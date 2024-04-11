@@ -25,15 +25,13 @@ export async function generateMetadata({
 
   const post = await client.fetch(
     groq`*[_type == "post" && slug.current == $slug][0]{
-      "title": coalesce(title[$locale], title.en, title),
-      "description": pt::text(coalesce(body[$locale], body.en, body))[0...160]
+      "title": string(coalesce(title[$locale], title[lower($locale)], title.uk, title.en, title.pl, title))
     }`,
     { slug, locale }
   );
 
   return {
     title: post?.title || 'Post',
-    description: post?.description || undefined,
   };
 }
 
