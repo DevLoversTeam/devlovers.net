@@ -6,7 +6,7 @@ export default function Home() {
     <div className={styles.page}>
       <main className={styles.main}>
         <div className={styles.ctas}>
-          <h1>We're working on something awesome!</h1>
+          <h1>We&apos;re working on something awesome!</h1>
         </div>
       </main>
       <footer className={styles.footer}>
