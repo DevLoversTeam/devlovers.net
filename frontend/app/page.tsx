@@ -1,28 +1,9 @@
-import Link from "next/link";
-import { client } from "../client";
-import groq from "groq";
+import TabsSection from '@/components/shared/TabsSection';
 
-export default async function Home() {
-  const posts = await client.fetch(groq`
-    *[_type == "post" && defined(slug.current) && publishedAt < now()]
-      | order(publishedAt desc)
-      { _id, title, slug, publishedAt }
-  `);
-
+export default function Home() {
   return (
-    <main>
-      <h1>Welcome to a blog!</h1>
-      <ul>
-        {posts.map(
-          ({ _id, title = "", slug, publishedAt }: any) =>
-            slug?.current && (
-              <li key={_id}>
-                <Link href={`/post/${slug.current}`}>{title}</Link> (
-                {publishedAt ? new Date(publishedAt).toDateString() : "—"})
-              </li>
-            )
-        )}
-      </ul>
+    <main className="max-w-3xl mx-auto py-10">
+      <TabsSection />
     </main>
   );
 }
