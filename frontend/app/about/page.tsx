@@ -1,7 +1,7 @@
 export const metadata = {
   title: "About | DevLovers",
   description:
-    "Learn more about the DevLovers Blog — a project powered by Next.js and Sanity CMS.",
+    "Discover the mission behind DevLovers - a platform for technical interview preparation across frontend, backend, and full-stack development.",
 };
 
 export default function AboutPage() {

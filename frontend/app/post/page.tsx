@@ -5,7 +5,8 @@ import { client } from "../../client";
 
 export const metadata = {
   title: "Blog | DevLovers",
-  description: "Browse all blog posts from DevLovers Blog",
+  description:
+    "Explore the latest articles, guides, and insights from the DevLovers platform.",
 };
 
 export default async function BlogPage() {

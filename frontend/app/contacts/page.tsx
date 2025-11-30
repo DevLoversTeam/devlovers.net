@@ -1,6 +1,7 @@
 export const metadata = {
   title: "Contacts | DevLovers",
-  description: "Get in touch with the DevLovers Blog team.",
+  description:
+    "Get in touch with the DevLovers team for questions, feedback, or collaboration.",
 };
 
 export default function ContactsPage() {

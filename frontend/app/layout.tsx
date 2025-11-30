@@ -14,8 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "DevLovers Blog",
-  description: "Modern blog built with Next.js and Sanity CMS",
+  title: "Home | DevLovers",
+  description:
+    "DevLovers - a platform for technical interview preparation in frontend, backend, and full-stack development.",
 };
 
 export default function RootLayout({
