@@ -1,0 +1,698 @@
+ # DevLovers Project - Interview Preparation Platform
+
+  ## Project Description
+  DevLovers is a platform for technical interview preparation in frontend, backend,
+  and full-stack development. It combines:
+  - **Content System**: Sanity CMS for blog posts with categories and authors
+  - **Interview Questions**: PostgreSQL database with structured Q&A (categories
+  table)
+  - **Quiz System**: Interactive quiz platform with anti-cheat, leaderboards (Phase
+  0-1 ✅ completed)
+
+  ---
+
+  ## Architecture
+
+  ### Monorepo Structure
+  The project is organized as a monorepo with two main directories:
+  - `frontend/` - Next.js 16 application with Drizzle ORM
+  - `studio/` - Sanity Studio CMS
+
+  ### Technology Stack
+
+  #### Frontend (`/frontend`)
+  - **Framework**: Next.js 16.0.1 with App Router
+  - **Runtime**: React 19.2.0
+  - **Styling**: Tailwind CSS v4, Geist fonts (sans & mono)
+  - **Database**: Neon PostgreSQL with Drizzle ORM 0.44.7
+  - **CMS Integration**: Sanity Client 7.12.1 with GROQ queries
+  - **UI Components**: Radix UI (Accordion, Tabs), Lucide React icons
+  - **Image Handling**: Sanity Image URL builder
+  - **Type Safety**: TypeScript 5
+  - **Code Quality**: ESLint 9, Prettier
+
+  #### Studio (`/studio`)
+  - **CMS**: Sanity Studio 4.14.2
+  - **Framework**: React 19.1
+  - **Styling**: Styled Components 6.1.18
+  - **Tooling**: Vision Tool (GROQ playground)
+  - **Project ID**: 6y9ive6v
+  - **Dataset**: production
+
+  ---
+
+  ## Directory Structure
+
+  devlovers.net/
+  ├── frontend/
+  │   ├── app/                          # Next.js App Router
+  │   │   ├── about/                    # About page
+  │   │   ├── api/                      # API routes
+  │   │   │   └── quiz/[slug]/          # ✅ NEW: Quiz API endpoint
+  │   │   │       └── route.ts
+  │   │   ├── contacts/                 # Contacts page
+  │   │   ├── post/                     # Blog post pages
+  │   │   ├── test-explanation/         # ✅ NEW: ExplanationRenderer test
+  │   │   │   └── page.tsx
+  │   │   ├── layout.tsx                # Root layout with header/footer
+  │   │   ├── page.tsx                  # Home page (TabsSection)
+  │   │   ├── globals.css               # Global styles
+  │   │   └── not-found.tsx             # 404 page
+  │   ├── components/
+  │   │   ├── quiz/                     # ✅ NEW: Quiz components
+  │   │   │   └── ExplanationRenderer.tsx  # Renders explanation JSON blocks
+  │   │   ├── shared/                   # Shared business components
+  │   │   │   ├── AccordionList.tsx
+  │   │   │   └── TabsSection.tsx
+  │   │   └── ui/                       # Reusable UI primitives
+  │   │       ├── accordion.tsx
+  │   │       └── tabs.tsx
+  │   ├── db/                           # Database layer
+  │   │   ├── schema/                   # ✅ UPDATED: Organized schemas
+  │   │   │   ├── index.ts              # Exports all schemas
+  │   │   │   ├── categories.ts         # Old tables (categories, questions)
+  │   │   │   └── quiz.ts               # ✅ NEW: 8 quiz tables
+  │   │   ├── queries/                  # ✅ NEW: Reusable query functions
+  │   │   │   └── quiz.ts               # Quiz-related queries
+  │   │   ├── index.ts                  # Database client
+  │   │   ├── seed.ts                   # Old seed script
+  │   │   ├── seedCategories.ts         # Category seeding
+  │   │   ├── seed-quiz-react.ts        # ✅ NEW: Quiz seed (5 questions × 3 langs)
+  │   │   └── verify-quiz-seed.ts       # ✅ NEW: Verification script
+  │   ├── docs/                         # ✅ NEW: Quiz documentation
+  │   │   ├── quiz-implementation-tasks.md  # Step-by-step implementation plan
+  │   │   ├── quiz-system-research.md       # Full technical research
+  │   │   ├── quiz-schema.dbml              # Database schema for dbdiagram.io
+  │   │   ├── quiz-schema.mermaid           # ERD diagram
+  │   │   └── QuizQuestion.jsx              # Component example
+  │   ├── drizzle/                      # Drizzle migrations
+  │   │   └── meta/                     # Migration metadata
+  │   ├── lib/
+  │   │   └── utils.ts                  # Utility functions (clsx, tailwind-merge)
+  │   ├── public/                       # Static assets
+  │   ├── drizzle.config.ts             # Drizzle Kit configuration
+  │   ├── next.config.ts                # Next.js config (Sanity CDN images)
+  │   └── package.json
+  │
+  ├── studio/
+  │   ├── schemaTypes/                  # Sanity schema definitions
+  │   │   ├── author.ts                 # Author content type
+  │   │   ├── blockContent.ts           # Rich text content
+  │   │   ├── category.ts               # Category content type
+  │   │   ├── post.ts                   # Blog post content type
+  │   │   └── index.ts                  # Schema exports
+  │   ├── static/                       # Static assets for studio
+  │   ├── sanity.config.ts              # Sanity configuration
+  │   └── package.json
+  │
+  ├── CLAUDE.md                         # This file (project state + quiz progress)
+  ├── .prettierrc                       # Prettier config (shared)
+  ├── .gitignore                        # Git ignore rules
+  ├── CODE_OF_CONDUCT.md                # Community guidelines
+  ├── SECURITY.md                       # Security policy
+  ├── LICENSE.txt                       # License information
+  └── README.md                         # Basic project description
+
+  ---
+
+  ## Database Schema (Drizzle ORM)
+
+  ### Old Tables (Interview Questions)
+
+  **1. categories**
+  - `id` (serial, primary key)
+  - `name` (text, unique, not null)
+  - Relations: One-to-many with questions
+
+  **2. questions**
+  - `id` (serial, primary key)
+  - `question` (text, not null)
+  - `answer_blocks` (jsonb, not null) - Stores structured answer content
+  - `category_id` (integer, foreign key to categories)
+  - Relations: Many-to-one with categories
+  - Cascade deletion: Questions deleted when category is deleted
+
+  **Database Configuration:**
+  - **Provider**: Neon Database (serverless PostgreSQL)
+  - **ORM**: Drizzle ORM with TypeScript
+  - **Migrations**: Located in `frontend/drizzle/`
+  - **Environment**: DATABASE_URL from `.env` file
+
+  ---
+
+  ### ✅ NEW: Quiz Tables (8 tables)
+
+  | Table | Purpose | Key Fields |
+  |-------|---------|------------|
+  | `quizzes` | Quiz metadata | id (uuid), slug, questionsCount, timeLimitSeconds, 
+  isActive |
+  | `quiz_translations` | Quiz i18n | quizId, locale (pk), title, description |
+  | `quiz_questions` | Questions | id (uuid), quizId, displayOrder, difficulty,
+  sourceQuestionId (nullable) |
+  | `quiz_question_content` | Question i18n | quizQuestionId, locale (pk),
+  questionText, explanation (JSONB) |
+  | `quiz_answers` | Answer options | id (uuid), quizQuestionId, displayOrder,
+  isCorrect |
+  | `quiz_answer_translations` | Answer i18n | quizAnswerId, locale (pk), answerText
+  |
+  | `quiz_attempts` | User results | id (uuid), userId, quizId, score, percentage,
+  integrityScore |
+  | `quiz_attempt_answers` | User answers | id (uuid), attemptId, quizQuestionId,
+  selectedAnswerId, isCorrect |
+
+  **Current Quiz Data:**
+  - 1 quiz: "React Fundamentals" (slug: `react-fundamentals`)
+  - 5 questions with 4 answers each
+  - 3 languages: uk (українська), en (English), pl (Polski)
+
+  **Key Architecture Decisions:**
+  - Quizzes are separate entities (not reusing questions directly)
+  - `source_question_id` in quiz_questions links to main questions (optional)
+  - `integrity_score` (0-100) tracks anti-cheat violations
+  - Composite primary keys for translations: (entity_id, locale)
+
+  ---
+
+  ## Sanity CMS Schema
+
+  ### Content Types
+  1. **Post** - Blog articles
+     - title, slug, author (reference)
+     - mainImage (with hotspot)
+     - categories (array of references)
+     - publishedAt (datetime)
+     - body (array of blocks and images)
+
+  2. **Author** - Content authors
+     - (Schema defined in studio/schemaTypes/author.ts)
+
+  3. **Category** - Content categorization
+     - (Schema defined in studio/schemaTypes/category.ts)
+
+  4. **Block Content** - Rich text content
+     - (Schema defined in studio/schemaTypes/blockContent.ts)
+
+  ---
+
+  ## ✅ COMPLETED: Quiz System Phase 0-1
+
+  ### Phase 0: Proof of Concept ✅
+  **Completed Tasks:**
+  - [x] Created 8 quiz tables in `db/schema/quiz.ts`
+  - [x] Generated and applied migrations to Neon DB (`npx drizzle-kit push`)
+  - [x] Created seed script: `db/seed-quiz-react.ts` (5 questions × 3 languages)
+  - [x] Verified data in DBeaver (all 8 tables populated correctly)
+  - [x] Created API endpoint: `GET /api/quiz/[slug]?locale=uk`
+  - [x] Created `ExplanationRenderer` component for rendering quiz explanations
+  - [x] Created test page `/test-explanation` to verify ExplanationRenderer
+
+  **Test URLs:**
+  http://localhost:3000/api/quiz/react-fundamentals?locale=uk
+  http://localhost:3000/api/quiz/react-fundamentals?locale=en
+  http://localhost:3000/api/quiz/react-fundamentals?locale=pl
+  http://localhost:3000/test-explanation
+
+  ### Phase 1: Database Queries ✅
+  **Completed Tasks:**
+  - [x] Created `db/queries/quiz.ts` with reusable query functions:
+    - `getQuizBySlug(slug, locale)` - get quiz with translation for specific locale
+    - `getQuizQuestions(quizId, locale)` - get questions with answers
+    - `randomizeQuizQuestions(questions, seed)` - shuffle questions/answers with seed
+    - `getQuizQuestionsRandomized(quizId, locale, seed)` - get randomized questions
+    - `getQuizLeaderboard(quizId, limit)` - top scores (integrity >= 70)
+    - `getUserBestAttempt(userId, quizId)` - user's best score
+    - `getUserQuizHistory(userId, quizId)` - all user attempts
+    - `getAttemptDetails(attemptId)` - attempt with answers
+  - [x] Refactored API route `/api/quiz/[slug]/route.ts` to use query functions
+    - Code reduced from 68 lines to 54 lines
+    - Much cleaner and more maintainable
+
+  ---
+
+  ## 🔄 NEXT: Quiz System Phase 2-7
+
+  ### Phase 2: Server Actions (NEXT STEP)
+  **File to create:** `actions/quiz.ts`
+
+  **Function to implement:**
+  ```typescript
+  submitQuizAttempt(input: SubmitQuizAttemptInput)
+
+  What it does:
+  - Validates answer submission
+  - Validates time spent (min 3 sec per question)
+  - Calculates score and percentage
+  - Calculates integrity_score from client violations
+  - Saves to quiz_attempts and quiz_attempt_answers tables
+  - Returns { success, attemptId, score, percentage, integrityScore }
+
+  ---
+  Phase 3: Anti-Cheat Hook
+
+  File to create: hooks/useAntiCheat.ts
+
+  Features:
+  - Prevent copy/paste (onCopy preventDefault)
+  - Prevent right-click context menu
+  - Detect tab switches (document.visibilitychange)
+  - Track violations array
+  - Show warning toast on violation
+
+  Returns: { violations, isTabActive, showWarning }
+
+  ---
+  Phase 4: UI Components (5 components)
+
+  1. QuizQuestion.tsx
+  - Props: question, status, selectedAnswerId, onAnswer, onNext, isLoading
+  - Shows question text with 4 radio-style answer options
+  - After answer: shows correct/incorrect visual feedback
+  - Shows ExplanationRenderer with fade-in animation
+  - Next button appears after answer
+  - Prevent double-click with isLocked state
+  - Apple-style design
+
+  2. QuizProgress.tsx
+  - Props: current, total, answers
+  - Circle indicators for each question
+  - Color based on correctness (green/red)
+  - Current question highlighted with accent ring
+  - Connecting lines between circles
+
+  3. QuizResult.tsx
+  - Props: score, total, percentage, previousBest, rank, totalParticipants,
+  onRestart, onViewAnswers
+  - Large score display
+  - Progress bar visualization
+  - Rank card (if available)
+  - Action buttons: restart, view answers, back to topic
+
+  4. QuizContainer.tsx (main orchestrator)
+  - Props: quiz, questions, userId, previousBest
+  - Uses useReducer for state management
+    - State: { status, currentIndex, answers, score }
+    - Status: 'answering' → 'revealed' → 'completed'
+  - Integrates useAntiCheat
+  - Uses useTransition for submit
+  - Orchestrates QuizProgress, QuizQuestion, QuizResult
+  - Calls submitQuizAttempt server action on completion
+
+  5. Leaderboard.tsx (server component)
+  - Props: entries, currentUserId
+  - Shows top 10 users (integrity >= 70)
+  - Medal emojis for top 3 (🥇🥈🥉)
+  - Highlighted row for current user (sticky)
+  - Horizontal dividers
+
+  ---
+  Phase 5: Quiz Page
+
+  File to create: app/[locale]/quiz/[slug]/page.tsx
+
+  What it does:
+  - Server Component
+  - Fetches quiz with getQuizBySlug(slug, locale)
+  - Fetches questions with getQuizQuestionsRandomized(quiz.id, locale)
+  - Fetches leaderboard with getQuizLeaderboard(quiz.id, 10)
+  - Fetches user's best attempt (if logged in)
+  - Renders <QuizContainer> + <Leaderboard>
+
+  Metadata:
+  - Dynamic title from quiz.title
+  - Description from quiz.description
+
+  ---
+  Phase 6: Integration
+
+  File to modify: app/[locale]/topics/[slug]/page.tsx
+  - Add "Пройти квіз" button linking to /[locale]/quiz/[quiz-slug]
+
+  File to modify: app/[locale]/dashboard/page.tsx
+  - Add quiz statistics section
+  - Total quizzes completed
+  - Average score
+  - Recent quiz attempts
+
+  ---
+  Phase 7: Testing
+
+  Files to create:
+  - __tests__/components/QuizQuestion.test.tsx - Component tests
+  - __tests__/quiz-flow.test.tsx - Integration tests
+
+  Tests:
+  - Renders question text and all answers
+  - Calls onAnswer with correct answerId on click
+  - Disables answers after selection
+  - Shows explanation when revealed
+  - Complete quiz flow from start to result
+  - Score calculation is correct
+  - Server action called with correct data
+
+  ---
+  Quiz System Architecture
+
+  State Management
+
+  // QuizContainer state (useReducer)
+  {
+    status: 'answering' | 'revealed' | 'completed',
+    currentIndex: number,
+    answers: {
+      questionId: string,
+      selectedAnswerId: string,
+      isCorrect: boolean,
+      answeredAt: Date
+    }[],
+    score: number
+  }
+
+  Anti-Cheat System
+
+  Client-side (soft warnings):
+  - Block copy/paste, context menu
+  - Detect tab switches (visibilitychange)
+  - Toast warnings on violations
+  - Track violations in array
+
+  Server-side (enforced):
+  - Randomize questions/answers with seed
+  - Validate min time per question (3 sec)
+  - Calculate integrity_score (0-100) based on violations
+  - Leaderboard filters by integrity_score >= 70
+
+  Explanation Block Format (JSONB)
+
+  Quiz explanations are stored as structured JSON blocks:
+
+  type BlockType = 'paragraph' | 'numberedList' | 'bulletList' | 'code';
+
+  interface AnswerBlock {
+    type: BlockType;
+    language?: string; // for code blocks (e.g., 'javascript')
+    children: (TextNode | ListItemNode)[];
+  }
+
+  interface TextNode {
+    text: string;
+    bold?: boolean;
+    italic?: boolean;
+    code?: boolean; // inline code
+  }
+
+  interface ListItemNode {
+    type: 'listItem';
+    children: (TextNode | ListItemNode)[];
+  }
+
+  Example:
+  [
+    {
+      "type": "paragraph",
+      "children": [
+        { "text": "React — це саме ", "bold": false },
+        { "text": "бібліотека", "bold": true },
+        { "text": ", а не фреймворк." }
+      ]
+    },
+    {
+      "type": "code",
+      "language": "javascript",
+      "children": [
+        { "text": "const [count, setCount] = useState(0);" }
+      ]
+    }
+  ]
+
+  Renderer: components/quiz/ExplanationRenderer.tsx handles all block types:
+  - paragraph → <p> with formatted text (bold, italic, inline code)
+  - code → <pre><code> with dark background
+  - numberedList → <ol><li>
+  - bulletList → <ul><li>
+
+  ---
+  Design System (Apple-style)
+
+  Colors
+
+  Light mode:
+    Background: #ffffff
+    Text: #1d1d1f
+    Accent: #007aff
+
+  Dark mode:
+    Background: #000000
+    Text: #f5f5f7
+    Accent: #0a84ff
+
+  Styling Guidelines
+
+  - No shadows (flat design)
+  - 1px borders for outlines
+  - 12px border radius for rounded corners
+  - SF Pro / system fonts (Geist fonts in this project)
+  - Minimalist - clean, simple, functional
+
+  ---
+  Key Features
+
+  Frontend Features
+
+  - Responsive Design: Tailwind CSS with mobile-first approach
+  - Navigation: Header with Home, Blog, About, Contacts
+  - Interview Prep: Tab-based interface with accordion lists for questions
+  - Quiz System: Interactive quizzes with anti-cheat, leaderboards, multilingual
+  - Blog System: Integration with Sanity CMS for blog posts
+  - Image Optimization: Next.js Image component with Sanity CDN
+  - Typography: Custom Geist font stack (sans + mono)
+
+  Content Management
+
+  - Sanity Studio: Dedicated CMS at /studio
+  - GROQ Queries: Type-safe content fetching
+  - Portable Text: Rich text rendering with @portabletext/react
+  - Image URLs: Server-side image transformation via Sanity
+
+  ---
+  Scripts & Commands
+
+  Frontend
+
+  # Development
+  npm run dev                        # Start Next.js dev server
+  npm run build                      # Build for production
+  npm run start                      # Start production server
+  npm run lint                       # Run ESLint
+
+  # Old seeding (categories + questions)
+  npm run seed:categories            # Seed category data
+  npm run seed                       # Run full database seed
+
+  # Database (Drizzle)
+  npx drizzle-kit generate           # Generate migrations
+  npx drizzle-kit push               # Apply migrations to Neon DB
+  npx drizzle-kit studio             # Open Drizzle Studio (GUI)
+
+  # Quiz seeding
+  npx tsx db/seed-quiz-react.ts      # Seed React quiz (5 questions × 3 langs)
+  npx tsx db/verify-quiz-seed.ts     # Verify seed data
+
+  Studio
+
+  cd studio
+  npm run dev                        # Start Sanity Studio dev server
+  npm run build                      # Build Sanity Studio
+  npm run deploy                     # Deploy studio to Sanity
+  npm run deploy-graphql             # Deploy GraphQL API
+
+  ---
+  Configuration Files
+
+  Prettier Configuration
+
+  - Print width: 80 characters
+  - Single quotes: true
+  - Semicolons: enabled
+  - ES5 trailing commas
+  - Arrow function parens: avoid
+  - Prose wrap: always
+
+  Next.js Configuration
+
+  - Remote image patterns: cdn.sanity.io/images/**
+
+  TypeScript
+
+  - Strict mode enabled (standard Next.js config)
+  - Path aliases: @/ points to frontend root
+
+  Drizzle Config
+
+  // drizzle.config.ts
+  {
+    out: './drizzle',
+    schema: './db/schema',  // Points to db/schema/ folder
+    dialect: 'postgresql',
+    dbCredentials: {
+      url: process.env.DATABASE_URL
+    }
+  }
+
+  ---
+  Development Workflow
+
+  Git Configuration
+
+  - Main Branch: main (for PRs)
+  - Current Branch: lesia-dev
+  - Ignored Files: node_modules, .next, .env*, dist, .sanity, build outputs
+
+  Recent Development
+
+  1. Integrated Drizzle ORM with Neon database
+  2. Configured database migrations and deployment
+  3. Added Prettier configuration
+  4. Created CODE_OF_CONDUCT.md and SECURITY.md
+  5. Updated metadata and favicon
+  6. Set up Sanity Studio
+  7. ✅ NEW: Implemented Quiz System Phase 0-1
+
+  ---
+  Environment Variables
+
+  Frontend (.env)
+
+  DATABASE_URL=postgresql://...     # Neon database connection string
+
+  Studio
+
+  - Sanity project ID: 6y9ive6v
+  - Dataset: production
+
+  ---
+  Deployment
+
+  Frontend
+
+  - Likely deployed on Vercel (Next.js native platform)
+  - Database hosted on Neon (serverless PostgreSQL)
+  - Static assets served via Next.js
+
+  Studio
+
+  - Deployed to Sanity hosting (npm run deploy)
+  - GraphQL API available via Sanity CDN
+
+  ---
+  Notes for Claude Code
+
+  When Adding Features
+
+  1. Database Changes:
+  - Update schemas in frontend/db/schema/
+  - Run npx drizzle-kit generate to create migrations
+  - Run npx drizzle-kit push to apply migrations
+  - Test with Drizzle Studio (npx drizzle-kit studio)
+
+  2. Content Types (Sanity):
+  - Add new schema types in studio/schemaTypes/
+  - Export from studio/schemaTypes/index.ts
+  - Deploy studio after schema changes (npm run deploy)
+
+  3. UI Components:
+  - Use Radix UI primitives for accessible components
+  - Place reusable UI in frontend/components/ui/
+  - Place business logic components in frontend/components/shared/
+  - Quiz components go in frontend/components/quiz/
+
+  4. Styling:
+  - Follow Tailwind CSS v4 conventions
+  - Use Geist fonts (sans for body, mono for code)
+  - Maintain consistent spacing with max-w-5xl container
+  - Apple-style: no shadows, 1px borders, 12px radius
+
+  5. Type Safety:
+  - Leverage Drizzle ORM for database type inference
+  - Use TypeScript for all new files
+  - Enable strict mode compliance
+
+  Code Style
+
+  - Follow Prettier configuration (auto-formatted)
+  - Use functional components with hooks
+  - Prefer server components (Next.js App Router default)
+  - Use async/await for data fetching
+  - Use useTransition for server actions
+
+  Testing Strategy
+
+  - Currently no test framework configured
+  - Phase 7 will add Jest + React Testing Library
+
+  Performance Considerations
+
+  - Use Next.js Image component for all images
+  - Leverage server components for data fetching
+  - Implement pagination for large lists
+  - Use Sanity CDN for optimized image delivery
+
+  ---
+  🚀 Continue Development
+
+  To resume Quiz System Phase 2:
+  "Continue with Phase 2: Server Actions from CLAUDE.md"
+
+  Claude will create actions/quiz.ts with submitQuizAttempt server action function.
+
+  ---
+  📊 Quiz System Progress Tracker
+
+  - Phase 0: Proof of Concept (✅ Completed)
+    - Database schema, migrations, seed, API, ExplanationRenderer, test page
+  - Phase 1: Database Queries (✅ Completed)
+    - Query functions in db/queries/quiz.ts, refactored API route
+  - Phase 2: Server Actions (NEXT)
+    - File: actions/quiz.ts
+    - Function: submitQuizAttempt
+  - Phase 3: Anti-Cheat Hook
+    - File: hooks/useAntiCheat.ts
+  - Phase 4: UI Components
+    - QuizQuestion.tsx
+    - QuizProgress.tsx
+    - QuizResult.tsx
+    - QuizContainer.tsx
+    - Leaderboard.tsx
+  - Phase 5: Quiz Page
+    - app/[locale]/quiz/[slug]/page.tsx
+  - Phase 6: Integration
+    - Topic pages, dashboard
+  - Phase 7: Testing
+    - Component tests, integration tests
+
+  Current State: Phase 1 completed, ready for Phase 2
+  Next File to Create: actions/quiz.ts
+
+  ---
+  License & Community
+
+  - License: Project uses a custom license (see LICENSE.txt)
+  - Studio: UNLICENSED (private)
+  - Code of Conduct: Available in CODE_OF_CONDUCT.md
+  - Security Policy: Available in SECURITY.md
+  - Issues: Report via GitHub (TBD)
+
+  ---
+  Reference Documentation
+
+  All quiz system documentation is in frontend/docs/:
+  - quiz-implementation-tasks.md - Full step-by-step implementation plan
+  - quiz-system-research.md - Technical research and decisions
+  - quiz-schema.dbml - Database schema for dbdiagram.io
+  - quiz-schema.mermaid - ERD diagram
+  - QuizQuestion.jsx - Component example
+
+  ---
+  Last Updated: Phase 0-1 completed, ready for Phase 2
+  Maintained By: Claude Code AI Assistant + Lesia (Developer)
+
+  ---

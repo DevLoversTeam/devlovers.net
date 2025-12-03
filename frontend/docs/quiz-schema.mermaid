@@ -1,0 +1,141 @@
+erDiagram
+    %% Existing tables
+    topics ||--o{ quizzes : "has"
+    topics ||--o{ questions : "has"
+    questions ||--o{ question_content : "has"
+    users ||--o{ user_progress : "tracks"
+    users ||--o{ user_bookmarks : "saves"
+    questions ||--o{ user_progress : "tracked"
+    questions ||--o{ user_bookmarks : "bookmarked"
+
+    %% Quiz content tables
+    quizzes ||--|{ quiz_translations : "has"
+    quizzes ||--|{ quiz_questions : "contains"
+    questions ||--o{ quiz_questions : "source"
+    quiz_questions ||--|{ quiz_question_content : "has"
+    quiz_questions ||--|{ quiz_answers : "has"
+    quiz_answers ||--|{ quiz_answer_translations : "has"
+
+    %% Quiz results tables
+    users ||--o{ quiz_attempts : "makes"
+    quizzes ||--o{ quiz_attempts : "has"
+    quiz_attempts ||--|{ quiz_attempt_answers : "contains"
+    quiz_questions ||--o{ quiz_attempt_answers : "referenced"
+    quiz_answers ||--o{ quiz_attempt_answers : "selected"
+
+    %% Existing tables (structure only)
+    topics {
+        uuid id PK
+        varchar slug
+        int display_order
+        varchar icon
+    }
+
+    questions {
+        uuid id PK
+        uuid topic_id FK
+        int display_order
+        varchar difficulty
+        varchar category
+    }
+
+    question_content {
+        uuid question_id PK_FK
+        varchar locale PK
+        jsonb question
+        jsonb answer
+    }
+
+    users {
+        uuid id PK
+        varchar email
+        varchar name
+        varchar preferred_locale
+    }
+
+    user_progress {
+        uuid user_id PK_FK
+        uuid question_id PK_FK
+        varchar status
+        int times_viewed
+        timestamp last_viewed_at
+    }
+
+    user_bookmarks {
+        uuid user_id PK_FK
+        uuid question_id PK_FK
+        text note
+        timestamp created_at
+    }
+
+    %% New quiz tables
+    quizzes {
+        uuid id PK
+        uuid topic_id FK
+        varchar slug
+        int display_order
+        int questions_count
+        int time_limit_seconds
+        boolean is_active
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    quiz_translations {
+        uuid quiz_id PK_FK
+        varchar locale PK
+        varchar title
+        text description
+    }
+
+    quiz_questions {
+        uuid id PK
+        uuid quiz_id FK
+        int display_order
+        uuid source_question_id FK
+        varchar difficulty
+        timestamp created_at
+    }
+
+    quiz_question_content {
+        uuid quiz_question_id PK_FK
+        varchar locale PK
+        text question_text
+        jsonb explanation
+    }
+
+    quiz_answers {
+        uuid id PK
+        uuid quiz_question_id FK
+        int display_order
+        boolean is_correct
+    }
+
+    quiz_answer_translations {
+        uuid quiz_answer_id PK_FK
+        varchar locale PK
+        text answer_text
+    }
+
+    quiz_attempts {
+        uuid id PK
+        uuid user_id FK
+        uuid quiz_id FK
+        int score
+        int total_questions
+        decimal percentage
+        int time_spent_seconds
+        int integrity_score
+        jsonb metadata
+        timestamp started_at
+        timestamp completed_at
+    }
+
+    quiz_attempt_answers {
+        uuid id PK
+        uuid attempt_id FK
+        uuid quiz_question_id FK
+        uuid selected_answer_id FK
+        boolean is_correct
+        timestamp answered_at
+    }
