@@ -43,6 +43,7 @@
 
   ## Directory Structure
 
+  ```
   devlovers.net/
   ├── frontend/
   │   ├── app/                          # Next.js App Router
@@ -112,6 +113,7 @@
   ├── SECURITY.md                       # Security policy
   ├── LICENSE.txt                       # License information
   └── README.md                         # Basic project description
+  ```
 
   ---
 
