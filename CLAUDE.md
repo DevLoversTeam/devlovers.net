@@ -229,27 +229,72 @@
     - Code reduced from 68 lines to 54 lines
     - Much cleaner and more maintainable
 
+  ### Phase 2: Server Actions ✅
+  **Completed Tasks:**
+  - [x] Created `actions/quiz.ts` with `submitQuizAttempt` server action
+  - [x] Validates answer submission (userId, quizId, answers required)
+  - [x] Validates time spent (min 3 sec per question)
+  - [x] Calculates score and percentage
+  - [x] Calculates integrity_score from client violations (100 - violations × 10)
+  - [x] Saves to quiz_attempts and quiz_attempt_answers tables
+  - [x] Returns { success, attemptId, score, percentage, integrityScore }
+
+  ### Phase 3: MVP Quiz UI ✅
+  **Completed Tasks:**
+  - [x] Installed `@radix-ui/react-radio-group` for accessible radio inputs
+  - [x] Created `components/ui/radio-group.tsx` wrapper (Apple-style design)
+  - [x] Created `components/quiz/QuizQuestion.tsx`:
+    - Radio-style answer options with Radix UI
+    - Correct/incorrect visual feedback (green/red borders)
+    - ExplanationRenderer integration with fade-in animation
+    - Motivational message for incorrect answers (orange block)
+    - "Далі" button after answer
+    - Props: question, status, selectedAnswerId, onAnswer, onNext, isLoading
+  - [x] Created `components/quiz/QuizProgress.tsx`:
+    - Circle indicators for each question (green/red/gray)
+    - Current question highlighted with blue accent ring
+    - Connecting lines between circles
+    - Progress text "Питання X / Y"
+    - Props: current, total, answers
+  - [x] Created `components/quiz/QuizResult.tsx`:
+    - Large score display (e.g., "3 / 5", "60%")
+    - Animated progress bar (color-coded: red/orange/green)
+    - Motivational messages based on score:
+      - < 50%: "Потрібно більше практики" 📚
+      - 50-79%: "Непоганий результат!" 💪
+      - 80-100%: "Чудова робота!" 🎉
+    - Action buttons: "Спробувати ще раз", "Повернутись до тем"
+    - Props: score, total, percentage, onRestart, onBackToTopics
+  - [x] Created `components/quiz/QuizContainer.tsx` (main orchestrator):
+    - useReducer for complex state management
+    - State: { status, currentIndex, answers, questionStatus, selectedAnswerId, startedAt }
+    - Actions: ANSWER_SELECTED, NEXT_QUESTION, COMPLETE_QUIZ, RESTART
+    - Orchestrates QuizProgress, QuizQuestion, QuizResult
+    - Calls submitQuizAttempt server action on completion (useTransition)
+    - Auto-submit on last question
+    - Props: quizId, questions, userId
+  - [x] Updated `app/quiz/[slug]/page.tsx`:
+    - Integrated QuizContainer with real DB data
+    - Server Component fetches quiz + randomized questions
+    - Passes data to QuizContainer (Client Component)
+    - Hardcoded userId: "test-user-123" (no auth yet)
+  - [x] Added "Quiz" link to header navigation
+
+  **Test URL:**
+  http://localhost:3000/quiz/react-fundamentals
+
+  **Features Working:**
+  - Full quiz flow: answer questions → progress tracking → final result
+  - Data saves to DB (quiz_attempts + quiz_attempt_answers tables)
+  - Motivational messages based on performance
+  - Restart quiz functionality
+  - Apple-style flat design (no shadows, 1px borders, 12px radius)
+
   ---
 
-  ## 🔄 NEXT: Quiz System Phase 2-7
+  ## 🔄 NEXT: Quiz System Phase 4-7
 
-  ### Phase 2: Server Actions (NEXT STEP)
-  **File to create:** `actions/quiz.ts`
-
-  **Function to implement:**
-  ```typescript
-  submitQuizAttempt(input: SubmitQuizAttemptInput)
-
-  What it does:
-  - Validates answer submission
-  - Validates time spent (min 3 sec per question)
-  - Calculates score and percentage
-  - Calculates integrity_score from client violations
-  - Saves to quiz_attempts and quiz_attempt_answers tables
-  - Returns { success, attemptId, score, percentage, integrityScore }
-
-  ---
-  Phase 3: Anti-Cheat Hook
+  ### Phase 4: Anti-Cheat Hook (NEXT STEP)
 
   File to create: hooks/useAntiCheat.ts
 
@@ -262,94 +307,86 @@
 
   Returns: { violations, isTabActive, showWarning }
 
+  Integration into QuizContainer:
+  - Add useAntiCheat hook
+  - Pass violations to submitQuizAttempt
+  - Show toast warnings on violations
+  - Display warning indicator in UI
+
   ---
-  Phase 4: UI Components (5 components)
+  ### Phase 5: Leaderboard Component
 
-  1. QuizQuestion.tsx
-  - Props: question, status, selectedAnswerId, onAnswer, onNext, isLoading
-  - Shows question text with 4 radio-style answer options
-  - After answer: shows correct/incorrect visual feedback
-  - Shows ExplanationRenderer with fade-in animation
-  - Next button appears after answer
-  - Prevent double-click with isLocked state
-  - Apple-style design
+  File to create: components/quiz/Leaderboard.tsx (server component)
 
-  2. QuizProgress.tsx
-  - Props: current, total, answers
-  - Circle indicators for each question
-  - Color based on correctness (green/red)
-  - Current question highlighted with accent ring
-  - Connecting lines between circles
-
-  3. QuizResult.tsx
-  - Props: score, total, percentage, previousBest, rank, totalParticipants,
-  onRestart, onViewAnswers
-  - Large score display
-  - Progress bar visualization
-  - Rank card (if available)
-  - Action buttons: restart, view answers, back to topic
-
-  4. QuizContainer.tsx (main orchestrator)
-  - Props: quiz, questions, userId, previousBest
-  - Uses useReducer for state management
-    - State: { status, currentIndex, answers, score }
-    - Status: 'answering' → 'revealed' → 'completed'
-  - Integrates useAntiCheat
-  - Uses useTransition for submit
-  - Orchestrates QuizProgress, QuizQuestion, QuizResult
-  - Calls submitQuizAttempt server action on completion
-
-  5. Leaderboard.tsx (server component)
+  Features:
   - Props: entries, currentUserId
   - Shows top 10 users (integrity >= 70)
   - Medal emojis for top 3 (🥇🥈🥉)
   - Highlighted row for current user (sticky)
   - Horizontal dividers
+  - Anonymous userIds display (e.g., "User ***123")
+
+  Integration:
+  - Add to quiz page below QuizContainer
+  - Fetch leaderboard with getQuizLeaderboard(quiz.id, 10)
+  - Real-time updates after quiz completion
 
   ---
-  Phase 5: Quiz Page
+  ### Phase 6: Additional Features
 
-  File to create: app/[locale]/quiz/[slug]/page.tsx
+  **Countdown Timer:**
+  - Add to QuizContainer
+  - Formula: questionsCount × 20 seconds
+  - Display at top of quiz
+  - Auto-submit when time expires
+  - Visual warning at 60 seconds remaining
 
-  What it does:
-  - Server Component
-  - Fetches quiz with getQuizBySlug(slug, locale)
-  - Fetches questions with getQuizQuestionsRandomized(quiz.id, locale)
-  - Fetches leaderboard with getQuizLeaderboard(quiz.id, 10)
-  - Fetches user's best attempt (if logged in)
-  - Renders <QuizContainer> + <Leaderboard>
+  **Quiz List Page:**
+  - File: app/quiz/page.tsx
+  - Display all available quizzes
+  - Filter by topic/difficulty
+  - Show completion status per user
 
-  Metadata:
-  - Dynamic title from quiz.title
-  - Description from quiz.description
+  **Topics Integration:**
+  - File: app/topics/[slug]/page.tsx (to be created)
+  - Add "Пройти квіз" button linking to quiz
+  - Show quiz completion badge if completed
+
+  **Dashboard:**
+  - File: app/dashboard/page.tsx (to be created)
+  - Quiz statistics section:
+    - Total quizzes completed
+    - Average score
+    - Recent attempts
+    - Best scores per quiz
+  - Progress charts
+  - Achievements/badges
 
   ---
-  Phase 6: Integration
+  ### Phase 7: Testing & Optimization
 
-  File to modify: app/[locale]/topics/[slug]/page.tsx
-  - Add "Пройти квіз" button linking to /[locale]/quiz/[quiz-slug]
+  **Unit Tests:**
+  - __tests__/components/QuizQuestion.test.tsx
+  - __tests__/components/QuizProgress.test.tsx
+  - __tests__/components/QuizResult.test.tsx
 
-  File to modify: app/[locale]/dashboard/page.tsx
-  - Add quiz statistics section
-  - Total quizzes completed
-  - Average score
-  - Recent quiz attempts
+  **Integration Tests:**
+  - __tests__/quiz-flow.test.tsx
+  - Full quiz completion flow
+  - Score calculation verification
+  - Server action integration
 
-  ---
-  Phase 7: Testing
+  **Performance:**
+  - Code splitting for quiz components
+  - Lazy loading questions
+  - Optimistic UI updates
+  - Image optimization for explanation content
 
-  Files to create:
-  - __tests__/components/QuizQuestion.test.tsx - Component tests
-  - __tests__/quiz-flow.test.tsx - Integration tests
-
-  Tests:
-  - Renders question text and all answers
-  - Calls onAnswer with correct answerId on click
-  - Disables answers after selection
-  - Shows explanation when revealed
-  - Complete quiz flow from start to result
-  - Score calculation is correct
-  - Server action called with correct data
+  **Accessibility:**
+  - Keyboard navigation testing
+  - Screen reader compatibility
+  - Focus management
+  - ARIA labels verification
 
   ---
   Quiz System Architecture
@@ -588,6 +625,19 @@
   ---
   Notes for Claude Code
 
+  Component Development Rule
+
+  IMPORTANT: Never create UI components "blindly" without visual verification.
+
+  When creating a new component:
+  1. Ask where to add the component for visualization
+  2. Options:
+     - Add to existing page where it will be used
+     - Create test page if needed (e.g., app/test-[component]/page.tsx)
+     - Integrate into main flow immediately
+  3. Always provide mock data to test all component states
+  4. User must see the component working before moving to next task
+
   When Adding Features
 
   1. Database Changes:
@@ -641,10 +691,14 @@
   ---
   🚀 Continue Development
 
-  To resume Quiz System Phase 2:
-  "Continue with Phase 2: Server Actions from CLAUDE.md"
+  To resume Quiz System Phase 4:
+  "Continue with Phase 4: Anti-Cheat Hook from CLAUDE.md"
 
-  Claude will create actions/quiz.ts with submitQuizAttempt server action function.
+  Next steps:
+  1. Create hooks/useAntiCheat.ts with violation tracking
+  2. Integrate into QuizContainer
+  3. Add toast notifications for violations
+  4. Test anti-cheat functionality
 
   ---
   📊 Quiz System Progress Tracker
@@ -653,26 +707,24 @@
     - Database schema, migrations, seed, API, ExplanationRenderer, test page
   - Phase 1: Database Queries (✅ Completed)
     - Query functions in db/queries/quiz.ts, refactored API route
-  - Phase 2: Server Actions (NEXT)
-    - File: actions/quiz.ts
-    - Function: submitQuizAttempt
-  - Phase 3: Anti-Cheat Hook
+  - Phase 2: Server Actions (✅ Completed)
+    - actions/quiz.ts with submitQuizAttempt function
+  - Phase 3: MVP Quiz UI (✅ Completed)
+    - QuizQuestion.tsx, QuizProgress.tsx, QuizResult.tsx, QuizContainer.tsx
+    - Full quiz flow working with DB integration
+    - Added "Quiz" link to header
+  - Phase 4: Anti-Cheat Hook (NEXT)
     - File: hooks/useAntiCheat.ts
-  - Phase 4: UI Components
-    - QuizQuestion.tsx
-    - QuizProgress.tsx
-    - QuizResult.tsx
-    - QuizContainer.tsx
-    - Leaderboard.tsx
-  - Phase 5: Quiz Page
-    - app/[locale]/quiz/[slug]/page.tsx
-  - Phase 6: Integration
-    - Topic pages, dashboard
-  - Phase 7: Testing
-    - Component tests, integration tests
+    - Integration into QuizContainer
+  - Phase 5: Leaderboard Component
+    - File: components/quiz/Leaderboard.tsx
+  - Phase 6: Additional Features
+    - Countdown timer, quiz list page, topics integration, dashboard
+  - Phase 7: Testing & Optimization
+    - Unit tests, integration tests, performance, accessibility
 
-  Current State: Phase 1 completed, ready for Phase 2
-  Next File to Create: actions/quiz.ts
+  Current State: Phase 3 completed, ready for Phase 4 (Anti-Cheat Hook)
+  Next File to Create: hooks/useAntiCheat.ts
 
   ---
   License & Community
@@ -694,7 +746,7 @@
   - QuizQuestion.jsx - Component example
 
   ---
-  Last Updated: Phase 0-1 completed, ready for Phase 2
+  Last Updated: Phase 0-3 completed (MVP Quiz System working), ready for Phase 4
   Maintained By: Claude Code AI Assistant + Lesia (Developer)
 
   ---

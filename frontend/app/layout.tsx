@@ -41,6 +41,9 @@ export default function RootLayout({
               <Link href="/post" className="hover:text-blue-600 transition">
                 Blog
               </Link>
+               <Link href="/quiz/react-fundamentals" className="hover:text-blue-600 transition">
+                  Quiz
+                </Link>
               <Link href="/about" className="hover:text-blue-600 transition">
                 About
               </Link>
