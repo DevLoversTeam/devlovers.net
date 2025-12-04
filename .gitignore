@@ -41,6 +41,10 @@
 .DS_Store
 *.pem
 
+# IDE
+.idea/
+.vscode/
+
 # Debug
 npm-debug.log*
 yarn-debug.log*
@@ -56,3 +60,7 @@ yarn-error.log*
 # Typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Documentation (only for development)
+CLAUDE.md
+frontend/docs/
