@@ -40,7 +40,7 @@
 
         {/* Answer options */}
         <RadioGroup
-          value={selectedAnswerId || undefined}
+          value={selectedAnswerId ?? ''}
           onValueChange={onAnswer}
           disabled={!isAnswering || isLoading}
           className="gap-3"
@@ -121,13 +121,16 @@
           </div>
         )}
         {/* Next button (shown for both correct and incorrect) */}
-     <Button
-      onClick={onNext}
-      disabled={isLoading}
-      className="mt-2 animate-in fade-in slide-in-from-bottom-2 duration-300"
-    >
-      {isLoading ? 'Завантаження...' : 'Далі'}
-    </Button>
+    {/* Next button (shown only after answer is revealed) */}
+      {isRevealed && (
+        <Button
+          onClick={onNext}
+          disabled={isLoading}
+          className="mt-2 animate-in fade-in slide-in-from-bottom-2 duration-300"
+        >
+          {isLoading ? 'Завантаження...' : 'Далі'}
+        </Button>
+      )}
       </div>
     );
   }

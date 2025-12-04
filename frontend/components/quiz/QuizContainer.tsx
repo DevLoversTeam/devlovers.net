@@ -163,6 +163,7 @@
 
     // Submit quiz attempt to server
     const handleSubmit = () => {
+      
       startTransition(async () => {
         const result = await submitQuizAttempt({
           userId,

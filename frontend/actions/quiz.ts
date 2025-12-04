@@ -174,7 +174,7 @@
         integrityScore,
       };
     } catch (error) {
-      console.error('Error submitting quiz attempt:', error);
+       console.error('Error submitting quiz attempt:', error);
       return {
         success: false,
         error: 'Failed to submit quiz attempt',
