@@ -40,5 +40,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
- # IDE
-  .idea/
+# IDE
+.idea/
+
+# Documentation (only for development)
+CLAUDE.md
+docs/
