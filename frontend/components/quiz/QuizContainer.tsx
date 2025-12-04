@@ -1,9 +1,11 @@
-'use client';
+ 'use client';
 
   import { useReducer, useTransition } from 'react';
+  import { useAntiCheat } from '@/hooks/useAntiCheat';
   import { QuizProgress } from './QuizProgress';
   import { QuizQuestion } from './QuizQuestion';
   import { QuizResult } from './QuizResult';
+  import { Button } from '@/components/ui/button';
   import { submitQuizAttempt } from '@/actions/quiz';
   import type { QuizQuestionWithAnswers } from '@/db/queries/quiz';
 
@@ -19,15 +21,16 @@
   }
 
   type QuizState = {
-    status: 'in_progress' | 'completed';
+    status: 'rules' | 'in_progress' | 'completed';
     currentIndex: number;
     answers: Answer[];
     questionStatus: 'answering' | 'revealed';
     selectedAnswerId: string | null;
-    startedAt: Date;
+    startedAt: Date | null;
   };
 
   type QuizAction =
+    | { type: 'START_QUIZ' }
     | { type: 'ANSWER_SELECTED'; payload: { answerId: string; isCorrect: boolean; questionId: string } }
     | { type: 'NEXT_QUESTION' }
     | { type: 'COMPLETE_QUIZ' }
@@ -39,6 +42,13 @@
 
   function quizReducer(state: QuizState, action: QuizAction): QuizState {
     switch (action.type) {
+      case 'START_QUIZ':
+        return {
+          ...state,
+          status: 'in_progress',
+          startedAt: new Date(),
+        };
+
       case 'ANSWER_SELECTED':
         return {
           ...state,
@@ -71,12 +81,12 @@
 
       case 'RESTART':
         return {
-          status: 'in_progress',
+          status: 'rules',
           currentIndex: 0,
           answers: [],
           questionStatus: 'answering',
           selectedAnswerId: null,
-          startedAt: new Date(),
+          startedAt: null,
         };
 
       default:
@@ -104,16 +114,26 @@
     const [isPending, startTransition] = useTransition();
 
     const [state, dispatch] = useReducer(quizReducer, {
-      status: 'in_progress',
+      status: 'rules',
       currentIndex: 0,
       answers: [],
       questionStatus: 'answering',
       selectedAnswerId: null,
-      startedAt: new Date(),
+      startedAt: null,
     });
+
+    // Anti-cheat protection (only during quiz)
+    const { violations, violationsCount, resetViolations } = useAntiCheat(
+      state.status === 'in_progress'
+    );
 
     const currentQuestion = questions[state.currentIndex];
     const totalQuestions = questions.length;
+
+    // Handle quiz start
+    const handleStart = () => {
+      dispatch({ type: 'START_QUIZ' });
+    };
 
     // Handle answer selection
     const handleAnswer = (answerId: string) => {
@@ -148,8 +168,8 @@
           userId,
           quizId,
           answers: state.answers,
-          violations: [], // TODO: integrate anti-cheat hook
-          startedAt: state.startedAt,
+          violations: violations,
+          startedAt: state.startedAt!,
           completedAt: new Date(),
         });
 
@@ -165,6 +185,7 @@
 
     // Handle restart
     const handleRestart = () => {
+      resetViolations();
       dispatch({ type: 'RESTART' });
     };
 
@@ -177,6 +198,67 @@
       }
     };
 
+    // Show rules if not started
+    if (state.status === 'rules') {
+      return (
+        <div className="max-w-2xl mx-auto space-y-6 p-6 rounded-xl border border-gray-200 dark:border-gray-800">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+            Правила проходження квізу
+          </h2>
+
+          <div className="space-y-4 text-gray-700 dark:text-gray-300">
+            <div className="flex gap-3">
+              <span className="text-xl">📝</span>
+              <div>
+                <p className="font-medium">Загальні правила</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Відповідайте на питання чесно. Кожне питання має тільки одну правильну відповідь.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <span className="text-xl">🚫</span>
+              <div>
+                <p className="font-medium">Заборонено</p>
+                <ul className="text-sm text-gray-600 dark:text-gray-400 list-disc list-inside space-y-1">
+                  <li>Копіювання та вставка тексту</li>
+                  <li>Використання контекстного меню (права кнопка миші)</li>
+                  <li>Переключення на інші вкладки або програми</li>
+                  <li>Використання сторонніх джерел інформації</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <span className="text-xl">⚠️</span>
+              <div>
+                <p className="font-medium">Система контролю</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Порушення правил фіксуються автоматично. При 3+ порушеннях результат не зараховується до рейтингу.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <span className="text-xl">⏱️</span>
+              <div>
+                <p className="font-medium">Час проходження</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Мінімальний час: {totalQuestions * 3} секунд (по 3 секунди на питання). Занадто швидке проходження не
+  зараховується.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <Button onClick={handleStart} className="w-full" size="lg">
+            Почати квіз
+          </Button>
+        </div>
+      );
+    }
+
     // Show result if completed
     if (state.status === 'completed') {
       const correctAnswers = state.answers.filter((a) => a.isCorrect).length;
@@ -187,6 +269,7 @@
           score={correctAnswers}
           total={totalQuestions}
           percentage={percentage}
+          violationsCount={violationsCount}
           onRestart={handleRestart}
           onBackToTopics={handleBackToTopicsClick}
         />
@@ -195,7 +278,7 @@
 
     // Show quiz in progress
     return (
-      <div className="space-y-8">
+      <div className="space-y-8 no-select">
         {/* Progress indicator */}
         <QuizProgress
           current={state.currentIndex}

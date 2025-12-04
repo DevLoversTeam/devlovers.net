@@ -1,11 +1,13 @@
  'use client';
 
   import { cn } from '@/lib/utils';
+  import { Button } from '@/components/ui/button';
 
   interface QuizResultProps {
     score: number;
     total: number;
     percentage: number;
+    violationsCount?: number;
     onRestart: () => void;
     onBackToTopics: () => void;
   }
@@ -14,6 +16,7 @@
     score,
     total,
     percentage,
+    violationsCount = 0,
     onRestart,
     onBackToTopics,
   }: QuizResultProps) {
@@ -82,28 +85,24 @@
           </h3>
           <p className="text-gray-600 dark:text-gray-400">{motivation.message}</p>
         </div>
-
+         {/* Violation warning (if applicable) */}
+          {violationsCount >= 3 && (
+            <div className="p-4 rounded-xl bg-orange-50 dark:bg-orange-900/20 border border-orange-200
+  dark:border-orange-800">
+              <p className="text-center text-orange-800 dark:text-orange-200 font-medium">
+                ⚠️ Квіз завершено з порушеннями правил ({violationsCount} порушень).
+                Результат не зараховано до рейтингу.
+              </p>
+            </div>
+          )}
         {/* Action buttons */}
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <button
-            onClick={onRestart}
-            className={cn(
-              'px-6 py-3 rounded-xl font-medium transition-colors',
-              'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800'
-            )}
-          >
+            <Button onClick={onRestart} variant="primary">
             Спробувати ще раз
-          </button>
-          <button
-            onClick={onBackToTopics}
-            className={cn(
-              'px-6 py-3 rounded-xl font-medium transition-colors',
-              'bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-gray-100',
-              'hover:bg-gray-300 dark:hover:bg-gray-700'
-            )}
-          >
+          </Button>
+          <Button onClick={onBackToTopics} variant="secondary">
             Повернутись до тем
-          </button>
+          </Button>
         </div>
       </div>
     );

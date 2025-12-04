@@ -26,7 +26,8 @@
   - **Styling**: Tailwind CSS v4, Geist fonts (sans & mono)
   - **Database**: Neon PostgreSQL with Drizzle ORM 0.44.7
   - **CMS Integration**: Sanity Client 7.12.1 with GROQ queries
-  - **UI Components**: Radix UI (Accordion, Tabs), Lucide React icons
+  - **UI Components**: Radix UI (Accordion, Tabs, Radio Group), Lucide React icons
+  - **Notifications**: Sonner (toast notifications)
   - **Image Handling**: Sanity Image URL builder
   - **Type Safety**: TypeScript 5
   - **Code Quality**: ESLint 9, Prettier
@@ -60,14 +61,22 @@
   │   │   ├── globals.css               # Global styles
   │   │   └── not-found.tsx             # 404 page
   │   ├── components/
-  │   │   ├── quiz/                     # ✅ NEW: Quiz components
-  │   │   │   └── ExplanationRenderer.tsx  # Renders explanation JSON blocks
+  │   │   ├── quiz/                     # ✅ Quiz components
+  │   │   │   ├── ExplanationRenderer.tsx  # Renders explanation JSON blocks
+  │   │   │   ├── QuizContainer.tsx     # Main quiz orchestrator
+  │   │   │   ├── QuizQuestion.tsx      # Question display with answers
+  │   │   │   ├── QuizProgress.tsx      # Progress indicator
+  │   │   │   └── QuizResult.tsx        # Result screen
   │   │   ├── shared/                   # Shared business components
   │   │   │   ├── AccordionList.tsx
   │   │   │   └── TabsSection.tsx
   │   │   └── ui/                       # Reusable UI primitives
   │   │       ├── accordion.tsx
+  │   │       ├── button.tsx            # ✅ NEW: Reusable button component
+  │   │       ├── radio-group.tsx
   │   │       └── tabs.tsx
+  │   ├── hooks/                        # ✅ NEW: Custom React hooks
+  │   │   └── useAntiCheat.ts           # Anti-cheat violation tracking
   │   ├── db/                           # Database layer
   │   │   ├── schema/                   # ✅ UPDATED: Organized schemas
   │   │   │   ├── index.ts              # Exports all schemas
@@ -294,24 +303,80 @@
 
   ## 🔄 NEXT: Quiz System Phase 4-7
 
-  ### Phase 4: Anti-Cheat Hook (NEXT STEP)
+  ### Phase 4: Anti-Cheat Hook ✅
 
-  File to create: hooks/useAntiCheat.ts
+  **Completed Tasks:**
+  - [x] Installed Sonner toast library
+  - [x] Created `hooks/useAntiCheat.ts`:
+    - Prevents copy/paste (onCopy/onPaste preventDefault)
+    - Prevents right-click context menu
+    - Detects tab switches (document.visibilitychange)
+    - Tracks violations array with timestamps
+    - Shows toast warnings on violations (Sonner)
+    - Returns: { violations, violationsCount, isTabActive, showWarning, resetViolations }
+  - [x] Integrated `<Toaster />` in root layout (top-right position)
+  - [x] Integrated useAntiCheat into QuizContainer:
+    - Active only during 'in_progress' status
+    - Passes violations to submitQuizAttempt
+    - Resets violations on quiz restart
+  - [x] Updated `actions/quiz.ts`:
+    - Added 'paste' to ViolationEvent type
+    - Stores violations in metadata
+  - [x] Added Rules Screen before quiz start:
+    - Explains quiz rules and anti-cheat system
+    - Shows minimum time requirement (3 sec per question)
+    - "Почати квіз" button starts the quiz
+  - [x] Created `components/ui/button.tsx`:
+    - Reusable button with 3 variants (primary, secondary, outline)
+    - 3 sizes (sm, md, lg)
+    - Used in QuizContainer, QuizResult, QuizQuestion
+  - [x] Updated QuizResult:
+    - Added violationsCount prop
+    - Shows orange warning if violations >= 3
+    - Message: "⚠️ Квіз завершено з порушеннями правил (N порушень). Результат не зараховано до рейтингу."
+  - [x] Added `user-select: none` CSS for quiz content
+  - [x] Updated QuizContainer state:
+    - Added 'rules' status
+    - startedAt is nullable (set on START_QUIZ action)
+    - Restart returns to rules screen
 
-  Features:
-  - Prevent copy/paste (onCopy preventDefault)
-  - Prevent right-click context menu
-  - Detect tab switches (document.visibilitychange)
-  - Track violations array
-  - Show warning toast on violation
+  **Violations Handling (MVP - Soft Approach):**
+  - 0-2 violations: Toast warnings, integrity_score reduced by 10% each
+  - 3+ violations: integrity_score = 0 (not shown in leaderboard)
+  - Quiz can be completed with any number of violations
+  - QuizResult shows current progress + violation warning message
 
-  Returns: { violations, isTabActive, showWarning }
+  ---
 
-  Integration into QuizContainer:
-  - Add useAntiCheat hook
-  - Pass violations to submitQuizAttempt
-  - Show toast warnings on violations
-  - Display warning indicator in UI
+  **Future Enhancements (Post-MVP):**
+
+  Auto-fail mechanism:
+  - Option 1: Auto-submit after N violations (configurable per quiz)
+  - Option 2: Score penalty per violation (e.g., -20% per tab switch)
+  - Option 3: Hard limit (e.g., 3 strikes → immediate fail with score 0)
+
+  Advanced detection:
+  - DevTools detection (console.log intercept, debugger detection)
+  - Mouse tracking (suspicious patterns, too fast selections)
+  - Fullscreen API (require fullscreen mode during quiz)
+  - Page visibility advanced tracking (blur/focus events)
+
+  Visual deterrents:
+  - Semi-transparent userId watermark across screen
+  - Blur content when tab is inactive (document.hidden)
+  - Screenshot detection via canvas fingerprinting
+  - Camera/screen recording warning
+
+  Quiz configuration (per quiz):
+  - `allow_tab_switch` (boolean) - allow/disallow tab switching
+  - `max_violations` (number) - auto-fail threshold
+  - `require_fullscreen` (boolean) - enforce fullscreen mode
+  - `violation_penalty` (number) - score reduction per violation
+
+  Database schema updates (future):
+  - Add `violation_details` JSONB to quiz_attempts (store violation types + timestamps)
+  - Add anti-cheat config fields to quizzes table
+  - Track violation patterns per user for anomaly detection
 
   ---
   ### Phase 5: Leaderboard Component
@@ -691,14 +756,14 @@
   ---
   🚀 Continue Development
 
-  To resume Quiz System Phase 4:
-  "Continue with Phase 4: Anti-Cheat Hook from CLAUDE.md"
+  To resume Quiz System Phase 5:
+  "Continue with Phase 5: Leaderboard Component from CLAUDE.md"
 
   Next steps:
-  1. Create hooks/useAntiCheat.ts with violation tracking
-  2. Integrate into QuizContainer
-  3. Add toast notifications for violations
-  4. Test anti-cheat functionality
+  1. Create components/quiz/Leaderboard.tsx (server component)
+  2. Add to quiz/[slug]/page.tsx below QuizContainer
+  3. Fetch leaderboard data with getQuizLeaderboard
+  4. Test leaderboard display and user highlighting
 
   ---
   📊 Quiz System Progress Tracker
@@ -713,18 +778,21 @@
     - QuizQuestion.tsx, QuizProgress.tsx, QuizResult.tsx, QuizContainer.tsx
     - Full quiz flow working with DB integration
     - Added "Quiz" link to header
-  - Phase 4: Anti-Cheat Hook (NEXT)
-    - File: hooks/useAntiCheat.ts
-    - Integration into QuizContainer
-  - Phase 5: Leaderboard Component
+  - Phase 4: Anti-Cheat Hook (✅ Completed)
+    - useAntiCheat hook with violation tracking
+    - Sonner toast notifications
+    - Rules Screen before quiz start
+    - Button component (reusable UI)
+    - user-select: none CSS
+  - Phase 5: Leaderboard Component (NEXT)
     - File: components/quiz/Leaderboard.tsx
   - Phase 6: Additional Features
     - Countdown timer, quiz list page, topics integration, dashboard
   - Phase 7: Testing & Optimization
     - Unit tests, integration tests, performance, accessibility
 
-  Current State: Phase 3 completed, ready for Phase 4 (Anti-Cheat Hook)
-  Next File to Create: hooks/useAntiCheat.ts
+  Current State: Phase 4 completed, ready for Phase 5 (Leaderboard Component)
+  Next File to Create: components/quiz/Leaderboard.tsx
 
   ---
   License & Community
@@ -746,7 +814,7 @@
   - QuizQuestion.jsx - Component example
 
   ---
-  Last Updated: Phase 0-3 completed (MVP Quiz System working), ready for Phase 4
+  Last Updated: Phase 0-4 completed (MVP Quiz System + Anti-Cheat), ready for Phase 5
   Maintained By: Claude Code AI Assistant + Lesia (Developer)
 
   ---

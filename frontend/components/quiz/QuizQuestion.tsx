@@ -2,6 +2,7 @@
 
   import { QuizQuestionWithAnswers } from '@/db/queries/quiz';
   import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+  import { Button } from '@/components/ui/button';
   import ExplanationRenderer from './ExplanationRenderer';
   import { cn } from '@/lib/utils';
 
@@ -119,22 +120,14 @@
             </div>
           </div>
         )}
-
         {/* Next button (shown for both correct and incorrect) */}
-        {isRevealed && (
-          <button
-            onClick={onNext}
-            disabled={isLoading}
-            className={cn(
-              'mt-2 rounded-xl bg-blue-600 px-6 py-3 text-base font-medium text-white',
-              'hover:bg-blue-700 active:bg-blue-800 transition-colors',
-              'disabled:opacity-50 disabled:cursor-not-allowed',
-              'animate-in fade-in slide-in-from-bottom-2 duration-300'
-            )}
-          >
-            {isLoading ? 'Завантаження...' : 'Далі'}
-          </button>
-        )}
+     <Button
+      onClick={onNext}
+      disabled={isLoading}
+      className="mt-2 animate-in fade-in slide-in-from-bottom-2 duration-300"
+    >
+      {isLoading ? 'Завантаження...' : 'Далі'}
+    </Button>
       </div>
     );
   }

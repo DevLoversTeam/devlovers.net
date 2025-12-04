@@ -15,7 +15,7 @@
   }
 
   export interface ViolationEvent {
-    type: 'copy' | 'context-menu' | 'tab-switch';
+    type: 'copy' | 'context-menu' | 'tab-switch'| 'paste';
     timestamp: Date;
   }
 
