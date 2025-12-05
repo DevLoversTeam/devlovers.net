@@ -20,7 +20,7 @@ async function main() {
 
     await db.insert(questions).values({
       question: q.question,
-      answerBlocks: q.answer,
+      answerBlocks: q.answerBlocks,
       categoryId: category[0].id,
     });
   }
