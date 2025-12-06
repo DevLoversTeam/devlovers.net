@@ -1,12 +1,24 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Trophy } from 'lucide-react';
-
 import { LeaderboardTabs } from '@/components/leaderboard/LeaderboardTabs';
 import { LeaderboardPodium } from '@/components/leaderboard/LeaderboardPodium';
 import { LeaderboardTable } from '@/components/leaderboard/LeaderboardTable';
 import { User } from '@/components/leaderboard/types';
+import { Trophy, Crown, ArrowUp, Zap, TrendingUp, Medal } from 'lucide-react';
+
+function cn(...classes: (string | undefined | null | false)[]) {
+  return classes.filter(Boolean).join(' ');
+}
+
+interface User {
+  id: number;
+  rank: number;
+  username: string;
+  points: number;
+  avatar: string;
+  change: number;
+}
 
 const generateData = (tab: string): User[] => {
   const seed = tab.length * 5;
