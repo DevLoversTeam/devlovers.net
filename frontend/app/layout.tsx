@@ -39,7 +39,10 @@ export default function RootLayout({
               <Link href="/" className="hover:text-blue-600 transition">
                 Home
               </Link>
-              <Link href="/" className="hover:text-blue-600 transition">
+              <Link
+                href="/leaderboard"
+                className="hover:text-blue-600 transition flex items-center gap-1"
+              >
                 Leaderboard
               </Link>
               <Link href="/post" className="hover:text-blue-600 transition">
