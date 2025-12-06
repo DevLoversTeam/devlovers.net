@@ -26,18 +26,18 @@
 
 ### 1.2. Team Members & Initials
 
-| Name | Initials | Role |
-|------|----------|------|
-| Lesia Soloviova | `ls` | Team member |
-| Alina Riabova | `ar` | Team member |
-| Andrew Motko | `am` | Code reviewer |
-| Liudmyla Sovetovs | `lso` | Team member |
-| Tetiana Zorii | `tz` | Team member |
-| Alex Kryvosheyin | `ak` | Team member |
-| Viktor Svertoka | `vs` | Code reviewer |
-| Yevhenii Datsenko | `yd` | Team member |
-| Yuliia Nazymko | `yn` | Team member |
-| Anna Komrakova | `ako` | Team member |
+| Name              | Initials | Role          |
+| ----------------- | -------- | ------------- |
+| Lesia Soloviova   | `ls`     | Team member   |
+| Alina Riabova     | `ar`     | Team member   |
+| Andrew Motko      | `am`     | Code reviewer |
+| Liudmyla Sovetovs | `lso`    | Team member   |
+| Tetiana Zorii     | `tz`     | Team member   |
+| Alex Kryvosheyin  | `ak`     | Team member   |
+| Viktor Svertoka   | `vs`     | Code reviewer |
+| Yevhenii Datsenko | `yd`     | Team member   |
+| Yuliia Nazymko    | `yn`     | Team member   |
+| Anna Komrakova    | `ako`    | Team member   |
 
 ## 2. Git Workflow and Naming Conventions
 
@@ -49,7 +49,8 @@
 
 **Components:**
 
-- `{initials}`: Your initials (e.g., `ls` for Lesia Soloviova, `ar` for Alina Riabova, `am` for Andrew Motko)
+- `{initials}`: Your initials (e.g., `ls` for Lesia Soloviova, `ar` for Alina
+  Riabova, `am` for Andrew Motko)
 - `{type}`: Type of work (`feat`, `fix`, `refactor`, `docs`, `test`, `db`)
 - `{scope}`: Feature area or module
 - `{description}`: Brief description using hyphens
@@ -198,9 +199,10 @@ Use when:
 - Bug fixes or small features
 - Commits contain "WIP" messages
 
-**Important**: 
+**Important**:
 
-- Always include PR number in squash commit: `feat(quiz): Add timer system (#42)`
+- Always include PR number in squash commit:
+  `feat(quiz): Add timer system (#42)`
 - Edit commit message to remove obsolete/reversed commits
 - Keep commits marked with asterisk
 
@@ -224,7 +226,8 @@ git push -f origin your-branch-name
 
 **When to use:**
 
-- **Merge**: Long-running branches, multiple contributors, preserve exact history
+- **Merge**: Long-running branches, multiple contributors, preserve exact
+  history
 - **Rebase**: Short-lived branches, solo work, clean linear history
 
 **Note**: Prefer merging over rebasing if PR is already open.
@@ -241,6 +244,7 @@ git push -f origin your-branch-name
 ## Related Issue
 
 <!-- Link to GitHub issue if applicable -->
+
 **Issue**: #123
 
 ## Changes
@@ -250,7 +254,7 @@ git push -f origin your-branch-name
 
 ## Database Changes (if applicable)
 
-<!-- 
+<!--
 - [ ] Schema migration required
 - [ ] Seed data updated
 - [ ] Breaking changes to existing queries
@@ -260,6 +264,7 @@ git push -f origin your-branch-name
 ## How Has This Been Tested?
 
 <!-- Describe testing approach -->
+
 - [ ] Tested locally
 - [ ] Verified in development environment
 - [ ] Checked responsive design (if UI changes)
@@ -292,9 +297,11 @@ git push -f origin your-branch-name
 
 **Required Reviewers:**
 
-- Every PR must be reviewed by **Viktor Svertoka** (`vs`) OR **Andrew Motko** (`am`)
+- Every PR must be reviewed by **Viktor Svertoka** (`vs`) OR **Andrew Motko**
+  (`am`)
 - PR cannot be merged without approval from one of these reviewers
-- Other team members can provide comments but approval must come from designated reviewers
+- Other team members can provide comments but approval must come from designated
+  reviewers
 
 **After Approval:**
 
@@ -356,7 +363,7 @@ export async function getQuizBySlug(slug: string) {
     .from(quizzes)
     .where(eq(quizzes.slug, slug))
     .limit(1);
-  
+
   return quiz[0];
 }
 ```
@@ -365,7 +372,8 @@ export async function getQuizBySlug(slug: string) {
 
 **Component Organization:**
 
-- **UI Components** (`/components/ui/`): Radix-based primitives, no business logic
+- **UI Components** (`/components/ui/`): Radix-based primitives, no business
+  logic
 - **Shared Components** (`/components/shared/`): Reusable business components
 - **Feature Components** (`/components/quiz/`): Feature-specific logic
 
@@ -443,17 +451,11 @@ export async function GET(
   try {
     const quiz = await getQuizBySlug(params.slug);
     if (!quiz) {
-      return Response.json(
-        { error: 'Quiz not found' },
-        { status: 404 }
-      );
+      return Response.json({ error: 'Quiz not found' }, { status: 404 });
     }
     return Response.json(quiz);
   } catch (error) {
-    return Response.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return Response.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 ```
@@ -469,7 +471,7 @@ export async function GET(
 **Discovered Bugs:**
 
 - **Non-critical bugs**: Create separate GitHub issue, fix in new branch
-- **Critical blockers**: 
+- **Critical blockers**:
   - Create separate branch for fix, OR
   - Make separate commit with `fix` prefix in current branch
 
@@ -541,7 +543,8 @@ flowchart TD
 
 ### Q: How do I test database changes locally?
 
-A: 
+A:
+
 1. Ensure you have `DATABASE_URL` in `.env.local`
 2. Run migration: `npx drizzle-kit push`
 3. Test with seed data: `npm run seed:categories` or create custom seed script
@@ -549,13 +552,16 @@ A:
 
 ### Q: What's the difference between content in Sanity vs PostgreSQL?
 
-A: 
+A:
+
 - **Sanity**: Blog posts, authors, categories (CMS-managed content)
-- **PostgreSQL**: Quiz data, user progress, application data (structured data with relations)
+- **PostgreSQL**: Quiz data, user progress, application data (structured data
+  with relations)
 
 ### Q: How do I add a new API route?
 
 A:
+
 1. Create folder in `/app/api/`
 2. Add `route.ts` file
 3. Export GET/POST/etc handlers
@@ -564,35 +570,42 @@ A:
 
 ### Q: Can I modify the database schema directly?
 
-A: No. Always use Drizzle migrations. Direct schema changes will cause conflicts and break migrations.
+A: No. Always use Drizzle migrations. Direct schema changes will cause conflicts
+and break migrations.
 
 ### Q: Which merge strategy should I use?
 
-A: 
+A:
+
 - **1 commit**: Merge commit (preserves history)
 - **Multiple commits**: Squash and merge (cleaner history)
 - Always include PR number in final commit message
 
 ### Q: Who should I assign as reviewer?
 
-A: Assign either **Viktor Svertoka** (`vs`) OR **Andrew Motko** (`am`). One approval from these reviewers is required.
+A: Assign either **Viktor Svertoka** (`vs`) OR **Andrew Motko** (`am`). One
+approval from these reviewers is required.
 
 ### Q: How do I organize components?
 
 A:
+
 - `/components/ui/`: Radix-based primitives, no logic
 - `/components/shared/`: Reusable business components
 - `/components/quiz/`: Quiz-specific components with logic
 
 ### Q: Where do I put database queries?
 
-A: Put reusable queries in `/db/queries/`. Keep API routes thin by extracting query logic.
+A: Put reusable queries in `/db/queries/`. Keep API routes thin by extracting
+query logic.
 
 ### Q: How do I handle discovered bugs?
 
 A:
+
 - **Non-critical**: Create GitHub issue, fix in separate branch
-- **Critical blocker**: Either create hotfix branch OR make separate `fix` commit in current branch
+- **Critical blocker**: Either create hotfix branch OR make separate `fix`
+  commit in current branch
 
 ## 7. Common Issues
 
@@ -600,7 +613,8 @@ A:
 
 **Issue**: `ECONNREFUSED` or connection timeout
 
-**Solution**: 
+**Solution**:
+
 - Verify `DATABASE_URL` in `.env.local`
 - Check Neon dashboard - database might be suspended (free tier)
 - Confirm correct connection string format
@@ -611,6 +625,7 @@ A:
 **Issue**: Migration won't apply or generates errors
 
 **Solution**:
+
 - Check syntax in schema files
 - Verify no conflicting changes
 - Run `npx drizzle-kit generate` to regenerate
@@ -622,6 +637,7 @@ A:
 **Issue**: API endpoint returns 404
 
 **Solution**:
+
 - Verify file is named `route.ts` (not `index.ts`)
 - Check folder structure matches URL path
 - Ensure proper export: `export async function GET()`
@@ -633,6 +649,7 @@ A:
 **Issue**: Type errors when querying database
 
 **Solution**:
+
 ```typescript
 // ✅ Good: Proper typing
 const quiz = await db
@@ -652,6 +669,7 @@ const result: any = await db.select()...
 **Issue**: Blog posts not appearing
 
 **Solution**:
+
 - Verify Sanity project ID in config
 - Check API token in environment variables
 - Confirm content is published (not draft)
@@ -663,6 +681,7 @@ const result: any = await db.select()...
 **Issue**: Styles not applying
 
 **Solution**:
+
 - Ensure Tailwind 4 config is correct
 - Check `globals.css` imports Tailwind
 - Verify class names are valid Tailwind utilities
@@ -674,6 +693,7 @@ const result: any = await db.select()...
 **Issue**: Radix components not rendering properly
 
 **Solution**:
+
 - Check all required sub-components are imported
 - Verify proper component composition
 - Use `asChild` prop when needed
@@ -685,6 +705,7 @@ const result: any = await db.select()...
 **Issue**: `useAntiCheat` hook not working
 
 **Solution**:
+
 - Verify hook is called in client component
 - Check browser console for visibility API errors
 - Test in different browsers (Safari has limitations)
@@ -696,6 +717,7 @@ const result: any = await db.select()...
 **Issue**: Conflicts in `/db/schema/` files
 
 **Solution**:
+
 1. Communicate with team about schema changes
 2. Pull latest main before starting schema work
 3. If conflict occurs:
@@ -709,6 +731,7 @@ const result: any = await db.select()...
 **Issue**: Process.env variables are undefined
 
 **Solution**:
+
 - File must be named `.env.local` (not `.env`)
 - Variables must start with `NEXT_PUBLIC_` for client-side
 - Restart dev server after changing env vars
