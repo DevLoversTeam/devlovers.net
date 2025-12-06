@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { LeaderboardTabs } from '@/components/leaderboard/LeaderboardTabs';
 import { LeaderboardPodium } from '@/components/leaderboard/LeaderboardPodium';
 import { LeaderboardTable } from '@/components/leaderboard/LeaderboardTable';
@@ -9,15 +9,6 @@ import { Trophy, Crown, ArrowUp, Zap, TrendingUp, Medal } from 'lucide-react';
 
 function cn(...classes: (string | undefined | null | false)[]) {
   return classes.filter(Boolean).join(' ');
-}
-
-interface User {
-  id: number;
-  rank: number;
-  username: string;
-  points: number;
-  avatar: string;
-  change: number;
 }
 
 const generateData = (tab: string): User[] => {
@@ -59,7 +50,6 @@ export default function LeaderboardPage() {
   return (
     <div className="min-h-screen bg-white text-slate-900">
       <main className="max-w-4xl mx-auto px-4 py-12 flex flex-col items-center">
-        {/* Header */}
         <div className="mb-10 text-center">
           <h1 className="text-4xl font-extrabold tracking-tight flex items-center justify-center gap-3 mb-2">
             <Trophy
