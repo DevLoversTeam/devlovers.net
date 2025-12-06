@@ -1,8 +1,8 @@
 import { Toaster } from 'sonner';
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import Link from "next/link";
-import "./globals.css";
+import type { Metadata } from 'next';
+import { Geist, Geist_Mono } from 'next/font/google';
+import Link from 'next/link';
+import './globals.css';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -36,8 +36,14 @@ export default function RootLayout({
               <span className="text-xl font-bold text-blue-600">DevLovers</span>
             </Link>
             <nav className="flex items-center gap-6 text-gray-700 font-medium">
-              <Link href="/" className="hover:text-blue-600 transition">
-                Home
+              <Link href="/q&a" className="hover:text-blue-600 transition">
+                Q&A
+              </Link>
+              <Link
+                href="/quiz/react-fundamentals"
+                className="hover:text-blue-600 transition"
+              >
+                Quiz
               </Link>
               <Link
                 href="/leaderboard"
@@ -48,9 +54,6 @@ export default function RootLayout({
               <Link href="/post" className="hover:text-blue-600 transition">
                 Blog
               </Link>
-               <Link href="/quiz/react-fundamentals" className="hover:text-blue-600 transition">
-                  Quiz
-                </Link>
               <Link href="/about" className="hover:text-blue-600 transition">
                 About
               </Link>
@@ -64,7 +67,7 @@ export default function RootLayout({
         <footer className="border-t border-gray-200 text-center py-6 text-sm text-gray-500">
           © {new Date().getFullYear()} DevLovers Blog. All rights reserved.
         </footer>
-        <Toaster position="top-right" richColors expand={true}/>
+        <Toaster position="top-right" richColors expand={true} />
       </body>
     </html>
   );
