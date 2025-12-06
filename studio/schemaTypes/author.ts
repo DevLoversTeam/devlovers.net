@@ -40,6 +40,30 @@ export default defineType({
         },
       ],
     }),
+
+    defineField({
+      name: 'company',
+      title: 'Company',
+      type: 'string',
+    }),
+    defineField({
+      name: 'jobTitle',
+      title: 'Job Title',
+      type: 'string',
+    }),
+    defineField({
+      name: 'city',
+      title: 'City',
+      type: 'string',
+    }),
+
+    defineField({
+      name: 'socialMedia',
+      title: 'Social Media',
+      type: 'array',
+      of: [{type: 'socialLink'}],
+      description: 'Links to profiles like LinkedIn, GitHub, Twitter...',
+    }),
   ],
   preview: {
     select: {
