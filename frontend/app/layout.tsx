@@ -63,7 +63,7 @@ export default function RootLayout({
             </nav>
           </div>
         </header>
-        <main className="max-w-5xl mx-auto px-6 py-10">{children}</main>
+        <main className="mx-auto px-6">{children}</main>
         <footer className="border-t border-gray-200 text-center py-6 text-sm text-gray-500">
           © {new Date().getFullYear()} DevLovers Blog. All rights reserved.
         </footer>
