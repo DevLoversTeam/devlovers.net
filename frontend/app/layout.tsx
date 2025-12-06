@@ -1,22 +1,22 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import Link from "next/link";
-import "./globals.css";
+import type { Metadata } from 'next';
+import { Geist, Geist_Mono } from 'next/font/google';
+import Link from 'next/link';
+import './globals.css';
 
 const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+  variable: '--font-geist-sans',
+  subsets: ['latin'],
 });
 
 const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  variable: '--font-geist-mono',
+  subsets: ['latin'],
 });
 
 export const metadata: Metadata = {
-  title: "Home | DevLovers",
+  title: 'Home | DevLovers',
   description:
-    "DevLovers - a platform for technical interview preparation in frontend, backend, and full-stack development.",
+    'DevLovers - a platform for technical interview preparation in frontend, backend, and full-stack development.',
 };
 
 export default function RootLayout({
@@ -37,6 +37,12 @@ export default function RootLayout({
             <nav className="flex items-center gap-6 text-gray-700 font-medium">
               <Link href="/" className="hover:text-blue-600 transition">
                 Home
+              </Link>
+              <Link
+                href="/leaderboard"
+                className="hover:text-blue-600 transition"
+              >
+                Leaderboard
               </Link>
               <Link href="/post" className="hover:text-blue-600 transition">
                 Blog
