@@ -39,6 +39,30 @@ export default defineType({
       type: 'array',
       of: [{type: 'reference', to: {type: 'category'}}],
     }),
+
+    defineField({
+      name: 'tags',
+      title: 'Tags',
+      type: 'array',
+      of: [{type: 'string'}],
+      options: {
+        layout: 'tags',
+      },
+      description: 'Topics like "frontend", "backend", "CSS", "testing"...',
+    }),
+
+    defineField({
+      name: 'resourceLink',
+      title: 'Resource Link',
+      type: 'url',
+      description: 'Optional link to an external resource',
+      validation: (Rule) =>
+        Rule.uri({
+          allowRelative: false,
+          scheme: ['http', 'https'],
+        }),
+    }),
+
     defineField({
       name: 'publishedAt',
       title: 'Published at',

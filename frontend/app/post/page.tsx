@@ -1,12 +1,12 @@
-import Link from "next/link";
-import Image from "next/image";
-import groq from "groq";
-import { client } from "../../client";
+import Link from 'next/link';
+import Image from 'next/image';
+import groq from 'groq';
+import { client } from '../../client';
 
 export const metadata = {
-  title: "Blog | DevLovers",
+  title: 'Blog | DevLovers',
   description:
-    "Explore the latest articles, guides, and insights from the DevLovers platform.",
+    'Explore the latest articles, guides, and insights from the DevLovers platform.',
 };
 
 export default async function BlogPage() {
@@ -22,6 +22,8 @@ export default async function BlogPage() {
         "authorImage": author->image.asset->url,
         "categories": categories[]->title,
         "mainImage": mainImage.asset->url,
+        tags,
+        resourceLink,
         body[] {
           ...,
           children[]{
@@ -42,12 +44,12 @@ export default async function BlogPage() {
           {posts.map((post: any) => {
             const excerpt =
               post.body
-                ?.filter((block: any) => block._type === "block")
+                ?.filter((block: any) => block._type === 'block')
                 .map((block: any) =>
-                  block.children.map((child: any) => child.text).join(" ")
+                  block.children.map((child: any) => child.text).join(' ')
                 )
-                .join(" ")
-                .slice(0, 200) || "";
+                .join(' ')
+                .slice(0, 200) || '';
 
             return (
               <article
@@ -64,6 +66,7 @@ export default async function BlogPage() {
                     />
                   </div>
                 )}
+
                 <div className="p-6 flex flex-col flex-grow">
                   <Link
                     href={`/post/${post.slug.current}`}
@@ -71,6 +74,7 @@ export default async function BlogPage() {
                   >
                     {post.title}
                   </Link>
+
                   <div className="mt-4 flex items-center gap-3 text-sm text-gray-700">
                     {post.authorImage && (
                       <div className="relative w-9 h-9 shrink-0">
@@ -82,6 +86,7 @@ export default async function BlogPage() {
                         />
                       </div>
                     )}
+
                     <div className="flex flex-col">
                       <span className="font-medium">{post.author}</span>
                       {post.publishedAt && (
@@ -91,6 +96,7 @@ export default async function BlogPage() {
                       )}
                     </div>
                   </div>
+
                   {post.categories?.length > 0 && (
                     <div className="mt-3 flex flex-wrap gap-2">
                       {post.categories.map((cat: string, i: number) => (
@@ -103,10 +109,35 @@ export default async function BlogPage() {
                       ))}
                     </div>
                   )}
+
+                  {post.tags?.length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {post.tags.map((tag: string, i: number) => (
+                        <span
+                          key={i}
+                          className="text-xs bg-purple-50 text-purple-700 px-2 py-1 rounded-md"
+                        >
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
                   {excerpt && (
                     <p className="mt-4 text-gray-700 flex-grow leading-relaxed">
                       {excerpt}
                     </p>
+                  )}
+
+                  {post.resourceLink && (
+                    <a
+                      href={post.resourceLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-4 inline-block bg-green-600 text-white px-4 py-2 rounded-md text-sm hover:bg-green-700 transition"
+                    >
+                      Visit Resource →
+                    </a>
                   )}
                 </div>
               </article>
