@@ -4,6 +4,9 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import Link from 'next/link';
 import './globals.css';
 
+import { ThemeProvider } from "@/components/theme/ThemeProvider";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
+
 const geistSans = Geist({
   variable: '--font-geist-sans',
   subsets: ['latin'],
@@ -26,48 +29,49 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 text-gray-900`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 text-gray-900 dark:bg-neutral-950 dark:text-gray-100 transition-colors duration-300`}
       >
-        <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
-          <div className="max-w-5xl mx-auto flex items-center justify-between px-6 py-4">
-            <Link href="/" className="flex items-center gap-2">
-              <span className="text-xl font-bold text-blue-600">DevLovers</span>
-            </Link>
-            <nav className="flex items-center gap-6 text-gray-700 font-medium">
-              <Link href="/q&a" className="hover:text-blue-600 transition">
-                Q&A
-              </Link>
-              <Link
-                href="/quiz/react-fundamentals"
-                className="hover:text-blue-600 transition"
-              >
-                Quiz
-              </Link>
-              <Link
-                href="/leaderboard"
-                className="hover:text-blue-600 transition flex items-center gap-1"
-              >
-                Leaderboard
-              </Link>
-              <Link href="/post" className="hover:text-blue-600 transition">
-                Blog
-              </Link>
-              <Link href="/about" className="hover:text-blue-600 transition">
-                About
-              </Link>
-              <Link href="/contacts" className="hover:text-blue-600 transition">
-                Contacts
-              </Link>
-            </nav>
-          </div>
-        </header>
-        <main className="max-w-5xl mx-auto px-6 py-10">{children}</main>
-        <footer className="border-t border-gray-200 text-center py-6 text-sm text-gray-500">
-          © {new Date().getFullYear()} DevLovers Blog. All rights reserved.
-        </footer>
-        <Toaster position="top-right" richColors expand={true} />
+        {}
+        <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+        >
+            <header className="bg-white dark:bg-neutral-900 border-b border-gray-200 dark:border-neutral-800 shadow-sm sticky top-0 z-50 transition-colors">
+              <div className="max-w-5xl mx-auto flex items-center justify-between px-6 py-4">
+                <Link href="/" className="flex items-center gap-2">
+                  <span className="text-xl font-bold text-blue-600 dark:text-blue-500">DevLovers</span>
+                </Link>
+                <nav className="flex items-center gap-6 text-gray-700 dark:text-gray-300 font-medium">
+                  <Link href="/q&a" className="hover:text-blue-600 dark:hover:text-blue-400 transition">Q&A</Link>
+                  <Link href="/quiz/react-fundamentals" className="hover:text-blue-600 dark:hover:text-blue-400 transition">Quiz</Link>
+                  <Link href="/leaderboard" className="hover:text-blue-600 dark:hover:text-blue-400 transition flex items-center gap-1">Leaderboard</Link>
+                  <Link href="/post" className="hover:text-blue-600 dark:hover:text-blue-400 transition">Blog</Link>
+                  <Link href="/about" className="hover:text-blue-600 dark:hover:text-blue-400 transition">About</Link>
+                  <Link href="/contacts" className="hover:text-blue-600 dark:hover:text-blue-400 transition">Contacts</Link>
+                </nav>
+              </div>
+            </header>
+            
+            <main className="max-w-5xl mx-auto px-6 py-10 min-h-[80vh]">
+                {children}
+            </main>
+
+            <footer className="border-t border-gray-200 dark:border-neutral-800 text-center py-8 text-sm text-gray-500 dark:text-gray-400 transition-colors">
+              <div className="flex flex-col items-center gap-4">
+                  
+                  {}
+                  <ThemeToggle />
+                  
+                  <p>© {new Date().getFullYear()} DevLovers Blog. All rights reserved.</p>
+              </div>
+            </footer>
+            
+            <Toaster position="top-right" richColors expand={true} />
+        </ThemeProvider>
       </body>
     </html>
   );
