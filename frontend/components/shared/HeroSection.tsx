@@ -24,6 +24,7 @@ function CodeCard({ fileName, snippet, className }: CodeCardProps) {
           dark:shadow-[0_22px_60px_rgba(56,189,248,0.45)]
           px-5 py-4
           min-w-[230px]
+          animate-float-soft
         "
       >
         {/* top bar */}
@@ -156,14 +157,14 @@ export default function HeroSection() {
         {/* eyebrow */}
         <p
           className="
-            text-[11px] sm:text-xs md:text-sm
-            tracking-[0.35em]
-            uppercase
-            text-emerald-600/90
-            dark:text-emerald-300/80
-          "
+    text-[11px] sm:text-xs md:text-sm
+    tracking-[0.35em]
+    uppercase
+    text-emerald-600/90
+    dark:text-emerald-300/80
+  "
         >
-          ІНТЕРАКТИВНА ПІДГОТОВКА ДО СПІВБЕСІД ДЛЯ РОЗРОБНИКІВ
+          Пройди співбесіду, ніби ти вже Senior
         </p>
 
         {/* title */}
@@ -244,10 +245,11 @@ export default function HeroSection() {
                 opacity-40
                 group-hover:opacity-60
                 transition-opacity
+                motion-safe:animate-pulse-soft
               "
               aria-hidden="true"
             />
-            <span className="relative z-10">Почати</span>
+            <span className="relative z-10">Стартуємо</span>
             <span
               className="
                 relative z-10 ml-4
