@@ -1,0 +1,55 @@
+📄 .gitignore
+📁 app
+  📁 about
+    📄 page.tsx
+  📁 api
+    📁 questions
+      📁 [category]
+        📄 route.ts
+  📁 contacts
+    📄 page.tsx
+  📄 favicon.ico
+  📄 globals.css
+  📄 layout.tsx
+  📁 leaderboard
+  📄 not-found.tsx
+  📄 page.tsx
+  📁 post
+    📄 page.tsx
+📄 client.ts
+📁 components
+  📁 shared
+    📄 AccordionList.tsx
+    📄 TabsSection.tsx
+  📁 ui
+    📄 accordion.tsx
+    📄 tabs.tsx
+📄 components.json
+📁 data
+  📄 questions.json
+📁 db
+  📄 index.ts
+  📄 schema.ts
+  📄 seed.ts
+  📄 seedCategories.ts
+📁 drizzle
+  📄 0000_strong_mauler.sql
+  📄 0001_tiny_kitty_pryde.sql
+  📁 meta
+    📄 0000_snapshot.json
+    📄 0001_snapshot.json
+    📄 _journal.json
+📄 drizzle.config.ts
+📄 eslint.config.mjs
+📁 lib
+  📄 utils.ts
+📄 next-env.d.ts
+📄 next.config.ts
+📄 package-lock.json
+📄 package.json
+📄 postcss.config.mjs
+📁 public
+  📄 github-logo.svg
+📄 README.md
+📄 save-structure.cjs
+📄 tsconfig.json

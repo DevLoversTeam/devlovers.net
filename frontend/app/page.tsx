@@ -1,9 +1,9 @@
-import TabsSection from '@/components/shared/TabsSection';
+import HeroSection from '@/components/shared/HeroSection';
 
 export default function Home() {
   return (
-    <main className="max-w-3xl mx-auto py-10">
-      <TabsSection />
-    </main>
+    <>
+      <HeroSection />
+    </>
   );
 }
