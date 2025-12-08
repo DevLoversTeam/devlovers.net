@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { Crown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { User } from './types';
@@ -49,8 +50,7 @@ export function LeaderboardPodium({ topThree }: { topThree: User[] }) {
                 )}
               >
                 {user.avatar ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
+                  <Image
                     src={user.avatar}
                     alt={user.username}
                     className="w-full h-full object-cover"

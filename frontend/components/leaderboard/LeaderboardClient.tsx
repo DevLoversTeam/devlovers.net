@@ -23,7 +23,6 @@ export default function LeaderboardClient({
 
   return (
     <div className="relative min-h-screen overflow-hidden">
-      {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-b from-sky-50 via-white to-rose-50 dark:from-slate-950 dark:via-slate-950 dark:to-black -z-20" />
       <div className="pointer-events-none absolute inset-0 opacity-70 -z-10">
         <div className="absolute -top-32 left-1/2 h-96 w-[36rem] -translate-x-1/2 rounded-full bg-sky-300/30 blur-3xl dark:bg-sky-500/20" />

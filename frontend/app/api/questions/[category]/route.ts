@@ -7,9 +7,8 @@ export async function GET(
   req: Request,
   ctx: { params: Promise<{ category: string }> }
 ) {
-  const { category } = await ctx.params; // <-- ВАЖНО: await !!!
+  const { category } = await ctx.params;
 
-  // найти категорию
   const cat = await db
     .select()
     .from(categories)
@@ -20,7 +19,6 @@ export async function GET(
     return NextResponse.json([]);
   }
 
-  // получить вопросы этой категории
   const items = await db
     .select()
     .from(questions)

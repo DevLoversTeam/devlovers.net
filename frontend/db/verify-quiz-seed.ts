@@ -1,43 +1,49 @@
-// scripts/verify-quiz-seed.ts
-// Verification script for React quiz seed
-// Run: npx tsx scripts/verify-quiz-seed.ts
-
 import { db } from './index';
-import { 
-  quizzes, 
-  quizTranslations, 
-  quizQuestions, 
+import {
+  quizzes,
+  quizTranslations,
+  quizQuestions,
   quizQuestionContent,
   quizAnswers,
-  quizAnswerTranslations 
+  quizAnswerTranslations,
 } from '@/db/schema/quiz';
 import { eq, sql } from 'drizzle-orm';
 
 async function verifyQuizSeed() {
   console.log('🔍 Verifying quiz seed data...\n');
 
-  // 1. Count records in each table
   console.log('📊 Record counts:');
-  
-  const quizCount = await db.select({ count: sql<number>`count(*)` }).from(quizzes);
+
+  const quizCount = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(quizzes);
   console.log(`   quizzes: ${quizCount[0].count}`);
 
-  const quizTransCount = await db.select({ count: sql<number>`count(*)` }).from(quizTranslations);
+  const quizTransCount = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(quizTranslations);
   console.log(`   quiz_translations: ${quizTransCount[0].count}`);
 
-  const questionCount = await db.select({ count: sql<number>`count(*)` }).from(quizQuestions);
+  const questionCount = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(quizQuestions);
   console.log(`   quiz_questions: ${questionCount[0].count}`);
 
-  const questionContentCount = await db.select({ count: sql<number>`count(*)` }).from(quizQuestionContent);
+  const questionContentCount = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(quizQuestionContent);
   console.log(`   quiz_question_content: ${questionContentCount[0].count}`);
 
-  const answerCount = await db.select({ count: sql<number>`count(*)` }).from(quizAnswers);
+  const answerCount = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(quizAnswers);
   console.log(`   quiz_answers: ${answerCount[0].count}`);
 
-  const answerTransCount = await db.select({ count: sql<number>`count(*)` }).from(quizAnswerTranslations);
+  const answerTransCount = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(quizAnswerTranslations);
   console.log(`   quiz_answer_translations: ${answerTransCount[0].count}`);
 
-  // 2. Fetch quiz with translations
   console.log('\n📝 Quiz data:');
   const quizData = await db.query.quizzes.findFirst({
     where: eq(quizzes.slug, 'react-fundamentals'),
@@ -57,7 +63,6 @@ async function verifyQuizSeed() {
     });
   }
 
-  // 3. Fetch first question with all content
   console.log('\n❓ Sample question (first one):');
   const sampleQuestion = await db.query.quizQuestions.findFirst({
     where: eq(quizQuestions.quizId, 'quiz-react-fundamentals'),
@@ -79,14 +84,15 @@ async function verifyQuizSeed() {
     sampleQuestion.content?.forEach(c => {
       console.log(`     [${c.locale}] ${c.questionText}`);
     });
-    
+
     console.log('   Answers:');
     sampleQuestion.answers?.forEach(a => {
       const correct = a.isCorrect ? '✅' : '❌';
-      console.log(`     ${correct} ${a.translations?.[0]?.answerText?.slice(0, 50)}...`);
+      console.log(
+        `     ${correct} ${a.translations?.[0]?.answerText?.slice(0, 50)}...`
+      );
     });
 
-    // 4. Show explanation structure
     console.log('\n📖 Explanation JSON structure (UK):');
     const ukContent = sampleQuestion.content?.find(c => c.locale === 'uk');
     if (ukContent?.explanation) {
@@ -94,30 +100,27 @@ async function verifyQuizSeed() {
     }
   }
 
-  // 5. Verify all locales have content
   console.log('\n🌍 Locale coverage check:');
   const locales = ['uk', 'en', 'pl'];
-  
+
   for (const locale of locales) {
     const contentCount = await db
       .select({ count: sql<number>`count(*)` })
       .from(quizQuestionContent)
       .where(eq(quizQuestionContent.locale, locale));
-    
+
     const answerTransCount = await db
       .select({ count: sql<number>`count(*)` })
       .from(quizAnswerTranslations)
       .where(eq(quizAnswerTranslations.locale, locale));
-    
-    console.log(`   [${locale}] questions: ${contentCount[0].count}, answers: ${answerTransCount[0].count}`);
+
+    console.log(
+      `   [${locale}] questions: ${contentCount[0].count}, answers: ${answerTransCount[0].count}`
+    );
   }
 
   console.log('\n✅ Verification complete!');
 }
-
-// =============================================================================
-// SAMPLE QUERY: Get full quiz with questions for a locale
-// =============================================================================
 
 async function getQuizForLocale(slug: string, locale: string) {
   console.log(`\n🎯 Fetching quiz "${slug}" for locale "${locale}":\n`);
@@ -152,7 +155,6 @@ async function getQuizForLocale(slug: string, locale: string) {
     return;
   }
 
-  // Transform to API-friendly format
   const result = {
     id: quiz.id,
     slug: quiz.slug,
@@ -175,18 +177,12 @@ async function getQuizForLocale(slug: string, locale: string) {
   };
 
   console.log(JSON.stringify(result, null, 2));
-  
+
   return result;
 }
 
-// =============================================================================
-// RUN
-// =============================================================================
-
 async function main() {
   await verifyQuizSeed();
-  
-  // Test fetching for each locale
   await getQuizForLocale('react-fundamentals', 'uk');
   await getQuizForLocale('react-fundamentals', 'en');
   await getQuizForLocale('react-fundamentals', 'pl');
@@ -194,7 +190,7 @@ async function main() {
 
 main()
   .then(() => process.exit(0))
-  .catch((error) => {
+  .catch(error => {
     console.error('Error:', error);
     process.exit(1);
   });
