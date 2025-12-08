@@ -9,6 +9,7 @@
     "lint": "eslint",
     "seed:categories": "tsx db/seedCategories.ts",
     "seed": "tsx db/seed.ts",
+    "seed:users": "tsx db/seed-users.ts",
     "parse": "tsx db_script/script.ts"
   },
   "dependencies": {
