@@ -1,4 +1,8 @@
+📄 .env
 📄 .gitignore
+📄 .prettierrc
+📁 actions
+  📄 quiz.ts
 📁 app
   📁 about
     📄 page.tsx
@@ -6,41 +10,82 @@
     📁 questions
       📁 [category]
         📄 route.ts
+    📁 quiz
+      📁 [slug]
+        📄 route.ts
   📁 contacts
     📄 page.tsx
   📄 favicon.ico
   📄 globals.css
   📄 layout.tsx
   📁 leaderboard
+    📄 page.tsx
   📄 not-found.tsx
   📄 page.tsx
   📁 post
     📄 page.tsx
+  📁 q&a
+    📄 page.tsx
+  📁 quiz
+    📁 [slug]
+      📄 page.tsx
 📄 client.ts
 📁 components
+  📁 leaderboard
+    📄 LeaderboardPodium.tsx
+    📄 LeaderboardTable.tsx
+    📄 LeaderboardTabs.tsx
+    📄 types.ts
+  📁 quiz
+    📄 ExplanationRenderer.tsx
+    📄 QuizContainer.tsx
+    📄 QuizProgress.tsx
+    📄 QuizQuestion.tsx
+    📄 QuizResult.tsx
   📁 shared
     📄 AccordionList.tsx
+    📄 HeroSection.tsx
     📄 TabsSection.tsx
+  📁 theme
+    📄 ThemeProvider.tsx
+    📄 ThemeToggle.tsx
   📁 ui
     📄 accordion.tsx
+    📄 button.tsx
+    📄 radio-group.tsx
     📄 tabs.tsx
 📄 components.json
 📁 data
   📄 questions.json
 📁 db
   📄 index.ts
-  📄 schema.ts
+  📁 queries
+    📄 quiz.ts
+  📁 schema
+    📄 categories.ts
+    📄 index.ts
+    📄 quiz.ts
+  📄 seed-quiz-react.ts
   📄 seed.ts
   📄 seedCategories.ts
+  📄 verify-quiz-seed.ts
+📁 db_script
+  📁 data
+  📄 README.md
+  📄 script.ts
 📁 drizzle
   📄 0000_strong_mauler.sql
   📄 0001_tiny_kitty_pryde.sql
+  📄 0002_fantastic_retro_girl.sql
   📁 meta
     📄 0000_snapshot.json
     📄 0001_snapshot.json
+    📄 0002_snapshot.json
     📄 _journal.json
 📄 drizzle.config.ts
 📄 eslint.config.mjs
+📁 hooks
+  📄 useAntiCheat.ts
 📁 lib
   📄 utils.ts
 📄 next-env.d.ts
@@ -48,6 +93,7 @@
 📄 package-lock.json
 📄 package.json
 📄 postcss.config.mjs
+📄 project-structure.txt
 📁 public
   📄 github-logo.svg
 📄 README.md
