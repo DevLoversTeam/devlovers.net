@@ -14,16 +14,16 @@ export function LeaderboardTabs({
   const tabs = ['Overall', 'Day 1', 'Day 2', 'Day 3', 'Day 4'];
 
   return (
-    <div className="flex gap-2 p-1 overflow-x-auto max-w-full justify-center">
+    <div className="flex gap-2 p-1.5 bg-slate-100/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-full border border-slate-200/50 dark:border-slate-700/50">
       {tabs.map(tab => (
         <button
           key={tab}
           onClick={() => onTabChange(tab)}
           className={cn(
-            'px-6 py-2 text-sm font-medium rounded-full transition-all duration-200 whitespace-nowrap',
+            'px-5 py-2 text-sm font-semibold rounded-full transition-all duration-300 whitespace-nowrap',
             activeTab === tab
-              ? 'bg-slate-900 text-white shadow-lg transform scale-105'
-              : 'bg-white text-slate-500 border border-slate-200 hover:border-slate-400 hover:text-slate-800'
+              ? 'bg-gradient-to-r from-sky-500 via-indigo-500 to-pink-500 text-white shadow-md'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-slate-700/50'
           )}
         >
           {tab}

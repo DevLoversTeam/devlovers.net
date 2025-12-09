@@ -67,7 +67,7 @@ export default function RootLayout({
                   Leaderboard
                 </Link>
                 <Link
-                  href="/post"
+                  href="/blog"
                   className="hover:text-blue-600 dark:hover:text-blue-400 transition"
                 >
                   Blog

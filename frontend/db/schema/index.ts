@@ -1,4 +1,3 @@
- // Export categories schemas
-  export * from './categories';
-  // Export quiz schemas
-  export * from './quiz';
+export * from './categories';
+export * from './quiz';
+export * from './users';

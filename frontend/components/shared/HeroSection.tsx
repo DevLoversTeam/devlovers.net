@@ -27,7 +27,6 @@ function CodeCard({ fileName, snippet, className }: CodeCardProps) {
           animate-float-soft
         "
       >
-        {/* top bar */}
         <div className="flex items-center justify-between mb-3 text-[10px] text-slate-500 dark:text-slate-300">
           <div className="flex items-center gap-1.5">
             <span className="h-2 w-2 rounded-full bg-rose-400/90" />
@@ -36,8 +35,6 @@ function CodeCard({ fileName, snippet, className }: CodeCardProps) {
           </div>
           <span className="font-medium">{fileName}</span>
         </div>
-
-        {/* colored code */}
         <code
           className="
             text-[11px] whitespace-pre leading-relaxed font-mono
@@ -64,7 +61,6 @@ export default function HeroSection() {
         items-center
       "
     >
-      {/* background: light + dark */}
       <div
         className="
           absolute inset-0
@@ -73,15 +69,11 @@ export default function HeroSection() {
           dark:from-slate-950 dark:via-slate-950 dark:to-black
         "
       />
-
-      {/* soft radial glow behind content */}
       <div className="pointer-events-none absolute inset-0 opacity-70">
         <div className="absolute -top-32 left-1/2 h-96 w-[36rem] -translate-x-1/2 rounded-full bg-sky-300/30 blur-3xl dark:bg-sky-500/25" />
         <div className="absolute bottom-[-12rem] left-1/4 h-[22rem] w-[22rem] rounded-full bg-pink-300/30 blur-3xl dark:bg-fuchsia-500/25" />
         <div className="absolute bottom-[-10rem] right-0 h-[26rem] w-[26rem] rounded-full bg-violet-300/40 blur-3xl dark:bg-violet-500/25" />
       </div>
-
-      {/* simple "stars" */}
       <div className="pointer-events-none absolute inset-0 opacity-70 dark:opacity-100">
         <span className="absolute left-[10%] top-[18%] h-1 w-1 rounded-full bg-sky-300/70 dark:bg-sky-400" />
         <span className="absolute left-[35%] top-[8%] h-1 w-1 rounded-full bg-fuchsia-300/70 dark:bg-fuchsia-400" />
@@ -89,8 +81,6 @@ export default function HeroSection() {
         <span className="absolute left-[80%] top-[40%] h-0.5 w-0.5 rounded-full bg-sky-300/70 dark:bg-sky-400" />
         <span className="absolute left-[18%] top-[60%] h-0.5 w-0.5 rounded-full bg-violet-300/70 dark:bg-violet-400" />
       </div>
-
-      {/* inner container */}
       <div
         className="
           relative
@@ -101,7 +91,6 @@ export default function HeroSection() {
           flex flex-col items-center text-center
         "
       >
-        {/* code cards */}
         <CodeCard
           fileName="arrays.ts"
           className="left-8 -top-4 rotate-[-10deg]"
@@ -153,8 +142,6 @@ export default function HeroSection() {
             </>
           }
         />
-
-        {/* eyebrow */}
         <p
           className="
     text-[11px] sm:text-xs md:text-sm
@@ -166,8 +153,6 @@ export default function HeroSection() {
         >
           Пройди співбесіду, ніби ти вже Senior
         </p>
-
-        {/* title */}
         <div className="mt-10 sm:mt-12">
           <div className="-rotate-2 inline-block">
             <h1
@@ -192,8 +177,6 @@ export default function HeroSection() {
             </h1>
           </div>
         </div>
-
-        {/* description */}
         <p
           className="
             mt-8 sm:mt-10
@@ -205,8 +188,6 @@ export default function HeroSection() {
           Практикуй типові питання, поглиблюй знання та проходь квізи перед
           співбесідами на Junior, Middle або Senior позиції.
         </p>
-
-        {/* CTA */}
         <div className="mt-12">
           <Link
             href="/q&a"
