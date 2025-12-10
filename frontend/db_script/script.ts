@@ -147,12 +147,12 @@ function parseInlineFormatting(text: string): TextNode[] {
 
 function isSpecialLine(line: string): boolean {
   const trimmed = line.trim();
-  if (!trimmed) return true; // пустая строка
-  if (trimmed.startsWith('```')) return true; // код
-  if (trimmed.startsWith('|')) return true; // таблица
-  if (/^\d+\.\s+/.test(trimmed)) return true; // нумерованный список
-  if (/^[-*]\s+/.test(trimmed)) return true; // маркированный список
-  if (/^#{1,6}\s+/.test(trimmed)) return true; // заголовок
+  if (!trimmed) return true;
+  if (trimmed.startsWith('```')) return true;
+  if (trimmed.startsWith('|')) return true;
+  if (/^\d+\.\s+/.test(trimmed)) return true;
+  if (/^[-*]\s+/.test(trimmed)) return true;
+  if (/^#{1,6}\s+/.test(trimmed)) return true;
   return false;
 }
 
@@ -168,18 +168,18 @@ function parseCodeBlock(
   startIndex: number
 ): { block: CodeBlock; nextIndex: number } | null {
   const firstLine = lines[startIndex];
-  if (!firstLine.startsWith('```')) return null;
+  if (!firstLine.trim().startsWith('```')) return null;
 
-  const language = firstLine.slice(3).trim() || null;
+  const language = firstLine.trim().slice(3).trim() || null;
   const codeLines: string[] = [];
   let i = startIndex + 1;
 
-  while (i < lines.length && !lines[i].startsWith('```')) {
+  while (i < lines.length && !lines[i].trim().startsWith('```')) {
     codeLines.push(lines[i]);
     i++;
   }
 
-  if (i < lines.length && lines[i].startsWith('```')) {
+  if (i < lines.length && lines[i].trim().startsWith('```')) {
     i++;
   }
 
@@ -230,154 +230,6 @@ function parseTable(
   };
 }
 
-function parseBulletList(
-  lines: string[],
-  startIndex: number
-): { block: BulletListBlock; nextIndex: number } | null {
-  const items: ListItemBlock[] = [];
-  let i = startIndex;
-
-  while (i < lines.length) {
-    const line = lines[i];
-    const trimmedLine = line.trim();
-    const match = trimmedLine.match(/^[-*]\s+(.+)$/);
-
-    if (!match) break;
-
-    let itemText = match[1];
-    i++;
-
-    while (i < lines.length) {
-      const nextLine = lines[i];
-      const nextTrimmed = nextLine.trim();
-
-      if (!nextTrimmed) break;
-      if (/^[-*]\s+/.test(nextTrimmed)) break;
-      if (nextTrimmed.startsWith('```')) break;
-      if (/^\d+\.\s+/.test(nextTrimmed)) break;
-
-      if (nextLine.startsWith('   ') || nextLine.startsWith('\t') || nextLine.startsWith('  ')) {
-        itemText += ' ' + nextTrimmed;
-        i++;
-      } else {
-        break;
-      }
-    }
-
-    const children: ListItemChild[] = parseInlineFormatting(itemText);
-
-    let emptyLineCount = 0;
-    let checkIndex = i;
-
-    while (checkIndex < lines.length && !lines[checkIndex].trim()) {
-      emptyLineCount++;
-      checkIndex++;
-    }
-
-    if (
-      emptyLineCount <= 1 &&
-      checkIndex < lines.length &&
-      lines[checkIndex].trim().startsWith('```')
-    ) {
-      i = checkIndex;
-      const codeResult = parseCodeBlock(lines, i);
-      if (codeResult) {
-        children.push(codeResult.block);
-        i = codeResult.nextIndex;
-      }
-    }
-
-    items.push({
-      type: 'listItem',
-      children,
-    });
-  }
-
-  if (items.length === 0) return null;
-
-  return {
-    block: {
-      type: 'bulletList',
-      children: items,
-    },
-    nextIndex: i,
-  };
-}
-
-function parseNumberedList(
-  lines: string[],
-  startIndex: number
-): { block: NumberedListBlock; nextIndex: number } | null {
-  const items: ListItemBlock[] = [];
-  let i = startIndex;
-
-  while (i < lines.length) {
-    const line = lines[i];
-    const trimmedLine = line.trim();
-    const match = trimmedLine.match(/^\d+\.\s+(.+)$/);
-
-    if (!match) break;
-
-    let itemText = match[1];
-    i++;
-
-    while (i < lines.length) {
-      const nextLine = lines[i];
-      const nextTrimmed = nextLine.trim();
-
-      if (!nextTrimmed) break;
-      if (/^\d+\.\s+/.test(nextTrimmed)) break;
-      if (nextTrimmed.startsWith('```')) break;
-      if (/^[-*]\s+/.test(nextTrimmed)) break;
-
-      if (nextLine.startsWith('   ') || nextLine.startsWith('\t')) {
-        itemText += ' ' + nextTrimmed;
-        i++;
-      } else {
-        break;
-      }
-    }
-
-    const children: ListItemChild[] = parseInlineFormatting(itemText);
-
-    let emptyLineCount = 0;
-    let checkIndex = i;
-
-    while (checkIndex < lines.length && !lines[checkIndex].trim()) {
-      emptyLineCount++;
-      checkIndex++;
-    }
-
-    if (
-      emptyLineCount <= 1 &&
-      checkIndex < lines.length &&
-      lines[checkIndex].trim().startsWith('```')
-    ) {
-      i = checkIndex;
-      const codeResult = parseCodeBlock(lines, i);
-      if (codeResult) {
-        children.push(codeResult.block);
-        i = codeResult.nextIndex;
-      }
-    }
-
-    items.push({
-      type: 'listItem',
-      children,
-    });
-  }
-
-  if (items.length === 0) return null;
-
-  return {
-    block: {
-      type: 'numberedList',
-      children: items,
-    },
-    nextIndex: i,
-  };
-}
-
 function parseHeading(line: string): HeadingBlock | null {
   const match = line.match(/^(#{3,4})\s+(.+)$/);
   if (!match) return null;
@@ -392,9 +244,6 @@ function parseHeading(line: string): HeadingBlock | null {
   };
 }
 
-/**
- * Парсит абзац, объединяя последовательные строки текста
- */
 function parseParagraph(
   lines: string[],
   startIndex: number
@@ -405,18 +254,12 @@ function parseParagraph(
   const textLines: string[] = [trimmedFirst];
   let i = startIndex + 1;
 
-  // Собираем последовательные строки обычного текста
   while (i < lines.length) {
     const line = lines[i];
     const trimmed = line.trim();
 
-    // Пустая строка — конец абзаца
     if (!trimmed) break;
-
-    // Специальная строка — конец абзаца
     if (isSpecialLine(line)) break;
-
-    // Маркер категории — пропускаем
     if (isCategoryMarker(trimmed)) {
       i++;
       continue;
@@ -434,6 +277,216 @@ function parseParagraph(
       type: 'paragraph',
       children,
     },
+    nextIndex: i,
+  };
+}
+
+/**
+ * Парсит bullet list item с учётом:
+ * - continuation lines (отступы)
+ * - вложенного кода после пункта
+ */
+function parseBulletListItem(
+  lines: string[],
+  startIndex: number
+): { item: ListItemBlock; nextIndex: number } | null {
+  const line = lines[startIndex];
+  const trimmedLine = line.trim();
+  const match = trimmedLine.match(/^[-*]\s+(.+)$/);
+
+  if (!match) return null;
+
+  let itemText = match[1];
+  let i = startIndex + 1;
+
+  // Собираем continuation lines (с отступом)
+  while (i < lines.length) {
+    const nextLine = lines[i];
+    const nextTrimmed = nextLine.trim();
+
+    if (!nextTrimmed) break;
+    if (/^[-*]\s+/.test(nextTrimmed)) break;
+    if (nextTrimmed.startsWith('```')) break;
+    if (/^\d+\.\s+/.test(nextTrimmed)) break;
+
+    // Continuation line — начинается с отступа
+    if (nextLine.startsWith('  ') || nextLine.startsWith('\t')) {
+      itemText += ' ' + nextTrimmed;
+      i++;
+    } else {
+      break;
+    }
+  }
+
+  const children: ListItemChild[] = parseInlineFormatting(itemText);
+
+  // Проверяем код после пункта (через 0-1 пустую строку)
+  let emptyCount = 0;
+  let checkIdx = i;
+  while (checkIdx < lines.length && !lines[checkIdx].trim()) {
+    emptyCount++;
+    checkIdx++;
+  }
+
+  if (emptyCount <= 1 && checkIdx < lines.length && lines[checkIdx].trim().startsWith('```')) {
+    i = checkIdx;
+    const codeResult = parseCodeBlock(lines, i);
+    if (codeResult) {
+      children.push(codeResult.block);
+      i = codeResult.nextIndex;
+    }
+  }
+
+  return {
+    item: { type: 'listItem', children },
+    nextIndex: i,
+  };
+}
+
+/**
+ * Парсит bullet list — собирает все пункты подряд
+ */
+function parseBulletList(
+  lines: string[],
+  startIndex: number
+): { block: BulletListBlock; nextIndex: number } | null {
+  const items: ListItemBlock[] = [];
+  let i = startIndex;
+
+  while (i < lines.length) {
+    // Пропускаем пустые строки между пунктами
+    while (i < lines.length && !lines[i].trim()) {
+      i++;
+    }
+
+    if (i >= lines.length) break;
+
+    const trimmed = lines[i].trim();
+    if (!/^[-*]\s+/.test(trimmed)) break;
+
+    const itemResult = parseBulletListItem(lines, i);
+    if (!itemResult) break;
+
+    items.push(itemResult.item);
+    i = itemResult.nextIndex;
+  }
+
+  if (items.length === 0) return null;
+
+  return {
+    block: { type: 'bulletList', children: items },
+    nextIndex: i,
+  };
+}
+
+/**
+ * Парсит numbered list item с учётом:
+ * - continuation lines
+ * - вложенного bullet list после пункта
+ * - вложенного кода после bullet list
+ */
+function parseNumberedListItem(
+  lines: string[],
+  startIndex: number
+): { item: ListItemBlock; nextIndex: number } | null {
+  const line = lines[startIndex];
+  const trimmedLine = line.trim();
+  const match = trimmedLine.match(/^\d+\.\s+(.+)$/);
+
+  if (!match) return null;
+
+  let itemText = match[1];
+  let i = startIndex + 1;
+
+  // Собираем continuation lines
+  while (i < lines.length) {
+    const nextLine = lines[i];
+    const nextTrimmed = nextLine.trim();
+
+    if (!nextTrimmed) break;
+    if (/^\d+\.\s+/.test(nextTrimmed)) break;
+    if (nextTrimmed.startsWith('```')) break;
+    if (/^[-*]\s+/.test(nextTrimmed)) break;
+
+    if (nextLine.startsWith('  ') || nextLine.startsWith('\t')) {
+      itemText += ' ' + nextTrimmed;
+      i++;
+    } else {
+      break;
+    }
+  }
+
+  const children: ListItemChild[] = parseInlineFormatting(itemText);
+
+  // Пропускаем пустые строки
+  while (i < lines.length && !lines[i].trim()) {
+    i++;
+  }
+
+  // Проверяем bullet list после numbered item
+  if (i < lines.length && /^[-*]\s+/.test(lines[i].trim())) {
+    const bulletResult = parseBulletList(lines, i);
+    if (bulletResult) {
+      children.push(bulletResult.block);
+      i = bulletResult.nextIndex;
+    }
+  }
+
+  // Проверяем код после (может быть после bullet list)
+  let emptyCount = 0;
+  let checkIdx = i;
+  while (checkIdx < lines.length && !lines[checkIdx].trim()) {
+    emptyCount++;
+    checkIdx++;
+  }
+
+  if (emptyCount <= 1 && checkIdx < lines.length && lines[checkIdx].trim().startsWith('```')) {
+    i = checkIdx;
+    const codeResult = parseCodeBlock(lines, i);
+    if (codeResult) {
+      children.push(codeResult.block);
+      i = codeResult.nextIndex;
+    }
+  }
+
+  return {
+    item: { type: 'listItem', children },
+    nextIndex: i,
+  };
+}
+
+/**
+ * Парсит numbered list — собирает все пункты подряд (через пустые строки тоже)
+ */
+function parseNumberedList(
+  lines: string[],
+  startIndex: number
+): { block: NumberedListBlock; nextIndex: number } | null {
+  const items: ListItemBlock[] = [];
+  let i = startIndex;
+
+  while (i < lines.length) {
+    // Пропускаем пустые строки между пунктами
+    while (i < lines.length && !lines[i].trim()) {
+      i++;
+    }
+
+    if (i >= lines.length) break;
+
+    const trimmed = lines[i].trim();
+    if (!/^\d+\.\s+/.test(trimmed)) break;
+
+    const itemResult = parseNumberedListItem(lines, i);
+    if (!itemResult) break;
+
+    items.push(itemResult.item);
+    i = itemResult.nextIndex;
+  }
+
+  if (items.length === 0) return null;
+
+  return {
+    block: { type: 'numberedList', children: items },
     nextIndex: i,
   };
 }
@@ -480,6 +533,7 @@ function mergeConsecutiveLists(blocks: AnswerBlock[]): AnswerBlock[] {
   for (let i = 0; i < blocks.length; i++) {
     const block = blocks[i];
 
+    // numberedList с одним пунктом, начинающимся с bold — кандидат на объединение
     if (
       block.type === 'numberedList' &&
       block.children.length === 1 &&
@@ -506,6 +560,7 @@ function mergeConsecutiveLists(blocks: AnswerBlock[]): AnswerBlock[] {
       }
     }
 
+    // Объединяем последовательные bulletList
     if (block.type === 'bulletList') {
       const prev = result[result.length - 1];
       if (prev?.type === 'bulletList') {
@@ -588,7 +643,6 @@ function parseBlocks(content: string): AnswerBlock[] {
       }
     }
 
-    // Обычный текст — парсим как абзац с объединением строк
     const paragraphResult = parseParagraph(lines, i);
     if (paragraphResult) {
       blocks.push(paragraphResult.block);
@@ -601,8 +655,6 @@ function parseBlocks(content: string): AnswerBlock[] {
 
   return mergeConsecutiveLists(blocks);
 }
-
-// ============ RUN ============
 
 function run() {
   const readmePath = path.join(__dirname, 'README.md');
@@ -649,15 +701,14 @@ function run() {
 
 run();
 
-// =============================================================
+
+// ===========================================================
 // import fs from 'fs';
 // import path from 'path';
 // import { fileURLToPath } from 'url';
 
 // const __filename = fileURLToPath(import.meta.url);
 // const __dirname = path.dirname(__filename);
-
-// // ============ TYPES ============
 
 // type TextNode = {
 //   text: string;
@@ -723,8 +774,6 @@ run();
 //   answerBlocks: AnswerBlock[];
 // };
 
-// // ============ EXTRACT FUNCTIONS ============
-
 // function extractDetails(md: string): string[] {
 //   const regex = /<details>([\s\S]*?)<\/details>/g;
 //   const list: string[] = [];
@@ -748,8 +797,6 @@ run();
 //   const match = block.match(/^####\s+([A-Za-z]+)\s*$/m);
 //   return match ? match[1].trim().toLowerCase() : 'general';
 // }
-
-// // ============ INLINE PARSING ============
 
 // function parseInlineFormatting(text: string): TextNode[] {
 //   const nodes: TextNode[] = [];
@@ -795,7 +842,21 @@ run();
 //   return nodes;
 // }
 
-// // ============ BLOCK PARSERS ============
+// function isSpecialLine(line: string): boolean {
+//   const trimmed = line.trim();
+//   if (!trimmed) return true; 
+//   if (trimmed.startsWith('```')) return true; 
+//   if (trimmed.startsWith('|')) return true; 
+//   if (/^\d+\.\s+/.test(trimmed)) return true; 
+//   if (/^[-*]\s+/.test(trimmed)) return true; 
+//   if (/^#{1,6}\s+/.test(trimmed)) return true; 
+//   return false;
+// }
+
+// function isCategoryMarker(line: string): boolean {
+//   const match = line.match(/^####\s+([A-Za-z]+)\s*$/);
+//   return match !== null;
+// }
 
 // function parseCodeBlock(
 //   lines: string[],
@@ -890,11 +951,7 @@ run();
 //       if (nextTrimmed.startsWith('```')) break;
 //       if (/^\d+\.\s+/.test(nextTrimmed)) break;
 
-//       if (
-//         nextLine.startsWith('   ') ||
-//         nextLine.startsWith('\t') ||
-//         nextLine.startsWith('  ')
-//       ) {
+//       if (nextLine.startsWith('   ') || nextLine.startsWith('\t') || nextLine.startsWith('  ')) {
 //         itemText += ' ' + nextTrimmed;
 //         i++;
 //       } else {
@@ -1030,16 +1087,54 @@ run();
 //   };
 // }
 
-// function isCategoryMarker(line: string): boolean {
-//   const match = line.match(/^####\s+([A-Za-z]+)\s*$/);
-//   return match !== null;
+// /**
+//  * Парсит абзац, объединяя последовательные строки текста
+//  */
+// function parseParagraph(
+//   lines: string[],
+//   startIndex: number
+// ): { block: ParagraphBlock; nextIndex: number } | null {
+//   const trimmedFirst = lines[startIndex].trim();
+//   if (!trimmedFirst || isSpecialLine(lines[startIndex])) return null;
+
+//   const textLines: string[] = [trimmedFirst];
+//   let i = startIndex + 1;
+
+//   // Собираем последовательные строки обычного текста
+//   while (i < lines.length) {
+//     const line = lines[i];
+//     const trimmed = line.trim();
+
+//     // Пустая строка — конец абзаца
+//     if (!trimmed) break;
+
+//     // Специальная строка — конец абзаца
+//     if (isSpecialLine(line)) break;
+
+//     // Маркер категории — пропускаем
+//     if (isCategoryMarker(trimmed)) {
+//       i++;
+//       continue;
+//     }
+
+//     textLines.push(trimmed);
+//     i++;
+//   }
+
+//   const fullText = textLines.join(' ');
+//   const children = parseInlineFormatting(fullText);
+
+//   return {
+//     block: {
+//       type: 'paragraph',
+//       children,
+//     },
+//     nextIndex: i,
+//   };
 // }
 
 // // ============ MERGE LOGIC ============
 
-// /**
-//  * Проверяет, начинается ли listItem с bold текста
-//  */
 // function startsWithBold(item: ListItemBlock): boolean {
 //   if (item.children.length === 0) return false;
 //   const first = item.children[0];
@@ -1048,15 +1143,11 @@ run();
 //   return false;
 // }
 
-// /**
-//  * Получает последний numberedList из result, если он есть
-//  */
 // function getLastNumberedList(result: AnswerBlock[]): NumberedListBlock | null {
 //   for (let i = result.length - 1; i >= 0; i--) {
 //     if (result[i].type === 'numberedList') {
 //       return result[i] as NumberedListBlock;
 //     }
-//     // Прерываем если встретили heading или table — это явный разделитель
 //     if (result[i].type === 'heading' || result[i].type === 'table') {
 //       return null;
 //     }
@@ -1064,12 +1155,7 @@ run();
 //   return null;
 // }
 
-// /**
-//  * Удаляет блоки после последнего numberedList и возвращает их
-//  */
-// function extractBlocksAfterLastNumberedList(
-//   result: AnswerBlock[]
-// ): AnswerBlock[] {
+// function extractBlocksAfterLastNumberedList(result: AnswerBlock[]): AnswerBlock[] {
 //   const extracted: AnswerBlock[] = [];
 
 //   while (result.length > 0) {
@@ -1083,23 +1169,12 @@ run();
 //   return extracted;
 // }
 
-// /**
-//  * Объединяет разрозненные numberedList в один.
-//  *
-//  * Паттерн в MD:
-//  *   1. **Заголовок:**
-//  *   Текст параграфа
-//  *   1. **Следующий:**
-//  *
-//  * Результат: один numberedList, где параграф — child первого listItem
-//  */
 // function mergeConsecutiveLists(blocks: AnswerBlock[]): AnswerBlock[] {
 //   const result: AnswerBlock[] = [];
 
 //   for (let i = 0; i < blocks.length; i++) {
 //     const block = blocks[i];
 
-//     // numberedList с одним пунктом, начинающимся с bold — кандидат на объединение
 //     if (
 //       block.type === 'numberedList' &&
 //       block.children.length === 1 &&
@@ -1108,8 +1183,6 @@ run();
 //       const prevList = getLastNumberedList(result);
 
 //       if (prevList) {
-//         // Есть предыдущий numberedList — объединяем
-//         // Сначала забираем блоки между ними и вкладываем в последний listItem предыдущего списка
 //         const between = extractBlocksAfterLastNumberedList(result);
 //         const lastItem = prevList.children[prevList.children.length - 1];
 
@@ -1121,16 +1194,13 @@ run();
 //           } else if (b.type === 'bulletList') {
 //             lastItem.children.push(b);
 //           }
-//           // heading и table не вкладываем — они разделители
 //         }
 
-//         // Добавляем новый пункт в предыдущий список
 //         prevList.children.push(...block.children);
 //         continue;
 //       }
 //     }
 
-//     // Объединяем последовательные bulletList
 //     if (block.type === 'bulletList') {
 //       const prev = result[result.length - 1];
 //       if (prev?.type === 'bulletList') {
@@ -1213,12 +1283,12 @@ run();
 //       }
 //     }
 
-//     const children = parseInlineFormatting(trimmedLine);
-//     if (children.length > 0) {
-//       blocks.push({
-//         type: 'paragraph',
-//         children,
-//       });
+//     // Обычный текст — парсим как абзац с объединением строк
+//     const paragraphResult = parseParagraph(lines, i);
+//     if (paragraphResult) {
+//       blocks.push(paragraphResult.block);
+//       i = paragraphResult.nextIndex;
+//       continue;
 //     }
 
 //     i++;
@@ -1273,3 +1343,4 @@ run();
 // }
 
 // run();
+
