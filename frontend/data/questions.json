@@ -290,12 +290,22 @@
               },
               {
                 "text": " Дозволяють використовувати стан і методи життєвого циклу у функціональних"
-              },
-              {
-                "text": "компонентах."
               }
             ]
-          },
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "text": "компонентах."
+          }
+        ]
+      },
+      {
+        "type": "numberedList",
+        "children": [
           {
             "type": "listItem",
             "children": [
@@ -332,12 +342,22 @@
               },
               {
                 "text": " Великий набір бібліотек та інструментів, таких як React Router, Redux, Context"
-              },
-              {
-                "text": "API."
               }
             ]
-          },
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "text": "API."
+          }
+        ]
+      },
+      {
+        "type": "numberedList",
+        "children": [
           {
             "type": "listItem",
             "children": [
@@ -555,7 +575,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "const element = Hello, world!;"
+                "content": "const element = Hello, world!;\r"
               }
             ]
           },
@@ -579,7 +599,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "const name = 'Alice';\nconst element = Hello, {name}!;"
+                "content": "const name = 'Alice';\r\nconst element = Hello, {name}!;\r"
               }
             ]
           },
@@ -596,7 +616,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "const element = Hello;\n// Перетворюється в:\nconst element = React.createElement('h1', null, 'Hello');"
+                "content": "const element = Hello;\r\n// Перетворюється в:\r\nconst element = React.createElement('h1', null, 'Hello');\r"
               }
             ]
           },
@@ -641,7 +661,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "const input = ;"
+                "content": "const input = ;\r"
               }
             ]
           },
@@ -672,7 +692,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "return <>Title Description</>;"
+                "content": "return <>Title Description</>;\r"
               }
             ]
           }
@@ -1087,7 +1107,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "function Greeting(props) {\n  return Hello, {props.name}!;\n}\n\n// Використання:\n;"
+                "content": "function Greeting(props) {\r\n  return Hello, {props.name}!;\r\n}\r\n\r\n// Використання:\r\n;\r"
               }
             ]
           },
@@ -1104,7 +1124,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "class Greeting extends React.Component {\n  render() {\n    return Hello, {this.props.name}!;\n  }\n}\n\n// Використання:\n;"
+                "content": "class Greeting extends React.Component {\r\n  render() {\r\n    return Hello, {this.props.name}!;\r\n  }\r\n}\r\n\r\n// Використання:\r\n;\r"
               }
             ]
           }
@@ -1246,7 +1266,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "class Counter extends React.Component {\n  constructor(props) {\n    super(props);\n    this.state = { count: 0 };\n  }\n\n  increment = () => {\n    this.setState({ count: this.state.count + 1 });\n  };\n\n  render() {\n    return (\n\n        Count: {this.state.count}\n        Increment\n\n    );\n  }\n}"
+        "content": "class Counter extends React.Component {\r\n  constructor(props) {\r\n    super(props);\r\n    this.state = { count: 0 };\r\n  }\r\n\r\n  increment = () => {\r\n    this.setState({ count: this.state.count + 1 });\r\n  };\r\n\r\n  render() {\r\n    return (\r\n\r\n        Count: {this.state.count}\r\n        Increment\r\n\r\n    );\r\n  }\r\n}\r"
       },
       {
         "type": "heading",
@@ -1267,7 +1287,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "import React, { useState } from 'react';\n\nfunction Counter() {\n  const [count, setCount] = useState(0);\n\n  return (\n\n      Count: {count}\n      <button onClick={() => setCount(count + 1)}>Increment\n\n  );\n}"
+        "content": "import React, { useState } from 'react';\r\n\r\nfunction Counter() {\r\n  const [count, setCount] = useState(0);\r\n\r\n  return (\r\n\r\n      Count: {count}\r\n      <button onClick={() => setCount(count + 1)}>Increment\r\n\r\n  );\r\n}\r"
       },
       {
         "type": "heading",
@@ -1397,7 +1417,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "function Welcome(props) {\n  return Hello, {props.name}!;\n}\n\n// Використання:\n;"
+                "content": "function Welcome(props) {\r\n  return Hello, {props.name}!;\r\n}\r\n\r\n// Використання:\r\n;\r"
               }
             ]
           },
@@ -1411,7 +1431,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "Копіювати;\nРедагувати;\nclass Welcome extends React.Component {\n  render() {\n    return Hello, {this.props.name}!;\n  }\n}\n\n// Використання:\n;"
+                "content": "Копіювати;\r\nРедагувати;\r\nclass Welcome extends React.Component {\r\n  render() {\r\n    return Hello, {this.props.name}!;\r\n  }\r\n}\r\n\r\n// Використання:\r\n;\r"
               }
             ]
           }
@@ -1429,7 +1449,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "function App() {\n  return (\n\n  );\n}"
+        "content": "function App() {\r\n  return (\r\n\r\n  );\r\n}\r"
       },
       {
         "type": "paragraph",
@@ -1443,7 +1463,7 @@
       {
         "type": "code",
         "language": "bash",
-        "content": "Hello, Alice!\nHello, Bob!"
+        "content": "Hello, Alice!\r\nHello, Bob!\r"
       },
       {
         "type": "heading",
@@ -1457,7 +1477,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "function Welcome({ name }) {\n  return Hello, {name}!;\n}"
+        "content": "function Welcome({ name }) {\r\n  return Hello, {name}!;\r\n}\r"
       },
       {
         "type": "heading",
@@ -1471,7 +1491,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "function Welcome({ name = 'Guest' }) {\n  return Hello, {name}!;\n}\n\n// Використання:\n; // Виведе: Hello, Guest!"
+        "content": "function Welcome({ name = 'Guest' }) {\r\n  return Hello, {name}!;\r\n}\r\n\r\n// Використання:\r\n; // Виведе: Hello, Guest!\r"
       },
       {
         "type": "paragraph",
@@ -1631,7 +1651,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "const items = ['Apple', 'Banana', 'Cherry'];\nreturn (\n\n    {items.map((item, index) => (\n      {item} // Унікальний key для кожного елемента\n    ))}\n\n);"
+                "content": "const items = ['Apple', 'Banana', 'Cherry'];\r\nreturn (\r\n\r\n    {items.map((item, index) => (\r\n      {item} // Унікальний key для кожного елемента\r\n    ))}\r\n\r\n);\r"
               }
             ]
           }
@@ -1680,7 +1700,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "function ParentComponent() {\n  const data = 'Hello from Parent';\n\n  return;\n}\n\nfunction ChildComponent({ message }) {\n  return { message };\n}"
+        "content": "function ParentComponent() {\r\n  const data = 'Hello from Parent';\r\n\r\n  return;\r\n}\r\n\r\nfunction ChildComponent({ message }) {\r\n  return { message };\r\n}\r"
       },
       {
         "type": "paragraph",
@@ -1752,7 +1772,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "function ParentComponent() {\n  const handleData = childData => {\n    console.log('Data from child:', childData);\n  };\n\n  return ;\n}\n\nfunction ChildComponent({ sendData }) {\n  const data = 'Hello from Child';\n\n  return <button onClick={() => sendData(data)}>Send Data;\n}"
+        "content": "function ParentComponent() {\r\n  const handleData = childData => {\r\n    console.log('Data from child:', childData);\r\n  };\r\n\r\n  return ;\r\n}\r\n\r\nfunction ChildComponent({ sendData }) {\r\n  const data = 'Hello from Child';\r\n\r\n  return <button onClick={() => sendData(data)}>Send Data;\r\n}\r"
       },
       {
         "type": "paragraph",
@@ -1816,20 +1836,35 @@
               {
                 "text": "Контекст (Context API):",
                 "bold": true
-              },
-              {
-                "text": "Для передачі даних глибоко по ієрархії без пропсів."
-              },
-              {
-                "text": "Підходить для глобального стану, наприклад, теми чи мови інтерфейсу."
-              },
-              {
-                "type": "code",
-                "language": "jsx",
-                "content": "const MyContext = React.createContext();\n\nfunction ParentComponent() {\n  const data = 'Hello from Context';\n\n  return (\n\n  );\n}\n\nfunction ChildComponent() {\n  const contextData = React.useContext(MyContext);\n\n  return {contextData};\n}"
               }
             ]
-          },
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "text": "Для передачі даних глибоко по ієрархії без пропсів."
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "text": "Підходить для глобального стану, наприклад, теми чи мови інтерфейсу."
+          }
+        ]
+      },
+      {
+        "type": "code",
+        "language": "jsx",
+        "content": "const MyContext = React.createContext();\r\n\r\nfunction ParentComponent() {\r\n  const data = 'Hello from Context';\r\n\r\n  return (\r\n\r\n  );\r\n}\r\n\r\nfunction ChildComponent() {\r\n  const contextData = React.useContext(MyContext);\r\n\r\n  return {contextData};\r\n}\r"
+      },
+      {
+        "type": "numberedList",
+        "children": [
           {
             "type": "listItem",
             "children": [
@@ -1995,7 +2030,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "// Коректний варіант у React\n\nHello;\n\n// Некоректний варіант (синтаксична помилка)\n\nHello;"
+        "content": "// Коректний варіант у React\r\n\r\nHello;\r\n\r\n// Некоректний варіант (синтаксична помилка)\r\n\r\nHello;\r"
       },
       {
         "type": "paragraph",
@@ -2031,41 +2066,51 @@
               },
               {
                 "text": " Імена компонентів повинні починатися з великої літери. Це обов'язково, щоб React міг відрізнити компоненти від стандартних HTML-елементів."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "text": "Наприклад:"
+          }
+        ]
+      },
+      {
+        "type": "bulletList",
+        "children": [
+          {
+            "type": "listItem",
+            "children": [
+              {
+                "text": "Правильно: "
               },
               {
-                "text": "Наприклад:"
-              },
-              {
-                "type": "bulletList",
-                "children": [
-                  {
-                    "type": "listItem",
-                    "children": [
-                      {
-                        "text": "Правильно: "
-                      },
-                      {
-                        "text": "<MyComponent />",
-                        "code": true
-                      }
-                    ]
-                  },
-                  {
-                    "type": "listItem",
-                    "children": [
-                      {
-                        "text": "Неправильно: "
-                      },
-                      {
-                        "text": "<myComponent />",
-                        "code": true
-                      }
-                    ]
-                  }
-                ]
+                "text": "<MyComponent />",
+                "code": true
               }
             ]
           },
+          {
+            "type": "listItem",
+            "children": [
+              {
+                "text": "Неправильно: "
+              },
+              {
+                "text": "<myComponent />",
+                "code": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "numberedList",
+        "children": [
           {
             "type": "listItem",
             "children": [
@@ -2223,20 +2268,20 @@
               },
               {
                 "text": " Якщо ви використовуєте класи для компонентів, вони також повинні мати імена з великої літери:"
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "type": "bulletList",
-        "children": [
-          {
-            "type": "listItem",
-            "children": [
+              },
               {
-                "text": "class MyComponent extends React.Component {}",
-                "code": true
+                "type": "bulletList",
+                "children": [
+                  {
+                    "type": "listItem",
+                    "children": [
+                      {
+                        "text": "class MyComponent extends React.Component {}",
+                        "code": true
+                      }
+                    ]
+                  }
+                ]
               }
             ]
           }
@@ -2277,7 +2322,7 @@
               {
                 "type": "code",
                 "language": "javascript",
-                "content": "// Однорядковий коментар\n\n/*\nБагаторядковий коментар\n*/"
+                "content": "// Однорядковий коментар\r\n\r\n/*\r\nБагаторядковий коментар\r\n*/\r"
               }
             ]
           },
@@ -2315,7 +2360,7 @@
                       {
                         "type": "code",
                         "language": "jsx",
-                        "content": "function MyComponent() {\n  return (\n\n      {/_ Це коментар всередині JSX _/}\n      Hello, world!\n\n  );\n}"
+                        "content": "function MyComponent() {\r\n  return (\r\n\r\n      {/_ Це коментар всередині JSX _/}\r\n      Hello, world!\r\n\r\n  );\r\n}\r"
                       }
                     ]
                   },
@@ -2352,24 +2397,24 @@
               {
                 "text": "Коментарі в функціях та методах",
                 "bold": true
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "type": "bulletList",
-        "children": [
-          {
-            "type": "listItem",
-            "children": [
-              {
-                "text": "Для коментарів всередині функцій або методів можна використовувати стандартні JavaScript коментарі:"
               },
               {
-                "type": "code",
-                "language": "jsx",
-                "content": "function MyComponent() {\n  // Ось тут ми рендеримо компонент\n  return Hello, world!;\n}"
+                "type": "bulletList",
+                "children": [
+                  {
+                    "type": "listItem",
+                    "children": [
+                      {
+                        "text": "Для коментарів всередині функцій або методів можна використовувати стандартні JavaScript коментарі:"
+                      },
+                      {
+                        "type": "code",
+                        "language": "jsx",
+                        "content": "function MyComponent() {\r\n  // Ось тут ми рендеримо компонент\r\n  return Hello, world!;\r\n}\r"
+                      }
+                    ]
+                  }
+                ]
               }
             ]
           }
@@ -2629,7 +2674,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "const items = ['apple', 'banana', 'cherry'];\n\nfunction FruitList() {\n  return (\n\n      {items.map((item, index) => (\n        {item} // Важливо: використовувати унікальний key\n      ))}\n\n  );\n}"
+        "content": "const items = ['apple', 'banana', 'cherry'];\r\n\r\nfunction FruitList() {\r\n  return (\r\n\r\n      {items.map((item, index) => (\r\n        {item} // Важливо: використовувати унікальний key\r\n      ))}\r\n\r\n  );\r\n}\r"
       },
       {
         "type": "heading",
@@ -2675,7 +2720,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "const items = [\n  { id: 1, name: 'apple' },\n  { id: 2, name: 'banana' },\n  { id: 3, name: 'cherry' },\n];\n\nfunction FruitList() {\n  return (\n\n      {items.map(item => (\n        {item.name} // Краще використовувати унікальні id\n      ))}\n\n  );\n}"
+                "content": "const items = [\r\n  { id: 1, name: 'apple' },\r\n  { id: 2, name: 'banana' },\r\n  { id: 3, name: 'cherry' },\r\n];\r\n\r\nfunction FruitList() {\r\n  return (\r\n\r\n      {items.map(item => (\r\n        {item.name} // Краще використовувати унікальні id\r\n      ))}\r\n\r\n  );\r\n}\r"
               }
             ]
           }
@@ -2780,7 +2825,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "function Greeting(props) {\n  if (props.isLoggedIn) {\n    return Welcome back!;\n  }\n  return Please sign up.;\n}"
+                "content": "function Greeting(props) {\r\n  if (props.isLoggedIn) {\r\n    return Welcome back!;\r\n  }\r\n  return Please sign up.;\r\n}\r"
               }
             ]
           },
@@ -2797,7 +2842,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "function Greeting(props) {\n  return {props.isLoggedIn ? 'Welcome back!' : 'Please sign up.'};\n}"
+                "content": "function Greeting(props) {\r\n  return {props.isLoggedIn ? 'Welcome back!' : 'Please sign up.'};\r\n}\r"
               }
             ]
           },
@@ -2821,7 +2866,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "function Notifications(props) {\n  return (\n\n      {props.unreadMessages.length > 0 && (\n        You have {props.unreadMessages.length} unread messages.\n      )}\n\n  );\n}"
+                "content": "function Notifications(props) {\r\n  return (\r\n\r\n      {props.unreadMessages.length > 0 && (\r\n        You have {props.unreadMessages.length} unread messages.\r\n      )}\r\n\r\n  );\r\n}\r"
               },
               {
                 "text": "Це працює так: якщо props.unreadMessages.length більше за 0, то відобразиться повідомлення, інакше нічого не буде відображено."
@@ -2891,7 +2936,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "function UserStatus(props) {\n  return (\n\n      {props.isLoggedIn ? (\n        Log Out\n      ) : (\n        Log In\n      )}\n\n  );\n}"
+        "content": "function UserStatus(props) {\r\n  return (\r\n\r\n      {props.isLoggedIn ? (\r\n        Log Out\r\n      ) : (\r\n        Log In\r\n      )}\r\n\r\n  );\r\n}\r"
       },
       {
         "type": "paragraph",
@@ -2944,7 +2989,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "function MyComponent() {\n  return (\n\n      Title\n      Some text\n\n  );\n}"
+                "content": "function MyComponent() {\r\n  return (\r\n\r\n      Title\r\n      Some text\r\n\r\n  );\r\n}\r"
               },
               {
                 "text": "У цьому прикладі повертається один "
@@ -2982,7 +3027,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "function MyComponent() {\n  return <>Title Some text</>;\n}"
+                "content": "function MyComponent() {\r\n  return <>Title Some text</>;\r\n}\r"
               }
             ]
           }
@@ -3105,7 +3150,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "{\n  item.name;\n}\n{\n  item.description;\n}"
+                "content": "{\r\n  item.name;\r\n}\r\n{\r\n  item.description;\r\n}\r"
               }
             ]
           }
@@ -3253,19 +3298,19 @@
               {
                 "text": "Оновлення реального DOM:",
                 "bold": true
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "type": "bulletList",
-        "children": [
-          {
-            "type": "listItem",
-            "children": [
+              },
               {
-                "text": "React застосовує зміни лише до тих частин DOM, які потрібно оновити, уникаючи повного перерендеру."
+                "type": "bulletList",
+                "children": [
+                  {
+                    "type": "listItem",
+                    "children": [
+                      {
+                        "text": "React застосовує зміни лише до тих частин DOM, які потрібно оновити, уникаючи повного перерендеру."
+                      }
+                    ]
+                  }
+                ]
               }
             ]
           }
@@ -3354,7 +3399,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "function App({ isVisible }) {\n  return isVisible ? Hello : Goodbye;\n}"
+        "content": "function App({ isVisible }) {\r\n  return isVisible ? Hello : Goodbye;\r\n}\r"
       },
       {
         "type": "bulletList",
@@ -3431,7 +3476,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "\n  {items.map(item => (\n    {item.text}\n  ))}\n"
+        "content": "\r\n  {items.map(item => (\r\n    {item.text}\r\n  ))}\r\n\r"
       },
       {
         "type": "paragraph",
@@ -3543,7 +3588,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "class Counter extends React.Component {\n  constructor(props) {\n    super(props);\n    this.state = { count: 0 };\n  }\n\n  increment = () => {\n    this.setState({ count: this.state.count + 1 });\n  };\n\n  render() {\n    return (\n\n        Count: {this.state.count}\n        Increment\n\n    );\n  }\n}"
+        "content": "class Counter extends React.Component {\r\n  constructor(props) {\r\n    super(props);\r\n    this.state = { count: 0 };\r\n  }\r\n\r\n  increment = () => {\r\n    this.setState({ count: this.state.count + 1 });\r\n  };\r\n\r\n  render() {\r\n    return (\r\n\r\n        Count: {this.state.count}\r\n        Increment\r\n\r\n    );\r\n  }\r\n}\r"
       },
       {
         "type": "heading",
@@ -3581,7 +3626,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "import React, { useState } from 'react';\n\nfunction Counter() {\n  const [count, setCount] = useState(0);\n\n  const increment = () => {\n    setCount(count + 1);\n  };\n\n  return (\n\n      Count: {count}\n      Increment\n\n  );\n}"
+        "content": "import React, { useState } from 'react';\r\n\r\nfunction Counter() {\r\n  const [count, setCount] = useState(0);\r\n\r\n  const increment = () => {\r\n    setCount(count + 1);\r\n  };\r\n\r\n  return (\r\n\r\n      Count: {count}\r\n      Increment\r\n\r\n  );\r\n}\r"
       },
       {
         "type": "heading",
@@ -3622,7 +3667,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "this.setState(prevState => ({ count: prevState.count + 1 }));\nsetCount(prevCount => prevCount + 1);"
+                "content": "this.setState(prevState => ({ count: prevState.count + 1 }));\r\nsetCount(prevCount => prevCount + 1);\r"
               }
             ]
           },
@@ -3697,7 +3742,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "умова ? вираз_якщо_правда : вираз_якщо_неправда;"
+                "content": "умова ? вираз_якщо_правда : вираз_якщо_неправда;\r"
               },
               {
                 "text": "Приклад:",
@@ -3706,7 +3751,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "const isLoggedIn = true;\n\nfunction App() {\n  return {isLoggedIn ? Welcome, User! : Please log in};\n}"
+                "content": "const isLoggedIn = true;\r\n\r\nfunction App() {\r\n  return {isLoggedIn ? Welcome, User! : Please log in};\r\n}\r"
               }
             ]
           },
@@ -3727,7 +3772,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "const isUserAdmin = true;\n\nfunction App() {\n  return {isUserAdmin && You have admin privileges};\n}"
+                "content": "const isUserAdmin = true;\r\n\r\nfunction App() {\r\n  return {isUserAdmin && You have admin privileges};\r\n}\r"
               },
               {
                 "text": "У цьому випадку "
@@ -3781,7 +3826,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "function App() {\n  let content;\n  if (isLoggedIn) {\n    content = Welcome back!;\n  } else {\n    content = Please sign in.;\n  }\n\n  return {content};\n}"
+        "content": "function App() {\r\n  let content;\r\n  if (isLoggedIn) {\r\n    content = Welcome back!;\r\n  } else {\r\n    content = Please sign in.;\r\n  }\r\n\r\n  return {content};\r\n}\r"
       },
       {
         "type": "paragraph",
@@ -4084,7 +4129,7 @@
       {
         "type": "code",
         "language": "html",
-        "content": "Click me"
+        "content": "Click me\r"
       },
       {
         "type": "heading",
@@ -4098,7 +4143,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "function handleClick() {\n  alert('Clicked!');\n}\n\nfunction App() {\n  return Click me;\n}"
+        "content": "function handleClick() {\r\n  alert('Clicked!');\r\n}\r\n\r\nfunction App() {\r\n  return Click me;\r\n}\r"
       },
       {
         "type": "heading",
@@ -4223,7 +4268,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "function handleClick(event) {\n  // SyntheticEvent має доступ до методу preventDefault()\n  event.preventDefault();\n  console.log('Button clicked!');\n}\n\nfunction App() {\n  return Click me;\n}"
+        "content": "function handleClick(event) {\r\n  // SyntheticEvent має доступ до методу preventDefault()\r\n  event.preventDefault();\r\n  console.log('Button clicked!');\r\n}\r\n\r\nfunction App() {\r\n  return Click me;\r\n}\r"
       },
       {
         "type": "paragraph",
@@ -4337,7 +4382,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "import React, { Component } from 'react';\n\nclass MyButton extends Component {\n  handleClick = () => {\n    alert('Button clicked!');\n  };\n\n  render() {\n    return Click Me;\n  }\n}\n\nexport default MyButton;"
+        "content": "import React, { Component } from 'react';\r\n\r\nclass MyButton extends Component {\r\n  handleClick = () => {\r\n    alert('Button clicked!');\r\n  };\r\n\r\n  render() {\r\n    return Click Me;\r\n  }\r\n}\r\n\r\nexport default MyButton;\r"
       },
       {
         "type": "heading",
@@ -4351,7 +4396,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "import React, { useState } from 'react';\n\nfunction MyButton() {\n  const [count, setCount] = useState(0);\n\n  const handleClick = () => {\n    setCount(count + 1);\n  };\n\n  return Clicked {count} times;\n}\n\nexport default MyButton;"
+        "content": "import React, { useState } from 'react';\r\n\r\nfunction MyButton() {\r\n  const [count, setCount] = useState(0);\r\n\r\n  const handleClick = () => {\r\n    setCount(count + 1);\r\n  };\r\n\r\n  return Clicked {count} times;\r\n}\r\n\r\nexport default MyButton;\r"
       },
       {
         "type": "heading",
@@ -4397,7 +4442,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "class MyComponent extends React.Component {\n  constructor(props) {\n    super(props);\n    this.state = { count: 0 };\n    // Прив'язка методу\n    this.handleClick = this.handleClick.bind(this);\n  }\n\n  handleClick() {\n    this.setState({ count: this.state.count + 1 });\n  }\n\n  render() {\n    return (\n\n        Clicked {this.state.count} times\n\n    );\n  }\n}"
+                "content": "class MyComponent extends React.Component {\r\n  constructor(props) {\r\n    super(props);\r\n    this.state = { count: 0 };\r\n    // Прив'язка методу\r\n    this.handleClick = this.handleClick.bind(this);\r\n  }\r\n\r\n  handleClick() {\r\n    this.setState({ count: this.state.count + 1 });\r\n  }\r\n\r\n  render() {\r\n    return (\r\n\r\n        Clicked {this.state.count} times\r\n\r\n    );\r\n  }\r\n}\r"
               }
             ]
           },
@@ -4414,7 +4459,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "function MyButton({ label }) {\n  const handleClick = (event, label) => {\n    console.log(label);\n  };\n\n  return <button onClick={event => handleClick(event, label)}>{label};\n}"
+                "content": "function MyButton({ label }) {\r\n  const handleClick = (event, label) => {\r\n    console.log(label);\r\n  };\r\n\r\n  return <button onClick={event => handleClick(event, label)}>{label};\r\n}\r"
               }
             ]
           }
@@ -4582,7 +4627,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "const PointerExample = () => {\n  const handlePointerDown = () => console.log('Вказівник натиснуто');\n\n  return (\n\n      Клікни тут\n\n  );\n};"
+        "content": "const PointerExample = () => {\r\n  const handlePointerDown = () => console.log('Вказівник натиснуто');\r\n\r\n  return (\r\n\r\n      Клікни тут\r\n\r\n  );\r\n};\r"
       },
       {
         "type": "paragraph",
@@ -4775,7 +4820,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "// Stateless component\nfunction Greeting(props) {\n  return Hello, {props.name}!;\n}\n\n// Використання:\n;"
+        "content": "// Stateless component\r\nfunction Greeting(props) {\r\n  return Hello, {props.name}!;\r\n}\r\n\r\n// Використання:\r\n;\r"
       },
       {
         "type": "heading",
@@ -4952,7 +4997,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "// Stateful component\nclass Counter extends React.Component {\n  constructor(props) {\n    super(props);\n    this.state = {\n      count: 0,\n    };\n  }\n\n  increment = () => {\n    this.setState({ count: this.state.count + 1 });\n  };\n\n  render() {\n    return (\n\n        {this.state.count}\n        Increment\n\n    );\n  }\n}"
+        "content": "// Stateful component\r\nclass Counter extends React.Component {\r\n  constructor(props) {\r\n    super(props);\r\n    this.state = {\r\n      count: 0,\r\n    };\r\n  }\r\n\r\n  increment = () => {\r\n    this.setState({ count: this.state.count + 1 });\r\n  };\r\n\r\n  render() {\r\n    return (\r\n\r\n        {this.state.count}\r\n        Increment\r\n\r\n    );\r\n  }\r\n}\r"
       },
       {
         "type": "heading",
@@ -5054,7 +5099,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "import React, { PureComponent } from 'react';\n\nclass MyComponent extends PureComponent {\n  render() {\n    return Hello, {this.props.name}!;\n  }\n}\n\n// Використання:\n;"
+        "content": "import React, { PureComponent } from 'react';\r\n\r\nclass MyComponent extends PureComponent {\r\n  render() {\r\n    return Hello, {this.props.name}!;\r\n  }\r\n}\r\n\r\n// Використання:\r\n;\r"
       },
       {
         "type": "heading",
@@ -5176,7 +5221,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "this.setState({ data: { ...this.state.data, key: 'new value' } }); // Обхідна"
+                "content": "this.setState({ data: { ...this.state.data, key: 'new value' } }); // Обхідна\r"
               }
             ]
           },
@@ -5200,7 +5245,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "const MyComponent = React.memo(function MyComponent(props) {\n  return Hello, {props.name}!;\n});"
+                "content": "const MyComponent = React.memo(function MyComponent(props) {\r\n  return Hello, {props.name}!;\r\n});\r"
               }
             ]
           }
@@ -5236,7 +5281,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "const EnhancedComponent = higherOrderComponent(WrappedComponent);"
+        "content": "const EnhancedComponent = higherOrderComponent(WrappedComponent);\r"
       },
       {
         "type": "heading",
@@ -5299,7 +5344,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "import React, { useState } from 'react';\n\n// HOC: додає логіку роботи зі станом\nfunction withCounter(WrappedComponent) {\n  return function EnhancedComponent(props) {\n    const [count, setCount] = useState(0);\n\n    const increment = () => setCount(count + 1);\n\n    return ;\n  };\n}\n\n// Компонент, який буде розширено\nfunction Button({ count, increment }) {\n  return Clicked {count} times;\n}\n\n// Використання HOC\nconst EnhancedButton = withCounter(Button);\n\nexport default EnhancedButton;"
+        "content": "import React, { useState } from 'react';\r\n\r\n// HOC: додає логіку роботи зі станом\r\nfunction withCounter(WrappedComponent) {\r\n  return function EnhancedComponent(props) {\r\n    const [count, setCount] = useState(0);\r\n\r\n    const increment = () => setCount(count + 1);\r\n\r\n    return ;\r\n  };\r\n}\r\n\r\n// Компонент, який буде розширено\r\nfunction Button({ count, increment }) {\r\n  return Clicked {count} times;\r\n}\r\n\r\n// Використання HOC\r\nconst EnhancedButton = withCounter(Button);\r\n\r\nexport default EnhancedButton;\r"
       },
       {
         "type": "heading",
@@ -5469,7 +5514,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "function Wrapper({ children }) {\n  return { children };\n}"
+                "content": "function Wrapper({ children }) {\r\n  return { children };\r\n}\r"
               }
             ]
           },
@@ -5483,7 +5528,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "function App() {\n  return (\n\n      Hello, World!\n      This is a paragraph inside the wrapper.\n\n  );\n}"
+                "content": "function App() {\r\n  return (\r\n\r\n      Hello, World!\r\n      This is a paragraph inside the wrapper.\r\n\r\n  );\r\n}\r"
               }
             ]
           },
@@ -5497,7 +5542,7 @@
               {
                 "type": "code",
                 "language": "html",
-                "content": "Hello, World! This is a paragraph inside the wrapper."
+                "content": "Hello, World! This is a paragraph inside the wrapper.\r"
               }
             ]
           }
@@ -5594,7 +5639,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "function List({ items, children }) {\n  return {items.map(item => children(item))};\n}\n\nfunction App() {\n  return (\n    <List items={['Apple', 'Banana', 'Cherry']}>\n      {item => {item}}\n\n  );\n}"
+        "content": "function List({ items, children }) {\r\n  return {items.map(item => children(item))};\r\n}\r\n\r\nfunction App() {\r\n  return (\r\n    <List items={['Apple', 'Banana', 'Cherry']}>\r\n      {item => {item}}\r\n\r\n  );\r\n}\r"
       },
       {
         "type": "heading",
@@ -5608,7 +5653,7 @@
       {
         "type": "code",
         "language": "html",
-        "content": "Apple Banana Cherry"
+        "content": "Apple Banana Cherry\r"
       },
       {
         "type": "paragraph",
@@ -5705,7 +5750,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "ReactDOM.createPortal(child, container);"
+        "content": "ReactDOM.createPortal(child, container);\r"
       },
       {
         "type": "bulletList",
@@ -5748,7 +5793,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "import React from 'react';\nimport ReactDOM from 'react-dom';\n\nfunction Modal({ children }) {\n  return ReactDOM.createPortal(\n    {children},\n    document.getElementById('modal-root') // Цільовий вузол\n  );\n}\n\nfunction App() {\n  return (\n\n      Основний контент\n\n        Це контент модального вікна\n\n\n  );\n}"
+        "content": "import React from 'react';\r\nimport ReactDOM from 'react-dom';\r\n\r\nfunction Modal({ children }) {\r\n  return ReactDOM.createPortal(\r\n    {children},\r\n    document.getElementById('modal-root') // Цільовий вузол\r\n  );\r\n}\r\n\r\nfunction App() {\r\n  return (\r\n\r\n      Основний контент\r\n\r\n        Це контент модального вікна\r\n\r\n\r\n  );\r\n}\r"
       },
       {
         "type": "heading",
@@ -5938,7 +5983,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "import ReactDOM from 'react-dom';\n\nconst Modal = () => {\n  return ReactDOM.createPortal(\n    <div className=\"modal\">\n      <h1>Це модальне вікно</h1>\n    </div>,\n    document.getElementById('modal-root') // Місце в DOM, куди рендеримо портал\n  );\n};\n\nconst App = () => {\n  return (\n    <div>\n      <h1>Головна сторінка</h1>\n      <Modal />\n    </div>\n  );\n};"
+        "content": "import ReactDOM from 'react-dom';\r\n\r\nconst Modal = () => {\r\n  return ReactDOM.createPortal(\r\n    <div className=\"modal\">\r\n      <h1>Це модальне вікно</h1>\r\n    </div>,\r\n    document.getElementById('modal-root') // Місце в DOM, куди рендеримо портал\r\n  );\r\n};\r\n\r\nconst App = () => {\r\n  return (\r\n    <div>\r\n      <h1>Головна сторінка</h1>\r\n      <Modal />\r\n    </div>\r\n  );\r\n};\r"
       },
       {
         "type": "heading",
@@ -6575,7 +6620,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "class MyComponent extends React.Component {\n  shouldComponentUpdate(nextProps, nextState) {\n    return nextProps.value !== this.props.value; // Ререндер тільки при зміні value\n  }\n\n  render() {\n    return <div>{this.props.value}</div>;\n  }\n}"
+        "content": "class MyComponent extends React.Component {\r\n  shouldComponentUpdate(nextProps, nextState) {\r\n    return nextProps.value !== this.props.value; // Ререндер тільки при зміні value\r\n  }\r\n\r\n  render() {\r\n    return <div>{this.props.value}</div>;\r\n  }\r\n}\r"
       },
       {
         "type": "heading",
@@ -6662,7 +6707,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "class MyComponent extends React.Component {\n  componentWillUnmount() {\n    console.log('Компонент буде видалено');\n  }\n\n  render() {\n    return <div>Мій компонент</div>;\n  }\n}"
+                "content": "class MyComponent extends React.Component {\r\n  componentWillUnmount() {\r\n    console.log('Компонент буде видалено');\r\n  }\r\n\r\n  render() {\r\n    return <div>Мій компонент</div>;\r\n  }\r\n}\r"
               }
             ]
           },
@@ -6689,7 +6734,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "import { useEffect } from 'react';\n\nfunction MyComponent() {\n  useEffect(() => {\n    return () => {\n      console.log('Компонент буде видалено');\n    };\n  }, []);\n\n  return <div>Мій компонент</div>;\n}"
+                "content": "import { useEffect } from 'react';\r\n\r\nfunction MyComponent() {\r\n  useEffect(() => {\r\n    return () => {\r\n      console.log('Компонент буде видалено');\r\n    };\r\n  }, []);\r\n\r\n  return <div>Мій компонент</div>;\r\n}\r"
               }
             ]
           },
@@ -6715,7 +6760,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "useEffect(() => {\n  const handleUnload = () => {\n    console.log('Сторінка закривається');\n  };\n\n  window.addEventListener('beforeunload', handleUnload);\n  return () => window.removeEventListener('beforeunload', handleUnload);\n}, []);"
+        "content": "useEffect(() => {\r\n  const handleUnload = () => {\r\n    console.log('Сторінка закривається');\r\n  };\r\n\r\n  window.addEventListener('beforeunload', handleUnload);\r\n  return () => window.removeEventListener('beforeunload', handleUnload);\r\n}, []);\r"
       },
       {
         "type": "heading",
@@ -6831,7 +6876,7 @@
                       {
                         "type": "code",
                         "language": "jsx",
-                        "content": "<>\n  <h1>Title</h1>\n  <p>Text</p>\n</>"
+                        "content": "<>\r\n  <h1>Title</h1>\r\n  <p>Text</p>\r\n</>\r"
                       }
                     ]
                   },
@@ -6844,7 +6889,7 @@
                       {
                         "type": "code",
                         "language": "html",
-                        "content": "<h1>Title</h1>\n<p>Text</p>"
+                        "content": "<h1>Title</h1>\r\n<p>Text</p>\r"
                       }
                     ]
                   },
@@ -6864,7 +6909,7 @@
                       {
                         "type": "code",
                         "language": "html",
-                        "content": "<div>\n  <h1>Title</h1>\n  <p>Text</p>\n</div>"
+                        "content": "<div>\r\n  <h1>Title</h1>\r\n  <p>Text</p>\r\n</div>\r"
                       }
                     ]
                   }
@@ -6934,7 +6979,7 @@
                       {
                         "type": "code",
                         "language": "jsx",
-                        "content": "<>\n  <tr>\n    <td>Row 1</td>\n  </tr>\n  <tr>\n    <td>Row 2</td>\n  </tr>\n</>"
+                        "content": "<>\r\n  <tr>\r\n    <td>Row 1</td>\r\n  </tr>\r\n  <tr>\r\n    <td>Row 2</td>\r\n  </tr>\r\n</>\r"
                       }
                     ]
                   },
@@ -6963,19 +7008,19 @@
               {
                 "text": "Оптимізація продуктивності",
                 "bold": true
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "type": "bulletList",
-        "children": [
-          {
-            "type": "listItem",
-            "children": [
+              },
               {
-                "text": "Менше зайвих вузлів у DOM → швидший рендеринг та менше споживання пам’яті."
+                "type": "bulletList",
+                "children": [
+                  {
+                    "type": "listItem",
+                    "children": [
+                      {
+                        "text": "Менше зайвих вузлів у DOM → швидший рендеринг та менше споживання пам’яті."
+                      }
+                    ]
+                  }
+                ]
               }
             ]
           }
@@ -7024,7 +7069,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "const [state, setState] = useState(initialState);"
+                "content": "const [state, setState] = useState(initialState);\r"
               }
             ]
           },
@@ -7041,7 +7086,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "useEffect(() => {\n  // код для ефекту\n}, [dependencies]); // залежності"
+                "content": "useEffect(() => {\r\n  // код для ефекту\r\n}, [dependencies]); // залежності\r"
               }
             ]
           },
@@ -7058,7 +7103,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "const value = useContext(MyContext);"
+                "content": "const value = useContext(MyContext);\r"
               }
             ]
           },
@@ -7075,7 +7120,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "const myRef = useRef(initialValue);"
+                "content": "const myRef = useRef(initialValue);\r"
               }
             ]
           },
@@ -7092,7 +7137,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "const [state, dispatch] = useReducer(reducer, initialState);"
+                "content": "const [state, dispatch] = useReducer(reducer, initialState);\r"
               }
             ]
           },
@@ -7109,7 +7154,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "const memoizedValue = useMemo(() => computeExpensiveValue(a, b), [a, b]);"
+                "content": "const memoizedValue = useMemo(() => computeExpensiveValue(a, b), [a, b]);\r"
               }
             ]
           },
@@ -7126,7 +7171,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "const memoizedCallback = useCallback(() => {\n  // функція;\n}, [dependencies]);"
+                "content": "const memoizedCallback = useCallback(() => {\r\n  // функція;\r\n}, [dependencies]);\r"
               }
             ]
           }
@@ -7611,7 +7656,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "const [state, dispatch] = useReducer(reducer, initialState);"
+        "content": "const [state, dispatch] = useReducer(reducer, initialState);\r"
       },
       {
         "type": "bulletList",
@@ -7687,7 +7732,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "import { useReducer } from 'react';\n\nconst initialState = { count: 0 };\n\nfunction reducer(state, action) {\n  switch (action.type) {\n    case 'increment':\n      return { count: state.count + 1 };\n    case 'decrement':\n      return { count: state.count - 1 };\n    default:\n      return state;\n  }\n}\n\nfunction Counter() {\n  const [state, dispatch] = useReducer(reducer, initialState);\n\n  return (\n    <div>\n      <p>Count: {state.count}</p>\n      <button onClick={() => dispatch({ type: 'increment' })}>+</button>\n      <button onClick={() => dispatch({ type: 'decrement' })}>-</button>\n    </div>\n  );\n}"
+        "content": "import { useReducer } from 'react';\r\n\r\nconst initialState = { count: 0 };\r\n\r\nfunction reducer(state, action) {\r\n  switch (action.type) {\r\n    case 'increment':\r\n      return { count: state.count + 1 };\r\n    case 'decrement':\r\n      return { count: state.count - 1 };\r\n    default:\r\n      return state;\r\n  }\r\n}\r\n\r\nfunction Counter() {\r\n  const [state, dispatch] = useReducer(reducer, initialState);\r\n\r\n  return (\r\n    <div>\r\n      <p>Count: {state.count}</p>\r\n      <button onClick={() => dispatch({ type: 'increment' })}>+</button>\r\n      <button onClick={() => dispatch({ type: 'decrement' })}>-</button>\r\n    </div>\r\n  );\r\n}\r"
       },
       {
         "type": "heading",
@@ -7763,7 +7808,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "import { useCallback } from 'react';\n\nfunction MyComponent({ onClick }) {\n  return <button onClick={onClick}>Натисни</button>;\n}\n\nfunction Parent() {\n  const handleClick = useCallback(() => {\n    console.log('Клік');\n  }, []); // Функція створюється один раз\n\n  return <MyComponent onClick={handleClick} />;\n}"
+                "content": "import { useCallback } from 'react';\r\n\r\nfunction MyComponent({ onClick }) {\r\n  return <button onClick={onClick}>Натисни</button>;\r\n}\r\n\r\nfunction Parent() {\r\n  const handleClick = useCallback(() => {\r\n    console.log('Клік');\r\n  }, []); // Функція створюється один раз\r\n\r\n  return <MyComponent onClick={handleClick} />;\r\n}\r"
               }
             ]
           }
@@ -7798,7 +7843,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "import { useMemo } from \"react\";\n\nfunction ExpensiveCalculation({ num }) {\nconst result = useMemo(() => {\nconsole.log(\"Обчислення...\");\nreturn num \\* 2;\n}, [num]); // Виконується лише при зміні num\n\nreturn <div>Результат: {result}</div>;\n}"
+        "content": "import { useMemo } from \"react\";\r\n\r\nfunction ExpensiveCalculation({ num }) {\r\nconst result = useMemo(() => {\r\nconsole.log(\"Обчислення...\");\r\nreturn num \\* 2;\r\n}, [num]); // Виконується лише при зміні num\r\n\r\nreturn <div>Результат: {result}</div>;\r\n}\r"
       },
       {
         "type": "heading",
@@ -7829,7 +7874,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "import { useRef, useImperativeHandle, forwardRef } from 'react';\n\nconst CustomInput = forwardRef((props, ref) => {\n  const inputRef = useRef();\n\n  useImperativeHandle(ref, () => ({\n    focus: () => inputRef.current.focus(),\n    clear: () => (inputRef.current.value = ''),\n  }));\n\n  return <input ref={inputRef} {...props} />;\n});\n\nfunction Parent() {\n  const inputRef = useRef();\n\n  return (\n    <div>\n      <CustomInput ref={inputRef} />\n      <button onClick={() => inputRef.current.focus()}>Фокус</button>\n      <button onClick={() => inputRef.current.clear()}>Очистити</button>\n    </div>\n  );\n}"
+        "content": "import { useRef, useImperativeHandle, forwardRef } from 'react';\r\n\r\nconst CustomInput = forwardRef((props, ref) => {\r\n  const inputRef = useRef();\r\n\r\n  useImperativeHandle(ref, () => ({\r\n    focus: () => inputRef.current.focus(),\r\n    clear: () => (inputRef.current.value = ''),\r\n  }));\r\n\r\n  return <input ref={inputRef} {...props} />;\r\n});\r\n\r\nfunction Parent() {\r\n  const inputRef = useRef();\r\n\r\n  return (\r\n    <div>\r\n      <CustomInput ref={inputRef} />\r\n      <button onClick={() => inputRef.current.focus()}>Фокус</button>\r\n      <button onClick={() => inputRef.current.clear()}>Очистити</button>\r\n    </div>\r\n  );\r\n}\r"
       },
       {
         "type": "heading",
@@ -7868,7 +7913,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "import { useLayoutEffect, useRef } from 'react';\n\nfunction LayoutEffectExample() {\n  const divRef = useRef();\n\n  useLayoutEffect(() => {\n    console.log('Ширина елемента:', divRef.current.offsetWidth);\n  }, []);\n\n  return (\n    <div ref={divRef} style={{ width: '200px', height: '100px' }}>\n      Елемент\n    </div>\n  );\n}"
+                "content": "import { useLayoutEffect, useRef } from 'react';\r\n\r\nfunction LayoutEffectExample() {\r\n  const divRef = useRef();\r\n\r\n  useLayoutEffect(() => {\r\n    console.log('Ширина елемента:', divRef.current.offsetWidth);\r\n  }, []);\r\n\r\n  return (\r\n    <div ref={divRef} style={{ width: '200px', height: '100px' }}>\r\n      Елемент\r\n    </div>\r\n  );\r\n}\r"
               }
             ]
           }
@@ -7976,7 +8021,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "import { useEffect } from 'react';\n\nfunction MyComponent() {\n  useEffect(() => {\n    console.log('Це виконається лише один раз після монтування компонента');\n  }, []);\n\n  return <div>Компонент</div>;\n}"
+        "content": "import { useEffect } from 'react';\r\n\r\nfunction MyComponent() {\r\n  useEffect(() => {\r\n    console.log('Це виконається лише один раз після монтування компонента');\r\n  }, []);\r\n\r\n  return <div>Компонент</div>;\r\n}\r"
       },
       {
         "type": "heading",
@@ -8023,7 +8068,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "useEffect(() => {\n  const interval = setInterval(() => {\n    console.log('Працює одноразовий ефект');\n  }, 1000);\n\n  return () => clearInterval(interval); // Очистка при розмонтуванні\n}, []);"
+        "content": "useEffect(() => {\r\n  const interval = setInterval(() => {\r\n    console.log('Працює одноразовий ефект');\r\n  }, 1000);\r\n\r\n  return () => clearInterval(interval); // Очистка при розмонтуванні\r\n}, []);\r"
       },
       {
         "type": "paragraph",
@@ -8076,7 +8121,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "const MyContext = React.createContext(defaultValue);"
+                "content": "const MyContext = React.createContext(defaultValue);\r"
               }
             ]
           },
@@ -8093,7 +8138,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "<MyContext.Provider value={}>\n  <YourComponent />\n</MyContext.Provider>"
+                "content": "<MyContext.Provider value={}>\r\n  <YourComponent />\r\n</MyContext.Provider>\r"
               }
             ]
           },
@@ -8110,7 +8155,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "<MyContext.Consumer>\n{value => }\n</MyContext.Consumer>"
+                "content": "<MyContext.Consumer>\r\n{value => }\r\n</MyContext.Consumer>\r"
               }
             ]
           },
@@ -8127,7 +8172,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "const value = useContext(MyContext);"
+                "content": "const value = useContext(MyContext);\r"
               }
             ]
           }
@@ -8175,7 +8220,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "// Створення контексту\nconst ThemeContext = React.createContext('light');\n\n// Компонент, який надає значення контексту\nfunction App() {\n  return (\n    <ThemeContext.Provider value=\"dark\">\n      <ThemedComponent />\n    </ThemeContext.Provider>\n  );\n}\n\n// Компонент, який споживає значення контексту\nfunction ThemedComponent() {\n  const theme = useContext(ThemeContext);\n  return <div>The current theme is {theme}</div>;\n}"
+        "content": "// Створення контексту\r\nconst ThemeContext = React.createContext('light');\r\n\r\n// Компонент, який надає значення контексту\r\nfunction App() {\r\n  return (\r\n    <ThemeContext.Provider value=\"dark\">\r\n      <ThemedComponent />\r\n    </ThemeContext.Provider>\r\n  );\r\n}\r\n\r\n// Компонент, який споживає значення контексту\r\nfunction ThemedComponent() {\r\n  const theme = useContext(ThemeContext);\r\n  return <div>The current theme is {theme}</div>;\r\n}\r"
       },
       {
         "type": "heading",
@@ -8270,7 +8315,7 @@
                       {
                         "type": "code",
                         "language": "jsx",
-                        "content": "const MyContext = React.createContext();"
+                        "content": "const MyContext = React.createContext();\r"
                       }
                     ]
                   }
@@ -8291,7 +8336,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "const App = () => {\n  const [user, setUser] = useState('John Doe');\n\n  return (\n    <MyContext.Provider value={user}>\n      <Child />\n    </MyContext.Provider>\n  );\n};"
+                "content": "const App = () => {\r\n  const [user, setUser] = useState('John Doe');\r\n\r\n  return (\r\n    <MyContext.Provider value={user}>\r\n      <Child />\r\n    </MyContext.Provider>\r\n  );\r\n};\r"
               }
             ]
           },
@@ -8304,63 +8349,63 @@
               },
               {
                 "text": " Використовуємо Consumer або хук useContext для доступу до значення контексту."
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "type": "bulletList",
-        "children": [
-          {
-            "type": "listItem",
-            "children": [
-              {
-                "text": "Consumer:",
-                "bold": true
               },
               {
-                "type": "code",
-                "language": "jsx",
-                "content": "const Child = () => (\n  <MyContext.Consumer>{user => <div>{user}</div>}</MyContext.Consumer>\n);"
-              }
-            ]
-          },
-          {
-            "type": "listItem",
-            "children": [
-              {
-                "text": "useContext хук (рекомендовано в функціональних компонентах):",
-                "bold": true
-              },
-              {
-                "type": "code",
-                "language": "jsx",
-                "content": "const Child = () => {\n  const user = useContext(MyContext);\n  return <div>{user}</div>;\n};"
-              }
-            ]
-          },
-          {
-            "type": "listItem",
-            "children": [
-              {
-                "text": "Зміна контексту:",
-                "bold": true
-              },
-              {
-                "text": " Для зміни значення контексту можна використовувати функції, передані через "
-              },
-              {
-                "text": "useState",
-                "code": true
-              },
-              {
-                "text": " або інші методи управління станом."
-              },
-              {
-                "type": "code",
-                "language": "jsx",
-                "content": "const App = () => {\n  const [user, setUser] = useState('John Doe');\n\n  return (\n    <MyContext.Provider value={user}>\n      <button onClick={() => setUser('Jane Doe')}>Change User</button>\n      <Child />\n    </MyContext.Provider>\n  );\n};"
+                "type": "bulletList",
+                "children": [
+                  {
+                    "type": "listItem",
+                    "children": [
+                      {
+                        "text": "Consumer:",
+                        "bold": true
+                      },
+                      {
+                        "type": "code",
+                        "language": "jsx",
+                        "content": "const Child = () => (\r\n  <MyContext.Consumer>{user => <div>{user}</div>}</MyContext.Consumer>\r\n);\r"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "listItem",
+                    "children": [
+                      {
+                        "text": "useContext хук (рекомендовано в функціональних компонентах):",
+                        "bold": true
+                      },
+                      {
+                        "type": "code",
+                        "language": "jsx",
+                        "content": "const Child = () => {\r\n  const user = useContext(MyContext);\r\n  return <div>{user}</div>;\r\n};\r"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "listItem",
+                    "children": [
+                      {
+                        "text": "Зміна контексту:",
+                        "bold": true
+                      },
+                      {
+                        "text": " Для зміни значення контексту можна використовувати функції, передані через "
+                      },
+                      {
+                        "text": "useState",
+                        "code": true
+                      },
+                      {
+                        "text": " або інші методи управління станом."
+                      },
+                      {
+                        "type": "code",
+                        "language": "jsx",
+                        "content": "const App = () => {\r\n  const [user, setUser] = useState('John Doe');\r\n\r\n  return (\r\n    <MyContext.Provider value={user}>\r\n      <button onClick={() => setUser('Jane Doe')}>Change User</button>\r\n      <Child />\r\n    </MyContext.Provider>\r\n  );\r\n};\r"
+                      }
+                    ]
+                  }
+                ]
               }
             ]
           }
@@ -8460,7 +8505,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "const Parent = () => {\n  const user = { name: 'John' };\n  return <Child user={user} />;\n};\n\nconst Child = ({ user }) => {\n  return <GrandChild user={user} />;\n};\n\nconst GrandChild = ({ user }) => {\n  return <p>Ім'я: {user.name}</p>;\n};"
+        "content": "const Parent = () => {\r\n  const user = { name: 'John' };\r\n  return <Child user={user} />;\r\n};\r\n\r\nconst Child = ({ user }) => {\r\n  return <GrandChild user={user} />;\r\n};\r\n\r\nconst GrandChild = ({ user }) => {\r\n  return <p>Ім'я: {user.name}</p>;\r\n};\r"
       },
       {
         "type": "paragraph",
@@ -8583,7 +8628,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "import { createContext, useContext } from 'react';\n\nconst UserContext = createContext();\n\nconst Parent = () => {\n  const user = { name: 'John' };\n  return (\n    <UserContext.Provider value={user}>\n      <GrandChild />\n    </UserContext.Provider>\n  );\n};\n\nconst GrandChild = () => {\n  const user = useContext(UserContext);\n  return <p>Ім'я: {user.name}</p>;\n};"
+        "content": "import { createContext, useContext } from 'react';\r\n\r\nconst UserContext = createContext();\r\n\r\nconst Parent = () => {\r\n  const user = { name: 'John' };\r\n  return (\r\n    <UserContext.Provider value={user}>\r\n      <GrandChild />\r\n    </UserContext.Provider>\r\n  );\r\n};\r\n\r\nconst GrandChild = () => {\r\n  const user = useContext(UserContext);\r\n  return <p>Ім'я: {user.name}</p>;\r\n};\r"
       },
       {
         "type": "paragraph",
@@ -8969,12 +9014,7 @@
                 "text": "Виконувати асинхронні дії перед зміною стану."
               }
             ]
-          }
-        ]
-      },
-      {
-        "type": "numberedList",
-        "children": [
+          },
           {
             "type": "listItem",
             "children": [
@@ -9018,7 +9058,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "const fetchData = () => {\n  return async dispatch => {\n    dispatch({ type: 'FETCH_START' });\n\n    try {\n      const response = await fetch('https://api.example.com/data');\n      const data = await response.json();\n      dispatch({ type: 'FETCH_SUCCESS', payload: data });\n    } catch (error) {\n      dispatch({ type: 'FETCH_ERROR', error });\n    }\n  };\n};"
+        "content": "const fetchData = () => {\r\n  return async dispatch => {\r\n    dispatch({ type: 'FETCH_START' });\r\n\r\n    try {\r\n      const response = await fetch('https://api.example.com/data');\r\n      const data = await response.json();\r\n      dispatch({ type: 'FETCH_SUCCESS', payload: data });\r\n    } catch (error) {\r\n      dispatch({ type: 'FETCH_ERROR', error });\r\n    }\r\n  };\r\n};\r"
       },
       {
         "type": "paragraph",
@@ -9038,7 +9078,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "dispatch(fetchData());"
+        "content": "dispatch(fetchData());\r"
       },
       {
         "type": "heading",
@@ -9211,7 +9251,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "import { call, put, takeEvery } from 'redux-saga/effects';\n\nfunction* fetchData() {\n  try {\n    const response = yield call(fetch, 'https://api.example.com/data');\n    const data = yield response.json();\n    yield put({ type: 'FETCH_SUCCESS', payload: data });\n  } catch (error) {\n    yield put({ type: 'FETCH_ERROR', error });\n  }\n}"
+                "content": "import { call, put, takeEvery } from 'redux-saga/effects';\r\n\r\nfunction* fetchData() {\r\n  try {\r\n    const response = yield call(fetch, 'https://api.example.com/data');\r\n    const data = yield response.json();\r\n    yield put({ type: 'FETCH_SUCCESS', payload: data });\r\n  } catch (error) {\r\n    yield put({ type: 'FETCH_ERROR', error });\r\n  }\r\n}\r"
               }
             ]
           },
@@ -9225,7 +9265,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "function* watchFetchData() {\n  yield takeEvery('FETCH_REQUEST', fetchData);\n}"
+                "content": "function* watchFetchData() {\r\n  yield takeEvery('FETCH_REQUEST', fetchData);\r\n}\r"
               }
             ]
           },
@@ -9239,7 +9279,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "import createSagaMiddleware from 'redux-saga';\nconst sagaMiddleware = createSagaMiddleware();\nconst store = createStore(reducer, applyMiddleware(sagaMiddleware));\nsagaMiddleware.run(watchFetchData);"
+                "content": "import createSagaMiddleware from 'redux-saga';\r\nconst sagaMiddleware = createSagaMiddleware();\r\nconst store = createStore(reducer, applyMiddleware(sagaMiddleware));\r\nsagaMiddleware.run(watchFetchData);\r"
               }
             ]
           }
@@ -9375,10 +9415,7 @@
                 "bold": true
               },
               {
-                "text": " Fiber дозволяє React зберігати стан виконання рендеру, що дає можливість"
-              },
-              {
-                "text": "переривати і продовжувати рендеринг за потреби. Це важливо для великих додатків, де складні обчислення можуть уповільнювати рендеринг."
+                "text": " Fiber дозволяє React зберігати стан виконання рендеру, що дає можливість переривати і продовжувати рендеринг за потреби. Це важливо для великих додатків, де складні обчислення можуть уповільнювати рендеринг."
               }
             ]
           },
@@ -9390,10 +9427,7 @@
                 "bold": true
               },
               {
-                "text": " React Fiber підтримує асинхронний рендеринг, що дозволяє виконувати рендеринг"
-              },
-              {
-                "text": "по частинах, покращуючи відгук додатку, особливо в складних інтерфейсах. Завдяки цьому можна виконувати рендеринг без блокування головного потоку."
+                "text": " React Fiber підтримує асинхронний рендеринг, що дозволяє виконувати рендеринг по частинах, покращуючи відгук додатку, особливо в складних інтерфейсах. Завдяки цьому можна виконувати рендеринг без блокування головного потоку."
               }
             ]
           },
@@ -9405,10 +9439,7 @@
                 "bold": true
               },
               {
-                "text": " Fiber дозволяє надавати пріоритет різним типам оновлень (наприклад, рендеринг"
-              },
-              {
-                "text": "анімацій може бути високим пріоритетом, а рендеринг змін стану - низьким). Це дозволяє React управляти складними оновленнями більш ефективно."
+                "text": " Fiber дозволяє надавати пріоритет різним типам оновлень (наприклад, рендеринг анімацій може бути високим пріоритетом, а рендеринг змін стану - низьким). Це дозволяє React управляти складними оновленнями більш ефективно."
               }
             ]
           },
@@ -9420,10 +9451,7 @@
                 "bold": true
               },
               {
-                "text": " У старих версіях React всі зміни оброблялись в одному кроці. Fiber розбиває"
-              },
-              {
-                "text": "рендеринг на дрібніші підзадачі, що дозволяє React виконувати роботу поетапно і дає змогу обробляти інші важливі операції (наприклад, обробку подій) між етапами."
+                "text": " У старих версіях React всі зміни оброблялись в одному кроці. Fiber розбиває рендеринг на дрібніші підзадачі, що дозволяє React виконувати роботу поетапно і дає змогу обробляти інші важливі операції (наприклад, обробку подій) між етапами."
               }
             ]
           },
@@ -9435,17 +9463,9 @@
                 "bold": true
               },
               {
-                "text": " Завдяки асинхронному рендерингу, React може більш ефективно керувати"
+                "text": " Завдяки асинхронному рендерингу, React може більш ефективно керувати анімаціями, що робить переходи між станами плавними та без затримок."
               }
             ]
-          }
-        ]
-      },
-      {
-        "type": "paragraph",
-        "children": [
-          {
-            "text": "анімаціями, що робить переходи між станами плавними та без затримок."
           }
         ]
       },
@@ -9657,7 +9677,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "import React, { useState } from 'react';\n\nfunction TemperatureInput({ temperature, onTemperatureChange }) {\n  return (\n    <fieldset>\n      <legend>Enter temperature in Celsius:</legend>\n      <input\n        type=\"number\"\n        value={temperature}\n        onChange={e => onTemperatureChange(e.target.value)}\n      />\n    </fieldset>\n  );\n}\n\nfunction BoilingVerdict({ celsius }) {\n  return celsius >= 100 ? (\n    <p>The water will boil.</p>\n  ) : (\n    <p>The water won't boil.</p>\n  );\n}\n\nfunction Calculator() {\n  const [temperature, setTemperature] = useState('');\n\n  return (\n    <div>\n      <TemperatureInput\n        temperature={temperature}\n        onTemperatureChange={setTemperature}\n      />\n      <BoilingVerdict celsius={parseFloat(temperature)} />\n    </div>\n  );\n}\n\nexport default Calculator;"
+        "content": "import React, { useState } from 'react';\r\n\r\nfunction TemperatureInput({ temperature, onTemperatureChange }) {\r\n  return (\r\n    <fieldset>\r\n      <legend>Enter temperature in Celsius:</legend>\r\n      <input\r\n        type=\"number\"\r\n        value={temperature}\r\n        onChange={e => onTemperatureChange(e.target.value)}\r\n      />\r\n    </fieldset>\r\n  );\r\n}\r\n\r\nfunction BoilingVerdict({ celsius }) {\r\n  return celsius >= 100 ? (\r\n    <p>The water will boil.</p>\r\n  ) : (\r\n    <p>The water won't boil.</p>\r\n  );\r\n}\r\n\r\nfunction Calculator() {\r\n  const [temperature, setTemperature] = useState('');\r\n\r\n  return (\r\n    <div>\r\n      <TemperatureInput\r\n        temperature={temperature}\r\n        onTemperatureChange={setTemperature}\r\n      />\r\n      <BoilingVerdict celsius={parseFloat(temperature)} />\r\n    </div>\r\n  );\r\n}\r\n\r\nexport default Calculator;\r"
       },
       {
         "type": "heading",
@@ -9811,7 +9831,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "import React, { useState } from 'react';\n\nfunction ControlledForm() {\n  const [inputValue, setInputValue] = useState('');\n\n  const handleChange = event => {\n    setInputValue(event.target.value); // Оновлюємо стан\n  };\n\n  const handleSubmit = event => {\n    event.preventDefault();\n    console.log('Submitted value:', inputValue);\n  };\n\n  return (\n    <form onSubmit={handleSubmit}>\n      <label>\n        Enter text:\n        <input\n          type=\"text\"\n          value={inputValue} // Значення контролюється state\n          onChange={handleChange} // Обробка змін\n        />\n      </label>\n      <button type=\"submit\">Submit</button>\n    </form>\n  );\n}\n\nexport default ControlledForm;"
+        "content": "import React, { useState } from 'react';\r\n\r\nfunction ControlledForm() {\r\n  const [inputValue, setInputValue] = useState('');\r\n\r\n  const handleChange = event => {\r\n    setInputValue(event.target.value); // Оновлюємо стан\r\n  };\r\n\r\n  const handleSubmit = event => {\r\n    event.preventDefault();\r\n    console.log('Submitted value:', inputValue);\r\n  };\r\n\r\n  return (\r\n    <form onSubmit={handleSubmit}>\r\n      <label>\r\n        Enter text:\r\n        <input\r\n          type=\"text\"\r\n          value={inputValue} // Значення контролюється state\r\n          onChange={handleChange} // Обробка змін\r\n        />\r\n      </label>\r\n      <button type=\"submit\">Submit</button>\r\n    </form>\r\n  );\r\n}\r\n\r\nexport default ControlledForm;\r"
       },
       {
         "type": "heading",
@@ -9919,7 +9939,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "function UncontrolledForm() {\n  const inputRef = React.useRef();\n\n  const handleSubmit = event => {\n    event.preventDefault();\n    console.log('Submitted value:', inputRef.current.value);\n  };\n\n  return (\n    <form onSubmit={handleSubmit}>\n      <label>\n        Enter text:\n        <input type=\"text\" ref={inputRef} />\n      </label>\n      <button type=\"submit\">Submit</button>\n    </form>\n  );\n}"
+        "content": "function UncontrolledForm() {\r\n  const inputRef = React.useRef();\r\n\r\n  const handleSubmit = event => {\r\n    event.preventDefault();\r\n    console.log('Submitted value:', inputRef.current.value);\r\n  };\r\n\r\n  return (\r\n    <form onSubmit={handleSubmit}>\r\n      <label>\r\n        Enter text:\r\n        <input type=\"text\" ref={inputRef} />\r\n      </label>\r\n      <button type=\"submit\">Submit</button>\r\n    </form>\r\n  );\r\n}\r"
       },
       {
         "type": "paragraph",
@@ -10021,7 +10041,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "import React, { useRef } from 'react';\n\nfunction UncontrolledForm() {\n  const inputRef = useRef(null);\n\n  const handleSubmit = event => {\n    event.preventDefault();\n    alert(`Введене значення: ${inputRef.current.value}`);\n  };\n\n  return (\n    <form onSubmit={handleSubmit}>\n      <label>\n        Ім'я:\n        <input type=\"text\" ref={inputRef} />\n      </label>\n      <button type=\"submit\">Відправити</button>\n    </form>\n  );\n}\n\nexport default UncontrolledForm;"
+        "content": "import React, { useRef } from 'react';\r\n\r\nfunction UncontrolledForm() {\r\n  const inputRef = useRef(null);\r\n\r\n  const handleSubmit = event => {\r\n    event.preventDefault();\r\n    alert(`Введене значення: ${inputRef.current.value}`);\r\n  };\r\n\r\n  return (\r\n    <form onSubmit={handleSubmit}>\r\n      <label>\r\n        Ім'я:\r\n        <input type=\"text\" ref={inputRef} />\r\n      </label>\r\n      <button type=\"submit\">Відправити</button>\r\n    </form>\r\n  );\r\n}\r\n\r\nexport default UncontrolledForm;\r"
       },
       {
         "type": "heading",
@@ -10209,7 +10229,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "import React, { useState } from 'react';\n\nfunction ControlledForm() {\n  const [name, setName] = useState('');\n  const [email, setEmail] = useState('');\n\n  const handleSubmit = e => {\n    e.preventDefault();\n    console.log('Submitted:', { name, email });\n  };\n\n  return (\n    <form onSubmit={handleSubmit}>\n      <label>\n        Name:\n        <input\n          type=\"text\"\n          value={name}\n          onChange={e => setName(e.target.value)}\n        />\n      </label>\n      <br />\n      <label>\n        Email:\n        <input\n          type=\"email\"\n          value={email}\n          onChange={e => setEmail(e.target.value)}\n        />\n      </label>\n      <br />\n      <button type=\"submit\">Submit</button>\n    </form>\n  );\n}\n\nexport default ControlledForm;"
+        "content": "import React, { useState } from 'react';\r\n\r\nfunction ControlledForm() {\r\n  const [name, setName] = useState('');\r\n  const [email, setEmail] = useState('');\r\n\r\n  const handleSubmit = e => {\r\n    e.preventDefault();\r\n    console.log('Submitted:', { name, email });\r\n  };\r\n\r\n  return (\r\n    <form onSubmit={handleSubmit}>\r\n      <label>\r\n        Name:\r\n        <input\r\n          type=\"text\"\r\n          value={name}\r\n          onChange={e => setName(e.target.value)}\r\n        />\r\n      </label>\r\n      <br />\r\n      <label>\r\n        Email:\r\n        <input\r\n          type=\"email\"\r\n          value={email}\r\n          onChange={e => setEmail(e.target.value)}\r\n        />\r\n      </label>\r\n      <br />\r\n      <button type=\"submit\">Submit</button>\r\n    </form>\r\n  );\r\n}\r\n\r\nexport default ControlledForm;\r"
       },
       {
         "type": "heading",
@@ -10284,7 +10304,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "import React, { useRef } from 'react';\n\nfunction UncontrolledForm() {\n  const nameRef = useRef();\n  const emailRef = useRef();\n\n  const handleSubmit = e => {\n    e.preventDefault();\n    console.log('Submitted:', {\n      name: nameRef.current.value,\n      email: emailRef.current.value,\n    });\n  };\n\n  return (\n    <form onSubmit={handleSubmit}>\n      <label>\n        Name:\n        <input type=\"text\" ref={nameRef} />\n      </label>\n      <br />\n      <label>\n        Email:\n        <input type=\"email\" ref={emailRef} />\n      </label>\n      <br />\n      <button type=\"submit\">Submit</button>\n    </form>\n  );\n}\n\nexport default UncontrolledForm;"
+        "content": "import React, { useRef } from 'react';\r\n\r\nfunction UncontrolledForm() {\r\n  const nameRef = useRef();\r\n  const emailRef = useRef();\r\n\r\n  const handleSubmit = e => {\r\n    e.preventDefault();\r\n    console.log('Submitted:', {\r\n      name: nameRef.current.value,\r\n      email: emailRef.current.value,\r\n    });\r\n  };\r\n\r\n  return (\r\n    <form onSubmit={handleSubmit}>\r\n      <label>\r\n        Name:\r\n        <input type=\"text\" ref={nameRef} />\r\n      </label>\r\n      <br />\r\n      <label>\r\n        Email:\r\n        <input type=\"email\" ref={emailRef} />\r\n      </label>\r\n      <br />\r\n      <button type=\"submit\">Submit</button>\r\n    </form>\r\n  );\r\n}\r\n\r\nexport default UncontrolledForm;\r"
       },
       {
         "type": "heading",
@@ -10371,34 +10391,34 @@
               {
                 "text": "Некерована форма:",
                 "bold": true
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "type": "bulletList",
-        "children": [
-          {
-            "type": "listItem",
-            "children": [
-              {
-                "text": "Використовує "
               },
               {
-                "text": "ref",
-                "code": true
-              },
-              {
-                "text": "."
-              }
-            ]
-          },
-          {
-            "type": "listItem",
-            "children": [
-              {
-                "text": "Простий підхід без складної логіки управління станом."
+                "type": "bulletList",
+                "children": [
+                  {
+                    "type": "listItem",
+                    "children": [
+                      {
+                        "text": "Використовує "
+                      },
+                      {
+                        "text": "ref",
+                        "code": true
+                      },
+                      {
+                        "text": "."
+                      }
+                    ]
+                  },
+                  {
+                    "type": "listItem",
+                    "children": [
+                      {
+                        "text": "Простий підхід без складної логіки управління станом."
+                      }
+                    ]
+                  }
+                ]
               }
             ]
           }
@@ -10446,7 +10466,7 @@
               {
                 "type": "code",
                 "language": "sh",
-                "content": "npm install prop-types"
+                "content": "npm install prop-types\r"
               }
             ]
           },
@@ -10460,7 +10480,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "import React from 'react';\nimport PropTypes from 'prop-types';\n\nfunction UserCard({ name, age, isAdmin }) {\n  return (\n    <div>\n      <h2>{name}</h2>\n      <p>Age: {age}</p>\n      {isAdmin && <p>Admin Access</p>}\n    </div>\n  );\n}\n\n// Визначення PropTypes\nUserCard.propTypes = {\n  name: PropTypes.string.isRequired,\n  age: PropTypes.number,\n  isAdmin: PropTypes.bool,\n};\n\n// Значення за замовчуванням\nUserCard.defaultProps = {\n  age: 18,\n  isAdmin: false,\n};\n\nexport default UserCard;"
+                "content": "import React from 'react';\r\nimport PropTypes from 'prop-types';\r\n\r\nfunction UserCard({ name, age, isAdmin }) {\r\n  return (\r\n    <div>\r\n      <h2>{name}</h2>\r\n      <p>Age: {age}</p>\r\n      {isAdmin && <p>Admin Access</p>}\r\n    </div>\r\n  );\r\n}\r\n\r\n// Визначення PropTypes\r\nUserCard.propTypes = {\r\n  name: PropTypes.string.isRequired,\r\n  age: PropTypes.number,\r\n  isAdmin: PropTypes.bool,\r\n};\r\n\r\n// Значення за замовчуванням\r\nUserCard.defaultProps = {\r\n  age: 18,\r\n  isAdmin: false,\r\n};\r\n\r\nexport default UserCard;\r"
               }
             ]
           },
@@ -10474,7 +10494,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "import React from 'react';\nimport PropTypes from 'prop-types';\n\nclass UserCard extends React.Component {\n  render() {\n    const { name, age, isAdmin } = this.props;\n    return (\n      <div>\n        <h2>{name}</h2>\n        <p>Age: {age}</p>\n        {isAdmin && <p>Admin Access</p>}\n      </div>\n    );\n  }\n}\n\n// Визначення PropTypes\nUserCard.propTypes = {\n  name: PropTypes.string.isRequired,\n  age: PropTypes.number,\n  isAdmin: PropTypes.bool,\n};\n\n// Значення за замовчуванням\nUserCard.defaultProps = {\n  age: 18,\n  isAdmin: false,\n};\n\nexport default UserCard;"
+                "content": "import React from 'react';\r\nimport PropTypes from 'prop-types';\r\n\r\nclass UserCard extends React.Component {\r\n  render() {\r\n    const { name, age, isAdmin } = this.props;\r\n    return (\r\n      <div>\r\n        <h2>{name}</h2>\r\n        <p>Age: {age}</p>\r\n        {isAdmin && <p>Admin Access</p>}\r\n      </div>\r\n    );\r\n  }\r\n}\r\n\r\n// Визначення PropTypes\r\nUserCard.propTypes = {\r\n  name: PropTypes.string.isRequired,\r\n  age: PropTypes.number,\r\n  isAdmin: PropTypes.bool,\r\n};\r\n\r\n// Значення за замовчуванням\r\nUserCard.defaultProps = {\r\n  age: 18,\r\n  isAdmin: false,\r\n};\r\n\r\nexport default UserCard;\r"
               }
             ]
           }
@@ -10804,7 +10824,7 @@
                 "code": true
               },
               {
-                "text": " або"
+                "text": " або "
               },
               {
                 "text": "children",
@@ -10820,7 +10840,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "import { Route } from 'react-router-dom';\n\n<Route path=\"/profile\" render={props => <Profile {...props} user=\"John\" />} />;"
+                "content": "import { Route } from 'react-router-dom';\r\n\r\n<Route path=\"/profile\" render={props => <Profile {...props} user=\"John\" />} />;\r"
               },
               {
                 "text": "Тут ми передаємо додаткові пропси до компонента "
@@ -10858,7 +10878,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "import { useNavigate } from 'react-router-dom';\n\nfunction Home() {\n  const navigate = useNavigate();\n\n  function goToProfile() {\n    navigate('/profile', { state: { user: 'John' } });\n  }\n\n  return <button onClick={goToProfile}>Go to Profile</button>;\n}"
+                "content": "import { useNavigate } from 'react-router-dom';\r\n\r\nfunction Home() {\r\n  const navigate = useNavigate();\r\n\r\n  function goToProfile() {\r\n    navigate('/profile', { state: { user: 'John' } });\r\n  }\r\n\r\n  return <button onClick={goToProfile}>Go to Profile</button>;\r\n}\r"
               },
               {
                 "text": "Отримання пропсів у компоненті:",
@@ -10867,7 +10887,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "import { useLocation } from 'react-router-dom';\n\nfunction Profile() {\n  const location = useLocation();\n  const user = location.state?.user;\n\n  return <div>Welcome, {user}</div>;\n}"
+                "content": "import { useLocation } from 'react-router-dom';\r\n\r\nfunction Profile() {\r\n  const location = useLocation();\r\n  const user = location.state?.user;\r\n\r\n  return <div>Welcome, {user}</div>;\r\n}\r"
               }
             ]
           },
@@ -10904,7 +10924,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "import { useParams } from 'react-router-dom';\n\nfunction Profile() {\n  const { id } = useParams();\n\n  return <div>User ID: {id}</div>;\n}"
+        "content": "import { useParams } from 'react-router-dom';\r\n\r\nfunction Profile() {\r\n  const { id } = useParams();\r\n\r\n  return <div>User ID: {id}</div>;\r\n}\r"
       },
       {
         "type": "heading",
@@ -11008,7 +11028,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "function InlineStyle() {\n  const style = {\n    color: 'blue',\n    fontSize: '20px',\n  };\n\n  return <h1 style={style}>Привіт, React!</h1>;\n}"
+                "content": "function InlineStyle() {\r\n  const style = {\r\n    color: 'blue',\r\n    fontSize: '20px',\r\n  };\r\n\r\n  return <h1 style={style}>Привіт, React!</h1>;\r\n}\r"
               }
             ]
           },
@@ -11025,12 +11045,12 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "import './styles.css';\n\nfunction CSSFile() {\n  return <h1 className=\"heading\">Привіт, React!</h1>;\n}"
+                "content": "import './styles.css';\r\n\r\nfunction CSSFile() {\r\n  return <h1 className=\"heading\">Привіт, React!</h1>;\r\n}\r"
               },
               {
                 "type": "code",
                 "language": "css",
-                "content": "Копіювати\nРедагувати\n/* styles.css */\n.heading {\n  color: blue;\n  font-size: 20px;\n}"
+                "content": "Копіювати\r\nРедагувати\r\n/* styles.css */\r\n.heading {\r\n  color: blue;\r\n  font-size: 20px;\r\n}\r"
               }
             ]
           },
@@ -11047,12 +11067,12 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "import styles from './styles.module.css';\n\nfunction CSSModule() {\n  return <h1 className={styles.heading}>Привіт, React!</h1>;\n}"
+                "content": "import styles from './styles.module.css';\r\n\r\nfunction CSSModule() {\r\n  return <h1 className={styles.heading}>Привіт, React!</h1>;\r\n}\r"
               },
               {
                 "type": "code",
                 "language": "css",
-                "content": "/* styles.module.css */\n.heading {\n  color: blue;\n  font-size: 20px;\n}"
+                "content": "/* styles.module.css */\r\n.heading {\r\n  color: blue;\r\n  font-size: 20px;\r\n}\r"
               }
             ]
           },
@@ -11069,12 +11089,12 @@
               {
                 "type": "code",
                 "language": "bash",
-                "content": "npm install styled-components"
+                "content": "npm install styled-components\r"
               },
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "import styled from 'styled-components';\n\nconst Heading = styled.h1`\n  color: blue;\n  font-size: 20px;\n`;\n\nfunction StyledComponent() {\n  return <Heading>Привіт, React!</Heading>;\n}"
+                "content": "import styled from 'styled-components';\r\n\r\nconst Heading = styled.h1`\r\n  color: blue;\r\n  font-size: 20px;\r\n`;\r\n\r\nfunction StyledComponent() {\r\n  return <Heading>Привіт, React!</Heading>;\r\n}\r"
               }
             ]
           },
@@ -11091,15 +11111,20 @@
               {
                 "type": "code",
                 "language": "bash",
-                "content": "npm install @emotion/react @emotion/styled"
-              },
-              {
-                "type": "code",
-                "language": "jsx",
-                "content": "/**_ @jsxImportSource @emotion/react */\nimport { css } from '@emotion/react';\n\nconst style = css`\n  color: blue;\n  font-size: 20px;\n`;\n\nfunction EmotionStyle() {\n  return <h1 css={style}>Привіт, React!</h1>;\n}"
+                "content": "npm install @emotion/react @emotion/styled\r"
               }
             ]
-          },
+          }
+        ]
+      },
+      {
+        "type": "code",
+        "language": "jsx",
+        "content": "/**_ @jsxImportSource @emotion/react */\r\nimport { css } from '@emotion/react';\r\n\r\nconst style = css`\r\n  color: blue;\r\n  font-size: 20px;\r\n`;\r\n\r\nfunction EmotionStyle() {\r\n  return <h1 css={style}>Привіт, React!</h1>;\r\n}\r"
+      },
+      {
+        "type": "numberedList",
+        "children": [
           {
             "type": "listItem",
             "children": [
@@ -11113,7 +11138,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "function CSSInJS({ isBlue }) {\n  const style = {\n    color: isBlue ? 'blue' : 'red',\n    fontSize: '20px',\n  };\n\n  return <h1 style={style}>Привіт, React!</h1>;\n}"
+                "content": "function CSSInJS({ isBlue }) {\r\n  const style = {\r\n    color: isBlue ? 'blue' : 'red',\r\n    fontSize: '20px',\r\n  };\r\n\r\n  return <h1 style={style}>Привіт, React!</h1>;\r\n}\r"
               }
             ]
           },
@@ -11130,7 +11155,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "function TailwindExample() {\n  return <h1 className=\"text-blue-500 text-2xl\">Привіт, React!</h1>;\n}"
+                "content": "function TailwindExample() {\r\n  return <h1 className=\"text-blue-500 text-2xl\">Привіт, React!</h1>;\r\n}\r"
               },
               {
                 "text": "Налаштування Tailwind CSS:",
@@ -11154,7 +11179,7 @@
               {
                 "type": "code",
                 "language": "bash",
-                "content": "npm install sass"
+                "content": "npm install sass\r"
               }
             ]
           }
@@ -11163,12 +11188,12 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "import './styles.scss';\n\nfunction SCSSExample() {\n  return <h1 className=\"heading\">Привіт, React!</h1>;\n}"
+        "content": "import './styles.scss';\r\n\r\nfunction SCSSExample() {\r\n  return <h1 className=\"heading\">Привіт, React!</h1>;\r\n}\r"
       },
       {
         "type": "code",
         "language": "scss",
-        "content": "/* styles.scss */\n.heading {\n  color: blue;\n  font-size: 20px;\n}"
+        "content": "/* styles.scss */\r\n.heading {\r\n  color: blue;\r\n  font-size: 20px;\r\n}\r"
       },
       {
         "type": "heading",
@@ -11402,12 +11427,22 @@
               {
                 "text": "Оптимізація рендерингу списків:",
                 "bold": true
-              },
-              {
-                "text": "Завжди використовуйте унікальний key для елементів у списках. Уникайте повторного рендерингу компонентів без потреби."
               }
             ]
-          },
+          }
+        ]
+      },
+      {
+        "type": "paragraph",
+        "children": [
+          {
+            "text": "Завжди використовуйте унікальний key для елементів у списках. Уникайте повторного рендерингу компонентів без потреби."
+          }
+        ]
+      },
+      {
+        "type": "numberedList",
+        "children": [
           {
             "type": "listItem",
             "children": [
@@ -11788,48 +11823,48 @@
               {
                 "text": "Оптимізація CSS та стилів:",
                 "bold": true
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "type": "bulletList",
-        "children": [
-          {
-            "type": "listItem",
-            "children": [
-              {
-                "text": "Використовуйте "
               },
               {
-                "text": "CSS-in-JS",
-                "code": true
-              },
-              {
-                "text": " рішення (наприклад, "
-              },
-              {
-                "text": "styled-components",
-                "code": true
-              },
-              {
-                "text": ") тільки там, де це необхідно."
-              }
-            ]
-          },
-          {
-            "type": "listItem",
-            "children": [
-              {
-                "text": "Стискайте стилі за допомогою "
-              },
-              {
-                "text": "PostCSS",
-                "code": true
-              },
-              {
-                "text": " або інших інструментів."
+                "type": "bulletList",
+                "children": [
+                  {
+                    "type": "listItem",
+                    "children": [
+                      {
+                        "text": "Використовуйте "
+                      },
+                      {
+                        "text": "CSS-in-JS",
+                        "code": true
+                      },
+                      {
+                        "text": " рішення (наприклад, "
+                      },
+                      {
+                        "text": "styled-components",
+                        "code": true
+                      },
+                      {
+                        "text": ") тільки там, де це необхідно."
+                      }
+                    ]
+                  },
+                  {
+                    "type": "listItem",
+                    "children": [
+                      {
+                        "text": "Стискайте стилі за допомогою "
+                      },
+                      {
+                        "text": "PostCSS",
+                        "code": true
+                      },
+                      {
+                        "text": " або інших інструментів."
+                      }
+                    ]
+                  }
+                ]
               }
             ]
           }
@@ -12068,7 +12103,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "function Counter() {\n  const [count, setCount] = useState(0);\n\n  function increment() {\n    setCount(count + 1);\n    setCount(count + 1);\n  }\n\n  return <button onClick={increment}>{count}</button>;\n}"
+        "content": "function Counter() {\r\n  const [count, setCount] = useState(0);\r\n\r\n  function increment() {\r\n    setCount(count + 1);\r\n    setCount(count + 1);\r\n  }\r\n\r\n  return <button onClick={increment}>{count}</button>;\r\n}\r"
       },
       {
         "type": "paragraph",
@@ -12104,7 +12139,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "function Counter() {\n  const [count, setCount] = useState(0);\n\n  function increment() {\n    setCount(prevCount => prevCount + 1);\n    setCount(prevCount => prevCount + 1);\n  }\n\n  return <button onClick={increment}>{count}</button>;\n}"
+        "content": "function Counter() {\r\n  const [count, setCount] = useState(0);\r\n\r\n  function increment() {\r\n    setCount(prevCount => prevCount + 1);\r\n    setCount(prevCount => prevCount + 1);\r\n  }\r\n\r\n  return <button onClick={increment}>{count}</button>;\r\n}\r"
       },
       {
         "type": "paragraph",
@@ -12165,7 +12200,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "const myRef = React.createRef();"
+                "content": "const myRef = React.createRef();\r"
               }
             ]
           },
@@ -12189,7 +12224,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "<input ref={myRef} />"
+                "content": "<input ref={myRef} />\r"
               }
             ]
           },
@@ -12213,7 +12248,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "myRef.current.focus();"
+                "content": "myRef.current.focus();\r"
               }
             ]
           },
@@ -12242,7 +12277,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "const inputRef = useRef();\ninputRef.current.focus();"
+                "content": "const inputRef = useRef();\r\ninputRef.current.focus();\r"
               }
             ]
           }
@@ -12286,7 +12321,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "const MyComponent = () => {\n  const htmlContent = '<p>Це <strong>HTML</strong> контент.</p>';\n\n  return <div dangerouslySetInnerHTML={{ __html: htmlContent }} />;\n};"
+        "content": "const MyComponent = () => {\r\n  const htmlContent = '<p>Це <strong>HTML</strong> контент.</p>';\r\n\r\n  return <div dangerouslySetInnerHTML={{ __html: htmlContent }} />;\r\n};\r"
       },
       {
         "type": "heading",
@@ -12401,7 +12436,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "import DOMPurify from 'dompurify';\n\nconst MyComponent = () => {\n  const dirtyHtml = \"<img src=x onerror=alert('XSS')>\";\n  const cleanHtml = DOMPurify.sanitize(dirtyHtml);\n\n  return <div dangerouslySetInnerHTML={{ __html: cleanHtml }} />;\n};"
+        "content": "import DOMPurify from 'dompurify';\r\n\r\nconst MyComponent = () => {\r\n  const dirtyHtml = \"<img src=x onerror=alert('XSS')>\";\r\n  const cleanHtml = DOMPurify.sanitize(dirtyHtml);\r\n\r\n  return <div dangerouslySetInnerHTML={{ __html: cleanHtml }} />;\r\n};\r"
       },
       {
         "type": "paragraph",
@@ -12461,7 +12496,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "import ReactDOMServer from 'react-dom/server';\nconst html = ReactDOMServer.renderToString(<App />);"
+                "content": "import ReactDOMServer from 'react-dom/server';\r\nconst html = ReactDOMServer.renderToString(<App />);\r"
               }
             ]
           },
@@ -12478,7 +12513,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "const html = ReactDOMServer.renderToStaticMarkup(<App />);"
+                "content": "const html = ReactDOMServer.renderToStaticMarkup(<App />);\r"
               }
             ]
           },
@@ -12495,7 +12530,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "ReactDOM.hydrate(<App />, document.getElementById('root'));"
+                "content": "ReactDOM.hydrate(<App />, document.getElementById('root'));\r"
               }
             ]
           }
@@ -12591,7 +12626,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "ReactDOM.render(<App />, document.getElementById('root'));"
+                "content": "ReactDOM.render(<App />, document.getElementById('root'));\r"
               }
             ]
           },
@@ -12608,7 +12643,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "ReactDOM.hydrate(<App />, document.getElementById('root'));"
+                "content": "ReactDOM.hydrate(<App />, document.getElementById('root'));\r"
               }
             ]
           },
@@ -12625,7 +12660,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "ReactDOM.createPortal(<Modal />, document.getElementById('modal-root'));"
+                "content": "ReactDOM.createPortal(<Modal />, document.getElementById('modal-root'));\r"
               }
             ]
           },
@@ -12642,7 +12677,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "ReactDOM.unmountComponentAtNode(document.getElementById('root'));"
+                "content": "ReactDOM.unmountComponentAtNode(document.getElementById('root'));\r"
               }
             ]
           },
@@ -12655,19 +12690,19 @@
               },
               {
                 "text": " Дає доступ до реального DOM елемента компонента (рідко використовується, бо є більш сучасні підходи через рефи)."
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "type": "bulletList",
-        "children": [
-          {
-            "type": "listItem",
-            "children": [
+              },
               {
-                "text": "Цей пакет необхідний для роботи з реальним DOM, але в більшості випадків, після початкової установки, вам не потрібно вручну викликати ці методи, оскільки вони автоматично використовуються за допомогою інструментів для компіляції та рендерингу."
+                "type": "bulletList",
+                "children": [
+                  {
+                    "type": "listItem",
+                    "children": [
+                      {
+                        "text": "Цей пакет необхідний для роботи з реальним DOM, але в більшості випадків, після початкової установки, вам не потрібно вручну викликати ці методи, оскільки вони автоматично використовуються за допомогою інструментів для компіляції та рендерингу."
+                      }
+                    ]
+                  }
+                ]
               }
             ]
           }
@@ -12775,7 +12810,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "// Динамічно завантажуваний компонент\nconst MyComponent = React.lazy(() => import('./MyComponent'));"
+                "content": "// Динамічно завантажуваний компонент\r\nconst MyComponent = React.lazy(() => import('./MyComponent'));\r"
               }
             ]
           },
@@ -12794,15 +12829,12 @@
                 "code": true
               },
               {
-                "text": ", щоб показати лоадер під час"
-              },
-              {
-                "text": "завантаження компонента."
+                "text": ", щоб показати лоадер під час завантаження компонента."
               },
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "function App() {\n  return (\n    <div>\n      <h1>Моя програма</h1>\n\n      {/* Обгортка для динамічно завантажуваних компонентів */}\n      <React.Suspense fallback={<div>Завантаження...</div>}>\n        <MyComponent />\n      </React.Suspense>\n    </div>\n  );\n}"
+                "content": "function App() {\r\n  return (\r\n    <div>\r\n      <h1>Моя програма</h1>\r\n\r\n      {/* Обгортка для динамічно завантажуваних компонентів */}\r\n      <React.Suspense fallback={<div>Завантаження...</div>}>\r\n        <MyComponent />\r\n      </React.Suspense>\r\n    </div>\r\n  );\r\n}\r"
               }
             ]
           },
@@ -12812,35 +12844,35 @@
               {
                 "text": "Опис:",
                 "bold": true
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "type": "bulletList",
-        "children": [
-          {
-            "type": "listItem",
-            "children": [
-              {
-                "text": "React.lazy()",
-                "code": true
               },
               {
-                "text": " приймає функцію, яка динамічно імпортує модуль."
-              }
-            ]
-          },
-          {
-            "type": "listItem",
-            "children": [
-              {
-                "text": "React.Suspense",
-                "code": true
-              },
-              {
-                "text": " обгортатиме компонент, що використовує React.lazy(), і покаже запасний контент (в даному випадку, текст \"Завантаження...\"), поки компонент не завантажиться."
+                "type": "bulletList",
+                "children": [
+                  {
+                    "type": "listItem",
+                    "children": [
+                      {
+                        "text": "React.lazy()",
+                        "code": true
+                      },
+                      {
+                        "text": " приймає функцію, яка динамічно імпортує модуль."
+                      }
+                    ]
+                  },
+                  {
+                    "type": "listItem",
+                    "children": [
+                      {
+                        "text": "React.Suspense",
+                        "code": true
+                      },
+                      {
+                        "text": " обгортатиме компонент, що використовує React.lazy(), і покаже запасний контент (в даному випадку, текст \"Завантаження...\"), поки компонент не завантажиться."
+                      }
+                    ]
+                  }
+                ]
               }
             ]
           }
@@ -13210,40 +13242,40 @@
               {
                 "text": "Захист від Clickjacking:",
                 "bold": true
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "type": "bulletList",
-        "children": [
-          {
-            "type": "listItem",
-            "children": [
-              {
-                "text": "Використовуйте заголовки "
               },
               {
-                "text": "X-Frame-Options",
-                "code": true
-              },
-              {
-                "text": " або "
-              },
-              {
-                "text": "Content-Security-Policy",
-                "code": true
-              },
-              {
-                "text": " для запобігання вашому сайту бути вбудованим в "
-              },
-              {
-                "text": "<iframe>",
-                "code": true
-              },
-              {
-                "text": " на інших веб-сайтах."
+                "type": "bulletList",
+                "children": [
+                  {
+                    "type": "listItem",
+                    "children": [
+                      {
+                        "text": "Використовуйте заголовки "
+                      },
+                      {
+                        "text": "X-Frame-Options",
+                        "code": true
+                      },
+                      {
+                        "text": " або "
+                      },
+                      {
+                        "text": "Content-Security-Policy",
+                        "code": true
+                      },
+                      {
+                        "text": " для запобігання вашому сайту бути вбудованим в "
+                      },
+                      {
+                        "text": "<iframe>",
+                        "code": true
+                      },
+                      {
+                        "text": " на інших веб-сайтах."
+                      }
+                    ]
+                  }
+                ]
               }
             ]
           }
@@ -13359,7 +13391,7 @@
                       {
                         "type": "code",
                         "language": "jsx",
-                        "content": "class ErrorBoundary extends React.Component {\n  constructor(props) {\n    super(props);\n    this.state = { hasError: false, error: null };\n  }\n\n  static getDerivedStateFromError(error) {\n    // Оновлюємо стан, щоб показати запасний UI\n    return { hasError: true, error };\n  }\n\n  componentDidCatch(error, info) {\n    // Логіка для реєстрації помилок (наприклад, на сервер)\n    console.error('Error caught:', error, info);\n  }\n\n  render() {\n    if (this.state.hasError) {\n      // Показуємо запасний UI, якщо сталася помилка\n      return <h1>Щось пішло не так.</h1>;\n    }\n\n    return this.props.children;\n  }\n}"
+                        "content": "class ErrorBoundary extends React.Component {\r\n  constructor(props) {\r\n    super(props);\r\n    this.state = { hasError: false, error: null };\r\n  }\r\n\r\n  static getDerivedStateFromError(error) {\r\n    // Оновлюємо стан, щоб показати запасний UI\r\n    return { hasError: true, error };\r\n  }\r\n\r\n  componentDidCatch(error, info) {\r\n    // Логіка для реєстрації помилок (наприклад, на сервер)\r\n    console.error('Error caught:', error, info);\r\n  }\r\n\r\n  render() {\r\n    if (this.state.hasError) {\r\n      // Показуємо запасний UI, якщо сталася помилка\r\n      return <h1>Щось пішло не так.</h1>;\r\n    }\r\n\r\n    return this.props.children;\r\n  }\r\n}\r"
                       }
                     ]
                   }
@@ -13387,7 +13419,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "const App = () => {\n  return (\n    <ErrorBoundary>\n      <MyComponent />\n    </ErrorBoundary>\n  );\n};"
+                "content": "const App = () => {\r\n  return (\r\n    <ErrorBoundary>\r\n      <MyComponent />\r\n    </ErrorBoundary>\r\n  );\r\n};\r"
               }
             ]
           },
@@ -13520,7 +13552,7 @@
       {
         "type": "code",
         "language": "js",
-        "content": "class Parent {\n  method() {\n    throw new Error('Метод має бути реалізований у нащадку');\n  }\n}\n\nclass Child extends Parent {\n  method() {\n    return 'Реалізація в нащадку';\n  }\n}"
+        "content": "class Parent {\r\n  method() {\r\n    throw new Error('Метод має бути реалізований у нащадку');\r\n  }\r\n}\r\n\r\nclass Child extends Parent {\r\n  method() {\r\n    return 'Реалізація в нащадку';\r\n  }\r\n}\r"
       },
       {
         "type": "paragraph",
@@ -13542,7 +13574,7 @@
       {
         "type": "code",
         "language": "js",
-        "content": "class Behavior {\n  method() {\n    return 'Реалізація без інверсії';\n  }\n}\n\nclass Parent {\n  constructor() {\n    this.behavior = new Behavior();\n  }\n\n  method() {\n    return this.behavior.method();\n  }\n}"
+        "content": "class Behavior {\r\n  method() {\r\n    return 'Реалізація без інверсії';\r\n  }\r\n}\r\n\r\nclass Parent {\r\n  constructor() {\r\n    this.behavior = new Behavior();\r\n  }\r\n\r\n  method() {\r\n    return this.behavior.method();\r\n  }\r\n}\r"
       },
       {
         "type": "paragraph",
@@ -13621,7 +13653,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "import { useState, useEffect } from 'react';\n\nconst PollingComponent = () => {\n  const [data, setData] = useState(null);\n\n  useEffect(() => {\n    const fetchData = async () => {\n      const response = await fetch('https://api.example.com/data');\n      const result = await response.json();\n      setData(result);\n    };\n\n    fetchData(); // Виконати одразу при завантаженні\n\n    const interval = setInterval(fetchData, 5000); // Опитування кожні 5 сек.\n\n    return () => clearInterval(interval); // Очищення при розмонтуванні\n  }, []);\n\n  return <div>{data ? JSON.stringify(data) : 'Завантаження...'}</div>;\n};"
+                "content": "import { useState, useEffect } from 'react';\r\n\r\nconst PollingComponent = () => {\r\n  const [data, setData] = useState(null);\r\n\r\n  useEffect(() => {\r\n    const fetchData = async () => {\r\n      const response = await fetch('https://api.example.com/data');\r\n      const result = await response.json();\r\n      setData(result);\r\n    };\r\n\r\n    fetchData(); // Виконати одразу при завантаженні\r\n\r\n    const interval = setInterval(fetchData, 5000); // Опитування кожні 5 сек.\r\n\r\n    return () => clearInterval(interval); // Очищення при розмонтуванні\r\n  }, []);\r\n\r\n  return <div>{data ? JSON.stringify(data) : 'Завантаження...'}</div>;\r\n};\r"
               },
               {
                 "type": "bulletList",
@@ -13676,7 +13708,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "const PollingComponent = () => {\n  const [data, setData] = useState(null);\n\n  useEffect(() => {\n    let isMounted = true;\n\n    const fetchData = async () => {\n      try {\n        const response = await fetch('https://api.example.com/data');\n        const result = await response.json();\n        if (isMounted) setData(result);\n      } catch (error) {\n        console.error('Помилка запиту', error);\n      } finally {\n        if (isMounted) setTimeout(fetchData, 5000);\n      }\n    };\n\n    fetchData();\n\n    return () => {\n      isMounted = false; // Запобігає оновленню стану після розмонтування\n    };\n  }, []);\n\n  return <div>{data ? JSON.stringify(data) : 'Завантаження...'}</div>;\n};"
+        "content": "const PollingComponent = () => {\r\n  const [data, setData] = useState(null);\r\n\r\n  useEffect(() => {\r\n    let isMounted = true;\r\n\r\n    const fetchData = async () => {\r\n      try {\r\n        const response = await fetch('https://api.example.com/data');\r\n        const result = await response.json();\r\n        if (isMounted) setData(result);\r\n      } catch (error) {\r\n        console.error('Помилка запиту', error);\r\n      } finally {\r\n        if (isMounted) setTimeout(fetchData, 5000);\r\n      }\r\n    };\r\n\r\n    fetchData();\r\n\r\n    return () => {\r\n      isMounted = false; // Запобігає оновленню стану після розмонтування\r\n    };\r\n  }, []);\r\n\r\n  return <div>{data ? JSON.stringify(data) : 'Завантаження...'}</div>;\r\n};\r"
       },
       {
         "type": "paragraph",
@@ -13771,7 +13803,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "import { useState } from 'react';\n\nconst TwoWayBinding = () => {\n  const [value, setValue] = useState('');\n\n  return (\n    <div>\n      <input\n        type=\"text\"\n        value={value}\n        onChange={e => setValue(e.target.value)}\n      />\n      <p>Введене значення: {value}</p>\n    </div>\n  );\n};\n\nexport default TwoWayBinding;"
+        "content": "import { useState } from 'react';\r\n\r\nconst TwoWayBinding = () => {\r\n  const [value, setValue] = useState('');\r\n\r\n  return (\r\n    <div>\r\n      <input\r\n        type=\"text\"\r\n        value={value}\r\n        onChange={e => setValue(e.target.value)}\r\n      />\r\n      <p>Введене значення: {value}</p>\r\n    </div>\r\n  );\r\n};\r\n\r\nexport default TwoWayBinding;\r"
       },
       {
         "type": "heading",
@@ -13904,7 +13936,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "function Parent() {\n  const [value, setValue] = useState('');\n\n  const handleChange = newValue => {\n    setValue(newValue);\n  };\n\n  return <Child onValueChange={handleChange} />;\n}\n\nfunction Child({ onValueChange }) {\n  return <input type=\"text\" onChange={e => onValueChange(e.target.value)} />;\n}"
+                "content": "function Parent() {\r\n  const [value, setValue] = useState('');\r\n\r\n  const handleChange = newValue => {\r\n    setValue(newValue);\r\n  };\r\n\r\n  return <Child onValueChange={handleChange} />;\r\n}\r\n\r\nfunction Child({ onValueChange }) {\r\n  return <input type=\"text\" onChange={e => onValueChange(e.target.value)} />;\r\n}\r"
               }
             ]
           }
@@ -14076,7 +14108,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "import React from 'react';\nimport ReactDOM from 'react-dom/client';\nimport App from './App';\n\nconst root = ReactDOM.createRoot(document.getElementById('root'));\nroot.render(\n  <React.StrictMode>\n    <App />\n  </React.StrictMode>\n);"
+        "content": "import React from 'react';\r\nimport ReactDOM from 'react-dom/client';\r\nimport App from './App';\r\n\r\nconst root = ReactDOM.createRoot(document.getElementById('root'));\r\nroot.render(\r\n  <React.StrictMode>\r\n    <App />\r\n  </React.StrictMode>\r\n);\r"
       },
       {
         "type": "heading",
@@ -14251,7 +14283,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "MyComponent.propTypes = {\n  name: PropTypes.string.isRequired,\n  age: PropTypes.number,\n};"
+                "content": "MyComponent.propTypes = {\r\n  name: PropTypes.string.isRequired,\r\n  age: PropTypes.number,\r\n};\r"
               }
             ]
           },
@@ -14318,7 +14350,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "\n<div className=\"my-element\">Hello</div>\n\n<style jsx>{`\n  .my-element {\n    animation: fadeIn 1s ease-in-out;\n  }\n\n  @keyframes fadeIn {\n    0% { opacity: 0; }\n    100% { opacity: 1; }\n  }\n`}</style>"
+                "content": "\r\n<div className=\"my-element\">Hello</div>\r\n\r\n<style jsx>{`\r\n  .my-element {\r\n    animation: fadeIn 1s ease-in-out;\r\n  }\r\n\r\n  @keyframes fadeIn {\r\n    0% { opacity: 0; }\r\n    100% { opacity: 1; }\r\n  }\r\n`}</style>\r"
               }
             ]
           },
@@ -14335,7 +14367,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "\nimport { CSSTransition } from 'react-transition-group';\n\n<CSSTransition in={isVisible} timeout={300} classNames=\"fade\" unmountOnExit>\n  <div>Content</div>\n</CSSTransition>\n\n<style jsx>{`\n  .fade-enter {\n    opacity: 0;\n  }\n  .fade-enter-active {\n    opacity: 1;\n    transition: opacity 300ms;\n  }\n  .fade-exit {\n    opacity: 1;\n  }\n  .fade-exit-active {\n    opacity: 0;\n    transition: opacity 300ms;\n  }\n`}</style>"
+                "content": "\r\nimport { CSSTransition } from 'react-transition-group';\r\n\r\n<CSSTransition in={isVisible} timeout={300} classNames=\"fade\" unmountOnExit>\r\n  <div>Content</div>\r\n</CSSTransition>\r\n\r\n<style jsx>{`\r\n  .fade-enter {\r\n    opacity: 0;\r\n  }\r\n  .fade-enter-active {\r\n    opacity: 1;\r\n    transition: opacity 300ms;\r\n  }\r\n  .fade-exit {\r\n    opacity: 1;\r\n  }\r\n  .fade-exit-active {\r\n    opacity: 0;\r\n    transition: opacity 300ms;\r\n  }\r\n`}</style>\r"
               }
             ]
           },
@@ -14352,7 +14384,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "import { motion } from 'framer-motion';\n\n<motion.div\n  animate={{ opacity: 1 }}\n  initial={{ opacity: 0 }}\n  transition={{ duration: 1 }}\n>\n  Hello\n</motion.div>;"
+                "content": "import { motion } from 'framer-motion';\r\n\r\n<motion.div\r\n  animate={{ opacity: 1 }}\r\n  initial={{ opacity: 0 }}\r\n  transition={{ duration: 1 }}\r\n>\r\n  Hello\r\n</motion.div>;\r"
               }
             ]
           },
@@ -14369,7 +14401,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "import { useSpring, animated } from 'react-spring';\n\nconst props = useSpring({ opacity: 1, from: { opacity: 0 } });\n\n<animated.div style={props}>Hello</animated.div>;"
+                "content": "import { useSpring, animated } from 'react-spring';\r\n\r\nconst props = useSpring({ opacity: 1, from: { opacity: 0 } });\r\n\r\n<animated.div style={props}>Hello</animated.div>;\r"
               }
             ]
           },
@@ -14386,7 +14418,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "const [opacity, setOpacity] = useState(0);\n\nuseEffect(() => {\n  setOpacity(1);\n}, []);\n\nreturn <div style={{ opacity }}>Hello</div>;"
+                "content": "const [opacity, setOpacity] = useState(0);\r\n\r\nuseEffect(() => {\r\n  setOpacity(1);\r\n}, []);\r\n\r\nreturn <div style={{ opacity }}>Hello</div>;\r"
               }
             ]
           }
@@ -14581,7 +14613,7 @@
                       {
                         "type": "code",
                         "language": "sh",
-                        "content": "npm install -g react-devtools\nreact-devtools"
+                        "content": "npm install -g react-devtools\r\nreact-devtools\r"
                       }
                     ]
                   }
@@ -14878,7 +14910,7 @@
                       {
                         "type": "code",
                         "language": "jsx",
-                        "content": "<React.StrictMode>\n  <App />\n</React.StrictMode>"
+                        "content": "<React.StrictMode>\r\n  <App />\r\n</React.StrictMode>\r"
                       }
                     ]
                   },
@@ -14900,55 +14932,55 @@
               {
                 "text": "Інспекція хуків",
                 "bold": true
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "type": "bulletList",
-        "children": [
-          {
-            "type": "listItem",
-            "children": [
-              {
-                "text": "DevTools дозволяє бачити стан хуків ("
               },
               {
-                "text": "useState",
-                "code": true
-              },
-              {
-                "text": ", "
-              },
-              {
-                "text": "useEffect",
-                "code": true
-              },
-              {
-                "text": ", "
-              },
-              {
-                "text": "useReducer",
-                "code": true
-              },
-              {
-                "text": ")."
-              }
-            ]
-          },
-          {
-            "type": "listItem",
-            "children": [
-              {
-                "text": "У вкладці Components вибери компонент → побачиш стан "
-              },
-              {
-                "text": "useState",
-                "code": true
-              },
-              {
-                "text": "."
+                "type": "bulletList",
+                "children": [
+                  {
+                    "type": "listItem",
+                    "children": [
+                      {
+                        "text": "DevTools дозволяє бачити стан хуків ("
+                      },
+                      {
+                        "text": "useState",
+                        "code": true
+                      },
+                      {
+                        "text": ", "
+                      },
+                      {
+                        "text": "useEffect",
+                        "code": true
+                      },
+                      {
+                        "text": ", "
+                      },
+                      {
+                        "text": "useReducer",
+                        "code": true
+                      },
+                      {
+                        "text": ")."
+                      }
+                    ]
+                  },
+                  {
+                    "type": "listItem",
+                    "children": [
+                      {
+                        "text": "У вкладці Components вибери компонент → побачиш стан "
+                      },
+                      {
+                        "text": "useState",
+                        "code": true
+                      },
+                      {
+                        "text": "."
+                      }
+                    ]
+                  }
+                ]
               }
             ]
           }
@@ -15551,7 +15583,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "import { Helmet } from 'react-helmet-async';\n\nfunction MyComponent() {\n  return (\n    <Helmet>\n      <title>Головна сторінка</title>\n      <meta name=\"description\" content=\"Це опис для головної сторінки\" />\n    </Helmet>\n  );\n}"
+        "content": "import { Helmet } from 'react-helmet-async';\r\n\r\nfunction MyComponent() {\r\n  return (\r\n    <Helmet>\r\n      <title>Головна сторінка</title>\r\n      <meta name=\"description\" content=\"Це опис для головної сторінки\" />\r\n    </Helmet>\r\n  );\r\n}\r"
       },
       {
         "type": "heading",
@@ -15565,7 +15597,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "import { HelmetProvider, Helmet } from 'react-helmet-async';\n\nconst helmetContext = {};\nconst html = renderToString(\n  <HelmetProvider context={helmetContext}>\n    <App />\n  </HelmetProvider>\n);\nconst { helmet } = helmetContext;\n\nconst finalHtml = `\n\n  <html>\n    <head>\n      ${helmet.title.toString()}\n      ${helmet.meta.toString()}\n    </head>\n    <body>${html}</body>\n  </html>\n`;"
+        "content": "import { HelmetProvider, Helmet } from 'react-helmet-async';\r\n\r\nconst helmetContext = {};\r\nconst html = renderToString(\r\n  <HelmetProvider context={helmetContext}>\r\n    <App />\r\n  </HelmetProvider>\r\n);\r\nconst { helmet } = helmetContext;\r\n\r\nconst finalHtml = `\r\n\r\n  <html>\r\n    <head>\r\n      ${helmet.title.toString()}\r\n      ${helmet.meta.toString()}\r\n    </head>\r\n    <body>${html}</body>\r\n  </html>\r\n`;\r"
       },
       {
         "type": "heading",
@@ -15692,7 +15724,7 @@
                       {
                         "type": "code",
                         "language": "jsx",
-                        "content": "import { lazy, Suspense } from 'react';\n\nconst LazyComponent = lazy(() => import('./LazyComponent'));\n\nfunction App() {\n  return (\n    <Suspense fallback={<div>Завантаження...</div>}>\n      <LazyComponent />\n    </Suspense>\n  );\n}"
+                        "content": "import { lazy, Suspense } from 'react';\r\n\r\nconst LazyComponent = lazy(() => import('./LazyComponent'));\r\n\r\nfunction App() {\r\n  return (\r\n    <Suspense fallback={<div>Завантаження...</div>}>\r\n      <LazyComponent />\r\n    </Suspense>\r\n  );\r\n}\r"
                       }
                     ]
                   }
@@ -15719,7 +15751,7 @@
                       {
                         "type": "code",
                         "language": "jsx",
-                        "content": "function DataContainer({ children }) {\n  const [data, setData] = useState(null);\n\n  useEffect(() => {\n    fetch('/api/data')\n      .then(res => res.json())\n      .then(setData);\n  }, []);\n\n  return children(data);\n}\n\nfunction Presentational({ data }) {\n  return <div>{data ? JSON.stringify(data) : 'Завантаження...'}</div>;\n}\n\nfunction App() {\n  return (\n    <DataContainer>{data => <Presentational data={data} />}</DataContainer>\n  );\n}"
+                        "content": "function DataContainer({ children }) {\r\n  const [data, setData] = useState(null);\r\n\r\n  useEffect(() => {\r\n    fetch('/api/data')\r\n      .then(res => res.json())\r\n      .then(setData);\r\n  }, []);\r\n\r\n  return children(data);\r\n}\r\n\r\nfunction Presentational({ data }) {\r\n  return <div>{data ? JSON.stringify(data) : 'Завантаження...'}</div>;\r\n}\r\n\r\nfunction App() {\r\n  return (\r\n    <DataContainer>{data => <Presentational data={data} />}</DataContainer>\r\n  );\r\n}\r"
                       }
                     ]
                   }
@@ -15733,48 +15765,48 @@
               {
                 "text": "Мікрофронтенди (Micro Frontends)",
                 "bold": true
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "type": "bulletList",
-        "children": [
-          {
-            "type": "listItem",
-            "children": [
-              {
-                "text": "Використання окремих автономних компонентів у різних частинах застосунку."
-              }
-            ]
-          },
-          {
-            "type": "listItem",
-            "children": [
-              {
-                "text": "Наприклад, різні команди розробляють окремі частини великого проєкту ("
               },
               {
-                "text": "React",
-                "code": true
-              },
-              {
-                "text": ", "
-              },
-              {
-                "text": "Vue",
-                "code": true
-              },
-              {
-                "text": ", "
-              },
-              {
-                "text": "Angular",
-                "code": true
-              },
-              {
-                "text": ") і інтегрують їх разом."
+                "type": "bulletList",
+                "children": [
+                  {
+                    "type": "listItem",
+                    "children": [
+                      {
+                        "text": "Використання окремих автономних компонентів у різних частинах застосунку."
+                      }
+                    ]
+                  },
+                  {
+                    "type": "listItem",
+                    "children": [
+                      {
+                        "text": "Наприклад, різні команди розробляють окремі частини великого проєкту ("
+                      },
+                      {
+                        "text": "React",
+                        "code": true
+                      },
+                      {
+                        "text": ", "
+                      },
+                      {
+                        "text": "Vue",
+                        "code": true
+                      },
+                      {
+                        "text": ", "
+                      },
+                      {
+                        "text": "Angular",
+                        "code": true
+                      },
+                      {
+                        "text": ") і інтегрують їх разом."
+                      }
+                    ]
+                  }
+                ]
               }
             ]
           }
@@ -15848,12 +15880,12 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "const SwitchingComponent = ({ type }) => {\n  switch (type) {\n    case 'success':\n      return <SuccessMessage />;\n    case 'error':\n      return <ErrorMessage />;\n    default:\n      return <DefaultMessage />;\n  }\n};"
+        "content": "const SwitchingComponent = ({ type }) => {\r\n  switch (type) {\r\n    case 'success':\r\n      return <SuccessMessage />;\r\n    case 'error':\r\n      return <ErrorMessage />;\r\n    default:\r\n      return <DefaultMessage />;\r\n  }\r\n};\r"
       },
       {
         "type": "code",
         "language": "jsx",
-        "content": "const App = () => {\n  return <SwitchingComponent type=\"success\" />;\n};"
+        "content": "const App = () => {\r\n  return <SwitchingComponent type=\"success\" />;\r\n};\r"
       },
       {
         "type": "bulletList",
@@ -15884,7 +15916,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "import { Route, Routes } from 'react-router-dom';\n\nconst App = () => {\n  return (\n    <Routes>\n      <Route path=\"/\" element={<Home />} />\n      <Route path=\"/about\" element={<About />} />\n      <Route path=\"\\*\" element={<NotFound />} />\n    </Routes>\n  );\n};"
+        "content": "import { Route, Routes } from 'react-router-dom';\r\n\r\nconst App = () => {\r\n  return (\r\n    <Routes>\r\n      <Route path=\"/\" element={<Home />} />\r\n      <Route path=\"/about\" element={<About />} />\r\n      <Route path=\"\\*\" element={<NotFound />} />\r\n    </Routes>\r\n  );\r\n};\r"
       },
       {
         "type": "bulletList",
@@ -15918,7 +15950,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "const components = {\n  success: SuccessMessage,\n  error: ErrorMessage,\n  default: DefaultMessage,\n};\n\nconst SwitchingComponent = ({ type }) => {\n  const Component = components[type] || components.default;\n  return <Component />;\n};"
+        "content": "const components = {\r\n  success: SuccessMessage,\r\n  error: ErrorMessage,\r\n  default: DefaultMessage,\r\n};\r\n\r\nconst SwitchingComponent = ({ type }) => {\r\n  const Component = components[type] || components.default;\r\n  return <Component />;\r\n};\r"
       },
       {
         "type": "bulletList",
@@ -16043,7 +16075,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "import { createSelector } from 'reselect';\n\n// Вхідний селектор отримує всі користувачі\nconst selectUsers = state => state.users;\n\n// Вхідний селектор отримує активний фільтр\nconst selectFilter = state => state.filter;\n\n// Мемоізований селектор фільтрує користувачів\nexport const selectFilteredUsers = createSelector(\n  [selectUsers, selectFilter],\n  (users, filter) => users.filter(user => user.role === filter)\n);"
+        "content": "import { createSelector } from 'reselect';\r\n\r\n// Вхідний селектор отримує всі користувачі\r\nconst selectUsers = state => state.users;\r\n\r\n// Вхідний селектор отримує активний фільтр\r\nconst selectFilter = state => state.filter;\r\n\r\n// Мемоізований селектор фільтрує користувачів\r\nexport const selectFilteredUsers = createSelector(\r\n  [selectUsers, selectFilter],\r\n  (users, filter) => users.filter(user => user.role === filter)\r\n);\r"
       },
       {
         "type": "bulletList",
@@ -16146,7 +16178,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "render() {\nreturn <div>Hello, World!</div>;\n}"
+                "content": "render() {\r\nreturn <div>Hello, World!</div>;\r\n}\r"
               }
             ]
           },
@@ -16160,7 +16192,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "render() {\nreturn [\n<li key=\"1\">Item 1</li>,\n<li key=\"2\">Item 2</li>\n];\n}"
+                "content": "render() {\r\nreturn [\r\n<li key=\"1\">Item 1</li>,\r\n<li key=\"2\">Item 2</li>\r\n];\r\n}\r"
               }
             ]
           },
@@ -16174,7 +16206,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "render() {\nreturn (\n<>\n<h1>Title</h1>\n<p>Description</p>\n</>\n);\n}"
+                "content": "render() {\r\nreturn (\r\n<>\r\n<h1>Title</h1>\r\n<p>Description</p>\r\n</>\r\n);\r\n}\r"
               }
             ]
           },
@@ -16188,7 +16220,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "render() {\nreturn null;\n}"
+                "content": "render() {\r\nreturn null;\r\n}\r"
               }
             ]
           },
@@ -16202,7 +16234,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "render() {\nreturn false; // Нічого не відобразиться\n}"
+                "content": "render() {\r\nreturn false; // Нічого не відобразиться\r\n}\r"
               }
             ]
           },
@@ -16216,7 +16248,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "render() {\nreturn \"Hello, World!\";\n}"
+                "content": "render() {\r\nreturn \"Hello, World!\";\r\n}\r"
               }
             ]
           },
@@ -16230,7 +16262,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "import { createPortal } from \"react-dom\";\n\nrender() {\nreturn createPortal(<div>Modal</div>, document.getElementById(\"modal-root\"));\n}"
+                "content": "import { createPortal } from \"react-dom\";\r\n\r\nrender() {\r\nreturn createPortal(<div>Modal</div>, document.getElementById(\"modal-root\"));\r\n}\r"
               }
             ]
           }
@@ -16294,7 +16326,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "import PropTypes from 'prop-types';\n\nconst MyComponent = ({ name, age, isActive }) => {\n  return (\n    <div>\n      <h1>{name}</h1>\n      <p>Вік: {age}</p>\n      <p>{isActive ? 'Активний' : 'Неактивний'}</p>\n    </div>\n  );\n};\n\n// Визначення типів пропсів\nMyComponent.propTypes = {\n  name: PropTypes.string.isRequired,\n  age: PropTypes.number,\n  isActive: PropTypes.bool,\n};"
+                "content": "import PropTypes from 'prop-types';\r\n\r\nconst MyComponent = ({ name, age, isActive }) => {\r\n  return (\r\n    <div>\r\n      <h1>{name}</h1>\r\n      <p>Вік: {age}</p>\r\n      <p>{isActive ? 'Активний' : 'Неактивний'}</p>\r\n    </div>\r\n  );\r\n};\r\n\r\n// Визначення типів пропсів\r\nMyComponent.propTypes = {\r\n  name: PropTypes.string.isRequired,\r\n  age: PropTypes.number,\r\n  isActive: PropTypes.bool,\r\n};\r"
               },
               {
                 "type": "bulletList",
@@ -16352,7 +16384,7 @@
               {
                 "type": "code",
                 "language": "tsx",
-                "content": "Копіювати;\nРедагувати;\ntype MyComponentProps = {\n  name: string;\n  age?: number;\n  isActive: boolean;\n};\n\nconst MyComponent: React.FC<MyComponentProps> = ({ name, age, isActive }) => {\n  return (\n    <div>\n      <h1>{name}</h1>\n      <p>Вік: {age}</p>\n      <p>{isActive ? 'Активний' : 'Неактивний'}</p>\n    </div>\n  );\n};"
+                "content": "Копіювати;\r\nРедагувати;\r\ntype MyComponentProps = {\r\n  name: string;\r\n  age?: number;\r\n  isActive: boolean;\r\n};\r\n\r\nconst MyComponent: React.FC<MyComponentProps> = ({ name, age, isActive }) => {\r\n  return (\r\n    <div>\r\n      <h1>{name}</h1>\r\n      <p>Вік: {age}</p>\r\n      <p>{isActive ? 'Активний' : 'Неактивний'}</p>\r\n    </div>\r\n  );\r\n};\r"
               }
             ]
           }
@@ -16640,7 +16672,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "useEffect(() => {\n  console.log('Компонент змонтовано');\n}, []); // Виконається один раз при монтуванні"
+        "content": "useEffect(() => {\r\n  console.log('Компонент змонтовано');\r\n}, []); // Виконається один раз при монтуванні\r"
       },
       {
         "type": "heading",
@@ -16654,7 +16686,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "const [count, setCount] = useState(0);\n\nuseEffect(() => {\n  console.log('Компонент відрендерився');\n}); // Виконається при кожному рендері\n\nreturn <button onClick={() => setCount(count + 1)}>+</button>;"
+        "content": "const [count, setCount] = useState(0);\r\n\r\nuseEffect(() => {\r\n  console.log('Компонент відрендерився');\r\n}); // Виконається при кожному рендері\r\n\r\nreturn <button onClick={() => setCount(count + 1)}>+</button>;\r"
       },
       {
         "type": "paragraph",
@@ -16751,7 +16783,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "import { useState } from 'react';\n\nfunction Counter() {\n  const [count, setCount] = useState(0);\n\n  return (\n    <div>\n      <p>Лічильник: {count}</p>\n      <button onClick={() => setCount(count + 1)}>Збільшити</button>\n    </div>\n  );\n}"
+        "content": "import { useState } from 'react';\r\n\r\nfunction Counter() {\r\n  const [count, setCount] = useState(0);\r\n\r\n  return (\r\n    <div>\r\n      <p>Лічильник: {count}</p>\r\n      <button onClick={() => setCount(count + 1)}>Збільшити</button>\r\n    </div>\r\n  );\r\n}\r"
       },
       {
         "type": "heading",
@@ -17028,7 +17060,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "import { useState } from 'react';\n\nfunction DragAndDrop() {\n  const [items, setItems] = useState(['Item 1', 'Item 2', 'Item 3']);\n\n  const onDragStart = (e, index) => {\n    e.dataTransfer.setData('text/plain', index);\n  };\n\n  const onDrop = (e, targetIndex) => {\n    const sourceIndex = e.dataTransfer.getData('text/plain');\n    const newItems = [...items];\n    const [movedItem] = newItems.splice(sourceIndex, 1);\n    newItems.splice(targetIndex, 0, movedItem);\n    setItems(newItems);\n  };\n\n  return (\n    <ul>\n      {items.map((item, index) => (\n        <li\n          key={index}\n          draggable\n          onDragStart={e => onDragStart(e, index)}\n          onDragOver={e => e.preventDefault()}\n          onDrop={e => onDrop(e, index)}\n          style={{ padding: '10px', border: '1px solid black', margin: '5px' }}\n        >\n          {item}\n        </li>\n      ))}\n    </ul>\n  );\n}\n\nexport default DragAndDrop;"
+                "content": "import { useState } from 'react';\r\n\r\nfunction DragAndDrop() {\r\n  const [items, setItems] = useState(['Item 1', 'Item 2', 'Item 3']);\r\n\r\n  const onDragStart = (e, index) => {\r\n    e.dataTransfer.setData('text/plain', index);\r\n  };\r\n\r\n  const onDrop = (e, targetIndex) => {\r\n    const sourceIndex = e.dataTransfer.getData('text/plain');\r\n    const newItems = [...items];\r\n    const [movedItem] = newItems.splice(sourceIndex, 1);\r\n    newItems.splice(targetIndex, 0, movedItem);\r\n    setItems(newItems);\r\n  };\r\n\r\n  return (\r\n    <ul>\r\n      {items.map((item, index) => (\r\n        <li\r\n          key={index}\r\n          draggable\r\n          onDragStart={e => onDragStart(e, index)}\r\n          onDragOver={e => e.preventDefault()}\r\n          onDrop={e => onDrop(e, index)}\r\n          style={{ padding: '10px', border: '1px solid black', margin: '5px' }}\r\n        >\r\n          {item}\r\n        </li>\r\n      ))}\r\n    </ul>\r\n  );\r\n}\r\n\r\nexport default DragAndDrop;\r"
               },
               {
                 "type": "bulletList",
@@ -17063,12 +17095,12 @@
               {
                 "type": "code",
                 "language": "bash",
-                "content": "   npm install react-dnd react-dnd-html5-backend"
+                "content": "   npm install react-dnd react-dnd-html5-backend\r"
               },
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "import { DndProvider, useDrag, useDrop } from 'react-dnd';\nimport { HTML5Backend } from 'react-dnd-html5-backend';\nimport { useState } from 'react';\n\nconst ItemType = 'ITEM';\n\nfunction DraggableItem({ item, index, moveItem }) {\n  const [{ isDragging }, drag] = useDrag({\n    type: ItemType,\n    item: { index },\n    collect: monitor => ({\n      isDragging: monitor.isDragging(),\n    }),\n  });\n\n  const [, drop] = useDrop({\n    accept: ItemType,\n    hover: draggedItem => {\n      if (draggedItem.index !== index) {\n        moveItem(draggedItem.index, index);\n        draggedItem.index = index;\n      }\n    },\n  });\n\n  return (\n    <div\n      ref={node => drag(drop(node))}\n      style={{\n        padding: '10px',\n        margin: '5px',\n        border: '1px solid black',\n        backgroundColor: isDragging ? 'lightgray' : 'white',\n      }}\n    >\n      {item}\n    </div>\n  );\n}\n\nfunction DragAndDrop() {\n  const [items, setItems] = useState(['Item 1', 'Item 2', 'Item 3']);\n\n  const moveItem = (from, to) => {\n    const updatedItems = [...items];\n    const [movedItem] = updatedItems.splice(from, 1);\n    updatedItems.splice(to, 0, movedItem);\n    setItems(updatedItems);\n  };\n\n  return (\n    <DndProvider backend={HTML5Backend}>\n      {items.map((item, index) => (\n        <DraggableItem\n          key={index}\n          item={item}\n          index={index}\n          moveItem={moveItem}\n        />\n      ))}\n    </DndProvider>\n  );\n}\n\nexport default DragAndDrop;"
+                "content": "import { DndProvider, useDrag, useDrop } from 'react-dnd';\r\nimport { HTML5Backend } from 'react-dnd-html5-backend';\r\nimport { useState } from 'react';\r\n\r\nconst ItemType = 'ITEM';\r\n\r\nfunction DraggableItem({ item, index, moveItem }) {\r\n  const [{ isDragging }, drag] = useDrag({\r\n    type: ItemType,\r\n    item: { index },\r\n    collect: monitor => ({\r\n      isDragging: monitor.isDragging(),\r\n    }),\r\n  });\r\n\r\n  const [, drop] = useDrop({\r\n    accept: ItemType,\r\n    hover: draggedItem => {\r\n      if (draggedItem.index !== index) {\r\n        moveItem(draggedItem.index, index);\r\n        draggedItem.index = index;\r\n      }\r\n    },\r\n  });\r\n\r\n  return (\r\n    <div\r\n      ref={node => drag(drop(node))}\r\n      style={{\r\n        padding: '10px',\r\n        margin: '5px',\r\n        border: '1px solid black',\r\n        backgroundColor: isDragging ? 'lightgray' : 'white',\r\n      }}\r\n    >\r\n      {item}\r\n    </div>\r\n  );\r\n}\r\n\r\nfunction DragAndDrop() {\r\n  const [items, setItems] = useState(['Item 1', 'Item 2', 'Item 3']);\r\n\r\n  const moveItem = (from, to) => {\r\n    const updatedItems = [...items];\r\n    const [movedItem] = updatedItems.splice(from, 1);\r\n    updatedItems.splice(to, 0, movedItem);\r\n    setItems(updatedItems);\r\n  };\r\n\r\n  return (\r\n    <DndProvider backend={HTML5Backend}>\r\n      {items.map((item, index) => (\r\n        <DraggableItem\r\n          key={index}\r\n          item={item}\r\n          index={index}\r\n          moveItem={moveItem}\r\n        />\r\n      ))}\r\n    </DndProvider>\r\n  );\r\n}\r\n\r\nexport default DragAndDrop;\r"
               },
               {
                 "type": "bulletList",
@@ -17111,7 +17143,7 @@
               {
                 "type": "code",
                 "language": "bash",
-                "content": "   npm install @dnd-kit/core @dnd-kit/sortable"
+                "content": "   npm install @dnd-kit/core @dnd-kit/sortable\r"
               }
             ]
           }
@@ -17120,7 +17152,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "import { DndContext, closestCenter } from '@dnd-kit/core';\nimport { SortableContext, useSortable, arrayMove } from '@dnd-kit/sortable';\nimport { useState } from 'react';\n\nfunction SortableItem({ id }) {\n  const { attributes, listeners, setNodeRef, transform, transition } =\n    useSortable({ id });\n\n  return (\n    <div\n      ref={setNodeRef}\n      {...attributes}\n      {...listeners}\n      style={{\n        padding: '10px',\n        margin: '5px',\n        border: '1px solid black',\n        backgroundColor: 'white',\n        transform: transform ? `translateY(${transform.y}px)` : undefined,\n        transition,\n      }}\n    >\n      {id}\n    </div>\n  );\n}\n\nfunction DragAndDrop() {\n  const [items, setItems] = useState(['Item 1', 'Item 2', 'Item 3']);\n\n  const onDragEnd = ({ active, over }) => {\n    if (active.id !== over.id) {\n      setItems(items => {\n        const oldIndex = items.indexOf(active.id);\n        const newIndex = items.indexOf(over.id);\n        return arrayMove(items, oldIndex, newIndex);\n      });\n    }\n  };\n\n  return (\n    <DndContext collisionDetection={closestCenter} onDragEnd={onDragEnd}>\n      <SortableContext items={items}>\n        {items.map(id => (\n          <SortableItem key={id} id={id} />\n        ))}\n      </SortableContext>\n    </DndContext>\n  );\n}\n\nexport default DragAndDrop;"
+        "content": "import { DndContext, closestCenter } from '@dnd-kit/core';\r\nimport { SortableContext, useSortable, arrayMove } from '@dnd-kit/sortable';\r\nimport { useState } from 'react';\r\n\r\nfunction SortableItem({ id }) {\r\n  const { attributes, listeners, setNodeRef, transform, transition } =\r\n    useSortable({ id });\r\n\r\n  return (\r\n    <div\r\n      ref={setNodeRef}\r\n      {...attributes}\r\n      {...listeners}\r\n      style={{\r\n        padding: '10px',\r\n        margin: '5px',\r\n        border: '1px solid black',\r\n        backgroundColor: 'white',\r\n        transform: transform ? `translateY(${transform.y}px)` : undefined,\r\n        transition,\r\n      }}\r\n    >\r\n      {id}\r\n    </div>\r\n  );\r\n}\r\n\r\nfunction DragAndDrop() {\r\n  const [items, setItems] = useState(['Item 1', 'Item 2', 'Item 3']);\r\n\r\n  const onDragEnd = ({ active, over }) => {\r\n    if (active.id !== over.id) {\r\n      setItems(items => {\r\n        const oldIndex = items.indexOf(active.id);\r\n        const newIndex = items.indexOf(over.id);\r\n        return arrayMove(items, oldIndex, newIndex);\r\n      });\r\n    }\r\n  };\r\n\r\n  return (\r\n    <DndContext collisionDetection={closestCenter} onDragEnd={onDragEnd}>\r\n      <SortableContext items={items}>\r\n        {items.map(id => (\r\n          <SortableItem key={id} id={id} />\r\n        ))}\r\n      </SortableContext>\r\n    </DndContext>\r\n  );\r\n}\r\n\r\nexport default DragAndDrop;\r"
       },
       {
         "type": "bulletList",
@@ -17234,7 +17266,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "Копіювати;\nРедагувати;\nfunction MyComponent() {\n  const htmlContent = \"<p style='color: red;'>Це HTML-код</p>\";\n\n  return <div dangerouslySetInnerHTML={{ __html: htmlContent }} />;\n}"
+        "content": "Копіювати;\r\nРедагувати;\r\nfunction MyComponent() {\r\n  const htmlContent = \"<p style='color: red;'>Це HTML-код</p>\";\r\n\r\n  return <div dangerouslySetInnerHTML={{ __html: htmlContent }} />;\r\n}\r"
       },
       {
         "type": "paragraph",
@@ -17287,7 +17319,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "function MyComponent({ isActive }) {\n  return (\n    <div className={isActive ? 'active-class' : 'inactive-class'}>Hello</div>\n  );\n}"
+                "content": "function MyComponent({ isActive }) {\r\n  return (\r\n    <div className={isActive ? 'active-class' : 'inactive-class'}>Hello</div>\r\n  );\r\n}\r"
               },
               {
                 "type": "bulletList",
@@ -17350,7 +17382,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "function MyComponent({ isHighlighted }) {\n  return (\n    <div className={`base-class ${isHighlighted ? 'highlighted-class' : ''}`}>\n      Hello\n    </div>\n  );\n}"
+                "content": "function MyComponent({ isHighlighted }) {\r\n  return (\r\n    <div className={`base-class ${isHighlighted ? 'highlighted-class' : ''}`}>\r\n      Hello\r\n    </div>\r\n  );\r\n}\r"
               },
               {
                 "type": "bulletList",
@@ -17419,7 +17451,7 @@
                       {
                         "type": "code",
                         "language": "bash",
-                        "content": "npm install clsx"
+                        "content": "npm install clsx\r"
                       }
                     ]
                   }
@@ -17428,27 +17460,32 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "import clsx from 'clsx';\n\nfunction MyComponent({ isActive, isDisabled }) {\n  return (\n    <div\n      className={clsx('base-class', {\n        'active-class': isActive,\n        'disabled-class': isDisabled,\n      })}\n    >\n      Hello\n    </div>\n  );\n}"
-              },
-              {
-                "type": "bulletList",
-                "children": [
-                  {
-                    "type": "listItem",
-                    "children": [
-                      {
-                        "text": "clsx",
-                        "code": true
-                      },
-                      {
-                        "text": " дозволяє легко додавати кілька класів на основі умов."
-                      }
-                    ]
-                  }
-                ]
+                "content": "import clsx from 'clsx';\r\n\r\nfunction MyComponent({ isActive, isDisabled }) {\r\n  return (\r\n    <div\r\n      className={clsx('base-class', {\r\n        'active-class': isActive,\r\n        'disabled-class': isDisabled,\r\n      })}\r\n    >\r\n      Hello\r\n    </div>\r\n  );\r\n}\r"
               }
             ]
-          },
+          }
+        ]
+      },
+      {
+        "type": "bulletList",
+        "children": [
+          {
+            "type": "listItem",
+            "children": [
+              {
+                "text": "clsx",
+                "code": true
+              },
+              {
+                "text": " дозволяє легко додавати кілька класів на основі умов."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "numberedList",
+        "children": [
           {
             "type": "listItem",
             "children": [
@@ -17475,7 +17512,7 @@
                       {
                         "type": "code",
                         "language": "bash",
-                        "content": "npm install classnames"
+                        "content": "npm install classnames\r"
                       }
                     ]
                   }
@@ -17484,7 +17521,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "import classNames from 'classnames';\n\nfunction MyComponent({ isActive, isDisabled }) {\n  return (\n    <div\n      className={classNames('base-class', {\n        'active-class': isActive,\n        'disabled-class': isDisabled,\n      })}\n    >\n      Hello\n    </div>\n  );\n}"
+                "content": "import classNames from 'classnames';\r\n\r\nfunction MyComponent({ isActive, isDisabled }) {\r\n  return (\r\n    <div\r\n      className={classNames('base-class', {\r\n        'active-class': isActive,\r\n        'disabled-class': isDisabled,\r\n      })}\r\n    >\r\n      Hello\r\n    </div>\r\n  );\r\n}\r"
               }
             ]
           },
@@ -17498,7 +17535,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "function getClassName(isActive, isDisabled) {\n  let className = 'base-class';\n  if (isActive) className += ' active-class';\n  if (isDisabled) className += ' disabled-class';\n  return className;\n}\n\nfunction MyComponent({ isActive, isDisabled }) {\n  return <div className={getClassName(isActive, isDisabled)}>Hello</div>;\n}"
+                "content": "function getClassName(isActive, isDisabled) {\r\n  let className = 'base-class';\r\n  if (isActive) className += ' active-class';\r\n  if (isDisabled) className += ' disabled-class';\r\n  return className;\r\n}\r\n\r\nfunction MyComponent({ isActive, isDisabled }) {\r\n  return <div className={getClassName(isActive, isDisabled)}>Hello</div>;\r\n}\r"
               }
             ]
           }
@@ -17600,7 +17637,7 @@
                       {
                         "type": "code",
                         "language": "jsx",
-                        "content": "class MyComponent extends React.Component {\n  componentWillUnmount() {\n    console.log('Компонент буде видалено');\n  }\n\n  render() {\n    return <div>Мій компонент</div>;\n  }\n}"
+                        "content": "class MyComponent extends React.Component {\r\n  componentWillUnmount() {\r\n    console.log('Компонент буде видалено');\r\n  }\r\n\r\n  render() {\r\n    return <div>Мій компонент</div>;\r\n  }\r\n}\r"
                       }
                     ]
                   }
@@ -17630,7 +17667,7 @@
                       {
                         "type": "code",
                         "language": "jsx",
-                        "content": "import { useEffect } from 'react';\n\nfunction MyComponent() {\n  useEffect(() => {\n    return () => {\n      console.log('Компонент буде видалено');\n    };\n  }, []);\n\n  return <div>Мій компонент</div>;\n}"
+                        "content": "import { useEffect } from 'react';\r\n\r\nfunction MyComponent() {\r\n  useEffect(() => {\r\n    return () => {\r\n      console.log('Компонент буде видалено');\r\n    };\r\n  }, []);\r\n\r\n  return <div>Мій компонент</div>;\r\n}\r"
                       }
                     ]
                   }
@@ -17644,24 +17681,24 @@
               {
                 "text": "Обробка перед закриттям сторінки (beforeunload)",
                 "bold": true
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "type": "bulletList",
-        "children": [
-          {
-            "type": "listItem",
-            "children": [
-              {
-                "text": "Якщо потрібно виконати код перед закриттям вкладки або перезавантаженням сторінки:"
               },
               {
-                "type": "code",
-                "language": "jsx",
-                "content": "useEffect(() => {\n  const handleUnload = () => {\n    console.log('Сторінка закривається');\n  };\n\n  window.addEventListener('beforeunload', handleUnload);\n  return () => window.removeEventListener('beforeunload', handleUnload);\n}, []);"
+                "type": "bulletList",
+                "children": [
+                  {
+                    "type": "listItem",
+                    "children": [
+                      {
+                        "text": "Якщо потрібно виконати код перед закриттям вкладки або перезавантаженням сторінки:"
+                      },
+                      {
+                        "type": "code",
+                        "language": "jsx",
+                        "content": "useEffect(() => {\r\n  const handleUnload = () => {\r\n    console.log('Сторінка закривається');\r\n  };\r\n\r\n  window.addEventListener('beforeunload', handleUnload);\r\n  return () => window.removeEventListener('beforeunload', handleUnload);\r\n}, []);\r"
+                      }
+                    ]
+                  }
+                ]
               }
             ]
           }
@@ -17766,7 +17803,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "const [state, dispatch] = useReducer(reducer, initialState);"
+        "content": "const [state, dispatch] = useReducer(reducer, initialState);\r"
       },
       {
         "type": "bulletList",
@@ -17842,7 +17879,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "import { useReducer } from 'react';\n\nconst initialState = { count: 0 };\n\nfunction reducer(state, action) {\n  switch (action.type) {\n    case 'increment':\n      return { count: state.count + 1 };\n    case 'decrement':\n      return { count: state.count - 1 };\n    default:\n      return state;\n  }\n}\n\nfunction Counter() {\n  const [state, dispatch] = useReducer(reducer, initialState);\n\n  return (\n    <div>\n      <p>Count: {state.count}</p>\n      <button onClick={() => dispatch({ type: 'increment' })}>+</button>\n      <button onClick={() => dispatch({ type: 'decrement' })}>-</button>\n    </div>\n  );\n}"
+        "content": "import { useReducer } from 'react';\r\n\r\nconst initialState = { count: 0 };\r\n\r\nfunction reducer(state, action) {\r\n  switch (action.type) {\r\n    case 'increment':\r\n      return { count: state.count + 1 };\r\n    case 'decrement':\r\n      return { count: state.count - 1 };\r\n    default:\r\n      return state;\r\n  }\r\n}\r\n\r\nfunction Counter() {\r\n  const [state, dispatch] = useReducer(reducer, initialState);\r\n\r\n  return (\r\n    <div>\r\n      <p>Count: {state.count}</p>\r\n      <button onClick={() => dispatch({ type: 'increment' })}>+</button>\r\n      <button onClick={() => dispatch({ type: 'decrement' })}>-</button>\r\n    </div>\r\n  );\r\n}\r"
       },
       {
         "type": "heading",
@@ -17944,12 +17981,7 @@
                 "text": " дозволяє відкладено завантажувати компонент."
               }
             ]
-          }
-        ]
-      },
-      {
-        "type": "numberedList",
-        "children": [
+          },
           {
             "type": "listItem",
             "children": [
@@ -17995,7 +18027,7 @@
                       {
                         "type": "code",
                         "language": "jsx",
-                        "content": "// Динамічно завантажуваний компонент\nconst MyComponent = React.lazy(() => import('./MyComponent'));"
+                        "content": "// Динамічно завантажуваний компонент\r\nconst MyComponent = React.lazy(() => import('./MyComponent'));\r"
                       }
                     ]
                   }
@@ -18029,7 +18061,7 @@
                       {
                         "type": "code",
                         "language": "jsx",
-                        "content": "function App() {\n  return (\n    <div>\n      <h1>Моя програма</h1>\n\n      {/* Обгортка для динамічно завантажуваних компонентів */}\n      <React.Suspense fallback={<div>Завантаження...</div>}>\n        <MyComponent />\n      </React.Suspense>\n    </div>\n  );\n}"
+                        "content": "function App() {\r\n  return (\r\n    <div>\r\n      <h1>Моя програма</h1>\r\n\r\n      {/* Обгортка для динамічно завантажуваних компонентів */}\r\n      <React.Suspense fallback={<div>Завантаження...</div>}>\r\n        <MyComponent />\r\n      </React.Suspense>\r\n    </div>\r\n  );\r\n}\r"
                       }
                     ]
                   }
@@ -18043,35 +18075,35 @@
               {
                 "text": "Опис:",
                 "bold": true
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "type": "bulletList",
-        "children": [
-          {
-            "type": "listItem",
-            "children": [
-              {
-                "text": "React.lazy()",
-                "code": true
               },
               {
-                "text": " приймає функцію, яка динамічно імпортує модуль."
-              }
-            ]
-          },
-          {
-            "type": "listItem",
-            "children": [
-              {
-                "text": "React.Suspense",
-                "code": true
-              },
-              {
-                "text": " обгортатиме компонент, що використовує React.lazy(), і покаже запасний контент (в даному випадку, текст \"Завантаження...\"), поки компонент не завантажиться."
+                "type": "bulletList",
+                "children": [
+                  {
+                    "type": "listItem",
+                    "children": [
+                      {
+                        "text": "React.lazy()",
+                        "code": true
+                      },
+                      {
+                        "text": " приймає функцію, яка динамічно імпортує модуль."
+                      }
+                    ]
+                  },
+                  {
+                    "type": "listItem",
+                    "children": [
+                      {
+                        "text": "React.Suspense",
+                        "code": true
+                      },
+                      {
+                        "text": " обгортатиме компонент, що використовує React.lazy(), і покаже запасний контент (в даному випадку, текст \"Завантаження...\"), поки компонент не завантажиться."
+                      }
+                    ]
+                  }
+                ]
               }
             ]
           }
@@ -18168,7 +18200,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "import React, { useEffect, useState } from 'react';\n\nfunction FetchExample() {\n  const [data, setData] = useState([]);\n  const [error, setError] = useState(null);\n\n  useEffect(() => {\n    fetch('https://jsonplaceholder.typicode.com/posts')\n      .then(response => {\n        if (!response.ok) {\n          throw new Error('Network response was not ok');\n        }\n        return response.json();\n      })\n      .then(data => setData(data))\n      .catch(error => setError(error.message));\n  }, []);\n\n  return (\n    <div>\n      {error ? (\n        <p>Error: {error}</p>\n      ) : (\n        <ul>\n          {data.map(post => (\n            <li key={post.id}>{post.title}</li>\n          ))}\n        </ul>\n      )}\n    </div>\n  );\n}\n\nexport default FetchExample;"
+                "content": "import React, { useEffect, useState } from 'react';\r\n\r\nfunction FetchExample() {\r\n  const [data, setData] = useState([]);\r\n  const [error, setError] = useState(null);\r\n\r\n  useEffect(() => {\r\n    fetch('https://jsonplaceholder.typicode.com/posts')\r\n      .then(response => {\r\n        if (!response.ok) {\r\n          throw new Error('Network response was not ok');\r\n        }\r\n        return response.json();\r\n      })\r\n      .then(data => setData(data))\r\n      .catch(error => setError(error.message));\r\n  }, []);\r\n\r\n  return (\r\n    <div>\r\n      {error ? (\r\n        <p>Error: {error}</p>\r\n      ) : (\r\n        <ul>\r\n          {data.map(post => (\r\n            <li key={post.id}>{post.title}</li>\r\n          ))}\r\n        </ul>\r\n      )}\r\n    </div>\r\n  );\r\n}\r\n\r\nexport default FetchExample;\r"
               }
             ]
           },
@@ -18199,7 +18231,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "import React, { useEffect, useState } from 'react';\nimport axios from 'axios';\n\nfunction AxiosExample() {\n  const [data, setData] = useState([]);\n  const [error, setError] = useState(null);\n\n  useEffect(() => {\n    axios\n      .get('https://jsonplaceholder.typicode.com/posts')\n      .then(response => setData(response.data))\n      .catch(error => setError(error.message));\n  }, []);\n\n  return (\n    <div>\n      {error ? (\n        <p>Error: {error}</p>\n      ) : (\n        <ul>\n          {data.map(post => (\n            <li key={post.id}>{post.title}</li>\n          ))}\n        </ul>\n      )}\n    </div>\n  );\n}\n\nexport default AxiosExample;"
+                "content": "import React, { useEffect, useState } from 'react';\r\nimport axios from 'axios';\r\n\r\nfunction AxiosExample() {\r\n  const [data, setData] = useState([]);\r\n  const [error, setError] = useState(null);\r\n\r\n  useEffect(() => {\r\n    axios\r\n      .get('https://jsonplaceholder.typicode.com/posts')\r\n      .then(response => setData(response.data))\r\n      .catch(error => setError(error.message));\r\n  }, []);\r\n\r\n  return (\r\n    <div>\r\n      {error ? (\r\n        <p>Error: {error}</p>\r\n      ) : (\r\n        <ul>\r\n          {data.map(post => (\r\n            <li key={post.id}>{post.title}</li>\r\n          ))}\r\n        </ul>\r\n      )}\r\n    </div>\r\n  );\r\n}\r\n\r\nexport default AxiosExample;\r"
               }
             ]
           },
@@ -18230,7 +18262,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "import React from 'react';\nimport { useQuery } from 'react-query';\nimport axios from 'axios';\n\nfunction ReactQueryExample() {\n  const { data, error, isLoading } = useQuery('posts', async () => {\n    const response = await axios.get(\n      'https://jsonplaceholder.typicode.com/posts'\n    );\n    return response.data;\n  });\n\n  if (isLoading) return <p>Loading...</p>;\n  if (error) return <p>Error: {error.message}</p>;\n\n  return (\n    <ul>\n      {data.map(post => (\n        <li key={post.id}>{post.title}</li>\n      ))}\n    </ul>\n  );\n}\n\nexport default ReactQueryExample;"
+                "content": "import React from 'react';\r\nimport { useQuery } from 'react-query';\r\nimport axios from 'axios';\r\n\r\nfunction ReactQueryExample() {\r\n  const { data, error, isLoading } = useQuery('posts', async () => {\r\n    const response = await axios.get(\r\n      'https://jsonplaceholder.typicode.com/posts'\r\n    );\r\n    return response.data;\r\n  });\r\n\r\n  if (isLoading) return <p>Loading...</p>;\r\n  if (error) return <p>Error: {error.message}</p>;\r\n\r\n  return (\r\n    <ul>\r\n      {data.map(post => (\r\n        <li key={post.id}>{post.title}</li>\r\n      ))}\r\n    </ul>\r\n  );\r\n}\r\n\r\nexport default ReactQueryExample;\r"
               }
             ]
           },
@@ -18261,7 +18293,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "import React from 'react';\nimport { useQuery, gql } from '@apollo/client';\n\nconst GET_POSTS = gql`\n  query GetPosts {\n    posts {\n      id\n      title\n    }\n  }\n`;\n\nfunction ApolloExample() {\n  const { loading, error, data } = useQuery(GET_POSTS);\n\n  if (loading) return <p>Loading...</p>;\n  if (error) return <p>Error: {error.message}</p>;\n\n  return (\n    <ul>\n      {data.posts.map(post => (\n        <li key={post.id}>{post.title}</li>\n      ))}\n    </ul>\n  );\n}\n\nexport default ApolloExample;"
+                "content": "import React from 'react';\r\nimport { useQuery, gql } from '@apollo/client';\r\n\r\nconst GET_POSTS = gql`\r\n  query GetPosts {\r\n    posts {\r\n      id\r\n      title\r\n    }\r\n  }\r\n`;\r\n\r\nfunction ApolloExample() {\r\n  const { loading, error, data } = useQuery(GET_POSTS);\r\n\r\n  if (loading) return <p>Loading...</p>;\r\n  if (error) return <p>Error: {error.message}</p>;\r\n\r\n  return (\r\n    <ul>\r\n      {data.posts.map(post => (\r\n        <li key={post.id}>{post.title}</li>\r\n      ))}\r\n    </ul>\r\n  );\r\n}\r\n\r\nexport default ApolloExample;\r"
               }
             ]
           },
@@ -18271,19 +18303,19 @@
               {
                 "text": "Custom Hooks",
                 "bold": true
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "type": "bulletList",
-        "children": [
-          {
-            "type": "listItem",
-            "children": [
+              },
               {
-                "text": "Ви можете створювати власні хуки для повторного використання логіки запитів."
+                "type": "bulletList",
+                "children": [
+                  {
+                    "type": "listItem",
+                    "children": [
+                      {
+                        "text": "Ви можете створювати власні хуки для повторного використання логіки запитів."
+                      }
+                    ]
+                  }
+                ]
               }
             ]
           }
@@ -18301,7 +18333,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "import { useState, useEffect } from 'react';\n\nfunction useFetch(url) {\n  const [data, setData] = useState(null);\n  const [error, setError] = useState(null);\n  const [loading, setLoading] = useState(true);\n\n  useEffect(() => {\n    fetch(url)\n      .then(response => response.json())\n      .then(data => {\n        setData(data);\n        setLoading(false);\n      })\n      .catch(error => {\n        setError(error.message);\n        setLoading(false);\n      });\n  }, [url]);\n\n  return { data, error, loading };\n}\n\nexport default useFetch;"
+        "content": "import { useState, useEffect } from 'react';\r\n\r\nfunction useFetch(url) {\r\n  const [data, setData] = useState(null);\r\n  const [error, setError] = useState(null);\r\n  const [loading, setLoading] = useState(true);\r\n\r\n  useEffect(() => {\r\n    fetch(url)\r\n      .then(response => response.json())\r\n      .then(data => {\r\n        setData(data);\r\n        setLoading(false);\r\n      })\r\n      .catch(error => {\r\n        setError(error.message);\r\n        setLoading(false);\r\n      });\r\n  }, [url]);\r\n\r\n  return { data, error, loading };\r\n}\r\n\r\nexport default useFetch;\r"
       },
       {
         "type": "heading",
@@ -18465,7 +18497,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "const element = React.createElement(\n  'div',\n  { className: 'example' },\n  'Привіт, React!'\n);"
+        "content": "const element = React.createElement(\r\n  'div',\r\n  { className: 'example' },\r\n  'Привіт, React!'\r\n);\r"
       },
       {
         "type": "paragraph",
@@ -18494,7 +18526,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "const originalElement = <button className=\"primary\">Натисни</button>;\n\nconst clonedElement = React.cloneElement(originalElement, {\n  className: 'secondary',\n});"
+        "content": "const originalElement = <button className=\"primary\">Натисни</button>;\r\n\r\nconst clonedElement = React.cloneElement(originalElement, {\r\n  className: 'secondary',\r\n});\r"
       },
       {
         "type": "paragraph",
@@ -18594,7 +18626,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "// Іменований експорт\nexport const MyComponent = () => {\n  return <div>Hello, World!</div>;\n};\n\n// Використання React.lazy\nconst LazyComponent = React.lazy(() =>\n  import('./MyComponent').then(module => ({ default: module.MyComponent }))\n);\n\nexport default LazyComponent;"
+        "content": "// Іменований експорт\r\nexport const MyComponent = () => {\r\n  return <div>Hello, World!</div>;\r\n};\r\n\r\n// Використання React.lazy\r\nconst LazyComponent = React.lazy(() =>\r\n  import('./MyComponent').then(module => ({ default: module.MyComponent }))\r\n);\r\n\r\nexport default LazyComponent;\r"
       },
       {
         "type": "bulletList",
@@ -18873,19 +18905,19 @@
               {
                 "text": "Активна спільнота та підтримка Facebook",
                 "bold": true
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "type": "bulletList",
-        "children": [
-          {
-            "type": "listItem",
-            "children": [
+              },
               {
-                "text": "Великий вибір бібліотек та готових рішень, швидкий розвиток фреймворку."
+                "type": "bulletList",
+                "children": [
+                  {
+                    "type": "listItem",
+                    "children": [
+                      {
+                        "text": "Великий вибір бібліотек та готових рішень, швидкий розвиток фреймворку."
+                      }
+                    ]
+                  }
+                ]
               }
             ]
           }
@@ -19062,7 +19094,7 @@
       {
         "type": "code",
         "language": "javascript",
-        "content": "import { register } from './serviceWorker';\n\nregister();"
+        "content": "import { register } from './serviceWorker';\r\n\r\nregister();\r"
       },
       {
         "type": "bulletList",
@@ -19187,7 +19219,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "function MyComponent() {\n  const handleClick = event => {\n    console.log(event.type); // \"click\"\n    console.log(event.nativeEvent); // Оригінальна подія браузера\n  };\n\n  return <button onClick={handleClick}>Натисни</button>;\n}"
+        "content": "function MyComponent() {\r\n  const handleClick = event => {\r\n    console.log(event.type); // \"click\"\r\n    console.log(event.nativeEvent); // Оригінальна подія браузера\r\n  };\r\n\r\n  return <button onClick={handleClick}>Натисни</button>;\r\n}\r"
       },
       {
         "type": "heading",
@@ -19709,19 +19741,19 @@
               {
                 "text": "Використання Web Workers",
                 "bold": true
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "type": "bulletList",
-        "children": [
-          {
-            "type": "listItem",
-            "children": [
+              },
               {
-                "text": "Для важких обчислень, щоб не блокувати головний потік."
+                "type": "bulletList",
+                "children": [
+                  {
+                    "type": "listItem",
+                    "children": [
+                      {
+                        "text": "Для важких обчислень, щоб не блокувати головний потік."
+                      }
+                    ]
+                  }
+                ]
               }
             ]
           }
@@ -19808,7 +19840,7 @@
                       {
                         "type": "code",
                         "language": "jsx",
-                        "content": "useEffect(() => {\n  const fetchData = async () => {\n    const response = await fetch('https://api.example.com');\n    const data = await response.json();\n    setData(data);\n  };\n  fetchData();\n}, []);"
+                        "content": "useEffect(() => {\r\n  const fetchData = async () => {\r\n    const response = await fetch('https://api.example.com');\r\n    const data = await response.json();\r\n    setData(data);\r\n  };\r\n  fetchData();\r\n}, []);\r"
                       }
                     ]
                   }
@@ -19829,7 +19861,7 @@
               {
                 "type": "code",
                 "language": "jsx",
-                "content": "const fetchData = async () => {\n  try {\n    const response = await fetch('https://api.example.com');\n    const data = await response.json();\n    setData(data);\n  } catch (error) {\n    console.error('Error fetching data:', error);\n  }\n};"
+                "content": "const fetchData = async () => {\r\n  try {\r\n    const response = await fetch('https://api.example.com');\r\n    const data = await response.json();\r\n    setData(data);\r\n  } catch (error) {\r\n    console.error('Error fetching data:', error);\r\n  }\r\n};\r"
               }
             ]
           }
@@ -20103,51 +20135,51 @@
               {
                 "text": "2024",
                 "bold": true
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "type": "bulletList",
-        "children": [
-          {
-            "type": "listItem",
-            "children": [
+              },
               {
-                "text": "Випущено React 19"
-              }
-            ]
-          },
-          {
-            "type": "listItem",
-            "children": [
-              {
-                "text": "Оновлений серверний рендеринг (RSC)."
-              }
-            ]
-          },
-          {
-            "type": "listItem",
-            "children": [
-              {
-                "text": "Підтримка нової use функції."
-              }
-            ]
-          },
-          {
-            "type": "listItem",
-            "children": [
-              {
-                "text": "Покращена система форм, помилки рендерингу та синтаксис JSX без import React."
-              }
-            ]
-          },
-          {
-            "type": "listItem",
-            "children": [
-              {
-                "text": "Оновлений React Compiler для автоматичної оптимізації продуктивності."
+                "type": "bulletList",
+                "children": [
+                  {
+                    "type": "listItem",
+                    "children": [
+                      {
+                        "text": "Випущено React 19"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "listItem",
+                    "children": [
+                      {
+                        "text": "Оновлений серверний рендеринг (RSC)."
+                      }
+                    ]
+                  },
+                  {
+                    "type": "listItem",
+                    "children": [
+                      {
+                        "text": "Підтримка нової use функції."
+                      }
+                    ]
+                  },
+                  {
+                    "type": "listItem",
+                    "children": [
+                      {
+                        "text": "Покращена система форм, помилки рендерингу та синтаксис JSX без import React."
+                      }
+                    ]
+                  },
+                  {
+                    "type": "listItem",
+                    "children": [
+                      {
+                        "text": "Оновлений React Compiler для автоматичної оптимізації продуктивності."
+                      }
+                    ]
+                  }
+                ]
               }
             ]
           }
@@ -20314,19 +20346,19 @@
               },
               {
                 "text": " та інші метатеги підтримуються без додаткових бібліотек, що спрощує керування SEO та ресурсами."
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "type": "bulletList",
-        "children": [
-          {
-            "type": "listItem",
-            "children": [
+              },
               {
-                "text": "Ці нововведення роблять React 19 потужнішим та зручнішим інструментом для розробників, покращуючи як продуктивність додатків, так і досвід розробки."
+                "type": "bulletList",
+                "children": [
+                  {
+                    "type": "listItem",
+                    "children": [
+                      {
+                        "text": "Ці нововведення роблять React 19 потужнішим та зручнішим інструментом для розробників, покращуючи як продуктивність додатків, так і досвід розробки."
+                      }
+                    ]
+                  }
+                ]
               }
             ]
           }
@@ -20469,7 +20501,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "const deferredValue = useDeferredValue(value);"
+        "content": "const deferredValue = useDeferredValue(value);\r"
       },
       {
         "type": "bulletList",
@@ -20511,7 +20543,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "import { useState, useMemo } from 'react';\n\nfunction SearchList({ items }) {\n  const [query, setQuery] = useState('');\n\n  const filteredItems = useMemo(() => {\n    return items.filter(item => item.includes(query));\n  }, [items, query]);\n\n  return (\n    <>\n      <input\n        value={query}\n        onChange={e => setQuery(e.target.value)}\n        placeholder=\"Пошук...\"\n      />\n      <List items={filteredItems} />\n    </>\n  );\n}"
+        "content": "import { useState, useMemo } from 'react';\r\n\r\nfunction SearchList({ items }) {\r\n  const [query, setQuery] = useState('');\r\n\r\n  const filteredItems = useMemo(() => {\r\n    return items.filter(item => item.includes(query));\r\n  }, [items, query]);\r\n\r\n  return (\r\n    <>\r\n      <input\r\n        value={query}\r\n        onChange={e => setQuery(e.target.value)}\r\n        placeholder=\"Пошук...\"\r\n      />\r\n      <List items={filteredItems} />\r\n    </>\r\n  );\r\n}\r"
       },
       {
         "type": "paragraph",
@@ -20524,7 +20556,7 @@
       {
         "type": "code",
         "language": "jsx",
-        "content": "import { useState, useDeferredValue, useMemo } from 'react';\n\nfunction SearchList({ items }) {\n  const [query, setQuery] = useState('');\n  const deferredQuery = useDeferredValue(query);\n\n  const filteredItems = useMemo(() => {\n    return items.filter(item => item.includes(deferredQuery));\n  }, [items, deferredQuery]);\n\n  return (\n    <>\n      <input\n        value={query}\n        onChange={e => setQuery(e.target.value)}\n        placeholder=\"Пошук...\"\n      />\n      <List items={filteredItems} />\n    </>\n  );\n}"
+        "content": "import { useState, useDeferredValue, useMemo } from 'react';\r\n\r\nfunction SearchList({ items }) {\r\n  const [query, setQuery] = useState('');\r\n  const deferredQuery = useDeferredValue(query);\r\n\r\n  const filteredItems = useMemo(() => {\r\n    return items.filter(item => item.includes(deferredQuery));\r\n  }, [items, deferredQuery]);\r\n\r\n  return (\r\n    <>\r\n      <input\r\n        value={query}\r\n        onChange={e => setQuery(e.target.value)}\r\n        placeholder=\"Пошук...\"\r\n      />\r\n      <List items={filteredItems} />\r\n    </>\r\n  );\r\n}\r"
       },
       {
         "type": "paragraph",
