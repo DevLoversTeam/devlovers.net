@@ -6,6 +6,7 @@ import {
   quizAttemptAnswers,
   quizAnswers,
 } from '@/db/schema/quiz';
+import { awardQuizPoints } from '@/db/queries/points';
 import { eq } from 'drizzle-orm';
 
 export interface UserAnswer {
@@ -35,6 +36,7 @@ export interface SubmitQuizAttemptResult {
   totalQuestions?: number;
   percentage?: number;
   integrityScore?: number;
+  pointsAwarded?: number;
   error?: string;
 }
 
@@ -48,7 +50,7 @@ function validateTimeSpent(
   completedAt: Date,
   questionCount: number
 ): boolean {
-  const MIN_SECONDS_PER_QUESTION = 3;
+  const MIN_SECONDS_PER_QUESTION = 1;
   const timeSpentSeconds = Math.floor(
     (completedAt.getTime() - startedAt.getTime()) / 1000
   );
@@ -142,6 +144,13 @@ export async function submitQuizAttempt(
         answeredAt: result.answeredAt,
       }))
     );
+     const pointsAwarded = await awardQuizPoints({
+      userId,
+      quizId,
+      attemptId: attempt.id,
+      score: correctAnswersCount,
+      integrityScore,
+    });
 
     return {
       success: true,
@@ -150,6 +159,7 @@ export async function submitQuizAttempt(
       totalQuestions,
       percentage: parseFloat(percentage),
       integrityScore,
+      pointsAwarded,
     };
   } catch (error) {
     console.error('Error submitting quiz attempt:', error);

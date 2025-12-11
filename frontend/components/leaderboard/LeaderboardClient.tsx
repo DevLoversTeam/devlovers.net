@@ -16,10 +16,11 @@ export default function LeaderboardClient({
 }: LeaderboardClientProps) {
   const [activeTab, setActiveTab] = useState('Overall');
 
-  const allUsers = initialUsers;
+  const usersWithPoints = initialUsers.filter(user => user.points > 0);
+  const hasResults = usersWithPoints.length > 0;
 
-  const topThree = allUsers.slice(0, 3);
-  const otherUsers = allUsers.slice(3);
+  const topThree = hasResults ? usersWithPoints.slice(0, 3) : [];
+  const otherUsers = initialUsers.slice(3);
 
   return (
     <div className="relative min-h-screen overflow-hidden">
@@ -51,7 +52,19 @@ export default function LeaderboardClient({
         </div>
 
         <div className="w-full mb-12">
-          <LeaderboardPodium topThree={topThree} />
+          {hasResults ? (
+            <LeaderboardPodium topThree={topThree} />
+          ) : (
+            <div className="text-center py-16">
+              <p className="text-6xl mb-4">🏆</p>
+              <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-2">
+                No results yet
+              </h3>
+              <p className="text-slate-600 dark:text-slate-400">
+                Be the first to complete a quiz and claim the top spot!
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="w-full animate-in fade-in slide-in-from-bottom-8 duration-700">
