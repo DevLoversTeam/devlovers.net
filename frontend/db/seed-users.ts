@@ -5,52 +5,59 @@ import * as dotenv from 'dotenv';
 dotenv.config({ path: '.env' });
 
 const mockUsers = [
+   {
+    id: 'test-user-123',
+    name: 'Test User',
+    points: 0,
+    role: 'user',
+    email: 'test@test.com',
+  },
   {
     id: 'user_1',
     name: 'som-sm',
-    points: 2535,
+    points: 0,
     role: 'user',
     email: 'som@test.com',
   },
   {
     id: 'user_2',
     name: 'sanjana',
-    points: 2485,
+    points: 0,
     role: 'user',
     email: 'sanjana@test.com',
   },
   {
     id: 'user_3',
     name: 'satohshi',
-    points: 2435,
+    points: 0,
     role: 'user',
     email: 'sat@test.com',
   },
   {
     id: 'user_4',
     name: 'Cristopher',
-    points: 2385,
+    points: 0,
     role: 'user',
     email: 'cris@test.com',
   },
   {
     id: 'user_5',
     name: 'Saad Khan',
-    points: 2335,
+    points: 0,
     role: 'user',
     email: 'saad@test.com',
   },
   {
     id: 'user_6',
     name: 'AlexDev',
-    points: 2285,
+    points: 0,
     role: 'admin',
     email: 'alex@test.com',
   },
   {
     id: 'user_7',
     name: 'CodeMaster',
-    points: 2235,
+    points: 0,
     role: 'user',
     email: 'code@test.com',
   },
@@ -61,7 +68,17 @@ async function main() {
 
   try {
     for (const user of mockUsers) {
-      await db.insert(users).values(user).onConflictDoNothing();
+      await db
+  .insert(users)
+  .values(user)
+  .onConflictDoUpdate({
+    target: users.email,
+    set: {
+      points: user.points,
+      name: user.name,
+      role: user.role,
+    },
+  });
     }
     console.log('✅ Users seeded successfully!');
   } catch (error) {
