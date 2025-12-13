@@ -3,11 +3,13 @@ import 'dotenv/config';
 import { db } from './index';
 import { categories, questions } from './schema';
 import { eq } from 'drizzle-orm';
+// ! Reset sequense to 1
 // import { sql } from 'drizzle-orm';
+
 import data from '../data/questions.json';
 
 async function main() {
-  // TODO: Reset sequense to 1
+  // ! Reset sequense to 1
   // await db.delete(questions);
   // await db.execute(sql`ALTER SEQUENCE questions_id_seq RESTART WITH 1`);
   // console.log('Table cleared, sequence reset to 1');
