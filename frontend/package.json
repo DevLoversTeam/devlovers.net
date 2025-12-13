@@ -7,10 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "seed:categories": "tsx db/seedCategories.ts",
+    "seed:categories": "tsx db/seed-categories.ts",
     "seed": "tsx db/seed.ts",
     "seed:users": "tsx db/seed-users.ts",
-    "parse": "tsx db_script/script.ts"
+    "parse": "tsx data/parse.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",

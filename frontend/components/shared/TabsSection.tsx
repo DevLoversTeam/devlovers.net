@@ -7,7 +7,7 @@ import AccordionList from '@/components/shared/AccordionList';
 import { Pagination } from '@/components/shared/Pagination';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
-const categories = ['react', 'angular', 'vue', 'javascript'];
+const categories = ['react', 'vue', 'angular', 'javascript', 'nextjs'];
 const DEBOUNCE_MS = 400;
 
 interface PaginatedResponse {
@@ -75,7 +75,6 @@ export default function TabsSection() {
     };
   }, [searchQuery]);
 
-  // Fetch data
   useEffect(() => {
     async function load() {
       setIsLoading(true);
@@ -149,8 +148,12 @@ export default function TabsSection() {
         )}
       </div>
 
-      <Tabs value={active} onValueChange={handleCategoryChange} className="w-full">
-        <TabsList className="grid grid-cols-4 mb-6">
+      <Tabs
+        value={active}
+        onValueChange={handleCategoryChange}
+        className="w-full"
+      >
+        <TabsList className="grid grid-cols-5 mb-6">
           {categories.map(c => (
             <TabsTrigger key={c} value={c} className="capitalize">
               {c}
