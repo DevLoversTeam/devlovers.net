@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import TabsSection from '@/components/shared/TabsSection';
 
 export const metadata = {
@@ -9,7 +10,9 @@ export const metadata = {
 export default function QAPage() {
   return (
     <main className="max-w-3xl mx-auto py-10">
-      <TabsSection />
+      <Suspense fallback={<>...</>}>
+        <TabsSection />
+      </Suspense>
     </main>
   );
 }
