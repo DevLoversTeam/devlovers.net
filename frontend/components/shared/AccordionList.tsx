@@ -291,4 +291,3 @@ export default function AccordionList({ items }: { items: QuestionEntry[] }) {
     </Accordion>
   );
 }
-
