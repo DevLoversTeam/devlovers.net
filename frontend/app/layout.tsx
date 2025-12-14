@@ -2,10 +2,10 @@ import { Toaster } from 'sonner';
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import Link from 'next/link';
+import Footer from '@/components/shared/Footer';
 import './globals.css';
 
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
-import { ThemeToggle } from '@/components/theme/ThemeToggle';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -90,17 +90,7 @@ export default function RootLayout({
           </header>
 
           <main className="mx-auto px-6 min-h-[80vh]">{children}</main>
-
-          <footer className="border-t border-gray-200 dark:border-neutral-800 text-center py-8 text-sm text-gray-500 dark:text-gray-400 transition-colors">
-            <div className="flex flex-col items-center gap-4">
-              <ThemeToggle />
-
-              <p>
-                © {new Date().getFullYear()} DevLovers Blog. All rights
-                reserved.
-              </p>
-            </div>
-          </footer>
+          <Footer />
 
           <Toaster position="top-right" richColors expand={true} />
         </ThemeProvider>
