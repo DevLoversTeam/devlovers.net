@@ -5,29 +5,36 @@ import Link from 'next/link';
 import Footer from '@/components/shared/Footer';
 import './globals.css';
 
-import { ThemeProvider } from '@/components/theme/ThemeProvider';
+import { ThemeProvider } from "@/components/theme/ThemeProvider";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { LogoutButton } from "@/components/auth/logoutButton";
+import { getCurrentUser } from "@/lib/auth";
+
+export const dynamic = "force-dynamic";
 
 const geistSans = Geist({
-  variable: '--font-geist-sans',
-  subsets: ['latin'],
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
 });
 
 const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: 'Home | DevLovers',
+  title: "Home | DevLovers",
   description:
-    'DevLovers - a platform for technical interview preparation in frontend, backend, and full-stack development.',
+    "DevLovers - a platform for technical interview preparation in frontend, backend, and full-stack development.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const user = await getCurrentUser();
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body
@@ -63,7 +70,7 @@ export default function RootLayout({
                 </Link>
                 <Link
                   href="/leaderboard"
-                  className="hover:text-blue-600 dark:hover:text-blue-400 transition flex items-center gap-1"
+                  className="hover:text-blue-600 dark:hover:text-blue-400 transition"
                 >
                   Leaderboard
                 </Link>
@@ -85,14 +92,35 @@ export default function RootLayout({
                 >
                   Contacts
                 </Link>
+
+                {/* Auth actions */}
+                {!user ? (
+                  <Link
+                    href="/login"
+                    className="hover:text-blue-600 dark:hover:text-blue-400 transition"
+                  >
+                    Log in
+                  </Link>
+                ) : (
+                  <LogoutButton />
+                )}
               </nav>
             </div>
           </header>
 
           <main className="mx-auto px-6 min-h-[80vh]">{children}</main>
-          <Footer />
 
-          <Toaster position="top-right" richColors expand={true} />
+          <footer className="border-t border-gray-200 dark:border-neutral-800 text-center py-8 text-sm text-gray-500 dark:text-gray-400 transition-colors">
+            <div className="flex flex-col items-center gap-4">
+              <ThemeToggle />
+
+              <p>
+                © {new Date().getFullYear()} DevLovers Blog. All rights reserved.
+              </p>
+            </div>
+          </footer>
+
+          <Toaster position="top-right" richColors expand />
         </ThemeProvider>
       </body>
     </html>
