@@ -3,19 +3,31 @@ import {
   text,
   integer,
   timestamp,
-} from 'drizzle-orm/pg-core';
-import { relations } from 'drizzle-orm';
-import { quizAttempts } from './quiz';
+} from "drizzle-orm/pg-core";
+import { relations, sql } from "drizzle-orm";
+import { quizAttempts } from "./quiz";
 
-export const users = pgTable('user', {
-  id: text('id').primaryKey().notNull(),
-  name: text('name'),
-  email: text('email').notNull().unique(),
-  emailVerified: timestamp('emailVerified', { mode: 'date' }),
-  image: text('image'),
-  role: text('role').default('user'),
-  points: integer('points').default(0),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
+export const users = pgTable("users", {
+  id: text("id")
+    .primaryKey()
+    .notNull()
+    .default(sql`gen_random_uuid()`),
+
+  name: text("name"),
+
+  email: text("email").notNull().unique(),
+
+  passwordHash: text("password_hash"),
+
+  emailVerified: timestamp("email_verified", { mode: "date" }),
+
+  image: text("image"),
+
+  role: text("role").notNull().default("user"),
+
+  points: integer("points").notNull().default(0),
+
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 export const usersRelations = relations(users, ({ many }) => ({
