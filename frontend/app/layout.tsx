@@ -110,15 +110,8 @@ export default async function RootLayout({
 
           <main className="mx-auto px-6 min-h-[80vh]">{children}</main>
 
-          <footer className="border-t border-gray-200 dark:border-neutral-800 text-center py-8 text-sm text-gray-500 dark:text-gray-400 transition-colors">
-            <div className="flex flex-col items-center gap-4">
-              <ThemeToggle />
 
-              <p>
-                © {new Date().getFullYear()} DevLovers Blog. All rights reserved.
-              </p>
-            </div>
-          </footer>
+          <Footer />
 
           <Toaster position="top-right" richColors expand />
         </ThemeProvider>
