@@ -31,9 +31,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
+        suppressHydrationWarning
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 text-gray-900 dark:bg-neutral-950 dark:text-gray-100 transition-colors duration-300`}
       >
-        {}
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -47,6 +47,7 @@ export default function RootLayout({
                   DevLovers
                 </span>
               </Link>
+
               <nav className="flex items-center gap-6 text-gray-700 dark:text-gray-300 font-medium">
                 <Link
                   href="/q&a"
@@ -92,7 +93,6 @@ export default function RootLayout({
 
           <footer className="border-t border-gray-200 dark:border-neutral-800 text-center py-8 text-sm text-gray-500 dark:text-gray-400 transition-colors">
             <div className="flex flex-col items-center gap-4">
-              {}
               <ThemeToggle />
 
               <p>
