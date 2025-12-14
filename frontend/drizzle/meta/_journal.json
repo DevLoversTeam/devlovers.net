@@ -5,43 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1764535252573,
-      "tag": "0000_strong_mauler",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1764535835836,
-      "tag": "0001_tiny_kitty_pryde",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1764781450263,
-      "tag": "0002_fantastic_retro_girl",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1765197457538,
-      "tag": "0003_fine_makkari",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1765632818425,
-      "tag": "0004_gray_loki",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1765633265067,
-      "tag": "0005_blushing_nightcrawler",
+      "when": 1765736767696,
+      "tag": "0000_rich_magus",
       "breakpoints": true
     }
   ]
