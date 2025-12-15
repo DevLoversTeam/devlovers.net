@@ -1,5 +1,4 @@
-import { User } from 'lucide-react'; 
-
+import { User } from 'lucide-react';
 
 interface ProfileCardProps {
   user: {
@@ -12,7 +11,6 @@ interface ProfileCardProps {
 }
 
 export function ProfileCard({ user }: ProfileCardProps) {
-
   const cardStyles = `
     relative overflow-hidden rounded-[2rem]
     border border-slate-200/70 dark:border-slate-700/80
@@ -23,17 +21,22 @@ export function ProfileCard({ user }: ProfileCardProps) {
   `;
 
   return (
-    <div className={cardStyles}>
+    <section className={cardStyles} aria-labelledby="profile-heading">
       <div className="flex items-start gap-6">
-    
-        <div className="relative p-[3px] rounded-full bg-gradient-to-br from-sky-400 to-pink-400">
+        <div
+          className="relative p-[3px] rounded-full bg-gradient-to-br from-sky-400 to-pink-400"
+          aria-hidden="true"
+        >
           <div className="h-20 w-20 rounded-full bg-white dark:bg-slate-900 flex items-center justify-center text-3xl font-bold text-slate-700 dark:text-slate-200">
             {user.name?.[0]?.toUpperCase() || user.email[0].toUpperCase()}
           </div>
         </div>
 
         <div className="flex-1">
-          <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
+          <h2
+            id="profile-heading"
+            className="text-2xl font-bold text-slate-800 dark:text-slate-100"
+          >
             {user.name || 'Developer'}
           </h2>
           <p className="text-slate-500 dark:text-slate-400 text-sm font-mono">
@@ -46,26 +49,27 @@ export function ProfileCard({ user }: ProfileCardProps) {
         </div>
       </div>
 
-      <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800/50 grid grid-cols-2 gap-6">
+      <dl className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800/50 grid grid-cols-2 gap-6">
         <div>
-          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+          <dt className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
             Total Points
-          </span>
-          <div className="text-3xl font-black text-slate-800 dark:text-white mt-1">
+          </dt>
+
+          <dd className="text-3xl font-black text-slate-800 dark:text-white mt-1">
             {user.points}
-          </div>
+          </dd>
         </div>
         <div>
-          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+          <dt className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
             Joined
-          </span>
-          <div className="text-lg font-medium text-slate-700 dark:text-slate-300 mt-2">
+          </dt>
+          <dd className="text-lg font-medium text-slate-700 dark:text-slate-300 mt-2">
             {user.createdAt
               ? new Date(user.createdAt).toLocaleDateString('uk-UA')
               : '-'}
-          </div>
+          </dd>
         </div>
-      </div>
-    </div>
+      </dl>
+    </section>
   );
 }
