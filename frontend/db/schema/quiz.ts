@@ -13,6 +13,7 @@ import {
   unique,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
+import { users } from './users';
 
 export const quizzes = pgTable(
   'quizzes',
@@ -249,6 +250,11 @@ export const quizAttemptsRelations = relations(
     quiz: one(quizzes, {
       fields: [quizAttempts.quizId],
       references: [quizzes.id],
+    }),
+
+    user: one(users, {
+      fields: [quizAttempts.userId],
+      references: [users.id],
     }),
     answers: many(quizAttemptAnswers),
   })

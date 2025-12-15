@@ -238,6 +238,16 @@ export async function getUserQuizHistory(
   return attempts as QuizAttempt[];
 }
 
+export async function getUserQuizStats(userId: string) {
+  const attempts = await db
+    .select()
+    .from(quizAttempts)
+    .where(eq(quizAttempts.userId, userId))
+    .orderBy(desc(quizAttempts.completedAt));
+
+  return attempts;
+}
+
 export async function getAttemptDetails(attemptId: string) {
   const attempt = await db
     .select()
