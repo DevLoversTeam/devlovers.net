@@ -20,7 +20,8 @@ export default function LeaderboardClient({
   const hasResults = usersWithPoints.length > 0;
 
   const topThree = hasResults ? usersWithPoints.slice(0, 3) : [];
-  const otherUsers = initialUsers.slice(3);
+  // const otherUsers = initialUsers.slice(3);
+  const otherUsers = usersWithPoints.slice(3);
 
   return (
     <div className="relative min-h-screen overflow-hidden">

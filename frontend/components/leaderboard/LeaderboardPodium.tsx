@@ -53,6 +53,8 @@ export function LeaderboardPodium({ topThree }: { topThree: User[] }) {
                   <Image
                     src={user.avatar}
                     alt={user.username}
+                    width={64}
+                    height={64}
                     className="w-full h-full object-cover"
                   />
                 ) : (
