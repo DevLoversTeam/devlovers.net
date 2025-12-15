@@ -20,14 +20,21 @@ export function StatsCard() {
   `;
 
   return (
-    <div
+    <section
       className={`${cardStyles} flex flex-col items-center justify-center text-center`}
+      aria-labelledby="stats-heading"
     >
-      <div className="mb-6 p-4 rounded-full bg-slate-50 dark:bg-slate-800/50 shadow-inner">
+      <div
+        className="mb-6 p-4 rounded-full bg-slate-50 dark:bg-slate-800/50 shadow-inner"
+        aria-hidden="true"
+      >
         <span className="text-4xl">📊</span>
       </div>
 
-      <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">
+      <h3
+        id="stats-heading"
+        className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2"
+      >
         Quiz Statistics
       </h3>
       <p className="text-slate-500 dark:text-slate-400 mb-8 max-w-xs mx-auto">
@@ -36,8 +43,11 @@ export function StatsCard() {
 
       <Link href="/quiz/react-fundamentals" className={primaryBtnStyles}>
         <span className="relative z-10">Start a Quiz</span>
-        <span className="absolute inset-0 rounded-full bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+        <span
+          className="absolute inset-0 rounded-full bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"
+          aria-hidden="true"
+        />
       </Link>
-    </div>
+    </section>
   );
 }

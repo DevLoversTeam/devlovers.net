@@ -8,6 +8,7 @@ import { StatsCard } from '@/components/dashboard/StatsCard';
 
 export const metadata = {
   title: 'Dashboard | DevLovers',
+  description: 'Track your progress and quiz performance.',
 };
 
 export default async function DashboardPage() {
@@ -17,18 +18,15 @@ export default async function DashboardPage() {
   const user = await getUserProfile(session.id);
   if (!user) redirect('/login');
 
-  const outlineBtnStyles = `
-    inline-flex items-center justify-center rounded-full 
-    border border-slate-200 dark:border-slate-700 
-    bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm
-    px-6 py-2 text-sm font-medium text-slate-600 dark:text-slate-300
-    transition-colors hover:bg-white hover:text-sky-600 
-    dark:hover:bg-slate-800 dark:hover:text-sky-400
-  `;
+  const outlineBtnStyles =
+    'inline-flex items-center justify-center rounded-full border border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm px-6 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 transition-colors hover:bg-white hover:text-sky-600 dark:hover:bg-slate-800 dark:hover:text-sky-400';
 
   return (
-    <div className="relative min-h-[calc(100vh-80px)] overflow-hidden">
-      <div className="absolute inset-0 pointer-events-none -z-10">
+    <main className="relative min-h-[calc(100vh-80px)] overflow-hidden">
+      <div
+        className="absolute inset-0 pointer-events-none -z-10"
+        aria-hidden="true"
+      >
         <div className="absolute inset-0 bg-gradient-to-b from-sky-50 via-white to-rose-50 dark:from-slate-950 dark:via-slate-950 dark:to-black" />
         <div className="absolute top-0 left-1/4 h-96 w-[36rem] -translate-x-1/2 rounded-full bg-sky-300/20 blur-3xl dark:bg-sky-500/10" />
         <div className="absolute bottom-0 right-0 h-[26rem] w-[26rem] rounded-full bg-violet-300/30 blur-3xl dark:bg-violet-500/10" />
@@ -36,7 +34,7 @@ export default async function DashboardPage() {
       </div>
 
       <div className="relative z-10 max-w-5xl mx-auto py-12 px-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
+        <header className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
           <div>
             <h1 className="text-4xl md:text-5xl font-black tracking-tight drop-shadow-sm">
               <span className="bg-gradient-to-r from-sky-400 via-violet-400 to-pink-400 dark:from-sky-400 dark:via-indigo-400 dark:to-fuchsia-500 bg-clip-text text-transparent">
@@ -51,13 +49,13 @@ export default async function DashboardPage() {
           <Link href="/contacts" className={outlineBtnStyles}>
             Support & Feedback
           </Link>
-        </div>
+        </header>
 
         <div className="grid gap-8 md:grid-cols-2">
           <ProfileCard user={user} />
           <StatsCard />
         </div>
       </div>
-    </div>
+    </main>
   );
 }
