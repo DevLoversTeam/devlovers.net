@@ -1,5 +1,3 @@
-import { User } from 'lucide-react';
-
 interface ProfileCardProps {
   user: {
     name: string | null;

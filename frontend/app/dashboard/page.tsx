@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getCurrentUser } from '@/lib/auth';
 import { getUserProfile } from '@/db/queries/users';
+import { getUserQuizStats } from '@/db/queries/quiz';
 
 import { ProfileCard } from '@/components/dashboard/ProfileCard';
 import { StatsCard } from '@/components/dashboard/StatsCard';
@@ -17,6 +18,36 @@ export default async function DashboardPage() {
 
   const user = await getUserProfile(session.id);
   if (!user) redirect('/login');
+
+  const attempts = await getUserQuizStats(session.id);
+
+  const totalAttempts = attempts.length;
+
+  const realPoints = attempts.reduce((sum, attempt) => sum + attempt.score, 0);
+
+  const averageScore =
+    totalAttempts > 0
+      ? Math.round(
+          attempts.reduce((acc, curr) => acc + Number(curr.percentage), 0) /
+            totalAttempts
+        )
+      : 0;
+
+  const lastActiveDate =
+    totalAttempts > 0
+      ? new Date(attempts[0].completedAt).toLocaleDateString('uk-UA')
+      : null;
+
+  const userForDisplay = {
+    ...user,
+    points: realPoints,
+  };
+
+  const stats = {
+    totalAttempts,
+    averageScore,
+    lastActiveDate,
+  };
 
   const outlineBtnStyles =
     'inline-flex items-center justify-center rounded-full border border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm px-6 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 transition-colors hover:bg-white hover:text-sky-600 dark:hover:bg-slate-800 dark:hover:text-sky-400';
@@ -52,8 +83,8 @@ export default async function DashboardPage() {
         </header>
 
         <div className="grid gap-8 md:grid-cols-2">
-          <ProfileCard user={user} />
-          <StatsCard />
+          <ProfileCard user={userForDisplay} />
+          <StatsCard stats={stats} />
         </div>
       </div>
     </main>

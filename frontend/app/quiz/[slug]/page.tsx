@@ -1,6 +1,7 @@
 import { getQuizBySlug, getQuizQuestionsRandomized } from '@/db/queries/quiz';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { QuizContainer } from '@/components/quiz/QuizContainer';
+import { getCurrentUser } from '@/lib/auth';
 
 interface QuizPageProps {
   params: Promise<{ slug: string }>;
@@ -13,6 +14,12 @@ export default async function QuizPage({
 }: QuizPageProps) {
   const { slug } = await params;
   const { locale = 'uk' } = await searchParams;
+
+  const user = await getCurrentUser();
+
+  if (!user) {
+    redirect('/login');
+  }
 
   const quiz = await getQuizBySlug(slug, locale);
 
@@ -49,10 +56,11 @@ export default async function QuizPage({
             )}
           </div>
         </div>
+
         <QuizContainer
           quizId={quiz.id}
           questions={questions}
-          userId="test-user-123"
+          userId={user.id}
         />
       </div>
     </div>

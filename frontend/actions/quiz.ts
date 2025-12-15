@@ -144,7 +144,7 @@ export async function submitQuizAttempt(
         answeredAt: result.answeredAt,
       }))
     );
-     const pointsAwarded = await awardQuizPoints({
+    const pointsAwarded = await awardQuizPoints({
       userId,
       quizId,
       attemptId: attempt.id,
