@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { users } from '@/db/schema/users';
 
-// Використовуємо cache React'а для дедуплікації запитів, якщо викличемо це в layout і page одночасно
+
 export const getUserProfile = cache(async (userId: string) => {
   const user = await db.query.users.findFirst({
     where: eq(users.id, userId),
