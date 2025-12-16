@@ -48,10 +48,7 @@ export async function POST(request: NextRequest) {
   try {
     const { items } = parsedPayload.data
     const parsedResult = await rehydrateCartItems(items)
-    console.log("rehydrate_result", JSON.stringify(parsedResult, null, 2))
-
-
-
+    
     return NextResponse.json(parsedResult)
   } catch (error) {
     console.error("Cart rehydrate failed", error)

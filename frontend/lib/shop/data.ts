@@ -164,15 +164,12 @@ export async function getCatalogProducts(filters: unknown): Promise<CatalogPage>
 
 export async function getProductDetail(slug: string): Promise<ShopProduct | null> {
   try {
-    console.log("getProductDetail: slug =", slug)
     const dbProduct = await getPublicProductBySlug(slug)
-    console.log("getProductDetail: dbProduct =", dbProduct)
-
+    
     if (!dbProduct) return null
 
     const mapped = mapToShopProduct(dbProduct)
-    console.log("getProductDetail: mapped =", mapped)
-
+    
     return mapped
   } catch (error) {
     console.error(`Failed to load product ${slug}`, error)
