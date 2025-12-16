@@ -40,5 +40,6 @@ export const config = {
     '/leaderboard/:path*',
     '/quiz/:path*',
     '/dashboard/:path*',
+    "/api/shop/admin/:path*",
   ],
 };

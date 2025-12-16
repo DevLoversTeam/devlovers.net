@@ -1,4 +1,3 @@
-// app/api/admin/products/[id]/status/route.ts
 import { NextRequest, NextResponse } from "next/server"
 
 import { AdminApiDisabledError, requireAdminApi } from "@/lib/auth/admin"
@@ -11,7 +10,7 @@ export async function PATCH(
 ) {
   try {
     await requireAdminApi(request)
-    // params – це Promise, розпаковуємо
+
     const { id: productId } = await context.params
 
     if (!productId) {

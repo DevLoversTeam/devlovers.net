@@ -10,19 +10,10 @@ import {
   productAdminUpdateSchema,
 } from "@/lib/validation/shop"
 
-/**
- * Admin product payload as validated by productAdminSchema.
- */
 export type AdminProductPayload = z.infer<typeof productAdminSchema>
 
-/**
- * Input DTO for creating a product from the admin UI.
- */
 export type ProductInput = AdminProductPayload & { image: File }
 
-/**
- * Input DTO for updating a product from the admin UI.
- */
 export type ProductUpdateInput = z.infer<typeof productAdminUpdateSchema> & { image?: File | null }
 
 export type DbProduct = z.infer<typeof dbProductSchema>

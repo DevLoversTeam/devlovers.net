@@ -97,7 +97,6 @@ function buildCheckoutResponse({
 }) {
   return NextResponse.json(
     {
-      // формат, який очікують тести
       success: true,
       order: {
         id: order.id,
@@ -109,7 +108,6 @@ function buildCheckoutResponse({
         paymentIntentId: order.paymentIntentId,
         clientSecret,
       },
-      // додаткові поля для фронта
       orderId: order.id,
       paymentStatus: order.paymentStatus,
       paymentProvider: order.paymentProvider,
@@ -165,7 +163,6 @@ export async function POST(request: NextRequest) {
   }
 
   const { items, userId } = parsedPayload.data;
-  // itemCount рахуємо з payload, як очікують тести
   const itemCount = items.reduce((total, item) => total + item.quantity, 0);
 
   try {
@@ -245,7 +242,6 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // повторний запит з тим самим idempotency key — віддаємо вже існуюче замовлення
       return buildCheckoutResponse({
         order: {
           id: order.id,
@@ -277,7 +273,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // === Stripe ввімкнено — працюємо як раніше, через PaymentIntent ===
     try {
       const paymentIntent = await createPaymentIntent({
         amount: totalCents,

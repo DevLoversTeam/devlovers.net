@@ -196,7 +196,7 @@ export async function getHomepageContent(): Promise<HomepageContent> {
       headline: "Postgres-powered storefront for developers",
       subheadline: "All product content now lives in Neon/Postgres via Drizzle—no CMS required.",
       ctaText: "Shop now",
-      ctaLink: "/products",
+      ctaLink: "/shop/products",
     },
     newArrivals: fallbackCatalog,
     categories: CATEGORY_TILES,

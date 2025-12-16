@@ -12,7 +12,6 @@ export function generateIdempotencyKey(): string {
       return crypto.randomUUID().replace(/[^A-Za-z0-9_-]/g, "").slice(0, IDEMPOTENCY_MAX_LENGTH)
     }
   } catch {
-    // ignore and use fallback
   }
 
   return fallbackKey()

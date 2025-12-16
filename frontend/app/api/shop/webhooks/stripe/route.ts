@@ -17,7 +17,6 @@ function logWebhookEvent(payload: {
 }) {
   const { orderId, paymentIntentId, paymentStatus, eventType } = payload;
 
-  // Мінімальне структуроване логування без PII
   console.log('stripe_webhook', {
     provider: 'stripe',
     orderId,
@@ -105,7 +104,6 @@ function buildPspMetadata(params: {
 export async function POST(request: NextRequest) {
   let rawBody: string;
 
-  // 1. Зчитали сире тіло
   try {
     rawBody = await request.text();
   } catch (error) {
@@ -113,7 +111,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'invalid_payload' }, { status: 400 });
   }
 
-  // 2. Витягнули підпис
   const signature = request.headers.get('stripe-signature');
   if (!signature) {
     logError(
@@ -123,7 +120,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'missing_signature' }, { status: 400 });
   }
 
-  // 3. Перевірили підпис
   let event: Stripe.Event;
   try {
     event = verifyWebhookSignature({ rawBody, signatureHeader: signature });
@@ -151,20 +147,18 @@ export async function POST(request: NextRequest) {
   let paymentIntent: Stripe.PaymentIntent | undefined;
   let charge: Stripe.Charge | undefined;
 
-  // Визначаємо, що саме прийшло, по event.type, а не по полю object
   if (eventType.startsWith('payment_intent.')) {
     paymentIntent = rawObject as Stripe.PaymentIntent;
   } else if (eventType.startsWith('charge.')) {
     charge = rawObject as Stripe.Charge;
   }
 
-  // Дістаємо paymentIntentId максимально терпимо до форми об’єкта
   let paymentIntentId: string | null = null;
 
   if (paymentIntent && typeof paymentIntent.id === 'string') {
     paymentIntentId = paymentIntent.id;
   } else if (charge) {
-    const pi = charge.payment_intent; // string | Stripe.PaymentIntent | null
+    const pi = charge.payment_intent; 
 
     if (typeof pi === 'string') {
       paymentIntentId = pi;
@@ -196,7 +190,6 @@ export async function POST(request: NextRequest) {
       ? metadata.orderId
       : undefined;
 
-  // Якщо ми реально не можемо дістати paymentIntentId – просто лог і 200
   if (!paymentIntentId) {
     logWebhookEvent({ eventType, paymentIntentId, paymentStatus });
     return NextResponse.json({ received: true }, { status: 200 });
@@ -211,7 +204,7 @@ export async function POST(request: NextRequest) {
   try {
     const response = await db.transaction(async tx => {
       try {
-        // Idempotency guard: if inserting the Stripe event hits UNIQUE, we treat it as already processed.
+
         await tx.insert(stripeEvents).values({
           provider: 'stripe',
           eventId: event.id,
@@ -446,7 +439,6 @@ export async function POST(request: NextRequest) {
 
         await restockOrder(order.id, { reason: 'refunded', tx });
       } else {
-        // Інші події просто логуються
         logWebhookEvent({
           orderId: order.id,
           paymentIntentId,
@@ -455,8 +447,6 @@ export async function POST(request: NextRequest) {
         });
         return NextResponse.json({ received: true }, { status: 200 });
       }
-
-      // 7. Фінальний лог і 200
       logWebhookEvent({
         orderId: order.id,
         paymentIntentId,

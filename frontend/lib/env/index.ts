@@ -1,8 +1,5 @@
 import { z } from "zod"
 
-// Do not access process.env directly. Always use the helpers in this module so we validate inputs consistently.
-// TODO: Enforce this via linting to prevent accidental raw environment access.
-
 const runtimeEnvSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
 })

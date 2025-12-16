@@ -1,4 +1,3 @@
-// lib/psp/stripe.ts
 import Stripe from "stripe"
 
 import { getStripeEnv } from "@/lib/env/stripe"
@@ -6,7 +5,6 @@ import { logError } from "@/lib/logging"
 
 const { secretKey, webhookSecret, paymentsEnabled, mode } = getStripeEnv()
 
-// Ініціалізуємо Stripe один раз
 const stripe = secretKey
   ? new Stripe(secretKey, {
       apiVersion: "2025-11-17.clover",
@@ -27,7 +25,6 @@ export async function createPaymentIntent({
   idempotencyKey,
 }: CreatePaymentIntentInput): Promise<{ clientSecret: string; paymentIntentId: string }> {
   if (!paymentsEnabled || !stripe) {
-    // /api/checkout реагує на помилки з префіксом STRIPE_
     throw new Error("STRIPE_DISABLED")
   }
 

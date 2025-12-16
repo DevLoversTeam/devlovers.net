@@ -19,9 +19,6 @@ export async function GET(
       )
     }
 
-    // TODO: Once auth is integrated, restrict this endpoint:
-    // - Only the owner of the order OR an admin can access this resource.
-    // - Otherwise return 403 (FORBIDDEN).
 
     const order = await getOrderSummary(parsed.data.id)
 

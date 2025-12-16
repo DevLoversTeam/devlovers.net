@@ -1,4 +1,3 @@
-// Cart state management using cookies/localStorage
 import { z } from "zod"
 
 import { fromCents, toCents } from "@/lib/shop/money"
@@ -127,7 +126,7 @@ export async function rehydrateCart(items: CartClientItem[]): Promise<Cart> {
     return emptyCart
   }
 
-  const response = await fetch("/api/cart/rehydrate", {
+  const response = await fetch("/api/shop/cart/rehydrate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ items }),

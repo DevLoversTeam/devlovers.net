@@ -53,7 +53,6 @@ function buildWhereClause(options: {
     conditions.push(sql`${products.slug} = ANY(${options.slugs})`)
   }
 
-  // and(...) теж може повертати union, тому фіксуємо
   return (and(...conditions) ?? conditions[0]) as SQL
 }
 
@@ -67,7 +66,6 @@ function applySorting(sort?: CatalogSort): SQL {
     case "newest":
       return desc(products.createdAt)
     default:
-      // будь-який fallback, нехай буде "найновіші"
       return desc(products.createdAt)
   }
 }

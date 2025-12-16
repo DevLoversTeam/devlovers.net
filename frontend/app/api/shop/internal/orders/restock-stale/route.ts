@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
         }
       }
     } catch {
-      // ignore body parsing errors and fall back to default
+
     }
   }
 
