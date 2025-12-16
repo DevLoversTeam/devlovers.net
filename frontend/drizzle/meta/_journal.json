@@ -8,6 +8,13 @@
       "when": 1765736767696,
       "tag": "0000_rich_magus",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1765838764737,
+      "tag": "0001_black_random",
+      "breakpoints": true
     }
   ]
 }
