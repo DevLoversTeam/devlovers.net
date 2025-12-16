@@ -9,7 +9,7 @@ import {
   type ProductBadge,
   type ShopProduct as ValidationShopProduct,
 } from "@/lib/validation/shop"
-import { getActiveProductsPage, getFeaturedProducts, getPublicProductBySlug } from "../db/products"
+import { getActiveProductsPage, getFeaturedProducts, getPublicProductBySlug } from "@/db/queries/shop/products"
 import { fromCents, fromDbMoney } from "./money"
 
 export type ShopProduct = ValidationShopProduct

@@ -92,6 +92,12 @@ export default async function RootLayout({
                 >
                   Contacts
                 </Link>
+                <Link
+                  href="/shop"
+                  className="hover:text-blue-600 dark:hover:text-blue-400 transition"
+                >
+                  Shop
+                </Link>
 
                 {/* Auth actions */}
                 {!user ? (

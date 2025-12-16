@@ -1,13 +1,13 @@
-import { and, eq, inArray, ne, sql } from "drizzle-orm"
+import { and, eq, inArray, ne, SQL } from "drizzle-orm"
 
 import { destroyProductImage, uploadProductImageFromFile } from "@/lib/cloudinary"
-import { requireDb } from "@/lib/db/client"
-import { products } from "@/lib/db/schema"
+import { db } from "@/db"
+import { products } from "@/db/schema"
 import { logError } from "@/lib/logging"
 import { calculateLineTotal, fromCents, fromDbMoney, toCents, toDbMoney } from "@/lib/shop/money"
 import { slugify } from "@/lib/shop/slug"
 import { MAX_QUANTITY_PER_LINE, cartRehydrateResultSchema } from "@/lib/validation/shop"
-import { coercePriceFromDb } from "@/lib/db/orders"
+import { coercePriceFromDb } from "@/db/queries/shop/orders"
 import type { CartClientItem, CartRehydrateItem, CartRehydrateResult, CartRemovedItem } from "@/lib/validation/shop"
 import { DbProduct, ProductInput, ProductUpdateInput } from "@/lib/types/shop"
 import { SlugConflictError } from "./errors"
@@ -23,7 +23,7 @@ type ProductsTable = typeof products
 
 type ProductRow = ProductsTable["$inferSelect"]
 
-type DbClient = ReturnType<typeof requireDb>
+type DbClient = typeof db
 
 function randomSuffix(length = 6) {
   return Math.random().toString(36).substring(2, 2 + length)
@@ -86,7 +86,6 @@ function mapRowToProduct(row: ProductRow): DbProduct {
 }
 
 export async function createProduct(input: ProductInput): Promise<DbProduct> {
-  const db = requireDb()
   const slug = await normalizeSlug(db, input.slug ?? input.title)
 
   let uploaded: { secureUrl: string; publicId: string } | null = null
@@ -151,7 +150,6 @@ export async function createProduct(input: ProductInput): Promise<DbProduct> {
 }
 
 export async function updateProduct(id: string, input: ProductUpdateInput): Promise<DbProduct> {
-  const db = requireDb()
   const [existing] = await db.select().from(products).where(eq(products.id, id)).limit(1)
 
   if (!existing) {
@@ -238,7 +236,6 @@ export async function updateProduct(id: string, input: ProductUpdateInput): Prom
 }
 
 export async function deleteProduct(id: string): Promise<void> {
-  const db = requireDb()
   const [existing] = await db.select().from(products).where(eq(products.id, id)).limit(1)
   if (!existing) {
     throw new Error("PRODUCT_NOT_FOUND")
@@ -256,7 +253,6 @@ export async function deleteProduct(id: string): Promise<void> {
 }
 
 export async function getAdminProductById(id: string): Promise<DbProduct> {
-  const db = requireDb()
   const [row] = await db.select().from(products).where(eq(products.id, id)).limit(1)
   if (!row) {
     throw new Error("PRODUCT_NOT_FOUND")
@@ -265,8 +261,7 @@ export async function getAdminProductById(id: string): Promise<DbProduct> {
 }
 
 export async function getAdminProductsList(filters: AdminProductsFilter = {}): Promise<DbProduct[]> {
-  const db = requireDb()
-  const conditions: any[] = []
+  const conditions: SQL[] = []
 
   if (typeof filters.isActive === "boolean") {
     conditions.push(eq(products.isActive, filters.isActive))
@@ -288,7 +283,6 @@ export async function getAdminProductsList(filters: AdminProductsFilter = {}): P
 
 export async function rehydrateCartItems(items: CartClientItem[]): Promise<CartRehydrateResult> {
   const uniqueProductIds = Array.from(new Set(items.map((item) => item.productId)))
-  const db = requireDb()
     const dbProducts = await db
     .select()
     .from(products)
@@ -363,7 +357,6 @@ export async function rehydrateCartItems(items: CartClientItem[]): Promise<CartR
 }
 
 export async function toggleProductStatus(id: string): Promise<DbProduct> {
-  const db = requireDb()
   const [current] = await db.select().from(products).where(eq(products.id, id)).limit(1)
   if (!current) {
     throw new Error("PRODUCT_NOT_FOUND")

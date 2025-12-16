@@ -1,7 +1,7 @@
 import { and, asc, count, desc, eq, inArray, or, sql, type SQL } from "drizzle-orm"
 import { db } from "@/db"
 import type { CatalogSort } from "@/lib/config/catalog"
-import { products } from "@/db/schema/shop"
+import { products } from "@/db/schema"
 import { dbProductSchema, type DbProduct } from "@/lib/validation/shop"
 
 export type DbProductRow = typeof products.$inferSelect

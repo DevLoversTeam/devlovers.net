@@ -9,7 +9,7 @@ const { secretKey, webhookSecret, paymentsEnabled, mode } = getStripeEnv()
 // Ініціалізуємо Stripe один раз
 const stripe = secretKey
   ? new Stripe(secretKey, {
-      apiVersion: "2024-06-20",
+      apiVersion: "2025-11-17.clover",
     })
   : null
 

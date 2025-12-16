@@ -2,7 +2,10 @@ import { z } from "zod"
 
 import { productAdminSchema, productAdminUpdateSchema } from "@/lib/validation/shop"
 
-type ParsedResult<T> = { ok: true; data: T } | { ok: false; error: z.ZodError<any> }
+type ParsedResult<T> =
+  | { ok: true; data: T }
+  | { ok: false; error: z.ZodError<unknown> }
+
 
 type ParseMode = "create" | "update"
 

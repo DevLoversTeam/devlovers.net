@@ -2,8 +2,8 @@ import { and, eq, gte, inArray, isNull, lt, sql } from "drizzle-orm";
 
 import { isPaymentsEnabled } from "@/lib/env/stripe";
 
-import { requireDb } from "@/lib/db/client";
-import { orderItems, orders, products } from "@/lib/db/schema";
+import { db } from "@/db";
+import { orderItems, orders, products } from "@/db/schema";
 import {
   calculateLineTotal,
   fromCents,
@@ -19,7 +19,7 @@ import {
   OrderSummary,
   PaymentStatus,
 } from "@/lib/types/shop";
-import { coercePriceFromDb } from "@/lib/db/orders";
+import { coercePriceFromDb } from "@/db/queries/shop/orders";
 import { currencyValues } from "@/lib/validation/shop";
 import {
   InsufficientStockError,
@@ -30,10 +30,10 @@ import type { PaymentProvider } from "@/lib/types/shop";
 
 type OrderRow = typeof orders.$inferSelect;
 
-type DbClient = ReturnType<typeof requireDb>;
+type DbClient = typeof db;
 type DbTransaction = Parameters<DbClient["transaction"]>[0] extends (
   tx: infer T
-) => any
+) => unknown
   ? T
   : DbClient;
 type DbOrTx = DbClient | DbTransaction;
@@ -93,7 +93,7 @@ function parseOrderSummary(
 }
 
 async function getOrderByIdempotencyKey(
-  db: ReturnType<typeof requireDb>,
+  db: DbClient,
   key: string
 ): Promise<OrderSummary | null> {
   const [order] = await db
@@ -114,7 +114,6 @@ async function getOrderByIdempotencyKey(
 
 async function getProductsForCheckout(productIds: string[]) {
   if (!productIds.length) return [];
-  const db = requireDb();
   return db
     .select()
     .from(products)
@@ -207,7 +206,6 @@ async function persistOrder({
   const paymentStatus: PaymentStatus =
     paymentProvider === "stripe" ? "pending" : "paid";
 
-  const db = requireDb();
   const summary = await db.transaction(async (tx) => {
     for (const item of items) {
       const [updated] = await tx
@@ -279,7 +277,6 @@ export async function createOrderWithItems({
   idempotencyKey: string;
   userId?: string | null;
 }): Promise<CheckoutResult> {
-  const db = requireDb();
 
   const existing = await getOrderByIdempotencyKey(db, idempotencyKey);
   if (existing) {
@@ -344,7 +341,6 @@ async function getOrderItems(db: DbOrTx, orderId: string) {
 }
 
 export async function getOrderById(id: string): Promise<OrderDetail> {
-  const db = requireDb();
   const [order] = await db
     .select()
     .from(orders)
@@ -370,7 +366,6 @@ export async function setOrderPaymentIntent({
   orderId: string;
   paymentIntentId: string;
 }): Promise<OrderSummary> {
-  const db = requireDb();
   const [order] = await db
     .update(orders)
     .set({
@@ -463,8 +458,6 @@ export async function restockOrder(
     return;
   }
 
-  const db = requireDb();
-
   await db.transaction(async (transaction) => {
     await restockOrderInTx(transaction, orderId, reason);
   });
@@ -473,7 +466,6 @@ export async function restockOrder(
 export async function restockStalePendingOrders(options?: {
   olderThanMinutes?: number;
 }): Promise<number> {
-  const db = requireDb();
   const olderThanMinutes = options?.olderThanMinutes ?? 60;
   const cutoff = new Date(Date.now() - olderThanMinutes * 60 * 1000);
 
@@ -502,8 +494,6 @@ export async function restockStalePendingOrders(options?: {
 }
 
 export async function refundOrder(orderId: string): Promise<OrderSummary> {
-  const db = requireDb();
-
   const [order] = await db
     .select({
       id: orders.id,
