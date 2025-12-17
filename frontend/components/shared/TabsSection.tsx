@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
+import { useRouter } from '@/i18n/routing';
+import { useTranslations } from 'next-intl';
 import { Search, X } from 'lucide-react';
 import AccordionList from '@/components/shared/AccordionList';
 import { Pagination } from '@/components/shared/Pagination';
@@ -18,6 +20,7 @@ interface PaginatedResponse {
 }
 
 export default function TabsSection() {
+  const t = useTranslations('qa');
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -134,14 +137,14 @@ export default function TabsSection() {
           type="text"
           value={searchQuery}
           onChange={handleSearchChange}
-          placeholder="Пошук..."
+          placeholder={t('searchPlaceholder')}
           className="block w-full pl-10 pr-10 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
         />
         {searchQuery && (
           <button
             onClick={handleClearSearch}
             className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-            aria-label="Очистити пошук"
+            aria-label={t('clearSearch')}
           >
             <X className="h-5 w-5" />
           </button>
@@ -172,8 +175,8 @@ export default function TabsSection() {
             ) : (
               <p className="text-center py-12 text-gray-500 dark:text-gray-400">
                 {debouncedSearch
-                  ? `Нічого не знайдено за запитом "${debouncedSearch}"`
-                  : 'Питань не знайдено'}
+                ? t('noResults', { query: debouncedSearch })
+                : t('noQuestions')}
               </p>
             )}
           </TabsContent>

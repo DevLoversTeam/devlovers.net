@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import BlogGrid from '@/components/blog/BlogGrid';
 
 type SocialLink = {
@@ -43,6 +44,7 @@ export function normalizeTag(input: string) {
 
 
 export default function BlogFilters({ posts }: { posts: Post[] }) {
+  const t = useTranslations('blog');
   const [input, setInput] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
@@ -94,7 +96,7 @@ export default function BlogFilters({ posts }: { posts: Post[] }) {
               addTag(input);
             }
           }}
-          placeholder="Type a hashtag and press Enter (e.g. frontend, qa)"
+          placeholder={t('searchPlaceholder')}
           className="w-full rounded-3xl border border-gray-200 bg-white px-6 py-4 text-lg shadow-sm outline-none focus:ring-2 focus:ring-blue-200"
         />
 
@@ -106,7 +108,7 @@ export default function BlogFilters({ posts }: { posts: Post[] }) {
                 type="button"
                 onClick={() => removeTag(tag)}
                 className="inline-flex items-center gap-2 rounded-md border border-purple-200 bg-purple-50 px-4 py-2 text-sm text-purple-700 hover:bg-purple-100 transition"
-                title="Remove tag"
+                title={t('removeTag')}
               >
                 <span>#{tag}</span>
                 <span className="text-base leading-none">×</span>
@@ -119,7 +121,7 @@ export default function BlogFilters({ posts }: { posts: Post[] }) {
                 onClick={() => addTag(input)}
                 className="rounded-md border border-gray-200 bg-white px-5 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
               >
-                Add
+                {t('add')}
               </button>
             )}
 
@@ -129,7 +131,7 @@ export default function BlogFilters({ posts }: { posts: Post[] }) {
                 onClick={clearAll}
                 className="rounded-md border border-gray-200 bg-white px-5 py-2 text-sm text-gray-900 hover:bg-gray-50 transition"
               >
-                Clear
+                {t('clear')}
               </button>
             )}
           </div>
@@ -146,7 +148,7 @@ export default function BlogFilters({ posts }: { posts: Post[] }) {
 
       {!filteredPosts.length && (
         <p className="text-center text-gray-500 mt-10">
-          No posts found for selected tags.
+          {t('noPostsForTags')}
         </p>
       )}
     </div>
