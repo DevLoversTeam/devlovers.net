@@ -1,0 +1,55 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "submit": "Submit"
+  },
+  "navigation": {
+    "home": "Home",
+    "topics": "Topics",
+    "quizzes": "Quizzes",
+    "leaderboard": "Leaderboard",
+    "qa": "Q&A",
+    "about": "About",
+    "contacts": "Contacts",
+    "blog": "Blog",
+    "login": "Log in",
+    "logout": "Log out",
+    "signup": "Sign up",
+    "dashboard": "Dashboard"
+  },
+  "homepage": {
+    "title": "DevLovers",
+    "subtitle": "Platform for Technical Interview Preparation",
+    "description": "Master frontend, backend, and full-stack development with our interview questions, quizzes, and learning materials.",
+    "cta": "Start Learning"
+  },
+  "qa": {
+    "title": "Questions and Answers",
+    "searchPlaceholder": "Search questions...",
+    "clearSearch": "Clear search",
+    "noResults": "Nothing found for \"{query}\"",
+    "noQuestions": "No questions found",
+    "metaTitle": "Q&A | DevLovers",
+    "metaDescription": "Questions and answers for technical interview preparation",
+    "frontend": "Frontend",
+    "backend": "Backend",
+    "fullstack": "Full-stack"
+  },
+  "blog": {
+    "title": "All Blog Posts",
+    "metaTitle": "Blog | DevLovers",
+    "metaDescription": "Explore the latest articles and insights",
+    "searchPlaceholder": "Type a hashtag and press Enter (e.g. frontend, qa)",
+    "removeTag": "Remove tag",
+    "add": "Add",
+    "clear": "Clear",
+    "noPosts": "No posts found",
+    "noPostsForTags": "No posts found for selected tags"
+  }
+}

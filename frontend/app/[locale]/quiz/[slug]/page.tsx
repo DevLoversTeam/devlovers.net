@@ -1,24 +1,20 @@
 import { getQuizBySlug, getQuizQuestionsRandomized } from '@/db/queries/quiz';
-import { notFound, redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
+import { redirect } from '@/i18n/routing';
 import { QuizContainer } from '@/components/quiz/QuizContainer';
 import { getCurrentUser } from '@/lib/auth';
 
 interface QuizPageProps {
-  params: Promise<{ slug: string }>;
-  searchParams: Promise<{ locale?: string }>;
+  params: Promise<{ locale: string; slug: string }>;
 }
 
-export default async function QuizPage({
-  params,
-  searchParams,
-}: QuizPageProps) {
-  const { slug } = await params;
-  const { locale = 'uk' } = await searchParams;
+export default async function QuizPage({ params }: QuizPageProps) {
+  const { locale, slug } = await params;
 
   const user = await getCurrentUser();
 
   if (!user) {
-    redirect('/login');
+    redirect({ href: '/login', locale });
   }
 
   const quiz = await getQuizBySlug(slug, locale);
@@ -60,7 +56,7 @@ export default async function QuizPage({
         <QuizContainer
           quizId={quiz.id}
           questions={questions}
-          userId={user.id}
+          userId={user!.id}
         />
       </div>
     </div>
