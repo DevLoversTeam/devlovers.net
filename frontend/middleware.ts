@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import createIntlMiddleware from 'next-intl/middleware';
+import { routing } from './i18n/routing';
 
 const AUTH_COOKIE_NAME = 'auth_session';
 
@@ -12,34 +14,49 @@ function isAuthenticated(req: NextRequest): boolean {
   return Boolean(req.cookies.get(AUTH_COOKIE_NAME)?.value);
 }
 
-export function middleware(req: NextRequest) {
+const intlMiddleware = createIntlMiddleware(routing);
+
+function authMiddleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const authenticated = isAuthenticated(req);
 
-  if ((pathname === '/login' || pathname === '/signup') && authenticated) {
-    return NextResponse.redirect(new URL('/', req.url));
+  const pathnameWithoutLocale = pathname.replace(/^\/(uk|en|pl)/, '') || '/';
+
+  if (
+    (pathnameWithoutLocale === '/login' ||
+      pathnameWithoutLocale === '/signup') &&
+    authenticated
+  ) {
+    return NextResponse.redirect(new URL(pathname.split('/').slice(0, 2).join('/') || '/', req.url));
   }
 
   if (
-    pathname.startsWith('/leaderboard') ||
-    pathname.startsWith('/quiz') ||
-    pathname.startsWith('/dashboard')
+    pathnameWithoutLocale.startsWith('/leaderboard') ||
+    pathnameWithoutLocale.startsWith('/quiz') ||
+    pathnameWithoutLocale.startsWith('/dashboard')
   ) {
     if (!authenticated) {
-      return NextResponse.redirect(new URL('/login', req.url));
+      const locale = pathname.split('/')[1];
+      return NextResponse.redirect(new URL(`/${locale}/login`, req.url));
     }
   }
 
-  return NextResponse.next();
+  return null;
+}
+
+export function middleware(req: NextRequest) {
+  
+  const intlResponse = intlMiddleware(req);
+
+  const authResponse = authMiddleware(req);
+
+  if (authResponse) {
+    return authResponse;
+  }
+
+  return intlResponse;
 }
 
 export const config = {
-  matcher: [
-    '/login',
-    '/signup',
-    '/leaderboard/:path*',
-    '/quiz/:path*',
-    '/dashboard/:path*',
-    "/api/shop/admin/:path*",
-  ],
+  matcher: ['/', '/(uk|en|pl)/:path*', '/((?!api|_next|.*\\..*).*)', "/api/shop/admin/:path*",],
 };

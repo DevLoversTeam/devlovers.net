@@ -1,13 +1,30 @@
 import groq from 'groq';
-import { client } from '../../client';
+import { getTranslations } from 'next-intl/server';
+import { client } from '@/client';
 import BlogFilters from '@/components/blog/BlogFilters';
 
-export const metadata = {
-  title: 'Blog | DevLovers',
-  description: 'Explore the latest articles and insights',
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'blog' });
 
-export default async function BlogPage() {
+  return {
+    title: t('metaTitle'),
+    description: t('metaDescription'),
+  };
+}
+
+export default async function BlogPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'blog' });
+
   const posts = await client.fetch(groq`
     *[_type == "post" && defined(slug.current)]
       | order(publishedAt desc) {
@@ -45,7 +62,7 @@ export default async function BlogPage() {
 
   return (
     <main className="max-w-6xl mx-auto px-6 py-12">
-      <h1 className="text-4xl font-bold mb-10 text-center">All Blog Posts</h1>
+      <h1 className="text-4xl font-bold mb-10 text-center">{t('title')}</h1>
       <BlogFilters posts={posts} />
     </main>
   );

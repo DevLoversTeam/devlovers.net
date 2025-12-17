@@ -1,5 +1,8 @@
+'use client';
+
 import type { ReactNode } from 'react';
-import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { Link } from '@/i18n/routing';
 
 interface CodeCardProps {
   fileName: string;
@@ -49,6 +52,8 @@ function CodeCard({ fileName, snippet, className }: CodeCardProps) {
 }
 
 export default function HeroSection() {
+  const t = useTranslations('homepage');
+
   return (
     <section
       className="
@@ -151,7 +156,7 @@ export default function HeroSection() {
     dark:text-emerald-300/80
   "
         >
-          Пройди співбесіду, ніби ти вже Senior
+          {t('subtitle')}
         </p>
         <div className="mt-10 sm:mt-12">
           <div className="-rotate-2 inline-block">
@@ -185,8 +190,7 @@ export default function HeroSection() {
             text-slate-700 dark:text-slate-200
           "
         >
-          Практикуй типові питання, поглиблюй знання та проходь квізи перед
-          співбесідами на Junior, Middle або Senior позиції.
+          {t('description')}
         </p>
         <div className="mt-12">
           <Link
@@ -230,7 +234,7 @@ export default function HeroSection() {
               "
               aria-hidden="true"
             />
-            <span className="relative z-10">Стартуємо</span>
+            <span className="relative z-10">{t('cta')}</span>
             <span
               className="
                 relative z-10 ml-4
