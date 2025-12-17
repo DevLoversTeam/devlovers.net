@@ -13,6 +13,7 @@ import {
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
+import { users } from '@/db/schema/users';
 
 export const productBadgeEnum = pgEnum('product_badge', [
   'NEW',
@@ -76,7 +77,9 @@ export const orders = pgTable(
   'orders',
   {
     id: uuid('id').defaultRandom().primaryKey(),
-    userId: uuid('user_id'),
+    userId: text('user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
     totalAmount: numeric('total_amount', { precision: 10, scale: 2 })
       .$type<string>()
       .notNull(),
@@ -104,7 +107,6 @@ export const orders = pgTable(
       .$onUpdate(() => new Date()),
   },
   table => [
-    uniqueIndex('orders_idempotency_key_idx').on(table.idempotencyKey),
     check(
       'orders_payment_provider_valid',
       sql`${table.paymentProvider} in ('stripe', 'none')`

@@ -220,9 +220,10 @@ export const checkoutPayloadSchema = z.object({
 export const idempotencyKeySchema = z
   .string()
   .trim()
-  .min(1)
+  .min(16) // було min(1)
   .max(128)
   .regex(/^[A-Za-z0-9_\-]+$/)
+
 
 export const cartClientItemSchema = z.object({
   productId: z.string().uuid(),
