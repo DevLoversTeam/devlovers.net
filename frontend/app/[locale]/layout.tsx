@@ -1,8 +1,6 @@
 import { Toaster } from 'sonner';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
-import NextLink from 'next/link';
-
 import { notFound } from 'next/navigation';
 import { locales } from '@/i18n/config';
 import { Link } from '@/i18n/routing';
@@ -83,12 +81,12 @@ export default async function LocaleLayout({
               >
                 Contacts
               </Link>
-              <NextLink
+              <Link
                 href="/shop"
                 className="hover:text-blue-600 dark:hover:text-blue-400 transition"
               >
                 Shop
-              </NextLink>
+              </Link>
 
               {/* Auth actions */}
               {!user ? (
