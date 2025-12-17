@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import BlogCard from '@/components/blog/BlogCard';
 import type { Post } from '@/components/blog/BlogFilters';
 
@@ -12,8 +13,10 @@ export default function BlogGrid({
   selectedTags: string[];
   onTagToggle: (tag: string) => void;
 }) {
+  const t = useTranslations('blog');
+
   if (!posts.length) {
-    return <p className="text-center text-gray-500">No posts found.</p>;
+    return <p className="text-center text-gray-500">{t('noPosts')}</p>;
   }
 
   return (

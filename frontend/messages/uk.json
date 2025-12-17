@@ -1,0 +1,55 @@
+{
+  "common": {
+    "loading": "Завантаження...",
+    "error": "Помилка",
+    "save": "Зберегти",
+    "cancel": "Скасувати",
+    "delete": "Видалити",
+    "edit": "Редагувати",
+    "close": "Закрити",
+    "submit": "Надіслати"
+  },
+  "navigation": {
+    "home": "Головна",
+    "topics": "Теми",
+    "quizzes": "Квізи",
+    "leaderboard": "Рейтинг",
+    "qa": "Q&A",
+    "about": "Про нас",
+    "contacts": "Контакти",
+    "blog": "Блог",
+    "login": "Увійти",
+    "logout": "Вийти",
+    "signup": "Зареєструватися",
+    "dashboard": "Панель"
+  },
+  "homepage": {
+    "title": "DevLovers",
+    "subtitle": "Пройди співбесіду, ніби ти вже Senior",
+    "description": "Практикуй типові питання, поглиблюй знання та проходь квізи перед співбесідами на Junior, Middle або Senior позиції.",
+    "cta": "Стартуємо"
+  },
+  "qa": {
+    "title": "Питання та Відповіді",
+    "searchPlaceholder": "Пошук...",
+    "clearSearch": "Очистити пошук",
+    "noResults": "Нічого не знайдено за запитом \"{query}\"",
+    "noQuestions": "Питань не знайдено",
+    "metaTitle": "Q&A | DevLovers",
+    "metaDescription": "Питання та відповіді для підготовки до технічних співбесід",
+    "frontend": "Frontend",
+    "backend": "Backend",
+    "fullstack": "Full-stack"
+  },
+  "blog": {
+    "title": "Усі статті блогу",
+    "metaTitle": "Блог | DevLovers",
+    "metaDescription": "Досліджуйте останні статті та корисні матеріали",
+    "searchPlaceholder": "Введіть хештег і натисніть Enter (наприклад, frontend, qa)",
+    "removeTag": "Видалити тег",
+    "add": "Додати",
+    "clear": "Очистити",
+    "noPosts": "Статей не знайдено",
+    "noPostsForTags": "Немає статей за обраними тегами"
+  }
+}

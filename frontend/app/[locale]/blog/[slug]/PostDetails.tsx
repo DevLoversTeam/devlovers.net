@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import groq from 'groq';
-import { client } from '../../../client';
+import { client } from '@/client';
 
 type SocialLink = {
   _key?: string;
