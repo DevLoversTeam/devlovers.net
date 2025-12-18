@@ -1,6 +1,3 @@
-/* app/shop/shop-theme.css */
-
-/* Light theme overrides for /shop subtree */
 .shop-scope {
   --radius: 0.5rem;
 
@@ -47,7 +44,6 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
-/* Dark theme overrides for /shop subtree */
 .dark .shop-scope {
   --background: #0a0a0a;
   --foreground: #ffffff;

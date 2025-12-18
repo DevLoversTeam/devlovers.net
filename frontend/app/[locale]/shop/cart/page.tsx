@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import Image from "next/image";
-import Link from "next/link";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
+import Image from 'next/image';
+import Link from 'next/link';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Minus, Plus, Trash2, ShoppingBag } from 'lucide-react';
 
-import { useCart } from "@/components/shop/cart-provider";
+import { useCart } from '@/components/shop/cart-provider';
 
-import { generateIdempotencyKey } from "@/lib/shop/idempotency";
-import { formatPrice } from "@/lib/shop/currency";
+import { generateIdempotencyKey } from '@/lib/shop/idempotency';
+import { formatPrice } from '@/lib/shop/currency';
 
 export default function CartPage() {
   const { cart, updateQuantity, removeFromCart, clearCart } = useCart();
@@ -24,14 +24,14 @@ export default function CartPage() {
     try {
       const idempotencyKey = generateIdempotencyKey();
 
-      const response = await fetch("/api/shop/checkout", {
-        method: "POST",
+      const response = await fetch('/api/shop/checkout', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
-          "Idempotency-Key": idempotencyKey,
+          'Content-Type': 'application/json',
+          'Idempotency-Key': idempotencyKey,
         },
         body: JSON.stringify({
-          items: cart.items.map((item) => ({
+          items: cart.items.map(item => ({
             productId: item.productId,
             quantity: item.quantity,
             selectedSize: item.selectedSize,
@@ -45,43 +45,48 @@ export default function CartPage() {
 
       if (!response.ok) {
         const message =
-          typeof data?.message === "string"
+          typeof data?.message === 'string'
             ? data.message
-            : typeof data?.error === "string"
+            : typeof data?.error === 'string'
             ? data.error
-            : "Unable to start checkout right now.";
+            : 'Unable to start checkout right now.';
 
         setCheckoutError(message);
         return;
       }
 
       if (!data?.orderId) {
-        setCheckoutError("Unexpected checkout response.");
+        setCheckoutError('Unexpected checkout response.');
         return;
       }
 
-      const paymentProvider: string = data.paymentProvider ?? "none";
+      const paymentProvider: string = data.paymentProvider ?? 'none';
       const clientSecret: string | null =
-        typeof data.clientSecret === "string" && data.clientSecret.trim().length > 0
+        typeof data.clientSecret === 'string' &&
+        data.clientSecret.trim().length > 0
           ? data.clientSecret
           : null;
 
-      if (paymentProvider === "stripe" && clientSecret) {
+      if (paymentProvider === 'stripe' && clientSecret) {
         clearCart();
         router.push(
-          `/shop/checkout/payment/${data.orderId}?clientSecret=${encodeURIComponent(
-            clientSecret,
-          )}`,
+          `/shop/checkout/payment/${
+            data.orderId
+          }?clientSecret=${encodeURIComponent(clientSecret)}`
         );
         return;
       }
       clearCart();
       const paymentsDisabledFlag =
-        paymentProvider !== "stripe" || !clientSecret ? "&paymentsDisabled=true" : "";
-      router.push(`/shop/checkout/success?orderId=${data.orderId}${paymentsDisabledFlag}`);
+        paymentProvider !== 'stripe' || !clientSecret
+          ? '&paymentsDisabled=true'
+          : '';
+      router.push(
+        `/shop/checkout/success?orderId=${data.orderId}${paymentsDisabledFlag}`
+      );
     } catch (error) {
-      console.error("Checkout failed", error);
-      setCheckoutError("Unable to start checkout right now.");
+      console.error('Checkout failed', error);
+      setCheckoutError('Unable to start checkout right now.');
     } finally {
       setIsCheckingOut(false);
     }
@@ -130,10 +135,9 @@ export default function CartPage() {
               key={`${item.productId}-${item.selectedSize}-${item.selectedColor}-${index}`}
               className="flex gap-4 rounded-lg border border-border p-4"
             >
-              {/* Product Image */}
               <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-md bg-muted">
                 <Image
-                  src={item.imageUrl || "/placeholder.svg"}
+                  src={item.imageUrl || '/placeholder.svg'}
                   alt={item.title}
                   fill
                   className="object-cover"
@@ -141,7 +145,6 @@ export default function CartPage() {
                 />
               </div>
 
-              {/* Product Details */}
               <div className="flex flex-1 flex-col">
                 <div className="flex items-start justify-between">
                   <div>
@@ -155,7 +158,7 @@ export default function CartPage() {
                       <p className="mt-1 text-xs text-muted-foreground">
                         {[item.selectedColor, item.selectedSize]
                           .filter(Boolean)
-                          .join(" / ")}
+                          .join(' / ')}
                       </p>
                     )}
                   </div>
@@ -164,7 +167,7 @@ export default function CartPage() {
                       removeFromCart(
                         item.productId,
                         item.selectedSize,
-                        item.selectedColor,
+                        item.selectedColor
                       )
                     }
                     className="text-muted-foreground transition-colors hover:text-foreground"
@@ -175,7 +178,6 @@ export default function CartPage() {
                 </div>
 
                 <div className="mt-auto flex items-center justify-between pt-2">
-                  {/* Quantity Controls */}
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() =>
@@ -183,7 +185,7 @@ export default function CartPage() {
                           item.productId,
                           item.quantity - 1,
                           item.selectedSize,
-                          item.selectedColor,
+                          item.selectedColor
                         )
                       }
                       className="flex h-8 w-8 items-center justify-center rounded border border-border text-foreground transition-colors hover:bg-secondary"
@@ -200,7 +202,7 @@ export default function CartPage() {
                           item.productId,
                           item.quantity + 1,
                           item.selectedSize,
-                          item.selectedColor,
+                          item.selectedColor
                         )
                       }
                       className="flex h-8 w-8 items-center justify-center rounded border border-border text-foreground transition-colors hover:bg-secondary"
@@ -215,7 +217,6 @@ export default function CartPage() {
                     )}
                   </div>
 
-                  {/* Price */}
                   <span className="text-sm font-semibold text-foreground">
                     {formatPrice(item.unitPrice * item.quantity)}
                   </span>
@@ -225,7 +226,6 @@ export default function CartPage() {
           ))}
         </div>
 
-        {/* Order Summary */}
         <div className="h-fit rounded-lg border border-border p-6">
           <h2 className="text-lg font-semibold text-foreground">
             Order summary
@@ -263,7 +263,7 @@ export default function CartPage() {
               disabled={isCheckingOut}
               className="flex w-full items-center justify-center gap-2 rounded-md bg-accent px-6 py-3 text-sm font-semibold uppercase tracking-wide text-accent-foreground transition-colors hover:bg-accent/90 disabled:opacity-60"
             >
-              {isCheckingOut ? "Placing order..." : "Place order"}
+              {isCheckingOut ? 'Placing order...' : 'Place order'}
             </button>
 
             <p className="text-center text-xs text-muted-foreground">

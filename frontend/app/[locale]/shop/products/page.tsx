@@ -1,44 +1,46 @@
-import { Suspense } from "react"
-import { Filter } from "lucide-react"
+import { Suspense } from 'react';
+import { Filter } from 'lucide-react';
 
-import { ProductCard } from "@/components/shop/product-card"
-import { ProductFilters } from "@/components/shop/product-filters"
-import { ProductSort } from "@/components/shop/product-sort"
-import { CatalogLoadMore } from "@/components/shop/catalog-load-more"
-import { getCatalogProducts } from "@/lib/shop/data"
-import { catalogQuerySchema } from "@/lib/validation/shop"
-import { CATALOG_PAGE_SIZE } from "@/lib/config/catalog"
-
+import { ProductCard } from '@/components/shop/product-card';
+import { ProductFilters } from '@/components/shop/product-filters';
+import { ProductSort } from '@/components/shop/product-sort';
+import { CatalogLoadMore } from '@/components/shop/catalog-load-more';
+import { getCatalogProducts } from '@/lib/shop/data';
+import { catalogQuerySchema } from '@/lib/validation/shop';
+import { CATALOG_PAGE_SIZE } from '@/lib/config/catalog';
 
 type RawSearchParams = {
-  category?: string
-  type?: string
-  color?: string
-  size?: string
-  sort?: string
-  page?: string
-}
+  category?: string;
+  type?: string;
+  color?: string;
+  size?: string;
+  sort?: string;
+  page?: string;
+};
 
 interface ProductsPageProps {
-  searchParams: Promise<RawSearchParams>
+  searchParams: Promise<RawSearchParams>;
 }
 
-export default async function ProductsPage({ searchParams }: ProductsPageProps) {
-  const resolvedSearchParams = (await searchParams) ?? {}
+export default async function ProductsPage({
+  searchParams,
+}: ProductsPageProps) {
+  const resolvedSearchParams = (await searchParams) ?? {};
 
-  const parsedParams = catalogQuerySchema.safeParse(resolvedSearchParams)
+  const parsedParams = catalogQuerySchema.safeParse(resolvedSearchParams);
 
-const filters = parsedParams.success
-  ? parsedParams.data
-  : { page: 1, limit: CATALOG_PAGE_SIZE } 
+  const filters = parsedParams.success
+    ? parsedParams.data
+    : { page: 1, limit: CATALOG_PAGE_SIZE };
 
-const catalog = await getCatalogProducts(filters)
-
+  const catalog = await getCatalogProducts(filters);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="flex items-center justify-between border-b border-border pb-6">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">All Products</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">
+          All Products
+        </h1>
         <div className="flex items-center gap-4">
           <Suspense fallback={null}>
             <ProductSort />
@@ -51,18 +53,18 @@ const catalog = await getCatalogProducts(filters)
       </div>
 
       <div className="mt-8 grid gap-8 lg:grid-cols-[240px_1fr]">
-        {/* Sidebar Filters (desktop) */}
         <div className="hidden lg:block">
           <Suspense fallback={null}>
             <ProductFilters />
           </Suspense>
         </div>
 
-        {/* Product Grid */}
         <div>
           {catalog.products.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <p className="text-lg font-medium text-foreground">No products found</p>
+              <p className="text-lg font-medium text-foreground">
+                No products found
+              </p>
               <p className="mt-2 text-sm text-muted-foreground">
                 Try adjusting your filters to find what you&apos;re looking for.
               </p>
@@ -70,19 +72,21 @@ const catalog = await getCatalogProducts(filters)
           ) : (
             <>
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {catalog.products.map((product) => (
+                {catalog.products.map(product => (
                   <ProductCard key={product.id} product={product} />
                 ))}
               </div>
 
-              {/* Load More */}
               <div className="mt-12 flex justify-center">
-                <CatalogLoadMore hasMore={catalog.hasMore} nextPage={catalog.page + 1} />
+                <CatalogLoadMore
+                  hasMore={catalog.hasMore}
+                  nextPage={catalog.page + 1}
+                />
               </div>
             </>
           )}
         </div>
       </div>
     </div>
-  )
+  );
 }

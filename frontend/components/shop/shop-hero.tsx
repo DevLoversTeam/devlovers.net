@@ -1,11 +1,10 @@
-
-import Link from "next/link"
+import Link from 'next/link';
 
 interface HeroProps {
-  headline: string
-  subheadline: string
-  ctaText: string
-  ctaLink: string
+  headline: string;
+  subheadline: string;
+  ctaText: string;
+  ctaLink: string;
 }
 
 export function Hero({ headline, subheadline, ctaText, ctaLink }: HeroProps) {
@@ -16,7 +15,9 @@ export function Hero({ headline, subheadline, ctaText, ctaLink }: HeroProps) {
           <h1 className="text-balance text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
             {headline}
           </h1>
-          <p className="mx-auto mt-6 max-w-xl text-pretty text-lg text-muted-foreground">{subheadline}</p>
+          <p className="mx-auto mt-6 max-w-xl text-pretty text-lg text-muted-foreground">
+            {subheadline}
+          </p>
           <div className="mt-10">
             <Link
               href={ctaLink}
@@ -28,14 +29,13 @@ export function Hero({ headline, subheadline, ctaText, ctaLink }: HeroProps) {
           </div>
         </div>
       </div>
-
-      {/* Decorative gradient background */}
       <div
         className="absolute inset-0 -z-10 opacity-30"
         style={{
-          background: "radial-gradient(ellipse 80% 50% at 50% -20%, rgba(255, 45, 85, 0.15), transparent)",
+          background:
+            'radial-gradient(ellipse 80% 50% at 50% -20%, rgba(255, 45, 85, 0.15), transparent)',
         }}
       />
     </section>
-  )
+  );
 }
