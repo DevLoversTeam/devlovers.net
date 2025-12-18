@@ -1,8 +1,6 @@
-// save-structure.js (CommonJS)
 const fs = require('fs');
 const path = require('path');
 
-// Получаем __dirname и __filename (уже доступны в CommonJS)
 const EXCLUDE_DIRS = ['node_modules', '.git', 'dist', 'build', '.next'];
 
 const output = [];
@@ -32,4 +30,4 @@ const rootDir = process.argv[2] ? path.resolve(process.argv[2]) : __dirname;
 walk(rootDir);
 
 fs.writeFileSync('project-structure.txt', output.join('\n'), 'utf8');
-console.log('✅ Структура проекта сохранена в project-structure.txt');
+console.log('✅ The project structure is saved in project-structure.txt');

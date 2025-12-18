@@ -1,52 +1,66 @@
-import "server-only"
+import 'server-only';
 
-import { count, desc, eq, sql } from "drizzle-orm"
-import { db } from "@/db"
-import { orderItems, orders } from "@/db/schema"
+import { count, desc, eq, sql } from 'drizzle-orm';
+import { db } from '@/db';
+import { orderItems, orders } from '@/db/schema';
 
 export type AdminOrderListItem = {
-  id: string
-  userId: string | null
-  totalAmount: string
-  currency: "USD"
-  paymentStatus: "pending" | "requires_payment" | "paid" | "failed" | "refunded"
-  paymentProvider: string
-  paymentIntentId: string | null
-  createdAt: Date
-  itemCount: number
-}
+  id: string;
+  userId: string | null;
+  totalAmount: string;
+  currency: 'USD';
+  paymentStatus:
+    | 'pending'
+    | 'requires_payment'
+    | 'paid'
+    | 'failed'
+    | 'refunded';
+  paymentProvider: string;
+  paymentIntentId: string | null;
+  createdAt: Date;
+  itemCount: number;
+};
 
 export type AdminOrderDetail = {
-  id: string
-  userId: string | null
-  totalAmount: string
-  currency: "USD"
-  paymentStatus: "pending" | "requires_payment" | "paid" | "failed" | "refunded"
-  paymentProvider: string
-  paymentIntentId: string | null
-  stockRestored: boolean
-  restockedAt: Date | null
-  idempotencyKey: string
-  createdAt: Date
-  updatedAt: Date
+  id: string;
+  userId: string | null;
+  totalAmount: string;
+  currency: 'USD';
+  paymentStatus:
+    | 'pending'
+    | 'requires_payment'
+    | 'paid'
+    | 'failed'
+    | 'refunded';
+  paymentProvider: string;
+  paymentIntentId: string | null;
+  stockRestored: boolean;
+  restockedAt: Date | null;
+  idempotencyKey: string;
+  createdAt: Date;
+  updatedAt: Date;
   items: Array<{
-    id: string
-    productId: string
-    productTitle: string | null
-    productSlug: string | null
-    productSku: string | null
-    quantity: number
-    unitPrice: string
-    lineTotal: string
-  }>
-}
+    id: string;
+    productId: string;
+    productTitle: string | null;
+    productSlug: string | null;
+    productSku: string | null;
+    quantity: number;
+    unitPrice: string;
+    lineTotal: string;
+  }>;
+};
 
-export async function getAdminOrdersPage(options: { limit: number; offset: number }) {
-  const limit = Math.max(1, Math.min(100, options.limit))
-  const offset = Math.max(0, options.offset)
+export async function getAdminOrdersPage(options: {
+  limit: number;
+  offset: number;
+}) {
+  const limit = Math.max(1, Math.min(100, options.limit));
+  const offset = Math.max(0, options.offset);
 
-  const [{ value: total }] = await db.select({ value: count() }).from(orders)
-  const totalCount = typeof total === "bigint" ? Number(total) : Number(total ?? 0)
+  const [{ value: total }] = await db.select({ value: count() }).from(orders);
+  const totalCount =
+    typeof total === 'bigint' ? Number(total) : Number(total ?? 0);
 
   const rows = await db
     .select({
@@ -65,34 +79,35 @@ export async function getAdminOrdersPage(options: { limit: number; offset: numbe
     .groupBy(orders.id)
     .orderBy(desc(orders.createdAt))
     .limit(limit)
-    .offset(offset)
+    .offset(offset);
 
   return {
     items: rows as AdminOrderListItem[],
     total: totalCount,
-  }
+  };
 }
 
 function toAdminOrderItem(
-  item:
-    | {
-        id: string | null
-        productId: string | null
-        productTitle: string | null
-        productSlug: string | null
-        productSku: string | null
-        quantity: number | null
-        unitPrice: string | null
-        lineTotal: string | null
-      }
-    | null
-): AdminOrderDetail["items"][number] | null {
-  // leftJoin => can be null OR “all-null columns”
-  if (!item || !item.id) return null
+  item: {
+    id: string | null;
+    productId: string | null;
+    productTitle: string | null;
+    productSlug: string | null;
+    productSku: string | null;
+    quantity: number | null;
+    unitPrice: string | null;
+    lineTotal: string | null;
+  } | null
+): AdminOrderDetail['items'][number] | null {
+  if (!item || !item.id) return null;
 
-  // If id exists, these must exist as well (DB invariant). If not — data corruption.
-  if (!item.productId || item.quantity === null || !item.unitPrice || !item.lineTotal) {
-    throw new Error("Corrupt order item row: required columns are null")
+  if (
+    !item.productId ||
+    item.quantity === null ||
+    !item.unitPrice ||
+    !item.lineTotal
+  ) {
+    throw new Error('Corrupt order item row: required columns are null');
   }
 
   return {
@@ -104,11 +119,12 @@ function toAdminOrderItem(
     quantity: item.quantity,
     unitPrice: item.unitPrice,
     lineTotal: item.lineTotal,
-  }
+  };
 }
 
-
-export async function getAdminOrderDetail(orderId: string): Promise<AdminOrderDetail | null> {
+export async function getAdminOrderDetail(
+  orderId: string
+): Promise<AdminOrderDetail | null> {
   const rows = await db
     .select({
       order: {
@@ -138,18 +154,18 @@ export async function getAdminOrderDetail(orderId: string): Promise<AdminOrderDe
     })
     .from(orders)
     .leftJoin(orderItems, eq(orderItems.orderId, orders.id))
-    .where(eq(orders.id, orderId))
+    .where(eq(orders.id, orderId));
 
-  if (rows.length === 0) return null
+  if (rows.length === 0) return null;
 
-  const base = rows[0]!.order
+  const base = rows[0]!.order;
 
   const items = rows
     .map(r => toAdminOrderItem(r.item))
-    .filter((i): i is AdminOrderDetail["items"][number] => i !== null)
+    .filter((i): i is AdminOrderDetail['items'][number] => i !== null);
 
   return {
     ...base,
     items,
-  }
+  };
 }

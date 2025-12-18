@@ -1,28 +1,27 @@
-import type React from "react"
-import Link from "next/link"
-import { notFound, redirect } from "next/navigation"
+import type React from 'react';
+import Link from 'next/link';
+import { notFound, redirect } from 'next/navigation';
 
 import {
   AdminApiDisabledError,
   AdminForbiddenError,
   AdminUnauthorizedError,
   requireAdminPage,
-} from "@/lib/auth/admin"
+} from '@/lib/auth/admin';
 
-export default async function ShopAdminLayout({ children }: { children: React.ReactNode }) {
+export default async function ShopAdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   try {
-    await requireAdminPage()
+    await requireAdminPage();
   } catch (err) {
-    // Admin is hard-disabled in prod → do not expose the page
-    if (err instanceof AdminApiDisabledError) notFound()
+    if (err instanceof AdminApiDisabledError) notFound();
+    if (err instanceof AdminUnauthorizedError) redirect('/login');
+    if (err instanceof AdminForbiddenError) notFound();
 
-    // Not logged in → go to login
-    if (err instanceof AdminUnauthorizedError) redirect("/login")
-
-    // Logged in but not admin → hide existence
-    if (err instanceof AdminForbiddenError) notFound()
-
-    throw err
+    throw err;
   }
 
   return (
@@ -62,5 +61,5 @@ export default async function ShopAdminLayout({ children }: { children: React.Re
 
       {children}
     </>
-  )
+  );
 }
