@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
-import { AdminApiDisabledError, requireAdminApi } from '@/lib/auth/admin';
+import {
+  AdminApiDisabledError,
+  AdminForbiddenError,
+  AdminUnauthorizedError,
+  requireAdminApi,
+} from '@/lib/auth/admin';
+
 import { parseAdminProductForm } from '@/lib/admin/parseAdminProductForm';
 import { logError } from '@/lib/logging';
 import { InvalidPayloadError, SlugConflictError } from '@/lib/services/errors';
@@ -33,7 +39,13 @@ export async function GET(
     return NextResponse.json({ product });
   } catch (error) {
     if (error instanceof AdminApiDisabledError) {
-      return NextResponse.json({ code: 'ADMIN_API_DISABLED' }, { status: 403 });
+      return NextResponse.json({ code: error.code }, { status: 403 });
+    }
+    if (error instanceof AdminUnauthorizedError) {
+      return NextResponse.json({ code: error.code }, { status: 401 });
+    }
+    if (error instanceof AdminForbiddenError) {
+      return NextResponse.json({ code: error.code }, { status: 403 });
     }
 
     logError('Failed to load admin product', error);
@@ -131,8 +143,15 @@ export async function PATCH(
     }
   } catch (error) {
     if (error instanceof AdminApiDisabledError) {
-      return NextResponse.json({ code: 'ADMIN_API_DISABLED' }, { status: 403 });
+      return NextResponse.json({ code: error.code }, { status: 403 });
     }
+    if (error instanceof AdminUnauthorizedError) {
+      return NextResponse.json({ code: error.code }, { status: 401 });
+    }
+    if (error instanceof AdminForbiddenError) {
+      return NextResponse.json({ code: error.code }, { status: 403 });
+    }
+
     logError('Admin PATCH /products/:id failed (outer)', error);
     return NextResponse.json(
       { error: 'Failed to process request' },
@@ -161,8 +180,15 @@ export async function DELETE(
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
     if (error instanceof AdminApiDisabledError) {
-      return NextResponse.json({ code: 'ADMIN_API_DISABLED' }, { status: 403 });
+      return NextResponse.json({ code: error.code }, { status: 403 });
     }
+    if (error instanceof AdminUnauthorizedError) {
+      return NextResponse.json({ code: error.code }, { status: 401 });
+    }
+    if (error instanceof AdminForbiddenError) {
+      return NextResponse.json({ code: error.code }, { status: 403 });
+    }
+
     logError('Failed to delete product', error);
 
     if (error instanceof Error && error.message === 'PRODUCT_NOT_FOUND') {

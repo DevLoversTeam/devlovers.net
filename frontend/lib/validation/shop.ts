@@ -205,24 +205,47 @@ export const productAdminUpdateSchema = z
     }
   })
 
-export const checkoutItemSchema = z.object({
-  productId: z.string().uuid(),
-  quantity: z.number().int().min(1).max(MAX_QUANTITY_PER_LINE),
-  selectedSize: z.string().optional(),
-  selectedColor: z.string().optional(),
-})
+export const checkoutItemSchema = z
+  .object({
+    productId: z.string().uuid(),
+    quantity: z.coerce.number().int().min(1).max(MAX_QUANTITY_PER_LINE),
+    selectedSize: z.string().optional(),
+    selectedColor: z.string().optional(),
+  })
+  .strict()
 
-export const checkoutPayloadSchema = z.object({
-  items: z.array(checkoutItemSchema).min(1),
-  userId: z.string().uuid().optional(),
-})
+export const checkoutPayloadSchema = z
+  .object({
+    items: z.array(checkoutItemSchema).min(1),
+    userId: z.string().uuid().optional(),
+  })
+  .strict()
+
+export const cartRehydratePayloadSchema = z
+  .object({
+    items: z
+      .array(
+        z
+          .object({
+            productId: z.string().uuid(),
+            quantity: z.coerce.number().int().min(1).max(MAX_QUANTITY_PER_LINE),
+            selectedSize: z.string().optional(),
+            selectedColor: z.string().optional(),
+          })
+          .strict(),
+      )
+      .min(1),
+  })
+  .strict()
+
 
 export const idempotencyKeySchema = z
   .string()
   .trim()
-  .min(16) // було min(1)
+  .min(16)
   .max(128)
-  .regex(/^[A-Za-z0-9_\-]+$/)
+  .regex(/^[A-Za-z0-9_.-]+$/)
+
 
 
 export const cartClientItemSchema = z.object({
@@ -230,19 +253,6 @@ export const cartClientItemSchema = z.object({
   quantity: z.coerce.number().int().min(1).max(MAX_QUANTITY_PER_LINE),
   selectedSize: z.string().optional(),
   selectedColor: z.string().optional(),
-})
-
-export const cartRehydratePayloadSchema = z.object({
-  items: z
-    .array(
-      z.object({
-        productId: z.string().uuid(),
-        quantity: z.number().int().min(1).max(MAX_QUANTITY_PER_LINE),
-        selectedSize: z.string().optional(),
-        selectedColor: z.string().optional(),
-      }),
-    )
-    .min(1),
 })
 
 export const cartRehydratedItemSchema = z.object({
