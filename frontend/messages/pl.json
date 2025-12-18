@@ -1,0 +1,55 @@
+{
+  "common": {
+    "loading": "Ładowanie...",
+    "error": "Błąd",
+    "save": "Zapisz",
+    "cancel": "Anuluj",
+    "delete": "Usuń",
+    "edit": "Edytuj",
+    "close": "Zamknij",
+    "submit": "Wyślij"
+  },
+  "navigation": {
+    "home": "Strona główna",
+    "topics": "Tematy",
+    "quizzes": "Quizy",
+    "leaderboard": "Ranking",
+    "qa": "Q&A",
+    "about": "O nas",
+    "contacts": "Kontakt",
+    "blog": "Blog",
+    "login": "Zaloguj się",
+    "logout": "Wyloguj się",
+    "signup": "Zarejestruj się",
+    "dashboard": "Panel"
+  },
+  "homepage": {
+    "title": "DevLovers",
+    "subtitle": "Platforma do Przygotowania do Rozmów Kwalifikacyjnych",
+    "description": "Opanuj frontend, backend i full-stack development dzięki naszym pytaniom do rozmów kwalifikacyjnych, quizom i materiałom edukacyjnym.",
+    "cta": "Rozpocznij naukę"
+  },
+  "qa": {
+    "title": "Pytania i Odpowiedzi",
+    "searchPlaceholder": "Szukaj pytań...",
+    "clearSearch": "Wyczyść wyszukiwanie",
+    "noResults": "Nic nie znaleziono dla \"{query}\"",
+    "noQuestions": "Nie znaleziono pytań",
+    "metaTitle": "Q&A | DevLovers",
+    "metaDescription": "Pytania i odpowiedzi do przygotowania do rozmów kwalifikacyjnych",
+    "frontend": "Frontend",
+    "backend": "Backend",
+    "fullstack": "Full-stack"
+  },
+  "blog": {
+    "title": "Wszystkie Wpisy na Blogu",
+    "metaTitle": "Blog | DevLovers",
+    "metaDescription": "Odkryj najnowsze artykuły i spostrzeżenia",
+    "searchPlaceholder": "Wpisz hashtag i naciśnij Enter (np. frontend, qa)",
+    "removeTag": "Usuń tag",
+    "add": "Dodaj",
+    "clear": "Wyczyść",
+    "noPosts": "Nie znaleziono wpisów",
+    "noPostsForTags": "Nie znaleziono wpisów dla wybranych tagów"
+  }
+}

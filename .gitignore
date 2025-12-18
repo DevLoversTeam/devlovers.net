@@ -33,7 +33,7 @@ yarn-error.log*
 
 # Dotenv files
 *.local
-.env*
+.env
 
 # Dependencies (Yarn)
 .pnp.*

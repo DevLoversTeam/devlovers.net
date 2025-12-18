@@ -41,127 +41,70 @@
 
 ## 2. Git Workflow and Naming Conventions
 
-### 2.1 Branch Naming
+### 2.1 Branch Strategy
 
-**Tense**: Present tense  
-**Case**: Lowercase with hyphens  
-**Structure**: `{initials}/{type}/{scope}/{description}`
+The project uses a **two-branch workflow** based on a simplified Git Flow model.
 
-**Components:**
+#### Main branches
 
-- `{initials}`: Your initials (e.g., `ls` for Lesia Soloviova, `ar` for Alina
-  Riabova, `am` for Andrew Motko)
-- `{type}`: Type of work (`feat`, `fix`, `refactor`, `docs`, `test`, `db`)
-- `{scope}`: Feature area or module
-- `{description}`: Brief description using hyphens
+- **`main`** — production / release branch
 
-**Scope Examples:**
+  - Contains only stable, production-ready code
+  - Updated **only via scheduled releases** from `develop`
+  - Direct pushes are forbidden
+  - Protected by mandatory Pull Requests and reviews
 
-- `quiz`: Quiz system (container, questions, results)
-- `quiz-api`: Quiz API routes
-- `categories`: Category management
-- `schema`: Database schema changes
-- `auth`: Authentication/authorization
-- `ui`: UI primitives (button, accordion, tabs)
-- `shared`: Shared business components
-- `hooks`: Custom React hooks
-- `blog`: Blog pages and components
-- `sanity`: Sanity CMS configuration
-- `db`: Database queries/seeds
-- `anti-cheat`: Anti-cheating measures
+- **`develop`** — integration branch (default)
+  - All feature branches are merged here
+  - May contain in-progress features
+  - Used for active development
+  - Protected by Pull Requests
 
-**Examples:**
+#### Supporting branches
 
-- `ls/feat/quiz/add-timer-system`
-- `ar/fix/quiz-api/slug-endpoint-bug`
-- `am/feat/schema/add-user-progress-table`
-- `vs/refactor/db/optimize-quiz-queries`
-- `yd/feat/hooks/add-use-anti-cheat`
-- `lso/feat/ui/add-button-component`
-- `tz/feat/blog/add-author-page`
+- **`feature/*`**
 
-**Note**: Delete branches after PR completion and merge.
+  - Created from `develop`
+  - Used for new features and improvements
+  - Merged back into `develop` via Pull Request
 
-### 2.2 Commit Messages
+- **`hotfix/*`**
+  - Created from `main`
+  - Used for critical production fixes
+  - Merged into `main` and back-merged into `develop`
 
-**Tense**: Present tense  
-**Case**: Lowercase (except proper nouns)  
-**Structure**: `type(scope): description`
+### 2.2 Branch Creation Rules
 
-**Types:**
+All new work **must start from `develop`**:
 
-- `feat`: New feature
-- `fix`: Bug fix
-- `refactor`: Code restructuring without functionality change
-- `docs`: Documentation changes
-- `test`: Adding/updating tests
-- `style`: Formatting, missing semicolons, etc.
-- `chore`: Build process, dependencies, tooling
-- `db`: Database schema or seed changes
-
-**Examples:**
-
-✅ **Good:**
-
-```
-feat(quiz): add anti-cheat violation tracking
-
-- Implement useAntiCheat hook
-- Track tab switches and visibility changes
-- Add violation counter to quiz state
+```bash
+git checkout develop
+git pull origin develop
+git checkout -b <initials>/<type>/<scope>/<description>
 ```
 
-```
-db(schema): add quiz system tables
+❌ Do NOT:
 
-- Create 8 new tables for quiz functionality
-- Add foreign keys and indexes
-- Include seed data for React quiz
-```
+- Create feature branches from `main`
 
-```
-fix(quiz-api): resolve slug endpoint 404 error
+- Push directly to `main` or `develop`
 
-- Fix route.ts export syntax
-- Add proper error handling
-- Return structured JSON response
-```
-
-❌ **Bad:**
-
-```
-update stuff
-```
-
-```
-fixed bugs
-```
-
-```
-додав квіз систему
-```
-
-**Important:**
-
-- Use only English in commit messages
-- Keep subject line under 50 characters
-- Provide details in commit body when needed
-- Reference issue numbers when applicable
-
-### 2.3 Pull Request Process
+### 2.3 Branch Naming
 
 **Pull Request Title**
 
 - **Tense**: Present tense
-- **Case**: Sentence case
-- **Structure**: `description` or `type(scope): description`
+- **Case**: Lowercase with hyphens
+- **Structure**: `{initials}/{type}/{scope}/{description}`
 
 Examples:
 
-- `Add quiz timer system`
-- `feat(quiz-api): Add slug endpoint for quiz data`
+- `ls/feat/quiz/add-timer-system`
+- `ar/fix/quiz-api/slug-endpoint-bug`
 - `fix: Resolve quiz result calculation bug`
-- `db: Add user progress tracking schema`
+- `vs/refactor/db/optimize-quiz-queries`
+
+Delete branches after PR completion.
 
 **Pull Request Description**
 
@@ -180,33 +123,45 @@ Examples:
 
 When creating PR, manually move your card from "In Progress" to "In Review".
 
-### 2.4 Merge Strategies
+### 2.4 Commit Messages
 
-#### 1. Merge Commit
+**Structure:** `type(scope): description`
 
-Use when:
+**Types:**
 
-- PR contains only one commit
-- Preserving commit history is critical
-- Database migrations or schema changes
+- `feat`, `fix`, `refactor`, `docs`, `test`, `style`, `chore`, `db`
 
-#### 2. Squash and Merge
+**Rules:**
 
-Use when:
+- English only
 
-- PR contains multiple commits
-- Simplifying history is preferred
-- Bug fixes or small features
-- Commits contain "WIP" messages
+- Subject line ≤ 50 characters
 
-**Important**:
+- Use commit body for details when needed
 
-- Always include PR number in squash commit:
-  `feat(quiz): Add timer system (#42)`
-- Edit commit message to remove obsolete/reversed commits
-- Keep commits marked with asterisk
+### 2.5 Pull Request Flow
 
-### 2.5 Handling Main Branch Updates
+- Feature branches → `develop`
+
+- Release Pull Requests → `develop` → `main`
+
+- Direct PRs to `main` are not **allowed** (except hotfixes)
+
+### 2.6 Release Process (Weekly)
+
+Releases are performed **once per week**.
+
+1. Code freeze on `develop`
+
+2. Create Pull Request: `develop` → `main`
+
+3. Review and merge
+
+4. Create Git tag (e.g. `v0.3.0`)
+
+5. Publish GitHub Release
+
+### 2.7 Handling Main Branch Updates
 
 **Option 1: Merge (Recommended for Long-Running Branches)**
 
@@ -740,7 +695,7 @@ const result: any = await db.select()...
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: 2025-12-05  
+**Document Version**: 1.1  
+**Last Updated**: 2025-12-12  
 **Maintained By**: Devlovers Team  
 **Repository**: https://github.com/DevLoversTeam/devlovers.net
