@@ -43,19 +43,35 @@ function authMiddleware(req: NextRequest) {
 
   return null;
 }
+function getScopeFromPathname(pathname: string): "shop" | "site" {
+  const pathnameWithoutLocale = pathname.replace(/^\/(uk|en|pl)(?=\/|$)/, "") || "/"
+  return pathnameWithoutLocale.startsWith("/shop") ? "shop" : "site"
+}
+
 
 export function middleware(req: NextRequest) {
-  
-  const intlResponse = intlMiddleware(req);
+  const authResponse = authMiddleware(req)
+  if (authResponse) return authResponse
 
-  const authResponse = authMiddleware(req);
+  const intlResponse = intlMiddleware(req)
+  const scope = getScopeFromPathname(req.nextUrl.pathname)
 
-  if (authResponse) {
-    return authResponse;
+  const requestHeaders = new Headers(req.headers)
+  requestHeaders.set("x-app-scope", scope)
+
+
+  const isRewriteOrRedirect = intlResponse.headers.has("location") || intlResponse.headers.has("x-middleware-rewrite")
+  if (isRewriteOrRedirect) {
+    intlResponse.headers.set("x-app-scope", scope)
+    return intlResponse
   }
 
-  return intlResponse;
+  return NextResponse.next({
+    request: { headers: requestHeaders },
+  })
 }
+
+
 
 export const config = {
   matcher: ['/', '/(uk|en|pl)/:path*', '/((?!api|_next|.*\\..*).*)',],
