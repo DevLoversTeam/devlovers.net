@@ -23,11 +23,10 @@ function authMiddleware(req: NextRequest) {
   const pathnameWithoutLocale = pathname.replace(/^\/(uk|en|pl)/, '') || '/';
 
   if (
-    (pathnameWithoutLocale === '/login' ||
-      pathnameWithoutLocale === '/signup') &&
-    authenticated
+    (pathnameWithoutLocale === '/login' || pathnameWithoutLocale === '/signup') && authenticated
   ) {
-    return NextResponse.redirect(new URL(pathname.split('/').slice(0, 2).join('/') || '/', req.url));
+    const locale = pathname.split('/')[1] || 'uk'; 
+    return NextResponse.redirect(new URL(`/${locale}/`, req.url)); 
   }
 
   if (
@@ -50,25 +49,21 @@ function getScopeFromPathname(pathname: string): "shop" | "site" {
 
 
 export function middleware(req: NextRequest) {
+  // Force redirect to /uk for root path only
+  if (req.nextUrl.pathname === '/') {
+    return NextResponse.redirect(new URL('/uk', req.url))
+  }
+
   const authResponse = authMiddleware(req)
   if (authResponse) return authResponse
 
   const intlResponse = intlMiddleware(req)
   const scope = getScopeFromPathname(req.nextUrl.pathname)
 
-  const requestHeaders = new Headers(req.headers)
-  requestHeaders.set("x-app-scope", scope)
+  // Add scope header to the response
+  intlResponse.headers.set("x-app-scope", scope)
 
-
-  const isRewriteOrRedirect = intlResponse.headers.has("location") || intlResponse.headers.has("x-middleware-rewrite")
-  if (isRewriteOrRedirect) {
-    intlResponse.headers.set("x-app-scope", scope)
-    return intlResponse
-  }
-
-  return NextResponse.next({
-    request: { headers: requestHeaders },
-  })
+  return intlResponse
 }
 
 

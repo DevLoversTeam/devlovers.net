@@ -1,17 +1,19 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { usePathname } from '@/i18n/routing';
-import { useParams } from 'next/navigation';
+import { useParams, usePathname } from 'next/navigation';
 import { locales, type Locale } from '@/i18n/config';
 import { Link } from '@/i18n/routing';
 
 export default function LanguageSwitcher() {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const pathname = usePathname();
+  const fullPathname = usePathname();
   const params = useParams();
   const currentLocale = params.locale as Locale;
+
+  // Remove locale prefix from pathname: /uk/q&a -> /q&a, /uk -> /
+  const pathname = fullPathname.replace(/^\/(uk|en|pl)/, '') || '/';
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
