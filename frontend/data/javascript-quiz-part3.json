@@ -1,0 +1,434 @@
+{
+  "questions": [
+    {
+      "id": "js-q21",
+      "order": 21,
+      "difficulty": "intermediate",
+      "uk": {
+        "q": "Що таке Promise у JavaScript?",
+        "exp": "Promise — це об'єкт для роботи з асинхронними операціями, який представляє результат, що буде доступний у майбутньому (resolve або reject)."
+      },
+      "en": {
+        "q": "What is a Promise in JavaScript?",
+        "exp": "Promise is an object for working with asynchronous operations that represents a result that will be available in the future (resolve or reject)."
+      },
+      "pl": {
+        "q": "Czym jest Promise w JavaScript?",
+        "exp": "Promise to obiekt do pracy z operacjami asynchronicznymi, który reprezentuje wynik, który będzie dostępny w przyszłości (resolve lub reject)."
+      },
+      "answers": [
+        {
+          "uk": "Синхронна функція для обробки даних",
+          "en": "Synchronous function for data processing",
+          "pl": "Synchroniczna funkcja do przetwarzania danych",
+          "correct": false
+        },
+        {
+          "uk": "Об'єкт для роботи з асинхронними операціями, що представляє майбутній результат",
+          "en": "Object for working with async operations representing a future result",
+          "pl": "Obiekt do pracy z operacjami asynchronicznymi reprezentujący przyszły wynik",
+          "correct": true
+        },
+        {
+          "uk": "Метод для створення callback-функцій",
+          "en": "Method for creating callback functions",
+          "pl": "Metoda tworzenia funkcji callback",
+          "correct": false
+        },
+        {
+          "uk": "Тип даних для зберігання часу",
+          "en": "Data type for storing time",
+          "pl": "Typ danych do przechowywania czasu",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "js-q22",
+      "order": 22,
+      "difficulty": "intermediate",
+      "uk": {
+        "q": "Які три стани має Promise?",
+        "exp": "Promise має три стани: pending (очікування), fulfilled (успішне виконання) і rejected (відхилення через помилку)."
+      },
+      "en": {
+        "q": "What are the three states of a Promise?",
+        "exp": "Promise has three states: pending (waiting), fulfilled (successful completion), and rejected (rejection due to error)."
+      },
+      "pl": {
+        "q": "Jakie są trzy stany Promise?",
+        "exp": "Promise ma trzy stany: pending (oczekiwanie), fulfilled (pomyślne zakończenie) i rejected (odrzucenie z powodu błędu)."
+      },
+      "answers": [
+        {
+          "uk": "started, running, completed",
+          "en": "started, running, completed",
+          "pl": "started, running, completed",
+          "correct": false
+        },
+        {
+          "uk": "pending, fulfilled, rejected",
+          "en": "pending, fulfilled, rejected",
+          "pl": "pending, fulfilled, rejected",
+          "correct": true
+        },
+        {
+          "uk": "waiting, success, failure",
+          "en": "waiting, success, failure",
+          "pl": "waiting, success, failure",
+          "correct": false
+        },
+        {
+          "uk": "idle, active, done",
+          "en": "idle, active, done",
+          "pl": "idle, active, done",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "js-q23",
+      "order": 23,
+      "difficulty": "intermediate",
+      "uk": {
+        "q": "Яка різниця між async/await та Promise.then()?",
+        "exp": "async/await — це синтаксичний цукор над Promise, що робить асинхронний код схожим на синхронний і легшим для читання."
+      },
+      "en": {
+        "q": "What's the difference between async/await and Promise.then()?",
+        "exp": "async/await is syntactic sugar over Promises that makes asynchronous code look like synchronous and easier to read."
+      },
+      "pl": {
+        "q": "Jaka jest różnica między async/await a Promise.then()?",
+        "exp": "async/await to cukier składniowy nad Promise, który sprawia, że kod asynchroniczny wygląda jak synchroniczny i jest łatwiejszy do czytania."
+      },
+      "answers": [
+        {
+          "uk": "async/await працює швидше",
+          "en": "async/await works faster",
+          "pl": "async/await działa szybciej",
+          "correct": false
+        },
+        {
+          "uk": "async/await — синтаксичний цукор, який робить асинхронний код схожим на синхронний",
+          "en": "async/await is syntactic sugar making async code look synchronous",
+          "pl": "async/await to cukier składniowy sprawiający, że kod async wygląda synchronicznie",
+          "correct": true
+        },
+        {
+          "uk": "Promise.then() застарілий метод",
+          "en": "Promise.then() is a deprecated method",
+          "pl": "Promise.then() to przestarzała metoda",
+          "correct": false
+        },
+        {
+          "uk": "async/await не потребує обробки помилок",
+          "en": "async/await doesn't require error handling",
+          "pl": "async/await nie wymaga obsługi błędów",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "js-q24",
+      "order": 24,
+      "difficulty": "advanced",
+      "uk": {
+        "q": "Що таке callback hell і як його уникнути?",
+        "exp": "Callback hell — це вкладені callback-функції, які важко читати. Уникнути можна через Promise або async/await."
+      },
+      "en": {
+        "q": "What is callback hell and how to avoid it?",
+        "exp": "Callback hell is nested callback functions that are hard to read. Can be avoided using Promises or async/await."
+      },
+      "pl": {
+        "q": "Czym jest callback hell i jak tego uniknąć?",
+        "exp": "Callback hell to zagnieżdżone funkcje callback, które są trudne do odczytania. Można uniknąć używając Promise lub async/await."
+      },
+      "answers": [
+        {
+          "uk": "Помилка при виклику функції",
+          "en": "Error when calling a function",
+          "pl": "Błąd podczas wywoływania funkcji",
+          "correct": false
+        },
+        {
+          "uk": "Глибоке вкладення callback-функцій, яке важко читати",
+          "en": "Deep nesting of callback functions that's hard to read",
+          "pl": "Głębokie zagnieżdżanie funkcji callback, które jest trudne do odczytania",
+          "correct": true
+        },
+        {
+          "uk": "Втрата контексту this у функціях",
+          "en": "Loss of this context in functions",
+          "pl": "Utrata kontekstu this w funkcjach",
+          "correct": false
+        },
+        {
+          "uk": "Нескінченний цикл виконання",
+          "en": "Infinite execution loop",
+          "pl": "Nieskończona pętla wykonania",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "js-q25",
+      "order": 25,
+      "difficulty": "advanced",
+      "uk": {
+        "q": "Що таке Event Loop у JavaScript?",
+        "exp": "Event Loop — це механізм, який керує виконанням коду, обробкою подій та виконанням асинхронних операцій у однопотоковому середовищі JavaScript."
+      },
+      "en": {
+        "q": "What is the Event Loop in JavaScript?",
+        "exp": "Event Loop is a mechanism that manages code execution, event handling, and asynchronous operations in JavaScript's single-threaded environment."
+      },
+      "pl": {
+        "q": "Czym jest Event Loop w JavaScript?",
+        "exp": "Event Loop to mechanizm zarządzający wykonywaniem kodu, obsługą zdarzeń i operacjami asynchronicznymi w jednowątkowym środowisku JavaScript."
+      },
+      "answers": [
+        {
+          "uk": "Спосіб створення циклів for",
+          "en": "A way to create for loops",
+          "pl": "Sposób tworzenia pętli for",
+          "correct": false
+        },
+        {
+          "uk": "Механізм керування виконанням коду та асинхронних операцій в однопотоковому середовищі",
+          "en": "Mechanism managing code execution and async operations in single-threaded environment",
+          "pl": "Mechanizm zarządzający wykonywaniem kodu i operacji async w środowisku jednowątkowym",
+          "correct": true
+        },
+        {
+          "uk": "Обробник подій миші та клавіатури",
+          "en": "Handler for mouse and keyboard events",
+          "pl": "Handler zdarzeń myszy i klawiatury",
+          "correct": false
+        },
+        {
+          "uk": "Бібліотека для роботи з DOM",
+          "en": "Library for working with DOM",
+          "pl": "Biblioteka do pracy z DOM",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "js-q26",
+      "order": 26,
+      "difficulty": "advanced",
+      "uk": {
+        "q": "Яка різниця між microtasks та macrotasks в Event Loop?",
+        "exp": "Microtasks (Promise callbacks) виконуються перед macrotasks (setTimeout, setInterval). Microtasks мають вищий пріоритет."
+      },
+      "en": {
+        "q": "What's the difference between microtasks and macrotasks in Event Loop?",
+        "exp": "Microtasks (Promise callbacks) execute before macrotasks (setTimeout, setInterval). Microtasks have higher priority."
+      },
+      "pl": {
+        "q": "Jaka jest różnica między microtasks a macrotasks w Event Loop?",
+        "exp": "Microtasks (Promise callbacks) wykonują się przed macrotasks (setTimeout, setInterval). Microtasks mają wyższy priorytet."
+      },
+      "answers": [
+        {
+          "uk": "Microtasks для малих завдань, macrotasks для великих",
+          "en": "Microtasks for small tasks, macrotasks for large",
+          "pl": "Microtasks dla małych zadań, macrotasks dla dużych",
+          "correct": false
+        },
+        {
+          "uk": "Microtasks виконуються перед macrotasks і мають вищий пріоритет",
+          "en": "Microtasks execute before macrotasks and have higher priority",
+          "pl": "Microtasks wykonują się przed macrotasks i mają wyższy priorytet",
+          "correct": true
+        },
+        {
+          "uk": "Macrotasks виконуються першими",
+          "en": "Macrotasks execute first",
+          "pl": "Macrotasks wykonują się jako pierwsze",
+          "correct": false
+        },
+        {
+          "uk": "Різниці немає",
+          "en": "There is no difference",
+          "pl": "Nie ma różnicy",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "js-q27",
+      "order": 27,
+      "difficulty": "intermediate",
+      "uk": {
+        "q": "Як обробити помилку в Promise?",
+        "exp": "Помилки в Promise обробляються через метод .catch() або через другий аргумент .then(), або через try/catch з async/await."
+      },
+      "en": {
+        "q": "How do you handle errors in a Promise?",
+        "exp": "Errors in Promises are handled via .catch() method, or through second .then() argument, or via try/catch with async/await."
+      },
+      "pl": {
+        "q": "Jak obsługiwać błędy w Promise?",
+        "exp": "Błędy w Promise są obsługiwane przez metodę .catch(), lub przez drugi argument .then(), lub przez try/catch z async/await."
+      },
+      "answers": [
+        {
+          "uk": "Через window.onerror",
+          "en": "Through window.onerror",
+          "pl": "Przez window.onerror",
+          "correct": false
+        },
+        {
+          "uk": "Через .catch() або try/catch з async/await",
+          "en": "Through .catch() or try/catch with async/await",
+          "pl": "Przez .catch() lub try/catch z async/await",
+          "correct": true
+        },
+        {
+          "uk": "Promise автоматично обробляють помилки",
+          "en": "Promises automatically handle errors",
+          "pl": "Promise automatycznie obsługują błędy",
+          "correct": false
+        },
+        {
+          "uk": "Через console.error()",
+          "en": "Through console.error()",
+          "pl": "Przez console.error()",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "js-q28",
+      "order": 28,
+      "difficulty": "intermediate",
+      "uk": {
+        "q": "Що робить Promise.all()?",
+        "exp": "Promise.all() приймає масив Promise і повертає Promise, який виконується коли всі Promise виконані, або відхиляється при першій помилці."
+      },
+      "en": {
+        "q": "What does Promise.all() do?",
+        "exp": "Promise.all() takes an array of Promises and returns a Promise that fulfills when all Promises are fulfilled, or rejects on first error."
+      },
+      "pl": {
+        "q": "Co robi Promise.all()?",
+        "exp": "Promise.all() przyjmuje tablicę Promise i zwraca Promise, który wypełnia się, gdy wszystkie Promise są wypełnione, lub odrzuca przy pierwszym błędzie."
+      },
+      "answers": [
+        {
+          "uk": "Виконує Promise по черзі один за одним",
+          "en": "Executes Promises sequentially one by one",
+          "pl": "Wykonuje Promise sekwencyjnie jeden po drugim",
+          "correct": false
+        },
+        {
+          "uk": "Виконує всі Promise паралельно і чекає виконання всіх або першої помилки",
+          "en": "Executes all Promises in parallel and waits for all to complete or first error",
+          "pl": "Wykonuje wszystkie Promise równolegle i czeka na zakończenie wszystkich lub pierwszy błąd",
+          "correct": true
+        },
+        {
+          "uk": "Вибирає найшвидший Promise",
+          "en": "Selects the fastest Promise",
+          "pl": "Wybiera najszybszy Promise",
+          "correct": false
+        },
+        {
+          "uk": "Об'єднує результати Promise в один об'єкт",
+          "en": "Merges Promise results into one object",
+          "pl": "Łączy wyniki Promise w jeden obiekt",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "js-q29",
+      "order": 29,
+      "difficulty": "intermediate",
+      "uk": {
+        "q": "Яка різниця між Promise.all() та Promise.race()?",
+        "exp": "Promise.all() чекає виконання всіх Promise, Promise.race() повертає результат першого виконаного або відхиленого Promise."
+      },
+      "en": {
+        "q": "What's the difference between Promise.all() and Promise.race()?",
+        "exp": "Promise.all() waits for all Promises to complete, Promise.race() returns the result of the first settled Promise."
+      },
+      "pl": {
+        "q": "Jaka jest różnica między Promise.all() a Promise.race()?",
+        "exp": "Promise.all() czeka na zakończenie wszystkich Promise, Promise.race() zwraca wynik pierwszego rozstrzygniętego Promise."
+      },
+      "answers": [
+        {
+          "uk": "Promise.all() швидший за Promise.race()",
+          "en": "Promise.all() is faster than Promise.race()",
+          "pl": "Promise.all() jest szybszy niż Promise.race()",
+          "correct": false
+        },
+        {
+          "uk": "Promise.all() чекає всіх, Promise.race() повертає результат першого",
+          "en": "Promise.all() waits for all, Promise.race() returns first result",
+          "pl": "Promise.all() czeka na wszystkie, Promise.race() zwraca pierwszy wynik",
+          "correct": true
+        },
+        {
+          "uk": "Promise.race() обробляє лише помилки",
+          "en": "Promise.race() handles only errors",
+          "pl": "Promise.race() obsługuje tylko błędy",
+          "correct": false
+        },
+        {
+          "uk": "Різниці немає",
+          "en": "There is no difference",
+          "pl": "Nie ma różnicy",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "js-q30",
+      "order": 30,
+      "difficulty": "advanced",
+      "uk": {
+        "q": "Що станеться, якщо не обробити rejected Promise?",
+        "exp": "Виникне unhandled promise rejection, яку можна відловити через window.addEventListener('unhandledrejection')."
+      },
+      "en": {
+        "q": "What happens if you don't handle a rejected Promise?",
+        "exp": "An unhandled promise rejection occurs, which can be caught via window.addEventListener('unhandledrejection')."
+      },
+      "pl": {
+        "q": "Co się stanie, jeśli nie obsłużysz odrzuconego Promise?",
+        "exp": "Wystąpi unhandled promise rejection, które można złapać przez window.addEventListener('unhandledrejection')."
+      },
+      "answers": [
+        {
+          "uk": "Нічого, помилка буде проігнорована",
+          "en": "Nothing, error will be ignored",
+          "pl": "Nic, błąd zostanie zignorowany",
+          "correct": false
+        },
+        {
+          "uk": "Виникне unhandled promise rejection",
+          "en": "An unhandled promise rejection occurs",
+          "pl": "Wystąpi unhandled promise rejection",
+          "correct": true
+        },
+        {
+          "uk": "Додаток автоматично перезавантажиться",
+          "en": "Application will automatically restart",
+          "pl": "Aplikacja automatycznie się zrestartuje",
+          "correct": false
+        },
+        {
+          "uk": "Promise автоматично повториться",
+          "en": "Promise will automatically retry",
+          "pl": "Promise automatycznie się powtórzy",
+          "correct": false
+        }
+      ]
+    }
+  ]
+}

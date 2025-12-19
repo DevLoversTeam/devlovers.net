@@ -8,6 +8,8 @@ interface QuizResultProps {
   total: number;
   percentage: number;
   violationsCount?: number;
+  isGuest?: boolean;
+  quizSlug?: string;
   onRestart: () => void;
   onBackToTopics: () => void;
 }
@@ -17,6 +19,8 @@ export function QuizResult({
   total,
   percentage,
   violationsCount = 0,
+  isGuest = false,
+  quizSlug = '',
   onRestart,
   onBackToTopics,
 }: QuizResultProps) {
@@ -85,7 +89,30 @@ export function QuizResult({
           </p>
         </div>
       )}
-      <div className="flex flex-col sm:flex-row gap-3 justify-center">
+      {isGuest ? (
+  <div className="space-y-4">
+    <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+      <p className="text-center text-blue-800 dark:text-blue-200 font-medium">
+        Щоб зберегти результат та потрапити в рейтинг, увійдіть або зареєструйтесь
+      </p>
+    </div>
+    <div className="flex flex-col sm:flex-row gap-3 justify-center">
+      <Button
+        onClick={() => window.location.href = `/login?returnTo=/quiz/${quizSlug}`}
+        variant="primary"
+      >
+        Увійти
+      </Button>
+      <Button
+        onClick={() => window.location.href = `/signup?returnTo=/quiz/${quizSlug}`}
+        variant="secondary"
+      >
+        Зареєструватися
+      </Button>
+    </div>
+  </div>
+) : (
+    <div className="flex flex-col sm:flex-row gap-3 justify-center">
         <Button onClick={onRestart} variant="primary">
           Спробувати ще раз
         </Button>
@@ -93,6 +120,7 @@ export function QuizResult({
           Повернутись до тем
         </Button>
       </div>
+)}
     </div>
-  );
+    );
 }

@@ -1,11 +1,15 @@
 "use client";
 
 import { useState } from "react";
-
-
+import { toast } from 'sonner';
+import { useSearchParams } from "next/navigation";
+import { getPendingQuizResult, clearPendingQuizResult } from "@/lib/guest-quiz";
+import { submitGuestQuizResult } from "@/actions/guest-quiz";
 import { Button } from "@/components/ui/button";
 
 export default function LoginPage() {
+  const searchParams = useSearchParams();
+  const returnTo = searchParams.get("returnTo") || "/";
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,7 +36,39 @@ export default function LoginPage() {
       return;
     }
 
-    window.location.href = "/";
+   const data = await res.json();
+   const pendingResult = getPendingQuizResult();
+
+ if (pendingResult && data.userId) {
+  try {
+    const result = await submitGuestQuizResult({
+      userId: data.userId,
+      quizId: pendingResult.quizId,
+      answers: pendingResult.answers,
+      violations: pendingResult.violations,
+      timeSpentSeconds: pendingResult.timeSpentSeconds,
+    });
+
+    if (result.success) {
+      sessionStorage.setItem('quiz_just_saved', JSON.stringify({
+        score: result.score,
+        total: result.totalQuestions,
+        percentage: result.percentage,
+        pointsAwarded: result.pointsAwarded,
+        quizSlug: pendingResult.quizSlug,
+      }));
+    }
+  } catch (err) {
+    console.error('Failed to save quiz result:', err);
+  } finally {
+    clearPendingQuizResult();
+  }
+
+  window.location.href = '/dashboard';
+  return;
+}
+
+  window.location.href = returnTo;
   }
 
   return (
@@ -65,7 +101,7 @@ export default function LoginPage() {
 
       <p className="mt-4 text-sm text-gray-600">
         Don’t have an account?{" "}
-        <a href="/signup" className="underline">
+        <a href={`/signup?returnTo=${encodeURIComponent(returnTo)}`} className="underline">
           Sign up
         </a>
       </p>

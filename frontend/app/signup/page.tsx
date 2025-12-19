@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-
+import { useSearchParams } from "next/navigation";
+import { getPendingQuizResult, clearPendingQuizResult } from "@/lib/guest-quiz";
+import { submitGuestQuizResult } from "@/actions/guest-quiz";
 import { Button } from "@/components/ui/button";
 
 type FormError = string | Record<string, string[]>;
@@ -9,12 +11,16 @@ type FormError = string | Record<string, string[]>;
 export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<FormError | null>(null);
+  const searchParams = useSearchParams();
+  const returnTo = searchParams.get("returnTo") || "/";
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    console.log('[DEBUG] signup submit start', { returnTo });
 
+    try{
     const formData = new FormData(e.currentTarget);
 
     const res = await fetch("/api/auth/signup", {
@@ -26,17 +32,54 @@ export default function SignupPage() {
         password: formData.get("password"),
       }),
     });
+    console.log('[DEBUG] signup response status', res.status);
 
-    setLoading(false);
-
-    if (!res.ok) {
-      const data = await res.json();
-      setError(data.error ?? "Signup failed");
-      return;
-    }
-
-    window.location.href = "/";
+      if (!res.ok) {
+    const data = await res.json();
+    setError(data.error ?? "Signup failed");
+    return;
   }
+
+  const data = await res.json();
+  const pendingResult = getPendingQuizResult();
+  console.log('[DEBUG] signup pendingResult', pendingResult);
+
+ if (pendingResult && data.userId) {
+  try {
+    const result = await submitGuestQuizResult({
+      userId: data.userId,
+      quizId: pendingResult.quizId,
+      answers: pendingResult.answers,
+      violations: pendingResult.violations,
+      timeSpentSeconds: pendingResult.timeSpentSeconds,
+    });
+
+    if (result.success) {
+      sessionStorage.setItem('quiz_just_saved', JSON.stringify({
+        score: result.score,
+        total: result.totalQuestions,
+        percentage: result.percentage,
+        pointsAwarded: result.pointsAwarded,
+        quizSlug: pendingResult.quizSlug,
+      }));
+    }
+  } catch (err) {
+    console.error('Failed to save quiz result:', err);
+  } finally {
+    clearPendingQuizResult();
+  }
+  console.log('[DEBUG] signup redirect: dashboard');
+  // window.location.href = '/dashboard';
+  return;
+}
+  console.log('[DEBUG] signup redirect: returnTo', { returnTo });
+  // window.location.href = returnTo;
+} 
+  catch (err) { 
+    console.error('[DEBUG] signup submit error', err); setError('Signup failed'); } finally { setLoading(false); 
+
+    }
+    }
 
   return (
     <div className="mx-auto max-w-sm py-12">
@@ -81,7 +124,7 @@ export default function SignupPage() {
 
       <p className="mt-4 text-sm text-gray-600">
         Already have an account?{" "}
-        <a href="/login" className="underline">
+        <a href={`/login?returnTo=${encodeURIComponent(returnTo)}`} className="underline">
           Log in
         </a>
       </p>

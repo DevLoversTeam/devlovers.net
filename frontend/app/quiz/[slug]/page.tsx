@@ -1,6 +1,7 @@
 import { getQuizBySlug, getQuizQuestionsRandomized } from '@/db/queries/quiz';
 import { notFound, redirect } from 'next/navigation';
 import { QuizContainer } from '@/components/quiz/QuizContainer';
+import { PendingResultHandler } from '@/components/quiz/PendingResultHandler';
 import { getCurrentUser } from '@/lib/auth';
 
 interface QuizPageProps {
@@ -17,17 +18,14 @@ export default async function QuizPage({
 
   const user = await getCurrentUser();
 
-  if (!user) {
-    redirect('/login');
-  }
-
   const quiz = await getQuizBySlug(slug, locale);
 
   if (!quiz || !quiz.isActive) {
     notFound();
   }
 
-  const questions = await getQuizQuestionsRandomized(quiz.id, locale);
+  const seed = Date.now();
+const questions = await getQuizQuestionsRandomized(quiz.id, locale, seed);
 
   if (!questions.length) {
     return (
@@ -58,10 +56,12 @@ export default async function QuizPage({
         </div>
 
         <QuizContainer
-          quizId={quiz.id}
-          questions={questions}
-          userId={user.id}
+         quizId={quiz.id}
+         quizSlug={slug}
+         questions={questions}
+         userId={user?.id ?? null}
         />
+        {user && <PendingResultHandler userId={user.id} />}
       </div>
     </div>
   );

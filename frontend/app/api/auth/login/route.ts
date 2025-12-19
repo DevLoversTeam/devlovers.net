@@ -57,5 +57,5 @@ export async function POST(req: Request) {
 
   await setAuthCookie(token);
 
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ success: true, userId: result[0].id });
 }

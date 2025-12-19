@@ -21,8 +21,6 @@ export function middleware(req: NextRequest) {
   }
 
   if (
-    pathname.startsWith('/leaderboard') ||
-    pathname.startsWith('/quiz') ||
     pathname.startsWith('/dashboard')
   ) {
     if (!authenticated) {
@@ -37,8 +35,6 @@ export const config = {
   matcher: [
     '/login',
     '/signup',
-    '/leaderboard/:path*',
-    '/quiz/:path*',
     '/dashboard/:path*',
   ],
 };

@@ -6,6 +6,7 @@ import { getUserQuizStats } from '@/db/queries/quiz';
 
 import { ProfileCard } from '@/components/dashboard/ProfileCard';
 import { StatsCard } from '@/components/dashboard/StatsCard';
+import { QuizSavedBanner } from '@/components/dashboard/QuizSavedBanner';
 
 export const metadata = {
   title: 'Dashboard | DevLovers',
@@ -81,7 +82,7 @@ export default async function DashboardPage() {
             Support & Feedback
           </Link>
         </header>
-
+        <QuizSavedBanner />
         <div className="grid gap-8 md:grid-cols-2">
           <ProfileCard user={userForDisplay} />
           <StatsCard stats={stats} />
