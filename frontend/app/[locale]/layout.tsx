@@ -27,7 +27,7 @@ export default async function LocaleLayout({
     notFound();
   }
 
-  const messages = await getMessages();
+  const messages = await getMessages({ locale });
   const user = await getCurrentUser();
   const scope = (await headers()).get('x-app-scope') ?? 'site';
   const showAdminNavLink = process.env.NEXT_PUBLIC_ENABLE_ADMIN === 'true';
