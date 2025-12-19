@@ -4,38 +4,150 @@
 📁 actions
   📄 quiz.ts
 📁 app
-  📁 about
-    📄 page.tsx
   📁 api
+    📁 auth
+      📁 login
+        📄 route.ts
+      📁 logout
+        📄 route.ts
+      📁 me
+        📄 route.ts
+      📁 signup
+        📄 route.ts
     📁 questions
       📁 [category]
         📄 route.ts
     📁 quiz
       📁 [slug]
         📄 route.ts
-  📁 contacts
-    📄 page.tsx
+    📁 shop
+      📁 admin
+        📁 orders
+          📁 reconcile-stale
+            📄 route.ts
+          📄 route.ts
+          📁 [id]
+            📁 refund
+              📄 route.ts
+            📄 route.ts
+        📁 products
+          📄 route.ts
+          📁 [id]
+            📄 route.ts
+            📁 status
+              📄 route.ts
+      📁 cart
+        📁 rehydrate
+          📄 route.ts
+      📁 checkout
+        📄 route.ts
+      📁 internal
+        📁 orders
+          📁 restock-stale
+            📄 route.ts
+      📁 orders
+        📁 [id]
+          📄 route.ts
+      📁 webhooks
+        📁 stripe
+          📄 route.ts
   📄 favicon.ico
   📄 globals.css
   📄 layout.tsx
-  📁 leaderboard
+  📁 [locale]
+    📁 about
+      📄 page.tsx
+    📁 blog
+      📄 page.tsx
+      📁 [slug]
+        📄 page.tsx
+        📄 PostDetails.tsx
+    📁 contacts
+      📄 page.tsx
+    📁 dashboard
+      📄 page.tsx
+    📄 layout.tsx
+    📁 leaderboard
+      📄 page.tsx
+    📁 login
+      📄 page.tsx
+    📄 not-found.tsx
     📄 page.tsx
-  📄 not-found.tsx
-  📄 page.tsx
-  📁 post
-    📄 page.tsx
-  📁 q&a
-    📄 page.tsx
-  📁 quiz
-    📁 [slug]
+    📁 privacy-policy
+      📄 page.tsx
+    📁 q&a
+      📄 page.tsx
+    📁 quiz
+      📁 [slug]
+        📄 page.tsx
+    📁 shop
+      📁 admin
+        📄 layout.tsx
+        📁 orders
+          📄 page.tsx
+          📁 [id]
+            📄 page.tsx
+        📄 page.tsx
+        📁 products
+          📁 new
+            📄 page.tsx
+          📄 page.tsx
+          📁 [id]
+            📁 edit
+              📄 page.tsx
+          📁 _components
+            📄 product-form.tsx
+      📁 cart
+        📄 page.tsx
+      📁 checkout
+        📁 error
+          📄 page.tsx
+        📁 payment
+          📄 StripePaymentClient.tsx
+          📁 [orderId]
+            📄 page.tsx
+        📁 success
+          📄 page.tsx
+      📄 layout.tsx
+      📄 page.tsx
+      📁 products
+        📄 page.tsx
+        📁 [slug]
+          📄 page.tsx
+      📄 shop-theme.css
+    📁 signup
+      📄 page.tsx
+    📁 terms-of-service
       📄 page.tsx
 📄 client.ts
 📁 components
+  📁 about
+    📄 CommunitySection.tsx
+    📄 FeaturesSection.tsx
+    📄 HeroSection.tsx
+    📄 PricingSection.tsx
+    📄 StatsSection.tsx
+  📁 auth
+    📄 logoutButton.tsx
+  📁 blog
+    📄 AuthorModal.tsx
+    📄 BlogCard.tsx
+    📄 BlogFilters.tsx
+    📄 BlogGrid.tsx
+  📁 dashboard
+    📄 ProfileCard.tsx
+    📄 StatsCard.tsx
   📁 leaderboard
+    📄 LeaderboardClient.tsx
     📄 LeaderboardPodium.tsx
     📄 LeaderboardTable.tsx
     📄 LeaderboardTabs.tsx
     📄 types.ts
+  📁 legal
+    📄 LegalBlock.tsx
+    📄 LegalPageShell.tsx
+    📄 PrivacyPolicyContent.tsx
+    📄 TermsOfServiceContent.tsx
   📁 quiz
     📄 ExplanationRenderer.tsx
     📄 QuizContainer.tsx
@@ -44,8 +156,30 @@
     📄 QuizResult.tsx
   📁 shared
     📄 AccordionList.tsx
+    📄 Footer.tsx
     📄 HeroSection.tsx
+    📄 LanguageSwitcher.tsx
+    📄 Pagination.tsx
     📄 TabsSection.tsx
+  📁 shop
+    📄 add-to-cart-button.tsx
+    📁 admin
+      📄 admin-product-status-toggle.tsx
+    📄 cart-provider.tsx
+    📄 catalog-load-more.tsx
+    📄 category-tile.tsx
+    📁 header
+      📄 cart-button.tsx
+      📄 mobile-nav.tsx
+      📄 nav-links.tsx
+      📄 theme-toggle.tsx
+    📄 product-card.tsx
+    📄 product-filters.tsx
+    📄 product-sort.tsx
+    📄 shop-footer.tsx
+    📄 shop-header.tsx
+    📄 shop-hero.tsx
+    📄 theme-provider.tsx
   📁 theme
     📄 ThemeProvider.tsx
     📄 ThemeToggle.tsx
@@ -56,38 +190,96 @@
     📄 tabs.tsx
 📄 components.json
 📁 data
+  📄 parse.ts
   📄 questions.json
+  📄 README.md
 📁 db
   📄 index.ts
   📁 queries
+    📄 leaderboard.ts
+    📄 points.ts
     📄 quiz.ts
+    📁 shop
+      📄 admin-orders.ts
+      📄 orders.ts
+      📄 products.ts
+    📄 users.ts
   📁 schema
     📄 categories.ts
     📄 index.ts
+    📄 points.ts
     📄 quiz.ts
+    📄 shop.ts
+    📄 users.ts
+  📄 seed-categories.ts
+  📄 seed-demo-leaderboard.ts
   📄 seed-quiz-react.ts
+  📄 seed-users.ts
   📄 seed.ts
-  📄 seedCategories.ts
   📄 verify-quiz-seed.ts
-📁 db_script
-  📁 data
-  📄 README.md
-  📄 script.ts
 📁 drizzle
-  📄 0000_strong_mauler.sql
-  📄 0001_tiny_kitty_pryde.sql
-  📄 0002_fantastic_retro_girl.sql
+  📄 0000_fair_quasar.sql
+  📄 0000_moaning_reavers.sql
+  📄 0000_rich_magus.sql
+  📄 0001_black_random.sql
+  📄 0002_yielding_purple_man.sql
+  📄 0003_handy_cammi.sql
   📁 meta
     📄 0000_snapshot.json
     📄 0001_snapshot.json
     📄 0002_snapshot.json
+    📄 0003_snapshot.json
     📄 _journal.json
+  📄 relations.ts
+  📄 schema.ts
 📄 drizzle.config.ts
 📄 eslint.config.mjs
 📁 hooks
+  📄 use-mounted.ts
   📄 useAntiCheat.ts
+📁 i18n
+  📄 config.ts
+  📄 request.ts
+  📄 routing.ts
 📁 lib
+  📁 admin
+    📄 parseAdminProductForm.ts
+  📁 auth
+    📄 admin.ts
+  📄 auth.ts
+  📄 cart.ts
+  📄 cloudinary.ts
+  📁 config
+    📄 catalog.ts
+  📁 env
+    📄 cloudinary.ts
+    📄 index.ts
+    📄 stripe.ts
+  📄 logging.ts
+  📄 logout.ts
+  📁 psp
+    📄 stripe.ts
+  📁 services
+    📄 errors.ts
+    📄 orders.ts
+    📄 products.ts
+  📁 shop
+    📄 currency.ts
+    📄 data.ts
+    📄 idempotency.ts
+    📄 money.ts
+    📄 slug.ts
+  📁 types
+    📄 shop.ts
   📄 utils.ts
+  📁 validation
+    📄 checkout.ts
+    📄 shop.ts
+📁 messages
+  📄 en.json
+  📄 pl.json
+  📄 uk.json
+📄 middleware.ts
 📄 next-env.d.ts
 📄 next.config.ts
 📄 package-lock.json
@@ -96,6 +288,8 @@
 📄 project-structure.txt
 📁 public
   📄 github-logo.svg
+  📄 placeholder.svg
 📄 README.md
 📄 save-structure.cjs
 📄 tsconfig.json
+📄 tsconfig.tsbuildinfo

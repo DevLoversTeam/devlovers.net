@@ -63,10 +63,10 @@ export default async function RootLayout({
                   Q&A
                 </Link>
                 <Link
-                  href="/quizzes"
+                  href="/quiz/react-fundamentals"
                   className="hover:text-blue-600 dark:hover:text-blue-400 transition"
                 >
-                  Quizzes
+                  Quiz
                 </Link>
                 <Link
                   href="/leaderboard"
@@ -102,15 +102,7 @@ export default async function RootLayout({
                     Log in
                   </Link>
                 ) : (
-                  <>
-    <Link
-      href="/dashboard"
-      className="hover:text-blue-600 dark:hover:text-blue-400 transition"
-    >
-      Dashboard
-    </Link>
-    <LogoutButton />
-  </>
+                  <LogoutButton />
                 )}
               </nav>
             </div>

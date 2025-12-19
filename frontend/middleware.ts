@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import createIntlMiddleware from 'next-intl/middleware';
+import { routing } from './i18n/routing';
 
 const AUTH_COOKIE_NAME = 'auth_session';
 
@@ -12,29 +14,66 @@ function isAuthenticated(req: NextRequest): boolean {
   return Boolean(req.cookies.get(AUTH_COOKIE_NAME)?.value);
 }
 
-export function middleware(req: NextRequest) {
+const intlMiddleware = createIntlMiddleware(routing);
+
+function authMiddleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const authenticated = isAuthenticated(req);
 
-  if ((pathname === '/login' || pathname === '/signup') && authenticated) {
-    return NextResponse.redirect(new URL('/', req.url));
+  const pathnameWithoutLocale = pathname.replace(/^\/(uk|en|pl)/, '') || '/';
+
+  if (
+    (pathnameWithoutLocale === '/login' || pathnameWithoutLocale === '/signup') && authenticated
+  ) {
+    const locale = pathname.split('/')[1] || 'uk'; 
+    return NextResponse.redirect(new URL(`/${locale}/`, req.url)); 
   }
 
   if (
+    pathname.startsWith('/leaderboard') ||
+    pathname.startsWith('/quiz') ||
     pathname.startsWith('/dashboard')
   ) {
     if (!authenticated) {
-      return NextResponse.redirect(new URL('/login', req.url));
+      const locale = pathname.split('/')[1];
+      return NextResponse.redirect(new URL(`/${locale}/login`, req.url));
     }
   }
 
-  return NextResponse.next();
+  return null;
 }
+function getScopeFromPathname(pathname: string): "shop" | "site" {
+  const pathnameWithoutLocale = pathname.replace(/^\/(uk|en|pl)(?=\/|$)/, "") || "/"
+  return pathnameWithoutLocale.startsWith("/shop") ? "shop" : "site"
+}
+
+
+export function middleware(req: NextRequest) {
+  // Force redirect to /uk for root path only
+  if (req.nextUrl.pathname === '/') {
+    return NextResponse.redirect(new URL('/uk', req.url))
+  }
+
+  const authResponse = authMiddleware(req)
+  if (authResponse) return authResponse
+
+  const intlResponse = intlMiddleware(req)
+  const scope = getScopeFromPathname(req.nextUrl.pathname)
+
+  // Add scope header to the response
+  intlResponse.headers.set("x-app-scope", scope)
+
+  return intlResponse
+}
+
+
 
 export const config = {
   matcher: [
     '/login',
     '/signup',
+    '/leaderboard/:path*',
+    '/quiz/:path*',
     '/dashboard/:path*',
   ],
 };
