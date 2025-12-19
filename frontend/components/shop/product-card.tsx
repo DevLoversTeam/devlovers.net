@@ -11,6 +11,11 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
+  const src =
+    typeof product.image === 'string' && product.image.length > 0
+      ? product.image
+      : '/placeholder.svg';
+
   return (
     <Link
       href={`/shop/products/${product.slug}`}
@@ -30,7 +35,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
       <div className="relative aspect-square overflow-hidden bg-muted">
         <Image
-          src={product.image || '/placeholder.svg'}
+          src={src}
           alt={product.name}
           fill
           className="object-cover transition-transform duration-300 group-hover:scale-105"

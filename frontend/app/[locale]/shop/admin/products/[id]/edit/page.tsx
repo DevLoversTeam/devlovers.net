@@ -1,33 +1,33 @@
-import { notFound } from "next/navigation";
-import { eq } from "drizzle-orm";
-import { z } from "zod";
+import { notFound } from "next/navigation"
+import { eq } from "drizzle-orm"
+import { z } from "zod"
 
-import { ProductForm } from "../../_components/product-form";
-import { db } from "@/db";
-import { products } from "@/db/schema";
+import { ProductForm } from "../../_components/product-form"
+import { db } from "@/db"
+import { products } from "@/db/schema"
 
-const paramsSchema = z.object({ id: z.uuid() });
-
+const paramsSchema = z.object({ id: z.uuid() })
 
 export default async function EditProductPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>
 }) {
-  const parsed = paramsSchema.safeParse(params);
+  const rawParams = await params
+  const parsed = paramsSchema.safeParse(rawParams)
 
   if (!parsed.success) {
-    return notFound();
+    return notFound()
   }
 
   const [product] = await db
     .select()
     .from(products)
     .where(eq(products.id, parsed.data.id))
-    .limit(1);
+    .limit(1)
 
   if (!product) {
-    return notFound();
+    return notFound()
   }
 
   return (
@@ -39,9 +39,7 @@ export default async function EditProductPage({
         slug: product.slug,
         price: Number(product.price),
         originalPrice:
-          product.originalPrice == null
-            ? undefined
-            : Number(product.originalPrice),
+          product.originalPrice == null ? undefined : Number(product.originalPrice),
         currency: product.currency ?? undefined,
         description: product.description ?? undefined,
         category: product.category ?? undefined,
@@ -56,5 +54,5 @@ export default async function EditProductPage({
         imageUrl: product.imageUrl,
       }}
     />
-  );
+  )
 }
