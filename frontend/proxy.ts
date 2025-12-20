@@ -23,10 +23,12 @@ function authMiddleware(req: NextRequest) {
   const pathnameWithoutLocale = pathname.replace(/^\/(uk|en|pl)/, '') || '/';
 
   if (
-    (pathnameWithoutLocale === '/login' || pathnameWithoutLocale === '/signup') && authenticated
+    (pathnameWithoutLocale === '/login' ||
+      pathnameWithoutLocale === '/signup') &&
+    authenticated
   ) {
-    const locale = pathname.split('/')[1] || 'uk'; 
-    return NextResponse.redirect(new URL(`/${locale}/`, req.url)); 
+    const locale = pathname.split('/')[1] || 'uk';
+    return NextResponse.redirect(new URL(`/${locale}/`, req.url));
   }
 
   if (
@@ -42,32 +44,28 @@ function authMiddleware(req: NextRequest) {
 
   return null;
 }
-function getScopeFromPathname(pathname: string): "shop" | "site" {
-  const pathnameWithoutLocale = pathname.replace(/^\/(uk|en|pl)(?=\/|$)/, "") || "/"
-  return pathnameWithoutLocale.startsWith("/shop") ? "shop" : "site"
+function getScopeFromPathname(pathname: string): 'shop' | 'site' {
+  const pathnameWithoutLocale =
+    pathname.replace(/^\/(uk|en|pl)(?=\/|$)/, '') || '/';
+  return pathnameWithoutLocale.startsWith('/shop') ? 'shop' : 'site';
 }
 
-
-export function middleware(req: NextRequest) {
-  // Force redirect to /uk for root path only
+export function proxy(req: NextRequest) {
   if (req.nextUrl.pathname === '/') {
-    return NextResponse.redirect(new URL('/uk', req.url))
+    return NextResponse.redirect(new URL('/uk', req.url));
   }
 
-  const authResponse = authMiddleware(req)
-  if (authResponse) return authResponse
+  const authResponse = authMiddleware(req);
+  if (authResponse) return authResponse;
 
-  const intlResponse = intlMiddleware(req)
-  const scope = getScopeFromPathname(req.nextUrl.pathname)
+  const intlResponse = intlMiddleware(req);
+  const scope = getScopeFromPathname(req.nextUrl.pathname);
 
-  // Add scope header to the response
-  intlResponse.headers.set("x-app-scope", scope)
+  intlResponse.headers.set('x-app-scope', scope);
 
-  return intlResponse
+  return intlResponse;
 }
 
-
-
 export const config = {
-  matcher: ['/', '/(uk|en|pl)/:path*', '/((?!api|_next|.*\\..*).*)',],
+  matcher: ['/', '/(uk|en|pl)/:path*', '/((?!api|_next|.*\\..*).*)'],
 };
