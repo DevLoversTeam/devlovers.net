@@ -42,7 +42,7 @@ function getScopeFromPathname(pathname: string): "shop" | "site" {
 }
 
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   // Force redirect to /uk for root path only
   if (req.nextUrl.pathname === '/') {
     return NextResponse.redirect(new URL('/uk', req.url))
