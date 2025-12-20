@@ -10,7 +10,7 @@
     "seed:categories": "tsx db/seed-categories.ts",
     "seed": "tsx db/seed.ts",
     "seed:users": "tsx db/seed-users.ts",
-    "parse": "tsx data/parse.ts",
+    "parse": "tsx parse/parse.ts",
     "db:generate": "drizzle-kit generate --config drizzle.config.ts",
     "db:migrate": "drizzle-kit migrate --config drizzle.config.ts",
     "db:studio": "drizzle-kit studio --config drizzle.config.ts"

@@ -6,7 +6,7 @@ import { eq } from 'drizzle-orm';
 // ! Reset sequense to 1
 // import { sql } from 'drizzle-orm';
 
-import rawData from '../data/questions.json';
+import rawData from '../parse/questions.json';
 
 type QuestionSeed = {
   category: string;

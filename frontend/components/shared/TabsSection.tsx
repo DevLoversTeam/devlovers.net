@@ -8,8 +8,9 @@ import { Search, X } from 'lucide-react';
 import AccordionList from '@/components/shared/AccordionList';
 import { Pagination } from '@/components/shared/Pagination';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { categoryNames } from '@/data/category';
 
-const categories = ['react', 'vue', 'angular', 'javascript', 'nextjs'];
+const DEFAULT_CATEGORY = categoryNames[0] || 'HTML';
 const DEBOUNCE_MS = 400;
 
 interface PaginatedResponse {
@@ -25,11 +26,11 @@ export default function TabsSection() {
   const searchParams = useSearchParams();
 
   const pageFromUrl = parseInt(searchParams.get('page') || '1', 10);
-  const categoryFromUrl = searchParams.get('category') || 'react';
+  const categoryFromUrl = searchParams.get('category') || DEFAULT_CATEGORY;
   const searchFromUrl = searchParams.get('search') || '';
 
   const [active, setActive] = useState(
-    categories.includes(categoryFromUrl) ? categoryFromUrl : 'react'
+    categoryNames.includes(categoryFromUrl) ? categoryFromUrl : DEFAULT_CATEGORY
   );
   const [currentPage, setCurrentPage] = useState(pageFromUrl);
   const [searchQuery, setSearchQuery] = useState(searchFromUrl);
@@ -43,7 +44,7 @@ export default function TabsSection() {
   const updateUrl = useCallback(
     (category: string, page: number, search: string) => {
       const params = new URLSearchParams();
-      if (category !== 'react') {
+      if (category !== DEFAULT_CATEGORY) {
         params.set('category', category);
       }
       if (page > 1) {
@@ -156,15 +157,15 @@ export default function TabsSection() {
         onValueChange={handleCategoryChange}
         className="w-full"
       >
-        <TabsList className="grid grid-cols-5 mb-6">
-          {categories.map(c => (
-            <TabsTrigger key={c} value={c} className="capitalize">
+        <TabsList className="grid grid-cols-7 mb-6">
+          {categoryNames.map(c => (
+            <TabsTrigger key={c} value={c}>
               {c}
             </TabsTrigger>
           ))}
         </TabsList>
 
-        {categories.map(c => (
+        {categoryNames.map(c => (
           <TabsContent key={c} value={c}>
             {isLoading ? (
               <div className="flex justify-center py-12">
@@ -175,8 +176,8 @@ export default function TabsSection() {
             ) : (
               <p className="text-center py-12 text-gray-500 dark:text-gray-400">
                 {debouncedSearch
-                ? t('noResults', { query: debouncedSearch })
-                : t('noQuestions')}
+                  ? t('noResults', { query: debouncedSearch })
+                  : t('noQuestions')}
               </p>
             )}
           </TabsContent>
