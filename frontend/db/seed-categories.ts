@@ -2,7 +2,7 @@ import 'dotenv/config';
 
 import { db } from './index';
 import { categories } from './schema';
-import { categoryNames } from '../data/categories';
+import { categoryNames } from '../data/category';
 
 async function categoriesList() {
   for (const name of categoryNames) {

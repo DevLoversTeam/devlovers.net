@@ -8,9 +8,9 @@ import { Search, X } from 'lucide-react';
 import AccordionList from '@/components/shared/AccordionList';
 import { Pagination } from '@/components/shared/Pagination';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { categories } from '@/data/categories';
+import { categoryNames } from '@/data/category';
 
-const DEFAULT_CATEGORY = categories[0] || 'HTML';
+const DEFAULT_CATEGORY = categoryNames[0] || 'HTML';
 const DEBOUNCE_MS = 400;
 
 interface PaginatedResponse {
@@ -30,7 +30,7 @@ export default function TabsSection() {
   const searchFromUrl = searchParams.get('search') || '';
 
   const [active, setActive] = useState(
-    categories.includes(categoryFromUrl) ? categoryFromUrl : DEFAULT_CATEGORY
+    categoryNames.includes(categoryFromUrl) ? categoryFromUrl : DEFAULT_CATEGORY
   );
   const [currentPage, setCurrentPage] = useState(pageFromUrl);
   const [searchQuery, setSearchQuery] = useState(searchFromUrl);
@@ -158,14 +158,14 @@ export default function TabsSection() {
         className="w-full"
       >
         <TabsList className="grid grid-cols-7 mb-6">
-          {categories.map(c => (
+          {categoryNames.map(c => (
             <TabsTrigger key={c} value={c}>
               {c}
             </TabsTrigger>
           ))}
         </TabsList>
 
-        {categories.map(c => (
+        {categoryNames.map(c => (
           <TabsContent key={c} value={c}>
             {isLoading ? (
               <div className="flex justify-center py-12">
