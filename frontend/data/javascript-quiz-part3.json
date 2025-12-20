@@ -3,7 +3,7 @@
     {
       "id": "js-q21",
       "order": 21,
-      "difficulty": "intermediate",
+      "difficulty": "medium",
       "uk": {
         "q": "Що таке Promise у JavaScript?",
         "exp": "Promise — це об'єкт для роботи з асинхронними операціями, який представляє результат, що буде доступний у майбутньому (resolve або reject)."
@@ -46,7 +46,7 @@
     {
       "id": "js-q22",
       "order": 22,
-      "difficulty": "intermediate",
+      "difficulty": "medium",
       "uk": {
         "q": "Які три стани має Promise?",
         "exp": "Promise має три стани: pending (очікування), fulfilled (успішне виконання) і rejected (відхилення через помилку)."
@@ -89,7 +89,7 @@
     {
       "id": "js-q23",
       "order": 23,
-      "difficulty": "intermediate",
+      "difficulty": "medium",
       "uk": {
         "q": "Яка різниця між async/await та Promise.then()?",
         "exp": "async/await — це синтаксичний цукор над Promise, що робить асинхронний код схожим на синхронний і легшим для читання."
@@ -261,7 +261,7 @@
     {
       "id": "js-q27",
       "order": 27,
-      "difficulty": "intermediate",
+      "difficulty": "medium",
       "uk": {
         "q": "Як обробити помилку в Promise?",
         "exp": "Помилки в Promise обробляються через метод .catch() або через другий аргумент .then(), або через try/catch з async/await."
@@ -304,7 +304,7 @@
     {
       "id": "js-q28",
       "order": 28,
-      "difficulty": "intermediate",
+      "difficulty": "medium",
       "uk": {
         "q": "Що робить Promise.all()?",
         "exp": "Promise.all() приймає масив Promise і повертає Promise, який виконується коли всі Promise виконані, або відхиляється при першій помилці."
@@ -347,7 +347,7 @@
     {
       "id": "js-q29",
       "order": 29,
-      "difficulty": "intermediate",
+      "difficulty": "medium",
       "uk": {
         "q": "Яка різниця між Promise.all() та Promise.race()?",
         "exp": "Promise.all() чекає виконання всіх Promise, Promise.race() повертає результат першого виконаного або відхиленого Promise."

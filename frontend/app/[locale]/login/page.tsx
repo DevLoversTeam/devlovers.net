@@ -1,7 +1,7 @@
 "use client";
 
 import { useLocale } from 'next-intl';
-import{ Link } from '@/i18n/routing';
+import { Link } from '@/i18n/routing';
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { getPendingQuizResult, clearPendingQuizResult } from "@/lib/guest-quiz";
@@ -37,42 +37,45 @@ export default function LoginPage() {
       return;
     }
 
-   const data = await res.json();
-   const pendingResult = getPendingQuizResult();
- if (pendingResult && data.userId) {
-  try {
-    const res = await fetch("/api/quiz/guest-result", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        userId: data.userId,
-        quizId: pendingResult.quizId,
-        answers: pendingResult.answers,
-        violations: pendingResult.violations,
-        timeSpentSeconds: pendingResult.timeSpentSeconds,
-      }),
-    });
-    const result = await res.json();
+    const data = await res.json();
+    const pendingResult = getPendingQuizResult();
+    if (pendingResult && data.userId) {
+      try {
+        const quizRes = await fetch("/api/quiz/guest-result", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: data.userId,
+            quizId: pendingResult.quizId,
+            answers: pendingResult.answers,
+            violations: pendingResult.violations,
+            timeSpentSeconds: pendingResult.timeSpentSeconds,
+          }),
+        });
+        if (!quizRes.ok) {
+          throw new Error(`Failed to save quiz result: ${quizRes.status}`);
+        }
+        const result = await quizRes.json();
 
-    if (result.success) {
-      sessionStorage.setItem('quiz_just_saved', JSON.stringify({
-        score: result.score,
-        total: result.totalQuestions,
-        percentage: result.percentage,
-        pointsAwarded: result.pointsAwarded,
-        quizSlug: pendingResult.quizSlug,
-      }));
+        if (result.success) {
+          sessionStorage.setItem('quiz_just_saved', JSON.stringify({
+            score: result.score,
+            total: result.totalQuestions,
+            percentage: result.percentage,
+            pointsAwarded: result.pointsAwarded,
+            quizSlug: pendingResult.quizSlug,
+          }));
+        }
+      } catch (err) {
+        console.error('Failed to save quiz result:', err);
+      } finally {
+        clearPendingQuizResult();
+      }
+
+      window.location.href = `/${locale}/dashboard`;
+      return;
     }
-  } catch (err) {
-    console.error('Failed to save quiz result:', err);
-  } finally {
-    clearPendingQuizResult();
-  }
-  
-  window.location.href = `/${locale}/dashboard`;
-  return;
-}
-window.location.href = returnTo || `/${locale}/dashboard`;
+    window.location.href = returnTo || `/${locale}/dashboard`;
   }
 
   return (
@@ -105,9 +108,9 @@ window.location.href = returnTo || `/${locale}/dashboard`;
 
       <p className="mt-4 text-sm text-gray-600">
         Don’t have an account?{" "}
-<Link href={returnTo ? `/signup?returnTo=${encodeURIComponent(returnTo)}` : '/signup'} className="underline">
-  Sign up
-</Link>
+        <Link href={returnTo ? `/signup?returnTo=${encodeURIComponent(returnTo)}` : '/signup'} className="underline">
+          Sign up
+        </Link>
       </p>
     </div>
   );

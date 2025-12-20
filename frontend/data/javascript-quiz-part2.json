@@ -3,7 +3,7 @@
     {
       "id": "js-q11",
       "order": 11,
-      "difficulty": "intermediate",
+      "difficulty": "medium",
       "uk": {
         "q": "Що таке замикання (closure) у JavaScript?",
         "exp": "Замикання — це функція, яка запам'ятовує оточення, в якому була створена, і має доступ до змінних зовнішньої області видимості."
@@ -46,7 +46,7 @@
     {
       "id": "js-q12",
       "order": 12,
-      "difficulty": "intermediate",
+      "difficulty": "medium",
       "uk": {
         "q": "Що таке hoisting у JavaScript?",
         "exp": "Hoisting — це механізм, при якому оголошення змінних та функцій переміщуються на початок області видимості перед виконанням коду."
@@ -132,7 +132,7 @@
     {
       "id": "js-q14",
       "order": 14,
-      "difficulty": "intermediate",
+      "difficulty": "medium",
       "uk": {
         "q": "Чим відрізняються стрілкові функції від звичайних функцій стосовно this?",
         "exp": "Стрілкові функції не мають власного this — вони успадковують this з оточуючого контексту, де були створені."
@@ -175,7 +175,7 @@
     {
       "id": "js-q15",
       "order": 15,
-      "difficulty": "intermediate",
+      "difficulty": "medium",
       "uk": {
         "q": "Що відбувається, коли ви намагаєтесь отримати доступ до змінної, оголошеної через let, до її ініціалізації?",
         "exp": "Виникає ReferenceError через temporal dead zone — період між початком блоку та ініціалізацією змінної."
@@ -304,7 +304,7 @@
     {
       "id": "js-q18",
       "order": 18,
-      "difficulty": "intermediate",
+      "difficulty": "medium",
       "uk": {
         "q": "В якому порядку виконуються phases при event propagation?",
         "exp": "Спочатку йде capturing phase (від document до цільового елемента), потім target phase, потім bubbling phase (від цільового до document)."
@@ -347,7 +347,7 @@
     {
       "id": "js-q19",
       "order": 19,
-      "difficulty": "intermediate",
+      "difficulty": "medium",
       "uk": {
         "q": "Яка різниця між stopPropagation() та stopImmediatePropagation()?",
         "exp": "stopPropagation() зупиняє поширення події далі, але не скасовує інші обробники на поточному елементі. stopImmediatePropagation() зупиняє поширення та скасовує всі інші обробники."
@@ -390,7 +390,7 @@
     {
       "id": "js-q20",
       "order": 20,
-      "difficulty": "intermediate",
+      "difficulty": "medium",
       "uk": {
         "q": "Що таке event delegation і навіщо воно потрібне?",
         "exp": "Event delegation — техніка додавання одного обробника на батьківський елемент замість багатьох на дочірні. Ефективніше для динамічних елементів."

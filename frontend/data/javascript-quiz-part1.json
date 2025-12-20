@@ -175,7 +175,7 @@
     {
       "id": "js-q05",
       "order": 5,
-      "difficulty": "intermediate",
+      "difficulty": "medium",
       "uk": {
         "q": "Яка основна різниця між функціональним та подієвим програмуванням у JavaScript?",
         "exp": "Функціональне програмування базується на чистих функціях без побічних ефектів, подієве — на реакції на події через event listeners."
@@ -261,7 +261,7 @@
     {
       "id": "js-q07",
       "order": 7,
-      "difficulty": "intermediate",
+      "difficulty": "medium",
       "uk": {
         "q": "Що таке event bubbling у JavaScript?",
         "exp": "Bubbling — це процес, коли подія спочатку викликається на вкладеному елементі, а потім спливає до батьківських елементів."
@@ -347,7 +347,7 @@
     {
       "id": "js-q09",
       "order": 9,
-      "difficulty": "intermediate",
+      "difficulty": "medium",
       "uk": {
         "q": "Що означає принцип DRY?",
         "exp": "DRY (Don't Repeat Yourself) — принцип уникнення дублювання коду шляхом створення спільних функцій для повторюваної логіки."

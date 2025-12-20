@@ -1,7 +1,7 @@
 import { getQuizBySlug, getQuizQuestionsRandomized } from '@/db/queries/quiz';
 import { notFound } from 'next/navigation';
 import { QuizContainer } from '@/components/quiz/QuizContainer';
-import{ PendingResultHandler } from '@/components/quiz/PendingResultHandler';
+import { PendingResultHandler } from '@/components/quiz/PendingResultHandler';
 
 import { getCurrentUser } from '@/lib/auth';
 

@@ -16,6 +16,7 @@ import {
   quizQuestionContent,
   quizAnswers,
   quizAnswerTranslations,
+  quizAttempts,
 } from './schema/quiz';
 
 type Locale = 'uk' | 'en' | 'pl';
@@ -24,7 +25,7 @@ const LOCALES: Locale[] = ['uk', 'en', 'pl'];
 interface QuestionData {
   id: string;
   order: number;
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  difficulty: 'beginner' | 'medium' | 'advanced';
   uk: { q: string; exp: string };
   en: { q: string; exp: string };
   pl: { q: string; exp: string };
@@ -40,10 +41,12 @@ interface QuizPartData {
   questions: QuestionData[];
 }
 
+const TOPIC_ID = randomUUID();
+
 // Quiz metadata (same for all parts)
 const QUIZ_METADATA = {
   quizId: 'quiz-javascript-fundamentals',
-  topicId: 'topic-javascript',
+  topicId: TOPIC_ID,
   slug: 'javascript-fundamentals',
   questionsCount: 40,
   timeLimitSeconds: 1800,
@@ -82,13 +85,41 @@ async function ensureQuizExists(): Promise<string> {
     where: eq(quizzes.slug, QUIZ_METADATA.slug),
   });
   if (existing) {
-    await db.delete(quizzes).where(eq(quizzes.id, existing.id));
-    console.log('Old quiz deleted');
+    const existingAttempt = await db.query.quizAttempts.findFirst({
+      where: eq(quizAttempts.quizId, existing.id),
+    });
+    if (existingAttempt) {
+      throw new Error(`Quiz ${QUIZ_METADATA.slug} has existing attempts. Aborting to avoid data loss.`);
+    }
+
+    await db.delete(quizQuestions).where(eq(quizQuestions.quizId, existing.id));
+    await db.delete(quizTranslations).where(eq(quizTranslations.quizId, existing.id));
+    await db.update(quizzes).set({
+      topicId: existing.topicId,
+      slug: QUIZ_METADATA.slug,
+      displayOrder: 1,
+      questionsCount: QUIZ_METADATA.questionsCount,
+      timeLimitSeconds: QUIZ_METADATA.timeLimitSeconds,
+      isActive: true,
+    }).where(eq(quizzes.id, existing.id));
+
+    const quizId = existing.id;
+    // Insert translations
+    for (const locale of LOCALES) {
+      await db.insert(quizTranslations).values({
+        quizId,
+        locale,
+        title: QUIZ_METADATA.translations[locale].title,
+        description: QUIZ_METADATA.translations[locale].description,
+      });
+    }
+
+    return quizId;
   }
 
   // Insert quiz - DB generates id
   const [quiz] = await db.insert(quizzes).values({
-    topicId: randomUUID(),
+    topicId: TOPIC_ID,
     slug: QUIZ_METADATA.slug,
     displayOrder: 1,
     questionsCount: QUIZ_METADATA.questionsCount,
