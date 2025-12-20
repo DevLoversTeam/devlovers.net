@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { getTranslations } from 'next-intl/server';
-import TabsSection from '@/components/shared/TabsSection';
+import TabsSection from '@/components/q&a/TabsSection';
 
 export async function generateMetadata({
   params,
