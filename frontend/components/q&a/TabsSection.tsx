@@ -5,8 +5,8 @@ import { useSearchParams } from 'next/navigation';
 import { useRouter } from '@/i18n/routing';
 import { useTranslations } from 'next-intl';
 import { Search, X } from 'lucide-react';
-import AccordionList from '@/components/shared/AccordionList';
-import { Pagination } from '@/components/shared/Pagination';
+import AccordionList from '@/components/q&a/AccordionList';
+import { Pagination } from '@/components/q&a/Pagination';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { categoryNames } from '@/data/category';
 

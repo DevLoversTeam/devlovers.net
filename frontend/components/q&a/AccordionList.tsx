@@ -8,6 +8,8 @@ import {
   AccordionContent,
 } from '@/components/ui/accordion';
 
+import CodeBlock from '@/components/q&a/CodeBlock';
+
 type TextNode = {
   text: string;
   bold?: boolean;
@@ -112,17 +114,7 @@ function renderTextNodes(nodes: TextNode[]): ReactNode {
 
 function renderCodeBlock(block: CodeBlock, index: number): ReactNode {
   return (
-    <pre
-      key={index}
-      className="bg-gray-900 text-gray-100 p-4 rounded-lg text-sm overflow-x-auto my-2"
-    >
-      {block.language && (
-        <div className="text-gray-400 text-xs mb-2 font-mono">
-          {block.language}
-        </div>
-      )}
-      <code className="font-mono">{block.content}</code>
-    </pre>
+    <CodeBlock key={index} code={block.content} language={block.language} />
   );
 }
 
@@ -157,17 +149,7 @@ function renderListItemChildren(children: ListItemChild[]): ReactNode {
   return children.map((child, i) => {
     if ('type' in child && child.type === 'code') {
       return (
-        <pre
-          key={i}
-          className="bg-gray-900 text-gray-100 p-3 rounded-lg text-sm overflow-x-auto mt-2"
-        >
-          {child.language && (
-            <div className="text-gray-400 text-xs mb-2 font-mono">
-              {child.language}
-            </div>
-          )}
-          <code className="font-mono">{child.content}</code>
-        </pre>
+        <CodeBlock key={i} code={child.content} language={child.language} />
       );
     }
 
