@@ -1,15 +1,16 @@
 "use client";
 
+import { useLocale } from 'next-intl';
+import{ Link } from '@/i18n/routing';
 import { useState } from "react";
-import { toast } from 'sonner';
 import { useSearchParams } from "next/navigation";
 import { getPendingQuizResult, clearPendingQuizResult } from "@/lib/guest-quiz";
-import { submitGuestQuizResult } from "@/actions/guest-quiz";
 import { Button } from "@/components/ui/button";
 
 export default function LoginPage() {
   const searchParams = useSearchParams();
-  const returnTo = searchParams.get("returnTo") || "/";
+  const returnTo = searchParams.get("returnTo");
+  const locale = useLocale();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,16 +39,20 @@ export default function LoginPage() {
 
    const data = await res.json();
    const pendingResult = getPendingQuizResult();
-
  if (pendingResult && data.userId) {
   try {
-    const result = await submitGuestQuizResult({
-      userId: data.userId,
-      quizId: pendingResult.quizId,
-      answers: pendingResult.answers,
-      violations: pendingResult.violations,
-      timeSpentSeconds: pendingResult.timeSpentSeconds,
+    const res = await fetch("/api/quiz/guest-result", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: data.userId,
+        quizId: pendingResult.quizId,
+        answers: pendingResult.answers,
+        violations: pendingResult.violations,
+        timeSpentSeconds: pendingResult.timeSpentSeconds,
+      }),
     });
+    const result = await res.json();
 
     if (result.success) {
       sessionStorage.setItem('quiz_just_saved', JSON.stringify({
@@ -63,12 +68,11 @@ export default function LoginPage() {
   } finally {
     clearPendingQuizResult();
   }
-
-  window.location.href = '/dashboard';
+  
+  window.location.href = `/${locale}/dashboard`;
   return;
 }
-
-  window.location.href = returnTo;
+window.location.href = returnTo || `/${locale}/dashboard`;
   }
 
   return (
@@ -101,9 +105,9 @@ export default function LoginPage() {
 
       <p className="mt-4 text-sm text-gray-600">
         Don’t have an account?{" "}
-        <a href={`/signup?returnTo=${encodeURIComponent(returnTo)}`} className="underline">
-          Sign up
-        </a>
+<Link href={returnTo ? `/signup?returnTo=${encodeURIComponent(returnTo)}` : '/signup'} className="underline">
+  Sign up
+</Link>
       </p>
     </div>
   );

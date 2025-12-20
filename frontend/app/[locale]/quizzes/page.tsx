@@ -1,13 +1,13 @@
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { getActiveQuizzes } from '@/db/queries/quiz';
 
-type PageProps = { searchParams: Promise<{ locale?: string }>; };
+type PageProps = { params: Promise<{ locale: string }>; };
 
 
 export const dynamic = 'force-dynamic';
 
-export default async function QuizzesPage({ searchParams }: PageProps) {
-  const { locale = 'uk' } = await searchParams;
+export default async function QuizzesPage({ params }: PageProps) {
+  const { locale } = await params;
   const quizzes = await getActiveQuizzes(locale);
 
   if (!quizzes.length) {

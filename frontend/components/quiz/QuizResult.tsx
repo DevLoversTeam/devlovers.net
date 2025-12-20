@@ -1,5 +1,6 @@
 'use client';
 
+import { useLocale } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
@@ -24,6 +25,7 @@ export function QuizResult({
   onRestart,
   onBackToTopics,
 }: QuizResultProps) {
+  const locale = useLocale();
   const getMotivationalMessage = () => {
     if (percentage < 50) {
       return {
@@ -96,20 +98,20 @@ export function QuizResult({
         Щоб зберегти результат та потрапити в рейтинг, увійдіть або зареєструйтесь
       </p>
     </div>
-    <div className="flex flex-col sm:flex-row gap-3 justify-center">
-      <Button
-        onClick={() => window.location.href = `/login?returnTo=/quiz/${quizSlug}`}
-        variant="primary"
-      >
-        Увійти
-      </Button>
-      <Button
-        onClick={() => window.location.href = `/signup?returnTo=/quiz/${quizSlug}`}
-        variant="secondary"
-      >
-        Зареєструватися
-      </Button>
-    </div>
+<div className="flex flex-col sm:flex-row gap-3 justify-center">
+  <Button
+    onClick={() => window.location.href = `/${locale}/login?returnTo=/quiz/${quizSlug}`}
+    variant="primary"
+  >
+    Увійти
+  </Button>
+  <Button
+    onClick={() => window.location.href = `/${locale}/signup?returnTo=/quiz/${quizSlug}`}
+    variant="secondary"
+  >
+    Зареєструватися
+  </Button>
+</div>
   </div>
 ) : (
     <div className="flex flex-col sm:flex-row gap-3 justify-center">

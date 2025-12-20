@@ -1,5 +1,6 @@
 'use client';
 
+import { useLocale } from 'next-intl';
 import { savePendingQuizResult } from '@/lib/guest-quiz';
 import { useReducer, useTransition } from 'react';
 import { useAntiCheat } from '@/hooks/useAntiCheat';
@@ -35,6 +36,8 @@ type QuizAction =
   | { type: 'NEXT_QUESTION' }
   | { type: 'COMPLETE_QUIZ' }
   | { type: 'RESTART' };
+
+
 
 function quizReducer(state: QuizState, action: QuizAction): QuizState {
   switch (action.type) {
@@ -114,6 +117,7 @@ export function QuizContainer({
     selectedAnswerId: null,
     startedAt: null,
   });
+const locale = useLocale();
 
   const isGuest = userId === null;
   const { violations, violationsCount, resetViolations } = useAntiCheat(
@@ -203,7 +207,7 @@ export function QuizContainer({
     if (onBackToTopics) {
       onBackToTopics();
     } else {
-      window.location.href = '/';
+       window.location.href = `/${locale}/`;
     }
   };
 

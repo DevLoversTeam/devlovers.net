@@ -1,9 +1,10 @@
 "use client";
 
+import { useLocale } from 'next-intl';
+import{ Link } from '@/i18n/routing';
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { getPendingQuizResult, clearPendingQuizResult } from "@/lib/guest-quiz";
-import { submitGuestQuizResult } from "@/actions/guest-quiz";
 import { Button } from "@/components/ui/button";
 
 type FormError = string | Record<string, string[]>;
@@ -13,12 +14,12 @@ export default function SignupPage() {
   const [error, setError] = useState<FormError | null>(null);
   const searchParams = useSearchParams();
   const returnTo = searchParams.get("returnTo") || "/";
+  const locale = useLocale();
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    console.log('[DEBUG] signup submit start', { returnTo });
 
     try{
     const formData = new FormData(e.currentTarget);
@@ -32,7 +33,6 @@ export default function SignupPage() {
         password: formData.get("password"),
       }),
     });
-    console.log('[DEBUG] signup response status', res.status);
 
       if (!res.ok) {
     const data = await res.json();
@@ -42,17 +42,22 @@ export default function SignupPage() {
 
   const data = await res.json();
   const pendingResult = getPendingQuizResult();
-  console.log('[DEBUG] signup pendingResult', pendingResult);
 
  if (pendingResult && data.userId) {
   try {
-    const result = await submitGuestQuizResult({
-      userId: data.userId,
-      quizId: pendingResult.quizId,
-      answers: pendingResult.answers,
-      violations: pendingResult.violations,
-      timeSpentSeconds: pendingResult.timeSpentSeconds,
+    const res = await fetch("/api/quiz/guest-result", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: data.userId,
+        quizId: pendingResult.quizId,
+        answers: pendingResult.answers,
+        violations: pendingResult.violations,
+        timeSpentSeconds: pendingResult.timeSpentSeconds,
+      }),
     });
+    const result = await res.json();
+
 
     if (result.success) {
       sessionStorage.setItem('quiz_just_saved', JSON.stringify({
@@ -68,16 +73,16 @@ export default function SignupPage() {
   } finally {
     clearPendingQuizResult();
   }
-  console.log('[DEBUG] signup redirect: dashboard');
-  // window.location.href = '/dashboard';
+ window.location.href = `/${locale}/dashboard`;
+  
   return;
 }
-  console.log('[DEBUG] signup redirect: returnTo', { returnTo });
-  // window.location.href = returnTo;
+window.location.href = returnTo || `/${locale}/dashboard`;
 } 
   catch (err) { 
-    console.error('[DEBUG] signup submit error', err); setError('Signup failed'); } finally { setLoading(false); 
-
+    console.error('Signup submit error', err); setError('Signup failed'); 
+  } finally { 
+    setLoading(false); 
     }
     }
 
@@ -124,9 +129,9 @@ export default function SignupPage() {
 
       <p className="mt-4 text-sm text-gray-600">
         Already have an account?{" "}
-        <a href={`/login?returnTo=${encodeURIComponent(returnTo)}`} className="underline">
-          Log in
-        </a>
+  <Link href={returnTo ? `/login?returnTo=${encodeURIComponent(returnTo)}` : '/login'} className="underline">
+    Log in
+  </Link>
       </p>
     </div>
   );

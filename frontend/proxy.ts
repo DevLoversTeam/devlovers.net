@@ -29,16 +29,10 @@ function authMiddleware(req: NextRequest) {
     return NextResponse.redirect(new URL(`/${locale}/`, req.url)); 
   }
 
-  if (
-    pathname.startsWith('/leaderboard') ||
-    pathname.startsWith('/quiz') ||
-    pathname.startsWith('/dashboard')
-  ) {
-    if (!authenticated) {
-      const locale = pathname.split('/')[1];
-      return NextResponse.redirect(new URL(`/${locale}/login`, req.url));
-    }
-  }
+if (pathnameWithoutLocale.startsWith('/dashboard') && !authenticated) {
+  const locale = pathname.split('/')[1];
+  return NextResponse.redirect(new URL(`/${locale}/login`, req.url));
+}
 
   return null;
 }
@@ -67,13 +61,10 @@ export function middleware(req: NextRequest) {
 }
 
 
-
 export const config = {
   matcher: [
-    '/login',
-    '/signup',
-    '/leaderboard/:path*',
-    '/quiz/:path*',
-    '/dashboard/:path*',
+    // Include all routes except static files, API, and Next.js internals
+    '/((?!api|_next|_vercel|.*\\..*).*)',
+    '/',
   ],
 };

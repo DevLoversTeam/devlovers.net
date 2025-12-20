@@ -62,7 +62,7 @@ export default async function LocaleLayout({
                     Q&A
                   </Link>
                   <Link
-                    href="/quiz/react-fundamentals"
+                    href="/quizzes"
                     className="hover:text-blue-600 dark:hover:text-blue-400 transition"
                   >
                     Quiz
@@ -106,7 +106,10 @@ export default async function LocaleLayout({
                       Log in
                     </Link>
                   ) : (
+                    <>
+                    <Link href="/dashboard" className="hover:text-blue-600 dark:hover:text-blue-400 transition">Dashboard</Link>
                     <LogoutButton />
+                    </>
                   )}
 
                   <LanguageSwitcher />

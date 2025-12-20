@@ -1,5 +1,5 @@
-import { redirect } from 'next/navigation';
-import Link from 'next/link';
+import { redirect } from '@/i18n/routing';
+import { Link } from '@/i18n/routing'
 import { getCurrentUser } from '@/lib/auth';
 import { getUserProfile } from '@/db/queries/users';
 import { getUserQuizStats } from '@/db/queries/quiz';
@@ -13,12 +13,13 @@ export const metadata = {
   description: 'Track your progress and quiz performance.',
 };
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ params }: { params: Promise<{ locale: string }> }) {
   const session = await getCurrentUser();
-  if (!session) redirect('/login');
+  const { locale } = await params;
+  if (!session) { redirect({ href: '/login', locale }); return; }
 
   const user = await getUserProfile(session.id);
-  if (!user) redirect('/login');
+  if (!user) { redirect({ href: '/login', locale }); return; }
 
   const attempts = await getUserQuizStats(session.id);
 
@@ -40,8 +41,11 @@ export default async function DashboardPage() {
       : null;
 
   const userForDisplay = {
-    ...user,
+    name: user.name ?? null,
+    email: user.email ?? '',
+    role: user.role ?? null,
     points: realPoints,
+    createdAt: user.createdAt ?? null,
   };
 
   const stats = {
