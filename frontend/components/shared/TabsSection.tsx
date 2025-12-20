@@ -8,10 +8,9 @@ import { Search, X } from 'lucide-react';
 import AccordionList from '@/components/shared/AccordionList';
 import { Pagination } from '@/components/shared/Pagination';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { categoryNames } from '@/data/categories';
+import { categories } from '@/data/categories';
 
-const categories = categoryNames;
-const DEFAULT_CATEGORY = categories[0] || 'react';
+const DEFAULT_CATEGORY = categories[0] || 'HTML';
 const DEBOUNCE_MS = 400;
 
 interface PaginatedResponse {

@@ -1,4 +1,4 @@
-export const categoryNames = [
+export const categories = [
   'HTML',
   'CSS',
   'JavaScript',
