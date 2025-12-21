@@ -4,9 +4,8 @@ import { routing } from './i18n/routing';
 
 const AUTH_COOKIE_NAME = 'auth_session';
 
-const _AUTH_SECRET = process.env.AUTH_SECRET;
-
-if (!_AUTH_SECRET) {
+const AUTH_SECRET = process.env.AUTH_SECRET;
+if (!AUTH_SECRET) {
   throw new Error('AUTH_SECRET is not defined');
 }
 
@@ -20,7 +19,8 @@ function authMiddleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const authenticated = isAuthenticated(req);
 
-  const pathnameWithoutLocale = pathname.replace(/^\/(uk|en|pl)/, '') || '/';
+  const pathnameWithoutLocale =
+    pathname.replace(/^\/(uk|en|pl)(?=\/|$)/, '') || '/';
 
   if (
     (pathnameWithoutLocale === '/login' ||
@@ -37,16 +37,18 @@ function authMiddleware(req: NextRequest) {
     pathnameWithoutLocale.startsWith('/dashboard')
   ) {
     if (!authenticated) {
-      const locale = pathname.split('/')[1];
+      const locale = pathname.split('/')[1] || 'uk';
       return NextResponse.redirect(new URL(`/${locale}/login`, req.url));
     }
   }
 
   return null;
 }
+
 function getScopeFromPathname(pathname: string): 'shop' | 'site' {
   const pathnameWithoutLocale =
     pathname.replace(/^\/(uk|en|pl)(?=\/|$)/, '') || '/';
+
   return pathnameWithoutLocale.startsWith('/shop') ? 'shop' : 'site';
 }
 
@@ -55,6 +57,8 @@ export function proxy(req: NextRequest) {
     return NextResponse.redirect(new URL('/uk', req.url));
   }
 
+  const locale = req.nextUrl.pathname.split('/')[1] || 'uk';
+
   const authResponse = authMiddleware(req);
   if (authResponse) return authResponse;
 
@@ -62,6 +66,7 @@ export function proxy(req: NextRequest) {
   const scope = getScopeFromPathname(req.nextUrl.pathname);
 
   intlResponse.headers.set('x-app-scope', scope);
+  intlResponse.headers.set('x-locale', locale);
 
   return intlResponse;
 }
