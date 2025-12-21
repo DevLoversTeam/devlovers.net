@@ -1,18 +1,9 @@
 'use client';
 
+import { SITE_LINKS } from '@/lib/navigation';
 import { useEffect, useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import { Link } from '@/i18n/routing';
-
-const SITE_LINKS = [
-  { href: '/q&a', label: 'Q&A' },
-  { href: '/quiz/react-fundamentals', label: 'Quiz' },
-  { href: '/leaderboard', label: 'Leaderboard' },
-  { href: '/blog', label: 'Blog' },
-  { href: '/about', label: 'About' },
-  { href: '/contacts', label: 'Contacts' },
-  { href: '/shop', label: 'Shop' },
-] as const;
 
 export default function SiteMobileHeader() {
   const [open, setOpen] = useState(false);
@@ -40,7 +31,7 @@ export default function SiteMobileHeader() {
         aria-expanded={open ? 'true' : 'false'}
         aria-controls="site-mobile-nav"
       >
-        {open ? <X className="h-5 w-5" /> : <Menu className="h-6 w-6" />}
+        {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
       </button>
 
       {open && (
