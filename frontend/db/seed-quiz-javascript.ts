@@ -5,10 +5,10 @@
 // Or upload all: npx tsx db/seeds/seed-quiz-javascript.ts all
 
 import { eq } from 'drizzle-orm';
-import { randomUUID } from 'crypto';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { db } from './index';
+import { categories } from './schema/categories';
 import {
   quizzes,
   quizTranslations,
@@ -41,12 +41,10 @@ interface QuizPartData {
   questions: QuestionData[];
 }
 
-const TOPIC_ID = randomUUID();
+const CATEGORY_SLUG = 'javascript';
 
 // Quiz metadata (same for all parts)
 const QUIZ_METADATA = {
-  quizId: 'quiz-javascript-fundamentals',
-  topicId: TOPIC_ID,
   slug: 'javascript-fundamentals',
   questionsCount: 40,
   timeLimitSeconds: 1800,
@@ -79,7 +77,18 @@ async function loadQuestions(partNumber: number): Promise<QuestionData[]> {
 
 async function ensureQuizExists(): Promise<string> {
   console.log('Ensuring quiz exists...');
-  
+
+  // Find category by slug
+  const [category] = await db
+    .select()
+    .from(categories)
+    .where(eq(categories.slug, CATEGORY_SLUG))
+    .limit(1);
+
+  if (!category) {
+    throw new Error(`Category "${CATEGORY_SLUG}" not found. Run seed:categories first.`);
+  }
+
   // Clean up old quiz by slug
   const existing = await db.query.quizzes.findFirst({
     where: eq(quizzes.slug, QUIZ_METADATA.slug),
@@ -95,7 +104,7 @@ async function ensureQuizExists(): Promise<string> {
     await db.delete(quizQuestions).where(eq(quizQuestions.quizId, existing.id));
     await db.delete(quizTranslations).where(eq(quizTranslations.quizId, existing.id));
     await db.update(quizzes).set({
-      topicId: existing.topicId,
+      categoryId: category.id,
       slug: QUIZ_METADATA.slug,
       displayOrder: 1,
       questionsCount: QUIZ_METADATA.questionsCount,
@@ -119,7 +128,7 @@ async function ensureQuizExists(): Promise<string> {
 
   // Insert quiz - DB generates id
   const [quiz] = await db.insert(quizzes).values({
-    topicId: TOPIC_ID,
+    categoryId: category.id,
     slug: QUIZ_METADATA.slug,
     displayOrder: 1,
     questionsCount: QUIZ_METADATA.questionsCount,

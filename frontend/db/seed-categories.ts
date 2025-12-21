@@ -1,28 +1,44 @@
 import 'dotenv/config';
 import { db } from './index';
-import { categories } from './schema';
+import { categories, categoryTranslations } from './schema';
 import { categoryNames } from '../data/category';
-import { slugify } from '../utils/slugify';
 
-const LOCALES = ['en', 'pl', 'uk'] as const;
+const LOCALES = ['uk', 'en', 'pl'] as const;
 
 async function seedCategories() {
-  const rows = categoryNames.flatMap(name => {
-    const slug = slugify(name);
+  for (let i = 0; i < categoryNames.length; i++) {
+    const name = categoryNames[i];
+    const slug = name.toLowerCase();
 
-    return LOCALES.map(locale => ({
-      slug,
+    // Insert category
+    const [category] = await db
+      .insert(categories)
+      .values({
+        slug,
+        displayOrder: i,
+      })
+      .onConflictDoNothing()
+      .returning();
+
+    if (!category) {
+      console.log(`Category ${slug} already exists, skipping...`);
+      continue;
+    }
+
+    // Insert translations
+    const translations = LOCALES.map(locale => ({
+      categoryId: category.id,
       locale,
       title: name,
     }));
-  });
 
-  await db.insert(categories).values(rows).onConflictDoNothing();
+    await db.insert(categoryTranslations).values(translations).onConflictDoNothing();
+  }
 
-  console.log('✅ Categories seeded!');
+  console.log('Categories seeded!');
 }
 
 seedCategories().catch(err => {
-  console.error('❌ Seed failed...', err);
+  console.error('Seed failed:', err);
   process.exit(1);
 });

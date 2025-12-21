@@ -14,12 +14,15 @@ import {
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { users } from './users';
+import { categories } from './categories';
 
 export const quizzes = pgTable(
   'quizzes',
   {
     id: uuid('id').defaultRandom().primaryKey(),
-    topicId: uuid('topic_id').notNull(),
+    categoryId: uuid('category_id')
+  .notNull()
+  .references(() => categories.id, { onDelete: 'restrict' }),
     slug: varchar('slug', { length: 100 }).notNull(),
     displayOrder: integer('display_order').notNull().default(0),
     questionsCount: integer('questions_count').notNull().default(10),
@@ -33,7 +36,7 @@ export const quizzes = pgTable(
       .defaultNow(),
   },
   table => ({
-    topicSlugUnique: unique().on(table.topicId, table.slug),
+    categorySlugUnique: unique().on(table.categoryId, table.slug),
   })
 );
 
