@@ -90,6 +90,32 @@ export async function getQuizBySlug(
   return result[0];
 }
 
+export async function getActiveQuizzes(
+  locale: string = 'uk'
+): Promise<Quiz[]> {
+  const rows = await db
+    .select({
+      id: quizzes.id,
+      slug: quizzes.slug,
+      questionsCount: quizzes.questionsCount,
+      timeLimitSeconds: quizzes.timeLimitSeconds,
+      isActive: quizzes.isActive,
+      title: quizTranslations.title,
+      description: quizTranslations.description,
+    })
+    .from(quizzes)
+    .leftJoin(
+      quizTranslations,
+      and(
+        eq(quizTranslations.quizId, quizzes.id),
+        eq(quizTranslations.locale, locale)
+      )
+    )
+    .where(eq(quizzes.isActive, true));
+
+  return rows;
+}
+
 export async function getQuizQuestions(
   quizId: string,
   locale: string = 'uk'

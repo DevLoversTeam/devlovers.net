@@ -1,5 +1,7 @@
 'use client';
 
+import { useLocale } from 'next-intl';
+import { savePendingQuizResult } from '@/lib/guest-quiz';
 import { useReducer, useTransition } from 'react';
 import { useAntiCheat } from '@/hooks/useAntiCheat';
 import { QuizProgress } from './QuizProgress';
@@ -34,6 +36,8 @@ type QuizAction =
   | { type: 'NEXT_QUESTION' }
   | { type: 'COMPLETE_QUIZ' }
   | { type: 'RESTART' };
+
+
 
 function quizReducer(state: QuizState, action: QuizAction): QuizState {
   switch (action.type) {
@@ -92,18 +96,19 @@ function quizReducer(state: QuizState, action: QuizAction): QuizState {
 interface QuizContainerProps {
   quizId: string;
   questions: QuizQuestionWithAnswers[];
-  userId: string;
+  userId: string | null;
+  quizSlug: string;
   onBackToTopics?: () => void;
 }
 
 export function QuizContainer({
+  quizSlug,
   quizId,
   questions,
   userId,
   onBackToTopics,
 }: QuizContainerProps) {
   const [isPending, startTransition] = useTransition();
-
   const [state, dispatch] = useReducer(quizReducer, {
     status: 'rules',
     currentIndex: 0,
@@ -112,7 +117,9 @@ export function QuizContainer({
     selectedAnswerId: null,
     startedAt: null,
   });
+const locale = useLocale();
 
+  const isGuest = userId === null;
   const { violations, violationsCount, resetViolations } = useAntiCheat(
     state.status === 'in_progress'
   );
@@ -147,6 +154,31 @@ export function QuizContainer({
   };
 
   const handleSubmit = () => {
+      const correctAnswers = state.answers.filter(a => a.isCorrect).length;
+  const percentage = (correctAnswers / totalQuestions) * 100;
+  const timeSpentSeconds = state.startedAt
+    ? Math.floor((Date.now() - state.startedAt.getTime()) / 1000)
+    : 0;
+
+  if (isGuest) {
+    savePendingQuizResult({
+      quizId,
+      quizSlug,
+      answers: state.answers.map(a => ({
+        questionId: a.questionId,
+        selectedAnswerId: a.selectedAnswerId,
+        isCorrect: a.isCorrect,
+      })),
+      score: correctAnswers,
+      totalQuestions,
+      percentage,
+      violations: violations.map(v => ({ type: v.type, timestamp: v.timestamp.getTime() })),
+      timeSpentSeconds,
+      savedAt: Date.now(),
+    });
+    dispatch({ type: 'COMPLETE_QUIZ' });
+    return;
+  }
     startTransition(async () => {
       const result = await submitQuizAttempt({
         userId,
@@ -175,7 +207,7 @@ export function QuizContainer({
     if (onBackToTopics) {
       onBackToTopics();
     } else {
-      window.location.href = '/';
+       window.location.href = `/${locale}/`;
     }
   };
 
@@ -253,6 +285,8 @@ export function QuizContainer({
         violationsCount={violationsCount}
         onRestart={handleRestart}
         onBackToTopics={handleBackToTopicsClick}
+        isGuest={isGuest}
+        quizSlug={quizSlug}
       />
     );
   }

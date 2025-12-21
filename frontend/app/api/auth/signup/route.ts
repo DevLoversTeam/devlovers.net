@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from 'next/cache'; 
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
@@ -65,6 +66,6 @@ export async function POST(req: Request) {
   });
 
   await setAuthCookie(token);
-
-  return NextResponse.json({ success: true }, { status: 201 });
+  revalidatePath('/[locale]', 'layout');
+  return NextResponse.json({ success: true, userId: user.id }, { status: 201 });
 }

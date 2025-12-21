@@ -31,15 +31,9 @@ function authMiddleware(req: NextRequest) {
     return NextResponse.redirect(new URL(`/${locale}/`, req.url));
   }
 
-  if (
-    pathnameWithoutLocale.startsWith('/leaderboard') ||
-    pathnameWithoutLocale.startsWith('/quiz') ||
-    pathnameWithoutLocale.startsWith('/dashboard')
-  ) {
-    if (!authenticated) {
-      const locale = pathname.split('/')[1];
-      return NextResponse.redirect(new URL(`/${locale}/login`, req.url));
-    }
+  if (pathnameWithoutLocale.startsWith('/dashboard') && !authenticated) {
+    const locale = pathname.split('/')[1];
+    return NextResponse.redirect(new URL(`/${locale}/login`, req.url));
   }
 
   return null;
