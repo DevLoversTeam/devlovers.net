@@ -80,6 +80,7 @@ export async function POST(req: Request) {
       pointsAwarded,
     });
   } catch (error) {
+    console.error('Failed to save guest quiz result:', error);
     return NextResponse.json(
       { success: false, error: "Failed to save result" },
       { status: 500 }

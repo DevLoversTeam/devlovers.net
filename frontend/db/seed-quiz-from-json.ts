@@ -1,10 +1,10 @@
 import 'dotenv/config';
 import { readFileSync } from 'fs';
 import { dirname, join } from 'path';
-import { randomUUID } from 'crypto';
 import { fileURLToPath } from 'url';
 import { eq } from 'drizzle-orm';
 import { db } from './index';
+import { categories } from './schema/categories';
 import {
   quizzes,
   quizTranslations,
@@ -21,9 +21,10 @@ const LOCALES: Locale[] = ['uk', 'en', 'pl'];
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+const CATEGORY_SLUG = 'react';
+
 interface QuizMetadata {
   quizId: string;
-  topicId: string;
   slug: string;
   questionsCount: number;
   timeLimitSeconds: number;
@@ -63,6 +64,17 @@ async function seedQuizFromJson() {
   console.log(`Loaded ${allQuestions.length} questions`);
 
   try {
+  // Find category by slug
+  const [category] = await db
+    .select()
+    .from(categories)
+    .where(eq(categories.slug, CATEGORY_SLUG))
+    .limit(1);
+
+  if (!category) {
+    throw new Error(`Category "${CATEGORY_SLUG}" not found. Run seed:categories first.`);
+  }
+
   // Clean up old quiz by slug
   console.log('Cleaning up old quiz...');
   const existing = await db.query.quizzes.findFirst({
@@ -80,7 +92,7 @@ async function seedQuizFromJson() {
     await db.delete(quizQuestions).where(eq(quizQuestions.quizId, existing.id));
     await db.delete(quizTranslations).where(eq(quizTranslations.quizId, existing.id));
     await db.update(quizzes).set({
-      topicId: existing.topicId,
+      categoryId: category.id,
       slug: part1.slug,
       displayOrder: 1,
       questionsCount: part1.questionsCount,
@@ -92,7 +104,7 @@ async function seedQuizFromJson() {
     // Insert quiz
     console.log('Creating quiz...');
     const [quiz] = await db.insert(quizzes).values({
-      topicId: randomUUID(),
+      categoryId: category.id,
       slug: part1.slug,
       displayOrder: 1,
       questionsCount: part1.questionsCount,

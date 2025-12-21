@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
-import { questions } from '@/db/schema';
+import { categories, questions, questionTranslations } from '@/db/schema';
 import { eq, sql, and, ilike } from 'drizzle-orm';
 
 const DEFAULT_PAGE = 1;
@@ -29,26 +29,62 @@ export async function GET(
 
     const search = searchParams.get('search')?.trim();
 
+    // Find category by slug
+    const [cat] = await db
+      .select()
+      .from(categories)
+      .where(eq(categories.slug, category.toLowerCase()))
+      .limit(1);
+
+    if (!cat) {
+      return NextResponse.json({
+        items: [],
+        total: 0,
+        page: 1,
+        totalPages: 0,
+        locale,
+      });
+    }
+
+    // Base conditions: category match + locale match
     const baseCondition = and(
-      eq(questions.categorySlug, category.toLowerCase()),
-      eq(questions.locale, locale)
+      eq(questions.categoryId, cat.id),
+      eq(questionTranslations.locale, locale)
     );
 
     const whereCondition = search
-      ? and(baseCondition, ilike(questions.question, `%${search}%`))
+      ? and(baseCondition, ilike(questionTranslations.question, `%${search}%`))
       : baseCondition;
 
+    // Count total
     const [{ count }] = await db
       .select({ count: sql<number>`count(*)` })
       .from(questions)
+      .innerJoin(
+        questionTranslations,
+        eq(questions.id, questionTranslations.questionId)
+      )
       .where(whereCondition);
 
     const total = Number(count);
     const totalPages = Math.ceil(total / limit);
 
+    // Get items with translations
     const items = await db
-      .select()
+      .select({
+        id: questions.id,
+        categoryId: questions.categoryId,
+        sortOrder: questions.sortOrder,
+        difficulty: questions.difficulty,
+        question: questionTranslations.question,
+        answerBlocks: questionTranslations.answerBlocks,
+        locale: questionTranslations.locale,
+      })
       .from(questions)
+      .innerJoin(
+        questionTranslations,
+        eq(questions.id, questionTranslations.questionId)
+      )
       .where(whereCondition)
       .orderBy(questions.sortOrder)
       .limit(limit)

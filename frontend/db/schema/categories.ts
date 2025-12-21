@@ -1,14 +1,47 @@
-import { pgTable, uuid, varchar, text, unique } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  uuid,
+  varchar,
+  text,
+  integer,
+  timestamp,
+  primaryKey,
+} from 'drizzle-orm/pg-core';
+import { relations } from 'drizzle-orm';
 
-export const categories = pgTable(
-  'categories',
+export const categories = pgTable('categories', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  slug: varchar('slug', { length: 50 }).notNull().unique(),
+  displayOrder: integer('display_order').notNull().default(0),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export const categoryTranslations = pgTable(
+  'category_translations',
   {
-    id: uuid('id').defaultRandom().primaryKey(),
-    slug: varchar('slug', { length: 50 }).notNull(),
+    categoryId: uuid('category_id')
+      .notNull()
+      .references(() => categories.id, { onDelete: 'cascade' }),
     locale: varchar('locale', { length: 5 }).notNull(),
     title: text('title').notNull(),
   },
-  table => [
-    unique('categories_slug_locale_unique').on(table.slug, table.locale),
-  ]
+  table => ({
+    pk: primaryKey({ columns: [table.categoryId, table.locale] }),
+  })
+);
+
+export const categoriesRelations = relations(categories, ({ many }) => ({
+  translations: many(categoryTranslations),
+}));
+
+export const categoryTranslationsRelations = relations(
+  categoryTranslations,
+  ({ one }) => ({
+    category: one(categories, {
+      fields: [categoryTranslations.categoryId],
+      references: [categories.id],
+    }),
+  })
 );

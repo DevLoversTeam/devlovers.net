@@ -10,6 +10,8 @@ interface Props {
 export function PendingResultHandler({ userId }: Props) {
   useEffect(() => {
     const pending = getPendingQuizResult();
+    if (!pending) return;
+
     if (pending) {
       fetch("/api/quiz/guest-result", {
         method: "POST",
