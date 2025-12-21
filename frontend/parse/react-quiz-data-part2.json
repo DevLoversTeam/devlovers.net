@@ -1,0 +1,244 @@
+{
+  "questions": [
+    {
+      "id": "react-q21", "order": 21, "difficulty": "medium",
+      "uk": { "q": "Як отримати значення контексту у функціональному компоненті?", "exp": "useContext — хук для читання контексту. Він приймає сам об'єкт контексту (не Consumer!) і повертає поточне значення." },
+      "en": { "q": "How to get context value in a functional component?", "exp": "useContext is a hook for reading context. It takes the context object itself (not Consumer!) and returns the current value." },
+      "pl": { "q": "Jak uzyskać wartość kontekstu w komponencie funkcyjnym?", "exp": "useContext to hook do odczytu kontekstu. Przyjmuje sam obiekt kontekstu (nie Consumer!) i zwraca aktualną wartość." },
+      "answers": [
+        { "uk": "this.context", "en": "this.context", "pl": "this.context", "correct": false },
+        { "uk": "useContext(MyContext)", "en": "useContext(MyContext)", "pl": "useContext(MyContext)", "correct": true },
+        { "uk": "getContext(MyContext)", "en": "getContext(MyContext)", "pl": "getContext(MyContext)", "correct": false },
+        { "uk": "MyContext.get()", "en": "MyContext.get()", "pl": "MyContext.get()", "correct": false }
+      ]
+    },
+    {
+      "id": "react-q22", "order": 22, "difficulty": "medium",
+      "uk": { "q": "Коли доцільно використовувати useReducer замість useState?", "exp": "useReducer корисний, коли: стан — об'єкт з кількома полями; оновлення залежать від типу дії (action); логіка оновлення складна." },
+      "en": { "q": "When is it appropriate to use useReducer instead of useState?", "exp": "useReducer is useful when: state is an object with multiple fields; updates depend on action type; update logic is complex." },
+      "pl": { "q": "Kiedy warto używać useReducer zamiast useState?", "exp": "useReducer jest przydatny, gdy: stan to obiekt z wieloma polami; aktualizacje zależą od typu akcji; logika aktualizacji jest złożona." },
+      "answers": [
+        { "uk": "Завжди, бо він швидший", "en": "Always, because it's faster", "pl": "Zawsze, bo jest szybszy", "correct": false },
+        { "uk": "Коли стан має складну логіку або кілька взаємопов'язаних значень", "en": "When state has complex logic or multiple interrelated values", "pl": "Gdy stan ma złożoną logikę lub kilka powiązanych wartości", "correct": true },
+        { "uk": "Тільки для глобального стану", "en": "Only for global state", "pl": "Tylko dla globalnego stanu", "correct": false },
+        { "uk": "Тільки в класових компонентах", "en": "Only in class components", "pl": "Tylko w komponentach klasowych", "correct": false }
+      ]
+    },
+    {
+      "id": "react-q23", "order": 23, "difficulty": "medium",
+      "uk": { "q": "Для чого використовується хук useMemo?", "exp": "useMemo 'запам'ятовує' результат обчислення і повертає закешоване значення, поки залежності не зміняться. Корисно для важких обчислень." },
+      "en": { "q": "What is the useMemo hook used for?", "exp": "useMemo 'remembers' computation result and returns cached value until dependencies change. Useful for heavy computations." },
+      "pl": { "q": "Do czego służy hook useMemo?", "exp": "useMemo 'zapamiętuje' wynik obliczeń i zwraca zbuforowaną wartość, dopóki zależności się nie zmienią. Przydatny dla ciężkich obliczeń." },
+      "answers": [
+        { "uk": "Для мемоізації посилання на функцію", "en": "For memoizing function reference", "pl": "Do memoizacji referencji do funkcji", "correct": false },
+        { "uk": "Для мемоізації результату обчислень, щоб не перераховувати на кожному рендері", "en": "For memoizing computation result to avoid recalculating on every render", "pl": "Do memoizacji wyniku obliczeń, aby nie przeliczać przy każdym renderze", "correct": true },
+        { "uk": "Для збереження даних у localStorage", "en": "For storing data in localStorage", "pl": "Do przechowywania danych w localStorage", "correct": false },
+        { "uk": "Для створення мемо-нотаток у коді", "en": "For creating memo notes in code", "pl": "Do tworzenia notatek memo w kodzie", "correct": false }
+      ]
+    },
+    {
+      "id": "react-q24", "order": 24, "difficulty": "medium",
+      "uk": { "q": "Чим useCallback відрізняється від useMemo?", "exp": "useCallback(fn, deps) еквівалентний useMemo(() => fn, deps). useCallback повертає саму функцію, useMemo — результат її виконання." },
+      "en": { "q": "How does useCallback differ from useMemo?", "exp": "useCallback(fn, deps) is equivalent to useMemo(() => fn, deps). useCallback returns the function itself, useMemo returns the result of execution." },
+      "pl": { "q": "Czym różni się useCallback od useMemo?", "exp": "useCallback(fn, deps) jest równoważne useMemo(() => fn, deps). useCallback zwraca samą funkcję, useMemo zwraca wynik jej wykonania." },
+      "answers": [
+        { "uk": "useCallback для класових компонентів, useMemo для функціональних", "en": "useCallback for class components, useMemo for functional", "pl": "useCallback dla komponentów klasowych, useMemo dla funkcyjnych", "correct": false },
+        { "uk": "useCallback мемоізує функцію, useMemo мемоізує результат виклику", "en": "useCallback memoizes function, useMemo memoizes call result", "pl": "useCallback memoizuje funkcję, useMemo memoizuje wynik wywołania", "correct": true },
+        { "uk": "Вони абсолютно однакові", "en": "They are absolutely identical", "pl": "Są absolutnie identyczne", "correct": false },
+        { "uk": "useCallback працює асинхронно", "en": "useCallback works asynchronously", "pl": "useCallback działa asynchronicznie", "correct": false }
+      ]
+    },
+    {
+      "id": "react-q25", "order": 25, "difficulty": "medium",
+      "uk": { "q": "Що зберігає useRef і коли його змінювати?", "exp": "useRef створює 'коробку' з властивістю .current, яку можна змінювати. На відміну від state, зміна ref не викликає ререндер." },
+      "en": { "q": "What does useRef store and when to modify it?", "exp": "useRef creates a 'box' with a .current property that can be modified. Unlike state, changing ref doesn't cause re-render." },
+      "pl": { "q": "Co przechowuje useRef i kiedy go modyfikować?", "exp": "useRef tworzy 'pudełko' z właściwością .current, którą można modyfikować. W przeciwieństwie do state, zmiana ref nie powoduje ponownego renderowania." },
+      "answers": [
+        { "uk": "Змінне значення, яке не викликає ререндер при зміні", "en": "A mutable value that doesn't cause re-render when changed", "pl": "Zmienną wartość, która nie powoduje ponownego renderowania przy zmianie", "correct": true },
+        { "uk": "Незмінне значення, доступне тільки для читання", "en": "An immutable value, read-only", "pl": "Niezmienną wartość, tylko do odczytu", "correct": false },
+        { "uk": "Посилання на батьківський компонент", "en": "Reference to parent component", "pl": "Referencję do komponentu nadrzędnego", "correct": false },
+        { "uk": "Історію всіх станів компонента", "en": "History of all component states", "pl": "Historię wszystkich stanów komponentu", "correct": false }
+      ]
+    },
+    {
+      "id": "react-q26", "order": 26, "difficulty": "beginner",
+      "uk": { "q": "Як у React отримати прямий доступ до DOM-елемента (наприклад, для фокусу на input)?", "exp": "const inputRef = useRef(); <input ref={inputRef} /> — тепер inputRef.current містить DOM-елемент. Це 'аварійний вихід' з React у реальний DOM." },
+      "en": { "q": "How to get direct DOM element access in React (e.g., to focus an input)?", "exp": "const inputRef = useRef(); <input ref={inputRef} /> — now inputRef.current contains the DOM element. This is an 'escape hatch' from React to the real DOM." },
+      "pl": { "q": "Jak uzyskać bezpośredni dostęp do elementu DOM w React (np. do ustawienia fokusa na input)?", "exp": "const inputRef = useRef(); <input ref={inputRef} /> — teraz inputRef.current zawiera element DOM. To 'wyjście awaryjne' z React do prawdziwego DOM." },
+      "answers": [
+        { "uk": "document.getElementById()", "en": "document.getElementById()", "pl": "document.getElementById()", "correct": false },
+        { "uk": "Через атрибут ref і хук useRef", "en": "Through ref attribute and useRef hook", "pl": "Przez atrybut ref i hook useRef", "correct": true },
+        { "uk": "Через props", "en": "Through props", "pl": "Przez props", "correct": false },
+        { "uk": "DOM недоступний у React", "en": "DOM is not accessible in React", "pl": "DOM nie jest dostępny w React", "correct": false }
+      ]
+    },
+    {
+      "id": "react-q27", "order": 27, "difficulty": "medium",
+      "uk": { "q": "Що таке 'контрольований компонент' у контексті форм React?", "exp": "У контрольованому компоненті React є 'єдиним джерелом правди': <input value={state} onChange={...} />. Дає більше контролю (валідація, форматування)." },
+      "en": { "q": "What is a 'controlled component' in React forms context?", "exp": "In a controlled component, React is the 'single source of truth': <input value={state} onChange={...} />. Gives more control (validation, formatting)." },
+      "pl": { "q": "Czym jest 'komponent kontrolowany' w kontekście formularzy React?", "exp": "W komponencie kontrolowanym React jest 'jedynym źródłem prawdy': <input value={state} onChange={...} />. Daje większą kontrolę (walidacja, formatowanie)." },
+      "answers": [
+        { "uk": "Компонент, захищений від XSS-атак", "en": "A component protected from XSS attacks", "pl": "Komponent chroniony przed atakami XSS", "correct": false },
+        { "uk": "Input, значення якого контролюється станом React", "en": "An input whose value is controlled by React state", "pl": "Input, którego wartość jest kontrolowana przez stan React", "correct": true },
+        { "uk": "Компонент, який не можна редагувати", "en": "A component that cannot be edited", "pl": "Komponent, którego nie można edytować", "correct": false },
+        { "uk": "Компонент з обмеженим доступом для користувачів", "en": "A component with restricted user access", "pl": "Komponent z ograniczonym dostępem dla użytkowników", "correct": false }
+      ]
+    },
+    {
+      "id": "react-q28", "order": 28, "difficulty": "beginner",
+      "uk": { "q": "Яка головна перевага функціональних компонентів над класовими?", "exp": "Функціональні компоненти — це просто функції, що повертають JSX. Не потрібно писати class, constructor, this, bind. Код коротший, читабельніший." },
+      "en": { "q": "What is the main advantage of functional components over class components?", "exp": "Functional components are just functions that return JSX. No need to write class, constructor, this, bind. Code is shorter, more readable." },
+      "pl": { "q": "Jaka jest główna zaleta komponentów funkcyjnych nad klasowymi?", "exp": "Komponenty funkcyjne to po prostu funkcje zwracające JSX. Nie trzeba pisać class, constructor, this, bind. Kod jest krótszy, bardziej czytelny." },
+      "answers": [
+        { "uk": "Вони працюють швидше в 10 разів", "en": "They work 10 times faster", "pl": "Działają 10 razy szybciej", "correct": false },
+        { "uk": "Простіший синтаксис, менше boilerplate-коду, легше тестувати", "en": "Simpler syntax, less boilerplate code, easier to test", "pl": "Prostsza składnia, mniej boilerplate'u, łatwiejsze testowanie", "correct": true },
+        { "uk": "Вони підтримують більше методів життєвого циклу", "en": "They support more lifecycle methods", "pl": "Obsługują więcej metod cyklu życia", "correct": false },
+        { "uk": "Тільки функціональні компоненти можуть мати стан", "en": "Only functional components can have state", "pl": "Tylko komponenty funkcyjne mogą mieć stan", "correct": false }
+      ]
+    },
+    {
+      "id": "react-q29", "order": 29, "difficulty": "medium",
+      "uk": { "q": "Що робить React.memo?", "exp": "React.memo(Component) — це HOC, що 'обгортає' функціональний компонент. Якщо props однакові — компонент не ререндериться. Порівнює props поверхнево (shallow)." },
+      "en": { "q": "What does React.memo do?", "exp": "React.memo(Component) is a HOC that 'wraps' a functional component. If props are the same — component doesn't re-render. Compares props shallowly." },
+      "pl": { "q": "Co robi React.memo?", "exp": "React.memo(Component) to HOC, który 'opakowuje' komponent funkcyjny. Jeśli props są takie same — komponent nie renderuje się ponownie. Porównuje props płytko." },
+      "answers": [
+        { "uk": "Додає компонент у пам'ять браузера", "en": "Adds component to browser memory", "pl": "Dodaje komponent do pamięci przeglądarki", "correct": false },
+        { "uk": "Запобігає ререндеру компонента, якщо props не змінились", "en": "Prevents component re-render if props haven't changed", "pl": "Zapobiega ponownemu renderowaniu komponentu, jeśli props się nie zmieniły", "correct": true },
+        { "uk": "Створює мемо-нотатку для розробників", "en": "Creates a memo note for developers", "pl": "Tworzy notatkę memo dla deweloperów", "correct": false },
+        { "uk": "Конвертує класовий компонент у функціональний", "en": "Converts class component to functional", "pl": "Konwertuje komponent klasowy na funkcyjny", "correct": false }
+      ]
+    },
+    {
+      "id": "react-q30", "order": 30, "difficulty": "medium",
+      "uk": { "q": "Що означає 'підняття стану' (Lifting State Up) у React?", "exp": "Коли кільком компонентам потрібен спільний стан — його 'піднімають' до найближчого спільного предка. Батько зберігає стан і передає його через props." },
+      "en": { "q": "What does 'Lifting State Up' mean in React?", "exp": "When multiple components need shared state — it's 'lifted' to the nearest common ancestor. The parent stores the state and passes it via props." },
+      "pl": { "q": "Co oznacza 'podnoszenie stanu' (Lifting State Up) w React?", "exp": "Gdy wiele komponentów potrzebuje wspólnego stanu — jest on 'podnoszony' do najbliższego wspólnego przodka. Rodzic przechowuje stan i przekazuje go przez props." },
+      "answers": [
+        { "uk": "Переміщення стану в глобальну змінну", "en": "Moving state to a global variable", "pl": "Przenoszenie stanu do zmiennej globalnej", "correct": false },
+        { "uk": "Переміщення стану в спільного батьківського компонента для кількох дочірніх", "en": "Moving state to a common parent component for multiple children", "pl": "Przenoszenie stanu do wspólnego komponentu nadrzędnego dla wielu potomnych", "correct": true },
+        { "uk": "Видалення стану з компонента", "en": "Removing state from component", "pl": "Usuwanie stanu z komponentu", "correct": false },
+        { "uk": "Копіювання стану в localStorage", "en": "Copying state to localStorage", "pl": "Kopiowanie stanu do localStorage", "correct": false }
+      ]
+    },
+    {
+      "id": "react-q31", "order": 31, "difficulty": "medium",
+      "uk": { "q": "Який хук відповідає за логіку при монтуванні компонента (аналог componentDidMount)?", "exp": "useEffect(() => { /* код */ }, []) виконується один раз після першого рендеру. Порожній масив залежностей [] — ключова деталь." },
+      "en": { "q": "Which hook handles logic when component mounts (equivalent to componentDidMount)?", "exp": "useEffect(() => { /* code */ }, []) runs once after the first render. Empty dependency array [] is the key detail." },
+      "pl": { "q": "Który hook obsługuje logikę przy montowaniu komponentu (odpowiednik componentDidMount)?", "exp": "useEffect(() => { /* kod */ }, []) wykonuje się raz po pierwszym renderze. Pusta tablica zależności [] to kluczowy szczegół." },
+      "answers": [
+        { "uk": "useState", "en": "useState", "pl": "useState", "correct": false },
+        { "uk": "useEffect з порожнім масивом залежностей []", "en": "useEffect with empty dependency array []", "pl": "useEffect z pustą tablicą zależności []", "correct": true },
+        { "uk": "useRef", "en": "useRef", "pl": "useRef", "correct": false },
+        { "uk": "useCallback", "en": "useCallback", "pl": "useCallback", "correct": false }
+      ]
+    },
+    {
+      "id": "react-q32", "order": 32, "difficulty": "medium",
+      "uk": { "q": "Як виконати код при розмонтуванні компонента (аналог componentWillUnmount)?", "exp": "Функція, яку повертає useEffect, викликається при розмонтуванні. Cleanup важливий для уникнення витоків пам'яті." },
+      "en": { "q": "How to execute code when component unmounts (equivalent to componentWillUnmount)?", "exp": "The function returned by useEffect is called on unmount. Cleanup is important to avoid memory leaks." },
+      "pl": { "q": "Jak wykonać kod przy odmontowaniu komponentu (odpowiednik componentWillUnmount)?", "exp": "Funkcja zwracana przez useEffect jest wywoływana przy odmontowaniu. Cleanup jest ważny, aby uniknąć wycieków pamięci." },
+      "answers": [
+        { "uk": "Викликати useUnmount()", "en": "Call useUnmount()", "pl": "Wywołać useUnmount()", "correct": false },
+        { "uk": "Повернути cleanup-функцію з useEffect", "en": "Return cleanup function from useEffect", "pl": "Zwrócić funkcję cleanup z useEffect", "correct": true },
+        { "uk": "Використати useState з параметром onUnmount", "en": "Use useState with onUnmount parameter", "pl": "Użyć useState z parametrem onUnmount", "correct": false },
+        { "uk": "Це неможливо у функціональних компонентах", "en": "This is impossible in functional components", "pl": "To niemożliwe w komponentach funkcyjnych", "correct": false }
+      ]
+    },
+    {
+      "id": "react-q33", "order": 33, "difficulty": "beginner",
+      "uk": { "q": "Навіщо в React існують <Fragment> або <> </>?", "exp": "React-компонент має повертати один кореневий елемент. <Fragment> (або скорочено <></>) групує елементи 'невидимо', без додаткового DOM-вузла." },
+      "en": { "q": "Why do <Fragment> or <> </> exist in React?", "exp": "A React component must return a single root element. <Fragment> (or short <></>) groups elements 'invisibly', without an extra DOM node." },
+      "pl": { "q": "Po co w React istnieją <Fragment> lub <> </>?", "exp": "Komponent React musi zwracać jeden element główny. <Fragment> (lub skrótowo <></>) grupuje elementy 'niewidocznie', bez dodatkowego węzła DOM." },
+      "answers": [
+        { "uk": "Для створення анімацій", "en": "For creating animations", "pl": "Do tworzenia animacji", "correct": false },
+        { "uk": "Щоб групувати елементи без додавання зайвого DOM-вузла", "en": "To group elements without adding an extra DOM node", "pl": "Aby grupować elementy bez dodawania dodatkowego węzła DOM", "correct": true },
+        { "uk": "Для кешування компонентів", "en": "For caching components", "pl": "Do buforowania komponentów", "correct": false },
+        { "uk": "Для підключення стилів", "en": "For connecting styles", "pl": "Do podłączania stylów", "correct": false }
+      ]
+    },
+    {
+      "id": "react-q34", "order": 34, "difficulty": "advanced",
+      "uk": { "q": "Що дозволяють робити React Portals?", "exp": "createPortal(child, domNode) рендерить компонент у вказаний DOM-вузол, навіть якщо в React-ієрархії він вкладений глибоко. Типове використання: модальні вікна, tooltips." },
+      "en": { "q": "What do React Portals allow you to do?", "exp": "createPortal(child, domNode) renders a component to a specified DOM node, even if it's deeply nested in the React hierarchy. Typical use: modals, tooltips." },
+      "pl": { "q": "Co pozwalają robić React Portals?", "exp": "createPortal(child, domNode) renderuje komponent do określonego węzła DOM, nawet jeśli jest głęboko zagnieżdżony w hierarchii React. Typowe użycie: modale, tooltipy." },
+      "answers": [
+        { "uk": "Переносити компоненти на інший сервер", "en": "Transfer components to another server", "pl": "Przenosić komponenty na inny serwer", "correct": false },
+        { "uk": "Рендерити дочірній компонент в DOM-вузол поза ієрархією батьківського", "en": "Render child component to a DOM node outside the parent hierarchy", "pl": "Renderować komponent potomny do węzła DOM poza hierarchią nadrzędnego", "correct": true },
+        { "uk": "Створювати посилання між сторінками", "en": "Create links between pages", "pl": "Tworzyć linki między stronami", "correct": false },
+        { "uk": "Телепортувати стан між компонентами", "en": "Teleport state between components", "pl": "Teleportować stan między komponentami", "correct": false }
+      ]
+    },
+    {
+      "id": "react-q35", "order": 35, "difficulty": "advanced",
+      "uk": { "q": "Що таке Error Boundary в React?", "exp": "Error Boundary — класовий компонент з методами getDerivedStateFromError() або componentDidCatch(). Він 'ловить' помилки рендерингу і показує fallback UI." },
+      "en": { "q": "What is an Error Boundary in React?", "exp": "Error Boundary is a class component with methods getDerivedStateFromError() or componentDidCatch(). It 'catches' rendering errors and shows fallback UI." },
+      "pl": { "q": "Czym jest Error Boundary w React?", "exp": "Error Boundary to komponent klasowy z metodami getDerivedStateFromError() lub componentDidCatch(). 'Łapie' błędy renderowania i pokazuje fallback UI." },
+      "answers": [
+        { "uk": "Стиль CSS для відображення помилок", "en": "CSS style for displaying errors", "pl": "Styl CSS do wyświetlania błędów", "correct": false },
+        { "uk": "Компонент, який перехоплює JavaScript-помилки в дочірніх компонентах", "en": "A component that catches JavaScript errors in child components", "pl": "Komponent, który przechwytuje błędy JavaScript w komponentach potomnych", "correct": true },
+        { "uk": "Функція для логування помилок на сервер", "en": "A function for logging errors to server", "pl": "Funkcja do logowania błędów na serwer", "correct": false },
+        { "uk": "Middleware для обробки помилок API", "en": "Middleware for handling API errors", "pl": "Middleware do obsługi błędów API", "correct": false }
+      ]
+    },
+    {
+      "id": "react-q36", "order": 36, "difficulty": "medium",
+      "uk": { "q": "Що робить <React.StrictMode>?", "exp": "StrictMode — інструмент для розробки. Викликає деякі функції двічі (щоб виявити side effects), попереджає про застарілі API. В production — не впливає." },
+      "en": { "q": "What does <React.StrictMode> do?", "exp": "StrictMode is a development tool. Calls some functions twice (to detect side effects), warns about deprecated APIs. In production — has no effect." },
+      "pl": { "q": "Co robi <React.StrictMode>?", "exp": "StrictMode to narzędzie deweloperskie. Wywołuje niektóre funkcje dwukrotnie (aby wykryć efekty uboczne), ostrzega o przestarzałych API. W produkcji — nie ma wpływu." },
+      "answers": [
+        { "uk": "Забороняє використання застарілого синтаксису JavaScript", "en": "Forbids using deprecated JavaScript syntax", "pl": "Zabrania używania przestarzałej składni JavaScript", "correct": false },
+        { "uk": "Активує додаткові перевірки і попередження в режимі розробки", "en": "Activates additional checks and warnings in development mode", "pl": "Aktywuje dodatkowe sprawdzenia i ostrzeżenia w trybie deweloperskim", "correct": true },
+        { "uk": "Прискорює рендеринг у production", "en": "Speeds up rendering in production", "pl": "Przyspiesza renderowanie w produkcji", "correct": false },
+        { "uk": "Вимикає всі console.log", "en": "Disables all console.log", "pl": "Wyłącza wszystkie console.log", "correct": false }
+      ]
+    },
+    {
+      "id": "react-q37", "order": 37, "difficulty": "beginner",
+      "uk": { "q": "Для чого використовують React DevTools?", "exp": "React DevTools — розширення для Chrome/Firefox. Показує ієрархію компонентів, дозволяє переглядати і змінювати props/state, профілює рендери." },
+      "en": { "q": "What is React DevTools used for?", "exp": "React DevTools is an extension for Chrome/Firefox. Shows component hierarchy, allows viewing and changing props/state, profiles render performance." },
+      "pl": { "q": "Do czego służy React DevTools?", "exp": "React DevTools to rozszerzenie dla Chrome/Firefox. Pokazuje hierarchię komponentów, pozwala przeglądać i zmieniać props/state, profiluje wydajność renderowania." },
+      "answers": [
+        { "uk": "Для написання коду React", "en": "For writing React code", "pl": "Do pisania kodu React", "correct": false },
+        { "uk": "Для інспектування дерева компонентів, props і state в браузері", "en": "For inspecting component tree, props and state in browser", "pl": "Do inspekcji drzewa komponentów, props i state w przeglądarce", "correct": true },
+        { "uk": "Для деплою React-додатків", "en": "For deploying React applications", "pl": "Do wdrażania aplikacji React", "correct": false },
+        { "uk": "Для генерації компонентів", "en": "For generating components", "pl": "Do generowania komponentów", "correct": false }
+      ]
+    },
+    {
+      "id": "react-q38", "order": 38, "difficulty": "advanced",
+      "uk": { "q": "Яка головна перевага Server-Side Rendering для React-додатків?", "exp": "SSR генерує HTML на сервері. Пошукові боти бачать контент одразу (важливо для SEO). Користувач швидше бачить сторінку. Next.js — популярний SSR-фреймворк." },
+      "en": { "q": "What is the main advantage of Server-Side Rendering for React apps?", "exp": "SSR generates HTML on the server. Search bots see content immediately (important for SEO). User sees the page faster. Next.js is a popular SSR framework." },
+      "pl": { "q": "Jaka jest główna zaleta Server-Side Rendering dla aplikacji React?", "exp": "SSR generuje HTML na serwerze. Boty wyszukiwarek widzą treść natychmiast (ważne dla SEO). Użytkownik szybciej widzi stronę. Next.js to popularny framework SSR." },
+      "answers": [
+        { "uk": "Простіший код компонентів", "en": "Simpler component code", "pl": "Prostszy kod komponentów", "correct": false },
+        { "uk": "Краще SEO і швидше перше відображення сторінки", "en": "Better SEO and faster first page render", "pl": "Lepsze SEO i szybsze pierwsze wyświetlenie strony", "correct": true },
+        { "uk": "Менше коду JavaScript", "en": "Less JavaScript code", "pl": "Mniej kodu JavaScript", "correct": false },
+        { "uk": "Автоматичне кешування даних", "en": "Automatic data caching", "pl": "Automatyczne buforowanie danych", "correct": false }
+      ]
+    },
+    {
+      "id": "react-q39", "order": 39, "difficulty": "advanced",
+      "uk": { "q": "Що привніс React 18 у роботу з рендерингом?", "exp": "Concurrent Mode дозволяє React 'призупиняти' менш важливі оновлення. Нові API: useTransition, useDeferredValue, автоматичний batching setState." },
+      "en": { "q": "What did React 18 introduce for rendering?", "exp": "Concurrent Mode allows React to 'pause' less important updates. New APIs: useTransition, useDeferredValue, automatic setState batching." },
+      "pl": { "q": "Co React 18 wprowadził dla renderowania?", "exp": "Concurrent Mode pozwala React 'wstrzymywać' mniej ważne aktualizacje. Nowe API: useTransition, useDeferredValue, automatyczny batching setState." },
+      "answers": [
+        { "uk": "Заборонив класові компоненти", "en": "Banned class components", "pl": "Zakazał komponentów klasowych", "correct": false },
+        { "uk": "Concurrent Rendering — можливість переривати і пріоритезувати оновлення", "en": "Concurrent Rendering — ability to interrupt and prioritize updates", "pl": "Concurrent Rendering — możliwość przerywania i priorytetyzacji aktualizacji", "correct": true },
+        { "uk": "Новий синтаксис JSX", "en": "New JSX syntax", "pl": "Nowa składnia JSX", "correct": false },
+        { "uk": "Вбудовану підтримку TypeScript", "en": "Built-in TypeScript support", "pl": "Wbudowaną obsługę TypeScript", "correct": false }
+      ]
+    },
+    {
+      "id": "react-q40", "order": 40, "difficulty": "beginner",
+      "uk": { "q": "Що рекомендується використовувати замість Create React App (CRA) для нових проєктів?", "exp": "CRA став deprecated у 2025. Альтернативи: Vite (для SPA), React Router (для маршрутизації), Next.js (для SSR, SEO, production-ready)." },
+      "en": { "q": "What is recommended instead of Create React App (CRA) for new projects?", "exp": "CRA became deprecated in 2025. Alternatives: Vite (for SPAs), React Router (for routing), Next.js (for SSR, SEO, production-ready)." },
+      "pl": { "q": "Co jest zalecane zamiast Create React App (CRA) dla nowych projektów?", "exp": "CRA został zdeprecjonowany w 2025. Alternatywy: Vite (dla SPA), React Router (dla routingu), Next.js (dla SSR, SEO, production-ready)." },
+      "answers": [
+        { "uk": "Тільки ванільний JavaScript без інструментів", "en": "Only vanilla JavaScript without tools", "pl": "Tylko czysty JavaScript bez narzędzi", "correct": false },
+        { "uk": "Next.js, Vite або React Router (залежно від потреб)", "en": "Next.js, Vite or React Router (depending on needs)", "pl": "Next.js, Vite lub React Router (w zależności od potrzeb)", "correct": true },
+        { "uk": "jQuery", "en": "jQuery", "pl": "jQuery", "correct": false },
+        { "uk": "CRA досі рекомендований варіант", "en": "CRA is still the recommended option", "pl": "CRA wciąż jest zalecaną opcją", "correct": false }
+      ]
+    }
+  ]
+}

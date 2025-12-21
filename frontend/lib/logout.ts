@@ -6,5 +6,4 @@ export async function logout() {
     credentials: "same-origin",
   });
 
-  window.location.href = "/login";
-}
+}  

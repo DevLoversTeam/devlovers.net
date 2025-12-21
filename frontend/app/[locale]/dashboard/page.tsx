@@ -1,23 +1,25 @@
-import { redirect } from 'next/navigation';
-import Link from 'next/link';
+import { redirect } from '@/i18n/routing';
+import { Link } from '@/i18n/routing'
 import { getCurrentUser } from '@/lib/auth';
 import { getUserProfile } from '@/db/queries/users';
 import { getUserQuizStats } from '@/db/queries/quiz';
 
 import { ProfileCard } from '@/components/dashboard/ProfileCard';
 import { StatsCard } from '@/components/dashboard/StatsCard';
+import { QuizSavedBanner } from '@/components/dashboard/QuizSavedBanner';
 
 export const metadata = {
   title: 'Dashboard | DevLovers',
   description: 'Track your progress and quiz performance.',
 };
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ params }: { params: Promise<{ locale: string }> }) {
   const session = await getCurrentUser();
-  if (!session) redirect('/login');
+  const { locale } = await params;
+  if (!session) { redirect({ href: '/login', locale }); return; }
 
   const user = await getUserProfile(session.id);
-  if (!user) redirect('/login');
+  if (!user) { redirect({ href: '/login', locale }); return; }
 
   const attempts = await getUserQuizStats(session.id);
 
@@ -39,8 +41,11 @@ export default async function DashboardPage() {
       : null;
 
   const userForDisplay = {
-    ...user,
+    name: user.name ?? null,
+    email: user.email ?? '',
+    role: user.role ?? null,
     points: realPoints,
+    createdAt: user.createdAt ?? null,
   };
 
   const stats = {
@@ -81,7 +86,7 @@ export default async function DashboardPage() {
             Support & Feedback
           </Link>
         </header>
-
+        <QuizSavedBanner />
         <div className="grid gap-8 md:grid-cols-2">
           <ProfileCard user={userForDisplay} />
           <StatsCard stats={stats} />
