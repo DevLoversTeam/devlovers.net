@@ -3,7 +3,7 @@ import { users } from './schema/users';
 import { sql } from 'drizzle-orm';
 
 async function main() {
-  console.log('⏳ Seeding demo leaderboard users...');
+  console.log('Seeding demo leaderboard users...');
 
   const demoUsers = [
     {
@@ -59,11 +59,11 @@ async function main() {
       set: { points: sql`excluded.points` },
     });
 
-  console.log('✅ Demo users created!');
+  console.log('Demo users created!');
   process.exit(0);
 }
 
 main().catch(err => {
-  console.error('❌ Seeding failed:', err);
+  console.error('Seeding failed:', err);
   process.exit(1);
 });

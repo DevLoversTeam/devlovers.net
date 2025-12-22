@@ -121,11 +121,25 @@ function renderCodeBlock(block: CodeBlock, index: number): ReactNode {
 function renderBulletList(block: BulletListBlock, index: number): ReactNode {
   return (
     <ul key={index} className="list-disc list-outside ml-6 space-y-1 my-2">
-      {block.children.map((item, i) => (
-        <li key={i} className="leading-relaxed">
-          {renderListItemChildren(item.children)}
-        </li>
-      ))}
+      {block.children.map((item, i) => {
+        if (!item || typeof item !== 'object') {
+          return null;
+        }
+
+        if ('type' in item && item.type === 'listItem') {
+          return (
+            <li key={i} className="leading-relaxed">
+              {renderListItemChildren(item.children)}
+            </li>
+          );
+        }
+
+        return (
+          <li key={i} className="leading-relaxed">
+            {renderListItemChildren([item as ListItemChild])}
+          </li>
+        );
+      })}
     </ul>
   );
 }
@@ -136,17 +150,41 @@ function renderNumberedList(
 ): ReactNode {
   return (
     <ol key={index} className="list-decimal list-outside ml-6 space-y-1 my-2">
-      {block.children.map((item, i) => (
-        <li key={i} className="leading-relaxed">
-          {renderListItemChildren(item.children)}
-        </li>
-      ))}
+      {block.children.map((item, i) => {
+        if (!item || typeof item !== 'object') {
+          return null;
+        }
+
+        if ('type' in item && item.type === 'listItem') {
+          return (
+            <li key={i} className="leading-relaxed">
+              {renderListItemChildren(item.children)}
+            </li>
+          );
+        }
+
+        return (
+          <li key={i} className="leading-relaxed">
+            {renderListItemChildren([item as ListItemChild])}
+          </li>
+        );
+      })}
     </ol>
   );
 }
 
-function renderListItemChildren(children: ListItemChild[]): ReactNode {
+function renderListItemChildren(
+  children: ListItemChild[] | undefined
+): ReactNode {
+  if (!Array.isArray(children)) {
+    return null;
+  }
+
   return children.map((child, i) => {
+    if (!child || typeof child !== 'object') {
+      return null;
+    }
+
     if ('type' in child && child.type === 'code') {
       return (
         <CodeBlock key={i} code={child.content} language={child.language} />

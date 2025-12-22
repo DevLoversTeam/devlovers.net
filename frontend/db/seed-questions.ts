@@ -20,12 +20,11 @@ const data = Array.isArray(rawData) ? (rawData as RawQuestion[]) : [];
 
 async function seedQuestions() {
   if (!data.length) {
-    console.log('No questions to seed — skipping.');
+    console.log('No questions to seed - skipping.');
     return;
   }
 
   for (const q of data) {
-    // Find category by slug
     const [category] = await db
       .select()
       .from(categories)
@@ -37,7 +36,6 @@ async function seedQuestions() {
       continue;
     }
 
-    // Insert question
     const [question] = await db
       .insert(questions)
       .values({
@@ -46,7 +44,6 @@ async function seedQuestions() {
       })
       .returning();
 
-    // Insert translations
     const translations = Object.entries(q.translations).map(
       ([locale, content]) => ({
         questionId: question.id,

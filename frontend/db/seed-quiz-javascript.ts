@@ -1,9 +1,3 @@
-// db/seeds/seed-quiz-javascript.ts
-// Loads JavaScript quiz data from JSON files and inserts into database
-// Run: npx tsx db/seeds/seed-quiz-javascript.ts <part-number>
-// Example: npx tsx db/seeds/seed-quiz-javascript.ts 1
-// Or upload all: npx tsx db/seeds/seed-quiz-javascript.ts all
-
 import { eq } from 'drizzle-orm';
 import { readFileSync } from 'fs';
 import { join } from 'path';
@@ -43,7 +37,6 @@ interface QuizPartData {
 
 const CATEGORY_SLUG = 'javascript';
 
-// Quiz metadata (same for all parts)
 const QUIZ_METADATA = {
   slug: 'javascript-fundamentals',
   questionsCount: 40,
@@ -64,7 +57,6 @@ const QUIZ_METADATA = {
   },
 };
 
-// Simple explanation block (text only for compact JSON)
 function createExplanation(text: string) {
   return [{ type: 'paragraph' as const, children: [{ text }] }];
 }
@@ -113,7 +105,6 @@ async function ensureQuizExists(): Promise<string> {
     }).where(eq(quizzes.id, existing.id));
 
     const quizId = existing.id;
-    // Insert translations
     for (const locale of LOCALES) {
       await db.insert(quizTranslations).values({
         quizId,
@@ -126,7 +117,6 @@ async function ensureQuizExists(): Promise<string> {
     return quizId;
   }
 
-  // Insert quiz - DB generates id
   const [quiz] = await db.insert(quizzes).values({
     categoryId: category.id,
     slug: QUIZ_METADATA.slug,
@@ -136,7 +126,6 @@ async function ensureQuizExists(): Promise<string> {
     isActive: true,
   }).returning();
 
-  // Insert translations
   for (const locale of LOCALES) {
     await db.insert(quizTranslations).values({
       quizId: quiz.id,
@@ -153,7 +142,6 @@ async function seedQuestions(questions: QuestionData[], quizId: string, partNumb
   console.log(`Seeding ${questions.length} questions from part ${partNumber}...`);
 
   for (const question of questions) {
-    // DB generates question id
     const [q] = await db.insert(quizQuestions).values({
       quizId,
       displayOrder: question.order,
@@ -172,7 +160,6 @@ async function seedQuestions(questions: QuestionData[], quizId: string, partNumb
     for (let i = 0; i < question.answers.length; i++) {
       const answer = question.answers[i];
       
-      // DB generates answer id
       const [a] = await db.insert(quizAnswers).values({
         quizQuestionId: q.id,
         displayOrder: i + 1,
@@ -197,21 +184,20 @@ async function seedQuizFromJson() {
   const partArg = args[0];
 
   if (!partArg) {
-    console.error('❌ Error: Please specify which part to upload');
+    console.error('Error: Please specify which part to upload');
     console.log('Usage: npx tsx db/seeds/seed-quiz-javascript.ts <part-number>');
     console.log('Example: npx tsx db/seeds/seed-quiz-javascript.ts 1');
     console.log('Or upload all: npx tsx db/seeds/seed-quiz-javascript.ts all');
     process.exit(1);
   }
 
-  console.log('🚀 Starting JavaScript quiz seed...\n');
+  console.log('Starting JavaScript quiz seed...\n');
 
   try {
     const quizId = await ensureQuizExists();
 
     if (partArg.toLowerCase() === 'all') {
-      // Upload all parts
-      console.log('📦 Uploading all parts...\n');
+      console.log('Uploading all parts...\n');
       let totalQuestions = 0;
 
       for (let i = 1; i <= 4; i++) {
@@ -220,29 +206,28 @@ async function seedQuizFromJson() {
         totalQuestions += questions.length;
       }
 
-      console.log('\n✅ All parts seeded successfully!');
+      console.log('\nAll parts seeded successfully!');
       console.log(`   - 1 quiz with ${LOCALES.length} translations`);
       console.log(`   - ${totalQuestions} questions total`);
       console.log(`   - ${totalQuestions * 4} answers with ${LOCALES.length} translations each`);
     } else {
-      // Upload specific part
       const partNumber = parseInt(partArg, 10);
 
       if (isNaN(partNumber) || partNumber < 1 || partNumber > 4) {
-        console.error('❌ Error: Part number must be between 1 and 4');
+        console.error('Error: Part number must be between 1 and 4');
         process.exit(1);
       }
 
       const questions = await loadQuestions(partNumber);
       await seedQuestions(questions, quizId, partNumber);
 
-      console.log('\n✅ Part seeded successfully!');
+      console.log('\nPart seeded successfully!');
       console.log(`   - Quiz: ${QUIZ_METADATA.translations.en.title}`);
       console.log(`   - Part ${partNumber}: ${questions.length} questions`);
       console.log(`   - ${questions.length * 4} answers with ${LOCALES.length} translations each`);
     }
   } catch (error) {
-    console.error('\n❌ Error seeding quiz:', error);
+    console.error('\nError seeding quiz:', error);
     throw error;
   }
 }

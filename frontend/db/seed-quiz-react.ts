@@ -892,14 +892,19 @@ async function seedReactQuiz() {
       .limit(1);
 
     if (!category) {
-      throw new Error(`Category "${CATEGORY_SLUG}" not found. Run seed:categories first.`);
+      throw new Error(
+        `Category "${CATEGORY_SLUG}" not found. Run seed:categories first.`
+      );
     }
 
     console.log('Creating quiz...');
-    await db.insert(quizzes).values({
-      ...quizData,
-      categoryId: category.id,
-    }).onConflictDoNothing();
+    await db
+      .insert(quizzes)
+      .values({
+        ...quizData,
+        categoryId: category.id,
+      })
+      .onConflictDoNothing();
 
     console.log('Creating quiz translations...');
     for (const locale of locales) {
@@ -969,8 +974,14 @@ async function seedReactQuiz() {
 
     console.log('React quiz seeded successfully!');
     console.log(`   - 1 quiz with ${locales.length} translations`);
-    console.log(`   - ${questionsData.length} questions with ${locales.length} translations each`);
-    console.log(`   - ${questionsData.length * 4} answers with ${locales.length} translations each`);
+    console.log(
+      `   - ${questionsData.length} questions with ${locales.length} translations each`
+    );
+    console.log(
+      `   - ${questionsData.length * 4} answers with ${
+        locales.length
+      } translations each`
+    );
   } catch (error) {
     console.error('Error seeding quiz:', error);
     throw error;
@@ -987,7 +998,7 @@ async function cleanupReactQuiz() {
   await db.delete(quizTranslations);
   await db.delete(quizzes);
 
-  console.log('✅ Cleanup complete!');
+  console.log('Cleanup complete!');
 }
 
 seedReactQuiz()
