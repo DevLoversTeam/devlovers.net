@@ -24,14 +24,16 @@ type CodeBlock = {
   content: string;
 };
 
+type ListEntry = ListItemBlock | ListItemChild;
+
 type BulletListBlock = {
   type: 'bulletList';
-  children: ListItemBlock[];
+  children: ListEntry[];
 };
 
 type NumberedListBlock = {
   type: 'numberedList';
-  children: ListItemBlock[];
+  children: ListEntry[];
 };
 
 type ListItemChild = TextNode | CodeBlock | BulletListBlock | NumberedListBlock;
@@ -74,6 +76,37 @@ type QuestionEntry = {
   category: string;
   answerBlocks: AnswerBlock[];
 };
+
+function isListItemBlock(value: ListEntry): value is ListItemBlock {
+  return (
+    !!value &&
+    typeof value === 'object' &&
+    'type' in value &&
+    value.type === 'listItem'
+  );
+}
+
+function renderListEntries(entries: ListEntry[]): ReactNode {
+  return entries.map((item, i) => {
+    if (!item || typeof item !== 'object') {
+      return null;
+    }
+
+    if (isListItemBlock(item)) {
+      return (
+        <li key={i} className="leading-relaxed">
+          {renderListItemChildren(item.children)}
+        </li>
+      );
+    }
+
+    return (
+      <li key={i} className="leading-relaxed">
+        {renderListItemChildren([item])}
+      </li>
+    );
+  });
+}
 
 function renderTextNode(node: TextNode, index: number): ReactNode {
   const { text, bold, italic, code, boldItalic } = node;
@@ -121,11 +154,7 @@ function renderCodeBlock(block: CodeBlock, index: number): ReactNode {
 function renderBulletList(block: BulletListBlock, index: number): ReactNode {
   return (
     <ul key={index} className="list-disc list-outside ml-6 space-y-1 my-2">
-      {block.children.map((item, i) => (
-        <li key={i} className="leading-relaxed">
-          {renderListItemChildren(item.children)}
-        </li>
-      ))}
+      {renderListEntries(block.children)}
     </ul>
   );
 }
@@ -136,17 +165,23 @@ function renderNumberedList(
 ): ReactNode {
   return (
     <ol key={index} className="list-decimal list-outside ml-6 space-y-1 my-2">
-      {block.children.map((item, i) => (
-        <li key={i} className="leading-relaxed">
-          {renderListItemChildren(item.children)}
-        </li>
-      ))}
+      {renderListEntries(block.children)}
     </ol>
   );
 }
 
-function renderListItemChildren(children: ListItemChild[]): ReactNode {
+function renderListItemChildren(
+  children: ListItemChild[] | undefined
+): ReactNode {
+  if (!Array.isArray(children)) {
+    return null;
+  }
+
   return children.map((child, i) => {
+    if (!child || typeof child !== 'object') {
+      return null;
+    }
+
     if ('type' in child && child.type === 'code') {
       return (
         <CodeBlock key={i} code={child.content} language={child.language} />
@@ -154,25 +189,23 @@ function renderListItemChildren(children: ListItemChild[]): ReactNode {
     }
 
     if ('type' in child && child.type === 'bulletList') {
+      if (!Array.isArray(child.children)) {
+        return null;
+      }
       return (
         <ul key={i} className="list-disc list-outside ml-6 space-y-1 mt-1">
-          {child.children.map((item, j) => (
-            <li key={j} className="leading-relaxed">
-              {renderListItemChildren(item.children)}
-            </li>
-          ))}
+          {renderListEntries(child.children)}
         </ul>
       );
     }
 
     if ('type' in child && child.type === 'numberedList') {
+      if (!Array.isArray(child.children)) {
+        return null;
+      }
       return (
         <ol key={i} className="list-decimal list-outside ml-6 space-y-1 mt-1">
-          {child.children.map((item, j) => (
-            <li key={j} className="leading-relaxed">
-              {renderListItemChildren(item.children)}
-            </li>
-          ))}
+          {renderListEntries(child.children)}
         </ol>
       );
     }
