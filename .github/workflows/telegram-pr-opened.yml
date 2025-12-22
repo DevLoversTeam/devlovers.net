@@ -1,0 +1,25 @@
+name: Telegram — PR opened
+
+on:
+    pull_request:
+        types: [opened]
+
+jobs:
+    notify:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Send Telegram message
+              uses: appleboy/telegram-action@v1.0.1
+              with:
+                  token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+                  to: ${{ secrets.TELEGRAM_CHAT_ID }}
+                  message: |
+                      🚀 New Pull Request created!
+
+                      📦 Repository: ${{ github.repository }}
+                      👤 Author: ${{ github.actor }}
+                      📝 Title: ${{ github.event.pull_request.title }}
+                      🌿 Branches: ${{ github.head_ref }} → ${{ github.base_ref }}
+
+                      🔗 Open PR:
+                      ${{ github.event.pull_request.html_url }}
