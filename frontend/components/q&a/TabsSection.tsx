@@ -157,7 +157,7 @@ export default function TabsSection() {
       </div>
 
       <Tabs value={active} onValueChange={handleCategoryChange}>
-        <TabsList className="grid grid-cols-9 mb-6">
+        <TabsList className="grid grid-cols-10 mb-6">
           {categoryData.map(category => (
             <TabsTrigger key={category.slug} value={category.slug}>
               {category.translations[locale] ??

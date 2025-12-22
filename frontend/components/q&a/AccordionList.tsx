@@ -24,14 +24,16 @@ type CodeBlock = {
   content: string;
 };
 
+type ListEntry = ListItemBlock | ListItemChild;
+
 type BulletListBlock = {
   type: 'bulletList';
-  children: ListItemBlock[];
+  children: ListEntry[];
 };
 
 type NumberedListBlock = {
   type: 'numberedList';
-  children: ListItemBlock[];
+  children: ListEntry[];
 };
 
 type ListItemChild = TextNode | CodeBlock | BulletListBlock | NumberedListBlock;
@@ -74,6 +76,15 @@ type QuestionEntry = {
   category: string;
   answerBlocks: AnswerBlock[];
 };
+
+function isListItemBlock(value: ListEntry): value is ListItemBlock {
+  return (
+    !!value &&
+    typeof value === 'object' &&
+    'type' in value &&
+    value.type === 'listItem'
+  );
+}
 
 function renderTextNode(node: TextNode, index: number): ReactNode {
   const { text, bold, italic, code, boldItalic } = node;
@@ -126,7 +137,7 @@ function renderBulletList(block: BulletListBlock, index: number): ReactNode {
           return null;
         }
 
-        if ('type' in item && item.type === 'listItem') {
+        if (isListItemBlock(item)) {
           return (
             <li key={i} className="leading-relaxed">
               {renderListItemChildren(item.children)}
@@ -136,7 +147,7 @@ function renderBulletList(block: BulletListBlock, index: number): ReactNode {
 
         return (
           <li key={i} className="leading-relaxed">
-            {renderListItemChildren([item as ListItemChild])}
+            {renderListItemChildren([item])}
           </li>
         );
       })}
@@ -155,7 +166,7 @@ function renderNumberedList(
           return null;
         }
 
-        if ('type' in item && item.type === 'listItem') {
+        if (isListItemBlock(item)) {
           return (
             <li key={i} className="leading-relaxed">
               {renderListItemChildren(item.children)}
@@ -165,7 +176,7 @@ function renderNumberedList(
 
         return (
           <li key={i} className="leading-relaxed">
-            {renderListItemChildren([item as ListItemChild])}
+            {renderListItemChildren([item])}
           </li>
         );
       })}
