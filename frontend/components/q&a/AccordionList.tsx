@@ -86,6 +86,28 @@ function isListItemBlock(value: ListEntry): value is ListItemBlock {
   );
 }
 
+function renderListEntries(entries: ListEntry[]): ReactNode {
+  return entries.map((item, i) => {
+    if (!item || typeof item !== 'object') {
+      return null;
+    }
+
+    if (isListItemBlock(item)) {
+      return (
+        <li key={i} className="leading-relaxed">
+          {renderListItemChildren(item.children)}
+        </li>
+      );
+    }
+
+    return (
+      <li key={i} className="leading-relaxed">
+        {renderListItemChildren([item])}
+      </li>
+    );
+  });
+}
+
 function renderTextNode(node: TextNode, index: number): ReactNode {
   const { text, bold, italic, code, boldItalic } = node;
 
@@ -132,25 +154,7 @@ function renderCodeBlock(block: CodeBlock, index: number): ReactNode {
 function renderBulletList(block: BulletListBlock, index: number): ReactNode {
   return (
     <ul key={index} className="list-disc list-outside ml-6 space-y-1 my-2">
-      {block.children.map((item, i) => {
-        if (!item || typeof item !== 'object') {
-          return null;
-        }
-
-        if (isListItemBlock(item)) {
-          return (
-            <li key={i} className="leading-relaxed">
-              {renderListItemChildren(item.children)}
-            </li>
-          );
-        }
-
-        return (
-          <li key={i} className="leading-relaxed">
-            {renderListItemChildren([item])}
-          </li>
-        );
-      })}
+      {renderListEntries(block.children)}
     </ul>
   );
 }
@@ -161,25 +165,7 @@ function renderNumberedList(
 ): ReactNode {
   return (
     <ol key={index} className="list-decimal list-outside ml-6 space-y-1 my-2">
-      {block.children.map((item, i) => {
-        if (!item || typeof item !== 'object') {
-          return null;
-        }
-
-        if (isListItemBlock(item)) {
-          return (
-            <li key={i} className="leading-relaxed">
-              {renderListItemChildren(item.children)}
-            </li>
-          );
-        }
-
-        return (
-          <li key={i} className="leading-relaxed">
-            {renderListItemChildren([item])}
-          </li>
-        );
-      })}
+      {renderListEntries(block.children)}
     </ol>
   );
 }
@@ -203,25 +189,23 @@ function renderListItemChildren(
     }
 
     if ('type' in child && child.type === 'bulletList') {
+      if (!Array.isArray(child.children)) {
+        return null;
+      }
       return (
         <ul key={i} className="list-disc list-outside ml-6 space-y-1 mt-1">
-          {child.children.map((item, j) => (
-            <li key={j} className="leading-relaxed">
-              {renderListItemChildren(item.children)}
-            </li>
-          ))}
+          {renderListEntries(child.children)}
         </ul>
       );
     }
 
     if ('type' in child && child.type === 'numberedList') {
+      if (!Array.isArray(child.children)) {
+        return null;
+      }
       return (
         <ol key={i} className="list-decimal list-outside ml-6 space-y-1 mt-1">
-          {child.children.map((item, j) => (
-            <li key={j} className="leading-relaxed">
-              {renderListItemChildren(item.children)}
-            </li>
-          ))}
+          {renderListEntries(child.children)}
         </ol>
       );
     }
