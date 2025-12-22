@@ -29,6 +29,9 @@ export default function TabsSection() {
   const params = useParams();
 
   const locale = params.locale as string;
+  const localeKey = (['uk', 'en', 'pl'] as const).includes(locale as 'uk' | 'en' | 'pl')
+    ? (locale as 'uk' | 'en' | 'pl')
+    : 'en';
 
   const pageFromUrl = Number(searchParams.get('page') || 1);
   const categoryFromUrl = searchParams.get('category') || DEFAULT_CATEGORY;
@@ -160,7 +163,7 @@ export default function TabsSection() {
         <TabsList className="grid grid-cols-10 mb-6">
           {categoryData.map(category => (
             <TabsTrigger key={category.slug} value={category.slug}>
-              {category.translations[locale] ??
+              {category.translations[localeKey] ??
                 category.translations.en ??
                 category.slug}
             </TabsTrigger>
