@@ -169,6 +169,7 @@ export default function BlogFilters({ posts }: { posts: Post[] }) {
                 setInput(suggestion);
                 return;
               }
+
               if (e.key === 'Enter') {
                 e.preventDefault();
                 addTag(input);
@@ -176,11 +177,14 @@ export default function BlogFilters({ posts }: { posts: Post[] }) {
             }}
             placeholder="Пошук..."
             className="
-              w-full rounded-xl
-              border border-gray-300 bg-white
+              w-full
+              rounded-xl
+              border border-gray-200
+              bg-white
               pl-14 pr-6 py-4
               text-lg text-gray-900
-              shadow-sm outline-none
+              shadow-sm
+              outline-none
               placeholder-gray-400
               focus:placeholder-transparent
               focus:border-gray-400
