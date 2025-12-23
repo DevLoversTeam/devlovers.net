@@ -9,7 +9,6 @@ type SocialLink = {
   _key?: string;
 };
 
-/** --- Portable Text (мінімально необхідні типи) --- */
 export type PortableTextSpan = {
   _type: 'span';
   text?: string;
@@ -24,7 +23,7 @@ export type PortableTextBlock = {
 export type PortableTextImage = {
   _type: 'image';
   _key?: string;
-  url?: string; // інколи ти додаєш "url": asset->url в GROQ
+  url?: string;
 };
 
 export type PortableText = Array<PortableTextBlock | PortableTextImage>;
@@ -35,7 +34,7 @@ type Author = {
   company?: string;
   jobTitle?: string;
   city?: string;
-  bio?: PortableText; // ✅ було any
+  bio?: PortableText;
   socialMedia?: SocialLink[];
 };
 
@@ -48,7 +47,7 @@ export type Post = {
   categories?: string[];
   resourceLink?: string;
   mainImage?: string;
-  body?: PortableText; // ✅ було any[]
+  body?: PortableText;
   author?: Author;
 };
 
@@ -105,7 +104,6 @@ export default function BlogFilters({ posts }: { posts: Post[] }) {
     setInput('');
   };
 
-  // ✅ all unique tags (normalized) for autocomplete
   const allTags = useMemo(() => {
     const s = new Set<string>();
     for (const p of posts) {
