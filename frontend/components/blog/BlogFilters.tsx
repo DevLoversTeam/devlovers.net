@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useTranslations } from 'next-intl';
 import BlogGrid from '@/components/blog/BlogGrid';
 
 type SocialLink = {
@@ -10,13 +9,32 @@ type SocialLink = {
   _key?: string;
 };
 
+export type PortableTextSpan = {
+  _type: 'span';
+  text?: string;
+};
+
+export type PortableTextBlock = {
+  _type: 'block';
+  _key?: string;
+  children?: PortableTextSpan[];
+};
+
+export type PortableTextImage = {
+  _type: 'image';
+  _key?: string;
+  url?: string;
+};
+
+export type PortableText = Array<PortableTextBlock | PortableTextImage>;
+
 type Author = {
   name?: string;
   image?: string;
   company?: string;
   jobTitle?: string;
   city?: string;
-  bio?: any;
+  bio?: PortableText;
   socialMedia?: SocialLink[];
 };
 
@@ -29,10 +47,9 @@ export type Post = {
   categories?: string[];
   resourceLink?: string;
   mainImage?: string;
-  body?: any[];
+  body?: PortableText;
   author?: Author;
 };
-
 
 export function normalizeTag(input: string) {
   return (input || '')
@@ -42,9 +59,23 @@ export function normalizeTag(input: string) {
     .replace(/\s+/g, ' ');
 }
 
+function SearchIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className || 'h-6 w-6'}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <path d="M21 21l-4.3-4.3" />
+      <circle cx="11" cy="11" r="7" />
+    </svg>
+  );
+}
 
 export default function BlogFilters({ posts }: { posts: Post[] }) {
-  const t = useTranslations('blog');
   const [input, setInput] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
@@ -73,6 +104,28 @@ export default function BlogFilters({ posts }: { posts: Post[] }) {
     setInput('');
   };
 
+  const allTags = useMemo(() => {
+    const s = new Set<string>();
+    for (const p of posts) {
+      for (const t of p.tags || []) s.add(normalizeTag(t));
+    }
+    return Array.from(s).sort((a, b) => a.localeCompare(b));
+  }, [posts]);
+
+  const inputTrim = input.trim();
+  const inputNorm = normalizeTag(inputTrim);
+
+  const suggestion = useMemo(() => {
+    if (!inputNorm) return '';
+    const match = allTags.find(t => t.startsWith(inputNorm));
+    return match || '';
+  }, [allTags, inputNorm]);
+
+  const suggestionRemainder =
+    suggestion && inputNorm && suggestion.startsWith(inputNorm)
+      ? suggestion.slice(inputNorm.length)
+      : '';
+
   const filteredPosts = useMemo(() => {
     if (!selectedTags.length) return posts;
 
@@ -82,23 +135,60 @@ export default function BlogFilters({ posts }: { posts: Post[] }) {
     });
   }, [posts, selectedTags]);
 
-  const showControls = selectedTags.length > 0 || input.trim().length > 0;
+  const showControls = selectedTags.length > 0 || inputTrim.length > 0;
 
   return (
     <div className="mt-8">
       <div className="max-w-3xl mx-auto">
-        <input
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={e => {
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              addTag(input);
-            }
-          }}
-          placeholder={t('searchPlaceholder')}
-          className="w-full rounded-3xl border border-gray-200 bg-white px-6 py-4 text-lg shadow-sm outline-none focus:ring-2 focus:ring-blue-200"
-        />
+        <div className="relative">
+          <div className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-gray-400">
+            <SearchIcon className="h-6 w-6" />
+          </div>
+
+          {inputTrim.length > 0 && suggestion && (
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 flex items-center pl-14 pr-6 text-lg whitespace-pre"
+            >
+              <span className="text-transparent">{inputTrim}</span>
+              <span className="text-gray-400">{suggestionRemainder}</span>
+            </div>
+          )}
+
+          <input
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={e => {
+              if (
+                e.key === 'Tab' &&
+                suggestion &&
+                inputNorm &&
+                suggestionRemainder
+              ) {
+                e.preventDefault();
+                setInput(suggestion);
+                return;
+              }
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                addTag(input);
+              }
+            }}
+            placeholder="Пошук..."
+            className="
+              w-full rounded-xl
+              border border-gray-300 bg-white
+              pl-14 pr-6 py-4
+              text-lg text-gray-900
+              shadow-sm outline-none
+              placeholder-gray-400
+              focus:placeholder-transparent
+              focus:border-gray-400
+              focus:ring-0
+              focus:shadow-[0_0_0_2px_rgba(0,0,0,0.04)]
+            "
+          />
+        </div>
 
         {showControls && (
           <div className="mt-5 flex flex-wrap items-center gap-3">
@@ -107,21 +197,31 @@ export default function BlogFilters({ posts }: { posts: Post[] }) {
                 key={tag}
                 type="button"
                 onClick={() => removeTag(tag)}
-                className="inline-flex items-center gap-2 rounded-md border border-purple-200 bg-purple-50 px-4 py-2 text-sm text-purple-700 hover:bg-purple-100 transition"
-                title={t('removeTag')}
+                className="
+                  inline-flex items-center gap-2
+                  text-xs px-3 py-2 rounded-md
+                  border border-gray-300 bg-gray-50
+                  text-gray-600 hover:bg-gray-100
+                  transition
+                "
+                title="Remove tag"
               >
                 <span>#{tag}</span>
                 <span className="text-base leading-none">×</span>
               </button>
             ))}
 
-            {input.trim().length > 0 && (
+            {inputTrim.length > 0 && (
               <button
                 type="button"
                 onClick={() => addTag(input)}
-                className="rounded-md border border-gray-200 bg-white px-5 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
+                className="
+                  rounded-md border border-gray-300 bg-white
+                  px-5 py-2 text-sm text-gray-800
+                  hover:bg-gray-50 hover:border-gray-400 transition
+                "
               >
-                {t('add')}
+                Add
               </button>
             )}
 
@@ -129,9 +229,13 @@ export default function BlogFilters({ posts }: { posts: Post[] }) {
               <button
                 type="button"
                 onClick={clearAll}
-                className="rounded-md border border-gray-200 bg-white px-5 py-2 text-sm text-gray-900 hover:bg-gray-50 transition"
+                className="
+                  rounded-md border border-gray-300 bg-white
+                  px-5 py-2 text-sm text-gray-800
+                  hover:bg-gray-50 hover:border-gray-400 transition
+                "
               >
-                {t('clear')}
+                Clear
               </button>
             )}
           </div>
@@ -148,7 +252,7 @@ export default function BlogFilters({ posts }: { posts: Post[] }) {
 
       {!filteredPosts.length && (
         <p className="text-center text-gray-500 mt-10">
-          {t('noPostsForTags')}
+          No posts found for selected tags.
         </p>
       )}
     </div>
