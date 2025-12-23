@@ -1,91 +1,69 @@
-import { db } from './index';
-import { users } from './schema/users';
-import * as dotenv from 'dotenv';
+import "dotenv/config";
+import bcrypt from "bcryptjs";
 
-dotenv.config({ path: '.env' });
+import { db, closeDb } from "./index";
+import { users } from "./schema";
+import { eq } from "drizzle-orm";
 
-const mockUsers = [
-   {
-    id: 'test-user-123',
-    name: 'Test User',
-    points: 0,
-    role: 'user',
-    email: 'test@test.com',
-  },
-  {
-    id: 'user_1',
-    name: 'som-sm',
-    points: 0,
-    role: 'user',
-    email: 'som@test.com',
-  },
-  {
-    id: 'user_2',
-    name: 'sanjana',
-    points: 0,
-    role: 'user',
-    email: 'sanjana@test.com',
-  },
-  {
-    id: 'user_3',
-    name: 'satohshi',
-    points: 0,
-    role: 'user',
-    email: 'sat@test.com',
-  },
-  {
-    id: 'user_4',
-    name: 'Cristopher',
-    points: 0,
-    role: 'user',
-    email: 'cris@test.com',
-  },
-  {
-    id: 'user_5',
-    name: 'Saad Khan',
-    points: 0,
-    role: 'user',
-    email: 'saad@test.com',
-  },
-  {
-    id: 'user_6',
-    name: 'AlexDev',
-    points: 0,
-    role: 'admin',
-    email: 'alex@test.com',
-  },
-  {
-    id: 'user_7',
-    name: 'CodeMaster',
-    points: 0,
-    role: 'user',
-    email: 'code@test.com',
-  },
-];
-
-async function main() {
-  console.log('🌱 Seeding users...');
-
-  try {
-    for (const user of mockUsers) {
-      await db
-  .insert(users)
-  .values(user)
-  .onConflictDoUpdate({
-    target: users.email,
-    set: {
-      points: user.points,
-      name: user.name,
-      role: user.role,
-    },
-  });
-    }
-    console.log('✅ Users seeded successfully!');
-  } catch (error) {
-    console.error('❌ Error seeding users:', error);
-  } finally {
-    process.exit(0);
-  }
+if (!process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL is missing");
 }
 
-main();
+async function main() {
+  console.log("[seed] Seeding users...");
+
+  const passwordHash = await bcrypt.hash("password123", 10);
+
+  const seedUsers = [
+    {
+      name: "Admin User",
+      email: "admin@example.com",
+      passwordHash,
+      emailVerified: new Date(),
+      role: "admin",
+    },
+    {
+      name: "Test User",
+      email: "user@example.com",
+      passwordHash,
+      emailVerified: null,
+      role: "user",
+    },
+    {
+      name: "Google User",
+      email: "google@example.com",
+      passwordHash: null,
+      emailVerified: new Date(),
+      role: "user",
+    },
+  ] as const;
+
+  for (const user of seedUsers) {
+    const existing = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, user.email))
+      .limit(1);
+
+    if (existing.length > 0) {
+      console.log(`[seed] Skipping existing user: ${user.email}`);
+      continue;
+    }
+
+    await db.insert(users).values(user);
+    console.log(`[seed] Inserted user: ${user.email}`);
+  }
+
+  console.log("[seed] Users seeding completed");
+}
+
+main()
+  .then(closeDb)
+  .then(() => process.exit(0))
+  .catch(async (err) => {
+    console.error("[seed] Failed:", err);
+    try {
+      await closeDb();
+    } catch {}
+    process.exit(1);
+  });

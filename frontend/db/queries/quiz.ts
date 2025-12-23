@@ -90,6 +90,32 @@ export async function getQuizBySlug(
   return result[0];
 }
 
+export async function getActiveQuizzes(
+  locale: string = 'uk'
+): Promise<Quiz[]> {
+  const rows = await db
+    .select({
+      id: quizzes.id,
+      slug: quizzes.slug,
+      questionsCount: quizzes.questionsCount,
+      timeLimitSeconds: quizzes.timeLimitSeconds,
+      isActive: quizzes.isActive,
+      title: quizTranslations.title,
+      description: quizTranslations.description,
+    })
+    .from(quizzes)
+    .leftJoin(
+      quizTranslations,
+      and(
+        eq(quizTranslations.quizId, quizzes.id),
+        eq(quizTranslations.locale, locale)
+      )
+    )
+    .where(eq(quizzes.isActive, true));
+
+  return rows;
+}
+
 export async function getQuizQuestions(
   quizId: string,
   locale: string = 'uk'
@@ -236,6 +262,16 @@ export async function getUserQuizHistory(
     .orderBy(desc(quizAttempts.completedAt));
 
   return attempts as QuizAttempt[];
+}
+
+export async function getUserQuizStats(userId: string) {
+  const attempts = await db
+    .select()
+    .from(quizAttempts)
+    .where(eq(quizAttempts.userId, userId))
+    .orderBy(desc(quizAttempts.completedAt));
+
+  return attempts;
 }
 
 export async function getAttemptDetails(attemptId: string) {

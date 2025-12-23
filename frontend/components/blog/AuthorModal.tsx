@@ -29,7 +29,6 @@ function plainTextFromPortableText(value: any): string {
     .trim();
 }
 
-// ✅ Variant 1: stable date formatting (no hydration mismatch)
 function formatDateGB(dateString?: string) {
   if (!dateString) return '';
   const d = new Date(dateString);
@@ -110,12 +109,10 @@ export default function AuthorModal({
     [author]
   );
 
-  // ✅ compute once (stable SSR/CSR)
   const formattedDate = useMemo(() => formatDateGB(publishedAt), [publishedAt]);
 
   useEffect(() => setMounted(true), []);
 
-  // lock scroll + ESC
   useEffect(() => {
     if (!open) return;
 
@@ -158,7 +155,6 @@ export default function AuthorModal({
       <div className="flex flex-col">
         <span className="font-medium">{author?.name || 'Unknown author'}</span>
 
-        {/* ✅ stable (en-GB) */}
         {formattedDate && (
           <span className="text-gray-500 text-xs">{formattedDate}</span>
         )}
