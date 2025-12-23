@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useTranslations } from 'next-intl';
 import BlogGrid from '@/components/blog/BlogGrid';
 
 type SocialLink = {
@@ -78,7 +77,6 @@ function SearchIcon({ className }: { className?: string }) {
 }
 
 export default function BlogFilters({ posts }: { posts: Post[] }) {
-  const t = useTranslations('blog');
   const [input, setInput] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
@@ -201,7 +199,13 @@ export default function BlogFilters({ posts }: { posts: Post[] }) {
                 key={tag}
                 type="button"
                 onClick={() => removeTag(tag)}
-                className="inline-flex items-center gap-2 rounded-md border border-purple-200 bg-purple-50 px-4 py-2 text-sm text-purple-700 hover:bg-purple-100 transition"
+                className="
+                  inline-flex items-center gap-2
+                  text-xs px-3 py-2 rounded-md
+                  border border-gray-300 bg-gray-50
+                  text-gray-600 hover:bg-gray-100
+                  transition
+                "
                 title="Remove tag"
               >
                 <span>#{tag}</span>
@@ -219,7 +223,7 @@ export default function BlogFilters({ posts }: { posts: Post[] }) {
                   hover:bg-gray-50 hover:border-gray-400 transition
                 "
               >
-                {t('add')}
+                Add
               </button>
             )}
 
@@ -233,7 +237,7 @@ export default function BlogFilters({ posts }: { posts: Post[] }) {
                   hover:bg-gray-50 hover:border-gray-400 transition
                 "
               >
-                {t('clear')}
+                Clear
               </button>
             )}
           </div>
@@ -249,7 +253,9 @@ export default function BlogFilters({ posts }: { posts: Post[] }) {
       </div>
 
       {!filteredPosts.length && (
-        <p className="text-center text-gray-500 mt-10">{t('noPostsForTags')}</p>
+        <p className="text-center text-gray-500 mt-10">
+          No posts found for selected tags.
+        </p>
       )}
     </div>
   );
