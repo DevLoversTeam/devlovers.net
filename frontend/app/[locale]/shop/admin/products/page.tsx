@@ -4,6 +4,14 @@ import { desc } from "drizzle-orm"
 import { AdminProductStatusToggle } from "@/components/shop/admin/admin-product-status-toggle"
 import { db } from "@/db"
 import { products } from "@/db/schema"
+import { currencyValues, formatPrice, type CurrencyCode } from "@/lib/shop/currency"
+
+function toCurrencyCode(value: string | null | undefined): CurrencyCode {
+  const normalized = (value ?? "").trim().toUpperCase()
+  return currencyValues.includes(normalized as CurrencyCode)
+    ? (normalized as CurrencyCode)
+    : "USD"
+}
 
 function formatCurrency(value: string | number | null | undefined, currency: string) {
   if (value === null || value === undefined) return "-"
@@ -11,12 +19,7 @@ function formatCurrency(value: string | number | null | undefined, currency: str
   const numericValue = typeof value === "string" ? Number(value) : value
   if (Number.isNaN(numericValue)) return "-"
 
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(numericValue)
+  return formatPrice(numericValue, toCurrencyCode(currency))
 }
 
 function formatDate(value: Date | null) {
@@ -24,7 +27,10 @@ function formatDate(value: Date | null) {
   return value.toLocaleDateString()
 }
 
-export default async function AdminProductsPage() {
+export default async function AdminProductsPage({
+  params,
+}: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
   const allProducts = await db.select().from(products).orderBy(desc(products.createdAt))
 
   return (
@@ -88,13 +94,13 @@ export default async function AdminProductsPage() {
                 <td className="px-3 py-2">
                   <div className="flex flex-wrap gap-2">
                     <Link
-                      href={`/shop/products/${product.slug}`}
+                      href={`/${locale}/shop/products/${product.slug}`}
                       className="rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
                     >
                       View
                     </Link>
                     <Link
-                      href={`/shop/admin/products/${product.id}/edit`}
+                      href={`/${locale}/shop/admin/products/${product.id}/edit`}
                       className="rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
                     >
                       Edit

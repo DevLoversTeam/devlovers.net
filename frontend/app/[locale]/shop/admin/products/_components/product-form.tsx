@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { CATEGORIES, COLORS, PRODUCT_TYPES, SIZES } from "@/lib/config/catalog";
-
 import type { ProductAdminInput } from "@/lib/validation/shop";
 
 const localSlugify = (input: string): string => {
@@ -31,27 +30,53 @@ type ApiResponse = {
   field?: string;
 };
 
-export function ProductForm({
-  mode,
-  productId,
-  initialValues,
-}: ProductFormProps) {
+type PriceRow = ProductAdminInput["prices"][number];
+type CurrencyCode = PriceRow["currency"];
+
+function normalizePriceRow(row: unknown): PriceRow | null {
+  const r = row as any;
+
+  const currency = r?.currency as CurrencyCode | undefined;
+  if (currency !== "USD" && currency !== "UAH") return null;
+
+  const price =
+    typeof r?.price === "string" ? r.price : String(r?.price ?? "").trim();
+
+  const originalPrice =
+    r?.originalPrice == null ? null : String(r.originalPrice).trim() || null;
+
+  return { currency, price, originalPrice };
+}
+
+function ensureUiPriceRows(fromInitial: PriceRow[] | undefined): PriceRow[] {
+  const valid = (fromInitial ?? []).map(normalizePriceRow).filter(Boolean) as PriceRow[];
+  const map = new Map<CurrencyCode, PriceRow>(valid.map(p => [p.currency, p]));
+
+  return (["USD", "UAH"] as const).map(currency => {
+    return (
+      map.get(currency) ?? {
+        currency,
+        price: "",
+        originalPrice: null,
+      }
+    );
+  });
+}
+
+export function ProductForm({ mode, productId, initialValues }: ProductFormProps) {
   const router = useRouter();
+
   const [title, setTitle] = useState(initialValues?.title ?? "");
   const [slug, setSlug] = useState(
     initialValues?.slug
       ? localSlugify(initialValues.slug)
       : localSlugify(initialValues?.title ?? "")
   );
-  const [price, setPrice] = useState(
-    initialValues?.price ? String(initialValues.price) : ""
+
+  const [prices, setPrices] = useState<PriceRow[]>(
+    ensureUiPriceRows(initialValues?.prices)
   );
-  const [originalPrice, setOriginalPrice] = useState(
-    initialValues?.originalPrice ? String(initialValues.originalPrice) : ""
-  );
-  const [currency, setCurrency] = useState<string>(
-    initialValues?.currency ?? "USD"
-  );
+
   const [category, setCategory] = useState(initialValues?.category ?? "");
   const [type, setType] = useState(initialValues?.type ?? "");
   const [selectedColors, setSelectedColors] = useState<string[]>(
@@ -67,15 +92,13 @@ export function ProductForm({
   const [badge, setBadge] = useState<ProductAdminInput["badge"]>(
     initialValues?.badge ?? "NONE"
   );
-  const [description, setDescription] = useState(
-    initialValues?.description ?? ""
-  );
+  const [description, setDescription] = useState(initialValues?.description ?? "");
   const [isActive, setIsActive] = useState(initialValues?.isActive ?? true);
-  const [isFeatured, setIsFeatured] = useState(
-    initialValues?.isFeatured ?? false
-  );
+  const [isFeatured, setIsFeatured] = useState(initialValues?.isFeatured ?? false);
+
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [existingImageUrl] = useState(initialValues?.imageUrl);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [slugError, setSlugError] = useState<string | null>(null);
@@ -86,6 +109,26 @@ export function ProductForm({
   }, [title]);
 
   const slugValue = useMemo(() => slug || localSlugify(title), [slug, title]);
+
+  const usdRow = useMemo(
+    () => prices.find(p => p.currency === "USD"),
+    [prices]
+  );
+  const uahRow = useMemo(
+    () => prices.find(p => p.currency === "UAH"),
+    [prices]
+  );
+
+  function setPriceField(currency: CurrencyCode, field: "price" | "originalPrice", value: string) {
+    setPrices(prev =>
+      prev.map(p => {
+        if (p.currency !== currency) return p;
+        if (field === "price") return { ...p, price: value };
+        // originalPrice: allow empty -> null later on submit
+        return { ...p, originalPrice: value };
+      })
+    );
+  }
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;
@@ -107,13 +150,31 @@ export function ProductForm({
     setIsSubmitting(true);
 
     try {
+      const normalizedPrices = prices
+        .map(p => ({
+          currency: p.currency,
+          price: String(p.price ?? "").trim(),
+          originalPrice:
+            p.originalPrice == null
+              ? null
+              : String(p.originalPrice).trim() || null,
+        }))
+        .filter(p => p.price.length > 0);
+
+      const usd = normalizedPrices.find(p => p.currency === "USD");
+      if (!usd) {
+        setError("USD price is required.");
+        setIsSubmitting(false);
+        return;
+      }
+
       const formData = new FormData();
       formData.append("title", title);
       formData.append("slug", slugValue);
-      formData.append("price", price);
 
-      if (originalPrice) formData.append("originalPrice", originalPrice);
-      if (currency) formData.append("currency", currency);
+      // canonical: prices[]
+      formData.append("prices", JSON.stringify(normalizedPrices));
+
       if (category) formData.append("category", category);
       if (type) formData.append("type", type);
       formData.append("colors", selectedColors.join(","));
@@ -130,7 +191,7 @@ export function ProductForm({
         formData.append("image", imageFile);
       }
 
-            const response = await fetch(
+      const response = await fetch(
         mode === "create"
           ? "/api/shop/admin/products"
           : `/api/shop/admin/products/${productId}`,
@@ -139,7 +200,6 @@ export function ProductForm({
           body: formData,
         }
       );
-
 
       const data: ApiResponse = await response.json();
 
@@ -193,10 +253,7 @@ export function ProductForm({
       >
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label
-              className="block text-sm font-medium text-foreground"
-              htmlFor="title"
-            >
+            <label className="block text-sm font-medium text-foreground" htmlFor="title">
               Title
             </label>
             <input
@@ -204,22 +261,17 @@ export function ProductForm({
               className="w-full rounded-md border border-border px-3 py-2 text-sm"
               type="text"
               value={title}
-              onChange={(event) => setTitle(event.target.value)}
+              onChange={event => setTitle(event.target.value)}
               required
             />
           </div>
 
           <div>
             <div className="flex items-center justify-between">
-              <label
-                className="block text-sm font-medium text-foreground"
-                htmlFor="slug"
-              >
+              <label className="block text-sm font-medium text-foreground" htmlFor="slug">
                 Slug
               </label>
-              <span className="text-xs text-muted-foreground">
-                Auto-generated from title
-              </span>
+              <span className="text-xs text-muted-foreground">Auto-generated from title</span>
             </div>
             <input
               id="slug"
@@ -228,71 +280,92 @@ export function ProductForm({
               value={slugValue}
               readOnly
             />
-            {slugError ? (
-              <p className="mt-1 text-sm text-red-600">{slugError}</p>
-            ) : null}
+            {slugError ? <p className="mt-1 text-sm text-red-600">{slugError}</p> : null}
           </div>
+        </div>
+
+        {/* Prices (USD required, UAH optional) */}
+        <div className="rounded-md border border-border p-3">
+          <div className="text-sm font-semibold text-foreground">Prices</div>
+
+          <div className="mt-3 grid gap-4 sm:grid-cols-2">
+            {/* USD */}
+            <div className="space-y-2">
+              <div className="text-xs font-medium text-muted-foreground">USD (required)</div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground" htmlFor="price-usd">
+                  Price (USD)
+                </label>
+                <input
+                  id="price-usd"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm"
+                  type="text"
+                  placeholder="59.00"
+                  value={usdRow?.price ?? ""}
+                  onChange={e => setPriceField("USD", "price", e.target.value)}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground" htmlFor="original-usd">
+                  Original price (USD)
+                </label>
+                <input
+                  id="original-usd"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm"
+                  type="text"
+                  placeholder="79.00"
+                  value={String(usdRow?.originalPrice ?? "")}
+                  onChange={e => setPriceField("USD", "originalPrice", e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* UAH */}
+            <div className="space-y-2">
+              <div className="text-xs font-medium text-muted-foreground">UAH (optional)</div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground" htmlFor="price-uah">
+                  Price (UAH)
+                </label>
+                <input
+                  id="price-uah"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm"
+                  type="text"
+                  placeholder="1999.00"
+                  value={uahRow?.price ?? ""}
+                  onChange={e => setPriceField("UAH", "price", e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground" htmlFor="original-uah">
+                  Original price (UAH)
+                </label>
+                <input
+                  id="original-uah"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm"
+                  type="text"
+                  placeholder="2499.00"
+                  value={String(uahRow?.originalPrice ?? "")}
+                  onChange={e => setPriceField("UAH", "originalPrice", e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+
+          <p className="mt-3 text-xs text-muted-foreground">
+            Checkout currency is server-selected by locale. Prices must exist in{" "}
+            <span className="font-mono">product_prices</span> for that currency, or checkout fails.
+          </p>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label
-              className="block text-sm font-medium text-foreground"
-              htmlFor="price"
-            >
-              Price
-            </label>
-            <input
-              id="price"
-              className="w-full rounded-md border border-border px-3 py-2 text-sm"
-              type="text"
-              placeholder="59.00"
-              value={price}
-              onChange={(event) => setPrice(event.target.value)}
-              required
-            />
-          </div>
-
-          <div>
-            <label
-              className="block text-sm font-medium text-foreground"
-              htmlFor="originalPrice"
-            >
-              Original price
-            </label>
-            <input
-              id="originalPrice"
-              className="w-full rounded-md border border-border px-3 py-2 text-sm"
-              type="text"
-              value={originalPrice}
-              onChange={(event) => setOriginalPrice(event.target.value)}
-              placeholder="79.00"
-            />
-          </div>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label
-              className="block text-sm font-medium text-foreground"
-              htmlFor="currency"
-            >
-              Currency
-            </label>
-            <input
-              id="currency"
-              className="w-full rounded-md border border-border px-3 py-2 text-sm"
-              type="text"
-              value={currency}
-              onChange={(event) => setCurrency(event.target.value)}
-            />
-          </div>
-
-          <div>
-            <label
-              className="block text-sm font-medium text-foreground"
-              htmlFor="stock"
-            >
+            <label className="block text-sm font-medium text-foreground" htmlFor="stock">
               Stock
             </label>
             <input
@@ -300,30 +373,38 @@ export function ProductForm({
               className="w-full rounded-md border border-border px-3 py-2 text-sm"
               type="number"
               value={stock}
-              onChange={(event) => setStock(event.target.value)}
+              onChange={event => setStock(event.target.value)}
               min={0}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-foreground" htmlFor="sku">
+              SKU
+            </label>
+            <input
+              id="sku"
+              className="w-full rounded-md border border-border px-3 py-2 text-sm"
+              type="text"
+              value={sku}
+              onChange={event => setSku(event.target.value)}
             />
           </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label
-              className="block text-sm font-medium text-foreground"
-              htmlFor="category"
-            >
+            <label className="block text-sm font-medium text-foreground" htmlFor="category">
               Category
             </label>
             <select
               id="category"
-              className="w-full rounded-md border border-border bg-background text-foreground px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
               value={category}
-              onChange={(event) => setCategory(event.target.value)}
+              onChange={event => setCategory(event.target.value)}
             >
               <option value="">Select category</option>
-              {CATEGORIES.filter(
-                (categoryOption) => categoryOption.slug !== "all"
-              ).map((categoryOption) => (
+              {CATEGORIES.filter(categoryOption => categoryOption.slug !== "all").map(categoryOption => (
                 <option key={categoryOption.slug} value={categoryOption.slug}>
                   {categoryOption.label}
                 </option>
@@ -332,20 +413,17 @@ export function ProductForm({
           </div>
 
           <div>
-            <label
-              className="block text-sm font-medium text-foreground"
-              htmlFor="type"
-            >
+            <label className="block text-sm font-medium text-foreground" htmlFor="type">
               Type
             </label>
             <select
               id="type"
-              className="w-full rounded-md border border-border bg-background text-foreground px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
               value={type}
-              onChange={(event) => setType(event.target.value)}
+              onChange={event => setType(event.target.value)}
             >
               <option value="">Select type</option>
-              {PRODUCT_TYPES.map((productType) => (
+              {PRODUCT_TYPES.map(productType => (
                 <option key={productType.slug} value={productType.slug}>
                   {productType.label}
                 </option>
@@ -356,31 +434,21 @@ export function ProductForm({
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label
-              className="block text-sm font-medium text-foreground"
-              htmlFor="colors"
-            >
+            <label className="block text-sm font-medium text-foreground" htmlFor="colors">
               Colors
             </label>
             <div className="flex flex-col gap-2 rounded-md border border-border px-3 py-2">
-              {COLORS.map((color) => (
-                <label
-                  key={color.slug}
-                  className="flex items-center gap-2 text-sm text-foreground"
-                >
+              {COLORS.map(color => (
+                <label key={color.slug} className="flex items-center gap-2 text-sm text-foreground">
                   <input
                     type="checkbox"
                     value={color.slug}
                     checked={selectedColors.includes(color.slug)}
-                    onChange={(event) => {
+                    onChange={event => {
                       if (event.target.checked) {
-                        setSelectedColors((prev) => [...prev, color.slug]);
+                        setSelectedColors(prev => [...prev, color.slug]);
                       } else {
-                        setSelectedColors((prev) =>
-                          prev.filter(
-                            (selectedColor) => selectedColor !== color.slug
-                          )
-                        );
+                        setSelectedColors(prev => prev.filter(selectedColor => selectedColor !== color.slug));
                       }
                     }}
                   />
@@ -391,29 +459,21 @@ export function ProductForm({
           </div>
 
           <div>
-            <label
-              className="block text-sm font-medium text-foreground"
-              htmlFor="sizes"
-            >
+            <label className="block text-sm font-medium text-foreground" htmlFor="sizes">
               Sizes
             </label>
             <div className="flex flex-col gap-2 rounded-md border border-border px-3 py-2">
-              {SIZES.map((size) => (
-                <label
-                  key={size}
-                  className="flex items-center gap-2 text-sm text-foreground"
-                >
+              {SIZES.map(size => (
+                <label key={size} className="flex items-center gap-2 text-sm text-foreground">
                   <input
                     type="checkbox"
                     value={size}
                     checked={selectedSizes.includes(size)}
-                    onChange={(event) => {
+                    onChange={event => {
                       if (event.target.checked) {
-                        setSelectedSizes((prev) => [...prev, size]);
+                        setSelectedSizes(prev => [...prev, size]);
                       } else {
-                        setSelectedSizes((prev) =>
-                          prev.filter((selectedSize) => selectedSize !== size)
-                        );
+                        setSelectedSizes(prev => prev.filter(selectedSize => selectedSize !== size));
                       }
                     }}
                   />
@@ -426,82 +486,52 @@ export function ProductForm({
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label
-              className="block text-sm font-medium text-foreground"
-              htmlFor="sku"
-            >
-              SKU
-            </label>
-            <input
-              id="sku"
-              className="w-full rounded-md border border-border px-3 py-2 text-sm"
-              type="text"
-              value={sku}
-              onChange={(event) => setSku(event.target.value)}
-            />
-          </div>
-
-          <div>
-            <label
-              className="block text-sm font-medium text-foreground"
-              htmlFor="badge"
-            >
+            <label className="block text-sm font-medium text-foreground" htmlFor="badge">
               Badge
             </label>
             <select
               id="badge"
-              className="w-full rounded-md border border-border bg-background text-foreground px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
               value={badge}
-              onChange={(event) =>
-                setBadge(event.target.value as ProductAdminInput["badge"])
-              }
+              onChange={event => setBadge(event.target.value as ProductAdminInput["badge"])}
             >
               <option value="NONE">None</option>
               <option value="SALE">SALE</option>
               <option value="NEW">NEW</option>
             </select>
           </div>
-        </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="flex items-center space-x-2">
-            <input
-              id="isActive"
-              type="checkbox"
-              checked={isActive}
-              onChange={(event) => setIsActive(event.target.checked)}
-              className="h-4 w-4 rounded border-border text-accent focus:ring-accent"
-            />
-            <label
-              className="text-sm font-medium text-foreground"
-              htmlFor="isActive"
-            >
-              Is Active
-            </label>
-          </div>
+          <div className="flex items-center gap-6">
+            <div className="flex items-center space-x-2">
+              <input
+                id="isActive"
+                type="checkbox"
+                checked={isActive}
+                onChange={event => setIsActive(event.target.checked)}
+                className="h-4 w-4 rounded border-border text-accent focus:ring-accent"
+              />
+              <label className="text-sm font-medium text-foreground" htmlFor="isActive">
+                Is Active
+              </label>
+            </div>
 
-          <div className="flex items-center space-x-2">
-            <input
-              id="isFeatured"
-              type="checkbox"
-              checked={isFeatured}
-              onChange={(event) => setIsFeatured(event.target.checked)}
-              className="h-4 w-4 rounded border-border text-accent focus:ring-accent"
-            />
-            <label
-              className="text-sm font-medium text-foreground"
-              htmlFor="isFeatured"
-            >
-              Is Featured
-            </label>
+            <div className="flex items-center space-x-2">
+              <input
+                id="isFeatured"
+                type="checkbox"
+                checked={isFeatured}
+                onChange={event => setIsFeatured(event.target.checked)}
+                className="h-4 w-4 rounded border-border text-accent focus:ring-accent"
+              />
+              <label className="text-sm font-medium text-foreground" htmlFor="isFeatured">
+                Is Featured
+              </label>
+            </div>
           </div>
         </div>
 
         <div>
-          <label
-            className="block text-sm font-medium text-foreground"
-            htmlFor="description"
-          >
+          <label className="block text-sm font-medium text-foreground" htmlFor="description">
             Description
           </label>
           <textarea
@@ -509,15 +539,12 @@ export function ProductForm({
             className="w-full rounded-md border border-border px-3 py-2 text-sm"
             rows={4}
             value={description}
-            onChange={(event) => setDescription(event.target.value)}
+            onChange={event => setDescription(event.target.value)}
           />
         </div>
 
         <div>
-          <label
-            className="block text-sm font-medium text-foreground"
-            htmlFor="image"
-          >
+          <label className="block text-sm font-medium text-foreground" htmlFor="image">
             Image
           </label>
           <input
@@ -533,9 +560,7 @@ export function ProductForm({
               Current image will be kept unless you upload a new one.
             </p>
           ) : null}
-          {imageError ? (
-            <p className="mt-1 text-sm text-red-600">{imageError}</p>
-          ) : null}
+          {imageError ? <p className="mt-1 text-sm text-red-600">{imageError}</p> : null}
         </div>
 
         <button

@@ -1,30 +1,38 @@
 // app/products/[slug]/page.tsx
 
-import Image from "next/image"
-import Link from "next/link"
-import { notFound } from "next/navigation"
-import { ArrowLeft } from "lucide-react"
+import Image from 'next/image';
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
+import { ArrowLeft } from 'lucide-react';
 
-import { AddToCartButton } from "@/components/shop/add-to-cart-button"
-import { getCatalogProducts, getProductDetail } from "@/lib/shop/data"
-import { formatPrice } from "@/lib/shop/currency"
+import { AddToCartButton } from '@/components/shop/add-to-cart-button';
+import { getCatalogProducts, getProductDetail } from '@/lib/shop/data';
+import { formatPrice } from '@/lib/shop/currency';
+
+import { locales } from '@/i18n/config'; // або звідки у тебе
 
 export async function generateStaticParams() {
-  const { products } = await getCatalogProducts({ category: "all", page: 1, limit: 100 })
-  return products.map((product) => ({ slug: product.slug }))
+  const all: { locale: string; slug: string }[] = [];
+  for (const locale of locales) {
+    const { products } = await getCatalogProducts(
+      { category: 'all', page: 1, limit: 100 },
+      locale
+    );
+    all.push(...products.map(p => ({ locale, slug: p.slug })));
+  }
+  return all;
 }
 
 export default async function ProductPage({
   params,
 }: {
-  params: Promise<{ slug: string }>
+  params: Promise<{ slug: string; locale: string }>;
 }) {
-  const { slug } = await params
-
-  const product = await getProductDetail(slug)
+  const { slug, locale } = await params;
+  const product = await getProductDetail(slug, locale);
 
   if (!product) {
-    notFound()
+    notFound();
   }
 
   return (
@@ -39,19 +47,19 @@ export default async function ProductPage({
 
       <div className="mt-8 grid gap-8 lg:grid-cols-2 lg:gap-16">
         <div className="relative aspect-square overflow-hidden rounded-lg bg-muted">
-          {product.badge && product.badge !== "NONE" && (
+          {product.badge && product.badge !== 'NONE' && (
             <span
               className={`absolute left-4 top-4 z-10 rounded px-2 py-1 text-xs font-semibold uppercase ${
-                product.badge === "SALE"
-                  ? "bg-accent text-accent-foreground"
-                  : "bg-foreground text-background"
+                product.badge === 'SALE'
+                  ? 'bg-accent text-accent-foreground'
+                  : 'bg-foreground text-background'
               }`}
             >
               {product.badge}
             </span>
           )}
           <Image
-            src={product.image || "/placeholder.svg"}
+            src={product.image || '/placeholder.svg'}
             alt={product.name}
             fill
             className="object-cover"
@@ -61,24 +69,32 @@ export default async function ProductPage({
         </div>
 
         <div className="flex flex-col">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">{product.name}</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+            {product.name}
+          </h1>
 
           <div className="mt-4 flex items-center gap-3">
-            <span className={`text-2xl font-bold ${product.badge === "SALE" ? "text-accent" : "text-foreground"}`}>
-              {formatPrice(product.price)}
+            <span
+              className={`text-2xl font-bold ${
+                product.badge === 'SALE' ? 'text-accent' : 'text-foreground'
+              }`}
+            >
+              {formatPrice(product.price, product.currency)}
             </span>
             {product.originalPrice && (
               <span className="text-lg text-muted-foreground line-through">
-                {formatPrice(product.originalPrice)}
+                {product.originalPrice ? formatPrice(product.originalPrice, product.currency) : null}
               </span>
             )}
           </div>
 
-          {product.description && <p className="mt-6 text-muted-foreground">{product.description}</p>}
+          {product.description && (
+            <p className="mt-6 text-muted-foreground">{product.description}</p>
+          )}
 
           <AddToCartButton product={product} />
         </div>
       </div>
     </div>
-  )
+  );
 }

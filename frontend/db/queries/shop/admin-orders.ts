@@ -3,12 +3,13 @@ import 'server-only';
 import { count, desc, eq, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import { orderItems, orders } from '@/db/schema';
+import type { CurrencyCode } from '@/lib/shop/currency';
 
 export type AdminOrderListItem = {
   id: string;
   userId: string | null;
   totalAmount: string;
-  currency: 'USD';
+  currency: CurrencyCode;
   paymentStatus:
     | 'pending'
     | 'requires_payment'
@@ -25,7 +26,7 @@ export type AdminOrderDetail = {
   id: string;
   userId: string | null;
   totalAmount: string;
-  currency: 'USD';
+  currency: CurrencyCode;
   paymentStatus:
     | 'pending'
     | 'requires_payment'

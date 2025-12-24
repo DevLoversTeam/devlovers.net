@@ -218,7 +218,7 @@ export default function CartPage() {
                   </div>
 
                   <span className="text-sm font-semibold text-foreground">
-                    {formatPrice(item.unitPrice * item.quantity)}
+                    {formatPrice(item.unitPrice * item.quantity, item.currency)}
                   </span>
                 </div>
               </div>
@@ -235,7 +235,7 @@ export default function CartPage() {
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Subtotal</span>
               <span className="font-medium text-foreground">
-                {formatPrice(cart.summary.totalAmount)}
+                {formatPrice(cart.summary.totalAmount, cart.summary.currency)}
               </span>
             </div>
             <div className="flex items-center justify-between text-sm">

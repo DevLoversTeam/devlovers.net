@@ -1,4 +1,5 @@
 📄 .env
+📄 .env.example
 📄 .gitignore
 📄 .prettierrc
 📁 actions
@@ -18,6 +19,8 @@
       📁 [category]
         📄 route.ts
     📁 quiz
+      📁 guest-result
+        📄 route.ts
       📁 [slug]
         📄 route.ts
     📁 shop
@@ -80,6 +83,8 @@
     📁 quiz
       📁 [slug]
         📄 page.tsx
+    📁 quizzes
+      📄 page.tsx
     📁 shop
       📁 admin
         📄 layout.tsx
@@ -119,6 +124,7 @@
       📄 page.tsx
     📁 terms-of-service
       📄 page.tsx
+📄 body.json
 📄 client.ts
 📁 components
   📁 about
@@ -136,7 +142,12 @@
     📄 BlogGrid.tsx
   📁 dashboard
     📄 ProfileCard.tsx
+    📄 QuizSavedBanner.tsx
     📄 StatsCard.tsx
+  📁 header
+    📄 HeaderSwitcher.tsx
+    📄 SiteHeader.tsx
+    📄 SiteMobileHeader.tsx
   📁 leaderboard
     📄 LeaderboardClient.tsx
     📄 LeaderboardPodium.tsx
@@ -148,19 +159,22 @@
     📄 LegalPageShell.tsx
     📄 PrivacyPolicyContent.tsx
     📄 TermsOfServiceContent.tsx
+  📁 q&a
+    📄 AccordionList.tsx
+    📄 CodeBlock.tsx
+    📄 Pagination.tsx
+    📄 TabsSection.tsx
   📁 quiz
     📄 ExplanationRenderer.tsx
+    📄 PendingResultHandler.tsx
     📄 QuizContainer.tsx
     📄 QuizProgress.tsx
     📄 QuizQuestion.tsx
     📄 QuizResult.tsx
   📁 shared
-    📄 AccordionList.tsx
     📄 Footer.tsx
     📄 HeroSection.tsx
     📄 LanguageSwitcher.tsx
-    📄 Pagination.tsx
-    📄 TabsSection.tsx
   📁 shop
     📄 add-to-cart-button.tsx
     📁 admin
@@ -179,6 +193,7 @@
     📄 shop-footer.tsx
     📄 shop-header.tsx
     📄 shop-hero.tsx
+    📄 shop-shell.tsx
     📄 theme-provider.tsx
   📁 theme
     📄 ThemeProvider.tsx
@@ -190,9 +205,7 @@
     📄 tabs.tsx
 📄 components.json
 📁 data
-  📄 parse.ts
-  📄 questions.json
-  📄 README.md
+  📄 category.ts
 📁 db
   📄 index.ts
   📁 queries
@@ -208,15 +221,21 @@
     📄 categories.ts
     📄 index.ts
     📄 points.ts
+    📄 questions.ts
     📄 quiz.ts
     📄 shop.ts
     📄 users.ts
   📄 seed-categories.ts
   📄 seed-demo-leaderboard.ts
+  📄 seed-questions.ts
+  📄 seed-quiz-from-json.ts
+  📄 seed-quiz-javascript.ts
   📄 seed-quiz-react.ts
+  📄 seed-quiz-types.ts
+  📄 seed-quiz-verify.ts
   📄 seed-users.ts
-  📄 seed.ts
-  📄 verify-quiz-seed.ts
+📁 docs
+  📄 env.md
 📁 drizzle
   📄 0000_fair_quasar.sql
   📄 0000_moaning_reavers.sql
@@ -224,11 +243,15 @@
   📄 0001_black_random.sql
   📄 0002_yielding_purple_man.sql
   📄 0003_handy_cammi.sql
+  📄 0004_tough_ultron.sql
+  📄 0005_furry_warstar.sql
   📁 meta
     📄 0000_snapshot.json
     📄 0001_snapshot.json
     📄 0002_snapshot.json
     📄 0003_snapshot.json
+    📄 0004_snapshot.json
+    📄 0005_snapshot.json
     📄 _journal.json
   📄 relations.ts
   📄 schema.ts
@@ -255,8 +278,10 @@
     📄 cloudinary.ts
     📄 index.ts
     📄 stripe.ts
+  📄 guest-quiz.ts
   📄 logging.ts
   📄 logout.ts
+  📄 navigation.ts
   📁 psp
     📄 stripe.ts
   📁 services
@@ -268,7 +293,10 @@
     📄 data.ts
     📄 idempotency.ts
     📄 money.ts
+    📄 request-locale.ts
     📄 slug.ts
+  📁 tests
+    📄 currency.test.ts
   📁 types
     📄 shop.ts
   📄 utils.ts
@@ -279,13 +307,25 @@
   📄 en.json
   📄 pl.json
   📄 uk.json
-📄 middleware.ts
 📄 next-env.d.ts
 📄 next.config.ts
 📄 package-lock.json
 📄 package.json
+📁 parse
+  📄 git.json
+  📄 javascript-quiz-part1.json
+  📄 javascript-quiz-part2.json
+  📄 javascript-quiz-part3.json
+  📄 javascript-quiz-part4.json
+  📄 parse.ts
+  📄 questions.json
+  📄 react-quiz-data-part1.json
+  📄 react-quiz-data-part2.json
+  📄 README.md
+📄 payload.json
 📄 postcss.config.mjs
 📄 project-structure.txt
+📄 proxy.ts
 📁 public
   📄 github-logo.svg
   📄 placeholder.svg
@@ -293,3 +333,5 @@
 📄 save-structure.cjs
 📄 tsconfig.json
 📄 tsconfig.tsbuildinfo
+📁 utils
+  📄 slugify.ts

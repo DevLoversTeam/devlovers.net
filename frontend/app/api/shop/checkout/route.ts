@@ -3,11 +3,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { isPaymentsEnabled } from '@/lib/env/stripe';
 import { logError } from '@/lib/logging';
+import { resolveLocaleAndCurrency } from '@/lib/shop/request-locale';
+
 import { MoneyValueError } from '@/db/queries/shop/orders';
 import { createPaymentIntent, retrievePaymentIntent } from '@/lib/psp/stripe';
 import {
   InsufficientStockError,
   InvalidPayloadError,
+  PriceConfigError,
 } from '@/lib/services/errors';
 import {
   createOrderWithItems,
@@ -103,6 +106,12 @@ function getSessionUserId(user: unknown): string | null {
   return trimmed.length ? trimmed : null;
 }
 
+function debugCurrencyResolution(locale: string | null, currency: string) {
+  if (process.env.NODE_ENV === 'production') return;
+  // No PII
+  console.debug('currency.resolve', { locale: locale ?? 'null', currency });
+}
+
 export async function POST(request: NextRequest) {
   let body: unknown;
 
@@ -150,6 +159,8 @@ export async function POST(request: NextRequest) {
 
   const { items, userId } = parsedPayload.data;
   const itemCount = items.reduce((total, item) => total + item.quantity, 0);
+  const { locale, currency } = resolveLocaleAndCurrency(request);
+  debugCurrencyResolution(locale, currency);
 
   let currentUser: unknown = null;
   try {
@@ -182,7 +193,8 @@ export async function POST(request: NextRequest) {
     const result = await createOrderWithItems({
       items,
       idempotencyKey,
-      userId: sessionUserId, 
+      userId: sessionUserId,
+      currency,
     });
 
     const { order, totalCents } = result;
@@ -383,6 +395,12 @@ export async function POST(request: NextRequest) {
         error.message || 'Invalid checkout payload',
         400
       );
+    }
+    if (error instanceof PriceConfigError) {
+      return errorResponse(error.code, error.message, 422, {
+        productId: error.productId,
+        currency: error.currency,
+      });
     }
 
     if (error instanceof InsufficientStockError) {

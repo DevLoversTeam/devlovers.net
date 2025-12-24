@@ -15,16 +15,15 @@ export function MobileNav({ showAdminLink = false }: MobileNavProps) {
   return (
     <>
       <button
-  type="button"
-  onClick={() => setOpen((prev) => !prev)}
-  className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground md:hidden"
-  aria-label="Toggle menu"
-  aria-expanded={open ? "true" : "false"}
-  aria-controls="shop-mobile-nav"
->
-  {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-</button>
-
+        type="button"
+        onClick={() => setOpen(prev => !prev)}
+        className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground md:hidden"
+        aria-label="Toggle menu"
+        aria-expanded={open ? 'true' : 'false'}
+        aria-controls="shop-mobile-nav"
+      >
+        {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+      </button>
 
       {open && (
         <>

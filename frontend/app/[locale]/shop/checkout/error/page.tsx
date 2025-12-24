@@ -104,7 +104,7 @@ export default async function CheckoutErrorPage({
           </div>
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Total</span>
-            <span className="font-semibold">{formatPrice(order.totalAmount)}</span>
+            <span className="font-semibold">{formatPrice(order.totalAmount, order.currency)}</span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Status</span>

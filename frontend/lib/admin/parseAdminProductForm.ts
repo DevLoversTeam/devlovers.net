@@ -69,23 +69,52 @@ export function parseAdminProductForm(
 ): ParsedResult<z.infer<typeof productAdminSchema> | z.infer<typeof productAdminUpdateSchema>> {
   const mode: ParseMode = options.mode ?? "create"
 
-  const payload = {
-    title: getStringField(formData, "title"),
-    slug: getStringField(formData, "slug"),
-    price: parseNumberField(formData, "price"),
-    originalPrice: parseNumberField(formData, "originalPrice"),
-    currency: getStringField(formData, "currency"),
-    description: getStringField(formData, "description"),
-    category: getStringField(formData, "category"),
-    type: getStringField(formData, "type"),
-    colors: parseArrayField(formData, "colors", mode),
-    sizes: parseArrayField(formData, "sizes", mode),
-    stock: parseNumberField(formData, "stock"),
-    sku: getStringField(formData, "sku"),
-    badge: getStringField(formData, "badge"),
-    isActive: parseBooleanField(formData, "isActive"),
-    isFeatured: parseBooleanField(formData, "isFeatured"),
-  }
+  const priceUsd = getStringField(formData, "priceUsd")
+  const originalPriceUsd = getStringField(formData, "originalPriceUsd")
+  const priceUah = getStringField(formData, "priceUah")
+  const originalPriceUah = getStringField(formData, "originalPriceUah")
+
+  const rawPrices = [
+    ...(priceUsd !== undefined || originalPriceUsd !== undefined
+      ? [{
+          currency: "USD" as const,
+          // ensure string type; schema will reject "" as invalid
+          price: priceUsd ?? "",
+          originalPrice: originalPriceUsd ?? null,
+        }]
+      : []),
+    ...(priceUah !== undefined || originalPriceUah !== undefined
+      ? [{
+          currency: "UAH" as const,
+          price: priceUah ?? "",
+          originalPrice: originalPriceUah ?? null,
+        }]
+      : []),
+  ]
+
+  // PATCH semantics:
+  // - create must always send `prices` (schema min(1) will enforce)
+  // - update should OMIT `prices` if no pricing fields were present
+  const prices =
+    mode === "update" && rawPrices.length === 0 ? undefined : rawPrices
+
+const payload = {
+  title: getStringField(formData, "title"),
+  slug: getStringField(formData, "slug"),
+  description: getStringField(formData, "description"),
+  category: getStringField(formData, "category"),
+  type: getStringField(formData, "type"),
+  colors: parseArrayField(formData, "colors", mode),
+  sizes: parseArrayField(formData, "sizes", mode),
+  stock: parseNumberField(formData, "stock"),
+  sku: getStringField(formData, "sku"),
+  badge: getStringField(formData, "badge"),
+  isActive: parseBooleanField(formData, "isActive"),
+  isFeatured: parseBooleanField(formData, "isFeatured"),
+
+  ...(prices !== undefined ? { prices } : {}),
+}
+
 
   const parsed = mode === "update" ? productAdminUpdateSchema.safeParse(payload) : productAdminSchema.safeParse(payload)
 

@@ -13,11 +13,32 @@ import { logError } from '@/lib/logging';
 import { InvalidPayloadError, SlugConflictError } from '@/lib/services/errors';
 import {
   deleteProduct,
-  getAdminProductById,
+  getAdminProductByIdWithPrices,
   updateProduct,
 } from '@/lib/services/products';
 
 const productIdParamSchema = z.object({ id: z.uuid() });
+const adminCurrencySchema = z
+  .string()
+  .transform((v) => v.trim().toUpperCase())
+  .pipe(z.enum(['USD', 'UAH']));
+
+const adminPriceRowSchema = z.object({
+  currency: adminCurrencySchema,
+  price: z.preprocess((v) => String(v), z.string().min(1)),
+  originalPrice: z.preprocess(
+    (v) => {
+      if (v === undefined) return undefined;
+      if (v === null) return null;
+      const s = String(v).trim();
+      return s.length ? s : null;
+    },
+    z.string().nullable().optional()
+  ),
+});
+
+const adminPricesSchema = z.array(adminPriceRowSchema);
+
 
 export async function GET(
   request: NextRequest,
@@ -35,7 +56,7 @@ export async function GET(
       );
     }
 
-    const product = await getAdminProductById(parsedParams.data.id);
+    const product = await getAdminProductByIdWithPrices(parsedParams.data.id);
     return NextResponse.json({ product });
   } catch (error) {
     if (error instanceof AdminApiDisabledError) {
@@ -67,6 +88,7 @@ export async function PATCH(
 ): Promise<NextResponse> {
   try {
     await requireAdminApi(request);
+
     const rawParams = await context.params;
     const parsedParams = productIdParamSchema.safeParse(rawParams);
 
@@ -78,8 +100,9 @@ export async function PATCH(
     }
 
     const formData = await request.formData();
-    const parsed = parseAdminProductForm(formData, { mode: 'update' });
 
+    // 1) Parse/validate base fields via existing parser
+    const parsed = parseAdminProductForm(formData, { mode: 'update' });
     if (!parsed.ok) {
       return NextResponse.json(
         { error: 'Invalid product data', details: parsed.error.format() },
@@ -87,14 +110,51 @@ export async function PATCH(
       );
     }
 
+    // 2) HOTFIX: parse/validate prices прямо з formData (не довіряємо parseAdminProductForm)
+    const rawPrices = formData.get('prices');
+    let pricesOverride: z.infer<typeof adminPricesSchema> | undefined;
+
+    if (rawPrices != null) {
+      if (typeof rawPrices !== 'string') {
+        return NextResponse.json(
+          {
+            error: 'Invalid product data',
+            details: { prices: 'Expected JSON string' },
+          },
+          { status: 400 }
+        );
+      }
+
+      let json: unknown;
+      try {
+        json = JSON.parse(rawPrices);
+      } catch {
+        return NextResponse.json(
+          { error: 'Invalid product data', details: { prices: 'Invalid JSON' } },
+          { status: 400 }
+        );
+      }
+
+      const validated = adminPricesSchema.safeParse(json);
+      if (!validated.success) {
+        return NextResponse.json(
+          { error: 'Invalid product data', details: validated.error.format() },
+          { status: 400 }
+        );
+      }
+
+      pricesOverride = validated.data;
+    }
+
+    // 3) Update product
     try {
       const imageFile = formData.get('image');
+
       const updated = await updateProduct(parsedParams.data.id, {
         ...parsed.data,
+        ...(pricesOverride ? { prices: pricesOverride } : {}),
         image:
-          imageFile instanceof File && imageFile.size > 0
-            ? imageFile
-            : undefined,
+          imageFile instanceof File && imageFile.size > 0 ? imageFile : undefined,
       });
 
       return NextResponse.json({ success: true, product: updated });
@@ -116,10 +176,7 @@ export async function PATCH(
       }
 
       if (error instanceof Error && error.message === 'PRODUCT_NOT_FOUND') {
-        return NextResponse.json(
-          { error: 'Product not found' },
-          { status: 404 }
-        );
+        return NextResponse.json({ error: 'Product not found' }, { status: 404 });
       }
 
       if (
@@ -136,10 +193,7 @@ export async function PATCH(
         );
       }
 
-      return NextResponse.json(
-        { error: 'Failed to update product' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to update product' }, { status: 500 });
     }
   } catch (error) {
     if (error instanceof AdminApiDisabledError) {
@@ -159,6 +213,7 @@ export async function PATCH(
     );
   }
 }
+
 
 export async function DELETE(
   request: NextRequest,

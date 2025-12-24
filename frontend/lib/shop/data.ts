@@ -1,4 +1,4 @@
-import { CATALOG_PAGE_SIZE, CATEGORY_TILES, type CatalogSort } from "@/lib/config/catalog"
+import { CATALOG_PAGE_SIZE, CATEGORY_TILES, type CatalogSort } from "@/lib/config/catalog";
 import {
   catalogFilterSchema,
   dbProductSchema,
@@ -8,96 +8,103 @@ import {
   type DbProduct,
   type ProductBadge,
   type ShopProduct as ValidationShopProduct,
-} from "@/lib/validation/shop"
-import { getActiveProductsPage, getFeaturedProducts, getPublicProductBySlug } from "@/db/queries/shop/products"
-import { fromCents, fromDbMoney } from "./money"
+} from "@/lib/validation/shop";
+import {
+  getActiveProductsPage,
+  getFeaturedProducts,
+  getPublicProductBySlug,
+} from "@/db/queries/shop/products";
+import { fromCents, fromDbMoney } from "./money";
+import { resolveCurrencyFromLocale } from "./currency";
 
-export type ShopProduct = ValidationShopProduct
+export type ShopProduct = ValidationShopProduct;
 
 export interface ShopCategory {
-  id: string
-  name: string
-  slug: string
-  image: string
+  id: string;
+  name: string;
+  slug: string;
+  image: string;
 }
 
 export interface HomepageContent {
   hero: {
-    headline: string
-    subheadline: string
-    ctaText: string
-    ctaLink: string
-  }
-  newArrivals: ShopProduct[]
-  categories: readonly ShopCategory[]
+    headline: string;
+    subheadline: string;
+    ctaText: string;
+    ctaLink: string;
+  };
+  newArrivals: ShopProduct[];
+  categories: readonly ShopCategory[];
 }
 
 export interface CatalogPage {
-  products: ShopProduct[]
-  total: number
-  page: number
-  pageSize: number
-  hasMore: boolean
+  products: ShopProduct[];
+  total: number;
+  page: number;
+  pageSize: number;
+  hasMore: boolean;
 }
 
 export class CatalogValidationError extends Error {
-  readonly status = 400
-  readonly details: unknown
+  readonly status = 400;
+  readonly details: unknown;
 
   constructor(details: unknown) {
-    super("Invalid catalog query")
-    this.name = "CatalogValidationError"
-    this.details = details
+    super("Invalid catalog query");
+    this.name = "CatalogValidationError";
+    this.details = details;
   }
 }
 
-const placeholderImage = "/placeholder.svg"
+const placeholderImage = "/placeholder.svg";
 
 function deriveStock(product: DbProduct): boolean {
-  if (!product.isActive) return false
-  return product.stock > 0
+  if (!product.isActive) return false;
+  return product.stock > 0;
 }
 
 function deriveBadge(product: DbProduct): ProductBadge {
-  const priceCents = fromDbMoney(product.price)
-  const originalPriceCents = product.originalPrice ? fromDbMoney(product.originalPrice) : undefined
+  const priceCents = fromDbMoney(product.price);
+  const originalPriceCents = product.originalPrice
+    ? fromDbMoney(product.originalPrice)
+    : undefined;
 
-  if (product.badge === "SALE") {
-    return "SALE"
-  }
+  if (product.badge === "SALE") return "SALE";
 
   if (originalPriceCents !== undefined && originalPriceCents > priceCents) {
-    return "SALE"
+    return "SALE";
   }
 
-  return productBadgeValues.includes(product.badge as ProductBadge) ? product.badge : "NONE"
+  return productBadgeValues.includes(product.badge as ProductBadge)
+    ? (product.badge as ProductBadge)
+    : "NONE";
 }
 
 function validateDbProduct(product: DbProduct): DbProduct | null {
-  const parsed = dbProductSchema.safeParse(product)
+  const parsed = dbProductSchema.safeParse(product);
   if (!parsed.success) {
-    console.error("Invalid DB product", parsed.error.format())
-    return null
+    console.error("Invalid DB product", parsed.error.format());
+    return null;
   }
-  return parsed.data
+  return parsed.data;
 }
 
 function validateCatalogFilters(filters: unknown): CatalogFilters {
-  const parsedFilters = catalogFilterSchema.safeParse(filters)
+  const parsedFilters = catalogFilterSchema.safeParse(filters);
 
   if (!parsedFilters.success) {
-    throw new CatalogValidationError(parsedFilters.error.format())
+    throw new CatalogValidationError(parsedFilters.error.format());
   }
 
-  return parsedFilters.data
+  return parsedFilters.data;
 }
 
 function mapToShopProduct(product: DbProduct): ShopProduct | null {
-  const validated = validateDbProduct(product)
-  if (!validated) return null
+  const validated = validateDbProduct(product);
+  if (!validated) return null;
 
-  const inStock = deriveStock(validated)
-  const badge = deriveBadge(validated)
+  const inStock = deriveStock(validated);
+  const badge = deriveBadge(validated);
 
   const candidate = {
     id: validated.id,
@@ -117,33 +124,33 @@ function mapToShopProduct(product: DbProduct): ShopProduct | null {
     description: validated.description ?? undefined,
     badge,
     inStock,
-  }
+  };
 
-  const parsed = shopProductSchema.safeParse(candidate)
+  const parsed = shopProductSchema.safeParse(candidate);
   if (!parsed.success) {
-    console.error("Invalid shop product", parsed.error.format())
-    return null
+    console.error("Invalid shop product", parsed.error.format());
+    return null;
   }
 
-  return parsed.data
+  return parsed.data;
 }
 
-export function __test__deriveBadge(product: DbProduct) {
-  return deriveBadge(product)
-}
+/**
+ * IMPORTANT:
+ * Pass `locale` from the route segment when possible (app/[locale]/...),
+ * because currency policy is locale-based: uk -> UAH, otherwise USD.
+ */
+export async function getCatalogProducts(
+  filters: unknown,
+  locale: string = "en"
+): Promise<CatalogPage> {
+  const { category, type, color, size, sort, page, limit } =
+    validateCatalogFilters(filters);
 
-export function __test__deriveStock(product: DbProduct) {
-  return deriveStock(product)
-}
-
-export function __test__mapToShopProduct(product: DbProduct) {
-  return mapToShopProduct(product)
-}
-
-export async function getCatalogProducts(filters: unknown): Promise<CatalogPage> {
-  const { category, type, color, size, sort, page, limit } = validateCatalogFilters(filters)
+  const currency = resolveCurrencyFromLocale(locale);
 
   const { items, total } = await getActiveProductsPage({
+    currency,
     limit,
     offset: (page - 1) * limit,
     category,
@@ -151,51 +158,62 @@ export async function getCatalogProducts(filters: unknown): Promise<CatalogPage>
     color,
     size,
     sort: sort as CatalogSort | undefined,
-  })
+  });
 
   const products = items
     .map(mapToShopProduct)
-    .filter((product): product is ShopProduct => product !== null)
+    .filter((product): product is ShopProduct => product !== null);
 
-  const hasMore = page * limit < total
+  const hasMore = page * limit < total;
 
-  return { products, total, page, pageSize: limit, hasMore }
+  return { products, total, page, pageSize: limit, hasMore };
 }
 
-export async function getProductDetail(slug: string): Promise<ShopProduct | null> {
+export async function getProductDetail(
+  slug: string,
+  locale: string = "en"
+): Promise<ShopProduct | null> {
   try {
-    const dbProduct = await getPublicProductBySlug(slug)
-    
-    if (!dbProduct) return null
+    const currency = resolveCurrencyFromLocale(locale);
 
-    const mapped = mapToShopProduct(dbProduct)
-    
-    return mapped
+    const dbProduct = await getPublicProductBySlug(slug, currency);
+
+    if (!dbProduct) return null;
+
+    return mapToShopProduct(dbProduct) ?? null;
   } catch (error) {
-    console.error(`Failed to load product ${slug}`, error)
-    return null
+    console.error(`Failed to load product ${slug}`, error);
+    return null;
   }
 }
 
+export async function getHomepageContent(
+  locale: string = "en"
+): Promise<HomepageContent> {
+  const currency = resolveCurrencyFromLocale(locale);
 
-export async function getHomepageContent(): Promise<HomepageContent> {
-  const featured = await getFeaturedProducts(4)
+  const featured: DbProduct[] = await getFeaturedProducts(currency, 4);
+
   const featuredProducts = featured
     .map(mapToShopProduct)
-    .filter((product): product is ShopProduct => product !== null)
+    .filter((product): product is ShopProduct => product !== null);
 
   const fallbackCatalog = featuredProducts.length
     ? featuredProducts
-    : (await getCatalogProducts({ category: "all", page: 1, limit: CATALOG_PAGE_SIZE })).products.slice(0, 4)
+    : (await getCatalogProducts(
+        { category: "all", page: 1, limit: CATALOG_PAGE_SIZE },
+        locale
+      )).products.slice(0, 4);
 
   return {
     hero: {
       headline: "Postgres-powered storefront for developers",
-      subheadline: "All product content now lives in Neon/Postgres via Drizzle—no CMS required.",
+      subheadline:
+        "All product content now lives in Neon/Postgres via Drizzle—no CMS required.",
       ctaText: "Shop now",
       ctaLink: "/shop/products",
     },
     newArrivals: fallbackCatalog,
     categories: CATEGORY_TILES,
-  }
+  };
 }

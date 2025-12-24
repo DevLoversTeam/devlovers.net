@@ -169,7 +169,7 @@ export default async function PaymentPage(props: PaymentPageProps) {
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Amount due</span>
               <span className="text-xl font-bold text-foreground">
-                {formatPrice(order.totalAmount)}
+                {formatPrice(order.totalAmount, order.currency)}
               </span>
             </div>
             <p className="mt-1 text-xs text-muted-foreground uppercase tracking-wide">

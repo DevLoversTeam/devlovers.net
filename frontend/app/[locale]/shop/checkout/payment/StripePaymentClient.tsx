@@ -15,7 +15,7 @@ import {
   type Stripe,
 } from '@stripe/stripe-js';
 
-import { formatPrice } from '@/lib/shop/currency';
+import { currencyValues, formatPrice, type CurrencyCode } from '@/lib/shop/currency';
 
 type PaymentFormProps = {
   orderId: string;
@@ -29,6 +29,13 @@ type StripePaymentClientProps = {
   amount: number;
   currency: string;
 };
+
+function toCurrencyCode(value: string | null | undefined): CurrencyCode {
+  const normalized = (value ?? '').trim().toUpperCase();
+  return currencyValues.includes(normalized as CurrencyCode)
+    ? (normalized as CurrencyCode)
+    : 'USD';
+}
 
 function StripePaymentForm({ orderId }: PaymentFormProps) {
   const stripe = useStripe();
@@ -105,6 +112,7 @@ export default function StripePaymentClient({
   amount,
   currency,
 }: StripePaymentClientProps) {
+  const uiCurrency = useMemo(() => toCurrencyCode(currency), [currency]);
   const stripePromise = useMemo(() => {
     if (!paymentsEnabled || !publishableKey) return null;
     return loadStripe(publishableKey);
@@ -170,11 +178,11 @@ export default function StripePaymentClient({
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Pay</span>
             <span className="text-base font-semibold">
-              {formatPrice(amount)}
+              {formatPrice(amount, uiCurrency)}
             </span>
           </div>
           <p className="text-xs uppercase tracking-wide text-muted-foreground">
-            {currency}
+            {uiCurrency}
           </p>
         </div>
         <StripePaymentForm orderId={orderId} />

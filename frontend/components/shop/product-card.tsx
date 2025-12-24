@@ -52,11 +52,13 @@ export function ProductCard({ product }: ProductCardProps) {
               product.badge === 'SALE' ? 'text-accent' : 'text-foreground'
             )}
           >
-            {formatPrice(product.price)}
+            {formatPrice(product.price, product.currency)}
           </span>
           {product.originalPrice && (
             <span className="text-sm text-muted-foreground line-through">
-              {formatPrice(product.originalPrice)}
+              {product.originalPrice
+                ? formatPrice(product.originalPrice, product.currency)
+                : null}
             </span>
           )}
         </div>

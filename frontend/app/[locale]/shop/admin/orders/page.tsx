@@ -3,17 +3,20 @@ export const dynamic = "force-dynamic"
 import Link from "next/link"
 
 import { getAdminOrdersPage } from "@/db/queries/shop/admin-orders"
+import { currencyValues, formatPrice, type CurrencyCode } from "@/lib/shop/currency"
+
+function toCurrencyCode(value: string | null | undefined): CurrencyCode {
+  const normalized = (value ?? "").trim().toUpperCase()
+  return currencyValues.includes(normalized as CurrencyCode)
+    ? (normalized as CurrencyCode)
+    : "USD"
+}
 
 function formatCurrency(value: string | number | null | undefined, currency: string) {
   if (value === null || value === undefined) return "-"
   const numericValue = typeof value === "string" ? Number(value) : value
   if (Number.isNaN(numericValue)) return "-"
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(numericValue)
+  return formatPrice(numericValue, toCurrencyCode(currency))
 }
 
 function formatDate(value: Date | null | undefined) {

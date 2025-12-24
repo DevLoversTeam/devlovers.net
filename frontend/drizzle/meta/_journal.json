@@ -43,6 +43,13 @@
       "when": 1766336694154,
       "tag": "0005_furry_warstar",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1766515642068,
+      "tag": "0006_minor_units_money",
+      "breakpoints": true
     }
   ]
 }
