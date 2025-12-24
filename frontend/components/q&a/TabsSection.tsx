@@ -9,9 +9,10 @@ import { Search, X } from 'lucide-react';
 import AccordionList from '@/components/q&a/AccordionList';
 import { Pagination } from '@/components/q&a/Pagination';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { categoryNames } from '@/data/category';
+import { categoryData } from '@/data/category';
 
-const DEFAULT_CATEGORY = categoryNames[0] || 'HTML';
+const CATEGORY_SLUGS = categoryData.map(category => category.slug);
+const DEFAULT_CATEGORY = CATEGORY_SLUGS[0] || 'html';
 const DEBOUNCE_MS = 400;
 
 interface PaginatedResponse {
@@ -28,13 +29,18 @@ export default function TabsSection() {
   const params = useParams();
 
   const locale = params.locale as string;
+  const localeKey = (['uk', 'en', 'pl'] as const).includes(locale as 'uk' | 'en' | 'pl')
+    ? (locale as 'uk' | 'en' | 'pl')
+    : 'en';
 
   const pageFromUrl = Number(searchParams.get('page') || 1);
   const categoryFromUrl = searchParams.get('category') || DEFAULT_CATEGORY;
   const searchFromUrl = searchParams.get('search') || '';
 
   const [active, setActive] = useState(
-    categoryNames.includes(categoryFromUrl) ? categoryFromUrl : DEFAULT_CATEGORY
+    CATEGORY_SLUGS.includes(categoryFromUrl)
+      ? categoryFromUrl
+      : DEFAULT_CATEGORY
   );
   const [currentPage, setCurrentPage] = useState(pageFromUrl);
   const [searchQuery, setSearchQuery] = useState(searchFromUrl);
@@ -154,16 +160,18 @@ export default function TabsSection() {
       </div>
 
       <Tabs value={active} onValueChange={handleCategoryChange}>
-        <TabsList className="grid grid-cols-7 mb-6">
-          {categoryNames.map(c => (
-            <TabsTrigger key={c} value={c}>
-              {c}
+        <TabsList className="grid grid-cols-10 mb-6">
+          {categoryData.map(category => (
+            <TabsTrigger key={category.slug} value={category.slug}>
+              {category.translations[localeKey] ??
+                category.translations.en ??
+                category.slug}
             </TabsTrigger>
           ))}
         </TabsList>
 
-        {categoryNames.map(c => (
-          <TabsContent key={c} value={c}>
+        {categoryData.map(category => (
+          <TabsContent key={category.slug} value={category.slug}>
             {isLoading ? (
               <div className="flex justify-center py-12">
                 <div className="animate-spin h-8 w-8 border-b-2" />

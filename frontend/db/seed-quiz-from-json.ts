@@ -56,65 +56,76 @@ async function seedQuizFromJson() {
 
   const part1Path = join(__dirname, '../data/react-quiz-data-part1.json');
   const part2Path = join(__dirname, '../data/react-quiz-data-part2.json');
-  
+
   const part1: QuizMetadata = JSON.parse(readFileSync(part1Path, 'utf-8'));
-  const part2: { questions: QuestionData[] } = JSON.parse(readFileSync(part2Path, 'utf-8'));
-  
+  const part2: { questions: QuestionData[] } = JSON.parse(
+    readFileSync(part2Path, 'utf-8')
+  );
+
   const allQuestions = [...part1.questions, ...part2.questions];
   console.log(`Loaded ${allQuestions.length} questions`);
 
   try {
-  // Find category by slug
-  const [category] = await db
-    .select()
-    .from(categories)
-    .where(eq(categories.slug, CATEGORY_SLUG))
-    .limit(1);
+    const [category] = await db
+      .select()
+      .from(categories)
+      .where(eq(categories.slug, CATEGORY_SLUG))
+      .limit(1);
 
-  if (!category) {
-    throw new Error(`Category "${CATEGORY_SLUG}" not found. Run seed:categories first.`);
-  }
-
-  // Clean up old quiz by slug
-  console.log('Cleaning up old quiz...');
-  const existing = await db.query.quizzes.findFirst({
-    where: eq(quizzes.slug, part1.slug),
-  });
-  let quizId: string;
-  if (existing) {
-    const existingAttempt = await db.query.quizAttempts.findFirst({
-      where: eq(quizAttempts.quizId, existing.id),
-    });
-    if (existingAttempt) {
-      throw new Error(`Quiz ${part1.slug} has existing attempts. Aborting to avoid data loss.`);
+    if (!category) {
+      throw new Error(
+        `Category "${CATEGORY_SLUG}" not found. Run seed:categories first.`
+      );
     }
 
-    await db.delete(quizQuestions).where(eq(quizQuestions.quizId, existing.id));
-    await db.delete(quizTranslations).where(eq(quizTranslations.quizId, existing.id));
-    await db.update(quizzes).set({
-      categoryId: category.id,
-      slug: part1.slug,
-      displayOrder: 1,
-      questionsCount: part1.questionsCount,
-      timeLimitSeconds: part1.timeLimitSeconds,
-      isActive: true,
-    }).where(eq(quizzes.id, existing.id));
-    quizId = existing.id;
-  } else {
-    // Insert quiz
-    console.log('Creating quiz...');
-    const [quiz] = await db.insert(quizzes).values({
-      categoryId: category.id,
-      slug: part1.slug,
-      displayOrder: 1,
-      questionsCount: part1.questionsCount,
-      timeLimitSeconds: part1.timeLimitSeconds,
-      isActive: true,
-    }).returning();
-    quizId = quiz.id;
-  }
+    console.log('Cleaning up old quiz...');
+    const existing = await db.query.quizzes.findFirst({
+      where: eq(quizzes.slug, part1.slug),
+    });
+    let quizId: string;
+    if (existing) {
+      const existingAttempt = await db.query.quizAttempts.findFirst({
+        where: eq(quizAttempts.quizId, existing.id),
+      });
+      if (existingAttempt) {
+        throw new Error(
+          `Quiz ${part1.slug} has existing attempts. Aborting to avoid data loss.`
+        );
+      }
 
-    // Insert quiz translations
+      await db
+        .delete(quizQuestions)
+        .where(eq(quizQuestions.quizId, existing.id));
+      await db
+        .delete(quizTranslations)
+        .where(eq(quizTranslations.quizId, existing.id));
+      await db
+        .update(quizzes)
+        .set({
+          categoryId: category.id,
+          slug: part1.slug,
+          displayOrder: 1,
+          questionsCount: part1.questionsCount,
+          timeLimitSeconds: part1.timeLimitSeconds,
+          isActive: true,
+        })
+        .where(eq(quizzes.id, existing.id));
+      quizId = existing.id;
+    } else {
+      console.log('Creating quiz...');
+      const [quiz] = await db
+        .insert(quizzes)
+        .values({
+          categoryId: category.id,
+          slug: part1.slug,
+          displayOrder: 1,
+          questionsCount: part1.questionsCount,
+          timeLimitSeconds: part1.timeLimitSeconds,
+          isActive: true,
+        })
+        .returning();
+      quizId = quiz.id;
+    }
     console.log('Creating quiz translations...');
     for (const locale of LOCALES) {
       await db.insert(quizTranslations).values({
@@ -125,14 +136,16 @@ async function seedQuizFromJson() {
       });
     }
 
-    // Insert questions
     console.log('Creating questions...');
     for (const question of allQuestions) {
-      const [q] = await db.insert(quizQuestions).values({
-        quizId,
-        displayOrder: question.order,
-        difficulty: question.difficulty,
-      }).returning();
+      const [q] = await db
+        .insert(quizQuestions)
+        .values({
+          quizId,
+          displayOrder: question.order,
+          difficulty: question.difficulty,
+        })
+        .returning();
 
       for (const locale of LOCALES) {
         await db.insert(quizQuestionContent).values({
@@ -145,12 +158,15 @@ async function seedQuizFromJson() {
 
       for (let i = 0; i < question.answers.length; i++) {
         const answer = question.answers[i];
-        
-        const [a] = await db.insert(quizAnswers).values({
-          quizQuestionId: q.id,
-          displayOrder: i + 1,
-          isCorrect: answer.correct,
-        }).returning();
+
+        const [a] = await db
+          .insert(quizAnswers)
+          .values({
+            quizQuestionId: q.id,
+            displayOrder: i + 1,
+            isCorrect: answer.correct,
+          })
+          .returning();
 
         for (const locale of LOCALES) {
           await db.insert(quizAnswerTranslations).values({
@@ -170,7 +186,6 @@ async function seedQuizFromJson() {
     console.log(`Quiz ID: ${quizId}`);
     console.log(`Questions: ${allQuestions.length}`);
     console.log(`Answers: ${allQuestions.length * 4}`);
-
   } catch (error) {
     console.error('Error:', error);
     throw error;
@@ -179,4 +194,7 @@ async function seedQuizFromJson() {
 
 seedQuizFromJson()
   .then(() => process.exit(0))
-  .catch(e => { console.error(e); process.exit(1); });
+  .catch(e => {
+    console.error(e);
+    process.exit(1);
+  });

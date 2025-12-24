@@ -1,38 +1,37 @@
 import 'dotenv/config';
 import { db } from './index';
 import { categories, categoryTranslations } from './schema';
-import { categoryNames } from '../data/category';
+import { categoryData } from '../data/category';
 
 const LOCALES = ['uk', 'en', 'pl'] as const;
 
 async function seedCategories() {
-  for (let i = 0; i < categoryNames.length; i++) {
-    const name = categoryNames[i];
-    const slug = name.toLowerCase();
-
-    // Insert category
+  for (const item of categoryData) {
     const [category] = await db
       .insert(categories)
       .values({
-        slug,
-        displayOrder: i,
+        slug: item.slug,
+        displayOrder: item.displayOrder,
       })
       .onConflictDoNothing()
       .returning();
 
     if (!category) {
-      console.log(`Category ${slug} already exists, skipping...`);
+      console.log(`Category ${item.slug} already exists, skipping...`);
       continue;
     }
 
-    // Insert translations
     const translations = LOCALES.map(locale => ({
       categoryId: category.id,
       locale,
-      title: name,
+      title: item.translations[locale],
     }));
 
-    await db.insert(categoryTranslations).values(translations).onConflictDoNothing();
+    await db
+      .insert(categoryTranslations)
+      .values(translations)
+      .onConflictDoNothing();
+    console.log(`Seeded: ${item.slug}`);
   }
 
   console.log('Categories seeded!');
