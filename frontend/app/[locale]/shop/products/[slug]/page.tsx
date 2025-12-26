@@ -6,7 +6,8 @@ import { ArrowLeft } from "lucide-react";
 
 import { AddToCartButton } from "@/components/shop/add-to-cart-button";
 import { getCatalogProducts, getProductPageData } from "@/lib/shop/data";
-import { formatPrice } from "@/lib/shop/currency";
+import { formatMoney } from "@/lib/shop/currency";
+
 
 import { Link } from "@/i18n/routing";
 import { locales } from "@/i18n/config";
@@ -133,12 +134,12 @@ export default async function ProductPage({
                 product.badge === "SALE" ? "text-accent" : "text-foreground"
               }`}
             >
-              {formatPrice(product.price, product.currency)}
+              {formatMoney(product.price, product.currency, locale)}
             </span>
 
             {product.originalPrice && (
               <span className="text-lg text-muted-foreground line-through">
-                {formatPrice(product.originalPrice, product.currency)}
+                {formatMoney(product.originalPrice, product.currency, locale)}
               </span>
             )}
           </div>

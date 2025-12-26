@@ -1,31 +1,33 @@
-export const dynamic = "force-dynamic"
+import Link from "next/link";
 
-import Link from "next/link"
+import { getAdminOrdersPage } from "@/db/queries/shop/admin-orders";
+import { formatMoney, resolveCurrencyFromLocale, type CurrencyCode } from "@/lib/shop/currency";
+import { fromDbMoney } from "@/lib/shop/money";
 
-import { getAdminOrdersPage } from "@/db/queries/shop/admin-orders"
-import { currencyValues, formatPrice, type CurrencyCode } from "@/lib/shop/currency"
+export const dynamic = "force-dynamic";
 
-function toCurrencyCode(value: string | null | undefined): CurrencyCode {
-  const normalized = (value ?? "").trim().toUpperCase()
-  return currencyValues.includes(normalized as CurrencyCode)
-    ? (normalized as CurrencyCode)
-    : "USD"
+function pickMinor(minor: unknown, legacyMajor: unknown): number | null {
+  if (typeof minor === "number") return minor;
+  if (legacyMajor === null || legacyMajor === undefined) return null;
+  return fromDbMoney(legacyMajor);
 }
 
-function formatCurrency(value: string | number | null | undefined, currency: string) {
-  if (value === null || value === undefined) return "-"
-  const numericValue = typeof value === "string" ? Number(value) : value
-  if (Number.isNaN(numericValue)) return "-"
-  return formatPrice(numericValue, toCurrencyCode(currency))
+function orderCurrency(order: any, locale: string): CurrencyCode {
+  return (order?.currency ?? resolveCurrencyFromLocale(locale)) as CurrencyCode;
 }
 
 function formatDate(value: Date | null | undefined) {
-  if (!value) return "-"
-  return value.toLocaleDateString()
+  if (!value) return "-";
+  return value.toLocaleDateString();
 }
 
-export default async function AdminOrdersPage() {
-  const { items } = await getAdminOrdersPage({ limit: 50, offset: 0 })
+export default async function AdminOrdersPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  const { items } = await getAdminOrdersPage({ limit: 50, offset: 0 });
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
@@ -55,24 +57,34 @@ export default async function AdminOrdersPage() {
               <th className="px-3 py-2 text-left font-semibold text-foreground">Actions</th>
             </tr>
           </thead>
+
           <tbody className="divide-y divide-border">
-            {items.map(order => (
+            {items.map((order) => (
               <tr key={order.id} className="hover:bg-muted/50">
                 <td className="px-3 py-2 text-muted-foreground">{formatDate(order.createdAt)}</td>
+
                 <td className="px-3 py-2">
                   <span className="inline-flex rounded-full bg-muted px-2 py-1 text-xs font-medium text-foreground">
                     {order.paymentStatus}
                   </span>
                 </td>
+
                 <td className="px-3 py-2 text-foreground">
-                  {formatCurrency(order.totalAmount, order.currency ?? "USD")}
+                  {(() => {
+                    const c = orderCurrency(order, locale);
+                    const totalMinor = pickMinor(order?.totalAmountMinor, order?.totalAmount);
+                    return totalMinor === null ? "-" : formatMoney(totalMinor, c, locale);
+                  })()}
                 </td>
+
                 <td className="px-3 py-2 text-muted-foreground">{order.itemCount}</td>
                 <td className="px-3 py-2 text-muted-foreground">{order.paymentProvider}</td>
+
                 <td className="px-3 py-2 font-mono text-xs text-muted-foreground">{order.id}</td>
+
                 <td className="px-3 py-2">
                   <Link
-                    href={`/shop/admin/orders/${order.id}`}
+                    href={`/${locale}/shop/admin/orders/${order.id}`}
                     className="rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
                   >
                     View
@@ -80,6 +92,7 @@ export default async function AdminOrdersPage() {
                 </td>
               </tr>
             ))}
+
             {items.length === 0 ? (
               <tr>
                 <td className="px-3 py-6 text-muted-foreground" colSpan={7}>
@@ -91,5 +104,5 @@ export default async function AdminOrdersPage() {
         </table>
       </div>
     </div>
-  )
+  );
 }

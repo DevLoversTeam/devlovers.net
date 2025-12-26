@@ -27,7 +27,7 @@ import type {
   CartRemovedItem,
 } from '@/lib/validation/shop';
 import { currencyValues } from '@/lib/shop/currency';
-import type { CurrencyCode } from "@/lib/shop/currency";
+import type { CurrencyCode } from '@/lib/shop/currency';
 
 import type {
   DbProduct,
@@ -701,9 +701,14 @@ export async function rehydrateCartItems(
       slug: product.slug,
       title: product.title,
       quantity: effectiveQuantity,
-      unitPrice: fromCents(unitPriceCents),
-      lineTotal: fromCents(lineTotalCents),
-      currency: product.priceCurrency,
+
+      // IMPORTANT: MINOR units (integer)
+      unitPrice: unitPriceCents,
+      lineTotal: lineTotalCents,
+
+      // policy: items currency should match resolved currency
+      currency,
+
       stock: product.stock,
       badge: product.badge ?? 'NONE',
       imageUrl: product.imageUrl,
@@ -712,13 +717,13 @@ export async function rehydrateCartItems(
     });
   }
 
-  const totalAmount = fromCents(totalCents);
   const itemCount = rehydratedItems.reduce((total, i) => total + i.quantity, 0);
 
   return cartRehydrateResultSchema.parse({
     items: rehydratedItems,
     removed,
-    summary: { totalAmount, itemCount, currency },
+    // IMPORTANT: MINOR units (integer)
+    summary: { totalAmount: totalCents, itemCount, currency },
   });
 }
 

@@ -1,9 +1,16 @@
-export const currencyValues = ['USD', 'UAH'] as const;
+export const currencyValues = ["USD", "UAH"] as const;
 export type CurrencyCode = (typeof currencyValues)[number];
 
+function assertMinorUnitsStrict(minor: number): number {
+  if (!Number.isFinite(minor) || !Number.isInteger(minor) || minor < 0) {
+    throw new Error("Invalid money minor-units value");
+  }
+  return minor;
+}
+
 function normalizeLocaleTag(locale: string | null | undefined): string {
-  const raw = (locale ?? '').trim().toLowerCase();
-  if (!raw) return '';
+  const raw = (locale ?? "").trim().toLowerCase();
+  if (!raw) return "";
   // "uk-UA" -> "uk", "uk_UA" -> "uk"
   return raw.split(/[-_]/)[0] ?? raw;
 }
@@ -17,7 +24,7 @@ export function resolveCurrencyFromLocale(
   locale: string | null | undefined
 ): CurrencyCode {
   const primary = normalizeLocaleTag(locale);
-  return primary === 'uk' ? 'UAH' : 'USD';
+  return primary === "uk" ? "UAH" : "USD";
 }
 
 /**
@@ -28,10 +35,10 @@ export function parsePrimaryLocaleFromAcceptLanguage(
 ): string | null {
   if (!acceptLanguage) return null;
 
-  const first = acceptLanguage.split(',')[0]?.trim();
+  const first = acceptLanguage.split(",")[0]?.trim();
   if (!first) return null;
 
-  const token = first.split(';')[0]?.trim();
+  const token = first.split(";")[0]?.trim();
   return token && token.length ? token : null;
 }
 
@@ -41,50 +48,103 @@ export function parsePrimaryLocaleFromAcceptLanguage(
  */
 export function resolveCurrencyFromHeaders(headers: Headers): CurrencyCode {
   const locale = parsePrimaryLocaleFromAcceptLanguage(
-    headers.get('accept-language')
+    headers.get("accept-language")
   );
   return resolveCurrencyFromLocale(locale);
 }
 
-const formatterCache = new Map<string, Intl.NumberFormat>();
+/**
+ * UI locale normalization.
+ * Route param locale is usually "uk" | "en", but Intl wants a BCP-47 tag.
+ */
+function normalizeLocaleForIntl(
+  locale: string | null | undefined,
+  currency: CurrencyCode
+): string {
+  const raw = (locale ?? "").trim();
+  const primary = normalizeLocaleTag(raw);
 
-function defaultLocaleForCurrency(currency: CurrencyCode): string {
-  // дає ₴ для UAH (і нормальний формат для USD)
-  return currency === 'UAH' ? 'uk-UA' : 'en-US';
+  if (primary === "uk") return "uk-UA";
+  if (primary === "en") return "en-US";
+
+  if (raw) return raw.replaceAll("_", "-");
+
+  // Safe fallback (still yields correct narrow symbol for currency)
+  return currency === "UAH" ? "uk-UA" : "en-US";
 }
 
+const formatterCache = new Map<string, Intl.NumberFormat>();
 function getFormatter(locale: string, currency: CurrencyCode) {
   const key = `${locale}::${currency}`;
   const cached = formatterCache.get(key);
   if (cached) return cached;
 
   const created = new Intl.NumberFormat(locale, {
-    style: 'currency',
+    style: "currency",
     currency,
-    currencyDisplay: 'narrowSymbol', // ключове для ₴
+    currencyDisplay: "narrowSymbol", // ₴ for UAH when available
   });
 
   formatterCache.set(key, created);
   return created;
 }
 
+
+function getCurrencyFractionDigits(currency: CurrencyCode): number {
+  // We currently support only fiat currencies with 2 fraction digits.
+  // Keep this explicit to avoid locale-specific probes and hardcoded "en-US".
+  switch (currency) {
+    case "USD":
+    case "UAH":
+      return 2;
+    default:
+      return 2;
+  }
+}
+
+function minorToMajor(amountMinor: number, currency: CurrencyCode): number {
+  const digits = getCurrencyFractionDigits(currency);
+  const factor = 10 ** digits;
+  return assertMinorUnitsStrict(amountMinor) / factor;
+}
+
 /**
- * UI formatter (safe defaults).
- * amount is in major units (e.g. 10.50)
+ * Canonical UI money formatter.
+ * amountMinor is in minor units (cents/kopeks), integer.
+ */
+export function formatMoney(
+  amountMinor: number,
+  currency: CurrencyCode,
+  locale?: string | null
+): string {
+  try {
+    const minor = assertMinorUnitsStrict(amountMinor);
+    const intlLocale = normalizeLocaleForIntl(locale, currency);
+    const major = minorToMajor(minor, currency);
+    return getFormatter(intlLocale, currency).format(major);
+  } catch {
+    return "-";
+  }
+}
+
+/**
+ * @deprecated Prefer formatMoney(minor, currency, locale).
+ * Legacy formatter for MAJOR units (e.g. 10.50).
  */
 export function formatPrice(
-  amount: number,
+  amountMajor: number,
   currencyOrOptions?:
     | CurrencyCode
     | { currency?: CurrencyCode; locale?: string }
 ) {
   const options =
-    typeof currencyOrOptions === 'string'
+    typeof currencyOrOptions === "string"
       ? { currency: currencyOrOptions }
       : currencyOrOptions;
 
-  const currency = options?.currency ?? 'USD';
-  const locale = options?.locale ?? defaultLocaleForCurrency(currency);
+  const currency = options?.currency ?? "USD";
+  const intlLocale = normalizeLocaleForIntl(options?.locale, currency);
 
-  return getFormatter(locale, currency).format(amount);
+  if (!Number.isFinite(amountMajor)) return "-";
+  return getFormatter(intlLocale, currency).format(amountMajor);
 }

@@ -4,7 +4,8 @@ import { desc } from "drizzle-orm"
 import { AdminProductStatusToggle } from "@/components/shop/admin/admin-product-status-toggle"
 import { db } from "@/db"
 import { products } from "@/db/schema"
-import { currencyValues, formatPrice, type CurrencyCode } from "@/lib/shop/currency"
+import { currencyValues, formatMoney, type CurrencyCode } from "@/lib/shop/currency";
+
 
 function toCurrencyCode(value: string | null | undefined): CurrencyCode {
   const normalized = (value ?? "").trim().toUpperCase()
@@ -13,14 +14,19 @@ function toCurrencyCode(value: string | null | undefined): CurrencyCode {
     : "USD"
 }
 
-function formatCurrency(value: string | number | null | undefined, currency: string) {
-  if (value === null || value === undefined) return "-"
+function formatCurrency(
+  value: string | number | null | undefined,
+  currency: string,
+  locale: string
+) {
+  if (value === null || value === undefined) return "-";
 
-  const numericValue = typeof value === "string" ? Number(value) : value
-  if (Number.isNaN(numericValue)) return "-"
+  const numericValue = typeof value === "string" ? Number(value) : value;
+  if (Number.isNaN(numericValue) || !Number.isFinite(numericValue)) return "-";
 
-  return formatPrice(numericValue, toCurrencyCode(currency))
+  return formatMoney(numericValue, toCurrencyCode(currency), locale);
 }
+
 
 function formatDate(value: Date | null) {
   if (!value) return "-"
@@ -68,7 +74,8 @@ export default async function AdminProductsPage({
                 <td className="px-3 py-2 font-medium text-foreground">{product.title}</td>
                 <td className="px-3 py-2 text-muted-foreground">{product.slug}</td>
                 <td className="px-3 py-2 text-foreground">
-                  {formatCurrency(product.price, product.currency ?? "USD")}
+                  {formatCurrency(product.price, product.currency ?? "USD", locale)}
+
                 </td>
                 <td className="px-3 py-2 text-muted-foreground">{product.category ?? "-"}</td>
                 <td className="px-3 py-2 text-muted-foreground">{product.type ?? "-"}</td>

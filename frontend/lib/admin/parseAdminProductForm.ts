@@ -4,6 +4,7 @@ import {
   productAdminUpdateSchema,
 } from '@/lib/validation/shop';
 import { currencyValues, type CurrencyCode } from '@/lib/shop/currency';
+import { toCents } from '@/lib/shop/money';
 
 type ParsedResult<T> =
   | { ok: true; data: T }
@@ -11,20 +12,14 @@ type ParsedResult<T> =
 
 type ParseMode = 'create' | 'update';
 
-const getStringField = (
-  formData: FormData,
-  name: string
-): string | undefined => {
+const getStringField = (formData: FormData, name: string): string | undefined => {
   const value = formData.get(name);
   if (typeof value !== 'string') return undefined;
   const trimmed = value.trim();
   return trimmed === '' ? undefined : trimmed;
 };
 
-const parseBooleanField = (
-  formData: FormData,
-  name: string
-): boolean | undefined => {
+const parseBooleanField = (formData: FormData, name: string): boolean | undefined => {
   const value = formData.get(name);
   if (typeof value === 'string') {
     const normalized = value.trim().toLowerCase();
@@ -35,10 +30,7 @@ const parseBooleanField = (
   return undefined;
 };
 
-const parseNumberField = (
-  formData: FormData,
-  name: string
-): number | undefined => {
+const parseNumberField = (formData: FormData, name: string): number | undefined => {
   const value = getStringField(formData, name);
   if (value === undefined) return undefined;
   return Number(value);
@@ -52,8 +44,7 @@ const parseArrayField = (
   const hasField = formData.has(name);
   const rawValue = getStringField(formData, name);
 
-  if (mode === 'update' && !hasField && rawValue === undefined)
-    return undefined;
+  if (mode === 'update' && !hasField && rawValue === undefined) return undefined;
 
   const value = rawValue ?? '';
   return value
@@ -72,77 +63,126 @@ function zodPricesJsonError(message: string) {
   ]);
 }
 
+function parseMajorToMinor(
+  value: unknown,
+  opts: { field: 'price' | 'originalPrice'; currency: string }
+): number | null {
+  if (value == null) return null;
+
+  const raw =
+    typeof value === 'string'
+      ? value.trim()
+      : typeof value === 'number'
+      ? String(value)
+      : '';
+
+  if (!raw) return null;
+
+  try {
+    return toCents(raw);
+  } catch {
+    throw zodPricesJsonError(`Invalid ${opts.field} for ${opts.currency}`);
+  }
+}
+
+function parseLegacyPriceMinorField(formData: FormData, name: string): number | undefined {
+  const v = getStringField(formData, name);
+  if (v === undefined) return undefined;
+  return toCents(v);
+}
+
+/**
+ * Legacy optional field semantics:
+ * - if field missing => undefined (PATCH omit)
+ * - if present but empty => null (explicit clear)
+ * - if present and value => cents int
+ */
+function parseLegacyOptionalOriginalMinorField(
+  formData: FormData,
+  name: string
+): number | null | undefined {
+  if (!formData.has(name)) return undefined;
+
+  const raw = formData.get(name);
+  if (typeof raw !== 'string') return undefined;
+
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+
+  return toCents(trimmed);
+}
+
 function parsePricesJsonField(formData: FormData, mode: ParseMode) {
   // PATCH semantics:
-  // - update: if field is missing => omit prices
-  // - create: missing/invalid => fail via schema (or explicit error)
+  // - update: if field is missing => omit prices (undefined)
+  // - create: missing => let legacy fallback handle it (null)
   if (!formData.has('prices')) {
     return mode === 'update' ? undefined : null;
   }
 
   const raw = formData.get('prices');
   if (typeof raw !== 'string') {
-    return {
-      ok: false as const,
-      error: zodPricesJsonError('Invalid prices payload type'),
-    };
+    return { ok: false as const, error: zodPricesJsonError('Invalid prices payload type') };
   }
 
   const trimmed = raw.trim();
   if (!trimmed) {
-    // empty string is invalid for create; for update treat as explicit "empty" (will fail schema anyway)
-    return mode === 'update'
-      ? { ok: true as const, value: [] }
-      : { ok: true as const, value: [] };
+    // explicit empty array (will be validated downstream by schema)
+    return { ok: true as const, value: [] as unknown[] };
   }
 
   let parsed: unknown;
   try {
     parsed = JSON.parse(trimmed);
   } catch {
-    return {
-      ok: false as const,
-      error: zodPricesJsonError('Invalid prices JSON'),
-    };
+    return { ok: false as const, error: zodPricesJsonError('Invalid prices JSON') };
   }
 
   if (!Array.isArray(parsed)) {
-    return {
-      ok: false as const,
-      error: zodPricesJsonError('Prices must be an array'),
-    };
+    return { ok: false as const, error: zodPricesJsonError('Prices must be an array') };
   }
 
-  const normalized = parsed.map((row: any) => {
-    const currencyRaw =
-      typeof row?.currency === 'string'
-        ? row.currency.trim().toUpperCase()
-        : '';
+  try {
+    const normalized = parsed.map((row: any) => {
+      const currencyRaw =
+        typeof row?.currency === 'string' ? row.currency.trim().toUpperCase() : '';
 
-    const currency = currencyValues.includes(currencyRaw as CurrencyCode)
-      ? (currencyRaw as CurrencyCode)
-      : currencyRaw;
+      const currency = currencyValues.includes(currencyRaw as CurrencyCode)
+        ? (currencyRaw as CurrencyCode)
+        : currencyRaw;
 
-    const price =
-      typeof row?.price === 'string' ? row.price.trim() : row?.price;
-    const originalRaw = row?.originalPrice;
-    const originalPrice =
-      originalRaw == null
-        ? null
-        : typeof originalRaw === 'string'
-        ? originalRaw.trim() === ''
-          ? null
-          : originalRaw.trim()
-        : String(originalRaw);
+      if (!currencyValues.includes(currency as CurrencyCode)) {
+        throw zodPricesJsonError('Invalid currency in prices payload');
+      }
 
-    return {
-      currency,
-      price: typeof price === 'string' ? price : String(price ?? ''),
-      originalPrice,
-    };
-  });
+      const priceMinor = parseMajorToMinor(row?.price, {
+        field: 'price',
+        currency: currency as string,
+      });
 
-  return { ok: true as const, value: normalized };
+      if (mode === 'create' && priceMinor == null) {
+        throw zodPricesJsonError(`Missing price for ${currency}`);
+      }
+
+      const originalPriceMinor = parseMajorToMinor(row?.originalPrice, {
+        field: 'originalPrice',
+        currency: currency as string,
+      });
+
+      return {
+        currency,
+        priceMinor,
+        originalPriceMinor,
+      };
+    });
+
+    return { ok: true as const, value: normalized };
+  } catch (e) {
+    if (e instanceof z.ZodError) {
+      return { ok: false as const, error: e };
+    }
+    return { ok: false as const, error: zodPricesJsonError('Invalid prices payload') };
+  }
 }
 
 export function parseAdminProductForm(
@@ -167,28 +207,29 @@ export function parseAdminProductForm(
     return { ok: false, error: pricesJson.error };
   }
 
-  // 2) Legacy fallback (priceUsd/priceUah)
-  const priceUsd = getStringField(formData, 'priceUsd');
-  const originalPriceUsd = getStringField(formData, 'originalPriceUsd');
-  const priceUah = getStringField(formData, 'priceUah');
-  const originalPriceUah = getStringField(formData, 'originalPriceUah');
+  // 2) Legacy fallback (priceUsd/priceUah) -> MINOR units
+  const priceUsdMinor = parseLegacyPriceMinorField(formData, 'priceUsd');
+  const originalPriceUsdMinor = parseLegacyOptionalOriginalMinorField(formData, 'originalPriceUsd');
+
+  const priceUahMinor = parseLegacyPriceMinorField(formData, 'priceUah');
+  const originalPriceUahMinor = parseLegacyOptionalOriginalMinorField(formData, 'originalPriceUah');
 
   const legacyRawPrices = [
-    ...(priceUsd !== undefined || originalPriceUsd !== undefined
+    ...(priceUsdMinor !== undefined || originalPriceUsdMinor !== undefined
       ? [
           {
             currency: 'USD' as const,
-            price: priceUsd ?? '',
-            originalPrice: originalPriceUsd ?? null,
+            priceMinor: priceUsdMinor ?? null,
+            originalPriceMinor: originalPriceUsdMinor ?? null,
           },
         ]
       : []),
-    ...(priceUah !== undefined || originalPriceUah !== undefined
+    ...(priceUahMinor !== undefined || originalPriceUahMinor !== undefined
       ? [
           {
             currency: 'UAH' as const,
-            price: priceUah ?? '',
-            originalPrice: originalPriceUah ?? null,
+            priceMinor: priceUahMinor ?? null,
+            originalPriceMinor: originalPriceUahMinor ?? null,
           },
         ]
       : []),

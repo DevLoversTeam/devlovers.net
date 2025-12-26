@@ -14,7 +14,7 @@ import {
   getFeaturedProducts,
   getPublicProductBySlug,
 } from "@/db/queries/shop/products";
-import { fromCents, fromDbMoney } from "./money";
+import { fromDbMoney } from "./money";
 import { resolveCurrencyFromLocale } from "./currency";
 import { getPublicProductBaseBySlug } from "@/db/queries/shop/products";
 
@@ -162,12 +162,12 @@ function mapToShopProduct(product: DbProduct): ShopProduct | null {
     id: validated.id,
     slug: validated.slug,
     name: validated.title,
-    price: fromCents(fromDbMoney(validated.price)),
+    price: fromDbMoney(validated.price),
     currency: validated.currency,
     image: validated.imageUrl || placeholderImage,
     originalPrice: validated.originalPrice
-      ? fromCents(fromDbMoney(validated.originalPrice))
-      : undefined,
+     ? fromDbMoney(validated.originalPrice)
+     : undefined,
     createdAt: validated.createdAt,
     category: validated.category ?? undefined,
     type: validated.type ?? undefined,

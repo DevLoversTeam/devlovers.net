@@ -99,6 +99,8 @@ export const dbProductSchema = z.object({
     .string()
     .nullish()
     .transform(value => value ?? undefined),
+  // NOTE: DB shape is still "price/originalPrice" here (whatever your query returns).
+  // You convert to minor in the mapper (fromDbMoney), so we keep these permissive.
   price: z.coerce.number(),
   originalPrice: z.coerce
     .number()
@@ -135,14 +137,15 @@ export const dbProductSchema = z.object({
   updatedAt: z.date(),
 });
 
+// IMPORTANT: shopProduct.price/originalPrice are MINOR units (integers).
 export const shopProductSchema = z.object({
   id: z.string(),
   slug: z.string(),
   name: z.string(),
-  price: z.number(),
+  price: z.number().int().min(0),
   currency: currencySchema,
   image: z.string(),
-  originalPrice: z.number().optional(),
+  originalPrice: z.number().int().min(0).optional(),
   createdAt: z.date().optional(),
   category: z.enum(productCategoryValues as [string, ...string[]]).optional(),
   type: z.enum(typeValues as [string, ...string[]]).optional(),
@@ -163,33 +166,31 @@ const booleanFromString = z.preprocess(value => {
   return undefined;
 }, z.boolean().optional());
 
-const moneyString = z
-  .string()
-  .trim()
-  .regex(/^\d+(\.\d{1,2})?$/, 'Invalid money format');
+// Admin prices are now MINOR units (integers)
+const moneyMinor = z.number().int().min(0);
+const moneyMinorPositive = z.number().int().min(1);
 
 export const adminPriceRowSchema = z
   .object({
     currency: currencySchema,
-    price: moneyString,
-    originalPrice: moneyString.optional().nullable(),
+    priceMinor: moneyMinorPositive,
+    originalPriceMinor: moneyMinor.optional().nullable(),
   })
   .superRefine((v, ctx) => {
-    const price = Number(v.price);
-    if (!Number.isFinite(price) || price <= 0) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['price'],
-        message: 'Price must be > 0',
-      });
-    }
-
-    if (v.originalPrice != null) {
-      const original = Number(v.originalPrice);
-      if (!Number.isFinite(original) || original <= price) {
+    // priceMinor already validated > 0
+    if (v.originalPriceMinor != null) {
+      if (!Number.isFinite(v.originalPriceMinor)) {
         ctx.addIssue({
           code: 'custom',
-          path: ['originalPrice'],
+          path: ['originalPriceMinor'],
+          message: 'Original price must be a number',
+        });
+        return;
+      }
+      if (v.originalPriceMinor <= v.priceMinor) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['originalPriceMinor'],
           message: 'Original price must be > price',
         });
       }
@@ -233,8 +234,9 @@ export const productAdminSchema = z
       }
     });
 
+    // 2) USD is required
     const usd = data.prices.find(p => p.currency === 'USD');
-    if (!usd?.price) {
+    if (!usd) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['prices'],
@@ -242,8 +244,6 @@ export const productAdminSchema = z
       });
     }
   });
-
-// 2) USD is required
 
 export const productAdminUpdateSchema = z
   .object({
@@ -269,7 +269,6 @@ export const productAdminUpdateSchema = z
   })
   .superRefine((data, ctx) => {
     if (data.prices) {
-      // no duplicate currencies
       const seen = new Set<string>();
       data.prices.forEach((p, idx) => {
         if (seen.has(p.currency)) {
@@ -284,7 +283,7 @@ export const productAdminUpdateSchema = z
       });
 
       const usd = data.prices.find(p => p.currency === 'USD');
-      if (!usd?.price) {
+      if (!usd) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ['prices'],
@@ -347,8 +346,10 @@ export const cartRehydratedItemSchema = z.object({
   slug: z.string(),
   title: z.string(),
   quantity: z.number().int().min(1).max(MAX_QUANTITY_PER_LINE),
-  unitPrice: z.number(),
-  lineTotal: z.number(),
+
+  unitPrice: z.number().int().min(0),   // <-- було z.number()
+  lineTotal: z.number().int().min(0),   // <-- було z.number()
+
   currency: currencySchema,
   stock: z.number().int().min(0),
   badge: badgeSchema.or(z.literal('NONE')),
@@ -356,21 +357,24 @@ export const cartRehydratedItemSchema = z.object({
   selectedSize: z.string().optional(),
   selectedColor: z.string().optional(),
 });
-
 export const cartRemovedItemSchema = z.object({
   productId: z.string(),
   reason: z.enum(['not_found', 'inactive', 'out_of_stock']),
 });
 
+
 export const cartRehydrateResultSchema = z.object({
   items: z.array(cartRehydratedItemSchema),
   removed: z.array(cartRemovedItemSchema),
   summary: z.object({
-    totalAmount: z.number(),
+    totalAmount: z.number().int().min(0), // <-- було z.number()
     itemCount: z.number().int().min(0),
     currency: currencySchema,
   }),
 });
+
+
+
 
 export const orderIdParamSchema = z.object({
   id: z.string().uuid(),

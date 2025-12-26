@@ -1,7 +1,5 @@
 import { z } from "zod"
 
-import { fromCents, toCents } from "@/lib/shop/money"
-
 import {
   cartClientItemSchema,
   cartRehydrateResultSchema,
@@ -103,18 +101,26 @@ function normalizeItemsForStorage(items: CartRehydrateItem[]): CartClientItem[] 
   }))
 }
 
+/**
+ * IMPORTANT:
+ * Cart money fields are MINOR UNITS (integers).
+ */
 export function computeSummaryFromItems(items: CartRehydrateItem[]): CartSummary {
   const totals = items.reduce(
     (acc, item) => {
-      acc.totalCents += toCents(item.lineTotal)
+      acc.totalMinor += item.lineTotal // lineTotal is minor int
       acc.itemCount += item.quantity
       return acc
     },
-    { totalCents: 0, itemCount: 0, currency: (items[0]?.currency ?? "USD") as CartSummary["currency"] },
+    {
+      totalMinor: 0,
+      itemCount: 0,
+      currency: (items[0]?.currency ?? "USD") as CartSummary["currency"],
+    },
   )
 
   return {
-    totalAmount: fromCents(totals.totalCents),
+    totalAmount: totals.totalMinor,
     itemCount: totals.itemCount,
     currency: totals.currency,
   }
