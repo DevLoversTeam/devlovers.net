@@ -17,14 +17,16 @@ import {
   updateProduct,
 } from '@/lib/services/products';
 
-const productIdParamSchema = z.object({ id: z.uuid() });
+const productIdParamSchema = z.object({ id: z.string().uuid() });
+
 const adminCurrencySchema = z
   .string()
   .transform(v => v.trim().toUpperCase())
   .pipe(z.enum(['USD', 'UAH']));
 
-function parseMajorToMinor(value: string): number {
-  const s = value.trim().replace(',', '.');
+function parseMajorToMinor(value: string | number): number {
+  const s = String(value).trim().replace(',', '.');
+
   if (!/^\d+(\.\d{1,2})?$/.test(s)) {
     throw new Error(`Invalid money value: "${value}"`);
   }
