@@ -50,6 +50,13 @@
       "when": 1766515642068,
       "tag": "0006_minor_units_money",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1766713709450,
+      "tag": "0007_add-payment-intent-id-to-orders",
+      "breakpoints": true
     }
   ]
 }

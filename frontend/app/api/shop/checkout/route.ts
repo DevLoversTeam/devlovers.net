@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { isPaymentsEnabled } from '@/lib/env/stripe';
 import { logError } from '@/lib/logging';
-import { resolveLocaleAndCurrency } from '@/lib/shop/request-locale';
+import { resolveRequestLocale } from '@/lib/shop/request-locale';
 
 import { MoneyValueError } from '@/db/queries/shop/orders';
 import { createPaymentIntent, retrievePaymentIntent } from '@/lib/psp/stripe';
@@ -11,7 +11,9 @@ import {
   InsufficientStockError,
   InvalidPayloadError,
   PriceConfigError,
+  OrderStateInvalidError,
 } from '@/lib/services/errors';
+
 import {
   createOrderWithItems,
   restockOrder,
@@ -20,9 +22,8 @@ import {
 import {
   checkoutPayloadSchema,
   idempotencyKeySchema,
-  type PaymentProvider,
-  type PaymentStatus,
 } from '@/lib/validation/shop';
+import { type PaymentProvider, type PaymentStatus } from '@/lib/shop/payments';
 
 function errorResponse(
   code: string,
@@ -105,19 +106,26 @@ function getSessionUserId(user: unknown): string | null {
   const trimmed = candidate.trim();
   return trimmed.length ? trimmed : null;
 }
+async function readJsonBody(request: NextRequest): Promise<unknown> {
+  const raw = await request.text();
 
-function debugCurrencyResolution(locale: string | null, currency: string) {
-  if (process.env.NODE_ENV === 'production') return;
-  // No PII
-  console.debug('currency.resolve', { locale: locale ?? 'null', currency });
+  if (!raw || !raw.trim()) {
+    throw new Error("EMPTY_BODY");
+  }
+
+  // tolerate BOM / odd whitespace
+  const normalized = raw.replace(/^\uFEFF/, "");
+
+  return JSON.parse(normalized);
 }
+
 
 export async function POST(request: NextRequest) {
   let body: unknown;
 
   try {
-    body = await request.json();
-  } catch (error) {
+  body = await readJsonBody(request);
+} catch (error) {
     logError('Failed to parse cart payload', error);
     return errorResponse(
       'INVALID_PAYLOAD',
@@ -159,8 +167,7 @@ export async function POST(request: NextRequest) {
 
   const { items, userId } = parsedPayload.data;
   const itemCount = items.reduce((total, item) => total + item.quantity, 0);
-  const { locale, currency } = resolveLocaleAndCurrency(request);
-  debugCurrencyResolution(locale, currency);
+  const locale = resolveRequestLocale(request);
 
   let currentUser: unknown = null;
   try {
@@ -194,7 +201,7 @@ export async function POST(request: NextRequest) {
       items,
       idempotencyKey,
       userId: sessionUserId,
-      currency,
+      locale,
     });
 
     const { order, totalCents } = result;
@@ -380,6 +387,12 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      if (error instanceof OrderStateInvalidError) {
+        return errorResponse(error.code, error.message, 500, {
+          orderId: error.orderId,
+        });
+      }
+
       return errorResponse(
         'INTERNAL_ERROR',
         'Unable to process checkout.',
@@ -396,8 +409,17 @@ export async function POST(request: NextRequest) {
         400
       );
     }
+
+    if (error instanceof OrderStateInvalidError) {
+      return errorResponse(error.code, error.message, 500, {
+        orderId: error.orderId,
+        field: (error as any).field,
+        rawValue: (error as any).rawValue,
+      });
+    }
+
     if (error instanceof PriceConfigError) {
-      return errorResponse(error.code, error.message, 422, {
+      return errorResponse(error.code, error.message, 400, {
         productId: error.productId,
         currency: error.currency,
       });

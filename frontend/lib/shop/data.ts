@@ -16,6 +16,8 @@ import {
 } from "@/db/queries/shop/products";
 import { fromCents, fromDbMoney } from "./money";
 import { resolveCurrencyFromLocale } from "./currency";
+import { getPublicProductBaseBySlug } from "@/db/queries/shop/products";
+
 
 export type ShopProduct = ValidationShopProduct;
 
@@ -43,6 +45,56 @@ export interface CatalogPage {
   page: number;
   pageSize: number;
   hasMore: boolean;
+}
+
+export type ProductPageData =
+  | { kind: "available"; product: ShopProduct }
+  | {
+      kind: "unavailable";
+      product: {
+        id: string;
+        slug: string;
+        name: string;
+        image: string;
+        description?: string;
+        badge: ProductBadge;
+      };
+    }
+  | { kind: "not_found" };
+
+export async function getProductPageData(
+  slug: string,
+  locale: string = "en"
+): Promise<ProductPageData> {
+  const currency = resolveCurrencyFromLocale(locale);
+
+  const dbProduct = await getPublicProductBySlug(slug, currency);
+  if (dbProduct) {
+    const mapped = mapToShopProduct(dbProduct);
+    if (mapped) return { kind: "available", product: mapped };
+    // якщо валідатор/маппер впав — не “видаємо” биті дані
+    return { kind: "not_found" };
+  }
+
+  const base = await getPublicProductBaseBySlug(slug);
+  if (!base) return { kind: "not_found" };
+
+  const badge: ProductBadge =
+    productBadgeValues.includes(base.badge as ProductBadge)
+      ? (base.badge as ProductBadge)
+      : "NONE";
+
+  return {
+    kind: "unavailable",
+    product: {
+      id: base.id,
+      slug: base.slug,
+      name: base.title,
+      image: base.imageUrl || placeholderImage,
+      description: base.description ?? undefined,
+      badge,
+    },
+  };
 }
 
 export class CatalogValidationError extends Error {

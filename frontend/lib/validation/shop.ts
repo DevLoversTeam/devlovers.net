@@ -8,6 +8,11 @@ import {
   SORT_OPTIONS,
 } from '@/lib/config/catalog';
 import { currencyValues } from '@/lib/shop/currency';
+import {
+  paymentProviderValues,
+  paymentStatusValues,
+} from '@/lib/shop/payments';
+export type { PaymentStatus, PaymentProvider } from '@/lib/shop/payments';
 
 export const MAX_QUANTITY_PER_LINE = 20;
 
@@ -16,17 +21,13 @@ type SortValue = (typeof SORT_OPTIONS)[number]['value'];
 export const productBadgeValues = ['NEW', 'SALE', 'NONE'] as const;
 export type ProductBadge = (typeof productBadgeValues)[number];
 
-export const paymentStatusValues = [
-  'pending',
-  'requires_payment',
-  'paid',
-  'failed',
-  'refunded',
-] as const;
-export type PaymentStatus = (typeof paymentStatusValues)[number];
+const sortValues: SortValue[] = SORT_OPTIONS.map(o => o.value);
+const sortEnum = z.enum(sortValues as [SortValue, ...SortValue[]]);
 
-export const paymentProviderValues = ['stripe', 'none'] as const;
-export type PaymentProvider = (typeof paymentProviderValues)[number];
+export const badgeSchema = z.enum(productBadgeValues);
+export const paymentStatusSchema = z.enum(paymentStatusValues);
+export const paymentProviderSchema = z.enum(paymentProviderValues);
+export const currencySchema = z.enum(currencyValues);
 
 export type { CurrencyCode } from '@/lib/shop/currency';
 
@@ -42,18 +43,11 @@ const searchParamString = z
     return undefined;
   });
 
-const sortValues: SortValue[] = SORT_OPTIONS.map(option => option.value);
-const sortEnum = z.enum(sortValues as [SortValue, ...SortValue[]]);
-
 const categoryValues = CATEGORIES.map(c => c.slug);
 const productCategoryValues = categoryValues.filter(slug => slug !== 'all');
 const typeValues = PRODUCT_TYPES.map(t => t.slug);
 const colorValues = COLORS.map(c => c.slug);
 const sizeValues = SIZES.map(s => s);
-export const badgeSchema = z.enum(productBadgeValues);
-export const paymentStatusSchema = z.enum(paymentStatusValues);
-export const paymentProviderSchema = z.enum(paymentProviderValues);
-export const currencySchema = z.enum(currencyValues);
 
 const enumSearchParam = <T extends readonly [string, ...string[]]>(values: T) =>
   searchParamString.pipe(z.enum(values).optional());
@@ -189,16 +183,10 @@ export const adminPriceRowSchema = z
         message: 'Price must be > 0',
       });
     }
+
     if (v.originalPrice != null) {
       const original = Number(v.originalPrice);
-      if (!Number.isFinite(original) || original < price) {
-        ctx.addIssue({
-          code: 'custom',
-          path: ['originalPrice'],
-          message: 'Original price must be > price',
-        });
-      }
-      if (Number.isFinite(original) && Number.isFinite(price) && original <= price) {
+      if (!Number.isFinite(original) || original <= price) {
         ctx.addIssue({
           code: 'custom',
           path: ['originalPrice'],

@@ -14,8 +14,13 @@ import {
   varchar,
 } from 'drizzle-orm/pg-core';
 import { users } from '@/db/schema/users';
+import type { PaymentProvider, PaymentStatus } from '@/lib/shop/payments';
 
-export const productBadgeEnum = pgEnum('product_badge', ['NEW', 'SALE', 'NONE']);
+export const productBadgeEnum = pgEnum('product_badge', [
+  'NEW',
+  'SALE',
+  'NONE',
+]);
 export const paymentStatusEnum = pgEnum('payment_status', [
   'pending',
   'requires_payment',
@@ -35,13 +40,24 @@ export const products = pgTable(
     imageUrl: text('image_url').notNull(),
     imagePublicId: text('image_public_id'),
     // legacy mirror (USD) — keep for now
-    price: numeric('price', { precision: 10, scale: 2 }).$type<string>().notNull(),
-    originalPrice: numeric('original_price', { precision: 10, scale: 2 }).$type<string>(),
+    price: numeric('price', { precision: 10, scale: 2 })
+      .$type<string>()
+      .notNull(),
+    originalPrice: numeric('original_price', {
+      precision: 10,
+      scale: 2,
+    }).$type<string>(),
     currency: currencyEnum('currency').notNull().default('USD'),
     category: text('category'),
     type: text('type'),
-    colors: text('colors').array().notNull().default(sql`'{}'::text[]`),
-    sizes: text('sizes').array().notNull().default(sql`'{}'::text[]`),
+    colors: text('colors')
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    sizes: text('sizes')
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
     badge: productBadgeEnum('badge').notNull().default('NONE'),
     isActive: boolean('is_active').notNull().default(true),
     isFeatured: boolean('is_featured').notNull().default(false),
@@ -63,17 +79,30 @@ export const orders = pgTable(
   'orders',
   {
     id: uuid('id').defaultRandom().primaryKey(),
-    userId: text('user_id').references(() => users.id, { onDelete: 'set null' }),
+    userId: text('user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
 
     // canonical money (minor units)
     totalAmountMinor: integer('total_amount_minor').notNull(),
 
     // legacy mirror for UI/back-compat
-    totalAmount: numeric('total_amount', { precision: 10, scale: 2 }).$type<string>().notNull(),
+    totalAmount: numeric('total_amount', { precision: 10, scale: 2 })
+      .$type<string>()
+      .notNull(),
 
     currency: currencyEnum('currency').notNull().default('USD'),
-    paymentStatus: paymentStatusEnum('payment_status').notNull().default('pending'),
-    paymentProvider: text('payment_provider').notNull().default('stripe'),
+    // keep as enum in DB and in TS
+    paymentStatus: paymentStatusEnum('payment_status')
+      .notNull()
+      .default('pending')
+      .$type<PaymentStatus>(),
+
+    // provider is text + CHECK constraint (OK), but TS must be narrowed
+    paymentProvider: text('payment_provider')
+      .notNull()
+      .default('stripe')
+      .$type<PaymentProvider>(),
     paymentIntentId: text('payment_intent_id'),
     pspChargeId: text('psp_charge_id'),
     pspPaymentMethod: text('psp_payment_method'),
@@ -83,7 +112,9 @@ export const orders = pgTable(
       .default(sql`'{}'::jsonb`),
     stockRestored: boolean('stock_restored').notNull().default(false),
     restockedAt: timestamp('restocked_at', { mode: 'date' }),
-    idempotencyKey: varchar('idempotency_key', { length: 128 }).notNull().unique(),
+    idempotencyKey: varchar('idempotency_key', { length: 128 })
+      .notNull()
+      .unique(),
     createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { mode: 'date' })
       .defaultNow()
@@ -91,33 +122,63 @@ export const orders = pgTable(
       .$onUpdate(() => new Date()),
   },
   table => [
-    check('orders_payment_provider_valid', sql`${table.paymentProvider} in ('stripe', 'none')`),
-    check('orders_total_amount_minor_non_negative', sql`${table.totalAmountMinor} >= 0`),
+    check(
+      'orders_payment_provider_valid',
+      sql`${table.paymentProvider} in ('stripe', 'none')`
+    ),
+    check(
+      'orders_total_amount_minor_non_negative',
+      sql`${table.totalAmountMinor} >= 0`
+    ),
+    check(
+      'orders_payment_intent_id_null_when_none',
+      sql`${table.paymentProvider} <> 'none' OR ${table.paymentIntentId} IS NULL`
+    ),
   ]
 );
 
-export const orderItems = pgTable('order_items', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  orderId: uuid('order_id')
-    .notNull()
-    .references(() => orders.id, { onDelete: 'cascade' }),
-  productId: uuid('product_id')
-    .notNull()
-    .references(() => products.id),
-  quantity: integer('quantity').notNull(),
+export const orderItems = pgTable(
+  'order_items',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    orderId: uuid('order_id')
+      .notNull()
+      .references(() => orders.id, { onDelete: 'cascade' }),
+    productId: uuid('product_id')
+      .notNull()
+      .references(() => products.id),
+    quantity: integer('quantity').notNull(),
 
-  // canonical money (minor units)
-  unitPriceMinor: integer('unit_price_minor').notNull(),
-  lineTotalMinor: integer('line_total_minor').notNull(),
+    unitPriceMinor: integer('unit_price_minor').notNull(),
+    lineTotalMinor: integer('line_total_minor').notNull(),
 
-  // legacy mirror (back-compat)
-  unitPrice: numeric('unit_price', { precision: 10, scale: 2 }).$type<string>().notNull(),
-  lineTotal: numeric('line_total', { precision: 10, scale: 2 }).$type<string>().notNull(),
+    unitPrice: numeric('unit_price', { precision: 10, scale: 2 })
+      .$type<string>()
+      .notNull(),
+    lineTotal: numeric('line_total', { precision: 10, scale: 2 })
+      .$type<string>()
+      .notNull(),
 
-  productTitle: text('product_title'),
-  productSlug: text('product_slug'),
-  productSku: text('product_sku'),
-});
+    productTitle: text('product_title'),
+    productSlug: text('product_slug'),
+    productSku: text('product_sku'),
+  },
+  t => [
+    check('order_items_quantity_positive', sql`${t.quantity} > 0`),
+    check(
+      'order_items_unit_price_minor_non_negative',
+      sql`${t.unitPriceMinor} >= 0`
+    ),
+    check(
+      'order_items_line_total_minor_non_negative',
+      sql`${t.lineTotalMinor} >= 0`
+    ),
+    check(
+      'order_items_line_total_consistent',
+      sql`${t.lineTotalMinor} = ${t.unitPriceMinor} * ${t.quantity}`
+    ),
+  ]
+);
 
 export const stripeEvents = pgTable(
   'stripe_events',
@@ -148,8 +209,13 @@ export const productPrices = pgTable(
     originalPriceMinor: integer('original_price_minor'),
 
     // legacy mirror (keep for now; used by admin/UI)
-    price: numeric('price', { precision: 10, scale: 2 }).$type<string>().notNull(),
-    originalPrice: numeric('original_price', { precision: 10, scale: 2 }).$type<string>(),
+    price: numeric('price', { precision: 10, scale: 2 })
+      .$type<string>()
+      .notNull(),
+    originalPrice: numeric('original_price', {
+      precision: 10,
+      scale: 2,
+    }).$type<string>(),
 
     createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { mode: 'date' })
@@ -158,13 +224,16 @@ export const productPrices = pgTable(
       .$onUpdate(() => new Date()),
   },
   t => [
-    uniqueIndex('product_prices_product_currency_uq').on(t.productId, t.currency),
+    uniqueIndex('product_prices_product_currency_uq').on(
+      t.productId,
+      t.currency
+    ),
 
     // checks should enforce canonical fields
     check('product_prices_price_positive', sql`${t.priceMinor} > 0`),
     check(
       'product_prices_original_price_valid',
-      sql`${t.originalPriceMinor} is null or ${t.originalPriceMinor} >= ${t.priceMinor}`
+      sql`${t.originalPriceMinor} is null or ${t.originalPriceMinor} > ${t.priceMinor}`
     ),
   ]
 );

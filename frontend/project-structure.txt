@@ -124,7 +124,6 @@
       📄 page.tsx
     📁 terms-of-service
       📄 page.tsx
-📄 body.json
 📄 client.ts
 📁 components
   📁 about
@@ -245,6 +244,7 @@
   📄 0003_handy_cammi.sql
   📄 0004_tough_ultron.sql
   📄 0005_furry_warstar.sql
+  📄 0006_minor_units_money.sql
   📁 meta
     📄 0000_snapshot.json
     📄 0001_snapshot.json
@@ -252,6 +252,7 @@
     📄 0003_snapshot.json
     📄 0004_snapshot.json
     📄 0005_snapshot.json
+    📄 0006_snapshot.json
     📄 _journal.json
   📄 relations.ts
   📄 schema.ts
@@ -297,6 +298,7 @@
     📄 slug.ts
   📁 tests
     📄 currency.test.ts
+    📄 prices.test.ts
   📁 types
     📄 shop.ts
   📄 utils.ts
@@ -312,7 +314,6 @@
 📄 package-lock.json
 📄 package.json
 📁 parse
-  📄 git.json
   📄 javascript-quiz-part1.json
   📄 javascript-quiz-part2.json
   📄 javascript-quiz-part3.json
@@ -322,7 +323,6 @@
   📄 react-quiz-data-part1.json
   📄 react-quiz-data-part2.json
   📄 README.md
-📄 payload.json
 📄 postcss.config.mjs
 📄 project-structure.txt
 📄 proxy.ts
@@ -333,5 +333,3 @@
 📄 save-structure.cjs
 📄 tsconfig.json
 📄 tsconfig.tsbuildinfo
-📁 utils
-  📄 slugify.ts

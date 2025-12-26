@@ -15,6 +15,60 @@ import { products, productPrices } from "@/db/schema";
 import { dbProductSchema, type DbProduct } from "@/lib/validation/shop";
 import type { CurrencyCode } from "@/lib/shop/currency";
 
+const publicProductBaseSelect = {
+  id: products.id,
+  slug: products.slug,
+  title: products.title,
+  description: products.description,
+  imageUrl: products.imageUrl,
+  imagePublicId: products.imagePublicId,
+  category: products.category,
+  type: products.type,
+  colors: products.colors,
+  sizes: products.sizes,
+  badge: products.badge,
+  isActive: products.isActive,
+  isFeatured: products.isFeatured,
+  stock: products.stock,
+  sku: products.sku,
+  createdAt: products.createdAt,
+  updatedAt: products.updatedAt,
+} as const;
+
+export type PublicProductBaseRow = Pick<
+  typeof products.$inferSelect,
+  | "id"
+  | "slug"
+  | "title"
+  | "description"
+  | "imageUrl"
+  | "imagePublicId"
+  | "category"
+  | "type"
+  | "colors"
+  | "sizes"
+  | "badge"
+  | "isActive"
+  | "isFeatured"
+  | "stock"
+  | "sku"
+  | "createdAt"
+  | "updatedAt"
+>;
+
+export async function getPublicProductBaseBySlug(
+  slug: string
+): Promise<PublicProductBaseRow | null> {
+  const rows = await db
+    .select(publicProductBaseSelect)
+    .from(products)
+    .where(and(eq(products.slug, slug), eq(products.isActive, true)))
+    .limit(1);
+
+  return rows[0] ?? null;
+}
+
+
 const publicProductSelect = {
   id: products.id,
   slug: products.slug,

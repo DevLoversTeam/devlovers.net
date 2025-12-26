@@ -39,3 +39,22 @@ export class SlugConflictError extends Error {
      this.name = 'SlugConflictError';
    }
  }
+
+export class OrderStateInvalidError extends Error {
+  code = 'ORDER_STATE_INVALID' as const;
+  orderId?: string;
+  field?: string;
+  rawValue?: unknown;
+
+  constructor(
+    message = 'Order state is invalid.',
+    options?: { orderId?: string; field?: string; rawValue?: unknown }
+  ) {
+    super(message);
+    this.name = 'OrderStateInvalidError';
+    this.orderId = options?.orderId;
+    this.field = options?.field;
+    this.rawValue = options?.rawValue;
+  }
+}
+

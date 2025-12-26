@@ -4,7 +4,11 @@ import { isPaymentsEnabled } from '@/lib/env/stripe';
 
 import { db } from '@/db';
 import { orderItems, orders, productPrices, products } from '@/db/schema';
-import type { CurrencyCode } from '@/lib/shop/currency';
+import {
+  resolveCurrencyFromLocale,
+  type CurrencyCode,
+} from '@/lib/shop/currency';
+
 import {
   calculateLineTotal,
   fromCents,
@@ -17,7 +21,6 @@ import {
   CheckoutResult,
   OrderDetail,
   OrderSummary,
-  PaymentStatus,
 } from '@/lib/types/shop';
 import { coercePriceFromDb } from '@/db/queries/shop/orders';
 import {
@@ -25,8 +28,10 @@ import {
   InvalidPayloadError,
   OrderNotFoundError,
   PriceConfigError,
+  OrderStateInvalidError,
 } from './errors';
-import type { PaymentProvider } from '@/lib/types/shop';
+
+import { type PaymentProvider, type PaymentStatus } from '@/lib/shop/payments';
 import { MAX_QUANTITY_PER_LINE } from '@/lib/validation/shop';
 
 type OrderRow = typeof orders.$inferSelect;
@@ -115,20 +120,69 @@ function mergeCheckoutItems(items: CheckoutItem[]): CheckoutItem[] {
   return Array.from(map.values());
 }
 
-function readMinor(value: unknown): number | null {
-  if (typeof value !== 'number' || !Number.isFinite(value)) return null;
-  return Math.trunc(value);
+function isStrictNonNegativeInt(value: unknown): value is number {
+  return (
+    typeof value === 'number' &&
+    Number.isFinite(value) &&
+    Number.isInteger(value) &&
+    value >= 0
+  );
+}
+
+function requireMinor(
+  value: unknown,
+  ctx: { orderId: string; field: string }
+): number {
+  if (isStrictNonNegativeInt(value)) return value;
+
+  throw new OrderStateInvalidError(
+    `Order ${ctx.orderId} has invalid minor units in field "${ctx.field}"`,
+    { orderId: ctx.orderId, field: ctx.field, rawValue: value }
+  );
 }
 
 function parseOrderSummary(
   order: OrderRow,
   items: OrderItemForSummary[]
 ): OrderSummary {
+  function readLegacyMoneyCentsOrThrow(
+    value: unknown,
+    ctx: { orderId: string; field: string }
+  ): number {
+    try {
+      return fromDbMoney(value);
+    } catch {
+      throw new OrderStateInvalidError(
+        `Order ${ctx.orderId} has invalid legacy money in field "${ctx.field}"`,
+        { orderId: ctx.orderId, field: ctx.field, rawValue: value }
+      );
+    }
+  }
+
   const normalizedItems = items.map(item => {
+    const unitPriceMinorMaybe = item.unitPriceMinor;
     const unitPriceCents =
-      readMinor(item.unitPriceMinor) ?? fromDbMoney(item.unitPrice);
+      unitPriceMinorMaybe === null || unitPriceMinorMaybe === undefined
+        ? readLegacyMoneyCentsOrThrow(item.unitPrice, {
+            orderId: order.id,
+            field: 'order_items.unitPrice',
+          })
+        : requireMinor(unitPriceMinorMaybe, {
+            orderId: order.id,
+            field: 'order_items.unitPriceMinor',
+          });
+
+    const lineTotalMinorMaybe = item.lineTotalMinor;
     const lineTotalCents =
-      readMinor(item.lineTotalMinor) ?? fromDbMoney(item.lineTotal);
+      lineTotalMinorMaybe === null || lineTotalMinorMaybe === undefined
+        ? readLegacyMoneyCentsOrThrow(item.lineTotal, {
+            orderId: order.id,
+            field: 'order_items.lineTotal',
+          })
+        : requireMinor(lineTotalMinorMaybe, {
+            orderId: order.id,
+            field: 'order_items.lineTotalMinor',
+          });
 
     return {
       unitPriceCents,
@@ -142,16 +196,17 @@ function parseOrderSummary(
     };
   });
 
-  const totalCents =
-    readMinor(
-      (order as unknown as { totalAmountMinor?: unknown }).totalAmountMinor
-    ) ?? fromDbMoney(order.totalAmount);
+  const totalCents = requireMinor(order.totalAmountMinor, {
+    orderId: order.id,
+    field: 'orders.totalAmountMinor',
+  });
 
   const paymentProvider = resolvePaymentProvider(order);
 
   if (paymentProvider === 'none' && order.paymentIntentId) {
-    throw new Error(
-      `Order ${order.id} is inconsistent: paymentProvider=none but paymentIntentId is set`
+    throw new OrderStateInvalidError(
+      `Order ${order.id} is inconsistent: paymentProvider=none but paymentIntentId is set`,
+      { orderId: order.id }
     );
   }
 
@@ -252,11 +307,14 @@ function priceItems(
 
     // canonical: int minor
     let unitPriceCents: number | null = null;
-    if (
-      typeof product.priceMinor === 'number' &&
-      Number.isFinite(product.priceMinor)
-    ) {
-      unitPriceCents = Math.trunc(product.priceMinor);
+    if (product.priceMinor !== null && product.priceMinor !== undefined) {
+      if (
+        !isStrictNonNegativeInt(product.priceMinor) ||
+        product.priceMinor <= 0
+      ) {
+        throw new InvalidPayloadError('Product pricing is misconfigured.');
+      }
+      unitPriceCents = product.priceMinor;
     }
 
     // safety fallback (should become dead code after migration + dual-write stabilizes)
@@ -399,13 +457,14 @@ export async function createOrderWithItems({
   items,
   idempotencyKey,
   userId,
-  currency,
+  locale,
 }: {
   items: CheckoutItem[];
   idempotencyKey: string;
   userId?: string | null;
-  currency: Currency;
+  locale: string | null | undefined;
 }): Promise<CheckoutResult> {
+  const currency: Currency = resolveCurrencyFromLocale(locale);
   const existing = await getOrderByIdempotencyKey(db, idempotencyKey);
   if (existing) {
     return {
