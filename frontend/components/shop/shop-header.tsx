@@ -6,6 +6,8 @@ import { CartButton } from './header/cart-button';
 import { MobileNav } from './header/mobile-nav';
 import { NavLinks } from './header/nav-links';
 import { ThemeToggleButton } from './header/theme-toggle';
+import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
+
 
 interface HeaderProps {
   showAdminLink?: boolean;
@@ -41,6 +43,7 @@ export function Header({ showAdminLink = false }: HeaderProps) {
             className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
             aria-label="Search"
           >
+            
             <Search className="h-5 w-5" />
           </button>
 
@@ -50,6 +53,7 @@ export function Header({ showAdminLink = false }: HeaderProps) {
           >
             <User className="h-5 w-5" />
           </button>
+          <LanguageSwitcher />
 
           <CartButton />
           <ThemeToggleButton />

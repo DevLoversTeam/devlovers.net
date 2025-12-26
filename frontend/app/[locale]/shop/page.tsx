@@ -4,8 +4,13 @@ import { CategoryTile } from '@/components/shop/category-tile';
 import { getHomepageContent } from '@/lib/shop/data';
 import Link from 'next/link';
 
-export default async function HomePage() {
-  const content = await getHomepageContent();
+export default async function HomePage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  const content = await getHomepageContent(locale);
 
   return (
     <>

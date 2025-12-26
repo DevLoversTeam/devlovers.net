@@ -1,101 +1,272 @@
-import { z } from "zod"
-
-import { productAdminSchema, productAdminUpdateSchema } from "@/lib/validation/shop"
+import { z } from 'zod';
+import {
+  productAdminSchema,
+  productAdminUpdateSchema,
+} from '@/lib/validation/shop';
+import { currencyValues, type CurrencyCode } from '@/lib/shop/currency';
+import { toCents } from '@/lib/shop/money';
 
 type ParsedResult<T> =
   | { ok: true; data: T }
-  | { ok: false; error: z.ZodError<unknown> }
+  | { ok: false; error: z.ZodError<unknown> };
 
-
-type ParseMode = "create" | "update"
+type ParseMode = 'create' | 'update';
 
 const getStringField = (formData: FormData, name: string): string | undefined => {
-  const value = formData.get(name)
-  if (typeof value !== "string") {
-    return undefined
-  }
-  const trimmed = value.trim()
-  return trimmed === "" ? undefined : trimmed
-}
+  const value = formData.get(name);
+  if (typeof value !== 'string') return undefined;
+  const trimmed = value.trim();
+  return trimmed === '' ? undefined : trimmed;
+};
 
 const parseBooleanField = (formData: FormData, name: string): boolean | undefined => {
-  const value = formData.get(name)
-  if (typeof value === "string") {
-    const normalized = value.trim().toLowerCase()
-    if (normalized === "true") return true
-    if (normalized === "false") return false
+  const value = formData.get(name);
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === 'true') return true;
+    if (normalized === 'false') return false;
   }
-  if (typeof value === "boolean") return value
-  return undefined
-}
+  if (typeof value === 'boolean') return value;
+  return undefined;
+};
 
 const parseNumberField = (formData: FormData, name: string): number | undefined => {
-  const value = getStringField(formData, name)
-  if (value === undefined) return undefined
-  const parsed = Number(value)
-  return parsed
-}
+  const value = getStringField(formData, name);
+  if (value === undefined) return undefined;
+  return Number(value);
+};
 
 const parseArrayField = (
   formData: FormData,
   name: string,
-  mode: ParseMode,
+  mode: ParseMode
 ): string[] | undefined => {
-  const hasField = formData.has(name)
-  const rawValue = getStringField(formData, name)
+  const hasField = formData.has(name);
+  const rawValue = getStringField(formData, name);
 
-  if (mode === "update" && !hasField && rawValue === undefined) {
-    return undefined
+  if (mode === 'update' && !hasField && rawValue === undefined) return undefined;
+
+  const value = rawValue ?? '';
+  return value
+    .split(',')
+    .map(item => item.trim())
+    .filter(Boolean);
+};
+
+function zodPricesJsonError(message: string) {
+  return new z.ZodError([
+    {
+      code: z.ZodIssueCode.custom,
+      path: ['prices'],
+      message,
+    },
+  ]);
+}
+
+function parseMajorToMinor(
+  value: unknown,
+  opts: { field: 'price' | 'originalPrice'; currency: string }
+): number | null {
+  if (value == null) return null;
+
+  const raw =
+    typeof value === 'string'
+      ? value.trim()
+      : typeof value === 'number'
+      ? String(value)
+      : '';
+
+  if (!raw) return null;
+
+  try {
+    return toCents(raw);
+  } catch {
+    throw zodPricesJsonError(`Invalid ${opts.field} for ${opts.currency}`);
+  }
+}
+
+function parseLegacyPriceMinorField(formData: FormData, name: string): number | undefined {
+  const v = getStringField(formData, name);
+  if (v === undefined) return undefined;
+  return toCents(v);
+}
+
+/**
+ * Legacy optional field semantics:
+ * - if field missing => undefined (PATCH omit)
+ * - if present but empty => null (explicit clear)
+ * - if present and value => cents int
+ */
+function parseLegacyOptionalOriginalMinorField(
+  formData: FormData,
+  name: string
+): number | null | undefined {
+  if (!formData.has(name)) return undefined;
+
+  const raw = formData.get(name);
+  if (typeof raw !== 'string') return undefined;
+
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+
+  return toCents(trimmed);
+}
+
+function parsePricesJsonField(formData: FormData, mode: ParseMode) {
+  // PATCH semantics:
+  // - update: if field is missing => omit prices (undefined)
+  // - create: missing => let legacy fallback handle it (null)
+  if (!formData.has('prices')) {
+    return mode === 'update' ? undefined : null;
   }
 
-  const value = rawValue ?? ""
-  return value
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean)
+  const raw = formData.get('prices');
+  if (typeof raw !== 'string') {
+    return { ok: false as const, error: zodPricesJsonError('Invalid prices payload type') };
+  }
+
+  const trimmed = raw.trim();
+  if (!trimmed) {
+    // explicit empty array (will be validated downstream by schema)
+    return { ok: true as const, value: [] as unknown[] };
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(trimmed);
+  } catch {
+    return { ok: false as const, error: zodPricesJsonError('Invalid prices JSON') };
+  }
+
+  if (!Array.isArray(parsed)) {
+    return { ok: false as const, error: zodPricesJsonError('Prices must be an array') };
+  }
+
+  try {
+    const normalized = parsed.map((row: any) => {
+      const currencyRaw =
+        typeof row?.currency === 'string' ? row.currency.trim().toUpperCase() : '';
+
+      const currency = currencyValues.includes(currencyRaw as CurrencyCode)
+        ? (currencyRaw as CurrencyCode)
+        : currencyRaw;
+
+      if (!currencyValues.includes(currency as CurrencyCode)) {
+        throw zodPricesJsonError('Invalid currency in prices payload');
+      }
+
+      const priceMinor = parseMajorToMinor(row?.price, {
+        field: 'price',
+        currency: currency as string,
+      });
+
+      if (mode === 'create' && priceMinor == null) {
+        throw zodPricesJsonError(`Missing price for ${currency}`);
+      }
+
+      const originalPriceMinor = parseMajorToMinor(row?.originalPrice, {
+        field: 'originalPrice',
+        currency: currency as string,
+      });
+
+      return {
+        currency,
+        priceMinor,
+        originalPriceMinor,
+      };
+    });
+
+    return { ok: true as const, value: normalized };
+  } catch (e) {
+    if (e instanceof z.ZodError) {
+      return { ok: false as const, error: e };
+    }
+    return { ok: false as const, error: zodPricesJsonError('Invalid prices payload') };
+  }
 }
 
 export function parseAdminProductForm(
   formData: FormData,
-  options?: { mode?: "create" },
-): ParsedResult<z.infer<typeof productAdminSchema>>
+  options?: { mode?: 'create' }
+): ParsedResult<z.infer<typeof productAdminSchema>>;
 export function parseAdminProductForm(
   formData: FormData,
-  options: { mode: "update" },
-): ParsedResult<z.infer<typeof productAdminUpdateSchema>>
+  options: { mode: 'update' }
+): ParsedResult<z.infer<typeof productAdminUpdateSchema>>;
 export function parseAdminProductForm(
   formData: FormData,
-  options: { mode?: ParseMode } = {},
-): ParsedResult<z.infer<typeof productAdminSchema> | z.infer<typeof productAdminUpdateSchema>> {
-  const mode: ParseMode = options.mode ?? "create"
+  options: { mode?: ParseMode } = {}
+): ParsedResult<
+  z.infer<typeof productAdminSchema> | z.infer<typeof productAdminUpdateSchema>
+> {
+  const mode: ParseMode = options.mode ?? 'create';
+
+  // 1) Prefer canonical "prices" JSON payload if present
+  const pricesJson = parsePricesJsonField(formData, mode);
+  if (pricesJson && 'ok' in pricesJson && pricesJson.ok === false) {
+    return { ok: false, error: pricesJson.error };
+  }
+
+  // 2) Legacy fallback (priceUsd/priceUah) -> MINOR units
+  const priceUsdMinor = parseLegacyPriceMinorField(formData, 'priceUsd');
+  const originalPriceUsdMinor = parseLegacyOptionalOriginalMinorField(formData, 'originalPriceUsd');
+
+  const priceUahMinor = parseLegacyPriceMinorField(formData, 'priceUah');
+  const originalPriceUahMinor = parseLegacyOptionalOriginalMinorField(formData, 'originalPriceUah');
+
+  const legacyRawPrices = [
+    ...(priceUsdMinor !== undefined || originalPriceUsdMinor !== undefined
+      ? [
+          {
+            currency: 'USD' as const,
+            priceMinor: priceUsdMinor ?? null,
+            originalPriceMinor: originalPriceUsdMinor ?? null,
+          },
+        ]
+      : []),
+    ...(priceUahMinor !== undefined || originalPriceUahMinor !== undefined
+      ? [
+          {
+            currency: 'UAH' as const,
+            priceMinor: priceUahMinor ?? null,
+            originalPriceMinor: originalPriceUahMinor ?? null,
+          },
+        ]
+      : []),
+  ];
+
+  // Resolve final prices with PATCH semantics
+  const prices =
+    pricesJson && 'value' in pricesJson
+      ? pricesJson.value
+      : mode === 'update' && legacyRawPrices.length === 0
+      ? undefined
+      : legacyRawPrices;
 
   const payload = {
-    title: getStringField(formData, "title"),
-    slug: getStringField(formData, "slug"),
-    price: parseNumberField(formData, "price"),
-    originalPrice: parseNumberField(formData, "originalPrice"),
-    currency: getStringField(formData, "currency"),
-    description: getStringField(formData, "description"),
-    category: getStringField(formData, "category"),
-    type: getStringField(formData, "type"),
-    colors: parseArrayField(formData, "colors", mode),
-    sizes: parseArrayField(formData, "sizes", mode),
-    stock: parseNumberField(formData, "stock"),
-    sku: getStringField(formData, "sku"),
-    badge: getStringField(formData, "badge"),
-    isActive: parseBooleanField(formData, "isActive"),
-    isFeatured: parseBooleanField(formData, "isFeatured"),
-  }
+    title: getStringField(formData, 'title'),
+    slug: getStringField(formData, 'slug'),
+    description: getStringField(formData, 'description'),
+    category: getStringField(formData, 'category'),
+    type: getStringField(formData, 'type'),
+    colors: parseArrayField(formData, 'colors', mode),
+    sizes: parseArrayField(formData, 'sizes', mode),
+    stock: parseNumberField(formData, 'stock'),
+    sku: getStringField(formData, 'sku'),
+    badge: getStringField(formData, 'badge'),
+    isActive: parseBooleanField(formData, 'isActive'),
+    isFeatured: parseBooleanField(formData, 'isFeatured'),
+    ...(prices !== undefined ? { prices } : {}),
+  };
 
-  const parsed = mode === "update" ? productAdminUpdateSchema.safeParse(payload) : productAdminSchema.safeParse(payload)
+  const parsed =
+    mode === 'update'
+      ? productAdminUpdateSchema.safeParse(payload)
+      : productAdminSchema.safeParse(payload);
 
   if (!parsed.success) {
-    return { ok: false, error: parsed.error }
+    return { ok: false, error: parsed.error };
   }
 
-  return { ok: true, data: parsed.data }
+  return { ok: true, data: parsed.data };
 }
-
-export type AdminProductCreatePayload = z.infer<typeof productAdminSchema>
-export type AdminProductUpdatePayload = z.infer<typeof productAdminUpdateSchema>
-export type ParseAdminProductResult<T> = ParsedResult<T>

@@ -3,14 +3,18 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import type { ShopProduct } from '@/lib/shop/data';
-import { formatPrice } from '@/lib/shop/currency';
 import { cn } from '@/lib/utils';
+import { useParams } from 'next/navigation';
+import { formatMoney } from '@/lib/shop/currency';
 
 interface ProductCardProps {
   product: ShopProduct;
 }
 
 export function ProductCard({ product }: ProductCardProps) {
+  const params = useParams<{ locale?: string }>();
+  const locale = params.locale ?? 'en';
+
   const src =
     typeof product.image === 'string' && product.image.length > 0
       ? product.image
@@ -52,11 +56,12 @@ export function ProductCard({ product }: ProductCardProps) {
               product.badge === 'SALE' ? 'text-accent' : 'text-foreground'
             )}
           >
-            {formatPrice(product.price)}
+            {formatMoney(product.price, product.currency, locale)}
           </span>
           {product.originalPrice && (
             <span className="text-sm text-muted-foreground line-through">
-              {formatPrice(product.originalPrice)}
+              {product.originalPrice ? formatMoney(product.originalPrice, product.currency, locale) : null}
+              
             </span>
           )}
         </div>

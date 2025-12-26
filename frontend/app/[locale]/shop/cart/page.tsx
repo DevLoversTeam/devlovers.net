@@ -9,13 +9,17 @@ import { Minus, Plus, Trash2, ShoppingBag } from 'lucide-react';
 import { useCart } from '@/components/shop/cart-provider';
 
 import { generateIdempotencyKey } from '@/lib/shop/idempotency';
-import { formatPrice } from '@/lib/shop/currency';
+import { useParams } from 'next/navigation';
+import { formatMoney } from '@/lib/shop/currency';
 
 export default function CartPage() {
   const { cart, updateQuantity, removeFromCart, clearCart } = useCart();
   const router = useRouter();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+
+  const params = useParams<{ locale?: string }>();
+  const locale = params.locale ?? 'en';
 
   async function handleCheckout() {
     setCheckoutError(null);
@@ -218,7 +222,7 @@ export default function CartPage() {
                   </div>
 
                   <span className="text-sm font-semibold text-foreground">
-                    {formatPrice(item.unitPrice * item.quantity)}
+                    {formatMoney(item.lineTotal, item.currency, locale)}
                   </span>
                 </div>
               </div>
@@ -235,7 +239,7 @@ export default function CartPage() {
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Subtotal</span>
               <span className="font-medium text-foreground">
-                {formatPrice(cart.summary.totalAmount)}
+                {formatMoney(cart.summary.totalAmount, cart.summary.currency, locale)}
               </span>
             </div>
             <div className="flex items-center justify-between text-sm">
@@ -250,7 +254,8 @@ export default function CartPage() {
                   Total
                 </span>
                 <span className="text-lg font-bold text-foreground">
-                  {formatPrice(cart.summary.totalAmount)}
+                  {formatMoney(cart.summary.totalAmount, cart.summary.currency, locale)}
+
                 </span>
               </div>
             </div>
