@@ -20,25 +20,62 @@ import {
 const productIdParamSchema = z.object({ id: z.uuid() });
 const adminCurrencySchema = z
   .string()
-  .transform((v) => v.trim().toUpperCase())
+  .transform(v => v.trim().toUpperCase())
   .pipe(z.enum(['USD', 'UAH']));
 
-const adminPriceRowSchema = z.object({
+function parseMajorToMinor(value: string): number {
+  const s = value.trim().replace(',', '.');
+  if (!/^\d+(\.\d{1,2})?$/.test(s)) {
+    throw new Error(`Invalid money value: "${value}"`);
+  }
+  const [whole, frac = ''] = s.split('.');
+  const frac2 = (frac + '00').slice(0, 2);
+  const minor = Number(whole) * 100 + Number(frac2);
+  if (!Number.isSafeInteger(minor) || minor < 0) {
+    throw new Error(`Invalid money value: "${value}"`);
+  }
+  return minor;
+}
+
+const minorRowSchema = z.object({
   currency: adminCurrencySchema,
-  price: z.preprocess((v) => String(v), z.string().min(1)),
-  originalPrice: z.preprocess(
-    (v) => {
-      if (v === undefined) return undefined;
-      if (v === null) return null;
-      const s = String(v).trim();
-      return s.length ? s : null;
-    },
-    z.string().nullable().optional()
+  priceMinor: z.preprocess(
+    v => (typeof v === 'string' ? Number(v) : v),
+    z.number().int().nonnegative()
   ),
+  originalPriceMinor: z.preprocess(v => {
+    if (v === undefined) return undefined;
+    if (v === null) return null;
+    return typeof v === 'string' ? Number(v) : v;
+  }, z.number().int().nonnegative().nullable().optional()),
 });
 
-const adminPricesSchema = z.array(adminPriceRowSchema);
+const legacyRowSchema = z.object({
+  currency: adminCurrencySchema,
+  price: z.preprocess(v => String(v).trim(), z.string().min(1)),
+  originalPrice: z.preprocess(v => {
+    if (v === undefined) return undefined;
+    if (v === null) return null;
+    const s = String(v).trim();
+    return s.length ? s : null;
+  }, z.string().nullable().optional()),
+});
 
+const adminPriceRowSchema = z
+  .union([minorRowSchema, legacyRowSchema])
+  .transform(row => {
+    if ('priceMinor' in row) {
+      return row;
+    }
+    return {
+      currency: row.currency,
+      priceMinor: parseMajorToMinor(row.price),
+      originalPriceMinor:
+        row.originalPrice == null ? null : parseMajorToMinor(row.originalPrice),
+    };
+  });
+
+const adminPricesSchema = z.array(adminPriceRowSchema);
 
 export async function GET(
   request: NextRequest,
@@ -130,7 +167,10 @@ export async function PATCH(
         json = JSON.parse(rawPrices);
       } catch {
         return NextResponse.json(
-          { error: 'Invalid product data', details: { prices: 'Invalid JSON' } },
+          {
+            error: 'Invalid product data',
+            details: { prices: 'Invalid JSON' },
+          },
           { status: 400 }
         );
       }
@@ -150,11 +190,16 @@ export async function PATCH(
     try {
       const imageFile = formData.get('image');
 
+      const base = { ...(parsed.data as any) };
+      delete base.prices;
+
       const updated = await updateProduct(parsedParams.data.id, {
-        ...parsed.data,
+        ...base,
         ...(pricesOverride ? { prices: pricesOverride } : {}),
         image:
-          imageFile instanceof File && imageFile.size > 0 ? imageFile : undefined,
+          imageFile instanceof File && imageFile.size > 0
+            ? imageFile
+            : undefined,
       });
 
       return NextResponse.json({ success: true, product: updated });
@@ -176,7 +221,10 @@ export async function PATCH(
       }
 
       if (error instanceof Error && error.message === 'PRODUCT_NOT_FOUND') {
-        return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+        return NextResponse.json(
+          { error: 'Product not found' },
+          { status: 404 }
+        );
       }
 
       if (
@@ -193,7 +241,10 @@ export async function PATCH(
         );
       }
 
-      return NextResponse.json({ error: 'Failed to update product' }, { status: 500 });
+      return NextResponse.json(
+        { error: 'Failed to update product' },
+        { status: 500 }
+      );
     }
   } catch (error) {
     if (error instanceof AdminApiDisabledError) {
@@ -213,7 +264,6 @@ export async function PATCH(
     );
   }
 }
-
 
 export async function DELETE(
   request: NextRequest,

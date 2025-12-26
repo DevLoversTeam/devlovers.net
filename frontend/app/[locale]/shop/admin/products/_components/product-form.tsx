@@ -30,81 +30,108 @@ type ApiResponse = {
   field?: string;
 };
 
-type PriceRow = ProductAdminInput['prices'][number];
-type CurrencyCode = PriceRow['currency'];
+// Canonical API type (minor units)
+type ApiPriceRow = ProductAdminInput['prices'][number];
+type CurrencyCode = ApiPriceRow['currency'];
 
-function normalizePriceRow(row: unknown): PriceRow | null {
+// UI type (strings in inputs)
+type UiPriceRow = {
+  currency: CurrencyCode;
+  price: string; // major, e.g. "59.00"
+  originalPrice: string; // major, "" means none
+};
+
+function formatMinorToMajor(value: number): string {
+  if (!Number.isFinite(value)) return '';
+  const abs = Math.abs(Math.trunc(value));
+  const whole = Math.floor(abs / 100);
+  const frac = abs % 100;
+  const sign = value < 0 ? '-' : '';
+  return `${sign}${whole}.${String(frac).padStart(2, '0')}`;
+}
+
+function parseMajorToMinor(value: string): number {
+  const s = value.trim().replace(',', '.');
+  if (!/^\d+(\.\d{1,2})?$/.test(s)) {
+    throw new Error(`Invalid money value: "${value}"`);
+  }
+  const [whole, frac = ''] = s.split('.');
+  const frac2 = (frac + '00').slice(0, 2);
+  const minor = Number(whole) * 100 + Number(frac2);
+  if (!Number.isSafeInteger(minor) || minor < 0) {
+    throw new Error(`Invalid money value: "${value}"`);
+  }
+  return minor;
+}
+
+function normalizeUiPriceRow(row: unknown): UiPriceRow | null {
   const r = row as any;
 
   const currency = r?.currency as CurrencyCode | undefined;
   if (currency !== 'USD' && currency !== 'UAH') return null;
 
-  const price =
-    typeof r?.price === 'string' ? r.price : String(r?.price ?? '').trim();
+  // Accept either legacy {price/originalPrice} or canonical {priceMinor/originalPriceMinor}
+  let price = '';
+  if (typeof r?.price === 'string') price = r.price.trim();
+  else if (typeof r?.priceMinor === 'number') price = formatMinorToMajor(r.priceMinor);
+  else if (typeof r?.priceMinor === 'string' && r.priceMinor.trim().length) {
+    const n = Number(r.priceMinor);
+    price = Number.isFinite(n) ? formatMinorToMajor(n) : '';
+  }
 
-  const originalPrice =
-    r?.originalPrice == null ? null : String(r.originalPrice).trim() || null;
+  let originalPrice = '';
+  if (typeof r?.originalPrice === 'string') originalPrice = r.originalPrice.trim();
+  else if (r?.originalPrice == null) originalPrice = '';
+  else if (typeof r?.originalPriceMinor === 'number') originalPrice = formatMinorToMajor(r.originalPriceMinor);
+  else if (typeof r?.originalPriceMinor === 'string' && r.originalPriceMinor.trim().length) {
+    const n = Number(r.originalPriceMinor);
+    originalPrice = Number.isFinite(n) ? formatMinorToMajor(n) : '';
+  }
 
   return { currency, price, originalPrice };
 }
 
-function ensureUiPriceRows(fromInitial: PriceRow[] | undefined): PriceRow[] {
-  const valid = (fromInitial ?? [])
-    .map(normalizePriceRow)
-    .filter(Boolean) as PriceRow[];
-  const map = new Map<CurrencyCode, PriceRow>(valid.map(p => [p.currency, p]));
+function ensureUiPriceRows(fromInitial: unknown): UiPriceRow[] {
+  const arr = Array.isArray(fromInitial) ? fromInitial : [];
+  const valid = arr.map(normalizeUiPriceRow).filter(Boolean) as UiPriceRow[];
 
-  return (['USD', 'UAH'] as const).map(currency => {
+  const map = new Map<CurrencyCode, UiPriceRow>(valid.map((p) => [p.currency, p]));
+
+  return (['USD', 'UAH'] as const).map((currency) => {
     return (
       map.get(currency) ?? {
         currency,
         price: '',
-        originalPrice: null,
+        originalPrice: '',
       }
     );
   });
 }
 
-export function ProductForm({
-  mode,
-  productId,
-  initialValues,
-}: ProductFormProps) {
+export function ProductForm({ mode, productId, initialValues }: ProductFormProps) {
   const router = useRouter();
 
   const [title, setTitle] = useState(initialValues?.title ?? '');
   const [slug, setSlug] = useState(
-    initialValues?.slug
-      ? localSlugify(initialValues.slug)
-      : localSlugify(initialValues?.title ?? '')
+    initialValues?.slug ? localSlugify(initialValues.slug) : localSlugify(initialValues?.title ?? '')
   );
 
-  const [prices, setPrices] = useState<PriceRow[]>(
-    ensureUiPriceRows(initialValues?.prices)
+  const [prices, setPrices] = useState<UiPriceRow[]>(
+    ensureUiPriceRows((initialValues as any)?.prices)
   );
 
   const [category, setCategory] = useState(initialValues?.category ?? '');
   const [type, setType] = useState(initialValues?.type ?? '');
-  const [selectedColors, setSelectedColors] = useState<string[]>(
-    initialValues?.colors ?? []
-  );
-  const [selectedSizes, setSelectedSizes] = useState<string[]>(
-    initialValues?.sizes ?? []
-  );
+  const [selectedColors, setSelectedColors] = useState<string[]>(initialValues?.colors ?? []);
+  const [selectedSizes, setSelectedSizes] = useState<string[]>(initialValues?.sizes ?? []);
   const [stock, setStock] = useState(
     typeof initialValues?.stock === 'number' ? String(initialValues.stock) : ''
   );
   const [sku, setSku] = useState(initialValues?.sku ?? '');
-  const [badge, setBadge] = useState<ProductAdminInput['badge']>(
-    initialValues?.badge ?? 'NONE'
-  );
-  const [description, setDescription] = useState(
-    initialValues?.description ?? ''
-  );
+  const [badge, setBadge] = useState<ProductAdminInput['badge']>(initialValues?.badge ?? 'NONE');
+  const [description, setDescription] = useState(initialValues?.description ?? '');
   const [isActive, setIsActive] = useState(initialValues?.isActive ?? true);
-  const [isFeatured, setIsFeatured] = useState(
-    initialValues?.isFeatured ?? false
-  );
+  const [isFeatured, setIsFeatured] = useState(initialValues?.isFeatured ?? false);
 
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [existingImageUrl] = useState(initialValues?.imageUrl);
@@ -120,25 +147,14 @@ export function ProductForm({
 
   const slugValue = useMemo(() => slug || localSlugify(title), [slug, title]);
 
-  const usdRow = useMemo(
-    () => prices.find(p => p.currency === 'USD'),
-    [prices]
-  );
-  const uahRow = useMemo(
-    () => prices.find(p => p.currency === 'UAH'),
-    [prices]
-  );
+  const usdRow = useMemo(() => prices.find((p) => p.currency === 'USD'), [prices]);
+  const uahRow = useMemo(() => prices.find((p) => p.currency === 'UAH'), [prices]);
 
-  function setPriceField(
-    currency: CurrencyCode,
-    field: 'price' | 'originalPrice',
-    value: string
-  ) {
-    setPrices(prev =>
-      prev.map(p => {
+  function setPriceField(currency: CurrencyCode, field: 'price' | 'originalPrice', value: string) {
+    setPrices((prev) =>
+      prev.map((p) => {
         if (p.currency !== currency) return p;
         if (field === 'price') return { ...p, price: value };
-        // originalPrice: allow empty -> null later on submit
         return { ...p, originalPrice: value };
       })
     );
@@ -164,43 +180,55 @@ export function ProductForm({
     setIsSubmitting(true);
 
     try {
-      const normalizedPrices = prices.map(p => ({
+      const normalizedPrices = prices.map((p) => ({
         currency: p.currency,
         price: String(p.price ?? '').trim(),
-        originalPrice:
-          p.originalPrice == null
-            ? null
-            : String(p.originalPrice).trim() || null,
+        originalPrice: String(p.originalPrice ?? '').trim(),
       }));
 
       const effectivePrices = normalizedPrices.filter(
-        p => p.price.length > 0 || p.originalPrice != null
+        (p) => p.price.length > 0 || p.originalPrice.length > 0
       );
 
       for (const p of effectivePrices) {
-        if (!p.price.length && p.originalPrice != null) {
-          setError(
-            `${p.currency}: price is required when original price is set.`
-          );
+        if (!p.price.length && p.originalPrice.length) {
+          setError(`${p.currency}: price is required when original price is set.`);
           setIsSubmitting(false);
           return;
         }
       }
 
-      const usd = effectivePrices.find(p => p.currency === 'USD');
+      const usd = effectivePrices.find((p) => p.currency === 'USD');
       if (!usd || !usd.price.length) {
         setError('USD price is required.');
         setIsSubmitting(false);
         return;
       }
 
+      // Convert UI major strings -> API minor ints
+      let minorPrices: Array<{
+        currency: CurrencyCode;
+        priceMinor: number;
+        originalPriceMinor: number | null;
+      }>;
+      try {
+        minorPrices = effectivePrices.map((p) => ({
+          currency: p.currency,
+          priceMinor: parseMajorToMinor(p.price),
+          originalPriceMinor: p.originalPrice.length ? parseMajorToMinor(p.originalPrice) : null,
+        }));
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Invalid price value.');
+        setIsSubmitting(false);
+        return;
+      }
+
       const formData = new FormData();
       formData.append('title', title);
-      // formData.append('slug', slugValue);
       if (mode === 'create') formData.append('slug', slugValue);
 
-      // canonical: prices[]
-      formData.append('prices', JSON.stringify(effectivePrices));
+      // canonical: prices[] in minor units
+      formData.append('prices', JSON.stringify(minorPrices));
 
       if (category) formData.append('category', category);
       if (type) formData.append('type', type);
@@ -219,9 +247,7 @@ export function ProductForm({
       }
 
       const response = await fetch(
-        mode === 'create'
-          ? '/api/shop/admin/products'
-          : `/api/shop/admin/products/${productId}`,
+        mode === 'create' ? '/api/shop/admin/products' : `/api/shop/admin/products/${productId}`,
         {
           method: mode === 'create' ? 'POST' : 'PATCH',
           body: formData,
@@ -239,25 +265,15 @@ export function ProductForm({
           setImageError(data.error ?? 'Failed to upload image');
         }
 
-        setError(
-          data.error ??
-            `Failed to ${mode === 'create' ? 'create' : 'update'} product`
-        );
+        setError(data.error ?? `Failed to ${mode === 'create' ? 'create' : 'update'} product`);
         return;
       }
 
       const destinationSlug = data.product?.slug ?? slugValue;
       router.push(`/shop/products/${destinationSlug}`);
     } catch (err) {
-      console.error(
-        `Failed to ${mode === 'create' ? 'create' : 'update'} product`,
-        err
-      );
-      setError(
-        `Unexpected error while ${
-          mode === 'create' ? 'creating' : 'updating'
-        } product.`
-      );
+      console.error(`Failed to ${mode === 'create' ? 'create' : 'update'} product`, err);
+      setError(`Unexpected error while ${mode === 'create' ? 'creating' : 'updating'} product.`);
     } finally {
       setIsSubmitting(false);
     }
@@ -270,22 +286,13 @@ export function ProductForm({
       </h1>
 
       {error ? (
-        <div className="mt-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
-          {error}
-        </div>
+        <div className="mt-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
       ) : null}
 
-      <form
-        className="mt-6 space-y-4"
-        onSubmit={handleSubmit}
-        encType="multipart/form-data"
-      >
+      <form className="mt-6 space-y-4" onSubmit={handleSubmit} encType="multipart/form-data">
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label
-              className="block text-sm font-medium text-foreground"
-              htmlFor="title"
-            >
+            <label className="block text-sm font-medium text-foreground" htmlFor="title">
               Title
             </label>
             <input
@@ -293,22 +300,17 @@ export function ProductForm({
               className="w-full rounded-md border border-border px-3 py-2 text-sm"
               type="text"
               value={title}
-              onChange={event => setTitle(event.target.value)}
+              onChange={(event) => setTitle(event.target.value)}
               required
             />
           </div>
 
           <div>
             <div className="flex items-center justify-between">
-              <label
-                className="block text-sm font-medium text-foreground"
-                htmlFor="slug"
-              >
+              <label className="block text-sm font-medium text-foreground" htmlFor="slug">
                 Slug
               </label>
-              <span className="text-xs text-muted-foreground">
-                Auto-generated from title
-              </span>
+              <span className="text-xs text-muted-foreground">Auto-generated from title</span>
             </div>
             <input
               id="slug"
@@ -317,9 +319,7 @@ export function ProductForm({
               value={slugValue}
               readOnly
             />
-            {slugError ? (
-              <p className="mt-1 text-sm text-red-600">{slugError}</p>
-            ) : null}
+            {slugError ? <p className="mt-1 text-sm text-red-600">{slugError}</p> : null}
           </div>
         </div>
 
@@ -330,15 +330,10 @@ export function ProductForm({
           <div className="mt-3 grid gap-4 sm:grid-cols-2">
             {/* USD */}
             <div className="space-y-2">
-              <div className="text-xs font-medium text-muted-foreground">
-                USD (required)
-              </div>
+              <div className="text-xs font-medium text-muted-foreground">USD (required)</div>
 
               <div>
-                <label
-                  className="block text-sm font-medium text-foreground"
-                  htmlFor="price-usd"
-                >
+                <label className="block text-sm font-medium text-foreground" htmlFor="price-usd">
                   Price (USD)
                 </label>
                 <input
@@ -347,16 +342,13 @@ export function ProductForm({
                   type="text"
                   placeholder="59.00"
                   value={usdRow?.price ?? ''}
-                  onChange={e => setPriceField('USD', 'price', e.target.value)}
+                  onChange={(e) => setPriceField('USD', 'price', e.target.value)}
                   required
                 />
               </div>
 
               <div>
-                <label
-                  className="block text-sm font-medium text-foreground"
-                  htmlFor="original-usd"
-                >
+                <label className="block text-sm font-medium text-foreground" htmlFor="original-usd">
                   Original price (USD)
                 </label>
                 <input
@@ -364,25 +356,18 @@ export function ProductForm({
                   className="w-full rounded-md border border-border px-3 py-2 text-sm"
                   type="text"
                   placeholder="79.00"
-                  value={String(usdRow?.originalPrice ?? '')}
-                  onChange={e =>
-                    setPriceField('USD', 'originalPrice', e.target.value)
-                  }
+                  value={usdRow?.originalPrice ?? ''}
+                  onChange={(e) => setPriceField('USD', 'originalPrice', e.target.value)}
                 />
               </div>
             </div>
 
             {/* UAH */}
             <div className="space-y-2">
-              <div className="text-xs font-medium text-muted-foreground">
-                UAH (optional)
-              </div>
+              <div className="text-xs font-medium text-muted-foreground">UAH (optional)</div>
 
               <div>
-                <label
-                  className="block text-sm font-medium text-foreground"
-                  htmlFor="price-uah"
-                >
+                <label className="block text-sm font-medium text-foreground" htmlFor="price-uah">
                   Price (UAH)
                 </label>
                 <input
@@ -391,15 +376,12 @@ export function ProductForm({
                   type="text"
                   placeholder="1999.00"
                   value={uahRow?.price ?? ''}
-                  onChange={e => setPriceField('UAH', 'price', e.target.value)}
+                  onChange={(e) => setPriceField('UAH', 'price', e.target.value)}
                 />
               </div>
 
               <div>
-                <label
-                  className="block text-sm font-medium text-foreground"
-                  htmlFor="original-uah"
-                >
+                <label className="block text-sm font-medium text-foreground" htmlFor="original-uah">
                   Original price (UAH)
                 </label>
                 <input
@@ -407,10 +389,8 @@ export function ProductForm({
                   className="w-full rounded-md border border-border px-3 py-2 text-sm"
                   type="text"
                   placeholder="2499.00"
-                  value={String(uahRow?.originalPrice ?? '')}
-                  onChange={e =>
-                    setPriceField('UAH', 'originalPrice', e.target.value)
-                  }
+                  value={uahRow?.originalPrice ?? ''}
+                  onChange={(e) => setPriceField('UAH', 'originalPrice', e.target.value)}
                 />
               </div>
             </div>
@@ -418,17 +398,13 @@ export function ProductForm({
 
           <p className="mt-3 text-xs text-muted-foreground">
             Checkout currency is server-selected by locale. Prices must exist in{' '}
-            <span className="font-mono">product_prices</span> for that currency,
-            or checkout fails.
+            <span className="font-mono">product_prices</span> for that currency, or checkout fails.
           </p>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label
-              className="block text-sm font-medium text-foreground"
-              htmlFor="stock"
-            >
+            <label className="block text-sm font-medium text-foreground" htmlFor="stock">
               Stock
             </label>
             <input
@@ -436,16 +412,13 @@ export function ProductForm({
               className="w-full rounded-md border border-border px-3 py-2 text-sm"
               type="number"
               value={stock}
-              onChange={event => setStock(event.target.value)}
+              onChange={(event) => setStock(event.target.value)}
               min={0}
             />
           </div>
 
           <div>
-            <label
-              className="block text-sm font-medium text-foreground"
-              htmlFor="sku"
-            >
+            <label className="block text-sm font-medium text-foreground" htmlFor="sku">
               SKU
             </label>
             <input
@@ -453,51 +426,45 @@ export function ProductForm({
               className="w-full rounded-md border border-border px-3 py-2 text-sm"
               type="text"
               value={sku}
-              onChange={event => setSku(event.target.value)}
+              onChange={(event) => setSku(event.target.value)}
             />
           </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label
-              className="block text-sm font-medium text-foreground"
-              htmlFor="category"
-            >
+            <label className="block text-sm font-medium text-foreground" htmlFor="category">
               Category
             </label>
             <select
               id="category"
               className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
               value={category}
-              onChange={event => setCategory(event.target.value)}
+              onChange={(event) => setCategory(event.target.value)}
             >
               <option value="">Select category</option>
-              {CATEGORIES.filter(
-                categoryOption => categoryOption.slug !== 'all'
-              ).map(categoryOption => (
-                <option key={categoryOption.slug} value={categoryOption.slug}>
-                  {categoryOption.label}
-                </option>
-              ))}
+              {CATEGORIES.filter((categoryOption) => categoryOption.slug !== 'all').map(
+                (categoryOption) => (
+                  <option key={categoryOption.slug} value={categoryOption.slug}>
+                    {categoryOption.label}
+                  </option>
+                )
+              )}
             </select>
           </div>
 
           <div>
-            <label
-              className="block text-sm font-medium text-foreground"
-              htmlFor="type"
-            >
+            <label className="block text-sm font-medium text-foreground" htmlFor="type">
               Type
             </label>
             <select
               id="type"
               className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
               value={type}
-              onChange={event => setType(event.target.value)}
+              onChange={(event) => setType(event.target.value)}
             >
               <option value="">Select type</option>
-              {PRODUCT_TYPES.map(productType => (
+              {PRODUCT_TYPES.map((productType) => (
                 <option key={productType.slug} value={productType.slug}>
                   {productType.label}
                 </option>
@@ -508,30 +475,22 @@ export function ProductForm({
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label
-              className="block text-sm font-medium text-foreground"
-              htmlFor="colors"
-            >
+            <label className="block text-sm font-medium text-foreground" htmlFor="colors">
               Colors
             </label>
             <div className="flex flex-col gap-2 rounded-md border border-border px-3 py-2">
-              {COLORS.map(color => (
-                <label
-                  key={color.slug}
-                  className="flex items-center gap-2 text-sm text-foreground"
-                >
+              {COLORS.map((color) => (
+                <label key={color.slug} className="flex items-center gap-2 text-sm text-foreground">
                   <input
                     type="checkbox"
                     value={color.slug}
                     checked={selectedColors.includes(color.slug)}
-                    onChange={event => {
+                    onChange={(event) => {
                       if (event.target.checked) {
-                        setSelectedColors(prev => [...prev, color.slug]);
+                        setSelectedColors((prev) => [...prev, color.slug]);
                       } else {
-                        setSelectedColors(prev =>
-                          prev.filter(
-                            selectedColor => selectedColor !== color.slug
-                          )
+                        setSelectedColors((prev) =>
+                          prev.filter((selectedColor) => selectedColor !== color.slug)
                         );
                       }
                     }}
@@ -543,28 +502,22 @@ export function ProductForm({
           </div>
 
           <div>
-            <label
-              className="block text-sm font-medium text-foreground"
-              htmlFor="sizes"
-            >
+            <label className="block text-sm font-medium text-foreground" htmlFor="sizes">
               Sizes
             </label>
             <div className="flex flex-col gap-2 rounded-md border border-border px-3 py-2">
-              {SIZES.map(size => (
-                <label
-                  key={size}
-                  className="flex items-center gap-2 text-sm text-foreground"
-                >
+              {SIZES.map((size) => (
+                <label key={size} className="flex items-center gap-2 text-sm text-foreground">
                   <input
                     type="checkbox"
                     value={size}
                     checked={selectedSizes.includes(size)}
-                    onChange={event => {
+                    onChange={(event) => {
                       if (event.target.checked) {
-                        setSelectedSizes(prev => [...prev, size]);
+                        setSelectedSizes((prev) => [...prev, size]);
                       } else {
-                        setSelectedSizes(prev =>
-                          prev.filter(selectedSize => selectedSize !== size)
+                        setSelectedSizes((prev) =>
+                          prev.filter((selectedSize) => selectedSize !== size)
                         );
                       }
                     }}
@@ -578,19 +531,14 @@ export function ProductForm({
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label
-              className="block text-sm font-medium text-foreground"
-              htmlFor="badge"
-            >
+            <label className="block text-sm font-medium text-foreground" htmlFor="badge">
               Badge
             </label>
             <select
               id="badge"
               className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
               value={badge}
-              onChange={event =>
-                setBadge(event.target.value as ProductAdminInput['badge'])
-              }
+              onChange={(event) => setBadge(event.target.value as ProductAdminInput['badge'])}
             >
               <option value="NONE">None</option>
               <option value="SALE">SALE</option>
@@ -604,13 +552,10 @@ export function ProductForm({
                 id="isActive"
                 type="checkbox"
                 checked={isActive}
-                onChange={event => setIsActive(event.target.checked)}
+                onChange={(event) => setIsActive(event.target.checked)}
                 className="h-4 w-4 rounded border-border text-accent focus:ring-accent"
               />
-              <label
-                className="text-sm font-medium text-foreground"
-                htmlFor="isActive"
-              >
+              <label className="text-sm font-medium text-foreground" htmlFor="isActive">
                 Is Active
               </label>
             </div>
@@ -620,13 +565,10 @@ export function ProductForm({
                 id="isFeatured"
                 type="checkbox"
                 checked={isFeatured}
-                onChange={event => setIsFeatured(event.target.checked)}
+                onChange={(event) => setIsFeatured(event.target.checked)}
                 className="h-4 w-4 rounded border-border text-accent focus:ring-accent"
               />
-              <label
-                className="text-sm font-medium text-foreground"
-                htmlFor="isFeatured"
-              >
+              <label className="text-sm font-medium text-foreground" htmlFor="isFeatured">
                 Is Featured
               </label>
             </div>
@@ -634,10 +576,7 @@ export function ProductForm({
         </div>
 
         <div>
-          <label
-            className="block text-sm font-medium text-foreground"
-            htmlFor="description"
-          >
+          <label className="block text-sm font-medium text-foreground" htmlFor="description">
             Description
           </label>
           <textarea
@@ -645,15 +584,12 @@ export function ProductForm({
             className="w-full rounded-md border border-border px-3 py-2 text-sm"
             rows={4}
             value={description}
-            onChange={event => setDescription(event.target.value)}
+            onChange={(event) => setDescription(event.target.value)}
           />
         </div>
 
         <div>
-          <label
-            className="block text-sm font-medium text-foreground"
-            htmlFor="image"
-          >
+          <label className="block text-sm font-medium text-foreground" htmlFor="image">
             Image
           </label>
           <input
@@ -669,9 +605,7 @@ export function ProductForm({
               Current image will be kept unless you upload a new one.
             </p>
           ) : null}
-          {imageError ? (
-            <p className="mt-1 text-sm text-red-600">{imageError}</p>
-          ) : null}
+          {imageError ? <p className="mt-1 text-sm text-red-600">{imageError}</p> : null}
         </div>
 
         <button
