@@ -3,14 +3,23 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import type { ShopProduct } from '@/lib/shop/data';
-import { formatPrice } from '@/lib/shop/currency';
 import { cn } from '@/lib/utils';
+import { useParams } from 'next/navigation';
+import { formatMoney } from '@/lib/shop/currency';
 
 interface ProductCardProps {
   product: ShopProduct;
 }
 
 export function ProductCard({ product }: ProductCardProps) {
+  const params = useParams<{ locale?: string }>();
+  const locale = params.locale ?? 'en';
+
+  const src =
+    typeof product.image === 'string' && product.image.length > 0
+      ? product.image
+      : '/placeholder.svg';
+
   return (
     <Link
       href={`/shop/products/${product.slug}`}
@@ -30,7 +39,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
       <div className="relative aspect-square overflow-hidden bg-muted">
         <Image
-          src={product.image || '/placeholder.svg'}
+          src={src}
           alt={product.name}
           fill
           className="object-cover transition-transform duration-300 group-hover:scale-105"
@@ -47,11 +56,12 @@ export function ProductCard({ product }: ProductCardProps) {
               product.badge === 'SALE' ? 'text-accent' : 'text-foreground'
             )}
           >
-            {formatPrice(product.price)}
+            {formatMoney(product.price, product.currency, locale)}
           </span>
           {product.originalPrice && (
             <span className="text-sm text-muted-foreground line-through">
-              {formatPrice(product.originalPrice)}
+              {product.originalPrice ? formatMoney(product.originalPrice, product.currency, locale) : null}
+              
             </span>
           )}
         </div>

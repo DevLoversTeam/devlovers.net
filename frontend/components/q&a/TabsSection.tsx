@@ -1,15 +1,18 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useParams } from 'next/navigation';
 import { useRouter } from '@/i18n/routing';
 import { useTranslations } from 'next-intl';
 import { Search, X } from 'lucide-react';
-import AccordionList from '@/components/shared/AccordionList';
-import { Pagination } from '@/components/shared/Pagination';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
-const categories = ['react', 'vue', 'angular', 'javascript', 'nextjs'];
+import AccordionList from '@/components/q&a/AccordionList';
+import { Pagination } from '@/components/q&a/Pagination';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { categoryData } from '@/data/category';
+
+const CATEGORY_SLUGS = categoryData.map(category => category.slug);
+const DEFAULT_CATEGORY = CATEGORY_SLUGS[0] || 'html';
 const DEBOUNCE_MS = 400;
 
 interface PaginatedResponse {
@@ -23,13 +26,21 @@ export default function TabsSection() {
   const t = useTranslations('qa');
   const router = useRouter();
   const searchParams = useSearchParams();
+  const params = useParams();
 
-  const pageFromUrl = parseInt(searchParams.get('page') || '1', 10);
-  const categoryFromUrl = searchParams.get('category') || 'react';
+  const locale = params.locale as string;
+  const localeKey = (['uk', 'en', 'pl'] as const).includes(locale as 'uk' | 'en' | 'pl')
+    ? (locale as 'uk' | 'en' | 'pl')
+    : 'en';
+
+  const pageFromUrl = Number(searchParams.get('page') || 1);
+  const categoryFromUrl = searchParams.get('category') || DEFAULT_CATEGORY;
   const searchFromUrl = searchParams.get('search') || '';
 
   const [active, setActive] = useState(
-    categories.includes(categoryFromUrl) ? categoryFromUrl : 'react'
+    CATEGORY_SLUGS.includes(categoryFromUrl)
+      ? categoryFromUrl
+      : DEFAULT_CATEGORY
   );
   const [currentPage, setCurrentPage] = useState(pageFromUrl);
   const [searchQuery, setSearchQuery] = useState(searchFromUrl);
@@ -39,21 +50,19 @@ export default function TabsSection() {
   const [isLoading, setIsLoading] = useState(true);
 
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const mountedRef = useRef(false);
 
   const updateUrl = useCallback(
     (category: string, page: number, search: string) => {
       const params = new URLSearchParams();
-      if (category !== 'react') {
-        params.set('category', category);
-      }
-      if (page > 1) {
-        params.set('page', String(page));
-      }
-      if (search) {
-        params.set('search', search);
-      }
+
+      if (category !== DEFAULT_CATEGORY) params.set('category', category);
+      if (page > 1) params.set('page', String(page));
+      if (search) params.set('search', search);
+
       const queryString = params.toString();
-      router.push(`/q&a${queryString ? `?${queryString}` : ''}`, {
+
+      router.replace(`/q&a${queryString ? `?${queryString}` : ''}`, {
         scroll: false,
       });
     },
@@ -61,9 +70,12 @@ export default function TabsSection() {
   );
 
   useEffect(() => {
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      return;
     }
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
 
     debounceRef.current = setTimeout(() => {
       setDebouncedSearch(searchQuery);
@@ -72,23 +84,25 @@ export default function TabsSection() {
     }, DEBOUNCE_MS);
 
     return () => {
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-      }
+      if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [searchQuery]);
+  }, [searchQuery, active, updateUrl]);
 
   useEffect(() => {
     async function load() {
       setIsLoading(true);
+
       try {
         const searchParam = debouncedSearch
           ? `&search=${encodeURIComponent(debouncedSearch)}`
           : '';
+
         const res = await fetch(
-          `/api/questions/${active}?page=${currentPage}&limit=10${searchParam}`
+          `/api/questions/${active}?page=${currentPage}&limit=10&locale=${locale}${searchParam}`
         );
+
         const data: PaginatedResponse = await res.json();
+
         setItems(data.items);
         setTotalPages(data.totalPages);
       } catch (error) {
@@ -99,8 +113,9 @@ export default function TabsSection() {
         setIsLoading(false);
       }
     }
+
     load();
-  }, [active, currentPage, debouncedSearch]);
+  }, [active, currentPage, debouncedSearch, locale]);
 
   const handleCategoryChange = (category: string) => {
     setActive(category);
@@ -116,67 +131,58 @@ export default function TabsSection() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-  };
-
-  const handleClearSearch = () => {
-    setSearchQuery('');
-    setDebouncedSearch('');
-    setCurrentPage(1);
-    updateUrl(active, 1, '');
-  };
-
   return (
     <div className="w-full">
       <div className="relative mb-6">
-        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <Search className="h-5 w-5 text-gray-400" />
-        </div>
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+
         <input
           type="text"
           value={searchQuery}
-          onChange={handleSearchChange}
+          onChange={e => setSearchQuery(e.target.value)}
           placeholder={t('searchPlaceholder')}
-          className="block w-full pl-10 pr-10 py-3 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+          className="w-full pl-10 pr-10 py-3 border rounded-lg"
         />
+
         {searchQuery && (
           <button
-            onClick={handleClearSearch}
-            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-            aria-label={t('clearSearch')}
+            onClick={() => {
+              setSearchQuery('');
+              setDebouncedSearch('');
+              setCurrentPage(1);
+              updateUrl(active, 1, '');
+            }}
+            className="absolute right-3 top-1/2 -translate-y-1/2"
           >
             <X className="h-5 w-5" />
           </button>
         )}
       </div>
 
-      <Tabs
-        value={active}
-        onValueChange={handleCategoryChange}
-        className="w-full"
-      >
-        <TabsList className="grid grid-cols-5 mb-6">
-          {categories.map(c => (
-            <TabsTrigger key={c} value={c} className="capitalize">
-              {c}
+      <Tabs value={active} onValueChange={handleCategoryChange}>
+        <TabsList className="grid grid-cols-10 mb-6">
+          {categoryData.map(category => (
+            <TabsTrigger key={category.slug} value={category.slug}>
+              {category.translations[localeKey] ??
+                category.translations.en ??
+                category.slug}
             </TabsTrigger>
           ))}
         </TabsList>
 
-        {categories.map(c => (
-          <TabsContent key={c} value={c}>
+        {categoryData.map(category => (
+          <TabsContent key={category.slug} value={category.slug}>
             {isLoading ? (
               <div className="flex justify-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+                <div className="animate-spin h-8 w-8 border-b-2" />
               </div>
-            ) : items.length > 0 ? (
+            ) : items.length ? (
               <AccordionList items={items} />
             ) : (
-              <p className="text-center py-12 text-gray-500 dark:text-gray-400">
+              <p className="text-center py-12">
                 {debouncedSearch
-                ? t('noResults', { query: debouncedSearch })
-                : t('noQuestions')}
+                  ? t('noResults', { query: debouncedSearch })
+                  : t('noQuestions')}
               </p>
             )}
           </TabsContent>

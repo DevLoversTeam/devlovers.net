@@ -1,22 +1,16 @@
-import type React from "react"
+import type React from 'react';
+import { ShopShell } from '@/components/shop/shop-shell';
 
-import { ThemeProvider } from "@/components/shop/theme-provider"
-import { CartProvider } from "@/components/shop/cart-provider"
+export default function ShopLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const showAdminNavLink = process.env.NEXT_PUBLIC_ENABLE_ADMIN === 'true';
 
-import "./shop-theme.css"
-
-export default function ShopLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="shop-scope min-h-screen">
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-        <CartProvider>
-          <div className="flex min-h-screen flex-col">
-            
-            <main className="flex-1">{children}</main>
-            
-          </div>
-        </CartProvider>
-      </ThemeProvider>
-    </div>
-  )
+    <ShopShell showAdminLink={showAdminNavLink}>
+      <main className="mx-auto px-6 min-h-[80vh]">{children}</main>
+    </ShopShell>
+  );
 }

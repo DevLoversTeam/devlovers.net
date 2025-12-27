@@ -1,33 +1,37 @@
-export const dynamic = "force-dynamic"
+import Link from "next/link";
+import { notFound } from "next/navigation";
 
-import Link from "next/link"
-import { notFound } from "next/navigation"
+import { getAdminOrderDetail } from "@/db/queries/shop/admin-orders";
+import { formatMoney, resolveCurrencyFromLocale, type CurrencyCode } from "@/lib/shop/currency";
+import { fromDbMoney } from "@/lib/shop/money";
 
-import { getAdminOrderDetail } from "@/db/queries/shop/admin-orders"
+export const dynamic = "force-dynamic";
 
-function formatCurrency(value: string | number | null | undefined, currency: string) {
-  if (value === null || value === undefined) return "-"
-  const numericValue = typeof value === "string" ? Number(value) : value
-  if (Number.isNaN(numericValue)) return "-"
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(numericValue)
+function pickMinor(minor: unknown, legacyMajor: unknown): number | null {
+  if (typeof minor === "number") return minor;
+  if (legacyMajor === null || legacyMajor === undefined) return null;
+  return fromDbMoney(legacyMajor);
+}
+
+function orderCurrency(order: any, locale: string): CurrencyCode {
+  return (order?.currency ?? resolveCurrencyFromLocale(locale)) as CurrencyCode;
 }
 
 function formatDateTime(value: Date | null | undefined) {
-  if (!value) return "-"
-  return value.toLocaleString()
+  if (!value) return "-";
+  return value.toLocaleString();
 }
 
-export default async function AdminOrderDetailPage(props: { params: Promise<{ id: string }> }) {
-  const { id } = await props.params
-  const order = await getAdminOrderDetail(id)
-  if (!order) notFound()
+export default async function AdminOrderDetailPage({
+  params,
+}: {
+  params: Promise<{ locale: string; id: string }>;
+}) {
+  const { locale, id } = await params;
+  const order = await getAdminOrderDetail(id);
+  if (!order) notFound();
 
-  const canRefund = order.paymentStatus === "paid"
+  const canRefund = order.paymentStatus === "paid";
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
@@ -39,7 +43,7 @@ export default async function AdminOrderDetailPage(props: { params: Promise<{ id
 
         <div className="flex gap-2">
           <Link
-            href="/shop/admin/orders"
+            href={`/${locale}/shop/admin/orders`}
             className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
           >
             Back
@@ -66,18 +70,28 @@ export default async function AdminOrderDetailPage(props: { params: Promise<{ id
               <dt className="text-muted-foreground">Payment status</dt>
               <dd className="text-foreground">{order.paymentStatus}</dd>
             </div>
+
             <div className="flex justify-between gap-4">
               <dt className="text-muted-foreground">Total</dt>
-              <dd className="text-foreground">{formatCurrency(order.totalAmount, order.currency ?? "USD")}</dd>
+              <dd className="text-foreground">
+                {(() => {
+                  const c = orderCurrency(order, locale);
+                  const totalMinor = pickMinor(order?.totalAmountMinor, order?.totalAmount);
+                  return totalMinor === null ? "-" : formatMoney(totalMinor, c, locale);
+                })()}
+              </dd>
             </div>
+
             <div className="flex justify-between gap-4">
               <dt className="text-muted-foreground">Provider</dt>
               <dd className="text-foreground">{order.paymentProvider}</dd>
             </div>
+
             <div className="flex justify-between gap-4">
               <dt className="text-muted-foreground">Payment intent</dt>
               <dd className="font-mono text-xs text-muted-foreground">{order.paymentIntentId ?? "-"}</dd>
             </div>
+
             <div className="flex justify-between gap-4">
               <dt className="text-muted-foreground">Idempotency key</dt>
               <dd className="font-mono text-xs text-muted-foreground">{order.idempotencyKey}</dd>
@@ -118,8 +132,9 @@ export default async function AdminOrderDetailPage(props: { params: Promise<{ id
               <th className="px-3 py-2 text-left font-semibold text-foreground">Line total</th>
             </tr>
           </thead>
+
           <tbody className="divide-y divide-border">
-            {order.items.map(item => (
+            {order.items.map((item) => (
               <tr key={item.id} className="hover:bg-muted/50">
                 <td className="px-3 py-2">
                   <div className="font-medium text-foreground">{item.productTitle ?? "-"}</div>
@@ -128,11 +143,27 @@ export default async function AdminOrderDetailPage(props: { params: Promise<{ id
                     {item.productSku ? <span> · {item.productSku}</span> : null}
                   </div>
                 </td>
+
                 <td className="px-3 py-2 text-muted-foreground">{item.quantity}</td>
-                <td className="px-3 py-2 text-foreground">{formatCurrency(item.unitPrice, order.currency ?? "USD")}</td>
-                <td className="px-3 py-2 text-foreground">{formatCurrency(item.lineTotal, order.currency ?? "USD")}</td>
+
+                <td className="px-3 py-2 text-foreground">
+                  {(() => {
+                    const c = orderCurrency(order, locale);
+                    const unitMinor = pickMinor(item?.unitPriceMinor, item?.unitPrice);
+                    return unitMinor === null ? "-" : formatMoney(unitMinor, c, locale);
+                  })()}
+                </td>
+
+                <td className="px-3 py-2 text-foreground">
+                  {(() => {
+                    const c = orderCurrency(order, locale);
+                    const lineMinor = pickMinor(item?.lineTotalMinor, item?.lineTotal);
+                    return lineMinor === null ? "-" : formatMoney(lineMinor, c, locale);
+                  })()}
+                </td>
               </tr>
             ))}
+
             {order.items.length === 0 ? (
               <tr>
                 <td className="px-3 py-6 text-muted-foreground" colSpan={4}>
@@ -144,5 +175,5 @@ export default async function AdminOrderDetailPage(props: { params: Promise<{ id
         </table>
       </div>
     </div>
-  )
+  );
 }

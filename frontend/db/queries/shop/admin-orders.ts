@@ -3,19 +3,18 @@ import 'server-only';
 import { count, desc, eq, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import { orderItems, orders } from '@/db/schema';
+import type { CurrencyCode } from '@/lib/shop/currency';
+import type { PaymentProvider, PaymentStatus } from '@/lib/shop/payments';
+import { toDbMoney } from '@/lib/shop/money';
 
 export type AdminOrderListItem = {
   id: string;
   userId: string | null;
+  totalAmountMinor: number;
   totalAmount: string;
-  currency: 'USD';
-  paymentStatus:
-    | 'pending'
-    | 'requires_payment'
-    | 'paid'
-    | 'failed'
-    | 'refunded';
-  paymentProvider: string;
+  currency: CurrencyCode;
+  paymentStatus: PaymentStatus;
+  paymentProvider: PaymentProvider;
   paymentIntentId: string | null;
   createdAt: Date;
   itemCount: number;
@@ -24,15 +23,11 @@ export type AdminOrderListItem = {
 export type AdminOrderDetail = {
   id: string;
   userId: string | null;
+  totalAmountMinor: number;
   totalAmount: string;
-  currency: 'USD';
-  paymentStatus:
-    | 'pending'
-    | 'requires_payment'
-    | 'paid'
-    | 'failed'
-    | 'refunded';
-  paymentProvider: string;
+  currency: CurrencyCode;
+  paymentStatus: PaymentStatus;
+  paymentProvider: PaymentProvider;
   paymentIntentId: string | null;
   stockRestored: boolean;
   restockedAt: Date | null;
@@ -45,6 +40,8 @@ export type AdminOrderDetail = {
     productTitle: string | null;
     productSlug: string | null;
     productSku: string | null;
+    unitPriceMinor: number;
+    lineTotalMinor: number;
     quantity: number;
     unitPrice: string;
     lineTotal: string;
@@ -67,6 +64,7 @@ export async function getAdminOrdersPage(options: {
       id: orders.id,
       userId: orders.userId,
       totalAmount: orders.totalAmount,
+      totalAmountMinor: orders.totalAmountMinor,
       currency: orders.currency,
       paymentStatus: orders.paymentStatus,
       paymentProvider: orders.paymentProvider,
@@ -82,7 +80,10 @@ export async function getAdminOrdersPage(options: {
     .offset(offset);
 
   return {
-    items: rows as AdminOrderListItem[],
+    items: rows.map(r => ({
+      ...r,
+      totalAmount: toDbMoney(r.totalAmountMinor),
+    })) as AdminOrderListItem[],
     total: totalCount,
   };
 }
@@ -95,8 +96,8 @@ function toAdminOrderItem(
     productSlug: string | null;
     productSku: string | null;
     quantity: number | null;
-    unitPrice: string | null;
-    lineTotal: string | null;
+    unitPriceMinor: number | null;
+    lineTotalMinor: number | null;
   } | null
 ): AdminOrderDetail['items'][number] | null {
   if (!item || !item.id) return null;
@@ -104,8 +105,8 @@ function toAdminOrderItem(
   if (
     !item.productId ||
     item.quantity === null ||
-    !item.unitPrice ||
-    !item.lineTotal
+    item.unitPriceMinor === null ||
+    item.lineTotalMinor === null
   ) {
     throw new Error('Corrupt order item row: required columns are null');
   }
@@ -117,8 +118,10 @@ function toAdminOrderItem(
     productSlug: item.productSlug,
     productSku: item.productSku,
     quantity: item.quantity,
-    unitPrice: item.unitPrice,
-    lineTotal: item.lineTotal,
+    unitPriceMinor: item.unitPriceMinor,
+    lineTotalMinor: item.lineTotalMinor,
+    unitPrice: toDbMoney(item.unitPriceMinor),
+    lineTotal: toDbMoney(item.lineTotalMinor),
   };
 }
 
@@ -131,6 +134,7 @@ export async function getAdminOrderDetail(
         id: orders.id,
         userId: orders.userId,
         totalAmount: orders.totalAmount,
+        totalAmountMinor: orders.totalAmountMinor,
         currency: orders.currency,
         paymentStatus: orders.paymentStatus,
         paymentProvider: orders.paymentProvider,
@@ -148,8 +152,8 @@ export async function getAdminOrderDetail(
         productSlug: orderItems.productSlug,
         productSku: orderItems.productSku,
         quantity: orderItems.quantity,
-        unitPrice: orderItems.unitPrice,
-        lineTotal: orderItems.lineTotal,
+        unitPriceMinor: orderItems.unitPriceMinor,
+        lineTotalMinor: orderItems.lineTotalMinor,
       },
     })
     .from(orders)
@@ -166,6 +170,7 @@ export async function getAdminOrderDetail(
 
   return {
     ...base,
+    totalAmount: toDbMoney(base.totalAmountMinor),
     items,
   };
 }

@@ -24,7 +24,9 @@ interface ProductsPageProps {
 
 export default async function ProductsPage({
   searchParams,
-}: ProductsPageProps) {
+  params,
+}: ProductsPageProps & { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
   const resolvedSearchParams = (await searchParams) ?? {};
 
   const parsedParams = catalogQuerySchema.safeParse(resolvedSearchParams);
@@ -33,7 +35,7 @@ export default async function ProductsPage({
     ? parsedParams.data
     : { page: 1, limit: CATALOG_PAGE_SIZE };
 
-  const catalog = await getCatalogProducts(filters);
+  const catalog = await getCatalogProducts(filters, locale);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">

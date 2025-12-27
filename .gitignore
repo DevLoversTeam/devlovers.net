@@ -62,5 +62,6 @@ yarn-error.log*
 next-env.d.ts
 
 # Documentation (development only)
+.claude/
 CLAUDE.md
 frontend/docs/

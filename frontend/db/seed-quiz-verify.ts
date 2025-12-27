@@ -10,9 +10,9 @@ import {
 import { eq, sql } from 'drizzle-orm';
 
 async function verifyQuizSeed() {
-  console.log('🔍 Verifying quiz seed data...\n');
+  console.log('Verifying quiz seed data...\n');
 
-  console.log('📊 Record counts:');
+  console.log('Record counts:');
 
   const quizCount = await db
     .select({ count: sql<number>`count(*)` })
@@ -44,7 +44,7 @@ async function verifyQuizSeed() {
     .from(quizAnswerTranslations);
   console.log(`   quiz_answer_translations: ${answerTransCount[0].count}`);
 
-  console.log('\n📝 Quiz data:');
+  console.log('\nQuiz data:');
   const quizData = await db.query.quizzes.findFirst({
     where: eq(quizzes.slug, 'react-fundamentals'),
     with: {
@@ -63,7 +63,7 @@ async function verifyQuizSeed() {
     });
   }
 
-  console.log('\n❓ Sample question (first one):');
+  console.log('\nSample question (first one):');
   const sampleQuestion = await db.query.quizQuestions.findFirst({
     where: eq(quizQuestions.quizId, 'quiz-react-fundamentals'),
     orderBy: (q, { asc }) => asc(q.displayOrder),
@@ -93,14 +93,14 @@ async function verifyQuizSeed() {
       );
     });
 
-    console.log('\n📖 Explanation JSON structure (UK):');
+    console.log('\nExplanation JSON structure (UK):');
     const ukContent = sampleQuestion.content?.find(c => c.locale === 'uk');
     if (ukContent?.explanation) {
       console.log(JSON.stringify(ukContent.explanation, null, 2));
     }
   }
 
-  console.log('\n🌍 Locale coverage check:');
+  console.log('\nLocale coverage check:');
   const locales = ['uk', 'en', 'pl'];
 
   for (const locale of locales) {
@@ -119,11 +119,11 @@ async function verifyQuizSeed() {
     );
   }
 
-  console.log('\n✅ Verification complete!');
+  console.log('\nVerification complete!');
 }
 
 async function getQuizForLocale(slug: string, locale: string) {
-  console.log(`\n🎯 Fetching quiz "${slug}" for locale "${locale}":\n`);
+  console.log(`\nFetching quiz "${slug}" for locale "${locale}":\n`);
 
   const quiz = await db.query.quizzes.findFirst({
     where: eq(quizzes.slug, slug),

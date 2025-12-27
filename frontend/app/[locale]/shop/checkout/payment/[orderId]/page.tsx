@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import StripePaymentClient from "../StripePaymentClient";
-import { formatPrice } from "@/lib/shop/currency";
+import { formatMoney } from "@/lib/shop/currency";
 import { getOrderSummary } from "@/lib/services/orders";
 import { OrderNotFoundError } from "@/lib/services/errors";
 import { orderIdParamSchema } from "@/lib/validation/shop";
@@ -33,13 +33,15 @@ function buildStatusMessage(status: string) {
 }
 
 type PaymentPageProps = {
-  params: Promise<{ orderId: string }>;
+  params: Promise<{ locale: string; orderId: string }>;
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
+
 
 export default async function PaymentPage(props: PaymentPageProps) {
   const params = await props.params;
   const searchParams = props.searchParams ? await props.searchParams : undefined;
+  const { locale } = params;
 
   const orderId = getOrderId(params);
 
@@ -52,14 +54,12 @@ export default async function PaymentPage(props: PaymentPageProps) {
             We couldn&apos;t identify your order. Please return to your cart.
           </p>
           <div className="mt-6 flex justify-center gap-3">
-            <Link
-              href="/shop/cart"
+            <Link href={`/${locale}/shop/cart`}
               className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
             >
               Go to cart
             </Link>
-            <Link
-              href="/shop/products"
+            <Link href={`/${locale}/shop/products`}
               className="inline-flex items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground hover:bg-accent/90"
             >
               Continue shopping
@@ -84,14 +84,12 @@ export default async function PaymentPage(props: PaymentPageProps) {
               We couldn&apos;t find this order. It may have been removed or never existed.
             </p>
             <div className="mt-6 flex justify-center gap-3">
-              <Link
-                href="/shop/cart"
+              <Link href={`/${locale}/shop/cart`}
                 className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
               >
                 Go to cart
               </Link>
-              <Link
-                href="/shop/products"
+              <Link href={`/${locale}/shop/products`}
                 className="inline-flex items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground hover:bg-accent/90"
               >
                 Continue shopping
@@ -127,13 +125,12 @@ export default async function PaymentPage(props: PaymentPageProps) {
           </p>
           <div className="mt-6 flex justify-center gap-3">
             <Link
-              href={`/shop/checkout/success?orderId=${order.id}`}
+              href={`/${locale}/shop/checkout/success?orderId=${order.id}`}
               className="inline-flex items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground hover:bg-accent/90"
             >
               View confirmation
             </Link>
-            <Link
-              href="/shop/products"
+            <Link href={`/${locale}/shop/products`}
               className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
             >
               Continue shopping
@@ -169,7 +166,7 @@ export default async function PaymentPage(props: PaymentPageProps) {
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Amount due</span>
               <span className="text-xl font-bold text-foreground">
-                {formatPrice(order.totalAmount)}
+                {formatMoney(order.totalAmount, order.currency, locale)}
               </span>
             </div>
             <p className="mt-1 text-xs text-muted-foreground uppercase tracking-wide">
@@ -185,6 +182,7 @@ export default async function PaymentPage(props: PaymentPageProps) {
               currency={order.currency}
               publishableKey={publishableKey}
               paymentsEnabled={paymentsEnabled}
+              locale={locale}
             />
           </div>
         </div>
@@ -201,7 +199,7 @@ export default async function PaymentPage(props: PaymentPageProps) {
             <div className="flex items-center justify-between">
               <span>Total amount</span>
               <span className="font-semibold text-foreground">
-                {formatPrice(order.totalAmount)}
+                {formatMoney(order.totalAmount, order.currency, locale)}
               </span>
             </div>
             <div className="flex items-center justify-between">

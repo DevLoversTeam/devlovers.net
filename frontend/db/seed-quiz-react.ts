@@ -1,5 +1,7 @@
 import 'dotenv/config';
+import { eq } from 'drizzle-orm';
 import { db } from './index';
+import { categories } from './schema/categories';
 import {
   quizzes,
   quizTranslations,
@@ -46,11 +48,10 @@ interface QuizQuestionSeed {
 }
 
 const QUIZ_ID = randomUUID();
-const TOPIC_ID = randomUUID();
+const CATEGORY_SLUG = 'react';
 
 const quizData = {
   id: QUIZ_ID,
-  topicId: TOPIC_ID,
   slug: 'react-fundamentals',
   displayOrder: 1,
   questionsCount: 5,
@@ -878,15 +879,34 @@ const questionsData: QuizQuestionSeed[] = [
 ];
 
 async function seedReactQuiz() {
-  console.log('🚀 Starting React quiz seed...');
+  console.log('Starting React quiz seed...');
 
   const locales: Locale[] = ['uk', 'en', 'pl'];
 
   try {
-    console.log('📝 Creating quiz...');
-    await db.insert(quizzes).values(quizData).onConflictDoNothing();
+    // Find category by slug
+    const [category] = await db
+      .select()
+      .from(categories)
+      .where(eq(categories.slug, CATEGORY_SLUG))
+      .limit(1);
 
-    console.log('🌍 Creating quiz translations...');
+    if (!category) {
+      throw new Error(
+        `Category "${CATEGORY_SLUG}" not found. Run seed:categories first.`
+      );
+    }
+
+    console.log('Creating quiz...');
+    await db
+      .insert(quizzes)
+      .values({
+        ...quizData,
+        categoryId: category.id,
+      })
+      .onConflictDoNothing();
+
+    console.log('Creating quiz translations...');
     for (const locale of locales) {
       await db
         .insert(quizTranslations)
@@ -899,7 +919,7 @@ async function seedReactQuiz() {
         .onConflictDoNothing();
     }
 
-    console.log('❓ Creating questions...');
+    console.log('Creating questions...');
     for (const question of questionsData) {
       const questionId = randomUUID();
 
@@ -952,14 +972,18 @@ async function seedReactQuiz() {
       }
     }
 
-    console.log('✅ React quiz seeded successfully!');
+    console.log('React quiz seeded successfully!');
     console.log(`   - 1 quiz with ${locales.length} translations`);
-    console.log(`   - ${questionsData.length} questions with ${locales.length}
-  translations each`);
-    console.log(`   - ${questionsData.length * 4} answers with ${locales.length}
-  translations each`);
+    console.log(
+      `   - ${questionsData.length} questions with ${locales.length} translations each`
+    );
+    console.log(
+      `   - ${questionsData.length * 4} answers with ${
+        locales.length
+      } translations each`
+    );
   } catch (error) {
-    console.error('❌ Error seeding quiz:', error);
+    console.error('Error seeding quiz:', error);
     throw error;
   }
 }
@@ -974,7 +998,7 @@ async function cleanupReactQuiz() {
   await db.delete(quizTranslations);
   await db.delete(quizzes);
 
-  console.log('✅ Cleanup complete!');
+  console.log('Cleanup complete!');
 }
 
 seedReactQuiz()

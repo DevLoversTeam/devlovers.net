@@ -2,22 +2,8 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import AuthorModal from '@/components/blog/AuthorModal';
-import type { Post } from '@/components/blog/BlogFilters';
-import { normalizeTag } from '@/components/blog/BlogFilters';
-
-function extractExcerpt(body: any[], max = 200) {
-  const text =
-    body
-      ?.filter((b: any) => b?._type === 'block')
-      .map((b: any) =>
-        (b.children || []).map((c: any) => c.text || '').join(' ')
-      )
-      .join(' ')
-      .trim() || '';
-
-  return text.slice(0, max);
-}
+import AuthorModal from './AuthorModal';
+import type { Post, PortableTextBlock } from './BlogFilters';
 
 export default function BlogCard({
   post,
@@ -28,12 +14,28 @@ export default function BlogCard({
   selectedTags: string[];
   onTagToggle: (tag: string) => void;
 }) {
-  const excerpt = extractExcerpt(post.body || []);
+  const excerpt =
+    post.body
+      ?.filter((b): b is PortableTextBlock => b?._type === 'block')
+      .map(b => (b.children || []).map(c => c.text || '').join(' '))
+      .join(' ')
+      .slice(0, 160) || '';
 
   return (
-    <article className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col">
+    <article
+      className="
+        bg-white
+        border border-gray-200
+        rounded-xl
+        overflow-hidden
+        shadow-[0_1px_0_rgba(0,0,0,0.04)]
+        hover:shadow-[0_10px_30px_rgba(0,0,0,0.08)]
+        transition-shadow
+        flex flex-col
+      "
+    >
       {post.mainImage && (
-        <div className="relative w-full h-56">
+        <div className="relative w-full aspect-[16/9] bg-gray-100">
           <Image
             src={post.mainImage}
             alt={post.title}
@@ -46,7 +48,15 @@ export default function BlogCard({
       <div className="p-6 flex flex-col flex-grow">
         <Link
           href={`/blog/${post.slug.current}`}
-          className="text-2xl font-semibold text-blue-600 hover:underline"
+          className="
+            text-[22px]
+            font-semibold
+            text-gray-900
+            leading-snug
+            hover:text-gray-700
+            transition
+          "
+          style={{ fontFamily: 'ui-rounded, system-ui, -apple-system' }}
         >
           {post.title}
         </Link>
@@ -60,8 +70,14 @@ export default function BlogCard({
             {post.categories.map((cat, i) => (
               <span
                 key={`${cat}-${i}`}
-                className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1.5 rounded-md"
-                title="Category"
+                className="
+                  text-xs
+                  bg-gray-100
+                  text-gray-700
+                  border border-gray-300
+                  px-3 py-1.5
+                  rounded-md
+                "
               >
                 {cat}
               </span>
@@ -70,9 +86,9 @@ export default function BlogCard({
         ) : null}
 
         {post.tags?.length ? (
-          <div className="mt-2 flex flex-wrap gap-2">
+          <div className="mt-3 flex flex-wrap gap-2">
             {post.tags.map((tag, i) => {
-              const norm = normalizeTag(tag);
+              const norm = tag.toLowerCase();
               const active = selectedTags.includes(norm);
 
               return (
@@ -81,11 +97,11 @@ export default function BlogCard({
                   type="button"
                   onClick={() => onTagToggle(norm)}
                   className={[
-                    'text-xs rounded-md border px-3 py-1.5 transition',
-                    'border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100',
-                    active ? 'ring-2 ring-purple-200' : '',
+                    'text-xs px-3 py-1.5 rounded-md border transition',
+                    active
+                      ? 'bg-gray-200 border-gray-400 text-gray-800'
+                      : 'bg-gray-50 border-gray-300 text-gray-600 hover:bg-gray-100',
                   ].join(' ')}
-                  title="Filter by this tag"
                 >
                   #{norm}
                 </button>
@@ -94,18 +110,30 @@ export default function BlogCard({
           </div>
         ) : null}
 
-        {excerpt ? (
-          <p className="mt-4 text-gray-700 flex-grow leading-relaxed">
+        {excerpt && (
+          <p className="mt-4 text-gray-600 leading-relaxed flex-grow">
             {excerpt}
           </p>
-        ) : null}
+        )}
 
         {post.resourceLink && (
           <a
             href={post.resourceLink}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-4 inline-block bg-green-600 text-white px-4 py-2 rounded-md text-sm hover:bg-green-700 transition"
+            className="
+              mt-6
+              inline-flex items-center justify-center
+              w-full
+              border border-gray-300
+              bg-white
+              text-gray-800
+              px-4 py-2.5
+              rounded-lg
+              text-sm font-medium
+              hover:bg-gray-50 hover:border-gray-400
+              transition
+            "
           >
             Visit Resource →
           </a>
