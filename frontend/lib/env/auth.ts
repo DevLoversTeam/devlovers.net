@@ -14,7 +14,7 @@ function requireEnv(name: string): string {
   return value;
 }
 
-export const env = {
+export const authEnv = {
   appEnv: APP_ENV,
 
   google: {

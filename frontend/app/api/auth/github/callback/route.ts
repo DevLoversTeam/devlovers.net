@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { users } from "@/db/schema/users";
 import { signAuthToken, setAuthCookie } from "@/lib/auth";
-import { env } from "@/lib/env";
+import { authEnv } from "@/lib/env/auth";
 
 type GithubTokenResponse = {
   access_token: string;
@@ -40,10 +40,10 @@ export async function GET(req: NextRequest) {
         Accept: "application/json",
       },
       body: new URLSearchParams({
-        client_id: env.github.clientId!,
-        client_secret: env.github.clientSecret!,
+        client_id: authEnv.github.clientId!,
+        client_secret: authEnv.github.clientSecret!,
         code,
-        redirect_uri: env.github.redirectUri!,
+        redirect_uri: authEnv.github.redirectUri!,
       }),
     }
   );

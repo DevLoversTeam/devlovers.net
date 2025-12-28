@@ -269,17 +269,17 @@ export const stripeEvents = pgTable("stripe_events", {
 ]);
 
 export const users = pgTable("users", {
-	id: text().default(gen_random_uuid()).primaryKey().notNull(),
-	name: text(),
-	email: text().notNull(),
-	passwordHash: text("password_hash"),
-	emailVerified: timestamp("email_verified", { mode: 'string' }),
-	image: text(),
-	role: text().default('user').notNull(),
-	points: integer().default(0).notNull(),
-	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
+  id: uuid().defaultRandom().primaryKey().notNull(),
+  name: text(),
+  email: text().notNull(),
+  passwordHash: text("password_hash"),
+  emailVerified: timestamp("email_verified", { mode: "string" }),
+  image: text(),
+  role: text().default("user").notNull(),
+  points: integer().default(0).notNull(),
+  createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
 }, (table) => [
-	unique("users_email_unique").on(table.email),
+  unique("users_email_unique").on(table.email),
 ]);
 
 export const quizAnswerTranslations = pgTable("quiz_answer_translations", {

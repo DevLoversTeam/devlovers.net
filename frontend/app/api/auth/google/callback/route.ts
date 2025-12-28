@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { users } from "@/db/schema/users";
 import { signAuthToken, setAuthCookie } from "@/lib/auth";
-import { env } from "@/lib/env";
+import { authEnv } from "@/lib/env/auth";
 
 type GoogleTokenResponse = {
   access_token: string;
@@ -35,9 +35,9 @@ export async function GET(req: NextRequest) {
     },
     body: new URLSearchParams({
       code,
-      client_id: env.google.clientId!,
-      client_secret: env.google.clientSecret!,
-      redirect_uri: env.google.redirectUri!,
+      client_id: authEnv.google.clientId!,
+      client_secret: authEnv.google.clientSecret!,
+      redirect_uri: authEnv.google.redirectUri!,
       grant_type: "authorization_code",
     }),
   });
