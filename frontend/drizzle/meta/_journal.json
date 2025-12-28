@@ -57,6 +57,13 @@
       "when": 1766713709450,
       "tag": "0007_add-payment-intent-id-to-orders",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1766958940589,
+      "tag": "0008_dizzy_james_howlett",
+      "breakpoints": true
     }
   ]
 }

@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { getPendingQuizResult, clearPendingQuizResult } from "@/lib/guest-quiz";
 import { Button } from "@/components/ui/button";
+import { OAuthButtons } from '@/components/auth/OAuthButtons';
 
 type FormError = string | Record<string, string[]>;
 
@@ -93,6 +94,14 @@ export default function SignupPage() {
   return (
     <div className="mx-auto max-w-sm py-12">
       <h1 className="mb-6 text-2xl font-semibold">Create account</h1>
+
+      <OAuthButtons />
+
+      <div className="my-4 flex items-center gap-3">
+        <div className="h-px flex-1 bg-gray-200" />
+        <span className="text-xs text-gray-500">or</span>
+        <div className="h-px flex-1 bg-gray-200" />
+      </div>
 
       <form onSubmit={onSubmit} className="space-y-4">
         <input
