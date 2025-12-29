@@ -30,14 +30,6 @@ export default async function QuizPage({ params }: QuizPageProps) {
     );
   }
 
-    const debugInfo = {
-    slug,
-    questionsCount: quiz.questionsCount,
-    actualQuestions: questions.length,
-    timeLimitSeconds: quiz.timeLimitSeconds,
-    calculatedTime: quiz.timeLimitSeconds ?? questions.length * 30,
-  };
-
   return (
     <div className="min-h-screen bg-white dark:bg-black">
       <div className="max-w-3xl mx-auto px-4 py-8">

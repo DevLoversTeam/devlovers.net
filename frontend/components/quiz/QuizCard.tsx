@@ -11,7 +11,7 @@ interface QuizCardProps {
     description: string | null;
     questionsCount: number;
     timeLimitSeconds: number | null;
-    categoryName: string;
+    categoryName: string | null;
   };
   userProgress?: {
     bestScore: number;
@@ -28,7 +28,7 @@ export function QuizCard({ quiz, userProgress }: QuizCardProps) {
   return (
     <div className="rounded-xl border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex gap-2 mb-3">
-        <Badge variant="blue">{quiz.categoryName}</Badge>
+        <Badge variant="blue">{quiz.categoryName ?? 'Uncategorized'}</Badge>
         {userProgress && (
           <Badge variant="success">✓ Completed</Badge>
         )}

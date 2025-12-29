@@ -43,10 +43,6 @@ export default function QuizzesSection({
   const DEFAULT_CATEGORY = categoryData[0]?.slug || 'html';
   const [active, setActive] = useState(DEFAULT_CATEGORY);
 
-  const filteredQuizzes = quizzes.filter(
-    quiz => quiz.categorySlug === active
-  );
-
   return (
     <div className="w-full">
       <Tabs value={active} onValueChange={setActive}>
