@@ -35,9 +35,9 @@ export async function GET(req: NextRequest) {
     },
     body: new URLSearchParams({
       code,
-      client_id: authEnv.google.clientId!,
-      client_secret: authEnv.google.clientSecret!,
-      redirect_uri: authEnv.google.redirectUri!,
+      client_id: authEnv.google.clientId,
+      client_secret: authEnv.google.clientSecret,
+      redirect_uri: authEnv.google.redirectUri,
       grant_type: "authorization_code",
     }),
   });

@@ -40,10 +40,10 @@ export async function GET(req: NextRequest) {
         Accept: "application/json",
       },
       body: new URLSearchParams({
-        client_id: authEnv.github.clientId!,
-        client_secret: authEnv.github.clientSecret!,
+        client_id: authEnv.github.clientId,
+        client_secret: authEnv.github.clientSecret,
         code,
-        redirect_uri: authEnv.github.redirectUri!,
+        redirect_uri: authEnv.github.redirectUri,
       }),
     }
   );

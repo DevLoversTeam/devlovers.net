@@ -22,10 +22,10 @@ export const authEnv = {
     clientSecret: requireEnv("GOOGLE_CLIENT_SECRET"),
     redirectUri:
       APP_ENV === "local"
-        ? requireEnv("GOOGLE_REDIRECT_URI_LOCAL")
+        ? requireEnv("GOOGLE_CLIENT_REDIRECT_URI_LOCAL")
         : APP_ENV === "develop"
-        ? requireEnv("GOOGLE_REDIRECT_URI_DEVELOP")
-        : requireEnv("GOOGLE_REDIRECT_URI_PROD"),
+        ? requireEnv("GOOGLE_CLIENT_REDIRECT_URI_DEVELOP")
+        : requireEnv("GOOGLE_CLIENT_REDIRECT_URI_PROD"),
   },
 
   github:
@@ -33,17 +33,17 @@ export const authEnv = {
       ? {
           clientId: requireEnv("GITHUB_CLIENT_ID_LOCAL"),
           clientSecret: requireEnv("GITHUB_CLIENT_SECRET_LOCAL"),
-          redirectUri: requireEnv("GITHUB_REDIRECT_URI_LOCAL"),
+          redirectUri: requireEnv("GITHUB_CLIENT_REDIRECT_URI_LOCAL"),
         }
       : APP_ENV === "develop"
       ? {
           clientId: requireEnv("GITHUB_CLIENT_ID_DEVELOP"),
           clientSecret: requireEnv("GITHUB_CLIENT_SECRET_DEVELOP"),
-          redirectUri: requireEnv("GITHUB_REDIRECT_URI_DEVELOP"),
+          redirectUri: requireEnv("GITHUB_CLIENT_REDIRECT_URI_DEVELOP"),
         }
       : {
           clientId: requireEnv("GITHUB_CLIENT_ID_PROD"),
           clientSecret: requireEnv("GITHUB_CLIENT_SECRET_PROD"),
-          redirectUri: requireEnv("GITHUB_REDIRECT_URI_PROD"),
+          redirectUri: requireEnv("GITHUB_CLIENT_REDIRECT_URI_PROD"),
         },
 };

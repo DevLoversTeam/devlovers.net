@@ -3,8 +3,8 @@ import { NextResponse } from "next/server";
 
 export async function GET() {
   const params = new URLSearchParams({
-    client_id: authEnv.google.clientId!,
-    redirect_uri: authEnv.google.redirectUri!,
+    client_id: authEnv.google.clientId,
+    redirect_uri: authEnv.google.redirectUri,
     response_type: "code",
     scope: "openid email profile",
     prompt: "select_account",
