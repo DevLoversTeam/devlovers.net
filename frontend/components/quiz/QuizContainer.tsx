@@ -7,6 +7,7 @@ import { useAntiCheat } from '@/hooks/useAntiCheat';
 import { QuizProgress } from './QuizProgress';
 import { QuizQuestion } from './QuizQuestion';
 import { QuizResult } from './QuizResult';
+import { CountdownTimer } from './CountdownTimer';
 import { Button } from '@/components/ui/button';
 import { submitQuizAttempt } from '@/actions/quiz';
 import type { QuizQuestionWithAnswers } from '@/db/queries/quiz';
@@ -98,6 +99,7 @@ interface QuizContainerProps {
   questions: QuizQuestionWithAnswers[];
   userId: string | null;
   quizSlug: string;
+  timeLimitSeconds: number | null;
   onBackToTopics?: () => void;
 }
 
@@ -106,6 +108,7 @@ export function QuizContainer({
   quizId,
   questions,
   userId,
+  timeLimitSeconds,
   onBackToTopics,
 }: QuizContainerProps) {
   const [isPending, startTransition] = useTransition();
@@ -203,6 +206,10 @@ const locale = useLocale();
     dispatch({ type: 'RESTART' });
   };
 
+  const handleTimeUp = () => {
+    handleSubmit();
+  };
+
   const handleBackToTopicsClick = () => {
     if (onBackToTopics) {
       onBackToTopics();
@@ -298,6 +305,17 @@ const locale = useLocale();
         total={totalQuestions}
         answers={state.answers}
       />
+
+      {(() => {
+        const calculatedTime = timeLimitSeconds ?? (totalQuestions * 30);
+        return (
+          <CountdownTimer
+            timeLimitSeconds={calculatedTime}
+            onTimeUp={handleTimeUp}
+            isActive={state.status === 'in_progress'}
+          />
+        );
+      })()}
 
       <QuizQuestion
         question={currentQuestion}

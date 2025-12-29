@@ -21,7 +21,7 @@ export default async function QuizPage({ params }: QuizPageProps) {
   }
 
   const questions = await getQuizQuestionsRandomized(quiz.id, locale);
-
+  
   if (!questions.length) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -29,6 +29,14 @@ export default async function QuizPage({ params }: QuizPageProps) {
       </div>
     );
   }
+
+    const debugInfo = {
+    slug,
+    questionsCount: quiz.questionsCount,
+    actualQuestions: questions.length,
+    timeLimitSeconds: quiz.timeLimitSeconds,
+    calculatedTime: quiz.timeLimitSeconds ?? questions.length * 30,
+  };
 
   return (
     <div className="min-h-screen bg-white dark:bg-black">
@@ -44,9 +52,9 @@ export default async function QuizPage({ params }: QuizPageProps) {
           )}
           <div className="mt-4 flex gap-4 text-sm text-gray-500">
             <span>Питань: {quiz.questionsCount}</span>
-            {quiz.timeLimitSeconds && (
-              <span>Час: {Math.floor(quiz.timeLimitSeconds / 60)} хв</span>
-            )}
+            <span>
+              Час: {Math.floor((quiz.timeLimitSeconds ?? questions.length * 30) / 60)} хв
+            </span>
           </div>
         </div>
 
@@ -55,6 +63,7 @@ export default async function QuizPage({ params }: QuizPageProps) {
           quizId={quiz.id}
           questions={questions}
           userId={user?.id ?? null}
+          timeLimitSeconds={quiz.timeLimitSeconds ?? questions.length * 30}
         />
         {user && <PendingResultHandler userId={user.id} />}
       </div>
