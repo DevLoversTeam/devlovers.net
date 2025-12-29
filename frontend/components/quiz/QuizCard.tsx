@@ -21,7 +21,7 @@ interface QuizCardProps {
 }
 
 export function QuizCard({ quiz, userProgress }: QuizCardProps) {
-  const percentage = userProgress
+  const percentage = userProgress && userProgress.totalQuestions > 0
     ? Math.round((userProgress.bestScore / userProgress.totalQuestions) * 100)
     : 0;
 
