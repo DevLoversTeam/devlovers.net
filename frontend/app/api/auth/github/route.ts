@@ -9,6 +9,7 @@ export async function GET() {
         client_id: authEnv.github.clientId,
         redirect_uri: authEnv.github.redirectUri,
         scope: "user:email",
+        state,
     });
 
     return NextResponse.redirect(

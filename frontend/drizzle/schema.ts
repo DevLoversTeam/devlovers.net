@@ -1,3 +1,6 @@
+// ⚠️ Legacy file — not used by drizzle or runtime.
+// Canonical schemas live in frontend/db/schema/*
+
 import { pgTable, foreignKey, unique, check, uuid, text, numeric, jsonb, boolean, timestamp, varchar, integer, index, uniqueIndex, primaryKey, pgEnum } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
