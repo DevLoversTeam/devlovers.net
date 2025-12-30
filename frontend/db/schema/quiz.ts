@@ -21,8 +21,8 @@ export const quizzes = pgTable(
   {
     id: uuid('id').defaultRandom().primaryKey(),
     categoryId: uuid('category_id')
-  .notNull()
-  .references(() => categories.id, { onDelete: 'restrict' }),
+      .notNull()
+      .references(() => categories.id, { onDelete: 'restrict' }),
     slug: varchar('slug', { length: 100 }).notNull(),
     displayOrder: integer('display_order').notNull().default(0),
     questionsCount: integer('questions_count').notNull().default(10),
@@ -192,7 +192,7 @@ export const quizAttemptAnswers = pgTable(
 export const quizzesRelations = relations(quizzes, ({ many }) => ({
   translations: many(quizTranslations),
   questions: many(quizQuestions),
-  attempts: many(quizAttempts),
+  quizAttempts: many(quizAttempts),
 }));
 
 export const quizTranslationsRelations = relations(
