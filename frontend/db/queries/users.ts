@@ -17,9 +17,9 @@ export const getUserProfile = cache(async (userId: string) => {
       createdAt: true,
     },
     with: {
-      attempts: {
+      quizAttempts: {
         limit: 10,
-        orderBy: (attempts, { desc }) => [desc(attempts.completedAt)],
+        orderBy: (quisAttemps, { desc }) => [desc(quisAttemps.completedAt)],
       },
     },
   });
