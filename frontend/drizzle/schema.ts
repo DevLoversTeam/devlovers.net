@@ -51,6 +51,34 @@ export const orders = pgTable("orders", {
 	check("orders_total_amount_minor_non_negative", sql`total_amount_minor >= 0`)
 ]);
 
+export const categories = pgTable("categories", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	slug: varchar({ length: 50 }).notNull(),
+	displayOrder: integer("display_order").default(0).notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	unique("categories_slug_unique").on(table.slug),
+]);
+
+export const quizzes = pgTable("quizzes", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	categoryId: uuid("category_id").notNull(),
+	slug: varchar({ length: 100 }).notNull(),
+	displayOrder: integer("display_order").default(0).notNull(),
+	questionsCount: integer("questions_count").default(10).notNull(),
+	timeLimitSeconds: integer("time_limit_seconds"),
+	isActive: boolean("is_active").default(true).notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+}, (table) => [
+	foreignKey({
+		columns: [table.categoryId],
+		foreignColumns: [categories.id],
+		name: "quizzes_category_id_categories_id_fk"
+	}).onDelete("restrict"),
+	unique("quizzes_category_id_slug_unique").on(table.categoryId, table.slug),
+]);
+
 export const quizQuestions = pgTable("quiz_questions", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	quizId: uuid("quiz_id").notNull(),
@@ -158,34 +186,6 @@ export const quizAnswers = pgTable("quiz_answers", {
 		foreignColumns: [quizQuestions.id],
 		name: "quiz_answers_quiz_question_id_quiz_questions_id_fk"
 	}).onDelete("cascade"),
-]);
-
-export const quizzes = pgTable("quizzes", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	categoryId: uuid("category_id").notNull(),
-	slug: varchar({ length: 100 }).notNull(),
-	displayOrder: integer("display_order").default(0).notNull(),
-	questionsCount: integer("questions_count").default(10).notNull(),
-	timeLimitSeconds: integer("time_limit_seconds"),
-	isActive: boolean("is_active").default(true).notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-}, (table) => [
-	foreignKey({
-		columns: [table.categoryId],
-		foreignColumns: [categories.id],
-		name: "quizzes_category_id_categories_id_fk"
-	}).onDelete("restrict"),
-	unique("quizzes_category_id_slug_unique").on(table.categoryId, table.slug),
-]);
-
-export const categories = pgTable("categories", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	slug: varchar({ length: 50 }).notNull(),
-	displayOrder: integer("display_order").default(0).notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-}, (table) => [
-	unique("categories_slug_unique").on(table.slug),
 ]);
 
 export const orderItems = pgTable("order_items", {
