@@ -121,7 +121,7 @@ export async function GET(req: NextRequest) {
             .limit(1);
 
         if (emailUser) {
-            await db
+            const [updatedUser] = await db
                 .update(users)
                 .set({
                     provider: "github",
@@ -130,9 +130,10 @@ export async function GET(req: NextRequest) {
                     image: emailUser.image ?? ghUser.avatar_url,
                     name: emailUser.name ?? ghUser.name ?? ghUser.login,
                 })
-                .where(eq(users.id, emailUser.id));
+                .where(eq(users.id, emailUser.id))
+                .returning();
 
-            user = emailUser;
+            user = updatedUser;
         } else {
             const [created] = await db
                 .insert(users)

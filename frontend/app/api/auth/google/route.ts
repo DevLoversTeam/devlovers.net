@@ -7,7 +7,7 @@ import {
 
 
 export async function GET() {
-  const { clientId, redirectUri } = authEnv.github
+  const { clientId, redirectUri } = authEnv.google
 
   if (!clientId || !redirectUri) {
     throw new Error("Google OAuth is not properly configured");
@@ -22,6 +22,7 @@ export async function GET() {
     response_type: "code",
     scope: "openid email profile",
     prompt: "select_account",
+    state,
   });
 
   return NextResponse.redirect(

@@ -12,7 +12,7 @@ export async function setOAuthStateCookie(state: string) {
     const store = await cookies();
     store.set(STATE_COOKIE, state, {
         httpOnly: true,
-        sameSite: "strict",
+        sameSite: "lax",
         secure: process.env.NODE_ENV === "production",
         path: "/",
         maxAge: STATE_TTL_SECONDS,
@@ -26,6 +26,7 @@ export async function consumeOAuthState(expected: string | null): Promise<boolea
     store.delete(STATE_COOKIE);
 
     if (!expected || !actual) return false;
+    if (actual.length !== expected.length) return false;
     return crypto.timingSafeEqual(
         Buffer.from(actual),
         Buffer.from(expected)

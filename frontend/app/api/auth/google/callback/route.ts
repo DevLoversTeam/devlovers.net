@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
 
   if (!tokenRes.ok) {
     console.error(
-      "Google token exchange failed",)
+      "Google token exchange failed", await tokenRes.text())
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
@@ -99,7 +99,7 @@ export async function GET(req: NextRequest) {
       .limit(1);
 
     if (emailUser) {
-      await db
+      const [updatedUser] = await db
         .update(users)
         .set({
           provider: "google",
@@ -108,9 +108,10 @@ export async function GET(req: NextRequest) {
           image: emailUser.image ?? profile.picture,
           name: emailUser.name ?? profile.name,
         })
-        .where(eq(users.id, emailUser.id));
+        .where(eq(users.id, emailUser.id))
+        .returning();
 
-      user = emailUser;
+      user = updatedUser;
     } else {
 
       const [created] = await db
