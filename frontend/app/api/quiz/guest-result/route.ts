@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getCurrentUser } from '@/lib/auth';
 import { db } from "@/db";
 import { quizAttempts, quizAttemptAnswers } from "@/db/schema/quiz";
 import { awardQuizPoints } from "@/db/queries/points";
@@ -7,6 +8,7 @@ export const runtime = "nodejs";
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
+
 
   if (!body) {
     return NextResponse.json(
@@ -17,12 +19,21 @@ export async function POST(req: Request) {
 
   const { userId, quizId, answers, violations, timeSpentSeconds } = body;
 
+
   if (!userId || !quizId || !Array.isArray(answers) || answers.length === 0) {
     return NextResponse.json(
       { success: false, error: "Invalid input" },
       { status: 400 }
     );
   }
+
+   const session = await getCurrentUser();
+    if (!session || session.id !== body.userId) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
 
   try {
     const correctAnswersCount = answers.filter((a: { isCorrect: boolean }) => a.isCorrect).length;

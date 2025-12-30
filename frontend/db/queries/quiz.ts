@@ -9,6 +9,7 @@ import {
   quizAttempts,
   quizAttemptAnswers,
 } from '../schema/quiz';
+import { categories, categoryTranslations } from '../schema/categories';
 import { eq, and, desc, sql } from 'drizzle-orm';
 
 export interface Quiz {
@@ -19,6 +20,8 @@ export interface Quiz {
   questionsCount: number;
   timeLimitSeconds: number | null;
   isActive: boolean;
+  categorySlug: string | null;
+  categoryName: string | null;
 }
 
 export interface QuizQuestion {
@@ -73,6 +76,8 @@ export async function getQuizBySlug(
       isActive: quizzes.isActive,
       title: quizTranslations.title,
       description: quizTranslations.description,
+      categorySlug: categories.slug,
+      categoryName: categoryTranslations.title,
     })
     .from(quizzes)
     .leftJoin(
@@ -80,6 +85,14 @@ export async function getQuizBySlug(
       and(
         eq(quizTranslations.quizId, quizzes.id),
         eq(quizTranslations.locale, locale)
+      )
+    )
+    .leftJoin(categories, eq(categories.id, quizzes.categoryId))
+    .leftJoin(
+      categoryTranslations,
+      and(
+        eq(categoryTranslations.categoryId, categories.id),
+        eq(categoryTranslations.locale, locale)
       )
     )
     .where(eq(quizzes.slug, slug))
@@ -102,6 +115,8 @@ export async function getActiveQuizzes(
       isActive: quizzes.isActive,
       title: quizTranslations.title,
       description: quizTranslations.description,
+      categorySlug: categories.slug,
+      categoryName: categoryTranslations.title,
     })
     .from(quizzes)
     .leftJoin(
@@ -111,7 +126,16 @@ export async function getActiveQuizzes(
         eq(quizTranslations.locale, locale)
       )
     )
-    .where(eq(quizzes.isActive, true));
+    .leftJoin(categories, eq(categories.id, quizzes.categoryId))
+    .leftJoin(
+      categoryTranslations,
+      and(
+        eq(categoryTranslations.categoryId, categories.id),
+        eq(categoryTranslations.locale, locale)
+      )
+    )
+    .where(eq(quizzes.isActive, true))
+    .orderBy(categories.displayOrder, quizzes.displayOrder);
 
   return rows;
 }
@@ -292,4 +316,50 @@ export async function getAttemptDetails(attemptId: string) {
     attempt: attempt[0],
     answers,
   };
+}
+
+export interface UserQuizProgress {
+  quizId: string;
+  bestScore: number;
+  totalQuestions: number;
+  attemptsCount: number;
+  lastAttemptAt: Date;
+}
+
+export async function getUserQuizzesProgress(
+  userId: string
+): Promise<Map<string, UserQuizProgress>> {
+  const results = await db
+    .select({
+      quizId: quizAttempts.quizId,
+      score: quizAttempts.score,
+      totalQuestions: quizAttempts.totalQuestions,
+      completedAt: quizAttempts.completedAt,
+    })
+    .from(quizAttempts)
+    .where(eq(quizAttempts.userId, userId))
+    .orderBy(desc(quizAttempts.completedAt));
+
+  const progressMap = new Map<string, UserQuizProgress>();
+
+  for (const row of results) {
+    const existing = progressMap.get(row.quizId);
+
+    if (!existing) {
+      progressMap.set(row.quizId, {
+        quizId: row.quizId,
+        bestScore: row.score,
+        totalQuestions: row.totalQuestions,
+        attemptsCount: 1,
+        lastAttemptAt: row.completedAt,
+      });
+    } else {
+      existing.attemptsCount += 1;
+      if (row.score > existing.bestScore) {
+        existing.bestScore = row.score;
+      }
+    }
+  }
+
+  return progressMap;
 }
