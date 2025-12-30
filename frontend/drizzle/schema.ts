@@ -12,13 +12,14 @@ export const users = pgTable("users", {
 	passwordHash: text("password_hash"),
 	provider: text().default('credentials').notNull(),
 	providerId: text("provider_id"),
-	emailVerified: timestamp("email_verified", { mode: "string" }),
+	emailVerified: timestamp("email_verified", { mode: 'date' }),
 	image: text(),
 	role: text().default("user").notNull(),
 	points: integer().default(0).notNull(),
-	createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+	createdAt: timestamp("created_at", { mode: 'date' }).defaultNow().notNull(),
 }, (table) => [
 	unique("users_email_unique").on(table.email),
+	unique("users_provider_provider_id_unique").on(table.provider, table.providerId),
 ]);
 
 export const orders = pgTable("orders", {
@@ -34,10 +35,10 @@ export const orders = pgTable("orders", {
 	pspStatusReason: text("psp_status_reason"),
 	pspMetadata: jsonb("psp_metadata").default({}),
 	stockRestored: boolean("stock_restored").default(false).notNull(),
-	restockedAt: timestamp("restocked_at", { mode: 'string' }),
+	restockedAt: timestamp("restocked_at", { mode: 'date' }),
 	idempotencyKey: varchar("idempotency_key", { length: 128 }).notNull(),
-	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),
+	createdAt: timestamp("created_at", { mode: 'date' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { mode: 'date' }).defaultNow().notNull(),
 	totalAmountMinor: integer("total_amount_minor").notNull(),
 }, (table) => [
 	foreignKey({
@@ -55,7 +56,7 @@ export const categories = pgTable("categories", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	slug: varchar({ length: 50 }).notNull(),
 	displayOrder: integer("display_order").default(0).notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
 }, (table) => [
 	unique("categories_slug_unique").on(table.slug),
 ]);
@@ -68,8 +69,8 @@ export const quizzes = pgTable("quizzes", {
 	questionsCount: integer("questions_count").default(10).notNull(),
 	timeLimitSeconds: integer("time_limit_seconds"),
 	isActive: boolean("is_active").default(true).notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
 }, (table) => [
 	foreignKey({
 		columns: [table.categoryId],
@@ -85,7 +86,7 @@ export const quizQuestions = pgTable("quiz_questions", {
 	displayOrder: integer("display_order").notNull(),
 	sourceQuestionId: uuid("source_question_id"),
 	difficulty: varchar({ length: 20 }).default('medium'),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
 }, (table) => [
 	index("quiz_questions_quiz_display_order_idx").using("btree", table.quizId.asc().nullsLast().op("int4_ops"), table.displayOrder.asc().nullsLast().op("int4_ops")),
 	foreignKey({
@@ -114,8 +115,8 @@ export const products = pgTable("products", {
 	isFeatured: boolean("is_featured").default(false).notNull(),
 	stock: integer().default(0).notNull(),
 	sku: text(),
-	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),
+	createdAt: timestamp("created_at", { mode: 'date' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { mode: 'date' }).defaultNow().notNull(),
 }, (table) => [
 	uniqueIndex("products_slug_unique").using("btree", table.slug.asc().nullsLast().op("text_ops")),
 	check("products_stock_non_negative", sql`stock >= 0`),
@@ -128,7 +129,7 @@ export const pointTransactions = pgTable("point_transactions", {
 	source: varchar({ length: 50 }).default('quiz').notNull(),
 	sourceId: uuid("source_id"),
 	metadata: jsonb().default({}),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
 }, (table) => [
 	foreignKey({
 		columns: [table.userId],
@@ -143,8 +144,8 @@ export const productPrices = pgTable("product_prices", {
 	currency: currency().notNull(),
 	price: numeric({ precision: 10, scale: 2 }).notNull(),
 	originalPrice: numeric("original_price", { precision: 10, scale: 2 }),
-	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow().notNull(),
+	createdAt: timestamp("created_at", { mode: 'date' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { mode: 'date' }).defaultNow().notNull(),
 	priceMinor: integer("price_minor").notNull(),
 	originalPriceMinor: integer("original_price_minor"),
 }, (table) => [
@@ -164,8 +165,8 @@ export const questions = pgTable("questions", {
 	sortOrder: integer("sort_order").default(0).notNull(),
 	categoryId: uuid("category_id").notNull(),
 	difficulty: varchar({ length: 20 }).default('medium'),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
 }, (table) => [
 	foreignKey({
 		columns: [table.categoryId],
@@ -227,8 +228,8 @@ export const quizAttempts = pgTable("quiz_attempts", {
 	timeSpentSeconds: integer("time_spent_seconds"),
 	integrityScore: integer("integrity_score").default(100),
 	metadata: jsonb().default({}),
-	startedAt: timestamp("started_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	completedAt: timestamp("completed_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	startedAt: timestamp("started_at", { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+	completedAt: timestamp("completed_at", { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
 }, (table) => [
 	index("quiz_attempts_quiz_integrity_score_idx").using("btree", table.quizId.asc().nullsLast().op("int4_ops"), table.integrityScore.asc().nullsLast().op("int4_ops")),
 	index("quiz_attempts_quiz_percentage_completed_at_idx").using("btree", table.quizId.asc().nullsLast().op("uuid_ops"), table.percentage.asc().nullsLast().op("timestamptz_ops"), table.completedAt.asc().nullsLast().op("numeric_ops")),
@@ -246,7 +247,7 @@ export const quizAttemptAnswers = pgTable("quiz_attempt_answers", {
 	quizQuestionId: uuid("quiz_question_id").notNull(),
 	selectedAnswerId: uuid("selected_answer_id"),
 	isCorrect: boolean("is_correct").notNull(),
-	answeredAt: timestamp("answered_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	answeredAt: timestamp("answered_at", { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
 }, (table) => [
 	index("quiz_attempt_answers_attempt_idx").using("btree", table.attemptId.asc().nullsLast().op("uuid_ops")),
 	foreignKey({
@@ -274,7 +275,7 @@ export const stripeEvents = pgTable("stripe_events", {
 	orderId: uuid("order_id"),
 	eventType: text("event_type").notNull(),
 	paymentStatus: text("payment_status"),
-	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow().notNull(),
+	createdAt: timestamp("created_at", { mode: 'date' }).defaultNow().notNull(),
 }, (table) => [
 	uniqueIndex("stripe_events_event_id_idx").using("btree", table.eventId.asc().nullsLast().op("text_ops")),
 	foreignKey({
