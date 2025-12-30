@@ -1,150 +1,162 @@
 import { NextRequest, NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import { db } from "@/db";
 import { users } from "@/db/schema/users";
 import { signAuthToken, setAuthCookie } from "@/lib/auth";
 import { authEnv } from "@/lib/env/auth";
+import { consumeOAuthState } from "@/lib/auth/oauth-state";
 
 type GithubTokenResponse = {
-  access_token: string;
-  token_type: string;
-  scope: string;
+    access_token: string;
+    token_type: string;
+    scope: string;
 };
 
 type GithubUser = {
-  id: number;
-  login: string;
-  name: string | null;
-  avatar_url: string;
+    id: number;
+    login: string;
+    name: string | null;
+    avatar_url: string;
 };
 
 type GithubEmail = {
-  email: string;
-  primary: boolean;
-  verified: boolean;
+    email: string;
+    primary: boolean;
+    verified: boolean;
+};
+
+const GITHUB_HEADERS = {
+    "User-Agent": "devlovers-app",
 };
 
 export async function GET(req: NextRequest) {
-  const code = req.nextUrl.searchParams.get("code");
+    const code = req.nextUrl.searchParams.get("code");
+    const state = req.nextUrl.searchParams.get("state");
 
-  if (!code) {
-    return NextResponse.redirect(new URL("/login", req.url));
-  }
-
-  const tokenRes = await fetch(
-    "https://github.com/login/oauth/access_token",
-    {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-      },
-      body: new URLSearchParams({
-        client_id: authEnv.github.clientId,
-        client_secret: authEnv.github.clientSecret,
-        code,
-        redirect_uri: authEnv.github.redirectUri,
-      }),
+    if (!(await consumeOAuthState(state))) {
+        return NextResponse.redirect(new URL("/login", req.url));
     }
-  );
 
-  if (!tokenRes.ok) {
-    console.error(
-    "GitHub token exchange failed",
-    await tokenRes.text()
-  );
-    return NextResponse.redirect(new URL("/login", req.url));
-  }
+    if (!code) {
+        return NextResponse.redirect(new URL("/login", req.url));
+    }
 
-  const tokenData = (await tokenRes.json()) as GithubTokenResponse;
+    const tokenRes = await fetch(
+        "https://github.com/login/oauth/access_token",
+        {
+            method: "POST",
+            headers: {
+                Accept: "application/json",
+            },
+            body: new URLSearchParams({
+                client_id: authEnv.github.clientId,
+                client_secret: authEnv.github.clientSecret,
+                code,
+                redirect_uri: authEnv.github.redirectUri,
+            }),
+        }
+    );
 
-  const userRes = await fetch("https://api.github.com/user", {
-    headers: {
-      Authorization: `Bearer ${tokenData.access_token}`,
-    },
-  });
+    if (!tokenRes.ok) {
+        console.error(
+            "GitHub token exchange failed",
+            await tokenRes.text()
+        );
+        return NextResponse.redirect(new URL("/login", req.url));
+    }
 
-  if (!userRes.ok) {
-    return NextResponse.redirect(new URL("/login", req.url));
-  }
+    const tokenData = (await tokenRes.json()) as GithubTokenResponse;
 
-  const ghUser = (await userRes.json()) as GithubUser;
+    const userRes = await fetch("https://api.github.com/user", {
+        headers: {
+            ...GITHUB_HEADERS,
+            Authorization: `Bearer ${tokenData.access_token}`,
+        },
+    });
 
-  const emailsRes = await fetch("https://api.github.com/user/emails", {
-    headers: {
-      Authorization: `Bearer ${tokenData.access_token}`,
-    },
-  });
+    if (!userRes.ok) {
+        return NextResponse.redirect(new URL("/login", req.url));
+    }
 
-  if (!emailsRes.ok) {
-    return NextResponse.redirect(new URL("/login", req.url));
-  }
+    const ghUser = (await userRes.json()) as GithubUser;
 
-  const emails = (await emailsRes.json()) as GithubEmail[];
+    const emailsRes = await fetch("https://api.github.com/user/emails", {
+        headers: {
+            ...GITHUB_HEADERS,
+            Authorization: `Bearer ${tokenData.access_token}`,
+        },
+    });
 
-  const primaryEmail = emails.find(
-    (e) => e.primary && e.verified
-  )?.email;
+    if (!emailsRes.ok) {
+        return NextResponse.redirect(new URL("/login", req.url));
+    }
 
-  if (!primaryEmail) {
-    return NextResponse.redirect(new URL("/login", req.url));
-  }
+    const emails = (await emailsRes.json()) as GithubEmail[];
 
-  const githubId = String(ghUser.id);
-  let user = null;
+    const primaryEmail = emails.find(
+        (e) => e.primary && e.verified
+    )?.email;
 
-  const [githubUser] = await db
-    .select()
-    .from(users)
-    .where(eq(users.providerId, githubId))
-    .limit(1);
+    if (!primaryEmail) {
+        return NextResponse.redirect(new URL("/login", req.url));
+    }
 
-  if (githubUser) {
-    user = githubUser;
-  } else {
-    const [emailUser] = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, primaryEmail))
-      .limit(1);
+    const githubId = String(ghUser.id);
+    let user = null;
 
-    if (emailUser) {
-      await db
-        .update(users)
-        .set({
-          provider: "github",
-          providerId: githubId,
-          emailVerified: emailUser.emailVerified ?? new Date(),
-          image: emailUser.image ?? ghUser.avatar_url,
-          name: emailUser.name ?? ghUser.name ?? ghUser.login,
-        })
-        .where(eq(users.id, emailUser.id));
+    const [githubUser] = await db
+        .select()
+        .from(users)
+        .where(and(eq(users.providerId, githubId), eq(users.provider, "github")))
+        .limit(1);
 
-      user = emailUser;
+    if (githubUser) {
+        user = githubUser;
     } else {
-      const [created] = await db
-        .insert(users)
-        .values({
-          email: primaryEmail,
-          name: ghUser.name ?? ghUser.login,
-          image: ghUser.avatar_url,
-          provider: "github",
-          providerId: githubId,
-          emailVerified: new Date(),
-        })
-        .returning();
+        const [emailUser] = await db
+            .select()
+            .from(users)
+            .where(eq(users.email, primaryEmail))
+            .limit(1);
 
-      user = created;
+        if (emailUser) {
+            await db
+                .update(users)
+                .set({
+                    provider: "github",
+                    providerId: githubId,
+                    emailVerified: emailUser.emailVerified ?? new Date(),
+                    image: emailUser.image ?? ghUser.avatar_url,
+                    name: emailUser.name ?? ghUser.name ?? ghUser.login,
+                })
+                .where(eq(users.id, emailUser.id));
+
+            user = emailUser;
+        } else {
+            const [created] = await db
+                .insert(users)
+                .values({
+                    email: primaryEmail,
+                    name: ghUser.name ?? ghUser.login,
+                    image: ghUser.avatar_url,
+                    provider: "github",
+                    providerId: githubId,
+                    emailVerified: new Date(),
+                })
+                .returning();
+
+            user = created;
+        }
     }
-  }
 
-  const token = signAuthToken({
-    userId: user.id,
-    email: user.email,
-    role: user.role === "admin" ? "admin" : "user",
-  });
+    const token = signAuthToken({
+        userId: user.id,
+        email: user.email,
+        role: user.role === "admin" ? "admin" : "user",
+    });
 
-  await setAuthCookie(token);
+    await setAuthCookie(token);
 
-  return NextResponse.redirect(new URL("/", req.url));
+    return NextResponse.redirect(new URL("/", req.url));
 }

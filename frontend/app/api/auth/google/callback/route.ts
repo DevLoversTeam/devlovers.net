@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import { db } from "@/db";
 import { users } from "@/db/schema/users";
 import { signAuthToken, setAuthCookie } from "@/lib/auth";
 import { authEnv } from "@/lib/env/auth";
+import { consumeOAuthState } from "@/lib/auth/oauth-state";
 
 type GoogleTokenResponse = {
   access_token: string;
@@ -28,6 +29,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
+  const state = req.nextUrl.searchParams.get("state");
+
+  if (!(await consumeOAuthState(state))) {
+    return NextResponse.redirect(new URL("/login", req.url));
+  }
+
   const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: {
@@ -43,6 +50,8 @@ export async function GET(req: NextRequest) {
   });
 
   if (!tokenRes.ok) {
+    console.error(
+      "Google token exchange failed",)
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
@@ -63,6 +72,11 @@ export async function GET(req: NextRequest) {
 
   const profile = (await profileRes.json()) as GoogleProfile;
 
+  if (!profile.verified_email) {
+    console.warn("Google email not verified", profile);
+    return NextResponse.redirect(new URL("/login?error=unverified_email", req.url));
+  }
+
   const email = profile.email;
   const googleId = profile.id;
 
@@ -71,7 +85,7 @@ export async function GET(req: NextRequest) {
   const [googleUser] = await db
     .select()
     .from(users)
-    .where(eq(users.providerId, googleId))
+    .where(and(eq(users.providerId, googleId), eq(users.provider, "google")))
     .limit(1);
 
   if (googleUser) {
