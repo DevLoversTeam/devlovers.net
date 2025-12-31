@@ -116,14 +116,14 @@ export function PricingSection() {
     const t = useTranslations("about.pricing")
     const tFeatures = useTranslations("about.pricing.features")
 
-    const features = [
-        tFeatures("unlimitedQuestions"),
-        tFeatures("fullQuizAccess"),
-        tFeatures("globalLeaderboard"),
-        tFeatures("progressTracking"),
-        tFeatures("communityChallenges"),
-        tFeatures("mobileFriendly")
-    ]
+    const featureKeys = [
+        "unlimitedQuestions",
+        "fullQuizAccess",
+        "globalLeaderboard",
+        "progressTracking",
+        "communityChallenges",
+        "mobileFriendly"
+    ] as const
 
     return (
         <section className="relative px-6 py-24 bg-background transition-colors duration-300 overflow-hidden">
@@ -178,12 +178,12 @@ export function PricingSection() {
                             <div className="h-px w-full bg-gradient-to-r from-transparent via-border to-transparent mb-10" />
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-12 text-left max-w-lg mx-auto mb-12">
-                                {features.map((feature) => (
-                                    <div key={feature} className="flex items-center gap-3">
+                                {featureKeys.map((featureKey) => (
+                                    <div key={featureKey} className="flex items-center gap-3">
                                         <div className="flex-shrink-0 h-5 w-5 rounded-full bg-[#2C7FFF]/10 flex items-center justify-center">
                                              <Heart className="h-3 w-3 text-[#2C7FFF] fill-[#2C7FFF]" />
                                         </div>
-                                        <span className="text-muted-foreground text-sm font-medium">{feature}</span>
+                                        <span className="text-muted-foreground text-sm font-medium">{tFeatures(featureKey)}</span>
                                     </div>
                                 ))}
                             </div>
