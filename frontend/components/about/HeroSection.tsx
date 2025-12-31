@@ -3,8 +3,11 @@
 import { motion } from "framer-motion"
 import { Heart, Sparkles } from "lucide-react"
 import { StatsSection } from "@/components/about/StatsSection"
+import { useTranslations } from "next-intl"
 
 export function HeroSection() {
+    const t = useTranslations("about.hero")
+
     return (
         <section className="relative flex flex-col items-center justify-center px-6 py-24 bg-background transition-colors duration-300 overflow-hidden">
             <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -42,16 +45,16 @@ export function HeroSection() {
                     className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#2C7FFF]/20 bg-[#2C7FFF]/5 px-4 py-1.5 text-sm font-medium text-[#2C7FFF]"
                 >
                     <Sparkles className="h-4 w-4" />
-                    <span>Our Story</span>
+                    <span>{t("badge")}</span>
                 </motion.div>
 
                 <h2 className="mb-6 text-balance text-3xl font-bold tracking-tight text-foreground md:text-5xl transition-colors duration-300">
-                    Driven by passion, <br />
-                    built for <span className="text-[#2C7FFF]">community growth</span>
+                    {t("title")} <br />
+                    <span className="text-[#2C7FFF]">{t("titleHighlight")}</span>
                 </h2>
 
                 <p className="max-w-2xl text-pretty text-lg text-muted-foreground md:text-xl transition-colors duration-300 mb-12">
-                    DevLovers started as a simple university project. We noticed a gap in how developers prepare for interviews — scattered resources and lack of structure. We built a unified ecosystem where knowledge meets practice.
+                    {t("description")}
                 </p>
 
                 <div className="w-full h-px bg-gradient-to-r from-transparent via-border to-transparent mb-12 opacity-50" />

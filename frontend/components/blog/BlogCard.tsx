@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import AuthorModal from './AuthorModal';
 import type { Post, PortableTextBlock } from './BlogFilters';
 
@@ -14,6 +15,7 @@ export default function BlogCard({
   selectedTags: string[];
   onTagToggle: (tag: string) => void;
 }) {
+  const t = useTranslations('blog');
   const excerpt =
     post.body
       ?.filter((b): b is PortableTextBlock => b?._type === 'block')
@@ -135,7 +137,7 @@ export default function BlogCard({
               transition
             "
           >
-            Visit Resource →
+            {t('visitResource')}
           </a>
         )}
       </div>
