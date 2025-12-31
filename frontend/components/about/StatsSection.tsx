@@ -3,12 +3,13 @@
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Star, Linkedin, Users, Terminal } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 const GITHUB_USERNAME = "DevLoversTeam"
 const GITHUB_REPO = "devlovers.net"
-const LINKEDIN_COUNT = "1.2k+"      
-const ACTIVE_USERS = "1"        
-const QUESTIONS_SOLVED = "0"   
+const LINKEDIN_COUNT = "1.2k+"
+const ACTIVE_USERS = "1"
+const QUESTIONS_SOLVED = "0"
 
 function formatCount(num: number): string {
   if (num >= 1000) return (num / 1000).toFixed(1) + "k"
@@ -16,14 +17,15 @@ function formatCount(num: number): string {
 }
 
 export function StatsSection() {
+  const t = useTranslations("about.stats")
   const [githubStars, setGithubStars] = useState("...")
 
   useEffect(() => {
     fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}`)
       .then(res => res.json())
       .then(data => {
-        const stars = data.stargazers_count 
-          ? formatCount(data.stargazers_count) 
+        const stars = data.stargazers_count
+          ? formatCount(data.stargazers_count)
           : "2.5k"
         setGithubStars(stars)
       })
@@ -31,10 +33,10 @@ export function StatsSection() {
   }, [])
 
   const stats = [
-    { key: "stars", value: githubStars, label: "GitHub Stars", icon: Star },
-    { key: "linkedin", value: LINKEDIN_COUNT, label: "Followers", icon: Linkedin },
-    { key: "users", value: ACTIVE_USERS, label: "Active Devs", icon: Users },
-    { key: "solved", value: QUESTIONS_SOLVED, label: "Solved", icon: Terminal },
+    { key: "stars", value: githubStars, label: t("githubStars"), icon: Star },
+    { key: "linkedin", value: LINKEDIN_COUNT, label: t("followers"), icon: Linkedin },
+    { key: "users", value: ACTIVE_USERS, label: t("activeDevs"), icon: Users },
+    { key: "solved", value: QUESTIONS_SOLVED, label: t("solved"), icon: Terminal },
   ]
 
   return (
@@ -54,11 +56,11 @@ export function StatsSection() {
               <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-lg bg-[#2C7FFF]/10 text-[#2C7FFF]">
                 <Icon className="h-5 w-5" />
               </div>
-              
+
               <div className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">
                 {item.value}
               </div>
-              
+
               <div className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
                 {item.label}
               </div>

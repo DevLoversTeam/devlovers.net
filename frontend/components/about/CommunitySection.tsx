@@ -2,54 +2,55 @@
 
 import { motion } from "framer-motion"
 import { MessageCircle } from "lucide-react"
+import { useTranslations } from "next-intl"
 
-const testimonials = [
+const testimonialData = [
   {
     name: "Alex Chen",
     role: "Frontend Engineer @ Meta",
     avatar: "AC",
-    content: "DevLovers helped me nail my system design interviews. The community is incredibly supportive!",
     platform: "LinkedIn",
   },
   {
     name: "Sarah Johnson",
     role: "Senior SWE @ Google",
     avatar: "SJ",
-    content: "Finally, a free resource that actually prepares you for real interviews. The questions are spot-on.",
     platform: "Twitter",
   },
   {
     name: "Marcus Williams",
     role: "Backend Developer @ Stripe",
     avatar: "MW",
-    content: "Went from struggling with DSA to getting multiple offers. Can't recommend this enough! 🚀",
     platform: "Twitter",
   },
   {
     name: "Emily Park",
     role: "Full Stack @ Vercel",
     avatar: "EP",
-    content: "The interactive quizzes are addictive. I've learned more here than months of LeetCode grinding.",
     platform: "LinkedIn",
   },
   {
     name: "David Kim",
     role: "Staff Engineer @ Netflix",
     avatar: "DK",
-    content:
-      "Love the community challenges! Great way to practice under pressure. This is the future of interview prep.",
     platform: "Twitter",
   },
   {
     name: "Lisa Thompson",
     role: "Engineering Manager @ Amazon",
     avatar: "LT",
-    content: "I recommend DevLovers to all my mentees. It's become essential for anyone preparing for tech interviews.",
     platform: "LinkedIn",
   },
 ]
 
 export function CommunitySection() {
+  const t = useTranslations("about.community")
+
+  const testimonials = testimonialData.map((data, index) => ({
+    ...data,
+    content: t(`testimonials.${index}`),
+  }))
+
   return (
     <section className="overflow-hidden px-6 py-24 bg-background transition-colors duration-300">
       <div className="mx-auto max-w-6xl">
@@ -61,10 +62,10 @@ export function CommunitySection() {
           className="mb-16 text-center"
         >
           <h2 className="text-3xl font-bold text-foreground md:text-4xl transition-colors duration-300">
-            Trusted by the Community
+            {t("title")}
           </h2>
           <p className="mt-4 text-muted-foreground transition-colors duration-300">
-            Join thousands of developers who&apos;ve leveled up their interview skills
+            {t("subtitle")}
           </p>
         </motion.div>
 
@@ -114,14 +115,14 @@ function TestimonialCard({
             <div className="text-xs text-muted-foreground transition-colors duration-300">{role}</div>
           </div>
         </div>
-        
+
         <div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted transition-colors duration-300">
           <MessageCircle className="h-3 w-3 text-muted-foreground" />
         </div>
       </div>
-      
+
       <p className="text-sm leading-relaxed text-muted-foreground transition-colors duration-300">{content}</p>
-      
+
       <div className="mt-4 text-xs text-muted-foreground/60 transition-colors duration-300">via {platform}</div>
     </div>
   )
