@@ -52,6 +52,12 @@
     "noPosts": "Статей не знайдено",
     "noPostsForTags": "Немає статей за обраними тегами"
   },
+  "footer": {
+    "builtWith": "Створено",
+    "byCommunity": "спільнотою.",
+    "privacyPolicy": "Політика Конфіденційності",
+    "termsOfService": "Умови Використання"
+  },
   "about": {
     "hero": {
       "badge": "Наша Історія",

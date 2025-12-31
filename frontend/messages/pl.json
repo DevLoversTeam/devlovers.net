@@ -52,6 +52,12 @@
     "noPosts": "Nie znaleziono wpisów",
     "noPostsForTags": "Nie znaleziono wpisów dla wybranych tagów"
   },
+  "footer": {
+    "builtWith": "Zbudowane z",
+    "byCommunity": "przez społeczność.",
+    "privacyPolicy": "Polityka Prywatności",
+    "termsOfService": "Warunki Świadczenia Usług"
+  },
   "about": {
     "hero": {
       "badge": "Nasza Historia",

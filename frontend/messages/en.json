@@ -52,6 +52,12 @@
     "noPosts": "No posts found",
     "noPostsForTags": "No posts found for selected tags"
   },
+  "footer": {
+    "builtWith": "Built with",
+    "byCommunity": "by the community.",
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service"
+  },
   "about": {
     "hero": {
       "badge": "Our Story",
