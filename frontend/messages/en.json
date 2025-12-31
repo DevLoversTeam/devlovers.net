@@ -45,12 +45,13 @@
     "title": "All Blog Posts",
     "metaTitle": "Blog | DevLovers",
     "metaDescription": "Explore the latest articles and insights",
-    "searchPlaceholder": "Type a hashtag and press Enter (e.g. frontend, qa)",
+    "searchPlaceholder": "Search...",
     "removeTag": "Remove tag",
     "add": "Add",
     "clear": "Clear",
     "noPosts": "No posts found",
-    "noPostsForTags": "No posts found for selected tags"
+    "noPostsForTags": "No posts found for selected tags",
+    "visitResource": "Visit Resource →"
   },
   "footer": {
     "builtWith": "Built with",

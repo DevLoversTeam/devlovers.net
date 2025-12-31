@@ -45,12 +45,13 @@
     "title": "Усі статті блогу",
     "metaTitle": "Блог | DevLovers",
     "metaDescription": "Досліджуйте останні статті та корисні матеріали",
-    "searchPlaceholder": "Введіть хештег і натисніть Enter (наприклад, frontend, qa)",
+    "searchPlaceholder": "Пошук...",
     "removeTag": "Видалити тег",
     "add": "Додати",
     "clear": "Очистити",
     "noPosts": "Статей не знайдено",
-    "noPostsForTags": "Немає статей за обраними тегами"
+    "noPostsForTags": "Немає статей за обраними тегами",
+    "visitResource": "Відвідати ресурс →"
   },
   "footer": {
     "builtWith": "Створено",

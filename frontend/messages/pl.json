@@ -45,12 +45,13 @@
     "title": "Wszystkie Wpisy na Blogu",
     "metaTitle": "Blog | DevLovers",
     "metaDescription": "Odkryj najnowsze artykuły i spostrzeżenia",
-    "searchPlaceholder": "Wpisz hashtag i naciśnij Enter (np. frontend, qa)",
+    "searchPlaceholder": "Szukaj...",
     "removeTag": "Usuń tag",
     "add": "Dodaj",
     "clear": "Wyczyść",
     "noPosts": "Nie znaleziono wpisów",
-    "noPostsForTags": "Nie znaleziono wpisów dla wybranych tagów"
+    "noPostsForTags": "Nie znaleziono wpisów dla wybranych tagów",
+    "visitResource": "Odwiedź zasób →"
   },
   "footer": {
     "builtWith": "Zbudowane z",
