@@ -12,7 +12,15 @@ import { formatMoney } from "@/lib/shop/currency";
 import { Link } from "@/i18n/routing";
 import { locales } from "@/i18n/config";
 
+const shouldSkipStaticParams =
+  process.env.NETLIFY === "true" ||
+  process.env.SKIP_BUILD_STATIC_PARAMS === "true";
+
 export async function generateStaticParams() {
+  if (shouldSkipStaticParams) {
+    return [];
+  }
+
   const all: { locale: string; slug: string }[] = [];
 
   for (const locale of locales) {
