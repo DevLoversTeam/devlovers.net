@@ -137,16 +137,23 @@ function assertMoneyString(value: string, field: string): number {
 
 function assertMoneyMinorInt(value: unknown, field: string): number {
   const n = typeof value === 'number' ? value : Number(value);
+
   if (!Number.isFinite(n)) {
     throw new InvalidPayloadError(`${field} must be a number.`);
   }
-  const i = Math.trunc(n);
-  if (!Number.isSafeInteger(i) || i < 1) {
+
+  // Critical: reject fractional minor units (no truncation)
+  if (!Number.isInteger(n)) {
+    throw new InvalidPayloadError(`${field} must be an integer (minor units).`);
+  }
+
+  if (!Number.isSafeInteger(n) || n < 1) {
     throw new InvalidPayloadError(
       `${field} must be a positive integer (minor units).`
     );
   }
-  return i;
+
+  return n;
 }
 
 function assertOptionalMoneyString(
@@ -739,16 +746,47 @@ export async function rehydrateCartItems(
       MAX_QUANTITY_PER_LINE
     );
 
-    const unitPriceCents =
+    let unitPriceCents: number;
+
+    if (
       typeof product.priceMinor === 'number' &&
       Number.isFinite(product.priceMinor)
-        ? Math.trunc(product.priceMinor)
-        : toCents(
-            coercePriceFromDb(product.price, {
-              field: 'price',
-              productId: product.id,
-            })
-          );
+    ) {
+      // Critical: DB should store integer minor units; do not truncate
+      if (!Number.isInteger(product.priceMinor)) {
+        throw new PriceConfigError(
+          'Invalid priceMinor in DB (must be integer).',
+          {
+            productId: product.id,
+            currency,
+          }
+        );
+      }
+      if (!Number.isSafeInteger(product.priceMinor) || product.priceMinor < 1) {
+        throw new PriceConfigError('Invalid priceMinor in DB (out of range).', {
+          productId: product.id,
+          currency,
+        });
+      }
+
+      unitPriceCents = product.priceMinor;
+    } else {
+      // Fallback to legacy money column (string/decimal), still validated via coercePriceFromDb
+      unitPriceCents = toCents(
+        coercePriceFromDb(product.price, {
+          field: 'price',
+          productId: product.id,
+        })
+      );
+    }
+    // Safety: regardless of source (canonical priceMinor or legacy price),
+    // unitPriceCents must be a positive safe integer in minor units.
+    if (!Number.isSafeInteger(unitPriceCents) || unitPriceCents < 1) {
+      throw new PriceConfigError('Invalid price in DB (out of range).', {
+        productId: product.id,
+        currency,
+      });
+    }
 
     const lineTotalCents = calculateLineTotal(
       unitPriceCents,
