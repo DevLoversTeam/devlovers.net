@@ -223,6 +223,11 @@ function normalizePricesFromInput(input: unknown): NormalizedPriceRow[] {
                   p.originalPriceMinor,
                   `${currency} originalPrice`
                 );
+                if (v <= priceMinor) {
+                  throw new InvalidPayloadError(
+                    `${currency} originalPrice must be > price.`
+                  );
+                }
                 return v;
               })();
 
