@@ -114,21 +114,21 @@ export default async function CheckoutErrorPage({
 
         <div className="mt-6 flex flex-wrap gap-3">
           <Link
-            href="/cart"
+            href="/shop/cart"
             className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
           >
             Back to cart
           </Link>
           {isFailed && order.id && (
             <Link
-              href={`/checkout/payment/${order.id}`}
+              href={`/shop/checkout/payment/${order.id}`}
               className="inline-flex items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground hover:bg-accent/90"
             >
               Retry payment
             </Link>
           )}
           <Link
-            href="/products"
+            href="/shop/products"
             className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
           >
             Continue shopping

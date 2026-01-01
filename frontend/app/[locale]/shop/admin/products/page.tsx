@@ -139,13 +139,13 @@ export default async function AdminProductsPage({
                 <td className="px-3 py-2">
                   <div className="flex flex-wrap gap-2">
                     <Link
-                      href={`/${locale}/shop/products/${product.slug}`}
+                      href={`/shop/products/${product.slug}`}
                       className="rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
                     >
                       View
                     </Link>
                     <Link
-                      href={`/${locale}/shop/admin/products/${product.id}/edit`}
+                      href={`/shop/admin/products/${product.id}/edit`}
                       className="rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
                     >
                       Edit

@@ -1,7 +1,7 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
-import { Link } from '@/i18n/routing';
+import { Link, usePathname } from '@/i18n/routing';
+import { useSearchParams } from 'next/navigation';
 
 import { CATEGORIES } from '@/lib/config/catalog';
 import { cn } from '@/lib/utils';
@@ -28,23 +28,24 @@ interface NavLinksProps {
   showAdminLink?: boolean;
 }
 
-function stripLocale(pathname: string) {
-  const parts = pathname.split('/').filter(Boolean);
-  if (parts.length === 0) return pathname;
-  // /{locale}/...  ->  /...
-  return '/' + parts.slice(1).join('/');
-}
-
 export function NavLinks({ className, onNavigate, showAdminLink = false }: NavLinksProps) {
-  const pathname = usePathname();
-  const pathNoLocale = stripLocale(pathname);
+  const pathname = usePathname(); // i18n-aware (без /{locale} префіксу)
+  const searchParams = useSearchParams();
+  const currentCategory = searchParams.get('category');
 
   return (
     <nav className={cn('items-center gap-1', className)}>
       {NAV_LINKS.map(link => {
+        const [linkPath, linkQuery] = link.href.split('?');
+        const linkParams = new URLSearchParams(linkQuery ?? '');
+        const linkCategory = linkParams.get('category');
+
+        // Правило:
+        // - "All Products" активний тільки коли немає category в URL
+        // - category-лінк активний тільки коли category збігається
         const isActive =
-          pathNoLocale === link.href ||
-          (link.href.includes('?') && pathNoLocale === '/shop/products');
+          pathname === linkPath &&
+          (linkCategory ? currentCategory === linkCategory : !currentCategory);
 
         return (
           <Link
