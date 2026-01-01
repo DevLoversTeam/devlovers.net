@@ -19,6 +19,10 @@ export const users = pgTable("users", {
 
   passwordHash: text("password_hash"),
 
+  provider: text("provider").notNull().default("credentials"),
+
+  providerId: text("provider_id"),
+
   emailVerified: timestamp("email_verified", { mode: "date" }),
 
   image: text("image"),
@@ -31,5 +35,5 @@ export const users = pgTable("users", {
 });
 
 export const usersRelations = relations(users, ({ many }) => ({
-  attempts: many(quizAttempts),
+  quizAttempts: many(quizAttempts),
 }));

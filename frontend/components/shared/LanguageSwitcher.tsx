@@ -12,12 +12,14 @@ export default function LanguageSwitcher() {
   const params = useParams();
   const currentLocale = params.locale as Locale;
 
-  // Remove locale prefix from pathname: /uk/q&a -> /q&a, /uk -> /
   const pathname = fullPathname.replace(/^\/(uk|en|pl)/, '') || '/';
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
@@ -34,7 +36,9 @@ export default function LanguageSwitcher() {
       >
         {currentLocale}
         <svg
-          className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          className={`h-4 w-4 transition-transform ${
+            isOpen ? 'rotate-180' : ''
+          }`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -50,7 +54,7 @@ export default function LanguageSwitcher() {
 
       {isOpen && (
         <div className="absolute right-0 mt-2 py-2 w-20 bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 rounded-md shadow-lg z-50">
-          {locales.map((locale) => (
+          {locales.map(locale => (
             <Link
               key={locale}
               href={pathname}

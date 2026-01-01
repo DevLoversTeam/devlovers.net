@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { Link } from '@/i18n/routing';
+
 import { notFound } from "next/navigation";
 
 import { getAdminOrderDetail } from "@/db/queries/shop/admin-orders";
@@ -42,8 +43,7 @@ export default async function AdminOrderDetailPage({
         </div>
 
         <div className="flex gap-2">
-          <Link
-            href={`/${locale}/shop/admin/orders`}
+          <Link href="/shop/admin/orders"
             className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
           >
             Back

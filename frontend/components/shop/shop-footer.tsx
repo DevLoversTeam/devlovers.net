@@ -2,7 +2,7 @@
 
 import type React from 'react';
 
-import Link from 'next/link';
+import { Link } from '@/i18n/routing'
 import { useState } from 'react';
 import { Github, Twitter, Instagram } from 'lucide-react';
 

@@ -9,10 +9,8 @@ import Footer from '@/components/shared/Footer';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
 import { getCurrentUser } from '@/lib/auth';
 
-import {
-  HeaderSwitcher,
-  MainSwitcher,
-} from '@/components/header/HeaderSwitcher';
+import { MainSwitcher } from '@/components/header/MainSwitcher';
+import { AppChrome } from '@/components/header/AppChrome';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,6 +28,9 @@ export default async function LocaleLayout({
   const messages = await getMessages({ locale });
   const user = await getCurrentUser();
 
+  const userExists = Boolean(user);
+  const showAdminNavLink = process.env.NEXT_PUBLIC_ENABLE_ADMIN === 'true';
+
   return (
     <NextIntlClientProvider messages={messages}>
       <ThemeProvider
@@ -38,8 +39,9 @@ export default async function LocaleLayout({
         enableSystem
         disableTransitionOnChange
       >
-        <HeaderSwitcher userExists={Boolean(user)} />
-        <MainSwitcher>{children}</MainSwitcher>
+        <AppChrome userExists={userExists} showAdminLink={showAdminNavLink}>
+          <MainSwitcher>{children}</MainSwitcher>
+        </AppChrome>
 
         <Footer />
         <Toaster position="top-right" richColors expand />
