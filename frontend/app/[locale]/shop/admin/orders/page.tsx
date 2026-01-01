@@ -84,7 +84,7 @@ export default async function AdminOrdersPage({
 
                 <td className="px-3 py-2">
                   <Link
-                    href={`/${locale}/shop/admin/orders/${order.id}`}
+                    href={`/shop/admin/orders/${order.id}`}
                     className="rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
                   >
                     View
