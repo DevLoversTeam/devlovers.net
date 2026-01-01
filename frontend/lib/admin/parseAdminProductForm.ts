@@ -243,7 +243,6 @@ function parsePricesJsonField(formData: FormData, mode: ParseMode) {
   }
 }
 
-
 export function parseAdminProductForm(
   formData: FormData,
   options?: { mode?: 'create' }

@@ -740,9 +740,9 @@ export async function rehydrateCartItems(
     );
 
     const unitPriceCents =
-      typeof (product as any).priceMinor === 'number' &&
-      Number.isFinite((product as any).priceMinor)
-        ? Math.trunc((product as any).priceMinor)
+      typeof product.priceMinor === 'number' &&
+      Number.isFinite(product.priceMinor)
+        ? Math.trunc(product.priceMinor)
         : toCents(
             coercePriceFromDb(product.price, {
               field: 'price',
