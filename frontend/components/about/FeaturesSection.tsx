@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import Link from "next/link"
+import { Link } from '@/i18n/routing';
 import { MessageCircle, Brain, Trophy, User, ShoppingBag, Star, Flame, Target } from "lucide-react"
 import { useTranslations } from "next-intl"
 

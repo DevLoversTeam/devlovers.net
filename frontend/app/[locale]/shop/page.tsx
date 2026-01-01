@@ -2,7 +2,7 @@ import { ProductCard } from '@/components/shop/product-card';
 import { Hero } from '@/components/shop/shop-hero';
 import { CategoryTile } from '@/components/shop/category-tile';
 import { getHomepageContent } from '@/lib/shop/data';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 
 export default async function HomePage({
   params,

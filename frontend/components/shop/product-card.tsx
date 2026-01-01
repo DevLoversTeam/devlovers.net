@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { Link } from '@/i18n/routing'
 import Image from 'next/image';
 import type { ShopProduct } from '@/lib/shop/data';
 import { cn } from '@/lib/utils';

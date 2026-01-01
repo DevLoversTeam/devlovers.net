@@ -1,6 +1,7 @@
 'use client';
 
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
+
 import { Github, Linkedin, Send } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { useTranslations } from 'next-intl';
