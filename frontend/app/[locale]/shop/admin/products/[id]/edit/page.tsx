@@ -11,7 +11,6 @@ import { currencyValues } from '@/lib/shop/currency';
 const paramsSchema = z.object({ id: z.string().uuid() });
 function parseMajorToMinor(value: string | number): number {
   const s = String(value).trim().replace(',', '.');
-  // допускаємо "10", "10.5", "10.50"
   if (!/^\d+(\.\d{1,2})?$/.test(s)) {
     throw new Error(`Invalid money value: "${value}"`);
   }

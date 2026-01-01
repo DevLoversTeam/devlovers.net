@@ -31,7 +31,6 @@ export function UnifiedHeader({
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        {/* LEFT */}
         <div className="flex min-w-0 items-center gap-3">
           {isShop ? (
             <Link
@@ -64,7 +63,6 @@ export function UnifiedHeader({
           </Link>
         </div>
 
-        {/* CENTER (desktop nav) */}
         <nav className="hidden items-center justify-center md:flex">
           {isShop ? (
             <NavLinks className="md:flex" showAdminLink={showAdminLink} />
@@ -83,13 +81,10 @@ export function UnifiedHeader({
           )}
         </nav>
 
-        {/* RIGHT */}
         <div className="flex items-center gap-1">
-          {/* Desktop actions */}
           <div className="hidden items-center gap-2 md:flex">
             {isShop && enableSearch ? (
               <>
-                {/* TODO: Implement shop search */}
                 <button
                   type="button"
                   disabled
@@ -117,8 +112,6 @@ export function UnifiedHeader({
             )}
 
             <LanguageSwitcher />
-
-            {/* SHOP: Cart перед Login/Logout (як на твоєму скріні 2 треба) */}
             {isShop && <CartButton />}
 
             {!userExists ? (
@@ -133,8 +126,6 @@ export function UnifiedHeader({
               <LogoutButton />
             )}
           </div>
-
-          {/* Mobile actions: мінімум, решта в меню */}
           <div className="flex items-center gap-1 md:hidden">
             <LanguageSwitcher />
             {isShop && <CartButton />}

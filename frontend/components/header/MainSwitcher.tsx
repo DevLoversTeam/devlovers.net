@@ -11,7 +11,6 @@ function isShopPath(pathname: string): boolean {
 export function MainSwitcher({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
-  // shop layout вже має <main>, тут не обгортаємо
   if (isShopPath(pathname)) return <>{children}</>;
 
   return <main className="mx-auto px-6 min-h-[80vh]">{children}</main>;

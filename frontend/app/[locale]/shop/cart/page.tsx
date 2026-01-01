@@ -42,7 +42,7 @@ export default function CartPage() {
             selectedSize: item.selectedSize,
             selectedColor: item.selectedColor,
           })),
-          // userId: ..., // додаси, коли буде auth
+          // userId: ...,
         }),
       });
 
@@ -240,7 +240,11 @@ export default function CartPage() {
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Subtotal</span>
               <span className="font-medium text-foreground">
-                {formatMoney(cart.summary.totalAmount, cart.summary.currency, locale)}
+                {formatMoney(
+                  cart.summary.totalAmount,
+                  cart.summary.currency,
+                  locale
+                )}
               </span>
             </div>
             <div className="flex items-center justify-between text-sm">
@@ -255,8 +259,11 @@ export default function CartPage() {
                   Total
                 </span>
                 <span className="text-lg font-bold text-foreground">
-                  {formatMoney(cart.summary.totalAmount, cart.summary.currency, locale)}
-
+                  {formatMoney(
+                    cart.summary.totalAmount,
+                    cart.summary.currency,
+                    locale
+                  )}
                 </span>
               </div>
             </div>

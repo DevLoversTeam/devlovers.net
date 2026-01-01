@@ -1,18 +1,27 @@
-"use client";
+'use client';
 
-import { useMemo, useState } from "react";
+import { useMemo, useState } from 'react';
 import { Link } from '@/i18n/routing';
 
-import { useRouter } from "next/navigation";
-import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
-import { loadStripe, type StripeElementsOptions, type Stripe } from "@stripe/stripe-js";
+import { useRouter } from 'next/navigation';
+import {
+  Elements,
+  PaymentElement,
+  useElements,
+  useStripe,
+} from '@stripe/react-stripe-js';
+import {
+  loadStripe,
+  type StripeElementsOptions,
+  type Stripe,
+} from '@stripe/stripe-js';
 
 import {
   currencyValues,
   formatMoney,
   resolveCurrencyFromLocale,
   type CurrencyCode,
-} from "@/lib/shop/currency";
+} from '@/lib/shop/currency';
 
 type PaymentFormProps = {
   orderId: string;
@@ -24,13 +33,16 @@ type StripePaymentClientProps = {
   publishableKey: string | null;
   paymentsEnabled: boolean;
   orderId: string;
-  amount: number;   // minor units expected
-  currency: string; // should come from server policy, but we still guard it
+  amount: number;
+  currency: string;
   locale: string;
 };
 
-function toCurrencyCode(value: string | null | undefined, locale: string): CurrencyCode {
-  const normalized = (value ?? "").trim().toUpperCase();
+function toCurrencyCode(
+  value: string | null | undefined,
+  locale: string
+): CurrencyCode {
+  const normalized = (value ?? '').trim().toUpperCase();
   return currencyValues.includes(normalized as CurrencyCode)
     ? (normalized as CurrencyCode)
     : resolveCurrencyFromLocale(locale);
@@ -48,7 +60,9 @@ function StripePaymentForm({ orderId, locale }: PaymentFormProps) {
     setErrorMessage(null);
 
     if (!stripe || !elements) {
-      setErrorMessage("Payment is not ready yet. Please try again in a moment.");
+      setErrorMessage(
+        'Payment is not ready yet. Please try again in a moment.'
+      );
       return;
     }
 
@@ -57,27 +71,27 @@ function StripePaymentForm({ orderId, locale }: PaymentFormProps) {
     try {
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
-        redirect: "if_required",
+        redirect: 'if_required',
         confirmParams: {
           return_url: `${window.location.origin}/${locale}/shop/checkout/success?orderId=${orderId}`,
         },
       });
 
       if (error) {
-        setErrorMessage(error.message ?? "Unable to confirm payment.");
+        setErrorMessage(error.message ?? 'Unable to confirm payment.');
         router.push(`/${locale}/shop/checkout/error?orderId=${orderId}`);
         return;
       }
 
-      if (paymentIntent?.status === "succeeded") {
+      if (paymentIntent?.status === 'succeeded') {
         router.push(`/${locale}/shop/checkout/success?orderId=${orderId}`);
         return;
       }
 
       router.push(`/${locale}/shop/checkout/error?orderId=${orderId}`);
     } catch (error) {
-      console.error("Payment confirmation failed", error);
-      setErrorMessage("We couldn’t confirm your payment. Please try again.");
+      console.error('Payment confirmation failed', error);
+      setErrorMessage('We couldn’t confirm your payment. Please try again.');
       router.push(`/${locale}/shop/checkout/error?orderId=${orderId}`);
     } finally {
       setSubmitting(false);
@@ -92,9 +106,11 @@ function StripePaymentForm({ orderId, locale }: PaymentFormProps) {
         disabled={!stripe || submitting}
         className="flex w-full items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground transition-colors hover:bg-accent/90 disabled:opacity-60"
       >
-        {submitting ? "Processing..." : "Submit payment"}
+        {submitting ? 'Processing...' : 'Submit payment'}
       </button>
-      {errorMessage && <p className="text-sm text-destructive">{errorMessage}</p>}
+      {errorMessage && (
+        <p className="text-sm text-destructive">{errorMessage}</p>
+      )}
     </form>
   );
 }
@@ -108,7 +124,10 @@ export default function StripePaymentClient({
   currency,
   locale,
 }: StripePaymentClientProps) {
-  const uiCurrency = useMemo(() => toCurrencyCode(currency, locale), [currency, locale]);
+  const uiCurrency = useMemo(
+    () => toCurrencyCode(currency, locale),
+    [currency, locale]
+  );
 
   const stripePromise = useMemo(() => {
     if (!paymentsEnabled || !publishableKey) return null;
@@ -118,7 +137,7 @@ export default function StripePaymentClient({
   const options = useMemo<StripeElementsOptions | undefined>(
     () =>
       clientSecret && paymentsEnabled
-        ? { clientSecret, appearance: { theme: "stripe" } }
+        ? { clientSecret, appearance: { theme: 'stripe' } }
         : undefined,
     [clientSecret, paymentsEnabled]
   );
@@ -160,7 +179,9 @@ export default function StripePaymentClient({
   }
 
   if (!stripePromise || !options) {
-    return <p className="text-sm text-muted-foreground">Preparing secure payment…</p>;
+    return (
+      <p className="text-sm text-muted-foreground">Preparing secure payment…</p>
+    );
   }
 
   return (
@@ -169,9 +190,13 @@ export default function StripePaymentClient({
         <div className="rounded-md border border-border bg-muted/40 p-3 text-sm text-foreground">
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Pay</span>
-            <span className="text-base font-semibold">{formatMoney(amount, uiCurrency, locale)}</span>
+            <span className="text-base font-semibold">
+              {formatMoney(amount, uiCurrency, locale)}
+            </span>
           </div>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">{uiCurrency}</p>
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">
+            {uiCurrency}
+          </p>
         </div>
         <StripePaymentForm orderId={orderId} locale={locale} />
       </div>
