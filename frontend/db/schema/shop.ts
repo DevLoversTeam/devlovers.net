@@ -72,6 +72,12 @@ export const products = pgTable(
   table => [
     uniqueIndex('products_slug_unique').on(table.slug),
     check('products_stock_non_negative', sql`${table.stock} >= 0`),
+    check('products_currency_usd_only', sql`${table.currency} = 'USD'`),
+    check('products_price_positive', sql`${table.price} > 0`),
+    check(
+      'products_original_price_valid',
+      sql`${table.originalPrice} is null or ${table.originalPrice} > ${table.price}`
+    ),
   ]
 );
 
@@ -108,8 +114,10 @@ export const orders = pgTable(
     pspPaymentMethod: text('psp_payment_method'),
     pspStatusReason: text('psp_status_reason'),
     pspMetadata: jsonb('psp_metadata')
-      .$type<Record<string, unknown> | null>()
+      .$type<Record<string, unknown>>()
+      .notNull()
       .default(sql`'{}'::jsonb`),
+
     stockRestored: boolean('stock_restored').notNull().default(false),
     restockedAt: timestamp('restocked_at', { mode: 'date' }),
     idempotencyKey: varchar('idempotency_key', { length: 128 })
@@ -133,6 +141,14 @@ export const orders = pgTable(
     check(
       'orders_payment_intent_id_null_when_none',
       sql`${table.paymentProvider} <> 'none' OR ${table.paymentIntentId} IS NULL`
+    ),
+    check(
+      'orders_total_amount_mirror_consistent',
+      sql`${table.totalAmount} = (${table.totalAmountMinor}::numeric / 100)`
+    ),
+    check(
+      'orders_payment_status_paid_when_none',
+      sql`${table.paymentProvider} <> 'none' OR ${table.paymentStatus} = 'paid'`
     ),
   ]
 );
@@ -176,6 +192,14 @@ export const orderItems = pgTable(
     check(
       'order_items_line_total_consistent',
       sql`${t.lineTotalMinor} = ${t.unitPriceMinor} * ${t.quantity}`
+    ),
+    check(
+      'order_items_unit_price_mirror_consistent',
+      sql`${t.unitPrice} = (${t.unitPriceMinor}::numeric / 100)`
+    ),
+    check(
+      'order_items_line_total_mirror_consistent',
+      sql`${t.lineTotal} = (${t.lineTotalMinor}::numeric / 100)`
     ),
   ]
 );
@@ -234,6 +258,18 @@ export const productPrices = pgTable(
     check(
       'product_prices_original_price_valid',
       sql`${t.originalPriceMinor} is null or ${t.originalPriceMinor} > ${t.priceMinor}`
+    ),
+    check(
+      'product_prices_price_mirror_consistent',
+      sql`${t.price} = (${t.priceMinor}::numeric / 100)`
+    ),
+    check(
+      'product_prices_original_price_null_coupled',
+      sql`(${t.originalPriceMinor} is null) = (${t.originalPrice} is null)`
+    ),
+    check(
+      'product_prices_original_price_mirror_consistent',
+      sql`${t.originalPriceMinor} is null or ${t.originalPrice} = (${t.originalPriceMinor}::numeric / 100)`
     ),
   ]
 );
