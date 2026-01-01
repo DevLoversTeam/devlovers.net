@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
+import { Link } from '@/i18n/routing';
+
 import { useRouter } from "next/navigation";
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { loadStripe, type StripeElementsOptions, type Stripe } from "@stripe/stripe-js";

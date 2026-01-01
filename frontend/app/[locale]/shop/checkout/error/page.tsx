@@ -1,4 +1,4 @@
-import Link from "next/link"
+import { Link } from '@/i18n/routing';
 
 import { formatPrice } from "@/lib/shop/currency"
 import { OrderNotFoundError } from "@/lib/services/errors"

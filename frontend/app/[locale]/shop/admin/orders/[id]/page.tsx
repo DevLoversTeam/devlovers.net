@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { Link } from '@/i18n/routing';
+
 import { notFound } from "next/navigation";
 
 import { getAdminOrderDetail } from "@/db/queries/shop/admin-orders";

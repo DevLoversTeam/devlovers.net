@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { desc } from 'drizzle-orm';
 
 import { AdminProductStatusToggle } from '@/components/shop/admin/admin-product-status-toggle';

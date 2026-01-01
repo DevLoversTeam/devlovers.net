@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from '@/i18n/routing';
 
 import { getAdminOrdersPage } from "@/db/queries/shop/admin-orders";
 import { formatMoney, resolveCurrencyFromLocale, type CurrencyCode } from "@/lib/shop/currency";
