@@ -112,22 +112,49 @@ function parseLegacyOptionalOriginalMinorField(
   return toCents(trimmed);
 }
 
+function parseMinorInt(
+  value: unknown,
+  opts: { field: 'priceMinor' | 'originalPriceMinor'; currency: string }
+): number | null {
+  if (value == null) return null;
+
+  const raw =
+    typeof value === 'number'
+      ? value
+      : typeof value === 'string'
+      ? Number(value.trim())
+      : NaN;
+
+  if (!Number.isFinite(raw) || !Number.isInteger(raw) || raw < 0) {
+    throw zodPricesJsonError(`Invalid ${opts.field} for ${opts.currency}`);
+  }
+
+  return raw;
+}
+
+function requirePositivePriceMinor(priceMinor: number | null, currency: string) {
+  // DB check: priceMinor > 0
+  if (priceMinor == null || priceMinor <= 0) {
+    throw zodPricesJsonError(`Missing price for ${currency}`);
+  }
+  return priceMinor;
+}
+
 function parsePricesJsonField(formData: FormData, mode: ParseMode) {
-  // PATCH semantics:
-  // - update: if field is missing => omit prices (undefined)
-  // - create: missing => let legacy fallback handle it (null)
   if (!formData.has('prices')) {
     return mode === 'update' ? undefined : null;
   }
 
   const raw = formData.get('prices');
   if (typeof raw !== 'string') {
-    return { ok: false as const, error: zodPricesJsonError('Invalid prices payload type') };
+    return {
+      ok: false as const,
+      error: zodPricesJsonError('Invalid prices payload type'),
+    };
   }
 
   const trimmed = raw.trim();
   if (!trimmed) {
-    // explicit empty array (will be validated downstream by schema)
     return { ok: true as const, value: [] as unknown[] };
   }
 
@@ -155,19 +182,52 @@ function parsePricesJsonField(formData: FormData, mode: ParseMode) {
         throw zodPricesJsonError('Invalid currency in prices payload');
       }
 
-      const priceMinor = parseMajorToMinor(row?.price, {
-        field: 'price',
+      // Prefer canonical minor payload
+      let priceMinor = parseMinorInt(row?.priceMinor, {
+        field: 'priceMinor',
         currency: currency as string,
       });
 
-      if (mode === 'create' && priceMinor == null) {
-        throw zodPricesJsonError(`Missing price for ${currency}`);
+      // Legacy major fallback
+      if (priceMinor == null) {
+        priceMinor = parseMajorToMinor(row?.price, {
+          field: 'price',
+          currency: currency as string,
+        });
       }
 
-      const originalPriceMinor = parseMajorToMinor(row?.originalPrice, {
-        field: 'originalPrice',
+      if (mode === 'create') {
+        priceMinor = requirePositivePriceMinor(priceMinor, currency as string);
+      } else {
+    
+        if (priceMinor != null && priceMinor <= 0) {
+          throw zodPricesJsonError(`Invalid priceMinor for ${currency}`);
+        }
+      }
+
+      let originalPriceMinor = parseMinorInt(row?.originalPriceMinor, {
+        field: 'originalPriceMinor',
         currency: currency as string,
       });
+
+      if (originalPriceMinor == null && row?.originalPrice !== undefined) {
+        originalPriceMinor = parseMajorToMinor(row?.originalPrice, {
+          field: 'originalPrice',
+          currency: currency as string,
+        });
+      }
+
+      // Normalize: empty -> null
+      if (originalPriceMinor == null) originalPriceMinor = null;
+
+      // DB invariant: originalPriceMinor is null OR > priceMinor
+      if (originalPriceMinor !== null && priceMinor != null) {
+        if (originalPriceMinor <= priceMinor) {
+          throw zodPricesJsonError(
+            `Invalid originalPrice for ${currency} (must be > price)`
+          );
+        }
+      }
 
       return {
         currency,
@@ -178,9 +238,7 @@ function parsePricesJsonField(formData: FormData, mode: ParseMode) {
 
     return { ok: true as const, value: normalized };
   } catch (e) {
-    if (e instanceof z.ZodError) {
-      return { ok: false as const, error: e };
-    }
+    if (e instanceof z.ZodError) return { ok: false as const, error: e };
     return { ok: false as const, error: zodPricesJsonError('Invalid prices payload') };
   }
 }

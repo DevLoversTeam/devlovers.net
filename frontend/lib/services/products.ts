@@ -50,10 +50,10 @@ type ProductsTable = typeof products;
 type ProductRow = ProductsTable['$inferSelect'];
 type DbClient = typeof db;
 
-type PriceRowInput = {
+type NormalizedPriceRow = {
   currency: CurrencyCode;
-  price: string;
-  originalPrice?: string | null;
+  priceMinor: number;
+  originalPriceMinor: number | null;
 };
 
 function randomSuffix(length = 6) {
@@ -135,6 +135,27 @@ function assertMoneyString(value: string, field: string): number {
   return n;
 }
 
+function assertMoneyMinorInt(value: unknown, field: string): number {
+  const n = typeof value === 'number' ? value : Number(value);
+
+  if (!Number.isFinite(n)) {
+    throw new InvalidPayloadError(`${field} must be a number.`);
+  }
+
+  // Critical: reject fractional minor units (no truncation)
+  if (!Number.isInteger(n)) {
+    throw new InvalidPayloadError(`${field} must be an integer (minor units).`);
+  }
+
+  if (!Number.isSafeInteger(n) || n < 1) {
+    throw new InvalidPayloadError(
+      `${field} must be a positive integer (minor units).`
+    );
+  }
+
+  return n;
+}
+
 function assertOptionalMoneyString(
   value: string | null | undefined,
   field: string,
@@ -171,75 +192,136 @@ function toMoneyMinorNullable(
   return toCents(n);
 }
 
-function toMoneyDb(value: string, field: string): string {
-  const cents = toMoneyMinor(value, field);
-  return toDbMoney(cents);
-}
-
-function toMoneyDbNullable(
-  value: string | null | undefined,
-  field: string,
-  price: string
-): string | null {
-  const cents = toMoneyMinorNullable(value, field, price);
-  if (cents == null) return null;
-  return toDbMoney(cents);
-}
-
-function normalizePricesFromInput(input: unknown): PriceRowInput[] {
-  // Transitional-safe: supports both new input.prices[] and legacy input.price/originalPrice/currency.
+function normalizePricesFromInput(input: unknown): NormalizedPriceRow[] {
+  // Transitional-safe:
+  // - NEW: input.prices[] uses MINOR units: { currency, priceMinor, originalPriceMinor }
+  // - LEGACY: input.prices[] uses MAJOR strings: { currency, price, originalPrice }
+  // - VERY LEGACY: top-level price/originalPrice/currency
   const anyInput = input as any;
 
   const prices = anyInput?.prices;
   if (Array.isArray(prices) && prices.length) {
-    return prices as PriceRowInput[];
+    return prices.map((p: any) => {
+      const currency = p?.currency as CurrencyCode;
+      if (!currencyValues.includes(currency as any)) {
+        throw new InvalidPayloadError(
+          `Unsupported currency: ${String(p?.currency)}.`
+        );
+      }
+
+      // NEW path: minor units
+      if (p?.priceMinor != null) {
+        const priceMinor = assertMoneyMinorInt(
+          p.priceMinor,
+          `${currency} price`
+        );
+        const originalPriceMinor =
+          p.originalPriceMinor == null
+            ? null
+            : (() => {
+                const v = assertMoneyMinorInt(
+                  p.originalPriceMinor,
+                  `${currency} originalPrice`
+                );
+                if (v <= priceMinor) {
+                  throw new InvalidPayloadError(
+                    `${currency} originalPrice must be > price.`
+                  );
+                }
+                return v;
+              })();
+
+        return { currency, priceMinor, originalPriceMinor };
+      }
+
+      // LEGACY path: major strings
+      const price = String(p?.price ?? '').trim();
+      const originalPrice =
+        p?.originalPrice == null ? null : String(p.originalPrice).trim();
+
+      if (!price) {
+        throw new InvalidPayloadError(`${currency}: price is required.`);
+      }
+
+      const priceMinor = toMoneyMinor(price, `${currency} price`);
+      const originalPriceMinor = toMoneyMinorNullable(
+        originalPrice,
+        `${currency} originalPrice`,
+        price
+      );
+      return { currency, priceMinor, originalPriceMinor };
+    });
   }
 
   // Legacy fallback (only if present)
   if (anyInput?.price != null) {
     const currency = (anyInput?.currency as CurrencyCode) ?? 'USD';
-    const price = String(anyInput.price);
+    if (!currencyValues.includes(currency as any)) {
+      throw new InvalidPayloadError(
+        `Unsupported currency: ${String(anyInput?.currency)}.`
+      );
+    }
+    const price = String(anyInput.price).trim();
     const originalPrice =
-      anyInput.originalPrice == null ? null : String(anyInput.originalPrice);
+      anyInput.originalPrice == null
+        ? null
+        : String(anyInput.originalPrice).trim();
 
-    return [{ currency, price, originalPrice }];
+    const priceMinor = toMoneyMinor(price, `${currency} price`);
+    const originalPriceMinor = toMoneyMinorNullable(
+      originalPrice,
+      `${currency} originalPrice`,
+      price
+    );
+
+    return [{ currency, priceMinor, originalPriceMinor }];
   }
 
   return [];
 }
 
-function requireUsd(prices: PriceRowInput[]): PriceRowInput {
+function requireUsd(prices: NormalizedPriceRow[]): NormalizedPriceRow {
   const usd = prices.find(p => p.currency === 'USD');
-  if (!usd?.price) {
+  if (!usd?.priceMinor) {
     throw new InvalidPayloadError('USD price is required.');
   }
   return usd;
 }
 
-function validatePriceRows(prices: PriceRowInput[]) {
+function validatePriceRows(prices: NormalizedPriceRow[]) {
+  // Safety: no duplicates even if upstream schema is bypassed
+  const seen = new Set<CurrencyCode>();
   for (const p of prices) {
-    // Runtime guard (legacy/transitional input can bypass TS/Zod)
-    if (!currencyValues.includes((p as any).currency)) {
+    if (seen.has(p.currency)) {
+      throw new InvalidPayloadError('Duplicate currency in prices.');
+    }
+    seen.add(p.currency);
+
+    // Runtime guard (transitional input can bypass TS/Zod)
+    if (!currencyValues.includes(p.currency as any)) {
       throw new InvalidPayloadError(
-        `Unsupported currency: ${String((p as any).currency)}.`
+        `Unsupported currency: ${String(p.currency)}.`
       );
     }
-    // If original is provided, price must be provided too.
-    if ((p.originalPrice ?? null) !== null && !p.price?.trim()) {
-      throw new InvalidPayloadError(
-        `${p.currency}: price is required when originalPrice is provided.`
-      );
-    }
-    if (!p.price?.trim()) {
+
+    // priceMinor must be positive integer (minor units)
+    if (!Number.isSafeInteger(p.priceMinor) || p.priceMinor < 1) {
       throw new InvalidPayloadError(`${p.currency}: price is required.`);
     }
-    // Validate numeric + invariants
-    assertMoneyString(p.price, `${p.currency} price`);
-    assertOptionalMoneyString(
-      p.originalPrice ?? null,
-      `${p.currency} originalPrice`,
-      p.price
-    );
+
+    // originalPriceMinor must be > priceMinor when present
+    if (p.originalPriceMinor != null) {
+      if (!Number.isSafeInteger(p.originalPriceMinor)) {
+        throw new InvalidPayloadError(
+          `${p.currency} originalPrice must be a number.`
+        );
+      }
+      if (p.originalPriceMinor <= p.priceMinor) {
+        throw new InvalidPayloadError(
+          `${p.currency} originalPrice must be > price.`
+        );
+      }
+    }
   }
 }
 
@@ -278,12 +360,11 @@ export async function createProduct(input: ProductInput): Promise<DbProduct> {
           imagePublicId: uploaded?.publicId,
 
           // legacy mirror (USD) — required by products.price NOT NULL
-          price: toMoneyDb(usd.price, 'USD price'),
-          originalPrice: toMoneyDbNullable(
-            usd.originalPrice ?? null,
-            'USD originalPrice',
-            usd.price
-          ),
+          price: toDbMoney(usd.priceMinor),
+          originalPrice:
+            usd.originalPriceMinor == null
+              ? null
+              : toDbMoney(usd.originalPriceMinor),
           currency: 'USD',
 
           category: (input as any).category ?? null,
@@ -305,12 +386,8 @@ export async function createProduct(input: ProductInput): Promise<DbProduct> {
 
       await tx.insert(productPrices).values(
         prices.map(p => {
-          const priceMinor = toMoneyMinor(p.price, `${p.currency} price`);
-          const originalMinor = toMoneyMinorNullable(
-            p.originalPrice ?? null,
-            `${p.currency} originalPrice`,
-            p.price
-          );
+          const priceMinor = p.priceMinor;
+          const originalMinor = p.originalPriceMinor;
 
           return {
             productId: row.id,
@@ -414,13 +491,12 @@ export async function updateProduct(
   // If USD provided in prices, update legacy mirror
   if (prices.length) {
     const usd = prices.find(p => p.currency === 'USD');
-    if (usd?.price) {
-      updateData.price = toMoneyDb(usd.price, 'USD price');
-      updateData.originalPrice = toMoneyDbNullable(
-        usd.originalPrice ?? null,
-        'USD originalPrice',
-        usd.price
-      );
+    if (usd?.priceMinor) {
+      updateData.price = toDbMoney(usd.priceMinor);
+      updateData.originalPrice =
+        usd.originalPriceMinor == null
+          ? null
+          : toDbMoney(usd.originalPriceMinor);
       updateData.currency = 'USD';
     }
   }
@@ -440,12 +516,8 @@ export async function updateProduct(
       // Upsert prices (only currencies provided in this request)
       if (prices.length) {
         for (const p of prices) {
-          const priceMinor = toMoneyMinor(p.price, `${p.currency} price`);
-          const originalMinor = toMoneyMinorNullable(
-            p.originalPrice ?? null,
-            `${p.currency} originalPrice`,
-            p.price
-          );
+          const priceMinor = p.priceMinor;
+          const originalMinor = p.originalPriceMinor;
 
           const priceDb = toDbMoney(priceMinor);
           const originalDb =
@@ -679,16 +751,47 @@ export async function rehydrateCartItems(
       MAX_QUANTITY_PER_LINE
     );
 
-    const unitPriceCents =
-      typeof (product as any).priceMinor === 'number' &&
-      Number.isFinite((product as any).priceMinor)
-        ? Math.trunc((product as any).priceMinor)
-        : toCents(
-            coercePriceFromDb(product.price, {
-              field: 'price',
-              productId: product.id,
-            })
-          );
+    let unitPriceCents: number;
+
+    if (
+      typeof product.priceMinor === 'number' &&
+      Number.isFinite(product.priceMinor)
+    ) {
+      // Critical: DB should store integer minor units; do not truncate
+      if (!Number.isInteger(product.priceMinor)) {
+        throw new PriceConfigError(
+          'Invalid priceMinor in DB (must be integer).',
+          {
+            productId: product.id,
+            currency,
+          }
+        );
+      }
+      if (!Number.isSafeInteger(product.priceMinor) || product.priceMinor < 1) {
+        throw new PriceConfigError('Invalid priceMinor in DB (out of range).', {
+          productId: product.id,
+          currency,
+        });
+      }
+
+      unitPriceCents = product.priceMinor;
+    } else {
+      // Fallback to legacy money column (string/decimal), still validated via coercePriceFromDb
+      unitPriceCents = toCents(
+        coercePriceFromDb(product.price, {
+          field: 'price',
+          productId: product.id,
+        })
+      );
+    }
+    // Safety: regardless of source (canonical priceMinor or legacy price),
+    // unitPriceCents must be a positive safe integer in minor units.
+    if (!Number.isSafeInteger(unitPriceCents) || unitPriceCents < 1) {
+      throw new PriceConfigError('Invalid price in DB (out of range).', {
+        productId: product.id,
+        currency,
+      });
+    }
 
     const lineTotalCents = calculateLineTotal(
       unitPriceCents,
