@@ -4,6 +4,7 @@ import {
   check,
   integer,
   jsonb,
+  index,
   numeric,
   pgEnum,
   pgTable,
@@ -180,6 +181,7 @@ export const orderItems = pgTable(
     productSku: text('product_sku'),
   },
   t => [
+    index('order_items_order_id_idx').on(t.orderId),
     check('order_items_quantity_positive', sql`${t.quantity} > 0`),
     check(
       'order_items_unit_price_minor_non_negative',
@@ -248,6 +250,7 @@ export const productPrices = pgTable(
       .$onUpdate(() => new Date()),
   },
   t => [
+    index('product_prices_product_id_idx').on(t.productId),
     uniqueIndex('product_prices_product_currency_uq').on(
       t.productId,
       t.currency

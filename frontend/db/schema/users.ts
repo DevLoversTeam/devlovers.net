@@ -3,36 +3,46 @@ import {
   text,
   integer,
   timestamp,
+  index,
 } from "drizzle-orm/pg-core";
 import { relations, sql } from "drizzle-orm";
 import { quizAttempts } from "./quiz";
 
-export const users = pgTable("users", {
-  id: text("id")
-    .primaryKey()
-    .notNull()
-    .default(sql`gen_random_uuid()`),
+export const users = pgTable(
+  "users",
+  {
+    id: text("id")
+      .primaryKey()
+      .notNull()
+      .default(sql`gen_random_uuid()`),
 
-  name: text("name"),
+    name: text("name"),
 
-  email: text("email").notNull().unique(),
+    email: text("email").notNull().unique(),
 
-  passwordHash: text("password_hash"),
+    passwordHash: text("password_hash"),
 
-  provider: text("provider").notNull().default("credentials"),
+    provider: text("provider").notNull().default("credentials"),
 
-  providerId: text("provider_id"),
+    providerId: text("provider_id"),
 
-  emailVerified: timestamp("email_verified", { mode: "date" }),
+    emailVerified: timestamp("email_verified", { mode: "date" }),
 
-  image: text("image"),
+    image: text("image"),
 
-  role: text("role").notNull().default("user"),
+    role: text("role").notNull().default("user"),
 
-  points: integer("points").notNull().default(0),
+    points: integer("points").notNull().default(0),
 
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  table => ({
+    providerProviderIdIdx: index("users_provider_provider_id_idx").on(
+      table.provider,
+      table.providerId
+    ),
+  })
+);
 
 export const usersRelations = relations(users, ({ many }) => ({
   quizAttempts: many(quizAttempts),

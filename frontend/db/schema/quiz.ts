@@ -37,6 +37,7 @@ export const quizzes = pgTable(
   },
   table => ({
     categorySlugUnique: unique().on(table.categoryId, table.slug),
+    slugIdx: index('quizzes_slug_idx').on(table.slug),
   })
 );
 

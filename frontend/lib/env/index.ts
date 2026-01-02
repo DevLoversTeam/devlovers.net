@@ -6,6 +6,8 @@ const runtimeEnvSchema = z.object({
 
 export const serverEnvSchema = z.object({
   DATABASE_URL: z.string().url(),
+  DATABASE_URL_PREVIEW: z.string().url().optional(),
+  DATABASE_URL_DEV: z.string().url().optional(),
   CLOUDINARY_CLOUD_NAME: z.string().min(1),
   CLOUDINARY_API_KEY: z.string().min(1),
   CLOUDINARY_API_SECRET: z.string().min(1),
