@@ -11,10 +11,16 @@ function resolveDatabaseUrl(): string {
   const isPreview = context === 'deploy-preview' || context === 'branch-deploy';
 
   if (isPreview) {
-    if (!process.env.DATABASE_URL_PREVIEW) {
-      throw new Error('DATABASE_URL_PREVIEW is missing for preview deploys');
+    if (process.env.DATABASE_URL_PREVIEW) {
+      return process.env.DATABASE_URL_PREVIEW;
     }
-    return process.env.DATABASE_URL_PREVIEW;
+    if (process.env.DATABASE_URL) {
+      console.warn(
+        '[db] DATABASE_URL_PREVIEW missing; falling back to DATABASE_URL for preview build.'
+      );
+      return process.env.DATABASE_URL;
+    }
+    throw new Error('DATABASE_URL_PREVIEW is missing for preview deploys');
   }
 
   if (process.env.NODE_ENV === 'development' && process.env.DATABASE_URL_DEV) {
