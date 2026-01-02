@@ -83,7 +83,11 @@ export async function GET(req: NextRequest) {
   let user = null;
 
   const [googleUser] = await db
-    .select()
+    .select({
+      id: users.id,
+      email: users.email,
+      role: users.role,
+    })
     .from(users)
     .where(and(eq(users.providerId, googleId), eq(users.provider, "google")))
     .limit(1);
@@ -93,19 +97,28 @@ export async function GET(req: NextRequest) {
   } else {
 
     const [emailUser] = await db
-      .select()
+      .select({
+        id: users.id,
+        emailVerified: users.emailVerified,
+        image: users.image,
+        name: users.name,
+      })
       .from(users)
       .where(eq(users.email, email))
       .limit(1);
 
     if (emailUser) {
+      const image =
+        emailUser.image && emailUser.image !== "null"
+          ? emailUser.image
+          : profile.picture;
       const [updatedUser] = await db
         .update(users)
         .set({
           provider: "google",
           providerId: googleId,
           emailVerified: emailUser.emailVerified ?? new Date(),
-          image: emailUser.image ?? profile.picture,
+          image,
           name: emailUser.name ?? profile.name,
         })
         .where(eq(users.id, emailUser.id))

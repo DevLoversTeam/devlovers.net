@@ -1,3 +1,5 @@
+import { cache } from 'react';
+import { unstable_cache } from 'next/cache';
 import { db } from '../index';
 import {
   quizzes,
@@ -63,82 +65,97 @@ export interface QuizAttempt {
   completedAt: Date;
 }
 
-export async function getQuizBySlug(
-  slug: string,
-  locale: string = 'uk'
-): Promise<Quiz | null> {
-  const result = await db
-    .select({
-      id: quizzes.id,
-      slug: quizzes.slug,
-      questionsCount: quizzes.questionsCount,
-      timeLimitSeconds: quizzes.timeLimitSeconds,
-      isActive: quizzes.isActive,
-      title: quizTranslations.title,
-      description: quizTranslations.description,
-      categorySlug: categories.slug,
-      categoryName: categoryTranslations.title,
-    })
-    .from(quizzes)
-    .leftJoin(
-      quizTranslations,
-      and(
-        eq(quizTranslations.quizId, quizzes.id),
-        eq(quizTranslations.locale, locale)
-      )
-    )
-    .leftJoin(categories, eq(categories.id, quizzes.categoryId))
-    .leftJoin(
-      categoryTranslations,
-      and(
-        eq(categoryTranslations.categoryId, categories.id),
-        eq(categoryTranslations.locale, locale)
-      )
-    )
-    .where(eq(quizzes.slug, slug))
-    .limit(1);
+export const getQuizBySlug = cache(
+  async (slug: string, locale: string = 'uk'): Promise<Quiz | null> => {
+    const cached = unstable_cache(
+      async (): Promise<Quiz | null> => {
+        const result = await db
+          .select({
+            id: quizzes.id,
+            slug: quizzes.slug,
+            questionsCount: quizzes.questionsCount,
+            timeLimitSeconds: quizzes.timeLimitSeconds,
+            isActive: quizzes.isActive,
+            title: quizTranslations.title,
+            description: quizTranslations.description,
+            categorySlug: categories.slug,
+            categoryName: categoryTranslations.title,
+          })
+          .from(quizzes)
+          .leftJoin(
+            quizTranslations,
+            and(
+              eq(quizTranslations.quizId, quizzes.id),
+              eq(quizTranslations.locale, locale)
+            )
+          )
+          .leftJoin(categories, eq(categories.id, quizzes.categoryId))
+          .leftJoin(
+            categoryTranslations,
+            and(
+              eq(categoryTranslations.categoryId, categories.id),
+              eq(categoryTranslations.locale, locale)
+            )
+          )
+          .where(eq(quizzes.slug, slug))
+          .limit(1);
 
-  if (!result.length) return null;
+        if (!result.length) return null;
 
-  return result[0];
-}
+        return result[0];
+      },
+      ['quiz-by-slug', slug, locale],
+      { revalidate: 300 }
+    );
 
-export async function getActiveQuizzes(
-  locale: string = 'uk'
-): Promise<Quiz[]> {
-  const rows = await db
-    .select({
-      id: quizzes.id,
-      slug: quizzes.slug,
-      questionsCount: quizzes.questionsCount,
-      timeLimitSeconds: quizzes.timeLimitSeconds,
-      isActive: quizzes.isActive,
-      title: quizTranslations.title,
-      description: quizTranslations.description,
-      categorySlug: categories.slug,
-      categoryName: categoryTranslations.title,
-    })
-    .from(quizzes)
-    .leftJoin(
-      quizTranslations,
-      and(
-        eq(quizTranslations.quizId, quizzes.id),
-        eq(quizTranslations.locale, locale)
-      )
-    )
-    .leftJoin(categories, eq(categories.id, quizzes.categoryId))
-    .leftJoin(
-      categoryTranslations,
-      and(
-        eq(categoryTranslations.categoryId, categories.id),
-        eq(categoryTranslations.locale, locale)
-      )
-    )
-    .where(eq(quizzes.isActive, true))
-    .orderBy(categories.displayOrder, quizzes.displayOrder);
+    return cached();
+  }
+);
 
-  return rows;
-}
+export const getActiveQuizzes = cache(
+  async (locale: string = 'uk'): Promise<Quiz[]> => {
+    const cached = unstable_cache(
+      async (): Promise<Quiz[]> => {
+        const rows = await db
+          .select({
+            id: quizzes.id,
+            slug: quizzes.slug,
+            questionsCount: quizzes.questionsCount,
+            timeLimitSeconds: quizzes.timeLimitSeconds,
+            isActive: quizzes.isActive,
+            title: quizTranslations.title,
+            description: quizTranslations.description,
+            categorySlug: categories.slug,
+            categoryName: categoryTranslations.title,
+          })
+          .from(quizzes)
+          .leftJoin(
+            quizTranslations,
+            and(
+              eq(quizTranslations.quizId, quizzes.id),
+              eq(quizTranslations.locale, locale)
+            )
+          )
+          .leftJoin(categories, eq(categories.id, quizzes.categoryId))
+          .leftJoin(
+            categoryTranslations,
+            and(
+              eq(categoryTranslations.categoryId, categories.id),
+              eq(categoryTranslations.locale, locale)
+            )
+          )
+          .where(eq(quizzes.isActive, true))
+          .orderBy(categories.displayOrder, quizzes.displayOrder);
+
+        return rows;
+      },
+      ['active-quizzes', locale],
+      { revalidate: 300 }
+    );
+
+    return cached();
+  }
+);
 
 export async function getQuizQuestions(
   quizId: string,
@@ -290,7 +307,11 @@ export async function getUserQuizHistory(
 
 export async function getUserQuizStats(userId: string) {
   const attempts = await db
-    .select()
+    .select({
+      score: quizAttempts.score,
+      percentage: quizAttempts.percentage,
+      completedAt: quizAttempts.completedAt,
+    })
     .from(quizAttempts)
     .where(eq(quizAttempts.userId, userId))
     .orderBy(desc(quizAttempts.completedAt));
