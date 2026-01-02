@@ -3,7 +3,7 @@ import {
   text,
   integer,
   timestamp,
-  index,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { relations, sql } from "drizzle-orm";
 import { quizAttempts } from "./quiz";
@@ -37,10 +37,9 @@ export const users = pgTable(
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   table => ({
-    providerProviderIdIdx: index("users_provider_provider_id_idx").on(
-      table.provider,
-      table.providerId
-    ),
+    providerProviderIdUq: uniqueIndex(
+      "users_provider_provider_id_unique"
+    ).on(table.provider, table.providerId),
   })
 );
 
