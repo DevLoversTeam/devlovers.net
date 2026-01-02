@@ -24,6 +24,7 @@ export type AuthTokenPayload = {
   userId: string;
   role: "user" | "admin";
   email: string;
+  exp: number;
 };
 
 export type AuthUser = {

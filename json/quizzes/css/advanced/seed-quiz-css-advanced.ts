@@ -38,21 +38,21 @@ interface QuizPartData {
 const CATEGORY_SLUG = 'css';
 
 const QUIZ_METADATA = {
-  slug: 'css-fundamentals',
+  slug: 'css-advanced',
   questionsCount: 40,
-  timeLimitSeconds: 1800,
+  timeLimitSeconds: 2400,
   translations: {
     uk: {
-      title: 'Основи CSS',
-      description: 'Перевірте свої знання базових концепцій CSS: селектори, блокова модель, Flexbox, Grid, позиціонування, анімації та адаптивний дизайн.',
+      title: 'CSS Advanced',
+      description: 'Поглиблені концепції CSS: 3D-трансформації, оптимізація продуктивності, методології архітектури, препроцесори, CSS-in-JS та сучасні можливості.',
     },
     en: {
-      title: 'CSS Fundamentals',
-      description: 'Test your knowledge of CSS basics: selectors, box model, Flexbox, Grid, positioning, animations, and responsive design.',
+      title: 'CSS Advanced',
+      description: 'Advanced CSS concepts: 3D transforms, performance optimization, architecture methodologies, preprocessors, CSS-in-JS, and modern features.',
     },
     pl: {
-      title: 'Podstawy CSS',
-      description: 'Sprawdź swoją wiedzę o podstawach CSS: selektory, model pudełkowy, Flexbox, Grid, pozycjonowanie, animacje i responsywny design.',
+      title: 'CSS Zaawansowany',
+      description: 'Zaawansowane koncepcje CSS: transformacje 3D, optymalizacja wydajności, metodologie architektury, preprocesory, CSS-in-JS i nowoczesne funkcje.',
     },
   },
 };
@@ -62,7 +62,7 @@ function createExplanation(text: string) {
 }
 
 async function loadQuestions(partNumber: number): Promise<QuestionData[]> {
-  const partPath = join(process.cwd(), 'parse', 'css', 'fundamentals', `css-quiz-part${partNumber}.json`);
+  const partPath = join(process.cwd(), 'data', `css-advanced-quiz-part${partNumber}.json`);
   const partData: QuizPartData = JSON.parse(readFileSync(partPath, 'utf-8'));
   return partData.questions;
 }
@@ -98,7 +98,7 @@ async function ensureQuizExists(): Promise<string> {
     await db.update(quizzes).set({
       categoryId: category.id,
       slug: QUIZ_METADATA.slug,
-      displayOrder: 2,
+      displayOrder: 3,
       questionsCount: QUIZ_METADATA.questionsCount,
       timeLimitSeconds: QUIZ_METADATA.timeLimitSeconds,
       isActive: true,
@@ -120,7 +120,7 @@ async function ensureQuizExists(): Promise<string> {
   const [quiz] = await db.insert(quizzes).values({
     categoryId: category.id,
     slug: QUIZ_METADATA.slug,
-    displayOrder: 2,
+    displayOrder: 3,
     questionsCount: QUIZ_METADATA.questionsCount,
     timeLimitSeconds: QUIZ_METADATA.timeLimitSeconds,
     isActive: true,
@@ -185,13 +185,13 @@ async function seedQuizFromJson() {
 
   if (!partArg) {
     console.error('Error: Please specify which part to upload');
-    console.log('Usage: npx tsx db/seed-quiz-css.ts <part-number>');
-    console.log('Example: npx tsx db/seed-quiz-css.ts 1');
-    console.log('Or upload all: npx tsx db/seed-quiz-css.ts all');
+    console.log('Usage: npx tsx db/seeds/seed-quiz-css-advanced.ts <part-number>');
+    console.log('Example: npx tsx db/seeds/seed-quiz-css-advanced.ts 1');
+    console.log('Or upload all: npx tsx db/seeds/seed-quiz-css-advanced.ts all');
     process.exit(1);
   }
 
-  console.log('Starting CSS quiz seed...\n');
+  console.log('Starting CSS Advanced quiz seed...\n');
 
   try {
     const quizId = await ensureQuizExists();

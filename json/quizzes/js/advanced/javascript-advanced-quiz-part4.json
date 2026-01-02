@@ -1,0 +1,144 @@
+{
+  "questions": [
+    {
+      "id": "js-adv-q31",
+      "order": 31,
+      "difficulty": "advanced",
+      "uk": {"q": "Що таке мемоїзація (memoization)?", "exp": "Мемоїзація — це техніка кешування результатів функції для уникнення повторних обчислень з тими самими аргументами."},
+      "en": {"q": "What is memoization?", "exp": "Memoization is a technique of caching function results to avoid repeated calculations with same arguments."},
+      "pl": {"q": "Czym jest memoizacja?", "exp": "Memoizacja to technika buforowania wyników funkcji, aby uniknąć powtarzających się obliczeń z tymi samymi argumentami."},
+      "answers": [
+        {"uk": "Збереження даних в LocalStorage", "en": "Storing data in LocalStorage", "pl": "Przechowywanie danych w LocalStorage", "correct": false},
+        {"uk": "Кешування результатів функції для уникнення повторних обчислень", "en": "Caching function results to avoid repeated calculations", "pl": "Buforowanie wyników funkcji aby uniknąć powtarzających się obliczeń", "correct": true},
+        {"uk": "Оптимізація циклів", "en": "Loop optimization", "pl": "Optymalizacja pętli", "correct": false},
+        {"uk": "Метод роботи з пам'яттю", "en": "Memory management method", "pl": "Metoda zarządzania pamięcią", "correct": false}
+      ]
+    },
+    {
+      "id": "js-adv-q32",
+      "order": 32,
+      "difficulty": "intermediate",
+      "uk": {"q": "Що робить метод Object.keys()?", "exp": "Object.keys() повертає масив власних перелічуваних ключів об'єкта (не включає успадковані властивості)."},
+      "en": {"q": "What does Object.keys() do?", "exp": "Object.keys() returns array of object's own enumerable keys (doesn't include inherited properties)."},
+      "pl": {"q": "Co robi Object.keys()?", "exp": "Object.keys() zwraca tablicę własnych wyliczalnych kluczy obiektu (nie zawiera odziedziczonych właściwości)."},
+      "answers": [
+        {"uk": "Повертає всі властивості об'єкта включно з успадкованими", "en": "Returns all object properties including inherited", "pl": "Zwraca wszystkie właściwości obiektu włącznie z odziedziczonymi", "correct": false},
+        {"uk": "Повертає масив власних перелічуваних ключів об'єкта", "en": "Returns array of object's own enumerable keys", "pl": "Zwraca tablicę własnych wyliczalnych kluczy obiektu", "correct": true},
+        {"uk": "Повертає масив значень об'єкта", "en": "Returns array of object values", "pl": "Zwraca tablicę wartości obiektu", "correct": false},
+        {"uk": "Створює новий об'єкт", "en": "Creates new object", "pl": "Tworzy nowy obiekt", "correct": false}
+      ]
+    },
+    {
+      "id": "js-adv-q33",
+      "order": 33,
+      "difficulty": "intermediate",
+      "uk": {"q": "Що робить метод Object.freeze()?", "exp": "Object.freeze() робить об'єкт незмінним — не можна додавати, видаляти чи змінювати властивості. Працює тільки на першому рівні (shallow)."},
+      "en": {"q": "What does Object.freeze() do?", "exp": "Object.freeze() makes object immutable — cannot add, delete or modify properties. Works only at first level (shallow)."},
+      "pl": {"q": "Co robi Object.freeze()?", "exp": "Object.freeze() czyni obiekt niezmiennym — nie można dodawać, usuwać ani modyfikować właściwości. Działa tylko na pierwszym poziomie (shallow)."},
+      "answers": [
+        {"uk": "Призупиняє виконання коду", "en": "Pauses code execution", "pl": "Wstrzymuje wykonanie kodu", "correct": false},
+        {"uk": "Робить об'єкт незмінним (тільки перший рівень)", "en": "Makes object immutable (only first level)", "pl": "Czyni obiekt niezmiennym (tylko pierwszy poziom)", "correct": true},
+        {"uk": "Видаляє всі властивості об'єкта", "en": "Deletes all object properties", "pl": "Usuwa wszystkie właściwości obiektu", "correct": false},
+        {"uk": "Клонує об'єкт", "en": "Clones object", "pl": "Klonuje obiekt", "correct": false}
+      ]
+    },
+    {
+      "id": "js-adv-q34",
+      "order": 34,
+      "difficulty": "advanced",
+      "uk": {"q": "Що таке дебаунсинг (debouncing)?", "exp": "Debouncing — це техніка затримки виконання функції до моменту, коли певна подія не відбувалась протягом заданого часу."},
+      "en": {"q": "What is debouncing?", "exp": "Debouncing is a technique to delay function execution until an event hasn't occurred for a specified time."},
+      "pl": {"q": "Czym jest debouncing?", "exp": "Debouncing to technika opóźniania wykonania funkcji do momentu, gdy zdarzenie nie wystąpiło przez określony czas."},
+      "answers": [
+        {"uk": "Метод оптимізації циклів", "en": "Loop optimization method", "pl": "Metoda optymalizacji pętli", "correct": false},
+        {"uk": "Затримка виконання функції до припинення події на заданий час", "en": "Delaying function execution until event stops for specified time", "pl": "Opóźnienie wykonania funkcji do zatrzymania zdarzenia na określony czas", "correct": true},
+        {"uk": "Перевірка типів даних", "en": "Data type validation", "pl": "Walidacja typów danych", "correct": false},
+        {"uk": "Видалення дублікатів з масиву", "en": "Removing duplicates from array", "pl": "Usuwanie duplikatów z tablicy", "correct": false}
+      ]
+    },
+    {
+      "id": "js-adv-q35",
+      "order": 35,
+      "difficulty": "advanced",
+      "uk": {"q": "Що таке тротлінг (throttling)?", "exp": "Throttling — це обмеження частоти виконання функції до одного разу за певний період часу, незалежно від кількості викликів."},
+      "en": {"q": "What is throttling?", "exp": "Throttling is limiting function execution frequency to once per time period, regardless of number of calls."},
+      "pl": {"q": "Czym jest throttling?", "exp": "Throttling to ograniczanie częstotliwości wykonania funkcji do raz na okres czasu, niezależnie od liczby wywołań."},
+      "answers": [
+        {"uk": "Зупинка виконання скрипта", "en": "Stopping script execution", "pl": "Zatrzymanie wykonania skryptu", "correct": false},
+        {"uk": "Обмеження частоти виконання функції до одного разу за період", "en": "Limiting function execution to once per period", "pl": "Ograniczanie wykonania funkcji do raz na okres", "correct": true},
+        {"uk": "Прискорення виконання асинхронних операцій", "en": "Speeding up async operations", "pl": "Przyspieszanie operacji asynchronicznych", "correct": false},
+        {"uk": "Видалення непотрібних змінних", "en": "Removing unnecessary variables", "pl": "Usuwanie niepotrzebnych zmiennych", "correct": false}
+      ]
+    },
+    {
+      "id": "js-adv-q36",
+      "order": 36,
+      "difficulty": "intermediate",
+      "uk": {"q": "Що робить метод Array.from()?", "exp": "Array.from() створює новий масив з ітерабельного або масивоподібного об'єкта (наприклад, NodeList, arguments, рядок)."},
+      "en": {"q": "What does Array.from() do?", "exp": "Array.from() creates new array from iterable or array-like object (e.g., NodeList, arguments, string)."},
+      "pl": {"q": "Co robi Array.from()?", "exp": "Array.from() tworzy nową tablicę z iterowalnego lub podobnego do tablicy obiektu (np. NodeList, arguments, string)."},
+      "answers": [
+        {"uk": "Клонує існуючий масив", "en": "Clones existing array", "pl": "Klonuje istniejącą tablicę", "correct": false},
+        {"uk": "Створює новий масив з ітерабельного або масивоподібного об'єкта", "en": "Creates new array from iterable or array-like object", "pl": "Tworzy nową tablicę z iterowalnego lub podobnego do tablicy obiektu", "correct": true},
+        {"uk": "Перетворює масив на об'єкт", "en": "Converts array to object", "pl": "Konwertuje tablicę na obiekt", "correct": false},
+        {"uk": "Сортує елементи масиву", "en": "Sorts array elements", "pl": "Sortuje elementy tablicy", "correct": false}
+      ]
+    },
+    {
+      "id": "js-adv-q37",
+      "order": 37,
+      "difficulty": "beginner",
+      "uk": {"q": "Що робить метод includes()?", "exp": "includes() перевіряє, чи масив або рядок містить вказане значення. Повертає true або false."},
+      "en": {"q": "What does the includes() method do?", "exp": "includes() checks if array or string contains specified value. Returns true or false."},
+      "pl": {"q": "Co robi metoda includes()?", "exp": "includes() sprawdza, czy tablica lub string zawiera określoną wartość. Zwraca true lub false."},
+      "answers": [
+        {"uk": "Додає елемент в масив", "en": "Adds element to array", "pl": "Dodaje element do tablicy", "correct": false},
+        {"uk": "Перевіряє наявність значення, повертає true/false", "en": "Checks value presence, returns true/false", "pl": "Sprawdza obecność wartości, zwraca true/false", "correct": true},
+        {"uk": "Повертає індекс елемента", "en": "Returns element index", "pl": "Zwraca indeks elementu", "correct": false},
+        {"uk": "Видаляє елемент з масиву", "en": "Removes element from array", "pl": "Usuwa element z tablicy", "correct": false}
+      ]
+    },
+    {
+      "id": "js-adv-q38",
+      "order": 38,
+      "difficulty": "intermediate",
+      "uk": {"q": "Що таке оператор nullish coalescing (??)?", "exp": "?? повертає праве значення тільки якщо ліве null або undefined. На відміну від ||, не реагує на 0, false, ''."},
+      "en": {"q": "What is the nullish coalescing operator (??)?", "exp": "?? returns right value only if left is null or undefined. Unlike ||, doesn't react to 0, false, ''."},
+      "pl": {"q": "Czym jest operator nullish coalescing (??)?", "exp": "?? zwraca prawą wartość tylko jeśli lewa to null lub undefined. W przeciwieństwie do ||, nie reaguje na 0, false, ''."},
+      "answers": [
+        {"uk": "Те саме що і ||", "en": "Same as ||", "pl": "To samo co ||", "correct": false},
+        {"uk": "Повертає праве значення тільки якщо ліве null/undefined", "en": "Returns right value only if left is null/undefined", "pl": "Zwraca prawą wartość tylko jeśli lewa to null/undefined", "correct": true},
+        {"uk": "Оператор множення", "en": "Multiplication operator", "pl": "Operator mnożenia", "correct": false},
+        {"uk": "Оператор порівняння", "en": "Comparison operator", "pl": "Operator porównania", "correct": false}
+      ]
+    },
+    {
+      "id": "js-adv-q39",
+      "order": 39,
+      "difficulty": "advanced",
+      "uk": {"q": "Що таке Proxy в JavaScript?", "exp": "Proxy дозволяє перехоплювати та змінювати базові операції з об'єктом (get, set, delete тощо) через handler з пастками (traps)."},
+      "en": {"q": "What is Proxy in JavaScript?", "exp": "Proxy allows intercepting and modifying basic object operations (get, set, delete, etc.) through handler with traps."},
+      "pl": {"q": "Czym jest Proxy w JavaScript?", "exp": "Proxy pozwala przechwytywać i modyfikować podstawowe operacje na obiekcie (get, set, delete itp.) przez handler z pułapkami."},
+      "answers": [
+        {"uk": "Сервер для проксування запитів", "en": "Server for proxying requests", "pl": "Serwer do proxy żądań", "correct": false},
+        {"uk": "Об'єкт для перехоплення та модифікації операцій з іншим об'єктом", "en": "Object for intercepting and modifying operations on another object", "pl": "Obiekt do przechwytywania i modyfikowania operacji na innym obiekcie", "correct": true},
+        {"uk": "Метод для клонування об'єктів", "en": "Method for cloning objects", "pl": "Metoda klonowania obiektów", "correct": false},
+        {"uk": "Асинхронна функція", "en": "Asynchronous function", "pl": "Funkcja asynchroniczna", "correct": false}
+      ]
+    },
+    {
+      "id": "js-adv-q40",
+      "order": 40,
+      "difficulty": "advanced",
+      "uk": {"q": "Що таке Reflect API?", "exp": "Reflect — це вбудований об'єкт з методами для виконання базових операцій з об'єктами (get, set, has тощо). Часто використовується з Proxy."},
+      "en": {"q": "What is Reflect API?", "exp": "Reflect is built-in object with methods for basic object operations (get, set, has, etc.). Often used with Proxy."},
+      "pl": {"q": "Czym jest Reflect API?", "exp": "Reflect to wbudowany obiekt z metodami do podstawowych operacji na obiektach (get, set, has itp.). Często używany z Proxy."},
+      "answers": [
+        {"uk": "Метод для дзеркального відображення інтерфейсу", "en": "Method for mirroring interface", "pl": "Metoda do lustrzanego odbicia interfejsu", "correct": false},
+        {"uk": "Вбудований об'єкт з методами для базових операцій з об'єктами", "en": "Built-in object with methods for basic object operations", "pl": "Wbudowany obiekt z metodami do podstawowych operacji na obiektach", "correct": true},
+        {"uk": "Бібліотека для роботи з DOM", "en": "Library for working with DOM", "pl": "Biblioteka do pracy z DOM", "correct": false},
+        {"uk": "Інструмент для дебагінгу", "en": "Debugging tool", "pl": "Narzędzie do debugowania", "correct": false}
+      ]
+    }
+  ]
+}

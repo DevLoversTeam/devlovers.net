@@ -30,7 +30,6 @@ export function QuizResult({
   onBackToTopics,
 }: QuizResultProps) {
   const locale = useLocale();
-  console.log('QuizResult render:', { locale, quizSlug, isGuest });
   const getMotivationalMessage = () => {
     if (score === 0 && answeredCount === 0) {
     return {

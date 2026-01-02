@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
 import { routing } from './i18n/routing';
+import { AuthTokenPayload } from '@/lib/auth';
 
 const AUTH_COOKIE_NAME = 'auth_session';
 
@@ -8,13 +9,6 @@ const AUTH_SECRET = process.env.AUTH_SECRET;
 if (!AUTH_SECRET) {
   throw new Error('AUTH_SECRET is not defined');
 }
-
-type AuthTokenPayload = {
-  userId: string;
-  role: "user" | "admin";
-  email: string;
-  exp: number;
-};
 
 function decodeAuthToken(token: string): AuthTokenPayload | null {
   const parts = token.split(".");

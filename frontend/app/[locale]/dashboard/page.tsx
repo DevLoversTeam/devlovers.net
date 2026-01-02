@@ -42,7 +42,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
     name: user.name ?? null,
     email: user.email ?? '',
     role: user.role ?? null,
-    points: user.points ?? 0,
+    points: user.points,
     createdAt: user.createdAt ?? null,
   };
 

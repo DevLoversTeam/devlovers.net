@@ -185,9 +185,9 @@ async function seedQuizFromJson() {
 
   if (!partArg) {
     console.error('Error: Please specify which part to upload');
-    console.log('Usage: npx tsx db/seeds/seed-quiz-html.ts <part-number>');
-    console.log('Example: npx tsx db/seeds/seed-quiz-html.ts 1');
-    console.log('Or upload all: npx tsx db/seeds/seed-quiz-html.ts all');
+    console.log('Usage: npx tsx db/seed-quiz-html.ts <part-number>');
+    console.log('Example: npx tsx db/seed-quiz-html.ts 1');
+    console.log('Or upload all: npx tsx db/seed-quiz-html.ts all');
     process.exit(1);
   }
 

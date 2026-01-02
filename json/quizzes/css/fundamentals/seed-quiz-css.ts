@@ -62,7 +62,7 @@ function createExplanation(text: string) {
 }
 
 async function loadQuestions(partNumber: number): Promise<QuestionData[]> {
-  const partPath = join(process.cwd(), 'parse', 'css', 'fundamentals', `css-quiz-part${partNumber}.json`);
+  const partPath = join(process.cwd(), 'data', `css-quiz-part${partNumber}.json`);
   const partData: QuizPartData = JSON.parse(readFileSync(partPath, 'utf-8'));
   return partData.questions;
 }
@@ -185,9 +185,9 @@ async function seedQuizFromJson() {
 
   if (!partArg) {
     console.error('Error: Please specify which part to upload');
-    console.log('Usage: npx tsx db/seed-quiz-css.ts <part-number>');
-    console.log('Example: npx tsx db/seed-quiz-css.ts 1');
-    console.log('Or upload all: npx tsx db/seed-quiz-css.ts all');
+    console.log('Usage: npx tsx db/seeds/seed-quiz-css.ts <part-number>');
+    console.log('Example: npx tsx db/seeds/seed-quiz-css.ts 1');
+    console.log('Or upload all: npx tsx db/seeds/seed-quiz-css.ts all');
     process.exit(1);
   }
 

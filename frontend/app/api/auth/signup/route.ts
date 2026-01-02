@@ -18,7 +18,8 @@ const signupSchema = z.object({
 
 export async function POST(req: Request) {
   console.log('signup handler hit')
-  try {const body = await req.json().catch(() => null);
+  try {
+  const body = await req.json().catch(() => null);
   const parsed = signupSchema.safeParse(body);
 
   if (!parsed.success) {
