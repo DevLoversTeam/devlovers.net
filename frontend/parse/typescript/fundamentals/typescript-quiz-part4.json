@@ -1,0 +1,434 @@
+{
+  "questions": [
+    {
+      "id": "ts-q31",
+      "order": 31,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Як працює type narrowing з typeof?",
+        "exp": "typeof використовується для звуження union-типів. У гілці if (typeof x === 'string') TypeScript знає, що x — це string."
+      },
+      "en": {
+        "q": "How does type narrowing with typeof work?",
+        "exp": "typeof is used to narrow union types. In the if (typeof x === 'string') branch, TypeScript knows that x is a string."
+      },
+      "pl": {
+        "q": "Jak działa zawężanie typów z typeof?",
+        "exp": "typeof służy do zawężania typów union. W gałęzi if (typeof x === 'string') TypeScript wie, że x jest stringiem."
+      },
+      "answers": [
+        {
+          "uk": "typeof не впливає на типи у TypeScript",
+          "en": "typeof does not affect types in TypeScript",
+          "pl": "typeof nie wpływa na typy w TypeScript",
+          "correct": false
+        },
+        {
+          "uk": "Компілятор звужує тип у відповідній гілці коду",
+          "en": "The compiler narrows the type in the corresponding code branch",
+          "pl": "Kompilator zawęża typ w odpowiedniej gałęzi kodu",
+          "correct": true
+        },
+        {
+          "uk": "typeof працює тільки з примітивами в рантаймі",
+          "en": "typeof only works with primitives at runtime",
+          "pl": "typeof działa tylko z prymitywami w runtime",
+          "correct": false
+        },
+        {
+          "uk": "Потрібно використовувати instanceof замість typeof",
+          "en": "You need to use instanceof instead of typeof",
+          "pl": "Trzeba używać instanceof zamiast typeof",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "ts-q32",
+      "order": 32,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке .d.ts файли?",
+        "exp": "Файли .d.ts — це декларації типів без реалізації. Вони описують типи для JavaScript-бібліотек, щоб TypeScript міг їх перевіряти."
+      },
+      "en": {
+        "q": "What are .d.ts files?",
+        "exp": ".d.ts files are type declarations without implementation. They describe types for JavaScript libraries so TypeScript can check them."
+      },
+      "pl": {
+        "q": "Czym są pliki .d.ts?",
+        "exp": "Pliki .d.ts to deklaracje typów bez implementacji. Opisują typy dla bibliotek JavaScript, aby TypeScript mógł je sprawdzać."
+      },
+      "answers": [
+        {
+          "uk": "Скомпільований JavaScript код",
+          "en": "Compiled JavaScript code",
+          "pl": "Skompilowany kod JavaScript",
+          "correct": false
+        },
+        {
+          "uk": "Декларації типів для JavaScript-бібліотек",
+          "en": "Type declarations for JavaScript libraries",
+          "pl": "Deklaracje typów dla bibliotek JavaScript",
+          "correct": true
+        },
+        {
+          "uk": "Файли конфігурації проєкту",
+          "en": "Project configuration files",
+          "pl": "Pliki konfiguracyjne projektu",
+          "correct": false
+        },
+        {
+          "uk": "Тестові файли",
+          "en": "Test files",
+          "pl": "Pliki testowe",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "ts-q33",
+      "order": 33,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Для чого використовується прапорець strict у tsconfig.json?",
+        "exp": "strict: true вмикає всі строгі перевірки типів: strictNullChecks, strictFunctionTypes та інші. Рекомендується для нових проєктів."
+      },
+      "en": {
+        "q": "What is the strict flag in tsconfig.json used for?",
+        "exp": "strict: true enables all strict type checks: strictNullChecks, strictFunctionTypes, and others. Recommended for new projects."
+      },
+      "pl": {
+        "q": "Do czego służy flaga strict w tsconfig.json?",
+        "exp": "strict: true włącza wszystkie ścisłe kontrole typów: strictNullChecks, strictFunctionTypes i inne. Zalecane dla nowych projektów."
+      },
+      "answers": [
+        {
+          "uk": "Вимикає всі перевірки типів",
+          "en": "Disables all type checks",
+          "pl": "Wyłącza wszystkie kontrole typów",
+          "correct": false
+        },
+        {
+          "uk": "Вмикає всі строгі перевірки типів",
+          "en": "Enables all strict type checks",
+          "pl": "Włącza wszystkie ścisłe kontrole typów",
+          "correct": true
+        },
+        {
+          "uk": "Забороняє використання any",
+          "en": "Prohibits the use of any",
+          "pl": "Zabrania używania any",
+          "correct": false
+        },
+        {
+          "uk": "Вмикає режим продакшену",
+          "en": "Enables production mode",
+          "pl": "Włącza tryb produkcyjny",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "ts-q34",
+      "order": 34,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Як перевизначити метод батьківського класу?",
+        "exp": "Метод у похідному класі з тією самою сигнатурою перевизначає батьківський. Для виклику оригінального методу використовується super.method()."
+      },
+      "en": {
+        "q": "How do you override a parent class method?",
+        "exp": "A method in a derived class with the same signature overrides the parent's. To call the original method, use super.method()."
+      },
+      "pl": {
+        "q": "Jak nadpisać metodę klasy nadrzędnej?",
+        "exp": "Metoda w klasie pochodnej z tą samą sygnaturą nadpisuje rodzica. Aby wywołać oryginalną metodę, użyj super.method()."
+      },
+      "answers": [
+        {
+          "uk": "Використати ключове слово override обов'язково",
+          "en": "Must use the override keyword",
+          "pl": "Trzeba użyć słowa kluczowego override",
+          "correct": false
+        },
+        {
+          "uk": "Створити метод з тією самою сигнатурою у похідному класі",
+          "en": "Create a method with the same signature in the derived class",
+          "pl": "Utworzyć metodę z tą samą sygnaturą w klasie pochodnej",
+          "correct": true
+        },
+        {
+          "uk": "Видалити метод з батьківського класу",
+          "en": "Delete the method from the parent class",
+          "pl": "Usunąć metodę z klasy nadrzędnej",
+          "correct": false
+        },
+        {
+          "uk": "Перевизначення методів неможливе в TypeScript",
+          "en": "Method overriding is not possible in TypeScript",
+          "pl": "Nadpisywanie metod nie jest możliwe w TypeScript",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "ts-q35",
+      "order": 35,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке перевантаження функцій (function overloading)?",
+        "exp": "Перевантаження дозволяє оголосити кілька сигнатур функції з різними параметрами, але реалізація одна. TypeScript перевіряє виклики за сигнатурами."
+      },
+      "en": {
+        "q": "What is function overloading?",
+        "exp": "Overloading allows declaring multiple function signatures with different parameters, but there's one implementation. TypeScript checks calls against signatures."
+      },
+      "pl": {
+        "q": "Czym jest przeciążanie funkcji (function overloading)?",
+        "exp": "Przeciążanie pozwala zadeklarować wiele sygnatur funkcji z różnymi parametrami, ale implementacja jest jedna. TypeScript sprawdza wywołania względem sygnatur."
+      },
+      "answers": [
+        {
+          "uk": "Створення кількох функцій з однаковими іменами",
+          "en": "Creating multiple functions with the same name",
+          "pl": "Tworzenie wielu funkcji o tych samych nazwach",
+          "correct": false
+        },
+        {
+          "uk": "Оголошення кількох сигнатур з однією реалізацією",
+          "en": "Declaring multiple signatures with one implementation",
+          "pl": "Deklarowanie wielu sygnatur z jedną implementacją",
+          "correct": true
+        },
+        {
+          "uk": "Автоматичне створення варіантів функції",
+          "en": "Automatic creation of function variants",
+          "pl": "Automatyczne tworzenie wariantów funkcji",
+          "correct": false
+        },
+        {
+          "uk": "Завантаження функцій з зовнішніх модулів",
+          "en": "Loading functions from external modules",
+          "pl": "Ładowanie funkcji z zewnętrznych modułów",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "ts-q36",
+      "order": 36,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що робить ключове слово static у класах?",
+        "exp": "static створює члени класу, які належать самому класу, а не його екземплярам. Доступ через ClassName.member, не через об'єкт."
+      },
+      "en": {
+        "q": "What does the static keyword do in classes?",
+        "exp": "static creates class members that belong to the class itself, not its instances. Access via ClassName.member, not through an object."
+      },
+      "pl": {
+        "q": "Co robi słowo kluczowe static w klasach?",
+        "exp": "static tworzy składowe klasy należące do samej klasy, nie jej instancji. Dostęp przez ClassName.member, nie przez obiekt."
+      },
+      "answers": [
+        {
+          "uk": "Робить властивість незмінною",
+          "en": "Makes a property immutable",
+          "pl": "Czyni właściwość niezmienną",
+          "correct": false
+        },
+        {
+          "uk": "Створює члени, що належать класу, а не екземплярам",
+          "en": "Creates members that belong to the class, not instances",
+          "pl": "Tworzy składowe należące do klasy, nie instancji",
+          "correct": true
+        },
+        {
+          "uk": "Робить метод асинхронним",
+          "en": "Makes a method asynchronous",
+          "pl": "Czyni metodę asynchroniczną",
+          "correct": false
+        },
+        {
+          "uk": "Забороняє наслідування",
+          "en": "Prevents inheritance",
+          "pl": "Zabrania dziedziczenia",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "ts-q37",
+      "order": 37,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Яка різниця між interface та type alias?",
+        "exp": "interface можна розширювати через extends і доповнювати (declaration merging). type alias гнучкіший: підтримує union, intersection, mapped types."
+      },
+      "en": {
+        "q": "What is the difference between interface and type alias?",
+        "exp": "interface can be extended via extends and augmented (declaration merging). type alias is more flexible: supports union, intersection, mapped types."
+      },
+      "pl": {
+        "q": "Jaka jest różnica między interface a type alias?",
+        "exp": "interface można rozszerzać przez extends i uzupełniać (declaration merging). type alias jest bardziej elastyczny: obsługuje union, intersection, mapped types."
+      },
+      "answers": [
+        {
+          "uk": "Немає різниці, це синоніми",
+          "en": "No difference, they are synonyms",
+          "pl": "Nie ma różnicy, to synonimy",
+          "correct": false
+        },
+        {
+          "uk": "interface підтримує розширення, type — union та mapped types",
+          "en": "interface supports extension, type supports union and mapped types",
+          "pl": "interface obsługuje rozszerzanie, type — union i mapped types",
+          "correct": true
+        },
+        {
+          "uk": "type швидший за interface",
+          "en": "type is faster than interface",
+          "pl": "type jest szybszy niż interface",
+          "correct": false
+        },
+        {
+          "uk": "interface для об'єктів, type для функцій",
+          "en": "interface for objects, type for functions",
+          "pl": "interface dla obiektów, type dla funkcji",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "ts-q38",
+      "order": 38,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке exhaustive checking у TypeScript?",
+        "exp": "Exhaustive checking гарантує обробку всіх варіантів union-типу. Якщо додати новий варіант і не обробити його, компілятор видасть помилку через never."
+      },
+      "en": {
+        "q": "What is exhaustive checking in TypeScript?",
+        "exp": "Exhaustive checking ensures all union type variants are handled. If you add a new variant without handling it, the compiler throws an error via never."
+      },
+      "pl": {
+        "q": "Czym jest exhaustive checking w TypeScript?",
+        "exp": "Exhaustive checking zapewnia obsługę wszystkich wariantów typu union. Jeśli dodasz nowy wariant bez obsługi, kompilator zgłosi błąd przez never."
+      },
+      "answers": [
+        {
+          "uk": "Перевірка продуктивності коду",
+          "en": "Code performance checking",
+          "pl": "Sprawdzanie wydajności kodu",
+          "correct": false
+        },
+        {
+          "uk": "Гарантія обробки всіх варіантів union-типу",
+          "en": "Guarantee that all union type variants are handled",
+          "pl": "Gwarancja obsługi wszystkich wariantów typu union",
+          "correct": true
+        },
+        {
+          "uk": "Перевірка на витоки пам'яті",
+          "en": "Memory leak checking",
+          "pl": "Sprawdzanie wycieków pamięci",
+          "correct": false
+        },
+        {
+          "uk": "Автоматичне тестування коду",
+          "en": "Automatic code testing",
+          "pl": "Automatyczne testowanie kodu",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "ts-q39",
+      "order": 39,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Що відбувається з типами TypeScript після компіляції?",
+        "exp": "Типи повністю видаляються при компіляції. Результат — звичайний JavaScript без жодної інформації про типи. Типи існують тільки на етапі розробки."
+      },
+      "en": {
+        "q": "What happens to TypeScript types after compilation?",
+        "exp": "Types are completely removed during compilation. The result is plain JavaScript without any type information. Types exist only at development time."
+      },
+      "pl": {
+        "q": "Co dzieje się z typami TypeScript po kompilacji?",
+        "exp": "Typy są całkowicie usuwane podczas kompilacji. Wynik to zwykły JavaScript bez żadnych informacji o typach. Typy istnieją tylko podczas programowania."
+      },
+      "answers": [
+        {
+          "uk": "Залишаються у вигляді коментарів",
+          "en": "Remain as comments",
+          "pl": "Pozostają jako komentarze",
+          "correct": false
+        },
+        {
+          "uk": "Перетворюються на перевірки в рантаймі",
+          "en": "Are converted to runtime checks",
+          "pl": "Są konwertowane na sprawdzenia w runtime",
+          "correct": false
+        },
+        {
+          "uk": "Повністю видаляються",
+          "en": "Are completely removed",
+          "pl": "Są całkowicie usuwane",
+          "correct": true
+        },
+        {
+          "uk": "Зберігаються в окремому файлі",
+          "en": "Are stored in a separate file",
+          "pl": "Są przechowywane w osobnym pliku",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "ts-q40",
+      "order": 40,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Як встановити типи для сторонньої JavaScript-бібліотеки?",
+        "exp": "Типи встановлюються через пакети @types з DefinitelyTyped: npm install --save-dev @types/назва-бібліотеки. Наприклад: @types/express."
+      },
+      "en": {
+        "q": "How do you install types for a third-party JavaScript library?",
+        "exp": "Types are installed via @types packages from DefinitelyTyped: npm install --save-dev @types/library-name. For example: @types/express."
+      },
+      "pl": {
+        "q": "Jak zainstalować typy dla zewnętrznej biblioteki JavaScript?",
+        "exp": "Typy instaluje się przez pakiety @types z DefinitelyTyped: npm install --save-dev @types/nazwa-biblioteki. Na przykład: @types/express."
+      },
+      "answers": [
+        {
+          "uk": "Типи встановлюються автоматично",
+          "en": "Types are installed automatically",
+          "pl": "Typy instalują się automatycznie",
+          "correct": false
+        },
+        {
+          "uk": "Через пакети @types з npm",
+          "en": "Via @types packages from npm",
+          "pl": "Przez pakiety @types z npm",
+          "correct": true
+        },
+        {
+          "uk": "Потрібно написати типи вручну",
+          "en": "You need to write types manually",
+          "pl": "Trzeba napisać typy ręcznie",
+          "correct": false
+        },
+        {
+          "uk": "TypeScript автоматично виводить типи з JS",
+          "en": "TypeScript automatically infers types from JS",
+          "pl": "TypeScript automatycznie wnioskuje typy z JS",
+          "correct": false
+        }
+      ]
+    }
+  ]
+}

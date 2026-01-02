@@ -26,6 +26,7 @@ type QuizState = {
   questionStatus: 'answering' | 'revealed';
   selectedAnswerId: string | null;
   startedAt: Date | null;
+  pointsAwarded: number | null;
 };
 
 type QuizAction =
@@ -35,7 +36,7 @@ type QuizAction =
       payload: { answerId: string; isCorrect: boolean; questionId: string };
     }
   | { type: 'NEXT_QUESTION' }
-  | { type: 'COMPLETE_QUIZ' }
+  | { type: 'COMPLETE_QUIZ'; payload?: { pointsAwarded: number } }
   | { type: 'RESTART' };
 
 
@@ -77,6 +78,7 @@ function quizReducer(state: QuizState, action: QuizAction): QuizState {
       return {
         ...state,
         status: 'completed',
+        pointsAwarded: action.payload?.pointsAwarded ?? null,
       };
 
     case 'RESTART':
@@ -87,6 +89,7 @@ function quizReducer(state: QuizState, action: QuizAction): QuizState {
         questionStatus: 'answering',
         selectedAnswerId: null,
         startedAt: null,
+        pointsAwarded: null,
       };
 
     default:
@@ -119,6 +122,7 @@ export function QuizContainer({
     questionStatus: 'answering',
     selectedAnswerId: null,
     startedAt: null,
+    pointsAwarded: null,
   });
 const locale = useLocale();
 
@@ -190,10 +194,14 @@ const locale = useLocale();
         violations: violations,
         startedAt: state.startedAt!,
         completedAt: new Date(),
+        totalQuestions,
       });
 
       if (result.success) {
-        dispatch({ type: 'COMPLETE_QUIZ' });
+        dispatch({ 
+          type: 'COMPLETE_QUIZ', 
+          payload: { pointsAwarded: result.pointsAwarded ?? 0 } 
+        });
       } else {
         console.error('Failed to submit quiz:', result.error);
         dispatch({ type: 'COMPLETE_QUIZ' });
@@ -289,7 +297,9 @@ const locale = useLocale();
         score={correctAnswers}
         total={totalQuestions}
         percentage={percentage}
+        answeredCount={state.answers.length}
         violationsCount={violationsCount}
+        pointsAwarded={state.pointsAwarded}
         onRestart={handleRestart}
         onBackToTopics={handleBackToTopicsClick}
         isGuest={isGuest}

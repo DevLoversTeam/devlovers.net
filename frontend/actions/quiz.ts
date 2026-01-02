@@ -5,9 +5,11 @@ import {
   quizAttempts,
   quizAttemptAnswers,
   quizAnswers,
+  quizQuestions,
 } from '@/db/schema/quiz';
-import { awardQuizPoints } from '@/db/queries/points';
-import { eq } from 'drizzle-orm';
+import { awardQuizPoints,calculateQuizPoints  } from '@/db/queries/points';
+import { getCurrentUser } from '@/lib/auth';
+import { eq, inArray, and } from 'drizzle-orm';
 
 export interface UserAnswer {
   questionId: string;
@@ -27,6 +29,7 @@ export interface SubmitQuizAttemptInput {
   violations: ViolationEvent[];
   startedAt: Date;
   completedAt: Date;
+  totalQuestions: number;
 }
 
 export interface SubmitQuizAttemptResult {
@@ -59,34 +62,224 @@ function validateTimeSpent(
   return timeSpentSeconds >= minRequiredTime;
 }
 
-async function isAnswerCorrect(answerId: string): Promise<boolean> {
-  const answer = await db
-    .select({ isCorrect: quizAnswers.isCorrect })
-    .from(quizAnswers)
-    .where(eq(quizAnswers.id, answerId))
-    .limit(1);
+async function getQuizQuestionIds(quizId: string): Promise<string[]> {
+  const rows = await db
+    .select({ id: quizQuestions.id })
+    .from(quizQuestions)
+    .where(eq(quizQuestions.quizId, quizId));
 
-  return answer.length > 0 && answer[0].isCorrect;
+  return rows.map(r => r.id);
 }
+
+async function getAnswerRecords(answerIds: string[]) {
+  if (answerIds.length === 0) return [];
+
+  return db
+    .select({
+      id: quizAnswers.id,
+      quizQuestionId: quizAnswers.quizQuestionId,
+      isCorrect: quizAnswers.isCorrect,
+    })
+    .from(quizAnswers)
+    .where(inArray(quizAnswers.id, answerIds));
+}
+
+// export async function submitQuizAttempt(
+//   input: SubmitQuizAttemptInput
+// ): Promise<SubmitQuizAttemptResult> {
+//   try {
+//     const { userId, quizId, answers, violations, startedAt, completedAt, totalQuestions } =
+//       input;
+
+//     if (!userId || !quizId || totalQuestions <= 0) {
+//       return {
+//         success: false,
+//         error: 'Invalid input: userId, quizId, and answers are required',
+//       };
+//     }
+
+//     const isValidTime = validateTimeSpent(
+//       startedAt,
+//       completedAt,
+//       totalQuestions
+//     );
+//     if (!isValidTime) {
+//       return {
+//         success: false,
+//         error: 'Invalid time spent: quiz completed too quickly',
+//       };
+//     }
+
+//     const allAnswerIds = answers.map(a => a.selectedAnswerId);
+//     const correctAnswerIds = await getCorrectAnswerIds(allAnswerIds);
+
+//     let correctAnswersCount = 0;
+//     const answerResults = answers.map(answer => {
+//       const isCorrect = correctAnswerIds.has(answer.selectedAnswerId);
+//       if (isCorrect) correctAnswersCount++;
+//       return {
+//         questionId: answer.questionId,
+//         selectedAnswerId: answer.selectedAnswerId,
+//         isCorrect,
+//         answeredAt: answer.answeredAt,
+//       };
+//     });
+
+//     const percentage = ((correctAnswersCount / totalQuestions) * 100).toFixed(
+//       2
+//     );
+//     const integrityScore = calculateIntegrityScore(violations);
+//     const timeSpentSeconds = Math.floor(
+//       (completedAt.getTime() - startedAt.getTime()) / 1000
+//     );
+
+//     const [attempt] = await db
+//       .insert(quizAttempts)
+//       .values({
+//         userId,
+//         quizId,
+//         score: correctAnswersCount,
+//         totalQuestions,
+//         percentage,
+//         timeSpentSeconds,
+//         integrityScore,
+//         metadata: { violations },
+//         startedAt,
+//         completedAt,
+//       })
+//       .returning({ id: quizAttempts.id });
+
+//     if (answerResults.length > 0) {
+//       await db.insert(quizAttemptAnswers).values(
+//         answerResults.map(result => ({
+//           attemptId: attempt.id,
+//           quizQuestionId: result.questionId,
+//           selectedAnswerId: result.selectedAnswerId,
+//           isCorrect: result.isCorrect,
+//           answeredAt: result.answeredAt,
+//         }))
+//       );
+//     }
+//     const pointsAwarded = await awardQuizPoints({
+//       userId,
+//       quizId,
+//       attemptId: attempt.id,
+//       score: correctAnswersCount,
+//       integrityScore,
+//     });
+
+//     return {
+//       success: true,
+//       attemptId: attempt.id,
+//       score: correctAnswersCount,
+//       totalQuestions,
+//       percentage: parseFloat(percentage),
+//       integrityScore,
+//       pointsAwarded,
+//     };
+//   } catch (error) {
+//     console.error('Error submitting quiz attempt:', error);
+//     return {
+//       success: false,
+//       error: 'Failed to submit quiz attempt',
+//     };
+//   }
+// }
 
 export async function submitQuizAttempt(
   input: SubmitQuizAttemptInput
 ): Promise<SubmitQuizAttemptResult> {
   try {
-    const { userId, quizId, answers, violations, startedAt, completedAt } =
-      input;
+    const session = await getCurrentUser();
+    if (!session) {
+      return { success: false, error: 'Unauthorized' };
+    }
 
-    if (!userId || !quizId || !answers.length) {
+    const { userId, quizId, answers, violations, startedAt, completedAt } = input;
+
+    if (userId && userId !== session.id) {
+      return { success: false, error: 'User mismatch' };
+    }
+
+    if (!quizId || !Array.isArray(answers) || answers.length === 0) {
       return {
         success: false,
-        error: 'Invalid input: userId, quizId, and answers are required',
+        error: 'Invalid input: quizId and answers are required',
       };
     }
 
+    const questionIds = await getQuizQuestionIds(quizId);
+    if (questionIds.length === 0) {
+      return { success: false, error: 'Quiz not found' };
+    }
+
+    if (answers.length !== questionIds.length) {
+      return {
+        success: false,
+        error: 'Invalid input: answers count mismatch',
+      };
+    }
+
+    const questionIdSet = new Set(questionIds);
+    const seenQuestionIds = new Set<string>();
+
+    for (const answer of answers) {
+      if (!questionIdSet.has(answer.questionId)) {
+        return { success: false, error: 'Invalid question in answers' };
+      }
+      if (seenQuestionIds.has(answer.questionId)) {
+        return { success: false, error: 'Duplicate answer for question' };
+      }
+      seenQuestionIds.add(answer.questionId);
+    }
+
+    const allAnswerIds = answers.map(a => a.selectedAnswerId);
+    const answerRecords = await getAnswerRecords(allAnswerIds);
+
+    if (answerRecords.length !== allAnswerIds.length) {
+      return { success: false, error: 'Invalid answer selection' };
+    }
+
+    const answerById = new Map(answerRecords.map(r => [r.id, r]));
+    let correctAnswersCount = 0;
+
+    const answerResults = [];
+    for (const answer of answers) {
+      const record = answerById.get(answer.selectedAnswerId);
+      if (!record || record.quizQuestionId !== answer.questionId) {
+        return { success: false, error: 'Answer does not match question' };
+      }
+
+      const isCorrect = record.isCorrect;
+      if (isCorrect) correctAnswersCount++;
+
+      const answeredAt = new Date(answer.answeredAt);
+      const safeAnsweredAt = Number.isNaN(answeredAt.getTime())
+        ? new Date()
+        : answeredAt;
+
+      answerResults.push({
+        questionId: answer.questionId,
+        selectedAnswerId: answer.selectedAnswerId,
+        isCorrect,
+        answeredAt: safeAnsweredAt,
+      });
+    }
+
+    const startedAtDate = new Date(startedAt);
+    const completedAtDate = new Date(completedAt);
+
+    if (
+      Number.isNaN(startedAtDate.getTime()) ||
+      Number.isNaN(completedAtDate.getTime())
+    ) {
+      return { success: false, error: 'Invalid time values' };
+    }
+
     const isValidTime = validateTimeSpent(
-      startedAt,
-      completedAt,
-      answers.length
+      startedAtDate,
+      completedAtDate,
+      questionIds.length
     );
     if (!isValidTime) {
       return {
@@ -95,57 +288,49 @@ export async function submitQuizAttempt(
       };
     }
 
-    let correctAnswersCount = 0;
-
-    const answerResults = await Promise.all(
-      answers.map(async answer => {
-        const isCorrect = await isAnswerCorrect(answer.selectedAnswerId);
-        if (isCorrect) correctAnswersCount++;
-        return {
-          questionId: answer.questionId,
-          selectedAnswerId: answer.selectedAnswerId,
-          isCorrect,
-          answeredAt: answer.answeredAt,
-        };
-      })
-    );
-
-    const totalQuestions = answers.length;
-    const percentage = ((correctAnswersCount / totalQuestions) * 100).toFixed(
+    const percentage = ((correctAnswersCount / questionIds.length) * 100).toFixed(
       2
     );
     const integrityScore = calculateIntegrityScore(violations);
     const timeSpentSeconds = Math.floor(
-      (completedAt.getTime() - startedAt.getTime()) / 1000
+      (completedAtDate.getTime() - startedAtDate.getTime()) / 1000
     );
+    const pointsEarned = calculateQuizPoints({
+      score: correctAnswersCount,
+      integrityScore,
+    });
 
     const [attempt] = await db
       .insert(quizAttempts)
       .values({
-        userId,
+        userId: session.id,
         quizId,
         score: correctAnswersCount,
-        totalQuestions,
+        totalQuestions: questionIds.length,
         percentage,
         timeSpentSeconds,
+        pointsEarned,
         integrityScore,
         metadata: { violations },
-        startedAt,
-        completedAt,
+        startedAt: startedAtDate,
+        completedAt: completedAtDate,
       })
       .returning({ id: quizAttempts.id });
 
-    await db.insert(quizAttemptAnswers).values(
-      answerResults.map(result => ({
-        attemptId: attempt.id,
-        quizQuestionId: result.questionId,
-        selectedAnswerId: result.selectedAnswerId,
-        isCorrect: result.isCorrect,
-        answeredAt: result.answeredAt,
-      }))
-    );
+    if (answerResults.length > 0) {
+      await db.insert(quizAttemptAnswers).values(
+        answerResults.map(result => ({
+          attemptId: attempt.id,
+          quizQuestionId: result.questionId,
+          selectedAnswerId: result.selectedAnswerId,
+          isCorrect: result.isCorrect,
+          answeredAt: result.answeredAt,
+        }))
+      );
+    }
+
     const pointsAwarded = await awardQuizPoints({
-      userId,
+      userId: session.id,
       quizId,
       attemptId: attempt.id,
       score: correctAnswersCount,
@@ -156,7 +341,7 @@ export async function submitQuizAttempt(
       success: true,
       attemptId: attempt.id,
       score: correctAnswersCount,
-      totalQuestions,
+      totalQuestions: questionIds.length,
       percentage: parseFloat(percentage),
       integrityScore,
       pointsAwarded,
@@ -169,4 +354,3 @@ export async function submitQuizAttempt(
     };
   }
 }
-

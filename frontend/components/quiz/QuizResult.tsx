@@ -8,9 +8,11 @@ interface QuizResultProps {
   score: number;
   total: number;
   percentage: number;
+  answeredCount: number;
   violationsCount?: number;
   isGuest?: boolean;
   quizSlug?: string;
+  pointsAwarded?: number | null;
   onRestart: () => void;
   onBackToTopics: () => void;
 }
@@ -19,14 +21,35 @@ export function QuizResult({
   score,
   total,
   percentage,
+  answeredCount,
   violationsCount = 0,
+  pointsAwarded,
   isGuest = false,
   quizSlug = '',
   onRestart,
   onBackToTopics,
 }: QuizResultProps) {
   const locale = useLocale();
+  console.log('QuizResult render:', { locale, quizSlug, isGuest });
   const getMotivationalMessage = () => {
+    if (score === 0 && answeredCount === 0) {
+    return {
+      emoji: '⏱️',
+      title: 'Час вийшов',
+      message: 'Ви не встигли дати жодної відповіді. Спробуйте ще раз і розподіляйте час ефективніше',
+      color: 'text-gray-600 dark:text-gray-400',
+    };
+  }
+  
+  if (score === 0 && answeredCount > 0) {
+    return {
+      emoji: '📚',
+      title: 'Всі відповіді неправильні',
+      message: 'Рекомендуємо ретельно вивчити матеріал перед наступною спробою',
+      color: 'text-red-600 dark:text-red-400',
+    };
+  }
+
     if (percentage < 50) {
       return {
         emoji: '📚',
@@ -83,11 +106,28 @@ export function QuizResult({
         </h3>
         <p className="text-gray-600 dark:text-gray-400">{motivation.message}</p>
       </div>
-      {violationsCount >= 3 && (
+{violationsCount >= 3 && (
         <div className="p-4 rounded-xl bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800">
           <p className="text-center text-orange-800 dark:text-orange-200 font-medium">
             ⚠️ Квіз завершено з порушеннями правил ({violationsCount} порушень).
             Результат не зараховано до рейтингу.
+          </p>
+        </div>
+      )}
+      {!isGuest && pointsAwarded !== null && pointsAwarded !== undefined && (
+        <div className={`p-4 rounded-xl border ${
+          pointsAwarded > 0 
+            ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' 
+            : 'bg-gray-50 dark:bg-gray-900/20 border-gray-200 dark:border-gray-800'
+        }`}>
+          <p className={`text-center font-medium ${
+            pointsAwarded > 0 
+              ? 'text-green-800 dark:text-green-200' 
+              : 'text-gray-600 dark:text-gray-400'
+          }`}>
+            {pointsAwarded > 0 
+              ? `+${pointsAwarded} балів додано до рейтингу` 
+              : 'Бали не нараховано (результат не покращено)'}
           </p>
         </div>
       )}
@@ -100,7 +140,11 @@ export function QuizResult({
     </div>
 <div className="flex flex-col sm:flex-row gap-3 justify-center">
   <Button
-    onClick={() => window.location.href = `/${locale}/login?returnTo=/quiz/${quizSlug}`}
+    onClick={() => {
+  const url = `/${locale}/signup?returnTo=/quiz/${quizSlug}`;
+  console.log('Navigating to signup:', url);
+  window.location.href = url;
+}}
     variant="primary"
   >
     Увійти

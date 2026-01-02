@@ -2,7 +2,8 @@ import { cache } from 'react';
 import { unstable_cache } from 'next/cache';
 import { db } from '../index';
 import { users } from '../schema/users';
-import { desc } from 'drizzle-orm';
+import { pointTransactions } from '../schema/points';
+import { desc, sql, eq } from 'drizzle-orm';
 import { User } from '@/components/leaderboard/types';
 
 const getLeaderboardDataCached = unstable_cache(
@@ -11,11 +12,13 @@ const getLeaderboardDataCached = unstable_cache(
       .select({
         id: users.id,
         username: users.name,
-        points: users.points,
         avatar: users.image,
+        points: sql<number>`COALESCE(SUM(${pointTransactions.points}), 0)`,
       })
       .from(users)
-      .orderBy(desc(users.points))
+      .leftJoin(pointTransactions, eq(pointTransactions.userId, users.id))
+      .groupBy(users.id, users.name, users.image)
+      .orderBy(desc(sql`COALESCE(SUM(${pointTransactions.points}), 0)`))
       .limit(50);
 
     return dbUsers.map((u, index) => {
@@ -31,14 +34,14 @@ const getLeaderboardDataCached = unstable_cache(
         id: index + 1,
         rank: index + 1,
         username,
-        points: u.points || 0,
+        points: Number(u.points) || 0,
         avatar,
         change: 0,
       };
     });
   },
   ['leaderboard'],
-  { revalidate: 300 }
+  { revalidate: 3600, tags: ['leaderboard'] }
 );
 
 export const getLeaderboardData = cache(async (): Promise<User[]> => {

@@ -20,7 +20,8 @@ export default async function QuizPage({ params }: QuizPageProps) {
     notFound();
   }
 
-  const questions = await getQuizQuestionsRandomized(quiz.id, locale);
+  const seed = Date.now();
+  const questions = await getQuizQuestionsRandomized(quiz.id, locale, seed);
   
   if (!questions.length) {
     return (

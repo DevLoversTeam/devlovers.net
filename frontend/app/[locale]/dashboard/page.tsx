@@ -25,8 +25,6 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
 
   const totalAttempts = attempts.length;
 
-  const realPoints = attempts.reduce((sum, attempt) => sum + attempt.score, 0);
-
   const averageScore =
     totalAttempts > 0
       ? Math.round(
@@ -44,7 +42,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
     name: user.name ?? null,
     email: user.email ?? '',
     role: user.role ?? null,
-    points: realPoints,
+    points: user.points ?? 0,
     createdAt: user.createdAt ?? null,
   };
 

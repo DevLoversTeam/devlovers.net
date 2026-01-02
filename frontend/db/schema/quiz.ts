@@ -139,6 +139,7 @@ export const quizAttempts = pgTable(
     percentage: decimal('percentage', { precision: 5, scale: 2 }).notNull(),
     timeSpentSeconds: integer('time_spent_seconds'),
     integrityScore: integer('integrity_score').default(100),
+    pointsEarned: integer('points_earned').notNull().default(0),
     metadata: jsonb('metadata').default({}),
     startedAt: timestamp('started_at', { withTimezone: true })
       .notNull()
