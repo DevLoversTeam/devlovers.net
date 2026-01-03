@@ -50,6 +50,7 @@
     "add": "Dodaj",
     "clear": "Wyczyść",
     "noPosts": "Nie znaleziono wpisów",
-    "noPostsForTags": "Nie znaleziono wpisów dla wybranych tagów"
+    "noPostsForTags": "Nie znaleziono wpisów dla wybranych tagów",
+    "visitResource": "Odwiedź źródło"
   }
 }

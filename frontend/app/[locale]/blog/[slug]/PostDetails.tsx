@@ -41,7 +41,7 @@ function plainTextFromPortableText(value: any): string {
 
 const query = groq`
   *[_type=="post" && slug.current==$slug][0]{
-    title,
+    "title": coalesce(title[$locale], title.en, title),
     publishedAt,
     "mainImage": mainImage.asset->url,
     "categories": categories[]->title,
@@ -49,16 +49,16 @@ const query = groq`
     resourceLink,
 
     "author": author->{
-      name,
-      company,
-      jobTitle,
-      city,
-      bio,
+      "name": coalesce(name[$locale], name.en, name),
+      "company": coalesce(company[$locale], company.en, company),
+      "jobTitle": coalesce(jobTitle[$locale], jobTitle.en, jobTitle),
+      "city": coalesce(city[$locale], city.en, city),
+      "bio": coalesce(bio[$locale], bio.en, bio),
       "image": image.asset->url,
       socialMedia[]{ _key, platform, url }
     },
 
-    body[]{
+    "body": coalesce(body[$locale], body.en, body)[]{
       ...,
       _type == "image" => {
         ...,
@@ -68,11 +68,20 @@ const query = groq`
   }
 `;
 
-export default async function PostDetails({ slug }: { slug: string }) {
+export default async function PostDetails({
+  slug,
+  locale,
+}: {
+  slug: string;
+  locale: string;
+}) {
   const slugParam = String(slug || '').trim();
   if (!slugParam) return notFound();
 
-  const post: Post | null = await client.fetch(query, { slug: slugParam });
+  const post: Post | null = await client.fetch(query, {
+    slug: slugParam,
+    locale,
+  });
 
   if (!post?.title) return notFound();
 

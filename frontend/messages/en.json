@@ -50,6 +50,7 @@
     "add": "Add",
     "clear": "Clear",
     "noPosts": "No posts found",
-    "noPostsForTags": "No posts found for selected tags"
+    "noPostsForTags": "No posts found for selected tags",
+    "visitResource": "Visit Resource"
   }
 }

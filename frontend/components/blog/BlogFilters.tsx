@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import BlogGrid from '@/components/blog/BlogGrid';
 
 type SocialLink = {
@@ -51,6 +52,13 @@ export type Post = {
   author?: Author;
 };
 
+/**
+ * Normalize a tag/search input:
+ * - removes leading "#"
+ * - trims spaces
+ * - lowercases
+ * - collapses multiple spaces
+ */
 export function normalizeTag(input: string) {
   return (input || '')
     .replace(/^#/, '')
@@ -75,7 +83,14 @@ function SearchIcon({ className }: { className?: string }) {
   );
 }
 
+/**
+ * BlogFilters
+ * - Tag input with inline autocomplete suggestion (Tab to accept)
+ * - Selected tags (AND filtering)
+ * - Renders BlogGrid with filtered posts
+ */
 export default function BlogFilters({ posts }: { posts: Post[] }) {
+  const t = useTranslations('blog');
   const [input, setInput] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
@@ -175,7 +190,7 @@ export default function BlogFilters({ posts }: { posts: Post[] }) {
                 addTag(input);
               }
             }}
-            placeholder="Пошук..."
+            placeholder={t('searchPlaceholder')}
             className="
               w-full
               rounded-xl
@@ -208,7 +223,7 @@ export default function BlogFilters({ posts }: { posts: Post[] }) {
                   text-gray-600 hover:bg-gray-100
                   transition
                 "
-                title="Remove tag"
+                title={t('removeTag')}
               >
                 <span>#{tag}</span>
                 <span className="text-base leading-none">×</span>
@@ -225,7 +240,7 @@ export default function BlogFilters({ posts }: { posts: Post[] }) {
                   hover:bg-gray-50 hover:border-gray-400 transition
                 "
               >
-                Add
+                {t('add')}
               </button>
             )}
 
@@ -239,7 +254,7 @@ export default function BlogFilters({ posts }: { posts: Post[] }) {
                   hover:bg-gray-50 hover:border-gray-400 transition
                 "
               >
-                Clear
+                {t('clear')}
               </button>
             )}
           </div>
@@ -256,7 +271,7 @@ export default function BlogFilters({ posts }: { posts: Post[] }) {
 
       {!filteredPosts.length && (
         <p className="text-center text-gray-500 mt-10">
-          No posts found for selected tags.
+          {t('noPostsForTags')}
         </p>
       )}
     </div>
