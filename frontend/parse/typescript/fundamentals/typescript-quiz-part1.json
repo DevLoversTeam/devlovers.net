@@ -1,0 +1,434 @@
+{
+  "questions": [
+    {
+      "id": "ts-q01",
+      "order": 1,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Що таке TypeScript?",
+        "exp": "TypeScript — це надбудова над JavaScript, яка додає статичну типізацію та компілюється у звичайний JavaScript."
+      },
+      "en": {
+        "q": "What is TypeScript?",
+        "exp": "TypeScript is a superset of JavaScript that adds static typing and compiles to plain JavaScript."
+      },
+      "pl": {
+        "q": "Czym jest TypeScript?",
+        "exp": "TypeScript to nadzbiór JavaScript, który dodaje statyczne typowanie i kompiluje się do zwykłego JavaScript."
+      },
+      "answers": [
+        {
+          "uk": "Окрема мова програмування, несумісна з JavaScript",
+          "en": "A separate programming language incompatible with JavaScript",
+          "pl": "Oddzielny język programowania niekompatybilny z JavaScript",
+          "correct": false
+        },
+        {
+          "uk": "Надбудова над JavaScript зі статичною типізацією",
+          "en": "A superset of JavaScript with static typing",
+          "pl": "Nadzbiór JavaScript ze statycznym typowaniem",
+          "correct": true
+        },
+        {
+          "uk": "Фреймворк для розробки бекенду",
+          "en": "A framework for backend development",
+          "pl": "Framework do tworzenia backendu",
+          "correct": false
+        },
+        {
+          "uk": "Бібліотека для роботи з DOM",
+          "en": "A library for working with the DOM",
+          "pl": "Biblioteka do pracy z DOM",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "ts-q02",
+      "order": 2,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Що означає твердження, що TypeScript є надмножиною JavaScript?",
+        "exp": "Будь-який коректний JavaScript-код є також коректним TypeScript-кодом. TS розширює JS, не змінюючи базову мову."
+      },
+      "en": {
+        "q": "What does it mean that TypeScript is a superset of JavaScript?",
+        "exp": "Any valid JavaScript code is also valid TypeScript code. TS extends JS without changing the base language."
+      },
+      "pl": {
+        "q": "Co oznacza stwierdzenie, że TypeScript jest nadzbiorem JavaScript?",
+        "exp": "Każdy poprawny kod JavaScript jest również poprawnym kodem TypeScript. TS rozszerza JS bez zmiany bazowego języka."
+      },
+      "answers": [
+        {
+          "uk": "TypeScript замінює JavaScript повністю",
+          "en": "TypeScript completely replaces JavaScript",
+          "pl": "TypeScript całkowicie zastępuje JavaScript",
+          "correct": false
+        },
+        {
+          "uk": "TypeScript працює швидше за JavaScript",
+          "en": "TypeScript runs faster than JavaScript",
+          "pl": "TypeScript działa szybciej niż JavaScript",
+          "correct": false
+        },
+        {
+          "uk": "Будь-який валідний JS-код є валідним TS-кодом",
+          "en": "Any valid JS code is valid TS code",
+          "pl": "Każdy poprawny kod JS jest poprawnym kodem TS",
+          "correct": true
+        },
+        {
+          "uk": "TypeScript не підтримує функції JavaScript",
+          "en": "TypeScript does not support JavaScript features",
+          "pl": "TypeScript nie obsługuje funkcji JavaScript",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "ts-q03",
+      "order": 3,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Який тип у TypeScript означає, що функція нічого не повертає?",
+        "exp": "Тип void використовується для функцій, які не повертають значення. Це відрізняється від undefined — void явно показує намір."
+      },
+      "en": {
+        "q": "Which TypeScript type indicates that a function returns nothing?",
+        "exp": "The void type is used for functions that do not return a value. This differs from undefined — void explicitly shows intent."
+      },
+      "pl": {
+        "q": "Który typ w TypeScript oznacza, że funkcja nic nie zwraca?",
+        "exp": "Typ void jest używany dla funkcji, które nie zwracają wartości. Różni się od undefined — void jawnie pokazuje intencję."
+      },
+      "answers": [
+        {
+          "uk": "null",
+          "en": "null",
+          "pl": "null",
+          "correct": false
+        },
+        {
+          "uk": "undefined",
+          "en": "undefined",
+          "pl": "undefined",
+          "correct": false
+        },
+        {
+          "uk": "void",
+          "en": "void",
+          "pl": "void",
+          "correct": true
+        },
+        {
+          "uk": "never",
+          "en": "never",
+          "pl": "never",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "ts-q04",
+      "order": 4,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Що таке виведення типу (type inference) у TypeScript?",
+        "exp": "Type inference — це автоматичне визначення типу змінної на основі присвоєного значення без явного оголошення типу."
+      },
+      "en": {
+        "q": "What is type inference in TypeScript?",
+        "exp": "Type inference is the automatic determination of a variable's type based on the assigned value without explicit type declaration."
+      },
+      "pl": {
+        "q": "Czym jest wnioskowanie typów (type inference) w TypeScript?",
+        "exp": "Wnioskowanie typów to automatyczne określanie typu zmiennej na podstawie przypisanej wartości bez jawnej deklaracji typu."
+      },
+      "answers": [
+        {
+          "uk": "Автоматичне визначення типу на основі значення",
+          "en": "Automatic type determination based on value",
+          "pl": "Automatyczne określanie typu na podstawie wartości",
+          "correct": true
+        },
+        {
+          "uk": "Перетворення одного типу в інший",
+          "en": "Converting one type to another",
+          "pl": "Konwersja jednego typu na inny",
+          "correct": false
+        },
+        {
+          "uk": "Видалення типів під час компіляції",
+          "en": "Removing types during compilation",
+          "pl": "Usuwanie typów podczas kompilacji",
+          "correct": false
+        },
+        {
+          "uk": "Обов'язкове оголошення типу для кожної змінної",
+          "en": "Mandatory type declaration for every variable",
+          "pl": "Obowiązkowa deklaracja typu dla każdej zmiennej",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "ts-q05",
+      "order": 5,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Чим тип unknown відрізняється від any?",
+        "exp": "unknown — безпечніша альтернатива any. З unknown потрібно перевірити тип перед використанням, а any дозволяє будь-які операції."
+      },
+      "en": {
+        "q": "How does the unknown type differ from any?",
+        "exp": "unknown is a safer alternative to any. With unknown, you must check the type before use, while any allows any operations."
+      },
+      "pl": {
+        "q": "Czym typ unknown różni się od any?",
+        "exp": "unknown to bezpieczniejsza alternatywa dla any. Z unknown trzeba sprawdzić typ przed użyciem, podczas gdy any pozwala na dowolne operacje."
+      },
+      "answers": [
+        {
+          "uk": "unknown та any — це синоніми",
+          "en": "unknown and any are synonyms",
+          "pl": "unknown i any to synonimy",
+          "correct": false
+        },
+        {
+          "uk": "unknown вимагає перевірки типу перед використанням",
+          "en": "unknown requires type checking before use",
+          "pl": "unknown wymaga sprawdzenia typu przed użyciem",
+          "correct": true
+        },
+        {
+          "uk": "any безпечніший за unknown",
+          "en": "any is safer than unknown",
+          "pl": "any jest bezpieczniejszy niż unknown",
+          "correct": false
+        },
+        {
+          "uk": "unknown не можна присвоювати змінним",
+          "en": "unknown cannot be assigned to variables",
+          "pl": "unknown nie można przypisać do zmiennych",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "ts-q06",
+      "order": 6,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Для чого використовуються інтерфейси (interface) у TypeScript?",
+        "exp": "Інтерфейси описують структуру об'єкта — його властивості та їх типи. Вони створюють контракт між частинами коду."
+      },
+      "en": {
+        "q": "What are interfaces used for in TypeScript?",
+        "exp": "Interfaces describe the structure of an object — its properties and their types. They create a contract between parts of code."
+      },
+      "pl": {
+        "q": "Do czego służą interfejsy (interface) w TypeScript?",
+        "exp": "Interfejsy opisują strukturę obiektu — jego właściwości i ich typy. Tworzą kontrakt między częściami kodu."
+      },
+      "answers": [
+        {
+          "uk": "Для створення нових класів",
+          "en": "For creating new classes",
+          "pl": "Do tworzenia nowych klas",
+          "correct": false
+        },
+        {
+          "uk": "Для опису структури об'єкта та контракту коду",
+          "en": "For describing object structure and code contract",
+          "pl": "Do opisywania struktury obiektu i kontraktu kodu",
+          "correct": true
+        },
+        {
+          "uk": "Для виконання асинхронних операцій",
+          "en": "For executing asynchronous operations",
+          "pl": "Do wykonywania operacji asynchronicznych",
+          "correct": false
+        },
+        {
+          "uk": "Для зміни рантайм-поведінки коду",
+          "en": "For changing runtime behavior of code",
+          "pl": "Do zmiany zachowania kodu w runtime",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "ts-q07",
+      "order": 7,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Що таке enum у TypeScript?",
+        "exp": "enum (перерахування) — це тип, який дозволяє задати набір іменованих констант. Робить код читабельнішим замість 'магічних' чисел."
+      },
+      "en": {
+        "q": "What is an enum in TypeScript?",
+        "exp": "enum (enumeration) is a type that allows defining a set of named constants. It makes code more readable instead of 'magic' numbers."
+      },
+      "pl": {
+        "q": "Czym jest enum w TypeScript?",
+        "exp": "enum (wyliczenie) to typ pozwalający zdefiniować zestaw nazwanych stałych. Czyni kod bardziej czytelnym zamiast 'magicznych' liczb."
+      },
+      "answers": [
+        {
+          "uk": "Функція для ітерації по масивах",
+          "en": "A function for iterating over arrays",
+          "pl": "Funkcja do iterowania po tablicach",
+          "correct": false
+        },
+        {
+          "uk": "Набір іменованих констант",
+          "en": "A set of named constants",
+          "pl": "Zestaw nazwanych stałych",
+          "correct": true
+        },
+        {
+          "uk": "Тип для роботи з датами",
+          "en": "A type for working with dates",
+          "pl": "Typ do pracy z datami",
+          "correct": false
+        },
+        {
+          "uk": "Метод для сортування об'єктів",
+          "en": "A method for sorting objects",
+          "pl": "Metoda do sortowania obiektów",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "ts-q08",
+      "order": 8,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Як позначити необов'язковий параметр функції у TypeScript?",
+        "exp": "Необов'язкові параметри позначаються знаком питання (?). Наприклад: function greet(name?: string). Такі параметри можуть бути undefined."
+      },
+      "en": {
+        "q": "How do you mark an optional function parameter in TypeScript?",
+        "exp": "Optional parameters are marked with a question mark (?). For example: function greet(name?: string). Such parameters can be undefined."
+      },
+      "pl": {
+        "q": "Jak oznaczyć opcjonalny parametr funkcji w TypeScript?",
+        "exp": "Parametry opcjonalne oznacza się znakiem zapytania (?). Na przykład: function greet(name?: string). Takie parametry mogą być undefined."
+      },
+      "answers": [
+        {
+          "uk": "За допомогою знаку оклику (!)",
+          "en": "Using an exclamation mark (!)",
+          "pl": "Za pomocą wykrzyknika (!)",
+          "correct": false
+        },
+        {
+          "uk": "За допомогою знаку питання (?)",
+          "en": "Using a question mark (?)",
+          "pl": "Za pomocą znaku zapytania (?)",
+          "correct": true
+        },
+        {
+          "uk": "За допомогою ключового слова optional",
+          "en": "Using the optional keyword",
+          "pl": "Za pomocą słowa kluczowego optional",
+          "correct": false
+        },
+        {
+          "uk": "За допомогою типу null",
+          "en": "Using the null type",
+          "pl": "Za pomocą typu null",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "ts-q09",
+      "order": 9,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Як скомпілювати TypeScript-файл у JavaScript?",
+        "exp": "Використовується TypeScript Compiler (tsc). Команда tsc file.ts створить відповідний JavaScript-файл."
+      },
+      "en": {
+        "q": "How do you compile a TypeScript file to JavaScript?",
+        "exp": "The TypeScript Compiler (tsc) is used. The command tsc file.ts will create the corresponding JavaScript file."
+      },
+      "pl": {
+        "q": "Jak skompilować plik TypeScript do JavaScript?",
+        "exp": "Używa się TypeScript Compiler (tsc). Polecenie tsc file.ts utworzy odpowiedni plik JavaScript."
+      },
+      "answers": [
+        {
+          "uk": "npm run typescript",
+          "en": "npm run typescript",
+          "pl": "npm run typescript",
+          "correct": false
+        },
+        {
+          "uk": "tsc file.ts",
+          "en": "tsc file.ts",
+          "pl": "tsc file.ts",
+          "correct": true
+        },
+        {
+          "uk": "node compile file.ts",
+          "en": "node compile file.ts",
+          "pl": "node compile file.ts",
+          "correct": false
+        },
+        {
+          "uk": "ts-compile file.ts",
+          "en": "ts-compile file.ts",
+          "pl": "ts-compile file.ts",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "ts-q10",
+      "order": 10,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Який тип позначає значення, яке ніколи не може існувати?",
+        "exp": "Тип never означає значення, що ніколи не існує. Використовується для функцій, які завжди кидають помилку або мають нескінченний цикл."
+      },
+      "en": {
+        "q": "Which type represents a value that can never exist?",
+        "exp": "The never type represents a value that never exists. It's used for functions that always throw an error or have an infinite loop."
+      },
+      "pl": {
+        "q": "Który typ oznacza wartość, która nigdy nie może istnieć?",
+        "exp": "Typ never oznacza wartość, która nigdy nie istnieje. Używany dla funkcji, które zawsze rzucają błąd lub mają nieskończoną pętlę."
+      },
+      "answers": [
+        {
+          "uk": "void",
+          "en": "void",
+          "pl": "void",
+          "correct": false
+        },
+        {
+          "uk": "null",
+          "en": "null",
+          "pl": "null",
+          "correct": false
+        },
+        {
+          "uk": "undefined",
+          "en": "undefined",
+          "pl": "undefined",
+          "correct": false
+        },
+        {
+          "uk": "never",
+          "en": "never",
+          "pl": "never",
+          "correct": true
+        }
+      ]
+    }
+  ]
+}

@@ -1,8 +1,9 @@
 import 'server-only';
 import { cache } from 'react';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import { users } from '@/db/schema/users';
+import { pointTransactions } from '@/db/schema/points';
 
 export const getUserProfile = cache(async (userId: string) => {
   const user = await db.query.users.findFirst({
@@ -13,7 +14,6 @@ export const getUserProfile = cache(async (userId: string) => {
       email: true,
       image: true,
       role: true,
-      points: true,
       createdAt: true,
     },
     with: {
@@ -24,5 +24,17 @@ export const getUserProfile = cache(async (userId: string) => {
     },
   });
 
-  return user;
+  if (!user) return null;
+
+  const pointsResult = await db
+    .select({
+      total: sql<number>`COALESCE(SUM(${pointTransactions.points}), 0)`,
+    })
+    .from(pointTransactions)
+    .where(eq(pointTransactions.userId, userId));
+
+  return {
+    ...user,
+    points: Number(pointsResult[0]?.total) || 0,
+  };
 });

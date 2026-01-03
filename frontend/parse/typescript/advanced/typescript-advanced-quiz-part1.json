@@ -1,0 +1,434 @@
+{
+  "questions": [
+    {
+      "id": "ts-adv-q01",
+      "order": 1,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке декоратор методу і які параметри він отримує?",
+        "exp": "Декоратор методу — це функція, що отримує target (прототип класу), propertyKey (ім'я методу) та descriptor (PropertyDescriptor для зміни поведінки методу)."
+      },
+      "en": {
+        "q": "What is a method decorator and what parameters does it receive?",
+        "exp": "A method decorator is a function that receives target (class prototype), propertyKey (method name), and descriptor (PropertyDescriptor to modify method behavior)."
+      },
+      "pl": {
+        "q": "Czym jest dekorator metody i jakie parametry otrzymuje?",
+        "exp": "Dekorator metody to funkcja otrzymująca target (prototyp klasy), propertyKey (nazwę metody) oraz descriptor (PropertyDescriptor do modyfikacji zachowania metody)."
+      },
+      "answers": [
+        {
+          "uk": "Тільки ім'я методу",
+          "en": "Only the method name",
+          "pl": "Tylko nazwę metody",
+          "correct": false
+        },
+        {
+          "uk": "target, propertyKey, descriptor",
+          "en": "target, propertyKey, descriptor",
+          "pl": "target, propertyKey, descriptor",
+          "correct": true
+        },
+        {
+          "uk": "constructor та arguments",
+          "en": "constructor and arguments",
+          "pl": "constructor i arguments",
+          "correct": false
+        },
+        {
+          "uk": "this та super",
+          "en": "this and super",
+          "pl": "this i super",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "ts-adv-q02",
+      "order": 2,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Яку опцію потрібно увімкнути в tsconfig.json для використання декораторів?",
+        "exp": "Для декораторів потрібно experimentalDecorators: true. Для роботи з метаданими додатково emitDecoratorMetadata: true."
+      },
+      "en": {
+        "q": "What option must be enabled in tsconfig.json to use decorators?",
+        "exp": "For decorators, experimentalDecorators: true is needed. For metadata support, additionally emitDecoratorMetadata: true."
+      },
+      "pl": {
+        "q": "Jaką opcję trzeba włączyć w tsconfig.json, aby używać dekoratorów?",
+        "exp": "Dla dekoratorów potrzeba experimentalDecorators: true. Dla obsługi metadanych dodatkowo emitDecoratorMetadata: true."
+      },
+      "answers": [
+        {
+          "uk": "enableDecorators: true",
+          "en": "enableDecorators: true",
+          "pl": "enableDecorators: true",
+          "correct": false
+        },
+        {
+          "uk": "experimentalDecorators: true",
+          "en": "experimentalDecorators: true",
+          "pl": "experimentalDecorators: true",
+          "correct": true
+        },
+        {
+          "uk": "useDecorators: true",
+          "en": "useDecorators: true",
+          "pl": "useDecorators: true",
+          "correct": false
+        },
+        {
+          "uk": "Декоратори увімкнені за замовчуванням",
+          "en": "Decorators are enabled by default",
+          "pl": "Dekoratory są włączone domyślnie",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "ts-adv-q03",
+      "order": 3,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке рефлексія (reflect-metadata) у TypeScript?",
+        "exp": "Рефлексія дозволяє зберігати та зчитувати метадані про класи, методи та властивості у рантаймі через Reflect.defineMetadata та Reflect.getMetadata."
+      },
+      "en": {
+        "q": "What is reflection (reflect-metadata) in TypeScript?",
+        "exp": "Reflection allows storing and reading metadata about classes, methods, and properties at runtime via Reflect.defineMetadata and Reflect.getMetadata."
+      },
+      "pl": {
+        "q": "Czym jest refleksja (reflect-metadata) w TypeScript?",
+        "exp": "Refleksja pozwala przechowywać i odczytywać metadane o klasach, metodach i właściwościach w runtime przez Reflect.defineMetadata i Reflect.getMetadata."
+      },
+      "answers": [
+        {
+          "uk": "Механізм зберігання/зчитування метаданих у рантаймі",
+          "en": "A mechanism for storing/reading metadata at runtime",
+          "pl": "Mechanizm przechowywania/odczytywania metadanych w runtime",
+          "correct": true
+        },
+        {
+          "uk": "Спосіб дзеркального копіювання об'єктів",
+          "en": "A way to mirror copy objects",
+          "pl": "Sposób kopiowania lustrzanego obiektów",
+          "correct": false
+        },
+        {
+          "uk": "Інструмент для налагодження коду",
+          "en": "A tool for debugging code",
+          "pl": "Narzędzie do debugowania kodu",
+          "correct": false
+        },
+        {
+          "uk": "Автоматичне створення типів",
+          "en": "Automatic type creation",
+          "pl": "Automatyczne tworzenie typów",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "ts-adv-q04",
+      "order": 4,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Як створити власний type guard у TypeScript?",
+        "exp": "Власний type guard — це функція з типом повернення 'paramName is Type'. Якщо повертає true, TypeScript звужує тип параметра до вказаного."
+      },
+      "en": {
+        "q": "How do you create a custom type guard in TypeScript?",
+        "exp": "A custom type guard is a function with return type 'paramName is Type'. If it returns true, TypeScript narrows the parameter type to the specified one."
+      },
+      "pl": {
+        "q": "Jak utworzyć własny type guard w TypeScript?",
+        "exp": "Własny type guard to funkcja z typem zwracanym 'paramName is Type'. Jeśli zwraca true, TypeScript zawęża typ parametru do określonego."
+      },
+      "answers": [
+        {
+          "uk": "Через ключове слово guard",
+          "en": "Using the guard keyword",
+          "pl": "Za pomocą słowa kluczowego guard",
+          "correct": false
+        },
+        {
+          "uk": "Функція з типом повернення 'param is Type'",
+          "en": "A function with return type 'param is Type'",
+          "pl": "Funkcja z typem zwracanym 'param is Type'",
+          "correct": true
+        },
+        {
+          "uk": "Через декоратор @TypeGuard",
+          "en": "Using @TypeGuard decorator",
+          "pl": "Za pomocą dekoratora @TypeGuard",
+          "correct": false
+        },
+        {
+          "uk": "Власні type guards неможливі",
+          "en": "Custom type guards are not possible",
+          "pl": "Własne type guards nie są możliwe",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "ts-adv-q05",
+      "order": 5,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Як працює оператор in для звуження типів?",
+        "exp": "Оператор in перевіряє наявність властивості в об'єкті. TypeScript використовує це для type narrowing: if ('name' in obj) — obj має властивість name."
+      },
+      "en": {
+        "q": "How does the in operator work for type narrowing?",
+        "exp": "The in operator checks for property existence in an object. TypeScript uses this for type narrowing: if ('name' in obj) — obj has property name."
+      },
+      "pl": {
+        "q": "Jak działa operator in do zawężania typów?",
+        "exp": "Operator in sprawdza istnienie właściwości w obiekcie. TypeScript używa tego do zawężania typów: if ('name' in obj) — obj ma właściwość name."
+      },
+      "answers": [
+        {
+          "uk": "Перевіряє чи об'єкт є масивом",
+          "en": "Checks if object is an array",
+          "pl": "Sprawdza czy obiekt jest tablicą",
+          "correct": false
+        },
+        {
+          "uk": "Перевіряє наявність властивості та звужує тип",
+          "en": "Checks property existence and narrows type",
+          "pl": "Sprawdza istnienie właściwości i zawęża typ",
+          "correct": true
+        },
+        {
+          "uk": "Перевіряє тип змінної",
+          "en": "Checks variable type",
+          "pl": "Sprawdza typ zmiennej",
+          "correct": false
+        },
+        {
+          "uk": "Працює тільки з масивами",
+          "en": "Works only with arrays",
+          "pl": "Działa tylko z tablicami",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "ts-adv-q06",
+      "order": 6,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Чим instanceof відрізняється від typeof для type narrowing?",
+        "exp": "typeof перевіряє примітивні типи (string, number тощо). instanceof перевіряє чи об'єкт є екземпляром класу, що корисно для класів та їх нащадків."
+      },
+      "en": {
+        "q": "How does instanceof differ from typeof for type narrowing?",
+        "exp": "typeof checks primitive types (string, number, etc.). instanceof checks if an object is an instance of a class, useful for classes and their descendants."
+      },
+      "pl": {
+        "q": "Czym instanceof różni się od typeof przy zawężaniu typów?",
+        "exp": "typeof sprawdza typy prymitywne (string, number itp.). instanceof sprawdza czy obiekt jest instancją klasy, przydatne dla klas i ich potomków."
+      },
+      "answers": [
+        {
+          "uk": "typeof для класів, instanceof для примітивів",
+          "en": "typeof for classes, instanceof for primitives",
+          "pl": "typeof dla klas, instanceof dla prymitywów",
+          "correct": false
+        },
+        {
+          "uk": "typeof для примітивів, instanceof для екземплярів класів",
+          "en": "typeof for primitives, instanceof for class instances",
+          "pl": "typeof dla prymitywów, instanceof dla instancji klas",
+          "correct": true
+        },
+        {
+          "uk": "Немає різниці, це синоніми",
+          "en": "No difference, they are synonyms",
+          "pl": "Nie ma różnicy, to synonimy",
+          "correct": false
+        },
+        {
+          "uk": "instanceof застарілий, використовуйте typeof",
+          "en": "instanceof is deprecated, use typeof",
+          "pl": "instanceof jest przestarzały, używaj typeof",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "ts-adv-q07",
+      "order": 7,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що робить утилітний тип Omit<T, K>?",
+        "exp": "Omit<T, K> створює новий тип, виключаючи вказані ключі K з типу T. Протилежність Pick — замість вибору виключає властивості."
+      },
+      "en": {
+        "q": "What does the Omit<T, K> utility type do?",
+        "exp": "Omit<T, K> creates a new type by excluding specified keys K from type T. The opposite of Pick — excludes properties instead of selecting them."
+      },
+      "pl": {
+        "q": "Co robi typ narzędziowy Omit<T, K>?",
+        "exp": "Omit<T, K> tworzy nowy typ wykluczając wskazane klucze K z typu T. Przeciwieństwo Pick — wyklucza właściwości zamiast je wybierać."
+      },
+      "answers": [
+        {
+          "uk": "Вибирає вказані властивості",
+          "en": "Selects specified properties",
+          "pl": "Wybiera wskazane właściwości",
+          "correct": false
+        },
+        {
+          "uk": "Виключає вказані властивості з типу",
+          "en": "Excludes specified properties from type",
+          "pl": "Wyklucza wskazane właściwości z typu",
+          "correct": true
+        },
+        {
+          "uk": "Робить властивості опціональними",
+          "en": "Makes properties optional",
+          "pl": "Czyni właściwości opcjonalnymi",
+          "correct": false
+        },
+        {
+          "uk": "Видаляє null і undefined",
+          "en": "Removes null and undefined",
+          "pl": "Usuwa null i undefined",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "ts-adv-q08",
+      "order": 8,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що робить утилітний тип Record<K, T>?",
+        "exp": "Record<K, T> створює об'єктний тип, де ключі мають тип K, а значення — тип T. Наприклад: Record<string, number> — об'єкт з рядковими ключами та числовими значеннями."
+      },
+      "en": {
+        "q": "What does the Record<K, T> utility type do?",
+        "exp": "Record<K, T> creates an object type where keys have type K and values have type T. For example: Record<string, number> — object with string keys and number values."
+      },
+      "pl": {
+        "q": "Co robi typ narzędziowy Record<K, T>?",
+        "exp": "Record<K, T> tworzy typ obiektowy, gdzie klucze mają typ K, a wartości typ T. Na przykład: Record<string, number> — obiekt z kluczami string i wartościami number."
+      },
+      "answers": [
+        {
+          "uk": "Записує дані в базу даних",
+          "en": "Records data to database",
+          "pl": "Zapisuje dane do bazy danych",
+          "correct": false
+        },
+        {
+          "uk": "Створює об'єкт з ключами типу K та значеннями типу T",
+          "en": "Creates object with keys of type K and values of type T",
+          "pl": "Tworzy obiekt z kluczami typu K i wartościami typu T",
+          "correct": true
+        },
+        {
+          "uk": "Конвертує масив в об'єкт",
+          "en": "Converts array to object",
+          "pl": "Konwertuje tablicę na obiekt",
+          "correct": false
+        },
+        {
+          "uk": "Створює масив з елементами типу T",
+          "en": "Creates array with elements of type T",
+          "pl": "Tworzy tablicę z elementami typu T",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "ts-adv-q09",
+      "order": 9,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що робить утилітний тип Exclude<T, U>?",
+        "exp": "Exclude<T, U> видаляє з union-типу T всі типи, які присвоювані до U. Наприклад: Exclude<'a' | 'b' | 'c', 'a'> дає 'b' | 'c'."
+      },
+      "en": {
+        "q": "What does the Exclude<T, U> utility type do?",
+        "exp": "Exclude<T, U> removes from union type T all types assignable to U. For example: Exclude<'a' | 'b' | 'c', 'a'> gives 'b' | 'c'."
+      },
+      "pl": {
+        "q": "Co robi typ narzędziowy Exclude<T, U>?",
+        "exp": "Exclude<T, U> usuwa z typu union T wszystkie typy przypisywalne do U. Na przykład: Exclude<'a' | 'b' | 'c', 'a'> daje 'b' | 'c'."
+      },
+      "answers": [
+        {
+          "uk": "Виключає властивості з об'єкта",
+          "en": "Excludes properties from object",
+          "pl": "Wyklucza właściwości z obiektu",
+          "correct": false
+        },
+        {
+          "uk": "Видаляє з union-типу вказані типи",
+          "en": "Removes specified types from union type",
+          "pl": "Usuwa wskazane typy z typu union",
+          "correct": true
+        },
+        {
+          "uk": "Створює новий клас без вказаних методів",
+          "en": "Creates new class without specified methods",
+          "pl": "Tworzy nową klasę bez wskazanych metod",
+          "correct": false
+        },
+        {
+          "uk": "Виключає null з типу",
+          "en": "Excludes null from type",
+          "pl": "Wyklucza null z typu",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "ts-adv-q10",
+      "order": 10,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що робить утилітний тип NonNullable<T>?",
+        "exp": "NonNullable<T> видаляє null та undefined з типу T. Наприклад: NonNullable<string | null | undefined> дає string."
+      },
+      "en": {
+        "q": "What does the NonNullable<T> utility type do?",
+        "exp": "NonNullable<T> removes null and undefined from type T. For example: NonNullable<string | null | undefined> gives string."
+      },
+      "pl": {
+        "q": "Co robi typ narzędziowy NonNullable<T>?",
+        "exp": "NonNullable<T> usuwa null i undefined z typu T. Na przykład: NonNullable<string | null | undefined> daje string."
+      },
+      "answers": [
+        {
+          "uk": "Робить всі властивості обов'язковими",
+          "en": "Makes all properties required",
+          "pl": "Czyni wszystkie właściwości wymaganymi",
+          "correct": false
+        },
+        {
+          "uk": "Видаляє null та undefined з типу",
+          "en": "Removes null and undefined from type",
+          "pl": "Usuwa null i undefined z typu",
+          "correct": true
+        },
+        {
+          "uk": "Забороняє присвоєння null",
+          "en": "Prohibits null assignment",
+          "pl": "Zabrania przypisania null",
+          "correct": false
+        },
+        {
+          "uk": "Перетворює nullable тип в string",
+          "en": "Converts nullable type to string",
+          "pl": "Konwertuje typ nullable na string",
+          "correct": false
+        }
+      ]
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 import { db } from './index';
 import { users } from './schema/users';
-import { sql } from 'drizzle-orm';
+import { pointTransactions } from './schema/points';
+import { and, eq, inArray } from 'drizzle-orm';
 
 async function main() {
   console.log('Seeding demo leaderboard users...');
@@ -49,15 +50,31 @@ async function main() {
         name: u.name,
         email: u.email,
         image: u.image,
-        points: u.points,
         role: 'user',
         createdAt: new Date(),
       }))
     )
-    .onConflictDoUpdate({
-      target: users.email,
-      set: { points: sql`excluded.points` },
-    });
+    .onConflictDoNothing();
+
+  const userIds = demoUsers.map(u => u.id);
+
+  await db
+    .delete(pointTransactions)
+    .where(
+      and(
+        eq(pointTransactions.source, 'seed'),
+        inArray(pointTransactions.userId, userIds)
+      )
+    );
+
+  await db.insert(pointTransactions).values(
+    demoUsers.map(u => ({
+      userId: u.id,
+      points: u.points,
+      source: 'seed',
+      metadata: { reason: 'demo' },
+    }))
+  );
 
   console.log('Demo users created!');
   process.exit(0);

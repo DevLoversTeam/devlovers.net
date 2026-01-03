@@ -1,0 +1,434 @@
+{
+  "questions": [
+    {
+      "id": "ts-adv-q31",
+      "order": 31,
+      "difficulty": "advanced",
+      "uk": {
+        "q": "Що таке distributive conditional types у TypeScript?",
+        "exp": "Коли conditional type застосовується до union-типу, він 'розподіляється' по кожному члену union. Наприклад: T extends U ? X : Y для T = A | B дає (A extends U ? X : Y) | (B extends U ? X : Y)."
+      },
+      "en": {
+        "q": "What are distributive conditional types in TypeScript?",
+        "exp": "When a conditional type is applied to a union type, it 'distributes' over each union member. For example: T extends U ? X : Y for T = A | B gives (A extends U ? X : Y) | (B extends U ? X : Y)."
+      },
+      "pl": {
+        "q": "Czym są distributive conditional types w TypeScript?",
+        "exp": "Gdy typ warunkowy jest stosowany do typu union, 'rozprowadza się' po każdym członku unii. Na przykład: T extends U ? X : Y dla T = A | B daje (A extends U ? X : Y) | (B extends U ? X : Y)."
+      },
+      "answers": [
+        {
+          "uk": "Типи для роботи з розподіленими системами",
+          "en": "Types for working with distributed systems",
+          "pl": "Typy do pracy z systemami rozproszonymi",
+          "correct": false
+        },
+        {
+          "uk": "Conditional type розподіляється по кожному члену union",
+          "en": "Conditional type distributes over each union member",
+          "pl": "Typ warunkowy rozprowadza się po każdym członku unii",
+          "correct": true
+        },
+        {
+          "uk": "Спосіб поділу коду на модулі",
+          "en": "Way to split code into modules",
+          "pl": "Sposób dzielenia kodu na moduły",
+          "correct": false
+        },
+        {
+          "uk": "Типи для паралельних обчислень",
+          "en": "Types for parallel computations",
+          "pl": "Typy dla obliczeń równoległych",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "ts-adv-q32",
+      "order": 32,
+      "difficulty": "advanced",
+      "uk": {
+        "q": "Як типізувати асинхронний ітератор у TypeScript?",
+        "exp": "Асинхронний ітератор типізується як AsyncGenerator<YieldType, ReturnType, NextType> або AsyncIterable<T>. Використовується з for await...of."
+      },
+      "en": {
+        "q": "How do you type an async iterator in TypeScript?",
+        "exp": "An async iterator is typed as AsyncGenerator<YieldType, ReturnType, NextType> or AsyncIterable<T>. Used with for await...of."
+      },
+      "pl": {
+        "q": "Jak typować asynchroniczny iterator w TypeScript?",
+        "exp": "Asynchroniczny iterator typuje się jako AsyncGenerator<YieldType, ReturnType, NextType> lub AsyncIterable<T>. Używany z for await...of."
+      },
+      "answers": [
+        {
+          "uk": "Через Promise<Iterator<T>>",
+          "en": "Via Promise<Iterator<T>>",
+          "pl": "Przez Promise<Iterator<T>>",
+          "correct": false
+        },
+        {
+          "uk": "AsyncGenerator<T> або AsyncIterable<T>",
+          "en": "AsyncGenerator<T> or AsyncIterable<T>",
+          "pl": "AsyncGenerator<T> lub AsyncIterable<T>",
+          "correct": true
+        },
+        {
+          "uk": "Через ключове слово async iterator",
+          "en": "Using async iterator keyword",
+          "pl": "Za pomocą słowa kluczowego async iterator",
+          "correct": false
+        },
+        {
+          "uk": "TypeScript не підтримує async iterators",
+          "en": "TypeScript does not support async iterators",
+          "pl": "TypeScript nie obsługuje async iterators",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "ts-adv-q33",
+      "order": 33,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке Value Object у Domain-Driven Design з TypeScript?",
+        "exp": "Value Object — об'єкт без ідентичності, визначений лише своїми значеннями. У TypeScript реалізується як клас з readonly полями та валідацією в конструкторі."
+      },
+      "en": {
+        "q": "What is a Value Object in Domain-Driven Design with TypeScript?",
+        "exp": "Value Object is an object without identity, defined only by its values. In TypeScript, implemented as a class with readonly fields and validation in constructor."
+      },
+      "pl": {
+        "q": "Czym jest Value Object w Domain-Driven Design z TypeScript?",
+        "exp": "Value Object to obiekt bez tożsamości, definiowany tylko przez swoje wartości. W TypeScript implementowany jako klasa z polami readonly i walidacją w konstruktorze."
+      },
+      "answers": [
+        {
+          "uk": "Об'єкт з унікальним ідентифікатором",
+          "en": "Object with unique identifier",
+          "pl": "Obiekt z unikalnym identyfikatorem",
+          "correct": false
+        },
+        {
+          "uk": "Незмінний об'єкт без ідентичності, визначений значеннями",
+          "en": "Immutable object without identity, defined by values",
+          "pl": "Niezmienny obiekt bez tożsamości, definiowany wartościami",
+          "correct": true
+        },
+        {
+          "uk": "Тип для примітивних значень",
+          "en": "Type for primitive values",
+          "pl": "Typ dla wartości prymitywnych",
+          "correct": false
+        },
+        {
+          "uk": "Контейнер для залежностей",
+          "en": "Container for dependencies",
+          "pl": "Kontener dla zależności",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "ts-adv-q34",
+      "order": 34,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке ізоморфний (універсальний) додаток у контексті TypeScript?",
+        "exp": "Ізоморфний додаток — застосунок, де один TypeScript-код виконується і на сервері (SSR), і на клієнті. Типовий приклад — Next.js з TypeScript."
+      },
+      "en": {
+        "q": "What is an isomorphic (universal) application in the context of TypeScript?",
+        "exp": "An isomorphic application is an app where the same TypeScript code runs on both server (SSR) and client. Typical example — Next.js with TypeScript."
+      },
+      "pl": {
+        "q": "Czym jest aplikacja izomorficzna (uniwersalna) w kontekście TypeScript?",
+        "exp": "Aplikacja izomorficzna to aplikacja, gdzie ten sam kod TypeScript wykonuje się zarówno na serwerze (SSR), jak i na kliencie. Typowy przykład — Next.js z TypeScript."
+      },
+      "answers": [
+        {
+          "uk": "Додаток тільки для браузера",
+          "en": "Browser-only application",
+          "pl": "Aplikacja tylko dla przeglądarki",
+          "correct": false
+        },
+        {
+          "uk": "Код виконується і на сервері, і на клієнті",
+          "en": "Code runs on both server and client",
+          "pl": "Kod wykonuje się zarówno na serwerze, jak i na kliencie",
+          "correct": true
+        },
+        {
+          "uk": "Додаток без залежностей",
+          "en": "Application without dependencies",
+          "pl": "Aplikacja bez zależności",
+          "correct": false
+        },
+        {
+          "uk": "Тільки API без UI",
+          "en": "Only API without UI",
+          "pl": "Tylko API bez UI",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "ts-adv-q35",
+      "order": 35,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Як реалізувати memoization у TypeScript з типобезпекою?",
+        "exp": "Memoization реалізується через generic-функцію, що приймає функцію T та повертає обгортку з кешем. Використовується Map для зберігання результатів за ключем аргументів."
+      },
+      "en": {
+        "q": "How do you implement memoization in TypeScript with type safety?",
+        "exp": "Memoization is implemented via a generic function that takes function T and returns a wrapper with cache. Map is used to store results by argument key."
+      },
+      "pl": {
+        "q": "Jak zaimplementować memoization w TypeScript z bezpieczeństwem typów?",
+        "exp": "Memoization implementuje się przez funkcję generyczną przyjmującą funkcję T i zwracającą wrapper z cache. Map służy do przechowywania wyników według klucza argumentów."
+      },
+      "answers": [
+        {
+          "uk": "Через декоратор @Memoize",
+          "en": "Using @Memoize decorator",
+          "pl": "Za pomocą dekoratora @Memoize",
+          "correct": false
+        },
+        {
+          "uk": "Generic-функція з Map для кешування результатів",
+          "en": "Generic function with Map for caching results",
+          "pl": "Funkcja generyczna z Map do cachowania wyników",
+          "correct": true
+        },
+        {
+          "uk": "TypeScript має вбудовану memoization",
+          "en": "TypeScript has built-in memoization",
+          "pl": "TypeScript ma wbudowane memoization",
+          "correct": false
+        },
+        {
+          "uk": "Тільки через localStorage",
+          "en": "Only through localStorage",
+          "pl": "Tylko przez localStorage",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "ts-adv-q36",
+      "order": 36,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Як використовувати as const для створення літеральних типів?",
+        "exp": "as const робить значення readonly та зберігає літеральний тип замість розширеного. ['a', 'b'] as const дає readonly ['a', 'b'] замість string[]."
+      },
+      "en": {
+        "q": "How do you use as const to create literal types?",
+        "exp": "as const makes values readonly and preserves literal type instead of widened. ['a', 'b'] as const gives readonly ['a', 'b'] instead of string[]."
+      },
+      "pl": {
+        "q": "Jak używać as const do tworzenia typów literalnych?",
+        "exp": "as const czyni wartości readonly i zachowuje typ literalny zamiast poszerzonego. ['a', 'b'] as const daje readonly ['a', 'b'] zamiast string[]."
+      },
+      "answers": [
+        {
+          "uk": "Створює копію константи",
+          "en": "Creates a copy of the constant",
+          "pl": "Tworzy kopię stałej",
+          "correct": false
+        },
+        {
+          "uk": "Робить readonly та зберігає літеральний тип",
+          "en": "Makes readonly and preserves literal type",
+          "pl": "Czyni readonly i zachowuje typ literalny",
+          "correct": true
+        },
+        {
+          "uk": "Конвертує в const змінну",
+          "en": "Converts to const variable",
+          "pl": "Konwertuje na zmienną const",
+          "correct": false
+        },
+        {
+          "uk": "Перевіряє чи значення є константою",
+          "en": "Checks if value is a constant",
+          "pl": "Sprawdza czy wartość jest stałą",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "ts-adv-q37",
+      "order": 37,
+      "difficulty": "advanced",
+      "uk": {
+        "q": "Як витягти тип елементів масиву за допомогою indexed access types?",
+        "exp": "Використовується T[number] для отримання типу елементів масиву. Наприклад: type ArrayElement = typeof arr[number] витягує union-тип всіх елементів."
+      },
+      "en": {
+        "q": "How do you extract array element type using indexed access types?",
+        "exp": "T[number] is used to get the array element type. For example: type ArrayElement = typeof arr[number] extracts a union type of all elements."
+      },
+      "pl": {
+        "q": "Jak wyodrębnić typ elementów tablicy używając indexed access types?",
+        "exp": "T[number] służy do uzyskania typu elementów tablicy. Na przykład: type ArrayElement = typeof arr[number] wyodrębnia typ union wszystkich elementów."
+      },
+      "answers": [
+        {
+          "uk": "Через Array.getElementType()",
+          "en": "Via Array.getElementType()",
+          "pl": "Przez Array.getElementType()",
+          "correct": false
+        },
+        {
+          "uk": "T[number] для отримання типу елементів",
+          "en": "T[number] to get element type",
+          "pl": "T[number] do uzyskania typu elementów",
+          "correct": true
+        },
+        {
+          "uk": "Через утилітний тип ElementOf<T>",
+          "en": "Via ElementOf<T> utility type",
+          "pl": "Przez typ narzędziowy ElementOf<T>",
+          "correct": false
+        },
+        {
+          "uk": "TypeScript автоматично виводить тип",
+          "en": "TypeScript automatically infers the type",
+          "pl": "TypeScript automatycznie wnioskuje typ",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "ts-adv-q38",
+      "order": 38,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Яка різниця між Project References та звичайними імпортами?",
+        "exp": "Project References (composite: true) дозволяють розбити великий проєкт на частини з окремими tsconfig, що прискорює інкрементальну збірку та забезпечує чіткі залежності між частинами."
+      },
+      "en": {
+        "q": "What is the difference between Project References and regular imports?",
+        "exp": "Project References (composite: true) allow splitting large projects into parts with separate tsconfigs, speeding up incremental builds and ensuring clear dependencies between parts."
+      },
+      "pl": {
+        "q": "Jaka jest różnica między Project References a zwykłymi importami?",
+        "exp": "Project References (composite: true) pozwalają dzielić duże projekty na części z osobnymi tsconfig, przyspieszając inkrementalne budowanie i zapewniając jasne zależności między częściami."
+      },
+      "answers": [
+        {
+          "uk": "Немає різниці",
+          "en": "No difference",
+          "pl": "Nie ma różnicy",
+          "correct": false
+        },
+        {
+          "uk": "Дозволяють розбити проєкт на частини з окремими tsconfig",
+          "en": "Allow splitting project into parts with separate tsconfigs",
+          "pl": "Pozwalają dzielić projekt na części z osobnymi tsconfig",
+          "correct": true
+        },
+        {
+          "uk": "Project References тільки для бібліотек",
+          "en": "Project References only for libraries",
+          "pl": "Project References tylko dla bibliotek",
+          "correct": false
+        },
+        {
+          "uk": "Застаріла функція TypeScript",
+          "en": "Deprecated TypeScript feature",
+          "pl": "Przestarzała funkcja TypeScript",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "ts-adv-q39",
+      "order": 39,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Як правильно обробляти помилки в async/await з TypeScript?",
+        "exp": "Використовувати try/catch з типізацією error як unknown. Потім перевіряти instanceof Error для доступу до message. Альтернатива — .catch() на Promise."
+      },
+      "en": {
+        "q": "How do you properly handle errors in async/await with TypeScript?",
+        "exp": "Use try/catch with error typed as unknown. Then check instanceof Error to access message. Alternative — .catch() on Promise."
+      },
+      "pl": {
+        "q": "Jak prawidłowo obsługiwać błędy w async/await z TypeScript?",
+        "exp": "Użyć try/catch z error typowanym jako unknown. Następnie sprawdzić instanceof Error dla dostępu do message. Alternatywa — .catch() na Promise."
+      },
+      "answers": [
+        {
+          "uk": "Помилки типізуються автоматично як Error",
+          "en": "Errors are automatically typed as Error",
+          "pl": "Błędy są automatycznie typowane jako Error",
+          "correct": false
+        },
+        {
+          "uk": "try/catch з error: unknown та перевіркою instanceof",
+          "en": "try/catch with error: unknown and instanceof check",
+          "pl": "try/catch z error: unknown i sprawdzeniem instanceof",
+          "correct": true
+        },
+        {
+          "uk": "TypeScript автоматично обробляє помилки",
+          "en": "TypeScript automatically handles errors",
+          "pl": "TypeScript automatycznie obsługuje błędy",
+          "correct": false
+        },
+        {
+          "uk": "Через декоратор @CatchError",
+          "en": "Using @CatchError decorator",
+          "pl": "Za pomocą dekoratora @CatchError",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "ts-adv-q40",
+      "order": 40,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Які best practices для роботи з any у TypeScript?",
+        "exp": "Уникати any де можливо. Використовувати unknown замість any для невідомих типів. Якщо any неминучий — ізолювати його та якнайшвидше звузити до конкретного типу."
+      },
+      "en": {
+        "q": "What are the best practices for working with any in TypeScript?",
+        "exp": "Avoid any where possible. Use unknown instead of any for unknown types. If any is unavoidable — isolate it and narrow to a specific type as soon as possible."
+      },
+      "pl": {
+        "q": "Jakie są najlepsze praktyki pracy z any w TypeScript?",
+        "exp": "Unikać any gdzie możliwe. Używać unknown zamiast any dla nieznanych typów. Jeśli any jest nieunikniony — izolować go i zawęzić do konkretnego typu jak najszybciej."
+      },
+      "answers": [
+        {
+          "uk": "Використовувати any скрізь для гнучкості",
+          "en": "Use any everywhere for flexibility",
+          "pl": "Używać any wszędzie dla elastyczności",
+          "correct": false
+        },
+        {
+          "uk": "Уникати any, використовувати unknown, ізолювати та звужувати",
+          "en": "Avoid any, use unknown, isolate and narrow",
+          "pl": "Unikać any, używać unknown, izolować i zawężać",
+          "correct": true
+        },
+        {
+          "uk": "any і unknown — однакові",
+          "en": "any and unknown are the same",
+          "pl": "any i unknown są takie same",
+          "correct": false
+        },
+        {
+          "uk": "Завжди використовувати @ts-ignore",
+          "en": "Always use @ts-ignore",
+          "pl": "Zawsze używać @ts-ignore",
+          "correct": false
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,434 @@
+{
+  "questions": [
+    {
+      "id": "html-q31",
+      "order": 31,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке семантичний HTML і чому він важливий?",
+        "exp": "Семантичний HTML — використання тегів за їхнім змістовим призначенням (header, main, article). Покращує SEO, доступність та читабельність коду."
+      },
+      "en": {
+        "q": "What is semantic HTML and why is it important?",
+        "exp": "Semantic HTML means using tags according to their meaningful purpose (header, main, article). Improves SEO, accessibility, and code readability."
+      },
+      "pl": {
+        "q": "Czym jest semantyczny HTML i dlaczego jest ważny?",
+        "exp": "Semantyczny HTML oznacza używanie tagów zgodnie z ich znaczeniem (header, main, article). Poprawia SEO, dostępność i czytelność kodu."
+      },
+      "answers": [
+        {
+          "uk": "Використання тільки тегів div і span",
+          "en": "Using only div and span tags",
+          "pl": "Używanie tylko tagów div i span",
+          "correct": false
+        },
+        {
+          "uk": "Використання тегів за їхнім змістовим призначенням для кращого SEO та доступності",
+          "en": "Using tags according to their meaningful purpose for better SEO and accessibility",
+          "pl": "Używanie tagów zgodnie z ich znaczeniem dla lepszego SEO i dostępności",
+          "correct": true
+        },
+        {
+          "uk": "Використання лише застарілих HTML тегів",
+          "en": "Using only deprecated HTML tags",
+          "pl": "Używanie tylko przestarzałych tagów HTML",
+          "correct": false
+        },
+        {
+          "uk": "Додавання коментарів до кожного тега",
+          "en": "Adding comments to every tag",
+          "pl": "Dodawanie komentarzy do każdego tagu",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-q32",
+      "order": 32,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Яка різниця між тегами <article> та <section>?",
+        "exp": "<article> — самостійний контент, зрозумілий поза контекстом (новини, пости). <section> — тематичний розділ, частина більшої структури сторінки."
+      },
+      "en": {
+        "q": "What is the difference between <article> and <section> tags?",
+        "exp": "<article> is standalone content understandable out of context (news, posts). <section> is a thematic division, part of a larger page structure."
+      },
+      "pl": {
+        "q": "Jaka jest różnica między tagami <article> a <section>?",
+        "exp": "<article> to samodzielna treść zrozumiała poza kontekstem (wiadomości, posty). <section> to tematyczny podział, część większej struktury strony."
+      },
+      "answers": [
+        {
+          "uk": "Різниці немає, це синоніми",
+          "en": "No difference, they are synonyms",
+          "pl": "Nie ma różnicy, to synonimy",
+          "correct": false
+        },
+        {
+          "uk": "<article> — самостійний контент, <section> — тематичний розділ сторінки",
+          "en": "<article> is standalone content, <section> is a thematic page division",
+          "pl": "<article> to samodzielna treść, <section> to tematyczny podział strony",
+          "correct": true
+        },
+        {
+          "uk": "<section> використовується тільки в <header>",
+          "en": "<section> is only used inside <header>",
+          "pl": "<section> jest używany tylko wewnątrz <header>",
+          "correct": false
+        },
+        {
+          "uk": "<article> застарів у HTML5",
+          "en": "<article> is deprecated in HTML5",
+          "pl": "<article> jest przestarzały w HTML5",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-q33",
+      "order": 33,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Для чого використовуються теги <header>, <main> та <footer>?",
+        "exp": "<header> — заголовок сторінки/секції, <main> — основний унікальний контент, <footer> — нижня частина з додатковою інформацією."
+      },
+      "en": {
+        "q": "What are <header>, <main>, and <footer> tags used for?",
+        "exp": "<header> is page/section header, <main> is the main unique content, <footer> is the bottom part with additional information."
+      },
+      "pl": {
+        "q": "Do czego służą tagi <header>, <main> i <footer>?",
+        "exp": "<header> to nagłówek strony/sekcji, <main> to główna unikalna treść, <footer> to dolna część z dodatkowymi informacjami."
+      },
+      "answers": [
+        {
+          "uk": "Для стилізації сторінки",
+          "en": "For styling the page",
+          "pl": "Do stylizowania strony",
+          "correct": false
+        },
+        {
+          "uk": "Для структурування сторінки: заголовок, основний контент, підвал",
+          "en": "For structuring page: header, main content, footer",
+          "pl": "Do strukturyzowania strony: nagłówek, główna treść, stopka",
+          "correct": true
+        },
+        {
+          "uk": "Тільки для SEO оптимізації",
+          "en": "Only for SEO optimization",
+          "pl": "Tylko do optymalizacji SEO",
+          "correct": false
+        },
+        {
+          "uk": "Для створення навігації",
+          "en": "For creating navigation",
+          "pl": "Do tworzenia nawigacji",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-q34",
+      "order": 34,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Для чого використовуються теги <nav> та <aside>?",
+        "exp": "<nav> — контейнер для основної навігації сайту (меню, посилання). <aside> — для побічного контенту (сайдбари, підказки, реклама)."
+      },
+      "en": {
+        "q": "What are <nav> and <aside> tags used for?",
+        "exp": "<nav> is a container for main site navigation (menus, links). <aside> is for secondary content (sidebars, tips, ads)."
+      },
+      "pl": {
+        "q": "Do czego służą tagi <nav> i <aside>?",
+        "exp": "<nav> to kontener dla głównej nawigacji strony (menu, linki). <aside> to dla treści pobocznej (paski boczne, podpowiedzi, reklamy)."
+      },
+      "answers": [
+        {
+          "uk": "<nav> — для навігації, <aside> — для побічного контенту",
+          "en": "<nav> for navigation, <aside> for secondary content",
+          "pl": "<nav> dla nawigacji, <aside> dla treści pobocznej",
+          "correct": true
+        },
+        {
+          "uk": "Обидва для створення меню",
+          "en": "Both for creating menus",
+          "pl": "Oba do tworzenia menu",
+          "correct": false
+        },
+        {
+          "uk": "<aside> для заголовків",
+          "en": "<aside> for headers",
+          "pl": "<aside> dla nagłówków",
+          "correct": false
+        },
+        {
+          "uk": "<nav> для зображень",
+          "en": "<nav> for images",
+          "pl": "<nav> dla obrazów",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-q35",
+      "order": 35,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Як використовувати теги <figure> та <figcaption>?",
+        "exp": "<figure> — контейнер для медіа-контенту (зображення, графіки, відео). <figcaption> — підпис до цього медіа всередині <figure>."
+      },
+      "en": {
+        "q": "How do you use <figure> and <figcaption> tags?",
+        "exp": "<figure> is a container for media content (images, charts, videos). <figcaption> is a caption for that media inside <figure>."
+      },
+      "pl": {
+        "q": "Jak używać tagów <figure> i <figcaption>?",
+        "exp": "<figure> to kontener dla treści multimedialnej (obrazy, wykresy, wideo). <figcaption> to podpis do tych mediów wewnątrz <figure>."
+      },
+      "answers": [
+        {
+          "uk": "Для створення таблиць з підписами",
+          "en": "For creating tables with captions",
+          "pl": "Do tworzenia tabel z podpisami",
+          "correct": false
+        },
+        {
+          "uk": "<figure> для медіа-контенту, <figcaption> для підпису до нього",
+          "en": "<figure> for media content, <figcaption> for its caption",
+          "pl": "<figure> dla treści multimedialnej, <figcaption> dla jej podpisu",
+          "correct": true
+        },
+        {
+          "uk": "Для створення форм",
+          "en": "For creating forms",
+          "pl": "Do tworzenia formularzy",
+          "correct": false
+        },
+        {
+          "uk": "Для математичних формул",
+          "en": "For mathematical formulas",
+          "pl": "Do wzorów matematycznych",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-q36",
+      "order": 36,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Як вбудувати відео на HTML-сторінку?",
+        "exp": "Використовується тег <video> з атрибутами src, controls, autoplay, loop. Можна додати кілька <source> для різних форматів."
+      },
+      "en": {
+        "q": "How do you embed video on an HTML page?",
+        "exp": "Use the <video> tag with src, controls, autoplay, loop attributes. You can add multiple <source> tags for different formats."
+      },
+      "pl": {
+        "q": "Jak osadzić wideo na stronie HTML?",
+        "exp": "Używa się tagu <video> z atrybutami src, controls, autoplay, loop. Można dodać wiele tagów <source> dla różnych formatów."
+      },
+      "answers": [
+        {
+          "uk": "<media src=\"video.mp4\">",
+          "en": "<media src=\"video.mp4\">",
+          "pl": "<media src=\"video.mp4\">",
+          "correct": false
+        },
+        {
+          "uk": "<video src=\"video.mp4\" controls></video>",
+          "en": "<video src=\"video.mp4\" controls></video>",
+          "pl": "<video src=\"video.mp4\" controls></video>",
+          "correct": true
+        },
+        {
+          "uk": "<movie href=\"video.mp4\">",
+          "en": "<movie href=\"video.mp4\">",
+          "pl": "<movie href=\"video.mp4\">",
+          "correct": false
+        },
+        {
+          "uk": "<embed type=\"video\" src=\"video.mp4\">",
+          "en": "<embed type=\"video\" src=\"video.mp4\">",
+          "pl": "<embed type=\"video\" src=\"video.mp4\">",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-q37",
+      "order": 37,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Як вбудувати аудіо на HTML-сторінку?",
+        "exp": "Використовується тег <audio> з атрибутами src, controls, autoplay, loop. Аналогічно до відео, можна додати кілька <source>."
+      },
+      "en": {
+        "q": "How do you embed audio on an HTML page?",
+        "exp": "Use the <audio> tag with src, controls, autoplay, loop attributes. Similar to video, you can add multiple <source> tags."
+      },
+      "pl": {
+        "q": "Jak osadzić audio na stronie HTML?",
+        "exp": "Używa się tagu <audio> z atrybutami src, controls, autoplay, loop. Podobnie jak wideo, można dodać wiele tagów <source>."
+      },
+      "answers": [
+        {
+          "uk": "<sound src=\"audio.mp3\">",
+          "en": "<sound src=\"audio.mp3\">",
+          "pl": "<sound src=\"audio.mp3\">",
+          "correct": false
+        },
+        {
+          "uk": "<audio src=\"audio.mp3\" controls></audio>",
+          "en": "<audio src=\"audio.mp3\" controls></audio>",
+          "pl": "<audio src=\"audio.mp3\" controls></audio>",
+          "correct": true
+        },
+        {
+          "uk": "<music href=\"audio.mp3\">",
+          "en": "<music href=\"audio.mp3\">",
+          "pl": "<music href=\"audio.mp3\">",
+          "correct": false
+        },
+        {
+          "uk": "<mp3>audio.mp3</mp3>",
+          "en": "<mp3>audio.mp3</mp3>",
+          "pl": "<mp3>audio.mp3</mp3>",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-q38",
+      "order": 38,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке елемент <canvas> у HTML5?",
+        "exp": "<canvas> — це контейнер для малювання графіки через JavaScript. Використовується для ігор, візуалізацій, анімацій та інтерактивної графіки."
+      },
+      "en": {
+        "q": "What is the <canvas> element in HTML5?",
+        "exp": "<canvas> is a container for drawing graphics via JavaScript. Used for games, visualizations, animations, and interactive graphics."
+      },
+      "pl": {
+        "q": "Czym jest element <canvas> w HTML5?",
+        "exp": "<canvas> to kontener do rysowania grafiki przez JavaScript. Używany do gier, wizualizacji, animacji i interaktywnej grafiki."
+      },
+      "answers": [
+        {
+          "uk": "Елемент для вбудовування PDF",
+          "en": "An element for embedding PDF",
+          "pl": "Element do osadzania PDF",
+          "correct": false
+        },
+        {
+          "uk": "Контейнер для малювання графіки через JavaScript",
+          "en": "A container for drawing graphics via JavaScript",
+          "pl": "Kontener do rysowania grafiki przez JavaScript",
+          "correct": true
+        },
+        {
+          "uk": "Елемент для зберігання даних",
+          "en": "An element for storing data",
+          "pl": "Element do przechowywania danych",
+          "correct": false
+        },
+        {
+          "uk": "Елемент для створення форм",
+          "en": "An element for creating forms",
+          "pl": "Element do tworzenia formularzy",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-q39",
+      "order": 39,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке meta viewport і для чого він використовується?",
+        "exp": "meta viewport контролює масштабування та розміри сторінки на мобільних пристроях. width=device-width робить сторінку адаптивною."
+      },
+      "en": {
+        "q": "What is meta viewport and what is it used for?",
+        "exp": "meta viewport controls scaling and dimensions of the page on mobile devices. width=device-width makes the page responsive."
+      },
+      "pl": {
+        "q": "Czym jest meta viewport i do czego służy?",
+        "exp": "meta viewport kontroluje skalowanie i wymiary strony na urządzeniach mobilnych. width=device-width sprawia, że strona jest responsywna."
+      },
+      "answers": [
+        {
+          "uk": "Для SEO оптимізації",
+          "en": "For SEO optimization",
+          "pl": "Do optymalizacji SEO",
+          "correct": false
+        },
+        {
+          "uk": "Для контролю масштабування та адаптивності на мобільних пристроях",
+          "en": "For controlling scaling and responsiveness on mobile devices",
+          "pl": "Do kontrolowania skalowania i responsywności na urządzeniach mobilnych",
+          "correct": true
+        },
+        {
+          "uk": "Для підключення шрифтів",
+          "en": "For connecting fonts",
+          "pl": "Do podłączania czcionek",
+          "correct": false
+        },
+        {
+          "uk": "Для валідації форм",
+          "en": "For form validation",
+          "pl": "Do walidacji formularzy",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-q40",
+      "order": 40,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке ARIA-атрибути і для чого вони використовуються?",
+        "exp": "ARIA (Accessible Rich Internet Applications) — атрибути для покращення доступності веб-контенту для людей з обмеженими можливостями та скрінрідерів."
+      },
+      "en": {
+        "q": "What are ARIA attributes and what are they used for?",
+        "exp": "ARIA (Accessible Rich Internet Applications) are attributes for improving web content accessibility for people with disabilities and screen readers."
+      },
+      "pl": {
+        "q": "Czym są atrybuty ARIA i do czego służą?",
+        "exp": "ARIA (Accessible Rich Internet Applications) to atrybuty do poprawy dostępności treści internetowych dla osób niepełnosprawnych i czytników ekranu."
+      },
+      "answers": [
+        {
+          "uk": "Для анімації елементів",
+          "en": "For animating elements",
+          "pl": "Do animowania elementów",
+          "correct": false
+        },
+        {
+          "uk": "Для покращення доступності контенту для людей з обмеженими можливостями",
+          "en": "For improving content accessibility for people with disabilities",
+          "pl": "Do poprawy dostępności treści dla osób niepełnosprawnych",
+          "correct": true
+        },
+        {
+          "uk": "Для стилізації елементів",
+          "en": "For styling elements",
+          "pl": "Do stylizowania elementów",
+          "correct": false
+        },
+        {
+          "uk": "Для прискорення завантаження сторінки",
+          "en": "For speeding up page loading",
+          "pl": "Do przyspieszania ładowania strony",
+          "correct": false
+        }
+      ]
+    }
+  ]
+}

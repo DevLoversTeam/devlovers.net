@@ -32,8 +32,6 @@ export const users = pgTable(
 
     role: text("role").notNull().default("user"),
 
-    points: integer("points").notNull().default(0),
-
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   table => ({

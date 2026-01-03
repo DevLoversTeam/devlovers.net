@@ -1,0 +1,434 @@
+{
+  "questions": [
+    {
+      "id": "git-q21",
+      "order": 21,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Для чого використовуються теги (tags) у Git?",
+        "exp": "Теги — це фіксовані маркери на певних комітах, зазвичай для позначення релізів (v1.0, v2.0). Вони не переміщуються, на відміну від гілок."
+      },
+      "en": {
+        "q": "What are tags used for in Git?",
+        "exp": "Tags are fixed markers on specific commits, usually for marking releases (v1.0, v2.0). Unlike branches, they don't move."
+      },
+      "pl": {
+        "q": "Do czego służą tagi w Git?",
+        "exp": "Tagi to stałe znaczniki na konkretnych commitach, zwykle do oznaczania wydań (v1.0, v2.0). W przeciwieństwie do gałęzi, nie przesuwają się."
+      },
+      "answers": [
+        {
+          "uk": "Для автоматичного злиття гілок",
+          "en": "For automatic branch merging",
+          "pl": "Do automatycznego łączenia gałęzi",
+          "correct": false
+        },
+        {
+          "uk": "Для позначення важливих точок у історії, наприклад релізів",
+          "en": "For marking important points in history, such as releases",
+          "pl": "Do oznaczania ważnych punktów w historii, np. wydań",
+          "correct": true
+        },
+        {
+          "uk": "Для видалення старих комітів",
+          "en": "For deleting old commits",
+          "pl": "Do usuwania starych commitów",
+          "correct": false
+        },
+        {
+          "uk": "Для шифрування комітів",
+          "en": "For encrypting commits",
+          "pl": "Do szyfrowania commitów",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "git-q22",
+      "order": 22,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке Gitflow Workflow?",
+        "exp": "Gitflow — це модель роботи з Git з чіткими правилами: main для продакшну, develop для розробки, feature/ для фіч, release/ для релізів, hotfix/ для виправлень."
+      },
+      "en": {
+        "q": "What is Gitflow Workflow?",
+        "exp": "Gitflow is a Git workflow model with clear rules: main for production, develop for development, feature/ for features, release/ for releases, hotfix/ for fixes."
+      },
+      "pl": {
+        "q": "Czym jest Gitflow Workflow?",
+        "exp": "Gitflow to model pracy z Git z jasnymi regułami: main dla produkcji, develop dla rozwoju, feature/ dla funkcji, release/ dla wydań, hotfix/ dla poprawek."
+      },
+      "answers": [
+        {
+          "uk": "Інструмент для автоматичного тестування коду",
+          "en": "A tool for automatic code testing",
+          "pl": "Narzędzie do automatycznego testowania kodu",
+          "correct": false
+        },
+        {
+          "uk": "Модель роботи з Git з чіткою структурою гілок для різних типів задач",
+          "en": "A Git workflow model with a clear branch structure for different types of tasks",
+          "pl": "Model pracy z Git z jasną strukturą gałęzi dla różnych typów zadań",
+          "correct": true
+        },
+        {
+          "uk": "Команда для прискорення операцій Git",
+          "en": "A command for speeding up Git operations",
+          "pl": "Polecenie do przyspieszania operacji Git",
+          "correct": false
+        },
+        {
+          "uk": "Онлайн-сервіс для хостингу репозиторіїв",
+          "en": "An online service for hosting repositories",
+          "pl": "Usługa online do hostingu repozytoriów",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "git-q23",
+      "order": 23,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке Pull Request (PR)?",
+        "exp": "Pull Request — це запит на внесення змін з однієї гілки в іншу через платформи GitHub/GitLab, що дозволяє провести code review перед злиттям."
+      },
+      "en": {
+        "q": "What is a Pull Request (PR)?",
+        "exp": "A Pull Request is a request to merge changes from one branch to another through platforms like GitHub/GitLab, allowing code review before merging."
+      },
+      "pl": {
+        "q": "Czym jest Pull Request (PR)?",
+        "exp": "Pull Request to prośba o scalenie zmian z jednej gałęzi do drugiej przez platformy takie jak GitHub/GitLab, umożliwiająca przegląd kodu przed scaleniem."
+      },
+      "answers": [
+        {
+          "uk": "Команда для завантаження змін з сервера",
+          "en": "A command for downloading changes from the server",
+          "pl": "Polecenie do pobierania zmian z serwera",
+          "correct": false
+        },
+        {
+          "uk": "Запит на злиття змін з code review через веб-платформу",
+          "en": "A request to merge changes with code review through a web platform",
+          "pl": "Prośba o scalenie zmian z przeglądem kodu przez platformę internetową",
+          "correct": true
+        },
+        {
+          "uk": "Автоматичне оновлення локального репозиторію",
+          "en": "Automatic update of the local repository",
+          "pl": "Automatyczna aktualizacja lokalnego repozytorium",
+          "correct": false
+        },
+        {
+          "uk": "Інструмент для видалення гілок",
+          "en": "A tool for deleting branches",
+          "pl": "Narzędzie do usuwania gałęzi",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "git-q24",
+      "order": 24,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке Git hooks?",
+        "exp": "Git hooks — це скрипти, які автоматично виконуються при певних подіях, наприклад pre-commit для перевірки коду перед комітом."
+      },
+      "en": {
+        "q": "What are Git hooks?",
+        "exp": "Git hooks are scripts that run automatically on certain events, such as pre-commit for checking code before a commit."
+      },
+      "pl": {
+        "q": "Czym są Git hooks?",
+        "exp": "Git hooks to skrypty uruchamiane automatycznie przy określonych zdarzeniach, np. pre-commit do sprawdzania kodu przed commitem."
+      },
+      "answers": [
+        {
+          "uk": "Способи підключення до віддалених репозиторіїв",
+          "en": "Ways to connect to remote repositories",
+          "pl": "Sposoby łączenia się ze zdalnymi repozytoriami",
+          "correct": false
+        },
+        {
+          "uk": "Скрипти, які автоматично виконуються при певних Git-подіях",
+          "en": "Scripts that run automatically on certain Git events",
+          "pl": "Skrypty uruchamiane automatycznie przy określonych zdarzeniach Git",
+          "correct": true
+        },
+        {
+          "uk": "Команди для об'єднання гілок",
+          "en": "Commands for merging branches",
+          "pl": "Polecenia do łączenia gałęzi",
+          "correct": false
+        },
+        {
+          "uk": "Розширення для IDE",
+          "en": "Extensions for IDE",
+          "pl": "Rozszerzenia dla IDE",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "git-q25",
+      "order": 25,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке git revert і чим він відрізняється від git reset?",
+        "exp": "git revert створює новий коміт, що відміняє зміни попереднього, зберігаючи історію. git reset переписує історію, видаляючи коміти."
+      },
+      "en": {
+        "q": "What is git revert and how does it differ from git reset?",
+        "exp": "git revert creates a new commit that undoes changes from a previous one, preserving history. git reset rewrites history, removing commits."
+      },
+      "pl": {
+        "q": "Czym jest git revert i czym różni się od git reset?",
+        "exp": "git revert tworzy nowy commit, który cofa zmiany z poprzedniego, zachowując historię. git reset przepisuje historię, usuwając commity."
+      },
+      "answers": [
+        {
+          "uk": "revert і reset — це синоніми",
+          "en": "revert and reset are synonyms",
+          "pl": "revert i reset to synonimy",
+          "correct": false
+        },
+        {
+          "uk": "revert створює новий коміт-відкат, reset видаляє коміти з історії",
+          "en": "revert creates a new rollback commit, reset removes commits from history",
+          "pl": "revert tworzy nowy commit cofający, reset usuwa commity z historii",
+          "correct": true
+        },
+        {
+          "uk": "reset працює локально, revert — віддалено",
+          "en": "reset works locally, revert works remotely",
+          "pl": "reset działa lokalnie, revert działa zdalnie",
+          "correct": false
+        },
+        {
+          "uk": "revert швидший за reset",
+          "en": "revert is faster than reset",
+          "pl": "revert jest szybszy niż reset",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "git-q26",
+      "order": 26,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке detached HEAD у Git?",
+        "exp": "Detached HEAD — це стан, коли HEAD вказує безпосередньо на коміт, а не на гілку. Нові коміти не будуть прив'язані до жодної гілки."
+      },
+      "en": {
+        "q": "What is detached HEAD in Git?",
+        "exp": "Detached HEAD is a state where HEAD points directly to a commit, not a branch. New commits won't be attached to any branch."
+      },
+      "pl": {
+        "q": "Czym jest detached HEAD w Git?",
+        "exp": "Detached HEAD to stan, gdy HEAD wskazuje bezpośrednio na commit, a nie na gałąź. Nowe commity nie będą przypisane do żadnej gałęzi."
+      },
+      "answers": [
+        {
+          "uk": "Помилка, яка означає пошкодження репозиторію",
+          "en": "An error indicating repository corruption",
+          "pl": "Błąd oznaczający uszkodzenie repozytorium",
+          "correct": false
+        },
+        {
+          "uk": "Стан, коли HEAD вказує на коміт, а не на гілку",
+          "en": "A state where HEAD points to a commit, not a branch",
+          "pl": "Stan, gdy HEAD wskazuje na commit, a nie na gałąź",
+          "correct": true
+        },
+        {
+          "uk": "Режим для видалення гілок",
+          "en": "A mode for deleting branches",
+          "pl": "Tryb do usuwania gałęzi",
+          "correct": false
+        },
+        {
+          "uk": "Спеціальний режим для злиття",
+          "en": "A special mode for merging",
+          "pl": "Specjalny tryb do scalania",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "git-q27",
+      "order": 27,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Як об'єднати кілька комітів в один (squash)?",
+        "exp": "Використовуйте git rebase -i HEAD~N, де N — кількість комітів. У редакторі змініть pick на squash для комітів, які хочете об'єднати."
+      },
+      "en": {
+        "q": "How do you combine multiple commits into one (squash)?",
+        "exp": "Use git rebase -i HEAD~N, where N is the number of commits. In the editor, change pick to squash for commits you want to combine."
+      },
+      "pl": {
+        "q": "Jak połączyć wiele commitów w jeden (squash)?",
+        "exp": "Użyj git rebase -i HEAD~N, gdzie N to liczba commitów. W edytorze zmień pick na squash dla commitów, które chcesz połączyć."
+      },
+      "answers": [
+        {
+          "uk": "git merge --squash",
+          "en": "git merge --squash",
+          "pl": "git merge --squash",
+          "correct": false
+        },
+        {
+          "uk": "git rebase -i з позначенням комітів як squash",
+          "en": "git rebase -i marking commits as squash",
+          "pl": "git rebase -i oznaczając commity jako squash",
+          "correct": true
+        },
+        {
+          "uk": "git combine",
+          "en": "git combine",
+          "pl": "git combine",
+          "correct": false
+        },
+        {
+          "uk": "Неможливо об'єднати коміти",
+          "en": "It's impossible to combine commits",
+          "pl": "Nie można połączyć commitów",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "git-q28",
+      "order": 28,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке git bisect і для чого він використовується?",
+        "exp": "git bisect — інструмент для бінарного пошуку коміту, який ввів баг. Він автоматично звужує діапазон між 'good' і 'bad' комітами."
+      },
+      "en": {
+        "q": "What is git bisect and what is it used for?",
+        "exp": "git bisect is a tool for binary searching the commit that introduced a bug. It automatically narrows down between 'good' and 'bad' commits."
+      },
+      "pl": {
+        "q": "Czym jest git bisect i do czego służy?",
+        "exp": "git bisect to narzędzie do binarnego wyszukiwania commita, który wprowadził błąd. Automatycznie zawęża zakres między 'good' a 'bad' commitami."
+      },
+      "answers": [
+        {
+          "uk": "Команда для розділення репозиторію на частини",
+          "en": "A command for splitting a repository into parts",
+          "pl": "Polecenie do dzielenia repozytorium na części",
+          "correct": false
+        },
+        {
+          "uk": "Інструмент для бінарного пошуку коміту з багом",
+          "en": "A tool for binary searching the commit with a bug",
+          "pl": "Narzędzie do binarnego wyszukiwania commita z błędem",
+          "correct": true
+        },
+        {
+          "uk": "Команда для створення резервних копій",
+          "en": "A command for creating backups",
+          "pl": "Polecenie do tworzenia kopii zapasowych",
+          "correct": false
+        },
+        {
+          "uk": "Інструмент для порівняння двох гілок",
+          "en": "A tool for comparing two branches",
+          "pl": "Narzędzie do porównywania dwóch gałęzi",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "git-q29",
+      "order": 29,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Що робить команда git diff?",
+        "exp": "git diff показує різницю між робочим каталогом і staging area, або між комітами. Це допомагає побачити, що саме змінено."
+      },
+      "en": {
+        "q": "What does the git diff command do?",
+        "exp": "git diff shows the difference between the working directory and staging area, or between commits. It helps see what exactly has changed."
+      },
+      "pl": {
+        "q": "Co robi polecenie git diff?",
+        "exp": "git diff pokazuje różnicę między katalogiem roboczym a staging area lub między commitami. Pomaga zobaczyć, co dokładnie zostało zmienione."
+      },
+      "answers": [
+        {
+          "uk": "Видаляє різницю між файлами",
+          "en": "Deletes the difference between files",
+          "pl": "Usuwa różnicę między plikami",
+          "correct": false
+        },
+        {
+          "uk": "Показує різницю між файлами або комітами",
+          "en": "Shows the difference between files or commits",
+          "pl": "Pokazuje różnicę między plikami lub commitami",
+          "correct": true
+        },
+        {
+          "uk": "Об'єднує різні версії файлів",
+          "en": "Merges different versions of files",
+          "pl": "Łączy różne wersje plików",
+          "correct": false
+        },
+        {
+          "uk": "Створює нову гілку на основі різниці",
+          "en": "Creates a new branch based on the difference",
+          "pl": "Tworzy nową gałąź na podstawie różnicy",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "git-q30",
+      "order": 30,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке семантичне версіонування (SemVer)?",
+        "exp": "SemVer — це система нумерації версій у форматі MAJOR.MINOR.PATCH. MAJOR — несумісні зміни, MINOR — нові функції, PATCH — виправлення багів."
+      },
+      "en": {
+        "q": "What is semantic versioning (SemVer)?",
+        "exp": "SemVer is a version numbering system in MAJOR.MINOR.PATCH format. MAJOR for incompatible changes, MINOR for new features, PATCH for bug fixes."
+      },
+      "pl": {
+        "q": "Czym jest wersjonowanie semantyczne (SemVer)?",
+        "exp": "SemVer to system numeracji wersji w formacie MAJOR.MINOR.PATCH. MAJOR dla niekompatybilnych zmian, MINOR dla nowych funkcji, PATCH dla poprawek błędów."
+      },
+      "answers": [
+        {
+          "uk": "Спосіб іменування гілок у Git",
+          "en": "A way of naming branches in Git",
+          "pl": "Sposób nazywania gałęzi w Git",
+          "correct": false
+        },
+        {
+          "uk": "Система нумерації версій у форматі MAJOR.MINOR.PATCH",
+          "en": "A version numbering system in MAJOR.MINOR.PATCH format",
+          "pl": "System numeracji wersji w formacie MAJOR.MINOR.PATCH",
+          "correct": true
+        },
+        {
+          "uk": "Алгоритм хешування комітів",
+          "en": "A commit hashing algorithm",
+          "pl": "Algorytm haszowania commitów",
+          "correct": false
+        },
+        {
+          "uk": "Метод шифрування репозиторіїв",
+          "en": "A repository encryption method",
+          "pl": "Metoda szyfrowania repozytoriów",
+          "correct": false
+        }
+      ]
+    }
+  ]
+}
