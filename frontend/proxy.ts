@@ -42,7 +42,7 @@ function isAuthenticated(req: NextRequest): boolean {
   if (!payload) return false;
 
   const now = Math.floor(Date.now() / 1000);
-  return payload.exp > now;
+  return typeof payload.exp === 'number' && payload.exp > now;
 }
 
 const intlMiddleware = createIntlMiddleware(routing);
