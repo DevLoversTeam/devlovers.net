@@ -1,0 +1,234 @@
+{
+  "questions": [
+    {
+      "id": "css-adv-q11",
+      "order": 11,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Для чого використовується мета-тег viewport в адаптивному дизайні?",
+        "exp": "Мета-тег viewport керує масштабуванням сторінки на мобільних пристроях. Без нього сторінка відображається з масштабом як для десктопа."
+      },
+      "en": {
+        "q": "What is the viewport meta tag used for in responsive design?",
+        "exp": "The viewport meta tag controls page scaling on mobile devices. Without it, the page displays at desktop scale."
+      },
+      "pl": {
+        "q": "Do czego służy meta tag viewport w responsywnym designie?",
+        "exp": "Meta tag viewport kontroluje skalowanie strony na urządzeniach mobilnych. Bez niego strona wyświetla się w skali desktopowej."
+      },
+      "answers": [
+        { "uk": "Керування масштабуванням на мобільних", "en": "Controlling scaling on mobile devices", "pl": "Kontrolowanie skalowania na urządzeniach mobilnych", "correct": true },
+        { "uk": "Підключення CSS-файлів", "en": "Connecting CSS files", "pl": "Podłączanie plików CSS", "correct": false },
+        { "uk": "Визначення кодування сторінки", "en": "Defining page encoding", "pl": "Definiowanie kodowania strony", "correct": false },
+        { "uk": "Налаштування SEO-параметрів", "en": "Setting SEO parameters", "pl": "Ustawianie parametrów SEO", "correct": false }
+      ]
+    },
+    {
+      "id": "css-adv-q12",
+      "order": 12,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Яка функція timing визначає рівномірну швидкість CSS-анімації?",
+        "exp": "linear забезпечує постійну швидкість анімації від початку до кінця, без прискорення чи уповільнення."
+      },
+      "en": {
+        "q": "Which timing function defines a uniform CSS animation speed?",
+        "exp": "linear provides constant animation speed from start to end, without acceleration or deceleration."
+      },
+      "pl": {
+        "q": "Która funkcja czasowa określa jednolitą prędkość animacji CSS?",
+        "exp": "linear zapewnia stałą prędkość animacji od początku do końca, bez przyspieszenia lub spowolnienia."
+      },
+      "answers": [
+        { "uk": "linear", "en": "linear", "pl": "linear", "correct": true },
+        { "uk": "ease", "en": "ease", "pl": "ease", "correct": false },
+        { "uk": "ease-in-out", "en": "ease-in-out", "pl": "ease-in-out", "correct": false },
+        { "uk": "steps", "en": "steps", "pl": "steps", "correct": false }
+      ]
+    },
+    {
+      "id": "css-adv-q13",
+      "order": 13,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Як зробити CSS-анімацію нескінченною?",
+        "exp": "Властивість animation-iteration-count: infinite змушує анімацію повторюватися нескінченно."
+      },
+      "en": {
+        "q": "How do you make a CSS animation infinite?",
+        "exp": "The property animation-iteration-count: infinite makes the animation repeat indefinitely."
+      },
+      "pl": {
+        "q": "Jak sprawić, aby animacja CSS była nieskończona?",
+        "exp": "Właściwość animation-iteration-count: infinite sprawia, że animacja powtarza się w nieskończoność."
+      },
+      "answers": [
+        { "uk": "animation-iteration-count: infinite", "en": "animation-iteration-count: infinite", "pl": "animation-iteration-count: infinite", "correct": true },
+        { "uk": "animation-repeat: always", "en": "animation-repeat: always", "pl": "animation-repeat: always", "correct": false },
+        { "uk": "animation-loop: true", "en": "animation-loop: true", "pl": "animation-loop: true", "correct": false },
+        { "uk": "animation-duration: forever", "en": "animation-duration: forever", "pl": "animation-duration: forever", "correct": false }
+      ]
+    },
+    {
+      "id": "css-adv-q14",
+      "order": 14,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке CSS-препроцесор?",
+        "exp": "CSS-препроцесор (Sass, LESS, Stylus) розширює можливості CSS: додає змінні, вкладені селектори, міксіни та функції для кращої організації коду."
+      },
+      "en": {
+        "q": "What is a CSS preprocessor?",
+        "exp": "A CSS preprocessor (Sass, LESS, Stylus) extends CSS capabilities: adds variables, nested selectors, mixins, and functions for better code organization."
+      },
+      "pl": {
+        "q": "Czym jest preprocesor CSS?",
+        "exp": "Preprocesor CSS (Sass, LESS, Stylus) rozszerza możliwości CSS: dodaje zmienne, zagnieżdżone selektory, mixiny i funkcje dla lepszej organizacji kodu."
+      },
+      "answers": [
+        { "uk": "Інструмент з розширеним синтаксисом CSS", "en": "Tool with extended CSS syntax", "pl": "Narzędzie z rozszerzonym składnią CSS", "correct": true },
+        { "uk": "Браузерний компілятор CSS", "en": "Browser CSS compiler", "pl": "Kompilator CSS w przeglądarce", "correct": false },
+        { "uk": "Плагін для мініфікації CSS", "en": "Plugin for CSS minification", "pl": "Wtyczka do minifikacji CSS", "correct": false },
+        { "uk": "Фреймворк для стилізації", "en": "Styling framework", "pl": "Framework do stylizacji", "correct": false }
+      ]
+    },
+    {
+      "id": "css-adv-q15",
+      "order": 15,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Яка перевага CSS-модулів у React-застосунках?",
+        "exp": "CSS-модулі автоматично обмежують область видимості стилів до компонента, уникаючи конфліктів імен класів у глобальному просторі."
+      },
+      "en": {
+        "q": "What is the advantage of CSS Modules in React applications?",
+        "exp": "CSS Modules automatically scope styles to the component, avoiding class name conflicts in the global namespace."
+      },
+      "pl": {
+        "q": "Jaka jest zaleta CSS Modules w aplikacjach React?",
+        "exp": "CSS Modules automatycznie ograniczają zakres stylów do komponentu, unikając konfliktów nazw klas w globalnej przestrzeni nazw."
+      },
+      "answers": [
+        { "uk": "Ізоляція стилів на рівні компонента", "en": "Style isolation at component level", "pl": "Izolacja stylów na poziomie komponentu", "correct": true },
+        { "uk": "Швидша компіляція стилів", "en": "Faster style compilation", "pl": "Szybsza kompilacja stylów", "correct": false },
+        { "uk": "Автоматична мініфікація", "en": "Automatic minification", "pl": "Automatyczna minifikacja", "correct": false },
+        { "uk": "Вбудована підтримка анімацій", "en": "Built-in animation support", "pl": "Wbudowane wsparcie animacji", "correct": false }
+      ]
+    },
+    {
+      "id": "css-adv-q16",
+      "order": 16,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що характеризує підхід CSS-in-JS?",
+        "exp": "CSS-in-JS — це підхід, коли стилі пишуться безпосередньо в JavaScript-файлах, часто прив'язані до компонентів (styled-components, Emotion)."
+      },
+      "en": {
+        "q": "What characterizes the CSS-in-JS approach?",
+        "exp": "CSS-in-JS is an approach where styles are written directly in JavaScript files, often tied to components (styled-components, Emotion)."
+      },
+      "pl": {
+        "q": "Co charakteryzuje podejście CSS-in-JS?",
+        "exp": "CSS-in-JS to podejście, w którym style są pisane bezpośrednio w plikach JavaScript, często powiązane z komponentami (styled-components, Emotion)."
+      },
+      "answers": [
+        { "uk": "Стилі пишуться у JavaScript-файлах", "en": "Styles are written in JavaScript files", "pl": "Style są pisane w plikach JavaScript", "correct": true },
+        { "uk": "JavaScript генерується з CSS", "en": "JavaScript is generated from CSS", "pl": "JavaScript jest generowany z CSS", "correct": false },
+        { "uk": "CSS компілюється на сервері", "en": "CSS is compiled on the server", "pl": "CSS jest kompilowany na serwerze", "correct": false },
+        { "uk": "Стилі завантажуються асинхронно", "en": "Styles are loaded asynchronously", "pl": "Style są ładowane asynchronicznie", "correct": false }
+      ]
+    },
+    {
+      "id": "css-adv-q17",
+      "order": 17,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Який інструмент використовується для лінтингу CSS?",
+        "exp": "Stylelint — інструмент для перевірки якості CSS-коду та відповідності стилів заданим стандартам і правилам."
+      },
+      "en": {
+        "q": "Which tool is used for CSS linting?",
+        "exp": "Stylelint is a tool for checking CSS code quality and ensuring styles comply with defined standards and rules."
+      },
+      "pl": {
+        "q": "Jakie narzędzie służy do lintingu CSS?",
+        "exp": "Stylelint to narzędzie do sprawdzania jakości kodu CSS i zapewnienia zgodności stylów z określonymi standardami i regułami."
+      },
+      "answers": [
+        { "uk": "Stylelint", "en": "Stylelint", "pl": "Stylelint", "correct": true },
+        { "uk": "ESLint", "en": "ESLint", "pl": "ESLint", "correct": false },
+        { "uk": "Webpack", "en": "Webpack", "pl": "Webpack", "correct": false },
+        { "uk": "Babel", "en": "Babel", "pl": "Babel", "correct": false }
+      ]
+    },
+    {
+      "id": "css-adv-q18",
+      "order": 18,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Як стилізувати кастомні чекбокси за допомогою CSS?",
+        "exp": "Приховують стандартний input і стилізують пов'язаний label або псевдоелементи ::before/::after, використовуючи :checked для зміни стану."
+      },
+      "en": {
+        "q": "How do you style custom checkboxes with CSS?",
+        "exp": "Hide the standard input and style the associated label or ::before/::after pseudo-elements, using :checked to change state."
+      },
+      "pl": {
+        "q": "Jak stylizować własne checkboxy za pomocą CSS?",
+        "exp": "Ukryj standardowy input i stylizuj powiązany label lub pseudoelementy ::before/::after, używając :checked do zmiany stanu."
+      },
+      "answers": [
+        { "uk": "Приховати input, стилізувати label і псевдоелементи", "en": "Hide input, style label and pseudo-elements", "pl": "Ukryć input, stylizować label i pseudoelementy", "correct": true },
+        { "uk": "Змінити appearance: custom", "en": "Change appearance: custom", "pl": "Zmienić appearance: custom", "correct": false },
+        { "uk": "Використати input-style: custom", "en": "Use input-style: custom", "pl": "Użyć input-style: custom", "correct": false },
+        { "uk": "Застосувати checkbox-design: custom", "en": "Apply checkbox-design: custom", "pl": "Zastosować checkbox-design: custom", "correct": false }
+      ]
+    },
+    {
+      "id": "css-adv-q19",
+      "order": 19,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Який псевдоелемент використовується для стилізації placeholder у полях введення?",
+        "exp": "::placeholder дозволяє змінювати стиль тексту-заповнювача в input та textarea елементах."
+      },
+      "en": {
+        "q": "Which pseudo-element is used to style placeholders in input fields?",
+        "exp": "::placeholder allows styling the placeholder text in input and textarea elements."
+      },
+      "pl": {
+        "q": "Który pseudoelement służy do stylizacji placeholder w polach wprowadzania?",
+        "exp": "::placeholder pozwala stylizować tekst zastępczy w elementach input i textarea."
+      },
+      "answers": [
+        { "uk": "::placeholder", "en": "::placeholder", "pl": "::placeholder", "correct": true },
+        { "uk": ":placeholder", "en": ":placeholder", "pl": ":placeholder", "correct": false },
+        { "uk": "::input-placeholder", "en": "::input-placeholder", "pl": "::input-placeholder", "correct": false },
+        { "uk": ":input-text", "en": ":input-text", "pl": ":input-text", "correct": false }
+      ]
+    },
+    {
+      "id": "css-adv-q20",
+      "order": 20,
+      "difficulty": "advanced",
+      "uk": {
+        "q": "У чому перевага :focus-visible над :focus для доступності?",
+        "exp": ":focus-visible застосовує стилі фокусу лише при клавіатурній навігації, уникаючи візуального шуму при кліках мишею."
+      },
+      "en": {
+        "q": "What is the advantage of :focus-visible over :focus for accessibility?",
+        "exp": ":focus-visible applies focus styles only during keyboard navigation, avoiding visual noise from mouse clicks."
+      },
+      "pl": {
+        "q": "Jaka jest przewaga :focus-visible nad :focus dla dostępności?",
+        "exp": ":focus-visible stosuje style fokusu tylko podczas nawigacji klawiaturą, unikając wizualnego szumu od kliknięć myszą."
+      },
+      "answers": [
+        { "uk": "Показує фокус лише при клавіатурній навігації", "en": "Shows focus only during keyboard navigation", "pl": "Pokazuje fokus tylko podczas nawigacji klawiaturą", "correct": true },
+        { "uk": "Працює швидше ніж :focus", "en": "Works faster than :focus", "pl": "Działa szybciej niż :focus", "correct": false },
+        { "uk": "Підтримує більше браузерів", "en": "Supports more browsers", "pl": "Obsługuje więcej przeglądarek", "correct": false },
+        { "uk": "Застосовується до всіх елементів автоматично", "en": "Applies to all elements automatically", "pl": "Stosuje się do wszystkich elementów automatycznie", "correct": false }
+      ]
+    }
+  ]
+}

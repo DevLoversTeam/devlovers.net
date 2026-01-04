@@ -1,5 +1,5 @@
 {
-  "id": "ef120981-b640-4ccf-992a-573de9f4a064",
+  "id": "f2781c1d-ec37-469a-87f0-12d96364aa59",
   "prevId": "ce78ece8-8772-4683-844d-b3b4544b76ed",
   "version": "7",
   "dialect": "postgresql",
@@ -634,6 +634,36 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "quiz_attempts_user_id_idx": {
+          "name": "quiz_attempts_user_id_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "quiz_attempts_quiz_id_idx": {
+          "name": "quiz_attempts_quiz_id_idx",
+          "columns": [
+            {
+              "expression": "quiz_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -1163,142 +1193,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.inventory_moves": {
-      "name": "inventory_moves",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "move_key": {
-          "name": "move_key",
-          "type": "varchar(200)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "order_id": {
-          "name": "order_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "product_id": {
-          "name": "product_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "type": {
-          "name": "type",
-          "type": "inventory_move_type",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "quantity": {
-          "name": "quantity",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "inventory_moves_move_key_uq": {
-          "name": "inventory_moves_move_key_uq",
-          "columns": [
-            {
-              "expression": "move_key",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "inventory_moves_order_id_idx": {
-          "name": "inventory_moves_order_id_idx",
-          "columns": [
-            {
-              "expression": "order_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "inventory_moves_product_id_idx": {
-          "name": "inventory_moves_product_id_idx",
-          "columns": [
-            {
-              "expression": "product_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "inventory_moves_order_id_orders_id_fk": {
-          "name": "inventory_moves_order_id_orders_id_fk",
-          "tableFrom": "inventory_moves",
-          "tableTo": "orders",
-          "columnsFrom": [
-            "order_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "inventory_moves_product_id_products_id_fk": {
-          "name": "inventory_moves_product_id_products_id_fk",
-          "tableFrom": "inventory_moves",
-          "tableTo": "products",
-          "columnsFrom": [
-            "product_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "inventory_moves_quantity_gt_0": {
-          "name": "inventory_moves_quantity_gt_0",
-          "value": "\"inventory_moves\".\"quantity\" > 0"
-        }
-      },
-      "isRLSEnabled": false
-    },
     "public.order_items": {
       "name": "order_items",
       "schema": "",
@@ -1383,27 +1277,6 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "order_items_order_product_uq": {
-          "name": "order_items_order_product_uq",
-          "columns": [
-            {
-              "expression": "order_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "product_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -1551,40 +1424,6 @@
           "notNull": true,
           "default": "'{}'::jsonb"
         },
-        "status": {
-          "name": "status",
-          "type": "order_status",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'CREATED'"
-        },
-        "inventory_status": {
-          "name": "inventory_status",
-          "type": "inventory_status",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'none'"
-        },
-        "failure_code": {
-          "name": "failure_code",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "failure_message": {
-          "name": "failure_message",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "idempotency_request_hash": {
-          "name": "idempotency_request_hash",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
         "stock_restored": {
           "name": "stock_restored",
           "type": "boolean",
@@ -1659,17 +1498,13 @@
           "name": "orders_payment_intent_id_null_when_none",
           "value": "\"orders\".\"payment_provider\" <> 'none' OR \"orders\".\"payment_intent_id\" IS NULL"
         },
-        "orders_psp_fields_null_when_none": {
-          "name": "orders_psp_fields_null_when_none",
-          "value": "\"orders\".\"payment_provider\" <> 'none' OR (\n        \"orders\".\"psp_charge_id\" IS NULL AND\n        \"orders\".\"psp_payment_method\" IS NULL AND\n        \"orders\".\"psp_status_reason\" IS NULL\n      )"
-        },
         "orders_total_amount_mirror_consistent": {
           "name": "orders_total_amount_mirror_consistent",
           "value": "\"orders\".\"total_amount\" = (\"orders\".\"total_amount_minor\"::numeric / 100)"
         },
-        "orders_payment_status_valid_when_none": {
-          "name": "orders_payment_status_valid_when_none",
-          "value": "\"orders\".\"payment_provider\" <> 'none' OR \"orders\".\"payment_status\" in ('paid','failed')"
+        "orders_payment_status_paid_when_none": {
+          "name": "orders_payment_status_paid_when_none",
+          "value": "\"orders\".\"payment_provider\" <> 'none' OR \"orders\".\"payment_status\" = 'paid'"
         }
       },
       "isRLSEnabled": false
@@ -2097,37 +1932,6 @@
       "values": [
         "USD",
         "UAH"
-      ]
-    },
-    "public.inventory_move_type": {
-      "name": "inventory_move_type",
-      "schema": "public",
-      "values": [
-        "reserve",
-        "release"
-      ]
-    },
-    "public.inventory_status": {
-      "name": "inventory_status",
-      "schema": "public",
-      "values": [
-        "none",
-        "reserving",
-        "reserved",
-        "release_pending",
-        "released",
-        "failed"
-      ]
-    },
-    "public.order_status": {
-      "name": "order_status",
-      "schema": "public",
-      "values": [
-        "CREATED",
-        "INVENTORY_RESERVED",
-        "INVENTORY_FAILED",
-        "PAID",
-        "CANCELED"
       ]
     },
     "public.payment_status": {

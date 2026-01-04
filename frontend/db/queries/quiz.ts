@@ -12,7 +12,7 @@ import {
   quizAttemptAnswers,
 } from '../schema/quiz';
 import { categories, categoryTranslations } from '../schema/categories';
-import { eq, and, desc, sql } from 'drizzle-orm';
+import { eq, and, desc, sql, inArray } from 'drizzle-orm';
 
 export interface Quiz {
   id: string;
@@ -161,6 +161,7 @@ export async function getQuizQuestions(
   quizId: string,
   locale: string = 'uk'
 ): Promise<QuizQuestionWithAnswers[]> {
+  // QUERY 1: Get all questions for this quiz
   const questionsData = await db
     .select({
       id: quizQuestions.id,
@@ -180,34 +181,49 @@ export async function getQuizQuestions(
     .where(eq(quizQuestions.quizId, quizId))
     .orderBy(quizQuestions.displayOrder);
 
-  const questions = await Promise.all(
-    questionsData.map(async question => {
-      const answersData = await db
-        .select({
-          id: quizAnswers.id,
-          displayOrder: quizAnswers.displayOrder,
-          isCorrect: quizAnswers.isCorrect,
-          answerText: quizAnswerTranslations.answerText,
-        })
-        .from(quizAnswers)
-        .leftJoin(
-          quizAnswerTranslations,
-          and(
-            eq(quizAnswerTranslations.quizAnswerId, quizAnswers.id),
-            eq(quizAnswerTranslations.locale, locale)
-          )
-        )
-        .where(eq(quizAnswers.quizQuestionId, question.id))
-        .orderBy(quizAnswers.displayOrder);
+  // Early return if no questions
+  if (questionsData.length === 0) return [];
 
-      return {
-        ...question,
-        answers: answersData,
-      };
+  // QUERY 2: Get ALL answers for ALL questions in one query
+  const questionIds = questionsData.map(q => q.id);
+  
+  const allAnswers = await db
+    .select({
+      id: quizAnswers.id,
+      questionId: quizAnswers.quizQuestionId,
+      displayOrder: quizAnswers.displayOrder,
+      isCorrect: quizAnswers.isCorrect,
+      answerText: quizAnswerTranslations.answerText,
     })
-  );
+    .from(quizAnswers)
+    .leftJoin(
+      quizAnswerTranslations,
+      and(
+        eq(quizAnswerTranslations.quizAnswerId, quizAnswers.id),
+        eq(quizAnswerTranslations.locale, locale)
+      )
+    )
+    .where(inArray(quizAnswers.quizQuestionId, questionIds))
+    .orderBy(quizAnswers.displayOrder);
 
-  return questions;
+  // GROUP answers by questionId in memory (O(n) operation)
+  const answersByQuestion = new Map<string, typeof allAnswers>();
+  for (const answer of allAnswers) {
+    const existing = answersByQuestion.get(answer.questionId) || [];
+    existing.push(answer);
+    answersByQuestion.set(answer.questionId, existing);
+  }
+
+  // MAP questions with their answers
+  return questionsData.map(question => ({
+    ...question,
+    answers: (answersByQuestion.get(question.id) || []).map(a => ({
+      id: a.id,
+      displayOrder: a.displayOrder,
+      isCorrect: a.isCorrect,
+      answerText: a.answerText,
+    })),
+  }));
 }
 
 export function randomizeQuizQuestions(

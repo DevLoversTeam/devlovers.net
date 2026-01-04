@@ -17,6 +17,8 @@ const signupSchema = z.object({
 });
 
 export async function POST(req: Request) {
+  console.log('signup handler hit')
+  try {
   const body = await req.json().catch(() => null);
   const parsed = signupSchema.safeParse(body);
 
@@ -68,4 +70,13 @@ export async function POST(req: Request) {
   await setAuthCookie(token);
   revalidatePath('/[locale]', 'layout');
   return NextResponse.json({ success: true, userId: user.id }, { status: 201 });
+}catch (error) {
+    console.error("Signup failed:", error);
+    const message =
+      error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json(
+      { error: "Signup failed", details: message },
+      { status: 500 }
+    );
+  }
 }

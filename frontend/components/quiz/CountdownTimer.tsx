@@ -14,24 +14,41 @@ export function CountdownTimer({
   onTimeUp,
   isActive,
 }: CountdownTimerProps) {
+  const [endTime] = useState(() => Date.now() + timeLimitSeconds * 1000);
   const [remainingSeconds, setRemainingSeconds] = useState(timeLimitSeconds);
 
   useEffect(() => {
     if (!isActive) return;
 
     const interval = setInterval(() => {
-      setRemainingSeconds(prev => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          onTimeUp();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+      const now = Date.now();
+      const remaining = Math.max(0, Math.floor((endTime - now) / 1000));
+      
+      setRemainingSeconds(remaining);
+
+      if (remaining === 0) {
+        clearInterval(interval);
+        queueMicrotask(onTimeUp);
+      }
+    }, 100);
 
     return () => clearInterval(interval);
-  }, [isActive, onTimeUp]);
+  }, [isActive, onTimeUp, endTime]);
+
+  // Force update when tab becomes visible again
+  useEffect(() => {
+    if (!isActive) return;
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        const remaining = Math.max(0, Math.floor((endTime - Date.now()) / 1000));
+        setRemainingSeconds(remaining);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [isActive, endTime]);
 
   const minutes = Math.floor(remainingSeconds / 60);
   const seconds = remainingSeconds % 60;

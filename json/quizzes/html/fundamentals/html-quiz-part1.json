@@ -1,0 +1,434 @@
+{
+  "questions": [
+    {
+      "id": "html-q01",
+      "order": 1,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Що означає абревіатура HTML?",
+        "exp": "HTML — HyperText Markup Language (мова гіпертекстової розмітки) для структурування вмісту вебсторінок."
+      },
+      "en": {
+        "q": "What does the abbreviation HTML stand for?",
+        "exp": "HTML stands for HyperText Markup Language, used for structuring web page content."
+      },
+      "pl": {
+        "q": "Co oznacza skrót HTML?",
+        "exp": "HTML to HyperText Markup Language (hipertekstowy język znaczników) do strukturyzowania treści stron internetowych."
+      },
+      "answers": [
+        {
+          "uk": "High Tech Modern Language",
+          "en": "High Tech Modern Language",
+          "pl": "High Tech Modern Language",
+          "correct": false
+        },
+        {
+          "uk": "HyperText Markup Language",
+          "en": "HyperText Markup Language",
+          "pl": "HyperText Markup Language",
+          "correct": true
+        },
+        {
+          "uk": "Home Tool Markup Language",
+          "en": "Home Tool Markup Language",
+          "pl": "Home Tool Markup Language",
+          "correct": false
+        },
+        {
+          "uk": "Hyper Transfer Markup Language",
+          "en": "Hyper Transfer Markup Language",
+          "pl": "Hyper Transfer Markup Language",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-q02",
+      "order": 2,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Яка роль HTML у веб-розробці порівняно з CSS та JavaScript?",
+        "exp": "HTML описує структуру сторінки (що є), CSS — оформлення (як виглядає), JavaScript — динаміку та інтерактивність (що робить)."
+      },
+      "en": {
+        "q": "What is the role of HTML in web development compared to CSS and JavaScript?",
+        "exp": "HTML describes page structure (what exists), CSS handles styling (how it looks), JavaScript adds dynamics and interactivity (what it does)."
+      },
+      "pl": {
+        "q": "Jaka jest rola HTML w tworzeniu stron internetowych w porównaniu z CSS i JavaScript?",
+        "exp": "HTML opisuje strukturę strony (co jest), CSS odpowiada za styl (jak wygląda), JavaScript dodaje dynamikę i interaktywność (co robi)."
+      },
+      "answers": [
+        {
+          "uk": "HTML відповідає за анімації на сторінці",
+          "en": "HTML is responsible for animations on the page",
+          "pl": "HTML odpowiada za animacje na stronie",
+          "correct": false
+        },
+        {
+          "uk": "HTML описує структуру, CSS — стилі, JavaScript — інтерактивність",
+          "en": "HTML describes structure, CSS handles styles, JavaScript handles interactivity",
+          "pl": "HTML opisuje strukturę, CSS obsługuje style, JavaScript obsługuje interaktywność",
+          "correct": true
+        },
+        {
+          "uk": "HTML і CSS виконують однакову роль",
+          "en": "HTML and CSS perform the same role",
+          "pl": "HTML i CSS pełnią tę samą rolę",
+          "correct": false
+        },
+        {
+          "uk": "HTML використовується тільки для серверної логіки",
+          "en": "HTML is only used for server-side logic",
+          "pl": "HTML jest używany tylko do logiki serwerowej",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-q03",
+      "order": 3,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Що таке HTML тег?",
+        "exp": "HTML тег — це інструкція у кутових дужках < >, яка визначає структуру та зміст веб-сторінки. Більшість тегів мають відкриваючу та закриваючу частини."
+      },
+      "en": {
+        "q": "What is an HTML tag?",
+        "exp": "An HTML tag is an instruction in angle brackets < > that defines the structure and content of a web page. Most tags have opening and closing parts."
+      },
+      "pl": {
+        "q": "Czym jest tag HTML?",
+        "exp": "Tag HTML to instrukcja w nawiasach kątowych < >, która określa strukturę i zawartość strony internetowej. Większość tagów ma część otwierającą i zamykającą."
+      },
+      "answers": [
+        {
+          "uk": "Інструкція у кутових дужках для визначення структури сторінки",
+          "en": "An instruction in angle brackets for defining page structure",
+          "pl": "Instrukcja w nawiasach kątowych do określania struktury strony",
+          "correct": true
+        },
+        {
+          "uk": "Спеціальний файл для зберігання стилів",
+          "en": "A special file for storing styles",
+          "pl": "Specjalny plik do przechowywania stylów",
+          "correct": false
+        },
+        {
+          "uk": "Програма для обробки даних на сервері",
+          "en": "A program for processing data on the server",
+          "pl": "Program do przetwarzania danych na serwerze",
+          "correct": false
+        },
+        {
+          "uk": "Посилання на зовнішній ресурс",
+          "en": "A link to an external resource",
+          "pl": "Odnośnik do zewnętrznego zasobu",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-q04",
+      "order": 4,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Що таке DOCTYPE і навіщо його використовують?",
+        "exp": "DOCTYPE — декларація типу документа, яка повідомляє браузеру версію HTML. Для HTML5 використовується <!DOCTYPE html>."
+      },
+      "en": {
+        "q": "What is DOCTYPE and why is it used?",
+        "exp": "DOCTYPE is a document type declaration that tells the browser which HTML version is used. For HTML5, <!DOCTYPE html> is used."
+      },
+      "pl": {
+        "q": "Czym jest DOCTYPE i dlaczego się go używa?",
+        "exp": "DOCTYPE to deklaracja typu dokumentu, która informuje przeglądarkę o wersji HTML. Dla HTML5 używa się <!DOCTYPE html>."
+      },
+      "answers": [
+        {
+          "uk": "Тег для створення заголовка сторінки",
+          "en": "A tag for creating page header",
+          "pl": "Tag do tworzenia nagłówka strony",
+          "correct": false
+        },
+        {
+          "uk": "Декларація, яка повідомляє браузеру версію HTML документа",
+          "en": "A declaration that tells the browser the HTML version of the document",
+          "pl": "Deklaracja informująca przeglądarkę o wersji dokumentu HTML",
+          "correct": true
+        },
+        {
+          "uk": "Команда для підключення JavaScript",
+          "en": "A command for connecting JavaScript",
+          "pl": "Polecenie do podłączania JavaScript",
+          "correct": false
+        },
+        {
+          "uk": "Атрибут для стилізації елементів",
+          "en": "An attribute for styling elements",
+          "pl": "Atrybut do stylizowania elementów",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-q05",
+      "order": 5,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Яка структура базового HTML-документа?",
+        "exp": "Базовий HTML-документ містить: <!DOCTYPE html>, <html> (кореневий елемент), <head> (метадані), <body> (видимий вміст)."
+      },
+      "en": {
+        "q": "What is the structure of a basic HTML document?",
+        "exp": "A basic HTML document contains: <!DOCTYPE html>, <html> (root element), <head> (metadata), <body> (visible content)."
+      },
+      "pl": {
+        "q": "Jaka jest struktura podstawowego dokumentu HTML?",
+        "exp": "Podstawowy dokument HTML zawiera: <!DOCTYPE html>, <html> (element główny), <head> (metadane), <body> (widoczna treść)."
+      },
+      "answers": [
+        {
+          "uk": "Тільки тег <body> з контентом",
+          "en": "Only the <body> tag with content",
+          "pl": "Tylko tag <body> z treścią",
+          "correct": false
+        },
+        {
+          "uk": "<!DOCTYPE html>, <html>, <head>, <body>",
+          "en": "<!DOCTYPE html>, <html>, <head>, <body>",
+          "pl": "<!DOCTYPE html>, <html>, <head>, <body>",
+          "correct": true
+        },
+        {
+          "uk": "<html>, <style>, <script>",
+          "en": "<html>, <style>, <script>",
+          "pl": "<html>, <style>, <script>",
+          "correct": false
+        },
+        {
+          "uk": "<header>, <main>, <footer>",
+          "en": "<header>, <main>, <footer>",
+          "pl": "<header>, <main>, <footer>",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-q06",
+      "order": 6,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Яка різниця між тегами <head> та <body>?",
+        "exp": "<head> містить метадані (назва, стилі, скрипти) і не відображається. <body> містить видимий контент для користувача."
+      },
+      "en": {
+        "q": "What is the difference between the <head> and <body> tags?",
+        "exp": "<head> contains metadata (title, styles, scripts) and is not displayed. <body> contains visible content for the user."
+      },
+      "pl": {
+        "q": "Jaka jest różnica między tagami <head> a <body>?",
+        "exp": "<head> zawiera metadane (tytuł, style, skrypty) i nie jest wyświetlany. <body> zawiera widoczną treść dla użytkownika."
+      },
+      "answers": [
+        {
+          "uk": "<head> для метаданих, <body> для видимого контенту",
+          "en": "<head> for metadata, <body> for visible content",
+          "pl": "<head> dla metadanych, <body> dla widocznej treści",
+          "correct": true
+        },
+        {
+          "uk": "Обидва теги відображають контент на сторінці",
+          "en": "Both tags display content on the page",
+          "pl": "Oba tagi wyświetlają treść na stronie",
+          "correct": false
+        },
+        {
+          "uk": "<head> для заголовків тексту, <body> для параграфів",
+          "en": "<head> for text headers, <body> for paragraphs",
+          "pl": "<head> dla nagłówków tekstu, <body> dla akapitów",
+          "correct": false
+        },
+        {
+          "uk": "Різниці немає, це синоніми",
+          "en": "No difference, they are synonyms",
+          "pl": "Nie ma różnicy, to synonimy",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-q07",
+      "order": 7,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Що таке порожні (void) елементи в HTML?",
+        "exp": "Порожні елементи — це теги без контенту і закриваючого тега, наприклад: <br>, <hr>, <img>, <input>, <meta>, <link>."
+      },
+      "en": {
+        "q": "What are void (empty) elements in HTML?",
+        "exp": "Void elements are tags without content and closing tag, for example: <br>, <hr>, <img>, <input>, <meta>, <link>."
+      },
+      "pl": {
+        "q": "Czym są puste (void) elementy w HTML?",
+        "exp": "Puste elementy to tagi bez treści i tagu zamykającego, na przykład: <br>, <hr>, <img>, <input>, <meta>, <link>."
+      },
+      "answers": [
+        {
+          "uk": "Теги, які потребують обов'язкового закриття",
+          "en": "Tags that require mandatory closing",
+          "pl": "Tagi wymagające obowiązkowego zamknięcia",
+          "correct": false
+        },
+        {
+          "uk": "Теги без контенту і закриваючого тега",
+          "en": "Tags without content and closing tag",
+          "pl": "Tagi bez treści i tagu zamykającego",
+          "correct": true
+        },
+        {
+          "uk": "Теги для створення порожнього простору",
+          "en": "Tags for creating empty space",
+          "pl": "Tagi do tworzenia pustej przestrzeni",
+          "correct": false
+        },
+        {
+          "uk": "Застарілі теги, які більше не підтримуються",
+          "en": "Deprecated tags that are no longer supported",
+          "pl": "Przestarzałe tagi, które nie są już wspierane",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-q08",
+      "order": 8,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "У чому різниця між елементами <div> і <span>?",
+        "exp": "<div> — блоковий елемент, займає всю ширину і починається з нового рядка. <span> — вбудований, займає тільки необхідну ширину."
+      },
+      "en": {
+        "q": "What is the difference between <div> and <span> elements?",
+        "exp": "<div> is a block element that takes full width and starts on a new line. <span> is inline and takes only necessary width."
+      },
+      "pl": {
+        "q": "Jaka jest różnica między elementami <div> a <span>?",
+        "exp": "<div> to element blokowy, zajmuje pełną szerokość i zaczyna się od nowej linii. <span> jest inline i zajmuje tylko niezbędną szerokość."
+      },
+      "answers": [
+        {
+          "uk": "<div> і <span> виконують однакову функцію",
+          "en": "<div> and <span> perform the same function",
+          "pl": "<div> i <span> pełnią tę samą funkcję",
+          "correct": false
+        },
+        {
+          "uk": "<div> — блоковий елемент, <span> — вбудований (inline)",
+          "en": "<div> is a block element, <span> is inline",
+          "pl": "<div> to element blokowy, <span> jest inline",
+          "correct": true
+        },
+        {
+          "uk": "<span> використовується тільки для зображень",
+          "en": "<span> is only used for images",
+          "pl": "<span> jest używany tylko dla obrazów",
+          "correct": false
+        },
+        {
+          "uk": "<div> застарів і замінений на <span>",
+          "en": "<div> is deprecated and replaced by <span>",
+          "pl": "<div> jest przestarzały i zastąpiony przez <span>",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-q09",
+      "order": 9,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Яка різниця між тегами <b> та <strong>?",
+        "exp": "<b> робить текст візуально жирним без семантичного значення. <strong> додає семантичний акцент важливості, що враховується пошуковими системами."
+      },
+      "en": {
+        "q": "What is the difference between <b> and <strong> tags?",
+        "exp": "<b> makes text visually bold without semantic meaning. <strong> adds semantic emphasis of importance, considered by search engines."
+      },
+      "pl": {
+        "q": "Jaka jest różnica między tagami <b> a <strong>?",
+        "exp": "<b> pogrubia tekst wizualnie bez znaczenia semantycznego. <strong> dodaje semantyczny nacisk na ważność, uwzględniany przez wyszukiwarki."
+      },
+      "answers": [
+        {
+          "uk": "Різниці немає, обидва роблять текст жирним",
+          "en": "No difference, both make text bold",
+          "pl": "Nie ma różnicy, oba pogrubiają tekst",
+          "correct": false
+        },
+        {
+          "uk": "<b> — візуальне виділення, <strong> — семантичне (важливість)",
+          "en": "<b> is visual styling, <strong> is semantic (importance)",
+          "pl": "<b> to wyróżnienie wizualne, <strong> to semantyczne (ważność)",
+          "correct": true
+        },
+        {
+          "uk": "<strong> робить текст більшим за розміром",
+          "en": "<strong> makes text larger in size",
+          "pl": "<strong> zwiększa rozmiar tekstu",
+          "correct": false
+        },
+        {
+          "uk": "<b> використовується тільки в заголовках",
+          "en": "<b> is only used in headings",
+          "pl": "<b> jest używany tylko w nagłówkach",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-q10",
+      "order": 10,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Для чого використовується атрибут lang у тегу <html>?",
+        "exp": "Атрибут lang вказує мову вмісту сторінки для пошукових систем, скрінрідерів та інших сервісів, наприклад lang=\"uk\" для української."
+      },
+      "en": {
+        "q": "What is the lang attribute in the <html> tag used for?",
+        "exp": "The lang attribute specifies the content language for search engines, screen readers and other services, e.g., lang=\"en\" for English."
+      },
+      "pl": {
+        "q": "Do czego służy atrybut lang w tagu <html>?",
+        "exp": "Atrybut lang określa język treści dla wyszukiwarek, czytników ekranu i innych usług, np. lang=\"pl\" dla polskiego."
+      },
+      "answers": [
+        {
+          "uk": "Для підключення мовних файлів JavaScript",
+          "en": "For connecting JavaScript language files",
+          "pl": "Do podłączania plików językowych JavaScript",
+          "correct": false
+        },
+        {
+          "uk": "Для вказання мови вмісту сторінки",
+          "en": "For specifying the content language of the page",
+          "pl": "Do określania języka treści strony",
+          "correct": true
+        },
+        {
+          "uk": "Для автоматичного перекладу сторінки",
+          "en": "For automatic page translation",
+          "pl": "Do automatycznego tłumaczenia strony",
+          "correct": false
+        },
+        {
+          "uk": "Для зміни напрямку тексту",
+          "en": "For changing text direction",
+          "pl": "Do zmiany kierunku tekstu",
+          "correct": false
+        }
+      ]
+    }
+  ]
+}

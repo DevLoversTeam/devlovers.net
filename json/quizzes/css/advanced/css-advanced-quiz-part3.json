@@ -1,0 +1,234 @@
+{
+  "questions": [
+    {
+      "id": "css-adv-q21",
+      "order": 21,
+      "difficulty": "advanced",
+      "uk": {
+        "q": "Які властивості CSS використовуються для 3D-обертання елемента?",
+        "exp": "rotateX(), rotateY(), rotateZ() у властивості transform дозволяють обертати елемент навколо відповідних осей у 3D-просторі."
+      },
+      "en": {
+        "q": "Which CSS properties are used for 3D rotation of an element?",
+        "exp": "rotateX(), rotateY(), rotateZ() in the transform property allow rotating an element around corresponding axes in 3D space."
+      },
+      "pl": {
+        "q": "Jakie właściwości CSS służą do obrotu 3D elementu?",
+        "exp": "rotateX(), rotateY(), rotateZ() we właściwości transform pozwalają obracać element wokół odpowiednich osi w przestrzeni 3D."
+      },
+      "answers": [
+        { "uk": "transform: rotateX/Y/Z()", "en": "transform: rotateX/Y/Z()", "pl": "transform: rotateX/Y/Z()", "correct": true },
+        { "uk": "rotate-3d: x y z", "en": "rotate-3d: x y z", "pl": "rotate-3d: x y z", "correct": false },
+        { "uk": "animation-rotate: 3d", "en": "animation-rotate: 3d", "pl": "animation-rotate: 3d", "correct": false },
+        { "uk": "position-3d: rotate", "en": "position-3d: rotate", "pl": "position-3d: rotate", "correct": false }
+      ]
+    },
+    {
+      "id": "css-adv-q22",
+      "order": 22,
+      "difficulty": "advanced",
+      "uk": {
+        "q": "Що робить властивість perspective у CSS?",
+        "exp": "perspective задає відстань від глядача до площини елемента, створюючи ефект глибини для 3D-перетворень. Менше значення — сильніша перспектива."
+      },
+      "en": {
+        "q": "What does the perspective property do in CSS?",
+        "exp": "perspective sets the distance from the viewer to the element plane, creating a depth effect for 3D transforms. Smaller value means stronger perspective."
+      },
+      "pl": {
+        "q": "Co robi właściwość perspective w CSS?",
+        "exp": "perspective ustawia odległość od widza do płaszczyzny elementu, tworząc efekt głębi dla transformacji 3D. Mniejsza wartość oznacza silniejszą perspektywę."
+      },
+      "answers": [
+        { "uk": "Створює ефект глибини для 3D-перетворень", "en": "Creates depth effect for 3D transforms", "pl": "Tworzy efekt głębi dla transformacji 3D", "correct": true },
+        { "uk": "Змінює прозорість елемента", "en": "Changes element opacity", "pl": "Zmienia przezroczystość elementu", "correct": false },
+        { "uk": "Встановлює точку трансформації", "en": "Sets transformation origin", "pl": "Ustawia punkt transformacji", "correct": false },
+        { "uk": "Визначає видиму область елемента", "en": "Defines visible area of element", "pl": "Określa widoczny obszar elementu", "correct": false }
+      ]
+    },
+    {
+      "id": "css-adv-q23",
+      "order": 23,
+      "difficulty": "advanced",
+      "uk": {
+        "q": "Для чого використовується backface-visibility: hidden?",
+        "exp": "backface-visibility: hidden приховує задню сторону елемента при 3D-обертанні, що важливо для ефектів типу перевернутої картки."
+      },
+      "en": {
+        "q": "What is backface-visibility: hidden used for?",
+        "exp": "backface-visibility: hidden hides the back side of an element during 3D rotation, essential for effects like card flip."
+      },
+      "pl": {
+        "q": "Do czego służy backface-visibility: hidden?",
+        "exp": "backface-visibility: hidden ukrywa tylną stronę elementu podczas obrotu 3D, co jest niezbędne dla efektów typu odwracana karta."
+      },
+      "answers": [
+        { "uk": "Приховати задню сторону при 3D-обертанні", "en": "Hide back side during 3D rotation", "pl": "Ukryć tylną stronę podczas obrotu 3D", "correct": true },
+        { "uk": "Приховати елемент повністю", "en": "Hide element completely", "pl": "Ukryć element całkowicie", "correct": false },
+        { "uk": "Вимкнути анімацію", "en": "Disable animation", "pl": "Wyłączyć animację", "correct": false },
+        { "uk": "Зробити елемент невидимим для скрін-рідерів", "en": "Make element invisible to screen readers", "pl": "Uczynić element niewidocznym dla czytników ekranu", "correct": false }
+      ]
+    },
+    {
+      "id": "css-adv-q24",
+      "order": 24,
+      "difficulty": "advanced",
+      "uk": {
+        "q": "Які CSS-властивості потрібні для ефекту перевернутої картки (card flip)?",
+        "exp": "Потрібні: perspective на контейнері, transform-style: preserve-3d на картці, transform: rotateY(180deg) при hover, і backface-visibility: hidden на обох сторонах."
+      },
+      "en": {
+        "q": "Which CSS properties are needed for a card flip effect?",
+        "exp": "Required: perspective on container, transform-style: preserve-3d on card, transform: rotateY(180deg) on hover, and backface-visibility: hidden on both sides."
+      },
+      "pl": {
+        "q": "Jakie właściwości CSS są potrzebne do efektu odwracanej karty?",
+        "exp": "Potrzebne: perspective na kontenerze, transform-style: preserve-3d na karcie, transform: rotateY(180deg) przy hover i backface-visibility: hidden po obu stronach."
+      },
+      "answers": [
+        { "uk": "perspective, transform-style, backface-visibility", "en": "perspective, transform-style, backface-visibility", "pl": "perspective, transform-style, backface-visibility", "correct": true },
+        { "uk": "flip, card-side, rotate", "en": "flip, card-side, rotate", "pl": "flip, card-side, rotate", "correct": false },
+        { "uk": "animation, keyframes, transition", "en": "animation, keyframes, transition", "pl": "animation, keyframes, transition", "correct": false },
+        { "uk": "opacity, display, visibility", "en": "opacity, display, visibility", "pl": "opacity, display, visibility", "correct": false }
+      ]
+    },
+    {
+      "id": "css-adv-q25",
+      "order": 25,
+      "difficulty": "advanced",
+      "uk": {
+        "q": "Для чого використовується властивість will-change?",
+        "exp": "will-change повідомляє браузеру про майбутні зміни властивостей, дозволяючи заздалегідь оптимізувати рендеринг і виносити елемент на окремий шар GPU."
+      },
+      "en": {
+        "q": "What is the will-change property used for?",
+        "exp": "will-change informs the browser about upcoming property changes, allowing it to pre-optimize rendering and move the element to a separate GPU layer."
+      },
+      "pl": {
+        "q": "Do czego służy właściwość will-change?",
+        "exp": "will-change informuje przeglądarkę o nadchodzących zmianach właściwości, pozwalając wcześniej zoptymalizować renderowanie i przenieść element na osobną warstwę GPU."
+      },
+      "answers": [
+        { "uk": "Оптимізувати рендеринг для майбутніх змін", "en": "Optimize rendering for upcoming changes", "pl": "Optymalizować renderowanie dla nadchodzących zmian", "correct": true },
+        { "uk": "Змінити значення властивості динамічно", "en": "Change property value dynamically", "pl": "Dynamicznie zmieniać wartość właściwości", "correct": false },
+        { "uk": "Запобігти змінам властивостей", "en": "Prevent property changes", "pl": "Zapobiegać zmianom właściwości", "correct": false },
+        { "uk": "Визначити умови для медіа-запитів", "en": "Define conditions for media queries", "pl": "Definiować warunki dla zapytań medialnych", "correct": false }
+      ]
+    },
+    {
+      "id": "css-adv-q26",
+      "order": 26,
+      "difficulty": "advanced",
+      "uk": {
+        "q": "У чому різниця між reflow та repaint у браузері?",
+        "exp": "Reflow — перерахунок позицій і розмірів елементів (при зміні layout). Repaint — перемальовування зовнішнього вигляду без зміни геометрії. Reflow дорожчий."
+      },
+      "en": {
+        "q": "What is the difference between reflow and repaint in the browser?",
+        "exp": "Reflow recalculates positions and sizes (when layout changes). Repaint redraws appearance without geometry changes. Reflow is more expensive."
+      },
+      "pl": {
+        "q": "Jaka jest różnica między reflow a repaint w przeglądarce?",
+        "exp": "Reflow przelicza pozycje i rozmiary (przy zmianie layoutu). Repaint przerysowuje wygląd bez zmian geometrii. Reflow jest droższy."
+      },
+      "answers": [
+        { "uk": "Reflow — геометрія, repaint — лише вигляд", "en": "Reflow — geometry, repaint — appearance only", "pl": "Reflow — geometria, repaint — tylko wygląd", "correct": true },
+        { "uk": "Repaint дорожчий за reflow", "en": "Repaint is more expensive than reflow", "pl": "Repaint jest droższy niż reflow", "correct": false },
+        { "uk": "Reflow стосується лише кольорів", "en": "Reflow only affects colors", "pl": "Reflow dotyczy tylko kolorów", "correct": false },
+        { "uk": "Це синоніми одного процесу", "en": "They are synonyms for the same process", "pl": "To synonimy tego samego procesu", "correct": false }
+      ]
+    },
+    {
+      "id": "css-adv-q27",
+      "order": 27,
+      "difficulty": "advanced",
+      "uk": {
+        "q": "Що таке Critical CSS і навіщо він потрібен?",
+        "exp": "Critical CSS — це мінімальний набір стилів для рендерингу above-the-fold контенту. Вбудовується inline у <head> для швидшого першого відображення сторінки."
+      },
+      "en": {
+        "q": "What is Critical CSS and why is it needed?",
+        "exp": "Critical CSS is the minimal set of styles for rendering above-the-fold content. It's inlined in <head> for faster initial page display."
+      },
+      "pl": {
+        "q": "Czym jest Critical CSS i dlaczego jest potrzebny?",
+        "exp": "Critical CSS to minimalny zestaw stylów do renderowania zawartości above-the-fold. Jest wbudowany inline w <head> dla szybszego pierwszego wyświetlenia strony."
+      },
+      "answers": [
+        { "uk": "Мінімальні стилі для першого екрану, вбудовані inline", "en": "Minimal styles for first screen, inlined", "pl": "Minimalne style dla pierwszego ekranu, wbudowane inline", "correct": true },
+        { "uk": "Стилі для критичних помилок", "en": "Styles for critical errors", "pl": "Style dla krytycznych błędów", "correct": false },
+        { "uk": "CSS для друку документів", "en": "CSS for document printing", "pl": "CSS do drukowania dokumentów", "correct": false },
+        { "uk": "Стилі з найвищим пріоритетом", "en": "Styles with highest priority", "pl": "Style z najwyższym priorytetem", "correct": false }
+      ]
+    },
+    {
+      "id": "css-adv-q28",
+      "order": 28,
+      "difficulty": "advanced",
+      "uk": {
+        "q": "Чому складні CSS-селектори впливають на продуктивність?",
+        "exp": "Браузер читає селектори справа наліво, тому глибокі вкладення (div ul li a) збільшують час обходу DOM для пошуку відповідних елементів."
+      },
+      "en": {
+        "q": "Why do complex CSS selectors affect performance?",
+        "exp": "The browser reads selectors right-to-left, so deep nesting (div ul li a) increases DOM traversal time to find matching elements."
+      },
+      "pl": {
+        "q": "Dlaczego złożone selektory CSS wpływają na wydajność?",
+        "exp": "Przeglądarka czyta selektory od prawej do lewej, więc głębokie zagnieżdżanie (div ul li a) wydłuża czas przechodzenia DOM w poszukiwaniu pasujących elementów."
+      },
+      "answers": [
+        { "uk": "Браузер читає справа наліво, глибокі вкладення уповільнюють пошук", "en": "Browser reads right-to-left, deep nesting slows search", "pl": "Przeglądarka czyta od prawej do lewej, głębokie zagnieżdżanie spowalnia wyszukiwanie", "correct": true },
+        { "uk": "Складні селектори займають більше пам'яті", "en": "Complex selectors use more memory", "pl": "Złożone selektory zajmują więcej pamięci", "correct": false },
+        { "uk": "Браузер компілює їх повільніше", "en": "Browser compiles them slower", "pl": "Przeglądarka kompiluje je wolniej", "correct": false },
+        { "uk": "Вони блокують завантаження сторінки", "en": "They block page loading", "pl": "Blokują ładowanie strony", "correct": false }
+      ]
+    },
+    {
+      "id": "css-adv-q29",
+      "order": 29,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке OOCSS (Object-Oriented CSS)?",
+        "exp": "OOCSS — методологія, що базується на розділенні стилів на структуру і шкіру (theme), та повторному використанні класів як об'єктів для зменшення дублювання."
+      },
+      "en": {
+        "q": "What is OOCSS (Object-Oriented CSS)?",
+        "exp": "OOCSS is a methodology based on separating styles into structure and skin (theme), and reusing classes as objects to reduce duplication."
+      },
+      "pl": {
+        "q": "Czym jest OOCSS (Object-Oriented CSS)?",
+        "exp": "OOCSS to metodologia oparta na rozdzieleniu stylów na strukturę i skórkę (theme) oraz ponownym użyciu klas jako obiektów w celu redukcji duplikacji."
+      },
+      "answers": [
+        { "uk": "Розділення структури і теми, повторне використання класів", "en": "Separating structure and theme, reusing classes", "pl": "Rozdzielenie struktury i tematu, ponowne użycie klas", "correct": true },
+        { "uk": "Використання JavaScript для стилізації", "en": "Using JavaScript for styling", "pl": "Używanie JavaScript do stylizacji", "correct": false },
+        { "uk": "Об'єктна модель CSS у браузері", "en": "CSS object model in browser", "pl": "Obiektowy model CSS w przeglądarce", "correct": false },
+        { "uk": "Автоматична генерація стилів", "en": "Automatic style generation", "pl": "Automatyczne generowanie stylów", "correct": false }
+      ]
+    },
+    {
+      "id": "css-adv-q30",
+      "order": 30,
+      "difficulty": "advanced",
+      "uk": {
+        "q": "Яка методологія CSS пропонує ієрархію шарів від глобальних до компонентних стилів?",
+        "exp": "ITCSS (Inverted Triangle CSS) організовує стилі у вигляді перевернутого трикутника: від загальних налаштувань до специфічних компонентів."
+      },
+      "en": {
+        "q": "Which CSS methodology proposes a hierarchy of layers from global to component styles?",
+        "exp": "ITCSS (Inverted Triangle CSS) organizes styles as an inverted triangle: from general settings to specific components."
+      },
+      "pl": {
+        "q": "Która metodologia CSS proponuje hierarchię warstw od globalnych do stylów komponentów?",
+        "exp": "ITCSS (Inverted Triangle CSS) organizuje style jako odwrócony trójkąt: od ogólnych ustawień do konkretnych komponentów."
+      },
+      "answers": [
+        { "uk": "ITCSS", "en": "ITCSS", "pl": "ITCSS", "correct": true },
+        { "uk": "BEM", "en": "BEM", "pl": "BEM", "correct": false },
+        { "uk": "OOCSS", "en": "OOCSS", "pl": "OOCSS", "correct": false },
+        { "uk": "Atomic CSS", "en": "Atomic CSS", "pl": "Atomic CSS", "correct": false }
+      ]
+    }
+  ]
+}

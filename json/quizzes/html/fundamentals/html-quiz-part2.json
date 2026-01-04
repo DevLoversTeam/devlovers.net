@@ -1,0 +1,434 @@
+{
+  "questions": [
+    {
+      "id": "html-q11",
+      "order": 11,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Які основні глобальні атрибути можна використовувати з будь-яким HTML елементом?",
+        "exp": "Глобальні атрибути: id, class, style, title, lang, hidden, data-*, tabindex. Вони працюють з усіма HTML елементами."
+      },
+      "en": {
+        "q": "What are the main global attributes that can be used with any HTML element?",
+        "exp": "Global attributes: id, class, style, title, lang, hidden, data-*, tabindex. They work with all HTML elements."
+      },
+      "pl": {
+        "q": "Jakie są główne atrybuty globalne, które można używać z dowolnym elementem HTML?",
+        "exp": "Atrybuty globalne: id, class, style, title, lang, hidden, data-*, tabindex. Działają ze wszystkimi elementami HTML."
+      },
+      "answers": [
+        {
+          "uk": "src, href, alt",
+          "en": "src, href, alt",
+          "pl": "src, href, alt",
+          "correct": false
+        },
+        {
+          "uk": "id, class, style, title, lang, data-*",
+          "en": "id, class, style, title, lang, data-*",
+          "pl": "id, class, style, title, lang, data-*",
+          "correct": true
+        },
+        {
+          "uk": "type, name, value",
+          "en": "type, name, value",
+          "pl": "type, name, value",
+          "correct": false
+        },
+        {
+          "uk": "action, method, enctype",
+          "en": "action, method, enctype",
+          "pl": "action, method, enctype",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-q12",
+      "order": 12,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Яка різниця між атрибутами id та class?",
+        "exp": "id — унікальний ідентифікатор, може бути тільки один на сторінці. class — групує елементи, може повторюватися і один елемент може мати кілька класів."
+      },
+      "en": {
+        "q": "What is the difference between id and class attributes?",
+        "exp": "id is a unique identifier, can only be one per page. class groups elements, can repeat, and one element can have multiple classes."
+      },
+      "pl": {
+        "q": "Jaka jest różnica między atrybutami id a class?",
+        "exp": "id to unikalny identyfikator, może być tylko jeden na stronie. class grupuje elementy, może się powtarzać, a jeden element może mieć wiele klas."
+      },
+      "answers": [
+        {
+          "uk": "id і class виконують однакову функцію",
+          "en": "id and class perform the same function",
+          "pl": "id i class pełnią tę samą funkcję",
+          "correct": false
+        },
+        {
+          "uk": "id — унікальний, class — може повторюватися",
+          "en": "id is unique, class can repeat",
+          "pl": "id jest unikalny, class może się powtarzać",
+          "correct": true
+        },
+        {
+          "uk": "class використовується тільки для JavaScript",
+          "en": "class is only used for JavaScript",
+          "pl": "class jest używany tylko dla JavaScript",
+          "correct": false
+        },
+        {
+          "uk": "id можна використовувати кілька разів на сторінці",
+          "en": "id can be used multiple times on a page",
+          "pl": "id można używać wielokrotnie na stronie",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-q13",
+      "order": 13,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Для чого використовуються атрибути data-* у HTML?",
+        "exp": "data-* атрибути дозволяють зберігати користувацькі дані в HTML елементах для використання в JavaScript, без впливу на відображення."
+      },
+      "en": {
+        "q": "What are data-* attributes used for in HTML?",
+        "exp": "data-* attributes allow storing custom data in HTML elements for use in JavaScript, without affecting display."
+      },
+      "pl": {
+        "q": "Do czego służą atrybuty data-* w HTML?",
+        "exp": "Atrybuty data-* pozwalają przechowywać niestandardowe dane w elementach HTML do użycia w JavaScript, bez wpływu na wyświetlanie."
+      },
+      "answers": [
+        {
+          "uk": "Для стилізації елементів",
+          "en": "For styling elements",
+          "pl": "Do stylizowania elementów",
+          "correct": false
+        },
+        {
+          "uk": "Для зберігання користувацьких даних у елементах для JavaScript",
+          "en": "For storing custom data in elements for JavaScript",
+          "pl": "Do przechowywania niestandardowych danych w elementach dla JavaScript",
+          "correct": true
+        },
+        {
+          "uk": "Для валідації форм",
+          "en": "For form validation",
+          "pl": "Do walidacji formularzy",
+          "correct": false
+        },
+        {
+          "uk": "Для SEO оптимізації",
+          "en": "For SEO optimization",
+          "pl": "Do optymalizacji SEO",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-q14",
+      "order": 14,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Як створити гіперпосилання в HTML?",
+        "exp": "Для створення посилання використовується тег <a> з атрибутом href, який вказує URL адресу призначення."
+      },
+      "en": {
+        "q": "How do you create a hyperlink in HTML?",
+        "exp": "To create a link, use the <a> tag with the href attribute that specifies the destination URL."
+      },
+      "pl": {
+        "q": "Jak utworzyć hiperłącze w HTML?",
+        "exp": "Do utworzenia linku używa się tagu <a> z atrybutem href, który określa docelowy URL."
+      },
+      "answers": [
+        {
+          "uk": "<link href=\"url\">Текст</link>",
+          "en": "<link href=\"url\">Text</link>",
+          "pl": "<link href=\"url\">Tekst</link>",
+          "correct": false
+        },
+        {
+          "uk": "<a href=\"url\">Текст посилання</a>",
+          "en": "<a href=\"url\">Link text</a>",
+          "pl": "<a href=\"url\">Tekst linku</a>",
+          "correct": true
+        },
+        {
+          "uk": "<url>Текст</url>",
+          "en": "<url>Text</url>",
+          "pl": "<url>Tekst</url>",
+          "correct": false
+        },
+        {
+          "uk": "<href=\"url\">Текст</href>",
+          "en": "<href=\"url\">Text</href>",
+          "pl": "<href=\"url\">Tekst</href>",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-q15",
+      "order": 15,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Як відкрити посилання в новій вкладці браузера?",
+        "exp": "Додати атрибут target=\"_blank\" до тега <a>. Рекомендовано також додати rel=\"noopener noreferrer\" для безпеки."
+      },
+      "en": {
+        "q": "How do you open a link in a new browser tab?",
+        "exp": "Add the target=\"_blank\" attribute to the <a> tag. It's also recommended to add rel=\"noopener noreferrer\" for security."
+      },
+      "pl": {
+        "q": "Jak otworzyć link w nowej karcie przeglądarki?",
+        "exp": "Dodaj atrybut target=\"_blank\" do tagu <a>. Zaleca się również dodanie rel=\"noopener noreferrer\" dla bezpieczeństwa."
+      },
+      "answers": [
+        {
+          "uk": "target=\"_new\"",
+          "en": "target=\"_new\"",
+          "pl": "target=\"_new\"",
+          "correct": false
+        },
+        {
+          "uk": "target=\"_blank\"",
+          "en": "target=\"_blank\"",
+          "pl": "target=\"_blank\"",
+          "correct": true
+        },
+        {
+          "uk": "newtab=\"true\"",
+          "en": "newtab=\"true\"",
+          "pl": "newtab=\"true\"",
+          "correct": false
+        },
+        {
+          "uk": "open=\"new\"",
+          "en": "open=\"new\"",
+          "pl": "open=\"new\"",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-q16",
+      "order": 16,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Як створити якірне посилання для переходу до певної частини сторінки?",
+        "exp": "Додати id до цільового елемента (id=\"section1\") і створити посилання з href=\"#section1\". При кліку сторінка прокрутиться до цього елемента."
+      },
+      "en": {
+        "q": "How do you create an anchor link to jump to a specific part of the page?",
+        "exp": "Add an id to the target element (id=\"section1\") and create a link with href=\"#section1\". Clicking will scroll to that element."
+      },
+      "pl": {
+        "q": "Jak utworzyć link kotwicowy do przejścia do określonej części strony?",
+        "exp": "Dodaj id do elementu docelowego (id=\"section1\") i utwórz link z href=\"#section1\". Kliknięcie przewinie do tego elementu."
+      },
+      "answers": [
+        {
+          "uk": "href=\"goto:section1\"",
+          "en": "href=\"goto:section1\"",
+          "pl": "href=\"goto:section1\"",
+          "correct": false
+        },
+        {
+          "uk": "href=\"#section1\" та id=\"section1\" на цільовому елементі",
+          "en": "href=\"#section1\" and id=\"section1\" on target element",
+          "pl": "href=\"#section1\" i id=\"section1\" na elemencie docelowym",
+          "correct": true
+        },
+        {
+          "uk": "anchor=\"section1\"",
+          "en": "anchor=\"section1\"",
+          "pl": "anchor=\"section1\"",
+          "correct": false
+        },
+        {
+          "uk": "jump=\"section1\"",
+          "en": "jump=\"section1\"",
+          "pl": "jump=\"section1\"",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-q17",
+      "order": 17,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Як вставити зображення на HTML-сторінку?",
+        "exp": "Використовується тег <img> з атрибутами src (шлях до зображення) та alt (альтернативний текст для доступності)."
+      },
+      "en": {
+        "q": "How do you insert an image on an HTML page?",
+        "exp": "Use the <img> tag with src (path to image) and alt (alternative text for accessibility) attributes."
+      },
+      "pl": {
+        "q": "Jak wstawić obraz na stronę HTML?",
+        "exp": "Używa się tagu <img> z atrybutami src (ścieżka do obrazu) i alt (alternatywny tekst dla dostępności)."
+      },
+      "answers": [
+        {
+          "uk": "<image src=\"photo.jpg\">",
+          "en": "<image src=\"photo.jpg\">",
+          "pl": "<image src=\"photo.jpg\">",
+          "correct": false
+        },
+        {
+          "uk": "<img src=\"photo.jpg\" alt=\"Опис\">",
+          "en": "<img src=\"photo.jpg\" alt=\"Description\">",
+          "pl": "<img src=\"photo.jpg\" alt=\"Opis\">",
+          "correct": true
+        },
+        {
+          "uk": "<picture>photo.jpg</picture>",
+          "en": "<picture>photo.jpg</picture>",
+          "pl": "<picture>photo.jpg</picture>",
+          "correct": false
+        },
+        {
+          "uk": "<photo href=\"photo.jpg\">",
+          "en": "<photo href=\"photo.jpg\">",
+          "pl": "<photo href=\"photo.jpg\">",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-q18",
+      "order": 18,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Яке призначення атрибута alt у тегу <img>?",
+        "exp": "alt — альтернативний текст, який показується якщо зображення не завантажилось, читається скрінрідерами та використовується для SEO."
+      },
+      "en": {
+        "q": "What is the purpose of the alt attribute in the <img> tag?",
+        "exp": "alt is alternative text shown if the image fails to load, read by screen readers, and used for SEO."
+      },
+      "pl": {
+        "q": "Jakie jest przeznaczenie atrybutu alt w tagu <img>?",
+        "exp": "alt to tekst alternatywny wyświetlany gdy obraz się nie załaduje, czytany przez czytniki ekranu i używany dla SEO."
+      },
+      "answers": [
+        {
+          "uk": "Для зміни розміру зображення",
+          "en": "To change image size",
+          "pl": "Do zmiany rozmiaru obrazu",
+          "correct": false
+        },
+        {
+          "uk": "Альтернативний текст для доступності та випадку незавантаження",
+          "en": "Alternative text for accessibility and when image fails to load",
+          "pl": "Alternatywny tekst dla dostępności i gdy obraz się nie załaduje",
+          "correct": true
+        },
+        {
+          "uk": "Для додавання рамки до зображення",
+          "en": "To add a border to the image",
+          "pl": "Do dodania ramki do obrazu",
+          "correct": false
+        },
+        {
+          "uk": "Для анімації зображення",
+          "en": "To animate the image",
+          "pl": "Do animacji obrazu",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-q19",
+      "order": 19,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Яка різниця між відносними та абсолютними URL-адресами?",
+        "exp": "Абсолютний URL містить повний шлях з протоколом (https://example.com/page). Відносний — шлях відносно поточного документа (/page, ../page)."
+      },
+      "en": {
+        "q": "What is the difference between relative and absolute URLs?",
+        "exp": "Absolute URL contains full path with protocol (https://example.com/page). Relative is a path relative to current document (/page, ../page)."
+      },
+      "pl": {
+        "q": "Jaka jest różnica między względnymi a bezwzględnymi adresami URL?",
+        "exp": "Bezwzględny URL zawiera pełną ścieżkę z protokołem (https://example.com/page). Względny to ścieżka względem bieżącego dokumentu (/page, ../page)."
+      },
+      "answers": [
+        {
+          "uk": "Різниці немає",
+          "en": "No difference",
+          "pl": "Nie ma różnicy",
+          "correct": false
+        },
+        {
+          "uk": "Абсолютний — повний шлях з протоколом, відносний — від поточного документа",
+          "en": "Absolute is full path with protocol, relative is from current document",
+          "pl": "Bezwzględny to pełna ścieżka z protokołem, względny od bieżącego dokumentu",
+          "correct": true
+        },
+        {
+          "uk": "Відносний завжди починається з https://",
+          "en": "Relative always starts with https://",
+          "pl": "Względny zawsze zaczyna się od https://",
+          "correct": false
+        },
+        {
+          "uk": "Абсолютний використовується тільки для зображень",
+          "en": "Absolute is only used for images",
+          "pl": "Bezwzględny jest używany tylko dla obrazów",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-q20",
+      "order": 20,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Які основні формати зображень підтримуються браузерами?",
+        "exp": "Основні формати: JPEG/JPG (фото), PNG (прозорість), GIF (анімація), WebP (сучасний з високим стисненням), SVG (векторна графіка)."
+      },
+      "en": {
+        "q": "What are the main image formats supported by browsers?",
+        "exp": "Main formats: JPEG/JPG (photos), PNG (transparency), GIF (animation), WebP (modern with high compression), SVG (vector graphics)."
+      },
+      "pl": {
+        "q": "Jakie są główne formaty obrazów obsługiwane przez przeglądarki?",
+        "exp": "Główne formaty: JPEG/JPG (zdjęcia), PNG (przezroczystość), GIF (animacja), WebP (nowoczesny z wysoką kompresją), SVG (grafika wektorowa)."
+      },
+      "answers": [
+        {
+          "uk": "Тільки JPEG та PNG",
+          "en": "Only JPEG and PNG",
+          "pl": "Tylko JPEG i PNG",
+          "correct": false
+        },
+        {
+          "uk": "JPEG, PNG, GIF, WebP, SVG",
+          "en": "JPEG, PNG, GIF, WebP, SVG",
+          "pl": "JPEG, PNG, GIF, WebP, SVG",
+          "correct": true
+        },
+        {
+          "uk": "Тільки SVG та WebP",
+          "en": "Only SVG and WebP",
+          "pl": "Tylko SVG i WebP",
+          "correct": false
+        },
+        {
+          "uk": "PSD, AI, EPS",
+          "en": "PSD, AI, EPS",
+          "pl": "PSD, AI, EPS",
+          "correct": false
+        }
+      ]
+    }
+  ]
+}

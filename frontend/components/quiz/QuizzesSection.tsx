@@ -88,7 +88,7 @@ export default function QuizzesSection({
               ) : (
                 <div className="text-center py-12">
                   <p className="text-gray-600 dark:text-gray-400">
-                    No quizzes available in this category yet.
+                    У цій категорії ще немає квізів.
                   </p>
                 </div>
               )}

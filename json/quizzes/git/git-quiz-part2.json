@@ -1,0 +1,434 @@
+{
+  "questions": [
+    {
+      "id": "git-q11",
+      "order": 11,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Яка різниця між git push і git pull?",
+        "exp": "git push відправляє локальні коміти у віддалений репозиторій, а git pull отримує зміни з віддаленого репозиторію та інтегрує їх локально."
+      },
+      "en": {
+        "q": "What is the difference between git push and git pull?",
+        "exp": "git push sends local commits to the remote repository, while git pull retrieves changes from the remote repository and integrates them locally."
+      },
+      "pl": {
+        "q": "Jaka jest różnica między git push a git pull?",
+        "exp": "git push wysyła lokalne commity do zdalnego repozytorium, a git pull pobiera zmiany ze zdalnego repozytorium i integruje je lokalnie."
+      },
+      "answers": [
+        {
+          "uk": "Обидві команди роблять одне й те саме",
+          "en": "Both commands do the same thing",
+          "pl": "Oba polecenia robią to samo",
+          "correct": false
+        },
+        {
+          "uk": "push відправляє зміни на сервер, pull отримує зміни з сервера",
+          "en": "push sends changes to the server, pull retrieves changes from the server",
+          "pl": "push wysyła zmiany na serwer, pull pobiera zmiany z serwera",
+          "correct": true
+        },
+        {
+          "uk": "push створює гілку, pull видаляє гілку",
+          "en": "push creates a branch, pull deletes a branch",
+          "pl": "push tworzy gałąź, pull usuwa gałąź",
+          "correct": false
+        },
+        {
+          "uk": "pull працює локально, push працює віддалено",
+          "en": "pull works locally, push works remotely",
+          "pl": "pull działa lokalnie, push działa zdalnie",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "git-q12",
+      "order": 12,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що робить команда git fetch і чим вона відрізняється від git pull?",
+        "exp": "git fetch завантажує зміни з віддаленого репозиторію, але не інтегрує їх. git pull — це git fetch плюс git merge."
+      },
+      "en": {
+        "q": "What does git fetch do and how does it differ from git pull?",
+        "exp": "git fetch downloads changes from the remote repository but does not integrate them. git pull is git fetch plus git merge."
+      },
+      "pl": {
+        "q": "Co robi git fetch i czym różni się od git pull?",
+        "exp": "git fetch pobiera zmiany ze zdalnego repozytorium, ale ich nie integruje. git pull to git fetch plus git merge."
+      },
+      "answers": [
+        {
+          "uk": "fetch і pull — це синоніми",
+          "en": "fetch and pull are synonyms",
+          "pl": "fetch i pull to synonimy",
+          "correct": false
+        },
+        {
+          "uk": "fetch завантажує зміни без злиття, pull завантажує і зливає",
+          "en": "fetch downloads changes without merging, pull downloads and merges",
+          "pl": "fetch pobiera zmiany bez łączenia, pull pobiera i łączy",
+          "correct": true
+        },
+        {
+          "uk": "fetch видаляє локальні зміни, pull зберігає їх",
+          "en": "fetch deletes local changes, pull preserves them",
+          "pl": "fetch usuwa lokalne zmiany, pull je zachowuje",
+          "correct": false
+        },
+        {
+          "uk": "fetch працює швидше, ніж pull",
+          "en": "fetch works faster than pull",
+          "pl": "fetch działa szybciej niż pull",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "git-q13",
+      "order": 13,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке merge conflict і коли він виникає?",
+        "exp": "Merge conflict виникає, коли дві гілки змінюють один і той самий рядок коду по-різному, і Git не може автоматично об'єднати зміни."
+      },
+      "en": {
+        "q": "What is a merge conflict and when does it occur?",
+        "exp": "A merge conflict occurs when two branches change the same line of code differently, and Git cannot automatically merge the changes."
+      },
+      "pl": {
+        "q": "Czym jest konflikt scalania i kiedy występuje?",
+        "exp": "Konflikt scalania występuje, gdy dwie gałęzie zmieniają tę samą linię kodu w różny sposób i Git nie może automatycznie połączyć zmian."
+      },
+      "answers": [
+        {
+          "uk": "Помилка при створенні нової гілки",
+          "en": "An error when creating a new branch",
+          "pl": "Błąd przy tworzeniu nowej gałęzi",
+          "correct": false
+        },
+        {
+          "uk": "Ситуація, коли дві гілки змінюють один рядок коду несумісним способом",
+          "en": "A situation where two branches change the same line of code incompatibly",
+          "pl": "Sytuacja, gdy dwie gałęzie zmieniają tę samą linię kodu w niekompatybilny sposób",
+          "correct": true
+        },
+        {
+          "uk": "Проблема з підключенням до віддаленого сервера",
+          "en": "A connection problem with the remote server",
+          "pl": "Problem z połączeniem ze zdalnym serwerem",
+          "correct": false
+        },
+        {
+          "uk": "Помилка в синтаксисі команди git merge",
+          "en": "A syntax error in the git merge command",
+          "pl": "Błąd składni w poleceniu git merge",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "git-q14",
+      "order": 14,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке fast-forward merge у Git?",
+        "exp": "Fast-forward merge — це злиття, коли Git просто переміщує вказівник гілки вперед, оскільки історія лінійна і немає розходжень."
+      },
+      "en": {
+        "q": "What is a fast-forward merge in Git?",
+        "exp": "A fast-forward merge is when Git simply moves the branch pointer forward because the history is linear with no divergence."
+      },
+      "pl": {
+        "q": "Czym jest fast-forward merge w Git?",
+        "exp": "Fast-forward merge to sytuacja, gdy Git po prostu przesuwa wskaźnik gałęzi do przodu, ponieważ historia jest liniowa bez rozbieżności."
+      },
+      "answers": [
+        {
+          "uk": "Злиття, яке завжди створює новий merge-коміт",
+          "en": "A merge that always creates a new merge commit",
+          "pl": "Scalanie, które zawsze tworzy nowy commit scalający",
+          "correct": false
+        },
+        {
+          "uk": "Злиття, яке просто переміщує вказівник гілки без створення merge-коміту",
+          "en": "A merge that simply moves the branch pointer without creating a merge commit",
+          "pl": "Scalanie, które po prostu przesuwa wskaźnik gałęzi bez tworzenia commita scalającego",
+          "correct": true
+        },
+        {
+          "uk": "Злиття, яке відбувається автоматично при кожному push",
+          "en": "A merge that happens automatically on every push",
+          "pl": "Scalanie, które następuje automatycznie przy każdym push",
+          "correct": false
+        },
+        {
+          "uk": "Злиття, яке видаляє історію старіших комітів",
+          "en": "A merge that deletes the history of older commits",
+          "pl": "Scalanie, które usuwa historię starszych commitów",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "git-q15",
+      "order": 15,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Яка основна різниця між git merge і git rebase?",
+        "exp": "merge зберігає історію та створює merge-коміт, а rebase переписує історію, роблячи її лінійною без merge-комітів."
+      },
+      "en": {
+        "q": "What is the main difference between git merge and git rebase?",
+        "exp": "merge preserves history and creates a merge commit, while rebase rewrites history, making it linear without merge commits."
+      },
+      "pl": {
+        "q": "Jaka jest główna różnica między git merge a git rebase?",
+        "exp": "merge zachowuje historię i tworzy commit scalający, a rebase przepisuje historię, czyniąc ją liniową bez commitów scalających."
+      },
+      "answers": [
+        {
+          "uk": "merge і rebase — це одне й те саме",
+          "en": "merge and rebase are the same thing",
+          "pl": "merge i rebase to to samo",
+          "correct": false
+        },
+        {
+          "uk": "merge зберігає історію, rebase переписує історію для лінійності",
+          "en": "merge preserves history, rebase rewrites history for linearity",
+          "pl": "merge zachowuje historię, rebase przepisuje historię dla liniowości",
+          "correct": true
+        },
+        {
+          "uk": "rebase працює лише з віддаленими гілками",
+          "en": "rebase only works with remote branches",
+          "pl": "rebase działa tylko ze zdalnymi gałęziami",
+          "correct": false
+        },
+        {
+          "uk": "merge швидший за rebase",
+          "en": "merge is faster than rebase",
+          "pl": "merge jest szybszy niż rebase",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "git-q16",
+      "order": 16,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Для чого використовується файл .gitignore?",
+        "exp": ".gitignore визначає, які файли та папки Git має ігнорувати і не відстежувати, наприклад node_modules, .env чи build-артефакти."
+      },
+      "en": {
+        "q": "What is the .gitignore file used for?",
+        "exp": ".gitignore defines which files and folders Git should ignore and not track, such as node_modules, .env, or build artifacts."
+      },
+      "pl": {
+        "q": "Do czego służy plik .gitignore?",
+        "exp": ".gitignore określa, które pliki i foldery Git powinien ignorować i nie śledzić, np. node_modules, .env lub artefakty budowania."
+      },
+      "answers": [
+        {
+          "uk": "Для зберігання конфігурації Git",
+          "en": "For storing Git configuration",
+          "pl": "Do przechowywania konfiguracji Git",
+          "correct": false
+        },
+        {
+          "uk": "Для визначення файлів і папок, які Git повинен ігнорувати",
+          "en": "For defining files and folders that Git should ignore",
+          "pl": "Do określania plików i folderów, które Git powinien ignorować",
+          "correct": true
+        },
+        {
+          "uk": "Для автоматичного видалення файлів",
+          "en": "For automatically deleting files",
+          "pl": "Do automatycznego usuwania plików",
+          "correct": false
+        },
+        {
+          "uk": "Для шифрування чутливих даних",
+          "en": "For encrypting sensitive data",
+          "pl": "Do szyfrowania wrażliwych danych",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "git-q17",
+      "order": 17,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що робить команда git stash?",
+        "exp": "git stash тимчасово зберігає незавершені зміни, щоб ви могли переключитися на іншу гілку без коміту. Потім зміни можна повернути."
+      },
+      "en": {
+        "q": "What does the git stash command do?",
+        "exp": "git stash temporarily saves uncommitted changes so you can switch to another branch without committing. Changes can be restored later."
+      },
+      "pl": {
+        "q": "Co robi polecenie git stash?",
+        "exp": "git stash tymczasowo zapisuje niezatwierdzone zmiany, abyś mógł przejść na inną gałąź bez commitowania. Zmiany można później przywrócić."
+      },
+      "answers": [
+        {
+          "uk": "Видаляє всі локальні зміни",
+          "en": "Deletes all local changes",
+          "pl": "Usuwa wszystkie lokalne zmiany",
+          "correct": false
+        },
+        {
+          "uk": "Тимчасово зберігає незавершені зміни для подальшого відновлення",
+          "en": "Temporarily saves uncommitted changes for later restoration",
+          "pl": "Tymczasowo zapisuje niezatwierdzone zmiany do późniejszego przywrócenia",
+          "correct": true
+        },
+        {
+          "uk": "Створює новий коміт з поточними змінами",
+          "en": "Creates a new commit with current changes",
+          "pl": "Tworzy nowy commit z bieżącymi zmianami",
+          "correct": false
+        },
+        {
+          "uk": "Об'єднує поточну гілку з main",
+          "en": "Merges the current branch with main",
+          "pl": "Łączy bieżącą gałąź z main",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "git-q18",
+      "order": 18,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Яка команда показує історію комітів у Git?",
+        "exp": "git log показує історію комітів з хешами, авторами, датами та повідомленнями. Можна додати прапорці для компактного виводу."
+      },
+      "en": {
+        "q": "Which command shows the commit history in Git?",
+        "exp": "git log shows the commit history with hashes, authors, dates, and messages. You can add flags for compact output."
+      },
+      "pl": {
+        "q": "Które polecenie pokazuje historię commitów w Git?",
+        "exp": "git log pokazuje historię commitów z hashami, autorami, datami i wiadomościami. Można dodać flagi dla kompaktowego wyjścia."
+      },
+      "answers": [
+        {
+          "uk": "git history",
+          "en": "git history",
+          "pl": "git history",
+          "correct": false
+        },
+        {
+          "uk": "git log",
+          "en": "git log",
+          "pl": "git log",
+          "correct": true
+        },
+        {
+          "uk": "git commits",
+          "en": "git commits",
+          "pl": "git commits",
+          "correct": false
+        },
+        {
+          "uk": "git show-all",
+          "en": "git show-all",
+          "pl": "git show-all",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "git-q19",
+      "order": 19,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що робить команда git blame?",
+        "exp": "git blame показує, хто і коли вніс кожен рядок у файлі, що допомагає знайти відповідального за конкретні зміни."
+      },
+      "en": {
+        "q": "What does the git blame command do?",
+        "exp": "git blame shows who and when made each line in a file, helping to find who is responsible for specific changes."
+      },
+      "pl": {
+        "q": "Co robi polecenie git blame?",
+        "exp": "git blame pokazuje, kto i kiedy wprowadził każdą linię w pliku, pomagając znaleźć osobę odpowiedzialną za konkretne zmiany."
+      },
+      "answers": [
+        {
+          "uk": "Видаляє авторство з комітів",
+          "en": "Removes authorship from commits",
+          "pl": "Usuwa autorstwo z commitów",
+          "correct": false
+        },
+        {
+          "uk": "Показує, хто і коли вніс кожен рядок у файлі",
+          "en": "Shows who and when made each line in a file",
+          "pl": "Pokazuje, kto i kiedy wprowadził każdą linię w pliku",
+          "correct": true
+        },
+        {
+          "uk": "Надсилає повідомлення про помилку автору коміту",
+          "en": "Sends an error message to the commit author",
+          "pl": "Wysyła wiadomość o błędzie do autora commita",
+          "correct": false
+        },
+        {
+          "uk": "Позначає файли як проблемні",
+          "en": "Marks files as problematic",
+          "pl": "Oznacza pliki jako problematyczne",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "git-q20",
+      "order": 20,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Як змінити повідомлення останнього коміту?",
+        "exp": "Використовуйте git commit --amend -m 'Нове повідомлення'. Якщо коміт вже запушено, потрібен --force push."
+      },
+      "en": {
+        "q": "How do you change the message of the last commit?",
+        "exp": "Use git commit --amend -m 'New message'. If the commit is already pushed, you need a --force push."
+      },
+      "pl": {
+        "q": "Jak zmienić wiadomość ostatniego commita?",
+        "exp": "Użyj git commit --amend -m 'Nowa wiadomość'. Jeśli commit jest już wypchnięty, potrzebujesz --force push."
+      },
+      "answers": [
+        {
+          "uk": "git message --edit",
+          "en": "git message --edit",
+          "pl": "git message --edit",
+          "correct": false
+        },
+        {
+          "uk": "git commit --amend -m 'Нове повідомлення'",
+          "en": "git commit --amend -m 'New message'",
+          "pl": "git commit --amend -m 'Nowa wiadomość'",
+          "correct": true
+        },
+        {
+          "uk": "git rewrite-commit",
+          "en": "git rewrite-commit",
+          "pl": "git rewrite-commit",
+          "correct": false
+        },
+        {
+          "uk": "Неможливо змінити повідомлення після коміту",
+          "en": "It's impossible to change a message after committing",
+          "pl": "Nie można zmienić wiadomości po zacommitowaniu",
+          "correct": false
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,434 @@
+{
+  "questions": [
+    {
+      "id": "ts-adv-q21",
+      "order": 21,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Як реалізувати патерн Singleton у TypeScript?",
+        "exp": "Singleton реалізується через приватний конструктор та статичний метод getInstance(), який створює або повертає єдиний екземпляр класу."
+      },
+      "en": {
+        "q": "How do you implement the Singleton pattern in TypeScript?",
+        "exp": "Singleton is implemented via a private constructor and static getInstance() method that creates or returns the single class instance."
+      },
+      "pl": {
+        "q": "Jak zaimplementować wzorzec Singleton w TypeScript?",
+        "exp": "Singleton implementuje się przez prywatny konstruktor i statyczną metodę getInstance(), która tworzy lub zwraca pojedynczą instancję klasy."
+      },
+      "answers": [
+        {
+          "uk": "Через декоратор @Singleton",
+          "en": "Using @Singleton decorator",
+          "pl": "Za pomocą dekoratora @Singleton",
+          "correct": false
+        },
+        {
+          "uk": "Приватний конструктор + статичний getInstance()",
+          "en": "Private constructor + static getInstance()",
+          "pl": "Prywatny konstruktor + statyczny getInstance()",
+          "correct": true
+        },
+        {
+          "uk": "Через ключове слово singleton",
+          "en": "Using singleton keyword",
+          "pl": "Za pomocą słowa kluczowego singleton",
+          "correct": false
+        },
+        {
+          "uk": "TypeScript не підтримує Singleton",
+          "en": "TypeScript does not support Singleton",
+          "pl": "TypeScript nie obsługuje Singleton",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "ts-adv-q22",
+      "order": 22,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке патерн Factory у TypeScript?",
+        "exp": "Factory — патерн, де функція або метод створює об'єкти на основі параметрів, приховуючи логіку створення. Дозволяє гнучко створювати різні реалізації інтерфейсу."
+      },
+      "en": {
+        "q": "What is the Factory pattern in TypeScript?",
+        "exp": "Factory is a pattern where a function or method creates objects based on parameters, hiding creation logic. Allows flexible creation of different interface implementations."
+      },
+      "pl": {
+        "q": "Czym jest wzorzec Factory w TypeScript?",
+        "exp": "Factory to wzorzec, gdzie funkcja lub metoda tworzy obiekty na podstawie parametrów, ukrywając logikę tworzenia. Pozwala elastycznie tworzyć różne implementacje interfejsu."
+      },
+      "answers": [
+        {
+          "uk": "Метод для копіювання об'єктів",
+          "en": "Method for copying objects",
+          "pl": "Metoda do kopiowania obiektów",
+          "correct": false
+        },
+        {
+          "uk": "Функція, що створює об'єкти приховуючи логіку створення",
+          "en": "Function that creates objects hiding creation logic",
+          "pl": "Funkcja tworząca obiekty ukrywając logikę tworzenia",
+          "correct": true
+        },
+        {
+          "uk": "Клас для роботи з базою даних",
+          "en": "Class for database operations",
+          "pl": "Klasa do operacji na bazie danych",
+          "correct": false
+        },
+        {
+          "uk": "Спосіб валідації даних",
+          "en": "Way to validate data",
+          "pl": "Sposób walidacji danych",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "ts-adv-q23",
+      "order": 23,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Як декоратори використовуються для Dependency Injection у NestJS/Angular?",
+        "exp": "Декоратори @Injectable, @Inject записують метадані про залежності. DI-контейнер читає ці метадані та автоматично підставляє потрібні сервіси в конструктор."
+      },
+      "en": {
+        "q": "How are decorators used for Dependency Injection in NestJS/Angular?",
+        "exp": "Decorators @Injectable, @Inject write metadata about dependencies. The DI container reads this metadata and automatically injects required services into the constructor."
+      },
+      "pl": {
+        "q": "Jak dekoratory są używane do Dependency Injection w NestJS/Angular?",
+        "exp": "Dekoratory @Injectable, @Inject zapisują metadane o zależnościach. Kontener DI odczytuje te metadane i automatycznie wstrzykuje wymagane serwisy do konstruktora."
+      },
+      "answers": [
+        {
+          "uk": "Декоратори створюють нові екземпляри вручну",
+          "en": "Decorators create new instances manually",
+          "pl": "Dekoratory tworzą nowe instancje ręcznie",
+          "correct": false
+        },
+        {
+          "uk": "Записують метадані для автоматичного впровадження залежностей",
+          "en": "Write metadata for automatic dependency injection",
+          "pl": "Zapisują metadane do automatycznego wstrzykiwania zależności",
+          "correct": true
+        },
+        {
+          "uk": "Декоратори не використовуються для DI",
+          "en": "Decorators are not used for DI",
+          "pl": "Dekoratory nie są używane do DI",
+          "correct": false
+        },
+        {
+          "uk": "Тільки для логування залежностей",
+          "en": "Only for logging dependencies",
+          "pl": "Tylko do logowania zależności",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "ts-adv-q24",
+      "order": 24,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Як типізувати React-компонент з пропсами у TypeScript?",
+        "exp": "Створюється interface або type для props, потім використовується React.FC<Props> або функція з типізованим параметром: const Component = ({ title }: Props) => ..."
+      },
+      "en": {
+        "q": "How do you type a React component with props in TypeScript?",
+        "exp": "Create an interface or type for props, then use React.FC<Props> or a function with typed parameter: const Component = ({ title }: Props) => ..."
+      },
+      "pl": {
+        "q": "Jak typować komponent React z propsami w TypeScript?",
+        "exp": "Tworzy się interface lub type dla props, potem używa React.FC<Props> lub funkcji z typowanym parametrem: const Component = ({ title }: Props) => ..."
+      },
+      "answers": [
+        {
+          "uk": "Через коментарі JSDoc",
+          "en": "Using JSDoc comments",
+          "pl": "Za pomocą komentarzy JSDoc",
+          "correct": false
+        },
+        {
+          "uk": "Interface/type для props + React.FC<Props> або типізований параметр",
+          "en": "Interface/type for props + React.FC<Props> or typed parameter",
+          "pl": "Interface/type dla props + React.FC<Props> lub typowany parametr",
+          "correct": true
+        },
+        {
+          "uk": "TypeScript автоматично виводить пропси",
+          "en": "TypeScript automatically infers props",
+          "pl": "TypeScript automatycznie wnioskuje propsy",
+          "correct": false
+        },
+        {
+          "uk": "Через PropTypes",
+          "en": "Using PropTypes",
+          "pl": "Za pomocą PropTypes",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "ts-adv-q25",
+      "order": 25,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Як типізувати useState hook у React з TypeScript?",
+        "exp": "useState типізується через generic: useState<string>('') або useState<User | null>(null). TypeScript виведе тип автоматично, якщо початкове значення однозначне."
+      },
+      "en": {
+        "q": "How do you type the useState hook in React with TypeScript?",
+        "exp": "useState is typed via generic: useState<string>('') or useState<User | null>(null). TypeScript will infer the type automatically if initial value is unambiguous."
+      },
+      "pl": {
+        "q": "Jak typować hook useState w React z TypeScript?",
+        "exp": "useState typuje się przez generic: useState<string>('') lub useState<User | null>(null). TypeScript automatycznie wywnioskuje typ, jeśli wartość początkowa jest jednoznaczna."
+      },
+      "answers": [
+        {
+          "uk": "Типізація не потрібна для useState",
+          "en": "Typing is not needed for useState",
+          "pl": "Typowanie nie jest potrzebne dla useState",
+          "correct": false
+        },
+        {
+          "uk": "Через generic: useState<Type>(initialValue)",
+          "en": "Via generic: useState<Type>(initialValue)",
+          "pl": "Przez generic: useState<Type>(initialValue)",
+          "correct": true
+        },
+        {
+          "uk": "Через декоратор @State",
+          "en": "Using @State decorator",
+          "pl": "Za pomocą dekoratora @State",
+          "correct": false
+        },
+        {
+          "uk": "Через PropTypes.state",
+          "en": "Using PropTypes.state",
+          "pl": "Za pomocą PropTypes.state",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "ts-adv-q26",
+      "order": 26,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Як налаштувати Jest для тестування TypeScript-коду?",
+        "exp": "Встановити jest, ts-jest та @types/jest. Потім налаштувати jest.config.js з preset: 'ts-jest' або виконати npx ts-jest config:init."
+      },
+      "en": {
+        "q": "How do you configure Jest for testing TypeScript code?",
+        "exp": "Install jest, ts-jest and @types/jest. Then configure jest.config.js with preset: 'ts-jest' or run npx ts-jest config:init."
+      },
+      "pl": {
+        "q": "Jak skonfigurować Jest do testowania kodu TypeScript?",
+        "exp": "Zainstalować jest, ts-jest i @types/jest. Następnie skonfigurować jest.config.js z preset: 'ts-jest' lub wykonać npx ts-jest config:init."
+      },
+      "answers": [
+        {
+          "uk": "Jest працює з TypeScript без налаштувань",
+          "en": "Jest works with TypeScript without configuration",
+          "pl": "Jest działa z TypeScript bez konfiguracji",
+          "correct": false
+        },
+        {
+          "uk": "Встановити ts-jest та налаштувати preset: 'ts-jest'",
+          "en": "Install ts-jest and configure preset: 'ts-jest'",
+          "pl": "Zainstalować ts-jest i skonfigurować preset: 'ts-jest'",
+          "correct": true
+        },
+        {
+          "uk": "Використовувати тільки Mocha для TypeScript",
+          "en": "Use only Mocha for TypeScript",
+          "pl": "Używać tylko Mocha dla TypeScript",
+          "correct": false
+        },
+        {
+          "uk": "Спочатку скомпілювати в JS, потім тестувати",
+          "en": "First compile to JS, then test",
+          "pl": "Najpierw skompilować do JS, potem testować",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "ts-adv-q27",
+      "order": 27,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке tree shaking і як TypeScript його підтримує?",
+        "exp": "Tree shaking — видалення невикористаного коду при збірці. TypeScript підтримує його через ES-модулі (module: 'ESNext') та іменовані експорти."
+      },
+      "en": {
+        "q": "What is tree shaking and how does TypeScript support it?",
+        "exp": "Tree shaking is removing unused code during build. TypeScript supports it through ES modules (module: 'ESNext') and named exports."
+      },
+      "pl": {
+        "q": "Czym jest tree shaking i jak TypeScript go obsługuje?",
+        "exp": "Tree shaking to usuwanie nieużywanego kodu podczas budowania. TypeScript obsługuje go przez moduły ES (module: 'ESNext') i nazwane eksporty."
+      },
+      "answers": [
+        {
+          "uk": "Оптимізація швидкості виконання коду",
+          "en": "Optimization of code execution speed",
+          "pl": "Optymalizacja szybkości wykonywania kodu",
+          "correct": false
+        },
+        {
+          "uk": "Видалення невикористаного коду через ES-модулі",
+          "en": "Removing unused code through ES modules",
+          "pl": "Usuwanie nieużywanego kodu przez moduły ES",
+          "correct": true
+        },
+        {
+          "uk": "Спосіб структурування файлів",
+          "en": "Way to structure files",
+          "pl": "Sposób strukturyzowania plików",
+          "correct": false
+        },
+        {
+          "uk": "Автоматичне видалення коментарів",
+          "en": "Automatic removal of comments",
+          "pl": "Automatyczne usuwanie komentarzy",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "ts-adv-q28",
+      "order": 28,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Як працює code splitting з динамічними імпортами у TypeScript?",
+        "exp": "Динамічний імпорт import('./module') повертає Promise з модулем. Bundler (Webpack, Vite) автоматично виділяє модуль в окремий chunk для відкладеного завантаження."
+      },
+      "en": {
+        "q": "How does code splitting with dynamic imports work in TypeScript?",
+        "exp": "Dynamic import import('./module') returns a Promise with the module. Bundler (Webpack, Vite) automatically extracts the module into a separate chunk for lazy loading."
+      },
+      "pl": {
+        "q": "Jak działa code splitting z dynamicznymi importami w TypeScript?",
+        "exp": "Dynamiczny import import('./module') zwraca Promise z modułem. Bundler (Webpack, Vite) automatycznie wyodrębnia moduł do osobnego chunka do leniwego ładowania."
+      },
+      "answers": [
+        {
+          "uk": "Через спеціальну директиву // @split",
+          "en": "Through special directive // @split",
+          "pl": "Przez specjalną dyrektywę // @split",
+          "correct": false
+        },
+        {
+          "uk": "import() повертає Promise, bundler створює окремий chunk",
+          "en": "import() returns Promise, bundler creates separate chunk",
+          "pl": "import() zwraca Promise, bundler tworzy osobny chunk",
+          "correct": true
+        },
+        {
+          "uk": "TypeScript не підтримує code splitting",
+          "en": "TypeScript does not support code splitting",
+          "pl": "TypeScript nie obsługuje code splitting",
+          "correct": false
+        },
+        {
+          "uk": "Через ключове слово lazy",
+          "en": "Using lazy keyword",
+          "pl": "Za pomocą słowa kluczowego lazy",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "ts-adv-q29",
+      "order": 29,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке barrel exports (re-exports) у TypeScript?",
+        "exp": "Barrel export — це index.ts файл, що реекспортує модулі з папки: export * from './moduleA'. Дозволяє імпортувати все з однієї точки: import { A, B } from './folder'."
+      },
+      "en": {
+        "q": "What are barrel exports (re-exports) in TypeScript?",
+        "exp": "Barrel export is an index.ts file that re-exports modules from a folder: export * from './moduleA'. Allows importing everything from one point: import { A, B } from './folder'."
+      },
+      "pl": {
+        "q": "Czym są barrel exports (re-exports) w TypeScript?",
+        "exp": "Barrel export to plik index.ts reeksportujący moduły z folderu: export * from './moduleA'. Pozwala importować wszystko z jednego punktu: import { A, B } from './folder'."
+      },
+      "answers": [
+        {
+          "uk": "Спосіб стиснення коду",
+          "en": "Way to compress code",
+          "pl": "Sposób kompresji kodu",
+          "correct": false
+        },
+        {
+          "uk": "index.ts що реекспортує модулі з папки",
+          "en": "index.ts that re-exports modules from folder",
+          "pl": "index.ts reeksportujący moduły z folderu",
+          "correct": true
+        },
+        {
+          "uk": "Тип для колекцій",
+          "en": "Type for collections",
+          "pl": "Typ dla kolekcji",
+          "correct": false
+        },
+        {
+          "uk": "Налаштування компілятора",
+          "en": "Compiler setting",
+          "pl": "Ustawienie kompilatora",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "ts-adv-q30",
+      "order": 30,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Як TypeScript інтегрується з Node.js?",
+        "exp": "Встановити typescript, @types/node та ts-node. Налаштувати tsconfig.json з module: 'CommonJS' або 'NodeNext'. Запускати через ts-node або компілювати tsc."
+      },
+      "en": {
+        "q": "How does TypeScript integrate with Node.js?",
+        "exp": "Install typescript, @types/node and ts-node. Configure tsconfig.json with module: 'CommonJS' or 'NodeNext'. Run via ts-node or compile with tsc."
+      },
+      "pl": {
+        "q": "Jak TypeScript integruje się z Node.js?",
+        "exp": "Zainstalować typescript, @types/node i ts-node. Skonfigurować tsconfig.json z module: 'CommonJS' lub 'NodeNext'. Uruchamiać przez ts-node lub kompilować tsc."
+      },
+      "answers": [
+        {
+          "uk": "Node.js має вбудовану підтримку TypeScript",
+          "en": "Node.js has built-in TypeScript support",
+          "pl": "Node.js ma wbudowaną obsługę TypeScript",
+          "correct": false
+        },
+        {
+          "uk": "@types/node + ts-node або компіляція через tsc",
+          "en": "@types/node + ts-node or compilation via tsc",
+          "pl": "@types/node + ts-node lub kompilacja przez tsc",
+          "correct": true
+        },
+        {
+          "uk": "TypeScript не сумісний з Node.js",
+          "en": "TypeScript is not compatible with Node.js",
+          "pl": "TypeScript nie jest kompatybilny z Node.js",
+          "correct": false
+        },
+        {
+          "uk": "Тільки через Deno",
+          "en": "Only through Deno",
+          "pl": "Tylko przez Deno",
+          "correct": false
+        }
+      ]
+    }
+  ]
+}
