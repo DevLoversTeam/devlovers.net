@@ -39,13 +39,6 @@ import { MAX_QUANTITY_PER_LINE } from '@/lib/validation/shop';
 type OrderRow = typeof orders.$inferSelect;
 
 type DbClient = typeof db;
-// type DbTransaction = Parameters<DbClient['transaction']>[0] extends (
-//   tx: infer T
-// ) => unknown
-//   ? T
-//   : DbClient;
-// type DbOrTx = DbClient | DbTransaction;
-
 type OrderItemForSummary = {
   productId: string;
   quantity: number;

@@ -242,10 +242,18 @@
   📄 seed-categories.ts
   📄 seed-demo-leaderboard.ts
   📄 seed-questions.ts
+  📄 seed-quiz-css-advanced.ts
+  📄 seed-quiz-css.ts
   📄 seed-quiz-from-json.ts
+  📄 seed-quiz-git.ts
+  📄 seed-quiz-html-advanced.ts
+  📄 seed-quiz-html.ts
+  📄 seed-quiz-javascript-advanced.ts
   📄 seed-quiz-javascript.ts
   📄 seed-quiz-react.ts
   📄 seed-quiz-types.ts
+  📄 seed-quiz-typescript-advanced.ts
+  📄 seed-quiz-typescript.ts
   📄 seed-quiz-verify.ts
   📄 seed-users.ts
 📁 docs
@@ -261,6 +269,8 @@
   📄 0007_add-payment-intent-id-to-orders.sql
   📄 0008_dizzy_james_howlett.sql
   📄 0009_p0_inventory_workflow_baseline.sql
+  📄 0009_unknown_nico_minoru.sql
+  📄 0010_parallel_princess_powerful.sql
   📁 meta
     📄 0000_snapshot.json
     📄 0001_snapshot.json
@@ -272,6 +282,7 @@
     📄 0007_snapshot.json
     📄 0008_snapshot.json
     📄 0009_snapshot.json
+    📄 0010_snapshot.json
     📄 _journal.json
   📄 relations.ts
   📄 schema.ts
@@ -342,16 +353,21 @@
 📄 package-lock.json
 📄 package.json
 📁 parse
-  📄 javascript-quiz-part1.json
-  📄 javascript-quiz-part2.json
-  📄 javascript-quiz-part3.json
-  📄 javascript-quiz-part4.json
   📄 parse.ts
   📄 questions.json
-  📄 react-quiz-data-part1.json
-  📄 react-quiz-data-part2.json
   📄 README.md
   📄 start.json
+  📁 typescript
+    📁 advanced
+      📄 typescript-advanced-quiz-part1.json
+      📄 typescript-advanced-quiz-part2.json
+      📄 typescript-advanced-quiz-part3.json
+      📄 typescript-advanced-quiz-part4.json
+    📁 fundamentals
+      📄 typescript-quiz-part1.json
+      📄 typescript-quiz-part2.json
+      📄 typescript-quiz-part3.json
+      📄 typescript-quiz-part4.json
 📄 postcss.config.mjs
 📄 project-structure.txt
 📄 proxy.ts
