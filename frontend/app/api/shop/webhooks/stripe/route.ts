@@ -7,7 +7,6 @@ import { verifyWebhookSignature } from '@/lib/psp/stripe';
 import { orders, stripeEvents } from '@/db/schema';
 import { restockOrder } from '@/lib/services/orders';
 import { logError } from '@/lib/logging';
-import { toCents } from '@/lib/shop/money';
 
 function logWebhookEvent(payload: {
   orderId?: string;
@@ -158,7 +157,7 @@ export async function POST(request: NextRequest) {
   if (paymentIntent && typeof paymentIntent.id === 'string') {
     paymentIntentId = paymentIntent.id;
   } else if (charge) {
-    const pi = charge.payment_intent; 
+    const pi = charge.payment_intent;
 
     if (typeof pi === 'string') {
       paymentIntentId = pi;
@@ -204,7 +203,6 @@ export async function POST(request: NextRequest) {
   try {
     const response = await db.transaction(async tx => {
       try {
-
         await tx.insert(stripeEvents).values({
           provider: 'stripe',
           eventId: event.id,
@@ -230,7 +228,7 @@ export async function POST(request: NextRequest) {
         | {
             id: string;
             paymentIntentId: string | null;
-            totalAmount: number;
+            totalAmountMinor: number;
             currency: string;
           }
         | undefined;
@@ -240,9 +238,10 @@ export async function POST(request: NextRequest) {
           .select({
             id: orders.id,
             paymentIntentId: orders.paymentIntentId,
-            totalAmount: orders.totalAmount,
+            totalAmountMinor: orders.totalAmountMinor,
             currency: orders.currency,
           })
+
           .from(orders)
           .where(eq(orders.id, orderId))
           .limit(1);
@@ -251,7 +250,7 @@ export async function POST(request: NextRequest) {
           order = {
             id: foundOrder.id,
             paymentIntentId: foundOrder.paymentIntentId,
-            totalAmount: Number(foundOrder.totalAmount),
+            totalAmountMinor: foundOrder.totalAmountMinor,
             currency: foundOrder.currency,
           };
         }
@@ -288,8 +287,9 @@ export async function POST(request: NextRequest) {
         const stripeAmount =
           paymentIntent?.amount_received ?? paymentIntent?.amount ?? null;
         const stripeCurrency = paymentIntent?.currency;
-        const orderAmountCents = toCents(order.totalAmount);
-        const amountMatches = stripeAmount === orderAmountCents;
+        const orderAmountMinor = order.totalAmountMinor;
+        const amountMatches = stripeAmount === orderAmountMinor;
+
         const currencyMatches =
           stripeCurrency?.toUpperCase() === order.currency.toUpperCase();
 
@@ -316,7 +316,7 @@ export async function POST(request: NextRequest) {
                   mismatch: {
                     reason: mismatchReason,
                     stripeAmount,
-                    orderAmountCents,
+                    orderAmountMinor,
                     stripeCurrency,
                     orderCurrency: order.currency,
                   },
@@ -330,7 +330,7 @@ export async function POST(request: NextRequest) {
             paymentIntentId,
             eventType,
             stripeAmount,
-            orderAmountCents,
+            orderAmountMinor,
             stripeCurrency,
             orderCurrency: order.currency,
             reason: mismatchReason,
@@ -387,7 +387,7 @@ export async function POST(request: NextRequest) {
           })
           .where(eq(orders.id, order.id));
 
-        await restockOrder(order.id, { reason: 'failed', tx });
+        await restockOrder(order.id, { reason: 'failed' });
       } else if (eventType === 'payment_intent.canceled') {
         const chargeForIntent = getLatestCharge(paymentIntent);
         const cancellationReason =
@@ -414,7 +414,7 @@ export async function POST(request: NextRequest) {
           })
           .where(eq(orders.id, order.id));
 
-        await restockOrder(order.id, { reason: 'canceled', tx });
+        await restockOrder(order.id, { reason: 'canceled' });
       } else if (
         eventType === 'charge.refunded' ||
         eventType === 'charge.refund.updated'
@@ -437,7 +437,7 @@ export async function POST(request: NextRequest) {
           })
           .where(eq(orders.id, order.id));
 
-        await restockOrder(order.id, { reason: 'refunded', tx });
+        await restockOrder(order.id, { reason: 'refunded' });
       } else {
         logWebhookEvent({
           orderId: order.id,

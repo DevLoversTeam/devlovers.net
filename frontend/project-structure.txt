@@ -7,6 +7,14 @@
 📁 app
   📁 api
     📁 auth
+      📁 github
+        📁 callback
+          📄 route.ts
+        📄 route.ts
+      📁 google
+        📁 callback
+          📄 route.ts
+        📄 route.ts
       📁 login
         📄 route.ts
       📁 logout
@@ -54,7 +62,6 @@
       📁 webhooks
         📁 stripe
           📄 route.ts
-  📄 favicon.ico
   📄 globals.css
   📄 layout.tsx
   📁 [locale]
@@ -124,6 +131,7 @@
       📄 page.tsx
     📁 terms-of-service
       📄 page.tsx
+📄 checkout.json
 📄 client.ts
 📁 components
   📁 about
@@ -133,7 +141,12 @@
     📄 PricingSection.tsx
     📄 StatsSection.tsx
   📁 auth
+    📁 icons
+      📄 GitHubIcon.tsx
+      📄 GoogleIcon.tsx
     📄 logoutButton.tsx
+    📄 OAuthButtons.tsx
+    📄 ProviderButton.tsx
   📁 blog
     📄 AuthorModal.tsx
     📄 BlogCard.tsx
@@ -144,9 +157,10 @@
     📄 QuizSavedBanner.tsx
     📄 StatsCard.tsx
   📁 header
-    📄 HeaderSwitcher.tsx
-    📄 SiteHeader.tsx
-    📄 SiteMobileHeader.tsx
+    📄 AppChrome.tsx
+    📄 AppMobileMenu.tsx
+    📄 MainSwitcher.tsx
+    📄 UnifiedHeader.tsx
   📁 leaderboard
     📄 LeaderboardClient.tsx
     📄 LeaderboardPodium.tsx
@@ -164,12 +178,15 @@
     📄 Pagination.tsx
     📄 TabsSection.tsx
   📁 quiz
+    📄 CountdownTimer.tsx
     📄 ExplanationRenderer.tsx
     📄 PendingResultHandler.tsx
+    📄 QuizCard.tsx
     📄 QuizContainer.tsx
     📄 QuizProgress.tsx
     📄 QuizQuestion.tsx
     📄 QuizResult.tsx
+    📄 QuizzesSection.tsx
   📁 shared
     📄 Footer.tsx
     📄 HeroSection.tsx
@@ -183,22 +200,20 @@
     📄 category-tile.tsx
     📁 header
       📄 cart-button.tsx
-      📄 mobile-nav.tsx
       📄 nav-links.tsx
       📄 theme-toggle.tsx
     📄 product-card.tsx
     📄 product-filters.tsx
     📄 product-sort.tsx
     📄 shop-footer.tsx
-    📄 shop-header.tsx
     📄 shop-hero.tsx
-    📄 shop-shell.tsx
     📄 theme-provider.tsx
   📁 theme
     📄 ThemeProvider.tsx
     📄 ThemeToggle.tsx
   📁 ui
     📄 accordion.tsx
+    📄 badge.tsx
     📄 button.tsx
     📄 radio-group.tsx
     📄 tabs.tsx
@@ -236,8 +251,6 @@
 📁 docs
   📄 env.md
 📁 drizzle
-  📄 0000_fair_quasar.sql
-  📄 0000_moaning_reavers.sql
   📄 0000_rich_magus.sql
   📄 0001_black_random.sql
   📄 0002_yielding_purple_man.sql
@@ -245,6 +258,9 @@
   📄 0004_tough_ultron.sql
   📄 0005_furry_warstar.sql
   📄 0006_minor_units_money.sql
+  📄 0007_add-payment-intent-id-to-orders.sql
+  📄 0008_dizzy_james_howlett.sql
+  📄 0009_p0_inventory_workflow_baseline.sql
   📁 meta
     📄 0000_snapshot.json
     📄 0001_snapshot.json
@@ -253,6 +269,9 @@
     📄 0004_snapshot.json
     📄 0005_snapshot.json
     📄 0006_snapshot.json
+    📄 0007_snapshot.json
+    📄 0008_snapshot.json
+    📄 0009_snapshot.json
     📄 _journal.json
   📄 relations.ts
   📄 schema.ts
@@ -270,12 +289,14 @@
     📄 parseAdminProductForm.ts
   📁 auth
     📄 admin.ts
+    📄 oauth-state.ts
   📄 auth.ts
   📄 cart.ts
   📄 cloudinary.ts
   📁 config
     📄 catalog.ts
   📁 env
+    📄 auth.ts
     📄 cloudinary.ts
     📄 index.ts
     📄 stripe.ts
@@ -287,6 +308,7 @@
     📄 stripe.ts
   📁 services
     📄 errors.ts
+    📄 inventory.ts
     📄 orders.ts
     📄 products.ts
   📁 shop
@@ -294,11 +316,17 @@
     📄 data.ts
     📄 idempotency.ts
     📄 money.ts
+    📄 payments.ts
     📄 request-locale.ts
     📄 slug.ts
   📁 tests
+    📄 checkout-currency-policy.test.ts
+    📄 checkout-no-payments.test.ts
     📄 currency.test.ts
+    📄 format-money.test.ts
     📄 prices.test.ts
+    📁 __mocks__
+      📄 server-only.ts
   📁 types
     📄 shop.ts
   📄 utils.ts
@@ -323,13 +351,18 @@
   📄 react-quiz-data-part1.json
   📄 react-quiz-data-part2.json
   📄 README.md
+  📄 start.json
 📄 postcss.config.mjs
 📄 project-structure.txt
 📄 proxy.ts
 📁 public
-  📄 github-logo.svg
+  📄 favicon-dark.svg
+  📄 favicon-light.svg
   📄 placeholder.svg
 📄 README.md
 📄 save-structure.cjs
+📁 scripts
+  📄 guard-non-preview.ts
 📄 tsconfig.json
 📄 tsconfig.tsbuildinfo
+📄 vitest.config.ts

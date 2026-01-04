@@ -31,6 +31,28 @@ export const paymentStatusEnum = pgEnum('payment_status', [
 ]);
 export const currencyEnum = pgEnum('currency', ['USD', 'UAH']);
 
+export const orderStatusEnum = pgEnum('order_status', [
+  'CREATED',
+  'INVENTORY_RESERVED',
+  'INVENTORY_FAILED',
+  'PAID',
+  'CANCELED',
+]);
+
+export const inventoryStatusEnum = pgEnum('inventory_status', [
+  'none',
+  'reserving',
+  'reserved',
+  'release_pending',
+  'released',
+  'failed',
+]);
+
+export const inventoryMoveTypeEnum = pgEnum('inventory_move_type', [
+  'reserve',
+  'release',
+]);
+
 export const products = pgTable(
   'products',
   {
@@ -119,6 +141,14 @@ export const orders = pgTable(
       .notNull()
       .default(sql`'{}'::jsonb`),
 
+    status: orderStatusEnum('status').notNull().default('CREATED'),
+    inventoryStatus: inventoryStatusEnum('inventory_status')
+      .notNull()
+      .default('none'),
+    failureCode: text('failure_code'),
+    failureMessage: text('failure_message'),
+    idempotencyRequestHash: text('idempotency_request_hash'),
+
     stockRestored: boolean('stock_restored').notNull().default(false),
     restockedAt: timestamp('restocked_at', { mode: 'date' }),
     idempotencyKey: varchar('idempotency_key', { length: 128 })
@@ -144,18 +174,27 @@ export const orders = pgTable(
       sql`${table.paymentProvider} <> 'none' OR ${table.paymentIntentId} IS NULL`
     ),
     check(
+      'orders_psp_fields_null_when_none',
+      sql`${table.paymentProvider} <> 'none' OR (
+        ${table.pspChargeId} IS NULL AND
+        ${table.pspPaymentMethod} IS NULL AND
+        ${table.pspStatusReason} IS NULL
+      )`
+    ),
+    check(
       'orders_total_amount_mirror_consistent',
       sql`${table.totalAmount} = (${table.totalAmountMinor}::numeric / 100)`
     ),
     check(
-      'orders_payment_status_paid_when_none',
-      sql`${table.paymentProvider} <> 'none' OR ${table.paymentStatus} = 'paid'`
+      'orders_payment_status_valid_when_none',
+      sql`${table.paymentProvider} <> 'none' OR ${table.paymentStatus} in ('paid','failed')`
     ),
   ]
 );
 
 export const orderItems = pgTable(
   'order_items',
+  
   {
     id: uuid('id').defaultRandom().primaryKey(),
     orderId: uuid('order_id')
@@ -179,9 +218,11 @@ export const orderItems = pgTable(
     productTitle: text('product_title'),
     productSlug: text('product_slug'),
     productSku: text('product_sku'),
+    
   },
   t => [
     index('order_items_order_id_idx').on(t.orderId),
+    uniqueIndex('order_items_order_product_uq').on(t.orderId, t.productId),
     check('order_items_quantity_positive', sql`${t.quantity} > 0`),
     check(
       'order_items_unit_price_minor_non_negative',
@@ -203,8 +244,8 @@ export const orderItems = pgTable(
       'order_items_line_total_mirror_consistent',
       sql`${t.lineTotal} = (${t.lineTotalMinor}::numeric / 100)`
     ),
-  ]
-);
+  ],
+  );
 
 export const stripeEvents = pgTable(
   'stripe_events',
@@ -277,6 +318,38 @@ export const productPrices = pgTable(
   ]
 );
 
+export const inventoryMoves = pgTable(
+  'inventory_moves',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+
+    moveKey: varchar('move_key', { length: 200 }).notNull(),
+
+    orderId: uuid('order_id')
+      .notNull()
+      .references(() => orders.id, { onDelete: 'cascade' }),
+
+    productId: uuid('product_id')
+      .notNull()
+      .references(() => products.id),
+
+    type: inventoryMoveTypeEnum('type').notNull(),
+
+    quantity: integer('quantity').notNull(),
+
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  t => ({
+    moveKeyUq: uniqueIndex('inventory_moves_move_key_uq').on(t.moveKey),
+    orderIdx: index('inventory_moves_order_id_idx').on(t.orderId),
+    productIdx: index('inventory_moves_product_id_idx').on(t.productId),
+    qtyCheck: check('inventory_moves_quantity_gt_0', sql`${t.quantity} > 0`),
+  })
+);
+
 export type DbProductPrice = typeof productPrices.$inferSelect;
 export type DbOrder = typeof orders.$inferSelect;
 export type DbOrderItem = typeof orderItems.$inferSelect;
+export type DbInventoryMove = typeof inventoryMoves.$inferSelect;

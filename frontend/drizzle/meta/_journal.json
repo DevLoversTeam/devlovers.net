@@ -64,6 +64,13 @@
       "when": 1766958940589,
       "tag": "0008_dizzy_james_howlett",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1767476400202,
+      "tag": "0009_p0_inventory_workflow_baseline",
+      "breakpoints": true
     }
   ]
 }

@@ -1,4 +1,4 @@
-import { and, eq, inArray, ne, type SQL } from 'drizzle-orm';
+import { and, eq, inArray, ne, sql, type SQL } from 'drizzle-orm';
 
 import {
   destroyProductImage,
@@ -348,79 +348,79 @@ export async function createProduct(input: ProductInput): Promise<DbProduct> {
   validatePriceRows(prices);
   const usd = requireUsd(prices);
 
+  let createdProductId: string | null = null;
+
   try {
-    const [created] = await db.transaction(async tx => {
-      const [row] = await tx
-        .insert(products)
-        .values({
-          slug,
-          title: (input as any).title,
-          description: (input as any).description ?? null,
-          imageUrl: uploaded?.secureUrl ?? '',
-          imagePublicId: uploaded?.publicId,
+    const [row] = await db
+      .insert(products)
+      .values({
+        slug,
+        title: (input as any).title,
+        description: (input as any).description ?? null,
+        imageUrl: uploaded?.secureUrl ?? '',
+        imagePublicId: uploaded?.publicId,
 
-          // legacy mirror (USD) — required by products.price NOT NULL
-          price: toDbMoney(usd.priceMinor),
+        // legacy mirror (USD) — required by products.price NOT NULL
+        price: toDbMoney(usd.priceMinor),
+        originalPrice:
+          usd.originalPriceMinor == null
+            ? null
+            : toDbMoney(usd.originalPriceMinor),
+        currency: 'USD',
+
+        category: (input as any).category ?? null,
+        type: (input as any).type ?? null,
+        colors: (input as any).colors ?? [],
+        sizes: (input as any).sizes ?? [],
+        badge: (input as any).badge ?? 'NONE',
+        isActive: (input as any).isActive ?? true,
+        isFeatured: (input as any).isFeatured ?? false,
+        stock: (input as any).stock ?? 0,
+        sku: (input as any).sku ?? null,
+      })
+      .onConflictDoNothing({ target: products.slug })
+      .returning();
+
+    if (!row) {
+      throw new SlugConflictError('Slug already exists.');
+    }
+
+    createdProductId = row.id;
+
+    await db.insert(productPrices).values(
+      prices.map(p => {
+        const priceMinor = p.priceMinor;
+        const originalMinor = p.originalPriceMinor;
+
+        return {
+          productId: row.id,
+          currency: p.currency,
+
+          // canonical
+          priceMinor,
+          originalPriceMinor: originalMinor,
+
+          // legacy mirror
+          price: toDbMoney(priceMinor),
           originalPrice:
-            usd.originalPriceMinor == null
-              ? null
-              : toDbMoney(usd.originalPriceMinor),
-          currency: 'USD',
+            originalMinor == null ? null : toDbMoney(originalMinor),
+        };
+      })
+    );
 
-          category: (input as any).category ?? null,
-          type: (input as any).type ?? null,
-          colors: (input as any).colors ?? [],
-          sizes: (input as any).sizes ?? [],
-          badge: (input as any).badge ?? 'NONE',
-          isActive: (input as any).isActive ?? true,
-          isFeatured: (input as any).isFeatured ?? false,
-          stock: (input as any).stock ?? 0,
-          sku: (input as any).sku ?? null,
-        })
-        .onConflictDoNothing({ target: products.slug })
-        .returning();
-
-      if (!row) {
-        throw new SlugConflictError('Slug already exists.');
-      }
-
-      await tx.insert(productPrices).values(
-        prices.map(p => {
-          const priceMinor = p.priceMinor;
-          const originalMinor = p.originalPriceMinor;
-
-          return {
-            productId: row.id,
-            currency: p.currency,
-
-            // canonical
-            priceMinor,
-            originalPriceMinor: originalMinor,
-
-            // legacy mirror
-            price: toDbMoney(priceMinor),
-            originalPrice:
-              originalMinor == null ? null : toDbMoney(originalMinor),
-          };
-        })
-      );
-
-      return [row];
-    });
-
-    return mapRowToProduct(created);
+    return mapRowToProduct(row);
   } catch (error) {
-    if (uploaded?.publicId) {
+    // якщо product_prices впало після створення продукту — прибираємо продукт (best-effort)
+    if (createdProductId) {
       try {
-        await destroyProductImage(uploaded.publicId);
-      } catch (cleanupError) {
+        await db.delete(products).where(eq(products.id, createdProductId));
+      } catch (cleanupDbError) {
         logError(
-          'Failed to cleanup uploaded image after create failure',
-          cleanupError
+          'Failed to cleanup product after create failure',
+          cleanupDbError
         );
       }
     }
-    if (error instanceof SlugConflictError) throw error;
     throw error;
   }
 }
@@ -501,61 +501,50 @@ export async function updateProduct(
     }
   }
 
-  try {
-    const [updated] = await db.transaction(async tx => {
-      const [row] = await tx
-        .update(products)
-        .set(updateData)
-        .where(eq(products.id, id))
-        .returning();
+    try {
+    // 1) upsert prices (якщо прийшли)
+    if (prices.length) {
+      const upsertRows = prices.map(p => {
+        const priceMinor = p.priceMinor;
+        const originalMinor = p.originalPriceMinor;
 
-      if (!row) {
-        throw new Error('PRODUCT_NOT_FOUND');
-      }
+        return {
+          productId: id,
+          currency: p.currency,
+          priceMinor,
+          originalPriceMinor: originalMinor,
+          price: toDbMoney(priceMinor),
+          originalPrice: originalMinor == null ? null : toDbMoney(originalMinor),
+        };
+      });
 
-      // Upsert prices (only currencies provided in this request)
-      if (prices.length) {
-        for (const p of prices) {
-          const priceMinor = p.priceMinor;
-          const originalMinor = p.originalPriceMinor;
+      await db
+        .insert(productPrices)
+        .values(upsertRows)
+        .onConflictDoUpdate({
+          target: [productPrices.productId, productPrices.currency],
+          set: {
+            priceMinor: sql`excluded.price_minor`,
+            originalPriceMinor: sql`excluded.original_price_minor`,
+            price: sql`excluded.price`,
+            originalPrice: sql`excluded.original_price`,
+            updatedAt: sql`now()`,
+          },
+        });
+    }
 
-          const priceDb = toDbMoney(priceMinor);
-          const originalDb =
-            originalMinor == null ? null : toDbMoney(originalMinor);
+    // 2) update products
+    const [row] = await db
+      .update(products)
+      .set(updateData)
+      .where(eq(products.id, id))
+      .returning();
 
-          const updatedPrice = await tx
-            .update(productPrices)
-            .set({
-              priceMinor,
-              originalPriceMinor: originalMinor,
-              price: priceDb,
-              originalPrice: originalDb,
-              updatedAt: new Date(),
-            })
-            .where(
-              and(
-                eq(productPrices.productId, id),
-                eq(productPrices.currency, p.currency)
-              )
-            )
-            .returning({ id: productPrices.id });
+    if (!row) {
+      throw new Error('PRODUCT_NOT_FOUND');
+    }
 
-          if (!updatedPrice.length) {
-            await tx.insert(productPrices).values({
-              productId: id,
-              currency: p.currency,
-              price: priceDb,
-              originalPrice: originalDb,
-              priceMinor,
-              originalPriceMinor: originalMinor,
-            });
-          }
-        }
-      }
-
-      return [row];
-    });
-
+    // 3) якщо нову картинку застосували — видаляємо стару
     if (uploaded && existing.imagePublicId) {
       try {
         await destroyProductImage(existing.imagePublicId);
@@ -564,16 +553,14 @@ export async function updateProduct(
       }
     }
 
-    return mapRowToProduct(updated);
+    return mapRowToProduct(row);
   } catch (error) {
+    // IMPORTANT: цей cleanup валідний, бо product update ще не гарантує що відбувся
     if (uploaded?.publicId) {
       try {
         await destroyProductImage(uploaded.publicId);
       } catch (cleanupError) {
-        logError(
-          'Failed to cleanup uploaded image after update failure',
-          cleanupError
-        );
+        logError('Failed to cleanup uploaded image after update failure', cleanupError);
       }
     }
 
@@ -583,6 +570,7 @@ export async function updateProduct(
 
     throw error;
   }
+
 }
 
 export async function deleteProduct(id: string): Promise<void> {
@@ -624,6 +612,8 @@ export async function getAdminProductById(id: string): Promise<DbProduct> {
 export async function getAdminProductPrices(productId: string): Promise<
   Array<{
     currency: CurrencyCode;
+    priceMinor: unknown;
+    originalPriceMinor: unknown;
     price: unknown;
     originalPrice: unknown;
   }>
@@ -631,6 +621,10 @@ export async function getAdminProductPrices(productId: string): Promise<
   return db
     .select({
       currency: productPrices.currency,
+      // canonical:
+      priceMinor: productPrices.priceMinor,
+      originalPriceMinor: productPrices.originalPriceMinor,
+      // legacy (keep during rollout):
       price: productPrices.price,
       originalPrice: productPrices.originalPrice,
     })
@@ -642,6 +636,8 @@ export async function getAdminProductByIdWithPrices(id: string): Promise<
   DbProduct & {
     prices: Array<{
       currency: CurrencyCode;
+      priceMinor: unknown;
+      originalPriceMinor: unknown;
       price: unknown;
       originalPrice: unknown;
     }>;
@@ -686,7 +682,7 @@ export async function rehydrateCartItems(
     return cartRehydrateResultSchema.parse({
       items: [],
       removed: [],
-      summary: { totalAmount: 0, itemCount: 0, currency },
+      summary: { totalAmountMinor: 0, totalAmount: 0, itemCount: 0, currency },
     });
   }
 
@@ -738,7 +734,10 @@ export async function rehydrateCartItems(
     }
 
     // критично: ціна має бути з product_prices для поточної currency
-    if (!product.priceCurrency || product.price == null) {
+    if (
+      !product.priceCurrency ||
+      (product.priceMinor == null && product.price == null)
+    ) {
       throw new PriceConfigError('Price not configured for currency.', {
         productId: product.id,
         currency,
@@ -805,9 +804,12 @@ export async function rehydrateCartItems(
       title: product.title,
       quantity: effectiveQuantity,
 
-      // IMPORTANT: MINOR units (integer)
-      unitPrice: unitPriceCents,
-      lineTotal: lineTotalCents,
+      // canonical:
+      unitPriceMinor: unitPriceCents,
+      lineTotalMinor: lineTotalCents,
+      // display:
+      unitPrice: fromCents(unitPriceCents),
+      lineTotal: fromCents(lineTotalCents),
 
       // policy: items currency should match resolved currency
       currency,
@@ -826,7 +828,14 @@ export async function rehydrateCartItems(
     items: rehydratedItems,
     removed,
     // IMPORTANT: MINOR units (integer)
-    summary: { totalAmount: totalCents, itemCount, currency },
+    summary: {
+      // canonical:
+      totalAmountMinor: totalCents,
+      // display:
+      totalAmount: fromCents(totalCents),
+      itemCount,
+      currency,
+    },
   });
 }
 

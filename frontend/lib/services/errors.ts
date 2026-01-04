@@ -2,13 +2,32 @@
 //   code = "INVALID_PAYLOAD" as const
 // }
 
+export class IdempotencyConflictError extends Error {
+  code = 'IDEMPOTENCY_CONFLICT' as const;
+  details?: Record<string, unknown>;
+  constructor(message = 'Idempotency key reuse with different payload.', details?: Record<string, unknown>) {
+    super(message);
+    this.name = 'IdempotencyConflictError';
+    this.details = details;
+  }
+}
+
 export class InsufficientStockError extends Error {
-  code = "INSUFFICIENT_STOCK" as const
+  code = 'INSUFFICIENT_STOCK' as const;
+  constructor(message = 'Insufficient stock.') {
+    super(message);
+    this.name = 'InsufficientStockError';
+  }
 }
 
 export class OrderNotFoundError extends Error {
-  code = "ORDER_NOT_FOUND" as const
+  code = 'ORDER_NOT_FOUND' as const;
+  constructor(message = 'Order not found.') {
+    super(message);
+    this.name = 'OrderNotFoundError';
+  }
 }
+
 
 // export class SlugConflictError extends Error {
 //   code = "SLUG_CONFLICT" as const
@@ -45,16 +64,23 @@ export class OrderStateInvalidError extends Error {
   orderId?: string;
   field?: string;
   rawValue?: unknown;
+  details?: Record<string, unknown>;
 
   constructor(
     message = 'Order state is invalid.',
-    options?: { orderId?: string; field?: string; rawValue?: unknown }
+    options?: {
+      orderId?: string;
+      field?: string;
+      rawValue?: unknown;
+      details?: Record<string, unknown>;
+    }
   ) {
     super(message);
     this.name = 'OrderStateInvalidError';
     this.orderId = options?.orderId;
     this.field = options?.field;
     this.rawValue = options?.rawValue;
+    this.details = options?.details;
   }
 }
 
