@@ -335,7 +335,9 @@
     📄 checkout-no-payments.test.ts
     📄 currency.test.ts
     📄 format-money.test.ts
+    📄 orders-access.test.ts
     📄 prices.test.ts
+    📄 public-product-visibility.test.ts
     📁 __mocks__
       📄 server-only.ts
   📁 types

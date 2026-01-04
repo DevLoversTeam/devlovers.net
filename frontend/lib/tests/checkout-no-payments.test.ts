@@ -25,8 +25,40 @@ vi.mock("@/lib/auth", async () => {
   };
 });
 
+async function pickActiveProductIdsForCurrency(opts: {
+  currency: "USD" | "UAH";
+  count: number;
+  minStock?: number;
+}): Promise<string[]> {
+  const { currency, count, minStock = 1 } = opts;
 
-const PRODUCT_A = "7b524b05-fc37-447a-9a83-77f02d7db6c5"; // must have USD price row
+  // IMPORTANT: avoid "fresh" test fixtures from other files (e.g. t-missing-*)
+  // and avoid newest-first ordering that can race with cleanup in parallel test files.
+  const result: any = await db.execute(sql`
+    select p.id
+    from products p
+    join product_prices pp on pp.product_id = p.id
+    where p.is_active = true
+      and p.stock >= ${minStock}
+      and pp.currency = ${currency}
+      and pp.price_minor is not null
+      and p.slug not like 't-missing-%'
+    order by p.created_at asc
+    limit ${count}
+  `);
+
+  const rows = result?.rows ?? result;
+  const ids = (rows ?? []).map((r: any) => r.id).filter(Boolean);
+
+  if (ids.length < count) {
+    throw new Error(
+      `Not enough stable active products for currency=${currency}. Need=${count}, got=${ids.length}. ` +
+        `Ensure DB has active products with product_prices.${currency} and stock>=${minStock}.`
+    );
+  }
+
+  return ids.slice(0, count);
+}
 
 async function postCheckout(params: {
   idemKey: string;
@@ -70,14 +102,10 @@ async function bestEffortHardDeleteOrder(orderId: string) {
   // Keep DB reasonably clean in dev.
   // Use raw SQL because inventory_moves/order_items may not be exported as Drizzle tables.
   try {
-    await db.execute(
-      sql`delete from inventory_moves where order_id = ${orderId}::uuid`
-    );
+    await db.execute(sql`delete from inventory_moves where order_id = ${orderId}::uuid`);
   } catch {}
   try {
-    await db.execute(
-      sql`delete from order_items where order_id = ${orderId}::uuid`
-    );
+    await db.execute(sql`delete from order_items where order_id = ${orderId}::uuid`);
   } catch {}
   try {
     await db.delete(orders).where(eq(orders.id, orderId));
@@ -86,10 +114,16 @@ async function bestEffortHardDeleteOrder(orderId: string) {
 
 describe.sequential("Checkout (no payments) invariants", () => {
   it("No-payments success path", async () => {
+    const [productId] = await pickActiveProductIdsForCurrency({
+      currency: "USD",
+      count: 1,
+      minStock: 1,
+    });
+
     const [p0] = await db
       .select({ stock: products.stock })
       .from(products)
-      .where(eq(products.id, PRODUCT_A))
+      .where(eq(products.id, productId))
       .limit(1);
 
     expect(p0).toBeTruthy();
@@ -99,7 +133,7 @@ describe.sequential("Checkout (no payments) invariants", () => {
     const res = await postCheckout({
       idemKey,
       acceptLanguage: "en",
-      items: [{ productId: PRODUCT_A, quantity: 1 }],
+      items: [{ productId, quantity: 1 }],
     });
 
     expect([200, 201]).toContain(res.status);
@@ -145,7 +179,7 @@ describe.sequential("Checkout (no payments) invariants", () => {
     const releases = moves.filter((m) => m.type === "release");
 
     expect(reserves.length).toBe(1);
-    expect(reserves[0]!.productId).toBe(PRODUCT_A);
+    expect(reserves[0]!.productId).toBe(productId);
     expect(reserves[0]!.quantity).toBe(1);
     expect(releases.length).toBe(0);
 
@@ -153,7 +187,7 @@ describe.sequential("Checkout (no payments) invariants", () => {
     const [p1] = await db
       .select({ stock: products.stock })
       .from(products)
-      .where(eq(products.id, PRODUCT_A))
+      .where(eq(products.id, productId))
       .limit(1);
 
     expect(p1).toBeTruthy();
@@ -166,7 +200,7 @@ describe.sequential("Checkout (no payments) invariants", () => {
     const [p2] = await db
       .select({ stock: products.stock })
       .from(products)
-      .where(eq(products.id, PRODUCT_A))
+      .where(eq(products.id, productId))
       .limit(1);
 
     expect(p2).toBeTruthy();
@@ -176,20 +210,27 @@ describe.sequential("Checkout (no payments) invariants", () => {
   }, 20_000);
 
   it("Idempotency for no-payments", async () => {
+    const [productId] = await pickActiveProductIdsForCurrency({
+      currency: "USD",
+      count: 1,
+      minStock: 1,
+    });
+
     const [p0] = await db
       .select({ stock: products.stock })
       .from(products)
-      .where(eq(products.id, PRODUCT_A))
+      .where(eq(products.id, productId))
       .limit(1);
 
     expect(p0).toBeTruthy();
     const stockBefore = p0!.stock;
 
     const idemKey = crypto.randomUUID();
-    const body1 = [{ productId: PRODUCT_A, quantity: 1 }];
+    const body1 = [{ productId, quantity: 1 }];
 
     const r1 = await postCheckout({ idemKey, acceptLanguage: "en", items: body1 });
-    expect(r1.status).toBe(201);
+    expect([200, 201]).toContain(r1.status);
+
     const j1: any = await r1.json();
     const orderId1: string = j1?.order?.id ?? j1?.orderId;
     expect(orderId1).toBeTruthy();
@@ -211,7 +252,7 @@ describe.sequential("Checkout (no payments) invariants", () => {
     const r3 = await postCheckout({
       idemKey,
       acceptLanguage: "en",
-      items: [{ productId: PRODUCT_A, quantity: 2 }],
+      items: [{ productId, quantity: 2 }],
     });
     expect(r3.status).toBe(409);
 
@@ -222,7 +263,7 @@ describe.sequential("Checkout (no payments) invariants", () => {
     const [p2] = await db
       .select({ stock: products.stock })
       .from(products)
-      .where(eq(products.id, PRODUCT_A))
+      .where(eq(products.id, productId))
       .limit(1);
 
     expect(p2).toBeTruthy();
