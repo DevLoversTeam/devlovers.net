@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { getCurrentUser } from '@/lib/auth';
 import { isPaymentsEnabled } from '@/lib/env/stripe';
-import { logError } from '@/lib/logging';
+import { logError, logWarn } from '@/lib/logging';
 import { resolveRequestLocale } from '@/lib/shop/request-locale';
 import { IdempotencyConflictError } from '@/lib/services/errors';
 import { MoneyValueError } from '@/db/queries/shop/orders';
@@ -24,6 +24,32 @@ import {
   idempotencyKeySchema,
 } from '@/lib/validation/shop';
 import { type PaymentProvider, type PaymentStatus } from '@/lib/shop/payments';
+
+const EXPECTED_BUSINESS_ERROR_CODES = new Set([
+  'IDEMPOTENCY_CONFLICT',
+  'INVALID_PAYLOAD',
+  'OUT_OF_STOCK',
+  'INSUFFICIENT_STOCK',
+  'PRICE_CONFIG_ERROR',
+]);
+
+function getErrorCode(err: unknown): string | null {
+  const e = err as any;
+  return typeof e?.code === 'string' ? e.code : null;
+}
+
+function isExpectedBusinessError(err: unknown): boolean {
+  const code = getErrorCode(err);
+  if (code && EXPECTED_BUSINESS_ERROR_CODES.has(code)) return true;
+
+  // fallback на типи (на випадок якщо десь нема .code)
+  if (err instanceof IdempotencyConflictError) return true;
+  if (err instanceof InvalidPayloadError) return true;
+  if (err instanceof InsufficientStockError) return true;
+  if (err instanceof PriceConfigError) return true;
+
+  return false;
+}
 
 function errorResponse(
   code: string,
@@ -125,7 +151,9 @@ export async function POST(request: NextRequest) {
   try {
     body = await readJsonBody(request);
   } catch (error) {
-    logError('Failed to parse cart payload', error);
+    logWarn('Failed to parse cart payload', {
+      reason: error instanceof Error ? error.message : String(error),
+    });
     return errorResponse(
       'INVALID_PAYLOAD',
       'Unable to process cart data.',
@@ -155,7 +183,9 @@ export async function POST(request: NextRequest) {
   const parsedPayload = checkoutPayloadSchema.safeParse(body);
 
   if (!parsedPayload.success) {
-    logError('Invalid checkout payload', parsedPayload.error);
+    logWarn('Invalid checkout payload', {
+      issuesCount: parsedPayload.error.issues?.length ?? 0,
+    });
     return errorResponse(
       'INVALID_PAYLOAD',
       'Invalid checkout payload',
@@ -247,7 +277,10 @@ export async function POST(request: NextRequest) {
       }
 
       if (order.paymentProvider === 'none') {
-        if (!['paid','failed'].includes(order.paymentStatus) || order.paymentIntentId) {
+        if (
+          !['paid', 'failed'].includes(order.paymentStatus) ||
+          order.paymentIntentId
+        ) {
           logError(
             `Payments disabled but order is not paid/none. orderId=${
               order.id
@@ -425,7 +458,14 @@ export async function POST(request: NextRequest) {
       );
     }
   } catch (error) {
-    logError('Checkout failed', error);
+    if (isExpectedBusinessError(error)) {
+      logWarn('Checkout rejected', {
+        code: getErrorCode(error) ?? 'UNKNOWN',
+        path: request.nextUrl.pathname,
+      });
+    } else {
+      logError('Checkout failed', error);
+    }
 
     if (error instanceof InvalidPayloadError) {
       return errorResponse(
