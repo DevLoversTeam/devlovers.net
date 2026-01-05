@@ -344,9 +344,10 @@ export async function POST(request: NextRequest) {
       const chargeForIntent = getLatestCharge(paymentIntent as any);
       const latestChargeId = getLatestChargeId(paymentIntent);
 
-      await db
+      const updated = await db
         .update(orders)
         .set({
+          status: 'PAID', // ✅ додати
           paymentStatus: 'paid',
           updatedAt: new Date(),
           pspChargeId: latestChargeId ?? chargeForIntent?.id ?? null,
@@ -354,14 +355,33 @@ export async function POST(request: NextRequest) {
             paymentIntent,
             chargeForIntent
           ),
-          pspStatusReason: null,
+          pspStatusReason: paymentIntent?.status ?? 'succeeded',
           pspMetadata: buildPspMetadata({
             eventType,
             paymentIntent,
-            charge: chargeForIntent,
+            charge: chargeForIntent ?? undefined,
           }),
         })
-        .where(eq(orders.id, order.id));
+        .where(
+          and(
+            eq(orders.id, order.id),
+            ne(orders.paymentStatus, 'paid'),
+            ne(orders.paymentStatus, 'failed'),
+            ne(orders.paymentStatus, 'refunded')
+          )
+        )
+        .returning({ id: orders.id });
+
+      // if returning empty => we did NOT "win" the right to mark paid; do nothing
+      if (updated.length === 0) {
+        logWebhookEvent({
+          orderId: order.id,
+          paymentIntentId,
+          paymentStatus,
+          eventType,
+        });
+        return NextResponse.json({ received: true }, { status: 200 });
+      }
 
       logWebhookEvent({
         orderId: order.id,
