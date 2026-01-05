@@ -48,6 +48,30 @@ function toCurrencyCode(
     : resolveCurrencyFromLocale(locale);
 }
 
+function nextRouteForPaymentResult(params: {
+  locale: string;
+  orderId: string;
+  status?: string | null;
+}) {
+  const { locale, orderId, status } = params;
+
+  // ✅ Stripe може повернути "processing" або інший non-terminal статус.
+  // Джерело істини = webhook, тому error-page показуємо тільки для явних фейлів.
+  const success = `/${locale}/shop/checkout/success?orderId=${orderId}`;
+  const failure = `/${locale}/shop/checkout/error?orderId=${orderId}`;
+
+  if (!status) return success;
+  if (
+    status === 'succeeded' ||
+    status === 'processing' ||
+    status === 'requires_capture'
+  )
+    return success;
+  if (status === 'requires_payment_method' || status === 'canceled')
+    return failure;
+  return success;
+}
+
 function StripePaymentForm({ orderId, locale }: PaymentFormProps) {
   const stripe = useStripe();
   const elements = useElements();
@@ -83,12 +107,12 @@ function StripePaymentForm({ orderId, locale }: PaymentFormProps) {
         return;
       }
 
-      if (paymentIntent?.status === 'succeeded') {
-        router.push(`/${locale}/shop/checkout/success?orderId=${orderId}`);
-        return;
-      }
-
-      router.push(`/${locale}/shop/checkout/error?orderId=${orderId}`);
+      const next = nextRouteForPaymentResult({
+        locale,
+        orderId,
+        status: paymentIntent?.status ?? null,
+      });
+      router.push(next);
     } catch (error) {
       console.error('Payment confirmation failed', error);
       setErrorMessage('We couldn’t confirm your payment. Please try again.');
