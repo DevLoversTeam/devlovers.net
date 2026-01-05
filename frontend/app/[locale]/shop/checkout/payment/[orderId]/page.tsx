@@ -6,6 +6,9 @@ import { getOrderSummary } from "@/lib/services/orders";
 import { OrderNotFoundError } from "@/lib/services/errors";
 import { orderIdParamSchema } from "@/lib/validation/shop";
 import { getStripeEnv } from "@/lib/env/stripe";
+import { createPaymentIntent, retrievePaymentIntent } from '@/lib/psp/stripe';
+import { setOrderPaymentIntent } from '@/lib/services/orders';
+
 
 function getOrderId(params: { orderId?: string }) {
   const parsed = orderIdParamSchema.safeParse({ id: params.orderId ?? "" });
@@ -112,8 +115,40 @@ export default async function PaymentPage(props: PaymentPageProps) {
 
   const stripeEnv = getStripeEnv();
   const paymentsEnabled = stripeEnv.paymentsEnabled && Boolean(stripeEnv.publishableKey);
-  const clientSecret = resolveClientSecret(searchParams);
+  let clientSecret = resolveClientSecret(searchParams);
   const publishableKey = paymentsEnabled ? stripeEnv.publishableKey : null;
+
+  // Ensure we have a clientSecret even when URL doesn't include ?clientSecret=...
+  // Source of truth for payment finality is webhook; this only initializes Elements.
+  if (paymentsEnabled && publishableKey && (!clientSecret || !clientSecret.trim())) {
+    try {
+      const existingPi =
+        typeof (order as any).paymentIntentId === 'string'
+          ? ((order as any).paymentIntentId as string).trim()
+          : '';
+
+      if (existingPi) {
+        const retrieved = await retrievePaymentIntent(existingPi);
+        clientSecret = retrieved.clientSecret;
+     } else {
+        const created = await createPaymentIntent({
+          amount: (order as any).totalAmountMinor,
+          currency: (order as any).currency,
+          orderId: (order as any).id,
+         idempotencyKey: `pi:${(order as any).id}`,
+        });
+
+        await setOrderPaymentIntent({
+          orderId: (order as any).id,
+          paymentIntentId: created.paymentIntentId,
+       });
+
+        clientSecret = created.clientSecret;
+      }
+    } catch {
+      // Leave clientSecret empty -> UI shows "Payment cannot be initialized"
+    }
+  }
 
   if (order.paymentStatus === "paid") {
     return (
@@ -166,7 +201,7 @@ export default async function PaymentPage(props: PaymentPageProps) {
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Amount due</span>
               <span className="text-xl font-bold text-foreground">
-                {formatMoney(order.totalAmount, order.currency, locale)}
+                {formatMoney(order.totalAmountMinor, order.currency, locale)}
               </span>
             </div>
             <p className="mt-1 text-xs text-muted-foreground uppercase tracking-wide">
@@ -178,7 +213,7 @@ export default async function PaymentPage(props: PaymentPageProps) {
             <StripePaymentClient
               clientSecret={clientSecret}
               orderId={order.id}
-              amount={order.totalAmount}
+              amountMinor={order.totalAmountMinor}
               currency={order.currency}
               publishableKey={publishableKey}
               paymentsEnabled={paymentsEnabled}
@@ -199,7 +234,7 @@ export default async function PaymentPage(props: PaymentPageProps) {
             <div className="flex items-center justify-between">
               <span>Total amount</span>
               <span className="font-semibold text-foreground">
-                {formatMoney(order.totalAmount, order.currency, locale)}
+                {formatMoney(order.totalAmountMinor, order.currency, locale)}
               </span>
             </div>
             <div className="flex items-center justify-between">

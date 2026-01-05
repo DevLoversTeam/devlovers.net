@@ -34,7 +34,9 @@ function getLatestCharge(paymentIntent?: PaymentIntentWithCharges) {
   return charges[0];
 }
 
-function getLatestChargeId(paymentIntent?: Stripe.PaymentIntent): string | null {
+function getLatestChargeId(
+  paymentIntent?: Stripe.PaymentIntent
+): string | null {
   const lc = (paymentIntent as any)?.latest_charge as unknown;
   if (typeof lc === 'string' && lc.trim().length > 0) return lc;
   if (
@@ -142,7 +144,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ code: 'WEBHOOK_DISABLED' }, { status: 500 });
     }
 
-    if (error instanceof Error && error.message === 'STRIPE_INVALID_SIGNATURE') {
+    if (
+      error instanceof Error &&
+      error.message === 'STRIPE_INVALID_SIGNATURE'
+    ) {
       logError('Stripe webhook signature verification failed', error);
       return NextResponse.json({ code: 'INVALID_SIGNATURE' }, { status: 400 });
     }
@@ -288,7 +293,6 @@ export async function POST(request: NextRequest) {
             : 'currency_mismatch';
 
         const chargeForIntent = getLatestCharge(paymentIntent as any);
-        
 
         await db
           .update(orders)
@@ -302,6 +306,17 @@ export async function POST(request: NextRequest) {
               extra: {
                 mismatch: {
                   reason: mismatchReason,
+                  eventId: event.id,
+                  expected: {
+                    amountMinor: orderAmountMinor,
+                    currency: order.currency,
+                  },
+                  actual: {
+                    amountMinor: stripeAmount,
+                    currency: stripeCurrency,
+                  },
+
+                  // keep old fields for backward-compat/debug grepping
                   stripeAmount,
                   orderAmountMinor,
                   stripeCurrency,
@@ -335,7 +350,10 @@ export async function POST(request: NextRequest) {
           paymentStatus: 'paid',
           updatedAt: new Date(),
           pspChargeId: latestChargeId ?? chargeForIntent?.id ?? null,
-          pspPaymentMethod: resolvePaymentMethod(paymentIntent, chargeForIntent),
+          pspPaymentMethod: resolvePaymentMethod(
+            paymentIntent,
+            chargeForIntent
+          ),
           pspStatusReason: null,
           pspMetadata: buildPspMetadata({
             eventType,
@@ -345,13 +363,23 @@ export async function POST(request: NextRequest) {
         })
         .where(eq(orders.id, order.id));
 
-      logWebhookEvent({ orderId: order.id, paymentIntentId, paymentStatus, eventType });
+      logWebhookEvent({
+        orderId: order.id,
+        paymentIntentId,
+        paymentStatus,
+        eventType,
+      });
       return NextResponse.json({ received: true }, { status: 200 });
     }
 
     if (eventType === 'payment_intent.payment_failed') {
       if (order.paymentStatus === 'paid') {
-        logWebhookEvent({ orderId: order.id, paymentIntentId, paymentStatus, eventType });
+        logWebhookEvent({
+          orderId: order.id,
+          paymentIntentId,
+          paymentStatus,
+          eventType,
+        });
         return NextResponse.json({ received: true }, { status: 200 });
       }
 
@@ -369,7 +397,10 @@ export async function POST(request: NextRequest) {
           paymentStatus: 'failed',
           updatedAt: new Date(),
           pspChargeId: chargeForIntent?.id ?? null,
-          pspPaymentMethod: resolvePaymentMethod(paymentIntent, chargeForIntent),
+          pspPaymentMethod: resolvePaymentMethod(
+            paymentIntent,
+            chargeForIntent
+          ),
           pspStatusReason: failureReason,
           pspMetadata: buildPspMetadata({
             eventType,
@@ -384,19 +415,31 @@ export async function POST(request: NextRequest) {
         await restockOrder(order.id, { reason: 'failed' });
       }
 
-      logWebhookEvent({ orderId: order.id, paymentIntentId, paymentStatus, eventType });
+      logWebhookEvent({
+        orderId: order.id,
+        paymentIntentId,
+        paymentStatus,
+        eventType,
+      });
       return NextResponse.json({ received: true }, { status: 200 });
     }
 
     if (eventType === 'payment_intent.canceled') {
       if (order.paymentStatus === 'paid') {
-        logWebhookEvent({ orderId: order.id, paymentIntentId, paymentStatus, eventType });
+        logWebhookEvent({
+          orderId: order.id,
+          paymentIntentId,
+          paymentStatus,
+          eventType,
+        });
         return NextResponse.json({ received: true }, { status: 200 });
       }
 
       const chargeForIntent = getLatestCharge(paymentIntent as any);
       const cancellationReason =
-        paymentIntent?.cancellation_reason ?? paymentIntent?.status ?? 'canceled';
+        paymentIntent?.cancellation_reason ??
+        paymentIntent?.status ??
+        'canceled';
 
       const updated = await db
         .update(orders)
@@ -404,7 +447,10 @@ export async function POST(request: NextRequest) {
           paymentStatus: 'failed',
           updatedAt: new Date(),
           pspChargeId: chargeForIntent?.id ?? null,
-          pspPaymentMethod: resolvePaymentMethod(paymentIntent, chargeForIntent),
+          pspPaymentMethod: resolvePaymentMethod(
+            paymentIntent,
+            chargeForIntent
+          ),
           pspStatusReason: cancellationReason,
           pspMetadata: buildPspMetadata({
             eventType,
@@ -419,11 +465,19 @@ export async function POST(request: NextRequest) {
         await restockOrder(order.id, { reason: 'canceled' });
       }
 
-      logWebhookEvent({ orderId: order.id, paymentIntentId, paymentStatus, eventType });
+      logWebhookEvent({
+        orderId: order.id,
+        paymentIntentId,
+        paymentStatus,
+        eventType,
+      });
       return NextResponse.json({ received: true }, { status: 200 });
     }
 
-    if (eventType === 'charge.refunded' || eventType === 'charge.refund.updated') {
+    if (
+      eventType === 'charge.refunded' ||
+      eventType === 'charge.refund.updated'
+    ) {
       const refund = charge?.refunds?.data?.[0] ?? null;
 
       const updated = await db
@@ -440,23 +494,34 @@ export async function POST(request: NextRequest) {
             refund,
           }),
         })
-        .where(and(eq(orders.id, order.id), ne(orders.paymentStatus, 'refunded')))
+        .where(
+          and(eq(orders.id, order.id), ne(orders.paymentStatus, 'refunded'))
+        )
         .returning({ id: orders.id });
 
       if (updated.length > 0) {
         await restockOrder(order.id, { reason: 'refunded' });
       }
 
-      logWebhookEvent({ orderId: order.id, paymentIntentId, paymentStatus, eventType });
+      logWebhookEvent({
+        orderId: order.id,
+        paymentIntentId,
+        paymentStatus,
+        eventType,
+      });
       return NextResponse.json({ received: true }, { status: 200 });
     }
 
     // default ack
-    logWebhookEvent({ orderId: order.id, paymentIntentId, paymentStatus, eventType });
+    logWebhookEvent({
+      orderId: order.id,
+      paymentIntentId,
+      paymentStatus,
+      eventType,
+    });
     return NextResponse.json({ received: true }, { status: 200 });
   } catch (error) {
     logError('Stripe webhook processing failed', error);
     return NextResponse.json({ error: 'internal_error' }, { status: 500 });
   }
 }
-

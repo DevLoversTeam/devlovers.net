@@ -33,7 +33,7 @@ type StripePaymentClientProps = {
   publishableKey: string | null;
   paymentsEnabled: boolean;
   orderId: string;
-  amount: number;
+  amountMinor: number;
   currency: string;
   locale: string;
 };
@@ -144,7 +144,7 @@ export default function StripePaymentClient({
   publishableKey,
   paymentsEnabled,
   orderId,
-  amount,
+  amountMinor,
   currency,
   locale,
 }: StripePaymentClientProps) {
@@ -215,7 +215,7 @@ export default function StripePaymentClient({
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Pay</span>
             <span className="text-base font-semibold">
-              {formatMoney(amount, uiCurrency, locale)}
+              {formatMoney(amountMinor, uiCurrency, locale)}
             </span>
           </div>
           <p className="text-xs uppercase tracking-wide text-muted-foreground">
