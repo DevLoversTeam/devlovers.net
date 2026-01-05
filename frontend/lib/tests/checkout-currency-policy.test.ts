@@ -33,10 +33,22 @@ vi.mock('@/lib/psp/stripe', () => ({
   },
 }));
 
+
+// checkout-currency-policy.test.ts
+
 const logErrorMock = vi.fn((..._args: any[]) => undefined);
-vi.mock('@/lib/logging', () => ({
-  logError: (...args: any[]) => logErrorMock(...args),
-}));
+const logWarnMock = vi.fn((..._args: any[]) => undefined);
+
+vi.mock('@/lib/logging', async () => {
+  const actual = await vi.importActual<typeof import('@/lib/logging')>('@/lib/logging');
+  return {
+    ...actual,
+    logError: (...args: any[]) => logErrorMock(...args),
+    logWarn: (...args: any[]) => logWarnMock(...args),
+  };
+});
+
+
 
 import { db } from '@/db';
 import { products, productPrices, orders } from '@/db/schema';

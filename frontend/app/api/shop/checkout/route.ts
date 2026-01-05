@@ -238,21 +238,7 @@ export async function POST(request: NextRequest) {
     const paymentsEnabled = isPaymentsEnabled();
 
     if (!paymentsEnabled) {
-      // If we are in "no payments" mode, an order can transiently exist in a non-final state
-      // (e.g., crash after insert). Treat as conflict so clients can retry safely.
-      if (
-        order.paymentProvider === 'none' &&
-        (order.paymentStatus === 'pending' ||
-          order.paymentStatus === 'requires_payment')
-      ) {
-        return errorResponse(
-          'CHECKOUT_IN_PROGRESS',
-          'Order is still being processed. Please retry.',
-          409,
-          { orderId: order.id, paymentStatus: order.paymentStatus }
-        );
-      }
-      // If the order already failed (inventory or other), return a stable conflict instead of 500.
+     // If the order already failed (inventory or other), return a stable conflict instead of 500.
       if (
         order.paymentProvider === 'none' &&
         order.paymentStatus === 'failed'
@@ -501,8 +487,8 @@ export async function POST(request: NextRequest) {
 
     if (error instanceof MoneyValueError) {
       return errorResponse(
-        'PRICE_CONFIG_ERROR',
-        'Invalid price configuration for one or more products.',
+        'PRICE_DATA_ERROR',
+        'Invalid stored price data for one or more products.',
         500,
         {
           productId: error.productId,
