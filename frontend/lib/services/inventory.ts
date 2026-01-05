@@ -21,7 +21,11 @@ function readStatus(res: unknown): string {
   // 1) { rows: [ { status: '...' } ] }
   // 2) [ { status: '...' } ]
   // 3) { rowCount, rows } but keys can be uppercase depending on driver
-  const rows = Array.isArray(r) ? r : Array.isArray(r?.rows) ? r.rows : undefined;
+  const rows = Array.isArray(r)
+    ? r
+    : Array.isArray(r?.rows)
+    ? r.rows
+    : undefined;
   const row = rows?.[0];
 
   const status = row?.status ?? row?.STATUS;
@@ -31,7 +35,11 @@ function readStatus(res: unknown): string {
   throw new Error(
     `inventory: unexpected db.execute result shape (missing status). ` +
       `Got: ${JSON.stringify(
-        { hasRows: !!r?.rows, topKeys: r && typeof r === 'object' ? Object.keys(r).slice(0, 20) : typeof r },
+        {
+          hasRows: !!r?.rows,
+          topKeys:
+            r && typeof r === 'object' ? Object.keys(r).slice(0, 20) : typeof r,
+        },
         null,
         0
       )}`
@@ -97,12 +105,15 @@ export async function applyReserveMove(
       END AS status;
   `);
 
-  const status = (res.rows?.[0] as any)?.status as string | undefined;
+  const status = readStatus(res);
+
   if (status === 'applied') return { ok: true, applied: true };
   if (status === 'already') return { ok: true, applied: false };
-  return { ok: false, reason: 'INSUFFICIENT_STOCK' };
-}
+  if (status === 'insufficient')
+    return { ok: false, reason: 'INSUFFICIENT_STOCK' };
 
+  throw new Error(`applyReserveMove: unexpected status "${status}"`);
+}
 
 export async function applyReleaseMove(
   orderId: string,
@@ -129,6 +140,7 @@ export async function applyReleaseMove(
       SELECT 1
       FROM inventory_moves m, c
       WHERE m.move_key = c.reserve_key
+        AND m.type = 'reserve'
       LIMIT 1
     ),
     claimed AS (

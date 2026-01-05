@@ -1,4 +1,5 @@
-import { and, eq, inArray, isNull, lt, ne, sql } from 'drizzle-orm';
+import { and, or, eq, inArray, isNull, lt, ne, sql } from 'drizzle-orm';
+
 import { applyReserveMove, applyReleaseMove } from './inventory';
 
 import { isPaymentsEnabled } from '@/lib/env/stripe';
@@ -897,10 +898,52 @@ export async function setOrderPaymentIntent({
 }
 
 type RestockReason = 'failed' | 'refunded' | 'canceled' | 'stale';
+type RestockOptions = {
+  reason?: RestockReason;
+  /** If caller already claimed the order (e.g. sweep), skip local claim. */
+  alreadyClaimed?: boolean;
+  /** Lease TTL for restock claim */
+  claimTtlMinutes?: number;
+  /** Who is claiming (trace/debug) */
+  workerId?: string;
+};
+
+async function tryClaimRestockLease(params: {
+  orderId: string;
+  workerId: string;
+  claimTtlMinutes: number;
+}): Promise<boolean> {
+  const now = new Date();
+  const expiresAt = new Date(Date.now() + params.claimTtlMinutes * 60 * 1000);
+
+  const [row] = await db
+    .update(orders)
+    .set({
+      sweepClaimedAt: now,
+      sweepClaimExpiresAt: expiresAt,
+      sweepRunId: crypto.randomUUID(),
+      sweepClaimedBy: params.workerId,
+      updatedAt: now,
+    })
+    .where(
+      and(
+        eq(orders.id, params.orderId),
+        eq(orders.stockRestored, false),
+        // claim gate: only unclaimed or expired claims can be claimed
+        or(
+          isNull(orders.sweepClaimExpiresAt),
+          lt(orders.sweepClaimExpiresAt, now)
+        )
+      )
+    )
+    .returning({ id: orders.id });
+
+  return !!row;
+}
 
 export async function restockOrder(
   orderId: string,
-  options?: { reason?: RestockReason }
+  options?: RestockOptions
 ): Promise<void> {
   const reason = options?.reason;
 
@@ -962,7 +1005,30 @@ export async function restockOrder(
           updatedAt: now,
         })
         .where(eq(orders.id, orderId));
+      return;
     }
+
+    // Stripe (or any non-none provider): stale orphan must become terminal, иначе sweep будет подбирать снова.
+    if (reason === 'stale') {
+      const now = new Date();
+      await db
+        .update(orders)
+        .set({
+          status: 'INVENTORY_FAILED',
+          inventoryStatus: 'failed',
+          paymentStatus: 'failed',
+          failureCode: order.failureCode ?? 'STALE_ORPHAN',
+          failureMessage:
+            order.failureMessage ??
+            'Orphan order: no inventory reservation was recorded.',
+          stockRestored: true,
+          restockedAt: now,
+          updatedAt: now,
+        })
+        .where(eq(orders.id, orderId));
+      return;
+    }
+
     return;
   }
 
@@ -975,7 +1041,19 @@ export async function restockOrder(
       { orderId, details: { reason, paymentStatus: order.paymentStatus } }
     );
   }
-
+  // If we have reserved moves, we must claim a lease to avoid concurrent double-processing.
+  // (Actual stock safety is guaranteed by inventory_moves move_key, but lease prevents wasted work
+  // and prevents "restocked_at" churn under concurrency.)
+  const claimTtlMinutes = options?.claimTtlMinutes ?? 5;
+  const workerId = options?.workerId ?? 'restock';
+  if (!options?.alreadyClaimed) {
+    const claimed = await tryClaimRestockLease({
+      orderId,
+      workerId,
+      claimTtlMinutes,
+    });
+    if (!claimed) return; // someone else is processing
+  }
   const now = new Date();
 
   await db
@@ -985,6 +1063,20 @@ export async function restockOrder(
 
   for (const item of reservedMoves)
     await applyReleaseMove(orderId, item.productId, item.quantity);
+  // FINALIZE ONCE: only one caller may flip stock_restored/restocked_at
+  // If RETURNING is empty => already finalized by another worker (or previous attempt).
+  const finalizedAt = new Date();
+  const [finalized] = await db
+    .update(orders)
+    .set({
+      stockRestored: true,
+      restockedAt: finalizedAt,
+      updatedAt: finalizedAt,
+    })
+    .where(and(eq(orders.id, orderId), eq(orders.stockRestored, false)))
+    .returning({ id: orders.id });
+
+  if (!finalized) return;
 
   let normalizedStatus: PaymentStatus | undefined;
   if (reason === 'refunded') normalizedStatus = 'refunded';
@@ -996,8 +1088,6 @@ export async function restockOrder(
     .update(orders)
     .set({
       inventoryStatus: 'released',
-      stockRestored: true,
-      restockedAt: now,
       updatedAt: now,
       ...(normalizedStatus ? { paymentStatus: normalizedStatus } : {}),
       ...(shouldFail ? { status: 'INVENTORY_FAILED' } : {}),
@@ -1009,37 +1099,83 @@ export async function restockOrder(
 export async function restockStalePendingOrders(options?: {
   olderThanMinutes?: number;
   batchSize?: number;
+  orderIds?: string[];
+  claimTtlMinutes?: number; // new: claim TTL window
+  workerId?: string; // new: identify who claimed
 }): Promise<number> {
   const olderThanMinutes = options?.olderThanMinutes ?? 60;
   const batchSize = options?.batchSize ?? 50;
+  const claimTtlMinutes = options?.claimTtlMinutes ?? 5;
+  const workerId = options?.workerId ?? 'restock-sweep';
+
+  // If explicitly provided empty list => nothing to do (test helper).
+  if (options?.orderIds && options.orderIds.length === 0) return 0;
 
   const cutoff = new Date(Date.now() - olderThanMinutes * 60 * 1000);
 
   let processed = 0;
 
+  // One sweep run id for traceability
+  const runId = crypto.randomUUID();
+
   while (true) {
-    const staleOrders = await db
+    const now = new Date();
+    const claimExpiresAt = new Date(Date.now() + claimTtlMinutes * 60 * 1000);
+
+    const baseConditions = [
+      inArray(orders.paymentStatus, [
+        'pending',
+        'requires_payment',
+      ] as PaymentStatus[]),
+      eq(orders.stockRestored, false),
+      isNull(orders.restockedAt),
+      lt(orders.createdAt, cutoff),
+      ne(orders.inventoryStatus, 'released'),
+      // claim gate: only unclaimed or expired claims are eligible
+      or(
+        isNull(orders.sweepClaimExpiresAt),
+        lt(orders.sweepClaimExpiresAt, now)
+      ),
+    ];
+
+    if (options?.orderIds?.length) {
+      baseConditions.push(inArray(orders.id, options.orderIds));
+    }
+
+    // Subquery: pick candidates deterministically (oldest first)
+    const claimable = db
       .select({ id: orders.id })
       .from(orders)
-      .where(
-        and(
-          inArray(orders.paymentStatus, [
-            'pending',
-            'requires_payment',
-          ] as PaymentStatus[]),
-          eq(orders.stockRestored, false),
-          isNull(orders.restockedAt),
-          lt(orders.createdAt, cutoff),
-          ne(orders.inventoryStatus, 'released')
-        )
-      )
+      .where(and(...baseConditions))
       .orderBy(orders.createdAt)
       .limit(batchSize);
 
-    if (!staleOrders.length) break;
+    // Atomic claim: update only rows selected above; returning ids is our "work queue"
+    const claimed = await db
+      .update(orders)
+      .set({
+        sweepClaimedAt: now,
+        sweepClaimExpiresAt: claimExpiresAt,
+        sweepRunId: runId,
+        sweepClaimedBy: workerId,
+        updatedAt: now,
+      })
+      .where(
+        and(
+          inArray(orders.id, claimable),
+          // re-check claim gate at UPDATE time to avoid stealing active claims under concurrency
+          or(
+            isNull(orders.sweepClaimExpiresAt),
+            lt(orders.sweepClaimExpiresAt, now)
+          )
+        )
+      )
+      .returning({ id: orders.id });
 
-    for (const { id } of staleOrders) {
-      await restockOrder(id, { reason: 'stale' });
+    if (!claimed.length) break;
+
+    for (const { id } of claimed) {
+      await restockOrder(id, { reason: 'stale', alreadyClaimed: true, workerId });
       processed += 1;
     }
   }

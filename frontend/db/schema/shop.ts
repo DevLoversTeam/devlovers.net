@@ -159,6 +159,10 @@ export const orders = pgTable(
       .defaultNow()
       .notNull()
       .$onUpdate(() => new Date()),
+    sweepClaimedAt: timestamp('sweep_claimed_at'),
+    sweepClaimExpiresAt: timestamp('sweep_claim_expires_at'),
+    sweepRunId: uuid('sweep_run_id'),
+    sweepClaimedBy: varchar('sweep_claimed_by', { length: 64 }),
   },
   table => [
     check(
@@ -189,12 +193,13 @@ export const orders = pgTable(
       'orders_payment_status_valid_when_none',
       sql`${table.paymentProvider} <> 'none' OR ${table.paymentStatus} in ('paid','failed')`
     ),
+    index('orders_sweep_claim_expires_idx').on(table.sweepClaimExpiresAt),
   ]
 );
 
 export const orderItems = pgTable(
   'order_items',
-  
+
   {
     id: uuid('id').defaultRandom().primaryKey(),
     orderId: uuid('order_id')
@@ -218,7 +223,6 @@ export const orderItems = pgTable(
     productTitle: text('product_title'),
     productSlug: text('product_slug'),
     productSku: text('product_sku'),
-    
   },
   t => [
     index('order_items_order_id_idx').on(t.orderId),
@@ -244,8 +248,8 @@ export const orderItems = pgTable(
       'order_items_line_total_mirror_consistent',
       sql`${t.lineTotal} = (${t.lineTotalMinor}::numeric / 100)`
     ),
-  ],
-  );
+  ]
+);
 
 export const stripeEvents = pgTable(
   'stripe_events',
