@@ -28,14 +28,15 @@ import { type PaymentProvider, type PaymentStatus } from '@/lib/shop/payments';
 const EXPECTED_BUSINESS_ERROR_CODES = new Set([
   'IDEMPOTENCY_CONFLICT',
   'INVALID_PAYLOAD',
-  'OUT_OF_STOCK',
   'INSUFFICIENT_STOCK',
   'PRICE_CONFIG_ERROR',
 ]);
 
 function getErrorCode(err: unknown): string | null {
-  const e = err as any;
-  return typeof e?.code === 'string' ? e.code : null;
+  if (typeof err !== 'object' || err === null) return null;
+
+  const e = err as { code?: unknown };
+  return typeof e.code === 'string' ? e.code : null;
 }
 
 function isExpectedBusinessError(err: unknown): boolean {

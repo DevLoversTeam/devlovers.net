@@ -1,7 +1,7 @@
 // lib/tests/stripe-webhook-psp-fields.test.ts
 import { describe, it, expect, vi } from 'vitest';
 import { NextRequest } from 'next/server';
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 
 import { db } from '@/db';
@@ -35,7 +35,7 @@ function makeWebhookRequest(rawBody: string) {
       'Stripe-Signature': 't=1,v1=test',
     },
     body: rawBody,
-  } as any);
+  });
 }
 
 async function cleanup(params: {
@@ -162,9 +162,7 @@ describe('P0-6 webhook: writes PSP fields on succeeded', () => {
       },
     };
 
-    (
-      verifyWebhookSignature as unknown as { mockReturnValue: (v: any) => void }
-    ).mockReturnValue(event);
+    vi.mocked(verifyWebhookSignature).mockReturnValue(event as any);
 
     const rawBody = JSON.stringify({ any: 'payload' });
     const req = makeWebhookRequest(rawBody);
@@ -173,6 +171,17 @@ describe('P0-6 webhook: writes PSP fields on succeeded', () => {
       const res = await webhookPOST(req);
       expect(res.status).toBeGreaterThanOrEqual(200);
       expect(res.status).toBeLessThan(300);
+      const mockedVerify = vi.mocked(verifyWebhookSignature);
+
+      expect(mockedVerify).toHaveBeenCalled();
+
+      const firstArg = mockedVerify.mock.calls[0]?.[0];
+      expect(firstArg).toBeTruthy();
+
+      expect(firstArg).toMatchObject({
+        rawBody,
+        signatureHeader: 't=1,v1=test',
+      });
 
       const updated1 = await db
         .select({

@@ -420,7 +420,13 @@ async function reconcileNoPaymentOrder(orderId: string): Promise<OrderSummary> {
     for (const item of itemsToReserve) {
       try {
         await applyReleaseMove(orderId, item.productId, item.quantity);
-      } catch {}
+      } catch (releaseErr) {
+        console.error(
+          '[reconcileNoPaymentOrder] release failed',
+          { orderId, productId: item.productId, quantity: item.quantity },
+          releaseErr
+        );
+      }
     }
 
     const isOos = e instanceof InsufficientStockError;
@@ -855,7 +861,13 @@ export async function createOrderWithItems({
     for (const it of itemsToReserve) {
       try {
         await applyReleaseMove(orderId, it.productId, it.quantity);
-      } catch {}
+      } catch (releaseErr) {
+        console.error(
+          '[createOrderWithItems] release failed',
+          { orderId, productId: it.productId, quantity: it.quantity },
+          releaseErr
+        );
+      }
     }
 
     const isOos = e instanceof InsufficientStockError;
@@ -1271,7 +1283,7 @@ export async function restockStaleNoPaymentOrders(options?: {
   const cutoff = new Date(Date.now() - olderThanMinutes * 60 * 1000);
 
   let processed = 0;
-
+  // test-only sweep; no batch claiming; relies on restockOrder lease + idempotency
   while (true) {
     const stale = await db
       .select({ id: orders.id })

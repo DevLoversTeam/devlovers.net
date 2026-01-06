@@ -89,16 +89,42 @@ async function cleanupIsolatedProduct(productId: string) {
       .update(products)
       .set({ isActive: false, updatedAt: new Date() } as any)
       .where(eq(products.id, productId));
-  } catch {}
+  } catch (e) {
+    // Non-fatal: best-effort test teardown
+    if (process.env.DEBUG) {
+      console.warn(
+        'cleanupIsolatedProduct: deactivate failed',
+        { productId },
+        e
+      );
+    }
+  }
 
   try {
     await db
       .delete(productPrices)
       .where(eq(productPrices.productId, productId));
-  } catch {}
+  } catch (e) {
+    if (process.env.DEBUG) {
+      console.warn(
+        'cleanupIsolatedProduct: delete productPrices failed',
+        { productId },
+        e
+      );
+    }
+  }
+
   try {
     await db.delete(products).where(eq(products.id, productId));
-  } catch {}
+  } catch (e) {
+    if (process.env.DEBUG) {
+      console.warn(
+        'cleanupIsolatedProduct: delete product failed',
+        { productId },
+        e
+      );
+    }
+  }
 }
 
 async function postCheckout(params: {
@@ -146,15 +172,41 @@ async function bestEffortHardDeleteOrder(orderId: string) {
     await db.execute(
       sql`delete from inventory_moves where order_id = ${orderId}::uuid`
     );
-  } catch {}
+  } catch (e) {
+    if (process.env.DEBUG) {
+      console.warn(
+        'bestEffortHardDeleteOrder: delete inventory_moves failed',
+        { orderId },
+        e
+      );
+    }
+  }
+
   try {
     await db.execute(
       sql`delete from order_items where order_id = ${orderId}::uuid`
     );
-  } catch {}
+  } catch (e) {
+    if (process.env.DEBUG) {
+      console.warn(
+        'bestEffortHardDeleteOrder: delete order_items failed',
+        { orderId },
+        e
+      );
+    }
+  }
+
   try {
     await db.delete(orders).where(eq(orders.id, orderId));
-  } catch {}
+  } catch (e) {
+    if (process.env.DEBUG) {
+      console.warn(
+        'bestEffortHardDeleteOrder: delete order failed',
+        { orderId },
+        e
+      );
+    }
+  }
 }
 
 describe.sequential('Checkout (no payments) invariants', () => {
