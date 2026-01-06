@@ -33,7 +33,7 @@ type StripePaymentClientProps = {
   publishableKey: string | null;
   paymentsEnabled: boolean;
   orderId: string;
-  amount: number;
+  amountMinor: number;
   currency: string;
   locale: string;
 };
@@ -46,6 +46,30 @@ function toCurrencyCode(
   return currencyValues.includes(normalized as CurrencyCode)
     ? (normalized as CurrencyCode)
     : resolveCurrencyFromLocale(locale);
+}
+
+function nextRouteForPaymentResult(params: {
+  locale: string;
+  orderId: string;
+  status?: string | null;
+}) {
+  const { orderId, status } = params;
+
+  // ✅ Stripe може повернути "processing" або інший non-terminal статус.
+  // Джерело істини = webhook, тому error-page показуємо тільки для явних фейлів.
+  const success = `/shop/checkout/success?orderId=${orderId}`;
+  const failure = `/shop/checkout/error?orderId=${orderId}`;
+
+  if (!status) return success;
+  if (
+    status === 'succeeded' ||
+    status === 'processing' ||
+    status === 'requires_capture'
+  )
+    return success;
+  if (status === 'requires_payment_method' || status === 'canceled')
+    return failure;
+  return success;
 }
 
 function StripePaymentForm({ orderId, locale }: PaymentFormProps) {
@@ -73,26 +97,26 @@ function StripePaymentForm({ orderId, locale }: PaymentFormProps) {
         elements,
         redirect: 'if_required',
         confirmParams: {
-          return_url: `${window.location.origin}/${locale}/shop/checkout/success?orderId=${orderId}`,
+          return_url: `${window.location.origin}/shop/checkout/success?orderId=${orderId}`,
         },
       });
 
       if (error) {
         setErrorMessage(error.message ?? 'Unable to confirm payment.');
-        router.push(`/${locale}/shop/checkout/error?orderId=${orderId}`);
+        router.push(`/shop/checkout/error?orderId=${orderId}`);
         return;
       }
 
-      if (paymentIntent?.status === 'succeeded') {
-        router.push(`/${locale}/shop/checkout/success?orderId=${orderId}`);
-        return;
-      }
-
-      router.push(`/${locale}/shop/checkout/error?orderId=${orderId}`);
+      const next = nextRouteForPaymentResult({
+        locale,
+        orderId,
+        status: paymentIntent?.status ?? null,
+      });
+      router.push(next);
     } catch (error) {
       console.error('Payment confirmation failed', error);
       setErrorMessage('We couldn’t confirm your payment. Please try again.');
-      router.push(`/${locale}/shop/checkout/error?orderId=${orderId}`);
+      router.push(`/shop/checkout/error?orderId=${orderId}`);
     } finally {
       setSubmitting(false);
     }
@@ -120,7 +144,7 @@ export default function StripePaymentClient({
   publishableKey,
   paymentsEnabled,
   orderId,
-  amount,
+  amountMinor,
   currency,
   locale,
 }: StripePaymentClientProps) {
@@ -148,13 +172,13 @@ export default function StripePaymentClient({
         <p>Payments are disabled in this environment.</p>
         <div className="flex gap-3">
           <Link
-            href={`/${locale}/shop/checkout/success?orderId=${orderId}`}
+            href={`/shop/checkout/success?orderId=${orderId}`}
             className="inline-flex items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground hover:bg-accent/90"
           >
             Continue
           </Link>
           <Link
-            href={`/${locale}/shop/cart`}
+            href={`/shop/cart`}
             className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
           >
             Back to cart
@@ -169,7 +193,7 @@ export default function StripePaymentClient({
       <div className="space-y-3 text-sm text-muted-foreground">
         <p>Payment cannot be initialized. Please try again later.</p>
         <Link
-          href={`/${locale}/shop/cart`}
+          href={`/shop/cart`}
           className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
         >
           Return to cart
@@ -191,7 +215,7 @@ export default function StripePaymentClient({
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Pay</span>
             <span className="text-base font-semibold">
-              {formatMoney(amount, uiCurrency, locale)}
+              {formatMoney(amountMinor, uiCurrency, locale)}
             </span>
           </div>
           <p className="text-xs uppercase tracking-wide text-muted-foreground">

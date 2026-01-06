@@ -6,7 +6,8 @@ import { ArrowLeft } from "lucide-react";
 
 import { AddToCartButton } from "@/components/shop/add-to-cart-button";
 import { getProductPageData } from "@/lib/shop/data";
-import { formatMoney } from "@/lib/shop/currency";
+import { formatMoney, resolveCurrencyFromLocale } from "@/lib/shop/currency";
+import { getPublicProductBySlug } from "@/db/queries/shop/products";
 
 import { Link } from "@/i18n/routing";
 
@@ -18,6 +19,16 @@ export default async function ProductPage({
   params: Promise<{ slug: string; locale: string }>;
 }) {
   const { slug, locale } = await params;
+
+  // P0-5 canonical gate:
+  // - slug AND is_active=true
+  // - join product_prices by currency
+  // - missing price -> 404 (public hides existence/details)
+  const currency = resolveCurrencyFromLocale(locale);
+  const publicProduct = await getPublicProductBySlug(slug, currency);
+  if (!publicProduct) {
+    notFound();
+  }
 
   const result = await getProductPageData(slug, locale);
 

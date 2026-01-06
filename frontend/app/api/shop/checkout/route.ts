@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { getCurrentUser } from '@/lib/auth';
 import { isPaymentsEnabled } from '@/lib/env/stripe';
-import { logError } from '@/lib/logging';
+import { logError, logWarn } from '@/lib/logging';
 import { resolveRequestLocale } from '@/lib/shop/request-locale';
-
+import { IdempotencyConflictError } from '@/lib/services/errors';
 import { MoneyValueError } from '@/db/queries/shop/orders';
 import { createPaymentIntent, retrievePaymentIntent } from '@/lib/psp/stripe';
 import {
@@ -24,6 +24,33 @@ import {
   idempotencyKeySchema,
 } from '@/lib/validation/shop';
 import { type PaymentProvider, type PaymentStatus } from '@/lib/shop/payments';
+
+const EXPECTED_BUSINESS_ERROR_CODES = new Set([
+  'IDEMPOTENCY_CONFLICT',
+  'INVALID_PAYLOAD',
+  'INSUFFICIENT_STOCK',
+  'PRICE_CONFIG_ERROR',
+]);
+
+function getErrorCode(err: unknown): string | null {
+  if (typeof err !== 'object' || err === null) return null;
+
+  const e = err as { code?: unknown };
+  return typeof e.code === 'string' ? e.code : null;
+}
+
+function isExpectedBusinessError(err: unknown): boolean {
+  const code = getErrorCode(err);
+  if (code && EXPECTED_BUSINESS_ERROR_CODES.has(code)) return true;
+
+  // fallback на типи (на випадок якщо десь нема .code)
+  if (err instanceof IdempotencyConflictError) return true;
+  if (err instanceof InvalidPayloadError) return true;
+  if (err instanceof InsufficientStockError) return true;
+  if (err instanceof PriceConfigError) return true;
+
+  return false;
+}
 
 function errorResponse(
   code: string,
@@ -110,23 +137,24 @@ async function readJsonBody(request: NextRequest): Promise<unknown> {
   const raw = await request.text();
 
   if (!raw || !raw.trim()) {
-    throw new Error("EMPTY_BODY");
+    throw new Error('EMPTY_BODY');
   }
 
   // tolerate BOM / odd whitespace
-  const normalized = raw.replace(/^\uFEFF/, "");
+  const normalized = raw.replace(/^\uFEFF/, '');
 
   return JSON.parse(normalized);
 }
-
 
 export async function POST(request: NextRequest) {
   let body: unknown;
 
   try {
-  body = await readJsonBody(request);
-} catch (error) {
-    logError('Failed to parse cart payload', error);
+    body = await readJsonBody(request);
+  } catch (error) {
+    logWarn('Failed to parse cart payload', {
+      reason: error instanceof Error ? error.message : String(error),
+    });
     return errorResponse(
       'INVALID_PAYLOAD',
       'Unable to process cart data.',
@@ -156,7 +184,9 @@ export async function POST(request: NextRequest) {
   const parsedPayload = checkoutPayloadSchema.safeParse(body);
 
   if (!parsedPayload.success) {
-    logError('Invalid checkout payload', parsedPayload.error);
+    logWarn('Invalid checkout payload', {
+      issuesCount: parsedPayload.error.issues?.length ?? 0,
+    });
     return errorResponse(
       'INVALID_PAYLOAD',
       'Invalid checkout payload',
@@ -209,6 +239,18 @@ export async function POST(request: NextRequest) {
     const paymentsEnabled = isPaymentsEnabled();
 
     if (!paymentsEnabled) {
+      // If the order already failed (inventory or other), return a stable conflict instead of 500.
+      if (
+        order.paymentProvider === 'none' &&
+        order.paymentStatus === 'failed'
+      ) {
+        return errorResponse(
+          'CHECKOUT_FAILED',
+          'Order could not be completed.',
+          409,
+          { orderId: order.id }
+        );
+      }
       if (
         order.paymentProvider === 'stripe' &&
         order.paymentStatus !== 'paid'
@@ -222,7 +264,10 @@ export async function POST(request: NextRequest) {
       }
 
       if (order.paymentProvider === 'none') {
-        if (order.paymentStatus !== 'paid' || order.paymentIntentId) {
+        if (
+          !['paid', 'failed'].includes(order.paymentStatus) ||
+          order.paymentIntentId
+        ) {
           logError(
             `Payments disabled but order is not paid/none. orderId=${
               order.id
@@ -400,7 +445,14 @@ export async function POST(request: NextRequest) {
       );
     }
   } catch (error) {
-    logError('Checkout failed', error);
+    if (isExpectedBusinessError(error)) {
+      logWarn('Checkout rejected', {
+        code: getErrorCode(error) ?? 'UNKNOWN',
+        path: request.nextUrl.pathname,
+      });
+    } else {
+      logError('Checkout failed', error);
+    }
 
     if (error instanceof InvalidPayloadError) {
       return errorResponse(
@@ -410,11 +462,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (error instanceof IdempotencyConflictError) {
+      return errorResponse(error.code, error.message, 409, error.details);
+    }
+
     if (error instanceof OrderStateInvalidError) {
       return errorResponse(error.code, error.message, 500, {
         orderId: error.orderId,
-        field: (error as any).field,
-        rawValue: (error as any).rawValue,
+        field: error.field,
+        rawValue: error.rawValue,
+        ...(error.details ? { details: error.details } : {}),
       });
     }
 
@@ -431,8 +488,8 @@ export async function POST(request: NextRequest) {
 
     if (error instanceof MoneyValueError) {
       return errorResponse(
-        'PRICE_CONFIG_ERROR',
-        'Invalid price configuration for one or more products.',
+        'PRICE_DATA_ERROR',
+        'Invalid stored price data for one or more products.',
         500,
         {
           productId: error.productId,
