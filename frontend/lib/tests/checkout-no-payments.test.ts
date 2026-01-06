@@ -8,6 +8,14 @@ import { db } from '@/db';
 import { orders, products, productPrices } from '@/db/schema';
 import { toDbMoney } from '@/lib/shop/money';
 
+vi.mock('@/lib/logging', async () => {
+  const actual = await vi.importActual<any>('@/lib/logging');
+  return {
+    ...actual,
+    logWarn: () => {}, // silence expected business warnings in this test file
+  };
+});
+
 // Force "no payments" for this whole test file.
 vi.mock('@/lib/env/stripe', async () => {
   const actual = await vi.importActual<any>('@/lib/env/stripe');
@@ -68,16 +76,25 @@ async function createIsolatedProductForCurrency(opts: {
   } as any);
 
   // Ensure price exists for requested currency (minor + legacy).
-  await db.insert(productPrices).values({
-    productId,
-    currency: opts.currency,
-    priceMinor: 1000,
-    price: toDbMoney(1000),
-    originalPriceMinor: null,
-    originalPrice: null,
-    createdAt: now,
-    updatedAt: now,
-  } as any);
+  try {
+    await db.insert(productPrices).values({
+      productId,
+      currency: opts.currency,
+      priceMinor: 1000,
+      price: toDbMoney(1000),
+      originalPriceMinor: null,
+      originalPrice: null,
+      createdAt: now,
+      updatedAt: now,
+    } as any);
+  } catch (e) {
+    // Cleanup orphaned product on price insert failure (best-effort)
+    await db
+      .delete(products)
+      .where(eq(products.id, productId))
+      .catch(() => {});
+    throw e;
+  }
 
   return { productId };
 }
@@ -162,7 +179,11 @@ async function readMoves(orderId: string): Promise<MoveRow[]> {
     `
   );
 
-  return (res.rows ?? []) as unknown as MoveRow[];
+  return (res.rows ?? []).map(row => ({
+    productId: String((row as any).productId ?? ''),
+    type: String((row as any).type ?? ''),
+    quantity: Number((row as any).quantity ?? 0),
+  }));
 }
 
 async function bestEffortHardDeleteOrder(orderId: string) {

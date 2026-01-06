@@ -1,7 +1,7 @@
 import { and, or, eq, inArray, isNull, lt, ne, sql } from 'drizzle-orm';
 
 import { applyReserveMove, applyReleaseMove } from './inventory';
-
+import { logError } from '@/lib/logging';
 import { isPaymentsEnabled } from '@/lib/env/stripe';
 import crypto from 'crypto';
 import { db } from '@/db';
@@ -421,9 +421,8 @@ async function reconcileNoPaymentOrder(orderId: string): Promise<OrderSummary> {
       try {
         await applyReleaseMove(orderId, item.productId, item.quantity);
       } catch (releaseErr) {
-        console.error(
-          '[reconcileNoPaymentOrder] release failed',
-          { orderId, productId: item.productId, quantity: item.quantity },
+        logError(
+          `[reconcileNoPaymentOrder] release failed orderId=${orderId} productId=${item.productId} quantity=${item.quantity}`,
           releaseErr
         );
       }
@@ -656,7 +655,15 @@ export async function createOrderWithItems({
             updatedAt: new Date(),
           })
           .where(eq(orders.id, row.id));
-      } catch {}
+      } catch (e) {
+        if (process.env.DEBUG) {
+          console.warn(
+            '[assertIdempotencyCompatible] idempotencyRequestHash backfill failed',
+            { orderId: row.id },
+            e
+          );
+        }
+      }
     }
 
     if (derivedExistingHash !== requestHash) {
@@ -670,7 +677,13 @@ export async function createOrderWithItems({
       // Best-effort cleanup if inventory was left reserved due to crash.
       try {
         await restockOrder(existing.id, { reason: 'failed' });
-      } catch {}
+      } catch (restockErr) {
+        logError(
+          `[assertIdempotencyCompatible] cleanup restock failed orderId=${existing.id}`,
+          restockErr
+        );
+      }
+
       throw new InsufficientStockError(
         row.failureMessage ?? 'Insufficient stock.'
       );
@@ -862,9 +875,8 @@ export async function createOrderWithItems({
       try {
         await applyReleaseMove(orderId, it.productId, it.quantity);
       } catch (releaseErr) {
-        console.error(
-          '[createOrderWithItems] release failed',
-          { orderId, productId: it.productId, quantity: it.quantity },
+        logError(
+          `[createOrderWithItems] release failed orderId=${orderId} productId=${it.productId} quantity=${it.quantity}`,
           releaseErr
         );
       }
