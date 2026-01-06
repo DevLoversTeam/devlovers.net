@@ -21,12 +21,20 @@ export function CookieBanner() {
   }, []);
 
   const handleAccept = () => {
-    localStorage.setItem('cookie-consent', 'accepted');
+    try {
+      localStorage.setItem('cookie-consent', 'accepted');
+    } catch (error) {
+      console.error('Failed to save cookie consent:', error);
+    }
     setIsVisible(false);
   };
 
   const handleDecline = () => {
-    localStorage.setItem('cookie-consent', 'declined');
+    try {
+      localStorage.setItem('cookie-consent', 'declined');
+    } catch (error) {
+      console.error('Failed to save cookie consent:', error);
+    }
     setIsVisible(false);
   };
 
