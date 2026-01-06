@@ -12,6 +12,8 @@ import { getCurrentUser } from '@/lib/auth';
 import { MainSwitcher } from '@/components/header/MainSwitcher';
 import { AppChrome } from '@/components/header/AppChrome';
 
+import { CookieBanner } from '@/components/shared/CookieBanner';
+
 export const dynamic = 'force-dynamic';
 
 export default async function LocaleLayout({
@@ -45,6 +47,7 @@ export default async function LocaleLayout({
 
         <Footer />
         <Toaster position="top-right" richColors expand />
+        <CookieBanner />
       </ThemeProvider>
     </NextIntlClientProvider>
   );
