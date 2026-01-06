@@ -5,7 +5,14 @@ import { applyReserveMove, applyReleaseMove } from './inventory';
 import { isPaymentsEnabled } from '@/lib/env/stripe';
 import crypto from 'crypto';
 import { db } from '@/db';
-import { orderItems, orders, productPrices, products } from '@/db/schema';
+import {
+  orderItems,
+  orders,
+  productPrices,
+  products,
+  inventoryMoves,
+} from '@/db/schema/shop';
+
 import {
   resolveCurrencyFromLocale,
   type CurrencyCode,
@@ -66,8 +73,8 @@ type OrderItemForSummary = {
 
 const orderItemSummarySelection = {
   productId: orderItems.productId,
-  selectedSize: (orderItems as any).selectedSize,
-  selectedColor: (orderItems as any).selectedColor,
+  selectedSize: orderItems.selectedSize,
+  selectedColor: orderItems.selectedColor,
   quantity: orderItems.quantity,
   unitPrice: orderItems.unitPrice,
   lineTotal: orderItems.lineTotal,
@@ -783,8 +790,8 @@ export async function createOrderWithItems({
         target: [
           orderItems.orderId,
           orderItems.productId,
-          (orderItems as any).selectedSize,
-          (orderItems as any).selectedColor,
+          orderItems.selectedSize,
+          orderItems.selectedColor,
         ],
         set: {
           quantity: sql`excluded.quantity`,
@@ -1038,11 +1045,16 @@ export async function restockOrder(
   // If state says "none" we still may have reserve moves (crash between reserve and status update).
   const reservedMoves = await db
     .select({
-      productId: sql<string>`product_id`,
-      quantity: sql<number>`quantity`,
+      productId: inventoryMoves.productId,
+      quantity: inventoryMoves.quantity,
     })
-    .from(sql`inventory_moves`)
-    .where(and(sql`order_id = ${orderId}::uuid`, sql`type = 'reserve'`));
+    .from(inventoryMoves)
+    .where(
+      and(
+        eq(inventoryMoves.orderId, orderId),
+        eq(inventoryMoves.type, 'reserve')
+      )
+    );
 
   if (!reservedMoves.length) {
     // Nothing was reserved. For no-payments orders this is an "orphan" that must become terminal.

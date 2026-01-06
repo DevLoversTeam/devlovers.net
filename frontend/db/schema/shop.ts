@@ -353,12 +353,12 @@ export const inventoryMoves = pgTable(
       .notNull()
       .defaultNow(),
   },
-  t => ({
-    moveKeyUq: uniqueIndex('inventory_moves_move_key_uq').on(t.moveKey),
-    orderIdx: index('inventory_moves_order_id_idx').on(t.orderId),
-    productIdx: index('inventory_moves_product_id_idx').on(t.productId),
-    qtyCheck: check('inventory_moves_quantity_gt_0', sql`${t.quantity} > 0`),
-  })
+  t => [
+    uniqueIndex('inventory_moves_move_key_uq').on(t.moveKey),
+    index('inventory_moves_order_id_idx').on(t.orderId),
+    index('inventory_moves_product_id_idx').on(t.productId),
+    check('inventory_moves_quantity_gt_0', sql`${t.quantity} > 0`),
+  ]
 );
 
 export type DbProductPrice = typeof productPrices.$inferSelect;

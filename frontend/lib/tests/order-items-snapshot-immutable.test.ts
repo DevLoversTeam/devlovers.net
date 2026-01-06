@@ -26,7 +26,9 @@ vi.mock('@/lib/auth', async () => {
 // Force "no-payments" path so checkout never touches Stripe network.
 // This test is only about snapshot immutability.
 vi.mock('@/lib/env/stripe', async () => {
-  const actual = await vi.importActual<Record<string, unknown>>('@/lib/env/stripe');
+  const actual = await vi.importActual<Record<string, unknown>>(
+    '@/lib/env/stripe'
+  );
   return {
     ...actual,
     isPaymentsEnabled: () => false,
@@ -63,9 +65,7 @@ async function cleanupByIds(params: { orderId?: string; productId: string }) {
     await db.delete(orders).where(eq(orders.id, orderId));
   }
 
-  await db
-    .delete(productPrices)
-    .where(eq(productPrices.productId, productId));
+  await db.delete(productPrices).where(eq(productPrices.productId, productId));
 
   await db.delete(products).where(eq(products.id, productId));
 }

@@ -115,7 +115,8 @@ export function verifyWebhookSignature({
       signatureHeader,
       webhookSecret
     );
-  } catch {
+  } catch (error) {
+    logError('Stripe webhook signature verification failed', error);
     throw new Error('STRIPE_INVALID_SIGNATURE');
   }
 }

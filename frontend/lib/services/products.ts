@@ -40,6 +40,16 @@ import {
   SlugConflictError,
 } from './errors';
 
+export type AdminProductPriceRow = {
+  currency: CurrencyCode;
+  // canonical (minor units)
+  priceMinor: number;
+  originalPriceMinor: number | null;
+  // legacy mirror (keep during rollout)
+  price: string;
+  originalPrice: string | null;
+};
+
 export type AdminProductsFilter = {
   isActive?: boolean;
   category?: string;
@@ -410,7 +420,6 @@ export async function createProduct(input: ProductInput): Promise<DbProduct> {
 
     return mapRowToProduct(row);
   } catch (error) {
-    // якщо product_prices впало після створення продукту — прибираємо продукт (best-effort)
     if (createdProductId) {
       try {
         await db.delete(products).where(eq(products.id, createdProductId));
@@ -545,7 +554,6 @@ export async function updateProduct(
       throw new Error('PRODUCT_NOT_FOUND');
     }
 
-    // 3) якщо нову картинку застосували — видаляємо стару
     if (uploaded && existing.imagePublicId) {
       try {
         await destroyProductImage(existing.imagePublicId);
@@ -556,7 +564,7 @@ export async function updateProduct(
 
     return mapRowToProduct(row);
   } catch (error) {
-    // IMPORTANT: цей cleanup валідний, бо product update ще не гарантує що відбувся
+    // IMPORTANT: cleanup new image on failure (price upsert or product update)
     if (uploaded?.publicId) {
       try {
         await destroyProductImage(uploaded.publicId);
@@ -611,16 +619,10 @@ export async function getAdminProductById(id: string): Promise<DbProduct> {
   return mapRowToProduct(row);
 }
 
-export async function getAdminProductPrices(productId: string): Promise<
-  Array<{
-    currency: CurrencyCode;
-    priceMinor: unknown;
-    originalPriceMinor: unknown;
-    price: unknown;
-    originalPrice: unknown;
-  }>
-> {
-  return db
+export async function getAdminProductPrices(
+  productId: string
+): Promise<AdminProductPriceRow[]> {
+  const rows = await db
     .select({
       currency: productPrices.currency,
       // canonical:
@@ -632,17 +634,29 @@ export async function getAdminProductPrices(productId: string): Promise<
     })
     .from(productPrices)
     .where(eq(productPrices.productId, productId));
+
+  // Guard: drizzle int columns should come as number, but never trust the driver implicitly.
+  return rows.map(r => ({
+    currency: r.currency as CurrencyCode,
+    priceMinor: assertMoneyMinorInt(
+      r.priceMinor,
+      `${String(r.currency)} priceMinor`
+    ),
+    originalPriceMinor:
+      r.originalPriceMinor == null
+        ? null
+        : assertMoneyMinorInt(
+            r.originalPriceMinor,
+            `${String(r.currency)} originalPriceMinor`
+          ),
+    price: String(r.price),
+    originalPrice: r.originalPrice == null ? null : String(r.originalPrice),
+  }));
 }
 
 export async function getAdminProductByIdWithPrices(id: string): Promise<
   DbProduct & {
-    prices: Array<{
-      currency: CurrencyCode;
-      priceMinor: unknown;
-      originalPriceMinor: unknown;
-      price: unknown;
-      originalPrice: unknown;
-    }>;
+    prices: AdminProductPriceRow[];
   }
 > {
   const product = await getAdminProductById(id);
@@ -735,7 +749,6 @@ export async function rehydrateCartItems(
       continue;
     }
 
-    // критично: ціна має бути з product_prices для поточної currency
     if (
       !product.priceCurrency ||
       (product.priceMinor == null && product.price == null)

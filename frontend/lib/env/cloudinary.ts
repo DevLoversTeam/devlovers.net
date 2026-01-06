@@ -1,11 +1,11 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 export class CloudinaryDisabledError extends Error {
-  public readonly code = "CLOUDINARY_DISABLED" as const;
+  public readonly code = 'CLOUDINARY_DISABLED' as const;
 
   constructor(message: string) {
     super(message);
-    this.name = "CloudinaryDisabledError";
+    this.name = 'CloudinaryDisabledError';
   }
 }
 
@@ -13,7 +13,7 @@ const cloudinaryRequiredSchema = z.object({
   CLOUDINARY_CLOUD_NAME: z.string().min(1),
   CLOUDINARY_API_KEY: z.string().min(1),
   CLOUDINARY_API_SECRET: z.string().min(1),
-  CLOUDINARY_UPLOAD_FOLDER: z.string().min(1).default("products"),
+  CLOUDINARY_UPLOAD_FOLDER: z.string().min(1).default('products'),
 });
 
 export type CloudinaryEnv = {
@@ -38,7 +38,6 @@ export function getCloudinaryEnvOptional(): CloudinaryEnv | null {
   if (!res.success) return null;
 
   const parsed = res.data;
-
   return {
     cloudName: parsed.CLOUDINARY_CLOUD_NAME,
     apiKey: parsed.CLOUDINARY_API_KEY,
@@ -53,17 +52,24 @@ export function getCloudinaryEnvOptional(): CloudinaryEnv | null {
  */
 export function getCloudinaryEnvRequired(): CloudinaryEnv {
   const missing: string[] = [];
-  if (!process.env.CLOUDINARY_CLOUD_NAME) missing.push("CLOUDINARY_CLOUD_NAME");
-  if (!process.env.CLOUDINARY_API_KEY) missing.push("CLOUDINARY_API_KEY");
-  if (!process.env.CLOUDINARY_API_SECRET) missing.push("CLOUDINARY_API_SECRET");
+  if (!process.env.CLOUDINARY_CLOUD_NAME) missing.push('CLOUDINARY_CLOUD_NAME');
+  if (!process.env.CLOUDINARY_API_KEY) missing.push('CLOUDINARY_API_KEY');
+  if (!process.env.CLOUDINARY_API_SECRET) missing.push('CLOUDINARY_API_SECRET');
 
   if (missing.length) {
     throw new CloudinaryDisabledError(
-      `Cloudinary is not configured. Missing: ${missing.join(", ")}`
+      `Cloudinary is not configured. Missing: ${missing.join(', ')}`
     );
   }
 
-  const parsed = cloudinaryRequiredSchema.parse(process.env);
+  const res = cloudinaryRequiredSchema.safeParse(process.env);
+  if (!res.success) {
+    throw new CloudinaryDisabledError(
+      `Cloudinary configuration is invalid: ${res.error.message}`
+    );
+  }
+
+  const parsed = res.data;
   return {
     cloudName: parsed.CLOUDINARY_CLOUD_NAME,
     apiKey: parsed.CLOUDINARY_API_KEY,

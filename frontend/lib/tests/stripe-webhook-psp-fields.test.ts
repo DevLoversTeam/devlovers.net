@@ -14,7 +14,9 @@ import {
 } from '@/db/schema';
 
 vi.mock('@/lib/psp/stripe', async () => {
-  const actual = await vi.importActual<Record<string, unknown>>('@/lib/psp/stripe');
+  const actual = await vi.importActual<Record<string, unknown>>(
+    '@/lib/psp/stripe'
+  );
   return {
     ...actual,
     verifyWebhookSignature: vi.fn(),
@@ -59,7 +61,9 @@ describe('P0-6 webhook: writes PSP fields on succeeded', () => {
     const orderId = randomUUID();
     const idemKey = `idem_${randomUUID()}`;
 
-    const paymentIntentId = `pi_test_${randomUUID().replace(/-/g, '').slice(0, 24)}`;
+    const paymentIntentId = `pi_test_${randomUUID()
+      .replace(/-/g, '')
+      .slice(0, 24)}`;
     const eventId = `evt_test_${randomUUID().replace(/-/g, '').slice(0, 24)}`;
     const chargeId = `ch_test_${randomUUID().replace(/-/g, '').slice(0, 24)}`;
 
@@ -158,7 +162,9 @@ describe('P0-6 webhook: writes PSP fields on succeeded', () => {
       },
     };
 
-    (verifyWebhookSignature as unknown as { mockReturnValue: (v: any) => void }).mockReturnValue(event);
+    (
+      verifyWebhookSignature as unknown as { mockReturnValue: (v: any) => void }
+    ).mockReturnValue(event);
 
     const rawBody = JSON.stringify({ any: 'payload' });
     const req = makeWebhookRequest(rawBody);
@@ -193,11 +199,16 @@ describe('P0-6 webhook: writes PSP fields on succeeded', () => {
       expect((updated1[0].pspPaymentMethod ?? '').length).toBeGreaterThan(0);
 
       expect(typeof updated1[0].pspStatusReason).toBe('string');
-      expect((updated1[0].pspStatusReason ?? '').toLowerCase()).toContain('succeeded');
+      expect((updated1[0].pspStatusReason ?? '').toLowerCase()).toContain(
+        'succeeded'
+      );
 
       // pspMetadata must not stay "{}"
       expect(updated1[0].pspMetadata).toBeTruthy();
-      expect(Object.keys((updated1[0].pspMetadata ?? {}) as Record<string, unknown>).length).toBeGreaterThan(0);
+      expect(
+        Object.keys((updated1[0].pspMetadata ?? {}) as Record<string, unknown>)
+          .length
+      ).toBeGreaterThan(0);
 
       // stripe_events must record the eventId once
       const ev1 = await db
@@ -233,7 +244,10 @@ describe('P0-6 webhook: writes PSP fields on succeeded', () => {
       expect(updated2.length).toBe(1);
       expect(updated2[0].paymentStatus).toBe('paid');
       expect(updated2[0].pspChargeId).toBe(chargeId);
-      expect(Object.keys((updated2[0].pspMetadata ?? {}) as Record<string, unknown>).length).toBeGreaterThan(0);
+      expect(
+        Object.keys((updated2[0].pspMetadata ?? {}) as Record<string, unknown>)
+          .length
+      ).toBeGreaterThan(0);
     } finally {
       await cleanup({ orderId, productId, eventId });
     }

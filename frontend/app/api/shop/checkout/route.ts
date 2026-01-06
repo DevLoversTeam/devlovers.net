@@ -487,7 +487,7 @@ export async function POST(request: NextRequest) {
 
     if (error instanceof MoneyValueError) {
       return errorResponse(
-        'PRICE_CONFIG_ERROR',
+        'PRICE_DATA_ERROR',
         'Invalid stored price data for one or more products.',
         500,
         {

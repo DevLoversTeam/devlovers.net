@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { eq, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
-import { products, productPrices, orders, orderItems } from '@/db/schema';
+import { products, productPrices, orders, orderItems } from '@/db/schema/shop';
 import { createOrderWithItems } from '@/lib/services/orders';
 
 describe('order_items variants (selected_size/selected_color)', () => {
@@ -79,8 +79,8 @@ describe('order_items variants (selected_size/selected_color)', () => {
         .select({
           productId: orderItems.productId,
           quantity: orderItems.quantity,
-          selectedSize: (orderItems as any).selectedSize,
-          selectedColor: (orderItems as any).selectedColor,
+          selectedSize: orderItems.selectedSize,
+          selectedColor: orderItems.selectedColor,
         })
         .from(orderItems)
         .where(eq(orderItems.orderId, orderId));
@@ -88,12 +88,7 @@ describe('order_items variants (selected_size/selected_color)', () => {
       expect(rows.length).toBe(2);
 
       const rowKeys = rows
-        .map(
-          r =>
-            `${r.productId}|${(r as any).selectedSize}|${
-              (r as any).selectedColor
-            }`
-        )
+        .map(r => `${r.productId}|${r.selectedSize}|${r.selectedColor}`)
         .sort();
 
       expect(rowKeys).toEqual([`${productId}|M|Red`, `${productId}|S|Red`]);
