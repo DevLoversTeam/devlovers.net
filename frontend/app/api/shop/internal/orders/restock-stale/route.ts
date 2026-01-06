@@ -1,39 +1,57 @@
-import { NextRequest, NextResponse } from "next/server"
+import { NextRequest, NextResponse } from 'next/server';
+import { restockStalePendingOrders } from '@/lib/services/orders';
+import { requireInternalJanitorAuth } from '@/lib/auth/internal-janitor';
 
-import { restockStalePendingOrders } from "@/lib/services/orders"
+export const runtime = 'nodejs';
+
+function parseOlderThanMinutes(req: NextRequest, body: unknown): number | null {
+  const q = req.nextUrl.searchParams.get('olderThanMinutes');
+  let candidate: unknown = q;
+
+  if (
+    (candidate === null || candidate === undefined) &&
+    body &&
+    typeof body === 'object' &&
+    'olderThanMinutes' in body
+  ) {
+    candidate = (body as Record<string, unknown>).olderThanMinutes;
+  }
+
+  if (candidate === undefined || candidate === null) return null;
+
+  const n = Number(candidate);
+  if (!Number.isFinite(n)) return null;
+
+  return Math.floor(n);
+}
 
 export async function POST(request: NextRequest) {
-  let olderThanMinutes: number | undefined
-  const queryValue = request.nextUrl.searchParams.get("olderThanMinutes")
+  const authRes = requireInternalJanitorAuth(request);
+  if (authRes) return authRes;
 
-  if (queryValue !== null) {
-    const parsedQuery = Number(queryValue)
-    if (!Number.isNaN(parsedQuery)) {
-      olderThanMinutes = parsedQuery
-    }
+  let body: unknown = null;
+  try {
+    body = await request.json();
+  } catch {
+    // ignore invalid/missing json body; query param may be used instead
   }
 
-  if (olderThanMinutes === undefined) {
-    try {
-      const body = await request.json()
-      const candidate =
-        body && typeof body === "object" && "olderThanMinutes" in body
-          ? (body as Record<string, unknown>).olderThanMinutes
-          : undefined
+  const parsed = parseOlderThanMinutes(request, body);
 
-      if (candidate !== undefined) {
-        const parsedBodyValue = Number(candidate)
-        if (!Number.isNaN(parsedBodyValue)) {
-          olderThanMinutes = parsedBodyValue
-        }
-      }
-    } catch {
+  const DEFAULT = 60;
+  const MIN = 10; // NOT 0
+  const MAX = 60 * 24 * 7;
 
-    }
-  }
+  const effectiveOlderThanMinutes =
+    parsed == null ? DEFAULT : Math.max(MIN, Math.min(MAX, parsed));
 
-  const effectiveOlderThanMinutes = olderThanMinutes ?? 60
-  const processed = await restockStalePendingOrders({ olderThanMinutes: effectiveOlderThanMinutes })
+  const processed = await restockStalePendingOrders({
+    olderThanMinutes: effectiveOlderThanMinutes,
+  });
 
-  return NextResponse.json({ success: true, processed, olderThanMinutes: effectiveOlderThanMinutes })
+  return NextResponse.json({
+    success: true,
+    processed,
+    olderThanMinutes: effectiveOlderThanMinutes,
+  });
 }
