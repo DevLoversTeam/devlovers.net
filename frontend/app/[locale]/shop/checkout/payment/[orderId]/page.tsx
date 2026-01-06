@@ -57,12 +57,12 @@ export default async function PaymentPage(props: PaymentPageProps) {
             We couldn&apos;t identify your order. Please return to your cart.
           </p>
           <div className="mt-6 flex justify-center gap-3">
-            <Link href={`/${locale}/shop/cart`}
+            <Link href={`/shop/cart`}
               className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
             >
               Go to cart
             </Link>
-            <Link href={`/${locale}/shop/products`}
+            <Link href={`/shop/products`}
               className="inline-flex items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground hover:bg-accent/90"
             >
               Continue shopping
@@ -87,12 +87,12 @@ export default async function PaymentPage(props: PaymentPageProps) {
               We couldn&apos;t find this order. It may have been removed or never existed.
             </p>
             <div className="mt-6 flex justify-center gap-3">
-              <Link href={`/${locale}/shop/cart`}
+              <Link href={`/shop/cart`}
                 className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
               >
                 Go to cart
               </Link>
-              <Link href={`/${locale}/shop/products`}
+              <Link href={`/shop/products`}
                 className="inline-flex items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground hover:bg-accent/90"
               >
                 Continue shopping
@@ -160,12 +160,12 @@ export default async function PaymentPage(props: PaymentPageProps) {
           </p>
           <div className="mt-6 flex justify-center gap-3">
             <Link
-              href={`/${locale}/shop/checkout/success?orderId=${order.id}`}
+              href={`/shop/checkout/success?orderId=${order.id}`}
               className="inline-flex items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground hover:bg-accent/90"
             >
               View confirmation
             </Link>
-            <Link href={`/${locale}/shop/products`}
+            <Link href={`/shop/products`}
               className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
             >
               Continue shopping

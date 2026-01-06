@@ -10,6 +10,7 @@ import {
   type CartRemovedItem,
 } from '@/lib/validation/shop';
 import { fromCents } from '@/lib/shop/money';
+import { createCartItemKey } from '@/lib/shop/cart-item-key';
 
 const CART_KEY = 'devlovers-cart';
 
@@ -45,13 +46,7 @@ const legacyStoredCartItemSchema = z.object({
   selectedColor: z.string().optional(),
 });
 
-export function createCartItemKey(
-  productId: string,
-  selectedSize?: string,
-  selectedColor?: string
-): string {
-  return [productId, selectedSize ?? '', selectedColor ?? ''].join('::');
-}
+export { createCartItemKey };
 
 export function capQuantityByStock(quantity: number, stock: number): number {
   return Math.max(
@@ -124,24 +119,37 @@ function normalizeItemsForStorage(
 export function computeSummaryFromItems(
   items: CartRehydrateItem[]
 ): CartSummary {
-  const totals = items.reduce(
-    (acc, item) => {
-      acc.totalMinor += item.lineTotal; // lineTotal is minor int
-      acc.itemCount += item.quantity;
-      return acc;
-    },
-    {
-      totalMinor: 0,
+  if (!items.length) {
+    return {
+      totalAmountMinor: 0,
+      totalAmount: 0,
       itemCount: 0,
-      currency: (items[0]?.currency ?? 'USD') as CartSummary['currency'],
+      currency: 'USD',
+    };
+  }
+
+  const currency = (items[0]?.currency ?? 'USD') as CartSummary['currency'];
+
+  let totalMinor = 0;
+  let itemCount = 0;
+
+  for (const item of items) {
+    // Production-safety: cart must not mix currencies (usually indicates locale switch + stale cart)
+    if (item.currency !== currency) {
+      throw new Error(
+        `Cart contains mixed currencies (${currency} and ${item.currency}). Clear cart and try again.`
+      );
     }
-  );
+
+    totalMinor += item.lineTotalMinor;
+    itemCount += item.quantity;
+  }
 
   return {
-    totalAmountMinor: totals.totalMinor,
-    totalAmount: fromCents(totals.totalMinor),
-    itemCount: totals.itemCount,
-    currency: totals.currency,
+    totalAmountMinor: totalMinor,
+    totalAmount: fromCents(totalMinor),
+    itemCount,
+    currency,
   };
 }
 

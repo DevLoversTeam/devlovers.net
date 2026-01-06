@@ -501,7 +501,7 @@ export async function updateProduct(
     }
   }
 
-    try {
+  try {
     // 1) upsert prices (якщо прийшли)
     if (prices.length) {
       const upsertRows = prices.map(p => {
@@ -514,7 +514,8 @@ export async function updateProduct(
           priceMinor,
           originalPriceMinor: originalMinor,
           price: toDbMoney(priceMinor),
-          originalPrice: originalMinor == null ? null : toDbMoney(originalMinor),
+          originalPrice:
+            originalMinor == null ? null : toDbMoney(originalMinor),
         };
       });
 
@@ -560,17 +561,18 @@ export async function updateProduct(
       try {
         await destroyProductImage(uploaded.publicId);
       } catch (cleanupError) {
-        logError('Failed to cleanup uploaded image after update failure', cleanupError);
+        logError(
+          'Failed to cleanup uploaded image after update failure',
+          cleanupError
+        );
       }
     }
 
     if ((error as { code?: string }).code === '23505') {
       throw new SlugConflictError('Slug already exists.');
     }
-
     throw error;
   }
-
 }
 
 export async function deleteProduct(id: string): Promise<void> {

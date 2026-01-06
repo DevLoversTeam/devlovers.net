@@ -238,7 +238,7 @@ export async function POST(request: NextRequest) {
     const paymentsEnabled = isPaymentsEnabled();
 
     if (!paymentsEnabled) {
-     // If the order already failed (inventory or other), return a stable conflict instead of 500.
+      // If the order already failed (inventory or other), return a stable conflict instead of 500.
       if (
         order.paymentProvider === 'none' &&
         order.paymentStatus === 'failed'
@@ -487,7 +487,7 @@ export async function POST(request: NextRequest) {
 
     if (error instanceof MoneyValueError) {
       return errorResponse(
-        'PRICE_DATA_ERROR',
+        'PRICE_CONFIG_ERROR',
         'Invalid stored price data for one or more products.',
         500,
         {

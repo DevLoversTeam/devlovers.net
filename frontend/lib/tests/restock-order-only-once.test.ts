@@ -22,392 +22,370 @@ async function countMoveKey(moveKey: string): Promise<number> {
   return Number(rows?.[0]?.n ?? 0);
 }
 
-describe('P0-8.4.2 restockOrder: order-level gate + idempotency', () => {
-  it('duplicate failed restock must not increment stock twice and must not change restocked_at', async () => {
-    const orderId = crypto.randomUUID();
-    const productId = crypto.randomUUID();
-    const slug = `test-${crypto.randomUUID()}`;
-    const sku = `sku-${crypto.randomUUID().slice(0, 8)}`;
+describe(
+  'P0-8.4.2 restockOrder: order-level gate + idempotency',
+  () => {
+    it('duplicate failed restock must not increment stock twice and must not change restocked_at', async () => {
+      const orderId = crypto.randomUUID();
+      const productId = crypto.randomUUID();
+      const slug = `test-${crypto.randomUUID()}`;
+      const sku = `sku-${crypto.randomUUID().slice(0, 8)}`;
 
-    const initialStock = 5;
-    const qty = 2;
-    const createdAt = new Date(Date.now() - 2 * 60 * 60 * 1000);
-    const idem = `test-restock-${crypto.randomUUID()}`;
+      const initialStock = 5;
+      const qty = 2;
+      const createdAt = new Date(Date.now() - 2 * 60 * 60 * 1000);
+      const idem = `test-restock-${crypto.randomUUID()}`;
 
-    try {
-      // product (adjust fields if your schema requires more NOT NULL columns)
-      await db.insert(products).values({
-        id: productId,
-        title: 'Test Product',
-        slug,
-        sku,
-        badge: 'NONE',
-        imageUrl: 'https://example.com/test.png',
-        isActive: true,
-        stock: initialStock,
-        price: toDbMoney(1000), // $10.00 (toDbMoney expects minor)
-        currency: 'USD',
-        createdAt,
-        updatedAt: createdAt,
-      } as any);
-
-      // order
-      await db.insert(orders).values({
-        id: orderId,
-        userId: null,
-
-        totalAmountMinor: 1234,
-        totalAmount: toDbMoney(1234),
-        currency: 'USD',
-
-        paymentProvider: 'stripe',
-        paymentStatus: 'failed',
-        paymentIntentId: null,
-
-        status: 'INVENTORY_RESERVED',
-        inventoryStatus: 'reserved',
-
-        failureCode: null,
-        failureMessage: null,
-        idempotencyRequestHash: null,
-
-        stockRestored: false,
-        restockedAt: null,
-        idempotencyKey: idem,
-
-        createdAt,
-        updatedAt: createdAt,
-      });
-
-      // create reserve move + decrement stock
-      const r = await applyReserveMove(orderId, productId, qty);
-      expect(r.ok).toBe(true);
-
-      const stockAfterReserve = await db
-        .select({ stock: products.stock })
-        .from(products)
-        .where(eq(products.id, productId))
-        .limit(1);
-
-      expect(stockAfterReserve[0]?.stock).toBe(initialStock - qty);
-
-      // First restock
-      await restockOrder(orderId, {
-        reason: 'failed',
-        workerId: 'test',
-        claimTtlMinutes: 5,
-      });
-
-      const [after1] = await db
-        .select({
-          stockRestored: orders.stockRestored,
-          restockedAt: orders.restockedAt,
-        })
-        .from(orders)
-        .where(eq(orders.id, orderId))
-        .limit(1);
-
-      expect(after1.stockRestored).toBe(true);
-      expect(after1.restockedAt).not.toBeNull();
-
-      const releaseKey = `release:${orderId}:${productId}`;
-      expect(await countMoveKey(releaseKey)).toBe(1);
-
-      const stockAfter1 = await db
-        .select({ stock: products.stock })
-        .from(products)
-        .where(eq(products.id, productId))
-        .limit(1);
-
-      expect(stockAfter1[0]?.stock).toBe(initialStock);
-
-      // Second restock (duplicate)
-      await restockOrder(orderId, {
-        reason: 'failed',
-        workerId: 'test',
-        claimTtlMinutes: 5,
-      });
-
-      const [after2] = await db
-        .select({
-          stockRestored: orders.stockRestored,
-          restockedAt: orders.restockedAt,
-        })
-        .from(orders)
-        .where(eq(orders.id, orderId))
-        .limit(1);
-
-      expect(after2.stockRestored).toBe(true);
-      expect(after2.restockedAt?.getTime()).toBe(after1.restockedAt?.getTime());
-
-      expect(await countMoveKey(releaseKey)).toBe(1);
-
-      const stockAfter2 = await db
-        .select({ stock: products.stock })
-        .from(products)
-        .where(eq(products.id, productId))
-        .limit(1);
-
-      expect(stockAfter2[0]?.stock).toBe(initialStock);
-    } finally {
       try {
-        await db.delete(orders).where(eq(orders.id, orderId));
-      } catch {}
-      try {
-        await db.delete(products).where(eq(products.id, productId));
-      } catch {}
-    }
-  });
+        await db.insert(products).values({
+          id: productId,
+          title: 'Test Product',
+          slug,
+          sku,
+          badge: 'NONE',
+          imageUrl: 'https://example.com/test.png',
+          isActive: true,
+          stock: initialStock,
+          price: toDbMoney(1000),
+          currency: 'USD',
+          createdAt,
+          updatedAt: createdAt,
+        } as any);
 
-  it('two concurrent restocks must process/finalize only once', async () => {
-    const orderId = crypto.randomUUID();
-    const productId = crypto.randomUUID();
-    const slug = `test-${crypto.randomUUID()}`;
-    const sku = `sku-${crypto.randomUUID().slice(0, 8)}`;
+        await db.insert(orders).values({
+          id: orderId,
+          userId: null,
 
-    const initialStock = 5;
-    const qty = 2;
-    const createdAt = new Date(Date.now() - 2 * 60 * 60 * 1000);
-    const idem = `test-restock-${crypto.randomUUID()}`;
+          totalAmountMinor: 1234,
+          totalAmount: toDbMoney(1234),
+          currency: 'USD',
 
-    try {
-      await db.insert(products).values({
-        id: productId,
-        title: 'Test Product',
-        slug,
-        sku,
-        badge: 'NONE',
-        imageUrl: 'https://example.com/test.png',
-        isActive: true,
-        stock: initialStock,
-        price: toDbMoney(1000),
- currency: 'USD',
-        createdAt,
-        updatedAt: createdAt,
-      } as any);
+          paymentProvider: 'stripe',
+          paymentStatus: 'failed',
+          paymentIntentId: null,
 
-      await db.insert(orders).values({
-        id: orderId,
-        userId: null,
+          status: 'INVENTORY_RESERVED',
+          inventoryStatus: 'reserved',
 
-        totalAmountMinor: 1234,
-        totalAmount: toDbMoney(1234),
-        currency: 'USD',
+          failureCode: null,
+          failureMessage: null,
+          idempotencyRequestHash: null,
 
-        paymentProvider: 'stripe',
-        paymentStatus: 'failed',
-        paymentIntentId: null,
+          stockRestored: false,
+          restockedAt: null,
+          idempotencyKey: idem,
 
-        status: 'INVENTORY_RESERVED',
-        inventoryStatus: 'reserved',
+          createdAt,
+          updatedAt: createdAt,
+        });
 
-        failureCode: null,
-        failureMessage: null,
-        idempotencyRequestHash: null,
+        const r = await applyReserveMove(orderId, productId, qty);
+        expect(r.ok).toBe(true);
 
-        stockRestored: false,
-        restockedAt: null,
-        idempotencyKey: idem,
+        const stockAfterReserve = await db
+          .select({ stock: products.stock })
+          .from(products)
+          .where(eq(products.id, productId))
+          .limit(1);
 
-        createdAt,
-        updatedAt: createdAt,
-      });
+        expect(stockAfterReserve[0]?.stock).toBe(initialStock - qty);
 
-      const r = await applyReserveMove(orderId, productId, qty);
-      expect(r.ok).toBe(true);
-
-      await Promise.all([
-        restockOrder(orderId, {
+        await restockOrder(orderId, {
           reason: 'failed',
           workerId: 'test',
           claimTtlMinutes: 5,
-        }),
-        restockOrder(orderId, {
+        });
+
+        const [after1] = await db
+          .select({
+            stockRestored: orders.stockRestored,
+            restockedAt: orders.restockedAt,
+          })
+          .from(orders)
+          .where(eq(orders.id, orderId))
+          .limit(1);
+
+        expect(after1.stockRestored).toBe(true);
+        expect(after1.restockedAt).not.toBeNull();
+
+        const releaseKey = `release:${orderId}:${productId}`;
+        expect(await countMoveKey(releaseKey)).toBe(1);
+
+        const stockAfter1 = await db
+          .select({ stock: products.stock })
+          .from(products)
+          .where(eq(products.id, productId))
+          .limit(1);
+
+        expect(stockAfter1[0]?.stock).toBe(initialStock);
+
+        await restockOrder(orderId, {
           reason: 'failed',
           workerId: 'test',
           claimTtlMinutes: 5,
-        }),
-      ]);
+        });
 
-      const releaseKey = `release:${orderId}:${productId}`;
-      expect(await countMoveKey(releaseKey)).toBe(1);
+        const [after2] = await db
+          .select({
+            stockRestored: orders.stockRestored,
+            restockedAt: orders.restockedAt,
+          })
+          .from(orders)
+          .where(eq(orders.id, orderId))
+          .limit(1);
 
-      const stockAfter = await db
-        .select({ stock: products.stock })
-        .from(products)
-        .where(eq(products.id, productId))
-        .limit(1);
+        expect(after2.stockRestored).toBe(true);
+        expect(after2.restockedAt?.getTime()).toBe(after1.restockedAt?.getTime());
+        expect(await countMoveKey(releaseKey)).toBe(1);
 
-      expect(stockAfter[0]?.stock).toBe(initialStock);
+        const stockAfter2 = await db
+          .select({ stock: products.stock })
+          .from(products)
+          .where(eq(products.id, productId))
+          .limit(1);
 
-      const [finalOrder] = await db
-        .select({
-          stockRestored: orders.stockRestored,
-          restockedAt: orders.restockedAt,
-        })
-        .from(orders)
-        .where(eq(orders.id, orderId))
-        .limit(1);
-
-      expect(finalOrder.stockRestored).toBe(true);
-      expect(finalOrder.restockedAt).not.toBeNull();
-    } finally {
-      try {
-        await db.delete(orders).where(eq(orders.id, orderId));
-      } catch {}
-      try {
-        await db.delete(products).where(eq(products.id, productId));
-      } catch {}
-    }
-  });
-}, 30000);
-
-it('duplicate refund restock must not increment stock twice and must not change restocked_at', async () => {
-  const orderId = crypto.randomUUID();
-  const productId = crypto.randomUUID();
-  const slug = `test-${crypto.randomUUID()}`;
-  const sku = `sku-${crypto.randomUUID().slice(0, 8)}`;
-
-  const initialStock = 5;
-  const qty = 2;
-  const createdAt = new Date(Date.now() - 2 * 60 * 60 * 1000);
-  const idem = `test-restock-${crypto.randomUUID()}`;
-
-  try {
-    // product (include NOT NULL columns required by your schema)
-    await db.insert(products).values({
-      id: productId,
-      title: 'Test Product',
-      slug,
-      sku,
-      badge: 'NONE',
-      imageUrl: 'https://example.com/test.png',
-      isActive: true,
-      stock: initialStock,
-
-      // IMPORTANT: your schema requires price/currency NOT NULL
-      price: toDbMoney(1000), // $10.00 (toDbMoney expects minor)
-      currency: 'USD',
-
-      createdAt,
-      updatedAt: createdAt,
-    } as any);
-
-    // order in "paid" state (refund is allowed)
-    await db.insert(orders).values({
-      id: orderId,
-      userId: null,
-
-      totalAmountMinor: 1234,
-      totalAmount: toDbMoney(1234),
-      currency: 'USD',
-
-      paymentProvider: 'stripe',
-      paymentStatus: 'paid',
-      paymentIntentId: null,
-
-      status: 'PAID',
-      inventoryStatus: 'reserved',
-
-      failureCode: null,
-      failureMessage: null,
-      idempotencyRequestHash: null,
-
-      stockRestored: false,
-      restockedAt: null,
-      idempotencyKey: idem,
-
-      createdAt,
-      updatedAt: createdAt,
-    } as any);
-
-    // create reserve move + decrement stock
-    const r = await applyReserveMove(orderId, productId, qty);
-    expect(r.ok).toBe(true);
-
-    const stockAfterReserve = await db
-      .select({ stock: products.stock })
-      .from(products)
-      .where(eq(products.id, productId))
-      .limit(1);
-
-    expect(stockAfterReserve[0]?.stock).toBe(initialStock - qty);
-
-    // First refund restock
-    await restockOrder(orderId, {
-      reason: 'refunded',
-      workerId: 'test',
-      claimTtlMinutes: 5,
+        expect(stockAfter2[0]?.stock).toBe(initialStock);
+      } finally {
+        try {
+          await db.delete(orders).where(eq(orders.id, orderId));
+        } catch {}
+        try {
+          await db.delete(products).where(eq(products.id, productId));
+        } catch {}
+      }
     });
 
-    const [after1] = await db
-      .select({
-        stockRestored: orders.stockRestored,
-        restockedAt: orders.restockedAt,
-        paymentStatus: orders.paymentStatus,
-        inventoryStatus: orders.inventoryStatus,
-      })
-      .from(orders)
-      .where(eq(orders.id, orderId))
-      .limit(1);
+    it('two concurrent restocks must process/finalize only once', async () => {
+      const orderId = crypto.randomUUID();
+      const productId = crypto.randomUUID();
+      const slug = `test-${crypto.randomUUID()}`;
+      const sku = `sku-${crypto.randomUUID().slice(0, 8)}`;
 
-    expect(after1.stockRestored).toBe(true);
-    expect(after1.restockedAt).not.toBeNull();
-    expect(after1.paymentStatus).toBe('refunded');
-    expect(after1.inventoryStatus).toBe('released');
+      const initialStock = 5;
+      const qty = 2;
+      const createdAt = new Date(Date.now() - 2 * 60 * 60 * 1000);
+      const idem = `test-restock-${crypto.randomUUID()}`;
 
-    const releaseKey = `release:${orderId}:${productId}`;
-    expect(await countMoveKey(releaseKey)).toBe(1);
+      try {
+        await db.insert(products).values({
+          id: productId,
+          title: 'Test Product',
+          slug,
+          sku,
+          badge: 'NONE',
+          imageUrl: 'https://example.com/test.png',
+          isActive: true,
+          stock: initialStock,
+          price: toDbMoney(1000),
+          currency: 'USD',
+          createdAt,
+          updatedAt: createdAt,
+        } as any);
 
-    const stockAfter1 = await db
-      .select({ stock: products.stock })
-      .from(products)
-      .where(eq(products.id, productId))
-      .limit(1);
+        await db.insert(orders).values({
+          id: orderId,
+          userId: null,
 
-    expect(stockAfter1[0]?.stock).toBe(initialStock);
+          totalAmountMinor: 1234,
+          totalAmount: toDbMoney(1234),
+          currency: 'USD',
 
-    // Second refund restock (duplicate)
-    await restockOrder(orderId, {
-      reason: 'refunded',
-      workerId: 'test',
-      claimTtlMinutes: 5,
+          paymentProvider: 'stripe',
+          paymentStatus: 'failed',
+          paymentIntentId: null,
+
+          status: 'INVENTORY_RESERVED',
+          inventoryStatus: 'reserved',
+
+          failureCode: null,
+          failureMessage: null,
+          idempotencyRequestHash: null,
+
+          stockRestored: false,
+          restockedAt: null,
+          idempotencyKey: idem,
+
+          createdAt,
+          updatedAt: createdAt,
+        });
+
+        const r = await applyReserveMove(orderId, productId, qty);
+        expect(r.ok).toBe(true);
+
+        await Promise.all([
+          restockOrder(orderId, { reason: 'failed', workerId: 'test', claimTtlMinutes: 5 }),
+          restockOrder(orderId, { reason: 'failed', workerId: 'test', claimTtlMinutes: 5 }),
+        ]);
+
+        const releaseKey = `release:${orderId}:${productId}`;
+        expect(await countMoveKey(releaseKey)).toBe(1);
+
+        const stockAfter = await db
+          .select({ stock: products.stock })
+          .from(products)
+          .where(eq(products.id, productId))
+          .limit(1);
+
+        expect(stockAfter[0]?.stock).toBe(initialStock);
+
+        const [finalOrder] = await db
+          .select({
+            stockRestored: orders.stockRestored,
+            restockedAt: orders.restockedAt,
+          })
+          .from(orders)
+          .where(eq(orders.id, orderId))
+          .limit(1);
+
+        expect(finalOrder.stockRestored).toBe(true);
+        expect(finalOrder.restockedAt).not.toBeNull();
+      } finally {
+        try {
+          await db.delete(orders).where(eq(orders.id, orderId));
+        } catch {}
+        try {
+          await db.delete(products).where(eq(products.id, productId));
+        } catch {}
+      }
     });
 
-    const [after2] = await db
-      .select({
-        stockRestored: orders.stockRestored,
-        restockedAt: orders.restockedAt,
-        paymentStatus: orders.paymentStatus,
-        inventoryStatus: orders.inventoryStatus,
-      })
-      .from(orders)
-      .where(eq(orders.id, orderId))
-      .limit(1);
+    it('duplicate refund restock must not increment stock twice and must not change restocked_at', async () => {
+      const orderId = crypto.randomUUID();
+      const productId = crypto.randomUUID();
+      const slug = `test-${crypto.randomUUID()}`;
+      const sku = `sku-${crypto.randomUUID().slice(0, 8)}`;
 
-    expect(after2.stockRestored).toBe(true);
-    expect(after2.paymentStatus).toBe('refunded');
-    expect(after2.inventoryStatus).toBe('released');
+      const initialStock = 5;
+      const qty = 2;
+      const createdAt = new Date(Date.now() - 2 * 60 * 60 * 1000);
+      const idem = `test-restock-${crypto.randomUUID()}`;
 
-    // must not change timestamp on duplicate call
-    expect(after2.restockedAt?.getTime()).toBe(after1.restockedAt?.getTime());
+      try {
+        await db.insert(products).values({
+          id: productId,
+          title: 'Test Product',
+          slug,
+          sku,
+          badge: 'NONE',
+          imageUrl: 'https://example.com/test.png',
+          isActive: true,
+          stock: initialStock,
+          price: toDbMoney(1000),
+          currency: 'USD',
+          createdAt,
+          updatedAt: createdAt,
+        } as any);
 
-    // must not create extra release move / extra stock increment
-    expect(await countMoveKey(releaseKey)).toBe(1);
+        await db.insert(orders).values({
+          id: orderId,
+          userId: null,
 
-    const stockAfter2 = await db
-      .select({ stock: products.stock })
-      .from(products)
-      .where(eq(products.id, productId))
-      .limit(1);
+          totalAmountMinor: 1234,
+          totalAmount: toDbMoney(1234),
+          currency: 'USD',
 
-    expect(stockAfter2[0]?.stock).toBe(initialStock);
-  } finally {
-    try {
-      await db.delete(orders).where(eq(orders.id, orderId));
-    } catch {}
-    try {
-      await db.delete(products).where(eq(products.id, productId));
-    } catch {}
-  }
-});
+          paymentProvider: 'stripe',
+          paymentStatus: 'paid',
+          paymentIntentId: null,
+
+          status: 'PAID',
+          inventoryStatus: 'reserved',
+
+          failureCode: null,
+          failureMessage: null,
+          idempotencyRequestHash: null,
+
+          stockRestored: false,
+          restockedAt: null,
+          idempotencyKey: idem,
+
+          createdAt,
+          updatedAt: createdAt,
+        } as any);
+
+        const r = await applyReserveMove(orderId, productId, qty);
+        expect(r.ok).toBe(true);
+
+        const stockAfterReserve = await db
+          .select({ stock: products.stock })
+          .from(products)
+          .where(eq(products.id, productId))
+          .limit(1);
+
+        expect(stockAfterReserve[0]?.stock).toBe(initialStock - qty);
+
+        await restockOrder(orderId, {
+          reason: 'refunded',
+          workerId: 'test',
+          claimTtlMinutes: 5,
+        });
+
+        const [after1] = await db
+          .select({
+            stockRestored: orders.stockRestored,
+            restockedAt: orders.restockedAt,
+            paymentStatus: orders.paymentStatus,
+            inventoryStatus: orders.inventoryStatus,
+          })
+          .from(orders)
+          .where(eq(orders.id, orderId))
+          .limit(1);
+
+        expect(after1.stockRestored).toBe(true);
+        expect(after1.restockedAt).not.toBeNull();
+        expect(after1.paymentStatus).toBe('refunded');
+        expect(after1.inventoryStatus).toBe('released');
+
+        const releaseKey = `release:${orderId}:${productId}`;
+        expect(await countMoveKey(releaseKey)).toBe(1);
+
+        const stockAfter1 = await db
+          .select({ stock: products.stock })
+          .from(products)
+          .where(eq(products.id, productId))
+          .limit(1);
+
+        expect(stockAfter1[0]?.stock).toBe(initialStock);
+
+        await restockOrder(orderId, {
+          reason: 'refunded',
+          workerId: 'test',
+          claimTtlMinutes: 5,
+        });
+
+        const [after2] = await db
+          .select({
+            stockRestored: orders.stockRestored,
+            restockedAt: orders.restockedAt,
+            paymentStatus: orders.paymentStatus,
+            inventoryStatus: orders.inventoryStatus,
+          })
+          .from(orders)
+          .where(eq(orders.id, orderId))
+          .limit(1);
+
+        expect(after2.stockRestored).toBe(true);
+        expect(after2.paymentStatus).toBe('refunded');
+        expect(after2.inventoryStatus).toBe('released');
+        expect(after2.restockedAt?.getTime()).toBe(after1.restockedAt?.getTime());
+        expect(await countMoveKey(releaseKey)).toBe(1);
+
+        const stockAfter2 = await db
+          .select({ stock: products.stock })
+          .from(products)
+          .where(eq(products.id, productId))
+          .limit(1);
+
+        expect(stockAfter2[0]?.stock).toBe(initialStock);
+      } finally {
+        try {
+          await db.delete(orders).where(eq(orders.id, orderId));
+        } catch {}
+        try {
+          await db.delete(products).where(eq(products.id, productId));
+        } catch {}
+      }
+    });
+  },
+  30000
+);

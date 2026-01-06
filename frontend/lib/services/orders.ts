@@ -36,12 +36,25 @@ import {
 
 import { type PaymentProvider, type PaymentStatus } from '@/lib/shop/payments';
 import { MAX_QUANTITY_PER_LINE } from '@/lib/validation/shop';
+import { createCartItemKey } from '@/lib/shop/cart-item-key';
 
 type OrderRow = typeof orders.$inferSelect;
+
+type CheckoutItemWithVariant = CheckoutItem & {
+  selectedSize?: string | null;
+  selectedColor?: string | null;
+};
+
+function normVariant(v?: string | null): string {
+  const s = (v ?? '').trim();
+  return s;
+}
 
 type DbClient = typeof db;
 type OrderItemForSummary = {
   productId: string;
+  selectedSize: string;
+  selectedColor: string;
   quantity: number;
   unitPrice: unknown;
   lineTotal: unknown;
@@ -53,6 +66,8 @@ type OrderItemForSummary = {
 
 const orderItemSummarySelection = {
   productId: orderItems.productId,
+  selectedSize: (orderItems as any).selectedSize,
+  selectedColor: (orderItems as any).selectedColor,
   quantity: orderItems.quantity,
   unitPrice: orderItems.unitPrice,
   lineTotal: orderItems.lineTotal,
@@ -94,14 +109,17 @@ function requireTotalCents(summary: OrderSummary): number {
 }
 
 function mergeCheckoutItems(items: CheckoutItem[]): CheckoutItem[] {
-  const map = new Map<string, CheckoutItem>();
+  const map = new Map<string, CheckoutItemWithVariant>();
 
   for (const item of items) {
-    const key = item.productId;
+    const it = item as CheckoutItemWithVariant;
+    const selectedSize = normVariant(it.selectedSize);
+    const selectedColor = normVariant(it.selectedColor);
+    const key = createCartItemKey(item.productId, selectedSize, selectedColor);
 
     const existing = map.get(key);
     if (!existing) {
-      map.set(key, { ...item });
+      map.set(key, { ...it, selectedSize, selectedColor });
       continue;
     }
     const mergedQty = existing.quantity + item.quantity;
@@ -114,15 +132,44 @@ function mergeCheckoutItems(items: CheckoutItem[]): CheckoutItem[] {
   return Array.from(map.values());
 }
 
+function aggregateReserveByProductId(
+  items: Array<{ productId: string; quantity: number }>
+): Array<{ productId: string; quantity: number }> {
+  const agg = new Map<string, number>();
+  for (const it of items) {
+    agg.set(it.productId, (agg.get(it.productId) ?? 0) + it.quantity);
+  }
+  return Array.from(agg.entries())
+    .map(([productId, quantity]) => ({ productId, quantity }))
+    .sort((a, b) => a.productId.localeCompare(b.productId));
+}
+
 function hashIdempotencyRequest(params: {
-  items: CheckoutItem[];
+  items: CheckoutItemWithVariant[];
   currency: string;
   userId: string | null;
 }) {
   // Stable canonical form:
   const normalized = [...params.items]
-    .map(i => ({ productId: i.productId, quantity: i.quantity }))
-    .sort((a, b) => a.productId.localeCompare(b.productId));
+    .map(i => ({
+      productId: i.productId,
+      quantity: i.quantity,
+      selectedSize: normVariant(i.selectedSize),
+      selectedColor: normVariant(i.selectedColor),
+    }))
+    .sort((a, b) => {
+      const ka = createCartItemKey(
+        a.productId,
+        a.selectedSize ?? undefined,
+        a.selectedColor ?? undefined
+      );
+      const kb = createCartItemKey(
+        b.productId,
+        b.selectedSize ?? undefined,
+        b.selectedColor ?? undefined
+      );
+      return ka.localeCompare(kb);
+    });
 
   const payload = JSON.stringify({
     v: 1,
@@ -202,6 +249,8 @@ function parseOrderSummary(
       productId: item.productId,
       productTitle: item.productTitle ?? '',
       productSlug: item.productSlug ?? '',
+      selectedSize: item.selectedSize ?? '',
+      selectedColor: item.selectedColor ?? '',
       quantity: item.quantity,
 
       // canonical:
@@ -325,9 +374,7 @@ async function reconcileNoPaymentOrder(orderId: string): Promise<OrderSummary> {
       )
     );
 
-  const itemsToReserve = [...items].sort((a, b) =>
-    a.productId.localeCompare(b.productId)
-  );
+  const itemsToReserve = aggregateReserveByProductId(items);
 
   try {
     for (const item of itemsToReserve) {
@@ -450,7 +497,7 @@ type CheckoutProductRow = Awaited<
 >[number];
 
 function priceItems(
-  items: CheckoutItem[],
+  items: CheckoutItemWithVariant[],
   productMap: Map<string, CheckoutProductRow>,
   currency: Currency
 ) {
@@ -506,6 +553,8 @@ function priceItems(
 
     return {
       productId: product.id,
+      selectedSize: normVariant(item.selectedSize),
+      selectedColor: normVariant(item.selectedColor),
       quantity: item.quantity,
       unitPrice: normalizedUnitPrice,
       unitPriceCents,
@@ -536,7 +585,9 @@ export async function createOrderWithItems({
   // IMPORTANT: DB CHECK requires provider=none => payment_status in ('paid','failed')
   const paymentStatus = paymentsEnabled ? 'requires_payment' : 'paid';
 
-  const normalizedItems = mergeCheckoutItems(items);
+  const normalizedItems = mergeCheckoutItems(
+    items
+  ) as CheckoutItemWithVariant[];
   const requestHash = hashIdempotencyRequest({
     items: normalizedItems,
     currency,
@@ -572,10 +623,12 @@ export async function createOrderWithItems({
     const derivedExistingHash =
       row.idempotencyRequestHash ??
       hashIdempotencyRequest({
-        items: existing.items.map(i => ({
+        items: (existing.items as any[]).map(i => ({
           productId: i.productId,
           quantity: i.quantity,
-        })),
+          selectedSize: normVariant((i as any).selectedSize),
+          selectedColor: normVariant((i as any).selectedColor),
+        })) as CheckoutItemWithVariant[],
         currency: row.currency,
         userId: (row.userId ?? null) as string | null,
       });
@@ -703,7 +756,7 @@ export async function createOrderWithItems({
     throw error;
   }
 
-  // 5) upsert order_items (requires UNIQUE(order_id, product_id))
+  // 5) upsert order_items (requires UNIQUE(order_id, product_id, selected_size, selected_color))
   if (pricedItems.length) {
     await db
       .insert(orderItems)
@@ -711,6 +764,8 @@ export async function createOrderWithItems({
         pricedItems.map(item => ({
           orderId,
           productId: item.productId,
+          selectedSize: item.selectedSize ?? '',
+          selectedColor: item.selectedColor ?? '',
           quantity: item.quantity,
 
           unitPriceMinor: item.unitPriceCents,
@@ -725,7 +780,12 @@ export async function createOrderWithItems({
         }))
       )
       .onConflictDoUpdate({
-        target: [orderItems.orderId, orderItems.productId],
+        target: [
+          orderItems.orderId,
+          orderItems.productId,
+          (orderItems as any).selectedSize,
+          (orderItems as any).selectedColor,
+        ],
         set: {
           quantity: sql`excluded.quantity`,
           unitPriceMinor: sql`excluded.unit_price_minor`,
@@ -745,8 +805,9 @@ export async function createOrderWithItems({
     .set({ inventoryStatus: 'reserving', updatedAt: now })
     .where(eq(orders.id, orderId));
 
-  const itemsToReserve = [...pricedItems].sort((a, b) =>
-    a.productId.localeCompare(b.productId)
+  // stock is per-product => reserve aggregated by productId across variants
+  const itemsToReserve = aggregateReserveByProductId(
+    pricedItems.map(i => ({ productId: i.productId, quantity: i.quantity }))
   );
 
   try {
@@ -1175,7 +1236,11 @@ export async function restockStalePendingOrders(options?: {
     if (!claimed.length) break;
 
     for (const { id } of claimed) {
-      await restockOrder(id, { reason: 'stale', alreadyClaimed: true, workerId });
+      await restockOrder(id, {
+        reason: 'stale',
+        alreadyClaimed: true,
+        workerId,
+      });
       processed += 1;
     }
   }

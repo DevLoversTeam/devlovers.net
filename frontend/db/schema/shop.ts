@@ -208,6 +208,9 @@ export const orderItems = pgTable(
     productId: uuid('product_id')
       .notNull()
       .references(() => products.id),
+    // product variants (must be NOT NULL to make UNIQUE + ON CONFLICT reliable)
+    selectedSize: text('selected_size').notNull().default(''),
+    selectedColor: text('selected_color').notNull().default(''),
     quantity: integer('quantity').notNull(),
 
     unitPriceMinor: integer('unit_price_minor').notNull(),
@@ -226,7 +229,12 @@ export const orderItems = pgTable(
   },
   t => [
     index('order_items_order_id_idx').on(t.orderId),
-    uniqueIndex('order_items_order_product_uq').on(t.orderId, t.productId),
+    uniqueIndex('order_items_order_variant_uq').on(
+      t.orderId,
+      t.productId,
+      t.selectedSize,
+      t.selectedColor
+    ),
     check('order_items_quantity_positive', sql`${t.quantity} > 0`),
     check(
       'order_items_unit_price_minor_non_negative',

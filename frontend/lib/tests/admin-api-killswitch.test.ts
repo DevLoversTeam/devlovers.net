@@ -92,16 +92,25 @@ function makeReq(path: string, method: string) {
   return new NextRequest(url, init as any);
 }
 
-async function readCodeFromResponse(res: Response): Promise<{ status: number; code?: string; raw: string }> {
+async function readCodeFromResponse(
+  res: Response
+): Promise<{ status: number; code?: string; raw: string }> {
   const status = res.status;
 
+  // Read body ONCE to avoid "body used already"
+  const raw = await res.text();
+
+  if (!raw) return { status, raw: '' };
+
   try {
-    const json = await res.json();
-    const code = (json?.code as string | undefined) ?? (json?.error?.code as string | undefined);
-    return { status, code, raw: JSON.stringify(json) };
+    const parsed = JSON.parse(raw);
+    const code =
+      (parsed?.code as string | undefined) ??
+      (parsed?.error?.code as string | undefined);
+
+    return { status, code, raw };
   } catch {
-    const text = await res.text();
-    return { status, raw: text };
+    return { status, raw };
   }
 }
 
@@ -145,17 +154,20 @@ describe('P0-7.1 Admin API kill-switch coverage (production)', () => {
     vi.unstubAllEnvs();
   });
 
-  it.each(cases)('returns 403 ADMIN_API_DISABLED for all mutating handlers: %s', async (c) => {
-    const mod = await import(c.importPath);
+  it.each(cases)(
+    'returns 403 ADMIN_API_DISABLED for all mutating handlers: $name',
+    async c => {
+      const mod = await import(c.importPath);
 
-    if (c.kind === 'static') {
-      await runAllMutationMethods(mod, c.path);
-      return;
+      if (c.kind === 'static') {
+        await runAllMutationMethods(mod, c.path);
+        return;
+      }
+
+      const path = c.path(c.id);
+      const ctx = { params: { id: c.id } };
+
+      await runAllMutationMethods(mod, path, ctx);
     }
-
-    const path = c.path(c.id);
-    const ctx = { params: { id: c.id } };
-
-    await runAllMutationMethods(mod, path, ctx);
-  });
+  );
 });

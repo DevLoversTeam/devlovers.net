@@ -39,7 +39,6 @@ export default async function CheckoutSuccessPage({
   params: Promise<{ locale: string }>;
   searchParams: Promise<SearchParams>;
 }) {
-
   const { locale } = await params;
   const resolvedParams = await searchParams;
 
@@ -48,19 +47,22 @@ export default async function CheckoutSuccessPage({
     return (
       <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
         <div className="rounded-lg border border-border bg-card p-8 text-center">
-          <h1 className="text-2xl font-bold text-foreground">Missing order id</h1>
+          <h1 className="text-2xl font-bold text-foreground">
+            Missing order id
+          </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            We couldn&apos;t identify your order. Please return to your cart or browse products.
+            We couldn&apos;t identify your order. Please return to your cart or
+            browse products.
           </p>
           <div className="mt-6 flex justify-center gap-3">
             <Link
-              href={`/${locale}/shop/products`}
+              href={`/shop/products`}
               className="inline-flex items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground hover:bg-accent/90"
             >
               Back to products
             </Link>
             <Link
-              href={`/${locale}/shop/cart`}
+              href={`/shop/cart`}
               className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
             >
               Go to cart
@@ -81,19 +83,22 @@ export default async function CheckoutSuccessPage({
       return (
         <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="rounded-lg border border-border bg-card p-8 text-center">
-            <h1 className="text-2xl font-bold text-foreground">Order not found</h1>
+            <h1 className="text-2xl font-bold text-foreground">
+              Order not found
+            </h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              We couldn&apos;t find this order. It may have been removed or never existed.
+              We couldn&apos;t find this order. It may have been removed or
+              never existed.
             </p>
             <div className="mt-6 flex justify-center gap-3">
               <Link
-                href={`/${locale}/shop/products`}
+                href={`/shop/products`}
                 className="inline-flex items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground hover:bg-accent/90"
               >
                 Back to products
               </Link>
               <Link
-                href={`/${locale}/shop/cart`}
+                href={`/shop/cart`}
                 className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
               >
                 Go to cart
@@ -107,17 +112,18 @@ export default async function CheckoutSuccessPage({
     return (
       <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
         <div className="rounded-lg border border-border bg-card p-8 text-center">
-          <h1 className="text-2xl font-bold text-foreground">Unable to load order</h1>
-          <p className="mt-2 text-sm text-muted-foreground">Please try again later.</p>
+          <h1 className="text-2xl font-bold text-foreground">
+            Unable to load order
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Please try again later.
+          </p>
         </div>
       </div>
     );
   }
 
-  const totalMinor =
-    typeof (order as any).totalAmountMinor === 'number'
-      ? (order as any).totalAmountMinor
-      : Math.round(((order as any).totalAmount ?? 0) * 100);
+  const totalMinor = order.totalAmountMinor;
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
@@ -142,7 +148,8 @@ export default async function CheckoutSuccessPage({
 
         {paymentsDisabled && (
           <p className="mt-3 text-sm text-amber-500">
-            Payments are disabled in this environment. You were not charged for this order.
+            Payments are disabled in this environment. You were not charged for
+            this order.
           </p>
         )}
 
@@ -176,13 +183,13 @@ export default async function CheckoutSuccessPage({
 
         <div className="mt-8 flex flex-wrap gap-3">
           <Link
-            href={`/${locale}/shop/products`}
+            href={`/shop/products`}
             className="inline-flex items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground hover:bg-accent/90"
           >
             Continue shopping
           </Link>
           <Link
-            href={`/${locale}/shop/cart`}
+            href={`/shop/cart`}
             className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
           >
             View cart

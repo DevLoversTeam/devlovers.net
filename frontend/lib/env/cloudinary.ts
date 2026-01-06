@@ -34,7 +34,11 @@ export function getCloudinaryEnvOptional(): CloudinaryEnv | null {
 
   if (!cloudName || !apiKey || !apiSecret) return null;
 
-  const parsed = cloudinaryRequiredSchema.parse(process.env);
+  const res = cloudinaryRequiredSchema.safeParse(process.env);
+  if (!res.success) return null;
+
+  const parsed = res.data;
+
   return {
     cloudName: parsed.CLOUDINARY_CLOUD_NAME,
     apiKey: parsed.CLOUDINARY_API_KEY,

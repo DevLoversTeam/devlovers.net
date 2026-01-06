@@ -85,6 +85,13 @@
       "when": 1767645749364,
       "tag": "0011_add_orders_sweep_claim_index",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1767664985434,
+      "tag": "0012_inventory_moves_product_fk_restrict",
+      "breakpoints": true
     }
   ]
 }
