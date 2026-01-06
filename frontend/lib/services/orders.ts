@@ -1197,25 +1197,64 @@ export async function restockStalePendingOrders(options?: {
   olderThanMinutes?: number;
   batchSize?: number;
   orderIds?: string[];
-  claimTtlMinutes?: number; // new: claim TTL window
-  workerId?: string; // new: identify who claimed
+  claimTtlMinutes?: number; // claim TTL window
+  workerId?: string; // identify who claimed
+  timeBudgetMs?: number; // max runtime budget for this sweep
 }): Promise<number> {
-  const olderThanMinutes = options?.olderThanMinutes ?? 60;
-  const batchSize = options?.batchSize ?? 50;
-  const claimTtlMinutes = options?.claimTtlMinutes ?? 5;
-  const workerId = options?.workerId ?? 'restock-sweep';
+  const MIN_OLDER_MIN = 10;
+  const MAX_OLDER_MIN = 60 * 24 * 7;
+  const MIN_BATCH = 25;
+  const MAX_BATCH = 100;
+  const MIN_CLAIM_TTL = 1;
+  const MAX_CLAIM_TTL = 60;
+
+  const DEFAULT_TIME_BUDGET_MS = 20_000;
+  const MIN_TIME_BUDGET_MS = 0;
+  const MAX_TIME_BUDGET_MS = 25_000;
+
+  const olderThanMinutesRaw = options?.olderThanMinutes ?? 60;
+  const batchSizeRaw = options?.batchSize ?? 50;
+  const claimTtlMinutesRaw = options?.claimTtlMinutes ?? 5;
+
+  const workerId =
+    (options?.workerId ?? 'restock-sweep').trim() || 'restock-sweep';
+
+  const olderThanMinutes = Math.max(
+    MIN_OLDER_MIN,
+    Math.min(MAX_OLDER_MIN, Math.floor(Number(olderThanMinutesRaw)))
+  );
+
+  const batchSize = Math.max(
+    MIN_BATCH,
+    Math.min(MAX_BATCH, Math.floor(Number(batchSizeRaw)))
+  );
+
+  const claimTtlMinutes = Math.max(
+    MIN_CLAIM_TTL,
+    Math.min(MAX_CLAIM_TTL, Math.floor(Number(claimTtlMinutesRaw)))
+  );
+
+  const timeBudgetMs = Math.max(
+    MIN_TIME_BUDGET_MS,
+    Math.min(
+      MAX_TIME_BUDGET_MS,
+      Math.floor(Number(options?.timeBudgetMs ?? DEFAULT_TIME_BUDGET_MS))
+    )
+  );
+  const deadlineMs = Date.now() + timeBudgetMs;
 
   // If explicitly provided empty list => nothing to do (test helper).
   if (options?.orderIds && options.orderIds.length === 0) return 0;
 
+  const hasExplicitIds = Boolean(options?.orderIds?.length);
   const cutoff = new Date(Date.now() - olderThanMinutes * 60 * 1000);
 
   let processed = 0;
-
-  // One sweep run id for traceability
   const runId = crypto.randomUUID();
 
   while (true) {
+    if (Date.now() >= deadlineMs) break;
+
     const now = new Date();
     const claimExpiresAt = new Date(Date.now() + claimTtlMinutes * 60 * 1000);
 
@@ -1226,7 +1265,6 @@ export async function restockStalePendingOrders(options?: {
       ] as PaymentStatus[]),
       eq(orders.stockRestored, false),
       isNull(orders.restockedAt),
-      lt(orders.createdAt, cutoff),
       ne(orders.inventoryStatus, 'released'),
       // claim gate: only unclaimed or expired claims are eligible
       or(
@@ -1235,11 +1273,15 @@ export async function restockStalePendingOrders(options?: {
       ),
     ];
 
-    if (options?.orderIds?.length) {
+    // If not targeting specific orders, apply age cutoff.
+    if (!hasExplicitIds) {
+      baseConditions.push(lt(orders.createdAt, cutoff));
+    }
+
+    if (hasExplicitIds && options?.orderIds?.length) {
       baseConditions.push(inArray(orders.id, options.orderIds));
     }
 
-    // Subquery: pick candidates deterministically (oldest first)
     const claimable = db
       .select({ id: orders.id })
       .from(orders)
@@ -1247,7 +1289,6 @@ export async function restockStalePendingOrders(options?: {
       .orderBy(orders.createdAt)
       .limit(batchSize);
 
-    // Atomic claim: update only rows selected above; returning ids is our "work queue"
     const claimed = await db
       .update(orders)
       .set({
@@ -1260,7 +1301,6 @@ export async function restockStalePendingOrders(options?: {
       .where(
         and(
           inArray(orders.id, claimable),
-          // re-check claim gate at UPDATE time to avoid stealing active claims under concurrency
           or(
             isNull(orders.sweepClaimExpiresAt),
             lt(orders.sweepClaimExpiresAt, now)
@@ -1272,6 +1312,8 @@ export async function restockStalePendingOrders(options?: {
     if (!claimed.length) break;
 
     for (const { id } of claimed) {
+      if (Date.now() >= deadlineMs) break;
+
       await restockOrder(id, {
         reason: 'stale',
         alreadyClaimed: true,
@@ -1288,39 +1330,121 @@ export async function restockStalePendingOrders(options?: {
 export async function restockStaleNoPaymentOrders(options?: {
   olderThanMinutes?: number;
   batchSize?: number;
+  claimTtlMinutes?: number;
+  workerId?: string;
+  timeBudgetMs?: number;
 }): Promise<number> {
-  const olderThanMinutes = options?.olderThanMinutes ?? 10;
-  const batchSize = options?.batchSize ?? 50;
+  const MIN_OLDER_MIN = 10;
+  const MAX_OLDER_MIN = 60 * 24 * 7;
+  const MIN_BATCH = 25;
+  const MAX_BATCH = 100;
+  const MIN_CLAIM_TTL = 1;
+  const MAX_CLAIM_TTL = 60;
+
+  const DEFAULT_TIME_BUDGET_MS = 20_000;
+  const MIN_TIME_BUDGET_MS = 0;
+  const MAX_TIME_BUDGET_MS = 25_000;
+
+  const olderThanMinutes = Math.max(
+    MIN_OLDER_MIN,
+    Math.min(MAX_OLDER_MIN, Math.floor(Number(options?.olderThanMinutes ?? 30)))
+  );
+
+  const batchSize = Math.max(
+    MIN_BATCH,
+    Math.min(MAX_BATCH, Math.floor(Number(options?.batchSize ?? 50)))
+  );
+
+  const claimTtlMinutes = Math.max(
+    MIN_CLAIM_TTL,
+    Math.min(MAX_CLAIM_TTL, Math.floor(Number(options?.claimTtlMinutes ?? 5)))
+  );
+
+  const workerId =
+    (options?.workerId ?? 'restock-nopay-sweep').trim() ||
+    'restock-nopay-sweep';
+
+  const timeBudgetMs = Math.max(
+    MIN_TIME_BUDGET_MS,
+    Math.min(
+      MAX_TIME_BUDGET_MS,
+      Math.floor(Number(options?.timeBudgetMs ?? DEFAULT_TIME_BUDGET_MS))
+    )
+  );
+  const deadlineMs = Date.now() + timeBudgetMs;
 
   const cutoff = new Date(Date.now() - olderThanMinutes * 60 * 1000);
 
   let processed = 0;
-  // test-only sweep; no batch claiming; relies on restockOrder lease + idempotency
+  const runId = crypto.randomUUID();
+
   while (true) {
-    const stale = await db
+    if (Date.now() >= deadlineMs) break;
+
+    const now = new Date();
+    const claimExpiresAt = new Date(Date.now() + claimTtlMinutes * 60 * 1000);
+
+    const baseConditions = [
+      eq(orders.paymentProvider, 'none'),
+      eq(orders.stockRestored, false),
+      isNull(orders.restockedAt),
+      lt(orders.createdAt, cutoff),
+
+      inArray(orders.inventoryStatus, [
+        'none',
+        'reserving',
+        'release_pending',
+      ] as any),
+
+      // claim gate
+      or(
+        isNull(orders.sweepClaimExpiresAt),
+        lt(orders.sweepClaimExpiresAt, now)
+      ),
+    ];
+
+    const claimable = db
       .select({ id: orders.id })
       .from(orders)
-      .where(
-        and(
-          eq(orders.paymentProvider, 'none'),
-          eq(orders.stockRestored, false),
-          isNull(orders.restockedAt),
-          lt(orders.createdAt, cutoff),
-          ne(orders.inventoryStatus, 'reserved'),
-          ne(orders.inventoryStatus, 'released')
-        )
-      )
+      .where(and(...baseConditions))
       .orderBy(orders.createdAt)
       .limit(batchSize);
 
-    if (!stale.length) break;
+    const claimed = await db
+      .update(orders)
+      .set({
+        sweepClaimedAt: now,
+        sweepClaimExpiresAt: claimExpiresAt,
+        sweepRunId: runId,
+        sweepClaimedBy: workerId,
+        updatedAt: now,
+      })
+      .where(
+        and(
+          inArray(orders.id, claimable),
+          or(
+            isNull(orders.sweepClaimExpiresAt),
+            lt(orders.sweepClaimExpiresAt, now)
+          )
+        )
+      )
+      .returning({ id: orders.id });
 
-    for (const { id } of stale) {
-      // This will release reserved moves if they exist, or mark orphan orders as terminal failed if none exist.
-      await restockOrder(id, { reason: 'stale' });
+    if (!claimed.length) break;
+
+    for (const { id } of claimed) {
+      if (Date.now() >= deadlineMs) break;
+
+      await restockOrder(id, {
+        reason: 'stale', // reuse existing terminalization semantics
+        alreadyClaimed: true,
+        workerId,
+      });
+
       processed += 1;
     }
   }
+
   return processed;
 }
 

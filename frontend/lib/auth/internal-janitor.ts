@@ -9,11 +9,13 @@ function timingSafeEqual(a: string, b: string) {
   return crypto.timingSafeEqual(aBuf, bBuf);
 }
 
-export function requireInternalJanitorAuth(req: NextRequest): NextResponse | null {
+export function requireInternalJanitorAuth(
+  req: NextRequest
+): NextResponse | null {
   const secret = (process.env.INTERNAL_JANITOR_SECRET ?? '').trim();
 
   if (!secret) {
-       return NextResponse.json(
+    return NextResponse.json(
       { success: false, code: 'JANITOR_DISABLED' },
       { status: 503 }
     );
@@ -24,11 +26,17 @@ export function requireInternalJanitorAuth(req: NextRequest): NextResponse | nul
     (req.headers.get('x-internal-secret') ?? '').trim();
 
   if (!provided) {
-    return NextResponse.json({ success: false, code: 'UNAUTHORIZED' }, { status: 401 });
+    return NextResponse.json(
+      { success: false, code: 'UNAUTHORIZED' },
+      { status: 401 }
+    );
   }
 
   if (!timingSafeEqual(provided, secret)) {
-    return NextResponse.json({ success: false, code: 'UNAUTHORIZED' }, { status: 401 });
+    return NextResponse.json(
+      { success: false, code: 'FORBIDDEN' },
+      { status: 403 }
+    );
   }
 
   return null;

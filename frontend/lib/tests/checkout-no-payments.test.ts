@@ -443,7 +443,7 @@ describe.sequential('Checkout (no payments) invariants', () => {
   it('Orphan cleanup path', async () => {
     const orphanId = crypto.randomUUID();
     const idemKey = crypto.randomUUID();
-    const createdAt = new Date(Date.now() - 60_000);
+    const createdAt = new Date(Date.now() - 11 * 60_000);
 
     // Insert orphan order (no inventory_moves)
     await db.insert(orders).values({
@@ -452,20 +452,15 @@ describe.sequential('Checkout (no payments) invariants', () => {
       paymentProvider: 'none',
       paymentStatus: 'paid',
       paymentIntentId: null,
-
       status: 'CREATED',
-      inventoryStatus: 'none',
-
+      inventoryStatus: 'reserving',
       totalAmountMinor: 0,
       totalAmount: toDbMoney(0),
-
       idempotencyKey: idemKey,
       idempotencyRequestHash: 'orphan-test',
       userId: null,
-
       stockRestored: false,
       restockedAt: null,
-
       createdAt,
       updatedAt: createdAt,
       failureCode: null,
@@ -479,9 +474,10 @@ describe.sequential('Checkout (no payments) invariants', () => {
       '@/lib/services/orders'
     );
     const processed = await restockStaleNoPaymentOrders({
-      olderThanMinutes: 0,
+      olderThanMinutes: 10,
       batchSize: 50,
     });
+
     expect(processed).toBeGreaterThan(0);
 
     const [row] = await db
@@ -506,5 +502,5 @@ describe.sequential('Checkout (no payments) invariants', () => {
     expect(row!.restockedAt).not.toBeNull();
 
     await bestEffortHardDeleteOrder(orphanId);
-  });
+  }, 20_000);
 });
