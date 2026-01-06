@@ -133,8 +133,8 @@ export const dbProductSchema = z.object({
   badge: badgeSchema
     .nullish()
     .transform(value => (value ?? 'NONE') as ProductBadge),
-  createdAt: z.date(),
-  updatedAt: z.date(),
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
 });
 
 // IMPORTANT: shopProduct.price/originalPrice are MINOR units (integers).
@@ -146,7 +146,7 @@ export const shopProductSchema = z.object({
   currency: currencySchema,
   image: z.string(),
   originalPrice: z.number().int().min(0).optional(),
-  createdAt: z.date().optional(),
+  createdAt: z.coerce.date().optional(),
   category: z.enum(productCategoryValues as [string, ...string[]]).optional(),
   type: z.enum(typeValues as [string, ...string[]]).optional(),
   colors: z.array(z.enum(colorValues as [string, ...string[]])).default([]),
@@ -166,7 +166,7 @@ const booleanFromString = z.preprocess(value => {
   return undefined;
 }, z.boolean().optional());
 
-// Admin prices are now MINOR units (integers)
+// Money in MINOR units (integers)
 const moneyMinor = z.number().int().min(0);
 const moneyMinorPositive = z.number().int().min(1);
 
@@ -281,15 +281,6 @@ export const productAdminUpdateSchema = z
           seen.add(p.currency);
         }
       });
-
-      const usd = data.prices.find(p => p.currency === 'USD');
-      if (!usd) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['prices'],
-          message: 'USD price is required',
-        });
-      }
     }
   });
 
@@ -311,7 +302,6 @@ export const checkoutPayloadSchema = z
 
 export const cartRehydratePayloadSchema = z
   .object({
-    currency: currencySchema.optional(),
     items: z
       .array(
         z
@@ -323,7 +313,7 @@ export const cartRehydratePayloadSchema = z
           })
           .strict()
       )
-      .min(1),
+      .default([]),
   })
   .strict();
 
@@ -342,17 +332,20 @@ export const cartClientItemSchema = z.object({
 });
 
 export const cartRehydratedItemSchema = z.object({
-  productId: z.string(),
+  productId: z.string().uuid(),
   slug: z.string(),
   title: z.string(),
   quantity: z.number().int().min(1).max(MAX_QUANTITY_PER_LINE),
-
-  unitPrice: z.number().int().min(0),   // <-- було z.number()
-  lineTotal: z.number().int().min(0),   // <-- було z.number()
+  // canonical:
+  unitPriceMinor: moneyMinorPositive,
+  lineTotalMinor: moneyMinor,
+  // display/legacy:
+  unitPrice: z.number().min(0),
+  lineTotal: z.number().min(0),
 
   currency: currencySchema,
   stock: z.number().int().min(0),
-  badge: badgeSchema.or(z.literal('NONE')),
+  badge: badgeSchema,
   imageUrl: z.string(),
   selectedSize: z.string().optional(),
   selectedColor: z.string().optional(),
@@ -362,27 +355,29 @@ export const cartRemovedItemSchema = z.object({
   reason: z.enum(['not_found', 'inactive', 'out_of_stock']),
 });
 
-
 export const cartRehydrateResultSchema = z.object({
   items: z.array(cartRehydratedItemSchema),
   removed: z.array(cartRemovedItemSchema),
   summary: z.object({
-    totalAmount: z.number().int().min(0), // <-- було z.number()
+    // canonical:
+    totalAmountMinor: moneyMinor,
+    // display/legacy:
+    totalAmount: z.number().min(0),
     itemCount: z.number().int().min(0),
     currency: currencySchema,
   }),
 });
-
-
-
 
 export const orderIdParamSchema = z.object({
   id: z.string().uuid(),
 });
 
 export const orderSummarySchema = z.object({
-  id: z.string(),
-  totalAmount: z.coerce.number(),
+  id: z.string().uuid(),
+  // canonical:
+  totalAmountMinor: moneyMinor,
+  // display/legacy:
+  totalAmount: z.number().min(0),
   currency: currencySchema,
   paymentStatus: paymentStatusSchema,
   paymentProvider: paymentProviderSchema,
@@ -390,15 +385,19 @@ export const orderSummarySchema = z.object({
     .string()
     .nullish()
     .transform(value => value ?? undefined),
-  createdAt: z.date(),
+  createdAt: z.coerce.date(),
   items: z.array(
     z.object({
-      productId: z.string(),
+      productId: z.string().uuid(),
       productTitle: z.string(),
       productSlug: z.string(),
-      quantity: z.number(),
-      unitPrice: z.coerce.number(),
-      lineTotal: z.coerce.number(),
+      quantity: z.number().int().min(1),
+      // canonical:
+      unitPriceMinor: moneyMinorPositive,
+      lineTotalMinor: moneyMinor,
+      // display/legacy:
+      unitPrice: z.number().min(0),
+      lineTotal: z.number().min(0),
     })
   ),
 });

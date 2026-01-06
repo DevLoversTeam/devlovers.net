@@ -78,6 +78,20 @@
       "when": 1767386213214,
       "tag": "0010_parallel_princess_powerful",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1767645749364,
+      "tag": "0011_add_orders_sweep_claim_index",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1767664985434,
+      "tag": "0012_inventory_moves_product_fk_restrict",
+      "breakpoints": true
     }
   ]
 }

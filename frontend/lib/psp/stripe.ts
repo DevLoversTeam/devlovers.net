@@ -1,21 +1,29 @@
-import Stripe from "stripe"
-
-import { getStripeEnv } from "@/lib/env/stripe"
-import { logError } from "@/lib/logging"
-
-const { secretKey, webhookSecret, paymentsEnabled, mode } = getStripeEnv()
-
-const stripe = secretKey
-  ? new Stripe(secretKey, {
-      apiVersion: "2025-12-15.clover",
-    })
-  : null
+import Stripe from 'stripe';
+import { getStripeEnv } from '@/lib/env/stripe';
+import { logError } from '@/lib/logging';
 
 type CreatePaymentIntentInput = {
-  amount: number
-  currency: string
-  orderId: string
-  idempotencyKey?: string
+  amount: number;
+  currency: string;
+  orderId: string;
+  idempotencyKey?: string;
+};
+
+let _stripe: Stripe | null = null;
+let _stripeKey: string | null = null;
+
+function getStripeClient(): Stripe | null {
+  const { secretKey } = getStripeEnv();
+  if (!secretKey) return null;
+
+  if (_stripe && _stripeKey === secretKey) return _stripe;
+  _stripeKey = secretKey;
+
+  _stripe = new Stripe(secretKey, {
+    apiVersion: '2025-11-17.clover',
+  });
+
+  return _stripe;
 }
 
 export async function createPaymentIntent({
@@ -23,13 +31,19 @@ export async function createPaymentIntent({
   currency,
   orderId,
   idempotencyKey,
-}: CreatePaymentIntentInput): Promise<{ clientSecret: string; paymentIntentId: string }> {
+}: CreatePaymentIntentInput): Promise<{
+  clientSecret: string;
+  paymentIntentId: string;
+}> {
+  const { paymentsEnabled, mode } = getStripeEnv();
+  const stripe = getStripeClient();
+
   if (!paymentsEnabled || !stripe) {
-    throw new Error("STRIPE_DISABLED")
+    throw new Error('STRIPE_DISABLED');
   }
 
   if (!Number.isFinite(amount) || amount <= 0) {
-    throw new Error("STRIPE_INVALID_AMOUNT")
+    throw new Error('STRIPE_INVALID_AMOUNT');
   }
 
   try {
@@ -37,73 +51,72 @@ export async function createPaymentIntent({
       {
         amount,
         currency: currency.toLowerCase(),
-        metadata: {
-          orderId,
-          mode: mode ?? "test",
-        },
+        metadata: { orderId, mode: mode ?? 'test' },
         automatic_payment_methods: { enabled: true },
       },
       idempotencyKey ? { idempotencyKey } : undefined
-    )
+    );
 
     if (!intent.client_secret) {
-      throw new Error("STRIPE_CLIENT_SECRET_MISSING")
+      throw new Error('STRIPE_CLIENT_SECRET_MISSING');
     }
 
-    return {
-      clientSecret: intent.client_secret,
-      paymentIntentId: intent.id,
-    }
+    return { clientSecret: intent.client_secret, paymentIntentId: intent.id };
   } catch (error) {
-    logError("Stripe payment intent creation failed", error)
-    throw new Error("STRIPE_PAYMENT_INTENT_FAILED")
+    logError('Stripe payment intent creation failed', error);
+    throw new Error('STRIPE_PAYMENT_INTENT_FAILED');
   }
 }
 
 export async function retrievePaymentIntent(paymentIntentId: string): Promise<{
-  clientSecret: string
-  paymentIntentId: string
+  clientSecret: string;
+  paymentIntentId: string;
 }> {
+  const { paymentsEnabled } = getStripeEnv();
+  const stripe = getStripeClient();
+
   if (!paymentsEnabled || !stripe) {
-    throw new Error("STRIPE_DISABLED")
+    throw new Error('STRIPE_DISABLED');
   }
 
   try {
-    const intent = await stripe.paymentIntents.retrieve(paymentIntentId)
-
-    if (!intent.client_secret) {
-      throw new Error("STRIPE_CLIENT_SECRET_MISSING")
-    }
-
-    return { clientSecret: intent.client_secret, paymentIntentId: intent.id }
+    const intent = await stripe.paymentIntents.retrieve(paymentIntentId);
+    if (!intent.client_secret) throw new Error('STRIPE_CLIENT_SECRET_MISSING');
+    return { clientSecret: intent.client_secret, paymentIntentId: intent.id };
   } catch (error) {
-    logError("Stripe payment intent retrieval failed", error)
-    throw new Error("STRIPE_PAYMENT_INTENT_FAILED")
+    logError('Stripe payment intent retrieval failed', error);
+    throw new Error('STRIPE_PAYMENT_INTENT_FAILED');
   }
 }
 
 type VerifyWebhookSignatureInput = {
-  rawBody: string
-  signatureHeader: string | null
-}
+  rawBody: string;
+  signatureHeader: string | null;
+};
 
 export function verifyWebhookSignature({
   rawBody,
   signatureHeader,
 }: VerifyWebhookSignatureInput): Stripe.Event {
+  const { paymentsEnabled, webhookSecret } = getStripeEnv();
+  const stripe = getStripeClient();
+
   if (!paymentsEnabled || !stripe || !webhookSecret) {
-    throw new Error("STRIPE_WEBHOOK_DISABLED")
+    throw new Error('STRIPE_WEBHOOK_DISABLED');
   }
 
   if (!signatureHeader) {
-    throw new Error("STRIPE_MISSING_SIGNATURE")
+    throw new Error('STRIPE_MISSING_SIGNATURE');
   }
 
   try {
-    const event = stripe.webhooks.constructEvent(rawBody, signatureHeader, webhookSecret)
-    return event
+    return stripe.webhooks.constructEvent(
+      rawBody,
+      signatureHeader,
+      webhookSecret
+    );
   } catch (error) {
-    logError("Stripe webhook signature verification failed", error)
-    throw new Error("STRIPE_INVALID_SIGNATURE")
+    logError('Stripe webhook signature verification failed', error);
+    throw new Error('STRIPE_INVALID_SIGNATURE');
   }
 }
