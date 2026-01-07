@@ -29,7 +29,7 @@ import {
   CheckoutItem,
   CheckoutResult,
   OrderDetail,
-  OrderSummary,
+  OrderSummaryWithMinor,
 } from '@/lib/types/shop';
 import { coercePriceFromDb } from '@/db/queries/shop/orders';
 import {
@@ -104,9 +104,8 @@ function resolvePaymentProvider(
 }
 
 type Currency = CurrencyCode;
-
-function requireTotalCents(summary: OrderSummary): number {
-  const v = (summary as any).totalAmountMinor;
+function requireTotalCents(summary: OrderSummaryWithMinor): number {
+  const v = summary.totalAmountMinor;
   if (typeof v !== 'number' || !Number.isFinite(v)) {
     throw new Error(
       'Order summary missing totalAmountMinor (server invariant violated).'
@@ -212,7 +211,7 @@ function requireMinor(
 function parseOrderSummary(
   order: OrderRow,
   items: OrderItemForSummary[]
-): OrderSummary {
+): OrderSummaryWithMinor {
   function readLegacyMoneyCentsOrThrow(
     value: unknown,
     ctx: { orderId: string; field: string }
@@ -305,7 +304,9 @@ function parseOrderSummary(
   };
 }
 
-async function reconcileNoPaymentOrder(orderId: string): Promise<OrderSummary> {
+async function reconcileNoPaymentOrder(
+  orderId: string
+): Promise<OrderSummaryWithMinor> {
   const [row] = await db
     .select({
       id: orders.id,
@@ -452,7 +453,7 @@ async function reconcileNoPaymentOrder(orderId: string): Promise<OrderSummary> {
 async function getOrderByIdempotencyKey(
   dbClient: DbClient,
   key: string
-): Promise<OrderSummary | null> {
+): Promise<OrderSummaryWithMinor | null> {
   const [order] = await dbClient
     .select()
     .from(orders)
@@ -606,7 +607,7 @@ export async function createOrderWithItems({
     userId: userId ?? null,
   });
 
-  async function assertIdempotencyCompatible(existing: OrderSummary) {
+  async function assertIdempotencyCompatible(existing: OrderSummaryWithMinor) {
     const [row] = await db
       .select({
         id: orders.id,
@@ -926,7 +927,9 @@ export async function getOrderById(id: string): Promise<OrderDetail> {
   return parseOrderSummary(order, items);
 }
 
-export async function getOrderSummary(id: string): Promise<OrderSummary> {
+export async function getOrderSummary(
+  id: string
+): Promise<OrderSummaryWithMinor> {
   return getOrderById(id);
 }
 
@@ -936,7 +939,7 @@ export async function setOrderPaymentIntent({
 }: {
   orderId: string;
   paymentIntentId: string;
-}): Promise<OrderSummary> {
+}): Promise<OrderSummaryWithMinor> {
   const [existing] = await db
     .select()
     .from(orders)
@@ -1396,7 +1399,10 @@ export async function restockStuckReservingOrders(options?: {
       ] as PaymentStatus[]),
 
       // stuck in reserving/releasing phase (not final)
-      inArray(orders.inventoryStatus, ['reserving', 'release_pending'] as any),
+      inArray(orders.inventoryStatus, [
+        'reserving',
+        'release_pending',
+      ] as const),
 
       // not already restocked/finalized
       eq(orders.stockRestored, false),
@@ -1529,7 +1535,7 @@ export async function restockStaleNoPaymentOrders(options?: {
         'none',
         'reserving',
         'release_pending',
-      ] as any),
+      ] as const),
 
       // claim gate
       or(
@@ -1583,7 +1589,9 @@ export async function restockStaleNoPaymentOrders(options?: {
   return processed;
 }
 
-export async function refundOrder(orderId: string): Promise<OrderSummary> {
+export async function refundOrder(
+  orderId: string
+): Promise<OrderSummaryWithMinor> {
   const [order] = await db
     .select({
       id: orders.id,

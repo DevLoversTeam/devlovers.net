@@ -37,15 +37,11 @@ function getLatestCharge(paymentIntent?: PaymentIntentWithCharges) {
 function getLatestChargeId(
   paymentIntent?: Stripe.PaymentIntent
 ): string | null {
-  const lc = (paymentIntent as any)?.latest_charge as unknown;
-  if (typeof lc === 'string' && lc.trim().length > 0) return lc;
-  if (
-    lc &&
-    typeof lc === 'object' &&
-    'id' in (lc as any) &&
-    typeof (lc as any).id === 'string'
-  ) {
-    return (lc as any).id;
+  const lc = paymentIntent?.latest_charge;
+  if (!lc) return null;
+  if (typeof lc === 'string') return lc.trim().length > 0 ? lc : null;
+  if (typeof lc === 'object' && 'id' in lc && typeof lc.id === 'string') {
+    return lc.id;
   }
   return null;
 }
@@ -365,6 +361,8 @@ export async function POST(request: NextRequest) {
         .where(
           and(
             eq(orders.id, order.id),
+            eq(orders.stockRestored, false),
+            ne(orders.inventoryStatus, 'released'),
             ne(orders.paymentStatus, 'paid'),
             ne(orders.paymentStatus, 'failed'),
             ne(orders.paymentStatus, 'refunded')
@@ -504,6 +502,7 @@ export async function POST(request: NextRequest) {
         .update(orders)
         .set({
           updatedAt: new Date(),
+          paymentStatus: 'refunded',
           pspChargeId: charge?.id ?? null,
           pspPaymentMethod: resolvePaymentMethod(paymentIntent, charge),
           pspStatusReason: refund?.reason ?? refund?.status ?? 'refunded',
