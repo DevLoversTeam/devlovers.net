@@ -342,6 +342,7 @@
     📄 slug.ts
   📁 tests
     📄 admin-api-killswitch.test.ts
+    📄 checkout-concurrency-stock1.test.ts
     📄 checkout-currency-policy.test.ts
     📄 checkout-no-payments.test.ts
     📄 currency.test.ts
@@ -354,6 +355,7 @@
     📄 restock-order-only-once.test.ts
     📄 restock-stale-claim-gate.test.ts
     📄 restock-stale-stripe-orphan.test.ts
+    📄 restock-stuck-reserving-sweep.test.ts
     📄 restock-sweep-claim.test.ts
     📄 stripe-webhook-contract.test.ts
     📄 stripe-webhook-mismatch.test.ts
