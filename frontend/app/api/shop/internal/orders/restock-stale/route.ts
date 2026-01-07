@@ -6,7 +6,9 @@ import { db } from '@/db';
 import {
   restockStalePendingOrders,
   restockStaleNoPaymentOrders,
+  restockStuckReservingOrders,
 } from '@/lib/services/orders';
+
 import { requireInternalJanitorAuth } from '@/lib/auth/internal-janitor';
 
 export const runtime = 'nodejs';
@@ -373,7 +375,16 @@ export async function POST(request: NextRequest) {
   try {
     const deadlineMs = Date.now() + maxRuntimeMs;
 
-    // NOTE: stuckReserving буде в окремій тасці; тут тільки policy shape/validation.
+    // 1) stuck reserving (timeout on inventory reservation phase)
+    const remaining0 = Math.max(0, deadlineMs - Date.now());
+    const processedStuckReserving = await restockStuckReservingOrders({
+      olderThanMinutes: policy.olderThanMinutes.stuckReserving,
+      batchSize: policy.batchSize,
+      workerId,
+      timeBudgetMs: remaining0,
+    });
+
+    // 2) stale pending (stripe payment never completed)
     const remaining1 = Math.max(0, deadlineMs - Date.now());
     const processedStalePending = await restockStalePendingOrders({
       olderThanMinutes: policy.olderThanMinutes.stalePending,
@@ -381,7 +392,7 @@ export async function POST(request: NextRequest) {
       workerId,
       timeBudgetMs: remaining1,
     });
-
+    // 3) orphan no-payment (payments disabled flow can be "paid" but not reserved yet)
     const remaining2 = Math.max(0, deadlineMs - Date.now());
     const processedOrphanNoPayment = await restockStaleNoPaymentOrders({
       olderThanMinutes: policy.olderThanMinutes.orphanNoPayment,
@@ -390,14 +401,17 @@ export async function POST(request: NextRequest) {
       timeBudgetMs: remaining2,
     });
 
-    const processed = processedStalePending + processedOrphanNoPayment;
+    const processed =
+      processedStuckReserving +
+      processedStalePending +
+      processedOrphanNoPayment;
 
     return NextResponse.json({
       success: true,
       runId,
       processed,
       processedByCategory: {
-        stuckReserving: 0,
+        stuckReserving: processedStuckReserving,
         stalePending: processedStalePending,
         orphanNoPayment: processedOrphanNoPayment,
       },

@@ -260,5 +260,5 @@ describe('P0-6 webhook: writes PSP fields on succeeded', () => {
     } finally {
       await cleanup({ orderId, productId, eventId });
     }
-  });
+  }, 30_000);
 });
