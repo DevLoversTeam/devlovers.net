@@ -1112,7 +1112,7 @@ export async function restockOrder(
         .update(orders)
         .set({
           status: 'INVENTORY_FAILED',
-          inventoryStatus: 'failed',
+          inventoryStatus: 'released',
           paymentStatus: 'failed',
           failureCode: order.failureCode ?? 'STALE_ORPHAN',
           failureMessage:
@@ -1259,6 +1259,7 @@ export async function restockStalePendingOrders(options?: {
     const claimExpiresAt = new Date(Date.now() + claimTtlMinutes * 60 * 1000);
 
     const baseConditions = [
+      eq(orders.paymentProvider, 'stripe'),
       inArray(orders.paymentStatus, [
         'pending',
         'requires_payment',
@@ -1405,7 +1406,10 @@ export async function restockStuckReservingOrders(options?: {
       lt(orders.createdAt, cutoff),
 
       // claim gate
-      or(isNull(orders.sweepClaimExpiresAt), lt(orders.sweepClaimExpiresAt, now)),
+      or(
+        isNull(orders.sweepClaimExpiresAt),
+        lt(orders.sweepClaimExpiresAt, now)
+      ),
     ];
 
     const claimable = db
@@ -1430,7 +1434,10 @@ export async function restockStuckReservingOrders(options?: {
       .where(
         and(
           inArray(orders.id, claimable),
-          or(isNull(orders.sweepClaimExpiresAt), lt(orders.sweepClaimExpiresAt, now))
+          or(
+            isNull(orders.sweepClaimExpiresAt),
+            lt(orders.sweepClaimExpiresAt, now)
+          )
         )
       )
       .returning({ id: orders.id });
