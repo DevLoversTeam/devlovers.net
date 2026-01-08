@@ -12,14 +12,20 @@ type ParsedResult<T> =
 
 type ParseMode = 'create' | 'update';
 
-const getStringField = (formData: FormData, name: string): string | undefined => {
+const getStringField = (
+  formData: FormData,
+  name: string
+): string | undefined => {
   const value = formData.get(name);
   if (typeof value !== 'string') return undefined;
   const trimmed = value.trim();
   return trimmed === '' ? undefined : trimmed;
 };
 
-const parseBooleanField = (formData: FormData, name: string): boolean | undefined => {
+const parseBooleanField = (
+  formData: FormData,
+  name: string
+): boolean | undefined => {
   const value = formData.get(name);
   if (typeof value === 'string') {
     const normalized = value.trim().toLowerCase();
@@ -30,7 +36,10 @@ const parseBooleanField = (formData: FormData, name: string): boolean | undefine
   return undefined;
 };
 
-const parseNumberField = (formData: FormData, name: string): number | undefined => {
+const parseNumberField = (
+  formData: FormData,
+  name: string
+): number | undefined => {
   const value = getStringField(formData, name);
   if (value === undefined) return undefined;
   return Number(value);
@@ -44,7 +53,8 @@ const parseArrayField = (
   const hasField = formData.has(name);
   const rawValue = getStringField(formData, name);
 
-  if (mode === 'update' && !hasField && rawValue === undefined) return undefined;
+  if (mode === 'update' && !hasField && rawValue === undefined)
+    return undefined;
 
   const value = rawValue ?? '';
   return value
@@ -85,7 +95,10 @@ function parseMajorToMinor(
   }
 }
 
-function parseLegacyPriceMinorField(formData: FormData, name: string): number | undefined {
+function parseLegacyPriceMinorField(
+  formData: FormData,
+  name: string
+): number | undefined {
   const v = getStringField(formData, name);
   if (v === undefined) return undefined;
   return toCents(v);
@@ -132,7 +145,10 @@ function parseMinorInt(
   return raw;
 }
 
-function requirePositivePriceMinor(priceMinor: number | null, currency: string) {
+function requirePositivePriceMinor(
+  priceMinor: number | null,
+  currency: string
+) {
   // DB check: priceMinor > 0
   if (priceMinor == null || priceMinor <= 0) {
     throw zodPricesJsonError(`Missing price for ${currency}`);
@@ -162,17 +178,25 @@ function parsePricesJsonField(formData: FormData, mode: ParseMode) {
   try {
     parsed = JSON.parse(trimmed);
   } catch {
-    return { ok: false as const, error: zodPricesJsonError('Invalid prices JSON') };
+    return {
+      ok: false as const,
+      error: zodPricesJsonError('Invalid prices JSON'),
+    };
   }
 
   if (!Array.isArray(parsed)) {
-    return { ok: false as const, error: zodPricesJsonError('Prices must be an array') };
+    return {
+      ok: false as const,
+      error: zodPricesJsonError('Prices must be an array'),
+    };
   }
 
   try {
     const normalized = parsed.map((row: any) => {
       const currencyRaw =
-        typeof row?.currency === 'string' ? row.currency.trim().toUpperCase() : '';
+        typeof row?.currency === 'string'
+          ? row.currency.trim().toUpperCase()
+          : '';
 
       const currency = currencyValues.includes(currencyRaw as CurrencyCode)
         ? (currencyRaw as CurrencyCode)
@@ -199,7 +223,6 @@ function parsePricesJsonField(formData: FormData, mode: ParseMode) {
       if (mode === 'create') {
         priceMinor = requirePositivePriceMinor(priceMinor, currency as string);
       } else {
-    
         if (priceMinor != null && priceMinor <= 0) {
           throw zodPricesJsonError(`Invalid priceMinor for ${currency}`);
         }
@@ -239,7 +262,10 @@ function parsePricesJsonField(formData: FormData, mode: ParseMode) {
     return { ok: true as const, value: normalized };
   } catch (e) {
     if (e instanceof z.ZodError) return { ok: false as const, error: e };
-    return { ok: false as const, error: zodPricesJsonError('Invalid prices payload') };
+    return {
+      ok: false as const,
+      error: zodPricesJsonError('Invalid prices payload'),
+    };
   }
 }
 
@@ -267,10 +293,16 @@ export function parseAdminProductForm(
 
   // 2) Legacy fallback (priceUsd/priceUah) -> MINOR units
   const priceUsdMinor = parseLegacyPriceMinorField(formData, 'priceUsd');
-  const originalPriceUsdMinor = parseLegacyOptionalOriginalMinorField(formData, 'originalPriceUsd');
+  const originalPriceUsdMinor = parseLegacyOptionalOriginalMinorField(
+    formData,
+    'originalPriceUsd'
+  );
 
   const priceUahMinor = parseLegacyPriceMinorField(formData, 'priceUah');
-  const originalPriceUahMinor = parseLegacyOptionalOriginalMinorField(formData, 'originalPriceUah');
+  const originalPriceUahMinor = parseLegacyOptionalOriginalMinorField(
+    formData,
+    'originalPriceUah'
+  );
 
   const legacyRawPrices = [
     ...(priceUsdMinor !== undefined || originalPriceUsdMinor !== undefined

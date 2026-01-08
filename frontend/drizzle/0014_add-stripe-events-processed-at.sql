@@ -1,0 +1,1 @@
+ALTER TABLE "stripe_events" ADD COLUMN "processed_at" timestamp with time zone;

@@ -269,6 +269,7 @@ export const stripeEvents = pgTable(
     orderId: uuid('order_id').references(() => orders.id),
     eventType: text('event_type').notNull(),
     paymentStatus: text('payment_status'),
+    processedAt: timestamp('processed_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
   },
   table => [uniqueIndex('stripe_events_event_id_idx').on(table.eventId)]
@@ -361,7 +362,17 @@ export const inventoryMoves = pgTable(
   ]
 );
 
+export const internalJobState = pgTable('internal_job_state', {
+  jobName: text('job_name').primaryKey(),
+  nextAllowedAt: timestamp('next_allowed_at', { withTimezone: true }).notNull(),
+  lastRunId: uuid('last_run_id'),
+  updatedAt: timestamp('updated_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
 export type DbProductPrice = typeof productPrices.$inferSelect;
 export type DbOrder = typeof orders.$inferSelect;
 export type DbOrderItem = typeof orderItems.$inferSelect;
 export type DbInventoryMove = typeof inventoryMoves.$inferSelect;
+export type DbInternalJobState = typeof internalJobState.$inferSelect;

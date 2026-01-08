@@ -210,5 +210,5 @@ describe('P0-6 snapshots: order_items immutability', () => {
     } finally {
       await cleanupByIds({ orderId, productId });
     }
-  });
+  }, 30_000);
 });

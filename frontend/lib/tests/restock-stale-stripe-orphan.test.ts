@@ -8,7 +8,7 @@ import { toDbMoney } from '@/lib/shop/money';
 import { restockStalePendingOrders } from '@/lib/services/orders';
 
 describe('P0-3.x Restock stale pending orders: stripe orphan cleanup', () => {
-  it('marks stale stripe orphan (no inventory_moves) as terminal failed to avoid infinite sweep re-pick', async () => {
+  it('marks stale stripe orphan (no inventory_moves) as terminal failed and releases to avoid infinite sweep re-pick', async () => {
     const orderId = crypto.randomUUID();
     const idem = `test-stale-orphan-stripe-${crypto.randomUUID()}`;
 
@@ -69,7 +69,7 @@ describe('P0-3.x Restock stale pending orders: stripe orphan cleanup', () => {
 
       expect(row).toBeTruthy();
       expect(row!.status).toBe('INVENTORY_FAILED');
-      expect(row!.inventoryStatus).toBe('failed');
+      expect(row!.inventoryStatus).toBe('released');
       expect(row!.paymentStatus).toBe('failed');
       expect(row!.failureCode).toBe('STALE_ORPHAN');
       expect(row!.failureMessage).toBe(

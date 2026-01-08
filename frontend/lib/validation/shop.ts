@@ -243,6 +243,18 @@ export const productAdminSchema = z
         message: 'USD price is required',
       });
     }
+    // 3) SALE badge requires compare-at/original price for every provided currency
+    if (data.badge === 'SALE') {
+      data.prices.forEach((p, idx) => {
+        if (p.originalPriceMinor == null) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['prices', idx, 'originalPriceMinor'],
+            message: 'Original price is required when badge is SALE',
+          });
+        }
+      });
+    }
   });
 
 export const productAdminUpdateSchema = z
@@ -279,6 +291,17 @@ export const productAdminUpdateSchema = z
           });
         } else {
           seen.add(p.currency);
+        }
+      });
+    }
+    if (data.badge === 'SALE' && data.prices) {
+      data.prices.forEach((p, idx) => {
+        if (p.originalPriceMinor == null) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['prices', idx, 'originalPriceMinor'],
+            message: 'Original price is required when badge is SALE',
+          });
         }
       });
     }
