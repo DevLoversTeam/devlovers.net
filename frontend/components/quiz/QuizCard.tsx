@@ -26,7 +26,8 @@ export function QuizCard({ quiz, userProgress }: QuizCardProps) {
     : 0;
 
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 shadow-sm hover:shadow-md transition-shadow">
+    <div className="flex flex-col rounded-xl border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-5 shadow-sm hover:shadow-md transition-shadow">
+      <div className="flex-grow">
       <div className="flex gap-2 mb-3">
         <Badge variant="blue">{quiz.categoryName ?? 'Uncategorized'}</Badge>
         {userProgress && (
@@ -37,7 +38,7 @@ export function QuizCard({ quiz, userProgress }: QuizCardProps) {
         {quiz.title ?? quiz.slug}
       </h2>
       {quiz.description && (
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+        <p className="line-clamp-2 text-sm text-gray-600 dark:text-gray-400 mb-3">
           {quiz.description}
         </p>
       )}
@@ -47,12 +48,18 @@ export function QuizCard({ quiz, userProgress }: QuizCardProps) {
           ⏱️ {Math.floor((quiz.timeLimitSeconds ?? quiz.questionsCount * 30) / 60)} min
         </span>
       </div>
+      </div>
       {userProgress && (
-        <div className="mb-4">
+        <div className="mb-6">
           <div className="flex justify-between text-xs mb-1.5">
-            <span className="text-gray-600 dark:text-gray-400">
+            <div className="flex flex-row items-center gap-2">
+              <span className="text-gray-600 dark:text-gray-400">
               Best: {userProgress.bestScore}/{userProgress.totalQuestions}
-            </span>
+              </span>
+              <p className="text-xs text-gray-500">
+                {userProgress.attemptsCount} {userProgress.attemptsCount === 1 ? 'attempt' : 'attempts'}
+              </p>
+            </div>
             <span className="font-medium text-gray-900 dark:text-gray-100">
               {percentage}%
             </span>
@@ -63,9 +70,7 @@ export function QuizCard({ quiz, userProgress }: QuizCardProps) {
               style={{ width: `${percentage}%` }}
             />
           </div>
-          <p className="text-xs text-gray-500 mt-1">
-            {userProgress.attemptsCount} {userProgress.attemptsCount === 1 ? 'attempt' : 'attempts'}
-          </p>
+
         </div>
       )}
       <Link
