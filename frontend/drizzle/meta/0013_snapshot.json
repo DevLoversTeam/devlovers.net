@@ -1,6 +1,6 @@
 {
-  "id": "816ec1c4-7d4a-4bbd-bb4a-f21dde7b36f5",
-  "prevId": "ff80403e-b315-4f2a-b266-86853ee4c859",
+  "id": "992ea1db-8b0c-48b9-ad60-7d268b6284c0",
+  "prevId": "0e73615b-1aef-44f4-b3bb-42ad793a8541",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1179,44 +1179,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.internal_job_state": {
-      "name": "internal_job_state",
-      "schema": "",
-      "columns": {
-        "job_name": {
-          "name": "job_name",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "next_allowed_at": {
-          "name": "next_allowed_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "last_run_id": {
-          "name": "last_run_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.inventory_moves": {
       "name": "inventory_moves",
       "schema": "",
@@ -1376,20 +1338,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "selected_size": {
-          "name": "selected_size",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "''"
-        },
-        "selected_color": {
-          "name": "selected_color",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "''"
-        },
         "quantity": {
           "name": "quantity",
           "type": "integer",
@@ -1455,8 +1403,8 @@
           "method": "btree",
           "with": {}
         },
-        "order_items_order_variant_uq": {
-          "name": "order_items_order_variant_uq",
+        "order_items_order_product_uq": {
+          "name": "order_items_order_product_uq",
           "columns": [
             {
               "expression": "order_id",
@@ -1466,18 +1414,6 @@
             },
             {
               "expression": "product_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "selected_size",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "selected_color",
               "isExpression": false,
               "asc": true,
               "nulls": "last"

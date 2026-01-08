@@ -92,20 +92,6 @@
       "when": 1767664985434,
       "tag": "0012_inventory_moves_product_fk_restrict",
       "breakpoints": true
-    },
-    {
-      "idx": 13,
-      "version": "7",
-      "when": 1767732003487,
-      "tag": "0013_add_internal_job_state",
-      "breakpoints": true
-    },
-    {
-      "idx": 14,
-      "version": "7",
-      "when": 1767799775194,
-      "tag": "0014_add-stripe-events-processed-at",
-      "breakpoints": true
     }
   ]
 }
