@@ -221,15 +221,15 @@
       "difficulty": "medium",
       "uk": {
         "q": "Яке значення мають заголовки h1-h6 для SEO?",
-        "exp": "<h1> — головний заголовок, має бути один на сторінці, сигналізує основну тему. <h2>-<h6> структурують контент ієрархічно. Використання ключових слів у заголовках покращує релевантність."
+        "exp": "<h1> — головний заголовок, рекомендовано один на сторінку для SEO (хоча HTML5 дозволяє кілька в межах секцій). <h2>-<h6> структурують контент ієрархічно. Використання ключових слів у заголовках покращує релевантність."
       },
       "en": {
         "q": "What importance do h1-h6 headings have for SEO?",
-        "exp": "<h1> is the main heading, should be one per page, signals main topic. <h2>-<h6> structure content hierarchically. Using keywords in headings improves relevance."
+        "exp": "<h1> is the main heading, one per page is recommended for SEO (though HTML5 allows multiple within sections). <h2>-<h6> structure content hierarchically. Using keywords in headings improves relevance."
       },
       "pl": {
         "q": "Jakie znaczenie mają nagłówki h1-h6 dla SEO?",
-        "exp": "<h1> to główny nagłówek, powinien być jeden na stronie, sygnalizuje główny temat. <h2>-<h6> strukturyzują treść hierarchicznie. Używanie słów kluczowych w nagłówkach poprawia trafność."
+        "exp": "<h1> to główny nagłówek, jeden na stronę jest zalecany dla SEO (choć HTML5 pozwala na wiele w sekcjach). <h2>-<h6> strukturyzują treść hierarchicznie. Używanie słów kluczowych w nagłówkach poprawia trafność."
       },
       "answers": [
         {
@@ -239,15 +239,15 @@
           "correct": false
         },
         {
-          "uk": "h1 один на сторінку, ієрархія h2-h6 структурує контент для пошуковиків",
-          "en": "h1 one per page, h2-h6 hierarchy structures content for search engines",
-          "pl": "h1 jeden na stronę, hierarchia h2-h6 strukturyzuje treść dla wyszukiwarek",
+          "uk": "h1 рекомендовано один на сторінку, ієрархія h2-h6 структурує контент",
+          "en": "h1 recommended one per page, h2-h6 hierarchy structures content",
+          "pl": "h1 zalecany jeden na stronę, hierarchia h2-h6 strukturyzuje treść",
           "correct": true
         },
         {
-          "uk": "Можна використовувати кілька h1 на сторінці",
-          "en": "Can use multiple h1 on a page",
-          "pl": "Można używać wielu h1 na stronie",
+          "uk": "Кілька h1 — найкраща практика для SEO",
+          "en": "Multiple h1 is best practice for SEO",
+          "pl": "Wiele h1 to najlepsza praktyka dla SEO",
           "correct": false
         },
         {
