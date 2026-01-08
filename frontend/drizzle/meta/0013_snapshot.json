@@ -1,6 +1,6 @@
 {
-  "id": "992ea1db-8b0c-48b9-ad60-7d268b6284c0",
-  "prevId": "0e73615b-1aef-44f4-b3bb-42ad793a8541",
+  "id": "7f528773-4966-47d2-85a4-5f3c2f62fec6",
+  "prevId": "ff80403e-b315-4f2a-b266-86853ee4c859",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -573,6 +573,36 @@
         }
       },
       "indexes": {
+        "quiz_attempts_user_id_idx": {
+          "name": "quiz_attempts_user_id_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "quiz_attempts_quiz_id_idx": {
+          "name": "quiz_attempts_quiz_id_idx",
+          "columns": [
+            {
+              "expression": "quiz_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "quiz_attempts_user_completed_at_idx": {
           "name": "quiz_attempts_user_completed_at_idx",
           "columns": [
@@ -1338,6 +1368,20 @@
           "primaryKey": false,
           "notNull": true
         },
+        "selected_size": {
+          "name": "selected_size",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "selected_color": {
+          "name": "selected_color",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
         "quantity": {
           "name": "quantity",
           "type": "integer",
@@ -1403,8 +1447,8 @@
           "method": "btree",
           "with": {}
         },
-        "order_items_order_product_uq": {
-          "name": "order_items_order_product_uq",
+        "order_items_order_variant_uq": {
+          "name": "order_items_order_variant_uq",
           "columns": [
             {
               "expression": "order_id",
@@ -1414,6 +1458,18 @@
             },
             {
               "expression": "product_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "selected_size",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "selected_color",
               "isExpression": false,
               "asc": true,
               "nulls": "last"

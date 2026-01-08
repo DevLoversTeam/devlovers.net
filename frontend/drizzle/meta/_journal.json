@@ -92,6 +92,13 @@
       "when": 1767664985434,
       "tag": "0012_inventory_moves_product_fk_restrict",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1767693499602,
+      "tag": "0013_warm_dexter_bennett",
+      "breakpoints": true
     }
   ]
 }
