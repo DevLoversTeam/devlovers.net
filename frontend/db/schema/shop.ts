@@ -269,6 +269,7 @@ export const stripeEvents = pgTable(
     orderId: uuid('order_id').references(() => orders.id),
     eventType: text('event_type').notNull(),
     paymentStatus: text('payment_status'),
+    processedAt: timestamp('processed_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
   },
   table => [uniqueIndex('stripe_events_event_id_idx').on(table.eventId)]

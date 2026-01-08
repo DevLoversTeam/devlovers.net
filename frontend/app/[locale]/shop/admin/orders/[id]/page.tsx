@@ -1,7 +1,7 @@
 import { Link } from '@/i18n/routing';
 
 import { notFound } from 'next/navigation';
-
+import { RefundButton } from './RefundButton';
 import { getAdminOrderDetail } from '@/db/queries/shop/admin-orders';
 import {
   formatMoney,
@@ -40,7 +40,10 @@ export default async function AdminOrderDetailPage({
   const order = await getAdminOrderDetail(id);
   if (!order) notFound();
 
-  const canRefund = order.paymentStatus === 'paid';
+  const canRefund =
+  order.paymentProvider === 'stripe' &&
+  order.paymentStatus === 'paid' &&
+  !!order.paymentIntentId;
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
@@ -60,23 +63,7 @@ export default async function AdminOrderDetailPage({
             Back
           </Link>
 
-          <form
-            action={`/api/shop/admin/orders/${order.id}/refund`}
-            method="post"
-          >
-            <button
-              type="submit"
-              disabled={!canRefund}
-              className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
-              title={
-                !canRefund
-                  ? 'Refund is only available for paid orders'
-                  : undefined
-              }
-            >
-              Refund
-            </button>
-          </form>
+          <RefundButton orderId={order.id} disabled={!canRefund} />
         </div>
       </div>
 
