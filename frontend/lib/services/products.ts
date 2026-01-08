@@ -335,6 +335,26 @@ function validatePriceRows(prices: NormalizedPriceRow[]) {
   }
 }
 
+function enforceSaleBadgeRequiresOriginal(
+  badge: unknown,
+  prices: NormalizedPriceRow[]
+) {
+  if (badge !== 'SALE') return;
+
+  for (const p of prices) {
+    if (p.originalPriceMinor == null) {
+      throw new InvalidPayloadError(
+        `SALE badge requires originalPrice for currency ${p.currency}.`
+      );
+    }
+    if (p.originalPriceMinor <= p.priceMinor) {
+      throw new InvalidPayloadError(
+        `Invalid originalPrice for ${p.currency} (must be > price).`
+      );
+    }
+  }
+}
+
 export async function createProduct(input: ProductInput): Promise<DbProduct> {
   const slug = await normalizeSlug(
     db,
@@ -355,7 +375,12 @@ export async function createProduct(input: ProductInput): Promise<DbProduct> {
     // Hard fail: admin flow must provide prices
     throw new InvalidPayloadError('Product pricing is required.');
   }
+
   validatePriceRows(prices);
+
+  const badge = (input as any).badge ?? 'NONE';
+  enforceSaleBadgeRequiresOriginal(badge, prices);
+
   const usd = requireUsd(prices);
 
   let createdProductId: string | null = null;
@@ -467,6 +492,44 @@ export async function updateProduct(
 
   const prices = normalizePricesFromInput(input);
   if (prices.length) validatePriceRows(prices);
+  // Enforce SALE invariant against FINAL state (DB rows + incoming upserts)
+  const finalBadge = (input as any).badge ?? existing.badge;
+
+  if (finalBadge === 'SALE') {
+    const existingPriceRows = await db
+      .select({
+        currency: productPrices.currency,
+        priceMinor: productPrices.priceMinor,
+        originalPriceMinor: productPrices.originalPriceMinor,
+      })
+      .from(productPrices)
+      .where(eq(productPrices.productId, id));
+
+    const merged = new Map<CurrencyCode, NormalizedPriceRow>();
+
+    for (const r of existingPriceRows) {
+      merged.set(r.currency as CurrencyCode, {
+        currency: r.currency as CurrencyCode,
+        priceMinor: assertMoneyMinorInt(
+          r.priceMinor,
+          `${String(r.currency)} priceMinor`
+        ),
+        originalPriceMinor:
+          r.originalPriceMinor == null
+            ? null
+            : assertMoneyMinorInt(
+                r.originalPriceMinor,
+                `${String(r.currency)} originalPriceMinor`
+              ),
+      });
+    }
+
+    for (const p of prices) {
+      merged.set(p.currency, p);
+    }
+
+    enforceSaleBadgeRequiresOriginal('SALE', Array.from(merged.values()));
+  }
 
   // Base fields update
   const updateData: Partial<ProductsTable['$inferInsert']> = {
