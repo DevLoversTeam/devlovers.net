@@ -28,7 +28,7 @@ export default async function ShopAdminLayout({
   return (
     <>
       <div className="border-b border-border bg-background">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
             <Link
               href="/shop/admin"
