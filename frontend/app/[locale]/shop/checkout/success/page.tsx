@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from '@/i18n/routing';
 
 import { formatPrice } from "@/lib/shop/currency";
 import { getOrderSummary } from "@/lib/services/orders";
@@ -136,7 +136,7 @@ export default async function CheckoutSuccessPage({
               <div className="flex items-center justify-between">
                 <span>Total amount</span>
                 <span className="font-semibold text-foreground">
-                  {formatPrice(order.totalAmount)}
+                  {formatPrice(order.totalAmount, order.currency)}
                 </span>
               </div>
               <div className="flex items-center justify-between">

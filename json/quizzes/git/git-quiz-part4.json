@@ -1,0 +1,434 @@
+{
+  "questions": [
+    {
+      "id": "git-q31",
+      "order": 31,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке Git LFS і для чого він використовується?",
+        "exp": "Git LFS (Large File Storage) — розширення для зберігання великих файлів поза основним репозиторієм. У Git зберігаються лише посилання на файли."
+      },
+      "en": {
+        "q": "What is Git LFS and what is it used for?",
+        "exp": "Git LFS (Large File Storage) is an extension for storing large files outside the main repository. Only file references are stored in Git."
+      },
+      "pl": {
+        "q": "Czym jest Git LFS i do czego służy?",
+        "exp": "Git LFS (Large File Storage) to rozszerzenie do przechowywania dużych plików poza głównym repozytorium. W Git przechowywane są tylko odniesienia do plików."
+      },
+      "answers": [
+        {
+          "uk": "Команда для прискорення клонування",
+          "en": "A command for faster cloning",
+          "pl": "Polecenie do szybszego klonowania",
+          "correct": false
+        },
+        {
+          "uk": "Розширення для зберігання великих файлів поза репозиторієм",
+          "en": "An extension for storing large files outside the repository",
+          "pl": "Rozszerzenie do przechowywania dużych plików poza repozytorium",
+          "correct": true
+        },
+        {
+          "uk": "Система для автоматичного бекапу",
+          "en": "A system for automatic backup",
+          "pl": "System do automatycznego tworzenia kopii zapasowych",
+          "correct": false
+        },
+        {
+          "uk": "Інструмент для стиснення комітів",
+          "en": "A tool for compressing commits",
+          "pl": "Narzędzie do kompresji commitów",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "git-q32",
+      "order": 32,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке shallow clone у Git?",
+        "exp": "Shallow clone — це клон репозиторію з обмеженою історією комітів (--depth N). Швидше клонується, але без повної історії."
+      },
+      "en": {
+        "q": "What is a shallow clone in Git?",
+        "exp": "A shallow clone is a repository clone with limited commit history (--depth N). It clones faster but without complete history."
+      },
+      "pl": {
+        "q": "Czym jest shallow clone w Git?",
+        "exp": "Shallow clone to klon repozytorium z ograniczoną historią commitów (--depth N). Klonuje się szybciej, ale bez pełnej historii."
+      },
+      "answers": [
+        {
+          "uk": "Клон без файлів, лише з метаданими",
+          "en": "A clone without files, only metadata",
+          "pl": "Klon bez plików, tylko z metadanymi",
+          "correct": false
+        },
+        {
+          "uk": "Клон репозиторію з обмеженою кількістю комітів в історії",
+          "en": "A repository clone with a limited number of commits in history",
+          "pl": "Klon repozytorium z ograniczoną liczbą commitów w historii",
+          "correct": true
+        },
+        {
+          "uk": "Клон лише однієї гілки",
+          "en": "A clone of only one branch",
+          "pl": "Klon tylko jednej gałęzi",
+          "correct": false
+        },
+        {
+          "uk": "Клон без можливості пушу",
+          "en": "A clone without push capability",
+          "pl": "Klon bez możliwości push",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "git-q33",
+      "order": 33,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Як налаштувати ім'я користувача та email у Git?",
+        "exp": "Використовуйте git config --global user.name та git config --global user.email для глобальних налаштувань усіх репозиторіїв."
+      },
+      "en": {
+        "q": "How do you configure username and email in Git?",
+        "exp": "Use git config --global user.name and git config --global user.email for global settings across all repositories."
+      },
+      "pl": {
+        "q": "Jak skonfigurować nazwę użytkownika i email w Git?",
+        "exp": "Użyj git config --global user.name i git config --global user.email dla globalnych ustawień we wszystkich repozytoriach."
+      },
+      "answers": [
+        {
+          "uk": "git setup --user",
+          "en": "git setup --user",
+          "pl": "git setup --user",
+          "correct": false
+        },
+        {
+          "uk": "git config --global user.name та user.email",
+          "en": "git config --global user.name and user.email",
+          "pl": "git config --global user.name i user.email",
+          "correct": true
+        },
+        {
+          "uk": "git init --username",
+          "en": "git init --username",
+          "pl": "git init --username",
+          "correct": false
+        },
+        {
+          "uk": "Налаштування редагуються вручну в .git",
+          "en": "Settings are edited manually in .git",
+          "pl": "Ustawienia edytuje się ręcznie w .git",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "git-q34",
+      "order": 34,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Які три рівні конфігурації існують у Git?",
+        "exp": "System (для всіх користувачів), Global (для поточного користувача), Local (для конкретного репозиторію). Пріоритет: local > global > system."
+      },
+      "en": {
+        "q": "What are the three configuration levels in Git?",
+        "exp": "System (for all users), Global (for current user), Local (for specific repository). Priority: local > global > system."
+      },
+      "pl": {
+        "q": "Jakie są trzy poziomy konfiguracji w Git?",
+        "exp": "System (dla wszystkich użytkowników), Global (dla bieżącego użytkownika), Local (dla konkretnego repozytorium). Priorytet: local > global > system."
+      },
+      "answers": [
+        {
+          "uk": "User, Admin, Root",
+          "en": "User, Admin, Root",
+          "pl": "User, Admin, Root",
+          "correct": false
+        },
+        {
+          "uk": "System, Global, Local",
+          "en": "System, Global, Local",
+          "pl": "System, Global, Local",
+          "correct": true
+        },
+        {
+          "uk": "Basic, Standard, Premium",
+          "en": "Basic, Standard, Premium",
+          "pl": "Basic, Standard, Premium",
+          "correct": false
+        },
+        {
+          "uk": "Main, Develop, Feature",
+          "en": "Main, Develop, Feature",
+          "pl": "Main, Develop, Feature",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "git-q35",
+      "order": 35,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Яка команда видаляє гілку на віддаленому сервері?",
+        "exp": "Використовуйте git push origin --delete branch_name для видалення гілки на віддаленому репозиторії."
+      },
+      "en": {
+        "q": "Which command deletes a branch on the remote server?",
+        "exp": "Use git push origin --delete branch_name to delete a branch on the remote repository."
+      },
+      "pl": {
+        "q": "Które polecenie usuwa gałąź na zdalnym serwerze?",
+        "exp": "Użyj git push origin --delete branch_name, aby usunąć gałąź w zdalnym repozytorium."
+      },
+      "answers": [
+        {
+          "uk": "git delete remote branch_name",
+          "en": "git delete remote branch_name",
+          "pl": "git delete remote branch_name",
+          "correct": false
+        },
+        {
+          "uk": "git push origin --delete branch_name",
+          "en": "git push origin --delete branch_name",
+          "pl": "git push origin --delete branch_name",
+          "correct": true
+        },
+        {
+          "uk": "git remove origin/branch_name",
+          "en": "git remove origin/branch_name",
+          "pl": "git remove origin/branch_name",
+          "correct": false
+        },
+        {
+          "uk": "git branch -r -d branch_name",
+          "en": "git branch -r -d branch_name",
+          "pl": "git branch -r -d branch_name",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "git-q36",
+      "order": 36,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що робить команда git clean?",
+        "exp": "git clean видаляє незатрековані файли з робочого каталогу. Використовуйте -n для dry-run, -f для видалення, -fd для файлів і каталогів."
+      },
+      "en": {
+        "q": "What does the git clean command do?",
+        "exp": "git clean removes untracked files from the working directory. Use -n for dry-run, -f to delete, -fd for files and directories."
+      },
+      "pl": {
+        "q": "Co robi polecenie git clean?",
+        "exp": "git clean usuwa nieśledzone pliki z katalogu roboczego. Użyj -n dla dry-run, -f do usunięcia, -fd dla plików i katalogów."
+      },
+      "answers": [
+        {
+          "uk": "Очищає історію комітів",
+          "en": "Clears commit history",
+          "pl": "Czyści historię commitów",
+          "correct": false
+        },
+        {
+          "uk": "Видаляє незатрековані файли з робочого каталогу",
+          "en": "Removes untracked files from the working directory",
+          "pl": "Usuwa nieśledzone pliki z katalogu roboczego",
+          "correct": true
+        },
+        {
+          "uk": "Форматує код у репозиторії",
+          "en": "Formats code in the repository",
+          "pl": "Formatuje kod w repozytorium",
+          "correct": false
+        },
+        {
+          "uk": "Видаляє всі локальні зміни",
+          "en": "Deletes all local changes",
+          "pl": "Usuwa wszystkie lokalne zmiany",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "git-q37",
+      "order": 37,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке Forking Workflow?",
+        "exp": "Forking Workflow — підхід, коли розробник працює зі своєю копією (fork) репозиторію і надсилає Pull Request в основний репозиторій."
+      },
+      "en": {
+        "q": "What is Forking Workflow?",
+        "exp": "Forking Workflow is an approach where a developer works with their own copy (fork) of the repository and sends a Pull Request to the main repository."
+      },
+      "pl": {
+        "q": "Czym jest Forking Workflow?",
+        "exp": "Forking Workflow to podejście, w którym programista pracuje z własną kopią (fork) repozytorium i wysyła Pull Request do głównego repozytorium."
+      },
+      "answers": [
+        {
+          "uk": "Робота з кількома гілками одночасно",
+          "en": "Working with multiple branches simultaneously",
+          "pl": "Praca z wieloma gałęziami jednocześnie",
+          "correct": false
+        },
+        {
+          "uk": "Робота зі своєю копією репозиторію та надсилання PR в основний",
+          "en": "Working with your own repository copy and sending PR to the main one",
+          "pl": "Praca z własną kopią repozytorium i wysyłanie PR do głównego",
+          "correct": true
+        },
+        {
+          "uk": "Автоматичне розділення великих комітів",
+          "en": "Automatic splitting of large commits",
+          "pl": "Automatyczne dzielenie dużych commitów",
+          "correct": false
+        },
+        {
+          "uk": "Спеціальний режим для вирішення конфліктів",
+          "en": "A special mode for resolving conflicts",
+          "pl": "Specjalny tryb do rozwiązywania konfliktów",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "git-q38",
+      "order": 38,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Яка команда дозволяє перенести конкретний коміт з однієї гілки в іншу?",
+        "exp": "git cherry-pick дозволяє вибрати конкретний коміт і застосувати його до поточної гілки, не виконуючи повного злиття."
+      },
+      "en": {
+        "q": "Which command allows you to move a specific commit from one branch to another?",
+        "exp": "git cherry-pick allows you to select a specific commit and apply it to the current branch without a full merge."
+      },
+      "pl": {
+        "q": "Które polecenie pozwala przenieść konkretny commit z jednej gałęzi do drugiej?",
+        "exp": "git cherry-pick pozwala wybrać konkretny commit i zastosować go do bieżącej gałęzi bez pełnego scalania."
+      },
+      "answers": [
+        {
+          "uk": "git move-commit",
+          "en": "git move-commit",
+          "pl": "git move-commit",
+          "correct": false
+        },
+        {
+          "uk": "git cherry-pick",
+          "en": "git cherry-pick",
+          "pl": "git cherry-pick",
+          "correct": true
+        },
+        {
+          "uk": "git copy",
+          "en": "git copy",
+          "pl": "git copy",
+          "correct": false
+        },
+        {
+          "uk": "git transfer",
+          "en": "git transfer",
+          "pl": "git transfer",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "git-q39",
+      "order": 39,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке Git submodule?",
+        "exp": "Git submodule — механізм для вбудовування одного репозиторію в інший як залежність, зберігаючи посилання на конкретний коміт."
+      },
+      "en": {
+        "q": "What is a Git submodule?",
+        "exp": "A Git submodule is a mechanism for embedding one repository into another as a dependency, maintaining a reference to a specific commit."
+      },
+      "pl": {
+        "q": "Czym jest Git submodule?",
+        "exp": "Git submodule to mechanizm do osadzania jednego repozytorium w drugim jako zależność, zachowując odniesienie do konkretnego commita."
+      },
+      "answers": [
+        {
+          "uk": "Окрема гілка для модульного тестування",
+          "en": "A separate branch for unit testing",
+          "pl": "Oddzielna gałąź do testów jednostkowych",
+          "correct": false
+        },
+        {
+          "uk": "Механізм для вбудовування одного репозиторію в інший",
+          "en": "A mechanism for embedding one repository into another",
+          "pl": "Mechanizm do osadzania jednego repozytorium w drugim",
+          "correct": true
+        },
+        {
+          "uk": "Тип файлу для зберігання налаштувань",
+          "en": "A file type for storing settings",
+          "pl": "Typ pliku do przechowywania ustawień",
+          "correct": false
+        },
+        {
+          "uk": "Команда для розділення великих файлів",
+          "en": "A command for splitting large files",
+          "pl": "Polecenie do dzielenia dużych plików",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "git-q40",
+      "order": 40,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Чому небезпечно зберігати секретні дані (паролі, API-ключі) у Git-репозиторії?",
+        "exp": "Дані залишаються в історії Git назавжди, навіть після видалення. Їх можуть знайти через пошук в історії або у форках репозиторію."
+      },
+      "en": {
+        "q": "Why is it dangerous to store secrets (passwords, API keys) in a Git repository?",
+        "exp": "Data remains in Git history forever, even after deletion. It can be found through history search or in repository forks."
+      },
+      "pl": {
+        "q": "Dlaczego niebezpieczne jest przechowywanie sekretów (haseł, kluczy API) w repozytorium Git?",
+        "exp": "Dane pozostają w historii Git na zawsze, nawet po usunięciu. Można je znaleźć przez przeszukiwanie historii lub w forkach repozytorium."
+      },
+      "answers": [
+        {
+          "uk": "Git не підтримує текстові дані",
+          "en": "Git doesn't support text data",
+          "pl": "Git nie obsługuje danych tekstowych",
+          "correct": false
+        },
+        {
+          "uk": "Секрети займають багато місця",
+          "en": "Secrets take up a lot of space",
+          "pl": "Sekrety zajmują dużo miejsca",
+          "correct": false
+        },
+        {
+          "uk": "Дані залишаються в історії назавжди і можуть бути знайдені",
+          "en": "Data remains in history forever and can be found",
+          "pl": "Dane pozostają w historii na zawsze i mogą zostać znalezione",
+          "correct": true
+        },
+        {
+          "uk": "Git автоматично публікує всі файли",
+          "en": "Git automatically publishes all files",
+          "pl": "Git automatycznie publikuje wszystkie pliki",
+          "correct": false
+        }
+      ]
+    }
+  ]
+}

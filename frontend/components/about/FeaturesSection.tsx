@@ -1,8 +1,9 @@
 "use client"
 
 import type React from "react"
-import Link from "next/link"
+import { Link } from '@/i18n/routing';
 import { MessageCircle, Brain, Trophy, User, ShoppingBag, Star, Flame, Target } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 interface FeatureCardProps {
   icon: React.ReactNode
@@ -14,9 +15,11 @@ interface FeatureCardProps {
 }
 
 function FeatureCard({ icon, title, description, href, className = "", children }: FeatureCardProps) {
+  const t = useTranslations("about.features")
+
   return (
     <div
-      className={`group relative overflow-hidden rounded-2xl border p-6 transition-all duration-300 hover:scale-[1.02] 
+      className={`group relative overflow-hidden rounded-2xl border p-6 transition-all duration-300 hover:scale-[1.02]
       bg-white border-gray-200 shadow-sm hover:border-blue-500/50 hover:shadow-blue-500/10
       dark:bg-white/5 dark:border-white/10 dark:backdrop-blur-md dark:hover:bg-white/10 dark:hover:border-blue-500/50
       ${className}`}
@@ -39,11 +42,11 @@ function FeatureCard({ icon, title, description, href, className = "", children 
 
         <Link
           href={href}
-          className="mt-4 inline-block w-fit rounded-lg border px-4 py-2 text-sm font-medium transition-all duration-300 
+          className="mt-4 inline-block w-fit rounded-lg border px-4 py-2 text-sm font-medium transition-all duration-300
           border-gray-200 text-gray-700 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-700
           dark:border-white/20 dark:text-white/80 dark:hover:border-blue-500/50 dark:hover:bg-blue-500/10 dark:hover:text-white"
         >
-          Learn more
+          {t("learnMore")}
         </Link>
       </div>
     </div>
@@ -76,9 +79,12 @@ function AchievementBadge({ icon, label }: { icon: React.ReactNode; label: strin
 }
 
 export function FeaturesSection() {
+  const t = useTranslations("about.features")
+  const tProfile = useTranslations("about.features.profile")
+
   return (
     <section className="relative px-4 py-20 sm:px-6 lg:px-8 transition-colors duration-300 bg-white dark:bg-transparent">
-      
+
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute left-1/4 top-1/4 h-96 w-96 rounded-full bg-blue-400/10 blur-3xl dark:bg-blue-500/10" />
         <div className="absolute bottom-1/4 right-1/4 h-96 w-96 rounded-full bg-blue-400/10 blur-3xl dark:bg-blue-600/10" />
@@ -87,36 +93,36 @@ export function FeaturesSection() {
       <div className="relative mx-auto max-w-6xl">
         <div className="mb-12 text-center">
           <h2 className="mb-4 text-4xl font-bold text-gray-900 dark:text-white md:text-5xl">
-            Powerful <span className="text-blue-600 dark:text-blue-400">Features</span>
+            {t("title")} <span className="text-blue-600 dark:text-blue-400">{t("titleHighlight")}</span>
           </h2>
           <p className="mx-auto max-w-2xl text-gray-600 dark:text-gray-400">
-            Everything you need to create engaging learning experiences and track progress effectively.
+            {t("subtitle")}
           </p>
         </div>
 
         <div className="grid auto-rows-[minmax(200px,auto)] grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          
+
           <FeatureCard
             icon={<MessageCircle className="h-7 w-7" />}
-            title="Q&A"
-            description="Access a curated collection of the most frequent and relevant technical interview questions. Get clear answers to the real challenges recruiters actually ask."
+            title={t("qa.title")}
+            description={t("qa.description")}
             href="/q&a"
             className="lg:row-span-1"
           />
 
           <FeatureCard
             icon={<Brain className="h-7 w-7" />}
-            title="Quiz"
-            description="Master technical interviews with our adaptive quizzes. Cover topics from React to Algorithms, track your weak spots, and level up your skills."
+            title={t("quiz.title")}
+            description={t("quiz.description")}
             href="/quiz"
             className="lg:row-span-1"
           />
 
           <FeatureCard
             icon={<User className="h-7 w-7" />}
-            title="Profile" 
-            description="Your central hub for progress tracking. Visualize your growth, manage your achievements, and customize your learning path."
-            href="/profile" 
+            title={t("profile.title")}
+            description={t("profile.description")}
+            href="/profile"
             className="md:col-span-2 lg:col-span-1 lg:row-span-2"
           >
             <div className="mt-4 space-y-4 rounded-xl border p-4 bg-gray-50 border-gray-100 dark:bg-white/5 dark:border-white/10">
@@ -126,40 +132,40 @@ export function FeaturesSection() {
                 </div>
                 <div>
                   <p className="font-semibold text-gray-900 dark:text-white">John Doe</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Level 12 • Pro Learner</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{tProfile("level")}</p>
                 </div>
               </div>
               <div>
-                <p className="mb-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-500">Achievements</p>
+                <p className="mb-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-500">{tProfile("achievements")}</p>
                 <div className="flex justify-around">
-                  <AchievementBadge icon={<Star className="h-5 w-5" />} label="Star" />
-                  <AchievementBadge icon={<Flame className="h-5 w-5" />} label="Streak" />
-                  <AchievementBadge icon={<Target className="h-5 w-5" />} label="Focus" />
-                  <AchievementBadge icon={<Trophy className="h-5 w-5" />} label="Champ" />
+                  <AchievementBadge icon={<Star className="h-5 w-5" />} label={tProfile("badges.star")} />
+                  <AchievementBadge icon={<Flame className="h-5 w-5" />} label={tProfile("badges.streak")} />
+                  <AchievementBadge icon={<Target className="h-5 w-5" />} label={tProfile("badges.focus")} />
+                  <AchievementBadge icon={<Trophy className="h-5 w-5" />} label={tProfile("badges.champ")} />
                 </div>
               </div>
               <div className="space-y-3">
-                <p className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-500">Progress</p>
-                <ProgressBar label="Course Completion" value={78} color="bg-gradient-to-r from-blue-500 to-blue-400" />
-                <ProgressBar label="Quiz Accuracy" value={92} color="bg-gradient-to-r from-emerald-500 to-emerald-400" />
-                <ProgressBar label="Weekly Goal" value={65} color="bg-gradient-to-r from-amber-500 to-amber-400" />
+                <p className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-500">{tProfile("progress")}</p>
+                <ProgressBar label={tProfile("courseCompletion")} value={78} color="bg-gradient-to-r from-blue-500 to-blue-400" />
+                <ProgressBar label={tProfile("quizAccuracy")} value={92} color="bg-gradient-to-r from-emerald-500 to-emerald-400" />
+                <ProgressBar label={tProfile("weeklyGoal")} value={65} color="bg-gradient-to-r from-amber-500 to-amber-400" />
               </div>
             </div>
           </FeatureCard>
 
           <FeatureCard
             icon={<Trophy className="h-7 w-7" />}
-            title="Leaderboard"
-            description="Compete with top developers globally. Earn points for correct answers, maintain streaks, and showcase your expertise on the global ranking."
+            title={t("leaderboard.title")}
+            description={t("leaderboard.description")}
             href="/leaderboard"
             className="lg:row-span-1"
           />
 
           <FeatureCard
             icon={<ShoppingBag className="h-7 w-7" />}
-            title="Shop"
-            description="Turn your hard work into rewards. Exchange your earned coins for exclusive merch, premium course access, or unique profile customization."
-            href="/shop" 
+            title={t("shop.title")}
+            description={t("shop.description")}
+            href="/shop"
             className="lg:row-span-1"
           />
         </div>

@@ -16,12 +16,12 @@ function noStoreJson(body: unknown, init?: { status?: number }) {
   res.headers.set('Cache-Control', 'no-store');
   return res;
 }
-
+type OrderCurrency = (typeof orders.$inferSelect)["currency"];
 type OrderDetailResponse = {
   id: string;
   userId: string | null;
   totalAmount: string;
-  currency: 'USD';
+  currency: OrderCurrency;
   paymentStatus:
     | 'pending'
     | 'requires_payment'
@@ -46,6 +46,7 @@ type OrderDetailResponse = {
     lineTotal: string;
   }>;
 };
+
 
 function toOrderItem(
   item: {

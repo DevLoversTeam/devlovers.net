@@ -17,8 +17,13 @@ export function QuizSavedBanner() {
   useEffect(() => {
     const saved = sessionStorage.getItem('quiz_just_saved');
     if (saved) {
-      setInfo(JSON.parse(saved));
+       try {
+       setInfo(JSON.parse(saved));
+        sessionStorage.removeItem('quiz_just_saved');
+     } catch (error) {
+       console.error('Failed to parse quiz_just_saved from sessionStorage:', error);
       sessionStorage.removeItem('quiz_just_saved');
+    }
     }
   }, []);
 

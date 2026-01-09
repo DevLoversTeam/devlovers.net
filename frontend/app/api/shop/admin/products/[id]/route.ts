@@ -13,11 +13,11 @@ import { logError } from '@/lib/logging';
 import { InvalidPayloadError, SlugConflictError } from '@/lib/services/errors';
 import {
   deleteProduct,
-  getAdminProductById,
+  getAdminProductByIdWithPrices,
   updateProduct,
 } from '@/lib/services/products';
 
-const productIdParamSchema = z.object({ id: z.uuid() });
+const productIdParamSchema = z.object({ id: z.string().uuid() });
 
 export async function GET(
   request: NextRequest,
@@ -35,7 +35,7 @@ export async function GET(
       );
     }
 
-    const product = await getAdminProductById(parsedParams.data.id);
+    const product = await getAdminProductByIdWithPrices(parsedParams.data.id);
     return NextResponse.json({ product });
   } catch (error) {
     if (error instanceof AdminApiDisabledError) {
@@ -67,6 +67,7 @@ export async function PATCH(
 ): Promise<NextResponse> {
   try {
     await requireAdminApi(request);
+
     const rawParams = await context.params;
     const parsedParams = productIdParamSchema.safeParse(rawParams);
 
@@ -78,8 +79,9 @@ export async function PATCH(
     }
 
     const formData = await request.formData();
-    const parsed = parseAdminProductForm(formData, { mode: 'update' });
 
+    // 1) Parse/validate base fields via existing parser
+    const parsed = parseAdminProductForm(formData, { mode: 'update' });
     if (!parsed.ok) {
       return NextResponse.json(
         { error: 'Invalid product data', details: parsed.error.format() },
@@ -87,10 +89,12 @@ export async function PATCH(
       );
     }
 
+    // 3) Update product
     try {
       const imageFile = formData.get('image');
+
       const updated = await updateProduct(parsedParams.data.id, {
-        ...parsed.data,
+        ...(parsed.data as any),
         image:
           imageFile instanceof File && imageFile.size > 0
             ? imageFile

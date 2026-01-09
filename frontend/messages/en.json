@@ -45,12 +45,102 @@
     "title": "All Blog Posts",
     "metaTitle": "Blog | DevLovers",
     "metaDescription": "Explore the latest articles and insights",
-    "searchPlaceholder": "Type a hashtag and press Enter (e.g. frontend, qa)",
+    "searchPlaceholder": "Search...",
     "removeTag": "Remove tag",
     "add": "Add",
     "clear": "Clear",
     "noPosts": "No posts found",
     "noPostsForTags": "No posts found for selected tags",
-    "visitResource": "Visit Resource"
+    "visitResource": "Visit Resource",
+    "readArticle": "Read article"
+  },
+  "footer": {
+    "builtWith": "Built with",
+    "byCommunity": "by the community.",
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service"
+  },
+  "about": {
+    "hero": {
+      "badge": "Our Story",
+      "title": "Driven by passion,",
+      "titleHighlight": "built for community growth",
+      "description": "DevLovers started as a simple university project. We noticed a gap in how developers prepare for interviews — scattered resources and lack of structure. We built a unified ecosystem where knowledge meets practice."
+    },
+    "stats": {
+      "githubStars": "GitHub Stars",
+      "followers": "Followers",
+      "activeDevs": "Active Devs",
+      "solved": "Solved"
+    },
+    "features": {
+      "title": "Powerful",
+      "titleHighlight": "Features",
+      "subtitle": "Everything you need to create engaging learning experiences and track progress effectively.",
+      "learnMore": "Learn more",
+      "qa": {
+        "title": "Q&A",
+        "description": "Access a curated collection of the most frequent and relevant technical interview questions. Get clear answers to the real challenges recruiters actually ask."
+      },
+      "quiz": {
+        "title": "Quiz",
+        "description": "Master technical interviews with our adaptive quizzes. Cover topics from React to Algorithms, track your weak spots, and level up your skills."
+      },
+      "profile": {
+        "title": "Profile",
+        "description": "Your central hub for progress tracking. Visualize your growth, manage your achievements, and customize your learning path.",
+        "level": "Level 12 • Pro Learner",
+        "achievements": "Achievements",
+        "badges": {
+          "star": "Star",
+          "streak": "Streak",
+          "focus": "Focus",
+          "champ": "Champ"
+        },
+        "progress": "Progress",
+        "courseCompletion": "Course Completion",
+        "quizAccuracy": "Quiz Accuracy",
+        "weeklyGoal": "Weekly Goal"
+      },
+      "leaderboard": {
+        "title": "Leaderboard",
+        "description": "Compete with top developers globally. Earn points for correct answers, maintain streaks, and showcase your expertise on the global ranking."
+      },
+      "shop": {
+        "title": "Shop",
+        "description": "Turn your hard work into rewards. Exchange your earned coins for exclusive merch, premium course access, or unique profile customization."
+      }
+    },
+    "pricing": {
+      "title": "Invest in knowledge,",
+      "titleHighlight": "not subscriptions",
+      "subtitle": "We believe quality education should be accessible to everyone. No paywalls, no hidden fees, just pure engineering growth.",
+      "badge": "Community Edition",
+      "monthlyPrice": "Monthly price",
+      "free": "Forever Free & Open Source",
+      "features": {
+        "unlimitedQuestions": "Unlimited Interview Questions",
+        "fullQuizAccess": "Full Access to Quizzes",
+        "globalLeaderboard": "Global Leaderboard",
+        "progressTracking": "Progress Tracking",
+        "communityChallenges": "Community Challenges",
+        "mobileFriendly": "Mobile Friendly"
+      },
+      "cta": "Start Learning Now",
+      "coffee": "Buy us a coffee",
+      "noCard": "No credit card required. No hidden data tracking."
+    },
+    "community": {
+      "title": "Trusted by the Community",
+      "subtitle": "Join thousands of developers who've leveled up their interview skills",
+      "testimonials": {
+        "0": "DevLovers helped me nail my system design interviews. The community is incredibly supportive!",
+        "1": "Finally, a free resource that actually prepares you for real interviews. The questions are spot-on.",
+        "2": "Went from struggling with DSA to getting multiple offers. Can't recommend this enough! 🚀",
+        "3": "The interactive quizzes are addictive. I've learned more here than months of LeetCode grinding.",
+        "4": "Love the community challenges! Great way to practice under pressure. This is the future of interview prep.",
+        "5": "I recommend DevLovers to all my mentees. It's become essential for anyone preparing for tech interviews."
+      }
+    }
   }
 }

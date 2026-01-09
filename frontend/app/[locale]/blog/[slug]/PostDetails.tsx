@@ -122,12 +122,12 @@ export default async function PostDetails({
       )}
 
       {post.mainImage && (
-        <div className="relative w-full h-[320px] rounded-2xl overflow-hidden border border-gray-200 my-8">
+        <div className="relative w-full h-[420px] rounded-2xl overflow-hidden border border-gray-200 my-8">
           <Image
             src={post.mainImage}
             alt={post.title || 'Post image'}
             fill
-            className="object-cover"
+            className="object-cover object-center"
           />
         </div>
       )}

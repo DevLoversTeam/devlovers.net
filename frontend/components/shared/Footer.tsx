@@ -1,6 +1,10 @@
-import Link from 'next/link';
+'use client';
+
+import { Link } from '@/i18n/routing';
+
 import { Github, Linkedin, Send } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
+import { useTranslations } from 'next-intl';
 
 const SOCIAL = [
   { label: 'GitHub', href: 'https://github.com/DevLoversTeam', Icon: Github },
@@ -13,6 +17,8 @@ const SOCIAL = [
 ] as const;
 
 export default function Footer() {
+  const t = useTranslations('footer');
+
   return (
     <footer className="relative overflow-hidden border-t border-gray-200/70 dark:border-neutral-800/70">
       <div
@@ -39,11 +45,11 @@ export default function Footer() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-3">
             <p className="text-sm text-slate-700 dark:text-slate-200">
-              Built with{' '}
+              {t('builtWith')}{' '}
               <span className="font-semibold text-blue-600 dark:text-blue-400">
                 DevLovers
               </span>{' '}
-              by the community.
+              {t('byCommunity')}
             </p>
 
             <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -51,14 +57,14 @@ export default function Footer() {
                 href="/privacy-policy"
                 className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
               >
-                Privacy Policy
+                {t('privacyPolicy')}
               </Link>
               <span className="px-2 opacity-60">|</span>
               <Link
                 href="/terms-of-service"
                 className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
               >
-                Terms of Service
+                {t('termsOfService')}
               </Link>
             </p>
           </div>

@@ -1,31 +1,38 @@
-import Link from "next/link"
-import { desc } from "drizzle-orm"
+import { Link } from '@/i18n/routing';
+import { desc } from 'drizzle-orm';
 
-import { AdminProductStatusToggle } from "@/components/shop/admin/admin-product-status-toggle"
-import { db } from "@/db"
-import { products } from "@/db/schema"
+import { AdminProductStatusToggle } from '@/components/shop/admin/admin-product-status-toggle';
+import { db } from '@/db';
+import { products } from '@/db/schema';
+import {
+  currencyValues,
+  formatMoney,
+  type CurrencyCode,
+} from '@/lib/shop/currency';
+import { fromDbMoney } from '@/lib/shop/money';
 
-function formatCurrency(value: string | number | null | undefined, currency: string) {
-  if (value === null || value === undefined) return "-"
-
-  const numericValue = typeof value === "string" ? Number(value) : value
-  if (Number.isNaN(numericValue)) return "-"
-
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(numericValue)
+function toCurrencyCode(value: string | null | undefined): CurrencyCode {
+  const normalized = (value ?? '').trim().toUpperCase();
+  return currencyValues.includes(normalized as CurrencyCode)
+    ? (normalized as CurrencyCode)
+    : 'USD';
 }
 
-function formatDate(value: Date | null) {
-  if (!value) return "-"
-  return value.toLocaleDateString()
+function formatDate(value: Date | null, locale: string) {
+  if (!value) return '-';
+  return value.toLocaleDateString(locale);
 }
 
-export default async function AdminProductsPage() {
-  const allProducts = await db.select().from(products).orderBy(desc(products.createdAt))
+export default async function AdminProductsPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  const allProducts = await db
+    .select()
+    .from(products)
+    .orderBy(desc(products.createdAt));
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
@@ -43,48 +50,92 @@ export default async function AdminProductsPage() {
         <table className="min-w-full divide-y divide-border text-sm">
           <thead className="bg-muted/50">
             <tr>
-              <th className="px-3 py-2 text-left font-semibold text-foreground">Title</th>
-              <th className="px-3 py-2 text-left font-semibold text-foreground">Slug</th>
-              <th className="px-3 py-2 text-left font-semibold text-foreground">Price</th>
-              <th className="px-3 py-2 text-left font-semibold text-foreground">Category</th>
-              <th className="px-3 py-2 text-left font-semibold text-foreground">Type</th>
-              <th className="px-3 py-2 text-left font-semibold text-foreground">Stock</th>
-              <th className="px-3 py-2 text-left font-semibold text-foreground">Badge</th>
-              <th className="px-3 py-2 text-left font-semibold text-foreground">Active</th>
-              <th className="px-3 py-2 text-left font-semibold text-foreground">Featured</th>
-              <th className="px-3 py-2 text-left font-semibold text-foreground">Created</th>
-              <th className="px-3 py-2 text-left font-semibold text-foreground">Actions</th>
+              <th className="px-3 py-2 text-left font-semibold text-foreground">
+                Title
+              </th>
+              <th className="px-3 py-2 text-left font-semibold text-foreground">
+                Slug
+              </th>
+              <th className="px-3 py-2 text-left font-semibold text-foreground">
+                Price
+              </th>
+              <th className="px-3 py-2 text-left font-semibold text-foreground">
+                Category
+              </th>
+              <th className="px-3 py-2 text-left font-semibold text-foreground">
+                Type
+              </th>
+              <th className="px-3 py-2 text-left font-semibold text-foreground">
+                Stock
+              </th>
+              <th className="px-3 py-2 text-left font-semibold text-foreground">
+                Badge
+              </th>
+              <th className="px-3 py-2 text-left font-semibold text-foreground">
+                Active
+              </th>
+              <th className="px-3 py-2 text-left font-semibold text-foreground">
+                Featured
+              </th>
+              <th className="px-3 py-2 text-left font-semibold text-foreground">
+                Created
+              </th>
+              <th className="px-3 py-2 text-left font-semibold text-foreground">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {allProducts.map((product) => (
+            {allProducts.map(product => (
               <tr key={product.id} className="hover:bg-muted/50">
-                <td className="px-3 py-2 font-medium text-foreground">{product.title}</td>
-                <td className="px-3 py-2 text-muted-foreground">{product.slug}</td>
+                <td className="px-3 py-2 font-medium text-foreground">
+                  {product.title}
+                </td>
+                <td className="px-3 py-2 text-muted-foreground">
+                  {product.slug}
+                </td>
                 <td className="px-3 py-2 text-foreground">
-                  {formatCurrency(product.price, product.currency ?? "USD")}
+                  {formatMoney(
+                    fromDbMoney(product.price),
+                    toCurrencyCode(product.currency ?? 'USD'),
+                    locale
+                  )}
                 </td>
-                <td className="px-3 py-2 text-muted-foreground">{product.category ?? "-"}</td>
-                <td className="px-3 py-2 text-muted-foreground">{product.type ?? "-"}</td>
-                <td className="px-3 py-2 text-muted-foreground">{product.stock}</td>
-                <td className="px-3 py-2 text-muted-foreground">{product.badge === "NONE" ? "-" : product.badge}</td>
+
+                <td className="px-3 py-2 text-muted-foreground">
+                  {product.category ?? '-'}
+                </td>
+                <td className="px-3 py-2 text-muted-foreground">
+                  {product.type ?? '-'}
+                </td>
+                <td className="px-3 py-2 text-muted-foreground">
+                  {product.stock}
+                </td>
+                <td className="px-3 py-2 text-muted-foreground">
+                  {product.badge === 'NONE' ? '-' : product.badge}
+                </td>
                 <td className="px-3 py-2">
                   <span
                     className="inline-flex rounded-full bg-muted px-2 py-1 text-xs font-medium text-foreground"
-                    aria-label={product.isActive ? "Active" : "Inactive"}
+                    aria-label={product.isActive ? 'Active' : 'Inactive'}
                   >
-                    {product.isActive ? "Yes" : "No"}
+                    {product.isActive ? 'Yes' : 'No'}
                   </span>
                 </td>
                 <td className="px-3 py-2">
                   <span
                     className="inline-flex rounded-full bg-muted px-2 py-1 text-xs font-medium text-foreground"
-                    aria-label={product.isFeatured ? "Featured" : "Not featured"}
+                    aria-label={
+                      product.isFeatured ? 'Featured' : 'Not featured'
+                    }
                   >
-                    {product.isFeatured ? "Yes" : "No"}
+                    {product.isFeatured ? 'Yes' : 'No'}
                   </span>
                 </td>
-                <td className="px-3 py-2 text-muted-foreground">{formatDate(product.createdAt)}</td>
+                <td className="px-3 py-2 text-muted-foreground">
+                  {formatDate(product.createdAt, locale)}
+                </td>
+
                 <td className="px-3 py-2">
                   <div className="flex flex-wrap gap-2">
                     <Link
@@ -99,7 +150,10 @@ export default async function AdminProductsPage() {
                     >
                       Edit
                     </Link>
-                    <AdminProductStatusToggle id={product.id} initialIsActive={product.isActive} />
+                    <AdminProductStatusToggle
+                      id={product.id}
+                      initialIsActive={product.isActive}
+                    />
                   </div>
                 </td>
               </tr>
@@ -108,5 +162,5 @@ export default async function AdminProductsPage() {
         </table>
       </div>
     </div>
-  )
+  );
 }

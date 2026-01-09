@@ -45,12 +45,102 @@
     "title": "Wszystkie Wpisy na Blogu",
     "metaTitle": "Blog | DevLovers",
     "metaDescription": "Odkryj najnowsze artykuły i spostrzeżenia",
-    "searchPlaceholder": "Wpisz hashtag i naciśnij Enter (np. frontend, qa)",
+    "searchPlaceholder": "Szukaj...",
     "removeTag": "Usuń tag",
     "add": "Dodaj",
     "clear": "Wyczyść",
     "noPosts": "Nie znaleziono wpisów",
     "noPostsForTags": "Nie znaleziono wpisów dla wybranych tagów",
-    "visitResource": "Odwiedź źródło"
+    "visitResource": "Odwiedź zasób",
+    "readArticle": "Czytaj artykuł"
+  },
+  "footer": {
+    "builtWith": "Zbudowane z",
+    "byCommunity": "przez społeczność.",
+    "privacyPolicy": "Polityka Prywatności",
+    "termsOfService": "Warunki Świadczenia Usług"
+  },
+  "about": {
+    "hero": {
+      "badge": "Nasza Historia",
+      "title": "Kierowani pasją,",
+      "titleHighlight": "zbudowani dla rozwoju społeczności",
+      "description": "DevLovers rozpoczął się jako prosty projekt uniwersytecki. Zauważyliśmy lukę w sposobie, w jaki programiści przygotowują się do rozmów kwalifikacyjnych — rozproszone zasoby i brak struktury. Zbudowaliśmy ujednolicony ekosystem, w którym wiedza spotyka się z praktyką."
+    },
+    "stats": {
+      "githubStars": "Gwiazdki GitHub",
+      "followers": "Obserwujący",
+      "activeDevs": "Aktywni Deweloperzy",
+      "solved": "Rozwiązane"
+    },
+    "features": {
+      "title": "Potężne",
+      "titleHighlight": "Funkcje",
+      "subtitle": "Wszystko, czego potrzebujesz, aby tworzyć angażujące doświadczenia edukacyjne i skutecznie śledzić postępy.",
+      "learnMore": "Dowiedz się więcej",
+      "qa": {
+        "title": "Pytania i Odpowiedzi",
+        "description": "Uzyskaj dostęp do starannie wyselekcjonowanej kolekcji najczęstszych i najbardziej istotnych pytań z rozmów kwalifikacyjnych. Zdobądź jasne odpowiedzi na rzeczywiste wyzwania, o które rzeczywiście pytają rekruterzy."
+      },
+      "quiz": {
+        "title": "Quiz",
+        "description": "Opanuj rozmowy kwalifikacyjne dzięki naszym adaptacyjnym quizom. Obejmuj tematy od React do Algorytmów, śledź swoje słabe punkty i podnieś swoje umiejętności."
+      },
+      "profile": {
+        "title": "Profil",
+        "description": "Twoje centralne centrum śledzenia postępów. Wizualizuj swój rozwój, zarządzaj swoimi osiągnięciami i dostosuj swoją ścieżkę nauki.",
+        "level": "Poziom 12 • Pro Uczeń",
+        "achievements": "Osiągnięcia",
+        "badges": {
+          "star": "Gwiazda",
+          "streak": "Seria",
+          "focus": "Skupienie",
+          "champ": "Mistrz"
+        },
+        "progress": "Postęp",
+        "courseCompletion": "Ukończenie Kursu",
+        "quizAccuracy": "Dokładność Quizu",
+        "weeklyGoal": "Tygodniowy Cel"
+      },
+      "leaderboard": {
+        "title": "Ranking",
+        "description": "Rywalizuj z najlepszymi programistami na całym świecie. Zdobywaj punkty za prawidłowe odpowiedzi, utrzymuj serie i pokaż swoją wiedzę w globalnym rankingu."
+      },
+      "shop": {
+        "title": "Sklep",
+        "description": "Zamień swoją ciężką pracę w nagrody. Wymień zdobyte monety na ekskluzywne gadżety, dostęp do kursów premium lub unikalne dostosowanie profilu."
+      }
+    },
+    "pricing": {
+      "title": "Inwestuj w wiedzę,",
+      "titleHighlight": "a nie w subskrypcje",
+      "subtitle": "Wierzymy, że wysokiej jakości edukacja powinna być dostępna dla każdego. Bez płatnych barier, bez ukrytych opłat, tylko czysty rozwój inżynierski.",
+      "badge": "Edycja Społecznościowa",
+      "monthlyPrice": "Cena miesięczna",
+      "free": "Na Zawsze Za Darmo i Open Source",
+      "features": {
+        "unlimitedQuestions": "Nieograniczone Pytania do Rozmów Kwalifikacyjnych",
+        "fullQuizAccess": "Pełny Dostęp do Quizów",
+        "globalLeaderboard": "Globalny Ranking",
+        "progressTracking": "Śledzenie Postępu",
+        "communityChallenges": "Wyzwania Społecznościowe",
+        "mobileFriendly": "Przyjazny dla Urządzeń Mobilnych"
+      },
+      "cta": "Zacznij Naukę Teraz",
+      "coffee": "Postaw nam kawę",
+      "noCard": "Karta kredytowa nie jest wymagana. Bez ukrytego śledzenia danych."
+    },
+    "community": {
+      "title": "Zaufana przez Społeczność",
+      "subtitle": "Dołącz do tysięcy programistów, którzy podnieśli swoje umiejętności rozmów kwalifikacyjnych",
+      "testimonials": {
+        "0": "DevLovers pomógł mi zdać rozmowy kwalifikacyjne z projektowania systemów. Społeczność jest niesamowicie wspierająca!",
+        "1": "Wreszcie darmowy zasób, który naprawdę przygotowuje do prawdziwych rozmów kwalifikacyjnych. Pytania są celne.",
+        "2": "Przeszedłem od zmagania się z DSA do otrzymania wielu ofert. Nie mogę polecić wystarczająco! 🚀",
+        "3": "Interaktywne quizy są uzależniające. Nauczyłem się tutaj więcej niż przez miesiące rozwiązywania LeetCode.",
+        "4": "Uwielbiam wyzwania społecznościowe! Świetny sposób na ćwiczenie pod presją. To jest przyszłość przygotowań do rozmów kwalifikacyjnych.",
+        "5": "Polecam DevLovers wszystkim moim podopiecznym. Stało się to niezbędne dla każdego, kto przygotowuje się do technicznych rozmów kwalifikacyjnych."
+      }
+    }
   }
 }

@@ -1,5 +1,21 @@
+import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
+
+export const metadata: Metadata = {
+  icons: {
+    icon: [
+      {
+        media: '(prefers-color-scheme: light)',
+        url: '/favicon-light.svg',
+      },
+      {
+        media: '(prefers-color-scheme: dark)',
+        url: '/favicon-dark.svg',
+      },
+    ],
+  },
+};
 
 const geistSans = Geist({
   variable: '--font-geist-sans',

@@ -21,8 +21,8 @@ export const quizzes = pgTable(
   {
     id: uuid('id').defaultRandom().primaryKey(),
     categoryId: uuid('category_id')
-  .notNull()
-  .references(() => categories.id, { onDelete: 'restrict' }),
+      .notNull()
+      .references(() => categories.id, { onDelete: 'restrict' }),
     slug: varchar('slug', { length: 100 }).notNull(),
     displayOrder: integer('display_order').notNull().default(0),
     questionsCount: integer('questions_count').notNull().default(10),
@@ -37,6 +37,7 @@ export const quizzes = pgTable(
   },
   table => ({
     categorySlugUnique: unique().on(table.categoryId, table.slug),
+    slugIdx: index('quizzes_slug_idx').on(table.slug),
   })
 );
 
@@ -138,6 +139,7 @@ export const quizAttempts = pgTable(
     percentage: decimal('percentage', { precision: 5, scale: 2 }).notNull(),
     timeSpentSeconds: integer('time_spent_seconds'),
     integrityScore: integer('integrity_score').default(100),
+    pointsEarned: integer('points_earned').notNull().default(0),
     metadata: jsonb('metadata').default({}),
     startedAt: timestamp('started_at', { withTimezone: true })
       .notNull()
@@ -192,7 +194,7 @@ export const quizAttemptAnswers = pgTable(
 export const quizzesRelations = relations(quizzes, ({ many }) => ({
   translations: many(quizTranslations),
   questions: many(quizQuestions),
-  attempts: many(quizAttempts),
+  quizAttempts: many(quizAttempts),
 }));
 
 export const quizTranslationsRelations = relations(

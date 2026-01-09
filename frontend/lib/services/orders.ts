@@ -3,13 +3,17 @@ import { and, eq, gte, inArray, isNull, lt, sql } from 'drizzle-orm';
 import { isPaymentsEnabled } from '@/lib/env/stripe';
 
 import { db } from '@/db';
-import { orderItems, orders, products } from '@/db/schema';
+import { orderItems, orders, productPrices, products } from '@/db/schema';
+import {
+  resolveCurrencyFromLocale,
+  type CurrencyCode,
+} from '@/lib/shop/currency';
+
 import {
   calculateLineTotal,
   fromCents,
   fromDbMoney,
   sumLineTotals,
-  toCents,
   toDbMoney,
 } from '@/lib/shop/money';
 import {
@@ -17,16 +21,18 @@ import {
   CheckoutResult,
   OrderDetail,
   OrderSummary,
-  PaymentStatus,
 } from '@/lib/types/shop';
 import { coercePriceFromDb } from '@/db/queries/shop/orders';
 import {
   InsufficientStockError,
   InvalidPayloadError,
   OrderNotFoundError,
+  PriceConfigError,
+  OrderStateInvalidError,
 } from './errors';
-import type { PaymentProvider } from '@/lib/types/shop';
-import { MAX_QUANTITY_PER_LINE, currencyValues } from '@/lib/validation/shop';
+
+import { type PaymentProvider, type PaymentStatus } from '@/lib/shop/payments';
+import { MAX_QUANTITY_PER_LINE } from '@/lib/validation/shop';
 
 type OrderRow = typeof orders.$inferSelect;
 
@@ -43,6 +49,8 @@ type OrderItemForSummary = {
   quantity: number;
   unitPrice: unknown;
   lineTotal: unknown;
+  unitPriceMinor: unknown;
+  lineTotalMinor: unknown;
   productTitle: string | null;
   productSlug: string | null;
 };
@@ -52,6 +60,8 @@ const orderItemSummarySelection = {
   quantity: orderItems.quantity,
   unitPrice: orderItems.unitPrice,
   lineTotal: orderItems.lineTotal,
+  unitPriceMinor: orderItems.unitPriceMinor,
+  lineTotalMinor: orderItems.lineTotalMinor,
   productTitle: sql<
     string | null
   >`coalesce(${orderItems.productTitle}, ${products.title})`,
@@ -74,7 +84,8 @@ function resolvePaymentProvider(
   // safest default: treat as stripe to avoid skipping payment flows
   return 'stripe';
 }
-type Currency = (typeof currencyValues)[number];
+
+type Currency = CurrencyCode;
 
 function requireTotalCents(summary: OrderSummary): number {
   const cents = (summary as { totalCents?: unknown }).totalCents;
@@ -90,9 +101,10 @@ function mergeCheckoutItems(items: CheckoutItem[]): CheckoutItem[] {
   const map = new Map<string, CheckoutItem>();
 
   for (const item of items) {
-    const key = `${item.productId}::${(item as any).selectedSize ?? ''}::${
-      (item as any).selectedColor ?? ''
+    const key = `${item.productId}::${item.selectedSize ?? ''}::${
+      item.selectedColor ?? ''
     }`;
+
     const existing = map.get(key);
     if (!existing) {
       map.set(key, { ...item });
@@ -107,13 +119,70 @@ function mergeCheckoutItems(items: CheckoutItem[]): CheckoutItem[] {
 
   return Array.from(map.values());
 }
+
+function isStrictNonNegativeInt(value: unknown): value is number {
+  return (
+    typeof value === 'number' &&
+    Number.isFinite(value) &&
+    Number.isInteger(value) &&
+    value >= 0
+  );
+}
+
+function requireMinor(
+  value: unknown,
+  ctx: { orderId: string; field: string }
+): number {
+  if (isStrictNonNegativeInt(value)) return value;
+
+  throw new OrderStateInvalidError(
+    `Order ${ctx.orderId} has invalid minor units in field "${ctx.field}"`,
+    { orderId: ctx.orderId, field: ctx.field, rawValue: value }
+  );
+}
+
 function parseOrderSummary(
   order: OrderRow,
   items: OrderItemForSummary[]
 ): OrderSummary {
+  function readLegacyMoneyCentsOrThrow(
+    value: unknown,
+    ctx: { orderId: string; field: string }
+  ): number {
+    try {
+      return fromDbMoney(value);
+    } catch {
+      throw new OrderStateInvalidError(
+        `Order ${ctx.orderId} has invalid legacy money in field "${ctx.field}"`,
+        { orderId: ctx.orderId, field: ctx.field, rawValue: value }
+      );
+    }
+  }
+
   const normalizedItems = items.map(item => {
-    const unitPriceCents = fromDbMoney(item.unitPrice);
-    const lineTotalCents = fromDbMoney(item.lineTotal);
+    const unitPriceMinorMaybe = item.unitPriceMinor;
+    const unitPriceCents =
+      unitPriceMinorMaybe === null || unitPriceMinorMaybe === undefined
+        ? readLegacyMoneyCentsOrThrow(item.unitPrice, {
+            orderId: order.id,
+            field: 'order_items.unitPrice',
+          })
+        : requireMinor(unitPriceMinorMaybe, {
+            orderId: order.id,
+            field: 'order_items.unitPriceMinor',
+          });
+
+    const lineTotalMinorMaybe = item.lineTotalMinor;
+    const lineTotalCents =
+      lineTotalMinorMaybe === null || lineTotalMinorMaybe === undefined
+        ? readLegacyMoneyCentsOrThrow(item.lineTotal, {
+            orderId: order.id,
+            field: 'order_items.lineTotal',
+          })
+        : requireMinor(lineTotalMinorMaybe, {
+            orderId: order.id,
+            field: 'order_items.lineTotalMinor',
+          });
 
     return {
       unitPriceCents,
@@ -127,14 +196,20 @@ function parseOrderSummary(
     };
   });
 
-  const totalCents = fromDbMoney(order.totalAmount);
+  const totalCents = requireMinor(order.totalAmountMinor, {
+    orderId: order.id,
+    field: 'orders.totalAmountMinor',
+  });
+
   const paymentProvider = resolvePaymentProvider(order);
 
   if (paymentProvider === 'none' && order.paymentIntentId) {
-    throw new Error(
-      `Order ${order.id} is inconsistent: paymentProvider=none but paymentIntentId is set`
+    throw new OrderStateInvalidError(
+      `Order ${order.id} is inconsistent: paymentProvider=none but paymentIntentId is set`,
+      { orderId: order.id }
     );
   }
+
   return {
     id: order.id,
     totalCents,
@@ -149,17 +224,17 @@ function parseOrderSummary(
 }
 
 async function getOrderByIdempotencyKey(
-  db: DbClient,
+  dbClient: DbClient,
   key: string
 ): Promise<OrderSummary | null> {
-  const [order] = await db
+  const [order] = await dbClient
     .select()
     .from(orders)
     .where(eq(orders.idempotencyKey, key))
     .limit(1);
   if (!order) return null;
 
-  const items = await db
+  const items = await dbClient
     .select(orderItemSummarySelection)
     .from(orderItems)
     .leftJoin(products, eq(orderItems.productId, products.id))
@@ -168,34 +243,49 @@ async function getOrderByIdempotencyKey(
   return parseOrderSummary(order, items);
 }
 
-async function getProductsForCheckout(productIds: string[]) {
+async function getProductsForCheckout(
+  productIds: string[],
+  currency: Currency
+) {
   if (!productIds.length) return [];
+
   return db
-    .select()
+    .select({
+      id: products.id,
+      slug: products.slug,
+      title: products.title,
+      stock: products.stock,
+      sku: products.sku,
+
+      // canonical price (minor)
+      priceMinor: productPrices.priceMinor,
+
+      // legacy fallback (keep for safety during rollout)
+      price: productPrices.price,
+
+      originalPrice: productPrices.originalPrice,
+      priceCurrency: productPrices.currency,
+      isActive: products.isActive,
+    })
     .from(products)
+    .leftJoin(
+      productPrices,
+      and(
+        eq(productPrices.productId, products.id),
+        eq(productPrices.currency, currency)
+      )
+    )
     .where(and(eq(products.isActive, true), inArray(products.id, productIds)));
 }
 
-function validateCurrencyConsistency(
-  dbProducts: (typeof products.$inferSelect)[]
-): Currency {
-  const currencies = new Set(dbProducts.map(product => product.currency));
-  if (currencies.size > 1) {
-    throw new InvalidPayloadError('Product currencies are misconfigured.');
-  }
-
-  const configuredCurrency = currencyValues[0];
-  const currency = currencies.values().next().value ?? configuredCurrency;
-  if (currency !== configuredCurrency) {
-    throw new InvalidPayloadError('Product currencies are misconfigured.');
-  }
-
-  return currency as Currency;
-}
+type CheckoutProductRow = Awaited<
+  ReturnType<typeof getProductsForCheckout>
+>[number];
 
 function priceItems(
   items: CheckoutItem[],
-  productMap: Map<string, typeof products.$inferSelect>
+  productMap: Map<string, CheckoutProductRow>,
+  currency: Currency
 ) {
   return items.map(item => {
     const product = productMap.get(item.productId);
@@ -203,16 +293,46 @@ function priceItems(
     if (!product) {
       throw new InvalidPayloadError('Some products are unavailable.');
     }
+    //Price must exist for requested currency.
+    // With leftJoin, missing row => priceCurrency null and both price fields null.
+    if (
+      !product.priceCurrency ||
+      (product.priceMinor == null && product.price == null)
+    ) {
+      throw new PriceConfigError('Price not configured for currency.', {
+        productId: product.id,
+        currency,
+      });
+    }
 
-    const unitPrice = coercePriceFromDb(product.price, {
-      field: 'price',
-      productId: product.id,
-    });
-    if (unitPrice <= 0) {
+    // canonical: int minor
+    let unitPriceCents: number | null = null;
+    if (product.priceMinor !== null && product.priceMinor !== undefined) {
+      if (
+        !isStrictNonNegativeInt(product.priceMinor) ||
+        product.priceMinor <= 0
+      ) {
+        throw new InvalidPayloadError('Product pricing is misconfigured.');
+      }
+      unitPriceCents = product.priceMinor;
+    }
+
+    // safety fallback (should become dead code after migration + dual-write stabilizes)
+    if (unitPriceCents == null) {
+      const unitPrice = coercePriceFromDb(product.price, {
+        field: 'price',
+        productId: product.id,
+      });
+      if (unitPrice <= 0) {
+        throw new InvalidPayloadError('Product pricing is misconfigured.');
+      }
+      unitPriceCents = Math.round(unitPrice * 100);
+    }
+
+    if (unitPriceCents <= 0) {
       throw new InvalidPayloadError('Product pricing is misconfigured.');
     }
 
-    const unitPriceCents = toCents(unitPrice);
     const lineTotalCents = calculateLineTotal(unitPriceCents, item.quantity);
     const normalizedUnitPrice = fromCents(unitPriceCents);
     const lineTotal = fromCents(lineTotalCents);
@@ -224,7 +344,6 @@ function priceItems(
       unitPriceCents,
       lineTotal,
       lineTotalCents,
-      currency: product.currency,
       stock: product.stock,
       productTitle: product.title,
       productSlug: product.slug,
@@ -284,7 +403,12 @@ async function persistOrder({
     const [createdOrder] = await tx
       .insert(orders)
       .values({
+        // canonical
+        totalAmountMinor: totalCents,
+
+        // legacy mirror
         totalAmount: toDbMoney(totalCents),
+
         currency,
         paymentStatus,
         paymentProvider,
@@ -306,8 +430,15 @@ async function persistOrder({
           orderId: createdOrder.id,
           productId: item.productId,
           quantity: item.quantity,
+
+          // canonical
+          unitPriceMinor: item.unitPriceCents,
+          lineTotalMinor: item.lineTotalCents,
+
+          // legacy mirror
           unitPrice: toDbMoney(item.unitPriceCents),
           lineTotal: toDbMoney(item.lineTotalCents),
+
           productTitle: item.productTitle ?? null,
           productSlug: item.productSlug ?? null,
           productSku: item.productSku ?? null,
@@ -316,7 +447,6 @@ async function persistOrder({
     }
 
     const orderItemsResult = await getOrderItems(tx, createdOrder.id);
-
     return parseOrderSummary(createdOrder, orderItemsResult);
   });
 
@@ -327,11 +457,14 @@ export async function createOrderWithItems({
   items,
   idempotencyKey,
   userId,
+  locale,
 }: {
   items: CheckoutItem[];
   idempotencyKey: string;
   userId?: string | null;
+  locale: string | null | undefined;
 }): Promise<CheckoutResult> {
+  const currency: Currency = resolveCurrencyFromLocale(locale);
   const existing = await getOrderByIdempotencyKey(db, idempotencyKey);
   if (existing) {
     return {
@@ -344,20 +477,19 @@ export async function createOrderWithItems({
   const normalizedItems = mergeCheckoutItems(items);
 
   const uniqueProductIds = Array.from(
-    new Set(normalizedItems.map(item => item.productId))
+    new Set(normalizedItems.map(i => i.productId))
   );
-  const dbProducts = await getProductsForCheckout(uniqueProductIds);
+  const dbProducts = await getProductsForCheckout(uniqueProductIds, currency);
 
   if (dbProducts.length !== uniqueProductIds.length) {
-    throw new InvalidPayloadError('Some products are unavailable.');
+    // leftJoin: this mismatch only means product missing/inactive (NOT missing price).
+    // Missing price is handled in priceItems() as PriceConfigError (422).
+    throw new InvalidPayloadError('Some products are unavailable or inactive.');
   }
 
-  const currency = validateCurrencyConsistency(dbProducts);
-  const productMap = new Map(dbProducts.map(product => [product.id, product]));
-  const pricedItems = priceItems(normalizedItems, productMap);
-  const orderTotalCents = sumLineTotals(
-    pricedItems.map(item => item.lineTotalCents)
-  );
+  const productMap = new Map(dbProducts.map(p => [p.id, p]));
+  const pricedItems = priceItems(normalizedItems, productMap, currency);
+  const orderTotalCents = sumLineTotals(pricedItems.map(i => i.lineTotalCents));
 
   try {
     const order = await persistOrder({
@@ -380,13 +512,12 @@ export async function createOrderWithItems({
         };
       }
     }
-
     throw error;
   }
 }
 
-async function getOrderItems(db: DbOrTx, orderId: string) {
-  return db
+async function getOrderItems(dbOrTx: DbOrTx, orderId: string) {
+  return dbOrTx
     .select(orderItemSummarySelection)
     .from(orderItems)
     .leftJoin(products, eq(orderItems.productId, products.id))
@@ -399,12 +530,9 @@ export async function getOrderById(id: string): Promise<OrderDetail> {
     .from(orders)
     .where(eq(orders.id, id))
     .limit(1);
-  if (!order) {
-    throw new OrderNotFoundError('Order not found');
-  }
+  if (!order) throw new OrderNotFoundError('Order not found');
 
   const items = await getOrderItems(db, id);
-
   return parseOrderSummary(order, items);
 }
 
@@ -424,10 +552,7 @@ export async function setOrderPaymentIntent({
     .from(orders)
     .where(eq(orders.id, orderId))
     .limit(1);
-
-  if (!existing) {
-    throw new OrderNotFoundError('Order not found');
-  }
+  if (!existing) throw new OrderNotFoundError('Order not found');
 
   const provider = resolvePaymentProvider(existing);
 
@@ -453,7 +578,6 @@ export async function setOrderPaymentIntent({
     );
   }
 
-  // idempotent return if already set to the same value
   if (existing.paymentIntentId === paymentIntentId) {
     const items = await getOrderItems(db, orderId);
     return parseOrderSummary(existing, items);
@@ -469,9 +593,7 @@ export async function setOrderPaymentIntent({
     .where(eq(orders.id, orderId))
     .returning();
 
-  if (!updated) {
-    throw new Error('Failed to update order payment intent');
-  }
+  if (!updated) throw new Error('Failed to update order payment intent');
 
   const items = await getOrderItems(db, orderId);
   return parseOrderSummary(updated, items);
@@ -494,19 +616,11 @@ async function restockOrderInTx(
     .limit(1)
     .for('update');
 
-  if (!order) {
-    throw new OrderNotFoundError('Order not found');
-  }
-
-  if (order.stockRestored || order.restockedAt !== null) {
-    return;
-  }
+  if (!order) throw new OrderNotFoundError('Order not found');
+  if (order.stockRestored || order.restockedAt !== null) return;
 
   const items = await tx
-    .select({
-      productId: orderItems.productId,
-      quantity: orderItems.quantity,
-    })
+    .select({ productId: orderItems.productId, quantity: orderItems.quantity })
     .from(orderItems)
     .where(eq(orderItems.orderId, orderId));
 
@@ -520,15 +634,9 @@ async function restockOrderInTx(
   }
 
   let normalizedStatus: PaymentStatus | undefined;
-  if (reason === 'refunded') {
-    normalizedStatus = 'refunded';
-  } else if (
-    reason === 'failed' ||
-    reason === 'canceled' ||
-    reason === 'stale'
-  ) {
+  if (reason === 'refunded') normalizedStatus = 'refunded';
+  else if (reason === 'failed' || reason === 'canceled' || reason === 'stale')
     normalizedStatus = 'failed';
-  }
 
   await tx
     .update(orders)
@@ -549,12 +657,10 @@ export async function restockOrder(
   }
 ): Promise<void> {
   const { reason, tx } = options ?? {};
-
   if (tx) {
     await restockOrderInTx(tx, orderId, reason);
     return;
   }
-
   await db.transaction(async transaction => {
     await restockOrderInTx(transaction, orderId, reason);
   });
@@ -601,9 +707,7 @@ export async function refundOrder(orderId: string): Promise<OrderSummary> {
     .where(eq(orders.id, orderId))
     .limit(1);
 
-  if (!order) {
-    throw new OrderNotFoundError('Order not found');
-  }
+  if (!order) throw new OrderNotFoundError('Order not found');
 
   const refundableStatuses: PaymentStatus[] = ['paid'];
   if (!refundableStatuses.includes(order.paymentStatus as PaymentStatus)) {
@@ -618,9 +722,7 @@ export async function refundOrder(orderId: string): Promise<OrderSummary> {
     .where(eq(orders.id, orderId))
     .returning();
 
-  if (!updatedOrder) {
-    throw new Error('Failed to update order status');
-  }
+  if (!updatedOrder) throw new Error('Failed to update order status');
 
   const items = await getOrderItems(db, orderId);
   const summary = parseOrderSummary(updatedOrder, items);

@@ -1,0 +1,434 @@
+{
+  "questions": [
+    {
+      "id": "html-adv-q01",
+      "order": 1,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Яка різниця між елементами <canvas> та <svg>?",
+        "exp": "<canvas> — растрова графіка (пікселі), малюється через JavaScript API. <svg> — векторна графіка (математичні об'єкти), масштабується без втрати якості, можна стилізувати CSS."
+      },
+      "en": {
+        "q": "What is the difference between <canvas> and <svg> elements?",
+        "exp": "<canvas> is raster graphics (pixels), drawn via JavaScript API. <svg> is vector graphics (mathematical objects), scales without quality loss, can be styled with CSS."
+      },
+      "pl": {
+        "q": "Jaka jest różnica między elementami <canvas> a <svg>?",
+        "exp": "<canvas> to grafika rastrowa (piksele), rysowana przez JavaScript API. <svg> to grafika wektorowa (obiekty matematyczne), skaluje się bez utraty jakości, można ją stylizować CSS."
+      },
+      "answers": [
+        {
+          "uk": "Різниці немає, обидва для векторної графіки",
+          "en": "No difference, both are for vector graphics",
+          "pl": "Nie ma różnicy, oba są dla grafiki wektorowej",
+          "correct": false
+        },
+        {
+          "uk": "<canvas> — растрова графіка через JS, <svg> — векторна з підтримкою CSS",
+          "en": "<canvas> is raster graphics via JS, <svg> is vector with CSS support",
+          "pl": "<canvas> to grafika rastrowa przez JS, <svg> to wektorowa z obsługą CSS",
+          "correct": true
+        },
+        {
+          "uk": "<svg> використовується тільки для анімацій",
+          "en": "<svg> is only used for animations",
+          "pl": "<svg> jest używany tylko do animacji",
+          "correct": false
+        },
+        {
+          "uk": "<canvas> краще масштабується без втрати якості",
+          "en": "<canvas> scales better without quality loss",
+          "pl": "<canvas> lepiej się skaluje bez utraty jakości",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-adv-q02",
+      "order": 2,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Які способи додавання SVG на сторінку існують?",
+        "exp": "SVG можна додати: inline в HTML, через <img src>, як CSS background-image, через <object> або <embed>. Inline дає повний контроль CSS/JS, <img> кешується але без стилізації."
+      },
+      "en": {
+        "q": "What ways exist to add SVG to a page?",
+        "exp": "SVG can be added: inline in HTML, via <img src>, as CSS background-image, via <object> or <embed>. Inline gives full CSS/JS control, <img> is cached but without styling."
+      },
+      "pl": {
+        "q": "Jakie sposoby dodawania SVG na stronę istnieją?",
+        "exp": "SVG można dodać: inline w HTML, przez <img src>, jako CSS background-image, przez <object> lub <embed>. Inline daje pełną kontrolę CSS/JS, <img> jest cachowany ale bez stylizacji."
+      },
+      "answers": [
+        {
+          "uk": "Тільки через тег <img>",
+          "en": "Only via <img> tag",
+          "pl": "Tylko przez tag <img>",
+          "correct": false
+        },
+        {
+          "uk": "Inline, <img>, CSS background, <object>, <embed>",
+          "en": "Inline, <img>, CSS background, <object>, <embed>",
+          "pl": "Inline, <img>, CSS background, <object>, <embed>",
+          "correct": true
+        },
+        {
+          "uk": "Тільки inline або через JavaScript",
+          "en": "Only inline or via JavaScript",
+          "pl": "Tylko inline lub przez JavaScript",
+          "correct": false
+        },
+        {
+          "uk": "SVG не підтримується сучасними браузерами",
+          "en": "SVG is not supported by modern browsers",
+          "pl": "SVG nie jest obsługiwany przez nowoczesne przeglądarki",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-adv-q03",
+      "order": 3,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Як додати субтитри до відео в HTML?",
+        "exp": "Використовується тег <track> всередині <video> з атрибутами src (файл .vtt), kind (subtitles/captions), srclang (мова), label (назва в меню)."
+      },
+      "en": {
+        "q": "How do you add subtitles to video in HTML?",
+        "exp": "Use the <track> tag inside <video> with attributes src (.vtt file), kind (subtitles/captions), srclang (language), label (menu name)."
+      },
+      "pl": {
+        "q": "Jak dodać napisy do wideo w HTML?",
+        "exp": "Używa się tagu <track> wewnątrz <video> z atrybutami src (plik .vtt), kind (subtitles/captions), srclang (język), label (nazwa w menu)."
+      },
+      "answers": [
+        {
+          "uk": "Через атрибут subtitles у тегу <video>",
+          "en": "Via subtitles attribute in <video> tag",
+          "pl": "Przez atrybut subtitles w tagu <video>",
+          "correct": false
+        },
+        {
+          "uk": "Через тег <track> з файлом .vtt",
+          "en": "Via <track> tag with .vtt file",
+          "pl": "Przez tag <track> z plikiem .vtt",
+          "correct": true
+        },
+        {
+          "uk": "Субтитри неможливо додати в HTML",
+          "en": "Subtitles cannot be added in HTML",
+          "pl": "Napisy nie mogą być dodane w HTML",
+          "correct": false
+        },
+        {
+          "uk": "Тільки через JavaScript API",
+          "en": "Only via JavaScript API",
+          "pl": "Tylko przez JavaScript API",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-adv-q04",
+      "order": 4,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Які атрибути має тег <video> для керування відтворенням?",
+        "exp": "Основні атрибути: controls (елементи керування), autoplay (автовідтворення), loop (повтор), muted (без звуку), preload (попереднє завантаження), poster (зображення-заставка)."
+      },
+      "en": {
+        "q": "What attributes does the <video> tag have for playback control?",
+        "exp": "Main attributes: controls (player controls), autoplay (auto-play), loop (repeat), muted (no sound), preload (preloading), poster (preview image)."
+      },
+      "pl": {
+        "q": "Jakie atrybuty ma tag <video> do kontroli odtwarzania?",
+        "exp": "Główne atrybuty: controls (elementy sterowania), autoplay (automatyczne odtwarzanie), loop (powtarzanie), muted (bez dźwięku), preload (wstępne ładowanie), poster (obraz podglądu)."
+      },
+      "answers": [
+        {
+          "uk": "Тільки src і width",
+          "en": "Only src and width",
+          "pl": "Tylko src i width",
+          "correct": false
+        },
+        {
+          "uk": "controls, autoplay, loop, muted, preload, poster",
+          "en": "controls, autoplay, loop, muted, preload, poster",
+          "pl": "controls, autoplay, loop, muted, preload, poster",
+          "correct": true
+        },
+        {
+          "uk": "play, pause, stop, volume",
+          "en": "play, pause, stop, volume",
+          "pl": "play, pause, stop, volume",
+          "correct": false
+        },
+        {
+          "uk": "Відео не має спеціальних атрибутів",
+          "en": "Video has no special attributes",
+          "pl": "Wideo nie ma specjalnych atrybutów",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-adv-q05",
+      "order": 5,
+      "difficulty": "advanced",
+      "uk": {
+        "q": "Як працює атрибут srcset для адаптивних зображень?",
+        "exp": "srcset надає браузеру список зображень різної роздільності. Браузер автоматично обирає оптимальний варіант залежно від розміру екрана та pixel density. Дескриптори: w (ширина) або x (density)."
+      },
+      "en": {
+        "q": "How does the srcset attribute work for responsive images?",
+        "exp": "srcset provides the browser with a list of images at different resolutions. The browser automatically selects the optimal one based on screen size and pixel density. Descriptors: w (width) or x (density)."
+      },
+      "pl": {
+        "q": "Jak działa atrybut srcset dla responsywnych obrazów?",
+        "exp": "srcset dostarcza przeglądarce listę obrazów o różnych rozdzielczościach. Przeglądarka automatycznie wybiera optymalny wariant w zależności od rozmiaru ekranu i gęstości pikseli. Deskryptory: w (szerokość) lub x (gęstość)."
+      },
+      "answers": [
+        {
+          "uk": "Змінює src залежно від часу доби",
+          "en": "Changes src depending on time of day",
+          "pl": "Zmienia src w zależności od pory dnia",
+          "correct": false
+        },
+        {
+          "uk": "Надає список зображень, з яких браузер обирає оптимальне для екрана",
+          "en": "Provides a list of images from which browser selects optimal for screen",
+          "pl": "Dostarcza listę obrazów, z których przeglądarka wybiera optymalny dla ekranu",
+          "correct": true
+        },
+        {
+          "uk": "Автоматично стискає зображення",
+          "en": "Automatically compresses images",
+          "pl": "Automatycznie kompresuje obrazy",
+          "correct": false
+        },
+        {
+          "uk": "Завантажує всі зображення одночасно",
+          "en": "Loads all images simultaneously",
+          "pl": "Ładuje wszystkie obrazy jednocześnie",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-adv-q06",
+      "order": 6,
+      "difficulty": "advanced",
+      "uk": {
+        "q": "Для чого використовується елемент <picture>?",
+        "exp": "<picture> надає більше контролю над адаптивними зображеннями: дозволяє використовувати різні формати (WebP, AVIF) і показувати різні зображення на різних пристроях (art direction)."
+      },
+      "en": {
+        "q": "What is the <picture> element used for?",
+        "exp": "<picture> provides more control over responsive images: allows using different formats (WebP, AVIF) and showing different images on different devices (art direction)."
+      },
+      "pl": {
+        "q": "Do czego służy element <picture>?",
+        "exp": "<picture> daje większą kontrolę nad responsywnymi obrazami: pozwala używać różnych formatów (WebP, AVIF) i pokazywać różne obrazy na różnych urządzeniach (art direction)."
+      },
+      "answers": [
+        {
+          "uk": "Тільки для галерей зображень",
+          "en": "Only for image galleries",
+          "pl": "Tylko dla galerii obrazów",
+          "correct": false
+        },
+        {
+          "uk": "Для art direction та підтримки різних форматів зображень",
+          "en": "For art direction and supporting different image formats",
+          "pl": "Dla art direction i obsługi różnych formatów obrazów",
+          "correct": true
+        },
+        {
+          "uk": "Для створення фоторамок",
+          "en": "For creating photo frames",
+          "pl": "Do tworzenia ramek na zdjęcia",
+          "correct": false
+        },
+        {
+          "uk": "Замінює тег <img> повністю",
+          "en": "Completely replaces <img> tag",
+          "pl": "Całkowicie zastępuje tag <img>",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-adv-q07",
+      "order": 7,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке iframe і які його основні атрибути безпеки?",
+        "exp": "<iframe> вбудовує іншу HTML-сторінку. Атрибути безпеки: sandbox (обмежує можливості), referrerpolicy (контроль referrer), allow (дозволи для API). Рекомендовано для YouTube, карт, віджетів."
+      },
+      "en": {
+        "q": "What is iframe and what are its main security attributes?",
+        "exp": "<iframe> embeds another HTML page. Security attributes: sandbox (restricts capabilities), referrerpolicy (referrer control), allow (API permissions). Recommended for YouTube, maps, widgets."
+      },
+      "pl": {
+        "q": "Czym jest iframe i jakie są jego główne atrybuty bezpieczeństwa?",
+        "exp": "<iframe> osadza inną stronę HTML. Atrybuty bezpieczeństwa: sandbox (ogranicza możliwości), referrerpolicy (kontrola referrer), allow (uprawnienia API). Zalecany dla YouTube, map, widgetów."
+      },
+      "answers": [
+        {
+          "uk": "iframe не має атрибутів безпеки",
+          "en": "iframe has no security attributes",
+          "pl": "iframe nie ma atrybutów bezpieczeństwa",
+          "correct": false
+        },
+        {
+          "uk": "sandbox, referrerpolicy, allow",
+          "en": "sandbox, referrerpolicy, allow",
+          "pl": "sandbox, referrerpolicy, allow",
+          "correct": true
+        },
+        {
+          "uk": "Тільки src і width",
+          "en": "Only src and width",
+          "pl": "Tylko src i width",
+          "correct": false
+        },
+        {
+          "uk": "secure і protected",
+          "en": "secure and protected",
+          "pl": "secure i protected",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-adv-q08",
+      "order": 8,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Яка різниця між атрибутами async та defer для скриптів?",
+        "exp": "async — скрипт завантажується паралельно і виконується одразу після завантаження (порядок не гарантований). defer — завантажується паралельно, але виконується після парсингу HTML (порядок збережено)."
+      },
+      "en": {
+        "q": "What is the difference between async and defer attributes for scripts?",
+        "exp": "async — script loads in parallel and executes immediately after loading (order not guaranteed). defer — loads in parallel but executes after HTML parsing (order preserved)."
+      },
+      "pl": {
+        "q": "Jaka jest różnica między atrybutami async a defer dla skryptów?",
+        "exp": "async — skrypt ładuje się równolegle i wykonuje natychmiast po załadowaniu (kolejność nie gwarantowana). defer — ładuje się równolegle, ale wykonuje po parsowaniu HTML (kolejność zachowana)."
+      },
+      "answers": [
+        {
+          "uk": "Різниці немає",
+          "en": "No difference",
+          "pl": "Nie ma różnicy",
+          "correct": false
+        },
+        {
+          "uk": "async виконується одразу, defer — після парсингу HTML",
+          "en": "async executes immediately, defer — after HTML parsing",
+          "pl": "async wykonuje natychmiast, defer — po parsowaniu HTML",
+          "correct": true
+        },
+        {
+          "uk": "async тільки для зовнішніх скриптів",
+          "en": "async only for external scripts",
+          "pl": "async tylko dla zewnętrznych skryptów",
+          "correct": false
+        },
+        {
+          "uk": "defer застарів у HTML5",
+          "en": "defer is deprecated in HTML5",
+          "pl": "defer jest przestarzały w HTML5",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-adv-q09",
+      "order": 9,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Як створити карту зображення (image map) в HTML?",
+        "exp": "Використовується <img usemap=\"#mapname\"> і <map name=\"mapname\"> з елементами <area>. Area має атрибути shape (rect, circle, poly), coords (координати), href (посилання)."
+      },
+      "en": {
+        "q": "How do you create an image map in HTML?",
+        "exp": "Use <img usemap=\"#mapname\"> and <map name=\"mapname\"> with <area> elements. Area has attributes shape (rect, circle, poly), coords (coordinates), href (link)."
+      },
+      "pl": {
+        "q": "Jak utworzyć mapę obrazu (image map) w HTML?",
+        "exp": "Używa się <img usemap=\"#mapname\"> i <map name=\"mapname\"> z elementami <area>. Area ma atrybuty shape (rect, circle, poly), coords (współrzędne), href (link)."
+      },
+      "answers": [
+        {
+          "uk": "Через CSS grid на зображенні",
+          "en": "Via CSS grid on image",
+          "pl": "Przez CSS grid na obrazie",
+          "correct": false
+        },
+        {
+          "uk": "<img usemap> + <map> з елементами <area>",
+          "en": "<img usemap> + <map> with <area> elements",
+          "pl": "<img usemap> + <map> z elementami <area>",
+          "correct": true
+        },
+        {
+          "uk": "Тільки через JavaScript",
+          "en": "Only via JavaScript",
+          "pl": "Tylko przez JavaScript",
+          "correct": false
+        },
+        {
+          "uk": "Image maps не підтримуються в HTML5",
+          "en": "Image maps are not supported in HTML5",
+          "pl": "Mapy obrazów nie są obsługiwane w HTML5",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-adv-q10",
+      "order": 10,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Яка різниця між елементами <meter> та <progress>?",
+        "exp": "<meter> — для виміряних значень у діапазоні (рівень батареї, рейтинг, заповнення диска). <progress> — для прогресу завдань (завантаження файлів, виконання процесів)."
+      },
+      "en": {
+        "q": "What is the difference between <meter> and <progress> elements?",
+        "exp": "<meter> is for measured values in a range (battery level, rating, disk usage). <progress> is for task progress (file uploads, process completion)."
+      },
+      "pl": {
+        "q": "Jaka jest różnica między elementami <meter> a <progress>?",
+        "exp": "<meter> służy do mierzonych wartości w zakresie (poziom baterii, ocena, użycie dysku). <progress> służy do postępu zadań (przesyłanie plików, ukończenie procesów)."
+      },
+      "answers": [
+        {
+          "uk": "Різниці немає, це синоніми",
+          "en": "No difference, they are synonyms",
+          "pl": "Nie ma różnicy, to synonimy",
+          "correct": false
+        },
+        {
+          "uk": "<meter> для вимірів у діапазоні, <progress> для прогресу завдань",
+          "en": "<meter> for measurements in range, <progress> for task progress",
+          "pl": "<meter> dla pomiarów w zakresie, <progress> dla postępu zadań",
+          "correct": true
+        },
+        {
+          "uk": "<progress> застарів у HTML5",
+          "en": "<progress> is deprecated in HTML5",
+          "pl": "<progress> jest przestarzały w HTML5",
+          "correct": false
+        },
+        {
+          "uk": "<meter> тільки для числових значень",
+          "en": "<meter> only for numeric values",
+          "pl": "<meter> tylko dla wartości liczbowych",
+          "correct": false
+        }
+      ]
+    }
+  ]
+}

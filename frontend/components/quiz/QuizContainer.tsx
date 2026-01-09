@@ -7,6 +7,7 @@ import { useAntiCheat } from '@/hooks/useAntiCheat';
 import { QuizProgress } from './QuizProgress';
 import { QuizQuestion } from './QuizQuestion';
 import { QuizResult } from './QuizResult';
+import { CountdownTimer } from './CountdownTimer';
 import { Button } from '@/components/ui/button';
 import { submitQuizAttempt } from '@/actions/quiz';
 import type { QuizQuestionWithAnswers } from '@/db/queries/quiz';
@@ -25,6 +26,7 @@ type QuizState = {
   questionStatus: 'answering' | 'revealed';
   selectedAnswerId: string | null;
   startedAt: Date | null;
+  pointsAwarded: number | null;
 };
 
 type QuizAction =
@@ -34,7 +36,7 @@ type QuizAction =
       payload: { answerId: string; isCorrect: boolean; questionId: string };
     }
   | { type: 'NEXT_QUESTION' }
-  | { type: 'COMPLETE_QUIZ' }
+  | { type: 'COMPLETE_QUIZ'; payload?: { pointsAwarded: number } }
   | { type: 'RESTART' };
 
 
@@ -76,6 +78,7 @@ function quizReducer(state: QuizState, action: QuizAction): QuizState {
       return {
         ...state,
         status: 'completed',
+        pointsAwarded: action.payload?.pointsAwarded ?? null,
       };
 
     case 'RESTART':
@@ -86,6 +89,7 @@ function quizReducer(state: QuizState, action: QuizAction): QuizState {
         questionStatus: 'answering',
         selectedAnswerId: null,
         startedAt: null,
+        pointsAwarded: null,
       };
 
     default:
@@ -98,6 +102,7 @@ interface QuizContainerProps {
   questions: QuizQuestionWithAnswers[];
   userId: string | null;
   quizSlug: string;
+  timeLimitSeconds: number | null;
   onBackToTopics?: () => void;
 }
 
@@ -106,6 +111,7 @@ export function QuizContainer({
   quizId,
   questions,
   userId,
+  timeLimitSeconds,
   onBackToTopics,
 }: QuizContainerProps) {
   const [isPending, startTransition] = useTransition();
@@ -116,6 +122,7 @@ export function QuizContainer({
     questionStatus: 'answering',
     selectedAnswerId: null,
     startedAt: null,
+    pointsAwarded: null,
   });
 const locale = useLocale();
 
@@ -187,10 +194,14 @@ const locale = useLocale();
         violations: violations,
         startedAt: state.startedAt!,
         completedAt: new Date(),
+        totalQuestions,
       });
 
       if (result.success) {
-        dispatch({ type: 'COMPLETE_QUIZ' });
+        dispatch({ 
+          type: 'COMPLETE_QUIZ', 
+          payload: { pointsAwarded: result.pointsAwarded ?? 0 } 
+        });
       } else {
         console.error('Failed to submit quiz:', result.error);
         dispatch({ type: 'COMPLETE_QUIZ' });
@@ -201,6 +212,10 @@ const locale = useLocale();
   const handleRestart = () => {
     resetViolations();
     dispatch({ type: 'RESTART' });
+  };
+
+  const handleTimeUp = () => {
+    handleSubmit();
   };
 
   const handleBackToTopicsClick = () => {
@@ -282,7 +297,9 @@ const locale = useLocale();
         score={correctAnswers}
         total={totalQuestions}
         percentage={percentage}
+        answeredCount={state.answers.length}
         violationsCount={violationsCount}
+        pointsAwarded={state.pointsAwarded}
         onRestart={handleRestart}
         onBackToTopics={handleBackToTopicsClick}
         isGuest={isGuest}
@@ -298,6 +315,17 @@ const locale = useLocale();
         total={totalQuestions}
         answers={state.answers}
       />
+
+      {(() => {
+        const calculatedTime = timeLimitSeconds ?? (totalQuestions * 30);
+        return (
+          <CountdownTimer
+            timeLimitSeconds={calculatedTime}
+            onTimeUp={handleTimeUp}
+            isActive={state.status === 'in_progress'}
+          />
+        );
+      })()}
 
       <QuizQuestion
         question={currentQuestion}

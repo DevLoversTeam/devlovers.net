@@ -3,6 +3,8 @@ import { db } from '@/db';
 import { categories, questions, questionTranslations } from '@/db/schema';
 import { eq, sql, and, ilike } from 'drizzle-orm';
 
+export const revalidate = 300;
+
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 20;
 const DEFAULT_LOCALE = 'uk';
@@ -31,19 +33,24 @@ export async function GET(
 
     // Find category by slug
     const [cat] = await db
-      .select()
+      .select({ id: categories.id })
       .from(categories)
       .where(eq(categories.slug, category.toLowerCase()))
       .limit(1);
 
     if (!cat) {
-      return NextResponse.json({
+      const response = NextResponse.json({
         items: [],
         total: 0,
         page: 1,
         totalPages: 0,
         locale,
       });
+      response.headers.set(
+        'Cache-Control',
+        'public, s-maxage=300, stale-while-revalidate=600'
+      );
+      return response;
     }
 
     // Base conditions: category match + locale match
@@ -90,13 +97,18 @@ export async function GET(
       .limit(limit)
       .offset(offset);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       items,
       total,
       page,
       totalPages,
       locale,
     });
+    response.headers.set(
+      'Cache-Control',
+      'public, s-maxage=300, stale-while-revalidate=600'
+    );
+    return response;
   } catch (error) {
     console.error('[GET /api/questions/:category]', error);
 

@@ -20,7 +20,7 @@ export default function BlogGrid({
   }
 
   return (
-    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-10">
+    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-12">
       {posts.map(post => (
         <BlogCard
           key={post._id}

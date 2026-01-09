@@ -36,16 +36,19 @@ export default function BlogCard({
         overflow-visible
         flex flex-col
         h-full
+        transition-transform
+        hover:-translate-y-[2px]
       "
     >
       {post.mainImage && (
-        <div
+        <Link
+          href={`/blog/${post.slug.current}`}
           className="
             relative w-full aspect-[16/9]
             overflow-hidden
-            rounded-sm
+            rounded-lg
             bg-gray-100
-            shadow-[0_10px_30px_rgba(0,0,0,0.08)]
+            shadow-[0_8px_24px_rgba(0,0,0,0.08)]
             transition-transform duration-300
             group-hover:translate-y-[-2px]
           "
@@ -54,27 +57,27 @@ export default function BlogCard({
             src={post.mainImage}
             alt={post.title}
             fill
-            className="object-cover grayscale contrast-125 brightness-105"
+            className="object-cover grayscale brightness-95 contrast-110 scale-[1.03]"
             priority={false}
           />
-        </div>
+        </Link>
       )}
 
-      {/* body */}
-      <div className="pt-6 flex flex-col flex-1">
-        {/* TITLE */}
+      <div className="pt-8 flex flex-col flex-1">
         <Link
           href={`/blog/${post.slug.current}`}
           className="
     block
-    text-[28px] md:text-[30px]
-    font-extrabold
+    text-[20px] md:text-[22px]
+    font-semibold
     tracking-tight
-    leading-[1.15]
+    leading-[1.25]
     text-gray-950
     transition
-    hover:text-gray-800
+    hover:text-[#ff00ff]
     hover:underline
+    group-hover:text-[#ff00ff]
+    group-hover:underline
     underline-offset-4
   "
           style={{ fontFamily: 'ui-rounded, system-ui, -apple-system' }}
@@ -82,18 +85,15 @@ export default function BlogCard({
           {post.title}
         </Link>
 
-        {/* excerpt is the flexible area */}
         {excerpt && (
-          <p className="mt-6 text-[16px] leading-7 text-gray-700 max-w-[62ch]">
+          <p className="mt-4 text-[15px] md:text-[16px] leading-[1.7] text-gray-700 max-w-[60ch] line-clamp-3">
             {excerpt}
           </p>
         )}
 
-        {/* ✅ sticky bottom block */}
         <div className="mt-auto pt-6">
-          {/* AUTHOR (fixed bottom) */}
           {post.author && (
-            <div className="mb-4">
+            <div className="mb-3">
               <AuthorModal
                 author={post.author}
                 publishedAt={post.publishedAt}
@@ -101,7 +101,6 @@ export default function BlogCard({
             </div>
           )}
 
-          {/* TAGS (fixed bottom) */}
           {post.tags?.length ? (
             <div className="flex flex-wrap gap-3">
               {post.tags.map((tag, i) => {
@@ -113,10 +112,10 @@ export default function BlogCard({
                     key={`${norm}-${i}`}
                     onClick={() => onTagToggle(norm)}
                     className={[
-                      'text-sm transition underline-offset-4',
+                      'text-[13px] text-gray-400 transition underline-offset-4',
                       active
                         ? 'text-gray-950 underline'
-                        : 'text-gray-500 hover:text-gray-800 hover:underline',
+                        : 'hover:text-[#ff00ff] hover:underline',
                     ].join(' ')}
                   >
                     #{norm}
@@ -126,21 +125,21 @@ export default function BlogCard({
             </div>
           ) : null}
 
-          {/* resource link (also stays at bottom) */}
           {post.resourceLink && (
             <a
               href={post.resourceLink}
               target="_blank"
               rel="noopener noreferrer"
               className="
-                mt-6 inline-flex
-                text-sm font-medium
-                text-gray-900
-                hover:text-gray-700
-                underline underline-offset-4
+                mt-5 inline-flex
+                text-[13px] font-medium
+                text-gray-700
+                hover:text-[#ff00ff]
+                hover:underline
+                underline-offset-4
               "
             >
-              {t('visitResource')} →
+              → {t('readArticle')}
             </a>
           )}
         </div>

@@ -24,9 +24,13 @@ export function PendingResultHandler({ userId }: Props) {
           timeSpentSeconds: pending.timeSpentSeconds,
         }),
       })
-        .then(() => {
+      .then(async (res) => {
+        if (res.ok) {
           clearPendingQuizResult();
-        })
+        } else {
+          console.error("Guest-result API error:", res.status);
+        }
+      })
         .catch(err => {
           console.error("Guest-result fetch error:", err);
         });

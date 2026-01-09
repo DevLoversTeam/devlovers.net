@@ -6,6 +6,7 @@ import {
   varchar,
   jsonb,
   timestamp,
+  index
 } from 'drizzle-orm/pg-core';
 import { users } from './users';
 
@@ -21,4 +22,6 @@ export const pointTransactions = pgTable('point_transactions', {
   createdAt: timestamp('created_at', { withTimezone: true })
     .notNull()
     .defaultNow(),
-});
+}, (table) => ({
+  userIdIdx: index('point_transactions_user_id_idx').on(table.userId),
+}));
