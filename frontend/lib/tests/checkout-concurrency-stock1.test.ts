@@ -1,5 +1,5 @@
 // lib/tests/checkout-concurrency-stock1.test.ts
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import crypto from 'crypto';
 import { NextRequest } from 'next/server';
 import { eq, inArray } from 'drizzle-orm';
@@ -13,8 +13,7 @@ import {
   inventoryMoves,
 } from '@/db/schema/shop';
 
-import { POST as checkoutPOST } from '@/app/api/shop/checkout/route';
-import { vi } from 'vitest';
+// NOTE: checkout route will be imported dynamically after mocks are installed.
 
 vi.mock('@/lib/auth', async () => {
   const actual = await vi.importActual<any>('@/lib/auth');
@@ -122,6 +121,9 @@ describe('P0-8.10.1 checkout concurrency: stock=1, two parallel checkouts', () =
 
     // ---------- Helper: call checkout with given idempotency key ----------
     const baseUrl = 'http://localhost:3000';
+    const { POST: checkoutPOST } = await import(
+      '@/app/api/shop/checkout/route'
+    );
 
     async function callCheckout(idemKey: string) {
       const body = JSON.stringify({

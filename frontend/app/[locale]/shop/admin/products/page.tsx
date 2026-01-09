@@ -12,10 +12,22 @@ function formatDate(value: Date | null, locale: string) {
   return value.toLocaleDateString(locale);
 }
 
-function safeFromDbMoney(value: unknown): number | null {
+function safeFromDbMoney(
+  value: unknown,
+  ctx: { productId: string; currency: string }
+): number | null {
+  // expected case for leftJoin: missing price row
+  if (value == null) return null;
+
   try {
     return fromDbMoney(value);
-  } catch {
+  } catch (err) {
+    console.warn('[admin products] fromDbMoney failed', {
+      ...ctx,
+      valueType: typeof value,
+      value,
+      error: err instanceof Error ? err.message : String(err),
+    });
     return null;
   }
 }
@@ -108,7 +120,10 @@ export default async function AdminProductsPage({
 
           <tbody className="divide-y divide-border">
             {rows.map(row => {
-              const priceMinor = safeFromDbMoney(row.price);
+              const priceMinor = safeFromDbMoney(row.price, {
+                productId: row.id,
+                currency: displayCurrency,
+              });
 
               return (
                 <tr key={row.id} className="hover:bg-muted/50">
