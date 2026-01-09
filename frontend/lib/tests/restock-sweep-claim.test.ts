@@ -63,7 +63,16 @@ describe('restockStalePendingOrders claim', () => {
     } finally {
       try {
         await db.delete(orders).where(eq(orders.id, orderId));
-      } catch {}
+      } catch (error) {
+        console.error('[test cleanup failed]', {
+          file: 'restock-sweep-claim.test.ts',
+          test: 'two concurrent sweeps must not both process the same order',
+          step: 'delete order by id',
+          orderId,
+          idem,
+          error,
+        });
+      }
     }
   });
 }, 20000);

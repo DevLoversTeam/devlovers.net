@@ -14,7 +14,19 @@ if (!secret) {
   process.exit(1);
 }
 
-const timeoutMs = Number(process.env.JANITOR_TIMEOUT_MS ?? '25000');
+const DEFAULT_TIMEOUT_MS = 25_000;
+const MIN_TIMEOUT_MS = 1_000;
+
+const rawTimeout = (process.env.JANITOR_TIMEOUT_MS ?? '').trim();
+const n = Number.parseInt(rawTimeout, 10);
+
+// NaN / '' / abc / 0 / negative -> default
+const timeoutMs =
+  Number.isFinite(n) && n > 0
+    ? Math.max(MIN_TIMEOUT_MS, n)
+    : DEFAULT_TIMEOUT_MS;
+
+console.log('[janitor] timeoutMs=', timeoutMs, 'raw=', rawTimeout || '(empty)');
 
 const controller = new AbortController();
 const timer = setTimeout(() => controller.abort(), timeoutMs);

@@ -106,7 +106,17 @@ describe('order_items variants (selected_size/selected_color)', () => {
         await db.execute(
           sql`delete from product_prices where product_id = ${productId}::uuid`
         );
-      } catch {}
+      } catch (error) {
+        console.error('[test cleanup failed]', {
+          file: 'order-items-variants.test.ts',
+          test: 'order_items variants: distinct rows for different variants',
+          step: 'delete product_prices fallback by productId',
+          orderId,
+          productId,
+          priceId,
+          error,
+        });
+      }
     }
   }, 60_000);
 });

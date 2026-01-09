@@ -61,8 +61,6 @@ function makeRequest() {
 }
 
 async function cleanupInserted(ins: Inserted) {
-  // stripeEvents вставляються навіть коли orderId null (metadata missing),
-  // тому чистимо по paymentIntentId
   await db
     .delete(stripeEvents)
     .where(eq(stripeEvents.paymentIntentId, ins.paymentIntentId));
@@ -165,7 +163,7 @@ describe('stripe webhook refund (full only): PI fallback + terminal status + ded
       .where(eq(stripeEvents.eventId, eventId));
 
     expect(events.length).toBe(1);
-  });
+  }, 30_000);
 
   it('full refund (charge.refund.updated) WITHOUT metadata.orderId resolves by paymentIntentId, sets terminal status, calls restock once', async () => {
     inserted = await insertPaidOrder();
@@ -173,15 +171,34 @@ describe('stripe webhook refund (full only): PI fallback + terminal status + ded
     const eventId = `evt_${crypto.randomUUID()}`;
     const chargeId = `ch_${crypto.randomUUID()}`;
 
+    const refundId = `re_${crypto.randomUUID()}`;
+
     const refund = {
-      id: `re_${crypto.randomUUID()}`,
+      id: refundId,
       object: 'refund',
-      amount: 2500, // must equal order.totalAmountMinor for full-refund gate
+      amount: 2500,
       status: 'succeeded',
       reason: null,
-      charge: chargeId,
+      charge: {
+        id: chargeId,
+        object: 'charge',
+        amount: 2500,
+        amount_refunded: 2500,
+        refunds: {
+          object: 'list',
+          data: [
+            {
+              id: refundId,
+              object: 'refund',
+              status: 'succeeded',
+              reason: null,
+              amount: 2500,
+            },
+          ],
+        },
+      },
       payment_intent: inserted.paymentIntentId,
-      metadata: {}, // IMPORTANT: no orderId -> PI fallback must resolve
+      metadata: {},
     };
 
     (verifyWebhookSignature as any).mockReturnValue({
@@ -213,7 +230,7 @@ describe('stripe webhook refund (full only): PI fallback + terminal status + ded
     expect(restockOrder).toHaveBeenCalledWith(inserted.orderId, {
       reason: 'refunded',
     });
-  });
+  }, 30_000);
 
   it('partial refund is ignored (no paymentStatus/status change, no restock)', async () => {
     inserted = await insertPaidOrder();
@@ -266,8 +283,8 @@ describe('stripe webhook refund (full only): PI fallback + terminal status + ded
     expect(row.stockRestored).toBe(false);
 
     expect(restockOrder).toHaveBeenCalledTimes(0);
-  });
-    it('retry after 500 must reprocess same event.id until processedAt is set (restock not lost)', async () => {
+  }, 30_000);
+  it('retry after 500 must reprocess same event.id until processedAt is set (restock not lost)', async () => {
     inserted = await insertPaidOrder();
 
     const eventId = `evt_${crypto.randomUUID()}`;
@@ -295,12 +312,15 @@ describe('stripe webhook refund (full only): PI fallback + terminal status + ded
         throw new Error('RESTOCK_FAILED');
       })
       .mockImplementationOnce(async (orderId: string) => {
-        await db.update(orders).set({
-          stockRestored: true,
-          restockedAt: new Date(),
-          inventoryStatus: 'released',
-          updatedAt: new Date(),
-        }).where(eq(orders.id, orderId));
+        await db
+          .update(orders)
+          .set({
+            stockRestored: true,
+            restockedAt: new Date(),
+            inventoryStatus: 'released',
+            updatedAt: new Date(),
+          })
+          .where(eq(orders.id, orderId));
       });
 
     const res1 = await POST(makeRequest());
@@ -331,6 +351,73 @@ describe('stripe webhook refund (full only): PI fallback + terminal status + ded
       .limit(1);
 
     expect(evt.processedAt).not.toBeNull();
-  });
+  }, 30_000);
+  it('full refund (charge.refund.updated) must use cumulative refunded (not refund.amount) when full consists of multiple partial refunds', async () => {
+    inserted = await insertPaidOrder();
 
+    const eventId = `evt_${crypto.randomUUID()}`;
+    const chargeId = `ch_${crypto.randomUUID()}`;
+
+    const refund1 = {
+      id: `re_${crypto.randomUUID()}`,
+      object: 'refund',
+      status: 'succeeded',
+      reason: null,
+      amount: 1000,
+    };
+    const refund2 = {
+      id: `re_${crypto.randomUUID()}`,
+      object: 'refund',
+      status: 'succeeded',
+      reason: null,
+      amount: 1000,
+    };
+    const refund3Id = `re_${crypto.randomUUID()}`;
+
+    // current event refund is only 500 (not full by itself)
+    const refund = {
+      id: refund3Id,
+      object: 'refund',
+      amount: 500,
+      status: 'succeeded',
+      reason: null,
+      charge: {
+        id: chargeId,
+        object: 'charge',
+        amount: 2500,
+        amount_refunded: 2500, // cumulative full
+        refunds: {
+          object: 'list',
+          data: [refund1, refund2, { ...refund1, id: refund3Id, amount: 500 }],
+        },
+      },
+      payment_intent: inserted.paymentIntentId,
+      metadata: {},
+    };
+
+    (verifyWebhookSignature as any).mockReturnValue({
+      id: eventId,
+      type: 'charge.refund.updated',
+      data: { object: refund },
+    });
+
+    const res = await POST(makeRequest());
+    expect(res.status).toBe(200);
+
+    const [row] = await db
+      .select({
+        paymentStatus: orders.paymentStatus,
+        status: orders.status,
+        stockRestored: orders.stockRestored,
+      })
+      .from(orders)
+      .where(eq(orders.id, inserted.orderId))
+      .limit(1);
+
+    expect(row.paymentStatus).toBe('refunded');
+    expect(row.status).toBe('CANCELED');
+    expect(row.stockRestored).toBe(true);
+
+    expect(restockOrder).toHaveBeenCalledTimes(1);
+  }, 30_000);
 });

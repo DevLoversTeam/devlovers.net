@@ -208,7 +208,12 @@ describe('P0-6 snapshots: order_items immutability', () => {
       // Snapshot MUST remain V1 even after product changes
       expect(after[0]).toEqual(before[0]);
     } finally {
-      await cleanupByIds({ orderId, productId });
+      try {
+        await cleanupByIds({ orderId, productId });
+      } catch (e) {
+        console.error('[test cleanup failed]', { orderId, productId }, e);
+        throw e;
+      }
     }
   }, 30_000);
 });

@@ -54,9 +54,6 @@ function nextRouteForPaymentResult(params: {
   status?: string | null;
 }) {
   const { orderId, status } = params;
-
-  // ✅ Stripe може повернути "processing" або інший non-terminal статус.
-  // Джерело істини = webhook, тому error-page показуємо тільки для явних фейлів.
   const success = `/shop/checkout/success?orderId=${orderId}`;
   const failure = `/shop/checkout/error?orderId=${orderId}`;
 

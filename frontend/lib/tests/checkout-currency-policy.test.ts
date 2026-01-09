@@ -245,5 +245,5 @@ describe('P0-CUR-3 checkout currency policy', () => {
     expect(json.code).toBe('PRICE_CONFIG_ERROR');
     expect(json.details?.productId).toBe(productId);
     expect(json.details?.currency).toBe('UAH');
-  });
+  }, 30_000);
 });

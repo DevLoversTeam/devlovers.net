@@ -26,6 +26,14 @@ vi.mock('@/lib/psp/stripe', async () => {
 import { verifyWebhookSignature } from '@/lib/psp/stripe';
 import { POST as webhookPOST } from '@/app/api/shop/webhooks/stripe/route';
 
+function logTestCleanupFailed(meta: Record<string, unknown>, error: unknown) {
+  console.error('[test cleanup failed]', {
+    file: 'stripe-webhook-psp-fields.test.ts',
+    ...meta,
+    error,
+  });
+}
+
 function makeWebhookRequest(rawBody: string) {
   return new NextRequest('http://localhost:3000/api/shop/webhooks/stripe', {
     method: 'POST',
@@ -45,12 +53,58 @@ async function cleanup(params: {
 }) {
   const { orderId, productId, eventId } = params;
 
-  await db.delete(stripeEvents).where(eq(stripeEvents.eventId, eventId));
-  await db.delete(orderItems).where(eq(orderItems.orderId, orderId));
-  await db.delete(orders).where(eq(orders.id, orderId));
+  // teardown must not mask assertion failures, but must surface cleanup problems
+  try {
+    await db.delete(stripeEvents).where(eq(stripeEvents.eventId, eventId));
+  } catch (e) {
+    logTestCleanupFailed(
+      { step: 'delete stripeEvents by eventId', eventId, orderId, productId },
+      e
+    );
+  }
 
-  await db.delete(productPrices).where(eq(productPrices.productId, productId));
-  await db.delete(products).where(eq(products.id, productId));
+  try {
+    await db.delete(orderItems).where(eq(orderItems.orderId, orderId));
+  } catch (e) {
+    logTestCleanupFailed(
+      { step: 'delete orderItems by orderId', orderId, eventId, productId },
+      e
+    );
+  }
+
+  try {
+    await db.delete(orders).where(eq(orders.id, orderId));
+  } catch (e) {
+    logTestCleanupFailed(
+      { step: 'delete order by id', orderId, eventId, productId },
+      e
+    );
+  }
+
+  try {
+    await db
+      .delete(productPrices)
+      .where(eq(productPrices.productId, productId));
+  } catch (e) {
+    logTestCleanupFailed(
+      {
+        step: 'delete productPrices by productId',
+        productId,
+        orderId,
+        eventId,
+      },
+      e
+    );
+  }
+
+  try {
+    await db.delete(products).where(eq(products.id, productId));
+  } catch (e) {
+    logTestCleanupFailed(
+      { step: 'delete product by id', productId, orderId, eventId },
+      e
+    );
+  }
 }
 
 describe('P0-6 webhook: writes PSP fields on succeeded', () => {

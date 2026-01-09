@@ -574,7 +574,7 @@ export async function updateProduct(
   }
 
   try {
-    // 1) upsert prices (якщо прийшли)
+    // 1) upsert prices 
     if (prices.length) {
       const upsertRows = prices.map(p => {
         const priceMinor = p.priceMinor;

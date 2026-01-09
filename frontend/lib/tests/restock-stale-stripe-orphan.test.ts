@@ -81,7 +81,16 @@ describe('P0-3.x Restock stale pending orders: stripe orphan cleanup', () => {
       // cleanup
       try {
         await db.delete(orders).where(eq(orders.id, orderId));
-      } catch {}
+      } catch (error) {
+        console.error('[test cleanup failed]', {
+          file: 'restock-stale-stripe-orphan.test.ts',
+          test: 'stale stripe orphan -> terminal failed + released',
+          step: 'delete order by id',
+          orderId,
+          idem,
+          error,
+        });
+      }
     }
   });
 }, 20000);

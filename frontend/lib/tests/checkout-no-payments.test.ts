@@ -33,6 +33,14 @@ vi.mock('@/lib/auth', async () => {
   };
 });
 
+function logTestCleanupFailed(meta: Record<string, unknown>, error: unknown) {
+  console.error('[test cleanup failed]', {
+    file: 'checkout-no-payments.test.ts',
+    ...meta,
+    error,
+  });
+}
+
 /**
  * Creates an isolated product + product_prices row to avoid stock races
  * with parallel test files that also reserve/release inventory.
@@ -89,10 +97,20 @@ async function createIsolatedProductForCurrency(opts: {
     } as any);
   } catch (e) {
     // Cleanup orphaned product on price insert failure (best-effort)
-    await db
-      .delete(products)
-      .where(eq(products.id, productId))
-      .catch(() => {});
+    try {
+      await db.delete(products).where(eq(products.id, productId));
+    } catch (cleanupError) {
+      logTestCleanupFailed(
+        {
+          fn: 'createIsolatedProductForCurrency',
+          step: 'rollback delete product after productPrices insert failure',
+          productId,
+          currency: opts.currency,
+          stock: opts.stock,
+        },
+        cleanupError
+      );
+    }
     throw e;
   }
 
@@ -108,13 +126,10 @@ async function cleanupIsolatedProduct(productId: string) {
       .where(eq(products.id, productId));
   } catch (e) {
     // Non-fatal: best-effort test teardown
-    if (process.env.DEBUG) {
-      console.warn(
-        'cleanupIsolatedProduct: deactivate failed',
-        { productId },
-        e
-      );
-    }
+    logTestCleanupFailed(
+      { fn: 'cleanupIsolatedProduct', step: 'deactivate product', productId },
+      e
+    );
   }
 
   try {
@@ -122,25 +137,23 @@ async function cleanupIsolatedProduct(productId: string) {
       .delete(productPrices)
       .where(eq(productPrices.productId, productId));
   } catch (e) {
-    if (process.env.DEBUG) {
-      console.warn(
-        'cleanupIsolatedProduct: delete productPrices failed',
-        { productId },
-        e
-      );
-    }
+    logTestCleanupFailed(
+      {
+        fn: 'cleanupIsolatedProduct',
+        step: 'delete productPrices by productId',
+        productId,
+      },
+      e
+    );
   }
 
   try {
     await db.delete(products).where(eq(products.id, productId));
   } catch (e) {
-    if (process.env.DEBUG) {
-      console.warn(
-        'cleanupIsolatedProduct: delete product failed',
-        { productId },
-        e
-      );
-    }
+    logTestCleanupFailed(
+      { fn: 'cleanupIsolatedProduct', step: 'delete product by id', productId },
+      e
+    );
   }
 }
 
@@ -194,13 +207,14 @@ async function bestEffortHardDeleteOrder(orderId: string) {
       sql`delete from inventory_moves where order_id = ${orderId}::uuid`
     );
   } catch (e) {
-    if (process.env.DEBUG) {
-      console.warn(
-        'bestEffortHardDeleteOrder: delete inventory_moves failed',
-        { orderId },
-        e
-      );
-    }
+    logTestCleanupFailed(
+      {
+        fn: 'bestEffortHardDeleteOrder',
+        step: 'delete inventory_moves by orderId',
+        orderId,
+      },
+      e
+    );
   }
 
   try {
@@ -208,25 +222,23 @@ async function bestEffortHardDeleteOrder(orderId: string) {
       sql`delete from order_items where order_id = ${orderId}::uuid`
     );
   } catch (e) {
-    if (process.env.DEBUG) {
-      console.warn(
-        'bestEffortHardDeleteOrder: delete order_items failed',
-        { orderId },
-        e
-      );
-    }
+    logTestCleanupFailed(
+      {
+        fn: 'bestEffortHardDeleteOrder',
+        step: 'delete order_items by orderId',
+        orderId,
+      },
+      e
+    );
   }
 
   try {
     await db.delete(orders).where(eq(orders.id, orderId));
   } catch (e) {
-    if (process.env.DEBUG) {
-      console.warn(
-        'bestEffortHardDeleteOrder: delete order failed',
-        { orderId },
-        e
-      );
-    }
+    logTestCleanupFailed(
+      { fn: 'bestEffortHardDeleteOrder', step: 'delete order by id', orderId },
+      e
+    );
   }
 }
 

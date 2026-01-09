@@ -29,7 +29,7 @@ interface NavLinksProps {
 }
 
 export function NavLinks({ className, onNavigate, showAdminLink = false }: NavLinksProps) {
-  const pathname = usePathname(); // i18n-aware (без /{locale} префіксу)
+  const pathname = usePathname(); 
   const searchParams = useSearchParams();
   const currentCategory = searchParams.get('category');
 
@@ -40,9 +40,6 @@ export function NavLinks({ className, onNavigate, showAdminLink = false }: NavLi
         const linkParams = new URLSearchParams(linkQuery ?? '');
         const linkCategory = linkParams.get('category');
 
-        // Правило:
-        // - "All Products" активний тільки коли немає category в URL
-        // - category-лінк активний тільки коли category збігається
         const isActive =
           pathname === linkPath &&
           (linkCategory ? currentCategory === linkCategory : !currentCategory);
