@@ -47,12 +47,15 @@ function makeFile(): File {
 function makeFormData(payload?: {
   badge?: string;
   prices?: unknown;
+  pricesRaw?: string;
 }): FormData {
   const fd = new FormData();
   fd.append('image', makeFile());
 
   if (payload?.badge) fd.append('badge', payload.badge);
-  if (payload?.prices) fd.append('prices', JSON.stringify(payload.prices));
+
+  if (payload?.pricesRaw != null) fd.append('prices', payload.pricesRaw);
+  else if (payload?.prices) fd.append('prices', JSON.stringify(payload.prices));
 
   return fd;
 }
@@ -154,5 +157,60 @@ describe('P1-3 SALE rule end-to-end contract: admin products API returns stable 
       field: 'originalPriceMinor',
       rule: 'greater_than_price',
     });
+  });
+  it('POST /api/shop/admin/products: invalid prices JSON -> 400 INVALID_PRICES_JSON', async () => {
+    parseAdminProductFormMock.mockImplementation(() => {
+      throw new Error('parseAdminProductForm must not be called');
+    });
+
+    const { POST } = await import('@/app/api/shop/admin/products/route');
+
+    const req = new NextRequest(
+      new Request('http://localhost/api/shop/admin/products', {
+        method: 'POST',
+        body: makeFormData({ badge: 'SALE', pricesRaw: '{' }),
+      })
+    );
+
+    const res = await POST(req);
+    expect(res.status).toBe(400);
+
+    const json = await res.json();
+    expect(json.code).toBe('INVALID_PRICES_JSON');
+    expect(json.field).toBe('prices');
+
+    expect(productsServiceMock.createProduct).not.toHaveBeenCalled();
+    expect(parseAdminProductFormMock).not.toHaveBeenCalled();
+  });
+
+  it('PATCH /api/shop/admin/products/:id: invalid prices JSON -> 400 INVALID_PRICES_JSON', async () => {
+    parseAdminProductFormMock.mockImplementation(() => {
+      throw new Error('parseAdminProductForm must not be called');
+    });
+
+    const { PATCH } = await import('@/app/api/shop/admin/products/[id]/route');
+
+    const req = new NextRequest(
+      new Request(
+        'http://localhost/api/shop/admin/products/11111111-1111-4111-8111-111111111111',
+        {
+          method: 'PATCH',
+          body: makeFormData({ badge: 'SALE', pricesRaw: '{' }),
+        }
+      )
+    );
+
+    const res = await PATCH(req, {
+      params: Promise.resolve({ id: '11111111-1111-4111-8111-111111111111' }),
+    });
+
+    expect(res.status).toBe(400);
+
+    const json = await res.json();
+    expect(json.code).toBe('INVALID_PRICES_JSON');
+    expect(json.field).toBe('prices');
+
+    expect(productsServiceMock.updateProduct).not.toHaveBeenCalled();
+    expect(parseAdminProductFormMock).not.toHaveBeenCalled();
   });
 });

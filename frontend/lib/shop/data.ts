@@ -72,7 +72,6 @@ export async function getProductPageData(
   if (dbProduct) {
     const mapped = mapToShopProduct(dbProduct);
     if (mapped) return { kind: "available", product: mapped };
-    // якщо валідатор/маппер впав — не “видаємо” биті дані
     return { kind: "not_found" };
   }
 

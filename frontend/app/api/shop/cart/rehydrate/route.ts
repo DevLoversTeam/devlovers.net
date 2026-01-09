@@ -70,8 +70,6 @@ export async function POST(request: NextRequest) {
         { status: 422 }
       );
     }
-
-    // якщо ти десь все ще кидаєш MoneyValueError (coercePriceFromDb)
     if (error instanceof MoneyValueError) {
       return NextResponse.json(
         {

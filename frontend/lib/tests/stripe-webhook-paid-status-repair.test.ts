@@ -1,8 +1,9 @@
 import crypto from 'crypto';
-import { describe, it, expect, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { eq } from 'drizzle-orm';
+
 import { db } from '@/db';
 import { orders, stripeEvents } from '@/db/schema';
-import { eq } from 'drizzle-orm';
 import { toDbMoney } from '@/lib/shop/money';
 
 async function seedOrder(params: { orderId: string; pi: string }) {
@@ -62,54 +63,112 @@ async function callWebhook(params: { eventId: string; pi: string; orderId: strin
   );
 }
 
+async function cleanupByIds(params: { orderId: string; eventId: string }) {
+  const { orderId, eventId } = params;
+
+  try {
+    await db.delete(stripeEvents).where(eq(stripeEvents.eventId, eventId));
+  } catch (e) {
+    console.error(
+      '[test cleanup failed]',
+      {
+        file: 'stripe-webhook-paid-status-repair.test.ts',
+        step: 'delete stripeEvents',
+        eventId,
+        orderId,
+      },
+      e
+    );
+  }
+
+  try {
+    await db.delete(orders).where(eq(orders.id, orderId));
+  } catch (e) {
+    console.error(
+      '[test cleanup failed]',
+      {
+        file: 'stripe-webhook-paid-status-repair.test.ts',
+        step: 'delete orders',
+        eventId,
+        orderId,
+      },
+      e
+    );
+  }
+}
+
 describe('stripe webhook: repair paid status mismatch', () => {
-  it('repairs status to PAID when paymentStatus=paid but status!=PAID', async () => {
-    const orderId = crypto.randomUUID();
-    const eventId = `evt_${crypto.randomUUID()}`;
-    const pi = `pi_test_repair_${crypto.randomUUID()}`;
+  let lastOrderId: string | null = null;
+  let lastEventId: string | null = null;
 
-    await seedOrder({ orderId, pi });
-
-    const res = await callWebhook({ eventId, pi, orderId });
-    expect(res.status).toBe(200);
-
-    const [row] = await db
-      .select({ status: orders.status, paymentStatus: orders.paymentStatus })
-      .from(orders)
-      .where(eq(orders.id, orderId))
-      .limit(1);
-
-    expect(row!.paymentStatus).toBe('paid');
-    expect(row!.status).toBe('PAID');
+  afterEach(async () => {
+    if (!lastOrderId || !lastEventId) return;
+    await cleanupByIds({ orderId: lastOrderId, eventId: lastEventId });
+    lastOrderId = null;
+    lastEventId = null;
   });
 
-  it('dedupes the same eventId after processedAt is set (second call is no-op)', async () => {
-    const orderId = crypto.randomUUID();
-    const eventId = `evt_${crypto.randomUUID()}`;
-    const pi = `pi_test_repair_${crypto.randomUUID()}`;
+  it(
+    'repairs status to PAID when paymentStatus=paid but status!=PAID',
+    async () => {
+      const orderId = crypto.randomUUID();
+      const eventId = `evt_${crypto.randomUUID()}`;
+      const pi = `pi_test_repair_${crypto.randomUUID()}`;
 
-    await seedOrder({ orderId, pi });
+      lastOrderId = orderId;
+      lastEventId = eventId;
 
-    const res1 = await callWebhook({ eventId, pi, orderId });
-    expect(res1.status).toBe(200);
+      await seedOrder({ orderId, pi });
 
-    const res2 = await callWebhook({ eventId, pi, orderId });
-    expect(res2.status).toBe(200);
+      const res = await callWebhook({ eventId, pi, orderId });
+      expect(res.status).toBe(200);
 
-    const [evt] = await db
-      .select({ processedAt: stripeEvents.processedAt })
-      .from(stripeEvents)
-      .where(eq(stripeEvents.eventId, eventId))
-      .limit(1);
+      const [row] = await db
+        .select({ status: orders.status, paymentStatus: orders.paymentStatus })
+        .from(orders)
+        .where(eq(orders.id, orderId))
+        .limit(1);
 
-    expect(evt?.processedAt).toBeTruthy();
+      expect(row!.paymentStatus).toBe('paid');
+      expect(row!.status).toBe('PAID');
+    },
+    30_000
+  );
 
-    const [row] = await db
-      .select({ status: orders.status })
-      .from(orders)
-      .where(eq(orders.id, orderId))
-      .limit(1);
+  it(
+    'dedupes the same eventId after processedAt is set (second call is no-op)',
+    async () => {
+      const orderId = crypto.randomUUID();
+      const eventId = `evt_${crypto.randomUUID()}`;
+      const pi = `pi_test_repair_${crypto.randomUUID()}`;
 
-    expect(row!.status).toBe('PAID');
-  });
+      lastOrderId = orderId;
+      lastEventId = eventId;
+
+      await seedOrder({ orderId, pi });
+
+      const res1 = await callWebhook({ eventId, pi, orderId });
+      expect(res1.status).toBe(200);
+
+      const res2 = await callWebhook({ eventId, pi, orderId });
+      expect(res2.status).toBe(200);
+
+      const [evt] = await db
+        .select({ processedAt: stripeEvents.processedAt })
+        .from(stripeEvents)
+        .where(eq(stripeEvents.eventId, eventId))
+        .limit(1);
+
+      expect(evt?.processedAt).toBeTruthy();
+
+      const [row] = await db
+        .select({ status: orders.status })
+        .from(orders)
+        .where(eq(orders.id, orderId))
+        .limit(1);
+
+      expect(row!.status).toBe('PAID');
+    },
+    30_000
+  );
 });

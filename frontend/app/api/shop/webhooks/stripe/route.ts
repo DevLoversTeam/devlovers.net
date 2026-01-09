@@ -3,7 +3,7 @@ import Stripe from 'stripe';
 import { NextRequest, NextResponse } from 'next/server';
 import { and, eq, ne, or } from 'drizzle-orm';
 import { db } from '@/db';
-import { verifyWebhookSignature } from '@/lib/psp/stripe';
+import { verifyWebhookSignature, retrieveCharge } from '@/lib/psp/stripe';
 import { orders, stripeEvents } from '@/db/schema';
 import { restockOrder } from '@/lib/services/orders';
 import { logError } from '@/lib/logging';
@@ -233,7 +233,7 @@ export async function POST(request: NextRequest) {
         .where(eq(stripeEvents.eventId, event.id));
       return NextResponse.json({ received: true }, { status: 200 });
     };
-    // 1) Записуємо event ідемпотентно (без транзакцій)
+    // 1) Insert event idempotently (no transactions)
     const inserted = await db
       .insert(stripeEvents)
       .values({
@@ -301,7 +301,7 @@ export async function POST(request: NextRequest) {
         .where(eq(stripeEvents.eventId, event.id));
     }
 
-    // 3) Завантажуємо order
+    // 3) Load order
     const [order] = await db
       .select({
         id: orders.id,
@@ -331,7 +331,7 @@ export async function POST(request: NextRequest) {
       return ack();
     }
 
-    // 4) Бізнес-обробка
+    // 4) Business logic per event type
     if (eventType === 'payment_intent.succeeded') {
       const stripeAmount =
         paymentIntent?.amount_received ?? paymentIntent?.amount ?? null;
@@ -405,7 +405,7 @@ export async function POST(request: NextRequest) {
       const updated = await db
         .update(orders)
         .set({
-          status: 'PAID', // ✅ додати
+          status: 'PAID',
           paymentStatus: 'paid',
           updatedAt: new Date(),
           pspChargeId: latestChargeId ?? chargeForIntent?.id ?? null,
@@ -592,35 +592,89 @@ export async function POST(request: NextRequest) {
       eventType === 'charge.refund.updated'
     ) {
       const refund = refundObject ?? charge?.refunds?.data?.[0] ?? null;
+
       const refundChargeId =
-        refundObject &&
-        typeof (refundObject as any).charge === 'string' &&
-        (refundObject as any).charge.trim().length > 0
-          ? (refundObject as any).charge
+        refund && typeof refund.charge === 'string'
+          ? refund.charge.trim().length > 0
+            ? refund.charge
+            : null
+          : refund && typeof refund.charge === 'object' && refund.charge
+          ? typeof (refund.charge as any).id === 'string'
+            ? (refund.charge as any).id
+            : null
           : null;
 
       // MVP: only FULL refund.
       // - charge.refunded: amount_refunded === amount
-      // - charge.refund.updated: refund.amount === order.totalAmountMinor (no partial support)
+      // - charge.refund.updated: compare cumulative refunded for the charge vs charge.amount
       let isFullRefund = false;
 
-      if (eventType === 'charge.refunded' && charge) {
+      if (eventType === 'charge.refunded') {
+        const effectiveCharge = charge;
         const amt =
-          typeof (charge as any).amount === 'number'
-            ? (charge as any).amount
+          typeof (effectiveCharge as any)?.amount === 'number'
+            ? (effectiveCharge as any).amount
             : null;
         const refunded =
-          typeof (charge as any).amount_refunded === 'number'
-            ? (charge as any).amount_refunded
+          typeof (effectiveCharge as any)?.amount_refunded === 'number'
+            ? (effectiveCharge as any).amount_refunded
             : null;
+
         isFullRefund = amt != null && refunded != null && refunded === amt;
       } else if (eventType === 'charge.refund.updated' && refund) {
-        const refundAmt =
-          typeof (refund as any).amount === 'number'
-            ? (refund as any).amount
+        // Ensure we have the Charge to compute cumulative refunded correctly.
+        let effectiveCharge: Stripe.Charge | undefined;
+
+        if (typeof refund.charge === 'object' && refund.charge) {
+          effectiveCharge = refund.charge as Stripe.Charge;
+        } else if (typeof refund.charge === 'string' && refund.charge.trim()) {
+          // Critical: fetch charge to get full refunds list
+          effectiveCharge = await retrieveCharge(refund.charge.trim());
+        }
+
+        const amt =
+          typeof (effectiveCharge as any)?.amount === 'number'
+            ? (effectiveCharge as any).amount
             : null;
-        isFullRefund =
-          refundAmt != null && refundAmt === order.totalAmountMinor;
+
+        let cumulativeRefunded: number | null =
+          typeof (effectiveCharge as any)?.amount_refunded === 'number'
+            ? (effectiveCharge as any).amount_refunded
+            : null;
+
+        // Fallback: sum refunds list if present; include current refund if not in list yet
+        if (
+          cumulativeRefunded == null &&
+          Array.isArray((effectiveCharge as any)?.refunds?.data)
+        ) {
+          const list = (effectiveCharge as any).refunds.data as any[];
+          const sumFromList = list.reduce((sum, r) => {
+            const a = typeof r?.amount === 'number' ? r.amount : 0;
+            return sum + a;
+          }, 0);
+
+          const currentAmt =
+            typeof (refund as any).amount === 'number'
+              ? (refund as any).amount
+              : 0;
+
+          const hasCurrent = list.some(r => r?.id && r.id === refund.id);
+
+          cumulativeRefunded = sumFromList + (hasCurrent ? 0 : currentAmt);
+        }
+
+        // If still unknown -> fail to force retry (better than silently ignoring full refund)
+        if (amt == null || cumulativeRefunded == null) {
+          throw new Error('REFUND_FULLNESS_UNDETERMINED');
+        }
+
+        isFullRefund = cumulativeRefunded === amt;
+
+        // Prefer charge id from effectiveCharge for PSP fields
+        if (effectiveCharge?.id) {
+          // override local charge variable for downstream pspChargeId/metadata usage
+          charge = effectiveCharge;
+        }
       }
 
       if (!isFullRefund) {
@@ -629,7 +683,7 @@ export async function POST(request: NextRequest) {
           .set({
             updatedAt: new Date(),
             // do NOT change paymentStatus/status for partial refund
-            pspChargeId: charge?.id ?? null,
+            pspChargeId: charge?.id ?? refundChargeId ?? null,
             pspPaymentMethod: resolvePaymentMethod(paymentIntent, charge),
             pspStatusReason: 'PARTIAL_REFUND_IGNORED',
             pspMetadata: buildPspMetadata({

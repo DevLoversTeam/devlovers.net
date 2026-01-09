@@ -1108,7 +1108,7 @@ export async function restockOrder(
       return;
     }
 
-    // Stripe (or any non-none provider): stale orphan must become terminal, иначе sweep будет подбирать снова.
+    // Stripe (or any non-none provider): stale orphan must become terminal
     if (reason === 'stale') {
       const now = new Date();
       await db

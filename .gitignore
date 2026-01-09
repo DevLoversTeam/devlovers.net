@@ -65,3 +65,10 @@ next-env.d.ts
 .claude/
 CLAUDE.md
 frontend/docs/
+frontend/.env.bak
+
+
+# local env backups
+frontend/.env*.bak
+frontend/.env.bak
+

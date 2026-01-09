@@ -422,7 +422,6 @@ export async function POST(request: NextRequest) {
       minIntervalSeconds,
     });
   } catch (e) {
-    // не ковтай: але без твого логера — мінімально
     console.error('restock-stale failed', { runId, error: e });
     return NextResponse.json(
       { success: false, code: 'INTERNAL_ERROR' },

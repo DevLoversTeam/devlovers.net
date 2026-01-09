@@ -23,7 +23,7 @@ function orderCurrency(
   locale: string
 ): CurrencyCode {
   const c = order?.currency ?? resolveCurrencyFromLocale(locale);
-  return (c === 'UAH' ? 'UAH' : 'USD') as CurrencyCode;
+  return c === 'UAH' ? 'UAH' : 'USD';
 }
 
 function formatDateTime(value: Date | null | undefined) {
@@ -41,9 +41,9 @@ export default async function AdminOrderDetailPage({
   if (!order) notFound();
 
   const canRefund =
-  order.paymentProvider === 'stripe' &&
-  order.paymentStatus === 'paid' &&
-  !!order.paymentIntentId;
+    order.paymentProvider === 'stripe' &&
+    order.paymentStatus === 'paid' &&
+    !!order.paymentIntentId;
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">

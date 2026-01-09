@@ -24,6 +24,17 @@ type SaleRuleViolation = {
   rule: 'required' | 'greater_than_price';
 };
 
+type InvalidPricesJsonError = {
+  code: 'INVALID_PRICES_JSON';
+  field: 'prices';
+};
+
+function isInvalidPricesJsonError(
+  value: SaleRuleViolation | InvalidPricesJsonError | null
+): value is InvalidPricesJsonError {
+  return !!value && (value as any).code === 'INVALID_PRICES_JSON';
+}
+
 function findSaleRuleViolation(input: any): SaleRuleViolation | null {
   const badge = input?.badge;
   if (badge !== 'SALE') return null;
@@ -54,9 +65,10 @@ function findSaleRuleViolation(input: any): SaleRuleViolation | null {
 
   return null;
 }
+
 function getSaleViolationFromFormData(
   formData: FormData
-): SaleRuleViolation | null {
+): SaleRuleViolation | InvalidPricesJsonError | null {
   const badge = String(formData.get('badge') ?? '');
   if (badge !== 'SALE') return null;
 
@@ -67,9 +79,10 @@ function getSaleViolationFromFormData(
     const prices = JSON.parse(pricesRaw);
     return findSaleRuleViolation({ badge, prices });
   } catch {
-    return null;
+    return { code: 'INVALID_PRICES_JSON', field: 'prices' };
   }
 }
+
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -132,6 +145,18 @@ export async function PATCH(
     const formData = await request.formData();
     // PATCH inside PATCH() right after: const formData = await request.formData();
     const saleViolationFromForm = getSaleViolationFromFormData(formData);
+
+    if (isInvalidPricesJsonError(saleViolationFromForm)) {
+      return NextResponse.json(
+        {
+          error: 'Invalid prices JSON',
+          code: 'INVALID_PRICES_JSON',
+          field: 'prices',
+        },
+        { status: 400 }
+      );
+    }
+
     if (saleViolationFromForm) {
       const message =
         saleViolationFromForm.rule === 'required'

@@ -48,6 +48,7 @@ describe('P0-7 stuckReserving sweep: restock exactly-once', () => {
     const qty = 2;
     const createdAt = new Date(Date.now() - 2 * 60 * 60 * 1000); // old enough
     const idem = `test-stuck-${crypto.randomUUID()}`;
+    let originalError: unknown = null;
 
     try {
       await db.insert(products).values({
@@ -164,18 +165,26 @@ describe('P0-7 stuckReserving sweep: restock exactly-once', () => {
         .limit(1);
 
       expect(after2.restockedAt?.getTime()).toBe(after1.restockedAt?.getTime());
+    } catch (e) {
+      originalError = e;
     } finally {
       try {
         await cleanupTestRows({ orderId, productId });
-      } catch (e) {
-        // Don’t hide leaks: failing fast is better than contaminating subsequent tests.
-        console.error('[test cleanup failed]', {
-          orderId,
-          productId,
-          error: e,
-        });
-        throw e;
+      } catch (cleanupError) {
+        if (originalError) {
+          // cleanup failed, but do NOT hide the real test failure
+          console.error('[test cleanup failed]', {
+            orderId,
+            productId,
+            error: cleanupError,
+          });
+        } else {
+          // no original failure -> cleanup error is the failure
+          originalError = cleanupError;
+        }
       }
     }
+
+    if (originalError) throw originalError;
   }, 30_000);
 });

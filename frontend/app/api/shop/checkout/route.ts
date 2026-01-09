@@ -43,7 +43,6 @@ function isExpectedBusinessError(err: unknown): boolean {
   const code = getErrorCode(err);
   if (code && EXPECTED_BUSINESS_ERROR_CODES.has(code)) return true;
 
-  // fallback на типи (на випадок якщо десь нема .code)
   if (err instanceof IdempotencyConflictError) return true;
   if (err instanceof InvalidPayloadError) return true;
   if (err instanceof InsufficientStockError) return true;

@@ -248,7 +248,6 @@ export function ProductForm({
           setError(
             `${p.currency}: price is required when original price is set.`
           );
-          setIsSubmitting(false);
           return;
         }
       }
@@ -256,7 +255,6 @@ export function ProductForm({
       const usd = effectivePrices.find(p => p.currency === 'USD');
       if (!usd || !usd.price.length) {
         setError('USD price is required.');
-        setIsSubmitting(false);
         return;
       }
 
@@ -275,7 +273,6 @@ export function ProductForm({
         }));
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Invalid price value.');
-        setIsSubmitting(false);
         return;
       }
 

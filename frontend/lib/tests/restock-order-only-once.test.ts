@@ -22,6 +22,16 @@ async function countMoveKey(moveKey: string): Promise<number> {
   return Number(rows?.[0]?.n ?? 0);
 }
 
+function logCleanupFailed(payload: {
+  test: string;
+  orderId: string;
+  productId: string;
+  step: string;
+  error: unknown;
+}) {
+  console.error('[test cleanup failed]', payload);
+}
+
 describe('P0-8.4.2 restockOrder: order-level gate + idempotency', () => {
   it('duplicate failed restock must not increment stock twice and must not change restocked_at', async () => {
     const orderId = crypto.randomUUID();
@@ -146,10 +156,26 @@ describe('P0-8.4.2 restockOrder: order-level gate + idempotency', () => {
     } finally {
       try {
         await db.delete(orders).where(eq(orders.id, orderId));
-      } catch {}
+      } catch (error) {
+        logCleanupFailed({
+          test: 'restockOrder: duplicate failed restock',
+          orderId,
+          productId,
+          step: 'delete orders',
+          error,
+        });
+      }
       try {
         await db.delete(products).where(eq(products.id, productId));
-      } catch {}
+      } catch (error) {
+        logCleanupFailed({
+          test: 'restockOrder: duplicate failed restock',
+          orderId,
+          productId,
+          step: 'delete products',
+          error,
+        });
+      }
     }
   }, 30_000);
 
@@ -248,10 +274,26 @@ describe('P0-8.4.2 restockOrder: order-level gate + idempotency', () => {
     } finally {
       try {
         await db.delete(orders).where(eq(orders.id, orderId));
-      } catch {}
+      } catch (error) {
+        logCleanupFailed({
+          test: 'restockOrder: concurrent restocks',
+          orderId,
+          productId,
+          step: 'delete orders',
+          error,
+        });
+      }
       try {
         await db.delete(products).where(eq(products.id, productId));
-      } catch {}
+      } catch (error) {
+        logCleanupFailed({
+          test: 'restockOrder: concurrent restocks',
+          orderId,
+          productId,
+          step: 'delete products',
+          error,
+        });
+      }
     }
   }, 30_000);
 
@@ -386,10 +428,26 @@ describe('P0-8.4.2 restockOrder: order-level gate + idempotency', () => {
     } finally {
       try {
         await db.delete(orders).where(eq(orders.id, orderId));
-      } catch {}
+      } catch (error) {
+        logCleanupFailed({
+          test: 'restockOrder: duplicate refund restock',
+          orderId,
+          productId,
+          step: 'delete orders',
+          error,
+        });
+      }
       try {
         await db.delete(products).where(eq(products.id, productId));
-      } catch {}
+      } catch (error) {
+        logCleanupFailed({
+          test: 'restockOrder: duplicate refund restock',
+          orderId,
+          productId,
+          step: 'delete products',
+          error,
+        });
+      }
     }
-  });
+  }, 30000);
 }, 30000);

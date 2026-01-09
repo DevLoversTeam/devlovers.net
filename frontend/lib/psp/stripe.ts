@@ -88,6 +88,25 @@ export async function retrievePaymentIntent(paymentIntentId: string): Promise<{
     throw new Error('STRIPE_PAYMENT_INTENT_FAILED');
   }
 }
+export async function retrieveCharge(chargeId: string): Promise<Stripe.Charge> {
+  const { paymentsEnabled } = getStripeEnv();
+  const stripe = getStripeClient();
+
+  if (!paymentsEnabled || !stripe) {
+    throw new Error('STRIPE_DISABLED');
+  }
+
+  if (!chargeId || chargeId.trim().length === 0) {
+    throw new Error('STRIPE_INVALID_CHARGE_ID');
+  }
+
+  try {
+    return await stripe.charges.retrieve(chargeId);
+  } catch (error) {
+    logError('Stripe charge retrieval failed', error);
+    throw new Error('STRIPE_CHARGE_RETRIEVE_FAILED');
+  }
+}
 
 type VerifyWebhookSignatureInput = {
   rawBody: string;
