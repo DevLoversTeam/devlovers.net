@@ -51,7 +51,9 @@
     "clear": "Очистити",
     "noPosts": "Статей не знайдено",
     "noPostsForTags": "Немає статей за обраними тегами",
-    "visitResource": "Відвідати ресурс →"
+    "visitResource": "Відвідати ресурс",
+    "readArticle": "Читати статтю",
+    "aboutAuthor": "Про автора"
   },
   "footer": {
     "builtWith": "Створено",

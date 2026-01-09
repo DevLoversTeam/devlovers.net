@@ -51,7 +51,9 @@
     "clear": "Wyczyść",
     "noPosts": "Nie znaleziono wpisów",
     "noPostsForTags": "Nie znaleziono wpisów dla wybranych tagów",
-    "visitResource": "Odwiedź zasób →"
+    "visitResource": "Odwiedź zasób",
+    "readArticle": "Czytaj artykuł",
+    "aboutAuthor": "O autorze"
   },
   "footer": {
     "builtWith": "Zbudowane z",

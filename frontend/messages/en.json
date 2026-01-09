@@ -51,7 +51,9 @@
     "clear": "Clear",
     "noPosts": "No posts found",
     "noPostsForTags": "No posts found for selected tags",
-    "visitResource": "Visit Resource →"
+    "visitResource": "Visit Resource",
+    "readArticle": "Read article",
+    "aboutAuthor": "About the author"
   },
   "footer": {
     "builtWith": "Built with",

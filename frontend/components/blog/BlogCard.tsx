@@ -1,11 +1,10 @@
 'use client';
 
 import Image from 'next/image';
-import { Link } from '@/i18n/routing';
-
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import AuthorModal from './AuthorModal';
-import type { Post, PortableTextBlock } from './BlogFilters';
+import type { Post, PortableTextBlock, PortableTextSpan } from './BlogFilters';
 
 export default function BlogCard({
   post,
@@ -18,129 +17,132 @@ export default function BlogCard({
 }) {
   const t = useTranslations('blog');
   const excerpt =
-    post.body
-      ?.filter((b): b is PortableTextBlock => b?._type === 'block')
-      .map(b => (b.children || []).map(c => c.text || '').join(' '))
+    (post.body ?? [])
+      .filter((b): b is PortableTextBlock => b._type === 'block')
+      .map(b =>
+        (b.children ?? []).map((c: PortableTextSpan) => c.text ?? '').join(' ')
+      )
       .join(' ')
       .slice(0, 160) || '';
 
   return (
     <article
       className="
-        bg-white
-        border border-gray-200
-        rounded-xl
-        overflow-hidden
-        shadow-[0_1px_0_rgba(0,0,0,0.04)]
-        hover:shadow-[0_10px_30px_rgba(0,0,0,0.08)]
-        transition-shadow
+        group
+        bg-transparent
+        border-0
+        shadow-none
+        rounded-none
+        overflow-visible
         flex flex-col
+        h-full
+        transition-transform
+        hover:-translate-y-[2px]
       "
     >
       {post.mainImage && (
-        <div className="relative w-full aspect-[16/9] bg-gray-100">
+        <Link
+          href={`/blog/${post.slug.current}`}
+          className="
+            relative w-full aspect-[16/9]
+            overflow-hidden
+            rounded-lg
+            bg-gray-100
+            shadow-[0_8px_24px_rgba(0,0,0,0.08)]
+            transition-transform duration-300
+            group-hover:translate-y-[-2px]
+          "
+        >
           <Image
             src={post.mainImage}
             alt={post.title}
             fill
-            className="object-cover"
+            className="object-cover grayscale brightness-95 contrast-110 scale-[1.03]"
+            priority={false}
           />
-        </div>
+        </Link>
       )}
 
-      <div className="p-6 flex flex-col flex-grow">
+      <div className="pt-8 flex flex-col flex-1">
         <Link
           href={`/blog/${post.slug.current}`}
           className="
-            text-[22px]
-            font-semibold
-            text-gray-900
-            leading-snug
-            hover:text-gray-700
-            transition
-          "
+    block
+    text-[20px] md:text-[22px]
+    font-semibold
+    tracking-tight
+    leading-[1.25]
+    text-gray-950
+    transition
+    hover:text-[#ff00ff]
+    hover:underline
+    group-hover:text-[#ff00ff]
+    group-hover:underline
+    underline-offset-4
+  "
           style={{ fontFamily: 'ui-rounded, system-ui, -apple-system' }}
         >
           {post.title}
         </Link>
 
-        {post.author && (
-          <AuthorModal author={post.author} publishedAt={post.publishedAt} />
-        )}
-
-        {post.categories?.length ? (
-          <div className="mt-3 flex flex-wrap gap-2">
-            {post.categories.map((cat, i) => (
-              <span
-                key={`${cat}-${i}`}
-                className="
-                  text-xs
-                  bg-gray-100
-                  text-gray-700
-                  border border-gray-300
-                  px-3 py-1.5
-                  rounded-md
-                "
-              >
-                {cat}
-              </span>
-            ))}
-          </div>
-        ) : null}
-
-        {post.tags?.length ? (
-          <div className="mt-3 flex flex-wrap gap-2">
-            {post.tags.map((tag, i) => {
-              const norm = tag.toLowerCase();
-              const active = selectedTags.includes(norm);
-
-              return (
-                <button
-                  key={`${norm}-${i}`}
-                  type="button"
-                  onClick={() => onTagToggle(norm)}
-                  className={[
-                    'text-xs px-3 py-1.5 rounded-md border transition',
-                    active
-                      ? 'bg-gray-200 border-gray-400 text-gray-800'
-                      : 'bg-gray-50 border-gray-300 text-gray-600 hover:bg-gray-100',
-                  ].join(' ')}
-                >
-                  #{norm}
-                </button>
-              );
-            })}
-          </div>
-        ) : null}
-
         {excerpt && (
-          <p className="mt-4 text-gray-600 leading-relaxed flex-grow">
+          <p className="mt-4 text-[15px] md:text-[16px] leading-[1.7] text-gray-700 max-w-[60ch] line-clamp-3">
             {excerpt}
           </p>
         )}
 
-        {post.resourceLink && (
-          <a
-            href={post.resourceLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="
-              mt-6
-              inline-flex items-center justify-center
-              w-full
-              border border-gray-300
-              bg-white
-              text-gray-800
-              px-4 py-2.5
-              rounded-lg
-              text-sm font-medium
-              hover:bg-gray-50 hover:border-gray-400
-              transition
-            "
-          >
-            {t('visitResource')}
-          </a>
-        )}
+        <div className="mt-auto pt-6">
+          {post.author && (
+            <div className="mb-3">
+              <AuthorModal
+                author={post.author}
+                publishedAt={post.publishedAt}
+              />
+            </div>
+          )}
+
+          {post.tags?.length ? (
+            <div className="flex flex-wrap gap-3">
+              {post.tags.map((tag, i) => {
+                const norm = tag.toLowerCase();
+                const active = selectedTags.includes(norm);
+
+                return (
+                  <button
+                    key={`${norm}-${i}`}
+                    onClick={() => onTagToggle(norm)}
+                    className={[
+                      'text-[13px] text-gray-400 transition underline-offset-4',
+                      active
+                        ? 'text-gray-950 underline'
+                        : 'hover:text-[#ff00ff] hover:underline',
+                    ].join(' ')}
+                  >
+                    #{norm}
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
+
+          {post.resourceLink && (
+            <a
+              href={post.resourceLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="
+                mt-5 inline-flex
+                text-[13px] font-medium
+                text-gray-700
+                hover:text-[#ff00ff]
+                hover:underline
+                underline-offset-4
+              "
+            >
+              → {t('readArticle')}
+            </a>
+          )}
+        </div>
       </div>
     </article>
   );
