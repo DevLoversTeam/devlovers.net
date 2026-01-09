@@ -31,6 +31,28 @@ export const paymentStatusEnum = pgEnum('payment_status', [
 ]);
 export const currencyEnum = pgEnum('currency', ['USD', 'UAH']);
 
+export const orderStatusEnum = pgEnum('order_status', [
+  'CREATED',
+  'INVENTORY_RESERVED',
+  'INVENTORY_FAILED',
+  'PAID',
+  'CANCELED',
+]);
+
+export const inventoryStatusEnum = pgEnum('inventory_status', [
+  'none',
+  'reserving',
+  'reserved',
+  'release_pending',
+  'released',
+  'failed',
+]);
+
+export const inventoryMoveTypeEnum = pgEnum('inventory_move_type', [
+  'reserve',
+  'release',
+]);
+
 export const products = pgTable(
   'products',
   {
@@ -119,6 +141,14 @@ export const orders = pgTable(
       .notNull()
       .default(sql`'{}'::jsonb`),
 
+    status: orderStatusEnum('status').notNull().default('CREATED'),
+    inventoryStatus: inventoryStatusEnum('inventory_status')
+      .notNull()
+      .default('none'),
+    failureCode: text('failure_code'),
+    failureMessage: text('failure_message'),
+    idempotencyRequestHash: text('idempotency_request_hash'),
+
     stockRestored: boolean('stock_restored').notNull().default(false),
     restockedAt: timestamp('restocked_at', { mode: 'date' }),
     idempotencyKey: varchar('idempotency_key', { length: 128 })
@@ -129,6 +159,10 @@ export const orders = pgTable(
       .defaultNow()
       .notNull()
       .$onUpdate(() => new Date()),
+    sweepClaimedAt: timestamp('sweep_claimed_at'),
+    sweepClaimExpiresAt: timestamp('sweep_claim_expires_at'),
+    sweepRunId: uuid('sweep_run_id'),
+    sweepClaimedBy: varchar('sweep_claimed_by', { length: 64 }),
   },
   table => [
     check(
@@ -144,18 +178,28 @@ export const orders = pgTable(
       sql`${table.paymentProvider} <> 'none' OR ${table.paymentIntentId} IS NULL`
     ),
     check(
+      'orders_psp_fields_null_when_none',
+      sql`${table.paymentProvider} <> 'none' OR (
+        ${table.pspChargeId} IS NULL AND
+        ${table.pspPaymentMethod} IS NULL AND
+        ${table.pspStatusReason} IS NULL
+      )`
+    ),
+    check(
       'orders_total_amount_mirror_consistent',
       sql`${table.totalAmount} = (${table.totalAmountMinor}::numeric / 100)`
     ),
     check(
-      'orders_payment_status_paid_when_none',
-      sql`${table.paymentProvider} <> 'none' OR ${table.paymentStatus} = 'paid'`
+      'orders_payment_status_valid_when_none',
+      sql`${table.paymentProvider} <> 'none' OR ${table.paymentStatus} in ('paid','failed')`
     ),
+    index('orders_sweep_claim_expires_idx').on(table.sweepClaimExpiresAt),
   ]
 );
 
 export const orderItems = pgTable(
   'order_items',
+
   {
     id: uuid('id').defaultRandom().primaryKey(),
     orderId: uuid('order_id')
@@ -164,6 +208,9 @@ export const orderItems = pgTable(
     productId: uuid('product_id')
       .notNull()
       .references(() => products.id),
+    // product variants (must be NOT NULL to make UNIQUE + ON CONFLICT reliable)
+    selectedSize: text('selected_size').notNull().default(''),
+    selectedColor: text('selected_color').notNull().default(''),
     quantity: integer('quantity').notNull(),
 
     unitPriceMinor: integer('unit_price_minor').notNull(),
@@ -182,6 +229,12 @@ export const orderItems = pgTable(
   },
   t => [
     index('order_items_order_id_idx').on(t.orderId),
+    uniqueIndex('order_items_order_variant_uq').on(
+      t.orderId,
+      t.productId,
+      t.selectedSize,
+      t.selectedColor
+    ),
     check('order_items_quantity_positive', sql`${t.quantity} > 0`),
     check(
       'order_items_unit_price_minor_non_negative',
@@ -216,6 +269,7 @@ export const stripeEvents = pgTable(
     orderId: uuid('order_id').references(() => orders.id),
     eventType: text('event_type').notNull(),
     paymentStatus: text('payment_status'),
+    processedAt: timestamp('processed_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
   },
   table => [uniqueIndex('stripe_events_event_id_idx').on(table.eventId)]
@@ -277,6 +331,48 @@ export const productPrices = pgTable(
   ]
 );
 
+export const inventoryMoves = pgTable(
+  'inventory_moves',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+
+    moveKey: varchar('move_key', { length: 200 }).notNull(),
+
+    orderId: uuid('order_id')
+      .notNull()
+      .references(() => orders.id, { onDelete: 'cascade' }),
+
+    productId: uuid('product_id')
+      .notNull()
+      .references(() => products.id),
+
+    type: inventoryMoveTypeEnum('type').notNull(),
+
+    quantity: integer('quantity').notNull(),
+
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  t => [
+    uniqueIndex('inventory_moves_move_key_uq').on(t.moveKey),
+    index('inventory_moves_order_id_idx').on(t.orderId),
+    index('inventory_moves_product_id_idx').on(t.productId),
+    check('inventory_moves_quantity_gt_0', sql`${t.quantity} > 0`),
+  ]
+);
+
+export const internalJobState = pgTable('internal_job_state', {
+  jobName: text('job_name').primaryKey(),
+  nextAllowedAt: timestamp('next_allowed_at', { withTimezone: true }).notNull(),
+  lastRunId: uuid('last_run_id'),
+  updatedAt: timestamp('updated_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
 export type DbProductPrice = typeof productPrices.$inferSelect;
 export type DbOrder = typeof orders.$inferSelect;
 export type DbOrderItem = typeof orderItems.$inferSelect;
+export type DbInventoryMove = typeof inventoryMoves.$inferSelect;
+export type DbInternalJobState = typeof internalJobState.$inferSelect;

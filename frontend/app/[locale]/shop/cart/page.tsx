@@ -89,8 +89,7 @@ export default function CartPage() {
       router.push(
         `/shop/checkout/success?orderId=${data.orderId}${paymentsDisabledFlag}`
       );
-    } catch (error) {
-      console.error('Checkout failed', error);
+    } catch {
       setCheckoutError('Unable to start checkout right now.');
     } finally {
       setIsCheckingOut(false);

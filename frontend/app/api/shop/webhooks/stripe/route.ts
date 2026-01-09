@@ -1,13 +1,12 @@
 // app/api/webhooks/stripe/route.ts
 import Stripe from 'stripe';
 import { NextRequest, NextResponse } from 'next/server';
-import { eq } from 'drizzle-orm';
+import { and, eq, ne, or } from 'drizzle-orm';
 import { db } from '@/db';
 import { verifyWebhookSignature } from '@/lib/psp/stripe';
 import { orders, stripeEvents } from '@/db/schema';
 import { restockOrder } from '@/lib/services/orders';
 import { logError } from '@/lib/logging';
-import { toCents } from '@/lib/shop/money';
 
 function logWebhookEvent(payload: {
   orderId?: string;
@@ -33,6 +32,18 @@ function getLatestCharge(paymentIntent?: PaymentIntentWithCharges) {
   const charges = paymentIntent?.charges?.data;
   if (!charges || charges.length === 0) return undefined;
   return charges[0];
+}
+
+function getLatestChargeId(
+  paymentIntent?: Stripe.PaymentIntent
+): string | null {
+  const lc = paymentIntent?.latest_charge;
+  if (!lc) return null;
+  if (typeof lc === 'string') return lc.trim().length > 0 ? lc : null;
+  if (typeof lc === 'object' && 'id' in lc && typeof lc.id === 'string') {
+    return lc.id;
+  }
+  return null;
 }
 
 function resolvePaymentMethod(
@@ -117,7 +128,7 @@ export async function POST(request: NextRequest) {
       'Stripe webhook missing signature header',
       new Error('MISSING_STRIPE_SIGNATURE')
     );
-    return NextResponse.json({ error: 'missing_signature' }, { status: 400 });
+    return NextResponse.json({ code: 'INVALID_SIGNATURE' }, { status: 400 });
   }
 
   let event: Stripe.Event;
@@ -126,7 +137,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof Error && error.message === 'STRIPE_WEBHOOK_DISABLED') {
       logError('Stripe webhook disabled or misconfigured', error);
-      return NextResponse.json({ error: 'WEBHOOK_DISABLED' }, { status: 500 });
+      return NextResponse.json({ code: 'WEBHOOK_DISABLED' }, { status: 500 });
     }
 
     if (
@@ -134,10 +145,9 @@ export async function POST(request: NextRequest) {
       error.message === 'STRIPE_INVALID_SIGNATURE'
     ) {
       logError('Stripe webhook signature verification failed', error);
-      return NextResponse.json({ error: 'INVALID_SIGNATURE' }, { status: 400 });
+      return NextResponse.json({ code: 'INVALID_SIGNATURE' }, { status: 400 });
     }
 
-    logError('Stripe webhook signature verification failed', error);
     throw error;
   }
 
@@ -146,9 +156,13 @@ export async function POST(request: NextRequest) {
 
   let paymentIntent: Stripe.PaymentIntent | undefined;
   let charge: Stripe.Charge | undefined;
+  let refundObject: Stripe.Refund | undefined;
 
   if (eventType.startsWith('payment_intent.')) {
     paymentIntent = rawObject as Stripe.PaymentIntent;
+  } else if (eventType === 'charge.refund.updated') {
+    // Stripe sends Refund object for charge.refund.updated
+    refundObject = rawObject as Stripe.Refund;
   } else if (eventType.startsWith('charge.')) {
     charge = rawObject as Stripe.Charge;
   }
@@ -158,7 +172,7 @@ export async function POST(request: NextRequest) {
   if (paymentIntent && typeof paymentIntent.id === 'string') {
     paymentIntentId = paymentIntent.id;
   } else if (charge) {
-    const pi = charge.payment_intent; 
+    const pi = charge.payment_intent;
 
     if (typeof pi === 'string') {
       paymentIntentId = pi;
@@ -166,15 +180,28 @@ export async function POST(request: NextRequest) {
       pi &&
       typeof pi === 'object' &&
       'id' in pi &&
-      typeof pi.id === 'string'
+      typeof (pi as any).id === 'string'
     ) {
-      paymentIntentId = pi.id;
+      paymentIntentId = (pi as any).id;
+    }
+  } else if (refundObject) {
+    const pi = (refundObject as any).payment_intent;
+    if (typeof pi === 'string') {
+      paymentIntentId = pi;
+    } else if (
+      pi &&
+      typeof pi === 'object' &&
+      'id' in pi &&
+      typeof (pi as any).id === 'string'
+    ) {
+      paymentIntentId = (pi as any).id;
     }
   }
 
   const paymentStatus: string | null =
     (paymentIntent?.status as string | null | undefined) ??
     (charge?.status as string | null | undefined) ??
+    ((refundObject as any)?.status as string | null | undefined) ??
     null;
 
   const rawMetadata =
@@ -183,7 +210,10 @@ export async function POST(request: NextRequest) {
       : undefined;
 
   const metadata: Stripe.Metadata | undefined =
-    paymentIntent?.metadata ?? charge?.metadata ?? rawMetadata;
+    paymentIntent?.metadata ??
+    charge?.metadata ??
+    (refundObject as any)?.metadata ??
+    rawMetadata;
 
   const orderId =
     typeof metadata?.orderId === 'string' && metadata.orderId.trim().length > 0
@@ -195,268 +225,481 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ received: true }, { status: 200 });
   }
 
-  const isUniqueConstraintError = (error: unknown) =>
-    typeof error === 'object' &&
-    error !== null &&
-    'code' in error &&
-    (error as { code: string }).code === '23505';
-
   try {
-    const response = await db.transaction(async tx => {
-      try {
+    const ack = async () => {
+      await db
+        .update(stripeEvents)
+        .set({ processedAt: new Date() })
+        .where(eq(stripeEvents.eventId, event.id));
+      return NextResponse.json({ received: true }, { status: 200 });
+    };
+    // 1) Записуємо event ідемпотентно (без транзакцій)
+    const inserted = await db
+      .insert(stripeEvents)
+      .values({
+        provider: 'stripe',
+        eventId: event.id,
+        paymentIntentId,
+        orderId: orderId ?? null,
+        eventType,
+        paymentStatus,
+        processedAt: null,
+      })
+      .onConflictDoNothing()
+      .returning({ eventId: stripeEvents.eventId });
 
-        await tx.insert(stripeEvents).values({
-          provider: 'stripe',
+    if (inserted.length === 0) {
+      const [existing] = await db
+        .select({ processedAt: stripeEvents.processedAt })
+        .from(stripeEvents)
+        .where(eq(stripeEvents.eventId, event.id))
+        .limit(1);
+
+      if (existing?.processedAt) {
+        console.log('stripe_webhook_duplicate_event', {
           eventId: event.id,
-          paymentIntentId,
-          orderId: orderId ?? null,
           eventType,
-          paymentStatus,
         });
-      } catch (error) {
-        if (isUniqueConstraintError(error)) {
-          console.log('stripe_webhook_duplicate_event', {
-            eventId: event.id,
-            eventType,
-          });
-
-          return NextResponse.json({ received: true }, { status: 200 });
-        }
-
-        throw error;
+        return NextResponse.json({ received: true }, { status: 200 });
       }
+      // processedAt is NULL => previous attempt failed; reprocess
+    }
 
-      let order:
-        | {
-            id: string;
-            paymentIntentId: string | null;
-            totalAmount: number;
-            currency: string;
-          }
-        | undefined;
+    //2) Resolve orderId:
+    //    primary: metadata.orderId
+    //    fallback: orders.paymentIntentId == paymentIntentId (ONLY if unique match)
+    let resolvedOrderId: string | undefined = orderId;
 
-      if (orderId) {
-        const [foundOrder] = await tx
-          .select({
-            id: orders.id,
-            paymentIntentId: orders.paymentIntentId,
-            totalAmount: orders.totalAmount,
-            currency: orders.currency,
-          })
-          .from(orders)
-          .where(eq(orders.id, orderId))
-          .limit(1);
+    if (!resolvedOrderId) {
+      const candidates = await db
+        .select({ id: orders.id })
+        .from(orders)
+        .where(eq(orders.paymentIntentId, paymentIntentId))
+        .limit(2);
 
-        if (foundOrder) {
-          order = {
-            id: foundOrder.id,
-            paymentIntentId: foundOrder.paymentIntentId,
-            totalAmount: Number(foundOrder.totalAmount),
-            currency: foundOrder.currency,
-          };
-        }
-      }
-
-      if (!orderId) {
+      if (candidates.length === 1) {
+        resolvedOrderId = candidates[0].id;
+      } else {
         console.log('stripe_webhook_missing_order_id', {
           paymentIntentId,
           eventType,
-          reason: 'missing_order_id_metadata',
+          reason:
+            candidates.length === 0
+              ? 'no_order_for_payment_intent'
+              : 'multiple_orders_for_payment_intent',
         });
-
-        return NextResponse.json({ received: true }, { status: 200 });
-      }
-
-      if (!order) {
         logWebhookEvent({ eventType, paymentIntentId, paymentStatus });
-        return NextResponse.json({ received: true }, { status: 200 });
+        return ack();
       }
+    }
 
-      if (order.paymentIntentId && order.paymentIntentId !== paymentIntentId) {
-        console.log('stripe_webhook_payment_intent_mismatch', {
+    // backfill stripe_events.orderId if resolved via fallback (or to normalize)
+    if (resolvedOrderId && !orderId) {
+      await db
+        .update(stripeEvents)
+        .set({ orderId: resolvedOrderId })
+        .where(eq(stripeEvents.eventId, event.id));
+    }
+
+    // 3) Завантажуємо order
+    const [order] = await db
+      .select({
+        id: orders.id,
+        paymentIntentId: orders.paymentIntentId,
+        totalAmountMinor: orders.totalAmountMinor,
+        currency: orders.currency,
+        paymentStatus: orders.paymentStatus,
+        status: orders.status,
+      })
+      .from(orders)
+      .where(eq(orders.id, resolvedOrderId))
+      .limit(1);
+
+    if (!order) {
+      logWebhookEvent({ eventType, paymentIntentId, paymentStatus });
+      return ack();
+    }
+
+    if (order.paymentIntentId && order.paymentIntentId !== paymentIntentId) {
+      console.log('stripe_webhook_payment_intent_mismatch', {
+        orderId: order.id,
+        paymentIntentId,
+        orderPaymentIntentId: order.paymentIntentId,
+        eventType,
+        reason: 'payment_intent_mismatch',
+      });
+      return ack();
+    }
+
+    // 4) Бізнес-обробка
+    if (eventType === 'payment_intent.succeeded') {
+      const stripeAmount =
+        paymentIntent?.amount_received ?? paymentIntent?.amount ?? null;
+      const stripeCurrency = paymentIntent?.currency;
+      const orderAmountMinor = order.totalAmountMinor;
+
+      const amountMatches = stripeAmount === orderAmountMinor;
+      const currencyMatches =
+        stripeCurrency?.toUpperCase() === order.currency.toUpperCase();
+
+      if (stripeAmount == null || !amountMatches || !currencyMatches) {
+        const mismatchReason =
+          !amountMatches && !currencyMatches
+            ? 'amount_and_currency_mismatch'
+            : !amountMatches
+            ? 'amount_mismatch'
+            : 'currency_mismatch';
+
+        const chargeForIntent = getLatestCharge(paymentIntent as any);
+
+        await db
+          .update(orders)
+          .set({
+            updatedAt: new Date(),
+            pspStatusReason: mismatchReason,
+            pspMetadata: buildPspMetadata({
+              eventType,
+              paymentIntent,
+              charge: chargeForIntent,
+              extra: {
+                mismatch: {
+                  reason: mismatchReason,
+                  eventId: event.id,
+                  expected: {
+                    amountMinor: orderAmountMinor,
+                    currency: order.currency,
+                  },
+                  actual: {
+                    amountMinor: stripeAmount,
+                    currency: stripeCurrency,
+                  },
+
+                  // keep old fields for backward-compat/debug grepping
+                  stripeAmount,
+                  orderAmountMinor,
+                  stripeCurrency,
+                  orderCurrency: order.currency,
+                },
+              },
+            }),
+          })
+          .where(eq(orders.id, order.id));
+
+        console.log('stripe_webhook_mismatch', {
           orderId: order.id,
           paymentIntentId,
-          orderPaymentIntentId: order.paymentIntentId,
           eventType,
-          reason: 'payment_intent_mismatch',
+          stripeAmount,
+          orderAmountMinor,
+          stripeCurrency,
+          orderCurrency: order.currency,
+          reason: mismatchReason,
         });
 
-        return NextResponse.json({ received: true }, { status: 200 });
+        return ack();
       }
 
-      if (eventType === 'payment_intent.succeeded') {
-        const stripeAmount =
-          paymentIntent?.amount_received ?? paymentIntent?.amount ?? null;
-        const stripeCurrency = paymentIntent?.currency;
-        const orderAmountCents = toCents(order.totalAmount);
-        const amountMatches = stripeAmount === orderAmountCents;
-        const currencyMatches =
-          stripeCurrency?.toUpperCase() === order.currency.toUpperCase();
+      const chargeForIntent = getLatestCharge(paymentIntent as any);
+      const latestChargeId = getLatestChargeId(paymentIntent);
 
-        if (stripeAmount == null || !amountMatches || !currencyMatches) {
-          const mismatchReason =
-            !amountMatches && !currencyMatches
-              ? 'amount_and_currency_mismatch'
-              : !amountMatches
-              ? 'amount_mismatch'
-              : 'currency_mismatch';
-
-          const chargeForIntent = getLatestCharge(paymentIntent);
-
-          await tx
-            .update(orders)
-            .set({
-              updatedAt: new Date(),
-              pspStatusReason: mismatchReason,
-              pspMetadata: buildPspMetadata({
-                eventType,
-                paymentIntent,
-                charge: chargeForIntent,
-                extra: {
-                  mismatch: {
-                    reason: mismatchReason,
-                    stripeAmount,
-                    orderAmountCents,
-                    stripeCurrency,
-                    orderCurrency: order.currency,
-                  },
-                },
-              }),
-            })
-            .where(eq(orders.id, order.id));
-
-          console.log('stripe_webhook_mismatch', {
-            orderId: order.id,
-            paymentIntentId,
+      const updated = await db
+        .update(orders)
+        .set({
+          status: 'PAID', // ✅ додати
+          paymentStatus: 'paid',
+          updatedAt: new Date(),
+          pspChargeId: latestChargeId ?? chargeForIntent?.id ?? null,
+          pspPaymentMethod: resolvePaymentMethod(
+            paymentIntent,
+            chargeForIntent
+          ),
+          pspStatusReason: paymentIntent?.status ?? 'succeeded',
+          pspMetadata: buildPspMetadata({
             eventType,
-            stripeAmount,
-            orderAmountCents,
-            stripeCurrency,
-            orderCurrency: order.currency,
-            reason: mismatchReason,
-          });
+            paymentIntent,
+            charge: chargeForIntent ?? undefined,
+          }),
+        })
+        .where(
+          and(
+            eq(orders.id, order.id),
+            eq(orders.stockRestored, false),
+            ne(orders.inventoryStatus, 'released'),
 
-          return NextResponse.json({ received: true }, { status: 200 });
-        }
+            // allow "repair": if already paid but status != PAID, still update
+            or(ne(orders.paymentStatus, 'paid'), ne(orders.status, 'PAID')),
 
-        const chargeForIntent = getLatestCharge(paymentIntent);
+            // keep safety gates
+            ne(orders.paymentStatus, 'failed'),
+            ne(orders.paymentStatus, 'refunded')
+          )
+        )
 
-        await tx
+        .returning({ id: orders.id });
+
+      // if returning empty => we did NOT "win" the right to mark paid; do nothing
+      if (updated.length === 0) {
+        // REPAIR: paid already, but status is inconsistent
+        await db
           .update(orders)
           .set({
-            paymentStatus: 'paid',
+            status: 'PAID',
             updatedAt: new Date(),
-            pspChargeId: chargeForIntent?.id ?? null,
+            pspChargeId: latestChargeId ?? chargeForIntent?.id ?? null,
             pspPaymentMethod: resolvePaymentMethod(
               paymentIntent,
               chargeForIntent
             ),
-            pspStatusReason: null,
+            pspStatusReason: paymentIntent?.status ?? 'succeeded',
             pspMetadata: buildPspMetadata({
               eventType,
               paymentIntent,
-              charge: chargeForIntent,
+              charge: chargeForIntent ?? undefined,
             }),
           })
-          .where(eq(orders.id, order.id));
-      } else if (eventType === 'payment_intent.payment_failed') {
-        const chargeForIntent = getLatestCharge(paymentIntent);
-        const failureReason =
-          paymentIntent?.last_payment_error?.decline_code ??
-          paymentIntent?.last_payment_error?.code ??
-          paymentIntent?.cancellation_reason ??
-          paymentIntent?.status ??
-          'payment_failed';
+          .where(
+            and(
+              eq(orders.id, order.id),
+              eq(orders.paymentStatus, 'paid'),
+              ne(orders.status, 'PAID'),
+              eq(orders.stockRestored, false),
+              ne(orders.inventoryStatus, 'released')
+            )
+          );
 
-        await tx
-          .update(orders)
-          .set({
-            paymentStatus: 'failed',
-            updatedAt: new Date(),
-            pspChargeId: chargeForIntent?.id ?? null,
-            pspPaymentMethod: resolvePaymentMethod(
-              paymentIntent,
-              chargeForIntent
-            ),
-            pspStatusReason: failureReason,
-            pspMetadata: buildPspMetadata({
-              eventType,
-              paymentIntent,
-              charge: chargeForIntent,
-            }),
-          })
-          .where(eq(orders.id, order.id));
-
-        await restockOrder(order.id, { reason: 'failed', tx });
-      } else if (eventType === 'payment_intent.canceled') {
-        const chargeForIntent = getLatestCharge(paymentIntent);
-        const cancellationReason =
-          paymentIntent?.cancellation_reason ??
-          paymentIntent?.status ??
-          'canceled';
-
-        await tx
-          .update(orders)
-          .set({
-            paymentStatus: 'failed',
-            updatedAt: new Date(),
-            pspChargeId: chargeForIntent?.id ?? null,
-            pspPaymentMethod: resolvePaymentMethod(
-              paymentIntent,
-              chargeForIntent
-            ),
-            pspStatusReason: cancellationReason,
-            pspMetadata: buildPspMetadata({
-              eventType,
-              paymentIntent,
-              charge: chargeForIntent,
-            }),
-          })
-          .where(eq(orders.id, order.id));
-
-        await restockOrder(order.id, { reason: 'canceled', tx });
-      } else if (
-        eventType === 'charge.refunded' ||
-        eventType === 'charge.refund.updated'
-      ) {
-        const refund = charge?.refunds?.data?.[0] ?? null;
-
-        await tx
-          .update(orders)
-          .set({
-            updatedAt: new Date(),
-            pspChargeId: charge?.id ?? null,
-            pspPaymentMethod: resolvePaymentMethod(paymentIntent, charge),
-            pspStatusReason: refund?.reason ?? refund?.status ?? 'refunded',
-            pspMetadata: buildPspMetadata({
-              eventType,
-              paymentIntent,
-              charge: charge ?? undefined,
-              refund,
-            }),
-          })
-          .where(eq(orders.id, order.id));
-
-        await restockOrder(order.id, { reason: 'refunded', tx });
-      } else {
         logWebhookEvent({
           orderId: order.id,
           paymentIntentId,
           paymentStatus,
           eventType,
         });
-        return NextResponse.json({ received: true }, { status: 200 });
+        return ack();
       }
+
       logWebhookEvent({
         orderId: order.id,
         paymentIntentId,
         paymentStatus,
         eventType,
       });
-      return NextResponse.json({ received: true }, { status: 200 });
-    });
+      return ack();
+    }
 
-    return response;
+    if (eventType === 'payment_intent.payment_failed') {
+      if (order.paymentStatus === 'paid') {
+        logWebhookEvent({
+          orderId: order.id,
+          paymentIntentId,
+          paymentStatus,
+          eventType,
+        });
+        return ack();
+      }
+
+      const chargeForIntent = getLatestCharge(paymentIntent as any);
+      const failureReason =
+        paymentIntent?.last_payment_error?.decline_code ??
+        paymentIntent?.last_payment_error?.code ??
+        paymentIntent?.cancellation_reason ??
+        paymentIntent?.status ??
+        'payment_failed';
+
+      const updated = await db
+        .update(orders)
+        .set({
+          paymentStatus: 'failed',
+          updatedAt: new Date(),
+          pspChargeId: chargeForIntent?.id ?? null,
+          pspPaymentMethod: resolvePaymentMethod(
+            paymentIntent,
+            chargeForIntent
+          ),
+          pspStatusReason: failureReason,
+          pspMetadata: buildPspMetadata({
+            eventType,
+            paymentIntent,
+            charge: chargeForIntent,
+          }),
+        })
+        .where(and(eq(orders.id, order.id), ne(orders.paymentStatus, 'failed')))
+        .returning({ id: orders.id });
+
+      if (updated.length > 0) {
+        await restockOrder(order.id, { reason: 'failed' });
+      }
+
+      logWebhookEvent({
+        orderId: order.id,
+        paymentIntentId,
+        paymentStatus,
+        eventType,
+      });
+      return ack();
+    }
+
+    if (eventType === 'payment_intent.canceled') {
+      if (order.paymentStatus === 'paid') {
+        logWebhookEvent({
+          orderId: order.id,
+          paymentIntentId,
+          paymentStatus,
+          eventType,
+        });
+        return ack();
+      }
+
+      const chargeForIntent = getLatestCharge(paymentIntent as any);
+      const cancellationReason =
+        paymentIntent?.cancellation_reason ??
+        paymentIntent?.status ??
+        'canceled';
+
+      const updated = await db
+        .update(orders)
+        .set({
+          paymentStatus: 'failed',
+          updatedAt: new Date(),
+          pspChargeId: chargeForIntent?.id ?? null,
+          pspPaymentMethod: resolvePaymentMethod(
+            paymentIntent,
+            chargeForIntent
+          ),
+          pspStatusReason: cancellationReason,
+          pspMetadata: buildPspMetadata({
+            eventType,
+            paymentIntent,
+            charge: chargeForIntent,
+          }),
+        })
+        .where(and(eq(orders.id, order.id), ne(orders.paymentStatus, 'failed')))
+        .returning({ id: orders.id });
+
+      if (updated.length > 0) {
+        await restockOrder(order.id, { reason: 'canceled' });
+      }
+
+      logWebhookEvent({
+        orderId: order.id,
+        paymentIntentId,
+        paymentStatus,
+        eventType,
+      });
+      return ack();
+    }
+
+    if (
+      eventType === 'charge.refunded' ||
+      eventType === 'charge.refund.updated'
+    ) {
+      const refund = refundObject ?? charge?.refunds?.data?.[0] ?? null;
+      const refundChargeId =
+        refundObject &&
+        typeof (refundObject as any).charge === 'string' &&
+        (refundObject as any).charge.trim().length > 0
+          ? (refundObject as any).charge
+          : null;
+
+      // MVP: only FULL refund.
+      // - charge.refunded: amount_refunded === amount
+      // - charge.refund.updated: refund.amount === order.totalAmountMinor (no partial support)
+      let isFullRefund = false;
+
+      if (eventType === 'charge.refunded' && charge) {
+        const amt =
+          typeof (charge as any).amount === 'number'
+            ? (charge as any).amount
+            : null;
+        const refunded =
+          typeof (charge as any).amount_refunded === 'number'
+            ? (charge as any).amount_refunded
+            : null;
+        isFullRefund = amt != null && refunded != null && refunded === amt;
+      } else if (eventType === 'charge.refund.updated' && refund) {
+        const refundAmt =
+          typeof (refund as any).amount === 'number'
+            ? (refund as any).amount
+            : null;
+        isFullRefund =
+          refundAmt != null && refundAmt === order.totalAmountMinor;
+      }
+
+      if (!isFullRefund) {
+        await db
+          .update(orders)
+          .set({
+            updatedAt: new Date(),
+            // do NOT change paymentStatus/status for partial refund
+            pspChargeId: charge?.id ?? null,
+            pspPaymentMethod: resolvePaymentMethod(paymentIntent, charge),
+            pspStatusReason: 'PARTIAL_REFUND_IGNORED',
+            pspMetadata: buildPspMetadata({
+              eventType,
+              paymentIntent,
+              charge: charge ?? undefined,
+              refund,
+              extra: {
+                refundGate: {
+                  decision: 'ignored',
+                  expectedAmountMinor: order.totalAmountMinor,
+                  chargeAmount: (charge as any)?.amount ?? null,
+                  chargeAmountRefunded:
+                    (charge as any)?.amount_refunded ?? null,
+                  refundAmount: (refund as any)?.amount ?? null,
+                  eventId: event.id,
+                },
+              },
+            }),
+          })
+          .where(eq(orders.id, order.id));
+
+        logWebhookEvent({
+          orderId: order.id,
+          paymentIntentId,
+          paymentStatus,
+          eventType,
+        });
+        return ack();
+      }
+
+      await db
+        .update(orders)
+        .set({
+          updatedAt: new Date(),
+          paymentStatus: 'refunded',
+          status: 'CANCELED', // terminal in current enum
+          pspChargeId: charge?.id ?? refundChargeId ?? null,
+          pspPaymentMethod: resolvePaymentMethod(paymentIntent, charge),
+          pspStatusReason: refund?.reason ?? refund?.status ?? 'refunded',
+          pspMetadata: buildPspMetadata({
+            eventType,
+            paymentIntent,
+            charge: charge ?? undefined,
+            refund,
+          }),
+        })
+        .where(
+          and(eq(orders.id, order.id), ne(orders.paymentStatus, 'refunded'))
+        );
+
+      await restockOrder(order.id, { reason: 'refunded' });
+
+      logWebhookEvent({
+        orderId: order.id,
+        paymentIntentId,
+        paymentStatus,
+        eventType,
+      });
+      return ack();
+    }
+
+    // default ack
+    logWebhookEvent({
+      orderId: order.id,
+      paymentIntentId,
+      paymentStatus,
+      eventType,
+    });
+    return ack();
   } catch (error) {
     logError('Stripe webhook processing failed', error);
     return NextResponse.json({ error: 'internal_error' }, { status: 500 });

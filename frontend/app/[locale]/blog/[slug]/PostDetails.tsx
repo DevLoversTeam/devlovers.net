@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import groq from 'groq';
+import { getTranslations } from 'next-intl/server';
 import { client } from '@/client';
 
 type SocialLink = {
@@ -75,6 +76,7 @@ export default async function PostDetails({
   slug: string;
   locale: string;
 }) {
+  const t = await getTranslations({ locale, namespace: 'blog' });
   const slugParam = String(slug || '').trim();
   if (!slugParam) return notFound();
 
@@ -86,6 +88,13 @@ export default async function PostDetails({
   if (!post?.title) return notFound();
 
   const authorBio = plainTextFromPortableText(post.author?.bio);
+  const authorName = post.author?.name;
+  const authorMetaParts = [
+    post.author?.jobTitle,
+    post.author?.company,
+    post.author?.city,
+  ].filter(Boolean) as string[];
+  const authorMeta = authorMetaParts.join(' · ');
 
   return (
     <main className="max-w-3xl mx-auto px-6 py-12">
@@ -127,7 +136,7 @@ export default async function PostDetails({
             src={post.mainImage}
             alt={post.title || 'Post image'}
             fill
-            className="object-cover object-center"
+            className="object-cover object-top scale-[1.05]"
           />
         </div>
       )}
@@ -169,12 +178,37 @@ export default async function PostDetails({
         </div>
       )}
 
-      {(authorBio || post.author?.jobTitle) && (
+      {(authorBio || authorName || authorMeta) && (
         <section className="mt-12 p-6 rounded-2xl border border-gray-200 bg-white">
-          <h2 className="text-lg font-semibold">About the author</h2>
-          <p className="mt-2 text-sm text-gray-700 whitespace-pre-line">
-            {authorBio}
-          </p>
+          <h2 className="text-lg font-semibold">{t('aboutAuthor')}</h2>
+          <div className="mt-4 flex items-start gap-4">
+            {post.author?.image && (
+              <div className="relative w-14 h-14 shrink-0">
+                <Image
+                  src={post.author.image}
+                  alt={authorName || 'Author'}
+                  fill
+                  className="rounded-full object-cover border border-gray-200"
+                />
+              </div>
+            )}
+
+            <div className="min-w-0">
+              {authorName && (
+                <p className="text-sm font-semibold text-gray-900">
+                  {authorName}
+                </p>
+              )}
+              {authorMeta && (
+                <p className="mt-1 text-sm text-gray-600">{authorMeta}</p>
+              )}
+              {authorBio && (
+                <p className="mt-3 text-sm text-gray-700 whitespace-pre-line leading-relaxed">
+                  {authorBio}
+                </p>
+              )}
+            </div>
+          </div>
         </section>
       )}
     </main>

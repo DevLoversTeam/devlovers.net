@@ -52,7 +52,8 @@
     "noPosts": "Nie znaleziono wpisów",
     "noPostsForTags": "Nie znaleziono wpisów dla wybranych tagów",
     "visitResource": "Odwiedź zasób",
-    "readArticle": "Czytaj artykuł"
+    "readArticle": "Czytaj artykuł",
+    "aboutAuthor": "O autorze"
   },
   "footer": {
     "builtWith": "Zbudowane z",
@@ -142,5 +143,12 @@
         "5": "Polecam DevLovers wszystkim moim podopiecznym. Stało się to niezbędne dla każdego, kto przygotowuje się do technicznych rozmów kwalifikacyjnych."
       }
     }
+  },
+  "CookieBanner": {
+    "title": "🍪 Dbamy o Twoją prywatność",
+    "description": "Używamy plików cookie, aby poprawić jakość przeglądania, wyświetlać spersonalizowane treści i analizować nasz ruch. Klikając „Zaakceptuj”, wyrażasz zgodę na używanie plików cookie. Przeczytaj naszą",
+    "policyLink": "Politykę Prywatności",
+    "accept": "Zaakceptuj",
+    "decline": "Odrzuć"
   }
 }

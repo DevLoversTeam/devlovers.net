@@ -14,3 +14,8 @@ export function logError(context: string, error: unknown) {
 }
 
 
+export function logWarn(message: string, meta?: Record<string, unknown>) {
+  // ВАЖЛИВО: console.warn -> stderr, нам треба stdout, щоб не спамити stderr у тестах/CI
+  if (meta) console.info(`WARN: ${message}`, meta);
+  else console.info(`WARN: ${message}`);
+}

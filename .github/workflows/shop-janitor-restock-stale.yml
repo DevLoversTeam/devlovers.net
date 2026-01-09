@@ -1,0 +1,53 @@
+name: Shop janitor - restock stale orders
+
+on:
+  schedule:
+    - cron: "*/5 * * * *" # every 5 minutes (UTC)
+  workflow_dispatch: {}
+
+concurrency:
+  group: shop-janitor-restock-stale
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # Step-level guard: тут secrets дозволені
+      - name: Guard config (skip if secrets missing)
+        id: guard
+        run: |
+          if [ -z "$JANITOR_URL" ] || [ -z "$INTERNAL_JANITOR_SECRET" ]; then
+            echo "::warning::JANITOR_URL or INTERNAL_JANITOR_SECRET is empty; skipping janitor run."
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "should_run=true" >> "$GITHUB_OUTPUT"
+        env:
+          JANITOR_URL: ${{ secrets.JANITOR_URL }}
+          INTERNAL_JANITOR_SECRET: ${{ secrets.INTERNAL_JANITOR_SECRET }}
+
+      - name: Run janitor
+        if: steps.guard.outputs.should_run == 'true'
+        run: node scripts/shop-janitor-restock-stale.mjs
+        env:
+          JANITOR_URL: ${{ secrets.JANITOR_URL }}
+          INTERNAL_JANITOR_SECRET: ${{ secrets.INTERNAL_JANITOR_SECRET }}
+          JANITOR_TIMEOUT_MS: "25000"

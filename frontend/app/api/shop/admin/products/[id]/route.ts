@@ -18,7 +18,58 @@ import {
 } from '@/lib/services/products';
 
 const productIdParamSchema = z.object({ id: z.string().uuid() });
+type SaleRuleViolation = {
+  currency: string;
+  field: 'originalPriceMinor';
+  rule: 'required' | 'greater_than_price';
+};
 
+function findSaleRuleViolation(input: any): SaleRuleViolation | null {
+  const badge = input?.badge;
+  if (badge !== 'SALE') return null;
+
+  const prices = Array.isArray(input?.prices) ? input.prices : [];
+  for (const row of prices) {
+    const currency = String(row?.currency ?? '');
+    const priceMinor = Number(row?.priceMinor);
+    const originalPriceMinor =
+      row?.originalPriceMinor == null ? null : Number(row.originalPriceMinor);
+
+    if (!currency || !Number.isFinite(priceMinor)) continue;
+
+    if (originalPriceMinor == null) {
+      return { currency, field: 'originalPriceMinor', rule: 'required' };
+    }
+    if (
+      !Number.isFinite(originalPriceMinor) ||
+      originalPriceMinor <= priceMinor
+    ) {
+      return {
+        currency,
+        field: 'originalPriceMinor',
+        rule: 'greater_than_price',
+      };
+    }
+  }
+
+  return null;
+}
+function getSaleViolationFromFormData(
+  formData: FormData
+): SaleRuleViolation | null {
+  const badge = String(formData.get('badge') ?? '');
+  if (badge !== 'SALE') return null;
+
+  const pricesRaw = formData.get('prices');
+  if (typeof pricesRaw !== 'string' || !pricesRaw.trim()) return null;
+
+  try {
+    const prices = JSON.parse(pricesRaw);
+    return findSaleRuleViolation({ badge, prices });
+  } catch {
+    return null;
+  }
+}
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -79,12 +130,47 @@ export async function PATCH(
     }
 
     const formData = await request.formData();
+    // PATCH inside PATCH() right after: const formData = await request.formData();
+    const saleViolationFromForm = getSaleViolationFromFormData(formData);
+    if (saleViolationFromForm) {
+      const message =
+        saleViolationFromForm.rule === 'required'
+          ? 'SALE badge requires original price for each provided currency.'
+          : 'SALE badge requires original price to be greater than price.';
+
+      return NextResponse.json(
+        {
+          error: message,
+          code: 'SALE_ORIGINAL_REQUIRED',
+          field: 'prices',
+          details: saleViolationFromForm,
+        },
+        { status: 400 }
+      );
+    }
 
     // 1) Parse/validate base fields via existing parser
     const parsed = parseAdminProductForm(formData, { mode: 'update' });
     if (!parsed.ok) {
       return NextResponse.json(
         { error: 'Invalid product data', details: parsed.error.format() },
+        { status: 400 }
+      );
+    }
+    const saleViolation = findSaleRuleViolation(parsed.data as any);
+    if (saleViolation) {
+      const message =
+        saleViolation.rule === 'required'
+          ? 'SALE badge requires original price for each provided currency.'
+          : 'SALE badge requires original price to be greater than price.';
+
+      return NextResponse.json(
+        {
+          error: message,
+          code: 'SALE_ORIGINAL_REQUIRED',
+          field: 'prices',
+          details: saleViolation,
+        },
         { status: 400 }
       );
     }
@@ -106,8 +192,14 @@ export async function PATCH(
       logError('Failed to update product', error);
 
       if (error instanceof InvalidPayloadError) {
+        const anyErr = error as any;
         return NextResponse.json(
-          { error: error.message || 'Invalid product data', code: error.code },
+          {
+            error: error.message || 'Invalid product data',
+            code: anyErr.code,
+            field: anyErr.field,
+            details: anyErr.details,
+          },
           { status: 400 }
         );
       }
