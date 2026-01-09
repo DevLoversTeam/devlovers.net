@@ -32,7 +32,8 @@ type InvalidPricesJsonError = {
 function isInvalidPricesJsonError(
   value: SaleRuleViolation | InvalidPricesJsonError | null
 ): value is InvalidPricesJsonError {
-  return !!value && (value as any).code === 'INVALID_PRICES_JSON';
+  if (!value || typeof value !== 'object') return false;
+  return (value as Record<string, unknown>).code === 'INVALID_PRICES_JSON';
 }
 
 function findSaleRuleViolation(input: any): SaleRuleViolation | null {

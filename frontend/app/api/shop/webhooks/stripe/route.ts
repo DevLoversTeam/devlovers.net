@@ -112,6 +112,17 @@ function buildPspMetadata(params: {
   };
 }
 
+function shouldRestockFromWebhook(order: {
+  stockRestored: boolean | null;
+  inventoryStatus: string | null;
+}) {
+  // Webhook-level gate: avoid unnecessary calls when we already restored stock
+  // or inventory has already been released.
+  if (order.stockRestored === true) return false;
+  if (order.inventoryStatus === 'released') return false;
+  return true;
+}
+
 export async function POST(request: NextRequest) {
   let rawBody: string;
 
@@ -310,6 +321,8 @@ export async function POST(request: NextRequest) {
         currency: orders.currency,
         paymentStatus: orders.paymentStatus,
         status: orders.status,
+        stockRestored: orders.stockRestored,
+        inventoryStatus: orders.inventoryStatus,
       })
       .from(orders)
       .where(eq(orders.id, resolvedOrderId))
@@ -504,7 +517,7 @@ export async function POST(request: NextRequest) {
         paymentIntent?.status ??
         'payment_failed';
 
-      const updated = await db
+      await db
         .update(orders)
         .set({
           paymentStatus: 'failed',
@@ -521,10 +534,11 @@ export async function POST(request: NextRequest) {
             charge: chargeForIntent,
           }),
         })
-        .where(and(eq(orders.id, order.id), ne(orders.paymentStatus, 'failed')))
-        .returning({ id: orders.id });
+        .where(
+          and(eq(orders.id, order.id), ne(orders.paymentStatus, 'failed'))
+        );
 
-      if (updated.length > 0) {
+      if (shouldRestockFromWebhook(order)) {
         await restockOrder(order.id, { reason: 'failed' });
       }
 
@@ -554,7 +568,7 @@ export async function POST(request: NextRequest) {
         paymentIntent?.status ??
         'canceled';
 
-      const updated = await db
+      await db
         .update(orders)
         .set({
           paymentStatus: 'failed',
@@ -571,10 +585,11 @@ export async function POST(request: NextRequest) {
             charge: chargeForIntent,
           }),
         })
-        .where(and(eq(orders.id, order.id), ne(orders.paymentStatus, 'failed')))
-        .returning({ id: orders.id });
+        .where(
+          and(eq(orders.id, order.id), ne(orders.paymentStatus, 'failed'))
+        );
 
-      if (updated.length > 0) {
+      if (shouldRestockFromWebhook(order)) {
         await restockOrder(order.id, { reason: 'canceled' });
       }
 
@@ -611,16 +626,44 @@ export async function POST(request: NextRequest) {
 
       if (eventType === 'charge.refunded') {
         const effectiveCharge = charge;
+
         const amt =
           typeof (effectiveCharge as any)?.amount === 'number'
             ? (effectiveCharge as any).amount
             : null;
-        const refunded =
+
+        let cumulativeRefunded: number | null =
           typeof (effectiveCharge as any)?.amount_refunded === 'number'
             ? (effectiveCharge as any).amount_refunded
             : null;
 
-        isFullRefund = amt != null && refunded != null && refunded === amt;
+        // Fallback: sum refunds list if amount_refunded is missing
+        if (
+          cumulativeRefunded == null &&
+          Array.isArray((effectiveCharge as any)?.refunds?.data)
+        ) {
+          const list = (effectiveCharge as any).refunds.data as any[];
+          const sumFromList = list.reduce((sum, r) => {
+            const a = typeof r?.amount === 'number' ? r.amount : 0;
+            return sum + a;
+          }, 0);
+
+          const currentAmt =
+            typeof (refund as any)?.amount === 'number'
+              ? (refund as any).amount
+              : 0;
+
+          const hasCurrent =
+            refund?.id && list.some(r => r?.id && r.id === refund.id);
+
+          cumulativeRefunded = sumFromList + (hasCurrent ? 0 : currentAmt);
+        }
+
+        if (amt == null || cumulativeRefunded == null) {
+          throw new Error('REFUND_FULLNESS_UNDETERMINED');
+        }
+
+        isFullRefund = cumulativeRefunded === amt;
       } else if (eventType === 'charge.refund.updated' && refund) {
         // Ensure we have the Charge to compute cumulative refunded correctly.
         let effectiveCharge: Stripe.Charge | undefined;
@@ -735,7 +778,9 @@ export async function POST(request: NextRequest) {
           and(eq(orders.id, order.id), ne(orders.paymentStatus, 'refunded'))
         );
 
-      await restockOrder(order.id, { reason: 'refunded' });
+      if (shouldRestockFromWebhook(order)) {
+        await restockOrder(order.id, { reason: 'refunded' });
+      }
 
       logWebhookEvent({
         orderId: order.id,

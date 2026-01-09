@@ -1,3 +1,5 @@
+// C:\Users\milka\devlovers.net\frontend\lib\tests\stripe-webhook-paid-status-repair.test.ts
+
 import crypto from 'crypto';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { eq } from 'drizzle-orm';
@@ -10,7 +12,7 @@ async function seedOrder(params: { orderId: string; pi: string }) {
   const now = new Date();
   await db.insert(orders).values({
     id: params.orderId,
-    idempotencyKey: `test:${crypto.randomUUID()}`, // required in your schema
+    idempotencyKey: `test:${crypto.randomUUID()}`,
     totalAmountMinor: 2500,
     totalAmount: toDbMoney(2500),
     currency: 'USD',
@@ -26,8 +28,14 @@ async function seedOrder(params: { orderId: string; pi: string }) {
   });
 }
 
-async function callWebhook(params: { eventId: string; pi: string; orderId: string }) {
+async function callWebhook(params: {
+  eventId: string;
+  pi: string;
+  orderId: string;
+}) {
+  // Keep this pattern: reset module cache so route picks up env + mocks.
   vi.resetModules();
+
   vi.doMock('@/lib/psp/stripe', async () => {
     const actual = await vi.importActual<any>('@/lib/psp/stripe');
     return {
@@ -49,8 +57,9 @@ async function callWebhook(params: { eventId: string; pi: string; orderId: strin
     };
   });
 
-  process.env.STRIPE_SECRET_KEY = 'sk_test_dummy';
-  process.env.STRIPE_WEBHOOK_SECRET = 'whsec_test_dummy';
+  // Task #5: avoid process.env mutation; use stubEnv + restore in afterEach.
+  vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_dummy');
+  vi.stubEnv('STRIPE_WEBHOOK_SECRET', 'whsec_test_dummy');
 
   const { POST } = await import('@/app/api/shop/webhooks/stripe/route');
 
@@ -102,8 +111,13 @@ describe('stripe webhook: repair paid status mismatch', () => {
   let lastEventId: string | null = null;
 
   afterEach(async () => {
-    if (!lastOrderId || !lastEventId) return;
-    await cleanupByIds({ orderId: lastOrderId, eventId: lastEventId });
+    // restore env stubs to avoid cross-test coupling
+    vi.unstubAllEnvs();
+
+    if (lastOrderId && lastEventId) {
+      await cleanupByIds({ orderId: lastOrderId, eventId: lastEventId });
+    }
+
     lastOrderId = null;
     lastEventId = null;
   });

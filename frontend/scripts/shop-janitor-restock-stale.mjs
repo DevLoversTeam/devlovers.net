@@ -18,13 +18,32 @@ const DEFAULT_TIMEOUT_MS = 25_000;
 const MIN_TIMEOUT_MS = 1_000;
 
 const rawTimeout = (process.env.JANITOR_TIMEOUT_MS ?? '').trim();
-const n = Number.parseInt(rawTimeout, 10);
 
-// NaN / '' / abc / 0 / negative -> default
-const timeoutMs =
-  Number.isFinite(n) && n > 0
-    ? Math.max(MIN_TIMEOUT_MS, n)
-    : DEFAULT_TIMEOUT_MS;
+let timeoutMs = DEFAULT_TIMEOUT_MS;
+
+if (rawTimeout) {
+  // strict: only digits, no "123abc", no floats, no underscores
+  if (/^\d+$/.test(rawTimeout)) {
+    const n = Number(rawTimeout);
+    if (Number.isSafeInteger(n) && n > 0) {
+      timeoutMs = Math.max(MIN_TIMEOUT_MS, n);
+    } else {
+      console.warn(
+        '[janitor] Invalid JANITOR_TIMEOUT_MS (non-positive/out of range). Using default.',
+        {
+          raw: rawTimeout,
+        }
+      );
+    }
+  } else {
+    console.warn(
+      '[janitor] Invalid JANITOR_TIMEOUT_MS (must be digits). Using default.',
+      {
+        raw: rawTimeout,
+      }
+    );
+  }
+}
 
 console.log('[janitor] timeoutMs=', timeoutMs, 'raw=', rawTimeout || '(empty)');
 
