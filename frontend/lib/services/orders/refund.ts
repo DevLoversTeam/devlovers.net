@@ -4,11 +4,11 @@ import { db } from '@/db';
 import { orders } from '@/db/schema/shop';
 import { type PaymentStatus } from '@/lib/shop/payments';
 import { type OrderSummaryWithMinor } from '@/lib/types/shop';
-
 import { InvalidPayloadError, OrderNotFoundError } from '../errors';
 import { resolvePaymentProvider } from './_shared';
-import { getOrderItems, parseOrderSummary } from './summary';
 import { restockOrder } from './restock';
+import { guardedPaymentStatusUpdate } from './payment-state';
+import { getOrderById } from './summary';
 
 export async function refundOrder(
   orderId: string
@@ -40,20 +40,37 @@ export async function refundOrder(
     );
   }
 
-  const [updatedOrder] = await db
-    .update(orders)
-    .set({ paymentStatus: 'refunded', updatedAt: new Date() })
-    .where(eq(orders.id, orderId))
-    .returning();
+  const res = await guardedPaymentStatusUpdate({
+    orderId,
+    paymentProvider: order.paymentProvider,
+    to: 'refunded',
+    source: 'admin',
+    note: 'refundOrder()',
+    set: { updatedAt: new Date(), status: 'CANCELED' },
+  });
 
-  if (!updatedOrder) throw new Error('Failed to update order status');
+  if (!res.applied) {
+    if (res.reason === 'ALREADY_IN_STATE') {
+      // idempotent
+    } else if (res.reason === 'INVALID_TRANSITION') {
+      throw new InvalidPayloadError(
+        'Order cannot be refunded from the current status.'
+      );
+    } else if (res.reason === 'PROVIDER_MISMATCH') {
+      throw new InvalidPayloadError('Order payment provider mismatch.');
+    } else if (res.reason === 'BLOCKED') {
+      throw new InvalidPayloadError('Refund blocked by safety gates.');
+    } else {
+      throw new OrderNotFoundError('Order not found');
+    }
+  }
 
-  const items = await getOrderItems(orderId);
-  const summary = parseOrderSummary(updatedOrder, items);
+  const canRestock =
+    res.applied || (!res.applied && res.reason === 'ALREADY_IN_STATE');
 
-  if (!order.stockRestored) {
+  if (canRestock && !order.stockRestored) {
     await restockOrder(orderId, { reason: 'refunded' });
   }
 
-  return summary;
+  return getOrderById(orderId);
 }

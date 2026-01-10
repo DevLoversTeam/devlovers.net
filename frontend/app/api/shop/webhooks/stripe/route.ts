@@ -7,6 +7,7 @@ import { verifyWebhookSignature, retrieveCharge } from '@/lib/psp/stripe';
 import { orders, stripeEvents } from '@/db/schema';
 import { restockOrder } from '@/lib/services/orders';
 import { logError } from '@/lib/logging';
+import { guardedPaymentStatusUpdate } from '@/lib/services/orders/payment-state';
 
 function warnRefundFullnessUndetermined(payload: {
   eventId: string;
@@ -433,12 +434,18 @@ export async function POST(request: NextRequest) {
       const chargeForIntent = getLatestCharge(paymentIntent as any);
       const latestChargeId = getLatestChargeId(paymentIntent);
 
-      const updated = await db
-        .update(orders)
-        .set({
+      const now = new Date();
+
+      await guardedPaymentStatusUpdate({
+        orderId: order.id,
+        paymentProvider: 'stripe',
+        to: 'paid',
+        source: 'stripe_webhook',
+        eventId: event.id,
+        note: eventType,
+        set: {
           status: 'PAID',
-          paymentStatus: 'paid',
-          updatedAt: new Date(),
+          updatedAt: now,
           pspChargeId: latestChargeId ?? chargeForIntent?.id ?? null,
           pspPaymentMethod: resolvePaymentMethod(
             paymentIntent,
@@ -450,62 +457,17 @@ export async function POST(request: NextRequest) {
             paymentIntent,
             charge: chargeForIntent ?? undefined,
           }),
-        })
-        .where(
-          and(
-            eq(orders.id, order.id),
-            eq(orders.stockRestored, false),
-            ne(orders.inventoryStatus, 'released'),
-
-            // allow "repair": if already paid but status != PAID, still update
-            or(ne(orders.paymentStatus, 'paid'), ne(orders.status, 'PAID')),
-
-            // keep safety gates
-            ne(orders.paymentStatus, 'failed'),
-            ne(orders.paymentStatus, 'refunded')
-          )
-        )
-
-        .returning({ id: orders.id });
-
-      // if returning empty => we did NOT "win" the right to mark paid; do nothing
-      if (updated.length === 0) {
-        // REPAIR: paid already, but status is inconsistent
-        await db
-          .update(orders)
-          .set({
-            status: 'PAID',
-            updatedAt: new Date(),
-            pspChargeId: latestChargeId ?? chargeForIntent?.id ?? null,
-            pspPaymentMethod: resolvePaymentMethod(
-              paymentIntent,
-              chargeForIntent
-            ),
-            pspStatusReason: paymentIntent?.status ?? 'succeeded',
-            pspMetadata: buildPspMetadata({
-              eventType,
-              paymentIntent,
-              charge: chargeForIntent ?? undefined,
-            }),
-          })
-          .where(
-            and(
-              eq(orders.id, order.id),
-              eq(orders.paymentStatus, 'paid'),
-              ne(orders.status, 'PAID'),
-              eq(orders.stockRestored, false),
-              ne(orders.inventoryStatus, 'released')
-            )
-          );
-
-        logWebhookEvent({
-          orderId: order.id,
-          paymentIntentId,
-          paymentStatus,
-          eventType,
-        });
-        return ack();
-      }
+        },
+        extraWhere: and(
+          eq(orders.stockRestored, false),
+          ne(orders.inventoryStatus, 'released'),
+          // avoid churn when already consistent
+          or(ne(orders.paymentStatus, 'paid'), ne(orders.status, 'PAID')),
+          // explicit safety gates (redundant with matrix, but keep)
+          ne(orders.paymentStatus, 'failed'),
+          ne(orders.paymentStatus, 'refunded')
+        ),
+      });
 
       logWebhookEvent({
         orderId: order.id,
@@ -515,9 +477,17 @@ export async function POST(request: NextRequest) {
       });
       return ack();
     }
-
     if (eventType === 'payment_intent.payment_failed') {
       if (order.paymentStatus === 'paid') {
+        logWebhookEvent({
+          orderId: order.id,
+          paymentIntentId,
+          paymentStatus,
+          eventType,
+        });
+        return ack();
+      }
+      if (order.paymentStatus === 'refunded') {
         logWebhookEvent({
           orderId: order.id,
           paymentIntentId,
@@ -535,10 +505,14 @@ export async function POST(request: NextRequest) {
         paymentIntent?.status ??
         'payment_failed';
 
-      await db
-        .update(orders)
-        .set({
-          paymentStatus: 'failed',
+      await guardedPaymentStatusUpdate({
+        orderId: order.id,
+        paymentProvider: 'stripe',
+        to: 'failed',
+        source: 'stripe_webhook',
+        eventId: event.id,
+        note: eventType,
+        set: {
           updatedAt: new Date(),
           pspChargeId: chargeForIntent?.id ?? null,
           pspPaymentMethod: resolvePaymentMethod(
@@ -551,10 +525,8 @@ export async function POST(request: NextRequest) {
             paymentIntent,
             charge: chargeForIntent,
           }),
-        })
-        .where(
-          and(eq(orders.id, order.id), ne(orders.paymentStatus, 'failed'))
-        );
+        },
+      });
 
       if (shouldRestockFromWebhook(order)) {
         await restockOrder(order.id, { reason: 'failed' });
@@ -579,17 +551,29 @@ export async function POST(request: NextRequest) {
         });
         return ack();
       }
-
+      if (order.paymentStatus === 'refunded') {
+        logWebhookEvent({
+          orderId: order.id,
+          paymentIntentId,
+          paymentStatus,
+          eventType,
+        });
+        return ack();
+      }
       const chargeForIntent = getLatestCharge(paymentIntent as any);
       const cancellationReason =
         paymentIntent?.cancellation_reason ??
         paymentIntent?.status ??
         'canceled';
 
-      await db
-        .update(orders)
-        .set({
-          paymentStatus: 'failed',
+      await guardedPaymentStatusUpdate({
+        orderId: order.id,
+        paymentProvider: 'stripe',
+        to: 'failed',
+        source: 'stripe_webhook',
+        eventId: event.id,
+        note: eventType,
+        set: {
           updatedAt: new Date(),
           pspChargeId: chargeForIntent?.id ?? null,
           pspPaymentMethod: resolvePaymentMethod(
@@ -602,10 +586,8 @@ export async function POST(request: NextRequest) {
             paymentIntent,
             charge: chargeForIntent,
           }),
-        })
-        .where(
-          and(eq(orders.id, order.id), ne(orders.paymentStatus, 'failed'))
-        );
+        },
+      });
 
       if (shouldRestockFromWebhook(order)) {
         await restockOrder(order.id, { reason: 'canceled' });
@@ -916,11 +898,15 @@ export async function POST(request: NextRequest) {
         return ack();
       }
 
-      await db
-        .update(orders)
-        .set({
+      const refundRes = await guardedPaymentStatusUpdate({
+        orderId: order.id,
+        paymentProvider: 'stripe',
+        to: 'refunded',
+        source: 'stripe_webhook',
+        eventId: event.id,
+        note: eventType,
+        set: {
           updatedAt: new Date(),
-          paymentStatus: 'refunded',
           status: 'CANCELED', // terminal in current enum
           pspChargeId: charge?.id ?? refundChargeId ?? null,
           pspPaymentMethod: resolvePaymentMethod(paymentIntent, charge),
@@ -931,12 +917,14 @@ export async function POST(request: NextRequest) {
             charge: charge ?? undefined,
             refund,
           }),
-        })
-        .where(
-          and(eq(orders.id, order.id), ne(orders.paymentStatus, 'refunded'))
-        );
+        },
+      });
 
-      if (shouldRestockFromWebhook(order)) {
+      const canRestock =
+        refundRes.applied ||
+        (!refundRes.applied && refundRes.reason === 'ALREADY_IN_STATE');
+
+      if (canRestock && shouldRestockFromWebhook(order)) {
         await restockOrder(order.id, { reason: 'refunded' });
       }
 
