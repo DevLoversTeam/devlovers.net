@@ -8,6 +8,7 @@ import { type OrderSummaryWithMinor } from '@/lib/types/shop';
 import { InvalidPayloadError, OrderNotFoundError } from '../errors';
 import { resolvePaymentProvider } from './_shared';
 import { getOrderItems, parseOrderSummary } from './summary';
+import { guardedPaymentStatusUpdate } from './payment-state';
 
 export async function setOrderPaymentIntent({
   orderId,
@@ -52,19 +53,34 @@ export async function setOrderPaymentIntent({
     return parseOrderSummary(existing, items);
   }
 
-  const [updated] = await db
-    .update(orders)
-    .set({
+  const res = await guardedPaymentStatusUpdate({
+    orderId,
+    paymentProvider: 'stripe',
+    to: 'requires_payment',
+    source: 'payment_intent',
+    allowSameStateUpdate: true,
+    set: {
       paymentIntentId,
-      paymentStatus: 'requires_payment',
       updatedAt: new Date(),
-    })
-    .where(eq(orders.id, orderId))
-    .returning();
+    },
+  });
 
-  if (!updated) throw new Error('Failed to update order payment intent');
+  if (!res.applied) {
+    // Keep error semantics consistent with previous validation rules.
+    // This also guarantees we won't ever do failed/refunded -> requires_payment.
+    throw new InvalidPayloadError(
+      `Order payment intent update blocked (${res.reason}).`
+    );
+  }
+
+  const [updated] = await db
+    .select()
+    .from(orders)
+    .where(eq(orders.id, orderId))
+    .limit(1);
+
+  if (!updated) throw new OrderNotFoundError('Order not found');
 
   const items = await getOrderItems(orderId);
   return parseOrderSummary(updated, items);
 }
-

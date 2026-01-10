@@ -18,7 +18,7 @@ import {
   type OrderSummaryWithMinor,
 } from '@/lib/types/shop';
 import { coercePriceFromDb } from '@/db/queries/shop/orders';
-import { type PaymentStatus } from '@/lib/shop/payments';
+import { type PaymentProvider, type PaymentStatus } from '@/lib/shop/payments';
 
 import {
   InsufficientStockError,
@@ -44,6 +44,7 @@ import {
 
 import { getOrderById, getOrderByIdempotencyKey } from './summary';
 import { restockOrder } from './restock';
+import { guardedPaymentStatusUpdate } from './payment-state';
 
 async function reconcileNoPaymentOrder(
   orderId: string
@@ -144,12 +145,25 @@ async function reconcileNoPaymentOrder(
       .set({
         status: 'PAID',
         inventoryStatus: 'reserved',
-        paymentStatus: 'paid',
         failureCode: null,
         failureMessage: null,
         updatedAt: new Date(),
       })
       .where(eq(orders.id, orderId));
+
+    const payRes = await guardedPaymentStatusUpdate({
+      orderId,
+      paymentProvider: 'none',
+      to: 'paid',
+      source: 'checkout',
+    });
+
+    if (!payRes.applied && payRes.reason !== 'ALREADY_IN_STATE') {
+      throw new OrderStateInvalidError(
+        'Order paymentStatus transition blocked after reservation.',
+        { orderId, details: { reason: payRes.reason, from: payRes.from } }
+      );
+    }
 
     return getOrderById(orderId);
   } catch (e) {
@@ -176,7 +190,6 @@ async function reconcileNoPaymentOrder(
       .set({
         status: 'INVENTORY_FAILED',
         inventoryStatus: 'released',
-        paymentStatus: 'failed',
         failureCode: isOos ? 'OUT_OF_STOCK' : 'INTERNAL_ERROR',
         failureMessage: isOos
           ? e.message
@@ -186,6 +199,20 @@ async function reconcileNoPaymentOrder(
         updatedAt: failAt,
       })
       .where(eq(orders.id, orderId));
+
+    const payRes = await guardedPaymentStatusUpdate({
+      orderId,
+      paymentProvider: 'none',
+      to: 'failed',
+      source: 'checkout',
+    });
+
+    if (!payRes.applied && payRes.reason !== 'ALREADY_IN_STATE') {
+      logError(
+        `[reconcileNoPaymentOrder] paymentStatus transition to failed blocked orderId=${orderId} reason=${payRes.reason}`,
+        new Error('payment_transition_blocked')
+      );
+    }
 
     throw e;
   }
@@ -367,7 +394,8 @@ export async function createOrderWithItems({
 }): Promise<CheckoutResult> {
   const currency: Currency = resolveCurrencyFromLocale(locale);
   const paymentsEnabled = isPaymentsEnabled();
-  const paymentProvider = paymentsEnabled ? 'stripe' : 'none';
+  const paymentProvider: PaymentProvider = paymentsEnabled ? 'stripe' : 'none';
+
   // IMPORTANT: DB CHECK requires provider=none => payment_status in ('paid','failed')
   const paymentStatus = paymentsEnabled ? 'requires_payment' : 'paid';
 
@@ -678,12 +706,37 @@ export async function createOrderWithItems({
       .set({
         status: paymentsEnabled ? 'INVENTORY_RESERVED' : 'PAID',
         inventoryStatus: 'reserved',
-        paymentStatus: paymentsEnabled ? 'pending' : 'paid',
         failureCode: null,
         failureMessage: null,
         updatedAt: new Date(),
       })
       .where(eq(orders.id, orderId));
+
+    const targetPaymentStatus: PaymentStatus = paymentsEnabled
+      ? 'pending'
+      : 'paid';
+
+    const payRes = await guardedPaymentStatusUpdate({
+      orderId,
+      paymentProvider,
+      to: targetPaymentStatus,
+      source: 'checkout',
+    });
+
+    if (!payRes.applied && payRes.reason !== 'ALREADY_IN_STATE') {
+      throw new OrderStateInvalidError(
+        'Order paymentStatus transition blocked after inventory reservation.',
+        {
+          orderId,
+          details: {
+            reason: payRes.reason,
+            from: payRes.from,
+            to: targetPaymentStatus,
+            paymentProvider,
+          },
+        }
+      );
+    }
   } catch (e) {
     const failAt = new Date();
     await db
@@ -709,7 +762,6 @@ export async function createOrderWithItems({
       .set({
         status: 'INVENTORY_FAILED',
         inventoryStatus: 'released',
-        paymentStatus: 'failed',
         failureCode: isOos ? 'OUT_OF_STOCK' : 'INTERNAL_ERROR',
         failureMessage: isOos
           ? e.message
@@ -719,6 +771,20 @@ export async function createOrderWithItems({
         updatedAt: failAt,
       })
       .where(eq(orders.id, orderId));
+
+    const payRes = await guardedPaymentStatusUpdate({
+      orderId,
+      paymentProvider,
+      to: 'failed',
+      source: 'checkout',
+    });
+
+    if (!payRes.applied && payRes.reason !== 'ALREADY_IN_STATE') {
+      logError(
+        `[createOrderWithItems] paymentStatus transition to failed blocked orderId=${orderId} provider=${paymentProvider} reason=${payRes.reason}`,
+        new Error('payment_transition_blocked')
+      );
+    }
 
     throw e;
   }

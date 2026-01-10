@@ -2,7 +2,6 @@ import { eq } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { orders } from '@/db/schema/shop';
-import { type PaymentStatus } from '@/lib/shop/payments';
 import { type OrderSummaryWithMinor } from '@/lib/types/shop';
 import { InvalidPayloadError, OrderNotFoundError } from '../errors';
 import { resolvePaymentProvider } from './_shared';
@@ -32,17 +31,9 @@ export async function refundOrder(
       'Refunds are only supported for stripe orders.'
     );
   }
-
-  const refundableStatuses: PaymentStatus[] = ['paid'];
-  if (!refundableStatuses.includes(order.paymentStatus as PaymentStatus)) {
-    throw new InvalidPayloadError(
-      'Order cannot be refunded from the current status.'
-    );
-  }
-
   const res = await guardedPaymentStatusUpdate({
     orderId,
-    paymentProvider: order.paymentProvider,
+    paymentProvider: provider, // <-- замість order.paymentProvider
     to: 'refunded',
     source: 'admin',
     note: 'refundOrder()',

@@ -5,8 +5,9 @@ import { applyReleaseMove } from '../inventory';
 import { db } from '@/db';
 import { inventoryMoves, orders } from '@/db/schema/shop';
 import { type PaymentStatus } from '@/lib/shop/payments';
-
+import { guardedPaymentStatusUpdate } from './payment-state';
 import { OrderNotFoundError, OrderStateInvalidError } from '../errors';
+import { resolvePaymentProvider } from './_shared';
 
 export type RestockReason = 'failed' | 'refunded' | 'canceled' | 'stale';
 export type RestockOptions = {
@@ -63,6 +64,7 @@ export async function restockOrder(
       id: orders.id,
       paymentProvider: orders.paymentProvider,
       paymentStatus: orders.paymentStatus,
+      paymentIntentId: orders.paymentIntentId,
       inventoryStatus: orders.inventoryStatus,
       stockRestored: orders.stockRestored,
       restockedAt: orders.restockedAt,
@@ -76,6 +78,8 @@ export async function restockOrder(
   if (!order) throw new OrderNotFoundError('Order not found');
 
   const isNoPayment = order.paymentProvider === 'none';
+  const provider = resolvePaymentProvider(order);
+  const transitionSource = options?.alreadyClaimed ? 'janitor' : 'system';
 
   // already released / legacy idempotency
   if (
@@ -106,12 +110,12 @@ export async function restockOrder(
       (reason === 'failed' || reason === 'canceled' || reason === 'stale')
     ) {
       const now = new Date();
-      await db
+
+      const [touched] = await db
         .update(orders)
         .set({
           status: 'INVENTORY_FAILED',
           inventoryStatus: 'released',
-          paymentStatus: 'failed',
           failureCode: order.failureCode ?? 'STALE_ORPHAN',
           failureMessage:
             order.failureMessage ??
@@ -120,19 +124,33 @@ export async function restockOrder(
           restockedAt: now,
           updatedAt: now,
         })
-        .where(eq(orders.id, orderId));
+        .where(and(eq(orders.id, orderId), eq(orders.stockRestored, false)))
+        .returning({ id: orders.id });
+
+      if (!touched) return;
+
+      // paymentStatus transition only via guard
+      await guardedPaymentStatusUpdate({
+        orderId,
+        paymentProvider: provider,
+        to: 'failed',
+        source: transitionSource,
+        // tie to this exact finalize marker (prevents races)
+        extraWhere: eq(orders.restockedAt, now),
+      });
+
       return;
     }
 
     // Stripe (or any non-none provider): stale orphan must become terminal
     if (reason === 'stale') {
       const now = new Date();
-      await db
+
+      const [touched] = await db
         .update(orders)
         .set({
           status: 'INVENTORY_FAILED',
           inventoryStatus: 'released',
-          paymentStatus: 'failed',
           failureCode: order.failureCode ?? 'STALE_ORPHAN',
           failureMessage:
             order.failureMessage ??
@@ -141,7 +159,20 @@ export async function restockOrder(
           restockedAt: now,
           updatedAt: now,
         })
-        .where(eq(orders.id, orderId));
+        .where(and(eq(orders.id, orderId), eq(orders.stockRestored, false)))
+        .returning({ id: orders.id });
+
+      if (!touched) return;
+
+      // paymentStatus transition only via guard (provider from DB)
+      await guardedPaymentStatusUpdate({
+        orderId,
+        paymentProvider: provider,
+        to: 'failed',
+        source: transitionSource,
+        extraWhere: eq(orders.restockedAt, now),
+      });
+
       return;
     }
 
@@ -195,9 +226,10 @@ export async function restockOrder(
   if (!finalized) return;
 
   let normalizedStatus: PaymentStatus | undefined;
-  if (reason === 'refunded') normalizedStatus = 'refunded';
+  if (reason === 'refunded' && !isNoPayment) normalizedStatus = 'refunded';
   else if (reason === 'failed' || reason === 'canceled' || reason === 'stale')
     normalizedStatus = 'failed';
+
   const shouldCancel = reason === 'canceled';
   const shouldFail = reason === 'failed' || reason === 'stale';
   await db
@@ -205,9 +237,19 @@ export async function restockOrder(
     .set({
       inventoryStatus: 'released',
       updatedAt: now,
-      ...(normalizedStatus ? { paymentStatus: normalizedStatus } : {}),
       ...(shouldFail ? { status: 'INVENTORY_FAILED' } : {}),
       ...(shouldCancel ? { status: 'CANCELED' } : {}),
     })
     .where(eq(orders.id, orderId));
+
+  if (normalizedStatus) {
+    await guardedPaymentStatusUpdate({
+      orderId,
+      paymentProvider: provider,
+      to: normalizedStatus,
+      source: transitionSource,
+      // bind to finalize-once marker
+      extraWhere: eq(orders.restockedAt, finalizedAt),
+    });
+  }
 }
