@@ -492,4 +492,81 @@ describe('stripe webhook refund (full only): PI fallback + terminal status + ded
       reason: 'refunded',
     });
   }, 30_000);
+  it('refund fullness undetermined: amount_refunded missing + refunds list empty (no refund object) -> 500, processedAt NULL, no order changes', async () => {
+    inserted = await insertPaidOrder();
+
+    const eventId = `evt_${crypto.randomUUID()}`;
+    const chargeId = `ch_${crypto.randomUUID()}`;
+
+    const charge = makeCharge({
+      chargeId,
+      paymentIntentId: inserted.paymentIntentId,
+      amount: 2500,
+      amountRefunded: 0, // will be deleted to force "missing"
+      refunds: [], // empty list => refund object unavailable (refund == null)
+    });
+
+    // Edge-case: Stripe object WITHOUT amount_refunded
+    delete (charge as any).amount_refunded;
+
+    // Ensure refunds list is present but empty (covers "refunds.data = []")
+    (charge as any).refunds = { object: 'list', data: [] };
+
+    verifyWebhookSignatureMock.mockReturnValue({
+      id: eventId,
+      type: 'charge.refunded',
+      data: { object: charge },
+    } as unknown as Stripe.Event);
+
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const res = await POST(makeRequest());
+    expect(res.status).toBe(500);
+
+    // If you kept the explicit diagnostic mapping:
+    const body = await res.json();
+    expect(body).toEqual({ code: 'REFUND_FULLNESS_UNDETERMINED' });
+
+    // stripe_events.processed_at must remain NULL (no ack -> Stripe retries)
+    const [evt] = await db
+      .select({
+        processedAt: stripeEvents.processedAt,
+        eventId: stripeEvents.eventId,
+        paymentIntentId: stripeEvents.paymentIntentId,
+      })
+      .from(stripeEvents)
+      .where(eq(stripeEvents.eventId, eventId))
+      .limit(1);
+
+    expect(evt).toBeTruthy();
+    expect(evt.processedAt).toBeNull();
+    expect(evt.paymentIntentId).toBe(inserted.paymentIntentId);
+
+    // Order must NOT change (safe no-op)
+    const [row] = await db
+      .select({
+        paymentStatus: orders.paymentStatus,
+        status: orders.status,
+        stockRestored: orders.stockRestored,
+        inventoryStatus: orders.inventoryStatus,
+      })
+      .from(orders)
+      .where(eq(orders.id, inserted.orderId))
+      .limit(1);
+
+    expect(row.paymentStatus).toBe('paid');
+    expect(row.status).toBe('PAID');
+    expect(row.stockRestored).toBe(false);
+    expect(row.inventoryStatus).toBe('reserved');
+
+    expect(restockOrderMock).toHaveBeenCalledTimes(0);
+
+    // Optional: assert warning fired (locks observability behavior)
+    expect(warnSpy).toHaveBeenCalled();
+    expect(warnSpy.mock.calls[0]?.[0]).toBe(
+      'stripe_webhook_refund_fullness_undetermined'
+    );
+
+    warnSpy.mockRestore();
+  }, 30_000);
 });

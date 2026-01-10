@@ -72,37 +72,44 @@ async function callWebhook(params: {
   );
 }
 
-async function cleanupByIds(params: { orderId: string; eventId: string }) {
+async function cleanupByIds(params: {
+  orderId: string | null;
+  eventId: string | null;
+}) {
   const { orderId, eventId } = params;
 
-  try {
-    await db.delete(stripeEvents).where(eq(stripeEvents.eventId, eventId));
-  } catch (e) {
-    console.error(
-      '[test cleanup failed]',
-      {
-        file: 'stripe-webhook-paid-status-repair.test.ts',
-        step: 'delete stripeEvents',
-        eventId,
-        orderId,
-      },
-      e
-    );
+  if (eventId) {
+    try {
+      await db.delete(stripeEvents).where(eq(stripeEvents.eventId, eventId));
+    } catch (e) {
+      console.error(
+        '[test cleanup failed]',
+        {
+          file: 'stripe-webhook-paid-status-repair.test.ts',
+          step: 'delete stripeEvents',
+          eventId,
+          orderId,
+        },
+        e
+      );
+    }
   }
 
-  try {
-    await db.delete(orders).where(eq(orders.id, orderId));
-  } catch (e) {
-    console.error(
-      '[test cleanup failed]',
-      {
-        file: 'stripe-webhook-paid-status-repair.test.ts',
-        step: 'delete orders',
-        eventId,
-        orderId,
-      },
-      e
-    );
+  if (orderId) {
+    try {
+      await db.delete(orders).where(eq(orders.id, orderId));
+    } catch (e) {
+      console.error(
+        '[test cleanup failed]',
+        {
+          file: 'stripe-webhook-paid-status-repair.test.ts',
+          step: 'delete orders',
+          eventId,
+          orderId,
+        },
+        e
+      );
+    }
   }
 }
 
@@ -114,7 +121,7 @@ describe('stripe webhook: repair paid status mismatch', () => {
     // restore env stubs to avoid cross-test coupling
     vi.unstubAllEnvs();
 
-    if (lastOrderId && lastEventId) {
+    if (lastOrderId || lastEventId) {
       await cleanupByIds({ orderId: lastOrderId, eventId: lastEventId });
     }
 
@@ -122,67 +129,59 @@ describe('stripe webhook: repair paid status mismatch', () => {
     lastEventId = null;
   });
 
-  it(
-    'repairs status to PAID when paymentStatus=paid but status!=PAID',
-    async () => {
-      const orderId = crypto.randomUUID();
-      const eventId = `evt_${crypto.randomUUID()}`;
-      const pi = `pi_test_repair_${crypto.randomUUID()}`;
+  it('repairs status to PAID when paymentStatus=paid but status!=PAID', async () => {
+    const orderId = crypto.randomUUID();
+    const eventId = `evt_${crypto.randomUUID()}`;
+    const pi = `pi_test_repair_${crypto.randomUUID()}`;
 
-      lastOrderId = orderId;
-      lastEventId = eventId;
+    lastOrderId = orderId;
+    lastEventId = eventId;
 
-      await seedOrder({ orderId, pi });
+    await seedOrder({ orderId, pi });
 
-      const res = await callWebhook({ eventId, pi, orderId });
-      expect(res.status).toBe(200);
+    const res = await callWebhook({ eventId, pi, orderId });
+    expect(res.status).toBe(200);
 
-      const [row] = await db
-        .select({ status: orders.status, paymentStatus: orders.paymentStatus })
-        .from(orders)
-        .where(eq(orders.id, orderId))
-        .limit(1);
+    const [row] = await db
+      .select({ status: orders.status, paymentStatus: orders.paymentStatus })
+      .from(orders)
+      .where(eq(orders.id, orderId))
+      .limit(1);
 
-      expect(row!.paymentStatus).toBe('paid');
-      expect(row!.status).toBe('PAID');
-    },
-    30_000
-  );
+    expect(row!.paymentStatus).toBe('paid');
+    expect(row!.status).toBe('PAID');
+  }, 30_000);
 
-  it(
-    'dedupes the same eventId after processedAt is set (second call is no-op)',
-    async () => {
-      const orderId = crypto.randomUUID();
-      const eventId = `evt_${crypto.randomUUID()}`;
-      const pi = `pi_test_repair_${crypto.randomUUID()}`;
+  it('dedupes the same eventId after processedAt is set (second call is no-op)', async () => {
+    const orderId = crypto.randomUUID();
+    const eventId = `evt_${crypto.randomUUID()}`;
+    const pi = `pi_test_repair_${crypto.randomUUID()}`;
 
-      lastOrderId = orderId;
-      lastEventId = eventId;
+    lastOrderId = orderId;
+    lastEventId = eventId;
 
-      await seedOrder({ orderId, pi });
+    await seedOrder({ orderId, pi });
 
-      const res1 = await callWebhook({ eventId, pi, orderId });
-      expect(res1.status).toBe(200);
+    const res1 = await callWebhook({ eventId, pi, orderId });
+    expect(res1.status).toBe(200);
 
-      const res2 = await callWebhook({ eventId, pi, orderId });
-      expect(res2.status).toBe(200);
+    const res2 = await callWebhook({ eventId, pi, orderId });
+    expect(res2.status).toBe(200);
 
-      const [evt] = await db
-        .select({ processedAt: stripeEvents.processedAt })
-        .from(stripeEvents)
-        .where(eq(stripeEvents.eventId, eventId))
-        .limit(1);
+    const [evt] = await db
+      .select({ processedAt: stripeEvents.processedAt })
+      .from(stripeEvents)
+      .where(eq(stripeEvents.eventId, eventId))
+      .limit(1);
 
-      expect(evt?.processedAt).toBeTruthy();
+    expect(evt?.processedAt).toBeTruthy();
 
-      const [row] = await db
-        .select({ status: orders.status })
-        .from(orders)
-        .where(eq(orders.id, orderId))
-        .limit(1);
+    const [row] = await db
+      .select({ status: orders.status })
+      .from(orders)
+      .where(eq(orders.id, orderId))
+      .limit(1);
 
-      expect(row!.status).toBe('PAID');
-    },
-    30_000
-  );
+    expect(row!.status).toBe('PAID');
+  }, 30_000);
 });

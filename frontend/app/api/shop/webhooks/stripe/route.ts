@@ -8,6 +8,24 @@ import { orders, stripeEvents } from '@/db/schema';
 import { restockOrder } from '@/lib/services/orders';
 import { logError } from '@/lib/logging';
 
+function warnRefundFullnessUndetermined(payload: {
+  eventId: string;
+  eventType: string;
+  chargeId: string | null;
+  chargeAmount: number | null;
+  cumulativeRefunded: number | null;
+  hasRefundObject: boolean;
+  refundsListLength: number | null;
+  hasAmountRefundedField: boolean;
+  reason: string;
+  orderId?: string;
+  paymentIntentId?: string | null;
+  refundId?: string | null;
+  refundAmount?: number | null;
+}) {
+  console.warn('stripe_webhook_refund_fullness_undetermined', payload);
+}
+
 function logWebhookEvent(payload: {
   orderId?: string;
   paymentIntentId?: string | null;
@@ -620,7 +638,7 @@ export async function POST(request: NextRequest) {
           : null;
 
       // MVP: only FULL refund.
-      // - charge.refunded: amount_refunded === amount
+      // - charge.refunded: amount_refunded === amount (or fallback sum(refunds))
       // - charge.refund.updated: compare cumulative refunded for the charge vs charge.amount
       let isFullRefund = false;
 
@@ -637,29 +655,97 @@ export async function POST(request: NextRequest) {
             ? (effectiveCharge as any).amount_refunded
             : null;
 
-        // Fallback: sum refunds list if amount_refunded is missing
-        if (
-          cumulativeRefunded == null &&
-          Array.isArray((effectiveCharge as any)?.refunds?.data)
-        ) {
-          const list = (effectiveCharge as any).refunds.data as any[];
-          const sumFromList = list.reduce((sum, r) => {
-            const a = typeof r?.amount === 'number' ? r.amount : 0;
-            return sum + a;
-          }, 0);
+        // Fail-safe fallback: if amount_refunded missing, try refunds list;
+        // if list absent/empty -> UNDETERMINED (500 + retry), NOT "0 refunded".
+        if (cumulativeRefunded == null) {
+          const list = Array.isArray((effectiveCharge as any)?.refunds?.data)
+            ? ((effectiveCharge as any).refunds.data as any[])
+            : null;
 
           const currentAmt =
             typeof (refund as any)?.amount === 'number'
               ? (refund as any).amount
-              : 0;
+              : null;
+
+          if (!list || list.length === 0) {
+            warnRefundFullnessUndetermined({
+              eventId: event.id,
+              eventType,
+              chargeId:
+                ((effectiveCharge as any)?.id as string | undefined) ?? null,
+              chargeAmount: amt,
+              cumulativeRefunded: null,
+              hasRefundObject: refund != null,
+              refundsListLength: list ? list.length : null,
+              hasAmountRefundedField:
+                typeof (effectiveCharge as any)?.amount_refunded === 'number',
+              reason: 'missing_amount_refunded_and_empty_refunds_list',
+              orderId: order.id,
+              paymentIntentId,
+              refundId: refund?.id ?? null,
+              refundAmount: currentAmt,
+            });
+            throw new Error('REFUND_FULLNESS_UNDETERMINED');
+          }
+
+          let sawNumericAmount = false;
+          const sumFromList = list.reduce((sum, r) => {
+            const a = typeof r?.amount === 'number' ? r.amount : null;
+            if (a == null) return sum;
+            sawNumericAmount = true;
+            return sum + a;
+          }, 0);
+          if (!sawNumericAmount && currentAmt == null) {
+            warnRefundFullnessUndetermined({
+              eventId: event.id,
+              eventType,
+              chargeId:
+                ((effectiveCharge as any)?.id as string | undefined) ?? null,
+              chargeAmount: amt,
+              cumulativeRefunded: null,
+              hasRefundObject: refund != null,
+              refundsListLength: list.length,
+              hasAmountRefundedField:
+                typeof (effectiveCharge as any)?.amount_refunded === 'number',
+              reason:
+                'refunds_list_has_no_numeric_amounts_and_event_has_no_refund_amount',
+              orderId: order.id,
+              paymentIntentId,
+              refundId: refund?.id ?? null,
+              refundAmount: currentAmt,
+            });
+            throw new Error('REFUND_FULLNESS_UNDETERMINED');
+          }
 
           const hasCurrent =
             refund?.id && list.some(r => r?.id && r.id === refund.id);
 
-          cumulativeRefunded = sumFromList + (hasCurrent ? 0 : currentAmt);
+          cumulativeRefunded = sumFromList + (hasCurrent ? 0 : currentAmt ?? 0);
         }
-
         if (amt == null || cumulativeRefunded == null) {
+          const list = Array.isArray((effectiveCharge as any)?.refunds?.data)
+            ? ((effectiveCharge as any).refunds.data as any[])
+            : null;
+          warnRefundFullnessUndetermined({
+            eventId: event.id,
+            eventType,
+            chargeId:
+              ((effectiveCharge as any)?.id as string | undefined) ?? null,
+            chargeAmount: amt,
+            cumulativeRefunded,
+            hasRefundObject: refund != null,
+            refundsListLength: list ? list.length : null,
+            hasAmountRefundedField:
+              typeof (effectiveCharge as any)?.amount_refunded === 'number',
+            reason: 'missing_charge_amount_or_cumulative_refunded',
+            orderId: order.id,
+            paymentIntentId,
+            refundId: refund?.id ?? null,
+            refundAmount:
+              typeof (refund as any)?.amount === 'number'
+                ? (refund as any).amount
+                : null,
+          });
           throw new Error('REFUND_FULLNESS_UNDETERMINED');
         }
 
@@ -671,7 +757,7 @@ export async function POST(request: NextRequest) {
         if (typeof refund.charge === 'object' && refund.charge) {
           effectiveCharge = refund.charge as Stripe.Charge;
         } else if (typeof refund.charge === 'string' && refund.charge.trim()) {
-          // Critical: fetch charge to get full refunds list
+          // Fetch charge to get cumulative refunded / refunds list
           effectiveCharge = await retrieveCharge(refund.charge.trim());
         }
 
@@ -685,29 +771,102 @@ export async function POST(request: NextRequest) {
             ? (effectiveCharge as any).amount_refunded
             : null;
 
-        // Fallback: sum refunds list if present; include current refund if not in list yet
-        if (
-          cumulativeRefunded == null &&
-          Array.isArray((effectiveCharge as any)?.refunds?.data)
-        ) {
-          const list = (effectiveCharge as any).refunds.data as any[];
+        if (cumulativeRefunded == null) {
+          const list = Array.isArray((effectiveCharge as any)?.refunds?.data)
+            ? ((effectiveCharge as any).refunds.data as any[])
+            : null;
+
+          const currentAmt =
+            typeof (refund as any)?.amount === 'number'
+              ? (refund as any).amount
+              : null;
+
+          if (!list || list.length === 0) {
+            warnRefundFullnessUndetermined({
+              eventId: event.id,
+              eventType,
+              chargeId:
+                ((effectiveCharge as any)?.id as string | undefined) ??
+                refundChargeId ??
+                null,
+              chargeAmount: amt,
+              cumulativeRefunded: null,
+              hasRefundObject: true,
+              refundsListLength: list ? list.length : null,
+              hasAmountRefundedField:
+                typeof (effectiveCharge as any)?.amount_refunded === 'number',
+              reason: 'missing_amount_refunded_and_empty_refunds_list',
+              orderId: order.id,
+              paymentIntentId,
+              refundId: refund.id,
+              refundAmount: currentAmt,
+            });
+            throw new Error('REFUND_FULLNESS_UNDETERMINED');
+          }
+
+          let sawNumericAmount = false;
           const sumFromList = list.reduce((sum, r) => {
-            const a = typeof r?.amount === 'number' ? r.amount : 0;
+            const a = typeof r?.amount === 'number' ? r.amount : null;
+            if (a == null) return sum;
+            sawNumericAmount = true;
             return sum + a;
           }, 0);
 
-          const currentAmt =
-            typeof (refund as any).amount === 'number'
-              ? (refund as any).amount
-              : 0;
+          if (!sawNumericAmount && currentAmt == null) {
+            warnRefundFullnessUndetermined({
+              eventId: event.id,
+              eventType,
+              chargeId:
+                ((effectiveCharge as any)?.id as string | undefined) ??
+                refundChargeId ??
+                null,
+              chargeAmount: amt,
+              cumulativeRefunded: null,
+              hasRefundObject: true,
+              refundsListLength: list.length,
+              hasAmountRefundedField:
+                typeof (effectiveCharge as any)?.amount_refunded === 'number',
+              reason:
+                'refunds_list_has_no_numeric_amounts_and_event_has_no_refund_amount',
+              orderId: order.id,
+              paymentIntentId,
+              refundId: refund.id,
+              refundAmount: currentAmt,
+            });
+            throw new Error('REFUND_FULLNESS_UNDETERMINED');
+          }
 
           const hasCurrent = list.some(r => r?.id && r.id === refund.id);
 
-          cumulativeRefunded = sumFromList + (hasCurrent ? 0 : currentAmt);
+          cumulativeRefunded = sumFromList + (hasCurrent ? 0 : currentAmt ?? 0);
         }
 
-        // If still unknown -> fail to force retry (better than silently ignoring full refund)
         if (amt == null || cumulativeRefunded == null) {
+          const list = Array.isArray((effectiveCharge as any)?.refunds?.data)
+            ? ((effectiveCharge as any).refunds.data as any[])
+            : null;
+          warnRefundFullnessUndetermined({
+            eventId: event.id,
+            eventType,
+            chargeId:
+              ((effectiveCharge as any)?.id as string | undefined) ??
+              refundChargeId ??
+              null,
+            chargeAmount: amt,
+            cumulativeRefunded,
+            hasRefundObject: true,
+            refundsListLength: list ? list.length : null,
+            hasAmountRefundedField:
+              typeof (effectiveCharge as any)?.amount_refunded === 'number',
+            reason: 'missing_charge_amount_or_cumulative_refunded',
+            orderId: order.id,
+            paymentIntentId,
+            refundId: refund.id,
+            refundAmount:
+              typeof (refund as any)?.amount === 'number'
+                ? (refund as any).amount
+                : null,
+          });
           throw new Error('REFUND_FULLNESS_UNDETERMINED');
         }
 
@@ -715,7 +874,6 @@ export async function POST(request: NextRequest) {
 
         // Prefer charge id from effectiveCharge for PSP fields
         if (effectiveCharge?.id) {
-          // override local charge variable for downstream pspChargeId/metadata usage
           charge = effectiveCharge;
         }
       }
@@ -800,6 +958,17 @@ export async function POST(request: NextRequest) {
     });
     return ack();
   } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message === 'REFUND_FULLNESS_UNDETERMINED'
+    ) {
+      // Do NOT ack() -> keep processedAt NULL so Stripe retries.
+      return NextResponse.json(
+        { code: 'REFUND_FULLNESS_UNDETERMINED' },
+        { status: 500 }
+      );
+    }
+
     logError('Stripe webhook processing failed', error);
     return NextResponse.json({ error: 'internal_error' }, { status: 500 });
   }
