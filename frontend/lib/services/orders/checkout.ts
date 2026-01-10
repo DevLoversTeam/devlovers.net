@@ -24,6 +24,7 @@ import {
   InsufficientStockError,
   IdempotencyConflictError,
   InvalidPayloadError,
+  InvalidVariantError,
   OrderNotFoundError,
   PriceConfigError,
   OrderStateInvalidError,
@@ -204,6 +205,10 @@ async function getProductsForCheckout(
       stock: products.stock,
       sku: products.sku,
 
+      // variant option sets (text/CSV/JSON)
+      colors: products.colors,
+      sizes: products.sizes,
+
       // canonical price (minor)
       priceMinor: productPrices.priceMinor,
 
@@ -214,6 +219,7 @@ async function getProductsForCheckout(
       priceCurrency: productPrices.currency,
       isActive: products.isActive,
     })
+
     .from(products)
     .leftJoin(
       productPrices,
@@ -228,6 +234,53 @@ async function getProductsForCheckout(
 type CheckoutProductRow = Awaited<
   ReturnType<typeof getProductsForCheckout>
 >[number];
+
+function parseVariantList(raw: unknown): string[] {
+  if (raw == null) return [];
+
+  // If DB returns array (e.g. text[] / jsonb)
+  if (Array.isArray(raw)) {
+    const out = raw.map(x => normVariant(String(x))).filter(x => x.length > 0);
+    return Array.from(new Set(out));
+  }
+
+  if (typeof raw !== 'string') {
+    // Unknown shape -> treat as "no configured variants"
+    return [];
+  }
+
+  const v0 = raw.trim();
+  if (!v0) return [];
+
+  // JSON array: '["S","M"]'
+  if (v0.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(v0);
+      if (Array.isArray(parsed)) {
+        const out = parsed
+          .map(x => normVariant(String(x)))
+          .filter(x => x.length > 0);
+        return Array.from(new Set(out));
+      }
+    } catch {
+      // fallthrough to CSV parsing
+    }
+  }
+
+  // Postgres array literal string: '{S,M}'
+  const v =
+    v0.startsWith('{') && v0.endsWith('}')
+      ? v0.slice(1, -1).replace(/"/g, '')
+      : v0;
+
+  // CSV / ';' / newline
+  const out = v
+    .split(/[,;\n\r]+/g)
+    .map(x => normVariant(x))
+    .filter(x => x.length > 0);
+
+  return Array.from(new Set(out));
+}
 
 function priceItems(
   items: CheckoutItemWithVariant[],
@@ -443,6 +496,53 @@ export async function createOrderWithItems({
   }
 
   const productMap = new Map(dbProducts.map(p => [p.id, p]));
+  // 3.1) Variant validation (fail-fast; no side effects)
+  const variantMap = new Map(
+    dbProducts.map(p => [
+      p.id,
+      {
+        allowedSizes: parseVariantList((p as any).sizes),
+        allowedColors: parseVariantList((p as any).colors),
+      },
+    ])
+  );
+
+  for (const item of normalizedItems) {
+    const cfg = variantMap.get(item.productId);
+    if (!cfg) continue; // product existence handled elsewhere
+
+    const selectedSize = normVariant(item.selectedSize ?? '');
+    const selectedColor = normVariant(item.selectedColor ?? '');
+
+    if (selectedSize) {
+      if (
+        cfg.allowedSizes.length === 0 ||
+        !cfg.allowedSizes.includes(selectedSize)
+      ) {
+        throw new InvalidVariantError('Invalid size selection.', {
+          productId: item.productId,
+          field: 'selectedSize',
+          value: selectedSize,
+          allowed: cfg.allowedSizes,
+        });
+      }
+    }
+
+    if (selectedColor) {
+      if (
+        cfg.allowedColors.length === 0 ||
+        !cfg.allowedColors.includes(selectedColor)
+      ) {
+        throw new InvalidVariantError('Invalid color selection.', {
+          productId: item.productId,
+          field: 'selectedColor',
+          value: selectedColor,
+          allowed: cfg.allowedColors,
+        });
+      }
+    }
+  }
+
   const pricedItems = priceItems(normalizedItems, productMap, currency);
   const orderTotalCents = sumLineTotals(pricedItems.map(i => i.lineTotalCents));
 

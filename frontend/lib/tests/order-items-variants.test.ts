@@ -26,7 +26,13 @@ describe('order_items variants (selected_size/selected_color)', () => {
       currency: 'USD',
       isActive: true,
       stock: 50,
-    });
+
+      // NEW: allow selected variants used below
+      ...({
+        sizes: ['S', 'M'],
+        colors: ['Red'],
+      } as any),
+    } as any);
 
     await db.insert(productPrices).values({
       id: priceId,
@@ -67,14 +73,21 @@ describe('order_items variants (selected_size/selected_color)', () => {
 
       // Assert (API-level): should keep two lines
       expect(result.order.items.length).toBe(2);
+      const norm = (v: unknown) =>
+        String(v ?? '')
+          .trim()
+          .toLowerCase();
 
-      const sizes = result.order.items.map(i => (i as any).selectedSize);
-      const colors = result.order.items.map(i => (i as any).selectedColor);
+      const sizes = result.order.items.map(i => norm((i as any).selectedSize));
+      const colors = result.order.items.map(i =>
+        norm((i as any).selectedColor)
+      );
 
-      expect(sizes.sort()).toEqual(['M', 'S']);
-      expect(colors.sort()).toEqual(['Red', 'Red']);
+      expect(sizes.sort()).toEqual(['m', 's']);
+      expect(colors.sort()).toEqual(['red', 'red']);
 
-      // Assert (DB-level): must have 2 distinct order_items rows
+      // DB-level
+
       const rows = await db
         .select({
           productId: orderItems.productId,
@@ -88,10 +101,12 @@ describe('order_items variants (selected_size/selected_color)', () => {
       expect(rows.length).toBe(2);
 
       const rowKeys = rows
-        .map(r => `${r.productId}|${r.selectedSize}|${r.selectedColor}`)
+        .map(
+          r => `${r.productId}|${norm(r.selectedSize)}|${norm(r.selectedColor)}`
+        )
         .sort();
 
-      expect(rowKeys).toEqual([`${productId}|M|Red`, `${productId}|S|Red`]);
+      expect(rowKeys).toEqual([`${productId}|m|red`, `${productId}|s|red`]);
     } finally {
       // Cleanup: delete order first (cascade deletes order_items + inventory_moves)
       if (orderId) {
