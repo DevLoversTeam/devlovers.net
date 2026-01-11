@@ -1,5 +1,6 @@
 import { getQuizBySlug, getQuizQuestionsRandomized } from '@/db/queries/quiz';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import { QuizContainer } from '@/components/quiz/QuizContainer';
 import { PendingResultHandler } from '@/components/quiz/PendingResultHandler';
 
@@ -11,6 +12,7 @@ interface QuizPageProps {
 
 export default async function QuizPage({ params }: QuizPageProps) {
   const { locale, slug } = await params;
+  const t = await getTranslations({ locale, namespace: 'quiz.page' });
 
   const user = await getCurrentUser();
 
@@ -22,11 +24,11 @@ export default async function QuizPage({ params }: QuizPageProps) {
 
   const seed = Date.now();
   const questions = await getQuizQuestionsRandomized(quiz.id, locale, seed);
-  
+
   if (!questions.length) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-600">Немає питань для цього квізу</p>
+        <p className="text-gray-600">{t('noQuestions')}</p>
       </div>
     );
   }
@@ -44,9 +46,9 @@ export default async function QuizPage({ params }: QuizPageProps) {
             </p>
           )}
           <div className="mt-4 flex gap-4 text-sm text-gray-500">
-            <span>Питань: {quiz.questionsCount}</span>
+            <span>{t('questionsLabel')}: {quiz.questionsCount}</span>
             <span>
-              Час: {Math.floor((quiz.timeLimitSeconds ?? questions.length * 30) / 60)} хв
+              {t('timeLabel')}: {Math.floor((quiz.timeLimitSeconds ?? questions.length * 30) / 60)} {t('minutes')}
             </span>
           </div>
         </div>

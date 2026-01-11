@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 
 interface Answer {
@@ -46,13 +47,14 @@ function getVisibleIndices(current: number, total: number): (number | 'ellipsis'
 }
 
 export function QuizProgress({ current, total, answers }: QuizProgressProps) {
+  const t = useTranslations('quiz.progress');
   const visibleIndices = getVisibleIndices(current, total);
 
   return (
     <div className="space-y-4">
       <div className="text-center">
         <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-          Питання {current + 1} / {total}
+          {t('label', { current: current + 1, total })}
         </span>
       </div>
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 
 interface CountdownTimerProps {
@@ -14,6 +15,7 @@ export function CountdownTimer({
   onTimeUp,
   isActive,
 }: CountdownTimerProps) {
+  const t = useTranslations('quiz.timer');
   const [endTime] = useState(() => Date.now() + timeLimitSeconds * 1000);
   const [remainingSeconds, setRemainingSeconds] = useState(timeLimitSeconds);
 
@@ -79,7 +81,7 @@ export function CountdownTimer({
       percentage <= 10 && 'animate-pulse'
     )}>
       <div className="flex items-center justify-between mb-2">
-        <span className="text-sm font-medium">Залишилось часу:</span>
+        <span className="text-sm font-medium">{t('label')}</span>
         <span className="text-2xl font-bold font-mono">
           {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
         </span>
@@ -97,7 +99,7 @@ export function CountdownTimer({
 
       {percentage <= 30 && (
         <p className="text-xs mt-2 font-medium">
-          {percentage <= 10 ? '⚠️ Час майже закінчився!' : '⏰ Поспішайте!'}
+          {percentage <= 10 ? t('almostDone') : t('hurryUp')}
         </p>
       )}
     </div>
