@@ -103,8 +103,8 @@
     },
     "timer": {
       "label": "Pozostały czas:",
-      "almostDone": "⚠️ Czas prawie minął!",
-      "hurryUp": "⏰ Pośpiesz się!"
+      "almostDone": "Czas prawie minął!",
+      "hurryUp": "Pośpiesz się!"
     },
     "result": {
       "correctAnswers": "prawidłowych odpowiedzi",
@@ -128,7 +128,7 @@
         "title": "Doskonała Praca!",
         "message": "Dobrze opanowałeś materiał"
       },
-      "violations": "⚠️ Quiz ukończony z naruszeniami zasad ({count} naruszeń). Wynik nie zaliczony do rankingu.",
+      "violations": "Quiz ukończony z naruszeniami zasad ({count} naruszeń). Wynik nie zaliczony do rankingu.",
       "pointsAwarded": "+{points} punktów dodanych do oceny",
       "noPointsAwarded": "Nie przyznano punktów (wynik nie poprawiony)",
       "guestMessage": "Aby zapisać wynik i pojawić się w rankingu, zaloguj się lub zarejestruj",
