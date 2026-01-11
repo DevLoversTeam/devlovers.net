@@ -11,6 +11,7 @@ import {
 } from '@/lib/validation/shop';
 import { fromCents } from '@/lib/shop/money';
 import { createCartItemKey } from '@/lib/shop/cart-item-key';
+import { logWarn } from '@/lib/logging';
 
 const CART_KEY = 'devlovers-cart';
 
@@ -86,7 +87,9 @@ export function getStoredCartItems(): CartClientItem[] {
       .map(item => normalizeStoredItem(item))
       .filter((item): item is CartClientItem => item !== null);
   } catch (error) {
-    console.warn('Failed to read cart from localStorage', error);
+    logWarn('cart_read_failed', {
+      message: error instanceof Error ? error.message : String(error),
+    });
     return [];
   }
 }
@@ -97,7 +100,9 @@ export function persistCartItems(items: CartClientItem[]): void {
   try {
     window.localStorage.setItem(CART_KEY, JSON.stringify(items));
   } catch (error) {
-    console.warn('Failed to save cart', error);
+    logWarn('cart_save_failed', {
+      message: error instanceof Error ? error.message : String(error),
+    });
   }
 }
 

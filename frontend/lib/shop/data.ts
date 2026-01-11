@@ -1,4 +1,8 @@
-import { CATALOG_PAGE_SIZE, CATEGORY_TILES, type CatalogSort } from "@/lib/config/catalog";
+import {
+  CATALOG_PAGE_SIZE,
+  CATEGORY_TILES,
+  type CatalogSort,
+} from '@/lib/config/catalog';
 import {
   catalogFilterSchema,
   dbProductSchema,
@@ -8,16 +12,16 @@ import {
   type DbProduct,
   type ProductBadge,
   type ShopProduct as ValidationShopProduct,
-} from "@/lib/validation/shop";
+} from '@/lib/validation/shop';
 import {
   getActiveProductsPage,
   getFeaturedProducts,
   getPublicProductBySlug,
-} from "@/db/queries/shop/products";
-import { fromDbMoney } from "./money";
-import { resolveCurrencyFromLocale } from "./currency";
-import { getPublicProductBaseBySlug } from "@/db/queries/shop/products";
-
+} from '@/db/queries/shop/products';
+import { fromDbMoney } from './money';
+import { resolveCurrencyFromLocale } from './currency';
+import { getPublicProductBaseBySlug } from '@/db/queries/shop/products';
+import { logError } from '@/lib/logging';
 
 export type ShopProduct = ValidationShopProduct;
 
@@ -48,9 +52,9 @@ export interface CatalogPage {
 }
 
 export type ProductPageData =
-  | { kind: "available"; product: ShopProduct }
+  | { kind: 'available'; product: ShopProduct }
   | {
-      kind: "unavailable";
+      kind: 'unavailable';
       product: {
         id: string;
         slug: string;
@@ -60,31 +64,32 @@ export type ProductPageData =
         badge: ProductBadge;
       };
     }
-  | { kind: "not_found" };
+  | { kind: 'not_found' };
 
 export async function getProductPageData(
   slug: string,
-  locale: string = "en"
+  locale: string = 'en'
 ): Promise<ProductPageData> {
   const currency = resolveCurrencyFromLocale(locale);
 
   const dbProduct = await getPublicProductBySlug(slug, currency);
   if (dbProduct) {
     const mapped = mapToShopProduct(dbProduct);
-    if (mapped) return { kind: "available", product: mapped };
-    return { kind: "not_found" };
+    if (mapped) return { kind: 'available', product: mapped };
+    return { kind: 'not_found' };
   }
 
   const base = await getPublicProductBaseBySlug(slug);
-  if (!base) return { kind: "not_found" };
+  if (!base) return { kind: 'not_found' };
 
-  const badge: ProductBadge =
-    productBadgeValues.includes(base.badge as ProductBadge)
-      ? (base.badge as ProductBadge)
-      : "NONE";
+  const badge: ProductBadge = productBadgeValues.includes(
+    base.badge as ProductBadge
+  )
+    ? (base.badge as ProductBadge)
+    : 'NONE';
 
   return {
-    kind: "unavailable",
+    kind: 'unavailable',
     product: {
       id: base.id,
       slug: base.slug,
@@ -101,13 +106,13 @@ export class CatalogValidationError extends Error {
   readonly details: unknown;
 
   constructor(details: unknown) {
-    super("Invalid catalog query");
-    this.name = "CatalogValidationError";
+    super('Invalid catalog query');
+    this.name = 'CatalogValidationError';
     this.details = details;
   }
 }
 
-const placeholderImage = "/placeholder.svg";
+const placeholderImage = '/placeholder.svg';
 
 function deriveStock(product: DbProduct): boolean {
   if (!product.isActive) return false;
@@ -120,21 +125,25 @@ function deriveBadge(product: DbProduct): ProductBadge {
     ? fromDbMoney(product.originalPrice)
     : undefined;
 
-  if (product.badge === "SALE") return "SALE";
+  if (product.badge === 'SALE') return 'SALE';
 
   if (originalPriceCents !== undefined && originalPriceCents > priceCents) {
-    return "SALE";
+    return 'SALE';
   }
 
   return productBadgeValues.includes(product.badge as ProductBadge)
     ? (product.badge as ProductBadge)
-    : "NONE";
+    : 'NONE';
 }
 
 function validateDbProduct(product: DbProduct): DbProduct | null {
   const parsed = dbProductSchema.safeParse(product);
   if (!parsed.success) {
-    console.error("Invalid DB product", parsed.error.format());
+    logError('shop_invalid_db_product', parsed.error, {
+      productId: product?.id ?? null,
+      slug: product?.slug ?? null,
+      currency: (product as any)?.currency ?? null,
+    });
     return null;
   }
   return parsed.data;
@@ -165,8 +174,8 @@ function mapToShopProduct(product: DbProduct): ShopProduct | null {
     currency: validated.currency,
     image: validated.imageUrl || placeholderImage,
     originalPrice: validated.originalPrice
-     ? fromDbMoney(validated.originalPrice)
-     : undefined,
+      ? fromDbMoney(validated.originalPrice)
+      : undefined,
     createdAt: validated.createdAt,
     category: validated.category ?? undefined,
     type: validated.type ?? undefined,
@@ -179,7 +188,11 @@ function mapToShopProduct(product: DbProduct): ShopProduct | null {
 
   const parsed = shopProductSchema.safeParse(candidate);
   if (!parsed.success) {
-    console.error("Invalid shop product", parsed.error.format());
+    logError('shop_invalid_shop_product', parsed.error, {
+      productId: validated.id,
+      slug: validated.slug,
+      currency: validated.currency,
+    });
     return null;
   }
 
@@ -193,7 +206,7 @@ function mapToShopProduct(product: DbProduct): ShopProduct | null {
  */
 export async function getCatalogProducts(
   filters: unknown,
-  locale: string = "en"
+  locale: string = 'en'
 ): Promise<CatalogPage> {
   const { category, type, color, size, sort, page, limit } =
     validateCatalogFilters(filters);
@@ -222,7 +235,7 @@ export async function getCatalogProducts(
 
 export async function getProductDetail(
   slug: string,
-  locale: string = "en"
+  locale: string = 'en'
 ): Promise<ShopProduct | null> {
   try {
     const currency = resolveCurrencyFromLocale(locale);
@@ -233,13 +246,13 @@ export async function getProductDetail(
 
     return mapToShopProduct(dbProduct) ?? null;
   } catch (error) {
-    console.error(`Failed to load product ${slug}`, error);
+    logError('shop_load_product_failed', error, { slug, locale });
     return null;
   }
 }
 
 export async function getHomepageContent(
-  locale: string = "en"
+  locale: string = 'en'
 ): Promise<HomepageContent> {
   const currency = resolveCurrencyFromLocale(locale);
 
@@ -251,18 +264,20 @@ export async function getHomepageContent(
 
   const fallbackCatalog = featuredProducts.length
     ? featuredProducts
-    : (await getCatalogProducts(
-        { category: "all", page: 1, limit: CATALOG_PAGE_SIZE },
-        locale
-      )).products.slice(0, 4);
+    : (
+        await getCatalogProducts(
+          { category: 'all', page: 1, limit: CATALOG_PAGE_SIZE },
+          locale
+        )
+      ).products.slice(0, 4);
 
   return {
     hero: {
-      headline: "Postgres-powered storefront for developers",
+      headline: 'Postgres-powered storefront for developers',
       subheadline:
-        "All product content now lives in Neon/Postgres via Drizzle—no CMS required.",
-      ctaText: "Shop now",
-      ctaLink: "/shop/products",
+        'All product content now lives in Neon/Postgres via Drizzle—no CMS required.',
+      ctaText: 'Shop now',
+      ctaLink: '/shop/products',
     },
     newArrivals: fallbackCatalog,
     categories: CATEGORY_TILES,

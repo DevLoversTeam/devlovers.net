@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 
 import { CATEGORIES, COLORS, PRODUCT_TYPES, SIZES } from '@/lib/config/catalog';
 import type { ProductAdminInput } from '@/lib/validation/shop';
+import { logError } from '@/lib/logging';
 
 const localSlugify = (input: string): string => {
   return input
@@ -344,10 +345,11 @@ export function ProductForm({
       const destinationSlug = data.product?.slug ?? slugValue;
       router.push(`/shop/products/${destinationSlug}`);
     } catch (err) {
-      console.error(
-        `Failed to ${mode === 'create' ? 'create' : 'update'} product`,
-        err
-      );
+      logError('admin_product_form_failed', err, {
+        mode,
+        productId: productId ?? null,
+        slug: slugValue,
+      });
       setError(
         `Unexpected error while ${
           mode === 'create' ? 'creating' : 'updating'

@@ -1,25 +1,26 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from 'next/server';
 
-import { MoneyValueError } from "@/db/queries/shop/orders";
-import { resolveLocaleAndCurrency } from "@/lib/shop/request-locale";
+import { MoneyValueError } from '@/db/queries/shop/orders';
+import { resolveLocaleAndCurrency } from '@/lib/shop/request-locale';
 
-import { rehydrateCartItems } from "@/lib/services/products";
-import { cartRehydratePayloadSchema } from "@/lib/validation/shop";
-import { InvalidPayloadError, PriceConfigError } from "@/lib/services/errors";
+import { rehydrateCartItems } from '@/lib/services/products';
+import { cartRehydratePayloadSchema } from '@/lib/validation/shop';
+import { InvalidPayloadError, PriceConfigError } from '@/lib/services/errors';
+import { logError } from '@/lib/logging';
 
 function normalizeCartPayload(body: unknown) {
-  if (!body || typeof body !== "object") return body;
+  if (!body || typeof body !== 'object') return body;
   const { items, ...rest } = body as { items?: unknown };
 
   if (!Array.isArray(items)) return body;
 
   return {
     ...rest,
-    items: items.map((item) => {
-      if (!item || typeof item !== "object") return item;
+    items: items.map(item => {
+      if (!item || typeof item !== 'object') return item;
       const { quantity, ...itemRest } = item as { quantity?: unknown };
       const normalizedQuantity =
-        typeof quantity === "string" && quantity.trim().length > 0
+        typeof quantity === 'string' && quantity.trim().length > 0
           ? Number(quantity)
           : quantity;
 
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest) {
     body = await request.json();
   } catch {
     return NextResponse.json(
-      { error: "Unable to process cart data." },
+      { error: 'Unable to process cart data.' },
       { status: 400 }
     );
   }
@@ -45,20 +46,19 @@ export async function POST(request: NextRequest) {
 
   if (!parsedPayload.success) {
     return NextResponse.json(
-      { error: "Invalid cart payload", details: parsedPayload.error.format() },
+      { error: 'Invalid cart payload', details: parsedPayload.error.format() },
       { status: 400 }
     );
   }
 
   const { currency } = resolveLocaleAndCurrency(request);
 
-
   try {
     const { items } = parsedPayload.data;
     const parsedResult = await rehydrateCartItems(items, currency);
     return NextResponse.json(parsedResult);
   } catch (error) {
-    console.error("Cart rehydrate failed", error);
+    logError('cart_rehydrate_failed', error);
 
     if (error instanceof PriceConfigError) {
       return NextResponse.json(
@@ -73,8 +73,8 @@ export async function POST(request: NextRequest) {
     if (error instanceof MoneyValueError) {
       return NextResponse.json(
         {
-          code: "PRICE_CONFIG_ERROR",
-          message: "Invalid price configuration for one or more products.",
+          code: 'PRICE_CONFIG_ERROR',
+          message: 'Invalid price configuration for one or more products.',
           details: {
             productId: error.productId,
             field: error.field,
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: "Unable to rehydrate cart." },
+      { error: 'Unable to rehydrate cart.' },
       { status: 500 }
     );
   }

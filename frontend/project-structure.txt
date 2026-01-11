@@ -333,6 +333,7 @@
     📁 orders
       📄 checkout.ts
       📄 payment-intent.ts
+      📄 payment-state.ts
       📄 refund.ts
       📄 restock.ts
       📄 summary.ts
@@ -374,6 +375,9 @@
     📄 order-items-snapshot-immutable.test.ts
     📄 order-items-variants.test.ts
     📄 orders-access.test.ts
+    📄 payment-state-legacy-writers.test.ts
+    📄 payment-state-machine.helper.test.ts
+    📄 payment-status-tripwire.test.ts
     📄 prices.test.ts
     📄 product-sale-invariant.test.ts
     📄 public-product-visibility.test.ts

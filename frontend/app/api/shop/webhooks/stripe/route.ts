@@ -6,8 +6,8 @@ import { db } from '@/db';
 import { verifyWebhookSignature, retrieveCharge } from '@/lib/psp/stripe';
 import { orders, stripeEvents } from '@/db/schema';
 import { restockOrder } from '@/lib/services/orders';
-import { logError } from '@/lib/logging';
 import { guardedPaymentStatusUpdate } from '@/lib/services/orders/payment-state';
+import { logError, logInfo, logWarn } from '@/lib/logging';
 
 function warnRefundFullnessUndetermined(payload: {
   eventId: string;
@@ -24,7 +24,7 @@ function warnRefundFullnessUndetermined(payload: {
   refundId?: string | null;
   refundAmount?: number | null;
 }) {
-  console.warn('stripe_webhook_refund_fullness_undetermined', payload);
+  logWarn('stripe_webhook_refund_fullness_undetermined', payload);
 }
 
 function logWebhookEvent(payload: {
@@ -35,7 +35,7 @@ function logWebhookEvent(payload: {
 }) {
   const { orderId, paymentIntentId, paymentStatus, eventType } = payload;
 
-  console.log('stripe_webhook', {
+  logInfo('stripe_webhook', {
     provider: 'stripe',
     orderId,
     paymentIntentId,
@@ -286,7 +286,7 @@ export async function POST(request: NextRequest) {
         .limit(1);
 
       if (existing?.processedAt) {
-        console.log('stripe_webhook_duplicate_event', {
+        logInfo('stripe_webhook_duplicate_event', {
           eventId: event.id,
           eventType,
         });
@@ -310,7 +310,7 @@ export async function POST(request: NextRequest) {
       if (candidates.length === 1) {
         resolvedOrderId = candidates[0].id;
       } else {
-        console.log('stripe_webhook_missing_order_id', {
+        logWarn('stripe_webhook_missing_order_id', {
           paymentIntentId,
           eventType,
           reason:
@@ -353,7 +353,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (order.paymentIntentId && order.paymentIntentId !== paymentIntentId) {
-      console.log('stripe_webhook_payment_intent_mismatch', {
+      logInfo('stripe_webhook_payment_intent_mismatch', {
         orderId: order.id,
         paymentIntentId,
         orderPaymentIntentId: order.paymentIntentId,
@@ -417,7 +417,7 @@ export async function POST(request: NextRequest) {
           })
           .where(eq(orders.id, order.id));
 
-        console.log('stripe_webhook_mismatch', {
+        logWarn('stripe_webhook_mismatch', {
           orderId: order.id,
           paymentIntentId,
           eventType,

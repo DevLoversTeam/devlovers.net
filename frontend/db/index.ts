@@ -1,7 +1,7 @@
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import * as dotenv from 'dotenv';
-
+import { logWarn } from '@/lib/logging';
 import * as schema from './schema';
 
 dotenv.config();
@@ -15,9 +15,7 @@ function resolveDatabaseUrl(): string {
       return process.env.DATABASE_URL_PREVIEW;
     }
     if (process.env.DATABASE_URL) {
-      console.warn(
-        '[db] DATABASE_URL_PREVIEW missing; falling back to DATABASE_URL for preview build.'
-      );
+      logWarn('db_preview_url_fallback', { context });
       return process.env.DATABASE_URL;
     }
     throw new Error('DATABASE_URL_PREVIEW is missing for preview deploys');

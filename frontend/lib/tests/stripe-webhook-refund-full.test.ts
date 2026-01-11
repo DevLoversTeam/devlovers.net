@@ -563,8 +563,23 @@ describe('stripe webhook refund (full only): PI fallback + terminal status + ded
 
     // Optional: assert warning fired (locks observability behavior)
     expect(warnSpy).toHaveBeenCalled();
-    expect(warnSpy.mock.calls[0]?.[0]).toBe(
-      'stripe_webhook_refund_fullness_undetermined'
+
+    const firstArg = warnSpy.mock.calls[0]?.[0];
+    expect(typeof firstArg).toBe('string');
+
+    const line = firstArg as string;
+    const parsed = JSON.parse(line) as {
+      level?: string;
+      msg?: string;
+      meta?: Record<string, unknown>;
+    };
+
+    expect(parsed.level).toBe('warn');
+    expect(parsed.msg).toBe('stripe_webhook_refund_fullness_undetermined');
+
+    // (опційно, але корисно: зафіксувати reason)
+    expect(parsed.meta?.reason).toBe(
+      'missing_amount_refunded_and_empty_refunds_list'
     );
 
     warnSpy.mockRestore();

@@ -1,7 +1,7 @@
 import { and, eq, inArray, ne, sql } from 'drizzle-orm';
 
 import { applyReserveMove, applyReleaseMove } from '../inventory';
-import { logError } from '@/lib/logging';
+import { logError, logWarn } from '@/lib/logging';
 import { isPaymentsEnabled } from '@/lib/env/stripe';
 import { db } from '@/db';
 import { orderItems, orders, productPrices, products } from '@/db/schema/shop';
@@ -459,11 +459,11 @@ export async function createOrderWithItems({
           .where(eq(orders.id, row.id));
       } catch (e) {
         if (process.env.DEBUG) {
-          console.warn(
-            '[assertIdempotencyCompatible] idempotencyRequestHash backfill failed',
-            { orderId: row.id },
-            e
-          );
+          logWarn('checkout_rejected', {
+            phase: 'idempotency_request_hash_backfill',
+            orderId: row.id,
+            message: e instanceof Error ? e.message : String(e),
+          });
         }
       }
     }
