@@ -35,14 +35,17 @@ export function useQaTabs() {
   const locale = params.locale as string;
   const localeKey = resolveLocale(locale);
 
-  const pageFromUrl = Number(searchParams.get('page') || 1);
+  const rawPage = searchParams.get('page');
+  const pageFromUrl = rawPage ? Number(rawPage) : 1;
+  const safePageFromUrl =
+    Number.isFinite(pageFromUrl) && pageFromUrl > 0 ? pageFromUrl : 1;
   const categoryFromUrl = searchParams.get('category') || DEFAULT_CATEGORY;
   const searchFromUrl = searchParams.get('search') || '';
 
   const [active, setActive] = useState<CategorySlug>(
     isCategorySlug(categoryFromUrl) ? categoryFromUrl : DEFAULT_CATEGORY
   );
-  const [currentPage, setCurrentPage] = useState(pageFromUrl);
+  const [currentPage, setCurrentPage] = useState(safePageFromUrl);
   const [searchQuery, setSearchQuery] = useState(searchFromUrl);
   const [debouncedSearch, setDebouncedSearch] = useState(searchFromUrl);
   const [items, setItems] = useState<QuestionEntry[]>([]);
@@ -100,6 +103,10 @@ export function useQaTabs() {
         const res = await fetch(
           `/api/questions/${active}?page=${currentPage}&limit=10&locale=${locale}${searchParam}`
         );
+
+        if (!res.ok) {
+          throw new Error(`Failed to load questions: ${res.status}`);
+        }
 
         const data: PaginatedResponse<QuestionApiItem> = await res.json();
 
