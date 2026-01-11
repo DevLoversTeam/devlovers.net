@@ -12,6 +12,7 @@ import CodeBlock from '@/components/q&a/CodeBlock';
 import type {
   AnswerBlock,
   BulletListBlock,
+  CodeBlock as CodeBlockEntry,
   HeadingBlock,
   ListEntry,
   ListItemBlock,
@@ -20,7 +21,6 @@ import type {
   ParagraphBlock,
   QuestionEntry,
   TableBlock,
-  TableCell,
   TextNode,
 } from '@/components/q&a/types';
 
@@ -92,7 +92,7 @@ function renderTextNodes(nodes: TextNode[]): ReactNode {
   return nodes.map((node, i) => renderTextNode(node, i));
 }
 
-function renderCodeBlock(block: CodeBlock, index: number): ReactNode {
+function renderCodeBlock(block: CodeBlockEntry, index: number): ReactNode {
   return (
     <CodeBlock key={index} code={block.content} language={block.language} />
   );
