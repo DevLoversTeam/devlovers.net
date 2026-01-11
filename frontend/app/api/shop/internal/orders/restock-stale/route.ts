@@ -1,4 +1,4 @@
-// C:\Users\milka\devlovers.net\frontend\app\api\shop\internal\orders\restock-stale\route.ts
+//app\api\shop\internal\orders\restock-stale\route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { sql } from 'drizzle-orm';
@@ -10,6 +10,7 @@ import {
 } from '@/lib/services/orders';
 
 import { requireInternalJanitorAuth } from '@/lib/auth/internal-janitor';
+import { logError } from '@/lib/logging';
 
 export const runtime = 'nodejs';
 
@@ -422,7 +423,7 @@ export async function POST(request: NextRequest) {
       minIntervalSeconds,
     });
   } catch (e) {
-    console.error('restock-stale failed', { runId, error: e });
+    logError('restock_stale_failed', e, { runId });
     return NextResponse.json(
       { success: false, code: 'INTERNAL_ERROR' },
       { status: 500 }

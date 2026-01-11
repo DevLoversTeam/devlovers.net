@@ -10,6 +10,7 @@ import { createPaymentIntent, retrievePaymentIntent } from '@/lib/psp/stripe';
 import {
   InsufficientStockError,
   InvalidPayloadError,
+  InvalidVariantError,
   PriceConfigError,
   OrderStateInvalidError,
 } from '@/lib/services/errors';
@@ -28,6 +29,7 @@ import { type PaymentProvider, type PaymentStatus } from '@/lib/shop/payments';
 const EXPECTED_BUSINESS_ERROR_CODES = new Set([
   'IDEMPOTENCY_CONFLICT',
   'INVALID_PAYLOAD',
+  'INVALID_VARIANT',
   'INSUFFICIENT_STOCK',
   'PRICE_CONFIG_ERROR',
 ]);
@@ -47,6 +49,7 @@ function isExpectedBusinessError(err: unknown): boolean {
   if (err instanceof InvalidPayloadError) return true;
   if (err instanceof InsufficientStockError) return true;
   if (err instanceof PriceConfigError) return true;
+  if (err instanceof InvalidVariantError) return true;
 
   return false;
 }
@@ -459,6 +462,15 @@ export async function POST(request: NextRequest) {
         error.message || 'Invalid checkout payload',
         400
       );
+    }
+
+    if (error instanceof InvalidVariantError) {
+      return errorResponse(error.code, error.message, 400, {
+        productId: error.productId,
+        field: error.field,
+        value: error.value,
+        allowed: error.allowed,
+      });
     }
 
     if (error instanceof IdempotencyConflictError) {

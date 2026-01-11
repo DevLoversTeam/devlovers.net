@@ -6,7 +6,26 @@ import { db } from '@/db';
 import { verifyWebhookSignature, retrieveCharge } from '@/lib/psp/stripe';
 import { orders, stripeEvents } from '@/db/schema';
 import { restockOrder } from '@/lib/services/orders';
-import { logError } from '@/lib/logging';
+import { guardedPaymentStatusUpdate } from '@/lib/services/orders/payment-state';
+import { logError, logInfo, logWarn } from '@/lib/logging';
+
+function warnRefundFullnessUndetermined(payload: {
+  eventId: string;
+  eventType: string;
+  chargeId: string | null;
+  chargeAmount: number | null;
+  cumulativeRefunded: number | null;
+  hasRefundObject: boolean;
+  refundsListLength: number | null;
+  hasAmountRefundedField: boolean;
+  reason: string;
+  orderId?: string;
+  paymentIntentId?: string | null;
+  refundId?: string | null;
+  refundAmount?: number | null;
+}) {
+  logWarn('stripe_webhook_refund_fullness_undetermined', payload);
+}
 
 function logWebhookEvent(payload: {
   orderId?: string;
@@ -16,7 +35,7 @@ function logWebhookEvent(payload: {
 }) {
   const { orderId, paymentIntentId, paymentStatus, eventType } = payload;
 
-  console.log('stripe_webhook', {
+  logInfo('stripe_webhook', {
     provider: 'stripe',
     orderId,
     paymentIntentId,
@@ -267,7 +286,7 @@ export async function POST(request: NextRequest) {
         .limit(1);
 
       if (existing?.processedAt) {
-        console.log('stripe_webhook_duplicate_event', {
+        logInfo('stripe_webhook_duplicate_event', {
           eventId: event.id,
           eventType,
         });
@@ -291,7 +310,7 @@ export async function POST(request: NextRequest) {
       if (candidates.length === 1) {
         resolvedOrderId = candidates[0].id;
       } else {
-        console.log('stripe_webhook_missing_order_id', {
+        logWarn('stripe_webhook_missing_order_id', {
           paymentIntentId,
           eventType,
           reason:
@@ -334,7 +353,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (order.paymentIntentId && order.paymentIntentId !== paymentIntentId) {
-      console.log('stripe_webhook_payment_intent_mismatch', {
+      logInfo('stripe_webhook_payment_intent_mismatch', {
         orderId: order.id,
         paymentIntentId,
         orderPaymentIntentId: order.paymentIntentId,
@@ -398,7 +417,7 @@ export async function POST(request: NextRequest) {
           })
           .where(eq(orders.id, order.id));
 
-        console.log('stripe_webhook_mismatch', {
+        logWarn('stripe_webhook_mismatch', {
           orderId: order.id,
           paymentIntentId,
           eventType,
@@ -415,12 +434,18 @@ export async function POST(request: NextRequest) {
       const chargeForIntent = getLatestCharge(paymentIntent as any);
       const latestChargeId = getLatestChargeId(paymentIntent);
 
-      const updated = await db
-        .update(orders)
-        .set({
+      const now = new Date();
+
+      await guardedPaymentStatusUpdate({
+        orderId: order.id,
+        paymentProvider: 'stripe',
+        to: 'paid',
+        source: 'stripe_webhook',
+        eventId: event.id,
+        note: eventType,
+        set: {
           status: 'PAID',
-          paymentStatus: 'paid',
-          updatedAt: new Date(),
+          updatedAt: now,
           pspChargeId: latestChargeId ?? chargeForIntent?.id ?? null,
           pspPaymentMethod: resolvePaymentMethod(
             paymentIntent,
@@ -432,62 +457,17 @@ export async function POST(request: NextRequest) {
             paymentIntent,
             charge: chargeForIntent ?? undefined,
           }),
-        })
-        .where(
-          and(
-            eq(orders.id, order.id),
-            eq(orders.stockRestored, false),
-            ne(orders.inventoryStatus, 'released'),
-
-            // allow "repair": if already paid but status != PAID, still update
-            or(ne(orders.paymentStatus, 'paid'), ne(orders.status, 'PAID')),
-
-            // keep safety gates
-            ne(orders.paymentStatus, 'failed'),
-            ne(orders.paymentStatus, 'refunded')
-          )
-        )
-
-        .returning({ id: orders.id });
-
-      // if returning empty => we did NOT "win" the right to mark paid; do nothing
-      if (updated.length === 0) {
-        // REPAIR: paid already, but status is inconsistent
-        await db
-          .update(orders)
-          .set({
-            status: 'PAID',
-            updatedAt: new Date(),
-            pspChargeId: latestChargeId ?? chargeForIntent?.id ?? null,
-            pspPaymentMethod: resolvePaymentMethod(
-              paymentIntent,
-              chargeForIntent
-            ),
-            pspStatusReason: paymentIntent?.status ?? 'succeeded',
-            pspMetadata: buildPspMetadata({
-              eventType,
-              paymentIntent,
-              charge: chargeForIntent ?? undefined,
-            }),
-          })
-          .where(
-            and(
-              eq(orders.id, order.id),
-              eq(orders.paymentStatus, 'paid'),
-              ne(orders.status, 'PAID'),
-              eq(orders.stockRestored, false),
-              ne(orders.inventoryStatus, 'released')
-            )
-          );
-
-        logWebhookEvent({
-          orderId: order.id,
-          paymentIntentId,
-          paymentStatus,
-          eventType,
-        });
-        return ack();
-      }
+        },
+        extraWhere: and(
+          eq(orders.stockRestored, false),
+          ne(orders.inventoryStatus, 'released'),
+          // avoid churn when already consistent
+          or(ne(orders.paymentStatus, 'paid'), ne(orders.status, 'PAID')),
+          // explicit safety gates (redundant with matrix, but keep)
+          ne(orders.paymentStatus, 'failed'),
+          ne(orders.paymentStatus, 'refunded')
+        ),
+      });
 
       logWebhookEvent({
         orderId: order.id,
@@ -497,9 +477,17 @@ export async function POST(request: NextRequest) {
       });
       return ack();
     }
-
     if (eventType === 'payment_intent.payment_failed') {
       if (order.paymentStatus === 'paid') {
+        logWebhookEvent({
+          orderId: order.id,
+          paymentIntentId,
+          paymentStatus,
+          eventType,
+        });
+        return ack();
+      }
+      if (order.paymentStatus === 'refunded') {
         logWebhookEvent({
           orderId: order.id,
           paymentIntentId,
@@ -517,10 +505,14 @@ export async function POST(request: NextRequest) {
         paymentIntent?.status ??
         'payment_failed';
 
-      await db
-        .update(orders)
-        .set({
-          paymentStatus: 'failed',
+      await guardedPaymentStatusUpdate({
+        orderId: order.id,
+        paymentProvider: 'stripe',
+        to: 'failed',
+        source: 'stripe_webhook',
+        eventId: event.id,
+        note: eventType,
+        set: {
           updatedAt: new Date(),
           pspChargeId: chargeForIntent?.id ?? null,
           pspPaymentMethod: resolvePaymentMethod(
@@ -533,10 +525,8 @@ export async function POST(request: NextRequest) {
             paymentIntent,
             charge: chargeForIntent,
           }),
-        })
-        .where(
-          and(eq(orders.id, order.id), ne(orders.paymentStatus, 'failed'))
-        );
+        },
+      });
 
       if (shouldRestockFromWebhook(order)) {
         await restockOrder(order.id, { reason: 'failed' });
@@ -561,17 +551,29 @@ export async function POST(request: NextRequest) {
         });
         return ack();
       }
-
+      if (order.paymentStatus === 'refunded') {
+        logWebhookEvent({
+          orderId: order.id,
+          paymentIntentId,
+          paymentStatus,
+          eventType,
+        });
+        return ack();
+      }
       const chargeForIntent = getLatestCharge(paymentIntent as any);
       const cancellationReason =
         paymentIntent?.cancellation_reason ??
         paymentIntent?.status ??
         'canceled';
 
-      await db
-        .update(orders)
-        .set({
-          paymentStatus: 'failed',
+      await guardedPaymentStatusUpdate({
+        orderId: order.id,
+        paymentProvider: 'stripe',
+        to: 'failed',
+        source: 'stripe_webhook',
+        eventId: event.id,
+        note: eventType,
+        set: {
           updatedAt: new Date(),
           pspChargeId: chargeForIntent?.id ?? null,
           pspPaymentMethod: resolvePaymentMethod(
@@ -584,10 +586,8 @@ export async function POST(request: NextRequest) {
             paymentIntent,
             charge: chargeForIntent,
           }),
-        })
-        .where(
-          and(eq(orders.id, order.id), ne(orders.paymentStatus, 'failed'))
-        );
+        },
+      });
 
       if (shouldRestockFromWebhook(order)) {
         await restockOrder(order.id, { reason: 'canceled' });
@@ -620,7 +620,7 @@ export async function POST(request: NextRequest) {
           : null;
 
       // MVP: only FULL refund.
-      // - charge.refunded: amount_refunded === amount
+      // - charge.refunded: amount_refunded === amount (or fallback sum(refunds))
       // - charge.refund.updated: compare cumulative refunded for the charge vs charge.amount
       let isFullRefund = false;
 
@@ -637,29 +637,97 @@ export async function POST(request: NextRequest) {
             ? (effectiveCharge as any).amount_refunded
             : null;
 
-        // Fallback: sum refunds list if amount_refunded is missing
-        if (
-          cumulativeRefunded == null &&
-          Array.isArray((effectiveCharge as any)?.refunds?.data)
-        ) {
-          const list = (effectiveCharge as any).refunds.data as any[];
-          const sumFromList = list.reduce((sum, r) => {
-            const a = typeof r?.amount === 'number' ? r.amount : 0;
-            return sum + a;
-          }, 0);
+        // Fail-safe fallback: if amount_refunded missing, try refunds list;
+        // if list absent/empty -> UNDETERMINED (500 + retry), NOT "0 refunded".
+        if (cumulativeRefunded == null) {
+          const list = Array.isArray((effectiveCharge as any)?.refunds?.data)
+            ? ((effectiveCharge as any).refunds.data as any[])
+            : null;
 
           const currentAmt =
             typeof (refund as any)?.amount === 'number'
               ? (refund as any).amount
-              : 0;
+              : null;
+
+          if (!list || list.length === 0) {
+            warnRefundFullnessUndetermined({
+              eventId: event.id,
+              eventType,
+              chargeId:
+                ((effectiveCharge as any)?.id as string | undefined) ?? null,
+              chargeAmount: amt,
+              cumulativeRefunded: null,
+              hasRefundObject: refund != null,
+              refundsListLength: list ? list.length : null,
+              hasAmountRefundedField:
+                typeof (effectiveCharge as any)?.amount_refunded === 'number',
+              reason: 'missing_amount_refunded_and_empty_refunds_list',
+              orderId: order.id,
+              paymentIntentId,
+              refundId: refund?.id ?? null,
+              refundAmount: currentAmt,
+            });
+            throw new Error('REFUND_FULLNESS_UNDETERMINED');
+          }
+
+          let sawNumericAmount = false;
+          const sumFromList = list.reduce((sum, r) => {
+            const a = typeof r?.amount === 'number' ? r.amount : null;
+            if (a == null) return sum;
+            sawNumericAmount = true;
+            return sum + a;
+          }, 0);
+          if (!sawNumericAmount && currentAmt == null) {
+            warnRefundFullnessUndetermined({
+              eventId: event.id,
+              eventType,
+              chargeId:
+                ((effectiveCharge as any)?.id as string | undefined) ?? null,
+              chargeAmount: amt,
+              cumulativeRefunded: null,
+              hasRefundObject: refund != null,
+              refundsListLength: list.length,
+              hasAmountRefundedField:
+                typeof (effectiveCharge as any)?.amount_refunded === 'number',
+              reason:
+                'refunds_list_has_no_numeric_amounts_and_event_has_no_refund_amount',
+              orderId: order.id,
+              paymentIntentId,
+              refundId: refund?.id ?? null,
+              refundAmount: currentAmt,
+            });
+            throw new Error('REFUND_FULLNESS_UNDETERMINED');
+          }
 
           const hasCurrent =
             refund?.id && list.some(r => r?.id && r.id === refund.id);
 
-          cumulativeRefunded = sumFromList + (hasCurrent ? 0 : currentAmt);
+          cumulativeRefunded = sumFromList + (hasCurrent ? 0 : currentAmt ?? 0);
         }
-
         if (amt == null || cumulativeRefunded == null) {
+          const list = Array.isArray((effectiveCharge as any)?.refunds?.data)
+            ? ((effectiveCharge as any).refunds.data as any[])
+            : null;
+          warnRefundFullnessUndetermined({
+            eventId: event.id,
+            eventType,
+            chargeId:
+              ((effectiveCharge as any)?.id as string | undefined) ?? null,
+            chargeAmount: amt,
+            cumulativeRefunded,
+            hasRefundObject: refund != null,
+            refundsListLength: list ? list.length : null,
+            hasAmountRefundedField:
+              typeof (effectiveCharge as any)?.amount_refunded === 'number',
+            reason: 'missing_charge_amount_or_cumulative_refunded',
+            orderId: order.id,
+            paymentIntentId,
+            refundId: refund?.id ?? null,
+            refundAmount:
+              typeof (refund as any)?.amount === 'number'
+                ? (refund as any).amount
+                : null,
+          });
           throw new Error('REFUND_FULLNESS_UNDETERMINED');
         }
 
@@ -671,7 +739,7 @@ export async function POST(request: NextRequest) {
         if (typeof refund.charge === 'object' && refund.charge) {
           effectiveCharge = refund.charge as Stripe.Charge;
         } else if (typeof refund.charge === 'string' && refund.charge.trim()) {
-          // Critical: fetch charge to get full refunds list
+          // Fetch charge to get cumulative refunded / refunds list
           effectiveCharge = await retrieveCharge(refund.charge.trim());
         }
 
@@ -685,29 +753,102 @@ export async function POST(request: NextRequest) {
             ? (effectiveCharge as any).amount_refunded
             : null;
 
-        // Fallback: sum refunds list if present; include current refund if not in list yet
-        if (
-          cumulativeRefunded == null &&
-          Array.isArray((effectiveCharge as any)?.refunds?.data)
-        ) {
-          const list = (effectiveCharge as any).refunds.data as any[];
+        if (cumulativeRefunded == null) {
+          const list = Array.isArray((effectiveCharge as any)?.refunds?.data)
+            ? ((effectiveCharge as any).refunds.data as any[])
+            : null;
+
+          const currentAmt =
+            typeof (refund as any)?.amount === 'number'
+              ? (refund as any).amount
+              : null;
+
+          if (!list || list.length === 0) {
+            warnRefundFullnessUndetermined({
+              eventId: event.id,
+              eventType,
+              chargeId:
+                ((effectiveCharge as any)?.id as string | undefined) ??
+                refundChargeId ??
+                null,
+              chargeAmount: amt,
+              cumulativeRefunded: null,
+              hasRefundObject: true,
+              refundsListLength: list ? list.length : null,
+              hasAmountRefundedField:
+                typeof (effectiveCharge as any)?.amount_refunded === 'number',
+              reason: 'missing_amount_refunded_and_empty_refunds_list',
+              orderId: order.id,
+              paymentIntentId,
+              refundId: refund.id,
+              refundAmount: currentAmt,
+            });
+            throw new Error('REFUND_FULLNESS_UNDETERMINED');
+          }
+
+          let sawNumericAmount = false;
           const sumFromList = list.reduce((sum, r) => {
-            const a = typeof r?.amount === 'number' ? r.amount : 0;
+            const a = typeof r?.amount === 'number' ? r.amount : null;
+            if (a == null) return sum;
+            sawNumericAmount = true;
             return sum + a;
           }, 0);
 
-          const currentAmt =
-            typeof (refund as any).amount === 'number'
-              ? (refund as any).amount
-              : 0;
+          if (!sawNumericAmount && currentAmt == null) {
+            warnRefundFullnessUndetermined({
+              eventId: event.id,
+              eventType,
+              chargeId:
+                ((effectiveCharge as any)?.id as string | undefined) ??
+                refundChargeId ??
+                null,
+              chargeAmount: amt,
+              cumulativeRefunded: null,
+              hasRefundObject: true,
+              refundsListLength: list.length,
+              hasAmountRefundedField:
+                typeof (effectiveCharge as any)?.amount_refunded === 'number',
+              reason:
+                'refunds_list_has_no_numeric_amounts_and_event_has_no_refund_amount',
+              orderId: order.id,
+              paymentIntentId,
+              refundId: refund.id,
+              refundAmount: currentAmt,
+            });
+            throw new Error('REFUND_FULLNESS_UNDETERMINED');
+          }
 
           const hasCurrent = list.some(r => r?.id && r.id === refund.id);
 
-          cumulativeRefunded = sumFromList + (hasCurrent ? 0 : currentAmt);
+          cumulativeRefunded = sumFromList + (hasCurrent ? 0 : currentAmt ?? 0);
         }
 
-        // If still unknown -> fail to force retry (better than silently ignoring full refund)
         if (amt == null || cumulativeRefunded == null) {
+          const list = Array.isArray((effectiveCharge as any)?.refunds?.data)
+            ? ((effectiveCharge as any).refunds.data as any[])
+            : null;
+          warnRefundFullnessUndetermined({
+            eventId: event.id,
+            eventType,
+            chargeId:
+              ((effectiveCharge as any)?.id as string | undefined) ??
+              refundChargeId ??
+              null,
+            chargeAmount: amt,
+            cumulativeRefunded,
+            hasRefundObject: true,
+            refundsListLength: list ? list.length : null,
+            hasAmountRefundedField:
+              typeof (effectiveCharge as any)?.amount_refunded === 'number',
+            reason: 'missing_charge_amount_or_cumulative_refunded',
+            orderId: order.id,
+            paymentIntentId,
+            refundId: refund.id,
+            refundAmount:
+              typeof (refund as any)?.amount === 'number'
+                ? (refund as any).amount
+                : null,
+          });
           throw new Error('REFUND_FULLNESS_UNDETERMINED');
         }
 
@@ -715,7 +856,6 @@ export async function POST(request: NextRequest) {
 
         // Prefer charge id from effectiveCharge for PSP fields
         if (effectiveCharge?.id) {
-          // override local charge variable for downstream pspChargeId/metadata usage
           charge = effectiveCharge;
         }
       }
@@ -758,11 +898,15 @@ export async function POST(request: NextRequest) {
         return ack();
       }
 
-      await db
-        .update(orders)
-        .set({
+      const refundRes = await guardedPaymentStatusUpdate({
+        orderId: order.id,
+        paymentProvider: 'stripe',
+        to: 'refunded',
+        source: 'stripe_webhook',
+        eventId: event.id,
+        note: eventType,
+        set: {
           updatedAt: new Date(),
-          paymentStatus: 'refunded',
           status: 'CANCELED', // terminal in current enum
           pspChargeId: charge?.id ?? refundChargeId ?? null,
           pspPaymentMethod: resolvePaymentMethod(paymentIntent, charge),
@@ -773,12 +917,14 @@ export async function POST(request: NextRequest) {
             charge: charge ?? undefined,
             refund,
           }),
-        })
-        .where(
-          and(eq(orders.id, order.id), ne(orders.paymentStatus, 'refunded'))
-        );
+        },
+      });
 
-      if (shouldRestockFromWebhook(order)) {
+      const canRestock =
+        refundRes.applied ||
+        (!refundRes.applied && refundRes.reason === 'ALREADY_IN_STATE');
+
+      if (canRestock && shouldRestockFromWebhook(order)) {
         await restockOrder(order.id, { reason: 'refunded' });
       }
 
@@ -800,6 +946,17 @@ export async function POST(request: NextRequest) {
     });
     return ack();
   } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message === 'REFUND_FULLNESS_UNDETERMINED'
+    ) {
+      // Do NOT ack() -> keep processedAt NULL so Stripe retries.
+      return NextResponse.json(
+        { code: 'REFUND_FULLNESS_UNDETERMINED' },
+        { status: 500 }
+      );
+    }
+
     logError('Stripe webhook processing failed', error);
     return NextResponse.json({ error: 'internal_error' }, { status: 500 });
   }

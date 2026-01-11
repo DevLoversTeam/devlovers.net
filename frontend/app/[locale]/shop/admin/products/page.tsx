@@ -6,6 +6,7 @@ import { db } from '@/db';
 import { products, productPrices } from '@/db/schema';
 import { formatMoney, resolveCurrencyFromLocale } from '@/lib/shop/currency';
 import { fromDbMoney } from '@/lib/shop/money';
+import { logWarn } from '@/lib/logging';
 
 function formatDate(value: Date | null, locale: string) {
   if (!value) return '-';
@@ -22,7 +23,7 @@ function safeFromDbMoney(
   try {
     return fromDbMoney(value);
   } catch (err) {
-    console.warn('[admin products] fromDbMoney failed', {
+    logWarn('admin_products_from_db_money_failed', {
       ...ctx,
       valueType: typeof value,
       value,

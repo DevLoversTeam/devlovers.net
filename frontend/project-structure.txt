@@ -99,6 +99,7 @@
           📄 page.tsx
           📁 [id]
             📄 page.tsx
+            📄 RefundButton.tsx
         📄 page.tsx
         📁 products
           📁 new
@@ -258,8 +259,6 @@
   📄 seed-quiz-typescript.ts
   📄 seed-quiz-verify.ts
   📄 seed-users.ts
-📁 docs
-  📄 env.md
 📁 drizzle
   📄 0000_rich_magus.sql
   📄 0001_black_random.sql
@@ -276,6 +275,8 @@
   📄 0011_add_orders_sweep_claim_index.sql
   📄 0012_inventory_moves_product_fk_restrict.sql
   📄 0013_add_internal_job_state.sql
+  📄 0014_add-stripe-events-processed-at.sql
+  📄 0015_warm_dexter_bennett.sql
   📁 meta
     📄 0000_snapshot.json
     📄 0001_snapshot.json
@@ -288,9 +289,9 @@
     📄 0008_snapshot.json
     📄 0009_snapshot.json
     📄 0010_snapshot.json
-    📄 0011_snapshot.json
     📄 0012_snapshot.json
     📄 0013_snapshot.json
+    📄 0014_snapshot.json
     📄 _journal.json
   📄 relations.ts
   📄 schema.ts
@@ -329,7 +330,30 @@
   📁 services
     📄 errors.ts
     📄 inventory.ts
+    📁 orders
+      📄 checkout.ts
+      📄 payment-intent.ts
+      📄 payment-state.ts
+      📄 refund.ts
+      📄 restock.ts
+      📄 summary.ts
+      📄 sweeps.ts
+      📄 _shared.ts
     📄 orders.ts
+    📁 products
+      📁 admin
+        📄 queries.ts
+      📁 cart
+        📄 rehydrate.ts
+      📄 mapping.ts
+      📁 mutations
+        📄 create.ts
+        📄 delete.ts
+        📄 toggle.ts
+        📄 update.ts
+      📄 prices.ts
+      📄 slug.ts
+      📄 types.ts
     📄 products.ts
   📁 shop
     📄 cart-item-key.ts
@@ -342,6 +366,7 @@
     📄 slug.ts
   📁 tests
     📄 admin-api-killswitch.test.ts
+    📄 admin-product-sale-contract.test.ts
     📄 checkout-concurrency-stock1.test.ts
     📄 checkout-currency-policy.test.ts
     📄 checkout-no-payments.test.ts
@@ -350,7 +375,11 @@
     📄 order-items-snapshot-immutable.test.ts
     📄 order-items-variants.test.ts
     📄 orders-access.test.ts
+    📄 payment-state-legacy-writers.test.ts
+    📄 payment-state-machine.helper.test.ts
+    📄 payment-status-tripwire.test.ts
     📄 prices.test.ts
+    📄 product-sale-invariant.test.ts
     📄 public-product-visibility.test.ts
     📄 restock-order-only-once.test.ts
     📄 restock-stale-claim-gate.test.ts
@@ -359,7 +388,9 @@
     📄 restock-sweep-claim.test.ts
     📄 stripe-webhook-contract.test.ts
     📄 stripe-webhook-mismatch.test.ts
+    📄 stripe-webhook-paid-status-repair.test.ts
     📄 stripe-webhook-psp-fields.test.ts
+    📄 stripe-webhook-refund-full.test.ts
     📁 __mocks__
       📄 server-only.ts
   📁 types
@@ -404,7 +435,5 @@
 📁 scripts
   📄 guard-non-preview.ts
   📄 shop-janitor-restock-stale.mjs
-📁 tmp
 📄 tsconfig.json
-📄 tsconfig.tsbuildinfo
 📄 vitest.config.ts

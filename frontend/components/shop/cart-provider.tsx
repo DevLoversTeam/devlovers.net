@@ -13,6 +13,7 @@ import {
 import {
   type Cart,
   type CartClientItem,
+  type CartRehydrateError,
   createCartItemKey,
   capQuantityByStock,
   getStoredCartItems,
@@ -22,6 +23,7 @@ import {
   emptyCart,
 } from '@/lib/cart';
 import type { ShopProduct } from '@/lib/shop/data';
+import { logWarn } from '@/lib/logging';
 
 interface CartContextType {
   cart: Cart;
@@ -53,16 +55,89 @@ const CartContext = createContext<CartContextType>({
   clearCart: () => {},
 });
 
+function getErrorInfo(error: unknown): {
+  code: string;
+  message: string;
+  details?: unknown;
+} {
+  const e = error as Partial<CartRehydrateError> & {
+    code?: unknown;
+    details?: unknown;
+    message?: unknown;
+  };
+
+  return {
+    code: typeof e?.code === 'string' ? e.code : 'UNKNOWN_ERROR',
+    message: typeof e?.message === 'string' ? e.message : 'Cart rehydrate failed',
+    details: e?.details,
+  };
+}
+
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [cart, setCart] = useState<Cart>(emptyCart);
 
   const syncCartWithServer = useCallback(async (items: CartClientItem[]) => {
     persistCartItems(items);
+
     try {
       const nextCart = await rehydrateCart(items);
       setCart(nextCart);
+      return;
     } catch (error) {
-      console.error('Failed to rehydrate cart', error);
+      const info = getErrorInfo(error);
+
+      // Self-heal: missing price for locale currency (e.g., uk => UAH) should not crash UI.
+      if (info.code === 'PRICE_CONFIG_ERROR') {
+        const productId =
+          typeof (info.details as any)?.productId === 'string'
+            ? String((info.details as any).productId)
+            : '';
+
+        // Best-effort: remove only the problematic product (if identified), retry once.
+        if (productId) {
+          const filtered = items.filter(i => i.productId !== productId);
+
+          if (filtered.length !== items.length) {
+            persistCartItems(filtered);
+
+            try {
+              const retriedCart = await rehydrateCart(filtered);
+              setCart(retriedCart);
+
+              logWarn('cart_rehydrate_recovered_by_removing_item', {
+                code: info.code,
+                removedProductId: productId,
+              });
+
+              return;
+            } catch (retryError) {
+              const retryInfo = getErrorInfo(retryError);
+              logWarn('cart_rehydrate_retry_failed', {
+                code: retryInfo.code,
+                message: retryInfo.message,
+              });
+            }
+          }
+        }
+
+        // Fallback: clear cart to unblock the user.
+        clearStoredCart();
+        setCart(emptyCart);
+
+        logWarn('cart_cleared_due_to_rehydrate_error', {
+          code: info.code,
+          message: info.message,
+          details: info.details,
+        });
+
+        return;
+      }
+
+      // Non-blocking: keep current cart state (avoid crashing the page).
+      logWarn('cart_rehydrate_failed_client', {
+        code: info.code,
+        message: info.message,
+      });
     }
   }, []);
 
