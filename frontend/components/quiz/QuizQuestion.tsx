@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { QuizQuestionWithAnswers } from '@/db/queries/quiz';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Button } from '@/components/ui/button';
@@ -23,6 +24,7 @@ export function QuizQuestion({
   onNext,
   isLoading = false,
 }: QuizQuestionProps) {
+  const t = useTranslations('quiz.question');
   const isAnswering = status === 'answering';
   const isRevealed = status === 'revealed';
 
@@ -63,12 +65,12 @@ export function QuizQuestion({
               <span className="flex-1 text-base">{answer.answerText}</span>
               {showCorrect && (
                 <span className="text-green-600 dark:text-green-400 text-sm font-medium">
-                  ✓ Правильно
+                  ✓ {t('correct')}
                 </span>
               )}
               {showIncorrect && (
                 <span className="text-red-600 dark:text-red-400 text-sm font-medium">
-                  ✗ Неправильно
+                  ✗ {t('incorrect')}
                 </span>
               )}
             </label>
@@ -83,7 +85,7 @@ export function QuizQuestion({
           )}
         >
           <div className="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
-            Пояснення:
+            {t('explanationLabel')}
           </div>
           <ExplanationRenderer blocks={question.explanation} />
         </div>
@@ -99,10 +101,10 @@ export function QuizQuestion({
             <div className="text-2xl">💡</div>
             <div className="flex-1">
               <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">
-                Рекомендація
+                {t('recommendation.title')}
               </h4>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Рекомендуємо повторити цю тему після завершення квізу
+                {t('recommendation.description')}
               </p>
             </div>
           </div>
@@ -114,7 +116,7 @@ export function QuizQuestion({
           disabled={isLoading}
           className="mt-2 animate-in fade-in slide-in-from-bottom-2 duration-300"
         >
-          {isLoading ? 'Завантаження...' : 'Далі'}
+          {isLoading ? t('loading') : t('nextButton')}
         </Button>
       )}
     </div>
