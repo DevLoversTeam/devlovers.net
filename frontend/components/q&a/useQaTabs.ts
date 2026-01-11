@@ -32,7 +32,8 @@ export function useQaTabs() {
   const searchParams = useSearchParams();
   const params = useParams();
 
-  const locale = params.locale as string;
+  const locale =
+    typeof params.locale === 'string' ? params.locale : params.locale?.[0] ?? '';
   const localeKey = resolveLocale(locale);
 
   const rawPage = searchParams.get('page');
@@ -92,6 +93,8 @@ export function useQaTabs() {
   }, [searchQuery, active, updateUrl]);
 
   useEffect(() => {
+    const controller = new AbortController();
+
     async function load() {
       setIsLoading(true);
 
@@ -101,7 +104,8 @@ export function useQaTabs() {
           : '';
 
         const res = await fetch(
-          `/api/questions/${active}?page=${currentPage}&limit=10&locale=${localeKey}${searchParam}`
+          `/api/questions/${active}?page=${currentPage}&limit=10&locale=${localeKey}${searchParam}`,
+          { signal: controller.signal }
         );
 
         if (!res.ok) {
@@ -129,6 +133,9 @@ export function useQaTabs() {
     }
 
     load();
+    return () => {
+      controller.abort();
+    };
   }, [active, currentPage, debouncedSearch, localeKey]);
 
   const handleCategoryChange = useCallback(
