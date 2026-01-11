@@ -29,26 +29,34 @@ function normalizeCartPayload(body: unknown) {
   };
 }
 
+function jsonError(
+  status: number,
+  code: string,
+  message: string,
+  details?: unknown
+) {
+  return NextResponse.json(
+    { error: { code, message, ...(details ? { details } : {}) } },
+    { status }
+  );
+}
+
 export async function POST(request: NextRequest) {
   let body: unknown;
 
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json(
-      { error: 'Unable to process cart data.' },
-      { status: 400 }
-    );
+    return jsonError(400, 'INVALID_PAYLOAD', 'Unable to process cart data.');
   }
 
   const normalizedBody = normalizeCartPayload(body);
   const parsedPayload = cartRehydratePayloadSchema.safeParse(normalizedBody);
 
   if (!parsedPayload.success) {
-    return NextResponse.json(
-      { error: 'Invalid cart payload', details: parsedPayload.error.format() },
-      { status: 400 }
-    );
+    return jsonError(400, 'INVALID_PAYLOAD', 'Invalid cart payload', {
+      issues: parsedPayload.error.format(),
+    });
   }
 
   const { currency } = resolveLocaleAndCurrency(request);
@@ -60,41 +68,33 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     logError('cart_rehydrate_failed', error);
 
+    // Missing price for locale currency is a CONTRACT error, not a 422.
     if (error instanceof PriceConfigError) {
-      return NextResponse.json(
-        {
-          code: error.code,
-          message: error.message,
-          details: { productId: error.productId, currency: error.currency },
-        },
-        { status: 422 }
-      );
+      return jsonError(400, error.code, error.message, {
+        productId: error.productId,
+        currency: error.currency,
+      });
     }
+
+    // DB misconfiguration / invalid stored money: treat as 500 (server fault),
+    // but keep stable code for diagnostics.
     if (error instanceof MoneyValueError) {
-      return NextResponse.json(
+      return jsonError(
+        500,
+        'PRICE_CONFIG_ERROR',
+        'Invalid price configuration for one or more products.',
         {
-          code: 'PRICE_CONFIG_ERROR',
-          message: 'Invalid price configuration for one or more products.',
-          details: {
-            productId: error.productId,
-            field: error.field,
-            rawValue: error.rawValue,
-          },
-        },
-        { status: 500 }
+          productId: error.productId,
+          field: error.field,
+          rawValue: error.rawValue,
+        }
       );
     }
 
     if (error instanceof InvalidPayloadError) {
-      return NextResponse.json(
-        { code: error.code, message: error.message },
-        { status: 400 }
-      );
+      return jsonError(400, error.code, error.message);
     }
 
-    return NextResponse.json(
-      { error: 'Unable to rehydrate cart.' },
-      { status: 500 }
-    );
+    return jsonError(500, 'INTERNAL_ERROR', 'Unable to rehydrate cart.');
   }
 }
