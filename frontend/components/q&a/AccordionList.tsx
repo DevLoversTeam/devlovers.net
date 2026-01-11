@@ -9,73 +9,20 @@ import {
 } from '@/components/ui/accordion';
 
 import CodeBlock from '@/components/q&a/CodeBlock';
-
-type TextNode = {
-  text: string;
-  bold?: boolean;
-  italic?: boolean;
-  code?: boolean;
-  boldItalic?: boolean;
-};
-
-type CodeBlock = {
-  type: 'code';
-  language: string | null;
-  content: string;
-};
-
-type ListEntry = ListItemBlock | ListItemChild;
-
-type BulletListBlock = {
-  type: 'bulletList';
-  children: ListEntry[];
-};
-
-type NumberedListBlock = {
-  type: 'numberedList';
-  children: ListEntry[];
-};
-
-type ListItemChild = TextNode | CodeBlock | BulletListBlock | NumberedListBlock;
-
-type ListItemBlock = {
-  type: 'listItem';
-  children: ListItemChild[];
-};
-
-type ParagraphBlock = {
-  type: 'paragraph';
-  children: TextNode[];
-};
-
-type HeadingBlock = {
-  type: 'heading';
-  level: 3 | 4;
-  children: TextNode[];
-};
-
-type TableCell = TextNode[];
-
-type TableBlock = {
-  type: 'table';
-  header: TableCell[];
-  rows: TableCell[][];
-};
-
-type AnswerBlock =
-  | ParagraphBlock
-  | HeadingBlock
-  | BulletListBlock
-  | NumberedListBlock
-  | CodeBlock
-  | TableBlock;
-
-type QuestionEntry = {
-  id?: number | string;
-  question: string;
-  category: string;
-  answerBlocks: AnswerBlock[];
-};
+import type {
+  AnswerBlock,
+  BulletListBlock,
+  CodeBlock as CodeBlockEntry,
+  HeadingBlock,
+  ListEntry,
+  ListItemBlock,
+  ListItemChild,
+  NumberedListBlock,
+  ParagraphBlock,
+  QuestionEntry,
+  TableBlock,
+  TextNode,
+} from '@/components/q&a/types';
 
 function isListItemBlock(value: ListEntry): value is ListItemBlock {
   return (
@@ -145,7 +92,7 @@ function renderTextNodes(nodes: TextNode[]): ReactNode {
   return nodes.map((node, i) => renderTextNode(node, i));
 }
 
-function renderCodeBlock(block: CodeBlock, index: number): ReactNode {
+function renderCodeBlock(block: CodeBlockEntry, index: number): ReactNode {
   return (
     <CodeBlock key={index} code={block.content} language={block.language} />
   );
