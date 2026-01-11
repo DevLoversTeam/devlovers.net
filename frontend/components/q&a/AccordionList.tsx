@@ -9,73 +9,20 @@ import {
 } from '@/components/ui/accordion';
 
 import CodeBlock from '@/components/q&a/CodeBlock';
-
-type TextNode = {
-  text: string;
-  bold?: boolean;
-  italic?: boolean;
-  code?: boolean;
-  boldItalic?: boolean;
-};
-
-type CodeBlock = {
-  type: 'code';
-  language: string | null;
-  content: string;
-};
-
-type ListEntry = ListItemBlock | ListItemChild;
-
-type BulletListBlock = {
-  type: 'bulletList';
-  children: ListEntry[];
-};
-
-type NumberedListBlock = {
-  type: 'numberedList';
-  children: ListEntry[];
-};
-
-type ListItemChild = TextNode | CodeBlock | BulletListBlock | NumberedListBlock;
-
-type ListItemBlock = {
-  type: 'listItem';
-  children: ListItemChild[];
-};
-
-type ParagraphBlock = {
-  type: 'paragraph';
-  children: TextNode[];
-};
-
-type HeadingBlock = {
-  type: 'heading';
-  level: 3 | 4;
-  children: TextNode[];
-};
-
-type TableCell = TextNode[];
-
-type TableBlock = {
-  type: 'table';
-  header: TableCell[];
-  rows: TableCell[][];
-};
-
-type AnswerBlock =
-  | ParagraphBlock
-  | HeadingBlock
-  | BulletListBlock
-  | NumberedListBlock
-  | CodeBlock
-  | TableBlock;
-
-type QuestionEntry = {
-  id?: number | string;
-  question: string;
-  category: string;
-  answerBlocks: AnswerBlock[];
-};
+import type {
+  AnswerBlock,
+  BulletListBlock,
+  HeadingBlock,
+  ListEntry,
+  ListItemBlock,
+  ListItemChild,
+  NumberedListBlock,
+  ParagraphBlock,
+  QuestionEntry,
+  TableBlock,
+  TableCell,
+  TextNode,
+} from '@/components/q&a/types';
 
 function isListItemBlock(value: ListEntry): value is ListItemBlock {
   return (

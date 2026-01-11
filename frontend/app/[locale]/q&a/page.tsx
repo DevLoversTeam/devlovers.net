@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { getTranslations } from 'next-intl/server';
-import TabsSection from '@/components/q&a/TabsSection';
+import QaSection from '@/components/q&a/QaSection';
 
 export async function generateMetadata({
   params,
@@ -18,9 +18,9 @@ export async function generateMetadata({
 
 export default function QAPage() {
   return (
-    <main className="max-w-3xl mx-auto py-10">
+    <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
       <Suspense fallback={<>...</>}>
-        <TabsSection />
+        <QaSection />
       </Suspense>
     </main>
   );
