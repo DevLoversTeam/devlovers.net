@@ -109,7 +109,7 @@ export function QuizResult({
 {violationsCount >= 3 && (
         <div className="p-4 rounded-xl bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800">
           <p className="text-center text-orange-800 dark:text-orange-200 font-medium">
-            {t('violations', { count: violationsCount })}
+            <span aria-hidden="true">⚠️</span> {t('violations', { count: violationsCount })}
           </p>
         </div>
       )}
@@ -140,12 +140,10 @@ export function QuizResult({
 <div className="flex flex-col sm:flex-row gap-3 justify-center">
   <Button
     onClick={() => {
-  const url = `/${locale}/signup?returnTo=/quiz/${quizSlug}`;
-  console.log('Navigating to signup:', url);
-  window.location.href = url;
-}}
-    variant="primary"
-  >
+      const url = `/${locale}/login?returnTo=/quiz/${quizSlug}`;
+      window.location.href = url;
+    }}
+    variant="primary">
     {t('loginButton')}
   </Button>
   <Button

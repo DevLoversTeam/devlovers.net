@@ -99,7 +99,15 @@ export function CountdownTimer({
 
       {percentage <= 30 && (
         <p className="text-xs mt-2 font-medium">
-          {percentage <= 10 ? t('almostDone') : t('hurryUp')}
+          {percentage <= 10 ? (
+            <>
+              <span aria-hidden="true">⚠️</span> {t('almostDone')}
+            </>
+          ) : (
+            <>
+              <span aria-hidden="true">⏰</span> {t('hurryUp')}
+            </>
+          )}
         </p>
       )}
     </div>
