@@ -101,7 +101,7 @@ export function useQaTabs() {
           : '';
 
         const res = await fetch(
-          `/api/questions/${active}?page=${currentPage}&limit=10&locale=${locale}${searchParam}`
+          `/api/questions/${active}?page=${currentPage}&limit=10&locale=${localeKey}${searchParam}`
         );
 
         if (!res.ok) {
@@ -129,7 +129,7 @@ export function useQaTabs() {
     }
 
     load();
-  }, [active, currentPage, debouncedSearch, locale]);
+  }, [active, currentPage, debouncedSearch, localeKey]);
 
   const handleCategoryChange = useCallback(
     (category: string) => {
