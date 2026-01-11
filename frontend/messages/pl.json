@@ -39,7 +39,118 @@
     "metaDescription": "Pytania i odpowiedzi do przygotowania do rozmów kwalifikacyjnych",
     "frontend": "Frontend",
     "backend": "Backend",
-    "fullstack": "Full-stack"
+    "fullstack": "Full-stack",
+    "pagination": {
+      "label": "Paginacja",
+      "previous": "Poprzedni",
+      "next": "Następny",
+      "previousPage": "Poprzednia strona",
+      "nextPage": "Następna strona",
+      "page": "Strona {page}"
+    }
+  },
+  "quiz": {
+    "metaTitle": "Quizy | DevLovers",
+    "metaDescription": "Sprawdź swoją wiedzę za pomocą interaktywnych quizów",
+    "page": {
+      "noQuestions": "Brak pytań dla tego quizu",
+      "questionsLabel": "Pytania",
+      "timeLabel": "Czas",
+      "minutes": "min"
+    },
+    "list": {
+      "title": "Quizy",
+      "practice": "Praktyka",
+      "subtitle": "Wybierz quiz, aby sprawdzić swoją wiedzę",
+      "noQuizzes": "Brak dostępnych quizów. Sprawdź ponownie wkrótce."
+    },
+    "rules": {
+      "title": "Zasady Quizu",
+      "general": {
+        "title": "Zasady Ogólne",
+        "description": "Odpowiadaj na pytania uczciwie. Każde pytanie ma tylko jedną prawidłową odpowiedź."
+      },
+      "forbidden": {
+        "title": "Zabronione",
+        "copyPaste": "Kopiowanie i wklejanie tekstu",
+        "contextMenu": "Używanie menu kontekstowego (prawy przycisk myszy)",
+        "tabSwitch": "Przełączanie na inne karty lub programy",
+        "externalSources": "Używanie zewnętrznych źródeł informacji"
+      },
+      "control": {
+        "title": "System Kontroli",
+        "description": "Naruszenia zasad są automatycznie wykrywane. Przy 3+ naruszeniach wynik nie zostanie zaliczony do rankingu."
+      },
+      "time": {
+        "title": "Wymagania Czasowe",
+        "description": "Minimalny czas: {seconds} sekund (3 sekundy na pytanie). Wyniki zbyt szybkie nie będą liczone."
+      },
+      "startButton": "Rozpocznij Quiz"
+    },
+    "question": {
+      "correct": "Prawidłowo",
+      "incorrect": "Nieprawidłowo",
+      "explanationLabel": "Wyjaśnienie:",
+      "recommendation": {
+        "title": "Rekomendacja",
+        "description": "Zalecamy przejrzenie tego tematu po ukończeniu quizu"
+      },
+      "loading": "Ładowanie...",
+      "nextButton": "Dalej"
+    },
+    "progress": {
+      "label": "Pytanie {current} / {total}"
+    },
+    "timer": {
+      "label": "Pozostały czas:",
+      "almostDone": "Czas prawie minął!",
+      "hurryUp": "Pośpiesz się!"
+    },
+    "result": {
+      "correctAnswers": "prawidłowych odpowiedzi",
+      "timeUp": {
+        "title": "Czas Minął",
+        "message": "Nie zdążyłeś odpowiedzieć na żadne pytanie. Spróbuj ponownie i lepiej zarządzaj czasem"
+      },
+      "allWrong": {
+        "title": "Wszystkie Odpowiedzi Nieprawidłowe",
+        "message": "Zalecamy dokładne przestudiowanie materiału przed następną próbą"
+      },
+      "needPractice": {
+        "title": "Potrzeba Więcej Praktyki",
+        "message": "Zalecamy poświęcenie więcej czasu na teorię i praktykę"
+      },
+      "goodJob": {
+        "title": "Dobra Robota!",
+        "message": "Przejrzyj trudne tematy i spróbuj ponownie"
+      },
+      "excellent": {
+        "title": "Doskonała Praca!",
+        "message": "Dobrze opanowałeś materiał"
+      },
+      "violations": "Quiz ukończony z naruszeniami zasad ({count} naruszeń). Wynik nie zaliczony do rankingu.",
+      "pointsAwarded": "+{points} punktów dodanych do oceny",
+      "noPointsAwarded": "Nie przyznano punktów (wynik nie poprawiony)",
+      "guestMessage": "Aby zapisać wynik i pojawić się w rankingu, zaloguj się lub zarejestruj",
+      "loginButton": "Zaloguj się",
+      "signupButton": "Zarejestruj się",
+      "retryButton": "Spróbuj Ponownie",
+      "backButton": "Powrót do Tematów"
+    },
+    "card": {
+      "uncategorized": "Bez kategorii",
+      "completed": "✓ Ukończono",
+      "questions": "pytań",
+      "min": "min",
+      "best": "Najlepszy:",
+      "attempt": "próba",
+      "attempts": "próby",
+      "retake": "Powtórz Quiz",
+      "start": "Rozpocznij Quiz"
+    },
+    "section": {
+      "noQuizzes": "W tej kategorii nie ma jeszcze quizów."
+    }
   },
   "blog": {
     "title": "Wszystkie Wpisy na Blogu",
@@ -51,7 +162,9 @@
     "clear": "Wyczyść",
     "noPosts": "Nie znaleziono wpisów",
     "noPostsForTags": "Nie znaleziono wpisów dla wybranych tagów",
-    "visitResource": "Odwiedź zasób →"
+    "visitResource": "Odwiedź zasób",
+    "readArticle": "Czytaj artykuł",
+    "aboutAuthor": "O autorze"
   },
   "footer": {
     "builtWith": "Zbudowane z",

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { QuizCard } from './QuizCard';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { categoryData } from '@/data/category';
@@ -32,6 +33,7 @@ export default function QuizzesSection({
   quizzes,
   userProgressMap,
 }: QuizzesSectionProps) {
+  const t = useTranslations('quiz.section');
   const params = useParams();
   const locale = params.locale as string;
   const localeKey = (['uk', 'en', 'pl'] as const).includes(
@@ -88,7 +90,7 @@ export default function QuizzesSection({
               ) : (
                 <div className="text-center py-12">
                   <p className="text-gray-600 dark:text-gray-400">
-                    У цій категорії ще немає квізів.
+                    {t('noQuizzes')}
                   </p>
                 </div>
               )}

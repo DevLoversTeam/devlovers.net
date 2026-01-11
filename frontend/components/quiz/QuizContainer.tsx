@@ -1,6 +1,6 @@
 'use client';
 
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { savePendingQuizResult } from '@/lib/guest-quiz';
 import { useReducer, useTransition } from 'react';
 import { useAntiCheat } from '@/hooks/useAntiCheat';
@@ -114,6 +114,7 @@ export function QuizContainer({
   timeLimitSeconds,
   onBackToTopics,
 }: QuizContainerProps) {
+  const tRules = useTranslations('quiz.rules');
   const [isPending, startTransition] = useTransition();
   const [state, dispatch] = useReducer(quizReducer, {
     status: 'rules',
@@ -230,17 +231,16 @@ const locale = useLocale();
     return (
       <div className="max-w-2xl mx-auto space-y-6 p-6 rounded-xl border border-gray-200 dark:border-gray-800">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-          Правила проходження квізу
+          {tRules('title')}
         </h2>
 
         <div className="space-y-4 text-gray-700 dark:text-gray-300">
           <div className="flex gap-3">
             <span className="text-xl">📝</span>
             <div>
-              <p className="font-medium">Загальні правила</p>
+              <p className="font-medium">{tRules('general.title')}</p>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Відповідайте на питання чесно. Кожне питання має тільки одну
-                правильну відповідь.
+                {tRules('general.description')}
               </p>
             </div>
           </div>
@@ -248,12 +248,12 @@ const locale = useLocale();
           <div className="flex gap-3">
             <span className="text-xl">🚫</span>
             <div>
-              <p className="font-medium">Заборонено</p>
+              <p className="font-medium">{tRules('forbidden.title')}</p>
               <ul className="text-sm text-gray-600 dark:text-gray-400 list-disc list-inside space-y-1">
-                <li>Копіювання та вставка тексту</li>
-                <li>Використання контекстного меню (права кнопка миші)</li>
-                <li>Переключення на інші вкладки або програми</li>
-                <li>Використання сторонніх джерел інформації</li>
+                <li>{tRules('forbidden.copyPaste')}</li>
+                <li>{tRules('forbidden.contextMenu')}</li>
+                <li>{tRules('forbidden.tabSwitch')}</li>
+                <li>{tRules('forbidden.externalSources')}</li>
               </ul>
             </div>
           </div>
@@ -261,10 +261,9 @@ const locale = useLocale();
           <div className="flex gap-3">
             <span className="text-xl">⚠️</span>
             <div>
-              <p className="font-medium">Система контролю</p>
+              <p className="font-medium">{tRules('control.title')}</p>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Порушення правил фіксуються автоматично. При 3+ порушеннях
-                результат не зараховується до рейтингу.
+                {tRules('control.description')}
               </p>
             </div>
           </div>
@@ -272,17 +271,16 @@ const locale = useLocale();
           <div className="flex gap-3">
             <span className="text-xl">⏱️</span>
             <div>
-              <p className="font-medium">Час проходження</p>
+              <p className="font-medium">{tRules('time.title')}</p>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Мінімальний час: {totalQuestions * 3} секунд (по 3 секунди на
-                питання). Занадто швидке проходження не зараховується.
+                {tRules('time.description', { seconds: totalQuestions * 3 })}
               </p>
             </div>
           </div>
         </div>
 
         <Button onClick={handleStart} className="w-full" size="lg">
-          Почати квіз
+          {tRules('startButton')}
         </Button>
       </div>
     );

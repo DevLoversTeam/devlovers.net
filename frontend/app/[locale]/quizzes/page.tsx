@@ -1,5 +1,6 @@
 import { getActiveQuizzes, getUserQuizzesProgress } from '@/db/queries/quiz';
 import { getCurrentUser } from '@/lib/auth';
+import { getTranslations } from 'next-intl/server';
 import QuizzesSection from '@/components/quiz/QuizzesSection';
 
 type PageProps = { params: Promise<{ locale: string }> };
@@ -8,8 +9,9 @@ export const dynamic = 'force-dynamic';
 
 export default async function QuizzesPage({ params }: PageProps) {
   const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'quiz.list' });
   const session = await getCurrentUser();
-  
+
   const quizzes = await getActiveQuizzes(locale);
 
   let userProgressMap: Record<string, any> = {};
@@ -22,9 +24,9 @@ export default async function QuizzesPage({ params }: PageProps) {
   if (!quizzes.length) {
     return (
       <div className="mx-auto max-w-5xl py-12">
-        <h1 className="text-3xl font-bold mb-4">Quizzes</h1>
+        <h1 className="text-3xl font-bold mb-4">{t('title')}</h1>
         <p className="text-gray-600 dark:text-gray-400">
-          No quizzes available yet. Please check back soon.
+          {t('noQuizzes')}
         </p>
       </div>
     );
@@ -34,11 +36,11 @@ export default async function QuizzesPage({ params }: PageProps) {
     <div className="mx-auto max-w-5xl py-12">
       <div className="mb-8">
         <p className="text-sm text-blue-600 dark:text-blue-400 font-semibold">
-          Practice
+          {t('practice')}
         </p>
-        <h1 className="text-3xl font-bold">Quizzes</h1>
+        <h1 className="text-3xl font-bold">{t('title')}</h1>
         <p className="text-gray-600 dark:text-gray-400">
-          Choose a quiz to test your knowledge.
+          {t('subtitle')}
         </p>
       </div>
 

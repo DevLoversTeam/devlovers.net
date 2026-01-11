@@ -5,15 +5,14 @@ import {
   desc,
   eq,
   inArray,
-  or,
   sql,
   type SQL,
-} from "drizzle-orm";
-import { db } from "@/db";
-import type { CatalogSort } from "@/lib/config/catalog";
-import { products, productPrices } from "@/db/schema";
-import { dbProductSchema, type DbProduct } from "@/lib/validation/shop";
-import type { CurrencyCode } from "@/lib/shop/currency";
+} from 'drizzle-orm';
+import { db } from '@/db';
+import type { CatalogSort } from '@/lib/config/catalog';
+import { products, productPrices } from '@/db/schema';
+import { dbProductSchema, type DbProduct } from '@/lib/validation/shop';
+import type { CurrencyCode } from '@/lib/shop/currency';
 
 const publicProductBaseSelect = {
   id: products.id,
@@ -37,23 +36,23 @@ const publicProductBaseSelect = {
 
 export type PublicProductBaseRow = Pick<
   typeof products.$inferSelect,
-  | "id"
-  | "slug"
-  | "title"
-  | "description"
-  | "imageUrl"
-  | "imagePublicId"
-  | "category"
-  | "type"
-  | "colors"
-  | "sizes"
-  | "badge"
-  | "isActive"
-  | "isFeatured"
-  | "stock"
-  | "sku"
-  | "createdAt"
-  | "updatedAt"
+  | 'id'
+  | 'slug'
+  | 'title'
+  | 'description'
+  | 'imageUrl'
+  | 'imagePublicId'
+  | 'category'
+  | 'type'
+  | 'colors'
+  | 'sizes'
+  | 'badge'
+  | 'isActive'
+  | 'isFeatured'
+  | 'stock'
+  | 'sku'
+  | 'createdAt'
+  | 'updatedAt'
 >;
 
 export async function getPublicProductBaseBySlug(
@@ -67,7 +66,6 @@ export async function getPublicProductBaseBySlug(
 
   return rows[0] ?? null;
 }
-
 
 const publicProductSelect = {
   id: products.id,
@@ -96,27 +94,27 @@ const publicProductSelect = {
 
 type PublicProductRow = Pick<
   typeof products.$inferSelect,
-  | "id"
-  | "slug"
-  | "title"
-  | "description"
-  | "imageUrl"
-  | "imagePublicId"
-  | "category"
-  | "type"
-  | "colors"
-  | "sizes"
-  | "badge"
-  | "isActive"
-  | "isFeatured"
-  | "stock"
-  | "sku"
-  | "createdAt"
-  | "updatedAt"
+  | 'id'
+  | 'slug'
+  | 'title'
+  | 'description'
+  | 'imageUrl'
+  | 'imagePublicId'
+  | 'category'
+  | 'type'
+  | 'colors'
+  | 'sizes'
+  | 'badge'
+  | 'isActive'
+  | 'isFeatured'
+  | 'stock'
+  | 'sku'
+  | 'createdAt'
+  | 'updatedAt'
 > & {
   price: string;
   originalPrice: string | null;
-  currency: CurrencyCode; // фактично буде "USD" | "UAH" зараз
+  currency: CurrencyCode;
 };
 
 function mapRowToDbProduct(row: PublicProductRow): DbProduct {
@@ -143,15 +141,12 @@ function buildWhereClause(options: {
 }): SQL {
   const conditions: SQL[] = [eq(products.isActive, true)];
 
-  if (options.category && options.category !== "all") {
-    if (options.category === "new-arrivals") {
+  if (options.category && options.category !== 'all') {
+    if (options.category === 'new-arrivals') {
       conditions.push(eq(products.isFeatured, true));
-    } else if (options.category === "sale") {
-      const saleCondition = or(
-        eq(products.badge, "SALE"),
-        sql`${productPrices.originalPrice} IS NOT NULL`
-      ) as SQL;
-      conditions.push(saleCondition);
+    } else if (options.category === 'sale') {
+      // sale = has compare-at/original price for the selected currency
+      conditions.push(sql`${productPrices.originalPriceMinor} IS NOT NULL`);
     } else {
       conditions.push(eq(products.category, options.category));
     }
@@ -178,18 +173,20 @@ function buildWhereClause(options: {
 
 function applySorting(sort?: CatalogSort): SQL {
   switch (sort) {
-    case "price-asc":
+    case 'price-asc':
       return asc(productPrices.price);
-    case "price-desc":
+    case 'price-desc':
       return desc(productPrices.price);
-    case "newest":
+    case 'newest':
       return desc(products.createdAt);
     default:
       return desc(products.createdAt);
   }
 }
 
-export async function getActiveProducts(currency: CurrencyCode): Promise<DbProduct[]> {
+export async function getActiveProducts(
+  currency: CurrencyCode
+): Promise<DbProduct[]> {
   const rows = await db
     .select(publicProductSelect)
     .from(products)
@@ -200,7 +197,7 @@ export async function getActiveProducts(currency: CurrencyCode): Promise<DbProdu
 }
 
 export async function getActiveProductsPage(options: {
-  currency: CurrencyCode; // ✅ ВАЖЛИВО
+  currency: CurrencyCode;
   limit: number;
   offset: number;
   slugs?: string[];
@@ -219,7 +216,7 @@ export async function getActiveProductsPage(options: {
     .where(whereClause);
 
   const totalCount =
-    typeof total === "bigint" ? Number(total) : Number(total ?? 0);
+    typeof total === 'bigint' ? Number(total) : Number(total ?? 0);
 
   const rows = await db
     .select(publicProductSelect)
@@ -233,7 +230,6 @@ export async function getActiveProductsPage(options: {
   return { items: rows.map(mapRowToDbProduct), total: totalCount };
 }
 
-// (може бути потрібний для адмінки/внутрішнього використання)
 export async function getProductBySlug(
   slug: string,
   currency: CurrencyCode

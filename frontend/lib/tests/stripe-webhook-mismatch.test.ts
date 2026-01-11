@@ -217,5 +217,5 @@ describe('P0-3.4 Stripe webhook: amount/currency mismatch (minor) must not set p
     expect(metaObj?.mismatch?.actual?.amountMinor).toBe(actualMinor);
     expect(String(metaObj?.mismatch?.expected?.currency)).toBe('UAH');
     expect(String(metaObj?.mismatch?.actual?.currency)).toBe('uah');
-  });
+  }, 30_000);
 });

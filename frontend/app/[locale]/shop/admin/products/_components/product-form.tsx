@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 
 import { CATEGORIES, COLORS, PRODUCT_TYPES, SIZES } from '@/lib/config/catalog';
 import type { ProductAdminInput } from '@/lib/validation/shop';
+import { logError } from '@/lib/logging';
 
 const localSlugify = (input: string): string => {
   return input
@@ -28,6 +29,7 @@ type ApiResponse = {
   error?: string;
   code?: string;
   field?: string;
+  details?: unknown;
 };
 
 type ApiPriceRow = ProductAdminInput['prices'][number];
@@ -38,6 +40,14 @@ type UiPriceRow = {
   price: string;
   originalPrice: string;
 };
+type SaleRuleDetails = {
+  currency?: CurrencyCode;
+  field?: string;
+  rule?: 'required' | 'greater_than_price';
+};
+
+const SALE_REQUIRED_MSG = 'Original price is required for SALE.';
+const SALE_GREATER_MSG = 'Original price must be greater than price for SALE.';
 
 function formatMinorToMajor(value: number): string {
   if (!Number.isFinite(value)) return '';
@@ -161,6 +171,9 @@ export function ProductForm({
   const [error, setError] = useState<string | null>(null);
   const [slugError, setSlugError] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [originalPriceErrors, setOriginalPriceErrors] = useState<
+    Partial<Record<CurrencyCode, string>>
+  >({});
 
   useEffect(() => {
     setSlug(localSlugify(title));
@@ -176,6 +189,8 @@ export function ProductForm({
     () => prices.find(p => p.currency === 'UAH'),
     [prices]
   );
+  const usdOriginalError = originalPriceErrors['USD'];
+  const uahOriginalError = originalPriceErrors['UAH'];
 
   function setPriceField(
     currency: CurrencyCode,
@@ -189,6 +204,13 @@ export function ProductForm({
         return { ...p, originalPrice: value };
       })
     );
+
+    setOriginalPriceErrors(prev => {
+      if (!prev[currency]) return prev;
+      const next = { ...prev };
+      delete next[currency];
+      return next;
+    });
   }
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -202,6 +224,7 @@ export function ProductForm({
     setError(null);
     setSlugError(null);
     setImageError(null);
+    setOriginalPriceErrors({});
 
     if (mode === 'create' && !imageFile) {
       setImageError('Image file is required.');
@@ -226,7 +249,6 @@ export function ProductForm({
           setError(
             `${p.currency}: price is required when original price is set.`
           );
-          setIsSubmitting(false);
           return;
         }
       }
@@ -234,7 +256,6 @@ export function ProductForm({
       const usd = effectivePrices.find(p => p.currency === 'USD');
       if (!usd || !usd.price.length) {
         setError('USD price is required.');
-        setIsSubmitting(false);
         return;
       }
 
@@ -253,7 +274,6 @@ export function ProductForm({
         }));
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Invalid price value.');
-        setIsSubmitting(false);
         return;
       }
 
@@ -299,6 +319,21 @@ export function ProductForm({
         if (data.code === 'IMAGE_UPLOAD_FAILED' || data.field === 'image') {
           setImageError(data.error ?? 'Failed to upload image');
         }
+        if (data.code === 'SALE_ORIGINAL_REQUIRED') {
+          const details = data.details as SaleRuleDetails | undefined;
+          const currency = details?.currency;
+          const msg =
+            details?.rule === 'greater_than_price'
+              ? SALE_GREATER_MSG
+              : SALE_REQUIRED_MSG;
+
+          if (currency === 'USD' || currency === 'UAH') {
+            setOriginalPriceErrors(prev => ({ ...prev, [currency]: msg }));
+          }
+
+          setError(data.error ?? msg);
+          return;
+        }
 
         setError(
           data.error ??
@@ -310,10 +345,11 @@ export function ProductForm({
       const destinationSlug = data.product?.slug ?? slugValue;
       router.push(`/shop/products/${destinationSlug}`);
     } catch (err) {
-      console.error(
-        `Failed to ${mode === 'create' ? 'create' : 'update'} product`,
-        err
-      );
+      logError('admin_product_form_failed', err, {
+        mode,
+        productId: productId ?? null,
+        slug: slugValue,
+      });
       setError(
         `Unexpected error while ${
           mode === 'create' ? 'creating' : 'updating'
@@ -420,7 +456,9 @@ export function ProductForm({
                 </label>
                 <input
                   id="original-usd"
-                  className="w-full rounded-md border border-border px-3 py-2 text-sm"
+                  className={`w-full rounded-md border px-3 py-2 text-sm ${
+                    usdOriginalError ? 'border-red-500' : 'border-border'
+                  }`}
                   type="text"
                   placeholder="79.00"
                   value={usdRow?.originalPrice ?? ''}
@@ -428,6 +466,11 @@ export function ProductForm({
                     setPriceField('USD', 'originalPrice', e.target.value)
                   }
                 />
+                {usdOriginalError ? (
+                  <p className="mt-1 text-sm text-red-600">
+                    {usdOriginalError}
+                  </p>
+                ) : null}
               </div>
             </div>
 
@@ -462,7 +505,9 @@ export function ProductForm({
                 </label>
                 <input
                   id="original-uah"
-                  className="w-full rounded-md border border-border px-3 py-2 text-sm"
+                  className={`w-full rounded-md border px-3 py-2 text-sm ${
+                    uahOriginalError ? 'border-red-500' : 'border-border'
+                  }`}
                   type="text"
                   placeholder="2499.00"
                   value={uahRow?.originalPrice ?? ''}
@@ -470,6 +515,11 @@ export function ProductForm({
                     setPriceField('UAH', 'originalPrice', e.target.value)
                   }
                 />
+                {uahOriginalError ? (
+                  <p className="mt-1 text-sm text-red-600">
+                    {uahOriginalError}
+                  </p>
+                ) : null}
               </div>
             </div>
           </div>
@@ -646,9 +696,14 @@ export function ProductForm({
               id="badge"
               className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
               value={badge}
-              onChange={event =>
-                setBadge(event.target.value as ProductAdminInput['badge'])
-              }
+              onChange={event => {
+                const next = event.target.value as ProductAdminInput['badge'];
+                setBadge(next);
+
+                if (next !== 'SALE') {
+                  setOriginalPriceErrors({});
+                }
+              }}
             >
               <option value="NONE">None</option>
               <option value="SALE">SALE</option>

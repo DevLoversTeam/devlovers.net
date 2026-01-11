@@ -25,40 +25,43 @@ export default async function BlogPage({
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'blog' });
 
-  const posts = await client.fetch(groq`
-    *[_type == "post" && defined(slug.current)]
-      | order(publishedAt desc) {
-        _id,
-        title,
-        slug,
-        publishedAt,
-        tags,
-        resourceLink,
+  const posts = await client.fetch(
+    groq`
+      *[_type == "post" && defined(slug.current)]
+        | order(publishedAt desc) {
+          _id,
+          "title": coalesce(title[$locale], title.en, title),
+          slug,
+          publishedAt,
+          tags,
+          resourceLink,
 
-        "categories": categories[]->title,
+          "categories": categories[]->title,
 
-        body[] {
-          ...,
-          children[]{
-            text
-          }
-        },
-        "mainImage": mainImage.asset->url,
+          "body": coalesce(body[$locale], body.en, body)[]{
+            ...,
+            children[]{
+              text
+            }
+          },
+          "mainImage": mainImage.asset->url,
         "author": author->{
-          name,
-          company,
-          jobTitle,
-          city,
-          bio,
+          "name": coalesce(name[$locale], name.en, name),
+          "company": coalesce(company[$locale], company.en, company),
+          "jobTitle": coalesce(jobTitle[$locale], jobTitle.en, jobTitle),
+          "city": coalesce(city[$locale], city.en, city),
+          "bio": coalesce(bio[$locale], bio.en, bio),
           "image": image.asset->url,
           socialMedia[]{
             _key,
-            platform,
-            url
+              platform,
+              url
+            }
           }
         }
-      }
-  `);
+    `,
+    { locale }
+  );
 
   return (
     <main className="max-w-6xl mx-auto px-6 py-12">

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 
 interface PaginationProps {
@@ -13,6 +14,8 @@ export function Pagination({
   totalPages,
   onPageChange,
 }: PaginationProps) {
+  const t = useTranslations('qa.pagination');
+
   if (totalPages <= 1) return null;
 
   const getPageNumbers = (): (number | 'ellipsis')[] => {
@@ -57,7 +60,7 @@ export function Pagination({
   return (
     <nav
       className="flex items-center justify-center gap-1 mt-8"
-      aria-label="Пагінація"
+      aria-label={t('label')}
     >
       <button
         onClick={() => onPageChange(currentPage - 1)}
@@ -69,9 +72,9 @@ export function Pagination({
             ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
             : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
         )}
-        aria-label="Попередня сторінка"
+        aria-label={t('previousPage')}
       >
-        ← Назад
+        ← {t('previous')}
       </button>
 
       <div className="flex items-center gap-1 mx-2">
@@ -94,7 +97,7 @@ export function Pagination({
                   ? 'bg-blue-600 text-white'
                   : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
               )}
-              aria-label={`Сторінка ${page}`}
+              aria-label={t('page', { page })}
               aria-current={page === currentPage ? 'page' : undefined}
             >
               {page}
@@ -113,9 +116,9 @@ export function Pagination({
             ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
             : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
         )}
-        aria-label="Наступна сторінка"
+        aria-label={t('nextPage')}
       >
-        Вперед →
+        {t('next')} →
       </button>
     </nav>
   );

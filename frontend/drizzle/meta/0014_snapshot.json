@@ -1,6 +1,6 @@
 {
-  "id": "0549f5dd-1c4e-4128-b9af-5e3e22bcf56a",
-  "prevId": "7f528773-4966-47d2-85a4-5f3c2f62fec6",
+  "id": "3de2d313-f082-439b-a8b2-c1fc596a8843",
+  "prevId": "816ec1c4-7d4a-4bbd-bb4a-f21dde7b36f5",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -573,36 +573,6 @@
         }
       },
       "indexes": {
-        "quiz_attempts_user_id_idx": {
-          "name": "quiz_attempts_user_id_idx",
-          "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "quiz_attempts_quiz_id_idx": {
-          "name": "quiz_attempts_quiz_id_idx",
-          "columns": [
-            {
-              "expression": "quiz_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "quiz_attempts_user_completed_at_idx": {
           "name": "quiz_attempts_user_completed_at_idx",
           "columns": [
@@ -674,19 +644,6 @@
         }
       },
       "foreignKeys": {
-        "quiz_attempts_user_id_users_id_fk": {
-          "name": "quiz_attempts_user_id_users_id_fk",
-          "tableFrom": "quiz_attempts",
-          "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
         "quiz_attempts_quiz_id_quizzes_id_fk": {
           "name": "quiz_attempts_quiz_id_quizzes_id_fk",
           "tableFrom": "quiz_attempts",
@@ -1216,6 +1173,44 @@
           "onUpdate": "no action"
         }
       },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.internal_job_state": {
+      "name": "internal_job_state",
+      "schema": "",
+      "columns": {
+        "job_name": {
+          "name": "job_name",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "next_allowed_at": {
+          "name": "next_allowed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_run_id": {
+          "name": "last_run_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -2165,6 +2160,12 @@
         "payment_status": {
           "name": "payment_status",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "processed_at": {
+          "name": "processed_at",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
         },

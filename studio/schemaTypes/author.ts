@@ -8,14 +8,19 @@ export default defineType({
     defineField({
       name: 'name',
       title: 'Name',
-      type: 'string',
+      type: 'object',
+      fields: [
+        defineField({name: 'en', title: 'English', type: 'string'}),
+        defineField({name: 'pl', title: 'Polish', type: 'string'}),
+        defineField({name: 'uk', title: 'Ukrainian', type: 'string'}),
+      ],
     }),
     defineField({
       name: 'slug',
       title: 'Slug',
       type: 'slug',
       options: {
-        source: 'name',
+        source: 'name.en',
         maxLength: 96,
       },
     }),
@@ -30,31 +35,79 @@ export default defineType({
     defineField({
       name: 'bio',
       title: 'Bio',
-      type: 'array',
-      of: [
-        {
-          title: 'Block',
-          type: 'block',
-          styles: [{title: 'Normal', value: 'normal'}],
-          lists: [],
-        },
+      type: 'object',
+      fields: [
+        defineField({
+          name: 'en',
+          title: 'English',
+          type: 'array',
+          of: [
+            {
+              title: 'Block',
+              type: 'block',
+              styles: [{title: 'Normal', value: 'normal'}],
+              lists: [],
+            },
+          ],
+        }),
+        defineField({
+          name: 'pl',
+          title: 'Polish',
+          type: 'array',
+          of: [
+            {
+              title: 'Block',
+              type: 'block',
+              styles: [{title: 'Normal', value: 'normal'}],
+              lists: [],
+            },
+          ],
+        }),
+        defineField({
+          name: 'uk',
+          title: 'Ukrainian',
+          type: 'array',
+          of: [
+            {
+              title: 'Block',
+              type: 'block',
+              styles: [{title: 'Normal', value: 'normal'}],
+              lists: [],
+            },
+          ],
+        }),
       ],
     }),
 
     defineField({
       name: 'company',
       title: 'Company',
-      type: 'string',
+      type: 'object',
+      fields: [
+        defineField({name: 'en', title: 'English', type: 'string'}),
+        defineField({name: 'pl', title: 'Polish', type: 'string'}),
+        defineField({name: 'uk', title: 'Ukrainian', type: 'string'}),
+      ],
     }),
     defineField({
       name: 'jobTitle',
       title: 'Job Title',
-      type: 'string',
+      type: 'object',
+      fields: [
+        defineField({name: 'en', title: 'English', type: 'string'}),
+        defineField({name: 'pl', title: 'Polish', type: 'string'}),
+        defineField({name: 'uk', title: 'Ukrainian', type: 'string'}),
+      ],
     }),
     defineField({
       name: 'city',
       title: 'City',
-      type: 'string',
+      type: 'object',
+      fields: [
+        defineField({name: 'en', title: 'English', type: 'string'}),
+        defineField({name: 'pl', title: 'Polish', type: 'string'}),
+        defineField({name: 'uk', title: 'Ukrainian', type: 'string'}),
+      ],
     }),
 
     defineField({
@@ -67,7 +120,7 @@ export default defineType({
   ],
   preview: {
     select: {
-      title: 'name',
+      title: 'name.en',
       media: 'image',
     },
   },

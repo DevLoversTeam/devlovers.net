@@ -52,6 +52,13 @@ export type Post = {
   author?: Author;
 };
 
+/**
+ * Normalize a tag/search input:
+ * - removes leading "#"
+ * - trims spaces
+ * - lowercases
+ * - collapses multiple spaces
+ */
 export function normalizeTag(input: string) {
   return (input || '')
     .replace(/^#/, '')
@@ -76,6 +83,12 @@ function SearchIcon({ className }: { className?: string }) {
   );
 }
 
+/**
+ * BlogFilters
+ * - Tag input with inline autocomplete suggestion (Tab to accept)
+ * - Selected tags (AND filtering)
+ * - Renders BlogGrid with filtered posts
+ */
 export default function BlogFilters({ posts }: { posts: Post[] }) {
   const t = useTranslations('blog');
   const [input, setInput] = useState('');

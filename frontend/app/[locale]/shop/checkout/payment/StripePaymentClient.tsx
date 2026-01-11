@@ -22,6 +22,7 @@ import {
   resolveCurrencyFromLocale,
   type CurrencyCode,
 } from '@/lib/shop/currency';
+import { logError } from '@/lib/logging';
 
 type PaymentFormProps = {
   orderId: string;
@@ -54,9 +55,6 @@ function nextRouteForPaymentResult(params: {
   status?: string | null;
 }) {
   const { orderId, status } = params;
-
-  // ✅ Stripe може повернути "processing" або інший non-terminal статус.
-  // Джерело істини = webhook, тому error-page показуємо тільки для явних фейлів.
   const success = `/shop/checkout/success?orderId=${orderId}`;
   const failure = `/shop/checkout/error?orderId=${orderId}`;
 
@@ -114,7 +112,7 @@ function StripePaymentForm({ orderId, locale }: PaymentFormProps) {
       });
       router.push(next);
     } catch (error) {
-      console.error('Payment confirmation failed', error);
+      logError('stripe_payment_confirm_failed', error, { orderId });
       setErrorMessage('We couldn’t confirm your payment. Please try again.');
       router.push(`/shop/checkout/error?orderId=${orderId}`);
     } finally {
