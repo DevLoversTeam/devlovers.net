@@ -4,7 +4,7 @@ import { useLocale } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { getPendingQuizResult, clearPendingQuizResult } from "@/lib/guest-quiz";
+import { getPendingQuizResult, clearPendingQuizResult } from "@/lib/quiz/guest-quiz";
 import { Button } from "@/components/ui/button";
 import { OAuthButtons } from '@/components/auth/OAuthButtons';
 

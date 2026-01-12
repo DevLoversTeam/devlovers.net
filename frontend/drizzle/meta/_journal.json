@@ -92,6 +92,13 @@
       "when": 1767664985434,
       "tag": "0012_inventory_moves_product_fk_restrict",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1768162667947,
+      "tag": "0013_brown_gamora",
+      "breakpoints": true
     }
   ]
 }

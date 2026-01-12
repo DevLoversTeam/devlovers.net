@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useParams, usePathname } from 'next/navigation';
+import { useParams, usePathname,useSearchParams } from 'next/navigation';
 import { locales, type Locale } from '@/i18n/config';
 import { Link } from '@/i18n/routing';
 
@@ -11,8 +11,13 @@ export default function LanguageSwitcher() {
   const fullPathname = usePathname();
   const params = useParams();
   const currentLocale = params.locale as Locale;
+  const searchParams = useSearchParams();
+  const queryString = searchParams.toString();
 
   const pathname = fullPathname.replace(/^\/(uk|en|pl)/, '') || '/';
+  const allowRestoreKey = 'quiz-allow-restore';
+  const isQuizPage = pathname.startsWith('/quiz/');
+
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -57,9 +62,14 @@ export default function LanguageSwitcher() {
           {locales.map(locale => (
             <Link
               key={locale}
-              href={pathname}
+              href={`${pathname}${queryString ? `?${queryString}` : ''}`}
               locale={locale}
-              onClick={() => setIsOpen(false)}
+              onClick={() => {
+                if (isQuizPage) {
+                  sessionStorage.setItem(allowRestoreKey, '1');
+                }
+                setIsOpen(false);
+              }}
               className={`block px-4 py-2 text-sm uppercase transition ${
                 currentLocale === locale
                   ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-medium'

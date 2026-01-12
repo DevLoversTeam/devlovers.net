@@ -150,7 +150,13 @@
     },
     "section": {
       "noQuizzes": "No quizzes in this category yet."
-    }
+    },
+    "exitModal": {
+  "title": "Exit Quiz?",
+  "message": "Your progress will not be saved.",
+  "confirm": "Exit",
+  "cancel": "Continue"
+}
   },
   "blog": {
     "title": "All Blog Posts",

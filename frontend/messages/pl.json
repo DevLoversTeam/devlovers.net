@@ -150,7 +150,13 @@
     },
     "section": {
       "noQuizzes": "W tej kategorii nie ma jeszcze quizów."
-    }
+    },
+    "exitModal": {
+  "title": "Wyjść z quizu?",
+  "message": "Twój postęp nie zostanie zapisany.",
+  "confirm": "Wyjdź",
+  "cancel": "Kontynuuj"
+}
   },
   "blog": {
     "title": "Wszystkie Wpisy na Blogu",

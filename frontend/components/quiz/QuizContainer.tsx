@@ -1,16 +1,22 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
-import { savePendingQuizResult } from '@/lib/guest-quiz';
-import { useReducer, useTransition } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect } from 'react';
+import { savePendingQuizResult } from '@/lib/quiz/guest-quiz';
+import { useReducer, useTransition, useState } from 'react';
 import { useAntiCheat } from '@/hooks/useAntiCheat';
+import { useQuizSession } from '@/hooks/useQuizSession';
+import { useQuizGuards } from '@/hooks/useQuizGuards';
 import { QuizProgress } from './QuizProgress';
 import { QuizQuestion } from './QuizQuestion';
 import { QuizResult } from './QuizResult';
 import { CountdownTimer } from './CountdownTimer';
 import { Button } from '@/components/ui/button';
 import { submitQuizAttempt } from '@/actions/quiz';
-import type { QuizQuestionWithAnswers } from '@/db/queries/quiz';
+import { clearQuizSession, type QuizSessionData } from '@/lib/quiz/quiz-session';
+import type { QuizQuestionClient } from '@/db/queries/quiz';
+import { ConfirmModal } from '@/components/ui/confirm-modal';
 
 interface Answer {
   questionId: string;
@@ -27,18 +33,19 @@ type QuizState = {
   selectedAnswerId: string | null;
   startedAt: Date | null;
   pointsAwarded: number | null;
+  isIncomplete: boolean;
 };
 
 type QuizAction =
   | { type: 'START_QUIZ' }
   | {
-      type: 'ANSWER_SELECTED';
-      payload: { answerId: string; isCorrect: boolean; questionId: string };
-    }
+    type: 'ANSWER_SELECTED';
+    payload: { answerId: string; isCorrect: boolean; questionId: string;};
+  }
   | { type: 'NEXT_QUESTION' }
-  | { type: 'COMPLETE_QUIZ'; payload?: { pointsAwarded: number } }
-  | { type: 'RESTART' };
-
+  | { type: 'COMPLETE_QUIZ'; payload?: { pointsAwarded?: number; isIncomplete?: boolean } }
+  | { type: 'RESTART' }
+  | { type: 'RESTORE_SESSION'; payload: QuizSessionData };
 
 
 function quizReducer(state: QuizState, action: QuizAction): QuizState {
@@ -79,6 +86,20 @@ function quizReducer(state: QuizState, action: QuizAction): QuizState {
         ...state,
         status: 'completed',
         pointsAwarded: action.payload?.pointsAwarded ?? null,
+        isIncomplete: action.payload?.isIncomplete ?? false,
+      };
+    case 'RESTORE_SESSION':
+      return {
+        ...state,
+        status: action.payload.status,
+        currentIndex: action.payload.currentIndex,
+        answers: action.payload.answers.map(a => ({
+          ...a,
+          answeredAt: new Date(a.answeredAt),
+        })),
+        questionStatus: action.payload.questionStatus,
+        selectedAnswerId: action.payload.selectedAnswerId,
+        startedAt: action.payload.startedAt ? new Date(action.payload.startedAt) : null,
       };
 
     case 'RESTART':
@@ -90,6 +111,7 @@ function quizReducer(state: QuizState, action: QuizAction): QuizState {
         selectedAnswerId: null,
         startedAt: null,
         pointsAwarded: null,
+        isIncomplete: false,
       };
 
     default:
@@ -99,10 +121,13 @@ function quizReducer(state: QuizState, action: QuizAction): QuizState {
 
 interface QuizContainerProps {
   quizId: string;
-  questions: QuizQuestionWithAnswers[];
+  questions: QuizQuestionClient[];
+  encryptedAnswers: string;
   userId: string | null;
   quizSlug: string;
   timeLimitSeconds: number | null;
+  seed: number;
+  categorySlug?: string | null;
   onBackToTopics?: () => void;
 }
 
@@ -110,11 +135,15 @@ export function QuizContainer({
   quizSlug,
   quizId,
   questions,
+  encryptedAnswers,
   userId,
   timeLimitSeconds,
+  seed,
+  categorySlug,
   onBackToTopics,
 }: QuizContainerProps) {
   const tRules = useTranslations('quiz.rules');
+  const tExit = useTranslations('quiz.exitModal');
   const [isPending, startTransition] = useTransition();
   const [state, dispatch] = useReducer(quizReducer, {
     status: 'rules',
@@ -124,34 +153,76 @@ export function QuizContainer({
     selectedAnswerId: null,
     startedAt: null,
     pointsAwarded: null,
+    isIncomplete: false,
   });
-const locale = useLocale();
+  const [showExitModal, setShowExitModal] = useState(false);
+  
+  const locale = useLocale();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  
 
   const isGuest = userId === null;
   const { violations, violationsCount, resetViolations } = useAntiCheat(
     state.status === 'in_progress'
   );
-
   const currentQuestion = questions[state.currentIndex];
   const totalQuestions = questions.length;
 
+  useQuizSession({
+  quizId,
+  state,
+  onRestore: data => dispatch({ type: 'RESTORE_SESSION', payload: data }),
+});
+
+const { markQuitting } = useQuizGuards({
+  quizId,
+  status: state.status,
+  onExit: () => {
+    router.back();
+  },
+  resetViolations,
+});
+
+
+  // Sync seed to URL for language switch persistence
+  useEffect(() => {
+    if (!searchParams.has('seed')) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('seed', seed.toString());
+      router.replace(`?${params.toString()}`, { scroll: false });
+    }
+  }, [seed, searchParams, router]);
+
+
   const handleStart = () => {
+    window.history.pushState({ quizGuard: true }, '');
     dispatch({ type: 'START_QUIZ' });
   };
 
-  const handleAnswer = (answerId: string) => {
-    const correctAnswer = currentQuestion.answers.find(a => a.isCorrect);
-    const isCorrect = answerId === correctAnswer?.id;
+ const handleAnswer = async (answerId: string) => {
+  const response = await fetch('/api/quiz/verify-answer', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      questionId: currentQuestion.id,
+      answerId,
+      encryptedAnswers,
+    }),
+  });
+  
+  const { isCorrect } = await response.json();
 
-    dispatch({
-      type: 'ANSWER_SELECTED',
-      payload: {
-        answerId,
-        isCorrect,
-        questionId: currentQuestion.id,
-      },
-    });
-  };
+  dispatch({
+    type: 'ANSWER_SELECTED',
+    payload: {
+      answerId,
+      isCorrect,
+      questionId: currentQuestion.id,
+    },
+  });
+};
+
 
   const handleNext = () => {
     if (state.currentIndex + 1 >= totalQuestions) {
@@ -162,31 +233,40 @@ const locale = useLocale();
   };
 
   const handleSubmit = () => {
-      const correctAnswers = state.answers.filter(a => a.isCorrect).length;
-  const percentage = (correctAnswers / totalQuestions) * 100;
-  const timeSpentSeconds = state.startedAt
-    ? Math.floor((Date.now() - state.startedAt.getTime()) / 1000)
-    : 0;
+    clearQuizSession(quizId);
 
-  if (isGuest) {
-    savePendingQuizResult({
-      quizId,
-      quizSlug,
-      answers: state.answers.map(a => ({
-        questionId: a.questionId,
-        selectedAnswerId: a.selectedAnswerId,
-        isCorrect: a.isCorrect,
-      })),
-      score: correctAnswers,
-      totalQuestions,
-      percentage,
-      violations: violations.map(v => ({ type: v.type, timestamp: v.timestamp.getTime() })),
-      timeSpentSeconds,
-      savedAt: Date.now(),
-    });
-    dispatch({ type: 'COMPLETE_QUIZ' });
-    return;
-  }
+    const isIncomplete = state.answers.length < totalQuestions;
+    
+    const correctAnswers = state.answers.filter(a => a.isCorrect).length;
+    const percentage = (correctAnswers / totalQuestions) * 100;
+    const timeSpentSeconds = state.startedAt
+      ? Math.floor((Date.now() - state.startedAt.getTime()) / 1000)
+      : 0;
+
+    if (isIncomplete) {
+      dispatch({ type: 'COMPLETE_QUIZ', payload: { isIncomplete: true } });
+      return;
+    }
+
+    if (isGuest) {
+      savePendingQuizResult({
+        quizId,
+        quizSlug,
+        answers: state.answers.map(a => ({
+          questionId: a.questionId,
+          selectedAnswerId: a.selectedAnswerId,
+          isCorrect: a.isCorrect,
+        })),
+        score: correctAnswers,
+        totalQuestions,
+        percentage,
+        violations: violations.map(v => ({ type: v.type, timestamp: v.timestamp.getTime() })),
+        timeSpentSeconds,
+        savedAt: Date.now(),
+      });
+      dispatch({ type: 'COMPLETE_QUIZ' });
+      return;
+    }
     startTransition(async () => {
       const result = await submitQuizAttempt({
         userId,
@@ -199,9 +279,9 @@ const locale = useLocale();
       });
 
       if (result.success) {
-        dispatch({ 
-          type: 'COMPLETE_QUIZ', 
-          payload: { pointsAwarded: result.pointsAwarded ?? 0 } 
+        dispatch({
+          type: 'COMPLETE_QUIZ',
+          payload: { pointsAwarded: result.pointsAwarded ?? 0 }
         });
       } else {
         console.error('Failed to submit quiz:', result.error);
@@ -211,9 +291,23 @@ const locale = useLocale();
   };
 
   const handleRestart = () => {
+    clearQuizSession(quizId);
     resetViolations();
     dispatch({ type: 'RESTART' });
   };
+
+const handleQuit = () => {
+  setShowExitModal(true);
+};
+
+const confirmQuit = () => {
+  markQuitting();
+  clearQuizSession(quizId);
+  resetViolations();
+  const categoryParam = categorySlug ? `?category=${categorySlug}` : '';
+  window.location.href = `/${locale}/quizzes${categoryParam}`;
+};
+
 
   const handleTimeUp = () => {
     handleSubmit();
@@ -223,7 +317,7 @@ const locale = useLocale();
     if (onBackToTopics) {
       onBackToTopics();
     } else {
-       window.location.href = `/${locale}/`;
+      window.location.href = `/${locale}/`;
     }
   };
 
@@ -298,6 +392,7 @@ const locale = useLocale();
         answeredCount={state.answers.length}
         violationsCount={violationsCount}
         pointsAwarded={state.pointsAwarded}
+        isIncomplete={state.isIncomplete}
         onRestart={handleRestart}
         onBackToTopics={handleBackToTopicsClick}
         isGuest={isGuest}
@@ -308,6 +403,19 @@ const locale = useLocale();
 
   return (
     <div className="space-y-8 no-select">
+      <div className="flex justify-end">
+        <Button
+            variant="outline"
+            size="sm"
+            onClick={handleQuit}
+            className="gap-2 hover:border-red-500 hover:text-red-600 dark:hover:text-red-400"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            Exit Quiz
+          </Button>
+      </div>
       <QuizProgress
         current={state.currentIndex}
         total={totalQuestions}
@@ -329,9 +437,20 @@ const locale = useLocale();
         question={currentQuestion}
         status={state.questionStatus}
         selectedAnswerId={state.selectedAnswerId}
+        isCorrect={state.answers.find(a => a.questionId === currentQuestion.id)?.isCorrect ?? false}
         onAnswer={handleAnswer}
         onNext={handleNext}
         isLoading={isPending}
+      />
+      <ConfirmModal
+        isOpen={showExitModal}
+        title={tExit('title')}
+        message={tExit('message')}
+        confirmText={tExit('confirm')}
+        cancelText={tExit('cancel')}
+        variant="danger"
+        onConfirm={confirmQuit}
+        onCancel={() => setShowExitModal(false)}
       />
     </div>
   );

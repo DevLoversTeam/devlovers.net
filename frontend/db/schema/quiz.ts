@@ -130,7 +130,9 @@ export const quizAttempts = pgTable(
   'quiz_attempts',
   {
     id: uuid('id').defaultRandom().primaryKey(),
-    userId: text('user_id').notNull(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
     quizId: uuid('quiz_id')
       .notNull()
       .references(() => quizzes.id, { onDelete: 'cascade' }),
