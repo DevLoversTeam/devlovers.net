@@ -1,3 +1,5 @@
+import { createEncryptedAnswersBlob } from '@/lib/quiz/quiz-crypto';
+import { stripCorrectAnswers } from '@/db/queries/quiz';
 import { getQuizBySlug, getQuizQuestionsRandomized } from '@/db/queries/quiz';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
@@ -8,11 +10,13 @@ import { getCurrentUser } from '@/lib/auth';
 
 interface QuizPageProps {
   params: Promise<{ locale: string; slug: string }>;
+  searchParams: Promise<{seed?: string}>;
 }
 
-export default async function QuizPage({ params }: QuizPageProps) {
+export default async function QuizPage({ params, searchParams }: QuizPageProps) {
   const { locale, slug } = await params;
   const t = await getTranslations({ locale, namespace: 'quiz.page' });
+  const { seed: seedParam } = await searchParams;
 
   const user = await getCurrentUser();
 
@@ -22,8 +26,11 @@ export default async function QuizPage({ params }: QuizPageProps) {
     notFound();
   }
 
-  const seed = Date.now();
+  const seed = seedParam ? parseInt(seedParam, 10) : Date.now();
   const questions = await getQuizQuestionsRandomized(quiz.id, locale, seed);
+
+  const encryptedAnswers = createEncryptedAnswersBlob(questions);
+  const clientQuestions = stripCorrectAnswers(questions);
 
   if (!questions.length) {
     return (
@@ -56,9 +63,12 @@ export default async function QuizPage({ params }: QuizPageProps) {
         <QuizContainer
           quizSlug={slug}
           quizId={quiz.id}
-          questions={questions}
+          questions={clientQuestions}
+          encryptedAnswers={encryptedAnswers}
           userId={user?.id ?? null}
           timeLimitSeconds={quiz.timeLimitSeconds ?? questions.length * 30}
+          seed={seed}
+          categorySlug={quiz.categorySlug} 
         />
         {user && <PendingResultHandler userId={user.id} />}
       </div>

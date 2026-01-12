@@ -13,6 +13,7 @@ interface QuizResultProps {
   isGuest?: boolean;
   quizSlug?: string;
   pointsAwarded?: number | null;
+  isIncomplete?: boolean;
   onRestart: () => void;
   onBackToTopics: () => void;
 }
@@ -26,12 +27,22 @@ export function QuizResult({
   pointsAwarded,
   isGuest = false,
   quizSlug = '',
+  isIncomplete = false, 
   onRestart,
   onBackToTopics,
 }: QuizResultProps) {
   const locale = useLocale();
   const t = useTranslations('quiz.result');
   const getMotivationalMessage = () => {
+    if (isIncomplete && answeredCount > 0) {
+    return {
+      emoji: '⏱️',
+      title: 'Час вийшов',
+      message: `Ви відповіли на ${answeredCount} з ${total} питань. Результат не зараховано.`,
+      color: 'text-orange-600 dark:text-orange-400',
+    };
+  }
+  
     if (score === 0 && answeredCount === 0) {
     return {
       emoji: '⏱️',

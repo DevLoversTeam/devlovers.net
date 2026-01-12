@@ -1,16 +1,17 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { QuizQuestionWithAnswers } from '@/db/queries/quiz';
+import { QuizQuestionClient } from '@/db/queries/quiz';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Button } from '@/components/ui/button';
 import ExplanationRenderer from './ExplanationRenderer';
 import { cn } from '@/lib/utils';
 
 interface QuizQuestionProps {
-  question: QuizQuestionWithAnswers;
+  question: QuizQuestionClient;
   status: 'answering' | 'revealed';
   selectedAnswerId: string | null;
+  isCorrect: boolean;
   onAnswer: (answerId: string) => void;
   onNext: () => void;
   isLoading?: boolean;
@@ -20,6 +21,7 @@ export function QuizQuestion({
   question,
   status,
   selectedAnswerId,
+  isCorrect,
   onAnswer,
   onNext,
   isLoading = false,
@@ -28,8 +30,7 @@ export function QuizQuestion({
   const isAnswering = status === 'answering';
   const isRevealed = status === 'revealed';
 
-  const correctAnswer = question.answers.find(a => a.isCorrect);
-  const isCorrectAnswer = isRevealed && selectedAnswerId === correctAnswer?.id;
+  const isCorrectAnswer = isRevealed && isCorrect;
 
   return (
     <div className="flex flex-col gap-6">
@@ -44,8 +45,8 @@ export function QuizQuestion({
       >
         {question.answers.map(answer => {
           const isSelected = selectedAnswerId === answer.id;
-          const showCorrect = isRevealed && isCorrectAnswer && isSelected;
-          const showIncorrect = isRevealed && !isCorrectAnswer && isSelected;
+          const showCorrect = isRevealed && isSelected && isCorrect;
+          const showIncorrect = isRevealed && isSelected && !isCorrect;
 
           return (
             <label

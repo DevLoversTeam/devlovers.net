@@ -52,34 +52,26 @@ export function QuizCard({ quiz, userProgress }: QuizCardProps) {
       </div>
       </div>
       {userProgress && (
-        <div className="mb-6">
-          <div className="flex justify-between text-xs mb-1.5">
-            <div className="flex flex-row items-center gap-2">
-              <span className="text-gray-600 dark:text-gray-400">
-              Best: {userProgress.bestScore}/{userProgress.totalQuestions}
-              </span>
-              <p className="text-xs text-gray-500">
-                {userProgress.attemptsCount} {userProgress.attemptsCount === 1 ? 'attempt' : 'attempts'}
-              </p>
-            </div>
-            <span className="text-gray-600 dark:text-gray-400">
-              {t('best')} {userProgress.bestScore}/{userProgress.totalQuestions}
-            </span>
-            <span className="font-medium text-gray-900 dark:text-gray-100">
-              {percentage}%
-            </span>
-          </div>
-          <div className="h-1.5 bg-gray-200 dark:bg-neutral-800 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-blue-600 rounded-full transition-all"
-              style={{ width: `${percentage}%` }}
-            />
-          </div>
-          <p className="text-xs text-gray-500 mt-1">
-            {userProgress.attemptsCount} {userProgress.attemptsCount === 1 ? t('attempt') : t('attempts')}
-          </p>
-        </div>
-      )}
+    <div className="mb-6">
+      <div className="flex justify-between text-xs mb-1.5">
+        <span className="text-gray-600 dark:text-gray-400">
+          {t('best')} {userProgress.bestScore}/{userProgress.totalQuestions}
+        </span>
+        <span className="text-gray-500">
+          {userProgress.attemptsCount} {userProgress.attemptsCount === 1 ? t('attempt') : t('attempts')}
+        </span>
+        <span className="font-medium text-gray-900 dark:text-gray-100">
+          {percentage}%
+        </span>
+      </div>
+      <div className="h-1.5 bg-gray-200 dark:bg-neutral-800 rounded-full overflow-hidden">
+        <div
+          className="h-full bg-blue-600 rounded-full transition-all"
+          style={{ width: `${percentage}%` }}
+        />
+      </div>
+    </div>
+     )}
       <Link
         href={`/quiz/${quiz.slug}`}
         className="block w-full text-center rounded-lg bg-blue-600 text-white px-4 py-2.5 text-sm font-medium hover:bg-blue-500 transition-colors"
