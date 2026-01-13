@@ -17,6 +17,7 @@ import { savePendingQuizResult } from '@/lib/quiz/guest-quiz';
 import type { QuizQuestionClient } from '@/db/queries/quiz';
 import { ConfirmModal } from '@/components/ui/confirm-modal';
 import { Button } from '@/components/ui/button';
+import { FileText, Ban, AlertTriangle, Clock } from 'lucide-react';
 
 interface Answer {
   questionId: string;
@@ -380,8 +381,8 @@ const confirmQuit = () => {
         </h2>
 
         <div className="space-y-4 text-gray-700 dark:text-gray-300">
-          <div className="flex gap-3">
-            <span className="text-xl">📝</span>
+                   <div className="flex gap-3">
+            <FileText className="w-5 h-5 text-blue-500 dark:text-blue-400 flex-shrink-0 mt-0.5" />
             <div>
               <p className="font-medium">{tRules('general.title')}</p>
               <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -391,7 +392,7 @@ const confirmQuit = () => {
           </div>
 
           <div className="flex gap-3">
-            <span className="text-xl">🚫</span>
+            <Ban className="w-5 h-5 text-red-500 dark:text-red-400 flex-shrink-0 mt-0.5" />
             <div>
               <p className="font-medium">{tRules('forbidden.title')}</p>
               <ul className="text-sm text-gray-600 dark:text-gray-400 list-disc list-inside space-y-1">
@@ -404,7 +405,7 @@ const confirmQuit = () => {
           </div>
 
           <div className="flex gap-3">
-            <span className="text-xl">⚠️</span>
+            <AlertTriangle className="w-5 h-5 text-amber-500 dark:text-amber-400 flex-shrink-0 mt-0.5" />
             <div>
               <p className="font-medium">{tRules('control.title')}</p>
               <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -412,9 +413,8 @@ const confirmQuit = () => {
               </p>
             </div>
           </div>
-
           <div className="flex gap-3">
-            <span className="text-xl">⏱️</span>
+            <Clock className="w-5 h-5 text-blue-500 dark:text-blue-400 flex-shrink-0 mt-0.5" />
             <div>
               <p className="font-medium">{tRules('time.title')}</p>
               <p className="text-sm text-gray-600 dark:text-gray-400">

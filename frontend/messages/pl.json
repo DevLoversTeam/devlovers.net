@@ -130,6 +130,10 @@
         "title": "Doskonała Praca!",
         "message": "Dobrze opanowałeś materiał"
       },
+      "incomplete": {
+        "title": "Czas minął",
+        "message": "Odpowiedzi udzielono na {answeredCount} z {total} pytań. Wynik nie został zaliczony."
+      },
       "violations": "Quiz ukończony z naruszeniami zasad ({count} naruszeń). Wynik nie zaliczony do rankingu.",
       "pointsAwarded": "+{points} punktów dodanych do oceny",
       "noPointsAwarded": "Nie przyznano punktów (wynik nie poprawiony)",

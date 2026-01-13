@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { Badge } from '@/components/ui/badge';
+import { FileText, Clock } from 'lucide-react';
 
 interface QuizCardProps {
   quiz: {
@@ -44,12 +45,16 @@ export function QuizCard({ quiz, userProgress }: QuizCardProps) {
           {quiz.description}
         </p>
       )}
-      <div className="flex gap-3 text-xs text-gray-500 mb-3">
-        <span>📝 {quiz.questionsCount} {t('questions')}</span>
-        <span>
-          ⏱️ {Math.floor((quiz.timeLimitSeconds ?? quiz.questionsCount * 30) / 60)} {t('min')}
-        </span>
-      </div>
+        <div className="flex gap-3 text-xs text-gray-500 mb-3">
+          <span className="flex items-center gap-1">
+            <FileText className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" />
+            {quiz.questionsCount} {t('questions')}
+          </span>
+          <span className="flex items-center gap-1">
+            <Clock className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" />
+            {Math.floor((quiz.timeLimitSeconds ?? quiz.questionsCount * 30) / 60)} {t('min')}
+          </span>
+        </div>
       </div>
       {userProgress && (
     <div className="mb-6">

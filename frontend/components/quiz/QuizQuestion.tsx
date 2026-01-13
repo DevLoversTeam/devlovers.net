@@ -6,6 +6,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Button } from '@/components/ui/button';
 import ExplanationRenderer from './ExplanationRenderer';
 import { cn } from '@/lib/utils';
+import { Check, X, Lightbulb } from 'lucide-react';
 
 interface QuizQuestionProps {
   question: QuizQuestionClient;
@@ -66,12 +67,12 @@ export function QuizQuestion({
               <span className="flex-1 text-base">{answer.answerText}</span>
               {showCorrect && (
                 <span className="text-green-600 dark:text-green-400 text-sm font-medium">
-                  ✓ {t('correct')}
+                  <Check className="w-4 h-4 inline" /> {t('correct')}
                 </span>
               )}
               {showIncorrect && (
                 <span className="text-red-600 dark:text-red-400 text-sm font-medium">
-                  ✗ {t('incorrect')}
+                 <X className="w-4 h-4 inline" /> {t('incorrect')}
                 </span>
               )}
             </label>
@@ -99,7 +100,7 @@ export function QuizQuestion({
           )}
         >
           <div className="flex items-start gap-3">
-            <div className="text-2xl">💡</div>
+            <Lightbulb className="w-6 h-6 text-amber-500 flex-shrink-0" />
             <div className="flex-1">
               <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">
                 {t('recommendation.title')}
