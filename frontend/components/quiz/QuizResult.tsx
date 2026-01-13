@@ -38,12 +38,11 @@ export function QuizResult({
     if (isIncomplete && answeredCount > 0) {
       return {
         icon: <Clock className="w-14 h-14 text-orange-500" />,
-        title: 'Час вийшов',
-        message: `Ви відповіли на ${answeredCount} з ${total} питань. Результат не зараховано.`,
+        title: t('incomplete.title'),
+        message: t('incomplete.message', { answeredCount, total }),
         color: 'text-orange-600 dark:text-orange-400',
       };
     }
-
     if (score === 0 && answeredCount === 0) {
       return {
         icon: <Clock className="w-14 h-14 text-gray-500" />,
