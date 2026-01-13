@@ -1,0 +1,434 @@
+{
+  "questions": [
+    {
+      "id": "angular-q01",
+      "order": 1,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Що таке Angular?",
+        "exp": "Angular — це фронтенд-фреймворк від Google для побудови SPA (Single Page Applications) та масштабованих веб-додатків із вбудованими інструментами."
+      },
+      "en": {
+        "q": "What is Angular?",
+        "exp": "Angular is a frontend framework by Google for building SPAs (Single Page Applications) and scalable web applications with built-in tools."
+      },
+      "pl": {
+        "q": "Czym jest Angular?",
+        "exp": "Angular to framework frontendowy od Google do budowania SPA (Single Page Applications) i skalowalnych aplikacji webowych z wbudowanymi narzędziami."
+      },
+      "answers": [
+        {
+          "uk": "Бібліотека для роботи з базами даних",
+          "en": "A library for working with databases",
+          "pl": "Biblioteka do pracy z bazami danych",
+          "correct": false
+        },
+        {
+          "uk": "Фронтенд-фреймворк від Google для побудови SPA та масштабованих веб-додатків",
+          "en": "A frontend framework by Google for building SPAs and scalable web applications",
+          "pl": "Framework frontendowy od Google do budowania SPA i skalowalnych aplikacji webowych",
+          "correct": true
+        },
+        {
+          "uk": "Мова програмування для мобільних додатків",
+          "en": "A programming language for mobile applications",
+          "pl": "Język programowania dla aplikacji mobilnych",
+          "correct": false
+        },
+        {
+          "uk": "Інструмент для тестування бекенду",
+          "en": "A tool for backend testing",
+          "pl": "Narzędzie do testowania backendu",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "angular-q02",
+      "order": 2,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Що таке компонент в Angular?",
+        "exp": "Компонент — це основний будівельний блок Angular-додатку, що складається з класу (логіка), шаблону HTML та стилів."
+      },
+      "en": {
+        "q": "What is a component in Angular?",
+        "exp": "A component is the main building block of an Angular application, consisting of a class (logic), HTML template, and styles."
+      },
+      "pl": {
+        "q": "Czym jest komponent w Angular?",
+        "exp": "Komponent to główny blok budulcowy aplikacji Angular, składający się z klasy (logika), szablonu HTML i stylów."
+      },
+      "answers": [
+        {
+          "uk": "Функція для обробки HTTP-запитів",
+          "en": "A function for handling HTTP requests",
+          "pl": "Funkcja do obsługi żądań HTTP",
+          "correct": false
+        },
+        {
+          "uk": "Основний будівельний блок, що містить клас, шаблон і стилі",
+          "en": "A main building block containing a class, template, and styles",
+          "pl": "Główny blok budulcowy zawierający klasę, szablon i style",
+          "correct": true
+        },
+        {
+          "uk": "Файл конфігурації для маршрутизації",
+          "en": "A configuration file for routing",
+          "pl": "Plik konfiguracyjny dla routingu",
+          "correct": false
+        },
+        {
+          "uk": "Тип змінної в TypeScript",
+          "en": "A variable type in TypeScript",
+          "pl": "Typ zmiennej w TypeScript",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "angular-q03",
+      "order": 3,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Скільки основних типів data-binding існує в Angular?",
+        "exp": "В Angular є 4 типи: interpolation ({{ }}), property binding ([]), event binding (()), та two-way binding ([()])."
+      },
+      "en": {
+        "q": "How many main types of data binding exist in Angular?",
+        "exp": "Angular has 4 types: interpolation ({{ }}), property binding ([]), event binding (()), and two-way binding ([()])"
+      },
+      "pl": {
+        "q": "Ile głównych typów data binding istnieje w Angular?",
+        "exp": "Angular ma 4 typy: interpolation ({{ }}), property binding ([]), event binding (()), oraz two-way binding ([()])"
+      },
+      "answers": [
+        {
+          "uk": "2",
+          "en": "2",
+          "pl": "2",
+          "correct": false
+        },
+        {
+          "uk": "3",
+          "en": "3",
+          "pl": "3",
+          "correct": false
+        },
+        {
+          "uk": "4",
+          "en": "4",
+          "pl": "4",
+          "correct": true
+        },
+        {
+          "uk": "5",
+          "en": "5",
+          "pl": "5",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "angular-q04",
+      "order": 4,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Який синтаксис використовується для interpolation в Angular?",
+        "exp": "Interpolation використовує подвійні фігурні дужки {{ value }} для відображення даних із компонента в шаблоні."
+      },
+      "en": {
+        "q": "What syntax is used for interpolation in Angular?",
+        "exp": "Interpolation uses double curly braces {{ value }} to display component data in the template."
+      },
+      "pl": {
+        "q": "Jakiej składni używa się do interpolacji w Angular?",
+        "exp": "Interpolacja używa podwójnych nawiasów klamrowych {{ value }} do wyświetlania danych komponentu w szablonie."
+      },
+      "answers": [
+        {
+          "uk": "[value]",
+          "en": "[value]",
+          "pl": "[value]",
+          "correct": false
+        },
+        {
+          "uk": "(value)",
+          "en": "(value)",
+          "pl": "(value)",
+          "correct": false
+        },
+        {
+          "uk": "{{ value }}",
+          "en": "{{ value }}",
+          "pl": "{{ value }}",
+          "correct": true
+        },
+        {
+          "uk": "*value",
+          "en": "*value",
+          "pl": "*value",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "angular-q05",
+      "order": 5,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Як реалізувати двостороннє зв'язування (two-way binding) у Angular?",
+        "exp": "Two-way binding реалізується через [(ngModel)] або комбінацію property binding і event binding. Синтаксис [()] називають \"banana in a box\"."
+      },
+      "en": {
+        "q": "How do you implement two-way binding in Angular?",
+        "exp": "Two-way binding is implemented via [(ngModel)] or a combination of property and event binding. The [()] syntax is called 'banana in a box'."
+      },
+      "pl": {
+        "q": "Jak zaimplementować dwukierunkowe wiązanie (two-way binding) w Angular?",
+        "exp": "Two-way binding implementuje się przez [(ngModel)] lub kombinację property binding i event binding. Składnia [()] nazywana jest 'banana in a box'."
+      },
+      "answers": [
+        {
+          "uk": "Через синтаксис {{ value }}",
+          "en": "Using {{ value }} syntax",
+          "pl": "Przez składnię {{ value }}",
+          "correct": false
+        },
+        {
+          "uk": "Через синтаксис [(ngModel)]=\"value\"",
+          "en": "Using [(ngModel)]=\"value\" syntax",
+          "pl": "Przez składnię [(ngModel)]=\"value\"",
+          "correct": true
+        },
+        {
+          "uk": "Через синтаксис [value]",
+          "en": "Using [value] syntax",
+          "pl": "Przez składnię [value]",
+          "correct": false
+        },
+        {
+          "uk": "Two-way binding неможливий в Angular",
+          "en": "Two-way binding is not possible in Angular",
+          "pl": "Two-way binding nie jest możliwy w Angular",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "angular-q06",
+      "order": 6,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Яка основна різниця між структурними та атрибутними директивами?",
+        "exp": "Структурні директиви (@if, @for) змінюють структуру DOM (додають/видаляють елементи), атрибутні (ngClass, ngStyle) змінюють лише вигляд чи поведінку елемента."
+      },
+      "en": {
+        "q": "What is the main difference between structural and attribute directives?",
+        "exp": "Structural directives (@if, @for) change DOM structure (add/remove elements), attribute directives (ngClass, ngStyle) only change element appearance or behavior."
+      },
+      "pl": {
+        "q": "Jaka jest główna różnica między dyrektywami strukturalnymi a atrybutowymi?",
+        "exp": "Dyrektywy strukturalne (@if, @for) zmieniają strukturę DOM (dodają/usuwają elementy), dyrektywy atrybutowe (ngClass, ngStyle) zmieniają tylko wygląd lub zachowanie elementu."
+      },
+      "answers": [
+        {
+          "uk": "Структурні змінюють стилі, атрибутні — структуру DOM",
+          "en": "Structural change styles, attribute change DOM structure",
+          "pl": "Strukturalne zmieniają style, atrybutowe — strukturę DOM",
+          "correct": false
+        },
+        {
+          "uk": "Структурні змінюють структуру DOM, атрибутні — вигляд або поведінку",
+          "en": "Structural change DOM structure, attribute change appearance or behavior",
+          "pl": "Strukturalne zmieniają strukturę DOM, atrybutowe — wygląd lub zachowanie",
+          "correct": true
+        },
+        {
+          "uk": "Різниці немає, це синоніми",
+          "en": "No difference, they are synonyms",
+          "pl": "Nie ma różnicy, to synonimy",
+          "correct": false
+        },
+        {
+          "uk": "Атрибутні можуть видаляти елементи, структурні — ні",
+          "en": "Attribute can remove elements, structural cannot",
+          "pl": "Atrybutowe mogą usuwać elementy, strukturalne — nie",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "angular-q07",
+      "order": 7,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Що таке standalone components в Angular?",
+        "exp": "Standalone components — це компоненти, які не потребують NgModule для свого оголошення. Вони імпортують залежності напряму через властивість imports."
+      },
+      "en": {
+        "q": "What are standalone components in Angular?",
+        "exp": "Standalone components are components that don't require NgModule for their declaration. They import dependencies directly via the imports property."
+      },
+      "pl": {
+        "q": "Czym są standalone components w Angular?",
+        "exp": "Standalone components to komponenty, które nie wymagają NgModule do ich deklaracji. Importują zależności bezpośrednio przez właściwość imports."
+      },
+      "answers": [
+        {
+          "uk": "Компоненти, які працюють тільки на сервері",
+          "en": "Components that only work on the server",
+          "pl": "Komponenty, które działają tylko na serwerze",
+          "correct": false
+        },
+        {
+          "uk": "Компоненти без шаблону",
+          "en": "Components without a template",
+          "pl": "Komponenty bez szablonu",
+          "correct": false
+        },
+        {
+          "uk": "Компоненти, які не потребують NgModule",
+          "en": "Components that don't require NgModule",
+          "pl": "Komponenty, które nie wymagają NgModule",
+          "correct": true
+        },
+        {
+          "uk": "Компоненти з глобальними стилями",
+          "en": "Components with global styles",
+          "pl": "Komponenty z globalnymi stylami",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "angular-q08",
+      "order": 8,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Яка директива використовується для динамічного керування CSS-класами?",
+        "exp": "Директива ngClass дозволяє динамічно додавати або видаляти CSS-класи на елементі залежно від умов у компоненті."
+      },
+      "en": {
+        "q": "Which directive is used for dynamic CSS class management?",
+        "exp": "The ngClass directive allows dynamically adding or removing CSS classes on an element based on conditions in the component."
+      },
+      "pl": {
+        "q": "Która dyrektywa służy do dynamicznego zarządzania klasami CSS?",
+        "exp": "Dyrektywa ngClass pozwala dynamicznie dodawać lub usuwać klasy CSS na elemencie w zależności od warunków w komponencie."
+      },
+      "answers": [
+        {
+          "uk": "ngStyle",
+          "en": "ngStyle",
+          "pl": "ngStyle",
+          "correct": false
+        },
+        {
+          "uk": "ngClass",
+          "en": "ngClass",
+          "pl": "ngClass",
+          "correct": true
+        },
+        {
+          "uk": "@if",
+          "en": "@if",
+          "pl": "@if",
+          "correct": false
+        },
+        {
+          "uk": "ngModel",
+          "en": "ngModel",
+          "pl": "ngModel",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "angular-q09",
+      "order": 9,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Як обробити подію click на кнопці в Angular?",
+        "exp": "Події обробляються через event binding з синтаксисом (eventName). Для click: <button (click)=\"onClick()\">."
+      },
+      "en": {
+        "q": "How do you handle a click event on a button in Angular?",
+        "exp": "Events are handled via event binding with (eventName) syntax. For click: <button (click)=\"onClick()\">."
+      },
+      "pl": {
+        "q": "Jak obsłużyć zdarzenie click na przycisku w Angular?",
+        "exp": "Zdarzenia obsługuje się przez event binding ze składnią (eventName). Dla click: <button (click)=\"onClick()\">."
+      },
+      "answers": [
+        {
+          "uk": "<button [click]=\"onClick()\">",
+          "en": "<button [click]=\"onClick()\">",
+          "pl": "<button [click]=\"onClick()\">",
+          "correct": false
+        },
+        {
+          "uk": "<button (click)=\"onClick()\">",
+          "en": "<button (click)=\"onClick()\">",
+          "pl": "<button (click)=\"onClick()\">",
+          "correct": true
+        },
+        {
+          "uk": "<button {{click}}=\"onClick()\">",
+          "en": "<button {{click}}=\"onClick()\">",
+          "pl": "<button {{click}}=\"onClick()\">",
+          "correct": false
+        },
+        {
+          "uk": "<button click=\"onClick()\">",
+          "en": "<button click=\"onClick()\">",
+          "pl": "<button click=\"onClick()\">",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "angular-q10",
+      "order": 10,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Який декоратор використовується для передачі даних з батьківського компонента в дочірній?",
+        "exp": "Декоратор @Input() позначає властивість, яка може отримувати дані від батьківського компонента через property binding."
+      },
+      "en": {
+        "q": "Which decorator is used to pass data from a parent component to a child?",
+        "exp": "The @Input() decorator marks a property that can receive data from a parent component via property binding."
+      },
+      "pl": {
+        "q": "Który dekorator służy do przekazywania danych z komponentu rodzica do dziecka?",
+        "exp": "Dekorator @Input() oznacza właściwość, która może otrzymywać dane od komponentu rodzica przez property binding."
+      },
+      "answers": [
+        {
+          "uk": "@Output()",
+          "en": "@Output()",
+          "pl": "@Output()",
+          "correct": false
+        },
+        {
+          "uk": "@Input()",
+          "en": "@Input()",
+          "pl": "@Input()",
+          "correct": true
+        },
+        {
+          "uk": "@ViewChild()",
+          "en": "@ViewChild()",
+          "pl": "@ViewChild()",
+          "correct": false
+        },
+        {
+          "uk": "@Injectable()",
+          "en": "@Injectable()",
+          "pl": "@Injectable()",
+          "correct": false
+        }
+      ]
+    }
+  ]
+}

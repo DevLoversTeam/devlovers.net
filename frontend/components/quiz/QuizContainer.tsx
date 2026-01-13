@@ -2,9 +2,8 @@
 
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect } from 'react';
-import { savePendingQuizResult } from '@/lib/quiz/guest-quiz';
-import { useReducer, useTransition, useState } from 'react';
+import { useReducer, useTransition, useState, useEffect, useCallback } from 'react';
+import { toast } from 'sonner';
 import { useAntiCheat } from '@/hooks/useAntiCheat';
 import { useQuizSession } from '@/hooks/useQuizSession';
 import { useQuizGuards } from '@/hooks/useQuizGuards';
@@ -12,11 +11,12 @@ import { QuizProgress } from './QuizProgress';
 import { QuizQuestion } from './QuizQuestion';
 import { QuizResult } from './QuizResult';
 import { CountdownTimer } from './CountdownTimer';
-import { Button } from '@/components/ui/button';
 import { submitQuizAttempt } from '@/actions/quiz';
 import { clearQuizSession, type QuizSessionData } from '@/lib/quiz/quiz-session';
+import { savePendingQuizResult } from '@/lib/quiz/guest-quiz';
 import type { QuizQuestionClient } from '@/db/queries/quiz';
 import { ConfirmModal } from '@/components/ui/confirm-modal';
+import { Button } from '@/components/ui/button';
 
 interface Answer {
   questionId: string;
@@ -58,12 +58,15 @@ function quizReducer(state: QuizState, action: QuizAction): QuizState {
       };
 
     case 'ANSWER_SELECTED':
+      const answersWithoutThisQuestion = state.answers.filter(
+        a => a.questionId !== action.payload.questionId
+      );
       return {
         ...state,
         selectedAnswerId: action.payload.answerId,
         questionStatus: 'revealed',
         answers: [
-          ...state.answers,
+          ...answersWithoutThisQuestion,
           {
             questionId: action.payload.questionId,
             selectedAnswerId: action.payload.answerId,
@@ -144,6 +147,7 @@ export function QuizContainer({
 }: QuizContainerProps) {
   const tRules = useTranslations('quiz.rules');
   const tExit = useTranslations('quiz.exitModal');
+  const tQuestion = useTranslations('quiz.question');
   const [isPending, startTransition] = useTransition();
   const [state, dispatch] = useReducer(quizReducer, {
     status: 'rules',
@@ -156,7 +160,8 @@ export function QuizContainer({
     isIncomplete: false,
   });
   const [showExitModal, setShowExitModal] = useState(false);
-  
+  const [isVerifyingAnswer, setIsVerifyingAnswer] = useState(false);
+
   const locale = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -169,10 +174,15 @@ export function QuizContainer({
   const currentQuestion = questions[state.currentIndex];
   const totalQuestions = questions.length;
 
-  useQuizSession({
+  const handleRestoreSession = useCallback(
+  (data: QuizSessionData) => dispatch({ type: 'RESTORE_SESSION', payload: data }),
+  []
+);
+
+useQuizSession({
   quizId,
   state,
-  onRestore: data => dispatch({ type: 'RESTORE_SESSION', payload: data }),
+  onRestore: handleRestoreSession,
 });
 
 const { markQuitting } = useQuizGuards({
@@ -200,7 +210,7 @@ const { markQuitting } = useQuizGuards({
     dispatch({ type: 'START_QUIZ' });
   };
 
- const handleAnswer = async (answerId: string) => {
+  const verifyAnswer = async (answerId: string) => {
   const response = await fetch('/api/quiz/verify-answer', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -210,19 +220,60 @@ const { markQuitting } = useQuizGuards({
       encryptedAnswers,
     }),
   });
-  
-  const { isCorrect } = await response.json();
 
-  dispatch({
-    type: 'ANSWER_SELECTED',
-    payload: {
-      answerId,
-      isCorrect,
-      questionId: currentQuestion.id,
-    },
-  });
+  if (!response.ok) {
+    throw new Error('Verify answer failed');
+  }
+
+  const data = await response.json();
+
+  if (typeof data.isCorrect !== 'boolean') {
+    throw new Error('Invalid verify response');
+  }
+
+  return data.isCorrect;
 };
 
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+
+const handleAnswer = async (answerId: string) => {
+  if (state.questionStatus !== 'answering') return;
+  if (isVerifyingAnswer) return;
+
+  setIsVerifyingAnswer(true);
+
+  const maxRetries = 1;
+  let attempt = 0;
+
+  try {
+    while (true) {
+      try {
+        const isCorrect = await verifyAnswer(answerId);
+
+        dispatch({
+          type: 'ANSWER_SELECTED',
+          payload: {
+            answerId,
+            isCorrect,
+            questionId: currentQuestion.id,
+          },
+        });
+        return;
+      } catch {
+        if (attempt >= maxRetries) {
+          toast.error(tQuestion('verifyFailed'));
+          return;
+        }
+        attempt += 1;
+        toast(tQuestion('verifyRetry'));
+        await sleep(600);
+      }
+    }
+  } finally {
+    setIsVerifyingAnswer(false);
+  }
+};
 
   const handleNext = () => {
     if (state.currentIndex + 1 >= totalQuestions) {
@@ -373,7 +424,7 @@ const confirmQuit = () => {
           </div>
         </div>
 
-        <Button onClick={handleStart} className="w-full" size="lg">
+        <Button onClick={handleStart} className="w-full" size="md">
           {tRules('startButton')}
         </Button>
       </div>
@@ -429,6 +480,7 @@ const confirmQuit = () => {
             timeLimitSeconds={calculatedTime}
             onTimeUp={handleTimeUp}
             isActive={state.status === 'in_progress'}
+            startedAt={state.startedAt!}
           />
         );
       })()}

@@ -96,7 +96,9 @@
         "description": "We recommend reviewing this topic after completing the quiz"
       },
       "loading": "Loading...",
-      "nextButton": "Next"
+      "nextButton": "Next",
+      "verifyRetry": "Retrying answer verification...",
+      "verifyFailed": "Failed to verify the answer. Please try again."
     },
     "progress": {
       "label": "Question {current} / {total}"

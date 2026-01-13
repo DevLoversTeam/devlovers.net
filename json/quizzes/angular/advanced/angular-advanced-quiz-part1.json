@@ -1,0 +1,434 @@
+{
+  "questions": [
+    {
+      "id": "angular-adv-q01",
+      "order": 1,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Який lifecycle hook викликається при кожній зміні @Input властивостей?",
+        "exp": "ngOnChanges() викликається кожного разу, коли змінюються @Input властивості. Отримує об'єкт SimpleChanges з попередніми та поточними значеннями."
+      },
+      "en": {
+        "q": "Which lifecycle hook is called on every @Input property change?",
+        "exp": "ngOnChanges() is called every time @Input properties change. It receives a SimpleChanges object with previous and current values."
+      },
+      "pl": {
+        "q": "Który lifecycle hook jest wywoływany przy każdej zmianie właściwości @Input?",
+        "exp": "ngOnChanges() jest wywoływany za każdym razem, gdy zmieniają się właściwości @Input. Otrzymuje obiekt SimpleChanges z poprzednimi i aktualnymi wartościami."
+      },
+      "answers": [
+        {
+          "uk": "ngOnInit()",
+          "en": "ngOnInit()",
+          "pl": "ngOnInit()",
+          "correct": false
+        },
+        {
+          "uk": "ngOnChanges()",
+          "en": "ngOnChanges()",
+          "pl": "ngOnChanges()",
+          "correct": true
+        },
+        {
+          "uk": "ngDoCheck()",
+          "en": "ngDoCheck()",
+          "pl": "ngDoCheck()",
+          "correct": false
+        },
+        {
+          "uk": "ngAfterViewInit()",
+          "en": "ngAfterViewInit()",
+          "pl": "ngAfterViewInit()",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "angular-adv-q02",
+      "order": 2,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Коли використовується ngAfterViewInit()?",
+        "exp": "ngAfterViewInit() викликається один раз після ініціалізації view компонента. Використовується для доступу до елементів через @ViewChild/@ViewChildren."
+      },
+      "en": {
+        "q": "When is ngAfterViewInit() used?",
+        "exp": "ngAfterViewInit() is called once after the component's view is initialized. Used for accessing elements via @ViewChild/@ViewChildren."
+      },
+      "pl": {
+        "q": "Kiedy używa się ngAfterViewInit()?",
+        "exp": "ngAfterViewInit() jest wywoływany raz po inicjalizacji widoku komponentu. Używany do dostępu do elementów przez @ViewChild/@ViewChildren."
+      },
+      "answers": [
+        {
+          "uk": "Перед ініціалізацією компонента",
+          "en": "Before component initialization",
+          "pl": "Przed inicjalizacją komponentu",
+          "correct": false
+        },
+        {
+          "uk": "Після ініціалізації view для доступу до @ViewChild",
+          "en": "After view initialization for @ViewChild access",
+          "pl": "Po inicjalizacji widoku dla dostępu do @ViewChild",
+          "correct": true
+        },
+        {
+          "uk": "При кожній зміні даних",
+          "en": "On every data change",
+          "pl": "Przy każdej zmianie danych",
+          "correct": false
+        },
+        {
+          "uk": "Перед знищенням компонента",
+          "en": "Before component destruction",
+          "pl": "Przed zniszczeniem komponentu",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "angular-adv-q03",
+      "order": 3,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Для чого використовується @ViewChild?",
+        "exp": "@ViewChild дає доступ до дочірнього компонента, директиви або DOM-елемента з власного шаблону компонента. Доступний після ngAfterViewInit()."
+      },
+      "en": {
+        "q": "What is @ViewChild used for?",
+        "exp": "@ViewChild provides access to a child component, directive, or DOM element from the component's own template. Available after ngAfterViewInit()."
+      },
+      "pl": {
+        "q": "Do czego służy @ViewChild?",
+        "exp": "@ViewChild zapewnia dostęp do komponentu dziecka, dyrektywy lub elementu DOM z własnego szablonu komponentu. Dostępny po ngAfterViewInit()."
+      },
+      "answers": [
+        {
+          "uk": "Для передачі даних батьківському компоненту",
+          "en": "For passing data to parent component",
+          "pl": "Do przekazywania danych do komponentu rodzica",
+          "correct": false
+        },
+        {
+          "uk": "Для доступу до елементів власного шаблону",
+          "en": "For accessing elements in own template",
+          "pl": "Do dostępu do elementów własnego szablonu",
+          "correct": true
+        },
+        {
+          "uk": "Для підписки на HTTP-запити",
+          "en": "For subscribing to HTTP requests",
+          "pl": "Do subskrypcji żądań HTTP",
+          "correct": false
+        },
+        {
+          "uk": "Для валідації форм",
+          "en": "For form validation",
+          "pl": "Do walidacji formularzy",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "angular-adv-q04",
+      "order": 4,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Яка різниця між @ViewChild та @ContentChild?",
+        "exp": "@ViewChild звертається до елементів власного шаблону компонента. @ContentChild — до проєктованого контенту (ng-content), переданого ззовні."
+      },
+      "en": {
+        "q": "What is the difference between @ViewChild and @ContentChild?",
+        "exp": "@ViewChild accesses elements in the component's own template. @ContentChild accesses projected content (ng-content) passed from outside."
+      },
+      "pl": {
+        "q": "Jaka jest różnica między @ViewChild a @ContentChild?",
+        "exp": "@ViewChild dostęp do elementów własnego szablonu komponentu. @ContentChild dostęp do projektowanej zawartości (ng-content) przekazanej z zewnątrz."
+      },
+      "answers": [
+        {
+          "uk": "@ViewChild — для сервісів, @ContentChild — для компонентів",
+          "en": "@ViewChild for services, @ContentChild for components",
+          "pl": "@ViewChild dla serwisów, @ContentChild dla komponentów",
+          "correct": false
+        },
+        {
+          "uk": "@ViewChild — для власного шаблону, @ContentChild — для проєктованого контенту",
+          "en": "@ViewChild for own template, @ContentChild for projected content",
+          "pl": "@ViewChild dla własnego szablonu, @ContentChild dla projektowanej zawartości",
+          "correct": true
+        },
+        {
+          "uk": "Різниці немає",
+          "en": "No difference",
+          "pl": "Nie ma różnicy",
+          "correct": false
+        },
+        {
+          "uk": "@ContentChild працює тільки з формами",
+          "en": "@ContentChild only works with forms",
+          "pl": "@ContentChild działa tylko z formularzami",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "angular-adv-q05",
+      "order": 5,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке ng-content і для чого він використовується?",
+        "exp": "ng-content — це механізм проєкції контенту, що дозволяє передавати HTML-вміст у компонент ззовні. Аналог slots у Web Components."
+      },
+      "en": {
+        "q": "What is ng-content and what is it used for?",
+        "exp": "ng-content is a content projection mechanism that allows passing HTML content into a component from outside. Similar to slots in Web Components."
+      },
+      "pl": {
+        "q": "Czym jest ng-content i do czego służy?",
+        "exp": "ng-content to mechanizm projekcji zawartości pozwalający przekazywać zawartość HTML do komponentu z zewnątrz. Podobny do slots w Web Components."
+      },
+      "answers": [
+        {
+          "uk": "Директива для умовного рендерингу",
+          "en": "A directive for conditional rendering",
+          "pl": "Dyrektywa do warunkowego renderowania",
+          "correct": false
+        },
+        {
+          "uk": "Механізм проєкції контенту для передачі HTML у компонент ззовні",
+          "en": "A content projection mechanism for passing HTML into a component from outside",
+          "pl": "Mechanizm projekcji zawartości do przekazywania HTML do komponentu z zewnątrz",
+          "correct": true
+        },
+        {
+          "uk": "Сервіс для роботи з DOM",
+          "en": "A service for working with DOM",
+          "pl": "Serwis do pracy z DOM",
+          "correct": false
+        },
+        {
+          "uk": "Pipe для форматування тексту",
+          "en": "A pipe for text formatting",
+          "pl": "Pipe do formatowania tekstu",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "angular-adv-q06",
+      "order": 6,
+      "difficulty": "advanced",
+      "uk": {
+        "q": "Як створити синхронний кастомний валідатор для Reactive Forms?",
+        "exp": "Кастомний валідатор — це функція, що приймає AbstractControl і повертає об'єкт помилки { errorKey: true } або null, якщо валідація пройшла."
+      },
+      "en": {
+        "q": "How do you create a synchronous custom validator for Reactive Forms?",
+        "exp": "A custom validator is a function that takes AbstractControl and returns an error object { errorKey: true } or null if validation passed."
+      },
+      "pl": {
+        "q": "Jak stworzyć synchroniczny niestandardowy walidator dla Reactive Forms?",
+        "exp": "Niestandardowy walidator to funkcja przyjmująca AbstractControl i zwracająca obiekt błędu { errorKey: true } lub null, jeśli walidacja przeszła."
+      },
+      "answers": [
+        {
+          "uk": "Створити клас, що розширює Validators",
+          "en": "Create a class extending Validators",
+          "pl": "Stworzyć klasę rozszerzającą Validators",
+          "correct": false
+        },
+        {
+          "uk": "Створити функцію, що повертає { errorKey: true } або null",
+          "en": "Create a function returning { errorKey: true } or null",
+          "pl": "Stworzyć funkcję zwracającą { errorKey: true } lub null",
+          "correct": true
+        },
+        {
+          "uk": "Використати декоратор @Validator",
+          "en": "Use @Validator decorator",
+          "pl": "Użyć dekoratora @Validator",
+          "correct": false
+        },
+        {
+          "uk": "Кастомні валідатори неможливі в Angular",
+          "en": "Custom validators are not possible in Angular",
+          "pl": "Niestandardowe walidatory nie są możliwe w Angular",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "angular-adv-q07",
+      "order": 7,
+      "difficulty": "advanced",
+      "uk": {
+        "q": "Чим асинхронний валідатор відрізняється від синхронного?",
+        "exp": "Асинхронний валідатор повертає Observable або Promise замість звичайного значення. Використовується для перевірок, що потребують HTTP-запитів (наприклад, унікальність email)."
+      },
+      "en": {
+        "q": "How does an async validator differ from a sync validator?",
+        "exp": "An async validator returns Observable or Promise instead of a plain value. Used for checks requiring HTTP requests (e.g., email uniqueness)."
+      },
+      "pl": {
+        "q": "Czym różni się walidator asynchroniczny od synchronicznego?",
+        "exp": "Walidator asynchroniczny zwraca Observable lub Promise zamiast zwykłej wartości. Używany do sprawdzeń wymagających żądań HTTP (np. unikalność emaila)."
+      },
+      "answers": [
+        {
+          "uk": "Асинхронний працює швидше",
+          "en": "Async works faster",
+          "pl": "Asynchroniczny działa szybciej",
+          "correct": false
+        },
+        {
+          "uk": "Асинхронний повертає Observable/Promise для перевірок з HTTP-запитами",
+          "en": "Async returns Observable/Promise for checks with HTTP requests",
+          "pl": "Asynchroniczny zwraca Observable/Promise dla sprawdzeń z żądaniami HTTP",
+          "correct": true
+        },
+        {
+          "uk": "Асинхронний не підтримує кастомні помилки",
+          "en": "Async doesn't support custom errors",
+          "pl": "Asynchroniczny nie wspiera niestandardowych błędów",
+          "correct": false
+        },
+        {
+          "uk": "Різниці немає",
+          "en": "No difference",
+          "pl": "Nie ma różnicy",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "angular-adv-q08",
+      "order": 8,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Який lifecycle hook викликається один раз після вставлення проєктованого контенту (ng-content)?",
+        "exp": "ngAfterContentInit() викликається один раз після того, як Angular проєктує зовнішній контент у компонент через ng-content."
+      },
+      "en": {
+        "q": "Which lifecycle hook is called once after projected content (ng-content) is inserted?",
+        "exp": "ngAfterContentInit() is called once after Angular projects external content into the component via ng-content."
+      },
+      "pl": {
+        "q": "Który lifecycle hook jest wywoływany raz po wstawieniu projektowanej zawartości (ng-content)?",
+        "exp": "ngAfterContentInit() jest wywoływany raz po tym, jak Angular projektuje zewnętrzną zawartość do komponentu przez ng-content."
+      },
+      "answers": [
+        {
+          "uk": "ngOnInit()",
+          "en": "ngOnInit()",
+          "pl": "ngOnInit()",
+          "correct": false
+        },
+        {
+          "uk": "ngAfterViewInit()",
+          "en": "ngAfterViewInit()",
+          "pl": "ngAfterViewInit()",
+          "correct": false
+        },
+        {
+          "uk": "ngAfterContentInit()",
+          "en": "ngAfterContentInit()",
+          "pl": "ngAfterContentInit()",
+          "correct": true
+        },
+        {
+          "uk": "ngDoCheck()",
+          "en": "ngDoCheck()",
+          "pl": "ngDoCheck()",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "angular-adv-q09",
+      "order": 9,
+      "difficulty": "advanced",
+      "uk": {
+        "q": "Для чого використовується ngDoCheck()?",
+        "exp": "ngDoCheck() викликається на кожному циклі change detection. Використовується для кастомної логіки виявлення змін, коли стандартний механізм не підходить."
+      },
+      "en": {
+        "q": "What is ngDoCheck() used for?",
+        "exp": "ngDoCheck() is called on every change detection cycle. Used for custom change detection logic when the standard mechanism isn't sufficient."
+      },
+      "pl": {
+        "q": "Do czego służy ngDoCheck()?",
+        "exp": "ngDoCheck() jest wywoływany przy każdym cyklu change detection. Używany do niestandardowej logiki wykrywania zmian, gdy standardowy mechanizm nie wystarcza."
+      },
+      "answers": [
+        {
+          "uk": "Для ініціалізації компонента",
+          "en": "For component initialization",
+          "pl": "Do inicjalizacji komponentu",
+          "correct": false
+        },
+        {
+          "uk": "Для кастомної логіки виявлення змін на кожному CD-циклі",
+          "en": "For custom change detection logic on every CD cycle",
+          "pl": "Do niestandardowej logiki wykrywania zmian przy każdym cyklu CD",
+          "correct": true
+        },
+        {
+          "uk": "Для очищення ресурсів",
+          "en": "For resource cleanup",
+          "pl": "Do czyszczenia zasobów",
+          "correct": false
+        },
+        {
+          "uk": "Для HTTP-запитів",
+          "en": "For HTTP requests",
+          "pl": "Do żądań HTTP",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "angular-adv-q10",
+      "order": 10,
+      "difficulty": "medium",
+      "uk": {
+        "q": "В якому порядку викликаються lifecycle hooks: ngOnInit, ngOnChanges, ngAfterViewInit?",
+        "exp": "Порядок: ngOnChanges (перший, якщо є @Input) → ngOnInit → ngAfterContentInit → ngAfterViewInit. ngOnChanges викликається перед ngOnInit."
+      },
+      "en": {
+        "q": "In what order are lifecycle hooks called: ngOnInit, ngOnChanges, ngAfterViewInit?",
+        "exp": "Order: ngOnChanges (first if @Input exists) → ngOnInit → ngAfterContentInit → ngAfterViewInit. ngOnChanges is called before ngOnInit."
+      },
+      "pl": {
+        "q": "W jakiej kolejności wywoływane są lifecycle hooks: ngOnInit, ngOnChanges, ngAfterViewInit?",
+        "exp": "Kolejność: ngOnChanges (pierwszy jeśli istnieje @Input) → ngOnInit → ngAfterContentInit → ngAfterViewInit. ngOnChanges wywoływany przed ngOnInit."
+      },
+      "answers": [
+        {
+          "uk": "ngOnInit → ngOnChanges → ngAfterViewInit",
+          "en": "ngOnInit → ngOnChanges → ngAfterViewInit",
+          "pl": "ngOnInit → ngOnChanges → ngAfterViewInit",
+          "correct": false
+        },
+        {
+          "uk": "ngOnChanges → ngOnInit → ngAfterViewInit",
+          "en": "ngOnChanges → ngOnInit → ngAfterViewInit",
+          "pl": "ngOnChanges → ngOnInit → ngAfterViewInit",
+          "correct": true
+        },
+        {
+          "uk": "ngAfterViewInit → ngOnInit → ngOnChanges",
+          "en": "ngAfterViewInit → ngOnInit → ngOnChanges",
+          "pl": "ngAfterViewInit → ngOnInit → ngOnChanges",
+          "correct": false
+        },
+        {
+          "uk": "Порядок випадковий",
+          "en": "Order is random",
+          "pl": "Kolejność jest losowa",
+          "correct": false
+        }
+      ]
+    }
+  ]
+}

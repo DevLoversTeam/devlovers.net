@@ -96,7 +96,9 @@
         "description": "Zalecamy przejrzenie tego tematu po ukończeniu quizu"
       },
       "loading": "Ładowanie...",
-      "nextButton": "Dalej"
+      "nextButton": "Dalej",
+      "verifyRetry": "Ponawiamy weryfikację odpowiedzi...",
+      "verifyFailed": "Nie udało się zweryfikować odpowiedzi. Spróbuj ponownie."
     },
     "progress": {
       "label": "Pytanie {current} / {total}"
@@ -157,7 +159,7 @@
   "confirm": "Wyjdź",
   "cancel": "Kontynuuj"
 }
-  },
+},
   "blog": {
     "title": "Wszystkie Wpisy na Blogu",
     "metaTitle": "Blog | DevLovers",

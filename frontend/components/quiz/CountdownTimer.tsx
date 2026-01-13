@@ -8,17 +8,21 @@ interface CountdownTimerProps {
   timeLimitSeconds: number;
   onTimeUp: () => void;
   isActive: boolean;
+  startedAt: Date;
 }
 
 export function CountdownTimer({
   timeLimitSeconds,
   onTimeUp,
   isActive,
+  startedAt,
 }: CountdownTimerProps) {
   const t = useTranslations('quiz.timer');
-  const [endTime] = useState(() => Date.now() + timeLimitSeconds * 1000);
-  const [remainingSeconds, setRemainingSeconds] = useState(timeLimitSeconds);
-
+  const endTime = startedAt.getTime() + timeLimitSeconds * 1000;
+  const [remainingSeconds, setRemainingSeconds] = useState(() => 
+    Math.max(0, Math.floor((endTime - Date.now()) / 1000))
+  );
+  
   useEffect(() => {
     if (!isActive) return;
 

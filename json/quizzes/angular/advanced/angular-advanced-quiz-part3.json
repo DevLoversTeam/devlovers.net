@@ -1,0 +1,434 @@
+{
+  "questions": [
+    {
+      "id": "angular-adv-q21",
+      "order": 21,
+      "difficulty": "advanced",
+      "uk": {
+        "q": "Що таке Actions у NgRx?",
+        "exp": "Actions — це об'єкти, що описують події в застосунку (\"що сталося\"). Мають обов'язкове поле type і опціональний payload через props<>()."
+      },
+      "en": {
+        "q": "What are Actions in NgRx?",
+        "exp": "Actions are objects describing events in the application (\"what happened\"). They have a required type field and optional payload via props<>()."
+      },
+      "pl": {
+        "q": "Czym są Actions w NgRx?",
+        "exp": "Actions to obiekty opisujące zdarzenia w aplikacji (\"co się stało\"). Mają wymagane pole type i opcjonalny payload przez props<>()."
+      },
+      "answers": [
+        {
+          "uk": "Функції для HTTP-запитів",
+          "en": "Functions for HTTP requests",
+          "pl": "Funkcje do żądań HTTP",
+          "correct": false
+        },
+        {
+          "uk": "Об'єкти, що описують події (\"що сталося\") з типом і payload",
+          "en": "Objects describing events (\"what happened\") with type and payload",
+          "pl": "Obiekty opisujące zdarzenia (\"co się stało\") z type i payload",
+          "correct": true
+        },
+        {
+          "uk": "Компоненти для відображення даних",
+          "en": "Components for displaying data",
+          "pl": "Komponenty do wyświetlania danych",
+          "correct": false
+        },
+        {
+          "uk": "Валідатори форм",
+          "en": "Form validators",
+          "pl": "Walidatory formularzy",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "angular-adv-q22",
+      "order": 22,
+      "difficulty": "advanced",
+      "uk": {
+        "q": "Що таке Reducers у NgRx і які їх ключові правила?",
+        "exp": "Reducers — чисті функції, що визначають як змінюється стан у відповідь на action. Правила: без side-effects, без мутацій, повертають новий immutable-стан."
+      },
+      "en": {
+        "q": "What are Reducers in NgRx and what are their key rules?",
+        "exp": "Reducers are pure functions defining how state changes in response to actions. Rules: no side effects, no mutations, return new immutable state."
+      },
+      "pl": {
+        "q": "Czym są Reducers w NgRx i jakie są ich kluczowe zasady?",
+        "exp": "Reducers to czyste funkcje określające jak zmienia się stan w odpowiedzi na akcje. Zasady: bez efektów ubocznych, bez mutacji, zwracają nowy niemutowalny stan."
+      },
+      "answers": [
+        {
+          "uk": "Асинхронні функції для API-запитів",
+          "en": "Async functions for API requests",
+          "pl": "Asynchroniczne funkcje do żądań API",
+          "correct": false
+        },
+        {
+          "uk": "Чисті функції без side-effects, що повертають новий immutable-стан",
+          "en": "Pure functions without side effects returning new immutable state",
+          "pl": "Czyste funkcje bez efektów ubocznych zwracające nowy niemutowalny stan",
+          "correct": true
+        },
+        {
+          "uk": "Класи для валідації даних",
+          "en": "Classes for data validation",
+          "pl": "Klasy do walidacji danych",
+          "correct": false
+        },
+        {
+          "uk": "Директиви для шаблонів",
+          "en": "Template directives",
+          "pl": "Dyrektywy dla szablonów",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "angular-adv-q23",
+      "order": 23,
+      "difficulty": "advanced",
+      "uk": {
+        "q": "Для чого використовуються Effects у NgRx?",
+        "exp": "Effects обробляють side-effects (HTTP, storage, navigation) поза reducer. Слухають actions через ofType() і можуть dispatch нові actions."
+      },
+      "en": {
+        "q": "What are Effects used for in NgRx?",
+        "exp": "Effects handle side effects (HTTP, storage, navigation) outside reducers. They listen to actions via ofType() and can dispatch new actions."
+      },
+      "pl": {
+        "q": "Do czego służą Effects w NgRx?",
+        "exp": "Effects obsługują efekty uboczne (HTTP, storage, nawigacja) poza reducerami. Nasłuchują akcji przez ofType() i mogą dispatch'ować nowe akcje."
+      },
+      "answers": [
+        {
+          "uk": "Для стилізації компонентів",
+          "en": "For styling components",
+          "pl": "Do stylizacji komponentów",
+          "correct": false
+        },
+        {
+          "uk": "Для обробки side-effects (HTTP, storage) поза reducer",
+          "en": "For handling side effects (HTTP, storage) outside reducer",
+          "pl": "Do obsługi efektów ubocznych (HTTP, storage) poza reducerem",
+          "correct": true
+        },
+        {
+          "uk": "Для валідації форм",
+          "en": "For form validation",
+          "pl": "Do walidacji formularzy",
+          "correct": false
+        },
+        {
+          "uk": "Для анімацій",
+          "en": "For animations",
+          "pl": "Do animacji",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "angular-adv-q24",
+      "order": 24,
+      "difficulty": "advanced",
+      "uk": {
+        "q": "Що таке Selectors у NgRx і навіщо вони потрібні?",
+        "exp": "Selectors — чисті функції для ефективного отримання даних зі Store. createSelector() мемоізує результати, уникаючи зайвих обчислень."
+      },
+      "en": {
+        "q": "What are Selectors in NgRx and why are they needed?",
+        "exp": "Selectors are pure functions for efficient data retrieval from Store. createSelector() memoizes results, avoiding unnecessary computations."
+      },
+      "pl": {
+        "q": "Czym są Selectors w NgRx i po co są potrzebne?",
+        "exp": "Selectors to czyste funkcje do efektywnego pobierania danych ze Store. createSelector() memoizuje wyniki, unikając niepotrzebnych obliczeń."
+      },
+      "answers": [
+        {
+          "uk": "CSS-селектори для компонентів",
+          "en": "CSS selectors for components",
+          "pl": "Selektory CSS dla komponentów",
+          "correct": false
+        },
+        {
+          "uk": "Мемоізовані функції для ефективного отримання даних зі Store",
+          "en": "Memoized functions for efficient data retrieval from Store",
+          "pl": "Memoizowane funkcje do efektywnego pobierania danych ze Store",
+          "correct": true
+        },
+        {
+          "uk": "Методи для фільтрації масивів",
+          "en": "Methods for filtering arrays",
+          "pl": "Metody do filtrowania tablic",
+          "correct": false
+        },
+        {
+          "uk": "Декоратори для сервісів",
+          "en": "Decorators for services",
+          "pl": "Dekoratory dla serwisów",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "angular-adv-q25",
+      "order": 25,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що робить ChangeDetectionStrategy.OnPush?",
+        "exp": "OnPush оптимізує change detection: компонент перевіряється тільки коли змінюються @Input (за посиланням), або викликається async pipe, або вручну markForCheck()."
+      },
+      "en": {
+        "q": "What does ChangeDetectionStrategy.OnPush do?",
+        "exp": "OnPush optimizes change detection: component is checked only when @Input changes (by reference), async pipe fires, or markForCheck() is called manually."
+      },
+      "pl": {
+        "q": "Co robi ChangeDetectionStrategy.OnPush?",
+        "exp": "OnPush optymalizuje change detection: komponent sprawdzany tylko gdy zmienia się @Input (przez referencję), odpala async pipe, lub ręcznie markForCheck()."
+      },
+      "answers": [
+        {
+          "uk": "Вимикає change detection повністю",
+          "en": "Disables change detection completely",
+          "pl": "Wyłącza change detection całkowicie",
+          "correct": false
+        },
+        {
+          "uk": "Перевіряє компонент тільки при зміні @Input за посиланням або async pipe",
+          "en": "Checks component only on @Input reference change or async pipe",
+          "pl": "Sprawdza komponent tylko przy zmianie @Input przez referencję lub async pipe",
+          "correct": true
+        },
+        {
+          "uk": "Запускає change detection кожну секунду",
+          "en": "Runs change detection every second",
+          "pl": "Uruchamia change detection co sekundę",
+          "correct": false
+        },
+        {
+          "uk": "Використовується тільки для форм",
+          "en": "Used only for forms",
+          "pl": "Używany tylko dla formularzy",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "angular-adv-q26",
+      "order": 26,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Як вручну запустити change detection при OnPush?",
+        "exp": "Використовується ChangeDetectorRef: markForCheck() позначає компонент для перевірки, detectChanges() запускає CD негайно для компонента і нащадків."
+      },
+      "en": {
+        "q": "How do you manually trigger change detection with OnPush?",
+        "exp": "Use ChangeDetectorRef: markForCheck() marks component for check, detectChanges() runs CD immediately for component and descendants."
+      },
+      "pl": {
+        "q": "Jak ręcznie uruchomić change detection przy OnPush?",
+        "exp": "Używa się ChangeDetectorRef: markForCheck() oznacza komponent do sprawdzenia, detectChanges() uruchamia CD natychmiast dla komponentu i potomków."
+      },
+      "answers": [
+        {
+          "uk": "Викликати this.update()",
+          "en": "Call this.update()",
+          "pl": "Wywołać this.update()",
+          "correct": false
+        },
+        {
+          "uk": "Через ChangeDetectorRef.markForCheck() або detectChanges()",
+          "en": "Via ChangeDetectorRef.markForCheck() or detectChanges()",
+          "pl": "Przez ChangeDetectorRef.markForCheck() lub detectChanges()",
+          "correct": true
+        },
+        {
+          "uk": "Перезавантажити сторінку",
+          "en": "Reload the page",
+          "pl": "Przeładować stronę",
+          "correct": false
+        },
+        {
+          "uk": "Неможливо при OnPush",
+          "en": "Not possible with OnPush",
+          "pl": "Niemożliwe przy OnPush",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "angular-adv-q27",
+      "order": 27,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Які основні функції використовуються для створення анімацій в Angular?",
+        "exp": "Основні функції з @angular/animations: trigger(), state(), style(), transition(), animate(). trigger() визначає ім'я анімації для шаблону."
+      },
+      "en": {
+        "q": "What are the main functions used for creating animations in Angular?",
+        "exp": "Main functions from @angular/animations: trigger(), state(), style(), transition(), animate(). trigger() defines the animation name for template."
+      },
+      "pl": {
+        "q": "Jakie są główne funkcje do tworzenia animacji w Angular?",
+        "exp": "Główne funkcje z @angular/animations: trigger(), state(), style(), transition(), animate(). trigger() definiuje nazwę animacji dla szablonu."
+      },
+      "answers": [
+        {
+          "uk": "animate(), move(), scale()",
+          "en": "animate(), move(), scale()",
+          "pl": "animate(), move(), scale()",
+          "correct": false
+        },
+        {
+          "uk": "trigger(), state(), style(), transition(), animate()",
+          "en": "trigger(), state(), style(), transition(), animate()",
+          "pl": "trigger(), state(), style(), transition(), animate()",
+          "correct": true
+        },
+        {
+          "uk": "start(), stop(), pause()",
+          "en": "start(), stop(), pause()",
+          "pl": "start(), stop(), pause()",
+          "correct": false
+        },
+        {
+          "uk": "Angular не підтримує анімації",
+          "en": "Angular doesn't support animations",
+          "pl": "Angular nie wspiera animacji",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "angular-adv-q28",
+      "order": 28,
+      "difficulty": "advanced",
+      "uk": {
+        "q": "Що робить функція stagger() в анімаціях Angular?",
+        "exp": "stagger() створює затримку між анімаціями елементів у списку. Наприклад, stagger(100, animate(...)) додає 100ms затримки між кожним елементом."
+      },
+      "en": {
+        "q": "What does the stagger() function do in Angular animations?",
+        "exp": "stagger() creates a delay between animations of list elements. For example, stagger(100, animate(...)) adds 100ms delay between each element."
+      },
+      "pl": {
+        "q": "Co robi funkcja stagger() w animacjach Angular?",
+        "exp": "stagger() tworzy opóźnienie między animacjami elementów listy. Na przykład stagger(100, animate(...)) dodaje 100ms opóźnienia między każdym elementem."
+      },
+      "answers": [
+        {
+          "uk": "Зупиняє анімацію",
+          "en": "Stops the animation",
+          "pl": "Zatrzymuje animację",
+          "correct": false
+        },
+        {
+          "uk": "Створює затримку між анімаціями елементів списку",
+          "en": "Creates delay between list element animations",
+          "pl": "Tworzy opóźnienie między animacjami elementów listy",
+          "correct": true
+        },
+        {
+          "uk": "Прискорює анімацію",
+          "en": "Speeds up animation",
+          "pl": "Przyspiesza animację",
+          "correct": false
+        },
+        {
+          "uk": "Повторює анімацію",
+          "en": "Repeats animation",
+          "pl": "Powtarza animację",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "angular-adv-q29",
+      "order": 29,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Як створити pipe з параметрами?",
+        "exp": "Метод transform() приймає додаткові параметри після основного значення. У шаблоні: {{ value | pipeName:param1:param2 }}."
+      },
+      "en": {
+        "q": "How do you create a pipe with parameters?",
+        "exp": "The transform() method accepts additional parameters after the main value. In template: {{ value | pipeName:param1:param2 }}."
+      },
+      "pl": {
+        "q": "Jak stworzyć pipe z parametrami?",
+        "exp": "Metoda transform() przyjmuje dodatkowe parametry po głównej wartości. W szablonie: {{ value | pipeName:param1:param2 }}."
+      },
+      "answers": [
+        {
+          "uk": "Через декоратор @Param()",
+          "en": "Via @Param() decorator",
+          "pl": "Przez dekorator @Param()",
+          "correct": false
+        },
+        {
+          "uk": "Додаткові параметри в transform() і {{ value | pipe:param1:param2 }}",
+          "en": "Additional parameters in transform() and {{ value | pipe:param1:param2 }}",
+          "pl": "Dodatkowe parametry w transform() i {{ value | pipe:param1:param2 }}",
+          "correct": true
+        },
+        {
+          "uk": "Pipes не підтримують параметри",
+          "en": "Pipes don't support parameters",
+          "pl": "Pipes nie wspierają parametrów",
+          "correct": false
+        },
+        {
+          "uk": "Через окремий конфігураційний файл",
+          "en": "Via separate configuration file",
+          "pl": "Przez osobny plik konfiguracyjny",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "angular-adv-q30",
+      "order": 30,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що означає providedIn: 'any' у @Injectable?",
+        "exp": "providedIn: 'any' створює окремий екземпляр сервісу для кожного lazy-loaded модуля. Корисно для ізоляції стану між незалежними частинами застосунку."
+      },
+      "en": {
+        "q": "What does providedIn: 'any' mean in @Injectable?",
+        "exp": "providedIn: 'any' creates a separate service instance for each lazy-loaded module. Useful for isolating state between independent app parts."
+      },
+      "pl": {
+        "q": "Co oznacza providedIn: 'any' w @Injectable?",
+        "exp": "providedIn: 'any' tworzy osobną instancję serwisu dla każdego lazy-loaded modułu. Przydatne do izolacji stanu między niezależnymi częściami aplikacji."
+      },
+      "answers": [
+        {
+          "uk": "Сервіс доступний тільки в тестах",
+          "en": "Service is only available in tests",
+          "pl": "Serwis dostępny tylko w testach",
+          "correct": false
+        },
+        {
+          "uk": "Окремий екземпляр сервісу для кожного lazy-loaded модуля",
+          "en": "Separate service instance for each lazy-loaded module",
+          "pl": "Osobna instancja serwisu dla każdego lazy-loaded modułu",
+          "correct": true
+        },
+        {
+          "uk": "Сервіс не використовує DI",
+          "en": "Service doesn't use DI",
+          "pl": "Serwis nie używa DI",
+          "correct": false
+        },
+        {
+          "uk": "Те саме, що providedIn: 'root'",
+          "en": "Same as providedIn: 'root'",
+          "pl": "To samo co providedIn: 'root'",
+          "correct": false
+        }
+      ]
+    }
+  ]
+}

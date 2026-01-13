@@ -1,0 +1,434 @@
+{
+  "questions": [
+    {
+      "id": "node-adv-q01",
+      "order": 1,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке BFF (Backend For Frontend) у контексті мікросервісної архітектури Node.js?",
+        "exp": "BFF — це легкий API-шар на Node.js, який агрегує запити до різних мікросервісів і надає оптимізований інтерфейс для конкретного клієнта (web, mobile)."
+      },
+      "en": {
+        "q": "What is BFF (Backend For Frontend) in the context of Node.js microservices architecture?",
+        "exp": "BFF is a lightweight API layer on Node.js that aggregates requests to various microservices and provides an optimized interface for a specific client (web, mobile)."
+      },
+      "pl": {
+        "q": "Czym jest BFF (Backend For Frontend) w kontekście architektury mikroserwisów Node.js?",
+        "exp": "BFF to lekka warstwa API na Node.js, która agreguje żądania do różnych mikroserwisów i zapewnia zoptymalizowany interfejs dla konkretnego klienta (web, mobile)."
+      },
+      "answers": [
+        {
+          "uk": "База даних для фронтенд-застосунків",
+          "en": "A database for frontend applications",
+          "pl": "Baza danych dla aplikacji frontendowych",
+          "correct": false
+        },
+        {
+          "uk": "API-шар, що агрегує запити до мікросервісів для конкретного клієнта",
+          "en": "An API layer that aggregates requests to microservices for a specific client",
+          "pl": "Warstwa API agregująca żądania do mikroserwisów dla konkretnego klienta",
+          "correct": true
+        },
+        {
+          "uk": "Протокол для передачі даних між сервісами",
+          "en": "A protocol for data transfer between services",
+          "pl": "Protokół do przesyłania danych między usługami",
+          "correct": false
+        },
+        {
+          "uk": "Фреймворк для розробки фронтенду",
+          "en": "A framework for frontend development",
+          "pl": "Framework do rozwoju frontendu",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-adv-q02",
+      "order": 2,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Яка перевага gRPC над REST для комунікації між мікросервісами?",
+        "exp": "gRPC використовує бінарний протокол Protocol Buffers, що забезпечує швидшу серіалізацію, менший розмір повідомлень та автогенерацію клієнтів."
+      },
+      "en": {
+        "q": "What is the advantage of gRPC over REST for microservice communication?",
+        "exp": "gRPC uses the binary Protocol Buffers protocol, which provides faster serialization, smaller message sizes, and auto-generated clients."
+      },
+      "pl": {
+        "q": "Jaka jest zaleta gRPC nad REST do komunikacji między mikroserwisami?",
+        "exp": "gRPC używa binarnego protokołu Protocol Buffers, który zapewnia szybszą serializację, mniejszy rozmiar wiadomości i automatycznie generowanych klientów."
+      },
+      "answers": [
+        {
+          "uk": "gRPC простіший у налагодженні через браузер",
+          "en": "gRPC is easier to debug through a browser",
+          "pl": "gRPC jest łatwiejszy do debugowania przez przeglądarkę",
+          "correct": false
+        },
+        {
+          "uk": "Бінарний протокол, швидша серіалізація, менший розмір повідомлень",
+          "en": "Binary protocol, faster serialization, smaller message sizes",
+          "pl": "Protokół binarny, szybsza serializacja, mniejszy rozmiar wiadomości",
+          "correct": true
+        },
+        {
+          "uk": "gRPC не потребує визначення схеми",
+          "en": "gRPC doesn't require schema definition",
+          "pl": "gRPC nie wymaga definicji schematu",
+          "correct": false
+        },
+        {
+          "uk": "gRPC працює тільки з JavaScript",
+          "en": "gRPC works only with JavaScript",
+          "pl": "gRPC działa tylko z JavaScript",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-adv-q03",
+      "order": 3,
+      "difficulty": "medium",
+      "uk": {
+        "q": "У чому різниця між child_process та worker_threads у Node.js?",
+        "exp": "child_process створює окремі процеси з власною пам'яттю (fork, spawn), а worker_threads — потоки в межах одного процесу з можливістю обміну пам'яттю через SharedArrayBuffer."
+      },
+      "en": {
+        "q": "What is the difference between child_process and worker_threads in Node.js?",
+        "exp": "child_process creates separate processes with their own memory (fork, spawn), while worker_threads creates threads within one process with shared memory via SharedArrayBuffer."
+      },
+      "pl": {
+        "q": "Jaka jest różnica między child_process a worker_threads w Node.js?",
+        "exp": "child_process tworzy oddzielne procesy z własną pamięcią (fork, spawn), a worker_threads tworzy wątki w ramach jednego procesu z współdzieloną pamięcią przez SharedArrayBuffer."
+      },
+      "answers": [
+        {
+          "uk": "child_process — окремі процеси з власною пам'яттю; worker_threads — потоки з можливістю обміну пам'яттю",
+          "en": "child_process — separate processes with own memory; worker_threads — threads with possible shared memory",
+          "pl": "child_process — oddzielne procesy z własną pamięcią; worker_threads — wątki z możliwą współdzieloną pamięcią",
+          "correct": true
+        },
+        {
+          "uk": "Різниці немає, це синоніми",
+          "en": "No difference, they are synonyms",
+          "pl": "Nie ma różnicy, to synonimy",
+          "correct": false
+        },
+        {
+          "uk": "worker_threads працює тільки на Linux",
+          "en": "worker_threads works only on Linux",
+          "pl": "worker_threads działa tylko na Linux",
+          "correct": false
+        },
+        {
+          "uk": "child_process швидший для всіх задач",
+          "en": "child_process is faster for all tasks",
+          "pl": "child_process jest szybszy dla wszystkich zadań",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-adv-q04",
+      "order": 4,
+      "difficulty": "medium",
+      "uk": {
+        "q": "У чому різниця між process.nextTick() та setImmediate() у Node.js?",
+        "exp": "process.nextTick() виконується перед переходом до наступної фази event loop, а setImmediate() — на початку наступної ітерації (check phase)."
+      },
+      "en": {
+        "q": "What is the difference between process.nextTick() and setImmediate() in Node.js?",
+        "exp": "process.nextTick() executes before moving to the next event loop phase, while setImmediate() executes at the start of the next iteration (check phase)."
+      },
+      "pl": {
+        "q": "Jaka jest różnica między process.nextTick() a setImmediate() w Node.js?",
+        "exp": "process.nextTick() wykonuje się przed przejściem do następnej fazy event loop, a setImmediate() wykonuje się na początku następnej iteracji (check phase)."
+      },
+      "answers": [
+        {
+          "uk": "Вони виконуються однаково",
+          "en": "They execute the same way",
+          "pl": "Wykonują się tak samo",
+          "correct": false
+        },
+        {
+          "uk": "nextTick — перед наступною фазою event loop; setImmediate — на check phase наступної ітерації",
+          "en": "nextTick — before next event loop phase; setImmediate — at check phase of next iteration",
+          "pl": "nextTick — przed następną fazą event loop; setImmediate — na check phase następnej iteracji",
+          "correct": true
+        },
+        {
+          "uk": "setImmediate швидший за nextTick завжди",
+          "en": "setImmediate is always faster than nextTick",
+          "pl": "setImmediate jest zawsze szybszy niż nextTick",
+          "correct": false
+        },
+        {
+          "uk": "nextTick застарів і не рекомендується",
+          "en": "nextTick is deprecated and not recommended",
+          "pl": "nextTick jest przestarzały i nie zalecany",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-adv-q05",
+      "order": 5,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Який інструмент рекомендується для перевірки вразливостей у залежностях Node.js проєкту?",
+        "exp": "npm audit вбудований у npm і перевіряє залежності на відомі вразливості. Також використовують Snyk для більш детального аналізу."
+      },
+      "en": {
+        "q": "Which tool is recommended for checking vulnerabilities in Node.js project dependencies?",
+        "exp": "npm audit is built into npm and checks dependencies for known vulnerabilities. Snyk is also used for more detailed analysis."
+      },
+      "pl": {
+        "q": "Które narzędzie jest zalecane do sprawdzania podatności w zależnościach projektu Node.js?",
+        "exp": "npm audit jest wbudowany w npm i sprawdza zależności pod kątem znanych podatności. Snyk jest również używany do bardziej szczegółowej analizy."
+      },
+      "answers": [
+        {
+          "uk": "ESLint",
+          "en": "ESLint",
+          "pl": "ESLint",
+          "correct": false
+        },
+        {
+          "uk": "npm audit або Snyk",
+          "en": "npm audit or Snyk",
+          "pl": "npm audit lub Snyk",
+          "correct": true
+        },
+        {
+          "uk": "Prettier",
+          "en": "Prettier",
+          "pl": "Prettier",
+          "correct": false
+        },
+        {
+          "uk": "Webpack",
+          "en": "Webpack",
+          "pl": "Webpack",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-adv-q06",
+      "order": 6,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке Content Security Policy (CSP) і як вона захищає Node.js застосунок?",
+        "exp": "CSP — це HTTP-заголовок, який визначає дозволені джерела скриптів, стилів та інших ресурсів, захищаючи від XSS-атак через заборону inline-скриптів."
+      },
+      "en": {
+        "q": "What is Content Security Policy (CSP) and how does it protect a Node.js application?",
+        "exp": "CSP is an HTTP header that defines allowed sources for scripts, styles, and other resources, protecting against XSS attacks by blocking inline scripts."
+      },
+      "pl": {
+        "q": "Czym jest Content Security Policy (CSP) i jak chroni aplikację Node.js?",
+        "exp": "CSP to nagłówek HTTP określający dozwolone źródła skryptów, stylów i innych zasobów, chroniący przed atakami XSS przez blokowanie skryptów inline."
+      },
+      "answers": [
+        {
+          "uk": "Протокол шифрування даних у базі",
+          "en": "A protocol for encrypting database data",
+          "pl": "Protokół szyfrowania danych w bazie",
+          "correct": false
+        },
+        {
+          "uk": "HTTP-заголовок, що визначає дозволені джерела ресурсів для захисту від XSS",
+          "en": "HTTP header that defines allowed resource sources for XSS protection",
+          "pl": "Nagłówek HTTP określający dozwolone źródła zasobów dla ochrony przed XSS",
+          "correct": true
+        },
+        {
+          "uk": "Бібліотека для валідації форм",
+          "en": "A library for form validation",
+          "pl": "Biblioteka do walidacji formularzy",
+          "correct": false
+        },
+        {
+          "uk": "Менеджер сесій користувачів",
+          "en": "A user session manager",
+          "pl": "Menedżer sesji użytkowników",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-adv-q07",
+      "order": 7,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Як захистити Node.js API від brute-force атак?",
+        "exp": "Використовувати rate limiting (express-rate-limit), slow-down для уповільнення запитів, CAPTCHA та блокування IP після багатьох невдалих спроб."
+      },
+      "en": {
+        "q": "How to protect a Node.js API from brute-force attacks?",
+        "exp": "Use rate limiting (express-rate-limit), slow-down to slow down requests, CAPTCHA, and IP blocking after many failed attempts."
+      },
+      "pl": {
+        "q": "Jak chronić API Node.js przed atakami brute-force?",
+        "exp": "Używać rate limiting (express-rate-limit), slow-down do spowalniania żądań, CAPTCHA i blokowania IP po wielu nieudanych próbach."
+      },
+      "answers": [
+        {
+          "uk": "Збільшити потужність сервера",
+          "en": "Increase server capacity",
+          "pl": "Zwiększyć moc serwera",
+          "correct": false
+        },
+        {
+          "uk": "Rate limiting, slow-down, CAPTCHA, блокування IP",
+          "en": "Rate limiting, slow-down, CAPTCHA, IP blocking",
+          "pl": "Rate limiting, slow-down, CAPTCHA, blokowanie IP",
+          "correct": true
+        },
+        {
+          "uk": "Використовувати тільки POST-запити",
+          "en": "Use only POST requests",
+          "pl": "Używać tylko żądań POST",
+          "correct": false
+        },
+        {
+          "uk": "Відключити логування",
+          "en": "Disable logging",
+          "pl": "Wyłączyć logowanie",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-adv-q08",
+      "order": 8,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке loosely coupled архітектура у контексті мікросервісів?",
+        "exp": "Loosely coupled означає, що сервіси взаємодіють через асинхронні повідомлення (message broker), не залежать один від одного напряму і можуть змінюватися незалежно."
+      },
+      "en": {
+        "q": "What is loosely coupled architecture in the context of microservices?",
+        "exp": "Loosely coupled means services communicate through async messages (message broker), don't depend directly on each other, and can change independently."
+      },
+      "pl": {
+        "q": "Czym jest architektura loosely coupled w kontekście mikroserwisów?",
+        "exp": "Loosely coupled oznacza, że usługi komunikują się przez asynchroniczne wiadomości (message broker), nie zależą bezpośrednio od siebie i mogą zmieniać się niezależnie."
+      },
+      "answers": [
+        {
+          "uk": "Усі сервіси в одному репозиторії",
+          "en": "All services in one repository",
+          "pl": "Wszystkie usługi w jednym repozytorium",
+          "correct": false
+        },
+        {
+          "uk": "Сервіси не залежать напряму один від одного, спілкуються через message broker",
+          "en": "Services don't depend directly on each other, communicate via message broker",
+          "pl": "Usługi nie zależą bezpośrednio od siebie, komunikują się przez message broker",
+          "correct": true
+        },
+        {
+          "uk": "Сервіси використовують одну базу даних",
+          "en": "Services use one database",
+          "pl": "Usługi używają jednej bazy danych",
+          "correct": false
+        },
+        {
+          "uk": "Сервіси завжди синхронно викликають один одного",
+          "en": "Services always call each other synchronously",
+          "pl": "Usługi zawsze wywołują się synchronicznie",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-adv-q09",
+      "order": 9,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Яка різниця між RabbitMQ та Kafka для Node.js мікросервісів?",
+        "exp": "RabbitMQ — традиційний message broker з чергами, підходить для task queues. Kafka — distributed log для high-throughput streaming з persistence та replay."
+      },
+      "en": {
+        "q": "What is the difference between RabbitMQ and Kafka for Node.js microservices?",
+        "exp": "RabbitMQ is a traditional message broker with queues, suitable for task queues. Kafka is a distributed log for high-throughput streaming with persistence and replay."
+      },
+      "pl": {
+        "q": "Jaka jest różnica między RabbitMQ a Kafka dla mikroserwisów Node.js?",
+        "exp": "RabbitMQ to tradycyjny message broker z kolejkami, odpowiedni dla task queues. Kafka to distributed log dla high-throughput streaming z persistence i replay."
+      },
+      "answers": [
+        {
+          "uk": "Вони однакові, різниця лише в назві",
+          "en": "They are the same, only the name differs",
+          "pl": "Są takie same, różni się tylko nazwa",
+          "correct": false
+        },
+        {
+          "uk": "RabbitMQ — черги для tasks; Kafka — distributed log для streaming з persistence",
+          "en": "RabbitMQ — queues for tasks; Kafka — distributed log for streaming with persistence",
+          "pl": "RabbitMQ — kolejki dla tasks; Kafka — distributed log dla streaming z persistence",
+          "correct": true
+        },
+        {
+          "uk": "Kafka працює тільки з Java",
+          "en": "Kafka works only with Java",
+          "pl": "Kafka działa tylko z Java",
+          "correct": false
+        },
+        {
+          "uk": "RabbitMQ швидший за Kafka завжди",
+          "en": "RabbitMQ is always faster than Kafka",
+          "pl": "RabbitMQ jest zawsze szybszy niż Kafka",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-adv-q10",
+      "order": 10,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке ZeroMQ і коли його варто використовувати замість RabbitMQ?",
+        "exp": "ZeroMQ — бібліотека для P2P комунікації без центрального брокера. Підходить, коли потрібна низька затримка і немає потреби у гарантованій доставці повідомлень."
+      },
+      "en": {
+        "q": "What is ZeroMQ and when should it be used instead of RabbitMQ?",
+        "exp": "ZeroMQ is a library for P2P communication without a central broker. Suitable when low latency is needed and guaranteed message delivery is not required."
+      },
+      "pl": {
+        "q": "Czym jest ZeroMQ i kiedy należy go używać zamiast RabbitMQ?",
+        "exp": "ZeroMQ to biblioteka do komunikacji P2P bez centralnego brokera. Odpowiednia gdy potrzebne jest niskie opóźnienie i nie wymaga gwarantowanego dostarczenia wiadomości."
+      },
+      "answers": [
+        {
+          "uk": "ZeroMQ — база даних для повідомлень",
+          "en": "ZeroMQ is a database for messages",
+          "pl": "ZeroMQ to baza danych dla wiadomości",
+          "correct": false
+        },
+        {
+          "uk": "P2P бібліотека без брокера для низької затримки",
+          "en": "P2P library without broker for low latency",
+          "pl": "Biblioteka P2P bez brokera dla niskiego opóźnienia",
+          "correct": true
+        },
+        {
+          "uk": "ZeroMQ замінює HTTP протокол",
+          "en": "ZeroMQ replaces the HTTP protocol",
+          "pl": "ZeroMQ zastępuje protokół HTTP",
+          "correct": false
+        },
+        {
+          "uk": "ZeroMQ працює тільки локально",
+          "en": "ZeroMQ works only locally",
+          "pl": "ZeroMQ działa tylko lokalnie",
+          "correct": false
+        }
+      ]
+    }
+  ]
+}

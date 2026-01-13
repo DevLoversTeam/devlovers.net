@@ -1,0 +1,434 @@
+{
+  "questions": [
+    {
+      "id": "vue-q31",
+      "order": 31,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке Single File Component (SFC) у Vue.js?",
+        "exp": "SFC — це компонент у файлі .vue з трьома секціями: template (розмітка), script (логіка), style (стилі, можуть бути scoped)."
+      },
+      "en": {
+        "q": "What is a Single File Component (SFC) in Vue.js?",
+        "exp": "SFC is a component in a .vue file with three sections: template (markup), script (logic), style (styles, can be scoped)."
+      },
+      "pl": {
+        "q": "Czym jest Single File Component (SFC) w Vue.js?",
+        "exp": "SFC to komponent w pliku .vue z trzema sekcjami: template (znaczniki), script (logika), style (style, mogą być scoped)."
+      },
+      "answers": [
+        {
+          "uk": "JavaScript-модуль з експортом функцій",
+          "en": "A JavaScript module with function exports",
+          "pl": "Moduł JavaScript z eksportowanymi funkcjami",
+          "correct": false
+        },
+        {
+          "uk": "Компонент у файлі .vue з секціями template, script, style",
+          "en": "A component in a .vue file with template, script, style sections",
+          "pl": "Komponent w pliku .vue z sekcjami template, script, style",
+          "correct": true
+        },
+        {
+          "uk": "CSS-файл зі стилями компонента",
+          "en": "A CSS file with component styles",
+          "pl": "Plik CSS ze stylami komponentu",
+          "correct": false
+        },
+        {
+          "uk": "JSON-конфігурація компонента",
+          "en": "A JSON component configuration",
+          "pl": "Konfiguracja komponentu w JSON",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "vue-q32",
+      "order": 32,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Що робить атрибут scoped у тегу style у Vue SFC?",
+        "exp": "Атрибут scoped обмежує CSS-стилі тільки поточним компонентом, додаючи унікальні атрибути до елементів і селекторів."
+      },
+      "en": {
+        "q": "What does the scoped attribute do in a Vue SFC style tag?",
+        "exp": "The scoped attribute limits CSS styles to only the current component by adding unique attributes to elements and selectors."
+      },
+      "pl": {
+        "q": "Co robi atrybut scoped w tagu style w Vue SFC?",
+        "exp": "Atrybut scoped ogranicza style CSS tylko do bieżącego komponentu, dodając unikalne atrybuty do elementów i selektorów."
+      },
+      "answers": [
+        {
+          "uk": "Робить стилі глобальними",
+          "en": "Makes styles global",
+          "pl": "Czyni style globalnymi",
+          "correct": false
+        },
+        {
+          "uk": "Обмежує стилі тільки поточним компонентом",
+          "en": "Limits styles to only the current component",
+          "pl": "Ogranicza style tylko do bieżącego komponentu",
+          "correct": true
+        },
+        {
+          "uk": "Видаляє стилі при unmount",
+          "en": "Removes styles on unmount",
+          "pl": "Usuwa style przy unmount",
+          "correct": false
+        },
+        {
+          "uk": "Кешує стилі для швидкодії",
+          "en": "Caches styles for performance",
+          "pl": "Cachuje style dla wydajności",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "vue-q33",
+      "order": 33,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Які нові можливості з'явились у Vue 3?",
+        "exp": "Vue 3 додав Composition API, Teleport, Fragments (кілька кореневих елементів), Suspense, покращену TypeScript-підтримку та меншій бандл."
+      },
+      "en": {
+        "q": "What new features were added in Vue 3?",
+        "exp": "Vue 3 added Composition API, Teleport, Fragments (multiple root elements), Suspense, improved TypeScript support, and smaller bundle."
+      },
+      "pl": {
+        "q": "Jakie nowe funkcje dodano w Vue 3?",
+        "exp": "Vue 3 dodał Composition API, Teleport, Fragments (wiele elementów głównych), Suspense, ulepszone wsparcie TypeScript i mniejszy bundle."
+      },
+      "answers": [
+        {
+          "uk": "Тільки покращення продуктивності",
+          "en": "Only performance improvements",
+          "pl": "Tylko ulepszenia wydajności",
+          "correct": false
+        },
+        {
+          "uk": "Composition API, Teleport, Fragments, Suspense, краща TypeScript-підтримка",
+          "en": "Composition API, Teleport, Fragments, Suspense, better TypeScript support",
+          "pl": "Composition API, Teleport, Fragments, Suspense, lepsze wsparcie TypeScript",
+          "correct": true
+        },
+        {
+          "uk": "Vuex вбудований у ядро",
+          "en": "Vuex built into the core",
+          "pl": "Vuex wbudowany w rdzeń",
+          "correct": false
+        },
+        {
+          "uk": "Видалено реактивність",
+          "en": "Reactivity removed",
+          "pl": "Usunięto reaktywność",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "vue-q34",
+      "order": 34,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке Teleport у Vue 3?",
+        "exp": "Teleport дозволяє рендерити елементи у будь-яке місце DOM поза ієрархією компонента, корисно для модальних вікон і тултіпів."
+      },
+      "en": {
+        "q": "What is Teleport in Vue 3?",
+        "exp": "Teleport allows rendering elements to any place in the DOM outside the component hierarchy, useful for modals and tooltips."
+      },
+      "pl": {
+        "q": "Czym jest Teleport w Vue 3?",
+        "exp": "Teleport pozwala renderować elementy w dowolnym miejscu DOM poza hierarchią komponentu, przydatne dla modali i tooltipów."
+      },
+      "answers": [
+        {
+          "uk": "Метод навігації між сторінками",
+          "en": "A method for page navigation",
+          "pl": "Metoda nawigacji między stronami",
+          "correct": false
+        },
+        {
+          "uk": "Компонент для рендерингу елементів у будь-яке місце DOM",
+          "en": "A component for rendering elements to any place in the DOM",
+          "pl": "Komponent do renderowania elementów w dowolnym miejscu DOM",
+          "correct": true
+        },
+        {
+          "uk": "Бібліотека анімацій",
+          "en": "An animation library",
+          "pl": "Biblioteka animacji",
+          "correct": false
+        },
+        {
+          "uk": "Інструмент для дебагу",
+          "en": "A debugging tool",
+          "pl": "Narzędzie do debugowania",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "vue-q35",
+      "order": 35,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Навіщо потрібен атрибут key при рендерингу списків у Vue.js?",
+        "exp": "key допомагає Vue ідентифікувати елементи при оновленні DOM, забезпечуючи ефективний diffing і правильне відстеження стану елементів."
+      },
+      "en": {
+        "q": "Why is the key attribute needed when rendering lists in Vue.js?",
+        "exp": "key helps Vue identify elements during DOM updates, ensuring efficient diffing and correct tracking of element state."
+      },
+      "pl": {
+        "q": "Po co potrzebny jest atrybut key przy renderowaniu list w Vue.js?",
+        "exp": "key pomaga Vue identyfikować elementy podczas aktualizacji DOM, zapewniając efektywny diffing i prawidłowe śledzenie stanu elementów."
+      },
+      "answers": [
+        {
+          "uk": "Для стилізації елементів",
+          "en": "For styling elements",
+          "pl": "Do stylizacji elementów",
+          "correct": false
+        },
+        {
+          "uk": "Для ідентифікації елементів і ефективного оновлення DOM",
+          "en": "For identifying elements and efficient DOM updates",
+          "pl": "Do identyfikacji elementów i efektywnej aktualizacji DOM",
+          "correct": true
+        },
+        {
+          "uk": "Для валідації даних",
+          "en": "For data validation",
+          "pl": "Do walidacji danych",
+          "correct": false
+        },
+        {
+          "uk": "Для сортування списку",
+          "en": "For sorting the list",
+          "pl": "Do sortowania listy",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "vue-q36",
+      "order": 36,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке Vue DevTools і для чого вони використовуються?",
+        "exp": "Vue DevTools — розширення браузера для дебагу Vue-застосунків: інспекція компонентів, стану, подій, Vuex/Pinia та time-travel debugging."
+      },
+      "en": {
+        "q": "What is Vue DevTools and what is it used for?",
+        "exp": "Vue DevTools is a browser extension for debugging Vue apps: inspecting components, state, events, Vuex/Pinia, and time-travel debugging."
+      },
+      "pl": {
+        "q": "Czym jest Vue DevTools i do czego służy?",
+        "exp": "Vue DevTools to rozszerzenie przeglądarki do debugowania aplikacji Vue: inspekcja komponentów, stanu, zdarzeń, Vuex/Pinia i time-travel debugging."
+      },
+      "answers": [
+        {
+          "uk": "IDE для розробки Vue",
+          "en": "An IDE for Vue development",
+          "pl": "IDE do rozwoju Vue",
+          "correct": false
+        },
+        {
+          "uk": "Розширення браузера для дебагу Vue-застосунків",
+          "en": "A browser extension for debugging Vue apps",
+          "pl": "Rozszerzenie przeglądarki do debugowania aplikacji Vue",
+          "correct": true
+        },
+        {
+          "uk": "Фреймворк для тестування",
+          "en": "A testing framework",
+          "pl": "Framework do testowania",
+          "correct": false
+        },
+        {
+          "uk": "Бібліотека UI-компонентів",
+          "en": "A UI component library",
+          "pl": "Biblioteka komponentów UI",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "vue-q37",
+      "order": 37,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Як працює компонент transition у Vue.js?",
+        "exp": "Компонент <transition> автоматично додає CSS-класи (v-enter, v-leave тощо) на різних етапах анімації при вставці/видаленні елементів."
+      },
+      "en": {
+        "q": "How does the transition component work in Vue.js?",
+        "exp": "The <transition> component automatically adds CSS classes (v-enter, v-leave, etc.) at different animation stages during element insert/removal."
+      },
+      "pl": {
+        "q": "Jak działa komponent transition w Vue.js?",
+        "exp": "Komponent <transition> automatycznie dodaje klasy CSS (v-enter, v-leave itp.) na różnych etapach animacji podczas wstawiania/usuwania elementów."
+      },
+      "answers": [
+        {
+          "uk": "Виконує JavaScript-анімації напряму",
+          "en": "Executes JavaScript animations directly",
+          "pl": "Wykonuje animacje JavaScript bezpośrednio",
+          "correct": false
+        },
+        {
+          "uk": "Автоматично додає CSS-класи на етапах анімації",
+          "en": "Automatically adds CSS classes at animation stages",
+          "pl": "Automatycznie dodaje klasy CSS na etapach animacji",
+          "correct": true
+        },
+        {
+          "uk": "Замінює елементи без анімації",
+          "en": "Replaces elements without animation",
+          "pl": "Zastępuje elementy bez animacji",
+          "correct": false
+        },
+        {
+          "uk": "Працює тільки з SVG",
+          "en": "Works only with SVG",
+          "pl": "Działa tylko z SVG",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "vue-q38",
+      "order": 38,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке Nuxt.js і як він пов'язаний з Vue.js?",
+        "exp": "Nuxt.js — фреймворк на базі Vue.js для SSR (серверний рендеринг), SSG (статична генерація), з вбудованим роутингом і структурою проєкту."
+      },
+      "en": {
+        "q": "What is Nuxt.js and how is it related to Vue.js?",
+        "exp": "Nuxt.js is a Vue.js-based framework for SSR (server-side rendering), SSG (static site generation), with built-in routing and project structure."
+      },
+      "pl": {
+        "q": "Czym jest Nuxt.js i jak jest powiązany z Vue.js?",
+        "exp": "Nuxt.js to framework oparty na Vue.js dla SSR (renderowanie po stronie serwera), SSG (generacja statyczna), z wbudowanym routingiem i strukturą projektu."
+      },
+      "answers": [
+        {
+          "uk": "Альтернатива Vue.js",
+          "en": "An alternative to Vue.js",
+          "pl": "Alternatywa dla Vue.js",
+          "correct": false
+        },
+        {
+          "uk": "Фреймворк на базі Vue.js для SSR і SSG",
+          "en": "A Vue.js-based framework for SSR and SSG",
+          "pl": "Framework oparty na Vue.js dla SSR i SSG",
+          "correct": true
+        },
+        {
+          "uk": "Бібліотека для тестування Vue",
+          "en": "A testing library for Vue",
+          "pl": "Biblioteka do testowania Vue",
+          "correct": false
+        },
+        {
+          "uk": "CSS-фреймворк для Vue",
+          "en": "A CSS framework for Vue",
+          "pl": "Framework CSS dla Vue",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "vue-q39",
+      "order": 39,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Як створити computed властивість з геттером і сеттером у Vue 3?",
+        "exp": "Передайте об'єкт з методами get() і set() у функцію computed(): computed({ get() {...}, set(val) {...} })."
+      },
+      "en": {
+        "q": "How do you create a computed property with getter and setter in Vue 3?",
+        "exp": "Pass an object with get() and set() methods to the computed() function: computed({ get() {...}, set(val) {...} })."
+      },
+      "pl": {
+        "q": "Jak utworzyć właściwość computed z getterem i setterem w Vue 3?",
+        "exp": "Przekaż obiekt z metodami get() i set() do funkcji computed(): computed({ get() {...}, set(val) {...} })."
+      },
+      "answers": [
+        {
+          "uk": "computed(() => value, (val) => {...})",
+          "en": "computed(() => value, (val) => {...})",
+          "pl": "computed(() => value, (val) => {...})",
+          "correct": false
+        },
+        {
+          "uk": "computed({ get() {...}, set(val) {...} })",
+          "en": "computed({ get() {...}, set(val) {...} })",
+          "pl": "computed({ get() {...}, set(val) {...} })",
+          "correct": true
+        },
+        {
+          "uk": "computed.withSetter(() => value)",
+          "en": "computed.withSetter(() => value)",
+          "pl": "computed.withSetter(() => value)",
+          "correct": false
+        },
+        {
+          "uk": "Це неможливо у Vue 3",
+          "en": "This is not possible in Vue 3",
+          "pl": "To niemożliwe w Vue 3",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "vue-q40",
+      "order": 40,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Яка техніка використовується для зменшення розміру бандла у Vue.js?",
+        "exp": "Lazy loading (ліниве завантаження) через динамічний import() дозволяє завантажувати компоненти та маршрути тільки коли вони потрібні."
+      },
+      "en": {
+        "q": "What technique is used to reduce bundle size in Vue.js?",
+        "exp": "Lazy loading through dynamic import() allows loading components and routes only when they are needed."
+      },
+      "pl": {
+        "q": "Jaka technika jest używana do zmniejszenia rozmiaru bundle w Vue.js?",
+        "exp": "Lazy loading (leniwe ładowanie) przez dynamiczny import() pozwala ładować komponenty i trasy tylko wtedy, gdy są potrzebne."
+      },
+      "answers": [
+        {
+          "uk": "Видалення всіх коментарів",
+          "en": "Removing all comments",
+          "pl": "Usuwanie wszystkich komentarzy",
+          "correct": false
+        },
+        {
+          "uk": "Lazy loading через динамічний import()",
+          "en": "Lazy loading through dynamic import()",
+          "pl": "Lazy loading przez dynamiczny import()",
+          "correct": true
+        },
+        {
+          "uk": "Використання тільки inline-стилів",
+          "en": "Using only inline styles",
+          "pl": "Używanie tylko stylów inline",
+          "correct": false
+        },
+        {
+          "uk": "Відмова від TypeScript",
+          "en": "Abandoning TypeScript",
+          "pl": "Rezygnacja z TypeScript",
+          "correct": false
+        }
+      ]
+    }
+  ]
+}
