@@ -13,7 +13,10 @@
     "parse": "tsx parse/parse.ts",
     "db:generate": "drizzle-kit generate --config drizzle.config.ts",
     "db:migrate": "tsx scripts/guard-non-preview.ts drizzle-kit migrate --config drizzle.config.ts",
-    "db:studio": "drizzle-kit studio --config drizzle.config.ts"
+    "db:studio": "drizzle-kit studio --config drizzle.config.ts",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
@@ -51,6 +54,9 @@
   "devDependencies": {
     "@netlify/plugin-nextjs": "^5.15.1",
     "@tailwindcss/postcss": "^4",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/react": "^16.3.1",
+    "@testing-library/user-event": "^14.6.1",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -58,6 +64,7 @@
     "drizzle-kit": "^0.31.8",
     "eslint": "^9",
     "eslint-config-next": "16.0.1",
+    "jsdom": "^27.4.0",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
