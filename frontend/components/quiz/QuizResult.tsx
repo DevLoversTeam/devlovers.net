@@ -3,6 +3,7 @@
 import { useLocale, useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Clock, BookOpen, TrendingUp, Trophy, AlertTriangle } from 'lucide-react';
 
 interface QuizResultProps {
   score: number;
@@ -35,49 +36,49 @@ export function QuizResult({
   const t = useTranslations('quiz.result');
   const getMotivationalMessage = () => {
     if (isIncomplete && answeredCount > 0) {
-    return {
-      emoji: '⏱️',
-      title: 'Час вийшов',
-      message: `Ви відповіли на ${answeredCount} з ${total} питань. Результат не зараховано.`,
-      color: 'text-orange-600 dark:text-orange-400',
-    };
-  }
-  
-    if (score === 0 && answeredCount === 0) {
-    return {
-      emoji: '⏱️',
-      title: t('timeUp.title'),
-      message: t('timeUp.message'),
-      color: 'text-gray-600 dark:text-gray-400',
-    };
-  }
+      return {
+        icon: <Clock className="w-14 h-14 text-orange-500" />,
+        title: 'Час вийшов',
+        message: `Ви відповіли на ${answeredCount} з ${total} питань. Результат не зараховано.`,
+        color: 'text-orange-600 dark:text-orange-400',
+      };
+    }
 
-  if (score === 0 && answeredCount > 0) {
-    return {
-      emoji: '📚',
-      title: t('allWrong.title'),
-      message: t('allWrong.message'),
-      color: 'text-red-600 dark:text-red-400',
-    };
-  }
+    if (score === 0 && answeredCount === 0) {
+      return {
+        icon: <Clock className="w-14 h-14 text-gray-500" />,
+        title: t('timeUp.title'),
+        message: t('timeUp.message'),
+        color: 'text-gray-600 dark:text-gray-400',
+      };
+    }
+
+    if (score === 0 && answeredCount > 0) {
+      return {
+        icon: <BookOpen className="w-14 h-14 text-red-500" />,
+        title: t('allWrong.title'),
+        message: t('allWrong.message'),
+        color: 'text-red-600 dark:text-red-400',
+      };
+    }
 
     if (percentage < 50) {
       return {
-        emoji: '📚',
+        icon: <BookOpen className="w-14 h-14 text-red-500" />,
         title: t('needPractice.title'),
         message: t('needPractice.message'),
         color: 'text-red-600 dark:text-red-400',
       };
     } else if (percentage < 80) {
       return {
-        emoji: '💪',
+        icon: <TrendingUp className="w-14 h-14 text-orange-500" />,
         title: t('goodJob.title'),
         message: t('goodJob.message'),
         color: 'text-orange-600 dark:text-orange-400',
       };
     } else {
       return {
-        emoji: '🎉',
+        icon: <Trophy className="w-14 h-14 text-amber-500" />,
         title: t('excellent.title'),
         message: t('excellent.message'),
         color: 'text-green-600 dark:text-green-400',
@@ -89,7 +90,7 @@ export function QuizResult({
 
   return (
     <div className="max-w-2xl mx-auto space-y-8">
-      <div className="text-center text-6xl">{motivation.emoji}</div>
+      <div className="flex justify-center">{motivation.icon}</div>
       {!isIncomplete && (
         <>
           <div className="text-center space-y-2">
@@ -124,7 +125,7 @@ export function QuizResult({
 {violationsCount >= 3 && (
         <div className="p-4 rounded-xl bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800">
           <p className="text-center text-orange-800 dark:text-orange-200 font-medium">
-            <span aria-hidden="true">⚠️</span> {t('violations', { count: violationsCount })}
+            <AlertTriangle className="w-4 h-4 inline" /> {t('violations', { count: violationsCount })}
           </p>
         </div>
       )}

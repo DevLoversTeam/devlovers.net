@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
+import { Check, X } from 'lucide-react';
 
 interface Answer {
   questionId: string;
@@ -90,7 +91,7 @@ export function QuizProgress({ current, total, answers }: QuizProgressProps) {
             >
               {isAnswered ? (
                 <span className="text-white font-bold">
-                  {isCorrect ? '✓' : '✗'}
+                  {isCorrect ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
                 </span>
               ) : (
                 <span
