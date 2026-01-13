@@ -1,0 +1,434 @@
+{
+  "questions": [
+    {
+      "id": "vue-q21",
+      "order": 21,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке Vue Router і для чого він використовується?",
+        "exp": "Vue Router — офіційна бібліотека маршрутизації для створення SPA з багатьма сторінками без перезавантаження, з підтримкою динамічних маршрутів і guard'ів."
+      },
+      "en": {
+        "q": "What is Vue Router and what is it used for?",
+        "exp": "Vue Router is the official routing library for creating SPAs with multiple pages without reload, supporting dynamic routes and guards."
+      },
+      "pl": {
+        "q": "Czym jest Vue Router i do czego służy?",
+        "exp": "Vue Router to oficjalna biblioteka routingu do tworzenia SPA z wieloma stronami bez przeładowania, wspierająca dynamiczne trasy i guardy."
+      },
+      "answers": [
+        {
+          "uk": "Бібліотека для управління станом",
+          "en": "A state management library",
+          "pl": "Biblioteka do zarządzania stanem",
+          "correct": false
+        },
+        {
+          "uk": "Офіційна бібліотека маршрутизації для SPA",
+          "en": "The official routing library for SPAs",
+          "pl": "Oficjalna biblioteka routingu dla SPA",
+          "correct": true
+        },
+        {
+          "uk": "Фреймворк для тестування",
+          "en": "A testing framework",
+          "pl": "Framework do testowania",
+          "correct": false
+        },
+        {
+          "uk": "CSS-фреймворк",
+          "en": "A CSS framework",
+          "pl": "Framework CSS",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "vue-q22",
+      "order": 22,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Як створити динамічний маршрут у Vue Router?",
+        "exp": "Динамічний маршрут створюється з параметром у шляху, наприклад: path: '/user/:id'. Доступ до параметра через route.params.id."
+      },
+      "en": {
+        "q": "How do you create a dynamic route in Vue Router?",
+        "exp": "A dynamic route is created with a parameter in the path, e.g.: path: '/user/:id'. Access the parameter via route.params.id."
+      },
+      "pl": {
+        "q": "Jak utworzyć dynamiczną trasę w Vue Router?",
+        "exp": "Dynamiczną trasę tworzy się z parametrem w ścieżce, np.: path: '/user/:id'. Dostęp do parametru przez route.params.id."
+      },
+      "answers": [
+        {
+          "uk": "path: '/user/*'",
+          "en": "path: '/user/*'",
+          "pl": "path: '/user/*'",
+          "correct": false
+        },
+        {
+          "uk": "path: '/user/:id'",
+          "en": "path: '/user/:id'",
+          "pl": "path: '/user/:id'",
+          "correct": true
+        },
+        {
+          "uk": "path: '/user/{id}'",
+          "en": "path: '/user/{id}'",
+          "pl": "path: '/user/{id}'",
+          "correct": false
+        },
+        {
+          "uk": "path: '/user/[id]'",
+          "en": "path: '/user/[id]'",
+          "pl": "path: '/user/[id]'",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "vue-q23",
+      "order": 23,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке Vuex і які його основні концепції?",
+        "exp": "Vuex — бібліотека глобального стану з концепціями: state (дані), getters (обчислені), mutations (синхронні зміни), actions (асинхронна логіка), modules."
+      },
+      "en": {
+        "q": "What is Vuex and what are its core concepts?",
+        "exp": "Vuex is a global state library with concepts: state (data), getters (computed), mutations (sync changes), actions (async logic), modules."
+      },
+      "pl": {
+        "q": "Czym jest Vuex i jakie są jego podstawowe koncepcje?",
+        "exp": "Vuex to biblioteka globalnego stanu z koncepcjami: state (dane), getters (obliczone), mutations (zmiany sync), actions (logika async), modules."
+      },
+      "answers": [
+        {
+          "uk": "Бібліотека маршрутизації з концепціями routes, guards, params",
+          "en": "A routing library with routes, guards, params concepts",
+          "pl": "Biblioteka routingu z koncepcjami routes, guards, params",
+          "correct": false
+        },
+        {
+          "uk": "Бібліотека стану з концепціями state, getters, mutations, actions, modules",
+          "en": "A state library with state, getters, mutations, actions, modules concepts",
+          "pl": "Biblioteka stanu z koncepcjami state, getters, mutations, actions, modules",
+          "correct": true
+        },
+        {
+          "uk": "UI-бібліотека компонентів",
+          "en": "A UI component library",
+          "pl": "Biblioteka komponentów UI",
+          "correct": false
+        },
+        {
+          "uk": "Фреймворк для серверного рендерингу",
+          "en": "A server-side rendering framework",
+          "pl": "Framework do renderowania po stronie serwera",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "vue-q24",
+      "order": 24,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Яка різниця між mutations і actions у Vuex?",
+        "exp": "Mutations — синхронні методи для зміни state. Actions — асинхронна логіка (API-запити), яка в кінці викликає mutations."
+      },
+      "en": {
+        "q": "What is the difference between mutations and actions in Vuex?",
+        "exp": "Mutations are synchronous methods for changing state. Actions are async logic (API requests) that eventually call mutations."
+      },
+      "pl": {
+        "q": "Jaka jest różnica między mutations a actions w Vuex?",
+        "exp": "Mutations to synchroniczne metody do zmiany state. Actions to logika async (żądania API), która ostatecznie wywołuje mutations."
+      },
+      "answers": [
+        {
+          "uk": "Mutations для великих змін, actions для малих",
+          "en": "Mutations for big changes, actions for small ones",
+          "pl": "Mutations do dużych zmian, actions do małych",
+          "correct": false
+        },
+        {
+          "uk": "Mutations — синхронні зміни стану, actions — асинхронна логіка",
+          "en": "Mutations are sync state changes, actions are async logic",
+          "pl": "Mutations to sync zmiany stanu, actions to logika async",
+          "correct": true
+        },
+        {
+          "uk": "Actions швидші за mutations",
+          "en": "Actions are faster than mutations",
+          "pl": "Actions są szybsze niż mutations",
+          "correct": false
+        },
+        {
+          "uk": "Різниці немає",
+          "en": "There is no difference",
+          "pl": "Nie ma różnicy",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "vue-q25",
+      "order": 25,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке Pinia і як вона відрізняється від Vuex?",
+        "exp": "Pinia — офіційна заміна Vuex у Vue 3, легша, з кращою TypeScript-підтримкою, без mutations (тільки state, getters, actions)."
+      },
+      "en": {
+        "q": "What is Pinia and how does it differ from Vuex?",
+        "exp": "Pinia is the official Vuex replacement in Vue 3, lighter, with better TypeScript support, no mutations (only state, getters, actions)."
+      },
+      "pl": {
+        "q": "Czym jest Pinia i czym różni się od Vuex?",
+        "exp": "Pinia to oficjalny zamiennik Vuex w Vue 3, lżejszy, z lepszym wsparciem TypeScript, bez mutations (tylko state, getters, actions)."
+      },
+      "answers": [
+        {
+          "uk": "Pinia — це бібліотека маршрутизації",
+          "en": "Pinia is a routing library",
+          "pl": "Pinia to biblioteka routingu",
+          "correct": false
+        },
+        {
+          "uk": "Pinia — легша заміна Vuex з кращою TypeScript-підтримкою",
+          "en": "Pinia is a lighter Vuex replacement with better TypeScript support",
+          "pl": "Pinia to lżejszy zamiennik Vuex z lepszym wsparciem TypeScript",
+          "correct": true
+        },
+        {
+          "uk": "Pinia і Vuex ідентичні",
+          "en": "Pinia and Vuex are identical",
+          "pl": "Pinia i Vuex są identyczne",
+          "correct": false
+        },
+        {
+          "uk": "Pinia тільки для Vue 2",
+          "en": "Pinia is only for Vue 2",
+          "pl": "Pinia jest tylko dla Vue 2",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "vue-q26",
+      "order": 26,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке mixins у Vue.js і яка їх головна проблема?",
+        "exp": "Mixins — механізм повторного використання логіки між компонентами. Головна проблема — конфлікти імен і важко відстежити джерело логіки."
+      },
+      "en": {
+        "q": "What are mixins in Vue.js and what is their main problem?",
+        "exp": "Mixins are a mechanism for reusing logic between components. The main problem is name conflicts and difficulty tracking logic source."
+      },
+      "pl": {
+        "q": "Czym są mixiny w Vue.js i jaki jest ich główny problem?",
+        "exp": "Mixiny to mechanizm wielokrotnego użycia logiki między komponentami. Główny problem to konflikty nazw i trudność w śledzeniu źródła logiki."
+      },
+      "answers": [
+        {
+          "uk": "Стилі компонентів, проблема — важко перевизначити",
+          "en": "Component styles, problem — hard to override",
+          "pl": "Style komponentów, problem — trudne do nadpisania",
+          "correct": false
+        },
+        {
+          "uk": "Механізм повторного використання логіки, проблема — конфлікти імен",
+          "en": "Logic reuse mechanism, problem — name conflicts",
+          "pl": "Mechanizm wielokrotnego użycia logiki, problem — konflikty nazw",
+          "correct": true
+        },
+        {
+          "uk": "Хуки життєвого циклу, проблема — повільні",
+          "en": "Lifecycle hooks, problem — slow",
+          "pl": "Hooki cyklu życia, problem — wolne",
+          "correct": false
+        },
+        {
+          "uk": "Директиви Vue, проблема — несумісність",
+          "en": "Vue directives, problem — incompatibility",
+          "pl": "Dyrektywy Vue, problem — niekompatybilność",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "vue-q27",
+      "order": 27,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Як створити кастомну директиву у Vue 3?",
+        "exp": "Кастомна директива створюється через app.directive('name', { mounted(el) {...} }) і використовується як v-name у шаблоні."
+      },
+      "en": {
+        "q": "How do you create a custom directive in Vue 3?",
+        "exp": "A custom directive is created via app.directive('name', { mounted(el) {...} }) and used as v-name in the template."
+      },
+      "pl": {
+        "q": "Jak utworzyć własną dyrektywę w Vue 3?",
+        "exp": "Własną dyrektywę tworzy się przez app.directive('name', { mounted(el) {...} }) i używa jako v-name w szablonie."
+      },
+      "answers": [
+        {
+          "uk": "Vue.createDirective('name', handler)",
+          "en": "Vue.createDirective('name', handler)",
+          "pl": "Vue.createDirective('name', handler)",
+          "correct": false
+        },
+        {
+          "uk": "app.directive('name', { mounted(el) {...} })",
+          "en": "app.directive('name', { mounted(el) {...} })",
+          "pl": "app.directive('name', { mounted(el) {...} })",
+          "correct": true
+        },
+        {
+          "uk": "new Directive('name', handler)",
+          "en": "new Directive('name', handler)",
+          "pl": "new Directive('name', handler)",
+          "correct": false
+        },
+        {
+          "uk": "defineDirective('name', handler)",
+          "en": "defineDirective('name', handler)",
+          "pl": "defineDirective('name', handler)",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "vue-q28",
+      "order": 28,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке provide/inject у Vue.js?",
+        "exp": "provide/inject дозволяють передавати дані від батьківського компонента до будь-якого нащадка без props, уникаючи prop drilling."
+      },
+      "en": {
+        "q": "What is provide/inject in Vue.js?",
+        "exp": "provide/inject allows passing data from a parent component to any descendant without props, avoiding prop drilling."
+      },
+      "pl": {
+        "q": "Czym jest provide/inject w Vue.js?",
+        "exp": "provide/inject pozwala przekazywać dane z komponentu nadrzędnego do dowolnego potomka bez props, unikając prop drilling."
+      },
+      "answers": [
+        {
+          "uk": "Методи для роботи з API",
+          "en": "Methods for working with API",
+          "pl": "Metody do pracy z API",
+          "correct": false
+        },
+        {
+          "uk": "Механізм передачі даних від батька до нащадків без props",
+          "en": "Mechanism for passing data from parent to descendants without props",
+          "pl": "Mechanizm przekazywania danych od rodzica do potomków bez props",
+          "correct": true
+        },
+        {
+          "uk": "Хуки для асинхронних операцій",
+          "en": "Hooks for async operations",
+          "pl": "Hooki do operacji asynchronicznych",
+          "correct": false
+        },
+        {
+          "uk": "Директиви для форм",
+          "en": "Directives for forms",
+          "pl": "Dyrektywy do formularzy",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "vue-q29",
+      "order": 29,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке Composition API і чим він відрізняється від Options API?",
+        "exp": "Composition API — новий спосіб організації логіки через setup() з ref, reactive, computed. Логіка однієї фічі зберігається разом, на відміну від Options API."
+      },
+      "en": {
+        "q": "What is the Composition API and how does it differ from Options API?",
+        "exp": "Composition API is a new way to organize logic via setup() with ref, reactive, computed. Logic for one feature stays together, unlike Options API."
+      },
+      "pl": {
+        "q": "Czym jest Composition API i czym różni się od Options API?",
+        "exp": "Composition API to nowy sposób organizacji logiki przez setup() z ref, reactive, computed. Logika jednej funkcji jest razem, w przeciwieństwie do Options API."
+      },
+      "answers": [
+        {
+          "uk": "Composition API — це бібліотека компонентів",
+          "en": "Composition API is a component library",
+          "pl": "Composition API to biblioteka komponentów",
+          "correct": false
+        },
+        {
+          "uk": "Composition API організує логіку через setup(), логіка фічі зберігається разом",
+          "en": "Composition API organizes logic via setup(), feature logic stays together",
+          "pl": "Composition API organizuje logikę przez setup(), logika funkcji jest razem",
+          "correct": true
+        },
+        {
+          "uk": "Options API новіший за Composition API",
+          "en": "Options API is newer than Composition API",
+          "pl": "Options API jest nowszy niż Composition API",
+          "correct": false
+        },
+        {
+          "uk": "Вони ідентичні",
+          "en": "They are identical",
+          "pl": "Są identyczne",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "vue-q30",
+      "order": 30,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Яка різниця між ref і reactive у Vue 3?",
+        "exp": "ref використовується для примітивів (доступ через .value), reactive — для об'єктів і масивів (прямий доступ до властивостей)."
+      },
+      "en": {
+        "q": "What is the difference between ref and reactive in Vue 3?",
+        "exp": "ref is used for primitives (access via .value), reactive is for objects and arrays (direct property access)."
+      },
+      "pl": {
+        "q": "Jaka jest różnica między ref a reactive w Vue 3?",
+        "exp": "ref używa się dla prymitywów (dostęp przez .value), reactive dla obiektów i tablic (bezpośredni dostęp do właściwości)."
+      },
+      "answers": [
+        {
+          "uk": "ref швидший за reactive",
+          "en": "ref is faster than reactive",
+          "pl": "ref jest szybszy niż reactive",
+          "correct": false
+        },
+        {
+          "uk": "ref для примітивів (через .value), reactive для об'єктів (прямий доступ)",
+          "en": "ref for primitives (via .value), reactive for objects (direct access)",
+          "pl": "ref dla prymitywów (przez .value), reactive dla obiektów (bezpośredni dostęp)",
+          "correct": true
+        },
+        {
+          "uk": "reactive тільки для масивів",
+          "en": "reactive is only for arrays",
+          "pl": "reactive jest tylko dla tablic",
+          "correct": false
+        },
+        {
+          "uk": "Різниці немає",
+          "en": "There is no difference",
+          "pl": "Nie ma różnicy",
+          "correct": false
+        }
+      ]
+    }
+  ]
+}

@@ -90,27 +90,31 @@ export function QuizResult({
   return (
     <div className="max-w-2xl mx-auto space-y-8">
       <div className="text-center text-6xl">{motivation.emoji}</div>
-      <div className="text-center space-y-2">
-        <h2 className="text-4xl font-bold text-gray-900 dark:text-gray-100">
-          {score} / {total}
-        </h2>
-        <p className="text-xl text-gray-600 dark:text-gray-400">
-          {percentage.toFixed(0)}% {t('correctAnswers')}
-        </p>
-      </div>
-      <div className="space-y-2">
-        <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
-          <div
-            className={cn(
-              'h-full transition-all duration-1000 ease-out',
-              percentage < 50 && 'bg-red-500',
-              percentage >= 50 && percentage < 80 && 'bg-orange-500',
-              percentage >= 80 && 'bg-green-500'
-            )}
-            style={{ width: `${percentage}%` }}
-          />
-        </div>
-      </div>
+      {!isIncomplete && (
+        <>
+          <div className="text-center space-y-2">
+            <h2 className="text-4xl font-bold text-gray-900 dark:text-gray-100">
+              {score} / {total}
+            </h2>
+            <p className="text-xl text-gray-600 dark:text-gray-400">
+              {percentage.toFixed(0)}% {t('correctAnswers')}
+            </p>
+          </div>
+          <div className="space-y-2">
+            <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
+              <div
+                className={cn(
+                  'h-full transition-all duration-1000 ease-out',
+                  percentage < 50 && 'bg-red-500',
+                  percentage >= 50 && percentage < 80 && 'bg-orange-500',
+                  percentage >= 80 && 'bg-green-500'
+                )}
+                style={{ width: `${percentage}%` }}
+              />
+            </div>
+          </div>
+        </>
+      )}
       <div className="text-center space-y-2">
         <h3 className={cn('text-xl font-semibold', motivation.color)}>
           {motivation.title}
@@ -141,7 +145,7 @@ export function QuizResult({
           </p>
         </div>
       )}
-      {isGuest ? (
+      {isGuest && !isIncomplete ? (
   <div className="space-y-4">
     <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
       <p className="text-center text-blue-800 dark:text-blue-200 font-medium">
@@ -154,7 +158,7 @@ export function QuizResult({
       const url = `/${locale}/login?returnTo=/quiz/${quizSlug}`;
       window.location.href = url;
     }}
-    variant="primary">
+   >
     {t('loginButton')}
   </Button>
   <Button
