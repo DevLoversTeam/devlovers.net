@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { revalidatePath } from 'next/cache'; 
+import { revalidatePath } from 'next/cache';
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
@@ -9,6 +9,7 @@ import { users } from "@/db/schema/users";
 import { signAuthToken, setAuthCookie } from "@/lib/auth";
 
 export const runtime = "nodejs";
+
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email"),
@@ -34,18 +35,39 @@ export async function POST(req: Request) {
       id: users.id,
       role: users.role,
       passwordHash: users.passwordHash,
+      emailVerified: users.emailVerified,
+      provider: users.provider,
     })
     .from(users)
     .where(eq(users.email, normalizedEmail))
     .limit(1);
 
+  if (result.length === 0) {
+    return NextResponse.json(
+      { error: "Invalid email or password" },
+      { status: 401 }
+    );
+  }
+
+  const user = result[0]
+
+  if (!user.provider) {
+    throw new Error("User record missing provider");
+  }
+
+  if (user.provider === "credentials" && user.emailVerified === null) {
+    return NextResponse.json({
+      error: "Email is not verified",
+      code: "EMAIL_NOT_VERIFIED",
+    }, { status: 403 })
+  }
+
   if (
-    result.length === 0 ||
-    !result[0].passwordHash ||
-    !(await bcrypt.compare(password, result[0].passwordHash))
+    !user.passwordHash ||
+    !(await bcrypt.compare(password, user.passwordHash))
   ) {
     return NextResponse.json(
-      { error: "Invalid credentials" },
+      { error: "Invalid email or password" },
       { status: 401 }
     );
   }

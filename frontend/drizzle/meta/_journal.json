@@ -96,8 +96,27 @@
     {
       "idx": 13,
       "version": "7",
+<<<<<<< HEAD
       "when": 1768162667947,
       "tag": "0013_brown_gamora",
+=======
+      "when": 1767697281389,
+      "tag": "0013_low_roughhouse",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1768045270184,
+      "tag": "0014_dapper_kang",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1768166276337,
+      "tag": "0015_glamorous_eternity",
+>>>>>>> b30415e (feat(auth): add email verification, password reset, and improved auth UX)
       "breakpoints": true
     },
     {

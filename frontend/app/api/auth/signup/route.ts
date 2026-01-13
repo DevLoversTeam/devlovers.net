@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
-import { revalidatePath } from 'next/cache'; 
+import { headers } from "next/headers";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
 
 import { db } from "@/db";
 import { users } from "@/db/schema/users";
-import { signAuthToken, setAuthCookie } from "@/lib/auth";
+import { createEmailVerificationToken } from "@/lib/auth/email-verification";
+import { sendVerificationEmail } from "@/lib/email/sendVerificationEmail";
+
 
 export const runtime = "nodejs";
 
@@ -19,58 +21,61 @@ const signupSchema = z.object({
 export async function POST(req: Request) {
   console.log('signup handler hit')
   try {
-  const body = await req.json().catch(() => null);
-  const parsed = signupSchema.safeParse(body);
+    const body = await req.json().catch(() => null);
+    const parsed = signupSchema.safeParse(body);
 
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: parsed.error.flatten().fieldErrors },
-      { status: 400 }
-    );
-  }
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.flatten().fieldErrors },
+        { status: 400 }
+      );
+    }
 
-  const { name, email, password } = parsed.data;
-  const normalizedEmail = email.toLowerCase();
+    const { name, email, password } = parsed.data;
+    const normalizedEmail = email.toLowerCase();
 
-  const existingUser = await db
-    .select({ id: users.id })
-    .from(users)
-    .where(eq(users.email, normalizedEmail))
-    .limit(1);
+    const existingUser = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, normalizedEmail))
+      .limit(1);
 
-  if (existingUser.length > 0) {
-    return NextResponse.json(
-      { error: "Email already in use" },
-      { status: 409 }
-    );
-  }
+    if (existingUser.length > 0) {
+      return NextResponse.json(
+        { error: "Email already in use" },
+        { status: 409 }
+      );
+    }
 
-  const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = await bcrypt.hash(password, 10);
 
-  const [user] = await db
-    .insert(users)
-    .values({
-      name,
-      email: normalizedEmail,
-      passwordHash,
-      emailVerified: null,
-      role: "user",
+    const [user] = await db
+      .insert(users)
+      .values({
+        name,
+        email: normalizedEmail,
+        passwordHash,
+        provider: "credentials",
+        emailVerified: null,
+        role: "user",
+      })
+      .returning();
+
+    const token = await createEmailVerificationToken(user.id)
+
+    const origin = (await headers()).get("origin")
+
+    await sendVerificationEmail({
+      to: normalizedEmail,
+      verifyUrl: `${origin}/api/auth/verify-email?token=${token}`
     })
-    .returning({
-      id: users.id,
-      role: users.role,
-    });
 
-  const token = signAuthToken({
-    userId: user.id,
-    role: user.role as "user" | "admin",
-    email: normalizedEmail
-  });
+    return NextResponse.json({
+      success: true,
+      verificationRequired: true
+    }, { status: 201 })
 
-  await setAuthCookie(token);
-  revalidatePath('/[locale]', 'layout');
-  return NextResponse.json({ success: true, userId: user.id }, { status: 201 });
-}catch (error) {
+  } catch (error) {
     console.error("Signup failed:", error);
     const message =
       error instanceof Error ? error.message : "Unknown error";
