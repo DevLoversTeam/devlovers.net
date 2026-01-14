@@ -1,6 +1,6 @@
 import { and, eq, inArray, ne, sql } from 'drizzle-orm';
 
-import { applyReserveMove, applyReleaseMove } from '../inventory';
+import { applyReserveMove } from '../inventory';
 import { logError, logWarn } from '@/lib/logging';
 import { isPaymentsEnabled } from '@/lib/env/stripe';
 import { db } from '@/db';
@@ -58,6 +58,8 @@ async function reconcileNoPaymentOrder(
       inventoryStatus: orders.inventoryStatus,
       stockRestored: orders.stockRestored,
       restockedAt: orders.restockedAt,
+      failureCode: orders.failureCode,
+      failureMessage: orders.failureMessage,
     })
     .from(orders)
     .where(eq(orders.id, orderId))
@@ -87,6 +89,25 @@ async function reconcileNoPaymentOrder(
   // Finality is inventory-driven: if inventory is reserved, the order is complete.
   if (row.inventoryStatus === 'reserved') {
     return getOrderById(orderId);
+  }
+
+  if (row.inventoryStatus === 'release_pending') {
+    // Do not attempt to reserve again while release is pending.
+    try {
+      await restockOrder(orderId, {
+        reason: 'failed',
+        workerId: 'reconcileNoPaymentOrder',
+      });
+    } catch (restockErr) {
+      logError(
+        `[reconcileNoPaymentOrder] restock failed orderId=${orderId}`,
+        restockErr
+      );
+    }
+
+    throw new InsufficientStockError(
+      row.failureMessage ?? 'Order cannot be completed (release pending).'
+    );
   }
 
   // If it was already released/restocked - treat as failed.
@@ -168,49 +189,39 @@ async function reconcileNoPaymentOrder(
     return getOrderById(orderId);
   } catch (e) {
     const failAt = new Date();
+
+    // Mark as "release pending" only. Finalization must happen via restockOrder().
     await db
       .update(orders)
       .set({ inventoryStatus: 'release_pending', updatedAt: failAt })
       .where(eq(orders.id, orderId));
 
-    for (const item of itemsToReserve) {
-      try {
-        await applyReleaseMove(orderId, item.productId, item.quantity);
-      } catch (releaseErr) {
-        logError(
-          `[reconcileNoPaymentOrder] release failed orderId=${orderId} productId=${item.productId} quantity=${item.quantity}`,
-          releaseErr
-        );
-      }
-    }
-
     const isOos = e instanceof InsufficientStockError;
+
     await db
       .update(orders)
       .set({
         status: 'INVENTORY_FAILED',
-        inventoryStatus: 'released',
+        inventoryStatus: 'release_pending',
         failureCode: isOos ? 'OUT_OF_STOCK' : 'INTERNAL_ERROR',
         failureMessage: isOos
           ? e.message
           : 'Checkout failed after reservation attempt.',
-        stockRestored: true,
-        restockedAt: failAt,
+        // IMPORTANT: do NOT set stockRestored/restockedAt here.
         updatedAt: failAt,
       })
       .where(eq(orders.id, orderId));
 
-    const payRes = await guardedPaymentStatusUpdate({
-      orderId,
-      paymentProvider: 'none',
-      to: 'failed',
-      source: 'checkout',
-    });
-
-    if (!payRes.applied && payRes.reason !== 'ALREADY_IN_STATE') {
+    try {
+      await restockOrder(orderId, {
+        reason: 'failed',
+        workerId: 'reconcileNoPaymentOrder',
+      });
+    } catch (restockErr) {
+      // If release fails, we must not lie in order state; leave it for sweeps/janitor.
       logError(
-        `[reconcileNoPaymentOrder] paymentStatus transition to failed blocked orderId=${orderId} reason=${payRes.reason}`,
-        new Error('payment_transition_blocked')
+        `[reconcileNoPaymentOrder] restock failed orderId=${orderId}`,
+        restockErr
       );
     }
 
@@ -396,8 +407,10 @@ export async function createOrderWithItems({
   const paymentsEnabled = isPaymentsEnabled();
   const paymentProvider: PaymentProvider = paymentsEnabled ? 'stripe' : 'none';
 
-  // IMPORTANT: DB CHECK requires provider=none => payment_status in ('paid','failed')
-  const paymentStatus = paymentsEnabled ? 'requires_payment' : 'paid';
+  // paymentStatus is initialized here only; ALL transitions must go via guardedPaymentStatusUpdate.
+  // IMPORTANT: DB CHECK requires provider='none' => payment_status in ('paid','failed')
+  const initialPaymentStatus: PaymentStatus =
+    paymentProvider === 'none' ? 'paid' : 'requires_payment';
 
   const normalizedItems = mergeCheckoutItems(
     items
@@ -584,7 +597,7 @@ export async function createOrderWithItems({
         totalAmount: toDbMoney(orderTotalCents),
 
         currency,
-        paymentStatus,
+        paymentStatus: initialPaymentStatus,
         paymentProvider,
         paymentIntentId: null,
 
@@ -712,9 +725,8 @@ export async function createOrderWithItems({
       })
       .where(eq(orders.id, orderId));
 
-    const targetPaymentStatus: PaymentStatus = paymentsEnabled
-      ? 'pending'
-      : 'paid';
+    const targetPaymentStatus: PaymentStatus =
+      paymentProvider === 'none' ? 'paid' : 'pending';
 
     const payRes = await guardedPaymentStatusUpdate({
       orderId,
@@ -739,50 +751,37 @@ export async function createOrderWithItems({
     }
   } catch (e) {
     const failAt = new Date();
+
     await db
       .update(orders)
       .set({ inventoryStatus: 'release_pending', updatedAt: failAt })
       .where(eq(orders.id, orderId));
 
-    // best-effort release
-    for (const it of itemsToReserve) {
-      try {
-        await applyReleaseMove(orderId, it.productId, it.quantity);
-      } catch (releaseErr) {
-        logError(
-          `[createOrderWithItems] release failed orderId=${orderId} productId=${it.productId} quantity=${it.quantity}`,
-          releaseErr
-        );
-      }
-    }
-
     const isOos = e instanceof InsufficientStockError;
+
     await db
       .update(orders)
       .set({
         status: 'INVENTORY_FAILED',
-        inventoryStatus: 'released',
+        inventoryStatus: 'release_pending',
         failureCode: isOos ? 'OUT_OF_STOCK' : 'INTERNAL_ERROR',
         failureMessage: isOos
           ? e.message
           : 'Checkout failed after reservation attempt.',
-        stockRestored: true,
-        restockedAt: failAt,
+        // IMPORTANT: do NOT set stockRestored/restockedAt here.
         updatedAt: failAt,
       })
       .where(eq(orders.id, orderId));
 
-    const payRes = await guardedPaymentStatusUpdate({
-      orderId,
-      paymentProvider,
-      to: 'failed',
-      source: 'checkout',
-    });
-
-    if (!payRes.applied && payRes.reason !== 'ALREADY_IN_STATE') {
+    try {
+      await restockOrder(orderId, {
+        reason: 'failed',
+        workerId: 'createOrderWithItems',
+      });
+    } catch (restockErr) {
       logError(
-        `[createOrderWithItems] paymentStatus transition to failed blocked orderId=${orderId} provider=${paymentProvider} reason=${payRes.reason}`,
-        new Error('payment_transition_blocked')
+        `[createOrderWithItems] restock failed orderId=${orderId}`,
+        restockErr
       );
     }
 

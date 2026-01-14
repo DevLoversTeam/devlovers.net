@@ -1,4 +1,4 @@
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 import { and, eq, isNull, lt, ne, or } from 'drizzle-orm';
 
 import { applyReleaseMove } from '../inventory';
@@ -103,77 +103,71 @@ export async function restockOrder(
       )
     );
 
-  if (!reservedMoves.length) {
-    // Nothing was reserved. For no-payments orders this is an "orphan" that must become terminal.
+  if (reservedMoves.length === 0) {
+    // safety: paid can only be terminalized via refund
     if (
-      isNoPayment &&
-      (reason === 'failed' || reason === 'canceled' || reason === 'stale')
+      !isNoPayment &&
+      order.paymentStatus === 'paid' &&
+      reason !== 'refunded'
     ) {
-      const now = new Date();
-
-      const [touched] = await db
-        .update(orders)
-        .set({
-          status: 'INVENTORY_FAILED',
-          inventoryStatus: 'released',
-          failureCode: order.failureCode ?? 'STALE_ORPHAN',
-          failureMessage:
-            order.failureMessage ??
-            'Orphan order: no inventory reservation was recorded.',
-          stockRestored: true,
-          restockedAt: now,
-          updatedAt: now,
-        })
-        .where(and(eq(orders.id, orderId), eq(orders.stockRestored, false)))
-        .returning({ id: orders.id });
-
-      if (!touched) return;
-
-      // paymentStatus transition only via guard
-      await guardedPaymentStatusUpdate({
-        orderId,
-        paymentProvider: provider,
-        to: 'failed',
-        source: transitionSource,
-        // tie to this exact finalize marker (prevents races)
-        extraWhere: eq(orders.restockedAt, now),
-      });
-
-      return;
+      throw new OrderStateInvalidError(
+        `Cannot terminalize an orphan paid order without refund reason.`,
+        { orderId, details: { reason, paymentStatus: order.paymentStatus } }
+      );
     }
 
-    // Stripe (or any non-none provider): stale orphan must become terminal
-    if (reason === 'stale') {
-      const now = new Date();
+    // No inventory was reserved. If caller gave no reason, do nothing (fail-closed).
+    if (!reason) return;
 
-      const [touched] = await db
-        .update(orders)
-        .set({
-          status: 'INVENTORY_FAILED',
-          inventoryStatus: 'released',
-          failureCode: order.failureCode ?? 'STALE_ORPHAN',
-          failureMessage:
-            order.failureMessage ??
-            'Orphan order: no inventory reservation was recorded.',
-          stockRestored: true,
-          restockedAt: now,
-          updatedAt: now,
-        })
-        .where(and(eq(orders.id, orderId), eq(orders.stockRestored, false)))
-        .returning({ id: orders.id });
+    const now = new Date();
+    const shouldCancel = reason === 'canceled';
+    const shouldFail = reason === 'failed' || reason === 'stale';
 
-      if (!touched) return;
+    const orphanFailureCode =
+      order.failureCode ??
+      (reason === 'failed'
+        ? 'FAILED_ORPHAN'
+        : reason === 'canceled'
+        ? 'CANCELED_ORPHAN'
+        : 'STALE_ORPHAN');
 
-      // paymentStatus transition only via guard (provider from DB)
+    const [touched] = await db
+      .update(orders)
+      .set({
+        ...(shouldFail ? { status: 'INVENTORY_FAILED' } : {}),
+        ...(shouldCancel ? { status: 'CANCELED' } : {}),
+        inventoryStatus: 'released',
+        ...(shouldFail
+          ? {
+              failureCode: orphanFailureCode,
+              failureMessage:
+                order.failureMessage ??
+                'Orphan order: no inventory reservation was recorded.',
+            }
+          : {}),
+        stockRestored: true,
+        restockedAt: now,
+        updatedAt: now,
+      })
+      .where(and(eq(orders.id, orderId), eq(orders.stockRestored, false)))
+      .returning({ id: orders.id });
+
+    if (!touched) return;
+
+    let normalizedStatus: PaymentStatus | undefined;
+    if (reason === 'refunded' && !isNoPayment) normalizedStatus = 'refunded';
+    else if (reason === 'failed' || reason === 'canceled' || reason === 'stale')
+      normalizedStatus = 'failed';
+
+    if (normalizedStatus) {
       await guardedPaymentStatusUpdate({
         orderId,
         paymentProvider: provider,
-        to: 'failed',
+        to: normalizedStatus,
         source: transitionSource,
+        // bind to this exact finalize marker (prevents races)
         extraWhere: eq(orders.restockedAt, now),
       });
-
-      return;
     }
 
     return;
@@ -208,8 +202,73 @@ export async function restockOrder(
     .set({ inventoryStatus: 'release_pending', updatedAt: now })
     .where(and(eq(orders.id, orderId), ne(orders.inventoryStatus, 'released')));
 
-  for (const item of reservedMoves)
-    await applyReleaseMove(orderId, item.productId, item.quantity);
+  // Apply release moves. IMPORTANT invariant:
+  // do NOT mark released/stockRestored/restockedAt unless all releases are CONFIRMED ok.
+  const releaseFailures: Array<{ productId: string; reason: string }> = [];
+
+  for (const item of reservedMoves) {
+    try {
+      const res: unknown = await applyReleaseMove(
+        orderId,
+        item.productId,
+        item.quantity
+      );
+
+      // Support both styles:
+      // - void return (treat as success)
+      // - { ok: boolean, reason?: string } return (explicit fail if ok === false)
+      if (
+        res &&
+        typeof res === 'object' &&
+        'ok' in (res as any) &&
+        (res as any).ok === false
+      ) {
+        releaseFailures.push({
+          productId: item.productId,
+          reason: String((res as any).reason ?? 'unknown'),
+        });
+      }
+    } catch (err) {
+      releaseFailures.push({
+        productId: item.productId,
+        reason: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+
+  if (releaseFailures.length > 0) {
+    const failAt = new Date();
+    const details = releaseFailures
+      .slice(0, 3)
+      .map(f => `${f.productId}:${f.reason}`)
+      .join(', ');
+
+    const msg =
+      `Release move not confirmed for ${releaseFailures.length} item(s): ` +
+      details +
+      (releaseFailures.length > 3 ? ', ...' : '');
+
+    // FAIL-SAFE: leave order in a state janitor can safely retry.
+    // Do NOT set: inventoryStatus='released' OR stockRestored=true OR restockedAt!=null.
+    const shouldSetFailureCode = reason === 'failed' || reason === 'stale';
+    await db
+      .update(orders)
+      .set({
+        inventoryStatus: 'release_pending',
+        stockRestored: false,
+        restockedAt: null,
+        ...(shouldSetFailureCode
+          ? { failureCode: order.failureCode ?? 'RESTOCK_RELEASE_FAILED' }
+          : {}),
+        failureMessage: order.failureMessage
+          ? `${order.failureMessage} | ${msg}`
+          : msg,
+        updatedAt: failAt,
+      })
+      .where(eq(orders.id, orderId));
+
+    return;
+  }
   // FINALIZE ONCE: only one caller may flip stock_restored/restocked_at
   // If RETURNING is empty => already finalized by another worker (or previous attempt).
   const finalizedAt = new Date();
@@ -236,7 +295,7 @@ export async function restockOrder(
     .update(orders)
     .set({
       inventoryStatus: 'released',
-      updatedAt: now,
+      updatedAt: finalizedAt,
       ...(shouldFail ? { status: 'INVENTORY_FAILED' } : {}),
       ...(shouldCancel ? { status: 'CANCELED' } : {}),
     })
