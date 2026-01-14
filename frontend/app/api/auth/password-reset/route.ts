@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
-import { headers } from "next/headers";
 
 import { db } from "@/db";
 import { users } from "@/db/schema/users";
 import { passwordResetTokens } from "@/db/schema/passwordResetTokens";
 import { createPasswordResetToken } from "@/lib/auth/password-reset";
 import { sendPasswordResetEmail } from "@/lib/email/sendPasswordResetEmail";
+import { headers } from "next/headers";
+import { resolveBaseUrl } from "@/lib/http/getBaseUrl";
 
 const schema = z.object({
     email: z.string().email(),
@@ -48,12 +49,15 @@ export async function POST(req: Request) {
 
     const token = await createPasswordResetToken(user.id);
 
-    const origin = (await headers()).get("origin");
+    const h = await headers()
+    const baseUrl = resolveBaseUrl({
+        origin: h.get("origin"),
+        host: h.get("host"),
+    })
 
     await sendPasswordResetEmail({
         to: email,
-        resetUrl: `${origin}/reset-password?token=${token}`,
+        resetUrl: `${baseUrl}/reset-password?token=${token}`,
     });
-
     return NextResponse.json({ success: true });
 }
