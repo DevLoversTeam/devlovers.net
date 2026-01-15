@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { eq, and, lt } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 import { db } from "@/db";
 import { users } from "@/db/schema/users";
@@ -43,16 +43,14 @@ export async function GET(req: NextRequest) {
         );
     }
 
-    await db.transaction(async tx => {
-        await tx
-            .update(users)
-            .set({ emailVerified: now })
-            .where(eq(users.id, userId));
+    await db
+        .update(users)
+        .set({ emailVerified: now })
+        .where(eq(users.id, userId));
 
-        await tx
-            .delete(emailVerificationTokens)
-            .where(eq(emailVerificationTokens.token, token));
-    });
+    await db
+        .delete(emailVerificationTokens)
+        .where(eq(emailVerificationTokens.token, token));
 
     return NextResponse.redirect(
         new URL("/login?verified=1", req.url)

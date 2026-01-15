@@ -18,20 +18,25 @@ export default function ForgotPasswordPage() {
         setLoading(true);
         setError(null);
 
-        const res = await fetch("/api/auth/password-reset", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email }),
-        });
+        try {
+            const res = await fetch("/api/auth/password-reset", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email }),
+            });
 
-        setLoading(false);
+            if (!res.ok) {
+                setError("Something went wrong. Please try again.");
+                return;
+            }
 
-        if (!res.ok) {
-            setError("Something went wrong. Please try again.");
-            return;
+            setSubmitted(true);
+        } catch (err) {
+            console.error("Password reset request failed:", err);
+            setError("Network error. Please check your connection and try again.");
+        } finally {
+            setLoading(false);
         }
-
-        setSubmitted(true);
     }
 
     return (

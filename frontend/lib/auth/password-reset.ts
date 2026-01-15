@@ -2,10 +2,10 @@ import crypto from "crypto";
 import { db } from "@/db";
 import { passwordResetTokens } from "@/db/schema/passwordResetTokens";
 
-function addHours(date: Date, hours: number) {
-    const d = new Date();
-    d.setHours(d.getHours() + hours);
-    return d;
+export function addHours(date: Date, hours: number): Date {
+    const result = new Date(date.getTime());
+    result.setHours(result.getHours() + hours);
+    return result;
 }
 
 export async function createPasswordResetToken(

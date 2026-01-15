@@ -7,6 +7,7 @@ import { db } from "@/db";
 import { users } from "@/db/schema/users";
 import { passwordResetTokens } from "@/db/schema/passwordResetTokens";
 
+
 const schema = z.object({
     token: z.string().uuid(),
     password: z.string().min(8),
@@ -56,16 +57,15 @@ export async function POST(req: Request) {
 
     const passwordHash = await bcrypt.hash(password, 10);
 
-    await db.transaction(async tx => {
-        await tx
-            .update(users)
-            .set({ passwordHash })
-            .where(eq(users.id, userId));
 
-        await tx
-            .delete(passwordResetTokens)
-            .where(eq(passwordResetTokens.token, token));
-    });
+    await db
+        .delete(passwordResetTokens)
+        .where(eq(passwordResetTokens.token, token));
+
+    await db
+        .update(users)
+        .set({ passwordHash })
+        .where(eq(users.id, userId));
 
     return NextResponse.json({ success: true });
 }

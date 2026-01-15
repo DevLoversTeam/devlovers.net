@@ -8,10 +8,13 @@ import { emailVerificationTokens } from "@/db/schema/emailVerificationTokens";
 import { createEmailVerificationToken } from "@/lib/auth/email-verification";
 import { sendVerificationEmail } from "@/lib/email/sendVerificationEmail";
 import { headers } from "next/headers";
+import { resolveBaseUrl } from "@/lib/http/getBaseUrl";
 
 const schema = z.object({
     email: z.string().email(),
 });
+
+
 
 export async function POST(req: Request) {
     const body = await req.json().catch(() => null);
@@ -34,7 +37,6 @@ export async function POST(req: Request) {
         .limit(1);
 
     if (rows.length === 0) {
-        // do not leak user existence
         return NextResponse.json({ success: true });
     }
 
@@ -54,11 +56,15 @@ export async function POST(req: Request) {
 
     const token = await createEmailVerificationToken(user.id);
 
-    const origin = (await headers()).get("origin");
+    const h = await headers();
+    const baseUrl = resolveBaseUrl({
+        origin: h.get("origin"),
+        host: h.get("host"),
+    });
 
     await sendVerificationEmail({
         to: email,
-        verifyUrl: `${origin}/api/auth/verify-email?token=${token}`,
+        verifyUrl: `${baseUrl}/api/auth/verify-email?token=${token}`,
     });
 
     return NextResponse.json({ success: true });

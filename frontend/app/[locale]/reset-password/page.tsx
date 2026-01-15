@@ -1,5 +1,8 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
+
 import { Link } from "@/i18n/routing";
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -25,23 +28,30 @@ export default function ResetPasswordPage() {
 
         setLoading(true);
 
-        const res = await fetch("/api/auth/password-reset/confirm", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                token,
-                password,
-            }),
-        });
+        try {
+            const res = await fetch(
+                "/api/auth/password-reset/confirm",
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        token,
+                        password,
+                    }),
+                }
+            );
 
-        setLoading(false);
+            if (!res.ok) {
+                setError("Invalid or expired reset link.");
+                return;
+            }
 
-        if (!res.ok) {
-            setError("Invalid or expired reset link.");
-            return;
+            setConfirmed(true);
+        } catch {
+            setError("Network error, please try again.");
+        } finally {
+            setLoading(false);
         }
-
-        setConfirmed(true);
     }
 
     if (!token) {
@@ -51,7 +61,10 @@ export default function ResetPasswordPage() {
                     Invalid or missing reset token.
                 </div>
 
-                <Link href="/login" className="mt-4 inline-block underline">
+                <Link
+                    href="/login"
+                    className="mt-4 inline-block underline"
+                >
                     Back to login
                 </Link>
             </div>

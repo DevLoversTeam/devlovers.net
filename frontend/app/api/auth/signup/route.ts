@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { headers } from "next/headers";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
@@ -8,9 +7,12 @@ import { db } from "@/db";
 import { users } from "@/db/schema/users";
 import { createEmailVerificationToken } from "@/lib/auth/email-verification";
 import { sendVerificationEmail } from "@/lib/email/sendVerificationEmail";
+import { headers } from "next/headers";
+import { resolveBaseUrl } from "@/lib/http/getBaseUrl";
 
 
 export const runtime = "nodejs";
+
 
 const signupSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -19,7 +21,6 @@ const signupSchema = z.object({
 });
 
 export async function POST(req: Request) {
-  console.log('signup handler hit')
   try {
     const body = await req.json().catch(() => null);
     const parsed = signupSchema.safeParse(body);
@@ -63,11 +64,15 @@ export async function POST(req: Request) {
 
     const token = await createEmailVerificationToken(user.id)
 
-    const origin = (await headers()).get("origin")
+    const h = await headers();
+    const baseUrl = resolveBaseUrl({
+      origin: h.get("origin"),
+      host: h.get("host"),
+    });
 
     await sendVerificationEmail({
       to: normalizedEmail,
-      verifyUrl: `${origin}/api/auth/verify-email?token=${token}`
+      verifyUrl: `${baseUrl}/api/auth/verify-email?token=${token}`
     })
 
     return NextResponse.json({

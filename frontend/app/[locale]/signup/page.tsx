@@ -7,20 +7,33 @@ import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { OAuthButtons } from "@/components/auth/OAuthButtons";
 
+/**
+ * Prevent open redirect vulnerabilities.
+ * Allows only safe relative internal paths.
+ */
+function isSafeRedirectUrl(url: string): boolean {
+  if (!url.startsWith("/")) return false;
+  if (url.startsWith("//")) return false;
+  if (url.includes("://")) return false;
+  return true;
+}
+
 export default function SignupPage() {
   const locale = useLocale();
   const searchParams = useSearchParams();
-  const returnTo = searchParams.get("returnTo");
+
+  const returnToParam = searchParams.get("returnTo");
+  const returnTo = returnToParam ?? "";
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showPassword, setShowPassword] = useState(false);
-
   const [verificationRequired, setVerificationRequired] =
     useState(false);
   const [email, setEmail] = useState("");
 
-  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function onSubmit(
+    e: React.FormEvent<HTMLFormElement>
+  ) {
     e.preventDefault();
     setLoading(true);
     setError(null);
@@ -29,31 +42,47 @@ export default function SignupPage() {
     const emailValue = String(formData.get("email") || "");
     setEmail(emailValue);
 
-    const res = await fetch("/api/auth/signup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: formData.get("name"),
-        email: emailValue,
-        password: formData.get("password"),
-      }),
-    });
+    let res: Response | undefined;
 
-    const data = await res.json().catch(() => null);
-    setLoading(false);
+    try {
+      res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: formData.get("name"),
+          email: emailValue,
+          password: formData.get("password"),
+        }),
+      });
 
-    if (!res.ok) {
-      setError(data?.error ?? "Failed to sign up");
-      return;
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        setError(
+          data?.error ??
+          "Failed to sign up. Please try again."
+        );
+        return;
+      }
+
+      if (data?.verificationRequired) {
+        setVerificationRequired(true);
+        return;
+      }
+
+      const redirectTarget =
+        returnTo && isSafeRedirectUrl(returnTo)
+          ? returnTo
+          : `/${locale}/dashboard`;
+
+      window.location.href = redirectTarget;
+    } catch {
+      setError(
+        "Network error. Please check your connection and try again."
+      );
+    } finally {
+      setLoading(false);
     }
-
-    if (data?.verificationRequired) {
-      setVerificationRequired(true);
-      return;
-    }
-
-    window.location.href =
-      returnTo || `/${locale}/dashboard`;
   }
 
   return (
@@ -62,13 +91,19 @@ export default function SignupPage() {
         Sign up
       </h1>
 
-      <OAuthButtons />
+      {!verificationRequired && (
+        <>
+          <OAuthButtons />
 
-      <div className="my-4 flex items-center gap-3">
-        <div className="h-px flex-1 bg-gray-200" />
-        <span className="text-xs text-gray-500">or</span>
-        <div className="h-px flex-1 bg-gray-200" />
-      </div>
+          <div className="my-4 flex items-center gap-3">
+            <div className="h-px flex-1 bg-gray-200" />
+            <span className="text-xs text-gray-500">
+              or
+            </span>
+            <div className="h-px flex-1 bg-gray-200" />
+          </div>
+        </>
+      )}
 
       {verificationRequired ? (
         <div className="rounded-md border border-green-400 bg-green-50 p-4 text-sm text-green-800">
@@ -85,7 +120,9 @@ export default function SignupPage() {
           <Link
             href={
               returnTo
-                ? `/login?returnTo=${encodeURIComponent(returnTo)}`
+                ? `/login?returnTo=${encodeURIComponent(
+                  returnTo
+                )}`
                 : "/login"
             }
             className="mt-4 inline-block underline"
@@ -111,25 +148,14 @@ export default function SignupPage() {
             className="w-full rounded border px-3 py-2"
           />
 
-          <div className="relative">
-            <input
-              name="password"
-              type={showPassword ? "text" : "password"}
-              placeholder="Password"
-              required
-              minLength={8}
-              className="w-full rounded border px-3 py-2 pr-10"
-            />
-
-            <button
-              type="button"
-              aria-label={showPassword ? "Hide password" : "Show password"}
-              onClick={() => setShowPassword(v => !v)}
-              className="absolute inset-y-0 right-2 flex items-center text-sm text-gray-500"
-            >
-              {showPassword ? "Hide" : "Show"}
-            </button>
-          </div>
+          <input
+            name="password"
+            type="password"
+            placeholder="Password"
+            required
+            minLength={8}
+            className="w-full rounded border px-3 py-2"
+          />
 
           {error && (
             <p className="text-sm text-red-600">
@@ -142,7 +168,9 @@ export default function SignupPage() {
             disabled={loading}
             className="w-full"
           >
-            {loading ? "Signing up..." : "Sign up"}
+            {loading
+              ? "Signing up..."
+              : "Sign up"}
           </Button>
         </form>
       )}
@@ -153,7 +181,9 @@ export default function SignupPage() {
           <Link
             href={
               returnTo
-                ? `/login?returnTo=${encodeURIComponent(returnTo)}`
+                ? `/login?returnTo=${encodeURIComponent(
+                  returnTo
+                )}`
                 : "/login"
             }
             className="underline"
