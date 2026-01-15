@@ -158,14 +158,15 @@
       "noQuizzes": "No quizzes in this category yet."
     },
     "exitModal": {
-  "title": "Exit Quiz?",
-  "message": "Your progress will not be saved.",
-  "confirm": "Exit",
-  "cancel": "Continue"
-}
+      "title": "Exit Quiz?",
+      "message": "Your progress will not be saved.",
+      "confirm": "Exit",
+      "cancel": "Continue"
+    }
   },
   "blog": {
     "title": "All Blog Posts",
+    "subtitle": "Explore the latest articles in Tech, News, and Career Growth, covering trends, ideas, and practical insights.",
     "metaTitle": "Blog | DevLovers",
     "metaDescription": "Explore the latest articles and insights",
     "searchPlaceholder": "Search...",
@@ -176,7 +177,13 @@
     "noPostsForTags": "No posts found for selected tags",
     "visitResource": "Visit Resource",
     "readArticle": "Read article",
-    "aboutAuthor": "About the author"
+    "aboutAuthor": "About the author",
+    "author": "Author",
+    "removeAuthor": "Remove author",
+    "articlesBy": "Articles by {name}",
+    "articlesPublished": "{count} articles published",
+    "recommendedPosts": "Recommended Posts",
+    "goBack": "Go back"
   },
   "footer": {
     "builtWith": "Built with",
