@@ -26,15 +26,43 @@ interface NavLinksProps {
   className?: string;
   onNavigate?: () => void;
   showAdminLink?: boolean;
+  includeHomeLink?: boolean; // NEW
 }
 
-export function NavLinks({ className, onNavigate, showAdminLink = false }: NavLinksProps) {
-  const pathname = usePathname(); 
+export function NavLinks({
+  className,
+  onNavigate,
+  showAdminLink = false,
+  includeHomeLink = false,
+}: NavLinksProps) {
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const currentCategory = searchParams.get('category');
 
+  const baseLink =
+    'rounded-md px-3 py-2 text-sm font-medium transition-colors ' +
+    'hover:bg-muted/50 hover:text-foreground ' +
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ' +
+    'focus-visible:ring-offset-2 focus-visible:ring-offset-background';
+
+  const isHomeActive = pathname === '/';
+
   return (
-    <nav className={cn('items-center gap-1', className)}>
+    <nav className={cn('flex items-center gap-1', className)} aria-label="Shop categories">
+      {includeHomeLink ? (
+        <Link
+          href="/"
+          onClick={onNavigate}
+          aria-current={isHomeActive ? 'page' : undefined}
+          className={cn(
+            baseLink,
+            isHomeActive ? 'bg-muted text-foreground' : 'text-muted-foreground'
+          )}
+        >
+          Home
+        </Link>
+      ) : null}
+
       {NAV_LINKS.map(link => {
         const [linkPath, linkQuery] = link.href.split('?');
         const linkParams = new URLSearchParams(linkQuery ?? '');
@@ -49,9 +77,10 @@ export function NavLinks({ className, onNavigate, showAdminLink = false }: NavLi
             key={link.href}
             href={link.href}
             onClick={onNavigate}
+            aria-current={isActive ? 'page' : undefined}
             className={cn(
-              'px-3 py-2 text-sm font-medium transition-colors hover:text-foreground',
-              isActive ? 'text-foreground' : 'text-muted-foreground',
+              baseLink,
+              isActive ? 'bg-muted text-foreground' : 'text-muted-foreground'
             )}
           >
             {link.label}
@@ -63,7 +92,7 @@ export function NavLinks({ className, onNavigate, showAdminLink = false }: NavLi
         <Link
           href="/shop/admin/products/new"
           onClick={onNavigate}
-          className="text-sm text-muted-foreground hover:text-foreground"
+          className={cn(baseLink, 'text-muted-foreground')}
         >
           New product
         </Link>
