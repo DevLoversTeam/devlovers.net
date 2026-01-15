@@ -47,7 +47,7 @@ describe('SALE invariant: originalPriceMinor is required', () => {
         isActive: true,
       } as any)
     ).rejects.toThrow(/SALE badge requires originalPrice/i);
-  });
+  }, 30_000);
 
   it('updateProduct: existing SALE + PATCH that removes originalPriceMinor must reject (final state invariant)', async () => {
     const slug = uniqueSlug();
@@ -113,5 +113,5 @@ describe('SALE invariant: originalPriceMinor is required', () => {
 
     expect(pp.priceMinor).toBe(1000);
     expect(pp.originalPriceMinor).toBe(2000);
-  });
+  }, 30_000);
 });

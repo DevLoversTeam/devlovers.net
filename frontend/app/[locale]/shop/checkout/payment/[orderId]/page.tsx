@@ -8,6 +8,7 @@ import { orderIdParamSchema } from '@/lib/validation/shop';
 import { getStripeEnv } from '@/lib/env/stripe';
 import { createPaymentIntent, retrievePaymentIntent } from '@/lib/psp/stripe';
 import { setOrderPaymentIntent } from '@/lib/services/orders';
+import { logError } from '@/lib/logging';
 
 function getOrderId(params: { orderId?: string }) {
   const parsed = orderIdParamSchema.safeParse({ id: params.orderId ?? '' });
@@ -169,15 +170,11 @@ export default async function PaymentPage(props: PaymentPageProps) {
         clientSecret = created.clientSecret;
       }
     } catch (error) {
-      console.error(
-        'Failed to initialize Stripe payment intent',
-        {
-          orderId: order.id,
-          existingPi,
-          phase,
-        },
-        error
-      );
+      logError('payment_page_failed', error, {
+        orderId: order.id,
+        existingPi,
+        phase,
+      });
 
       // Leave clientSecret empty -> UI shows "Payment cannot be initialized"
     }

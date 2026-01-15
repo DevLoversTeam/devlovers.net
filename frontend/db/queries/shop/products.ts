@@ -114,7 +114,7 @@ type PublicProductRow = Pick<
 > & {
   price: string;
   originalPrice: string | null;
-  currency: CurrencyCode; // фактично буде "USD" | "UAH" зараз
+  currency: CurrencyCode;
 };
 
 function mapRowToDbProduct(row: PublicProductRow): DbProduct {
@@ -197,7 +197,7 @@ export async function getActiveProducts(
 }
 
 export async function getActiveProductsPage(options: {
-  currency: CurrencyCode; // ✅ ВАЖЛИВО
+  currency: CurrencyCode;
   limit: number;
   offset: number;
   slugs?: string[];
@@ -230,7 +230,6 @@ export async function getActiveProductsPage(options: {
   return { items: rows.map(mapRowToDbProduct), total: totalCount };
 }
 
-// (може бути потрібний для адмінки/внутрішнього використання)
 export async function getProductBySlug(
   slug: string,
   currency: CurrencyCode

@@ -45,8 +45,12 @@ function plainTextFromPortableText(value: any): string {
 
 const query = groq`
   *[_type=="post" && slug.current==$slug][0]{
+<<<<<<< HEAD
     _id,
     "title": coalesce(title[$locale], title[lower($locale)], title.uk, title.en, title.pl, title),
+=======
+    "title": coalesce(title[$locale], title.en, title),
+>>>>>>> develop
     publishedAt,
     "mainImage": mainImage.asset->url,
     "categories": categories[]->title,
@@ -54,16 +58,28 @@ const query = groq`
     resourceLink,
 
     "author": author->{
+<<<<<<< HEAD
       "name": coalesce(name[$locale], name[lower($locale)], name.uk, name.en, name.pl, name),
       "company": coalesce(company[$locale], company[lower($locale)], company.uk, company.en, company.pl, company),
       "jobTitle": coalesce(jobTitle[$locale], jobTitle[lower($locale)], jobTitle.uk, jobTitle.en, jobTitle.pl, jobTitle),
       "city": coalesce(city[$locale], city[lower($locale)], city.uk, city.en, city.pl, city),
       "bio": coalesce(bio[$locale], bio[lower($locale)], bio.uk, bio.en, bio.pl, bio),
+=======
+      "name": coalesce(name[$locale], name.en, name),
+      "company": coalesce(company[$locale], company.en, company),
+      "jobTitle": coalesce(jobTitle[$locale], jobTitle.en, jobTitle),
+      "city": coalesce(city[$locale], city.en, city),
+      "bio": coalesce(bio[$locale], bio.en, bio),
+>>>>>>> develop
       "image": image.asset->url,
       socialMedia[]{ _key, platform, url }
     },
 
+<<<<<<< HEAD
     "body": coalesce(body[$locale], body[lower($locale)], body.uk, body.en, body.pl, body)[]{
+=======
+    "body": coalesce(body[$locale], body.en, body)[]{
+>>>>>>> develop
       ...,
       _type == "image" => {
         ...,
@@ -101,6 +117,7 @@ export default async function PostDetails({
     slug: slugParam,
     locale,
   });
+<<<<<<< HEAD
   const recommendedAll: Post[] = await client.fetch(recommendedQuery, {
     slug: slugParam,
     locale,
@@ -108,6 +125,8 @@ export default async function PostDetails({
   const recommendedPosts = recommendedAll
     .sort(() => Math.random() - 0.5)
     .slice(0, 3);
+=======
+>>>>>>> develop
 
   if (!post?.title) return notFound();
 
@@ -249,9 +268,45 @@ export default async function PostDetails({
         </>
       )}
 
+<<<<<<< HEAD
       {post.resourceLink && null}
 
       {(authorBio || authorName || authorMeta) && null}
+=======
+      {(authorBio || authorName || authorMeta) && (
+        <section className="mt-12 p-6 rounded-2xl border border-gray-200 bg-white">
+          <h2 className="text-lg font-semibold">{t('aboutAuthor')}</h2>
+          <div className="mt-4 flex items-start gap-4">
+            {post.author?.image && (
+              <div className="relative w-14 h-14 shrink-0">
+                <Image
+                  src={post.author.image}
+                  alt={authorName || 'Author'}
+                  fill
+                  className="rounded-full object-cover border border-gray-200"
+                />
+              </div>
+            )}
+
+            <div className="min-w-0">
+              {authorName && (
+                <p className="text-sm font-semibold text-gray-900">
+                  {authorName}
+                </p>
+              )}
+              {authorMeta && (
+                <p className="mt-1 text-sm text-gray-600">{authorMeta}</p>
+              )}
+              {authorBio && (
+                <p className="mt-3 text-sm text-gray-700 whitespace-pre-line leading-relaxed">
+                  {authorBio}
+                </p>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+>>>>>>> develop
     </main>
   );
 }

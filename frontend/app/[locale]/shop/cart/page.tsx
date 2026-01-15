@@ -222,7 +222,7 @@ export default function CartPage() {
                   </div>
 
                   <span className="text-sm font-semibold text-foreground">
-                    {formatMoney(item.lineTotal, item.currency, locale)}
+                    {formatMoney(item.lineTotalMinor, item.currency, locale)}
                   </span>
                 </div>
               </div>
@@ -240,7 +240,7 @@ export default function CartPage() {
               <span className="text-muted-foreground">Subtotal</span>
               <span className="font-medium text-foreground">
                 {formatMoney(
-                  cart.summary.totalAmount,
+                  cart.summary.totalAmountMinor,
                   cart.summary.currency,
                   locale
                 )}
@@ -259,7 +259,7 @@ export default function CartPage() {
                 </span>
                 <span className="text-lg font-bold text-foreground">
                   {formatMoney(
-                    cart.summary.totalAmount,
+                    cart.summary.totalAmountMinor,
                     cart.summary.currency,
                     locale
                   )}

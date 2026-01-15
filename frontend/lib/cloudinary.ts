@@ -1,6 +1,7 @@
-import { v2 as cloudinary } from "cloudinary";
+import { v2 as cloudinary } from 'cloudinary';
 
-import { getCloudinaryEnvRequired } from "@/lib/env/cloudinary";
+import { getCloudinaryEnvRequired } from '@/lib/env/cloudinary';
+import { logError } from '@/lib/logging';
 
 let isConfigured = false;
 
@@ -18,7 +19,7 @@ function ensureConfigured() {
 }
 
 async function toBuffer(fileOrBuffer: File | Buffer): Promise<Buffer> {
-  if (typeof Buffer !== "undefined" && Buffer.isBuffer(fileOrBuffer)) {
+  if (typeof Buffer !== 'undefined' && Buffer.isBuffer(fileOrBuffer)) {
     return fileOrBuffer;
   }
 
@@ -41,15 +42,18 @@ export async function uploadImage(
     const uploadStream = cloudinary.uploader.upload_stream(
       {
         folder: options?.folder ?? env.uploadFolder,
-        resource_type: "image",
+        resource_type: 'image',
       },
       (
         error: unknown,
         result: { secure_url: string; public_id: string } | undefined
       ) => {
         if (error || !result) {
-          console.error("Cloudinary upload failed", error);
-          reject(new Error("Failed to upload image to Cloudinary"));
+          logError('cloudinary_upload_failed', error, {
+            folder: options?.folder ?? env.uploadFolder,
+            hasResult: Boolean(result),
+          });
+          reject(new Error('Failed to upload image to Cloudinary'));
           return;
         }
 

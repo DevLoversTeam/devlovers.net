@@ -11,6 +11,7 @@ import {
 } from '@/lib/validation/shop';
 import { fromCents } from '@/lib/shop/money';
 import { createCartItemKey } from '@/lib/shop/cart-item-key';
+import { logWarn } from '@/lib/logging';
 
 const CART_KEY = 'devlovers-cart';
 
@@ -86,7 +87,9 @@ export function getStoredCartItems(): CartClientItem[] {
       .map(item => normalizeStoredItem(item))
       .filter((item): item is CartClientItem => item !== null);
   } catch (error) {
-    console.warn('Failed to read cart from localStorage', error);
+    logWarn('cart_read_failed', {
+      message: error instanceof Error ? error.message : String(error),
+    });
     return [];
   }
 }
@@ -97,13 +100,13 @@ export function persistCartItems(items: CartClientItem[]): void {
   try {
     window.localStorage.setItem(CART_KEY, JSON.stringify(items));
   } catch (error) {
-    console.warn('Failed to save cart', error);
+    logWarn('cart_save_failed', {
+      message: error instanceof Error ? error.message : String(error),
+    });
   }
 }
 
-function normalizeItemsForStorage(
-  items: CartRehydrateItem[]
-): CartClientItem[] {
+function normalizeItemsForStorage(items: CartRehydrateItem[]): CartClientItem[] {
   return items.map(item => ({
     productId: item.productId,
     quantity: item.quantity,
@@ -116,9 +119,7 @@ function normalizeItemsForStorage(
  * IMPORTANT:
  * Cart money fields are MINOR UNITS (integers).
  */
-export function computeSummaryFromItems(
-  items: CartRehydrateItem[]
-): CartSummary {
+export function computeSummaryFromItems(items: CartRehydrateItem[]): CartSummary {
   if (!items.length) {
     return {
       totalAmountMinor: 0,
@@ -153,6 +154,79 @@ export function computeSummaryFromItems(
   };
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function extractApiError(data: unknown): {
+  code: string;
+  message: string;
+  details?: unknown;
+} {
+  // legacy: { error: "..." }
+  if (isRecord(data) && typeof data.error === 'string') {
+    return { code: 'UNKNOWN_ERROR', message: data.error };
+  }
+
+  // preferred: { error: { code, message, details } }
+  if (isRecord(data) && isRecord(data.error)) {
+    const errObj = data.error;
+    const code =
+      typeof errObj.code === 'string' && errObj.code.trim().length > 0
+        ? errObj.code
+        : 'UNKNOWN_ERROR';
+    const message =
+      typeof errObj.message === 'string' && errObj.message.trim().length > 0
+        ? errObj.message
+        : 'Request failed';
+    return { code, message, details: errObj.details };
+  }
+
+  // fallback: { code, message, details }
+  if (isRecord(data)) {
+    const code =
+      typeof data.code === 'string' && data.code.trim().length > 0
+        ? data.code
+        : 'UNKNOWN_ERROR';
+    const message =
+      typeof data.message === 'string' && data.message.trim().length > 0
+        ? data.message
+        : 'Request failed';
+    if (typeof data.code === 'string' || typeof data.message === 'string') {
+      return { code, message, details: data.details };
+    }
+  }
+
+  return { code: 'UNKNOWN_ERROR', message: 'Unable to rehydrate cart' };
+}
+
+export class CartRehydrateError extends Error {
+  public readonly code: string;
+  public readonly status: number;
+  public readonly details?: unknown;
+
+  constructor(args: {
+    code: string;
+    message: string;
+    status: number;
+    details?: unknown;
+  }) {
+    super(args.message);
+    this.name = 'CartRehydrateError';
+    this.code = args.code;
+    this.status = args.status;
+    this.details = args.details;
+  }
+}
+
+async function readJsonSafe(response: Response): Promise<unknown> {
+  try {
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
 export async function rehydrateCart(items: CartClientItem[]): Promise<Cart> {
   if (!items.length) {
     persistCartItems([]);
@@ -165,10 +239,16 @@ export async function rehydrateCart(items: CartClientItem[]): Promise<Cart> {
     body: JSON.stringify({ items }),
   });
 
-  const data = await response.json();
+  const data = await readJsonSafe(response);
 
   if (!response.ok) {
-    throw new Error(data?.error ?? 'Unable to rehydrate cart');
+    const apiErr = extractApiError(data);
+    throw new CartRehydrateError({
+      code: apiErr.code,
+      message: apiErr.message || `Unable to rehydrate cart (HTTP ${response.status})`,
+      status: response.status,
+      details: apiErr.details,
+    });
   }
 
   const parsed = cartRehydrateResultSchema.parse(data);

@@ -1,0 +1,434 @@
+{
+  "questions": [
+    {
+      "id": "node-q21",
+      "order": 21,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Що таке Express.js і чому він популярний?",
+        "exp": "Express.js — це мінімалістичний веб-фреймворк для Node.js, який спрощує маршрутизацію, middleware та розробку REST API."
+      },
+      "en": {
+        "q": "What is Express.js and why is it popular?",
+        "exp": "Express.js is a minimalist web framework for Node.js that simplifies routing, middleware, and REST API development."
+      },
+      "pl": {
+        "q": "Czym jest Express.js i dlaczego jest popularny?",
+        "exp": "Express.js to minimalistyczny framework webowy dla Node.js, który upraszcza routing, middleware i tworzenie REST API."
+      },
+      "answers": [
+        {
+          "uk": "База даних для Node.js",
+          "en": "A database for Node.js",
+          "pl": "Baza danych dla Node.js",
+          "correct": false
+        },
+        {
+          "uk": "Мінімалістичний веб-фреймворк для створення серверів та API",
+          "en": "A minimalist web framework for building servers and APIs",
+          "pl": "Minimalistyczny framework webowy do tworzenia serwerów i API",
+          "correct": true
+        },
+        {
+          "uk": "Інструмент для тестування JavaScript",
+          "en": "A tool for testing JavaScript",
+          "pl": "Narzędzie do testowania JavaScript",
+          "correct": false
+        },
+        {
+          "uk": "Компілятор TypeScript",
+          "en": "A TypeScript compiler",
+          "pl": "Kompilator TypeScript",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-q22",
+      "order": 22,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке middleware у Express.js?",
+        "exp": "Middleware — це функція, яка виконується між отриманням запиту та відправкою відповіді. Вона може змінювати req/res та викликати next()."
+      },
+      "en": {
+        "q": "What is middleware in Express.js?",
+        "exp": "Middleware is a function that executes between receiving a request and sending a response. It can modify req/res and call next()."
+      },
+      "pl": {
+        "q": "Czym jest middleware w Express.js?",
+        "exp": "Middleware to funkcja wykonywana między otrzymaniem żądania a wysłaniem odpowiedzi. Może modyfikować req/res i wywoływać next()."
+      },
+      "answers": [
+        {
+          "uk": "Функція між отриманням запиту та відправкою відповіді",
+          "en": "A function between receiving request and sending response",
+          "pl": "Funkcja między otrzymaniem żądania a wysłaniem odpowiedzi",
+          "correct": true
+        },
+        {
+          "uk": "База даних для зберігання сесій",
+          "en": "A database for storing sessions",
+          "pl": "Baza danych do przechowywania sesji",
+          "correct": false
+        },
+        {
+          "uk": "Протокол для передачі даних",
+          "en": "A protocol for data transmission",
+          "pl": "Protokół do transmisji danych",
+          "correct": false
+        },
+        {
+          "uk": "Інструмент для мінімізації JavaScript",
+          "en": "A tool for minifying JavaScript",
+          "pl": "Narzędzie do minifikacji JavaScript",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-q23",
+      "order": 23,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Який пакет рекомендується для захисту HTTP-заголовків у Express.js?",
+        "exp": "helmet — це middleware, який автоматично додає безпечні HTTP-заголовки для захисту від XSS, clickjacking та інших атак."
+      },
+      "en": {
+        "q": "Which package is recommended for securing HTTP headers in Express.js?",
+        "exp": "helmet is a middleware that automatically adds secure HTTP headers for protection against XSS, clickjacking, and other attacks."
+      },
+      "pl": {
+        "q": "Który pakiet jest zalecany do zabezpieczania nagłówków HTTP w Express.js?",
+        "exp": "helmet to middleware, który automatycznie dodaje bezpieczne nagłówki HTTP dla ochrony przed XSS, clickjacking i innymi atakami."
+      },
+      "answers": [
+        {
+          "uk": "cors",
+          "en": "cors",
+          "pl": "cors",
+          "correct": false
+        },
+        {
+          "uk": "helmet",
+          "en": "helmet",
+          "pl": "helmet",
+          "correct": true
+        },
+        {
+          "uk": "morgan",
+          "en": "morgan",
+          "pl": "morgan",
+          "correct": false
+        },
+        {
+          "uk": "body-parser",
+          "en": "body-parser",
+          "pl": "body-parser",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-q24",
+      "order": 24,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Як обробити невловлені помилки у Node.js застосунку?",
+        "exp": "Використовуються process.on('uncaughtException') для синхронних помилок і process.on('unhandledRejection') для відхилених промісів."
+      },
+      "en": {
+        "q": "How to handle uncaught errors in a Node.js application?",
+        "exp": "Use process.on('uncaughtException') for synchronous errors and process.on('unhandledRejection') for rejected promises."
+      },
+      "pl": {
+        "q": "Jak obsłużyć nieprzechwycone błędy w aplikacji Node.js?",
+        "exp": "Używa się process.on('uncaughtException') dla błędów synchronicznych i process.on('unhandledRejection') dla odrzuconych promisów."
+      },
+      "answers": [
+        {
+          "uk": "Тільки через try/catch у кожній функції",
+          "en": "Only through try/catch in every function",
+          "pl": "Tylko przez try/catch w każdej funkcji",
+          "correct": false
+        },
+        {
+          "uk": "Через process.on('uncaughtException') та process.on('unhandledRejection')",
+          "en": "Through process.on('uncaughtException') and process.on('unhandledRejection')",
+          "pl": "Przez process.on('uncaughtException') i process.on('unhandledRejection')",
+          "correct": true
+        },
+        {
+          "uk": "Node.js автоматично логує всі помилки",
+          "en": "Node.js automatically logs all errors",
+          "pl": "Node.js automatycznie loguje wszystkie błędy",
+          "correct": false
+        },
+        {
+          "uk": "Невловлені помилки неможливо обробити",
+          "en": "Uncaught errors cannot be handled",
+          "pl": "Nieprzechwyconych błędów nie można obsłużyć",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-q25",
+      "order": 25,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке ORM і яку роль він виконує у Node.js?",
+        "exp": "ORM (Object-Relational Mapping) дозволяє працювати з базою даних через JavaScript-об'єкти замість SQL-запитів."
+      },
+      "en": {
+        "q": "What is ORM and what role does it play in Node.js?",
+        "exp": "ORM (Object-Relational Mapping) allows working with databases through JavaScript objects instead of SQL queries."
+      },
+      "pl": {
+        "q": "Czym jest ORM i jaką rolę pełni w Node.js?",
+        "exp": "ORM (Object-Relational Mapping) pozwala pracować z bazą danych przez obiekty JavaScript zamiast zapytań SQL."
+      },
+      "answers": [
+        {
+          "uk": "Протокол для передачі даних між серверами",
+          "en": "A protocol for data transfer between servers",
+          "pl": "Protokół do przesyłania danych między serwerami",
+          "correct": false
+        },
+        {
+          "uk": "Шар абстракції для роботи з БД через JavaScript-об'єкти",
+          "en": "An abstraction layer for working with DB through JavaScript objects",
+          "pl": "Warstwa abstrakcji do pracy z BD przez obiekty JavaScript",
+          "correct": true
+        },
+        {
+          "uk": "Інструмент для оптимізації запитів до API",
+          "en": "A tool for optimizing API requests",
+          "pl": "Narzędzie do optymalizacji żądań API",
+          "correct": false
+        },
+        {
+          "uk": "Система кешування для Node.js",
+          "en": "A caching system for Node.js",
+          "pl": "System cachowania dla Node.js",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-q26",
+      "order": 26,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Який популярний ODM використовується для роботи з MongoDB у Node.js?",
+        "exp": "Mongoose — це ODM (Object Data Modeling), який додає схеми, валідацію та зручні методи для роботи з MongoDB."
+      },
+      "en": {
+        "q": "Which popular ODM is used for working with MongoDB in Node.js?",
+        "exp": "Mongoose is an ODM (Object Data Modeling) that adds schemas, validation, and convenient methods for working with MongoDB."
+      },
+      "pl": {
+        "q": "Który popularny ODM jest używany do pracy z MongoDB w Node.js?",
+        "exp": "Mongoose to ODM (Object Data Modeling), który dodaje schematy, walidację i wygodne metody do pracy z MongoDB."
+      },
+      "answers": [
+        {
+          "uk": "Sequelize",
+          "en": "Sequelize",
+          "pl": "Sequelize",
+          "correct": false
+        },
+        {
+          "uk": "Mongoose",
+          "en": "Mongoose",
+          "pl": "Mongoose",
+          "correct": true
+        },
+        {
+          "uk": "Prisma",
+          "en": "Prisma",
+          "pl": "Prisma",
+          "correct": false
+        },
+        {
+          "uk": "TypeORM",
+          "en": "TypeORM",
+          "pl": "TypeORM",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-q27",
+      "order": 27,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Для чого використовуються змінні оточення (environment variables) у Node.js?",
+        "exp": "Змінні оточення зберігають конфігурацію (порти, ключі API, URL бази даних) окремо від коду для безпеки та гнучкості."
+      },
+      "en": {
+        "q": "What are environment variables used for in Node.js?",
+        "exp": "Environment variables store configuration (ports, API keys, database URLs) separately from code for security and flexibility."
+      },
+      "pl": {
+        "q": "Do czego służą zmienne środowiskowe w Node.js?",
+        "exp": "Zmienne środowiskowe przechowują konfigurację (porty, klucze API, URL bazy danych) oddzielnie od kodu dla bezpieczeństwa i elastyczności."
+      },
+      "answers": [
+        {
+          "uk": "Для прискорення виконання коду",
+          "en": "For speeding up code execution",
+          "pl": "Do przyspieszania wykonywania kodu",
+          "correct": false
+        },
+        {
+          "uk": "Для зберігання конфігурації окремо від коду",
+          "en": "For storing configuration separately from code",
+          "pl": "Do przechowywania konfiguracji oddzielnie od kodu",
+          "correct": true
+        },
+        {
+          "uk": "Для логування помилок",
+          "en": "For logging errors",
+          "pl": "Do logowania błędów",
+          "correct": false
+        },
+        {
+          "uk": "Для компіляції TypeScript",
+          "en": "For compiling TypeScript",
+          "pl": "Do kompilowania TypeScript",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-q28",
+      "order": 28,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Який пакет найчастіше використовують для завантаження .env файлів у Node.js?",
+        "exp": "dotenv — це популярний пакет, який завантажує змінні середовища з .env файлу в process.env."
+      },
+      "en": {
+        "q": "Which package is most commonly used for loading .env files in Node.js?",
+        "exp": "dotenv is a popular package that loads environment variables from a .env file into process.env."
+      },
+      "pl": {
+        "q": "Który pakiet jest najczęściej używany do ładowania plików .env w Node.js?",
+        "exp": "dotenv to popularny pakiet, który ładuje zmienne środowiskowe z pliku .env do process.env."
+      },
+      "answers": [
+        {
+          "uk": "config",
+          "en": "config",
+          "pl": "config",
+          "correct": false
+        },
+        {
+          "uk": "dotenv",
+          "en": "dotenv",
+          "pl": "dotenv",
+          "correct": true
+        },
+        {
+          "uk": "env-loader",
+          "en": "env-loader",
+          "pl": "env-loader",
+          "correct": false
+        },
+        {
+          "uk": "process-env",
+          "en": "process-env",
+          "pl": "process-env",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-q29",
+      "order": 29,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке JWT і як він використовується для аутентифікації?",
+        "exp": "JWT (JSON Web Token) — це токен, що зберігає інформацію про користувача і перевіряється сервером без звернення до бази даних."
+      },
+      "en": {
+        "q": "What is JWT and how is it used for authentication?",
+        "exp": "JWT (JSON Web Token) is a token that stores user information and is verified by the server without database queries."
+      },
+      "pl": {
+        "q": "Czym jest JWT i jak jest używany do uwierzytelniania?",
+        "exp": "JWT (JSON Web Token) to token przechowujący informacje o użytkowniku i weryfikowany przez serwer bez zapytań do bazy danych."
+      },
+      "answers": [
+        {
+          "uk": "Протокол для шифрування паролів",
+          "en": "A protocol for encrypting passwords",
+          "pl": "Protokół do szyfrowania haseł",
+          "correct": false
+        },
+        {
+          "uk": "Токен з інформацією про користувача, що перевіряється без БД",
+          "en": "A token with user info that is verified without DB",
+          "pl": "Token z informacjami o użytkowniku weryfikowany bez BD",
+          "correct": true
+        },
+        {
+          "uk": "Бібліотека для хешування даних",
+          "en": "A library for hashing data",
+          "pl": "Biblioteka do hashowania danych",
+          "correct": false
+        },
+        {
+          "uk": "Менеджер сесій у Express.js",
+          "en": "A session manager in Express.js",
+          "pl": "Menedżer sesji w Express.js",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-q30",
+      "order": 30,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке EventEmitter у Node.js?",
+        "exp": "EventEmitter — це клас з модуля events, який дозволяє створювати власні події та підписників (listeners) для реалізації подієвої моделі."
+      },
+      "en": {
+        "q": "What is EventEmitter in Node.js?",
+        "exp": "EventEmitter is a class from the events module that allows creating custom events and listeners for implementing the event model."
+      },
+      "pl": {
+        "q": "Czym jest EventEmitter w Node.js?",
+        "exp": "EventEmitter to klasa z modułu events, która pozwala tworzyć własne zdarzenia i listenerów do implementacji modelu zdarzeń."
+      },
+      "answers": [
+        {
+          "uk": "Модуль для відправки email",
+          "en": "A module for sending emails",
+          "pl": "Moduł do wysyłania emaili",
+          "correct": false
+        },
+        {
+          "uk": "Клас для створення власних подій та підписників",
+          "en": "A class for creating custom events and listeners",
+          "pl": "Klasa do tworzenia własnych zdarzeń i listenerów",
+          "correct": true
+        },
+        {
+          "uk": "Функція для запуску таймерів",
+          "en": "A function for starting timers",
+          "pl": "Funkcja do uruchamiania timerów",
+          "correct": false
+        },
+        {
+          "uk": "Інструмент для логування подій у файл",
+          "en": "A tool for logging events to a file",
+          "pl": "Narzędzie do logowania zdarzeń do pliku",
+          "correct": false
+        }
+      ]
+    }
+  ]
+}

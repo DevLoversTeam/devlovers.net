@@ -4,3 +4,5 @@ export * from './quiz';
 export * from './users';
 export * from './points';
 export * from './shop';
+export * from './emailVerificationTokens';
+export * from "./passwordResetTokens";

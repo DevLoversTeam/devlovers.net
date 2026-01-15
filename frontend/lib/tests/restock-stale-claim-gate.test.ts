@@ -74,9 +74,18 @@ describe('restockStalePendingOrders claim gate', () => {
     } finally {
       try {
         await db.delete(orders).where(eq(orders.id, orderId));
-      } catch {}
+      } catch (error) {
+        console.error('[test cleanup failed]', {
+          file: 'restock-stale-claim-gate.test.ts',
+          test: 'skip active claim',
+          step: 'delete order by id',
+          orderId,
+          idem,
+          error,
+        });
+      }
     }
-  });
+  }, 30_000);
 
   it('must process orders with an expired claim', async () => {
     const orderId = crypto.randomUUID();
@@ -132,7 +141,16 @@ describe('restockStalePendingOrders claim gate', () => {
     } finally {
       try {
         await db.delete(orders).where(eq(orders.id, orderId));
-      } catch {}
+      } catch (error) {
+        console.error('[test cleanup failed]', {
+          file: 'restock-stale-claim-gate.test.ts',
+          test: 'process expired claim',
+          step: 'delete order by id',
+          orderId,
+          idem,
+          error,
+        });
+      }
     }
-  });
+  }, 30_000);
 });

@@ -1,0 +1,434 @@
+{
+  "questions": [
+    {
+      "id": "node-adv-q21",
+      "order": 21,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке serverless архітектура і які її переваги для Node.js?",
+        "exp": "Serverless — модель, де код виконується по запиту без управління серверами. Платиш тільки за час виконання, автоматичне масштабування."
+      },
+      "en": {
+        "q": "What is serverless architecture and what are its advantages for Node.js?",
+        "exp": "Serverless is a model where code runs on demand without server management. You pay only for execution time, automatic scaling."
+      },
+      "pl": {
+        "q": "Czym jest architektura serverless i jakie są jej zalety dla Node.js?",
+        "exp": "Serverless to model, w którym kod uruchamia się na żądanie bez zarządzania serwerami. Płacisz tylko za czas wykonania, automatyczne skalowanie."
+      },
+      "answers": [
+        {
+          "uk": "Код виконується без JavaScript",
+          "en": "Code runs without JavaScript",
+          "pl": "Kod działa bez JavaScript",
+          "correct": false
+        },
+        {
+          "uk": "Виконання по запиту без управління серверами, оплата за час виконання",
+          "en": "On-demand execution without server management, pay for execution time",
+          "pl": "Wykonywanie na żądanie bez zarządzania serwerami, płatność za czas wykonania",
+          "correct": true
+        },
+        {
+          "uk": "Сервери працюють без електрики",
+          "en": "Servers work without electricity",
+          "pl": "Serwery działają bez elektryczności",
+          "correct": false
+        },
+        {
+          "uk": "Тільки для статичних сайтів",
+          "en": "Only for static sites",
+          "pl": "Tylko dla stron statycznych",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-adv-q22",
+      "order": 22,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Яка проблема cold start у serverless і як її мінімізувати?",
+        "exp": "Cold start — затримка при першому виклику функції через ініціалізацію контейнера. Мінімізують через provisioned concurrency, менший розмір пакета, lazy loading."
+      },
+      "en": {
+        "q": "What is the cold start problem in serverless and how to minimize it?",
+        "exp": "Cold start is a delay on the first function call due to container initialization. Minimize via provisioned concurrency, smaller package size, lazy loading."
+      },
+      "pl": {
+        "q": "Czym jest problem cold start w serverless i jak go zminimalizować?",
+        "exp": "Cold start to opóźnienie przy pierwszym wywołaniu funkcji przez inicjalizację kontenera. Minimalizuje się przez provisioned concurrency, mniejszy rozmiar pakietu, lazy loading."
+      },
+      "answers": [
+        {
+          "uk": "Проблема з температурою серверів",
+          "en": "Server temperature problem",
+          "pl": "Problem z temperaturą serwerów",
+          "correct": false
+        },
+        {
+          "uk": "Затримка при першому виклику; мінімізують через provisioned concurrency та менший пакет",
+          "en": "Delay on first call; minimize via provisioned concurrency and smaller package",
+          "pl": "Opóźnienie przy pierwszym wywołaniu; minimalizuje się przez provisioned concurrency i mniejszy pakiet",
+          "correct": true
+        },
+        {
+          "uk": "Помилка у конфігурації",
+          "en": "Configuration error",
+          "pl": "Błąd konfiguracji",
+          "correct": false
+        },
+        {
+          "uk": "Обмеження на кількість функцій",
+          "en": "Limit on number of functions",
+          "pl": "Limit liczby funkcji",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-adv-q23",
+      "order": 23,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що включає Continuous Integration (CI) для Node.js проєкту?",
+        "exp": "CI включає автоматичну установку залежностей (npm install), запуск тестів (npm test), перевірку коду лінтером (ESLint) при кожному push/PR."
+      },
+      "en": {
+        "q": "What does Continuous Integration (CI) include for a Node.js project?",
+        "exp": "CI includes automatic dependency installation (npm install), running tests (npm test), code linting (ESLint) on every push/PR."
+      },
+      "pl": {
+        "q": "Co obejmuje Continuous Integration (CI) dla projektu Node.js?",
+        "exp": "CI obejmuje automatyczną instalację zależności (npm install), uruchamianie testów (npm test), sprawdzanie kodu linterem (ESLint) przy każdym push/PR."
+      },
+      "answers": [
+        {
+          "uk": "Тільки деплой на продакшн",
+          "en": "Only deployment to production",
+          "pl": "Tylko deployment na produkcję",
+          "correct": false
+        },
+        {
+          "uk": "Автоматична установка залежностей, тести, лінтинг при кожному push/PR",
+          "en": "Automatic dependency installation, tests, linting on every push/PR",
+          "pl": "Automatyczna instalacja zależności, testy, linting przy każdym push/PR",
+          "correct": true
+        },
+        {
+          "uk": "Ручне тестування перед релізом",
+          "en": "Manual testing before release",
+          "pl": "Ręczne testowanie przed wydaniem",
+          "correct": false
+        },
+        {
+          "uk": "Написання документації",
+          "en": "Writing documentation",
+          "pl": "Pisanie dokumentacji",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-adv-q24",
+      "order": 24,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Як керувати сесіями у масштабованому Node.js застосунку з кількома інстансами?",
+        "exp": "Використовувати централізоване сховище сесій (Redis, Memcached) або JWT-токени, які зберігаються на клієнті і не потребують серверного стану."
+      },
+      "en": {
+        "q": "How to manage sessions in a scalable Node.js app with multiple instances?",
+        "exp": "Use centralized session storage (Redis, Memcached) or JWT tokens that are stored on the client and don't require server state."
+      },
+      "pl": {
+        "q": "Jak zarządzać sesjami w skalowalnej aplikacji Node.js z wieloma instancjami?",
+        "exp": "Używać scentralizowanego storage sesji (Redis, Memcached) lub tokenów JWT przechowywanych na kliencie i nie wymagających stanu serwera."
+      },
+      "answers": [
+        {
+          "uk": "Зберігати сесії в пам'яті кожного інстансу",
+          "en": "Store sessions in memory of each instance",
+          "pl": "Przechowywać sesje w pamięci każdej instancji",
+          "correct": false
+        },
+        {
+          "uk": "Централізоване сховище (Redis) або JWT-токени на клієнті",
+          "en": "Centralized storage (Redis) or JWT tokens on client",
+          "pl": "Scentralizowane storage (Redis) lub tokeny JWT na kliencie",
+          "correct": true
+        },
+        {
+          "uk": "Використовувати cookies без шифрування",
+          "en": "Use cookies without encryption",
+          "pl": "Używać cookies bez szyfrowania",
+          "correct": false
+        },
+        {
+          "uk": "Завжди направляти користувача на один сервер",
+          "en": "Always direct user to one server",
+          "pl": "Zawsze kierować użytkownika na jeden serwer",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-adv-q25",
+      "order": 25,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке connection pooling і чому він важливий для Node.js з базами даних?",
+        "exp": "Connection pooling — повторне використання відкритих з'єднань до БД замість створення нових. Зменшує overhead та покращує продуктивність."
+      },
+      "en": {
+        "q": "What is connection pooling and why is it important for Node.js with databases?",
+        "exp": "Connection pooling is reusing open database connections instead of creating new ones. Reduces overhead and improves performance."
+      },
+      "pl": {
+        "q": "Czym jest connection pooling i dlaczego jest ważny dla Node.js z bazami danych?",
+        "exp": "Connection pooling to ponowne wykorzystywanie otwartych połączeń do BD zamiast tworzenia nowych. Zmniejsza overhead i poprawia wydajność."
+      },
+      "answers": [
+        {
+          "uk": "Об'єднання кількох баз даних в одну",
+          "en": "Combining multiple databases into one",
+          "pl": "Łączenie wielu baz danych w jedną",
+          "correct": false
+        },
+        {
+          "uk": "Повторне використання з'єднань до БД для зменшення overhead",
+          "en": "Reusing DB connections to reduce overhead",
+          "pl": "Ponowne wykorzystywanie połączeń do BD dla zmniejszenia overhead",
+          "correct": true
+        },
+        {
+          "uk": "Шифрування з'єднань до бази",
+          "en": "Encrypting database connections",
+          "pl": "Szyfrowanie połączeń do bazy",
+          "correct": false
+        },
+        {
+          "uk": "Створення нового з'єднання для кожного запиту",
+          "en": "Creating a new connection for each request",
+          "pl": "Tworzenie nowego połączenia dla każdego żądania",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-adv-q26",
+      "order": 26,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Який інструмент використовують для профайлінгу CPU та пам'яті у Node.js?",
+        "exp": "node --inspect з Chrome DevTools, clinic.js (Doctor, Flame, Bubbleprof), 0x для flame graphs, perf_hooks для вбудованого профайлінгу."
+      },
+      "en": {
+        "q": "Which tool is used for CPU and memory profiling in Node.js?",
+        "exp": "node --inspect with Chrome DevTools, clinic.js (Doctor, Flame, Bubbleprof), 0x for flame graphs, perf_hooks for built-in profiling."
+      },
+      "pl": {
+        "q": "Które narzędzie jest używane do profilowania CPU i pamięci w Node.js?",
+        "exp": "node --inspect z Chrome DevTools, clinic.js (Doctor, Flame, Bubbleprof), 0x dla flame graphs, perf_hooks dla wbudowanego profilowania."
+      },
+      "answers": [
+        {
+          "uk": "npm audit",
+          "en": "npm audit",
+          "pl": "npm audit",
+          "correct": false
+        },
+        {
+          "uk": "node --inspect з Chrome DevTools, clinic.js, 0x",
+          "en": "node --inspect with Chrome DevTools, clinic.js, 0x",
+          "pl": "node --inspect z Chrome DevTools, clinic.js, 0x",
+          "correct": true
+        },
+        {
+          "uk": "ESLint",
+          "en": "ESLint",
+          "pl": "ESLint",
+          "correct": false
+        },
+        {
+          "uk": "Prettier",
+          "en": "Prettier",
+          "pl": "Prettier",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-adv-q27",
+      "order": 27,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Яка рекомендована стратегія логування для Node.js у продакшн?",
+        "exp": "Логування як потік у stdout/stderr, структуровані JSON логи (Winston, Pino), збір через зовнішні сервіси (ELK stack, Datadog)."
+      },
+      "en": {
+        "q": "What is the recommended logging strategy for Node.js in production?",
+        "exp": "Logging as a stream to stdout/stderr, structured JSON logs (Winston, Pino), collection via external services (ELK stack, Datadog)."
+      },
+      "pl": {
+        "q": "Jaka jest zalecana strategia logowania dla Node.js na produkcji?",
+        "exp": "Logowanie jako strumień do stdout/stderr, strukturyzowane logi JSON (Winston, Pino), zbieranie przez zewnętrzne serwisy (ELK stack, Datadog)."
+      },
+      "answers": [
+        {
+          "uk": "Записувати логи тільки у локальний файл",
+          "en": "Write logs only to a local file",
+          "pl": "Zapisywać logi tylko do lokalnego pliku",
+          "correct": false
+        },
+        {
+          "uk": "Структуровані JSON логи у stdout/stderr, збір через ELK/Datadog",
+          "en": "Structured JSON logs to stdout/stderr, collection via ELK/Datadog",
+          "pl": "Strukturyzowane logi JSON do stdout/stderr, zbieranie przez ELK/Datadog",
+          "correct": true
+        },
+        {
+          "uk": "Використовувати тільки console.log",
+          "en": "Use only console.log",
+          "pl": "Używać tylko console.log",
+          "correct": false
+        },
+        {
+          "uk": "Відключити логування для продуктивності",
+          "en": "Disable logging for performance",
+          "pl": "Wyłączyć logowanie dla wydajności",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-adv-q28",
+      "order": 28,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Як використовувати Swagger/OpenAPI для документування Node.js REST API?",
+        "exp": "Визначити специфікацію API у YAML/JSON форматі, інтегрувати swagger-ui-express для візуалізації, автогенерувати клієнти та тести."
+      },
+      "en": {
+        "q": "How to use Swagger/OpenAPI for documenting Node.js REST API?",
+        "exp": "Define API specification in YAML/JSON format, integrate swagger-ui-express for visualization, auto-generate clients and tests."
+      },
+      "pl": {
+        "q": "Jak używać Swagger/OpenAPI do dokumentowania REST API Node.js?",
+        "exp": "Zdefiniować specyfikację API w formacie YAML/JSON, zintegrować swagger-ui-express dla wizualizacji, autogenerować klientów i testy."
+      },
+      "answers": [
+        {
+          "uk": "Swagger тільки для фронтенду",
+          "en": "Swagger is only for frontend",
+          "pl": "Swagger jest tylko dla frontendu",
+          "correct": false
+        },
+        {
+          "uk": "Специфікація у YAML/JSON, swagger-ui-express для візуалізації, автогенерація клієнтів",
+          "en": "Specification in YAML/JSON, swagger-ui-express for visualization, auto-generate clients",
+          "pl": "Specyfikacja w YAML/JSON, swagger-ui-express dla wizualizacji, autogeneracja klientów",
+          "correct": true
+        },
+        {
+          "uk": "Swagger замінює базу даних",
+          "en": "Swagger replaces the database",
+          "pl": "Swagger zastępuje bazę danych",
+          "correct": false
+        },
+        {
+          "uk": "Swagger працює тільки з GraphQL",
+          "en": "Swagger works only with GraphQL",
+          "pl": "Swagger działa tylko z GraphQL",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-adv-q29",
+      "order": 29,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Які хмарні сервіси AWS використовуються для Node.js serverless функцій?",
+        "exp": "AWS Lambda для виконання функцій, API Gateway для HTTP-ендпоінтів, DynamoDB для даних, SQS/SNS для повідомлень, S3 для файлів."
+      },
+      "en": {
+        "q": "Which AWS cloud services are used for Node.js serverless functions?",
+        "exp": "AWS Lambda for function execution, API Gateway for HTTP endpoints, DynamoDB for data, SQS/SNS for messages, S3 for files."
+      },
+      "pl": {
+        "q": "Które usługi chmurowe AWS są używane do funkcji serverless Node.js?",
+        "exp": "AWS Lambda do wykonywania funkcji, API Gateway dla endpointów HTTP, DynamoDB dla danych, SQS/SNS dla wiadomości, S3 dla plików."
+      },
+      "answers": [
+        {
+          "uk": "Тільки EC2",
+          "en": "Only EC2",
+          "pl": "Tylko EC2",
+          "correct": false
+        },
+        {
+          "uk": "Lambda, API Gateway, DynamoDB, SQS/SNS, S3",
+          "en": "Lambda, API Gateway, DynamoDB, SQS/SNS, S3",
+          "pl": "Lambda, API Gateway, DynamoDB, SQS/SNS, S3",
+          "correct": true
+        },
+        {
+          "uk": "Тільки S3",
+          "en": "Only S3",
+          "pl": "Tylko S3",
+          "correct": false
+        },
+        {
+          "uk": "AWS не підтримує Node.js",
+          "en": "AWS doesn't support Node.js",
+          "pl": "AWS nie obsługuje Node.js",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-adv-q30",
+      "order": 30,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке API Gateway у контексті мікросервісної архітектури?",
+        "exp": "API Gateway — єдина точка входу, яка маршрутизує запити до мікросервісів, забезпечує аутентифікацію, rate limiting, агрегацію відповідей."
+      },
+      "en": {
+        "q": "What is API Gateway in the context of microservices architecture?",
+        "exp": "API Gateway is a single entry point that routes requests to microservices, provides authentication, rate limiting, and response aggregation."
+      },
+      "pl": {
+        "q": "Czym jest API Gateway w kontekście architektury mikroserwisów?",
+        "exp": "API Gateway to pojedynczy punkt wejścia, który routuje żądania do mikroserwisów, zapewnia autentykację, rate limiting i agregację odpowiedzi."
+      },
+      "answers": [
+        {
+          "uk": "База даних для API",
+          "en": "A database for API",
+          "pl": "Baza danych dla API",
+          "correct": false
+        },
+        {
+          "uk": "Єдина точка входу для маршрутизації, аутентифікації та rate limiting",
+          "en": "Single entry point for routing, authentication, and rate limiting",
+          "pl": "Pojedynczy punkt wejścia dla routingu, autentykacji i rate limiting",
+          "correct": true
+        },
+        {
+          "uk": "Інструмент для тестування",
+          "en": "A testing tool",
+          "pl": "Narzędzie do testowania",
+          "correct": false
+        },
+        {
+          "uk": "Фреймворк для фронтенду",
+          "en": "A frontend framework",
+          "pl": "Framework frontendowy",
+          "correct": false
+        }
+      ]
+    }
+  ]
+}

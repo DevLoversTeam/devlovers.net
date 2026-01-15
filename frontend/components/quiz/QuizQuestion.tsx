@@ -1,15 +1,18 @@
 'use client';
 
-import { QuizQuestionWithAnswers } from '@/db/queries/quiz';
+import { useTranslations } from 'next-intl';
+import { QuizQuestionClient } from '@/db/queries/quiz';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Button } from '@/components/ui/button';
 import ExplanationRenderer from './ExplanationRenderer';
 import { cn } from '@/lib/utils';
+import { Check, X, Lightbulb } from 'lucide-react';
 
 interface QuizQuestionProps {
-  question: QuizQuestionWithAnswers;
+  question: QuizQuestionClient;
   status: 'answering' | 'revealed';
   selectedAnswerId: string | null;
+  isCorrect: boolean;
   onAnswer: (answerId: string) => void;
   onNext: () => void;
   isLoading?: boolean;
@@ -19,15 +22,16 @@ export function QuizQuestion({
   question,
   status,
   selectedAnswerId,
+  isCorrect,
   onAnswer,
   onNext,
   isLoading = false,
 }: QuizQuestionProps) {
+  const t = useTranslations('quiz.question');
   const isAnswering = status === 'answering';
   const isRevealed = status === 'revealed';
 
-  const correctAnswer = question.answers.find(a => a.isCorrect);
-  const isCorrectAnswer = isRevealed && selectedAnswerId === correctAnswer?.id;
+  const isCorrectAnswer = isRevealed && isCorrect;
 
   return (
     <div className="flex flex-col gap-6">
@@ -42,8 +46,8 @@ export function QuizQuestion({
       >
         {question.answers.map(answer => {
           const isSelected = selectedAnswerId === answer.id;
-          const showCorrect = isRevealed && isCorrectAnswer && isSelected;
-          const showIncorrect = isRevealed && !isCorrectAnswer && isSelected;
+          const showCorrect = isRevealed && isSelected && isCorrect;
+          const showIncorrect = isRevealed && isSelected && !isCorrect;
 
           return (
             <label
@@ -63,12 +67,12 @@ export function QuizQuestion({
               <span className="flex-1 text-base">{answer.answerText}</span>
               {showCorrect && (
                 <span className="text-green-600 dark:text-green-400 text-sm font-medium">
-                  ✓ Правильно
+                  <Check className="w-4 h-4 inline" /> {t('correct')}
                 </span>
               )}
               {showIncorrect && (
                 <span className="text-red-600 dark:text-red-400 text-sm font-medium">
-                  ✗ Неправильно
+                 <X className="w-4 h-4 inline" /> {t('incorrect')}
                 </span>
               )}
             </label>
@@ -83,7 +87,7 @@ export function QuizQuestion({
           )}
         >
           <div className="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
-            Пояснення:
+            {t('explanationLabel')}
           </div>
           <ExplanationRenderer blocks={question.explanation} />
         </div>
@@ -96,13 +100,13 @@ export function QuizQuestion({
           )}
         >
           <div className="flex items-start gap-3">
-            <div className="text-2xl">💡</div>
+            <Lightbulb className="w-6 h-6 text-amber-500 flex-shrink-0" />
             <div className="flex-1">
               <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">
-                Рекомендація
+                {t('recommendation.title')}
               </h4>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Рекомендуємо повторити цю тему після завершення квізу
+                {t('recommendation.description')}
               </p>
             </div>
           </div>
@@ -114,7 +118,7 @@ export function QuizQuestion({
           disabled={isLoading}
           className="mt-2 animate-in fade-in slide-in-from-bottom-2 duration-300"
         >
-          {isLoading ? 'Завантаження...' : 'Далі'}
+          {isLoading ? t('loading') : t('nextButton')}
         </Button>
       )}
     </div>

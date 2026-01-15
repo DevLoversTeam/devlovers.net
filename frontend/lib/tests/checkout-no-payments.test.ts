@@ -33,6 +33,14 @@ vi.mock('@/lib/auth', async () => {
   };
 });
 
+function logTestCleanupFailed(meta: Record<string, unknown>, error: unknown) {
+  console.error('[test cleanup failed]', {
+    file: 'checkout-no-payments.test.ts',
+    ...meta,
+    error,
+  });
+}
+
 /**
  * Creates an isolated product + product_prices row to avoid stock races
  * with parallel test files that also reserve/release inventory.
@@ -89,10 +97,20 @@ async function createIsolatedProductForCurrency(opts: {
     } as any);
   } catch (e) {
     // Cleanup orphaned product on price insert failure (best-effort)
-    await db
-      .delete(products)
-      .where(eq(products.id, productId))
-      .catch(() => {});
+    try {
+      await db.delete(products).where(eq(products.id, productId));
+    } catch (cleanupError) {
+      logTestCleanupFailed(
+        {
+          fn: 'createIsolatedProductForCurrency',
+          step: 'rollback delete product after productPrices insert failure',
+          productId,
+          currency: opts.currency,
+          stock: opts.stock,
+        },
+        cleanupError
+      );
+    }
     throw e;
   }
 
@@ -108,13 +126,10 @@ async function cleanupIsolatedProduct(productId: string) {
       .where(eq(products.id, productId));
   } catch (e) {
     // Non-fatal: best-effort test teardown
-    if (process.env.DEBUG) {
-      console.warn(
-        'cleanupIsolatedProduct: deactivate failed',
-        { productId },
-        e
-      );
-    }
+    logTestCleanupFailed(
+      { fn: 'cleanupIsolatedProduct', step: 'deactivate product', productId },
+      e
+    );
   }
 
   try {
@@ -122,32 +137,35 @@ async function cleanupIsolatedProduct(productId: string) {
       .delete(productPrices)
       .where(eq(productPrices.productId, productId));
   } catch (e) {
-    if (process.env.DEBUG) {
-      console.warn(
-        'cleanupIsolatedProduct: delete productPrices failed',
-        { productId },
-        e
-      );
-    }
+    logTestCleanupFailed(
+      {
+        fn: 'cleanupIsolatedProduct',
+        step: 'delete productPrices by productId',
+        productId,
+      },
+      e
+    );
   }
 
   try {
     await db.delete(products).where(eq(products.id, productId));
   } catch (e) {
-    if (process.env.DEBUG) {
-      console.warn(
-        'cleanupIsolatedProduct: delete product failed',
-        { productId },
-        e
-      );
-    }
+    logTestCleanupFailed(
+      { fn: 'cleanupIsolatedProduct', step: 'delete product by id', productId },
+      e
+    );
   }
 }
 
 async function postCheckout(params: {
   idemKey: string;
   acceptLanguage?: string;
-  items: Array<{ productId: string; quantity: number }>;
+  items: Array<{
+    productId: string;
+    quantity: number;
+    selectedSize?: string;
+    selectedColor?: string;
+  }>;
 }) {
   const { POST } = await import('@/app/api/shop/checkout/route');
 
@@ -194,13 +212,14 @@ async function bestEffortHardDeleteOrder(orderId: string) {
       sql`delete from inventory_moves where order_id = ${orderId}::uuid`
     );
   } catch (e) {
-    if (process.env.DEBUG) {
-      console.warn(
-        'bestEffortHardDeleteOrder: delete inventory_moves failed',
-        { orderId },
-        e
-      );
-    }
+    logTestCleanupFailed(
+      {
+        fn: 'bestEffortHardDeleteOrder',
+        step: 'delete inventory_moves by orderId',
+        orderId,
+      },
+      e
+    );
   }
 
   try {
@@ -208,25 +227,23 @@ async function bestEffortHardDeleteOrder(orderId: string) {
       sql`delete from order_items where order_id = ${orderId}::uuid`
     );
   } catch (e) {
-    if (process.env.DEBUG) {
-      console.warn(
-        'bestEffortHardDeleteOrder: delete order_items failed',
-        { orderId },
-        e
-      );
-    }
+    logTestCleanupFailed(
+      {
+        fn: 'bestEffortHardDeleteOrder',
+        step: 'delete order_items by orderId',
+        orderId,
+      },
+      e
+    );
   }
 
   try {
     await db.delete(orders).where(eq(orders.id, orderId));
   } catch (e) {
-    if (process.env.DEBUG) {
-      console.warn(
-        'bestEffortHardDeleteOrder: delete order failed',
-        { orderId },
-        e
-      );
-    }
+    logTestCleanupFailed(
+      { fn: 'bestEffortHardDeleteOrder', step: 'delete order by id', orderId },
+      e
+    );
   }
 }
 
@@ -436,6 +453,226 @@ describe.sequential('Checkout (no payments) invariants', () => {
       if (orderId1) {
         await bestEffortHardDeleteOrder(orderId1);
       }
+      await cleanupIsolatedProduct(productId);
+    }
+  }, 20_000);
+  it('Invalid variant rejects without side effects (no payments)', async () => {
+    const { productId } = await createIsolatedProductForCurrency({
+      currency: 'USD',
+      stock: 2,
+    });
+
+    const idemKey = crypto.randomUUID();
+    let unexpectedOrderId: string | null = null;
+
+    try {
+      // Activate only for the minimal window needed by checkout.
+      await db
+        .update(products)
+        .set({ isActive: true, updatedAt: new Date() } as any)
+        .where(eq(products.id, productId));
+
+      // Make variants deterministic for this test.
+      await db
+        .update(products)
+        .set({
+          ...({
+            sizes: ['S'],
+            colors: ['Red'],
+          } as any),
+          updatedAt: new Date(),
+        } as any)
+        .where(eq(products.id, productId));
+
+      const [p0] = await db
+        .select({ stock: products.stock })
+        .from(products)
+        .where(eq(products.id, productId))
+        .limit(1);
+
+      expect(p0).toBeTruthy();
+      const stockBefore = p0!.stock;
+      // ДО checkout: порахували moves
+      const moves0 = await db.execute(
+        sql`select count(*)::int as c from inventory_moves where product_id = ${productId}::uuid`
+      );
+      const countBefore = Number((moves0.rows?.[0] as any)?.c ?? 0);
+
+      const res = await postCheckout({
+        idemKey,
+        acceptLanguage: 'en',
+        items: [
+          {
+            productId,
+            quantity: 1,
+            selectedSize: `INVALID_${crypto.randomUUID()}`,
+            selectedColor: `INVALID_${crypto.randomUUID()}`,
+          },
+        ],
+      });
+
+      expect(res.status).toBe(400);
+
+      const json: any = await res.json();
+      // Deactivate immediately to minimize chance other parallel tests pick it.
+      await db
+        .update(products)
+        .set({ isActive: false, updatedAt: new Date() } as any)
+        .where(eq(products.id, productId));
+
+      expect(json?.code).toBe('INVALID_VARIANT');
+      const moves1 = await db.execute(
+        sql`select count(*)::int as c from inventory_moves where product_id = ${productId}::uuid`
+      );
+      const countAfter = Number((moves1.rows?.[0] as any)?.c ?? 0);
+      expect(countAfter).toBe(countBefore);
+
+      // No order should be created for invalid variant
+      const [maybeOrder] = await db
+        .select({ id: orders.id })
+        .from(orders)
+        .where(eq(orders.idempotencyKey, idemKey))
+        .limit(1);
+
+      if (maybeOrder?.id) unexpectedOrderId = maybeOrder.id;
+      expect(maybeOrder).toBeFalsy();
+
+      // Stock must not change
+      const [p1] = await db
+        .select({ stock: products.stock })
+        .from(products)
+        .where(eq(products.id, productId))
+        .limit(1);
+
+      expect(p1).toBeTruthy();
+      expect(p1!.stock).toBe(stockBefore);
+    } finally {
+      // Deactivate to reduce cross-test interference.
+      try {
+        await db
+          .update(products)
+          .set({ isActive: false, updatedAt: new Date() } as any)
+          .where(eq(products.id, productId));
+      } catch {}
+
+      // If an order was unexpectedly created, remove it (keep DB clean).
+      if (unexpectedOrderId) {
+        await bestEffortHardDeleteOrder(unexpectedOrderId);
+      }
+
+      await cleanupIsolatedProduct(productId);
+    }
+  }, 20_000);
+
+  it('Missing variants reject when client provides options (no payments)', async () => {
+    const { productId } = await createIsolatedProductForCurrency({
+      currency: 'USD',
+      stock: 2,
+    });
+
+    const idemKey = crypto.randomUUID();
+    let unexpectedOrderId: string | null = null;
+
+    try {
+      // Activate only for the minimal window needed by checkout.
+      await db
+        .update(products)
+        .set({ isActive: true, updatedAt: new Date() } as any)
+        .where(eq(products.id, productId));
+
+      // Simulate "no variants configured" (empty lists).
+      await db
+        .update(products)
+        .set({
+          ...({
+            sizes: [],
+            colors: [],
+          } as any),
+          updatedAt: new Date(),
+        } as any)
+        .where(eq(products.id, productId));
+
+      const [p0] = await db
+        .select({ stock: products.stock })
+        .from(products)
+        .where(eq(products.id, productId))
+        .limit(1);
+
+      expect(p0).toBeTruthy();
+      const stockBefore = p0!.stock;
+
+      // ДО checkout: порахували moves
+      const moves0 = await db.execute(
+        sql`select count(*)::int as c from inventory_moves where product_id = ${productId}::uuid`
+      );
+      const countBefore = Number((moves0.rows?.[0] as any)?.c ?? 0);
+
+      const res = await postCheckout({
+        idemKey,
+        acceptLanguage: 'en',
+        items: [
+          {
+            productId,
+            quantity: 1,
+            // Client sends options, but product has none => must be rejected.
+            selectedSize: 'S',
+            selectedColor: 'Red',
+          },
+        ],
+      });
+
+      expect(res.status).toBe(400);
+
+      const json: any = await res.json();
+
+      // Deactivate immediately to minimize chance other parallel tests pick it.
+      await db
+        .update(products)
+        .set({ isActive: false, updatedAt: new Date() } as any)
+        .where(eq(products.id, productId));
+
+      expect(json?.code).toBe('INVALID_VARIANT');
+
+      // Після checkout: moves count must be unchanged
+      const moves1 = await db.execute(
+        sql`select count(*)::int as c from inventory_moves where product_id = ${productId}::uuid`
+      );
+      const countAfter = Number((moves1.rows?.[0] as any)?.c ?? 0);
+      expect(countAfter).toBe(countBefore);
+
+      // No order should be created for this idemKey
+      const [maybeOrder] = await db
+        .select({ id: orders.id })
+        .from(orders)
+        .where(eq(orders.idempotencyKey, idemKey))
+        .limit(1);
+
+      if (maybeOrder?.id) unexpectedOrderId = maybeOrder.id;
+      expect(maybeOrder).toBeFalsy();
+
+      // Stock must not change
+      const [p1] = await db
+        .select({ stock: products.stock })
+        .from(products)
+        .where(eq(products.id, productId))
+        .limit(1);
+
+      expect(p1).toBeTruthy();
+      expect(p1!.stock).toBe(stockBefore);
+    } finally {
+      // Deactivate to reduce cross-test interference.
+      try {
+        await db
+          .update(products)
+          .set({ isActive: false, updatedAt: new Date() } as any)
+          .where(eq(products.id, productId));
+      } catch {}
+
+      // If an order was unexpectedly created, remove it (keep DB clean).
+      if (unexpectedOrderId) {
+        await bestEffortHardDeleteOrder(unexpectedOrderId);
+      }
+
       await cleanupIsolatedProduct(productId);
     }
   }, 20_000);

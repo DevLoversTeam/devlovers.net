@@ -1,5 +1,5 @@
 // lib/tests/checkout-concurrency-stock1.test.ts
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import crypto from 'crypto';
 import { NextRequest } from 'next/server';
 import { eq, inArray } from 'drizzle-orm';
@@ -13,7 +13,15 @@ import {
   inventoryMoves,
 } from '@/db/schema/shop';
 
-import { POST as checkoutPOST } from '@/app/api/shop/checkout/route';
+// NOTE: checkout route will be imported dynamically after mocks are installed.
+
+vi.mock('@/lib/auth', async () => {
+  const actual = await vi.importActual<any>('@/lib/auth');
+  return {
+    ...actual,
+    getCurrentUser: async () => null, // avoid cookies() in vitest
+  };
+});
 
 type JsonValue = any;
 
@@ -60,15 +68,11 @@ describe('P0-8.10.1 checkout concurrency: stock=1, two parallel checkouts', () =
   const originalEnv: Record<string, string | undefined> = {};
 
   beforeAll(() => {
-    // зберегти оригінальні env значення тільки для stripe-ключів
     for (const k of stripeKeys) originalEnv[k] = process.env[k];
-
-    // тест має бути незалежним від Stripe — гасимо stripe env
     for (const k of stripeKeys) delete process.env[k];
   });
 
   afterAll(() => {
-    // відновити env
     for (const k of stripeKeys) {
       const v = originalEnv[k];
       if (v === undefined) delete process.env[k];
@@ -81,13 +85,6 @@ describe('P0-8.10.1 checkout concurrency: stock=1, two parallel checkouts', () =
     const productId = crypto.randomUUID();
     const slug = `__test_checkout_concurrency_${productId.slice(0, 8)}`;
     const now = new Date();
-
-    /**
-     * ВАЖЛИВО:
-     * products.image_url у твоїй БД NOT NULL -> треба передати imageUrl.
-     * Якщо у твоїй Drizzle-схемі поле назване інакше (imageURL / image_url),
-     * заміни ключ нижче.
-     */
     await db.insert(products).values({
       id: productId,
       slug,
@@ -110,7 +107,7 @@ describe('P0-8.10.1 checkout concurrency: stock=1, two parallel checkouts', () =
       productId,
       currency: 'USD',
 
-      // minor-units (твоя поточна модель)
+      // minor-units
       priceMinor: 1000,
       originalPriceMinor: null,
 
@@ -124,6 +121,9 @@ describe('P0-8.10.1 checkout concurrency: stock=1, two parallel checkouts', () =
 
     // ---------- Helper: call checkout with given idempotency key ----------
     const baseUrl = 'http://localhost:3000';
+    const { POST: checkoutPOST } = await import(
+      '@/app/api/shop/checkout/route'
+    );
 
     async function callCheckout(idemKey: string) {
       const body = JSON.stringify({
@@ -175,11 +175,8 @@ describe('P0-8.10.1 checkout concurrency: stock=1, two parallel checkouts', () =
     expect(success.length).toBe(1);
     expect(fail.length).toBe(1);
 
-    // Не допускаємо 5xx (має бути контрольований бізнес-фейл)
     expect(fail[0].status).toBeGreaterThanOrEqual(400);
     expect(fail[0].status).toBeLessThan(500);
-
-    // Додатково (м’яко): якщо ваш контракт повертає error code — перевіримо, що він “стоковий”
     const failJson = fail[0].json || {};
     const failCode = String(
       pick(failJson, ['code', 'errorCode', 'businessCode', 'reason']) ?? ''

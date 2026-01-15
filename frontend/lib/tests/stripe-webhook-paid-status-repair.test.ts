@@ -1,15 +1,18 @@
+// C:\Users\milka\devlovers.net\frontend\lib\tests\stripe-webhook-paid-status-repair.test.ts
+
 import crypto from 'crypto';
-import { describe, it, expect, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { eq } from 'drizzle-orm';
+
 import { db } from '@/db';
 import { orders, stripeEvents } from '@/db/schema';
-import { eq } from 'drizzle-orm';
 import { toDbMoney } from '@/lib/shop/money';
 
 async function seedOrder(params: { orderId: string; pi: string }) {
   const now = new Date();
   await db.insert(orders).values({
     id: params.orderId,
-    idempotencyKey: `test:${crypto.randomUUID()}`, // required in your schema
+    idempotencyKey: `test:${crypto.randomUUID()}`,
     totalAmountMinor: 2500,
     totalAmount: toDbMoney(2500),
     currency: 'USD',
@@ -25,8 +28,14 @@ async function seedOrder(params: { orderId: string; pi: string }) {
   });
 }
 
-async function callWebhook(params: { eventId: string; pi: string; orderId: string }) {
+async function callWebhook(params: {
+  eventId: string;
+  pi: string;
+  orderId: string;
+}) {
+  // Keep this pattern: reset module cache so route picks up env + mocks.
   vi.resetModules();
+
   vi.doMock('@/lib/psp/stripe', async () => {
     const actual = await vi.importActual<any>('@/lib/psp/stripe');
     return {
@@ -48,8 +57,9 @@ async function callWebhook(params: { eventId: string; pi: string; orderId: strin
     };
   });
 
-  process.env.STRIPE_SECRET_KEY = 'sk_test_dummy';
-  process.env.STRIPE_WEBHOOK_SECRET = 'whsec_test_dummy';
+  // Task #5: avoid process.env mutation; use stubEnv + restore in afterEach.
+  vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_dummy');
+  vi.stubEnv('STRIPE_WEBHOOK_SECRET', 'whsec_test_dummy');
 
   const { POST } = await import('@/app/api/shop/webhooks/stripe/route');
 
@@ -62,11 +72,70 @@ async function callWebhook(params: { eventId: string; pi: string; orderId: strin
   );
 }
 
+async function cleanupByIds(params: {
+  orderId: string | null;
+  eventId: string | null;
+}) {
+  const { orderId, eventId } = params;
+
+  if (eventId) {
+    try {
+      await db.delete(stripeEvents).where(eq(stripeEvents.eventId, eventId));
+    } catch (e) {
+      console.error(
+        '[test cleanup failed]',
+        {
+          file: 'stripe-webhook-paid-status-repair.test.ts',
+          step: 'delete stripeEvents',
+          eventId,
+          orderId,
+        },
+        e
+      );
+    }
+  }
+
+  if (orderId) {
+    try {
+      await db.delete(orders).where(eq(orders.id, orderId));
+    } catch (e) {
+      console.error(
+        '[test cleanup failed]',
+        {
+          file: 'stripe-webhook-paid-status-repair.test.ts',
+          step: 'delete orders',
+          eventId,
+          orderId,
+        },
+        e
+      );
+    }
+  }
+}
+
 describe('stripe webhook: repair paid status mismatch', () => {
+  let lastOrderId: string | null = null;
+  let lastEventId: string | null = null;
+
+  afterEach(async () => {
+    // restore env stubs to avoid cross-test coupling
+    vi.unstubAllEnvs();
+
+    if (lastOrderId || lastEventId) {
+      await cleanupByIds({ orderId: lastOrderId, eventId: lastEventId });
+    }
+
+    lastOrderId = null;
+    lastEventId = null;
+  });
+
   it('repairs status to PAID when paymentStatus=paid but status!=PAID', async () => {
     const orderId = crypto.randomUUID();
     const eventId = `evt_${crypto.randomUUID()}`;
     const pi = `pi_test_repair_${crypto.randomUUID()}`;
+
+    lastOrderId = orderId;
+    lastEventId = eventId;
 
     await seedOrder({ orderId, pi });
 
@@ -81,12 +150,15 @@ describe('stripe webhook: repair paid status mismatch', () => {
 
     expect(row!.paymentStatus).toBe('paid');
     expect(row!.status).toBe('PAID');
-  });
+  }, 30_000);
 
   it('dedupes the same eventId after processedAt is set (second call is no-op)', async () => {
     const orderId = crypto.randomUUID();
     const eventId = `evt_${crypto.randomUUID()}`;
     const pi = `pi_test_repair_${crypto.randomUUID()}`;
+
+    lastOrderId = orderId;
+    lastEventId = eventId;
 
     await seedOrder({ orderId, pi });
 
@@ -111,5 +183,5 @@ describe('stripe webhook: repair paid status mismatch', () => {
       .limit(1);
 
     expect(row!.status).toBe('PAID');
-  });
+  }, 30_000);
 });

@@ -39,7 +39,130 @@
     "metaDescription": "Questions and answers for technical interview preparation",
     "frontend": "Frontend",
     "backend": "Backend",
-    "fullstack": "Full-stack"
+    "fullstack": "Full-stack",
+    "pagination": {
+      "label": "Pagination",
+      "previous": "Previous",
+      "next": "Next",
+      "previousPage": "Previous page",
+      "nextPage": "Next page",
+      "page": "Page {page}"
+    }
+  },
+  "quiz": {
+    "metaTitle": "Quizzes | DevLovers",
+    "metaDescription": "Test your knowledge with interactive quizzes",
+    "page": {
+      "noQuestions": "No questions available for this quiz",
+      "questionsLabel": "Questions",
+      "timeLabel": "Time",
+      "minutes": "min"
+    },
+    "list": {
+      "title": "Quizzes",
+      "practice": "Practice",
+      "subtitle": "Choose a quiz to test your knowledge",
+      "noQuizzes": "No quizzes available yet. Please check back soon."
+    },
+    "rules": {
+      "title": "Quiz Rules",
+      "general": {
+        "title": "General Rules",
+        "description": "Answer questions honestly. Each question has only one correct answer."
+      },
+      "forbidden": {
+        "title": "Forbidden",
+        "copyPaste": "Copying and pasting text",
+        "contextMenu": "Using context menu (right-click)",
+        "tabSwitch": "Switching to other tabs or programs",
+        "externalSources": "Using external information sources"
+      },
+      "control": {
+        "title": "Control System",
+        "description": "Rule violations are automatically detected. With 3+ violations, the result will not count towards the leaderboard."
+      },
+      "time": {
+        "title": "Time Requirements",
+        "description": "Minimum time: {seconds} seconds (3 seconds per question). Results that are too fast will not be counted."
+      },
+      "startButton": "Start Quiz"
+    },
+    "question": {
+      "correct": "Correct",
+      "incorrect": "Incorrect",
+      "explanationLabel": "Explanation:",
+      "recommendation": {
+        "title": "Recommendation",
+        "description": "We recommend reviewing this topic after completing the quiz"
+      },
+      "loading": "Loading...",
+      "nextButton": "Next",
+      "verifyRetry": "Retrying answer verification...",
+      "verifyFailed": "Failed to verify the answer. Please try again."
+    },
+    "progress": {
+      "label": "Question {current} / {total}"
+    },
+    "timer": {
+      "label": "Time remaining:",
+      "almostDone": "Time is almost up!",
+      "hurryUp": "Hurry up!"
+    },
+    "result": {
+      "correctAnswers": "correct answers",
+      "timeUp": {
+        "title": "Time's Up",
+        "message": "You didn't manage to answer any questions. Try again and manage your time better"
+      },
+      "allWrong": {
+        "title": "All Answers Incorrect",
+        "message": "We recommend thoroughly studying the material before your next attempt"
+      },
+      "needPractice": {
+        "title": "Need More Practice",
+        "message": "We recommend spending more time on theory and practice"
+      },
+      "goodJob": {
+        "title": "Good Job!",
+        "message": "Review the difficult topics and try again"
+      },
+      "excellent": {
+        "title": "Excellent Work!",
+        "message": "You have mastered the material well"
+      },
+      "incomplete": {
+        "title": "Time's up",
+        "message": "You answered {answeredCount} out of {total} questions. Result not counted."
+      },
+      "violations": "Quiz completed with rule violations ({count} violations). Result not counted towards leaderboard.",
+      "pointsAwarded": "+{points} points added to rating",
+      "noPointsAwarded": "No points awarded (result not improved)",
+      "guestMessage": "To save your result and appear on the leaderboard, log in or sign up",
+      "loginButton": "Log In",
+      "signupButton": "Sign Up",
+      "retryButton": "Try Again",
+      "backButton": "Back to Topics"
+    },
+    "card": {
+      "uncategorized": "Uncategorized",
+      "completed": "✓ Completed",
+      "questions": "questions",
+      "min": "min",
+      "best": "Best:",
+      "attempt": "attempt",
+      "attempts": "attempts",
+      "retake": "Retake Quiz",
+      "start": "Start Quiz"
+    },
+    "section": {
+      "noQuizzes": "No quizzes in this category yet."
+    },
+    "exitModal": {
+      "title": "Exit Quiz?",
+      "message": "Your progress will not be saved.",
+      "confirm": "Exit",
+      "cancel": "Continue"
+    }
   },
   "blog": {
     "title": "All Blog Posts",

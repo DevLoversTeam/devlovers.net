@@ -15,8 +15,8 @@ export const categoryData = [
   createCategory('javascript', 'JavaScript', 3),
   createCategory('typescript', 'TypeScript', 4),
   createCategory('react', 'React', 5),
-  createCategory('angular', 'Angular', 6),
+  createCategory('next', 'Next.js', 6),
   createCategory('vue', 'Vue.js', 7),
-  createCategory('next', 'Next.js', 8),
+  createCategory('angular', 'Angular', 8),
   createCategory('node', 'Node.js', 9),
 ];

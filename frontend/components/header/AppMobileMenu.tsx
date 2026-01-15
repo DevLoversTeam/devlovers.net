@@ -16,7 +16,11 @@ type Props = {
   showAdminLink?: boolean;
 };
 
-export function AppMobileMenu({ variant, userExists, showAdminLink = false }: Props) {
+export function AppMobileMenu({
+  variant,
+  userExists,
+  showAdminLink = false,
+}: Props) {
   const [open, setOpen] = useState(false);
 
   const close = () => setOpen(false);
@@ -65,6 +69,16 @@ export function AppMobileMenu({ variant, userExists, showAdminLink = false }: Pr
             className="fixed left-0 right-0 top-16 z-50 border-t border-border bg-background px-4 py-4 md:hidden"
           >
             <div className="flex flex-col gap-1">
+              {variant === 'shop' ? (
+                <Link
+                  href="/"
+                  onClick={close}
+                  className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                >
+                  Home
+                </Link>
+              ) : null}
+
               {links.map(link => (
                 <Link
                   key={link.href}

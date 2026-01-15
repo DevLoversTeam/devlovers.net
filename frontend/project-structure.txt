@@ -21,13 +21,23 @@
         📄 route.ts
       📁 me
         📄 route.ts
+      📁 password-reset
+        📁 confirm
+          📄 route.ts
+        📄 route.ts
+      📁 resend-verification
+        📄 route.ts
       📁 signup
+        📄 route.ts
+      📁 verify-email
         📄 route.ts
     📁 questions
       📁 [category]
         📄 route.ts
     📁 quiz
       📁 guest-result
+        📄 route.ts
+      📁 verify-answer
         📄 route.ts
       📁 [slug]
         📄 route.ts
@@ -50,6 +60,8 @@
       📁 cart
         📁 rehydrate
           📄 route.ts
+      📁 catalog
+        📄 route.ts
       📁 checkout
         📄 route.ts
       📁 internal
@@ -76,6 +88,8 @@
       📄 page.tsx
     📁 dashboard
       📄 page.tsx
+    📁 forgot-password
+      📄 page.tsx
     📄 layout.tsx
     📁 leaderboard
       📄 page.tsx
@@ -92,6 +106,8 @@
         📄 page.tsx
     📁 quizzes
       📄 page.tsx
+    📁 reset-password
+      📄 page.tsx
     📁 shop
       📁 admin
         📄 layout.tsx
@@ -99,6 +115,7 @@
           📄 page.tsx
           📁 [id]
             📄 page.tsx
+            📄 RefundButton.tsx
         📄 page.tsx
         📁 products
           📁 new
@@ -177,7 +194,9 @@
     📄 AccordionList.tsx
     📄 CodeBlock.tsx
     📄 Pagination.tsx
-    📄 TabsSection.tsx
+    📄 QaSection.tsx
+    📄 types.ts
+    📄 useQaTabs.ts
   📁 quiz
     📄 CountdownTimer.tsx
     📄 ExplanationRenderer.tsx
@@ -199,6 +218,7 @@
       📄 admin-product-status-toggle.tsx
     📄 cart-provider.tsx
     📄 catalog-load-more.tsx
+    📄 catalog-products-client.tsx
     📄 category-tile.tsx
     📁 header
       📄 cart-button.tsx
@@ -210,6 +230,8 @@
     📄 shop-footer.tsx
     📄 shop-hero.tsx
     📄 theme-provider.tsx
+  📁 tests
+    📄 CookieBanner.test.tsx
   📁 theme
     📄 ThemeProvider.tsx
     📄 ThemeToggle.tsx
@@ -217,6 +239,7 @@
     📄 accordion.tsx
     📄 badge.tsx
     📄 button.tsx
+    📄 confirm-modal.tsx
     📄 radio-group.tsx
     📄 tabs.tsx
 📄 components.json
@@ -224,6 +247,50 @@
   📄 category.ts
 📁 db
   📄 index.ts
+  📁 legacy-migrations
+    📁 drizzle_legacy
+      📄 0000_rich_magus.sql
+      📄 0001_black_random.sql
+      📄 0002_yielding_purple_man.sql
+      📄 0003_handy_cammi.sql
+      📄 0004_tough_ultron.sql
+      📄 0005_furry_warstar.sql
+      📄 0006_minor_units_money.sql
+      📄 0007_add-payment-intent-id-to-orders.sql
+      📄 0008_dizzy_james_howlett.sql
+      📄 0009_p0_inventory_workflow_baseline.sql
+      📄 0009_unknown_nico_minoru.sql
+      📄 0010_parallel_princess_powerful.sql
+      📄 0011_add_orders_sweep_claim_index.sql
+      📄 0012_inventory_moves_product_fk_restrict.sql
+      📄 0013_add_internal_job_state.sql
+      📄 0013_brown_gamora.sql
+      📄 0013_low_roughhouse.sql
+      📄 0014_add-stripe-events-processed-at.sql
+      📄 0014_dapper_kang.sql
+      📄 0014_steep_kabuki.sql
+      📄 0015_dear_legion.sql
+      📄 0015_glamorous_eternity.sql
+      📄 0015_warm_dexter_bennett.sql
+      📁 meta
+        📄 0000_snapshot.json
+        📄 0001_snapshot.json
+        📄 0002_snapshot.json
+        📄 0003_snapshot.json
+        📄 0004_snapshot.json
+        📄 0005_snapshot.json
+        📄 0006_snapshot.json
+        📄 0007_snapshot.json
+        📄 0008_snapshot.json
+        📄 0009_snapshot.json
+        📄 0010_snapshot.json
+        📄 0012_snapshot.json
+        📄 0013_snapshot.json
+        📄 0014_snapshot.json
+        📄 0015_snapshot.json
+        📄 _journal.json
+      📄 relations.ts
+      📄 schema.ts
   📁 queries
     📄 leaderboard.ts
     📄 points.ts
@@ -235,7 +302,9 @@
     📄 users.ts
   📁 schema
     📄 categories.ts
+    📄 emailVerificationTokens.ts
     📄 index.ts
+    📄 passwordResetTokens.ts
     📄 points.ts
     📄 questions.ts
     📄 quiz.ts
@@ -244,6 +313,8 @@
   📄 seed-categories.ts
   📄 seed-demo-leaderboard.ts
   📄 seed-questions.ts
+  📄 seed-quiz-angular-advanced.ts
+  📄 seed-quiz-angular.ts
   📄 seed-quiz-css-advanced.ts
   📄 seed-quiz-css.ts
   📄 seed-quiz-from-json.ts
@@ -252,53 +323,30 @@
   📄 seed-quiz-html.ts
   📄 seed-quiz-javascript-advanced.ts
   📄 seed-quiz-javascript.ts
+  📄 seed-quiz-nodejs-advanced.ts
+  📄 seed-quiz-nodejs.ts
   📄 seed-quiz-react.ts
   📄 seed-quiz-types.ts
   📄 seed-quiz-typescript-advanced.ts
   📄 seed-quiz-typescript.ts
   📄 seed-quiz-verify.ts
+  📄 seed-quiz-vue.ts
   📄 seed-users.ts
 📁 docs
-  📄 env.md
+  📁 payments
+    📄 fondy.md
 📁 drizzle
-  📄 0000_rich_magus.sql
-  📄 0001_black_random.sql
-  📄 0002_yielding_purple_man.sql
-  📄 0003_handy_cammi.sql
-  📄 0004_tough_ultron.sql
-  📄 0005_furry_warstar.sql
-  📄 0006_minor_units_money.sql
-  📄 0007_add-payment-intent-id-to-orders.sql
-  📄 0008_dizzy_james_howlett.sql
-  📄 0009_p0_inventory_workflow_baseline.sql
-  📄 0009_unknown_nico_minoru.sql
-  📄 0010_parallel_princess_powerful.sql
-  📄 0011_add_orders_sweep_claim_index.sql
-  📄 0012_inventory_moves_product_fk_restrict.sql
-  📄 0013_add_internal_job_state.sql
+  📄 0000_dry_young_avengers.sql
   📁 meta
     📄 0000_snapshot.json
-    📄 0001_snapshot.json
-    📄 0002_snapshot.json
-    📄 0003_snapshot.json
-    📄 0004_snapshot.json
-    📄 0005_snapshot.json
-    📄 0006_snapshot.json
-    📄 0007_snapshot.json
-    📄 0008_snapshot.json
-    📄 0009_snapshot.json
-    📄 0010_snapshot.json
-    📄 0011_snapshot.json
-    📄 0012_snapshot.json
-    📄 0013_snapshot.json
     📄 _journal.json
-  📄 relations.ts
-  📄 schema.ts
 📄 drizzle.config.ts
 📄 eslint.config.mjs
 📁 hooks
   📄 use-mounted.ts
   📄 useAntiCheat.ts
+  📄 useQuizGuards.ts
+  📄 useQuizSession.ts
 📁 i18n
   📄 config.ts
   📄 request.ts
@@ -308,28 +356,65 @@
     📄 parseAdminProductForm.ts
   📁 auth
     📄 admin.ts
+    📄 email-verification.ts
     📄 internal-janitor.ts
     📄 oauth-state.ts
+    📄 password-reset.ts
   📄 auth.ts
   📄 cart.ts
   📄 cloudinary.ts
   📁 config
     📄 catalog.ts
+  📁 email
+    📄 sendPasswordResetEmail.ts
+    📄 sendVerificationEmail.ts
+    📁 templates
+      📄 base-layout.ts
+      📄 reset-password.ts
+      📄 verify-email.ts
+    📄 transporter.ts
   📁 env
     📄 auth.ts
     📄 cloudinary.ts
     📄 index.ts
     📄 stripe.ts
-  📄 guest-quiz.ts
   📄 logging.ts
   📄 logout.ts
   📄 navigation.ts
   📁 psp
     📄 stripe.ts
+  📁 quiz
+    📄 guest-quiz.ts
+    📄 quiz-crypto.ts
+    📄 quiz-session.ts
+    📄 quiz-storage-keys.ts
   📁 services
     📄 errors.ts
     📄 inventory.ts
+    📁 orders
+      📄 checkout.ts
+      📄 payment-intent.ts
+      📄 payment-state.ts
+      📄 refund.ts
+      📄 restock.ts
+      📄 summary.ts
+      📄 sweeps.ts
+      📄 _shared.ts
     📄 orders.ts
+    📁 products
+      📁 admin
+        📄 queries.ts
+      📁 cart
+        📄 rehydrate.ts
+      📄 mapping.ts
+      📁 mutations
+        📄 create.ts
+        📄 delete.ts
+        📄 toggle.ts
+        📄 update.ts
+      📄 prices.ts
+      📄 slug.ts
+      📄 types.ts
     📄 products.ts
   📁 shop
     📄 cart-item-key.ts
@@ -342,24 +427,34 @@
     📄 slug.ts
   📁 tests
     📄 admin-api-killswitch.test.ts
+    📄 admin-product-sale-contract.test.ts
     📄 checkout-concurrency-stock1.test.ts
     📄 checkout-currency-policy.test.ts
     📄 checkout-no-payments.test.ts
+    📄 checkout-set-payment-intent-reject-contract.test.ts
+    📄 checkout-stripe-error-contract.test.ts
     📄 currency.test.ts
     📄 format-money.test.ts
     📄 order-items-snapshot-immutable.test.ts
     📄 order-items-variants.test.ts
     📄 orders-access.test.ts
+    📄 payment-state-legacy-writers.test.ts
+    📄 payment-state-machine.helper.test.ts
+    📄 payment-status-tripwire.test.ts
     📄 prices.test.ts
+    📄 product-sale-invariant.test.ts
     📄 public-product-visibility.test.ts
     📄 restock-order-only-once.test.ts
+    📄 restock-release-failure-invariant.test.ts
     📄 restock-stale-claim-gate.test.ts
     📄 restock-stale-stripe-orphan.test.ts
     📄 restock-stuck-reserving-sweep.test.ts
     📄 restock-sweep-claim.test.ts
     📄 stripe-webhook-contract.test.ts
     📄 stripe-webhook-mismatch.test.ts
+    📄 stripe-webhook-paid-status-repair.test.ts
     📄 stripe-webhook-psp-fields.test.ts
+    📄 stripe-webhook-refund-full.test.ts
     📁 __mocks__
       📄 server-only.ts
   📁 types
@@ -402,9 +497,7 @@
 📄 README.md
 📄 save-structure.cjs
 📁 scripts
-  📄 guard-non-preview.ts
   📄 shop-janitor-restock-stale.mjs
-📁 tmp
 📄 tsconfig.json
 📄 tsconfig.tsbuildinfo
 📄 vitest.config.ts

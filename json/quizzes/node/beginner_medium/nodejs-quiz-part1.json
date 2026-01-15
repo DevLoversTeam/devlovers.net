@@ -1,0 +1,434 @@
+{
+  "questions": [
+    {
+      "id": "node-q01",
+      "order": 1,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Що таке Node.js?",
+        "exp": "Node.js — це середовище виконання JavaScript поза браузером, побудоване на движку V8. Використовується для серверної розробки, API, CLI-утиліт."
+      },
+      "en": {
+        "q": "What is Node.js?",
+        "exp": "Node.js is a JavaScript runtime environment outside the browser, built on the V8 engine. It is used for server-side development, APIs, and CLI tools."
+      },
+      "pl": {
+        "q": "Czym jest Node.js?",
+        "exp": "Node.js to środowisko uruchomieniowe JavaScript poza przeglądarką, zbudowane na silniku V8. Używane do programowania serwerowego, API i narzędzi CLI."
+      },
+      "answers": [
+        {
+          "uk": "Фреймворк для створення фронтенд-інтерфейсів",
+          "en": "A framework for building frontend interfaces",
+          "pl": "Framework do tworzenia interfejsów frontend",
+          "correct": false
+        },
+        {
+          "uk": "Середовище виконання JavaScript поза браузером, побудоване на V8",
+          "en": "A JavaScript runtime environment outside the browser, built on V8",
+          "pl": "Środowisko uruchomieniowe JavaScript poza przeglądarką, zbudowane na V8",
+          "correct": true
+        },
+        {
+          "uk": "База даних для зберігання JSON-документів",
+          "en": "A database for storing JSON documents",
+          "pl": "Baza danych do przechowywania dokumentów JSON",
+          "correct": false
+        },
+        {
+          "uk": "Компілятор JavaScript у машинний код",
+          "en": "A compiler of JavaScript to machine code",
+          "pl": "Kompilator JavaScript do kodu maszynowego",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-q02",
+      "order": 2,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Що таке event loop у Node.js?",
+        "exp": "Event loop — це механізм, який керує виконанням асинхронних операцій. Він перевіряє чергу подій і виконує колбеки, коли стек викликів порожній."
+      },
+      "en": {
+        "q": "What is the event loop in Node.js?",
+        "exp": "The event loop is a mechanism that manages asynchronous operations. It checks the event queue and executes callbacks when the call stack is empty."
+      },
+      "pl": {
+        "q": "Czym jest event loop w Node.js?",
+        "exp": "Event loop to mechanizm zarządzający operacjami asynchronicznymi. Sprawdza kolejkę zdarzeń i wykonuje callbacki, gdy stos wywołań jest pusty."
+      },
+      "answers": [
+        {
+          "uk": "Цикл for для обробки масивів",
+          "en": "A for loop for processing arrays",
+          "pl": "Pętla for do przetwarzania tablic",
+          "correct": false
+        },
+        {
+          "uk": "Механізм управління асинхронними операціями та виконання колбеків",
+          "en": "A mechanism for managing async operations and executing callbacks",
+          "pl": "Mechanizm zarządzania operacjami asynchronicznymi i wykonywania callbacków",
+          "correct": true
+        },
+        {
+          "uk": "Інструмент для відлагодження коду",
+          "en": "A tool for debugging code",
+          "pl": "Narzędzie do debugowania kodu",
+          "correct": false
+        },
+        {
+          "uk": "Модуль для роботи з файловою системою",
+          "en": "A module for working with the file system",
+          "pl": "Moduł do pracy z systemem plików",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-q03",
+      "order": 3,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Що означає неблокуюче (non-blocking) виконання у Node.js?",
+        "exp": "Неблокуюче означає, що Node.js не чекає завершення I/O операцій, а продовжує виконання коду, обробляючи результати через колбеки або проміси."
+      },
+      "en": {
+        "q": "What does non-blocking execution mean in Node.js?",
+        "exp": "Non-blocking means Node.js doesn't wait for I/O operations to complete but continues executing code, handling results through callbacks or promises."
+      },
+      "pl": {
+        "q": "Co oznacza nieblokujące (non-blocking) wykonanie w Node.js?",
+        "exp": "Nieblokujące oznacza, że Node.js nie czeka na zakończenie operacji I/O, lecz kontynuuje wykonywanie kodu, obsługując wyniki przez callbacki lub promise."
+      },
+      "answers": [
+        {
+          "uk": "Node.js виконує код тільки послідовно, один за одним",
+          "en": "Node.js executes code only sequentially, one after another",
+          "pl": "Node.js wykonuje kod tylko sekwencyjnie, jeden po drugim",
+          "correct": false
+        },
+        {
+          "uk": "Код не чекає завершення I/O операцій і продовжує виконання",
+          "en": "Code doesn't wait for I/O operations and continues execution",
+          "pl": "Kod nie czeka na zakończenie operacji I/O i kontynuuje wykonywanie",
+          "correct": true
+        },
+        {
+          "uk": "Усі операції виконуються в окремих потоках",
+          "en": "All operations are executed in separate threads",
+          "pl": "Wszystkie operacje są wykonywane w osobnych wątkach",
+          "correct": false
+        },
+        {
+          "uk": "Node.js блокує процесор під час мережевих запитів",
+          "en": "Node.js blocks the CPU during network requests",
+          "pl": "Node.js blokuje procesor podczas żądań sieciowych",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-q04",
+      "order": 4,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Для чого використовується npm?",
+        "exp": "npm (Node Package Manager) — це менеджер пакетів для встановлення, оновлення та управління бібліотеками і залежностями у Node.js проєктах."
+      },
+      "en": {
+        "q": "What is npm used for?",
+        "exp": "npm (Node Package Manager) is a package manager for installing, updating, and managing libraries and dependencies in Node.js projects."
+      },
+      "pl": {
+        "q": "Do czego służy npm?",
+        "exp": "npm (Node Package Manager) to menedżer pakietów do instalowania, aktualizowania i zarządzania bibliotekami i zależnościami w projektach Node.js."
+      },
+      "answers": [
+        {
+          "uk": "Для компіляції TypeScript у JavaScript",
+          "en": "For compiling TypeScript to JavaScript",
+          "pl": "Do kompilowania TypeScript do JavaScript",
+          "correct": false
+        },
+        {
+          "uk": "Для встановлення, оновлення та управління залежностями проєкту",
+          "en": "For installing, updating, and managing project dependencies",
+          "pl": "Do instalowania, aktualizowania i zarządzania zależnościami projektu",
+          "correct": true
+        },
+        {
+          "uk": "Для запуску тестів автоматично",
+          "en": "For running tests automatically",
+          "pl": "Do automatycznego uruchamiania testów",
+          "correct": false
+        },
+        {
+          "uk": "Для створення Docker-контейнерів",
+          "en": "For creating Docker containers",
+          "pl": "Do tworzenia kontenerów Docker",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-q05",
+      "order": 5,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Яке призначення файлу package.json?",
+        "exp": "package.json описує Node.js проєкт: назву, версію, залежності (dependencies, devDependencies), скрипти для запуску команд та метадані."
+      },
+      "en": {
+        "q": "What is the purpose of the package.json file?",
+        "exp": "package.json describes the Node.js project: name, version, dependencies (dependencies, devDependencies), scripts for running commands, and metadata."
+      },
+      "pl": {
+        "q": "Jakie jest przeznaczenie pliku package.json?",
+        "exp": "package.json opisuje projekt Node.js: nazwę, wersję, zależności (dependencies, devDependencies), skrypty do uruchamiania poleceń i metadane."
+      },
+      "answers": [
+        {
+          "uk": "Зберігає скомпільований JavaScript-код",
+          "en": "Stores compiled JavaScript code",
+          "pl": "Przechowuje skompilowany kod JavaScript",
+          "correct": false
+        },
+        {
+          "uk": "Містить конфігурацію бази даних",
+          "en": "Contains database configuration",
+          "pl": "Zawiera konfigurację bazy danych",
+          "correct": false
+        },
+        {
+          "uk": "Описує проєкт, залежності та скрипти для запуску команд",
+          "en": "Describes the project, dependencies, and scripts for running commands",
+          "pl": "Opisuje projekt, zależności i skrypty do uruchamiania poleceń",
+          "correct": true
+        },
+        {
+          "uk": "Зберігає змінні середовища для продакшну",
+          "en": "Stores environment variables for production",
+          "pl": "Przechowuje zmienne środowiskowe dla produkcji",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-q06",
+      "order": 6,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Яке призначення файлу package-lock.json?",
+        "exp": "package-lock.json фіксує точні версії всіх залежностей, гарантуючи однакові версії пакетів для всіх учасників проєкту."
+      },
+      "en": {
+        "q": "What is the purpose of the package-lock.json file?",
+        "exp": "package-lock.json locks exact versions of all dependencies, ensuring the same package versions for all project contributors."
+      },
+      "pl": {
+        "q": "Jakie jest przeznaczenie pliku package-lock.json?",
+        "exp": "package-lock.json blokuje dokładne wersje wszystkich zależności, zapewniając te same wersje pakietów dla wszystkich uczestników projektu."
+      },
+      "answers": [
+        {
+          "uk": "Блокує проєкт від змін іншими розробниками",
+          "en": "Locks the project from changes by other developers",
+          "pl": "Blokuje projekt przed zmianami innych programistów",
+          "correct": false
+        },
+        {
+          "uk": "Фіксує точні версії залежностей для консистентності у команді",
+          "en": "Locks exact dependency versions for team consistency",
+          "pl": "Blokuje dokładne wersje zależności dla spójności w zespole",
+          "correct": true
+        },
+        {
+          "uk": "Зберігає паролі та секрети проєкту",
+          "en": "Stores project passwords and secrets",
+          "pl": "Przechowuje hasła i sekrety projektu",
+          "correct": false
+        },
+        {
+          "uk": "Конфігурує налаштування Git для проєкту",
+          "en": "Configures Git settings for the project",
+          "pl": "Konfiguruje ustawienia Git dla projektu",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-q07",
+      "order": 7,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Чим Node.js відрізняється від традиційних вебсерверів (Apache, Tomcat)?",
+        "exp": "Node.js використовує однопотокову подієво-орієнтовану модель, тоді як традиційні сервери створюють окремий потік для кожного запиту."
+      },
+      "en": {
+        "q": "How does Node.js differ from traditional web servers (Apache, Tomcat)?",
+        "exp": "Node.js uses a single-threaded event-driven model, while traditional servers create a separate thread for each request."
+      },
+      "pl": {
+        "q": "Czym Node.js różni się od tradycyjnych serwerów webowych (Apache, Tomcat)?",
+        "exp": "Node.js używa jednowątkowego modelu sterowanego zdarzeniami, podczas gdy tradycyjne serwery tworzą osobny wątek dla każdego żądania."
+      },
+      "answers": [
+        {
+          "uk": "Node.js використовує однопотокову подієво-орієнтовану модель",
+          "en": "Node.js uses a single-threaded event-driven model",
+          "pl": "Node.js używa jednowątkowego modelu sterowanego zdarzeniami",
+          "correct": true
+        },
+        {
+          "uk": "Node.js не підтримує HTTP-протокол",
+          "en": "Node.js doesn't support the HTTP protocol",
+          "pl": "Node.js nie obsługuje protokołu HTTP",
+          "correct": false
+        },
+        {
+          "uk": "Node.js працює тільки на Windows",
+          "en": "Node.js works only on Windows",
+          "pl": "Node.js działa tylko na Windows",
+          "correct": false
+        },
+        {
+          "uk": "Node.js не підтримує роботу з базами даних",
+          "en": "Node.js doesn't support database operations",
+          "pl": "Node.js nie obsługuje operacji na bazach danych",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-q08",
+      "order": 8,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Який інструмент найкраще підходить для керування кількома версіями Node.js на одній машині?",
+        "exp": "nvm (Node Version Manager) дозволяє встановлювати та перемикатися між різними версіями Node.js без конфліктів."
+      },
+      "en": {
+        "q": "Which tool is best for managing multiple Node.js versions on one machine?",
+        "exp": "nvm (Node Version Manager) allows installing and switching between different Node.js versions without conflicts."
+      },
+      "pl": {
+        "q": "Które narzędzie najlepiej nadaje się do zarządzania wieloma wersjami Node.js na jednej maszynie?",
+        "exp": "nvm (Node Version Manager) pozwala instalować i przełączać się między różnymi wersjami Node.js bez konfliktów."
+      },
+      "answers": [
+        {
+          "uk": "Docker",
+          "en": "Docker",
+          "pl": "Docker",
+          "correct": false
+        },
+        {
+          "uk": "nvm (Node Version Manager)",
+          "en": "nvm (Node Version Manager)",
+          "pl": "nvm (Node Version Manager)",
+          "correct": true
+        },
+        {
+          "uk": "npm",
+          "en": "npm",
+          "pl": "npm",
+          "correct": false
+        },
+        {
+          "uk": "Git",
+          "en": "Git",
+          "pl": "Git",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-q09",
+      "order": 9,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Яка роль libuv у Node.js?",
+        "exp": "libuv — це бібліотека, яка забезпечує асинхронний I/O та пул потоків для виконання важких операцій без блокування основного потоку."
+      },
+      "en": {
+        "q": "What role does libuv play in Node.js?",
+        "exp": "libuv is a library that provides asynchronous I/O and a thread pool for executing heavy operations without blocking the main thread."
+      },
+      "pl": {
+        "q": "Jaką rolę pełni libuv w Node.js?",
+        "exp": "libuv to biblioteka zapewniająca asynchroniczne I/O i pulę wątków do wykonywania ciężkich operacji bez blokowania głównego wątku."
+      },
+      "answers": [
+        {
+          "uk": "Компілює JavaScript у машинний код",
+          "en": "Compiles JavaScript to machine code",
+          "pl": "Kompiluje JavaScript do kodu maszynowego",
+          "correct": false
+        },
+        {
+          "uk": "Забезпечує асинхронний I/O та пул потоків для важких операцій",
+          "en": "Provides async I/O and thread pool for heavy operations",
+          "pl": "Zapewnia asynchroniczne I/O i pulę wątków dla ciężkich operacji",
+          "correct": true
+        },
+        {
+          "uk": "Керує залежностями проєкту",
+          "en": "Manages project dependencies",
+          "pl": "Zarządza zależnościami projektu",
+          "correct": false
+        },
+        {
+          "uk": "Відповідає за рендеринг HTML-сторінок",
+          "en": "Responsible for rendering HTML pages",
+          "pl": "Odpowiada za renderowanie stron HTML",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-q10",
+      "order": 10,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке event-driven програмування у Node.js?",
+        "exp": "Event-driven програмування означає, що застосунок реагує на події (I/O, мережеві запити, таймери) через колбеки, проміси або async/await."
+      },
+      "en": {
+        "q": "What is event-driven programming in Node.js?",
+        "exp": "Event-driven programming means the application reacts to events (I/O, network requests, timers) through callbacks, promises, or async/await."
+      },
+      "pl": {
+        "q": "Czym jest programowanie sterowane zdarzeniami w Node.js?",
+        "exp": "Programowanie sterowane zdarzeniami oznacza, że aplikacja reaguje na zdarzenia (I/O, żądania sieciowe, timery) przez callbacki, promise lub async/await."
+      },
+      "answers": [
+        {
+          "uk": "Програмування, де весь код виконується синхронно",
+          "en": "Programming where all code executes synchronously",
+          "pl": "Programowanie, gdzie cały kod wykonuje się synchronicznie",
+          "correct": false
+        },
+        {
+          "uk": "Модель, де застосунок реагує на події через колбеки або проміси",
+          "en": "Model where the app reacts to events through callbacks or promises",
+          "pl": "Model, w którym aplikacja reaguje na zdarzenia przez callbacki lub promise",
+          "correct": true
+        },
+        {
+          "uk": "Підхід, де кожна функція створює новий потік",
+          "en": "Approach where each function creates a new thread",
+          "pl": "Podejście, gdzie każda funkcja tworzy nowy wątek",
+          "correct": false
+        },
+        {
+          "uk": "Спосіб організації CSS-стилів",
+          "en": "A way of organizing CSS styles",
+          "pl": "Sposób organizacji stylów CSS",
+          "correct": false
+        }
+      ]
+    }
+  ]
+}

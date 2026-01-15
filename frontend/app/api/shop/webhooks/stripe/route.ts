@@ -3,10 +3,105 @@ import Stripe from 'stripe';
 import { NextRequest, NextResponse } from 'next/server';
 import { and, eq, ne, or } from 'drizzle-orm';
 import { db } from '@/db';
-import { verifyWebhookSignature } from '@/lib/psp/stripe';
+import { verifyWebhookSignature, retrieveCharge } from '@/lib/psp/stripe';
 import { orders, stripeEvents } from '@/db/schema';
 import { restockOrder } from '@/lib/services/orders';
-import { logError } from '@/lib/logging';
+import { guardedPaymentStatusUpdate } from '@/lib/services/orders/payment-state';
+import { logError, logInfo, logWarn } from '@/lib/logging';
+
+type RefundMetaRecord = {
+  refundId: string;
+  idempotencyKey: string;
+  amountMinor: number;
+  currency: string;
+  createdAt: string;
+  createdBy: string;
+  status?: string | null;
+};
+
+function normalizeRefundsFromMeta(
+  meta: unknown,
+  fallback: { currency: string; createdAt: string }
+): RefundMetaRecord[] {
+  const m = (meta ?? {}) as any;
+
+  if (Array.isArray(m.refunds)) return m.refunds as RefundMetaRecord[];
+
+  const legacy = m.refund;
+  if (legacy?.id) {
+    return [
+      {
+        refundId: String(legacy.id),
+        idempotencyKey: 'legacy:webhook',
+        amountMinor: Number(legacy.amount ?? 0),
+        currency: fallback.currency,
+        createdAt: fallback.createdAt,
+        createdBy: 'webhook',
+        status: legacy.status ?? null,
+      },
+    ];
+  }
+
+  return [];
+}
+
+function upsertRefundIntoMeta(params: {
+  prevMeta: unknown;
+  refund: { id: string; amount?: number | null; status?: string | null } | null;
+  eventId: string;
+  currency: string;
+  createdAtIso: string;
+}): any {
+  const { prevMeta, refund, eventId, currency, createdAtIso } = params;
+
+  const base = ((prevMeta ?? {}) as any) ?? {};
+
+  // якщо refund в payload нема — просто повертаємо base (але НЕ затираємо refunds)
+  if (!refund?.id) return base;
+
+  const refunds = normalizeRefundsFromMeta(base, {
+    currency,
+    createdAt: createdAtIso,
+  });
+
+  const rec: RefundMetaRecord = {
+    refundId: refund.id,
+    idempotencyKey: `webhook:${eventId}`.slice(0, 128),
+    amountMinor: Number(refund.amount ?? 0),
+    currency,
+    createdAt: createdAtIso,
+    createdBy: 'webhook',
+    status: refund.status ?? null,
+  };
+
+  const exists = refunds.some(
+    r => r.refundId === rec.refundId || r.idempotencyKey === rec.idempotencyKey
+  );
+
+  return {
+    ...base,
+    refunds: exists ? refunds : [...refunds, rec],
+    refundInitiatedAt: base.refundInitiatedAt ?? createdAtIso,
+  };
+}
+
+function warnRefundFullnessUndetermined(payload: {
+  eventId: string;
+  eventType: string;
+  chargeId: string | null;
+  chargeAmount: number | null;
+  cumulativeRefunded: number | null;
+  hasRefundObject: boolean;
+  refundsListLength: number | null;
+  hasAmountRefundedField: boolean;
+  reason: string;
+  orderId?: string;
+  paymentIntentId?: string | null;
+  refundId?: string | null;
+  refundAmount?: number | null;
+}) {
+  logWarn('stripe_webhook_refund_fullness_undetermined', payload);
+}
 
 function logWebhookEvent(payload: {
   orderId?: string;
@@ -16,7 +111,7 @@ function logWebhookEvent(payload: {
 }) {
   const { orderId, paymentIntentId, paymentStatus, eventType } = payload;
 
-  console.log('stripe_webhook', {
+  logInfo('stripe_webhook', {
     provider: 'stripe',
     orderId,
     paymentIntentId,
@@ -110,6 +205,63 @@ function buildPspMetadata(params: {
       : undefined,
     ...(params.extra ?? {}),
   };
+}
+
+function stripUndefined(obj: Record<string, unknown>) {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (v !== undefined) out[k] = v;
+  }
+  return out;
+}
+
+function mergePspMetadata(params: {
+  prevMeta: unknown;
+  delta: Record<string, unknown>;
+  eventId: string;
+  currency: string;
+  createdAtIso: string;
+}) {
+  const cleanedDelta = stripUndefined(params.delta);
+
+  const refundForUpsert = (cleanedDelta as any)?.refund?.id
+    ? {
+        id: String((cleanedDelta as any).refund.id),
+        amount:
+          typeof (cleanedDelta as any).refund.amount === 'number'
+            ? (cleanedDelta as any).refund.amount
+            : null,
+        status:
+          typeof (cleanedDelta as any).refund.status === 'string'
+            ? (cleanedDelta as any).refund.status
+            : null,
+      }
+    : null;
+
+  const metaWithRefunds = upsertRefundIntoMeta({
+    prevMeta: params.prevMeta,
+    refund: refundForUpsert,
+    eventId: params.eventId,
+    currency: params.currency,
+    createdAtIso: params.createdAtIso,
+  });
+
+  // IMPORTANT: merge, not overwrite (preserves refunds[])
+  return {
+    ...metaWithRefunds,
+    ...cleanedDelta,
+  };
+}
+
+function shouldRestockFromWebhook(order: {
+  stockRestored: boolean | null;
+  inventoryStatus: string | null;
+}) {
+  // Webhook-level gate: avoid unnecessary calls when we already restored stock
+  // or inventory has already been released.
+  if (order.stockRestored === true) return false;
+  if (order.inventoryStatus === 'released') return false;
+  return true;
 }
 
 export async function POST(request: NextRequest) {
@@ -233,7 +385,7 @@ export async function POST(request: NextRequest) {
         .where(eq(stripeEvents.eventId, event.id));
       return NextResponse.json({ received: true }, { status: 200 });
     };
-    // 1) Записуємо event ідемпотентно (без транзакцій)
+    // 1) Insert event idempotently (no transactions)
     const inserted = await db
       .insert(stripeEvents)
       .values({
@@ -256,7 +408,7 @@ export async function POST(request: NextRequest) {
         .limit(1);
 
       if (existing?.processedAt) {
-        console.log('stripe_webhook_duplicate_event', {
+        logInfo('stripe_webhook_duplicate_event', {
           eventId: event.id,
           eventType,
         });
@@ -280,7 +432,7 @@ export async function POST(request: NextRequest) {
       if (candidates.length === 1) {
         resolvedOrderId = candidates[0].id;
       } else {
-        console.log('stripe_webhook_missing_order_id', {
+        logWarn('stripe_webhook_missing_order_id', {
           paymentIntentId,
           eventType,
           reason:
@@ -301,7 +453,7 @@ export async function POST(request: NextRequest) {
         .where(eq(stripeEvents.eventId, event.id));
     }
 
-    // 3) Завантажуємо order
+    // 3) Load order
     const [order] = await db
       .select({
         id: orders.id,
@@ -310,6 +462,9 @@ export async function POST(request: NextRequest) {
         currency: orders.currency,
         paymentStatus: orders.paymentStatus,
         status: orders.status,
+        stockRestored: orders.stockRestored,
+        inventoryStatus: orders.inventoryStatus,
+        pspMetadata: orders.pspMetadata,
       })
       .from(orders)
       .where(eq(orders.id, resolvedOrderId))
@@ -321,7 +476,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (order.paymentIntentId && order.paymentIntentId !== paymentIntentId) {
-      console.log('stripe_webhook_payment_intent_mismatch', {
+      logInfo('stripe_webhook_payment_intent_mismatch', {
         orderId: order.id,
         paymentIntentId,
         orderPaymentIntentId: order.paymentIntentId,
@@ -331,7 +486,7 @@ export async function POST(request: NextRequest) {
       return ack();
     }
 
-    // 4) Бізнес-обробка
+    // 4) Business logic per event type
     if (eventType === 'payment_intent.succeeded') {
       const stripeAmount =
         paymentIntent?.amount_received ?? paymentIntent?.amount ?? null;
@@ -351,41 +506,46 @@ export async function POST(request: NextRequest) {
             : 'currency_mismatch';
 
         const chargeForIntent = getLatestCharge(paymentIntent as any);
+        const createdAtIso = new Date().toISOString();
+        const deltaMeta = buildPspMetadata({
+          eventType,
+          paymentIntent,
+          charge: chargeForIntent,
+          extra: {
+            mismatch: {
+              reason: mismatchReason,
+              eventId: event.id,
+              expected: {
+                amountMinor: orderAmountMinor,
+                currency: order.currency,
+              },
+              actual: { amountMinor: stripeAmount, currency: stripeCurrency },
+              // keep old fields for backward-compat/debug grepping
+              stripeAmount,
+              orderAmountMinor,
+              stripeCurrency,
+              orderCurrency: order.currency,
+            },
+          },
+        });
+        const nextMeta = mergePspMetadata({
+          prevMeta: order.pspMetadata,
+          delta: deltaMeta as any,
+          eventId: event.id,
+          currency: order.currency,
+          createdAtIso,
+        });
 
         await db
           .update(orders)
           .set({
             updatedAt: new Date(),
             pspStatusReason: mismatchReason,
-            pspMetadata: buildPspMetadata({
-              eventType,
-              paymentIntent,
-              charge: chargeForIntent,
-              extra: {
-                mismatch: {
-                  reason: mismatchReason,
-                  eventId: event.id,
-                  expected: {
-                    amountMinor: orderAmountMinor,
-                    currency: order.currency,
-                  },
-                  actual: {
-                    amountMinor: stripeAmount,
-                    currency: stripeCurrency,
-                  },
-
-                  // keep old fields for backward-compat/debug grepping
-                  stripeAmount,
-                  orderAmountMinor,
-                  stripeCurrency,
-                  orderCurrency: order.currency,
-                },
-              },
-            }),
+            pspMetadata: nextMeta,
           })
           .where(eq(orders.id, order.id));
 
-        console.log('stripe_webhook_mismatch', {
+        logWarn('stripe_webhook_mismatch', {
           orderId: order.id,
           paymentIntentId,
           eventType,
@@ -402,79 +562,49 @@ export async function POST(request: NextRequest) {
       const chargeForIntent = getLatestCharge(paymentIntent as any);
       const latestChargeId = getLatestChargeId(paymentIntent);
 
-      const updated = await db
-        .update(orders)
-        .set({
-          status: 'PAID', // ✅ додати
-          paymentStatus: 'paid',
-          updatedAt: new Date(),
+      const now = new Date();
+      const createdAtIso = now.toISOString();
+      const deltaMeta = buildPspMetadata({
+        eventType,
+        paymentIntent,
+        charge: chargeForIntent ?? undefined,
+      });
+      const nextMeta = mergePspMetadata({
+        prevMeta: order.pspMetadata,
+        delta: deltaMeta as any,
+        eventId: event.id,
+        currency: order.currency,
+        createdAtIso,
+      });
+
+      await guardedPaymentStatusUpdate({
+        orderId: order.id,
+        paymentProvider: 'stripe',
+        to: 'paid',
+        source: 'stripe_webhook',
+        eventId: event.id,
+        note: eventType,
+        set: {
+          status: 'PAID',
+          updatedAt: now,
           pspChargeId: latestChargeId ?? chargeForIntent?.id ?? null,
           pspPaymentMethod: resolvePaymentMethod(
             paymentIntent,
             chargeForIntent
           ),
           pspStatusReason: paymentIntent?.status ?? 'succeeded',
-          pspMetadata: buildPspMetadata({
-            eventType,
-            paymentIntent,
-            charge: chargeForIntent ?? undefined,
-          }),
-        })
-        .where(
-          and(
-            eq(orders.id, order.id),
-            eq(orders.stockRestored, false),
-            ne(orders.inventoryStatus, 'released'),
-
-            // allow "repair": if already paid but status != PAID, still update
-            or(ne(orders.paymentStatus, 'paid'), ne(orders.status, 'PAID')),
-
-            // keep safety gates
-            ne(orders.paymentStatus, 'failed'),
-            ne(orders.paymentStatus, 'refunded')
-          )
-        )
-
-        .returning({ id: orders.id });
-
-      // if returning empty => we did NOT "win" the right to mark paid; do nothing
-      if (updated.length === 0) {
-        // REPAIR: paid already, but status is inconsistent
-        await db
-          .update(orders)
-          .set({
-            status: 'PAID',
-            updatedAt: new Date(),
-            pspChargeId: latestChargeId ?? chargeForIntent?.id ?? null,
-            pspPaymentMethod: resolvePaymentMethod(
-              paymentIntent,
-              chargeForIntent
-            ),
-            pspStatusReason: paymentIntent?.status ?? 'succeeded',
-            pspMetadata: buildPspMetadata({
-              eventType,
-              paymentIntent,
-              charge: chargeForIntent ?? undefined,
-            }),
-          })
-          .where(
-            and(
-              eq(orders.id, order.id),
-              eq(orders.paymentStatus, 'paid'),
-              ne(orders.status, 'PAID'),
-              eq(orders.stockRestored, false),
-              ne(orders.inventoryStatus, 'released')
-            )
-          );
-
-        logWebhookEvent({
-          orderId: order.id,
-          paymentIntentId,
-          paymentStatus,
-          eventType,
-        });
-        return ack();
-      }
+          pspMetadata: nextMeta,
+        },
+        extraWhere: and(
+          eq(orders.stockRestored, false),
+          ne(orders.inventoryStatus, 'released'),
+          // avoid churn when already consistent
+          or(ne(orders.paymentStatus, 'paid'), ne(orders.status, 'PAID')),
+          // explicit safety gates (redundant with matrix, but keep)
+          ne(orders.paymentStatus, 'failed'),
+          ne(orders.paymentStatus, 'refunded')
+        ),
+      });
 
       logWebhookEvent({
         orderId: order.id,
@@ -484,9 +614,17 @@ export async function POST(request: NextRequest) {
       });
       return ack();
     }
-
     if (eventType === 'payment_intent.payment_failed') {
       if (order.paymentStatus === 'paid') {
+        logWebhookEvent({
+          orderId: order.id,
+          paymentIntentId,
+          paymentStatus,
+          eventType,
+        });
+        return ack();
+      }
+      if (order.paymentStatus === 'refunded') {
         logWebhookEvent({
           orderId: order.id,
           paymentIntentId,
@@ -503,28 +641,40 @@ export async function POST(request: NextRequest) {
         paymentIntent?.cancellation_reason ??
         paymentIntent?.status ??
         'payment_failed';
-
-      const updated = await db
-        .update(orders)
-        .set({
-          paymentStatus: 'failed',
-          updatedAt: new Date(),
+      const now = new Date();
+      const createdAtIso = now.toISOString();
+      const deltaMeta = buildPspMetadata({
+        eventType,
+        paymentIntent,
+        charge: chargeForIntent,
+      });
+      const nextMeta = mergePspMetadata({
+        prevMeta: order.pspMetadata,
+        delta: deltaMeta as any,
+        eventId: event.id,
+        currency: order.currency,
+        createdAtIso,
+      });
+      await guardedPaymentStatusUpdate({
+        orderId: order.id,
+        paymentProvider: 'stripe',
+        to: 'failed',
+        source: 'stripe_webhook',
+        eventId: event.id,
+        note: eventType,
+        set: {
+          updatedAt: now,
           pspChargeId: chargeForIntent?.id ?? null,
           pspPaymentMethod: resolvePaymentMethod(
             paymentIntent,
             chargeForIntent
           ),
           pspStatusReason: failureReason,
-          pspMetadata: buildPspMetadata({
-            eventType,
-            paymentIntent,
-            charge: chargeForIntent,
-          }),
-        })
-        .where(and(eq(orders.id, order.id), ne(orders.paymentStatus, 'failed')))
-        .returning({ id: orders.id });
+          pspMetadata: nextMeta,
+        },
+      });
 
-      if (updated.length > 0) {
+      if (shouldRestockFromWebhook(order)) {
         await restockOrder(order.id, { reason: 'failed' });
       }
 
@@ -547,34 +697,54 @@ export async function POST(request: NextRequest) {
         });
         return ack();
       }
-
+      if (order.paymentStatus === 'refunded') {
+        logWebhookEvent({
+          orderId: order.id,
+          paymentIntentId,
+          paymentStatus,
+          eventType,
+        });
+        return ack();
+      }
       const chargeForIntent = getLatestCharge(paymentIntent as any);
       const cancellationReason =
         paymentIntent?.cancellation_reason ??
         paymentIntent?.status ??
         'canceled';
-
-      const updated = await db
-        .update(orders)
-        .set({
-          paymentStatus: 'failed',
-          updatedAt: new Date(),
+      const now = new Date();
+      const createdAtIso = now.toISOString();
+      const deltaMeta = buildPspMetadata({
+        eventType,
+        paymentIntent,
+        charge: chargeForIntent,
+      });
+      const nextMeta = mergePspMetadata({
+        prevMeta: order.pspMetadata,
+        delta: deltaMeta as any,
+        eventId: event.id,
+        currency: order.currency,
+        createdAtIso,
+      });
+      await guardedPaymentStatusUpdate({
+        orderId: order.id,
+        paymentProvider: 'stripe',
+        to: 'failed',
+        source: 'stripe_webhook',
+        eventId: event.id,
+        note: eventType,
+        set: {
+          updatedAt: now,
           pspChargeId: chargeForIntent?.id ?? null,
           pspPaymentMethod: resolvePaymentMethod(
             paymentIntent,
             chargeForIntent
           ),
           pspStatusReason: cancellationReason,
-          pspMetadata: buildPspMetadata({
-            eventType,
-            paymentIntent,
-            charge: chargeForIntent,
-          }),
-        })
-        .where(and(eq(orders.id, order.id), ne(orders.paymentStatus, 'failed')))
-        .returning({ id: orders.id });
+          pspMetadata: nextMeta,
+        },
+      });
 
-      if (updated.length > 0) {
+      if (shouldRestockFromWebhook(order)) {
         await restockOrder(order.id, { reason: 'canceled' });
       }
 
@@ -592,63 +762,292 @@ export async function POST(request: NextRequest) {
       eventType === 'charge.refund.updated'
     ) {
       const refund = refundObject ?? charge?.refunds?.data?.[0] ?? null;
+
       const refundChargeId =
-        refundObject &&
-        typeof (refundObject as any).charge === 'string' &&
-        (refundObject as any).charge.trim().length > 0
-          ? (refundObject as any).charge
+        refund && typeof refund.charge === 'string'
+          ? refund.charge.trim().length > 0
+            ? refund.charge
+            : null
+          : refund && typeof refund.charge === 'object' && refund.charge
+          ? typeof (refund.charge as any).id === 'string'
+            ? (refund.charge as any).id
+            : null
           : null;
 
       // MVP: only FULL refund.
-      // - charge.refunded: amount_refunded === amount
-      // - charge.refund.updated: refund.amount === order.totalAmountMinor (no partial support)
       let isFullRefund = false;
 
-      if (eventType === 'charge.refunded' && charge) {
+      if (eventType === 'charge.refunded') {
+        const effectiveCharge = charge;
+
         const amt =
-          typeof (charge as any).amount === 'number'
-            ? (charge as any).amount
+          typeof (effectiveCharge as any)?.amount === 'number'
+            ? (effectiveCharge as any).amount
             : null;
-        const refunded =
-          typeof (charge as any).amount_refunded === 'number'
-            ? (charge as any).amount_refunded
+
+        let cumulativeRefunded: number | null =
+          typeof (effectiveCharge as any)?.amount_refunded === 'number'
+            ? (effectiveCharge as any).amount_refunded
             : null;
-        isFullRefund = amt != null && refunded != null && refunded === amt;
+
+        if (cumulativeRefunded == null) {
+          const list = Array.isArray((effectiveCharge as any)?.refunds?.data)
+            ? ((effectiveCharge as any).refunds.data as any[])
+            : null;
+
+          const currentAmt =
+            typeof (refund as any)?.amount === 'number'
+              ? (refund as any).amount
+              : null;
+
+          if (!list || list.length === 0) {
+            warnRefundFullnessUndetermined({
+              eventId: event.id,
+              eventType,
+              chargeId:
+                ((effectiveCharge as any)?.id as string | undefined) ?? null,
+              chargeAmount: amt,
+              cumulativeRefunded: null,
+              hasRefundObject: refund != null,
+              refundsListLength: list ? list.length : null,
+              hasAmountRefundedField:
+                typeof (effectiveCharge as any)?.amount_refunded === 'number',
+              reason: 'missing_amount_refunded_and_empty_refunds_list',
+              orderId: order.id,
+              paymentIntentId,
+              refundId: refund?.id ?? null,
+              refundAmount: currentAmt,
+            });
+            throw new Error('REFUND_FULLNESS_UNDETERMINED');
+          }
+
+          let sawNumericAmount = false;
+          const sumFromList = list.reduce((sum, r) => {
+            const a = typeof r?.amount === 'number' ? r.amount : null;
+            if (a == null) return sum;
+            sawNumericAmount = true;
+            return sum + a;
+          }, 0);
+
+          if (!sawNumericAmount && currentAmt == null) {
+            warnRefundFullnessUndetermined({
+              eventId: event.id,
+              eventType,
+              chargeId:
+                ((effectiveCharge as any)?.id as string | undefined) ?? null,
+              chargeAmount: amt,
+              cumulativeRefunded: null,
+              hasRefundObject: refund != null,
+              refundsListLength: list.length,
+              hasAmountRefundedField:
+                typeof (effectiveCharge as any)?.amount_refunded === 'number',
+              reason:
+                'refunds_list_has_no_numeric_amounts_and_event_has_no_refund_amount',
+              orderId: order.id,
+              paymentIntentId,
+              refundId: refund?.id ?? null,
+              refundAmount: currentAmt,
+            });
+            throw new Error('REFUND_FULLNESS_UNDETERMINED');
+          }
+
+          const hasCurrent =
+            refund?.id && list.some(r => r?.id && r.id === refund.id);
+          cumulativeRefunded = sumFromList + (hasCurrent ? 0 : currentAmt ?? 0);
+        }
+
+        if (amt == null || cumulativeRefunded == null) {
+          const list = Array.isArray((effectiveCharge as any)?.refunds?.data)
+            ? ((effectiveCharge as any).refunds.data as any[])
+            : null;
+
+          warnRefundFullnessUndetermined({
+            eventId: event.id,
+            eventType,
+            chargeId:
+              ((effectiveCharge as any)?.id as string | undefined) ?? null,
+            chargeAmount: amt,
+            cumulativeRefunded,
+            hasRefundObject: refund != null,
+            refundsListLength: list ? list.length : null,
+            hasAmountRefundedField:
+              typeof (effectiveCharge as any)?.amount_refunded === 'number',
+            reason: 'missing_charge_amount_or_cumulative_refunded',
+            orderId: order.id,
+            paymentIntentId,
+            refundId: refund?.id ?? null,
+            refundAmount:
+              typeof (refund as any)?.amount === 'number'
+                ? (refund as any).amount
+                : null,
+          });
+          throw new Error('REFUND_FULLNESS_UNDETERMINED');
+        }
+
+        isFullRefund = cumulativeRefunded === amt;
       } else if (eventType === 'charge.refund.updated' && refund) {
-        const refundAmt =
-          typeof (refund as any).amount === 'number'
-            ? (refund as any).amount
+        let effectiveCharge: Stripe.Charge | undefined;
+
+        if (typeof refund.charge === 'object' && refund.charge) {
+          effectiveCharge = refund.charge as Stripe.Charge;
+        } else if (typeof refund.charge === 'string' && refund.charge.trim()) {
+          effectiveCharge = await retrieveCharge(refund.charge.trim());
+        }
+
+        const amt =
+          typeof (effectiveCharge as any)?.amount === 'number'
+            ? (effectiveCharge as any).amount
             : null;
-        isFullRefund =
-          refundAmt != null && refundAmt === order.totalAmountMinor;
+
+        let cumulativeRefunded: number | null =
+          typeof (effectiveCharge as any)?.amount_refunded === 'number'
+            ? (effectiveCharge as any).amount_refunded
+            : null;
+
+        if (cumulativeRefunded == null) {
+          const list = Array.isArray((effectiveCharge as any)?.refunds?.data)
+            ? ((effectiveCharge as any).refunds.data as any[])
+            : null;
+
+          const currentAmt =
+            typeof (refund as any)?.amount === 'number'
+              ? (refund as any).amount
+              : null;
+
+          if (!list || list.length === 0) {
+            warnRefundFullnessUndetermined({
+              eventId: event.id,
+              eventType,
+              chargeId:
+                ((effectiveCharge as any)?.id as string | undefined) ??
+                refundChargeId ??
+                null,
+              chargeAmount: amt,
+              cumulativeRefunded: null,
+              hasRefundObject: true,
+              refundsListLength: list ? list.length : null,
+              hasAmountRefundedField:
+                typeof (effectiveCharge as any)?.amount_refunded === 'number',
+              reason: 'missing_amount_refunded_and_empty_refunds_list',
+              orderId: order.id,
+              paymentIntentId,
+              refundId: refund.id,
+              refundAmount: currentAmt,
+            });
+            throw new Error('REFUND_FULLNESS_UNDETERMINED');
+          }
+
+          let sawNumericAmount = false;
+          const sumFromList = list.reduce((sum, r) => {
+            const a = typeof r?.amount === 'number' ? r.amount : null;
+            if (a == null) return sum;
+            sawNumericAmount = true;
+            return sum + a;
+          }, 0);
+
+          if (!sawNumericAmount && currentAmt == null) {
+            warnRefundFullnessUndetermined({
+              eventId: event.id,
+              eventType,
+              chargeId:
+                ((effectiveCharge as any)?.id as string | undefined) ??
+                refundChargeId ??
+                null,
+              chargeAmount: amt,
+              cumulativeRefunded: null,
+              hasRefundObject: true,
+              refundsListLength: list.length,
+              hasAmountRefundedField:
+                typeof (effectiveCharge as any)?.amount_refunded === 'number',
+              reason:
+                'refunds_list_has_no_numeric_amounts_and_event_has_no_refund_amount',
+              orderId: order.id,
+              paymentIntentId,
+              refundId: refund.id,
+              refundAmount: currentAmt,
+            });
+            throw new Error('REFUND_FULLNESS_UNDETERMINED');
+          }
+
+          const hasCurrent = list.some(r => r?.id && r.id === refund.id);
+          cumulativeRefunded = sumFromList + (hasCurrent ? 0 : currentAmt ?? 0);
+        }
+
+        if (amt == null || cumulativeRefunded == null) {
+          const list = Array.isArray((effectiveCharge as any)?.refunds?.data)
+            ? ((effectiveCharge as any).refunds.data as any[])
+            : null;
+
+          warnRefundFullnessUndetermined({
+            eventId: event.id,
+            eventType,
+            chargeId:
+              ((effectiveCharge as any)?.id as string | undefined) ??
+              refundChargeId ??
+              null,
+            chargeAmount: amt,
+            cumulativeRefunded,
+            hasRefundObject: true,
+            refundsListLength: list ? list.length : null,
+            hasAmountRefundedField:
+              typeof (effectiveCharge as any)?.amount_refunded === 'number',
+            reason: 'missing_charge_amount_or_cumulative_refunded',
+            orderId: order.id,
+            paymentIntentId,
+            refundId: refund.id,
+            refundAmount:
+              typeof (refund as any)?.amount === 'number'
+                ? (refund as any).amount
+                : null,
+          });
+          throw new Error('REFUND_FULLNESS_UNDETERMINED');
+        }
+
+        isFullRefund = cumulativeRefunded === amt;
+
+        if (effectiveCharge?.id) {
+          charge = effectiveCharge;
+        }
       }
 
+      const now = new Date();
+      const createdAtIso = now.toISOString();
+
       if (!isFullRefund) {
+        const deltaMeta = buildPspMetadata({
+          eventType,
+          paymentIntent,
+          charge: charge ?? undefined,
+          refund,
+          extra: {
+            refundGate: {
+              decision: 'ignored',
+              expectedAmountMinor: order.totalAmountMinor,
+              chargeAmount: (charge as any)?.amount ?? null,
+              chargeAmountRefunded: (charge as any)?.amount_refunded ?? null,
+              refundAmount: (refund as any)?.amount ?? null,
+              eventId: event.id,
+            },
+          },
+        });
+
+        const nextMeta = mergePspMetadata({
+          prevMeta: order.pspMetadata,
+          delta: deltaMeta as any,
+          eventId: event.id,
+          currency: order.currency,
+          createdAtIso,
+        });
+
         await db
           .update(orders)
           .set({
-            updatedAt: new Date(),
+            updatedAt: now,
+            pspMetadata: nextMeta,
             // do NOT change paymentStatus/status for partial refund
-            pspChargeId: charge?.id ?? null,
+            pspChargeId: charge?.id ?? refundChargeId ?? null,
             pspPaymentMethod: resolvePaymentMethod(paymentIntent, charge),
             pspStatusReason: 'PARTIAL_REFUND_IGNORED',
-            pspMetadata: buildPspMetadata({
-              eventType,
-              paymentIntent,
-              charge: charge ?? undefined,
-              refund,
-              extra: {
-                refundGate: {
-                  decision: 'ignored',
-                  expectedAmountMinor: order.totalAmountMinor,
-                  chargeAmount: (charge as any)?.amount ?? null,
-                  chargeAmountRefunded:
-                    (charge as any)?.amount_refunded ?? null,
-                  refundAmount: (refund as any)?.amount ?? null,
-                  eventId: event.id,
-                },
-              },
-            }),
           })
           .where(eq(orders.id, order.id));
 
@@ -661,27 +1060,45 @@ export async function POST(request: NextRequest) {
         return ack();
       }
 
-      await db
-        .update(orders)
-        .set({
-          updatedAt: new Date(),
-          paymentStatus: 'refunded',
+      const deltaMeta = buildPspMetadata({
+        eventType,
+        paymentIntent,
+        charge: charge ?? undefined,
+        refund,
+      });
+
+      const nextMeta = mergePspMetadata({
+        prevMeta: order.pspMetadata,
+        delta: deltaMeta as any,
+        eventId: event.id,
+        currency: order.currency,
+        createdAtIso,
+      });
+
+      const refundRes = await guardedPaymentStatusUpdate({
+        orderId: order.id,
+        paymentProvider: 'stripe',
+        to: 'refunded',
+        source: 'stripe_webhook',
+        eventId: event.id,
+        note: eventType,
+        set: {
+          updatedAt: now,
           status: 'CANCELED', // terminal in current enum
           pspChargeId: charge?.id ?? refundChargeId ?? null,
           pspPaymentMethod: resolvePaymentMethod(paymentIntent, charge),
           pspStatusReason: refund?.reason ?? refund?.status ?? 'refunded',
-          pspMetadata: buildPspMetadata({
-            eventType,
-            paymentIntent,
-            charge: charge ?? undefined,
-            refund,
-          }),
-        })
-        .where(
-          and(eq(orders.id, order.id), ne(orders.paymentStatus, 'refunded'))
-        );
+          pspMetadata: nextMeta,
+        },
+      });
 
-      await restockOrder(order.id, { reason: 'refunded' });
+      const canRestock =
+        refundRes.applied ||
+        (!refundRes.applied && refundRes.reason === 'ALREADY_IN_STATE');
+
+      if (canRestock && shouldRestockFromWebhook(order)) {
+        await restockOrder(order.id, { reason: 'refunded' });
+      }
 
       logWebhookEvent({
         orderId: order.id,
@@ -701,6 +1118,17 @@ export async function POST(request: NextRequest) {
     });
     return ack();
   } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message === 'REFUND_FULLNESS_UNDETERMINED'
+    ) {
+      // Do NOT ack() -> keep processedAt NULL so Stripe retries.
+      return NextResponse.json(
+        { code: 'REFUND_FULLNESS_UNDETERMINED' },
+        { status: 500 }
+      );
+    }
+
     logError('Stripe webhook processing failed', error);
     return NextResponse.json({ error: 'internal_error' }, { status: 500 });
   }

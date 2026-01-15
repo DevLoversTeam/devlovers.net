@@ -16,11 +16,19 @@ export function RefundButton({ orderId, disabled }: Props) {
   async function onRefund() {
     setError(null);
 
-    const res = await fetch(`/api/shop/admin/orders/${orderId}/refund`, {
-      method: 'POST',
-      credentials: 'same-origin',
-      headers: { 'Content-Type': 'application/json' },
-    });
+    let res: Response;
+    try {
+      res = await fetch(`/api/shop/admin/orders/${orderId}/refund`, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+      });
+    } catch (err) {
+      const msg =
+        err instanceof Error && err.message ? err.message : 'NETWORK_ERROR';
+      setError(msg);
+      return;
+    }
 
     let json: any = null;
     try {
@@ -46,14 +54,16 @@ export function RefundButton({ orderId, disabled }: Props) {
         onClick={onRefund}
         disabled={disabled || isPending}
         className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
-        title={disabled ? 'Refund is only available for paid Stripe orders' : undefined}
+        title={
+          disabled
+            ? 'Refund is only available for paid Stripe orders'
+            : undefined
+        }
       >
         {isPending ? 'Refunding…' : 'Refund'}
       </button>
 
-      {error ? (
-        <span className="text-xs text-destructive">{error}</span>
-      ) : null}
+      {error ? <span className="text-xs text-destructive">{error}</span> : null}
     </div>
   );
 }

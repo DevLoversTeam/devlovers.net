@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { getPendingQuizResult, clearPendingQuizResult } from '@/lib/guest-quiz';
+import { getPendingQuizResult, clearPendingQuizResult } from '@/lib/quiz/guest-quiz';
 
 interface Props {
   userId: string;
@@ -24,13 +24,13 @@ export function PendingResultHandler({ userId }: Props) {
           timeSpentSeconds: pending.timeSpentSeconds,
         }),
       })
-      .then(async (res) => {
-        if (res.ok) {
-          clearPendingQuizResult();
-        } else {
-          console.error("Guest-result API error:", res.status);
-        }
-      })
+        .then(async (res) => {
+          if (res.ok) {
+            clearPendingQuizResult();
+          } else {
+            console.error("Guest-result API error:", res.status);
+          }
+        })
         .catch(err => {
           console.error("Guest-result fetch error:", err);
         });

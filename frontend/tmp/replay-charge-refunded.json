@@ -1,1 +1,0 @@
-﻿{"data":{"object":{"id":"ch_3Sn5WRAzdq4b0hR02JIDJhDx","payment_intent":"pi_3Sn5WRAzdq4b0hR027sBGFiq","amount":5900,"refunds":{"data":[{"amount":5900,"status":"succeeded","id":"re_3Sn5WRAzdq4b0hR02gbWWFvP","reason":null}]},"metadata":{},"amount_refunded":5900,"status":"succeeded"}},"id":"\u003cPUT_EVT_ID_FROM_DB_HERE\u003e","type":"charge.refunded"}

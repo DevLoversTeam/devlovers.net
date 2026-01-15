@@ -52,7 +52,7 @@ export function StatsCard({ stats }: StatsCardProps) {
           <p className="text-slate-500 dark:text-slate-400 mb-8 max-w-xs mx-auto">
             Ready to level up? Challenge yourself with a new React quiz.
           </p>
-          <Link href="/quiz/react-fundamentals" className={primaryBtnStyles}>
+          <Link href="/quizzes" className={primaryBtnStyles}>
             <span className="relative z-10">Start a Quiz</span>
             <span
               className="absolute inset-0 rounded-full bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"
@@ -81,7 +81,7 @@ export function StatsCard({ stats }: StatsCardProps) {
           </div>
 
           <div className="col-span-2 mt-4">
-            <Link href="/quiz/react-fundamentals" className={primaryBtnStyles}>
+            <Link href="/q&a" className={primaryBtnStyles}>
               <span className="relative z-10">Continue Learning</span>
             </Link>
           </div>

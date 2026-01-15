@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 
 import { CATEGORIES, COLORS, PRODUCT_TYPES, SIZES } from '@/lib/config/catalog';
 import type { ProductAdminInput } from '@/lib/validation/shop';
+import { logError } from '@/lib/logging';
 
 const localSlugify = (input: string): string => {
   return input
@@ -248,7 +249,6 @@ export function ProductForm({
           setError(
             `${p.currency}: price is required when original price is set.`
           );
-          setIsSubmitting(false);
           return;
         }
       }
@@ -256,7 +256,6 @@ export function ProductForm({
       const usd = effectivePrices.find(p => p.currency === 'USD');
       if (!usd || !usd.price.length) {
         setError('USD price is required.');
-        setIsSubmitting(false);
         return;
       }
 
@@ -275,7 +274,6 @@ export function ProductForm({
         }));
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Invalid price value.');
-        setIsSubmitting(false);
         return;
       }
 
@@ -347,10 +345,11 @@ export function ProductForm({
       const destinationSlug = data.product?.slug ?? slugValue;
       router.push(`/shop/products/${destinationSlug}`);
     } catch (err) {
-      console.error(
-        `Failed to ${mode === 'create' ? 'create' : 'update'} product`,
-        err
-      );
+      logError('admin_product_form_failed', err, {
+        mode,
+        productId: productId ?? null,
+        slug: slugValue,
+      });
       setError(
         `Unexpected error while ${
           mode === 'create' ? 'creating' : 'updating'

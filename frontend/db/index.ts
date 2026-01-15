@@ -1,39 +1,54 @@
+import { Pool } from 'pg';
 import { neon } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-http';
+import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres';
+import { drizzle as drizzleNeon } from 'drizzle-orm/neon-http';
+import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
 import * as dotenv from 'dotenv';
 
 import * as schema from './schema';
 
 dotenv.config();
 
-function resolveDatabaseUrl(): string {
-  const context = process.env.CONTEXT || process.env.NETLIFY_CONTEXT;
-  const isPreview = context === 'deploy-preview' || context === 'branch-deploy';
+type AppDatabase = PgDatabase<PgQueryResultHKT, typeof schema>
 
-  if (isPreview) {
-    if (process.env.DATABASE_URL_PREVIEW) {
-      return process.env.DATABASE_URL_PREVIEW;
-    }
-    if (process.env.DATABASE_URL) {
-      console.warn(
-        '[db] DATABASE_URL_PREVIEW missing; falling back to DATABASE_URL for preview build.'
-      );
-      return process.env.DATABASE_URL;
-    }
-    throw new Error('DATABASE_URL_PREVIEW is missing for preview deploys');
+const APP_ENV = process.env.APP_ENV ?? 'local';
+
+let db: AppDatabase;
+
+if (APP_ENV === 'local') {
+  const url = process.env.DATABASE_URL_LOCAL;
+
+  if (!url) {
+    throw new Error(
+      '[db] APP_ENV=local requires DATABASE_URL_LOCAL to be set'
+    );
   }
 
-  if (process.env.NODE_ENV === 'development' && process.env.DATABASE_URL_DEV) {
-    return process.env.DATABASE_URL_DEV;
+  const pool = new Pool({
+    connectionString: url,
+  });
+
+  db = drizzlePg(pool, { schema });
+
+  if (process.env.NODE_ENV !== 'test') {
+    console.log('[db] using local PostgreSQL (pg)');
+  }
+} else {
+  const url = process.env.DATABASE_URL;
+
+  if (!url) {
+    throw new Error(
+      `[db] APP_ENV=${APP_ENV} requires DATABASE_URL to be set`
+    );
   }
 
-  if (!process.env.DATABASE_URL) {
-    throw new Error('DATABASE_URL is missing');
-  }
+  const sql = neon(url);
 
-  return process.env.DATABASE_URL;
+  db = drizzleNeon(sql, { schema });
+
+  if (process.env.NODE_ENV !== 'test') {
+    console.log('[db] using production database (neon http)');
+  }
 }
 
-const sql = neon(resolveDatabaseUrl());
-
-export const db = drizzle(sql, { schema });
+export { db };

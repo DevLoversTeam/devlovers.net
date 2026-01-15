@@ -1,0 +1,434 @@
+{
+  "questions": [
+    {
+      "id": "node-q11",
+      "order": 11,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Який модуль використовується для роботи з файловою системою у Node.js?",
+        "exp": "Модуль fs (File System) дозволяє читати, записувати, створювати та видаляти файли як синхронно, так і асинхронно."
+      },
+      "en": {
+        "q": "Which module is used for working with the file system in Node.js?",
+        "exp": "The fs (File System) module allows reading, writing, creating, and deleting files both synchronously and asynchronously."
+      },
+      "pl": {
+        "q": "Który moduł służy do pracy z systemem plików w Node.js?",
+        "exp": "Moduł fs (File System) pozwala na odczytywanie, zapisywanie, tworzenie i usuwanie plików zarówno synchronicznie, jak i asynchronicznie."
+      },
+      "answers": [
+        {
+          "uk": "path",
+          "en": "path",
+          "pl": "path",
+          "correct": false
+        },
+        {
+          "uk": "fs",
+          "en": "fs",
+          "pl": "fs",
+          "correct": true
+        },
+        {
+          "uk": "http",
+          "en": "http",
+          "pl": "http",
+          "correct": false
+        },
+        {
+          "uk": "os",
+          "en": "os",
+          "pl": "os",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-q12",
+      "order": 12,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Для чого використовується модуль path у Node.js?",
+        "exp": "Модуль path забезпечує кросплатформену роботу з файловими шляхами: об'єднання, отримання імені файлу, директорії, розширення."
+      },
+      "en": {
+        "q": "What is the path module used for in Node.js?",
+        "exp": "The path module provides cross-platform handling of file paths: joining, getting filename, directory, and extension."
+      },
+      "pl": {
+        "q": "Do czego służy moduł path w Node.js?",
+        "exp": "Moduł path zapewnia wieloplatformową obsługę ścieżek plików: łączenie, pobieranie nazwy pliku, katalogu i rozszerzenia."
+      },
+      "answers": [
+        {
+          "uk": "Для роботи з HTTP-запитами",
+          "en": "For handling HTTP requests",
+          "pl": "Do obsługi żądań HTTP",
+          "correct": false
+        },
+        {
+          "uk": "Для кросплатформної роботи з файловими шляхами",
+          "en": "For cross-platform handling of file paths",
+          "pl": "Do wieloplatformowej obsługi ścieżek plików",
+          "correct": true
+        },
+        {
+          "uk": "Для шифрування даних",
+          "en": "For encrypting data",
+          "pl": "Do szyfrowania danych",
+          "correct": false
+        },
+        {
+          "uk": "Для роботи з базою даних",
+          "en": "For working with databases",
+          "pl": "Do pracy z bazą danych",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-q13",
+      "order": 13,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке Buffer у Node.js?",
+        "exp": "Buffer — це клас для роботи з двійковими даними (raw data). Використовується для обробки файлів, мережевих потоків, зображень."
+      },
+      "en": {
+        "q": "What is Buffer in Node.js?",
+        "exp": "Buffer is a class for working with binary data (raw data). It is used for processing files, network streams, and images."
+      },
+      "pl": {
+        "q": "Czym jest Buffer w Node.js?",
+        "exp": "Buffer to klasa do pracy z danymi binarnymi (raw data). Używana do przetwarzania plików, strumieni sieciowych i obrazów."
+      },
+      "answers": [
+        {
+          "uk": "Тимчасове сховище для кешування HTTP-запитів",
+          "en": "Temporary storage for caching HTTP requests",
+          "pl": "Tymczasowe miejsce do cachowania żądań HTTP",
+          "correct": false
+        },
+        {
+          "uk": "Клас для роботи з двійковими даними поза V8 heap",
+          "en": "A class for working with binary data outside V8 heap",
+          "pl": "Klasa do pracy z danymi binarnymi poza V8 heap",
+          "correct": true
+        },
+        {
+          "uk": "Модуль для буферизації виводу в консоль",
+          "en": "A module for buffering console output",
+          "pl": "Moduł do buforowania wyjścia do konsoli",
+          "correct": false
+        },
+        {
+          "uk": "Функція для затримки виконання коду",
+          "en": "A function for delaying code execution",
+          "pl": "Funkcja do opóźniania wykonywania kodu",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-q14",
+      "order": 14,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Які типи стрімів існують у Node.js?",
+        "exp": "У Node.js є 4 типи стрімів: Readable (читання), Writable (запис), Duplex (читання і запис), Transform (трансформація даних)."
+      },
+      "en": {
+        "q": "What types of streams exist in Node.js?",
+        "exp": "Node.js has 4 stream types: Readable (reading), Writable (writing), Duplex (reading and writing), Transform (data transformation)."
+      },
+      "pl": {
+        "q": "Jakie typy strumieni istnieją w Node.js?",
+        "exp": "Node.js ma 4 typy strumieni: Readable (odczyt), Writable (zapis), Duplex (odczyt i zapis), Transform (transformacja danych)."
+      },
+      "answers": [
+        {
+          "uk": "Input, Output, Mixed",
+          "en": "Input, Output, Mixed",
+          "pl": "Input, Output, Mixed",
+          "correct": false
+        },
+        {
+          "uk": "Readable, Writable, Duplex, Transform",
+          "en": "Readable, Writable, Duplex, Transform",
+          "pl": "Readable, Writable, Duplex, Transform",
+          "correct": true
+        },
+        {
+          "uk": "Sync, Async, Hybrid",
+          "en": "Sync, Async, Hybrid",
+          "pl": "Sync, Async, Hybrid",
+          "correct": false
+        },
+        {
+          "uk": "File, Network, Memory",
+          "en": "File, Network, Memory",
+          "pl": "File, Network, Memory",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-q15",
+      "order": 15,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Яка перевага використання стрімів для роботи з великими файлами?",
+        "exp": "Стріми обробляють дані по частинах (chunks), не завантажуючи весь файл у пам'ять, що економить ресурси та прискорює обробку."
+      },
+      "en": {
+        "q": "What is the advantage of using streams for large files?",
+        "exp": "Streams process data in chunks without loading the entire file into memory, which saves resources and speeds up processing."
+      },
+      "pl": {
+        "q": "Jaka jest zaleta używania strumieni do dużych plików?",
+        "exp": "Strumienie przetwarzają dane w kawałkach bez ładowania całego pliku do pamięci, co oszczędza zasoby i przyspiesza przetwarzanie."
+      },
+      "answers": [
+        {
+          "uk": "Стріми автоматично стискають файли",
+          "en": "Streams automatically compress files",
+          "pl": "Strumienie automatycznie kompresują pliki",
+          "correct": false
+        },
+        {
+          "uk": "Обробка по частинах без завантаження всього файлу в пам'ять",
+          "en": "Processing in chunks without loading the entire file into memory",
+          "pl": "Przetwarzanie w kawałkach bez ładowania całego pliku do pamięci",
+          "correct": true
+        },
+        {
+          "uk": "Стріми працюють тільки з текстовими файлами",
+          "en": "Streams only work with text files",
+          "pl": "Strumienie działają tylko z plikami tekstowymi",
+          "correct": false
+        },
+        {
+          "uk": "Стріми шифрують дані автоматично",
+          "en": "Streams automatically encrypt data",
+          "pl": "Strumienie automatycznie szyfrują dane",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-q16",
+      "order": 16,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Що таке error-first callback у Node.js?",
+        "exp": "Error-first callback — це патерн, де перший аргумент колбека завжди призначений для помилки, а другий — для результату."
+      },
+      "en": {
+        "q": "What is an error-first callback in Node.js?",
+        "exp": "Error-first callback is a pattern where the first callback argument is always for the error, and the second is for the result."
+      },
+      "pl": {
+        "q": "Czym jest error-first callback w Node.js?",
+        "exp": "Error-first callback to wzorzec, gdzie pierwszy argument callbacka jest zawsze dla błędu, a drugi dla wyniku."
+      },
+      "answers": [
+        {
+          "uk": "Колбек, який викликається тільки при помилці",
+          "en": "A callback that is called only on error",
+          "pl": "Callback wywoływany tylko przy błędzie",
+          "correct": false
+        },
+        {
+          "uk": "Патерн, де перший аргумент — помилка, другий — результат",
+          "en": "Pattern where first argument is error, second is result",
+          "pl": "Wzorzec, gdzie pierwszy argument to błąd, drugi to wynik",
+          "correct": true
+        },
+        {
+          "uk": "Функція для логування помилок",
+          "en": "A function for logging errors",
+          "pl": "Funkcja do logowania błędów",
+          "correct": false
+        },
+        {
+          "uk": "Метод для перехоплення всіх помилок",
+          "en": "A method for catching all errors",
+          "pl": "Metoda do przechwytywania wszystkich błędów",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-q17",
+      "order": 17,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке callback hell і як його уникнути?",
+        "exp": "Callback hell — це вкладені колбеки, що ускладнюють код. Уникають через Promises, async/await або розбиття на функції."
+      },
+      "en": {
+        "q": "What is callback hell and how to avoid it?",
+        "exp": "Callback hell is nested callbacks that make code complex. Avoid it using Promises, async/await, or splitting into functions."
+      },
+      "pl": {
+        "q": "Czym jest callback hell i jak go uniknąć?",
+        "exp": "Callback hell to zagnieżdżone callbacki utrudniające kod. Unika się go przez Promise, async/await lub dzielenie na funkcje."
+      },
+      "answers": [
+        {
+          "uk": "Помилка сервера при великому навантаженні",
+          "en": "Server error under heavy load",
+          "pl": "Błąd serwera przy dużym obciążeniu",
+          "correct": false
+        },
+        {
+          "uk": "Вкладені колбеки, що ускладнюють код; уникають через Promises або async/await",
+          "en": "Nested callbacks making code complex; avoid with Promises or async/await",
+          "pl": "Zagnieżdżone callbacki utrudniające kod; unika się przez Promise lub async/await",
+          "correct": true
+        },
+        {
+          "uk": "Втрата даних при асинхронних операціях",
+          "en": "Data loss during async operations",
+          "pl": "Utrata danych podczas operacji asynchronicznych",
+          "correct": false
+        },
+        {
+          "uk": "Переповнення стеку викликів",
+          "en": "Call stack overflow",
+          "pl": "Przepełnienie stosu wywołań",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-q18",
+      "order": 18,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Які стани має Promise у JavaScript/Node.js?",
+        "exp": "Promise має три стани: pending (очікування), fulfilled (успішно виконано), rejected (помилка)."
+      },
+      "en": {
+        "q": "What states does a Promise have in JavaScript/Node.js?",
+        "exp": "A Promise has three states: pending (waiting), fulfilled (successfully completed), rejected (error)."
+      },
+      "pl": {
+        "q": "Jakie stany ma Promise w JavaScript/Node.js?",
+        "exp": "Promise ma trzy stany: pending (oczekiwanie), fulfilled (pomyślnie zakończony), rejected (błąd)."
+      },
+      "answers": [
+        {
+          "uk": "start, process, end",
+          "en": "start, process, end",
+          "pl": "start, process, end",
+          "correct": false
+        },
+        {
+          "uk": "pending, fulfilled, rejected",
+          "en": "pending, fulfilled, rejected",
+          "pl": "pending, fulfilled, rejected",
+          "correct": true
+        },
+        {
+          "uk": "waiting, running, completed",
+          "en": "waiting, running, completed",
+          "pl": "waiting, running, completed",
+          "correct": false
+        },
+        {
+          "uk": "open, closed, error",
+          "en": "open, closed, error",
+          "pl": "open, closed, error",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-q19",
+      "order": 19,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Яка перевага async/await над ланцюжками .then()?",
+        "exp": "async/await робить асинхронний код схожим на синхронний, що спрощує читання, написання та відлагодження."
+      },
+      "en": {
+        "q": "What is the advantage of async/await over .then() chains?",
+        "exp": "async/await makes async code look like synchronous code, which simplifies reading, writing, and debugging."
+      },
+      "pl": {
+        "q": "Jaka jest zaleta async/await nad łańcuchami .then()?",
+        "exp": "async/await sprawia, że kod asynchroniczny wygląda jak synchroniczny, co ułatwia czytanie, pisanie i debugowanie."
+      },
+      "answers": [
+        {
+          "uk": "async/await працює швидше",
+          "en": "async/await works faster",
+          "pl": "async/await działa szybciej",
+          "correct": false
+        },
+        {
+          "uk": "Код виглядає як синхронний, легше читати та відлагоджувати",
+          "en": "Code looks synchronous, easier to read and debug",
+          "pl": "Kod wygląda jak synchroniczny, łatwiejszy do czytania i debugowania",
+          "correct": true
+        },
+        {
+          "uk": "async/await не потребує обробки помилок",
+          "en": "async/await doesn't require error handling",
+          "pl": "async/await nie wymaga obsługi błędów",
+          "correct": false
+        },
+        {
+          "uk": "async/await автоматично кешує результати",
+          "en": "async/await automatically caches results",
+          "pl": "async/await automatycznie cachuje wyniki",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-q20",
+      "order": 20,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Чому синхронні методи fs (наприклад, readFileSync) не рекомендуються у продакшн-серверах?",
+        "exp": "Синхронні методи блокують event loop, що зупиняє обробку інших запитів і знижує продуктивність сервера."
+      },
+      "en": {
+        "q": "Why are synchronous fs methods (e.g., readFileSync) not recommended in production servers?",
+        "exp": "Synchronous methods block the event loop, which stops processing other requests and reduces server performance."
+      },
+      "pl": {
+        "q": "Dlaczego synchroniczne metody fs (np. readFileSync) nie są zalecane na serwerach produkcyjnych?",
+        "exp": "Metody synchroniczne blokują event loop, co zatrzymuje przetwarzanie innych żądań i obniża wydajność serwera."
+      },
+      "answers": [
+        {
+          "uk": "Вони споживають більше пам'яті",
+          "en": "They consume more memory",
+          "pl": "Zużywają więcej pamięci",
+          "correct": false
+        },
+        {
+          "uk": "Вони блокують event loop і зупиняють обробку інших запитів",
+          "en": "They block the event loop and stop processing other requests",
+          "pl": "Blokują event loop i zatrzymują przetwarzanie innych żądań",
+          "correct": true
+        },
+        {
+          "uk": "Вони не підтримують великі файли",
+          "en": "They don't support large files",
+          "pl": "Nie obsługują dużych plików",
+          "correct": false
+        },
+        {
+          "uk": "Вони застарілі та скоро будуть видалені",
+          "en": "They are deprecated and will be removed soon",
+          "pl": "Są przestarzałe i wkrótce zostaną usunięte",
+          "correct": false
+        }
+      ]
+    }
+  ]
+}

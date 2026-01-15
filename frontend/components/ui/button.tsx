@@ -3,7 +3,7 @@
 
   export interface ButtonProps
     extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-    variant?: 'primary' | 'secondary' | 'outline';
+    variant?: 'primary' | 'secondary' | 'outline'| 'accent';
     size?: 'sm' | 'md' | 'lg';
   }
 
@@ -17,6 +17,8 @@
             'disabled:opacity-50 disabled:pointer-events-none',
 
             // Variants
+            variant === 'accent' &&
+              'bg-accent text-accent-foreground hover:bg-accent/90',
             variant === 'primary' &&
               'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800',
             variant === 'secondary' &&

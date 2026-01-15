@@ -252,32 +252,33 @@ export default function BlogFilters({
             </span>
           </div>
 
-          {selectedAuthorData && (selectedAuthorData.image || authorBioText) && (
-            <div className="flex flex-col gap-6 md:flex-row md:items-start">
-              {selectedAuthorData.image && (
-                <div className="relative h-40 w-40 flex-shrink-0 overflow-hidden rounded-xl">
-                  <Image
-                    src={selectedAuthorData.image}
-                    alt={selectedAuthorData.name || t('author')}
-                    fill
-                    className="object-cover"
-                  />
+          {selectedAuthorData &&
+            (selectedAuthorData.image || authorBioText) && (
+              <div className="flex flex-col gap-6 md:flex-row md:items-start">
+                {selectedAuthorData.image && (
+                  <div className="relative h-40 w-40 flex-shrink-0 overflow-hidden rounded-xl">
+                    <Image
+                      src={selectedAuthorData.image}
+                      alt={selectedAuthorData.name || t('author')}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                )}
+                <div className="min-w-0">
+                  {selectedAuthorData.name && (
+                    <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
+                      {selectedAuthorData.name}
+                    </h2>
+                  )}
+                  {authorBioText && (
+                    <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+                      {authorBioText}
+                    </p>
+                  )}
                 </div>
-              )}
-              <div className="min-w-0">
-                {selectedAuthorData.name && (
-                  <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
-                    {selectedAuthorData.name}
-                  </h2>
-                )}
-                {authorBioText && (
-                  <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-gray-600 dark:text-gray-400">
-                    {authorBioText}
-                  </p>
-                )}
               </div>
-            </div>
-          )}
+            )}
 
           {selectedAuthorData?.name && (
             <div className="mt-10">
@@ -333,10 +334,7 @@ export default function BlogFilters({
       </div>
 
       <div className="mt-12">
-        <BlogGrid
-          posts={filteredPosts}
-          onAuthorSelect={toggleAuthor}
-        />
+        <BlogGrid posts={filteredPosts} onAuthorSelect={toggleAuthor} />
       </div>
 
       {!filteredPosts.length && (

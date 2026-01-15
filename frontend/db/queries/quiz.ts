@@ -45,6 +45,38 @@ export interface QuizQuestionWithAnswers extends QuizQuestion {
   answers: QuizAnswer[];
 }
 
+export interface QuizAnswerClient {
+  id: string;
+  displayOrder: number;
+  answerText: string | null;
+}
+
+export interface QuizQuestionClient {
+  id: string;
+  displayOrder: number;
+  difficulty: string | null;
+  questionText: string | null;
+  explanation: any;
+  answers: QuizAnswerClient[];
+}
+
+export function stripCorrectAnswers(
+  questions: QuizQuestionWithAnswers[]
+): QuizQuestionClient[] {
+  return questions.map(q => ({
+    id: q.id,
+    displayOrder: q.displayOrder,
+    difficulty: q.difficulty,
+    questionText: q.questionText,
+    explanation: q.explanation,
+    answers: q.answers.map(a => ({
+      id: a.id,
+      displayOrder: a.displayOrder,
+      answerText: a.answerText,
+    })),
+  }));
+}
+
 export interface LeaderboardEntry {
   rank: number;
   userId: string;
