@@ -8,9 +8,17 @@ import {
 } from '@/lib/shop/currency';
 import { fromDbMoney } from '@/lib/shop/money';
 import { ShopAdminTopbar } from '@/components/shop/admin/shop-admin-topbar';
+import { AdminPagination } from '@/components/shop/admin/admin-pagination';
 import { guardShopAdminPage } from '@/lib/auth/guard-shop-admin-page';
 
 export const dynamic = 'force-dynamic';
+
+const PAGE_SIZE = 50;
+
+function parsePage(input: string | undefined): number {
+  const n = Number.parseInt(input ?? '1', 10);
+  return Number.isFinite(n) && n > 0 ? n : 1;
+}
 
 function pickMinor(minor: unknown, legacyMajor: unknown): number | null {
   if (typeof minor === 'number') return minor;
@@ -29,12 +37,26 @@ function formatDate(value: Date | null | undefined) {
 
 export default async function AdminOrdersPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ page?: string }>;
 }) {
   await guardShopAdminPage();
   const { locale } = await params;
-  const { items } = await getAdminOrdersPage({ limit: 50, offset: 0 });
+  const sp = await searchParams;
+
+  const page = parsePage(sp.page);
+  const offset = (page - 1) * PAGE_SIZE;
+
+  // overfetch for hasNext without COUNT
+  const { items: all } = await getAdminOrdersPage({
+    limit: PAGE_SIZE + 1,
+    offset,
+  });
+
+  const hasNext = all.length > PAGE_SIZE;
+  const items = all.slice(0, PAGE_SIZE);
 
   return (
     <>
@@ -57,27 +79,13 @@ export default async function AdminOrdersPage({
           <table className="min-w-full divide-y divide-border text-sm">
             <thead className="bg-muted/50">
               <tr>
-                <th className="px-3 py-2 text-left font-semibold text-foreground">
-                  Created
-                </th>
-                <th className="px-3 py-2 text-left font-semibold text-foreground">
-                  Status
-                </th>
-                <th className="px-3 py-2 text-left font-semibold text-foreground">
-                  Total
-                </th>
-                <th className="px-3 py-2 text-left font-semibold text-foreground">
-                  Items
-                </th>
-                <th className="px-3 py-2 text-left font-semibold text-foreground">
-                  Provider
-                </th>
-                <th className="px-3 py-2 text-left font-semibold text-foreground">
-                  Order ID
-                </th>
-                <th className="px-3 py-2 text-left font-semibold text-foreground">
-                  Actions
-                </th>
+                <th className="px-3 py-2 text-left font-semibold text-foreground">Created</th>
+                <th className="px-3 py-2 text-left font-semibold text-foreground">Status</th>
+                <th className="px-3 py-2 text-left font-semibold text-foreground">Total</th>
+                <th className="px-3 py-2 text-left font-semibold text-foreground">Items</th>
+                <th className="px-3 py-2 text-left font-semibold text-foreground">Provider</th>
+                <th className="px-3 py-2 text-left font-semibold text-foreground">Order ID</th>
+                <th className="px-3 py-2 text-left font-semibold text-foreground">Actions</th>
               </tr>
             </thead>
 
@@ -97,26 +105,15 @@ export default async function AdminOrdersPage({
                   <td className="px-3 py-2 text-foreground">
                     {(() => {
                       const c = orderCurrency(order, locale);
-                      const totalMinor = pickMinor(
-                        order?.totalAmountMinor,
-                        order?.totalAmount
-                      );
-                      return totalMinor === null
-                        ? '-'
-                        : formatMoney(totalMinor, c, locale);
+                      const totalMinor = pickMinor(order?.totalAmountMinor, order?.totalAmount);
+                      return totalMinor === null ? '-' : formatMoney(totalMinor, c, locale);
                     })()}
                   </td>
 
-                  <td className="px-3 py-2 text-muted-foreground">
-                    {order.itemCount}
-                  </td>
-                  <td className="px-3 py-2 text-muted-foreground">
-                    {order.paymentProvider}
-                  </td>
+                  <td className="px-3 py-2 text-muted-foreground">{order.itemCount}</td>
+                  <td className="px-3 py-2 text-muted-foreground">{order.paymentProvider}</td>
 
-                  <td className="px-3 py-2 font-mono text-xs text-muted-foreground">
-                    {order.id}
-                  </td>
+                  <td className="px-3 py-2 font-mono text-xs text-muted-foreground">{order.id}</td>
 
                   <td className="px-3 py-2">
                     <Link
@@ -138,6 +135,12 @@ export default async function AdminOrdersPage({
               ) : null}
             </tbody>
           </table>
+
+          <AdminPagination
+            basePath="/shop/admin/orders"
+            page={page}
+            hasNext={hasNext}
+          />
         </div>
       </div>
     </>
