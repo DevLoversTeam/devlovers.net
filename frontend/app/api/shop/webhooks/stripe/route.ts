@@ -9,6 +9,82 @@ import { restockOrder } from '@/lib/services/orders';
 import { guardedPaymentStatusUpdate } from '@/lib/services/orders/payment-state';
 import { logError, logInfo, logWarn } from '@/lib/logging';
 
+type RefundMetaRecord = {
+  refundId: string;
+  idempotencyKey: string;
+  amountMinor: number;
+  currency: string;
+  createdAt: string;
+  createdBy: string;
+  status?: string | null;
+};
+
+function normalizeRefundsFromMeta(
+  meta: unknown,
+  fallback: { currency: string; createdAt: string }
+): RefundMetaRecord[] {
+  const m = (meta ?? {}) as any;
+
+  if (Array.isArray(m.refunds)) return m.refunds as RefundMetaRecord[];
+
+  const legacy = m.refund;
+  if (legacy?.id) {
+    return [
+      {
+        refundId: String(legacy.id),
+        idempotencyKey: 'legacy:webhook',
+        amountMinor: Number(legacy.amount ?? 0),
+        currency: fallback.currency,
+        createdAt: fallback.createdAt,
+        createdBy: 'webhook',
+        status: legacy.status ?? null,
+      },
+    ];
+  }
+
+  return [];
+}
+
+function upsertRefundIntoMeta(params: {
+  prevMeta: unknown;
+  refund: { id: string; amount?: number | null; status?: string | null } | null;
+  eventId: string;
+  currency: string;
+  createdAtIso: string;
+}): any {
+  const { prevMeta, refund, eventId, currency, createdAtIso } = params;
+
+  const base = ((prevMeta ?? {}) as any) ?? {};
+
+  // якщо refund в payload нема — просто повертаємо base (але НЕ затираємо refunds)
+  if (!refund?.id) return base;
+
+  const refunds = normalizeRefundsFromMeta(base, {
+    currency,
+    createdAt: createdAtIso,
+  });
+
+  const rec: RefundMetaRecord = {
+    refundId: refund.id,
+    idempotencyKey: `webhook:${eventId}`.slice(0, 128),
+    amountMinor: Number(refund.amount ?? 0),
+    currency,
+    createdAt: createdAtIso,
+    createdBy: 'webhook',
+    status: refund.status ?? null,
+  };
+
+  const exists = refunds.some(
+    r => r.refundId === rec.refundId || r.idempotencyKey === rec.idempotencyKey
+  );
+
+  return {
+    ...base,
+    refunds: exists ? refunds : [...refunds, rec],
+    refundInitiatedAt: base.refundInitiatedAt ?? createdAtIso,
+  };
+}
+
 function warnRefundFullnessUndetermined(payload: {
   eventId: string;
   eventType: string;
@@ -128,6 +204,52 @@ function buildPspMetadata(params: {
       ? { type: charge.payment_method_details.type }
       : undefined,
     ...(params.extra ?? {}),
+  };
+}
+
+function stripUndefined(obj: Record<string, unknown>) {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (v !== undefined) out[k] = v;
+  }
+  return out;
+}
+
+function mergePspMetadata(params: {
+  prevMeta: unknown;
+  delta: Record<string, unknown>;
+  eventId: string;
+  currency: string;
+  createdAtIso: string;
+}) {
+  const cleanedDelta = stripUndefined(params.delta);
+
+  const refundForUpsert = (cleanedDelta as any)?.refund?.id
+    ? {
+        id: String((cleanedDelta as any).refund.id),
+        amount:
+          typeof (cleanedDelta as any).refund.amount === 'number'
+            ? (cleanedDelta as any).refund.amount
+            : null,
+        status:
+          typeof (cleanedDelta as any).refund.status === 'string'
+            ? (cleanedDelta as any).refund.status
+            : null,
+      }
+    : null;
+
+  const metaWithRefunds = upsertRefundIntoMeta({
+    prevMeta: params.prevMeta,
+    refund: refundForUpsert,
+    eventId: params.eventId,
+    currency: params.currency,
+    createdAtIso: params.createdAtIso,
+  });
+
+  // IMPORTANT: merge, not overwrite (preserves refunds[])
+  return {
+    ...metaWithRefunds,
+    ...cleanedDelta,
   };
 }
 
@@ -342,6 +464,7 @@ export async function POST(request: NextRequest) {
         status: orders.status,
         stockRestored: orders.stockRestored,
         inventoryStatus: orders.inventoryStatus,
+        pspMetadata: orders.pspMetadata,
       })
       .from(orders)
       .where(eq(orders.id, resolvedOrderId))
@@ -383,37 +506,42 @@ export async function POST(request: NextRequest) {
             : 'currency_mismatch';
 
         const chargeForIntent = getLatestCharge(paymentIntent as any);
+        const createdAtIso = new Date().toISOString();
+        const deltaMeta = buildPspMetadata({
+          eventType,
+          paymentIntent,
+          charge: chargeForIntent,
+          extra: {
+            mismatch: {
+              reason: mismatchReason,
+              eventId: event.id,
+              expected: {
+                amountMinor: orderAmountMinor,
+                currency: order.currency,
+              },
+              actual: { amountMinor: stripeAmount, currency: stripeCurrency },
+              // keep old fields for backward-compat/debug grepping
+              stripeAmount,
+              orderAmountMinor,
+              stripeCurrency,
+              orderCurrency: order.currency,
+            },
+          },
+        });
+        const nextMeta = mergePspMetadata({
+          prevMeta: order.pspMetadata,
+          delta: deltaMeta as any,
+          eventId: event.id,
+          currency: order.currency,
+          createdAtIso,
+        });
 
         await db
           .update(orders)
           .set({
             updatedAt: new Date(),
             pspStatusReason: mismatchReason,
-            pspMetadata: buildPspMetadata({
-              eventType,
-              paymentIntent,
-              charge: chargeForIntent,
-              extra: {
-                mismatch: {
-                  reason: mismatchReason,
-                  eventId: event.id,
-                  expected: {
-                    amountMinor: orderAmountMinor,
-                    currency: order.currency,
-                  },
-                  actual: {
-                    amountMinor: stripeAmount,
-                    currency: stripeCurrency,
-                  },
-
-                  // keep old fields for backward-compat/debug grepping
-                  stripeAmount,
-                  orderAmountMinor,
-                  stripeCurrency,
-                  orderCurrency: order.currency,
-                },
-              },
-            }),
+            pspMetadata: nextMeta,
           })
           .where(eq(orders.id, order.id));
 
@@ -435,6 +563,19 @@ export async function POST(request: NextRequest) {
       const latestChargeId = getLatestChargeId(paymentIntent);
 
       const now = new Date();
+      const createdAtIso = now.toISOString();
+      const deltaMeta = buildPspMetadata({
+        eventType,
+        paymentIntent,
+        charge: chargeForIntent ?? undefined,
+      });
+      const nextMeta = mergePspMetadata({
+        prevMeta: order.pspMetadata,
+        delta: deltaMeta as any,
+        eventId: event.id,
+        currency: order.currency,
+        createdAtIso,
+      });
 
       await guardedPaymentStatusUpdate({
         orderId: order.id,
@@ -452,11 +593,7 @@ export async function POST(request: NextRequest) {
             chargeForIntent
           ),
           pspStatusReason: paymentIntent?.status ?? 'succeeded',
-          pspMetadata: buildPspMetadata({
-            eventType,
-            paymentIntent,
-            charge: chargeForIntent ?? undefined,
-          }),
+          pspMetadata: nextMeta,
         },
         extraWhere: and(
           eq(orders.stockRestored, false),
@@ -504,7 +641,20 @@ export async function POST(request: NextRequest) {
         paymentIntent?.cancellation_reason ??
         paymentIntent?.status ??
         'payment_failed';
-
+      const now = new Date();
+      const createdAtIso = now.toISOString();
+      const deltaMeta = buildPspMetadata({
+        eventType,
+        paymentIntent,
+        charge: chargeForIntent,
+      });
+      const nextMeta = mergePspMetadata({
+        prevMeta: order.pspMetadata,
+        delta: deltaMeta as any,
+        eventId: event.id,
+        currency: order.currency,
+        createdAtIso,
+      });
       await guardedPaymentStatusUpdate({
         orderId: order.id,
         paymentProvider: 'stripe',
@@ -513,18 +663,14 @@ export async function POST(request: NextRequest) {
         eventId: event.id,
         note: eventType,
         set: {
-          updatedAt: new Date(),
+          updatedAt: now,
           pspChargeId: chargeForIntent?.id ?? null,
           pspPaymentMethod: resolvePaymentMethod(
             paymentIntent,
             chargeForIntent
           ),
           pspStatusReason: failureReason,
-          pspMetadata: buildPspMetadata({
-            eventType,
-            paymentIntent,
-            charge: chargeForIntent,
-          }),
+          pspMetadata: nextMeta,
         },
       });
 
@@ -565,7 +711,20 @@ export async function POST(request: NextRequest) {
         paymentIntent?.cancellation_reason ??
         paymentIntent?.status ??
         'canceled';
-
+      const now = new Date();
+      const createdAtIso = now.toISOString();
+      const deltaMeta = buildPspMetadata({
+        eventType,
+        paymentIntent,
+        charge: chargeForIntent,
+      });
+      const nextMeta = mergePspMetadata({
+        prevMeta: order.pspMetadata,
+        delta: deltaMeta as any,
+        eventId: event.id,
+        currency: order.currency,
+        createdAtIso,
+      });
       await guardedPaymentStatusUpdate({
         orderId: order.id,
         paymentProvider: 'stripe',
@@ -574,18 +733,14 @@ export async function POST(request: NextRequest) {
         eventId: event.id,
         note: eventType,
         set: {
-          updatedAt: new Date(),
+          updatedAt: now,
           pspChargeId: chargeForIntent?.id ?? null,
           pspPaymentMethod: resolvePaymentMethod(
             paymentIntent,
             chargeForIntent
           ),
           pspStatusReason: cancellationReason,
-          pspMetadata: buildPspMetadata({
-            eventType,
-            paymentIntent,
-            charge: chargeForIntent,
-          }),
+          pspMetadata: nextMeta,
         },
       });
 
@@ -620,8 +775,6 @@ export async function POST(request: NextRequest) {
           : null;
 
       // MVP: only FULL refund.
-      // - charge.refunded: amount_refunded === amount (or fallback sum(refunds))
-      // - charge.refund.updated: compare cumulative refunded for the charge vs charge.amount
       let isFullRefund = false;
 
       if (eventType === 'charge.refunded') {
@@ -637,8 +790,6 @@ export async function POST(request: NextRequest) {
             ? (effectiveCharge as any).amount_refunded
             : null;
 
-        // Fail-safe fallback: if amount_refunded missing, try refunds list;
-        // if list absent/empty -> UNDETERMINED (500 + retry), NOT "0 refunded".
         if (cumulativeRefunded == null) {
           const list = Array.isArray((effectiveCharge as any)?.refunds?.data)
             ? ((effectiveCharge as any).refunds.data as any[])
@@ -677,6 +828,7 @@ export async function POST(request: NextRequest) {
             sawNumericAmount = true;
             return sum + a;
           }, 0);
+
           if (!sawNumericAmount && currentAmt == null) {
             warnRefundFullnessUndetermined({
               eventId: event.id,
@@ -701,13 +853,14 @@ export async function POST(request: NextRequest) {
 
           const hasCurrent =
             refund?.id && list.some(r => r?.id && r.id === refund.id);
-
           cumulativeRefunded = sumFromList + (hasCurrent ? 0 : currentAmt ?? 0);
         }
+
         if (amt == null || cumulativeRefunded == null) {
           const list = Array.isArray((effectiveCharge as any)?.refunds?.data)
             ? ((effectiveCharge as any).refunds.data as any[])
             : null;
+
           warnRefundFullnessUndetermined({
             eventId: event.id,
             eventType,
@@ -733,13 +886,11 @@ export async function POST(request: NextRequest) {
 
         isFullRefund = cumulativeRefunded === amt;
       } else if (eventType === 'charge.refund.updated' && refund) {
-        // Ensure we have the Charge to compute cumulative refunded correctly.
         let effectiveCharge: Stripe.Charge | undefined;
 
         if (typeof refund.charge === 'object' && refund.charge) {
           effectiveCharge = refund.charge as Stripe.Charge;
         } else if (typeof refund.charge === 'string' && refund.charge.trim()) {
-          // Fetch charge to get cumulative refunded / refunds list
           effectiveCharge = await retrieveCharge(refund.charge.trim());
         }
 
@@ -819,7 +970,6 @@ export async function POST(request: NextRequest) {
           }
 
           const hasCurrent = list.some(r => r?.id && r.id === refund.id);
-
           cumulativeRefunded = sumFromList + (hasCurrent ? 0 : currentAmt ?? 0);
         }
 
@@ -827,6 +977,7 @@ export async function POST(request: NextRequest) {
           const list = Array.isArray((effectiveCharge as any)?.refunds?.data)
             ? ((effectiveCharge as any).refunds.data as any[])
             : null;
+
           warnRefundFullnessUndetermined({
             eventId: event.id,
             eventType,
@@ -854,38 +1005,49 @@ export async function POST(request: NextRequest) {
 
         isFullRefund = cumulativeRefunded === amt;
 
-        // Prefer charge id from effectiveCharge for PSP fields
         if (effectiveCharge?.id) {
           charge = effectiveCharge;
         }
       }
 
+      const now = new Date();
+      const createdAtIso = now.toISOString();
+
       if (!isFullRefund) {
+        const deltaMeta = buildPspMetadata({
+          eventType,
+          paymentIntent,
+          charge: charge ?? undefined,
+          refund,
+          extra: {
+            refundGate: {
+              decision: 'ignored',
+              expectedAmountMinor: order.totalAmountMinor,
+              chargeAmount: (charge as any)?.amount ?? null,
+              chargeAmountRefunded: (charge as any)?.amount_refunded ?? null,
+              refundAmount: (refund as any)?.amount ?? null,
+              eventId: event.id,
+            },
+          },
+        });
+
+        const nextMeta = mergePspMetadata({
+          prevMeta: order.pspMetadata,
+          delta: deltaMeta as any,
+          eventId: event.id,
+          currency: order.currency,
+          createdAtIso,
+        });
+
         await db
           .update(orders)
           .set({
-            updatedAt: new Date(),
+            updatedAt: now,
+            pspMetadata: nextMeta,
             // do NOT change paymentStatus/status for partial refund
             pspChargeId: charge?.id ?? refundChargeId ?? null,
             pspPaymentMethod: resolvePaymentMethod(paymentIntent, charge),
             pspStatusReason: 'PARTIAL_REFUND_IGNORED',
-            pspMetadata: buildPspMetadata({
-              eventType,
-              paymentIntent,
-              charge: charge ?? undefined,
-              refund,
-              extra: {
-                refundGate: {
-                  decision: 'ignored',
-                  expectedAmountMinor: order.totalAmountMinor,
-                  chargeAmount: (charge as any)?.amount ?? null,
-                  chargeAmountRefunded:
-                    (charge as any)?.amount_refunded ?? null,
-                  refundAmount: (refund as any)?.amount ?? null,
-                  eventId: event.id,
-                },
-              },
-            }),
           })
           .where(eq(orders.id, order.id));
 
@@ -898,6 +1060,21 @@ export async function POST(request: NextRequest) {
         return ack();
       }
 
+      const deltaMeta = buildPspMetadata({
+        eventType,
+        paymentIntent,
+        charge: charge ?? undefined,
+        refund,
+      });
+
+      const nextMeta = mergePspMetadata({
+        prevMeta: order.pspMetadata,
+        delta: deltaMeta as any,
+        eventId: event.id,
+        currency: order.currency,
+        createdAtIso,
+      });
+
       const refundRes = await guardedPaymentStatusUpdate({
         orderId: order.id,
         paymentProvider: 'stripe',
@@ -906,17 +1083,12 @@ export async function POST(request: NextRequest) {
         eventId: event.id,
         note: eventType,
         set: {
-          updatedAt: new Date(),
+          updatedAt: now,
           status: 'CANCELED', // terminal in current enum
           pspChargeId: charge?.id ?? refundChargeId ?? null,
           pspPaymentMethod: resolvePaymentMethod(paymentIntent, charge),
           pspStatusReason: refund?.reason ?? refund?.status ?? 'refunded',
-          pspMetadata: buildPspMetadata({
-            eventType,
-            paymentIntent,
-            charge: charge ?? undefined,
-            refund,
-          }),
+          pspMetadata: nextMeta,
         },
       });
 

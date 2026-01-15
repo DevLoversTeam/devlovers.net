@@ -1,6 +1,6 @@
 'use client';
 
-import { LogIn, Search, User, Home } from 'lucide-react';
+import { LogIn, Search, User } from 'lucide-react';
 import { Link } from '@/i18n/routing';
 import { SITE_LINKS } from '@/lib/navigation';
 
@@ -51,9 +51,16 @@ export function UnifiedHeader({
           </Link>
         </div>
 
-        <nav className="hidden items-center justify-center md:flex">
+        <nav
+          className="hidden items-center justify-center md:flex"
+          aria-label="Primary"
+        >
           {isShop ? (
-            <NavLinks className="md:flex" showAdminLink={showAdminLink} />
+            <NavLinks
+              className="md:flex"
+              showAdminLink={showAdminLink}
+              includeHomeLink
+            />
           ) : (
             <div className="flex items-center gap-1">
               {SITE_LINKS.map(link => (
@@ -71,17 +78,6 @@ export function UnifiedHeader({
 
         <div className="flex items-center gap-1">
           <div className="hidden items-center gap-2 md:flex">
-            {isShop ? (
-              <Link
-                href="/"
-                aria-label="Back to main site"
-                className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-              >
-                <Home className="h-5 w-5" />
-              </Link>
-            ) : (
-              <div className="h-9 w-9 flex-shrink-0" aria-hidden="true" />
-            )}
             {isShop && enableSearch ? (
               <>
                 <button
