@@ -15,6 +15,7 @@
     "sanity"
   ],
   "dependencies": {
+    "@sanity/orderable-document-list": "^1.4.2",
     "@sanity/vision": "^4.20.3",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",

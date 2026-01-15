@@ -43,6 +43,7 @@
   },
   "blog": {
     "title": "Wszystkie Wpisy na Blogu",
+    "subtitle": "Poznaj najnowsze artykuły z Tech, News i Career Growth — trendy, idee i praktyczne wskazówki.",
     "metaTitle": "Blog | DevLovers",
     "metaDescription": "Odkryj najnowsze artykuły i spostrzeżenia",
     "searchPlaceholder": "Szukaj...",
@@ -53,7 +54,13 @@
     "noPostsForTags": "Nie znaleziono wpisów dla wybranych tagów",
     "visitResource": "Odwiedź zasób",
     "readArticle": "Czytaj artykuł",
-    "aboutAuthor": "O autorze"
+    "aboutAuthor": "O autorze",
+    "author": "Autor",
+    "removeAuthor": "Usuń autora",
+    "articlesBy": "Artykuły autora: {name}",
+    "articlesPublished": "Opublikowano artykułów: {count}",
+    "recommendedPosts": "Polecane wpisy",
+    "goBack": "Wróć"
   },
   "footer": {
     "builtWith": "Zbudowane z",

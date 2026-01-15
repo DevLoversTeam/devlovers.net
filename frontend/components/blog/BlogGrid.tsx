@@ -2,16 +2,14 @@
 
 import { useTranslations } from 'next-intl';
 import BlogCard from '@/components/blog/BlogCard';
-import type { Post } from '@/components/blog/BlogFilters';
+import type { Author, Post } from '@/components/blog/BlogFilters';
 
 export default function BlogGrid({
   posts,
-  selectedTags,
-  onTagToggle,
+  onAuthorSelect,
 }: {
   posts: Post[];
-  selectedTags: string[];
-  onTagToggle: (tag: string) => void;
+  onAuthorSelect: (author: Author) => void;
 }) {
   const t = useTranslations('blog');
 
@@ -25,8 +23,7 @@ export default function BlogGrid({
         <BlogCard
           key={post._id}
           post={post}
-          selectedTags={selectedTags}
-          onTagToggle={onTagToggle}
+          onAuthorSelect={onAuthorSelect}
         />
       ))}
     </div>

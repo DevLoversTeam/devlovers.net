@@ -43,6 +43,7 @@
   },
   "blog": {
     "title": "Усі статті блогу",
+    "subtitle": "Досліджуйте найсвіжіші статті про Tech, News та Career Growth із трендами, ідеями й практичними інсайтами.",
     "metaTitle": "Блог | DevLovers",
     "metaDescription": "Досліджуйте останні статті та корисні матеріали",
     "searchPlaceholder": "Пошук...",
@@ -53,7 +54,13 @@
     "noPostsForTags": "Немає статей за обраними тегами",
     "visitResource": "Відвідати ресурс",
     "readArticle": "Читати статтю",
-    "aboutAuthor": "Про автора"
+    "aboutAuthor": "Про автора",
+    "author": "Автор",
+    "removeAuthor": "Видалити автора",
+    "articlesBy": "Статті від {name}",
+    "articlesPublished": "Опубліковано статей: {count}",
+    "recommendedPosts": "Рекомендовані статті",
+    "goBack": "Назад"
   },
   "footer": {
     "builtWith": "Створено",
