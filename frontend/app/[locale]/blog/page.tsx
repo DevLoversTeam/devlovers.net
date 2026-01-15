@@ -30,11 +30,7 @@ export default async function BlogPage({
       *[_type == "post" && defined(slug.current)]
         | order(publishedAt desc) {
           _id,
-<<<<<<< HEAD
           "title": coalesce(title[$locale], title[lower($locale)], title.uk, title.en, title.pl, title),
-=======
-          "title": coalesce(title[$locale], title.en, title),
->>>>>>> develop
           slug,
           publishedAt,
           tags,
@@ -42,11 +38,7 @@ export default async function BlogPage({
 
           "categories": categories[]->title,
 
-<<<<<<< HEAD
           "body": coalesce(body[$locale], body[lower($locale)], body.uk, body.en, body.pl, body)[]{
-=======
-          "body": coalesce(body[$locale], body.en, body)[]{
->>>>>>> develop
             ...,
             children[]{
               text
@@ -54,19 +46,11 @@ export default async function BlogPage({
           },
           "mainImage": mainImage.asset->url,
         "author": author->{
-<<<<<<< HEAD
           "name": coalesce(name[$locale], name[lower($locale)], name.uk, name.en, name.pl, name),
           "company": coalesce(company[$locale], company[lower($locale)], company.uk, company.en, company.pl, company),
           "jobTitle": coalesce(jobTitle[$locale], jobTitle[lower($locale)], jobTitle.uk, jobTitle.en, jobTitle.pl, jobTitle),
           "city": coalesce(city[$locale], city[lower($locale)], city.uk, city.en, city.pl, city),
           "bio": coalesce(bio[$locale], bio[lower($locale)], bio.uk, bio.en, bio.pl, bio),
-=======
-          "name": coalesce(name[$locale], name.en, name),
-          "company": coalesce(company[$locale], company.en, company),
-          "jobTitle": coalesce(jobTitle[$locale], jobTitle.en, jobTitle),
-          "city": coalesce(city[$locale], city.en, city),
-          "bio": coalesce(bio[$locale], bio.en, bio),
->>>>>>> develop
           "image": image.asset->url,
           socialMedia[]{
             _key,
@@ -78,7 +62,6 @@ export default async function BlogPage({
     `,
     { locale }
   );
-<<<<<<< HEAD
   const categories = await client.fetch(
     groq`
       *[_type == "category"] | order(orderRank asc) {
@@ -88,8 +71,6 @@ export default async function BlogPage({
     `
   );
   const featuredPost = posts?.[0];
-=======
->>>>>>> develop
 
   return (
     <main className="max-w-6xl mx-auto px-6 py-12">

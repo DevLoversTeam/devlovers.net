@@ -43,14 +43,29 @@ function plainTextFromPortableText(value: any): string {
     .trim();
 }
 
+function seededShuffle<T>(items: T[], seed: number) {
+  const result = [...items];
+  let value = seed;
+  for (let i = result.length - 1; i > 0; i -= 1) {
+    value = (value * 1664525 + 1013904223) % 4294967296;
+    const j = value % (i + 1);
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
+function hashString(input: string) {
+  let hash = 0;
+  for (let i = 0; i < input.length; i += 1) {
+    hash = (hash * 31 + input.charCodeAt(i)) >>> 0;
+  }
+  return hash;
+}
+
 const query = groq`
   *[_type=="post" && slug.current==$slug][0]{
-<<<<<<< HEAD
     _id,
     "title": coalesce(title[$locale], title[lower($locale)], title.uk, title.en, title.pl, title),
-=======
-    "title": coalesce(title[$locale], title.en, title),
->>>>>>> develop
     publishedAt,
     "mainImage": mainImage.asset->url,
     "categories": categories[]->title,
@@ -58,28 +73,16 @@ const query = groq`
     resourceLink,
 
     "author": author->{
-<<<<<<< HEAD
       "name": coalesce(name[$locale], name[lower($locale)], name.uk, name.en, name.pl, name),
       "company": coalesce(company[$locale], company[lower($locale)], company.uk, company.en, company.pl, company),
       "jobTitle": coalesce(jobTitle[$locale], jobTitle[lower($locale)], jobTitle.uk, jobTitle.en, jobTitle.pl, jobTitle),
       "city": coalesce(city[$locale], city[lower($locale)], city.uk, city.en, city.pl, city),
       "bio": coalesce(bio[$locale], bio[lower($locale)], bio.uk, bio.en, bio.pl, bio),
-=======
-      "name": coalesce(name[$locale], name.en, name),
-      "company": coalesce(company[$locale], company.en, company),
-      "jobTitle": coalesce(jobTitle[$locale], jobTitle.en, jobTitle),
-      "city": coalesce(city[$locale], city.en, city),
-      "bio": coalesce(bio[$locale], bio.en, bio),
->>>>>>> develop
       "image": image.asset->url,
       socialMedia[]{ _key, platform, url }
     },
 
-<<<<<<< HEAD
     "body": coalesce(body[$locale], body[lower($locale)], body.uk, body.en, body.pl, body)[]{
-=======
-    "body": coalesce(body[$locale], body.en, body)[]{
->>>>>>> develop
       ...,
       _type == "image" => {
         ...,
@@ -117,16 +120,14 @@ export default async function PostDetails({
     slug: slugParam,
     locale,
   });
-<<<<<<< HEAD
   const recommendedAll: Post[] = await client.fetch(recommendedQuery, {
     slug: slugParam,
     locale,
   });
-  const recommendedPosts = recommendedAll
-    .sort(() => Math.random() - 0.5)
-    .slice(0, 3);
-=======
->>>>>>> develop
+  const recommendedPosts = seededShuffle(
+    recommendedAll,
+    hashString(slugParam)
+  ).slice(0, 3);
 
   if (!post?.title) return notFound();
 
@@ -187,18 +188,18 @@ export default async function PostDetails({
       )}
 
       <article className="prose prose-gray max-w-none">
-        {post.body?.map((block: any) => {
+        {post.body?.map((block: any, index: number) => {
           if (block?._type === 'block') {
             const text = (block.children || [])
               .map((c: any) => c.text || '')
               .join('');
-            return <p key={block._key || Math.random()}>{text}</p>;
+            return <p key={block._key || `block-${index}`}>{text}</p>;
           }
 
           if (block?._type === 'image' && block?.url) {
             return (
               <img
-                key={block._key || block.url}
+                key={block._key || `image-${index}`}
                 src={block.url}
                 alt={post.title || 'Post image'}
                 className="rounded-xl border border-gray-200 my-6"
@@ -268,45 +269,9 @@ export default async function PostDetails({
         </>
       )}
 
-<<<<<<< HEAD
       {post.resourceLink && null}
 
       {(authorBio || authorName || authorMeta) && null}
-=======
-      {(authorBio || authorName || authorMeta) && (
-        <section className="mt-12 p-6 rounded-2xl border border-gray-200 bg-white">
-          <h2 className="text-lg font-semibold">{t('aboutAuthor')}</h2>
-          <div className="mt-4 flex items-start gap-4">
-            {post.author?.image && (
-              <div className="relative w-14 h-14 shrink-0">
-                <Image
-                  src={post.author.image}
-                  alt={authorName || 'Author'}
-                  fill
-                  className="rounded-full object-cover border border-gray-200"
-                />
-              </div>
-            )}
-
-            <div className="min-w-0">
-              {authorName && (
-                <p className="text-sm font-semibold text-gray-900">
-                  {authorName}
-                </p>
-              )}
-              {authorMeta && (
-                <p className="mt-1 text-sm text-gray-600">{authorMeta}</p>
-              )}
-              {authorBio && (
-                <p className="mt-3 text-sm text-gray-700 whitespace-pre-line leading-relaxed">
-                  {authorBio}
-                </p>
-              )}
-            </div>
-          </div>
-        </section>
-      )}
->>>>>>> develop
     </main>
   );
 }
