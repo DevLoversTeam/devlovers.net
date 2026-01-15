@@ -13,6 +13,7 @@ import { OAuthButtons } from "@/components/auth/OAuthButtons";
 
 function isSafeRedirectUrl(url: string): boolean {
   if (!url.startsWith("/")) return false;
+  if (url.startsWith("//")) return false;
   if (url.includes("://")) return false;
   return true;
 }
@@ -21,16 +22,19 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
   const locale = useLocale();
 
-  // Normalize once → string only
   const returnToParam = searchParams.get("returnTo");
   const returnTo = returnToParam ?? "";
 
   const [loading, setLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [errorCode, setErrorCode] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] =
+    useState<string | null>(null);
+  const [errorCode, setErrorCode] =
+    useState<string | null>(null);
   const [email, setEmail] = useState("");
-  const [verificationSent, setVerificationSent] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+  const [verificationSent, setVerificationSent] =
+    useState(false);
+  const [showPassword, setShowPassword] =
+    useState(false);
 
   async function onSubmit(
     e: React.FormEvent<HTMLFormElement>
@@ -82,7 +86,8 @@ export default function LoginPage() {
               quizId: pendingResult.quizId,
               answers: pendingResult.answers,
               violations: pendingResult.violations,
-              timeSpentSeconds: pendingResult.timeSpentSeconds,
+              timeSpentSeconds:
+                pendingResult.timeSpentSeconds,
             }),
           });
 
@@ -113,11 +118,18 @@ export default function LoginPage() {
         }
       }
 
-      const redirectTarget = isSafeRedirectUrl(returnTo)
-        ? returnTo
-        : `/${locale}/dashboard`;
+      const redirectTarget =
+        returnTo && isSafeRedirectUrl(returnTo)
+          ? returnTo
+          : `/${locale}/dashboard`;
 
       window.location.href = redirectTarget;
+    } catch (err) {
+      console.error("Login request failed:", err);
+      setErrorMessage(
+        "Network error. Please check your connection and try again."
+      );
+      setErrorCode(null);
     } finally {
       setLoading(false);
     }
@@ -139,13 +151,17 @@ export default function LoginPage() {
 
   return (
     <div className="mx-auto max-w-sm py-12">
-      <h1 className="mb-6 text-2xl font-semibold">Log in</h1>
+      <h1 className="mb-6 text-2xl font-semibold">
+        Log in
+      </h1>
 
       <OAuthButtons />
 
       <div className="my-4 flex items-center gap-3">
         <div className="h-px flex-1 bg-gray-200" />
-        <span className="text-xs text-gray-500">or</span>
+        <span className="text-xs text-gray-500">
+          or
+        </span>
         <div className="h-px flex-1 bg-gray-200" />
       </div>
 
@@ -171,9 +187,13 @@ export default function LoginPage() {
           <button
             type="button"
             aria-label={
-              showPassword ? "Hide password" : "Show password"
+              showPassword
+                ? "Hide password"
+                : "Show password"
             }
-            onClick={() => setShowPassword(v => !v)}
+            onClick={() =>
+              setShowPassword(v => !v)
+            }
             className="absolute inset-y-0 right-2 flex items-center text-sm text-gray-500"
           >
             {showPassword ? "Hide" : "Show"}
@@ -232,7 +252,9 @@ export default function LoginPage() {
         <Link
           href={
             returnTo
-              ? `/signup?returnTo=${encodeURIComponent(returnTo)}`
+              ? `/signup?returnTo=${encodeURIComponent(
+                returnTo
+              )}`
               : "/signup"
           }
           className="underline"

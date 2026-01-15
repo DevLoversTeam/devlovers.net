@@ -4,7 +4,7 @@ export function resolveBaseUrl(options: {
 }): string {
     const base =
         options.origin ||
-        process.env.NEXT_PUBLIC_APP_URL ||
+        process.env.NEXT_PUBLIC_SITE_URL ||
         (options.host ? `http://${options.host}` : null);
 
     if (!base) {

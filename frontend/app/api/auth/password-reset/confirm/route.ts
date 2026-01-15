@@ -57,14 +57,15 @@ export async function POST(req: Request) {
 
     const passwordHash = await bcrypt.hash(password, 10);
 
-    await db
-        .update(users)
-        .set({ passwordHash })
-        .where(eq(users.id, userId));
 
     await db
         .delete(passwordResetTokens)
         .where(eq(passwordResetTokens.token, token));
+
+    await db
+        .update(users)
+        .set({ passwordHash })
+        .where(eq(users.id, userId));
 
     return NextResponse.json({ success: true });
 }
