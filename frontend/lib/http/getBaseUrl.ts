@@ -5,7 +5,7 @@ export function resolveBaseUrl(options: {
     const base =
         options.origin ||
         process.env.NEXT_PUBLIC_SITE_URL ||
-        (options.host ? `http://${options.host}` : null);
+        (options.host ? `https://${options.host}` : null);
 
     if (!base) {
         throw new Error("Unable to determine base URL");
