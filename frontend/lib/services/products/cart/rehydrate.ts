@@ -64,7 +64,7 @@ export async function rehydrateCartItems(
 
   const rehydratedItems: CartRehydrateItem[] = [];
   const removed: CartRemovedItem[] = [];
-  let totalCents = 0;
+  let totalMinor = 0;
 
   for (const item of items) {
     const product = productMap.get(item.productId);
@@ -100,7 +100,7 @@ export async function rehydrateCartItems(
       MAX_QUANTITY_PER_LINE
     );
 
-    let unitPriceCents: number;
+    let unitPriceMinor: number;
 
     if (
       typeof product.priceMinor === 'number' &&
@@ -123,10 +123,10 @@ export async function rehydrateCartItems(
         });
       }
 
-      unitPriceCents = product.priceMinor;
+      unitPriceMinor = product.priceMinor;
     } else {
       // Fallback to legacy money column (string/decimal), still validated via coercePriceFromDb
-      unitPriceCents = toCents(
+      unitPriceMinor = toCents(
         coercePriceFromDb(product.price, {
           field: 'price',
           productId: product.id,
@@ -134,19 +134,19 @@ export async function rehydrateCartItems(
       );
     }
     // Safety: regardless of source (canonical priceMinor or legacy price),
-    // unitPriceCents must be a positive safe integer in minor units.
-    if (!Number.isSafeInteger(unitPriceCents) || unitPriceCents < 1) {
+    // unitPriceMinor must be a positive safe integer in minor units.
+    if (!Number.isSafeInteger(unitPriceMinor) || unitPriceMinor < 1) {
       throw new PriceConfigError('Invalid price in DB (out of range).', {
         productId: product.id,
         currency,
       });
     }
 
-    const lineTotalCents = calculateLineTotal(
-      unitPriceCents,
+    const lineTotalMinor = calculateLineTotal(
+      unitPriceMinor,
       effectiveQuantity
     );
-    totalCents += lineTotalCents;
+    totalMinor += lineTotalMinor;
 
     rehydratedItems.push({
       productId: product.id,
@@ -155,11 +155,11 @@ export async function rehydrateCartItems(
       quantity: effectiveQuantity,
 
       // canonical:
-      unitPriceMinor: unitPriceCents,
-      lineTotalMinor: lineTotalCents,
+      unitPriceMinor: unitPriceMinor,
+      lineTotalMinor: lineTotalMinor,
       // display:
-      unitPrice: fromCents(unitPriceCents),
-      lineTotal: fromCents(lineTotalCents),
+      unitPrice: fromCents(unitPriceMinor),
+      lineTotal: fromCents(lineTotalMinor),
 
       // policy: items currency should match resolved currency
       currency,
@@ -180,9 +180,9 @@ export async function rehydrateCartItems(
     // IMPORTANT: MINOR units (integer)
     summary: {
       // canonical:
-      totalAmountMinor: totalCents,
+      totalAmountMinor: totalMinor,
       // display:
-      totalAmount: fromCents(totalCents),
+      totalAmount: fromCents(totalMinor),
       itemCount,
       currency,
     },

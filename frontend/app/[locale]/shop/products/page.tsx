@@ -5,6 +5,7 @@ import { ProductCard } from '@/components/shop/product-card';
 import { ProductFilters } from '@/components/shop/product-filters';
 import { ProductSort } from '@/components/shop/product-sort';
 import { CatalogLoadMore } from '@/components/shop/catalog-load-more';
+// import { Pagination } from '@/components/q&a/Pagination';
 import { getCatalogProducts } from '@/lib/shop/data';
 import { catalogQuerySchema } from '@/lib/validation/shop';
 import { CATALOG_PAGE_SIZE } from '@/lib/config/catalog';
@@ -17,6 +18,7 @@ type RawSearchParams = {
   sort?: string;
   page?: string;
 };
+
 
 interface ProductsPageProps {
   searchParams: Promise<RawSearchParams>;
@@ -84,6 +86,13 @@ export default async function ProductsPage({
                   hasMore={catalog.hasMore}
                   nextPage={catalog.page + 1}
                 />
+                {/* {!isLoading && totalPages > 1 && (
+                        <Pagination
+                          currentPage={currentPage}
+                          totalPages={totalPages}
+                          onPageChange={handlePageChange}
+                        />
+                      )} */}
               </div>
             </>
           )}

@@ -45,7 +45,7 @@ export async function createRefund({
   }
 
   if (amountMinor !== undefined) {
-    if (!Number.isInteger(amountMinor) || amountMinor <= 0) {
+    if (!Number.isSafeInteger(amountMinor) || amountMinor <= 0) {
       throw new Error('STRIPE_INVALID_REFUND_AMOUNT');
     }
   }
@@ -97,7 +97,8 @@ export async function createPaymentIntent({
     throw new Error('STRIPE_DISABLED');
   }
 
-  if (!Number.isFinite(amount) || amount <= 0) {
+  // Stripe amount must be an integer in minor units. Fail-closed on floats/NaN/huge values.
+  if (!Number.isSafeInteger(amount) || amount <= 0) {
     throw new Error('STRIPE_INVALID_AMOUNT');
   }
 

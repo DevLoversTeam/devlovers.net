@@ -46,6 +46,9 @@ import { getOrderById, getOrderByIdempotencyKey } from './summary';
 import { restockOrder } from './restock';
 import { guardedPaymentStatusUpdate } from './payment-state';
 
+// NOTE: PaymentStatus semantics for Stripe:
+// pending (no PI yet) -> requires_payment (PI attached) -> paid/failed/refunded via provider events.
+
 async function reconcileNoPaymentOrder(
   orderId: string
 ): Promise<OrderSummaryWithMinor> {
@@ -409,8 +412,10 @@ export async function createOrderWithItems({
 
   // paymentStatus is initialized here only; ALL transitions must go via guardedPaymentStatusUpdate.
   // IMPORTANT: DB CHECK requires provider='none' => payment_status in ('paid','failed')
+  // Avoid the cycle: requires_payment -> pending -> requires_payment.
+  // For Stripe, start at pending and switch to requires_payment only after PI is attached.
   const initialPaymentStatus: PaymentStatus =
-    paymentProvider === 'none' ? 'paid' : 'requires_payment';
+    paymentProvider === 'none' ? 'paid' : 'pending';
 
   const normalizedItems = mergeCheckoutItems(
     items

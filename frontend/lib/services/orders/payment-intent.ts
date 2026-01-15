@@ -32,6 +32,8 @@ export async function setOrderPaymentIntent({
     );
   }
 
+  // New flow: pending -> requires_payment when attaching PI.
+  // Keep requires_payment only for backward-compat (old orders created before this change).
   const allowed: PaymentStatus[] = ['pending', 'requires_payment'];
   if (!allowed.includes(existing.paymentStatus as PaymentStatus)) {
     throw new InvalidPayloadError(

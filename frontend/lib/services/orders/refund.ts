@@ -157,7 +157,8 @@ export async function refundOrder(
     idempotencyKey,
   });
 
-  const createdAtIso = new Date().toISOString();
+  const now = new Date();
+  const createdAtIso = now.toISOString();
 
   const nextMeta = appendRefund(order.pspMetadata, {
     refundId,
@@ -172,7 +173,11 @@ export async function refundOrder(
   // Persist тільки metadata. payment_status НЕ чіпаємо (джерело істини — webhook)
   await db
     .update(orders)
-    .set({ pspMetadata: nextMeta })
+    .set({
+      updatedAt: now,
+      pspStatusReason: 'REFUND_REQUESTED',
+      pspMetadata: nextMeta,
+    })
     .where(eq(orders.id, orderId));
 
   // Повертаємо як і раніше: order summary для API
