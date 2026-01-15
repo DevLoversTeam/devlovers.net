@@ -160,3 +160,40 @@
     transform: scale(1.08);
   }
 }
+
+
+/* Shop theme: scoped overrides (must not affect platform pages) */
+.shop-scope {
+  /* keep shop rounding slightly tighter than platform */
+  --radius: calc(var(--radius) - 2px);
+
+  /* light: shop accent = black */
+  --accent: var(--foreground);
+  --accent-foreground: var(--background);
+  --ring: var(--foreground);
+
+  /* IMPORTANT: override Tailwind v4 theme vars directly */
+  --color-accent: var(--foreground);
+  --color-accent-foreground: var(--background);
+  --color-ring: var(--foreground);
+
+  --card: var(--background);
+}
+
+.dark .shop-scope {
+  /* dark: shop accent = magenta */
+  --accent: var(--accent-primary);
+  --accent-foreground: var(--foreground);
+  --ring: var(--accent-primary);
+
+  /* IMPORTANT: override Tailwind v4 theme vars directly */
+  --color-accent: var(--accent-primary);
+  --color-accent-foreground: var(--foreground);
+  --color-ring: var(--accent-primary);
+
+  --card: var(--background);
+
+  /* keep borders closer to previous shop look, derived (no hex) */
+  --border: color-mix(in oklab, var(--foreground) 18%, var(--background));
+  --input: color-mix(in oklab, var(--foreground) 18%, var(--background));
+}

@@ -60,6 +60,8 @@
       📁 cart
         📁 rehydrate
           📄 route.ts
+      📁 catalog
+        📄 route.ts
       📁 checkout
         📄 route.ts
       📁 internal
@@ -216,6 +218,7 @@
       📄 admin-product-status-toggle.tsx
     📄 cart-provider.tsx
     📄 catalog-load-more.tsx
+    📄 catalog-products-client.tsx
     📄 category-tile.tsx
     📁 header
       📄 cart-button.tsx
@@ -244,6 +247,50 @@
   📄 category.ts
 📁 db
   📄 index.ts
+  📁 legacy-migrations
+    📁 drizzle_legacy
+      📄 0000_rich_magus.sql
+      📄 0001_black_random.sql
+      📄 0002_yielding_purple_man.sql
+      📄 0003_handy_cammi.sql
+      📄 0004_tough_ultron.sql
+      📄 0005_furry_warstar.sql
+      📄 0006_minor_units_money.sql
+      📄 0007_add-payment-intent-id-to-orders.sql
+      📄 0008_dizzy_james_howlett.sql
+      📄 0009_p0_inventory_workflow_baseline.sql
+      📄 0009_unknown_nico_minoru.sql
+      📄 0010_parallel_princess_powerful.sql
+      📄 0011_add_orders_sweep_claim_index.sql
+      📄 0012_inventory_moves_product_fk_restrict.sql
+      📄 0013_add_internal_job_state.sql
+      📄 0013_brown_gamora.sql
+      📄 0013_low_roughhouse.sql
+      📄 0014_add-stripe-events-processed-at.sql
+      📄 0014_dapper_kang.sql
+      📄 0014_steep_kabuki.sql
+      📄 0015_dear_legion.sql
+      📄 0015_glamorous_eternity.sql
+      📄 0015_warm_dexter_bennett.sql
+      📁 meta
+        📄 0000_snapshot.json
+        📄 0001_snapshot.json
+        📄 0002_snapshot.json
+        📄 0003_snapshot.json
+        📄 0004_snapshot.json
+        📄 0005_snapshot.json
+        📄 0006_snapshot.json
+        📄 0007_snapshot.json
+        📄 0008_snapshot.json
+        📄 0009_snapshot.json
+        📄 0010_snapshot.json
+        📄 0012_snapshot.json
+        📄 0013_snapshot.json
+        📄 0014_snapshot.json
+        📄 0015_snapshot.json
+        📄 _journal.json
+      📄 relations.ts
+      📄 schema.ts
   📁 queries
     📄 leaderboard.ts
     📄 points.ts
@@ -289,48 +336,10 @@
   📁 payments
     📄 fondy.md
 📁 drizzle
-  📄 0000_rich_magus.sql
-  📄 0001_black_random.sql
-  📄 0002_yielding_purple_man.sql
-  📄 0003_handy_cammi.sql
-  📄 0004_tough_ultron.sql
-  📄 0005_furry_warstar.sql
-  📄 0006_minor_units_money.sql
-  📄 0007_add-payment-intent-id-to-orders.sql
-  📄 0008_dizzy_james_howlett.sql
-  📄 0009_p0_inventory_workflow_baseline.sql
-  📄 0009_unknown_nico_minoru.sql
-  📄 0010_parallel_princess_powerful.sql
-  📄 0011_add_orders_sweep_claim_index.sql
-  📄 0012_inventory_moves_product_fk_restrict.sql
-  📄 0013_add_internal_job_state.sql
-  📄 0013_brown_gamora.sql
-  📄 0013_low_roughhouse.sql
-  📄 0014_add-stripe-events-processed-at.sql
-  📄 0014_dapper_kang.sql
-  📄 0014_steep_kabuki.sql
-  📄 0015_dear_legion.sql
-  📄 0015_glamorous_eternity.sql
-  📄 0015_warm_dexter_bennett.sql
+  📄 0000_dry_young_avengers.sql
   📁 meta
     📄 0000_snapshot.json
-    📄 0001_snapshot.json
-    📄 0002_snapshot.json
-    📄 0003_snapshot.json
-    📄 0004_snapshot.json
-    📄 0005_snapshot.json
-    📄 0006_snapshot.json
-    📄 0007_snapshot.json
-    📄 0008_snapshot.json
-    📄 0009_snapshot.json
-    📄 0010_snapshot.json
-    📄 0012_snapshot.json
-    📄 0013_snapshot.json
-    📄 0014_snapshot.json
-    📄 0015_snapshot.json
     📄 _journal.json
-  📄 relations.ts
-  📄 schema.ts
 📄 drizzle.config.ts
 📄 eslint.config.mjs
 📁 hooks
@@ -422,6 +431,8 @@
     📄 checkout-concurrency-stock1.test.ts
     📄 checkout-currency-policy.test.ts
     📄 checkout-no-payments.test.ts
+    📄 checkout-set-payment-intent-reject-contract.test.ts
+    📄 checkout-stripe-error-contract.test.ts
     📄 currency.test.ts
     📄 format-money.test.ts
     📄 order-items-snapshot-immutable.test.ts
@@ -434,6 +445,7 @@
     📄 product-sale-invariant.test.ts
     📄 public-product-visibility.test.ts
     📄 restock-order-only-once.test.ts
+    📄 restock-release-failure-invariant.test.ts
     📄 restock-stale-claim-gate.test.ts
     📄 restock-stale-stripe-orphan.test.ts
     📄 restock-stuck-reserving-sweep.test.ts
@@ -485,9 +497,7 @@
 📄 README.md
 📄 save-structure.cjs
 📁 scripts
-  📄 create-user.ts
-  📄 debug-user.ts
   📄 shop-janitor-restock-stale.mjs
-  📄 verify-user.ts
 📄 tsconfig.json
+📄 tsconfig.tsbuildinfo
 📄 vitest.config.ts
