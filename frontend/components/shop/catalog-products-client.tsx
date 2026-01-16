@@ -137,11 +137,7 @@ export function CatalogProductsClient({
         />
 
         {error ? (
-          <p
-            className="text-sm text-muted-foreground"
-            role="status"
-            aria-live="polite"
-          >
+          <p className="text-sm text-muted-foreground" role="status">
             {error}
           </p>
         ) : null}

@@ -1,4 +1,3 @@
-// frontend/lib/tests/checkout-stripe-error-contract.test.ts
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { makeCheckoutReq } from '@/lib/tests/helpers/makeCheckoutReq';
 
@@ -7,10 +6,10 @@ vi.mock('@/lib/env/stripe', () => ({
   getStripeEnv: () => ({
     paymentsEnabled: true,
     mode: 'test',
-    secretKey: 'stripe_secret_key_placeholder',
-    webhookSecret: 'stripe_webhook_secret_placeholder',
+    secretKey: 'sk_test_dummy',
+    webhookSecret: 'whsec_test_dummy',
   }),
-  isPaymentsEnabled: () => true, // якщо десь ще використовується
+  isPaymentsEnabled: () => true, // kept for backward compatibility
 }));
 
 // 2) avoid auth coupling

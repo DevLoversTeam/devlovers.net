@@ -209,7 +209,9 @@ export default async function AdminProductsPage({
                       </td>
 
                       <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
-                        {row.badge === 'NONE' ? '-' : row.badge}
+                        {row.badge == null || row.badge === 'NONE'
+                          ? '-'
+                          : row.badge}
                       </td>
 
                       <td className="px-3 py-2 whitespace-nowrap">

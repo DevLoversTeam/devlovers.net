@@ -146,9 +146,11 @@ export default function CartPage() {
               </li>
             )}
 
-            {cart.items.map((item, index) => (
+            {cart.items.map(item => (
               <li
-                key={`${item.productId}-${item.selectedSize}-${item.selectedColor}-${index}`}
+                key={`${item.productId}-${item.selectedSize ?? 'na'}-${
+                  item.selectedColor ?? 'na'
+                }`}
                 className="rounded-lg border border-border p-4"
               >
                 <article className="flex gap-4">

@@ -108,10 +108,7 @@ export function ProductFilters() {
           Color
         </h3>
 
-        <div
-          className="mt-4 flex flex-wrap gap-2"
-          aria-labelledby={colorGroupId}
-        >
+        <div className="mt-4 flex flex-wrap gap-2">
           {COLORS.map(color => {
             const isSelected = currentColor === color.slug;
 
@@ -147,10 +144,7 @@ export function ProductFilters() {
           Size
         </h3>
 
-        <div
-          className="mt-4 flex flex-wrap gap-2"
-          aria-labelledby={sizeGroupId}
-        >
+        <div className="mt-4 flex flex-wrap gap-2">
           {SIZES.map(size => {
             const isSelected = currentSize === size;
 

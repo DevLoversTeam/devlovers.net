@@ -20,14 +20,20 @@ import { PriceConfigError } from '../../errors';
 
 const fromMinorUnits = fromCents;
 
+// keep in sync with currency enum (CurrencyCode) and money helpers (fromCents/toCents assume 2 fraction digits)
+const TWO_DECIMAL_CURRENCIES: ReadonlySet<CurrencyCode> = new Set<CurrencyCode>(
+  ['USD', 'UAH']
+);
+
 function assertTwoDecimalCurrency(currency: CurrencyCode): void {
   // fromCents/toCents assume 2 fraction digits.
   // Guard against 0-decimal (JPY) / 3-decimal (BHD) and any future non-2-decimal currency.
-  if (currency === 'USD' || currency === 'UAH') return;
+  if (TWO_DECIMAL_CURRENCIES.has(currency)) return;
 
   throw new PriceConfigError(
     'Unsupported currency minor units exponent in cart rehydrate (expected 2-decimal currency).',
     {
+      // Keep productId to avoid breaking error-contract shape if it's required.
       productId: '__cart__',
       currency,
     }

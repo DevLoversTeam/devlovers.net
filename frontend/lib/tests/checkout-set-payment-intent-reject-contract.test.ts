@@ -3,14 +3,15 @@ import { makeCheckoutReq } from '@/lib/tests/helpers/makeCheckoutReq';
 import { InvalidPayloadError } from '@/lib/services/errors';
 
 // Force payments enabled so route goes into Stripe flow
+// gitleaks:allow
 vi.mock('@/lib/env/stripe', () => ({
   getStripeEnv: () => ({
     paymentsEnabled: true,
     mode: 'test',
-    secretKey: 'stripe_secret_key_placeholder',
-    webhookSecret: 'stripe_webhook_secret_placeholder',
+    secretKey: 'sk_test_dummy',
+    webhookSecret: 'whsec_test_dummy',
   }),
-  isPaymentsEnabled: () => true, // якщо десь ще використовується
+  isPaymentsEnabled: () => true, // kept for backward compatibility
 }));
 
 // Avoid auth coupling
