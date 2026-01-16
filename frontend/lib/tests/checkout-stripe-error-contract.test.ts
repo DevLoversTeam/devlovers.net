@@ -7,8 +7,8 @@ vi.mock('@/lib/env/stripe', () => ({
   getStripeEnv: () => ({
     paymentsEnabled: true,
     mode: 'test',
-    secretKey: 'sk_test_dummy',
-    webhookSecret: 'whsec_test_dummy',
+    secretKey: 'stripe_secret_key_placeholder',
+    webhookSecret: 'stripe_webhook_secret_placeholder',
   }),
   isPaymentsEnabled: () => true, // якщо десь ще використовується
 }));
@@ -72,7 +72,6 @@ describe('checkout: Stripe errors after order creation must not be 400', () => {
     expect(json.code).toBe('STRIPE_ERROR');
     expect(typeof json.message).toBe('string');
     expect(createOrderWithItems).toHaveBeenCalledTimes(1);
-
   });
 
   it('existing order (isNew=false, no PI): Stripe PI creation failure returns 502 STRIPE_ERROR', async () => {
@@ -100,6 +99,5 @@ describe('checkout: Stripe errors after order creation must not be 400', () => {
     expect(json.code).toBe('STRIPE_ERROR');
     expect(typeof json.message).toBe('string');
     expect(createOrderWithItems).toHaveBeenCalledTimes(1);
-
   });
 });

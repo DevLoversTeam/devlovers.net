@@ -1,13 +1,14 @@
 'use client';
 
 import { useId } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 import { CATEGORIES, COLORS, PRODUCT_TYPES, SIZES } from '@/lib/config/catalog';
 import { cn } from '@/lib/utils';
 
 export function ProductFilters() {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const currentCategory = searchParams.get('category') || 'all';
   const currentType = searchParams.get('type');
@@ -27,9 +28,7 @@ export function ProductFilters() {
     else params.delete(key);
 
     const queryString = params.toString();
-    router.push(
-      queryString ? `/shop/products?${queryString}` : '/shop/products'
-    );
+    router.push(queryString ? `${pathname}?${queryString}` : pathname);
   };
 
   return (

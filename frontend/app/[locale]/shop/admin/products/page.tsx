@@ -12,7 +12,6 @@ import { products, productPrices } from '@/db/schema';
 import { formatMoney, resolveCurrencyFromLocale } from '@/lib/shop/currency';
 import { parsePage } from '@/lib/pagination';
 
-
 export const dynamic = 'force-dynamic';
 
 const PAGE_SIZE = 25;
@@ -269,7 +268,8 @@ export default async function AdminProductsPage({
                 ) : null}
               </tbody>
             </table>
-
+          </div>
+          <div className="mt-4">
             <AdminPagination
               basePath="/shop/admin/products"
               page={page}

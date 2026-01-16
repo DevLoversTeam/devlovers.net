@@ -1,4 +1,3 @@
-// frontend/app/[locale]/shop/admin/orders/page.tsx
 import { Link } from '@/i18n/routing';
 
 import { getAdminOrdersPage } from '@/db/queries/shop/admin-orders';
@@ -18,14 +17,17 @@ export const dynamic = 'force-dynamic';
 
 const PAGE_SIZE = 25;
 
+type AdminOrdersResult = Awaited<ReturnType<typeof getAdminOrdersPage>>;
+type AdminOrderRow = AdminOrdersResult['items'][number];
+
 function pickMinor(minor: unknown, legacyMajor: unknown): number | null {
   if (typeof minor === 'number') return minor;
   if (legacyMajor === null || legacyMajor === undefined) return null;
   return fromDbMoney(legacyMajor);
 }
 
-function orderCurrency(order: any, locale: string): CurrencyCode {
-  const c = order?.currency ?? resolveCurrencyFromLocale(locale);
+function orderCurrency(order: AdminOrderRow, locale: string): CurrencyCode {
+  const c = order.currency ?? resolveCurrencyFromLocale(locale);
   return c === 'UAH' ? 'UAH' : 'USD';
 }
 
@@ -199,7 +201,8 @@ export default async function AdminOrdersPage({
                 )}
               </tbody>
             </table>
-
+          </div>
+          <div className="mt-4">
             <AdminPagination
               basePath="/shop/admin/orders"
               page={page}

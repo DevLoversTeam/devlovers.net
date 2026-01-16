@@ -58,6 +58,7 @@ export function AdminProductStatusToggle({
         onClick={toggleStatus}
         disabled={isLoading}
         aria-busy={isLoading}
+        aria-pressed={isActive}
         aria-describedby={error ? errorId : undefined}
         className="whitespace-nowrap rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
       >

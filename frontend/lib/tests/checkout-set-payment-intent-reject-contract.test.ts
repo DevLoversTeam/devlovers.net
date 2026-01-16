@@ -7,8 +7,8 @@ vi.mock('@/lib/env/stripe', () => ({
   getStripeEnv: () => ({
     paymentsEnabled: true,
     mode: 'test',
-    secretKey: 'sk_test_dummy',
-    webhookSecret: 'whsec_test_dummy',
+    secretKey: 'stripe_secret_key_placeholder',
+    webhookSecret: 'stripe_webhook_secret_placeholder',
   }),
   isPaymentsEnabled: () => true, // якщо десь ще використовується
 }));

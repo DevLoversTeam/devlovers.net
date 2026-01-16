@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { CATEGORIES, COLORS, PRODUCT_TYPES, SIZES } from '@/lib/config/catalog';
@@ -131,13 +131,21 @@ export function ProductForm({
 }: ProductFormProps) {
   const router = useRouter();
 
-  const headingId = useId();
-  const formErrorId = useId();
-  const slugHelpId = useId();
-  const slugErrorId = useId();
-  const imageErrorId = useId();
-  const usdOriginalErrorId = useId();
-  const uahOriginalErrorId = useId();
+  const idBase = useMemo(() => {
+    const pid =
+      typeof productId === 'string' && productId.trim().length
+        ? productId.trim()
+        : 'new';
+    return `product-form-${mode}-${pid}`;
+  }, [mode, productId]);
+
+  const headingId = `${idBase}-heading`;
+  const formErrorId = `${idBase}-form-error`;
+  const slugHelpId = `${idBase}-slug-help`;
+  const slugErrorId = `${idBase}-slug-error`;
+  const imageErrorId = `${idBase}-image-error`;
+  const usdOriginalErrorId = `${idBase}-usd-original-error`;
+  const uahOriginalErrorId = `${idBase}-uah-original-error`;
 
   const hydratedKeyRef = useRef<string | null>(null);
   const [title, setTitle] = useState(initialValues?.title ?? '');
@@ -195,6 +203,9 @@ export function ProductForm({
     if (!initialValues) return;
 
     const key =
+      (typeof productId === 'string' && productId.trim().length
+        ? productId
+        : null) ??
       (typeof initialValues.slug === 'string' &&
       initialValues.slug.trim().length
         ? initialValues.slug
@@ -207,7 +218,7 @@ export function ProductForm({
     if (!key) return;
 
     if (hydratedKeyRef.current === key) return;
-    
+
     // Reset transient UI state when switching between products in EDIT mode.
     // Do NOT do this in submit: it breaks retries (e.g., clears selected image).
     setError(null);
@@ -235,16 +246,12 @@ export function ProductForm({
     setIsActive(initialValues.isActive ?? true);
     setIsFeatured(initialValues.isFeatured ?? false);
     hydratedKeyRef.current = key;
-  }, [mode, initialValues]);
-
-  useEffect(() => {
-    if (mode !== 'create') return;
-    setSlug(localSlugify(title));
-  }, [mode, title]);
+  }, [mode, initialValues, productId]);
 
   const slugValue = useMemo(() => {
-    if (mode === 'edit') return slug; // slug в edit має бути стабільним
-    return slug || localSlugify(title);
+    if (mode === 'edit') return slug; // slug в edit має бути стабільним (з БД)
+    // In create mode, always derive from current title to avoid stale slug on fast submit.
+    return localSlugify(title);
   }, [mode, slug, title]);
 
   const usdRow = useMemo(
@@ -436,7 +443,10 @@ export function ProductForm({
     : slugHelpId;
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-8" aria-labelledby={headingId}>
+    <section
+      className="mx-auto max-w-2xl px-4 py-8"
+      aria-labelledby={headingId}
+    >
       <header>
         <h1 id={headingId} className="text-2xl font-bold text-foreground">
           {mode === 'create' ? 'Create new product' : 'Edit product'}
@@ -944,6 +954,6 @@ export function ProductForm({
             : 'Save changes'}
         </button>
       </form>
-    </main>
+    </section>
   );
 }

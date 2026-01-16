@@ -56,7 +56,6 @@ export function RefundButton({ orderId, disabled }: Props) {
         type="button"
         onClick={onRefund}
         disabled={isDisabled}
-        aria-disabled={isDisabled}
         aria-busy={isPending}
         aria-describedby={error ? errorId : undefined}
         className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"

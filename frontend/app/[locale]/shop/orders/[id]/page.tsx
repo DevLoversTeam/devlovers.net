@@ -10,6 +10,8 @@ import { orderItems, orders } from '@/db/schema';
 import { getCurrentUser } from '@/lib/auth';
 import { orderIdParamSchema } from '@/lib/validation/shop';
 import { logError } from '@/lib/logging';
+import { formatMoney, type CurrencyCode } from '@/lib/shop/currency';
+import { fromDbMoney } from '@/lib/shop/money';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,6 +46,24 @@ type OrderDetail = {
     lineTotal: string;
   }>;
 };
+
+function safeFormatMoneyMajor(
+  major: string,
+  currency: CurrencyCode,
+  locale: string
+): string {
+  try {
+    return formatMoney(fromDbMoney(major), currency, locale);
+  } catch {
+    return `${major} ${currency}`;
+  }
+}
+
+function safeFormatDateTime(iso: string, dtf: Intl.DateTimeFormat): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return dtf.format(d);
+}
 
 function toOrderItem(
   item: {
@@ -163,6 +183,22 @@ export default async function OrderDetailPage({
     throw new Error('ORDER_DETAIL_LOAD_FAILED');
   }
 
+  const currency: CurrencyCode = order.currency === 'UAH' ? 'UAH' : 'USD';
+  const dtf = new Intl.DateTimeFormat(locale, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  });
+
+  const totalFormatted = safeFormatMoneyMajor(
+    order.totalAmount,
+    currency,
+    locale
+  );
+  const createdFormatted = safeFormatDateTime(order.createdAt, dtf);
+  const restockedFormatted = order.restockedAt
+    ? safeFormatDateTime(order.restockedAt, dtf)
+    : '—';
+
   return (
     <main
       className="mx-auto w-full max-w-3xl px-4 py-8"
@@ -203,9 +239,7 @@ export default async function OrderDetailPage({
         <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <dt className="text-xs opacity-80">Total</dt>
-            <dd className="text-sm font-medium">
-              {order.totalAmount} {String(order.currency)}
-            </dd>
+            <dd className="text-sm font-medium">{totalFormatted}</dd>
           </div>
 
           <div>
@@ -217,7 +251,7 @@ export default async function OrderDetailPage({
 
           <div>
             <dt className="text-xs opacity-80">Created</dt>
-            <dd className="text-sm">{order.createdAt}</dd>
+            <dd className="text-sm">{createdFormatted}</dd>
           </div>
 
           {isAdmin && (
@@ -253,7 +287,7 @@ export default async function OrderDetailPage({
             </div>
             <div>
               <dt className="text-xs opacity-80">Restocked at</dt>
-              <dd className="text-sm">{order.restockedAt ?? '—'}</dd>
+              <dd className="text-sm">{restockedFormatted}</dd>
             </div>
           </dl>
         )}
@@ -294,12 +328,16 @@ export default async function OrderDetailPage({
                   </div>
                   <div>
                     <dt className="sr-only">Unit price</dt>
-                    <dd className="text-sm opacity-80">Unit: {it.unitPrice}</dd>
+                    <dd className="text-sm opacity-80">
+                      Unit:{' '}
+                      {safeFormatMoneyMajor(it.unitPrice, currency, locale)}
+                    </dd>
                   </div>
                   <div>
                     <dt className="sr-only">Line total</dt>
                     <dd className="text-sm font-medium">
-                      Line: {it.lineTotal}
+                      Line:{' '}
+                      {safeFormatMoneyMajor(it.lineTotal, currency, locale)}
                     </dd>
                   </div>
                 </dl>

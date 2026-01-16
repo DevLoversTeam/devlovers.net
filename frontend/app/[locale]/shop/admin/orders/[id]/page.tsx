@@ -22,10 +22,10 @@ function pickMinor(minor: unknown, legacyMajor: unknown): number | null {
 }
 
 function orderCurrency(
-  order: { currency?: string | null } | null,
+  order: { currency?: string | null },
   locale: string
 ): CurrencyCode {
-  const c = order?.currency ?? resolveCurrencyFromLocale(locale);
+  const c = order.currency ?? resolveCurrencyFromLocale(locale);
   return c === 'UAH' ? 'UAH' : 'USD';
 }
 
@@ -56,7 +56,7 @@ export default async function AdminOrderDetailPage({
 
   const currency = orderCurrency(order, locale);
 
-  const totalMinor = pickMinor(order?.totalAmountMinor, order?.totalAmount);
+  const totalMinor = pickMinor(order.totalAmountMinor, order.totalAmount);
   const totalFormatted =
     totalMinor === null ? '-' : formatMoney(totalMinor, currency, locale);
 
@@ -221,12 +221,12 @@ export default async function AdminOrderDetailPage({
               <tbody className="divide-y divide-border">
                 {order.items.map(item => {
                   const unitMinor = pickMinor(
-                    item?.unitPriceMinor,
-                    item?.unitPrice
+                    item.unitPriceMinor,
+                    item.unitPrice
                   );
                   const lineMinor = pickMinor(
-                    item?.lineTotalMinor,
-                    item?.lineTotal
+                    item.lineTotalMinor,
+                    item.lineTotal
                   );
 
                   const unitFormatted =

@@ -34,7 +34,10 @@ export async function POST(request: NextRequest) {
     try {
       form = await request.formData();
     } catch {
-      return NextResponse.json({ code: 'CSRF_INVALID' }, { status: 403 });
+      return NextResponse.json(
+        { code: 'INVALID_REQUEST_BODY' },
+        { status: 400 }
+      );
     }
 
     const token = form.get(CSRF_FORM_FIELD);

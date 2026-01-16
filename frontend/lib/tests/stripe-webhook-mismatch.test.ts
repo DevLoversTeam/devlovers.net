@@ -97,7 +97,7 @@ describe('P0-3.4 Stripe webhook: amount/currency mismatch (minor) must not set p
         : `idem_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 
     const checkoutBody = JSON.stringify({
-      items: [{ productId, quantity: 1, selectedSize: '', selectedColor: '' }],
+      items: [{ productId, quantity: 1 }],
     });
 
     const checkoutRes = await checkoutPOST(
@@ -152,8 +152,8 @@ describe('P0-3.4 Stripe webhook: amount/currency mismatch (minor) must not set p
      *    We mock verifyWebhookSignature so we don't need real Stripe signature.
      */
     process.env.PAYMENTS_ENABLED = 'true';
-    process.env.STRIPE_SECRET_KEY = 'sk_test_dummy';
-    process.env.STRIPE_WEBHOOK_SECRET = 'whsec_test_dummy';
+    process.env.STRIPE_SECRET_KEY = 'stripe_secret_key_placeholder';
+    process.env.STRIPE_WEBHOOK_SECRET = 'stripe_webhook_secret_placeholder';
 
     const evtId = `evt_mismatch_${orderId.slice(0, 8)}`;
     const actualMinor = expectedMinor + 1;

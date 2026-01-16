@@ -126,7 +126,7 @@ export function CatalogProductsClient({
         ))}
       </ul>
 
-      <footer
+      <nav
         className="mt-12 flex flex-col items-center gap-3"
         aria-label="Catalog pagination"
       >
@@ -145,7 +145,7 @@ export function CatalogProductsClient({
             {error}
           </p>
         ) : null}
-      </footer>
+      </nav>
     </section>
   );
 }

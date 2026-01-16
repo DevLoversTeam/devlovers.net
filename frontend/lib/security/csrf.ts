@@ -71,8 +71,18 @@ export function verifyCsrfToken(token: string, purpose: string): boolean {
   }
 
   const now = Math.floor(Date.now() / 1000);
+
   if (!payload || payload.p !== purpose) return false;
-  if (typeof payload.exp !== 'number' || payload.exp < now) return false;
+
+  const iat = payload.iat;
+  const exp = payload.exp;
+
+  if (typeof iat !== 'number' || !Number.isFinite(iat)) return false;
+  if (typeof exp !== 'number' || !Number.isFinite(exp)) return false;
+
+  // TTL + basic sanity: exp must be >= now and not before iat
+  if (exp < now) return false;
+  if (exp < iat) return false;
 
   return true;
 }

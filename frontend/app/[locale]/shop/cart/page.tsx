@@ -216,10 +216,7 @@ export default function CartPage() {
                           <Minus className="h-3 w-3" aria-hidden="true" />
                         </button>
 
-                        <span
-                          className="w-8 text-center text-sm font-medium"
-                          aria-label="Quantity"
-                        >
+                        <span className="w-8 text-center text-sm font-medium">
                           {item.quantity}
                         </span>
 

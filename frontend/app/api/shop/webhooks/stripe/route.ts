@@ -1,4 +1,3 @@
-// app/api/webhooks/stripe/route.ts
 import Stripe from 'stripe';
 import { NextRequest, NextResponse } from 'next/server';
 import { and, eq, ne, or } from 'drizzle-orm';
@@ -12,6 +11,16 @@ import {
   type RefundMetaRecord,
   appendRefundToMeta,
 } from '@/lib/services/orders/psp-metadata/refunds';
+
+const REFUND_FULLNESS_UNDETERMINED = 'REFUND_FULLNESS_UNDETERMINED' as const;
+
+function throwRefundFullnessUndetermined(): never {
+  throw new Error(REFUND_FULLNESS_UNDETERMINED);
+}
+
+function isRefundFullnessUndeterminedError(err: unknown): boolean {
+  return err instanceof Error && err.message === REFUND_FULLNESS_UNDETERMINED;
+}
 
 function upsertRefundIntoMeta(params: {
   prevMeta: unknown;
@@ -778,7 +787,7 @@ export async function POST(request: NextRequest) {
               refundId: refund?.id ?? null,
               refundAmount: currentAmt,
             });
-            throw new Error('REFUND_FULLNESS_UNDETERMINED');
+            throwRefundFullnessUndetermined();
           }
 
           let sawNumericAmount = false;
@@ -808,7 +817,7 @@ export async function POST(request: NextRequest) {
               refundId: refund?.id ?? null,
               refundAmount: currentAmt,
             });
-            throw new Error('REFUND_FULLNESS_UNDETERMINED');
+            throwRefundFullnessUndetermined();
           }
 
           const hasCurrent =
@@ -841,7 +850,7 @@ export async function POST(request: NextRequest) {
                 ? (refund as any).amount
                 : null,
           });
-          throw new Error('REFUND_FULLNESS_UNDETERMINED');
+          throwRefundFullnessUndetermined();
         }
 
         isFullRefund = cumulativeRefunded === amt;
@@ -894,7 +903,7 @@ export async function POST(request: NextRequest) {
               refundId: refund.id,
               refundAmount: currentAmt,
             });
-            throw new Error('REFUND_FULLNESS_UNDETERMINED');
+            throwRefundFullnessUndetermined();
           }
 
           let sawNumericAmount = false;
@@ -926,7 +935,7 @@ export async function POST(request: NextRequest) {
               refundId: refund.id,
               refundAmount: currentAmt,
             });
-            throw new Error('REFUND_FULLNESS_UNDETERMINED');
+            throwRefundFullnessUndetermined();
           }
 
           const hasCurrent = list.some(r => r?.id && r.id === refund.id);
@@ -960,7 +969,7 @@ export async function POST(request: NextRequest) {
                 ? (refund as any).amount
                 : null,
           });
-          throw new Error('REFUND_FULLNESS_UNDETERMINED');
+          throwRefundFullnessUndetermined();
         }
 
         isFullRefund = cumulativeRefunded === amt;
@@ -1078,13 +1087,10 @@ export async function POST(request: NextRequest) {
     });
     return ack();
   } catch (error) {
-    if (
-      error instanceof Error &&
-      error.message === 'REFUND_FULLNESS_UNDETERMINED'
-    ) {
+    if (isRefundFullnessUndeterminedError(error)) {
       // Do NOT ack() -> keep processedAt NULL so Stripe retries.
       return NextResponse.json(
-        { code: 'REFUND_FULLNESS_UNDETERMINED' },
+        { code: REFUND_FULLNESS_UNDETERMINED },
         { status: 500 }
       );
     }

@@ -16,7 +16,6 @@ export type UnifiedHeaderProps = {
   variant: UnifiedHeaderVariant;
   userExists: boolean;
   showAdminLink?: boolean;
-  enableSearch?: boolean;
 };
 
 export function UnifiedHeader({

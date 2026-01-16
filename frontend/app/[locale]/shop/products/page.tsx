@@ -72,14 +72,14 @@ export default async function ProductsPage({
       </header>
 
       <div className="mt-8 grid gap-8 lg:grid-cols-[240px_1fr]">
-        <aside className="hidden lg:block" aria-labelledby="filters-heading">
+        <div className="hidden lg:block">
           <h2 id="filters-heading" className="sr-only">
             Filters
           </h2>
           <Suspense fallback={null}>
             <ProductFilters />
           </Suspense>
-        </aside>
+        </div>
 
         <section aria-labelledby="results-heading">
           <h2 id="results-heading" className="sr-only">
