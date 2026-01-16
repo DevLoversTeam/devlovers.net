@@ -1,5 +1,3 @@
-// C:\Users\milka\devlovers.net-clean\frontend\components\shop\add-to-cart-button.tsx
-
 'use client';
 
 import { useId, useState } from 'react';

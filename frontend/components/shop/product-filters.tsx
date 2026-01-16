@@ -111,7 +111,6 @@ export function ProductFilters() {
 
         <div
           className="mt-4 flex flex-wrap gap-2"
-          role="radiogroup"
           aria-labelledby={colorGroupId}
         >
           {COLORS.map(color => {
@@ -124,8 +123,7 @@ export function ProductFilters() {
                 onClick={() =>
                   updateFilter('color', isSelected ? null : color.slug)
                 }
-                role="radio"
-                aria-checked={isSelected}
+                aria-pressed={isSelected}
                 className={cn(
                   'h-7 w-7 rounded-full border-2 transition-all',
                   isSelected
@@ -152,7 +150,6 @@ export function ProductFilters() {
 
         <div
           className="mt-4 flex flex-wrap gap-2"
-          role="radiogroup"
           aria-labelledby={sizeGroupId}
         >
           {SIZES.map(size => {
@@ -163,8 +160,7 @@ export function ProductFilters() {
                 key={size}
                 type="button"
                 onClick={() => updateFilter('size', isSelected ? null : size)}
-                role="radio"
-                aria-checked={isSelected}
+                aria-pressed={isSelected}
                 className={cn(
                   'rounded-md border px-3 py-1.5 text-sm transition-colors',
                   isSelected

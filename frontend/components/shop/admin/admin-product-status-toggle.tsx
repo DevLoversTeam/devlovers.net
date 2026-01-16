@@ -1,5 +1,3 @@
-// C:\Users\milka\devlovers.net-clean\frontend\components\shop\admin\admin-product-status-toggle.tsx
-
 'use client';
 
 import { useId, useState } from 'react';

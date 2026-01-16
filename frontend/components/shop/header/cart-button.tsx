@@ -1,5 +1,3 @@
-// C:\Users\milka\devlovers.net-clean\frontend\components\shop\header\cart-button.tsx
-
 'use client';
 
 import { ShoppingBag } from 'lucide-react';

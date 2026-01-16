@@ -1,7 +1,6 @@
-// frontend/app/[locale]/shop/admin/products/_components/product-form.tsx
 'use client';
 
-import { useEffect, useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { CATEGORIES, COLORS, PRODUCT_TYPES, SIZES } from '@/lib/config/catalog';
@@ -140,6 +139,7 @@ export function ProductForm({
   const usdOriginalErrorId = useId();
   const uahOriginalErrorId = useId();
 
+  const hydratedKeyRef = useRef<string | null>(null);
   const [title, setTitle] = useState(initialValues?.title ?? '');
   const [slug, setSlug] = useState(
     initialValues?.slug
@@ -185,11 +185,67 @@ export function ProductForm({
     Partial<Record<CurrencyCode, string>>
   >({});
 
+  // Hydrate state from initialValues once per product in EDIT mode.
+  // In edit: slug must come from DB and stay stable (no title->slug regeneration).
   useEffect(() => {
-    setSlug(localSlugify(title));
-  }, [title]);
+    if (mode !== 'edit') {
+      hydratedKeyRef.current = null;
+      return;
+    }
+    if (!initialValues) return;
 
-  const slugValue = useMemo(() => slug || localSlugify(title), [slug, title]);
+    const key =
+      (typeof initialValues.slug === 'string' &&
+      initialValues.slug.trim().length
+        ? initialValues.slug
+        : null) ??
+      (typeof initialValues.title === 'string' &&
+      initialValues.title.trim().length
+        ? initialValues.title
+        : null);
+
+    if (!key) return;
+
+    if (hydratedKeyRef.current === key) return;
+    
+    // Reset transient UI state when switching between products in EDIT mode.
+    // Do NOT do this in submit: it breaks retries (e.g., clears selected image).
+    setError(null);
+    setSlugError(null);
+    setImageError(null);
+    setOriginalPriceErrors({});
+    setIsSubmitting(false);
+    setImageFile(null);
+
+    if (typeof initialValues.title === 'string') setTitle(initialValues.title);
+    if (typeof initialValues.slug === 'string')
+      setSlug(localSlugify(initialValues.slug));
+
+    setPrices(ensureUiPriceRows((initialValues as any)?.prices));
+    setCategory(initialValues.category ?? '');
+    setType(initialValues.type ?? '');
+    setSelectedColors(initialValues.colors ?? []);
+    setSelectedSizes(initialValues.sizes ?? []);
+    setStock(
+      typeof initialValues.stock === 'number' ? String(initialValues.stock) : ''
+    );
+    setSku(initialValues.sku ?? '');
+    setBadge(initialValues.badge ?? 'NONE');
+    setDescription(initialValues.description ?? '');
+    setIsActive(initialValues.isActive ?? true);
+    setIsFeatured(initialValues.isFeatured ?? false);
+    hydratedKeyRef.current = key;
+  }, [mode, initialValues]);
+
+  useEffect(() => {
+    if (mode !== 'create') return;
+    setSlug(localSlugify(title));
+  }, [mode, title]);
+
+  const slugValue = useMemo(() => {
+    if (mode === 'edit') return slug; // slug в edit має бути стабільним
+    return slug || localSlugify(title);
+  }, [mode, slug, title]);
 
   const usdRow = useMemo(
     () => prices.find(p => p.currency === 'USD'),

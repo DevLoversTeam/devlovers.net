@@ -1,5 +1,3 @@
-// C:\Users\milka\devlovers.net-clean\frontend\components\shop\catalog-products-client.tsx
-
 'use client';
 
 import React from 'react';
@@ -91,7 +89,6 @@ export function CatalogProductsClient({
 
       const data = (await res.json()) as CatalogPayload;
 
-      // якщо фільтри/сорт змінились під час запиту — ігноруємо відповідь
       if (activeQueryRef.current !== requestQueryKey) return;
 
       setProducts(prev => {

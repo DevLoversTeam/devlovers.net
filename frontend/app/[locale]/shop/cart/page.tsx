@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { Minus, Plus, Trash2, ShoppingBag } from 'lucide-react';
@@ -11,16 +11,19 @@ import { generateIdempotencyKey } from '@/lib/shop/idempotency';
 import { formatMoney } from '@/lib/shop/currency';
 
 export default function CartPage() {
-  const { cart, updateQuantity, removeFromCart, clearCart } = useCart();
+  const { cart, updateQuantity, removeFromCart } = useCart();
   const router = useRouter();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
 
   const params = useParams<{ locale?: string }>();
   const locale = params.locale ?? 'en';
+  const shopBase = useMemo(() => `/${locale}/shop`, [locale]);
 
   async function handleCheckout() {
     setCheckoutError(null);
+    setCreatedOrderId(null);
     setIsCheckingOut(true);
 
     try {
@@ -39,7 +42,6 @@ export default function CartPage() {
             selectedSize: item.selectedSize,
             selectedColor: item.selectedColor,
           })),
-          // userId: ...,
         }),
       });
 
@@ -69,19 +71,19 @@ export default function CartPage() {
           ? data.clientSecret
           : null;
 
-      const shopBase = `/${locale}/shop`;
+      const orderId: string = String(data.orderId);
+      setCreatedOrderId(orderId);
 
       if (paymentProvider === 'stripe' && clientSecret) {
-        clearCart();
         router.push(
-          `${shopBase}/checkout/payment/${
-            data.orderId
-          }?clientSecret=${encodeURIComponent(clientSecret)}`
+          `${shopBase}/checkout/payment/${encodeURIComponent(
+            orderId
+          )}?clientSecret=${encodeURIComponent(clientSecret)}&clearCart=1`
         );
+
         return;
       }
 
-      clearCart();
       const paymentsDisabledFlag =
         paymentProvider !== 'stripe' || !clientSecret
           ? '&paymentsDisabled=true'
@@ -89,8 +91,8 @@ export default function CartPage() {
 
       router.push(
         `${shopBase}/checkout/success?orderId=${encodeURIComponent(
-          data.orderId
-        )}${paymentsDisabledFlag}`
+          orderId
+        )}&clearCart=1${paymentsDisabledFlag}`
       );
     } catch {
       setCheckoutError('Unable to start checkout right now.');
@@ -325,11 +327,41 @@ export default function CartPage() {
               confirmation if payment is not required in this environment.
             </p>
 
-            {checkoutError && (
-              <p className="text-center text-xs text-destructive" role="alert">
-                {checkoutError}
-              </p>
-            )}
+            {/* Fallback CTA if navigation fails after order was created */}
+            {createdOrderId && !checkoutError ? (
+              <div className="flex justify-center">
+                <Link
+                  href={`/shop/orders/${encodeURIComponent(createdOrderId)}`}
+                  className="text-xs underline underline-offset-4"
+                >
+                  If you are not redirected automatically, open your order
+                </Link>
+              </div>
+            ) : null}
+
+            {checkoutError ? (
+              <div className="space-y-2">
+                <p
+                  className="text-center text-xs text-destructive"
+                  role="alert"
+                >
+                  {checkoutError}
+                </p>
+
+                {createdOrderId ? (
+                  <div className="flex justify-center">
+                    <Link
+                      href={`/shop/orders/${encodeURIComponent(
+                        createdOrderId
+                      )}`}
+                      className="text-xs underline underline-offset-4"
+                    >
+                      Go to order
+                    </Link>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
           </div>
         </aside>
       </div>

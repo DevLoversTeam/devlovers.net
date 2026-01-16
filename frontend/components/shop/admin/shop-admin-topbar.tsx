@@ -1,5 +1,3 @@
-// C:\Users\milka\devlovers.net-clean\frontend\components\shop\admin\shop-admin-topbar.tsx
-
 import { Link } from '@/i18n/routing';
 
 export function ShopAdminTopbar() {

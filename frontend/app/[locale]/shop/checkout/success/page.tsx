@@ -2,7 +2,7 @@
 import { Link } from '@/i18n/routing';
 
 import OrderStatusAutoRefresh from './OrderStatusAutoRefresh';
-
+import { ClearCartOnMount } from '@/components/shop/clear-cart-on-mount';
 import { formatMoney } from '@/lib/shop/currency';
 import { getOrderSummary } from '@/lib/services/orders';
 import { OrderNotFoundError } from '@/lib/services/errors';
@@ -30,6 +30,11 @@ function parseOrderId(params: SearchParams): string | null {
 function isPaymentsDisabled(params: SearchParams): boolean {
   const raw = getStringParam(params, 'paymentsDisabled');
   if (!raw) return false;
+  return raw === 'true' || raw === '1';
+}
+
+function shouldClearCart(params: SearchParams): boolean {
+  const raw = getStringParam(params, 'clearCart');
   return raw === 'true' || raw === '1';
 }
 
@@ -71,6 +76,7 @@ export default async function CheckoutSuccessPage({
 }) {
   const { locale } = await params;
   const resolvedParams = await searchParams;
+  const clearCart = shouldClearCart(resolvedParams);
 
   const orderId = parseOrderId(resolvedParams);
   if (!orderId) {
@@ -146,6 +152,8 @@ export default async function CheckoutSuccessPage({
       className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8"
       aria-labelledby="order-title"
     >
+      <ClearCartOnMount enabled={clearCart} />
+
       {/* auto-refresh while webhook finalizes */}
       <OrderStatusAutoRefresh paymentStatus={order.paymentStatus} />
 

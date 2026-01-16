@@ -44,7 +44,6 @@ export default async function ProductPage({
           <Link
             href="/shop/products"
             className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
-            aria-label="Back to all products"
           >
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
             Back to all products
@@ -98,7 +97,6 @@ export default async function ProductPage({
         <Link
           href="/shop/products"
           className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
-          aria-label="Back to all products"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           Back to all products
@@ -134,7 +132,7 @@ export default async function ProductPage({
             {product.name}
           </h1>
 
-          <div className="mt-4 flex items-center gap-3" aria-label="Price">
+          <section className="mt-4 flex items-center gap-3" aria-label="Price">
             <span
               className={`text-2xl font-bold ${
                 product.badge === 'SALE' ? 'text-accent' : 'text-foreground'
@@ -148,7 +146,7 @@ export default async function ProductPage({
                 {formatMoney(product.originalPrice, product.currency, locale)}
               </span>
             )}
-          </div>
+          </section>
 
           {product.description && (
             <p className="mt-6 text-muted-foreground">{product.description}</p>

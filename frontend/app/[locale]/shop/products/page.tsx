@@ -90,7 +90,6 @@ export default async function ProductsPage({
             <div
               className="flex flex-col items-center justify-center py-16 text-center"
               role="status"
-              aria-live="polite"
             >
               <p className="text-lg font-medium text-foreground">
                 No products found

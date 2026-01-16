@@ -1,5 +1,3 @@
-// C:\Users\milka\devlovers.net-clean\frontend\components\shop\header\nav-links.tsx
-
 'use client';
 
 import { useMemo } from 'react';
@@ -34,7 +32,6 @@ const NAV_LINKS = [
 interface NavLinksProps {
   className?: string;
   onNavigate?: () => void;
-  showAdminLink?: boolean;
   includeHomeLink?: boolean;
 }
 

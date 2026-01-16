@@ -1,5 +1,3 @@
-// C:\Users\milka\devlovers.net-clean\frontend\app\[locale]\shop\orders\[id]\page.tsx
-
 import 'server-only';
 
 import { Link } from '@/i18n/routing';
@@ -22,7 +20,12 @@ type OrderDetail = {
   userId: string | null;
   totalAmount: string;
   currency: OrderCurrency;
-  paymentStatus: 'pending' | 'requires_payment' | 'paid' | 'failed' | 'refunded';
+  paymentStatus:
+    | 'pending'
+    | 'requires_payment'
+    | 'paid'
+    | 'failed'
+    | 'refunded';
   paymentProvider: string;
   paymentIntentId: string | null;
   stockRestored: boolean;
@@ -43,22 +46,25 @@ type OrderDetail = {
 };
 
 function toOrderItem(
-  item:
-    | {
-        id: string | null;
-        productId: string | null;
-        productTitle: string | null;
-        productSlug: string | null;
-        productSku: string | null;
-        quantity: number | null;
-        unitPrice: string | null;
-        lineTotal: string | null;
-      }
-    | null
+  item: {
+    id: string | null;
+    productId: string | null;
+    productTitle: string | null;
+    productSlug: string | null;
+    productSku: string | null;
+    quantity: number | null;
+    unitPrice: string | null;
+    lineTotal: string | null;
+  } | null
 ): OrderDetail['items'][number] | null {
   if (!item || !item.id) return null;
 
-  if (!item.productId || item.quantity === null || !item.unitPrice || !item.lineTotal) {
+  if (
+    !item.productId ||
+    item.quantity === null ||
+    !item.unitPrice ||
+    !item.lineTotal
+  ) {
     throw new Error('Corrupt order item row: required columns are null');
   }
 
@@ -85,8 +91,11 @@ export default async function OrderDetailPage({
 
   const user = await getCurrentUser();
   if (!user) {
-    // redirect() не знає про i18n Link, тому тут лишаємо locale в URL явно
-    redirect(`/${locale}/login?next=${encodeURIComponent(`/${locale}/shop/orders/${id}`)}`);
+    redirect(
+      `/${locale}/login?next=${encodeURIComponent(
+        `/${locale}/shop/orders/${id}`
+      )}`
+    );
   }
 
   const parsed = orderIdParamSchema.safeParse({ id });
@@ -130,7 +139,8 @@ export default async function OrderDetailPage({
       })
       .from(orders)
       .leftJoin(orderItems, eq(orderItems.orderId, orders.id))
-      .where(whereClause);
+      .where(whereClause)
+      .orderBy(orderItems.id);
 
     // non-admin: "не існує" == "не твій"
     if (rows.length === 0) notFound();
@@ -154,7 +164,10 @@ export default async function OrderDetailPage({
   }
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 py-8" aria-labelledby="order-heading">
+    <main
+      className="mx-auto w-full max-w-3xl px-4 py-8"
+      aria-labelledby="order-heading"
+    >
       <header className="mb-6 flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h1 id="order-heading" className="truncate text-2xl font-semibold">
@@ -163,8 +176,14 @@ export default async function OrderDetailPage({
           <div className="mt-1 truncate text-xs opacity-80">{order.id}</div>
         </div>
 
-        <nav className="flex flex-wrap items-center justify-end gap-3" aria-label="Order navigation">
-          <Link className="text-sm underline underline-offset-4" href="/shop/orders">
+        <nav
+          className="flex flex-wrap items-center justify-end gap-3"
+          aria-label="Order navigation"
+        >
+          <Link
+            className="text-sm underline underline-offset-4"
+            href="/shop/orders"
+          >
             My orders
           </Link>
           <Link className="text-sm underline underline-offset-4" href="/shop">
@@ -173,7 +192,10 @@ export default async function OrderDetailPage({
         </nav>
       </header>
 
-      <section className="mb-6 rounded-md border p-4" aria-labelledby="order-summary-heading">
+      <section
+        className="mb-6 rounded-md border p-4"
+        aria-labelledby="order-summary-heading"
+      >
         <h2 id="order-summary-heading" className="sr-only">
           Order summary
         </h2>
@@ -188,7 +210,9 @@ export default async function OrderDetailPage({
 
           <div>
             <dt className="text-xs opacity-80">Payment status</dt>
-            <dd className="text-sm font-medium">{String(order.paymentStatus)}</dd>
+            <dd className="text-sm font-medium">
+              {String(order.paymentStatus)}
+            </dd>
           </div>
 
           <div>
@@ -208,7 +232,9 @@ export default async function OrderDetailPage({
           <dl className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <dt className="text-xs opacity-80">Payment reference</dt>
-              <dd className="text-sm break-all">{order.paymentIntentId ?? '—'}</dd>
+              <dd className="text-sm break-all">
+                {order.paymentIntentId ?? '—'}
+              </dd>
             </div>
             <div>
               <dt className="text-xs opacity-80">Idempotency key</dt>
@@ -221,7 +247,9 @@ export default async function OrderDetailPage({
           <dl className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <dt className="text-xs opacity-80">Stock restored</dt>
-              <dd className="text-sm">{order.stockRestored ? 'true' : 'false'}</dd>
+              <dd className="text-sm">
+                {order.stockRestored ? 'true' : 'false'}
+              </dd>
             </div>
             <div>
               <dt className="text-xs opacity-80">Restocked at</dt>
@@ -231,7 +259,10 @@ export default async function OrderDetailPage({
         )}
       </section>
 
-      <section className="rounded-md border" aria-labelledby="order-items-heading">
+      <section
+        className="rounded-md border"
+        aria-labelledby="order-items-heading"
+      >
         <div className="border-b p-4">
           <h2 id="order-items-heading" className="text-lg font-semibold">
             Items
@@ -244,10 +275,15 @@ export default async function OrderDetailPage({
               <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
                   <div className="truncate font-medium">
-                    {it.productTitle ?? it.productSlug ?? it.productSku ?? it.productId}
+                    {it.productTitle ??
+                      it.productSlug ??
+                      it.productSku ??
+                      it.productId}
                   </div>
                   <div className="mt-1 break-all text-xs opacity-80">
-                    {it.productSku ? `SKU: ${it.productSku}` : `Product: ${it.productId}`}
+                    {it.productSku
+                      ? `SKU: ${it.productSku}`
+                      : `Product: ${it.productId}`}
                   </div>
                 </div>
 
@@ -262,7 +298,9 @@ export default async function OrderDetailPage({
                   </div>
                   <div>
                     <dt className="sr-only">Line total</dt>
-                    <dd className="text-sm font-medium">Line: {it.lineTotal}</dd>
+                    <dd className="text-sm font-medium">
+                      Line: {it.lineTotal}
+                    </dd>
                   </div>
                 </dl>
               </div>

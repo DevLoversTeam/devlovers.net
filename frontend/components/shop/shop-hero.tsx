@@ -1,7 +1,4 @@
-// C:\Users\milka\devlovers.net-clean\frontend\components\shop\shop-hero.tsx
-
 import { Link } from '@/i18n/routing';
-
 interface HeroProps {
   headline: string;
   subheadline: string;
@@ -32,7 +29,6 @@ export function Hero({ headline, subheadline, ctaText, ctaLink }: HeroProps) {
             <Link
               href={ctaLink}
               className="inline-flex items-center gap-2 rounded-md bg-foreground px-6 py-3 text-sm font-semibold uppercase tracking-wide text-background transition-colors hover:bg-foreground/90"
-              aria-label={ctaText}
             >
               <span>{ctaText}</span>
               <span aria-hidden="true">→</span>

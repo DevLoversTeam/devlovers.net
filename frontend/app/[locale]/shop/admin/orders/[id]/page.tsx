@@ -1,4 +1,3 @@
-// frontend/app/[locale]/shop/admin/orders/[id]/page.tsx
 import { notFound } from 'next/navigation';
 
 import { Link } from '@/i18n/routing';

@@ -1,5 +1,3 @@
-// C:\Users\milka\devlovers.net-clean\frontend\components\shop\cart-provider.tsx
-
 'use client';
 
 import {

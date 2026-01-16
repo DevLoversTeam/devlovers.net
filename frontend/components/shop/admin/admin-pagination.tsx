@@ -1,5 +1,3 @@
-// C:\Users\milka\devlovers.net-clean\frontend\components\shop\admin\admin-pagination.tsx
-
 import { Link } from '@/i18n/routing';
 import { cn } from '@/lib/utils';
 

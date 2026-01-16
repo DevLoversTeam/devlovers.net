@@ -42,7 +42,7 @@ export function CategoryTile({ category }: CategoryTileProps) {
           className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-white/90 opacity-0 transition-opacity group-hover:opacity-100"
           aria-hidden="true"
         >
-          Shop now <span aria-hidden="true">→</span>
+          Shop now <span>→</span>
         </span>
       </div>
     </Link>

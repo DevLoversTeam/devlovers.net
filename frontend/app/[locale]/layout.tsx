@@ -32,11 +32,13 @@ export default async function LocaleLayout({
 
   const userExists = Boolean(user);
   const enableAdmin =
-  (process.env.ENABLE_ADMIN_API ?? process.env.NEXT_PUBLIC_ENABLE_ADMIN ?? '')
-    .toLowerCase() === 'true';
+    (
+      process.env.ENABLE_ADMIN_API ??
+      process.env.NEXT_PUBLIC_ENABLE_ADMIN ??
+      ''
+    ).toLowerCase() === 'true';
 
-  // підстав свій реальний шлях до ролі
-  const isAdmin = user?.role === 'admin'; // або 'ADMIN', або isShopAdmin === true
+  const isAdmin = user?.role === 'admin';
   const showAdminNavLink = Boolean(user) && isAdmin && enableAdmin;
 
   return (

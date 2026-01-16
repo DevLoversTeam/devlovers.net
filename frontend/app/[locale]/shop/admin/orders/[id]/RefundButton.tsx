@@ -70,12 +70,7 @@ export function RefundButton({ orderId, disabled }: Props) {
       </button>
 
       {error ? (
-        <span
-          id={errorId}
-          role="alert"
-          aria-live="polite"
-          className="text-xs text-destructive"
-        >
+        <span id={errorId} role="alert" className="text-xs text-destructive">
           {error}
         </span>
       ) : null}

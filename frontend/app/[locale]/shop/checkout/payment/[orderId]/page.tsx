@@ -1,6 +1,5 @@
-// frontend/app/[locale]/shop/checkout/payment/[orderId]/page.tsx
 import { Link } from '@/i18n/routing';
-
+import { ClearCartOnMount } from '@/components/shop/clear-cart-on-mount';
 import StripePaymentClient from '../StripePaymentClient';
 import { formatMoney } from '@/lib/shop/currency';
 import { getOrderSummary } from '@/lib/services/orders';
@@ -39,6 +38,14 @@ function buildStatusMessage(status: string) {
   }
 
   return 'Complete payment to finish your order.';
+}
+
+function shouldClearCart(
+  searchParams?: Record<string, string | string[] | undefined>
+): boolean {
+  const raw = searchParams?.clearCart;
+  const v = Array.isArray(raw) ? raw[0] : raw;
+  return v === 'true' || v === '1';
 }
 
 type PaymentPageProps = {
@@ -80,6 +87,8 @@ export default async function PaymentPage(props: PaymentPageProps) {
   const searchParams = props.searchParams
     ? await props.searchParams
     : undefined;
+  const clearCart = shouldClearCart(searchParams);
+  const cc = clearCart ? '&clearCart=1' : '';
   const { locale } = params;
 
   const orderId = getOrderId(params);
@@ -203,25 +212,31 @@ export default async function PaymentPage(props: PaymentPageProps) {
 
   if (order.paymentStatus === 'paid') {
     return (
-      <PageShell
-        title="Order already paid"
-        description="We've already confirmed payment for this order."
-      >
-        <nav className="mt-6 flex justify-center gap-3" aria-label="Next steps">
-          <Link
-            href={`/shop/checkout/success?orderId=${order.id}`}
-            className="inline-flex items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground hover:bg-accent/90"
+      <>
+        <ClearCartOnMount enabled={clearCart} />
+        <PageShell
+          title="Order already paid"
+          description="We've already confirmed payment for this order."
+        >
+          <nav
+            className="mt-6 flex justify-center gap-3"
+            aria-label="Next steps"
           >
-            View confirmation
-          </Link>
-          <Link
-            href="/shop/products"
-            className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
-          >
-            Continue shopping
-          </Link>
-        </nav>
-      </PageShell>
+            <Link
+              href={`/shop/checkout/success?orderId=${order.id}${cc}`}
+              className="inline-flex items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground hover:bg-accent/90"
+            >
+              View confirmation
+            </Link>
+            <Link
+              href="/shop/products"
+              className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
+            >
+              Continue shopping
+            </Link>
+          </nav>
+        </PageShell>
+      </>
     );
   }
 
@@ -232,6 +247,8 @@ export default async function PaymentPage(props: PaymentPageProps) {
       className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8"
       aria-labelledby="pay-order-title"
     >
+      <ClearCartOnMount enabled={clearCart} />
+
       <header className="mb-6">
         <p className="text-sm font-semibold uppercase tracking-wide text-accent">
           Secure checkout

@@ -1,38 +1,40 @@
-// C:\Users\milka\devlovers.net\frontend\lib\tests\checkout-currency-policy.test.ts
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { inArray } from 'drizzle-orm';
 import { NextRequest } from 'next/server';
 import crypto from 'crypto';
-
 
 process.env.STRIPE_PAYMENTS_ENABLED = 'false';
 process.env.STRIPE_SECRET_KEY = '';
 process.env.STRIPE_WEBHOOK_SECRET = '';
 
 vi.mock('@/lib/auth', async () => {
-  const actual = await vi.importActual<typeof import('@/lib/auth')>('@/lib/auth');
+  const actual = await vi.importActual<typeof import('@/lib/auth')>(
+    '@/lib/auth'
+  );
   return {
     ...actual,
     getCurrentUser: async () => null, // guest
   };
 });
 
-
 vi.mock('@/lib/env/stripe', () => ({
   isPaymentsEnabled: () => false,
 }));
 
 const createPaymentIntentMock = vi.fn((..._args: any[]) => {
-  throw new Error('Stripe should not be called in this test (payments disabled).');
+  throw new Error(
+    'Stripe should not be called in this test (payments disabled).'
+  );
 });
 
 vi.mock('@/lib/psp/stripe', () => ({
   createPaymentIntent: (...args: any[]) => createPaymentIntentMock(...args),
   retrievePaymentIntent: (..._args: any[]) => {
-    throw new Error('Stripe should not be called in this test (payments disabled).');
+    throw new Error(
+      'Stripe should not be called in this test (payments disabled).'
+    );
   },
 }));
-
 
 // checkout-currency-policy.test.ts
 
@@ -40,15 +42,15 @@ const logErrorMock = vi.fn((..._args: any[]) => undefined);
 const logWarnMock = vi.fn((..._args: any[]) => undefined);
 
 vi.mock('@/lib/logging', async () => {
-  const actual = await vi.importActual<typeof import('@/lib/logging')>('@/lib/logging');
+  const actual = await vi.importActual<typeof import('@/lib/logging')>(
+    '@/lib/logging'
+  );
   return {
     ...actual,
     logError: (...args: any[]) => logErrorMock(...args),
     logWarn: (...args: any[]) => logWarnMock(...args),
   };
 });
-
-
 
 import { db } from '@/db';
 import { products, productPrices, orders } from '@/db/schema';
@@ -60,7 +62,9 @@ const createdOrderIds: string[] = [];
 
 beforeAll(() => {
   if (process.env.NODE_ENV === 'production') {
-    throw new Error('Refusing to run DB-mutating tests in production environment.');
+    throw new Error(
+      'Refusing to run DB-mutating tests in production environment.'
+    );
   }
 });
 
@@ -163,7 +167,10 @@ async function debugIfNotExpected(res: Response, expectedStatus: number) {
   // Keep output minimal but decisive
   console.log('checkout failed', { status: res.status, body: text });
   console.log('logError calls', logErrorMock.mock.calls);
-  console.log('stripe createPaymentIntent calls', createPaymentIntentMock.mock.calls.length);
+  console.log(
+    'stripe createPaymentIntent calls',
+    createPaymentIntentMock.mock.calls.length
+  );
 }
 
 describe('P0-CUR-3 checkout currency policy', () => {

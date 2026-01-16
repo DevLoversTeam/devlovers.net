@@ -1,5 +1,3 @@
-// C:\Users\milka\devlovers.net-clean\frontend\components\shop\catalog-load-more.tsx
-
 'use client';
 
 interface CatalogLoadMoreProps {

@@ -17,6 +17,25 @@ export function ProductsToolbar() {
 
   const close = React.useCallback(() => setOpen(false), []);
 
+  const getFocusable = React.useCallback((root: HTMLElement) => {
+    const selectors = [
+      'a[href]',
+      'button:not([disabled])',
+      'input:not([disabled])',
+      'select:not([disabled])',
+      'textarea:not([disabled])',
+      '[tabindex]:not([tabindex="-1"])',
+    ].join(',');
+
+    return Array.from(root.querySelectorAll<HTMLElement>(selectors)).filter(
+      el => {
+        // ignore elements that are not actually visible/clickable
+        const style = window.getComputedStyle(el);
+        return style.visibility !== 'hidden' && style.display !== 'none';
+      }
+    );
+  }, []);
+
   React.useEffect(() => {
     if (!open) return;
 
@@ -40,28 +59,73 @@ export function ProductsToolbar() {
     const mq = window.matchMedia('(min-width: 1024px)');
     if (mq.matches) return;
 
-    // snapshot refs for cleanup (eslint react-hooks/exhaustive-deps warning)
     const triggerEl = openBtnRef.current;
-    const initialCloseEl = closeBtnRef.current;
+    const dialogEl = document.getElementById(dialogId) as HTMLElement | null;
+
+    const focusFirst = () => {
+      if (!dialogEl) return;
+      const focusables = getFocusable(dialogEl);
+      (focusables[0] ?? dialogEl).focus();
+    };
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') close();
+      if (!dialogEl) return;
+
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        close();
+        return;
+      }
+
+      if (e.key !== 'Tab') return;
+
+      const focusables = getFocusable(dialogEl);
+      if (focusables.length === 0) {
+        // if nothing is focusable, keep focus on dialog itself
+        e.preventDefault();
+        dialogEl.focus();
+        return;
+      }
+
+      const active = document.activeElement as HTMLElement | null;
+      const first = focusables[0]!;
+      const last = focusables[focusables.length - 1]!;
+
+      // If focus somehow escaped, pull it back in.
+      if (!active || !dialogEl.contains(active)) {
+        e.preventDefault();
+        (e.shiftKey ? last : first).focus();
+        return;
+      }
+
+      if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+        return;
+      }
+
+      if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      }
     };
 
     document.addEventListener('keydown', onKeyDown);
     document.documentElement.classList.add('overflow-hidden');
 
-    requestAnimationFrame(() =>
-      (initialCloseEl ?? closeBtnRef.current)?.focus()
-    );
+    requestAnimationFrame(() => {
+      // prefer close button, else first focusable, else dialog
+      const closeEl = closeBtnRef.current;
+      if (closeEl) closeEl.focus();
+      else focusFirst();
+    });
 
     return () => {
       document.removeEventListener('keydown', onKeyDown);
       document.documentElement.classList.remove('overflow-hidden');
-
       requestAnimationFrame(() => triggerEl?.focus());
     };
-  }, [open, close]);
+  }, [open, close, dialogId, getFocusable]);
 
   return (
     <>
@@ -94,7 +158,8 @@ export function ProductsToolbar() {
           <button
             type="button"
             className="absolute inset-0 bg-black/40"
-            aria-label="Close filters"
+            aria-hidden="true"
+            tabIndex={-1}
             onClick={close}
           />
 
@@ -102,6 +167,7 @@ export function ProductsToolbar() {
             id={dialogId}
             role="dialog"
             aria-modal="true"
+            tabIndex={-1}
             aria-labelledby={dialogTitleId}
             className="absolute right-0 top-0 h-full w-full max-w-sm overflow-y-auto bg-background shadow-xl"
           >

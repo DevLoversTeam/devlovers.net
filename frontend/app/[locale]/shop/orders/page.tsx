@@ -1,5 +1,3 @@
-// C:\Users\milka\devlovers.net-clean\frontend\app\[locale]\shop\orders\page.tsx
-
 import 'server-only';
 
 import { Link } from '@/i18n/routing';
