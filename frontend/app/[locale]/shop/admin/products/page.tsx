@@ -10,40 +10,16 @@ import { AdminPagination } from '@/components/shop/admin/admin-pagination';
 import { db } from '@/db';
 import { products, productPrices } from '@/db/schema';
 import { formatMoney, resolveCurrencyFromLocale } from '@/lib/shop/currency';
-import { fromDbMoney } from '@/lib/shop/money';
-import { logWarn } from '@/lib/logging';
+import { parsePage } from '@/lib/pagination';
+
 
 export const dynamic = 'force-dynamic';
 
 const PAGE_SIZE = 25;
 
-function parsePage(input: string | undefined): number {
-  const n = Number.parseInt(input ?? '1', 10);
-  return Number.isFinite(n) && n > 0 ? n : 1;
-}
-
 function formatDate(value: Date | null, locale: string): string {
   if (!value) return '-';
   return value.toLocaleDateString(locale);
-}
-
-function safeFromDbMoney(
-  value: unknown,
-  ctx: { productId: string; currency: string }
-): number | null {
-  if (value == null) return null;
-
-  try {
-    return fromDbMoney(value);
-  } catch (err) {
-    logWarn('admin_products_from_db_money_failed', {
-      ...ctx,
-      valueType: typeof value,
-      value,
-      error: err instanceof Error ? err.message : String(err),
-    });
-    return null;
-  }
 }
 
 export default async function AdminProductsPage({
@@ -75,7 +51,7 @@ export default async function AdminProductsPage({
       isActive: products.isActive,
       isFeatured: products.isFeatured,
       createdAt: products.createdAt,
-      price: productPrices.price,
+      priceMinor: productPrices.priceMinor,
     })
     .from(products)
     .leftJoin(
@@ -85,7 +61,7 @@ export default async function AdminProductsPage({
         eq(productPrices.currency, displayCurrency)
       )
     )
-    // стабільне сортування (tie-breaker)
+    // stable sort with tie-breaker
     .orderBy(desc(products.createdAt), desc(products.id))
     .limit(PAGE_SIZE + 1)
     .offset(offset);
@@ -195,10 +171,7 @@ export default async function AdminProductsPage({
 
               <tbody className="divide-y divide-border">
                 {rows.map(row => {
-                  const priceMinor = safeFromDbMoney(row.price, {
-                    productId: row.id,
-                    currency: displayCurrency,
-                  });
+                  const priceMinor = row.priceMinor;
 
                   return (
                     <tr key={row.id} className="hover:bg-muted/50">

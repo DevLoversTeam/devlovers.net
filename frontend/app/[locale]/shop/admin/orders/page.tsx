@@ -11,15 +11,12 @@ import { fromDbMoney } from '@/lib/shop/money';
 import { ShopAdminTopbar } from '@/components/shop/admin/shop-admin-topbar';
 import { AdminPagination } from '@/components/shop/admin/admin-pagination';
 import { guardShopAdminPage } from '@/lib/auth/guard-shop-admin-page';
+import { CSRF_FORM_FIELD, issueCsrfToken } from '@/lib/security/csrf';
+import { parsePage } from '@/lib/pagination';
 
 export const dynamic = 'force-dynamic';
 
-const PAGE_SIZE = 50;
-
-function parsePage(input: string | undefined): number {
-  const n = Number.parseInt(input ?? '1', 10);
-  return Number.isFinite(n) && n > 0 ? n : 1;
-}
+const PAGE_SIZE = 25;
 
 function pickMinor(minor: unknown, legacyMajor: unknown): number | null {
   if (typeof minor === 'number') return minor;
@@ -32,9 +29,9 @@ function orderCurrency(order: any, locale: string): CurrencyCode {
   return c === 'UAH' ? 'UAH' : 'USD';
 }
 
-function formatDate(value: Date | null | undefined): string {
+function formatDate(value: Date | null | undefined, locale: string): string {
   if (!value) return '-';
-  return value.toLocaleDateString();
+  return value.toLocaleDateString(locale);
 }
 
 export default async function AdminOrdersPage({
@@ -48,6 +45,7 @@ export default async function AdminOrdersPage({
 
   const { locale } = await params;
   const sp = await searchParams;
+  const csrfToken = issueCsrfToken('admin:orders:reconcile-stale');
 
   const page = parsePage(sp.page);
   const offset = (page - 1) * PAGE_SIZE;
@@ -78,6 +76,7 @@ export default async function AdminOrdersPage({
           </h1>
 
           <form action="/api/shop/admin/orders/reconcile-stale" method="post">
+            <input type="hidden" name={CSRF_FORM_FIELD} value={csrfToken} />
             <button
               type="submit"
               className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
@@ -140,64 +139,64 @@ export default async function AdminOrdersPage({
               </thead>
 
               <tbody className="divide-y divide-border">
-                {items.map(order => {
-                  const currency = orderCurrency(order, locale);
-                  const totalMinor = pickMinor(
-                    order?.totalAmountMinor,
-                    order?.totalAmount
-                  );
-                  const totalFormatted =
-                    totalMinor === null
-                      ? '-'
-                      : formatMoney(totalMinor, currency, locale);
-
-                  return (
-                    <tr key={order.id} className="hover:bg-muted/50">
-                      <td className="px-3 py-2 text-muted-foreground">
-                        {formatDate(order.createdAt)}
-                      </td>
-
-                      <td className="px-3 py-2">
-                        <span className="inline-flex rounded-full bg-muted px-2 py-1 text-xs font-medium text-foreground">
-                          {order.paymentStatus}
-                        </span>
-                      </td>
-
-                      <td className="px-3 py-2 text-foreground">
-                        {totalFormatted}
-                      </td>
-
-                      <td className="px-3 py-2 text-muted-foreground">
-                        {order.itemCount}
-                      </td>
-                      <td className="px-3 py-2 text-muted-foreground">
-                        {order.paymentProvider}
-                      </td>
-
-                      <td className="px-3 py-2 font-mono text-xs text-muted-foreground break-all">
-                        {order.id}
-                      </td>
-
-                      <td className="px-3 py-2">
-                        <Link
-                          href={`/shop/admin/orders/${order.id}`}
-                          className="rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
-                          aria-label={`View order ${order.id}`}
-                        >
-                          View
-                        </Link>
-                      </td>
-                    </tr>
-                  );
-                })}
-
                 {items.length === 0 ? (
                   <tr>
                     <td className="px-3 py-6 text-muted-foreground" colSpan={7}>
                       No orders yet.
                     </td>
                   </tr>
-                ) : null}
+                ) : (
+                  items.map(order => {
+                    const currency = orderCurrency(order, locale);
+                    const totalMinor = pickMinor(
+                      order?.totalAmountMinor,
+                      order?.totalAmount
+                    );
+                    const totalFormatted =
+                      totalMinor === null
+                        ? '-'
+                        : formatMoney(totalMinor, currency, locale);
+
+                    return (
+                      <tr key={order.id} className="hover:bg-muted/50">
+                        <td className="px-3 py-2 text-muted-foreground">
+                          {formatDate(order.createdAt, locale)}
+                        </td>
+
+                        <td className="px-3 py-2">
+                          <span className="inline-flex rounded-full bg-muted px-2 py-1 text-xs font-medium text-foreground">
+                            {order.paymentStatus}
+                          </span>
+                        </td>
+
+                        <td className="px-3 py-2 text-foreground">
+                          {totalFormatted}
+                        </td>
+
+                        <td className="px-3 py-2 text-muted-foreground">
+                          {order.itemCount}
+                        </td>
+                        <td className="px-3 py-2 text-muted-foreground">
+                          {order.paymentProvider}
+                        </td>
+
+                        <td className="px-3 py-2 font-mono text-xs text-muted-foreground break-all">
+                          {order.id}
+                        </td>
+
+                        <td className="px-3 py-2">
+                          <Link
+                            href={`/shop/admin/orders/${order.id}`}
+                            className="rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
+                            aria-label={`View order ${order.id}`}
+                          >
+                            View
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
 
