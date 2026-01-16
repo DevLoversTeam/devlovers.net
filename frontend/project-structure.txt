@@ -224,6 +224,7 @@
     📄 catalog-load-more.tsx
     📄 catalog-products-client.tsx
     📄 category-tile.tsx
+    📄 clear-cart-on-mount.tsx
     📁 header
       📄 cart-button.tsx
       📄 nav-links.tsx
@@ -386,6 +387,7 @@
   📄 logging.ts
   📄 logout.ts
   📄 navigation.ts
+  📄 pagination.ts
   📁 psp
     📄 stripe.ts
   📁 quiz
@@ -393,6 +395,8 @@
     📄 quiz-crypto.ts
     📄 quiz-session.ts
     📄 quiz-storage-keys.ts
+  📁 security
+    📄 csrf.ts
   📁 services
     📄 errors.ts
     📄 inventory.ts
@@ -400,6 +404,8 @@
       📄 checkout.ts
       📄 payment-intent.ts
       📄 payment-state.ts
+      📁 psp-metadata
+        📄 refunds.ts
       📄 refund.ts
       📄 restock.ts
       📄 summary.ts
@@ -440,6 +446,8 @@
     📄 checkout-stripe-error-contract.test.ts
     📄 currency.test.ts
     📄 format-money.test.ts
+    📁 helpers
+      📄 makeCheckoutReq.ts
     📄 order-items-snapshot-immutable.test.ts
     📄 order-items-variants.test.ts
     📄 orders-access.test.ts
