@@ -30,9 +30,12 @@ function orderCurrency(
   return c === 'UAH' ? 'UAH' : 'USD';
 }
 
-function formatDateTime(value: Date | null | undefined): string {
+function formatDateTime(
+  value: Date | null | undefined,
+  locale: string
+): string {
   if (!value) return '-';
-  return value.toLocaleString();
+  return value.toLocaleString(locale);
 }
 
 export default async function AdminOrderDetailPage({
@@ -150,14 +153,14 @@ export default async function AdminOrderDetailPage({
               <div className="flex justify-between gap-4">
                 <dt className="text-muted-foreground">Created</dt>
                 <dd className="text-foreground">
-                  {formatDateTime(order.createdAt)}
+                  {formatDateTime(order.createdAt, locale)}
                 </dd>
               </div>
 
               <div className="flex justify-between gap-4">
                 <dt className="text-muted-foreground">Updated</dt>
                 <dd className="text-foreground">
-                  {formatDateTime(order.updatedAt)}
+                  {formatDateTime(order.updatedAt, locale)}
                 </dd>
               </div>
 
@@ -171,7 +174,7 @@ export default async function AdminOrderDetailPage({
               <div className="flex justify-between gap-4">
                 <dt className="text-muted-foreground">Restocked at</dt>
                 <dd className="text-foreground">
-                  {formatDateTime(order.restockedAt)}
+                  {formatDateTime(order.restockedAt, locale)}
                 </dd>
               </div>
             </dl>

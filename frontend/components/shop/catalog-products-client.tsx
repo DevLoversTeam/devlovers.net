@@ -7,6 +7,7 @@ import { useSearchParams, type ReadonlyURLSearchParams } from 'next/navigation';
 
 import { CatalogLoadMore } from '@/components/shop/catalog-load-more';
 import { ProductCard } from '@/components/shop/product-card';
+import { logError } from '@/lib/logging';
 
 type Product = React.ComponentProps<typeof ProductCard>['product'] & {
   id: string;
@@ -75,7 +76,6 @@ export function CatalogProductsClient({
     query.set('page', String(nextPage));
 
     const requestQueryKey = `${baseQuery}|l=${locale}`;
-    activeQueryRef.current = requestQueryKey;
     query.set('locale', locale);
 
     try {
@@ -102,7 +102,12 @@ export function CatalogProductsClient({
 
       setPage(data.page);
       setHasMore(data.hasMore);
-    } catch {
+    } catch (err) {
+      logError('[shop.catalog] load more failed', err, {
+        locale,
+        baseQuery,
+        nextPage,
+      });
       setError('Failed to load more');
     } finally {
       if (activeQueryRef.current === requestQueryKey) {

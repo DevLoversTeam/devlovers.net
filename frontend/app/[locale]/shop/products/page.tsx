@@ -54,7 +54,6 @@ export default async function ProductsPage({
 
   const filters = {
     ...parsed,
-    page: 1,
     limit: parsed.limit ?? CATALOG_PAGE_SIZE,
   };
 

@@ -204,30 +204,12 @@ export async function restockOrder(
 
   // Apply release moves. IMPORTANT invariant:
   // do NOT mark released/stockRestored/restockedAt unless all releases are CONFIRMED ok.
+
   const releaseFailures: Array<{ productId: string; reason: string }> = [];
 
   for (const item of reservedMoves) {
     try {
-      const res: unknown = await applyReleaseMove(
-        orderId,
-        item.productId,
-        item.quantity
-      );
-
-      // Support both styles:
-      // - void return (treat as success)
-      // - { ok: boolean, reason?: string } return (explicit fail if ok === false)
-      if (
-        res &&
-        typeof res === 'object' &&
-        'ok' in (res as any) &&
-        (res as any).ok === false
-      ) {
-        releaseFailures.push({
-          productId: item.productId,
-          reason: String((res as any).reason ?? 'unknown'),
-        });
-      }
+      await applyReleaseMove(orderId, item.productId, item.quantity);
     } catch (err) {
       releaseFailures.push({
         productId: item.productId,

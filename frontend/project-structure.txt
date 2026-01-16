@@ -110,7 +110,6 @@
       📄 page.tsx
     📁 shop
       📁 admin
-        📄 layout.tsx
         📁 orders
           📄 page.tsx
           📁 [id]
@@ -138,13 +137,16 @@
         📁 success
           📄 OrderStatusAutoRefresh.tsx
           📄 page.tsx
-      📄 layout.tsx
+      📁 orders
+        📄 error.tsx
+        📄 page.tsx
+        📁 [id]
+          📄 page.tsx
       📄 page.tsx
       📁 products
         📄 page.tsx
         📁 [slug]
           📄 page.tsx
-      📄 shop-theme.css
     📁 signup
       📄 page.tsx
     📁 terms-of-service
@@ -215,7 +217,9 @@
   📁 shop
     📄 add-to-cart-button.tsx
     📁 admin
+      📄 admin-pagination.tsx
       📄 admin-product-status-toggle.tsx
+      📄 shop-admin-topbar.tsx
     📄 cart-provider.tsx
     📄 catalog-load-more.tsx
     📄 catalog-products-client.tsx
@@ -223,13 +227,11 @@
     📁 header
       📄 cart-button.tsx
       📄 nav-links.tsx
-      📄 theme-toggle.tsx
     📄 product-card.tsx
     📄 product-filters.tsx
     📄 product-sort.tsx
-    📄 shop-footer.tsx
+    📄 products-toolbar.tsx
     📄 shop-hero.tsx
-    📄 theme-provider.tsx
   📁 tests
     📄 CookieBanner.test.tsx
   📁 theme
@@ -357,6 +359,7 @@
   📁 auth
     📄 admin.ts
     📄 email-verification.ts
+    📄 guard-shop-admin-page.ts
     📄 internal-janitor.ts
     📄 oauth-state.ts
     📄 password-reset.ts
@@ -378,6 +381,8 @@
     📄 cloudinary.ts
     📄 index.ts
     📄 stripe.ts
+  📁 http
+    📄 getBaseUrl.ts
   📄 logging.ts
   📄 logout.ts
   📄 navigation.ts
@@ -491,8 +496,11 @@
 📄 project-structure.txt
 📄 proxy.ts
 📁 public
+  📄 apparel.jpg
+  📄 collectibles.jpg
   📄 favicon-dark.svg
   📄 favicon-light.svg
+  📄 lifestyle.jpg
   📄 placeholder.svg
 📄 README.md
 📄 save-structure.cjs

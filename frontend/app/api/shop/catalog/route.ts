@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCatalogProducts } from '@/lib/shop/data';
 import { catalogQuerySchema } from '@/lib/validation/shop';
 import { CATALOG_PAGE_SIZE } from '@/lib/config/catalog';
+import { logWarn } from '@/lib/logging';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -26,6 +27,13 @@ export async function GET(req: NextRequest) {
   const effectiveLocale = locale ?? 'en';
 
   const parsed = catalogQuerySchema.safeParse(rest);
+
+  if (!parsed.success) {
+    logWarn('[shop.catalog] invalid query params; using defaults', {
+      query: rest,
+      issues: parsed.error.flatten(),
+    });
+  }
 
   const filters = parsed.success
     ? parsed.data

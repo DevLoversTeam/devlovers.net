@@ -8,42 +8,10 @@ import { orders, stripeEvents } from '@/db/schema';
 import { restockOrder } from '@/lib/services/orders';
 import { guardedPaymentStatusUpdate } from '@/lib/services/orders/payment-state';
 import { logError, logInfo, logWarn } from '@/lib/logging';
-
-type RefundMetaRecord = {
-  refundId: string;
-  idempotencyKey: string;
-  amountMinor: number;
-  currency: string;
-  createdAt: string;
-  createdBy: string;
-  status?: string | null;
-};
-
-function normalizeRefundsFromMeta(
-  meta: unknown,
-  fallback: { currency: string; createdAt: string }
-): RefundMetaRecord[] {
-  const m = (meta ?? {}) as any;
-
-  if (Array.isArray(m.refunds)) return m.refunds as RefundMetaRecord[];
-
-  const legacy = m.refund;
-  if (legacy?.id) {
-    return [
-      {
-        refundId: String(legacy.id),
-        idempotencyKey: 'legacy:webhook',
-        amountMinor: Number(legacy.amount ?? 0),
-        currency: fallback.currency,
-        createdAt: fallback.createdAt,
-        createdBy: 'webhook',
-        status: legacy.status ?? null,
-      },
-    ];
-  }
-
-  return [];
-}
+import {
+  type RefundMetaRecord,
+  appendRefundToMeta,
+} from '@/lib/services/orders/psp-metadata/refunds';
 
 function upsertRefundIntoMeta(params: {
   prevMeta: unknown;
@@ -54,15 +22,12 @@ function upsertRefundIntoMeta(params: {
 }): any {
   const { prevMeta, refund, eventId, currency, createdAtIso } = params;
 
-  const base = ((prevMeta ?? {}) as any) ?? {};
+  const base =
+    prevMeta && typeof prevMeta === 'object' && !Array.isArray(prevMeta)
+      ? (prevMeta as any)
+      : {};
 
-  // якщо refund в payload нема — просто повертаємо base (але НЕ затираємо refunds)
   if (!refund?.id) return base;
-
-  const refunds = normalizeRefundsFromMeta(base, {
-    currency,
-    createdAt: createdAtIso,
-  });
 
   const rec: RefundMetaRecord = {
     refundId: refund.id,
@@ -74,15 +39,7 @@ function upsertRefundIntoMeta(params: {
     status: refund.status ?? null,
   };
 
-  const exists = refunds.some(
-    r => r.refundId === rec.refundId || r.idempotencyKey === rec.idempotencyKey
-  );
-
-  return {
-    ...base,
-    refunds: exists ? refunds : [...refunds, rec],
-    refundInitiatedAt: base.refundInitiatedAt ?? createdAtIso,
-  };
+  return appendRefundToMeta({ prevMeta: base, record: rec });
 }
 
 function warnRefundFullnessUndetermined(payload: {
@@ -246,13 +203,16 @@ function mergePspMetadata(params: {
     createdAtIso: params.createdAtIso,
   });
 
-  // IMPORTANT: merge, not overwrite (preserves refunds[])
+  // Do NOT allow delta to overwrite refunds/refundInitiatedAt (canonical fields managed by upsertRefundIntoMeta)
+  const safeDelta: any = { ...cleanedDelta };
+  delete safeDelta.refunds;
+  delete safeDelta.refundInitiatedAt;
+
   return {
     ...metaWithRefunds,
-    ...cleanedDelta,
+    ...safeDelta,
   };
 }
-
 function shouldRestockFromWebhook(order: {
   stockRestored: boolean | null;
   inventoryStatus: string | null;

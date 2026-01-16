@@ -2,16 +2,12 @@ import { and, eq, inArray } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { products, productPrices } from '@/db/schema';
-import {
-  calculateLineTotal,
-  fromCents,
-  toCents,
-} from '@/lib/shop/money';
+import { coercePriceFromDb } from '@/db/queries/shop/orders';
+import { calculateLineTotal, fromCents, toCents } from '@/lib/shop/money';
 import {
   MAX_QUANTITY_PER_LINE,
   cartRehydrateResultSchema,
 } from '@/lib/validation/shop';
-import { coercePriceFromDb } from '@/db/queries/shop/orders';
 import type {
   CartClientItem,
   CartRehydrateItem,
@@ -21,6 +17,8 @@ import type {
 import type { CurrencyCode } from '@/lib/shop/currency';
 
 import { PriceConfigError } from '../../errors';
+
+const fromMinorUnits = fromCents;
 
 export async function rehydrateCartItems(
   items: CartClientItem[],
@@ -158,8 +156,8 @@ export async function rehydrateCartItems(
       unitPriceMinor: unitPriceMinor,
       lineTotalMinor: lineTotalMinor,
       // display:
-      unitPrice: fromCents(unitPriceMinor),
-      lineTotal: fromCents(lineTotalMinor),
+      unitPrice: fromMinorUnits(unitPriceMinor),
+      lineTotal: fromMinorUnits(lineTotalMinor),
 
       // policy: items currency should match resolved currency
       currency,
@@ -182,7 +180,7 @@ export async function rehydrateCartItems(
       // canonical:
       totalAmountMinor: totalMinor,
       // display:
-      totalAmount: fromCents(totalMinor),
+      totalAmount: fromMinorUnits(totalMinor),
       itemCount,
       currency,
     },
