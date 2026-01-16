@@ -12,7 +12,11 @@ type AppChromeProps = {
   children: React.ReactNode;
 };
 
-export function AppChrome({ userExists, showAdminLink = false, children }: AppChromeProps) {
+export function AppChrome({
+  userExists,
+  showAdminLink = false,
+  children,
+}: AppChromeProps) {
   const segments = useSelectedLayoutSegments();
   const isShop = segments.includes('shop');
 
@@ -25,6 +29,7 @@ export function AppChrome({ userExists, showAdminLink = false, children }: AppCh
             userExists={userExists}
             showAdminLink={showAdminLink}
           />
+
           {children}
         </div>
       </CartProvider>

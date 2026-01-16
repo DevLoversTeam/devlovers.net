@@ -30,8 +30,8 @@ describe('P0 Inventory release invariants', () => {
     // Spy/mocking: force release to fail
     // NOTE: if applyReleaseMove throws in your impl, mockRejectedValueOnce is also OK.
     const releaseSpy = vi
-      .spyOn(inventory, 'applyReleaseMove' as any)
-      .mockResolvedValueOnce({ ok: false, reason: 'MOCK_FAIL' } as any);
+      .spyOn(inventory, 'applyReleaseMove')
+      .mockRejectedValue(new Error('SIMULATED_RELEASE_FAIL'));
 
     try {
       // 1) Seed product + price

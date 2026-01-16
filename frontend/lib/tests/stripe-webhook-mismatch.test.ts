@@ -5,6 +5,8 @@ import { db } from '@/db';
 
 const ORIG_ENV = process.env;
 
+type DbRows<T> = { rows: T[] };
+
 function makeReq(url: string, body: string, headers?: Record<string, string>) {
   return new NextRequest(
     new Request(url, {
@@ -19,7 +21,7 @@ function makeReq(url: string, body: string, headers?: Record<string, string>) {
 }
 
 async function pickActiveProductIdForCurrency(currency: 'UAH' | 'USD') {
-  const res = await db.execute(sql`
+  const res = (await db.execute(sql`
     select p.id
     from products p
     inner join product_prices pp
@@ -30,9 +32,9 @@ async function pickActiveProductIdForCurrency(currency: 'UAH' | 'USD') {
       and pp.price_minor > 0
     order by p.updated_at desc
     limit 1
-  `);
+  `)) as DbRows<{ id: string }>;
 
-  const id = (res.rows?.[0] as any)?.id as string | undefined;
+  const id = res.rows?.[0]?.id;
   if (!id) {
     throw new Error(
       `No active product found for currency=${currency}. Ensure DB has products.is_active=true, stock>0, and product_prices row.`
@@ -119,15 +121,15 @@ describe('P0-3.4 Stripe webhook: amount/currency mismatch (minor) must not set p
     /**
      * 2) Read expected total_amount_minor + currency from DB.
      */
-    const row0 = await db.execute(sql`
+    const row0 = (await db.execute(sql`
       select total_amount_minor, currency
       from orders
       where id = ${orderId}
       limit 1
-    `);
+    `)) as DbRows<{ total_amount_minor: number | string; currency: string }>;
 
-    const expectedMinor = Number((row0.rows?.[0] as any)?.total_amount_minor);
-    const expectedCurrency = String((row0.rows?.[0] as any)?.currency);
+    const expectedMinor = Number(row0.rows?.[0]?.total_amount_minor);
+    const expectedCurrency = String(row0.rows?.[0]?.currency);
 
     expect(Number.isFinite(expectedMinor)).toBe(true);
     expect(expectedMinor).toBeGreaterThan(0);
@@ -150,8 +152,8 @@ describe('P0-3.4 Stripe webhook: amount/currency mismatch (minor) must not set p
      *    We mock verifyWebhookSignature so we don't need real Stripe signature.
      */
     process.env.PAYMENTS_ENABLED = 'true';
-    process.env.STRIPE_SECRET_KEY = 'sk_test_dummy';
-    process.env.STRIPE_WEBHOOK_SECRET = 'whsec_test_dummy';
+    process.env.STRIPE_SECRET_KEY = 'stripe_secret_key_placeholder';
+    process.env.STRIPE_WEBHOOK_SECRET = 'stripe_webhook_secret_placeholder';
 
     const evtId = `evt_mismatch_${orderId.slice(0, 8)}`;
     const actualMinor = expectedMinor + 1;
@@ -192,19 +194,20 @@ describe('P0-3.4 Stripe webhook: amount/currency mismatch (minor) must not set p
     /**
      * 5) Assert DB: not paid + pspStatusReason set + pspMetadata contains expected/actual + event id.
      */
-    const row1 = await db.execute(sql`
+    const row1 = (await db.execute(sql`
       select payment_status, psp_status_reason, psp_metadata
       from orders
       where id = ${orderId}
       limit 1
-    `);
+    `)) as DbRows<{
+      payment_status: string;
+      psp_status_reason: string | null;
+      psp_metadata: unknown;
+    }>;
 
-    const paymentStatus = String((row1.rows?.[0] as any)?.payment_status ?? '');
-    const reason = (row1.rows?.[0] as any)?.psp_status_reason as
-      | string
-      | null
-      | undefined;
-    const metaRaw = (row1.rows?.[0] as any)?.psp_metadata;
+    const paymentStatus = String(row1.rows?.[0]?.payment_status ?? '');
+    const reason = row1.rows?.[0]?.psp_status_reason ?? null;
+    const metaRaw = row1.rows?.[0]?.psp_metadata;
 
     expect(paymentStatus).not.toBe('paid');
     expect(reason && reason.length > 0).toBe(true);

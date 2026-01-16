@@ -1,4 +1,3 @@
-// app/api/webhooks/stripe/route.ts
 import Stripe from 'stripe';
 import { NextRequest, NextResponse } from 'next/server';
 import { and, eq, ne, or } from 'drizzle-orm';
@@ -8,41 +7,19 @@ import { orders, stripeEvents } from '@/db/schema';
 import { restockOrder } from '@/lib/services/orders';
 import { guardedPaymentStatusUpdate } from '@/lib/services/orders/payment-state';
 import { logError, logInfo, logWarn } from '@/lib/logging';
+import {
+  type RefundMetaRecord,
+  appendRefundToMeta,
+} from '@/lib/services/orders/psp-metadata/refunds';
 
-type RefundMetaRecord = {
-  refundId: string;
-  idempotencyKey: string;
-  amountMinor: number;
-  currency: string;
-  createdAt: string;
-  createdBy: string;
-  status?: string | null;
-};
+const REFUND_FULLNESS_UNDETERMINED = 'REFUND_FULLNESS_UNDETERMINED' as const;
 
-function normalizeRefundsFromMeta(
-  meta: unknown,
-  fallback: { currency: string; createdAt: string }
-): RefundMetaRecord[] {
-  const m = (meta ?? {}) as any;
+function throwRefundFullnessUndetermined(): never {
+  throw new Error(REFUND_FULLNESS_UNDETERMINED);
+}
 
-  if (Array.isArray(m.refunds)) return m.refunds as RefundMetaRecord[];
-
-  const legacy = m.refund;
-  if (legacy?.id) {
-    return [
-      {
-        refundId: String(legacy.id),
-        idempotencyKey: 'legacy:webhook',
-        amountMinor: Number(legacy.amount ?? 0),
-        currency: fallback.currency,
-        createdAt: fallback.createdAt,
-        createdBy: 'webhook',
-        status: legacy.status ?? null,
-      },
-    ];
-  }
-
-  return [];
+function isRefundFullnessUndeterminedError(err: unknown): boolean {
+  return err instanceof Error && err.message === REFUND_FULLNESS_UNDETERMINED;
 }
 
 function upsertRefundIntoMeta(params: {
@@ -54,15 +31,12 @@ function upsertRefundIntoMeta(params: {
 }): any {
   const { prevMeta, refund, eventId, currency, createdAtIso } = params;
 
-  const base = ((prevMeta ?? {}) as any) ?? {};
+  const base =
+    prevMeta && typeof prevMeta === 'object' && !Array.isArray(prevMeta)
+      ? (prevMeta as any)
+      : {};
 
-  // якщо refund в payload нема — просто повертаємо base (але НЕ затираємо refunds)
   if (!refund?.id) return base;
-
-  const refunds = normalizeRefundsFromMeta(base, {
-    currency,
-    createdAt: createdAtIso,
-  });
 
   const rec: RefundMetaRecord = {
     refundId: refund.id,
@@ -74,15 +48,7 @@ function upsertRefundIntoMeta(params: {
     status: refund.status ?? null,
   };
 
-  const exists = refunds.some(
-    r => r.refundId === rec.refundId || r.idempotencyKey === rec.idempotencyKey
-  );
-
-  return {
-    ...base,
-    refunds: exists ? refunds : [...refunds, rec],
-    refundInitiatedAt: base.refundInitiatedAt ?? createdAtIso,
-  };
+  return appendRefundToMeta({ prevMeta: base, record: rec });
 }
 
 function warnRefundFullnessUndetermined(payload: {
@@ -246,13 +212,16 @@ function mergePspMetadata(params: {
     createdAtIso: params.createdAtIso,
   });
 
-  // IMPORTANT: merge, not overwrite (preserves refunds[])
+  // Do NOT allow delta to overwrite refunds/refundInitiatedAt (canonical fields managed by upsertRefundIntoMeta)
+  const safeDelta: any = { ...cleanedDelta };
+  delete safeDelta.refunds;
+  delete safeDelta.refundInitiatedAt;
+
   return {
     ...metaWithRefunds,
-    ...cleanedDelta,
+    ...safeDelta,
   };
 }
-
 function shouldRestockFromWebhook(order: {
   stockRestored: boolean | null;
   inventoryStatus: string | null;
@@ -818,7 +787,7 @@ export async function POST(request: NextRequest) {
               refundId: refund?.id ?? null,
               refundAmount: currentAmt,
             });
-            throw new Error('REFUND_FULLNESS_UNDETERMINED');
+            throwRefundFullnessUndetermined();
           }
 
           let sawNumericAmount = false;
@@ -848,7 +817,7 @@ export async function POST(request: NextRequest) {
               refundId: refund?.id ?? null,
               refundAmount: currentAmt,
             });
-            throw new Error('REFUND_FULLNESS_UNDETERMINED');
+            throwRefundFullnessUndetermined();
           }
 
           const hasCurrent =
@@ -881,7 +850,7 @@ export async function POST(request: NextRequest) {
                 ? (refund as any).amount
                 : null,
           });
-          throw new Error('REFUND_FULLNESS_UNDETERMINED');
+          throwRefundFullnessUndetermined();
         }
 
         isFullRefund = cumulativeRefunded === amt;
@@ -934,7 +903,7 @@ export async function POST(request: NextRequest) {
               refundId: refund.id,
               refundAmount: currentAmt,
             });
-            throw new Error('REFUND_FULLNESS_UNDETERMINED');
+            throwRefundFullnessUndetermined();
           }
 
           let sawNumericAmount = false;
@@ -966,7 +935,7 @@ export async function POST(request: NextRequest) {
               refundId: refund.id,
               refundAmount: currentAmt,
             });
-            throw new Error('REFUND_FULLNESS_UNDETERMINED');
+            throwRefundFullnessUndetermined();
           }
 
           const hasCurrent = list.some(r => r?.id && r.id === refund.id);
@@ -1000,7 +969,7 @@ export async function POST(request: NextRequest) {
                 ? (refund as any).amount
                 : null,
           });
-          throw new Error('REFUND_FULLNESS_UNDETERMINED');
+          throwRefundFullnessUndetermined();
         }
 
         isFullRefund = cumulativeRefunded === amt;
@@ -1118,13 +1087,10 @@ export async function POST(request: NextRequest) {
     });
     return ack();
   } catch (error) {
-    if (
-      error instanceof Error &&
-      error.message === 'REFUND_FULLNESS_UNDETERMINED'
-    ) {
+    if (isRefundFullnessUndeterminedError(error)) {
       // Do NOT ack() -> keep processedAt NULL so Stripe retries.
       return NextResponse.json(
-        { code: 'REFUND_FULLNESS_UNDETERMINED' },
+        { code: REFUND_FULLNESS_UNDETERMINED },
         { status: 500 }
       );
     }

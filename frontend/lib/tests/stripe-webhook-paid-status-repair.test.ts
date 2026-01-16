@@ -1,5 +1,3 @@
-// C:\Users\milka\devlovers.net\frontend\lib\tests\stripe-webhook-paid-status-repair.test.ts
-
 import crypto from 'crypto';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { eq } from 'drizzle-orm';

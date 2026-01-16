@@ -2,30 +2,46 @@ import { and, eq, inArray } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { products, productPrices } from '@/db/schema';
-import {
-  calculateLineTotal,
-  fromCents,
-  toCents,
-} from '@/lib/shop/money';
+import { coercePriceFromDb } from '@/db/queries/shop/orders';
+import { calculateLineTotal, fromCents, toCents } from '@/lib/shop/money';
 import {
   MAX_QUANTITY_PER_LINE,
   cartRehydrateResultSchema,
 } from '@/lib/validation/shop';
-import { coercePriceFromDb } from '@/db/queries/shop/orders';
 import type {
   CartClientItem,
   CartRehydrateItem,
   CartRehydrateResult,
   CartRemovedItem,
 } from '@/lib/validation/shop';
-import type { CurrencyCode } from '@/lib/shop/currency';
+import { isTwoDecimalCurrency, type CurrencyCode } from '@/lib/shop/currency';
 
 import { PriceConfigError } from '../../errors';
+
+const fromMinorUnits = fromCents;
+// 2-decimal currencies (money helpers fromCents/toCents assume exponent=2)
+
+function assertTwoDecimalCurrency(currency: CurrencyCode): void {
+  // fromCents/toCents assume exponent=2.
+  // Guard against 0-decimal (JPY) / 3-decimal (BHD) and any future non-2-decimal currency.
+  if (isTwoDecimalCurrency(currency)) return;
+
+  throw new PriceConfigError(
+    'Unsupported currency minor units exponent in cart rehydrate (expected 2-decimal currency).',
+    {
+      // Keep productId to avoid breaking error-contract shape if it's required.
+      productId: '__cart__',
+      currency,
+    }
+  );
+}
 
 export async function rehydrateCartItems(
   items: CartClientItem[],
   currency: CurrencyCode
 ): Promise<CartRehydrateResult> {
+  assertTwoDecimalCurrency(currency);
+
   const uniqueProductIds = Array.from(
     new Set(items.map(item => item.productId))
   );
@@ -106,14 +122,10 @@ export async function rehydrateCartItems(
       typeof product.priceMinor === 'number' &&
       Number.isFinite(product.priceMinor)
     ) {
-      // Critical: DB should store integer minor units; do not truncate
       if (!Number.isInteger(product.priceMinor)) {
         throw new PriceConfigError(
           'Invalid priceMinor in DB (must be integer).',
-          {
-            productId: product.id,
-            currency,
-          }
+          { productId: product.id, currency }
         );
       }
       if (!Number.isSafeInteger(product.priceMinor) || product.priceMinor < 1) {
@@ -125,7 +137,6 @@ export async function rehydrateCartItems(
 
       unitPriceMinor = product.priceMinor;
     } else {
-      // Fallback to legacy money column (string/decimal), still validated via coercePriceFromDb
       unitPriceMinor = toCents(
         coercePriceFromDb(product.price, {
           field: 'price',
@@ -133,8 +144,7 @@ export async function rehydrateCartItems(
         })
       );
     }
-    // Safety: regardless of source (canonical priceMinor or legacy price),
-    // unitPriceMinor must be a positive safe integer in minor units.
+
     if (!Number.isSafeInteger(unitPriceMinor) || unitPriceMinor < 1) {
       throw new PriceConfigError('Invalid price in DB (out of range).', {
         productId: product.id,
@@ -154,14 +164,12 @@ export async function rehydrateCartItems(
       title: product.title,
       quantity: effectiveQuantity,
 
-      // canonical:
-      unitPriceMinor: unitPriceMinor,
-      lineTotalMinor: lineTotalMinor,
-      // display:
-      unitPrice: fromCents(unitPriceMinor),
-      lineTotal: fromCents(lineTotalMinor),
+      unitPriceMinor,
+      lineTotalMinor,
 
-      // policy: items currency should match resolved currency
+      unitPrice: fromMinorUnits(unitPriceMinor),
+      lineTotal: fromMinorUnits(lineTotalMinor),
+
       currency,
 
       stock: product.stock,
@@ -177,12 +185,9 @@ export async function rehydrateCartItems(
   return cartRehydrateResultSchema.parse({
     items: rehydratedItems,
     removed,
-    // IMPORTANT: MINOR units (integer)
     summary: {
-      // canonical:
       totalAmountMinor: totalMinor,
-      // display:
-      totalAmount: fromCents(totalMinor),
+      totalAmount: fromMinorUnits(totalMinor),
       itemCount,
       currency,
     },

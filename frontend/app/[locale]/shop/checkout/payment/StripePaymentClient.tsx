@@ -1,3 +1,4 @@
+// frontend/app/[locale]/shop/checkout/payment/StripePaymentClient.tsx
 'use client';
 
 import { useMemo, useState } from 'react';
@@ -121,18 +122,27 @@ function StripePaymentForm({ orderId, locale }: PaymentFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-4"
+      aria-label="Stripe payment form"
+    >
       <PaymentElement />
+
       <button
         type="submit"
         disabled={!stripe || submitting}
         className="flex w-full items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground transition-colors hover:bg-accent/90 disabled:opacity-60"
+        aria-disabled={!stripe || submitting}
       >
         {submitting ? 'Processing...' : 'Submit payment'}
       </button>
-      {errorMessage && (
-        <p className="text-sm text-destructive">{errorMessage}</p>
-      )}
+
+      {errorMessage ? (
+        <p className="text-sm text-destructive" role="alert">
+          {errorMessage}
+        </p>
+      ) : null}
     </form>
   );
 }
@@ -166,9 +176,12 @@ export default function StripePaymentClient({
 
   if (!paymentsEnabled) {
     return (
-      <div className="space-y-3 text-sm text-muted-foreground">
+      <section
+        className="space-y-3 text-sm text-muted-foreground"
+        aria-label="Payments disabled"
+      >
         <p>Payments are disabled in this environment.</p>
-        <div className="flex gap-3">
+        <nav className="flex gap-3" aria-label="Next steps">
           <Link
             href={`/shop/checkout/success?orderId=${orderId}`}
             className="inline-flex items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground hover:bg-accent/90"
@@ -176,52 +189,60 @@ export default function StripePaymentClient({
             Continue
           </Link>
           <Link
-            href={`/shop/cart`}
+            href="/shop/cart"
             className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
           >
             Back to cart
           </Link>
-        </div>
-      </div>
+        </nav>
+      </section>
     );
   }
 
   if (!clientSecret || !clientSecret.trim()) {
     return (
-      <div className="space-y-3 text-sm text-muted-foreground">
+      <section
+        className="space-y-3 text-sm text-muted-foreground"
+        aria-label="Payment initialization failed"
+      >
         <p>Payment cannot be initialized. Please try again later.</p>
         <Link
-          href={`/shop/cart`}
+          href="/shop/cart"
           className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
         >
           Return to cart
         </Link>
-      </div>
+      </section>
     );
   }
 
   if (!stripePromise || !options) {
     return (
-      <p className="text-sm text-muted-foreground">Preparing secure payment…</p>
+      <p className="text-sm text-muted-foreground" aria-live="polite">
+        Preparing secure payment…
+      </p>
     );
   }
 
   return (
-    <Elements stripe={stripePromise as Promise<Stripe>} options={options}>
-      <div className="space-y-4">
-        <div className="rounded-md border border-border bg-muted/40 p-3 text-sm text-foreground">
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Pay</span>
-            <span className="text-base font-semibold">
-              {formatMoney(amountMinor, uiCurrency, locale)}
-            </span>
+    <section aria-label="Secure payment">
+      <Elements stripe={stripePromise as Promise<Stripe>} options={options}>
+        <div className="space-y-4">
+          <div className="rounded-md border border-border bg-muted/40 p-3 text-sm text-foreground">
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Pay</span>
+              <span className="text-base font-semibold">
+                {formatMoney(amountMinor, uiCurrency, locale)}
+              </span>
+            </div>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+              {uiCurrency}
+            </p>
           </div>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">
-            {uiCurrency}
-          </p>
+
+          <StripePaymentForm orderId={orderId} locale={locale} />
         </div>
-        <StripePaymentForm orderId={orderId} locale={locale} />
-      </div>
-    </Elements>
+      </Elements>
+    </section>
   );
 }

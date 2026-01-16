@@ -33,7 +33,8 @@
 }
 
 @theme {
-  --radius: 0.625rem;
+  --radius-base: 0.625rem;
+  --radius: var(--radius-base);
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -161,11 +162,10 @@
   }
 }
 
-
 /* Shop theme: scoped overrides (must not affect platform pages) */
 .shop-scope {
   /* keep shop rounding slightly tighter than platform */
-  --radius: calc(var(--radius) - 2px);
+  --radius: calc(var(--radius-base) - 2px);
 
   /* light: shop accent = black */
   --accent: var(--foreground);
