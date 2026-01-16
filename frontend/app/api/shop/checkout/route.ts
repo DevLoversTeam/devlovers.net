@@ -14,6 +14,7 @@ import {
   PriceConfigError,
   OrderStateInvalidError,
 } from '@/lib/services/errors';
+import { readStripePaymentIntentParams } from '@/lib/services/orders/payment-intent';
 
 import {
   createOrderWithItems,
@@ -157,7 +158,11 @@ export async function POST(request: NextRequest) {
     logWarn('Failed to parse cart payload', {
       reason: error instanceof Error ? error.message : String(error),
     });
-    return errorResponse('INVALID_PAYLOAD', 'Unable to process cart data.', 400);
+    return errorResponse(
+      'INVALID_PAYLOAD',
+      'Unable to process cart data.',
+      400
+    );
   }
 
   const idempotencyKey = getIdempotencyKey(request);
@@ -232,18 +237,29 @@ export async function POST(request: NextRequest) {
       locale,
     });
 
-    const { order, totalCents } = result;
+    const { order } = result;
 
     const paymentsEnabled = isPaymentsEnabled();
 
     if (!paymentsEnabled) {
-      if (order.paymentProvider === 'none' && order.paymentStatus === 'failed') {
-        return errorResponse('CHECKOUT_FAILED', 'Order could not be completed.', 409, {
-          orderId: order.id,
-        });
+      if (
+        order.paymentProvider === 'none' &&
+        order.paymentStatus === 'failed'
+      ) {
+        return errorResponse(
+          'CHECKOUT_FAILED',
+          'Order could not be completed.',
+          409,
+          {
+            orderId: order.id,
+          }
+        );
       }
 
-      if (order.paymentProvider === 'stripe' && order.paymentStatus !== 'paid') {
+      if (
+        order.paymentProvider === 'stripe' &&
+        order.paymentStatus !== 'paid'
+      ) {
         return errorResponse(
           'PAYMENTS_DISABLED',
           'Payments are disabled. This order requires payment and cannot be processed.',
@@ -253,9 +269,16 @@ export async function POST(request: NextRequest) {
       }
 
       if (order.paymentProvider === 'none') {
-        if (!['paid', 'failed'].includes(order.paymentStatus) || order.paymentIntentId) {
+        if (
+          !['paid', 'failed'].includes(order.paymentStatus) ||
+          order.paymentIntentId
+        ) {
           logError(
-            `Payments disabled but order is not paid/none. orderId=${order.id} provider=${order.paymentProvider} status=${order.paymentStatus} intent=${order.paymentIntentId ?? 'null'}`,
+            `Payments disabled but order is not paid/none. orderId=${
+              order.id
+            } provider=${order.paymentProvider} status=${
+              order.paymentStatus
+            } intent=${order.paymentIntentId ?? 'null'}`,
             new Error('ORDER_STATE_INVALID')
           );
           return errorResponse(
@@ -267,7 +290,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const stripePaymentFlow = paymentsEnabled && order.paymentProvider === 'stripe';
+    const stripePaymentFlow =
+      paymentsEnabled && order.paymentProvider === 'stripe';
 
     // =========================
     // Existing order path
@@ -276,7 +300,9 @@ export async function POST(request: NextRequest) {
       // Existing order already has PI: retrieve client_secret
       if (stripePaymentFlow && order.paymentIntentId) {
         try {
-          const paymentIntent = await retrievePaymentIntent(order.paymentIntentId);
+          const paymentIntent = await retrievePaymentIntent(
+            order.paymentIntentId
+          );
           return buildCheckoutResponse({
             order: {
               id: order.id,
@@ -292,7 +318,11 @@ export async function POST(request: NextRequest) {
           });
         } catch (error) {
           logError('Checkout payment intent retrieval failed', error);
-          return errorResponse('STRIPE_ERROR', 'Unable to initiate payment.', 502);
+          return errorResponse(
+            'STRIPE_ERROR',
+            'Unable to initiate payment.',
+            502
+          );
         }
       }
 
@@ -301,15 +331,21 @@ export async function POST(request: NextRequest) {
         let paymentIntent: { paymentIntentId: string; clientSecret: string };
 
         try {
+          const snapshot = await readStripePaymentIntentParams(order.id);
+
           paymentIntent = await createPaymentIntent({
-            amount: totalCents,
-            currency: order.currency,
+            amount: snapshot.amountMinor,
+            currency: snapshot.currency,
             orderId: order.id,
             idempotencyKey,
           });
         } catch (error) {
           logError('Checkout payment intent creation failed', error);
-          return errorResponse('STRIPE_ERROR', 'Unable to initiate payment.', 502);
+          return errorResponse(
+            'STRIPE_ERROR',
+            'Unable to initiate payment.',
+            502
+          );
         }
 
         try {
@@ -351,7 +387,11 @@ export async function POST(request: NextRequest) {
             });
           }
 
-          return errorResponse('INTERNAL_ERROR', 'Unable to process checkout.', 500);
+          return errorResponse(
+            'INTERNAL_ERROR',
+            'Unable to process checkout.',
+            500
+          );
         }
       }
 
@@ -394,9 +434,11 @@ export async function POST(request: NextRequest) {
     let paymentIntent: { paymentIntentId: string; clientSecret: string };
 
     try {
+      const snapshot = await readStripePaymentIntentParams(order.id);
+
       paymentIntent = await createPaymentIntent({
-        amount: totalCents,
-        currency: order.currency,
+        amount: snapshot.amountMinor,
+        currency: snapshot.currency,
         orderId: order.id,
         idempotencyKey,
       });
@@ -406,7 +448,10 @@ export async function POST(request: NextRequest) {
       try {
         await restockOrder(order.id, { reason: 'failed' });
       } catch (restockError) {
-        logError('Restoring stock after payment intent failure failed', restockError);
+        logError(
+          'Restoring stock after payment intent failure failed',
+          restockError
+        );
       }
 
       return errorResponse('STRIPE_ERROR', 'Unable to initiate payment.', 502);
@@ -450,7 +495,10 @@ export async function POST(request: NextRequest) {
       try {
         await restockOrder(order.id, { reason: 'failed' });
       } catch (restockError) {
-        logError('Restoring stock after payment intent attach failure failed', restockError);
+        logError(
+          'Restoring stock after payment intent attach failure failed',
+          restockError
+        );
       }
 
       if (error instanceof OrderStateInvalidError) {
@@ -460,7 +508,11 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      return errorResponse('INTERNAL_ERROR', 'Unable to process checkout.', 500);
+      return errorResponse(
+        'INTERNAL_ERROR',
+        'Unable to process checkout.',
+        500
+      );
     }
   } catch (error) {
     if (isExpectedBusinessError(error)) {
@@ -473,7 +525,11 @@ export async function POST(request: NextRequest) {
     }
 
     if (error instanceof InvalidPayloadError) {
-      return errorResponse(error.code, error.message || 'Invalid checkout payload', 400);
+      return errorResponse(
+        error.code,
+        error.message || 'Invalid checkout payload',
+        400
+      );
     }
 
     if (error instanceof InvalidVariantError) {

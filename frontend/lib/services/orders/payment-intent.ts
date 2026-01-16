@@ -2,10 +2,13 @@ import { eq } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { orders } from '@/db/schema/shop';
-import { type PaymentStatus } from '@/lib/shop/payments';
+import { type PaymentProvider, type PaymentStatus } from '@/lib/shop/payments';
 import { type OrderSummaryWithMinor } from '@/lib/types/shop';
-
-import { InvalidPayloadError, OrderNotFoundError } from '../errors';
+import {
+  InvalidPayloadError,
+  OrderNotFoundError,
+  OrderStateInvalidError,
+} from '../errors';
 import { resolvePaymentProvider } from './_shared';
 import { getOrderItems, parseOrderSummary } from './summary';
 import { guardedPaymentStatusUpdate } from './payment-state';
@@ -85,4 +88,46 @@ export async function setOrderPaymentIntent({
 
   const items = await getOrderItems(orderId);
   return parseOrderSummary(updated, items);
+}
+
+export async function readStripePaymentIntentParams(orderId: string): Promise<{
+  amountMinor: number;
+  currency: (typeof orders.$inferSelect)['currency'];
+}> {
+  const [existing] = await db
+    .select()
+    .from(orders)
+    .where(eq(orders.id, orderId))
+    .limit(1);
+
+  if (!existing) throw new OrderNotFoundError('Order not found');
+
+  const provider: PaymentProvider = resolvePaymentProvider(existing);
+
+  if (provider !== 'stripe') {
+    throw new InvalidPayloadError(
+      'Payment intent can only be created for stripe orders.'
+    );
+  }
+
+  const amountMinor = existing.totalAmountMinor;
+
+  // Canonical money source = DB minor units. Fail-closed on invalid totals.
+  if (!Number.isSafeInteger(amountMinor) || amountMinor <= 0) {
+    const err = new OrderStateInvalidError(
+      'Invalid order total for Stripe payment intent creation.'
+    );
+
+    // attach diagnostics for API handler (keeps existing errorResponse shape)
+    (err as any).orderId = orderId;
+    (err as any).field = 'totalAmountMinor';
+    (err as any).rawValue = amountMinor;
+    (err as any).details = {
+      reason: 'Invalid order total for Stripe payment intent creation.',
+    };
+
+    throw err;
+  }
+
+  return { amountMinor, currency: existing.currency };
 }

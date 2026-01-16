@@ -28,6 +28,14 @@ vi.mock('@/lib/psp/stripe', () => ({
   retrievePaymentIntent: vi.fn(),
 }));
 
+// Avoid DB coupling introduced by #6 (DB-canonical PI amount/currency)
+vi.mock('@/lib/services/orders/payment-intent', () => ({
+  readStripePaymentIntentParams: vi.fn(async () => ({
+    amountMinor: 1000,
+    currency: 'USD',
+  })),
+}));
+
 // Mock order services
 vi.mock('@/lib/services/orders', async () => {
   const actual = await vi.importActual<any>('@/lib/services/orders');
