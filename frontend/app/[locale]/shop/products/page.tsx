@@ -1,5 +1,3 @@
-// frontend/app/[locale]/shop/products/page.tsx
-
 import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 
@@ -52,8 +50,16 @@ export default async function ProductsPage({
     ? parsedParams.data
     : { page: 1, limit: CATALOG_PAGE_SIZE };
 
+  const page =
+    typeof parsed.page === 'number' &&
+    Number.isFinite(parsed.page) &&
+    parsed.page >= 1
+      ? parsed.page
+      : 1;
+
   const filters = {
     ...parsed,
+    page,
     limit: parsed.limit ?? CATALOG_PAGE_SIZE,
   };
 

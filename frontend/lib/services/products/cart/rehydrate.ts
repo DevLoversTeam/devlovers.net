@@ -14,21 +14,17 @@ import type {
   CartRehydrateResult,
   CartRemovedItem,
 } from '@/lib/validation/shop';
-import type { CurrencyCode } from '@/lib/shop/currency';
+import { isTwoDecimalCurrency, type CurrencyCode } from '@/lib/shop/currency';
 
 import { PriceConfigError } from '../../errors';
 
 const fromMinorUnits = fromCents;
-
-// keep in sync with currency enum (CurrencyCode) and money helpers (fromCents/toCents assume 2 fraction digits)
-const TWO_DECIMAL_CURRENCIES: ReadonlySet<CurrencyCode> = new Set<CurrencyCode>(
-  ['USD', 'UAH']
-);
+// 2-decimal currencies (money helpers fromCents/toCents assume exponent=2)
 
 function assertTwoDecimalCurrency(currency: CurrencyCode): void {
-  // fromCents/toCents assume 2 fraction digits.
+  // fromCents/toCents assume exponent=2.
   // Guard against 0-decimal (JPY) / 3-decimal (BHD) and any future non-2-decimal currency.
-  if (TWO_DECIMAL_CURRENCIES.has(currency)) return;
+  if (isTwoDecimalCurrency(currency)) return;
 
   throw new PriceConfigError(
     'Unsupported currency minor units exponent in cart rehydrate (expected 2-decimal currency).',
