@@ -1,3 +1,4 @@
+// frontend/app/[locale]/shop/admin/orders/page.tsx
 import { Link } from '@/i18n/routing';
 
 import { getAdminOrdersPage } from '@/db/queries/shop/admin-orders';
@@ -27,10 +28,11 @@ function pickMinor(minor: unknown, legacyMajor: unknown): number | null {
 }
 
 function orderCurrency(order: any, locale: string): CurrencyCode {
-  return (order?.currency ?? resolveCurrencyFromLocale(locale)) as CurrencyCode;
+  const c = order?.currency ?? resolveCurrencyFromLocale(locale);
+  return c === 'UAH' ? 'UAH' : 'USD';
 }
 
-function formatDate(value: Date | null | undefined) {
+function formatDate(value: Date | null | undefined): string {
   if (!value) return '-';
   return value.toLocaleDateString();
 }
@@ -43,6 +45,7 @@ export default async function AdminOrdersPage({
   searchParams: Promise<{ page?: string }>;
 }) {
   await guardShopAdminPage();
+
   const { locale } = await params;
   const sp = await searchParams;
 
@@ -61,9 +64,18 @@ export default async function AdminOrdersPage({
   return (
     <>
       <ShopAdminTopbar />
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-foreground">Admin · Orders</h1>
+
+      <main
+        className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8"
+        aria-labelledby="admin-orders-title"
+      >
+        <header className="flex items-start justify-between gap-4">
+          <h1
+            id="admin-orders-title"
+            className="text-2xl font-bold text-foreground"
+          >
+            Admin · Orders
+          </h1>
 
           <form action="/api/shop/admin/orders/reconcile-stale" method="post">
             <button
@@ -73,76 +85,130 @@ export default async function AdminOrdersPage({
               Reconcile stale
             </button>
           </form>
-        </div>
+        </header>
 
-        <div className="mt-6 overflow-x-auto">
-          <table className="min-w-full divide-y divide-border text-sm">
-            <thead className="bg-muted/50">
-              <tr>
-                <th className="px-3 py-2 text-left font-semibold text-foreground">Created</th>
-                <th className="px-3 py-2 text-left font-semibold text-foreground">Status</th>
-                <th className="px-3 py-2 text-left font-semibold text-foreground">Total</th>
-                <th className="px-3 py-2 text-left font-semibold text-foreground">Items</th>
-                <th className="px-3 py-2 text-left font-semibold text-foreground">Provider</th>
-                <th className="px-3 py-2 text-left font-semibold text-foreground">Order ID</th>
-                <th className="px-3 py-2 text-left font-semibold text-foreground">Actions</th>
-              </tr>
-            </thead>
+        <section className="mt-6" aria-label="Orders table">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-border text-sm">
+              <caption className="sr-only">Orders list</caption>
 
-            <tbody className="divide-y divide-border">
-              {items.map(order => (
-                <tr key={order.id} className="hover:bg-muted/50">
-                  <td className="px-3 py-2 text-muted-foreground">
-                    {formatDate(order.createdAt)}
-                  </td>
-
-                  <td className="px-3 py-2">
-                    <span className="inline-flex rounded-full bg-muted px-2 py-1 text-xs font-medium text-foreground">
-                      {order.paymentStatus}
-                    </span>
-                  </td>
-
-                  <td className="px-3 py-2 text-foreground">
-                    {(() => {
-                      const c = orderCurrency(order, locale);
-                      const totalMinor = pickMinor(order?.totalAmountMinor, order?.totalAmount);
-                      return totalMinor === null ? '-' : formatMoney(totalMinor, c, locale);
-                    })()}
-                  </td>
-
-                  <td className="px-3 py-2 text-muted-foreground">{order.itemCount}</td>
-                  <td className="px-3 py-2 text-muted-foreground">{order.paymentProvider}</td>
-
-                  <td className="px-3 py-2 font-mono text-xs text-muted-foreground">{order.id}</td>
-
-                  <td className="px-3 py-2">
-                    <Link
-                      href={`/shop/admin/orders/${order.id}`}
-                      className="rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
-                    >
-                      View
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-
-              {items.length === 0 ? (
+              <thead className="bg-muted/50">
                 <tr>
-                  <td className="px-3 py-6 text-muted-foreground" colSpan={7}>
-                    No orders yet.
-                  </td>
+                  <th
+                    scope="col"
+                    className="px-3 py-2 text-left font-semibold text-foreground"
+                  >
+                    Created
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-3 py-2 text-left font-semibold text-foreground"
+                  >
+                    Status
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-3 py-2 text-left font-semibold text-foreground"
+                  >
+                    Total
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-3 py-2 text-left font-semibold text-foreground"
+                  >
+                    Items
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-3 py-2 text-left font-semibold text-foreground"
+                  >
+                    Provider
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-3 py-2 text-left font-semibold text-foreground"
+                  >
+                    Order ID
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-3 py-2 text-left font-semibold text-foreground"
+                  >
+                    Actions
+                  </th>
                 </tr>
-              ) : null}
-            </tbody>
-          </table>
+              </thead>
 
-          <AdminPagination
-            basePath="/shop/admin/orders"
-            page={page}
-            hasNext={hasNext}
-          />
-        </div>
-      </div>
+              <tbody className="divide-y divide-border">
+                {items.map(order => {
+                  const currency = orderCurrency(order, locale);
+                  const totalMinor = pickMinor(
+                    order?.totalAmountMinor,
+                    order?.totalAmount
+                  );
+                  const totalFormatted =
+                    totalMinor === null
+                      ? '-'
+                      : formatMoney(totalMinor, currency, locale);
+
+                  return (
+                    <tr key={order.id} className="hover:bg-muted/50">
+                      <td className="px-3 py-2 text-muted-foreground">
+                        {formatDate(order.createdAt)}
+                      </td>
+
+                      <td className="px-3 py-2">
+                        <span className="inline-flex rounded-full bg-muted px-2 py-1 text-xs font-medium text-foreground">
+                          {order.paymentStatus}
+                        </span>
+                      </td>
+
+                      <td className="px-3 py-2 text-foreground">
+                        {totalFormatted}
+                      </td>
+
+                      <td className="px-3 py-2 text-muted-foreground">
+                        {order.itemCount}
+                      </td>
+                      <td className="px-3 py-2 text-muted-foreground">
+                        {order.paymentProvider}
+                      </td>
+
+                      <td className="px-3 py-2 font-mono text-xs text-muted-foreground break-all">
+                        {order.id}
+                      </td>
+
+                      <td className="px-3 py-2">
+                        <Link
+                          href={`/shop/admin/orders/${order.id}`}
+                          className="rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
+                          aria-label={`View order ${order.id}`}
+                        >
+                          View
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })}
+
+                {items.length === 0 ? (
+                  <tr>
+                    <td className="px-3 py-6 text-muted-foreground" colSpan={7}>
+                      No orders yet.
+                    </td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+
+            <AdminPagination
+              basePath="/shop/admin/orders"
+              page={page}
+              hasNext={hasNext}
+            />
+          </div>
+        </section>
+      </main>
     </>
   );
 }

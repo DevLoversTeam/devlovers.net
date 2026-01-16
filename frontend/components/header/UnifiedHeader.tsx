@@ -1,6 +1,7 @@
 'use client';
 
-import { LogIn, Search, User } from 'lucide-react';
+// import { LogIn, Search, Settings, User } from 'lucide-react';
+import { LogIn, Settings, User } from 'lucide-react';
 import { Link } from '@/i18n/routing';
 import { SITE_LINKS } from '@/lib/navigation';
 
@@ -24,7 +25,7 @@ export function UnifiedHeader({
   variant,
   userExists,
   showAdminLink = false,
-  enableSearch = true,
+  // enableSearch = true,
 }: UnifiedHeaderProps) {
   const isShop = variant === 'shop';
 
@@ -78,7 +79,7 @@ export function UnifiedHeader({
 
         <div className="flex items-center gap-1">
           <div className="hidden items-center gap-2 md:flex">
-            {isShop && enableSearch ? (
+            {/* {isShop && enableSearch ? (
               <>
                 <button
                   type="button"
@@ -93,7 +94,7 @@ export function UnifiedHeader({
               </>
             ) : (
               <div className="h-9 w-9" aria-hidden="true" />
-            )}
+            )} */}
 
             {userExists && (
               <Link
@@ -105,6 +106,16 @@ export function UnifiedHeader({
                 <User className="h-5 w-5" />
               </Link>
             )}
+            {showAdminLink ? (
+              <Link
+                href="/shop/admin"
+                aria-label="Shop admin"
+                title="Shop admin"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              >
+                <Settings className="h-5 w-5" aria-hidden="true" />
+              </Link>
+            ) : null}
 
             <LanguageSwitcher />
             {isShop && <CartButton />}

@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState, useTransition } from 'react';
+import { useId, useState, useTransition } from 'react';
 
 type Props = {
   orderId: string;
@@ -12,6 +12,7 @@ export function RefundButton({ orderId, disabled }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const errorId = useId();
 
   async function onRefund() {
     setError(null);
@@ -47,12 +48,17 @@ export function RefundButton({ orderId, disabled }: Props) {
     });
   }
 
+  const isDisabled = disabled || isPending;
+
   return (
     <div className="flex items-center gap-2">
       <button
         type="button"
         onClick={onRefund}
-        disabled={disabled || isPending}
+        disabled={isDisabled}
+        aria-disabled={isDisabled}
+        aria-busy={isPending}
+        aria-describedby={error ? errorId : undefined}
         className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
         title={
           disabled
@@ -63,7 +69,16 @@ export function RefundButton({ orderId, disabled }: Props) {
         {isPending ? 'Refunding…' : 'Refund'}
       </button>
 
-      {error ? <span className="text-xs text-destructive">{error}</span> : null}
+      {error ? (
+        <span
+          id={errorId}
+          role="alert"
+          aria-live="polite"
+          className="text-xs text-destructive"
+        >
+          {error}
+        </span>
+      ) : null}
     </div>
   );
 }

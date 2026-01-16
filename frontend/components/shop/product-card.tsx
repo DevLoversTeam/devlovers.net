@@ -71,7 +71,7 @@ export function ProductCard({ product }: ProductCardProps) {
       <div className="flex flex-1 flex-col p-4">
         <h3 className="text-sm font-medium text-foreground">{product.name}</h3>
 
-        <div className="mt-2 flex items-center gap-2">
+        <div className="mt-2 flex items-center gap-2" aria-label="Price">
           <span
             className={cn(
               'text-sm font-semibold',
@@ -89,7 +89,9 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
 
         {!product.inStock && (
-          <p className="mt-2 text-xs text-muted-foreground">Sold out</p>
+          <p className="mt-2 text-xs text-muted-foreground" role="status">
+            Sold out
+          </p>
         )}
       </div>
     </Link>

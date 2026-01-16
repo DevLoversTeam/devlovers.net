@@ -4,6 +4,7 @@ import {
   count,
   desc,
   eq,
+  or,
   inArray,
   sql,
   type SQL,
@@ -143,7 +144,13 @@ function buildWhereClause(options: {
 
   if (options.category && options.category !== 'all') {
     if (options.category === 'new-arrivals') {
-      conditions.push(eq(products.isFeatured, true));
+      // "New Arrivals" is derived, not "featured".
+      // Back-compat: also allow products.category='new-arrivals' if you already saved such rows.
+      const clause = or(
+        eq(products.badge, 'NEW'),
+        eq(products.category, 'new-arrivals')
+      );
+      if (clause) conditions.push(clause);
     } else if (options.category === 'sale') {
       // sale = has compare-at/original price for the selected currency
       conditions.push(sql`${productPrices.originalPriceMinor} IS NOT NULL`);

@@ -1,10 +1,12 @@
+// C:\Users\milka\devlovers.net-clean\frontend\components\shop\catalog-products-client.tsx
+
 'use client';
 
 import React from 'react';
 import { useSearchParams, type ReadonlyURLSearchParams } from 'next/navigation';
 
-import { ProductCard } from '@/components/shop/product-card';
 import { CatalogLoadMore } from '@/components/shop/catalog-load-more';
+import { ProductCard } from '@/components/shop/product-card';
 
 type Product = React.ComponentProps<typeof ProductCard>['product'] & {
   id: string;
@@ -110,23 +112,38 @@ export function CatalogProductsClient({
   };
 
   return (
-    <>
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <section aria-label="Catalog results">
+      <ul
+        className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+        aria-label="Products"
+      >
         {products.map(p => (
-          <ProductCard key={p.id} product={p} />
+          <li key={p.id} className="min-w-0">
+            <ProductCard product={p} />
+          </li>
         ))}
-      </div>
+      </ul>
 
-      <div className="mt-12 flex flex-col items-center gap-3">
+      <footer
+        className="mt-12 flex flex-col items-center gap-3"
+        aria-label="Catalog pagination"
+      >
         <CatalogLoadMore
           hasMore={hasMore}
           isLoading={isLoadingMore}
           onLoadMore={onLoadMore}
         />
+
         {error ? (
-          <p className="text-sm text-muted-foreground">{error}</p>
+          <p
+            className="text-sm text-muted-foreground"
+            role="status"
+            aria-live="polite"
+          >
+            {error}
+          </p>
         ) : null}
-      </div>
-    </>
+      </footer>
+    </section>
   );
 }

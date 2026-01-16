@@ -1,13 +1,14 @@
+// frontend/app/[locale]/shop/products/page.tsx
+
 import { Suspense } from 'react';
-import { Filter } from 'lucide-react';
+import { redirect } from 'next/navigation';
 
 import { ProductFilters } from '@/components/shop/product-filters';
-import { ProductSort } from '@/components/shop/product-sort';
 import { CatalogProductsClient } from '@/components/shop/catalog-products-client';
+import { ProductsToolbar } from '@/components/shop/products-toolbar';
 import { getCatalogProducts } from '@/lib/shop/data';
 import { catalogQuerySchema } from '@/lib/validation/shop';
 import { CATALOG_PAGE_SIZE } from '@/lib/config/catalog';
-import { redirect } from 'next/navigation';
 
 type RawSearchParams = {
   category?: string;
@@ -28,6 +29,7 @@ export default async function ProductsPage({
 }: ProductsPageProps & { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   const resolvedSearchParams = (await searchParams) ?? {};
+
   // canonicalize: infinite-load page should not be shareable as ?page=N
   if (resolvedSearchParams.page) {
     const qsParams = new URLSearchParams();
@@ -50,7 +52,6 @@ export default async function ProductsPage({
     ? parsedParams.data
     : { page: 1, limit: CATALOG_PAGE_SIZE };
 
-  // Для “Load more” UX: починаємо завжди з 1-ї сторінки (URL ?page=... ігноруємо).
   const filters = {
     ...parsed,
     page: 1,
@@ -60,32 +61,38 @@ export default async function ProductsPage({
   const catalog = await getCatalogProducts(filters, locale);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="flex items-center justify-between border-b border-border pb-6">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">
+    <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <header className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
           All Products
         </h1>
-        <div className="flex items-center gap-4">
-          <Suspense fallback={null}>
-            <ProductSort />
-          </Suspense>
-          <button className="flex items-center gap-2 rounded-md border border-border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:border-foreground hover:text-foreground lg:hidden">
-            <Filter className="h-4 w-4" />
-            Filters
-          </button>
-        </div>
-      </div>
+
+        <Suspense fallback={null}>
+          <ProductsToolbar />
+        </Suspense>
+      </header>
 
       <div className="mt-8 grid gap-8 lg:grid-cols-[240px_1fr]">
-        <div className="hidden lg:block">
+        <aside className="hidden lg:block" aria-labelledby="filters-heading">
+          <h2 id="filters-heading" className="sr-only">
+            Filters
+          </h2>
           <Suspense fallback={null}>
             <ProductFilters />
           </Suspense>
-        </div>
+        </aside>
 
-        <div>
+        <section aria-labelledby="results-heading">
+          <h2 id="results-heading" className="sr-only">
+            Product results
+          </h2>
+
           {catalog.products.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div
+              className="flex flex-col items-center justify-center py-16 text-center"
+              role="status"
+              aria-live="polite"
+            >
               <p className="text-lg font-medium text-foreground">
                 No products found
               </p>
@@ -96,8 +103,8 @@ export default async function ProductsPage({
           ) : (
             <CatalogProductsClient locale={locale} initialCatalog={catalog} />
           )}
-        </div>
+        </section>
       </div>
-    </div>
+    </main>
   );
 }

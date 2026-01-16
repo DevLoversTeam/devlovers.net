@@ -33,7 +33,7 @@ export function AppChrome({ userExists, showAdminLink = false, children }: AppCh
 
   return (
     <>
-      <UnifiedHeader variant="platform" userExists={userExists} />
+      <UnifiedHeader variant="platform" userExists={userExists} showAdminLink={showAdminLink}/>
       {children}
     </>
   );

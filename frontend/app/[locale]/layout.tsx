@@ -31,7 +31,13 @@ export default async function LocaleLayout({
   const user = await getCurrentUser();
 
   const userExists = Boolean(user);
-  const showAdminNavLink = process.env.NEXT_PUBLIC_ENABLE_ADMIN === 'true';
+  const enableAdmin =
+  (process.env.ENABLE_ADMIN_API ?? process.env.NEXT_PUBLIC_ENABLE_ADMIN ?? '')
+    .toLowerCase() === 'true';
+
+  // підстав свій реальний шлях до ролі
+  const isAdmin = user?.role === 'admin'; // або 'ADMIN', або isShopAdmin === true
+  const showAdminNavLink = Boolean(user) && isAdmin && enableAdmin;
 
   return (
     <NextIntlClientProvider messages={messages}>

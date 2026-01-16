@@ -1,6 +1,7 @@
+// frontend/app/[locale]/shop/admin/products/_components/product-form.tsx
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { CATEGORIES, COLORS, PRODUCT_TYPES, SIZES } from '@/lib/config/catalog';
@@ -40,6 +41,7 @@ type UiPriceRow = {
   price: string;
   originalPrice: string;
 };
+
 type SaleRuleDetails = {
   currency?: CurrencyCode;
   field?: string;
@@ -130,6 +132,14 @@ export function ProductForm({
 }: ProductFormProps) {
   const router = useRouter();
 
+  const headingId = useId();
+  const formErrorId = useId();
+  const slugHelpId = useId();
+  const slugErrorId = useId();
+  const imageErrorId = useId();
+  const usdOriginalErrorId = useId();
+  const uahOriginalErrorId = useId();
+
   const [title, setTitle] = useState(initialValues?.title ?? '');
   const [slug, setSlug] = useState(
     initialValues?.slug
@@ -165,7 +175,7 @@ export function ProductForm({
   );
 
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [existingImageUrl] = useState(initialValues?.imageUrl);
+  const existingImageUrl = initialValues?.imageUrl;
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -189,6 +199,7 @@ export function ProductForm({
     () => prices.find(p => p.currency === 'UAH'),
     [prices]
   );
+
   const usdOriginalError = originalPriceErrors['USD'];
   const uahOriginalError = originalPriceErrors['UAH'];
 
@@ -221,6 +232,7 @@ export function ProductForm({
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
     setError(null);
     setSlugError(null);
     setImageError(null);
@@ -264,6 +276,7 @@ export function ProductForm({
         priceMinor: number;
         originalPriceMinor: number | null;
       }>;
+
       try {
         minorPrices = effectivePrices.map(p => ({
           currency: p.currency,
@@ -319,6 +332,7 @@ export function ProductForm({
         if (data.code === 'IMAGE_UPLOAD_FAILED' || data.field === 'image') {
           setImageError(data.error ?? 'Failed to upload image');
         }
+
         if (data.code === 'SALE_ORIGINAL_REQUIRED') {
           const details = data.details as SaleRuleDetails | undefined;
           const currency = details?.currency;
@@ -350,6 +364,7 @@ export function ProductForm({
         productId: productId ?? null,
         slug: slugValue,
       });
+
       setError(
         `Unexpected error while ${
           mode === 'create' ? 'creating' : 'updating'
@@ -360,14 +375,25 @@ export function ProductForm({
     }
   };
 
+  const describedBySlug = slugError
+    ? `${slugHelpId} ${slugErrorId}`
+    : slugHelpId;
+
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8">
-      <h1 className="text-2xl font-bold text-foreground">
-        {mode === 'create' ? 'Create new product' : 'Edit product'}
-      </h1>
+    <main className="mx-auto max-w-2xl px-4 py-8" aria-labelledby={headingId}>
+      <header>
+        <h1 id={headingId} className="text-2xl font-bold text-foreground">
+          {mode === 'create' ? 'Create new product' : 'Edit product'}
+        </h1>
+      </header>
 
       {error ? (
-        <div className="mt-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div
+          id={formErrorId}
+          role="alert"
+          aria-live="polite"
+          className="mt-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700"
+        >
           {error}
         </div>
       ) : null}
@@ -376,8 +402,9 @@ export function ProductForm({
         className="mt-6 space-y-4"
         onSubmit={handleSubmit}
         encType="multipart/form-data"
+        aria-describedby={error ? formErrorId : undefined}
       >
-        <div className="grid gap-4 sm:grid-cols-2">
+        <section className="grid gap-4 sm:grid-cols-2" aria-label="Basic info">
           <div>
             <label
               className="block text-sm font-medium text-foreground"
@@ -387,6 +414,7 @@ export function ProductForm({
             </label>
             <input
               id="title"
+              name="title"
               className="w-full rounded-md border border-border px-3 py-2 text-sm"
               type="text"
               value={title}
@@ -403,31 +431,43 @@ export function ProductForm({
               >
                 Slug
               </label>
-              <span className="text-xs text-muted-foreground">
+              <span id={slugHelpId} className="text-xs text-muted-foreground">
                 Auto-generated from title
               </span>
             </div>
             <input
               id="slug"
+              name="slug"
               className="w-full rounded-md border border-border bg-muted px-3 py-2 text-sm"
               type="text"
               value={slugValue}
               readOnly
+              aria-readonly="true"
+              aria-describedby={describedBySlug}
+              aria-invalid={slugError ? true : undefined}
             />
             {slugError ? (
-              <p className="mt-1 text-sm text-red-600">{slugError}</p>
+              <p
+                id={slugErrorId}
+                className="mt-1 text-sm text-red-600"
+                role="alert"
+              >
+                {slugError}
+              </p>
             ) : null}
           </div>
-        </div>
+        </section>
 
-        <div className="rounded-md border border-border p-3">
-          <div className="text-sm font-semibold text-foreground">Prices</div>
+        <fieldset className="rounded-md border border-border p-3">
+          <legend className="px-1 text-sm font-semibold text-foreground">
+            Prices
+          </legend>
 
           <div className="mt-3 grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <div className="text-xs font-medium text-muted-foreground">
+            <fieldset className="space-y-2">
+              <legend className="text-xs font-medium text-muted-foreground">
                 USD (required)
-              </div>
+              </legend>
 
               <div>
                 <label
@@ -438,8 +478,10 @@ export function ProductForm({
                 </label>
                 <input
                   id="price-usd"
+                  name="price-usd"
                   className="w-full rounded-md border border-border px-3 py-2 text-sm"
                   type="text"
+                  inputMode="decimal"
                   placeholder="59.00"
                   value={usdRow?.price ?? ''}
                   onChange={e => setPriceField('USD', 'price', e.target.value)}
@@ -456,28 +498,38 @@ export function ProductForm({
                 </label>
                 <input
                   id="original-usd"
+                  name="original-usd"
                   className={`w-full rounded-md border px-3 py-2 text-sm ${
                     usdOriginalError ? 'border-red-500' : 'border-border'
                   }`}
                   type="text"
+                  inputMode="decimal"
                   placeholder="79.00"
                   value={usdRow?.originalPrice ?? ''}
                   onChange={e =>
                     setPriceField('USD', 'originalPrice', e.target.value)
                   }
+                  aria-invalid={usdOriginalError ? true : undefined}
+                  aria-describedby={
+                    usdOriginalError ? usdOriginalErrorId : undefined
+                  }
                 />
                 {usdOriginalError ? (
-                  <p className="mt-1 text-sm text-red-600">
+                  <p
+                    id={usdOriginalErrorId}
+                    className="mt-1 text-sm text-red-600"
+                    role="alert"
+                  >
                     {usdOriginalError}
                   </p>
                 ) : null}
               </div>
-            </div>
+            </fieldset>
 
-            <div className="space-y-2">
-              <div className="text-xs font-medium text-muted-foreground">
+            <fieldset className="space-y-2">
+              <legend className="text-xs font-medium text-muted-foreground">
                 UAH (optional)
-              </div>
+              </legend>
 
               <div>
                 <label
@@ -488,8 +540,10 @@ export function ProductForm({
                 </label>
                 <input
                   id="price-uah"
+                  name="price-uah"
                   className="w-full rounded-md border border-border px-3 py-2 text-sm"
                   type="text"
+                  inputMode="decimal"
                   placeholder="1999.00"
                   value={uahRow?.price ?? ''}
                   onChange={e => setPriceField('UAH', 'price', e.target.value)}
@@ -505,23 +559,33 @@ export function ProductForm({
                 </label>
                 <input
                   id="original-uah"
+                  name="original-uah"
                   className={`w-full rounded-md border px-3 py-2 text-sm ${
                     uahOriginalError ? 'border-red-500' : 'border-border'
                   }`}
                   type="text"
+                  inputMode="decimal"
                   placeholder="2499.00"
                   value={uahRow?.originalPrice ?? ''}
                   onChange={e =>
                     setPriceField('UAH', 'originalPrice', e.target.value)
                   }
+                  aria-invalid={uahOriginalError ? true : undefined}
+                  aria-describedby={
+                    uahOriginalError ? uahOriginalErrorId : undefined
+                  }
                 />
                 {uahOriginalError ? (
-                  <p className="mt-1 text-sm text-red-600">
+                  <p
+                    id={uahOriginalErrorId}
+                    className="mt-1 text-sm text-red-600"
+                    role="alert"
+                  >
                     {uahOriginalError}
                   </p>
                 ) : null}
               </div>
-            </div>
+            </fieldset>
           </div>
 
           <p className="mt-3 text-xs text-muted-foreground">
@@ -529,9 +593,12 @@ export function ProductForm({
             <span className="font-mono">product_prices</span> for that currency,
             or checkout fails.
           </p>
-        </div>
+        </fieldset>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <section
+          className="grid gap-4 sm:grid-cols-2"
+          aria-label="Inventory and SKU"
+        >
           <div>
             <label
               className="block text-sm font-medium text-foreground"
@@ -541,11 +608,13 @@ export function ProductForm({
             </label>
             <input
               id="stock"
+              name="stock"
               className="w-full rounded-md border border-border px-3 py-2 text-sm"
               type="number"
               value={stock}
               onChange={event => setStock(event.target.value)}
               min={0}
+              inputMode="numeric"
             />
           </div>
 
@@ -558,15 +627,19 @@ export function ProductForm({
             </label>
             <input
               id="sku"
+              name="sku"
               className="w-full rounded-md border border-border px-3 py-2 text-sm"
               type="text"
               value={sku}
               onChange={event => setSku(event.target.value)}
             />
           </div>
-        </div>
+        </section>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <section
+          className="grid gap-4 sm:grid-cols-2"
+          aria-label="Catalog attributes"
+        >
           <div>
             <label
               className="block text-sm font-medium text-foreground"
@@ -576,6 +649,7 @@ export function ProductForm({
             </label>
             <select
               id="category"
+              name="category"
               className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
               value={category}
               onChange={event => setCategory(event.target.value)}
@@ -600,6 +674,7 @@ export function ProductForm({
             </label>
             <select
               id="type"
+              name="type"
               className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
               value={type}
               onChange={event => setType(event.target.value)}
@@ -612,17 +687,14 @@ export function ProductForm({
               ))}
             </select>
           </div>
-        </div>
+        </section>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label
-              className="block text-sm font-medium text-foreground"
-              htmlFor="colors"
-            >
+        <section className="grid gap-4 sm:grid-cols-2" aria-label="Variants">
+          <fieldset>
+            <legend className="block text-sm font-medium text-foreground">
               Colors
-            </label>
-            <div className="flex flex-col gap-2 rounded-md border border-border px-3 py-2">
+            </legend>
+            <div className="mt-2 flex flex-col gap-2 rounded-md border border-border px-3 py-2">
               {COLORS.map(color => (
                 <label
                   key={color.slug}
@@ -648,16 +720,13 @@ export function ProductForm({
                 </label>
               ))}
             </div>
-          </div>
+          </fieldset>
 
-          <div>
-            <label
-              className="block text-sm font-medium text-foreground"
-              htmlFor="sizes"
-            >
+          <fieldset>
+            <legend className="block text-sm font-medium text-foreground">
               Sizes
-            </label>
-            <div className="flex flex-col gap-2 rounded-md border border-border px-3 py-2">
+            </legend>
+            <div className="mt-2 flex flex-col gap-2 rounded-md border border-border px-3 py-2">
               {SIZES.map(size => (
                 <label
                   key={size}
@@ -681,10 +750,13 @@ export function ProductForm({
                 </label>
               ))}
             </div>
-          </div>
-        </div>
+          </fieldset>
+        </section>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <section
+          className="grid gap-4 sm:grid-cols-2"
+          aria-label="Flags and badge"
+        >
           <div>
             <label
               className="block text-sm font-medium text-foreground"
@@ -694,6 +766,7 @@ export function ProductForm({
             </label>
             <select
               id="badge"
+              name="badge"
               className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
               value={badge}
               onChange={event => {
@@ -715,6 +788,7 @@ export function ProductForm({
             <div className="flex items-center space-x-2">
               <input
                 id="isActive"
+                name="isActive"
                 type="checkbox"
                 checked={isActive}
                 onChange={event => setIsActive(event.target.checked)}
@@ -731,6 +805,7 @@ export function ProductForm({
             <div className="flex items-center space-x-2">
               <input
                 id="isFeatured"
+                name="isFeatured"
                 type="checkbox"
                 checked={isFeatured}
                 onChange={event => setIsFeatured(event.target.checked)}
@@ -744,9 +819,9 @@ export function ProductForm({
               </label>
             </div>
           </div>
-        </div>
+        </section>
 
-        <div>
+        <section aria-label="Description">
           <label
             className="block text-sm font-medium text-foreground"
             htmlFor="description"
@@ -755,14 +830,15 @@ export function ProductForm({
           </label>
           <textarea
             id="description"
+            name="description"
             className="w-full rounded-md border border-border px-3 py-2 text-sm"
             rows={4}
             value={description}
             onChange={event => setDescription(event.target.value)}
           />
-        </div>
+        </section>
 
-        <div>
+        <section aria-label="Image upload">
           <label
             className="block text-sm font-medium text-foreground"
             htmlFor="image"
@@ -771,11 +847,14 @@ export function ProductForm({
           </label>
           <input
             id="image"
+            name="image"
             className="w-full rounded-md border border-border px-3 py-2 text-sm"
             type="file"
             accept="image/*"
             onChange={handleImageChange}
             required={mode === 'create'}
+            aria-invalid={imageError ? true : undefined}
+            aria-describedby={imageError ? imageErrorId : undefined}
           />
           {existingImageUrl && !imageFile ? (
             <p className="mt-2 text-sm text-muted-foreground">
@@ -783,14 +862,22 @@ export function ProductForm({
             </p>
           ) : null}
           {imageError ? (
-            <p className="mt-1 text-sm text-red-600">{imageError}</p>
+            <p
+              id={imageErrorId}
+              className="mt-1 text-sm text-red-600"
+              role="alert"
+            >
+              {imageError}
+            </p>
           ) : null}
-        </div>
+        </section>
 
         <button
           type="submit"
           className="mt-6 w-full rounded-md bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent/90 disabled:opacity-60"
           disabled={isSubmitting}
+          aria-disabled={isSubmitting}
+          aria-busy={isSubmitting}
         >
           {isSubmitting
             ? mode === 'create'
@@ -801,6 +888,6 @@ export function ProductForm({
             : 'Save changes'}
         </button>
       </form>
-    </div>
+    </main>
   );
 }
