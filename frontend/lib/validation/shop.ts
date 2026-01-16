@@ -267,7 +267,8 @@ export const productAdminUpdateSchema = z
         const trimmed = value?.trim() ?? '';
         return trimmed.length ? trimmed : undefined;
       }),
-    prices: z.array(adminPriceRowSchema).optional(),
+    prices: z.array(adminPriceRowSchema).min(1).optional(),
+
     description: z.string().optional(),
     category: z.enum(productCategoryValues as [string, ...string[]]).optional(),
     type: z.enum(typeValues as [string, ...string[]]).optional(),
@@ -293,6 +294,15 @@ export const productAdminUpdateSchema = z
           seen.add(p.currency);
         }
       });
+      // USD is required when prices are provided (avoid wiping USD on PATCH replace-all)
+      const usd = data.prices.find(p => p.currency === 'USD');
+      if (!usd) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['prices'],
+          message: 'USD price is required',
+        });
+      }
     }
     if (data.badge === 'SALE' && data.prices) {
       data.prices.forEach((p, idx) => {
