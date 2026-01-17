@@ -1,10 +1,8 @@
-// frontend/app/[locale]/shop/checkout/payment/StripePaymentClient.tsx
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Link } from '@/i18n/routing';
+import { Link, useRouter } from '@/i18n/routing';
 
-import { useRouter } from 'next/navigation';
 import {
   Elements,
   PaymentElement,
@@ -50,14 +48,21 @@ function toCurrencyCode(
     : resolveCurrencyFromLocale(locale);
 }
 
+function buildShopBase(locale: string) {
+  return `/${locale}/shop`;
+}
+
 function nextRouteForPaymentResult(params: {
   locale: string;
   orderId: string;
   status?: string | null;
 }) {
-  const { orderId, status } = params;
-  const success = `/shop/checkout/success?orderId=${orderId}`;
-  const failure = `/shop/checkout/error?orderId=${orderId}`;
+  const { locale, orderId, status } = params;
+  const shopBase = buildShopBase(locale);
+  const id = encodeURIComponent(orderId);
+
+  const success = `${shopBase}/checkout/success?orderId=${id}`;
+  const failure = `${shopBase}/checkout/error?orderId=${id}`;
 
   if (!status) return success;
   if (
@@ -75,6 +80,9 @@ function StripePaymentForm({ orderId, locale }: PaymentFormProps) {
   const stripe = useStripe();
   const elements = useElements();
   const router = useRouter();
+
+  const shopBase = useMemo(() => buildShopBase(locale), [locale]);
+
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -92,17 +100,20 @@ function StripePaymentForm({ orderId, locale }: PaymentFormProps) {
     setSubmitting(true);
 
     try {
+      const id = encodeURIComponent(orderId);
+
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
         redirect: 'if_required',
         confirmParams: {
-          return_url: `${window.location.origin}/shop/checkout/success?orderId=${orderId}`,
+          // Stripe redirect comes from outside Next.js routing — must include locale.
+          return_url: `${window.location.origin}${shopBase}/checkout/success?orderId=${id}`,
         },
       });
 
       if (error) {
         setErrorMessage(error.message ?? 'Unable to confirm payment.');
-        router.push(`/shop/checkout/error?orderId=${orderId}`);
+        router.push(`${shopBase}/checkout/error?orderId=${id}`);
         return;
       }
 
@@ -111,11 +122,14 @@ function StripePaymentForm({ orderId, locale }: PaymentFormProps) {
         orderId,
         status: paymentIntent?.status ?? null,
       });
+
       router.push(next);
     } catch (error) {
       logError('stripe_payment_confirm_failed', error, { orderId });
       setErrorMessage('We couldn’t confirm your payment. Please try again.');
-      router.push(`/shop/checkout/error?orderId=${orderId}`);
+      router.push(
+        `${shopBase}/checkout/error?orderId=${encodeURIComponent(orderId)}`
+      );
     } finally {
       setSubmitting(false);
     }
@@ -161,6 +175,8 @@ export default function StripePaymentClient({
     [currency, locale]
   );
 
+  const shopBase = useMemo(() => buildShopBase(locale), [locale]);
+
   const stripePromise = useMemo(() => {
     if (!paymentsEnabled || !publishableKey) return null;
     return loadStripe(publishableKey);
@@ -183,13 +199,15 @@ export default function StripePaymentClient({
         <p>Payments are disabled in this environment.</p>
         <nav className="flex gap-3" aria-label="Next steps">
           <Link
-            href={`/shop/checkout/success?orderId=${orderId}`}
+            href={`${shopBase}/checkout/success?orderId=${encodeURIComponent(
+              orderId
+            )}`}
             className="inline-flex items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground hover:bg-accent/90"
           >
             Continue
           </Link>
           <Link
-            href="/shop/cart"
+            href={`${shopBase}/cart`}
             className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
           >
             Back to cart
@@ -207,7 +225,7 @@ export default function StripePaymentClient({
       >
         <p>Payment cannot be initialized. Please try again later.</p>
         <Link
-          href="/shop/cart"
+          href={`${shopBase}/cart`}
           className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
         >
           Return to cart

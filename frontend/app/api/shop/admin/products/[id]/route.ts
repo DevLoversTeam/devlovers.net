@@ -7,10 +7,14 @@ import {
   AdminUnauthorizedError,
   requireAdminApi,
 } from '@/lib/auth/admin';
+import {
+  InvalidPayloadError,
+  SlugConflictError,
+  PriceConfigError,
+} from '@/lib/services/errors';
 
 import { parseAdminProductForm } from '@/lib/admin/parseAdminProductForm';
 import { logError } from '@/lib/logging';
-import { InvalidPayloadError, SlugConflictError } from '@/lib/services/errors';
 import {
   deleteProduct,
   getAdminProductByIdWithPrices,
@@ -216,6 +220,19 @@ export async function PATCH(
       return NextResponse.json({ success: true, product: updated });
     } catch (error) {
       logError('Failed to update product', error);
+
+      if (error instanceof PriceConfigError) {
+        return NextResponse.json(
+          {
+            error: error.message,
+            code: error.code, // PRICE_CONFIG_ERROR
+            productId: error.productId,
+            currency: error.currency,
+            field: 'prices',
+          },
+          { status: 400 }
+        );
+      }
 
       if (error instanceof InvalidPayloadError) {
         const anyErr = error as any;

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { makeCheckoutReq } from '@/lib/tests/helpers/makeCheckoutReq';
 import { InvalidPayloadError } from '@/lib/services/errors';
+import { ensureStripePaymentIntentForOrder } from '@/lib/services/orders/payment-attempts';
 
 // Force payments enabled so route goes into Stripe flow
 // gitleaks:allow
@@ -28,6 +29,14 @@ vi.mock('@/lib/psp/stripe', () => ({
   retrievePaymentIntent: vi.fn(),
 }));
 
+// Avoid DB coupling introduced by #6 (DB-canonical PI amount/currency)
+vi.mock('@/lib/services/orders/payment-intent', () => ({
+  readStripePaymentIntentParams: vi.fn(async () => ({
+    amountMinor: 1000,
+    currency: 'USD',
+  })),
+}));
+
 // Mock order services
 vi.mock('@/lib/services/orders', async () => {
   const actual = await vi.importActual<any>('@/lib/services/orders');
@@ -36,6 +45,16 @@ vi.mock('@/lib/services/orders', async () => {
     createOrderWithItems: vi.fn(),
     setOrderPaymentIntent: vi.fn(),
     restockOrder: vi.fn(),
+  };
+});
+
+vi.mock('@/lib/services/orders/payment-attempts', async () => {
+  const actual = await vi.importActual<any>(
+    '@/lib/services/orders/payment-attempts'
+  );
+  return {
+    ...actual,
+    ensureStripePaymentIntentForOrder: vi.fn(),
   };
 });
 
@@ -76,6 +95,14 @@ describe('checkout: setOrderPaymentIntent rejection after order creation must no
         'Order cannot accept a payment intent from the current status.'
       )
     );
+    const ensurePI = ensureStripePaymentIntentForOrder as unknown as MockedFn;
+
+    ensurePI.mockRejectedValueOnce(
+      new InvalidPayloadError(
+        'Order cannot accept a payment intent from the current status.'
+      )
+    );
+
     const res = await POST(
       makeCheckoutReq({
         idempotencyKey: 'idem_key_test_new_attach_reject_0001',
@@ -110,6 +137,13 @@ describe('checkout: setOrderPaymentIntent rejection after order creation must no
     });
 
     setPI.mockRejectedValueOnce(
+      new InvalidPayloadError(
+        'Order cannot accept a payment intent from the current status.'
+      )
+    );
+    const ensurePI = ensureStripePaymentIntentForOrder as unknown as MockedFn;
+
+    ensurePI.mockRejectedValueOnce(
       new InvalidPayloadError(
         'Order cannot accept a payment intent from the current status.'
       )

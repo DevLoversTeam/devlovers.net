@@ -86,6 +86,7 @@ export function CartProvider({ children }: CartProviderProps) {
 
     try {
       const nextCart = await rehydrateCart(items);
+
       setCart(nextCart);
       return;
     } catch (error) {
@@ -107,6 +108,7 @@ export function CartProvider({ children }: CartProviderProps) {
 
             try {
               const retriedCart = await rehydrateCart(filtered);
+
               setCart(retriedCart);
 
               logWarn('cart_rehydrate_recovered_by_removing_item', {

@@ -20,11 +20,20 @@ type CreateRefundInput = {
 let _stripe: Stripe | null = null;
 let _stripeKey: string | null = null;
 
+class StripePspError extends Error {
+  readonly code: string;
+  readonly cause: unknown;
+
+  constructor(code: string, cause: unknown) {
+    super(code);
+    this.name = 'StripePspError';
+    this.code = code;
+    this.cause = cause;
+  }
+}
+
 function withCause(code: string, cause: unknown): Error {
-  const err = new Error(code);
-  // Preserve original error for logs/diagnostics without relying on ES2022 ErrorOptions.
-  (err as any).cause = cause;
-  return err;
+  return new StripePspError(code, cause);
 }
 
 export async function createRefund({
@@ -134,6 +143,7 @@ export async function createPaymentIntent({
 export async function retrievePaymentIntent(paymentIntentId: string): Promise<{
   clientSecret: string;
   paymentIntentId: string;
+  status: Stripe.PaymentIntent['status'];
 }> {
   const { paymentsEnabled } = getStripeEnv();
   const stripe = getStripeClient();
@@ -149,7 +159,11 @@ export async function retrievePaymentIntent(paymentIntentId: string): Promise<{
   try {
     const intent = await stripe.paymentIntents.retrieve(paymentIntentId);
     if (!intent.client_secret) throw new Error('STRIPE_CLIENT_SECRET_MISSING');
-    return { clientSecret: intent.client_secret, paymentIntentId: intent.id };
+    return {
+      clientSecret: intent.client_secret,
+      paymentIntentId: intent.id,
+      status: intent.status,
+    };
   } catch (error) {
     logError('Stripe payment intent retrieval failed', error);
     throw withCause('STRIPE_PAYMENT_INTENT_FAILED', error);
