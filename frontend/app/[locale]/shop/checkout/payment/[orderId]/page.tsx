@@ -6,9 +6,8 @@ import { getOrderSummary } from '@/lib/services/orders';
 import { OrderNotFoundError } from '@/lib/services/errors';
 import { orderIdParamSchema } from '@/lib/validation/shop';
 import { getStripeEnv } from '@/lib/env/stripe';
-import { createPaymentIntent, retrievePaymentIntent } from '@/lib/psp/stripe';
-import { setOrderPaymentIntent } from '@/lib/services/orders';
 import { logError } from '@/lib/logging';
+import { ensureStripePaymentIntentForOrder } from '@/lib/services/orders/payment-attempts';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -90,6 +89,7 @@ export default async function PaymentPage(props: PaymentPageProps) {
   const clearCart = shouldClearCart(searchParams);
   const cc = clearCart ? '&clearCart=1' : '';
   const { locale } = params;
+  const shopBase = `/${locale}/shop`;
 
   const orderId = getOrderId(params);
 
@@ -101,13 +101,13 @@ export default async function PaymentPage(props: PaymentPageProps) {
       >
         <nav className="mt-6 flex justify-center gap-3" aria-label="Next steps">
           <Link
-            href="/shop/cart"
+            href={`${shopBase}/cart`}
             className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
           >
             Go to cart
           </Link>
           <Link
-            href="/shop/products"
+            href={`${shopBase}/products`}
             className="inline-flex items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground hover:bg-accent/90"
           >
             Continue shopping
@@ -133,13 +133,13 @@ export default async function PaymentPage(props: PaymentPageProps) {
             aria-label="Next steps"
           >
             <Link
-              href="/shop/cart"
+              href={`${shopBase}/cart`}
               className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
             >
               Go to cart
             </Link>
             <Link
-              href="/shop/products"
+              href={`${shopBase}/products`}
               className="inline-flex items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground hover:bg-accent/90"
             >
               Continue shopping
@@ -165,48 +165,74 @@ export default async function PaymentPage(props: PaymentPageProps) {
 
   // Ensure we have a clientSecret even when URL doesn't include ?clientSecret=...
   // Source of truth for payment finality is webhook; this only initializes Elements.
+  // if (
+  //   paymentsEnabled &&
+  //   publishableKey &&
+  //   (!clientSecret || !clientSecret.trim())
+  // ) {
+  //   const existingPi = order.paymentIntentId?.trim() ?? '';
+  //   let phase:
+  //     | 'retrievePaymentIntent'
+  //     | 'createPaymentIntent'
+  //     | 'setOrderPaymentIntent'
+  //     | 'unknown' = 'unknown';
+
+  //   try {
+  //     if (existingPi) {
+  //       phase = 'retrievePaymentIntent';
+  //       const retrieved = await retrievePaymentIntent(existingPi);
+  //       clientSecret = retrieved.clientSecret;
+  //     } else {
+  //       phase = 'createPaymentIntent';
+  //       const snapshot = await readStripePaymentIntentParams(order.id);
+  //       const created = await createPaymentIntent({
+  //         amount: snapshot.amountMinor,
+  //         currency: snapshot.currency,
+  //         orderId: order.id,
+  //         idempotencyKey: `pi:${order.id}`,
+  //       });
+
+  //       phase = 'setOrderPaymentIntent';
+  //       await setOrderPaymentIntent({
+  //         orderId: order.id,
+  //         paymentIntentId: created.paymentIntentId,
+  //       });
+
+  //       clientSecret = created.clientSecret;
+  //     }
+  //   } catch (error) {
+  //     logError('payment_page_failed', error, {
+  //       orderId: order.id,
+  //       existingPi,
+  //       phase,
+  //     });
+
+  //     // Leave clientSecret empty -> UI shows "Payment cannot be initialized"
+  //   }
+  // }
+
   if (
     paymentsEnabled &&
     publishableKey &&
     (!clientSecret || !clientSecret.trim())
   ) {
     const existingPi = order.paymentIntentId?.trim() ?? '';
-    let phase:
-      | 'retrievePaymentIntent'
-      | 'createPaymentIntent'
-      | 'setOrderPaymentIntent'
-      | 'unknown' = 'unknown';
+    let phase: 'ensureStripePaymentIntentForOrder' | 'unknown' = 'unknown';
 
     try {
-      if (existingPi) {
-        phase = 'retrievePaymentIntent';
-        const retrieved = await retrievePaymentIntent(existingPi);
-        clientSecret = retrieved.clientSecret;
-      } else {
-        phase = 'createPaymentIntent';
-        const created = await createPaymentIntent({
-          amount: order.totalAmountMinor,
-          currency: order.currency,
-          orderId: order.id,
-          idempotencyKey: `pi:${order.id}`,
-        });
+      phase = 'ensureStripePaymentIntentForOrder';
+      const ensured = await ensureStripePaymentIntentForOrder({
+        orderId: order.id,
+        existingPaymentIntentId: existingPi || null,
+      });
 
-        phase = 'setOrderPaymentIntent';
-        await setOrderPaymentIntent({
-          orderId: order.id,
-          paymentIntentId: created.paymentIntentId,
-        });
-
-        clientSecret = created.clientSecret;
-      }
+      clientSecret = ensured.clientSecret;
     } catch (error) {
       logError('payment_page_failed', error, {
         orderId: order.id,
         existingPi,
         phase,
       });
-
-      // Leave clientSecret empty -> UI shows "Payment cannot be initialized"
     }
   }
 
@@ -223,13 +249,13 @@ export default async function PaymentPage(props: PaymentPageProps) {
             aria-label="Next steps"
           >
             <Link
-              href={`/shop/checkout/success?orderId=${order.id}${cc}`}
+              href={`${shopBase}/checkout/success?orderId=${order.id}${cc}`}
               className="inline-flex items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground hover:bg-accent/90"
             >
               View confirmation
             </Link>
             <Link
-              href="/shop/products"
+              href={`${shopBase}/products`}
               className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
             >
               Continue shopping

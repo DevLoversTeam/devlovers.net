@@ -134,6 +134,7 @@ export async function createPaymentIntent({
 export async function retrievePaymentIntent(paymentIntentId: string): Promise<{
   clientSecret: string;
   paymentIntentId: string;
+  status: Stripe.PaymentIntent['status'];
 }> {
   const { paymentsEnabled } = getStripeEnv();
   const stripe = getStripeClient();
@@ -149,7 +150,11 @@ export async function retrievePaymentIntent(paymentIntentId: string): Promise<{
   try {
     const intent = await stripe.paymentIntents.retrieve(paymentIntentId);
     if (!intent.client_secret) throw new Error('STRIPE_CLIENT_SECRET_MISSING');
-    return { clientSecret: intent.client_secret, paymentIntentId: intent.id };
+    return {
+      clientSecret: intent.client_secret,
+      paymentIntentId: intent.id,
+      status: intent.status,
+    };
   } catch (error) {
     logError('Stripe payment intent retrieval failed', error);
     throw withCause('STRIPE_PAYMENT_INTENT_FAILED', error);

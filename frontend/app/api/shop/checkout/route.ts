@@ -6,7 +6,6 @@ import { logError, logWarn } from '@/lib/logging';
 import { resolveRequestLocale } from '@/lib/shop/request-locale';
 import { IdempotencyConflictError } from '@/lib/services/errors';
 import { MoneyValueError } from '@/db/queries/shop/orders';
-import { createPaymentIntent, retrievePaymentIntent } from '@/lib/psp/stripe';
 import {
   InsufficientStockError,
   InvalidPayloadError,
@@ -14,18 +13,17 @@ import {
   PriceConfigError,
   OrderStateInvalidError,
 } from '@/lib/services/errors';
-import { readStripePaymentIntentParams } from '@/lib/services/orders/payment-intent';
-
-import {
-  createOrderWithItems,
-  restockOrder,
-  setOrderPaymentIntent,
-} from '@/lib/services/orders';
 import {
   checkoutPayloadSchema,
   idempotencyKeySchema,
 } from '@/lib/validation/shop';
 import { type PaymentProvider, type PaymentStatus } from '@/lib/shop/payments';
+import {
+  PaymentAttemptsExhaustedError,
+  ensureStripePaymentIntentForOrder,
+} from '@/lib/services/orders/payment-attempts';
+
+import { createOrderWithItems, restockOrder } from '@/lib/services/orders';
 
 const EXPECTED_BUSINESS_ERROR_CODES = new Set([
   'IDEMPOTENCY_CONFLICT',
@@ -33,6 +31,7 @@ const EXPECTED_BUSINESS_ERROR_CODES = new Set([
   'INVALID_VARIANT',
   'INSUFFICIENT_STOCK',
   'PRICE_CONFIG_ERROR',
+  'PAYMENT_ATTEMPTS_EXHAUSTED',
 ]);
 
 function getErrorCode(err: unknown): string | null {
@@ -293,16 +292,27 @@ export async function POST(request: NextRequest) {
     const stripePaymentFlow =
       paymentsEnabled && order.paymentProvider === 'stripe';
 
+    async function ensureStripePI(
+      orderId: string,
+      existingPaymentIntentId: string | null
+    ) {
+      return await ensureStripePaymentIntentForOrder({
+        orderId,
+        existingPaymentIntentId,
+      });
+    }
+
     // =========================
     // Existing order path
     // =========================
     if (!result.isNew) {
-      // Existing order already has PI: retrieve client_secret
-      if (stripePaymentFlow && order.paymentIntentId) {
+      if (stripePaymentFlow) {
         try {
-          const paymentIntent = await retrievePaymentIntent(
-            order.paymentIntentId
+          const ensured = await ensureStripePI(
+            order.id,
+            order.paymentIntentId ?? null
           );
+
           return buildCheckoutResponse({
             order: {
               id: order.id,
@@ -310,71 +320,36 @@ export async function POST(request: NextRequest) {
               totalAmount: order.totalAmount,
               paymentStatus: order.paymentStatus,
               paymentProvider: order.paymentProvider,
-              paymentIntentId: order.paymentIntentId ?? null,
+              paymentIntentId: ensured.paymentIntentId,
             },
             itemCount,
-            clientSecret: paymentIntent.clientSecret,
+            clientSecret: ensured.clientSecret,
             status: 200,
           });
         } catch (error) {
-          logError('Checkout payment intent retrieval failed', error);
-          return errorResponse(
-            'STRIPE_ERROR',
-            'Unable to initiate payment.',
-            502
-          );
-        }
-      }
+          if (error instanceof PaymentAttemptsExhaustedError) {
+            // Best-effort release to avoid holding reserved stock indefinitely.
+            try {
+              await restockOrder(order.id, { reason: 'failed' });
+            } catch (restockError) {
+              logError(
+                'Restoring stock after attempts exhausted failed',
+                restockError
+              );
+            }
+            return errorResponse(
+              'PAYMENT_ATTEMPTS_EXHAUSTED',
+              'Payment attempts exhausted for this order.',
+              409,
+              { orderId: error.orderId, provider: error.provider }
+            );
+          }
 
-      // Existing order without PI: create PI then attach (post-create => never 400)
-      if (stripePaymentFlow && !order.paymentIntentId) {
-        let paymentIntent: { paymentIntentId: string; clientSecret: string };
-
-        try {
-          const snapshot = await readStripePaymentIntentParams(order.id);
-
-          paymentIntent = await createPaymentIntent({
-            amount: snapshot.amountMinor,
-            currency: snapshot.currency,
-            orderId: order.id,
-            idempotencyKey,
-          });
-        } catch (error) {
-          logError('Checkout payment intent creation failed', error);
-          return errorResponse(
-            'STRIPE_ERROR',
-            'Unable to initiate payment.',
-            502
-          );
-        }
-
-        try {
-          const updatedOrder = await setOrderPaymentIntent({
-            orderId: order.id,
-            paymentIntentId: paymentIntent.paymentIntentId,
-          });
-
-          return buildCheckoutResponse({
-            order: {
-              id: updatedOrder.id,
-              currency: updatedOrder.currency,
-              totalAmount: updatedOrder.totalAmount,
-              paymentStatus: updatedOrder.paymentStatus,
-              paymentProvider: updatedOrder.paymentProvider,
-              paymentIntentId: updatedOrder.paymentIntentId ?? null,
-            },
-            itemCount,
-            clientSecret: paymentIntent.clientSecret,
-            status: 200,
-          });
-        } catch (error) {
-          logError('Checkout payment intent attach failed', error);
-
-          // Post-create => conflict, not 400
+          // Post-create/state conflict must be 409 (not 502)
           if (error instanceof InvalidPayloadError) {
             return errorResponse(
               'CHECKOUT_CONFLICT',
-              'Order state conflict while attaching payment intent. Retry with the same Idempotency-Key.',
+              'Order state conflict while initializing payment. Retry with the same Idempotency-Key.',
               409,
               { orderId: order.id }
             );
@@ -387,10 +362,11 @@ export async function POST(request: NextRequest) {
             });
           }
 
+          logError('Checkout payment initialization failed', error);
           return errorResponse(
-            'INTERNAL_ERROR',
-            'Unable to process checkout.',
-            500
+            'STRIPE_ERROR',
+            'Unable to initiate payment.',
+            502
           );
         }
       }
@@ -430,89 +406,71 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Stripe new order: Phase 1 PSP call (if fails => restock best-effort, return 502)
-    let paymentIntent: { paymentIntentId: string; clientSecret: string };
-
+    // Stripe new order: durable attempt layer (bounded + audited)
     try {
-      const snapshot = await readStripePaymentIntentParams(order.id);
-
-      paymentIntent = await createPaymentIntent({
-        amount: snapshot.amountMinor,
-        currency: snapshot.currency,
-        orderId: order.id,
-        idempotencyKey,
-      });
-    } catch (error) {
-      logError('Checkout payment intent creation failed', error);
-
-      try {
-        await restockOrder(order.id, { reason: 'failed' });
-      } catch (restockError) {
-        logError(
-          'Restoring stock after payment intent failure failed',
-          restockError
-        );
-      }
-
-      return errorResponse('STRIPE_ERROR', 'Unable to initiate payment.', 502);
-    }
-
-    // Stripe new order: Phase 2 attach PI (post-create => never 400)
-    try {
-      const updatedOrder = await setOrderPaymentIntent({
-        orderId: order.id,
-        paymentIntentId: paymentIntent.paymentIntentId,
-      });
+      const ensured = await ensureStripePI(
+        order.id,
+        order.paymentIntentId ?? null
+      );
 
       return buildCheckoutResponse({
         order: {
-          id: updatedOrder.id,
-          currency: updatedOrder.currency,
-          totalAmount: updatedOrder.totalAmount,
-          paymentStatus: updatedOrder.paymentStatus,
-          paymentProvider: updatedOrder.paymentProvider,
-          paymentIntentId: updatedOrder.paymentIntentId ?? null,
+          id: order.id,
+          currency: order.currency,
+          totalAmount: order.totalAmount,
+          paymentStatus: order.paymentStatus,
+          paymentProvider: order.paymentProvider,
+          paymentIntentId: ensured.paymentIntentId,
         },
         itemCount,
-        clientSecret: paymentIntent.clientSecret,
+        clientSecret: ensured.clientSecret,
         status: 201,
       });
     } catch (error) {
-      logError('Checkout payment intent attach failed', error);
-
+      // Conflict => 409 and DO NOT restock (leave reserved; retry/janitor)
       if (error instanceof InvalidPayloadError) {
-        // Conflict/race/state issue. Do NOT return 400.
-        // Leave inventory reserved; retry with same idempotency key or janitor will sweep.
         return errorResponse(
           'CHECKOUT_CONFLICT',
-          'Order state conflict while attaching payment intent. Retry with the same Idempotency-Key.',
+          'Order state conflict while initializing payment. Retry with the same Idempotency-Key.',
           409,
           { orderId: order.id }
         );
       }
+      if (error instanceof PaymentAttemptsExhaustedError) {
+        // Best-effort release to avoid holding reserved stock indefinitely
+        try {
+          await restockOrder(order.id, { reason: 'failed' });
+        } catch (restockError) {
+          logError(
+            'Restoring stock after attempts exhausted failed',
+            restockError
+          );
+        }
+        return errorResponse(
+          'PAYMENT_ATTEMPTS_EXHAUSTED',
+          'Payment attempts exhausted for this order.',
+          409,
+          { orderId: error.orderId, provider: error.provider }
+        );
+      }
 
-      // For non-conflict attach failures: best-effort release to avoid stock lock
+      logError('Checkout payment initialization failed', error);
+
       try {
         await restockOrder(order.id, { reason: 'failed' });
       } catch (restockError) {
         logError(
-          'Restoring stock after payment intent attach failure failed',
+          'Restoring stock after payment init failure failed',
           restockError
         );
       }
-
       if (error instanceof OrderStateInvalidError) {
         return errorResponse(error.code, error.message, 500, {
           orderId: error.orderId,
           ...(error.details ? { details: error.details } : {}),
         });
       }
-
-      return errorResponse(
-        'INTERNAL_ERROR',
-        'Unable to process checkout.',
-        500
-      );
+      return errorResponse('STRIPE_ERROR', 'Unable to initiate payment.', 502);
     }
   } catch (error) {
     if (isExpectedBusinessError(error)) {

@@ -11,6 +11,7 @@ import {
   type RefundMetaRecord,
   appendRefundToMeta,
 } from '@/lib/services/orders/psp-metadata/refunds';
+import { markStripeAttemptFinal } from '@/lib/services/orders/payment-attempts';
 
 const REFUND_FULLNESS_UNDETERMINED = 'REFUND_FULLNESS_UNDETERMINED' as const;
 
@@ -525,6 +526,13 @@ export async function POST(request: NextRequest) {
           reason: mismatchReason,
         });
 
+        await markStripeAttemptFinal({
+          paymentIntentId,
+          status: 'succeeded',
+          errorCode: mismatchReason,
+          errorMessage: 'webhook_succeeded_but_mismatch',
+        });
+
         return ack();
       }
 
@@ -573,6 +581,10 @@ export async function POST(request: NextRequest) {
           ne(orders.paymentStatus, 'failed'),
           ne(orders.paymentStatus, 'refunded')
         ),
+      });
+      await markStripeAttemptFinal({
+        paymentIntentId,
+        status: 'succeeded',
       });
 
       logWebhookEvent({
@@ -647,6 +659,16 @@ export async function POST(request: NextRequest) {
         await restockOrder(order.id, { reason: 'failed' });
       }
 
+      await markStripeAttemptFinal({
+        paymentIntentId,
+        status: 'failed',
+        errorCode:
+          paymentIntent?.last_payment_error?.decline_code ??
+          paymentIntent?.last_payment_error?.code ??
+          null,
+        errorMessage: paymentIntent?.last_payment_error?.message ?? null,
+      });
+
       logWebhookEvent({
         orderId: order.id,
         paymentIntentId,
@@ -716,7 +738,12 @@ export async function POST(request: NextRequest) {
       if (shouldRestockFromWebhook(order)) {
         await restockOrder(order.id, { reason: 'canceled' });
       }
-
+      await markStripeAttemptFinal({
+        paymentIntentId,
+        status: 'canceled',
+        errorCode: paymentIntent?.cancellation_reason ?? null,
+        errorMessage: 'payment_intent_canceled',
+      });
       logWebhookEvent({
         orderId: order.id,
         paymentIntentId,
