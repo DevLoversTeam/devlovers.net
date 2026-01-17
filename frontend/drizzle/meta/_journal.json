@@ -22,6 +22,13 @@
       "when": 1768664588311,
       "tag": "0002_clean_martin_li",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1768690525242,
+      "tag": "0003_add_stripe_events_claim_lock",
+      "breakpoints": true
     }
   ]
 }
