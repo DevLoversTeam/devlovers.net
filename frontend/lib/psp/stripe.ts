@@ -20,11 +20,20 @@ type CreateRefundInput = {
 let _stripe: Stripe | null = null;
 let _stripeKey: string | null = null;
 
+class StripePspError extends Error {
+  readonly code: string;
+  readonly cause: unknown;
+
+  constructor(code: string, cause: unknown) {
+    super(code);
+    this.name = 'StripePspError';
+    this.code = code;
+    this.cause = cause;
+  }
+}
+
 function withCause(code: string, cause: unknown): Error {
-  const err = new Error(code);
-  // Preserve original error for logs/diagnostics without relying on ES2022 ErrorOptions.
-  (err as any).cause = cause;
-  return err;
+  return new StripePspError(code, cause);
 }
 
 export async function createRefund({

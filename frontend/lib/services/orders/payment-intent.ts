@@ -110,23 +110,39 @@ export async function readStripePaymentIntentParams(orderId: string): Promise<{
     );
   }
 
+  // Payable-state gate: fail-closed for paid/failed/refunded/canceled/etc.
+  const allowed: PaymentStatus[] = ['pending', 'requires_payment'];
+  if (!allowed.includes(existing.paymentStatus as PaymentStatus)) {
+    throw new OrderStateInvalidError(
+      'Order is not payable; Stripe PaymentIntent initialization is not allowed in the current state.',
+      {
+        orderId,
+        field: 'paymentStatus',
+        rawValue: existing.paymentStatus,
+        details: {
+          allowed,
+          provider,
+          paymentIntentId: existing.paymentIntentId ?? null,
+        },
+      }
+    );
+  }
+
   const amountMinor = existing.totalAmountMinor;
 
   // Canonical money source = DB minor units. Fail-closed on invalid totals.
   if (!Number.isSafeInteger(amountMinor) || amountMinor <= 0) {
-    const err = new OrderStateInvalidError(
-      'Invalid order total for Stripe payment intent creation.'
+    throw new OrderStateInvalidError(
+      'Invalid order total for Stripe payment intent creation.',
+      {
+        orderId,
+        field: 'totalAmountMinor',
+        rawValue: amountMinor,
+        details: {
+          reason: 'Invalid order total for Stripe payment intent creation.',
+        },
+      }
     );
-
-    // attach diagnostics for API handler (keeps existing errorResponse shape)
-    (err as any).orderId = orderId;
-    (err as any).field = 'totalAmountMinor';
-    (err as any).rawValue = amountMinor;
-    (err as any).details = {
-      reason: 'Invalid order total for Stripe payment intent creation.',
-    };
-
-    throw err;
   }
 
   return { amountMinor, currency: existing.currency };

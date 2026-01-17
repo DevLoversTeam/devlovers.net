@@ -163,54 +163,6 @@ export default async function PaymentPage(props: PaymentPageProps) {
   let clientSecret = resolveClientSecret(searchParams);
   const publishableKey = paymentsEnabled ? stripeEnv.publishableKey : null;
 
-  // Ensure we have a clientSecret even when URL doesn't include ?clientSecret=...
-  // Source of truth for payment finality is webhook; this only initializes Elements.
-  // if (
-  //   paymentsEnabled &&
-  //   publishableKey &&
-  //   (!clientSecret || !clientSecret.trim())
-  // ) {
-  //   const existingPi = order.paymentIntentId?.trim() ?? '';
-  //   let phase:
-  //     | 'retrievePaymentIntent'
-  //     | 'createPaymentIntent'
-  //     | 'setOrderPaymentIntent'
-  //     | 'unknown' = 'unknown';
-
-  //   try {
-  //     if (existingPi) {
-  //       phase = 'retrievePaymentIntent';
-  //       const retrieved = await retrievePaymentIntent(existingPi);
-  //       clientSecret = retrieved.clientSecret;
-  //     } else {
-  //       phase = 'createPaymentIntent';
-  //       const snapshot = await readStripePaymentIntentParams(order.id);
-  //       const created = await createPaymentIntent({
-  //         amount: snapshot.amountMinor,
-  //         currency: snapshot.currency,
-  //         orderId: order.id,
-  //         idempotencyKey: `pi:${order.id}`,
-  //       });
-
-  //       phase = 'setOrderPaymentIntent';
-  //       await setOrderPaymentIntent({
-  //         orderId: order.id,
-  //         paymentIntentId: created.paymentIntentId,
-  //       });
-
-  //       clientSecret = created.clientSecret;
-  //     }
-  //   } catch (error) {
-  //     logError('payment_page_failed', error, {
-  //       orderId: order.id,
-  //       existingPi,
-  //       phase,
-  //     });
-
-  //     // Leave clientSecret empty -> UI shows "Payment cannot be initialized"
-  //   }
-  // }
-
   if (
     paymentsEnabled &&
     publishableKey &&

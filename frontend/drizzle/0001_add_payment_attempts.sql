@@ -12,6 +12,7 @@ CREATE TABLE "payment_attempts" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"finalized_at" timestamp with time zone,
+	CONSTRAINT "payment_attempts_provider_check" CHECK ("payment_attempts"."provider" in ('stripe')),
 	CONSTRAINT "payment_attempts_status_check" CHECK ("payment_attempts"."status" in ('active','succeeded','failed','canceled')),
 	CONSTRAINT "payment_attempts_attempt_number_check" CHECK ("payment_attempts"."attempt_number" >= 1)
 );

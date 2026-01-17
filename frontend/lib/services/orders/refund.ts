@@ -11,9 +11,7 @@ import {
 } from './psp-metadata/refunds';
 
 function invalid(code: string, message: string): InvalidPayloadError {
-  const err = new InvalidPayloadError(message);
-  (err as any).code = code;
-  return err;
+  return new InvalidPayloadError(message, { code });
 }
 
 function makeRefundIdempotencyKey(

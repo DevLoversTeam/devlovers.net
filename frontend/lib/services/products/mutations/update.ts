@@ -1,6 +1,4 @@
-// frontend/lib/services/products/mutations/update.ts
 import { eq, sql } from 'drizzle-orm';
-
 import {
   destroyProductImage,
   uploadProductImageFromFile,
@@ -17,6 +15,7 @@ import { mapRowToProduct } from '../mapping';
 import { normalizeSlug } from '../slug';
 import {
   assertMoneyMinorInt,
+  assertMergedPricesPolicy,
   enforceSaleBadgeRequiresOriginal,
   normalizePricesFromInput,
   validatePriceRows,
@@ -56,10 +55,14 @@ export async function updateProduct(
 
   const prices = normalizePricesFromInput(input);
   if (prices.length) validatePriceRows(prices);
-  // Enforce SALE invariant against FINAL state (DB rows + incoming upserts)
+
   const finalBadge = (input as any).badge ?? existing.badge;
 
-  if (finalBadge === 'SALE') {
+  // Enforce merged-state invariants (DB rows + incoming upserts)
+  // - If prices are patched, validate merged currency policy (e.g. USD must exist)
+  // - If final badge is SALE, enforce originalPrice for ALL currencies in merged state
+
+  if (prices.length || finalBadge === 'SALE') {
     const existingPriceRows = await db
       .select({
         currency: productPrices.currency,
@@ -92,7 +95,18 @@ export async function updateProduct(
       merged.set(p.currency, p);
     }
 
-    enforceSaleBadgeRequiresOriginal('SALE', Array.from(merged.values()));
+    const mergedRows = Array.from(merged.values());
+
+    // Currency-set policy should be enforced on merged state ONLY when prices are patched.
+    // This keeps PATCH semantics: partial prices payload is allowed, and policy is checked post-merge.
+    if (prices.length) {
+      assertMergedPricesPolicy(mergedRows, { productId: id, requireUsd: true });
+    }
+
+    // SALE invariant must be enforced on merged state when badge is SALE (even if prices are not patched).
+    if (finalBadge === 'SALE') {
+      enforceSaleBadgeRequiresOriginal('SALE', mergedRows);
+    }
   }
 
   // Base fields update
@@ -138,7 +152,7 @@ export async function updateProduct(
   }
 
   try {
-    // 1) upsert prices 
+    // 1) upsert prices
     if (prices.length) {
       const upsertRows = prices.map(p => {
         const priceMinor = p.priceMinor;

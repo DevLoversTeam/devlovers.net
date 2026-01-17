@@ -292,26 +292,16 @@ export async function POST(request: NextRequest) {
     const stripePaymentFlow =
       paymentsEnabled && order.paymentProvider === 'stripe';
 
-    async function ensureStripePI(
-      orderId: string,
-      existingPaymentIntentId: string | null
-    ) {
-      return await ensureStripePaymentIntentForOrder({
-        orderId,
-        existingPaymentIntentId,
-      });
-    }
-
     // =========================
     // Existing order path
     // =========================
     if (!result.isNew) {
       if (stripePaymentFlow) {
         try {
-          const ensured = await ensureStripePI(
-            order.id,
-            order.paymentIntentId ?? null
-          );
+          const ensured = await ensureStripePaymentIntentForOrder({
+            orderId: order.id,
+            existingPaymentIntentId: order.paymentIntentId ?? null,
+          });
 
           return buildCheckoutResponse({
             order: {
@@ -408,10 +398,10 @@ export async function POST(request: NextRequest) {
 
     // Stripe new order: durable attempt layer (bounded + audited)
     try {
-      const ensured = await ensureStripePI(
-        order.id,
-        order.paymentIntentId ?? null
-      );
+      const ensured = await ensureStripePaymentIntentForOrder({
+        orderId: order.id,
+        existingPaymentIntentId: order.paymentIntentId ?? null,
+      });
 
       return buildCheckoutResponse({
         order: {

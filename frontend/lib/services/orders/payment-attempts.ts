@@ -8,6 +8,7 @@ import { readStripePaymentIntentParams } from '@/lib/services/orders/payment-int
 import { createPaymentIntent, retrievePaymentIntent } from '@/lib/psp/stripe';
 import { setOrderPaymentIntent } from '@/lib/services/orders';
 import { logError } from '@/lib/logging';
+import { OrderStateInvalidError } from '@/lib/services/errors';
 
 export type PaymentProvider = 'stripe';
 export type PaymentAttemptStatus =
@@ -125,7 +126,27 @@ async function upsertBackfillAttemptForExistingPI(args: {
     )
     .limit(1);
 
-  if (found[0]) return found[0];
+  const existingAttempt = found[0] ?? null;
+  if (existingAttempt) {
+    // Guard: never reuse attempt that belongs to a different order (cross-order PI reuse).
+    if (existingAttempt.orderId === orderId) return existingAttempt;
+
+    // Fail-closed: PI is already linked to another order. Do NOT create a new attempt
+    // that would bind this PI to a second order.
+    throw new OrderStateInvalidError(
+      'PaymentIntent is already associated with a different order.',
+      {
+        orderId,
+        field: 'providerPaymentIntentId',
+        rawValue: paymentIntentId,
+        details: {
+          provider,
+          paymentIntentId,
+          existingOrderId: existingAttempt.orderId,
+        },
+      }
+    );
+  }
 
   const max = await getMaxAttemptNumber(orderId, provider);
   const next = max + 1;

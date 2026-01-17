@@ -1,8 +1,7 @@
 import { toCents } from '@/lib/shop/money';
 import { currencyValues } from '@/lib/shop/currency';
 import type { CurrencyCode } from '@/lib/shop/currency';
-
-import { InvalidPayloadError } from '../errors';
+import { InvalidPayloadError, PriceConfigError } from '../errors';
 import type { NormalizedPriceRow } from './types';
 
 function assertMoneyString(value: string, field: string): number {
@@ -56,7 +55,27 @@ function assertOptionalMoneyString(
   }
   return n;
 }
+export function assertMergedPricesPolicy(
+  merged: NormalizedPriceRow[],
+  options?: { productId?: string; requireUsd?: boolean }
+) {
+  if (!merged.length) {
+    throw new PriceConfigError('At least one price is required.', {
+      productId: options?.productId,
+    });
+  }
 
+  const requireUsd = options?.requireUsd ?? true;
+  if (requireUsd) {
+    const hasUsd = merged.some(p => p.currency === 'USD' && p.priceMinor >= 1);
+    if (!hasUsd) {
+      throw new PriceConfigError('USD price is required.', {
+        productId: options?.productId,
+        currency: 'USD',
+      });
+    }
+  }
+}
 function toMoneyMinor(value: string, field: string): number {
   const n = assertMoneyString(value, field);
   return toCents(n);
@@ -167,7 +186,6 @@ export function requireUsd(prices: NormalizedPriceRow[]): NormalizedPriceRow {
   }
   return usd;
 }
-
 
 export function validatePriceRows(prices: NormalizedPriceRow[]) {
   // Safety: no duplicates even if upstream schema is bypassed
