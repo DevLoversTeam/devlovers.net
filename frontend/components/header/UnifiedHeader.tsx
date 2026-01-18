@@ -9,6 +9,7 @@ import { LogoutButton } from '@/components/auth/logoutButton';
 import { CartButton } from '@/components/shop/header/cart-button';
 import { NavLinks } from '@/components/shop/header/nav-links';
 import { BlogCategoryLinks } from '@/components/blog/BlogCategoryLinks';
+import { BlogHeaderSearch } from '@/components/blog/BlogHeaderSearch';
 import { AppMobileMenu } from '@/components/header/AppMobileMenu';
 
 export type UnifiedHeaderVariant = 'platform' | 'shop' | 'blog';
@@ -98,6 +99,7 @@ export function UnifiedHeader({
               </Link>
             ) : null}
 
+            {isBlog && <BlogHeaderSearch />}
             <LanguageSwitcher />
             {isShop && <CartButton />}
 
@@ -114,6 +116,7 @@ export function UnifiedHeader({
             )}
           </div>
           <div className="flex items-center gap-1 md:hidden">
+            {isBlog && <BlogHeaderSearch />}
             <LanguageSwitcher />
             {isShop && <CartButton />}
             <AppMobileMenu

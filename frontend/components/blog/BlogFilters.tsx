@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
+import { usePathname, useRouter } from '@/i18n/routing';
 import BlogGrid from '@/components/blog/BlogGrid';
 import { Link } from '@/i18n/routing';
 
@@ -76,10 +77,14 @@ function plainTextFromPortableText(value?: PortableText): string {
   return value
     .filter(block => block?._type === 'block')
     .map(block =>
-      (block.children || []).map(child => child.text || '').join('')
+      (block.children || []).map(child => child.text || '').join(' ')
     )
-    .join('\n')
+    .join(' ')
     .trim();
+}
+
+function normalizeSearchText(value: string) {
+  return value.toLowerCase().replace(/\s+/g, ' ').trim();
 }
 
 function plainTextExcerpt(value?: PortableText): string {
@@ -103,6 +108,8 @@ export default function BlogFilters({
   const tNav = useTranslations('navigation');
   const locale = useLocale();
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   const [selectedAuthor, setSelectedAuthor] = useState<{
     name: string;
     norm: string;
@@ -154,6 +161,28 @@ export default function BlogFilters({
   const categoryParam = useMemo(() => {
     return searchParams?.get('category') || '';
   }, [searchParams]);
+  const searchQuery = useMemo(() => {
+    return (searchParams?.get('search') || '').trim();
+  }, [searchParams]);
+  const searchQueryLower = searchQuery.toLowerCase();
+  const didClearSearchRef = useRef(false);
+
+  useEffect(() => {
+    if (didClearSearchRef.current) return;
+    if (!searchQuery) {
+      didClearSearchRef.current = true;
+      return;
+    }
+    if (typeof performance === 'undefined') return;
+    const [navEntry] = performance.getEntriesByType('navigation');
+    const navType = (navEntry as PerformanceNavigationTiming | undefined)?.type;
+    if (navType !== 'reload') return;
+    const params = new URLSearchParams(searchParams?.toString() || '');
+    params.delete('search');
+    const nextPath = params.toString() ? `${pathname}?${params}` : pathname;
+    router.replace(nextPath);
+    didClearSearchRef.current = true;
+  }, [pathname, router, searchParams, searchQuery]);
 
   useEffect(() => {
     const normParam = normalizeTag(categoryParam);
@@ -185,9 +214,22 @@ export default function BlogFilters({
         if (!postCategories.includes(selectedCategory.norm)) return false;
       }
 
+      if (searchQueryLower) {
+        const titleText = normalizeSearchText(post.title);
+        const bodyText = normalizeSearchText(
+          plainTextFromPortableText(post.body)
+        );
+        if (
+          !titleText.includes(searchQueryLower) &&
+          !bodyText.includes(searchQueryLower)
+        ) {
+          return false;
+        }
+      }
+
       return true;
     });
-  }, [posts, selectedAuthor, selectedCategory]);
+  }, [posts, selectedAuthor, selectedCategory, searchQueryLower]);
 
   const selectedAuthorData = selectedAuthor?.data || null;
   const authorBioText = useMemo(() => {
