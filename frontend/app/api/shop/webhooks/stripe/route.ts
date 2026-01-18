@@ -15,7 +15,7 @@ import {
 import { markStripeAttemptFinal } from '@/lib/services/orders/payment-attempts';
 import {
   enforceRateLimit,
-  getClientIp,
+  getRateLimitSubject,
   rateLimitResponse,
 } from '@/lib/security/rate-limit';
 
@@ -317,9 +317,9 @@ export async function POST(request: NextRequest) {
 
   const signature = request.headers.get('stripe-signature');
   if (!signature) {
-    const ip = getClientIp(request) ?? 'anon';
+    const subject = getRateLimitSubject(request);
     const decision = await enforceRateLimit({
-      key: `stripe_webhook:missing_sig:${ip}`,
+      key: `stripe_webhook:missing_sig:${subject}`,
       limit: Number(process.env.STRIPE_WEBHOOK_INVALID_SIG_RL_MAX ?? 30),
       windowSeconds: Number(
         process.env.STRIPE_WEBHOOK_INVALID_SIG_RL_WINDOW_SECONDS ?? 60
@@ -353,9 +353,9 @@ export async function POST(request: NextRequest) {
       error instanceof Error &&
       error.message === 'STRIPE_INVALID_SIGNATURE'
     ) {
-      const ip = getClientIp(request) ?? 'anon';
+      const subject = getRateLimitSubject(request);
       const decision = await enforceRateLimit({
-        key: `stripe_webhook:invalid_sig:${ip}`,
+        key: `stripe_webhook:invalid_sig:${subject}`,
         limit: Number(process.env.STRIPE_WEBHOOK_INVALID_SIG_RL_MAX ?? 30),
         windowSeconds: Number(
           process.env.STRIPE_WEBHOOK_INVALID_SIG_RL_WINDOW_SECONDS ?? 60

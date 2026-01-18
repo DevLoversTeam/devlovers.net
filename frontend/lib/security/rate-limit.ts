@@ -2,9 +2,9 @@ import 'server-only';
 
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { sql } from 'drizzle-orm';
-import { createHash } from 'node:crypto';
 import { isIP } from 'node:net';
+import { createHash } from 'node:crypto';
+import { sql } from 'drizzle-orm';
 
 import { db } from '@/db';
 
@@ -95,22 +95,47 @@ function envInt(name: string, fallback: number): number {
   return Number.isFinite(n) ? Math.floor(n) : fallback;
 }
 
-export function getClientIp(request: NextRequest): string | null {
-  const h = request.headers;
+export function getClientIpFromHeaders(
+  headers: Headers,
+  nodeEnv: string
+): string | null {
+  const env = (nodeEnv ?? '').trim().toLowerCase();
+  const cf = (headers.get('cf-connecting-ip') ?? '').trim();
+  if (cf && isIP(cf)) return cf;
 
-  const cf = (h.get('cf-connecting-ip') ?? '').trim();
-  if (cf) return cf;
+  const xr = (headers.get('x-real-ip') ?? '').trim();
+  if (xr && isIP(xr)) return xr;
 
-  const xr = (h.get('x-real-ip') ?? '').trim();
-  if (xr) return xr;
-
-  const xff = (h.get('x-forwarded-for') ?? '').trim();
-  if (xff) {
-    const first = xff.split(',')[0]?.trim();
-    return first?.length ? first : null;
+  if (env !== 'production') {
+    const xff = (headers.get('x-forwarded-for') ?? '').trim();
+    if (xff) {
+      for (const part of xff.split(',')) {
+        const candidate = part.trim();
+        if (candidate && isIP(candidate)) return candidate;
+      }
+    }
   }
 
   return null;
+}
+
+export function getClientIp(request: NextRequest): string | null {
+  return getClientIpFromHeaders(
+    request.headers,
+    (process.env.NODE_ENV ?? '').trim()
+  );
+}
+
+export function getRateLimitSubject(request: NextRequest): string {
+  const ip = getClientIp(request);
+  // Keep subject clean/stable for IPv6 (no ":"), consistent with key normalization.
+  if (ip) return normalizeRateLimitSubject(ip);
+
+  const ua = (request.headers.get('user-agent') ?? '').trim();
+  const al = (request.headers.get('accept-language') ?? '').trim();
+  const baseString = `${ua}|${al}`;
+  const hash = createHash('sha256').update(baseString).digest('base64url');
+  return `ua_${hash.slice(0, 16)}`;
 }
 
 export type RateLimitOk = { ok: true; remaining: number };

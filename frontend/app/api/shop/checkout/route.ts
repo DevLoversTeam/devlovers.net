@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   enforceRateLimit,
-  getClientIp,
+  getRateLimitSubject,
   rateLimitResponse,
 } from '@/lib/security/rate-limit';
 import { getCurrentUser } from '@/lib/auth';
@@ -233,7 +233,7 @@ export async function POST(request: NextRequest) {
   }
   // P1: rate limit checkout (cross-instance, DB-backed)
   // Policy: allow reasonable retries; block abusive burst.
-  const checkoutSubject = sessionUserId ?? getClientIp(request) ?? 'anon';
+  const checkoutSubject = sessionUserId ?? getRateLimitSubject(request);
 
   const decision = await enforceRateLimit({
     key: `checkout:${checkoutSubject}`,
