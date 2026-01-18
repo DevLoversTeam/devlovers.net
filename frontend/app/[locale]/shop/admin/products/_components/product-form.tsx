@@ -21,6 +21,7 @@ type ProductFormProps = {
   mode: 'create' | 'edit';
   productId?: string;
   initialValues?: Partial<ProductAdminInput> & { imageUrl?: string };
+  csrfToken: string;
 };
 
 type ApiResponse = {
@@ -128,6 +129,7 @@ export function ProductForm({
   mode,
   productId,
   initialValues,
+  csrfToken,
 }: ProductFormProps) {
   const router = useRouter();
 
@@ -374,6 +376,11 @@ export function ProductForm({
       if (imageFile) {
         formData.append('image', imageFile);
       }
+      if (!csrfToken) {
+        setError('Security token missing. Refresh the page and retry.');
+        setIsSubmitting(false);
+        return;
+      }
 
       const response = await fetch(
         mode === 'create'
@@ -381,6 +388,9 @@ export function ProductForm({
           : `/api/shop/admin/products/${productId}`,
         {
           method: mode === 'create' ? 'POST' : 'PATCH',
+          headers: {
+            'x-csrf-token': csrfToken,
+          },
           body: formData,
         }
       );
@@ -409,6 +419,13 @@ export function ProductForm({
           }
 
           setError(data.error ?? msg);
+          return;
+        }
+        if (
+          response.status === 403 &&
+          (data.code === 'CSRF_MISSING' || data.code === 'CSRF_INVALID')
+        ) {
+          setError('Security token expired. Refresh the page and retry.');
           return;
         }
 

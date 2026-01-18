@@ -1,6 +1,7 @@
 import Stripe from 'stripe';
+import crypto from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
-import { and, eq, ne, or } from 'drizzle-orm';
+import { and, eq, ne, or, isNull, lt } from 'drizzle-orm';
 import { db } from '@/db';
 import { verifyWebhookSignature, retrieveCharge } from '@/lib/psp/stripe';
 import { orders, stripeEvents } from '@/db/schema';
@@ -12,8 +13,79 @@ import {
   appendRefundToMeta,
 } from '@/lib/services/orders/psp-metadata/refunds';
 import { markStripeAttemptFinal } from '@/lib/services/orders/payment-attempts';
+import {
+  enforceRateLimit,
+  getRateLimitSubject,
+  rateLimitResponse,
+} from '@/lib/security/rate-limit';
+import { resolveStripeWebhookRateLimit } from '@/lib/security/stripe-webhook-rate-limit';
 
 const REFUND_FULLNESS_UNDETERMINED = 'REFUND_FULLNESS_UNDETERMINED' as const;
+
+// P0.8: multi-instance claim/lock (no transactions; safe under parallel deliveries)
+const STRIPE_WEBHOOK_INSTANCE_ID =
+  (
+    process.env.STRIPE_WEBHOOK_INSTANCE_ID ??
+    process.env.WEBHOOK_INSTANCE_ID ??
+    ''
+  ).trim() || crypto.randomUUID().slice(0, 12);
+
+const STRIPE_EVENT_CLAIM_TTL_MS = 10 * 60 * 1000; // 10 minutes
+const STRIPE_EVENT_RETRY_AFTER_SECONDS = 10;
+
+function busyRetry() {
+  return NextResponse.json(
+    {
+      code: 'WEBHOOK_CLAIMED',
+      retryAfterSeconds: STRIPE_EVENT_RETRY_AFTER_SECONDS,
+    },
+    {
+      status: 503,
+      headers: { 'Retry-After': String(STRIPE_EVENT_RETRY_AFTER_SECONDS) },
+    }
+  );
+}
+async function tryClaimStripeEvent(
+  eventId: string
+): Promise<'claimed' | 'already_processed' | 'busy'> {
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + STRIPE_EVENT_CLAIM_TTL_MS);
+
+  const claimed = await db
+    .update(stripeEvents)
+    .set({
+      claimedAt: now,
+      claimExpiresAt: expiresAt,
+      claimedBy: STRIPE_WEBHOOK_INSTANCE_ID,
+    })
+    .where(
+      and(
+        eq(stripeEvents.eventId, eventId),
+        isNull(stripeEvents.processedAt),
+        or(
+          isNull(stripeEvents.claimedAt),
+          isNull(stripeEvents.claimExpiresAt),
+          lt(stripeEvents.claimExpiresAt, now)
+        )
+      )
+    )
+    .returning({ eventId: stripeEvents.eventId });
+
+  if (claimed.length > 0) return 'claimed';
+
+  const [row] = await db
+    .select({
+      processedAt: stripeEvents.processedAt,
+      claimExpiresAt: stripeEvents.claimExpiresAt,
+      claimedBy: stripeEvents.claimedBy,
+    })
+    .from(stripeEvents)
+    .where(eq(stripeEvents.eventId, eventId))
+    .limit(1);
+
+  if (row?.processedAt) return 'already_processed';
+  return 'busy';
+}
 
 function throwRefundFullnessUndetermined(): never {
   throw new Error(REFUND_FULLNESS_UNDETERMINED);
@@ -246,6 +318,21 @@ export async function POST(request: NextRequest) {
 
   const signature = request.headers.get('stripe-signature');
   if (!signature) {
+    const subject = getRateLimitSubject(request);
+    const rateLimit = resolveStripeWebhookRateLimit('missing_sig');
+    const decision = await enforceRateLimit({
+      key: `stripe_webhook:missing_sig:${subject}`,
+      limit: rateLimit.max,
+      windowSeconds: rateLimit.windowSeconds,
+    });
+
+    if (!decision.ok) {
+      return rateLimitResponse({
+        retryAfterSeconds: decision.retryAfterSeconds,
+        details: { scope: 'stripe_webhook', reason: 'missing_signature' },
+      });
+    }
+
     logError(
       'Stripe webhook missing signature header',
       new Error('MISSING_STRIPE_SIGNATURE')
@@ -266,6 +353,21 @@ export async function POST(request: NextRequest) {
       error instanceof Error &&
       error.message === 'STRIPE_INVALID_SIGNATURE'
     ) {
+      const subject = getRateLimitSubject(request);
+      const rateLimit = resolveStripeWebhookRateLimit('invalid_sig');
+      const decision = await enforceRateLimit({
+        key: `stripe_webhook:invalid_sig:${subject}`,
+        limit: rateLimit.max,
+        windowSeconds: rateLimit.windowSeconds,
+      });
+
+      if (!decision.ok) {
+        return rateLimitResponse({
+          retryAfterSeconds: decision.retryAfterSeconds,
+          details: { scope: 'stripe_webhook', reason: 'invalid_signature' },
+        });
+      }
+
       logError('Stripe webhook signature verification failed', error);
       return NextResponse.json({ code: 'INVALID_SIGNATURE' }, { status: 400 });
     }
@@ -349,10 +451,25 @@ export async function POST(request: NextRequest) {
 
   try {
     const ack = async () => {
-      await db
+      const updated = await db
         .update(stripeEvents)
         .set({ processedAt: new Date() })
-        .where(eq(stripeEvents.eventId, event.id));
+        .where(
+          and(
+            eq(stripeEvents.eventId, event.id),
+            eq(stripeEvents.claimedBy, STRIPE_WEBHOOK_INSTANCE_ID)
+          )
+        )
+        .returning({ eventId: stripeEvents.eventId });
+
+      if (updated.length === 0) {
+        logWarn('stripe_webhook_ack_claim_lost', {
+          eventId: event.id,
+          eventType,
+        });
+        return busyRetry();
+      }
+
       return NextResponse.json({ received: true }, { status: 200 });
     };
     // 1) Insert event idempotently (no transactions)
@@ -386,7 +503,23 @@ export async function POST(request: NextRequest) {
       }
       // processedAt is NULL => previous attempt failed; reprocess
     }
-
+    // P0.8: claim/lock BEFORE any business logic (multi-instance safe).
+    const claimState = await tryClaimStripeEvent(event.id);
+    if (claimState === 'already_processed') {
+      logInfo('stripe_webhook_duplicate_event', {
+        eventId: event.id,
+        eventType,
+        reason: 'already_processed',
+      });
+      return NextResponse.json({ received: true }, { status: 200 });
+    }
+    if (claimState === 'busy') {
+      logInfo('stripe_webhook_claimed_by_other_instance', {
+        eventId: event.id,
+        eventType,
+      });
+      return busyRetry();
+    }
     //2) Resolve orderId:
     //    primary: metadata.orderId
     //    fallback: orders.paymentIntentId == paymentIntentId (ONLY if unique match)
@@ -1123,6 +1256,21 @@ export async function POST(request: NextRequest) {
     }
 
     logError('Stripe webhook processing failed', error);
+    // P0.8: release claim early so Stripe retries can be claimed immediately.
+    try {
+      await db
+        .update(stripeEvents)
+        .set({ claimExpiresAt: new Date(0) })
+        .where(
+          and(
+            eq(stripeEvents.eventId, event.id),
+            eq(stripeEvents.claimedBy, STRIPE_WEBHOOK_INSTANCE_ID),
+            isNull(stripeEvents.processedAt)
+          )
+        );
+    } catch {
+      // best-effort
+    }
     return NextResponse.json({ error: 'internal_error' }, { status: 500 });
   }
 }

@@ -6,6 +6,7 @@ import {
   AdminUnauthorizedError,
   requireAdminApi,
 } from '@/lib/auth/admin';
+import { requireAdminCsrf } from '@/lib/security/admin-csrf';
 
 import { parseAdminProductForm } from '@/lib/admin/parseAdminProductForm';
 import { logError } from '@/lib/logging';
@@ -82,6 +83,13 @@ export async function POST(request: NextRequest) {
     await requireAdminApi(request);
 
     const formData = await request.formData();
+    const csrfRes = requireAdminCsrf(
+      request,
+      'admin:products:create',
+      formData
+    );
+    if (csrfRes) return csrfRes;
+
     const imageFile = formData.get('image');
     if (!(imageFile instanceof File) || imageFile.size === 0) {
       return NextResponse.json(
