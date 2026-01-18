@@ -2,11 +2,84 @@ import 'server-only';
 
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { isIP } from 'node:net';
+import { createHash } from 'node:crypto';
 import { sql } from 'drizzle-orm';
 
 import { db } from '@/db';
 
 type GateRow = { window_started_at: unknown; count: unknown };
+
+const SUBJECT_PREFIXES = [
+  'checkout:',
+  'stripe_webhook:missing_sig:',
+  'stripe_webhook:invalid_sig:',
+];
+
+const SAFE_SUBJECT_RE = /^[a-zA-Z0-9._-]$/;
+
+function hashSubject(subject: string, prefix: string): string {
+  const digest = createHash('sha256')
+    .update(subject, 'utf8')
+    .digest('base64url');
+  return `${prefix}${digest.slice(0, 16)}`;
+}
+
+function sanitizeSubject(subject: string): string {
+  if (!subject) return 'anon';
+  let sanitized = '';
+  let lastUnderscore = false;
+  for (const char of subject) {
+    if (SAFE_SUBJECT_RE.test(char)) {
+      sanitized += char;
+      lastUnderscore = false;
+      continue;
+    }
+    if (!lastUnderscore) {
+      sanitized += '_';
+      lastUnderscore = true;
+    }
+  }
+  sanitized = sanitized.replace(/^_+|_+$/g, '');
+  if (!sanitized) return 'anon';
+  if (sanitized.length > 64) return hashSubject(subject, 'h_');
+  return sanitized;
+}
+
+export function normalizeRateLimitSubject(subject: string): string {
+  const trimmed = subject.trim();
+  if (!trimmed) return 'anon';
+
+  const ipKind = isIP(trimmed); // 0 | 4 | 6
+  if (ipKind === 6) return hashSubject(trimmed, 'ip6_');
+  if (ipKind === 4) return trimmed;
+
+  return sanitizeSubject(trimmed);
+}
+
+function normalizeRateLimitKey(key: string): {
+  legacyKey: string;
+  normalizedKey: string;
+} {
+  const legacyKey = key;
+  if (!key) return { legacyKey, normalizedKey: key };
+  const prefix = SUBJECT_PREFIXES.find(candidate => key.startsWith(candidate));
+  if (prefix) {
+    const subject = key.slice(prefix.length);
+    const normalizedSubject = normalizeRateLimitSubject(subject);
+    if (normalizedSubject === subject) return { legacyKey, normalizedKey: key };
+    return { legacyKey, normalizedKey: `${prefix}${normalizedSubject}` };
+  }
+  const lastColon = key.lastIndexOf(':');
+  if (lastColon === -1) return { legacyKey, normalizedKey: key };
+  const subject = key.slice(lastColon + 1);
+  const normalizedSubject = normalizeRateLimitSubject(subject);
+  if (normalizedSubject === subject) return { legacyKey, normalizedKey: key };
+  return {
+    legacyKey,
+    normalizedKey: `${key.slice(0, lastColon + 1)}${normalizedSubject}`,
+  };
+}
 
 function normalizeDate(x: unknown): Date | null {
   if (!x) return null;
@@ -22,22 +95,57 @@ function envInt(name: string, fallback: number): number {
   return Number.isFinite(n) ? Math.floor(n) : fallback;
 }
 
-export function getClientIp(request: NextRequest): string | null {
-  const h = request.headers;
+function envBool(name: string, fallback: boolean): boolean {
+  const raw = (process.env[name] ?? '').trim().toLowerCase();
+  if (!raw) return fallback;
 
-  const cf = (h.get('cf-connecting-ip') ?? '').trim();
-  if (cf) return cf;
+  if (raw === '1' || raw === 'true' || raw === 'yes' || raw === 'on')
+    return true;
+  if (raw === '0' || raw === 'false' || raw === 'no' || raw === 'off')
+    return false;
 
-  const xr = (h.get('x-real-ip') ?? '').trim();
-  if (xr) return xr;
+  return fallback;
+}
 
-  const xff = (h.get('x-forwarded-for') ?? '').trim();
+export function getClientIpFromHeaders(headers: Headers): string | null {
+  // Always allow Cloudflare canonical header (highest priority).
+  const cf = (headers.get('cf-connecting-ip') ?? '').trim();
+  if (cf && isIP(cf)) return cf;
+
+  const trustForwarded = envBool('TRUST_FORWARDED_HEADERS', false);
+
+  // Trusted boundary: if we don't trust forwarded headers and CF is missing,
+  // do NOT fall back to spoofable headers.
+  if (!trustForwarded) return null;
+
+  const xr = (headers.get('x-real-ip') ?? '').trim();
+  if (xr && isIP(xr)) return xr;
+
+  const xff = (headers.get('x-forwarded-for') ?? '').trim();
   if (xff) {
-    const first = xff.split(',')[0]?.trim();
-    return first?.length ? first : null;
+    for (const part of xff.split(',')) {
+      const candidate = part.trim();
+      if (candidate && isIP(candidate)) return candidate;
+    }
   }
 
   return null;
+}
+
+export function getClientIp(request: NextRequest): string | null {
+  return getClientIpFromHeaders(request.headers);
+}
+
+export function getRateLimitSubject(request: NextRequest): string {
+  const ip = getClientIp(request);
+  // Keep subject clean/stable for IPv6 (no ":"), consistent with key normalization.
+  if (ip) return normalizeRateLimitSubject(ip);
+
+  const ua = (request.headers.get('user-agent') ?? '').trim();
+  const al = (request.headers.get('accept-language') ?? '').trim();
+  const baseString = `${ua}|${al}`;
+  const hash = createHash('sha256').update(baseString).digest('base64url');
+  return `ua_${hash.slice(0, 16)}`;
 }
 
 export type RateLimitOk = { ok: true; remaining: number };
@@ -56,7 +164,8 @@ export async function enforceRateLimit(params: {
 }): Promise<RateLimitDecision> {
   const limit = Math.max(0, Math.floor(params.limit));
   const windowSeconds = Math.max(1, Math.floor(params.windowSeconds));
-  const key = params.key;
+  const { legacyKey, normalizedKey } = normalizeRateLimitKey(params.key);
+  const key = normalizedKey;
 
   // Allow disabling via env (for emergency): RATE_LIMIT_DISABLED=1
   if (envInt('RATE_LIMIT_DISABLED', 0) === 1) {
@@ -65,6 +174,21 @@ export async function enforceRateLimit(params: {
 
   if (!key || limit <= 0) {
     return { ok: true, remaining: Number.MAX_SAFE_INTEGER };
+  }
+
+  if (legacyKey !== normalizedKey) {
+    try {
+      await db.execute(sql`
+        UPDATE api_rate_limits
+        SET key = ${normalizedKey}
+        WHERE key = ${legacyKey}
+          AND NOT EXISTS (
+            SELECT 1 FROM api_rate_limits WHERE key = ${normalizedKey}
+          )
+      `);
+    } catch {
+      // Ignore conflicts; fall through to use normalizedKey for enforcement.
+    }
   }
 
   const res = await db.execute<GateRow>(sql`

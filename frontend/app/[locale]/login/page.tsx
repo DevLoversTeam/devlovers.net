@@ -4,10 +4,6 @@ import { useLocale } from "next-intl";
 import { Link } from "@/i18n/routing";
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
-import {
-  getPendingQuizResult,
-  clearPendingQuizResult,
-} from "@/lib/quiz/guest-quiz";
 import { Button } from "@/components/ui/button";
 import { OAuthButtons } from "@/components/auth/OAuthButtons";
 
@@ -72,50 +68,6 @@ export default function LoginPage() {
           setErrorMessage("Invalid email or password");
         }
         return;
-      }
-
-      const pendingResult = getPendingQuizResult();
-
-      if (pendingResult && data?.userId) {
-        try {
-          const quizRes = await fetch("/api/quiz/guest-result", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              userId: data.userId,
-              quizId: pendingResult.quizId,
-              answers: pendingResult.answers,
-              violations: pendingResult.violations,
-              timeSpentSeconds:
-                pendingResult.timeSpentSeconds,
-            }),
-          });
-
-          if (!quizRes.ok) {
-            throw new Error(
-              `Failed to save quiz result: ${quizRes.status}`
-            );
-          }
-
-          const result = await quizRes.json();
-
-          if (result.success) {
-            sessionStorage.setItem(
-              "quiz_just_saved",
-              JSON.stringify({
-                score: result.score,
-                total: result.totalQuestions,
-                percentage: result.percentage,
-                pointsAwarded: result.pointsAwarded,
-                quizSlug: pendingResult.quizSlug,
-              })
-            );
-          }
-        } catch (err) {
-          console.error("Failed to save quiz result:", err);
-        } finally {
-          clearPendingQuizResult();
-        }
       }
 
       const redirectTarget =

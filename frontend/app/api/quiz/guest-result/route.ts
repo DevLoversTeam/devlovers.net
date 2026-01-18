@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/db";
-import { quizAttempts, quizAttemptAnswers, quizQuestions, quizAnswers } from "@/db/schema/quiz";
+import {
+  quizAttempts,
+  quizAttemptAnswers,
+  quizQuestions,
+  quizAnswers,
+} from "@/db/schema/quiz";
 import { awardQuizPoints, calculateQuizPoints } from "@/db/queries/points";
 import { eq, inArray } from "drizzle-orm";
 
@@ -17,9 +22,9 @@ export async function POST(req: Request) {
     );
   }
 
-  const { userId, quizId, answers, violations, timeSpentSeconds } = body;
+  const { quizId, answers, violations, timeSpentSeconds } = body;
 
-  if (!userId || !quizId || !Array.isArray(answers) || answers.length === 0) {
+  if (!quizId || !Array.isArray(answers) || answers.length === 0) {
     return NextResponse.json(
       { success: false, error: "Invalid input" },
       { status: 400 }
@@ -27,12 +32,14 @@ export async function POST(req: Request) {
   }
 
   const session = await getCurrentUser();
-  if (!session || session.id !== userId) {
+  if (!session) {
     return NextResponse.json(
       { success: false, error: "Unauthorized" },
       { status: 401 }
     );
   }
+
+  const userId = session.id;
 
   const questionRows = await db
     .select({ id: quizQuestions.id })
@@ -114,14 +121,13 @@ export async function POST(req: Request) {
       );
     }
 
-    const isCorrect = record.isCorrect;
-    if (isCorrect) correctAnswersCount++;
+    if (record.isCorrect) correctAnswersCount++;
 
     attemptAnswers.push({
       attemptId: "",
       quizQuestionId: answer.questionId,
       selectedAnswerId: answer.selectedAnswerId,
-      isCorrect,
+      isCorrect: record.isCorrect,
       answeredAt: now,
     });
   }
@@ -132,10 +138,12 @@ export async function POST(req: Request) {
   const integrityScore = Math.max(0, 100 - violationsArray.length * 10);
   const safeTimeSpentSeconds = Math.max(0, Number(timeSpentSeconds) || 0);
   const startedAt = new Date(now.getTime() - safeTimeSpentSeconds * 1000);
+
   const pointsEarned = calculateQuizPoints({
     score: correctAnswersCount,
     integrityScore,
   });
+
   try {
     const [attempt] = await db
       .insert(quizAttempts)

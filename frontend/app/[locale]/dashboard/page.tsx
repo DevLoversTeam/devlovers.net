@@ -7,6 +7,7 @@ import { getUserQuizStats } from '@/db/queries/quiz';
 import { ProfileCard } from '@/components/dashboard/ProfileCard';
 import { StatsCard } from '@/components/dashboard/StatsCard';
 import { QuizSavedBanner } from '@/components/dashboard/QuizSavedBanner';
+import { PostAuthQuizSync } from "@/components/auth/PostAuthQuizSync";
 
 export const metadata = {
   title: 'Dashboard | DevLovers',
@@ -28,9 +29,9 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
   const averageScore =
     totalAttempts > 0
       ? Math.round(
-          attempts.reduce((acc, curr) => acc + Number(curr.percentage), 0) /
-            totalAttempts
-        )
+        attempts.reduce((acc, curr) => acc + Number(curr.percentage), 0) /
+        totalAttempts
+      )
       : 0;
 
   const lastActiveDate =
@@ -57,6 +58,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
 
   return (
     <main className="relative min-h-[calc(100vh-80px)] overflow-hidden">
+      <PostAuthQuizSync />
       <div
         className="absolute inset-0 pointer-events-none -z-10"
         aria-hidden="true"

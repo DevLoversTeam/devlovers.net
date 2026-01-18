@@ -161,6 +161,15 @@ export default function BlogFilters({
   const categoryParam = useMemo(() => {
     return searchParams?.get('category') || '';
   }, [searchParams]);
+  const resolvedCategory = useMemo(() => {
+    const normParam = normalizeTag(categoryParam);
+    if (!normParam) return selectedCategory;
+    const matched = allCategories.find(category => category.norm === normParam);
+    return {
+      name: matched?.name || categoryParam,
+      norm: normParam,
+    };
+  }, [allCategories, categoryParam, selectedCategory]);
   const searchQuery = useMemo(() => {
     return (searchParams?.get('search') || '').trim();
   }, [searchParams]);
@@ -184,23 +193,7 @@ export default function BlogFilters({
     didClearSearchRef.current = true;
   }, [pathname, router, searchParams, searchQuery]);
 
-  useEffect(() => {
-    const normParam = normalizeTag(categoryParam);
-    if (!normParam) {
-      setSelectedCategory(null);
-      return;
-    }
-    const matchedCategory = allCategories.find(
-      category => category.norm === normParam
-    );
-    setSelectedCategory(prev => {
-      if (prev?.norm === normParam) return prev;
-      return {
-        name: matchedCategory?.name || categoryParam,
-        norm: normParam,
-      };
-    });
-  }, [allCategories, categoryParam]);
+  // categoryParam is handled via resolvedCategory to avoid state updates in effects.
 
   const filteredPosts = useMemo(() => {
     return posts.filter(post => {
@@ -209,9 +202,9 @@ export default function BlogFilters({
         if (authorName !== selectedAuthor.norm) return false;
       }
 
-      if (selectedCategory) {
+      if (resolvedCategory) {
         const postCategories = (post.categories || []).map(normalizeTag);
-        if (!postCategories.includes(selectedCategory.norm)) return false;
+        if (!postCategories.includes(resolvedCategory.norm)) return false;
       }
 
       if (searchQueryLower) {
@@ -229,7 +222,7 @@ export default function BlogFilters({
 
       return true;
     });
-  }, [posts, selectedAuthor, selectedCategory, searchQueryLower]);
+  }, [posts, resolvedCategory, selectedAuthor, searchQueryLower]);
 
   const selectedAuthorData = selectedAuthor?.data || null;
   const authorBioText = useMemo(() => {
@@ -238,8 +231,8 @@ export default function BlogFilters({
 
   return (
     <div className="mt-8">
-      {!selectedAuthor && featuredPost && (
-        <section className="mb-12">
+        {!selectedAuthor && featuredPost && (
+          <section className="mb-12">
           <div className="grid gap-8 md:grid-cols-[0.9fr_1fr] md:items-center lg:grid-cols-[1fr_1fr]">
             {featuredPost.mainImage && (
               <Link
@@ -345,7 +338,7 @@ export default function BlogFilters({
               type="button"
               onClick={() => setSelectedCategory(null)}
               className={
-                !selectedCategory
+                !resolvedCategory
                   ? 'rounded-full border border-[#ff00ff] bg-[#ff00ff]/10 px-4 py-2 text-sm font-medium text-[#ff00ff] transition'
                   : 'rounded-full border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800'
               }
@@ -364,7 +357,7 @@ export default function BlogFilters({
                   )
                 }
                 className={
-                  selectedCategory?.norm === category.norm
+                  resolvedCategory?.norm === category.norm
                     ? 'rounded-full border border-[#ff00ff] bg-[#ff00ff]/10 px-4 py-2 text-sm font-medium text-[#ff00ff] transition'
                     : 'rounded-full border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800'
                 }
