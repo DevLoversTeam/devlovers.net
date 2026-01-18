@@ -7,19 +7,15 @@ import {
     clearPendingQuizResult,
 } from "@/lib/quiz/guest-quiz";
 
+
 export function PostAuthQuizSync() {
     const router = useRouter();
 
     useEffect(() => {
-        if (sessionStorage.getItem("guest_quiz_sync_done") === "1") {
-            return;
-        }
 
         queueMicrotask(() => {
             const pendingResult = getPendingQuizResult();
             if (!pendingResult) return;
-
-            sessionStorage.setItem("guest_quiz_sync_done", "1");
 
             (async () => {
                 try {
@@ -40,27 +36,24 @@ export function PostAuthQuizSync() {
 
                     const result = await res.json();
 
-                    if (result?.success) {
-                        sessionStorage.setItem(
-                            "quiz_just_saved",
-                            JSON.stringify({
-                                score: result.score,
-                                total: result.totalQuestions,
-                                percentage: result.percentage,
-                                pointsAwarded: result.pointsAwarded,
-                                quizSlug: pendingResult.quizSlug,
-                            })
-                        );
-
-                        clearPendingQuizResult();
-
-                        router.refresh();
-                    } else {
-                        sessionStorage.removeItem("guest_quiz_sync_done");
+                    if (!result?.success) {
+                        throw new Error("Quiz save did not succeed");
                     }
+
+                    sessionStorage.setItem(
+                        "quiz_just_saved",
+                        JSON.stringify({
+                            score: result.score,
+                            total: result.totalQuestions,
+                            percentage: result.percentage,
+                            pointsAwarded: result.pointsAwarded,
+                            quizSlug: pendingResult.quizSlug,
+                        })
+                    );
+                    clearPendingQuizResult();
+                    router.refresh();
                 } catch (error) {
                     console.error("Failed to sync guest quiz result:", error);
-                    sessionStorage.removeItem("guest_quiz_sync_done");
                 }
             })();
         });

@@ -69,22 +69,15 @@
         📁 success
           📄 OrderStatusAutoRefresh.tsx
           📄 page.tsx
-<<<<<<< HEAD
       📁 orders
         📄 error.tsx
         📄 page.tsx
         📁 [id]
           📄 page.tsx
-=======
->>>>>>> d0590fe (feat(auth,quiz): sync guest quiz results after authentication)
       📄 page.tsx
       📁 products
         📁 [slug]
           📄 page.tsx
-<<<<<<< HEAD
-=======
-        📄 page.tsx
->>>>>>> d0590fe (feat(auth,quiz): sync guest quiz results after authentication)
     📁 signup
       📄 page.tsx
     📁 terms-of-service
