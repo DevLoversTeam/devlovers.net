@@ -1,7 +1,7 @@
 "use client"
 
 import { MessageCircle, Github, ArrowRight, ExternalLink } from "lucide-react"
-import { TESTIMONIALS } from "@/data/about"
+import { TESTIMONIALS, type Testimonial } from "@/data/about" 
 
 import Link from "next/link"
 
@@ -26,10 +26,8 @@ export function CommunitySection() {
                 </p>
             </div>
 
-            {/* Infinite Scroll Container */}
             <div className="relative w-full pause-on-hover mb-16">
                 
-                {/* Fade Edges */}
                 <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-12 md:w-32 bg-gradient-to-r from-gray-50 dark:from-background to-transparent" />
                 <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-12 md:w-32 bg-gradient-to-l from-gray-50 dark:from-background to-transparent" />
 
@@ -95,7 +93,7 @@ function TestimonialCard({
   platform,
   icon: Icon,
   color
-}: any) {
+}: Testimonial) {
   return (
     <div className="w-[280px] md:w-[320px] shrink-0 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#0f0f0f] p-5 shadow-sm hover:shadow-md transition-all duration-300 hover:border-gray-300 dark:hover:border-white/20 hover:-translate-y-1">
       <div className="mb-3 flex items-start justify-between">

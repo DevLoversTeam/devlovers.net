@@ -18,31 +18,35 @@ const formatMetric = (n: number) => {
 
 export const getPlatformStats = unstable_cache(
   async (): Promise<PlatformStats> => {
-    // 1. GitHub
     let stars = 125
     try {
         const headers: HeadersInit = {}
         if (process.env.GITHUB_TOKEN) headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`
         
-        // Додаємо тип any для опцій fetch, щоб TS не лаявся на next.js розширення
         const res = await fetch('https://api.github.com/repos/DevLoversTeam/devlovers.net', { 
-            headers, 
-            next: { revalidate: 3600 } 
-        } as RequestInit & { next?: { revalidate?: number } })
+            headers,
+            cache: 'no-store'
+        })
         
-        if (res.ok) stars = (await res.json()).stargazers_count
-    } catch (e) { console.error(e) }
+        if (res.ok) {
+            const data = await res.json()
+            stars = data.stargazers_count
+        }
+    } catch (e) { 
+        console.error("GitHub Fetch Error:", e) 
+    }
 
-    // 2. LinkedIn
     const linkedinCount = process.env.LINKEDIN_FOLLOWER_COUNT ? parseInt(process.env.LINKEDIN_FOLLOWER_COUNT) : 1342
 
-    // 3. DB
     let totalUsers = 243
     let solvedTests = 1890
     try {
-      const [u] = await db.select({ value: count() }).from(users)
+      const [[u], [q]] = await Promise.all([
+        db.select({ value: count() }).from(users),
+        db.select({ value: count() }).from(quizAttempts)
+      ])
+      
       if (u) totalUsers = u.value
-      const [q] = await db.select({ value: count() }).from(quizAttempts)
       if (q) solvedTests = q.value
     } catch (e) { 
         console.error("DB Fetch Error:", e) 

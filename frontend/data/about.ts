@@ -1,55 +1,55 @@
 import { Twitter, Linkedin, Github } from "lucide-react"
 
 export const TESTIMONIALS = [
-  {
-    name: "Alex Chen",
-    role: "Frontend @ Meta",
-    avatar: "AC",
-    content: "Cheap therapy for React devs.",
-    platform: "Twitter",
-    icon: Twitter,
-    color: "text-sky-500 bg-sky-500/10"
-  },
-  {
-    name: "Sarah J.",
-    role: "Senior SWE @ Google",
-    avatar: "SJ",
-    content: "Harder than my actual interview. 10/10.",
-    platform: "LinkedIn",
-    icon: Linkedin,
-    color: "text-blue-600 bg-blue-600/10"
-  },
-  {
-    name: "git_push_force",
-    role: "Open Source Contributor",
-    avatar: "GP",
-    content: "Found a bug in the quiz, reported it, got points. Now I'm addicted to fixing your typos.",
-    platform: "GitHub",
-    icon: Github,
-    color: "text-gray-900 dark:text-white bg-gray-500/10"
-  },
-  {
-    name: "Emily Park",
-    role: "Full Stack @ Vercel",
-    avatar: "EP",
-    content: "This is the only place where 'centering a div' is explained like I'm 5. Bless you.",
-    platform: "Twitter",
-    icon: Twitter,
-    color: "text-sky-500 bg-sky-500/10"
-  },
-  {
-    name: "David Kim",
-    role: "Staff Engineer @ Netflix",
-    avatar: "DK",
-    content: "I use the Q&A section to win arguments with my juniors. Don't tell them.",
-    platform: "LinkedIn",
-    icon: Linkedin,
-    color: "text-blue-600 bg-blue-600/10"
-  },
+    {
+        name: "Alex Chen",
+        role: "Frontend @ Meta",
+        avatar: "AC",
+        content: "Cheap therapy for React devs.",
+        platform: "Twitter",
+        icon: Twitter,
+        color: "text-sky-500 bg-sky-500/10"
+    },
+    {
+        name: "Sarah J.",
+        role: "Senior SWE @ Google",
+        avatar: "SJ",
+        content: "Harder than my actual interview. 10/10.",
+        platform: "LinkedIn",
+        icon: Linkedin,
+        color: "text-blue-600 bg-blue-600/10"
+    },
+    {
+        name: "git_push_force",
+        role: "Open Source Contributor",
+        avatar: "GP",
+        content: "Found a bug in the quiz, reported it, got points. Now I'm addicted to fixing your typos.",
+        platform: "GitHub",
+        icon: Github,
+        color: "text-gray-900 dark:text-white bg-gray-500/10"
+    },
+    {
+        name: "Emily Park",
+        role: "Full Stack @ Vercel",
+        avatar: "EP",
+        content: "This is the only place where 'centering a div' is explained like I'm 5. Bless you.",
+        platform: "Twitter",
+        icon: Twitter,
+        color: "text-sky-500 bg-sky-500/10"
+    },
+    {
+        name: "David Kim",
+        role: "Staff Engineer @ Netflix",
+        avatar: "DK",
+        content: "I use the Q&A section to win arguments with my juniors. Don't tell them.",
+        platform: "LinkedIn",
+        icon: Linkedin,
+        color: "text-blue-600 bg-blue-600/10"
+    },
 ]
 
 export const TOPICS = [
-        {
+    {
         id: "git",
         name: "Git & Version Control",
         questions: "90+ Questions",
@@ -141,3 +141,6 @@ export const TOPICS = [
         href: "/q&a/?category=node"
     },
 ]
+
+export type Topic = typeof TOPICS[number];
+export type Testimonial = typeof TESTIMONIALS[number];

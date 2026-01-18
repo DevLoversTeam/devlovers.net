@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion"
 import { ArrowUpRight } from "lucide-react"
-import { TOPICS } from "@/data/about"
+import { TOPICS, type Topic } from "@/data/about" 
 import Image from "next/image"
 import Link from "next/link" 
 
@@ -35,7 +35,7 @@ export function TopicsSection() {
 
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                         {TOPICS.map((topic, i) => (
-                            <TopicCard key={topic.id} topic={topic} index={i} />
+                            <TopicCard key={topic.id} topic={topic as Topic} index={i} />
                         ))}
                     </div>
 
@@ -44,7 +44,7 @@ export function TopicsSection() {
     )
 }
 
-function TopicCard({ topic, index }: { topic: any, index: number }) {
+function TopicCard({ topic, index }: { topic: Topic, index: number }) {
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
