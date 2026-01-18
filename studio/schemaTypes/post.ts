@@ -14,12 +14,6 @@ export default defineType({
         defineField({name: 'pl', title: 'Polish', type: 'string'}),
         defineField({name: 'uk', title: 'Ukrainian', type: 'string'}),
       ],
-      type: 'object',
-      fields: [
-        defineField({name: 'en', title: 'English', type: 'string'}),
-        defineField({name: 'pl', title: 'Polish', type: 'string'}),
-        defineField({name: 'uk', title: 'Ukrainian', type: 'string'}),
-      ],
     }),
     defineField({
       name: 'slug',

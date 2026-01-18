@@ -9,12 +9,19 @@ import { CartProvider } from '@/components/shop/cart-provider';
 type AppChromeProps = {
   userExists: boolean;
   showAdminLink?: boolean;
+  blogCategories?: Array<{ _id: string; title: string }>;
   children: React.ReactNode;
 };
 
-export function AppChrome({ userExists, showAdminLink = false, children }: AppChromeProps) {
+export function AppChrome({
+  userExists,
+  showAdminLink = false,
+  blogCategories = [],
+  children,
+}: AppChromeProps) {
   const segments = useSelectedLayoutSegments();
   const isShop = segments.includes('shop');
+  const isBlog = segments.includes('blog');
 
   if (isShop) {
     return (
@@ -24,6 +31,7 @@ export function AppChrome({ userExists, showAdminLink = false, children }: AppCh
             variant="shop"
             userExists={userExists}
             showAdminLink={showAdminLink}
+            blogCategories={blogCategories}
           />
           {children}
         </div>
@@ -33,7 +41,11 @@ export function AppChrome({ userExists, showAdminLink = false, children }: AppCh
 
   return (
     <>
-      <UnifiedHeader variant="platform" userExists={userExists} />
+      <UnifiedHeader
+        variant={isBlog ? 'blog' : 'platform'}
+        userExists={userExists}
+        blogCategories={blogCategories}
+      />
       {children}
     </>
   );

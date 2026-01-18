@@ -131,7 +131,7 @@ export default function BlogFilters({
       return categories
         .map(category => ({
           norm: normalizeTag(category.title),
-          name: category.title,
+          name: category.title === 'Growth' ? 'Career' : category.title,
         }))
         .filter(category => category.norm);
     }
@@ -145,7 +145,10 @@ export default function BlogFilters({
       }
     }
     return Array.from(map.entries())
-      .map(([norm, name]) => ({ norm, name }))
+      .map(([norm, name]) => ({
+        norm,
+        name: name === 'Growth' ? 'Career' : name,
+      }))
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [posts, categories]);
   const categoryParam = useMemo(() => {
@@ -195,11 +198,11 @@ export default function BlogFilters({
     <div className="mt-8">
       {!selectedAuthor && featuredPost && (
         <section className="mb-12">
-          <div className="grid gap-8 lg:grid-cols-[1fr_1fr] lg:items-center">
+          <div className="grid gap-8 md:grid-cols-[0.9fr_1fr] md:items-center lg:grid-cols-[1fr_1fr]">
             {featuredPost.mainImage && (
               <Link
                 href={`/blog/${featuredPost.slug.current}`}
-                className="group relative block aspect-[4/3] overflow-hidden rounded-3xl shadow-[0_12px_30px_rgba(0,0,0,0.12)]"
+                className="group relative block aspect-[4/3] overflow-hidden rounded-3xl shadow-[0_12px_30px_rgba(0,0,0,0.12)] md:aspect-[5/4] lg:aspect-[4/3]"
               >
                 <Image
                   src={featuredPost.mainImage}
