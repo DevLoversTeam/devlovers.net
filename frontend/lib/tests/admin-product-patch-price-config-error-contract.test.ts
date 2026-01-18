@@ -31,6 +31,9 @@ vi.mock('@/lib/services/products', () => ({
   getAdminProductByIdWithPrices: vi.fn(),
   deleteProduct: vi.fn(),
 }));
+vi.mock('@/lib/security/admin-csrf', () => ({
+  requireAdminCsrf: vi.fn(() => null),
+}));
 
 import { PATCH } from '@/app/api/shop/admin/products/[id]/route';
 

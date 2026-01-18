@@ -1,11 +1,18 @@
 import { NextRequest } from 'next/server';
 
-type CheckoutItemInput = {
+export type CheckoutItemInput = {
   productId: string;
   quantity: number;
   selectedSize?: string;
   selectedColor?: string;
 };
+
+function deriveTestIpFromIdemKey(idemKey: string): string {
+  // беремо перші 2 hex-символи, робимо байт 1..250
+  const hex = idemKey.replace(/[^0-9a-f]/gi, '').slice(0, 2);
+  const n = hex ? (parseInt(hex, 16) % 250) + 1 : 1;
+  return `203.0.113.${n}`; // TEST-NET-3
+}
 
 export function makeCheckoutReq(params: {
   idempotencyKey: string;
@@ -14,14 +21,13 @@ export function makeCheckoutReq(params: {
   userId?: string;
 }) {
   const locale = params.locale ?? 'en';
+  const idemKey = params.idempotencyKey;
 
   const items = params.items ?? [
     {
       productId: '11111111-1111-4111-8111-111111111111',
       quantity: 1,
-      // IMPORTANT:
-      // do NOT force selectedSize/selectedColor unless explicitly provided.
-      // Empty strings often fail schema validation (min(1) etc).
+      // IMPORTANT: не форсимо selectedSize/selectedColor
     },
   ];
 
@@ -30,18 +36,16 @@ export function makeCheckoutReq(params: {
       productId: i.productId,
       quantity: i.quantity,
     };
-
-    // Include variant fields only if caller provided them (including empty string intentionally).
     if (i.selectedSize !== undefined) base.selectedSize = i.selectedSize;
     if (i.selectedColor !== undefined) base.selectedColor = i.selectedColor;
-
     return base;
   });
 
   const headers = new Headers({
-    'Content-Type': 'application/json',
-    'Idempotency-Key': params.idempotencyKey,
-    'Accept-Language': locale,
+    'content-type': 'application/json',
+    'accept-language': locale,
+    'idempotency-key': idemKey,
+    'x-forwarded-for': deriveTestIpFromIdemKey(idemKey),
   });
 
   const req = new Request('http://localhost/api/shop/checkout', {
@@ -53,6 +57,5 @@ export function makeCheckoutReq(params: {
     }),
   });
 
-  // Wrap the real Request to ensure body is readable by request.text() in route
   return new NextRequest(req);
 }

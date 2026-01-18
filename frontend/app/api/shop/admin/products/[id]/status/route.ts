@@ -6,6 +6,7 @@ import {
   AdminUnauthorizedError,
   requireAdminApi,
 } from '@/lib/auth/admin';
+import { requireAdminCsrf } from '@/lib/security/admin-csrf';
 
 import { logError } from '@/lib/logging';
 import { toggleProductStatus } from '@/lib/services/products';
@@ -18,6 +19,8 @@ export async function PATCH(
 ) {
   try {
     await requireAdminApi(request);
+    const csrfRes = requireAdminCsrf(request, 'admin:products:status');
+    if (csrfRes) return csrfRes;
 
     const rawParams = await context.params;
     const parsedParams = productIdParamSchema.safeParse(rawParams);

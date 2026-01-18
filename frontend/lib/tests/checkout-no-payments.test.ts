@@ -156,6 +156,11 @@ async function cleanupIsolatedProduct(productId: string) {
     );
   }
 }
+function deriveTestIpFromIdemKey(idemKey: string): string {
+  const hex = idemKey.replace(/[^0-9a-f]/gi, '').slice(0, 2);
+  const n = hex ? (parseInt(hex, 16) % 250) + 1 : 1;
+  return `203.0.113.${n}`;
+}
 
 async function postCheckout(params: {
   idemKey: string;
@@ -167,7 +172,9 @@ async function postCheckout(params: {
     selectedColor?: string;
   }>;
 }) {
-  const { POST } = await import('@/app/api/shop/checkout/route');
+  const mod = (await import('@/app/api/shop/checkout/route')) as unknown as {
+    POST: (req: NextRequest) => Promise<Response>;
+  };
 
   const req = new NextRequest('http://localhost/api/shop/checkout', {
     method: 'POST',
@@ -175,17 +182,19 @@ async function postCheckout(params: {
       'content-type': 'application/json',
       'accept-language': params.acceptLanguage ?? 'en',
       'idempotency-key': params.idemKey,
+      'x-forwarded-for': deriveTestIpFromIdemKey(params.idemKey),
     },
+
     body: JSON.stringify({ items: params.items }),
   });
 
-  return POST(req);
+  return mod.POST(req);
 }
 
 type MoveRow = { productId: string; type: string; quantity: number };
 
 async function readMoves(orderId: string): Promise<MoveRow[]> {
-  const res = await db.execute(
+  const res = (await db.execute(
     sql`
       select
         product_id as "productId",
@@ -195,13 +204,22 @@ async function readMoves(orderId: string): Promise<MoveRow[]> {
       where order_id = ${orderId}::uuid
       order by created_at asc
     `
-  );
+  )) as unknown as {
+    rows?: Array<{ productId: unknown; type: unknown; quantity: unknown }>;
+  };
 
   return (res.rows ?? []).map(row => ({
-    productId: String((row as any).productId ?? ''),
-    type: String((row as any).type ?? ''),
-    quantity: Number((row as any).quantity ?? 0),
+    productId: String(row.productId ?? ''),
+    type: String(row.type ?? ''),
+    quantity: Number(row.quantity ?? 0),
   }));
+}
+async function countMovesForProduct(productId: string): Promise<number> {
+  const res = (await db.execute(
+    sql`select count(*)::int as c from inventory_moves where product_id = ${productId}::uuid`
+  )) as unknown as { rows?: Array<{ c: number | string }> };
+
+  return Number(res.rows?.[0]?.c ?? 0);
 }
 
 async function bestEffortHardDeleteOrder(orderId: string) {
@@ -493,10 +511,7 @@ describe.sequential('Checkout (no payments) invariants', () => {
       expect(p0).toBeTruthy();
       const stockBefore = p0!.stock;
       // ДО checkout: порахували moves
-      const moves0 = await db.execute(
-        sql`select count(*)::int as c from inventory_moves where product_id = ${productId}::uuid`
-      );
-      const countBefore = Number((moves0.rows?.[0] as any)?.c ?? 0);
+      const countBefore = await countMovesForProduct(productId);
 
       const res = await postCheckout({
         idemKey,
@@ -521,10 +536,7 @@ describe.sequential('Checkout (no payments) invariants', () => {
         .where(eq(products.id, productId));
 
       expect(json?.code).toBe('INVALID_VARIANT');
-      const moves1 = await db.execute(
-        sql`select count(*)::int as c from inventory_moves where product_id = ${productId}::uuid`
-      );
-      const countAfter = Number((moves1.rows?.[0] as any)?.c ?? 0);
+      const countAfter = await countMovesForProduct(productId);
       expect(countAfter).toBe(countBefore);
 
       // No order should be created for invalid variant
@@ -602,10 +614,7 @@ describe.sequential('Checkout (no payments) invariants', () => {
       const stockBefore = p0!.stock;
 
       // ДО checkout: порахували moves
-      const moves0 = await db.execute(
-        sql`select count(*)::int as c from inventory_moves where product_id = ${productId}::uuid`
-      );
-      const countBefore = Number((moves0.rows?.[0] as any)?.c ?? 0);
+      const countBefore = await countMovesForProduct(productId);
 
       const res = await postCheckout({
         idemKey,
@@ -634,10 +643,7 @@ describe.sequential('Checkout (no payments) invariants', () => {
       expect(json?.code).toBe('INVALID_VARIANT');
 
       // Після checkout: moves count must be unchanged
-      const moves1 = await db.execute(
-        sql`select count(*)::int as c from inventory_moves where product_id = ${productId}::uuid`
-      );
-      const countAfter = Number((moves1.rows?.[0] as any)?.c ?? 0);
+      const countAfter = await countMovesForProduct(productId);
       expect(countAfter).toBe(countBefore);
 
       // No order should be created for this idemKey
