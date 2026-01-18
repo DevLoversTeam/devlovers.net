@@ -12,9 +12,12 @@ function readTokenFromForm(formData?: FormData): string | null {
   return typeof raw === 'string' ? raw.trim() : null;
 }
 
-function readTokenFromHeader(request: NextRequest): string | null {
-  const raw = request.headers.get('x-csrf-token');
-  return raw ? raw.trim() : null;
+function readTokenFromHeader(request: unknown): string | null {
+  const headers = (request as any)?.headers;
+  if (!headers || typeof headers.get !== 'function') return null;
+
+  const raw = headers.get('x-csrf-token');
+  return typeof raw === 'string' ? raw.trim() : null;
 }
 
 /**

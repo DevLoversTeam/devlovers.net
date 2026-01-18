@@ -311,6 +311,7 @@
     📄 points.ts
     📄 questions.ts
     📄 quiz.ts
+    📄 sessions.ts
     📄 shop.ts
     📄 users.ts
   📄 seed-categories.ts
@@ -340,8 +341,14 @@
     📄 fondy.md
 📁 drizzle
   📄 0000_dry_young_avengers.sql
+  📄 0001_add_payment_attempts.sql
+  📄 0002_clean_martin_li.sql
+  📄 0003_add_stripe_events_claim_lock.sql
   📁 meta
     📄 0000_snapshot.json
+    📄 0001_snapshot.json
+    📄 0002_snapshot.json
+    📄 0003_snapshot.json
     📄 _journal.json
 📄 drizzle.config.ts
 📄 eslint.config.mjs
@@ -396,12 +403,14 @@
     📄 quiz-session.ts
     📄 quiz-storage-keys.ts
   📁 security
+    📄 admin-csrf.ts
     📄 csrf.ts
   📁 services
     📄 errors.ts
     📄 inventory.ts
     📁 orders
       📄 checkout.ts
+      📄 payment-attempts.ts
       📄 payment-intent.ts
       📄 payment-state.ts
       📁 psp-metadata
@@ -438,7 +447,10 @@
     📄 slug.ts
   📁 tests
     📄 admin-api-killswitch.test.ts
+    📄 admin-csrf-contract.test.ts
+    📄 admin-product-patch-price-config-error-contract.test.ts
     📄 admin-product-sale-contract.test.ts
+    📄 cart-rehydrate-variant-sanitize.test.ts
     📄 checkout-concurrency-stock1.test.ts
     📄 checkout-currency-policy.test.ts
     📄 checkout-no-payments.test.ts
@@ -455,6 +467,8 @@
     📄 payment-state-machine.helper.test.ts
     📄 payment-status-tripwire.test.ts
     📄 prices.test.ts
+    📄 product-admin-merged-prices-policy.test.ts
+    📄 product-admin-update-prices-patch-semantics.test.ts
     📄 product-sale-invariant.test.ts
     📄 public-product-visibility.test.ts
     📄 restock-order-only-once.test.ts

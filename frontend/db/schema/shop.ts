@@ -377,6 +377,24 @@ export const internalJobState = pgTable('internal_job_state', {
     .defaultNow(),
 });
 
+export const apiRateLimits = pgTable(
+  'api_rate_limits',
+  {
+    key: text('key').primaryKey(),
+    windowStartedAt: timestamp('window_started_at', {
+      withTimezone: true,
+    }).notNull(),
+    count: integer('count').notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  t => [
+    check('api_rate_limits_count_non_negative', sql`${t.count} >= 0`),
+    index('api_rate_limits_updated_at_idx').on(t.updatedAt),
+  ]
+);
+
 export const paymentAttempts = pgTable(
   'payment_attempts',
   {
@@ -452,3 +470,4 @@ export type DbOrderItem = typeof orderItems.$inferSelect;
 export type DbInventoryMove = typeof inventoryMoves.$inferSelect;
 export type DbInternalJobState = typeof internalJobState.$inferSelect;
 export type DbPaymentAttempt = typeof paymentAttempts.$inferSelect;
+export type DbApiRateLimit = typeof apiRateLimits.$inferSelect;

@@ -13,6 +13,11 @@ import {
   appendRefundToMeta,
 } from '@/lib/services/orders/psp-metadata/refunds';
 import { markStripeAttemptFinal } from '@/lib/services/orders/payment-attempts';
+import {
+  enforceRateLimit,
+  getClientIp,
+  rateLimitResponse,
+} from '@/lib/security/rate-limit';
 
 const REFUND_FULLNESS_UNDETERMINED = 'REFUND_FULLNESS_UNDETERMINED' as const;
 
@@ -312,6 +317,22 @@ export async function POST(request: NextRequest) {
 
   const signature = request.headers.get('stripe-signature');
   if (!signature) {
+    const ip = getClientIp(request) ?? 'anon';
+    const decision = await enforceRateLimit({
+      key: `stripe_webhook:missing_sig:${ip}`,
+      limit: Number(process.env.STRIPE_WEBHOOK_INVALID_SIG_RL_MAX ?? 30),
+      windowSeconds: Number(
+        process.env.STRIPE_WEBHOOK_INVALID_SIG_RL_WINDOW_SECONDS ?? 60
+      ),
+    });
+
+    if (!decision.ok) {
+      return rateLimitResponse({
+        retryAfterSeconds: decision.retryAfterSeconds,
+        details: { scope: 'stripe_webhook', reason: 'missing_signature' },
+      });
+    }
+
     logError(
       'Stripe webhook missing signature header',
       new Error('MISSING_STRIPE_SIGNATURE')
@@ -332,6 +353,22 @@ export async function POST(request: NextRequest) {
       error instanceof Error &&
       error.message === 'STRIPE_INVALID_SIGNATURE'
     ) {
+      const ip = getClientIp(request) ?? 'anon';
+      const decision = await enforceRateLimit({
+        key: `stripe_webhook:invalid_sig:${ip}`,
+        limit: Number(process.env.STRIPE_WEBHOOK_INVALID_SIG_RL_MAX ?? 30),
+        windowSeconds: Number(
+          process.env.STRIPE_WEBHOOK_INVALID_SIG_RL_WINDOW_SECONDS ?? 60
+        ),
+      });
+
+      if (!decision.ok) {
+        return rateLimitResponse({
+          retryAfterSeconds: decision.retryAfterSeconds,
+          details: { scope: 'stripe_webhook', reason: 'invalid_signature' },
+        });
+      }
+
       logError('Stripe webhook signature verification failed', error);
       return NextResponse.json({ code: 'INVALID_SIGNATURE' }, { status: 400 });
     }
