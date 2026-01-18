@@ -95,24 +95,37 @@ function envInt(name: string, fallback: number): number {
   return Number.isFinite(n) ? Math.floor(n) : fallback;
 }
 
-export function getClientIpFromHeaders(
-  headers: Headers,
-  nodeEnv: string
-): string | null {
-  const env = (nodeEnv ?? '').trim().toLowerCase();
+function envBool(name: string, fallback: boolean): boolean {
+  const raw = (process.env[name] ?? '').trim().toLowerCase();
+  if (!raw) return fallback;
+
+  if (raw === '1' || raw === 'true' || raw === 'yes' || raw === 'on')
+    return true;
+  if (raw === '0' || raw === 'false' || raw === 'no' || raw === 'off')
+    return false;
+
+  return fallback;
+}
+
+export function getClientIpFromHeaders(headers: Headers): string | null {
+  // Always allow Cloudflare canonical header (highest priority).
   const cf = (headers.get('cf-connecting-ip') ?? '').trim();
   if (cf && isIP(cf)) return cf;
+
+  const trustForwarded = envBool('TRUST_FORWARDED_HEADERS', false);
+
+  // Trusted boundary: if we don't trust forwarded headers and CF is missing,
+  // do NOT fall back to spoofable headers.
+  if (!trustForwarded) return null;
 
   const xr = (headers.get('x-real-ip') ?? '').trim();
   if (xr && isIP(xr)) return xr;
 
-  if (env !== 'production') {
-    const xff = (headers.get('x-forwarded-for') ?? '').trim();
-    if (xff) {
-      for (const part of xff.split(',')) {
-        const candidate = part.trim();
-        if (candidate && isIP(candidate)) return candidate;
-      }
+  const xff = (headers.get('x-forwarded-for') ?? '').trim();
+  if (xff) {
+    for (const part of xff.split(',')) {
+      const candidate = part.trim();
+      if (candidate && isIP(candidate)) return candidate;
     }
   }
 
@@ -120,10 +133,7 @@ export function getClientIpFromHeaders(
 }
 
 export function getClientIp(request: NextRequest): string | null {
-  return getClientIpFromHeaders(
-    request.headers,
-    (process.env.NODE_ENV ?? '').trim()
-  );
+  return getClientIpFromHeaders(request.headers);
 }
 
 export function getRateLimitSubject(request: NextRequest): string {

@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { deriveTestIpFromIdemKey } from '@/lib/tests/helpers/ip';
 
 export type CheckoutItemInput = {
   productId: string;
@@ -6,13 +7,6 @@ export type CheckoutItemInput = {
   selectedSize?: string;
   selectedColor?: string;
 };
-
-function deriveTestIpFromIdemKey(idemKey: string): string {
-  // беремо перші 2 hex-символи, робимо байт 1..250
-  const hex = idemKey.replace(/[^0-9a-f]/gi, '').slice(0, 2);
-  const n = hex ? (parseInt(hex, 16) % 250) + 1 : 1;
-  return `203.0.113.${n}`; // TEST-NET-3
-}
 
 export function makeCheckoutReq(params: {
   idempotencyKey: string;

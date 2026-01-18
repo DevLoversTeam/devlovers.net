@@ -235,12 +235,24 @@ export async function POST(request: NextRequest) {
   // Policy: allow reasonable retries; block abusive burst.
   const checkoutSubject = sessionUserId ?? getRateLimitSubject(request);
 
+  const limitParsed = Number.parseInt(
+    process.env.CHECKOUT_RATE_LIMIT_MAX ?? '',
+    10
+  );
+  const windowParsed = Number.parseInt(
+    process.env.CHECKOUT_RATE_LIMIT_WINDOW_SECONDS ?? '',
+    10
+  );
+
+  const limit =
+    Number.isFinite(limitParsed) && limitParsed > 0 ? limitParsed : 10;
+  const windowSeconds =
+    Number.isFinite(windowParsed) && windowParsed > 0 ? windowParsed : 300;
+
   const decision = await enforceRateLimit({
     key: `checkout:${checkoutSubject}`,
-    limit: Number(process.env.CHECKOUT_RATE_LIMIT_MAX ?? 10),
-    windowSeconds: Number(
-      process.env.CHECKOUT_RATE_LIMIT_WINDOW_SECONDS ?? 300
-    ),
+    limit,
+    windowSeconds,
   });
 
   if (!decision.ok) {

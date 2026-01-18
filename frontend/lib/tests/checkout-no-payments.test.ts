@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import crypto from 'crypto';
 import { eq, sql } from 'drizzle-orm';
 import { NextRequest } from 'next/server';
-
+import { deriveTestIpFromIdemKey } from '@/lib/tests/helpers/ip';
 import { db } from '@/db';
 import { orders, products, productPrices } from '@/db/schema';
 import { toDbMoney } from '@/lib/shop/money';
@@ -155,11 +155,6 @@ async function cleanupIsolatedProduct(productId: string) {
       e
     );
   }
-}
-function deriveTestIpFromIdemKey(idemKey: string): string {
-  const hex = idemKey.replace(/[^0-9a-f]/gi, '').slice(0, 2);
-  const n = hex ? (parseInt(hex, 16) % 250) + 1 : 1;
-  return `203.0.113.${n}`;
 }
 
 async function postCheckout(params: {
