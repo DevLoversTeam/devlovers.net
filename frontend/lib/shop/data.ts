@@ -256,20 +256,45 @@ export async function getHomepageContent(
 ): Promise<HomepageContent> {
   const currency = resolveCurrencyFromLocale(locale);
 
+  // 1) primary: featured (може бути < 4)
   const featured: DbProduct[] = await getFeaturedProducts(currency, 4);
 
   const featuredProducts = featured
     .map(mapToShopProduct)
     .filter((product): product is ShopProduct => product !== null);
 
-  const fallbackCatalog = featuredProducts.length
-    ? featuredProducts
-    : (
-        await getCatalogProducts(
-          { category: 'all', page: 1, limit: CATALOG_PAGE_SIZE },
-          locale
-        )
-      ).products.slice(0, 4);
+  // helper: докомплектувати до N без дублікатів
+  const fillTo = (
+    primary: ShopProduct[],
+    fallback: ShopProduct[],
+    count: number
+  ) => {
+    const used = new Set(primary.map(p => p.id));
+    const merged = [...primary];
+
+    for (const p of fallback) {
+      if (merged.length >= count) break;
+      if (used.has(p.id)) continue;
+      used.add(p.id);
+      merged.push(p);
+    }
+
+    return merged.slice(0, count);
+  };
+
+  // 2) fallback source: newest active products (щоб завжди було чим добрати до 4)
+  // беремо більше ніж 4, щоб було що фільтрувати після дедупу
+  const newestCatalog = await getCatalogProducts(
+    {
+      category: 'all',
+      sort: 'newest',
+      page: 1,
+      limit: Math.max(12, CATALOG_PAGE_SIZE),
+    },
+    locale
+  );
+
+  const newArrivals = fillTo(featuredProducts, newestCatalog.products, 4);
 
   return {
     hero: {
@@ -279,7 +304,7 @@ export async function getHomepageContent(
       ctaText: 'Shop now',
       ctaLink: '/shop/products',
     },
-    newArrivals: fallbackCatalog,
+    newArrivals,
     categories: CATEGORY_TILES,
   };
 }

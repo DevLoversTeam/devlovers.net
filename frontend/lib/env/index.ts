@@ -29,10 +29,6 @@ export const clientEnvSchema = z.object({
     .default('false'),
   NEXT_PUBLIC_SITE_URL: z.string().url().optional(),
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().min(1).optional(),
-  NEXT_PUBLIC_PAYMENTS_ENABLED: z
-    .enum(['true', 'false'])
-    .optional()
-    .default('false'),
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;

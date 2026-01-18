@@ -1,48 +1,97 @@
-// app/api/webhooks/stripe/route.ts
 import Stripe from 'stripe';
+import crypto from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
-import { and, eq, ne, or } from 'drizzle-orm';
+import { and, eq, ne, or, isNull, lt } from 'drizzle-orm';
 import { db } from '@/db';
 import { verifyWebhookSignature, retrieveCharge } from '@/lib/psp/stripe';
 import { orders, stripeEvents } from '@/db/schema';
 import { restockOrder } from '@/lib/services/orders';
 import { guardedPaymentStatusUpdate } from '@/lib/services/orders/payment-state';
 import { logError, logInfo, logWarn } from '@/lib/logging';
+import {
+  type RefundMetaRecord,
+  appendRefundToMeta,
+} from '@/lib/services/orders/psp-metadata/refunds';
+import { markStripeAttemptFinal } from '@/lib/services/orders/payment-attempts';
+import {
+  enforceRateLimit,
+  getClientIp,
+  rateLimitResponse,
+} from '@/lib/security/rate-limit';
 
-type RefundMetaRecord = {
-  refundId: string;
-  idempotencyKey: string;
-  amountMinor: number;
-  currency: string;
-  createdAt: string;
-  createdBy: string;
-  status?: string | null;
-};
+const REFUND_FULLNESS_UNDETERMINED = 'REFUND_FULLNESS_UNDETERMINED' as const;
 
-function normalizeRefundsFromMeta(
-  meta: unknown,
-  fallback: { currency: string; createdAt: string }
-): RefundMetaRecord[] {
-  const m = (meta ?? {}) as any;
+// P0.8: multi-instance claim/lock (no transactions; safe under parallel deliveries)
+const STRIPE_WEBHOOK_INSTANCE_ID =
+  (
+    process.env.STRIPE_WEBHOOK_INSTANCE_ID ??
+    process.env.WEBHOOK_INSTANCE_ID ??
+    ''
+  ).trim() || crypto.randomUUID().slice(0, 12);
 
-  if (Array.isArray(m.refunds)) return m.refunds as RefundMetaRecord[];
+const STRIPE_EVENT_CLAIM_TTL_MS = 10 * 60 * 1000; // 10 minutes
+const STRIPE_EVENT_RETRY_AFTER_SECONDS = 10;
 
-  const legacy = m.refund;
-  if (legacy?.id) {
-    return [
-      {
-        refundId: String(legacy.id),
-        idempotencyKey: 'legacy:webhook',
-        amountMinor: Number(legacy.amount ?? 0),
-        currency: fallback.currency,
-        createdAt: fallback.createdAt,
-        createdBy: 'webhook',
-        status: legacy.status ?? null,
-      },
-    ];
-  }
+function busyRetry() {
+  return NextResponse.json(
+    {
+      code: 'WEBHOOK_CLAIMED',
+      retryAfterSeconds: STRIPE_EVENT_RETRY_AFTER_SECONDS,
+    },
+    {
+      status: 503,
+      headers: { 'Retry-After': String(STRIPE_EVENT_RETRY_AFTER_SECONDS) },
+    }
+  );
+}
+async function tryClaimStripeEvent(
+  eventId: string
+): Promise<'claimed' | 'already_processed' | 'busy'> {
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + STRIPE_EVENT_CLAIM_TTL_MS);
 
-  return [];
+  const claimed = await db
+    .update(stripeEvents)
+    .set({
+      claimedAt: now,
+      claimExpiresAt: expiresAt,
+      claimedBy: STRIPE_WEBHOOK_INSTANCE_ID,
+    })
+    .where(
+      and(
+        eq(stripeEvents.eventId, eventId),
+        isNull(stripeEvents.processedAt),
+        or(
+          isNull(stripeEvents.claimedAt),
+          isNull(stripeEvents.claimExpiresAt),
+          lt(stripeEvents.claimExpiresAt, now)
+        )
+      )
+    )
+    .returning({ eventId: stripeEvents.eventId });
+
+  if (claimed.length > 0) return 'claimed';
+
+  const [row] = await db
+    .select({
+      processedAt: stripeEvents.processedAt,
+      claimExpiresAt: stripeEvents.claimExpiresAt,
+      claimedBy: stripeEvents.claimedBy,
+    })
+    .from(stripeEvents)
+    .where(eq(stripeEvents.eventId, eventId))
+    .limit(1);
+
+  if (row?.processedAt) return 'already_processed';
+  return 'busy';
+}
+
+function throwRefundFullnessUndetermined(): never {
+  throw new Error(REFUND_FULLNESS_UNDETERMINED);
+}
+
+function isRefundFullnessUndeterminedError(err: unknown): boolean {
+  return err instanceof Error && err.message === REFUND_FULLNESS_UNDETERMINED;
 }
 
 function upsertRefundIntoMeta(params: {
@@ -54,15 +103,12 @@ function upsertRefundIntoMeta(params: {
 }): any {
   const { prevMeta, refund, eventId, currency, createdAtIso } = params;
 
-  const base = ((prevMeta ?? {}) as any) ?? {};
+  const base =
+    prevMeta && typeof prevMeta === 'object' && !Array.isArray(prevMeta)
+      ? (prevMeta as any)
+      : {};
 
-  // якщо refund в payload нема — просто повертаємо base (але НЕ затираємо refunds)
   if (!refund?.id) return base;
-
-  const refunds = normalizeRefundsFromMeta(base, {
-    currency,
-    createdAt: createdAtIso,
-  });
 
   const rec: RefundMetaRecord = {
     refundId: refund.id,
@@ -74,15 +120,7 @@ function upsertRefundIntoMeta(params: {
     status: refund.status ?? null,
   };
 
-  const exists = refunds.some(
-    r => r.refundId === rec.refundId || r.idempotencyKey === rec.idempotencyKey
-  );
-
-  return {
-    ...base,
-    refunds: exists ? refunds : [...refunds, rec],
-    refundInitiatedAt: base.refundInitiatedAt ?? createdAtIso,
-  };
+  return appendRefundToMeta({ prevMeta: base, record: rec });
 }
 
 function warnRefundFullnessUndetermined(payload: {
@@ -246,13 +284,16 @@ function mergePspMetadata(params: {
     createdAtIso: params.createdAtIso,
   });
 
-  // IMPORTANT: merge, not overwrite (preserves refunds[])
+  // Do NOT allow delta to overwrite refunds/refundInitiatedAt (canonical fields managed by upsertRefundIntoMeta)
+  const safeDelta: any = { ...cleanedDelta };
+  delete safeDelta.refunds;
+  delete safeDelta.refundInitiatedAt;
+
   return {
     ...metaWithRefunds,
-    ...cleanedDelta,
+    ...safeDelta,
   };
 }
-
 function shouldRestockFromWebhook(order: {
   stockRestored: boolean | null;
   inventoryStatus: string | null;
@@ -276,6 +317,22 @@ export async function POST(request: NextRequest) {
 
   const signature = request.headers.get('stripe-signature');
   if (!signature) {
+    const ip = getClientIp(request) ?? 'anon';
+    const decision = await enforceRateLimit({
+      key: `stripe_webhook:missing_sig:${ip}`,
+      limit: Number(process.env.STRIPE_WEBHOOK_INVALID_SIG_RL_MAX ?? 30),
+      windowSeconds: Number(
+        process.env.STRIPE_WEBHOOK_INVALID_SIG_RL_WINDOW_SECONDS ?? 60
+      ),
+    });
+
+    if (!decision.ok) {
+      return rateLimitResponse({
+        retryAfterSeconds: decision.retryAfterSeconds,
+        details: { scope: 'stripe_webhook', reason: 'missing_signature' },
+      });
+    }
+
     logError(
       'Stripe webhook missing signature header',
       new Error('MISSING_STRIPE_SIGNATURE')
@@ -296,6 +353,22 @@ export async function POST(request: NextRequest) {
       error instanceof Error &&
       error.message === 'STRIPE_INVALID_SIGNATURE'
     ) {
+      const ip = getClientIp(request) ?? 'anon';
+      const decision = await enforceRateLimit({
+        key: `stripe_webhook:invalid_sig:${ip}`,
+        limit: Number(process.env.STRIPE_WEBHOOK_INVALID_SIG_RL_MAX ?? 30),
+        windowSeconds: Number(
+          process.env.STRIPE_WEBHOOK_INVALID_SIG_RL_WINDOW_SECONDS ?? 60
+        ),
+      });
+
+      if (!decision.ok) {
+        return rateLimitResponse({
+          retryAfterSeconds: decision.retryAfterSeconds,
+          details: { scope: 'stripe_webhook', reason: 'invalid_signature' },
+        });
+      }
+
       logError('Stripe webhook signature verification failed', error);
       return NextResponse.json({ code: 'INVALID_SIGNATURE' }, { status: 400 });
     }
@@ -379,10 +452,25 @@ export async function POST(request: NextRequest) {
 
   try {
     const ack = async () => {
-      await db
+      const updated = await db
         .update(stripeEvents)
         .set({ processedAt: new Date() })
-        .where(eq(stripeEvents.eventId, event.id));
+        .where(
+          and(
+            eq(stripeEvents.eventId, event.id),
+            eq(stripeEvents.claimedBy, STRIPE_WEBHOOK_INSTANCE_ID)
+          )
+        )
+        .returning({ eventId: stripeEvents.eventId });
+
+      if (updated.length === 0) {
+        logWarn('stripe_webhook_ack_claim_lost', {
+          eventId: event.id,
+          eventType,
+        });
+        return busyRetry();
+      }
+
       return NextResponse.json({ received: true }, { status: 200 });
     };
     // 1) Insert event idempotently (no transactions)
@@ -416,7 +504,23 @@ export async function POST(request: NextRequest) {
       }
       // processedAt is NULL => previous attempt failed; reprocess
     }
-
+    // P0.8: claim/lock BEFORE any business logic (multi-instance safe).
+    const claimState = await tryClaimStripeEvent(event.id);
+    if (claimState === 'already_processed') {
+      logInfo('stripe_webhook_duplicate_event', {
+        eventId: event.id,
+        eventType,
+        reason: 'already_processed',
+      });
+      return NextResponse.json({ received: true }, { status: 200 });
+    }
+    if (claimState === 'busy') {
+      logInfo('stripe_webhook_claimed_by_other_instance', {
+        eventId: event.id,
+        eventType,
+      });
+      return busyRetry();
+    }
     //2) Resolve orderId:
     //    primary: metadata.orderId
     //    fallback: orders.paymentIntentId == paymentIntentId (ONLY if unique match)
@@ -556,6 +660,13 @@ export async function POST(request: NextRequest) {
           reason: mismatchReason,
         });
 
+        await markStripeAttemptFinal({
+          paymentIntentId,
+          status: 'succeeded',
+          errorCode: mismatchReason,
+          errorMessage: 'webhook_succeeded_but_mismatch',
+        });
+
         return ack();
       }
 
@@ -604,6 +715,10 @@ export async function POST(request: NextRequest) {
           ne(orders.paymentStatus, 'failed'),
           ne(orders.paymentStatus, 'refunded')
         ),
+      });
+      await markStripeAttemptFinal({
+        paymentIntentId,
+        status: 'succeeded',
       });
 
       logWebhookEvent({
@@ -678,6 +793,16 @@ export async function POST(request: NextRequest) {
         await restockOrder(order.id, { reason: 'failed' });
       }
 
+      await markStripeAttemptFinal({
+        paymentIntentId,
+        status: 'failed',
+        errorCode:
+          paymentIntent?.last_payment_error?.decline_code ??
+          paymentIntent?.last_payment_error?.code ??
+          null,
+        errorMessage: paymentIntent?.last_payment_error?.message ?? null,
+      });
+
       logWebhookEvent({
         orderId: order.id,
         paymentIntentId,
@@ -747,7 +872,12 @@ export async function POST(request: NextRequest) {
       if (shouldRestockFromWebhook(order)) {
         await restockOrder(order.id, { reason: 'canceled' });
       }
-
+      await markStripeAttemptFinal({
+        paymentIntentId,
+        status: 'canceled',
+        errorCode: paymentIntent?.cancellation_reason ?? null,
+        errorMessage: 'payment_intent_canceled',
+      });
       logWebhookEvent({
         orderId: order.id,
         paymentIntentId,
@@ -818,7 +948,7 @@ export async function POST(request: NextRequest) {
               refundId: refund?.id ?? null,
               refundAmount: currentAmt,
             });
-            throw new Error('REFUND_FULLNESS_UNDETERMINED');
+            throwRefundFullnessUndetermined();
           }
 
           let sawNumericAmount = false;
@@ -848,7 +978,7 @@ export async function POST(request: NextRequest) {
               refundId: refund?.id ?? null,
               refundAmount: currentAmt,
             });
-            throw new Error('REFUND_FULLNESS_UNDETERMINED');
+            throwRefundFullnessUndetermined();
           }
 
           const hasCurrent =
@@ -881,7 +1011,7 @@ export async function POST(request: NextRequest) {
                 ? (refund as any).amount
                 : null,
           });
-          throw new Error('REFUND_FULLNESS_UNDETERMINED');
+          throwRefundFullnessUndetermined();
         }
 
         isFullRefund = cumulativeRefunded === amt;
@@ -934,7 +1064,7 @@ export async function POST(request: NextRequest) {
               refundId: refund.id,
               refundAmount: currentAmt,
             });
-            throw new Error('REFUND_FULLNESS_UNDETERMINED');
+            throwRefundFullnessUndetermined();
           }
 
           let sawNumericAmount = false;
@@ -966,7 +1096,7 @@ export async function POST(request: NextRequest) {
               refundId: refund.id,
               refundAmount: currentAmt,
             });
-            throw new Error('REFUND_FULLNESS_UNDETERMINED');
+            throwRefundFullnessUndetermined();
           }
 
           const hasCurrent = list.some(r => r?.id && r.id === refund.id);
@@ -1000,7 +1130,7 @@ export async function POST(request: NextRequest) {
                 ? (refund as any).amount
                 : null,
           });
-          throw new Error('REFUND_FULLNESS_UNDETERMINED');
+          throwRefundFullnessUndetermined();
         }
 
         isFullRefund = cumulativeRefunded === amt;
@@ -1118,18 +1248,30 @@ export async function POST(request: NextRequest) {
     });
     return ack();
   } catch (error) {
-    if (
-      error instanceof Error &&
-      error.message === 'REFUND_FULLNESS_UNDETERMINED'
-    ) {
+    if (isRefundFullnessUndeterminedError(error)) {
       // Do NOT ack() -> keep processedAt NULL so Stripe retries.
       return NextResponse.json(
-        { code: 'REFUND_FULLNESS_UNDETERMINED' },
+        { code: REFUND_FULLNESS_UNDETERMINED },
         { status: 500 }
       );
     }
 
     logError('Stripe webhook processing failed', error);
+    // P0.8: release claim early so Stripe retries can be claimed immediately.
+    try {
+      await db
+        .update(stripeEvents)
+        .set({ claimExpiresAt: new Date(0) })
+        .where(
+          and(
+            eq(stripeEvents.eventId, event.id),
+            eq(stripeEvents.claimedBy, STRIPE_WEBHOOK_INSTANCE_ID),
+            isNull(stripeEvents.processedAt)
+          )
+        );
+    } catch {
+      // best-effort
+    }
     return NextResponse.json({ error: 'internal_error' }, { status: 500 });
   }
 }

@@ -43,7 +43,15 @@ export default async function LocaleLayout({
     );
 
   const userExists = Boolean(user);
-  const showAdminNavLink = process.env.NEXT_PUBLIC_ENABLE_ADMIN === 'true';
+  const enableAdmin =
+    (
+      process.env.ENABLE_ADMIN_API ??
+      process.env.NEXT_PUBLIC_ENABLE_ADMIN ??
+      ''
+    ).toLowerCase() === 'true';
+
+  const isAdmin = user?.role === 'admin';
+  const showAdminNavLink = Boolean(user) && isAdmin && enableAdmin;
 
   return (
     <NextIntlClientProvider messages={messages}>
@@ -58,7 +66,13 @@ export default async function LocaleLayout({
           showAdminLink={showAdminNavLink}
           blogCategories={blogCategories}
         >
-          <MainSwitcher>{children}</MainSwitcher>
+          <MainSwitcher
+            userExists={userExists}
+            showAdminLink={showAdminNavLink}
+            blogCategories={blogCategories}
+          >
+            {children}
+          </MainSwitcher>
         </AppChrome>
 
         <Footer />

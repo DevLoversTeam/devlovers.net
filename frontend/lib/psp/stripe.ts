@@ -20,6 +20,22 @@ type CreateRefundInput = {
 let _stripe: Stripe | null = null;
 let _stripeKey: string | null = null;
 
+class StripePspError extends Error {
+  readonly code: string;
+  readonly cause: unknown;
+
+  constructor(code: string, cause: unknown) {
+    super(code);
+    this.name = 'StripePspError';
+    this.code = code;
+    this.cause = cause;
+  }
+}
+
+function withCause(code: string, cause: unknown): Error {
+  return new StripePspError(code, cause);
+}
+
 export async function createRefund({
   orderId,
   paymentIntentId,
@@ -63,7 +79,7 @@ export async function createRefund({
     return { refundId: refund.id, status: refund.status };
   } catch (error) {
     logError('Stripe refund creation failed', error);
-    throw new Error('STRIPE_REFUND_FAILED');
+    throw withCause('STRIPE_REFUND_FAILED', error);
   }
 }
 
@@ -120,13 +136,14 @@ export async function createPaymentIntent({
     return { clientSecret: intent.client_secret, paymentIntentId: intent.id };
   } catch (error) {
     logError('Stripe payment intent creation failed', error);
-    throw new Error('STRIPE_PAYMENT_INTENT_FAILED');
+    throw withCause('STRIPE_PAYMENT_INTENT_FAILED', error);
   }
 }
 
 export async function retrievePaymentIntent(paymentIntentId: string): Promise<{
   clientSecret: string;
   paymentIntentId: string;
+  status: Stripe.PaymentIntent['status'];
 }> {
   const { paymentsEnabled } = getStripeEnv();
   const stripe = getStripeClient();
@@ -142,10 +159,14 @@ export async function retrievePaymentIntent(paymentIntentId: string): Promise<{
   try {
     const intent = await stripe.paymentIntents.retrieve(paymentIntentId);
     if (!intent.client_secret) throw new Error('STRIPE_CLIENT_SECRET_MISSING');
-    return { clientSecret: intent.client_secret, paymentIntentId: intent.id };
+    return {
+      clientSecret: intent.client_secret,
+      paymentIntentId: intent.id,
+      status: intent.status,
+    };
   } catch (error) {
     logError('Stripe payment intent retrieval failed', error);
-    throw new Error('STRIPE_PAYMENT_INTENT_FAILED');
+    throw withCause('STRIPE_PAYMENT_INTENT_FAILED', error);
   }
 }
 
@@ -165,7 +186,7 @@ export async function retrieveCharge(chargeId: string): Promise<Stripe.Charge> {
     return await stripe.charges.retrieve(chargeId);
   } catch (error) {
     logError('Stripe charge retrieval failed', error);
-    throw new Error('STRIPE_CHARGE_RETRIEVE_FAILED');
+    throw withCause('STRIPE_CHARGE_RETRIEVE_FAILED', error);
   }
 }
 
@@ -197,6 +218,6 @@ export function verifyWebhookSignature({
     );
   } catch (error) {
     logError('Stripe webhook signature verification failed', error);
-    throw new Error('STRIPE_INVALID_SIGNATURE');
+    throw withCause('STRIPE_INVALID_SIGNATURE', error);
   }
 }

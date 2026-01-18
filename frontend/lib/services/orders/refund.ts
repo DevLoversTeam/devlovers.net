@@ -5,68 +5,13 @@ import { orders } from '@/db/schema/shop';
 import { createRefund } from '@/lib/psp/stripe';
 import { InvalidPayloadError, OrderNotFoundError } from '../errors';
 import { getOrderById } from './summary';
-
-type RefundMetaRecord = {
-  refundId: string;
-  idempotencyKey: string;
-  amountMinor: number;
-  currency: string;
-  createdAt: string;
-  createdBy: string;
-  status?: string | null;
-};
+import {
+  appendRefundToMeta,
+  normalizeRefundsFromMeta,
+} from './psp-metadata/refunds';
 
 function invalid(code: string, message: string): InvalidPayloadError {
-  const err = new InvalidPayloadError(message); // 1 аргумент
-  (err as any).code = code; // зберігаємо стабільний code
-  return err;
-}
-
-function normalizeRefunds(
-  meta: unknown,
-  fallback: { currency: string; createdAt: string }
-): RefundMetaRecord[] {
-  const m = (meta ?? {}) as any;
-
-  if (Array.isArray(m.refunds)) return m.refunds as RefundMetaRecord[];
-
-  const legacy = m.refund;
-  if (legacy?.id) {
-    // backward-compat: переносимо старий одиночний refund у refunds[]
-    return [
-      {
-        refundId: String(legacy.id),
-        idempotencyKey: 'legacy:webhook',
-        amountMinor: Number(legacy.amount ?? 0),
-        currency: fallback.currency,
-        createdAt: fallback.createdAt,
-        createdBy: 'webhook',
-        status: legacy.status ?? null,
-      },
-    ];
-  }
-
-  return [];
-}
-
-function appendRefund(meta: unknown, rec: RefundMetaRecord) {
-  const base = ((meta ?? {}) as any) ?? {};
-  const refunds = normalizeRefunds(base, {
-    currency: rec.currency,
-    createdAt: rec.createdAt,
-  });
-
-  // доменна ідемпотентність: не дублювати по idempotencyKey або refundId
-  const exists = refunds.some(
-    r => r.idempotencyKey === rec.idempotencyKey || r.refundId === rec.refundId
-  );
-  const nextRefunds = exists ? refunds : [...refunds, rec];
-
-  return {
-    ...base,
-    refunds: nextRefunds,
-    refundInitiatedAt: rec.createdAt, // для UI-disable
-  };
+  return new InvalidPayloadError(message, { code });
 }
 
 function makeRefundIdempotencyKey(
@@ -74,7 +19,6 @@ function makeRefundIdempotencyKey(
   amountMinor: number,
   currency: string
 ): string {
-  // тримай коротко; Stripe дозволяє довше, але це стабільно
   return `refund:${orderId}:${amountMinor}:${currency}`.slice(0, 128);
 }
 
@@ -135,8 +79,8 @@ export async function refundOrder(
     currency
   );
 
-  // Доменна ідемпотентність: якщо вже є запис — просто повертаємо summary
-  const existingRefunds = normalizeRefunds(order.pspMetadata, {
+  // Domain idempotency: if already recorded in metadata — return summary
+  const existingRefunds = normalizeRefundsFromMeta(order.pspMetadata, {
     currency,
     createdAt: order.createdAt.toISOString(),
   });
@@ -148,7 +92,7 @@ export async function refundOrder(
     return await getOrderById(orderId);
   }
 
-  // Реальний Stripe call (idempotent на стороні Stripe)
+  // Real Stripe call (Stripe-idempotent)
   const { refundId, status } = await createRefund({
     orderId,
     paymentIntentId,
@@ -160,17 +104,20 @@ export async function refundOrder(
   const now = new Date();
   const createdAtIso = now.toISOString();
 
-  const nextMeta = appendRefund(order.pspMetadata, {
-    refundId,
-    idempotencyKey,
-    amountMinor,
-    currency,
-    createdAt: createdAtIso,
-    createdBy: requestedBy,
-    status: status ?? null,
+  const nextMeta = appendRefundToMeta({
+    prevMeta: order.pspMetadata,
+    record: {
+      refundId,
+      idempotencyKey,
+      amountMinor,
+      currency,
+      createdAt: createdAtIso,
+      createdBy: requestedBy,
+      status: status ?? null,
+    },
   });
 
-  // Persist тільки metadata. payment_status НЕ чіпаємо (джерело істини — webhook)
+  // Persist ONLY metadata. payment_status not touched (source of truth = webhook)
   await db
     .update(orders)
     .set({
@@ -180,6 +127,5 @@ export async function refundOrder(
     })
     .where(eq(orders.id, orderId));
 
-  // Повертаємо як і раніше: order summary для API
   return await getOrderById(orderId);
 }

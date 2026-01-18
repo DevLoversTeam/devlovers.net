@@ -14,12 +14,16 @@ export function CatalogLoadMore({
   if (!hasMore) return null;
 
   return (
-    <button
-      onClick={onLoadMore}
-      disabled={isLoading}
-      className="rounded-md border border-border px-6 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-70"
-    >
-      {isLoading ? 'Loading...' : 'Load more'}
-    </button>
+    <div className="flex justify-center">
+      <button
+        type="button"
+        onClick={onLoadMore}
+        disabled={isLoading}
+        aria-busy={isLoading}
+        className="rounded-md border border-border px-6 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-70"
+      >
+        {isLoading ? 'Loading...' : 'Load more'}
+      </button>
+    </div>
   );
 }

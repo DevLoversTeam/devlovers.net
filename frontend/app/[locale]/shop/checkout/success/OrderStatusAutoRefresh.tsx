@@ -1,3 +1,4 @@
+// frontend/app/[locale]/shop/checkout/success/OrderStatusAutoRefresh.tsx
 'use client';
 
 import { useEffect, useRef } from 'react';
@@ -38,5 +39,6 @@ export default function OrderStatusAutoRefresh({
     return () => window.clearInterval(id);
   }, [paymentStatus, router, maxMs, intervalMs]);
 
-  return null;
+  // Non-visual utility component (keeps page data fresh while payment settles).
+  return <span className="sr-only" aria-live="polite" />;
 }

@@ -269,10 +269,16 @@ export const stripeEvents = pgTable(
     orderId: uuid('order_id').references(() => orders.id),
     eventType: text('event_type').notNull(),
     paymentStatus: text('payment_status'),
+    claimedAt: timestamp('claimed_at', { withTimezone: true }),
+    claimExpiresAt: timestamp('claim_expires_at', { withTimezone: true }),
+    claimedBy: varchar('claimed_by', { length: 64 }),
     processedAt: timestamp('processed_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
   },
-  table => [uniqueIndex('stripe_events_event_id_idx').on(table.eventId)]
+  table => [
+    uniqueIndex('stripe_events_event_id_idx').on(table.eventId),
+    index('stripe_events_claim_expires_idx').on(table.claimExpiresAt),
+  ]
 );
 
 export const productPrices = pgTable(
@@ -371,8 +377,97 @@ export const internalJobState = pgTable('internal_job_state', {
     .defaultNow(),
 });
 
+export const apiRateLimits = pgTable(
+  'api_rate_limits',
+  {
+    key: text('key').primaryKey(),
+    windowStartedAt: timestamp('window_started_at', {
+      withTimezone: true,
+    }).notNull(),
+    count: integer('count').notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  t => [
+    check('api_rate_limits_count_non_negative', sql`${t.count} >= 0`),
+    index('api_rate_limits_updated_at_idx').on(t.updatedAt),
+  ]
+);
+
+export const paymentAttempts = pgTable(
+  'payment_attempts',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+
+    orderId: uuid('order_id')
+      .notNull()
+      .references(() => orders.id, { onDelete: 'cascade' }),
+
+    provider: text('provider').notNull(), // 'stripe'
+    status: text('status').notNull().default('active'), // active|succeeded|failed|canceled
+    attemptNumber: integer('attempt_number').notNull(),
+
+    idempotencyKey: text('idempotency_key').notNull(),
+    providerPaymentIntentId: text('provider_payment_intent_id'),
+
+    lastErrorCode: text('last_error_code'),
+    lastErrorMessage: text('last_error_message'),
+    metadata: jsonb('metadata')
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+
+    finalizedAt: timestamp('finalized_at', { withTimezone: true }),
+  },
+  t => [
+    check('payment_attempts_provider_check', sql`${t.provider} in ('stripe')`),
+
+    // CHECKs (match SQL migration)
+    check(
+      'payment_attempts_status_check',
+      sql`${t.status} in ('active','succeeded','failed','canceled')`
+    ),
+    check(
+      'payment_attempts_attempt_number_check',
+      sql`${t.attemptNumber} >= 1`
+    ),
+
+    // UNIQUE / INDEX (match SQL migration)
+    uniqueIndex('payment_attempts_order_provider_attempt_unique').on(
+      t.orderId,
+      t.provider,
+      t.attemptNumber
+    ),
+    uniqueIndex('payment_attempts_idempotency_key_unique').on(t.idempotencyKey),
+    uniqueIndex('payment_attempts_provider_pi_unique').on(
+      t.providerPaymentIntentId
+    ),
+    index('payment_attempts_order_provider_status_idx').on(
+      t.orderId,
+      t.provider,
+      t.status
+    ),
+
+    // Critical: at most ONE active attempt per (order, provider)
+    uniqueIndex('payment_attempts_order_provider_active_unique')
+      .on(t.orderId, t.provider)
+      .where(sql`${t.status} = 'active'`),
+  ]
+);
+
 export type DbProductPrice = typeof productPrices.$inferSelect;
 export type DbOrder = typeof orders.$inferSelect;
 export type DbOrderItem = typeof orderItems.$inferSelect;
 export type DbInventoryMove = typeof inventoryMoves.$inferSelect;
 export type DbInternalJobState = typeof internalJobState.$inferSelect;
+export type DbPaymentAttempt = typeof paymentAttempts.$inferSelect;
+export type DbApiRateLimit = typeof apiRateLimits.$inferSelect;

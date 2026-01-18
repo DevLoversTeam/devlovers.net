@@ -27,31 +27,48 @@ export function AdminPagination({
     'inline-flex items-center rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary';
 
   return (
-    <nav
-      aria-label="Pagination"
-      className={cn('mt-6 flex items-center justify-between gap-3', className)}
-    >
-      {hasPrev ? (
-        <Link href={pageHref(basePath, page - 1)} rel="prev" className={linkClass}>
-          Previous
-        </Link>
-      ) : (
-        <span aria-disabled="true" className={disabledClass}>
-          Previous
-        </span>
-      )}
+    <nav aria-label="Pagination" className={cn('mt-6', className)}>
+      <ul className="flex items-center justify-between gap-3">
+        <li>
+          {hasPrev ? (
+            <Link
+              href={pageHref(basePath, page - 1)}
+              rel="prev"
+              aria-label="Previous page"
+              className={linkClass}
+            >
+              Previous
+            </Link>
+          ) : (
+            <span aria-disabled="true" className={disabledClass}>
+              Previous
+            </span>
+          )}
+        </li>
 
-      <span className="text-sm text-muted-foreground">Page {page}</span>
+        <li>
+          <span aria-current="page" className="text-sm text-muted-foreground">
+            Page {page}
+          </span>
+        </li>
 
-      {hasNext ? (
-        <Link href={pageHref(basePath, page + 1)} rel="next" className={linkClass}>
-          Next
-        </Link>
-      ) : (
-        <span aria-disabled="true" className={disabledClass}>
-          Next
-        </span>
-      )}
+        <li>
+          {hasNext ? (
+            <Link
+              href={pageHref(basePath, page + 1)}
+              rel="next"
+              aria-label="Next page"
+              className={linkClass}
+            >
+              Next
+            </Link>
+          ) : (
+            <span aria-disabled="true" className={disabledClass}>
+              Next
+            </span>
+          )}
+        </li>
+      </ul>
     </nav>
   );
 }

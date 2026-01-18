@@ -35,10 +35,12 @@ export class OrderNotFoundError extends Error {
 //   code = "SLUG_CONFLICT" as const
 // }
 export class InvalidPayloadError extends Error {
-  code = 'INVALID_PAYLOAD' as const;
-  constructor(message = 'Invalid payload') {
+  code: string;
+
+  constructor(message = 'Invalid payload', opts?: { code?: string }) {
     super(message);
     this.name = 'InvalidPayloadError';
+    this.code = opts?.code ?? 'INVALID_PAYLOAD';
   }
 }
 
@@ -91,26 +93,27 @@ export class SlugConflictError extends Error {
 }
 
 export class OrderStateInvalidError extends Error {
-  code = 'ORDER_STATE_INVALID' as const;
-  orderId?: string;
-  field?: string;
-  rawValue?: unknown;
-  details?: Record<string, unknown>;
+  readonly code = 'ORDER_STATE_INVALID' as const;
+
+  readonly orderId?: string;
+  readonly field?: string;
+  readonly rawValue?: unknown;
+  readonly details?: unknown;
 
   constructor(
-    message = 'Order state is invalid.',
-    options?: {
+    message: string,
+    opts?: {
       orderId?: string;
       field?: string;
       rawValue?: unknown;
-      details?: Record<string, unknown>;
+      details?: unknown;
     }
   ) {
     super(message);
     this.name = 'OrderStateInvalidError';
-    this.orderId = options?.orderId;
-    this.field = options?.field;
-    this.rawValue = options?.rawValue;
-    this.details = options?.details;
+    this.orderId = opts?.orderId;
+    this.field = opts?.field;
+    this.rawValue = opts?.rawValue;
+    this.details = opts?.details;
   }
 }

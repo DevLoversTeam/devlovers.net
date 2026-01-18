@@ -33,16 +33,21 @@ export function AppChrome({
             showAdminLink={showAdminLink}
             blogCategories={blogCategories}
           />
+
           {children}
         </div>
       </CartProvider>
     );
   }
 
+  if (isBlog) {
+    return <>{children}</>;
+  }
+
   return (
     <>
       <UnifiedHeader
-        variant={isBlog ? 'blog' : 'platform'}
+        variant="platform"
         userExists={userExists}
         blogCategories={blogCategories}
       />

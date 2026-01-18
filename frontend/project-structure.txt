@@ -110,7 +110,6 @@
       📄 page.tsx
     📁 shop
       📁 admin
-        📄 layout.tsx
         📁 orders
           📄 page.tsx
           📁 [id]
@@ -138,13 +137,16 @@
         📁 success
           📄 OrderStatusAutoRefresh.tsx
           📄 page.tsx
-      📄 layout.tsx
+      📁 orders
+        📄 error.tsx
+        📄 page.tsx
+        📁 [id]
+          📄 page.tsx
       📄 page.tsx
       📁 products
         📄 page.tsx
         📁 [slug]
           📄 page.tsx
-      📄 shop-theme.css
     📁 signup
       📄 page.tsx
     📁 terms-of-service
@@ -215,21 +217,22 @@
   📁 shop
     📄 add-to-cart-button.tsx
     📁 admin
+      📄 admin-pagination.tsx
       📄 admin-product-status-toggle.tsx
+      📄 shop-admin-topbar.tsx
     📄 cart-provider.tsx
     📄 catalog-load-more.tsx
     📄 catalog-products-client.tsx
     📄 category-tile.tsx
+    📄 clear-cart-on-mount.tsx
     📁 header
       📄 cart-button.tsx
       📄 nav-links.tsx
-      📄 theme-toggle.tsx
     📄 product-card.tsx
     📄 product-filters.tsx
     📄 product-sort.tsx
-    📄 shop-footer.tsx
+    📄 products-toolbar.tsx
     📄 shop-hero.tsx
-    📄 theme-provider.tsx
   📁 tests
     📄 CookieBanner.test.tsx
   📁 theme
@@ -308,6 +311,7 @@
     📄 points.ts
     📄 questions.ts
     📄 quiz.ts
+    📄 sessions.ts
     📄 shop.ts
     📄 users.ts
   📄 seed-categories.ts
@@ -337,8 +341,14 @@
     📄 fondy.md
 📁 drizzle
   📄 0000_dry_young_avengers.sql
+  📄 0001_add_payment_attempts.sql
+  📄 0002_clean_martin_li.sql
+  📄 0003_add_stripe_events_claim_lock.sql
   📁 meta
     📄 0000_snapshot.json
+    📄 0001_snapshot.json
+    📄 0002_snapshot.json
+    📄 0003_snapshot.json
     📄 _journal.json
 📄 drizzle.config.ts
 📄 eslint.config.mjs
@@ -357,6 +367,7 @@
   📁 auth
     📄 admin.ts
     📄 email-verification.ts
+    📄 guard-shop-admin-page.ts
     📄 internal-janitor.ts
     📄 oauth-state.ts
     📄 password-reset.ts
@@ -378,9 +389,12 @@
     📄 cloudinary.ts
     📄 index.ts
     📄 stripe.ts
+  📁 http
+    📄 getBaseUrl.ts
   📄 logging.ts
   📄 logout.ts
   📄 navigation.ts
+  📄 pagination.ts
   📁 psp
     📄 stripe.ts
   📁 quiz
@@ -388,13 +402,19 @@
     📄 quiz-crypto.ts
     📄 quiz-session.ts
     📄 quiz-storage-keys.ts
+  📁 security
+    📄 admin-csrf.ts
+    📄 csrf.ts
   📁 services
     📄 errors.ts
     📄 inventory.ts
     📁 orders
       📄 checkout.ts
+      📄 payment-attempts.ts
       📄 payment-intent.ts
       📄 payment-state.ts
+      📁 psp-metadata
+        📄 refunds.ts
       📄 refund.ts
       📄 restock.ts
       📄 summary.ts
@@ -427,7 +447,10 @@
     📄 slug.ts
   📁 tests
     📄 admin-api-killswitch.test.ts
+    📄 admin-csrf-contract.test.ts
+    📄 admin-product-patch-price-config-error-contract.test.ts
     📄 admin-product-sale-contract.test.ts
+    📄 cart-rehydrate-variant-sanitize.test.ts
     📄 checkout-concurrency-stock1.test.ts
     📄 checkout-currency-policy.test.ts
     📄 checkout-no-payments.test.ts
@@ -435,6 +458,8 @@
     📄 checkout-stripe-error-contract.test.ts
     📄 currency.test.ts
     📄 format-money.test.ts
+    📁 helpers
+      📄 makeCheckoutReq.ts
     📄 order-items-snapshot-immutable.test.ts
     📄 order-items-variants.test.ts
     📄 orders-access.test.ts
@@ -442,6 +467,8 @@
     📄 payment-state-machine.helper.test.ts
     📄 payment-status-tripwire.test.ts
     📄 prices.test.ts
+    📄 product-admin-merged-prices-policy.test.ts
+    📄 product-admin-update-prices-patch-semantics.test.ts
     📄 product-sale-invariant.test.ts
     📄 public-product-visibility.test.ts
     📄 restock-order-only-once.test.ts
@@ -491,8 +518,11 @@
 📄 project-structure.txt
 📄 proxy.ts
 📁 public
+  📄 apparel.jpg
+  📄 collectibles.jpg
   📄 favicon-dark.svg
   📄 favicon-light.svg
+  📄 lifestyle.jpg
   📄 placeholder.svg
 📄 README.md
 📄 save-structure.cjs

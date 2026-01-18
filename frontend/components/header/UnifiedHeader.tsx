@@ -1,6 +1,5 @@
 'use client';
-
-import { LogIn, Search, User } from 'lucide-react';
+import { LogIn, Settings, User } from 'lucide-react';
 import { Link } from '@/i18n/routing';
 import { SITE_LINKS } from '@/lib/navigation';
 
@@ -26,7 +25,6 @@ export function UnifiedHeader({
   variant,
   userExists,
   showAdminLink = false,
-  enableSearch = true,
   blogCategories = [],
 }: UnifiedHeaderProps) {
   const isShop = variant === 'shop';
@@ -38,10 +36,7 @@ export function UnifiedHeader({
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <div className="flex min-w-0 items-center gap-3">
-          <Link
-            href={brandHref}
-            className="flex min-w-0 items-center gap-2"
-          >
+          <Link href={brandHref} className="flex min-w-0 items-center gap-2">
             <span className="truncate text-xl font-bold tracking-tight">
               DevLovers
             </span>
@@ -62,11 +57,7 @@ export function UnifiedHeader({
           aria-label="Primary"
         >
           {isShop ? (
-            <NavLinks
-              className="md:flex"
-              showAdminLink={showAdminLink}
-              includeHomeLink
-            />
+            <NavLinks className="md:flex" includeHomeLink />
           ) : isBlog ? (
             <BlogCategoryLinks categories={blogCategories} />
           ) : (
@@ -86,23 +77,6 @@ export function UnifiedHeader({
 
         <div className="flex items-center gap-1">
           <div className="hidden items-center gap-2 md:flex">
-            {isShop && enableSearch ? (
-              <>
-                <button
-                  type="button"
-                  disabled
-                  aria-disabled="true"
-                  title="Search is coming soon"
-                  className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
-                  aria-label="Search (coming soon)"
-                >
-                  <Search className="h-5 w-5" />
-                </button>
-              </>
-            ) : (
-              <div className="h-9 w-9" aria-hidden="true" />
-            )}
-
             {userExists && (
               <Link
                 href="/dashboard"
@@ -113,6 +87,16 @@ export function UnifiedHeader({
                 <User className="h-5 w-5" />
               </Link>
             )}
+            {showAdminLink ? (
+              <Link
+                href="/shop/admin"
+                aria-label="Shop admin"
+                title="Shop admin"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              >
+                <Settings className="h-5 w-5" aria-hidden="true" />
+              </Link>
+            ) : null}
 
             <LanguageSwitcher />
             {isShop && <CartButton />}

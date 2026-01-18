@@ -8,6 +8,7 @@ import { type PaymentStatus } from '@/lib/shop/payments';
 import { guardedPaymentStatusUpdate } from './payment-state';
 import { OrderNotFoundError, OrderStateInvalidError } from '../errors';
 import { resolvePaymentProvider } from './_shared';
+import { logWarn } from '@/lib/logging';
 
 export type RestockReason = 'failed' | 'refunded' | 'canceled' | 'stale';
 export type RestockOptions = {
@@ -204,6 +205,7 @@ export async function restockOrder(
 
   // Apply release moves. IMPORTANT invariant:
   // do NOT mark released/stockRestored/restockedAt unless all releases are CONFIRMED ok.
+
   const releaseFailures: Array<{ productId: string; reason: string }> = [];
 
   for (const item of reservedMoves) {
@@ -214,18 +216,26 @@ export async function restockOrder(
         item.quantity
       );
 
-      // Support both styles:
-      // - void return (treat as success)
-      // - { ok: boolean, reason?: string } return (explicit fail if ok === false)
-      if (
-        res &&
-        typeof res === 'object' &&
-        'ok' in (res as any) &&
-        (res as any).ok === false
-      ) {
-        releaseFailures.push({
+      const appliedFalse =
+        typeof res === 'boolean'
+          ? res === false
+          : res && typeof res === 'object' && 'applied' in (res as any)
+          ? (res as any).applied === false
+          : false;
+
+      if (appliedFalse) {
+        const detail =
+          res && typeof res === 'object' && 'reason' in (res as any)
+            ? String((res as any).reason)
+            : 'applied:false';
+
+        logWarn('[shop.restock] release move not applied', {
+          orderId,
           productId: item.productId,
-          reason: String((res as any).reason ?? 'unknown'),
+          quantity: item.quantity,
+          reason,
+          workerId,
+          detail,
         });
       }
     } catch (err) {

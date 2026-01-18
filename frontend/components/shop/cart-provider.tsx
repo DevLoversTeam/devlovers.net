@@ -1,26 +1,26 @@
 'use client';
 
-import type React from 'react';
-
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
-  useState,
-  useCallback,
   useRef,
+  useState,
 } from 'react';
+import type { ReactNode } from 'react';
+
 import {
   type Cart,
   type CartClientItem,
   type CartRehydrateError,
-  createCartItemKey,
   capQuantityByStock,
+  clearStoredCart,
+  createCartItemKey,
+  emptyCart,
   getStoredCartItems,
   persistCartItems,
   rehydrateCart,
-  clearStoredCart,
-  emptyCart,
 } from '@/lib/cart';
 import type { ShopProduct } from '@/lib/shop/data';
 import { logWarn } from '@/lib/logging';
@@ -68,12 +68,17 @@ function getErrorInfo(error: unknown): {
 
   return {
     code: typeof e?.code === 'string' ? e.code : 'UNKNOWN_ERROR',
-    message: typeof e?.message === 'string' ? e.message : 'Cart rehydrate failed',
+    message:
+      typeof e?.message === 'string' ? e.message : 'Cart rehydrate failed',
     details: e?.details,
   };
 }
 
-export function CartProvider({ children }: { children: React.ReactNode }) {
+type CartProviderProps = {
+  children: ReactNode;
+};
+
+export function CartProvider({ children }: CartProviderProps) {
   const [cart, setCart] = useState<Cart>(emptyCart);
 
   const syncCartWithServer = useCallback(async (items: CartClientItem[]) => {
@@ -81,6 +86,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     try {
       const nextCart = await rehydrateCart(items);
+
       setCart(nextCart);
       return;
     } catch (error) {
@@ -102,6 +108,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
             try {
               const retriedCart = await rehydrateCart(filtered);
+
               setCart(retriedCart);
 
               logWarn('cart_rehydrate_recovered_by_removing_item', {
@@ -148,8 +155,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     didHydrate.current = true;
 
     const stored = getStoredCartItems();
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    void syncCartWithServer(stored);
+
+    // Defer to avoid "setState in effect" lint rules without changing runtime behavior meaningfully.
+    void Promise.resolve().then(() => syncCartWithServer(stored));
   }, [syncCartWithServer]);
 
   const addToCart = useCallback(

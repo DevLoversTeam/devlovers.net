@@ -39,9 +39,9 @@ export const SORT_OPTIONS = [
 export const CATALOG_PAGE_SIZE = 12
 
 export const CATEGORY_TILES = [
-  { id: "apparel", name: "Apparel", slug: "apparel", image: "/placeholder.svg" },
-  { id: "collectibles", name: "Collectibles", slug: "collectibles", image: "/placeholder.svg" },
-  { id: "lifestyle", name: "Lifestyle", slug: "lifestyle", image: "/placeholder.svg" },
+  { id: "apparel", name: "Apparel", slug: "apparel", image: "/apparel.jpg" },
+  { id: "collectibles", name: "Collectibles", slug: "collectibles", image: "/collectibles.jpg" },
+  { id: "lifestyle", name: "Lifestyle", slug: "lifestyle", image: "/lifestyle.jpg" },
 ] as const
 
 

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { NextRequest } from 'next/server';
 
 /**
@@ -38,6 +38,10 @@ vi.mock('@/lib/admin/parseAdminProductForm', () => ({
   parseAdminProductForm: parseAdminProductFormMock,
 }));
 
+vi.mock('@/lib/security/admin-csrf', () => ({
+  requireAdminCsrf: vi.fn(() => null),
+}));
+
 function makeFile(): File {
   return new File([new Uint8Array([1, 2, 3])], 'test.png', {
     type: 'image/png',
@@ -62,11 +66,17 @@ function makeFormData(payload?: {
 
 describe('P1-3 SALE rule end-to-end contract: admin products API returns stable code + details', () => {
   beforeEach(() => {
+    vi.stubEnv('ENABLE_ADMIN_API', 'true');
+
     parseAdminProductFormMock.mockReset();
     productsServiceMock.createProduct.mockReset();
     productsServiceMock.updateProduct.mockReset();
     productsServiceMock.deleteProduct.mockReset();
     productsServiceMock.getAdminProductByIdWithPrices.mockReset();
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it('POST /api/shop/admin/products: SALE without originalPriceMinor -> 400 SALE_ORIGINAL_REQUIRED (required)', async () => {

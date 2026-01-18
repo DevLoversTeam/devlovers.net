@@ -194,11 +194,6 @@ async function reconcileNoPaymentOrder(
     const failAt = new Date();
 
     // Mark as "release pending" only. Finalization must happen via restockOrder().
-    await db
-      .update(orders)
-      .set({ inventoryStatus: 'release_pending', updatedAt: failAt })
-      .where(eq(orders.id, orderId));
-
     const isOos = e instanceof InsufficientStockError;
 
     await db

@@ -196,6 +196,25 @@ export const adminPriceRowSchema = z
       }
     }
   });
+type AdminPriceRow = z.infer<typeof adminPriceRowSchema>;
+
+function refineNoDuplicateCurrencies(
+  prices: AdminPriceRow[],
+  ctx: z.RefinementCtx
+) {
+  const seen = new Set<string>();
+  prices.forEach((p, idx) => {
+    if (seen.has(p.currency)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['prices', idx, 'currency'],
+        message: 'Duplicate currency in prices',
+      });
+    } else {
+      seen.add(p.currency);
+    }
+  });
+}
 
 export const productAdminSchema = z
   .object({
@@ -221,18 +240,7 @@ export const productAdminSchema = z
   })
   .superRefine((data, ctx) => {
     // 1) no duplicate currencies
-    const seen = new Set<string>();
-    data.prices.forEach((p, idx) => {
-      if (seen.has(p.currency)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['prices', idx, 'currency'],
-          message: 'Duplicate currency in prices',
-        });
-      } else {
-        seen.add(p.currency);
-      }
-    });
+    refineNoDuplicateCurrencies(data.prices, ctx);
 
     // 2) USD is required
     const usd = data.prices.find(p => p.currency === 'USD');
@@ -267,7 +275,8 @@ export const productAdminUpdateSchema = z
         const trimmed = value?.trim() ?? '';
         return trimmed.length ? trimmed : undefined;
       }),
-    prices: z.array(adminPriceRowSchema).optional(),
+    prices: z.array(adminPriceRowSchema).min(1).optional(),
+
     description: z.string().optional(),
     category: z.enum(productCategoryValues as [string, ...string[]]).optional(),
     type: z.enum(typeValues as [string, ...string[]]).optional(),
@@ -281,19 +290,9 @@ export const productAdminUpdateSchema = z
   })
   .superRefine((data, ctx) => {
     if (data.prices) {
-      const seen = new Set<string>();
-      data.prices.forEach((p, idx) => {
-        if (seen.has(p.currency)) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ['prices', idx, 'currency'],
-            message: 'Duplicate currency in prices',
-          });
-        } else {
-          seen.add(p.currency);
-        }
-      });
+      refineNoDuplicateCurrencies(data.prices, ctx);
     }
+
     if (data.badge === 'SALE' && data.prices) {
       data.prices.forEach((p, idx) => {
         if (p.originalPriceMinor == null) {

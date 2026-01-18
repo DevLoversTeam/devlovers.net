@@ -125,6 +125,17 @@ export function AppMobileMenu({
                     Dashboard
                   </Link>
 
+                  {showAdminLink ? (
+                    <Link
+                      href="/shop/admin"
+                      aria-label="Shop admin"
+                      title="Shop admin"
+                      className="inline-flex items-center rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                    >
+                      Admin
+                    </Link>
+                  ) : null}
+
                   {/* LogoutButton стилізується сам; ми тільки позиціонуємо як пункт меню */}
                   <div className="px-3 py-2" onClick={close}>
                     <LogoutButton />

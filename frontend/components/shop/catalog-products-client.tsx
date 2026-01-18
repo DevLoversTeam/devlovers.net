@@ -3,8 +3,9 @@
 import React from 'react';
 import { useSearchParams, type ReadonlyURLSearchParams } from 'next/navigation';
 
-import { ProductCard } from '@/components/shop/product-card';
 import { CatalogLoadMore } from '@/components/shop/catalog-load-more';
+import { ProductCard } from '@/components/shop/product-card';
+import { logError } from '@/lib/logging';
 
 type Product = React.ComponentProps<typeof ProductCard>['product'] & {
   id: string;
@@ -73,7 +74,6 @@ export function CatalogProductsClient({
     query.set('page', String(nextPage));
 
     const requestQueryKey = `${baseQuery}|l=${locale}`;
-    activeQueryRef.current = requestQueryKey;
     query.set('locale', locale);
 
     try {
@@ -89,7 +89,6 @@ export function CatalogProductsClient({
 
       const data = (await res.json()) as CatalogPayload;
 
-      // якщо фільтри/сорт змінились під час запиту — ігноруємо відповідь
       if (activeQueryRef.current !== requestQueryKey) return;
 
       setProducts(prev => {
@@ -100,7 +99,12 @@ export function CatalogProductsClient({
 
       setPage(data.page);
       setHasMore(data.hasMore);
-    } catch {
+    } catch (err) {
+      logError('[shop.catalog] load more failed', err, {
+        locale,
+        baseQuery,
+        nextPage,
+      });
       setError('Failed to load more');
     } finally {
       if (activeQueryRef.current === requestQueryKey) {
@@ -110,23 +114,34 @@ export function CatalogProductsClient({
   };
 
   return (
-    <>
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <section aria-label="Catalog results">
+      <ul
+        className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+        aria-label="Products"
+      >
         {products.map(p => (
-          <ProductCard key={p.id} product={p} />
+          <li key={p.id} className="min-w-0">
+            <ProductCard product={p} />
+          </li>
         ))}
-      </div>
+      </ul>
 
-      <div className="mt-12 flex flex-col items-center gap-3">
+      <nav
+        className="mt-12 flex flex-col items-center gap-3"
+        aria-label="Catalog pagination"
+      >
         <CatalogLoadMore
           hasMore={hasMore}
           isLoading={isLoadingMore}
           onLoadMore={onLoadMore}
         />
+
         {error ? (
-          <p className="text-sm text-muted-foreground">{error}</p>
+          <p className="text-sm text-muted-foreground" role="status">
+            {error}
+          </p>
         ) : null}
-      </div>
-    </>
+      </nav>
+    </section>
   );
 }

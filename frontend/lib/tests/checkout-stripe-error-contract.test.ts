@@ -1,10 +1,15 @@
-// frontend/lib/tests/checkout-stripe-error-contract.test.ts
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { NextRequest } from 'next/server';
+import { makeCheckoutReq } from '@/lib/tests/helpers/makeCheckoutReq';
 
 // 1) force payments enabled so route goes into Stripe flow
 vi.mock('@/lib/env/stripe', () => ({
-  isPaymentsEnabled: () => true,
+  getStripeEnv: () => ({
+    paymentsEnabled: true,
+    mode: 'test',
+    secretKey: 'sk_test_dummy',
+    webhookSecret: 'whsec_test_dummy',
+  }),
+  isPaymentsEnabled: () => true, // kept for backward compatibility
 }));
 
 // 2) avoid auth coupling
@@ -18,6 +23,14 @@ vi.mock('@/lib/psp/stripe', () => ({
     throw new Error('STRIPE_TEST_DOWN');
   }),
   retrievePaymentIntent: vi.fn(),
+}));
+
+// Avoid DB coupling introduced by #6 (DB-canonical PI amount/currency)
+vi.mock('@/lib/services/orders/payment-intent', () => ({
+  readStripePaymentIntentParams: vi.fn(async () => ({
+    amountMinor: 1000,
+    currency: 'USD',
+  })),
 }));
 
 // 4) mock orders services so we don't depend on DB schema/seed here
@@ -35,27 +48,6 @@ import { POST } from '@/app/api/shop/checkout/route';
 import { createOrderWithItems } from '@/lib/services/orders';
 
 type MockedFn = ReturnType<typeof vi.fn>;
-
-function makeReq(idempotencyKey: string) {
-  return new NextRequest('http://localhost/api/shop/checkout', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Idempotency-Key': idempotencyKey,
-      'Accept-Language': 'en',
-    },
-    body: JSON.stringify({
-      items: [
-        {
-          productId: '11111111-1111-4111-8111-111111111111',
-          quantity: 1,
-          selectedSize: '',
-          selectedColor: '',
-        },
-      ],
-    }),
-  });
-}
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -78,12 +70,15 @@ describe('checkout: Stripe errors after order creation must not be 400', () => {
       totalCents: 1000,
     });
 
-    const res = await POST(makeReq('idem_key_test_new_0001'));
+    const res = await POST(
+      makeCheckoutReq({ idempotencyKey: 'idem_key_test_new_0001' })
+    );
     expect(res.status).toBe(502);
 
     const json = await res.json();
     expect(json.code).toBe('STRIPE_ERROR');
     expect(typeof json.message).toBe('string');
+    expect(createOrderWithItems).toHaveBeenCalledTimes(1);
   });
 
   it('existing order (isNew=false, no PI): Stripe PI creation failure returns 502 STRIPE_ERROR', async () => {
@@ -102,11 +97,14 @@ describe('checkout: Stripe errors after order creation must not be 400', () => {
       totalCents: 1000,
     });
 
-    const res = await POST(makeReq('idem_key_test_existing_0001'));
+    const res = await POST(
+      makeCheckoutReq({ idempotencyKey: 'idem_key_test_existing_0001' })
+    );
     expect(res.status).toBe(502);
 
     const json = await res.json();
     expect(json.code).toBe('STRIPE_ERROR');
     expect(typeof json.message).toBe('string');
+    expect(createOrderWithItems).toHaveBeenCalledTimes(1);
   });
 });

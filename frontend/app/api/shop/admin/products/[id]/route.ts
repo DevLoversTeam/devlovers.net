@@ -7,10 +7,15 @@ import {
   AdminUnauthorizedError,
   requireAdminApi,
 } from '@/lib/auth/admin';
+import {
+  InvalidPayloadError,
+  SlugConflictError,
+  PriceConfigError,
+} from '@/lib/services/errors';
+import { requireAdminCsrf } from '@/lib/security/admin-csrf';
 
 import { parseAdminProductForm } from '@/lib/admin/parseAdminProductForm';
 import { logError } from '@/lib/logging';
-import { InvalidPayloadError, SlugConflictError } from '@/lib/services/errors';
 import {
   deleteProduct,
   getAdminProductByIdWithPrices,
@@ -144,6 +149,13 @@ export async function PATCH(
     }
 
     const formData = await request.formData();
+    const csrfRes = requireAdminCsrf(
+      request,
+      'admin:products:update',
+      formData
+    );
+    if (csrfRes) return csrfRes;
+
     // PATCH inside PATCH() right after: const formData = await request.formData();
     const saleViolationFromForm = getSaleViolationFromFormData(formData);
 
@@ -217,6 +229,19 @@ export async function PATCH(
     } catch (error) {
       logError('Failed to update product', error);
 
+      if (error instanceof PriceConfigError) {
+        return NextResponse.json(
+          {
+            error: error.message,
+            code: error.code, // PRICE_CONFIG_ERROR
+            productId: error.productId,
+            currency: error.currency,
+            field: 'prices',
+          },
+          { status: 400 }
+        );
+      }
+
       if (error instanceof InvalidPayloadError) {
         const anyErr = error as any;
         return NextResponse.json(
@@ -288,6 +313,9 @@ export async function DELETE(
 ): Promise<NextResponse> {
   try {
     await requireAdminApi(request);
+    const csrfRes = requireAdminCsrf(request, 'admin:products:delete');
+    if (csrfRes) return csrfRes;
+
     const rawParams = await context.params;
     const parsedParams = productIdParamSchema.safeParse(rawParams);
 
