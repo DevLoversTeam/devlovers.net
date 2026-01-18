@@ -12,11 +12,15 @@ import { logError } from '@/lib/logging';
 import { OrderNotFoundError, InvalidPayloadError } from '@/lib/services/errors';
 import { refundOrder } from '@/lib/services/orders';
 import { orderIdParamSchema, orderSummarySchema } from '@/lib/validation/shop';
+import { guardBrowserSameOrigin } from '@/lib/security/origin';
 
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
+  const blocked = guardBrowserSameOrigin(request);
+  if (blocked) return blocked;
+
   try {
     await requireAdminApi(request);
     const csrfRes = requireAdminCsrf(request, 'admin:orders:refund');

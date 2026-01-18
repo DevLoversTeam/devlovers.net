@@ -12,6 +12,7 @@ import { parseAdminProductForm } from '@/lib/admin/parseAdminProductForm';
 import { logError } from '@/lib/logging';
 import { InvalidPayloadError, SlugConflictError } from '@/lib/services/errors';
 import { createProduct } from '@/lib/services/products';
+import { guardBrowserSameOrigin } from '@/lib/security/origin';
 
 type SaleRuleViolation = {
   currency: string;
@@ -79,6 +80,9 @@ function getSaleViolationFromFormData(
 }
 
 export async function POST(request: NextRequest) {
+  const blocked = guardBrowserSameOrigin(request);
+  if (blocked) return blocked;
+
   try {
     await requireAdminApi(request);
 

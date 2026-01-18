@@ -104,6 +104,7 @@ describe('P0-3.4 Stripe webhook: amount/currency mismatch (minor) must not set p
       makeReq('http://localhost/api/shop/checkout', checkoutBody, {
         'accept-language': 'uk-UA,uk;q=0.9',
         'idempotency-key': idemKey,
+        origin: 'http://localhost:3000',
       })
     );
 

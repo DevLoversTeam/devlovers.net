@@ -11,6 +11,7 @@ import {
 
 import { requireInternalJanitorAuth } from '@/lib/auth/internal-janitor';
 import { logError } from '@/lib/logging';
+import { guardNonBrowserOnly } from '@/lib/security/origin';
 
 export const runtime = 'nodejs';
 
@@ -261,6 +262,9 @@ async function acquireJobSlot(params: {
 }
 
 export async function POST(request: NextRequest) {
+  const blocked = guardNonBrowserOnly(request);
+  if (blocked) return blocked;
+
   const authRes = requireInternalJanitorAuth(request);
   if (authRes) return authRes;
 

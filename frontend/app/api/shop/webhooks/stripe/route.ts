@@ -19,6 +19,7 @@ import {
   rateLimitResponse,
 } from '@/lib/security/rate-limit';
 import { resolveStripeWebhookRateLimit } from '@/lib/security/stripe-webhook-rate-limit';
+import { guardNonBrowserOnly } from '@/lib/security/origin';
 
 const REFUND_FULLNESS_UNDETERMINED = 'REFUND_FULLNESS_UNDETERMINED' as const;
 
@@ -44,6 +45,10 @@ function busyRetry() {
       headers: { 'Retry-After': String(STRIPE_EVENT_RETRY_AFTER_SECONDS) },
     }
   );
+}
+
+export function OPTIONS() {
+  return NextResponse.json({ error: 'METHOD_NOT_ALLOWED' }, { status: 405 });
 }
 async function tryClaimStripeEvent(
   eventId: string
@@ -307,6 +312,9 @@ function shouldRestockFromWebhook(order: {
 }
 
 export async function POST(request: NextRequest) {
+  const blocked = guardNonBrowserOnly(request);
+  if (blocked) return blocked;
+
   let rawBody: string;
 
   try {

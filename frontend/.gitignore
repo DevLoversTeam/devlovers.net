@@ -47,3 +47,7 @@ next-env.d.ts
 CLAUDE.md
 docs/
 .claude
+
+!docs/
+!docs/security/
+!docs/security/origin-posture.md

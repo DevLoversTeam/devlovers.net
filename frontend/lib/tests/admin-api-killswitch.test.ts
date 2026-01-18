@@ -76,12 +76,13 @@ const cases: RouteCase[] = [
 
 function makeReq(path: string, method: string) {
   const url = `${BASE_URL}${path}`;
+  const origin = process.env.APP_ORIGIN ?? 'http://localhost:3000';
 
   // Intentionally invalid JSON payload to ensure kill-switch guard runs
   // BEFORE any req.json()/formData() parsing.
   const init: RequestInit = {
     method,
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', origin },
   };
 
   if (method !== 'GET' && method !== 'HEAD') {
@@ -148,6 +149,7 @@ describe('P0-7.1 Admin API kill-switch coverage (production)', () => {
     vi.stubEnv('NODE_ENV', 'production');
     // Treat anything except 'true' as disabled; empty string is explicitly disabled.
     vi.stubEnv('ENABLE_ADMIN_API', '');
+    vi.stubEnv('APP_ORIGIN', 'https://admin.example.test');
   });
 
   afterEach(() => {

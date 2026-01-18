@@ -10,6 +10,7 @@ import { logError, logWarn } from '@/lib/logging';
 import { resolveRequestLocale } from '@/lib/shop/request-locale';
 import { IdempotencyConflictError } from '@/lib/services/errors';
 import { MoneyValueError } from '@/db/queries/shop/orders';
+import { guardBrowserSameOrigin } from '@/lib/security/origin';
 import {
   InsufficientStockError,
   InvalidPayloadError,
@@ -153,6 +154,9 @@ async function readJsonBody(request: NextRequest): Promise<unknown> {
 }
 
 export async function POST(request: NextRequest) {
+  const blocked = guardBrowserSameOrigin(request);
+  if (blocked) return blocked;
+
   let body: unknown;
 
   try {

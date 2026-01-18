@@ -136,6 +136,7 @@ describe('P0-8.10.1 checkout concurrency: stock=1, two parallel checkouts', () =
           'Content-Type': 'application/json',
           'Accept-Language': 'en-US,en;q=0.9',
           'Idempotency-Key': idemKey,
+          Origin: 'http://localhost:3000',
         },
         body,
       });

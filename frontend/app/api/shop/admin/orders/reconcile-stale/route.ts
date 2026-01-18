@@ -14,10 +14,14 @@ import {
   isSameOrigin,
   verifyCsrfToken,
 } from '@/lib/security/csrf';
+import { guardBrowserSameOrigin } from '@/lib/security/origin';
 
 const DEFAULT_STALE_MINUTES = 60;
 
 export async function POST(request: NextRequest) {
+  const blocked = guardBrowserSameOrigin(request);
+  if (blocked) return blocked;
+
   try {
     // 1) Kill-switch + auth FIRST (no body parsing)
     await requireAdminApi(request);

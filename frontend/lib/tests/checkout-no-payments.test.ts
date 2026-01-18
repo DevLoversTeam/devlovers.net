@@ -1,5 +1,4 @@
 // frontend/lib/tests/checkout-no-payments.test.ts
-import { describe, it, expect, vi } from 'vitest';
 import crypto from 'crypto';
 import { eq, sql } from 'drizzle-orm';
 import { NextRequest } from 'next/server';
@@ -7,6 +6,19 @@ import { deriveTestIpFromIdemKey } from '@/lib/tests/helpers/ip';
 import { db } from '@/db';
 import { orders, products, productPrices } from '@/db/schema';
 import { toDbMoney } from '@/lib/shop/money';
+import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
+
+const __prevRateLimitDisabled = process.env.RATE_LIMIT_DISABLED;
+
+beforeAll(() => {
+  process.env.RATE_LIMIT_DISABLED = '1';
+});
+
+afterAll(() => {
+  if (__prevRateLimitDisabled === undefined)
+    delete process.env.RATE_LIMIT_DISABLED;
+  else process.env.RATE_LIMIT_DISABLED = __prevRateLimitDisabled;
+});
 
 vi.mock('@/lib/logging', async () => {
   const actual = await vi.importActual<any>('@/lib/logging');
@@ -178,6 +190,7 @@ async function postCheckout(params: {
       'accept-language': params.acceptLanguage ?? 'en',
       'idempotency-key': params.idemKey,
       'x-forwarded-for': deriveTestIpFromIdemKey(params.idemKey),
+      origin: 'http://localhost:3000',
     },
 
     body: JSON.stringify({ items: params.items }),

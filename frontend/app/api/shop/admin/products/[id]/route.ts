@@ -21,6 +21,7 @@ import {
   getAdminProductByIdWithPrices,
   updateProduct,
 } from '@/lib/services/products';
+import { guardBrowserSameOrigin } from '@/lib/security/origin';
 
 const productIdParamSchema = z.object({ id: z.string().uuid() });
 type SaleRuleViolation = {
@@ -135,6 +136,9 @@ export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
+  const blocked = guardBrowserSameOrigin(request);
+  if (blocked) return blocked;
+
   try {
     await requireAdminApi(request);
 
@@ -311,6 +315,9 @@ export async function DELETE(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
+  const blocked = guardBrowserSameOrigin(request);
+  if (blocked) return blocked;
+
   try {
     await requireAdminApi(request);
     const csrfRes = requireAdminCsrf(request, 'admin:products:delete');

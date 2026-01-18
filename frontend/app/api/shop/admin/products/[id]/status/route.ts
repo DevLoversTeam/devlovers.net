@@ -10,6 +10,7 @@ import { requireAdminCsrf } from '@/lib/security/admin-csrf';
 
 import { logError } from '@/lib/logging';
 import { toggleProductStatus } from '@/lib/services/products';
+import { guardBrowserSameOrigin } from '@/lib/security/origin';
 
 const productIdParamSchema = z.object({ id: z.string().uuid() });
 
@@ -17,6 +18,9 @@ export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
+  const blocked = guardBrowserSameOrigin(request);
+  if (blocked) return blocked;
+
   try {
     await requireAdminApi(request);
     const csrfRes = requireAdminCsrf(request, 'admin:products:status');
