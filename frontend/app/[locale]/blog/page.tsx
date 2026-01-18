@@ -3,6 +3,8 @@ import { getTranslations } from 'next-intl/server';
 import { client } from '@/client';
 import BlogFilters from '@/components/blog/BlogFilters';
 
+export const revalidate = 0;
+
 export async function generateMetadata({
   params,
 }: {
@@ -25,7 +27,7 @@ export default async function BlogPage({
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'blog' });
 
-  const posts = await client.fetch(
+  const posts = await client.withConfig({ useCdn: false }).fetch(
     groq`
       *[_type == "post" && defined(slug.current)]
         | order(publishedAt desc) {
@@ -62,7 +64,7 @@ export default async function BlogPage({
     `,
     { locale }
   );
-  const categories = await client.fetch(
+  const categories = await client.withConfig({ useCdn: false }).fetch(
     groq`
       *[_type == "category"] | order(orderRank asc) {
         _id,

@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
+import { usePathname, useRouter } from '@/i18n/routing';
 import BlogGrid from '@/components/blog/BlogGrid';
 import { Link } from '@/i18n/routing';
 
@@ -76,10 +77,14 @@ function plainTextFromPortableText(value?: PortableText): string {
   return value
     .filter(block => block?._type === 'block')
     .map(block =>
-      (block.children || []).map(child => child.text || '').join('')
+      (block.children || []).map(child => child.text || '').join(' ')
     )
-    .join('\n')
+    .join(' ')
     .trim();
+}
+
+function normalizeSearchText(value: string) {
+  return value.toLowerCase().replace(/\s+/g, ' ').trim();
 }
 
 function plainTextExcerpt(value?: PortableText): string {
@@ -103,6 +108,8 @@ export default function BlogFilters({
   const tNav = useTranslations('navigation');
   const locale = useLocale();
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   const [selectedAuthor, setSelectedAuthor] = useState<{
     name: string;
     norm: string;
@@ -131,7 +138,7 @@ export default function BlogFilters({
       return categories
         .map(category => ({
           norm: normalizeTag(category.title),
-          name: category.title,
+          name: category.title === 'Growth' ? 'Career' : category.title,
         }))
         .filter(category => category.norm);
     }
@@ -145,30 +152,48 @@ export default function BlogFilters({
       }
     }
     return Array.from(map.entries())
-      .map(([norm, name]) => ({ norm, name }))
+      .map(([norm, name]) => ({
+        norm,
+        name: name === 'Growth' ? 'Career' : name,
+      }))
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [posts, categories]);
   const categoryParam = useMemo(() => {
     return searchParams?.get('category') || '';
   }, [searchParams]);
+  const resolvedCategory = useMemo(() => {
+    const normParam = normalizeTag(categoryParam);
+    if (!normParam) return selectedCategory;
+    const matched = allCategories.find(category => category.norm === normParam);
+    return {
+      name: matched?.name || categoryParam,
+      norm: normParam,
+    };
+  }, [allCategories, categoryParam, selectedCategory]);
+  const searchQuery = useMemo(() => {
+    return (searchParams?.get('search') || '').trim();
+  }, [searchParams]);
+  const searchQueryLower = searchQuery.toLowerCase();
+  const didClearSearchRef = useRef(false);
 
   useEffect(() => {
-    const normParam = normalizeTag(categoryParam);
-    if (!normParam) {
-      setSelectedCategory(null);
+    if (didClearSearchRef.current) return;
+    if (!searchQuery) {
+      didClearSearchRef.current = true;
       return;
     }
-    const matchedCategory = allCategories.find(
-      category => category.norm === normParam
-    );
-    setSelectedCategory(prev => {
-      if (prev?.norm === normParam) return prev;
-      return {
-        name: matchedCategory?.name || categoryParam,
-        norm: normParam,
-      };
-    });
-  }, [allCategories, categoryParam]);
+    if (typeof performance === 'undefined') return;
+    const [navEntry] = performance.getEntriesByType('navigation');
+    const navType = (navEntry as PerformanceNavigationTiming | undefined)?.type;
+    if (navType !== 'reload') return;
+    const params = new URLSearchParams(searchParams?.toString() || '');
+    params.delete('search');
+    const nextPath = params.toString() ? `${pathname}?${params}` : pathname;
+    router.replace(nextPath);
+    didClearSearchRef.current = true;
+  }, [pathname, router, searchParams, searchQuery]);
+
+  // categoryParam is handled via resolvedCategory to avoid state updates in effects.
 
   const filteredPosts = useMemo(() => {
     return posts.filter(post => {
@@ -177,14 +202,27 @@ export default function BlogFilters({
         if (authorName !== selectedAuthor.norm) return false;
       }
 
-      if (selectedCategory) {
+      if (resolvedCategory) {
         const postCategories = (post.categories || []).map(normalizeTag);
-        if (!postCategories.includes(selectedCategory.norm)) return false;
+        if (!postCategories.includes(resolvedCategory.norm)) return false;
+      }
+
+      if (searchQueryLower) {
+        const titleText = normalizeSearchText(post.title);
+        const bodyText = normalizeSearchText(
+          plainTextFromPortableText(post.body)
+        );
+        if (
+          !titleText.includes(searchQueryLower) &&
+          !bodyText.includes(searchQueryLower)
+        ) {
+          return false;
+        }
       }
 
       return true;
     });
-  }, [posts, selectedAuthor, selectedCategory]);
+  }, [posts, resolvedCategory, selectedAuthor, searchQueryLower]);
 
   const selectedAuthorData = selectedAuthor?.data || null;
   const authorBioText = useMemo(() => {
@@ -193,13 +231,13 @@ export default function BlogFilters({
 
   return (
     <div className="mt-8">
-      {!selectedAuthor && featuredPost && (
-        <section className="mb-12">
-          <div className="grid gap-8 lg:grid-cols-[1fr_1fr] lg:items-center">
+        {!selectedAuthor && featuredPost && (
+          <section className="mb-12">
+          <div className="grid gap-8 md:grid-cols-[0.9fr_1fr] md:items-center lg:grid-cols-[1fr_1fr]">
             {featuredPost.mainImage && (
               <Link
                 href={`/blog/${featuredPost.slug.current}`}
-                className="group relative block aspect-[4/3] overflow-hidden rounded-3xl shadow-[0_12px_30px_rgba(0,0,0,0.12)]"
+                className="group relative block aspect-[4/3] overflow-hidden rounded-3xl shadow-[0_12px_30px_rgba(0,0,0,0.12)] md:aspect-[5/4] lg:aspect-[4/3]"
               >
                 <Image
                   src={featuredPost.mainImage}
@@ -300,7 +338,7 @@ export default function BlogFilters({
               type="button"
               onClick={() => setSelectedCategory(null)}
               className={
-                !selectedCategory
+                !resolvedCategory
                   ? 'rounded-full border border-[#ff00ff] bg-[#ff00ff]/10 px-4 py-2 text-sm font-medium text-[#ff00ff] transition'
                   : 'rounded-full border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800'
               }
@@ -319,7 +357,7 @@ export default function BlogFilters({
                   )
                 }
                 className={
-                  selectedCategory?.norm === category.norm
+                  resolvedCategory?.norm === category.norm
                     ? 'rounded-full border border-[#ff00ff] bg-[#ff00ff]/10 px-4 py-2 text-sm font-medium text-[#ff00ff] transition'
                     : 'rounded-full border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800'
                 }
