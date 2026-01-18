@@ -11,6 +11,7 @@ import { db } from '@/db';
 import { products, productPrices } from '@/db/schema';
 import type { CurrencyCode } from '@/lib/shop/currency';
 import { currencyValues } from '@/lib/shop/currency';
+import { issueCsrfToken } from '@/lib/security/csrf';
 
 export const dynamic = 'force-dynamic';
 
@@ -75,6 +76,7 @@ export default async function EditProductPage({
               : parseMajorToMinor(product.originalPrice),
         },
       ];
+  const csrfToken = issueCsrfToken('admin:products:update');
 
   return (
     <>
@@ -83,6 +85,7 @@ export default async function EditProductPage({
         <ProductForm
           mode="edit"
           productId={product.id}
+          csrfToken={csrfToken}
           initialValues={{
             title: product.title,
             slug: product.slug,

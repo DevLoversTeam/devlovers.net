@@ -12,6 +12,7 @@ import {
   SlugConflictError,
   PriceConfigError,
 } from '@/lib/services/errors';
+import { requireAdminCsrf } from '@/lib/security/admin-csrf';
 
 import { parseAdminProductForm } from '@/lib/admin/parseAdminProductForm';
 import { logError } from '@/lib/logging';
@@ -148,6 +149,13 @@ export async function PATCH(
     }
 
     const formData = await request.formData();
+    const csrfRes = requireAdminCsrf(
+      request,
+      'admin:products:update',
+      formData
+    );
+    if (csrfRes) return csrfRes;
+
     // PATCH inside PATCH() right after: const formData = await request.formData();
     const saleViolationFromForm = getSaleViolationFromFormData(formData);
 
@@ -305,6 +313,9 @@ export async function DELETE(
 ): Promise<NextResponse> {
   try {
     await requireAdminApi(request);
+    const csrfRes = requireAdminCsrf(request, 'admin:products:delete');
+    if (csrfRes) return csrfRes;
+
     const rawParams = await context.params;
     const parsedParams = productIdParamSchema.safeParse(rawParams);
 
