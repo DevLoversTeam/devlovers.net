@@ -38,6 +38,8 @@ export default function BlogCard({
       year: 'numeric',
     }).format(date);
   }, [post.publishedAt, locale]);
+  const categoryLabel =
+    post.categories?.[0] === 'Growth' ? 'Career' : post.categories?.[0];
 
   return (
     <article
@@ -77,15 +79,15 @@ export default function BlogCard({
         </Link>
       )}
 
-      <div className="pt-8 flex flex-col flex-1">
+      <div className="pt-2 px-1 flex flex-col flex-1">
         <Link
           href={`/blog/${post.slug.current}`}
           className="
     block
-    text-[22px] md:text-[26px]
+    text-[18px] md:text-[22px]
     font-semibold
     tracking-tight
-    leading-[1.2]
+    leading-[1.15]
     text-gray-950 dark:text-gray-100
     transition
     hover:text-[#ff00ff]
@@ -100,33 +102,39 @@ export default function BlogCard({
         </Link>
 
         {excerpt && (
-          <p className="mt-4 text-[16px] md:text-[17px] leading-[1.65] text-gray-700 dark:text-gray-300 max-w-[60ch] line-clamp-3">
+          <p className="mt-2 text-[15px] md:text-[16px] leading-[1.55] text-gray-700 dark:text-gray-300 max-w-[60ch] line-clamp-3">
             {excerpt}
           </p>
         )}
 
-        <div className="mt-auto pt-6">
-          {post.author?.name && (
-            <div className="mb-3 flex items-center gap-2 text-[13px] md:text-[14px] text-gray-500 dark:text-gray-400">
-              <button
-                type="button"
-                onClick={() => post.author && onAuthorSelect(post.author)}
-                className="flex items-center gap-2 hover:text-[#ff00ff] hover:underline underline-offset-4 transition"
-              >
-                {post.author?.image && (
-                  <span className="relative h-6 w-6 overflow-hidden rounded-full">
-                    <Image
-                      src={post.author.image}
-                      alt={post.author.name || 'Author'}
-                      fill
-                      className="object-cover"
-                    />
-                  </span>
-                )}
-                {post.author.name}
-              </button>
-              {formattedDate && <span>·</span>}
+        <div className="mt-auto pt-3">
+          {(post.author?.name || formattedDate || categoryLabel) && (
+            <div className="mb-2 flex flex-wrap items-center gap-2 text-[12px] md:text-[13px] text-gray-500 dark:text-gray-400">
+              {post.author?.name && (
+                <button
+                  type="button"
+                  onClick={() => post.author && onAuthorSelect(post.author)}
+                  className="flex items-center gap-2 hover:text-[#ff00ff] hover:underline underline-offset-4 transition"
+                >
+                  {post.author?.image && (
+                    <span className="relative h-6 w-6 overflow-hidden rounded-full">
+                      <Image
+                        src={post.author.image}
+                        alt={post.author.name || 'Author'}
+                        fill
+                        className="object-cover"
+                      />
+                    </span>
+                  )}
+                  {post.author.name}
+                </button>
+              )}
+              {post.author?.name && formattedDate && <span>·</span>}
               {formattedDate && <span>{formattedDate}</span>}
+              {(formattedDate || post.author?.name) && categoryLabel && (
+                <span>·</span>
+              )}
+              {categoryLabel && <span>{categoryLabel}</span>}
             </div>
           )}
 
