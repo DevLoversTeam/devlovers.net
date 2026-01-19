@@ -1,11 +1,14 @@
 'use client';
 
 import { TrendingUp } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { User } from './types';
 
 export function LeaderboardTable({ users }: { users: User[] }) {
+  const t = useTranslations('leaderboard');
+
   return (
-    <div className="w-full bg-white/70 dark:bg-slate-900/60 backdrop-blur-md rounded-2xl shadow-xl border border-slate-200/60 dark:border-slate-700/60 overflow-hidden">
+    <div className="w-full bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 dark:border-slate-700/50 overflow-hidden">
       <table className="w-full text-left border-collapse">
         <caption className="sr-only">
           Leaderboard ranking for other participants
@@ -15,57 +18,60 @@ export function LeaderboardTable({ users }: { users: User[] }) {
           <tr>
             <th
               scope="col"
-              className="px-6 py-4 text-center text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-[16%]"
+              className="px-6 py-5 text-center text-xs font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-widest w-[15%]"
             >
-              Rank
+              {t('rank')}
             </th>
             <th
               scope="col"
-              className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-[58%]"
+              className="px-6 py-5 text-xs font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-widest w-[60%]"
             >
-              UserName
+              {t('user')}
             </th>
             <th
               scope="col"
-              className="px-6 py-4 text-right text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-[25%]"
+              className="px-6 py-5 text-right text-xs font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-widest w-[25%]"
             >
-              Points
+              {t('score')}
             </th>
           </tr>
         </thead>
 
-        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+        <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
           {users.map(user => (
             <tr
               key={user.id}
-              className="hover:bg-slate-50/80 dark:hover:bg-slate-800/60 transition-colors group"
+              className="group transition-colors hover:bg-white/80 dark:hover:bg-slate-800/80"
             >
-              <td className="px-6 py-4 text-center font-mono font-semibold text-slate-400 dark:text-slate-500 group-hover:text-slate-900 dark:group-hover:text-slate-200">
-                {user.rank}
+              <td className="px-6 py-4 text-center font-bold text-slate-500 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
+                #{user.rank}
               </td>
 
               <td className="px-6 py-4">
                 <div className="flex items-center gap-4">
                   <div
-                    className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-sm font-bold text-slate-600 dark:text-slate-300 ring-2 ring-transparent group-hover:ring-slate-200 dark:group-hover:ring-slate-600 transition-all"
+                    className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center text-sm font-bold text-slate-600 dark:text-slate-300 shadow-inner group-hover:scale-110 transition-transform duration-300"
                     aria-hidden="true"
                   >
-                    <span>{user.username.slice(0, 1).toUpperCase()}</span>
+                    {user.username.slice(0, 1).toUpperCase()}
                   </div>
+
                   <div className="flex flex-col">
-                    <span className="font-bold text-slate-700 dark:text-slate-200 text-sm group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                    <span className="font-bold text-slate-700 dark:text-slate-200 text-sm group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                       {user.username}
                     </span>
-                    <span className="flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+                    <span className="flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wide opacity-0 group-hover:opacity-100 transition-opacity">
                       <TrendingUp className="w-3 h-3" aria-hidden="true" />
-                      Rising
+                      {t('rising')}
                     </span>
                   </div>
                 </div>
               </td>
 
-              <td className="px-6 py-4 text-right font-mono font-bold text-slate-800 dark:text-slate-100">
-                {user.points.toLocaleString()}
+              <td className="px-6 py-4 text-right">
+                <span className="font-mono font-bold text-slate-800 dark:text-slate-100 group-hover:scale-105 inline-block transition-transform">
+                  {user.points}
+                </span>
               </td>
             </tr>
           ))}

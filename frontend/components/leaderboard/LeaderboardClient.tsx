@@ -1,7 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-import { LeaderboardTabs } from './LeaderboardTabs';
+import { useTranslations } from 'next-intl';
 import { LeaderboardPodium } from './LeaderboardPodium';
 import { LeaderboardTable } from './LeaderboardTable';
 import { User } from './types';
@@ -13,7 +12,7 @@ interface LeaderboardClientProps {
 export default function LeaderboardClient({
   initialUsers,
 }: LeaderboardClientProps) {
-  const [activeTab, setActiveTab] = useState('Overall');
+  const t = useTranslations('leaderboard');
 
   const usersWithPoints = initialUsers.filter(user => user.points > 0);
   const hasResults = usersWithPoints.length > 0;
@@ -37,7 +36,7 @@ export default function LeaderboardClient({
       </div>
 
       <div className="relative max-w-4xl mx-auto px-4 py-12 flex flex-col items-center z-10">
-        <header className="text-center mb-12 animate-in fade-in slide-in-from-top-4 duration-700">
+        <header className="text-center mb-10 animate-in fade-in slide-in-from-top-4 duration-700">
           <div className="inline-flex items-center justify-center p-3 mb-6 rounded-full bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm shadow-sm ring-1 ring-slate-200/50 dark:ring-slate-700/50">
             <span className="text-2xl mr-2" role="img" aria-label="Trophy">
               🏆
@@ -46,40 +45,35 @@ export default function LeaderboardClient({
               Champions Arena
             </span>
           </div>
-          <h1 className="text-4xl md:text-6xl font-extrabold mb-4 tracking-tight text-slate-900 dark:text-white drop-shadow-sm">
-            Community{' '}
+
+          <h1 className="text-5xl md:text-7xl font-black mb-6 tracking-tighter drop-shadow-sm">
             <span className="bg-gradient-to-r from-sky-500 via-indigo-500 to-pink-500 bg-clip-text text-transparent">
-              Leaderboard
+              {t('title')}
             </span>
           </h1>
-          <p className="text-slate-600 dark:text-slate-400 font-medium text-lg">
-            Top performers of the community.
+
+          <p className="text-slate-600 dark:text-slate-400 font-medium text-lg max-w-md mx-auto leading-relaxed">
+            {t('subtitle')}
           </p>
         </header>
 
-        <div className="mb-10 w-full flex justify-center">
-          <LeaderboardTabs activeTab={activeTab} onTabChange={setActiveTab} />
-        </div>
-
-        <section
-          className="w-full flex flex-col items-center"
-          role="tabpanel"
-          id="leaderboard-panel"
-          aria-label={`Results for ${activeTab}`}
-        >
-          <div className="w-full mb-12">
+        <div className="w-full flex flex-col items-center">
+          <div className="w-full mb-16">
             {hasResults ? (
               <LeaderboardPodium topThree={topThree} />
             ) : (
               <div className="text-center py-16" role="status">
-                <p className="text-6xl mb-4" aria-hidden="true">
+                <p
+                  className="text-6xl mb-4 grayscale opacity-50"
+                  aria-hidden="true"
+                >
                   🏆
                 </p>
                 <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-2">
-                  No results yet
+                  {t('noResults')}
                 </h2>
                 <p className="text-slate-600 dark:text-slate-400">
-                  Be the first to complete a quiz and claim the top spot!
+                  {t('beFirst')}
                 </p>
               </div>
             )}
@@ -88,7 +82,7 @@ export default function LeaderboardClient({
           <div className="w-full animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
             {hasResults && <LeaderboardTable users={otherUsers} />}
           </div>
-        </section>
+        </div>
       </div>
     </div>
   );

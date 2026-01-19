@@ -280,5 +280,15 @@
     "policyLink": "Privacy Policy",
     "accept": "Accept Cookies",
     "decline": "Decline"
+  },
+  "leaderboard": {
+    "title": "Leaderboard",
+    "subtitle": "Top performers of all time. Compete, learn, and rise to the top!",
+    "noResults": "No results yet",
+    "beFirst": "Be the first to complete a quiz and claim the top spot!",
+    "rank": "Rank",
+    "user": "User",
+    "score": "Score",
+    "rising": "Rising"
   }
 }

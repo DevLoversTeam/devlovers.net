@@ -157,5 +157,15 @@
     "policyLink": "Politykę Prywatności",
     "accept": "Zaakceptuj",
     "decline": "Odrzuć"
+  },
+  "leaderboard": {
+    "title": "Ranking",
+    "subtitle": "Najlepsi uczestnicy wszech czasów. Rywalizuj, ucz się i zwyciężaj!",
+    "noResults": "Brak wyników",
+    "beFirst": "Bądź pierwszy, który ukończy quiz i zajmie pierwsze miejsce!",
+    "rank": "Miejsce",
+    "user": "Użytkownik",
+    "score": "Wynik",
+    "rising": "Wzrost"
   }
 }
