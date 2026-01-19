@@ -44,9 +44,9 @@ export function CookieBanner() {
     <div className="fixed bottom-0 left-0 right-0 z-[100] p-4 md:p-6 animate-in slide-in-from-bottom-full fade-in duration-700">
       <div className="mx-auto max-w-4xl rounded-2xl border border-gray-200 bg-white/90 p-5 shadow-2xl backdrop-blur-md dark:border-gray-800 dark:bg-gray-900/90 md:flex md:items-center md:justify-between md:gap-6">
         <div className="mb-4 md:mb-0 md:flex-1">
-          <h3 className="mb-1 text-lg font-semibold text-gray-900 dark:text-white">
+          <div className="mb-1 text-lg font-semibold text-gray-900 dark:text-white">
             {t('title')}
-          </h3>
+          </div>
           <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-300">
             {t('description')}{' '}
             <Link

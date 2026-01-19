@@ -22,69 +22,61 @@ export function LeaderboardPodium({ topThree }: { topThree: User[] }) {
             key={user.id}
             className={cn(
               'flex flex-col items-center transition-all duration-500 relative',
-
               isFirst ? 'order-2 z-10 -mt-8' : 'z-0',
               isSecond ? 'order-1' : '',
               isThird ? 'order-3' : ''
             )}
           >
-            <article className="flex flex-col items-center">
+            <div className="flex flex-col items-center">
               <div className="relative mb-4 group cursor-pointer">
                 {isFirst && (
                   <Crown
-                    className="absolute -top-12 left-1/2 -translate-x-1/2 w-10 h-10 text-yellow-500 fill-yellow-500 animate-bounce drop-shadow-lg"
-                    strokeWidth={1.5}
+                    className="absolute -top-12 left-1/2 -translate-x-1/2 w-10 h-10 text-yellow-400 animate-bounce drop-shadow-lg"
                     aria-hidden="true"
                   />
                 )}
-
                 <div
                   className={cn(
-                    'relative flex items-center justify-center rounded-full overflow-hidden shadow-2xl transition-transform duration-300 group-hover:scale-105 border-4',
+                    'relative rounded-full p-1 transition-transform duration-300 group-hover:scale-105',
                     isFirst
-                      ? 'w-28 h-28 border-yellow-400 dark:border-yellow-500'
+                      ? 'bg-gradient-to-tr from-yellow-300 via-yellow-100 to-yellow-500 shadow-yellow-500/50 shadow-lg'
                       : '',
                     isSecond
-                      ? 'w-20 h-20 border-slate-300 dark:border-slate-500'
+                      ? 'bg-gradient-to-tr from-slate-300 via-slate-100 to-slate-400 shadow-slate-400/50 shadow-md'
                       : '',
                     isThird
-                      ? 'w-20 h-20 border-orange-300 dark:border-orange-400'
-                      : '',
-                    'bg-white dark:bg-slate-800'
+                      ? 'bg-gradient-to-tr from-orange-300 via-orange-100 to-orange-400 shadow-orange-400/50 shadow-md'
+                      : ''
                   )}
                 >
-                  {user.avatar ? (
+                  <div className="relative w-16 h-16 md:w-20 md:h-20 rounded-full overflow-hidden border-2 border-white dark:border-slate-800 bg-slate-200 dark:bg-slate-800">
                     <Image
                       src={user.avatar}
                       alt={`${user.username}'s avatar`}
-                      width={64}
-                      height={64}
-                      className="w-full h-full object-cover"
+                      fill
+                      className="object-cover"
                     />
-                  ) : (
-                    <span className="text-2xl font-bold text-slate-700 dark:text-slate-200">
-                      {user.username.slice(0, 2).toUpperCase()}
-                    </span>
-                  )}
+                  </div>
                 </div>
 
                 <div
                   className={cn(
-                    'absolute -bottom-3 left-1/2 -translate-x-1/2 flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold border-2 border-white dark:border-slate-900 shadow-md',
-                    isFirst ? 'bg-yellow-500 text-white' : '',
-                    isSecond ? 'bg-slate-400 text-white' : '',
-                    isThird ? 'bg-orange-400 text-white' : ''
+                    'absolute -bottom-3 left-1/2 -translate-x-1/2 flex items-center justify-center w-8 h-8 rounded-full font-bold border-2 border-white dark:border-slate-900 shadow-md',
+                    isFirst
+                      ? 'bg-yellow-500 text-white'
+                      : isSecond
+                        ? 'bg-slate-400 text-white'
+                        : 'bg-orange-400 text-white'
                   )}
-                  aria-label={`Rank ${user.rank}`}
                 >
                   {user.rank}
                 </div>
               </div>
 
               <div className="text-center mb-3">
-                <h3 className="font-bold text-slate-800 dark:text-slate-100 text-base mb-1 truncate max-w-[120px]">
+                <div className="font-bold text-slate-800 dark:text-slate-100 text-base mb-1 truncate max-w-[120px]">
                   {user.username}
-                </h3>
+                </div>
                 <div className="font-mono font-bold text-xl text-slate-900 dark:text-white tracking-tight">
                   {user.points}{' '}
                   <span className="text-xs font-normal text-slate-500">
@@ -105,11 +97,11 @@ export function LeaderboardPodium({ topThree }: { topThree: User[] }) {
                     ? 'h-24 border-slate-300/30 dark:border-slate-500/30'
                     : '',
                   isThird
-                    ? 'h-16 border-orange-300/30 dark:border-orange-500/30'
+                    ? 'h-20 border-orange-300/30 dark:border-orange-500/30'
                     : ''
                 )}
               />
-            </article>
+            </div>
           </li>
         );
       })}

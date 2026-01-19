@@ -54,7 +54,7 @@ export function AppMobileMenu({
         className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
         aria-label="Toggle menu"
         aria-expanded={open ? 'true' : 'false'}
-        aria-controls="app-mobile-nav"
+        aria-controls={open ? 'app-mobile-nav' : undefined}
       >
         {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
       </button>
