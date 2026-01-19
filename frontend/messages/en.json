@@ -281,6 +281,20 @@
     "accept": "Accept Cookies",
     "decline": "Decline"
   },
+  "leaderboard": {
+    "title": "Leaderboard",
+    "subtitle": "Top performers of all time. Compete, learn, and rise to the top!",
+    "noResults": "No results yet",
+    "beFirst": "Be the first to complete a quiz and claim the top spot!",
+    "rank": "Rank",
+    "user": "User",
+    "score": "Score",
+    "rising": "Rising",
+    "championsArena": "Champions Arena",
+    "topThreeLabel": "Top 3 Leaders",
+    "pts": "pts",
+    "tableCaption": "Leaderboard ranking for other participants"
+  },
   "auth": {
     "login": {
       "title": "Log in",
