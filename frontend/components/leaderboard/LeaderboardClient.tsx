@@ -42,7 +42,7 @@ export default function LeaderboardClient({
               🏆
             </span>
             <span className="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
-              Champions Arena
+              {t('championsArena')}
             </span>
           </div>
 

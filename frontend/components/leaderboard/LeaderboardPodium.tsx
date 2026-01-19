@@ -2,14 +2,17 @@
 
 import Image from 'next/image';
 import { Crown } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { User } from './types';
 
 export function LeaderboardPodium({ topThree }: { topThree: User[] }) {
+  const t = useTranslations('leaderboard');
+
   return (
     <ol
       className="flex items-end justify-center gap-2 md:gap-8 pb-4 pt-16 min-h-[340px] list-none m-0 p-0"
-      aria-label="Top 3 Leaders"
+      aria-label={t('topThreeLabel')}
     >
       {topThree.map(user => {
         if (!user) return null;
@@ -76,7 +79,8 @@ export function LeaderboardPodium({ topThree }: { topThree: User[] }) {
                 </div>
                 <div className="inline-block px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
                   <div className="font-mono font-bold text-xs md:text-sm text-slate-700 dark:text-slate-300">
-                    {user.points} <span className="text-slate-400">pts</span>
+                    {user.points}{' '}
+                    <span className="text-slate-400">{t('pts')}</span>
                   </div>
                 </div>
               </div>

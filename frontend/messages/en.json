@@ -289,6 +289,111 @@
     "rank": "Rank",
     "user": "User",
     "score": "Score",
-    "rising": "Rising"
+    "rising": "Rising",
+    "championsArena": "Champions Arena",
+    "topThreeLabel": "Top 3 Leaders",
+    "pts": "pts",
+    "tableCaption": "Leaderboard ranking for other participants"
+  },
+  "auth": {
+    "login": {
+      "title": "Log in",
+      "submit": "Log in",
+      "submitting": "Logging in...",
+      "noAccount": "Don't have an account?",
+      "signupLink": "Sign up",
+      "forgotPassword": "Forgot password?",
+      "errors": {
+        "invalidCredentials": "Invalid email or password",
+        "emailNotVerified": "Your email address is not verified. Please check your inbox.",
+        "networkError": "Network error. Please check your connection and try again.",
+        "resendFailed": "Failed to resend verification email. Please try again."
+      },
+      "resendVerification": "Resend verification email",
+      "verificationSent": "Verification successfully sent to"
+    },
+    "signup": {
+      "title": "Sign up",
+      "submit": "Sign up",
+      "submitting": "Signing up...",
+      "hasAccount": "Already have an account?",
+      "loginLink": "Log in",
+      "errors": {
+        "signupFailed": "Failed to sign up. Please try again.",
+        "networkError": "Network error. Please check your connection and try again."
+      },
+      "verificationSent": "We've sent a verification email to",
+      "checkInbox": "Please check your inbox and click the verification link to activate your account.",
+      "goToLogin": "Go to login"
+    },
+    "forgotPassword": {
+      "title": "Reset password",
+      "submit": "Send reset link",
+      "submitting": "Sending...",
+      "errors": {
+        "sendFailed": "Failed to send reset email. Please try again.",
+        "networkError": "Network error. Please check your connection."
+      },
+      "emailSent": "We've sent a password reset link to",
+      "checkInbox": "Please check your inbox."
+    },
+    "resetPassword": {
+      "title": "Set new password",
+      "submit": "Update password",
+      "submitting": "Updating...",
+      "errors": {
+        "resetFailed": "Failed to reset password. The link may be invalid or expired.",
+        "networkError": "Network error. Please try again."
+      },
+      "success": "Your password has been updated successfully."
+    },
+    "fields": {
+      "email": "Email",
+      "password": "Password",
+      "name": "Name",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
+      "show": "Show",
+      "hide": "Hide"
+    },
+    "divider": "or"
+  },
+  "contacts": {
+    "metaTitle": "Contacts | DevLovers",
+    "metaDescription": "Get in touch with the DevLovers team for questions, feedback, or collaboration.",
+    "title": "Contacts",
+    "subtitle": "We'd love to hear from you!",
+    "email": "Email:",
+    "linkedin": "LinkedIn:",
+    "github": "GitHub:"
+  },
+  "dashboard": {
+    "metaTitle": "Dashboard | DevLovers",
+    "metaDescription": "Track your progress and quiz performance.",
+    "title": "Dashboard",
+    "subtitle": "Welcome back to your training ground.",
+    "supportLink": "Support & Feedback",
+    "profile": {
+      "defaultName": "Developer",
+      "defaultRole": "user",
+      "totalPoints": "Total Points",
+      "joined": "Joined"
+    },
+    "stats": {
+      "title": "Quiz Statistics",
+      "noActivity": "Ready to level up? Challenge yourself with a new quiz.",
+      "startQuiz": "Start a Quiz",
+      "attempts": "Attempts",
+      "avgScore": "Avg Score",
+      "continueLearning": "Continue Learning"
+    },
+    "quizSaved": {
+      "title": "Quiz result saved!",
+      "scored": "You scored",
+      "pointsAwarded": "+{points} points added to rating",
+      "noPoints": "No points awarded (result not improved)",
+      "viewLeaderboard": "View leaderboard",
+      "tryAgain": "Try again"
+    }
   }
 }

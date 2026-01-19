@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/routing";
 import { Button } from "@/components/ui/button";
 import { AuthShell } from "@/components/auth/AuthShell";
@@ -20,6 +21,7 @@ export function LoginForm({
     locale,
     returnTo,
 }: LoginFormProps) {
+    const t = useTranslations("auth.login");
     const [loading, setLoading] = useState(false);
     const [errorMessage, setErrorMessage] =
         useState<string | null>(null);
@@ -58,11 +60,9 @@ export function LoginForm({
                 setErrorCode(data?.code ?? null);
 
                 if (data?.code === "EMAIL_NOT_VERIFIED") {
-                    setErrorMessage(
-                        "Your email address is not verified. Please check your inbox."
-                    );
+                    setErrorMessage(t("errors.emailNotVerified"));
                 } else {
-                    setErrorMessage("Invalid email or password");
+                    setErrorMessage(t("errors.invalidCredentials"));
                 }
                 return;
             }
@@ -71,9 +71,7 @@ export function LoginForm({
                 returnTo || `/${locale}/dashboard`;
         } catch (err) {
             console.error("Login request failed:", err);
-            setErrorMessage(
-                "Network error. Please check your connection and try again."
-            );
+            setErrorMessage(t("errors.networkError"));
             setErrorCode(null);
         } finally {
             setLoading(false);
@@ -94,10 +92,7 @@ export function LoginForm({
 
             if (!res.ok) {
                 setErrorCode(data?.code ?? "RESEND_FAILED");
-                setErrorMessage(
-                    data?.error ??
-                    "Failed to resend verification email. Please try again."
-                );
+                setErrorMessage(data?.error ?? t("errors.resendFailed"));
                 return;
             }
 
@@ -107,18 +102,16 @@ export function LoginForm({
         } catch (err) {
             console.error("Resend verification failed:", err);
             setErrorCode("NETWORK_ERROR");
-            setErrorMessage(
-                "Network error. Please check your connection and try again."
-            );
+            setErrorMessage(t("errors.networkError"));
         }
     }
 
     return (
         <AuthShell
-            title="Log in"
+            title={t("title")}
             footer={
                 <p className="text-sm text-gray-600">
-                    Don’t have an account?{" "}
+                    {t("noAccount")}{" "}
                     <Link
                         href={
                             returnTo
@@ -129,7 +122,7 @@ export function LoginForm({
                         }
                         className="underline"
                     >
-                        Sign up
+                        {t("signupLink")}
                     </Link>
                 </p>
             }
@@ -152,7 +145,7 @@ export function LoginForm({
                         }
                         className="text-sm underline text-gray-600"
                     >
-                        Forgot password?
+                        {t("forgotPassword")}
                     </Link>
                 </div>
 
@@ -161,7 +154,7 @@ export function LoginForm({
                         message={errorMessage}
                         actionLabel={
                             errorCode === "EMAIL_NOT_VERIFIED"
-                                ? "Resend verification email"
+                                ? t("resendVerification")
                                 : undefined
                         }
                         onAction={
@@ -176,7 +169,7 @@ export function LoginForm({
                     <AuthSuccessBanner
                         message={
                             <>
-                                Verification successfully sent to{" "}
+                                {t("verificationSent")}{" "}
                                 <strong>{email}</strong>
                             </>
                         }
@@ -188,7 +181,7 @@ export function LoginForm({
                     disabled={loading}
                     className="w-full"
                 >
-                    {loading ? "Logging in..." : "Log in"}
+                    {loading ? t("submitting") : t("submit")}
                 </Button>
             </form>
         </AuthShell>
