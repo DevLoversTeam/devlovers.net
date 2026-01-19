@@ -164,6 +164,23 @@
   }
 }
 
+@keyframes progress {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+@keyframes shrink {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
 /* Shop theme: scoped overrides (must not affect platform pages) */
 .shop-scope {
   /* keep shop rounding slightly tighter than platform */
