@@ -83,15 +83,34 @@ export function LoginForm({
     async function resendVerification() {
         if (!email) return;
 
-        await fetch("/api/auth/resend-verification", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email }),
-        });
+        try {
+            const res = await fetch("/api/auth/resend-verification", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email }),
+            });
 
-        setVerificationSent(true);
-        setErrorCode(null);
-        setErrorMessage(null);
+            const data = await res.json().catch(() => null);
+
+            if (!res.ok) {
+                setErrorCode(data?.code ?? "RESEND_FAILED");
+                setErrorMessage(
+                    data?.error ??
+                    "Failed to resend verification email. Please try again."
+                );
+                return;
+            }
+
+            setVerificationSent(true);
+            setErrorCode(null);
+            setErrorMessage(null);
+        } catch (err) {
+            console.error("Resend verification failed:", err);
+            setErrorCode("NETWORK_ERROR");
+            setErrorMessage(
+                "Network error. Please check your connection and try again."
+            );
+        }
     }
 
     return (
