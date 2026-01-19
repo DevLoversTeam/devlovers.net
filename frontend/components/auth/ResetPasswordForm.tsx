@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { AuthErrorBanner } from "@/components/auth/AuthErrorBanner";
@@ -14,6 +15,7 @@ type ResetPasswordFormProps = {
 export function ResetPasswordForm({
     token,
 }: ResetPasswordFormProps) {
+    const t = useTranslations("auth.resetPassword");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
@@ -43,28 +45,22 @@ export function ResetPasswordForm({
             );
 
             if (!res.ok) {
-                setError(
-                    "Failed to reset password. The link may be invalid or expired."
-                );
+                setError(t("errors.resetFailed"));
                 return;
             }
 
             setSuccess(true);
         } catch {
-            setError(
-                "Network error. Please try again."
-            );
+            setError(t("errors.networkError"));
         } finally {
             setLoading(false);
         }
     }
 
     return (
-        <AuthShell title="Set new password">
+        <AuthShell title={t("title")}>
             {success ? (
-                <AuthSuccessBanner
-                    message="Your password has been updated successfully."
-                />
+                <AuthSuccessBanner message={t("success")} />
             ) : (
                 <form onSubmit={onSubmit} className="space-y-4">
                     <PasswordField minLength={8} />
@@ -78,9 +74,7 @@ export function ResetPasswordForm({
                         disabled={loading}
                         className="w-full"
                     >
-                        {loading
-                            ? "Updating..."
-                            : "Update password"}
+                        {loading ? t("submitting") : t("submit")}
                     </Button>
                 </form>
             )}

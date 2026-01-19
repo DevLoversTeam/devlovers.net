@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { AuthErrorBanner } from "@/components/auth/AuthErrorBanner";
@@ -8,6 +9,7 @@ import { AuthSuccessBanner } from "@/components/auth/AuthSuccessBanner";
 import { EmailField } from "@/components/auth/fields/EmailField";
 
 export function ForgotPasswordForm() {
+    const t = useTranslations("auth.forgotPassword");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [emailSent, setEmailSent] = useState(false);
@@ -37,34 +39,30 @@ export function ForgotPasswordForm() {
             );
 
             if (!res.ok) {
-                setError(
-                    "Failed to send reset email. Please try again."
-                );
+                setError(t("errors.sendFailed"));
                 return;
             }
 
             setEmailSent(true);
         } catch {
-            setError(
-                "Network error. Please check your connection."
-            );
+            setError(t("errors.networkError"));
         } finally {
             setLoading(false);
         }
     }
 
     return (
-        <AuthShell title="Reset password">
+        <AuthShell title={t("title")}>
             {emailSent ? (
                 <AuthSuccessBanner
                     message={
                         <>
                             <p>
-                                We’ve sent a password reset link to{" "}
+                                {t("emailSent")}{" "}
                                 <strong>{email}</strong>.
                             </p>
                             <p className="mt-2">
-                                Please check your inbox.
+                                {t("checkInbox")}
                             </p>
                         </>
                     }
@@ -82,9 +80,7 @@ export function ForgotPasswordForm() {
                         disabled={loading}
                         className="w-full"
                     >
-                        {loading
-                            ? "Sending..."
-                            : "Send reset link"}
+                        {loading ? t("submitting") : t("submit")}
                     </Button>
                 </form>
             )}

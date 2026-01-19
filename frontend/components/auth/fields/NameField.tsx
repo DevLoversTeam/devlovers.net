@@ -1,17 +1,21 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 type NameFieldProps = {
     name?: string;
-    placeholder?: string;
 };
 
 export function NameField({
     name = "name",
-    placeholder = "Name",
 }: NameFieldProps) {
+    const t = useTranslations("auth.fields");
+
     return (
         <input
             name={name}
             type="text"
-            placeholder={placeholder}
+            placeholder={t("name")}
             required
             className="w-full rounded border px-3 py-2"
         />
