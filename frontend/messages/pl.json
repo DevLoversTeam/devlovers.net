@@ -153,9 +153,110 @@
   },
   "CookieBanner": {
     "title": "🍪 Dbamy o Twoją prywatność",
-    "description": "Używamy plików cookie, aby poprawić jakość przeglądania, wyświetlać spersonalizowane treści i analizować nasz ruch. Klikając „Zaakceptuj”, wyrażasz zgodę na używanie plików cookie. Przeczytaj naszą",
+    "description": "Używamy plików cookie, aby poprawić jakość przeglądania, wyświetlać spersonalizowane treści i analizować nasz ruch. Klikając „Zaakceptuj\", wyrażasz zgodę na używanie plików cookie. Przeczytaj naszą",
     "policyLink": "Politykę Prywatności",
     "accept": "Zaakceptuj",
     "decline": "Odrzuć"
+  },
+  "auth": {
+    "login": {
+      "title": "Zaloguj się",
+      "submit": "Zaloguj się",
+      "submitting": "Logowanie...",
+      "noAccount": "Nie masz konta?",
+      "signupLink": "Zarejestruj się",
+      "forgotPassword": "Zapomniałeś hasła?",
+      "errors": {
+        "invalidCredentials": "Nieprawidłowy email lub hasło",
+        "emailNotVerified": "Twój adres email nie został zweryfikowany. Sprawdź swoją skrzynkę.",
+        "networkError": "Błąd sieci. Sprawdź połączenie i spróbuj ponownie.",
+        "resendFailed": "Nie udało się ponownie wysłać emaila weryfikacyjnego. Spróbuj ponownie."
+      },
+      "resendVerification": "Wyślij ponownie email weryfikacyjny",
+      "verificationSent": "Email weryfikacyjny został wysłany na"
+    },
+    "signup": {
+      "title": "Rejestracja",
+      "submit": "Zarejestruj się",
+      "submitting": "Rejestrowanie...",
+      "hasAccount": "Masz już konto?",
+      "loginLink": "Zaloguj się",
+      "errors": {
+        "signupFailed": "Nie udało się zarejestrować. Spróbuj ponownie.",
+        "networkError": "Błąd sieci. Sprawdź połączenie i spróbuj ponownie."
+      },
+      "verificationSent": "Wysłaliśmy email weryfikacyjny na",
+      "checkInbox": "Sprawdź swoją skrzynkę i kliknij link weryfikacyjny, aby aktywować konto.",
+      "goToLogin": "Przejdź do logowania"
+    },
+    "forgotPassword": {
+      "title": "Resetowanie hasła",
+      "submit": "Wyślij link resetujący",
+      "submitting": "Wysyłanie...",
+      "errors": {
+        "sendFailed": "Nie udało się wysłać emaila resetującego. Spróbuj ponownie.",
+        "networkError": "Błąd sieci. Sprawdź połączenie."
+      },
+      "emailSent": "Wysłaliśmy link do resetowania hasła na",
+      "checkInbox": "Sprawdź swoją skrzynkę."
+    },
+    "resetPassword": {
+      "title": "Ustaw nowe hasło",
+      "submit": "Zaktualizuj hasło",
+      "submitting": "Aktualizowanie...",
+      "errors": {
+        "resetFailed": "Nie udało się zresetować hasła. Link może być nieprawidłowy lub wygasły.",
+        "networkError": "Błąd sieci. Spróbuj ponownie."
+      },
+      "success": "Twoje hasło zostało pomyślnie zaktualizowane."
+    },
+    "fields": {
+      "email": "Email",
+      "password": "Hasło",
+      "name": "Imię",
+      "showPassword": "Pokaż hasło",
+      "hidePassword": "Ukryj hasło",
+      "show": "Pokaż",
+      "hide": "Ukryj"
+    },
+    "divider": "lub"
+  },
+  "contacts": {
+    "metaTitle": "Kontakt | DevLovers",
+    "metaDescription": "Skontaktuj się z zespołem DevLovers w sprawie pytań, opinii lub współpracy.",
+    "title": "Kontakt",
+    "subtitle": "Chętnie usłyszymy od Ciebie!",
+    "email": "Email:",
+    "linkedin": "LinkedIn:",
+    "github": "GitHub:"
+  },
+  "dashboard": {
+    "metaTitle": "Panel | DevLovers",
+    "metaDescription": "Śledź swój postęp i wyniki quizów.",
+    "title": "Panel",
+    "subtitle": "Witaj z powrotem na swoim placu treningowym.",
+    "supportLink": "Wsparcie i opinie",
+    "profile": {
+      "defaultName": "Programista",
+      "defaultRole": "użytkownik",
+      "totalPoints": "Łączna liczba punktów",
+      "joined": "Dołączył"
+    },
+    "stats": {
+      "title": "Statystyki quizów",
+      "noActivity": "Gotowy na rozwój? Sprawdź się w nowym quizie.",
+      "startQuiz": "Rozpocznij quiz",
+      "attempts": "Próby",
+      "avgScore": "Średni wynik",
+      "continueLearning": "Kontynuuj naukę"
+    },
+    "quizSaved": {
+      "title": "Wynik quizu zapisany!",
+      "scored": "Zdobyłeś",
+      "pointsAwarded": "+{points} punktów dodano do rankingu",
+      "noPoints": "Nie przyznano punktów (wynik nie uległ poprawie)",
+      "viewLeaderboard": "Zobacz ranking",
+      "tryAgain": "Spróbuj ponownie"
+    }
   }
 }

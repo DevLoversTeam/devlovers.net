@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/routing";
 import { Button } from "@/components/ui/button";
 import { AuthShell } from "@/components/auth/AuthShell";
@@ -20,6 +21,7 @@ export function SignupForm({
     locale,
     returnTo,
 }: SignupFormProps) {
+    const t = useTranslations("auth.signup");
     const [loading, setLoading] = useState(false);
     const [error, setError] =
         useState<string | null>(null);
@@ -52,10 +54,7 @@ export function SignupForm({
             const data = await res.json().catch(() => null);
 
             if (!res.ok) {
-                setError(
-                    data?.error ??
-                    "Failed to sign up. Please try again."
-                );
+                setError(data?.error ?? t("errors.signupFailed"));
                 return;
             }
 
@@ -67,9 +66,7 @@ export function SignupForm({
             window.location.href =
                 returnTo || `/${locale}/dashboard`;
         } catch {
-            setError(
-                "Network error. Please check your connection and try again."
-            );
+            setError(t("errors.networkError"));
         } finally {
             setLoading(false);
         }
@@ -77,11 +74,11 @@ export function SignupForm({
 
     return (
         <AuthShell
-            title="Sign up"
+            title={t("title")}
             footer={
                 !verificationRequired && (
                     <p className="text-sm text-gray-600">
-                        Already have an account?{" "}
+                        {t("hasAccount")}{" "}
                         <Link
                             href={
                                 returnTo
@@ -92,7 +89,7 @@ export function SignupForm({
                             }
                             className="underline"
                         >
-                            Log in
+                            {t("loginLink")}
                         </Link>
                     </p>
                 )
@@ -107,13 +104,12 @@ export function SignupForm({
                     message={
                         <>
                             <p>
-                                We’ve sent a verification email to{" "}
+                                {t("verificationSent")}{" "}
                                 <strong>{email}</strong>.
                             </p>
 
                             <p className="mt-2">
-                                Please check your inbox and click the
-                                verification link to activate your account.
+                                {t("checkInbox")}
                             </p>
                         </>
                     }
@@ -128,7 +124,7 @@ export function SignupForm({
                             }
                             className="inline-block underline"
                         >
-                            Go to login
+                            {t("goToLogin")}
                         </Link>
                     }
                 />
@@ -149,7 +145,7 @@ export function SignupForm({
                         disabled={loading}
                         className="w-full"
                     >
-                        {loading ? "Signing up..." : "Sign up"}
+                        {loading ? t("submitting") : t("submit")}
                     </Button>
                 </form>
             )}
