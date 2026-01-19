@@ -36,6 +36,16 @@ const nextConfig: NextConfig = {
         hostname: "api.dicebear.com",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "github.com",
+        pathname: "/**",
+      },
+      {
+        protocol: 'https',
+        hostname: 'cdn.jsdelivr.net',
+        pathname: '/**',
+      },
     ],
   },
 };

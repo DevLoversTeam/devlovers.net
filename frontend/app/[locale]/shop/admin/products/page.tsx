@@ -1,7 +1,7 @@
 // frontend/app/[locale]/shop/admin/products/page.tsx
 import { Link } from '@/i18n/routing';
 import { and, desc, eq } from 'drizzle-orm';
-
+import { issueCsrfToken } from '@/lib/security/csrf';
 import { ShopAdminTopbar } from '@/components/shop/admin/shop-admin-topbar';
 import { guardShopAdminPage } from '@/lib/auth/guard-shop-admin-page';
 
@@ -67,6 +67,7 @@ export default async function AdminProductsPage({
 
   const hasNext = all.length > PAGE_SIZE;
   const rows = all.slice(0, PAGE_SIZE);
+  const csrfTokenStatus = issueCsrfToken('admin:products:status');
 
   return (
     <>
@@ -251,6 +252,7 @@ export default async function AdminProductsPage({
                           <AdminProductStatusToggle
                             id={row.id}
                             initialIsActive={row.isActive}
+                            csrfToken={csrfTokenStatus}
                           />
                         </div>
                       </td>

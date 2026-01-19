@@ -6,20 +6,23 @@ import { Link } from '@/i18n/routing';
 
 import { SITE_LINKS } from '@/lib/navigation';
 import { NAV_LINKS } from '@/components/shop/header/nav-links';
+import { BlogCategoryLinks } from '@/components/blog/BlogCategoryLinks';
 import { LogoutButton } from '@/components/auth/logoutButton';
 
-export type AppMobileMenuVariant = 'platform' | 'shop';
+export type AppMobileMenuVariant = 'platform' | 'shop' | 'blog';
 
 type Props = {
   variant: AppMobileMenuVariant;
   userExists: boolean;
   showAdminLink?: boolean;
+  blogCategories?: Array<{ _id: string; title: string }>;
 };
 
 export function AppMobileMenu({
   variant,
   userExists,
   showAdminLink = false,
+  blogCategories = [],
 }: Props) {
   const [open, setOpen] = useState(false);
 
@@ -39,7 +42,8 @@ export function AppMobileMenu({
 
   const links = useMemo(() => {
     if (variant === 'shop') return NAV_LINKS;
-    return SITE_LINKS;
+    if (variant === 'platform') return SITE_LINKS;
+    return [];
   }, [variant]);
 
   return (
@@ -79,16 +83,25 @@ export function AppMobileMenu({
                 </Link>
               ) : null}
 
-              {links.map(link => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={close}
-                  className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                >
-                  {link.label}
-                </Link>
-              ))}
+              {variant === 'blog' ? (
+                <BlogCategoryLinks
+                  categories={blogCategories}
+                  className="flex flex-col gap-1"
+                  linkClassName="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                  onNavigate={close}
+                />
+              ) : (
+                links.map(link => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={close}
+                    className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                  >
+                    {link.label}
+                  </Link>
+                ))
+              )}
 
               {variant === 'shop' && showAdminLink ? (
                 <Link

@@ -5,6 +5,8 @@ import { getTranslations } from 'next-intl/server';
 import { client } from '@/client';
 import { Link } from '@/i18n/routing';
 
+export const revalidate = 0;
+
 type SocialLink = {
   _key?: string;
   platform?: string;
@@ -116,11 +118,15 @@ export default async function PostDetails({
   const slugParam = String(slug || '').trim();
   if (!slugParam) return notFound();
 
-  const post: Post | null = await client.fetch(query, {
+  const post: Post | null = await client
+    .withConfig({ useCdn: false })
+    .fetch(query, {
     slug: slugParam,
     locale,
   });
-  const recommendedAll: Post[] = await client.fetch(recommendedQuery, {
+  const recommendedAll: Post[] = await client
+    .withConfig({ useCdn: false })
+    .fetch(recommendedQuery, {
     slug: slugParam,
     locale,
   });
@@ -156,7 +162,7 @@ export default async function PostDetails({
             href={`/blog?category=${encodeURIComponent(post.categories[0])}`}
             className="inline-flex items-center gap-1 hover:text-[#ff00ff] transition"
           >
-            {post.categories[0]}
+            {post.categories[0] === 'Growth' ? 'Career' : post.categories[0]}
           </Link>
         </div>
       )}

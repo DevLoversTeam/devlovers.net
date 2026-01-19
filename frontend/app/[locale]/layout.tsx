@@ -3,11 +3,13 @@ import { Toaster } from 'sonner';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import groq from 'groq';
 
 import { locales } from '@/i18n/config';
 import Footer from '@/components/shared/Footer';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
 import { getCurrentUser } from '@/lib/auth';
+import { client } from '@/client';
 
 import { MainSwitcher } from '@/components/header/MainSwitcher';
 import { AppChrome } from '@/components/header/AppChrome';
@@ -30,6 +32,16 @@ export default async function LocaleLayout({
 
   const messages = await getMessages({ locale });
   const user = await getCurrentUser();
+  const blogCategories: Array<{ _id: string; title: string }> = await client
+    .withConfig({ useCdn: false })
+    .fetch(
+      groq`
+        *[_type == "category"] | order(orderRank asc) {
+          _id,
+          title
+        }
+      `
+    );
 
   const userExists = Boolean(user);
   const enableAdmin =
@@ -50,8 +62,18 @@ export default async function LocaleLayout({
         enableSystem
         disableTransitionOnChange
       >
-        <AppChrome userExists={userExists} showAdminLink={showAdminNavLink}>
-          <MainSwitcher>{children}</MainSwitcher>
+        <AppChrome
+          userExists={userExists}
+          showAdminLink={showAdminNavLink}
+          blogCategories={blogCategories}
+        >
+          <MainSwitcher
+            userExists={userExists}
+            showAdminLink={showAdminNavLink}
+            blogCategories={blogCategories}
+          >
+            {children}
+          </MainSwitcher>
         </AppChrome>
         <OnlineCounterPopup />
 

@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-
+import {
+  enforceRateLimit,
+  getRateLimitSubject,
+  rateLimitResponse,
+} from '@/lib/security/rate-limit';
 import { getCurrentUser } from '@/lib/auth';
 import { isPaymentsEnabled } from '@/lib/env/stripe';
 import { logError, logWarn } from '@/lib/logging';
@@ -226,6 +230,36 @@ export async function POST(request: NextRequest) {
         400
       );
     }
+  }
+  // P1: rate limit checkout (cross-instance, DB-backed)
+  // Policy: allow reasonable retries; block abusive burst.
+  const checkoutSubject = sessionUserId ?? getRateLimitSubject(request);
+
+  const limitParsed = Number.parseInt(
+    process.env.CHECKOUT_RATE_LIMIT_MAX ?? '',
+    10
+  );
+  const windowParsed = Number.parseInt(
+    process.env.CHECKOUT_RATE_LIMIT_WINDOW_SECONDS ?? '',
+    10
+  );
+
+  const limit =
+    Number.isFinite(limitParsed) && limitParsed > 0 ? limitParsed : 10;
+  const windowSeconds =
+    Number.isFinite(windowParsed) && windowParsed > 0 ? windowParsed : 300;
+
+  const decision = await enforceRateLimit({
+    key: `checkout:${checkoutSubject}`,
+    limit,
+    windowSeconds,
+  });
+
+  if (!decision.ok) {
+    return rateLimitResponse({
+      retryAfterSeconds: decision.retryAfterSeconds,
+      details: { scope: 'checkout' },
+    });
   }
 
   try {

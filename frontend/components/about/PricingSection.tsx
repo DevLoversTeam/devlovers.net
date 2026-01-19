@@ -1,215 +1,149 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
-import { motion, AnimatePresence, useInView } from "framer-motion"
-import { Heart, Sparkles, Coffee } from "lucide-react"
-import { useTranslations } from "next-intl"
-
-function PriceEvolution() {
-    const containerRef = useRef(null)
-    const isInView = useInView(containerRef, { once: true, amount: 0.5 })
-
-    const [displayValue, setDisplayValue] = useState("$14.99")
-    const [isFinal, setIsFinal] = useState(false)
-    const [colorState, setColorState] = useState<"normal" | "rising" | "chaos">("normal")
-
-    useEffect(() => {
-        if (!isInView) return
-
-        let interval: NodeJS.Timeout
-        let step = 0
-
-        const sequence = async () => {
-            await new Promise(r => setTimeout(r, 1500))
-
-            setColorState("rising")
-            let currentValue = 14.99
-
-            await new Promise<void>(resolve => {
-                interval = setInterval(() => {
-                    currentValue += Math.random() * 10
-                    setDisplayValue(`$${Math.floor(currentValue)}`)
-
-                    step++
-                    if (step > 15) {
-                        clearInterval(interval)
-                        resolve()
-                    }
-                }, 50)
-            })
-
-            setColorState("chaos")
-            const chars = "!@#$%^&*?<>~"
-
-            await new Promise<void>(resolve => {
-                let chaosStep = 0
-                interval = setInterval(() => {
-                    const randomStr = Array(3).fill(0).map(() => chars[Math.floor(Math.random() * chars.length)]).join("")
-                    setDisplayValue(`$${randomStr}`)
-
-                    chaosStep++
-                    if (chaosStep > 10) {
-                        clearInterval(interval)
-                        resolve()
-                    }
-                }, 50)
-            })
-
-            setIsFinal(true)
-        }
-
-        sequence()
-
-        return () => clearInterval(interval)
-    }, [isInView])
-
-    return (
-        <div ref={containerRef} className="h-24 flex items-center justify-center relative overflow-hidden">
-            <AnimatePresence mode="wait">
-                {!isFinal ? (
-                    <motion.div
-                        key="changing-text"
-                        exit={{ opacity: 0, scale: 0.5, filter: "blur(10px)" }}
-                        transition={{ duration: 0.4 }}
-                        className="flex items-center justify-center"
-                    >
-                        <motion.span
-                            className={`text-6xl font-bold tracking-tighter font-mono transition-colors duration-200
-                                ${colorState === "normal" ? "text-muted-foreground/50" : ""}
-                                ${colorState === "rising" ? "text-red-400" : ""}
-                                ${colorState === "chaos" ? "text-foreground" : ""}
-                            `}
-                        >
-                            {displayValue}
-                        </motion.span>
-                    </motion.div>
-                ) : (
-                    <motion.div
-                        key="final-zero"
-                        initial={{ opacity: 0, scale: 2, y: 20 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        transition={{
-                                type: "spring",
-                                stiffness: 200,
-                                damping: 15
-                        }}
-                        className="flex items-center gap-4"
-                    >
-                        <span className="text-8xl font-black text-foreground tracking-tighter drop-shadow-2xl">
-                            $0
-                        </span>
-                        <motion.div
-                                initial={{ scale: 0, rotate: -45 }}
-                                animate={{ scale: 1, rotate: 0 }}
-                                transition={{ delay: 0.2, type: "spring" }}
-                        >
-                             <Heart className="h-12 w-12 text-[#2C7FFF] fill-[#2C7FFF]" />
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-        </div>
-    )
+import { motion } from "framer-motion"
+import { Check, Heart, X, Sparkles, Server, ArrowRight } from "lucide-react"
+import type { Sponsor } from "@/lib/about/github-sponsors" 
+import { SponsorsWall } from "./SponsorsWall"
+import Link from "next/link"
+interface PricingSectionProps {
+  sponsors?: Sponsor[]
 }
 
-export function PricingSection() {
-    const t = useTranslations("about.pricing")
-    const tFeatures = useTranslations("about.pricing.features")
-
-    const featureKeys = [
-        "unlimitedQuestions",
-        "fullQuizAccess",
-        "globalLeaderboard",
-        "progressTracking",
-        "communityChallenges",
-        "mobileFriendly"
-    ] as const
-
+export function PricingSection({ sponsors = [] }: PricingSectionProps) {
     return (
-        <section className="relative px-6 py-24 bg-background transition-colors duration-300 overflow-hidden">
-            <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-96 w-96 rounded-full bg-[#2C7FFF]/10 blur-[100px]" />
+        <section className="w-full py-24 relative overflow-hidden bg-gray-50 dark:bg-transparent">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#1e5eff]/5 dark:bg-[#ff2d55]/5 blur-[100px] rounded-full pointer-events-none" />
 
-            <div className="mx-auto max-w-5xl relative z-10">
-
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.6 }}
-                    className="mb-16 text-center"
-                >
-                    <h2 className="text-3xl font-bold text-foreground md:text-5xl tracking-tight mb-4">
-                        {t("title")} <br className="hidden md:block" />
-                        <span className="text-[#2C7FFF]">{t("titleHighlight")}</span>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                <div className="text-center mb-16">
+                    <motion.div 
+                        initial={{ opacity: 0, y: 10 }} 
+                        whileInView={{ opacity: 1, y: 0 }}
+                        className="inline-flex items-center gap-2 px-3 py-1 rounded-full 
+                            border border-[#1e5eff]/20 dark:border-[#ff2d55]/20 
+                            bg-[#1e5eff]/10 dark:bg-[#ff2d55]/10 
+                            text-[#1e5eff] dark:text-[#ff2d55] 
+                            text-[10px] font-bold uppercase tracking-widest mb-4"
+                    >
+                        <Sparkles size={12} /> No Hidden Fees
+                    </motion.div>
+                    <h2 className="text-4xl md:text-5xl font-black tracking-tight text-gray-900 dark:text-white mb-6">
+                        Invest in your brain, <br />
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-500 to-gray-700 dark:from-neutral-400 dark:to-neutral-600">not our subscriptions.</span>
                     </h2>
-                    <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                        {t("subtitle")}
+                    <p className="text-gray-700 dark:text-neutral-400 max-w-2xl mx-auto text-lg font-light">
+                        We believe knowledge should be accessible. So we don&apos;t sell courses. But servers heat up and coffee runs out. The choice is yours.
                     </p>
-                </motion.div>
+                </div>
 
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.5, delay: 0.2 }}
-                    className="relative mx-auto max-w-3xl"
-                >
-                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-20">
-                        <span className="flex items-center gap-1 rounded-full bg-gradient-to-r from-[#2C7FFF] to-blue-600 px-4 py-1 text-xs font-bold text-white shadow-lg shadow-blue-500/20 uppercase tracking-wider">
-                            <Sparkles className="h-6 w-3" /> {t("badge")}
-                        </span>
-                    </div>
-
-                    <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-2xl transition-all duration-300 hover:shadow-[#2C7FFF]/10 hover:border-[#2C7FFF]/30">
-                        <div className="px-8 py-12 md:px-16 text-center">
-
-                            <div className="mb-10 min-h-[160px] flex flex-col justify-center">
-                                 <p className="text-sm font-medium text-muted-foreground mb-4 uppercase tracking-widest">{t("monthlyPrice")}</p>
-
-                                 <PriceEvolution />
-
-                                 <div className="mt-6">
-                                        <p className="text-[#2C7FFF] font-medium bg-[#2C7FFF]/10 inline-block px-4 py-1 rounded-full text-sm">
-                                                {t("free")}
-                                        </p>
-                                 </div>
-                            </div>
-
-                            <div className="h-px w-full bg-gradient-to-r from-transparent via-border to-transparent mb-10" />
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-12 text-left max-w-lg mx-auto mb-12">
-                                {featureKeys.map((featureKey) => (
-                                    <div key={featureKey} className="flex items-center gap-3">
-                                        <div className="flex-shrink-0 h-5 w-5 rounded-full bg-[#2C7FFF]/10 flex items-center justify-center">
-                                             <Heart className="h-3 w-3 text-[#2C7FFF] fill-[#2C7FFF]" />
-                                        </div>
-                                        <span className="text-muted-foreground text-sm font-medium">{tFeatures(featureKey)}</span>
-                                    </div>
-                                ))}
-                            </div>
-
-                            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                                <button className="w-full sm:w-auto px-8 py-3 rounded-full bg-[#2C7FFF] hover:bg-blue-600 text-white font-bold transition-all shadow-lg shadow-[#2C7FFF]/25">
-                                    {t("cta")}
-                                </button>
-
-                                <a
-                                    href="https://buymeacoffee.com/viktor.svertoka"
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="w-full sm:w-auto px-8 py-3 rounded-full border border-border hover:bg-muted text-foreground font-medium transition-all flex items-center justify-center gap-2 group"
-                                >
-                                    <Coffee className="h-4 w-4 text-muted-foreground group-hover:text-[#2C7FFF] transition-colors" />
-                                    <span>{t("coffee")}</span>
-                                </a>
-                            </div>
-
-                            <p className="mt-6 text-xs text-muted-foreground/60">
-                                {t("noCard")}
-                            </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-24">
+                    
+                    <motion.div 
+                        whileHover={{ y: -5 }}
+                        className="flex flex-col p-8 rounded-3xl border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/50 backdrop-blur-sm shadow-sm"
+                    >
+                        <div className="mb-6">
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Junior Engineer</h3>
+                            <p className="text-sm text-gray-600 dark:text-neutral-400">For those who want an offer, not expenses.</p>
                         </div>
-                    </div>
-                </motion.div>
+                        <div className="mb-8">
+                            <span className="text-5xl font-black text-gray-900 dark:text-white">$0</span>
+                            <span className="text-gray-500 dark:text-neutral-500 font-mono text-sm ml-2">/ forever</span>
+                        </div>
+                        
+                        <ul className="space-y-4 mb-8 flex-1">
+                            {[
+                                "Unlimited Questions",
+                                "Full Quiz Access",
+                                "No Credit Card Required",
+                                "0% Guilt Trip",
+                            ].map((item) => (
+                                <li key={item} className="flex items-center gap-3 text-sm text-gray-700 dark:text-neutral-300">
+                                    <div className="p-1 rounded-full bg-green-500/10 text-green-500">
+                                        <Check size={12} />
+                                    </div>
+                                    {item}
+                                </li>
+                            ))}
+                             <li className="flex items-center gap-3 text-sm text-gray-400 dark:text-neutral-500 line-through decoration-gray-300 dark:decoration-neutral-700">
+                                    <div className="p-1 rounded-full bg-gray-100 dark:bg-neutral-800 text-gray-400 dark:text-neutral-600">
+                                        <X size={12} />
+                                    </div>
+                                    Personal Yacht
+                                </li>
+                        </ul>
+
+                        <Link href="/" className="w-full py-4 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 text-gray-900 dark:text-white font-bold text-center transition-all uppercase tracking-widest text-xs">
+                            Start Learning
+                        </Link>
+                    </motion.div>
+
+                    <motion.div 
+                        whileHover={{ y: -5 }}
+                        className="relative flex flex-col p-8 rounded-3xl overflow-hidden backdrop-blur-sm
+                            border border-[#1e5eff]/30 dark:border-[#ff2d55]/30
+                            bg-gradient-to-b from-[#1e5eff]/5 to-white dark:from-[#ff2d55]/10 dark:to-neutral-900/50"
+                    >
+                        <div className="absolute top-0 right-0 px-3 py-1 rounded-bl-xl uppercase tracking-widest text-[10px] font-bold text-white
+                            bg-[#1e5eff] dark:bg-[#ff2d55]"
+                        >
+                            High Impact
+                        </div>
+
+                        <div className="mb-6">
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+                                Open Source Hero 
+                                <Heart size={18} className="fill-[#1e5eff] text-[#1e5eff] dark:fill-[#ff2d55] dark:text-[#ff2d55]" />
+                            </h3>
+                            <p className="text-sm text-neutral-500 dark:text-neutral-400">For those who already landed an offer thanks to us.</p>
+                        </div>
+                        <div className="mb-8">
+                            <span className="text-5xl font-black text-[#1e5eff] dark:text-[#ff2d55]">$$$</span>
+                            <span className="text-neutral-500 font-mono text-sm ml-2">/ karma points</span>
+                        </div>
+                        
+                        <ul className="space-y-4 mb-8 flex-1">
+                            {[
+                                "Keep Servers Alive",
+                                "Buy Coffee for Mentors",
+                                "Profile Badge (Big Flex)",
+                                "Warm Fuzzy Feeling",
+                            ].map((item) => (
+                                <li key={item} className="flex items-center gap-3 text-sm text-gray-900 dark:text-white font-medium">
+                                    <div className="p-1 rounded-full bg-[#1e5eff]/20 text-[#1e5eff] dark:bg-[#ff2d55]/20 dark:text-[#ff2d55]">
+                                        <Sparkles size={12} />
+                                    </div>
+                                    {item}
+                                </li>
+                            ))}
+                            <li className="flex items-center gap-3 text-sm text-gray-600 dark:text-neutral-400 italic">
+                                    <div className="p-1 rounded-full bg-gray-200 dark:bg-neutral-800 text-gray-500 dark:text-neutral-500">
+                                        <Server size={12} />
+                                    </div>
+                                    We actually pay for Drizzle
+                                </li>
+                        </ul>
+
+                        <Link 
+                            href="https://github.com/sponsors/DevLoversTeam" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="group w-full py-4 rounded-xl text-white font-bold flex items-center justify-center gap-2 transition-all uppercase tracking-widest text-xs
+                                bg-[#1e5eff] hover:bg-[#1e5eff]/90 shadow-[0_0_20px_rgba(30,94,255,0.3)] hover:shadow-[0_0_30px_rgba(30,94,255,0.5)]
+                                dark:bg-[#ff2d55] dark:hover:bg-[#ff2d55]/90 dark:shadow-[0_0_20px_rgba(255,45,85,0.3)] dark:hover:shadow-[0_0_30px_rgba(255,45,85,0.5)]"
+                        >
+                            Support the Project <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform"/>
+                        </Link>
+                    </motion.div>
+
+                </div>
+                
+                <p className="text-center text-gray-500 dark:text-neutral-600 text-xs mb-12 font-mono">
+                    *No developers were harmed in the making of this pricing table. Only caffeine levels were impacted.
+                </p>
+
+                <SponsorsWall sponsors={sponsors} />
+                
             </div>
         </section>
     )

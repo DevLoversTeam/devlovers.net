@@ -269,10 +269,16 @@ export const stripeEvents = pgTable(
     orderId: uuid('order_id').references(() => orders.id),
     eventType: text('event_type').notNull(),
     paymentStatus: text('payment_status'),
+    claimedAt: timestamp('claimed_at', { withTimezone: true }),
+    claimExpiresAt: timestamp('claim_expires_at', { withTimezone: true }),
+    claimedBy: varchar('claimed_by', { length: 64 }),
     processedAt: timestamp('processed_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
   },
-  table => [uniqueIndex('stripe_events_event_id_idx').on(table.eventId)]
+  table => [
+    uniqueIndex('stripe_events_event_id_idx').on(table.eventId),
+    index('stripe_events_claim_expires_idx').on(table.claimExpiresAt),
+  ]
 );
 
 export const productPrices = pgTable(
@@ -371,6 +377,24 @@ export const internalJobState = pgTable('internal_job_state', {
     .defaultNow(),
 });
 
+export const apiRateLimits = pgTable(
+  'api_rate_limits',
+  {
+    key: text('key').primaryKey(),
+    windowStartedAt: timestamp('window_started_at', {
+      withTimezone: true,
+    }).notNull(),
+    count: integer('count').notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  t => [
+    check('api_rate_limits_count_non_negative', sql`${t.count} >= 0`),
+    index('api_rate_limits_updated_at_idx').on(t.updatedAt),
+  ]
+);
+
 export const paymentAttempts = pgTable(
   'payment_attempts',
   {
@@ -405,6 +429,8 @@ export const paymentAttempts = pgTable(
     finalizedAt: timestamp('finalized_at', { withTimezone: true }),
   },
   t => [
+    check('payment_attempts_provider_check', sql`${t.provider} in ('stripe')`),
+
     // CHECKs (match SQL migration)
     check(
       'payment_attempts_status_check',
@@ -444,3 +470,4 @@ export type DbOrderItem = typeof orderItems.$inferSelect;
 export type DbInventoryMove = typeof inventoryMoves.$inferSelect;
 export type DbInternalJobState = typeof internalJobState.$inferSelect;
 export type DbPaymentAttempt = typeof paymentAttempts.$inferSelect;
+export type DbApiRateLimit = typeof apiRateLimits.$inferSelect;
