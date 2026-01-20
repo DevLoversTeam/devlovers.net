@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import {
   Accordion,
   AccordionItem,
@@ -249,7 +249,7 @@ export default function AccordionList({ items }: { items: QuestionEntry[] }) {
             className="qa-accordion-item mb-3 last:mb-0 rounded-xl border border-black/5 bg-white/90 shadow-sm transition-colors last:border-b dark:border-white/10 dark:bg-neutral-900/80"
             style={
               accent
-                ? ({ '--qa-accent': accent } as React.CSSProperties)
+                ? ({ '--qa-accent': accent } as CSSProperties)
                 : undefined
             }
           >
