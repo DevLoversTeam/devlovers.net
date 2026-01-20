@@ -29,18 +29,19 @@ export default function TabsSection() {
       <Tabs value={active} onValueChange={handleCategoryChange}>
         <TabsList className="!bg-transparent !p-0 !h-auto !w-full flex flex-wrap items-stretch justify-start gap-3 mb-6">
           {categoryData.map(category => {
-            const slug = category.slug as CategorySlug;
+            const slug = category.slug as keyof typeof qaTabStyles;
+            const value = slug as CategorySlug;
             return (
             <QaTabButton
               key={slug}
-              value={slug}
+              value={value}
               label={
                 category.translations[localeKey] ??
                 category.translations.en ??
-                slug
+                value
               }
               style={qaTabStyles[slug]}
-              isActive={active === slug}
+              isActive={active === value}
             />
             );
           })}
