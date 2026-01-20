@@ -31,6 +31,8 @@
   },
   "qa": {
     "title": "Pytania i Odpowiedzi",
+    "pretitle": "Rozmowa",
+    "subtitle": "Przeglądaj wybrane pytania według kategorii",
     "searchPlaceholder": "Szukaj pytań...",
     "clearSearch": "Wyczyść wyszukiwanie",
     "noResults": "Nic nie znaleziono dla \"{query}\"",

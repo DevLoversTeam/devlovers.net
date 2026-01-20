@@ -1,23 +1,12 @@
 "use client"
 
-import { useRef } from "react"
-import { motion, useMotionTemplate, useMotionValue } from "framer-motion"
+import { motion } from "framer-motion"
 import { CheckCircle, Users, Star, Linkedin, ArrowDown } from "lucide-react"
 import { InteractiveGame } from "./InteractiveGame"
 import type { PlatformStats } from "@/lib/about/stats"
+import { DynamicGridBackground } from "@/components/shared/DynamicGridBackground"
 
 export function HeroSection({ stats }: { stats?: PlatformStats }) {
-  const containerRef = useRef<HTMLElement>(null)
-  
-  const mouseX = useMotionValue(0)
-  const mouseY = useMotionValue(0)
-
-  function handleMouseMove({ currentTarget, clientX, clientY }: React.MouseEvent) {
-    const { left, top } = currentTarget.getBoundingClientRect()
-    mouseX.set(clientX - left)
-    mouseY.set(clientY - top)
-  }
-
   const data = stats || {
     questionsSolved: "850+",
     githubStars: "120+",
@@ -26,33 +15,7 @@ export function HeroSection({ stats }: { stats?: PlatformStats }) {
   }
 
   return (
-    <section
-      ref={containerRef}
-      onMouseMove={handleMouseMove}
-      className="relative flex min-h-[calc(100svh)] items-center justify-center overflow-hidden bg-gray-50 transition-colors duration-300 dark:bg-transparent pt-20 pb-10 group"
-    >
-      
-      <div className="pointer-events-none absolute inset-0">
-         <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_80%_80%_at_50%_50%,#000_70%,transparent_100%)]" />
-      </div>
-
-      <motion.div
-        className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-        style={{
-          maskImage: useMotionTemplate`radial-gradient(300px circle at ${mouseX}px ${mouseY}px, black, transparent)`,
-          WebkitMaskImage: useMotionTemplate`radial-gradient(300px circle at ${mouseX}px ${mouseY}px, black, transparent)`,
-        }}
-      >
-         <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e5eff_1px,transparent_1px),linear-gradient(to_bottom,#1e5eff_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#ff2d55_1px,transparent_1px),linear-gradient(to_bottom,#ff2d55_1px,transparent_1px)] bg-[size:40px_40px] opacity-20 dark:opacity-30" />
-      </motion.div>
-
-      <div className="pointer-events-none absolute inset-0">
-         <div className="absolute left-1/2 top-1/2 h-[70svh] w-[70svw] min-h-[500px] min-w-[500px] md:h-[900px] md:w-[900px] -translate-x-1/2 -translate-y-1/2 rounded-full 
-            bg-[#1e5eff]/10 blur-[120px] mix-blend-multiply 
-            dark:bg-[#ff2d55]/10 dark:mix-blend-screen transition-all duration-500" 
-         />
-      </div>
-
+    <DynamicGridBackground className="flex min-h-[calc(100svh)] items-center justify-center bg-gray-50 transition-colors duration-300 dark:bg-transparent pt-20 pb-10">
       <div className="relative z-10 grid w-full max-w-[1600px] grid-cols-1 items-center px-4 sm:px-6 lg:px-8 xl:grid-cols-12 xl:gap-8 h-full">
         
         <div className="hidden h-full flex-col justify-center gap-24 xl:col-span-3 xl:flex">
@@ -121,7 +84,7 @@ export function HeroSection({ stats }: { stats?: PlatformStats }) {
         </div>
 
       </div>
-    </section>
+    </DynamicGridBackground>
   )
 }
 

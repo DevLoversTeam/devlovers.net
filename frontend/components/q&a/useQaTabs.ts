@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useParams } from 'next/navigation';
 import { useRouter } from '@/i18n/routing';
 import { categoryData } from '@/data/category';
@@ -15,8 +15,6 @@ import {
 
 const CATEGORY_SLUGS = categoryData.map(category => category.slug);
 const DEFAULT_CATEGORY = CATEGORY_SLUGS[0] || 'html';
-const DEBOUNCE_MS = 400;
-
 function resolveLocale(value: string): Locale {
   return qaConstants.supportedLocales.includes(value as Locale)
     ? (value as Locale)
@@ -41,28 +39,20 @@ export function useQaTabs() {
   const safePageFromUrl =
     Number.isFinite(pageFromUrl) && pageFromUrl > 0 ? pageFromUrl : 1;
   const categoryFromUrl = searchParams.get('category') || DEFAULT_CATEGORY;
-  const searchFromUrl = searchParams.get('search') || '';
-
   const [active, setActive] = useState<CategorySlug>(
     isCategorySlug(categoryFromUrl) ? categoryFromUrl : DEFAULT_CATEGORY
   );
   const [currentPage, setCurrentPage] = useState(safePageFromUrl);
-  const [searchQuery, setSearchQuery] = useState(searchFromUrl);
-  const [debouncedSearch, setDebouncedSearch] = useState(searchFromUrl);
   const [items, setItems] = useState<QuestionEntry[]>([]);
   const [totalPages, setTotalPages] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const mountedRef = useRef(false);
-
   const updateUrl = useCallback(
-    (category: CategorySlug, page: number, search: string) => {
+    (category: CategorySlug, page: number) => {
       const params = new URLSearchParams();
 
       if (category !== DEFAULT_CATEGORY) params.set('category', category);
       if (page > 1) params.set('page', String(page));
-      if (search) params.set('search', search);
 
       const queryString = params.toString();
 
@@ -74,37 +64,26 @@ export function useQaTabs() {
   );
 
   useEffect(() => {
-    if (!mountedRef.current) {
-      mountedRef.current = true;
-      return;
-    }
-
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-
-    debounceRef.current = setTimeout(() => {
-      setDebouncedSearch(searchQuery);
-      setCurrentPage(1);
-      updateUrl(active, 1, searchQuery);
-    }, DEBOUNCE_MS);
-
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, [searchQuery, active, updateUrl]);
+    setCurrentPage(safePageFromUrl);
+  }, [safePageFromUrl]);
 
   useEffect(() => {
+    if (!isCategorySlug(categoryFromUrl)) {
+      return;
+    }
+    setActive(categoryFromUrl);
+  }, [categoryFromUrl]);
+
+  useEffect(() => {
+    let isActive = true;
     const controller = new AbortController();
 
     async function load() {
       setIsLoading(true);
 
       try {
-        const searchParam = debouncedSearch
-          ? `&search=${encodeURIComponent(debouncedSearch)}`
-          : '';
-
         const res = await fetch(
-          `/api/questions/${active}?page=${currentPage}&limit=10&locale=${localeKey}${searchParam}`,
+          `/api/questions/${active}?page=${currentPage}&limit=10&locale=${localeKey}`,
           { signal: controller.signal }
         );
 
@@ -124,19 +103,26 @@ export function useQaTabs() {
         );
         setTotalPages(data.totalPages);
       } catch (error) {
+        if (!isActive || controller.signal.aborted) {
+          return;
+        }
         console.error('Failed to load questions:', error);
         setItems([]);
         setTotalPages(0);
       } finally {
+        if (!isActive) {
+          return;
+        }
         setIsLoading(false);
       }
     }
 
     load();
     return () => {
+      isActive = false;
       controller.abort();
     };
-  }, [active, currentPage, debouncedSearch, localeKey]);
+  }, [active, currentPage, localeKey]);
 
   const handleCategoryChange = useCallback(
     (category: string) => {
@@ -145,9 +131,7 @@ export function useQaTabs() {
       }
       setActive(category);
       setCurrentPage(1);
-      setSearchQuery('');
-      setDebouncedSearch('');
-      updateUrl(category, 1, '');
+      updateUrl(category, 1);
     },
     [updateUrl]
   );
@@ -155,31 +139,20 @@ export function useQaTabs() {
   const handlePageChange = useCallback(
     (page: number) => {
       setCurrentPage(page);
-      updateUrl(active, page, debouncedSearch);
+      updateUrl(active, page);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     },
-    [active, debouncedSearch, updateUrl]
+    [active, updateUrl]
   );
-
-  const clearSearch = useCallback(() => {
-    setSearchQuery('');
-    setDebouncedSearch('');
-    setCurrentPage(1);
-    updateUrl(active, 1, '');
-  }, [active, updateUrl]);
 
   return {
     active,
     currentPage,
-    debouncedSearch,
     handleCategoryChange,
     handlePageChange,
     isLoading,
     items,
     localeKey,
-    searchQuery,
-    setSearchQuery,
     totalPages,
-    clearSearch,
   };
 }
