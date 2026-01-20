@@ -110,10 +110,9 @@ export function useQaTabs() {
         setItems([]);
         setTotalPages(0);
       } finally {
-        if (!isActive) {
-          return;
+        if (isActive) {
+          setIsLoading(false);
         }
-        setIsLoading(false);
       }
     }
 

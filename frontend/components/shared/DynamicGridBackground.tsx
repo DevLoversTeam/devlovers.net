@@ -16,6 +16,7 @@ export function DynamicGridBackground({
 }: DynamicGridBackgroundProps) {
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
+  const maskImage = useMotionTemplate`radial-gradient(300px circle at ${mouseX}px ${mouseY}px, black, transparent)`;
 
   function handleMouseMove(event: MouseEvent<HTMLElement>) {
     const { left, top } = event.currentTarget.getBoundingClientRect();
@@ -35,8 +36,8 @@ export function DynamicGridBackground({
       <motion.div
         className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover/dynamic:opacity-100"
         style={{
-          maskImage: useMotionTemplate`radial-gradient(300px circle at ${mouseX}px ${mouseY}px, black, transparent)`,
-          WebkitMaskImage: useMotionTemplate`radial-gradient(300px circle at ${mouseX}px ${mouseY}px, black, transparent)`,
+          maskImage,
+          WebkitMaskImage: maskImage,
         }}
       >
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e5eff_1px,transparent_1px),linear-gradient(to_bottom,#1e5eff_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#ff2d55_1px,transparent_1px),linear-gradient(to_bottom,#ff2d55_1px,transparent_1px)] bg-[size:40px_40px] opacity-20 dark:opacity-30" />
