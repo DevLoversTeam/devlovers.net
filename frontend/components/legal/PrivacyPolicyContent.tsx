@@ -1,93 +1,111 @@
+import { getTranslations } from 'next-intl/server';
 import LegalBlock from './LegalBlock';
 
 export const PRIVACY_LAST_UPDATED = '2025-12-14';
 
-export default function PrivacyPolicyContent() {
+const linkClass =
+  'underline underline-offset-4 hover:text-blue-600 dark:hover:text-blue-400 transition-colors';
+
+export default async function PrivacyPolicyContent() {
+  const t = await getTranslations('legal.privacy');
+  const tLegal = await getTranslations('legal');
+  const email = tLegal('contactEmail');
+
   return (
     <div className="space-y-6">
-      <LegalBlock id="who-we-are" title="1. Who we are">
+      <LegalBlock id="who-we-are" title={t('whoWeAre.title')}>
         <p>
-          DevLovers is a platform for technical interview preparation. If you
-          have questions about this policy, contact us at{' '}
-          <a
-            className="underline underline-offset-4 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-            href="mailto:devlovers.net@gmail.com"
-          >
-            devlovers.net@gmail.com
+          {t('whoWeAre.content')}{' '}
+          <a className={linkClass} href={`mailto:${email}`}>
+            {email}
           </a>
           .
         </p>
       </LegalBlock>
 
-      <LegalBlock id="data-we-collect" title="2. What data we collect">
+      <LegalBlock id="data-we-collect" title={t('dataWeCollect.title')}>
         <ul className="list-disc pl-5 space-y-2">
           <li>
-            <strong>Account data (for authorization):</strong> email, username,
-            authentication identifiers, and related security metadata.
+            <strong>{t('dataWeCollect.accountData')}</strong>{' '}
+            {t('dataWeCollect.accountDataDesc')}
           </li>
           <li>
-            <strong>Usage data:</strong> interactions with quizzes, results,
-            progress, and basic telemetry needed to improve the service.
+            <strong>{t('dataWeCollect.usageData')}</strong>{' '}
+            {t('dataWeCollect.usageDataDesc')}
           </li>
           <li>
-            <strong>Technical data:</strong> device/browser information, IP
-            address, logs, and error reports.
+            <strong>{t('dataWeCollect.technicalData')}</strong>{' '}
+            {t('dataWeCollect.technicalDataDesc')}
           </li>
         </ul>
       </LegalBlock>
 
-      <LegalBlock id="why-we-collect" title="3. Why we collect data">
+      <LegalBlock id="why-we-collect" title={t('whyWeCollect.title')}>
         <ul className="list-disc pl-5 space-y-2">
-          <li>To provide and secure authorization and account access.</li>
-          <li>
-            To run quizzes, store results, and show progress/leaderboards.
-          </li>
-          <li>To improve performance, reliability, and user experience.</li>
+          <li>{t('whyWeCollect.reason1')}</li>
+          <li>{t('whyWeCollect.reason2')}</li>
+          <li>{t('whyWeCollect.reason3')}</li>
         </ul>
       </LegalBlock>
 
-      <LegalBlock id="cookies" title="4. Cookies and similar technologies">
-        <p>
-          We may use cookies/local storage to keep you signed in, store
-          preferences (e.g. theme), and protect the service. If we add analytics
-          cookies, we will update this section.
-        </p>
+      <LegalBlock id="cookies" title={t('cookies.title')}>
+        <p>{t('cookies.content')}</p>
       </LegalBlock>
 
-      <LegalBlock id="sharing" title="5. Sharing of data">
-        <p>
-          We do not sell personal data. We may share limited data with trusted
-          service providers (e.g. hosting, database, error monitoring) strictly
-          to operate DevLovers.
-        </p>
+      <LegalBlock id="sharing" title={t('sharing.title')}>
+        <p>{t('sharing.content')}</p>
       </LegalBlock>
 
-      <LegalBlock id="retention" title="6. Data retention">
-        <p>
-          We keep personal data only as long as needed for the purposes
-          described above or as required by law.
-        </p>
+      <LegalBlock id="retention" title={t('retention.title')}>
+        <p>{t('retention.content')}</p>
       </LegalBlock>
 
-      <LegalBlock id="rights" title="7. Your rights">
+      <LegalBlock id="rights" title={t('rights.title')}>
         <p>
-          Depending on your location, you may have rights to access, correct,
-          delete, or export your data. Contact us at{' '}
-          <a
-            className="underline underline-offset-4 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-            href="mailto:devlovers.net@gmail.com"
-          >
-            devlovers.net@gmail.com
+          {t('rights.content')}{' '}
+          <a className={linkClass} href={`mailto:${email}`}>
+            {email}
           </a>
           .
         </p>
       </LegalBlock>
 
-      <LegalBlock id="changes" title="8. Changes to this policy">
-        <p>
-          We may update this Privacy Policy. The latest version will always be
-          available on this page.
+      <LegalBlock id="gdpr" title={t('gdpr.title')}>
+        <p className="mb-4">{t('gdpr.intro')}</p>
+        <ul className="list-disc pl-5 space-y-2">
+          <li>
+            <strong>{t('gdpr.rightAccess')}</strong> {t('gdpr.rightAccessDesc')}
+          </li>
+          <li>
+            <strong>{t('gdpr.rightRectification')}</strong>{' '}
+            {t('gdpr.rightRectificationDesc')}
+          </li>
+          <li>
+            <strong>{t('gdpr.rightErasure')}</strong> {t('gdpr.rightErasureDesc')}
+          </li>
+          <li>
+            <strong>{t('gdpr.rightRestriction')}</strong>{' '}
+            {t('gdpr.rightRestrictionDesc')}
+          </li>
+          <li>
+            <strong>{t('gdpr.rightPortability')}</strong>{' '}
+            {t('gdpr.rightPortabilityDesc')}
+          </li>
+          <li>
+            <strong>{t('gdpr.rightObject')}</strong> {t('gdpr.rightObjectDesc')}
+          </li>
+        </ul>
+        <p className="mt-4">
+          {t('gdpr.exerciseRights')}{' '}
+          <a className={linkClass} href={`mailto:${email}`}>
+            {email}
+          </a>
+          . {t('gdpr.response')}
         </p>
+      </LegalBlock>
+
+      <LegalBlock id="changes" title={t('changes.title')}>
+        <p>{t('changes.content')}</p>
       </LegalBlock>
     </div>
   );
