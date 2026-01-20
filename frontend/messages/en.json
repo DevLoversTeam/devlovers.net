@@ -31,6 +31,8 @@
   },
   "qa": {
     "title": "Questions and Answers",
+    "pretitle": "Interview",
+    "subtitle": "Explore curated interview questions by category",
     "searchPlaceholder": "Search questions...",
     "clearSearch": "Clear search",
     "noResults": "Nothing found for \"{query}\"",
