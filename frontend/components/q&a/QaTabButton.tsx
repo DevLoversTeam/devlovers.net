@@ -24,7 +24,7 @@ export function QaTabButton({
     <TabsTrigger
       value={value}
       className={cn(
-        'group relative h-full min-w-[96px] !flex !w-fit !flex-none !shrink-0 !items-center !justify-start gap-2 overflow-hidden rounded-xl border border-black/5 bg-transparent px-4 py-3 text-left text-xs font-semibold text-black shadow-sm transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-lg dark:border-white/20 dark:bg-transparent dark:text-white',
+        'group relative h-full min-w-[96px] !flex !w-fit !flex-none !shrink-0 !items-center !justify-start gap-2 overflow-hidden rounded-xl border border-black/5 bg-white/90 px-4 py-3 text-left text-xs font-semibold text-black shadow-sm transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-lg dark:border-white/20 dark:bg-neutral-900/80 dark:text-white',
         'data-[state=active]:-translate-y-0.5 data-[state=active]:shadow-lg data-[state=active]:border-2 dark:data-[state=active]:border-2',
         style.color
       )}

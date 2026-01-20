@@ -14,7 +14,7 @@ export default function CodeBlock({ code, language }: Props) {
   const { resolvedTheme } = useTheme();
   const [copied, setCopied] = useState(false);
 
-  const theme = resolvedTheme === 'dark' ? themes.nightOwl : themes.vsLight;
+  const theme = resolvedTheme === 'dark' ? themes.nightOwl : themes.github;
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(code);

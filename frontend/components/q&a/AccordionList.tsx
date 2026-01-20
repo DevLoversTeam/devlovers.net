@@ -7,6 +7,7 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from '@/components/ui/accordion';
+import { qaTabStyles } from '@/data/qaTabs';
 
 import CodeBlock from '@/components/q&a/CodeBlock';
 import type {
@@ -239,10 +240,23 @@ export default function AccordionList({ items }: { items: QuestionEntry[] }) {
     <Accordion type="single" collapsible className="w-full">
       {items.map((q, idx) => {
         const key = q.id ?? idx;
+        const accent =
+          qaTabStyles[q.category as keyof typeof qaTabStyles]?.accent;
         return (
-          <AccordionItem key={key} value={String(key)}>
-            <AccordionTrigger>{q.question}</AccordionTrigger>
-            <AccordionContent>
+          <AccordionItem
+            key={key}
+            value={String(key)}
+            className="qa-accordion-item mb-3 last:mb-0 rounded-xl border border-black/5 bg-white/90 shadow-sm transition-colors last:border-b dark:border-white/10 dark:bg-neutral-900/80"
+            style={
+              accent
+                ? ({ '--qa-accent': accent } as React.CSSProperties)
+                : undefined
+            }
+          >
+            <AccordionTrigger className="px-4 hover:no-underline">
+              {q.question}
+            </AccordionTrigger>
+            <AccordionContent className="px-4">
               <div className="space-y-3 pt-2">
                 {q.answerBlocks.map((block, i) => renderBlock(block, i))}
               </div>
