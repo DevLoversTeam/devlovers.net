@@ -9,6 +9,7 @@ import { useQaTabs } from '@/components/q&a/useQaTabs';
 import { QaTabButton } from '@/components/q&a/QaTabButton';
 import { qaTabStyles } from '@/data/qaTabs';
 import { cn } from '@/lib/utils';
+import type { CategorySlug } from '@/components/q&a/types';
 
 export default function TabsSection() {
   const t = useTranslations('qa');
@@ -27,19 +28,22 @@ export default function TabsSection() {
     <div className="w-full">
       <Tabs value={active} onValueChange={handleCategoryChange}>
         <TabsList className="!bg-transparent !p-0 !h-auto !w-full flex flex-wrap items-stretch justify-start gap-3 mb-6">
-          {categoryData.map(category => (
+          {categoryData.map(category => {
+            const slug = category.slug as CategorySlug;
+            return (
             <QaTabButton
-              key={category.slug}
-              value={category.slug}
+              key={slug}
+              value={slug}
               label={
                 category.translations[localeKey] ??
                 category.translations.en ??
-                category.slug
+                slug
               }
-              style={qaTabStyles[category.slug]}
-              isActive={active === category.slug}
+              style={qaTabStyles[slug]}
+              isActive={active === slug}
             />
-          ))}
+            );
+          })}
         </TabsList>
 
         {categoryData.map(category => (
