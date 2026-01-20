@@ -97,7 +97,7 @@ export function Pagination({
         disabled={currentPage === 1}
         className={cn(
           'px-2 py-2 text-sm font-medium rounded-lg transition-colors sm:px-3',
-          'border border-gray-300 dark:border-gray-700',
+          'border border-gray-300 bg-white/90 dark:border-gray-700 dark:bg-neutral-900/80',
           currentPage === 1
             ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
             : 'text-gray-700 dark:text-gray-300 hover:bg-[var(--qa-accent-soft)]'
@@ -122,7 +122,7 @@ export function Pagination({
               onClick={() => onPageChange(page)}
               disabled={page === currentPage}
               className={cn(
-                'min-w-[40px] px-3 py-2 text-sm font-medium rounded-lg transition-colors border border-transparent overflow-hidden',
+                'min-w-[40px] px-3 py-2 text-sm font-medium rounded-lg transition-colors border border-transparent overflow-hidden bg-white/90 dark:bg-neutral-900/80',
                 page === currentPage
                   ? 'shadow-sm text-gray-700 dark:text-gray-300'
                   : 'text-gray-700 dark:text-gray-300 hover:bg-[var(--qa-accent-soft)]'
@@ -150,7 +150,7 @@ export function Pagination({
         disabled={currentPage === totalPages}
         className={cn(
           'px-2 py-2 text-sm font-medium rounded-lg transition-colors sm:px-3',
-          'border border-gray-300 dark:border-gray-700',
+          'border border-gray-300 bg-white/90 dark:border-gray-700 dark:bg-neutral-900/80',
           currentPage === totalPages
             ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
             : 'text-gray-700 dark:text-gray-300 hover:bg-[var(--qa-accent-soft)]'

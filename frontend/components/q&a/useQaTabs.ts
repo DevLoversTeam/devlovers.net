@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useSearchParams, useParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
+import { useLocale } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import { categoryData } from '@/data/category';
 import {
-  qaConstants,
   type CategorySlug,
   type Locale,
   type PaginatedResponse,
@@ -15,11 +15,6 @@ import {
 
 const CATEGORY_SLUGS = categoryData.map(category => category.slug);
 const DEFAULT_CATEGORY = CATEGORY_SLUGS[0] || 'html';
-function resolveLocale(value: string): Locale {
-  return qaConstants.supportedLocales.includes(value as Locale)
-    ? (value as Locale)
-    : 'en';
-}
 
 function isCategorySlug(value: string): value is CategorySlug {
   return CATEGORY_SLUGS.includes(value);
@@ -28,11 +23,7 @@ function isCategorySlug(value: string): value is CategorySlug {
 export function useQaTabs() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const params = useParams();
-
-  const locale =
-    typeof params.locale === 'string' ? params.locale : params.locale?.[0] ?? '';
-  const localeKey = resolveLocale(locale);
+  const localeKey = useLocale() as Locale;
 
   const rawPage = searchParams.get('page');
   const pageFromUrl = rawPage ? Number(rawPage) : 1;
