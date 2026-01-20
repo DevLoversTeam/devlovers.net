@@ -78,7 +78,7 @@ export default function TabsSection() {
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={handlePageChange}
-          accentColor={qaTabStyles[active].accent}
+          accentColor={qaTabStyles[active as keyof typeof qaTabStyles].accent}
         />
       )}
     </div>
