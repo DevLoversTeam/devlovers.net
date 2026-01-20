@@ -3,7 +3,8 @@ import { db } from '@/db';
 import { categories, questions, questionTranslations } from '@/db/schema';
 import { eq, sql, and, ilike } from 'drizzle-orm';
 
-export const revalidate = 300;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 20;
@@ -46,10 +47,7 @@ export async function GET(
         totalPages: 0,
         locale,
       });
-      response.headers.set(
-        'Cache-Control',
-        'public, s-maxage=300, stale-while-revalidate=600'
-      );
+      response.headers.set('Cache-Control', 'no-store');
       return response;
     }
 
@@ -104,10 +102,7 @@ export async function GET(
       totalPages,
       locale,
     });
-    response.headers.set(
-      'Cache-Control',
-      'public, s-maxage=300, stale-while-revalidate=600'
-    );
+    response.headers.set('Cache-Control', 'no-store');
     return response;
   } catch (error) {
     console.error('[GET /api/questions/:category]', error);
