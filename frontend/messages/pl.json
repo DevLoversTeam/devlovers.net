@@ -322,7 +322,8 @@
     "championsArena": "Arena Mistrzów",
     "topThreeLabel": "Top 3 Liderów",
     "pts": "pkt",
-    "tableCaption": "Tabela rankingowa pozostałych uczestników"
+    "tableCaption": "Tabela rankingowa pozostałych uczestników",
+    "you": "Ty"
   },
   "auth": {
     "login": {

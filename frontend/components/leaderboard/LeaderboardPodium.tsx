@@ -11,7 +11,7 @@ export function LeaderboardPodium({ topThree }: { topThree: User[] }) {
 
   return (
     <ol
-      className="flex items-end justify-center gap-2 md:gap-8 pb-4 pt-16 min-h-[340px] list-none m-0 p-0"
+      className="flex items-end justify-center gap-4 md:gap-8 pb-4 pt-16 min-h-[400px] list-none m-0 p-0"
       aria-label={t('topThreeLabel')}
     >
       {topThree.map(user => {
@@ -25,31 +25,31 @@ export function LeaderboardPodium({ topThree }: { topThree: User[] }) {
             key={user.id}
             className={cn(
               'flex flex-col items-center transition-all duration-500 relative z-0',
-              isFirst ? 'order-2 z-10 -mt-8 md:-mt-12' : '',
+              isFirst ? 'order-2 z-10 -mt-12' : '',
               isSecond ? 'order-1' : '',
               isThird ? 'order-3' : ''
             )}
           >
-            <div className="flex flex-col items-center group">
-              <div className="relative mb-3 md:mb-5 transition-transform duration-300 group-hover:scale-105">
+            <div className="flex flex-col items-center group w-full">
+              <div className="relative mb-4 transition-transform duration-300 group-hover:scale-105">
                 {isFirst && (
                   <Crown
-                    className="absolute -top-10 md:-top-12 left-1/2 -translate-x-1/2 w-10 h-10 md:w-12 md:h-12 text-yellow-400 animate-bounce drop-shadow-[0_0_15px_rgba(250,204,21,0.5)]"
+                    className="absolute -top-12 left-1/2 -translate-x-1/2 w-10 h-10 text-yellow-400 animate-bounce drop-shadow-[0_0_15px_rgba(250,204,21,0.6)]"
                     aria-hidden="true"
                   />
                 )}
 
                 <div
                   className={cn(
-                    'relative rounded-full p-[3px] shadow-2xl',
+                    'relative rounded-full p-[2px]',
                     isFirst
-                      ? 'bg-gradient-to-tr from-yellow-300 via-yellow-100 to-yellow-500'
+                      ? 'bg-gradient-to-b from-yellow-300 to-yellow-600'
                       : isSecond
-                        ? 'bg-gradient-to-tr from-slate-300 via-slate-100 to-slate-400'
-                        : 'bg-gradient-to-tr from-orange-300 via-orange-100 to-orange-400'
+                        ? 'bg-gradient-to-b from-slate-300 to-slate-500'
+                        : 'bg-gradient-to-b from-orange-300 to-orange-600'
                   )}
                 >
-                  <div className="relative w-16 h-16 md:w-24 md:h-24 rounded-full overflow-hidden border-4 border-white dark:border-slate-900 bg-slate-200">
+                  <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden border-4 border-white dark:border-slate-950 bg-slate-200 dark:bg-slate-900">
                     <Image
                       src={user.avatar}
                       alt={`${user.username}'s avatar`}
@@ -61,26 +61,25 @@ export function LeaderboardPodium({ topThree }: { topThree: User[] }) {
 
                 <div
                   className={cn(
-                    'absolute -bottom-3 left-1/2 -translate-x-1/2 flex items-center justify-center w-7 h-7 md:w-9 md:h-9 rounded-full font-bold text-xs md:text-sm border-[3px] border-white dark:border-slate-900 shadow-lg',
+                    'absolute -bottom-3 left-1/2 -translate-x-1/2 flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm border-4 border-white dark:border-slate-950 shadow-lg',
                     isFirst
                       ? 'bg-yellow-500 text-white'
                       : isSecond
-                        ? 'bg-slate-400 text-white'
-                        : 'bg-orange-400 text-white'
+                        ? 'bg-slate-400 text-slate-900'
+                        : 'bg-orange-500 text-white'
                   )}
                 >
                   {user.rank}
                 </div>
               </div>
 
-              <div className="text-center mb-3 md:mb-5">
-                <div className="font-bold text-slate-800 dark:text-slate-100 text-xs md:text-lg mb-1 truncate max-w-[85px] md:max-w-[140px]">
+              <div className="text-center mb-4">
+                <div className="font-bold text-slate-900 dark:text-white text-sm md:text-lg mb-1 truncate max-w-[120px]">
                   {user.username}
                 </div>
-                <div className="inline-block px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                  <div className="font-mono font-bold text-xs md:text-sm text-slate-700 dark:text-slate-300">
+                <div className="inline-block px-3 py-1 rounded-full bg-white/60 dark:bg-white/5 border border-slate-300 dark:border-white/10 backdrop-blur-sm">
+                  <div className="font-mono font-bold text-xs md:text-sm text-[#ff2d55]">
                     {user.points}{' '}
-                    <span className="text-slate-400">{t('pts')}</span>
                   </div>
                 </div>
               </div>
@@ -88,16 +87,24 @@ export function LeaderboardPodium({ topThree }: { topThree: User[] }) {
               <div
                 aria-hidden="true"
                 className={cn(
-                  'w-20 md:w-40 rounded-t-2xl backdrop-blur-xl transition-all duration-300',
-                  'border-t-2 border-x-2 border-white/60 dark:border-white/10',
+                  'w-24 md:w-40 rounded-t-2xl backdrop-blur-md transition-all duration-300 relative overflow-hidden',
+                  'border-x border-t border-slate-300 dark:border-white/10 bg-white/60 dark:bg-white/5',
 
                   isFirst
-                    ? 'h-40 md:h-56 bg-gradient-to-b from-yellow-200/30 to-yellow-500/5 dark:from-yellow-400/20 dark:to-transparent shadow-[0_0_50px_-10px_rgba(234,179,8,0.4)]'
+                    ? 'h-48 md:h-64'
                     : isSecond
-                      ? 'h-28 md:h-40 bg-gradient-to-b from-slate-200/30 to-slate-500/5 dark:from-slate-400/20 dark:to-transparent shadow-[0_0_40px_-10px_rgba(148,163,184,0.3)]'
-                      : 'h-20 md:h-28 bg-gradient-to-b from-orange-200/30 to-orange-500/5 dark:from-orange-400/20 dark:to-transparent shadow-[0_0_40px_-10px_rgba(251,146,60,0.3)]'
+                      ? 'h-32 md:h-44'
+                      : 'h-24 md:h-32',
+
+                  isFirst
+                    ? 'shadow-[0_0_40px_-10px_rgba(234,179,8,0.2)] dark:shadow-[0_0_40px_-10px_rgba(234,179,8,0.3)] after:absolute after:inset-0 after:bg-gradient-to-b after:from-yellow-500/10 after:to-transparent'
+                    : isSecond
+                      ? 'shadow-[0_0_40px_-10px_rgba(148,163,184,0.2)] dark:shadow-[0_0_40px_-10px_rgba(148,163,184,0.2)] after:absolute after:inset-0 after:bg-gradient-to-b after:from-slate-400/10 after:to-transparent'
+                      : 'shadow-[0_0_40px_-10px_rgba(249,115,22,0.2)] dark:shadow-[0_0_40px_-10px_rgba(249,115,22,0.2)] after:absolute after:inset-0 after:bg-gradient-to-b after:from-orange-500/10 after:to-transparent'
                 )}
-              />
+              >
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:16px_16px] opacity-50" />
+              </div>
             </div>
           </li>
         );
