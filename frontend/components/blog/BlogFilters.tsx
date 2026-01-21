@@ -378,7 +378,7 @@ export default function BlogFilters({
 
       <div className="w-full">
         {!resolvedAuthor && allCategories.length > 0 && (
-          <div className="mt-5 flex w-full flex-nowrap justify-start gap-1 overflow-x-auto rounded-full border border-gray-200 bg-white p-1 dark:border-gray-700 dark:bg-gray-900 sm:flex-wrap sm:gap-3 sm:overflow-visible sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0">
+          <div className="mt-5 flex w-full flex-nowrap justify-start gap-1 overflow-x-auto sm:flex-wrap sm:gap-3 sm:overflow-visible">
             <button
               type="button"
               onClick={() => setSelectedCategory(null)}
