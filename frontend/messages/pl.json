@@ -9,6 +9,16 @@
     "close": "Zamknij",
     "submit": "Wyślij"
   },
+  "aria": {
+    "primaryNav": "Nawigacja główna",
+    "dashboard": "Panel",
+    "shopAdmin": "Panel administracyjny sklepu",
+    "blogCategories": "Kategorie bloga",
+    "searchBlog": "Szukaj w blogu",
+    "toggleMenu": "Przełącz menu",
+    "closeMenu": "Zamknij menu",
+    "logout": "Wyloguj się"
+  },
   "navigation": {
     "home": "Strona główna",
     "topics": "Tematy",
@@ -186,7 +196,7 @@
       "career": "Kariera",
       "insights": "Spostrzeżenia",
       "news": "Aktualności",
-      "growth": "Kariera"
+      "growth": "Wzrost"
     },
     "removeTag": "Usuń tag",
     "add": "Dodaj",

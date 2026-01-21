@@ -9,6 +9,16 @@
     "close": "Close",
     "submit": "Submit"
   },
+  "aria": {
+    "primaryNav": "Primary navigation",
+    "dashboard": "Dashboard",
+    "shopAdmin": "Shop admin",
+    "blogCategories": "Blog categories",
+    "searchBlog": "Search blog",
+    "toggleMenu": "Toggle menu",
+    "closeMenu": "Close menu",
+    "logout": "Log out"
+  },
   "navigation": {
     "home": "Home",
     "topics": "Topics",
@@ -186,7 +196,7 @@
       "career": "Career",
       "insights": "Insights",
       "news": "News",
-      "growth": "Career"
+      "growth": "Growth"
     },
     "removeTag": "Remove tag",
     "add": "Add",

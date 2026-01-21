@@ -136,11 +136,15 @@ export default function BlogFilters({
 
   // Helper function to get translated category label
   const getCategoryLabel = (categoryName: string): string => {
-    const key = categoryName.toLowerCase();
-    const translationKey = `categories.${key}` as const;
-    // Try to get translation, fallback to original name
-    const translated = t.raw(translationKey);
-    return typeof translated === 'string' ? translated : categoryName;
+    const key = categoryName.toLowerCase() as 'tech' | 'career' | 'insights' | 'news' | 'growth';
+    const categoryTranslations: Record<string, string> = {
+      tech: t('categories.tech'),
+      career: t('categories.career'),
+      insights: t('categories.insights'),
+      news: t('categories.news'),
+      growth: t('categories.growth'),
+    };
+    return categoryTranslations[key] || categoryName;
   };
 
   const allCategories = useMemo(() => {

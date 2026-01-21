@@ -1,12 +1,19 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 
 export type AntiCheatViolation = {
   type: 'copy' | 'context-menu' | 'tab-switch' | 'paste';
   timestamp: Date;
+};
+
+const messageKey: Record<AntiCheatViolation['type'], string> = {
+  copy: 'copy',
+  paste: 'paste',
+  'context-menu': 'contextMenu',
+  'tab-switch': 'tabSwitch',
 };
 
 export function useAntiCheat(isActive: boolean = true) {
@@ -16,35 +23,31 @@ export function useAntiCheat(isActive: boolean = true) {
   const [showWarning, setShowWarning] = useState(false);
   const warningTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const addViolation = (type: AntiCheatViolation['type']) => {
-    if (!isActive) return;
+  const addViolation = useCallback(
+    (type: AntiCheatViolation['type']) => {
+      if (!isActive) return;
 
-    const violation: AntiCheatViolation = {
-      type,
-      timestamp: new Date(),
-    };
+      const violation: AntiCheatViolation = {
+        type,
+        timestamp: new Date(),
+      };
 
-    setViolations(prev => [...prev, violation]);
-    setShowWarning(true);
+      setViolations(prev => [...prev, violation]);
+      setShowWarning(true);
 
-    const messageKey: Record<AntiCheatViolation['type'], string> = {
-      copy: 'copy',
-      paste: 'paste',
-      'context-menu': 'contextMenu',
-      'tab-switch': 'tabSwitch',
-    };
+      toast.warning(t(messageKey[type]), {
+        duration: 3000,
+      });
 
-    toast.warning(t(messageKey[type]), {
-      duration: 3000,
-    });
-
-    if (warningTimeoutRef.current) {
-      clearTimeout(warningTimeoutRef.current);
-    }
-    warningTimeoutRef.current = setTimeout(() => {
-      setShowWarning(false);
-    }, 3000);
-  };
+      if (warningTimeoutRef.current) {
+        clearTimeout(warningTimeoutRef.current);
+      }
+      warningTimeoutRef.current = setTimeout(() => {
+        setShowWarning(false);
+      }, 3000);
+    },
+    [isActive, t]
+  );
 
   useEffect(() => {
     if (!isActive) return;
@@ -88,7 +91,7 @@ export function useAntiCheat(isActive: boolean = true) {
         clearTimeout(warningTimeoutRef.current);
       }
     };
-  }, [isActive]);
+  }, [isActive, addViolation]);
 
   const resetViolations = () => {
     setViolations([]);
