@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Link, usePathname } from '@/i18n/routing';
 import { cn } from '@/lib/utils';
 
@@ -21,7 +22,22 @@ export function BlogCategoryLinks({
   linkClassName,
   onNavigate,
 }: BlogCategoryLinksProps) {
+  const t = useTranslations('blog');
+  const tNav = useTranslations('navigation');
   const pathname = usePathname();
+
+  // Helper function to get translated category label
+  const getCategoryLabel = (categoryName: string): string => {
+    const key = categoryName.toLowerCase() as 'tech' | 'career' | 'insights' | 'news' | 'growth';
+    const categoryTranslations: Record<string, string> = {
+      tech: t('categories.tech'),
+      career: t('categories.career'),
+      insights: t('categories.insights'),
+      news: t('categories.news'),
+      growth: t('categories.growth'),
+    };
+    return categoryTranslations[key] || categoryName;
+  };
   const baseLink =
     linkClassName ||
     'rounded-md px-3 py-2 text-sm font-medium transition-colors ' +
@@ -53,7 +69,7 @@ export function BlogCategoryLinks({
               isActive ? 'bg-muted text-foreground' : 'text-muted-foreground'
             )}
           >
-            {category.displayTitle}
+            {getCategoryLabel(category.displayTitle)}
           </Link>
         );
       })}
@@ -66,7 +82,7 @@ export function BlogCategoryLinks({
           pathname === '/' ? 'bg-muted text-foreground' : 'text-muted-foreground'
         )}
       >
-        Home
+        {tNav('home')}
       </Link>
     </nav>
   );

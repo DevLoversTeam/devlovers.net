@@ -9,6 +9,16 @@
     "close": "Close",
     "submit": "Submit"
   },
+  "aria": {
+    "primaryNav": "Primary navigation",
+    "dashboard": "Dashboard",
+    "shopAdmin": "Shop admin",
+    "blogCategories": "Blog categories",
+    "searchBlog": "Search blog",
+    "toggleMenu": "Toggle menu",
+    "closeMenu": "Close menu",
+    "logout": "Log out"
+  },
   "navigation": {
     "home": "Home",
     "topics": "Topics",
@@ -18,6 +28,7 @@
     "about": "About",
     "contacts": "Contacts",
     "blog": "Blog",
+    "shop": "Shop",
     "login": "Log in",
     "logout": "Log out",
     "signup": "Sign up",
@@ -164,6 +175,12 @@
       "message": "Your progress will not be saved.",
       "confirm": "Exit",
       "cancel": "Continue"
+    },
+    "antiCheat": {
+      "copy": "Copying is not allowed during the quiz",
+      "paste": "Pasting is not allowed during the quiz",
+      "contextMenu": "Context menu is not allowed during the quiz",
+      "tabSwitch": "Tab switch detected"
     }
   },
   "blog": {
@@ -171,7 +188,16 @@
     "subtitle": "Explore the latest articles in Tech, News, and Career Growth, covering trends, ideas, and practical insights.",
     "metaTitle": "Blog | DevLovers",
     "metaDescription": "Explore the latest articles and insights",
+    "all": "All",
+    "noMatches": "No matches",
     "searchPlaceholder": "Search...",
+    "categories": {
+      "tech": "Tech",
+      "career": "Career",
+      "insights": "Insights",
+      "news": "News",
+      "growth": "Growth"
+    },
     "removeTag": "Remove tag",
     "add": "Add",
     "clear": "Clear",

@@ -2,6 +2,7 @@
 
 import { Menu, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 
 import { SITE_LINKS } from '@/lib/navigation';
@@ -24,6 +25,7 @@ export function AppMobileMenu({
   showAdminLink = false,
   blogCategories = [],
 }: Props) {
+  const t = useTranslations('navigation');
   const [open, setOpen] = useState(false);
 
   const close = () => setOpen(false);
@@ -79,7 +81,7 @@ export function AppMobileMenu({
                   onClick={close}
                   className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
                 >
-                  Home
+                  {t('home')}
                 </Link>
               ) : null}
 
@@ -98,7 +100,7 @@ export function AppMobileMenu({
                     onClick={close}
                     className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
                   >
-                    {link.label}
+                    {'labelKey' in link ? t(link.labelKey) : link.label}
                   </Link>
                 ))
               )}
@@ -122,7 +124,7 @@ export function AppMobileMenu({
                     onClick={close}
                     className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
                   >
-                    Dashboard
+                    {t('dashboard')}
                   </Link>
 
                   {showAdminLink ? (
@@ -147,7 +149,7 @@ export function AppMobileMenu({
                   onClick={close}
                   className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
                 >
-                  Log in
+                  {t('login')}
                 </Link>
               )}
             </div>
