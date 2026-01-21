@@ -135,6 +135,12 @@
   }
 }
 
+.qa-accordion-item:hover,
+.qa-accordion-item:focus-within,
+.qa-accordion-item[data-state='open'] {
+  border-color: var(--qa-accent);
+}
+
 .no-select {
   -webkit-user-select: none; /* Safari */
   -moz-user-select: none; /* Firefox */

@@ -7,9 +7,11 @@ import type { Author, Post } from '@/components/blog/BlogFilters';
 export default function BlogGrid({
   posts,
   onAuthorSelect,
+  disableHoverColor = false,
 }: {
   posts: Post[];
   onAuthorSelect: (author: Author) => void;
+  disableHoverColor?: boolean;
 }) {
   const t = useTranslations('blog');
 
@@ -24,6 +26,7 @@ export default function BlogGrid({
           key={post._id}
           post={post}
           onAuthorSelect={onAuthorSelect}
+          disableHoverColor={disableHoverColor}
         />
       ))}
     </div>

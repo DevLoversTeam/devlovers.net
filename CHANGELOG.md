@@ -101,3 +101,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Prevented import breakages caused by outdated shop/platform shells
 - Improved robustness of quiz duration calculation with reliable fallbacks
 - Cleaned up redundant files, comments, and unused utilities
+
+## [0.4.0] - 2026-01-21
+
+### Added
+
+- Complete authentication lifecycle:
+  - Google & GitHub OAuth
+  - Email verification
+  - Password reset and recovery flows
+- Full internationalization (uk / en / pl) across:
+  - Authentication pages
+  - Dashboard
+  - Contacts
+  - About page
+  - Blog, Q&A, Quiz
+  - Privacy Policy and Terms & Conditions
+- New quiz content:
+  - Angular, Vue.js, Node.js quizzes
+  - HTML and React question bases
+- Advanced quiz experience:
+  - Countdown timer with persistence and auto-submit
+  - Encrypted/hashed answers to prevent client-side cheating
+  - Session persistence with quit confirmation
+  - Guest quiz results synced after authentication
+- Real-time online users counter with animated UI
+- GDPR-compliant cookie consent banner with i18n support
+- Unified platform & shop header system
+- System theme–based favicon switching (light / dark)
+- Initial SVG icon set for UI usage
+
+### Changed
+
+- Quiz UI redesigned:
+  - Category-based tabs
+  - Consistent QuizCard layout
+  - Progress indicators and status badges
+- Q&A UI refreshed:
+  - Unified layout with shared background
+  - Improved pagination and accordion readability
+- Authentication pages refactored into reusable components
+- Blog experience improved:
+  - Redesigned blog page and cards
+  - Category pages and header search
+  - Recommended posts section
+- Shop UI and layout unified across platform and admin views
+- Tailwind theme tokens centralized for theme-aware styling
+- Database migration history reset to a clean, linear baseline
+
+### Fixed
+
+- Fixed GitHub OAuth redirect and CSRF state handling
+- Fixed quiz timer issues when switching languages
+- Fixed Q&A API caching to always return fresh data
+- Resolved multiple accessibility issues (WCAG, W3C, Lighthouse 100%)
+- Hardened authentication redirects to prevent open-redirect vulnerabilities
+- Stabilized shop checkout, refund, inventory, and webhook flows
+- Improved Neon performance and reduced CU-hours usage
+- Cleaned up redundant files, comments, and legacy code

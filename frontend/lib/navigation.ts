@@ -1,9 +1,9 @@
 export const SITE_LINKS = [
-  { href: '/q&a', label: 'Q&A' },
-  { href: '/quizzes', label: 'Quizzes' },
-  { href: '/leaderboard', label: 'Leaderboard' },
-  { href: '/blog', label: 'Blog' },
-  { href: '/about', label: 'About' },
-  { href: '/contacts', label: 'Contacts' },
-  { href: '/shop', label: 'Shop' },
+  { href: '/q&a', labelKey: 'qa' },
+  { href: '/quizzes', labelKey: 'quizzes' },
+  { href: '/leaderboard', labelKey: 'leaderboard' },
+  { href: '/blog', labelKey: 'blog' },
+  { href: '/about', labelKey: 'about' },
+  { href: '/contacts', labelKey: 'contacts' },
+  { href: '/shop', labelKey: 'shop' },
 ] as const;

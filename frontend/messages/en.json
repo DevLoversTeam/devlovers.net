@@ -9,6 +9,16 @@
     "close": "Close",
     "submit": "Submit"
   },
+  "aria": {
+    "primaryNav": "Primary navigation",
+    "dashboard": "Dashboard",
+    "shopAdmin": "Shop admin",
+    "blogCategories": "Blog categories",
+    "searchBlog": "Search blog",
+    "toggleMenu": "Toggle menu",
+    "closeMenu": "Close menu",
+    "logout": "Log out"
+  },
   "navigation": {
     "home": "Home",
     "topics": "Topics",
@@ -18,6 +28,7 @@
     "about": "About",
     "contacts": "Contacts",
     "blog": "Blog",
+    "shop": "Shop",
     "login": "Log in",
     "logout": "Log out",
     "signup": "Sign up",
@@ -31,6 +42,8 @@
   },
   "qa": {
     "title": "Questions and Answers",
+    "pretitle": "Interview",
+    "subtitle": "Explore curated interview questions by category",
     "searchPlaceholder": "Search questions...",
     "clearSearch": "Clear search",
     "noResults": "Nothing found for \"{query}\"",
@@ -162,6 +175,12 @@
       "message": "Your progress will not be saved.",
       "confirm": "Exit",
       "cancel": "Continue"
+    },
+    "antiCheat": {
+      "copy": "Copying is not allowed during the quiz",
+      "paste": "Pasting is not allowed during the quiz",
+      "contextMenu": "Context menu is not allowed during the quiz",
+      "tabSwitch": "Tab switch detected"
     }
   },
   "blog": {
@@ -169,7 +188,16 @@
     "subtitle": "Explore the latest articles in Tech, News, and Career Growth, covering trends, ideas, and practical insights.",
     "metaTitle": "Blog | DevLovers",
     "metaDescription": "Explore the latest articles and insights",
+    "all": "All",
+    "noMatches": "No matches",
     "searchPlaceholder": "Search...",
+    "categories": {
+      "tech": "Tech",
+      "career": "Career",
+      "insights": "Insights",
+      "news": "News",
+      "growth": "Growth"
+    },
     "removeTag": "Remove tag",
     "add": "Add",
     "clear": "Clear",
@@ -177,6 +205,7 @@
     "noPostsForTags": "No posts found for selected tags",
     "visitResource": "Visit Resource",
     "readArticle": "Read article",
+    "readMore": "Read more",
     "aboutAuthor": "About the author",
     "author": "Author",
     "removeAuthor": "Remove author",
@@ -395,6 +424,121 @@
       "noPoints": "No points awarded (result not improved)",
       "viewLeaderboard": "View leaderboard",
       "tryAgain": "Try again"
+    }
+  },
+  "legal": {
+    "back": "Back",
+    "lastUpdated": "Last updated",
+    "contactEmail": "devlovers.net@gmail.com",
+    "privacy": {
+      "metaTitle": "Privacy Policy | DevLovers",
+      "metaDescription": "Learn how DevLovers collects, uses, and protects your personal data.",
+      "title": "Privacy Policy",
+      "whoWeAre": {
+        "title": "1. Who we are",
+        "content": "DevLovers is a platform for technical interview preparation. If you have questions about this policy, contact us at"
+      },
+      "dataWeCollect": {
+        "title": "2. What data we collect",
+        "accountData": "Account data (for authorization):",
+        "accountDataDesc": "email, username, authentication identifiers, and related security metadata.",
+        "usageData": "Usage data:",
+        "usageDataDesc": "interactions with quizzes, results, progress, and basic telemetry needed to improve the service.",
+        "technicalData": "Technical data:",
+        "technicalDataDesc": "device/browser information, IP address, logs, and error reports."
+      },
+      "whyWeCollect": {
+        "title": "3. Why we collect data",
+        "reason1": "To provide and secure authorization and account access.",
+        "reason2": "To run quizzes, store results, and show progress/leaderboards.",
+        "reason3": "To improve performance, reliability, and user experience."
+      },
+      "cookies": {
+        "title": "4. Cookies and similar technologies",
+        "content": "We may use cookies/local storage to keep you signed in, store preferences (e.g. theme), and protect the service. If we add analytics cookies, we will update this section."
+      },
+      "sharing": {
+        "title": "5. Sharing of data",
+        "content": "We do not sell personal data. We may share limited data with trusted service providers (e.g. hosting, database, error monitoring) strictly to operate DevLovers."
+      },
+      "retention": {
+        "title": "6. Data retention",
+        "content": "We keep personal data only as long as needed for the purposes described above or as required by law."
+      },
+      "rights": {
+        "title": "7. Your rights",
+        "content": "Depending on your location, you may have rights to access, correct, delete, or export your data. Contact us at"
+      },
+      "gdpr": {
+        "title": "8. GDPR compliance (EU users)",
+        "intro": "If you are located in the European Economic Area (EEA), you have additional rights under the General Data Protection Regulation (GDPR):",
+        "rightAccess": "Right of access:",
+        "rightAccessDesc": "You can request a copy of your personal data.",
+        "rightRectification": "Right to rectification:",
+        "rightRectificationDesc": "You can request correction of inaccurate data.",
+        "rightErasure": "Right to erasure:",
+        "rightErasureDesc": "You can request deletion of your data (\"right to be forgotten\").",
+        "rightRestriction": "Right to restriction:",
+        "rightRestrictionDesc": "You can request limited processing of your data.",
+        "rightPortability": "Right to data portability:",
+        "rightPortabilityDesc": "You can request your data in a machine-readable format.",
+        "rightObject": "Right to object:",
+        "rightObjectDesc": "You can object to processing based on legitimate interests.",
+        "exerciseRights": "To exercise these rights, contact us at",
+        "response": "We will respond within 30 days."
+      },
+      "changes": {
+        "title": "9. Changes to this policy",
+        "content": "We may update this Privacy Policy. The latest version will always be available on this page."
+      }
+    },
+    "terms": {
+      "metaTitle": "Terms of Service | DevLovers",
+      "metaDescription": "Read the terms and conditions for using the DevLovers platform.",
+      "title": "Terms of Service",
+      "acceptance": {
+        "title": "1. Acceptance of terms",
+        "content": "By accessing or using DevLovers, you agree to these Terms of Service and our Privacy Policy."
+      },
+      "accounts": {
+        "title": "2. Accounts and authorization",
+        "content": "When authorization is enabled, you may need an account to access certain features. You are responsible for maintaining the confidentiality of your credentials and for all activity under your account."
+      },
+      "features": {
+        "title": "3. Service features",
+        "feature1": "Q&A content and interview preparation materials",
+        "feature2": "Quizzes, results, and progress tracking",
+        "feature3": "Leaderboards"
+      },
+      "prohibited": {
+        "title": "4. Prohibited use",
+        "item1": "Attempting to hack, disrupt, or bypass security/authentication mechanisms.",
+        "item2": "Scraping content at scale without permission."
+      },
+      "ip": {
+        "title": "5. Intellectual property",
+        "content": "DevLovers and its content are protected by applicable intellectual property laws. You may not copy, distribute, or reuse content beyond what is permitted for normal usage of the service."
+      },
+      "disclaimer": {
+        "title": "6. Disclaimer",
+        "content": "DevLovers is provided \"as is\" without warranties. We do not guarantee that using the platform will result in employment."
+      },
+      "liability": {
+        "title": "7. Limitation of liability",
+        "content": "To the maximum extent permitted by law, DevLovers shall not be liable for indirect or consequential damages."
+      },
+      "termination": {
+        "title": "8. Termination",
+        "content": "We may suspend or terminate access if we reasonably believe you violated these Terms or abused the service."
+      },
+      "changes": {
+        "title": "9. Changes to terms",
+        "content": "We may update these Terms from time to time. The latest version will always be available on this page."
+      },
+      "contact": {
+        "title": "10. Contact",
+        "content": "Questions:"
+      }
     }
   }
 }

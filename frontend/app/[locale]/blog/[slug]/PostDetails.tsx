@@ -45,6 +45,28 @@ function plainTextFromPortableText(value: any): string {
     .trim();
 }
 
+function linkifyText(text: string) {
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const parts = text.split(urlRegex);
+  return parts.map((part, index) => {
+    if (!part) return null;
+    if (urlRegex.test(part)) {
+      return (
+        <a
+          key={`link-${index}`}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[var(--accent-primary)] underline underline-offset-4"
+        >
+          {part}
+        </a>
+      );
+    }
+    return <span key={`text-${index}`}>{part}</span>;
+  });
+}
+
 function seededShuffle<T>(items: T[], seed: number) {
   const result = [...items];
   let value = seed;
@@ -103,6 +125,13 @@ const recommendedQuery = groq`
     "author": author->{
       "name": coalesce(name[$locale], name[lower($locale)], name.uk, name.en, name.pl, name),
       "image": image.asset->url
+    },
+    "body": coalesce(body[$locale], body[lower($locale)], body.uk, body.en, body.pl, body)[]{
+      ...,
+      _type == "image" => {
+        ...,
+        "url": asset->url
+      }
     }
   }
 `;
@@ -115,6 +144,7 @@ export default async function PostDetails({
   locale: string;
 }) {
   const t = await getTranslations({ locale, namespace: 'blog' });
+  const tNav = await getTranslations({ locale, namespace: 'navigation' });
   const slugParam = String(slug || '').trim();
   if (!slugParam) return notFound();
 
@@ -145,24 +175,32 @@ export default async function PostDetails({
     post.author?.city,
   ].filter(Boolean) as string[];
   const authorMeta = authorMetaParts.join(' · ');
+  const categoryLabel = post.categories?.[0];
 
   return (
     <main className="max-w-3xl mx-auto px-6 py-12">
-      <Link
-        href="/blog"
-        className="inline-flex items-center gap-2 text-sm text-gray-600 border-b border-current transition hover:text-[#ff00ff] hover:bg-sky-50 hover:shadow-[0_6px_18px_rgba(56,189,248,0.18)] dark:text-gray-300 dark:hover:bg-sky-900/20"
-      >
-        <span>&larr;</span>
-        <span>{t('goBack')}</span>
-      </Link>
+      <div className="mb-6 relative left-1/2 right-1/2 w-screen -translate-x-1/2 px-6">
+        <div className="mx-auto flex max-w-6xl justify-start">
+          <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+            <Link
+              href="/blog"
+              className="transition hover:text-[var(--accent-primary)] hover:underline underline-offset-4"
+            >
+              {tNav('blog')}
+            </Link>
+            <span>&gt;</span>
+            <span className="text-[var(--accent-primary)]">{post.title}</span>
+          </div>
+        </div>
+      </div>
 
-      {post.categories?.[0] && (
+      {categoryLabel && (
         <div className="text-sm font-medium text-gray-500 dark:text-gray-400 text-center">
           <Link
-            href={`/blog?category=${encodeURIComponent(post.categories[0])}`}
-            className="inline-flex items-center gap-1 hover:text-[#ff00ff] transition"
+            href={`/blog?category=${encodeURIComponent(categoryLabel)}`}
+            className="inline-flex items-center gap-1 text-[var(--accent-primary)] transition"
           >
-            {post.categories[0] === 'Growth' ? 'Career' : post.categories[0]}
+            {categoryLabel === 'Growth' ? 'Career' : categoryLabel}
           </Link>
         </div>
       )}
@@ -172,7 +210,14 @@ export default async function PostDetails({
 
       {(authorName || post.publishedAt) && (
         <div className="mt-4 flex justify-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-          {authorName && <span>{authorName}</span>}
+          {authorName && (
+            <Link
+              href={`/blog?author=${encodeURIComponent(authorName)}`}
+              className="transition hover:text-[var(--accent-primary)]"
+            >
+              {authorName}
+            </Link>
+          )}
           {authorName && post.publishedAt && <span>·</span>}
           {post.publishedAt && (
             <span>{new Date(post.publishedAt).toLocaleDateString()}</span>
@@ -199,7 +244,14 @@ export default async function PostDetails({
             const text = (block.children || [])
               .map((c: any) => c.text || '')
               .join('');
-            return <p key={block._key || `block-${index}`}>{text}</p>;
+            return (
+              <p
+                key={block._key || `block-${index}`}
+                className="whitespace-pre-line"
+              >
+                {linkifyText(text)}
+              </p>
+            );
           }
 
           if (block?._type === 'image' && block?.url) {
@@ -219,57 +271,64 @@ export default async function PostDetails({
 
       {recommendedPosts.length > 0 && (
         <>
-          <div className="mt-16 flex justify-center">
-            <div className="h-10 w-px bg-gray-200 dark:bg-gray-800" />
+          <div className="mt-16 relative left-1/2 right-1/2 w-screen -translate-x-1/2 px-6">
+            <div className="mx-auto h-px w-full max-w-6xl bg-gray-200 dark:bg-gray-800" />
           </div>
 
-          <section className="mt-10">
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
-              {t('recommendedPosts')}
-            </h2>
-            <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {recommendedPosts.map(item => (
-                <Link
-                  key={item._id}
-                  href={`/blog/${item.slug?.current}`}
-                  className="group block"
-                >
-                  {item.mainImage && (
-                    <div className="relative h-44 w-full overflow-hidden rounded-2xl">
-                      <Image
-                        src={item.mainImage}
-                        alt={item.title || 'Post image'}
-                        fill
-                        className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-                      />
-                    </div>
-                  )}
-                  <h3 className="mt-4 text-lg font-semibold text-gray-900 transition group-hover:text-[#ff00ff] dark:text-gray-100">
+          <section className="mt-10 relative left-1/2 right-1/2 w-screen -translate-x-1/2 px-6">
+            <div className="mx-auto max-w-6xl">
+              <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
+                {t('recommendedPosts')}
+              </h2>
+              <div className="mt-6 grid gap-6 auto-rows-fr sm:grid-cols-2 lg:grid-cols-3">
+                {recommendedPosts.map(item => (
+                  <Link
+                    key={item._id}
+                    href={`/blog/${item.slug?.current}`}
+                    className="group flex h-full flex-col"
+                  >
+                    {item.mainImage && (
+                      <div className="relative h-48 w-full overflow-hidden rounded-2xl">
+                        <Image
+                          src={item.mainImage}
+                          alt={item.title || 'Post image'}
+                          fill
+                          className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                        />
+                      </div>
+                    )}
+                  <h3 className="mt-4 text-lg font-semibold text-gray-900 transition group-hover:underline underline-offset-4 dark:text-gray-100">
                     {item.title}
                   </h3>
+                  {item.body && (
+                    <p className="mt-2 text-sm leading-relaxed text-gray-600 dark:text-gray-400 line-clamp-2">
+                      {plainTextFromPortableText(item.body)}
+                    </p>
+                  )}
                   {(item.author?.name || item.publishedAt) && (
-                    <div className="mt-2 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                    <div className="mt-auto pt-3 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                       {item.author?.image && (
                         <span className="relative h-5 w-5 overflow-hidden rounded-full">
                           <Image
                             src={item.author.image}
-                            alt={item.author.name || 'Author'}
-                            fill
-                            className="object-cover"
-                          />
-                        </span>
-                      )}
-                      {item.author?.name && <span>{item.author.name}</span>}
-                      {item.author?.name && item.publishedAt && <span>·</span>}
-                      {item.publishedAt && (
-                        <span>
-                          {new Date(item.publishedAt).toLocaleDateString()}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </Link>
-              ))}
+                              alt={item.author.name || 'Author'}
+                              fill
+                              className="object-cover"
+                            />
+                          </span>
+                        )}
+                        {item.author?.name && <span>{item.author.name}</span>}
+                        {item.author?.name && item.publishedAt && <span>·</span>}
+                        {item.publishedAt && (
+                          <span>
+                            {new Date(item.publishedAt).toLocaleDateString()}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </Link>
+                ))}
+              </div>
             </div>
           </section>
         </>
