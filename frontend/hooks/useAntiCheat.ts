@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 
 export type AntiCheatViolation = {
@@ -9,6 +10,7 @@ export type AntiCheatViolation = {
 };
 
 export function useAntiCheat(isActive: boolean = true) {
+  const t = useTranslations('quiz.antiCheat');
   const [violations, setViolations] = useState<AntiCheatViolation[]>([]);
   const [isTabActive, setIsTabActive] = useState(true);
   const [showWarning, setShowWarning] = useState(false);
@@ -25,14 +27,14 @@ export function useAntiCheat(isActive: boolean = true) {
     setViolations(prev => [...prev, violation]);
     setShowWarning(true);
 
-    const messages = {
-      copy: '⚠️ Копіювання заборонено під час квізу',
-      paste: '⚠️ Вставка заборонена під час квізу',
-      'context-menu': '⚠️ Контекстне меню заборонено під час квізу',
-      'tab-switch': '⚠️ Перехід на іншу вкладку зафіксовано',
+    const messageKey: Record<AntiCheatViolation['type'], string> = {
+      copy: 'copy',
+      paste: 'paste',
+      'context-menu': 'contextMenu',
+      'tab-switch': 'tabSwitch',
     };
 
-    toast.warning(messages[type], {
+    toast.warning(t(messageKey[type]), {
       duration: 3000,
     });
 

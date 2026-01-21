@@ -1,5 +1,6 @@
 'use client';
 import { LogIn, Settings, User } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { SITE_LINKS } from '@/lib/navigation';
 
@@ -28,10 +29,11 @@ export function UnifiedHeader({
   showAdminLink = false,
   blogCategories = [],
 }: UnifiedHeaderProps) {
+  const t = useTranslations('navigation');
   const isShop = variant === 'shop';
   const isBlog = variant === 'blog';
   const brandHref = isShop ? '/shop' : isBlog ? '/blog' : '/';
-  const brandBadge = isShop ? 'Shop' : isBlog ? 'Blog' : '';
+  const brandBadge = isShop ? t('shop') : isBlog ? t('blog') : '';
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -69,7 +71,7 @@ export function UnifiedHeader({
                   href={link.href}
                   className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
                 >
-                  {link.label}
+                  {t(link.labelKey)}
                 </Link>
               ))}
             </div>
@@ -109,7 +111,7 @@ export function UnifiedHeader({
                 className="inline-flex items-center gap-2 rounded-md bg-secondary px-3 py-2 text-sm font-medium text-foreground transition-colors hover:opacity-90"
               >
                 <LogIn className="h-4 w-4" />
-                Log in
+                {t('login')}
               </Link>
             ) : (
               <LogoutButton />

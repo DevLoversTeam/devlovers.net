@@ -133,6 +133,16 @@ export default function BlogFilters({
     setSelectedAuthor(null);
     setSelectedCategory(null);
   };
+
+  // Helper function to get translated category label
+  const getCategoryLabel = (categoryName: string): string => {
+    const key = categoryName.toLowerCase();
+    const translationKey = `categories.${key}` as const;
+    // Try to get translation, fallback to original name
+    const translated = t.raw(translationKey);
+    return typeof translated === 'string' ? translated : categoryName;
+  };
+
   const allCategories = useMemo(() => {
     if (categories.length) {
       return categories
@@ -343,7 +353,7 @@ export default function BlogFilters({
                   : 'rounded-full border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800'
               }
             >
-              All
+              {t('all')}
             </button>
             {allCategories.map(category => (
               <button
@@ -362,7 +372,7 @@ export default function BlogFilters({
                     : 'rounded-full border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800'
                 }
               >
-                {category.name}
+                {getCategoryLabel(category.name)}
               </button>
             ))}
           </div>

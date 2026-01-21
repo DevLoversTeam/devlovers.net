@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Search } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 
 type PostSearchItem = {
@@ -36,6 +37,7 @@ function extractSnippet(body: PostSearchItem['body'], query: string) {
 const SEARCH_ENDPOINT = '/api/blog-search';
 
 export function BlogHeaderSearch() {
+  const t = useTranslations('blog');
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState('');
   const [items, setItems] = useState<PostSearchItem[]>([]);
@@ -156,7 +158,7 @@ export function BlogHeaderSearch() {
                 onKeyDown={event => {
                   if (event.key === 'Escape') setOpen(false);
                 }}
-              placeholder="What're we looking for ?"
+              placeholder={t('searchPlaceholder')}
               className="w-full bg-transparent text-sm text-foreground outline-none"
               style={{ fontFamily: 'Lato, system-ui, -apple-system, sans-serif' }}
             />
@@ -200,7 +202,7 @@ export function BlogHeaderSearch() {
           )}
           {value && !results.length && !isLoading && (
             <div className="border-t border-border px-3 py-2 text-xs text-muted-foreground">
-              No matches
+              {t('noMatches')}
             </div>
           )}
         </div>

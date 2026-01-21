@@ -18,6 +18,7 @@
     "about": "O nas",
     "contacts": "Kontakt",
     "blog": "Blog",
+    "shop": "Sklep",
     "login": "Zaloguj się",
     "logout": "Wyloguj się",
     "signup": "Zarejestruj się",
@@ -164,6 +165,12 @@
       "message": "Twój postęp nie zostanie zapisany.",
       "confirm": "Wyjdź",
       "cancel": "Kontynuuj"
+    },
+    "antiCheat": {
+      "copy": "Kopiowanie jest zabronione podczas quizu",
+      "paste": "Wklejanie jest zabronione podczas quizu",
+      "contextMenu": "Menu kontekstowe jest zabronione podczas quizu",
+      "tabSwitch": "Wykryto przełączenie karty"
     }
   },
   "blog": {
@@ -171,7 +178,16 @@
     "subtitle": "Poznaj najnowsze artykuły z Tech, News i Career Growth — trendy, idee i praktyczne wskazówki.",
     "metaTitle": "Blog | DevLovers",
     "metaDescription": "Odkryj najnowsze artykuły i spostrzeżenia",
+    "all": "Wszystkie",
+    "noMatches": "Brak wyników",
     "searchPlaceholder": "Szukaj...",
+    "categories": {
+      "tech": "Technologia",
+      "career": "Kariera",
+      "insights": "Spostrzeżenia",
+      "news": "Aktualności",
+      "growth": "Kariera"
+    },
     "removeTag": "Usuń tag",
     "add": "Dodaj",
     "clear": "Wyczyść",
