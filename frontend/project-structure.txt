@@ -70,14 +70,15 @@
           📄 OrderStatusAutoRefresh.tsx
           📄 page.tsx
       📁 orders
-        📄 error.tsx
-        📄 page.tsx
         📁 [id]
           📄 page.tsx
+        📄 error.tsx
+        📄 page.tsx
       📄 page.tsx
       📁 products
         📁 [slug]
           📄 page.tsx
+        📄 page.tsx
     📁 signup
       📄 page.tsx
     📁 terms-of-service
@@ -167,6 +168,7 @@
     📄 StatsSection.tsx
   📁 auth
     📄 OAuthButtons.tsx
+    📄 PostAuthQuizSync.tsx
     📄 ProviderButton.tsx
     📁 icons
       📄 GitHubIcon.tsx
@@ -347,11 +349,13 @@
   📄 0001_add_payment_attempts.sql
   📄 0002_clean_martin_li.sql
   📄 0003_add_stripe_events_claim_lock.sql
+  📄 0004_add_api_rate_limits.sql
   📁 meta
     📄 0000_snapshot.json
     📄 0001_snapshot.json
     📄 0002_snapshot.json
     📄 0003_snapshot.json
+    📄 0004_snapshot.json
     📄 _journal.json
 📄 drizzle.config.ts
 📄 eslint.config.mjs
@@ -408,6 +412,7 @@
   📁 security
     📄 admin-csrf.ts
     📄 csrf.ts
+    📄 rate-limit.ts
   📁 services
     📄 errors.ts
     📄 inventory.ts

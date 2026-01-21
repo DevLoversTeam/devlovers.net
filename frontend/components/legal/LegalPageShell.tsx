@@ -1,4 +1,5 @@
 import { Link } from '@/i18n/routing';
+import { getTranslations } from 'next-intl/server';
 
 type Props = {
   title: string;
@@ -6,11 +7,13 @@ type Props = {
   children: React.ReactNode;
 };
 
-export default function LegalPageShell({
+export default async function LegalPageShell({
   title,
   lastUpdated,
   children,
 }: Props) {
+  const t = await getTranslations('legal');
+
   return (
     <main
       className="
@@ -50,7 +53,7 @@ export default function LegalPageShell({
             href="/"
             className="inline-flex text-sm text-slate-600 hover:text-blue-600 transition-colors dark:text-slate-300 dark:hover:text-white"
           >
-            ← Back
+            ← {t('back')}
           </Link>
 
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
@@ -62,15 +65,15 @@ export default function LegalPageShell({
             <span className="opacity-60">•</span>
             <address className="not-italic">
               <a
-                href="mailto:devlovers.net@gmail.com"
+                href={`mailto:${t('contactEmail')}`}
                 className="underline underline-offset-4 hover:text-blue-600 dark:hover:text-white transition-colors"
               >
-                devlovers.net@gmail.com
+                {t('contactEmail')}
               </a>
             </address>
             <span className="opacity-60">•</span>
             <span>
-              Last updated: <span className="font-medium">{lastUpdated}</span>
+              {t('lastUpdated')}: <span className="font-medium">{lastUpdated}</span>
             </span>
           </div>
         </header>

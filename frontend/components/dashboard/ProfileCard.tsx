@@ -1,3 +1,7 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 interface ProfileCardProps {
   user: {
     name: string | null;
@@ -6,9 +10,12 @@ interface ProfileCardProps {
     points: number;
     createdAt: Date | null;
   };
+  locale: string;
 }
 
-export function ProfileCard({ user }: ProfileCardProps) {
+export function ProfileCard({ user, locale }: ProfileCardProps) {
+  const t = useTranslations("dashboard.profile");
+
   const cardStyles = `
     relative overflow-hidden rounded-[2rem]
     border border-slate-200/70 dark:border-slate-700/80
@@ -35,14 +42,14 @@ export function ProfileCard({ user }: ProfileCardProps) {
             id="profile-heading"
             className="text-2xl font-bold text-slate-800 dark:text-slate-100"
           >
-            {user.name || 'Developer'}
+            {user.name || t("defaultName")}
           </h2>
           <p className="text-slate-500 dark:text-slate-400 text-sm font-mono">
             {user.email}
           </p>
 
           <div className="mt-3 inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-300">
-            {user.role || 'user'}
+            {user.role || t("defaultRole")}
           </div>
         </div>
       </div>
@@ -50,7 +57,7 @@ export function ProfileCard({ user }: ProfileCardProps) {
       <dl className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800/50 grid grid-cols-2 gap-6">
         <div>
           <dt className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-            Total Points
+            {t("totalPoints")}
           </dt>
 
           <dd className="text-3xl font-black text-slate-800 dark:text-white mt-1">
@@ -59,11 +66,11 @@ export function ProfileCard({ user }: ProfileCardProps) {
         </div>
         <div>
           <dt className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-            Joined
+            {t("joined")}
           </dt>
           <dd className="text-lg font-medium text-slate-700 dark:text-slate-300 mt-2">
             {user.createdAt
-              ? new Date(user.createdAt).toLocaleDateString('uk-UA')
+              ? new Date(user.createdAt).toLocaleDateString(locale)
               : '-'}
           </dd>
         </div>

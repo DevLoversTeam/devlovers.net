@@ -15,6 +15,7 @@ import { MainSwitcher } from '@/components/header/MainSwitcher';
 import { AppChrome } from '@/components/header/AppChrome';
 
 import { CookieBanner } from '@/components/shared/CookieBanner';
+import { OnlineCounterPopup } from '@/components/shared/OnlineCounterPopup';
 
 export const dynamic = 'force-dynamic';
 
@@ -74,6 +75,7 @@ export default async function LocaleLayout({
             {children}
           </MainSwitcher>
         </AppChrome>
+        <OnlineCounterPopup />
 
         <Footer />
         <Toaster position="top-right" richColors expand />
