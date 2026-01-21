@@ -8,17 +8,11 @@ export const metadata: Metadata = {
   description: 'Top performers of the community',
 };
 
-// Робимо сторінку динамічною, щоб завжди бачити актуального юзера
 export const dynamic = 'force-dynamic';
 
 export default async function LeaderboardPage() {
   const users = await getLeaderboardData();
   const session = await getCurrentUser();
 
-  return (
-    <LeaderboardClient
-      initialUsers={users}
-      currentUser={session} // ✅ ПЕРЕДАЄМО ВЕСЬ ОБ'ЄКТ
-    />
-  );
+  return <LeaderboardClient initialUsers={users} currentUser={session} />;
 }

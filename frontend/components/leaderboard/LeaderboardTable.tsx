@@ -1,13 +1,11 @@
 'use client';
 
 import { TrendingUp, Trophy, Medal } from 'lucide-react';
-// ✅ Додаємо motion для анімації серцебиття
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { User } from './types';
 
-// Спрощений тип для currentUser
 type AuthUser = { id: string; username: string; email: string };
 
 interface LeaderboardTableProps {
@@ -25,7 +23,6 @@ export function LeaderboardTable({
   const normalizedCurrentUserId = currentUser ? String(currentUser.id) : null;
   const currentUsername = currentUser?.username;
 
-  // Шукаємо користувача за ID АБО за ім'ям
   const matchedUser = users.find(
     u =>
       String(u.id) === normalizedCurrentUserId ||
@@ -142,15 +139,13 @@ function TableRow({
             >
               {user.username}
 
-              {/* ✅ ЗАМІНА: СЕРДЕЧКО, ЩО Б'ЄТЬСЯ */}
               {isCurrentUser && (
                 <div className="relative flex items-center justify-center w-8 h-8 ml-1">
-                  {/* Анімоване SVG серце */}
                   <motion.div
-                    animate={{ scale: [1, 1.2, 1] }} // Ефект удару серця
+                    animate={{ scale: [1, 1.2, 1] }}
                     transition={{
                       repeat: Infinity,
-                      duration: 0.8, // Швидкість серцебиття
+                      duration: 0.8,
                       ease: 'easeInOut',
                     }}
                     className="absolute inset-0 text-[#ff2d55]"
@@ -164,7 +159,6 @@ function TableRow({
                     </svg>
                   </motion.div>
 
-                  {/* Текст "YOU" всередині */}
                   <span className="relative z-10 text-[8px] font-black text-white uppercase tracking-tighter -mt-0.5">
                     {t('you') || 'YOU'}
                   </span>

@@ -92,23 +92,15 @@ export async function clearAuthCookie() {
 export async function getCurrentUser(): Promise<AuthUser | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get(AUTH_COOKIE_NAME)?.value;
-  // 🔍 DEBUG: Немає токена
   if (!token) {
-    console.log('[Auth] No token cookie found');
     return null;
   }
 
   const payload = verifyAuthToken(token);
-  // 🔍 DEBUG: Токен невалідний
   if (!payload) {
-    console.log('[Auth] Token invalid or verification failed');
     return null;
   }
-  // 🔍 DEBUG: Шукаємо в базі
-  console.log(`[Auth] Looking for user ID: ${payload.userId}`);
 
-  // ⚠️ Увага: переконайтеся, що тип ID в базі співпадає (string vs number)
-  // Якщо в базі ID - це число, а payload.userId - рядок, треба конвертувати
   const result = await db
     .select({
       id: users.id,
@@ -121,9 +113,6 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     .limit(1);
 
   if (result.length === 0) {
-    console.warn(
-      `[Auth] ⚠️ User ID ${payload.userId} found in token BUT NOT in Database. Probably stale cookie.`
-    );
     return null;
   }
 
