@@ -322,7 +322,8 @@
     "championsArena": "Champions Arena",
     "topThreeLabel": "Top 3 Leaders",
     "pts": "pts",
-    "tableCaption": "Leaderboard ranking for other participants"
+    "tableCaption": "Leaderboard ranking for other participants",
+    "you": "You"
   },
   "auth": {
     "login": {
