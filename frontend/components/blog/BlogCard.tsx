@@ -94,7 +94,11 @@ export default function BlogCard({
             hover:underline
             group-hover:underline
             underline-offset-4
-            ${disableHoverColor ? '' : 'dark:group-hover:text-[var(--accent-primary)]'}
+            ${
+              disableHoverColor
+                ? ''
+                : 'hover:text-[var(--accent-primary)] group-hover:text-[var(--accent-primary)]'
+            }
           `}
           style={{ fontFamily: 'ui-rounded, system-ui, -apple-system' }}
         >
@@ -114,7 +118,7 @@ export default function BlogCard({
                 <button
                   type="button"
                   onClick={() => post.author && onAuthorSelect(post.author)}
-                  className="flex items-center gap-2 hover:text-[#ff00ff] hover:underline underline-offset-4 transition"
+                  className="flex items-center gap-2 hover:text-[var(--accent-primary)] hover:underline underline-offset-4 transition"
                 >
                   {post.author?.image && (
                     <span className="relative h-5 w-5 overflow-hidden rounded-full">
