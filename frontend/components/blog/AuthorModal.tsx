@@ -110,6 +110,8 @@ export default function AuthorModal({
   );
 
   const formattedDate = useMemo(() => formatDateGB(publishedAt), [publishedAt]);
+  const authorName = author?.name || 'Unknown author';
+  const metaText = formattedDate ? `${authorName} · ${formattedDate}` : authorName;
 
   useEffect(() => setMounted(true), []);
 
@@ -139,26 +141,9 @@ export default function AuthorModal({
     <button
       type="button"
       onClick={() => setOpen(true)}
-      className="mt-4 flex items-center gap-3 text-sm text-gray-700 hover:opacity-80 transition text-left"
+      className="mt-3 text-[12px] md:text-[13px] text-gray-500 hover:text-[#ff00ff] hover:underline underline-offset-4 transition text-left"
     >
-      {author?.image && (
-        <div className="relative w-9 h-9 shrink-0">
-          <Image
-            src={author.image}
-            alt={author?.name || 'Author'}
-            fill
-            className="rounded-full object-cover border border-gray-300"
-          />
-        </div>
-      )}
-
-      <div className="flex flex-col">
-        <span className="font-medium">{author?.name || 'Unknown author'}</span>
-
-        {formattedDate && (
-          <span className="text-gray-500 text-xs">{formattedDate}</span>
-        )}
-      </div>
+      {metaText}
     </button>
   );
 
@@ -193,7 +178,7 @@ export default function AuthorModal({
                   transition
                 "
               >
-                <span className="text-xl leading-none">×</span>
+                <span className="text-xl leading-none -mt-px">×</span>
               </button>
 
               <div className="flex items-center gap-4">
@@ -240,7 +225,7 @@ export default function AuthorModal({
               )}
 
               {hasSocial && (
-                <div className="mt-5">
+                <div className="mt-5 border-t border-gray-100 pt-4">
                   <h3 className="text-sm font-semibold text-gray-900 mb-2">
                     Social links
                   </h3>

@@ -1,9 +1,8 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Link } from '@/i18n/routing';
+import { Link, useRouter } from '@/i18n/routing';
 
-import { useRouter } from 'next/navigation';
 import {
   Elements,
   PaymentElement,
@@ -22,6 +21,7 @@ import {
   resolveCurrencyFromLocale,
   type CurrencyCode,
 } from '@/lib/shop/currency';
+import { logError } from '@/lib/logging';
 
 type PaymentFormProps = {
   orderId: string;
@@ -33,7 +33,7 @@ type StripePaymentClientProps = {
   publishableKey: string | null;
   paymentsEnabled: boolean;
   orderId: string;
-  amount: number;
+  amountMinor: number;
   currency: string;
   locale: string;
 };
@@ -48,10 +48,41 @@ function toCurrencyCode(
     : resolveCurrencyFromLocale(locale);
 }
 
+function buildShopBase(locale: string) {
+  return `/${locale}/shop`;
+}
+
+function nextRouteForPaymentResult(params: {
+  locale: string;
+  orderId: string;
+  status?: string | null;
+}) {
+  const { locale, orderId, status } = params;
+  const shopBase = buildShopBase(locale);
+  const id = encodeURIComponent(orderId);
+
+  const success = `${shopBase}/checkout/success?orderId=${id}`;
+  const failure = `${shopBase}/checkout/error?orderId=${id}`;
+
+  if (!status) return success;
+  if (
+    status === 'succeeded' ||
+    status === 'processing' ||
+    status === 'requires_capture'
+  )
+    return success;
+  if (status === 'requires_payment_method' || status === 'canceled')
+    return failure;
+  return success;
+}
+
 function StripePaymentForm({ orderId, locale }: PaymentFormProps) {
   const stripe = useStripe();
   const elements = useElements();
   const router = useRouter();
+
+  const shopBase = useMemo(() => buildShopBase(locale), [locale]);
+
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -69,48 +100,63 @@ function StripePaymentForm({ orderId, locale }: PaymentFormProps) {
     setSubmitting(true);
 
     try {
+      const id = encodeURIComponent(orderId);
+
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
         redirect: 'if_required',
         confirmParams: {
-          return_url: `${window.location.origin}/${locale}/shop/checkout/success?orderId=${orderId}`,
+          // Stripe redirect comes from outside Next.js routing — must include locale.
+          return_url: `${window.location.origin}${shopBase}/checkout/success?orderId=${id}`,
         },
       });
 
       if (error) {
         setErrorMessage(error.message ?? 'Unable to confirm payment.');
-        router.push(`/${locale}/shop/checkout/error?orderId=${orderId}`);
+        router.push(`${shopBase}/checkout/error?orderId=${id}`);
         return;
       }
 
-      if (paymentIntent?.status === 'succeeded') {
-        router.push(`/${locale}/shop/checkout/success?orderId=${orderId}`);
-        return;
-      }
+      const next = nextRouteForPaymentResult({
+        locale,
+        orderId,
+        status: paymentIntent?.status ?? null,
+      });
 
-      router.push(`/${locale}/shop/checkout/error?orderId=${orderId}`);
+      router.push(next);
     } catch (error) {
-      console.error('Payment confirmation failed', error);
+      logError('stripe_payment_confirm_failed', error, { orderId });
       setErrorMessage('We couldn’t confirm your payment. Please try again.');
-      router.push(`/${locale}/shop/checkout/error?orderId=${orderId}`);
+      router.push(
+        `${shopBase}/checkout/error?orderId=${encodeURIComponent(orderId)}`
+      );
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-4"
+      aria-label="Stripe payment form"
+    >
       <PaymentElement />
+
       <button
         type="submit"
         disabled={!stripe || submitting}
         className="flex w-full items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground transition-colors hover:bg-accent/90 disabled:opacity-60"
+        aria-disabled={!stripe || submitting}
       >
         {submitting ? 'Processing...' : 'Submit payment'}
       </button>
-      {errorMessage && (
-        <p className="text-sm text-destructive">{errorMessage}</p>
-      )}
+
+      {errorMessage ? (
+        <p className="text-sm text-destructive" role="alert">
+          {errorMessage}
+        </p>
+      ) : null}
     </form>
   );
 }
@@ -120,7 +166,7 @@ export default function StripePaymentClient({
   publishableKey,
   paymentsEnabled,
   orderId,
-  amount,
+  amountMinor,
   currency,
   locale,
 }: StripePaymentClientProps) {
@@ -128,6 +174,8 @@ export default function StripePaymentClient({
     () => toCurrencyCode(currency, locale),
     [currency, locale]
   );
+
+  const shopBase = useMemo(() => buildShopBase(locale), [locale]);
 
   const stripePromise = useMemo(() => {
     if (!paymentsEnabled || !publishableKey) return null;
@@ -144,62 +192,75 @@ export default function StripePaymentClient({
 
   if (!paymentsEnabled) {
     return (
-      <div className="space-y-3 text-sm text-muted-foreground">
+      <section
+        className="space-y-3 text-sm text-muted-foreground"
+        aria-label="Payments disabled"
+      >
         <p>Payments are disabled in this environment.</p>
-        <div className="flex gap-3">
+        <nav className="flex gap-3" aria-label="Next steps">
           <Link
-            href={`/${locale}/shop/checkout/success?orderId=${orderId}`}
+            href={`${shopBase}/checkout/success?orderId=${encodeURIComponent(
+              orderId
+            )}`}
             className="inline-flex items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground hover:bg-accent/90"
           >
             Continue
           </Link>
           <Link
-            href={`/${locale}/shop/cart`}
+            href={`${shopBase}/cart`}
             className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
           >
             Back to cart
           </Link>
-        </div>
-      </div>
+        </nav>
+      </section>
     );
   }
 
   if (!clientSecret || !clientSecret.trim()) {
     return (
-      <div className="space-y-3 text-sm text-muted-foreground">
+      <section
+        className="space-y-3 text-sm text-muted-foreground"
+        aria-label="Payment initialization failed"
+      >
         <p>Payment cannot be initialized. Please try again later.</p>
         <Link
-          href={`/${locale}/shop/cart`}
+          href={`${shopBase}/cart`}
           className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
         >
           Return to cart
         </Link>
-      </div>
+      </section>
     );
   }
 
   if (!stripePromise || !options) {
     return (
-      <p className="text-sm text-muted-foreground">Preparing secure payment…</p>
+      <p className="text-sm text-muted-foreground" aria-live="polite">
+        Preparing secure payment…
+      </p>
     );
   }
 
   return (
-    <Elements stripe={stripePromise as Promise<Stripe>} options={options}>
-      <div className="space-y-4">
-        <div className="rounded-md border border-border bg-muted/40 p-3 text-sm text-foreground">
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Pay</span>
-            <span className="text-base font-semibold">
-              {formatMoney(amount, uiCurrency, locale)}
-            </span>
+    <section aria-label="Secure payment">
+      <Elements stripe={stripePromise as Promise<Stripe>} options={options}>
+        <div className="space-y-4">
+          <div className="rounded-md border border-border bg-muted/40 p-3 text-sm text-foreground">
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Pay</span>
+              <span className="text-base font-semibold">
+                {formatMoney(amountMinor, uiCurrency, locale)}
+              </span>
+            </div>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+              {uiCurrency}
+            </p>
           </div>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">
-            {uiCurrency}
-          </p>
+
+          <StripePaymentForm orderId={orderId} locale={locale} />
         </div>
-        <StripePaymentForm orderId={orderId} locale={locale} />
-      </div>
-    </Elements>
+      </Elements>
+    </section>
   );
 }

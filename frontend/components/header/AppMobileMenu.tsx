@@ -6,17 +6,24 @@ import { Link } from '@/i18n/routing';
 
 import { SITE_LINKS } from '@/lib/navigation';
 import { NAV_LINKS } from '@/components/shop/header/nav-links';
+import { BlogCategoryLinks } from '@/components/blog/BlogCategoryLinks';
 import { LogoutButton } from '@/components/auth/logoutButton';
 
-export type AppMobileMenuVariant = 'platform' | 'shop';
+export type AppMobileMenuVariant = 'platform' | 'shop' | 'blog';
 
 type Props = {
   variant: AppMobileMenuVariant;
   userExists: boolean;
   showAdminLink?: boolean;
+  blogCategories?: Array<{ _id: string; title: string }>;
 };
 
-export function AppMobileMenu({ variant, userExists, showAdminLink = false }: Props) {
+export function AppMobileMenu({
+  variant,
+  userExists,
+  showAdminLink = false,
+  blogCategories = [],
+}: Props) {
   const [open, setOpen] = useState(false);
 
   const close = () => setOpen(false);
@@ -35,7 +42,8 @@ export function AppMobileMenu({ variant, userExists, showAdminLink = false }: Pr
 
   const links = useMemo(() => {
     if (variant === 'shop') return NAV_LINKS;
-    return SITE_LINKS;
+    if (variant === 'platform') return SITE_LINKS;
+    return [];
   }, [variant]);
 
   return (
@@ -46,7 +54,7 @@ export function AppMobileMenu({ variant, userExists, showAdminLink = false }: Pr
         className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
         aria-label="Toggle menu"
         aria-expanded={open ? 'true' : 'false'}
-        aria-controls="app-mobile-nav"
+        aria-controls={open ? 'app-mobile-nav' : undefined}
       >
         {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
       </button>
@@ -65,16 +73,35 @@ export function AppMobileMenu({ variant, userExists, showAdminLink = false }: Pr
             className="fixed left-0 right-0 top-16 z-50 border-t border-border bg-background px-4 py-4 md:hidden"
           >
             <div className="flex flex-col gap-1">
-              {links.map(link => (
+              {variant === 'shop' ? (
                 <Link
-                  key={link.href}
-                  href={link.href}
+                  href="/"
                   onClick={close}
                   className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
                 >
-                  {link.label}
+                  Home
                 </Link>
-              ))}
+              ) : null}
+
+              {variant === 'blog' ? (
+                <BlogCategoryLinks
+                  categories={blogCategories}
+                  className="flex flex-col gap-1"
+                  linkClassName="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                  onNavigate={close}
+                />
+              ) : (
+                links.map(link => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={close}
+                    className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                  >
+                    {link.label}
+                  </Link>
+                ))
+              )}
 
               {variant === 'shop' && showAdminLink ? (
                 <Link
@@ -97,6 +124,17 @@ export function AppMobileMenu({ variant, userExists, showAdminLink = false }: Pr
                   >
                     Dashboard
                   </Link>
+
+                  {showAdminLink ? (
+                    <Link
+                      href="/shop/admin"
+                      aria-label="Shop admin"
+                      title="Shop admin"
+                      className="inline-flex items-center rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                    >
+                      Admin
+                    </Link>
+                  ) : null}
 
                   {/* LogoutButton стилізується сам; ми тільки позиціонуємо як пункт меню */}
                   <div className="px-3 py-2" onClick={close}>

@@ -1,0 +1,434 @@
+{
+  "questions": [
+    {
+      "id": "node-q31",
+      "order": 31,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Який тестовий фреймворк найчастіше використовується у Node.js проєктах?",
+        "exp": "Jest — це all-in-one фреймворк від Facebook з вбудованими асертами, мокінгом та coverage, що робить його популярним вибором."
+      },
+      "en": {
+        "q": "Which testing framework is most commonly used in Node.js projects?",
+        "exp": "Jest is an all-in-one framework from Facebook with built-in assertions, mocking, and coverage, making it a popular choice."
+      },
+      "pl": {
+        "q": "Który framework testowy jest najczęściej używany w projektach Node.js?",
+        "exp": "Jest to framework all-in-one od Facebooka z wbudowanymi asercjami, mockingiem i coverage, co czyni go popularnym wyborem."
+      },
+      "answers": [
+        {
+          "uk": "Webpack",
+          "en": "Webpack",
+          "pl": "Webpack",
+          "correct": false
+        },
+        {
+          "uk": "Jest",
+          "en": "Jest",
+          "pl": "Jest",
+          "correct": true
+        },
+        {
+          "uk": "Babel",
+          "en": "Babel",
+          "pl": "Babel",
+          "correct": false
+        },
+        {
+          "uk": "ESLint",
+          "en": "ESLint",
+          "pl": "ESLint",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-q32",
+      "order": 32,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке mocking у контексті тестування Node.js?",
+        "exp": "Mocking — це техніка імітації залежностей (БД, API) для ізольованого тестування модулів без реальних зовнішніх сервісів."
+      },
+      "en": {
+        "q": "What is mocking in the context of Node.js testing?",
+        "exp": "Mocking is a technique for simulating dependencies (DB, API) to test modules in isolation without real external services."
+      },
+      "pl": {
+        "q": "Czym jest mocking w kontekście testowania Node.js?",
+        "exp": "Mocking to technika symulowania zależności (BD, API) do izolowanego testowania modułów bez rzeczywistych usług zewnętrznych."
+      },
+      "answers": [
+        {
+          "uk": "Техніка прискорення виконання тестів",
+          "en": "A technique for speeding up test execution",
+          "pl": "Technika przyspieszania wykonywania testów",
+          "correct": false
+        },
+        {
+          "uk": "Імітація залежностей для ізольованого тестування модулів",
+          "en": "Simulating dependencies for isolated module testing",
+          "pl": "Symulowanie zależności do izolowanego testowania modułów",
+          "correct": true
+        },
+        {
+          "uk": "Генерація випадкових тестових даних",
+          "en": "Generating random test data",
+          "pl": "Generowanie losowych danych testowych",
+          "correct": false
+        },
+        {
+          "uk": "Автоматичне виправлення помилок у коді",
+          "en": "Automatic code error fixing",
+          "pl": "Automatyczne poprawianie błędów w kodzie",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-q33",
+      "order": 33,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке PM2 і для чого він використовується?",
+        "exp": "PM2 — це менеджер процесів для Node.js у продакшн. Забезпечує автоматичний рестарт, кластеризацію, моніторинг та логування."
+      },
+      "en": {
+        "q": "What is PM2 and what is it used for?",
+        "exp": "PM2 is a process manager for Node.js in production. It provides auto-restart, clustering, monitoring, and logging."
+      },
+      "pl": {
+        "q": "Czym jest PM2 i do czego jest używany?",
+        "exp": "PM2 to menedżer procesów dla Node.js na produkcji. Zapewnia auto-restart, klasteryzację, monitoring i logowanie."
+      },
+      "answers": [
+        {
+          "uk": "Пакетний менеджер для Node.js",
+          "en": "A package manager for Node.js",
+          "pl": "Menedżer pakietów dla Node.js",
+          "correct": false
+        },
+        {
+          "uk": "Менеджер процесів з авто-рестартом, кластеризацією та моніторингом",
+          "en": "A process manager with auto-restart, clustering, and monitoring",
+          "pl": "Menedżer procesów z auto-restartem, klasteryzacją i monitoringiem",
+          "correct": true
+        },
+        {
+          "uk": "Інструмент для мінімізації JavaScript",
+          "en": "A tool for minifying JavaScript",
+          "pl": "Narzędzie do minifikacji JavaScript",
+          "correct": false
+        },
+        {
+          "uk": "Фреймворк для створення API",
+          "en": "A framework for building APIs",
+          "pl": "Framework do tworzenia API",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-q34",
+      "order": 34,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Як кластеризація допомагає масштабувати Node.js застосунок?",
+        "exp": "Модуль cluster створює кілька воркер-процесів, що використовують усі ядра CPU, розподіляючи навантаження між ними."
+      },
+      "en": {
+        "q": "How does clustering help scale a Node.js application?",
+        "exp": "The cluster module creates multiple worker processes that utilize all CPU cores, distributing the load among them."
+      },
+      "pl": {
+        "q": "Jak klasteryzacja pomaga skalować aplikację Node.js?",
+        "exp": "Moduł cluster tworzy wiele procesów workerów wykorzystujących wszystkie rdzenie CPU, rozdzielając obciążenie między nimi."
+      },
+      "answers": [
+        {
+          "uk": "Стискає JavaScript-код для швидшого завантаження",
+          "en": "Compresses JavaScript code for faster loading",
+          "pl": "Kompresuje kod JavaScript dla szybszego ładowania",
+          "correct": false
+        },
+        {
+          "uk": "Створює воркер-процеси для використання всіх ядер CPU",
+          "en": "Creates worker processes to utilize all CPU cores",
+          "pl": "Tworzy procesy workerów do wykorzystania wszystkich rdzeni CPU",
+          "correct": true
+        },
+        {
+          "uk": "Кешує відповіді сервера автоматично",
+          "en": "Automatically caches server responses",
+          "pl": "Automatycznie cachuje odpowiedzi serwera",
+          "correct": false
+        },
+        {
+          "uk": "Об'єднує кілька серверів в один",
+          "en": "Combines multiple servers into one",
+          "pl": "Łączy wiele serwerów w jeden",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-q35",
+      "order": 35,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке WebSocket і чим він відрізняється від HTTP?",
+        "exp": "WebSocket — це протокол для постійного двонаправленого з'єднання між клієнтом і сервером, на відміну від HTTP з окремими запитами."
+      },
+      "en": {
+        "q": "What is WebSocket and how does it differ from HTTP?",
+        "exp": "WebSocket is a protocol for persistent bidirectional connection between client and server, unlike HTTP with separate requests."
+      },
+      "pl": {
+        "q": "Czym jest WebSocket i czym różni się od HTTP?",
+        "exp": "WebSocket to protokół dla trwałego dwukierunkowego połączenia między klientem a serwerem, w przeciwieństwie do HTTP z osobnymi żądaniami."
+      },
+      "answers": [
+        {
+          "uk": "WebSocket працює тільки на localhost",
+          "en": "WebSocket only works on localhost",
+          "pl": "WebSocket działa tylko na localhost",
+          "correct": false
+        },
+        {
+          "uk": "Протокол для постійного двонаправленого з'єднання",
+          "en": "A protocol for persistent bidirectional connection",
+          "pl": "Protokół dla trwałego dwukierunkowego połączenia",
+          "correct": true
+        },
+        {
+          "uk": "Спосіб стиснення HTTP-відповідей",
+          "en": "A way to compress HTTP responses",
+          "pl": "Sposób kompresji odpowiedzi HTTP",
+          "correct": false
+        },
+        {
+          "uk": "Альтернативний порт для HTTP-запитів",
+          "en": "An alternative port for HTTP requests",
+          "pl": "Alternatywny port dla żądań HTTP",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-q36",
+      "order": 36,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Яка основна перевага контейнеризації (Docker) для Node.js застосунків?",
+        "exp": "Docker забезпечує ізоляцію середовища та однакову роботу застосунку на dev, staging і production, спрощуючи деплой."
+      },
+      "en": {
+        "q": "What is the main advantage of containerization (Docker) for Node.js apps?",
+        "exp": "Docker provides environment isolation and consistent app behavior across dev, staging, and production, simplifying deployment."
+      },
+      "pl": {
+        "q": "Jaka jest główna zaleta konteneryzacji (Docker) dla aplikacji Node.js?",
+        "exp": "Docker zapewnia izolację środowiska i spójne działanie aplikacji na dev, staging i produkcji, upraszczając deployment."
+      },
+      "answers": [
+        {
+          "uk": "Прискорює виконання JavaScript-коду",
+          "en": "Speeds up JavaScript code execution",
+          "pl": "Przyspiesza wykonywanie kodu JavaScript",
+          "correct": false
+        },
+        {
+          "uk": "Ізоляція середовища та однакова робота на всіх оточеннях",
+          "en": "Environment isolation and consistent behavior across all environments",
+          "pl": "Izolacja środowiska i spójne działanie we wszystkich środowiskach",
+          "correct": true
+        },
+        {
+          "uk": "Автоматичне тестування коду",
+          "en": "Automatic code testing",
+          "pl": "Automatyczne testowanie kodu",
+          "correct": false
+        },
+        {
+          "uk": "Заміна npm для управління залежностями",
+          "en": "Replacement for npm for dependency management",
+          "pl": "Zamiennik npm do zarządzania zależnościami",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-q37",
+      "order": 37,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке Worker Threads у Node.js?",
+        "exp": "Worker Threads дозволяють виконувати JavaScript у паралельних потоках для CPU-інтенсивних задач, не блокуючи основний потік."
+      },
+      "en": {
+        "q": "What are Worker Threads in Node.js?",
+        "exp": "Worker Threads allow executing JavaScript in parallel threads for CPU-intensive tasks without blocking the main thread."
+      },
+      "pl": {
+        "q": "Czym są Worker Threads w Node.js?",
+        "exp": "Worker Threads pozwalają wykonywać JavaScript w równoległych wątkach dla zadań intensywnych CPU bez blokowania głównego wątku."
+      },
+      "answers": [
+        {
+          "uk": "Модуль для роботи з базою даних",
+          "en": "A module for database operations",
+          "pl": "Moduł do operacji na bazie danych",
+          "correct": false
+        },
+        {
+          "uk": "Паралельні потоки для CPU-інтенсивних задач без блокування main thread",
+          "en": "Parallel threads for CPU-intensive tasks without blocking main thread",
+          "pl": "Równoległe wątki dla zadań intensywnych CPU bez blokowania main thread",
+          "correct": true
+        },
+        {
+          "uk": "Інструмент для логування у фоновому режимі",
+          "en": "A tool for background logging",
+          "pl": "Narzędzie do logowania w tle",
+          "correct": false
+        },
+        {
+          "uk": "Механізм для обробки HTTP-запитів",
+          "en": "A mechanism for handling HTTP requests",
+          "pl": "Mechanizm do obsługi żądań HTTP",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-q38",
+      "order": 38,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке reverse proxy і яку роль він виконує для Node.js?",
+        "exp": "Reverse proxy (наприклад, Nginx) стоїть перед Node.js, забезпечуючи SSL-термінацію, балансування, кешування та безпеку."
+      },
+      "en": {
+        "q": "What is a reverse proxy and what role does it play for Node.js?",
+        "exp": "A reverse proxy (e.g., Nginx) sits in front of Node.js, providing SSL termination, load balancing, caching, and security."
+      },
+      "pl": {
+        "q": "Czym jest reverse proxy i jaką rolę pełni dla Node.js?",
+        "exp": "Reverse proxy (np. Nginx) stoi przed Node.js, zapewniając terminację SSL, balansowanie obciążenia, cachowanie i bezpieczeństwo."
+      },
+      "answers": [
+        {
+          "uk": "Бібліотека для шифрування даних",
+          "en": "A library for encrypting data",
+          "pl": "Biblioteka do szyfrowania danych",
+          "correct": false
+        },
+        {
+          "uk": "Посередник для SSL, балансування, кешування та безпеки",
+          "en": "An intermediary for SSL, load balancing, caching, and security",
+          "pl": "Pośrednik dla SSL, balansowania obciążenia, cachowania i bezpieczeństwa",
+          "correct": true
+        },
+        {
+          "uk": "Інструмент для тестування API",
+          "en": "A tool for API testing",
+          "pl": "Narzędzie do testowania API",
+          "correct": false
+        },
+        {
+          "uk": "Модуль Node.js для маршрутизації",
+          "en": "A Node.js module for routing",
+          "pl": "Moduł Node.js do routingu",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-q39",
+      "order": 39,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке message queue і як вона використовується з Node.js?",
+        "exp": "Message queue (RabbitMQ, Kafka) — система для асинхронної обробки завдань через передачу повідомлень між сервісами."
+      },
+      "en": {
+        "q": "What is a message queue and how is it used with Node.js?",
+        "exp": "A message queue (RabbitMQ, Kafka) is a system for async task processing through message passing between services."
+      },
+      "pl": {
+        "q": "Czym jest kolejka wiadomości i jak jest używana z Node.js?",
+        "exp": "Kolejka wiadomości (RabbitMQ, Kafka) to system do asynchronicznego przetwarzania zadań przez przekazywanie wiadomości między usługami."
+      },
+      "answers": [
+        {
+          "uk": "База даних для зберігання повідомлень чату",
+          "en": "A database for storing chat messages",
+          "pl": "Baza danych do przechowywania wiadomości czatu",
+          "correct": false
+        },
+        {
+          "uk": "Система для асинхронної обробки завдань через передачу повідомлень",
+          "en": "A system for async task processing through message passing",
+          "pl": "System do asynchronicznego przetwarzania zadań przez przekazywanie wiadomości",
+          "correct": true
+        },
+        {
+          "uk": "Протокол для відправки email",
+          "en": "A protocol for sending emails",
+          "pl": "Protokół do wysyłania emaili",
+          "correct": false
+        },
+        {
+          "uk": "Метод сортування масивів у JavaScript",
+          "en": "A method for sorting arrays in JavaScript",
+          "pl": "Metoda sortowania tablic w JavaScript",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-q40",
+      "order": 40,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Як запобігти витокам пам'яті (memory leaks) у Node.js?",
+        "exp": "Видаляти listeners, очищати таймери, обмежувати кешування, використовувати стріми для великих даних та профайлити heap."
+      },
+      "en": {
+        "q": "How to prevent memory leaks in Node.js?",
+        "exp": "Remove listeners, clear timers, limit caching, use streams for large data, and profile the heap."
+      },
+      "pl": {
+        "q": "Jak zapobiegać wyciekom pamięci w Node.js?",
+        "exp": "Usuwać listenery, czyścić timery, ograniczać cachowanie, używać strumieni dla dużych danych i profilować heap."
+      },
+      "answers": [
+        {
+          "uk": "Збільшити обсяг оперативної пам'яті сервера",
+          "en": "Increase server RAM",
+          "pl": "Zwiększyć RAM serwera",
+          "correct": false
+        },
+        {
+          "uk": "Видаляти listeners, очищати таймери, обмежувати кеш, профайлити heap",
+          "en": "Remove listeners, clear timers, limit cache, profile heap",
+          "pl": "Usuwać listenery, czyścić timery, ograniczać cache, profilować heap",
+          "correct": true
+        },
+        {
+          "uk": "Перезапускати сервер кожну годину",
+          "en": "Restart the server every hour",
+          "pl": "Restartować serwer co godzinę",
+          "correct": false
+        },
+        {
+          "uk": "Використовувати тільки синхронні методи",
+          "en": "Use only synchronous methods",
+          "pl": "Używać tylko metod synchronicznych",
+          "correct": false
+        }
+      ]
+    }
+  ]
+}

@@ -1,108 +1,216 @@
 import { Link } from '@/i18n/routing';
 
-import { getAdminOrdersPage } from "@/db/queries/shop/admin-orders";
-import { formatMoney, resolveCurrencyFromLocale, type CurrencyCode } from "@/lib/shop/currency";
-import { fromDbMoney } from "@/lib/shop/money";
+import { getAdminOrdersPage } from '@/db/queries/shop/admin-orders';
+import {
+  formatMoney,
+  resolveCurrencyFromLocale,
+  type CurrencyCode,
+} from '@/lib/shop/currency';
+import { fromDbMoney } from '@/lib/shop/money';
+import { ShopAdminTopbar } from '@/components/shop/admin/shop-admin-topbar';
+import { AdminPagination } from '@/components/shop/admin/admin-pagination';
+import { guardShopAdminPage } from '@/lib/auth/guard-shop-admin-page';
+import { CSRF_FORM_FIELD, issueCsrfToken } from '@/lib/security/csrf';
+import { parsePage } from '@/lib/pagination';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
+
+const PAGE_SIZE = 25;
+
+type AdminOrdersResult = Awaited<ReturnType<typeof getAdminOrdersPage>>;
+type AdminOrderRow = AdminOrdersResult['items'][number];
 
 function pickMinor(minor: unknown, legacyMajor: unknown): number | null {
-  if (typeof minor === "number") return minor;
+  if (typeof minor === 'number') return minor;
   if (legacyMajor === null || legacyMajor === undefined) return null;
   return fromDbMoney(legacyMajor);
 }
 
-function orderCurrency(order: any, locale: string): CurrencyCode {
-  return (order?.currency ?? resolveCurrencyFromLocale(locale)) as CurrencyCode;
+function orderCurrency(order: AdminOrderRow, locale: string): CurrencyCode {
+  const c = order.currency ?? resolveCurrencyFromLocale(locale);
+  return c === 'UAH' ? 'UAH' : 'USD';
 }
 
-function formatDate(value: Date | null | undefined) {
-  if (!value) return "-";
-  return value.toLocaleDateString();
+function formatDate(value: Date | null | undefined, locale: string): string {
+  if (!value) return '-';
+  return value.toLocaleDateString(locale);
 }
 
 export default async function AdminOrdersPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ page?: string }>;
 }) {
+  await guardShopAdminPage();
+
   const { locale } = await params;
-  const { items } = await getAdminOrdersPage({ limit: 50, offset: 0 });
+  const sp = await searchParams;
+  const csrfToken = issueCsrfToken('admin:orders:reconcile-stale');
+
+  const page = parsePage(sp.page);
+  const offset = (page - 1) * PAGE_SIZE;
+
+  // overfetch for hasNext without COUNT
+  const { items: all } = await getAdminOrdersPage({
+    limit: PAGE_SIZE + 1,
+    offset,
+  });
+
+  const hasNext = all.length > PAGE_SIZE;
+  const items = all.slice(0, PAGE_SIZE);
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Admin · Orders</h1>
+    <>
+      <ShopAdminTopbar />
 
-        <form action="/api/shop/admin/orders/reconcile-stale" method="post">
-          <button
-            type="submit"
-            className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+      <main
+        className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8"
+        aria-labelledby="admin-orders-title"
+      >
+        <header className="flex items-start justify-between gap-4">
+          <h1
+            id="admin-orders-title"
+            className="text-2xl font-bold text-foreground"
           >
-            Reconcile stale
-          </button>
-        </form>
-      </div>
+            Admin · Orders
+          </h1>
 
-      <div className="mt-6 overflow-x-auto">
-        <table className="min-w-full divide-y divide-border text-sm">
-          <thead className="bg-muted/50">
-            <tr>
-              <th className="px-3 py-2 text-left font-semibold text-foreground">Created</th>
-              <th className="px-3 py-2 text-left font-semibold text-foreground">Status</th>
-              <th className="px-3 py-2 text-left font-semibold text-foreground">Total</th>
-              <th className="px-3 py-2 text-left font-semibold text-foreground">Items</th>
-              <th className="px-3 py-2 text-left font-semibold text-foreground">Provider</th>
-              <th className="px-3 py-2 text-left font-semibold text-foreground">Order ID</th>
-              <th className="px-3 py-2 text-left font-semibold text-foreground">Actions</th>
-            </tr>
-          </thead>
+          <form action="/api/shop/admin/orders/reconcile-stale" method="post">
+            <input type="hidden" name={CSRF_FORM_FIELD} value={csrfToken} />
+            <button
+              type="submit"
+              className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+            >
+              Reconcile stale
+            </button>
+          </form>
+        </header>
 
-          <tbody className="divide-y divide-border">
-            {items.map((order) => (
-              <tr key={order.id} className="hover:bg-muted/50">
-                <td className="px-3 py-2 text-muted-foreground">{formatDate(order.createdAt)}</td>
+        <section className="mt-6" aria-label="Orders table">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-border text-sm">
+              <caption className="sr-only">Orders list</caption>
 
-                <td className="px-3 py-2">
-                  <span className="inline-flex rounded-full bg-muted px-2 py-1 text-xs font-medium text-foreground">
-                    {order.paymentStatus}
-                  </span>
-                </td>
-
-                <td className="px-3 py-2 text-foreground">
-                  {(() => {
-                    const c = orderCurrency(order, locale);
-                    const totalMinor = pickMinor(order?.totalAmountMinor, order?.totalAmount);
-                    return totalMinor === null ? "-" : formatMoney(totalMinor, c, locale);
-                  })()}
-                </td>
-
-                <td className="px-3 py-2 text-muted-foreground">{order.itemCount}</td>
-                <td className="px-3 py-2 text-muted-foreground">{order.paymentProvider}</td>
-
-                <td className="px-3 py-2 font-mono text-xs text-muted-foreground">{order.id}</td>
-
-                <td className="px-3 py-2">
-                  <Link
-                    href={`/shop/admin/orders/${order.id}`}
-                    className="rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
+              <thead className="bg-muted/50">
+                <tr>
+                  <th
+                    scope="col"
+                    className="px-3 py-2 text-left font-semibold text-foreground"
                   >
-                    View
-                  </Link>
-                </td>
-              </tr>
-            ))}
+                    Created
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-3 py-2 text-left font-semibold text-foreground"
+                  >
+                    Status
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-3 py-2 text-left font-semibold text-foreground"
+                  >
+                    Total
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-3 py-2 text-left font-semibold text-foreground"
+                  >
+                    Items
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-3 py-2 text-left font-semibold text-foreground"
+                  >
+                    Provider
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-3 py-2 text-left font-semibold text-foreground"
+                  >
+                    Order ID
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-3 py-2 text-left font-semibold text-foreground"
+                  >
+                    Actions
+                  </th>
+                </tr>
+              </thead>
 
-            {items.length === 0 ? (
-              <tr>
-                <td className="px-3 py-6 text-muted-foreground" colSpan={7}>
-                  No orders yet.
-                </td>
-              </tr>
-            ) : null}
-          </tbody>
-        </table>
-      </div>
-    </div>
+              <tbody className="divide-y divide-border">
+                {items.length === 0 ? (
+                  <tr>
+                    <td className="px-3 py-6 text-muted-foreground" colSpan={7}>
+                      No orders yet.
+                    </td>
+                  </tr>
+                ) : (
+                  items.map(order => {
+                    const currency = orderCurrency(order, locale);
+                    const totalMinor = pickMinor(
+                      order?.totalAmountMinor,
+                      order?.totalAmount
+                    );
+                    const totalFormatted =
+                      totalMinor === null
+                        ? '-'
+                        : formatMoney(totalMinor, currency, locale);
+
+                    return (
+                      <tr key={order.id} className="hover:bg-muted/50">
+                        <td className="px-3 py-2 text-muted-foreground">
+                          {formatDate(order.createdAt, locale)}
+                        </td>
+
+                        <td className="px-3 py-2">
+                          <span className="inline-flex rounded-full bg-muted px-2 py-1 text-xs font-medium text-foreground">
+                            {order.paymentStatus}
+                          </span>
+                        </td>
+
+                        <td className="px-3 py-2 text-foreground">
+                          {totalFormatted}
+                        </td>
+
+                        <td className="px-3 py-2 text-muted-foreground">
+                          {order.itemCount}
+                        </td>
+                        <td className="px-3 py-2 text-muted-foreground">
+                          {order.paymentProvider}
+                        </td>
+
+                        <td className="px-3 py-2 font-mono text-xs text-muted-foreground break-all">
+                          {order.id}
+                        </td>
+
+                        <td className="px-3 py-2">
+                          <Link
+                            href={`/shop/admin/orders/${order.id}`}
+                            className="rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
+                            aria-label={`View order ${order.id}`}
+                          >
+                            View
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+          <div className="mt-4">
+            <AdminPagination
+              basePath="/shop/admin/orders"
+              page={page}
+              hasNext={hasNext}
+            />
+          </div>
+        </section>
+      </main>
+    </>
   );
 }

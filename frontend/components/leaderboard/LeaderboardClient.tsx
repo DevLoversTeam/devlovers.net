@@ -1,11 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { LeaderboardTabs } from './LeaderboardTabs';
+import { useTranslations } from 'next-intl';
 import { LeaderboardPodium } from './LeaderboardPodium';
 import { LeaderboardTable } from './LeaderboardTable';
 import { User } from './types';
-import { Trophy } from 'lucide-react';
 
 interface LeaderboardClientProps {
   initialUsers: User[];
@@ -14,7 +12,7 @@ interface LeaderboardClientProps {
 export default function LeaderboardClient({
   initialUsers,
 }: LeaderboardClientProps) {
-  const [activeTab, setActiveTab] = useState('Overall');
+  const t = useTranslations('leaderboard');
 
   const usersWithPoints = initialUsers.filter(user => user.points > 0);
   const hasResults = usersWithPoints.length > 0;
@@ -32,60 +30,60 @@ export default function LeaderboardClient({
         className="pointer-events-none absolute inset-0 opacity-70 -z-10"
         aria-hidden="true"
       >
-        <div className="absolute -top-32 left-1/2 h-96 w-[36rem] -translate-x-1/2 rounded-full bg-sky-300/30 blur-3xl dark:bg-sky-500/20" />
-        <div className="absolute bottom-[-12rem] left-1/4 h-[22rem] w-[22rem] rounded-full bg-pink-300/30 blur-3xl dark:bg-fuchsia-500/20" />
-        <div className="absolute bottom-[-10rem] right-0 h-[26rem] w-[26rem] rounded-full bg-violet-300/40 blur-3xl dark:bg-violet-500/20" />
+        <div className="absolute -top-32 -left-32 w-96 h-96 bg-purple-200 dark:bg-purple-900/20 rounded-full blur-3xl opacity-50 animate-blob" />
+        <div className="absolute top-1/4 -right-32 w-80 h-80 bg-sky-200 dark:bg-sky-900/20 rounded-full blur-3xl opacity-50 animate-blob animation-delay-2000" />
+        <div className="absolute -bottom-32 left-1/3 w-96 h-96 bg-pink-200 dark:bg-pink-900/20 rounded-full blur-3xl opacity-50 animate-blob animation-delay-4000" />
       </div>
 
-      <main className="relative max-w-4xl mx-auto px-4 py-12 flex flex-col items-center z-10">
-        <header className="mb-10 text-center">
-          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight flex items-center justify-center gap-3 mb-4 drop-shadow-sm">
-            <Trophy
-              className="w-10 h-10 md:w-12 md:h-12 text-yellow-500 fill-yellow-500"
-              strokeWidth={1.5}
-              aria-hidden="true"
-            />
-            <span className="bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
-              Leaderboard
+      <div className="relative max-w-4xl mx-auto px-4 py-12 flex flex-col items-center z-10">
+        <header className="text-center mb-10 animate-in fade-in slide-in-from-top-4 duration-700">
+          <div className="inline-flex items-center justify-center p-3 mb-6 rounded-full bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm shadow-sm ring-1 ring-slate-200/50 dark:ring-slate-700/50">
+            <span className="text-2xl mr-2" role="img" aria-label="Trophy">
+              🏆
+            </span>
+            <span className="text-sm font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
+              {t('championsArena')}
+            </span>
+          </div>
+
+          <h1 className="text-5xl md:text-7xl font-black mb-6 tracking-tighter drop-shadow-sm">
+            <span className="bg-gradient-to-r from-sky-500 via-indigo-500 to-pink-500 bg-clip-text text-transparent">
+              {t('title')}
             </span>
           </h1>
-          <p className="text-slate-600 dark:text-slate-400 font-medium text-lg">
-            Top performers of the community.
+
+          <p className="text-slate-600 dark:text-slate-400 font-medium text-lg max-w-md mx-auto leading-relaxed">
+            {t('subtitle')}
           </p>
         </header>
 
-        <section className="mb-10 w-full flex justify-center">
-          <LeaderboardTabs activeTab={activeTab} onTabChange={setActiveTab} />
-        </section>
-
-        <section
-          className="w-full flex flex-col items-center"
-          role="tabpanel"
-          aria-label={`Results for ${activeTab}`}
-        >
-          <div className="w-full mb-12">
+        <div className="w-full flex flex-col items-center">
+          <div className="w-full mb-16">
             {hasResults ? (
               <LeaderboardPodium topThree={topThree} />
             ) : (
               <div className="text-center py-16" role="status">
-                <p className="text-6xl mb-4" aria-hidden="true">
+                <p
+                  className="text-6xl mb-4 grayscale opacity-50"
+                  aria-hidden="true"
+                >
                   🏆
                 </p>
                 <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-2">
-                  No results yet
+                  {t('noResults')}
                 </h2>
                 <p className="text-slate-600 dark:text-slate-400">
-                  Be the first to complete a quiz and claim the top spot!
+                  {t('beFirst')}
                 </p>
               </div>
             )}
           </div>
 
-          <div className="w-full animate-in fade-in slide-in-from-bottom-8 duration-700">
-            <LeaderboardTable users={otherUsers} />
+          <div className="w-full animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
+            {hasResults && <LeaderboardTable users={otherUsers} />}
           </div>
-        </section>
-      </main>
+        </div>
+      </div>
     </div>
   );
 }

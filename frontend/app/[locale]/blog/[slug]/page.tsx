@@ -15,13 +15,13 @@ export async function generateStaticParams() {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ slug: string; locale: string }>;
 }) {
-  const { slug } = await params;
+  const { slug, locale } = await params;
 
   const post = await client.fetch(
-    groq`*[_type == "post" && slug.current == $slug][0]{ title }`,
-    { slug }
+    groq`*[_type == "post" && slug.current == $slug][0]{ "title": coalesce(title[$locale], title.en, title) }`,
+    { slug, locale }
   );
 
   return {
@@ -32,8 +32,8 @@ export async function generateMetadata({
 export default async function Page({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ slug: string; locale: string }>;
 }) {
-  const { slug } = await params;
-  return <PostDetails slug={slug} />;
+  const { slug, locale } = await params;
+  return <PostDetails slug={slug} locale={locale} />;
 }

@@ -1,16 +1,23 @@
 'use client';
 
-import { useLocale } from 'next-intl';
-import { savePendingQuizResult } from '@/lib/guest-quiz';
-import { useReducer, useTransition } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useReducer, useTransition, useState, useEffect, useCallback } from 'react';
+import { toast } from 'sonner';
 import { useAntiCheat } from '@/hooks/useAntiCheat';
+import { useQuizSession } from '@/hooks/useQuizSession';
+import { useQuizGuards } from '@/hooks/useQuizGuards';
 import { QuizProgress } from './QuizProgress';
 import { QuizQuestion } from './QuizQuestion';
 import { QuizResult } from './QuizResult';
 import { CountdownTimer } from './CountdownTimer';
-import { Button } from '@/components/ui/button';
 import { submitQuizAttempt } from '@/actions/quiz';
-import type { QuizQuestionWithAnswers } from '@/db/queries/quiz';
+import { clearQuizSession, type QuizSessionData } from '@/lib/quiz/quiz-session';
+import { savePendingQuizResult } from '@/lib/quiz/guest-quiz';
+import type { QuizQuestionClient } from '@/db/queries/quiz';
+import { ConfirmModal } from '@/components/ui/confirm-modal';
+import { Button } from '@/components/ui/button';
+import { FileText, Ban, AlertTriangle, Clock } from 'lucide-react';
 
 interface Answer {
   questionId: string;
@@ -26,18 +33,20 @@ type QuizState = {
   questionStatus: 'answering' | 'revealed';
   selectedAnswerId: string | null;
   startedAt: Date | null;
+  pointsAwarded: number | null;
+  isIncomplete: boolean;
 };
 
 type QuizAction =
   | { type: 'START_QUIZ' }
   | {
-      type: 'ANSWER_SELECTED';
-      payload: { answerId: string; isCorrect: boolean; questionId: string };
-    }
+    type: 'ANSWER_SELECTED';
+    payload: { answerId: string; isCorrect: boolean; questionId: string;};
+  }
   | { type: 'NEXT_QUESTION' }
-  | { type: 'COMPLETE_QUIZ' }
-  | { type: 'RESTART' };
-
+  | { type: 'COMPLETE_QUIZ'; payload?: { pointsAwarded?: number; isIncomplete?: boolean } }
+  | { type: 'RESTART' }
+  | { type: 'RESTORE_SESSION'; payload: QuizSessionData };
 
 
 function quizReducer(state: QuizState, action: QuizAction): QuizState {
@@ -50,12 +59,15 @@ function quizReducer(state: QuizState, action: QuizAction): QuizState {
       };
 
     case 'ANSWER_SELECTED':
+      const answersWithoutThisQuestion = state.answers.filter(
+        a => a.questionId !== action.payload.questionId
+      );
       return {
         ...state,
         selectedAnswerId: action.payload.answerId,
         questionStatus: 'revealed',
         answers: [
-          ...state.answers,
+          ...answersWithoutThisQuestion,
           {
             questionId: action.payload.questionId,
             selectedAnswerId: action.payload.answerId,
@@ -77,6 +89,21 @@ function quizReducer(state: QuizState, action: QuizAction): QuizState {
       return {
         ...state,
         status: 'completed',
+        pointsAwarded: action.payload?.pointsAwarded ?? null,
+        isIncomplete: action.payload?.isIncomplete ?? false,
+      };
+    case 'RESTORE_SESSION':
+      return {
+        ...state,
+        status: action.payload.status,
+        currentIndex: action.payload.currentIndex,
+        answers: action.payload.answers.map(a => ({
+          ...a,
+          answeredAt: new Date(a.answeredAt),
+        })),
+        questionStatus: action.payload.questionStatus,
+        selectedAnswerId: action.payload.selectedAnswerId,
+        startedAt: action.payload.startedAt ? new Date(action.payload.startedAt) : null,
       };
 
     case 'RESTART':
@@ -87,6 +114,8 @@ function quizReducer(state: QuizState, action: QuizAction): QuizState {
         questionStatus: 'answering',
         selectedAnswerId: null,
         startedAt: null,
+        pointsAwarded: null,
+        isIncomplete: false,
       };
 
     default:
@@ -96,10 +125,13 @@ function quizReducer(state: QuizState, action: QuizAction): QuizState {
 
 interface QuizContainerProps {
   quizId: string;
-  questions: QuizQuestionWithAnswers[];
+  questions: QuizQuestionClient[];
+  encryptedAnswers: string;
   userId: string | null;
   quizSlug: string;
   timeLimitSeconds: number | null;
+  seed: number;
+  categorySlug?: string | null;
   onBackToTopics?: () => void;
 }
 
@@ -107,10 +139,16 @@ export function QuizContainer({
   quizSlug,
   quizId,
   questions,
+  encryptedAnswers,
   userId,
   timeLimitSeconds,
+  seed,
+  categorySlug,
   onBackToTopics,
 }: QuizContainerProps) {
+  const tRules = useTranslations('quiz.rules');
+  const tExit = useTranslations('quiz.exitModal');
+  const tQuestion = useTranslations('quiz.question');
   const [isPending, startTransition] = useTransition();
   const [state, dispatch] = useReducer(quizReducer, {
     status: 'rules',
@@ -119,34 +157,124 @@ export function QuizContainer({
     questionStatus: 'answering',
     selectedAnswerId: null,
     startedAt: null,
+    pointsAwarded: null,
+    isIncomplete: false,
   });
-const locale = useLocale();
+  const [showExitModal, setShowExitModal] = useState(false);
+  const [isVerifyingAnswer, setIsVerifyingAnswer] = useState(false);
+
+  const locale = useLocale();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  
 
   const isGuest = userId === null;
   const { violations, violationsCount, resetViolations } = useAntiCheat(
     state.status === 'in_progress'
   );
-
   const currentQuestion = questions[state.currentIndex];
   const totalQuestions = questions.length;
 
+  const handleRestoreSession = useCallback(
+  (data: QuizSessionData) => dispatch({ type: 'RESTORE_SESSION', payload: data }),
+  []
+);
+
+useQuizSession({
+  quizId,
+  state,
+  onRestore: handleRestoreSession,
+});
+
+const { markQuitting } = useQuizGuards({
+  quizId,
+  status: state.status,
+  onExit: () => {
+    router.back();
+  },
+  resetViolations,
+});
+
+
+  // Sync seed to URL for language switch persistence
+  useEffect(() => {
+    if (!searchParams.has('seed')) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('seed', seed.toString());
+      router.replace(`?${params.toString()}`, { scroll: false });
+    }
+  }, [seed, searchParams, router]);
+
+
   const handleStart = () => {
+    window.history.pushState({ quizGuard: true }, '');
     dispatch({ type: 'START_QUIZ' });
   };
 
-  const handleAnswer = (answerId: string) => {
-    const correctAnswer = currentQuestion.answers.find(a => a.isCorrect);
-    const isCorrect = answerId === correctAnswer?.id;
+  const verifyAnswer = async (answerId: string) => {
+  const response = await fetch('/api/quiz/verify-answer', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      questionId: currentQuestion.id,
+      answerId,
+      encryptedAnswers,
+    }),
+  });
 
-    dispatch({
-      type: 'ANSWER_SELECTED',
-      payload: {
-        answerId,
-        isCorrect,
-        questionId: currentQuestion.id,
-      },
-    });
-  };
+  if (!response.ok) {
+    throw new Error('Verify answer failed');
+  }
+
+  const data = await response.json();
+
+  if (typeof data.isCorrect !== 'boolean') {
+    throw new Error('Invalid verify response');
+  }
+
+  return data.isCorrect;
+};
+
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+
+const handleAnswer = async (answerId: string) => {
+  if (state.questionStatus !== 'answering') return;
+  if (isVerifyingAnswer) return;
+
+  setIsVerifyingAnswer(true);
+
+  const maxRetries = 1;
+  let attempt = 0;
+
+  try {
+    while (true) {
+      try {
+        const isCorrect = await verifyAnswer(answerId);
+
+        dispatch({
+          type: 'ANSWER_SELECTED',
+          payload: {
+            answerId,
+            isCorrect,
+            questionId: currentQuestion.id,
+          },
+        });
+        return;
+      } catch {
+        if (attempt >= maxRetries) {
+          toast.error(tQuestion('verifyFailed'));
+          return;
+        }
+        attempt += 1;
+        toast(tQuestion('verifyRetry'));
+        await sleep(600);
+      }
+    }
+  } finally {
+    setIsVerifyingAnswer(false);
+  }
+};
 
   const handleNext = () => {
     if (state.currentIndex + 1 >= totalQuestions) {
@@ -157,31 +285,40 @@ const locale = useLocale();
   };
 
   const handleSubmit = () => {
-      const correctAnswers = state.answers.filter(a => a.isCorrect).length;
-  const percentage = (correctAnswers / totalQuestions) * 100;
-  const timeSpentSeconds = state.startedAt
-    ? Math.floor((Date.now() - state.startedAt.getTime()) / 1000)
-    : 0;
+    clearQuizSession(quizId);
 
-  if (isGuest) {
-    savePendingQuizResult({
-      quizId,
-      quizSlug,
-      answers: state.answers.map(a => ({
-        questionId: a.questionId,
-        selectedAnswerId: a.selectedAnswerId,
-        isCorrect: a.isCorrect,
-      })),
-      score: correctAnswers,
-      totalQuestions,
-      percentage,
-      violations: violations.map(v => ({ type: v.type, timestamp: v.timestamp.getTime() })),
-      timeSpentSeconds,
-      savedAt: Date.now(),
-    });
-    dispatch({ type: 'COMPLETE_QUIZ' });
-    return;
-  }
+    const isIncomplete = state.answers.length < totalQuestions;
+    
+    const correctAnswers = state.answers.filter(a => a.isCorrect).length;
+    const percentage = (correctAnswers / totalQuestions) * 100;
+    const timeSpentSeconds = state.startedAt
+      ? Math.floor((Date.now() - state.startedAt.getTime()) / 1000)
+      : 0;
+
+    if (isIncomplete) {
+      dispatch({ type: 'COMPLETE_QUIZ', payload: { isIncomplete: true } });
+      return;
+    }
+
+    if (isGuest) {
+      savePendingQuizResult({
+        quizId,
+        quizSlug,
+        answers: state.answers.map(a => ({
+          questionId: a.questionId,
+          selectedAnswerId: a.selectedAnswerId,
+          isCorrect: a.isCorrect,
+        })),
+        score: correctAnswers,
+        totalQuestions,
+        percentage,
+        violations: violations.map(v => ({ type: v.type, timestamp: v.timestamp.getTime() })),
+        timeSpentSeconds,
+        savedAt: Date.now(),
+      });
+      dispatch({ type: 'COMPLETE_QUIZ' });
+      return;
+    }
     startTransition(async () => {
       const result = await submitQuizAttempt({
         userId,
@@ -190,10 +327,14 @@ const locale = useLocale();
         violations: violations,
         startedAt: state.startedAt!,
         completedAt: new Date(),
+        totalQuestions,
       });
 
       if (result.success) {
-        dispatch({ type: 'COMPLETE_QUIZ' });
+        dispatch({
+          type: 'COMPLETE_QUIZ',
+          payload: { pointsAwarded: result.pointsAwarded ?? 0 }
+        });
       } else {
         console.error('Failed to submit quiz:', result.error);
         dispatch({ type: 'COMPLETE_QUIZ' });
@@ -202,9 +343,23 @@ const locale = useLocale();
   };
 
   const handleRestart = () => {
+    clearQuizSession(quizId);
     resetViolations();
     dispatch({ type: 'RESTART' });
   };
+
+const handleQuit = () => {
+  setShowExitModal(true);
+};
+
+const confirmQuit = () => {
+  markQuitting();
+  clearQuizSession(quizId);
+  resetViolations();
+  const categoryParam = categorySlug ? `?category=${categorySlug}` : '';
+  window.location.href = `/${locale}/quizzes${categoryParam}`;
+};
+
 
   const handleTimeUp = () => {
     handleSubmit();
@@ -214,7 +369,7 @@ const locale = useLocale();
     if (onBackToTopics) {
       onBackToTopics();
     } else {
-       window.location.href = `/${locale}/`;
+      window.location.href = `/${locale}/`;
     }
   };
 
@@ -222,59 +377,55 @@ const locale = useLocale();
     return (
       <div className="max-w-2xl mx-auto space-y-6 p-6 rounded-xl border border-gray-200 dark:border-gray-800">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-          Правила проходження квізу
+          {tRules('title')}
         </h2>
 
         <div className="space-y-4 text-gray-700 dark:text-gray-300">
-          <div className="flex gap-3">
-            <span className="text-xl">📝</span>
+                   <div className="flex gap-3">
+            <FileText className="w-5 h-5 text-blue-500 dark:text-blue-400 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="font-medium">Загальні правила</p>
+              <p className="font-medium">{tRules('general.title')}</p>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Відповідайте на питання чесно. Кожне питання має тільки одну
-                правильну відповідь.
+                {tRules('general.description')}
               </p>
             </div>
           </div>
 
           <div className="flex gap-3">
-            <span className="text-xl">🚫</span>
+            <Ban className="w-5 h-5 text-red-500 dark:text-red-400 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="font-medium">Заборонено</p>
+              <p className="font-medium">{tRules('forbidden.title')}</p>
               <ul className="text-sm text-gray-600 dark:text-gray-400 list-disc list-inside space-y-1">
-                <li>Копіювання та вставка тексту</li>
-                <li>Використання контекстного меню (права кнопка миші)</li>
-                <li>Переключення на інші вкладки або програми</li>
-                <li>Використання сторонніх джерел інформації</li>
+                <li>{tRules('forbidden.copyPaste')}</li>
+                <li>{tRules('forbidden.contextMenu')}</li>
+                <li>{tRules('forbidden.tabSwitch')}</li>
+                <li>{tRules('forbidden.externalSources')}</li>
               </ul>
             </div>
           </div>
 
           <div className="flex gap-3">
-            <span className="text-xl">⚠️</span>
+            <AlertTriangle className="w-5 h-5 text-amber-500 dark:text-amber-400 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="font-medium">Система контролю</p>
+              <p className="font-medium">{tRules('control.title')}</p>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Порушення правил фіксуються автоматично. При 3+ порушеннях
-                результат не зараховується до рейтингу.
+                {tRules('control.description')}
               </p>
             </div>
           </div>
-
           <div className="flex gap-3">
-            <span className="text-xl">⏱️</span>
+            <Clock className="w-5 h-5 text-blue-500 dark:text-blue-400 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="font-medium">Час проходження</p>
+              <p className="font-medium">{tRules('time.title')}</p>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Мінімальний час: {totalQuestions * 3} секунд (по 3 секунди на
-                питання). Занадто швидке проходження не зараховується.
+                {tRules('time.description', { seconds: totalQuestions * 3 })}
               </p>
             </div>
           </div>
         </div>
 
-        <Button onClick={handleStart} className="w-full" size="lg">
-          Почати квіз
+        <Button onClick={handleStart} className="w-full" size="md">
+          {tRules('startButton')}
         </Button>
       </div>
     );
@@ -289,7 +440,10 @@ const locale = useLocale();
         score={correctAnswers}
         total={totalQuestions}
         percentage={percentage}
+        answeredCount={state.answers.length}
         violationsCount={violationsCount}
+        pointsAwarded={state.pointsAwarded}
+        isIncomplete={state.isIncomplete}
         onRestart={handleRestart}
         onBackToTopics={handleBackToTopicsClick}
         isGuest={isGuest}
@@ -300,6 +454,19 @@ const locale = useLocale();
 
   return (
     <div className="space-y-8 no-select">
+      <div className="flex justify-end">
+        <Button
+            variant="outline"
+            size="sm"
+            onClick={handleQuit}
+            className="gap-2 hover:border-red-500 hover:text-red-600 dark:hover:text-red-400"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            Exit Quiz
+          </Button>
+      </div>
       <QuizProgress
         current={state.currentIndex}
         total={totalQuestions}
@@ -313,6 +480,7 @@ const locale = useLocale();
             timeLimitSeconds={calculatedTime}
             onTimeUp={handleTimeUp}
             isActive={state.status === 'in_progress'}
+            startedAt={state.startedAt!}
           />
         );
       })()}
@@ -321,9 +489,20 @@ const locale = useLocale();
         question={currentQuestion}
         status={state.questionStatus}
         selectedAnswerId={state.selectedAnswerId}
+        isCorrect={state.answers.find(a => a.questionId === currentQuestion.id)?.isCorrect ?? false}
         onAnswer={handleAnswer}
         onNext={handleNext}
         isLoading={isPending}
+      />
+      <ConfirmModal
+        isOpen={showExitModal}
+        title={tExit('title')}
+        message={tExit('message')}
+        confirmText={tExit('confirm')}
+        cancelText={tExit('cancel')}
+        variant="danger"
+        onConfirm={confirmQuit}
+        onCancel={() => setShowExitModal(false)}
       />
     </div>
   );

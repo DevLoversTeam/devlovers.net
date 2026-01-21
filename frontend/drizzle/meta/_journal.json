@@ -5,64 +5,36 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1765736767696,
-      "tag": "0000_rich_magus",
+      "when": 1768412528916,
+      "tag": "0000_dry_young_avengers",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1765838764737,
-      "tag": "0001_black_random",
+      "when": 1768608742386,
+      "tag": "0001_add_payment_attempts",
       "breakpoints": true
     },
     {
       "idx": 2,
       "version": "7",
-      "when": 1765946576292,
-      "tag": "0002_yielding_purple_man",
+      "when": 1768664588311,
+      "tag": "0002_clean_martin_li",
       "breakpoints": true
     },
     {
       "idx": 3,
       "version": "7",
-      "when": 1765947894856,
-      "tag": "0003_handy_cammi",
+      "when": 1768690525242,
+      "tag": "0003_add_stripe_events_claim_lock",
       "breakpoints": true
     },
     {
       "idx": 4,
       "version": "7",
-      "when": 1766333819153,
-      "tag": "0004_tough_ultron",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1766336694154,
-      "tag": "0005_furry_warstar",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1766515642068,
-      "tag": "0006_minor_units_money",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "7",
-      "when": 1766713709450,
-      "tag": "0007_add-payment-intent-id-to-orders",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "7",
-      "when": 1766958940589,
-      "tag": "0008_dizzy_james_howlett",
+      "when": 1768707328896,
+      "tag": "0004_add_api_rate_limits",
       "breakpoints": true
     }
   ]

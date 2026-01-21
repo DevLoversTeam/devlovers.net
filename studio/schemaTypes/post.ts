@@ -8,14 +8,19 @@ export default defineType({
     defineField({
       name: 'title',
       title: 'Title',
-      type: 'string',
+      type: 'object',
+      fields: [
+        defineField({name: 'en', title: 'English', type: 'string'}),
+        defineField({name: 'pl', title: 'Polish', type: 'string'}),
+        defineField({name: 'uk', title: 'Ukrainian', type: 'string'}),
+      ],
     }),
     defineField({
       name: 'slug',
       title: 'Slug',
       type: 'slug',
       options: {
-        source: 'title',
+        source: 'title.en',
         maxLength: 96,
       },
     }),
@@ -71,15 +76,34 @@ export default defineType({
     defineField({
       name: 'body',
       title: 'Body',
-      type: 'array',
-      of: [{type: 'block'}, {type: 'image'}],
+      type: 'object',
+      fields: [
+        defineField({
+          name: 'en',
+          title: 'English',
+          type: 'array',
+          of: [{type: 'block'}, {type: 'image'}],
+        }),
+        defineField({
+          name: 'pl',
+          title: 'Polish',
+          type: 'array',
+          of: [{type: 'block'}, {type: 'image'}],
+        }),
+        defineField({
+          name: 'uk',
+          title: 'Ukrainian',
+          type: 'array',
+          of: [{type: 'block'}, {type: 'image'}],
+        }),
+      ],
     }),
   ],
 
   preview: {
     select: {
-      title: 'title',
-      author: 'author.name',
+      title: 'title.en',
+      author: 'author.name.en',
       media: 'mainImage',
     },
     prepare(selection) {

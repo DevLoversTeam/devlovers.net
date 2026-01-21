@@ -1,5 +1,6 @@
 import { redirect } from '@/i18n/routing';
 import { Link } from '@/i18n/routing'
+import { getTranslations } from 'next-intl/server';
 import { getCurrentUser } from '@/lib/auth';
 import { getUserProfile } from '@/db/queries/users';
 import { getUserQuizStats } from '@/db/queries/quiz';
@@ -7,11 +8,21 @@ import { getUserQuizStats } from '@/db/queries/quiz';
 import { ProfileCard } from '@/components/dashboard/ProfileCard';
 import { StatsCard } from '@/components/dashboard/StatsCard';
 import { QuizSavedBanner } from '@/components/dashboard/QuizSavedBanner';
+import { PostAuthQuizSync } from "@/components/auth/PostAuthQuizSync";
 
-export const metadata = {
-  title: 'Dashboard | DevLovers',
-  description: 'Track your progress and quiz performance.',
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'dashboard' });
+
+  return {
+    title: t('metaTitle'),
+    description: t('metaDescription'),
+  };
+}
 
 export default async function DashboardPage({ params }: { params: Promise<{ locale: string }> }) {
   const session = await getCurrentUser();
@@ -21,30 +32,30 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
   const user = await getUserProfile(session.id);
   if (!user) { redirect({ href: '/login', locale }); return; }
 
+  const t = await getTranslations('dashboard');
+
   const attempts = await getUserQuizStats(session.id);
 
   const totalAttempts = attempts.length;
 
-  const realPoints = attempts.reduce((sum, attempt) => sum + attempt.score, 0);
-
   const averageScore =
     totalAttempts > 0
       ? Math.round(
-          attempts.reduce((acc, curr) => acc + Number(curr.percentage), 0) /
-            totalAttempts
-        )
+        attempts.reduce((acc, curr) => acc + Number(curr.percentage), 0) /
+        totalAttempts
+      )
       : 0;
 
   const lastActiveDate =
     totalAttempts > 0
-      ? new Date(attempts[0].completedAt).toLocaleDateString('uk-UA')
+      ? new Date(attempts[0].completedAt).toLocaleDateString(locale)
       : null;
 
   const userForDisplay = {
     name: user.name ?? null,
     email: user.email ?? '',
     role: user.role ?? null,
-    points: realPoints,
+    points: user.points,
     createdAt: user.createdAt ?? null,
   };
 
@@ -59,6 +70,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
 
   return (
     <main className="relative min-h-[calc(100vh-80px)] overflow-hidden">
+      <PostAuthQuizSync />
       <div
         className="absolute inset-0 pointer-events-none -z-10"
         aria-hidden="true"
@@ -74,21 +86,21 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
           <div>
             <h1 className="text-4xl md:text-5xl font-black tracking-tight drop-shadow-sm">
               <span className="bg-gradient-to-r from-sky-400 via-violet-400 to-pink-400 dark:from-sky-400 dark:via-indigo-400 dark:to-fuchsia-500 bg-clip-text text-transparent">
-                Dashboard
+                {t('title')}
               </span>
             </h1>
             <p className="mt-2 text-slate-600 dark:text-slate-400 text-lg">
-              Welcome back to your training ground.
+              {t('subtitle')}
             </p>
           </div>
 
           <Link href="/contacts" className={outlineBtnStyles}>
-            Support & Feedback
+            {t('supportLink')}
           </Link>
         </header>
         <QuizSavedBanner />
         <div className="grid gap-8 md:grid-cols-2">
-          <ProfileCard user={userForDisplay} />
+          <ProfileCard user={userForDisplay} locale={locale} />
           <StatsCard stats={stats} />
         </div>
       </div>

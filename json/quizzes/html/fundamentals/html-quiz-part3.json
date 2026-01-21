@@ -1,0 +1,434 @@
+{
+  "questions": [
+    {
+      "id": "html-q21",
+      "order": 21,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Які типи списків доступні в HTML?",
+        "exp": "В HTML є три типи списків: нумерований (<ol>), маркований (<ul>) та список визначень (<dl> з <dt> і <dd>)."
+      },
+      "en": {
+        "q": "What types of lists are available in HTML?",
+        "exp": "HTML has three types of lists: ordered (<ol>), unordered (<ul>), and definition list (<dl> with <dt> and <dd>)."
+      },
+      "pl": {
+        "q": "Jakie typy list są dostępne w HTML?",
+        "exp": "HTML ma trzy typy list: numerowaną (<ol>), nienumerowaną (<ul>) i listę definicji (<dl> z <dt> i <dd>)."
+      },
+      "answers": [
+        {
+          "uk": "Тільки нумерований і маркований",
+          "en": "Only ordered and unordered",
+          "pl": "Tylko numerowana i nienumerowana",
+          "correct": false
+        },
+        {
+          "uk": "Нумерований (<ol>), маркований (<ul>), список визначень (<dl>)",
+          "en": "Ordered (<ol>), unordered (<ul>), definition list (<dl>)",
+          "pl": "Numerowana (<ol>), nienumerowana (<ul>), lista definicji (<dl>)",
+          "correct": true
+        },
+        {
+          "uk": "Тільки маркований список",
+          "en": "Only unordered list",
+          "pl": "Tylko lista nienumerowana",
+          "correct": false
+        },
+        {
+          "uk": "Тільки список визначень",
+          "en": "Only definition list",
+          "pl": "Tylko lista definicji",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-q22",
+      "order": 22,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Що таке HTML-форма і для чого вона використовується?",
+        "exp": "HTML-форма (<form>) — елемент для збору даних від користувача та відправки їх на сервер або обробки на клієнті через JavaScript."
+      },
+      "en": {
+        "q": "What is an HTML form and what is it used for?",
+        "exp": "An HTML form (<form>) is an element for collecting data from users and sending it to a server or processing it client-side via JavaScript."
+      },
+      "pl": {
+        "q": "Czym jest formularz HTML i do czego służy?",
+        "exp": "Formularz HTML (<form>) to element do zbierania danych od użytkowników i wysyłania ich na serwer lub przetwarzania po stronie klienta przez JavaScript."
+      },
+      "answers": [
+        {
+          "uk": "Елемент для відображення таблиць",
+          "en": "An element for displaying tables",
+          "pl": "Element do wyświetlania tabel",
+          "correct": false
+        },
+        {
+          "uk": "Елемент для збору даних від користувача та відправки на сервер",
+          "en": "An element for collecting user data and sending to server",
+          "pl": "Element do zbierania danych od użytkownika i wysyłania na serwer",
+          "correct": true
+        },
+        {
+          "uk": "Елемент для створення навігації",
+          "en": "An element for creating navigation",
+          "pl": "Element do tworzenia nawigacji",
+          "correct": false
+        },
+        {
+          "uk": "Елемент для вставки зображень",
+          "en": "An element for inserting images",
+          "pl": "Element do wstawiania obrazów",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-q23",
+      "order": 23,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Яка різниця між методами GET та POST у формах?",
+        "exp": "GET додає дані до URL (видимі, обмежені за розміром, для пошуку). POST відправляє дані в тілі запиту (приховані, без обмежень, для конфіденційних даних)."
+      },
+      "en": {
+        "q": "What is the difference between GET and POST methods in forms?",
+        "exp": "GET appends data to URL (visible, size-limited, for search). POST sends data in request body (hidden, no limits, for sensitive data)."
+      },
+      "pl": {
+        "q": "Jaka jest różnica między metodami GET a POST w formularzach?",
+        "exp": "GET dodaje dane do URL (widoczne, ograniczone rozmiarem, do wyszukiwania). POST wysyła dane w treści żądania (ukryte, bez ograniczeń, dla danych wrażliwych)."
+      },
+      "answers": [
+        {
+          "uk": "Різниці немає",
+          "en": "No difference",
+          "pl": "Nie ma różnicy",
+          "correct": false
+        },
+        {
+          "uk": "GET — дані в URL, POST — дані в тілі запиту",
+          "en": "GET has data in URL, POST has data in request body",
+          "pl": "GET ma dane w URL, POST ma dane w treści żądania",
+          "correct": true
+        },
+        {
+          "uk": "GET швидший за POST",
+          "en": "GET is faster than POST",
+          "pl": "GET jest szybszy niż POST",
+          "correct": false
+        },
+        {
+          "uk": "POST використовується тільки для завантаження файлів",
+          "en": "POST is only used for file uploads",
+          "pl": "POST jest używany tylko do przesyłania plików",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-q24",
+      "order": 24,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Як зробити поле форми обов'язковим для заповнення?",
+        "exp": "Додати атрибут required до елемента форми. Браузер не дозволить відправити форму, поки обов'язкове поле не заповнене."
+      },
+      "en": {
+        "q": "How do you make a form field required?",
+        "exp": "Add the required attribute to the form element. The browser won't allow form submission until the required field is filled."
+      },
+      "pl": {
+        "q": "Jak uczynić pole formularza wymaganym?",
+        "exp": "Dodaj atrybut required do elementu formularza. Przeglądarka nie pozwoli na wysłanie formularza, dopóki wymagane pole nie zostanie wypełnione."
+      },
+      "answers": [
+        {
+          "uk": "mandatory=\"true\"",
+          "en": "mandatory=\"true\"",
+          "pl": "mandatory=\"true\"",
+          "correct": false
+        },
+        {
+          "uk": "required",
+          "en": "required",
+          "pl": "required",
+          "correct": true
+        },
+        {
+          "uk": "validate=\"required\"",
+          "en": "validate=\"required\"",
+          "pl": "validate=\"required\"",
+          "correct": false
+        },
+        {
+          "uk": "must=\"fill\"",
+          "en": "must=\"fill\"",
+          "pl": "must=\"fill\"",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-q25",
+      "order": 25,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Для чого використовується тег <label> у формах?",
+        "exp": "<label> пов'язує текстову підказку з елементом форми. Покращує доступність і дозволяє фокусувати поле при кліку на текст підказки."
+      },
+      "en": {
+        "q": "What is the <label> tag used for in forms?",
+        "exp": "<label> associates a text label with a form element. Improves accessibility and allows focusing the field when clicking the label text."
+      },
+      "pl": {
+        "q": "Do czego służy tag <label> w formularzach?",
+        "exp": "<label> wiąże etykietę tekstową z elementem formularza. Poprawia dostępność i pozwala skupić pole przy kliknięciu tekstu etykiety."
+      },
+      "answers": [
+        {
+          "uk": "Для створення кнопки відправки",
+          "en": "To create a submit button",
+          "pl": "Do tworzenia przycisku wysyłania",
+          "correct": false
+        },
+        {
+          "uk": "Для пов'язування текстової підказки з елементом форми",
+          "en": "To associate a text label with a form element",
+          "pl": "Do wiązania etykiety tekstowej z elementem formularza",
+          "correct": true
+        },
+        {
+          "uk": "Для групування полів форми",
+          "en": "To group form fields",
+          "pl": "Do grupowania pól formularza",
+          "correct": false
+        },
+        {
+          "uk": "Для валідації даних",
+          "en": "To validate data",
+          "pl": "Do walidacji danych",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-q26",
+      "order": 26,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Які нові типи input з'явилися в HTML5?",
+        "exp": "HTML5 додав типи: email, url, tel, number, range, date, time, datetime-local, month, week, color, search та інші."
+      },
+      "en": {
+        "q": "What new input types appeared in HTML5?",
+        "exp": "HTML5 added types: email, url, tel, number, range, date, time, datetime-local, month, week, color, search and others."
+      },
+      "pl": {
+        "q": "Jakie nowe typy input pojawiły się w HTML5?",
+        "exp": "HTML5 dodał typy: email, url, tel, number, range, date, time, datetime-local, month, week, color, search i inne."
+      },
+      "answers": [
+        {
+          "uk": "Тільки text і password",
+          "en": "Only text and password",
+          "pl": "Tylko text i password",
+          "correct": false
+        },
+        {
+          "uk": "email, url, number, date, color, range та інші",
+          "en": "email, url, number, date, color, range and others",
+          "pl": "email, url, number, date, color, range i inne",
+          "correct": true
+        },
+        {
+          "uk": "Тільки file і hidden",
+          "en": "Only file and hidden",
+          "pl": "Tylko file i hidden",
+          "correct": false
+        },
+        {
+          "uk": "HTML5 не додав нових типів",
+          "en": "HTML5 didn't add new types",
+          "pl": "HTML5 nie dodał nowych typów",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-q27",
+      "order": 27,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Для чого використовуються теги <fieldset> і <legend> у формах?",
+        "exp": "<fieldset> групує пов'язані поля форми візуально та логічно. <legend> надає заголовок для цієї групи. Покращує доступність та структуру."
+      },
+      "en": {
+        "q": "What are <fieldset> and <legend> tags used for in forms?",
+        "exp": "<fieldset> groups related form fields visually and logically. <legend> provides a title for this group. Improves accessibility and structure."
+      },
+      "pl": {
+        "q": "Do czego służą tagi <fieldset> i <legend> w formularzach?",
+        "exp": "<fieldset> grupuje powiązane pola formularza wizualnie i logicznie. <legend> zapewnia tytuł dla tej grupy. Poprawia dostępność i strukturę."
+      },
+      "answers": [
+        {
+          "uk": "Для створення випадаючих списків",
+          "en": "For creating dropdown lists",
+          "pl": "Do tworzenia list rozwijanych",
+          "correct": false
+        },
+        {
+          "uk": "Для групування пов'язаних полів форми з заголовком",
+          "en": "For grouping related form fields with a title",
+          "pl": "Do grupowania powiązanych pól formularza z tytułem",
+          "correct": true
+        },
+        {
+          "uk": "Для валідації форми",
+          "en": "For form validation",
+          "pl": "Do walidacji formularza",
+          "correct": false
+        },
+        {
+          "uk": "Для стилізації кнопок",
+          "en": "For styling buttons",
+          "pl": "Do stylizowania przycisków",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-q28",
+      "order": 28,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Як створити таблицю в HTML?",
+        "exp": "Таблиця створюється тегом <table>. Рядки — <tr>, заголовки стовпців — <th>, комірки даних — <td>."
+      },
+      "en": {
+        "q": "How do you create a table in HTML?",
+        "exp": "A table is created with the <table> tag. Rows are <tr>, column headers are <th>, data cells are <td>."
+      },
+      "pl": {
+        "q": "Jak utworzyć tabelę w HTML?",
+        "exp": "Tabelę tworzy się tagiem <table>. Wiersze to <tr>, nagłówki kolumn to <th>, komórki danych to <td>."
+      },
+      "answers": [
+        {
+          "uk": "<grid>, <row>, <cell>",
+          "en": "<grid>, <row>, <cell>",
+          "pl": "<grid>, <row>, <cell>",
+          "correct": false
+        },
+        {
+          "uk": "<table>, <tr>, <th>, <td>",
+          "en": "<table>, <tr>, <th>, <td>",
+          "pl": "<table>, <tr>, <th>, <td>",
+          "correct": true
+        },
+        {
+          "uk": "<data>, <line>, <col>",
+          "en": "<data>, <line>, <col>",
+          "pl": "<data>, <line>, <col>",
+          "correct": false
+        },
+        {
+          "uk": "<list>, <item>, <value>",
+          "en": "<list>, <item>, <value>",
+          "pl": "<list>, <item>, <value>",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-q29",
+      "order": 29,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Для чого використовуються теги <thead>, <tbody> та <tfoot> у таблицях?",
+        "exp": "<thead> групує заголовки, <tbody> — основні дані, <tfoot> — підсумки. Покращують семантику, доступність та дозволяють окреме стилювання."
+      },
+      "en": {
+        "q": "What are <thead>, <tbody>, and <tfoot> tags used for in tables?",
+        "exp": "<thead> groups headers, <tbody> groups main data, <tfoot> groups summaries. Improves semantics, accessibility, and allows separate styling."
+      },
+      "pl": {
+        "q": "Do czego służą tagi <thead>, <tbody> i <tfoot> w tabelach?",
+        "exp": "<thead> grupuje nagłówki, <tbody> grupuje główne dane, <tfoot> grupuje podsumowania. Poprawia semantykę, dostępność i pozwala na oddzielne stylowanie."
+      },
+      "answers": [
+        {
+          "uk": "Це застарілі теги, які не використовуються",
+          "en": "These are deprecated tags that are not used",
+          "pl": "To przestarzałe tagi, które nie są używane",
+          "correct": false
+        },
+        {
+          "uk": "Для групування заголовків, даних та підсумків таблиці",
+          "en": "For grouping table headers, data, and summaries",
+          "pl": "Do grupowania nagłówków, danych i podsumowań tabeli",
+          "correct": true
+        },
+        {
+          "uk": "Для створення вкладених таблиць",
+          "en": "For creating nested tables",
+          "pl": "Do tworzenia zagnieżdżonych tabel",
+          "correct": false
+        },
+        {
+          "uk": "Для об'єднання комірок",
+          "en": "For merging cells",
+          "pl": "Do łączenia komórek",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-q30",
+      "order": 30,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке елемент <datalist> і для чого він використовується?",
+        "exp": "<datalist> надає список готових варіантів для поля вводу, створюючи автодоповнення. Користувач може обрати зі списку або ввести власний варіант."
+      },
+      "en": {
+        "q": "What is the <datalist> element and what is it used for?",
+        "exp": "<datalist> provides a list of predefined options for an input field, creating autocomplete. Users can select from the list or enter their own value."
+      },
+      "pl": {
+        "q": "Czym jest element <datalist> i do czego służy?",
+        "exp": "<datalist> dostarcza listę predefiniowanych opcji dla pola wprowadzania, tworząc autouzupełnianie. Użytkownicy mogą wybrać z listy lub wprowadzić własną wartość."
+      },
+      "answers": [
+        {
+          "uk": "Елемент для зберігання даних у браузері",
+          "en": "An element for storing data in the browser",
+          "pl": "Element do przechowywania danych w przeglądarce",
+          "correct": false
+        },
+        {
+          "uk": "Елемент для створення автодоповнення у полях вводу",
+          "en": "An element for creating autocomplete in input fields",
+          "pl": "Element do tworzenia autouzupełniania w polach wprowadzania",
+          "correct": true
+        },
+        {
+          "uk": "Елемент для відображення даних з бази",
+          "en": "An element for displaying data from database",
+          "pl": "Element do wyświetlania danych z bazy danych",
+          "correct": false
+        },
+        {
+          "uk": "Елемент для створення таблиць",
+          "en": "An element for creating tables",
+          "pl": "Element do tworzenia tabel",
+          "correct": false
+        }
+      ]
+    }
+  ]
+}

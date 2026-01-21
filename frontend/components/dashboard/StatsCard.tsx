@@ -1,3 +1,6 @@
+"use client";
+
+import { useTranslations } from "next-intl";
 import { Link } from '@/i18n/routing';
 import { TrendingUp, History } from 'lucide-react';
 
@@ -10,6 +13,7 @@ interface StatsCardProps {
 }
 
 export function StatsCard({ stats }: StatsCardProps) {
+  const t = useTranslations("dashboard.stats");
   const hasActivity = stats && stats.totalAttempts > 0;
 
   const cardStyles = `
@@ -23,11 +27,11 @@ export function StatsCard({ stats }: StatsCardProps) {
   `;
 
   const primaryBtnStyles = `
-    group relative inline-flex items-center justify-center rounded-full 
-    px-8 py-3 text-sm font-semibold tracking-widest uppercase text-white 
-    bg-gradient-to-r from-sky-500 via-indigo-500 to-pink-500 
-    shadow-[0_4px_14px_rgba(56,189,248,0.4)] 
-    dark:shadow-[0_4px_20px_rgba(129,140,248,0.4)] 
+    group relative inline-flex items-center justify-center rounded-full
+    px-8 py-3 text-sm font-semibold tracking-widest uppercase text-white
+    bg-gradient-to-r from-sky-500 via-indigo-500 to-pink-500
+    shadow-[0_4px_14px_rgba(56,189,248,0.4)]
+    dark:shadow-[0_4px_20px_rgba(129,140,248,0.4)]
     transition-all hover:scale-105 hover:shadow-lg
   `;
 
@@ -44,16 +48,16 @@ export function StatsCard({ stats }: StatsCardProps) {
         id="stats-heading"
         className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2"
       >
-        Quiz Statistics
+        {t("title")}
       </h3>
 
       {!hasActivity ? (
         <>
           <p className="text-slate-500 dark:text-slate-400 mb-8 max-w-xs mx-auto">
-            Ready to level up? Challenge yourself with a new React quiz.
+            {t("noActivity")}
           </p>
-          <Link href="/quiz/react-fundamentals" className={primaryBtnStyles}>
-            <span className="relative z-10">Start a Quiz</span>
+          <Link href="/quizzes" className={primaryBtnStyles}>
+            <span className="relative z-10">{t("startQuiz")}</span>
             <span
               className="absolute inset-0 rounded-full bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"
               aria-hidden="true"
@@ -64,7 +68,7 @@ export function StatsCard({ stats }: StatsCardProps) {
         <dl className="w-full grid grid-cols-2 gap-4 mt-2">
           <div className="p-4 rounded-2xl bg-slate-50/50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700">
             <dt className="flex items-center justify-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
-              <History className="w-3 h-3" /> Attempts
+              <History className="w-3 h-3" /> {t("attempts")}
             </dt>
             <dd className="text-2xl font-black text-slate-800 dark:text-white">
               {stats?.totalAttempts}
@@ -73,7 +77,7 @@ export function StatsCard({ stats }: StatsCardProps) {
 
           <div className="p-4 rounded-2xl bg-slate-50/50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700">
             <dt className="flex items-center justify-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
-              <TrendingUp className="w-3 h-3" /> Avg Score
+              <TrendingUp className="w-3 h-3" /> {t("avgScore")}
             </dt>
             <dd className="text-2xl font-black text-slate-800 dark:text-white">
               {stats?.averageScore}%
@@ -81,8 +85,8 @@ export function StatsCard({ stats }: StatsCardProps) {
           </div>
 
           <div className="col-span-2 mt-4">
-            <Link href="/quiz/react-fundamentals" className={primaryBtnStyles}>
-              <span className="relative z-10">Continue Learning</span>
+            <Link href="/q&a" className={primaryBtnStyles}>
+              <span className="relative z-10">{t("continueLearning")}</span>
             </Link>
           </div>
         </dl>

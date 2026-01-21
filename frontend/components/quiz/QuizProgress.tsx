@@ -1,6 +1,8 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
+import { Check, X } from 'lucide-react';
 
 interface Answer {
   questionId: string;
@@ -46,13 +48,14 @@ function getVisibleIndices(current: number, total: number): (number | 'ellipsis'
 }
 
 export function QuizProgress({ current, total, answers }: QuizProgressProps) {
+  const t = useTranslations('quiz.progress');
   const visibleIndices = getVisibleIndices(current, total);
 
   return (
     <div className="space-y-4">
       <div className="text-center">
         <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-          Питання {current + 1} / {total}
+          {t('label', { current: current + 1, total })}
         </span>
       </div>
 
@@ -88,7 +91,7 @@ export function QuizProgress({ current, total, answers }: QuizProgressProps) {
             >
               {isAnswered ? (
                 <span className="text-white font-bold">
-                  {isCorrect ? '✓' : '✗'}
+                  {isCorrect ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
                 </span>
               ) : (
                 <span

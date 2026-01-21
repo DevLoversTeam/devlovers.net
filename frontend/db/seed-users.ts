@@ -1,7 +1,7 @@
 import "dotenv/config";
 import bcrypt from "bcryptjs";
 
-import { db, closeDb } from "./index";
+import { db } from "./index";
 import { users } from "./schema";
 import { eq } from "drizzle-orm";
 
@@ -58,12 +58,8 @@ async function main() {
 }
 
 main()
-  .then(closeDb)
   .then(() => process.exit(0))
-  .catch(async (err) => {
+  .catch((err) => {
     console.error("[seed] Failed:", err);
-    try {
-      await closeDb();
-    } catch {}
     process.exit(1);
   });

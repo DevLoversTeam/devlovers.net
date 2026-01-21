@@ -1,0 +1,434 @@
+{
+  "questions": [
+    {
+      "id": "html-adv-q11",
+      "order": 11,
+      "difficulty": "advanced",
+      "uk": {
+        "q": "Яка різниця між localStorage та sessionStorage?",
+        "exp": "localStorage зберігає дані безстроково (до ручного видалення). sessionStorage — тільки в межах сесії браузера (закрив вкладку = дані зникають). Обидва працюють тільки з рядками."
+      },
+      "en": {
+        "q": "What is the difference between localStorage and sessionStorage?",
+        "exp": "localStorage stores data indefinitely (until manual deletion). sessionStorage — only within browser session (close tab = data gone). Both work only with strings."
+      },
+      "pl": {
+        "q": "Jaka jest różnica między localStorage a sessionStorage?",
+        "exp": "localStorage przechowuje dane bezterminowo (do ręcznego usunięcia). sessionStorage — tylko w ramach sesji przeglądarki (zamknij kartę = dane znikają). Oba działają tylko z ciągami znaków."
+      },
+      "answers": [
+        {
+          "uk": "localStorage швидший за sessionStorage",
+          "en": "localStorage is faster than sessionStorage",
+          "pl": "localStorage jest szybszy niż sessionStorage",
+          "correct": false
+        },
+        {
+          "uk": "localStorage — безстроково, sessionStorage — тільки в межах сесії",
+          "en": "localStorage — indefinitely, sessionStorage — only within session",
+          "pl": "localStorage — bezterminowo, sessionStorage — tylko w ramach sesji",
+          "correct": true
+        },
+        {
+          "uk": "sessionStorage зберігає більше даних",
+          "en": "sessionStorage stores more data",
+          "pl": "sessionStorage przechowuje więcej danych",
+          "correct": false
+        },
+        {
+          "uk": "Різниці немає",
+          "en": "No difference",
+          "pl": "Nie ma różnicy",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-adv-q12",
+      "order": 12,
+      "difficulty": "advanced",
+      "uk": {
+        "q": "Що таке Geolocation API і які його основні методи?",
+        "exp": "Geolocation API дозволяє отримати географічне положення користувача. Методи: getCurrentPosition() — поточна позиція, watchPosition() — відстеження змін, clearWatch() — зупинка відстеження."
+      },
+      "en": {
+        "q": "What is Geolocation API and what are its main methods?",
+        "exp": "Geolocation API allows getting user's geographic location. Methods: getCurrentPosition() — current position, watchPosition() — track changes, clearWatch() — stop tracking."
+      },
+      "pl": {
+        "q": "Czym jest Geolocation API i jakie są jego główne metody?",
+        "exp": "Geolocation API pozwala uzyskać położenie geograficzne użytkownika. Metody: getCurrentPosition() — bieżąca pozycja, watchPosition() — śledzenie zmian, clearWatch() — zatrzymanie śledzenia."
+      },
+      "answers": [
+        {
+          "uk": "getLocation(), setLocation(), removeLocation()",
+          "en": "getLocation(), setLocation(), removeLocation()",
+          "pl": "getLocation(), setLocation(), removeLocation()",
+          "correct": false
+        },
+        {
+          "uk": "getCurrentPosition(), watchPosition(), clearWatch()",
+          "en": "getCurrentPosition(), watchPosition(), clearWatch()",
+          "pl": "getCurrentPosition(), watchPosition(), clearWatch()",
+          "correct": true
+        },
+        {
+          "uk": "findPosition(), trackPosition(), stopTracking()",
+          "en": "findPosition(), trackPosition(), stopTracking()",
+          "pl": "findPosition(), trackPosition(), stopTracking()",
+          "correct": false
+        },
+        {
+          "uk": "Geolocation API не має методів",
+          "en": "Geolocation API has no methods",
+          "pl": "Geolocation API nie ma metod",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-adv-q13",
+      "order": 13,
+      "difficulty": "advanced",
+      "uk": {
+        "q": "Як працює Drag and Drop API в HTML5?",
+        "exp": "Елемент отримує атрибут draggable=\"true\". Ключові події: dragstart (початок), dragover (над зоною), drop (скидання), dragend (завершення). Дані передаються через event.dataTransfer."
+      },
+      "en": {
+        "q": "How does Drag and Drop API work in HTML5?",
+        "exp": "Element gets draggable=\"true\" attribute. Key events: dragstart (start), dragover (over zone), drop (drop), dragend (finish). Data transferred via event.dataTransfer."
+      },
+      "pl": {
+        "q": "Jak działa Drag and Drop API w HTML5?",
+        "exp": "Element otrzymuje atrybut draggable=\"true\". Kluczowe zdarzenia: dragstart (początek), dragover (nad strefą), drop (upuszczenie), dragend (koniec). Dane przekazywane przez event.dataTransfer."
+      },
+      "answers": [
+        {
+          "uk": "Тільки через CSS властивості",
+          "en": "Only via CSS properties",
+          "pl": "Tylko przez właściwości CSS",
+          "correct": false
+        },
+        {
+          "uk": "draggable=\"true\" + події dragstart, dragover, drop, dragend",
+          "en": "draggable=\"true\" + events dragstart, dragover, drop, dragend",
+          "pl": "draggable=\"true\" + zdarzenia dragstart, dragover, drop, dragend",
+          "correct": true
+        },
+        {
+          "uk": "Через атрибут movable",
+          "en": "Via movable attribute",
+          "pl": "Przez atrybut movable",
+          "correct": false
+        },
+        {
+          "uk": "Drag and Drop не підтримується в HTML5",
+          "en": "Drag and Drop is not supported in HTML5",
+          "pl": "Drag and Drop nie jest obsługiwany w HTML5",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-adv-q14",
+      "order": 14,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке атрибут tabindex і як він впливає на навігацію?",
+        "exp": "tabindex визначає порядок фокусування при Tab. tabindex=\"0\" — природний порядок, tabindex=\"-1\" — недоступний через Tab але можна сфокусувати JS, позитивні значення визначають порядок."
+      },
+      "en": {
+        "q": "What is the tabindex attribute and how does it affect navigation?",
+        "exp": "tabindex determines focus order when pressing Tab. tabindex=\"0\" — natural order, tabindex=\"-1\" — not accessible via Tab but can be focused with JS, positive values define order."
+      },
+      "pl": {
+        "q": "Czym jest atrybut tabindex i jak wpływa na nawigację?",
+        "exp": "tabindex określa kolejność fokusowania przy Tab. tabindex=\"0\" — naturalny porządek, tabindex=\"-1\" — niedostępny przez Tab ale można fokusować JS, dodatnie wartości definiują kolejność."
+      },
+      "answers": [
+        {
+          "uk": "tabindex визначає індекс таблиці",
+          "en": "tabindex defines table index",
+          "pl": "tabindex definiuje indeks tabeli",
+          "correct": false
+        },
+        {
+          "uk": "tabindex=\"0\" — природний порядок, tabindex=\"-1\" — тільки програмний фокус",
+          "en": "tabindex=\"0\" — natural order, tabindex=\"-1\" — programmatic focus only",
+          "pl": "tabindex=\"0\" — naturalny porządek, tabindex=\"-1\" — tylko programowy fokus",
+          "correct": true
+        },
+        {
+          "uk": "tabindex працює тільки з посиланнями",
+          "en": "tabindex only works with links",
+          "pl": "tabindex działa tylko z linkami",
+          "correct": false
+        },
+        {
+          "uk": "tabindex застарів у HTML5",
+          "en": "tabindex is deprecated in HTML5",
+          "pl": "tabindex jest przestarzały w HTML5",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-adv-q15",
+      "order": 15,
+      "difficulty": "advanced",
+      "uk": {
+        "q": "Які основні ARIA-атрибути та для чого вони використовуються?",
+        "exp": "ARIA покращує доступність. role — визначає тип елемента, aria-label — опис для скрінрідерів, aria-labelledby/describedby — пов'язує з текстом, aria-hidden — ховає від асистивних технологій."
+      },
+      "en": {
+        "q": "What are the main ARIA attributes and what are they used for?",
+        "exp": "ARIA improves accessibility. role — defines element type, aria-label — description for screen readers, aria-labelledby/describedby — links to text, aria-hidden — hides from assistive tech."
+      },
+      "pl": {
+        "q": "Jakie są główne atrybuty ARIA i do czego służą?",
+        "exp": "ARIA poprawia dostępność. role — określa typ elementu, aria-label — opis dla czytników ekranu, aria-labelledby/describedby — łączy z tekstem, aria-hidden — ukrywa przed technologiami asystującymi."
+      },
+      "answers": [
+        {
+          "uk": "ARIA використовується тільки для стилізації",
+          "en": "ARIA is only used for styling",
+          "pl": "ARIA jest używane tylko do stylizacji",
+          "correct": false
+        },
+        {
+          "uk": "role, aria-label, aria-labelledby, aria-describedby, aria-hidden",
+          "en": "role, aria-label, aria-labelledby, aria-describedby, aria-hidden",
+          "pl": "role, aria-label, aria-labelledby, aria-describedby, aria-hidden",
+          "correct": true
+        },
+        {
+          "uk": "ARIA замінює семантичний HTML",
+          "en": "ARIA replaces semantic HTML",
+          "pl": "ARIA zastępuje semantyczny HTML",
+          "correct": false
+        },
+        {
+          "uk": "ARIA-атрибути не підтримуються браузерами",
+          "en": "ARIA attributes are not supported by browsers",
+          "pl": "Atrybuty ARIA nie są obsługiwane przez przeglądarki",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-adv-q16",
+      "order": 16,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Як зробити таблицю доступною для скрінрідерів?",
+        "exp": "Використовувати <caption> для опису, scope=\"col\"/\"row\" у <th>, семантичні теги thead/tbody/tfoot. Уникати зайвого colspan/rowspan, забезпечити контраст та фокуси."
+      },
+      "en": {
+        "q": "How do you make a table accessible for screen readers?",
+        "exp": "Use <caption> for description, scope=\"col\"/\"row\" in <th>, semantic tags thead/tbody/tfoot. Avoid excessive colspan/rowspan, ensure contrast and focus states."
+      },
+      "pl": {
+        "q": "Jak uczynić tabelę dostępną dla czytników ekranu?",
+        "exp": "Używaj <caption> dla opisu, scope=\"col\"/\"row\" w <th>, semantyczne tagi thead/tbody/tfoot. Unikaj nadmiernego colspan/rowspan, zapewnij kontrast i stany fokusa."
+      },
+      "answers": [
+        {
+          "uk": "Таблиці завжди доступні автоматично",
+          "en": "Tables are always accessible automatically",
+          "pl": "Tabele są zawsze dostępne automatycznie",
+          "correct": false
+        },
+        {
+          "uk": "<caption>, scope у <th>, семантичні теги thead/tbody/tfoot",
+          "en": "<caption>, scope in <th>, semantic tags thead/tbody/tfoot",
+          "pl": "<caption>, scope w <th>, semantyczne tagi thead/tbody/tfoot",
+          "correct": true
+        },
+        {
+          "uk": "Додати aria-table до кожної комірки",
+          "en": "Add aria-table to every cell",
+          "pl": "Dodaj aria-table do każdej komórki",
+          "correct": false
+        },
+        {
+          "uk": "Використовувати div замість table",
+          "en": "Use div instead of table",
+          "pl": "Używaj div zamiast table",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-adv-q17",
+      "order": 17,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке атрибути colspan і rowspan у таблицях?",
+        "exp": "colspan об'єднує комірку по кількох стовпцях (горизонтально). rowspan об'єднує комірку по кількох рядках (вертикально). Значення вказує кількість об'єднаних комірок."
+      },
+      "en": {
+        "q": "What are colspan and rowspan attributes in tables?",
+        "exp": "colspan merges a cell across multiple columns (horizontally). rowspan merges a cell across multiple rows (vertically). Value specifies number of merged cells."
+      },
+      "pl": {
+        "q": "Czym są atrybuty colspan i rowspan w tabelach?",
+        "exp": "colspan łączy komórkę w wielu kolumnach (poziomo). rowspan łączy komórkę w wielu wierszach (pionowo). Wartość określa liczbę połączonych komórek."
+      },
+      "answers": [
+        {
+          "uk": "colspan — ширина стовпця, rowspan — висота рядка",
+          "en": "colspan — column width, rowspan — row height",
+          "pl": "colspan — szerokość kolumny, rowspan — wysokość wiersza",
+          "correct": false
+        },
+        {
+          "uk": "colspan — об'єднання по горизонталі, rowspan — по вертикалі",
+          "en": "colspan — merge horizontally, rowspan — vertically",
+          "pl": "colspan — łączenie poziome, rowspan — pionowe",
+          "correct": true
+        },
+        {
+          "uk": "Це застарілі атрибути HTML4",
+          "en": "These are deprecated HTML4 attributes",
+          "pl": "To przestarzałe atrybuty HTML4",
+          "correct": false
+        },
+        {
+          "uk": "colspan і rowspan — синоніми",
+          "en": "colspan and rowspan are synonyms",
+          "pl": "colspan i rowspan to synonimy",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-adv-q18",
+      "order": 18,
+      "difficulty": "advanced",
+      "uk": {
+        "q": "Що таке Server-Sent Events (SSE) і чим вони відрізняються від WebSocket?",
+        "exp": "SSE — односпрямована комунікація від сервера до клієнта через HTTP. WebSocket — двостороння комунікація. SSE простіше, автоматичне перепідключення, але тільки текстові дані."
+      },
+      "en": {
+        "q": "What are Server-Sent Events (SSE) and how do they differ from WebSocket?",
+        "exp": "SSE is one-way communication from server to client via HTTP. WebSocket is bidirectional. SSE is simpler, has auto-reconnect, but only text data."
+      },
+      "pl": {
+        "q": "Czym są Server-Sent Events (SSE) i czym różnią się od WebSocket?",
+        "exp": "SSE to jednokierunkowa komunikacja od serwera do klienta przez HTTP. WebSocket to komunikacja dwukierunkowa. SSE jest prostsze, ma auto-reconnect, ale tylko dane tekstowe."
+      },
+      "answers": [
+        {
+          "uk": "SSE і WebSocket — це одне й те саме",
+          "en": "SSE and WebSocket are the same thing",
+          "pl": "SSE i WebSocket to to samo",
+          "correct": false
+        },
+        {
+          "uk": "SSE — односпрямований від сервера, WebSocket — двосторонній",
+          "en": "SSE — one-way from server, WebSocket — bidirectional",
+          "pl": "SSE — jednokierunkowy od serwera, WebSocket — dwukierunkowy",
+          "correct": true
+        },
+        {
+          "uk": "WebSocket застарів, SSE замінив його",
+          "en": "WebSocket is deprecated, SSE replaced it",
+          "pl": "WebSocket jest przestarzały, SSE go zastąpił",
+          "correct": false
+        },
+        {
+          "uk": "SSE швидший за WebSocket",
+          "en": "SSE is faster than WebSocket",
+          "pl": "SSE jest szybszy niż WebSocket",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-adv-q19",
+      "order": 19,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке Fullscreen API і як його використовувати?",
+        "exp": "Fullscreen API дозволяє елементу переходити в повноекранний режим. Методи: element.requestFullscreen() — увійти, document.exitFullscreen() — вийти. Подія fullscreenchange відстежує зміни."
+      },
+      "en": {
+        "q": "What is Fullscreen API and how do you use it?",
+        "exp": "Fullscreen API allows an element to enter fullscreen mode. Methods: element.requestFullscreen() — enter, document.exitFullscreen() — exit. Event fullscreenchange tracks changes."
+      },
+      "pl": {
+        "q": "Czym jest Fullscreen API i jak go używać?",
+        "exp": "Fullscreen API pozwala elementowi wejść w tryb pełnoekranowy. Metody: element.requestFullscreen() — wejście, document.exitFullscreen() — wyjście. Zdarzenie fullscreenchange śledzi zmiany."
+      },
+      "answers": [
+        {
+          "uk": "Fullscreen API не існує в браузерах",
+          "en": "Fullscreen API doesn't exist in browsers",
+          "pl": "Fullscreen API nie istnieje w przeglądarkach",
+          "correct": false
+        },
+        {
+          "uk": "requestFullscreen() для входу, exitFullscreen() для виходу",
+          "en": "requestFullscreen() to enter, exitFullscreen() to exit",
+          "pl": "requestFullscreen() do wejścia, exitFullscreen() do wyjścia",
+          "correct": true
+        },
+        {
+          "uk": "Через CSS властивість fullscreen: true",
+          "en": "Via CSS property fullscreen: true",
+          "pl": "Przez właściwość CSS fullscreen: true",
+          "correct": false
+        },
+        {
+          "uk": "Тільки для відео елементів",
+          "en": "Only for video elements",
+          "pl": "Tylko dla elementów wideo",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-adv-q20",
+      "order": 20,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Як приховати елемент без CSS і JavaScript?",
+        "exp": "Використати атрибут hidden — це булевий атрибут, який повністю видаляє елемент з візуального потоку. Еквівалент CSS display: none. Можна змінювати через element.hidden = true/false."
+      },
+      "en": {
+        "q": "How do you hide an element without CSS and JavaScript?",
+        "exp": "Use the hidden attribute — a boolean attribute that completely removes element from visual flow. Equivalent to CSS display: none. Can be changed via element.hidden = true/false."
+      },
+      "pl": {
+        "q": "Jak ukryć element bez CSS i JavaScript?",
+        "exp": "Użyj atrybutu hidden — to atrybut logiczny, który całkowicie usuwa element z przepływu wizualnego. Odpowiednik CSS display: none. Można zmieniać przez element.hidden = true/false."
+      },
+      "answers": [
+        {
+          "uk": "Неможливо приховати без CSS або JS",
+          "en": "Impossible to hide without CSS or JS",
+          "pl": "Niemożliwe do ukrycia bez CSS lub JS",
+          "correct": false
+        },
+        {
+          "uk": "Атрибут hidden",
+          "en": "hidden attribute",
+          "pl": "Atrybut hidden",
+          "correct": true
+        },
+        {
+          "uk": "Атрибут invisible",
+          "en": "invisible attribute",
+          "pl": "Atrybut invisible",
+          "correct": false
+        },
+        {
+          "uk": "Атрибут display=\"none\"",
+          "en": "display=\"none\" attribute",
+          "pl": "Atrybut display=\"none\"",
+          "correct": false
+        }
+      ]
+    }
+  ]
+}

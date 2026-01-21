@@ -9,15 +9,49 @@ import {
 
 import { logError } from '@/lib/logging';
 import { restockStalePendingOrders } from '@/lib/services/orders';
+import {
+  CSRF_FORM_FIELD,
+  isSameOrigin,
+  verifyCsrfToken,
+} from '@/lib/security/csrf';
 
 const DEFAULT_STALE_MINUTES = 60;
 
 export async function POST(request: NextRequest) {
   try {
+    // 1) Kill-switch + auth FIRST (no body parsing)
     await requireAdminApi(request);
+
+    // 2) CSRF checks second (browser-only semantics)
+    if (!isSameOrigin(request)) {
+      return NextResponse.json(
+        { code: 'CSRF_ORIGIN_MISMATCH' },
+        { status: 403 }
+      );
+    }
+
+    let form: FormData;
+    try {
+      form = await request.formData();
+    } catch {
+      return NextResponse.json(
+        { code: 'INVALID_REQUEST_BODY' },
+        { status: 400 }
+      );
+    }
+
+    const token = form.get(CSRF_FORM_FIELD);
+    if (
+      typeof token !== 'string' ||
+      !verifyCsrfToken(token, 'admin:orders:reconcile-stale')
+    ) {
+      return NextResponse.json({ code: 'CSRF_INVALID' }, { status: 403 });
+    }
+
     const processed = await restockStalePendingOrders({
       olderThanMinutes: DEFAULT_STALE_MINUTES,
     });
+
     return NextResponse.json({ processed });
   } catch (error) {
     if (error instanceof AdminApiDisabledError) {

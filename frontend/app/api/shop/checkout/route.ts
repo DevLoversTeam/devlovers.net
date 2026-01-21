@@ -1,29 +1,62 @@
 import { NextRequest, NextResponse } from 'next/server';
-
+import {
+  enforceRateLimit,
+  getRateLimitSubject,
+  rateLimitResponse,
+} from '@/lib/security/rate-limit';
 import { getCurrentUser } from '@/lib/auth';
 import { isPaymentsEnabled } from '@/lib/env/stripe';
-import { logError } from '@/lib/logging';
+import { logError, logWarn } from '@/lib/logging';
 import { resolveRequestLocale } from '@/lib/shop/request-locale';
-
+import { IdempotencyConflictError } from '@/lib/services/errors';
 import { MoneyValueError } from '@/db/queries/shop/orders';
-import { createPaymentIntent, retrievePaymentIntent } from '@/lib/psp/stripe';
 import {
   InsufficientStockError,
   InvalidPayloadError,
+  InvalidVariantError,
   PriceConfigError,
   OrderStateInvalidError,
 } from '@/lib/services/errors';
-
-import {
-  createOrderWithItems,
-  restockOrder,
-  setOrderPaymentIntent,
-} from '@/lib/services/orders';
 import {
   checkoutPayloadSchema,
   idempotencyKeySchema,
 } from '@/lib/validation/shop';
 import { type PaymentProvider, type PaymentStatus } from '@/lib/shop/payments';
+import {
+  PaymentAttemptsExhaustedError,
+  ensureStripePaymentIntentForOrder,
+} from '@/lib/services/orders/payment-attempts';
+
+import { createOrderWithItems, restockOrder } from '@/lib/services/orders';
+
+const EXPECTED_BUSINESS_ERROR_CODES = new Set([
+  'IDEMPOTENCY_CONFLICT',
+  'INVALID_PAYLOAD',
+  'INVALID_VARIANT',
+  'INSUFFICIENT_STOCK',
+  'PRICE_CONFIG_ERROR',
+  'PAYMENT_ATTEMPTS_EXHAUSTED',
+]);
+
+function getErrorCode(err: unknown): string | null {
+  if (typeof err !== 'object' || err === null) return null;
+
+  const e = err as { code?: unknown };
+  return typeof e.code === 'string' ? e.code : null;
+}
+
+function isExpectedBusinessError(err: unknown): boolean {
+  const code = getErrorCode(err);
+  if (code && EXPECTED_BUSINESS_ERROR_CODES.has(code)) return true;
+
+  if (err instanceof IdempotencyConflictError) return true;
+  if (err instanceof InvalidPayloadError) return true;
+  if (err instanceof InsufficientStockError) return true;
+  if (err instanceof PriceConfigError) return true;
+  if (err instanceof InvalidVariantError) return true;
+
+  return false;
+}
 
 function errorResponse(
   code: string,
@@ -110,23 +143,24 @@ async function readJsonBody(request: NextRequest): Promise<unknown> {
   const raw = await request.text();
 
   if (!raw || !raw.trim()) {
-    throw new Error("EMPTY_BODY");
+    throw new Error('EMPTY_BODY');
   }
 
   // tolerate BOM / odd whitespace
-  const normalized = raw.replace(/^\uFEFF/, "");
+  const normalized = raw.replace(/^\uFEFF/, '');
 
   return JSON.parse(normalized);
 }
-
 
 export async function POST(request: NextRequest) {
   let body: unknown;
 
   try {
-  body = await readJsonBody(request);
-} catch (error) {
-    logError('Failed to parse cart payload', error);
+    body = await readJsonBody(request);
+  } catch (error) {
+    logWarn('Failed to parse cart payload', {
+      reason: error instanceof Error ? error.message : String(error),
+    });
     return errorResponse(
       'INVALID_PAYLOAD',
       'Unable to process cart data.',
@@ -156,7 +190,9 @@ export async function POST(request: NextRequest) {
   const parsedPayload = checkoutPayloadSchema.safeParse(body);
 
   if (!parsedPayload.success) {
-    logError('Invalid checkout payload', parsedPayload.error);
+    logWarn('Invalid checkout payload', {
+      issuesCount: parsedPayload.error.issues?.length ?? 0,
+    });
     return errorResponse(
       'INVALID_PAYLOAD',
       'Invalid checkout payload',
@@ -195,6 +231,36 @@ export async function POST(request: NextRequest) {
       );
     }
   }
+  // P1: rate limit checkout (cross-instance, DB-backed)
+  // Policy: allow reasonable retries; block abusive burst.
+  const checkoutSubject = sessionUserId ?? getRateLimitSubject(request);
+
+  const limitParsed = Number.parseInt(
+    process.env.CHECKOUT_RATE_LIMIT_MAX ?? '',
+    10
+  );
+  const windowParsed = Number.parseInt(
+    process.env.CHECKOUT_RATE_LIMIT_WINDOW_SECONDS ?? '',
+    10
+  );
+
+  const limit =
+    Number.isFinite(limitParsed) && limitParsed > 0 ? limitParsed : 10;
+  const windowSeconds =
+    Number.isFinite(windowParsed) && windowParsed > 0 ? windowParsed : 300;
+
+  const decision = await enforceRateLimit({
+    key: `checkout:${checkoutSubject}`,
+    limit,
+    windowSeconds,
+  });
+
+  if (!decision.ok) {
+    return rateLimitResponse({
+      retryAfterSeconds: decision.retryAfterSeconds,
+      details: { scope: 'checkout' },
+    });
+  }
 
   try {
     const result = await createOrderWithItems({
@@ -204,11 +270,25 @@ export async function POST(request: NextRequest) {
       locale,
     });
 
-    const { order, totalCents } = result;
+    const { order } = result;
 
     const paymentsEnabled = isPaymentsEnabled();
 
     if (!paymentsEnabled) {
+      if (
+        order.paymentProvider === 'none' &&
+        order.paymentStatus === 'failed'
+      ) {
+        return errorResponse(
+          'CHECKOUT_FAILED',
+          'Order could not be completed.',
+          409,
+          {
+            orderId: order.id,
+          }
+        );
+      }
+
       if (
         order.paymentProvider === 'stripe' &&
         order.paymentStatus !== 'paid'
@@ -222,7 +302,10 @@ export async function POST(request: NextRequest) {
       }
 
       if (order.paymentProvider === 'none') {
-        if (order.paymentStatus !== 'paid' || order.paymentIntentId) {
+        if (
+          !['paid', 'failed'].includes(order.paymentStatus) ||
+          order.paymentIntentId
+        ) {
           logError(
             `Payments disabled but order is not paid/none. orderId=${
               order.id
@@ -243,12 +326,16 @@ export async function POST(request: NextRequest) {
     const stripePaymentFlow =
       paymentsEnabled && order.paymentProvider === 'stripe';
 
+    // =========================
+    // Existing order path
+    // =========================
     if (!result.isNew) {
-      if (stripePaymentFlow && order.paymentIntentId) {
+      if (stripePaymentFlow) {
         try {
-          const paymentIntent = await retrievePaymentIntent(
-            order.paymentIntentId
-          );
+          const ensured = await ensureStripePaymentIntentForOrder({
+            orderId: order.id,
+            existingPaymentIntentId: order.paymentIntentId ?? null,
+          });
 
           return buildCheckoutResponse({
             order: {
@@ -257,59 +344,58 @@ export async function POST(request: NextRequest) {
               totalAmount: order.totalAmount,
               paymentStatus: order.paymentStatus,
               paymentProvider: order.paymentProvider,
-              paymentIntentId: order.paymentIntentId ?? null,
+              paymentIntentId: ensured.paymentIntentId,
             },
             itemCount,
-            clientSecret: paymentIntent.clientSecret,
+            clientSecret: ensured.clientSecret,
             status: 200,
           });
         } catch (error) {
-          logError('Checkout payment intent retrieval failed', error);
+          if (error instanceof PaymentAttemptsExhaustedError) {
+            // Best-effort release to avoid holding reserved stock indefinitely.
+            try {
+              await restockOrder(order.id, { reason: 'failed' });
+            } catch (restockError) {
+              logError(
+                'Restoring stock after attempts exhausted failed',
+                restockError
+              );
+            }
+            return errorResponse(
+              'PAYMENT_ATTEMPTS_EXHAUSTED',
+              'Payment attempts exhausted for this order.',
+              409,
+              { orderId: error.orderId, provider: error.provider }
+            );
+          }
+
+          // Post-create/state conflict must be 409 (not 502)
+          if (error instanceof InvalidPayloadError) {
+            return errorResponse(
+              'CHECKOUT_CONFLICT',
+              'Order state conflict while initializing payment. Retry with the same Idempotency-Key.',
+              409,
+              { orderId: order.id }
+            );
+          }
+
+          if (error instanceof OrderStateInvalidError) {
+            return errorResponse(error.code, error.message, 500, {
+              orderId: error.orderId,
+              ...(error.details ? { details: error.details } : {}),
+            });
+          }
+
+          logError('Checkout payment initialization failed', error);
           return errorResponse(
             'STRIPE_ERROR',
             'Unable to initiate payment.',
-            400
+            502
           );
         }
       }
 
-      if (stripePaymentFlow && !order.paymentIntentId) {
-        try {
-          const paymentIntent = await createPaymentIntent({
-            amount: totalCents,
-            currency: order.currency,
-            orderId: order.id,
-            idempotencyKey,
-          });
-
-          const updatedOrder = await setOrderPaymentIntent({
-            orderId: order.id,
-            paymentIntentId: paymentIntent.paymentIntentId,
-          });
-
-          return buildCheckoutResponse({
-            order: {
-              id: updatedOrder.id,
-              currency: updatedOrder.currency,
-              totalAmount: updatedOrder.totalAmount,
-              paymentStatus: updatedOrder.paymentStatus,
-              paymentProvider: updatedOrder.paymentProvider,
-              paymentIntentId: updatedOrder.paymentIntentId ?? null,
-            },
-            itemCount,
-            clientSecret: paymentIntent.clientSecret,
-            status: 200,
-          });
-        } catch (error) {
-          logError('Checkout payment intent creation failed', error);
-          return errorResponse(
-            'STRIPE_ERROR',
-            'Unable to initiate payment.',
-            400
-          );
-        }
-      }
-
+      // Not Stripe flow => return existing order as-is
       return buildCheckoutResponse({
         order: {
           id: order.id,
@@ -325,6 +411,9 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // =========================
+    // New order path
+    // =========================
     if (!stripePaymentFlow) {
       return buildCheckoutResponse({
         order: {
@@ -341,66 +430,81 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Stripe new order: durable attempt layer (bounded + audited)
     try {
-      const paymentIntent = await createPaymentIntent({
-        amount: totalCents,
-        currency: order.currency,
+      const ensured = await ensureStripePaymentIntentForOrder({
         orderId: order.id,
-        idempotencyKey,
-      });
-
-      const updatedOrder = await setOrderPaymentIntent({
-        orderId: order.id,
-        paymentIntentId: paymentIntent.paymentIntentId,
+        existingPaymentIntentId: order.paymentIntentId ?? null,
       });
 
       return buildCheckoutResponse({
         order: {
-          id: updatedOrder.id,
-          currency: updatedOrder.currency,
-          totalAmount: updatedOrder.totalAmount,
-          paymentStatus: updatedOrder.paymentStatus,
-          paymentProvider: updatedOrder.paymentProvider,
-          paymentIntentId: updatedOrder.paymentIntentId ?? null,
+          id: order.id,
+          currency: order.currency,
+          totalAmount: order.totalAmount,
+          paymentStatus: order.paymentStatus,
+          paymentProvider: order.paymentProvider,
+          paymentIntentId: ensured.paymentIntentId,
         },
         itemCount,
-        clientSecret: paymentIntent.clientSecret,
+        clientSecret: ensured.clientSecret,
         status: 201,
       });
     } catch (error) {
-      logError('Checkout payment intent creation failed', error);
+      // Conflict => 409 and DO NOT restock (leave reserved; retry/janitor)
+      if (error instanceof InvalidPayloadError) {
+        return errorResponse(
+          'CHECKOUT_CONFLICT',
+          'Order state conflict while initializing payment. Retry with the same Idempotency-Key.',
+          409,
+          { orderId: order.id }
+        );
+      }
+      if (error instanceof PaymentAttemptsExhaustedError) {
+        // Best-effort release to avoid holding reserved stock indefinitely
+        try {
+          await restockOrder(order.id, { reason: 'failed' });
+        } catch (restockError) {
+          logError(
+            'Restoring stock after attempts exhausted failed',
+            restockError
+          );
+        }
+        return errorResponse(
+          'PAYMENT_ATTEMPTS_EXHAUSTED',
+          'Payment attempts exhausted for this order.',
+          409,
+          { orderId: error.orderId, provider: error.provider }
+        );
+      }
+
+      logError('Checkout payment initialization failed', error);
 
       try {
         await restockOrder(order.id, { reason: 'failed' });
       } catch (restockError) {
         logError(
-          'Restoring stock after payment intent failure failed',
+          'Restoring stock after payment init failure failed',
           restockError
         );
       }
-
-      if (error instanceof Error && error.message.startsWith('STRIPE_')) {
-        return errorResponse(
-          'STRIPE_ERROR',
-          'Unable to initiate payment.',
-          400
-        );
-      }
-
       if (error instanceof OrderStateInvalidError) {
         return errorResponse(error.code, error.message, 500, {
           orderId: error.orderId,
+          ...(error.details ? { details: error.details } : {}),
         });
       }
-
-      return errorResponse(
-        'INTERNAL_ERROR',
-        'Unable to process checkout.',
-        500
-      );
+      return errorResponse('STRIPE_ERROR', 'Unable to initiate payment.', 502);
     }
   } catch (error) {
-    logError('Checkout failed', error);
+    if (isExpectedBusinessError(error)) {
+      logWarn('Checkout rejected', {
+        code: getErrorCode(error) ?? 'UNKNOWN',
+        path: request.nextUrl.pathname,
+      });
+    } else {
+      logError('Checkout failed', error);
+    }
 
     if (error instanceof InvalidPayloadError) {
       return errorResponse(
@@ -410,11 +514,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (error instanceof InvalidVariantError) {
+      return errorResponse(error.code, error.message, 400, {
+        productId: error.productId,
+        field: error.field,
+        value: error.value,
+        allowed: error.allowed,
+      });
+    }
+
+    if (error instanceof IdempotencyConflictError) {
+      return errorResponse(error.code, error.message, 409, error.details);
+    }
+
     if (error instanceof OrderStateInvalidError) {
       return errorResponse(error.code, error.message, 500, {
         orderId: error.orderId,
-        field: (error as any).field,
-        rawValue: (error as any).rawValue,
+        field: error.field,
+        rawValue: error.rawValue,
+        ...(error.details ? { details: error.details } : {}),
       });
     }
 
@@ -431,8 +549,8 @@ export async function POST(request: NextRequest) {
 
     if (error instanceof MoneyValueError) {
       return errorResponse(
-        'PRICE_CONFIG_ERROR',
-        'Invalid price configuration for one or more products.',
+        'PRICE_DATA_ERROR',
+        'Invalid stored price data for one or more products.',
         500,
         {
           productId: error.productId,

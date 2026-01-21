@@ -1,21 +1,100 @@
-import Stripe from "stripe"
-
-import { getStripeEnv } from "@/lib/env/stripe"
-import { logError } from "@/lib/logging"
-
-const { secretKey, webhookSecret, paymentsEnabled, mode } = getStripeEnv()
-
-const stripe = secretKey
-  ? new Stripe(secretKey, {
-      apiVersion: "2025-12-15.clover",
-    })
-  : null
+import Stripe from 'stripe';
+import { getStripeEnv } from '@/lib/env/stripe';
+import { logError } from '@/lib/logging';
 
 type CreatePaymentIntentInput = {
-  amount: number
-  currency: string
-  orderId: string
-  idempotencyKey?: string
+  amount: number;
+  currency: string;
+  orderId: string;
+  idempotencyKey?: string;
+};
+
+type CreateRefundInput = {
+  orderId: string;
+  paymentIntentId?: string | null;
+  chargeId?: string | null;
+  amountMinor?: number; // full refund: pass totalAmountMinor (recommended)
+  idempotencyKey?: string;
+};
+
+let _stripe: Stripe | null = null;
+let _stripeKey: string | null = null;
+
+class StripePspError extends Error {
+  readonly code: string;
+  readonly cause: unknown;
+
+  constructor(code: string, cause: unknown) {
+    super(code);
+    this.name = 'StripePspError';
+    this.code = code;
+    this.cause = cause;
+  }
+}
+
+function withCause(code: string, cause: unknown): Error {
+  return new StripePspError(code, cause);
+}
+
+export async function createRefund({
+  orderId,
+  paymentIntentId,
+  chargeId,
+  amountMinor,
+  idempotencyKey,
+}: CreateRefundInput): Promise<{
+  refundId: string;
+  status: Stripe.Refund['status'];
+}> {
+  const { paymentsEnabled, mode } = getStripeEnv();
+  const stripe = getStripeClient();
+
+  if (!paymentsEnabled || !stripe) {
+    throw new Error('STRIPE_DISABLED');
+  }
+
+  const pi = paymentIntentId?.trim() ? paymentIntentId.trim() : null;
+  const ch = chargeId?.trim() ? chargeId.trim() : null;
+
+  if (!pi && !ch) {
+    throw new Error('STRIPE_REFUND_MISSING_TARGET');
+  }
+
+  if (amountMinor !== undefined) {
+    if (!Number.isSafeInteger(amountMinor) || amountMinor <= 0) {
+      throw new Error('STRIPE_INVALID_REFUND_AMOUNT');
+    }
+  }
+
+  try {
+    const refund = await stripe.refunds.create(
+      {
+        ...(pi ? { payment_intent: pi } : { charge: ch! }),
+        ...(amountMinor !== undefined ? { amount: amountMinor } : {}),
+        metadata: { orderId, mode: mode ?? 'test' },
+      },
+      idempotencyKey ? { idempotencyKey } : undefined
+    );
+
+    return { refundId: refund.id, status: refund.status };
+  } catch (error) {
+    logError('Stripe refund creation failed', error);
+    throw withCause('STRIPE_REFUND_FAILED', error);
+  }
+}
+
+function getStripeClient(): Stripe | null {
+  const { secretKey } = getStripeEnv();
+  if (!secretKey) return null;
+
+  if (_stripe && _stripeKey === secretKey) return _stripe;
+  _stripeKey = secretKey;
+
+  _stripe = new Stripe(secretKey, {
+    apiVersion: '2025-11-17.clover',
+  });
+
+  return _stripe;
 }
 
 export async function createPaymentIntent({
@@ -23,13 +102,20 @@ export async function createPaymentIntent({
   currency,
   orderId,
   idempotencyKey,
-}: CreatePaymentIntentInput): Promise<{ clientSecret: string; paymentIntentId: string }> {
+}: CreatePaymentIntentInput): Promise<{
+  clientSecret: string;
+  paymentIntentId: string;
+}> {
+  const { paymentsEnabled, mode } = getStripeEnv();
+  const stripe = getStripeClient();
+
   if (!paymentsEnabled || !stripe) {
-    throw new Error("STRIPE_DISABLED")
+    throw new Error('STRIPE_DISABLED');
   }
 
-  if (!Number.isFinite(amount) || amount <= 0) {
-    throw new Error("STRIPE_INVALID_AMOUNT")
+  // Stripe amount must be an integer in minor units. Fail-closed on floats/NaN/huge values.
+  if (!Number.isSafeInteger(amount) || amount <= 0) {
+    throw new Error('STRIPE_INVALID_AMOUNT');
   }
 
   try {
@@ -37,73 +123,101 @@ export async function createPaymentIntent({
       {
         amount,
         currency: currency.toLowerCase(),
-        metadata: {
-          orderId,
-          mode: mode ?? "test",
-        },
+        metadata: { orderId, mode: mode ?? 'test' },
         automatic_payment_methods: { enabled: true },
       },
       idempotencyKey ? { idempotencyKey } : undefined
-    )
+    );
 
     if (!intent.client_secret) {
-      throw new Error("STRIPE_CLIENT_SECRET_MISSING")
+      throw new Error('STRIPE_CLIENT_SECRET_MISSING');
     }
 
-    return {
-      clientSecret: intent.client_secret,
-      paymentIntentId: intent.id,
-    }
+    return { clientSecret: intent.client_secret, paymentIntentId: intent.id };
   } catch (error) {
-    logError("Stripe payment intent creation failed", error)
-    throw new Error("STRIPE_PAYMENT_INTENT_FAILED")
+    logError('Stripe payment intent creation failed', error);
+    throw withCause('STRIPE_PAYMENT_INTENT_FAILED', error);
   }
 }
 
 export async function retrievePaymentIntent(paymentIntentId: string): Promise<{
-  clientSecret: string
-  paymentIntentId: string
+  clientSecret: string;
+  paymentIntentId: string;
+  status: Stripe.PaymentIntent['status'];
 }> {
+  const { paymentsEnabled } = getStripeEnv();
+  const stripe = getStripeClient();
+
   if (!paymentsEnabled || !stripe) {
-    throw new Error("STRIPE_DISABLED")
+    throw new Error('STRIPE_DISABLED');
+  }
+
+  if (!paymentIntentId || paymentIntentId.trim().length === 0) {
+    throw new Error('STRIPE_INVALID_PAYMENT_INTENT_ID');
   }
 
   try {
-    const intent = await stripe.paymentIntents.retrieve(paymentIntentId)
-
-    if (!intent.client_secret) {
-      throw new Error("STRIPE_CLIENT_SECRET_MISSING")
-    }
-
-    return { clientSecret: intent.client_secret, paymentIntentId: intent.id }
+    const intent = await stripe.paymentIntents.retrieve(paymentIntentId);
+    if (!intent.client_secret) throw new Error('STRIPE_CLIENT_SECRET_MISSING');
+    return {
+      clientSecret: intent.client_secret,
+      paymentIntentId: intent.id,
+      status: intent.status,
+    };
   } catch (error) {
-    logError("Stripe payment intent retrieval failed", error)
-    throw new Error("STRIPE_PAYMENT_INTENT_FAILED")
+    logError('Stripe payment intent retrieval failed', error);
+    throw withCause('STRIPE_PAYMENT_INTENT_FAILED', error);
+  }
+}
+
+export async function retrieveCharge(chargeId: string): Promise<Stripe.Charge> {
+  const { paymentsEnabled } = getStripeEnv();
+  const stripe = getStripeClient();
+
+  if (!paymentsEnabled || !stripe) {
+    throw new Error('STRIPE_DISABLED');
+  }
+
+  if (!chargeId || chargeId.trim().length === 0) {
+    throw new Error('STRIPE_INVALID_CHARGE_ID');
+  }
+
+  try {
+    return await stripe.charges.retrieve(chargeId);
+  } catch (error) {
+    logError('Stripe charge retrieval failed', error);
+    throw withCause('STRIPE_CHARGE_RETRIEVE_FAILED', error);
   }
 }
 
 type VerifyWebhookSignatureInput = {
-  rawBody: string
-  signatureHeader: string | null
-}
+  rawBody: string;
+  signatureHeader: string | null;
+};
 
 export function verifyWebhookSignature({
   rawBody,
   signatureHeader,
 }: VerifyWebhookSignatureInput): Stripe.Event {
+  const { paymentsEnabled, webhookSecret } = getStripeEnv();
+  const stripe = getStripeClient();
+
   if (!paymentsEnabled || !stripe || !webhookSecret) {
-    throw new Error("STRIPE_WEBHOOK_DISABLED")
+    throw new Error('STRIPE_WEBHOOK_DISABLED');
   }
 
   if (!signatureHeader) {
-    throw new Error("STRIPE_MISSING_SIGNATURE")
+    throw new Error('STRIPE_MISSING_SIGNATURE');
   }
 
   try {
-    const event = stripe.webhooks.constructEvent(rawBody, signatureHeader, webhookSecret)
-    return event
+    return stripe.webhooks.constructEvent(
+      rawBody,
+      signatureHeader,
+      webhookSecret
+    );
   } catch (error) {
-    logError("Stripe webhook signature verification failed", error)
-    throw new Error("STRIPE_INVALID_SIGNATURE")
+    logError('Stripe webhook signature verification failed', error);
+    throw withCause('STRIPE_INVALID_SIGNATURE', error);
   }
 }

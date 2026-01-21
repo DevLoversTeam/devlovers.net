@@ -1,37 +1,61 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
+import { AlertTriangle } from 'lucide-react';
 
 interface CountdownTimerProps {
   timeLimitSeconds: number;
   onTimeUp: () => void;
   isActive: boolean;
+  startedAt: Date;
 }
 
 export function CountdownTimer({
   timeLimitSeconds,
   onTimeUp,
   isActive,
+  startedAt,
 }: CountdownTimerProps) {
-  const [remainingSeconds, setRemainingSeconds] = useState(timeLimitSeconds);
-
+  const t = useTranslations('quiz.timer');
+  const endTime = startedAt.getTime() + timeLimitSeconds * 1000;
+  const [remainingSeconds, setRemainingSeconds] = useState(() => 
+    Math.max(0, Math.floor((endTime - Date.now()) / 1000))
+  );
+  
   useEffect(() => {
     if (!isActive) return;
 
     const interval = setInterval(() => {
-      setRemainingSeconds(prev => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          onTimeUp();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+      const now = Date.now();
+      const remaining = Math.max(0, Math.floor((endTime - now) / 1000));
+      
+      setRemainingSeconds(remaining);
+
+      if (remaining === 0) {
+        clearInterval(interval);
+        queueMicrotask(onTimeUp);
+      }
+    }, 100);
 
     return () => clearInterval(interval);
-  }, [isActive, onTimeUp]);
+  }, [isActive, onTimeUp, endTime]);
+
+  // Force update when tab becomes visible again
+  useEffect(() => {
+    if (!isActive) return;
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        const remaining = Math.max(0, Math.floor((endTime - Date.now()) / 1000));
+        setRemainingSeconds(remaining);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [isActive, endTime]);
 
   const minutes = Math.floor(remainingSeconds / 60);
   const seconds = remainingSeconds % 60;
@@ -62,7 +86,7 @@ export function CountdownTimer({
       percentage <= 10 && 'animate-pulse'
     )}>
       <div className="flex items-center justify-between mb-2">
-        <span className="text-sm font-medium">Залишилось часу:</span>
+        <span className="text-sm font-medium">{t('label')}</span>
         <span className="text-2xl font-bold font-mono">
           {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
         </span>
@@ -80,7 +104,15 @@ export function CountdownTimer({
 
       {percentage <= 30 && (
         <p className="text-xs mt-2 font-medium">
-          {percentage <= 10 ? '⚠️ Час майже закінчився!' : '⏰ Поспішайте!'}
+          {percentage <= 10 ? (
+            <>
+              <AlertTriangle className="w-4 h-4 inline text-amber-500" /> {t('almostDone')}
+            </>
+          ) : (
+            <>
+              <span aria-hidden="true">⏰</span> {t('hurryUp')}
+            </>
+          )}
         </p>
       )}
     </div>

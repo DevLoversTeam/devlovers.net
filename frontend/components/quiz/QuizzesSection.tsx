@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { QuizCard } from './QuizCard';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { categoryData } from '@/data/category';
@@ -32,7 +32,10 @@ export default function QuizzesSection({
   quizzes,
   userProgressMap,
 }: QuizzesSectionProps) {
+  const t = useTranslations('quiz.section');
   const params = useParams();
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const locale = params.locale as string;
   const localeKey = (['uk', 'en', 'pl'] as const).includes(
     locale as 'uk' | 'en' | 'pl'
@@ -40,12 +43,22 @@ export default function QuizzesSection({
     ? (locale as 'uk' | 'en' | 'pl')
     : 'en';
 
-  const DEFAULT_CATEGORY = categoryData[0]?.slug || 'html';
-  const [active, setActive] = useState(DEFAULT_CATEGORY);
+  const DEFAULT_CATEGORY = categoryData[0]?.slug || 'git';
+
+  const categoryFromUrl = searchParams.get('category');
+  const validCategory = categoryData.some(c => c.slug === categoryFromUrl);
+  const activeCategory = validCategory ? categoryFromUrl! : DEFAULT_CATEGORY;
+
+  const handleCategoryChange = (category: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('category', category);
+    router.replace(`?${params.toString()}`, { scroll: false });
+  };
+
 
   return (
     <div className="w-full">
-      <Tabs value={active} onValueChange={setActive}>
+      <Tabs value={activeCategory} onValueChange={handleCategoryChange}>
         <TabsList className="!bg-transparent !p-0 !h-auto !w-full grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-10 mb-6 gap-2">
           {categoryData.map(category => (
             <TabsTrigger
@@ -88,7 +101,7 @@ export default function QuizzesSection({
               ) : (
                 <div className="text-center py-12">
                   <p className="text-gray-600 dark:text-gray-400">
-                    No quizzes available in this category yet.
+                    {t('noQuizzes')}
                   </p>
                 </div>
               )}

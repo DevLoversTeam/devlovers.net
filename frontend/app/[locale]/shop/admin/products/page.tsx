@@ -1,166 +1,287 @@
+// frontend/app/[locale]/shop/admin/products/page.tsx
 import { Link } from '@/i18n/routing';
-import { desc } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
+import { issueCsrfToken } from '@/lib/security/csrf';
+import { ShopAdminTopbar } from '@/components/shop/admin/shop-admin-topbar';
+import { guardShopAdminPage } from '@/lib/auth/guard-shop-admin-page';
 
 import { AdminProductStatusToggle } from '@/components/shop/admin/admin-product-status-toggle';
+import { AdminPagination } from '@/components/shop/admin/admin-pagination';
 import { db } from '@/db';
-import { products } from '@/db/schema';
-import {
-  currencyValues,
-  formatMoney,
-  type CurrencyCode,
-} from '@/lib/shop/currency';
-import { fromDbMoney } from '@/lib/shop/money';
+import { products, productPrices } from '@/db/schema';
+import { formatMoney, resolveCurrencyFromLocale } from '@/lib/shop/currency';
+import { parsePage } from '@/lib/pagination';
 
-function toCurrencyCode(value: string | null | undefined): CurrencyCode {
-  const normalized = (value ?? '').trim().toUpperCase();
-  return currencyValues.includes(normalized as CurrencyCode)
-    ? (normalized as CurrencyCode)
-    : 'USD';
-}
+export const dynamic = 'force-dynamic';
 
-function formatDate(value: Date | null, locale: string) {
+const PAGE_SIZE = 25;
+
+function formatDate(value: Date | null, locale: string): string {
   if (!value) return '-';
   return value.toLocaleDateString(locale);
 }
 
 export default async function AdminProductsPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ page?: string }>;
 }) {
+  await guardShopAdminPage();
+
   const { locale } = await params;
-  const allProducts = await db
-    .select()
+  const sp = await searchParams;
+
+  const page = parsePage(sp.page);
+  const offset = (page - 1) * PAGE_SIZE;
+
+  const displayCurrency = resolveCurrencyFromLocale(locale);
+
+  const all = await db
+    .select({
+      id: products.id,
+      title: products.title,
+      slug: products.slug,
+      category: products.category,
+      type: products.type,
+      stock: products.stock,
+      badge: products.badge,
+      isActive: products.isActive,
+      isFeatured: products.isFeatured,
+      createdAt: products.createdAt,
+      priceMinor: productPrices.priceMinor,
+    })
     .from(products)
-    .orderBy(desc(products.createdAt));
+    .leftJoin(
+      productPrices,
+      and(
+        eq(productPrices.productId, products.id),
+        eq(productPrices.currency, displayCurrency)
+      )
+    )
+    // stable sort with tie-breaker
+    .orderBy(desc(products.createdAt), desc(products.id))
+    .limit(PAGE_SIZE + 1)
+    .offset(offset);
+
+  const hasNext = all.length > PAGE_SIZE;
+  const rows = all.slice(0, PAGE_SIZE);
+  const csrfTokenStatus = issueCsrfToken('admin:products:status');
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Admin · Products</h1>
-        <Link
-          href="/shop/admin/products/new"
-          className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
-        >
-          New product
-        </Link>
-      </div>
+    <>
+      <ShopAdminTopbar />
 
-      <div className="mt-6 overflow-x-auto">
-        <table className="min-w-full divide-y divide-border text-sm">
-          <thead className="bg-muted/50">
-            <tr>
-              <th className="px-3 py-2 text-left font-semibold text-foreground">
-                Title
-              </th>
-              <th className="px-3 py-2 text-left font-semibold text-foreground">
-                Slug
-              </th>
-              <th className="px-3 py-2 text-left font-semibold text-foreground">
-                Price
-              </th>
-              <th className="px-3 py-2 text-left font-semibold text-foreground">
-                Category
-              </th>
-              <th className="px-3 py-2 text-left font-semibold text-foreground">
-                Type
-              </th>
-              <th className="px-3 py-2 text-left font-semibold text-foreground">
-                Stock
-              </th>
-              <th className="px-3 py-2 text-left font-semibold text-foreground">
-                Badge
-              </th>
-              <th className="px-3 py-2 text-left font-semibold text-foreground">
-                Active
-              </th>
-              <th className="px-3 py-2 text-left font-semibold text-foreground">
-                Featured
-              </th>
-              <th className="px-3 py-2 text-left font-semibold text-foreground">
-                Created
-              </th>
-              <th className="px-3 py-2 text-left font-semibold text-foreground">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {allProducts.map(product => (
-              <tr key={product.id} className="hover:bg-muted/50">
-                <td className="px-3 py-2 font-medium text-foreground">
-                  {product.title}
-                </td>
-                <td className="px-3 py-2 text-muted-foreground">
-                  {product.slug}
-                </td>
-                <td className="px-3 py-2 text-foreground">
-                  {formatMoney(
-                    fromDbMoney(product.price),
-                    toCurrencyCode(product.currency ?? 'USD'),
-                    locale
-                  )}
-                </td>
+      <main
+        className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8"
+        aria-labelledby="admin-products-title"
+      >
+        <header className="flex items-start justify-between gap-4">
+          <h1
+            id="admin-products-title"
+            className="text-2xl font-bold text-foreground"
+          >
+            Admin · Products
+          </h1>
 
-                <td className="px-3 py-2 text-muted-foreground">
-                  {product.category ?? '-'}
-                </td>
-                <td className="px-3 py-2 text-muted-foreground">
-                  {product.type ?? '-'}
-                </td>
-                <td className="px-3 py-2 text-muted-foreground">
-                  {product.stock}
-                </td>
-                <td className="px-3 py-2 text-muted-foreground">
-                  {product.badge === 'NONE' ? '-' : product.badge}
-                </td>
-                <td className="px-3 py-2">
-                  <span
-                    className="inline-flex rounded-full bg-muted px-2 py-1 text-xs font-medium text-foreground"
-                    aria-label={product.isActive ? 'Active' : 'Inactive'}
+          <Link
+            href="/shop/admin/products/new"
+            className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+          >
+            New product
+          </Link>
+        </header>
+
+        <section className="mt-6" aria-label="Products table">
+          <div className="overflow-x-auto">
+            <table className="w-full table-fixed divide-y divide-border text-sm">
+              <caption className="sr-only">Products list</caption>
+
+              <thead className="bg-muted/50">
+                <tr>
+                  <th
+                    scope="col"
+                    className="w-[20%] px-3 py-2 text-left font-semibold text-foreground"
                   >
-                    {product.isActive ? 'Yes' : 'No'}
-                  </span>
-                </td>
-                <td className="px-3 py-2">
-                  <span
-                    className="inline-flex rounded-full bg-muted px-2 py-1 text-xs font-medium text-foreground"
-                    aria-label={
-                      product.isFeatured ? 'Featured' : 'Not featured'
-                    }
+                    Title
+                  </th>
+                  <th
+                    scope="col"
+                    className="w-[18%] px-3 py-2 text-left font-semibold text-foreground"
                   >
-                    {product.isFeatured ? 'Yes' : 'No'}
-                  </span>
-                </td>
-                <td className="px-3 py-2 text-muted-foreground">
-                  {formatDate(product.createdAt, locale)}
-                </td>
+                    Slug
+                  </th>
+                  <th
+                    scope="col"
+                    className="w-[8%] px-3 py-2 text-left font-semibold text-foreground"
+                  >
+                    Price
+                  </th>
+                  <th
+                    scope="col"
+                    className="w-[8%] px-3 py-2 text-left font-semibold text-foreground"
+                  >
+                    Category
+                  </th>
+                  <th
+                    scope="col"
+                    className="w-[8%] px-3 py-2 text-left font-semibold text-foreground"
+                  >
+                    Type
+                  </th>
+                  <th
+                    scope="col"
+                    className="w-[5%] px-3 py-2 text-left font-semibold text-foreground"
+                  >
+                    Stock
+                  </th>
+                  <th
+                    scope="col"
+                    className="w-[5%] px-3 py-2 text-left font-semibold text-foreground"
+                  >
+                    Badge
+                  </th>
+                  <th
+                    scope="col"
+                    className="w-[5%] px-3 py-2 text-left font-semibold text-foreground"
+                  >
+                    Active
+                  </th>
+                  <th
+                    scope="col"
+                    className="w-[6%] px-3 py-2 text-left font-semibold text-foreground"
+                  >
+                    Featured
+                  </th>
+                  <th
+                    scope="col"
+                    className="w-[8%] px-3 py-2 text-left font-semibold text-foreground"
+                  >
+                    Created
+                  </th>
+                  <th
+                    scope="col"
+                    className="w-[9%] px-3 py-2 text-left font-semibold text-foreground"
+                  >
+                    Actions
+                  </th>
+                </tr>
+              </thead>
 
-                <td className="px-3 py-2">
-                  <div className="flex flex-wrap gap-2">
-                    <Link
-                      href={`/shop/products/${product.slug}`}
-                      className="rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
+              <tbody className="divide-y divide-border">
+                {rows.map(row => {
+                  const priceMinor = row.priceMinor;
+
+                  return (
+                    <tr key={row.id} className="hover:bg-muted/50">
+                      <td className="px-3 py-2 font-medium text-foreground max-w-0">
+                        <div className="truncate" title={row.title}>
+                          {row.title}
+                        </div>
+                      </td>
+
+                      <td className="px-3 py-2 text-muted-foreground max-w-0">
+                        <div className="truncate" title={row.slug}>
+                          {row.slug}
+                        </div>
+                      </td>
+
+                      <td className="px-3 py-2 text-foreground whitespace-nowrap">
+                        {priceMinor === null
+                          ? '-'
+                          : formatMoney(priceMinor, displayCurrency, locale)}
+                      </td>
+
+                      <td className="px-3 py-2 text-muted-foreground max-w-0">
+                        <div className="truncate" title={row.category ?? '-'}>
+                          {row.category ?? '-'}
+                        </div>
+                      </td>
+
+                      <td className="px-3 py-2 text-muted-foreground max-w-0">
+                        <div className="truncate" title={row.type ?? '-'}>
+                          {row.type ?? '-'}
+                        </div>
+                      </td>
+
+                      <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
+                        {row.stock}
+                      </td>
+
+                      <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
+                        {row.badge == null || row.badge === 'NONE'
+                          ? '-'
+                          : row.badge}
+                      </td>
+
+                      <td className="px-3 py-2 whitespace-nowrap">
+                        <span className="inline-flex rounded-full bg-muted px-2 py-1 text-xs font-medium text-foreground">
+                          {row.isActive ? 'Yes' : 'No'}
+                        </span>
+                      </td>
+
+                      <td className="px-3 py-2 whitespace-nowrap">
+                        <span className="inline-flex rounded-full bg-muted px-2 py-1 text-xs font-medium text-foreground">
+                          {row.isFeatured ? 'Yes' : 'No'}
+                        </span>
+                      </td>
+
+                      <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
+                        {formatDate(row.createdAt, locale)}
+                      </td>
+
+                      <td className="px-3 py-2">
+                        <div className="flex flex-wrap gap-2">
+                          <Link
+                            href={`/shop/products/${row.slug}`}
+                            className="rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
+                            aria-label={`View product ${row.title}`}
+                          >
+                            View
+                          </Link>
+
+                          <Link
+                            href={`/shop/admin/products/${row.id}/edit`}
+                            className="rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
+                            aria-label={`Edit product ${row.title}`}
+                          >
+                            Edit
+                          </Link>
+
+                          <AdminProductStatusToggle
+                            id={row.id}
+                            initialIsActive={row.isActive}
+                            csrfToken={csrfTokenStatus}
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+
+                {rows.length === 0 ? (
+                  <tr>
+                    <td
+                      className="px-3 py-6 text-muted-foreground"
+                      colSpan={11}
                     >
-                      View
-                    </Link>
-                    <Link
-                      href={`/shop/admin/products/${product.id}/edit`}
-                      className="rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
-                    >
-                      Edit
-                    </Link>
-                    <AdminProductStatusToggle
-                      id={product.id}
-                      initialIsActive={product.isActive}
-                    />
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
+                      No products yet.
+                    </td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
+          <div className="mt-4">
+            <AdminPagination
+              basePath="/shop/admin/products"
+              page={page}
+              hasNext={hasNext}
+            />
+          </div>
+        </section>
+      </main>
+    </>
   );
 }

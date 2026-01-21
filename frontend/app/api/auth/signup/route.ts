@@ -1,14 +1,18 @@
 import { NextResponse } from "next/server";
-import { revalidatePath } from 'next/cache'; 
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
 
 import { db } from "@/db";
 import { users } from "@/db/schema/users";
-import { signAuthToken, setAuthCookie } from "@/lib/auth";
+import { createEmailVerificationToken } from "@/lib/auth/email-verification";
+import { sendVerificationEmail } from "@/lib/email/sendVerificationEmail";
+import { headers } from "next/headers";
+import { resolveBaseUrl } from "@/lib/http/getBaseUrl";
+
 
 export const runtime = "nodejs";
+
 
 const signupSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -17,55 +21,72 @@ const signupSchema = z.object({
 });
 
 export async function POST(req: Request) {
-  const body = await req.json().catch(() => null);
-  const parsed = signupSchema.safeParse(body);
+  try {
+    const body = await req.json().catch(() => null);
+    const parsed = signupSchema.safeParse(body);
 
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: parsed.error.flatten().fieldErrors },
-      { status: 400 }
-    );
-  }
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.flatten().fieldErrors },
+        { status: 400 }
+      );
+    }
 
-  const { name, email, password } = parsed.data;
-  const normalizedEmail = email.toLowerCase();
+    const { name, email, password } = parsed.data;
+    const normalizedEmail = email.toLowerCase();
 
-  const existingUser = await db
-    .select({ id: users.id })
-    .from(users)
-    .where(eq(users.email, normalizedEmail))
-    .limit(1);
+    const existingUser = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, normalizedEmail))
+      .limit(1);
 
-  if (existingUser.length > 0) {
-    return NextResponse.json(
-      { error: "Email already in use" },
-      { status: 409 }
-    );
-  }
+    if (existingUser.length > 0) {
+      return NextResponse.json(
+        { error: "Email already in use" },
+        { status: 409 }
+      );
+    }
 
-  const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = await bcrypt.hash(password, 10);
 
-  const [user] = await db
-    .insert(users)
-    .values({
-      name,
-      email: normalizedEmail,
-      passwordHash,
-      emailVerified: null,
-      role: "user",
-    })
-    .returning({
-      id: users.id,
-      role: users.role,
+    const [user] = await db
+      .insert(users)
+      .values({
+        name,
+        email: normalizedEmail,
+        passwordHash,
+        provider: "credentials",
+        emailVerified: null,
+        role: "user",
+      })
+      .returning();
+
+    const token = await createEmailVerificationToken(user.id)
+
+    const h = await headers();
+    const baseUrl = resolveBaseUrl({
+      origin: h.get("origin"),
+      host: h.get("host"),
     });
 
-  const token = signAuthToken({
-    userId: user.id,
-    role: user.role as "user" | "admin",
-    email: normalizedEmail
-  });
+    await sendVerificationEmail({
+      to: normalizedEmail,
+      verifyUrl: `${baseUrl}/api/auth/verify-email?token=${token}`
+    })
 
-  await setAuthCookie(token);
-  revalidatePath('/[locale]', 'layout');
-  return NextResponse.json({ success: true, userId: user.id }, { status: 201 });
+    return NextResponse.json({
+      success: true,
+      verificationRequired: true
+    }, { status: 201 })
+
+  } catch (error) {
+    console.error("Signup failed:", error);
+    const message =
+      error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json(
+      { error: "Signup failed", details: message },
+      { status: 500 }
+    );
+  }
 }

@@ -1,8 +1,8 @@
+import { revalidateTag } from 'next/cache';
 import { db } from '../index';
-import { users } from '../schema/users';
 import { pointTransactions } from '../schema/points';
 import { quizAttempts } from '../schema/quiz';
-import { eq, and, desc, sql } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 
 export function calculateQuizPoints(params: {
   score: number;
@@ -25,25 +25,14 @@ export async function getBestPreviousPoints(
     conditions.push(sql`${quizAttempts.id} != ${excludeAttemptId}`);
   }
 
-  const attempts = await db
+  const result = await db
     .select({
-      score: quizAttempts.score,
-      integrityScore: quizAttempts.integrityScore,
+      maxPoints: sql<number>`COALESCE(MAX(${quizAttempts.pointsEarned}), 0)`,
     })
     .from(quizAttempts)
-    .where(and(...conditions))
-    .orderBy(desc(quizAttempts.completedAt));
+    .where(and(...conditions));
 
-  if (!attempts.length) return 0;
-
-  const pointsArray = attempts.map(attempt =>
-    calculateQuizPoints({
-      score: attempt.score,
-      integrityScore: attempt.integrityScore ?? 0,
-    })
-  );
-
-  return Math.max(...pointsArray);
+  return result[0]?.maxPoints ?? 0;
 }
 
 export async function awardQuizPoints(params: {
@@ -63,32 +52,23 @@ export async function awardQuizPoints(params: {
     return 0;
   }
 
-  try {
-    await db.transaction(async tx => {
-      await tx.insert(pointTransactions).values({
-        userId,
-        points: pointsToAward,
-        source: 'quiz',
-        sourceId: attemptId,
-        metadata: {
-          quizId,
-          score,
-          integrityScore,
-          previousBest,
-          currentPoints,
-        },
-      });
+  await db
+  .insert(pointTransactions)
+  .values({
+    userId,
+    points: pointsToAward,
+    source: 'quiz',
+    sourceId: attemptId,
+    metadata: {
+      quizId,
+      score,
+      integrityScore,
+      previousBest,
+      currentPoints,
+    },
+  });
 
-      await tx
-        .update(users)
-        .set({
-          points: sql`${users.points} + ${pointsToAward}`,
-        })
-        .where(eq(users.id, userId));
-    });
-    return pointsToAward;
-  } catch (error) {
-    console.error('Failed to award points:', error);
-    throw error;
-  }
+  revalidateTag('leaderboard', 'default');
+
+  return pointsToAward;
 }

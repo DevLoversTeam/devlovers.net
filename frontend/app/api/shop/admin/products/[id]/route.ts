@@ -7,10 +7,15 @@ import {
   AdminUnauthorizedError,
   requireAdminApi,
 } from '@/lib/auth/admin';
+import {
+  InvalidPayloadError,
+  SlugConflictError,
+  PriceConfigError,
+} from '@/lib/services/errors';
+import { requireAdminCsrf } from '@/lib/security/admin-csrf';
 
 import { parseAdminProductForm } from '@/lib/admin/parseAdminProductForm';
 import { logError } from '@/lib/logging';
-import { InvalidPayloadError, SlugConflictError } from '@/lib/services/errors';
 import {
   deleteProduct,
   getAdminProductByIdWithPrices,
@@ -18,66 +23,71 @@ import {
 } from '@/lib/services/products';
 
 const productIdParamSchema = z.object({ id: z.string().uuid() });
+type SaleRuleViolation = {
+  currency: string;
+  field: 'originalPriceMinor';
+  rule: 'required' | 'greater_than_price';
+};
 
-const adminCurrencySchema = z
-  .string()
-  .transform(v => v.trim().toUpperCase())
-  .pipe(z.enum(['USD', 'UAH']));
+type InvalidPricesJsonError = {
+  code: 'INVALID_PRICES_JSON';
+  field: 'prices';
+};
 
-function parseMajorToMinor(value: string | number): number {
-  const s = String(value).trim().replace(',', '.');
-
-  if (!/^\d+(\.\d{1,2})?$/.test(s)) {
-    throw new Error(`Invalid money value: "${value}"`);
-  }
-  const [whole, frac = ''] = s.split('.');
-  const frac2 = (frac + '00').slice(0, 2);
-  const minor = Number(whole) * 100 + Number(frac2);
-  if (!Number.isSafeInteger(minor) || minor < 0) {
-    throw new Error(`Invalid money value: "${value}"`);
-  }
-  return minor;
+function isInvalidPricesJsonError(
+  value: SaleRuleViolation | InvalidPricesJsonError | null
+): value is InvalidPricesJsonError {
+  if (!value || typeof value !== 'object') return false;
+  return (value as Record<string, unknown>).code === 'INVALID_PRICES_JSON';
 }
 
-const minorRowSchema = z.object({
-  currency: adminCurrencySchema,
-  priceMinor: z.preprocess(
-    v => (typeof v === 'string' ? Number(v) : v),
-    z.number().int().nonnegative()
-  ),
-  originalPriceMinor: z.preprocess(v => {
-    if (v === undefined) return undefined;
-    if (v === null) return null;
-    return typeof v === 'string' ? Number(v) : v;
-  }, z.number().int().nonnegative().nullable().optional()),
-});
+function findSaleRuleViolation(input: any): SaleRuleViolation | null {
+  const badge = input?.badge;
+  if (badge !== 'SALE') return null;
 
-const legacyRowSchema = z.object({
-  currency: adminCurrencySchema,
-  price: z.preprocess(v => String(v).trim(), z.string().min(1)),
-  originalPrice: z.preprocess(v => {
-    if (v === undefined) return undefined;
-    if (v === null) return null;
-    const s = String(v).trim();
-    return s.length ? s : null;
-  }, z.string().nullable().optional()),
-});
+  const prices = Array.isArray(input?.prices) ? input.prices : [];
+  for (const row of prices) {
+    const currency = String(row?.currency ?? '');
+    const priceMinor = Number(row?.priceMinor);
+    const originalPriceMinor =
+      row?.originalPriceMinor == null ? null : Number(row.originalPriceMinor);
 
-const adminPriceRowSchema = z
-  .union([minorRowSchema, legacyRowSchema])
-  .transform(row => {
-    if ('priceMinor' in row) {
-      return row;
+    if (!currency || !Number.isFinite(priceMinor)) continue;
+
+    if (originalPriceMinor == null) {
+      return { currency, field: 'originalPriceMinor', rule: 'required' };
     }
-    return {
-      currency: row.currency,
-      priceMinor: parseMajorToMinor(row.price),
-      originalPriceMinor:
-        row.originalPrice == null ? null : parseMajorToMinor(row.originalPrice),
-    };
-  });
+    if (
+      !Number.isFinite(originalPriceMinor) ||
+      originalPriceMinor <= priceMinor
+    ) {
+      return {
+        currency,
+        field: 'originalPriceMinor',
+        rule: 'greater_than_price',
+      };
+    }
+  }
 
-const adminPricesSchema = z.array(adminPriceRowSchema);
+  return null;
+}
+
+function getSaleViolationFromFormData(
+  formData: FormData
+): SaleRuleViolation | InvalidPricesJsonError | null {
+  const badge = String(formData.get('badge') ?? '');
+  if (badge !== 'SALE') return null;
+
+  const pricesRaw = formData.get('prices');
+  if (typeof pricesRaw !== 'string' || !pricesRaw.trim()) return null;
+
+  try {
+    const prices = JSON.parse(pricesRaw);
+    return findSaleRuleViolation({ badge, prices });
+  } catch {
+    return { code: 'INVALID_PRICES_JSON', field: 'prices' };
+  }
+}
 
 export async function GET(
   request: NextRequest,
@@ -139,6 +149,43 @@ export async function PATCH(
     }
 
     const formData = await request.formData();
+    const csrfRes = requireAdminCsrf(
+      request,
+      'admin:products:update',
+      formData
+    );
+    if (csrfRes) return csrfRes;
+
+    // PATCH inside PATCH() right after: const formData = await request.formData();
+    const saleViolationFromForm = getSaleViolationFromFormData(formData);
+
+    if (isInvalidPricesJsonError(saleViolationFromForm)) {
+      return NextResponse.json(
+        {
+          error: 'Invalid prices JSON',
+          code: 'INVALID_PRICES_JSON',
+          field: 'prices',
+        },
+        { status: 400 }
+      );
+    }
+
+    if (saleViolationFromForm) {
+      const message =
+        saleViolationFromForm.rule === 'required'
+          ? 'SALE badge requires original price for each provided currency.'
+          : 'SALE badge requires original price to be greater than price.';
+
+      return NextResponse.json(
+        {
+          error: message,
+          code: 'SALE_ORIGINAL_REQUIRED',
+          field: 'prices',
+          details: saleViolationFromForm,
+        },
+        { status: 400 }
+      );
+    }
 
     // 1) Parse/validate base fields via existing parser
     const parsed = parseAdminProductForm(formData, { mode: 'update' });
@@ -148,56 +195,30 @@ export async function PATCH(
         { status: 400 }
       );
     }
+    const saleViolation = findSaleRuleViolation(parsed.data as any);
+    if (saleViolation) {
+      const message =
+        saleViolation.rule === 'required'
+          ? 'SALE badge requires original price for each provided currency.'
+          : 'SALE badge requires original price to be greater than price.';
 
-    // 2) HOTFIX: parse/validate prices прямо з formData (не довіряємо parseAdminProductForm)
-    const rawPrices = formData.get('prices');
-    let pricesOverride: z.infer<typeof adminPricesSchema> | undefined;
-
-    if (rawPrices != null) {
-      if (typeof rawPrices !== 'string') {
-        return NextResponse.json(
-          {
-            error: 'Invalid product data',
-            details: { prices: 'Expected JSON string' },
-          },
-          { status: 400 }
-        );
-      }
-
-      let json: unknown;
-      try {
-        json = JSON.parse(rawPrices);
-      } catch {
-        return NextResponse.json(
-          {
-            error: 'Invalid product data',
-            details: { prices: 'Invalid JSON' },
-          },
-          { status: 400 }
-        );
-      }
-
-      const validated = adminPricesSchema.safeParse(json);
-      if (!validated.success) {
-        return NextResponse.json(
-          { error: 'Invalid product data', details: validated.error.format() },
-          { status: 400 }
-        );
-      }
-
-      pricesOverride = validated.data;
+      return NextResponse.json(
+        {
+          error: message,
+          code: 'SALE_ORIGINAL_REQUIRED',
+          field: 'prices',
+          details: saleViolation,
+        },
+        { status: 400 }
+      );
     }
 
     // 3) Update product
     try {
       const imageFile = formData.get('image');
 
-      const base = { ...(parsed.data as any) };
-      delete base.prices;
-
       const updated = await updateProduct(parsedParams.data.id, {
-        ...base,
-        ...(pricesOverride ? { prices: pricesOverride } : {}),
+        ...(parsed.data as any),
         image:
           imageFile instanceof File && imageFile.size > 0
             ? imageFile
@@ -208,9 +229,28 @@ export async function PATCH(
     } catch (error) {
       logError('Failed to update product', error);
 
-      if (error instanceof InvalidPayloadError) {
+      if (error instanceof PriceConfigError) {
         return NextResponse.json(
-          { error: error.message || 'Invalid product data', code: error.code },
+          {
+            error: error.message,
+            code: error.code, // PRICE_CONFIG_ERROR
+            productId: error.productId,
+            currency: error.currency,
+            field: 'prices',
+          },
+          { status: 400 }
+        );
+      }
+
+      if (error instanceof InvalidPayloadError) {
+        const anyErr = error as any;
+        return NextResponse.json(
+          {
+            error: error.message || 'Invalid product data',
+            code: anyErr.code,
+            field: anyErr.field,
+            details: anyErr.details,
+          },
           { status: 400 }
         );
       }
@@ -273,6 +313,9 @@ export async function DELETE(
 ): Promise<NextResponse> {
   try {
     await requireAdminApi(request);
+    const csrfRes = requireAdminCsrf(request, 'admin:products:delete');
+    if (csrfRes) return csrfRes;
+
     const rawParams = await context.params;
     const parsedParams = productIdParamSchema.safeParse(rawParams);
 

@@ -1,3 +1,5 @@
+@import url(https://fonts.googleapis.com/css?family=Lato:100,300,400,700);
+@import url(https://raw.github.com/FortAwesome/Font-Awesome/master/docs/assets/css/font-awesome.min.css);
 @import 'tailwindcss';
 
 @custom-variant dark (&:is(.dark *));
@@ -7,19 +9,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
+
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -44,8 +34,9 @@
   --animate-pulse-soft: pulse-soft 2.8s ease-in-out infinite;
 }
 
-:root {
-  --radius: 0.625rem;
+@theme {
+  --radius-base: 0.625rem;
+  --radius: var(--radius-base);
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -77,6 +68,9 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  --accent-primary: #1e5eff;
+  --accent-hover: #174ad6;
 }
 
 .dark {
@@ -111,15 +105,40 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+
+  --accent-primary: #ff2d55;
+  --accent-hover: #e0264b;
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
+
+  button,
+  [role='button'],
+  a {
+    cursor: pointer;
+  }
+}
+
+@layer components {
+  .btn {
+    background-color: var(--accent-primary);
+  }
+  .btn:hover {
+    background-color: var(--accent-hover);
+  }
+}
+
+.qa-accordion-item:hover,
+.qa-accordion-item:focus-within,
+.qa-accordion-item[data-state='open'] {
+  border-color: var(--qa-accent);
 }
 
 .no-select {
@@ -149,4 +168,86 @@
     opacity: 0.4;
     transform: scale(1.08);
   }
+}
+
+@keyframes progress {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+@keyframes shrink {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+/* Shop theme: scoped overrides (must not affect platform pages) */
+.shop-scope {
+  /* keep shop rounding slightly tighter than platform */
+  --radius: calc(var(--radius-base) - 2px);
+
+  /* light: shop accent = black */
+  --accent: var(--foreground);
+  --accent-foreground: var(--background);
+  --ring: var(--foreground);
+
+  /* IMPORTANT: override Tailwind v4 theme vars directly */
+  --color-accent: var(--foreground);
+  --color-accent-foreground: var(--background);
+  --color-ring: var(--foreground);
+
+  --card: var(--background);
+}
+
+.dark .shop-scope {
+  /* dark: shop accent = magenta */
+  --accent: var(--accent-primary);
+  --accent-foreground: var(--foreground);
+  --ring: var(--accent-primary);
+
+  /* IMPORTANT: override Tailwind v4 theme vars directly */
+  --color-accent: var(--accent-primary);
+  --color-accent-foreground: var(--foreground);
+  --color-ring: var(--accent-primary);
+
+  --card: var(--background);
+
+  /* keep borders closer to previous shop look, derived (no hex) */
+  --border: color-mix(in oklab, var(--foreground) 18%, var(--background));
+  --input: color-mix(in oklab, var(--foreground) 18%, var(--background));
+}
+
+/* about-community */
+@keyframes scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-100%); }
+}
+
+.animate-scroll {
+  animation: scroll 40s linear infinite;
+}
+
+.pause-on-hover:hover .animate-scroll {
+  animation-play-state: paused;
+}
+
+/* Vertical Marquee Animation */
+@keyframes marquee-vertical {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-50%); } /* Рухаємось на 50%, бо контент дубльовано */
+}
+
+.animate-marquee-vertical {
+  animation: marquee-vertical var(--duration, 40s) linear infinite;
+}
+
+/* Зупинка при наведенні мишкою, щоб роздивитися */
+.hover\:pause:hover .animate-marquee-vertical {
+  animation-play-state: paused;
 }

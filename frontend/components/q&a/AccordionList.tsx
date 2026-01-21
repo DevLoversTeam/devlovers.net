@@ -1,81 +1,29 @@
 'use client';
 
-import { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import {
   Accordion,
   AccordionItem,
   AccordionTrigger,
   AccordionContent,
 } from '@/components/ui/accordion';
+import { qaTabStyles } from '@/data/qaTabs';
 
 import CodeBlock from '@/components/q&a/CodeBlock';
-
-type TextNode = {
-  text: string;
-  bold?: boolean;
-  italic?: boolean;
-  code?: boolean;
-  boldItalic?: boolean;
-};
-
-type CodeBlock = {
-  type: 'code';
-  language: string | null;
-  content: string;
-};
-
-type ListEntry = ListItemBlock | ListItemChild;
-
-type BulletListBlock = {
-  type: 'bulletList';
-  children: ListEntry[];
-};
-
-type NumberedListBlock = {
-  type: 'numberedList';
-  children: ListEntry[];
-};
-
-type ListItemChild = TextNode | CodeBlock | BulletListBlock | NumberedListBlock;
-
-type ListItemBlock = {
-  type: 'listItem';
-  children: ListItemChild[];
-};
-
-type ParagraphBlock = {
-  type: 'paragraph';
-  children: TextNode[];
-};
-
-type HeadingBlock = {
-  type: 'heading';
-  level: 3 | 4;
-  children: TextNode[];
-};
-
-type TableCell = TextNode[];
-
-type TableBlock = {
-  type: 'table';
-  header: TableCell[];
-  rows: TableCell[][];
-};
-
-type AnswerBlock =
-  | ParagraphBlock
-  | HeadingBlock
-  | BulletListBlock
-  | NumberedListBlock
-  | CodeBlock
-  | TableBlock;
-
-type QuestionEntry = {
-  id?: number | string;
-  question: string;
-  category: string;
-  answerBlocks: AnswerBlock[];
-};
+import type {
+  AnswerBlock,
+  BulletListBlock,
+  CodeBlock as CodeBlockEntry,
+  HeadingBlock,
+  ListEntry,
+  ListItemBlock,
+  ListItemChild,
+  NumberedListBlock,
+  ParagraphBlock,
+  QuestionEntry,
+  TableBlock,
+  TextNode,
+} from '@/components/q&a/types';
 
 function isListItemBlock(value: ListEntry): value is ListItemBlock {
   return (
@@ -145,7 +93,7 @@ function renderTextNodes(nodes: TextNode[]): ReactNode {
   return nodes.map((node, i) => renderTextNode(node, i));
 }
 
-function renderCodeBlock(block: CodeBlock, index: number): ReactNode {
+function renderCodeBlock(block: CodeBlockEntry, index: number): ReactNode {
   return (
     <CodeBlock key={index} code={block.content} language={block.language} />
   );
@@ -292,10 +240,23 @@ export default function AccordionList({ items }: { items: QuestionEntry[] }) {
     <Accordion type="single" collapsible className="w-full">
       {items.map((q, idx) => {
         const key = q.id ?? idx;
+        const accent =
+          qaTabStyles[q.category as keyof typeof qaTabStyles]?.accent;
         return (
-          <AccordionItem key={key} value={String(key)}>
-            <AccordionTrigger>{q.question}</AccordionTrigger>
-            <AccordionContent>
+          <AccordionItem
+            key={key}
+            value={String(key)}
+            className="qa-accordion-item mb-3 last:mb-0 rounded-xl border border-black/5 bg-white/90 shadow-sm transition-colors last:border-b dark:border-white/10 dark:bg-neutral-900/80"
+            style={
+              accent
+                ? ({ '--qa-accent': accent } as CSSProperties)
+                : undefined
+            }
+          >
+            <AccordionTrigger className="px-4 hover:no-underline">
+              {q.question}
+            </AccordionTrigger>
+            <AccordionContent className="px-4">
               <div className="space-y-3 pt-2">
                 {q.answerBlocks.map((block, i) => renderBlock(block, i))}
               </div>

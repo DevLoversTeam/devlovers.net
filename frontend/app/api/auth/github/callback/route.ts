@@ -106,7 +106,11 @@ export async function GET(req: NextRequest) {
     let user = null;
 
     const [githubUser] = await db
-        .select()
+        .select({
+            id: users.id,
+            email: users.email,
+            role: users.role,
+        })
         .from(users)
         .where(and(eq(users.providerId, githubId), eq(users.provider, "github")))
         .limit(1);
@@ -115,19 +119,28 @@ export async function GET(req: NextRequest) {
         user = githubUser;
     } else {
         const [emailUser] = await db
-            .select()
+            .select({
+                id: users.id,
+                emailVerified: users.emailVerified,
+                image: users.image,
+                name: users.name,
+            })
             .from(users)
             .where(eq(users.email, primaryEmail))
             .limit(1);
 
         if (emailUser) {
+            const image =
+                emailUser.image && emailUser.image !== "null"
+                    ? emailUser.image
+                    : ghUser.avatar_url;
             const [updatedUser] = await db
                 .update(users)
                 .set({
                     provider: "github",
                     providerId: githubId,
                     emailVerified: emailUser.emailVerified ?? new Date(),
-                    image: emailUser.image ?? ghUser.avatar_url,
+                    image,
                     name: emailUser.name ?? ghUser.name ?? ghUser.login,
                 })
                 .where(eq(users.id, emailUser.id))
@@ -159,5 +172,5 @@ export async function GET(req: NextRequest) {
 
     await setAuthCookie(token);
 
-    return NextResponse.redirect(new URL("/", req.url));
+    return NextResponse.redirect(new URL("/dashboard", req.url));
 }

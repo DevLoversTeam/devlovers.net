@@ -1,0 +1,434 @@
+{
+  "questions": [
+    {
+      "id": "css-q21",
+      "order": 21,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Що таке CSS Grid і для чого він використовується?",
+        "exp": "CSS Grid — це двовимірна система макетування, яка дозволяє створювати складні сітки з рядками та колонками для розташування елементів."
+      },
+      "en": {
+        "q": "What is CSS Grid and what is it used for?",
+        "exp": "CSS Grid is a two-dimensional layout system that allows creating complex grids with rows and columns for element placement."
+      },
+      "pl": {
+        "q": "Czym jest CSS Grid i do czego służy?",
+        "exp": "CSS Grid to dwuwymiarowy system układu, który pozwala tworzyć złożone siatki z wierszami i kolumnami do rozmieszczania elementów."
+      },
+      "answers": [
+        {
+          "uk": "Одновимірна система для розташування в рядок",
+          "en": "One-dimensional system for row layout",
+          "pl": "Jednowymiarowy system dla układu wierszowego",
+          "correct": false
+        },
+        {
+          "uk": "Двовимірна система для створення сіток з рядками і колонками",
+          "en": "Two-dimensional system for creating grids with rows and columns",
+          "pl": "Dwuwymiarowy system do tworzenia siatek z wierszami i kolumnami",
+          "correct": true
+        },
+        {
+          "uk": "Бібліотека для анімацій",
+          "en": "A library for animations",
+          "pl": "Biblioteka do animacji",
+          "correct": false
+        },
+        {
+          "uk": "Препроцесор CSS",
+          "en": "A CSS preprocessor",
+          "pl": "Preprocesor CSS",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "css-q22",
+      "order": 22,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Яка різниця між Flexbox і CSS Grid?",
+        "exp": "Flexbox — одновимірна модель для вирівнювання в ряд або колонку. Grid — двовимірна модель для створення складних сіток з рядками та колонками одночасно."
+      },
+      "en": {
+        "q": "What is the difference between Flexbox and CSS Grid?",
+        "exp": "Flexbox is a one-dimensional model for alignment in a row or column. Grid is a two-dimensional model for creating complex grids with rows and columns simultaneously."
+      },
+      "pl": {
+        "q": "Jaka jest różnica między Flexbox a CSS Grid?",
+        "exp": "Flexbox to jednowymiarowy model do wyrównywania w wierszu lub kolumnie. Grid to dwuwymiarowy model do tworzenia złożonych siatek z wierszami i kolumnami jednocześnie."
+      },
+      "answers": [
+        {
+          "uk": "Flexbox — двовимірний, Grid — одновимірний",
+          "en": "Flexbox is two-dimensional, Grid is one-dimensional",
+          "pl": "Flexbox jest dwuwymiarowy, Grid jest jednowymiarowy",
+          "correct": false
+        },
+        {
+          "uk": "Flexbox — одновимірний, Grid — двовимірний",
+          "en": "Flexbox is one-dimensional, Grid is two-dimensional",
+          "pl": "Flexbox jest jednowymiarowy, Grid jest dwuwymiarowy",
+          "correct": true
+        },
+        {
+          "uk": "Grid працює тільки з таблицями",
+          "en": "Grid works only with tables",
+          "pl": "Grid działa tylko z tabelami",
+          "correct": false
+        },
+        {
+          "uk": "Flexbox застарілий, треба використовувати тільки Grid",
+          "en": "Flexbox is deprecated, only Grid should be used",
+          "pl": "Flexbox jest przestarzały, należy używać tylko Grid",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "css-q23",
+      "order": 23,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Як визначити колонки в CSS Grid?",
+        "exp": "Колонки визначаються через властивість grid-template-columns. Наприклад: grid-template-columns: 1fr 2fr створить дві колонки з пропорцією 1:2."
+      },
+      "en": {
+        "q": "How do you define columns in CSS Grid?",
+        "exp": "Columns are defined using the grid-template-columns property. For example: grid-template-columns: 1fr 2fr creates two columns with a 1:2 ratio."
+      },
+      "pl": {
+        "q": "Jak definiować kolumny w CSS Grid?",
+        "exp": "Kolumny definiuje się za pomocą właściwości grid-template-columns. Na przykład: grid-template-columns: 1fr 2fr tworzy dwie kolumny w proporcji 1:2."
+      },
+      "answers": [
+        {
+          "uk": "grid-columns: 2",
+          "en": "grid-columns: 2",
+          "pl": "grid-columns: 2",
+          "correct": false
+        },
+        {
+          "uk": "grid-template-columns",
+          "en": "grid-template-columns",
+          "pl": "grid-template-columns",
+          "correct": true
+        },
+        {
+          "uk": "columns: auto",
+          "en": "columns: auto",
+          "pl": "columns: auto",
+          "correct": false
+        },
+        {
+          "uk": "flex-columns: 1fr",
+          "en": "flex-columns: 1fr",
+          "pl": "flex-columns: 1fr",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "css-q24",
+      "order": 24,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Для чого використовуються медіа-запити (@media)?",
+        "exp": "Медіа-запити дозволяють застосовувати різні стилі залежно від характеристик пристрою: ширини екрана, орієнтації, роздільної здатності."
+      },
+      "en": {
+        "q": "What are media queries (@media) used for?",
+        "exp": "Media queries allow applying different styles based on device characteristics: screen width, orientation, resolution."
+      },
+      "pl": {
+        "q": "Do czego służą zapytania o media (@media)?",
+        "exp": "Zapytania o media pozwalają stosować różne style w zależności od cech urządzenia: szerokości ekranu, orientacji, rozdzielczości."
+      },
+      "answers": [
+        {
+          "uk": "Для підключення зображень",
+          "en": "For including images",
+          "pl": "Do dołączania obrazów",
+          "correct": false
+        },
+        {
+          "uk": "Для застосування стилів залежно від характеристик пристрою",
+          "en": "For applying styles based on device characteristics",
+          "pl": "Do stosowania stylów w zależności od cech urządzenia",
+          "correct": true
+        },
+        {
+          "uk": "Для створення анімацій",
+          "en": "For creating animations",
+          "pl": "Do tworzenia animacji",
+          "correct": false
+        },
+        {
+          "uk": "Для підключення шрифтів",
+          "en": "For including fonts",
+          "pl": "Do dołączania czcionek",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "css-q25",
+      "order": 25,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Яка різниця між min-width і max-width у медіа-запитах?",
+        "exp": "min-width застосовує стилі від заданої ширини і вище (mobile-first). max-width застосовує стилі до заданої ширини включно (desktop-first)."
+      },
+      "en": {
+        "q": "What is the difference between min-width and max-width in media queries?",
+        "exp": "min-width applies styles from the specified width and above (mobile-first). max-width applies styles up to the specified width inclusive (desktop-first)."
+      },
+      "pl": {
+        "q": "Jaka jest różnica między min-width a max-width w zapytaniach o media?",
+        "exp": "min-width stosuje style od określonej szerokości wzwyż (mobile-first). max-width stosuje style do określonej szerokości włącznie (desktop-first)."
+      },
+      "answers": [
+        {
+          "uk": "min-width — для мінімальної висоти, max-width — для максимальної",
+          "en": "min-width is for minimum height, max-width is for maximum",
+          "pl": "min-width dla minimalnej wysokości, max-width dla maksymalnej",
+          "correct": false
+        },
+        {
+          "uk": "min-width — від заданої ширини і вище, max-width — до заданої ширини",
+          "en": "min-width is from specified width and up, max-width is up to specified width",
+          "pl": "min-width od określonej szerokości wzwyż, max-width do określonej szerokości",
+          "correct": true
+        },
+        {
+          "uk": "Обидва працюють однаково",
+          "en": "Both work the same way",
+          "pl": "Oba działają tak samo",
+          "correct": false
+        },
+        {
+          "uk": "max-width застарів, треба використовувати min-width",
+          "en": "max-width is deprecated, use min-width",
+          "pl": "max-width jest przestarzały, używaj min-width",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "css-q26",
+      "order": 26,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Яка різниця між transition і animation у CSS?",
+        "exp": "transition активується при зміні стану (hover, focus) і анімує перехід. animation запускається автоматично через @keyframes і може мати кілька етапів."
+      },
+      "en": {
+        "q": "What is the difference between transition and animation in CSS?",
+        "exp": "transition activates on state change (hover, focus) and animates the transition. animation runs automatically via @keyframes and can have multiple stages."
+      },
+      "pl": {
+        "q": "Jaka jest różnica między transition a animation w CSS?",
+        "exp": "transition aktywuje się przy zmianie stanu (hover, focus) i animuje przejście. animation uruchamia się automatycznie przez @keyframes i może mieć wiele etapów."
+      },
+      "answers": [
+        {
+          "uk": "transition — для складних анімацій, animation — для простих",
+          "en": "transition is for complex animations, animation is for simple ones",
+          "pl": "transition dla złożonych animacji, animation dla prostych",
+          "correct": false
+        },
+        {
+          "uk": "transition — при зміні стану, animation — автоматично через @keyframes",
+          "en": "transition is on state change, animation runs automatically via @keyframes",
+          "pl": "transition przy zmianie stanu, animation automatycznie przez @keyframes",
+          "correct": true
+        },
+        {
+          "uk": "animation працює тільки в Chrome",
+          "en": "animation works only in Chrome",
+          "pl": "animation działa tylko w Chrome",
+          "correct": false
+        },
+        {
+          "uk": "Обидві властивості ідентичні",
+          "en": "Both properties are identical",
+          "pl": "Obie właściwości są identyczne",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "css-q27",
+      "order": 27,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Для чого використовується @keyframes у CSS?",
+        "exp": "@keyframes визначає проміжні стани анімації. Ви задаєте стилі на різних етапах (from/to або відсотки), і браузер анімує перехід між ними."
+      },
+      "en": {
+        "q": "What is @keyframes used for in CSS?",
+        "exp": "@keyframes defines intermediate animation states. You set styles at different stages (from/to or percentages), and the browser animates transitions between them."
+      },
+      "pl": {
+        "q": "Do czego służy @keyframes w CSS?",
+        "exp": "@keyframes definiuje pośrednie stany animacji. Ustawiasz style na różnych etapach (from/to lub procenty), a przeglądarka animuje przejścia między nimi."
+      },
+      "answers": [
+        {
+          "uk": "Для створення медіа-запитів",
+          "en": "For creating media queries",
+          "pl": "Do tworzenia zapytań o media",
+          "correct": false
+        },
+        {
+          "uk": "Для визначення проміжних станів анімації",
+          "en": "For defining intermediate animation states",
+          "pl": "Do definiowania pośrednich stanów animacji",
+          "correct": true
+        },
+        {
+          "uk": "Для підключення шрифтів",
+          "en": "For including fonts",
+          "pl": "Do dołączania czcionek",
+          "correct": false
+        },
+        {
+          "uk": "Для створення змінних",
+          "en": "For creating variables",
+          "pl": "Do tworzenia zmiennych",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "css-q28",
+      "order": 28,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Коли краще використовувати transform: translate() замість top/left?",
+        "exp": "translate() використовує GPU, не викликає reflow і забезпечує плавніші анімації. top/left змушують браузер перераховувати макет."
+      },
+      "en": {
+        "q": "When is it better to use transform: translate() instead of top/left?",
+        "exp": "translate() uses the GPU, doesn't trigger reflow, and provides smoother animations. top/left force the browser to recalculate layout."
+      },
+      "pl": {
+        "q": "Kiedy lepiej używać transform: translate() zamiast top/left?",
+        "exp": "translate() używa GPU, nie wywołuje reflow i zapewnia płynniejsze animacje. top/left zmuszają przeglądarkę do przeliczania układu."
+      },
+      "answers": [
+        {
+          "uk": "Коли потрібно позиціонувати статичний елемент",
+          "en": "When positioning a static element",
+          "pl": "Przy pozycjonowaniu elementu statycznego",
+          "correct": false
+        },
+        {
+          "uk": "Для плавних анімацій і кращої продуктивності",
+          "en": "For smooth animations and better performance",
+          "pl": "Dla płynnych animacji i lepszej wydajności",
+          "correct": true
+        },
+        {
+          "uk": "top/left завжди швидше",
+          "en": "top/left is always faster",
+          "pl": "top/left jest zawsze szybsze",
+          "correct": false
+        },
+        {
+          "uk": "translate() не підтримується сучасними браузерами",
+          "en": "translate() is not supported by modern browsers",
+          "pl": "translate() nie jest obsługiwane przez nowoczesne przeglądarki",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "css-q29",
+      "order": 29,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Яка різниця між em і rem одиницями вимірювання?",
+        "exp": "em залежить від font-size батьківського елемента. rem завжди залежить від font-size кореневого елемента (html), що робить його передбачуванішим."
+      },
+      "en": {
+        "q": "What is the difference between em and rem units?",
+        "exp": "em depends on the parent element's font-size. rem always depends on the root element's (html) font-size, making it more predictable."
+      },
+      "pl": {
+        "q": "Jaka jest różnica między jednostkami em i rem?",
+        "exp": "em zależy od font-size elementu nadrzędnego. rem zawsze zależy od font-size elementu głównego (html), co czyni go bardziej przewidywalnym."
+      },
+      "answers": [
+        {
+          "uk": "em — для пікселів, rem — для відсотків",
+          "en": "em is for pixels, rem is for percentages",
+          "pl": "em dla pikseli, rem dla procentów",
+          "correct": false
+        },
+        {
+          "uk": "em — відносно батька, rem — відносно кореневого елемента",
+          "en": "em is relative to parent, rem is relative to root element",
+          "pl": "em względem rodzica, rem względem elementu głównego",
+          "correct": true
+        },
+        {
+          "uk": "rem застарів, краще використовувати em",
+          "en": "rem is deprecated, use em instead",
+          "pl": "rem jest przestarzały, lepiej używać em",
+          "correct": false
+        },
+        {
+          "uk": "Обидві одиниці ідентичні",
+          "en": "Both units are identical",
+          "pl": "Obie jednostki są identyczne",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "css-q30",
+      "order": 30,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Для чого використовуються CSS-змінні (custom properties)?",
+        "exp": "CSS-змінні (--var-name) дозволяють зберігати значення в одному місці та використовувати повторно. Спрощують темізацію та підтримку стилів."
+      },
+      "en": {
+        "q": "What are CSS custom properties (variables) used for?",
+        "exp": "CSS variables (--var-name) allow storing values in one place and reusing them. They simplify theming and style maintenance."
+      },
+      "pl": {
+        "q": "Do czego służą zmienne CSS (właściwości niestandardowe)?",
+        "exp": "Zmienne CSS (--var-name) pozwalają przechowywać wartości w jednym miejscu i używać ich wielokrotnie. Upraszczają tematyzację i utrzymanie stylów."
+      },
+      "answers": [
+        {
+          "uk": "Для створення анімацій",
+          "en": "For creating animations",
+          "pl": "Do tworzenia animacji",
+          "correct": false
+        },
+        {
+          "uk": "Для зберігання та повторного використання значень",
+          "en": "For storing and reusing values",
+          "pl": "Do przechowywania i wielokrotnego używania wartości",
+          "correct": true
+        },
+        {
+          "uk": "Для визначення медіа-запитів",
+          "en": "For defining media queries",
+          "pl": "Do definiowania zapytań o media",
+          "correct": false
+        },
+        {
+          "uk": "Для підключення JavaScript",
+          "en": "For including JavaScript",
+          "pl": "Do dołączania JavaScript",
+          "correct": false
+        }
+      ]
+    }
+  ]
+}

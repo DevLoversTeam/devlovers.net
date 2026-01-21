@@ -1,48 +1,114 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
-import { eq, inArray } from 'drizzle-orm';
+import { inArray } from 'drizzle-orm';
+import { NextRequest } from 'next/server';
+import crypto from 'crypto';
+
+process.env.STRIPE_PAYMENTS_ENABLED = 'false';
+process.env.STRIPE_SECRET_KEY = '';
+process.env.STRIPE_WEBHOOK_SECRET = '';
+
+vi.mock('@/lib/auth', async () => {
+  const actual = await vi.importActual<typeof import('@/lib/auth')>(
+    '@/lib/auth'
+  );
+  return {
+    ...actual,
+    getCurrentUser: async () => null, // guest
+  };
+});
 
 vi.mock('@/lib/env/stripe', () => ({
   isPaymentsEnabled: () => false,
 }));
 
+const createPaymentIntentMock = vi.fn((..._args: any[]) => {
+  throw new Error(
+    'Stripe should not be called in this test (payments disabled).'
+  );
+});
+
 vi.mock('@/lib/psp/stripe', () => ({
-  createPaymentIntent: () => {
-    throw new Error('Stripe should not be called in this test (payments disabled).');
-  },
-  retrievePaymentIntent: () => {
-    throw new Error('Stripe should not be called in this test (payments disabled).');
+  createPaymentIntent: (...args: any[]) => createPaymentIntentMock(...args),
+  retrievePaymentIntent: (..._args: any[]) => {
+    throw new Error(
+      'Stripe should not be called in this test (payments disabled).'
+    );
   },
 }));
 
-vi.mock('@/lib/logging', () => ({
-  logError: vi.fn(),
-}));
+// checkout-currency-policy.test.ts
+
+const logErrorMock = vi.fn((..._args: any[]) => undefined);
+const logWarnMock = vi.fn((..._args: any[]) => undefined);
+
+vi.mock('@/lib/logging', async () => {
+  const actual = await vi.importActual<typeof import('@/lib/logging')>(
+    '@/lib/logging'
+  );
+  return {
+    ...actual,
+    logError: (...args: any[]) => logErrorMock(...args),
+    logWarn: (...args: any[]) => logWarnMock(...args),
+  };
+});
 
 import { db } from '@/db';
 import { products, productPrices, orders } from '@/db/schema';
-import { NextRequest } from 'next/server';
+
+let POST: (req: NextRequest) => Promise<Response>;
+
+const createdProductIds: string[] = [];
+const createdOrderIds: string[] = [];
+
+beforeAll(() => {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(
+      'Refusing to run DB-mutating tests in production environment.'
+    );
+  }
+});
+
+beforeAll(async () => {
+  // Import route after env + mocks are set
+  const mod = await import('@/app/api/shop/checkout/route');
+  POST = mod.POST;
+});
+
+afterAll(async () => {
+  // delete orders first (cascade order_items)
+  if (createdOrderIds.length) {
+    await db.delete(orders).where(inArray(orders.id, createdOrderIds));
+  }
+  if (createdProductIds.length) {
+    await db
+      .delete(productPrices)
+      .where(inArray(productPrices.productId, createdProductIds));
+    await db.delete(products).where(inArray(products.id, createdProductIds));
+  }
+});
 
 function makeIdempotencyKey(): string {
   // 36 chars, allowed by your schema
   return crypto.randomUUID();
 }
 
-function makeCheckoutRequest(payload: unknown, opts: { idempotencyKey: string; acceptLanguage: string }) {
+function makeCheckoutRequest(
+  payload: unknown,
+  opts: { idempotencyKey: string; acceptLanguage: string }
+) {
   const headers = new Headers({
     'Content-Type': 'application/json',
     'Idempotency-Key': opts.idempotencyKey,
     'Accept-Language': opts.acceptLanguage,
   });
 
-  const req = new NextRequest(
+  return new NextRequest(
     new Request('http://localhost/api/shop/checkout', {
       method: 'POST',
       headers,
       body: JSON.stringify(payload),
     })
   );
-
-  return req;
 }
 
 async function seedProduct(options: {
@@ -90,28 +156,22 @@ async function seedProduct(options: {
     }))
   );
 
+  createdProductIds.push(p.id);
   return p.id;
 }
 
-const createdProductIds: string[] = [];
-const createdOrderIds: string[] = [];
+async function debugIfNotExpected(res: Response, expectedStatus: number) {
+  if (res.status === expectedStatus) return;
 
-beforeAll(() => {
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error('Refusing to run DB-mutating tests in production environment.');
-  }
-});
-
-afterAll(async () => {
-  // delete orders first (cascade order_items)
-  if (createdOrderIds.length) {
-    await db.delete(orders).where(inArray(orders.id, createdOrderIds));
-  }
-  if (createdProductIds.length) {
-    await db.delete(productPrices).where(inArray(productPrices.productId, createdProductIds));
-    await db.delete(products).where(inArray(products.id, createdProductIds));
-  }
-});
+  const text = await res.text().catch(() => '<failed to read body>');
+  // Keep output minimal but decisive
+  console.log('checkout failed', { status: res.status, body: text });
+  console.log('logError calls', logErrorMock.mock.calls);
+  console.log(
+    'stripe createPaymentIntent calls',
+    createPaymentIntentMock.mock.calls.length
+  );
+}
 
 describe('P0-CUR-3 checkout currency policy', () => {
   it('locale uk -> order.currency UAH and totals correct', async () => {
@@ -125,9 +185,6 @@ describe('P0-CUR-3 checkout currency policy', () => {
         { currency: 'UAH', priceMinor: 10000, price: '100.00' },
       ],
     });
-    createdProductIds.push(productId);
-
-    const { POST } = await import('@/app/api/shop/checkout/route');
 
     const req = makeCheckoutRequest(
       { items: [{ productId, quantity: 1 }] },
@@ -135,6 +192,7 @@ describe('P0-CUR-3 checkout currency policy', () => {
     );
 
     const res = await POST(req);
+    await debugIfNotExpected(res, 201);
     expect(res.status).toBe(201);
 
     const json = await res.json();
@@ -155,9 +213,6 @@ describe('P0-CUR-3 checkout currency policy', () => {
         { currency: 'UAH', priceMinor: 10000, price: '100.00' },
       ],
     });
-    createdProductIds.push(productId);
-
-    const { POST } = await import('@/app/api/shop/checkout/route');
 
     const req = makeCheckoutRequest(
       { items: [{ productId, quantity: 1 }] },
@@ -165,6 +220,7 @@ describe('P0-CUR-3 checkout currency policy', () => {
     );
 
     const res = await POST(req);
+    await debugIfNotExpected(res, 201);
     expect(res.status).toBe(201);
 
     const json = await res.json();
@@ -182,9 +238,6 @@ describe('P0-CUR-3 checkout currency policy', () => {
       stock: 10,
       prices: [{ currency: 'USD', priceMinor: 6700, price: '67.00' }], // no UAH row
     });
-    createdProductIds.push(productId);
-
-    const { POST } = await import('@/app/api/shop/checkout/route');
 
     const req = makeCheckoutRequest(
       { items: [{ productId, quantity: 1 }] },
@@ -192,11 +245,12 @@ describe('P0-CUR-3 checkout currency policy', () => {
     );
 
     const res = await POST(req);
+    await debugIfNotExpected(res, 400);
     expect(res.status).toBe(400);
 
     const json = await res.json();
     expect(json.code).toBe('PRICE_CONFIG_ERROR');
     expect(json.details?.productId).toBe(productId);
     expect(json.details?.currency).toBe('UAH');
-  });
+  }, 30_000);
 });

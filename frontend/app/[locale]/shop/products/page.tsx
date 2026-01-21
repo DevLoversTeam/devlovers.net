@@ -1,10 +1,9 @@
 import { Suspense } from 'react';
-import { Filter } from 'lucide-react';
+import { redirect } from 'next/navigation';
 
-import { ProductCard } from '@/components/shop/product-card';
 import { ProductFilters } from '@/components/shop/product-filters';
-import { ProductSort } from '@/components/shop/product-sort';
-import { CatalogLoadMore } from '@/components/shop/catalog-load-more';
+import { CatalogProductsClient } from '@/components/shop/catalog-products-client';
+import { ProductsToolbar } from '@/components/shop/products-toolbar';
 import { getCatalogProducts } from '@/lib/shop/data';
 import { catalogQuerySchema } from '@/lib/validation/shop';
 import { CATALOG_PAGE_SIZE } from '@/lib/config/catalog';
@@ -29,30 +28,54 @@ export default async function ProductsPage({
   const { locale } = await params;
   const resolvedSearchParams = (await searchParams) ?? {};
 
+  // canonicalize: infinite-load page should not be shareable as ?page=N
+  if (resolvedSearchParams.page) {
+    const qsParams = new URLSearchParams();
+
+    for (const [k, v] of Object.entries(resolvedSearchParams)) {
+      if (!v) continue;
+      if (k === 'page') continue;
+      qsParams.set(k, v);
+    }
+
+    const qs = qsParams.toString();
+    const basePath = `/${locale}/shop/products`;
+
+    redirect(qs ? `${basePath}?${qs}` : basePath);
+  }
+
   const parsedParams = catalogQuerySchema.safeParse(resolvedSearchParams);
 
-  const filters = parsedParams.success
+  const parsed = parsedParams.success
     ? parsedParams.data
     : { page: 1, limit: CATALOG_PAGE_SIZE };
+
+  const page =
+    typeof parsed.page === 'number' &&
+    Number.isFinite(parsed.page) &&
+    parsed.page >= 1
+      ? parsed.page
+      : 1;
+
+  const filters = {
+    ...parsed,
+    page,
+    limit: parsed.limit ?? CATALOG_PAGE_SIZE,
+  };
 
   const catalog = await getCatalogProducts(filters, locale);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="flex items-center justify-between border-b border-border pb-6">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">
+    <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <header className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
           All Products
         </h1>
-        <div className="flex items-center gap-4">
-          <Suspense fallback={null}>
-            <ProductSort />
-          </Suspense>
-          <button className="flex items-center gap-2 rounded-md border border-border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:border-foreground hover:text-foreground lg:hidden">
-            <Filter className="h-4 w-4" />
-            Filters
-          </button>
-        </div>
-      </div>
+
+        <Suspense fallback={null}>
+          <ProductsToolbar />
+        </Suspense>
+      </header>
 
       <div className="mt-8 grid gap-8 lg:grid-cols-[240px_1fr]">
         <div className="hidden lg:block">
@@ -61,9 +84,16 @@ export default async function ProductsPage({
           </Suspense>
         </div>
 
-        <div>
+        <section aria-labelledby="results-heading">
+          <h2 id="results-heading" className="sr-only">
+            Product results
+          </h2>
+
           {catalog.products.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div
+              className="flex flex-col items-center justify-center py-16 text-center"
+              role="status"
+            >
               <p className="text-lg font-medium text-foreground">
                 No products found
               </p>
@@ -72,23 +102,10 @@ export default async function ProductsPage({
               </p>
             </div>
           ) : (
-            <>
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {catalog.products.map(product => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-              </div>
-
-              <div className="mt-12 flex justify-center">
-                <CatalogLoadMore
-                  hasMore={catalog.hasMore}
-                  nextPage={catalog.page + 1}
-                />
-              </div>
-            </>
+            <CatalogProductsClient locale={locale} initialCatalog={catalog} />
           )}
-        </div>
+        </section>
       </div>
-    </div>
+    </main>
   );
 }

@@ -6,6 +6,7 @@ import {
   AdminUnauthorizedError,
   requireAdminApi,
 } from '@/lib/auth/admin';
+import { requireAdminCsrf } from '@/lib/security/admin-csrf';
 
 import { logError } from '@/lib/logging';
 import { OrderNotFoundError, InvalidPayloadError } from '@/lib/services/errors';
@@ -18,6 +19,9 @@ export async function POST(
 ) {
   try {
     await requireAdminApi(request);
+    const csrfRes = requireAdminCsrf(request, 'admin:orders:refund');
+    if (csrfRes) return csrfRes;
+
     const rawParams = await context.params;
     const parsed = orderIdParamSchema.safeParse(rawParams);
 
@@ -28,7 +32,9 @@ export async function POST(
       );
     }
 
-    const order = await refundOrder(parsed.data.id);
+    // app/api/shop/admin/orders/[id]/refund/route.ts
+    const order = await refundOrder(parsed.data.id, { requestedBy: 'admin' });
+
     const orderSummary = orderSummarySchema.parse(order);
 
     return NextResponse.json({

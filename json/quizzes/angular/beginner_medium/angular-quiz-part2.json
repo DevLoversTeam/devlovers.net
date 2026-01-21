@@ -1,0 +1,434 @@
+{
+  "questions": [
+    {
+      "id": "angular-q11",
+      "order": 11,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Який декоратор використовується для передачі подій з дочірнього компонента в батьківський?",
+        "exp": "@Output() разом з EventEmitter дозволяє дочірньому компоненту емітити події, на які батьківський компонент може підписатися."
+      },
+      "en": {
+        "q": "Which decorator is used to emit events from a child component to a parent?",
+        "exp": "@Output() together with EventEmitter allows a child component to emit events that the parent component can subscribe to."
+      },
+      "pl": {
+        "q": "Który dekorator służy do emitowania zdarzeń z komponentu dziecka do rodzica?",
+        "exp": "@Output() wraz z EventEmitter pozwala komponentowi dziecka emitować zdarzenia, na które komponent rodzica może się subskrybować."
+      },
+      "answers": [
+        {
+          "uk": "@Input()",
+          "en": "@Input()",
+          "pl": "@Input()",
+          "correct": false
+        },
+        {
+          "uk": "@Output()",
+          "en": "@Output()",
+          "pl": "@Output()",
+          "correct": true
+        },
+        {
+          "uk": "@Emit()",
+          "en": "@Emit()",
+          "pl": "@Emit()",
+          "correct": false
+        },
+        {
+          "uk": "@Event()",
+          "en": "@Event()",
+          "pl": "@Event()",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "angular-q12",
+      "order": 12,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Що таке сервіс в Angular і для чого він використовується?",
+        "exp": "Сервіс — це клас з бізнес-логікою, який не пов'язаний напряму з UI. Використовується для роботи з API, керування станом та повторного використання коду."
+      },
+      "en": {
+        "q": "What is a service in Angular and what is it used for?",
+        "exp": "A service is a class with business logic not directly tied to UI. It's used for API calls, state management, and code reusability."
+      },
+      "pl": {
+        "q": "Czym jest serwis w Angular i do czego służy?",
+        "exp": "Serwis to klasa z logiką biznesową niezwiązana bezpośrednio z UI. Służy do wywołań API, zarządzania stanem i ponownego wykorzystania kodu."
+      },
+      "answers": [
+        {
+          "uk": "Компонент для відображення даних",
+          "en": "A component for displaying data",
+          "pl": "Komponent do wyświetlania danych",
+          "correct": false
+        },
+        {
+          "uk": "Клас з бізнес-логікою для роботи з API та керування станом",
+          "en": "A class with business logic for API calls and state management",
+          "pl": "Klasa z logiką biznesową do wywołań API i zarządzania stanem",
+          "correct": true
+        },
+        {
+          "uk": "Файл конфігурації маршрутів",
+          "en": "A route configuration file",
+          "pl": "Plik konfiguracji tras",
+          "correct": false
+        },
+        {
+          "uk": "Директива для стилізації",
+          "en": "A directive for styling",
+          "pl": "Dyrektywa do stylizacji",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "angular-q13",
+      "order": 13,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що означає providedIn: 'root' у декораторі @Injectable?",
+        "exp": "providedIn: 'root' реєструє сервіс у головному інжекторі як singleton — один екземпляр на весь застосунок з оптимізацією tree-shaking."
+      },
+      "en": {
+        "q": "What does providedIn: 'root' mean in the @Injectable decorator?",
+        "exp": "providedIn: 'root' registers the service in the root injector as a singleton — one instance for the entire app with tree-shaking optimization."
+      },
+      "pl": {
+        "q": "Co oznacza providedIn: 'root' w dekoratorze @Injectable?",
+        "exp": "providedIn: 'root' rejestruje serwis w głównym injektorze jako singleton — jedna instancja dla całej aplikacji z optymalizacją tree-shaking."
+      },
+      "answers": [
+        {
+          "uk": "Сервіс доступний тільки в кореневому компоненті",
+          "en": "Service is only available in the root component",
+          "pl": "Serwis jest dostępny tylko w głównym komponencie",
+          "correct": false
+        },
+        {
+          "uk": "Сервіс є singleton на рівні всього застосунку",
+          "en": "Service is a singleton for the entire application",
+          "pl": "Serwis jest singletonem dla całej aplikacji",
+          "correct": true
+        },
+        {
+          "uk": "Сервіс створюється для кожного компонента окремо",
+          "en": "Service is created separately for each component",
+          "pl": "Serwis jest tworzony oddzielnie dla każdego komponentu",
+          "correct": false
+        },
+        {
+          "uk": "Сервіс працює тільки на сервері",
+          "en": "Service only works on the server",
+          "pl": "Serwis działa tylko na serwerze",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "angular-q14",
+      "order": 14,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке Dependency Injection (DI) в Angular?",
+        "exp": "DI — це механізм, який автоматично створює та надає об'єкти (сервіси) компонентам замість ручного створення через new. Спрощує тестування та керує життєвим циклом об'єктів."
+      },
+      "en": {
+        "q": "What is Dependency Injection (DI) in Angular?",
+        "exp": "DI is a mechanism that automatically creates and provides objects (services) to components instead of manual creation via new. It simplifies testing and manages object lifecycles."
+      },
+      "pl": {
+        "q": "Czym jest Dependency Injection (DI) w Angular?",
+        "exp": "DI to mechanizm automatycznego tworzenia i dostarczania obiektów (serwisów) do komponentów zamiast ręcznego tworzenia przez new. Upraszcza testowanie i zarządza cyklem życia obiektów."
+      },
+      "answers": [
+        {
+          "uk": "Спосіб додавання CSS-залежностей",
+          "en": "A way to add CSS dependencies",
+          "pl": "Sposób dodawania zależności CSS",
+          "correct": false
+        },
+        {
+          "uk": "Механізм автоматичного надання залежностей компонентам",
+          "en": "A mechanism for automatically providing dependencies to components",
+          "pl": "Mechanizm automatycznego dostarczania zależności do komponentów",
+          "correct": true
+        },
+        {
+          "uk": "Процес збірки застосунку",
+          "en": "The application build process",
+          "pl": "Proces budowania aplikacji",
+          "correct": false
+        },
+        {
+          "uk": "Метод шифрування даних",
+          "en": "A data encryption method",
+          "pl": "Metoda szyfrowania danych",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "angular-q15",
+      "order": 15,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Який lifecycle hook викликається один раз після ініціалізації компонента?",
+        "exp": "ngOnInit() викликається один раз після ініціалізації компонента. Використовується для початкового завантаження даних та налаштування."
+      },
+      "en": {
+        "q": "Which lifecycle hook is called once after component initialization?",
+        "exp": "ngOnInit() is called once after component initialization. It's used for initial data loading and setup."
+      },
+      "pl": {
+        "q": "Który lifecycle hook jest wywoływany raz po inicjalizacji komponentu?",
+        "exp": "ngOnInit() jest wywoływany raz po inicjalizacji komponentu. Służy do początkowego ładowania danych i konfiguracji."
+      },
+      "answers": [
+        {
+          "uk": "ngOnChanges()",
+          "en": "ngOnChanges()",
+          "pl": "ngOnChanges()",
+          "correct": false
+        },
+        {
+          "uk": "ngOnInit()",
+          "en": "ngOnInit()",
+          "pl": "ngOnInit()",
+          "correct": true
+        },
+        {
+          "uk": "ngOnDestroy()",
+          "en": "ngOnDestroy()",
+          "pl": "ngOnDestroy()",
+          "correct": false
+        },
+        {
+          "uk": "ngAfterViewInit()",
+          "en": "ngAfterViewInit()",
+          "pl": "ngAfterViewInit()",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "angular-q16",
+      "order": 16,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Який lifecycle hook використовується для очищення ресурсів перед знищенням компонента?",
+        "exp": "ngOnDestroy() викликається перед знищенням компонента. Тут потрібно відписуватися від Observable, очищати таймери та інші ресурси."
+      },
+      "en": {
+        "q": "Which lifecycle hook is used for cleanup before component destruction?",
+        "exp": "ngOnDestroy() is called before component destruction. Use it to unsubscribe from Observables, clear timers, and release other resources."
+      },
+      "pl": {
+        "q": "Który lifecycle hook służy do czyszczenia zasobów przed zniszczeniem komponentu?",
+        "exp": "ngOnDestroy() jest wywoływany przed zniszczeniem komponentu. Służy do odsubskrybowania Observable, czyszczenia timerów i innych zasobów."
+      },
+      "answers": [
+        {
+          "uk": "ngOnInit()",
+          "en": "ngOnInit()",
+          "pl": "ngOnInit()",
+          "correct": false
+        },
+        {
+          "uk": "ngAfterViewInit()",
+          "en": "ngAfterViewInit()",
+          "pl": "ngAfterViewInit()",
+          "correct": false
+        },
+        {
+          "uk": "ngOnDestroy()",
+          "en": "ngOnDestroy()",
+          "pl": "ngOnDestroy()",
+          "correct": true
+        },
+        {
+          "uk": "ngDoCheck()",
+          "en": "ngDoCheck()",
+          "pl": "ngDoCheck()",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "angular-q17",
+      "order": 17,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Що таке pipe в Angular?",
+        "exp": "Pipe — це клас для трансформації даних у шаблоні без зміни оригінального значення. Наприклад: date, currency, uppercase."
+      },
+      "en": {
+        "q": "What is a pipe in Angular?",
+        "exp": "A pipe is a class for transforming data in templates without changing the original value. For example: date, currency, uppercase."
+      },
+      "pl": {
+        "q": "Czym jest pipe w Angular?",
+        "exp": "Pipe to klasa do transformacji danych w szablonach bez zmiany oryginalnej wartości. Na przykład: date, currency, uppercase."
+      },
+      "answers": [
+        {
+          "uk": "Інструмент для роботи з HTTP",
+          "en": "A tool for working with HTTP",
+          "pl": "Narzędzie do pracy z HTTP",
+          "correct": false
+        },
+        {
+          "uk": "Клас для трансформації даних у шаблоні",
+          "en": "A class for transforming data in templates",
+          "pl": "Klasa do transformacji danych w szablonach",
+          "correct": true
+        },
+        {
+          "uk": "Метод маршрутизації",
+          "en": "A routing method",
+          "pl": "Metoda routingu",
+          "correct": false
+        },
+        {
+          "uk": "Декоратор для сервісів",
+          "en": "A decorator for services",
+          "pl": "Dekorator dla serwisów",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "angular-q18",
+      "order": 18,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Яка різниця між pure та impure pipes?",
+        "exp": "Pure pipes викликаються тільки при зміні вхідних даних (за замовчуванням), impure — на кожен цикл change detection. Pure pipes продуктивніші."
+      },
+      "en": {
+        "q": "What is the difference between pure and impure pipes?",
+        "exp": "Pure pipes are called only when input changes (default), impure pipes run on every change detection cycle. Pure pipes are more performant."
+      },
+      "pl": {
+        "q": "Jaka jest różnica między pipe'ami pure i impure?",
+        "exp": "Pure pipes wywoływane są tylko przy zmianie danych wejściowych (domyślnie), impure — przy każdym cyklu change detection. Pure pipes są wydajniejsze."
+      },
+      "answers": [
+        {
+          "uk": "Pure працюють на сервері, impure — в браузері",
+          "en": "Pure work on server, impure work in browser",
+          "pl": "Pure działają na serwerze, impure — w przeglądarce",
+          "correct": false
+        },
+        {
+          "uk": "Pure викликаються тільки при зміні input, impure — на кожен change detection",
+          "en": "Pure are called only on input change, impure on every change detection",
+          "pl": "Pure wywoływane tylko przy zmianie input, impure — przy każdym change detection",
+          "correct": true
+        },
+        {
+          "uk": "Impure швидші за pure",
+          "en": "Impure are faster than pure",
+          "pl": "Impure są szybsze niż pure",
+          "correct": false
+        },
+        {
+          "uk": "Різниці немає",
+          "en": "There is no difference",
+          "pl": "Nie ma różnicy",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "angular-q19",
+      "order": 19,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Яка основна різниця між Template-driven та Reactive формами?",
+        "exp": "Template-driven форми будуються в HTML через директиви (ngModel), Reactive — в TypeScript через FormGroup/FormControl. Reactive дають більше контролю."
+      },
+      "en": {
+        "q": "What is the main difference between Template-driven and Reactive forms?",
+        "exp": "Template-driven forms are built in HTML via directives (ngModel), Reactive forms in TypeScript via FormGroup/FormControl. Reactive forms give more control."
+      },
+      "pl": {
+        "q": "Jaka jest główna różnica między formularzami Template-driven a Reactive?",
+        "exp": "Formularze Template-driven budowane są w HTML przez dyrektywy (ngModel), Reactive — w TypeScript przez FormGroup/FormControl. Reactive dają więcej kontroli."
+      },
+      "answers": [
+        {
+          "uk": "Template-driven швидші за Reactive",
+          "en": "Template-driven are faster than Reactive",
+          "pl": "Template-driven są szybsze niż Reactive",
+          "correct": false
+        },
+        {
+          "uk": "Template-driven будуються в HTML, Reactive — в TypeScript коді",
+          "en": "Template-driven are built in HTML, Reactive in TypeScript code",
+          "pl": "Template-driven budowane są w HTML, Reactive — w kodzie TypeScript",
+          "correct": true
+        },
+        {
+          "uk": "Reactive працюють тільки з ngModel",
+          "en": "Reactive only work with ngModel",
+          "pl": "Reactive działają tylko z ngModel",
+          "correct": false
+        },
+        {
+          "uk": "Template-driven не підтримують валідацію",
+          "en": "Template-driven don't support validation",
+          "pl": "Template-driven nie wspierają walidacji",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "angular-q20",
+      "order": 20,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке FormGroup у Reactive Forms?",
+        "exp": "FormGroup — це контейнер, що об'єднує кілька FormControl у єдину структуру для керування станом, валідацією та значеннями всієї групи полів."
+      },
+      "en": {
+        "q": "What is FormGroup in Reactive Forms?",
+        "exp": "FormGroup is a container that combines multiple FormControls into a single structure for managing state, validation, and values of the entire field group."
+      },
+      "pl": {
+        "q": "Czym jest FormGroup w Reactive Forms?",
+        "exp": "FormGroup to kontener łączący wiele FormControl w jedną strukturę do zarządzania stanem, walidacją i wartościami całej grupy pól."
+      },
+      "answers": [
+        {
+          "uk": "Окреме поле форми",
+          "en": "A single form field",
+          "pl": "Pojedyncze pole formularza",
+          "correct": false
+        },
+        {
+          "uk": "Контейнер, що об'єднує кілька FormControl",
+          "en": "A container that combines multiple FormControls",
+          "pl": "Kontener łączący wiele FormControl",
+          "correct": true
+        },
+        {
+          "uk": "Валідатор форми",
+          "en": "A form validator",
+          "pl": "Walidator formularza",
+          "correct": false
+        },
+        {
+          "uk": "Декоратор для шаблону",
+          "en": "A template decorator",
+          "pl": "Dekorator dla szablonu",
+          "correct": false
+        }
+      ]
+    }
+  ]
+}

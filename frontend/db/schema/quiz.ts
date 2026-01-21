@@ -37,6 +37,7 @@ export const quizzes = pgTable(
   },
   table => ({
     categorySlugUnique: unique().on(table.categoryId, table.slug),
+    slugIdx: index('quizzes_slug_idx').on(table.slug),
   })
 );
 
@@ -129,7 +130,9 @@ export const quizAttempts = pgTable(
   'quiz_attempts',
   {
     id: uuid('id').defaultRandom().primaryKey(),
-    userId: text('user_id').notNull(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
     quizId: uuid('quiz_id')
       .notNull()
       .references(() => quizzes.id, { onDelete: 'cascade' }),
@@ -138,6 +141,7 @@ export const quizAttempts = pgTable(
     percentage: decimal('percentage', { precision: 5, scale: 2 }).notNull(),
     timeSpentSeconds: integer('time_spent_seconds'),
     integrityScore: integer('integrity_score').default(100),
+    pointsEarned: integer('points_earned').notNull().default(0),
     metadata: jsonb('metadata').default({}),
     startedAt: timestamp('started_at', { withTimezone: true })
       .notNull()
@@ -147,6 +151,8 @@ export const quizAttempts = pgTable(
       .defaultNow(),
   },
   table => ({
+    userIdIdx: index('quiz_attempts_user_id_idx').on(table.userId),       // ← NEW
+    quizIdIdx: index('quiz_attempts_quiz_id_idx').on(table.quizId),
     userCompletedAtIdx: index('quiz_attempts_user_completed_at_idx').on(
       table.userId,
       table.completedAt

@@ -1,0 +1,434 @@
+{
+  "questions": [
+    {
+      "id": "html-adv-q21",
+      "order": 21,
+      "difficulty": "advanced",
+      "uk": {
+        "q": "Що таке Web Components і з яких частин вони складаються?",
+        "exp": "Web Components — нативна технологія для створення повторно використовуваних UI-компонентів. Складаються з: Custom Elements (власні теги), Shadow DOM (ізоляція стилів), HTML Templates (заготовки розмітки)."
+      },
+      "en": {
+        "q": "What are Web Components and what parts do they consist of?",
+        "exp": "Web Components is a native technology for creating reusable UI components. Consists of: Custom Elements (custom tags), Shadow DOM (style isolation), HTML Templates (markup templates)."
+      },
+      "pl": {
+        "q": "Czym są Web Components i z jakich części się składają?",
+        "exp": "Web Components to natywna technologia do tworzenia wielokrotnie używalnych komponentów UI. Składa się z: Custom Elements (własne tagi), Shadow DOM (izolacja stylów), HTML Templates (szablony znaczników)."
+      },
+      "answers": [
+        {
+          "uk": "Web Components працюють тільки з React",
+          "en": "Web Components only work with React",
+          "pl": "Web Components działają tylko z React",
+          "correct": false
+        },
+        {
+          "uk": "Custom Elements, Shadow DOM, HTML Templates",
+          "en": "Custom Elements, Shadow DOM, HTML Templates",
+          "pl": "Custom Elements, Shadow DOM, HTML Templates",
+          "correct": true
+        },
+        {
+          "uk": "Modules, Classes, Functions",
+          "en": "Modules, Classes, Functions",
+          "pl": "Modules, Classes, Functions",
+          "correct": false
+        },
+        {
+          "uk": "Web Components застаріли в HTML5",
+          "en": "Web Components are deprecated in HTML5",
+          "pl": "Web Components są przestarzałe w HTML5",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-adv-q22",
+      "order": 22,
+      "difficulty": "advanced",
+      "uk": {
+        "q": "Що таке Shadow DOM і для чого він використовується?",
+        "exp": "Shadow DOM — механізм інкапсуляції DOM і стилів. Приховує внутрішню реалізацію компонента, запобігає конфліктам CSS. Створюється через attachShadow({mode: 'open'|'closed'})."
+      },
+      "en": {
+        "q": "What is Shadow DOM and what is it used for?",
+        "exp": "Shadow DOM is a mechanism for encapsulating DOM and styles. Hides component's internal implementation, prevents CSS conflicts. Created via attachShadow({mode: 'open'|'closed'})."
+      },
+      "pl": {
+        "q": "Czym jest Shadow DOM i do czego służy?",
+        "exp": "Shadow DOM to mechanizm enkapsulacji DOM i stylów. Ukrywa wewnętrzną implementację komponentu, zapobiega konfliktom CSS. Tworzony przez attachShadow({mode: 'open'|'closed'})."
+      },
+      "answers": [
+        {
+          "uk": "Shadow DOM — це темна тема для сайту",
+          "en": "Shadow DOM is a dark theme for website",
+          "pl": "Shadow DOM to ciemny motyw dla strony",
+          "correct": false
+        },
+        {
+          "uk": "Механізм інкапсуляції DOM і стилів для ізоляції компонентів",
+          "en": "Mechanism for encapsulating DOM and styles to isolate components",
+          "pl": "Mechanizm enkapsulacji DOM i stylów do izolacji komponentów",
+          "correct": true
+        },
+        {
+          "uk": "Shadow DOM — це віртуальний DOM",
+          "en": "Shadow DOM is virtual DOM",
+          "pl": "Shadow DOM to wirtualny DOM",
+          "correct": false
+        },
+        {
+          "uk": "Shadow DOM працює тільки у Firefox",
+          "en": "Shadow DOM only works in Firefox",
+          "pl": "Shadow DOM działa tylko w Firefox",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-adv-q23",
+      "order": 23,
+      "difficulty": "advanced",
+      "uk": {
+        "q": "Як створити Custom Element (власний HTML-елемент)?",
+        "exp": "Створити клас що наслідує HTMLElement, реалізувати lifecycle методи (connectedCallback, disconnectedCallback, attributeChangedCallback), зареєструвати через customElements.define('my-tag', MyClass)."
+      },
+      "en": {
+        "q": "How do you create a Custom Element?",
+        "exp": "Create a class extending HTMLElement, implement lifecycle methods (connectedCallback, disconnectedCallback, attributeChangedCallback), register via customElements.define('my-tag', MyClass)."
+      },
+      "pl": {
+        "q": "Jak utworzyć Custom Element (własny element HTML)?",
+        "exp": "Utwórz klasę dziedziczącą HTMLElement, zaimplementuj metody lifecycle (connectedCallback, disconnectedCallback, attributeChangedCallback), zarejestruj przez customElements.define('my-tag', MyClass)."
+      },
+      "answers": [
+        {
+          "uk": "Через атрибут custom у звичайних тегах",
+          "en": "Via custom attribute in regular tags",
+          "pl": "Przez atrybut custom w zwykłych tagach",
+          "correct": false
+        },
+        {
+          "uk": "Клас extends HTMLElement + customElements.define()",
+          "en": "Class extends HTMLElement + customElements.define()",
+          "pl": "Klasa extends HTMLElement + customElements.define()",
+          "correct": true
+        },
+        {
+          "uk": "Тільки через React або Vue",
+          "en": "Only via React or Vue",
+          "pl": "Tylko przez React lub Vue",
+          "correct": false
+        },
+        {
+          "uk": "Custom Elements не підтримуються браузерами",
+          "en": "Custom Elements are not supported by browsers",
+          "pl": "Custom Elements nie są obsługiwane przez przeglądarki",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-adv-q24",
+      "order": 24,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Для чого використовується тег <template>?",
+        "exp": "<template> визначає розмітку, яка не відображається до програмного клонування. Вміст не рендериться при завантаженні. Клонується через template.content.cloneNode(true)."
+      },
+      "en": {
+        "q": "What is the <template> tag used for?",
+        "exp": "<template> defines markup that is not displayed until programmatically cloned. Content is not rendered on load. Cloned via template.content.cloneNode(true)."
+      },
+      "pl": {
+        "q": "Do czego służy tag <template>?",
+        "exp": "<template> definiuje znaczniki, które nie są wyświetlane do programowego sklonowania. Zawartość nie jest renderowana przy ładowaniu. Klonowane przez template.content.cloneNode(true)."
+      },
+      "answers": [
+        {
+          "uk": "<template> відображає шаблон на сторінці",
+          "en": "<template> displays a template on page",
+          "pl": "<template> wyświetla szablon na stronie",
+          "correct": false
+        },
+        {
+          "uk": "Невидима розмітка для програмного клонування",
+          "en": "Invisible markup for programmatic cloning",
+          "pl": "Niewidoczne znaczniki do programowego klonowania",
+          "correct": true
+        },
+        {
+          "uk": "<template> — це застарілий тег",
+          "en": "<template> is a deprecated tag",
+          "pl": "<template> to przestarzały tag",
+          "correct": false
+        },
+        {
+          "uk": "Тільки для email шаблонів",
+          "en": "Only for email templates",
+          "pl": "Tylko dla szablonów email",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-adv-q25",
+      "order": 25,
+      "difficulty": "advanced",
+      "uk": {
+        "q": "Що таке структуровані дані (Schema.org) і як вони впливають на SEO?",
+        "exp": "Структуровані дані — спеціальна розмітка (JSON-LD, microdata) що пояснює пошуковикам значення контенту. Дозволяє показувати rich snippets (рейтинг, ціна, FAQ). Покращує CTR у видачі."
+      },
+      "en": {
+        "q": "What are structured data (Schema.org) and how do they affect SEO?",
+        "exp": "Structured data is special markup (JSON-LD, microdata) explaining content meaning to search engines. Enables rich snippets (rating, price, FAQ). Improves CTR in search results."
+      },
+      "pl": {
+        "q": "Czym są dane strukturalne (Schema.org) i jak wpływają na SEO?",
+        "exp": "Dane strukturalne to specjalne znaczniki (JSON-LD, microdata) wyjaśniające wyszukiwarkom znaczenie treści. Umożliwiają rich snippets (ocena, cena, FAQ). Poprawiają CTR w wynikach wyszukiwania."
+      },
+      "answers": [
+        {
+          "uk": "Структуровані дані не впливають на SEO",
+          "en": "Structured data don't affect SEO",
+          "pl": "Dane strukturalne nie wpływają na SEO",
+          "correct": false
+        },
+        {
+          "uk": "Розмітка для пошуковиків, що дозволяє rich snippets та покращує CTR",
+          "en": "Markup for search engines enabling rich snippets and improving CTR",
+          "pl": "Znaczniki dla wyszukiwarek umożliwiające rich snippets i poprawiające CTR",
+          "correct": true
+        },
+        {
+          "uk": "Структуровані дані — це CSS стилі",
+          "en": "Structured data is CSS styles",
+          "pl": "Dane strukturalne to style CSS",
+          "correct": false
+        },
+        {
+          "uk": "Schema.org працює тільки з Google",
+          "en": "Schema.org only works with Google",
+          "pl": "Schema.org działa tylko z Google",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-adv-q26",
+      "order": 26,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Яке значення мають заголовки h1-h6 для SEO?",
+        "exp": "<h1> — головний заголовок, рекомендовано один на сторінку для SEO (хоча HTML5 дозволяє кілька в межах секцій). <h2>-<h6> структурують контент ієрархічно. Використання ключових слів у заголовках покращує релевантність."
+      },
+      "en": {
+        "q": "What importance do h1-h6 headings have for SEO?",
+        "exp": "<h1> is the main heading, one per page is recommended for SEO (though HTML5 allows multiple within sections). <h2>-<h6> structure content hierarchically. Using keywords in headings improves relevance."
+      },
+      "pl": {
+        "q": "Jakie znaczenie mają nagłówki h1-h6 dla SEO?",
+        "exp": "<h1> to główny nagłówek, jeden na stronę jest zalecany dla SEO (choć HTML5 pozwala na wiele w sekcjach). <h2>-<h6> strukturyzują treść hierarchicznie. Używanie słów kluczowych w nagłówkach poprawia trafność."
+      },
+      "answers": [
+        {
+          "uk": "Заголовки не впливають на SEO",
+          "en": "Headings don't affect SEO",
+          "pl": "Nagłówki nie wpływają na SEO",
+          "correct": false
+        },
+        {
+          "uk": "h1 рекомендовано один на сторінку, ієрархія h2-h6 структурує контент",
+          "en": "h1 recommended one per page, h2-h6 hierarchy structures content",
+          "pl": "h1 zalecany jeden na stronę, hierarchia h2-h6 strukturyzuje treść",
+          "correct": true
+        },
+        {
+          "uk": "Кілька h1 — найкраща практика для SEO",
+          "en": "Multiple h1 is best practice for SEO",
+          "pl": "Wiele h1 to najlepsza praktyka dla SEO",
+          "correct": false
+        },
+        {
+          "uk": "Тільки h1 і h2 впливають на SEO",
+          "en": "Only h1 and h2 affect SEO",
+          "pl": "Tylko h1 i h2 wpływają na SEO",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-adv-q27",
+      "order": 27,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке атрибут rel=\"nofollow\" і коли його використовувати?",
+        "exp": "rel=\"nofollow\" вказує пошуковикам не передавати \"link juice\" на цільову сторінку. Використовується для рекламних посилань, ненадійних сайтів, захисту від спаму в коментарях."
+      },
+      "en": {
+        "q": "What is rel=\"nofollow\" attribute and when to use it?",
+        "exp": "rel=\"nofollow\" tells search engines not to pass \"link juice\" to target page. Used for ad links, untrusted sites, protection from comment spam."
+      },
+      "pl": {
+        "q": "Czym jest atrybut rel=\"nofollow\" i kiedy go używać?",
+        "exp": "rel=\"nofollow\" informuje wyszukiwarki, aby nie przekazywać \"link juice\" na stronę docelową. Używane dla linków reklamowych, niezaufanych stron, ochrony przed spamem w komentarzach."
+      },
+      "answers": [
+        {
+          "uk": "rel=\"nofollow\" прискорює завантаження посилань",
+          "en": "rel=\"nofollow\" speeds up link loading",
+          "pl": "rel=\"nofollow\" przyspiesza ładowanie linków",
+          "correct": false
+        },
+        {
+          "uk": "Вказує пошуковикам не передавати рейтинг на цільову сторінку",
+          "en": "Tells search engines not to pass ranking to target page",
+          "pl": "Informuje wyszukiwarki, aby nie przekazywać rankingu na stronę docelową",
+          "correct": true
+        },
+        {
+          "uk": "rel=\"nofollow\" ховає посилання від користувачів",
+          "en": "rel=\"nofollow\" hides links from users",
+          "pl": "rel=\"nofollow\" ukrywa linki przed użytkownikami",
+          "correct": false
+        },
+        {
+          "uk": "Застарілий атрибут, не використовується",
+          "en": "Deprecated attribute, not used",
+          "pl": "Przestarzały atrybut, nieużywany",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-adv-q28",
+      "order": 28,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Які способи покращення продуктивності HTML-сторінки ви знаєте?",
+        "exp": "Мінімізація HTML, gzip/brotli стиснення, lazy-loading зображень (loading=\"lazy\"), defer/async для скриптів, оптимізація DOM (менше елементів), Critical CSS inline, кешування."
+      },
+      "en": {
+        "q": "What ways to improve HTML page performance do you know?",
+        "exp": "Minify HTML, gzip/brotli compression, lazy-loading images (loading=\"lazy\"), defer/async for scripts, DOM optimization (fewer elements), Critical CSS inline, caching."
+      },
+      "pl": {
+        "q": "Jakie sposoby poprawy wydajności strony HTML znasz?",
+        "exp": "Minifikacja HTML, kompresja gzip/brotli, lazy-loading obrazów (loading=\"lazy\"), defer/async dla skryptów, optymalizacja DOM (mniej elementów), Critical CSS inline, cachowanie."
+      },
+      "answers": [
+        {
+          "uk": "Продуктивність залежить тільки від сервера",
+          "en": "Performance depends only on server",
+          "pl": "Wydajność zależy tylko od serwera",
+          "correct": false
+        },
+        {
+          "uk": "Мінімізація, стиснення, lazy-loading, defer/async, оптимізація DOM",
+          "en": "Minification, compression, lazy-loading, defer/async, DOM optimization",
+          "pl": "Minifikacja, kompresja, lazy-loading, defer/async, optymalizacja DOM",
+          "correct": true
+        },
+        {
+          "uk": "Тільки через CDN",
+          "en": "Only via CDN",
+          "pl": "Tylko przez CDN",
+          "correct": false
+        },
+        {
+          "uk": "Видалити всі зображення",
+          "en": "Remove all images",
+          "pl": "Usunąć wszystkie obrazy",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-adv-q29",
+      "order": 29,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке атрибут loading=\"lazy\" для зображень?",
+        "exp": "loading=\"lazy\" відкладає завантаження зображень поки вони не потраплять у viewport. Покращує початкову швидкість завантаження сторінки. Нативна підтримка браузерами без JavaScript."
+      },
+      "en": {
+        "q": "What is the loading=\"lazy\" attribute for images?",
+        "exp": "loading=\"lazy\" defers image loading until they enter the viewport. Improves initial page load speed. Native browser support without JavaScript."
+      },
+      "pl": {
+        "q": "Czym jest atrybut loading=\"lazy\" dla obrazów?",
+        "exp": "loading=\"lazy\" opóźnia ładowanie obrazów dopóki nie znajdą się w viewport. Poprawia początkową szybkość ładowania strony. Natywna obsługa przeglądarek bez JavaScript."
+      },
+      "answers": [
+        {
+          "uk": "Сповільнює завантаження зображень",
+          "en": "Slows down image loading",
+          "pl": "Spowalnia ładowanie obrazów",
+          "correct": false
+        },
+        {
+          "uk": "Відкладає завантаження до появи у viewport",
+          "en": "Defers loading until appearing in viewport",
+          "pl": "Opóźnia ładowanie do pojawienia się w viewport",
+          "correct": true
+        },
+        {
+          "uk": "Завантажує зображення в низькій якості",
+          "en": "Loads images in low quality",
+          "pl": "Ładuje obrazy w niskiej jakości",
+          "correct": false
+        },
+        {
+          "uk": "Цей атрибут не існує",
+          "en": "This attribute doesn't exist",
+          "pl": "Ten atrybut nie istnieje",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "html-adv-q30",
+      "order": 30,
+      "difficulty": "advanced",
+      "uk": {
+        "q": "Що таке категорії контенту в HTML5?",
+        "exp": "Категорії класифікують елементи за роллю: Flow content (більшість елементів), Sectioning (article, section), Heading (h1-h6), Phrasing (inline), Embedded (img, video), Interactive (button, input), Metadata (meta, link)."
+      },
+      "en": {
+        "q": "What are content categories in HTML5?",
+        "exp": "Categories classify elements by role: Flow content (most elements), Sectioning (article, section), Heading (h1-h6), Phrasing (inline), Embedded (img, video), Interactive (button, input), Metadata (meta, link)."
+      },
+      "pl": {
+        "q": "Czym są kategorie treści w HTML5?",
+        "exp": "Kategorie klasyfikują elementy według roli: Flow content (większość elementów), Sectioning (article, section), Heading (h1-h6), Phrasing (inline), Embedded (img, video), Interactive (button, input), Metadata (meta, link)."
+      },
+      "answers": [
+        {
+          "uk": "Категорії — це CSS класи",
+          "en": "Categories are CSS classes",
+          "pl": "Kategorie to klasy CSS",
+          "correct": false
+        },
+        {
+          "uk": "Flow, Sectioning, Heading, Phrasing, Embedded, Interactive, Metadata",
+          "en": "Flow, Sectioning, Heading, Phrasing, Embedded, Interactive, Metadata",
+          "pl": "Flow, Sectioning, Heading, Phrasing, Embedded, Interactive, Metadata",
+          "correct": true
+        },
+        {
+          "uk": "В HTML5 немає категорій контенту",
+          "en": "HTML5 has no content categories",
+          "pl": "HTML5 nie ma kategorii treści",
+          "correct": false
+        },
+        {
+          "uk": "Тільки Block і Inline",
+          "en": "Only Block and Inline",
+          "pl": "Tylko Block i Inline",
+          "correct": false
+        }
+      ]
+    }
+  ]
+}

@@ -1,29 +1,29 @@
 'use client';
 
+import { useMemo, useState } from 'react';
 import Image from 'next/image';
-import { Link } from '@/i18n/routing';
-
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { Minus, Plus, Trash2, ShoppingBag } from 'lucide-react';
 
+import { Link } from '@/i18n/routing';
 import { useCart } from '@/components/shop/cart-provider';
-
 import { generateIdempotencyKey } from '@/lib/shop/idempotency';
-import { useParams } from 'next/navigation';
 import { formatMoney } from '@/lib/shop/currency';
 
 export default function CartPage() {
-  const { cart, updateQuantity, removeFromCart, clearCart } = useCart();
+  const { cart, updateQuantity, removeFromCart } = useCart();
   const router = useRouter();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
 
   const params = useParams<{ locale?: string }>();
   const locale = params.locale ?? 'en';
+  const shopBase = useMemo(() => `/${locale}/shop`, [locale]);
 
   async function handleCheckout() {
     setCheckoutError(null);
+    setCreatedOrderId(null);
     setIsCheckingOut(true);
 
     try {
@@ -42,7 +42,6 @@ export default function CartPage() {
             selectedSize: item.selectedSize,
             selectedColor: item.selectedColor,
           })),
-          // userId: ...,
         }),
       });
 
@@ -72,25 +71,30 @@ export default function CartPage() {
           ? data.clientSecret
           : null;
 
+      const orderId: string = String(data.orderId);
+      setCreatedOrderId(orderId);
+
       if (paymentProvider === 'stripe' && clientSecret) {
-        clearCart();
         router.push(
-          `/shop/checkout/payment/${
-            data.orderId
-          }?clientSecret=${encodeURIComponent(clientSecret)}`
+          `${shopBase}/checkout/payment/${encodeURIComponent(
+            orderId
+          )}?clientSecret=${encodeURIComponent(clientSecret)}&clearCart=1`
         );
+
         return;
       }
-      clearCart();
+
       const paymentsDisabledFlag =
         paymentProvider !== 'stripe' || !clientSecret
           ? '&paymentsDisabled=true'
           : '';
+
       router.push(
-        `/shop/checkout/success?orderId=${data.orderId}${paymentsDisabledFlag}`
+        `${shopBase}/checkout/success?orderId=${encodeURIComponent(
+          orderId
+        )}&clearCart=1${paymentsDisabledFlag}`
       );
-    } catch (error) {
-      console.error('Checkout failed', error);
+    } catch {
       setCheckoutError('Unable to start checkout right now.');
     } finally {
       setIsCheckingOut(false);
@@ -99,9 +103,12 @@ export default function CartPage() {
 
   if (cart.items.length === 0) {
     return (
-      <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
         <div className="flex flex-col items-center justify-center text-center">
-          <ShoppingBag className="h-16 w-16 text-muted-foreground" />
+          <ShoppingBag
+            className="h-16 w-16 text-muted-foreground"
+            aria-hidden="true"
+          />
           <h1 className="mt-6 text-3xl font-bold tracking-tight text-foreground">
             Your cart is empty
           </h1>
@@ -109,130 +116,162 @@ export default function CartPage() {
             Looks like you haven&apos;t added any items to your cart yet.
           </p>
           <Link
-            href="/shop/products"
+            href={`/shop/products`}
             className="mt-8 inline-flex items-center gap-2 rounded-md bg-accent px-6 py-3 text-sm font-semibold uppercase tracking-wide text-accent-foreground transition-colors hover:bg-accent/90"
           >
             Start shopping
           </Link>
         </div>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <h1 className="text-3xl font-bold tracking-tight text-foreground">
         Your cart
       </h1>
 
       <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_380px]">
-        {/* Cart Items */}
-        <div className="space-y-4">
-          {cart.removed.length > 0 && (
-            <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-              Some items were removed from your cart because they are
-              unavailable or out of stock.
-            </div>
-          )}
+        <section aria-label="Cart items">
+          <ul className="space-y-4">
+            {cart.removed.length > 0 && (
+              <li
+                className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+                role="status"
+                aria-live="polite"
+              >
+                Some items were removed from your cart because they are
+                unavailable or out of stock.
+              </li>
+            )}
 
-          {cart.items.map((item, index) => (
-            <div
-              key={`${item.productId}-${item.selectedSize}-${item.selectedColor}-${index}`}
-              className="flex gap-4 rounded-lg border border-border p-4"
-            >
-              <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-md bg-muted">
-                <Image
-                  src={item.imageUrl || '/placeholder.svg'}
-                  alt={item.title}
-                  fill
-                  className="object-cover"
-                  sizes="96px"
-                />
-              </div>
-
-              <div className="flex flex-1 flex-col">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <Link
-                      href={`/shop/products/${item.slug}`}
-                      className="text-sm font-medium text-foreground hover:underline"
-                    >
-                      {item.title}
-                    </Link>
-                    {(item.selectedSize || item.selectedColor) && (
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {[item.selectedColor, item.selectedSize]
-                          .filter(Boolean)
-                          .join(' / ')}
-                      </p>
-                    )}
+            {cart.items.map(item => (
+              <li
+                key={`${item.productId}-${item.selectedSize ?? 'na'}-${
+                  item.selectedColor ?? 'na'
+                }`}
+                className="rounded-lg border border-border p-4"
+              >
+                <article className="flex gap-4">
+                  <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-md bg-muted">
+                    <Image
+                      src={item.imageUrl || '/placeholder.svg'}
+                      alt={item.title}
+                      fill
+                      className="object-cover"
+                      sizes="96px"
+                    />
                   </div>
-                  <button
-                    onClick={() =>
-                      removeFromCart(
-                        item.productId,
-                        item.selectedSize,
-                        item.selectedColor
-                      )
-                    }
-                    className="text-muted-foreground transition-colors hover:text-foreground"
-                    aria-label="Remove item"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
 
-                <div className="mt-auto flex items-center justify-between pt-2">
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() =>
-                        updateQuantity(
-                          item.productId,
-                          item.quantity - 1,
-                          item.selectedSize,
-                          item.selectedColor
-                        )
-                      }
-                      className="flex h-8 w-8 items-center justify-center rounded border border-border text-foreground transition-colors hover:bg-secondary"
-                      aria-label="Decrease quantity"
-                    >
-                      <Minus className="h-3 w-3" />
-                    </button>
-                    <span className="w-8 text-center text-sm font-medium">
-                      {item.quantity}
-                    </span>
-                    <button
-                      onClick={() =>
-                        updateQuantity(
-                          item.productId,
-                          item.quantity + 1,
-                          item.selectedSize,
-                          item.selectedColor
-                        )
-                      }
-                      className="flex h-8 w-8 items-center justify-center rounded border border-border text-foreground transition-colors hover:bg-secondary"
-                      aria-label="Increase quantity"
-                    >
-                      <Plus className="h-3 w-3" />
-                    </button>
-                    {item.quantity >= item.stock && (
-                      <span className="ml-3 text-xs text-muted-foreground">
-                        Max {item.stock} in stock
+                  <div className="flex flex-1 flex-col">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <Link
+                          href={`/shop/products/${item.slug}`}
+                          className="block truncate text-sm font-medium text-foreground hover:underline"
+                        >
+                          {item.title}
+                        </Link>
+
+                        {(item.selectedSize || item.selectedColor) && (
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {[item.selectedColor, item.selectedSize]
+                              .filter(Boolean)
+                              .join(' / ')}
+                          </p>
+                        )}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          removeFromCart(
+                            item.productId,
+                            item.selectedSize,
+                            item.selectedColor
+                          )
+                        }
+                        className="text-muted-foreground transition-colors hover:text-foreground"
+                        aria-label={`Remove ${item.title} from cart`}
+                      >
+                        <Trash2 className="h-4 w-4" aria-hidden="true" />
+                      </button>
+                    </div>
+
+                    <div className="mt-auto flex items-center justify-between pt-2">
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            updateQuantity(
+                              item.productId,
+                              item.quantity - 1,
+                              item.selectedSize,
+                              item.selectedColor
+                            )
+                          }
+                          disabled={item.quantity <= 1}
+                          className="flex h-8 w-8 items-center justify-center rounded border border-border text-foreground transition-colors hover:bg-secondary disabled:opacity-60"
+                          aria-label="Decrease quantity"
+                        >
+                          <Minus className="h-3 w-3" aria-hidden="true" />
+                        </button>
+
+                        <span className="w-8 text-center text-sm font-medium">
+                          {item.quantity}
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            updateQuantity(
+                              item.productId,
+                              item.quantity + 1,
+                              item.selectedSize,
+                              item.selectedColor
+                            )
+                          }
+                          disabled={item.quantity >= item.stock}
+                          className="flex h-8 w-8 items-center justify-center rounded border border-border text-foreground transition-colors hover:bg-secondary disabled:opacity-60"
+                          aria-label="Increase quantity"
+                        >
+                          <Plus className="h-3 w-3" aria-hidden="true" />
+                        </button>
+
+                        {item.quantity >= item.stock && (
+                          <span
+                            className="ml-3 text-xs text-muted-foreground"
+                            role="status"
+                          >
+                            Max {item.stock} in stock
+                          </span>
+                        )}
+                      </div>
+
+                      <span className="text-sm font-semibold text-foreground">
+                        {formatMoney(
+                          item.lineTotalMinor,
+                          item.currency,
+                          locale
+                        )}
                       </span>
-                    )}
+                    </div>
                   </div>
+                </article>
+              </li>
+            ))}
+          </ul>
+        </section>
 
-                  <span className="text-sm font-semibold text-foreground">
-                    {formatMoney(item.lineTotal, item.currency, locale)}
-                  </span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="h-fit rounded-lg border border-border p-6">
-          <h2 className="text-lg font-semibold text-foreground">
+        <aside
+          className="h-fit rounded-lg border border-border p-6"
+          aria-labelledby="order-summary"
+        >
+          <h2
+            id="order-summary"
+            className="text-lg font-semibold text-foreground"
+          >
             Order summary
           </h2>
 
@@ -241,18 +280,20 @@ export default function CartPage() {
               <span className="text-muted-foreground">Subtotal</span>
               <span className="font-medium text-foreground">
                 {formatMoney(
-                  cart.summary.totalAmount,
+                  cart.summary.totalAmountMinor,
                   cart.summary.currency,
                   locale
                 )}
               </span>
             </div>
+
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Shipping</span>
               <span className="text-muted-foreground">
                 Calculated at checkout
               </span>
             </div>
+
             <div className="border-t border-border pt-4">
               <div className="flex items-center justify-between">
                 <span className="text-base font-semibold text-foreground">
@@ -260,7 +301,7 @@ export default function CartPage() {
                 </span>
                 <span className="text-lg font-bold text-foreground">
                   {formatMoney(
-                    cart.summary.totalAmount,
+                    cart.summary.totalAmountMinor,
                     cart.summary.currency,
                     locale
                   )}
@@ -275,6 +316,7 @@ export default function CartPage() {
               onClick={handleCheckout}
               disabled={isCheckingOut}
               className="flex w-full items-center justify-center gap-2 rounded-md bg-accent px-6 py-3 text-sm font-semibold uppercase tracking-wide text-accent-foreground transition-colors hover:bg-accent/90 disabled:opacity-60"
+              aria-busy={isCheckingOut}
             >
               {isCheckingOut ? 'Placing order...' : 'Place order'}
             </button>
@@ -284,14 +326,44 @@ export default function CartPage() {
               confirmation if payment is not required in this environment.
             </p>
 
-            {checkoutError && (
-              <p className="text-center text-xs text-destructive">
-                {checkoutError}
-              </p>
-            )}
+            {/* Fallback CTA if navigation fails after order was created */}
+            {createdOrderId && !checkoutError ? (
+              <div className="flex justify-center">
+                <Link
+                  href={`/shop/orders/${encodeURIComponent(createdOrderId)}`}
+                  className="text-xs underline underline-offset-4"
+                >
+                  If you are not redirected automatically, open your order
+                </Link>
+              </div>
+            ) : null}
+
+            {checkoutError ? (
+              <div className="space-y-2">
+                <p
+                  className="text-center text-xs text-destructive"
+                  role="alert"
+                >
+                  {checkoutError}
+                </p>
+
+                {createdOrderId ? (
+                  <div className="flex justify-center">
+                    <Link
+                      href={`/shop/orders/${encodeURIComponent(
+                        createdOrderId
+                      )}`}
+                      className="text-xs underline underline-offset-4"
+                    >
+                      Go to order
+                    </Link>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
           </div>
-        </div>
+        </aside>
       </div>
-    </div>
+    </main>
   );
 }

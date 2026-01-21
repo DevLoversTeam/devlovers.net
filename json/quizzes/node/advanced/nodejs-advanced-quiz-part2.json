@@ -1,0 +1,434 @@
+{
+  "questions": [
+    {
+      "id": "node-adv-q11",
+      "order": 11,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Які основні архітектурні концепції використовує NestJS?",
+        "exp": "NestJS базується на модулях, контролерах, сервісах, декораторах та Dependency Injection (DI), подібно до Angular."
+      },
+      "en": {
+        "q": "What are the main architectural concepts used by NestJS?",
+        "exp": "NestJS is based on modules, controllers, services, decorators, and Dependency Injection (DI), similar to Angular."
+      },
+      "pl": {
+        "q": "Jakie są główne koncepcje architektoniczne używane przez NestJS?",
+        "exp": "NestJS opiera się na modułach, kontrolerach, serwisach, dekoratorach i Dependency Injection (DI), podobnie jak Angular."
+      },
+      "answers": [
+        {
+          "uk": "Тільки middleware та роути",
+          "en": "Only middleware and routes",
+          "pl": "Tylko middleware i routy",
+          "correct": false
+        },
+        {
+          "uk": "Модулі, контролери, сервіси, декоратори, Dependency Injection",
+          "en": "Modules, controllers, services, decorators, Dependency Injection",
+          "pl": "Moduły, kontrolery, serwisy, dekoratory, Dependency Injection",
+          "correct": true
+        },
+        {
+          "uk": "MVC без dependency injection",
+          "en": "MVC without dependency injection",
+          "pl": "MVC bez dependency injection",
+          "correct": false
+        },
+        {
+          "uk": "Функціональний підхід без класів",
+          "en": "Functional approach without classes",
+          "pl": "Podejście funkcyjne bez klas",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-adv-q12",
+      "order": 12,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Чим Koa.js відрізняється від Express.js у роботі з middleware?",
+        "exp": "Koa використовує onion model — middleware виконується до і після наступного через async/await, тоді як Express передає керування тільки вперед через next()."
+      },
+      "en": {
+        "q": "How does Koa.js differ from Express.js in middleware handling?",
+        "exp": "Koa uses an onion model — middleware executes before and after the next via async/await, while Express passes control only forward via next()."
+      },
+      "pl": {
+        "q": "Czym Koa.js różni się od Express.js w obsłudze middleware?",
+        "exp": "Koa używa modelu cebuli — middleware wykonuje się przed i po następnym przez async/await, podczas gdy Express przekazuje sterowanie tylko do przodu przez next()."
+      },
+      "answers": [
+        {
+          "uk": "Різниці немає",
+          "en": "No difference",
+          "pl": "Nie ma różnicy",
+          "correct": false
+        },
+        {
+          "uk": "Koa — onion model з async/await (до і після); Express — тільки вперед через next()",
+          "en": "Koa — onion model with async/await (before and after); Express — only forward via next()",
+          "pl": "Koa — model cebuli z async/await (przed i po); Express — tylko do przodu przez next()",
+          "correct": true
+        },
+        {
+          "uk": "Koa не підтримує middleware",
+          "en": "Koa doesn't support middleware",
+          "pl": "Koa nie obsługuje middleware",
+          "correct": false
+        },
+        {
+          "uk": "Express швидший за Koa",
+          "en": "Express is faster than Koa",
+          "pl": "Express jest szybszy niż Koa",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-adv-q13",
+      "order": 13,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Яка перевага GraphQL над REST API у Node.js?",
+        "exp": "GraphQL дозволяє клієнту запитувати тільки потрібні поля, уникаючи over-fetching та under-fetching, і надає єдину точку входу замість множини ендпоінтів."
+      },
+      "en": {
+        "q": "What is the advantage of GraphQL over REST API in Node.js?",
+        "exp": "GraphQL allows the client to request only needed fields, avoiding over-fetching and under-fetching, and provides a single entry point instead of multiple endpoints."
+      },
+      "pl": {
+        "q": "Jaka jest zaleta GraphQL nad REST API w Node.js?",
+        "exp": "GraphQL pozwala klientowi żądać tylko potrzebnych pól, unikając over-fetching i under-fetching, i zapewnia jeden punkt wejścia zamiast wielu endpointów."
+      },
+      "answers": [
+        {
+          "uk": "GraphQL працює швидше за мережею",
+          "en": "GraphQL works faster over the network",
+          "pl": "GraphQL działa szybciej przez sieć",
+          "correct": false
+        },
+        {
+          "uk": "Клієнт запитує лише потрібні поля, єдина точка входу",
+          "en": "Client requests only needed fields, single entry point",
+          "pl": "Klient żąda tylko potrzebnych pól, pojedynczy punkt wejścia",
+          "correct": true
+        },
+        {
+          "uk": "GraphQL не потребує серверної частини",
+          "en": "GraphQL doesn't need a server part",
+          "pl": "GraphQL nie wymaga części serwerowej",
+          "correct": false
+        },
+        {
+          "uk": "GraphQL автоматично кешує всі запити",
+          "en": "GraphQL automatically caches all requests",
+          "pl": "GraphQL automatycznie cachuje wszystkie żądania",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-adv-q14",
+      "order": 14,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке резолвери (resolvers) у GraphQL?",
+        "exp": "Резолвери — це функції, які виконуються для кожного поля у GraphQL-запиті та повертають дані з бази, API або іншого джерела."
+      },
+      "en": {
+        "q": "What are resolvers in GraphQL?",
+        "exp": "Resolvers are functions that execute for each field in a GraphQL query and return data from a database, API, or other source."
+      },
+      "pl": {
+        "q": "Czym są resolvery w GraphQL?",
+        "exp": "Resolvery to funkcje wykonywane dla każdego pola w zapytaniu GraphQL, które zwracają dane z bazy danych, API lub innego źródła."
+      },
+      "answers": [
+        {
+          "uk": "Валідатори вхідних даних",
+          "en": "Input data validators",
+          "pl": "Walidatory danych wejściowych",
+          "correct": false
+        },
+        {
+          "uk": "Функції, що повертають дані для кожного поля запиту",
+          "en": "Functions that return data for each query field",
+          "pl": "Funkcje zwracające dane dla każdego pola zapytania",
+          "correct": true
+        },
+        {
+          "uk": "Middleware для авторизації",
+          "en": "Middleware for authorization",
+          "pl": "Middleware do autoryzacji",
+          "correct": false
+        },
+        {
+          "uk": "Схеми бази даних",
+          "en": "Database schemas",
+          "pl": "Schematy bazy danych",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-adv-q15",
+      "order": 15,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке Server-Side Rendering (SSR) і яку бібліотеку використовують для React SSR у Node.js?",
+        "exp": "SSR — генерація HTML на сервері для покращення SEO та швидкості завантаження. Для React використовують Next.js або ReactDOMServer.renderToString()."
+      },
+      "en": {
+        "q": "What is Server-Side Rendering (SSR) and which library is used for React SSR in Node.js?",
+        "exp": "SSR is generating HTML on the server to improve SEO and loading speed. For React, Next.js or ReactDOMServer.renderToString() is used."
+      },
+      "pl": {
+        "q": "Czym jest Server-Side Rendering (SSR) i jakiej biblioteki używa się do React SSR w Node.js?",
+        "exp": "SSR to generowanie HTML na serwerze dla poprawy SEO i szybkości ładowania. Dla React używa się Next.js lub ReactDOMServer.renderToString()."
+      },
+      "answers": [
+        {
+          "uk": "Рендеринг CSS на сервері; використовують Sass",
+          "en": "Rendering CSS on server; Sass is used",
+          "pl": "Renderowanie CSS na serwerze; używa się Sass",
+          "correct": false
+        },
+        {
+          "uk": "Генерація HTML на сервері для SEO; Next.js або ReactDOMServer",
+          "en": "Generating HTML on server for SEO; Next.js or ReactDOMServer",
+          "pl": "Generowanie HTML na serwerze dla SEO; Next.js lub ReactDOMServer",
+          "correct": true
+        },
+        {
+          "uk": "Компіляція JavaScript у WebAssembly",
+          "en": "Compiling JavaScript to WebAssembly",
+          "pl": "Kompilacja JavaScript do WebAssembly",
+          "correct": false
+        },
+        {
+          "uk": "Кешування сторінок у Redis",
+          "en": "Caching pages in Redis",
+          "pl": "Cachowanie stron w Redis",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-adv-q16",
+      "order": 16,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке гідрація (hydration) у контексті SSR?",
+        "exp": "Гідрація — процес, коли React на клієнті приєднує event listeners до HTML, згенерованого на сервері, роблячи сторінку інтерактивною."
+      },
+      "en": {
+        "q": "What is hydration in the context of SSR?",
+        "exp": "Hydration is the process where React on the client attaches event listeners to HTML generated on the server, making the page interactive."
+      },
+      "pl": {
+        "q": "Czym jest hydration w kontekście SSR?",
+        "exp": "Hydration to proces, w którym React na kliencie dołącza event listenery do HTML wygenerowanego na serwerze, czyniąc stronę interaktywną."
+      },
+      "answers": [
+        {
+          "uk": "Стиснення HTML для передачі",
+          "en": "Compressing HTML for transfer",
+          "pl": "Kompresja HTML do transferu",
+          "correct": false
+        },
+        {
+          "uk": "Приєднання event listeners до серверного HTML для інтерактивності",
+          "en": "Attaching event listeners to server HTML for interactivity",
+          "pl": "Dołączanie event listenerów do serwerowego HTML dla interaktywności",
+          "correct": true
+        },
+        {
+          "uk": "Завантаження зображень",
+          "en": "Loading images",
+          "pl": "Ładowanie obrazów",
+          "correct": false
+        },
+        {
+          "uk": "Шифрування даних",
+          "en": "Encrypting data",
+          "pl": "Szyfrowanie danych",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-adv-q17",
+      "order": 17,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Яка основна перевага TypeScript для великих Node.js проєктів?",
+        "exp": "Статична типізація дозволяє ловити помилки на етапі компіляції, покращує автодоповнення в IDE, спрощує рефакторинг та підвищує читабельність коду."
+      },
+      "en": {
+        "q": "What is the main advantage of TypeScript for large Node.js projects?",
+        "exp": "Static typing allows catching errors at compile time, improves IDE autocompletion, simplifies refactoring, and increases code readability."
+      },
+      "pl": {
+        "q": "Jaka jest główna zaleta TypeScript dla dużych projektów Node.js?",
+        "exp": "Statyczne typowanie pozwala łapać błędy na etapie kompilacji, poprawia autouzupełnianie w IDE, upraszcza refaktoryzację i zwiększa czytelność kodu."
+      },
+      "answers": [
+        {
+          "uk": "TypeScript працює швидше за JavaScript",
+          "en": "TypeScript runs faster than JavaScript",
+          "pl": "TypeScript działa szybciej niż JavaScript",
+          "correct": false
+        },
+        {
+          "uk": "Статична типізація, помилки на етапі компіляції, кращий рефакторинг",
+          "en": "Static typing, compile-time errors, better refactoring",
+          "pl": "Statyczne typowanie, błędy na etapie kompilacji, lepszy refaktoring",
+          "correct": true
+        },
+        {
+          "uk": "TypeScript не потребує транспіляції",
+          "en": "TypeScript doesn't need transpilation",
+          "pl": "TypeScript nie wymaga transpilacji",
+          "correct": false
+        },
+        {
+          "uk": "TypeScript замінює всі npm-пакети",
+          "en": "TypeScript replaces all npm packages",
+          "pl": "TypeScript zastępuje wszystkie pakiety npm",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-adv-q18",
+      "order": 18,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Який принцип Twelve-Factor App відповідає за зберігання конфігурації?",
+        "exp": "Принцип Config вимагає зберігати конфігурацію у змінних середовища (process.env), а не в коді, для безпеки та гнучкості."
+      },
+      "en": {
+        "q": "Which Twelve-Factor App principle is responsible for configuration storage?",
+        "exp": "The Config principle requires storing configuration in environment variables (process.env), not in code, for security and flexibility."
+      },
+      "pl": {
+        "q": "Która zasada Twelve-Factor App odpowiada za przechowywanie konfiguracji?",
+        "exp": "Zasada Config wymaga przechowywania konfiguracji w zmiennych środowiskowych (process.env), nie w kodzie, dla bezpieczeństwa i elastyczności."
+      },
+      "answers": [
+        {
+          "uk": "Codebase",
+          "en": "Codebase",
+          "pl": "Codebase",
+          "correct": false
+        },
+        {
+          "uk": "Config — конфігурація через змінні середовища",
+          "en": "Config — configuration through environment variables",
+          "pl": "Config — konfiguracja przez zmienne środowiskowe",
+          "correct": true
+        },
+        {
+          "uk": "Logs",
+          "en": "Logs",
+          "pl": "Logs",
+          "correct": false
+        },
+        {
+          "uk": "Dependencies",
+          "en": "Dependencies",
+          "pl": "Dependencies",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-adv-q19",
+      "order": 19,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що означає принцип Disposability у Twelve-Factor App?",
+        "exp": "Disposability означає швидкий старт та graceful shutdown застосунку — процес має коректно завершувати активні запити та з'єднання перед зупинкою."
+      },
+      "en": {
+        "q": "What does the Disposability principle mean in Twelve-Factor App?",
+        "exp": "Disposability means fast startup and graceful shutdown — the process should correctly complete active requests and connections before stopping."
+      },
+      "pl": {
+        "q": "Co oznacza zasada Disposability w Twelve-Factor App?",
+        "exp": "Disposability oznacza szybki start i graceful shutdown — proces powinien poprawnie zakończyć aktywne żądania i połączenia przed zatrzymaniem."
+      },
+      "answers": [
+        {
+          "uk": "Код має бути одноразовим і видалятися після використання",
+          "en": "Code should be disposable and deleted after use",
+          "pl": "Kod powinien być jednorazowy i usuwany po użyciu",
+          "correct": false
+        },
+        {
+          "uk": "Швидкий старт та graceful shutdown з коректним завершенням запитів",
+          "en": "Fast startup and graceful shutdown with proper request completion",
+          "pl": "Szybki start i graceful shutdown z poprawnym zakończeniem żądań",
+          "correct": true
+        },
+        {
+          "uk": "Використання тимчасових файлів",
+          "en": "Using temporary files",
+          "pl": "Używanie plików tymczasowych",
+          "correct": false
+        },
+        {
+          "uk": "Автоматичне видалення логів",
+          "en": "Automatic log deletion",
+          "pl": "Automatyczne usuwanie logów",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "node-adv-q20",
+      "order": 20,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Як реалізувати graceful shutdown у Node.js застосунку?",
+        "exp": "Слухати сигнали SIGTERM/SIGINT, зупинити прийом нових з'єднань, дочекатися завершення активних запитів, закрити з'єднання з БД і вийти."
+      },
+      "en": {
+        "q": "How to implement graceful shutdown in a Node.js application?",
+        "exp": "Listen for SIGTERM/SIGINT signals, stop accepting new connections, wait for active requests to complete, close DB connections, and exit."
+      },
+      "pl": {
+        "q": "Jak zaimplementować graceful shutdown w aplikacji Node.js?",
+        "exp": "Nasłuchiwać sygnałów SIGTERM/SIGINT, przestać przyjmować nowe połączenia, poczekać na zakończenie aktywnych żądań, zamknąć połączenia z BD i wyjść."
+      },
+      "answers": [
+        {
+          "uk": "Просто викликати process.exit(0)",
+          "en": "Just call process.exit(0)",
+          "pl": "Po prostu wywołać process.exit(0)",
+          "correct": false
+        },
+        {
+          "uk": "Слухати SIGTERM/SIGINT, завершити активні запити, закрити з'єднання з БД",
+          "en": "Listen for SIGTERM/SIGINT, complete active requests, close DB connections",
+          "pl": "Nasłuchiwać SIGTERM/SIGINT, zakończyć aktywne żądania, zamknąć połączenia z BD",
+          "correct": true
+        },
+        {
+          "uk": "Перезапустити сервер автоматично",
+          "en": "Restart the server automatically",
+          "pl": "Zrestartować serwer automatycznie",
+          "correct": false
+        },
+        {
+          "uk": "Зберегти стан у файл",
+          "en": "Save state to a file",
+          "pl": "Zapisać stan do pliku",
+          "correct": false
+        }
+      ]
+    }
+  ]
+}

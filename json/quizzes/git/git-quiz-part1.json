@@ -1,0 +1,434 @@
+{
+  "questions": [
+    {
+      "id": "git-q01",
+      "order": 1,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Що таке Git?",
+        "exp": "Git — це розподілена система контролю версій, яка дозволяє відстежувати зміни у коді, працювати в гілках та співпрацювати з командою."
+      },
+      "en": {
+        "q": "What is Git?",
+        "exp": "Git is a distributed version control system that allows you to track changes in code, work in branches, and collaborate with a team."
+      },
+      "pl": {
+        "q": "Czym jest Git?",
+        "exp": "Git to rozproszony system kontroli wersji, który pozwala śledzić zmiany w kodzie, pracować w gałęziach i współpracować z zespołem."
+      },
+      "answers": [
+        {
+          "uk": "Онлайн-сервіс для хостингу коду",
+          "en": "An online code hosting service",
+          "pl": "Usługa hostingu kodu online",
+          "correct": false
+        },
+        {
+          "uk": "Розподілена система контролю версій для відстеження змін у коді",
+          "en": "A distributed version control system for tracking code changes",
+          "pl": "Rozproszony system kontroli wersji do śledzenia zmian w kodzie",
+          "correct": true
+        },
+        {
+          "uk": "Текстовий редактор для програмістів",
+          "en": "A text editor for programmers",
+          "pl": "Edytor tekstu dla programistów",
+          "correct": false
+        },
+        {
+          "uk": "Мова програмування для веб-розробки",
+          "en": "A programming language for web development",
+          "pl": "Język programowania do tworzenia stron internetowych",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "git-q02",
+      "order": 2,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Яка різниця між Git і GitHub?",
+        "exp": "Git — це інструмент для контролю версій, а GitHub — онлайн-платформа для зберігання Git-репозиторіїв та командної співпраці."
+      },
+      "en": {
+        "q": "What is the difference between Git and GitHub?",
+        "exp": "Git is a version control tool, while GitHub is an online platform for storing Git repositories and team collaboration."
+      },
+      "pl": {
+        "q": "Jaka jest różnica między Git a GitHub?",
+        "exp": "Git to narzędzie do kontroli wersji, a GitHub to platforma online do przechowywania repozytoriów Git i współpracy zespołowej."
+      },
+      "answers": [
+        {
+          "uk": "Git і GitHub — це одне й те саме",
+          "en": "Git and GitHub are the same thing",
+          "pl": "Git i GitHub to to samo",
+          "correct": false
+        },
+        {
+          "uk": "GitHub — це новіша версія Git",
+          "en": "GitHub is a newer version of Git",
+          "pl": "GitHub to nowsza wersja Git",
+          "correct": false
+        },
+        {
+          "uk": "Git — це система контролю версій, GitHub — платформа для хостингу репозиторіїв",
+          "en": "Git is a version control system, GitHub is a platform for hosting repositories",
+          "pl": "Git to system kontroli wersji, GitHub to platforma do hostingu repozytoriów",
+          "correct": true
+        },
+        {
+          "uk": "GitHub працює лише локально, Git — у хмарі",
+          "en": "GitHub works only locally, Git works in the cloud",
+          "pl": "GitHub działa tylko lokalnie, Git działa w chmurze",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "git-q03",
+      "order": 3,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Що таке репозиторій (repository) у Git?",
+        "exp": "Репозиторій — це місце зберігання коду проєкту разом із повною історією змін, гілками та метаданими."
+      },
+      "en": {
+        "q": "What is a repository in Git?",
+        "exp": "A repository is a storage location for project code along with the complete history of changes, branches, and metadata."
+      },
+      "pl": {
+        "q": "Czym jest repozytorium w Git?",
+        "exp": "Repozytorium to miejsce przechowywania kodu projektu wraz z pełną historią zmian, gałęziami i metadanymi."
+      },
+      "answers": [
+        {
+          "uk": "Тимчасовий файл для зберігання змін",
+          "en": "A temporary file for storing changes",
+          "pl": "Tymczasowy plik do przechowywania zmian",
+          "correct": false
+        },
+        {
+          "uk": "Місце зберігання коду та історії змін проєкту",
+          "en": "A storage location for code and project change history",
+          "pl": "Miejsce przechowywania kodu i historii zmian projektu",
+          "correct": true
+        },
+        {
+          "uk": "Онлайн-сервіс для обміну повідомленнями",
+          "en": "An online messaging service",
+          "pl": "Usługa do wymiany wiadomości online",
+          "correct": false
+        },
+        {
+          "uk": "Інструмент для компіляції коду",
+          "en": "A code compilation tool",
+          "pl": "Narzędzie do kompilacji kodu",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "git-q04",
+      "order": 4,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Що таке коміт (commit) у Git?",
+        "exp": "Коміт — це збереження знімка змін у репозиторії разом із повідомленням, автором та унікальним SHA-1 хешем."
+      },
+      "en": {
+        "q": "What is a commit in Git?",
+        "exp": "A commit is a saved snapshot of changes in the repository along with a message, author, and unique SHA-1 hash."
+      },
+      "pl": {
+        "q": "Czym jest commit w Git?",
+        "exp": "Commit to zapisana migawka zmian w repozytorium wraz z wiadomością, autorem i unikalnym hashem SHA-1."
+      },
+      "answers": [
+        {
+          "uk": "Команда для видалення файлів",
+          "en": "A command to delete files",
+          "pl": "Polecenie do usuwania plików",
+          "correct": false
+        },
+        {
+          "uk": "Збереження знімка змін у репозиторії з повідомленням та унікальним ідентифікатором",
+          "en": "Saving a snapshot of changes in the repository with a message and unique identifier",
+          "pl": "Zapisanie migawki zmian w repozytorium z wiadomością i unikalnym identyfikatorem",
+          "correct": true
+        },
+        {
+          "uk": "Створення нової гілки",
+          "en": "Creating a new branch",
+          "pl": "Tworzenie nowej gałęzi",
+          "correct": false
+        },
+        {
+          "uk": "Відправлення коду на сервер",
+          "en": "Sending code to a server",
+          "pl": "Wysyłanie kodu na serwer",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "git-q05",
+      "order": 5,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Яка роль staging area (індексу) у Git?",
+        "exp": "Staging area — це проміжна область, де ви готуєте зміни до коміту, обираючи, які файли включити в наступний коміт."
+      },
+      "en": {
+        "q": "What is the role of the staging area (index) in Git?",
+        "exp": "The staging area is an intermediate area where you prepare changes for a commit, selecting which files to include in the next commit."
+      },
+      "pl": {
+        "q": "Jaka jest rola staging area (indeksu) w Git?",
+        "exp": "Staging area to pośredni obszar, w którym przygotowujesz zmiany do commita, wybierając które pliki uwzględnić w następnym commicie."
+      },
+      "answers": [
+        {
+          "uk": "Зберігає резервні копії файлів",
+          "en": "Stores backup copies of files",
+          "pl": "Przechowuje kopie zapasowe plików",
+          "correct": false
+        },
+        {
+          "uk": "Проміжна область для підготовки змін до коміту",
+          "en": "An intermediate area for preparing changes for a commit",
+          "pl": "Pośredni obszar do przygotowania zmian do commita",
+          "correct": true
+        },
+        {
+          "uk": "Місце для зберігання видалених файлів",
+          "en": "A place for storing deleted files",
+          "pl": "Miejsce do przechowywania usuniętych plików",
+          "correct": false
+        },
+        {
+          "uk": "Область для автоматичного злиття гілок",
+          "en": "An area for automatic branch merging",
+          "pl": "Obszar do automatycznego łączenia gałęzi",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "git-q06",
+      "order": 6,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Що таке гілка (branch) у Git?",
+        "exp": "Гілка — це окрема лінія розробки, яка дозволяє працювати над новими функціями або виправленнями, не зачіпаючи основний код."
+      },
+      "en": {
+        "q": "What is a branch in Git?",
+        "exp": "A branch is a separate line of development that allows you to work on new features or fixes without affecting the main code."
+      },
+      "pl": {
+        "q": "Czym jest gałąź (branch) w Git?",
+        "exp": "Gałąź to oddzielna linia rozwoju, która pozwala pracować nad nowymi funkcjami lub poprawkami bez wpływu na główny kod."
+      },
+      "answers": [
+        {
+          "uk": "Копія репозиторію на віддаленому сервері",
+          "en": "A copy of the repository on a remote server",
+          "pl": "Kopia repozytorium na zdalnym serwerze",
+          "correct": false
+        },
+        {
+          "uk": "Окрема лінія розробки для паралельної роботи над кодом",
+          "en": "A separate line of development for parallel work on code",
+          "pl": "Oddzielna linia rozwoju do równoległej pracy nad kodem",
+          "correct": true
+        },
+        {
+          "uk": "Інструмент для видалення історії комітів",
+          "en": "A tool for deleting commit history",
+          "pl": "Narzędzie do usuwania historii commitów",
+          "correct": false
+        },
+        {
+          "uk": "Спосіб шифрування коду",
+          "en": "A method of encrypting code",
+          "pl": "Metoda szyfrowania kodu",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "git-q07",
+      "order": 7,
+      "difficulty": "medium",
+      "uk": {
+        "q": "Що таке HEAD у Git?",
+        "exp": "HEAD — це вказівник на поточний коміт, з яким ви працюєте. Зазвичай він вказує на гілку, а гілка — на останній коміт."
+      },
+      "en": {
+        "q": "What is HEAD in Git?",
+        "exp": "HEAD is a pointer to the current commit you are working with. Usually, it points to a branch, and the branch points to the latest commit."
+      },
+      "pl": {
+        "q": "Czym jest HEAD w Git?",
+        "exp": "HEAD to wskaźnik na bieżący commit, z którym pracujesz. Zwykle wskazuje na gałąź, a gałąź wskazuje na ostatni commit."
+      },
+      "answers": [
+        {
+          "uk": "Назва головної гілки репозиторію",
+          "en": "The name of the main branch of the repository",
+          "pl": "Nazwa głównej gałęzi repozytorium",
+          "correct": false
+        },
+        {
+          "uk": "Вказівник на поточний коміт, з яким ви працюєте",
+          "en": "A pointer to the current commit you are working with",
+          "pl": "Wskaźnik na bieżący commit, z którym pracujesz",
+          "correct": true
+        },
+        {
+          "uk": "Перший коміт у репозиторії",
+          "en": "The first commit in the repository",
+          "pl": "Pierwszy commit w repozytorium",
+          "correct": false
+        },
+        {
+          "uk": "Команда для перегляду історії",
+          "en": "A command for viewing history",
+          "pl": "Polecenie do przeglądania historii",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "git-q08",
+      "order": 8,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Яка команда створює новий локальний репозиторій Git?",
+        "exp": "Команда git init створює приховану папку .git у поточному каталозі, перетворюючи його на Git-репозиторій."
+      },
+      "en": {
+        "q": "Which command creates a new local Git repository?",
+        "exp": "The git init command creates a hidden .git folder in the current directory, turning it into a Git repository."
+      },
+      "pl": {
+        "q": "Które polecenie tworzy nowe lokalne repozytorium Git?",
+        "exp": "Polecenie git init tworzy ukryty folder .git w bieżącym katalogu, przekształcając go w repozytorium Git."
+      },
+      "answers": [
+        {
+          "uk": "git create",
+          "en": "git create",
+          "pl": "git create",
+          "correct": false
+        },
+        {
+          "uk": "git new",
+          "en": "git new",
+          "pl": "git new",
+          "correct": false
+        },
+        {
+          "uk": "git init",
+          "en": "git init",
+          "pl": "git init",
+          "correct": true
+        },
+        {
+          "uk": "git start",
+          "en": "git start",
+          "pl": "git start",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "git-q09",
+      "order": 9,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Що робить команда git clone?",
+        "exp": "git clone створює повну копію віддаленого репозиторію на вашому комп'ютері, включаючи всі файли, історію та гілки."
+      },
+      "en": {
+        "q": "What does the git clone command do?",
+        "exp": "git clone creates a complete copy of a remote repository on your computer, including all files, history, and branches."
+      },
+      "pl": {
+        "q": "Co robi polecenie git clone?",
+        "exp": "git clone tworzy pełną kopię zdalnego repozytorium na twoim komputerze, włącznie ze wszystkimi plikami, historią i gałęziami."
+      },
+      "answers": [
+        {
+          "uk": "Створює нову гілку",
+          "en": "Creates a new branch",
+          "pl": "Tworzy nową gałąź",
+          "correct": false
+        },
+        {
+          "uk": "Створює повну копію віддаленого репозиторію локально",
+          "en": "Creates a complete copy of a remote repository locally",
+          "pl": "Tworzy pełną kopię zdalnego repozytorium lokalnie",
+          "correct": true
+        },
+        {
+          "uk": "Видаляє локальний репозиторій",
+          "en": "Deletes the local repository",
+          "pl": "Usuwa lokalne repozytorium",
+          "correct": false
+        },
+        {
+          "uk": "Об'єднує дві гілки",
+          "en": "Merges two branches",
+          "pl": "Łączy dwie gałęzie",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "git-q10",
+      "order": 10,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Що показує команда git status?",
+        "exp": "git status показує поточний стан робочого каталогу: змінені файли, файли в staging area та файли, які не відстежуються."
+      },
+      "en": {
+        "q": "What does the git status command show?",
+        "exp": "git status shows the current state of the working directory: modified files, files in the staging area, and untracked files."
+      },
+      "pl": {
+        "q": "Co pokazuje polecenie git status?",
+        "exp": "git status pokazuje bieżący stan katalogu roboczego: zmienione pliki, pliki w staging area i nieśledzone pliki."
+      },
+      "answers": [
+        {
+          "uk": "Історію всіх комітів",
+          "en": "The history of all commits",
+          "pl": "Historię wszystkich commitów",
+          "correct": false
+        },
+        {
+          "uk": "Список усіх гілок",
+          "en": "A list of all branches",
+          "pl": "Listę wszystkich gałęzi",
+          "correct": false
+        },
+        {
+          "uk": "Поточний стан робочого каталогу та staging area",
+          "en": "The current state of the working directory and staging area",
+          "pl": "Bieżący stan katalogu roboczego i staging area",
+          "correct": true
+        },
+        {
+          "uk": "Налаштування конфігурації Git",
+          "en": "Git configuration settings",
+          "pl": "Ustawienia konfiguracji Git",
+          "correct": false
+        }
+      ]
+    }
+  ]
+}
