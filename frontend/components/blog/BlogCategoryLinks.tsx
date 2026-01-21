@@ -39,6 +39,17 @@ export function BlogCategoryLinks({
 
   return (
     <nav className={cn('flex items-center gap-1', className)} aria-label="Blog categories">
+      <Link
+        href="/"
+        onClick={onNavigate}
+        aria-current={pathname === '/' ? 'page' : undefined}
+        className={cn(
+          baseLink,
+          pathname === '/' ? 'bg-muted text-foreground' : 'text-muted-foreground'
+        )}
+      >
+        Home
+      </Link>
       {items.map(category => {
         const href = `/blog/category/${category.slug}`;
         const isActive = pathname === href;
@@ -57,17 +68,6 @@ export function BlogCategoryLinks({
           </Link>
         );
       })}
-      <Link
-        href="/"
-        onClick={onNavigate}
-        aria-current={pathname === '/' ? 'page' : undefined}
-        className={cn(
-          baseLink,
-          pathname === '/' ? 'bg-muted text-foreground' : 'text-muted-foreground'
-        )}
-      >
-        Home
-      </Link>
     </nav>
   );
 }
