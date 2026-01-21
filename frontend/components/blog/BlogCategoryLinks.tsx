@@ -28,7 +28,12 @@ export function BlogCategoryLinks({
 
   // Helper function to get translated category label
   const getCategoryLabel = (categoryName: string): string => {
-    const key = categoryName.toLowerCase() as 'tech' | 'career' | 'insights' | 'news' | 'growth';
+    const key = categoryName.toLowerCase() as
+      | 'tech'
+      | 'career'
+      | 'insights'
+      | 'news'
+      | 'growth';
     const categoryTranslations: Record<string, string> = {
       tech: t('categories.tech'),
       career: t('categories.career'),
@@ -54,7 +59,23 @@ export function BlogCategoryLinks({
     .filter(category => category.slug);
 
   return (
-    <nav className={cn('flex items-center gap-1', className)} aria-label="Blog categories">
+    <nav
+      className={cn('flex items-center gap-1', className)}
+      aria-label="Blog categories"
+    >
+      <Link
+        href="/"
+        onClick={onNavigate}
+        aria-current={pathname === '/' ? 'page' : undefined}
+        className={cn(
+          baseLink,
+          pathname === '/'
+            ? 'bg-muted text-foreground'
+            : 'text-muted-foreground'
+        )}
+      >
+        {tNav('home')}
+      </Link>
       {items.map(category => {
         const href = `/blog/category/${category.slug}`;
         const isActive = pathname === href;
@@ -73,17 +94,6 @@ export function BlogCategoryLinks({
           </Link>
         );
       })}
-      <Link
-        href="/"
-        onClick={onNavigate}
-        aria-current={pathname === '/' ? 'page' : undefined}
-        className={cn(
-          baseLink,
-          pathname === '/' ? 'bg-muted text-foreground' : 'text-muted-foreground'
-        )}
-      >
-        {tNav('home')}
-      </Link>
     </nav>
   );
 }
