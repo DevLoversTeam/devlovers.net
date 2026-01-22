@@ -67,11 +67,11 @@ function TopicCard({ topic, index }: { topic: Topic, index: number }) {
                         
                         <div className="flex justify-between items-start mb-6">
                             <div className="relative w-10 h-10 grayscale group-hover:grayscale-0 transition-all duration-300 group-hover:scale-110">
-                                <Image 
-                                    src={topic.icon} 
+                                <Image
+                                    src={topic.icon}
                                     alt={topic.name}
                                     fill
-                                    className={`object-contain ${topic.className || ''}`}
+                                    className="object-contain"
                                 />
                             </div>
                             <ArrowUpRight size={16} className="text-neutral-300 dark:text-neutral-700 group-hover:text-black dark:group-hover:text-white transition-colors" />
