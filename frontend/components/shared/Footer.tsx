@@ -46,7 +46,10 @@ export default function Footer() {
           <div className="space-y-3">
             <p className="text-sm text-slate-700 dark:text-slate-200">
               {t('builtWith')}{' '}
-              <span className="font-semibold text-blue-600 dark:text-blue-400">
+              <span
+                className="font-semibold "
+                style={{ color: 'var(--accent-primary)' }}
+              >
                 DevLovers
               </span>{' '}
               {t('byCommunity')}
@@ -55,14 +58,14 @@ export default function Footer() {
             <p className="text-sm text-slate-500 dark:text-slate-400">
               <Link
                 href="/privacy-policy"
-                className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                className="transition-colors hover:[color:var(--accent-hover)]"
               >
                 {t('privacyPolicy')}
               </Link>
               <span className="px-2 opacity-60">|</span>
               <Link
                 href="/terms-of-service"
-                className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                className="transition-colors hover:[color:var(--accent-hover)]"
               >
                 {t('termsOfService')}
               </Link>
@@ -94,11 +97,12 @@ export default function Footer() {
                       bg-white/40
                       text-slate-600
                       transition-all
-                      hover:-translate-y-0.5 hover:text-blue-600 hover:border-blue-300/60
+                      hover:-translate-y-0.5
                       dark:border-neutral-800/60
                       dark:bg-neutral-950/30
                       dark:text-slate-300
-                      dark:hover:text-blue-400 dark:hover:border-blue-500/40
+                      [&:hover]:!text-[var(--accent-primary)]
+                      [&:hover]:!border-[var(--accent-primary)]
                     "
                   >
                     <Icon className="h-5 w-5" />
