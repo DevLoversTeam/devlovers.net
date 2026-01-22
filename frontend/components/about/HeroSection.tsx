@@ -15,7 +15,7 @@ export function HeroSection({ stats }: { stats?: PlatformStats }) {
   }
 
   return (
-    <DynamicGridBackground className="flex min-h-[calc(100svh)] items-center justify-center bg-gray-50 transition-colors duration-300 dark:bg-transparent pt-20 pb-10">
+    <DynamicGridBackground showStaticGrid className="flex min-h-[calc(100svh)] items-center justify-center bg-gray-50 transition-colors duration-300 dark:bg-transparent pt-20 pb-10">
       <div className="relative z-10 grid w-full max-w-[1600px] grid-cols-1 items-center px-4 sm:px-6 lg:px-8 xl:grid-cols-12 xl:gap-8 h-full">
         
         <div className="hidden h-full flex-col justify-center gap-24 xl:col-span-3 xl:flex">

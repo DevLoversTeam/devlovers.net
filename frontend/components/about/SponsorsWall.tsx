@@ -11,9 +11,10 @@ interface SponsorsWallProps {
   sponsors?: Sponsor[]
 }
 
+const MAX_SPONSORS = 10
+
 export function SponsorsWall({ sponsors = [] }: SponsorsWallProps) {
-  
-  const displaySponsors = sponsors
+  const displaySponsors = sponsors.slice(0, MAX_SPONSORS)
 
   return (
     <div className="w-full mt-16 flex flex-col items-center">
