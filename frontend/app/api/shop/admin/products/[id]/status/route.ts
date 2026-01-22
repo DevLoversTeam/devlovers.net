@@ -12,7 +12,9 @@ import { requireAdminCsrf } from '@/lib/security/admin-csrf';
 import { guardBrowserSameOrigin } from '@/lib/security/origin';
 
 import { logError, logWarn } from '@/lib/logging';
+import { ProductNotFoundError } from '@/lib/errors/products';
 import { toggleProductStatus } from '@/lib/services/products';
+
 export const runtime = 'nodejs';
 
 const productIdParamSchema = z.object({ id: z.string().uuid() });
@@ -122,7 +124,7 @@ export async function PATCH(
       return noStoreJson({ code: error.code }, { status: 403 });
     }
 
-    if (error instanceof Error && error.message === 'PRODUCT_NOT_FOUND') {
+    if (error instanceof ProductNotFoundError) {
       logWarn('admin_product_status_not_found', {
         ...baseMeta,
         code: 'PRODUCT_NOT_FOUND',

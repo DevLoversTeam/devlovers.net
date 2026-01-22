@@ -8,7 +8,12 @@ import { AdminProductDeleteButton } from '@/components/shop/admin/admin-product-
 import { AdminProductStatusToggle } from '@/components/shop/admin/admin-product-status-toggle';
 import { AdminPagination } from '@/components/shop/admin/admin-pagination';
 import { db } from '@/db';
-import { products, productPrices } from '@/db/schema';
+import {
+  inventoryMoves,
+  orderItems,
+  products,
+  productPrices,
+} from '@/db/schema';
 import { formatMoney, resolveCurrencyFromLocale } from '@/lib/shop/currency';
 import { parsePage } from '@/lib/pagination';
 
@@ -37,6 +42,19 @@ export default async function AdminProductsPage({
   const offset = (page - 1) * PAGE_SIZE;
 
   const displayCurrency = resolveCurrencyFromLocale(locale);
+  const isInUseSql = sql<boolean>`(
+  exists (
+    select 1
+    from ${orderItems} oi
+    where oi.product_id = ${products.id}
+  )
+  OR
+  exists (
+    select 1
+    from ${inventoryMoves} im
+    where im.product_id = ${products.id}
+  )
+)`;
 
   const all = await db
     .select({
@@ -51,21 +69,7 @@ export default async function AdminProductsPage({
       isFeatured: products.isFeatured,
       createdAt: products.createdAt,
       priceMinor: productPrices.priceMinor,
-      isInUse: sql<boolean>`
-        (
-          exists (
-            select 1
-            from order_items oi
-            where oi.product_id = ${products.id}
-          )
-          OR
-          exists (
-            select 1
-            from inventory_moves im
-            where im.product_id = ${products.id}
-          )
-        )
-      `,
+      isInUse: isInUseSql,
     })
     .from(products)
     .leftJoin(

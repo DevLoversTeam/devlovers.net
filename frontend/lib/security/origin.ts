@@ -20,7 +20,15 @@ function buildErrorResponse(code: string, message: string) {
 }
 
 export function normalizeOrigin(input: string): string {
-  return input.trim().replace(/\/+$/, '');
+  const trimmed = input.trim().replace(/\/+$/, '');
+
+  try {
+    // If the input is a valid URL (incl. scheme), normalize to canonical origin.
+    return new URL(trimmed).origin;
+  } catch {
+    // Backward-compatible fallback for values like "example.com" (no scheme).
+    return trimmed;
+  }
 }
 
 export function getAllowedOrigins(): string[] {

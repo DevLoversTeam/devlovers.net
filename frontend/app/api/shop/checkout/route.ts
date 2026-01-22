@@ -224,7 +224,10 @@ export async function POST(request: NextRequest) {
       idempotencyKey.format?.()
     );
   }
+  // For observability: shorten to avoid oversized structured logs.
+  // Never used as an idempotency key; the full header value remains canonical.
   const idempotencyKeyShort = idempotencyKey.slice(0, 32);
+
   const meta = {
     ...baseMeta,
     idempotencyKey: idempotencyKeyShort,

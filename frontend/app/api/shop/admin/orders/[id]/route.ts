@@ -7,7 +7,6 @@ import {
   AdminUnauthorizedError,
   requireAdminApi,
 } from '@/lib/auth/admin';
-import { requireAdminCsrf } from '@/lib/security/admin-csrf';
 
 import { getAdminOrderDetail } from '@/db/queries/shop/admin-orders';
 
@@ -46,17 +45,8 @@ export async function GET(
   try {
     await requireAdminApi(request);
 
-    const csrfRes = requireAdminCsrf(request, 'admin:orders:read');
-    if (csrfRes) {
-      logWarn('admin_order_detail_csrf_rejected', {
-        ...baseMeta,
-        code: 'CSRF_REJECTED',
-        orderId: orderIdForLog,
-        durationMs: Date.now() - startedAtMs,
-      });
-      csrfRes.headers.set('Cache-Control', 'no-store');
-      return csrfRes;
-    }
+    // CSRF is enforced only for state-changing admin routes.
+    // This endpoint is read-only (GET), so we intentionally do not require CSRF.
 
     const rawParams = await context.params;
     const parsed = orderIdParamSchema.safeParse(rawParams);

@@ -60,12 +60,17 @@ function busyRetry() {
   return res;
 }
 
-export function OPTIONS() {
-  const res = noStoreJson(
+export function OPTIONS(request: NextRequest) {
+  const blocked = guardNonBrowserOnly(request);
+  if (blocked) {
+    blocked.headers.set('Cache-Control', 'no-store');
+    return blocked;
+  }
+
+  return noStoreJson(
     { error: 'METHOD_NOT_ALLOWED', code: 'METHOD_NOT_ALLOWED' },
     { status: 405, headers: { Allow: 'POST' } }
   );
-  return res;
 }
 
 async function tryClaimStripeEvent(
