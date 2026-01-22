@@ -135,6 +135,12 @@
   }
 }
 
+.qa-accordion-item:hover,
+.qa-accordion-item:focus-within,
+.qa-accordion-item[data-state='open'] {
+  border-color: var(--qa-accent);
+}
+
 .no-select {
   -webkit-user-select: none; /* Safari */
   -moz-user-select: none; /* Firefox */
@@ -161,6 +167,23 @@
   50% {
     opacity: 0.4;
     transform: scale(1.08);
+  }
+}
+
+@keyframes progress {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+@keyframes shrink {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
   }
 }
 
@@ -198,4 +221,33 @@
   /* keep borders closer to previous shop look, derived (no hex) */
   --border: color-mix(in oklab, var(--foreground) 18%, var(--background));
   --input: color-mix(in oklab, var(--foreground) 18%, var(--background));
+}
+
+/* about-community */
+@keyframes scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-100%); }
+}
+
+.animate-scroll {
+  animation: scroll 40s linear infinite;
+}
+
+.pause-on-hover:hover .animate-scroll {
+  animation-play-state: paused;
+}
+
+/* Vertical Marquee Animation */
+@keyframes marquee-vertical {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-50%); } /* Рухаємось на 50%, бо контент дубльовано */
+}
+
+.animate-marquee-vertical {
+  animation: marquee-vertical var(--duration, 40s) linear infinite;
+}
+
+/* Зупинка при наведенні мишкою, щоб роздивитися */
+.hover\:pause:hover .animate-marquee-vertical {
+  animation-play-state: paused;
 }

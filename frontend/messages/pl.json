@@ -9,6 +9,16 @@
     "close": "Zamknij",
     "submit": "Wyślij"
   },
+  "aria": {
+    "primaryNav": "Nawigacja główna",
+    "dashboard": "Panel",
+    "shopAdmin": "Panel administracyjny sklepu",
+    "blogCategories": "Kategorie bloga",
+    "searchBlog": "Szukaj w blogu",
+    "toggleMenu": "Przełącz menu",
+    "closeMenu": "Zamknij menu",
+    "logout": "Wyloguj się"
+  },
   "navigation": {
     "home": "Strona główna",
     "topics": "Tematy",
@@ -18,6 +28,7 @@
     "about": "O nas",
     "contacts": "Kontakt",
     "blog": "Blog",
+    "shop": "Sklep",
     "login": "Zaloguj się",
     "logout": "Wyloguj się",
     "signup": "Zarejestruj się",
@@ -31,6 +42,8 @@
   },
   "qa": {
     "title": "Pytania i Odpowiedzi",
+    "pretitle": "Rozmowa",
+    "subtitle": "Przeglądaj wybrane pytania według kategorii",
     "searchPlaceholder": "Szukaj pytań...",
     "clearSearch": "Wyczyść wyszukiwanie",
     "noResults": "Nic nie znaleziono dla \"{query}\"",
@@ -39,14 +52,152 @@
     "metaDescription": "Pytania i odpowiedzi do przygotowania do rozmów kwalifikacyjnych",
     "frontend": "Frontend",
     "backend": "Backend",
-    "fullstack": "Full-stack"
+    "fullstack": "Full-stack",
+    "pagination": {
+      "label": "Stronicowanie",
+      "previous": "Poprzednia",
+      "next": "Następna",
+      "previousPage": "Poprzednia strona",
+      "nextPage": "Następna strona",
+      "page": "Strona {page}"
+    }
+  },
+  "quiz": {
+    "metaTitle": "Quizy | DevLovers",
+    "metaDescription": "Sprawdź swoją wiedzę dzięki interaktywnym quizom",
+    "page": {
+      "noQuestions": "Brak dostępnych pytań dla tego quizu",
+      "questionsLabel": "Pytania",
+      "timeLabel": "Czas",
+      "minutes": "min"
+    },
+    "list": {
+      "title": "Quizy",
+      "practice": "Ćwicz",
+      "subtitle": "Wybierz quiz, aby sprawdzić swoją wiedzę",
+      "noQuizzes": "Brak dostępnych quizów. Sprawdź wkrótce."
+    },
+    "rules": {
+      "title": "Zasady Quizu",
+      "general": {
+        "title": "Ogólne Zasady",
+        "description": "Odpowiadaj uczciwie. Każde pytanie ma tylko jedną poprawną odpowiedź."
+      },
+      "forbidden": {
+        "title": "Zabronione",
+        "copyPaste": "Kopiowanie i wklejanie tekstu",
+        "contextMenu": "Używanie menu kontekstowego (prawy przycisk myszy)",
+        "tabSwitch": "Przełączanie na inne karty lub programy",
+        "externalSources": "Korzystanie z zewnętrznych źródeł informacji"
+      },
+      "control": {
+        "title": "System Kontroli",
+        "description": "Naruszenia zasad są wykrywane automatycznie. Przy 3+ naruszeniach wynik nie będzie liczony do rankingu."
+      },
+      "time": {
+        "title": "Wymagania Czasowe",
+        "description": "Minimalny czas: {seconds} sekund (3 sekundy na pytanie). Wyniki zbyt szybkie nie będą liczone."
+      },
+      "startButton": "Rozpocznij Quiz"
+    },
+    "question": {
+      "correct": "Poprawnie",
+      "incorrect": "Niepoprawnie",
+      "explanationLabel": "Wyjaśnienie:",
+      "recommendation": {
+        "title": "Rekomendacja",
+        "description": "Zalecamy przejrzenie tego tematu po zakończeniu quizu"
+      },
+      "loading": "Ładowanie...",
+      "nextButton": "Dalej",
+      "verifyRetry": "Ponawianie weryfikacji odpowiedzi...",
+      "verifyFailed": "Nie udało się zweryfikować odpowiedzi. Spróbuj ponownie."
+    },
+    "progress": {
+      "label": "Pytanie {current} / {total}"
+    },
+    "timer": {
+      "label": "Pozostały czas:",
+      "almostDone": "Czas prawie minął!",
+      "hurryUp": "Pośpiesz się!"
+    },
+    "result": {
+      "correctAnswers": "poprawnych odpowiedzi",
+      "timeUp": {
+        "title": "Czas Minął",
+        "message": "Nie zdążyłeś odpowiedzieć na żadne pytanie. Spróbuj ponownie i lepiej zarządzaj czasem"
+      },
+      "allWrong": {
+        "title": "Wszystkie Odpowiedzi Niepoprawne",
+        "message": "Zalecamy dokładne przestudiowanie materiału przed kolejną próbą"
+      },
+      "needPractice": {
+        "title": "Potrzebujesz Więcej Praktyki",
+        "message": "Zalecamy poświęcenie więcej czasu na teorię i praktykę"
+      },
+      "goodJob": {
+        "title": "Dobra Robota!",
+        "message": "Przejrzyj trudne tematy i spróbuj ponownie"
+      },
+      "excellent": {
+        "title": "Doskonała Praca!",
+        "message": "Świetnie opanowałeś materiał"
+      },
+      "incomplete": {
+        "title": "Czas minął",
+        "message": "Odpowiedziałeś na {answeredCount} z {total} pytań. Wynik nie został zaliczony."
+      },
+      "violations": "Quiz zakończony z naruszeniami ({count} naruszeń). Wynik nie został zaliczony do rankingu.",
+      "pointsAwarded": "+{points} punktów dodano do rankingu",
+      "noPointsAwarded": "Nie przyznano punktów (wynik nie uległ poprawie)",
+      "guestMessage": "Aby zapisać swój wynik i pojawić się w rankingu, zaloguj się lub zarejestruj",
+      "loginButton": "Zaloguj się",
+      "signupButton": "Zarejestruj się",
+      "retryButton": "Spróbuj Ponownie",
+      "backButton": "Wróć do Tematów"
+    },
+    "card": {
+      "uncategorized": "Nieskategoryzowane",
+      "completed": "✓ Ukończono",
+      "questions": "pytań",
+      "min": "min",
+      "best": "Najlepszy:",
+      "attempt": "próba",
+      "attempts": "próby",
+      "retake": "Powtórz Quiz",
+      "start": "Rozpocznij Quiz"
+    },
+    "section": {
+      "noQuizzes": "Brak quizów w tej kategorii."
+    },
+    "exitModal": {
+      "title": "Wyjść z Quizu?",
+      "message": "Twój postęp nie zostanie zapisany.",
+      "confirm": "Wyjdź",
+      "cancel": "Kontynuuj"
+    },
+    "antiCheat": {
+      "copy": "Kopiowanie jest zabronione podczas quizu",
+      "paste": "Wklejanie jest zabronione podczas quizu",
+      "contextMenu": "Menu kontekstowe jest zabronione podczas quizu",
+      "tabSwitch": "Wykryto przełączenie karty"
+    }
   },
   "blog": {
     "title": "Wszystkie Wpisy na Blogu",
     "subtitle": "Poznaj najnowsze artykuły z Tech, News i Career Growth — trendy, idee i praktyczne wskazówki.",
     "metaTitle": "Blog | DevLovers",
     "metaDescription": "Odkryj najnowsze artykuły i spostrzeżenia",
+    "all": "Wszystkie",
+    "noMatches": "Brak wyników",
     "searchPlaceholder": "Szukaj...",
+    "categories": {
+      "tech": "Technologia",
+      "career": "Kariera",
+      "insights": "Spostrzeżenia",
+      "news": "Aktualności",
+      "growth": "Wzrost"
+    },
     "removeTag": "Usuń tag",
     "add": "Dodaj",
     "clear": "Wyczyść",
@@ -54,6 +205,7 @@
     "noPostsForTags": "Nie znaleziono wpisów dla wybranych tagów",
     "visitResource": "Odwiedź zasób",
     "readArticle": "Czytaj artykuł",
+    "readMore": "Czytaj dalej",
     "aboutAuthor": "O autorze",
     "author": "Autor",
     "removeAuthor": "Usuń autora",
@@ -153,9 +305,240 @@
   },
   "CookieBanner": {
     "title": "🍪 Dbamy o Twoją prywatność",
-    "description": "Używamy plików cookie, aby poprawić jakość przeglądania, wyświetlać spersonalizowane treści i analizować nasz ruch. Klikając „Zaakceptuj”, wyrażasz zgodę na używanie plików cookie. Przeczytaj naszą",
+    "description": "Używamy plików cookie, aby poprawić jakość przeglądania, wyświetlać spersonalizowane treści i analizować nasz ruch. Klikając „Zaakceptuj\", wyrażasz zgodę na używanie plików cookie. Przeczytaj naszą",
     "policyLink": "Politykę Prywatności",
     "accept": "Zaakceptuj",
     "decline": "Odrzuć"
+  },
+  "leaderboard": {
+    "title": "Ranking",
+    "subtitle": "Najlepsi uczestnicy wszech czasów. Rywalizuj, ucz się i zwyciężaj!",
+    "noResults": "Brak wyników",
+    "beFirst": "Bądź pierwszy, który ukończy quiz i zajmie pierwsze miejsce!",
+    "rank": "Miejsce",
+    "user": "Użytkownik",
+    "score": "Wynik",
+    "rising": "Wzrost",
+    "championsArena": "Arena Mistrzów",
+    "topThreeLabel": "Top 3 Liderów",
+    "pts": "pkt",
+    "tableCaption": "Tabela rankingowa pozostałych uczestników",
+    "you": "Ty"
+  },
+  "auth": {
+    "login": {
+      "title": "Zaloguj się",
+      "submit": "Zaloguj się",
+      "submitting": "Logowanie...",
+      "noAccount": "Nie masz konta?",
+      "signupLink": "Zarejestruj się",
+      "forgotPassword": "Zapomniałeś hasła?",
+      "errors": {
+        "invalidCredentials": "Nieprawidłowy email lub hasło",
+        "emailNotVerified": "Twój adres email nie został zweryfikowany. Sprawdź swoją skrzynkę.",
+        "networkError": "Błąd sieci. Sprawdź połączenie i spróbuj ponownie.",
+        "resendFailed": "Nie udało się ponownie wysłać emaila weryfikacyjnego. Spróbuj ponownie."
+      },
+      "resendVerification": "Wyślij ponownie email weryfikacyjny",
+      "verificationSent": "Email weryfikacyjny został wysłany na"
+    },
+    "signup": {
+      "title": "Rejestracja",
+      "submit": "Zarejestruj się",
+      "submitting": "Rejestrowanie...",
+      "hasAccount": "Masz już konto?",
+      "loginLink": "Zaloguj się",
+      "errors": {
+        "signupFailed": "Nie udało się zarejestrować. Spróbuj ponownie.",
+        "networkError": "Błąd sieci. Sprawdź połączenie i spróbuj ponownie."
+      },
+      "verificationSent": "Wysłaliśmy email weryfikacyjny na",
+      "checkInbox": "Sprawdź swoją skrzynkę i kliknij link weryfikacyjny, aby aktywować konto.",
+      "goToLogin": "Przejdź do logowania"
+    },
+    "forgotPassword": {
+      "title": "Resetowanie hasła",
+      "submit": "Wyślij link resetujący",
+      "submitting": "Wysyłanie...",
+      "errors": {
+        "sendFailed": "Nie udało się wysłać emaila resetującego. Spróbuj ponownie.",
+        "networkError": "Błąd sieci. Sprawdź połączenie."
+      },
+      "emailSent": "Wysłaliśmy link do resetowania hasła na",
+      "checkInbox": "Sprawdź swoją skrzynkę."
+    },
+    "resetPassword": {
+      "title": "Ustaw nowe hasło",
+      "submit": "Zaktualizuj hasło",
+      "submitting": "Aktualizowanie...",
+      "errors": {
+        "resetFailed": "Nie udało się zresetować hasła. Link może być nieprawidłowy lub wygasły.",
+        "networkError": "Błąd sieci. Spróbuj ponownie."
+      },
+      "success": "Twoje hasło zostało pomyślnie zaktualizowane."
+    },
+    "fields": {
+      "email": "Email",
+      "password": "Hasło",
+      "name": "Imię",
+      "showPassword": "Pokaż hasło",
+      "hidePassword": "Ukryj hasło",
+      "show": "Pokaż",
+      "hide": "Ukryj"
+    },
+    "divider": "lub"
+  },
+  "contacts": {
+    "metaTitle": "Kontakt | DevLovers",
+    "metaDescription": "Skontaktuj się z zespołem DevLovers w sprawie pytań, opinii lub współpracy.",
+    "title": "Kontakt",
+    "subtitle": "Chętnie usłyszymy od Ciebie!",
+    "email": "Email:",
+    "linkedin": "LinkedIn:",
+    "github": "GitHub:"
+  },
+  "dashboard": {
+    "metaTitle": "Panel | DevLovers",
+    "metaDescription": "Śledź swój postęp i wyniki quizów.",
+    "title": "Panel",
+    "subtitle": "Witaj z powrotem na swoim placu treningowym.",
+    "supportLink": "Wsparcie i opinie",
+    "profile": {
+      "defaultName": "Programista",
+      "defaultRole": "użytkownik",
+      "totalPoints": "Łączna liczba punktów",
+      "joined": "Dołączył"
+    },
+    "stats": {
+      "title": "Statystyki quizów",
+      "noActivity": "Gotowy na rozwój? Sprawdź się w nowym quizie.",
+      "startQuiz": "Rozpocznij quiz",
+      "attempts": "Próby",
+      "avgScore": "Średni wynik",
+      "continueLearning": "Kontynuuj naukę"
+    },
+    "quizSaved": {
+      "title": "Wynik quizu zapisany!",
+      "scored": "Zdobyłeś",
+      "pointsAwarded": "+{points} punktów dodano do rankingu",
+      "noPoints": "Nie przyznano punktów (wynik nie uległ poprawie)",
+      "viewLeaderboard": "Zobacz ranking",
+      "tryAgain": "Spróbuj ponownie"
+    }
+  },
+  "legal": {
+    "back": "Wróć",
+    "lastUpdated": "Ostatnia aktualizacja",
+    "contactEmail": "devlovers.net@gmail.com",
+    "privacy": {
+      "metaTitle": "Polityka Prywatności | DevLovers",
+      "metaDescription": "Dowiedz się, jak DevLovers gromadzi, wykorzystuje i chroni Twoje dane osobowe.",
+      "title": "Polityka Prywatności",
+      "whoWeAre": {
+        "title": "1. Kim jesteśmy",
+        "content": "DevLovers to platforma do przygotowań do rozmów kwalifikacyjnych w branży IT. Jeśli masz pytania dotyczące tej polityki, skontaktuj się z nami pod adresem"
+      },
+      "dataWeCollect": {
+        "title": "2. Jakie dane zbieramy",
+        "accountData": "Dane konta (do autoryzacji):",
+        "accountDataDesc": "email, nazwa użytkownika, identyfikatory uwierzytelniania i powiązane metadane bezpieczeństwa.",
+        "usageData": "Dane użytkowania:",
+        "usageDataDesc": "interakcje z quizami, wyniki, postępy i podstawowa telemetria potrzebna do ulepszania usługi.",
+        "technicalData": "Dane techniczne:",
+        "technicalDataDesc": "informacje o urządzeniu/przeglądarce, adres IP, logi i raporty o błędach."
+      },
+      "whyWeCollect": {
+        "title": "3. Dlaczego zbieramy dane",
+        "reason1": "Aby zapewnić i zabezpieczyć autoryzację i dostęp do konta.",
+        "reason2": "Aby prowadzić quizy, przechowywać wyniki i pokazywać postępy/rankingi.",
+        "reason3": "Aby poprawić wydajność, niezawodność i doświadczenie użytkownika."
+      },
+      "cookies": {
+        "title": "4. Pliki cookie i podobne technologie",
+        "content": "Możemy używać plików cookie/lokalnego magazynu, aby utrzymać Cię zalogowanego, przechowywać preferencje (np. motyw) i chronić usługę. Jeśli dodamy analityczne pliki cookie, zaktualizujemy tę sekcję."
+      },
+      "sharing": {
+        "title": "5. Udostępnianie danych",
+        "content": "Nie sprzedajemy danych osobowych. Możemy udostępniać ograniczone dane zaufanym dostawcom usług (np. hosting, baza danych, monitorowanie błędów) wyłącznie w celu obsługi DevLovers."
+      },
+      "retention": {
+        "title": "6. Przechowywanie danych",
+        "content": "Przechowujemy dane osobowe tylko tak długo, jak jest to potrzebne do celów opisanych powyżej lub jak wymaga tego prawo."
+      },
+      "rights": {
+        "title": "7. Twoje prawa",
+        "content": "W zależności od Twojej lokalizacji, możesz mieć prawo do dostępu, poprawiania, usuwania lub eksportowania swoich danych. Skontaktuj się z nami pod adresem"
+      },
+      "gdpr": {
+        "title": "8. Zgodność z RODO (użytkownicy z UE)",
+        "intro": "Jeśli znajdujesz się w Europejskim Obszarze Gospodarczym (EOG), masz dodatkowe prawa wynikające z Ogólnego Rozporządzenia o Ochronie Danych (RODO):",
+        "rightAccess": "Prawo dostępu:",
+        "rightAccessDesc": "Możesz poprosić o kopię swoich danych osobowych.",
+        "rightRectification": "Prawo do sprostowania:",
+        "rightRectificationDesc": "Możesz poprosić o poprawienie nieprawidłowych danych.",
+        "rightErasure": "Prawo do usunięcia:",
+        "rightErasureDesc": "Możesz poprosić o usunięcie swoich danych (\"prawo do bycia zapomnianym\").",
+        "rightRestriction": "Prawo do ograniczenia:",
+        "rightRestrictionDesc": "Możesz poprosić o ograniczone przetwarzanie swoich danych.",
+        "rightPortability": "Prawo do przenoszenia danych:",
+        "rightPortabilityDesc": "Możesz poprosić o swoje dane w formacie nadającym się do odczytu maszynowego.",
+        "rightObject": "Prawo do sprzeciwu:",
+        "rightObjectDesc": "Możesz sprzeciwić się przetwarzaniu opartemu na uzasadnionych interesach.",
+        "exerciseRights": "Aby skorzystać z tych praw, skontaktuj się z nami pod adresem",
+        "response": "Odpowiemy w ciągu 30 dni."
+      },
+      "changes": {
+        "title": "9. Zmiany w tej polityce",
+        "content": "Możemy aktualizować tę Politykę Prywatności. Najnowsza wersja będzie zawsze dostępna na tej stronie."
+      }
+    },
+    "terms": {
+      "metaTitle": "Warunki Świadczenia Usług | DevLovers",
+      "metaDescription": "Przeczytaj warunki korzystania z platformy DevLovers.",
+      "title": "Warunki Świadczenia Usług",
+      "acceptance": {
+        "title": "1. Akceptacja warunków",
+        "content": "Korzystając z DevLovers, zgadzasz się na niniejsze Warunki Świadczenia Usług i naszą Politykę Prywatności."
+      },
+      "accounts": {
+        "title": "2. Konta i autoryzacja",
+        "content": "Gdy autoryzacja jest włączona, możesz potrzebować konta, aby uzyskać dostęp do niektórych funkcji. Jesteś odpowiedzialny za zachowanie poufności swoich danych logowania i za całą aktywność na swoim koncie."
+      },
+      "features": {
+        "title": "3. Funkcje usługi",
+        "feature1": "Treści Q&A i materiały do przygotowań do rozmów kwalifikacyjnych",
+        "feature2": "Quizy, wyniki i śledzenie postępów",
+        "feature3": "Rankingi"
+      },
+      "prohibited": {
+        "title": "4. Zakazane użycie",
+        "item1": "Próby włamania, zakłócenia lub obejścia mechanizmów bezpieczeństwa/uwierzytelniania.",
+        "item2": "Masowe pobieranie treści bez pozwolenia."
+      },
+      "ip": {
+        "title": "5. Własność intelektualna",
+        "content": "DevLovers i jego zawartość są chronione obowiązującymi prawami własności intelektualnej. Nie możesz kopiować, rozpowszechniać ani ponownie wykorzystywać treści poza tym, co jest dozwolone przy normalnym korzystaniu z usługi."
+      },
+      "disclaimer": {
+        "title": "6. Wyłączenie odpowiedzialności",
+        "content": "DevLovers jest dostarczany \"tak jak jest\" bez gwarancji. Nie gwarantujemy, że korzystanie z platformy doprowadzi do zatrudnienia."
+      },
+      "liability": {
+        "title": "7. Ograniczenie odpowiedzialności",
+        "content": "W maksymalnym zakresie dozwolonym przez prawo, DevLovers nie ponosi odpowiedzialności za pośrednie lub wtórne szkody."
+      },
+      "termination": {
+        "title": "8. Rozwiązanie",
+        "content": "Możemy zawiesić lub zakończyć dostęp, jeśli uzasadnienie uznamy, że naruszyłeś te Warunki lub nadużyłeś usługi."
+      },
+      "changes": {
+        "title": "9. Zmiany warunków",
+        "content": "Możemy od czasu do czasu aktualizować te Warunki. Najnowsza wersja będzie zawsze dostępna na tej stronie."
+      },
+      "contact": {
+        "title": "10. Kontakt",
+        "content": "Pytania:"
+      }
+    }
   }
 }

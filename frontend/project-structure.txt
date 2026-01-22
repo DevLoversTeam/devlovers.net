@@ -143,15 +143,16 @@
           📄 OrderStatusAutoRefresh.tsx
           📄 page.tsx
       📁 orders
-        📄 error.tsx
-        📄 page.tsx
         📁 [id]
           📄 page.tsx
+        📄 error.tsx
+        📄 page.tsx
       📄 page.tsx
       📁 products
         📄 page.tsx
         📁 [slug]
           📄 page.tsx
+        📄 page.tsx
     📁 signup
       📄 page.tsx
     📁 terms-of-service
@@ -166,6 +167,9 @@
     📄 PricingSection.tsx
     📄 StatsSection.tsx
   📁 auth
+    📄 OAuthButtons.tsx
+    📄 PostAuthQuizSync.tsx
+    📄 ProviderButton.tsx
     📁 icons
       📄 GitHubIcon.tsx
       📄 GoogleIcon.tsx
@@ -418,9 +422,7 @@
   📁 security
     📄 admin-csrf.ts
     📄 csrf.ts
-    📄 origin.ts
     📄 rate-limit.ts
-    📄 stripe-webhook-rate-limit.ts
   📁 services
     📄 errors.ts
     📄 inventory.ts

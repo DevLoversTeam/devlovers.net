@@ -14,6 +14,11 @@ function isBlogPath(pathname: string): boolean {
   return segments[0] === 'blog' || segments[1] === 'blog';
 }
 
+function isQaPath(pathname: string): boolean {
+  const segments = pathname.split('/').filter(Boolean);
+  return segments[0] === 'q&a' || segments[1] === 'q&a';
+}
+
 type MainSwitcherProps = {
   children: ReactNode;
   userExists: boolean;
@@ -28,6 +33,7 @@ export function MainSwitcher({
   blogCategories = [],
 }: MainSwitcherProps) {
   const pathname = usePathname();
+  const isQa = isQaPath(pathname);
 
   if (isShopPath(pathname)) return <>{children}</>;
 
@@ -45,5 +51,9 @@ export function MainSwitcher({
     );
   }
 
-  return <main className="mx-auto px-6 min-h-[80vh]">{children}</main>;
+  return (
+    <main className={isQa ? 'mx-auto min-h-[80vh]' : 'mx-auto px-6 min-h-[80vh]'}>
+      {children}
+    </main>
+  );
 }

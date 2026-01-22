@@ -1,76 +1,230 @@
 'use client';
 
-import { TrendingUp } from 'lucide-react';
+import { TrendingUp, Trophy, Medal } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
+import { cn } from '@/lib/utils';
 import { User } from './types';
 
-export function LeaderboardTable({ users }: { users: User[] }) {
+type AuthUser = { id: string; username: string; email: string };
+
+interface LeaderboardTableProps {
+  users: User[];
+  currentUser?: AuthUser | null;
+}
+
+export function LeaderboardTable({
+  users,
+  currentUser,
+}: LeaderboardTableProps) {
+  const t = useTranslations('leaderboard');
+
+  const topUsers = users.slice(0, 10);
+  const normalizedCurrentUserId = currentUser ? String(currentUser.id) : null;
+  const currentUsername = currentUser?.username;
+
+  const matchedUser = users.find(
+    u =>
+      String(u.id) === normalizedCurrentUserId ||
+      (currentUsername && u.username === currentUsername)
+  );
+
+  const currentUserRank = matchedUser?.rank || 0;
+  const isUserInTop = currentUserRank > 0 && currentUserRank <= 10;
+
   return (
-    <div className="w-full bg-white/70 dark:bg-slate-900/60 backdrop-blur-md rounded-2xl shadow-xl border border-slate-200/60 dark:border-slate-700/60 overflow-hidden">
-      <table className="w-full text-left border-collapse">
-        <caption className="sr-only">
-          Leaderboard ranking for other participants
-        </caption>
+    <div className="w-full max-w-4xl flex flex-col gap-4">
+      <div className="bg-white dark:bg-white/5 backdrop-blur-md rounded-2xl border border-slate-200 dark:border-white/10 overflow-hidden shadow-lg dark:shadow-2xl">
+        <table className="w-full text-left border-collapse">
+          <caption className="sr-only">{t('tableCaption')}</caption>
 
-        <thead className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-700">
-          <tr>
-            <th
-              scope="col"
-              className="px-6 py-4 text-center text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-[16%]"
-            >
-              Rank
-            </th>
-            <th
-              scope="col"
-              className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-[58%]"
-            >
-              UserName
-            </th>
-            <th
-              scope="col"
-              className="px-6 py-4 text-right text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-[25%]"
-            >
-              Points
-            </th>
-          </tr>
-        </thead>
-
-        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-          {users.map(user => (
-            <tr
-              key={user.id}
-              className="hover:bg-slate-50/80 dark:hover:bg-slate-800/60 transition-colors group"
-            >
-              <td className="px-6 py-4 text-center font-mono font-semibold text-slate-400 dark:text-slate-500 group-hover:text-slate-900 dark:group-hover:text-slate-200">
-                {user.rank}
-              </td>
-
-              <td className="px-6 py-4">
-                <div className="flex items-center gap-4">
-                  <div
-                    className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-sm font-bold text-slate-600 dark:text-slate-300 ring-2 ring-transparent group-hover:ring-slate-200 dark:group-hover:ring-slate-600 transition-all"
-                    aria-hidden="true"
-                  >
-                    <span>{user.username.slice(0, 1).toUpperCase()}</span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="font-bold text-slate-700 dark:text-slate-200 text-sm group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                      {user.username}
-                    </span>
-                    <span className="flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
-                      <TrendingUp className="w-3 h-3" aria-hidden="true" />
-                      Rising
-                    </span>
-                  </div>
-                </div>
-              </td>
-
-              <td className="px-6 py-4 text-right font-mono font-bold text-slate-800 dark:text-slate-100">
-                {user.points.toLocaleString()}
-              </td>
+          <thead className="bg-slate-50/80 dark:bg-white/5 border-b border-slate-200 dark:border-white/10">
+            <tr>
+              <th className="px-6 py-5 text-center text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest w-[15%]">
+                {t('rank')}
+              </th>
+              <th className="px-6 py-5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest w-[60%]">
+                {t('user')}
+              </th>
+              <th className="px-6 py-5 text-right text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest w-[25%]">
+                {t('score')}
+              </th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+
+          <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+            {topUsers.map(user => {
+              const isMe =
+                String(user.id) === normalizedCurrentUserId ||
+                (currentUsername && user.username === currentUsername);
+
+              return (
+                <TableRow
+                  key={user.id}
+                  user={user}
+                  isCurrentUser={!!isMe}
+                  t={t}
+                />
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {!isUserInTop && matchedUser && (
+        <>
+          <div className="text-center text-slate-400 dark:text-slate-600 text-xl font-bold tracking-widest select-none py-2">
+            • • •
+          </div>
+
+          <div className="bg-white dark:bg-white/5 backdrop-blur-md rounded-2xl border-2 border-[#ff2d55] overflow-hidden shadow-[0_0_20px_rgba(255,45,85,0.2)]">
+            <table className="w-full text-left border-collapse">
+              <tbody>
+                <TableRow user={matchedUser} isCurrentUser={true} t={t} />
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
     </div>
+  );
+}
+
+function TableRow({
+  user,
+  isCurrentUser,
+  t,
+}: {
+  user: User;
+  isCurrentUser: boolean;
+  t: any;
+}) {
+  return (
+    <tr
+      className={cn(
+        'group transition-all duration-300',
+        isCurrentUser
+          ? 'bg-[#ff2d55]/10 dark:bg-[#ff2d55]/20 border-l-[6px] border-l-[#ff2d55] shadow-inner'
+          : 'hover:bg-slate-50 dark:hover:bg-white/5 border-l-[6px] border-l-transparent'
+      )}
+    >
+      <td className="px-6 py-4">
+        <div className="flex justify-center items-center">
+          <RankBadge rank={user.rank} />
+        </div>
+      </td>
+
+      <td className="px-6 py-4">
+        <div className="flex items-center gap-4">
+          <div
+            className={cn(
+              'w-10 h-10 rounded-full border flex items-center justify-center text-sm font-bold transition-all duration-300',
+              isCurrentUser
+                ? 'bg-[#ff2d55] border-[#ff2d55] text-white shadow-[0_0_15px_rgba(255,45,85,0.5)]'
+                : 'bg-slate-100 border-slate-200 text-slate-600 dark:bg-gradient-to-br dark:from-slate-800 dark:to-slate-900 dark:border-white/10 dark:text-slate-300 group-hover:border-[#ff2d55]/50 group-hover:text-[#ff2d55] dark:group-hover:text-white'
+            )}
+            aria-hidden="true"
+          >
+            {user.username.slice(0, 1).toUpperCase()}
+          </div>
+
+          <div className="flex flex-col">
+            <span
+              className={cn(
+                'font-medium text-sm transition-colors flex items-center gap-2',
+                isCurrentUser
+                  ? 'text-[#ff2d55] font-black text-base'
+                  : 'text-slate-700 dark:text-slate-200 group-hover:text-[#ff2d55] dark:group-hover:text-[#ff2d55]'
+              )}
+            >
+              {user.username}
+
+              {isCurrentUser && (
+                <div className="relative flex items-center justify-center w-8 h-8 ml-1">
+                  <motion.div
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{
+                      repeat: Infinity,
+                      duration: 0.8,
+                      ease: 'easeInOut',
+                    }}
+                    className="absolute inset-0 text-[#ff2d55]"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      className="w-full h-full drop-shadow-md"
+                    >
+                      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                    </svg>
+                  </motion.div>
+
+                  <span className="relative z-10 text-[8px] font-black text-white uppercase tracking-tighter -mt-0.5">
+                    {t('you') || 'YOU'}
+                  </span>
+                </div>
+              )}
+            </span>
+
+            {user.change > 0 && (
+              <span className="flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wide opacity-70 group-hover:opacity-100 transition-opacity">
+                <TrendingUp className="w-3 h-3" aria-hidden="true" />
+                {t('rising')}
+              </span>
+            )}
+          </div>
+        </div>
+      </td>
+
+      <td className="px-6 py-4 text-right">
+        <span
+          className={cn(
+            'font-mono font-bold inline-block transition-all',
+            isCurrentUser
+              ? 'text-[#ff2d55] scale-110 drop-shadow-sm text-lg'
+              : 'text-slate-700 dark:text-slate-300 group-hover:scale-105'
+          )}
+        >
+          {user.points.toLocaleString()}
+        </span>
+      </td>
+    </tr>
+  );
+}
+
+function RankBadge({ rank }: { rank: number }) {
+  if (rank === 1) {
+    return (
+      <div className="relative w-14 h-8 flex items-center justify-center gap-1.5 rounded-lg bg-yellow-100 dark:bg-yellow-500/20 border border-yellow-500/50 shadow-[0_0_10px_rgba(234,179,8,0.3)]">
+        <span className="font-black text-yellow-700 dark:text-yellow-400">
+          1
+        </span>
+        <Trophy className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
+        <div className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-400 rounded-full animate-pulse" />
+      </div>
+    );
+  }
+  if (rank === 2) {
+    return (
+      <div className="w-14 h-8 flex items-center justify-center gap-1.5 rounded-lg bg-slate-100 dark:bg-slate-400/10 border border-slate-300 dark:border-slate-400/30">
+        <span className="font-black text-slate-600 dark:text-slate-300">2</span>
+        <Medal className="w-4 h-4 text-slate-500 dark:text-slate-300" />
+      </div>
+    );
+  }
+  if (rank === 3) {
+    return (
+      <div className="w-14 h-8 flex items-center justify-center gap-1.5 rounded-lg bg-orange-50 dark:bg-orange-500/10 border border-orange-300 dark:border-orange-500/30">
+        <span className="font-black text-orange-700 dark:text-orange-400">
+          3
+        </span>
+        <Medal className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+      </div>
+    );
+  }
+  return (
+    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 dark:bg-white/5 font-bold text-sm text-slate-500 dark:text-slate-500">
+      {rank}
+    </span>
   );
 }

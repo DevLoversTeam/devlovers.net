@@ -1,4 +1,5 @@
 import groq from 'groq';
+import { unstable_noStore as noStore } from 'next/cache';
 import { getTranslations } from 'next-intl/server';
 import { client } from '@/client';
 import BlogFilters from '@/components/blog/BlogFilters';
@@ -24,13 +25,14 @@ export default async function BlogPage({
 }: {
   params: Promise<{ locale: string }>;
 }) {
+  noStore();
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'blog' });
 
   const posts = await client.withConfig({ useCdn: false }).fetch(
     groq`
       *[_type == "post" && defined(slug.current)]
-        | order(publishedAt desc) {
+        | order(coalesce(publishedAt, _createdAt) desc) {
           _id,
           "title": coalesce(title[$locale], title[lower($locale)], title.uk, title.en, title.pl, title),
           slug,

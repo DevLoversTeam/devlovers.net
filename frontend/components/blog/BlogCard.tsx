@@ -14,9 +14,11 @@ import type {
 export default function BlogCard({
   post,
   onAuthorSelect,
+  disableHoverColor = false,
 }: {
   post: Post;
   onAuthorSelect: (author: Author) => void;
+  disableHoverColor?: boolean;
 }) {
   const t = useTranslations('blog');
   const locale = useLocale();
@@ -26,7 +28,7 @@ export default function BlogCard({
       .map(b =>
         (b.children ?? []).map((c: PortableTextSpan) => c.text ?? '').join(' ')
       )
-      .join(' ')
+      .join('\n')
       .slice(0, 160) || '';
   const formattedDate = useMemo(() => {
     if (!post.publishedAt) return '';
@@ -64,8 +66,7 @@ export default function BlogCard({
             rounded-lg
             bg-gray-100
             shadow-[0_8px_24px_rgba(0,0,0,0.08)]
-            dark:border dark:border-[rgba(56,189,248,0.25)]
-            dark:shadow-[0_0_0_1px_rgba(56,189,248,0.25),0_12px_28px_rgba(56,189,248,0.18)]
+            dark:border dark:border-[rgba(56,189,248,0.4)] dark:border-[0.5px]
             transition-transform duration-300
           "
         >
@@ -82,27 +83,30 @@ export default function BlogCard({
       <div className="pt-2 px-1 flex flex-col flex-1">
         <Link
           href={`/blog/${post.slug.current}`}
-          className="
-    block
-    text-[18px] md:text-[22px]
-    font-semibold
-    tracking-tight
-    leading-[1.15]
-    text-gray-950 dark:text-gray-100
-    transition
-    hover:text-[#ff00ff]
-    hover:underline
-    group-hover:text-[#ff00ff]
-    group-hover:underline
-    underline-offset-4
-  "
+          className={`
+            block
+            text-[18px] md:text-[22px]
+            font-semibold
+            tracking-tight
+            leading-[1.15]
+            text-gray-950 dark:text-gray-100
+            transition
+            hover:underline
+            group-hover:underline
+            underline-offset-4
+            ${
+              disableHoverColor
+                ? ''
+                : 'hover:text-[var(--accent-primary)] group-hover:text-[var(--accent-primary)]'
+            }
+          `}
           style={{ fontFamily: 'ui-rounded, system-ui, -apple-system' }}
         >
           {post.title}
         </Link>
 
         {excerpt && (
-          <p className="mt-2 text-[15px] md:text-[16px] leading-[1.55] text-gray-700 dark:text-gray-300 max-w-[60ch] line-clamp-3">
+          <p className="mt-2 text-[15px] md:text-[16px] leading-[1.55] text-gray-700 dark:text-gray-300 max-w-[60ch] line-clamp-2 whitespace-pre-line">
             {excerpt}
           </p>
         )}
@@ -114,10 +118,10 @@ export default function BlogCard({
                 <button
                   type="button"
                   onClick={() => post.author && onAuthorSelect(post.author)}
-                  className="flex items-center gap-2 hover:text-[#ff00ff] hover:underline underline-offset-4 transition"
+                  className="flex items-center gap-2 hover:text-[var(--accent-primary)] hover:underline underline-offset-4 transition"
                 >
                   {post.author?.image && (
-                    <span className="relative h-6 w-6 overflow-hidden rounded-full">
+                    <span className="relative h-5 w-5 overflow-hidden rounded-full">
                       <Image
                         src={post.author.image}
                         alt={post.author.name || 'Author'}
@@ -129,12 +133,16 @@ export default function BlogCard({
                   {post.author.name}
                 </button>
               )}
-              {post.author?.name && formattedDate && <span>·</span>}
-              {formattedDate && <span>{formattedDate}</span>}
-              {(formattedDate || post.author?.name) && categoryLabel && (
+              {post.author?.name && categoryLabel && <span>·</span>}
+              {categoryLabel && (
+                <span className="rounded-full bg-[color-mix(in_srgb,var(--accent-primary)_20%,transparent)] px-3 py-1 text-[11px] font-medium text-gray-500 dark:bg-[color-mix(in_srgb,var(--accent-primary)_50%,transparent)] dark:text-gray-400">
+                  {categoryLabel}
+                </span>
+              )}
+              {(post.author?.name || categoryLabel) && formattedDate && (
                 <span>·</span>
               )}
-              {categoryLabel && <span>{categoryLabel}</span>}
+              {formattedDate && <span>{formattedDate}</span>}
             </div>
           )}
 
