@@ -1,5 +1,7 @@
+import crypto from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+
 import {
   AdminApiDisabledError,
   AdminForbiddenError,
@@ -7,29 +9,74 @@ import {
   requireAdminApi,
 } from '@/lib/auth/admin';
 import { requireAdminCsrf } from '@/lib/security/admin-csrf';
-
-import { logError } from '@/lib/logging';
-import { toggleProductStatus } from '@/lib/services/products';
 import { guardBrowserSameOrigin } from '@/lib/security/origin';
 
+import { logError, logWarn } from '@/lib/logging';
+import { toggleProductStatus } from '@/lib/services/products';
+export const runtime = 'nodejs';
+
 const productIdParamSchema = z.object({ id: z.string().uuid() });
+function noStoreJson(body: unknown, init?: { status?: number }) {
+  const res = NextResponse.json(body, { status: init?.status ?? 200 });
+  res.headers.set('Cache-Control', 'no-store');
+  return res;
+}
 
 export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
+  const startedAtMs = Date.now();
+
+  const requestId =
+    request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
+
   const blocked = guardBrowserSameOrigin(request);
-  if (blocked) return blocked;
+  if (blocked) {
+    logWarn('admin_product_status_origin_blocked', {
+      requestId,
+      route: request.nextUrl.pathname,
+      method: request.method,
+      code: 'ORIGIN_BLOCKED',
+      durationMs: Date.now() - startedAtMs,
+    });
+    blocked.headers.set('Cache-Control', 'no-store');
+    return blocked;
+  }
+
+  const baseMeta = {
+    requestId,
+    route: request.nextUrl.pathname,
+    method: request.method,
+  };
+
+  let productIdForLog: string | null = null;
 
   try {
     await requireAdminApi(request);
     const csrfRes = requireAdminCsrf(request, 'admin:products:status');
-    if (csrfRes) return csrfRes;
+    if (csrfRes) {
+      logWarn('admin_product_status_csrf_rejected', {
+        ...baseMeta,
+        code: 'CSRF_REJECTED',
+        durationMs: Date.now() - startedAtMs,
+      });
+      csrfRes.headers.set('Cache-Control', 'no-store');
+      return csrfRes;
+    }
 
     const rawParams = await context.params;
     const parsedParams = productIdParamSchema.safeParse(rawParams);
+
     if (!parsedParams.success) {
-      return NextResponse.json(
+      logWarn('admin_product_status_invalid_product_id', {
+        ...baseMeta,
+        code: 'INVALID_PRODUCT_ID',
+        issuesCount: parsedParams.error.issues?.length ?? 0,
+        durationMs: Date.now() - startedAtMs,
+      });
+
+      return noStoreJson(
         {
           error: 'Invalid product id',
           code: 'INVALID_PRODUCT_ID',
@@ -39,27 +86,65 @@ export async function PATCH(
       );
     }
 
-    const productId = parsedParams.data.id;
+    productIdForLog = parsedParams.data.id;
 
-    const updated = await toggleProductStatus(productId);
-    return NextResponse.json({ success: true, product: updated });
+    const updated = await toggleProductStatus(productIdForLog);
+
+    // no success log (avoid log noise); rely on response + metrics
+
+    return noStoreJson({ success: true, product: updated }, { status: 200 });
   } catch (error) {
     if (error instanceof AdminApiDisabledError) {
-      return NextResponse.json({ code: error.code }, { status: 403 });
+      logWarn('admin_product_status_admin_api_disabled', {
+        ...baseMeta,
+        code: error.code,
+        productId: productIdForLog,
+        durationMs: Date.now() - startedAtMs,
+      });
+      return noStoreJson({ code: error.code }, { status: 403 });
     }
     if (error instanceof AdminUnauthorizedError) {
-      return NextResponse.json({ code: error.code }, { status: 401 });
+      logWarn('admin_product_status_unauthorized', {
+        ...baseMeta,
+        code: error.code,
+        productId: productIdForLog,
+        durationMs: Date.now() - startedAtMs,
+      });
+      return noStoreJson({ code: error.code }, { status: 401 });
     }
     if (error instanceof AdminForbiddenError) {
-      return NextResponse.json({ code: error.code }, { status: 403 });
+      logWarn('admin_product_status_forbidden', {
+        ...baseMeta,
+        code: error.code,
+        productId: productIdForLog,
+        durationMs: Date.now() - startedAtMs,
+      });
+      return noStoreJson({ code: error.code }, { status: 403 });
     }
 
-    logError('Failed to update product status', error);
+    logError('admin_product_status_failed', error, {
+      ...baseMeta,
+      code: 'ADMIN_PRODUCT_STATUS_FAILED',
+      productId: productIdForLog,
+      durationMs: Date.now() - startedAtMs,
+    });
+
     if (error instanceof Error && error.message === 'PRODUCT_NOT_FOUND') {
-      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+      logWarn('admin_product_status_not_found', {
+        ...baseMeta,
+        code: 'PRODUCT_NOT_FOUND',
+        productId: productIdForLog,
+        durationMs: Date.now() - startedAtMs,
+      });
+
+      return noStoreJson(
+        { error: 'Product not found', code: 'PRODUCT_NOT_FOUND' },
+        { status: 404 }
+      );
     }
-    return NextResponse.json(
-      { error: 'Failed to update product status' },
+
+    return noStoreJson(
+      { error: 'internal_error', code: 'INTERNAL_ERROR' },
       { status: 500 }
     );
   }

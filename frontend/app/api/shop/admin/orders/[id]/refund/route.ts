@@ -1,5 +1,5 @@
+import crypto from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
-
 import {
   AdminApiDisabledError,
   AdminForbiddenError,
@@ -7,75 +7,163 @@ import {
   requireAdminApi,
 } from '@/lib/auth/admin';
 import { requireAdminCsrf } from '@/lib/security/admin-csrf';
-
-import { logError } from '@/lib/logging';
+import { logError, logWarn } from '@/lib/logging';
 import { OrderNotFoundError, InvalidPayloadError } from '@/lib/services/errors';
 import { refundOrder } from '@/lib/services/orders';
 import { orderIdParamSchema, orderSummarySchema } from '@/lib/validation/shop';
 import { guardBrowserSameOrigin } from '@/lib/security/origin';
 
+function noStoreJson(body: unknown, init?: { status?: number }) {
+  const res = NextResponse.json(body, { status: init?.status ?? 200 });
+  res.headers.set('Cache-Control', 'no-store');
+  return res;
+}
+
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  const blocked = guardBrowserSameOrigin(request);
-  if (blocked) return blocked;
+  const startedAtMs = Date.now();
 
+  const requestId =
+    request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
+
+  const blocked = guardBrowserSameOrigin(request);
+  if (blocked) {
+    logWarn('admin_orders_refund_origin_blocked', {
+      requestId,
+      route: request.nextUrl.pathname,
+      method: request.method,
+      code: 'ORIGIN_BLOCKED',
+      durationMs: Date.now() - startedAtMs,
+    });
+    blocked.headers.set('Cache-Control', 'no-store');
+    return blocked;
+  }
+
+  const baseMeta = {
+    requestId,
+    route: request.nextUrl.pathname,
+    method: request.method,
+  };
+  let orderIdForLog: string | null = null;
   try {
     await requireAdminApi(request);
     const csrfRes = requireAdminCsrf(request, 'admin:orders:refund');
-    if (csrfRes) return csrfRes;
+    if (csrfRes) {
+      logWarn('admin_orders_refund_csrf_rejected', {
+        ...baseMeta,
+        code: 'CSRF_REJECTED',
+        orderId: orderIdForLog,
+        durationMs: Date.now() - startedAtMs,
+      });
+
+      csrfRes.headers.set('Cache-Control', 'no-store');
+      return csrfRes;
+    }
 
     const rawParams = await context.params;
     const parsed = orderIdParamSchema.safeParse(rawParams);
 
     if (!parsed.success) {
-      return NextResponse.json(
+      logWarn('admin_orders_refund_invalid_order_id', {
+        ...baseMeta,
+        code: 'INVALID_ORDER_ID',
+        issuesCount: parsed.error.issues?.length ?? 0,
+        durationMs: Date.now() - startedAtMs,
+      });
+
+      return noStoreJson(
         { error: 'Invalid order id', code: 'INVALID_ORDER_ID' },
         { status: 400 }
       );
     }
 
-    // app/api/shop/admin/orders/[id]/refund/route.ts
-    const order = await refundOrder(parsed.data.id, { requestedBy: 'admin' });
+    orderIdForLog = parsed.data.id;
+    const order = await refundOrder(orderIdForLog, { requestedBy: 'admin' });
 
     const orderSummary = orderSummarySchema.parse(order);
 
-    return NextResponse.json({
+    return noStoreJson({
       success: true,
       order: {
         ...orderSummary,
-        createdAt: orderSummary.createdAt.toISOString(),
+        createdAt:
+          orderSummary.createdAt instanceof Date
+            ? orderSummary.createdAt.toISOString()
+            : String(orderSummary.createdAt),
       },
     });
   } catch (error) {
     if (error instanceof AdminApiDisabledError) {
-      return NextResponse.json({ code: 'ADMIN_API_DISABLED' }, { status: 403 });
-    }
-    if (error instanceof AdminUnauthorizedError) {
-      return NextResponse.json({ code: error.code }, { status: 401 });
-    }
-    if (error instanceof AdminForbiddenError) {
-      return NextResponse.json({ code: error.code }, { status: 403 });
+      logWarn('admin_orders_refund_admin_api_disabled', {
+        ...baseMeta,
+        code: 'ADMIN_API_DISABLED',
+        orderId: orderIdForLog,
+        durationMs: Date.now() - startedAtMs,
+      });
+
+      return noStoreJson({ code: 'ADMIN_API_DISABLED' }, { status: 403 });
     }
 
-    logError('Refund order failed', error);
+    if (error instanceof AdminUnauthorizedError) {
+      logWarn('admin_orders_refund_unauthorized', {
+        ...baseMeta,
+        code: error.code,
+        orderId: orderIdForLog,
+        durationMs: Date.now() - startedAtMs,
+      });
+
+      return noStoreJson({ code: error.code }, { status: 401 });
+    }
+
+    if (error instanceof AdminForbiddenError) {
+      logWarn('admin_orders_refund_forbidden', {
+        ...baseMeta,
+        code: error.code,
+        orderId: orderIdForLog,
+        durationMs: Date.now() - startedAtMs,
+      });
+
+      return noStoreJson({ code: error.code }, { status: 403 });
+    }
+
+    logError('admin_orders_refund_failed', error, {
+      ...baseMeta,
+      orderId: orderIdForLog,
+      code: 'ADMIN_REFUND_FAILED',
+      durationMs: Date.now() - startedAtMs,
+    });
 
     if (error instanceof OrderNotFoundError) {
-      return NextResponse.json(
+      logWarn('admin_orders_refund_not_found', {
+        ...baseMeta,
+        code: error.code,
+        orderId: orderIdForLog,
+        durationMs: Date.now() - startedAtMs,
+      });
+
+      return noStoreJson(
         { error: error.message, code: error.code },
         { status: 404 }
       );
     }
 
     if (error instanceof InvalidPayloadError) {
-      return NextResponse.json(
+      logWarn('admin_orders_refund_invalid_payload', {
+        ...baseMeta,
+        code: error.code,
+        orderId: orderIdForLog,
+        durationMs: Date.now() - startedAtMs,
+      });
+
+      return noStoreJson(
         { error: error.message, code: error.code },
         { status: 400 }
       );
     }
 
-    return NextResponse.json(
+    return noStoreJson(
       { error: 'Unable to refund order', code: 'INTERNAL_ERROR' },
       { status: 500 }
     );

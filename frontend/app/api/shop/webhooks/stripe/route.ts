@@ -34,8 +34,20 @@ const STRIPE_WEBHOOK_INSTANCE_ID =
 const STRIPE_EVENT_CLAIM_TTL_MS = 10 * 60 * 1000; // 10 minutes
 const STRIPE_EVENT_RETRY_AFTER_SECONDS = 10;
 
+function noStoreJson(
+  body: unknown,
+  init?: { status?: number; headers?: HeadersInit }
+) {
+  const res = NextResponse.json(body, {
+    status: init?.status ?? 200,
+    headers: init?.headers,
+  });
+  res.headers.set('Cache-Control', 'no-store');
+  return res;
+}
+
 function busyRetry() {
-  return NextResponse.json(
+  const res = noStoreJson(
     {
       code: 'WEBHOOK_CLAIMED',
       retryAfterSeconds: STRIPE_EVENT_RETRY_AFTER_SECONDS,
@@ -45,11 +57,17 @@ function busyRetry() {
       headers: { 'Retry-After': String(STRIPE_EVENT_RETRY_AFTER_SECONDS) },
     }
   );
+  return res;
 }
 
 export function OPTIONS() {
-  return NextResponse.json({ error: 'METHOD_NOT_ALLOWED' }, { status: 405 });
+  const res = noStoreJson(
+    { error: 'METHOD_NOT_ALLOWED', code: 'METHOD_NOT_ALLOWED' },
+    { status: 405, headers: { Allow: 'POST' } }
+  );
+  return res;
 }
+
 async function tryClaimStripeEvent(
   eventId: string
 ): Promise<'claimed' | 'already_processed' | 'busy'> {
@@ -130,6 +148,8 @@ function upsertRefundIntoMeta(params: {
 }
 
 function warnRefundFullnessUndetermined(payload: {
+  requestId?: string;
+  route?: string;
   eventId: string;
   eventType: string;
   chargeId: string | null;
@@ -144,25 +164,67 @@ function warnRefundFullnessUndetermined(payload: {
   refundId?: string | null;
   refundAmount?: number | null;
 }) {
-  logWarn('stripe_webhook_refund_fullness_undetermined', payload);
+  logWarn('stripe_webhook_refund_fullness_undetermined', {
+    ...payload,
+    // keep consistent correlation fields with stripe_webhook
+    stripeEventId: payload.eventId,
+    instanceId: STRIPE_WEBHOOK_INSTANCE_ID,
+    provider: 'stripe',
+    code: 'REFUND_FULLNESS_UNDETERMINED',
+  });
 }
 
 function logWebhookEvent(payload: {
+  requestId?: string;
+  stripeEventId?: string;
   orderId?: string;
   paymentIntentId?: string | null;
   paymentStatus?: string | null;
   eventType: string;
+  chargeId?: string | null;
+  refundId?: string | null;
 }) {
-  const { orderId, paymentIntentId, paymentStatus, eventType } = payload;
-
-  logInfo('stripe_webhook', {
-    provider: 'stripe',
+  const {
+    requestId,
+    stripeEventId,
     orderId,
     paymentIntentId,
     paymentStatus,
     eventType,
+    chargeId,
+    refundId,
+  } = payload;
+
+  const providerRef = refundId ?? chargeId ?? paymentIntentId ?? null;
+
+  const providerRefType =
+    refundId != null
+      ? 'refund'
+      : chargeId != null
+      ? 'charge'
+      : paymentIntentId != null
+      ? 'payment_intent'
+      : null;
+
+  logInfo('stripe_webhook', {
+    requestId,
+    stripeEventId,
+    provider: 'stripe',
+    instanceId: STRIPE_WEBHOOK_INSTANCE_ID,
+
+    orderId,
+    paymentIntentId,
+    chargeId: chargeId ?? null,
+    refundId: refundId ?? null,
+
+    providerRef,
+    providerRefType,
+
+    paymentStatus,
+    eventType,
   });
 }
+
 type PaymentIntentWithCharges = Stripe.PaymentIntent & {
   charges?: { data?: Stripe.Charge[] };
 };
@@ -312,16 +374,47 @@ function shouldRestockFromWebhook(order: {
 }
 
 export async function POST(request: NextRequest) {
+  const startedAtMs = Date.now();
+
+  const requestId =
+    request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
+
+  const baseMeta = {
+    requestId,
+    route: request.nextUrl.pathname,
+    method: request.method,
+    provider: 'stripe',
+    instanceId: STRIPE_WEBHOOK_INSTANCE_ID,
+  };
+
+  const meta = (extra: Record<string, unknown> = {}) => ({
+    ...baseMeta,
+    ...extra,
+    durationMs: Date.now() - startedAtMs,
+  });
+
   const blocked = guardNonBrowserOnly(request);
-  if (blocked) return blocked;
+  if (blocked) {
+    logWarn('stripe_webhook_origin_blocked', meta({ code: 'ORIGIN_BLOCKED' }));
+    blocked.headers.set('Cache-Control', 'no-store');
+    return blocked;
+  }
 
   let rawBody: string;
 
   try {
     rawBody = await request.text();
   } catch (error) {
-    logError('Failed to read Stripe webhook body', error);
-    return NextResponse.json({ error: 'invalid_payload' }, { status: 400 });
+    logError(
+      'stripe_webhook_body_read_failed',
+      error,
+      meta({ code: 'INVALID_PAYLOAD' })
+    );
+    const res = noStoreJson(
+      { error: 'invalid_payload', code: 'INVALID_PAYLOAD' },
+      { status: 400 }
+    );
+       return res;
   }
 
   const signature = request.headers.get('stripe-signature');
@@ -335,17 +428,28 @@ export async function POST(request: NextRequest) {
     });
 
     if (!decision.ok) {
-      return rateLimitResponse({
+      logWarn('stripe_webhook_rate_limited', {
+        ...meta(),
+        code: 'RATE_LIMITED',
+        reason: 'missing_signature',
+        retryAfterSeconds: decision.retryAfterSeconds,
+      });
+
+      const res = rateLimitResponse({
         retryAfterSeconds: decision.retryAfterSeconds,
         details: { scope: 'stripe_webhook', reason: 'missing_signature' },
       });
+      res.headers.set('Cache-Control', 'no-store');
+      return res;
     }
 
     logError(
-      'Stripe webhook missing signature header',
-      new Error('MISSING_STRIPE_SIGNATURE')
+      'stripe_webhook_missing_signature',
+      new Error('MISSING_STRIPE_SIGNATURE'),
+      meta({ code: 'MISSING_SIGNATURE' })
     );
-    return NextResponse.json({ code: 'INVALID_SIGNATURE' }, { status: 400 });
+
+    return noStoreJson({ code: 'INVALID_SIGNATURE' }, { status: 400 });
   }
 
   let event: Stripe.Event;
@@ -353,8 +457,12 @@ export async function POST(request: NextRequest) {
     event = verifyWebhookSignature({ rawBody, signatureHeader: signature });
   } catch (error) {
     if (error instanceof Error && error.message === 'STRIPE_WEBHOOK_DISABLED') {
-      logError('Stripe webhook disabled or misconfigured', error);
-      return NextResponse.json({ code: 'WEBHOOK_DISABLED' }, { status: 500 });
+      logError('stripe_webhook_disabled_or_misconfigured', error, {
+        ...meta(),
+        code: 'WEBHOOK_DISABLED',
+      });
+
+      return noStoreJson({ code: 'WEBHOOK_DISABLED' }, { status: 500 });
     }
 
     if (
@@ -370,20 +478,48 @@ export async function POST(request: NextRequest) {
       });
 
       if (!decision.ok) {
-        return rateLimitResponse({
+        logWarn('stripe_webhook_rate_limited', {
+          ...meta(),
+          code: 'RATE_LIMITED',
+          reason: 'invalid_signature',
+          retryAfterSeconds: decision.retryAfterSeconds,
+        });
+
+        const res = rateLimitResponse({
           retryAfterSeconds: decision.retryAfterSeconds,
           details: { scope: 'stripe_webhook', reason: 'invalid_signature' },
         });
+        res.headers.set('Cache-Control', 'no-store');
+        return res;
       }
 
-      logError('Stripe webhook signature verification failed', error);
-      return NextResponse.json({ code: 'INVALID_SIGNATURE' }, { status: 400 });
+      logError('stripe_webhook_signature_verification_failed', error, {
+        ...meta(),
+        code: 'INVALID_SIGNATURE',
+      });
+
+      return noStoreJson({ code: 'INVALID_SIGNATURE' }, { status: 400 });
     }
 
-    throw error;
+    logError(
+      'stripe_webhook_signature_verification_unexpected_error',
+      error,
+      meta({ code: 'SIGNATURE_VERIFICATION_FAILED' })
+    );
+
+    const res = noStoreJson(
+      { error: 'internal_error', code: 'SIGNATURE_VERIFICATION_FAILED' },
+      { status: 500 }
+    );
+    return res;
   }
 
   const eventType = event.type;
+  const stripeEventId = event.id;
+  const eventMeta = (extra: Record<string, unknown> = {}) =>
+    meta({ stripeEventId, eventType, ...extra });
+
+  const warnBase = { requestId, route: baseMeta.route };
   const rawObject = event.data.object;
 
   let paymentIntent: Stripe.PaymentIntent | undefined;
@@ -436,6 +572,24 @@ export async function POST(request: NextRequest) {
     ((refundObject as any)?.status as string | null | undefined) ??
     null;
 
+  const bestEffortRefundChargeId: string | null =
+    refundObject && typeof (refundObject as any).charge === 'string'
+      ? (refundObject as any).charge.trim().length > 0
+        ? (refundObject as any).charge.trim()
+        : null
+      : refundObject &&
+        typeof (refundObject as any).charge === 'object' &&
+        (refundObject as any).charge &&
+        typeof (refundObject as any).charge.id === 'string'
+      ? (refundObject as any).charge.id
+      : null;
+
+  const bestEffortChargeId: string | null = paymentIntent
+    ? getLatestChargeId(paymentIntent)
+    : charge?.id ?? bestEffortRefundChargeId ?? null;
+
+  const bestEffortRefundId: string | null = refundObject?.id ?? null;
+
   const rawMetadata =
     rawObject && typeof rawObject === 'object' && 'metadata' in rawObject
       ? (rawObject as { metadata?: Stripe.Metadata }).metadata
@@ -453,8 +607,16 @@ export async function POST(request: NextRequest) {
       : undefined;
 
   if (!paymentIntentId) {
-    logWebhookEvent({ eventType, paymentIntentId, paymentStatus });
-    return NextResponse.json({ received: true }, { status: 200 });
+    logWebhookEvent({
+      eventType,
+      paymentIntentId,
+      paymentStatus,
+      chargeId: bestEffortChargeId,
+      refundId: bestEffortRefundId,
+      requestId,
+      stripeEventId,
+    });
+    return noStoreJson({ received: true }, { status: 200 });
   }
 
   try {
@@ -472,13 +634,15 @@ export async function POST(request: NextRequest) {
 
       if (updated.length === 0) {
         logWarn('stripe_webhook_ack_claim_lost', {
+          ...eventMeta(),
           eventId: event.id,
-          eventType,
+          code: 'WEBHOOK_CLAIM_LOST',
         });
+
         return busyRetry();
       }
 
-      return NextResponse.json({ received: true }, { status: 200 });
+      return noStoreJson({ received: true }, { status: 200 });
     };
     // 1) Insert event idempotently (no transactions)
     const inserted = await db
@@ -504,10 +668,11 @@ export async function POST(request: NextRequest) {
 
       if (existing?.processedAt) {
         logInfo('stripe_webhook_duplicate_event', {
+          ...eventMeta(),
           eventId: event.id,
-          eventType,
         });
-        return NextResponse.json({ received: true }, { status: 200 });
+
+        return noStoreJson({ received: true }, { status: 200 });
       }
       // processedAt is NULL => previous attempt failed; reprocess
     }
@@ -515,16 +680,17 @@ export async function POST(request: NextRequest) {
     const claimState = await tryClaimStripeEvent(event.id);
     if (claimState === 'already_processed') {
       logInfo('stripe_webhook_duplicate_event', {
+        ...eventMeta(),
         eventId: event.id,
-        eventType,
         reason: 'already_processed',
       });
-      return NextResponse.json({ received: true }, { status: 200 });
+
+      return noStoreJson({ received: true }, { status: 200 });
     }
     if (claimState === 'busy') {
       logInfo('stripe_webhook_claimed_by_other_instance', {
+        ...eventMeta(),
         eventId: event.id,
-        eventType,
       });
       return busyRetry();
     }
@@ -544,14 +710,27 @@ export async function POST(request: NextRequest) {
         resolvedOrderId = candidates[0].id;
       } else {
         logWarn('stripe_webhook_missing_order_id', {
+          ...eventMeta(),
+          code: 'MISSING_ORDER_ID',
           paymentIntentId,
-          eventType,
+          chargeId: bestEffortChargeId,
+          refundId: bestEffortRefundId,
           reason:
             candidates.length === 0
               ? 'no_order_for_payment_intent'
               : 'multiple_orders_for_payment_intent',
         });
-        logWebhookEvent({ eventType, paymentIntentId, paymentStatus });
+
+        logWebhookEvent({
+          requestId,
+          stripeEventId,
+          eventType,
+          paymentIntentId,
+          paymentStatus,
+          chargeId: bestEffortChargeId,
+          refundId: bestEffortRefundId,
+        });
+
         return ack();
       }
     }
@@ -582,18 +761,30 @@ export async function POST(request: NextRequest) {
       .limit(1);
 
     if (!order) {
-      logWebhookEvent({ eventType, paymentIntentId, paymentStatus });
+      logWebhookEvent({
+        eventType,
+        paymentIntentId,
+        paymentStatus,
+        chargeId: bestEffortChargeId,
+        refundId: bestEffortRefundId,
+        requestId,
+        stripeEventId,
+      });
       return ack();
     }
 
     if (order.paymentIntentId && order.paymentIntentId !== paymentIntentId) {
       logInfo('stripe_webhook_payment_intent_mismatch', {
+        ...eventMeta(),
+        code: 'PAYMENT_INTENT_MISMATCH',
         orderId: order.id,
         paymentIntentId,
         orderPaymentIntentId: order.paymentIntentId,
-        eventType,
+        chargeId: bestEffortChargeId,
+        refundId: bestEffortRefundId,
         reason: 'payment_intent_mismatch',
       });
+
       return ack();
     }
 
@@ -617,6 +808,7 @@ export async function POST(request: NextRequest) {
             : 'currency_mismatch';
 
         const chargeForIntent = getLatestCharge(paymentIntent as any);
+        const latestChargeId = getLatestChargeId(paymentIntent);
         const createdAtIso = new Date().toISOString();
         const deltaMeta = buildPspMetadata({
           eventType,
@@ -657,14 +849,16 @@ export async function POST(request: NextRequest) {
           .where(eq(orders.id, order.id));
 
         logWarn('stripe_webhook_mismatch', {
+          ...eventMeta(),
+          code: 'PSP_MISMATCH',
           orderId: order.id,
           paymentIntentId,
-          eventType,
           stripeAmount,
           orderAmountMinor,
           stripeCurrency,
           orderCurrency: order.currency,
           reason: mismatchReason,
+          chargeId: latestChargeId ?? chargeForIntent?.id ?? null,
         });
 
         await markStripeAttemptFinal({
@@ -714,8 +908,11 @@ export async function POST(request: NextRequest) {
           pspMetadata: nextMeta,
         },
         extraWhere: and(
-          eq(orders.stockRestored, false),
-          ne(orders.inventoryStatus, 'released'),
+          or(isNull(orders.stockRestored), eq(orders.stockRestored, false)),
+          or(
+            isNull(orders.inventoryStatus),
+            ne(orders.inventoryStatus, 'released')
+          ),
           // avoid churn when already consistent
           or(ne(orders.paymentStatus, 'paid'), ne(orders.status, 'PAID')),
           // explicit safety gates (redundant with matrix, but keep)
@@ -729,20 +926,30 @@ export async function POST(request: NextRequest) {
       });
 
       logWebhookEvent({
+        requestId,
+        stripeEventId,
         orderId: order.id,
         paymentIntentId,
         paymentStatus,
         eventType,
+        chargeId: latestChargeId ?? chargeForIntent?.id ?? null,
       });
+
       return ack();
     }
     if (eventType === 'payment_intent.payment_failed') {
+      const chargeForIntent = getLatestCharge(paymentIntent as any);
+      const latestChargeId = getLatestChargeId(paymentIntent);
+
       if (order.paymentStatus === 'paid') {
         logWebhookEvent({
           orderId: order.id,
           paymentIntentId,
           paymentStatus,
           eventType,
+          chargeId: latestChargeId ?? chargeForIntent?.id ?? null,
+          requestId,
+          stripeEventId,
         });
         return ack();
       }
@@ -752,11 +959,13 @@ export async function POST(request: NextRequest) {
           paymentIntentId,
           paymentStatus,
           eventType,
+          chargeId: latestChargeId ?? chargeForIntent?.id ?? null,
+          requestId,
+          stripeEventId,
         });
         return ack();
       }
 
-      const chargeForIntent = getLatestCharge(paymentIntent as any);
       const failureReason =
         paymentIntent?.last_payment_error?.decline_code ??
         paymentIntent?.last_payment_error?.code ??
@@ -786,7 +995,7 @@ export async function POST(request: NextRequest) {
         note: eventType,
         set: {
           updatedAt: now,
-          pspChargeId: chargeForIntent?.id ?? null,
+          pspChargeId: latestChargeId ?? chargeForIntent?.id ?? null,
           pspPaymentMethod: resolvePaymentMethod(
             paymentIntent,
             chargeForIntent
@@ -815,17 +1024,26 @@ export async function POST(request: NextRequest) {
         paymentIntentId,
         paymentStatus,
         eventType,
+        chargeId: latestChargeId ?? chargeForIntent?.id ?? null,
+        requestId,
+        stripeEventId,
       });
       return ack();
     }
 
     if (eventType === 'payment_intent.canceled') {
+      const chargeForIntent = getLatestCharge(paymentIntent as any);
+      const latestChargeId = getLatestChargeId(paymentIntent);
+
       if (order.paymentStatus === 'paid') {
         logWebhookEvent({
           orderId: order.id,
           paymentIntentId,
           paymentStatus,
           eventType,
+          chargeId: latestChargeId ?? chargeForIntent?.id ?? null,
+          requestId,
+          stripeEventId,
         });
         return ack();
       }
@@ -835,10 +1053,12 @@ export async function POST(request: NextRequest) {
           paymentIntentId,
           paymentStatus,
           eventType,
+          chargeId: latestChargeId ?? chargeForIntent?.id ?? null,
+          requestId,
+          stripeEventId,
         });
         return ack();
       }
-      const chargeForIntent = getLatestCharge(paymentIntent as any);
       const cancellationReason =
         paymentIntent?.cancellation_reason ??
         paymentIntent?.status ??
@@ -866,7 +1086,7 @@ export async function POST(request: NextRequest) {
         note: eventType,
         set: {
           updatedAt: now,
-          pspChargeId: chargeForIntent?.id ?? null,
+          pspChargeId: latestChargeId ?? chargeForIntent?.id ?? null,
           pspPaymentMethod: resolvePaymentMethod(
             paymentIntent,
             chargeForIntent
@@ -890,6 +1110,9 @@ export async function POST(request: NextRequest) {
         paymentIntentId,
         paymentStatus,
         eventType,
+        chargeId: latestChargeId ?? chargeForIntent?.id ?? null,
+        requestId,
+        stripeEventId,
       });
       return ack();
     }
@@ -939,6 +1162,7 @@ export async function POST(request: NextRequest) {
 
           if (!list || list.length === 0) {
             warnRefundFullnessUndetermined({
+              ...warnBase,
               eventId: event.id,
               eventType,
               chargeId:
@@ -968,6 +1192,7 @@ export async function POST(request: NextRequest) {
 
           if (!sawNumericAmount && currentAmt == null) {
             warnRefundFullnessUndetermined({
+              ...warnBase,
               eventId: event.id,
               eventType,
               chargeId:
@@ -999,6 +1224,7 @@ export async function POST(request: NextRequest) {
             : null;
 
           warnRefundFullnessUndetermined({
+            ...warnBase,
             eventId: event.id,
             eventType,
             chargeId:
@@ -1053,7 +1279,9 @@ export async function POST(request: NextRequest) {
 
           if (!list || list.length === 0) {
             warnRefundFullnessUndetermined({
+              ...warnBase,
               eventId: event.id,
+
               eventType,
               chargeId:
                 ((effectiveCharge as any)?.id as string | undefined) ??
@@ -1084,6 +1312,7 @@ export async function POST(request: NextRequest) {
 
           if (!sawNumericAmount && currentAmt == null) {
             warnRefundFullnessUndetermined({
+              ...warnBase,
               eventId: event.id,
               eventType,
               chargeId:
@@ -1116,6 +1345,7 @@ export async function POST(request: NextRequest) {
             : null;
 
           warnRefundFullnessUndetermined({
+            ...warnBase,
             eventId: event.id,
             eventType,
             chargeId:
@@ -1189,11 +1419,16 @@ export async function POST(request: NextRequest) {
           .where(eq(orders.id, order.id));
 
         logWebhookEvent({
+          requestId,
+          stripeEventId,
           orderId: order.id,
           paymentIntentId,
           paymentStatus,
           eventType,
+          refundId: refund?.id ?? null,
+          chargeId: charge?.id ?? refundChargeId ?? null,
         });
+
         return ack();
       }
 
@@ -1238,32 +1473,48 @@ export async function POST(request: NextRequest) {
       }
 
       logWebhookEvent({
+        requestId,
+        stripeEventId,
         orderId: order.id,
         paymentIntentId,
         paymentStatus,
         eventType,
+        refundId: refund?.id ?? null,
+        chargeId: charge?.id ?? refundChargeId ?? null,
       });
+
       return ack();
     }
 
     // default ack
     logWebhookEvent({
+      requestId,
+      stripeEventId,
       orderId: order.id,
       paymentIntentId,
       paymentStatus,
       eventType,
+      chargeId: charge?.id ?? null,
+      refundId: refundObject?.id ?? null,
     });
+
     return ack();
   } catch (error) {
     if (isRefundFullnessUndeterminedError(error)) {
       // Do NOT ack() -> keep processedAt NULL so Stripe retries.
-      return NextResponse.json(
+      return noStoreJson(
         { code: REFUND_FULLNESS_UNDETERMINED },
         { status: 500 }
       );
     }
 
-    logError('Stripe webhook processing failed', error);
+    logError('stripe_webhook_processing_failed', error, {
+      ...eventMeta(),
+      code: 'WEBHOOK_PROCESSING_FAILED',
+      paymentIntentId,
+      orderId: orderId ?? null,
+    });
+
     // P0.8: release claim early so Stripe retries can be claimed immediately.
     try {
       await db
@@ -1279,6 +1530,6 @@ export async function POST(request: NextRequest) {
     } catch {
       // best-effort
     }
-    return NextResponse.json({ error: 'internal_error' }, { status: 500 });
+    return noStoreJson({ error: 'internal_error' }, { status: 500 });
   }
 }
