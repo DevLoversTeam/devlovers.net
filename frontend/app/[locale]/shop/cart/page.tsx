@@ -19,7 +19,7 @@ export default function CartPage() {
 
   const params = useParams<{ locale?: string }>();
   const locale = params.locale ?? 'en';
-  const shopBase = useMemo(() => `/${locale}/shop`, [locale]);
+  const shopBase = useMemo(() => `/shop`, []);
 
   async function handleCheckout() {
     setCheckoutError(null);

@@ -112,8 +112,8 @@ export default async function OrderDetailPage({
   const user = await getCurrentUser();
   if (!user) {
     redirect(
-      `/${locale}/login?next=${encodeURIComponent(
-        `/${locale}/shop/orders/${id}`
+      `/login?next=${encodeURIComponent(
+        `/shop/orders/${id}`
       )}`
     );
   }

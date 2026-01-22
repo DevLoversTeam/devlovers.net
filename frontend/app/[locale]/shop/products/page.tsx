@@ -39,7 +39,7 @@ export default async function ProductsPage({
     }
 
     const qs = qsParams.toString();
-    const basePath = `/${locale}/shop/products`;
+    const basePath = `/shop/products`;
 
     redirect(qs ? `${basePath}?${qs}` : basePath);
   }
