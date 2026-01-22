@@ -13,7 +13,11 @@ function makeReq(init: RequestInit) {
 describe('origin posture helpers', () => {
   beforeEach(() => {
     vi.stubEnv('APP_ORIGIN', 'http://localhost:3000');
-    vi.stubEnv('APP_ADDITIONAL_ORIGINS', '');
+    vi.stubEnv(
+      'APP_ADDITIONAL_ORIGINS',
+      'https://admin.example, https://preview.example/'
+    );
+
     vi.stubEnv('NODE_ENV', 'test');
   });
 
@@ -31,6 +35,15 @@ describe('origin posture helpers', () => {
     const req = makeReq({
       method: 'POST',
       headers: { origin: 'http://localhost:3000' },
+    });
+    const res = guardBrowserSameOrigin(req);
+    expect(res).toBeNull();
+  });
+
+  it('guardBrowserSameOrigin allows POST with Origin from APP_ADDITIONAL_ORIGINS', () => {
+    const req = makeReq({
+      method: 'POST',
+      headers: { origin: 'https://preview.example' },
     });
     const res = guardBrowserSameOrigin(req);
     expect(res).toBeNull();

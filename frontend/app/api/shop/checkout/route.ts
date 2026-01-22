@@ -66,7 +66,7 @@ function errorResponse(
   status: number,
   details?: unknown
 ) {
-  return NextResponse.json(
+  const res = NextResponse.json(
     {
       code,
       message,
@@ -74,6 +74,9 @@ function errorResponse(
     },
     { status }
   );
+
+  res.headers.set('Cache-Control', 'no-store');
+  return res;
 }
 
 function getIdempotencyKey(request: NextRequest) {
@@ -106,7 +109,7 @@ function buildCheckoutResponse({
   clientSecret: string | null;
   status: number;
 }) {
-  return NextResponse.json(
+  const res = NextResponse.json(
     {
       success: true,
       order: {
@@ -127,6 +130,9 @@ function buildCheckoutResponse({
     },
     { status }
   );
+
+  res.headers.set('Cache-Control', 'no-store');
+  return res;
 }
 
 function getSessionUserId(user: unknown): string | null {
@@ -166,11 +172,9 @@ export async function POST(request: NextRequest) {
 
   const blocked = guardBrowserSameOrigin(request);
   if (blocked) {
-    logWarn('checkout_origin_blocked', {
-      ...baseMeta,
-      code: 'ORIGIN_BLOCKED',
-    });
+    logWarn('checkout_origin_blocked', { ...baseMeta, code: 'ORIGIN_BLOCKED' });
 
+    blocked.headers.set('Cache-Control', 'no-store');
     return blocked;
   }
 

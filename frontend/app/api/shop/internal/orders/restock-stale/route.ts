@@ -281,10 +281,15 @@ export async function POST(request: NextRequest) {
 
   const authRes = requireInternalJanitorAuth(request);
   if (authRes) {
+    const status =
+      (authRes as any).status ?? (authRes as any).statusCode ?? 401;
+
     logWarn('internal_janitor_auth_rejected', {
       ...baseMeta,
-      code: 'UNAUTHORIZED',
+      code: String(status),
+      status,
     });
+
     return authRes;
   }
 

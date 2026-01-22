@@ -1,3 +1,4 @@
+-- Note: Postgres DO blocks execute atomically as a single statement.
 DO $$
 BEGIN
   IF EXISTS (

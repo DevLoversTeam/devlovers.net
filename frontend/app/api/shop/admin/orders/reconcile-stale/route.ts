@@ -6,7 +6,7 @@ import {
   AdminUnauthorizedError,
   requireAdminApi,
 } from '@/lib/auth/admin';
-import { logError, logWarn } from '@/lib/logging';
+import { logError, logInfo, logWarn } from '@/lib/logging';
 import { restockStalePendingOrders } from '@/lib/services/orders';
 import {
   CSRF_FORM_FIELD,
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
     const processed = await restockStalePendingOrders({
       olderThanMinutes: DEFAULT_STALE_MINUTES,
     });
-    logWarn('admin_reconcile_stale_succeeded', {
+    logInfo('admin_reconcile_stale_succeeded', {
       ...baseMeta,
       code: 'OK',
       processed,

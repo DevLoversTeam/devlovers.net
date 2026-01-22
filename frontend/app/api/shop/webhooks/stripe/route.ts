@@ -247,6 +247,21 @@ function getLatestChargeId(
   return null;
 }
 
+function extractStripeId(value: unknown): string | null {
+  if (typeof value === 'string') {
+    const s = value.trim();
+    return s.length > 0 ? s : null;
+  }
+  if (value && typeof value === 'object' && 'id' in value) {
+    const id = (value as any).id;
+    if (typeof id === 'string') {
+      const s = id.trim();
+      return s.length > 0 ? s : null;
+    }
+  }
+  return null;
+}
+
 function resolvePaymentMethod(
   paymentIntent?: Stripe.PaymentIntent,
   charge?: Stripe.Charge
@@ -414,7 +429,7 @@ export async function POST(request: NextRequest) {
       { error: 'invalid_payload', code: 'INVALID_PAYLOAD' },
       { status: 400 }
     );
-       return res;
+    return res;
   }
 
   const signature = request.headers.get('stripe-signature');
@@ -439,7 +454,6 @@ export async function POST(request: NextRequest) {
         retryAfterSeconds: decision.retryAfterSeconds,
         details: { scope: 'stripe_webhook', reason: 'missing_signature' },
       });
-      res.headers.set('Cache-Control', 'no-store');
       return res;
     }
 
@@ -489,7 +503,6 @@ export async function POST(request: NextRequest) {
           retryAfterSeconds: decision.retryAfterSeconds,
           details: { scope: 'stripe_webhook', reason: 'invalid_signature' },
         });
-        res.headers.set('Cache-Control', 'no-store');
         return res;
       }
 
@@ -572,17 +585,9 @@ export async function POST(request: NextRequest) {
     ((refundObject as any)?.status as string | null | undefined) ??
     null;
 
-  const bestEffortRefundChargeId: string | null =
-    refundObject && typeof (refundObject as any).charge === 'string'
-      ? (refundObject as any).charge.trim().length > 0
-        ? (refundObject as any).charge.trim()
-        : null
-      : refundObject &&
-        typeof (refundObject as any).charge === 'object' &&
-        (refundObject as any).charge &&
-        typeof (refundObject as any).charge.id === 'string'
-      ? (refundObject as any).charge.id
-      : null;
+  const bestEffortRefundChargeId: string | null = extractStripeId(
+    (refundObject as any)?.charge
+  );
 
   const bestEffortChargeId: string | null = paymentIntent
     ? getLatestChargeId(paymentIntent)

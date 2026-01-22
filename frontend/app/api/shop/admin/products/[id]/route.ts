@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-
+import { sql } from 'drizzle-orm';
 import {
   AdminApiDisabledError,
   AdminForbiddenError,
@@ -20,7 +20,7 @@ import { guardBrowserSameOrigin } from '@/lib/security/origin';
 
 import { parseAdminProductForm } from '@/lib/admin/parseAdminProductForm';
 import { logError, logWarn } from '@/lib/logging';
-
+import { db } from '@/db';
 import {
   deleteProduct,
   getAdminProductByIdWithPrices,
@@ -48,29 +48,33 @@ type InvalidPricesJsonError = {
   field: 'prices';
 };
 
-function isInvalidPricesJsonError(
-  value: SaleRuleViolation | InvalidPricesJsonError | null
-): value is InvalidPricesJsonError {
-  if (!value || typeof value !== 'object') return false;
-  return (value as Record<string, unknown>).code === 'INVALID_PRICES_JSON';
-}
+function findSaleRuleViolation(input: unknown): SaleRuleViolation | null {
+  if (typeof input !== 'object' || input === null) return null;
 
-function findSaleRuleViolation(input: any): SaleRuleViolation | null {
-  const badge = input?.badge;
-  if (badge !== 'SALE') return null;
+  const rec = input as Record<string, unknown>;
+  if (rec.badge !== 'SALE') return null;
 
-  const prices = Array.isArray(input?.prices) ? input.prices : [];
-  for (const row of prices) {
-    const currency = String(row?.currency ?? '');
-    const priceMinor = Number(row?.priceMinor);
+  const pricesUnknown = rec.prices;
+  const prices = Array.isArray(pricesUnknown) ? pricesUnknown : [];
+
+  for (const rowUnknown of prices) {
+    if (typeof rowUnknown !== 'object' || rowUnknown === null) continue;
+
+    const row = rowUnknown as Record<string, unknown>;
+
+    const currency = String(row.currency ?? '');
+    const priceMinor = Number(row.priceMinor);
+    const originalPriceMinorRaw = row.originalPriceMinor;
+
     const originalPriceMinor =
-      row?.originalPriceMinor == null ? null : Number(row.originalPriceMinor);
+      originalPriceMinorRaw == null ? null : Number(originalPriceMinorRaw);
 
     if (!currency || !Number.isFinite(priceMinor)) continue;
 
     if (originalPriceMinor == null) {
       return { currency, field: 'originalPriceMinor', rule: 'required' };
     }
+
     if (
       !Number.isFinite(originalPriceMinor) ||
       originalPriceMinor <= priceMinor
@@ -86,9 +90,20 @@ function findSaleRuleViolation(input: any): SaleRuleViolation | null {
   return null;
 }
 
-function getSaleViolationFromFormData(
+function getIssuesCount(err: unknown): number {
+  if (err instanceof z.ZodError) return err.issues.length;
+
+  if (typeof err === 'object' && err !== null) {
+    const issues = (err as Record<string, unknown>).issues;
+    if (Array.isArray(issues)) return issues.length;
+  }
+
+  return 0;
+}
+
+function getInvalidPricesJsonErrorFromFormData(
   formData: FormData
-): SaleRuleViolation | InvalidPricesJsonError | null {
+): InvalidPricesJsonError | null {
   const badge = String(formData.get('badge') ?? '');
   if (badge !== 'SALE') return null;
 
@@ -96,11 +111,63 @@ function getSaleViolationFromFormData(
   if (typeof pricesRaw !== 'string' || !pricesRaw.trim()) return null;
 
   try {
-    const prices = JSON.parse(pricesRaw);
-    return findSaleRuleViolation({ badge, prices });
+    JSON.parse(pricesRaw);
+    return null;
   } catch {
     return { code: 'INVALID_PRICES_JSON', field: 'prices' };
   }
+}
+
+function getPgMeta(err: unknown): {
+  code?: string;
+  constraint?: string;
+  detail?: string;
+} {
+  const seen = new Set<unknown>();
+  let cur: unknown = err;
+
+  for (let i = 0; i < 8; i++) {
+    if (cur == null || typeof cur !== 'object') break;
+    if (seen.has(cur)) break;
+    seen.add(cur);
+
+    const rec = cur as Record<string, unknown>;
+    const code = typeof rec.code === 'string' ? rec.code : undefined;
+    const constraint =
+      typeof rec.constraint === 'string' ? rec.constraint : undefined;
+    const detail = typeof rec.detail === 'string' ? rec.detail : undefined;
+
+    if (code || constraint || detail) return { code, constraint, detail };
+
+    cur = rec.cause;
+  }
+
+  return {};
+}
+
+async function getProductDeleteBlockerConstraint(
+  productId: string
+): Promise<string | null> {
+  const result = await db.execute(sql`
+    SELECT
+      CASE
+        WHEN EXISTS (
+          SELECT 1 FROM order_items oi
+          WHERE oi.product_id = ${productId}
+        ) THEN 'order_items_product_id_products_id_fk'
+        WHEN EXISTS (
+          SELECT 1 FROM inventory_moves im
+          WHERE im.product_id = ${productId}
+        ) THEN 'inventory_moves_product_id_products_id_fk'
+        ELSE NULL
+      END AS constraint;
+  `);
+
+  const rows =
+    (result as unknown as { rows?: Array<{ constraint: string | null }> })
+      .rows ?? [];
+
+  return rows[0]?.constraint ?? null;
 }
 
 export async function GET(
@@ -112,18 +179,8 @@ export async function GET(
   const requestId =
     request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
 
-  const blocked = guardBrowserSameOrigin(request);
-  if (blocked) {
-    logWarn('admin_product_detail_origin_blocked', {
-      requestId,
-      route: request.nextUrl.pathname,
-      method: request.method,
-      code: 'ORIGIN_BLOCKED',
-      durationMs: Date.now() - startedAtMs,
-    });
-    blocked.headers.set('Cache-Control', 'no-store');
-    return blocked;
-  }
+  // Origin posture: same-origin enforcement is applied to mutating methods;
+  // GET is intentionally unguarded.
 
   const baseMeta = {
     requestId,
@@ -155,7 +212,8 @@ export async function GET(
       logWarn('admin_product_detail_invalid_product_id', {
         ...baseMeta,
         code: 'INVALID_PRODUCT_ID',
-        issuesCount: parsedParams.error.issues?.length ?? 0,
+        issuesCount: getIssuesCount(parsedParams.error),
+
         durationMs: Date.now() - startedAtMs,
       });
 
@@ -233,6 +291,8 @@ export async function GET(
   }
 }
 
+type UpdateProductInput = Parameters<typeof updateProduct>[1];
+
 export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -273,7 +333,8 @@ export async function PATCH(
       logWarn('admin_product_update_invalid_product_id', {
         ...baseMeta,
         code: 'INVALID_PRODUCT_ID',
-        issuesCount: parsedParams.error.issues?.length ?? 0,
+        issuesCount: getIssuesCount(parsedParams.error),
+
         durationMs: Date.now() - startedAtMs,
       });
 
@@ -323,9 +384,7 @@ export async function PATCH(
       return csrfRes;
     }
 
-    const saleViolationFromForm = getSaleViolationFromFormData(formData);
-
-    if (isInvalidPricesJsonError(saleViolationFromForm)) {
+    if (getInvalidPricesJsonErrorFromFormData(formData)) {
       logWarn('admin_product_update_invalid_prices_json', {
         ...baseMeta,
         code: 'INVALID_PRICES_JSON',
@@ -343,36 +402,9 @@ export async function PATCH(
       );
     }
 
-    if (saleViolationFromForm) {
-      const message =
-        saleViolationFromForm.rule === 'required'
-          ? 'SALE badge requires original price for each provided currency.'
-          : 'SALE badge requires original price to be greater than price.';
-
-      logWarn('admin_product_update_sale_rule_violation', {
-        ...baseMeta,
-        code: 'SALE_ORIGINAL_REQUIRED',
-        productId: productIdForLog,
-        currency: saleViolationFromForm.currency,
-        rule: saleViolationFromForm.rule,
-        durationMs: Date.now() - startedAtMs,
-      });
-
-      return noStoreJson(
-        {
-          error: message,
-          code: 'SALE_ORIGINAL_REQUIRED',
-          field: 'prices',
-          details: saleViolationFromForm,
-        },
-        { status: 400 }
-      );
-    }
-
     const parsed = parseAdminProductForm(formData, { mode: 'update' });
     if (!parsed.ok) {
-      const issuesCount =
-        ((parsed.error as any)?.issues?.length as number | undefined) ?? 0;
+      const issuesCount = getIssuesCount(parsed.error);
 
       logWarn('admin_product_update_invalid_payload', {
         ...baseMeta,
@@ -391,8 +423,8 @@ export async function PATCH(
         { status: 400 }
       );
     }
-
-    const saleViolation = findSaleRuleViolation(parsed.data as any);
+    // SALE invariant is validated on parsed/normalized payload (single source of truth).
+    const saleViolation = findSaleRuleViolation(parsed.data);
     if (saleViolation) {
       const message =
         saleViolation.rule === 'required'
@@ -423,7 +455,7 @@ export async function PATCH(
       const imageFile = formData.get('image');
 
       const updated = await updateProduct(productIdForLog, {
-        ...(parsed.data as any),
+        ...(parsed.data as UpdateProductInput),
         image:
           imageFile instanceof File && imageFile.size > 0
             ? imageFile
@@ -454,22 +486,26 @@ export async function PATCH(
       }
 
       if (error instanceof InvalidPayloadError) {
-        const anyErr = error as any;
+        const rec = error as unknown as Record<string, unknown>;
+        const code =
+          typeof rec.code === 'string' ? rec.code : 'INVALID_PAYLOAD';
+        const field = typeof rec.field === 'string' ? rec.field : undefined;
+        const details = rec.details;
 
         logWarn('admin_product_update_invalid_payload_error', {
           ...baseMeta,
-          code: anyErr.code ?? 'INVALID_PAYLOAD',
+          code,
           productId: productIdForLog,
-          field: anyErr.field,
+          field,
           durationMs: Date.now() - startedAtMs,
         });
 
         return noStoreJson(
           {
             error: error.message || 'Invalid product data',
-            code: anyErr.code,
-            field: anyErr.field,
-            details: anyErr.details,
+            code,
+            field,
+            details,
           },
           { status: 400 }
         );
@@ -634,7 +670,8 @@ export async function DELETE(
       logWarn('admin_product_delete_invalid_product_id', {
         ...baseMeta,
         code: 'INVALID_PRODUCT_ID',
-        issuesCount: parsedParams.error.issues?.length ?? 0,
+        issuesCount: getIssuesCount(parsedParams.error),
+
         durationMs: Date.now() - startedAtMs,
       });
 
@@ -649,6 +686,29 @@ export async function DELETE(
     }
 
     productIdForLog = parsedParams.data.id;
+    // Fail fast: do not attempt DELETE if product is referenced by orders.
+    const blockerConstraint = await getProductDeleteBlockerConstraint(
+      productIdForLog
+    );
+    if (blockerConstraint) {
+      logWarn('admin_product_delete_in_use', {
+        ...baseMeta,
+        code: 'PRODUCT_IN_USE',
+        productId: productIdForLog,
+        constraint: blockerConstraint,
+        durationMs: Date.now() - startedAtMs,
+      });
+
+      return noStoreJson(
+        {
+          error:
+            'Product cannot be deleted because it is referenced by other records.',
+          code: 'PRODUCT_IN_USE',
+          constraint: blockerConstraint,
+        },
+        { status: 409 }
+      );
+    }
 
     await deleteProduct(productIdForLog);
 
@@ -695,6 +755,28 @@ export async function DELETE(
       return noStoreJson(
         { error: 'Product not found', code: 'PRODUCT_NOT_FOUND' },
         { status: 404 }
+      );
+    }
+    const { code: pgCode, constraint } = getPgMeta(error);
+
+    // Postgres: 23503 = foreign_key_violation
+    if (pgCode === '23503') {
+      logWarn('admin_product_delete_in_use', {
+        ...baseMeta,
+        code: 'PRODUCT_IN_USE',
+        productId: productIdForLog,
+        constraint,
+        durationMs: Date.now() - startedAtMs,
+      });
+
+      return noStoreJson(
+        {
+          error:
+            'Product cannot be deleted because it is referenced by other records.',
+          code: 'PRODUCT_IN_USE',
+          constraint,
+        },
+        { status: 409 }
       );
     }
 

@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 const LOCALHOST_ORIGIN = 'http://localhost:3000';
 
 function buildErrorResponse(code: string, message: string) {
-  return NextResponse.json(
+  const res = NextResponse.json(
     {
       error: {
         code,
@@ -12,6 +12,11 @@ function buildErrorResponse(code: string, message: string) {
     },
     { status: 403 }
   );
+
+  // Ensure security errors are never cached by intermediaries.
+  res.headers.set('Cache-Control', 'no-store');
+
+  return res;
 }
 
 export function normalizeOrigin(input: string): string {

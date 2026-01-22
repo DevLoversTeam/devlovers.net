@@ -113,7 +113,6 @@ export async function POST(
         orderId: orderIdForLog,
         durationMs: Date.now() - startedAtMs,
       });
-
       return noStoreJson({ code: error.code }, { status: 401 });
     }
 
@@ -127,13 +126,6 @@ export async function POST(
 
       return noStoreJson({ code: error.code }, { status: 403 });
     }
-
-    logError('admin_orders_refund_failed', error, {
-      ...baseMeta,
-      orderId: orderIdForLog,
-      code: 'ADMIN_REFUND_FAILED',
-      durationMs: Date.now() - startedAtMs,
-    });
 
     if (error instanceof OrderNotFoundError) {
       logWarn('admin_orders_refund_not_found', {
@@ -162,6 +154,13 @@ export async function POST(
         { status: 400 }
       );
     }
+
+    logError('admin_orders_refund_failed', error, {
+      ...baseMeta,
+      orderId: orderIdForLog,
+      code: 'ADMIN_REFUND_FAILED',
+      durationMs: Date.now() - startedAtMs,
+    });
 
     return noStoreJson(
       { error: 'Unable to refund order', code: 'INTERNAL_ERROR' },

@@ -7,9 +7,7 @@ import {
   AdminUnauthorizedError,
   requireAdminApi,
 } from '@/lib/auth/admin';
-
 import { requireAdminCsrf } from '@/lib/security/admin-csrf';
-import { guardBrowserSameOrigin } from '@/lib/security/origin';
 
 import { getAdminOrderDetail } from '@/db/queries/shop/admin-orders';
 
@@ -34,18 +32,8 @@ export async function GET(
   const requestId =
     request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
 
-  const blocked = guardBrowserSameOrigin(request);
-  if (blocked) {
-    logWarn('admin_order_detail_origin_blocked', {
-      requestId,
-      route: request.nextUrl.pathname,
-      method: request.method,
-      code: 'ORIGIN_BLOCKED',
-      durationMs: Date.now() - startedAtMs,
-    });
-    blocked.headers.set('Cache-Control', 'no-store');
-    return blocked;
-  }
+  // Origin posture: same-origin enforcement is applied to mutating methods;
+  // GET is intentionally unguarded.
 
   const baseMeta = {
     requestId,

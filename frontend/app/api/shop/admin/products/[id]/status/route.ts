@@ -122,13 +122,6 @@ export async function PATCH(
       return noStoreJson({ code: error.code }, { status: 403 });
     }
 
-    logError('admin_product_status_failed', error, {
-      ...baseMeta,
-      code: 'ADMIN_PRODUCT_STATUS_FAILED',
-      productId: productIdForLog,
-      durationMs: Date.now() - startedAtMs,
-    });
-
     if (error instanceof Error && error.message === 'PRODUCT_NOT_FOUND') {
       logWarn('admin_product_status_not_found', {
         ...baseMeta,
@@ -142,6 +135,13 @@ export async function PATCH(
         { status: 404 }
       );
     }
+
+    logError('admin_product_status_failed', error, {
+      ...baseMeta,
+      code: 'ADMIN_PRODUCT_STATUS_FAILED',
+      productId: productIdForLog,
+      durationMs: Date.now() - startedAtMs,
+    });
 
     return noStoreJson(
       { error: 'internal_error', code: 'INTERNAL_ERROR' },

@@ -28,7 +28,7 @@ type RawSearchParams = {
 };
 
 function normalizeLocale(input: unknown): 'en' | 'uk' {
-  const raw = typeof input === 'string' ? input.trim() : '';
+  const raw = typeof input === 'string' ? input.trim().toLowerCase() : '';
   if (raw === 'uk' || raw.startsWith('uk-')) return 'uk';
   return 'en';
 }
