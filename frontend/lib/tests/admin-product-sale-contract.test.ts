@@ -95,6 +95,7 @@ describe('P1-3 SALE rule end-to-end contract: admin products API returns stable 
     const req = new NextRequest(
       new Request('http://localhost/api/shop/admin/products', {
         method: 'POST',
+        headers: { origin: 'http://localhost:3000' },
         body: makeFormData({
           badge: 'SALE',
           prices: [
@@ -138,6 +139,7 @@ describe('P1-3 SALE rule end-to-end contract: admin products API returns stable 
         'http://localhost/api/shop/admin/products/11111111-1111-4111-8111-111111111111',
         {
           method: 'PATCH',
+          headers: { origin: 'http://localhost:3000' },
           body: makeFormData({
             badge: 'SALE',
             prices: [
@@ -178,6 +180,7 @@ describe('P1-3 SALE rule end-to-end contract: admin products API returns stable 
     const req = new NextRequest(
       new Request('http://localhost/api/shop/admin/products', {
         method: 'POST',
+        headers: { origin: 'http://localhost:3000' },
         body: makeFormData({ badge: 'SALE', pricesRaw: '{' }),
       })
     );
@@ -205,6 +208,7 @@ describe('P1-3 SALE rule end-to-end contract: admin products API returns stable 
         'http://localhost/api/shop/admin/products/11111111-1111-4111-8111-111111111111',
         {
           method: 'PATCH',
+          headers: { origin: 'http://localhost:3000' },
           body: makeFormData({ badge: 'SALE', pricesRaw: '{' }),
         }
       )

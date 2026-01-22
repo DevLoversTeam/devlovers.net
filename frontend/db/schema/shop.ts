@@ -266,7 +266,7 @@ export const stripeEvents = pgTable(
     provider: text('provider').notNull().default('stripe'),
     eventId: text('event_id').notNull(),
     paymentIntentId: text('payment_intent_id'),
-    orderId: uuid('order_id').references(() => orders.id),
+    orderId: uuid('order_id').references(() => orders.id, { onDelete: 'cascade' }),
     eventType: text('event_type').notNull(),
     paymentStatus: text('payment_status'),
     claimedAt: timestamp('claimed_at', { withTimezone: true }),

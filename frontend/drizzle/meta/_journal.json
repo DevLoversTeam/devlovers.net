@@ -36,6 +36,13 @@
       "when": 1768707328896,
       "tag": "0004_add_api_rate_limits",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1768782782399,
+      "tag": "0005_modern_bromley",
+      "breakpoints": true
     }
   ]
 }

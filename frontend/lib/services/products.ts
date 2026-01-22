@@ -15,4 +15,7 @@ export {
 
 export { rehydrateCartItems } from './products/cart/rehydrate';
 
-export type { AdminProductPriceRow, AdminProductsFilter } from './products/types';
+export type {
+  AdminProductPriceRow,
+  AdminProductsFilter,
+} from './products/types';

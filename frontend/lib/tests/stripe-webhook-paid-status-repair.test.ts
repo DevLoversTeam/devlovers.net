@@ -1,7 +1,7 @@
 import crypto from 'crypto';
+import { NextRequest } from 'next/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { eq } from 'drizzle-orm';
-
 import { db } from '@/db';
 import { orders, stripeEvents } from '@/db/schema';
 import { toDbMoney } from '@/lib/shop/money';
@@ -61,13 +61,18 @@ async function callWebhook(params: {
 
   const { POST } = await import('@/app/api/shop/webhooks/stripe/route');
 
-  return POST(
-    new Request('http://localhost/api/shop/webhooks/stripe', {
-      method: 'POST',
-      headers: { 'stripe-signature': 't=0,v1=deadbeef' },
-      body: JSON.stringify({ id: params.eventId }),
-    }) as any
-  );
+  const req = new NextRequest('http://localhost/api/shop/webhooks/stripe', {
+    method: 'POST',
+    headers: {
+      'stripe-signature': 't=0,v1=deadbeef',
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({ id: params.eventId }),
+    // Node-fetch/undici інколи вимагає duplex при body; безпечно лишити як any.
+    duplex: 'half',
+  } as any);
+
+  return POST(req as any);
 }
 
 async function cleanupByIds(params: {

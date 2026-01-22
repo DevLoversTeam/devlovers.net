@@ -6,6 +6,7 @@ import { products } from '@/db/schema';
 import type { DbProduct } from '@/lib/types/shop';
 
 import { mapRowToProduct } from '../mapping';
+import { ProductNotFoundError } from '@/lib/errors/products';
 
 export async function toggleProductStatus(id: string): Promise<DbProduct> {
   const [current] = await db
@@ -15,7 +16,7 @@ export async function toggleProductStatus(id: string): Promise<DbProduct> {
     .limit(1);
 
   if (!current) {
-    throw new Error('PRODUCT_NOT_FOUND');
+    throw new ProductNotFoundError(id);
   }
 
   const [updated] = await db
@@ -23,6 +24,11 @@ export async function toggleProductStatus(id: string): Promise<DbProduct> {
     .set({ isActive: !current.isActive })
     .where(eq(products.id, id))
     .returning();
+
+  if (!updated) {
+    // concurrent delete between SELECT and UPDATE
+    throw new ProductNotFoundError(id);
+  }
 
   return mapRowToProduct(updated);
 }

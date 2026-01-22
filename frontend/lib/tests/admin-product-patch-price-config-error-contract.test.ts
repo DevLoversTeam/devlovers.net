@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { NextRequest } from 'next/server';
 import { PriceConfigError } from '@/lib/services/errors';
 
 vi.mock('@/lib/auth/admin', () => ({
@@ -41,7 +42,7 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-function makeReq(): any {
+function makeReq(): NextRequest {
   const fd = new FormData();
 
   // Make payload realistic enough to pass parseAdminProductForm in PATCH
@@ -60,7 +61,16 @@ function makeReq(): any {
     ])
   );
 
-  return { formData: async () => fd };
+  return new NextRequest(
+    new Request(
+      'http://localhost/api/shop/admin/products/00000000-0000-4000-8000-000000000001',
+      {
+        method: 'PATCH',
+        headers: { origin: 'http://localhost:3000' },
+        body: fd,
+      }
+    )
+  );
 }
 
 describe('admin PATCH /shop/admin/products/:id (PRICE_CONFIG_ERROR contract)', () => {

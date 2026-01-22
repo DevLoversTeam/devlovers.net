@@ -1,4 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  vi,
+  beforeEach,
+  beforeAll,
+  afterAll,
+} from 'vitest';
 import { makeCheckoutReq } from '@/lib/tests/helpers/makeCheckoutReq';
 import { InvalidPayloadError } from '@/lib/services/errors';
 import { ensureStripePaymentIntentForOrder } from '@/lib/services/orders/payment-attempts';
@@ -69,6 +77,18 @@ type MockedFn = ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
   vi.clearAllMocks();
+});
+
+const __prevRateLimitDisabled = process.env.RATE_LIMIT_DISABLED;
+
+beforeAll(() => {
+  process.env.RATE_LIMIT_DISABLED = '1';
+});
+
+afterAll(() => {
+  if (__prevRateLimitDisabled === undefined)
+    delete process.env.RATE_LIMIT_DISABLED;
+  else process.env.RATE_LIMIT_DISABLED = __prevRateLimitDisabled;
 });
 
 describe('checkout: setOrderPaymentIntent rejection after order creation must not be 400', () => {

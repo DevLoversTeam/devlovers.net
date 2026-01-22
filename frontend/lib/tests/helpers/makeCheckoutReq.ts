@@ -13,9 +13,12 @@ export function makeCheckoutReq(params: {
   locale?: string; // mapped to Accept-Language
   items?: CheckoutItemInput[];
   userId?: string;
+  origin?: string | null;
 }) {
   const locale = params.locale ?? 'en';
   const idemKey = params.idempotencyKey;
+  const origin =
+    params.origin === undefined ? 'http://localhost:3000' : params.origin;
 
   const items = params.items ?? [
     {
@@ -34,13 +37,18 @@ export function makeCheckoutReq(params: {
     if (i.selectedColor !== undefined) base.selectedColor = i.selectedColor;
     return base;
   });
+  const ip = deriveTestIpFromIdemKey(idemKey);
 
   const headers = new Headers({
     'content-type': 'application/json',
     'accept-language': locale,
     'idempotency-key': idemKey,
-    'x-forwarded-for': deriveTestIpFromIdemKey(idemKey),
+    'x-forwarded-for': ip,
+    'x-real-ip': ip,
   });
+  if (origin) {
+    headers.set('origin', origin);
+  }
 
   const req = new Request('http://localhost/api/shop/checkout', {
     method: 'POST',
