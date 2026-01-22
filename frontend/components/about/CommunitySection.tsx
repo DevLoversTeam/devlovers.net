@@ -46,27 +46,46 @@ export function CommunitySection() {
             </div>
 
             <div className="max-w-7xl mx-auto px-4 text-center">
-                <Link 
-                    href="https://github.com/DevLoversTeam/devlovers.net/discussions" 
+                <div className="flex flex-col items-center gap-3 md:hidden">
+                    <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                        Have a success story or feature request?
+                    </span>
+                    <Link
+                        href="https://github.com/DevLoversTeam/devlovers.net/discussions"
+                        target="_blank"
+                        className="group inline-flex items-center gap-2 px-5 py-3 rounded-full
+                            bg-gray-900 dark:bg-white text-white dark:text-black
+                            text-xs font-bold uppercase tracking-wider
+                            transition-all duration-300
+                            hover:bg-[#1e5eff] dark:hover:bg-[#ff2d55]
+                            hover:text-white dark:hover:text-white
+                            hover:scale-[1.02]"
+                    >
+                        <Github size={14} />
+                        Join Discussion
+                        <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />
+                    </Link>
+                </div>
+
+                <Link
+                    href="https://github.com/DevLoversTeam/devlovers.net/discussions"
                     target="_blank"
-                    className="group relative inline-flex flex-col md:flex-row items-center justify-center gap-4 p-1.5 pl-6 pr-1.5 rounded-full 
+                    className="group relative hidden md:inline-flex items-center justify-center gap-4 p-1.5 pl-6 pr-1.5 rounded-full
                     bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10
                     transition-all duration-300 ease-out
-                    hover:scale-[1.02] 
+                    hover:scale-[1.02]
                     hover:border-[#1e5eff]/50 dark:hover:border-[#ff2d55]/50
                     hover:shadow-[0_0_30px_-5px_rgba(30,94,255,0.15)] dark:hover:shadow-[0_0_30px_-5px_rgba(255,45,85,0.15)]"
                 >
-                    <div className="flex flex-col items-start md:items-center">
-                         <span className="text-sm text-gray-700 dark:text-gray-200 font-medium">
-                            Have a success story or feature request?
-                        </span>
-                    </div>
-                   
-                    <span className="flex items-center gap-2 px-5 py-2.5 rounded-full 
-                        bg-gray-900 dark:bg-white text-white dark:text-black 
-                        text-xs font-bold uppercase tracking-wider 
+                    <span className="text-sm text-gray-700 dark:text-gray-200 font-medium">
+                        Have a success story or feature request?
+                    </span>
+
+                    <span className="flex items-center gap-2 px-5 py-2.5 rounded-full
+                        bg-gray-900 dark:bg-white text-white dark:text-black
+                        text-xs font-bold uppercase tracking-wider
                         transition-all duration-300
-                        group-hover:bg-[#1e5eff] dark:group-hover:bg-[#ff2d55] 
+                        group-hover:bg-[#1e5eff] dark:group-hover:bg-[#ff2d55]
                         group-hover:text-white dark:group-hover:text-white"
                     >
                         <Github size={14} />
