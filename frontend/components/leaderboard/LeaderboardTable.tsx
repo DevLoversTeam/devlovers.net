@@ -4,13 +4,11 @@ import { TrendingUp, Trophy, Medal } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
-import { User } from './types';
-
-type AuthUser = { id: string; username: string; email: string };
+import { User, CurrentUser } from './types';
 
 interface LeaderboardTableProps {
   users: User[];
-  currentUser?: AuthUser | null;
+  currentUser?: CurrentUser | null;
 }
 
 export function LeaderboardTable({
