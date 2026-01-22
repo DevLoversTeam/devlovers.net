@@ -75,7 +75,7 @@ export function LeaderboardTable({
             • • •
           </div>
 
-          <div className="bg-white dark:bg-white/5 backdrop-blur-md rounded-2xl border-2 border-[#ff2d55] overflow-hidden shadow-[0_0_20px_rgba(255,45,85,0.2)]">
+          <div className="bg-white dark:bg-white/5 backdrop-blur-md rounded-2xl border-2 border-[var(--accent-primary)] overflow-hidden shadow-[0_0_20px_var(--accent-primary)]">
             <table className="w-full text-left border-collapse">
               <tbody>
                 <TableRow user={matchedUser} isCurrentUser={true} t={t} />
@@ -102,7 +102,7 @@ function TableRow({
       className={cn(
         'group transition-all duration-300',
         isCurrentUser
-          ? 'bg-[#ff2d55]/10 dark:bg-[#ff2d55]/20 border-l-[6px] border-l-[#ff2d55] shadow-inner'
+          ? 'bg-[color-mix(in_srgb,var(--accent-primary),transparent_90%)] border-l-[6px] border-l-[var(--accent-primary)] shadow-inner'
           : 'hover:bg-slate-50 dark:hover:bg-white/5 border-l-[6px] border-l-transparent'
       )}
     >
@@ -118,8 +118,8 @@ function TableRow({
             className={cn(
               'w-10 h-10 rounded-full border flex items-center justify-center text-sm font-bold transition-all duration-300',
               isCurrentUser
-                ? 'bg-[#ff2d55] border-[#ff2d55] text-white shadow-[0_0_15px_rgba(255,45,85,0.5)]'
-                : 'bg-slate-100 border-slate-200 text-slate-600 dark:bg-gradient-to-br dark:from-slate-800 dark:to-slate-900 dark:border-white/10 dark:text-slate-300 group-hover:border-[#ff2d55]/50 group-hover:text-[#ff2d55] dark:group-hover:text-white'
+                ? 'bg-[var(--accent-primary)] border-[var(--accent-primary)] text-white shadow-[0_0_15px_var(--accent-primary)]'
+                : 'bg-slate-100 border-slate-200 text-slate-600 dark:bg-gradient-to-br dark:from-slate-800 dark:to-slate-900 dark:border-white/10 dark:text-slate-300 group-hover:border-[var(--accent-primary)] group-hover:text-[var(--accent-primary)]'
             )}
             aria-hidden="true"
           >
@@ -131,8 +131,8 @@ function TableRow({
               className={cn(
                 'font-medium text-sm transition-colors flex items-center gap-2',
                 isCurrentUser
-                  ? 'text-[#ff2d55] font-black text-base'
-                  : 'text-slate-700 dark:text-slate-200 group-hover:text-[#ff2d55] dark:group-hover:text-[#ff2d55]'
+                  ? 'text-[var(--accent-primary)] font-black text-base'
+                  : 'text-slate-700 dark:text-slate-200 group-hover:text-[var(--accent-primary)]'
               )}
             >
               {user.username}
@@ -146,7 +146,7 @@ function TableRow({
                       duration: 0.8,
                       ease: 'easeInOut',
                     }}
-                    className="absolute inset-0 text-[#ff2d55]"
+                    className="absolute inset-0 text-[var(--accent-primary)]"
                   >
                     <svg
                       viewBox="0 0 24 24"
@@ -179,7 +179,7 @@ function TableRow({
           className={cn(
             'font-mono font-bold inline-block transition-all',
             isCurrentUser
-              ? 'text-[#ff2d55] scale-110 drop-shadow-sm text-lg'
+              ? 'text-[var(--accent-primary)] scale-110 drop-shadow-sm text-lg'
               : 'text-slate-700 dark:text-slate-300 group-hover:scale-105'
           )}
         >
