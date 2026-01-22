@@ -58,14 +58,14 @@ export default function Footer() {
             <p className="text-sm text-slate-500 dark:text-slate-400">
               <Link
                 href="/privacy-policy"
-                className="transition-colors hover:[color:var(--accent-hover)]"
+                className="transition-colors hover:[color:var(--accent-hover)] focus-visible:[color:var(--accent-hover)]"
               >
                 {t('privacyPolicy')}
               </Link>
               <span className="px-2 opacity-60">|</span>
               <Link
                 href="/terms-of-service"
-                className="transition-colors hover:[color:var(--accent-hover)]"
+                className="transition-colors hover:[color:var(--accent-hover)] focus-visible:[color:var(--accent-hover)]"
               >
                 {t('termsOfService')}
               </Link>
