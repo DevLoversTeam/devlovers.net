@@ -19,7 +19,7 @@ export function LeaderboardPodium({ topThree }: { topThree: User[] }) {
         const rank = user.rank;
         const isFirst = rank === 1;
 
-        const height = rank === 1 ? '100%' : rank === 2 ? '40%' : '35%';
+        const height = rank === 1 ? '100%' : rank === 2 ? '50%' : '35%';
         const delay = rank === 1 ? 0.4 : rank === 2 ? 0.2 : 0.6;
 
         const rankStyles = {
