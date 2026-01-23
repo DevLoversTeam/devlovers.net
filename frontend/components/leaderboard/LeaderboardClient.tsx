@@ -24,25 +24,23 @@ export default function LeaderboardClient({
 
   return (
     <div className="relative min-h-screen w-full">
- 
       <div className="fixed inset-0 z-0">
         <DynamicGridBackground className="w-full h-full bg-gray-50 transition-colors duration-300 dark:bg-transparent" />
       </div>
 
-         <div className="relative z-10 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center pt-20 pb-10">
-        
+      <div className="relative z-10 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center pt-20 pb-10">
         <header className="text-center mb-16 max-w-3xl">
           <motion.div
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.6 }}
           >
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-black tracking-tight text-[var(--accent-primary)] mb-6 uppercase drop-shadow-sm">
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-black tracking-tight text-[var(--accent-primary)] mb-6 drop-shadow-sm">
               {t('title')}
             </h1>
           </motion.div>
-          
-          <motion.p 
+
+          <motion.p
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.1 }}
@@ -57,7 +55,7 @@ export default function LeaderboardClient({
             {hasResults ? (
               <LeaderboardPodium topThree={topThree} />
             ) : (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 className="text-center py-20 rounded-2xl border border-gray-200 dark:border-white/10 bg-white/60 dark:bg-[#111]/60 backdrop-blur-xl shadow-xl"
