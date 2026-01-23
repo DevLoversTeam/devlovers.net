@@ -6,6 +6,45 @@ import { Crown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { User } from './types';
 
+const rankConfig = {
+  1: {
+    height: '100%',
+    delay: 0.4,
+    style: {
+      border: 'border-yellow-400 dark:border-yellow-500',
+      bg: 'bg-yellow-400/20 dark:bg-yellow-500/10',
+      text: 'text-yellow-600 dark:text-yellow-400',
+      badge: 'bg-yellow-400 dark:bg-yellow-500',
+      ring: 'border-yellow-400 dark:border-yellow-500',
+      barTop: 'bg-yellow-400 dark:bg-yellow-500',
+    },
+  },
+  2: {
+    height: '50%',
+    delay: 0.2,
+    style: {
+      border: 'border-slate-300 dark:border-slate-500',
+      bg: 'bg-slate-300/20 dark:bg-slate-500/10',
+      text: 'text-slate-600 dark:text-slate-400',
+      badge: 'bg-slate-400 dark:bg-slate-500',
+      ring: 'border-slate-300 dark:border-slate-500',
+      barTop: 'bg-slate-300 dark:bg-slate-500',
+    },
+  },
+  3: {
+    height: '35%',
+    delay: 0.6,
+    style: {
+      border: 'border-orange-300 dark:border-orange-500',
+      bg: 'bg-orange-300/20 dark:bg-orange-500/10',
+      text: 'text-orange-600 dark:text-orange-400',
+      badge: 'bg-orange-400 dark:bg-orange-500',
+      ring: 'border-orange-300 dark:border-orange-500',
+      barTop: 'bg-orange-300 dark:bg-orange-500',
+    },
+  },
+} as const;
+
 export function LeaderboardPodium({ topThree }: { topThree: User[] }) {
   const podiumOrder = [
     topThree.find(u => u.rank === 2),

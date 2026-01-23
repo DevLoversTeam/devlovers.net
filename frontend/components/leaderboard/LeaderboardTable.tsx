@@ -101,7 +101,7 @@ function TableRow({
 }: {
   user: User;
   isCurrentUser: boolean;
-  t: any;
+  t: ReturnType<typeof useTranslations>;
 }) {
   // ✅ ВИПРАВЛЕННЯ 3: Спільний клас для ліній між рядками
   const cellClass =
@@ -177,7 +177,7 @@ function TableRow({
             </span>
 
             {user.change > 0 && (
-              <span className="flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wide opacity-70 group-hover:opacity-100 transition-opacity">
+              <span className="hidden sm:flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wide opacity-70 group-hover:opacity-100 transition-opacity">
                 <TrendingUp className="w-3 h-3" aria-hidden="true" />
                 {t('rising')}
               </span>
