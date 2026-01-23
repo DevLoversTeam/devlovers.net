@@ -33,40 +33,44 @@ export function LeaderboardTable({
   return (
     <div className="w-full max-w-4xl flex flex-col gap-4">
       <div className="bg-white dark:bg-white/5 backdrop-blur-md rounded-2xl border border-slate-200 dark:border-white/10 overflow-hidden shadow-lg dark:shadow-2xl">
-        <table className="w-full text-left border-collapse">
-          <caption className="sr-only">{t('tableCaption')}</caption>
+        <div className="overflow-x-auto w-full">
+          {/* ✅ ВИПРАВЛЕННЯ 1: border-separate + border-spacing-0 замість border-collapse */}
+          <table className="w-full min-w-[350px] text-left border-separate border-spacing-0">
+            <caption className="sr-only">{t('tableCaption')}</caption>
 
-          <thead className="bg-slate-50/80 dark:bg-white/5 border-b border-slate-200 dark:border-white/10">
-            <tr>
-              <th className="px-6 py-5 text-center text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest w-[15%]">
-                {t('rank')}
-              </th>
-              <th className="px-6 py-5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest w-[60%]">
-                {t('user')}
-              </th>
-              <th className="px-6 py-5 text-right text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest w-[25%]">
-                {t('score')}
-              </th>
-            </tr>
-          </thead>
+            <thead className="bg-slate-50/80 dark:bg-white/5">
+              <tr>
+                <th className="px-3 sm:px-6 py-4 sm:py-5 text-center text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest w-[15%] border-b border-slate-200 dark:border-white/10">
+                  {t('rank')}
+                </th>
+                <th className="px-3 sm:px-6 py-4 sm:py-5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest w-[60%] border-b border-slate-200 dark:border-white/10">
+                  {t('user')}
+                </th>
+                <th className="px-3 sm:px-6 py-4 sm:py-5 text-right text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest w-[25%] border-b border-slate-200 dark:border-white/10">
+                  {t('score')}
+                </th>
+              </tr>
+            </thead>
 
-          <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-            {topUsers.map(user => {
-              const isMe =
-                String(user.id) === normalizedCurrentUserId ||
-                (currentUsername && user.username === currentUsername);
+            {/* ✅ ВИПРАВЛЕННЯ 2: Прибрали divide-y, бо він конфліктує з border-separate */}
+            <tbody>
+              {topUsers.map(user => {
+                const isMe =
+                  String(user.id) === normalizedCurrentUserId ||
+                  (currentUsername && user.username === currentUsername);
 
-              return (
-                <TableRow
-                  key={user.id}
-                  user={user}
-                  isCurrentUser={!!isMe}
-                  t={t}
-                />
-              );
-            })}
-          </tbody>
-        </table>
+                return (
+                  <TableRow
+                    key={user.id}
+                    user={user}
+                    isCurrentUser={!!isMe}
+                    t={t}
+                  />
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {!isUserInTop && matchedUser && (
@@ -76,11 +80,13 @@ export function LeaderboardTable({
           </div>
 
           <div className="bg-white dark:bg-white/5 backdrop-blur-md rounded-2xl border-2 border-[var(--accent-primary)] overflow-hidden shadow-[0_0_20px_var(--accent-primary)]">
-            <table className="w-full text-left border-collapse">
-              <tbody>
-                <TableRow user={matchedUser} isCurrentUser={true} t={t} />
-              </tbody>
-            </table>
+            <div className="overflow-x-auto w-full">
+              <table className="w-full min-w-[350px] text-left border-separate border-spacing-0">
+                <tbody>
+                  <TableRow user={matchedUser} isCurrentUser={true} t={t} />
+                </tbody>
+              </table>
+            </div>
           </div>
         </>
       )}
@@ -97,26 +103,30 @@ function TableRow({
   isCurrentUser: boolean;
   t: any;
 }) {
+  // ✅ ВИПРАВЛЕННЯ 3: Спільний клас для ліній між рядками
+  const cellClass =
+    'px-3 sm:px-6 py-4 border-b border-slate-100 dark:border-white/5';
+
   return (
     <tr
       className={cn(
         'group transition-all duration-300',
         isCurrentUser
-          ? 'bg-[color-mix(in_srgb,var(--accent-primary),transparent_90%)] border-l-[6px] border-l-[var(--accent-primary)] shadow-inner'
-          : 'hover:bg-slate-50 dark:hover:bg-white/5 border-l-[6px] border-l-transparent'
+          ? 'bg-[color-mix(in_srgb,var(--accent-primary),transparent_90%)] border-l-[4px] sm:border-l-[6px] border-l-[var(--accent-primary)] shadow-inner'
+          : 'hover:bg-slate-50 dark:hover:bg-white/5 border-l-[4px] sm:border-l-[6px] border-l-transparent'
       )}
     >
-      <td className="px-6 py-4">
+      <td className={cellClass}>
         <div className="flex justify-center items-center">
           <RankBadge rank={user.rank} />
         </div>
       </td>
 
-      <td className="px-6 py-4">
-        <div className="flex items-center gap-4">
+      <td className={cellClass}>
+        <div className="flex items-center gap-2 sm:gap-4">
           <div
             className={cn(
-              'w-10 h-10 rounded-full border flex items-center justify-center text-sm font-bold transition-all duration-300',
+              'w-8 h-8 sm:w-10 sm:h-10 rounded-full border flex-shrink-0 flex items-center justify-center text-xs sm:text-sm font-bold transition-all duration-300',
               isCurrentUser
                 ? 'bg-[var(--accent-primary)] border-[var(--accent-primary)] text-white shadow-[0_0_15px_var(--accent-primary)]'
                 : 'bg-slate-100 border-slate-200 text-slate-600 dark:bg-gradient-to-br dark:from-slate-800 dark:to-slate-900 dark:border-white/10 dark:text-slate-300 group-hover:border-[var(--accent-primary)] group-hover:text-[var(--accent-primary)]'
@@ -126,19 +136,21 @@ function TableRow({
             {user.username.slice(0, 1).toUpperCase()}
           </div>
 
-          <div className="flex flex-col">
+          <div className="flex flex-col min-w-0">
             <span
               className={cn(
-                'font-medium text-sm transition-colors flex items-center gap-2',
+                'font-medium text-sm transition-colors flex items-center gap-2 truncate',
                 isCurrentUser
-                  ? 'text-[var(--accent-primary)] font-black text-base'
+                  ? 'text-[var(--accent-primary)] font-black text-sm sm:text-base'
                   : 'text-slate-700 dark:text-slate-200 group-hover:text-[var(--accent-primary)]'
               )}
             >
-              {user.username}
+              <span className="truncate max-w-[120px] sm:max-w-none">
+                {user.username}
+              </span>
 
               {isCurrentUser && (
-                <div className="relative flex items-center justify-center w-8 h-8 ml-1">
+                <div className="relative flex-shrink-0 flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8 ml-1">
                   <motion.div
                     animate={{ scale: [1, 1.2, 1] }}
                     transition={{
@@ -157,7 +169,7 @@ function TableRow({
                     </svg>
                   </motion.div>
 
-                  <span className="relative z-10 text-[8px] font-black text-white uppercase tracking-tighter -mt-0.5">
+                  <span className="relative z-10 text-[6px] sm:text-[8px] font-black text-white uppercase tracking-tighter -mt-0.5">
                     {t('you') || 'YOU'}
                   </span>
                 </div>
@@ -174,12 +186,12 @@ function TableRow({
         </div>
       </td>
 
-      <td className="px-6 py-4 text-right">
+      <td className={cn(cellClass, 'text-right')}>
         <span
           className={cn(
             'font-mono font-bold inline-block transition-all',
             isCurrentUser
-              ? 'text-[var(--accent-primary)] scale-110 drop-shadow-sm text-lg'
+              ? 'text-[var(--accent-primary)] scale-110 drop-shadow-sm text-base sm:text-lg'
               : 'text-slate-700 dark:text-slate-300 group-hover:scale-105'
           )}
         >
@@ -193,35 +205,37 @@ function TableRow({
 function RankBadge({ rank }: { rank: number }) {
   if (rank === 1) {
     return (
-      <div className="relative w-14 h-8 flex items-center justify-center gap-1.5 rounded-lg bg-yellow-100 dark:bg-yellow-500/20 border border-yellow-500/50 shadow-[0_0_10px_rgba(234,179,8,0.3)]">
-        <span className="font-black text-yellow-700 dark:text-yellow-400">
+      <div className="relative w-10 h-6 sm:w-14 sm:h-8 flex items-center justify-center gap-1 sm:gap-1.5 rounded-lg bg-yellow-100 dark:bg-yellow-500/20 border border-yellow-500/50 shadow-[0_0_10px_rgba(234,179,8,0.3)]">
+        <span className="font-black text-xs sm:text-base text-yellow-700 dark:text-yellow-400">
           1
         </span>
-        <Trophy className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
-        <div className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-400 rounded-full animate-pulse" />
+        <Trophy className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-600 dark:text-yellow-400" />
+        <div className="absolute -top-1 -right-1 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-yellow-400 rounded-full animate-pulse" />
       </div>
     );
   }
   if (rank === 2) {
     return (
-      <div className="w-14 h-8 flex items-center justify-center gap-1.5 rounded-lg bg-slate-100 dark:bg-slate-400/10 border border-slate-300 dark:border-slate-400/30">
-        <span className="font-black text-slate-600 dark:text-slate-300">2</span>
-        <Medal className="w-4 h-4 text-slate-500 dark:text-slate-300" />
+      <div className="w-10 h-6 sm:w-14 sm:h-8 flex items-center justify-center gap-1 sm:gap-1.5 rounded-lg bg-slate-100 dark:bg-slate-400/10 border border-slate-300 dark:border-slate-400/30">
+        <span className="font-black text-xs sm:text-base text-slate-600 dark:text-slate-300">
+          2
+        </span>
+        <Medal className="w-3 h-3 sm:w-4 sm:h-4 text-slate-500 dark:text-slate-300" />
       </div>
     );
   }
   if (rank === 3) {
     return (
-      <div className="w-14 h-8 flex items-center justify-center gap-1.5 rounded-lg bg-orange-50 dark:bg-orange-500/10 border border-orange-300 dark:border-orange-500/30">
-        <span className="font-black text-orange-700 dark:text-orange-400">
+      <div className="w-10 h-6 sm:w-14 sm:h-8 flex items-center justify-center gap-1 sm:gap-1.5 rounded-lg bg-orange-50 dark:bg-orange-500/10 border border-orange-300 dark:border-orange-500/30">
+        <span className="font-black text-xs sm:text-base text-orange-700 dark:text-orange-400">
           3
         </span>
-        <Medal className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+        <Medal className="w-3 h-3 sm:w-4 sm:h-4 text-orange-600 dark:text-orange-400" />
       </div>
     );
   }
   return (
-    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 dark:bg-white/5 font-bold text-sm text-slate-500 dark:text-slate-500">
+    <span className="flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-slate-100 dark:bg-white/5 font-bold text-xs sm:text-sm text-slate-500 dark:text-slate-500">
       {rank}
     </span>
   );
