@@ -89,7 +89,7 @@ export default async function PaymentPage(props: PaymentPageProps) {
   const clearCart = shouldClearCart(searchParams);
   const cc = clearCart ? '&clearCart=1' : '';
   const { locale } = params;
-  const shopBase = `/${locale}/shop`;
+  const shopBase = `/shop`;
 
   const orderId = getOrderId(params);
 
