@@ -99,7 +99,7 @@ function TableRow({
 }: {
   user: User;
   isCurrentUser: boolean;
-  t: any;
+  t: ReturnType<typeof useTranslations>;
 }) {
   const cellClass =
     'px-2 sm:px-6 py-3 sm:py-4 border-b border-slate-100 dark:border-white/5';
@@ -142,7 +142,7 @@ function TableRow({
                   : 'text-slate-700 dark:text-slate-200 group-hover:text-[var(--accent-primary)]'
               )}
             >
-              <span className="truncate max-w-[100px] xs:max-w-[140px] sm:max-w-none">
+              <span className="truncate max-w-[100px] sm:max-w-none">
                 {user.username}
               </span>
 
