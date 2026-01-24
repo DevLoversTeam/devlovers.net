@@ -48,31 +48,55 @@ function toCurrencyCode(
     : resolveCurrencyFromLocale(locale);
 }
 
-function buildShopBase(locale: string) {
-  return `/${locale}/shop`;
+/**
+ * IMPORTANT:
+ * - In-app navigation uses next-intl routing -> DO NOT prefix locale manually.
+ * - Stripe return_url is an external redirect -> MUST include locale exactly once.
+ */
+const IN_APP_SHOP_BASE = '/shop';
+
+function normalizeLocale(raw: string): string {
+  return (raw ?? '').trim().replace(/^\/+/, '').replace(/\/+$/, '');
+}
+
+function buildInAppPath(path: string): string {
+  const p = path.startsWith('/') ? path : `/${path}`;
+  return `${IN_APP_SHOP_BASE}${p}`;
+}
+
+function buildStripeReturnUrl(params: {
+  locale: string;
+  inAppPath: string; // must be "/shop/..."
+}): string {
+  const loc = normalizeLocale(params.locale);
+  const p = params.inAppPath.startsWith('/')
+    ? params.inAppPath
+    : `/${params.inAppPath}`;
+  // Note: p can contain query string; URL() supports it.
+  return new URL(`/${loc}${p}`, window.location.origin).toString();
 }
 
 function nextRouteForPaymentResult(params: {
-  locale: string;
   orderId: string;
   status?: string | null;
 }) {
-  const { locale, orderId, status } = params;
-  const shopBase = buildShopBase(locale);
+  const { orderId, status } = params;
   const id = encodeURIComponent(orderId);
 
-  const success = `${shopBase}/checkout/success?orderId=${id}`;
-  const failure = `${shopBase}/checkout/error?orderId=${id}`;
+  const success = buildInAppPath(`/checkout/success?orderId=${id}`);
+  const failure = buildInAppPath(`/checkout/error?orderId=${id}`);
 
   if (!status) return success;
   if (
     status === 'succeeded' ||
     status === 'processing' ||
     status === 'requires_capture'
-  )
+  ) {
     return success;
-  if (status === 'requires_payment_method' || status === 'canceled')
+  }
+  if (status === 'requires_payment_method' || status === 'canceled') {
     return failure;
+  }
   return success;
 }
 
@@ -80,8 +104,6 @@ function StripePaymentForm({ orderId, locale }: PaymentFormProps) {
   const stripe = useStripe();
   const elements = useElements();
   const router = useRouter();
-
-  const shopBase = useMemo(() => buildShopBase(locale), [locale]);
 
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -102,23 +124,25 @@ function StripePaymentForm({ orderId, locale }: PaymentFormProps) {
     try {
       const id = encodeURIComponent(orderId);
 
+      const inAppSuccess = buildInAppPath(`/checkout/success?orderId=${id}`);
+      const inAppFailure = buildInAppPath(`/checkout/error?orderId=${id}`);
+
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
         redirect: 'if_required',
         confirmParams: {
-          // Stripe redirect comes from outside Next.js routing — must include locale.
-          return_url: `${window.location.origin}${shopBase}/checkout/success?orderId=${id}`,
+          // Stripe redirect comes from outside Next.js routing — MUST include locale exactly once.
+          return_url: buildStripeReturnUrl({ locale, inAppPath: inAppSuccess }),
         },
       });
 
       if (error) {
         setErrorMessage(error.message ?? 'Unable to confirm payment.');
-        router.push(`${shopBase}/checkout/error?orderId=${id}`);
+        router.push(inAppFailure);
         return;
       }
 
       const next = nextRouteForPaymentResult({
-        locale,
         orderId,
         status: paymentIntent?.status ?? null,
       });
@@ -128,7 +152,7 @@ function StripePaymentForm({ orderId, locale }: PaymentFormProps) {
       logError('stripe_payment_confirm_failed', error, { orderId });
       setErrorMessage('We couldn’t confirm your payment. Please try again.');
       router.push(
-        `${shopBase}/checkout/error?orderId=${encodeURIComponent(orderId)}`
+        buildInAppPath(`/checkout/error?orderId=${encodeURIComponent(orderId)}`)
       );
     } finally {
       setSubmitting(false);
@@ -175,8 +199,6 @@ export default function StripePaymentClient({
     [currency, locale]
   );
 
-  const shopBase = useMemo(() => buildShopBase(locale), [locale]);
-
   const stripePromise = useMemo(() => {
     if (!paymentsEnabled || !publishableKey) return null;
     return loadStripe(publishableKey);
@@ -199,15 +221,15 @@ export default function StripePaymentClient({
         <p>Payments are disabled in this environment.</p>
         <nav className="flex gap-3" aria-label="Next steps">
           <Link
-            href={`${shopBase}/checkout/success?orderId=${encodeURIComponent(
-              orderId
-            )}`}
+            href={buildInAppPath(
+              `/checkout/success?orderId=${encodeURIComponent(orderId)}`
+            )}
             className="inline-flex items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground hover:bg-accent/90"
           >
             Continue
           </Link>
           <Link
-            href={`${shopBase}/cart`}
+            href={buildInAppPath('/cart')}
             className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
           >
             Back to cart
@@ -225,7 +247,7 @@ export default function StripePaymentClient({
       >
         <p>Payment cannot be initialized. Please try again later.</p>
         <Link
-          href={`${shopBase}/cart`}
+          href={buildInAppPath('/cart')}
           className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
         >
           Return to cart

@@ -150,6 +150,7 @@
       "violations": "Quiz zakończony z naruszeniami ({count} naruszeń). Wynik nie został zaliczony do rankingu.",
       "pointsAwarded": "+{points} punktów dodano do rankingu",
       "noPointsAwarded": "Nie przyznano punktów (wynik nie uległ poprawie)",
+      "disqualified": "Nie przyznano punktów (zdyskwalifikowany z powodu naruszeń)",
       "guestMessage": "Aby zapisać swój wynik i pojawić się w rankingu, zaloguj się lub zarejestruj",
       "loginButton": "Zaloguj się",
       "signupButton": "Zarejestruj się",

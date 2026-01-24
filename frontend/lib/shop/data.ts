@@ -298,9 +298,9 @@ export async function getHomepageContent(
 
   return {
     hero: {
-      headline: 'Postgres-powered storefront for developers',
+      headline: 'Coming soon...',
       subheadline:
-        'All product content now lives in Neon/Postgres via Drizzle—no CMS required.',
+        'Our shop is launching soon. Stay tuned for the latest products and exclusive offers!',
       ctaText: 'Shop now',
       ctaLink: '/shop/products',
     },

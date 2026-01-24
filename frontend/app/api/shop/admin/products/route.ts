@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 
 import {
@@ -7,11 +8,19 @@ import {
   requireAdminApi,
 } from '@/lib/auth/admin';
 import { requireAdminCsrf } from '@/lib/security/admin-csrf';
+import { guardBrowserSameOrigin } from '@/lib/security/origin';
 
 import { parseAdminProductForm } from '@/lib/admin/parseAdminProductForm';
-import { logError } from '@/lib/logging';
+import { logError, logWarn } from '@/lib/logging';
 import { InvalidPayloadError, SlugConflictError } from '@/lib/services/errors';
 import { createProduct } from '@/lib/services/products';
+
+export const runtime = 'nodejs';
+function noStoreJson(body: unknown, init?: { status?: number }) {
+  const res = NextResponse.json(body, { status: init?.status ?? 200 });
+  res.headers.set('Cache-Control', 'no-store');
+  return res;
+}
 
 type SaleRuleViolation = {
   currency: string;
@@ -79,20 +88,84 @@ function getSaleViolationFromFormData(
 }
 
 export async function POST(request: NextRequest) {
+  const startedAtMs = Date.now();
+
+  const requestId =
+    request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
+
+  const blocked = guardBrowserSameOrigin(request);
+  if (blocked) {
+    logWarn('admin_product_create_origin_blocked', {
+      requestId,
+      route: request.nextUrl.pathname,
+      method: request.method,
+      code: 'ORIGIN_BLOCKED',
+      durationMs: Date.now() - startedAtMs,
+    });
+    blocked.headers.set('Cache-Control', 'no-store');
+    return blocked;
+  }
+
+  const baseMeta = {
+    requestId,
+    route: request.nextUrl.pathname,
+    method: request.method,
+  };
+
+  let slugForLog: string | null = null;
+
   try {
     await requireAdminApi(request);
 
-    const formData = await request.formData();
+    let formData: FormData;
+    try {
+      formData = await request.formData();
+    } catch (error) {
+      logWarn('admin_product_create_invalid_body', {
+        ...baseMeta,
+        code: 'INVALID_REQUEST_BODY',
+        reason: error instanceof Error ? error.message : String(error),
+        durationMs: Date.now() - startedAtMs,
+      });
+
+      return noStoreJson(
+        { error: 'Invalid request body', code: 'INVALID_REQUEST_BODY' },
+        { status: 400 }
+      );
+    }
+
+    const rawSlug = formData.get('slug');
+    slugForLog =
+      typeof rawSlug === 'string' && rawSlug.trim().length > 0
+        ? rawSlug.trim()
+        : null;
+
     const csrfRes = requireAdminCsrf(
       request,
       'admin:products:create',
       formData
     );
-    if (csrfRes) return csrfRes;
+    if (csrfRes) {
+      logWarn('admin_product_create_csrf_rejected', {
+        ...baseMeta,
+        code: 'CSRF_REJECTED',
+        slug: slugForLog,
+        durationMs: Date.now() - startedAtMs,
+      });
+      csrfRes.headers.set('Cache-Control', 'no-store');
+      return csrfRes;
+    }
 
     const imageFile = formData.get('image');
     if (!(imageFile instanceof File) || imageFile.size === 0) {
-      return NextResponse.json(
+      logWarn('admin_product_create_image_required', {
+        ...baseMeta,
+        code: 'IMAGE_REQUIRED',
+        slug: slugForLog,
+        durationMs: Date.now() - startedAtMs,
+      });
+
+      return noStoreJson(
         {
           error: 'Image file is required',
           code: 'IMAGE_REQUIRED',
@@ -101,9 +174,17 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
     const saleViolationFromForm = getSaleViolationFromFormData(formData);
     if (isInvalidPricesJsonError(saleViolationFromForm)) {
-      return NextResponse.json(
+      logWarn('admin_product_create_invalid_prices_json', {
+        ...baseMeta,
+        code: 'INVALID_PRICES_JSON',
+        slug: slugForLog,
+        durationMs: Date.now() - startedAtMs,
+      });
+
+      return noStoreJson(
         {
           error: 'Invalid prices JSON',
           code: 'INVALID_PRICES_JSON',
@@ -119,7 +200,16 @@ export async function POST(request: NextRequest) {
           ? 'SALE badge requires original price for each provided currency.'
           : 'SALE badge requires original price to be greater than price.';
 
-      return NextResponse.json(
+      logWarn('admin_product_create_sale_rule_violation', {
+        ...baseMeta,
+        code: 'SALE_ORIGINAL_REQUIRED',
+        slug: slugForLog,
+        currency: saleViolationFromForm.currency,
+        rule: saleViolationFromForm.rule,
+        durationMs: Date.now() - startedAtMs,
+      });
+
+      return noStoreJson(
         {
           error: message,
           code: 'SALE_ORIGINAL_REQUIRED',
@@ -129,14 +219,31 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
     const parsed = parseAdminProductForm(formData, { mode: 'create' });
 
     if (!parsed.ok) {
-      return NextResponse.json(
-        { error: 'Invalid product data', details: parsed.error.format() },
+      const issuesCount =
+        ((parsed.error as any)?.issues?.length as number | undefined) ?? 0;
+
+      logWarn('admin_product_create_invalid_payload', {
+        ...baseMeta,
+        code: 'INVALID_PAYLOAD',
+        slug: slugForLog,
+        issuesCount,
+        durationMs: Date.now() - startedAtMs,
+      });
+
+      return noStoreJson(
+        {
+          error: 'Invalid product data',
+          code: 'INVALID_PAYLOAD',
+          details: parsed.error.format(),
+        },
         { status: 400 }
       );
     }
+
     const saleViolation = findSaleRuleViolation(parsed.data as any);
     if (saleViolation) {
       const message =
@@ -144,7 +251,22 @@ export async function POST(request: NextRequest) {
           ? 'SALE badge requires original price for each provided currency.'
           : 'SALE badge requires original price to be greater than price.';
 
-      return NextResponse.json(
+      const parsedSlug =
+        typeof (parsed.data as any)?.slug === 'string' &&
+        (parsed.data as any).slug.trim().length > 0
+          ? (parsed.data as any).slug.trim()
+          : null;
+
+      logWarn('admin_product_create_sale_rule_violation', {
+        ...baseMeta,
+        code: 'SALE_ORIGINAL_REQUIRED',
+        slug: parsedSlug ?? slugForLog,
+        currency: saleViolation.currency,
+        rule: saleViolation.rule,
+        durationMs: Date.now() - startedAtMs,
+      });
+
+      return noStoreJson(
         {
           error: message,
           code: 'SALE_ORIGINAL_REQUIRED',
@@ -160,7 +282,7 @@ export async function POST(request: NextRequest) {
         ...parsed.data,
         image: imageFile,
       });
-      return NextResponse.json(
+      return noStoreJson(
         {
           success: true,
           product: inserted,
@@ -168,11 +290,48 @@ export async function POST(request: NextRequest) {
         { status: 201 }
       );
     } catch (error) {
-      logError('Failed to create product', error);
+      const parsedSlug =
+        typeof (parsed.data as any)?.slug === 'string' &&
+        (parsed.data as any).slug.trim().length > 0
+          ? (parsed.data as any).slug.trim()
+          : null;
+
+      const errCode =
+        error instanceof InvalidPayloadError
+          ? (error as any).code ?? 'INVALID_PAYLOAD'
+          : error instanceof SlugConflictError
+          ? error.code
+          : error instanceof Error &&
+            error.message === 'Failed to upload image to Cloudinary'
+          ? 'IMAGE_UPLOAD_FAILED'
+          : 'ADMIN_PRODUCT_CREATE_FAILED';
+
+      const isExpected =
+        error instanceof InvalidPayloadError ||
+        error instanceof SlugConflictError ||
+        (error instanceof Error &&
+          error.message === 'Failed to upload image to Cloudinary');
+
+      if (isExpected) {
+        logWarn('admin_product_create_failed', {
+          ...baseMeta,
+          code: errCode,
+          slug: parsedSlug ?? slugForLog,
+          reason: error instanceof Error ? error.message : String(error),
+          durationMs: Date.now() - startedAtMs,
+        });
+      } else {
+        logError('admin_product_create_failed', error, {
+          ...baseMeta,
+          code: errCode,
+          slug: parsedSlug ?? slugForLog,
+          durationMs: Date.now() - startedAtMs,
+        });
+      }
 
       if (error instanceof InvalidPayloadError) {
         const anyErr = error as any;
-        return NextResponse.json(
+        return noStoreJson(
           {
             error: error.message || 'Invalid product data',
             code: anyErr.code,
@@ -184,7 +343,7 @@ export async function POST(request: NextRequest) {
       }
 
       if (error instanceof SlugConflictError) {
-        return NextResponse.json(
+        return noStoreJson(
           { error: 'Slug already exists.', code: error.code, field: 'slug' },
           { status: 409 }
         );
@@ -194,7 +353,7 @@ export async function POST(request: NextRequest) {
         error instanceof Error &&
         error.message === 'Failed to upload image to Cloudinary'
       ) {
-        return NextResponse.json(
+        return noStoreJson(
           {
             error: 'Failed to upload product image',
             code: 'IMAGE_UPLOAD_FAILED',
@@ -204,21 +363,50 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      return NextResponse.json(
-        { error: 'Failed to create product' },
+      return noStoreJson(
+        { error: 'Failed to create product', code: 'INTERNAL_ERROR' },
         { status: 500 }
       );
     }
   } catch (error) {
     if (error instanceof AdminApiDisabledError) {
-      return NextResponse.json({ code: error.code }, { status: 403 });
+      logWarn('admin_product_create_admin_api_disabled', {
+        ...baseMeta,
+        code: error.code,
+        slug: slugForLog,
+        durationMs: Date.now() - startedAtMs,
+      });
+      return noStoreJson({ code: error.code }, { status: 403 });
     }
     if (error instanceof AdminUnauthorizedError) {
-      return NextResponse.json({ code: error.code }, { status: 401 });
+      logWarn('admin_product_create_unauthorized', {
+        ...baseMeta,
+        code: error.code,
+        slug: slugForLog,
+        durationMs: Date.now() - startedAtMs,
+      });
+      return noStoreJson({ code: error.code }, { status: 401 });
     }
     if (error instanceof AdminForbiddenError) {
-      return NextResponse.json({ code: error.code }, { status: 403 });
+      logWarn('admin_product_create_forbidden', {
+        ...baseMeta,
+        code: error.code,
+        slug: slugForLog,
+        durationMs: Date.now() - startedAtMs,
+      });
+      return noStoreJson({ code: error.code }, { status: 403 });
     }
-    throw error;
+
+    logError('admin_product_create_outer_failed', error, {
+      ...baseMeta,
+      code: 'ADMIN_PRODUCT_CREATE_OUTER_FAILED',
+      slug: slugForLog,
+      durationMs: Date.now() - startedAtMs,
+    });
+
+    return noStoreJson(
+      { error: 'internal_error', code: 'INTERNAL_ERROR' },
+      { status: 500 }
+    );
   }
 }

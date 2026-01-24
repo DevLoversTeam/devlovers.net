@@ -1,21 +1,94 @@
-📄 .DS_Store
 📄 .env
 📄 .env.example
 📄 .gitignore
 📄 .prettierrc
-📄 README.md
 📁 actions
   📄 quiz.ts
 📁 app
-  📄 .DS_Store
+  📁 api
+    📁 auth
+      📁 github
+        📁 callback
+          📄 route.ts
+        📄 route.ts
+      📁 google
+        📁 callback
+          📄 route.ts
+        📄 route.ts
+      📁 login
+        📄 route.ts
+      📁 logout
+        📄 route.ts
+      📁 me
+        📄 route.ts
+      📁 password-reset
+        📁 confirm
+          📄 route.ts
+        📄 route.ts
+      📁 resend-verification
+        📄 route.ts
+      📁 signup
+        📄 route.ts
+      📁 verify-email
+        📄 route.ts
+    📁 blog-search
+      📄 route.ts
+    📁 questions
+      📁 [category]
+        📄 route.ts
+    📁 quiz
+      📁 guest-result
+        📄 route.ts
+      📁 verify-answer
+        📄 route.ts
+      📁 [slug]
+        📄 route.ts
+    📁 shop
+      📁 admin
+        📁 orders
+          📁 reconcile-stale
+            📄 route.ts
+          📄 route.ts
+          📁 [id]
+            📁 refund
+              📄 route.ts
+            📄 route.ts
+        📁 products
+          📄 route.ts
+          📁 [id]
+            📄 route.ts
+            📁 status
+              📄 route.ts
+      📁 cart
+        📁 rehydrate
+          📄 route.ts
+      📁 catalog
+        📄 route.ts
+      📁 checkout
+        📄 route.ts
+      📁 internal
+        📁 orders
+          📁 restock-stale
+            📄 route.ts
+      📁 orders
+        📁 [id]
+          📄 route.ts
+      📁 webhooks
+        📁 stripe
+          📄 route.ts
+  📄 globals.css
+  📄 layout.tsx
   📁 [locale]
     📁 about
       📄 page.tsx
     📁 blog
-      📁 [slug]
-        📄 PostDetails.tsx
-        📄 page.tsx
+      📁 category
+        📁 [category]
+          📄 page.tsx
       📄 page.tsx
+      📁 [slug]
+        📄 page.tsx
+        📄 PostDetails.tsx
     📁 contacts
       📄 page.tsx
     📁 dashboard
@@ -43,20 +116,20 @@
     📁 shop
       📁 admin
         📁 orders
-          📁 [id]
-            📄 RefundButton.tsx
-            📄 page.tsx
           📄 page.tsx
+          📁 [id]
+            📄 page.tsx
+            📄 RefundButton.tsx
         📄 page.tsx
         📁 products
+          📁 new
+            📄 page.tsx
+          📄 page.tsx
           📁 [id]
             📁 edit
               📄 page.tsx
           📁 _components
             📄 product-form.tsx
-          📁 new
-            📄 page.tsx
-          📄 page.tsx
       📁 cart
         📄 page.tsx
       📁 checkout
@@ -76,6 +149,7 @@
         📄 page.tsx
       📄 page.tsx
       📁 products
+        📄 page.tsx
         📁 [slug]
           📄 page.tsx
         📄 page.tsx
@@ -83,80 +157,6 @@
       📄 page.tsx
     📁 terms-of-service
       📄 page.tsx
-  📁 api
-    📄 .DS_Store
-    📁 auth
-      📄 .DS_Store
-      📁 github
-        📁 callback
-          📄 route.ts
-        📄 route.ts
-      📁 google
-        📁 callback
-          📄 route.ts
-        📄 route.ts
-      📁 login
-        📄 route.ts
-      📁 logout
-        📄 route.ts
-      📁 me
-        📄 route.ts
-      📁 password-reset
-        📁 confirm
-          📄 route.ts
-        📄 route.ts
-      📁 resend-verification
-        📄 .DS_Store
-        📄 route.ts
-      📁 signup
-        📄 route.ts
-      📁 verify-email
-        📄 route.ts
-    📁 questions
-      📁 [category]
-        📄 route.ts
-    📁 quiz
-      📁 [slug]
-        📄 route.ts
-      📁 guest-result
-        📄 route.ts
-      📁 verify-answer
-        📄 route.ts
-    📁 shop
-      📁 admin
-        📁 orders
-          📁 [id]
-            📁 refund
-              📄 route.ts
-            📄 route.ts
-          📁 reconcile-stale
-            📄 route.ts
-          📄 route.ts
-        📁 products
-          📁 [id]
-            📄 route.ts
-            📁 status
-              📄 route.ts
-          📄 route.ts
-      📁 cart
-        📁 rehydrate
-          📄 route.ts
-      📁 catalog
-        📄 route.ts
-      📁 checkout
-        📄 route.ts
-      📁 internal
-        📁 orders
-          📁 restock-stale
-            📄 route.ts
-      📁 orders
-        📁 [id]
-          📄 route.ts
-      📁 webhooks
-        📁 stripe
-          📄 route.ts
-  📄 globals.css
-  📄 layout.tsx
 📄 checkout.json
 📄 client.ts
 📁 components
@@ -174,10 +174,17 @@
       📄 GitHubIcon.tsx
       📄 GoogleIcon.tsx
     📄 logoutButton.tsx
+    📄 OAuthButtons.tsx
+    📄 PostAuthQuizSync.tsx
+    📄 ProviderButton.tsx
   📁 blog
     📄 BlogCard.tsx
+    📄 BlogCategoryGrid.tsx
+    📄 BlogCategoryLinks.tsx
     📄 BlogFilters.tsx
     📄 BlogGrid.tsx
+    📄 BlogHeaderSearch.tsx
+    📄 BlogNavLinks.tsx
   📁 dashboard
     📄 ProfileCard.tsx
     📄 QuizSavedBanner.tsx
@@ -258,7 +265,6 @@
   📄 index.ts
   📁 legacy-migrations
     📁 drizzle_legacy
-      📄 .DS_Store
       📄 0000_rich_magus.sql
       📄 0001_black_random.sql
       📄 0002_yielding_purple_man.sql
@@ -343,6 +349,10 @@
   📄 seed-quiz-verify.ts
   📄 seed-quiz-vue.ts
   📄 seed-users.ts
+📁 docs
+  📁 payments
+  📁 security
+    📄 origin-posture.md
 📁 drizzle
   📄 0000_dry_young_avengers.sql
   📄 0001_add_payment_attempts.sql
@@ -416,7 +426,6 @@
     📄 errors.ts
     📄 inventory.ts
     📁 orders
-      📄 _shared.ts
       📄 checkout.ts
       📄 payment-attempts.ts
       📄 payment-intent.ts
@@ -427,6 +436,7 @@
       📄 restock.ts
       📄 summary.ts
       📄 sweeps.ts
+      📄 _shared.ts
     📄 orders.ts
     📁 products
       📁 admin
@@ -453,8 +463,6 @@
     📄 request-locale.ts
     📄 slug.ts
   📁 tests
-    📁 __mocks__
-      📄 server-only.ts
     📄 admin-api-killswitch.test.ts
     📄 admin-csrf-contract.test.ts
     📄 admin-product-patch-price-config-error-contract.test.ts
@@ -463,15 +471,18 @@
     📄 checkout-concurrency-stock1.test.ts
     📄 checkout-currency-policy.test.ts
     📄 checkout-no-payments.test.ts
+    📄 checkout-origin-posture-contract.test.ts
     📄 checkout-set-payment-intent-reject-contract.test.ts
     📄 checkout-stripe-error-contract.test.ts
     📄 currency.test.ts
     📄 format-money.test.ts
     📁 helpers
+      📄 ip.ts
       📄 makeCheckoutReq.ts
     📄 order-items-snapshot-immutable.test.ts
     📄 order-items-variants.test.ts
     📄 orders-access.test.ts
+    📄 origin-posture.test.ts
     📄 payment-state-legacy-writers.test.ts
     📄 payment-state-machine.helper.test.ts
     📄 payment-status-tripwire.test.ts
@@ -480,6 +491,8 @@
     📄 product-admin-update-prices-patch-semantics.test.ts
     📄 product-sale-invariant.test.ts
     📄 public-product-visibility.test.ts
+    📄 rate-limit-subject-normalization.test.ts
+    📄 rate-limit-subject.test.ts
     📄 restock-order-only-once.test.ts
     📄 restock-release-failure-invariant.test.ts
     📄 restock-stale-claim-gate.test.ts
@@ -490,7 +503,10 @@
     📄 stripe-webhook-mismatch.test.ts
     📄 stripe-webhook-paid-status-repair.test.ts
     📄 stripe-webhook-psp-fields.test.ts
+    📄 stripe-webhook-rate-limit-env.test.ts
     📄 stripe-webhook-refund-full.test.ts
+    📁 __mocks__
+      📄 server-only.ts
   📁 types
     📄 shop.ts
   📄 utils.ts
@@ -506,9 +522,9 @@
 📄 package-lock.json
 📄 package.json
 📁 parse
-  📄 README.md
   📄 parse.ts
   📄 questions.json
+  📄 README.md
   📄 start.json
   📁 typescript
     📁 advanced
@@ -531,8 +547,10 @@
   📄 favicon-light.svg
   📄 lifestyle.jpg
   📄 placeholder.svg
+📄 README.md
 📄 save-structure.cjs
 📁 scripts
   📄 shop-janitor-restock-stale.mjs
 📄 tsconfig.json
+📄 tsconfig.tsbuildinfo
 📄 vitest.config.ts

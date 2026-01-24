@@ -118,6 +118,7 @@ describe("P0-6 snapshots: order_items immutability", () => {
 				"Accept-Language": "en-US,en;q=0.9",
 				"Content-Type": "application/json",
 				"Idempotency-Key": idem,
+				Origin: "http://localhost:3000",
 			},
 		);
 		const { POST: checkoutPOST } = await import(
