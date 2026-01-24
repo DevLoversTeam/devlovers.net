@@ -97,7 +97,7 @@ export default async function HomePage({
           <div className="mt-8">
             <Link
               href="/shop/products"
-              className="inline-flex items-center gap-2 rounded-md bg-accent px-6 py-3 text-sm font-semibold uppercase tracking-wide text-accent-foreground transition-colors hover:bg-accent/90"
+              className="inline-flex items-center gap-2 rounded-md bg-[color:var(--shop-cta-bg)] px-6 py-3 text-sm font-semibold uppercase tracking-wide text-[color:var(--shop-cta-fg)] transition-opacity hover:opacity-90"
               aria-label="Browse all products"
             >
               Browse all products
