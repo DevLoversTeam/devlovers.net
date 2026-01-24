@@ -141,7 +141,7 @@ export function QuizResult({
           }`}>
             {pointsAwarded > 0
               ? t('pointsAwarded', { points: pointsAwarded })
-              : violationsCount > 3
+              : violationsCount >= 3
                 ? t('disqualified')
                 : t('noPointsAwarded')}
           </p>
