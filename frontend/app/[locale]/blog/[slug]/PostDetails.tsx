@@ -4,6 +4,7 @@ import groq from 'groq';
 import { getTranslations } from 'next-intl/server';
 import { client } from '@/client';
 import { Link } from '@/i18n/routing';
+import { formatBlogDate } from '@/lib/blog/date';
 
 export const revalidate = 0;
 
@@ -254,9 +255,7 @@ export default async function PostDetails({
             </Link>
           )}
           {authorName && post.publishedAt && <span>·</span>}
-          {post.publishedAt && (
-            <span>{new Date(post.publishedAt).toLocaleDateString()}</span>
-          )}
+          {post.publishedAt && <span>{formatBlogDate(post.publishedAt)}</span>}
         </div>
       )}
 
@@ -352,9 +351,7 @@ export default async function PostDetails({
                         {item.author?.name && <span>{item.author.name}</span>}
                         {item.author?.name && item.publishedAt && <span>·</span>}
                         {item.publishedAt && (
-                          <span>
-                            {new Date(item.publishedAt).toLocaleDateString()}
-                          </span>
+                          <span>{formatBlogDate(item.publishedAt)}</span>
                         )}
                       </div>
                     )}

@@ -7,6 +7,7 @@ import { useSearchParams } from 'next/navigation';
 import { usePathname, useRouter } from '@/i18n/routing';
 import BlogGrid from '@/components/blog/BlogGrid';
 import { Link } from '@/i18n/routing';
+import { formatBlogDate } from '@/lib/blog/date';
 
 export type PortableTextSpan = {
   _type: 'span';
@@ -340,9 +341,7 @@ export default function BlogFilters({
               {featuredPost.publishedAt && (
                 <div className="mt-6 flex items-center justify-between text-xs tracking-[0.25em] text-gray-500 dark:text-gray-400">
                   <span className="uppercase">
-                    {new Date(featuredPost.publishedAt).toLocaleDateString(
-                      locale
-                    )}
+                    {formatBlogDate(featuredPost.publishedAt)}
                   </span>
                   <Link
                     href={`/blog/${featuredPost.slug.current}`}

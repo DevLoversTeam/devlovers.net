@@ -3,7 +3,8 @@
 import { useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useLocale, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
+import { formatBlogDate } from '@/lib/blog/date';
 import type {
   Author,
   Post,
@@ -21,7 +22,6 @@ export default function BlogCard({
   disableHoverColor?: boolean;
 }) {
   const t = useTranslations('blog');
-  const locale = useLocale();
   const excerpt =
     (post.body ?? [])
       .filter((b): b is PortableTextBlock => b._type === 'block')
@@ -30,16 +30,10 @@ export default function BlogCard({
       )
       .join('\n')
       .slice(0, 160) || '';
-  const formattedDate = useMemo(() => {
-    if (!post.publishedAt) return '';
-    const date = new Date(post.publishedAt);
-    if (Number.isNaN(date.getTime())) return '';
-    return new Intl.DateTimeFormat(locale, {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    }).format(date);
-  }, [post.publishedAt, locale]);
+  const formattedDate = useMemo(
+    () => formatBlogDate(post.publishedAt),
+    [post.publishedAt]
+  );
   const categoryLabel =
     post.categories?.[0] === 'Growth' ? 'Career' : post.categories?.[0];
 
