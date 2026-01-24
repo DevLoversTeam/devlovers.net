@@ -7,7 +7,7 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from '@/components/ui/accordion';
-import { qaTabStyles } from '@/data/qaTabs';
+import { categoryTabStyles } from '@/data/categoryStyles';
 
 import CodeBlock from '@/components/q&a/CodeBlock';
 import type {
@@ -241,7 +241,7 @@ export default function AccordionList({ items }: { items: QuestionEntry[] }) {
       {items.map((q, idx) => {
         const key = q.id ?? idx;
         const accent =
-          qaTabStyles[q.category as keyof typeof qaTabStyles]?.accent;
+          categoryTabStyles[q.category as keyof typeof categoryTabStyles]?.accent;
         return (
           <AccordionItem
             key={key}
