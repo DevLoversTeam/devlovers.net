@@ -27,6 +27,12 @@ export type PortableTextImage = {
 
 export type PortableText = Array<PortableTextBlock | PortableTextImage>;
 
+export type SocialLink = {
+  _key?: string;
+  platform?: string;
+  url?: string;
+};
+
 export type Author = {
   name?: string;
   image?: string;
@@ -34,6 +40,7 @@ export type Author = {
   jobTitle?: string;
   city?: string;
   bio?: PortableText;
+  socialMedia?: SocialLink[];
 };
 
 export type Post = {

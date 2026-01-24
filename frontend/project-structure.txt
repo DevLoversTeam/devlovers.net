@@ -175,7 +175,6 @@
       📄 GoogleIcon.tsx
     📄 logoutButton.tsx
   📁 blog
-    📄 AuthorModal.tsx
     📄 BlogCard.tsx
     📄 BlogFilters.tsx
     📄 BlogGrid.tsx
