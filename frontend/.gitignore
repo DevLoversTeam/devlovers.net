@@ -45,9 +45,5 @@ next-env.d.ts
 
 # Documentation (only for development)
 CLAUDE.md
-docs/
+_dev-notes/
 .claude
-
-!docs/
-!docs/security/
-!docs/security/origin-posture.md

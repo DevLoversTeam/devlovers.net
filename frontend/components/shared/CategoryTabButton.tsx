@@ -4,22 +4,21 @@ import Image from 'next/image';
 
 import { TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
-import type { CategorySlug } from '@/components/q&a/types';
-import type { QaTabStyle } from '@/data/qaTabs';
+import type { CategoryTabStyle } from '@/data/categoryStyles';
 
-type QaTabButtonProps = {
-  value: CategorySlug;
+type CategoryTabButtonProps = {
+  value: string;
   label: string;
-  style: QaTabStyle;
+  style: CategoryTabStyle;
   isActive: boolean;
 };
 
-export function QaTabButton({
+export function CategoryTabButton({
   value,
   label,
   style,
   isActive,
-}: QaTabButtonProps) {
+}: CategoryTabButtonProps) {
   return (
     <TabsTrigger
       value={value}

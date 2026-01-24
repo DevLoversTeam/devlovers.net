@@ -3,8 +3,10 @@
 import { useTranslations } from 'next-intl';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { QuizCard } from './QuizCard';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsContent } from '@/components/ui/tabs';
 import { categoryData } from '@/data/category';
+import { CategoryTabButton } from '@/components/shared/CategoryTabButton';
+import { categoryTabStyles } from '@/data/categoryStyles';
 
 interface Quiz {
   id: string;
@@ -59,28 +61,32 @@ export default function QuizzesSection({
   return (
     <div className="w-full">
       <Tabs value={activeCategory} onValueChange={handleCategoryChange}>
-        <TabsList className="!bg-transparent !p-0 !h-auto !w-full grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-10 mb-6 gap-2">
-          {categoryData.map(category => (
-            <TabsTrigger
-              key={category.slug}
-              value={category.slug}
-              className="data-[state=active]:bg-blue-600 data-[state=active]:text-white bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg px-3 py-2 text-sm font-medium transition-colors"
-            >
-              {category.translations[localeKey] ??
+        <TabsList className="!bg-transparent !p-0 !h-auto !w-full flex flex-wrap items-stretch justify-start gap-3 mb-6">
+        {categoryData.map(category => {
+          const slug = category.slug as keyof typeof categoryTabStyles;
+          return (
+            <CategoryTabButton
+              key={slug}
+              value={slug}
+              label={
+                category.translations[localeKey] ??
                 category.translations.en ??
-                category.slug}
-            </TabsTrigger>
-          ))}
+                slug
+              }
+              style={categoryTabStyles[slug]}
+              isActive={activeCategory === slug}
+            />
+          );
+        })}
         </TabsList>
-
         {categoryData.map(category => {
           const categoryQuizzes = quizzes.filter(
             quiz => quiz.categorySlug === category.slug
           );
-
           return (
             <TabsContent key={category.slug} value={category.slug}>
               {categoryQuizzes.length > 0 ? (
+                <div className="max-w-5xl">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {categoryQuizzes.map(quiz => (
                     <QuizCard
@@ -93,10 +99,12 @@ export default function QuizzesSection({
                         questionsCount: quiz.questionsCount,
                         timeLimitSeconds: quiz.timeLimitSeconds,
                         categoryName: quiz.categoryName ?? category.slug,
+                        categorySlug: quiz.categorySlug ?? category.slug,
                       }}
                       userProgress={userProgressMap[quiz.id] || null}
                     />
                   ))}
+                </div>
                 </div>
               ) : (
                 <div className="text-center py-12">
