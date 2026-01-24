@@ -150,6 +150,7 @@
       "violations": "Quiz completed with rule violations ({count} violations). Result not counted towards leaderboard.",
       "pointsAwarded": "+{points} points added to rating",
       "noPointsAwarded": "No points awarded (result not improved)",
+      "disqualified": "No points awarded (disqualified due to violations)",
       "guestMessage": "To save your result and appear on the leaderboard, log in or sign up",
       "loginButton": "Log In",
       "signupButton": "Sign Up",

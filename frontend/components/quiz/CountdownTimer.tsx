@@ -68,13 +68,13 @@ export function CountdownTimer({
     if (percentage <= 30) {
       return 'text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-950/30 border-yellow-200 dark:border-yellow-800';
     }
-    return 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800';
+return 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800';
   };
 
   const getProgressBarColor = () => {
     if (percentage <= 10) return 'bg-red-600';
     if (percentage <= 30) return 'bg-yellow-600';
-    return 'bg-blue-600';
+    return 'bg-green-600';
   };
 
   if (!isActive) return null;

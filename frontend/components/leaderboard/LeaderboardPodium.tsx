@@ -16,7 +16,6 @@ const rankConfig = {
       text: 'text-yellow-600 dark:text-yellow-400',
       badge: 'bg-yellow-400 dark:bg-yellow-500',
       ring: 'border-yellow-400 dark:border-yellow-500',
-      barTop: 'bg-yellow-400 dark:bg-yellow-500',
     },
   },
   2: {
@@ -28,7 +27,6 @@ const rankConfig = {
       text: 'text-slate-600 dark:text-slate-400',
       badge: 'bg-slate-400 dark:bg-slate-500',
       ring: 'border-slate-300 dark:border-slate-500',
-      barTop: 'bg-slate-300 dark:bg-slate-500',
     },
   },
   3: {
@@ -40,7 +38,6 @@ const rankConfig = {
       text: 'text-orange-600 dark:text-orange-400',
       badge: 'bg-orange-400 dark:bg-orange-500',
       ring: 'border-orange-300 dark:border-orange-500',
-      barTop: 'bg-orange-300 dark:bg-orange-500',
     },
   },
 } as const;
@@ -55,40 +52,11 @@ export function LeaderboardPodium({ topThree }: { topThree: User[] }) {
   return (
     <div className="flex items-end justify-center gap-4 md:gap-8 h-[350px] w-full max-w-3xl mx-auto">
       {podiumOrder.map(user => {
-        const rank = user.rank;
+        const rank = user.rank as 1 | 2 | 3;
         const isFirst = rank === 1;
 
-        const height = rank === 1 ? '100%' : rank === 2 ? '40%' : '35%';
-        const delay = rank === 1 ? 0.4 : rank === 2 ? 0.2 : 0.6;
-
-        const rankStyles = {
-          1: {
-            border: 'border-yellow-400 dark:border-yellow-500',
-            bg: 'bg-yellow-400/20 dark:bg-yellow-500/10',
-            text: 'text-yellow-600 dark:text-yellow-400',
-            badge: 'bg-yellow-400 dark:bg-yellow-500',
-            ring: 'border-yellow-400 dark:border-yellow-500',
-            barTop: 'bg-yellow-400 dark:bg-yellow-500',
-          },
-          2: {
-            border: 'border-slate-300 dark:border-slate-500',
-            bg: 'bg-slate-300/20 dark:bg-slate-500/10',
-            text: 'text-slate-600 dark:text-slate-400',
-            badge: 'bg-slate-400 dark:bg-slate-500',
-            ring: 'border-slate-300 dark:border-slate-500',
-            barTop: 'bg-slate-300 dark:bg-slate-500',
-          },
-          3: {
-            border: 'border-orange-300 dark:border-orange-500',
-            bg: 'bg-orange-300/20 dark:bg-orange-500/10',
-            text: 'text-orange-600 dark:text-orange-400',
-            badge: 'bg-orange-400 dark:bg-orange-500',
-            ring: 'border-orange-300 dark:border-orange-500',
-            barTop: 'bg-orange-300 dark:bg-orange-500',
-          },
-        };
-
-        const style = rankStyles[rank as 1 | 2 | 3] || rankStyles[2];
+        const config = rankConfig[rank] || rankConfig[2];
+        const { height, delay, style } = config;
 
         return (
           <div
@@ -141,7 +109,7 @@ export function LeaderboardPodium({ topThree }: { topThree: User[] }) {
 
               <div
                 className={cn(
-                  'font-mono text-[10px] md:text-xs font-bold mt-0.5',
+                  'font-mono font-bold mt-0.5 text-base md:text-lg',
                   style.text
                 )}
               >
@@ -164,14 +132,7 @@ export function LeaderboardPodium({ topThree }: { topThree: User[] }) {
                 style.bg,
                 style.border
               )}
-            >
-              <div
-                className={cn(
-                  'w-full h-1 md:h-1.5 absolute top-0 left-0 opacity-80',
-                  style.barTop
-                )}
-              />
-            </motion.div>
+            ></motion.div>
           </div>
         );
       })}

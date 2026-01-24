@@ -2,6 +2,7 @@ import { getActiveQuizzes, getUserQuizzesProgress } from '@/db/queries/quiz';
 import { getCurrentUser } from '@/lib/auth';
 import { getTranslations } from 'next-intl/server';
 import QuizzesSection from '@/components/quiz/QuizzesSection';
+import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
 
 type PageProps = { params: Promise<{ locale: string }> };
 
@@ -23,7 +24,7 @@ export default async function QuizzesPage({ params }: PageProps) {
 
   if (!quizzes.length) {
     return (
-      <div className="mx-auto max-w-5xl py-12">
+      <div className="mx-auto max-w-7xl py-12 px-4 sm:px-6 lg:px-8">
         <h1 className="text-3xl font-bold mb-4">{t('title')}</h1>
         <p className="text-gray-600 dark:text-gray-400">
           {t('noQuizzes')}
@@ -33,9 +34,10 @@ export default async function QuizzesPage({ params }: PageProps) {
   }
 
   return (
-    <div className="mx-auto max-w-5xl py-12">
+    <DynamicGridBackground className="min-h-screen bg-gray-50 transition-colors duration-300 dark:bg-transparent py-10">
+  <main className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
       <div className="mb-8">
-        <p className="text-sm text-blue-600 dark:text-blue-400 font-semibold">
+        <p className="text-sm text-[var(--accent-primary)] font-semibold">
           {t('practice')}
         </p>
         <h1 className="text-3xl font-bold">{t('title')}</h1>
@@ -45,6 +47,7 @@ export default async function QuizzesPage({ params }: PageProps) {
       </div>
 
       <QuizzesSection quizzes={quizzes} userProgressMap={userProgressMap} />
-    </div>
+    </main>
+</DynamicGridBackground>
   );
 }

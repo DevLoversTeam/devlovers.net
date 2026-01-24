@@ -20,7 +20,7 @@
             variant === 'accent' &&
               'bg-accent text-accent-foreground hover:bg-accent/90',
             variant === 'primary' &&
-              'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800',
+              'bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-hover)] active:brightness-90',
             variant === 'secondary' &&
               'bg-gray-200 dark:bg-gray-800 text-gray-900 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-700',
             variant === 'outline' &&

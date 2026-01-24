@@ -1,6 +1,6 @@
 import type { CategorySlug } from '@/components/q&a/types';
 
-export type QaTabStyle = {
+export type CategoryTabStyle = {
   icon: string;
   color: string;
   glow: string;
@@ -8,7 +8,7 @@ export type QaTabStyle = {
   iconClassName?: string;
 };
 
-export const qaTabStyles = {
+export const categoryTabStyles = {
   git: {
     icon: '/icons/git.svg',
     color:
@@ -80,4 +80,4 @@ export const qaTabStyles = {
     glow: 'bg-[#339933]',
     accent: '#339933',
   },
-} as const satisfies Record<CategorySlug, QaTabStyle>;
+} as const satisfies Record<CategorySlug, CategoryTabStyle>;
