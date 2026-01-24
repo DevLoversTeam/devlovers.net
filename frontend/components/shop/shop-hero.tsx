@@ -28,7 +28,7 @@ export function Hero({ headline, subheadline, ctaText, ctaLink }: HeroProps) {
           <div className="mt-10">
             <Link
               href={ctaLink}
-              className="inline-flex items-center gap-2 rounded-md bg-foreground px-6 py-3 text-sm font-semibold uppercase tracking-wide text-background transition-colors hover:bg-foreground/90"
+              className="inline-flex items-center gap-2 rounded-md bg-foreground px-6 py-3 text-sm font-semibold uppercase tracking-wide text-background transition-colors hover:bg-foreground/90 dark:bg-[color:var(--accent-primary)] dark:hover:bg-[color:var(--accent-hover)] dark:text-[color:var(--foreground)]"
             >
               <span>{ctaText}</span>
               <span aria-hidden="true">→</span>
