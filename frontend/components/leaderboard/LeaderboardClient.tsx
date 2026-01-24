@@ -25,7 +25,10 @@ export default function LeaderboardClient({
   return (
     <div className="relative min-h-screen w-full">
       <div className="fixed inset-0 z-0">
-        <DynamicGridBackground className="w-full h-full bg-gray-50 transition-colors duration-300 dark:bg-transparent" />
+        <DynamicGridBackground
+          showStaticGrid
+          className="w-full h-full bg-gray-50 transition-colors duration-300 dark:bg-transparent"
+        />
       </div>
 
       <div className="relative z-10 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center pt-20 pb-10">
