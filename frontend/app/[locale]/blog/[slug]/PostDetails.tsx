@@ -67,6 +67,41 @@ function linkifyText(text: string) {
   });
 }
 
+function renderPortableTextSpans(
+  children: Array<{ _type?: string; text?: string; marks?: string[] }> = [],
+  markDefs: Array<{ _key?: string; _type?: string; href?: string }> = []
+) {
+  const linkMap = new Map(
+    markDefs
+      .filter(def => def?._type === 'link' && def?._key && def?.href)
+      .map(def => [def._key as string, def.href as string])
+  );
+
+  return children.map((child, index) => {
+    const text = child?.text || '';
+    if (!text) return null;
+    const marks = child?.marks || [];
+    const linkKey = marks.find(mark => linkMap.has(mark));
+
+    if (linkKey) {
+      const href = linkMap.get(linkKey)!;
+      return (
+        <a
+          key={`mark-link-${index}`}
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[var(--accent-primary)] underline underline-offset-4"
+        >
+          {text}
+        </a>
+      );
+    }
+
+    return <span key={`mark-text-${index}`}>{linkifyText(text)}</span>;
+  });
+}
+
 function seededShuffle<T>(items: T[], seed: number) {
   const result = [...items];
   let value = seed;
@@ -241,15 +276,12 @@ export default async function PostDetails({
       <article className="prose prose-gray max-w-none">
         {post.body?.map((block: any, index: number) => {
           if (block?._type === 'block') {
-            const text = (block.children || [])
-              .map((c: any) => c.text || '')
-              .join('');
             return (
               <p
                 key={block._key || `block-${index}`}
                 className="whitespace-pre-line"
               >
-                {linkifyText(text)}
+                {renderPortableTextSpans(block.children, block.markDefs)}
               </p>
             );
           }

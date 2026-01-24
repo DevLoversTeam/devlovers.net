@@ -115,6 +115,7 @@ export default function BlogFilters({
     norm: string;
     data?: Author;
   } | null>(null);
+  const [authorProfile, setAuthorProfile] = useState<Author | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<{
     name: string;
     norm: string;
@@ -231,6 +232,36 @@ export default function BlogFilters({
     };
   }, [authorParam, posts, selectedAuthor]);
 
+  useEffect(() => {
+    const name = resolvedAuthor?.name?.trim();
+    if (!name) {
+      setAuthorProfile(null);
+      return;
+    }
+
+    let active = true;
+    if (resolvedAuthor?.data) setAuthorProfile(resolvedAuthor.data);
+
+    fetch(
+      `/api/blog-author?name=${encodeURIComponent(name)}&locale=${encodeURIComponent(
+        locale
+      )}`,
+      { cache: 'no-store' }
+    )
+      .then(response => (response.ok ? response.json() : null))
+      .then((data: Author | null) => {
+        if (!active) return;
+        if (data) setAuthorProfile(data);
+      })
+      .catch(() => {
+        if (!active) return;
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [locale, resolvedAuthor?.data, resolvedAuthor?.name]);
+
   const filteredPosts = useMemo(() => {
     return posts.filter(post => {
       if (resolvedAuthor) {
@@ -260,7 +291,7 @@ export default function BlogFilters({
     });
   }, [posts, resolvedAuthor, resolvedCategory, searchQueryLower]);
 
-  const selectedAuthorData = resolvedAuthor?.data || null;
+  const selectedAuthorData = authorProfile || resolvedAuthor?.data || null;
   const authorBioText = useMemo(() => {
     return plainTextFromPortableText(selectedAuthorData?.bio);
   }, [selectedAuthorData]);
@@ -335,9 +366,8 @@ export default function BlogFilters({
             </span>
           </div>
 
-          {selectedAuthorData &&
-            (selectedAuthorData.image || authorBioText) && (
-              <div className="flex flex-col gap-6 md:flex-row md:items-start">
+          {selectedAuthorData && (
+            <div className="flex flex-col gap-6 md:flex-row md:items-start">
                 {selectedAuthorData.image && (
                   <div className="relative h-40 w-40 flex-shrink-0 overflow-hidden rounded-xl border border-[0.5px] border-[color-mix(in_srgb,var(--accent-primary)_50%,transparent)]">
                     <Image
@@ -354,11 +384,41 @@ export default function BlogFilters({
                       {selectedAuthorData.name}
                     </h2>
                   )}
+                  {(selectedAuthorData.jobTitle ||
+                    selectedAuthorData.company ||
+                    selectedAuthorData.city) && (
+                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                      {[
+                        selectedAuthorData.jobTitle,
+                        selectedAuthorData.company,
+                        selectedAuthorData.city,
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </p>
+                  )}
                   {authorBioText && (
                     <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-gray-600 dark:text-gray-400">
                       {authorBioText}
                     </p>
                   )}
+                  {selectedAuthorData.socialMedia?.length ? (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {selectedAuthorData.socialMedia
+                        .filter(item => item?.url)
+                        .map((item, index) => (
+                          <a
+                            key={item._key || `${item.platform}-${index}`}
+                            href={item.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center rounded-full border border-gray-200 px-3 py-1 text-xs text-gray-600 transition hover:text-[var(--accent-primary)] dark:border-gray-700 dark:text-gray-300"
+                          >
+                            {item.platform || 'link'}
+                          </a>
+                        ))}
+                    </div>
+                  ) : null}
                 </div>
               </div>
             )}
