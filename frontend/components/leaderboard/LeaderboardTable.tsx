@@ -110,7 +110,7 @@ function TableRow({
         'group transition-all duration-300',
         isCurrentUser
           ? 'bg-[color-mix(in_srgb,var(--accent-primary),transparent_90%)] border-l-[3px] sm:border-l-[6px] border-l-[var(--accent-primary)] shadow-inner'
-          : 'hover:bg-slate-50 dark:hover:bg-white/5 border-l-[3px] sm:border-l-[6px] border-l-transparent'
+          : 'hover:bg-slate-50/60 dark:hover:bg-white/[0.02] border-l-[3px] sm:border-l-[6px] border-l-transparent'
       )}
     >
       <td className={cellClass}>
@@ -139,7 +139,7 @@ function TableRow({
                 'font-medium text-sm transition-colors flex items-center gap-1 sm:gap-2 truncate',
                 isCurrentUser
                   ? 'text-[var(--accent-primary)] font-black text-sm sm:text-base'
-                  : 'text-slate-700 dark:text-slate-200 group-hover:text-[var(--accent-primary)]'
+                  : 'text-slate-700 dark:text-slate-200 group-hover:text-[var(--accent-primary)] dark:group-hover:text-[var(--accent-primary)]'
               )}
             >
               <span className="truncate max-w-[100px] sm:max-w-none">
@@ -165,10 +165,6 @@ function TableRow({
                       <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
                     </svg>
                   </motion.div>
-
-                  <span className="relative z-10 text-[6px] sm:text-[8px] font-black text-white uppercase tracking-tighter -mt-0.5">
-                    {t('you') || 'YOU'}
-                  </span>
                 </div>
               )}
             </span>

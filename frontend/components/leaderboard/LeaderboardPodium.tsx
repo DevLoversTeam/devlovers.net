@@ -16,7 +16,6 @@ const rankConfig = {
       text: 'text-yellow-600 dark:text-yellow-400',
       badge: 'bg-yellow-400 dark:bg-yellow-500',
       ring: 'border-yellow-400 dark:border-yellow-500',
-      barTop: 'bg-yellow-400 dark:bg-yellow-500',
     },
   },
   2: {
@@ -28,7 +27,6 @@ const rankConfig = {
       text: 'text-slate-600 dark:text-slate-400',
       badge: 'bg-slate-400 dark:bg-slate-500',
       ring: 'border-slate-300 dark:border-slate-500',
-      barTop: 'bg-slate-300 dark:bg-slate-500',
     },
   },
   3: {
@@ -40,7 +38,6 @@ const rankConfig = {
       text: 'text-orange-600 dark:text-orange-400',
       badge: 'bg-orange-400 dark:bg-orange-500',
       ring: 'border-orange-300 dark:border-orange-500',
-      barTop: 'bg-orange-300 dark:bg-orange-500',
     },
   },
 } as const;
@@ -112,7 +109,7 @@ export function LeaderboardPodium({ topThree }: { topThree: User[] }) {
 
               <div
                 className={cn(
-                  'font-mono text-[10px] md:text-xs font-bold mt-0.5',
+                  'font-mono font-bold mt-0.5 text-base md:text-lg',
                   style.text
                 )}
               >
@@ -135,14 +132,7 @@ export function LeaderboardPodium({ topThree }: { topThree: User[] }) {
                 style.bg,
                 style.border
               )}
-            >
-              <div
-                className={cn(
-                  'w-full h-1 md:h-1.5 absolute top-0 left-0 opacity-80',
-                  style.barTop
-                )}
-              />
-            </motion.div>
+            ></motion.div>
           </div>
         );
       })}
