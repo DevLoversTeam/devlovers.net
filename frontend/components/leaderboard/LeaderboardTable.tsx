@@ -104,10 +104,9 @@ function TableRow({
   const cellClass =
     'px-2 sm:px-6 py-3 sm:py-4 border-b border-slate-100 dark:border-white/5';
 
-  // ✅ FIX: Виносимо логіку лівого бордера окремо
   const leftBorderClass = isCurrentUser
-    ? 'border-l-[3px] sm:border-l-[6px] border-l-[var(--accent-primary)]'
-    : 'border-l-[3px] sm:border-l-[6px] border-l-transparent';
+    ? 'border-l-[1px] sm:border-l-[1px] border-l-[var(--accent-primary)]'
+    : 'border-l-[1px] sm:border-l-[1px] border-l-transparent';
 
   return (
     <tr
@@ -118,7 +117,7 @@ function TableRow({
           : 'hover:bg-slate-50/60 dark:hover:bg-white/[0.04]'
       )}
     >
-      <td className={cn(cellClass)}>
+      <td className={cn(cellClass, leftBorderClass)}>
         <div className="flex justify-center items-center">
           <RankBadge rank={user.rank} />
         </div>
