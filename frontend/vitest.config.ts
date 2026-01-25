@@ -13,7 +13,7 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
-    include: ['lib/tests/**/*.test.ts', 'components/tests/**/*.test.tsx'],
+    include: ['lib/tests/**/*.test.ts', 'components/tests/**/*.test.tsx', 'components/quiz/tests/**/*.test.tsx'],
     globals: true,
     coverage: {
       provider: 'v8',
