@@ -4,6 +4,7 @@ import groq from 'groq';
 import { getTranslations } from 'next-intl/server';
 import { client } from '@/client';
 import { Link } from '@/i18n/routing';
+import { formatBlogDate } from '@/lib/blog/date';
 
 export const revalidate = 0;
 
@@ -64,6 +65,41 @@ function linkifyText(text: string) {
       );
     }
     return <span key={`text-${index}`}>{part}</span>;
+  });
+}
+
+function renderPortableTextSpans(
+  children: Array<{ _type?: string; text?: string; marks?: string[] }> = [],
+  markDefs: Array<{ _key?: string; _type?: string; href?: string }> = []
+) {
+  const linkMap = new Map(
+    markDefs
+      .filter(def => def?._type === 'link' && def?._key && def?.href)
+      .map(def => [def._key as string, def.href as string])
+  );
+
+  return children.map((child, index) => {
+    const text = child?.text || '';
+    if (!text) return null;
+    const marks = child?.marks || [];
+    const linkKey = marks.find(mark => linkMap.has(mark));
+
+    if (linkKey) {
+      const href = linkMap.get(linkKey)!;
+      return (
+        <a
+          key={`mark-link-${index}`}
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[var(--accent-primary)] underline underline-offset-4"
+        >
+          {text}
+        </a>
+      );
+    }
+
+    return <span key={`mark-text-${index}`}>{linkifyText(text)}</span>;
   });
 }
 
@@ -151,15 +187,15 @@ export default async function PostDetails({
   const post: Post | null = await client
     .withConfig({ useCdn: false })
     .fetch(query, {
-    slug: slugParam,
-    locale,
-  });
+      slug: slugParam,
+      locale,
+    });
   const recommendedAll: Post[] = await client
     .withConfig({ useCdn: false })
     .fetch(recommendedQuery, {
-    slug: slugParam,
-    locale,
-  });
+      slug: slugParam,
+      locale,
+    });
   const recommendedPosts = seededShuffle(
     recommendedAll,
     hashString(slugParam)
@@ -176,9 +212,71 @@ export default async function PostDetails({
   ].filter(Boolean) as string[];
   const authorMeta = authorMetaParts.join(' · ');
   const categoryLabel = post.categories?.[0];
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  const postUrl = baseUrl
+    ? `${baseUrl}/${locale}/blog/${slugParam}`
+    : null;
+  const blogUrl = baseUrl ? `${baseUrl}/${locale}/blog` : null;
+  const description = plainTextFromPortableText(post.body).slice(0, 160);
+  const breadcrumbsJsonLd =
+    blogUrl && postUrl
+      ? {
+          '@context': 'https://schema.org',
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            {
+              '@type': 'ListItem',
+              position: 1,
+              name: tNav('blog'),
+              item: blogUrl,
+            },
+            {
+              '@type': 'ListItem',
+              position: 2,
+              name: post.title,
+              item: postUrl,
+            },
+          ],
+        }
+      : null;
+  const articleJsonLd =
+    postUrl
+      ? {
+          '@context': 'https://schema.org',
+          '@type': 'BlogPosting',
+          headline: post.title,
+          description: description || undefined,
+          mainEntityOfPage: postUrl,
+          url: postUrl,
+          datePublished: post.publishedAt || undefined,
+          author: post.author?.name
+            ? {
+                '@type': 'Person',
+                name: post.author.name,
+              }
+            : undefined,
+          image: post.mainImage ? [post.mainImage] : undefined,
+        }
+      : null;
 
   return (
     <main className="max-w-3xl mx-auto px-6 py-12">
+      {breadcrumbsJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(breadcrumbsJsonLd),
+          }}
+        />
+      )}
+      {articleJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(articleJsonLd),
+          }}
+        />
+      )}
       <div className="mb-6 relative left-1/2 right-1/2 w-screen -translate-x-1/2 px-6">
         <div className="mx-auto flex max-w-6xl justify-start">
           <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
@@ -220,7 +318,9 @@ export default async function PostDetails({
           )}
           {authorName && post.publishedAt && <span>·</span>}
           {post.publishedAt && (
-            <span>{new Date(post.publishedAt).toLocaleDateString()}</span>
+            <time dateTime={post.publishedAt}>
+              {formatBlogDate(post.publishedAt)}
+            </time>
           )}
         </div>
       )}
@@ -241,15 +341,12 @@ export default async function PostDetails({
       <article className="prose prose-gray max-w-none">
         {post.body?.map((block: any, index: number) => {
           if (block?._type === 'block') {
-            const text = (block.children || [])
-              .map((c: any) => c.text || '')
-              .join('');
             return (
               <p
                 key={block._key || `block-${index}`}
                 className="whitespace-pre-line"
               >
-                {linkifyText(text)}
+                {renderPortableTextSpans(block.children, block.markDefs)}
               </p>
             );
           }
@@ -297,20 +394,20 @@ export default async function PostDetails({
                         />
                       </div>
                     )}
-                  <h3 className="mt-4 text-lg font-semibold text-gray-900 transition group-hover:underline underline-offset-4 dark:text-gray-100">
-                    {item.title}
-                  </h3>
-                  {item.body && (
-                    <p className="mt-2 text-sm leading-relaxed text-gray-600 dark:text-gray-400 line-clamp-2">
-                      {plainTextFromPortableText(item.body)}
-                    </p>
-                  )}
-                  {(item.author?.name || item.publishedAt) && (
-                    <div className="mt-auto pt-3 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                      {item.author?.image && (
-                        <span className="relative h-5 w-5 overflow-hidden rounded-full">
-                          <Image
-                            src={item.author.image}
+                    <h3 className="mt-4 text-lg font-semibold text-gray-900 transition group-hover:underline underline-offset-4 dark:text-gray-100">
+                      {item.title}
+                    </h3>
+                    {item.body && (
+                      <p className="mt-2 text-sm leading-relaxed text-gray-600 dark:text-gray-400 line-clamp-2">
+                        {plainTextFromPortableText(item.body)}
+                      </p>
+                    )}
+                    {(item.author?.name || item.publishedAt) && (
+                      <div className="mt-auto pt-3 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                        {item.author?.image && (
+                          <span className="relative h-5 w-5 overflow-hidden rounded-full">
+                            <Image
+                              src={item.author.image}
                               alt={item.author.name || 'Author'}
                               fill
                               className="object-cover"
@@ -318,11 +415,13 @@ export default async function PostDetails({
                           </span>
                         )}
                         {item.author?.name && <span>{item.author.name}</span>}
-                        {item.author?.name && item.publishedAt && <span>·</span>}
+                        {item.author?.name && item.publishedAt && (
+                          <span>·</span>
+                        )}
                         {item.publishedAt && (
-                          <span>
-                            {new Date(item.publishedAt).toLocaleDateString()}
-                          </span>
+                          <time dateTime={item.publishedAt}>
+                            {formatBlogDate(item.publishedAt)}
+                          </time>
                         )}
                       </div>
                     )}

@@ -7,6 +7,7 @@ import { useSearchParams } from 'next/navigation';
 import { usePathname, useRouter } from '@/i18n/routing';
 import BlogGrid from '@/components/blog/BlogGrid';
 import { Link } from '@/i18n/routing';
+import { formatBlogDate } from '@/lib/blog/date';
 
 export type PortableTextSpan = {
   _type: 'span';
@@ -27,6 +28,12 @@ export type PortableTextImage = {
 
 export type PortableText = Array<PortableTextBlock | PortableTextImage>;
 
+export type SocialLink = {
+  _key?: string;
+  platform?: string;
+  url?: string;
+};
+
 export type Author = {
   name?: string;
   image?: string;
@@ -34,6 +41,7 @@ export type Author = {
   jobTitle?: string;
   city?: string;
   bio?: PortableText;
+  socialMedia?: SocialLink[];
 };
 
 export type Post = {
@@ -115,6 +123,10 @@ export default function BlogFilters({
     norm: string;
     data?: Author;
   } | null>(null);
+  const [authorProfile, setAuthorProfile] = useState<{
+    name: string;
+    data: Author;
+  } | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<{
     name: string;
     norm: string;
@@ -139,7 +151,6 @@ export default function BlogFilters({
     router.replace(nextPath);
   };
 
-  // Helper function to get translated category label
   const getCategoryLabel = (categoryName: string): string => {
     const key = categoryName.toLowerCase() as 'tech' | 'career' | 'insights' | 'news' | 'growth';
     const categoryTranslations: Record<string, string> = {
@@ -215,7 +226,6 @@ export default function BlogFilters({
     didClearSearchRef.current = true;
   }, [pathname, router, searchParams, searchQuery]);
 
-  // categoryParam is handled via resolvedCategory to avoid state updates in effects.
 
   const resolvedAuthor = useMemo(() => {
     const normParam = normalizeAuthor(authorParam);
@@ -230,6 +240,32 @@ export default function BlogFilters({
       data: match?.author,
     };
   }, [authorParam, posts, selectedAuthor]);
+
+  useEffect(() => {
+    const name = resolvedAuthor?.name?.trim();
+    if (!name) return;
+
+    let active = true;
+
+    fetch(
+      `/api/blog-author?name=${encodeURIComponent(name)}&locale=${encodeURIComponent(
+        locale
+      )}`,
+      { cache: 'no-store' }
+    )
+      .then(response => (response.ok ? response.json() : null))
+      .then((data: Author | null) => {
+        if (!active) return;
+        if (data) setAuthorProfile({ name, data });
+      })
+      .catch(() => {
+        if (!active) return;
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [locale, resolvedAuthor?.name]);
 
   const filteredPosts = useMemo(() => {
     return posts.filter(post => {
@@ -260,7 +296,12 @@ export default function BlogFilters({
     });
   }, [posts, resolvedAuthor, resolvedCategory, searchQueryLower]);
 
-  const selectedAuthorData = resolvedAuthor?.data || null;
+  const selectedAuthorData = useMemo(() => {
+    const resolvedName = resolvedAuthor?.name;
+    if (!resolvedName) return null;
+    if (authorProfile?.name === resolvedName) return authorProfile.data;
+    return resolvedAuthor?.data || null;
+  }, [authorProfile, resolvedAuthor?.data, resolvedAuthor?.name]);
   const authorBioText = useMemo(() => {
     return plainTextFromPortableText(selectedAuthorData?.bio);
   }, [selectedAuthorData]);
@@ -301,11 +342,12 @@ export default function BlogFilters({
               </p>
               {featuredPost.publishedAt && (
                 <div className="mt-6 flex items-center justify-between text-xs tracking-[0.25em] text-gray-500 dark:text-gray-400">
-                  <span className="uppercase">
-                    {new Date(featuredPost.publishedAt).toLocaleDateString(
-                      locale
-                    )}
-                  </span>
+                  <time
+                    dateTime={featuredPost.publishedAt}
+                    className="uppercase"
+                  >
+                    {formatBlogDate(featuredPost.publishedAt)}
+                  </time>
                   <Link
                     href={`/blog/${featuredPost.slug.current}`}
                     className="text-sm font-medium tracking-normal text-[var(--accent-primary)] transition hover:underline underline-offset-4"
@@ -335,9 +377,8 @@ export default function BlogFilters({
             </span>
           </div>
 
-          {selectedAuthorData &&
-            (selectedAuthorData.image || authorBioText) && (
-              <div className="flex flex-col gap-6 md:flex-row md:items-start">
+          {selectedAuthorData && (
+            <div className="flex flex-col gap-6 md:flex-row md:items-start">
                 {selectedAuthorData.image && (
                   <div className="relative h-40 w-40 flex-shrink-0 overflow-hidden rounded-xl border border-[0.5px] border-[color-mix(in_srgb,var(--accent-primary)_50%,transparent)]">
                     <Image
@@ -354,11 +395,41 @@ export default function BlogFilters({
                       {selectedAuthorData.name}
                     </h2>
                   )}
+                  {(selectedAuthorData.jobTitle ||
+                    selectedAuthorData.company ||
+                    selectedAuthorData.city) && (
+                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                      {[
+                        selectedAuthorData.jobTitle,
+                        selectedAuthorData.company,
+                        selectedAuthorData.city,
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </p>
+                  )}
                   {authorBioText && (
                     <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-gray-600 dark:text-gray-400">
                       {authorBioText}
                     </p>
                   )}
+                  {selectedAuthorData.socialMedia?.length ? (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {selectedAuthorData.socialMedia
+                        .filter(item => item?.url)
+                        .map((item, index) => (
+                          <a
+                            key={item._key || `${item.platform}-${index}`}
+                            href={item.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center rounded-full border border-gray-200 px-3 py-1 text-xs text-gray-600 transition hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)] dark:border-gray-700 dark:text-gray-300 dark:hover:text-[var(--accent-primary)] dark:hover:border-[var(--accent-primary)]"
+                          >
+                            {item.platform || 'link'}
+                          </a>
+                        ))}
+                    </div>
+                  ) : null}
                 </div>
               </div>
             )}
@@ -423,10 +494,6 @@ export default function BlogFilters({
           disableHoverColor
         />
       </div>
-
-      {!filteredPosts.length && (
-        <p className="text-center text-gray-500 mt-10">{t('noPosts')}</p>
-      )}
     </div>
   );
 }

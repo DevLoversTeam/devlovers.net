@@ -30,6 +30,7 @@ yarn-error.log*
 
 # Coverage directory
 /coverage
+/coverage-quiz
 
 # Dotenv files
 *.local
@@ -64,7 +65,7 @@ next-env.d.ts
 # Documentation (development only)
 .claude/
 CLAUDE.md
-frontend/docs/
+frontend/_dev-notes/
 frontend/.env.bak
 
 

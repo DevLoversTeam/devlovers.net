@@ -82,11 +82,11 @@ export function QuizProgress({ current, total, answers }: QuizProgressProps) {
             <div
               key={index}
               className={cn(
-                'relative flex items-center justify-center w-9 h-9 rounded-full transition-all border-2 text-sm font-medium',
-                isCurrent && !isAnswered && 'border-blue-500 bg-blue-50 dark:bg-blue-950',
-                isAnswered && isCorrect && 'border-green-500 bg-green-500',
-                isAnswered && !isCorrect && 'border-red-500 bg-red-500',
-                !isAnswered && !isCurrent && 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900'
+                'relative flex items-center justify-center w-9 h-9 rounded-full transition-all border text-sm font-medium',
+                isCurrent && !isAnswered && 'border-blue-500 bg-blue-500/20 dark:bg-blue-500/20',
+                isAnswered && isCorrect && 'border-green-500 bg-green-500/20 dark:bg-green-500/20',
+                isAnswered && !isCorrect && 'border-red-500 bg-red-500/20 dark:bg-red-500/20',
+                !isAnswered && !isCurrent && 'border-gray-300 dark:border-gray-600 bg-white/90 dark:bg-neutral-900/80'
               )}
             >
               {isAnswered ? (
@@ -103,7 +103,14 @@ export function QuizProgress({ current, total, answers }: QuizProgressProps) {
                 </span>
               )}
               {isCurrent && (
-                <div className="absolute inset-0 rounded-full border-2 border-blue-500 animate-pulse" />
+                <div 
+                  className={cn(
+                    "absolute inset-0 rounded-full border-1 animate-pulse",
+                    !isAnswered && "border-blue-500",
+                    isAnswered && isCorrect && "border-green-500",
+                    isAnswered && !isCorrect && "border-red-500"
+                  )} 
+                />
               )}
             </div>
           );
