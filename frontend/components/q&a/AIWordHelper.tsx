@@ -51,6 +51,17 @@ const messagesByLocale = {
   pl: plMessages,
 } as const;
 
+const SUPPORTED_LOCALES: Locale[] = ['uk', 'en', 'pl'];
+const DEFAULT_LOCALE: Locale = 'en';
+
+function isValidLocale(value: unknown): value is Locale {
+  return typeof value === 'string' && SUPPORTED_LOCALES.includes(value as Locale);
+}
+
+function getValidLocale(value: unknown): Locale {
+  return isValidLocale(value) ? value : DEFAULT_LOCALE;
+}
+
 function getLocalizedMessages(locale: Locale) {
   return messagesByLocale[locale].aiHelper;
 }
@@ -124,9 +135,9 @@ export default function AIWordHelper({
 }: AIWordHelperProps) {
   const t = useTranslations('aiHelper');
   const params = useParams();
-  const locale = (params.locale as string) || 'uk';
+  const validatedLocale = getValidLocale(params.locale);
 
-  const [activeLocale, setActiveLocale] = useState<Locale>(locale as Locale);
+  const [activeLocale, setActiveLocale] = useState<Locale>(validatedLocale);
   const [explanation, setExplanation] = useState<ExplanationResponse | null>(
     null
   );
@@ -179,13 +190,13 @@ export default function AIWordHelper({
   useEffect(() => {
     if (isOpen) {
       setPosition({ x: 0, y: 0 });
-      setActiveLocale(locale as Locale);
+      setActiveLocale(validatedLocale);
       setExplanation(null);
       setError(null);
       setRateLimitState({ isRateLimited: false, resetIn: 0, retryAttempts: 0 });
       setServiceErrorState({ isServiceError: false, errorCode: '', retryAttempts: 0 });
     }
-  }, [isOpen, locale]);
+  }, [isOpen, validatedLocale]);
 
   const fetchExplanation = useCallback(async () => {
     const cached = getCachedExplanation(term);
@@ -328,7 +339,7 @@ export default function AIWordHelper({
 
   if (!isOpen) return null;
 
-  const locales: Locale[] = ['uk', 'en', 'pl'];
+  const locales = SUPPORTED_LOCALES;
 
   const renderGuestCTA = () => (
     <div className="flex flex-col items-center justify-center gap-4 px-4 py-8 text-center">
