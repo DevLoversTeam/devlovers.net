@@ -18,7 +18,13 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
-      include: ['lib/quiz/**', 'hooks/**', 'app/api/quiz/**'],
+      include: [
+        'lib/quiz/**',
+        'hooks/**',
+        'app/api/quiz/**',
+        'components/q&a/**',
+        'app/api/questions/**',
+      ],
     },
   },
 });
