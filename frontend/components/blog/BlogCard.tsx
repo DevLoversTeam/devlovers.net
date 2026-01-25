@@ -136,7 +136,9 @@ export default function BlogCard({
               {(post.author?.name || categoryLabel) && formattedDate && (
                 <span>·</span>
               )}
-              {formattedDate && <span>{formattedDate}</span>}
+              {formattedDate && post.publishedAt && (
+                <time dateTime={post.publishedAt}>{formattedDate}</time>
+              )}
             </div>
           )}
 

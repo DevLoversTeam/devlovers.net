@@ -123,7 +123,10 @@ export default function BlogFilters({
     norm: string;
     data?: Author;
   } | null>(null);
-  const [authorProfile, setAuthorProfile] = useState<Author | null>(null);
+  const [authorProfile, setAuthorProfile] = useState<{
+    name: string;
+    data: Author;
+  } | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<{
     name: string;
     norm: string;
@@ -148,7 +151,6 @@ export default function BlogFilters({
     router.replace(nextPath);
   };
 
-  // Helper function to get translated category label
   const getCategoryLabel = (categoryName: string): string => {
     const key = categoryName.toLowerCase() as 'tech' | 'career' | 'insights' | 'news' | 'growth';
     const categoryTranslations: Record<string, string> = {
@@ -224,7 +226,6 @@ export default function BlogFilters({
     didClearSearchRef.current = true;
   }, [pathname, router, searchParams, searchQuery]);
 
-  // categoryParam is handled via resolvedCategory to avoid state updates in effects.
 
   const resolvedAuthor = useMemo(() => {
     const normParam = normalizeAuthor(authorParam);
@@ -242,13 +243,9 @@ export default function BlogFilters({
 
   useEffect(() => {
     const name = resolvedAuthor?.name?.trim();
-    if (!name) {
-      setAuthorProfile(null);
-      return;
-    }
+    if (!name) return;
 
     let active = true;
-    if (resolvedAuthor?.data) setAuthorProfile(resolvedAuthor.data);
 
     fetch(
       `/api/blog-author?name=${encodeURIComponent(name)}&locale=${encodeURIComponent(
@@ -259,7 +256,7 @@ export default function BlogFilters({
       .then(response => (response.ok ? response.json() : null))
       .then((data: Author | null) => {
         if (!active) return;
-        if (data) setAuthorProfile(data);
+        if (data) setAuthorProfile({ name, data });
       })
       .catch(() => {
         if (!active) return;
@@ -268,7 +265,7 @@ export default function BlogFilters({
     return () => {
       active = false;
     };
-  }, [locale, resolvedAuthor?.data, resolvedAuthor?.name]);
+  }, [locale, resolvedAuthor?.name]);
 
   const filteredPosts = useMemo(() => {
     return posts.filter(post => {
@@ -299,7 +296,12 @@ export default function BlogFilters({
     });
   }, [posts, resolvedAuthor, resolvedCategory, searchQueryLower]);
 
-  const selectedAuthorData = authorProfile || resolvedAuthor?.data || null;
+  const selectedAuthorData = useMemo(() => {
+    const resolvedName = resolvedAuthor?.name;
+    if (!resolvedName) return null;
+    if (authorProfile?.name === resolvedName) return authorProfile.data;
+    return resolvedAuthor?.data || null;
+  }, [authorProfile, resolvedAuthor?.data, resolvedAuthor?.name]);
   const authorBioText = useMemo(() => {
     return plainTextFromPortableText(selectedAuthorData?.bio);
   }, [selectedAuthorData]);
@@ -340,9 +342,12 @@ export default function BlogFilters({
               </p>
               {featuredPost.publishedAt && (
                 <div className="mt-6 flex items-center justify-between text-xs tracking-[0.25em] text-gray-500 dark:text-gray-400">
-                  <span className="uppercase">
+                  <time
+                    dateTime={featuredPost.publishedAt}
+                    className="uppercase"
+                  >
                     {formatBlogDate(featuredPost.publishedAt)}
-                  </span>
+                  </time>
                   <Link
                     href={`/blog/${featuredPost.slug.current}`}
                     className="text-sm font-medium tracking-normal text-[var(--accent-primary)] transition hover:underline underline-offset-4"
