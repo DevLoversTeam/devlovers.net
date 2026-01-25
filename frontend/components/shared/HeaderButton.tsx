@@ -65,16 +65,16 @@ export function HeaderButton({
       <span
         className="
           absolute inset-0
-          translate-x-[-100%]
-          group-hover:translate-x-[100%]
-          group-active:translate-x-[100%]
+          [--tw-translate-x:-100%]
+          group-hover:[--tw-translate-x:100%]
+          group-active:[--tw-translate-x:100%]
           transition-transform duration-1000 ease-in-out
+          [transform:translateX(var(--tw-translate-x))_skewX(-20deg)]
         "
         style={{
           background: `linear-gradient(90deg, transparent 0%, rgba(255,255,255,${
             isIconOnly ? '0.3' : '0.4'
           }) 50%, transparent 100%)`,
-          transform: 'skewX(-20deg)',
         }}
         aria-hidden="true"
       />
