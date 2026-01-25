@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { client } from '@/client';
 import { Link } from '@/i18n/routing';
 import { BlogCategoryGrid } from '@/components/blog/BlogCategoryGrid';
+import { formatBlogDate } from '@/lib/blog/date';
 
 export const revalidate = 0;
 
@@ -79,13 +80,7 @@ export default async function BlogCategoryPage({
 
   const featuredPost = posts[0];
   const restPosts = posts.slice(1);
-  const featuredDate = featuredPost?.publishedAt
-    ? new Intl.DateTimeFormat(locale, {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-      }).format(new Date(featuredPost.publishedAt))
-    : '';
+  const featuredDate = formatBlogDate(featuredPost?.publishedAt);
 
   return (
     <main className="max-w-6xl mx-auto px-6 py-12">

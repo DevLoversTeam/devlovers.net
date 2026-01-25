@@ -178,7 +178,6 @@
     📄 PostAuthQuizSync.tsx
     📄 ProviderButton.tsx
   📁 blog
-    📄 AuthorModal.tsx
     📄 BlogCard.tsx
     📄 BlogCategoryGrid.tsx
     📄 BlogCategoryLinks.tsx

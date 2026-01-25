@@ -6,8 +6,8 @@ import { Pagination } from '@/components/q&a/Pagination';
 import { Tabs, TabsList, TabsContent } from '@/components/ui/tabs';
 import { categoryData } from '@/data/category';
 import { useQaTabs } from '@/components/q&a/useQaTabs';
-import { QaTabButton } from '@/components/q&a/QaTabButton';
-import { qaTabStyles } from '@/data/qaTabs';
+import { CategoryTabButton } from '@/components/shared/CategoryTabButton';
+import { categoryTabStyles } from '@/data/categoryStyles';
 import { cn } from '@/lib/utils';
 import type { CategorySlug } from '@/components/q&a/types';
 
@@ -29,10 +29,10 @@ export default function TabsSection() {
       <Tabs value={active} onValueChange={handleCategoryChange}>
         <TabsList className="!bg-transparent !p-0 !h-auto !w-full flex flex-wrap items-stretch justify-start gap-3 mb-6">
           {categoryData.map(category => {
-            const slug = category.slug as keyof typeof qaTabStyles;
+            const slug = category.slug as keyof typeof categoryTabStyles;
             const value = slug as CategorySlug;
             return (
-            <QaTabButton
+            <CategoryTabButton
               key={slug}
               value={value}
               label={
@@ -40,7 +40,7 @@ export default function TabsSection() {
                 category.translations.en ??
                 value
               }
-              style={qaTabStyles[slug]}
+              style={categoryTabStyles[slug]}
               isActive={active === value}
             />
             );
@@ -78,7 +78,7 @@ export default function TabsSection() {
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={handlePageChange}
-          accentColor={qaTabStyles[active as keyof typeof qaTabStyles].accent}
+          accentColor={categoryTabStyles[active as keyof typeof categoryTabStyles].accent}
         />
       )}
     </div>

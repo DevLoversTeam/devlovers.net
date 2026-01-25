@@ -118,11 +118,6 @@ export function BlogHeaderSearch() {
     setOpen(false);
   };
 
-  const clear = () => {
-    setValue('');
-    setOpen(false);
-  };
-
   return (
     <div className="relative flex items-center">
       <button

@@ -18,6 +18,7 @@ import type { QuizQuestionClient } from '@/db/queries/quiz';
 import { ConfirmModal } from '@/components/ui/confirm-modal';
 import { Button } from '@/components/ui/button';
 import { FileText, Ban, AlertTriangle, Clock } from 'lucide-react';
+import { categoryTabStyles } from '@/data/categoryStyles';
 
 interface Answer {
   questionId: string;
@@ -149,6 +150,8 @@ export function QuizContainer({
   const tRules = useTranslations('quiz.rules');
   const tExit = useTranslations('quiz.exitModal');
   const tQuestion = useTranslations('quiz.question');
+  const categoryStyle = categorySlug ? categoryTabStyles[categorySlug as keyof typeof categoryTabStyles] : null;
+  const accentColor = categoryStyle?.accent ?? '#3B82F6';
   const [isPending, startTransition] = useTransition();
   const [state, dispatch] = useReducer(quizReducer, {
     status: 'rules',
@@ -194,7 +197,6 @@ const { markQuitting } = useQuizGuards({
   },
   resetViolations,
 });
-
 
   // Sync seed to URL for language switch persistence
   useEffect(() => {
@@ -369,7 +371,7 @@ const confirmQuit = () => {
     if (onBackToTopics) {
       onBackToTopics();
     } else {
-      window.location.href = `/${locale}/`;
+      window.location.href = `/${locale}/q&a`;
     }
   };
 
@@ -423,10 +425,21 @@ const confirmQuit = () => {
             </div>
           </div>
         </div>
-
-        <Button onClick={handleStart} className="w-full" size="md">
-          {tRules('startButton')}
-        </Button>
+          <button
+            onClick={handleStart}
+            className="group relative w-full overflow-hidden text-center rounded-xl border px-6 py-3 text-base font-semibold transition-all duration-300"
+            style={{
+              borderColor: `${accentColor}50`,
+              backgroundColor: `${accentColor}15`,
+              color: accentColor,
+            }}
+          >
+            {tRules('startButton')}
+            <span
+              className="pointer-events-none absolute left-1/2 top-1/2 h-[150%] w-[80%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[20px] opacity-0 transition-opacity duration-300 group-hover:opacity-30"
+              style={{ backgroundColor: accentColor }}
+            />
+          </button>
       </div>
     );
   }
@@ -493,6 +506,7 @@ const confirmQuit = () => {
         onAnswer={handleAnswer}
         onNext={handleNext}
         isLoading={isPending}
+        accentColor={accentColor}
       />
       <ConfirmModal
         isOpen={showExitModal}

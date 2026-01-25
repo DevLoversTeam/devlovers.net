@@ -218,7 +218,12 @@
   --color-ring: var(--foreground);
 
   --card: var(--background);
+    /* CTA button: light theme (section is black) -> pink bg + white text */
+  --shop-cta-bg: #ff2d55;
+  --shop-cta-fg: oklch(0.985 0 0);
+
 }
+
 
 .dark .shop-scope {
   /* dark: shop accent = magenta */
@@ -236,6 +241,10 @@
   /* keep borders closer to previous shop look, derived (no hex) */
   --border: color-mix(in oklab, var(--foreground) 18%, var(--background));
   --input: color-mix(in oklab, var(--foreground) 18%, var(--background));
+    /* CTA button: dark theme (section becomes white) -> black bg + white text */
+  --shop-cta-bg: var(--background);
+  --shop-cta-fg: var(--foreground);
+
 }
 
 /* about-community */
