@@ -56,7 +56,7 @@ function authMiddleware(req: NextRequest) {
 
   if (pathnameWithoutLocale.startsWith('/dashboard')) {
   if (!authenticated) {
-    const locale = pathname.split('/')[1] || 'uk';
+    const locale = pathname.split('/')[1] || 'en';
     return NextResponse.redirect(new URL(`/${locale}/login`, req.url));
   }
 }
@@ -73,10 +73,10 @@ function getScopeFromPathname(pathname: string): 'shop' | 'site' {
 
 export function proxy(req: NextRequest) {
   if (req.nextUrl.pathname === '/') {
-    return NextResponse.redirect(new URL('/uk', req.url));
+    return NextResponse.redirect(new URL('/en', req.url));
   }
 
-  const locale = req.nextUrl.pathname.split('/')[1] || 'uk';
+  const locale = req.nextUrl.pathname.split('/')[1] || 'en';
 
   const authResponse = authMiddleware(req);
   if (authResponse) return authResponse;
