@@ -103,6 +103,25 @@ function renderPortableTextSpans(
   });
 }
 
+function seededShuffle<T>(items: T[], seed: number) {
+  const result = [...items];
+  let value = seed;
+  for (let i = result.length - 1; i > 0; i -= 1) {
+    value = (value * 1664525 + 1013904223) % 4294967296;
+    const j = value % (i + 1);
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
+function hashString(input: string) {
+  let hash = 0;
+  for (let i = 0; i < input.length; i += 1) {
+    hash = (hash * 31 + input.charCodeAt(i)) >>> 0;
+  }
+  return hash;
+}
+
 const query = groq`
   *[_type=="post" && slug.current==$slug][0]{
     _id,
@@ -133,8 +152,7 @@ const query = groq`
   }
 `;
 const recommendedQuery = groq`
-  *[_type=="post" && defined(slug.current) && slug.current != $slug]
-    | order(coalesce(publishedAt, _createdAt) desc)[0...3]{
+  *[_type=="post" && defined(slug.current) && slug.current != $slug]{
     _id,
     "title": coalesce(title[$locale], title[lower($locale)], title.uk, title.en, title.pl, title),
     publishedAt,
@@ -169,16 +187,19 @@ export default async function PostDetails({
   const post: Post | null = await client
     .withConfig({ useCdn: false })
     .fetch(query, {
-    slug: slugParam,
-    locale,
-  });
+      slug: slugParam,
+      locale,
+    });
   const recommendedAll: Post[] = await client
     .withConfig({ useCdn: false })
     .fetch(recommendedQuery, {
-    slug: slugParam,
-    locale,
-  });
-  const recommendedPosts = recommendedAll;
+      slug: slugParam,
+      locale,
+    });
+  const recommendedPosts = seededShuffle(
+    recommendedAll,
+    hashString(slugParam)
+  ).slice(0, 3);
 
   if (!post?.title) return notFound();
 
@@ -307,20 +328,20 @@ export default async function PostDetails({
                         />
                       </div>
                     )}
-                  <h3 className="mt-4 text-lg font-semibold text-gray-900 transition group-hover:underline underline-offset-4 dark:text-gray-100">
-                    {item.title}
-                  </h3>
-                  {item.body && (
-                    <p className="mt-2 text-sm leading-relaxed text-gray-600 dark:text-gray-400 line-clamp-2">
-                      {plainTextFromPortableText(item.body)}
-                    </p>
-                  )}
-                  {(item.author?.name || item.publishedAt) && (
-                    <div className="mt-auto pt-3 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                      {item.author?.image && (
-                        <span className="relative h-5 w-5 overflow-hidden rounded-full">
-                          <Image
-                            src={item.author.image}
+                    <h3 className="mt-4 text-lg font-semibold text-gray-900 transition group-hover:underline underline-offset-4 dark:text-gray-100">
+                      {item.title}
+                    </h3>
+                    {item.body && (
+                      <p className="mt-2 text-sm leading-relaxed text-gray-600 dark:text-gray-400 line-clamp-2">
+                        {plainTextFromPortableText(item.body)}
+                      </p>
+                    )}
+                    {(item.author?.name || item.publishedAt) && (
+                      <div className="mt-auto pt-3 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                        {item.author?.image && (
+                          <span className="relative h-5 w-5 overflow-hidden rounded-full">
+                            <Image
+                              src={item.author.image}
                               alt={item.author.name || 'Author'}
                               fill
                               className="object-cover"
@@ -328,7 +349,9 @@ export default async function PostDetails({
                           </span>
                         )}
                         {item.author?.name && <span>{item.author.name}</span>}
-                        {item.author?.name && item.publishedAt && <span>·</span>}
+                        {item.author?.name && item.publishedAt && (
+                          <span>·</span>
+                        )}
                         {item.publishedAt && (
                           <span>{formatBlogDate(item.publishedAt)}</span>
                         )}

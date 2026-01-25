@@ -26,7 +26,6 @@ export function BlogCategoryLinks({
   const tNav = useTranslations('navigation');
   const pathname = usePathname();
 
-  // Helper function to get translated category label
   const getCategoryLabel = (categoryName: string): string => {
     const key = categoryName.toLowerCase() as
       | 'tech'

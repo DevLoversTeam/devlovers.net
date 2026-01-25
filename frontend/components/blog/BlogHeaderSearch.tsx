@@ -67,9 +67,8 @@ export function BlogHeaderSearch() {
   }, [open]);
 
   useEffect(() => {
-    if (!open || items.length || isLoading) return;
+    if (!open || items.length || !isLoading) return;
     let active = true;
-    setIsLoading(true);
     fetch(SEARCH_ENDPOINT, { cache: 'no-store' })
       .then(response => (response.ok ? response.json() : []))
       .then((result: PostSearchItem[]) => {
@@ -133,11 +132,23 @@ export function BlogHeaderSearch() {
     setOpen(false);
   };
 
+  const startLoading = () => {
+    if (!items.length && !isLoading) {
+      setIsLoading(true);
+    }
+  };
+
   return (
     <div ref={containerRef} className="relative flex items-center">
       <button
         type="button"
-        onClick={() => setOpen(prev => !prev)}
+        onClick={() =>
+          setOpen(prev => {
+            const next = !prev;
+            if (next) startLoading();
+            return next;
+          })
+        }
         className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
         aria-label="Search blog"
       >
@@ -163,7 +174,10 @@ export function BlogHeaderSearch() {
               value={value}
               onChange={event => {
                 setValue(event.target.value);
-                if (!open) setOpen(true);
+                if (!open) {
+                  setOpen(true);
+                  startLoading();
+                }
               }}
                 onKeyDown={event => {
                   if (event.key === 'Escape') setOpen(false);
