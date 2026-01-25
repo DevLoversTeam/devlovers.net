@@ -73,8 +73,7 @@ type Category = {
   title: string;
 };
 
-const SOCIAL_ICON_CLASSNAME =
-  'h-3.5 w-3.5 text-gray-900 dark:text-gray-100';
+const SOCIAL_ICON_CLASSNAME = 'h-3.5 w-3.5 text-gray-900 dark:text-gray-100';
 
 function SocialIcon({ platform }: { platform?: string }) {
   const normalized = (platform || '').trim().toLowerCase();
@@ -209,7 +208,12 @@ export default function BlogFilters({
   };
 
   const getCategoryLabel = (categoryName: string): string => {
-    const key = categoryName.toLowerCase() as 'tech' | 'career' | 'insights' | 'news' | 'growth';
+    const key = categoryName.toLowerCase() as
+      | 'tech'
+      | 'career'
+      | 'insights'
+      | 'news'
+      | 'growth';
     const categoryTranslations: Record<string, string> = {
       tech: t('categories.tech'),
       career: t('categories.career'),
@@ -282,7 +286,6 @@ export default function BlogFilters({
     router.replace(nextPath);
     didClearSearchRef.current = true;
   }, [pathname, router, searchParams, searchQuery]);
-
 
   const resolvedAuthor = useMemo(() => {
     const normParam = normalizeAuthor(authorParam);
@@ -365,8 +368,8 @@ export default function BlogFilters({
 
   return (
     <div className="mt-8">
-        {!resolvedAuthor && featuredPost && (
-          <section className="mb-12">
+      {!resolvedAuthor && featuredPost && (
+        <section className="mb-12">
           <div className="grid gap-8 md:grid-cols-[1.3fr_1fr] md:items-stretch lg:grid-cols-[1.4fr_1fr]">
             {featuredPost.mainImage && (
               <Link
@@ -436,61 +439,61 @@ export default function BlogFilters({
 
           {selectedAuthorData && (
             <div className="flex flex-col gap-6 md:flex-row md:items-start">
-                {selectedAuthorData.image && (
-                  <div className="relative h-40 w-40 flex-shrink-0 overflow-hidden rounded-xl border border-[0.5px] border-[color-mix(in_srgb,var(--accent-primary)_50%,transparent)]">
-                    <Image
-                      src={selectedAuthorData.image}
-                      alt={selectedAuthorData.name || t('author')}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                )}
-                <div className="min-w-0">
-                  {selectedAuthorData.name && (
-                    <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
-                      {selectedAuthorData.name}
-                    </h2>
-                  )}
-                  {(selectedAuthorData.jobTitle ||
-                    selectedAuthorData.company ||
-                    selectedAuthorData.city) && (
-                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                      {[
-                        selectedAuthorData.jobTitle,
-                        selectedAuthorData.company,
-                        selectedAuthorData.city,
-                      ]
-                        .filter(Boolean)
-                        .join(' · ')}
-                    </p>
-                  )}
-                  {authorBioText && (
-                    <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-gray-600 dark:text-gray-400">
-                      {authorBioText}
-                    </p>
-                  )}
-                  {selectedAuthorData.socialMedia?.length ? (
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {selectedAuthorData.socialMedia
-                        .filter(item => item?.url)
-                        .map((item, index) => (
-                          <a
-                            key={item._key || `${item.platform}-${index}`}
-                            href={item.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-3 py-1 text-xs text-gray-600 transition hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)] dark:border-gray-700 dark:text-gray-300 dark:hover:text-[var(--accent-primary)] dark:hover:border-[var(--accent-primary)]"
-                          >
-                            <SocialIcon platform={item.platform} />
-                            {item.platform || 'link'}
-                          </a>
-                        ))}
-                    </div>
-                  ) : null}
+              {selectedAuthorData.image && (
+                <div className="relative h-40 w-40 flex-shrink-0 overflow-hidden rounded-xl border border-[0.5px] border-[color-mix(in_srgb,var(--accent-primary)_50%,transparent)]">
+                  <Image
+                    src={selectedAuthorData.image}
+                    alt={selectedAuthorData.name || t('author')}
+                    fill
+                    className="object-cover"
+                  />
                 </div>
+              )}
+              <div className="min-w-0">
+                {selectedAuthorData.name && (
+                  <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
+                    {selectedAuthorData.name}
+                  </h2>
+                )}
+                {(selectedAuthorData.jobTitle ||
+                  selectedAuthorData.company ||
+                  selectedAuthorData.city) && (
+                  <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                    {[
+                      selectedAuthorData.jobTitle,
+                      selectedAuthorData.company,
+                      selectedAuthorData.city,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </p>
+                )}
+                {authorBioText && (
+                  <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+                    {authorBioText}
+                  </p>
+                )}
+                {selectedAuthorData.socialMedia?.length ? (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {selectedAuthorData.socialMedia
+                      .filter(item => item?.url)
+                      .map((item, index) => (
+                        <a
+                          key={item._key || `${item.platform}-${index}`}
+                          href={item.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-3 py-1 text-xs text-gray-600 transition hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)] dark:border-gray-700 dark:text-gray-300 dark:hover:text-[var(--accent-primary)] dark:hover:border-[var(--accent-primary)]"
+                        >
+                          <SocialIcon platform={item.platform} />
+                          {item.platform || 'link'}
+                        </a>
+                      ))}
+                  </div>
+                ) : null}
               </div>
-            )}
+            </div>
+          )}
 
           {selectedAuthorData?.name && (
             <div className="mt-10">

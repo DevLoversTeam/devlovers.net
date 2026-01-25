@@ -56,8 +56,9 @@ export function ThemeToggle() {
 
       <style jsx>{`
         .theme-toggle-btn:hover :global(svg),
-        .theme-toggle-btn:focus-visible :global(svg) {
-          color: var(--accent-primary);
+        .theme-toggle-btn:focus-visible :global(svg),
+        .theme-toggle-btn:active :global(svg) {
+          color: var(--accent-hover);
         }
       `}</style>
     </div>
