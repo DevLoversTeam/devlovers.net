@@ -41,7 +41,7 @@ export default function Footer() {
   "
       />
 
-      <div className="relative mx-auto max-w-5xl px-6 py-6">
+      <div className="container-main relative py-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-3">
             <p className="text-sm text-slate-700 dark:text-slate-200">
@@ -101,8 +101,8 @@ export default function Footer() {
                       dark:border-neutral-800/60
                       dark:bg-neutral-950/30
                       dark:text-slate-300
-                      [&:hover]:!text-[var(--accent-primary)]
-                      [&:hover]:!border-[var(--accent-primary)]
+                      [&:hover]:!text-[var(--accent-hover)]
+                      [&:hover]:!border-[var(--accent-hover)]
                     "
                   >
                     <Icon className="h-5 w-5" />

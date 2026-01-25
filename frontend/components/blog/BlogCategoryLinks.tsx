@@ -1,8 +1,11 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { Link, usePathname } from '@/i18n/routing';
+import { usePathname } from '@/i18n/routing';
+import { Home } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { AnimatedNavLink } from '@/components/shared/AnimatedNavLink';
+import { HeaderButton } from '@/components/shared/HeaderButton';
 
 type Category = {
   _id: string;
@@ -43,12 +46,6 @@ export function BlogCategoryLinks({
     };
     return categoryTranslations[key] || categoryName;
   };
-  const baseLink =
-    linkClassName ||
-    'rounded-md px-3 py-2 text-sm font-medium transition-colors ' +
-      'hover:bg-secondary hover:text-foreground ' +
-      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ' +
-      'focus-visible:ring-offset-2 focus-visible:ring-offset-background';
 
   const items = categories
     .map(category => ({
@@ -60,38 +57,26 @@ export function BlogCategoryLinks({
 
   return (
     <nav
-      className={cn('flex items-center gap-1', className)}
+      className={cn('flex items-center gap-2', className)}
       aria-label="Blog categories"
     >
-      <Link
-        href="/"
-        onClick={onNavigate}
-        aria-current={pathname === '/' ? 'page' : undefined}
-        className={cn(
-          baseLink,
-          pathname === '/'
-            ? 'bg-muted text-foreground'
-            : 'text-muted-foreground'
-        )}
-      >
+      <HeaderButton href="/" onClick={onNavigate} icon={Home}>
         {tNav('home')}
-      </Link>
+      </HeaderButton>
+
       {items.map(category => {
         const href = `/blog/category/${category.slug}`;
         const isActive = pathname === href;
         return (
-          <Link
+          <AnimatedNavLink
             key={category._id}
             href={href}
+            isActive={isActive}
             onClick={onNavigate}
-            aria-current={isActive ? 'page' : undefined}
-            className={cn(
-              baseLink,
-              isActive ? 'bg-muted text-foreground' : 'text-muted-foreground'
-            )}
+            className={linkClassName}
           >
             {getCategoryLabel(category.displayTitle)}
-          </Link>
+          </AnimatedNavLink>
         );
       })}
     </nav>

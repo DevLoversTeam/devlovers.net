@@ -51,6 +51,7 @@
   --muted-foreground: oklch(0.556 0 0);
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
+  --logo-foreground: oklch(0.25 0.08 250);
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
@@ -88,6 +89,7 @@
   --muted-foreground: oklch(0.708 0 0);
   --accent: oklch(0.269 0 0);
   --accent-foreground: oklch(0.985 0 0);
+  --logo-foreground: oklch(0.95 0.05 350);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
@@ -135,6 +137,10 @@
   }
 }
 
+.container-main {
+  @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+}
+
 .qa-accordion-item:hover,
 .qa-accordion-item:focus-within,
 .qa-accordion-item[data-state='open'] {
@@ -178,6 +184,15 @@
     width: 0%;
   }
 }
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
 @keyframes shrink {
   from {
     transform: scaleX(1);
@@ -225,8 +240,12 @@
 
 /* about-community */
 @keyframes scroll {
-  from { transform: translateX(0); }
-  to { transform: translateX(-100%); }
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
 }
 
 .animate-scroll {
@@ -239,8 +258,12 @@
 
 /* Vertical Marquee Animation */
 @keyframes marquee-vertical {
-  0% { transform: translateY(0); }
-  100% { transform: translateY(-50%); } /* Рухаємось на 50%, бо контент дубльовано */
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-50%);
+  } /* Рухаємось на 50%, бо контент дубльовано */
 }
 
 .animate-marquee-vertical {
@@ -254,9 +277,9 @@
 
 /* Hide scrollbar for horizontal scroll containers */
 .scrollbar-hide {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 }
 .scrollbar-hide::-webkit-scrollbar {
-  display: none;  /* Chrome, Safari and Opera */
+  display: none; /* Chrome, Safari and Opera */
 }
