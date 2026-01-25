@@ -1,6 +1,5 @@
-//app\api\shop\internal\orders\restock-stale\route.ts
+import crypto from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
-import crypto from 'crypto';
 import { sql } from 'drizzle-orm';
 import { db } from '@/db';
 import {
@@ -8,9 +7,9 @@ import {
   restockStaleNoPaymentOrders,
   restockStuckReservingOrders,
 } from '@/lib/services/orders';
-
 import { requireInternalJanitorAuth } from '@/lib/auth/internal-janitor';
-import { logError } from '@/lib/logging';
+import { logError, logInfo, logWarn } from '@/lib/logging';
+import { guardNonBrowserOnly } from '@/lib/security/origin';
 
 export const runtime = 'nodejs';
 
@@ -261,18 +260,60 @@ async function acquireJobSlot(params: {
 }
 
 export async function POST(request: NextRequest) {
+  const requestId =
+    request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
+
+  const baseMeta = {
+    requestId,
+    route: request.nextUrl.pathname,
+    method: request.method,
+    jobName: 'restock-stale',
+  };
+
+  const blocked = guardNonBrowserOnly(request);
+  if (blocked) {
+    logWarn('internal_janitor_origin_blocked', {
+      ...baseMeta,
+      code: 'ORIGIN_BLOCKED',
+    });
+    return blocked;
+  }
+
   const authRes = requireInternalJanitorAuth(request);
-  if (authRes) return authRes;
+  if (authRes) {
+    const status =
+      (authRes as any).status ?? (authRes as any).statusCode ?? 401;
+
+    logWarn('internal_janitor_auth_rejected', {
+      ...baseMeta,
+      code: String(status),
+      status,
+    });
+
+    return authRes;
+  }
 
   let body: unknown = null;
   try {
     body = await request.json();
-  } catch {
+  } catch (error) {
+    logWarn('internal_janitor_payload_parse_failed', {
+      ...baseMeta,
+      code: 'INVALID_PAYLOAD',
+      reason: error instanceof Error ? error.message : String(error),
+    });
     // ignore invalid/missing json body; query params may be used instead
   }
 
   const batchSizeParsed = parseBatchSize(request, body);
   if (typeof batchSizeParsed === 'object' && 'error' in batchSizeParsed) {
+    logWarn('internal_janitor_invalid_payload', {
+      ...baseMeta,
+      code: 'INVALID_PAYLOAD',
+      field: 'batchSize',
+      reason: batchSizeParsed.error,
+    });
+
     return NextResponse.json(
       {
         success: false,
@@ -285,6 +326,13 @@ export async function POST(request: NextRequest) {
 
   const olderThanParsed = parseOlderThanPolicy(request, body);
   if (typeof olderThanParsed === 'object' && 'error' in olderThanParsed) {
+    logWarn('internal_janitor_invalid_payload', {
+      ...baseMeta,
+      code: 'INVALID_PAYLOAD',
+      field: 'olderThanMinutes',
+      reason: olderThanParsed.error,
+    });
+
     return NextResponse.json(
       {
         success: false,
@@ -297,6 +345,13 @@ export async function POST(request: NextRequest) {
 
   const maxRuntimeParsed = parseMaxRuntimeMs(request, body);
   if (typeof maxRuntimeParsed === 'object' && 'error' in maxRuntimeParsed) {
+    logWarn('internal_janitor_invalid_payload', {
+      ...baseMeta,
+      code: 'INVALID_PAYLOAD',
+      field: 'maxRuntimeMs',
+      reason: maxRuntimeParsed.error,
+    });
+
     return NextResponse.json(
       {
         success: false,
@@ -315,6 +370,13 @@ export async function POST(request: NextRequest) {
     typeof requestedMinIntervalParsed === 'object' &&
     'error' in requestedMinIntervalParsed
   ) {
+    logWarn('internal_janitor_invalid_payload', {
+      ...baseMeta,
+      code: 'INVALID_PAYLOAD',
+      field: 'minIntervalSeconds',
+      reason: requestedMinIntervalParsed.error,
+    });
+
     return NextResponse.json(
       {
         success: false,
@@ -342,7 +404,8 @@ export async function POST(request: NextRequest) {
 
   // DB-backed limiter: cross-instance, atomic
   const runId = crypto.randomUUID();
-  const jobName = 'restock-stale';
+  const jobName = baseMeta.jobName;
+  const workerId = `janitor:${runId}`;
 
   const gate = await acquireJobSlot({
     jobName,
@@ -357,6 +420,14 @@ export async function POST(request: NextRequest) {
           Math.ceil((gate.nextAllowedAt.getTime() - Date.now()) / 1000)
         )
       : Math.max(1, minIntervalSeconds);
+    logWarn('internal_janitor_rate_limited', {
+      ...baseMeta,
+      code: 'RATE_LIMITED',
+      runId,
+      workerId,
+      retryAfterSeconds,
+      minIntervalSeconds,
+    });
 
     const res = NextResponse.json(
       {
@@ -370,11 +441,9 @@ export async function POST(request: NextRequest) {
     res.headers.set('Cache-Control', 'no-store');
     return res;
   }
-
-  const workerId = `janitor:${runId}`;
-
   try {
-    const deadlineMs = Date.now() + maxRuntimeMs;
+    const startedAtMs = Date.now();
+    const deadlineMs = startedAtMs + maxRuntimeMs;
 
     // 1) stuck reserving (timeout on inventory reservation phase)
     const remaining0 = Math.max(0, deadlineMs - Date.now());
@@ -407,6 +476,25 @@ export async function POST(request: NextRequest) {
       processedStalePending +
       processedOrphanNoPayment;
 
+    logInfo('internal_janitor_run_completed', {
+      ...baseMeta,
+      code: 'OK',
+      runId,
+      jobName,
+      workerId,
+      processed,
+      processedByCategory: {
+        stuckReserving: processedStuckReserving,
+        stalePending: processedStalePending,
+        orphanNoPayment: processedOrphanNoPayment,
+      },
+      batchSize: policy.batchSize,
+      appliedPolicy: policy,
+      maxRuntimeMs,
+      minIntervalSeconds,
+      runtimeMs: Date.now() - startedAtMs,
+    });
+
     return NextResponse.json({
       success: true,
       runId,
@@ -423,7 +511,14 @@ export async function POST(request: NextRequest) {
       minIntervalSeconds,
     });
   } catch (e) {
-    logError('restock_stale_failed', e, { runId });
+    logError('internal_janitor_restock_stale_failed', e, {
+      ...baseMeta,
+      code: 'JANITOR_RESTOCK_STALE_FAILED',
+      runId,
+      jobName,
+      workerId,
+    });
+
     return NextResponse.json(
       { success: false, code: 'INTERNAL_ERROR' },
       { status: 500 }

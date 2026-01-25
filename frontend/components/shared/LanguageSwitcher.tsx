@@ -1,9 +1,16 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useParams, usePathname,useSearchParams } from 'next/navigation';
+import { useParams, usePathname, useSearchParams } from 'next/navigation';
 import { locales, type Locale } from '@/i18n/config';
 import { Link } from '@/i18n/routing';
+import { Globe } from 'lucide-react';
+
+const localeLabels: Record<Locale, string> = {
+  uk: 'UA',
+  en: 'EN',
+  pl: 'PL',
+};
 
 export default function LanguageSwitcher() {
   const [isOpen, setIsOpen] = useState(false);
@@ -17,7 +24,6 @@ export default function LanguageSwitcher() {
   const pathname = fullPathname.replace(/^\/(uk|en|pl)/, '') || '/';
   const allowRestoreKey = 'quiz-allow-restore';
   const isQuizPage = pathname.startsWith('/quiz/');
-
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -37,11 +43,15 @@ export default function LanguageSwitcher() {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1 text-gray-700 dark:text-gray-300 font-medium hover:text-blue-600 dark:hover:text-blue-400 transition uppercase"
+        className="group flex items-center gap-1.5 text-muted-foreground font-medium transition-colors active:text-[var(--accent-hover)]"
+        aria-label="Change language"
       >
-        {currentLocale}
+        <Globe className="h-4 w-4 transition-colors group-hover:[color:var(--accent-hover)] group-active:[color:var(--accent-hover)]" />
+        <span className="transition-colors group-hover:[color:var(--accent-hover)] group-active:[color:var(--accent-hover)]">
+          {localeLabels[currentLocale]}
+        </span>
         <svg
-          className={`h-4 w-4 transition-transform ${
+          className={`h-4 w-4 transition-all group-hover:[color:var(--accent-hover)] group-active:[color:var(--accent-hover)] ${
             isOpen ? 'rotate-180' : ''
           }`}
           fill="none"
@@ -58,7 +68,7 @@ export default function LanguageSwitcher() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 py-2 w-20 bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 rounded-md shadow-lg z-50">
+        <div className="absolute right-0 mt-2 py-2 w-20 bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 rounded-md shadow-lg z-[60]">
           {locales.map(locale => (
             <Link
               key={locale}
@@ -70,13 +80,13 @@ export default function LanguageSwitcher() {
                 }
                 setIsOpen(false);
               }}
-              className={`block px-4 py-2 text-sm uppercase transition ${
+              className={`block px-4 py-2 text-sm transition active:text-[var(--accent-hover)] ${
                 currentLocale === locale
-                  ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-medium'
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-neutral-800'
+                  ? 'text-muted-foreground font-medium [background-color:color-mix(in_srgb,var(--accent-primary)_10%,transparent)]'
+                  : 'text-muted-foreground hover:bg-secondary active:bg-secondary'
               }`}
             >
-              {locale}
+              {localeLabels[locale]}
             </Link>
           ))}
         </div>

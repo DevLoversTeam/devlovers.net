@@ -1,8 +1,10 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import Image from 'next/image';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
+import { useRouter } from '@/i18n/routing';
+
 import { Minus, Plus, Trash2, ShoppingBag } from 'lucide-react';
 
 import { Link } from '@/i18n/routing';
@@ -19,7 +21,7 @@ export default function CartPage() {
 
   const params = useParams<{ locale?: string }>();
   const locale = params.locale ?? 'en';
-  const shopBase = useMemo(() => `/${locale}/shop`, [locale]);
+  const shopBase = '/shop';
 
   async function handleCheckout() {
     setCheckoutError(null);

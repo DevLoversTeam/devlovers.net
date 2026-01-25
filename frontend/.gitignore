@@ -12,6 +12,7 @@
 
 # testing
 /coverage
+/coverage-quiz
 
 # next.js
 /.next/
@@ -45,5 +46,5 @@ next-env.d.ts
 
 # Documentation (only for development)
 CLAUDE.md
-docs/
+_dev-notes/
 .claude

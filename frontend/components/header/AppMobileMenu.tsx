@@ -1,13 +1,14 @@
 'use client';
 
-import { Menu, X } from 'lucide-react';
+import { Menu, X, LogIn, ShoppingBag, Home } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from '@/i18n/routing';
+import { useTranslations } from 'next-intl';
+import { Link, usePathname } from '@/i18n/routing';
 
 import { SITE_LINKS } from '@/lib/navigation';
 import { NAV_LINKS } from '@/components/shop/header/nav-links';
-import { BlogCategoryLinks } from '@/components/blog/BlogCategoryLinks';
 import { LogoutButton } from '@/components/auth/logoutButton';
+import { HeaderButton } from '@/components/shared/HeaderButton';
 
 export type AppMobileMenuVariant = 'platform' | 'shop' | 'blog';
 
@@ -24,10 +25,24 @@ export function AppMobileMenu({
   showAdminLink = false,
   blogCategories = [],
 }: Props) {
+  const t = useTranslations('navigation');
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
 
-  const close = () => setOpen(false);
-  const toggle = () => setOpen(prev => !prev);
+  const close = () => {
+    setIsAnimating(false);
+    setTimeout(() => setOpen(false), 200);
+  };
+
+  const toggle = () => {
+    if (open) {
+      close();
+    } else {
+      setOpen(true);
+      setTimeout(() => setIsAnimating(true), 10);
+    }
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -46,12 +61,49 @@ export function AppMobileMenu({
     return [];
   }, [variant]);
 
+  useEffect(() => {
+    if (open) {
+      const scrollY = window.scrollY;
+
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
+      document.body.style.overflow = 'hidden';
+
+      return () => {
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+        document.body.style.overflow = '';
+
+        window.scrollTo(0, scrollY);
+      };
+    }
+  }, [open]);
+
+  const linkClass = (isActive: boolean) =>
+    `rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+      isActive
+        ? 'text-[var(--accent-primary)]'
+        : 'text-muted-foreground active:text-[var(--accent-hover)]'
+    }`;
+
+  const slugify = (value: string) =>
+    value
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-');
+
   return (
     <>
       <button
         type="button"
         onClick={toggle}
-        className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+        className="flex h-9 w-9 items-center justify-center rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+        style={{
+          color: open ? 'var(--accent-primary)' : 'var(--muted-foreground)',
+        }}
         aria-label="Toggle menu"
         aria-expanded={open ? 'true' : 'false'}
         aria-controls={open ? 'app-mobile-nav' : undefined}
@@ -61,53 +113,97 @@ export function AppMobileMenu({
 
       {open && (
         <>
-          <button
-            type="button"
-            aria-label="Close menu"
-            className="fixed inset-0 z-40 md:hidden"
+          <div
+            className={`fixed inset-x-0 top-16 bottom-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden transition-opacity duration-200 ${
+              isAnimating ? 'opacity-100' : 'opacity-0'
+            }`}
             onClick={close}
+            aria-hidden="true"
           />
 
           <nav
             id="app-mobile-nav"
-            className="fixed left-0 right-0 top-16 z-50 border-t border-border bg-background px-4 py-4 md:hidden"
+            className={`fixed left-0 right-0 top-16 z-50 h-[calc(100dvh-4rem)] overflow-y-auto bg-background px-4 sm:px-6 lg:px-8 py-4 lg:hidden overscroll-contain transition-transform duration-300 ease-out ${
+              isAnimating ? 'translate-y-0' : '-translate-y-4'
+            }`}
+            style={{
+              opacity: isAnimating ? 1 : 0,
+              transition: 'transform 300ms ease-out, opacity 200ms ease-out',
+            }}
           >
             <div className="flex flex-col gap-1">
               {variant === 'shop' ? (
-                <Link
-                  href="/"
-                  onClick={close}
-                  className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                >
-                  Home
-                </Link>
+                <>
+                  <HeaderButton href="/" icon={Home} onClick={close}>
+                    {t('home')}
+                  </HeaderButton>
+                  {links.map(link => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={close}
+                      className={linkClass(pathname === link.href)}
+                    >
+                      {'labelKey' in link ? t(link.labelKey) : link.label}
+                    </Link>
+                  ))}
+                </>
               ) : null}
 
               {variant === 'blog' ? (
-                <BlogCategoryLinks
-                  categories={blogCategories}
-                  className="flex flex-col gap-1"
-                  linkClassName="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                  onNavigate={close}
-                />
-              ) : (
-                links.map(link => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
+                <>
+                  <HeaderButton href="/" icon={Home} onClick={close}>
+                    {t('home')}
+                  </HeaderButton>
+                  {blogCategories.map(category => {
+                    const slug = slugify(category.title || '');
+                    const href = `/blog/category/${slug}`;
+                    const isActive = pathname === href;
+                    return (
+                      <Link
+                        key={category._id}
+                        href={href}
+                        onClick={close}
+                        className={linkClass(isActive)}
+                      >
+                        {category.title}
+                      </Link>
+                    );
+                  })}
+                </>
+              ) : null}
+
+              {variant === 'platform' ? (
+                <>
+                  {links
+                    .filter(link => link.href !== '/shop')
+                    .map(link => (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        onClick={close}
+                        className={linkClass(pathname === link.href)}
+                      >
+                        {'labelKey' in link ? t(link.labelKey) : link.label}
+                      </Link>
+                    ))}
+
+                  <HeaderButton
+                    href="/shop"
+                    icon={ShoppingBag}
+                    showArrow
                     onClick={close}
-                    className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
                   >
-                    {link.label}
-                  </Link>
-                ))
-              )}
+                    {t('shop')}
+                  </HeaderButton>
+                </>
+              ) : null}
 
               {variant === 'shop' && showAdminLink ? (
                 <Link
                   href="/shop/admin/products/new"
                   onClick={close}
-                  className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                  className={linkClass(pathname === '/shop/admin/products/new')}
                 >
                   New product
                 </Link>
@@ -120,9 +216,9 @@ export function AppMobileMenu({
                   <Link
                     href="/dashboard"
                     onClick={close}
-                    className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                    className={linkClass(pathname === '/dashboard')}
                   >
-                    Dashboard
+                    {t('dashboard')}
                   </Link>
 
                   {showAdminLink ? (
@@ -130,25 +226,21 @@ export function AppMobileMenu({
                       href="/shop/admin"
                       aria-label="Shop admin"
                       title="Shop admin"
-                      className="inline-flex items-center rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                      onClick={close}
+                      className={linkClass(pathname === '/shop/admin')}
                     >
                       Admin
                     </Link>
                   ) : null}
 
-                  {/* LogoutButton стилізується сам; ми тільки позиціонуємо як пункт меню */}
-                  <div className="px-3 py-2" onClick={close}>
+                  <div onClick={close}>
                     <LogoutButton />
                   </div>
                 </>
               ) : (
-                <Link
-                  href="/login"
-                  onClick={close}
-                  className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                >
-                  Log in
-                </Link>
+                <HeaderButton href="/login" icon={LogIn} onClick={close}>
+                  {t('login')}
+                </HeaderButton>
               )}
             </div>
           </nav>

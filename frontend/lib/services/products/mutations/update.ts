@@ -9,9 +9,10 @@ import { logError } from '@/lib/logging';
 import { toDbMoney } from '@/lib/shop/money';
 import type { CurrencyCode } from '@/lib/shop/currency';
 import type { DbProduct, ProductUpdateInput } from '@/lib/types/shop';
-
 import { SlugConflictError } from '../../errors';
+import { ProductNotFoundError } from '@/lib/errors/products';
 import { mapRowToProduct } from '../mapping';
+
 import { normalizeSlug } from '../slug';
 import {
   assertMoneyMinorInt,
@@ -33,7 +34,7 @@ export async function updateProduct(
     .limit(1);
 
   if (!existing) {
-    throw new Error('PRODUCT_NOT_FOUND');
+    throw new ProductNotFoundError(id);
   }
 
   const slug = await normalizeSlug(
@@ -192,7 +193,7 @@ export async function updateProduct(
       .returning();
 
     if (!row) {
-      throw new Error('PRODUCT_NOT_FOUND');
+      throw new ProductNotFoundError(id);
     }
 
     if (uploaded && existing.imagePublicId) {

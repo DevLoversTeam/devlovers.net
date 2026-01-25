@@ -6,3 +6,8 @@ export interface User {
   avatar: string;
   change: number;
 }
+
+export interface CurrentUser {
+  id: string;
+  username: string;
+}

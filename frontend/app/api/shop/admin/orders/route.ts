@@ -1,41 +1,99 @@
-import { NextRequest, NextResponse } from "next/server"
-import { z } from "zod"
+import crypto from 'node:crypto';
+import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 
 import {
   AdminApiDisabledError,
   AdminForbiddenError,
   AdminUnauthorizedError,
   requireAdminApi,
-} from "@/lib/auth/admin"
+} from '@/lib/auth/admin';
 
-import { getAdminOrdersPage } from "@/db/queries/shop/admin-orders"
-import { logError } from "@/lib/logging"
+import { requireAdminCsrf } from '@/lib/security/admin-csrf';
+import { guardBrowserSameOrigin } from '@/lib/security/origin';
+
+import { getAdminOrdersPage } from '@/db/queries/shop/admin-orders';
+
+import { logError, logWarn } from '@/lib/logging';
+
+export const runtime = 'nodejs';
+
+function noStoreJson(body: unknown, init?: { status?: number }) {
+  const res = NextResponse.json(body, { status: init?.status ?? 200 });
+  res.headers.set('Cache-Control', 'no-store');
+  return res;
+}
 
 const querySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(50),
   offset: z.coerce.number().int().min(0).default(0),
-})
+});
 
 export async function GET(request: NextRequest) {
+  const startedAtMs = Date.now();
+
+  const requestId =
+    request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
+
+  const blocked = guardBrowserSameOrigin(request);
+  if (blocked) {
+    logWarn('admin_orders_list_origin_blocked', {
+      requestId,
+      route: request.nextUrl.pathname,
+      method: request.method,
+      code: 'ORIGIN_BLOCKED',
+      durationMs: Date.now() - startedAtMs,
+    });
+    blocked.headers.set('Cache-Control', 'no-store');
+    return blocked;
+  }
+
+  const baseMeta = {
+    requestId,
+    route: request.nextUrl.pathname,
+    method: request.method,
+  };
+
   try {
-    await requireAdminApi(request)
+    await requireAdminApi(request);
 
-    const url = new URL(request.url)
-    const parsedQuery = querySchema.safeParse({
-      limit: url.searchParams.get("limit") ?? undefined,
-      offset: url.searchParams.get("offset") ?? undefined,
-    })
-
-    if (!parsedQuery.success) {
-      return NextResponse.json(
-        { error: "Invalid query", code: "INVALID_QUERY", details: parsedQuery.error.format() },
-        { status: 400 }
-      )
+    const csrfRes = requireAdminCsrf(request, 'admin:orders:list');
+    if (csrfRes) {
+      logWarn('admin_orders_list_csrf_rejected', {
+        ...baseMeta,
+        code: 'CSRF_REJECTED',
+        durationMs: Date.now() - startedAtMs,
+      });
+      csrfRes.headers.set('Cache-Control', 'no-store');
+      return csrfRes;
     }
 
-    const { items, total } = await getAdminOrdersPage(parsedQuery.data)
+    const parsedQuery = querySchema.safeParse({
+      limit: request.nextUrl.searchParams.get('limit') ?? undefined,
+      offset: request.nextUrl.searchParams.get('offset') ?? undefined,
+    });
 
-    return NextResponse.json(
+    if (!parsedQuery.success) {
+      logWarn('admin_orders_list_invalid_query', {
+        ...baseMeta,
+        code: 'INVALID_QUERY',
+        issuesCount: parsedQuery.error.issues?.length ?? 0,
+        durationMs: Date.now() - startedAtMs,
+      });
+
+      return noStoreJson(
+        {
+          error: 'Invalid query',
+          code: 'INVALID_QUERY',
+          details: parsedQuery.error.format(),
+        },
+        { status: 400 }
+      );
+    }
+
+    const { items, total } = await getAdminOrdersPage(parsedQuery.data);
+
+    return noStoreJson(
       {
         success: true,
         total,
@@ -45,19 +103,44 @@ export async function GET(request: NextRequest) {
         })),
       },
       { status: 200 }
-    )
+    );
   } catch (error) {
     if (error instanceof AdminApiDisabledError) {
-      return NextResponse.json({ code: error.code }, { status: 403 })
-    }
-    if (error instanceof AdminUnauthorizedError) {
-      return NextResponse.json({ code: error.code }, { status: 401 })
-    }
-    if (error instanceof AdminForbiddenError) {
-      return NextResponse.json({ code: error.code }, { status: 403 })
+      logWarn('admin_orders_list_admin_api_disabled', {
+        ...baseMeta,
+        code: error.code,
+        durationMs: Date.now() - startedAtMs,
+      });
+      return noStoreJson({ code: error.code }, { status: 403 });
     }
 
-    logError("Admin orders list failed", error)
-    return NextResponse.json({ error: "internal_error", code: "INTERNAL_ERROR" }, { status: 500 })
+    if (error instanceof AdminUnauthorizedError) {
+      logWarn('admin_orders_list_unauthorized', {
+        ...baseMeta,
+        code: error.code,
+        durationMs: Date.now() - startedAtMs,
+      });
+      return noStoreJson({ code: error.code }, { status: 401 });
+    }
+
+    if (error instanceof AdminForbiddenError) {
+      logWarn('admin_orders_list_forbidden', {
+        ...baseMeta,
+        code: error.code,
+        durationMs: Date.now() - startedAtMs,
+      });
+      return noStoreJson({ code: error.code }, { status: 403 });
+    }
+
+    logError('admin_orders_list_failed', error, {
+      ...baseMeta,
+      code: 'ADMIN_ORDERS_LIST_FAILED',
+      durationMs: Date.now() - startedAtMs,
+    });
+
+    return noStoreJson(
+      { error: 'internal_error', code: 'INTERNAL_ERROR' },
+      { status: 500 }
+    );
   }
 }

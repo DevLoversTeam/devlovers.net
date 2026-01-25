@@ -108,13 +108,19 @@ function envBool(name: string, fallback: boolean): boolean {
 }
 
 export function getClientIpFromHeaders(headers: Headers): string | null {
-  // Always allow Cloudflare canonical header (highest priority).
-  const cf = (headers.get('cf-connecting-ip') ?? '').trim();
-  if (cf && isIP(cf)) return cf;
+  const trustForwarded = envBool(
+    'TRUST_FORWARDED_HEADERS',
+    process.env.NODE_ENV !== 'production'
+  );
+  const trustCf = envBool('TRUST_CF_CONNECTING_IP', false);
 
-  const trustForwarded = envBool('TRUST_FORWARDED_HEADERS', false);
+  // Allow Cloudflare canonical header (highest priority) only when explicitly trusted.
+  if (trustCf) {
+    const cf = (headers.get('cf-connecting-ip') ?? '').trim();
+    if (cf && isIP(cf)) return cf;
+  }
 
-  // Trusted boundary: if we don't trust forwarded headers and CF is missing,
+  // Trusted boundary: if we don't trust forwarded headers,
   // do NOT fall back to spoofable headers.
   if (!trustForwarded) return null;
 

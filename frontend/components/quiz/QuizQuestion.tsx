@@ -16,6 +16,7 @@ interface QuizQuestionProps {
   onAnswer: (answerId: string) => void;
   onNext: () => void;
   isLoading?: boolean;
+  accentColor?: string;
 }
 
 export function QuizQuestion({
@@ -26,6 +27,7 @@ export function QuizQuestion({
   onAnswer,
   onNext,
   isLoading = false,
+  accentColor,
 }: QuizQuestionProps) {
   const t = useTranslations('quiz.question');
   const isAnswering = status === 'answering';
@@ -58,8 +60,8 @@ export function QuizQuestion({
                 isSelected &&
                   isAnswering &&
                   'border-blue-500 bg-blue-50 dark:bg-blue-950',
-                showCorrect && 'border-green-500 bg-green-50 dark:bg-green-950',
-                showIncorrect && 'border-red-500 bg-red-50 dark:bg-red-950',
+                showCorrect && 'border-1 border-green-500',
+                showIncorrect && 'border-1 border-red-500',
                 !isAnswering && 'cursor-default'
               )}
             >
@@ -83,7 +85,7 @@ export function QuizQuestion({
         <div
           className={cn(
             'rounded-xl border p-4 animate-in fade-in duration-300',
-            'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950'
+            'border-1 border-blue-500 dark:border-blue-500'
           )}
         >
           <div className="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
@@ -96,7 +98,7 @@ export function QuizQuestion({
         <div
           className={cn(
             'rounded-xl border p-4 animate-in fade-in duration-300',
-            'border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950'
+            'border-1 border-orange-500 dark:border-orange-500'
           )}
         >
           <div className="flex items-start gap-3">
@@ -113,13 +115,22 @@ export function QuizQuestion({
         </div>
       )}
       {isRevealed && (
-        <Button
+        <button
           onClick={onNext}
           disabled={isLoading}
-          className="mt-2 animate-in fade-in slide-in-from-bottom-2 duration-300"
+          className="group relative mt-2 w-full overflow-hidden text-center rounded-xl border px-6 py-3 text-base font-semibold transition-all duration-300 disabled:opacity-50 animate-in fade-in slide-in-from-bottom-2"
+          style={{
+            borderColor: `${accentColor}50`,
+            backgroundColor: `${accentColor}15`,
+            color: accentColor,
+          }}
         >
           {isLoading ? t('loading') : t('nextButton')}
-        </Button>
+          <span
+            className="pointer-events-none absolute left-1/2 top-1/2 h-[150%] w-[80%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[20px] opacity-0 transition-opacity duration-300 group-hover:opacity-30"
+            style={{ backgroundColor: accentColor }}
+          />
+        </button>
       )}
     </div>
   );

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'node:crypto';
 import {
   enforceRateLimit,
   getRateLimitSubject,
@@ -10,6 +11,7 @@ import { logError, logWarn } from '@/lib/logging';
 import { resolveRequestLocale } from '@/lib/shop/request-locale';
 import { IdempotencyConflictError } from '@/lib/services/errors';
 import { MoneyValueError } from '@/db/queries/shop/orders';
+import { guardBrowserSameOrigin } from '@/lib/security/origin';
 import {
   InsufficientStockError,
   InvalidPayloadError,
@@ -64,7 +66,7 @@ function errorResponse(
   status: number,
   details?: unknown
 ) {
-  return NextResponse.json(
+  const res = NextResponse.json(
     {
       code,
       message,
@@ -72,6 +74,9 @@ function errorResponse(
     },
     { status }
   );
+
+  res.headers.set('Cache-Control', 'no-store');
+  return res;
 }
 
 function getIdempotencyKey(request: NextRequest) {
@@ -104,7 +109,7 @@ function buildCheckoutResponse({
   clientSecret: string | null;
   status: number;
 }) {
-  return NextResponse.json(
+  const res = NextResponse.json(
     {
       success: true,
       order: {
@@ -125,6 +130,9 @@ function buildCheckoutResponse({
     },
     { status }
   );
+
+  res.headers.set('Cache-Control', 'no-store');
+  return res;
 }
 
 function getSessionUserId(user: unknown): string | null {
@@ -153,14 +161,34 @@ async function readJsonBody(request: NextRequest): Promise<unknown> {
 }
 
 export async function POST(request: NextRequest) {
+  const requestId =
+    request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
+
+  const baseMeta = {
+    requestId,
+    route: request.nextUrl.pathname,
+    method: request.method,
+  };
+
+  const blocked = guardBrowserSameOrigin(request);
+  if (blocked) {
+    logWarn('checkout_origin_blocked', { ...baseMeta, code: 'ORIGIN_BLOCKED' });
+
+    blocked.headers.set('Cache-Control', 'no-store');
+    return blocked;
+  }
+
   let body: unknown;
 
   try {
     body = await readJsonBody(request);
   } catch (error) {
-    logWarn('Failed to parse cart payload', {
+    logWarn('checkout_payload_parse_failed', {
+      ...baseMeta,
+      code: 'INVALID_PAYLOAD',
       reason: error instanceof Error ? error.message : String(error),
     });
+
     return errorResponse(
       'INVALID_PAYLOAD',
       'Unable to process cart data.',
@@ -171,6 +199,11 @@ export async function POST(request: NextRequest) {
   const idempotencyKey = getIdempotencyKey(request);
 
   if (idempotencyKey === null) {
+    logWarn('checkout_missing_idempotency_key', {
+      ...baseMeta,
+      code: 'MISSING_IDEMPOTENCY_KEY',
+    });
+
     return errorResponse(
       'MISSING_IDEMPOTENCY_KEY',
       'Idempotency-Key header is required.',
@@ -179,6 +212,11 @@ export async function POST(request: NextRequest) {
   }
 
   if (idempotencyKey instanceof Error) {
+    logWarn('checkout_invalid_idempotency_key', {
+      ...baseMeta,
+      code: 'INVALID_IDEMPOTENCY_KEY',
+    });
+
     return errorResponse(
       'INVALID_IDEMPOTENCY_KEY',
       'Idempotency key must be 16-128 chars and contain only A-Z a-z 0-9 _ -.',
@@ -186,13 +224,24 @@ export async function POST(request: NextRequest) {
       idempotencyKey.format?.()
     );
   }
+  // For observability: shorten to avoid oversized structured logs.
+  // Never used as an idempotency key; the full header value remains canonical.
+  const idempotencyKeyShort = idempotencyKey.slice(0, 32);
+
+  const meta = {
+    ...baseMeta,
+    idempotencyKey: idempotencyKeyShort,
+  };
 
   const parsedPayload = checkoutPayloadSchema.safeParse(body);
 
   if (!parsedPayload.success) {
-    logWarn('Invalid checkout payload', {
+    logWarn('checkout_invalid_payload', {
+      ...meta,
+      code: 'INVALID_PAYLOAD',
       issuesCount: parsedPayload.error.issues?.length ?? 0,
     });
+
     return errorResponse(
       'INVALID_PAYLOAD',
       'Invalid checkout payload',
@@ -209,21 +258,40 @@ export async function POST(request: NextRequest) {
   try {
     currentUser = await getCurrentUser();
   } catch (error) {
-    logError('Failed to resolve current user', error);
+    logError('checkout_auth_user_resolve_failed', error, {
+      ...meta,
+      code: 'AUTH_USER_RESOLVE_FAILED',
+    });
+
     currentUser = null;
   }
 
   const sessionUserId = getSessionUserId(currentUser);
+  const authMeta = {
+    ...meta,
+    sessionUserId,
+  };
 
   if (userId) {
     if (!sessionUserId) {
+      logWarn('checkout_user_id_not_allowed', {
+        ...authMeta,
+        code: 'USER_ID_NOT_ALLOWED',
+      });
+
       return errorResponse(
         'USER_ID_NOT_ALLOWED',
         'userId is not allowed for guest checkout.',
         400
       );
     }
+
     if (userId !== sessionUserId) {
+      logWarn('checkout_user_mismatch', {
+        ...authMeta,
+        code: 'USER_MISMATCH',
+      });
+
       return errorResponse(
         'USER_MISMATCH',
         'Authenticated user does not match payload userId.',
@@ -256,6 +324,12 @@ export async function POST(request: NextRequest) {
   });
 
   if (!decision.ok) {
+    logWarn('checkout_rate_limited', {
+      ...authMeta,
+      code: 'RATE_LIMITED',
+      retryAfterSeconds: decision.retryAfterSeconds,
+    });
+
     return rateLimitResponse({
       retryAfterSeconds: decision.retryAfterSeconds,
       details: { scope: 'checkout' },
@@ -271,6 +345,13 @@ export async function POST(request: NextRequest) {
     });
 
     const { order } = result;
+    const orderMeta = {
+      ...authMeta,
+      orderId: order.id,
+      paymentProvider: order.paymentProvider,
+      paymentStatus: order.paymentStatus,
+      paymentIntentId: order.paymentIntentId ?? null,
+    };
 
     const paymentsEnabled = isPaymentsEnabled();
 
@@ -279,6 +360,11 @@ export async function POST(request: NextRequest) {
         order.paymentProvider === 'none' &&
         order.paymentStatus === 'failed'
       ) {
+        logWarn('checkout_failed', {
+          ...orderMeta,
+          code: 'CHECKOUT_FAILED',
+        });
+
         return errorResponse(
           'CHECKOUT_FAILED',
           'Order could not be completed.',
@@ -293,6 +379,11 @@ export async function POST(request: NextRequest) {
         order.paymentProvider === 'stripe' &&
         order.paymentStatus !== 'paid'
       ) {
+        logWarn('checkout_payments_disabled_requires_payment', {
+          ...orderMeta,
+          code: 'PAYMENTS_DISABLED',
+        });
+
         return errorResponse(
           'PAYMENTS_DISABLED',
           'Payments are disabled. This order requires payment and cannot be processed.',
@@ -307,13 +398,14 @@ export async function POST(request: NextRequest) {
           order.paymentIntentId
         ) {
           logError(
-            `Payments disabled but order is not paid/none. orderId=${
-              order.id
-            } provider=${order.paymentProvider} status=${
-              order.paymentStatus
-            } intent=${order.paymentIntentId ?? 'null'}`,
-            new Error('ORDER_STATE_INVALID')
+            'checkout_order_state_invalid',
+            new Error('ORDER_STATE_INVALID'),
+            {
+              ...orderMeta,
+              code: 'ORDER_STATE_INVALID',
+            }
           );
+
           return errorResponse(
             'ORDER_STATE_INVALID',
             'Order state is invalid for payments disabled.',
@@ -356,11 +448,18 @@ export async function POST(request: NextRequest) {
             try {
               await restockOrder(order.id, { reason: 'failed' });
             } catch (restockError) {
-              logError(
-                'Restoring stock after attempts exhausted failed',
-                restockError
-              );
+              logError('checkout_restock_failed', restockError, {
+                ...orderMeta,
+                code: 'RESTOCK_FAILED',
+                reason: 'attempts_exhausted',
+              });
             }
+            logWarn('checkout_payment_attempts_exhausted', {
+              ...orderMeta,
+              code: 'PAYMENT_ATTEMPTS_EXHAUSTED',
+              provider: error.provider,
+            });
+
             return errorResponse(
               'PAYMENT_ATTEMPTS_EXHAUSTED',
               'Payment attempts exhausted for this order.',
@@ -371,6 +470,12 @@ export async function POST(request: NextRequest) {
 
           // Post-create/state conflict must be 409 (not 502)
           if (error instanceof InvalidPayloadError) {
+            logWarn('checkout_conflict', {
+              ...orderMeta,
+              code: 'CHECKOUT_CONFLICT',
+              reason: 'payment_init_state_conflict',
+            });
+
             return errorResponse(
               'CHECKOUT_CONFLICT',
               'Order state conflict while initializing payment. Retry with the same Idempotency-Key.',
@@ -380,13 +485,22 @@ export async function POST(request: NextRequest) {
           }
 
           if (error instanceof OrderStateInvalidError) {
+            logError('checkout_order_state_invalid', error, {
+              ...orderMeta,
+              code: error.code,
+            });
+
             return errorResponse(error.code, error.message, 500, {
               orderId: error.orderId,
               ...(error.details ? { details: error.details } : {}),
             });
           }
 
-          logError('Checkout payment initialization failed', error);
+          logError('checkout_payment_init_failed', error, {
+            ...orderMeta,
+            code: 'STRIPE_ERROR',
+          });
+
           return errorResponse(
             'STRIPE_ERROR',
             'Unable to initiate payment.',
@@ -453,6 +567,12 @@ export async function POST(request: NextRequest) {
     } catch (error) {
       // Conflict => 409 and DO NOT restock (leave reserved; retry/janitor)
       if (error instanceof InvalidPayloadError) {
+        logWarn('checkout_conflict', {
+          ...orderMeta,
+          code: 'CHECKOUT_CONFLICT',
+          reason: 'payment_init_state_conflict',
+        });
+
         return errorResponse(
           'CHECKOUT_CONFLICT',
           'Order state conflict while initializing payment. Retry with the same Idempotency-Key.',
@@ -465,11 +585,18 @@ export async function POST(request: NextRequest) {
         try {
           await restockOrder(order.id, { reason: 'failed' });
         } catch (restockError) {
-          logError(
-            'Restoring stock after attempts exhausted failed',
-            restockError
-          );
+          logError('checkout_restock_failed', restockError, {
+            ...orderMeta,
+            code: 'RESTOCK_FAILED',
+            reason: 'attempts_exhausted',
+          });
         }
+        logWarn('checkout_payment_attempts_exhausted', {
+          ...orderMeta,
+          code: 'PAYMENT_ATTEMPTS_EXHAUSTED',
+          provider: error.provider,
+        });
+
         return errorResponse(
           'PAYMENT_ATTEMPTS_EXHAUSTED',
           'Payment attempts exhausted for this order.',
@@ -478,17 +605,26 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      logError('Checkout payment initialization failed', error);
+      logError('checkout_payment_init_failed', error, {
+        ...orderMeta,
+        code: 'STRIPE_ERROR',
+      });
 
       try {
         await restockOrder(order.id, { reason: 'failed' });
       } catch (restockError) {
-        logError(
-          'Restoring stock after payment init failure failed',
-          restockError
-        );
+        logError('checkout_restock_failed', restockError, {
+          ...orderMeta,
+          code: 'RESTOCK_FAILED',
+          reason: 'payment_init_failure',
+        });
       }
       if (error instanceof OrderStateInvalidError) {
+        logError('checkout_order_state_invalid', error, {
+          ...orderMeta,
+          code: error.code,
+        });
+
         return errorResponse(error.code, error.message, 500, {
           orderId: error.orderId,
           ...(error.details ? { details: error.details } : {}),
@@ -497,13 +633,23 @@ export async function POST(request: NextRequest) {
       return errorResponse('STRIPE_ERROR', 'Unable to initiate payment.', 502);
     }
   } catch (error) {
+    const errorOrderId =
+      typeof (error as any)?.orderId === 'string'
+        ? (error as any).orderId
+        : null;
+
     if (isExpectedBusinessError(error)) {
-      logWarn('Checkout rejected', {
+      logWarn('checkout_business_rejected', {
+        ...authMeta,
         code: getErrorCode(error) ?? 'UNKNOWN',
-        path: request.nextUrl.pathname,
+        orderId: errorOrderId,
       });
     } else {
-      logError('Checkout failed', error);
+      logError('checkout_failed', error, {
+        ...authMeta,
+        code: getErrorCode(error) ?? 'INTERNAL_ERROR',
+        orderId: errorOrderId,
+      });
     }
 
     if (error instanceof InvalidPayloadError) {

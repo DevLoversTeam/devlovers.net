@@ -4,9 +4,22 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
+import {
+  Dribbble,
+  Facebook,
+  Github,
+  Globe,
+  Instagram,
+  Linkedin,
+  Link as LinkIcon,
+  Send,
+  Twitter,
+  Youtube,
+} from 'lucide-react';
 import { usePathname, useRouter } from '@/i18n/routing';
 import BlogGrid from '@/components/blog/BlogGrid';
 import { Link } from '@/i18n/routing';
+import { formatBlogDate } from '@/lib/blog/date';
 
 export type PortableTextSpan = {
   _type: 'span';
@@ -27,6 +40,12 @@ export type PortableTextImage = {
 
 export type PortableText = Array<PortableTextBlock | PortableTextImage>;
 
+export type SocialLink = {
+  _key?: string;
+  platform?: string;
+  url?: string;
+};
+
 export type Author = {
   name?: string;
   image?: string;
@@ -34,6 +53,7 @@ export type Author = {
   jobTitle?: string;
   city?: string;
   bio?: PortableText;
+  socialMedia?: SocialLink[];
 };
 
 export type Post = {
@@ -52,6 +72,51 @@ type Category = {
   _id: string;
   title: string;
 };
+
+const SOCIAL_ICON_CLASSNAME =
+  'h-3.5 w-3.5 text-gray-900 dark:text-gray-100 transition-colors group-hover:text-[var(--accent-primary)]';
+
+function SocialIcon({ platform }: { platform?: string }) {
+  const normalized = (platform || '').trim().toLowerCase();
+  if (normalized === 'github') {
+    return <Github className={SOCIAL_ICON_CLASSNAME} strokeWidth={1.8} />;
+  }
+  if (normalized === 'linkedin') {
+    return <Linkedin className={SOCIAL_ICON_CLASSNAME} strokeWidth={1.8} />;
+  }
+  if (normalized === 'youtube') {
+    return <Youtube className={SOCIAL_ICON_CLASSNAME} strokeWidth={1.8} />;
+  }
+  if (normalized === 'facebook') {
+    return <Facebook className={SOCIAL_ICON_CLASSNAME} strokeWidth={1.8} />;
+  }
+  if (normalized === 'x' || normalized === 'twitter') {
+    return <Twitter className={SOCIAL_ICON_CLASSNAME} strokeWidth={1.8} />;
+  }
+  if (normalized === 'dribbble') {
+    return <Dribbble className={SOCIAL_ICON_CLASSNAME} strokeWidth={1.8} />;
+  }
+  if (normalized === 'instagram') {
+    return <Instagram className={SOCIAL_ICON_CLASSNAME} strokeWidth={1.8} />;
+  }
+  if (normalized === 'telegram') {
+    return <Send className={SOCIAL_ICON_CLASSNAME} strokeWidth={1.8} />;
+  }
+  if (normalized === 'website' || normalized === 'portfolio') {
+    return <Globe className={SOCIAL_ICON_CLASSNAME} strokeWidth={1.8} />;
+  }
+  if (normalized === 'behance') {
+    return (
+      <span
+        aria-hidden="true"
+        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full border border-current text-[8px] font-semibold text-gray-900 transition-colors group-hover:text-[var(--accent-primary)] dark:text-gray-100"
+      >
+        B
+      </span>
+    );
+  }
+  return <LinkIcon className={SOCIAL_ICON_CLASSNAME} strokeWidth={1.8} />;
+}
 
 /**
  * Normalize a tag/search input:
@@ -79,7 +144,7 @@ function plainTextFromPortableText(value?: PortableText): string {
     .map(block =>
       (block.children || []).map(child => child.text || '').join(' ')
     )
-    .join(' ')
+    .join('\n')
     .trim();
 }
 
@@ -115,6 +180,11 @@ export default function BlogFilters({
     norm: string;
     data?: Author;
   } | null>(null);
+  const [authorProfile, setAuthorProfile] = useState<{
+    name: string;
+    data: Author;
+  } | null>(null);
+  const authorHeadingRef = useRef<HTMLHeadingElement>(null);
   const [selectedCategory, setSelectedCategory] = useState<{
     name: string;
     norm: string;
@@ -132,7 +202,30 @@ export default function BlogFilters({
   const clearAll = () => {
     setSelectedAuthor(null);
     setSelectedCategory(null);
+    const params = new URLSearchParams(searchParams?.toString() || '');
+    params.delete('author');
+    params.delete('category');
+    const nextPath = params.toString() ? `${pathname}?${params}` : pathname;
+    router.replace(nextPath);
   };
+
+  const getCategoryLabel = (categoryName: string): string => {
+    const key = categoryName.toLowerCase() as
+      | 'tech'
+      | 'career'
+      | 'insights'
+      | 'news'
+      | 'growth';
+    const categoryTranslations: Record<string, string> = {
+      tech: t('categories.tech'),
+      career: t('categories.career'),
+      insights: t('categories.insights'),
+      news: t('categories.news'),
+      growth: t('categories.growth'),
+    };
+    return categoryTranslations[key] || categoryName;
+  };
+
   const allCategories = useMemo(() => {
     if (categories.length) {
       return categories
@@ -173,7 +266,10 @@ export default function BlogFilters({
   const searchQuery = useMemo(() => {
     return (searchParams?.get('search') || '').trim();
   }, [searchParams]);
-  const searchQueryLower = searchQuery.toLowerCase();
+  const authorParam = useMemo(() => {
+    return (searchParams?.get('author') || '').trim();
+  }, [searchParams]);
+  const searchQueryNormalized = normalizeSearchText(searchQuery);
   const didClearSearchRef = useRef(false);
 
   useEffect(() => {
@@ -193,13 +289,62 @@ export default function BlogFilters({
     didClearSearchRef.current = true;
   }, [pathname, router, searchParams, searchQuery]);
 
-  // categoryParam is handled via resolvedCategory to avoid state updates in effects.
+  const resolvedAuthor = useMemo(() => {
+    const normParam = normalizeAuthor(authorParam);
+    if (!normParam) return selectedAuthor;
+    if (selectedAuthor?.norm === normParam) return selectedAuthor;
+    const match = posts.find(
+      post => normalizeAuthor(post.author?.name || '') === normParam
+    );
+    return {
+      name: match?.author?.name || authorParam,
+      norm: normParam,
+      data: match?.author,
+    };
+  }, [authorParam, posts, selectedAuthor]);
+
+  useEffect(() => {
+    const name = resolvedAuthor?.name?.trim();
+    if (!name) return;
+
+    let active = true;
+
+    fetch(
+      `/api/blog-author?name=${encodeURIComponent(name)}&locale=${encodeURIComponent(
+        locale
+      )}`,
+      { cache: 'no-store' }
+    )
+      .then(response => (response.ok ? response.json() : null))
+      .then((data: Author | null) => {
+        if (!active) return;
+        if (data) setAuthorProfile({ name, data });
+      })
+      .catch(() => {
+        if (!active) return;
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [locale, resolvedAuthor?.name]);
+
+  useEffect(() => {
+    if (!resolvedAuthor) return;
+    const frame = window.requestAnimationFrame(() => {
+      authorHeadingRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [resolvedAuthor?.norm]);
 
   const filteredPosts = useMemo(() => {
     return posts.filter(post => {
-      if (selectedAuthor) {
+      if (resolvedAuthor) {
         const authorName = normalizeAuthor(post.author?.name || '');
-        if (authorName !== selectedAuthor.norm) return false;
+        if (authorName !== resolvedAuthor.norm) return false;
       }
 
       if (resolvedCategory) {
@@ -207,14 +352,16 @@ export default function BlogFilters({
         if (!postCategories.includes(resolvedCategory.norm)) return false;
       }
 
-      if (searchQueryLower) {
+      if (searchQueryNormalized) {
         const titleText = normalizeSearchText(post.title);
         const bodyText = normalizeSearchText(
           plainTextFromPortableText(post.body)
         );
+        const words = searchQueryNormalized.split(/\s+/).filter(Boolean);
         if (
-          !titleText.includes(searchQueryLower) &&
-          !bodyText.includes(searchQueryLower)
+          !words.some(
+            word => titleText.includes(word) || bodyText.includes(word)
+          )
         ) {
           return false;
         }
@@ -222,101 +369,149 @@ export default function BlogFilters({
 
       return true;
     });
-  }, [posts, resolvedCategory, selectedAuthor, searchQueryLower]);
+  }, [posts, resolvedAuthor, resolvedCategory, searchQueryNormalized]);
 
-  const selectedAuthorData = selectedAuthor?.data || null;
+  const selectedAuthorData = useMemo(() => {
+    const resolvedName = resolvedAuthor?.name;
+    if (!resolvedName) return null;
+    if (authorProfile?.name === resolvedName) return authorProfile.data;
+    return resolvedAuthor?.data || null;
+  }, [authorProfile, resolvedAuthor?.data, resolvedAuthor?.name]);
   const authorBioText = useMemo(() => {
     return plainTextFromPortableText(selectedAuthorData?.bio);
   }, [selectedAuthorData]);
 
   return (
     <div className="mt-8">
-        {!selectedAuthor && featuredPost && (
-          <section className="mb-12">
-          <div className="grid gap-8 md:grid-cols-[0.9fr_1fr] md:items-center lg:grid-cols-[1fr_1fr]">
+      {!resolvedAuthor && featuredPost && (
+        <section className="mb-12">
+          <div className="grid gap-8 md:grid-cols-[1.3fr_1fr] md:items-stretch lg:grid-cols-[1.4fr_1fr]">
             {featuredPost.mainImage && (
               <Link
                 href={`/blog/${featuredPost.slug.current}`}
-                className="group relative block aspect-[4/3] overflow-hidden rounded-3xl shadow-[0_12px_30px_rgba(0,0,0,0.12)] md:aspect-[5/4] lg:aspect-[4/3]"
+                className="group block"
               >
-                <Image
-                  src={featuredPost.mainImage}
-                  alt={featuredPost.title}
-                  fill
-                  className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-                />
+                <div className="overflow-hidden rounded-3xl shadow-[0_12px_30px_rgba(0,0,0,0.12)] h-[300px] sm:h-[340px] md:h-full md:min-h-[400px] lg:min-h-[440px] border-0">
+                  <img
+                    src={featuredPost.mainImage}
+                    alt={featuredPost.title}
+                    className="block w-full h-full object-cover transition-transform duration-300 scale-[1.02] group-hover:scale-[1.05] border-0"
+                  />
+                </div>
               </Link>
             )}
-            <div className="pt-2">
+            <div className="pt-2 flex flex-col h-full">
               {featuredPost.categories?.[0] && (
-                <div className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400 -mt-2">
+                <div className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--accent-primary)] -mt-2">
                   {featuredPost.categories[0]}
                 </div>
               )}
               <Link
                 href={`/blog/${featuredPost.slug.current}`}
-                className="mt-3 block text-3xl font-semibold leading-tight text-gray-900 transition hover:text-[#ff00ff] dark:text-gray-100"
+                className="mt-3 block text-3xl font-semibold leading-tight text-gray-900 transition hover:underline underline-offset-4 dark:text-gray-100 md:text-4xl"
               >
                 {featuredPost.title}
               </Link>
-              <p className="mt-4 text-base leading-relaxed text-gray-600 dark:text-gray-400">
+              <p className="mt-4 text-base leading-relaxed text-gray-600 dark:text-gray-400 line-clamp-3 whitespace-pre-line">
                 {plainTextExcerpt(featuredPost.body)}
               </p>
               {featuredPost.publishedAt && (
-                <p className="mt-6 text-xs uppercase tracking-[0.25em] text-gray-500 dark:text-gray-400">
-                  {new Date(featuredPost.publishedAt).toLocaleDateString(
-                    locale
-                  )}
-                </p>
+                <div className="mt-auto pt-8 flex items-center justify-between text-xs tracking-[0.25em] text-gray-500 dark:text-gray-400">
+                  <time
+                    dateTime={featuredPost.publishedAt}
+                    className="uppercase"
+                  >
+                    {formatBlogDate(featuredPost.publishedAt)}
+                  </time>
+                  <Link
+                    href={`/blog/${featuredPost.slug.current}`}
+                    className="text-sm font-medium tracking-normal text-[var(--accent-primary)] transition hover:underline underline-offset-4"
+                  >
+                    {t('readMore')} <span aria-hidden="true">→</span>
+                  </Link>
+                </div>
               )}
             </div>
           </div>
         </section>
       )}
 
-      {selectedAuthor && (
+      {resolvedAuthor && (
         <div className="mb-10">
           <div className="mb-6 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
             <button
               type="button"
               onClick={clearAll}
-              className="transition hover:text-[#ff00ff] hover:underline underline-offset-4"
+              className="transition hover:text-[var(--accent-primary)] hover:underline underline-offset-4"
             >
               {tNav('blog')}
             </button>
             <span>&gt;</span>
-            <span className="text-gray-700 dark:text-gray-300">
-              {selectedAuthor.name}
+            <span className="text-[var(--accent-primary)]">
+              {resolvedAuthor.name}
             </span>
           </div>
 
-          {selectedAuthorData &&
-            (selectedAuthorData.image || authorBioText) && (
-              <div className="flex flex-col gap-6 md:flex-row md:items-start">
-                {selectedAuthorData.image && (
-                  <div className="relative h-40 w-40 flex-shrink-0 overflow-hidden rounded-xl">
-                    <Image
-                      src={selectedAuthorData.image}
-                      alt={selectedAuthorData.name || t('author')}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                )}
-                <div className="min-w-0">
-                  {selectedAuthorData.name && (
-                    <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
-                      {selectedAuthorData.name}
-                    </h2>
-                  )}
-                  {authorBioText && (
-                    <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-gray-600 dark:text-gray-400">
-                      {authorBioText}
-                    </p>
-                  )}
+          {selectedAuthorData && (
+            <div className="flex flex-col gap-6 md:flex-row md:items-start">
+              {selectedAuthorData.image && (
+                <div className="relative h-40 w-40 flex-shrink-0 overflow-hidden rounded-xl border border-[0.5px] border-[color-mix(in_srgb,var(--accent-primary)_50%,transparent)]">
+                  <Image
+                    src={selectedAuthorData.image}
+                    alt={selectedAuthorData.name || t('author')}
+                    fill
+                    className="object-cover"
+                  />
                 </div>
+              )}
+              <div className="min-w-0">
+                {selectedAuthorData.name && (
+                  <h2
+                    ref={authorHeadingRef}
+                    className="text-2xl font-semibold text-gray-900 dark:text-gray-100 scroll-mt-24"
+                  >
+                    {selectedAuthorData.name}
+                  </h2>
+                )}
+                {(selectedAuthorData.jobTitle ||
+                  selectedAuthorData.company ||
+                  selectedAuthorData.city) && (
+                  <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                    {[
+                      selectedAuthorData.jobTitle,
+                      selectedAuthorData.company,
+                      selectedAuthorData.city,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </p>
+                )}
+                {authorBioText && (
+                  <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+                    {authorBioText}
+                  </p>
+                )}
+                {selectedAuthorData.socialMedia?.length ? (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {selectedAuthorData.socialMedia
+                      .filter(item => item?.url)
+                      .map((item, index) => (
+                        <a
+                          key={item._key || `${item.platform}-${index}`}
+                          href={item.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="group inline-flex items-center gap-2 rounded-full border border-gray-200 px-3 py-1 text-xs text-gray-600 transition hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)] dark:border-gray-700 dark:text-gray-300 dark:hover:text-[var(--accent-primary)] dark:hover:border-[var(--accent-primary)]"
+                        >
+                          <SocialIcon platform={item.platform} />
+                          {item.platform || 'link'}
+                        </a>
+                      ))}
+                  </div>
+                ) : null}
               </div>
-            )}
+            </div>
+          )}
 
           {selectedAuthorData?.name && (
             <div className="mt-10">
@@ -331,19 +526,19 @@ export default function BlogFilters({
         </div>
       )}
 
-      <div className="max-w-3xl mx-auto">
-        {!selectedAuthor && allCategories.length > 0 && (
-          <div className="mt-5 flex flex-wrap gap-3">
+      <div className="w-full">
+        {!resolvedAuthor && allCategories.length > 0 && (
+          <div className="mt-5 flex w-full flex-nowrap justify-start gap-1 overflow-x-auto sm:flex-wrap sm:gap-3 sm:overflow-visible">
             <button
               type="button"
               onClick={() => setSelectedCategory(null)}
               className={
                 !resolvedCategory
-                  ? 'rounded-full border border-[#ff00ff] bg-[#ff00ff]/10 px-4 py-2 text-sm font-medium text-[#ff00ff] transition'
-                  : 'rounded-full border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800'
+                  ? 'rounded-full border border-transparent px-4 py-2 text-sm font-medium text-[var(--accent-primary)] transition whitespace-nowrap sm:border-[var(--accent-primary)]'
+                  : 'rounded-full border border-transparent px-4 py-2 text-sm text-gray-600 hover:text-[var(--accent-primary)] transition whitespace-nowrap dark:text-gray-300 sm:border-gray-300 sm:text-gray-700 sm:dark:border-gray-700 sm:dark:text-gray-200'
               }
             >
-              All
+              {t('all')}
             </button>
             {allCategories.map(category => (
               <button
@@ -358,11 +553,11 @@ export default function BlogFilters({
                 }
                 className={
                   resolvedCategory?.norm === category.norm
-                    ? 'rounded-full border border-[#ff00ff] bg-[#ff00ff]/10 px-4 py-2 text-sm font-medium text-[#ff00ff] transition'
-                    : 'rounded-full border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800'
+                    ? 'rounded-full border border-transparent px-4 py-2 text-sm font-medium text-[var(--accent-primary)] transition whitespace-nowrap sm:border-[var(--accent-primary)]'
+                    : 'rounded-full border border-transparent px-4 py-2 text-sm text-gray-600 hover:text-[var(--accent-primary)] transition whitespace-nowrap dark:text-gray-300 sm:border-gray-300 sm:text-gray-700 sm:dark:border-gray-700 sm:dark:text-gray-200'
                 }
               >
-                {category.name}
+                {getCategoryLabel(category.name)}
               </button>
             ))}
           </div>
@@ -372,12 +567,12 @@ export default function BlogFilters({
       </div>
 
       <div className="mt-12">
-        <BlogGrid posts={filteredPosts} onAuthorSelect={toggleAuthor} />
+        <BlogGrid
+          posts={filteredPosts}
+          onAuthorSelect={toggleAuthor}
+          disableHoverColor
+        />
       </div>
-
-      {!filteredPosts.length && (
-        <p className="text-center text-gray-500 mt-10">{t('noPosts')}</p>
-      )}
     </div>
   );
 }

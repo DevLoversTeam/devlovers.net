@@ -1,13 +1,12 @@
 import 'server-only';
-
+import crypto from 'node:crypto';
+import { orderIdParamSchema } from '@/lib/validation/shop';
+import { logError, logWarn } from '@/lib/logging';
 import { NextRequest, NextResponse } from 'next/server';
 import { and, eq } from 'drizzle-orm';
-
 import { db } from '@/db';
 import { orderItems, orders } from '@/db/schema';
 import { getCurrentUser } from '@/lib/auth';
-import { orderIdParamSchema } from '@/lib/validation/shop';
-import { logError } from '@/lib/logging';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,7 +15,7 @@ function noStoreJson(body: unknown, init?: { status?: number }) {
   res.headers.set('Cache-Control', 'no-store');
   return res;
 }
-type OrderCurrency = (typeof orders.$inferSelect)["currency"];
+type OrderCurrency = (typeof orders.$inferSelect)['currency'];
 type OrderDetailResponse = {
   id: string;
   userId: string | null;
@@ -46,7 +45,6 @@ type OrderDetailResponse = {
     lineTotal: string;
   }>;
 };
-
 
 function toOrderItem(
   item: {
@@ -84,12 +82,31 @@ function toOrderItem(
 }
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
+  const startedAtMs = Date.now();
+
+  const requestId =
+    request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
+
+  const baseMeta = {
+    requestId,
+    route: request.nextUrl.pathname,
+    method: request.method,
+  };
+
+  let orderIdForLog: string | null = null;
+
   try {
     const user = await getCurrentUser();
     if (!user) {
+      logWarn('public_order_detail_unauthorized', {
+        ...baseMeta,
+        code: 'UNAUTHORIZED',
+        durationMs: Date.now() - startedAtMs,
+      });
+
       return noStoreJson(
         { code: 'UNAUTHORIZED', error: 'Authentication required' },
         { status: 401 }
@@ -99,17 +116,26 @@ export async function GET(
     const rawParams = await context.params;
     const parsed = orderIdParamSchema.safeParse(rawParams);
     if (!parsed.success) {
+      logWarn('public_order_detail_invalid_order_id', {
+        ...baseMeta,
+        code: 'INVALID_ORDER_ID',
+        issuesCount: parsed.error.issues?.length ?? 0,
+        durationMs: Date.now() - startedAtMs,
+      });
+
       return noStoreJson(
         { code: 'INVALID_ORDER_ID', error: 'Invalid order id' },
         { status: 400 }
       );
     }
 
+    orderIdForLog = parsed.data.id;
+
     const isAdmin = user.role === 'admin';
 
     const whereClause = isAdmin
-      ? eq(orders.id, parsed.data.id)
-      : and(eq(orders.id, parsed.data.id), eq(orders.userId, user.id));
+      ? eq(orders.id, orderIdForLog)
+      : and(eq(orders.id, orderIdForLog), eq(orders.userId, user.id));
 
     const rows = await db
       .select({
@@ -140,10 +166,17 @@ export async function GET(
       })
       .from(orders)
       .leftJoin(orderItems, eq(orderItems.orderId, orders.id))
-      .where(whereClause)
-
+      .where(whereClause);
 
     if (rows.length === 0) {
+      logWarn('public_order_detail_not_found', {
+        ...baseMeta,
+        code: 'ORDER_NOT_FOUND',
+        orderId: orderIdForLog,
+        isAdmin,
+        durationMs: Date.now() - startedAtMs,
+      });
+
       return noStoreJson({ code: 'ORDER_NOT_FOUND' }, { status: 404 });
     }
 
@@ -163,7 +196,14 @@ export async function GET(
 
     return noStoreJson({ success: true, order: response }, { status: 200 });
   } catch (error) {
-    logError('Public order detail failed', error);
+        logError('public_order_detail_failed', error, {
+      ...baseMeta,
+      orderId: orderIdForLog,
+      code: 'PUBLIC_ORDER_DETAIL_FAILED',
+      durationMs: Date.now() - startedAtMs,
+    });
+
+
     return noStoreJson(
       { code: 'INTERNAL_ERROR', error: 'internal_error' },
       { status: 500 }

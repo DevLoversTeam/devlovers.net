@@ -4,6 +4,7 @@ import { db } from '@/db';
 import { products, productPrices } from '@/db/schema';
 import type { CurrencyCode } from '@/lib/shop/currency';
 import type { DbProduct } from '@/lib/types/shop';
+import { ProductNotFoundError } from '@/lib/errors/products';
 
 import { assertMoneyMinorInt } from '../prices';
 import { mapRowToProduct } from '../mapping';
@@ -17,7 +18,7 @@ export async function getAdminProductById(id: string): Promise<DbProduct> {
     .limit(1);
 
   if (!row) {
-    throw new Error('PRODUCT_NOT_FOUND');
+    throw new ProductNotFoundError(id);
   }
 
   return mapRowToProduct(row);

@@ -7,10 +7,12 @@ import {
   getRateLimitSubject,
 } from '@/lib/security/rate-limit';
 
-const prevTrust = process.env.TRUST_FORWARDED_HEADERS;
+const prevTrustForwarded = process.env.TRUST_FORWARDED_HEADERS;
+const prevTrustCf = process.env.TRUST_CF_CONNECTING_IP;
 
 afterEach(() => {
-  process.env.TRUST_FORWARDED_HEADERS = prevTrust;
+  process.env.TRUST_FORWARDED_HEADERS = prevTrustForwarded;
+  process.env.TRUST_CF_CONNECTING_IP = prevTrustCf;
 });
 
 describe('rate limit subject', () => {
@@ -44,8 +46,9 @@ describe('rate limit subject', () => {
     expect(getClientIpFromHeaders(headers)).toBe('198.51.100.7');
   });
 
-  it('prefers cf-connecting-ip over other headers (even when trust is true)', () => {
+  it('prefers cf-connecting-ip over other headers when TRUST_CF_CONNECTING_IP is true', () => {
     process.env.TRUST_FORWARDED_HEADERS = '1';
+    process.env.TRUST_CF_CONNECTING_IP = '1';
 
     const headers = new Headers({
       'cf-connecting-ip': '203.0.113.1',
@@ -79,8 +82,9 @@ describe('rate limit subject', () => {
     expect(getClientIpFromHeaders(headers)).toBe('198.51.100.4');
   });
 
-  it('returns clean ip6_ subject for IPv6 client ip (no ":")', () => {
+  it('returns clean ip6_ subject for IPv6 client ip (no ":") when TRUST_CF_CONNECTING_IP is true', () => {
     process.env.TRUST_FORWARDED_HEADERS = '0';
+    process.env.TRUST_CF_CONNECTING_IP = '1';
 
     const headers = new Headers({
       'cf-connecting-ip': '2001:db8::1',

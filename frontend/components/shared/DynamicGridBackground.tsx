@@ -8,11 +8,13 @@ import { cn } from '@/lib/utils';
 type DynamicGridBackgroundProps = {
   className?: string;
   children?: ReactNode;
+  showStaticGrid?: boolean;
 };
 
 export function DynamicGridBackground({
   className,
   children,
+  showStaticGrid = false,
 }: DynamicGridBackgroundProps) {
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
@@ -29,9 +31,11 @@ export function DynamicGridBackground({
       onMouseMove={handleMouseMove}
       className={cn('group/dynamic relative overflow-hidden', className)}
     >
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_80%_80%_at_50%_50%,#000_70%,transparent_100%)]" />
-      </div>
+      {showStaticGrid && (
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808020_1px,transparent_1px),linear-gradient(to_bottom,#80808020_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_80%_80%_at_50%_50%,#000_70%,transparent_100%)]" />
+        </div>
+      )}
 
       <motion.div
         className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover/dynamic:opacity-100"

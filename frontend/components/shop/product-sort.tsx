@@ -3,7 +3,8 @@
 'use client';
 
 import { useId } from 'react';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from '@/i18n/routing';
+import { useSearchParams } from 'next/navigation';
 
 import { SORT_OPTIONS } from '@/lib/config/catalog';
 import { cn } from '@/lib/utils';
@@ -16,9 +17,8 @@ export function ProductSort({ className }: ProductSortProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const params = useParams<{ locale?: string }>();
-  const locale = params.locale ?? 'en';
-  const basePath = `/${locale}/shop/products`;
+  // IMPORTANT: when using '@/i18n/routing' router, do NOT prefix locale manually.
+  const basePath = '/shop/products';
 
   const currentSort = searchParams.get('sort') || 'featured';
   const isActive = currentSort !== 'featured';

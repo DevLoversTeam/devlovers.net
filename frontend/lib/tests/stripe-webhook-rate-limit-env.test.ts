@@ -105,4 +105,19 @@ describe('stripe webhook rate limit env precedence', () => {
       windowSeconds: 777,
     });
   });
+
+  it('rejects zero and negative values (falls back to defaults)', () => {
+    vi.stubEnv('STRIPE_WEBHOOK_RL_MAX', '0');
+    vi.stubEnv('STRIPE_WEBHOOK_RL_WINDOW_SECONDS', '-1');
+
+    expect(resolveStripeWebhookRateLimit('missing_sig')).toEqual({
+      max: 30,
+      windowSeconds: 60,
+    });
+
+    expect(resolveStripeWebhookRateLimit('invalid_sig')).toEqual({
+      max: 30,
+      windowSeconds: 60,
+    });
+  });
 });

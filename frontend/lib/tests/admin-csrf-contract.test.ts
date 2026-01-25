@@ -32,6 +32,7 @@ describe('P0-SEC: admin CSRF required for mutating endpoints', () => {
       const req = new NextRequest(
         new Request('http://localhost/api/shop/admin/products/x/status', {
           method: 'PATCH',
+          headers: { origin: 'http://localhost:3000' },
         })
       );
 

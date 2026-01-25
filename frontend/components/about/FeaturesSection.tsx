@@ -128,39 +128,40 @@ export function FeaturesSection() {
           </Link>
         </div>
 
-        <div className="flex flex-wrap justify-center gap-2 mb-8 p-1.5 transition-all
-          rounded-2xl md:rounded-full
-          border border-gray-200 dark:border-white/10
-          bg-white dark:bg-white/5 backdrop-blur-md shadow-sm dark:shadow-none"
-        >
-          {features.map((feature) => {
-            const isActive = activeTab === feature.id
-            return (
-              <button
-                key={feature.id}
-                onClick={() => setActiveTab(feature.id)}
-                className={`relative px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-300 ${
-                  isActive 
-                    ? "text-white" 
-                    : "text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10"
-                }`}
-              >
-                {isActive && (
-                  <motion.div
-                    layoutId="activeTabBackground"
-                    className="absolute inset-0 bg-[#1e5eff] dark:bg-[#ff2d55] shadow-lg shadow-[#1e5eff]/25 dark:shadow-[#ff2d55]/25"
-                    initial={false}
-                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                    style={{ borderRadius: 9999 }}
-                  />
-                )}
-                <span className="relative z-10 flex items-center gap-2">
-                    <feature.icon size={16} />
-                    {t(`${feature.id}.title`)}
-                </span>
-              </button>
-            )
-          })}
+        <div className="flex justify-center mb-8">
+          <div className="inline-flex gap-1 md:gap-2 p-1.5 rounded-full
+            border border-gray-200 dark:border-white/10
+            bg-white dark:bg-white/5 backdrop-blur-md shadow-sm dark:shadow-none"
+          >
+            {features.map((feature) => {
+              const isActive = activeTab === feature.id
+              return (
+                <button
+                  key={feature.id}
+                  onClick={() => setActiveTab(feature.id)}
+                  className={`relative p-2.5 md:px-5 md:py-2.5 rounded-full text-sm font-medium transition-all duration-300 ${
+                    isActive
+                      ? "text-white"
+                      : "text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10"
+                  }`}
+                >
+                  {isActive && (
+                    <motion.div
+                      layoutId="activeTabBackground"
+                      className="absolute inset-0 bg-[#1e5eff] dark:bg-[#ff2d55] shadow-lg shadow-[#1e5eff]/25 dark:shadow-[#ff2d55]/25"
+                      initial={false}
+                      transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                      style={{ borderRadius: 9999 }}
+                    />
+                  )}
+                  <span className="relative z-10 flex items-center gap-2">
+                      <feature.icon size={18} className="md:w-4 md:h-4" />
+                      <span className="hidden md:inline">{t(`${feature.id}.title`)}</span>
+                  </span>
+                </button>
+              )
+            })}
+          </div>
         </div>
 
         <div className="max-w-2xl mx-auto text-center relative h-20 w-full overflow-hidden">

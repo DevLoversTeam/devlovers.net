@@ -100,6 +100,7 @@ function makeCheckoutRequest(
     'Content-Type': 'application/json',
     'Idempotency-Key': opts.idempotencyKey,
     'Accept-Language': opts.acceptLanguage,
+    Origin: 'http://localhost:3000',
   });
 
   return new NextRequest(

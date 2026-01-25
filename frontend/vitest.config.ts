@@ -13,7 +13,18 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
-    include: ['lib/tests/**/*.test.ts', 'components/tests/**/*.test.tsx'],
+    include: ['lib/tests/**/*.test.ts', 'components/tests/**/*.test.tsx', 'components/quiz/tests/**/*.test.tsx'],
     globals: true,
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html'],
+      include: [
+        'lib/quiz/**',
+        'hooks/**',
+        'app/api/quiz/**',
+        'components/q&a/**',
+        'app/api/questions/**',
+      ],
+    },
   },
 });
