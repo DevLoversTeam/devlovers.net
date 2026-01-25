@@ -34,7 +34,7 @@ function makeBuilder(finalMethod: keyof Builder, result: unknown): Builder {
 
 describe('GET /api/questions/[category]', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   it('returns empty payload for unknown category', async () => {

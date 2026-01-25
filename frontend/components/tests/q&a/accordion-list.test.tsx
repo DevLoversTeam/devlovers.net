@@ -25,9 +25,13 @@ vi.mock('@/components/ui/accordion', () => ({
 
 vi.mock('@/components/q&a/CodeBlock', () => ({
   __esModule: true,
-  default: ({ code }: { code: string }) => (
-    <pre data-testid="code-block">{code}</pre>
-  ),
+  default: ({
+    code,
+    content,
+  }: {
+    code?: string;
+    content?: string;
+  }) => <pre data-testid="code-block">{content ?? code}</pre>,
 }));
 
 vi.mock('@/components/q&a/SelectableText', () => ({
@@ -95,15 +99,24 @@ vi.mock('@/components/q&a/HighlightCachedTerms', () => ({
   __esModule: true,
   default: ({
     text,
+    cachedTerms,
     onTermClick,
   }: {
     text: string;
+    cachedTerms: Set<string>;
     onTermClick: (term: string) => void;
-  }) => (
-    <button type="button" onClick={() => onTermClick(text)}>
-      {text}
-    </button>
-  ),
+  }) => {
+    const normalized = text.toLowerCase().trim();
+    if (!cachedTerms.has(normalized)) {
+      return <span>{text}</span>;
+    }
+
+    return (
+      <button type="button" onClick={() => onTermClick(text)}>
+        {text}
+      </button>
+    );
+  },
 }));
 
 import AccordionList from '@/components/q&a/AccordionList';
