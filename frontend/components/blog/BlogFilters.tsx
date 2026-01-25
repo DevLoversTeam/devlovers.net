@@ -297,9 +297,10 @@ export default function BlogFilters({
   }, [posts, resolvedAuthor, resolvedCategory, searchQueryLower]);
 
   const selectedAuthorData = useMemo(() => {
-    if (!resolvedAuthor?.name) return null;
-    if (authorProfile?.name === resolvedAuthor.name) return authorProfile.data;
-    return resolvedAuthor.data || null;
+    const resolvedName = resolvedAuthor?.name;
+    if (!resolvedName) return null;
+    if (authorProfile?.name === resolvedName) return authorProfile.data;
+    return resolvedAuthor?.data || null;
   }, [authorProfile, resolvedAuthor?.data, resolvedAuthor?.name]);
   const authorBioText = useMemo(() => {
     return plainTextFromPortableText(selectedAuthorData?.bio);
