@@ -1,0 +1,48 @@
+'use client';
+
+import { useTranslations } from 'next-intl';
+import { ShoppingBag } from 'lucide-react';
+import { SITE_LINKS } from '@/lib/navigation';
+
+import { NavLink } from '@/components/header/NavLink';
+import { HeaderButton } from '@/components/shared/HeaderButton';
+import { NavLinks } from '@/components/shop/header/nav-links';
+import { BlogCategoryLinks } from '@/components/blog/BlogCategoryLinks';
+
+type Category = {
+  _id: string;
+  title: string;
+};
+
+type DesktopNavProps = {
+  variant: 'platform' | 'shop' | 'blog';
+  blogCategories?: Category[];
+};
+
+export function DesktopNav({ variant, blogCategories = [] }: DesktopNavProps) {
+  const t = useTranslations('navigation');
+
+  if (variant === 'shop') {
+    return <NavLinks className="lg:flex" includeHomeLink />;
+  }
+
+  if (variant === 'blog') {
+    return <BlogCategoryLinks categories={blogCategories} />;
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1">
+        {SITE_LINKS.filter(link => link.href !== '/shop').map(link => (
+          <NavLink key={link.href} href={link.href}>
+            {t(link.labelKey)}
+          </NavLink>
+        ))}
+      </div>
+
+      <HeaderButton href="/shop" icon={ShoppingBag} showArrow>
+        {t('shop')}
+      </HeaderButton>
+    </div>
+  );
+}
