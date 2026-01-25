@@ -43,12 +43,27 @@ export function BlogHeaderSearch() {
   const [items, setItems] = useState<PostSearchItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const debounceRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!open) return;
     inputRef.current?.focus();
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!containerRef.current) return;
+      if (!containerRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handlePointerDown);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+    };
   }, [open]);
 
   useEffect(() => {
@@ -119,7 +134,7 @@ export function BlogHeaderSearch() {
   };
 
   return (
-    <div className="relative flex items-center">
+    <div ref={containerRef} className="relative flex items-center">
       <button
         type="button"
         onClick={() => setOpen(prev => !prev)}

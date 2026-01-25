@@ -103,25 +103,6 @@ function renderPortableTextSpans(
   });
 }
 
-function seededShuffle<T>(items: T[], seed: number) {
-  const result = [...items];
-  let value = seed;
-  for (let i = result.length - 1; i > 0; i -= 1) {
-    value = (value * 1664525 + 1013904223) % 4294967296;
-    const j = value % (i + 1);
-    [result[i], result[j]] = [result[j], result[i]];
-  }
-  return result;
-}
-
-function hashString(input: string) {
-  let hash = 0;
-  for (let i = 0; i < input.length; i += 1) {
-    hash = (hash * 31 + input.charCodeAt(i)) >>> 0;
-  }
-  return hash;
-}
-
 const query = groq`
   *[_type=="post" && slug.current==$slug][0]{
     _id,
@@ -152,7 +133,8 @@ const query = groq`
   }
 `;
 const recommendedQuery = groq`
-  *[_type=="post" && defined(slug.current) && slug.current != $slug]{
+  *[_type=="post" && defined(slug.current) && slug.current != $slug]
+    | order(coalesce(publishedAt, _createdAt) desc)[0...3]{
     _id,
     "title": coalesce(title[$locale], title[lower($locale)], title.uk, title.en, title.pl, title),
     publishedAt,
@@ -196,10 +178,7 @@ export default async function PostDetails({
     slug: slugParam,
     locale,
   });
-  const recommendedPosts = seededShuffle(
-    recommendedAll,
-    hashString(slugParam)
-  ).slice(0, 3);
+  const recommendedPosts = recommendedAll;
 
   if (!post?.title) return notFound();
 
