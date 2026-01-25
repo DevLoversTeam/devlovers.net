@@ -218,25 +218,47 @@ export default async function PostDetails({
     : null;
   const blogUrl = baseUrl ? `${baseUrl}/${locale}/blog` : null;
   const description = plainTextFromPortableText(post.body).slice(0, 160);
+  const categoryHref = categoryLabel
+    ? `/blog/category/${categoryLabel.toLowerCase().replace(/[^a-z0-9\\s-]/g, '').replace(/\\s+/g, '-')}`
+    : null;
+  const categoryUrl =
+    baseUrl && categoryLabel
+      ? `${baseUrl}/${locale}/blog/category/${categoryLabel.toLowerCase().replace(/[^a-z0-9\\s-]/g, '').replace(/\\s+/g, '-')}`
+      : null;
+  const breadcrumbsItems = [
+    {
+      name: tNav('blog'),
+      href: '/blog',
+      url: blogUrl,
+    },
+    ...(categoryLabel
+      ? [
+          {
+            name: categoryLabel,
+            href: categoryHref,
+            url: categoryUrl,
+          },
+        ]
+      : []),
+    {
+      name: post.title,
+      href: postUrl ? `/blog/${slugParam}` : '',
+      url: postUrl,
+    },
+  ];
   const breadcrumbsJsonLd =
     blogUrl && postUrl
       ? {
           '@context': 'https://schema.org',
           '@type': 'BreadcrumbList',
-          itemListElement: [
-            {
+          itemListElement: breadcrumbsItems
+            .filter(item => item.url)
+            .map((item, index) => ({
               '@type': 'ListItem',
-              position: 1,
-              name: tNav('blog'),
-              item: blogUrl,
-            },
-            {
-              '@type': 'ListItem',
-              position: 2,
-              name: post.title,
-              item: postUrl,
-            },
-          ],
+              position: index + 1,
+              name: item.name,
+              item: item.url,
+            })),
         }
       : null;
   const articleJsonLd =
@@ -260,7 +282,7 @@ export default async function PostDetails({
       : null;
 
   return (
-    <main className="max-w-3xl mx-auto px-6 py-12">
+    <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
       {breadcrumbsJsonLd && (
         <script
           type="application/ld+json"
@@ -277,53 +299,63 @@ export default async function PostDetails({
           }}
         />
       )}
-      <div className="mb-6 relative left-1/2 right-1/2 w-screen -translate-x-1/2 px-6">
-        <div className="mx-auto flex max-w-6xl justify-start">
-          <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+      <nav className="mb-6" aria-label="Breadcrumb">
+        <ol className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+          {breadcrumbsItems.map((item, index) => {
+            const isLast = index === breadcrumbsItems.length - 1;
+            return (
+            <li key={`${item.name}-${index}`} className="flex items-center gap-2">
+              {!isLast && item.href ? (
+                <Link
+                  href={item.href}
+                  className="transition hover:text-[var(--accent-primary)] hover:underline underline-offset-4"
+                >
+                  {item.name}
+                </Link>
+              ) : (
+                <span className="text-[var(--accent-primary)]">{item.name}</span>
+              )}
+              {index < breadcrumbsItems.length - 1 && <span>&gt;</span>}
+            </li>
+            );
+          })}
+        </ol>
+      </nav>
+
+      <div className="mx-auto w-full max-w-3xl">
+        {categoryLabel && (
+          <div className="text-sm font-medium text-gray-500 dark:text-gray-400 text-center">
             <Link
-              href="/blog"
-              className="transition hover:text-[var(--accent-primary)] hover:underline underline-offset-4"
+              href={`/blog?category=${encodeURIComponent(categoryLabel)}`}
+              className="inline-flex items-center gap-1 text-[var(--accent-primary)] transition"
             >
-              {tNav('blog')}
+              {categoryLabel === 'Growth' ? 'Career' : categoryLabel}
             </Link>
-            <span>&gt;</span>
-            <span className="text-[var(--accent-primary)]">{post.title}</span>
           </div>
-        </div>
+        )}
+        <h1 className="mt-3 text-4xl font-bold text-gray-900 dark:text-gray-100 text-center">
+          {post.title}
+        </h1>
+
+        {(authorName || post.publishedAt) && (
+          <div className="mt-4 flex justify-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+            {authorName && (
+              <Link
+                href={`/blog?author=${encodeURIComponent(authorName)}`}
+                className="transition hover:text-[var(--accent-primary)]"
+              >
+                {authorName}
+              </Link>
+            )}
+            {authorName && post.publishedAt && <span>·</span>}
+            {post.publishedAt && (
+              <time dateTime={post.publishedAt}>
+                {formatBlogDate(post.publishedAt)}
+              </time>
+            )}
+          </div>
+        )}
       </div>
-
-      {categoryLabel && (
-        <div className="text-sm font-medium text-gray-500 dark:text-gray-400 text-center">
-          <Link
-            href={`/blog?category=${encodeURIComponent(categoryLabel)}`}
-            className="inline-flex items-center gap-1 text-[var(--accent-primary)] transition"
-          >
-            {categoryLabel === 'Growth' ? 'Career' : categoryLabel}
-          </Link>
-        </div>
-      )}
-      <h1 className="mt-3 text-4xl font-bold text-gray-900 dark:text-gray-100 text-center">
-        {post.title}
-      </h1>
-
-      {(authorName || post.publishedAt) && (
-        <div className="mt-4 flex justify-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-          {authorName && (
-            <Link
-              href={`/blog?author=${encodeURIComponent(authorName)}`}
-              className="transition hover:text-[var(--accent-primary)]"
-            >
-              {authorName}
-            </Link>
-          )}
-          {authorName && post.publishedAt && <span>·</span>}
-          {post.publishedAt && (
-            <time dateTime={post.publishedAt}>
-              {formatBlogDate(post.publishedAt)}
-            </time>
-          )}
-        </div>
-      )}
 
       {(post.tags?.length || 0) > 0 && null}
 
@@ -338,42 +370,44 @@ export default async function PostDetails({
         </div>
       )}
 
-      <article className="prose prose-gray max-w-none">
-        {post.body?.map((block: any, index: number) => {
-          if (block?._type === 'block') {
-            return (
-              <p
-                key={block._key || `block-${index}`}
-                className="whitespace-pre-line"
-              >
-                {renderPortableTextSpans(block.children, block.markDefs)}
-              </p>
-            );
-          }
+      <div className="mx-auto w-full max-w-3xl">
+        <article className="prose prose-gray max-w-none">
+          {post.body?.map((block: any, index: number) => {
+            if (block?._type === 'block') {
+              return (
+                <p
+                  key={block._key || `block-${index}`}
+                  className="whitespace-pre-line"
+                >
+                  {renderPortableTextSpans(block.children, block.markDefs)}
+                </p>
+              );
+            }
 
-          if (block?._type === 'image' && block?.url) {
-            return (
-              <img
-                key={block._key || `image-${index}`}
-                src={block.url}
-                alt={post.title || 'Post image'}
-                className="rounded-xl border border-gray-200 my-6"
-              />
-            );
-          }
+            if (block?._type === 'image' && block?.url) {
+              return (
+                <img
+                  key={block._key || `image-${index}`}
+                  src={block.url}
+                  alt={post.title || 'Post image'}
+                  className="rounded-xl border border-gray-200 my-6"
+                />
+              );
+            }
 
-          return null;
-        })}
-      </article>
+            return null;
+          })}
+        </article>
+      </div>
 
       {recommendedPosts.length > 0 && (
         <>
-          <div className="mt-16 relative left-1/2 right-1/2 w-screen -translate-x-1/2 px-6">
-            <div className="mx-auto h-px w-full max-w-6xl bg-gray-200 dark:bg-gray-800" />
+          <div className="mt-16">
+            <div className="h-px w-full bg-gray-200 dark:bg-gray-800" />
           </div>
 
-          <section className="mt-10 relative left-1/2 right-1/2 w-screen -translate-x-1/2 px-6">
-            <div className="mx-auto max-w-6xl">
+          <section className="mt-10">
+            <div>
               <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
                 {t('recommendedPosts')}
               </h2>

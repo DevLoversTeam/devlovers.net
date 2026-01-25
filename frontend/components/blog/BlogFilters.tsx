@@ -4,6 +4,18 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
+import {
+  Dribbble,
+  Facebook,
+  Github,
+  Globe,
+  Instagram,
+  Linkedin,
+  Link as LinkIcon,
+  Send,
+  Twitter,
+  Youtube,
+} from 'lucide-react';
 import { usePathname, useRouter } from '@/i18n/routing';
 import BlogGrid from '@/components/blog/BlogGrid';
 import { Link } from '@/i18n/routing';
@@ -60,6 +72,51 @@ type Category = {
   _id: string;
   title: string;
 };
+
+const SOCIAL_ICON_CLASSNAME =
+  'h-3.5 w-3.5 text-gray-900 dark:text-gray-100';
+
+function SocialIcon({ platform }: { platform?: string }) {
+  const normalized = (platform || '').trim().toLowerCase();
+  if (normalized === 'github') {
+    return <Github className={SOCIAL_ICON_CLASSNAME} strokeWidth={1.8} />;
+  }
+  if (normalized === 'linkedin') {
+    return <Linkedin className={SOCIAL_ICON_CLASSNAME} strokeWidth={1.8} />;
+  }
+  if (normalized === 'youtube') {
+    return <Youtube className={SOCIAL_ICON_CLASSNAME} strokeWidth={1.8} />;
+  }
+  if (normalized === 'facebook') {
+    return <Facebook className={SOCIAL_ICON_CLASSNAME} strokeWidth={1.8} />;
+  }
+  if (normalized === 'x' || normalized === 'twitter') {
+    return <Twitter className={SOCIAL_ICON_CLASSNAME} strokeWidth={1.8} />;
+  }
+  if (normalized === 'dribbble') {
+    return <Dribbble className={SOCIAL_ICON_CLASSNAME} strokeWidth={1.8} />;
+  }
+  if (normalized === 'instagram') {
+    return <Instagram className={SOCIAL_ICON_CLASSNAME} strokeWidth={1.8} />;
+  }
+  if (normalized === 'telegram') {
+    return <Send className={SOCIAL_ICON_CLASSNAME} strokeWidth={1.8} />;
+  }
+  if (normalized === 'website' || normalized === 'portfolio') {
+    return <Globe className={SOCIAL_ICON_CLASSNAME} strokeWidth={1.8} />;
+  }
+  if (normalized === 'behance') {
+    return (
+      <span
+        aria-hidden="true"
+        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full border border-current text-[8px] font-semibold text-gray-900 dark:text-gray-100"
+      >
+        B
+      </span>
+    );
+  }
+  return <LinkIcon className={SOCIAL_ICON_CLASSNAME} strokeWidth={1.8} />;
+}
 
 /**
  * Normalize a tag/search input:
@@ -310,7 +367,7 @@ export default function BlogFilters({
     <div className="mt-8">
         {!resolvedAuthor && featuredPost && (
           <section className="mb-12">
-          <div className="grid gap-8 md:grid-cols-[1.15fr_1fr] md:items-stretch lg:grid-cols-[1.2fr_1fr]">
+          <div className="grid gap-8 md:grid-cols-[1.3fr_1fr] md:items-stretch lg:grid-cols-[1.4fr_1fr]">
             {featuredPost.mainImage && (
               <Link
                 href={`/blog/${featuredPost.slug.current}`}
@@ -325,7 +382,7 @@ export default function BlogFilters({
                 </div>
               </Link>
             )}
-            <div className="pt-2">
+            <div className="pt-2 flex flex-col h-full">
               {featuredPost.categories?.[0] && (
                 <div className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--accent-primary)] -mt-2">
                   {featuredPost.categories[0]}
@@ -341,7 +398,7 @@ export default function BlogFilters({
                 {plainTextExcerpt(featuredPost.body)}
               </p>
               {featuredPost.publishedAt && (
-                <div className="mt-6 flex items-center justify-between text-xs tracking-[0.25em] text-gray-500 dark:text-gray-400">
+                <div className="mt-auto pt-8 flex items-center justify-between text-xs tracking-[0.25em] text-gray-500 dark:text-gray-400">
                   <time
                     dateTime={featuredPost.publishedAt}
                     className="uppercase"
@@ -423,8 +480,9 @@ export default function BlogFilters({
                             href={item.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center rounded-full border border-gray-200 px-3 py-1 text-xs text-gray-600 transition hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)] dark:border-gray-700 dark:text-gray-300 dark:hover:text-[var(--accent-primary)] dark:hover:border-[var(--accent-primary)]"
+                            className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-3 py-1 text-xs text-gray-600 transition hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)] dark:border-gray-700 dark:text-gray-300 dark:hover:text-[var(--accent-primary)] dark:hover:border-[var(--accent-primary)]"
                           >
+                            <SocialIcon platform={item.platform} />
                             {item.platform || 'link'}
                           </a>
                         ))}

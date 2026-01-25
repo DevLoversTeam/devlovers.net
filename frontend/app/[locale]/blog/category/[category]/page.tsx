@@ -83,7 +83,7 @@ export default async function BlogCategoryPage({
   const featuredDate = formatBlogDate(featuredPost?.publishedAt);
 
   return (
-    <main className="max-w-6xl mx-auto px-6 py-12">
+    <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
       <h1 className="text-4xl font-bold mb-4 text-center">
         {categoryTitle}
       </h1>

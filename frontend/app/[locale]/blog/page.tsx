@@ -77,7 +77,7 @@ export default async function BlogPage({
   const featuredPost = posts?.[0];
 
   return (
-    <main className="max-w-6xl mx-auto px-6 py-12">
+    <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
       <h1 className="text-4xl font-bold mb-4 text-center">{t('title')}</h1>
       <p className="mx-auto max-w-2xl text-center text-base text-gray-500 dark:text-gray-400">
         {t('subtitle')}
