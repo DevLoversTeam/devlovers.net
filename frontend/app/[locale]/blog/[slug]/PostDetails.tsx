@@ -213,17 +213,21 @@ export default async function PostDetails({
   const authorMeta = authorMetaParts.join(' · ');
   const categoryLabel = post.categories?.[0];
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL;
-  const postUrl = baseUrl
-    ? `${baseUrl}/${locale}/blog/${slugParam}`
-    : null;
+  const postUrl = baseUrl ? `${baseUrl}/${locale}/blog/${slugParam}` : null;
   const blogUrl = baseUrl ? `${baseUrl}/${locale}/blog` : null;
   const description = plainTextFromPortableText(post.body).slice(0, 160);
   const categoryHref = categoryLabel
-    ? `/blog/category/${categoryLabel.toLowerCase().replace(/[^a-z0-9\\s-]/g, '').replace(/\\s+/g, '-')}`
+    ? `/blog/category/${categoryLabel
+        .toLowerCase()
+        .replace(/[^a-z0-9\\s-]/g, '')
+        .replace(/\\s+/g, '-')}`
     : null;
   const categoryUrl =
     baseUrl && categoryLabel
-      ? `${baseUrl}/${locale}/blog/category/${categoryLabel.toLowerCase().replace(/[^a-z0-9\\s-]/g, '').replace(/\\s+/g, '-')}`
+      ? `${baseUrl}/${locale}/blog/category/${categoryLabel
+          .toLowerCase()
+          .replace(/[^a-z0-9\\s-]/g, '')
+          .replace(/\\s+/g, '-')}`
       : null;
   const breadcrumbsItems = [
     {
@@ -261,25 +265,24 @@ export default async function PostDetails({
             })),
         }
       : null;
-  const articleJsonLd =
-    postUrl
-      ? {
-          '@context': 'https://schema.org',
-          '@type': 'BlogPosting',
-          headline: post.title,
-          description: description || undefined,
-          mainEntityOfPage: postUrl,
-          url: postUrl,
-          datePublished: post.publishedAt || undefined,
-          author: post.author?.name
-            ? {
-                '@type': 'Person',
-                name: post.author.name,
-              }
-            : undefined,
-          image: post.mainImage ? [post.mainImage] : undefined,
-        }
-      : null;
+  const articleJsonLd = postUrl
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'BlogPosting',
+        headline: post.title,
+        description: description || undefined,
+        mainEntityOfPage: postUrl,
+        url: postUrl,
+        datePublished: post.publishedAt || undefined,
+        author: post.author?.name
+          ? {
+              '@type': 'Person',
+              name: post.author.name,
+            }
+          : undefined,
+        image: post.mainImage ? [post.mainImage] : undefined,
+      }
+    : null;
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
@@ -301,11 +304,12 @@ export default async function PostDetails({
       )}
       <nav className="mb-6" aria-label="Breadcrumb">
         <ol className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-          {breadcrumbsItems.map((item, index) => {
-            const isLast = index === breadcrumbsItems.length - 1;
-            return (
-            <li key={`${item.name}-${index}`} className="flex items-center gap-2">
-              {!isLast && item.href ? (
+          {breadcrumbsItems.map((item, index) => (
+            <li
+              key={`${item.name}-${index}`}
+              className="flex items-center gap-2"
+            >
+              {item.href ? (
                 <Link
                   href={item.href}
                   className="transition hover:text-[var(--accent-primary)] hover:underline underline-offset-4"
@@ -313,12 +317,13 @@ export default async function PostDetails({
                   {item.name}
                 </Link>
               ) : (
-                <span className="text-[var(--accent-primary)]">{item.name}</span>
+                <span className="text-[var(--accent-primary)]">
+                  {item.name}
+                </span>
               )}
               {index < breadcrumbsItems.length - 1 && <span>&gt;</span>}
             </li>
-            );
-          })}
+          ))}
         </ol>
       </nav>
 
