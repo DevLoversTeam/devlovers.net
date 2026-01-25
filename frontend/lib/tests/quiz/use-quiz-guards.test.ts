@@ -156,6 +156,6 @@ describe('useQuizGuards', () => {
       window.dispatchEvent(new Event('beforeunload'));
     });
 
-    expect(sessionStorage.getItem(reloadKey)).toBeNull;
+    expect(sessionStorage.getItem(reloadKey)).toBeNull();
   });
 });
