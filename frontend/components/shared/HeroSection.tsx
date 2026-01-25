@@ -58,8 +58,6 @@ export default function HeroSection() {
     <section
       className="
         relative
-        mx-[-1.5rem]
-        w-[calc(100%+3rem)]
         overflow-hidden
         min-h-[100vh]
         flex

@@ -423,7 +423,7 @@ export default function BlogFilters({
                             href={item.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center rounded-full border border-gray-200 px-3 py-1 text-xs text-gray-600 transition hover:text-[var(--accent-primary)] dark:border-gray-700 dark:text-gray-300"
+                            className="inline-flex items-center rounded-full border border-gray-200 px-3 py-1 text-xs text-gray-600 transition hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)] dark:border-gray-700 dark:text-gray-300 dark:hover:text-[var(--accent-primary)] dark:hover:border-[var(--accent-primary)]"
                           >
                             {item.platform || 'link'}
                           </a>
@@ -494,10 +494,6 @@ export default function BlogFilters({
           disableHoverColor
         />
       </div>
-
-      {!filteredPosts.length && (
-        <p className="text-center text-gray-500 mt-10">{t('noPosts')}</p>
-      )}
     </div>
   );
 }
