@@ -375,12 +375,12 @@ export default async function PostDetails({
       {(post.tags?.length || 0) > 0 && null}
 
       {post.mainImage && (
-        <div className="relative w-full h-[520px] rounded-2xl overflow-hidden border border-gray-200/50 my-8">
+        <div className="relative w-full h-[520px] rounded-2xl overflow-hidden my-8">
           <Image
             src={post.mainImage}
             alt={post.title || 'Post image'}
             fill
-            className="object-cover object-top scale-[1.05]"
+            className="object-contain"
           />
         </div>
       )}
