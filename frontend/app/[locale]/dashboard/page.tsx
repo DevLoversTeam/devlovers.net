@@ -94,9 +94,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
             </p>
           </div>
 
-          <Link href="/contacts" className={outlineBtnStyles}>
-            {t('supportLink')}
-          </Link>
+          <span className={outlineBtnStyles}>{t('supportLink')}</span>
         </header>
         <QuizSavedBanner />
         <div className="grid gap-8 md:grid-cols-2">
