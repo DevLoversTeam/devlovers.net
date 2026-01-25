@@ -26,7 +26,6 @@
     "leaderboard": "Ranking",
     "qa": "Q&A",
     "about": "O nas",
-    "contacts": "Kontakt",
     "blog": "Blog",
     "shop": "Sklep",
     "login": "Zaloguj się",
@@ -308,15 +307,6 @@
       "hide": "Ukryj"
     },
     "divider": "lub"
-  },
-  "contacts": {
-    "metaTitle": "Kontakt | DevLovers",
-    "metaDescription": "Skontaktuj się z zespołem DevLovers w sprawie pytań, opinii lub współpracy.",
-    "title": "Kontakt",
-    "subtitle": "Chętnie usłyszymy od Ciebie!",
-    "email": "Email:",
-    "linkedin": "LinkedIn:",
-    "github": "GitHub:"
   },
   "dashboard": {
     "metaTitle": "Panel | DevLovers",

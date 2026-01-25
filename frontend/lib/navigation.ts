@@ -4,6 +4,5 @@ export const SITE_LINKS = [
   { href: '/leaderboard', labelKey: 'leaderboard' },
   { href: '/about', labelKey: 'about' },
   { href: '/blog', labelKey: 'blog' },
-  { href: '/contacts', labelKey: 'contacts' },
   { href: '/shop', labelKey: 'shop' },
 ] as const;

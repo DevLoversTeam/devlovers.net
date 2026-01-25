@@ -89,8 +89,6 @@
       📁 [slug]
         📄 page.tsx
         📄 PostDetails.tsx
-    📁 contacts
-      📄 page.tsx
     📁 dashboard
       📄 page.tsx
     📁 forgot-password
