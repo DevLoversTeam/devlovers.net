@@ -124,7 +124,11 @@ export default async function BlogCategoryPage({
                   <span>{featuredPost.author.name}</span>
                 )}
                 {featuredPost.author?.name && featuredDate && <span>·</span>}
-                {featuredDate && <span>{featuredDate}</span>}
+                {featuredDate && featuredPost.publishedAt && (
+                  <time dateTime={featuredPost.publishedAt}>
+                    {featuredDate}
+                  </time>
+                )}
               </div>
               <Link
                 href={`/blog/${featuredPost.slug.current}`}

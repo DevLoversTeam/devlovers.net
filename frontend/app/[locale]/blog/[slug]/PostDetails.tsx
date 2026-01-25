@@ -212,9 +212,71 @@ export default async function PostDetails({
   ].filter(Boolean) as string[];
   const authorMeta = authorMetaParts.join(' · ');
   const categoryLabel = post.categories?.[0];
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  const postUrl = baseUrl
+    ? `${baseUrl}/${locale}/blog/${slugParam}`
+    : null;
+  const blogUrl = baseUrl ? `${baseUrl}/${locale}/blog` : null;
+  const description = plainTextFromPortableText(post.body).slice(0, 160);
+  const breadcrumbsJsonLd =
+    blogUrl && postUrl
+      ? {
+          '@context': 'https://schema.org',
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            {
+              '@type': 'ListItem',
+              position: 1,
+              name: tNav('blog'),
+              item: blogUrl,
+            },
+            {
+              '@type': 'ListItem',
+              position: 2,
+              name: post.title,
+              item: postUrl,
+            },
+          ],
+        }
+      : null;
+  const articleJsonLd =
+    postUrl
+      ? {
+          '@context': 'https://schema.org',
+          '@type': 'BlogPosting',
+          headline: post.title,
+          description: description || undefined,
+          mainEntityOfPage: postUrl,
+          url: postUrl,
+          datePublished: post.publishedAt || undefined,
+          author: post.author?.name
+            ? {
+                '@type': 'Person',
+                name: post.author.name,
+              }
+            : undefined,
+          image: post.mainImage ? [post.mainImage] : undefined,
+        }
+      : null;
 
   return (
     <main className="max-w-3xl mx-auto px-6 py-12">
+      {breadcrumbsJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(breadcrumbsJsonLd),
+          }}
+        />
+      )}
+      {articleJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(articleJsonLd),
+          }}
+        />
+      )}
       <div className="mb-6 relative left-1/2 right-1/2 w-screen -translate-x-1/2 px-6">
         <div className="mx-auto flex max-w-6xl justify-start">
           <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
@@ -255,7 +317,11 @@ export default async function PostDetails({
             </Link>
           )}
           {authorName && post.publishedAt && <span>·</span>}
-          {post.publishedAt && <span>{formatBlogDate(post.publishedAt)}</span>}
+          {post.publishedAt && (
+            <time dateTime={post.publishedAt}>
+              {formatBlogDate(post.publishedAt)}
+            </time>
+          )}
         </div>
       )}
 
@@ -353,7 +419,9 @@ export default async function PostDetails({
                           <span>·</span>
                         )}
                         {item.publishedAt && (
-                          <span>{formatBlogDate(item.publishedAt)}</span>
+                          <time dateTime={item.publishedAt}>
+                            {formatBlogDate(item.publishedAt)}
+                          </time>
                         )}
                       </div>
                     )}

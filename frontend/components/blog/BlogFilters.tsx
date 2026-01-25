@@ -342,9 +342,12 @@ export default function BlogFilters({
               </p>
               {featuredPost.publishedAt && (
                 <div className="mt-6 flex items-center justify-between text-xs tracking-[0.25em] text-gray-500 dark:text-gray-400">
-                  <span className="uppercase">
+                  <time
+                    dateTime={featuredPost.publishedAt}
+                    className="uppercase"
+                  >
                     {formatBlogDate(featuredPost.publishedAt)}
-                  </span>
+                  </time>
                   <Link
                     href={`/blog/${featuredPost.slug.current}`}
                     className="text-sm font-medium tracking-normal text-[var(--accent-primary)] transition hover:underline underline-offset-4"
