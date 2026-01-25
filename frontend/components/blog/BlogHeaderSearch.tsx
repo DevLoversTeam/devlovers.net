@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Search } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 
 type PostSearchItem = {
@@ -36,8 +36,13 @@ function extractSnippet(body: PostSearchItem['body'], query: string) {
 
 const SEARCH_ENDPOINT = '/api/blog-search';
 
+function normalizeSearchText(value: string) {
+  return value.toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
 export function BlogHeaderSearch() {
   const t = useTranslations('blog');
+  const locale = useLocale();
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState('');
   const [items, setItems] = useState<PostSearchItem[]>([]);
@@ -69,7 +74,9 @@ export function BlogHeaderSearch() {
   useEffect(() => {
     if (!open || items.length || !isLoading) return;
     let active = true;
-    fetch(SEARCH_ENDPOINT, { cache: 'no-store' })
+    fetch(`${SEARCH_ENDPOINT}?locale=${encodeURIComponent(locale)}`, {
+      cache: 'no-store',
+    })
       .then(response => (response.ok ? response.json() : []))
       .then((result: PostSearchItem[]) => {
         if (!active) return;
@@ -101,20 +108,21 @@ export function BlogHeaderSearch() {
   }, [open, router, value]);
 
   const results = useMemo<SearchResult[]>(() => {
-    const query = value.trim().toLowerCase();
+    const query = normalizeSearchText(value);
     if (!query) return [];
     const words = query.split(/\s+/).filter(Boolean);
     return items
       .filter(item => {
-        const title = (item.title || '').toLowerCase();
-        const bodyText = (item.body || [])
-          .filter(block => block?._type === 'block')
-          .map(block =>
-            (block.children || []).map(child => child.text || '').join(' ')
-          )
-          .join(' ')
-          .toLowerCase();
-        return words.every(
+        const title = normalizeSearchText(item.title || '');
+        const bodyText = normalizeSearchText(
+          (item.body || [])
+            .filter(block => block?._type === 'block')
+            .map(block =>
+              (block.children || []).map(child => child.text || '').join(' ')
+            )
+            .join(' ')
+        );
+        return words.some(
           word => title.includes(word) || bodyText.includes(word)
         );
       })
