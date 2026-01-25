@@ -30,6 +30,7 @@ yarn-error.log*
 
 # Coverage directory
 /coverage
+/coverage-quiz
 
 # Dotenv files
 *.local
