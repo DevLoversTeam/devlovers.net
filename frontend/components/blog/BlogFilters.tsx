@@ -73,7 +73,8 @@ type Category = {
   title: string;
 };
 
-const SOCIAL_ICON_CLASSNAME = 'h-3.5 w-3.5 text-gray-900 dark:text-gray-100';
+const SOCIAL_ICON_CLASSNAME =
+  'h-3.5 w-3.5 text-gray-900 dark:text-gray-100 transition-colors group-hover:text-[var(--accent-primary)]';
 
 function SocialIcon({ platform }: { platform?: string }) {
   const normalized = (platform || '').trim().toLowerCase();
@@ -108,7 +109,7 @@ function SocialIcon({ platform }: { platform?: string }) {
     return (
       <span
         aria-hidden="true"
-        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full border border-current text-[8px] font-semibold text-gray-900 dark:text-gray-100"
+        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full border border-current text-[8px] font-semibold text-gray-900 transition-colors group-hover:text-[var(--accent-primary)] dark:text-gray-100"
       >
         B
       </span>
@@ -183,6 +184,7 @@ export default function BlogFilters({
     name: string;
     data: Author;
   } | null>(null);
+  const authorHeadingRef = useRef<HTMLHeadingElement>(null);
   const [selectedCategory, setSelectedCategory] = useState<{
     name: string;
     norm: string;
@@ -267,7 +269,7 @@ export default function BlogFilters({
   const authorParam = useMemo(() => {
     return (searchParams?.get('author') || '').trim();
   }, [searchParams]);
-  const searchQueryLower = searchQuery.toLowerCase();
+  const searchQueryNormalized = normalizeSearchText(searchQuery);
   const didClearSearchRef = useRef(false);
 
   useEffect(() => {
@@ -327,6 +329,17 @@ export default function BlogFilters({
     };
   }, [locale, resolvedAuthor?.name]);
 
+  useEffect(() => {
+    if (!resolvedAuthor) return;
+    const frame = window.requestAnimationFrame(() => {
+      authorHeadingRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [resolvedAuthor?.norm]);
+
   const filteredPosts = useMemo(() => {
     return posts.filter(post => {
       if (resolvedAuthor) {
@@ -339,14 +352,16 @@ export default function BlogFilters({
         if (!postCategories.includes(resolvedCategory.norm)) return false;
       }
 
-      if (searchQueryLower) {
+      if (searchQueryNormalized) {
         const titleText = normalizeSearchText(post.title);
         const bodyText = normalizeSearchText(
           plainTextFromPortableText(post.body)
         );
+        const words = searchQueryNormalized.split(/\s+/).filter(Boolean);
         if (
-          !titleText.includes(searchQueryLower) &&
-          !bodyText.includes(searchQueryLower)
+          !words.some(
+            word => titleText.includes(word) || bodyText.includes(word)
+          )
         ) {
           return false;
         }
@@ -354,7 +369,7 @@ export default function BlogFilters({
 
       return true;
     });
-  }, [posts, resolvedAuthor, resolvedCategory, searchQueryLower]);
+  }, [posts, resolvedAuthor, resolvedCategory, searchQueryNormalized]);
 
   const selectedAuthorData = useMemo(() => {
     const resolvedName = resolvedAuthor?.name;
@@ -451,7 +466,10 @@ export default function BlogFilters({
               )}
               <div className="min-w-0">
                 {selectedAuthorData.name && (
-                  <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
+                  <h2
+                    ref={authorHeadingRef}
+                    className="text-2xl font-semibold text-gray-900 dark:text-gray-100 scroll-mt-24"
+                  >
                     {selectedAuthorData.name}
                   </h2>
                 )}
@@ -483,7 +501,7 @@ export default function BlogFilters({
                           href={item.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-3 py-1 text-xs text-gray-600 transition hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)] dark:border-gray-700 dark:text-gray-300 dark:hover:text-[var(--accent-primary)] dark:hover:border-[var(--accent-primary)]"
+                          className="group inline-flex items-center gap-2 rounded-full border border-gray-200 px-3 py-1 text-xs text-gray-600 transition hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)] dark:border-gray-700 dark:text-gray-300 dark:hover:text-[var(--accent-primary)] dark:hover:border-[var(--accent-primary)]"
                         >
                           <SocialIcon platform={item.platform} />
                           {item.platform || 'link'}

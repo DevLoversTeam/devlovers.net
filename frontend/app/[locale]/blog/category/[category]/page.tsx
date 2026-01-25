@@ -44,6 +44,7 @@ export default async function BlogCategoryPage({
 }) {
   const { locale, category } = await params;
   const t = await getTranslations({ locale, namespace: 'blog' });
+  const tNav = await getTranslations({ locale, namespace: 'navigation' });
   const categoryKey = String(category || '').toLowerCase();
   const categories: Category[] = await client
     .withConfig({ useCdn: false })
@@ -54,6 +55,7 @@ export default async function BlogCategoryPage({
 
   if (!matchedCategory) return notFound();
   const categoryTitle = matchedCategory.title;
+  const categoryDisplay = getCategoryLabel(categoryTitle, t);
 
   const posts: Post[] = await client.withConfig({ useCdn: false }).fetch(
     groq`
@@ -84,8 +86,26 @@ export default async function BlogCategoryPage({
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+      <nav className="mb-6" aria-label="Breadcrumb">
+        <ol className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+          <li className="flex items-center gap-2">
+            <Link
+              href="/blog"
+              className="transition hover:text-[var(--accent-primary)] hover:underline underline-offset-4"
+            >
+              {tNav('blog')}
+            </Link>
+            <span>&gt;</span>
+          </li>
+          <li className="flex items-center gap-2">
+            <span className="text-[var(--accent-primary)]" aria-current="page">
+              {categoryDisplay}
+            </span>
+          </li>
+        </ol>
+      </nav>
       <h1 className="text-4xl font-bold mb-4 text-center">
-        {categoryTitle}
+        {categoryDisplay}
       </h1>
       {featuredPost?.mainImage && (
         <section className="mt-10">
@@ -157,4 +177,14 @@ function slugify(value: string) {
     .trim()
     .replace(/[^a-z0-9\s-]/g, '')
     .replace(/\s+/g, '-');
+}
+
+function getCategoryLabel(categoryName: string, t: (key: string) => string) {
+  const key = categoryName.toLowerCase();
+  if (key === 'growth') return t('categories.career');
+  if (key === 'tech') return t('categories.tech');
+  if (key === 'career') return t('categories.career');
+  if (key === 'insights') return t('categories.insights');
+  if (key === 'news') return t('categories.news');
+  return categoryName;
 }
