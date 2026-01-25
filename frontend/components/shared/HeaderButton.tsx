@@ -119,6 +119,7 @@ export function HeaderButton({
       <button
         onClick={onClick}
         className={baseClasses}
+        type="button"
         aria-label={label}
         title={label}
       >

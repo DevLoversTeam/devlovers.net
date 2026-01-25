@@ -13,12 +13,12 @@ export function NavLink({ href, children, className = '' }: NavLinkProps) {
   const pathname = usePathname();
 
   const isActive = (() => {
-    const cleanPathname = pathname.replace(/^\/(uk|en|pl)/, '') || '/';
+    const cleanPathname = pathname.replace(/^\/(uk|en|pl)(?=\/|$)/, '') || '/';
 
     if (href === '/' && cleanPathname === '/') return true;
 
     if (href !== '/') {
-      return cleanPathname.startsWith(href);
+      return cleanPathname === href || cleanPathname.startsWith(`${href}/`);
     }
 
     return false;

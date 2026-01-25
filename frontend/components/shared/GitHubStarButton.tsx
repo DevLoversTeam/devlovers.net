@@ -4,7 +4,6 @@ import { Star } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 
 interface GitHubStarButtonProps {
-  org: string;
   className?: string;
 }
 
@@ -20,17 +19,19 @@ export function GitHubStarButton({ className = '' }: GitHubStarButtonProps) {
         const response = await fetch('/api/stats');
         if (response.ok) {
           const data = await response.json();
-          const starsStr = data.githubStars;
+          const starsStr =
+            typeof data?.githubStars === 'string'
+              ? data.githubStars
+              : String(data?.githubStars ?? '0');
           let starsNum = 0;
-
-          if (starsStr.includes('k+')) {
+          const normalized = starsStr.replace(/,/g, '').toLowerCase();
+          if (normalized.includes('k+')) {
             starsNum = Math.floor(
-              parseFloat(starsStr.replace('k+', '')) * 1000
+              parseFloat(normalized.replace('k+', '')) * 1000
             );
           } else {
-            starsNum = parseInt(starsStr);
+            starsNum = parseInt(normalized, 10);
           }
-
           setFinalCount(starsNum);
         }
       } catch (error) {

@@ -53,6 +53,7 @@ export function NavLinks({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const currentCategory = searchParams.get('category');
+  const isHomeActive = pathname.startsWith('/shop');
 
   const computed = useMemo(() => {
     return NAV_LINKS.map(link => {
@@ -75,7 +76,12 @@ export function NavLinks({
       <ul className="flex items-center gap-2">
         {includeHomeLink ? (
           <li>
-            <HeaderButton href="/" onClick={onNavigate} icon={Home}>
+            <HeaderButton
+              href="/"
+              onClick={onNavigate}
+              icon={Home}
+              className={cn(isHomeActive && '[color:var(--accent-primary)]')}
+            >
               Home
             </HeaderButton>
           </li>

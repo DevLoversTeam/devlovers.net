@@ -48,7 +48,7 @@ export function DesktopActions({
       {isBlog && <BlogHeaderSearch />}
 
       <LanguageSwitcher />
-      <GitHubStarButton org="DevLoversTeam" />
+      <GitHubStarButton />
 
       {isShop && <CartButton />}
 
