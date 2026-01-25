@@ -29,6 +29,12 @@ export function HeaderButton({
   className = '',
 }: HeaderButtonProps) {
   const isIconOnly = variant === 'icon';
+  const resolvedLabel =
+    label ?? (typeof children === 'string' ? children : undefined);
+
+  if (process.env.NODE_ENV !== 'production' && isIconOnly && !resolvedLabel) {
+    console.warn('HeaderButton: icon-only buttons require a label');
+  }
 
   const ArrowIcon = showArrow ? (
     <svg
@@ -120,8 +126,8 @@ export function HeaderButton({
         onClick={onClick}
         className={baseClasses}
         type="button"
-        aria-label={label}
-        title={label}
+        aria-label={resolvedLabel}
+        title={resolvedLabel}
       >
         {content}
       </button>
@@ -133,8 +139,8 @@ export function HeaderButton({
       href={href}
       onClick={onClick}
       className={baseClasses}
-      aria-label={label}
-      title={label}
+      aria-label={resolvedLabel}
+      title={resolvedLabel}
     >
       {content}
     </Link>
