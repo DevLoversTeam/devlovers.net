@@ -132,7 +132,7 @@ function TableRow({
             className={cn(
               'w-8 h-8 sm:w-10 sm:h-10 rounded-full border flex-shrink-0 flex items-center justify-center text-xs sm:text-sm font-bold transition-all duration-300',
               isCurrentUser
-                ? 'bg-[var(--accent-primary)] border-[var(--accent-primary)] text-white shadow-[0_0px_var(--accent-primary)]'
+                ? 'bg-[var(--accent-primary)] border-[var(--accent-primary)] text-white shadow-[0_0_1px_var(--accent-primary)]'
                 : 'bg-slate-100 border-slate-200 text-slate-600 dark:bg-gradient-to-br dark:from-slate-800 dark:to-slate-900 dark:border-white/10 dark:text-slate-300 group-hover:border-[var(--accent-primary)] group-hover:text-[var(--accent-primary)]'
             )}
             aria-hidden="true"
