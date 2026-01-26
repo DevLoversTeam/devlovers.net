@@ -382,7 +382,7 @@ export default function BlogFilters({
   }, [selectedAuthorData]);
 
   return (
-    <div className="mt-8">
+    <div className="mt-4">
       {!resolvedAuthor && featuredPost && (
         <section className="mb-12">
           <div className="grid gap-8 md:grid-cols-[1.3fr_1fr] md:items-stretch lg:grid-cols-[1.4fr_1fr]">
@@ -400,21 +400,23 @@ export default function BlogFilters({
                 </div>
               </Link>
             )}
-            <div className="pt-2 flex flex-col h-full">
+            <div className="relative flex flex-col h-full pt-8">
               {featuredPost.categories?.[0] && (
-                <div className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--accent-primary)] -mt-2">
+                <div className="absolute top-0 left-0 text-xs font-bold uppercase tracking-[0.2em] text-[var(--accent-primary)]">
                   {featuredPost.categories[0]}
                 </div>
               )}
-              <Link
-                href={`/blog/${featuredPost.slug.current}`}
-                className="mt-3 block text-3xl font-semibold leading-tight text-gray-900 transition hover:underline underline-offset-4 dark:text-gray-100 md:text-4xl"
-              >
-                {featuredPost.title}
-              </Link>
-              <p className="mt-4 text-base leading-relaxed text-gray-600 dark:text-gray-400 line-clamp-3 whitespace-pre-line">
-                {plainTextExcerpt(featuredPost.body)}
-              </p>
+              <div className="my-auto">
+                <Link
+                  href={`/blog/${featuredPost.slug.current}`}
+                  className="mt-3 block text-3xl font-semibold leading-tight text-gray-900 transition hover:underline underline-offset-4 dark:text-gray-100 md:text-4xl"
+                >
+                  {featuredPost.title}
+                </Link>
+                <p className="mt-4 text-base leading-relaxed text-gray-600 dark:text-gray-400 line-clamp-3 whitespace-pre-line">
+                  {plainTextExcerpt(featuredPost.body)}
+                </p>
+              </div>
               {featuredPost.publishedAt && (
                 <div className="mt-auto pt-8 flex items-center justify-between text-xs tracking-[0.25em] text-gray-500 dark:text-gray-400">
                   <time
