@@ -31,7 +31,7 @@ export default function LeaderboardClient({
         />
       </div>
 
-      <div className="relative z-10 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center pt-20 pb-10">
+      <div className="relative z-10 container-main mx-auto flex flex-col items-center pt-20 pb-10">
         <header className="text-center mb-16 max-w-3xl">
           <motion.div
             initial={{ y: 20, opacity: 0 }}
