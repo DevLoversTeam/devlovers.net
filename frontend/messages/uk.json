@@ -26,7 +26,6 @@
     "leaderboard": "Рейтинг",
     "qa": "Q&A",
     "about": "Про нас",
-    "contacts": "Контакти",
     "blog": "Блог",
     "shop": "Магазин",
     "login": "Увійти",
@@ -308,15 +307,6 @@
       "hide": "Сховати"
     },
     "divider": "або"
-  },
-  "contacts": {
-    "metaTitle": "Контакти | DevLovers",
-    "metaDescription": "Зв'яжіться з командою DevLovers для запитань, відгуків або співпраці.",
-    "title": "Контакти",
-    "subtitle": "Будемо раді почути від вас!",
-    "email": "Email:",
-    "linkedin": "LinkedIn:",
-    "github": "GitHub:"
   },
   "dashboard": {
     "metaTitle": "Панель | DevLovers",

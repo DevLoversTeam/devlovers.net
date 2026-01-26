@@ -17,15 +17,20 @@ export default function FloatingExplainButton({
 }: FloatingExplainButtonProps) {
   const t = useTranslations('aiHelper');
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const onDismissRef = useRef(onDismiss);
+
+  useEffect(() => {
+    onDismissRef.current = onDismiss;
+  });
 
   useEffect(() => {
     const handleScroll = () => {
-      onDismiss();
+      onDismissRef.current();
     };
 
     const handleClickOutside = (e: MouseEvent) => {
       if (buttonRef.current && !buttonRef.current.contains(e.target as Node)) {
-        onDismiss();
+        onDismissRef.current();
       }
     };
 
@@ -39,7 +44,7 @@ export default function FloatingExplainButton({
       window.removeEventListener('scroll', handleScroll, true);
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [onDismiss]);
+  }, []);
 
   return (
     <button

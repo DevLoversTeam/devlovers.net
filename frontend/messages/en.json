@@ -26,7 +26,6 @@
     "leaderboard": "Leaderboard",
     "qa": "Q&A",
     "about": "About",
-    "contacts": "Contacts",
     "blog": "Blog",
     "shop": "Shop",
     "login": "Log in",
@@ -307,15 +306,6 @@
       "hide": "Hide"
     },
     "divider": "or"
-  },
-  "contacts": {
-    "metaTitle": "Contacts | DevLovers",
-    "metaDescription": "Get in touch with the DevLovers team for questions, feedback, or collaboration.",
-    "title": "Contacts",
-    "subtitle": "We'd love to hear from you!",
-    "email": "Email:",
-    "linkedin": "LinkedIn:",
-    "github": "GitHub:"
   },
   "dashboard": {
     "metaTitle": "Dashboard | DevLovers",
