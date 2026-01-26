@@ -159,3 +159,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Stabilized shop checkout, refund, inventory, and webhook flows
 - Improved Neon performance and reduced CU-hours usage
 - Cleaned up redundant files, comments, and legacy code
+
+## [0.5.0] - 2026-01-26
+
+### Added
+
+- AI-powered Word Helper for Q&A:
+  - Text selection with floating “Explain” button
+  - Multilingual explanations (uk / en / pl)
+  - Draggable modal with caching and rate limiting
+- Extensive automated testing:
+  - 90%+ coverage for Quiz core logic (unit + integration)
+  - Full Q&A component, hook, and API test coverage
+- SEO & content enhancements for Blog:
+  - Breadcrumb navigation (posts & categories)
+  - Schema.org JSON-LD (Article, BreadcrumbList)
+  - Improved metadata (descriptions, dates, authors)
+- Improved navigation & UX:
+  - Refactored responsive header with clear active states
+  - GitHub stars indicator in header
+  - Enhanced mobile menu with scroll locking
+- Visual & UX polish across platform:
+  - Unified category accent colors across Quiz & Q&A
+  - Refined Leaderboard layout and mobile responsiveness
+  - Updated About page interactions and game mechanics
+- Infrastructure & environment support:
+  - GROQ API integration for AI features
+  - New environment variable support and documentation
+
+### Changed
+
+- Quiz UI unified with Q&A design system:
+  - Shared CategoryTabButton component
+  - Category-based accent colors across full quiz flow
+  - Traffic-light countdown timer (green / yellow / red)
+- Blog experience refined:
+  - Improved search relevance and filtering UX
+  - Better author navigation and category presentation
+- Header, footer, and navigation styles aligned to brand tokens
+- Shop UI polish:
+  - Button styles and hero messaging updated
+  - Stripe checkout success redirect fixed
+- Removed deprecated Contacts page and all references
+
+### Fixed
+
+- Stabilized Leaderboard layout, spacing, and mobile behavior
+- Fixed quiz timer persistence and anti-cheat messaging UX
+- Improved accessibility and visual consistency across components
+- Resolved locale duplication in Stripe checkout redirects
+- Cleaned up redundant UI states, placeholders, and legacy styles
