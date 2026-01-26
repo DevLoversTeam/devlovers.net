@@ -41,7 +41,6 @@ vi.mock('next-intl', () => ({
 }));
 
 vi.mock('@/components/blog/BlogGrid', () => ({
-  __esModule: true,
   default: ({ posts }: { posts: Post[] }) => (
     <ul data-testid="blog-grid">
       {posts.map(post => (

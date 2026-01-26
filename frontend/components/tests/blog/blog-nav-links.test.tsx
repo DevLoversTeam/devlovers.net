@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { BlogNavLinks } from '@/components/blog/BlogNavLinks';
 
@@ -25,8 +25,12 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('@/lib/utils', () => ({
-  cn: (...args: string[]) => args.filter(Boolean).join(' '),
+  cn: (...args: unknown[]) => args.flat().filter(Boolean).join(' '),
 }));
+
+afterEach(() => {
+  fetchMock.mockReset();
+});
 
 describe('BlogNavLinks', () => {
   it('renders category links and marks active', async () => {

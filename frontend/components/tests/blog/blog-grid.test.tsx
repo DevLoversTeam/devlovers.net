@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import type { Post } from '@/components/blog/BlogFilters';
 import BlogGrid from '@/components/blog/BlogGrid';
@@ -9,7 +9,6 @@ vi.mock('next-intl', () => ({
 }));
 
 vi.mock('@/components/blog/BlogCard', () => ({
-  __esModule: true,
   default: ({ post }: { post: Post }) => <div>{post.title}</div>,
 }));
 
