@@ -74,7 +74,7 @@ type Category = {
 };
 
 const SOCIAL_ICON_CLASSNAME =
-  'h-3.5 w-3.5 text-gray-900 dark:text-gray-100 transition-colors group-hover:text-[var(--accent-primary)]';
+  'h-3.5 w-3.5 text-gray-900 dark:text-gray-100 transition-colors group-hover:text-[var(--accent-primary)] dark:group-hover:text-[var(--accent-primary)]';
 
 function SocialIcon({ platform }: { platform?: string }) {
   const normalized = (platform || '').trim().toLowerCase();
@@ -109,7 +109,7 @@ function SocialIcon({ platform }: { platform?: string }) {
     return (
       <span
         aria-hidden="true"
-        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full border border-current text-[8px] font-semibold text-gray-900 transition-colors group-hover:text-[var(--accent-primary)] dark:text-gray-100"
+        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full border border-current text-[8px] font-semibold text-gray-900 transition-colors group-hover:text-[var(--accent-primary)] dark:text-gray-100 dark:group-hover:text-[var(--accent-primary)]"
       >
         B
       </span>
