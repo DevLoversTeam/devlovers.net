@@ -1,6 +1,6 @@
 import type { ExplanationResponse } from './prompts';
 
-const CACHE_KEY = 'ai-word-explanations';
+export const CACHE_KEY = 'ai-word-explanations';
 const CACHE_VERSION = 1;
 
 interface CacheEntry {
@@ -21,27 +21,49 @@ function isBrowser(): boolean {
   return typeof window !== 'undefined' && typeof localStorage !== 'undefined';
 }
 
+function isValidCacheData(data: unknown): data is CacheData {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'version' in data &&
+    typeof (data as CacheData).version === 'number' &&
+    'entries' in data &&
+    typeof (data as CacheData).entries === 'object' &&
+    (data as CacheData).entries !== null
+  );
+}
+
+function getDefaultCache(): CacheData {
+  return { version: CACHE_VERSION, entries: {} };
+}
+
 function readCache(): CacheData {
   if (!isBrowser()) {
-    return { version: CACHE_VERSION, entries: {} };
+    return getDefaultCache();
   }
 
   try {
     const raw = localStorage.getItem(CACHE_KEY);
     if (!raw) {
-      return { version: CACHE_VERSION, entries: {} };
+      return getDefaultCache();
     }
 
-    const data = JSON.parse(raw) as CacheData;
+    const data: unknown = JSON.parse(raw);
+
+    if (!isValidCacheData(data)) {
+      localStorage.removeItem(CACHE_KEY);
+      return getDefaultCache();
+    }
 
     if (data.version !== CACHE_VERSION) {
       localStorage.removeItem(CACHE_KEY);
-      return { version: CACHE_VERSION, entries: {} };
+      return getDefaultCache();
     }
 
     return data;
   } catch {
-    return { version: CACHE_VERSION, entries: {} };
+    localStorage.removeItem(CACHE_KEY);
+    return getDefaultCache();
   }
 }
 

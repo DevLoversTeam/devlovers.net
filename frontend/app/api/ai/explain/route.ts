@@ -5,6 +5,7 @@ import {
   createExplainPrompt,
   type ExplanationResponse,
 } from '@/lib/ai/prompts';
+import { getClientIp } from '@/lib/security/rate-limit';
 
 const rateLimiter = new Map<string, { count: number; resetAt: number }>();
 const MAX_REQUESTS_PER_WINDOW = 10;
@@ -36,13 +37,6 @@ const requestSchema = z.object({
     .optional(),
 });
 
-function getClientIp(request: NextRequest): string {
-  const forwarded = request.headers.get('x-forwarded-for');
-  if (forwarded) {
-    return forwarded.split(',')[0].trim();
-  }
-  return request.headers.get('x-real-ip') || 'unknown';
-}
 
 function checkRateLimit(ip: string): { allowed: boolean; remaining: number; resetIn: number } {
   cleanupRateLimiter();
@@ -104,7 +98,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const clientIp = getClientIp(request);
+  const clientIp = getClientIp(request) ?? 'unknown';
   const rateLimit = checkRateLimit(clientIp);
 
   if (!rateLimit.allowed) {
