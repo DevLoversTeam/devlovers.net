@@ -23,7 +23,7 @@ sm:min-h-[calc(100vh-280px)] md:min-h-[85vh] lg:min-h-[100vh]
     >
       <HeroBackground />
 
-      <div className="relative max-w-5xl mx-auto w-full px-6 py-8 sm:py-12 md:py-28 lg:py-30 xl:py-32 flex flex-col items-center text-center">
+      <div className="relative max-w-5xl mx-auto w-full px-6 py-8 sm:py-12 md:py-28 lg:py-[7.5rem] xl:py-32 flex flex-col items-center text-center">
         <HeroCodeCards />
 
         <p className="text-[11px] sm:text-xs md:text-sm tracking-[0.35em] uppercase text-foreground font-bold">
