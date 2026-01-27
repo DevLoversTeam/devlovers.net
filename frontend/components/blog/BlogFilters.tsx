@@ -194,9 +194,16 @@ export default function BlogFilters({
     const name = author.name || '';
     const norm = normalizeAuthor(name);
     if (!norm) return;
-    setSelectedAuthor(prev =>
-      prev?.norm === norm ? null : { name, norm, data: author }
-    );
+    const isSame = selectedAuthor?.norm === norm;
+    setSelectedAuthor(isSame ? null : { name, norm, data: author });
+    const params = new URLSearchParams(searchParams?.toString() || '');
+    if (isSame) {
+      params.delete('author');
+    } else {
+      params.set('author', name);
+    }
+    const nextPath = params.toString() ? `${pathname}?${params}` : pathname;
+    router.replace(nextPath);
   };
 
   const clearAll = () => {

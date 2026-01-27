@@ -3,6 +3,7 @@ import { unstable_noStore as noStore } from 'next/cache';
 import { getTranslations } from 'next-intl/server';
 import { client } from '@/client';
 import BlogFilters from '@/components/blog/BlogFilters';
+import { BlogPageHeader } from '@/components/blog/BlogPageHeader';
 import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
 
 export const revalidate = 0;
@@ -23,12 +24,17 @@ export async function generateMetadata({
 
 export default async function BlogPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams?: { [key: string]: string | string[] | undefined };
 }) {
   noStore();
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'blog' });
+  const authorParam =
+    typeof searchParams?.author === 'string' ? searchParams.author.trim() : '';
+  const hasAuthorFilter = authorParam.length > 0;
 
   const posts = await client.withConfig({ useCdn: false }).fetch(
     groq`
@@ -80,12 +86,9 @@ export default async function BlogPage({
   return (
     <DynamicGridBackground className="bg-gray-50 transition-colors duration-300 dark:bg-transparent py-10">
       <main className="relative z-10 mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <h1 className="text-5xl font-extrabold mb-3 text-center leading-[1.1] bg-gradient-to-b from-[color-mix(in_srgb,var(--accent-primary)_70%,white)] to-[var(--accent-hover)] bg-clip-text text-transparent">
-          {t('title')}
-        </h1>
-        <p className="mx-auto max-w-2xl text-center text-base text-gray-500 dark:text-gray-400">
-          {t('subtitle')}
-        </p>
+        {!hasAuthorFilter && (
+          <BlogPageHeader title={t('title')} subtitle={t('subtitle')} />
+        )}
         <BlogFilters
           posts={posts}
           categories={categories}
