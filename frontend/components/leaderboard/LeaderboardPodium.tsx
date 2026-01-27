@@ -8,7 +8,7 @@ import { User } from './types';
 
 const rankConfig = {
   1: {
-    height: '100%',
+    height: '70%',
     delay: 0.4,
     style: {
       border: 'border-yellow-400 dark:border-yellow-500',
@@ -19,7 +19,7 @@ const rankConfig = {
     },
   },
   2: {
-    height: '50%',
+    height: '40%',
     delay: 0.2,
     style: {
       border: 'border-slate-300 dark:border-slate-500',
@@ -30,7 +30,7 @@ const rankConfig = {
     },
   },
   3: {
-    height: '35%',
+    height: '20%',
     delay: 0.6,
     style: {
       border: 'border-orange-300 dark:border-orange-500',

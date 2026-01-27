@@ -26,7 +26,6 @@
     "leaderboard": "Leaderboard",
     "qa": "Q&A",
     "about": "About",
-    "contacts": "Contacts",
     "blog": "Blog",
     "shop": "Shop",
     "login": "Log in",
@@ -223,6 +222,13 @@
   },
   "about": {
   },
+  "notFound": {
+    "metaTitle": "404 - Page Not Found | DevLovers",
+    "metaDescription": "The page you are looking for does not exist on DevLovers.",
+    "title": "Page Not Found",
+    "description": "Sorry, we couldn't find the page you're looking for. It might have been moved or deleted.",
+    "backHome": "Back to Home"
+  },
   "CookieBanner": {
     "title": "🍪 We value your privacy",
     "description": "We use cookies to enhance your browsing experience, serve personalized content, and analyze our traffic. By clicking \"Accept\", you consent to our use of cookies. Read our",
@@ -307,15 +313,6 @@
       "hide": "Hide"
     },
     "divider": "or"
-  },
-  "contacts": {
-    "metaTitle": "Contacts | DevLovers",
-    "metaDescription": "Get in touch with the DevLovers team for questions, feedback, or collaboration.",
-    "title": "Contacts",
-    "subtitle": "We'd love to hear from you!",
-    "email": "Email:",
-    "linkedin": "LinkedIn:",
-    "github": "GitHub:"
   },
   "dashboard": {
     "metaTitle": "Dashboard | DevLovers",

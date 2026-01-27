@@ -158,6 +158,7 @@ const recommendedQuery = groq`
     publishedAt,
     "mainImage": mainImage.asset->url,
     slug,
+    "categories": categories[]->title,
     "author": author->{
       "name": coalesce(name[$locale], name[lower($locale)], name.uk, name.en, name.pl, name),
       "image": image.asset->url
@@ -212,55 +213,83 @@ export default async function PostDetails({
   ].filter(Boolean) as string[];
   const authorMeta = authorMetaParts.join(' · ');
   const categoryLabel = post.categories?.[0];
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL;
-  const postUrl = baseUrl
-    ? `${baseUrl}/${locale}/blog/${slugParam}`
+  const categoryDisplay = categoryLabel
+    ? getCategoryLabel(categoryLabel, t)
     : null;
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  const postUrl = baseUrl ? `${baseUrl}/${locale}/blog/${slugParam}` : null;
   const blogUrl = baseUrl ? `${baseUrl}/${locale}/blog` : null;
   const description = plainTextFromPortableText(post.body).slice(0, 160);
+  const categoryHref = categoryLabel
+    ? `/blog/category/${categoryLabel
+        .toLowerCase()
+        .replace(/[^a-z0-9\\s-]/g, '')
+        .replace(/\\s+/g, '-')}`
+    : null;
+  const categoryUrl =
+    baseUrl && categoryLabel
+      ? `${baseUrl}/${locale}/blog/category/${categoryLabel
+          .toLowerCase()
+          .replace(/[^a-z0-9\\s-]/g, '')
+          .replace(/\\s+/g, '-')}`
+      : null;
+  const breadcrumbsItems = [
+    {
+      name: tNav('blog'),
+      href: '/blog',
+      url: blogUrl,
+    },
+    ...(categoryLabel
+      ? [
+          {
+            name: categoryDisplay || categoryLabel,
+            href: categoryHref,
+            url: categoryUrl,
+          },
+        ]
+      : []),
+    {
+      name: post.title,
+      href: '',
+      url: postUrl,
+    },
+  ];
   const breadcrumbsJsonLd =
     blogUrl && postUrl
       ? {
           '@context': 'https://schema.org',
           '@type': 'BreadcrumbList',
-          itemListElement: [
-            {
+          itemListElement: breadcrumbsItems
+            .filter(item => item.url)
+            .map((item, index) => ({
               '@type': 'ListItem',
-              position: 1,
-              name: tNav('blog'),
-              item: blogUrl,
-            },
-            {
-              '@type': 'ListItem',
-              position: 2,
-              name: post.title,
-              item: postUrl,
-            },
-          ],
+              position: index + 1,
+              name: item.name,
+              item: item.url,
+            })),
         }
       : null;
-  const articleJsonLd =
-    postUrl
-      ? {
-          '@context': 'https://schema.org',
-          '@type': 'BlogPosting',
-          headline: post.title,
-          description: description || undefined,
-          mainEntityOfPage: postUrl,
-          url: postUrl,
-          datePublished: post.publishedAt || undefined,
-          author: post.author?.name
-            ? {
-                '@type': 'Person',
-                name: post.author.name,
-              }
-            : undefined,
-          image: post.mainImage ? [post.mainImage] : undefined,
-        }
-      : null;
+  const articleJsonLd = postUrl
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'BlogPosting',
+        headline: post.title,
+        description: description || undefined,
+        mainEntityOfPage: postUrl,
+        url: postUrl,
+        datePublished: post.publishedAt || undefined,
+        author: post.author?.name
+          ? {
+              '@type': 'Person',
+              name: post.author.name,
+            }
+          : undefined,
+        image: post.mainImage ? [post.mainImage] : undefined,
+      }
+    : null;
 
   return (
-    <main className="max-w-3xl mx-auto px-6 py-12">
+    <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
       {breadcrumbsJsonLd && (
         <script
           type="application/ld+json"
@@ -277,113 +306,139 @@ export default async function PostDetails({
           }}
         />
       )}
-      <div className="mb-6 relative left-1/2 right-1/2 w-screen -translate-x-1/2 px-6">
-        <div className="mx-auto flex max-w-6xl justify-start">
-          <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+      <nav className="mb-6" aria-label="Breadcrumb">
+        <ol className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+          {breadcrumbsItems.map((item, index) => {
+            const isLast = index === breadcrumbsItems.length - 1;
+            return (
+              <li
+                key={`${item.name}-${index}`}
+                className="flex items-center gap-2"
+              >
+                {!isLast && item.href ? (
+                  <Link
+                    href={item.href}
+                    className="transition hover:text-[var(--accent-primary)] hover:underline underline-offset-4"
+                  >
+                    {item.name}
+                  </Link>
+                ) : (
+                  <span
+                    className="text-[var(--accent-primary)]"
+                    aria-current={isLast ? 'page' : undefined}
+                  >
+                    {item.name}
+                  </span>
+                )}
+                {index < breadcrumbsItems.length - 1 && <span>&gt;</span>}
+              </li>
+            );
+          })}
+        </ol>
+      </nav>
+
+      <div className="mx-auto w-full max-w-3xl">
+        {categoryLabel && (
+          <div className="text-sm font-medium text-gray-500 dark:text-gray-400 text-center">
             <Link
-              href="/blog"
-              className="transition hover:text-[var(--accent-primary)] hover:underline underline-offset-4"
+              href={categoryHref || '/blog'}
+              className="inline-flex items-center gap-1 text-[var(--accent-primary)] transition"
             >
-              {tNav('blog')}
+              {categoryDisplay || categoryLabel}
             </Link>
-            <span>&gt;</span>
-            <span className="text-[var(--accent-primary)]">{post.title}</span>
           </div>
-        </div>
+        )}
+        <h1 className="mt-3 text-4xl font-bold text-gray-900 dark:text-gray-100 text-center">
+          {post.title}
+        </h1>
+
+        {(authorName || post.publishedAt) && (
+          <div className="mt-4 flex justify-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+            {authorName && (
+              <Link
+                href={`/blog?author=${encodeURIComponent(authorName)}`}
+                className="transition hover:text-[var(--accent-primary)]"
+              >
+                {authorName}
+              </Link>
+            )}
+            {authorName && post.publishedAt && <span>·</span>}
+            {post.publishedAt && (
+              <time dateTime={post.publishedAt}>
+                {formatBlogDate(post.publishedAt)}
+              </time>
+            )}
+          </div>
+        )}
       </div>
-
-      {categoryLabel && (
-        <div className="text-sm font-medium text-gray-500 dark:text-gray-400 text-center">
-          <Link
-            href={`/blog?category=${encodeURIComponent(categoryLabel)}`}
-            className="inline-flex items-center gap-1 text-[var(--accent-primary)] transition"
-          >
-            {categoryLabel === 'Growth' ? 'Career' : categoryLabel}
-          </Link>
-        </div>
-      )}
-      <h1 className="mt-3 text-4xl font-bold text-gray-900 dark:text-gray-100 text-center">
-        {post.title}
-      </h1>
-
-      {(authorName || post.publishedAt) && (
-        <div className="mt-4 flex justify-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-          {authorName && (
-            <Link
-              href={`/blog?author=${encodeURIComponent(authorName)}`}
-              className="transition hover:text-[var(--accent-primary)]"
-            >
-              {authorName}
-            </Link>
-          )}
-          {authorName && post.publishedAt && <span>·</span>}
-          {post.publishedAt && (
-            <time dateTime={post.publishedAt}>
-              {formatBlogDate(post.publishedAt)}
-            </time>
-          )}
-        </div>
-      )}
 
       {(post.tags?.length || 0) > 0 && null}
 
       {post.mainImage && (
-        <div className="relative w-full h-[420px] rounded-2xl overflow-hidden border border-gray-200 my-8">
+        <div className="relative w-full h-[520px] rounded-2xl overflow-hidden my-8">
           <Image
             src={post.mainImage}
             alt={post.title || 'Post image'}
             fill
-            className="object-cover object-top scale-[1.05]"
+            className="object-contain"
           />
         </div>
       )}
 
-      <article className="prose prose-gray max-w-none">
-        {post.body?.map((block: any, index: number) => {
-          if (block?._type === 'block') {
-            return (
-              <p
-                key={block._key || `block-${index}`}
-                className="whitespace-pre-line"
-              >
-                {renderPortableTextSpans(block.children, block.markDefs)}
-              </p>
-            );
-          }
+      <div className="mx-auto w-full max-w-3xl">
+        <article className="prose prose-gray max-w-none">
+          {post.body?.map((block: any, index: number) => {
+            if (block?._type === 'block') {
+              return (
+                <p
+                  key={block._key || `block-${index}`}
+                  className="whitespace-pre-line"
+                >
+                  {renderPortableTextSpans(block.children, block.markDefs)}
+                </p>
+              );
+            }
 
-          if (block?._type === 'image' && block?.url) {
-            return (
-              <img
-                key={block._key || `image-${index}`}
-                src={block.url}
-                alt={post.title || 'Post image'}
-                className="rounded-xl border border-gray-200 my-6"
-              />
-            );
-          }
+            if (block?._type === 'image' && block?.url) {
+              return (
+                <img
+                  key={block._key || `image-${index}`}
+                  src={block.url}
+                  alt={post.title || 'Post image'}
+                  className="rounded-xl border border-gray-200 my-6"
+                />
+              );
+            }
 
-          return null;
-        })}
-      </article>
+            return null;
+          })}
+        </article>
+      </div>
 
       {recommendedPosts.length > 0 && (
         <>
-          <div className="mt-16 relative left-1/2 right-1/2 w-screen -translate-x-1/2 px-6">
-            <div className="mx-auto h-px w-full max-w-6xl bg-gray-200 dark:bg-gray-800" />
+          <div className="mt-16">
+            <div className="h-px w-full bg-gray-200 dark:bg-gray-800" />
           </div>
 
-          <section className="mt-10 relative left-1/2 right-1/2 w-screen -translate-x-1/2 px-6">
-            <div className="mx-auto max-w-6xl">
+          <section className="mt-10">
+            <div>
               <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
                 {t('recommendedPosts')}
               </h2>
               <div className="mt-6 grid gap-6 auto-rows-fr sm:grid-cols-2 lg:grid-cols-3">
-                {recommendedPosts.map(item => (
-                  <Link
-                    key={item._id}
-                    href={`/blog/${item.slug?.current}`}
-                    className="group flex h-full flex-col"
-                  >
+                {recommendedPosts.map(item => {
+                  const itemCategory = item.categories?.[0];
+                  const itemCategoryDisplay = itemCategory
+                    ? getCategoryLabel(itemCategory, t)
+                    : null;
+
+                  return (
+                    <Link
+                      key={item._id}
+                      href={`/blog/${item.slug?.current}`}
+                      className="group flex h-full flex-col"
+                    >
                     {item.mainImage && (
                       <div className="relative h-48 w-full overflow-hidden rounded-2xl">
                         <Image
@@ -402,8 +457,10 @@ export default async function PostDetails({
                         {plainTextFromPortableText(item.body)}
                       </p>
                     )}
-                    {(item.author?.name || item.publishedAt) && (
-                      <div className="mt-auto pt-3 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                    {(item.author?.name ||
+                      itemCategoryDisplay ||
+                      item.publishedAt) && (
+                      <div className="mt-auto pt-3 flex flex-wrap items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                         {item.author?.image && (
                           <span className="relative h-5 w-5 overflow-hidden rounded-full">
                             <Image
@@ -415,9 +472,16 @@ export default async function PostDetails({
                           </span>
                         )}
                         {item.author?.name && <span>{item.author.name}</span>}
-                        {item.author?.name && item.publishedAt && (
+                        {item.author?.name && itemCategoryDisplay && (
                           <span>·</span>
                         )}
+                        {itemCategoryDisplay && (
+                          <span className="rounded-full bg-[color-mix(in_srgb,var(--accent-primary)_20%,transparent)] px-3 py-1 text-[11px] font-medium text-gray-500 dark:bg-[color-mix(in_srgb,var(--accent-primary)_50%,transparent)] dark:text-gray-400">
+                            {itemCategoryDisplay}
+                          </span>
+                        )}
+                        {(item.author?.name || itemCategoryDisplay) &&
+                          item.publishedAt && <span>·</span>}
                         {item.publishedAt && (
                           <time dateTime={item.publishedAt}>
                             {formatBlogDate(item.publishedAt)}
@@ -425,8 +489,9 @@ export default async function PostDetails({
                         )}
                       </div>
                     )}
-                  </Link>
-                ))}
+                    </Link>
+                  );
+                })}
               </div>
             </div>
           </section>
@@ -438,4 +503,14 @@ export default async function PostDetails({
       {(authorBio || authorName || authorMeta) && null}
     </main>
   );
+}
+
+function getCategoryLabel(categoryName: string, t: (key: string) => string) {
+  const key = categoryName.toLowerCase();
+  if (key === 'growth') return t('categories.career');
+  if (key === 'tech') return t('categories.tech');
+  if (key === 'career') return t('categories.career');
+  if (key === 'insights') return t('categories.insights');
+  if (key === 'news') return t('categories.news');
+  return categoryName;
 }

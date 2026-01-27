@@ -1,95 +1,23 @@
+📄 .DS_Store
 📄 .env
 📄 .env.example
 📄 .gitignore
 📄 .prettierrc
+📄 README.md
 📁 actions
   📄 quiz.ts
 📁 app
-  📁 api
-    📁 auth
-      📁 github
-        📁 callback
-          📄 route.ts
-        📄 route.ts
-      📁 google
-        📁 callback
-          📄 route.ts
-        📄 route.ts
-      📁 login
-        📄 route.ts
-      📁 logout
-        📄 route.ts
-      📁 me
-        📄 route.ts
-      📁 password-reset
-        📁 confirm
-          📄 route.ts
-        📄 route.ts
-      📁 resend-verification
-        📄 route.ts
-      📁 signup
-        📄 route.ts
-      📁 verify-email
-        📄 route.ts
-    📁 blog-search
-      📄 route.ts
-    📁 questions
-      📁 [category]
-        📄 route.ts
-    📁 quiz
-      📁 guest-result
-        📄 route.ts
-      📁 verify-answer
-        📄 route.ts
-      📁 [slug]
-        📄 route.ts
-    📁 shop
-      📁 admin
-        📁 orders
-          📁 reconcile-stale
-            📄 route.ts
-          📄 route.ts
-          📁 [id]
-            📁 refund
-              📄 route.ts
-            📄 route.ts
-        📁 products
-          📄 route.ts
-          📁 [id]
-            📄 route.ts
-            📁 status
-              📄 route.ts
-      📁 cart
-        📁 rehydrate
-          📄 route.ts
-      📁 catalog
-        📄 route.ts
-      📁 checkout
-        📄 route.ts
-      📁 internal
-        📁 orders
-          📁 restock-stale
-            📄 route.ts
-      📁 orders
-        📁 [id]
-          📄 route.ts
-      📁 webhooks
-        📁 stripe
-          📄 route.ts
-  📄 globals.css
-  📄 layout.tsx
+  📄 .DS_Store
   📁 [locale]
     📁 about
       📄 page.tsx
     📁 blog
+      📁 [slug]
+        📄 PostDetails.tsx
+        📄 page.tsx
       📁 category
         📁 [category]
           📄 page.tsx
-      📄 page.tsx
-      📁 [slug]
-        📄 page.tsx
-        📄 PostDetails.tsx
-    📁 contacts
       📄 page.tsx
     📁 dashboard
       📄 page.tsx
@@ -116,20 +44,20 @@
     📁 shop
       📁 admin
         📁 orders
-          📄 page.tsx
           📁 [id]
-            📄 page.tsx
             📄 RefundButton.tsx
+            📄 page.tsx
+          📄 page.tsx
         📄 page.tsx
         📁 products
-          📁 new
-            📄 page.tsx
-          📄 page.tsx
           📁 [id]
             📁 edit
               📄 page.tsx
           📁 _components
             📄 product-form.tsx
+          📁 new
+            📄 page.tsx
+          📄 page.tsx
       📁 cart
         📄 page.tsx
       📁 checkout
@@ -149,7 +77,6 @@
         📄 page.tsx
       📄 page.tsx
       📁 products
-        📄 page.tsx
         📁 [slug]
           📄 page.tsx
         📄 page.tsx
@@ -157,26 +84,121 @@
       📄 page.tsx
     📁 terms-of-service
       📄 page.tsx
+  📁 api
+    📁 ai
+      📁 explain
+        📄 route.ts
+    📁 auth
+      📁 github
+        📁 callback
+          📄 route.ts
+        📄 route.ts
+      📁 google
+        📁 callback
+          📄 route.ts
+        📄 route.ts
+      📁 login
+        📄 route.ts
+      📁 logout
+        📄 route.ts
+      📁 me
+        📄 route.ts
+      📁 password-reset
+        📁 confirm
+          📄 route.ts
+        📄 route.ts
+      📁 resend-verification
+        📄 route.ts
+      📁 signup
+        📄 route.ts
+      📁 verify-email
+        📄 route.ts
+    📁 blog-author
+      📄 route.ts
+    📁 blog-search
+      📄 route.ts
+    📁 questions
+      📁 [category]
+        📄 route.ts
+    📁 quiz
+      📁 [slug]
+        📄 route.ts
+      📁 guest-result
+        📄 route.ts
+      📁 verify-answer
+        📄 route.ts
+    📁 sessions
+      📁 activity
+        📄 route.ts
+    📁 shop
+      📁 admin
+        📁 orders
+          📁 [id]
+            📁 refund
+              📄 route.ts
+            📄 route.ts
+          📁 reconcile-stale
+            📄 route.ts
+          📄 route.ts
+        📁 products
+          📁 [id]
+            📄 route.ts
+            📁 status
+              📄 route.ts
+          📄 route.ts
+      📁 cart
+        📁 rehydrate
+          📄 route.ts
+      📁 catalog
+        📄 route.ts
+      📁 checkout
+        📄 route.ts
+      📁 internal
+        📁 orders
+          📁 restock-stale
+            📄 route.ts
+      📁 orders
+        📁 [id]
+          📄 route.ts
+      📁 webhooks
+        📁 stripe
+          📄 route.ts
+    📁 stats
+      📄 route.ts
+  📄 globals.css
+  📄 layout.tsx
 📄 checkout.json
 📄 client.ts
 📁 components
+  📄 .DS_Store
   📁 about
     📄 CommunitySection.tsx
     📄 FeaturesSection.tsx
     📄 HeroSection.tsx
+    📄 InteractiveGame.tsx
     📄 PricingSection.tsx
-    📄 StatsSection.tsx
+    📄 SponsorsWall.tsx
+    📄 TopicsSection.tsx
   📁 auth
+    📄 AuthErrorBanner.tsx
+    📄 AuthProvidersBlock.tsx
+    📄 AuthShell.tsx
+    📄 AuthSuccessBanner.tsx
+    📄 ForgotPasswordForm.tsx
+    📄 LoginForm.tsx
     📄 OAuthButtons.tsx
     📄 PostAuthQuizSync.tsx
     📄 ProviderButton.tsx
+    📄 ResetPasswordForm.tsx
+    📄 SignupForm.tsx
+    📁 fields
+      📄 EmailField.tsx
+      📄 NameField.tsx
+      📄 PasswordField.tsx
     📁 icons
       📄 GitHubIcon.tsx
       📄 GoogleIcon.tsx
     📄 logoutButton.tsx
-    📄 OAuthButtons.tsx
-    📄 PostAuthQuizSync.tsx
-    📄 ProviderButton.tsx
   📁 blog
     📄 BlogCard.tsx
     📄 BlogCategoryGrid.tsx
@@ -192,13 +214,16 @@
   📁 header
     📄 AppChrome.tsx
     📄 AppMobileMenu.tsx
+    📄 DesktopActions.tsx
+    📄 DesktopNav.tsx
     📄 MainSwitcher.tsx
+    📄 MobileActions.tsx
+    📄 NavLink.tsx
     📄 UnifiedHeader.tsx
   📁 leaderboard
     📄 LeaderboardClient.tsx
     📄 LeaderboardPodium.tsx
     📄 LeaderboardTable.tsx
-    📄 LeaderboardTabs.tsx
     📄 types.ts
   📁 legal
     📄 LegalBlock.tsx
@@ -206,10 +231,14 @@
     📄 PrivacyPolicyContent.tsx
     📄 TermsOfServiceContent.tsx
   📁 q&a
+    📄 AIWordHelper.tsx
     📄 AccordionList.tsx
     📄 CodeBlock.tsx
+    📄 FloatingExplainButton.tsx
+    📄 HighlightCachedTerms.tsx
     📄 Pagination.tsx
     📄 QaSection.tsx
+    📄 SelectableText.tsx
     📄 types.ts
     📄 useQaTabs.ts
   📁 quiz
@@ -222,15 +251,25 @@
     📄 QuizQuestion.tsx
     📄 QuizResult.tsx
     📄 QuizzesSection.tsx
+    📁 tests
+      📄 quiz-container-flow.test.tsx
   📁 shared
+    📄 AnimatedNavLink.tsx
+    📄 CategoryTabButton.tsx
     📄 CookieBanner.tsx
+    📄 DynamicGridBackground.tsx
     📄 Footer.tsx
+    📄 GitHubStarButton.tsx
+    📄 HeaderButton.tsx
     📄 HeroSection.tsx
     📄 LanguageSwitcher.tsx
+    📄 Logo.tsx
+    📄 OnlineCounterPopup.tsx
   📁 shop
     📄 add-to-cart-button.tsx
     📁 admin
       📄 admin-pagination.tsx
+      📄 admin-product-delete-button.tsx
       📄 admin-product-status-toggle.tsx
       📄 shop-admin-topbar.tsx
     📄 cart-provider.tsx
@@ -248,6 +287,17 @@
     📄 shop-hero.tsx
   📁 tests
     📄 CookieBanner.test.tsx
+    📁 q&a
+      📄 accordion-list.test.tsx
+      📄 ai-word-helper.test.tsx
+      📄 code-block.test.tsx
+      📄 floating-explain-button.test.tsx
+      📄 highlight-cached-terms.test.tsx
+      📄 pagination.test.tsx
+      📄 qa-section.test.tsx
+      📄 selectable-text.test.tsx
+      📄 types.test.ts
+      📄 use-qa-tabs.test.tsx
   📁 theme
     📄 ThemeProvider.tsx
     📄 ThemeToggle.tsx
@@ -256,11 +306,14 @@
     📄 badge.tsx
     📄 button.tsx
     📄 confirm-modal.tsx
+    📄 github-star-button.tsx
     📄 radio-group.tsx
     📄 tabs.tsx
 📄 components.json
 📁 data
+  📄 about.ts
   📄 category.ts
+  📄 categoryStyles.ts
 📁 db
   📄 index.ts
   📁 legacy-migrations
@@ -350,7 +403,6 @@
   📄 seed-quiz-vue.ts
   📄 seed-users.ts
 📁 docs
-  📁 payments
   📁 security
     📄 origin-posture.md
 📁 drizzle
@@ -359,12 +411,14 @@
   📄 0002_clean_martin_li.sql
   📄 0003_add_stripe_events_claim_lock.sql
   📄 0004_add_api_rate_limits.sql
+  📄 0005_modern_bromley.sql
   📁 meta
     📄 0000_snapshot.json
     📄 0001_snapshot.json
     📄 0002_snapshot.json
     📄 0003_snapshot.json
     📄 0004_snapshot.json
+    📄 0005_snapshot.json
     📄 _journal.json
 📄 drizzle.config.ts
 📄 eslint.config.mjs
@@ -378,8 +432,14 @@
   📄 request.ts
   📄 routing.ts
 📁 lib
+  📁 about
+    📄 github-sponsors.ts
+    📄 stats.ts
   📁 admin
     📄 parseAdminProductForm.ts
+  📁 ai
+    📄 explainCache.ts
+    📄 prompts.ts
   📁 auth
     📄 admin.ts
     📄 email-verification.ts
@@ -387,7 +447,10 @@
     📄 internal-janitor.ts
     📄 oauth-state.ts
     📄 password-reset.ts
+    📄 safe-redirect.ts
   📄 auth.ts
+  📁 blog
+    📄 date.ts
   📄 cart.ts
   📄 cloudinary.ts
   📁 config
@@ -405,6 +468,8 @@
     📄 cloudinary.ts
     📄 index.ts
     📄 stripe.ts
+  📁 errors
+    📄 products.ts
   📁 http
     📄 getBaseUrl.ts
   📄 logging.ts
@@ -421,11 +486,14 @@
   📁 security
     📄 admin-csrf.ts
     📄 csrf.ts
+    📄 origin.ts
     📄 rate-limit.ts
+    📄 stripe-webhook-rate-limit.ts
   📁 services
     📄 errors.ts
     📄 inventory.ts
     📁 orders
+      📄 _shared.ts
       📄 checkout.ts
       📄 payment-attempts.ts
       📄 payment-intent.ts
@@ -436,7 +504,6 @@
       📄 restock.ts
       📄 summary.ts
       📄 sweeps.ts
-      📄 _shared.ts
     📄 orders.ts
     📁 products
       📁 admin
@@ -463,6 +530,8 @@
     📄 request-locale.ts
     📄 slug.ts
   📁 tests
+    📁 __mocks__
+      📄 server-only.ts
     📄 admin-api-killswitch.test.ts
     📄 admin-csrf-contract.test.ts
     📄 admin-product-patch-price-config-error-contract.test.ts
@@ -475,6 +544,9 @@
     📄 checkout-set-payment-intent-reject-contract.test.ts
     📄 checkout-stripe-error-contract.test.ts
     📄 currency.test.ts
+    📁 factories
+      📁 quiz
+        📄 quiz.ts
     📄 format-money.test.ts
     📁 helpers
       📄 ip.ts
@@ -491,6 +563,20 @@
     📄 product-admin-update-prices-patch-semantics.test.ts
     📄 product-sale-invariant.test.ts
     📄 public-product-visibility.test.ts
+    📁 q&a
+      📄 questions-route.test.ts
+    📁 quiz
+      📄 guest-quiz.test.ts
+      📄 guest-result-route.test.ts
+      📄 quiz-anticheat.test.ts
+      📄 quiz-crypto.test.ts
+      📄 quiz-session.test.ts
+      📄 quiz-setup.test.ts
+      📄 quiz-slug-route.test.ts
+      📄 setup.ts
+      📄 use-quiz-guards.test.ts
+      📄 use-quiz-session.test.ts
+      📄 verify-answer.test.ts
     📄 rate-limit-subject-normalization.test.ts
     📄 rate-limit-subject.test.ts
     📄 restock-order-only-once.test.ts
@@ -505,8 +591,6 @@
     📄 stripe-webhook-psp-fields.test.ts
     📄 stripe-webhook-rate-limit-env.test.ts
     📄 stripe-webhook-refund-full.test.ts
-    📁 __mocks__
-      📄 server-only.ts
   📁 types
     📄 shop.ts
   📄 utils.ts
@@ -522,9 +606,9 @@
 📄 package-lock.json
 📄 package.json
 📁 parse
+  📄 README.md
   📄 parse.ts
   📄 questions.json
-  📄 README.md
   📄 start.json
   📁 typescript
     📁 advanced
@@ -545,12 +629,21 @@
   📄 collectibles.jpg
   📄 favicon-dark.svg
   📄 favicon-light.svg
+  📁 icons
+    📄 angular.svg
+    📄 css3.svg
+    📄 git.svg
+    📄 html5.svg
+    📄 javascript.svg
+    📄 nextjs.svg
+    📄 nodejs.svg
+    📄 react.svg
+    📄 typescript.svg
+    📄 vuejs.svg
   📄 lifestyle.jpg
   📄 placeholder.svg
-📄 README.md
 📄 save-structure.cjs
 📁 scripts
   📄 shop-janitor-restock-stale.mjs
 📄 tsconfig.json
-📄 tsconfig.tsbuildinfo
 📄 vitest.config.ts

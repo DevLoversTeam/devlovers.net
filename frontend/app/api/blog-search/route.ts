@@ -5,8 +5,8 @@ import { client } from '@/client';
 const searchQuery = groq`
   *[_type == "post" && defined(slug.current)] | order(publishedAt desc) {
     _id,
-    "title": coalesce(title.en, title.uk, title.pl, title),
-    "body": coalesce(body.en, body.uk, body.pl, body)[]{
+    "title": coalesce(title[$locale], title[lower($locale)], title.uk, title.en, title.pl, title),
+    "body": coalesce(body[$locale], body[lower($locale)], body.uk, body.en, body.pl, body)[]{
       ...,
       children[]{ text }
     },
@@ -14,7 +14,11 @@ const searchQuery = groq`
   }
 `;
 
-export async function GET() {
-  const items = await client.withConfig({ useCdn: false }).fetch(searchQuery);
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const locale = searchParams.get('locale') || 'en';
+  const items = await client
+    .withConfig({ useCdn: false })
+    .fetch(searchQuery, { locale });
   return NextResponse.json(items || []);
 }
