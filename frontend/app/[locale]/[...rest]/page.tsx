@@ -1,9 +1,9 @@
 'use client';
-
+ 
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 
-export default function NotFound() {
+export default function CatchAllPage() {
   const t = useTranslations('notFound');
 
   return (
