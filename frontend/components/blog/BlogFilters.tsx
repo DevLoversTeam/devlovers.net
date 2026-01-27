@@ -194,9 +194,16 @@ export default function BlogFilters({
     const name = author.name || '';
     const norm = normalizeAuthor(name);
     if (!norm) return;
-    setSelectedAuthor(prev =>
-      prev?.norm === norm ? null : { name, norm, data: author }
-    );
+    const isSame = selectedAuthor?.norm === norm;
+    setSelectedAuthor(isSame ? null : { name, norm, data: author });
+    const params = new URLSearchParams(searchParams?.toString() || '');
+    if (isSame) {
+      params.delete('author');
+    } else {
+      params.set('author', name);
+    }
+    const nextPath = params.toString() ? `${pathname}?${params}` : pathname;
+    router.replace(nextPath);
   };
 
   const clearAll = () => {
@@ -537,7 +544,7 @@ export default function BlogFilters({
               className={
                 !resolvedCategory
                   ? 'rounded-full border border-transparent px-4 py-2 text-sm font-medium text-[var(--accent-primary)] transition whitespace-nowrap sm:border-[var(--accent-primary)]'
-                  : 'rounded-full border border-transparent px-4 py-2 text-sm text-gray-600 hover:text-[var(--accent-primary)] transition whitespace-nowrap dark:text-gray-300 sm:border-gray-300 sm:text-gray-700 sm:dark:border-gray-700 sm:dark:text-gray-200'
+                  : 'rounded-full border border-transparent px-4 py-2 text-sm text-gray-600 transition whitespace-nowrap dark:text-gray-300 sm:border-gray-300 sm:text-gray-700 sm:dark:border-gray-700 sm:dark:text-gray-200 hover:bg-secondary hover:text-foreground'
               }
             >
               {t('all')}
@@ -556,7 +563,7 @@ export default function BlogFilters({
                 className={
                   resolvedCategory?.norm === category.norm
                     ? 'rounded-full border border-transparent px-4 py-2 text-sm font-medium text-[var(--accent-primary)] transition whitespace-nowrap sm:border-[var(--accent-primary)]'
-                    : 'rounded-full border border-transparent px-4 py-2 text-sm text-gray-600 hover:text-[var(--accent-primary)] transition whitespace-nowrap dark:text-gray-300 sm:border-gray-300 sm:text-gray-700 sm:dark:border-gray-700 sm:dark:text-gray-200'
+                    : 'rounded-full border border-transparent px-4 py-2 text-sm text-gray-600 transition whitespace-nowrap dark:text-gray-300 sm:border-gray-300 sm:text-gray-700 sm:dark:border-gray-700 sm:dark:text-gray-200 hover:bg-secondary hover:text-foreground'
                 }
               >
                 {getCategoryLabel(category.name)}

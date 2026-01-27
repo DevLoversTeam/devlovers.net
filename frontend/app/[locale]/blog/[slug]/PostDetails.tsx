@@ -5,6 +5,7 @@ import { getTranslations } from 'next-intl/server';
 import { client } from '@/client';
 import { Link } from '@/i18n/routing';
 import { formatBlogDate } from '@/lib/blog/date';
+import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
 
 export const revalidate = 0;
 
@@ -289,7 +290,8 @@ export default async function PostDetails({
     : null;
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+    <DynamicGridBackground className="bg-gray-50 transition-colors duration-300 dark:bg-transparent py-10">
+      <main className="relative z-10 mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
       {breadcrumbsJsonLd && (
         <script
           type="application/ld+json"
@@ -501,7 +503,8 @@ export default async function PostDetails({
       {post.resourceLink && null}
 
       {(authorBio || authorName || authorMeta) && null}
-    </main>
+      </main>
+    </DynamicGridBackground>
   );
 }
 
