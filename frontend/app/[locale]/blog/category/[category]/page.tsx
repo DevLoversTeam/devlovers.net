@@ -157,7 +157,7 @@ export default async function BlogCategoryPage({
               <FeaturedPostCtaButton
                 href={`/blog/${featuredPost.slug.current}`}
                 label={featuredPost.title || 'Read more'}
-                className="!absolute !bottom-6 !right-6 z-10 h-11 w-11 rounded-full bg-[var(--accent-primary)] text-white opacity-0 shadow-sm transition group-hover:opacity-100"
+                className="!absolute !bottom-6 !right-6 z-10 h-11 w-11 rounded-full bg-[var(--accent-primary)] text-white opacity-0 shadow-sm transition group-hover:opacity-100 focus-visible:opacity-100 group-focus-within:opacity-100"
               />
             </article>
           </section>
