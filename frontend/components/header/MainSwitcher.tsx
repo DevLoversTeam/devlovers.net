@@ -61,11 +61,7 @@ export function MainSwitcher({
   }
 
   return (
-    <main
-      className={
-        isQa || isHome ? 'mx-auto min-h-[80vh]' : 'mx-auto px-6 min-h-[80vh]'
-      }
-    >
+    <main className={isQa || isHome ? 'mx-auto' : 'mx-auto px-6 min-h-[80vh]'}>
       {children}
     </main>
   );
