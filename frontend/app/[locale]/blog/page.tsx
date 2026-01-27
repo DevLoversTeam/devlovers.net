@@ -27,13 +27,14 @@ export default async function BlogPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams?: { [key: string]: string | string[] | undefined };
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   noStore();
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'blog' });
+  const sp = searchParams ? await searchParams : undefined;
   const authorParam =
-    typeof searchParams?.author === 'string' ? searchParams.author.trim() : '';
+    typeof sp?.author === 'string' ? sp.author.trim() : '';
   const hasAuthorFilter = authorParam.length > 0;
 
   const posts = await client.withConfig({ useCdn: false }).fetch(
