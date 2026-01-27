@@ -288,7 +288,7 @@
   }
 }
 
-@layer components {
+@layer utilities {
   .wave-text-gradient {
     animation: wave-clip 5s ease-in-out infinite;
   }
