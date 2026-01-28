@@ -33,12 +33,6 @@ export interface ShopCategory {
 }
 
 export interface HomepageContent {
-  hero: {
-    headline: string;
-    subheadline: string;
-    ctaText: string;
-    ctaLink: string;
-  };
   newArrivals: ShopProduct[];
   categories: readonly ShopCategory[];
 }
@@ -297,13 +291,6 @@ export async function getHomepageContent(
   const newArrivals = fillTo(featuredProducts, newestCatalog.products, 4);
 
   return {
-    hero: {
-      headline: 'Coming soon...',
-      subheadline:
-        'Our shop is launching soon. Stay tuned for the latest products and exclusive offers!',
-      ctaText: 'Shop now',
-      ctaLink: '/shop/products',
-    },
     newArrivals,
     categories: CATEGORY_TILES,
   };

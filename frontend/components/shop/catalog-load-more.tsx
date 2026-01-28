@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+
 interface CatalogLoadMoreProps {
   hasMore: boolean;
   isLoading: boolean;
@@ -11,6 +13,9 @@ export function CatalogLoadMore({
   isLoading,
   onLoadMore,
 }: CatalogLoadMoreProps) {
+  const t = useTranslations('shop.products');
+  const tCommon = useTranslations('common');
+
   if (!hasMore) return null;
 
   return (
@@ -22,7 +27,7 @@ export function CatalogLoadMore({
         aria-busy={isLoading}
         className="rounded-md border border-border px-6 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-70"
       >
-        {isLoading ? 'Loading...' : 'Load more'}
+        {isLoading ? tCommon('loading') : t('loadMore')}
       </button>
     </div>
   );

@@ -8,6 +8,7 @@ import { orderIdParamSchema } from '@/lib/validation/shop';
 import { getStripeEnv } from '@/lib/env/stripe';
 import { logError } from '@/lib/logging';
 import { ensureStripePaymentIntentForOrder } from '@/lib/services/orders/payment-attempts';
+import { getTranslations } from 'next-intl/server';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -27,16 +28,18 @@ function resolveClientSecret(
   return raw;
 }
 
-function buildStatusMessage(status: string) {
+async function buildStatusMessage(status: string) {
+  const t = await getTranslations('shop.checkout.payment.statusMessages');
+
   if (status === 'paid') {
-    return 'This order is already paid.';
+    return t('alreadyPaid');
   }
 
   if (status === 'failed') {
-    return 'The previous payment attempt failed. Please try again.';
+    return t('previousFailed');
   }
 
-  return 'Complete payment to finish your order.';
+  return t('completePayment');
 }
 
 function shouldClearCart(
@@ -91,26 +94,28 @@ export default async function PaymentPage(props: PaymentPageProps) {
   const { locale } = params;
   const shopBase = `/shop`;
 
+  const t = await getTranslations('shop.checkout');
+
   const orderId = getOrderId(params);
 
   if (!orderId) {
     return (
       <PageShell
-        title="Invalid order"
-        description="We couldn't identify your order. Please return to your cart."
+        title={t('errors.invalidOrder')}
+        description={t('missingOrder.message')}
       >
         <nav className="mt-6 flex justify-center gap-3" aria-label="Next steps">
           <Link
             href={`${shopBase}/cart`}
             className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
           >
-            Go to cart
+            {t('actions.goToCart')}
           </Link>
           <Link
             href={`${shopBase}/products`}
             className="inline-flex items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground hover:bg-accent/90"
           >
-            Continue shopping
+            {t('actions.continueShopping')}
           </Link>
         </nav>
       </PageShell>
@@ -125,8 +130,8 @@ export default async function PaymentPage(props: PaymentPageProps) {
     if (error instanceof OrderNotFoundError) {
       return (
         <PageShell
-          title="Order not found"
-          description="We couldn't find this order. It may have been removed or never existed."
+          title={t('errors.orderNotFound')}
+          description={t('notFoundOrder.message')}
         >
           <nav
             className="mt-6 flex justify-center gap-3"
@@ -136,13 +141,13 @@ export default async function PaymentPage(props: PaymentPageProps) {
               href={`${shopBase}/cart`}
               className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
             >
-              Go to cart
+              {t('actions.goToCart')}
             </Link>
             <Link
               href={`${shopBase}/products`}
               className="inline-flex items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground hover:bg-accent/90"
             >
-              Continue shopping
+              {t('actions.continueShopping')}
             </Link>
           </nav>
         </PageShell>
@@ -151,8 +156,8 @@ export default async function PaymentPage(props: PaymentPageProps) {
 
     return (
       <PageShell
-        title="Unable to load order"
-        description="Please try again later."
+        title={t('errors.unableToLoad')}
+        description={t('errors.tryAgainLater')}
       />
     );
   }
@@ -193,8 +198,8 @@ export default async function PaymentPage(props: PaymentPageProps) {
       <>
         <ClearCartOnMount enabled={clearCart} />
         <PageShell
-          title="Order already paid"
-          description="We've already confirmed payment for this order."
+          title={t('payment.statusMessages.alreadyPaid')}
+          description={t('success.paymentConfirmed')}
         >
           <nav
             className="mt-6 flex justify-center gap-3"
@@ -204,13 +209,13 @@ export default async function PaymentPage(props: PaymentPageProps) {
               href={`${shopBase}/checkout/success?orderId=${order.id}${cc}`}
               className="inline-flex items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground hover:bg-accent/90"
             >
-              View confirmation
+              {t('payment.viewConfirmation')}
             </Link>
             <Link
               href={`${shopBase}/products`}
               className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
             >
-              Continue shopping
+              {t('payment.continueShopping')}
             </Link>
           </nav>
         </PageShell>
@@ -229,13 +234,13 @@ export default async function PaymentPage(props: PaymentPageProps) {
 
       <header className="mb-6">
         <p className="text-sm font-semibold uppercase tracking-wide text-accent">
-          Secure checkout
+          {t('payment.title')}
         </p>
         <h1 id="pay-order-title" className="text-3xl font-bold text-foreground">
-          Pay for order #{order.id.slice(0, 8)}
+          {t('payment.payForOrder', { orderId: order.id.slice(0, 8) })}
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          {buildStatusMessage(order.paymentStatus)}
+          {await buildStatusMessage(order.paymentStatus)}
         </p>
       </header>
 
@@ -248,15 +253,15 @@ export default async function PaymentPage(props: PaymentPageProps) {
           aria-label="Payment details"
         >
           <h2 className="text-lg font-semibold text-foreground">
-            Payment details
+            {t('payment.paymentDetails')}
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Complete payment to place your order.
+            {t('payment.completePayment')}
           </p>
 
           <div className="mt-6 rounded-md border border-border bg-muted/30 p-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Amount due</span>
+              <span className="text-sm text-muted-foreground">{t('payment.amountDue')}</span>
               <span className="text-xl font-bold text-foreground">
                 {formatMoney(order.totalAmountMinor, order.currency, locale)}
               </span>
@@ -284,22 +289,22 @@ export default async function PaymentPage(props: PaymentPageProps) {
           aria-label="Order summary"
         >
           <h2 className="text-lg font-semibold text-foreground">
-            Order summary
+            {t('payment.orderSummary')}
           </h2>
 
           <dl className="mt-4 space-y-3 text-sm text-muted-foreground">
             <div className="flex items-center justify-between">
-              <dt>Items</dt>
+              <dt>{t('payment.items')}</dt>
               <dd className="font-medium text-foreground">{itemsCount}</dd>
             </div>
             <div className="flex items-center justify-between">
-              <dt>Total amount</dt>
+              <dt>{t('payment.totalAmount')}</dt>
               <dd className="font-semibold text-foreground">
                 {formatMoney(order.totalAmountMinor, order.currency, locale)}
               </dd>
             </div>
             <div className="flex items-center justify-between">
-              <dt>Status</dt>
+              <dt>{t('payment.status')}</dt>
               <dd className="font-semibold capitalize text-foreground">
                 {order.paymentStatus}
               </dd>

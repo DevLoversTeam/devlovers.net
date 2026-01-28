@@ -16,6 +16,7 @@ import {
 } from '@/db/schema';
 import { formatMoney, resolveCurrencyFromLocale } from '@/lib/shop/currency';
 import { parsePage } from '@/lib/pagination';
+import { getTranslations } from 'next-intl/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,6 +38,7 @@ export default async function AdminProductsPage({
 
   const { locale } = await params;
   const sp = await searchParams;
+  const t = await getTranslations('shop.admin.products');
 
   const page = parsePage(sp.page);
   const offset = (page - 1) * PAGE_SIZE;
@@ -102,23 +104,23 @@ export default async function AdminProductsPage({
             id="admin-products-title"
             className="text-2xl font-bold text-foreground"
           >
-            Admin · Products
+            {t('title')}
           </h1>
 
           <Link
             href="/shop/admin/products/new"
             className="inline-flex items-center justify-center rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
           >
-            New product
+            {t('newProduct')}
           </Link>
         </header>
 
-        <section className="mt-6" aria-label="Products list">
+        <section className="mt-6" aria-label={t('listCaption')}>
           {/* Mobile cards */}
           <div className="md:hidden">
             {rows.length === 0 ? (
               <div className="rounded-md border border-border p-4 text-sm text-muted-foreground">
-                No products yet.
+                {t('empty')}
               </div>
             ) : (
               <ul className="space-y-3">
@@ -157,7 +159,7 @@ export default async function AdminProductsPage({
 
                       <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
                         <div className="min-w-0">
-                          <dt className="text-muted-foreground">Category</dt>
+                          <dt className="text-muted-foreground">{t('table.category')}</dt>
                           <dd
                             className="truncate text-foreground"
                             title={row.category ?? '-'}
@@ -167,7 +169,7 @@ export default async function AdminProductsPage({
                         </div>
 
                         <div className="min-w-0">
-                          <dt className="text-muted-foreground">Type</dt>
+                          <dt className="text-muted-foreground">{t('table.type')}</dt>
                           <dd
                             className="truncate text-foreground"
                             title={row.type ?? '-'}
@@ -177,31 +179,31 @@ export default async function AdminProductsPage({
                         </div>
 
                         <div>
-                          <dt className="text-muted-foreground">Stock</dt>
+                          <dt className="text-muted-foreground">{t('table.stock')}</dt>
                           <dd className="text-foreground">{row.stock}</dd>
                         </div>
 
                         <div>
-                          <dt className="text-muted-foreground">Badge</dt>
+                          <dt className="text-muted-foreground">{t('table.badge')}</dt>
                           <dd className="text-foreground">{badge}</dd>
                         </div>
 
                         <div>
-                          <dt className="text-muted-foreground">Active</dt>
+                          <dt className="text-muted-foreground">{t('table.active')}</dt>
                           <dd className="text-foreground">
-                            {row.isActive ? 'Yes' : 'No'}
+                            {row.isActive ? t('actions.yes') : t('actions.no')}
                           </dd>
                         </div>
 
                         <div>
-                          <dt className="text-muted-foreground">Featured</dt>
+                          <dt className="text-muted-foreground">{t('table.featured')}</dt>
                           <dd className="text-foreground">
-                            {row.isFeatured ? 'Yes' : 'No'}
+                            {row.isFeatured ? t('actions.yes') : t('actions.no')}
                           </dd>
                         </div>
 
                         <div className="col-span-2">
-                          <dt className="text-muted-foreground">Created</dt>
+                          <dt className="text-muted-foreground">{t('table.created')}</dt>
                           <dd className="text-foreground">
                             {formatDate(row.createdAt, locale)}
                           </dd>
@@ -212,17 +214,17 @@ export default async function AdminProductsPage({
                         <Link
                           href={`/shop/products/${row.slug}`}
                           className="inline-flex items-center justify-center rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
-                          aria-label={`View product ${row.title}`}
+                          aria-label={t('actions.viewProduct', { title: row.title })}
                         >
-                          View
+                          {t('actions.view')}
                         </Link>
 
                         <Link
                           href={`/shop/admin/products/${row.id}/edit`}
                           className="inline-flex items-center justify-center rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
-                          aria-label={`Edit product ${row.title}`}
+                          aria-label={t('actions.editProduct', { title: row.title })}
                         >
-                          Edit
+                          {t('actions.edit')}
                         </Link>
 
                         <AdminProductStatusToggle
@@ -250,7 +252,7 @@ export default async function AdminProductsPage({
           <div className="hidden md:block">
             <div className="overflow-x-auto">
               <table className="w-full table-fixed divide-y divide-border text-sm">
-                <caption className="sr-only">Products list</caption>
+                <caption className="sr-only">{t('listCaption')}</caption>
 
                 <thead className="bg-muted/50">
                   <tr>
@@ -258,67 +260,67 @@ export default async function AdminProductsPage({
                       scope="col"
                       className="w-[20%] px-3 py-2 text-left font-semibold text-foreground"
                     >
-                      Title
+                      {t('table.title')}
                     </th>
                     <th
                       scope="col"
                       className="w-[18%] px-3 py-2 text-left font-semibold text-foreground"
                     >
-                      Slug
+                      {t('table.slug')}
                     </th>
                     <th
                       scope="col"
                       className="w-[8%] px-3 py-2 text-left font-semibold text-foreground"
                     >
-                      Price
+                      {t('table.price')}
                     </th>
                     <th
                       scope="col"
                       className="w-[8%] px-3 py-2 text-left font-semibold text-foreground"
                     >
-                      Category
+                      {t('table.category')}
                     </th>
                     <th
                       scope="col"
                       className="w-[8%] px-3 py-2 text-left font-semibold text-foreground"
                     >
-                      Type
+                      {t('table.type')}
                     </th>
                     <th
                       scope="col"
                       className="w-[5%] px-3 py-2 text-left font-semibold text-foreground"
                     >
-                      Stock
+                      {t('table.stock')}
                     </th>
                     <th
                       scope="col"
                       className="w-[5%] px-3 py-2 text-left font-semibold text-foreground"
                     >
-                      Badge
+                      {t('table.badge')}
                     </th>
                     <th
                       scope="col"
                       className="w-[5%] px-3 py-2 text-left font-semibold text-foreground"
                     >
-                      Active
+                      {t('table.active')}
                     </th>
                     <th
                       scope="col"
                       className="w-[6%] px-3 py-2 text-left font-semibold text-foreground"
                     >
-                      Featured
+                      {t('table.featured')}
                     </th>
                     <th
                       scope="col"
                       className="w-[8%] px-3 py-2 text-left font-semibold text-foreground"
                     >
-                      Created
+                      {t('table.created')}
                     </th>
                     <th
                       scope="col"
                       className="w-[9%] px-3 py-2 text-left font-semibold text-foreground"
                     >
-                      Actions
+                      {t('table.actions')}
                     </th>
                   </tr>
                 </thead>
@@ -371,13 +373,13 @@ export default async function AdminProductsPage({
 
                         <td className="whitespace-nowrap px-3 py-2">
                           <span className="inline-flex rounded-full bg-muted px-2 py-1 text-xs font-medium text-foreground">
-                            {row.isActive ? 'Yes' : 'No'}
+                            {row.isActive ? t('actions.yes') : t('actions.no')}
                           </span>
                         </td>
 
                         <td className="whitespace-nowrap px-3 py-2">
                           <span className="inline-flex rounded-full bg-muted px-2 py-1 text-xs font-medium text-foreground">
-                            {row.isFeatured ? 'Yes' : 'No'}
+                            {row.isFeatured ? t('actions.yes') : t('actions.no')}
                           </span>
                         </td>
 
@@ -390,17 +392,17 @@ export default async function AdminProductsPage({
                             <Link
                               href={`/shop/products/${row.slug}`}
                               className="rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
-                              aria-label={`View product ${row.title}`}
+                              aria-label={t('actions.viewProduct', { title: row.title })}
                             >
-                              View
+                              {t('actions.view')}
                             </Link>
 
                             <Link
                               href={`/shop/admin/products/${row.id}/edit`}
                               className="rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
-                              aria-label={`Edit product ${row.title}`}
+                              aria-label={t('actions.editProduct', { title: row.title })}
                             >
-                              Edit
+                              {t('actions.edit')}
                             </Link>
 
                             <AdminProductStatusToggle
@@ -428,7 +430,7 @@ export default async function AdminProductsPage({
                         className="px-3 py-6 text-muted-foreground"
                         colSpan={11}
                       >
-                        No products yet.
+                        {t('empty')}
                       </td>
                     </tr>
                   ) : null}

@@ -4,6 +4,7 @@ import { useId, useState } from 'react';
 import type { ShopProduct } from '@/lib/shop/data';
 import { cn } from '@/lib/utils';
 import { Check, Minus, Plus } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 import { useCart } from './cart-provider';
 
@@ -13,6 +14,8 @@ interface AddToCartButtonProps {
 
 export function AddToCartButton({ product }: AddToCartButtonProps) {
   const { addToCart } = useCart();
+  const t = useTranslations('shop.product');
+  const tColors = useTranslations('shop.catalog.colors');
   const [selectedSize, setSelectedSize] = useState<string | undefined>(
     product.sizes?.[0]
   );
@@ -21,6 +24,15 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
   );
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
+
+  const translateColor = (color: string): string => {
+    const colorSlug = color.toLowerCase();
+    try {
+      return tColors(colorSlug);
+    } catch {
+      return color; 
+    }
+  };
 
   const handleAddToCart = () => {
     if (!product.inStock) return;
@@ -45,7 +57,7 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
   const quantityGroupId = useId();
 
   return (
-    <section className="mt-8 space-y-6" aria-label="Purchase options">
+    <section className="mt-8 space-y-6" aria-label={t('purchaseOptions')}>
       {/* Colors */}
       {product.colors && product.colors.length > 0 ? (
         <fieldset className="min-w-0">
@@ -53,7 +65,7 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
             id={colorGroupId}
             className="text-sm font-medium text-foreground"
           >
-            Color
+            {t('color')}
           </legend>
 
           <div
@@ -61,26 +73,29 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
             role="radiogroup"
             aria-labelledby={colorGroupId}
           >
-            {product.colors.map(color => (
-              <button
-                key={color}
-                type="button"
-                onClick={() => setSelectedColor(color)}
-                role="radio"
-                aria-checked={selectedColor === color}
-                className={cn(
-                  'h-9 w-9 rounded-full border-2 transition-all',
-                  selectedColor === color
-                    ? 'border-accent ring-2 ring-accent ring-offset-2 ring-offset-background'
-                    : 'border-border hover:border-muted-foreground'
-                )}
-                style={{
-                  background: colorMap[color] || color,
-                }}
-                title={color}
-                aria-label={color}
-              />
-            ))}
+            {product.colors.map(color => {
+              const translatedColor = translateColor(color);
+              return (
+                <button
+                  key={color}
+                  type="button"
+                  onClick={() => setSelectedColor(color)}
+                  role="radio"
+                  aria-checked={selectedColor === color}
+                  className={cn(
+                    'h-9 w-9 rounded-full border-2 transition-all',
+                    selectedColor === color
+                      ? 'border-accent ring-2 ring-accent ring-offset-2 ring-offset-background'
+                      : 'border-border hover:border-muted-foreground'
+                  )}
+                  style={{
+                    background: colorMap[color] || color,
+                  }}
+                  title={translatedColor}
+                  aria-label={translatedColor}
+                />
+              );
+            })}
           </div>
         </fieldset>
       ) : null}
@@ -92,7 +107,7 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
             id={sizeGroupId}
             className="text-sm font-medium text-foreground"
           >
-            Size
+            {t('size')}
           </legend>
 
           <div
@@ -127,7 +142,7 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
           id={quantityGroupId}
           className="text-sm font-medium text-foreground"
         >
-          Quantity
+          {t('quantity')}
         </h3>
 
         <div className="mt-3 flex items-center gap-3">
@@ -135,7 +150,7 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
             type="button"
             onClick={() => setQuantity(Math.max(1, quantity - 1))}
             className="flex h-10 w-10 items-center justify-center rounded-md border border-border text-foreground transition-colors hover:bg-secondary"
-            aria-label="Decrease quantity"
+            aria-label={t('decreaseQuantity')}
           >
             <Minus className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -148,7 +163,7 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
             type="button"
             onClick={() => setQuantity(quantity + 1)}
             className="flex h-10 w-10 items-center justify-center rounded-md border border-border text-foreground transition-colors hover:bg-secondary"
-            aria-label="Increase quantity"
+            aria-label={t('increaseQuantity')}
           >
             <Plus className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -170,14 +185,14 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
         )}
       >
         {!product.inStock ? (
-          'Sold Out'
+          t('soldOut')
         ) : added ? (
           <>
             <Check className="h-5 w-5" aria-hidden="true" />
-            Added to cart
+            {t('addedToCart')}
           </>
         ) : (
-          'Add to cart'
+          t('addToCart')
         )}
       </button>
     </section>

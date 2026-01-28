@@ -1,5 +1,6 @@
 // frontend/app/[locale]/shop/admin/page.tsx
 import { Link } from '@/i18n/routing';
+import { getTranslations } from 'next-intl/server';
 
 import { ShopAdminTopbar } from '@/components/shop/admin/shop-admin-topbar';
 import { guardShopAdminPage } from '@/lib/auth/guard-shop-admin-page';
@@ -8,6 +9,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function ShopAdminHomePage() {
   await guardShopAdminPage();
+  const t = await getTranslations('shop.admin.page');
 
   return (
     <>
@@ -22,10 +24,10 @@ export default async function ShopAdminHomePage() {
             id="shop-admin-title"
             className="text-2xl font-bold text-foreground"
           >
-            Shop Admin
+            {t('title')}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Administrative tools for the merch shop.
+            {t('description')}
           </p>
         </header>
 
@@ -37,10 +39,10 @@ export default async function ShopAdminHomePage() {
                 className="block rounded-lg border border-border p-4 transition-colors hover:bg-muted/50"
               >
                 <div className="text-base font-semibold text-foreground">
-                  Products
+                  {t('productsSection.title')}
                 </div>
                 <div className="mt-1 text-sm text-muted-foreground">
-                  Create, edit, activate, feature.
+                  {t('productsSection.description')}
                 </div>
               </Link>
             </li>
@@ -51,10 +53,10 @@ export default async function ShopAdminHomePage() {
                 className="block rounded-lg border border-border p-4 transition-colors hover:bg-muted/50"
               >
                 <div className="text-base font-semibold text-foreground">
-                  Orders
+                  {t('ordersSection.title')}
                 </div>
                 <div className="mt-1 text-sm text-muted-foreground">
-                  Review and manage orders.
+                  {t('ordersSection.description')}
                 </div>
               </Link>
             </li>

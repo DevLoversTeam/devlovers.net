@@ -19,6 +19,10 @@
     "closeMenu": "Close menu",
     "logout": "Log out"
   },
+  "mobileMenu": {
+    "newProduct": "New product",
+    "admin": "Admin"
+  },
   "navigation": {
     "home": "Home",
     "topics": "Topics",
@@ -220,6 +224,359 @@
     "privacyPolicy": "Privacy Policy",
     "termsOfService": "Terms of Service"
   },
+  "shop": {
+    "page": {
+      "newArrivals": "New Arrivals",
+      "shopByCategory": "Shop by Category",
+      "viewAll": "View all",
+      "hero": {
+        "headline": "Code. Create. Collect.",
+        "subheadline": "Join thousands of developers who express their passion through premium merch.",
+        "cta": "Browse all products"
+      },
+      "comingSoon": {
+        "headline": "Coming soon...",
+        "subheadline": "Our shop is launching soon. Stay tuned for the latest products and exclusive offers!",
+        "cta": "Shop now"
+      }
+    },
+    "product": {
+      "soldOut": "Sold out",
+      "color": "Color",
+      "size": "Size",
+      "quantity": "Quantity",
+      "addToCart": "Add to cart",
+      "addedToCart": "Added to cart",
+      "purchaseOptions": "Purchase options",
+      "decreaseQuantity": "Decrease quantity",
+      "increaseQuantity": "Increase quantity",
+      "badges": {
+        "NEW": "New",
+        "SALE": "Sale"
+      }
+    },
+    "categoryTile": {
+      "shopCategory": "Shop category: {name}"
+    },
+    "filters": {
+      "category": "Category",
+      "type": "Type",
+      "color": "Color",
+      "size": "Size",
+      "label": "Product filters"
+    },
+    "sort": {
+      "sortBy": "Sort by:",
+      "label": "Sort products"
+    },
+    "toolbar": {
+      "filters": "Filters",
+      "openFilters": "Open filters",
+      "close": "Close",
+      "label": "Product listing controls"
+    },
+    "cart": {
+      "title": "Your cart",
+      "empty": "Your cart is empty",
+      "emptyDescription": "Looks like you haven't added any items to your cart yet.",
+      "startShopping": "Start shopping",
+      "itemsLabel": "Cart items",
+      "summary": {
+        "heading": "Order summary",
+        "subtotal": "Subtotal",
+        "shipping": "Shipping",
+        "shippingCalc": "Calculated at checkout",
+        "total": "Total"
+      },
+      "checkout": {
+        "placeOrder": "Place order",
+        "placing": "Placing order...",
+        "message": "You'll either be redirected to secure payment or see confirmation if payment is not required in this environment.",
+        "notRedirected": "If you are not redirected automatically, open your order",
+        "goToOrder": "Go to order"
+      },
+      "actions": {
+        "removeItem": "Remove {title} from cart",
+        "decreaseQty": "Decrease quantity",
+        "increaseQty": "Increase quantity",
+        "maxStock": "Max {stock} in stock"
+      },
+      "alerts": {
+        "itemsRemoved": "Some items were removed from your cart because they are unavailable or out of stock."
+      }
+    },
+    "admin": {
+      "page": {
+        "title": "Shop Admin",
+        "description": "Administrative tools for the merch shop.",
+        "productsSection": {
+          "title": "Products",
+          "description": "Create, edit, activate, feature."
+        },
+        "ordersSection": {
+          "title": "Orders",
+          "description": "Review and manage orders."
+        }
+      },
+      "topbar": {
+        "label": "Shop admin",
+        "admin": "Admin",
+        "products": "Products",
+        "orders": "Orders",
+        "backToShop": "Back to shop"
+      },
+      "products": {
+        "title": "Admin · Products",
+        "newProduct": "New product",
+        "listCaption": "Products list",
+        "empty": "No products yet.",
+        "table": {
+          "title": "Title",
+          "slug": "Slug",
+          "price": "Price",
+          "category": "Category",
+          "type": "Type",
+          "stock": "Stock",
+          "badge": "Badge",
+          "active": "Active",
+          "featured": "Featured",
+          "created": "Created",
+          "actions": "Actions"
+        },
+        "actions": {
+          "view": "View",
+          "edit": "Edit",
+          "viewProduct": "View product {title}",
+          "editProduct": "Edit product {title}",
+          "yes": "Yes",
+          "no": "No"
+        }
+      },
+      "statusToggle": {
+        "securityMissing": "Security token missing. Refresh the page.",
+        "securityExpired": "Security token expired. Refresh the page and retry.",
+        "failedUpdate": "Failed to update status",
+        "updating": "Updating",
+        "deactivate": "Deactivate",
+        "activate": "Activate"
+      },
+      "pagination": {
+        "label": "Pagination",
+        "previous": "Previous",
+        "next": "Next",
+        "page": "Page {page}",
+        "previousPage": "Previous page",
+        "nextPage": "Next page"
+      },
+      "orders": {
+        "title": "Admin · Orders",
+        "reconcileStale": "Reconcile stale",
+        "empty": "No orders yet.",
+        "listCaption": "Orders list",
+        "viewOrder": "View order {id}",
+        "table": {
+          "created": "Created",
+          "status": "Status",
+          "total": "Total",
+          "items": "Items",
+          "provider": "Provider",
+          "orderId": "Order ID",
+          "actions": "Actions"
+        },
+        "actions": {
+          "view": "View"
+        }
+      },
+      "deleteProduct": {
+        "securityMissing": "Security token missing. Refresh the page.",
+        "securityExpired": "Security token expired. Refresh the page and retry.",
+        "confirmDelete": "Delete product \"{title}\"? This cannot be undone.",
+        "notFound": "Product not found (already deleted).",
+        "referenced": "Cannot delete: this product is referenced by other records.",
+        "failedDelete": "Failed to delete product",
+        "deleting": "Deleting",
+        "delete": "Delete"
+      },
+      "refund": {
+        "onlyForPaid": "Refund is only available for paid Stripe orders",
+        "refunding": "Refunding…",
+        "refund": "Refund"
+      },
+      "navigation": {
+        "shopNav": "Shop navigation",
+        "home": "Home"
+      }
+    },
+    "catalog": {
+      "results": "Catalog results",
+      "products": "Products",
+      "pagination": "Catalog pagination",
+      "loadMoreFailed": "Failed to load more",
+      "loadMoreFailedHttp": "Failed to load more (HTTP {status})",
+      "categories": {
+        "all": "All Products",
+        "newArrivals": "New Arrivals",
+        "bestSellers": "Best Sellers",
+        "apparel": "Apparel",
+        "lifestyle": "Lifestyle",
+        "collectibles": "Collectibles",
+        "sale": "Sale"
+      },
+      "productTypes": {
+        "accessories": "Accessories",
+        "shirts": "Shirts",
+        "drinkware": "Drinkware",
+        "technology": "Technology"
+      },
+      "colors": {
+        "black": "Black",
+        "white": "White",
+        "grey": "Grey",
+        "navy": "Navy",
+        "multicolor": "Multicolor"
+      },
+      "sort": {
+        "featured": "Featured",
+        "priceAsc": "Price: Low to High",
+        "priceDesc": "Price: High to Low",
+        "newest": "Newest"
+      }
+    },
+    "products": {
+      "title": "All Products",
+      "noProductsFound": "No products found",
+      "adjustFilters": "Try adjusting your filters to find what you're looking for.",
+      "backToProducts": "Back to all products",
+      "notAvailable": "This product is not available in your locale/currency.",
+      "loadMore": "Load more",
+      "shopNow": "Shop now"
+    },
+    "checkout": {
+      "errors": {
+        "missingOrderId": "Missing order id",
+        "missingOrderIdDescription": "We couldn't identify your order. Please return to your cart or browse products.",
+        "orderNotFound": "Order not found",
+        "orderNotFoundDescription": "We couldn't find this order. It may have been removed or never existed.",
+        "invalidOrder": "Invalid order",
+        "unableToLoad": "Unable to load order",
+        "unableToCheckout": "Unable to start checkout right now.",
+        "unexpectedResponse": "Unexpected checkout response.",
+        "tryAgainLater": "Please try again later."
+      },
+      "missingOrder": {
+        "message": "We couldn't identify your order. Please return to your cart or browse products."
+      },
+      "notFoundOrder": {
+        "message": "We couldn't find this order. It may have been removed or never existed."
+      },
+      "success": {
+        "title": "Thank you for your order",
+        "orderLabel": "Order",
+        "received": "We've received your order.",
+        "paymentConfirmed": "Payment has been confirmed.",
+        "paymentProcessing": "Payment is still being processed. This page will update automatically.",
+        "paymentsDisabled": "Payments are disabled in this environment. You were not charged for this order.",
+        "orderSummary": "Order summary",
+        "totalAmount": "Total amount",
+        "items": "Items",
+        "status": "Status",
+        "continueShopping": "Continue shopping",
+        "viewCart": "View cart"
+      },
+      "error": {
+        "paymentFailed": "Payment failed",
+        "paymentFailedDescription": "The payment for this order was not completed. You can try again or contact support.",
+        "paymentUnclear": "Payment status unclear",
+        "paymentUnclearDescription": "We could not confirm a payment failure for this order.",
+        "notCompleted": "The payment for this order was not completed. You can try again or contact support.",
+        "couldNotConfirm": "We could not confirm a payment failure for this order.",
+        "orderDetails": "Order details",
+        "order": "Order",
+        "orderLabel": "Order",
+        "total": "Total",
+        "totalLabel": "Total",
+        "status": "Status",
+        "statusLabel": "Status",
+        "backToCart": "Back to cart",
+        "retryPayment": "Retry payment",
+        "continueShopping": "Continue shopping"
+      },
+      "payment": {
+        "title": "Secure checkout",
+        "payForOrder": "Pay for order #{orderId}",
+        "paymentDetails": "Payment details",
+        "completePayment": "Complete payment to place your order.",
+        "amountDue": "Amount due",
+        "orderSummary": "Order summary",
+        "items": "Items",
+        "totalAmount": "Total amount",
+        "status": "Status",
+        "viewConfirmation": "View confirmation",
+        "continueShopping": "Continue shopping",
+        "statusMessages": {
+          "alreadyPaid": "This order is already paid.",
+          "previousFailed": "The previous payment attempt failed. Please try again.",
+          "completePayment": "Complete payment to finish your order."
+        }
+      },
+      "actions": {
+        "backToProducts": "Back to products",
+        "goToCart": "Go to cart",
+        "backToCart": "Back to cart",
+        "continueShopping": "Continue shopping"
+      }
+    },
+    "orders": {
+      "title": "My orders",
+      "subtitle": "Your most recent orders (up to 50).",
+      "backToShop": "Back to shop",
+      "empty": {
+        "message": "No orders yet.",
+        "browseProducts": "Browse products"
+      },
+      "table": {
+        "caption": "Your orders",
+        "items": "Items",
+        "date": "Date",
+        "status": "Status",
+        "total": "Total"
+      },
+      "orderHeadline": {
+        "incomplete": "Order {id} (incomplete)",
+        "withMore": "{item} +{count} more",
+        "default": "Order {id}"
+      },
+      "paymentStatus": {
+        "paid": "Paid",
+        "pending": "Pending",
+        "requiresPayment": "Payment required",
+        "failed": "Failed",
+        "refunded": "Refunded"
+      },
+      "detail": {
+        "title": "Order",
+        "myOrders": "My orders",
+        "shop": "Shop",
+        "orderSummary": "Order summary",
+        "total": "Total",
+        "paymentStatus": "Payment status",
+        "created": "Created",
+        "provider": "Provider",
+        "paymentReference": "Payment reference",
+        "idempotencyKey": "Idempotency key",
+        "stockRestored": "Stock restored",
+        "restockedAt": "Restocked at",
+        "items": "Items",
+        "sku": "SKU: {sku}",
+        "product": "Product: {productId}",
+        "quantity": "Quantity",
+        "unitPrice": "Unit price",
+        "lineTotal": "Line total",
+        "yes": "Yes",
+        "no": "No"
+      }
+    }
+  },
   "about": {
   },
   "notFound": {
@@ -387,6 +744,13 @@
       "working": "Fixing it...",
       "fixing": "Magic in progress"
     }
+  },
+  "onlineCounter": {
+    "one": "you are one step closer to the goal",
+    "two": "chasing the dream",
+    "upToFive": "on the way to an offer",
+    "upToTen": "closer to the dream job",
+    "many": "marching towards success"
   },
   "legal": {
     "back": "Back",

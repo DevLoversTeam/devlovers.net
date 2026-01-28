@@ -5,6 +5,7 @@
 import { useId } from 'react';
 import { useRouter } from '@/i18n/routing';
 import { useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 import { SORT_OPTIONS } from '@/lib/config/catalog';
 import { cn } from '@/lib/utils';
@@ -16,6 +17,8 @@ type ProductSortProps = {
 export function ProductSort({ className }: ProductSortProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const t = useTranslations('shop.sort');
+  const tOptions = useTranslations('shop.catalog.sort');
 
   // IMPORTANT: when using '@/i18n/routing' router, do NOT prefix locale manually.
   const basePath = '/shop/products';
@@ -24,6 +27,16 @@ export function ProductSort({ className }: ProductSortProps) {
   const isActive = currentSort !== 'featured';
 
   const selectId = useId();
+
+  const getOptionLabel = (value: string) => {
+    const keyMap: Record<string, string> = {
+      'featured': 'featured',
+      'price-asc': 'priceAsc',
+      'price-desc': 'priceDesc',
+      'newest': 'newest',
+    };
+    return tOptions(keyMap[value] || 'featured');
+  };
 
   const handleSort = (value: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -45,10 +58,10 @@ export function ProductSort({ className }: ProductSortProps) {
         'flex w-full flex-col gap-1 sm:w-auto sm:flex-row sm:items-center sm:gap-2',
         className
       )}
-      aria-label="Sort products"
+      aria-label={t('label')}
     >
       <label htmlFor={selectId} className="text-sm text-muted-foreground">
-        Sort by:
+        {t('sortBy')}
       </label>
 
       <select
@@ -67,7 +80,7 @@ export function ProductSort({ className }: ProductSortProps) {
       >
         {SORT_OPTIONS.map(option => (
           <option key={option.value} value={option.value}>
-            {option.label}
+            {getOptionLabel(option.value)}
           </option>
         ))}
       </select>

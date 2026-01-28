@@ -2,12 +2,14 @@
 
 import React from 'react';
 import { Filter, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 import { ProductSort } from '@/components/shop/product-sort';
 import { ProductFilters } from '@/components/shop/product-filters';
 
 export function ProductsToolbar() {
   const [open, setOpen] = React.useState(false);
+  const t = useTranslations('shop.toolbar');
 
   const dialogTitleId = React.useId();
   const dialogId = React.useId();
@@ -129,10 +131,10 @@ export function ProductsToolbar() {
 
   return (
     <>
-      {/* No w-full here: on mobile header stretches items; on desktop it stays content-sized (fixes “center gap”). */}
+      {/* No w-full here: on mobile header stretches items; on desktop it stays content-sized (fixes "center gap"). */}
       <div
         role="group"
-        aria-label="Product listing controls"
+        aria-label={t('label')}
         className="flex flex-wrap items-end gap-3"
       >
         <div className="min-w-0 flex-1 sm:flex-none sm:min-w-[260px]">
@@ -144,12 +146,12 @@ export function ProductsToolbar() {
           type="button"
           onClick={() => setOpen(true)}
           className="inline-flex h-10 shrink-0 items-center gap-2 rounded-md border border-border px-3 text-sm text-muted-foreground transition-colors hover:border-foreground hover:text-foreground lg:hidden"
-          aria-label="Open filters"
+          aria-label={t('openFilters')}
           aria-controls={dialogId}
           aria-expanded={open}
         >
           <Filter className="h-4 w-4" aria-hidden="true" />
-          Filters
+          {t('filters')}
         </button>
       </div>
 
@@ -176,7 +178,7 @@ export function ProductsToolbar() {
                 id={dialogTitleId}
                 className="text-sm font-semibold text-foreground"
               >
-                Filters
+                {t('filters')}
               </h2>
 
               <button
@@ -184,7 +186,7 @@ export function ProductsToolbar() {
                 type="button"
                 onClick={close}
                 className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                aria-label="Close"
+                aria-label={t('close')}
               >
                 <X className="h-5 w-5" aria-hidden="true" />
               </button>
