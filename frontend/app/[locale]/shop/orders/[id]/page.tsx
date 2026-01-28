@@ -114,7 +114,7 @@ export default async function OrderDetailPage({
   const user = await getCurrentUser();
   if (!user) {
     redirect(
-      `/${locale}/login?next=${encodeURIComponent(
+      `/${locale}/login?returnTo=${encodeURIComponent(
         `/${locale}/shop/orders/${id}`
       )}`
     );
@@ -284,7 +284,7 @@ export default async function OrderDetailPage({
             <div>
               <dt className="text-xs opacity-80">{t('stockRestored')}</dt>
               <dd className="text-sm">
-                {order.stockRestored ? 'true' : 'false'}
+                {order.stockRestored ? t('yes') : t('no')}
               </dd>
             </div>
             <div>

@@ -454,7 +454,9 @@
     "checkout": {
       "errors": {
         "missingOrderId": "Missing order id",
+        "missingOrderIdDescription": "We couldn't identify your order. Please return to your cart or browse products.",
         "orderNotFound": "Order not found",
+        "orderNotFoundDescription": "We couldn't find this order. It may have been removed or never existed.",
         "invalidOrder": "Invalid order",
         "unableToLoad": "Unable to load order",
         "unableToCheckout": "Unable to start checkout right now.",
@@ -469,6 +471,7 @@
       },
       "success": {
         "title": "Thank you for your order",
+        "orderLabel": "Order",
         "received": "We've received your order.",
         "paymentConfirmed": "Payment has been confirmed.",
         "paymentProcessing": "Payment is still being processed. This page will update automatically.",
@@ -482,13 +485,18 @@
       },
       "error": {
         "paymentFailed": "Payment failed",
+        "paymentFailedDescription": "The payment for this order was not completed. You can try again or contact support.",
         "paymentUnclear": "Payment status unclear",
+        "paymentUnclearDescription": "We could not confirm a payment failure for this order.",
         "notCompleted": "The payment for this order was not completed. You can try again or contact support.",
         "couldNotConfirm": "We could not confirm a payment failure for this order.",
         "orderDetails": "Order details",
         "order": "Order",
+        "orderLabel": "Order",
         "total": "Total",
+        "totalLabel": "Total",
         "status": "Status",
+        "statusLabel": "Status",
         "backToCart": "Back to cart",
         "retryPayment": "Retry payment",
         "continueShopping": "Continue shopping"
@@ -563,7 +571,9 @@
         "product": "Product: {productId}",
         "quantity": "Quantity",
         "unitPrice": "Unit price",
-        "lineTotal": "Line total"
+        "lineTotal": "Line total",
+        "yes": "Yes",
+        "no": "No"
       }
     }
   },

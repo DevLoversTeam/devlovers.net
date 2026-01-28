@@ -136,7 +136,7 @@ export default async function CheckoutErrorPage({
             id="checkout-error-title"
             className="text-2xl font-bold text-foreground"
           >
-            {t('errors.unableToLoadOrder')}
+            {t('errors.unableToLoad')}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {t('errors.tryAgainLater')}
@@ -219,7 +219,7 @@ export default async function CheckoutErrorPage({
               href={`/shop/checkout/payment/${order.id}`}
               className="inline-flex items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground hover:bg-accent/90"
             >
-              {t('actions.retryPayment')}
+              {t('error.retryPayment')}
             </Link>
           ) : null}
 
