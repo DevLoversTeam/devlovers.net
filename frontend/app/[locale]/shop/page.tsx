@@ -3,6 +3,7 @@ import { ProductCard } from '@/components/shop/product-card';
 import { Hero } from '@/components/shop/shop-hero';
 import { CategoryTile } from '@/components/shop/category-tile';
 import { getHomepageContent } from '@/lib/shop/data';
+import { getTranslations } from 'next-intl/server';
 
 export default async function HomePage({
   params,
@@ -11,14 +12,15 @@ export default async function HomePage({
 }) {
   const { locale } = await params;
   const content = await getHomepageContent(locale);
+  const t = await getTranslations('shop.page');
 
   return (
     <>
       <Hero
-        headline={content.hero.headline}
-        subheadline={content.hero.subheadline}
-        ctaText={content.hero.ctaText}
-        ctaLink={content.hero.ctaLink}
+        headline={t('comingSoon.headline')}
+        subheadline={t('comingSoon.subheadline')}
+        ctaText={t('comingSoon.cta')}
+        ctaLink="/shop/products"
       />
 
       <section
@@ -31,15 +33,15 @@ export default async function HomePage({
               id="new-arrivals-heading"
               className="text-2xl font-bold tracking-tight text-foreground"
             >
-              New Arrivals
+              {t('newArrivals')}
             </h2>
 
             <Link
               href="/shop/products?filter=new"
               className="text-sm font-medium text-muted-foreground hover:text-foreground"
-              aria-label="View all new arrivals"
+              aria-label={t('viewAll')}
             >
-              View all <span aria-hidden="true">→</span>
+              {t('viewAll')} <span aria-hidden="true">→</span>
             </Link>
           </header>
 
@@ -63,7 +65,7 @@ export default async function HomePage({
               id="shop-by-category-heading"
               className="text-2xl font-bold tracking-tight text-foreground"
             >
-              Shop by Category
+              {t('shopByCategory')}
             </h2>
           </header>
 
@@ -86,21 +88,20 @@ export default async function HomePage({
             id="shop-cta-heading"
             className="text-2xl font-bold tracking-tight sm:text-3xl"
           >
-            Code. Create. Collect.
+            {t('hero.headline')}
           </h2>
 
           <p className="mx-auto mt-4 max-w-xl text-background/80">
-            Join thousands of developers who express their passion through
-            premium merch.
+            {t('hero.subheadline')}
           </p>
 
           <div className="mt-8">
             <Link
               href="/shop/products"
               className="inline-flex items-center gap-2 rounded-md bg-[color:var(--shop-cta-bg)] px-6 py-3 text-sm font-semibold uppercase tracking-wide text-[color:var(--shop-cta-fg)] transition-opacity hover:opacity-90"
-              aria-label="Browse all products"
+              aria-label={t('hero.cta')}
             >
-              Browse all products
+              {t('hero.cta')}
             </Link>
           </div>
         </div>
