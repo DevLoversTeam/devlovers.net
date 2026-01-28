@@ -190,7 +190,8 @@ export function ParticleCanvas({ activeShape, className }: ParticleCanvasProps) 
       if (!canvas || !ctx) return
       
       if (!lastTimeRef.current) lastTimeRef.current = timestamp
-      const deltaTime = (timestamp - lastTimeRef.current) / 1000
+      const rawDeltaTime = (timestamp - lastTimeRef.current) / 1000
+      const deltaTime = Math.min(rawDeltaTime, 0.05)
       lastTimeRef.current = timestamp
 
       ctx.clearRect(0, 0, canvas.width, canvas.height)

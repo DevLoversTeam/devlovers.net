@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion"
 import { Link } from "@/i18n/routing"
 import { 
     MessageCircle, Brain, Trophy, User, ShoppingBag, BookOpen,
@@ -143,6 +143,8 @@ function FeatureBubble({ feature, index, href, isMobile }: { feature: Feature; i
     const posX = feature.x * scaleX
     const posY = feature.y * scaleY
     
+    const shouldReduceMotion = useReducedMotion()
+
     return (
         <motion.div
             className="absolute"
@@ -155,7 +157,7 @@ function FeatureBubble({ feature, index, href, isMobile }: { feature: Feature; i
                 scale: 1,
             }}
             exit={{ x: '-50%', y: '-50%', opacity: 0, scale: 0 }}
-            transition={{
+            transition={shouldReduceMotion ? { duration: 0 } : {
                 x: { delay: 0.1 + index * 0.08, duration: 0.6, type: "spring", bounce: 0.3 },
                 y: { delay: 0.1 + index * 0.08, duration: 0.6, type: "spring", bounce: 0.3 },
                 opacity: { delay: 0.1 + index * 0.08, duration: 0.3 },
@@ -163,7 +165,7 @@ function FeatureBubble({ feature, index, href, isMobile }: { feature: Feature; i
             }}
         >
             <div 
-                className="animate-float"
+                className="animate-float motion-reduce:animate-none"
                 style={{ animationDelay: `${floatDelay}s`, animationDuration: `${floatDuration}s` }}
             >
                 <Link href={href} className="group block">
@@ -273,14 +275,27 @@ function ConnectingLines() {
     )
 }
 
-function TabButton({ page, isActive, onClick }: { page: Page; isActive: boolean; onClick: () => void }) {
+function TabButton({ 
+    page, 
+    isActive, 
+    onClick,
+    onKeyDown
+}: { 
+    page: Page; 
+    isActive: boolean; 
+    onClick: () => void 
+    onKeyDown: (e: React.KeyboardEvent<HTMLButtonElement>) => void
+}) {
     return (
         <button
+            type="button"
             id={`${page.id}-tab`}
             onClick={onClick}
+            onKeyDown={onKeyDown}
             role="tab"
             aria-selected={isActive}
             aria-controls={`${page.id}-panel`}
+            tabIndex={isActive ? 0 : -1}
             className={`relative p-2.5 md:px-5 md:py-2.5 rounded-full text-sm font-medium transition-all duration-300 ${
                 isActive
                     ? "text-white"
@@ -318,6 +333,18 @@ export function FeaturesSection() {
         window.addEventListener('resize', checkMobile)
         return () => window.removeEventListener('resize', checkMobile)
     }, [])
+
+    const onTabKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
+        if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return
+        event.preventDefault()
+        const dir = event.key === "ArrowRight" ? 1 : -1
+        const nextIndex = (index + dir + pages.length) % pages.length
+        const nextId = pages[nextIndex].id
+        setActiveTab(nextId)
+        setTimeout(() => {
+             document.getElementById(`${nextId}-tab`)?.focus()
+        }, 0)
+    }
 
     if (!mounted) return null
 
@@ -372,12 +399,13 @@ export function FeaturesSection() {
 
                 <div className="flex justify-center mb-8">
                     <div role="tablist" aria-label="Feature categories" className="inline-flex gap-1 md:gap-2 p-1.5 rounded-full border border-gray-200 dark:border-white/10 bg-white/20 dark:bg-white/5 backdrop-blur-md shadow-sm dark:shadow-none">
-                        {pages.map((page) => (
+                        {pages.map((page, index) => (
                             <TabButton
                                 key={page.id}
                                 page={page}
                                 isActive={activeTab === page.id}
                                 onClick={() => setActiveTab(page.id)}
+                                onKeyDown={(e) => onTabKeyDown(e, index)}
                             />
                         ))}
                     </div>
