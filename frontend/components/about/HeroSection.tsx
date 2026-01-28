@@ -29,7 +29,7 @@ export function HeroSection({ stats }: { stats?: PlatformStats }) {
 
         <div className="flex flex-col items-center text-center xl:col-span-6">
             
-            <div className="scale-90 md:scale-100 mb-6">
+            <div className="scale-90 md:scale-100 mb-6" aria-hidden="true">
                 <InteractiveGame />
             </div>
 
@@ -37,10 +37,10 @@ export function HeroSection({ stats }: { stats?: PlatformStats }) {
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.6 }}
-              className="mt-4 mb-8 text-4xl font-black tracking-tight text-gray-900 dark:text-white md:text-6xl lg:text-7xl max-w-5xl text-balance leading-[1.1]"
+              className="mt-4 mb-8 text-4xl font-black tracking-tight text-gray-900 dark:text-white md:text-5xl lg:text-6xl xl:text-7xl max-w-5xl text-balance leading-[1.1]"
             >
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1e5eff] to-[#174ad6] dark:from-[#ff2d55] dark:to-[#e0264b]">
-                Debug your skills
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1e5eff] to-[#1e5eff]/70 dark:from-[#ff2d55] dark:to-[#ff2d55]/70">
+                Debug your skills <br/>
               </span> before the recruiter does.
             </motion.h1>
             
@@ -48,7 +48,7 @@ export function HeroSection({ stats }: { stats?: PlatformStats }) {
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="max-w-3xl text-base font-light leading-relaxed text-gray-600 text-balance dark:text-gray-400 md:text-xl mb-10"
+              className="max-w-3xl text-sm font-light leading-relaxed text-gray-700 text-balance dark:text-gray-300 md:text-lg lg:text-xl mb-10"
             >
               Stop guessing. We decoded the chaotic interview process into a structured roadmap. <strong className="font-medium text-gray-900 dark:text-gray-200">Compile your scattered knowledge</strong> into a production-ready skillset and land that offer.
             </motion.p>
@@ -70,7 +70,7 @@ export function HeroSection({ stats }: { stats?: PlatformStats }) {
                 transition={{ duration: 2, repeat: Infinity }}
                 className="mt-16 text-gray-400 dark:text-gray-600 hidden xl:block"
             >
-                <ArrowDown className="h-6 w-6" />
+                <ArrowDown className="h-6 w-6" aria-hidden="true" />
             </motion.div>
         </div>
 
@@ -92,9 +92,9 @@ function GlassWidget({ icon: Icon, color, bg, label, value }: any) {
     return (
         <motion.div 
             whileHover={{ y: -5 }}
-            className="flex min-w-[220px] items-center gap-4 rounded-2xl border border-gray-100 bg-white/60 p-5 shadow-xl backdrop-blur-xl transition-all hover:border-[#1e5eff]/30 dark:border-white/5 dark:bg-[#111]/60 dark:hover:border-[#ff2d55]/30 dark:shadow-black/50"
+            className="flex min-w-[220px] items-center gap-4 rounded-2xl border border-gray-100 bg-white/10 p-5 shadow-xl backdrop-blur-xl transition-all hover:border-[#1e5eff]/30 dark:border-white/5 dark:bg-neutral-900/10 dark:hover:border-[#ff2d55]/30 dark:shadow-black/50"
         >
-            <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${bg} ${color}`}>
+            <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${bg} ${color}`} aria-hidden="true">
                 <Icon size={24} />
             </div>
             <div className="flex flex-col items-start">
@@ -107,8 +107,8 @@ function GlassWidget({ icon: Icon, color, bg, label, value }: any) {
 
 function MobileStatItem({ icon: Icon, color, bg, label, value }: any) {
     return (
-        <div className="flex items-center gap-3 rounded-xl border border-gray-100 bg-white/60 p-3 shadow-sm backdrop-blur-xl dark:border-white/5 dark:bg-[#111]/60">
-            <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg ${bg} ${color}`}>
+        <div className="flex items-center gap-3 rounded-xl border border-gray-100 bg-white/10 p-3 shadow-sm backdrop-blur-xl dark:border-white/5 dark:bg-neutral-900/10">
+            <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg ${bg} ${color}`} aria-hidden="true">
                 <Icon size={20} />
             </div>
             <div className="flex flex-col items-start overflow-hidden">

@@ -1,336 +1,395 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Link } from "@/i18n/routing"
-import { MessageCircle, Brain, Trophy, User, ShoppingBag } from "lucide-react"
+import { 
+    MessageCircle, Brain, Trophy, User, ShoppingBag, BookOpen,
+    Globe, Cpu, Shield, Languages, Clock, Lightbulb, Target,
+    Medal, Users, Flame, Zap, BarChart3, TrendingUp, Tag, History,
+    CreditCard, Package, Sparkles, PenTool, CalendarDays,
+    Search, Save, Activity, UserCircle, Bell,
+    LucideIcon
+} from "lucide-react"
+import { SectionHeading } from "@/components/ui/section-heading"
 
-const tMock = (key: string) => {
-    const map: any = {
-        "title": "Everything you need to",
-        "titleHighlight": "get hired",
-        "subtitle": "Stop searching for scattered info. We curated the ultimate toolkit to crack technical interviews.",
-        
-        "qa.title": "Q&A",
-        "qa.description": "No fluff. Just a massive library of real interview questions with precise, recruiter-approved answers.",
-        
-        "quiz.title": "Quizzes",
-        "quiz.description": "Validate your confidence. Fast-paced interactive quizzes to spot your weak points before the interviewer does.",
-        
-        "leaderboard.title": "Leaderboard",
-        "leaderboard.description": "Gamify your prep. Earn points for every correct answer, keep your streak alive, and rank up against others.",
-        
-        "profile.title": "Analytics",
-        "profile.description": "Don't fly blind. Visualize your progress with detailed charts to see exactly which topics you've mastered.",
-        
-        "shop.title": "Shop",
-        "shop.description": "Upgrade your setup. High-quality developer apparel, desk accessories, and digital assets available for purchase.",
-    }
-    return map[key] || key
+interface Feature {
+    icon: LucideIcon
+    label: string
+    desc: string
+    x: number
+    y: number
+    size: number
+}
+
+interface Page {
+    id: string
+    icon: LucideIcon
+    href: string
+    features: Feature[]
+}
+
+const translations: Record<string, string> = {
+    "title": "Features designed to",
+    "titleHighlight": "make you unstoppable",
+    "subtitle": "Stop searching for scattered info. We curated the ultimate toolkit to crack technical interviews.",
+    "qa.title": "Q&A",
+    "qa.description": "No fluff. Just a massive library of real interview questions with precise, recruiter-approved answers.",
+    "quiz.title": "Quizzes",
+    "quiz.description": "Validate your confidence. Fast-paced interactive quizzes to spot your weak points before the interviewer does.",
+    "leaderboard.title": "Leaderboard",
+    "leaderboard.description": "Gamify your prep. Earn points for every correct answer, keep your streak alive, and rank up against others.",
+    "blog.title": "Blog",
+    "blog.description": "Stay updated. detailed articles on tech trends, coding tutorials, and industry insights to keep you ahead of the curve.",
+    "profile.title": "Analytics",
+    "profile.description": "Don't fly blind. Visualize your progress with detailed charts to see exactly which topics you've mastered.",
+    "shop.title": "Shop",
+    "shop.description": "Upgrade your setup. High-quality developer apparel, desk accessories, and digital assets available for purchase.",
+}
+
+const t = (key: string) => translations[key] || key
+
+const decorativeDots = [
+    { x: '5%', y: '20%', size: 8 },
+    { x: '10%', y: '75%', size: 6 },
+    { x: '18%', y: '40%', size: 5 },
+    { x: '92%', y: '25%', size: 7 },
+    { x: '88%', y: '70%', size: 6 },
+    { x: '82%', y: '45%', size: 5 },
+    { x: '7%', y: '55%', size: 7 },
+    { x: '95%', y: '55%', size: 8 },
+    { x: '15%', y: '85%', size: 6 },
+    { x: '85%', y: '15%', size: 5 },
+    { x: '3%', y: '35%', size: 6 },
+    { x: '97%', y: '80%', size: 7 },
+]
+
+const pages: Page[] = [
+    {
+        id: "qa",
+        icon: MessageCircle,
+        href: "/q&a",
+        features: [
+            { icon: Globe, label: "3 Languages", desc: "EN, UK & PL supported", x: -120, y: -120, size: 88 },
+            { icon: Cpu, label: "AI Helper", desc: "Select text for AI explain", x: 120, y: -120, size: 88 },
+            { icon: Lightbulb, label: "Smart Cache", desc: "Highlights learned terms", x: -120, y: 120, size: 88 },
+            { icon: Search, label: "Tech Filter", desc: "React, Git, JS & more", x: 120, y: 120, size: 88 },
+        ]
+    },
+    {
+        id: "quiz",
+        icon: Brain,
+        href: "/quizzes",
+        features: [
+            { icon: Clock, label: "Smart Timer", desc: "Race against the total time", x: -120, y: -120, size: 88 },
+            { icon: Shield, label: "Anti-Cheat", desc: "Focus loss detection", x: 120, y: -120, size: 88 },
+            { icon: Save, label: "Auto Sync", desc: "Saves progress post-login", x: -120, y: 120, size: 88 },
+            { icon: BarChart3, label: "Tracking", desc: "Best scores & attempts", x: 120, y: 120, size: 88 },
+        ]
+    },
+    {
+        id: "leaderboard",
+        icon: Trophy,
+        href: "/leaderboard",
+        features: [
+            { icon: Medal, label: "The Podium", desc: "Top 3 exclusive spotlight", x: -120, y: -120, size: 88 },
+            { icon: Globe, label: "Global Rank", desc: "Compete worldwide", x: 120, y: -120, size: 88 },
+            { icon: Zap, label: "XP System", desc: "Points for every answer", x: -120, y: 120, size: 88 },
+            { icon: Activity, label: "Live Feed", desc: "Real-time rank updates", x: 120, y: 120, size: 88 },
+        ]
+    },
+    {
+        id: "profile",
+        icon: User,
+        href: "/dashboard",
+        features: [
+            { icon: BarChart3, label: "Stats Hub", desc: "Visualize your growth", x: -120, y: -120, size: 88 },
+            { icon: History, label: "History", desc: "Track learning streaks", x: 120, y: -120, size: 88 },
+            { icon: UserCircle, label: "Identity", desc: "Manage role & profile", x: -120, y: 120, size: 88 },
+            { icon: Bell, label: "Reminders", desc: "Finish incomplete quizzes", x: 120, y: 120, size: 88 },
+        ]
+    },
+    {
+        id: "blog",
+        icon: BookOpen,
+        href: "/blog",
+        features: [
+            { icon: TrendingUp, label: "Tech Trends", desc: "Stay ahead of the curve", x: -120, y: -120, size: 88 },
+            { icon: PenTool, label: "Tutorials", desc: "Step-by-step guides", x: 120, y: -120, size: 88 },
+            { icon: BookOpen, label: "Deep Dives", desc: "In-depth analysis", x: -120, y: 120, size: 88 },
+            { icon: Users, label: "Community", desc: "Written by developers", x: 120, y: 120, size: 88 },
+        ]
+    },
+    {
+        id: "shop",
+        icon: ShoppingBag,
+        href: "/shop",
+        features: [
+            { icon: Sparkles, label: "New Drops", desc: "Regular fresh content", x: -120, y: -120, size: 88 },
+            { icon: Tag, label: "Curated", desc: "Dev-focused collections", x: 120, y: -120, size: 88 },
+            { icon: CreditCard, label: "Checkout", desc: "Seamless Stripe flow", x: -120, y: 120, size: 88 },
+            { icon: Package, label: "Premium", desc: "High-quality material", x: 120, y: 120, size: 88 },
+        ]
+    },
+]
+
+function FeatureBubble({ feature, index, href, isMobile }: { feature: Feature; index: number; href: string; isMobile: boolean }) {
+    const Icon = feature.icon
+    const floatDelay = index * 0.5
+    const floatDuration = 3 + index * 0.3
+    
+    const scaleX = isMobile ? 0.55 : 1
+    const scaleY = isMobile ? 1.3 : 1
+    const posX = feature.x * scaleX
+    const posY = feature.y * scaleY
+    
+    return (
+        <motion.div
+            className="absolute"
+            style={{ left: '50%', top: '50%' }}
+            initial={{ x: '-50%', y: '-50%', opacity: 0, scale: 0 }}
+            animate={{ 
+                x: `calc(-50% + ${posX}%)`, 
+                y: `calc(-50% + ${posY}%)`,
+                opacity: 1, 
+                scale: 1,
+            }}
+            exit={{ x: '-50%', y: '-50%', opacity: 0, scale: 0 }}
+            transition={{
+                x: { delay: 0.1 + index * 0.08, duration: 0.6, type: "spring", bounce: 0.3 },
+                y: { delay: 0.1 + index * 0.08, duration: 0.6, type: "spring", bounce: 0.3 },
+                opacity: { delay: 0.1 + index * 0.08, duration: 0.3 },
+                scale: { delay: 0.1 + index * 0.08, duration: 0.5, type: "spring", bounce: 0.4 },
+            }}
+        >
+            <div 
+                className="animate-float"
+                style={{ animationDelay: `${floatDelay}s`, animationDuration: `${floatDuration}s` }}
+            >
+                <Link href={href} className="group block">
+                    <div className="flex items-center gap-2 md:gap-3 px-2 md:px-3 py-2 md:py-2.5 w-[140px] md:w-[180px] bg-white dark:bg-neutral-900 border border-gray-200 dark:border-white/10 shadow-lg dark:shadow-black/30 rounded-xl md:rounded-2xl cursor-pointer transition-all duration-200 group-hover:border-[#1e5eff]/40 dark:group-hover:border-[#ff2d55]/40 group-hover:shadow-[0_8px_30px_rgba(30,94,255,0.25)] dark:group-hover:shadow-[0_8px_30px_rgba(255,45,85,0.25)] group-hover:scale-105">
+                        <div 
+                            className="flex items-center justify-center shrink-0 w-8 h-8 md:w-10 md:h-10 bg-[#1e5eff]/10 dark:bg-[#ff2d55]/10 rounded-lg md:rounded-xl transition-transform duration-200 group-hover:rotate-6 group-hover:scale-110"
+                        >
+                            <Icon className="w-4 h-4 md:w-5 md:h-5 text-[#1e5eff] dark:text-[#ff2d55]" strokeWidth={1.5} />
+                        </div>
+                        <div className="min-w-0">
+                            <div className="text-xs md:text-sm font-bold text-gray-800 dark:text-white">{feature.label}</div>
+                            <div className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400">{feature.desc}</div>
+                        </div>
+                    </div>
+                </Link>
+            </div>
+        </motion.div>
+    )
+}
+
+function CentralIcon({ page }: { page: Page }) {
+    const Icon = page.icon
+    
+    return (
+        <motion.div
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ duration: 0.5, type: "spring", bounce: 0.3 }}
+            className="relative flex items-center justify-center z-30"
+        >
+            <motion.div 
+                className="absolute w-60 h-60 rounded-full blur-3xl"
+                animate={{ opacity: [0.15, 0.25, 0.15], scale: [1, 1.1, 1] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+            >
+                <div className="w-full h-full rounded-full bg-[#1e5eff] dark:bg-[#ff2d55]" />
+            </motion.div>
+            
+            <div className="relative w-36 h-36 md:w-40 md:h-40 rounded-full flex items-center justify-center border border-gray-100 dark:border-white/10 bg-white/80 dark:bg-neutral-900/60 backdrop-blur-xl shadow-2xl dark:shadow-black/40">
+                <div className="absolute inset-2 rounded-full bg-gradient-to-br from-[#1e5eff]/10 to-[#1e5eff]/5 dark:from-[#ff2d55]/10 dark:to-[#ff2d55]/5" />
+                <Icon className="relative z-10 w-16 h-16 text-[#1e5eff] dark:text-[#ff2d55]" strokeWidth={1.5} />
+            </div>
+        </motion.div>
+    )
+}
+
+function DecorativeDots() {
+    return (
+        <div className="absolute inset-0 pointer-events-none z-0" aria-hidden="true">
+            {decorativeDots.map((dot, i) => (
+                <div
+                    key={i}
+                    className="absolute rounded-full bg-[#1e5eff]/40 dark:bg-[#ff2d55]/40 animate-float"
+                    style={{
+                        left: dot.x,
+                        top: dot.y,
+                        width: dot.size,
+                        height: dot.size,
+                        animationDelay: `${i * 0.3}s`,
+                        animationDuration: `${3 + i * 0.2}s`,
+                    }}
+                />
+            ))}
+        </div>
+    )
+}
+
+function OrbitRings() {
+    return (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none" aria-hidden="true">
+            <div className="absolute w-[55%] h-[55%] rounded-full border border-dashed border-gray-300/50 dark:border-white/10 animate-spin-slow" />
+            <div className="absolute w-[75%] h-[75%] rounded-full border border-dashed border-gray-200/50 dark:border-white/[0.07] animate-spin-slower" />
+            <div className="absolute w-[95%] h-[95%] rounded-full border border-gray-100/50 dark:border-white/[0.03]" />
+        </div>
+    )
+}
+
+function ConnectingLines() {
+    const lines = [
+        { x2: "15%", y2: "15%", delay: "0s" },
+        { x2: "85%", y2: "15%", delay: "0.5s" },
+        { x2: "15%", y2: "85%", delay: "1s" },
+        { x2: "85%", y2: "85%", delay: "1.5s" },
+    ]
+    
+    return (
+        <svg className="absolute inset-0 w-full h-full pointer-events-none" aria-hidden="true">
+            <defs>
+                <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" className="[stop-color:#1e5eff] dark:[stop-color:#ff2d55]" stopOpacity="0.3" />
+                    <stop offset="100%" className="[stop-color:#1e5eff] dark:[stop-color:#ff2d55]" stopOpacity="0" />
+                </linearGradient>
+            </defs>
+            {lines.map((line, i) => (
+                <line 
+                    key={i}
+                    x1="50%" y1="50%" x2={line.x2} y2={line.y2} 
+                    stroke="url(#lineGradient)" 
+                    strokeWidth="1" 
+                    strokeDasharray="4 4" 
+                    className="animate-dash-flow" 
+                    style={{ animationDelay: line.delay }} 
+                />
+            ))}
+        </svg>
+    )
+}
+
+function TabButton({ page, isActive, onClick }: { page: Page; isActive: boolean; onClick: () => void }) {
+    return (
+        <button
+            onClick={onClick}
+            aria-label={t(`${page.id}.title`)}
+            aria-current={isActive ? 'true' : 'false'}
+            className={`relative p-2.5 md:px-5 md:py-2.5 rounded-full text-sm font-medium transition-all duration-300 ${
+                isActive
+                    ? "text-white"
+                    : "text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10"
+            }`}
+        >
+            {isActive && (
+                <motion.div
+                    layoutId="activeTabBackground"
+                    className="absolute inset-0 bg-[#1e5eff] dark:bg-[#ff2d55] shadow-lg shadow-[#1e5eff]/25 dark:shadow-[#ff2d55]/25"
+                    initial={false}
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                    style={{ borderRadius: 9999 }}
+                />
+            )}
+            <span className="relative z-10 flex items-center gap-2">
+                <page.icon size={18} className="md:w-4 md:h-4" aria-hidden="true" />
+                <span className="hidden md:inline">{t(`${page.id}.title`)}</span>
+            </span>
+        </button>
+    )
 }
 
 export function FeaturesSection() {
-  const t = tMock 
-  const [activeTab, setActiveTab] = useState("qa")
+    const [activeTab, setActiveTab] = useState("qa")
+    const [isMobile, setIsMobile] = useState(false)
+    const activePage = pages.find(p => p.id === activeTab) || pages[0]
 
-  const features = [
-    { id: "qa", icon: MessageCircle, href: "/q&a" },
-    { id: "quiz", icon: Brain, href: "/quizzes" },
-    { id: "leaderboard", icon: Trophy, href: "/leaderboard" },
-    { id: "profile", icon: User, href: "/profile" },
-    { id: "shop", icon: ShoppingBag, href: "/shop" },
-  ]
+    useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 768)
+        checkMobile()
+        window.addEventListener('resize', checkMobile)
+        return () => window.removeEventListener('resize', checkMobile)
+    }, [])
 
-  const activeFeature = features.find((f) => f.id === activeTab)
-  const activeHref = activeFeature ? activeFeature.href : "/"
-
-  return (
-    <section className="relative w-full py-24 overflow-hidden bg-gray-50 dark:bg-transparent">
-      
-      <div className="absolute inset-0 -z-10 pointer-events-none">
-        <div className="absolute top-[10%] left-1/2 -translate-x-1/2 w-full max-w-4xl h-[500px] rounded-full blur-[120px] opacity-30 
-          bg-[#1e5eff]/15 dark:bg-[#ff2d55]/15 mix-blend-multiply dark:mix-blend-screen" 
-        />
-      </div>
-
-      <div className="relative container mx-auto px-4 max-w-5xl z-10 flex flex-col items-center">
-        
-        <div className="mb-12 text-center max-w-3xl">
-          <h2 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight text-gray-900 dark:text-white">
-            {t("title")} <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1e5eff] to-[#174ad6] dark:from-[#ff2d55] dark:to-[#e0264b]">{t("titleHighlight")}</span>
-          </h2>
-          <p className="text-lg text-gray-600 dark:text-gray-400">
-            {t("subtitle")}
-          </p>
-        </div>
-
-        <div className="w-full relative mb-10 group perspective-1000">
-          
-          <div className="absolute -inset-1 rounded-xl blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700
-             bg-gradient-to-t from-[#1e5eff]/20 to-transparent dark:from-[#ff2d55]/20" 
-          />
-
-          <Link href={activeHref} className="block relative w-full focus:outline-none cursor-pointer">
-            <div className="relative w-full aspect-video rounded-xl overflow-hidden shadow-2xl transition-all duration-500 group-hover:scale-[1.01] 
-              border border-gray-200 dark:border-white/10
-              bg-white dark:bg-[#0f0f0f]
-              group-hover:shadow-[0_0_40px_-10px_rgba(30,94,255,0.3)] dark:group-hover:shadow-[0_0_40px_-10px_rgba(255,45,85,0.3)]"
-            >
-              
-              <div className="absolute top-0 left-0 w-full h-10 flex items-center px-4 z-20 backdrop-blur-md
-                border-b border-gray-200 dark:border-white/5
-                bg-white/90 dark:bg-[#1a1a1a]/95"
-              >
-                <div className="flex gap-2 opacity-100 dark:opacity-70 group-hover:opacity-100 transition-opacity">
-                  <div className="w-3 h-3 rounded-full bg-[#ff5f56] border border-black/5" />
-                  <div className="w-3 h-3 rounded-full bg-[#ffbd2e] border border-black/5" />
-                  <div className="w-3 h-3 rounded-full bg-[#27c93f] border border-black/5" />
-                </div>
-                
-                <div className="ml-4 px-3 py-1 rounded-md text-[10px] font-mono flex items-center select-none transition-colors
-                  border border-gray-200 dark:border-white/5
-                  bg-gray-50 dark:bg-black/40 
-                  text-gray-500 group-hover:text-gray-900 dark:group-hover:text-gray-300"
-                >
-                  <span className="text-gray-400 dark:text-gray-600 mr-1">https://</span>
-                  devlovers.net/{activeTab}
-                </div>
-              </div>
-
-              <div className="absolute inset-0 pt-10 w-full h-full bg-white dark:bg-[#0f0f0f]">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={activeTab}
-                    initial={{ opacity: 0, scale: 1.02, filter: "blur(4px)" }}
-                    animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-                    exit={{ opacity: 0, scale: 0.98, filter: "blur(4px)" }}
-                    transition={{ duration: 0.35, ease: "easeInOut" }}
-                    className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden"
-                  >
-                    <div className="absolute inset-0 bg-[size:24px_24px]
-                      bg-[linear-gradient(to_right,#00000008_1px,transparent_1px),linear-gradient(to_bottom,#00000008_1px,transparent_1px)]
-                      dark:bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)]" 
-                    />
-                    
-                    <div className="z-10 w-full h-full flex items-center justify-center p-8">
-                        {activeTab === 'qa' && <QAVisual />}
-                        {activeTab === 'quiz' && <QuizVisual />}
-                        {activeTab === 'leaderboard' && <LeaderboardVisual />}
-                        {activeTab === 'profile' && <ProfileVisual />}
-                        {activeTab === 'shop' && <ShopVisual />}
-                    </div>
-
-                    <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-                  </motion.div>
-                </AnimatePresence>
-              </div>
-            </div>
-          </Link>
-        </div>
-
-        <div className="flex justify-center mb-8">
-          <div className="inline-flex gap-1 md:gap-2 p-1.5 rounded-full
-            border border-gray-200 dark:border-white/10
-            bg-white dark:bg-white/5 backdrop-blur-md shadow-sm dark:shadow-none"
-          >
-            {features.map((feature) => {
-              const isActive = activeTab === feature.id
-              return (
-                <button
-                  key={feature.id}
-                  onClick={() => setActiveTab(feature.id)}
-                  className={`relative p-2.5 md:px-5 md:py-2.5 rounded-full text-sm font-medium transition-all duration-300 ${
-                    isActive
-                      ? "text-white"
-                      : "text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/10"
-                  }`}
-                >
-                  {isActive && (
-                    <motion.div
-                      layoutId="activeTabBackground"
-                      className="absolute inset-0 bg-[#1e5eff] dark:bg-[#ff2d55] shadow-lg shadow-[#1e5eff]/25 dark:shadow-[#ff2d55]/25"
-                      initial={false}
-                      transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                      style={{ borderRadius: 9999 }}
-                    />
-                  )}
-                  <span className="relative z-10 flex items-center gap-2">
-                      <feature.icon size={18} className="md:w-4 md:h-4" />
-                      <span className="hidden md:inline">{t(`${feature.id}.title`)}</span>
-                  </span>
-                </button>
-              )
-            })}
-          </div>
-        </div>
-
-        <div className="max-w-2xl mx-auto text-center relative h-20 w-full overflow-hidden">
-           <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-              className="absolute w-full top-0 left-0 flex justify-center"
-            >
-              <p className="text-lg text-gray-600 dark:text-gray-300 leading-relaxed font-light">
-                {t(`${activeTab}.description`)}
-              </p>
-            </motion.div>
-          </AnimatePresence>
-        </div>
-      </div>
-    </section>
-  )
-}
-
-function QAVisual() {
     return (
-        <div className="w-full max-w-sm space-y-3">
-            <motion.div 
-                initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-                className="bg-white dark:bg-neutral-800 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-white/10 w-full"
-            >
-                <div className="flex items-center gap-2 mb-2">
-                     <div className="w-2 h-2 rounded-full bg-red-500" />
-                     <div className="text-[10px] uppercase font-bold text-gray-400">Question</div>
-                </div>
-                <div className="h-2 w-3/4 bg-gray-200 dark:bg-white/20 rounded mb-2" />
-                <div className="h-2 w-1/2 bg-gray-200 dark:bg-white/20 rounded" />
-            </motion.div>
+        <section className="relative w-full py-20 lg:py-28 overflow-hidden bg-gray-50 dark:bg-transparent">
+            <DecorativeDots />
             
-            <motion.div 
-                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
-                 className="flex justify-center"
-            >
-                <div className="w-[1px] h-4 bg-gray-300 dark:bg-white/20" />
-            </motion.div>
+            <div className="absolute inset-0 -z-10 pointer-events-none" aria-hidden="true">
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl h-[400px] rounded-full blur-[150px] opacity-20 bg-[#1e5eff]/20 dark:bg-[#ff2d55]/20" />
+            </div>
 
-            <motion.div 
-                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
-                className="bg-[#1e5eff]/5 dark:bg-[#ff2d55]/5 p-4 rounded-xl shadow-sm border border-[#1e5eff]/20 dark:border-[#ff2d55]/20 w-full"
-            >
-                <div className="flex items-center gap-2 mb-2">
-                     <div className="w-2 h-2 rounded-full bg-green-500" />
-                     <div className="text-[10px] uppercase font-bold text-[#1e5eff] dark:text-[#ff2d55]">Correct Answer</div>
+            <div className="relative container-main z-10 flex flex-col items-center">
+                <SectionHeading 
+                    title={t("title")}
+                    highlight={t("titleHighlight")}
+                    subtitle={t("subtitle")}
+                />
+
+                <div className="w-full max-w-md mx-auto aspect-square relative mb-4">
+                    <OrbitRings />
+                    <ConnectingLines />
+                    
+                    <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
+                        <AnimatePresence mode="wait">
+                            <CentralIcon key={activeTab} page={activePage} />
+                        </AnimatePresence>
+                    </div>
+
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={activeTab}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute inset-0"
+                        >
+                            {activePage.features.map((feature, i) => (
+                                <FeatureBubble
+                                    key={feature.label}
+                                    feature={feature}
+                                    index={i}
+                                    href={activePage.href}
+                                    isMobile={isMobile}
+                                />
+                            ))}
+                        </motion.div>
+                    </AnimatePresence>
                 </div>
-                <div className="h-2 w-full bg-[#1e5eff]/20 dark:bg-[#ff2d55]/20 rounded mb-2" />
-                <div className="h-2 w-5/6 bg-[#1e5eff]/20 dark:bg-[#ff2d55]/20 rounded mb-2" />
-                <div className="h-2 w-2/3 bg-[#1e5eff]/20 dark:bg-[#ff2d55]/20 rounded" />
-            </motion.div>
-        </div>
-    )
-}
 
-function QuizVisual() {
-    return (
-        <div className="relative w-full max-w-sm h-48 flex items-center justify-center">
-            <motion.div 
-                initial={{ rotate: -5, scale: 0.9 }} animate={{ rotate: -5, scale: 0.95 }} 
-                className="absolute inset-0 bg-white dark:bg-neutral-800 rounded-xl border border-gray-200 dark:border-white/5 shadow opacity-60"
-            />
-            <motion.div 
-                 initial={{ rotate: 5, scale: 0.95 }} animate={{ rotate: 5, scale: 0.98 }} 
-                 className="absolute inset-0 bg-white dark:bg-neutral-800 rounded-xl border border-gray-200 dark:border-white/5 shadow opacity-80"
-            />
-             <motion.div 
-                 initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-                 className="absolute inset-0 bg-white dark:bg-neutral-800 rounded-xl border border-gray-200 dark:border-white/10 shadow-xl p-6 flex flex-col items-center justify-center text-center"
-            >
-                <Brain className="w-12 h-12 text-[#1e5eff] dark:text-[#ff2d55] mb-4 opacity-80" />
-                <div className="h-2 w-3/4 bg-gray-100 dark:bg-white/10 rounded mb-2" />
-                <div className="h-2 w-1/2 bg-gray-100 dark:bg-white/10 rounded mb-6" />
-                <div className="flex gap-2 w-full">
-                    <div className="h-8 flex-1 rounded bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5" />
-                    <div className="h-8 flex-1 rounded bg-[#1e5eff]/10 dark:bg-[#ff2d55]/10 border border-[#1e5eff]/30 dark:border-[#ff2d55]/30" />
+                <div className="flex justify-center mb-8">
+                    <div className="inline-flex gap-1 md:gap-2 p-1.5 rounded-full border border-gray-200 dark:border-white/10 bg-white/20 dark:bg-white/5 backdrop-blur-md shadow-sm dark:shadow-none">
+                        {pages.map((page) => (
+                            <TabButton
+                                key={page.id}
+                                page={page}
+                                isActive={activeTab === page.id}
+                                onClick={() => setActiveTab(page.id)}
+                            />
+                        ))}
+                    </div>
                 </div>
-            </motion.div>
-        </div>
-    )
-}
 
-function LeaderboardVisual() {
-    return (
-        <div className="flex items-end gap-4 h-32">
-            <motion.div 
-                initial={{ height: 0 }} animate={{ height: "40%" }} transition={{ delay: 0.2 }}
-                className="w-16 bg-gray-200 dark:bg-white/10 rounded-t-lg relative group"
-            >
-                 <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs text-gray-400 font-bold">3</div>
-            </motion.div>
-            <motion.div 
-                initial={{ height: 0 }} animate={{ height: "100%" }} transition={{ delay: 0.4, type: "spring" }}
-                className="w-16 bg-gradient-to-t from-[#1e5eff] to-[#60a5fa] dark:from-[#ff2d55] dark:to-[#ff7c9c] rounded-t-lg relative shadow-lg shadow-blue-500/20 dark:shadow-pink-500/20"
-            >
-                <Trophy className="absolute -top-8 left-1/2 -translate-x-1/2 w-6 h-6 text-[#1e5eff] dark:text-[#ff2d55]" />
-                <div className="absolute top-2 left-1/2 -translate-x-1/2 text-white font-bold">1</div>
-            </motion.div>
-            <motion.div 
-                initial={{ height: 0 }} animate={{ height: "70%" }} transition={{ delay: 0.3 }}
-                className="w-16 bg-gray-300 dark:bg-white/20 rounded-t-lg relative"
-            >
-                 <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs text-gray-400 font-bold">2</div>
-            </motion.div>
-        </div>
-    )
-}
-
-function ProfileVisual() {
-    return (
-        <div className="w-full max-w-md bg-white dark:bg-neutral-800 rounded-xl border border-gray-200 dark:border-white/5 p-4 shadow-sm">
-            <div className="flex items-center gap-4 mb-6">
-                <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-white/10" />
-                <div className="space-y-2">
-                    <div className="h-3 w-32 bg-gray-200 dark:bg-white/20 rounded" />
-                    <div className="h-2 w-20 bg-gray-100 dark:bg-white/10 rounded" />
+                <div className="max-w-2xl mx-auto text-center relative h-20 md:h-16 w-full mb-4">
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={activeTab}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.2 }}
+                            className="absolute w-full top-0 left-0 flex justify-center"
+                        >
+                            <p className="text-base md:text-lg text-gray-600 dark:text-gray-300 leading-relaxed font-light">
+                                {t(`${activeTab}.description`)}
+                            </p>
+                        </motion.div>
+                    </AnimatePresence>
                 </div>
             </div>
-            <div className="space-y-3">
-                <div className="flex justify-between text-xs text-gray-400">
-                    <span>JS</span>
-                    <span>85%</span>
-                </div>
-                <div className="w-full h-2 bg-gray-100 dark:bg-white/5 rounded-full overflow-hidden">
-                    <motion.div 
-                        initial={{ width: 0 }} animate={{ width: "85%" }} transition={{ duration: 1, delay: 0.2 }}
-                        className="h-full bg-yellow-400 rounded-full" 
-                    />
-                </div>
-                 <div className="flex justify-between text-xs text-gray-400">
-                    <span>React</span>
-                    <span>60%</span>
-                </div>
-                <div className="w-full h-2 bg-gray-100 dark:bg-white/5 rounded-full overflow-hidden">
-                    <motion.div 
-                        initial={{ width: 0 }} animate={{ width: "60%" }} transition={{ duration: 1, delay: 0.4 }}
-                        className="h-full bg-blue-400 rounded-full" 
-                    />
-                </div>
-            </div>
-        </div>
-    )
-}
-
-function ShopVisual() {
-    return (
-        <div className="flex gap-4">
-            {[1, 2].map((i) => (
-                <motion.div 
-                    key={i}
-                    initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
-                    className="w-36 bg-white dark:bg-neutral-800 rounded-xl border border-gray-200 dark:border-white/5 p-3 shadow-sm hover:-translate-y-1 transition-transform relative"
-                >
-                    <div className="w-full aspect-square bg-gray-100 dark:bg-white/5 rounded-lg mb-3 flex items-center justify-center">
-                        <ShoppingBag className="w-6 h-6 text-gray-300" />
-                    </div>
-                    <div className="h-2 w-3/4 bg-gray-200 dark:bg-white/20 rounded mb-2" />
-                    <div className="flex justify-between items-center mt-2">
-                         <div className="h-3 w-10 bg-[#1e5eff]/20 dark:bg-[#ff2d55]/20 rounded" />
-                         <div className="text-[10px] font-bold text-gray-400">$25</div>
-                    </div>
-                </motion.div>
-            ))}
-        </div>
+        </section>
     )
 }
