@@ -154,18 +154,21 @@ export function ParticleCanvas({ activeShape, className }: ParticleCanvasProps) 
     const ctx = canvas.getContext("2d")
     if (!ctx) return
 
+    let logicalWidth = 0
+    let logicalHeight = 0
+
     const resizeCanvas = () => {
-      const width = canvas.parentElement?.offsetWidth || window.innerWidth
-      const height = canvas.parentElement?.offsetHeight || window.innerHeight
+      logicalWidth = canvas.parentElement?.offsetWidth || window.innerWidth
+      logicalHeight = canvas.parentElement?.offsetHeight || window.innerHeight
       const dpr = window.devicePixelRatio || 1
       
-      canvas.width = width * dpr
-      canvas.height = height * dpr
-      canvas.style.width = `${width}px`
-      canvas.style.height = `${height}px`
+      canvas.width = logicalWidth * dpr
+      canvas.height = logicalHeight * dpr
+      canvas.style.width = `${logicalWidth}px`
+      canvas.style.height = `${logicalHeight}px`
       
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-      initParticles(width, height)
+      initParticles(logicalWidth, logicalHeight)
     }
 
     const initParticles = (width: number, height: number) => {
@@ -202,7 +205,7 @@ export function ParticleCanvas({ activeShape, className }: ParticleCanvasProps) 
       const deltaTime = Math.min(rawDeltaTime, 0.05)
       lastTimeRef.current = timestamp
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      ctx.clearRect(0, 0, logicalWidth, logicalHeight)
 
       timeRef.current += deltaTime
 
@@ -223,7 +226,7 @@ export function ParticleCanvas({ activeShape, className }: ParticleCanvasProps) 
 
       const { r, g, b, isDark } = getThemeColors()
 
-      const isMobileView = canvas.width < 768
+      const isMobileView = logicalWidth < 768
 
       const currentShape = activeShapeRef.current || prevShapeRef.current
       const shapePoints =
@@ -243,13 +246,13 @@ export function ParticleCanvas({ activeShape, className }: ParticleCanvasProps) 
         p.floatX += p.floatVx
         p.floatY += p.floatVy
 
-        if (p.floatX < 0 || p.floatX > canvas.width) {
+        if (p.floatX < 0 || p.floatX > logicalWidth) {
           p.floatVx *= -1
-          p.floatX = Math.max(0, Math.min(canvas.width, p.floatX))
+          p.floatX = Math.max(0, Math.min(logicalWidth, p.floatX))
         }
-        if (p.floatY < 0 || p.floatY > canvas.height) {
+        if (p.floatY < 0 || p.floatY > logicalHeight) {
           p.floatVy *= -1
-          p.floatY = Math.max(0, Math.min(canvas.height, p.floatY))
+          p.floatY = Math.max(0, Math.min(logicalHeight, p.floatY))
         }
 
         // Calculate shape position
@@ -269,20 +272,20 @@ export function ParticleCanvas({ activeShape, className }: ParticleCanvasProps) 
           const rotatedY = shapePoint.y
           const perspective = 3
           const scale = perspective / (perspective + rotatedZ)
-          const shapeScale = Math.min(canvas.width, canvas.height) * 0.7
+          const shapeScale = Math.min(logicalWidth, logicalHeight) * 0.7
           
           // Position: centered on each card
-          const centerX = canvas.width / 2
-          const centerY = isFirstHalf ? canvas.height * 0.32 : canvas.height * 0.68
+          const centerX = logicalWidth / 2
+          const centerY = isFirstHalf ? logicalHeight * 0.32 : logicalHeight * 0.68
           
           shapeX = centerX + rotatedX * shapeScale * scale
           shapeY = centerY + rotatedY * shapeScale * scale
         } else if (shapePoints) {
           // Desktop: original hover behavior
-          let centerX = canvas.width / 2
-          const centerY = canvas.height / 2
-          if (currentShape === "brackets") centerX = canvas.width * 0.25
-          if (currentShape === "heart") centerX = canvas.width * 0.75
+          let centerX = logicalWidth / 2
+          const centerY = logicalHeight / 2
+          if (currentShape === "brackets") centerX = logicalWidth * 0.25
+          if (currentShape === "heart") centerX = logicalWidth * 0.75
           
           const shapePoint = shapePoints[i % shapePoints.length]
           const rotatedX = shapePoint.x * cos - shapePoint.z * sin
@@ -290,7 +293,7 @@ export function ParticleCanvas({ activeShape, className }: ParticleCanvasProps) 
           const rotatedY = shapePoint.y
           const perspective = 3
           const scale = perspective / (perspective + rotatedZ)
-          const shapeScale = Math.min(canvas.width, canvas.height) * 0.35
+          const shapeScale = Math.min(logicalWidth, logicalHeight) * 0.35
           shapeX = centerX + rotatedX * shapeScale * scale
           shapeY = centerY + rotatedY * shapeScale * scale
         }
