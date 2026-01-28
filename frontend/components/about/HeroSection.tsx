@@ -29,7 +29,7 @@ export function HeroSection({ stats }: { stats?: PlatformStats }) {
 
         <div className="flex flex-col items-center text-center xl:col-span-6">
             
-            <div className="scale-90 md:scale-100 mb-6" aria-hidden="true">
+            <div className="scale-90 md:scale-100 mb-6">
                 <InteractiveGame />
             </div>
 

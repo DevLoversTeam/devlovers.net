@@ -40,7 +40,7 @@ const translations: Record<string, string> = {
     "leaderboard.title": "Leaderboard",
     "leaderboard.description": "Gamify your prep. Earn points for every correct answer, keep your streak alive, and rank up against others.",
     "blog.title": "Blog",
-    "blog.description": "Stay updated. detailed articles on tech trends, coding tutorials, and industry insights to keep you ahead of the curve.",
+    "blog.description": "Stay updated with detailed articles on tech trends, coding tutorials, and industry insights to keep you ahead of the curve.",
     "profile.title": "Analytics",
     "profile.description": "Don't fly blind. Visualize your progress with detailed charts to see exactly which topics you've mastered.",
     "shop.title": "Shop",

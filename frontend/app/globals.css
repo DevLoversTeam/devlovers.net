@@ -458,3 +458,12 @@
 .scrollbar-hide::-webkit-scrollbar {
   display: none; /* Chrome, Safari and Opera */
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-float,
+  .animate-spin-slow,
+  .animate-spin-slower,
+  .animate-dash-flow {
+    animation: none !important;
+  }
+}

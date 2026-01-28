@@ -6,7 +6,7 @@ interface SectionHeadingProps {
   className?: string
 }
 
-export function SectionHeading({ title, highlight, subtitle, align = "center", className }: SectionHeadingProps) {
+export function SectionHeading({ title, highlight, subtitle, align = "center", className = "" }: SectionHeadingProps) {
   return (
     <div className={`mb-12 ${align === "center" ? "text-center mx-auto" : ""} max-w-3xl ${className}`}>
       <h2 className="text-4xl md:text-5xl lg:text-6xl font-black mb-6 tracking-tight text-gray-900 dark:text-white leading-[1.1]">

@@ -46,6 +46,8 @@ export function PricingSection({ sponsors = [] }: PricingSectionProps) {
                         whileHover={{ y: -5 }}
                         onMouseEnter={() => setActiveShape("brackets")}
                         onMouseLeave={() => setActiveShape(null)}
+                        onFocus={() => setActiveShape("brackets")}
+                        onBlur={() => setActiveShape(null)}
                         className="flex flex-col p-8 lg:p-10 rounded-3xl border border-gray-200 dark:border-neutral-800 bg-white/10 dark:bg-neutral-900/10 backdrop-blur-md shadow-sm relative z-10"
                     >
                         <div className="mb-6">
@@ -88,6 +90,8 @@ export function PricingSection({ sponsors = [] }: PricingSectionProps) {
                         whileHover={{ y: -5 }}
                         onMouseEnter={() => setActiveShape("heart")}
                         onMouseLeave={() => setActiveShape(null)}
+                        onFocus={() => setActiveShape("heart")}
+                        onBlur={() => setActiveShape(null)}
                         className="relative flex flex-col p-8 lg:p-10 rounded-3xl overflow-hidden backdrop-blur-md z-10
                             border border-[#1e5eff]/30 dark:border-[#ff2d55]/30
                             bg-gradient-to-b from-[#1e5eff]/5 to-white/10 dark:from-[#ff2d55]/10 dark:to-neutral-900/10"

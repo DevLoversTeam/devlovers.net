@@ -117,6 +117,7 @@ export function ParticleCanvas({ activeShape, className }: ParticleCanvasProps) 
   const targetTransitionRef = useRef(0)
   const prevShapeRef = useRef<"brackets" | "heart" | null>(null)
   const justLeftShapeRef = useRef(false)
+  const activeShapeRef = useRef<"brackets" | "heart" | null>(activeShape)
 
   const getThemeColors = () => {
     const isDark = document.documentElement.classList.contains("dark")
@@ -129,6 +130,7 @@ export function ParticleCanvas({ activeShape, className }: ParticleCanvasProps) 
   }
 
   useEffect(() => {
+    activeShapeRef.current = activeShape
     const wasInShape = targetTransitionRef.current === 1
     targetTransitionRef.current = activeShape ? 1 : 0
     if (activeShape) {
@@ -208,7 +210,7 @@ export function ParticleCanvas({ activeShape, className }: ParticleCanvasProps) 
 
       const isMobileView = canvas.width < 768
 
-      const currentShape = activeShape || prevShapeRef.current
+      const currentShape = activeShapeRef.current || prevShapeRef.current
       const shapePoints =
         currentShape === "brackets"
           ? SHAPE_POINTS_BRACKETS
@@ -342,7 +344,7 @@ export function ParticleCanvas({ activeShape, className }: ParticleCanvasProps) 
       window.removeEventListener("resize", resizeCanvas)
       if (animationFrameId.current) cancelAnimationFrame(animationFrameId.current)
     }
-  }, [activeShape])
+  }, [])
 
   return <canvas ref={canvasRef} className={className} />
 }

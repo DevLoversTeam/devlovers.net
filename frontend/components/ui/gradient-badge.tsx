@@ -6,7 +6,7 @@ interface GradientBadgeProps {
   className?: string
 }
 
-export function GradientBadge({ icon: Icon, text, className }: GradientBadgeProps) {
+export function GradientBadge({ icon: Icon, text, className = "" }: GradientBadgeProps) {
   return (
     <div 
       className={`inline-flex items-center gap-2 px-3 py-1 rounded-full 

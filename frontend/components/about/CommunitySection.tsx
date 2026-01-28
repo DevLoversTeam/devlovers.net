@@ -49,6 +49,7 @@ export function CommunitySection() {
                     <Link
                         href="https://github.com/DevLoversTeam/devlovers.net/discussions"
                         target="_blank"
+                        rel="noopener noreferrer"
                         className="group inline-flex items-center gap-1.5 px-4 py-2 rounded-full
                             border border-gray-200 dark:border-white/10
                             bg-white/50 dark:bg-white/5
@@ -67,6 +68,7 @@ export function CommunitySection() {
                 <Link
                     href="https://github.com/DevLoversTeam/devlovers.net/discussions"
                     target="_blank"
+                    rel="noopener noreferrer"
                     className="group relative hidden md:inline-flex items-center justify-center gap-4 p-1.5 pl-6 pr-1.5 rounded-full
                     bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10
                     transition-all duration-300 ease-out
