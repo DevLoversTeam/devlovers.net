@@ -454,7 +454,9 @@
     "checkout": {
       "errors": {
         "missingOrderId": "Brak identyfikatora zamówienia",
+        "missingOrderIdDescription": "Nie mogliśmy zidentyfikować twojego zamówienia. Wróć do koszyka lub przeglądaj produkty.",
         "orderNotFound": "Zamówienie nie znalezione",
+        "orderNotFoundDescription": "Nie mogliśmy znaleźć tego zamówienia. Mogło zostać usunięte lub nigdy nie istniało.",
         "invalidOrder": "Nieprawidłowe zamówienie",
         "unableToLoad": "Nie można załadować zamówienia",
         "unableToCheckout": "Nie można rozpocząć procesu zakupu.",
@@ -469,6 +471,7 @@
       },
       "success": {
         "title": "Dziękujemy za zamówienie",
+        "orderLabel": "Zamówienie",
         "received": "Otrzymaliśmy twoje zamówienie.",
         "paymentConfirmed": "Płatność została potwierdzona.",
         "paymentProcessing": "Płatność jest nadal przetwarzana. Ta strona zaktualizuje się automatycznie.",
@@ -482,13 +485,18 @@
       },
       "error": {
         "paymentFailed": "Płatność nie powiodła się",
+        "paymentFailedDescription": "Płatność za to zamówienie nie została zakończona. Możesz spróbować ponownie lub skontaktować się z pomocą.",
         "paymentUnclear": "Status płatności nieznany",
+        "paymentUnclearDescription": "Nie mogliśmy potwierdzić błędu płatności dla tego zamówienia.",
         "notCompleted": "Płatność za to zamówienie nie została zakończona. Możesz spróbować ponownie lub skontaktować się z pomocą.",
         "couldNotConfirm": "Nie mogliśmy potwierdzić błędu płatności dla tego zamówienia.",
         "orderDetails": "Szczegóły zamówienia",
         "order": "Zamówienie",
+        "orderLabel": "Zamówienie",
         "total": "Razem",
+        "totalLabel": "Razem",
         "status": "Status",
+        "statusLabel": "Status",
         "backToCart": "Wróć do koszyka",
         "retryPayment": "Spróbuj ponownie",
         "continueShopping": "Kontynuuj zakupy"
@@ -563,7 +571,9 @@
         "product": "Produkt: {productId}",
         "quantity": "Ilość",
         "unitPrice": "Cena jednostkowa",
-        "lineTotal": "Suma wiersza"
+        "lineTotal": "Suma wiersza",
+        "yes": "Tak",
+        "no": "Nie"
       }
     }
   },

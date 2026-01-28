@@ -3,6 +3,7 @@
 import { Menu, X, LogIn, ShoppingBag, Home } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { useSearchParams } from 'next/navigation';
 import { Link, usePathname } from '@/i18n/routing';
 
 import { SITE_LINKS } from '@/lib/navigation';
@@ -30,6 +31,8 @@ export function AppMobileMenu({
   const tCategories = useTranslations('shop.catalog.categories');
   const tProducts = useTranslations('shop.products');
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const currentCategory = searchParams.get('category');
   const [open, setOpen] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
 
@@ -59,10 +62,10 @@ export function AppMobileMenu({
   }, [open]);
 
   const shopLinks = useMemo(() => [
-    { href: '/shop/products', label: tProducts('title') },
-    { href: '/shop/products?category=apparel', label: tCategories('apparel') },
-    { href: '/shop/products?category=lifestyle', label: tCategories('lifestyle') },
-    { href: '/shop/products?category=collectibles', label: tCategories('collectibles') },
+    { href: '/shop/products', label: tProducts('title'), category: null },
+    { href: '/shop/products?category=apparel', label: tCategories('apparel'), category: 'apparel' },
+    { href: '/shop/products?category=lifestyle', label: tCategories('lifestyle'), category: 'lifestyle' },
+    { href: '/shop/products?category=collectibles', label: tCategories('collectibles'), category: 'collectibles' },
   ], [tProducts, tCategories]);
 
   const links = useMemo(() => {
@@ -147,16 +150,20 @@ export function AppMobileMenu({
                   <HeaderButton href="/" icon={Home} onClick={close}>
                     {t('home')}
                   </HeaderButton>
-                  {links.map(link => (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      onClick={close}
-                      className={linkClass(pathname === link.href)}
-                    >
-                      {'labelKey' in link ? t(link.labelKey) : link.label}
-                    </Link>
-                  ))}
+                  {links.map(link => {
+                    const isActive = pathname === '/shop/products' &&
+                      ('category' in link ? link.category === currentCategory : currentCategory === null);
+                    return (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        onClick={close}
+                        className={linkClass(isActive)}
+                      >
+                        {'labelKey' in link ? t(link.labelKey) : link.label}
+                      </Link>
+                    );
+                  })}
                 </>
               ) : null}
 

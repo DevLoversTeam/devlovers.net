@@ -113,7 +113,7 @@ export default async function MyOrdersPage({
 
   const user = await getCurrentUser();
   if (!user) {
-    redirect(`/login?next=${encodeURIComponent(`/shop/orders`)}`);
+    redirect(`/${locale}/login?returnTo=${encodeURIComponent(`/${locale}/shop/orders`)}`);
   }
 
   let rows: Array<{

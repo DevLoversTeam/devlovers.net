@@ -168,7 +168,7 @@ export default async function CheckoutSuccessPage({
           id="order-title"
           className="mt-2 text-3xl font-bold text-foreground"
         >
-          {t('error.order')} #{order.id.slice(0, 8)}
+          {t('success.orderLabel')} #{order.id.slice(0, 8)}
         </h1>
 
         <p className="mt-2 text-sm text-muted-foreground">
