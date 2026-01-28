@@ -276,6 +276,7 @@ function ConnectingLines() {
 function TabButton({ page, isActive, onClick }: { page: Page; isActive: boolean; onClick: () => void }) {
     return (
         <button
+            id={`${page.id}-tab`}
             onClick={onClick}
             role="tab"
             aria-selected={isActive}
@@ -348,6 +349,9 @@ export function FeaturesSection() {
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={activeTab}
+                            role="tabpanel"
+                            id={`${activeTab}-panel`}
+                            aria-labelledby={`${activeTab}-tab`}
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}

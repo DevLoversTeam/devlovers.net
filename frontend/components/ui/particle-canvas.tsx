@@ -111,6 +111,7 @@ export function ParticleCanvas({ activeShape, className }: ParticleCanvasProps) 
   const particles = useRef<Point[]>([])
   const animationFrameId = useRef<number | undefined>(undefined)
   const timeRef = useRef(0)
+  const lastTimeRef = useRef<number>(0)
 
   // Simple transition: 0 = floating, 1 = shape
   const transitionRef = useRef(0)
@@ -185,11 +186,16 @@ export function ParticleCanvas({ activeShape, className }: ParticleCanvasProps) 
       }
     }
 
-    const draw = () => {
+    const draw = (timestamp: number) => {
       if (!canvas || !ctx) return
+      
+      if (!lastTimeRef.current) lastTimeRef.current = timestamp
+      const deltaTime = (timestamp - lastTimeRef.current) / 1000
+      lastTimeRef.current = timestamp
+
       ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-      timeRef.current += 0.016
+      timeRef.current += deltaTime
 
       // Linear transition - no initial freeze
       const inSpeed = 0.012
@@ -338,7 +344,7 @@ export function ParticleCanvas({ activeShape, className }: ParticleCanvasProps) 
 
     resizeCanvas()
     window.addEventListener("resize", resizeCanvas)
-    draw()
+    animationFrameId.current = requestAnimationFrame(draw)
 
     return () => {
       window.removeEventListener("resize", resizeCanvas)
