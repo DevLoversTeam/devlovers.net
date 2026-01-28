@@ -1,4 +1,5 @@
 import { Link } from '@/i18n/routing';
+import { getTranslations } from 'next-intl/server';
 
 import { getAdminOrdersPage } from '@/db/queries/shop/admin-orders';
 import {
@@ -47,6 +48,7 @@ export default async function AdminOrdersPage({
 
   const { locale } = await params;
   const sp = await searchParams;
+  const t = await getTranslations('shop.admin.orders');
   const csrfToken = issueCsrfToken('admin:orders:reconcile-stale');
 
   const page = parsePage(sp.page);
@@ -74,7 +76,7 @@ export default async function AdminOrdersPage({
       itemCount: order.itemCount,
       paymentProvider: order.paymentProvider ?? '-',
       viewHref: `/shop/admin/orders/${order.id}`,
-      viewAriaLabel: `View order ${order.id}`,
+      viewAriaLabel: t('viewOrder', { id: order.id }),
     };
   });
 
@@ -91,7 +93,7 @@ export default async function AdminOrdersPage({
             id="admin-orders-title"
             className="text-2xl font-bold text-foreground"
           >
-            Admin · Orders
+            {t('title')}
           </h1>
 
           <form action="/api/shop/admin/orders/reconcile-stale" method="post">
@@ -100,17 +102,17 @@ export default async function AdminOrdersPage({
               type="submit"
               className="inline-flex w-full items-center justify-center rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary sm:w-auto"
             >
-              Reconcile stale
+              {t('reconcileStale')}
             </button>
           </form>
         </header>
 
-        <section className="mt-6" aria-label="Orders list">
+        <section className="mt-6" aria-label={t('listCaption')}>
           {/* Mobile cards */}
           <div className="md:hidden">
             {viewModels.length === 0 ? (
               <div className="rounded-md border border-border p-4 text-sm text-muted-foreground">
-                No orders yet.
+                {t('empty')}
               </div>
             ) : (
               <ul className="space-y-3">
@@ -138,12 +140,12 @@ export default async function AdminOrdersPage({
 
                     <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
                       <div>
-                        <dt className="text-muted-foreground">Items</dt>
+                        <dt className="text-muted-foreground">{t('table.items')}</dt>
                         <dd className="text-foreground">{vm.itemCount}</dd>
                       </div>
 
                       <div className="min-w-0">
-                        <dt className="text-muted-foreground">Provider</dt>
+                        <dt className="text-muted-foreground">{t('table.provider')}</dt>
                         <dd
                           className="truncate text-foreground"
                           title={vm.paymentProvider}
@@ -153,7 +155,7 @@ export default async function AdminOrdersPage({
                       </div>
 
                       <div className="col-span-2">
-                        <dt className="text-muted-foreground">Order ID</dt>
+                        <dt className="text-muted-foreground">{t('table.orderId')}</dt>
                         <dd
                           className="break-all font-mono text-[11px] text-muted-foreground"
                           title={vm.id}
@@ -169,7 +171,7 @@ export default async function AdminOrdersPage({
                         className="inline-flex items-center justify-center rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
                         aria-label={vm.viewAriaLabel}
                       >
-                        View
+                        {t('actions.view')}
                       </Link>
                     </div>
                   </li>
@@ -182,7 +184,7 @@ export default async function AdminOrdersPage({
           <div className="hidden md:block">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-border text-sm">
-                <caption className="sr-only">Orders list</caption>
+                <caption className="sr-only">{t('listCaption')}</caption>
 
                 <thead className="bg-muted/50">
                   <tr>
@@ -190,43 +192,43 @@ export default async function AdminOrdersPage({
                       scope="col"
                       className="px-3 py-2 text-left font-semibold text-foreground"
                     >
-                      Created
+                      {t('table.created')}
                     </th>
                     <th
                       scope="col"
                       className="px-3 py-2 text-left font-semibold text-foreground"
                     >
-                      Status
+                      {t('table.status')}
                     </th>
                     <th
                       scope="col"
                       className="px-3 py-2 text-left font-semibold text-foreground"
                     >
-                      Total
+                      {t('table.total')}
                     </th>
                     <th
                       scope="col"
                       className="px-3 py-2 text-left font-semibold text-foreground"
                     >
-                      Items
+                      {t('table.items')}
                     </th>
                     <th
                       scope="col"
                       className="px-3 py-2 text-left font-semibold text-foreground"
                     >
-                      Provider
+                      {t('table.provider')}
                     </th>
                     <th
                       scope="col"
                       className="px-3 py-2 text-left font-semibold text-foreground"
                     >
-                      Order ID
+                      {t('table.orderId')}
                     </th>
                     <th
                       scope="col"
                       className="px-3 py-2 text-left font-semibold text-foreground"
                     >
-                      Actions
+                      {t('table.actions')}
                     </th>
                   </tr>
                 </thead>
@@ -238,7 +240,7 @@ export default async function AdminOrdersPage({
                         className="px-3 py-6 text-muted-foreground"
                         colSpan={7}
                       >
-                        No orders yet.
+                        {t('empty')}
                       </td>
                     </tr>
                   ) : (
@@ -276,7 +278,7 @@ export default async function AdminOrdersPage({
                             className="rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
                             aria-label={vm.viewAriaLabel}
                           >
-                            View
+                            {t('actions.view')}
                           </Link>
                         </td>
                       </tr>

@@ -1,5 +1,6 @@
 // frontend/app/[locale]/shop/checkout/error/page.tsx
 import { Link } from '@/i18n/routing';
+import { getTranslations } from 'next-intl/server';
 
 import { formatMoney, resolveCurrencyFromLocale } from '@/lib/shop/currency';
 import { OrderNotFoundError } from '@/lib/services/errors';
@@ -33,6 +34,7 @@ export default async function CheckoutErrorPage({
   searchParams?: Promise<SearchParams> | SearchParams;
 }) {
   const { locale } = await params;
+  const t = await getTranslations('shop.checkout');
 
   const resolvedSearchParams: SearchParams | undefined =
     searchParams && typeof (searchParams as any).then === 'function'
@@ -52,10 +54,10 @@ export default async function CheckoutErrorPage({
             id="checkout-error-title"
             className="text-2xl font-bold text-foreground"
           >
-            Missing order id
+            {t('errors.missingOrderId')}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            We couldn’t identify your order.
+            {t('errors.missingOrderIdDescription')}
           </p>
 
           <nav
@@ -66,13 +68,13 @@ export default async function CheckoutErrorPage({
               href="/shop/cart"
               className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
             >
-              Back to cart
+              {t('actions.backToCart')}
             </Link>
             <Link
               href="/shop/products"
               className="inline-flex items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground hover:bg-accent/90"
             >
-              Continue shopping
+              {t('actions.continueShopping')}
             </Link>
           </nav>
         </section>
@@ -96,10 +98,10 @@ export default async function CheckoutErrorPage({
               id="checkout-error-title"
               className="text-2xl font-bold text-foreground"
             >
-              Order not found
+              {t('errors.orderNotFound')}
             </h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              We couldn’t find this order.
+              {t('errors.orderNotFoundDescription')}
             </p>
 
             <nav
@@ -110,13 +112,13 @@ export default async function CheckoutErrorPage({
                 href="/shop/cart"
                 className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
               >
-                Back to cart
+                {t('actions.backToCart')}
               </Link>
               <Link
                 href="/shop/products"
                 className="inline-flex items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground hover:bg-accent/90"
               >
-                Continue shopping
+                {t('actions.continueShopping')}
               </Link>
             </nav>
           </section>
@@ -134,10 +136,10 @@ export default async function CheckoutErrorPage({
             id="checkout-error-title"
             className="text-2xl font-bold text-foreground"
           >
-            Unable to load order
+            {t('errors.unableToLoadOrder')}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Please try again later.
+            {t('errors.tryAgainLater')}
           </p>
         </section>
       </main>
@@ -165,12 +167,12 @@ export default async function CheckoutErrorPage({
             id="checkout-error-title"
             className="text-3xl font-bold text-foreground"
           >
-            {isFailed ? 'Payment failed' : 'Payment status unclear'}
+            {isFailed ? t('error.paymentFailed') : t('error.paymentUnclear')}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {isFailed
-              ? 'The payment for this order was not completed. You can try again or contact support.'
-              : 'We could not confirm a payment failure for this order.'}
+              ? t('error.paymentFailedDescription')
+              : t('error.paymentUnclearDescription')}
           </p>
         </header>
 
@@ -180,14 +182,14 @@ export default async function CheckoutErrorPage({
         >
           <dl className="space-y-2">
             <div className="flex items-center justify-between gap-4">
-              <dt className="text-muted-foreground">Order</dt>
+              <dt className="text-muted-foreground">{t('error.orderLabel')}</dt>
               <dd className="font-mono text-xs text-muted-foreground">
                 {order.id}
               </dd>
             </div>
 
             <div className="flex items-center justify-between gap-4">
-              <dt className="text-muted-foreground">Total</dt>
+              <dt className="text-muted-foreground">{t('error.totalLabel')}</dt>
               <dd className="font-semibold text-foreground">
                 {totalMinor == null
                   ? '-'
@@ -196,7 +198,7 @@ export default async function CheckoutErrorPage({
             </div>
 
             <div className="flex items-center justify-between gap-4">
-              <dt className="text-muted-foreground">Status</dt>
+              <dt className="text-muted-foreground">{t('error.statusLabel')}</dt>
               <dd className="font-semibold capitalize text-foreground">
                 {order.paymentStatus}
               </dd>
@@ -209,7 +211,7 @@ export default async function CheckoutErrorPage({
             href="/shop/cart"
             className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
           >
-            Back to cart
+            {t('actions.backToCart')}
           </Link>
 
           {isFailed && order.id ? (
@@ -217,7 +219,7 @@ export default async function CheckoutErrorPage({
               href={`/shop/checkout/payment/${order.id}`}
               className="inline-flex items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground hover:bg-accent/90"
             >
-              Retry payment
+              {t('actions.retryPayment')}
             </Link>
           ) : null}
 
@@ -225,7 +227,7 @@ export default async function CheckoutErrorPage({
             href="/shop/products"
             className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
           >
-            Continue shopping
+            {t('actions.continueShopping')}
           </Link>
         </nav>
       </section>

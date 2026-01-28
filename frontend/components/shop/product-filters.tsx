@@ -2,6 +2,7 @@
 
 import { useId } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 import { CATEGORIES, COLORS, PRODUCT_TYPES, SIZES } from '@/lib/config/catalog';
 import { cn } from '@/lib/utils';
@@ -10,6 +11,10 @@ export function ProductFilters() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const t = useTranslations('shop.filters');
+  const tCategories = useTranslations('shop.catalog.categories');
+  const tTypes = useTranslations('shop.catalog.productTypes');
+  const tColors = useTranslations('shop.catalog.colors');
   const currentCategory = searchParams.get('category') || 'all';
   const currentType = searchParams.get('type');
   const currentColor = searchParams.get('color');
@@ -32,14 +37,14 @@ export function ProductFilters() {
   };
 
   return (
-    <aside className="space-y-8" aria-label="Product filters">
+    <aside className="space-y-8" aria-label={t('label')}>
       {/* Category */}
       <section aria-labelledby={categoryGroupId}>
         <h3
           id={categoryGroupId}
           className="text-sm font-semibold uppercase tracking-wide text-foreground"
         >
-          Category
+          {t('category')}
         </h3>
 
         <ul className="mt-4 space-y-2" role="list">
@@ -56,7 +61,7 @@ export function ProductFilters() {
                     : 'text-muted-foreground hover:text-foreground'
                 )}
               >
-                {cat.label}
+                {tCategories(cat.slug === 'new-arrivals' ? 'newArrivals' : cat.slug === 'best-sellers' ? 'bestSellers' : cat.slug)}
               </button>
             </li>
           ))}
@@ -69,7 +74,7 @@ export function ProductFilters() {
           id={typeGroupId}
           className="text-sm font-semibold uppercase tracking-wide text-foreground"
         >
-          Type
+          {t('type')}
         </h3>
 
         <ul className="mt-4 space-y-2" role="list">
@@ -91,7 +96,7 @@ export function ProductFilters() {
                       : 'text-muted-foreground hover:text-foreground'
                   )}
                 >
-                  {type.label}
+                  {tTypes(type.slug)}
                 </button>
               </li>
             );
@@ -105,12 +110,13 @@ export function ProductFilters() {
           id={colorGroupId}
           className="text-sm font-semibold uppercase tracking-wide text-foreground"
         >
-          Color
+          {t('color')}
         </h3>
 
         <div className="mt-4 flex flex-wrap gap-2">
           {COLORS.map(color => {
             const isSelected = currentColor === color.slug;
+            const colorLabel = tColors(color.slug);
 
             return (
               <button
@@ -127,8 +133,8 @@ export function ProductFilters() {
                     : 'border-border hover:border-muted-foreground'
                 )}
                 style={{ background: color.hex }}
-                title={color.label}
-                aria-label={color.label}
+                title={colorLabel}
+                aria-label={colorLabel}
               />
             );
           })}
@@ -141,7 +147,7 @@ export function ProductFilters() {
           id={sizeGroupId}
           className="text-sm font-semibold uppercase tracking-wide text-foreground"
         >
-          Size
+          {t('size')}
         </h3>
 
         <div className="mt-4 flex flex-wrap gap-2">

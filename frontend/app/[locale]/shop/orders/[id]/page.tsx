@@ -4,6 +4,7 @@ import { Link } from '@/i18n/routing';
 import { notFound, redirect } from 'next/navigation';
 import { unstable_noStore as noStore } from 'next/cache';
 import { and, eq } from 'drizzle-orm';
+import { getTranslations } from 'next-intl/server';
 
 import { db } from '@/db';
 import { orderItems, orders } from '@/db/schema';
@@ -108,6 +109,7 @@ export default async function OrderDetailPage({
   noStore();
 
   const { locale, id } = await params;
+  const t = await getTranslations('shop.orders.detail');
 
   const user = await getCurrentUser();
   if (!user) {
@@ -207,7 +209,7 @@ export default async function OrderDetailPage({
       <header className="mb-6 flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h1 id="order-heading" className="truncate text-2xl font-semibold">
-            Order
+            {t('title')}
           </h1>
           <div className="mt-1 truncate text-xs opacity-80">{order.id}</div>
         </div>
@@ -220,10 +222,10 @@ export default async function OrderDetailPage({
             className="text-sm underline underline-offset-4"
             href="/shop/orders"
           >
-            My orders
+            {t('myOrders')}
           </Link>
           <Link className="text-sm underline underline-offset-4" href="/shop">
-            Shop
+            {t('shop')}
           </Link>
         </nav>
       </header>
@@ -233,30 +235,30 @@ export default async function OrderDetailPage({
         aria-labelledby="order-summary-heading"
       >
         <h2 id="order-summary-heading" className="sr-only">
-          Order summary
+          {t('orderSummary')}
         </h2>
 
         <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
-            <dt className="text-xs opacity-80">Total</dt>
+            <dt className="text-xs opacity-80">{t('total')}</dt>
             <dd className="text-sm font-medium">{totalFormatted}</dd>
           </div>
 
           <div>
-            <dt className="text-xs opacity-80">Payment status</dt>
+            <dt className="text-xs opacity-80">{t('paymentStatus')}</dt>
             <dd className="text-sm font-medium">
               {String(order.paymentStatus)}
             </dd>
           </div>
 
           <div>
-            <dt className="text-xs opacity-80">Created</dt>
+            <dt className="text-xs opacity-80">{t('created')}</dt>
             <dd className="text-sm">{createdFormatted}</dd>
           </div>
 
           {isAdmin && (
             <div>
-              <dt className="text-xs opacity-80">Provider</dt>
+              <dt className="text-xs opacity-80">{t('provider')}</dt>
               <dd className="text-sm">{String(order.paymentProvider)}</dd>
             </div>
           )}
@@ -265,13 +267,13 @@ export default async function OrderDetailPage({
         {isAdmin && (
           <dl className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <dt className="text-xs opacity-80">Payment reference</dt>
+              <dt className="text-xs opacity-80">{t('paymentReference')}</dt>
               <dd className="text-sm break-all">
                 {order.paymentIntentId ?? '—'}
               </dd>
             </div>
             <div>
-              <dt className="text-xs opacity-80">Idempotency key</dt>
+              <dt className="text-xs opacity-80">{t('idempotencyKey')}</dt>
               <dd className="text-sm break-all">{order.idempotencyKey}</dd>
             </div>
           </dl>
@@ -280,13 +282,13 @@ export default async function OrderDetailPage({
         {isAdmin && (
           <dl className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <dt className="text-xs opacity-80">Stock restored</dt>
+              <dt className="text-xs opacity-80">{t('stockRestored')}</dt>
               <dd className="text-sm">
                 {order.stockRestored ? 'true' : 'false'}
               </dd>
             </div>
             <div>
-              <dt className="text-xs opacity-80">Restocked at</dt>
+              <dt className="text-xs opacity-80">{t('restockedAt')}</dt>
               <dd className="text-sm">{restockedFormatted}</dd>
             </div>
           </dl>
@@ -299,11 +301,11 @@ export default async function OrderDetailPage({
       >
         <div className="border-b p-4">
           <h2 id="order-items-heading" className="text-lg font-semibold">
-            Items
+            {t('items')}
           </h2>
         </div>
 
-        <ul className="divide-y" aria-label="Order items">
+        <ul className="divide-y" aria-label={t('items')}>
           {order.items.map(it => (
             <li key={it.id} className="p-4">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
@@ -316,25 +318,25 @@ export default async function OrderDetailPage({
                   </div>
                   <div className="mt-1 break-all text-xs opacity-80">
                     {it.productSku
-                      ? `SKU: ${it.productSku}`
-                      : `Product: ${it.productId}`}
+                      ? t('sku', { sku: it.productSku })
+                      : t('product', { productId: it.productId })}
                   </div>
                 </div>
 
                 <dl className="flex flex-col items-start gap-1 sm:items-end">
                   <div>
-                    <dt className="sr-only">Quantity</dt>
+                    <dt className="sr-only">{t('quantity')}</dt>
                     <dd className="text-sm">Qty: {it.quantity}</dd>
                   </div>
                   <div>
-                    <dt className="sr-only">Unit price</dt>
+                    <dt className="sr-only">{t('unitPrice')}</dt>
                     <dd className="text-sm opacity-80">
                       Unit:{' '}
                       {safeFormatMoneyMajor(it.unitPrice, currency, locale)}
                     </dd>
                   </div>
                   <div>
-                    <dt className="sr-only">Line total</dt>
+                    <dt className="sr-only">{t('lineTotal')}</dt>
                     <dd className="text-sm font-medium">
                       Line:{' '}
                       {safeFormatMoneyMajor(it.lineTotal, currency, locale)}

@@ -6,7 +6,6 @@ import { useTranslations } from 'next-intl';
 import { Link, usePathname } from '@/i18n/routing';
 
 import { SITE_LINKS } from '@/lib/navigation';
-import { NAV_LINKS } from '@/components/shop/header/nav-links';
 import { LogoutButton } from '@/components/auth/logoutButton';
 import { HeaderButton } from '@/components/shared/HeaderButton';
 
@@ -26,6 +25,10 @@ export function AppMobileMenu({
   blogCategories = [],
 }: Props) {
   const t = useTranslations('navigation');
+  const tAria = useTranslations('aria');
+  const tMobileMenu = useTranslations('mobileMenu');
+  const tCategories = useTranslations('shop.catalog.categories');
+  const tProducts = useTranslations('shop.products');
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -55,11 +58,18 @@ export function AppMobileMenu({
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [open]);
 
+  const shopLinks = useMemo(() => [
+    { href: '/shop/products', label: tProducts('title') },
+    { href: '/shop/products?category=apparel', label: tCategories('apparel') },
+    { href: '/shop/products?category=lifestyle', label: tCategories('lifestyle') },
+    { href: '/shop/products?category=collectibles', label: tCategories('collectibles') },
+  ], [tProducts, tCategories]);
+
   const links = useMemo(() => {
-    if (variant === 'shop') return NAV_LINKS;
+    if (variant === 'shop') return shopLinks;
     if (variant === 'platform') return SITE_LINKS;
     return [];
-  }, [variant]);
+  }, [variant, shopLinks]);
 
   useEffect(() => {
     if (open) {
@@ -104,7 +114,7 @@ export function AppMobileMenu({
         style={{
           color: open ? 'var(--accent-primary)' : 'var(--muted-foreground)',
         }}
-        aria-label="Toggle menu"
+        aria-label={tAria('toggleMenu')}
         aria-expanded={open ? 'true' : 'false'}
         aria-controls={open ? 'app-mobile-nav' : undefined}
       >
@@ -205,7 +215,7 @@ export function AppMobileMenu({
                   onClick={close}
                   className={linkClass(pathname === '/shop/admin/products/new')}
                 >
-                  New product
+                  {tMobileMenu('newProduct')}
                 </Link>
               ) : null}
 
@@ -224,12 +234,12 @@ export function AppMobileMenu({
                   {showAdminLink ? (
                     <Link
                       href="/shop/admin"
-                      aria-label="Shop admin"
-                      title="Shop admin"
+                      aria-label={tAria('shopAdmin')}
+                      title={tAria('shopAdmin')}
                       onClick={close}
                       className={linkClass(pathname === '/shop/admin')}
                     >
-                      Admin
+                      {tMobileMenu('admin')}
                     </Link>
                   ) : null}
 
