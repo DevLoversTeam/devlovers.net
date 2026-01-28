@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Search } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 
 type PostSearchItem = {
@@ -36,13 +36,19 @@ function extractSnippet(body: PostSearchItem['body'], query: string) {
 
 const SEARCH_ENDPOINT = '/api/blog-search';
 
+function normalizeSearchText(value: string) {
+  return value.toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
 export function BlogHeaderSearch() {
   const t = useTranslations('blog');
+  const locale = useLocale();
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState('');
   const [items, setItems] = useState<PostSearchItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const debounceRef = useRef<number | null>(null);
 
@@ -52,10 +58,25 @@ export function BlogHeaderSearch() {
   }, [open]);
 
   useEffect(() => {
-    if (!open || items.length || isLoading) return;
+    if (!open) return;
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!containerRef.current) return;
+      if (!containerRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handlePointerDown);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open || items.length || !isLoading) return;
     let active = true;
-    setIsLoading(true);
-    fetch(SEARCH_ENDPOINT, { cache: 'no-store' })
+    fetch(`${SEARCH_ENDPOINT}?locale=${encodeURIComponent(locale)}`, {
+      cache: 'no-store',
+    })
       .then(response => (response.ok ? response.json() : []))
       .then((result: PostSearchItem[]) => {
         if (!active) return;
@@ -87,20 +108,21 @@ export function BlogHeaderSearch() {
   }, [open, router, value]);
 
   const results = useMemo<SearchResult[]>(() => {
-    const query = value.trim().toLowerCase();
+    const query = normalizeSearchText(value);
     if (!query) return [];
     const words = query.split(/\s+/).filter(Boolean);
     return items
       .filter(item => {
-        const title = (item.title || '').toLowerCase();
-        const bodyText = (item.body || [])
-          .filter(block => block?._type === 'block')
-          .map(block =>
-            (block.children || []).map(child => child.text || '').join(' ')
-          )
-          .join(' ')
-          .toLowerCase();
-        return words.every(
+        const title = normalizeSearchText(item.title || '');
+        const bodyText = normalizeSearchText(
+          (item.body || [])
+            .filter(block => block?._type === 'block')
+            .map(block =>
+              (block.children || []).map(child => child.text || '').join(' ')
+            )
+            .join(' ')
+        );
+        return words.some(
           word => title.includes(word) || bodyText.includes(word)
         );
       })
@@ -118,16 +140,23 @@ export function BlogHeaderSearch() {
     setOpen(false);
   };
 
-  const clear = () => {
-    setValue('');
-    setOpen(false);
+  const startLoading = () => {
+    if (!items.length && !isLoading) {
+      setIsLoading(true);
+    }
   };
 
   return (
-    <div className="relative flex items-center">
+    <div ref={containerRef} className="relative flex items-center">
       <button
         type="button"
-        onClick={() => setOpen(prev => !prev)}
+        onClick={() =>
+          setOpen(prev => {
+            const next = !prev;
+            if (next) startLoading();
+            return next;
+          })
+        }
         className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
         aria-label="Search blog"
       >
@@ -153,7 +182,10 @@ export function BlogHeaderSearch() {
               value={value}
               onChange={event => {
                 setValue(event.target.value);
-                if (!open) setOpen(true);
+                if (!open) {
+                  setOpen(true);
+                  startLoading();
+                }
               }}
                 onKeyDown={event => {
                   if (event.key === 'Escape') setOpen(false);

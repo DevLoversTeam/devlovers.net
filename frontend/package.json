@@ -1,6 +1,6 @@
 {
   "name": "frontend",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -16,7 +16,9 @@
     "db:studio": "drizzle-kit studio --config drizzle.config.ts",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "test:blog": "vitest run components/tests/blog/*.test.tsx lib/tests/blog/*.test.ts",
+    "test:blog:coverage": "vitest run --coverage \"--coverage.include=components/blog/**\" \"--coverage.include=app/api/blog-*/**\" components/tests/blog/*.test.tsx lib/tests/blog/*.test.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
@@ -37,6 +39,7 @@
     "drizzle-orm": "^0.45.1",
     "framer-motion": "^12.23.26",
     "groq": "^4.14.2",
+    "groq-sdk": "^0.37.0",
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^0.555.0",
     "next": "^16.0.7",
@@ -56,6 +59,7 @@
     "@netlify/plugin-nextjs": "^5.15.1",
     "@tailwindcss/postcss": "^4",
     "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/react": "^16.3.1",
     "@testing-library/user-event": "^14.6.1",
     "@types/jsonwebtoken": "^9.0.10",
@@ -63,6 +67,7 @@
     "@types/nodemailer": "^7.0.4",
     "@types/react": "^19.2.8",
     "@types/react-dom": "^19",
+    "@vitest/coverage-v8": "^4.0.18",
     "drizzle-kit": "^0.18.1",
     "eslint": "^9",
     "eslint-config-next": "16.0.1",

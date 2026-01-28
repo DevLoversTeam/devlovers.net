@@ -19,6 +19,14 @@ function isQaPath(pathname: string): boolean {
   return segments[0] === 'q&a' || segments[1] === 'q&a';
 }
 
+function isHomePath(pathname: string): boolean {
+  const segments = pathname.split('/').filter(Boolean);
+  return (
+    segments.length === 0 ||
+    (segments.length === 1 && ['en', 'pl', 'uk'].includes(segments[0]))
+  );
+}
+
 type MainSwitcherProps = {
   children: ReactNode;
   userExists: boolean;
@@ -34,6 +42,7 @@ export function MainSwitcher({
 }: MainSwitcherProps) {
   const pathname = usePathname();
   const isQa = isQaPath(pathname);
+  const isHome = isHomePath(pathname);
 
   if (isShopPath(pathname)) return <>{children}</>;
 
@@ -52,7 +61,7 @@ export function MainSwitcher({
   }
 
   return (
-    <main className={isQa ? 'mx-auto min-h-[80vh]' : 'mx-auto px-6 min-h-[80vh]'}>
+    <main className={isQa || isHome ? 'mx-auto' : 'mx-auto px-6 min-h-[80vh]'}>
       {children}
     </main>
   );

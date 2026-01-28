@@ -30,8 +30,7 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  --animate-float-soft: float-soft 8s ease-in-out infinite;
-  --animate-pulse-soft: pulse-soft 2.8s ease-in-out infinite;
+  --animate-wave-clip: wave-clip 5s ease-in-out infinite;
 }
 
 @theme {
@@ -51,6 +50,7 @@
   --muted-foreground: oklch(0.556 0 0);
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
+  --logo-foreground: oklch(0.25 0.08 250);
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
@@ -88,6 +88,7 @@
   --muted-foreground: oklch(0.708 0 0);
   --accent: oklch(0.269 0 0);
   --accent-foreground: oklch(0.985 0 0);
+  --logo-foreground: oklch(0.95 0.05 350);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
@@ -135,6 +136,10 @@
   }
 }
 
+.container-main {
+  @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+}
+
 .qa-accordion-item:hover,
 .qa-accordion-item:focus-within,
 .qa-accordion-item[data-state='open'] {
@@ -148,28 +153,6 @@
   user-select: none; /* Standard */
 }
 
-@keyframes float-soft {
-  0%,
-  100% {
-    transform: translateY(8px) scale(1);
-  }
-  50% {
-    transform: translateY(-16px) scale(1.04);
-  }
-}
-
-@keyframes pulse-soft {
-  0%,
-  100% {
-    opacity: 0.2;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.4;
-    transform: scale(1.08);
-  }
-}
-
 @keyframes progress {
   from {
     width: 100%;
@@ -178,12 +161,175 @@
     width: 0%;
   }
 }
+
 @keyframes shrink {
   from {
     transform: scaleX(1);
   }
   to {
     transform: scaleX(0);
+  }
+}
+
+@keyframes wave-clip {
+  0%,
+  100% {
+    clip-path: polygon(
+      0% 50%,
+      15% 48%,
+      32% 52%,
+      54% 60%,
+      70% 62%,
+      84% 60%,
+      100% 55%,
+      100% 100%,
+      0% 100%
+    );
+  }
+  50% {
+    clip-path: polygon(
+      0% 65%,
+      16% 70%,
+      34% 72%,
+      51% 68%,
+      67% 58%,
+      84% 52%,
+      100% 48%,
+      100% 100%,
+      0% 100%
+    );
+  }
+}
+
+@keyframes slide-up-gradient {
+  0% {
+    clip-path: inset(100% 0 0 0);
+  }
+  100% {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes wave-slide-up {
+  0% {
+    clip-path: polygon(
+      0% 100%,
+      10% 100%,
+      20% 100%,
+      30% 100%,
+      40% 100%,
+      50% 100%,
+      60% 100%,
+      70% 100%,
+      80% 100%,
+      90% 100%,
+      100% 100%,
+      100% 100%,
+      0% 100%
+    );
+  }
+  50% {
+    clip-path: polygon(
+      0% 60%,
+      10% 50%,
+      20% 45%,
+      30% 48%,
+      40% 55%,
+      50% 50%,
+      60% 45%,
+      70% 48%,
+      80% 52%,
+      90% 50%,
+      100% 55%,
+      100% 100%,
+      0% 100%
+    );
+  }
+  100% {
+    clip-path: polygon(
+      0% 0%,
+      10% 0%,
+      20% 0%,
+      30% 0%,
+      40% 0%,
+      50% 0%,
+      60% 0%,
+      70% 0%,
+      80% 0%,
+      90% 0%,
+      100% 0%,
+      100% 100%,
+      0% 100%
+    );
+  }
+}
+
+@keyframes text-fade-in {
+  0% {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes card-breathe {
+  0% {
+    transform: translate(0, 0) scale(1) rotate(var(--card-rotate, 0deg));
+  }
+  50% {
+    transform: translate(var(--card-x, 0), var(--card-y, 0)) scale(1.05)
+      rotate(calc(var(--card-rotate, 0deg) + var(--card-rotate-offset, 0deg)));
+  }
+  100% {
+    transform: translate(0, 0) scale(1) rotate(var(--card-rotate, 0deg));
+  }
+}
+
+@layer utilities {
+  .wave-text-gradient {
+    animation: wave-clip 5s ease-in-out infinite;
+  }
+
+  .animate-slide-up-gradient {
+    animation: slide-up-gradient 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
+  .animate-wave-slide-up {
+    animation: wave-slide-up 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
+  .animate-text-fade-in {
+    animation: text-fade-in 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
+  .animate-card-breathe {
+    animation: card-breathe 6s ease-in-out infinite;
+    will-change: transform;
+  }
+
+  .left-4 .animate-card-breathe,
+  .md\:left-6 .animate-card-breathe,
+  .lg\:left-8 .animate-card-breathe,
+  .xl\:left-12 .animate-card-breathe {
+    --card-x: -30px;
+    --card-y: -25px;
+    --card-rotate: -10deg;
+    --card-rotate-offset: -3deg;
+    animation-delay: 0s;
+  }
+
+  .right-4 .animate-card-breathe,
+  .md\:right-6 .animate-card-breathe,
+  .lg\:right-8 .animate-card-breathe,
+  .xl\:right-12 .animate-card-breathe {
+    --card-x: 30px;
+    --card-y: 25px;
+    --card-rotate: 8deg;
+    --card-rotate-offset: 3deg;
+    animation-delay: 0.8s;
   }
 }
 
@@ -203,12 +349,10 @@
   --color-ring: var(--foreground);
 
   --card: var(--background);
-    /* CTA button: light theme (section is black) -> pink bg + white text */
+  /* CTA button: light theme (section is black) -> pink bg + white text */
   --shop-cta-bg: #ff2d55;
   --shop-cta-fg: oklch(0.985 0 0);
-
 }
-
 
 .dark .shop-scope {
   /* dark: shop accent = magenta */
@@ -226,16 +370,19 @@
   /* keep borders closer to previous shop look, derived (no hex) */
   --border: color-mix(in oklab, var(--foreground) 18%, var(--background));
   --input: color-mix(in oklab, var(--foreground) 18%, var(--background));
-    /* CTA button: dark theme (section becomes white) -> black bg + white text */
+  /* CTA button: dark theme (section becomes white) -> black bg + white text */
   --shop-cta-bg: var(--background);
   --shop-cta-fg: var(--foreground);
-
 }
 
 /* about-community */
 @keyframes scroll {
-  from { transform: translateX(0); }
-  to { transform: translateX(-100%); }
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
 }
 
 .animate-scroll {
@@ -248,8 +395,12 @@
 
 /* Vertical Marquee Animation */
 @keyframes marquee-vertical {
-  0% { transform: translateY(0); }
-  100% { transform: translateY(-50%); } /* Рухаємось на 50%, бо контент дубльовано */
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-50%);
+  } /* Рухаємось на 50%, бо контент дубльовано */
 }
 
 .animate-marquee-vertical {
@@ -263,9 +414,9 @@
 
 /* Hide scrollbar for horizontal scroll containers */
 .scrollbar-hide {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 }
 .scrollbar-hide::-webkit-scrollbar {
-  display: none;  /* Chrome, Safari and Opera */
+  display: none; /* Chrome, Safari and Opera */
 }

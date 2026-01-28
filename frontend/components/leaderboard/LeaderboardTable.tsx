@@ -31,21 +31,21 @@ export function LeaderboardTable({
   const isUserInTop = currentUserRank > 0 && currentUserRank <= 10;
 
   return (
-    <div className="w-full max-w-4xl flex flex-col gap-4">
+    <div className="w-full flex flex-col gap-4">
       <div className="bg-white dark:bg-white/5 backdrop-blur-md rounded-2xl border border-slate-200 dark:border-white/10 overflow-hidden shadow-lg dark:shadow-2xl">
-        <div className="overflow-x-auto w-full">
-          <table className="w-full text-left border-separate border-spacing-0">
+        <div className="w-full">
+          <table className="w-full text-left border-separate border-spacing-0 table-fixed">
             <caption className="sr-only">{t('tableCaption')}</caption>
 
             <thead className="bg-slate-50/80 dark:bg-white/5">
               <tr>
-                <th className="px-2 sm:px-6 py-3 sm:py-5 text-center text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest w-12 sm:w-[15%] border-b border-slate-200 dark:border-white/10">
+                <th className="px-2 sm:px-6 py-3 sm:py-5 text-center text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest w-[15%] sm:w-[12%] border-b border-slate-200 dark:border-white/10">
                   {t('rank')}
                 </th>
                 <th className="px-2 sm:px-6 py-3 sm:py-5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest w-auto border-b border-slate-200 dark:border-white/10">
                   {t('user')}
                 </th>
-                <th className="px-2 sm:px-6 py-3 sm:py-5 text-right text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest w-[25%] sm:w-[20%] border-b border-slate-200 dark:border-white/10">
+                <th className="pl-2 pr-4 sm:px-6 py-3 sm:py-5 text-right text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest w-[25%] sm:w-[20%] border-b border-slate-200 dark:border-white/10">
                   {t('score')}
                 </th>
               </tr>
@@ -78,8 +78,8 @@ export function LeaderboardTable({
           </div>
 
           <div className="bg-white dark:bg-white/5 backdrop-blur-md rounded-2xl border-2 border-[var(--accent-primary)] overflow-hidden shadow-[0_0_20px_var(--accent-primary)]">
-            <div className="overflow-x-auto w-full">
-              <table className="w-full text-left border-separate border-spacing-0">
+            <div className="w-full">
+              <table className="w-full text-left border-separate border-spacing-0 table-fixed">
                 <tbody>
                   <TableRow user={matchedUser} isCurrentUser={true} t={t} />
                 </tbody>
@@ -105,8 +105,12 @@ function TableRow({
     'px-2 sm:px-6 py-3 sm:py-4 border-b border-slate-100 dark:border-white/5';
 
   const leftBorderClass = isCurrentUser
-    ? 'border-l-[1px] sm:border-l-[1px] border-l-[var(--accent-primary)]'
+    ? 'border-l-[1px] sm:border-l-[1px] border-l-transparent'
     : 'border-l-[1px] sm:border-l-[1px] border-l-transparent';
+
+  const rightBorderClass = isCurrentUser
+    ? 'border-r-[1px] sm:border-r-[1px] border-r-transparent'
+    : 'border-r-[1px] sm:border-r-[1px] border-r-transparent';
 
   return (
     <tr
@@ -124,12 +128,12 @@ function TableRow({
       </td>
 
       <td className={cellClass}>
-        <div className="flex items-center gap-2 sm:gap-4">
+        <div className="flex items-center gap-2 sm:gap-4 overflow-hidden">
           <div
             className={cn(
               'w-8 h-8 sm:w-10 sm:h-10 rounded-full border flex-shrink-0 flex items-center justify-center text-xs sm:text-sm font-bold transition-all duration-300',
               isCurrentUser
-                ? 'bg-[var(--accent-primary)] border-[var(--accent-primary)] text-white shadow-[0_0_15px_var(--accent-primary)]'
+                ? 'bg-[var(--accent-primary)] border-[var(--accent-primary)] text-white shadow-[0_0_1px_var(--accent-primary)]'
                 : 'bg-slate-100 border-slate-200 text-slate-600 dark:bg-gradient-to-br dark:from-slate-800 dark:to-slate-900 dark:border-white/10 dark:text-slate-300 group-hover:border-[var(--accent-primary)] group-hover:text-[var(--accent-primary)]'
             )}
             aria-hidden="true"
@@ -140,15 +144,13 @@ function TableRow({
           <div className="flex flex-col min-w-0">
             <span
               className={cn(
-                'font-medium text-sm transition-colors flex items-center gap-1 sm:gap-2 truncate',
+                'font-medium text-sm transition-colors flex items-center gap-1 sm:gap-2',
                 isCurrentUser
                   ? 'text-[var(--accent-primary)] font-black text-sm sm:text-base'
                   : 'text-slate-700 dark:text-slate-200 group-hover:text-[var(--accent-primary)] dark:group-hover:text-[var(--accent-primary)]'
               )}
             >
-              <span className="truncate max-w-[100px] sm:max-w-none">
-                {user.username}
-              </span>
+              <span className="truncate">{user.username}</span>
 
               {isCurrentUser && (
                 <div className="relative flex-shrink-0 flex items-center justify-center w-5 h-5 sm:w-8 sm:h-8 ml-1">
@@ -183,7 +185,9 @@ function TableRow({
         </div>
       </td>
 
-      <td className={cn(cellClass, 'text-right')}>
+      <td
+        className={cn(cellClass, 'text-right pr-4 sm:pr-6', rightBorderClass)}
+      >
         <span
           className={cn(
             'font-mono font-bold inline-block transition-all',

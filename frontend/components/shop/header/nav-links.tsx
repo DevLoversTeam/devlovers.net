@@ -2,10 +2,13 @@
 
 import { useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { Home } from 'lucide-react';
 
-import { Link, usePathname } from '@/i18n/routing';
+import { usePathname } from '@/i18n/routing';
 import { CATEGORIES } from '@/lib/config/catalog';
 import { cn } from '@/lib/utils';
+import { AnimatedNavLink } from '@/components/shared/AnimatedNavLink';
+import { HeaderButton } from '@/components/shared/HeaderButton';
 
 const NAV_LINKS = [
   { href: '/shop/products', label: 'All Products' },
@@ -50,14 +53,7 @@ export function NavLinks({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const currentCategory = searchParams.get('category');
-
-  const baseLink =
-    'rounded-md px-3 py-2 text-sm font-medium transition-colors ' +
-    'hover:bg-muted/50 hover:text-foreground ' +
-    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ' +
-    'focus-visible:ring-offset-2 focus-visible:ring-offset-background';
-
-  const isHomeActive = pathname === '/';
+  const isHomeActive = pathname.startsWith('/shop');
 
   const computed = useMemo(() => {
     return NAV_LINKS.map(link => {
@@ -75,42 +71,31 @@ export function NavLinks({
   return (
     <nav
       aria-label="Shop navigation"
-      className={cn('flex items-center gap-1', className)}
+      className={cn('flex items-center gap-2', className)}
     >
-      <ul className="flex items-center gap-1">
+      <ul className="flex items-center gap-2">
         {includeHomeLink ? (
           <li>
-            <Link
+            <HeaderButton
               href="/"
               onClick={onNavigate}
-              aria-current={isHomeActive ? 'page' : undefined}
-              className={cn(
-                baseLink,
-                isHomeActive
-                  ? 'bg-muted text-foreground'
-                  : 'text-muted-foreground'
-              )}
+              icon={Home}
+              className={cn(isHomeActive && '[color:var(--accent-primary)]')}
             >
               Home
-            </Link>
+            </HeaderButton>
           </li>
         ) : null}
 
         {computed.map(link => (
           <li key={link.href}>
-            <Link
+            <AnimatedNavLink
               href={link.href}
+              isActive={link.isActive}
               onClick={onNavigate}
-              aria-current={link.isActive ? 'page' : undefined}
-              className={cn(
-                baseLink,
-                link.isActive
-                  ? 'bg-muted text-foreground'
-                  : 'text-muted-foreground'
-              )}
             >
               {link.label}
-            </Link>
+            </AnimatedNavLink>
           </li>
         ))}
       </ul>

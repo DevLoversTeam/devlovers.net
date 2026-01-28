@@ -20,28 +20,8 @@ export default function Footer() {
   const t = useTranslations('footer');
 
   return (
-    <footer className="relative overflow-hidden border-t border-gray-200/70 dark:border-neutral-800/70">
-      <div
-        className="
-    absolute inset-0
-    bg-white
-    dark:bg-neutral-950/70
-    dark:backdrop-blur
-  "
-      />
-
-      <div
-        aria-hidden="true"
-        className="
-    pointer-events-none absolute inset-0
-    hidden dark:block
-    opacity-40
-    [background-image:radial-gradient(circle_at_20%_30%,rgba(59,130,246,0.20)_0,transparent_35%),radial-gradient(circle_at_80%_20%,rgba(168,85,247,0.18)_0,transparent_38%),radial-gradient(circle,rgba(148,163,184,0.18)_1px,transparent_1px)]
-    [background-size:900px_420px,900px_420px,22px_22px]
-  "
-      />
-
-      <div className="relative mx-auto max-w-5xl px-6 py-6">
+    <footer className="relative overflow-hidden border-t border-border bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/50">
+      <div className="container-main relative py-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-3">
             <p className="text-sm text-slate-700 dark:text-slate-200">
@@ -58,14 +38,24 @@ export default function Footer() {
             <p className="text-sm text-slate-500 dark:text-slate-400">
               <Link
                 href="/privacy-policy"
-                className="transition-colors hover:[color:var(--accent-hover)] focus-visible:[color:var(--accent-hover)]"
+                className="
+transition-colors
+hover:[color:var(--accent-hover)]
+active:[color:var(--accent-hover)]
+focus-visible:[color:var(--accent-hover)]
+"
               >
                 {t('privacyPolicy')}
               </Link>
               <span className="px-2 opacity-60">|</span>
               <Link
                 href="/terms-of-service"
-                className="transition-colors hover:[color:var(--accent-hover)] focus-visible:[color:var(--accent-hover)]"
+                className="
+transition-colors
+hover:[color:var(--accent-hover)]
+active:[color:var(--accent-hover)]
+focus-visible:[color:var(--accent-hover)]
+"
               >
                 {t('termsOfService')}
               </Link>
@@ -96,13 +86,20 @@ export default function Footer() {
                       rounded-full border border-gray-200/60
                       bg-white/40
                       text-slate-600
-                      transition-all
-                      hover:-translate-y-0.5
                       dark:border-neutral-800/60
                       dark:bg-neutral-950/30
                       dark:text-slate-300
-                      [&:hover]:!text-[var(--accent-primary)]
-                      [&:hover]:!border-[var(--accent-primary)]
+                      transition-all
+
+hover:-translate-y-0.5
+hover:!text-[var(--accent-hover)]
+hover:!border-[var(--accent-hover)]
+
+active:!text-[var(--accent-hover)]
+active:!border-[var(--accent-hover)]
+active:scale-95
+
+
                     "
                   >
                     <Icon className="h-5 w-5" />
