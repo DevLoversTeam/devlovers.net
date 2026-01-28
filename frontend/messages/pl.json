@@ -224,8 +224,6 @@
 
   },
   "notFound": {
-    "metaTitle": "404 - Strona nie znaleziona | DevLovers",
-    "metaDescription": "Strona, której szukasz, nie istnieje na DevLovers.",
     "title": "Strona nie znaleziona",
     "description": "Przepraszamy, nie mogliśmy znaleźć strony, której szukasz. Mogła zostać przeniesiona lub usunięta.",
     "backHome": "Wróć na stronę główną"

@@ -6,6 +6,8 @@ import { client } from '@/client';
 import { Link } from '@/i18n/routing';
 import { BlogCategoryGrid } from '@/components/blog/BlogCategoryGrid';
 import { formatBlogDate } from '@/lib/blog/date';
+import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
+import { FeaturedPostCtaButton } from '@/components/blog/FeaturedPostCtaButton';
 
 export const revalidate = 0;
 
@@ -85,89 +87,89 @@ export default async function BlogCategoryPage({
   const featuredDate = formatBlogDate(featuredPost?.publishedAt);
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-      <nav className="mb-6" aria-label="Breadcrumb">
-        <ol className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-          <li className="flex items-center gap-2">
-            <Link
-              href="/blog"
-              className="transition hover:text-[var(--accent-primary)] hover:underline underline-offset-4"
-            >
-              {tNav('blog')}
-            </Link>
-            <span>&gt;</span>
-          </li>
-          <li className="flex items-center gap-2">
-            <span className="text-[var(--accent-primary)]" aria-current="page">
-              {categoryDisplay}
-            </span>
-          </li>
-        </ol>
-      </nav>
-      <h1 className="text-4xl font-bold mb-4 text-center">
-        {categoryDisplay}
-      </h1>
-      {featuredPost?.mainImage && (
-        <section className="mt-10">
-          <article className="group relative overflow-hidden rounded-3xl bg-white dark:bg-black">
-            <div className="h-[320px] w-full overflow-hidden sm:h-[380px] md:h-[450px] lg:h-[618px] max-h-[65vh]">
-              <Image
-                src={featuredPost.mainImage}
-                alt={featuredPost.title}
-                width={1400}
-                height={800}
-                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-                priority={false}
-              />
-            </div>
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-56 bg-gradient-to-t from-white/95 via-white/70 to-transparent dark:from-black/90 dark:via-black/60 sm:h-64" />
-            <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8">
-              {featuredPost.categories?.[0] && (
-                <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                  {featuredPost.categories[0]}
-                </div>
-              )}
-              <h2 className="mt-2 text-3xl font-semibold text-gray-900 transition group-hover:text-[var(--accent-primary)] dark:text-white dark:group-hover:text-[var(--accent-primary)] sm:text-4xl">
-                {featuredPost.title}
-              </h2>
-              <div className="mt-3 flex items-center gap-3 text-sm text-gray-800 dark:text-gray-200">
-                {featuredPost.author?.image && (
-                  <Image
-                    src={featuredPost.author.image}
-                    alt={featuredPost.author.name || 'Author'}
-                    width={28}
-                    height={28}
-                    className="h-7 w-7 rounded-full object-cover"
-                  />
-                )}
-                {featuredPost.author?.name && (
-                  <span>{featuredPost.author.name}</span>
-                )}
-                {featuredPost.author?.name && featuredDate && <span>·</span>}
-                {featuredDate && featuredPost.publishedAt && (
-                  <time dateTime={featuredPost.publishedAt}>
-                    {featuredDate}
-                  </time>
-                )}
-              </div>
+    <DynamicGridBackground className="bg-gray-50 transition-colors duration-300 dark:bg-transparent py-10">
+      <main className="relative z-10 mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <nav className="mb-6" aria-label="Breadcrumb">
+          <ol className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+            <li className="flex items-center gap-2">
               <Link
-                href={`/blog/${featuredPost.slug.current}`}
-                className="absolute bottom-6 right-6 inline-flex h-11 w-11 items-center justify-center rounded-full bg-[var(--accent-primary)] text-white opacity-0 transition group-hover:opacity-100 hover:brightness-110"
-                aria-label={featuredPost.title}
+                href="/blog"
+                className="transition hover:text-[var(--accent-primary)] hover:underline underline-offset-4"
               >
-                <span aria-hidden="true">↗</span>
+                {tNav('blog')}
               </Link>
-            </div>
-          </article>
-        </section>
-      )}
-      <div className="mt-12">
-        <BlogCategoryGrid posts={restPosts} />
-      </div>
-      {!posts.length && (
-        <p className="text-center text-gray-500 mt-10">{t('noPosts')}</p>
-      )}
-    </main>
+              <span>&gt;</span>
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="text-[var(--accent-primary)]" aria-current="page">
+                {categoryDisplay}
+              </span>
+            </li>
+          </ol>
+        </nav>
+        <h1 className="text-4xl font-bold mb-4 text-left">
+          {categoryDisplay}
+        </h1>
+        {featuredPost?.mainImage && (
+          <section className="mt-10">
+            <article className="group relative overflow-hidden rounded-3xl bg-white dark:bg-black">
+              <div className="h-[320px] w-full overflow-hidden sm:h-[380px] md:h-[450px] lg:h-[618px] max-h-[65vh]">
+                <Image
+                  src={featuredPost.mainImage}
+                  alt={featuredPost.title}
+                  width={1400}
+                  height={800}
+                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                  priority={false}
+                />
+              </div>
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-56 bg-gradient-to-t from-white/95 via-white/70 to-transparent dark:from-black/90 dark:via-black/60 sm:h-64" />
+              <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8">
+                {featuredPost.categories?.[0] && (
+                  <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                    {featuredPost.categories[0]}
+                  </div>
+                )}
+                <h2 className="mt-2 text-3xl font-semibold text-gray-900 transition group-hover:text-[var(--accent-primary)] dark:text-white dark:group-hover:text-[var(--accent-primary)] sm:text-4xl">
+                  {featuredPost.title}
+                </h2>
+                <div className="mt-3 flex items-center gap-3 text-sm text-gray-800 dark:text-gray-200">
+                  {featuredPost.author?.image && (
+                    <Image
+                      src={featuredPost.author.image}
+                      alt={featuredPost.author.name || 'Author'}
+                      width={28}
+                      height={28}
+                      className="h-7 w-7 rounded-full object-cover"
+                    />
+                  )}
+                  {featuredPost.author?.name && (
+                    <span>{featuredPost.author.name}</span>
+                  )}
+                  {featuredPost.author?.name && featuredDate && <span>·</span>}
+                  {featuredDate && featuredPost.publishedAt && (
+                    <time dateTime={featuredPost.publishedAt}>
+                      {featuredDate}
+                    </time>
+                  )}
+                </div>
+              </div>
+              <FeaturedPostCtaButton
+                href={`/blog/${featuredPost.slug.current}`}
+                label={featuredPost.title || 'Read more'}
+                className="!absolute !bottom-6 !right-6 z-10 h-11 w-11 rounded-full bg-[var(--accent-primary)] text-white opacity-0 shadow-sm transition group-hover:opacity-100 focus-visible:opacity-100 group-focus-within:opacity-100"
+              />
+            </article>
+          </section>
+        )}
+        <div className="mt-12">
+          <BlogCategoryGrid posts={restPosts} />
+        </div>
+        {!posts.length && (
+          <p className="text-center text-gray-500 mt-10">{t('noPosts')}</p>
+        )}
+      </main>
+    </DynamicGridBackground>
   );
 }
 
