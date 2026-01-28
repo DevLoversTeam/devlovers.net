@@ -155,9 +155,17 @@ export function ParticleCanvas({ activeShape, className }: ParticleCanvasProps) 
     if (!ctx) return
 
     const resizeCanvas = () => {
-      canvas.width = canvas.parentElement?.offsetWidth || window.innerWidth
-      canvas.height = canvas.parentElement?.offsetHeight || window.innerHeight
-      initParticles(canvas.width, canvas.height)
+      const width = canvas.parentElement?.offsetWidth || window.innerWidth
+      const height = canvas.parentElement?.offsetHeight || window.innerHeight
+      const dpr = window.devicePixelRatio || 1
+      
+      canvas.width = width * dpr
+      canvas.height = height * dpr
+      canvas.style.width = `${width}px`
+      canvas.style.height = `${height}px`
+      
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+      initParticles(width, height)
     }
 
     const initParticles = (width: number, height: number) => {

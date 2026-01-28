@@ -321,13 +321,12 @@ function TabButton({
 
 export function FeaturesSection() {
     const [activeTab, setActiveTab] = useState("qa")
-    const [isMobile, setIsMobile] = useState(false)
+    const [isMobile, setIsMobile] = useState(() => 
+        typeof window !== "undefined" ? window.innerWidth < 768 : false
+    )
     const activePage = pages.find(p => p.id === activeTab) || pages[0]
 
-    const [mounted, setMounted] = useState(false)
-
     useEffect(() => {
-        setMounted(true)
         const checkMobile = () => setIsMobile(window.innerWidth < 768)
         checkMobile()
         window.addEventListener('resize', checkMobile)
@@ -346,7 +345,7 @@ export function FeaturesSection() {
         }, 0)
     }
 
-    if (!mounted) return null
+
 
     return (
         <section className="relative w-full py-20 lg:py-28 overflow-hidden bg-gray-50 dark:bg-transparent">
