@@ -8,7 +8,6 @@ import { SponsorsWall } from "./SponsorsWall"
 import { GradientBadge } from "@/components/ui/gradient-badge"
 import { SectionHeading } from "@/components/ui/section-heading"
 import { ParticleCanvas } from "@/components/ui/particle-canvas"
-import { cn } from "@/lib/utils"
 interface PricingSectionProps {
   sponsors?: Sponsor[]
 }
@@ -30,6 +29,7 @@ export function PricingSection({ sponsors = [] }: PricingSectionProps) {
                         initial={{ opacity: 0, y: 10 }} 
                         whileInView={{ opacity: 1, y: 0 }}
                     >
+                        <h2 id="pricing-heading" className="sr-only">Pricing</h2>
                         <GradientBadge icon={Sparkles} text="No Hidden Fees" className="mb-4" />
                     </motion.div>
                     

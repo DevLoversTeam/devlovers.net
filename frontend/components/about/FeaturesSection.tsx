@@ -277,8 +277,9 @@ function TabButton({ page, isActive, onClick }: { page: Page; isActive: boolean;
     return (
         <button
             onClick={onClick}
-            aria-label={t(`${page.id}.title`)}
-            aria-current={isActive ? 'true' : 'false'}
+            role="tab"
+            aria-selected={isActive}
+            aria-controls={`${page.id}-panel`}
             className={`relative p-2.5 md:px-5 md:py-2.5 rounded-full text-sm font-medium transition-all duration-300 ${
                 isActive
                     ? "text-white"
@@ -307,12 +308,17 @@ export function FeaturesSection() {
     const [isMobile, setIsMobile] = useState(false)
     const activePage = pages.find(p => p.id === activeTab) || pages[0]
 
+    const [mounted, setMounted] = useState(false)
+
     useEffect(() => {
+        setMounted(true)
         const checkMobile = () => setIsMobile(window.innerWidth < 768)
         checkMobile()
         window.addEventListener('resize', checkMobile)
         return () => window.removeEventListener('resize', checkMobile)
     }, [])
+
+    if (!mounted) return null
 
     return (
         <section className="relative w-full py-20 lg:py-28 overflow-hidden bg-gray-50 dark:bg-transparent">
@@ -361,7 +367,7 @@ export function FeaturesSection() {
                 </div>
 
                 <div className="flex justify-center mb-8">
-                    <div className="inline-flex gap-1 md:gap-2 p-1.5 rounded-full border border-gray-200 dark:border-white/10 bg-white/20 dark:bg-white/5 backdrop-blur-md shadow-sm dark:shadow-none">
+                    <div role="tablist" aria-label="Feature categories" className="inline-flex gap-1 md:gap-2 p-1.5 rounded-full border border-gray-200 dark:border-white/10 bg-white/20 dark:bg-white/5 backdrop-blur-md shadow-sm dark:shadow-none">
                         {pages.map((page) => (
                             <TabButton
                                 key={page.id}

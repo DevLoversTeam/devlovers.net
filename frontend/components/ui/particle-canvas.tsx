@@ -346,5 +346,5 @@ export function ParticleCanvas({ activeShape, className }: ParticleCanvasProps) 
     }
   }, [])
 
-  return <canvas ref={canvasRef} className={className} />
+  return <canvas ref={canvasRef} className={className} aria-hidden="true" />
 }
