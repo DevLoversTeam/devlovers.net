@@ -8,8 +8,8 @@ import Link from "next/link"
 
 export function TopicsSection() {
     return (
-        <section id="topics" className="w-full py-24 bg-gray-50 dark:bg-transparent">
-            <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+        <section id="topics" className="w-full py-20 lg:py-28 bg-gray-50 dark:bg-transparent">
+            <div className="container-main">
                     
                     <div className="mb-16 md:flex md:justify-between md:items-end">
                         <div className="max-w-2xl">
@@ -20,9 +20,9 @@ export function TopicsSection() {
                             >
                                 / The Ecosystem
                             </motion.div>
-                            <h2 className="text-4xl md:text-5xl font-black text-black dark:text-white tracking-tighter">
+                            <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-black dark:text-white tracking-tighter">
                                 Master your <br />
-                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1e5eff] to-[#174ad6] dark:from-[#ff2d55] dark:to-[#e0264b]">
+                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1e5eff] to-[#1e5eff]/70 dark:from-[#ff2d55] dark:to-[#ff2d55]/70">
                                     entire stack
                                 </span>
                             </h2>

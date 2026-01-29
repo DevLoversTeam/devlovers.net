@@ -3,34 +3,12 @@
 import { useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Home } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 import { usePathname } from '@/i18n/routing';
-import { CATEGORIES } from '@/lib/config/catalog';
 import { cn } from '@/lib/utils';
 import { AnimatedNavLink } from '@/components/shared/AnimatedNavLink';
 import { HeaderButton } from '@/components/shared/HeaderButton';
-
-const NAV_LINKS = [
-  { href: '/shop/products', label: 'All Products' },
-  {
-    href: '/shop/products?category=apparel',
-    label:
-      CATEGORIES.find(category => category.slug === 'apparel')?.label ??
-      'Apparel',
-  },
-  {
-    href: '/shop/products?category=lifestyle',
-    label:
-      CATEGORIES.find(category => category.slug === 'lifestyle')?.label ??
-      'Lifestyle',
-  },
-  {
-    href: '/shop/products?category=collectibles',
-    label:
-      CATEGORIES.find(category => category.slug === 'collectibles')?.label ??
-      'Collectibles',
-  },
-] as const;
 
 interface NavLinksProps {
   className?: string;
@@ -54,9 +32,19 @@ export function NavLinks({
   const searchParams = useSearchParams();
   const currentCategory = searchParams.get('category');
   const isHomeActive = pathname.startsWith('/shop');
+  const t = useTranslations('shop.catalog.categories');
+  const tProducts = useTranslations('shop.products');
+  const tNav = useTranslations('shop.admin.navigation');
+
+  const navLinks = useMemo(() => [
+    { href: '/shop/products', label: tProducts('title'), slug: 'all' },
+    { href: '/shop/products?category=apparel', label: t('apparel'), slug: 'apparel' },
+    { href: '/shop/products?category=lifestyle', label: t('lifestyle'), slug: 'lifestyle' },
+    { href: '/shop/products?category=collectibles', label: t('collectibles'), slug: 'collectibles' },
+  ], [t, tProducts]);
 
   const computed = useMemo(() => {
-    return NAV_LINKS.map(link => {
+    return navLinks.map(link => {
       const linkPath = link.href.split('?')[0] ?? link.href;
       const linkCategory = getLinkCategory(link.href);
 
@@ -66,11 +54,11 @@ export function NavLinks({
 
       return { ...link, isActive };
     });
-  }, [pathname, currentCategory]);
+  }, [pathname, currentCategory, navLinks]);
 
   return (
     <nav
-      aria-label="Shop navigation"
+      aria-label={tNav('shopNav')}
       className={cn('flex items-center gap-2', className)}
     >
       <ul className="flex items-center gap-2">
@@ -82,7 +70,7 @@ export function NavLinks({
               icon={Home}
               className={cn(isHomeActive && '[color:var(--accent-primary)]')}
             >
-              Home
+              {tNav('home')}
             </HeaderButton>
           </li>
         ) : null}
@@ -102,5 +90,3 @@ export function NavLinks({
     </nav>
   );
 }
-
-export { NAV_LINKS };

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { useRouter } from '@/i18n/routing';
+import { useTranslations } from 'next-intl';
 
 import { Minus, Plus, Trash2, ShoppingBag } from 'lucide-react';
 
@@ -15,6 +16,8 @@ import { formatMoney } from '@/lib/shop/currency';
 export default function CartPage() {
   const { cart, updateQuantity, removeFromCart } = useCart();
   const router = useRouter();
+  const t = useTranslations('shop.cart');
+  const tColors = useTranslations('shop.catalog.colors');
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
@@ -22,6 +25,16 @@ export default function CartPage() {
   const params = useParams<{ locale?: string }>();
   const locale = params.locale ?? 'en';
   const shopBase = '/shop';
+
+  const translateColor = (color: string | null | undefined): string | null => {
+    if (!color) return null;
+    const colorSlug = color.toLowerCase();
+    try {
+      return tColors(colorSlug);
+    } catch {
+      return color; 
+    }
+  };
 
   async function handleCheckout() {
     setCheckoutError(null);
@@ -112,16 +125,16 @@ export default function CartPage() {
             aria-hidden="true"
           />
           <h1 className="mt-6 text-3xl font-bold tracking-tight text-foreground">
-            Your cart is empty
+            {t('empty')}
           </h1>
           <p className="mt-4 text-muted-foreground">
-            Looks like you haven&apos;t added any items to your cart yet.
+            {t('emptyDescription')}
           </p>
           <Link
             href={`/shop/products`}
             className="mt-8 inline-flex items-center gap-2 rounded-md bg-accent px-6 py-3 text-sm font-semibold uppercase tracking-wide text-accent-foreground transition-colors hover:bg-accent/90"
           >
-            Start shopping
+            {t('startShopping')}
           </Link>
         </div>
       </main>
@@ -131,11 +144,11 @@ export default function CartPage() {
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <h1 className="text-3xl font-bold tracking-tight text-foreground">
-        Your cart
+        {t('title')}
       </h1>
 
       <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_380px]">
-        <section aria-label="Cart items">
+        <section aria-label={t('itemsLabel')}>
           <ul className="space-y-4">
             {cart.removed.length > 0 && (
               <li
@@ -143,8 +156,7 @@ export default function CartPage() {
                 role="status"
                 aria-live="polite"
               >
-                Some items were removed from your cart because they are
-                unavailable or out of stock.
+                {t('alerts.itemsRemoved')}
               </li>
             )}
 
@@ -178,7 +190,7 @@ export default function CartPage() {
 
                         {(item.selectedSize || item.selectedColor) && (
                           <p className="mt-1 text-xs text-muted-foreground">
-                            {[item.selectedColor, item.selectedSize]
+                            {[translateColor(item.selectedColor), item.selectedSize]
                               .filter(Boolean)
                               .join(' / ')}
                           </p>
@@ -195,7 +207,7 @@ export default function CartPage() {
                           )
                         }
                         className="text-muted-foreground transition-colors hover:text-foreground"
-                        aria-label={`Remove ${item.title} from cart`}
+                        aria-label={t('actions.removeItem', { title: item.title })}
                       >
                         <Trash2 className="h-4 w-4" aria-hidden="true" />
                       </button>
@@ -215,7 +227,7 @@ export default function CartPage() {
                           }
                           disabled={item.quantity <= 1}
                           className="flex h-8 w-8 items-center justify-center rounded border border-border text-foreground transition-colors hover:bg-secondary disabled:opacity-60"
-                          aria-label="Decrease quantity"
+                          aria-label={t('actions.decreaseQty')}
                         >
                           <Minus className="h-3 w-3" aria-hidden="true" />
                         </button>
@@ -236,7 +248,7 @@ export default function CartPage() {
                           }
                           disabled={item.quantity >= item.stock}
                           className="flex h-8 w-8 items-center justify-center rounded border border-border text-foreground transition-colors hover:bg-secondary disabled:opacity-60"
-                          aria-label="Increase quantity"
+                          aria-label={t('actions.increaseQty')}
                         >
                           <Plus className="h-3 w-3" aria-hidden="true" />
                         </button>
@@ -246,7 +258,7 @@ export default function CartPage() {
                             className="ml-3 text-xs text-muted-foreground"
                             role="status"
                           >
-                            Max {item.stock} in stock
+                            {t('actions.maxStock', { stock: item.stock })}
                           </span>
                         )}
                       </div>
@@ -274,12 +286,12 @@ export default function CartPage() {
             id="order-summary"
             className="text-lg font-semibold text-foreground"
           >
-            Order summary
+            {t('summary.heading')}
           </h2>
 
           <div className="mt-6 space-y-4">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Subtotal</span>
+              <span className="text-muted-foreground">{t('summary.subtotal')}</span>
               <span className="font-medium text-foreground">
                 {formatMoney(
                   cart.summary.totalAmountMinor,
@@ -290,16 +302,16 @@ export default function CartPage() {
             </div>
 
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Shipping</span>
+              <span className="text-muted-foreground">{t('summary.shipping')}</span>
               <span className="text-muted-foreground">
-                Calculated at checkout
+                {t('summary.shippingCalc')}
               </span>
             </div>
 
             <div className="border-t border-border pt-4">
               <div className="flex items-center justify-between">
                 <span className="text-base font-semibold text-foreground">
-                  Total
+                  {t('summary.total')}
                 </span>
                 <span className="text-lg font-bold text-foreground">
                   {formatMoney(
@@ -320,12 +332,11 @@ export default function CartPage() {
               className="flex w-full items-center justify-center gap-2 rounded-md bg-accent px-6 py-3 text-sm font-semibold uppercase tracking-wide text-accent-foreground transition-colors hover:bg-accent/90 disabled:opacity-60"
               aria-busy={isCheckingOut}
             >
-              {isCheckingOut ? 'Placing order...' : 'Place order'}
+              {isCheckingOut ? t('checkout.placing') : t('checkout.placeOrder')}
             </button>
 
             <p className="text-center text-xs text-muted-foreground">
-              You&apos;ll either be redirected to secure payment or see
-              confirmation if payment is not required in this environment.
+              {t('checkout.message')}
             </p>
 
             {/* Fallback CTA if navigation fails after order was created */}
@@ -335,7 +346,7 @@ export default function CartPage() {
                   href={`/shop/orders/${encodeURIComponent(createdOrderId)}`}
                   className="text-xs underline underline-offset-4"
                 >
-                  If you are not redirected automatically, open your order
+                  {t('checkout.notRedirected')}
                 </Link>
               </div>
             ) : null}
@@ -357,7 +368,7 @@ export default function CartPage() {
                       )}`}
                       className="text-xs underline underline-offset-4"
                     >
-                      Go to order
+                      {t('checkout.goToOrder')}
                     </Link>
                   </div>
                 ) : null}

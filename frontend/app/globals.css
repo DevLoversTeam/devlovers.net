@@ -331,6 +331,44 @@
     --card-rotate-offset: 3deg;
     animation-delay: 0.8s;
   }
+
+  /* Feature bubble floating animation */
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+    will-change: transform;
+  }
+
+  /* Slow spinning for orbit rings */
+  .animate-spin-slow {
+    animation: spin 20s linear infinite;
+  }
+  
+  .animate-spin-slower {
+    animation: spin 30s linear infinite reverse;
+  }
+
+  /* Dashed line flow animation */
+  .animate-dash-flow {
+    animation: dash-flow 2s linear infinite;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes dash-flow {
+  0% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: 20;
+  }
 }
 
 /* Shop theme: scoped overrides (must not affect platform pages) */
@@ -419,4 +457,13 @@
 }
 .scrollbar-hide::-webkit-scrollbar {
   display: none; /* Chrome, Safari and Opera */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-float,
+  .animate-spin-slow,
+  .animate-spin-slower,
+  .animate-dash-flow {
+    animation: none !important;
+  }
 }

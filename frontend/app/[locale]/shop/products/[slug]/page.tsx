@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
 
 import { AddToCartButton } from '@/components/shop/add-to-cart-button';
 import { getProductPageData } from '@/lib/shop/data';
@@ -18,6 +19,8 @@ export default async function ProductPage({
   params: Promise<{ slug: string; locale: string }>;
 }) {
   const { slug, locale } = await params;
+  const t = await getTranslations('shop.products');
+  const tProduct = await getTranslations('shop.product');
 
   // P0-5 canonical gate:
   // - slug AND is_active=true
@@ -46,7 +49,7 @@ export default async function ProductPage({
             className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-            Back to all products
+            {t('backToProducts')}
           </Link>
         </nav>
 
@@ -77,7 +80,7 @@ export default async function ProductPage({
               role="status"
               aria-live="polite"
             >
-              This product is not available in your locale/currency.
+              {t('notAvailable')}
             </div>
 
             {p.description && (
@@ -99,7 +102,7 @@ export default async function ProductPage({
           className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-          Back to all products
+          {t('backToProducts')}
         </Link>
       </nav>
 
@@ -113,7 +116,7 @@ export default async function ProductPage({
                   : 'bg-foreground text-background'
               }`}
             >
-              {product.badge}
+              {tProduct(`badges.${product.badge}`)}
             </span>
           )}
 
