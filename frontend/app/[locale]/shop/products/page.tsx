@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 
 import { ProductFilters } from '@/components/shop/product-filters';
 import { CatalogProductsClient } from '@/components/shop/catalog-products-client';
@@ -27,6 +28,7 @@ export default async function ProductsPage({
 }: ProductsPageProps & { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   const resolvedSearchParams = (await searchParams) ?? {};
+  const t = await getTranslations('shop.products');
 
   // canonicalize: infinite-load page should not be shareable as ?page=N
   if (resolvedSearchParams.page) {
@@ -69,7 +71,7 @@ export default async function ProductsPage({
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <header className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-          All Products
+          {t('title')}
         </h1>
 
         <Suspense fallback={null}>
@@ -95,10 +97,10 @@ export default async function ProductsPage({
               role="status"
             >
               <p className="text-lg font-medium text-foreground">
-                No products found
+                {t('noProductsFound')}
               </p>
               <p className="mt-2 text-sm text-muted-foreground">
-                Try adjusting your filters to find what you&apos;re looking for.
+                {t('adjustFilters')}
               </p>
             </div>
           ) : (

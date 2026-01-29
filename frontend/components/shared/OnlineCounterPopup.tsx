@@ -1,9 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Users, Sparkles } from 'lucide-react';
 
 export function OnlineCounterPopup() {
+  const t = useTranslations('onlineCounter');
   const [online, setOnline] = useState<number | null>(null);
   const [show, setShow] = useState(false);
 
@@ -32,11 +34,11 @@ export function OnlineCounterPopup() {
   };
 
   const getText = (count: number) => {
-    if (count === 1) return 'на крок до цілі';
-    if (count === 2) return 'йдуть до мрії';
-    if (count <= 5) return 'на шляху до оффера';
-    if (count <= 10) return 'ближчі до dream job';
-    return 'крокує до успіху';
+    if (count === 1) return t('one');
+    if (count === 2) return t('two');
+    if (count <= 5) return t('upToFive');
+    if (count <= 10) return t('upToTen');
+    return t('many');
   };
 
   return (

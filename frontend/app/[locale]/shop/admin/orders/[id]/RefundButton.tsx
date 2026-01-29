@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useId, useState, useTransition } from 'react';
+import { useTranslations } from 'next-intl';
 
 type Props = {
   orderId: string;
@@ -10,6 +11,7 @@ type Props = {
 
 export function RefundButton({ orderId, disabled }: Props) {
   const router = useRouter();
+  const t = useTranslations('shop.admin.refund');
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const errorId = useId();
@@ -59,13 +61,9 @@ export function RefundButton({ orderId, disabled }: Props) {
         aria-busy={isPending}
         aria-describedby={error ? errorId : undefined}
         className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
-        title={
-          disabled
-            ? 'Refund is only available for paid Stripe orders'
-            : undefined
-        }
+        title={disabled ? t('onlyForPaid') : undefined}
       >
-        {isPending ? 'Refunding…' : 'Refund'}
+        {isPending ? t('refunding') : t('refund')}
       </button>
 
       {error ? (
