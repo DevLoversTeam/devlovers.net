@@ -117,3 +117,27 @@ export class OrderStateInvalidError extends Error {
     this.details = opts?.details;
   }
 }
+
+export class PspUnavailableError extends Error {
+  readonly code = 'PSP_UNAVAILABLE' as const;
+  readonly orderId?: string;
+  readonly requestId?: string;
+
+  constructor(message = 'PSP unavailable', opts?: { orderId?: string; requestId?: string }) {
+    super(message);
+    this.name = 'PspUnavailableError';
+    this.orderId = opts?.orderId;
+    this.requestId = opts?.requestId;
+  }
+}
+
+export class PspInvoicePersistError extends Error {
+  readonly code = 'PSP_INVOICE_PERSIST_FAILED' as const;
+  readonly orderId?: string;
+
+  constructor(message = 'Failed to persist PSP invoice', opts?: { orderId?: string }) {
+    super(message);
+    this.name = 'PspInvoicePersistError';
+    this.orderId = opts?.orderId;
+  }
+}

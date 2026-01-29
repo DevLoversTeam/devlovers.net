@@ -13,6 +13,7 @@ import {
   uniqueIndex,
   uuid,
   varchar,
+  bigint,
 } from 'drizzle-orm/pg-core';
 import { users } from '@/db/schema/users';
 import type { PaymentProvider, PaymentStatus } from '@/lib/shop/payments';
@@ -167,8 +168,9 @@ export const orders = pgTable(
   table => [
     check(
       'orders_payment_provider_valid',
-      sql`${table.paymentProvider} in ('stripe', 'none')`
+      sql`${table.paymentProvider} in ('stripe', 'monobank', 'none')`
     ),
+
     check(
       'orders_total_amount_minor_non_negative',
       sql`${table.totalAmountMinor} >= 0`
@@ -266,7 +268,9 @@ export const stripeEvents = pgTable(
     provider: text('provider').notNull().default('stripe'),
     eventId: text('event_id').notNull(),
     paymentIntentId: text('payment_intent_id'),
-    orderId: uuid('order_id').references(() => orders.id, { onDelete: 'cascade' }),
+    orderId: uuid('order_id').references(() => orders.id, {
+      onDelete: 'cascade',
+    }),
     eventType: text('event_type').notNull(),
     paymentStatus: text('payment_status'),
     claimedAt: timestamp('claimed_at', { withTimezone: true }),
@@ -407,6 +411,8 @@ export const paymentAttempts = pgTable(
     provider: text('provider').notNull(), // 'stripe'
     status: text('status').notNull().default('active'), // active|succeeded|failed|canceled
     attemptNumber: integer('attempt_number').notNull(),
+    currency: currencyEnum('currency'),
+    expectedAmountMinor: bigint('expected_amount_minor', { mode: 'number' }),
 
     idempotencyKey: text('idempotency_key').notNull(),
     providerPaymentIntentId: text('provider_payment_intent_id'),
@@ -429,16 +435,28 @@ export const paymentAttempts = pgTable(
     finalizedAt: timestamp('finalized_at', { withTimezone: true }),
   },
   t => [
-    check('payment_attempts_provider_check', sql`${t.provider} in ('stripe')`),
+    check(
+      'payment_attempts_provider_check',
+      sql`${t.provider} in ('stripe','monobank')`
+    ),
 
     // CHECKs (match SQL migration)
     check(
       'payment_attempts_status_check',
-      sql`${t.status} in ('active','succeeded','failed','canceled')`
+      sql`${t.status} in ('creating','active','succeeded','failed','canceled')`
     ),
+
     check(
       'payment_attempts_attempt_number_check',
       sql`${t.attemptNumber} >= 1`
+    ),
+    check(
+      'payment_attempts_expected_amount_minor_non_negative',
+      sql`${t.expectedAmountMinor} is null or ${t.expectedAmountMinor} >= 0`
+    ),
+    check(
+      'payment_attempts_mono_currency_uah',
+      sql`${t.provider} <> 'monobank' OR ${t.currency} = 'UAH'`
     ),
 
     // UNIQUE / INDEX (match SQL migration)
@@ -457,10 +475,10 @@ export const paymentAttempts = pgTable(
       t.status
     ),
 
-    // Critical: at most ONE active attempt per (order, provider)
+    // Critical: at most ONE active/creating attempt per (order, provider)
     uniqueIndex('payment_attempts_order_provider_active_unique')
       .on(t.orderId, t.provider)
-      .where(sql`${t.status} = 'active'`),
+      .where(sql`${t.status} in ('active','creating')`),
   ]
 );
 

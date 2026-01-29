@@ -20,6 +20,11 @@ export const serverEnvSchema = z.object({
   STRIPE_MODE: z.enum(['test', 'live']).optional(),
   PAYMENTS_ENABLED: z.enum(['true', 'false']).optional().default('false'),
   NEXT_PUBLIC_SITE_URL: z.string().url().optional(),
+  MONOBANK_ACQUIRING_TOKEN: z.string().min(1).optional(),
+  MONOBANK_ACQUIRING_PUBLIC_KEY: z.string().min(1).optional(),
+  MONOBANK_ACQUIRING_API_BASE: z.string().url().optional(),
+  MONOBANK_INVOICE_TIMEOUT_MS: z.string().optional(),
+  SHOP_STATUS_TOKEN_SECRET: z.string().min(32).optional(),
 });
 
 export const clientEnvSchema = z.object({

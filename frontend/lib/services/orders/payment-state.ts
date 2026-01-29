@@ -8,11 +8,12 @@ export type PaymentTransitionSource =
   | 'checkout'
   | 'payment_intent'
   | 'stripe_webhook'
+  | 'monobank_webhook'
   | 'admin'
   | 'janitor'
   | 'system';
 
-// Stripe flow transitions
+// Stripe/Monobank flow transitions
 const ALLOWED_FROM_STRIPE: Record<PaymentStatus, readonly PaymentStatus[]> = {
   pending: ['requires_payment'],
   requires_payment: ['pending'],

@@ -8,6 +8,6 @@ export const paymentStatusValues = [
 
 export type PaymentStatus = (typeof paymentStatusValues)[number];
 
-export const paymentProviderValues = ["stripe", "none"] as const;
+export const paymentProviderValues = ["stripe", "monobank", "none"] as const;
 
 export type PaymentProvider = (typeof paymentProviderValues)[number];
