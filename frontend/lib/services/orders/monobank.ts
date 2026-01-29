@@ -19,6 +19,7 @@ import {
   PspInvoicePersistError,
   PspUnavailableError,
 } from '@/lib/services/errors';
+import { buildMonobankAttemptIdempotencyKey } from './attempt-idempotency';
 
 type PaymentAttemptRow = typeof paymentAttempts.$inferSelect;
 
@@ -78,7 +79,10 @@ async function createCreatingAttempt(args: {
     });
   }
 
-  const idempotencyKey = `mono:${args.orderId}:${next}`;
+  const idempotencyKey = buildMonobankAttemptIdempotencyKey(
+    args.orderId,
+    next
+  );
   const inserted = await db
     .insert(paymentAttempts)
     .values({

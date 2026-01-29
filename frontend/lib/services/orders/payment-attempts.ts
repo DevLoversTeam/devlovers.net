@@ -9,6 +9,7 @@ import { createPaymentIntent, retrievePaymentIntent } from '@/lib/psp/stripe';
 import { setOrderPaymentIntent } from '@/lib/services/orders';
 import { logError } from '@/lib/logging';
 import { OrderStateInvalidError } from '@/lib/services/errors';
+import { buildStripeAttemptIdempotencyKey } from './attempt-idempotency';
 
 export type PaymentProvider = 'stripe';
 export type PaymentAttemptStatus =
@@ -80,7 +81,11 @@ async function createActiveAttempt(
     throw new PaymentAttemptsExhaustedError(orderId, provider);
   }
 
-  const idempotencyKey = `pi:${provider}:${orderId}:${next}`;
+  const idempotencyKey = buildStripeAttemptIdempotencyKey(
+    provider,
+    orderId,
+    next
+  );
 
   try {
     const inserted = await db
@@ -155,7 +160,11 @@ async function upsertBackfillAttemptForExistingPI(args: {
     throw new PaymentAttemptsExhaustedError(orderId, provider);
   }
 
-  const idempotencyKey = `pi:${provider}:${orderId}:${next}`;
+  const idempotencyKey = buildStripeAttemptIdempotencyKey(
+    provider,
+    orderId,
+    next
+  );
 
   try {
     const inserted = await db
@@ -353,8 +362,8 @@ export async function markStripeAttemptFinal(args: {
       status === 'succeeded'
         ? 'succeeded'
         : status === 'canceled'
-        ? 'canceled'
-        : 'failed';
+          ? 'canceled'
+          : 'failed';
 
     await db
       .update(paymentAttempts)
