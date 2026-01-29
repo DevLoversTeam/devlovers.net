@@ -395,15 +395,27 @@ export async function createOrderWithItems({
   idempotencyKey,
   userId,
   locale,
+  paymentProvider: requestedProvider,
 }: {
   items: CheckoutItem[];
   idempotencyKey: string;
   userId?: string | null;
   locale: string | null | undefined;
+  paymentProvider?: PaymentProvider;
 }): Promise<CheckoutResult> {
-  const currency: Currency = resolveCurrencyFromLocale(locale);
-  const paymentsEnabled = isPaymentsEnabled();
-  const paymentProvider: PaymentProvider = paymentsEnabled ? 'stripe' : 'none';
+  const isMonobankRequested = requestedProvider === 'monobank';
+  const currency: Currency = isMonobankRequested
+    ? 'UAH'
+    : resolveCurrencyFromLocale(locale);
+  const stripePaymentsEnabled = isPaymentsEnabled();
+  const paymentProvider: PaymentProvider =
+    requestedProvider === 'monobank'
+      ? 'monobank'
+      : stripePaymentsEnabled
+        ? 'stripe'
+        : 'none';
+  const paymentsEnabled =
+    paymentProvider === 'monobank' ? true : stripePaymentsEnabled;
 
   // paymentStatus is initialized here only; ALL transitions must go via guardedPaymentStatusUpdate.
   // IMPORTANT: DB CHECK requires provider='none' => payment_status in ('paid','failed')

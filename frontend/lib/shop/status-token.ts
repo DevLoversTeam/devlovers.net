@@ -74,7 +74,7 @@ export function verifyStatusToken(args: {
   const secret = (() => {
     try {
       return getSecret();
-    } catch (e) {
+    } catch {
       return null;
     }
   })();

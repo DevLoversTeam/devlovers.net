@@ -250,26 +250,44 @@ export async function createMonobankAttemptAndInvoice(args: {
     });
     invoice = { invoiceId: created.invoiceId, pageUrl: created.pageUrl };
   } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : 'Invoice create failed';
     logWarn('monobank_invoice_create_failed', {
       orderId: args.orderId,
       attemptId: attempt.id,
       code: 'PSP_UNAVAILABLE',
       requestId: args.requestId,
-      message: error instanceof Error ? error.message : String(error),
+      message: errorMessage,
     });
 
-    await markAttemptFailed({
-      attemptId: attempt.id,
-      errorCode: 'invoice_create_failed',
-      errorMessage:
-        error instanceof Error ? error.message : 'Invoice create failed',
-      meta: { requestId: args.requestId },
-    });
+    try {
+      await markAttemptFailed({
+        attemptId: attempt.id,
+        errorCode: 'PSP_UNAVAILABLE',
+        errorMessage,
+        meta: { requestId: args.requestId },
+      });
+    } catch (markError) {
+      logError('monobank_attempt_mark_failed', markError, {
+        orderId: args.orderId,
+        attemptId: attempt.id,
+        requestId: args.requestId,
+      });
+    }
 
-    await cancelOrderAndRelease(
-      args.orderId,
-      'Monobank invoice create failed.'
-    );
+    try {
+      await cancelOrderAndRelease(
+        args.orderId,
+        'Monobank invoice create failed.'
+      );
+    } catch (cancelError) {
+      logError('monobank_cancel_order_failed', cancelError, {
+        orderId: args.orderId,
+        attemptId: attempt.id,
+        requestId: args.requestId,
+      });
+      throw cancelError;
+    }
 
     throw new PspUnavailableError('Monobank invoice unavailable.', {
       orderId: args.orderId,

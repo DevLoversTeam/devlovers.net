@@ -7,7 +7,7 @@ import {
 } from '@/lib/security/rate-limit';
 import { getCurrentUser } from '@/lib/auth';
 import { isPaymentsEnabled } from '@/lib/env/stripe';
-import { logError, logWarn } from '@/lib/logging';
+import { logError, logInfo, logWarn } from '@/lib/logging';
 import { resolveRequestLocale } from '@/lib/shop/request-locale';
 import { IdempotencyConflictError } from '@/lib/services/errors';
 import { MoneyValueError } from '@/db/queries/shop/orders';
@@ -18,11 +18,14 @@ import {
   InvalidVariantError,
   PriceConfigError,
   OrderStateInvalidError,
+  PspUnavailableError,
 } from '@/lib/services/errors';
 import {
   checkoutPayloadSchema,
   idempotencyKeySchema,
 } from '@/lib/validation/shop';
+import { createStatusToken } from '@/lib/shop/status-token';
+import { isMonobankEnabled } from '@/lib/env/monobank';
 import { type PaymentProvider, type PaymentStatus } from '@/lib/shop/payments';
 import {
   PaymentAttemptsExhaustedError,
@@ -39,6 +42,20 @@ const EXPECTED_BUSINESS_ERROR_CODES = new Set([
   'PRICE_CONFIG_ERROR',
   'PAYMENT_ATTEMPTS_EXHAUSTED',
 ]);
+
+function parseRequestedProvider(raw: unknown): PaymentProvider | 'invalid' | null {
+  if (raw === null || raw === undefined) return null;
+  if (typeof raw !== 'string') return 'invalid';
+
+  const normalized = raw.trim().toLowerCase();
+  if (!normalized) return 'invalid';
+
+  if (normalized === 'stripe' || normalized === 'monobank') {
+    return normalized;
+  }
+
+  return 'invalid';
+}
 
 function getErrorCode(err: unknown): string | null {
   if (typeof err !== 'object' || err === null) return null;
@@ -233,7 +250,46 @@ export async function POST(request: NextRequest) {
     idempotencyKey: idempotencyKeyShort,
   };
 
-  const parsedPayload = checkoutPayloadSchema.safeParse(body);
+  let requestedProvider: PaymentProvider | null = null;
+  let payloadForValidation: unknown = body;
+
+  if (body && typeof body === 'object' && !Array.isArray(body)) {
+    const { paymentProvider, provider, ...rest } = body as Record<
+      string,
+      unknown
+    >;
+    const parsedProvider = parseRequestedProvider(
+      paymentProvider ?? provider
+    );
+
+    if (parsedProvider === 'invalid') {
+      return errorResponse(
+        'PAYMENTS_PROVIDER_INVALID',
+        'Invalid payment provider.',
+        422
+      );
+    }
+
+    requestedProvider = parsedProvider;
+    payloadForValidation = rest;
+  }
+
+  const selectedProvider: PaymentProvider = requestedProvider ?? 'stripe';
+
+  if (selectedProvider === 'monobank' && !isMonobankEnabled()) {
+    logWarn('provider_disabled', {
+      requestedProvider: 'monobank',
+      requestId,
+    });
+
+    return errorResponse(
+      'PAYMENTS_PROVIDER_DISABLED',
+      'Requested payment provider is disabled.',
+      422
+    );
+  }
+
+  const parsedPayload = checkoutPayloadSchema.safeParse(payloadForValidation);
 
   if (!parsedPayload.success) {
     logWarn('checkout_invalid_payload', {
@@ -342,6 +398,7 @@ export async function POST(request: NextRequest) {
       idempotencyKey,
       userId: sessionUserId,
       locale,
+      paymentProvider: selectedProvider === 'monobank' ? 'monobank' : undefined,
     });
 
     const { order } = result;
@@ -353,9 +410,22 @@ export async function POST(request: NextRequest) {
       paymentIntentId: order.paymentIntentId ?? null,
     };
 
-    const paymentsEnabled = isPaymentsEnabled();
+    logInfo('provider_selected', {
+      provider: order.paymentProvider,
+      requestId,
+      orderId: order.id,
+    });
 
-    if (!paymentsEnabled) {
+    const stripePaymentsEnabled = isPaymentsEnabled();
+
+    const paymentsEnabledForOrder =
+      order.paymentProvider === 'none'
+        ? false
+        : order.paymentProvider === 'monobank'
+          ? true
+          : stripePaymentsEnabled;
+
+    if (!paymentsEnabledForOrder) {
       if (
         order.paymentProvider === 'none' &&
         order.paymentStatus === 'failed'
@@ -416,7 +486,8 @@ export async function POST(request: NextRequest) {
     }
 
     const stripePaymentFlow =
-      paymentsEnabled && order.paymentProvider === 'stripe';
+      stripePaymentsEnabled && order.paymentProvider === 'stripe';
+    const monobankPaymentFlow = order.paymentProvider === 'monobank';
 
     // =========================
     // Existing order path
@@ -509,6 +580,39 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      if (monobankPaymentFlow) {
+        logInfo('monobank_lazy_import_invoked', {
+          requestId,
+          orderId: order.id,
+        });
+
+        const { createMonobankAttemptAndInvoice } = await import(
+          '@/lib/services/orders/monobank'
+        );
+        const statusToken = createStatusToken({ orderId: order.id });
+
+        await createMonobankAttemptAndInvoice({
+          orderId: order.id,
+          baseUrl: request.nextUrl.origin,
+          statusToken,
+          requestId,
+        });
+
+        return buildCheckoutResponse({
+          order: {
+            id: order.id,
+            currency: order.currency,
+            totalAmount: order.totalAmount,
+            paymentStatus: order.paymentStatus,
+            paymentProvider: order.paymentProvider,
+            paymentIntentId: order.paymentIntentId ?? null,
+          },
+          itemCount,
+          clientSecret: null,
+          status: 200,
+        });
+      }
+
       // Not Stripe flow => return existing order as-is
       return buildCheckoutResponse({
         order: {
@@ -528,6 +632,39 @@ export async function POST(request: NextRequest) {
     // =========================
     // New order path
     // =========================
+    if (monobankPaymentFlow) {
+      logInfo('monobank_lazy_import_invoked', {
+        requestId,
+        orderId: order.id,
+      });
+
+      const { createMonobankAttemptAndInvoice } = await import(
+        '@/lib/services/orders/monobank'
+      );
+      const statusToken = createStatusToken({ orderId: order.id });
+
+      await createMonobankAttemptAndInvoice({
+        orderId: order.id,
+        baseUrl: request.nextUrl.origin,
+        statusToken,
+        requestId,
+      });
+
+      return buildCheckoutResponse({
+        order: {
+          id: order.id,
+          currency: order.currency,
+          totalAmount: order.totalAmount,
+          paymentStatus: order.paymentStatus,
+          paymentProvider: order.paymentProvider,
+          paymentIntentId: order.paymentIntentId ?? null,
+        },
+        itemCount,
+        clientSecret: null,
+        status: 201,
+      });
+    }
+
     if (!stripePaymentFlow) {
       return buildCheckoutResponse({
         order: {
@@ -683,10 +820,22 @@ export async function POST(request: NextRequest) {
     }
 
     if (error instanceof PriceConfigError) {
-      return errorResponse(error.code, error.message, 400, {
+      const status = selectedProvider === 'monobank' ? 422 : 400;
+      return errorResponse(error.code, error.message, status, {
         productId: error.productId,
         currency: error.currency,
       });
+    }
+
+    if (
+      error instanceof PspUnavailableError ||
+      getErrorCode(error) === 'PSP_UNAVAILABLE'
+    ) {
+      return errorResponse(
+        'PSP_UNAVAILABLE',
+        'Payment provider unavailable.',
+        503
+      );
     }
 
     if (error instanceof InsufficientStockError) {

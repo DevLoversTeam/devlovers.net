@@ -23,6 +23,7 @@ vi.mock('@/lib/logging', async () => {
 });
 
 vi.mock('@/lib/psp/monobank', () => ({
+  MONO_CURRENCY: 'UAH',
   createMonobankInvoice: vi.fn(async () => {
     throw new Error('MONO_TIMEOUT');
   }),
@@ -84,9 +85,6 @@ async function createIsolatedProduct(stock: number) {
     title: `Test ${slug}`,
     stock,
     isActive: true,
-    currency: 'UAH',
-    price: toDbMoney(1000),
-    originalPrice: null,
     createdAt: now,
     updatedAt: now,
   } as any);
@@ -132,10 +130,14 @@ async function postCheckout(idemKey: string, productId: string) {
       'content-type': 'application/json',
       'accept-language': 'uk-UA',
       'idempotency-key': idemKey,
+      'x-request-id': 'mono-req-1',
       'x-forwarded-for': deriveTestIpFromIdemKey(idemKey),
       origin: 'http://localhost:3000',
     },
-    body: JSON.stringify({ items: [{ productId, quantity: 1 }] }),
+    body: JSON.stringify({
+      items: [{ productId, quantity: 1 }],
+      paymentProvider: 'monobank',
+    }),
   });
 
   return mod.POST(req);
@@ -161,6 +163,7 @@ describe.sequential('monobank PSP_UNAVAILABLE invariant', () => {
           paymentStatus: orders.paymentStatus,
           inventoryStatus: orders.inventoryStatus,
           stockRestored: orders.stockRestored,
+          failureCode: orders.failureCode,
         })
         .from(orders)
         .where(eq(orders.idempotencyKey, idemKey))
@@ -170,6 +173,7 @@ describe.sequential('monobank PSP_UNAVAILABLE invariant', () => {
       orderId = row!.id;
       expect(row!.currency).toBe('UAH');
       expect(row!.status).toBe('CANCELED');
+      expect(row!.failureCode).toBe('PSP_UNAVAILABLE');
       expect(row!.paymentStatus).toBe('failed');
       expect(row!.inventoryStatus).toBe('released');
       expect(row!.stockRestored).toBe(true);
@@ -185,6 +189,8 @@ describe.sequential('monobank PSP_UNAVAILABLE invariant', () => {
       const [attempt] = await db
         .select({
           status: paymentAttempts.status,
+          lastErrorCode: paymentAttempts.lastErrorCode,
+          metadata: paymentAttempts.metadata,
           currency: paymentAttempts.currency,
           expectedAmountMinor: paymentAttempts.expectedAmountMinor,
         })
@@ -194,6 +200,10 @@ describe.sequential('monobank PSP_UNAVAILABLE invariant', () => {
 
       expect(attempt).toBeTruthy();
       expect(attempt!.status).toBe('failed');
+      expect(attempt!.lastErrorCode).toBe('PSP_UNAVAILABLE');
+      expect((attempt!.metadata as Record<string, unknown>)?.requestId).toBe(
+        'mono-req-1'
+      );
       expect(attempt!.currency).toBe('UAH');
       expect(attempt!.expectedAmountMinor).toBeGreaterThan(0);
     } finally {
