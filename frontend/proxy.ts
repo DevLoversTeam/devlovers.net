@@ -87,6 +87,11 @@ export function proxy(req: NextRequest) {
   intlResponse.headers.set('x-app-scope', scope);
   intlResponse.headers.set('x-locale', locale);
 
+  intlResponse.cookies.set('NEXT_LOCALE', locale, {
+    path: '/',
+    sameSite: 'lax',
+  });
+
   return intlResponse;
 }
 
