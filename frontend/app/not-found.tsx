@@ -45,7 +45,7 @@ export default async function NotFound() {
             <span className="relative inline-block bg-gradient-to-r from-[var(--accent-primary)]/70 via-[color-mix(in_srgb,var(--accent-primary)_70%,white)]/70 to-[var(--accent-hover)]/70 bg-clip-text text-transparent">
               DevL
             </span>
-            <span className="relative inline-block text-red-500 text-[1 em] leading-none" style={{ verticalAlign: 'baseline' }}>
+            <span className="relative inline-block text-red-500 text-[1em] leading-none" style={{ verticalAlign: 'baseline' }}>
               Ø
             </span>
             <span className="relative inline-block bg-gradient-to-r from-[var(--accent-primary)]/70 via-[color-mix(in_srgb,var(--accent-primary)_70%,white)]/70 to-[var(--accent-hover)]/70 bg-clip-text text-transparent">
