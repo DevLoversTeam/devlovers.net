@@ -7,7 +7,7 @@ import {
   createExplainPrompt,
   type ExplanationResponse,
 } from '@/lib/ai/prompts';
-import { getClientIp } from '@/lib/security/rate-limit';
+import { getClientIp } from '@/lib/security/client-ip';
 
 const rateLimiter = new Map<string, { count: number; resetAt: number }>();
 const MAX_REQUESTS_PER_WINDOW = 10;
@@ -94,6 +94,9 @@ export async function POST(request: NextRequest) {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
     console.error('GROQ_API_KEY is not configured');
+    console.error('Available env vars starting with GROQ:',
+      Object.keys(process.env).filter(k => k.startsWith('GROQ'))
+    );
     return NextResponse.json(
       { error: 'AI service not configured', code: 'SERVICE_UNAVAILABLE' },
       { status: 503 }
