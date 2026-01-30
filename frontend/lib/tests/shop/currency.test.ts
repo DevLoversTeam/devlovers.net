@@ -3,7 +3,7 @@ import {
   parsePrimaryLocaleFromAcceptLanguage,
   resolveCurrencyFromHeaders,
   resolveCurrencyFromLocale,
-} from "../shop/currency";
+} from "../../shop/currency";
 
 describe("currency policy (CUR-0 / D1)", () => {
   it("uk -> UAH", () => {

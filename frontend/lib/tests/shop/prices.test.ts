@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { adminPriceRowSchema } from "../validation/shop";
+import { adminPriceRowSchema } from "../../validation/shop";
 
 describe("pricing validation", () => {
   it("rejects originalPriceMinor == priceMinor (SALE must be strict)", () => {
