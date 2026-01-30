@@ -209,6 +209,7 @@ describe.sequential('monobank PSP_UNAVAILABLE invariant', () => {
           metadata: paymentAttempts.metadata,
           currency: paymentAttempts.currency,
           expectedAmountMinor: paymentAttempts.expectedAmountMinor,
+          finalizedAt: paymentAttempts.finalizedAt,
         })
         .from(paymentAttempts)
         .where(eq(paymentAttempts.orderId, orderId))
@@ -222,6 +223,7 @@ describe.sequential('monobank PSP_UNAVAILABLE invariant', () => {
       );
       expect(attempt!.currency).toBe('UAH');
       expect(attempt!.expectedAmountMinor).toBeGreaterThan(0);
+      expect(attempt!.finalizedAt).not.toBeNull();
     } finally {
       if (orderId) {
         await cleanupOrder(orderId);

@@ -1,15 +1,20 @@
 import 'server-only';
 
 import { and, eq, sql } from 'drizzle-orm';
-
 import { db } from '@/db';
-import { orders, paymentAttempts } from '@/db/schema';
+import { orderItems, orders, paymentAttempts } from '@/db/schema';
 import {
   createMonobankInvoice,
   cancelMonobankInvoice,
   MONO_CURRENCY,
+  type MonobankInvoiceCreateArgs,
 } from '@/lib/psp/monobank';
+
 import { logError, logWarn } from '@/lib/logging';
+import {
+  buildMonoMerchantPaymInfoFromSnapshot,
+  MonobankMerchantPaymInfoError,
+} from '@/lib/psp/monobank/merchant-paym-info';
 
 import { restockOrder } from '@/lib/services/orders/restock';
 import { toAbsoluteUrl } from '@/lib/shop/url';
@@ -80,10 +85,7 @@ async function createCreatingAttempt(args: {
     });
   }
 
-  const idempotencyKey = buildMonobankAttemptIdempotencyKey(
-    args.orderId,
-    next
-  );
+  const idempotencyKey = buildMonobankAttemptIdempotencyKey(args.orderId, next);
   const inserted = await db
     .insert(paymentAttempts)
     .values({
@@ -103,9 +105,24 @@ async function createCreatingAttempt(args: {
   return row;
 }
 
+function isUniqueViolation(error: unknown): boolean {
+  return (
+    !!error &&
+    typeof error === 'object' &&
+    (error as { code?: unknown }).code === '23505'
+  );
+}
+
 async function readMonobankInvoiceParams(orderId: string): Promise<{
   amountMinor: number;
   currency: string;
+  items: Array<{
+    productId: string;
+    title: string | null;
+    quantity: number;
+    unitPriceMinor: number;
+    lineTotalMinor: number;
+  }>;
 }> {
   const [existing] = await db
     .select()
@@ -148,7 +165,30 @@ async function readMonobankInvoiceParams(orderId: string): Promise<{
     );
   }
 
-  return { amountMinor, currency: existing.currency };
+  const items = await db
+    .select({
+      productId: orderItems.productId,
+      productTitle: orderItems.productTitle,
+      productSlug: orderItems.productSlug,
+      productSku: orderItems.productSku,
+      quantity: orderItems.quantity,
+      unitPriceMinor: orderItems.unitPriceMinor,
+      lineTotalMinor: orderItems.lineTotalMinor,
+    })
+    .from(orderItems)
+    .where(eq(orderItems.orderId, orderId));
+
+  return {
+    amountMinor,
+    currency: existing.currency,
+    items: items.map(item => ({
+      productId: item.productId,
+      title: item.productTitle ?? item.productSlug ?? item.productSku ?? null,
+      quantity: item.quantity,
+      unitPriceMinor: item.unitPriceMinor,
+      lineTotalMinor: item.lineTotalMinor,
+    })),
+  };
 }
 
 async function markAttemptFailed(args: {
@@ -185,20 +225,129 @@ async function cancelOrderAndRelease(orderId: string, reason: string) {
   await restockOrder(orderId, { reason: 'canceled', workerId: 'monobank' });
 }
 
-export async function createMonobankAttemptAndInvoice(args: {
+async function finalizeAttemptWithInvoice(args: {
+  attemptId: string;
   orderId: string;
-  statusToken: string;
-  requestId: string;
-  maxAttempts?: number;
-}): Promise<{
   invoiceId: string;
   pageUrl: string;
-  attemptId: string;
-  attemptNumber: number;
-}> {
-  const snapshot = await readMonobankInvoiceParams(args.orderId);
+  requestId: string;
+}) {
+  const maxRetries = 2;
+  let lastError: unknown = null;
 
-  const existing = await getActiveAttempt(args.orderId);
+  const now = new Date();
+  const attemptMetaPatchJson = JSON.stringify({
+    pageUrl: args.pageUrl,
+    invoiceId: args.invoiceId,
+  });
+  const orderMetaPatchJson = JSON.stringify({
+    monobank: { invoiceId: args.invoiceId, pageUrl: args.pageUrl },
+  });
+  for (let attempt = 0; attempt < maxRetries; attempt += 1) {
+    try {
+      // NOTE: neon-http has no real transactions. Keep persistence idempotent.
+      const updatedAttempt = await db
+        .update(paymentAttempts)
+        .set({
+          status: 'active',
+          providerPaymentIntentId: args.invoiceId,
+          metadata: sql`coalesce(${paymentAttempts.metadata}, '{}'::jsonb) || ${attemptMetaPatchJson}::jsonb`,
+          updatedAt: now,
+        })
+        .where(eq(paymentAttempts.id, args.attemptId))
+        .returning({ id: paymentAttempts.id });
+
+      if (!updatedAttempt[0]?.id) {
+        throw new Error('Payment attempt not found during invoice finalize');
+      }
+
+      const updatedOrder = await db
+        .update(orders)
+        .set({
+          pspChargeId: args.invoiceId,
+          pspMetadata: sql`coalesce(${orders.pspMetadata}, '{}'::jsonb) || ${orderMetaPatchJson}::jsonb`,
+          updatedAt: now,
+        })
+        .where(eq(orders.id, args.orderId))
+        .returning({ id: orders.id });
+
+      if (!updatedOrder[0]?.id) {
+        throw new Error('Order not found during invoice finalize');
+      }
+
+      return;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  logError('monobank_invoice_persist_retry_exhausted', lastError, {
+    orderId: args.orderId,
+    attemptId: args.attemptId,
+    invoiceId: args.invoiceId,
+    requestId: args.requestId,
+  });
+
+  try {
+    const pendingPatchJson = JSON.stringify({
+      pageUrl: args.pageUrl,
+      invoiceId: args.invoiceId,
+      requestId: args.requestId,
+      finalizePending: true,
+    });
+    await db
+      .update(paymentAttempts)
+      .set({
+        status: 'active',
+        providerPaymentIntentId: args.invoiceId,
+        metadata: sql`coalesce(${paymentAttempts.metadata}, '{}'::jsonb) || ${pendingPatchJson}::jsonb`,
+        updatedAt: new Date(),
+      })
+      .where(eq(paymentAttempts.id, args.attemptId));
+  } catch (error) {
+    logError('monobank_invoice_persist_failed', error, {
+      orderId: args.orderId,
+      attemptId: args.attemptId,
+      invoiceId: args.invoiceId,
+      requestId: args.requestId,
+    });
+
+    await cancelMonobankInvoice(args.invoiceId);
+    await cancelOrderAndRelease(args.orderId, 'Invoice persistence failed.');
+
+    throw new PspInvoicePersistError('Invoice persistence failed.', {
+      orderId: args.orderId,
+    });
+  }
+
+  throw new PspInvoicePersistError('Invoice persistence failed.', {
+    orderId: args.orderId,
+  });
+}
+
+type CreateMonoAttemptAndInvoiceDeps = {
+  readMonobankInvoiceParams: typeof readMonobankInvoiceParams;
+  getActiveAttempt: typeof getActiveAttempt;
+  createCreatingAttempt: typeof createCreatingAttempt;
+  markAttemptFailed: typeof markAttemptFailed;
+  cancelOrderAndRelease: typeof cancelOrderAndRelease;
+  createMonobankInvoice: typeof createMonobankInvoice;
+  finalizeAttemptWithInvoice: typeof finalizeAttemptWithInvoice;
+};
+
+async function createMonoAttemptAndInvoiceImpl(
+  deps: CreateMonoAttemptAndInvoiceDeps,
+  args: {
+    orderId: string;
+    requestId: string;
+    redirectUrl: string;
+    webhookUrl: string;
+    maxAttempts?: number;
+  }
+): Promise<{ attemptId: string; invoiceId: string; pageUrl: string }> {
+  const snapshot = await deps.readMonobankInvoiceParams(args.orderId);
+
+  const existing = await deps.getActiveAttempt(args.orderId);
   if (existing) {
     const pageUrl = readPageUrlFromMetadata(existing);
     if (existing.providerPaymentIntentId && pageUrl) {
@@ -206,7 +355,6 @@ export async function createMonobankAttemptAndInvoice(args: {
         invoiceId: existing.providerPaymentIntentId,
         pageUrl,
         attemptId: existing.id,
-        attemptNumber: existing.attemptNumber,
       };
     }
 
@@ -219,56 +367,119 @@ export async function createMonobankAttemptAndInvoice(args: {
       );
     }
 
-    await markAttemptFailed({
+    await deps.markAttemptFailed({
       attemptId: existing.id,
       errorCode: 'invoice_missing',
       errorMessage: 'Active attempt missing invoice details.',
     });
-    await cancelOrderAndRelease(args.orderId, 'Invoice creation incomplete.');
+    await deps.cancelOrderAndRelease(
+      args.orderId,
+      'Invoice creation incomplete.'
+    );
     throw new PspUnavailableError('Invoice creation incomplete.', {
       orderId: args.orderId,
       requestId: args.requestId,
     });
   }
 
-  const attempt = await createCreatingAttempt({
-    orderId: args.orderId,
-    expectedAmountMinor: snapshot.amountMinor,
-    maxAttempts: args.maxAttempts ?? DEFAULT_MAX_ATTEMPTS,
-  });
+  let attempt: PaymentAttemptRow;
+  try {
+    attempt = await deps.createCreatingAttempt({
+      orderId: args.orderId,
+      expectedAmountMinor: snapshot.amountMinor,
+      maxAttempts: args.maxAttempts ?? DEFAULT_MAX_ATTEMPTS,
+    });
+  } catch (error) {
+    if (isUniqueViolation(error)) {
+      const reused = await deps.getActiveAttempt(args.orderId);
+      if (reused) {
+        const pageUrl = readPageUrlFromMetadata(reused);
+        if (reused.providerPaymentIntentId && pageUrl) {
+          return {
+            invoiceId: reused.providerPaymentIntentId,
+            pageUrl,
+            attemptId: reused.id,
+          };
+        }
+      }
+    }
+    throw error;
+  }
 
-  const redirectUrl = toAbsoluteUrl(
-    `/shop/checkout/success?orderId=${encodeURIComponent(
-      args.orderId
-    )}&statusToken=${encodeURIComponent(args.statusToken)}`
-  );
-  const webhookUrl = toAbsoluteUrl('/api/shop/webhooks/monobank');
+  let merchantPaymInfo: MonobankInvoiceCreateArgs['merchantPaymInfo'];
+  try {
+    merchantPaymInfo = buildMonoMerchantPaymInfoFromSnapshot({
+      reference: attempt.id,
+      order: {
+        id: args.orderId,
+        currency: snapshot.currency,
+        totalAmountMinor: snapshot.amountMinor,
+      },
+      items: snapshot.items,
+      expectedAmountMinor: snapshot.amountMinor,
+    });
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : 'Invalid order snapshot';
+    const errorCode =
+      error instanceof MonobankMerchantPaymInfoError && error.code
+        ? error.code
+        : 'MONO_INVALID_SNAPSHOT';
+
+    try {
+      await deps.markAttemptFailed({
+        attemptId: attempt.id,
+        errorCode,
+        errorMessage,
+        meta: { requestId: args.requestId },
+      });
+    } catch (markError) {
+      logError('monobank_attempt_mark_failed', markError, {
+        orderId: args.orderId,
+        attemptId: attempt.id,
+        requestId: args.requestId,
+      });
+    }
+
+    await deps.cancelOrderAndRelease(
+      args.orderId,
+      'Monobank snapshot validation failed.'
+    );
+
+    throw error;
+  }
 
   let invoice: { invoiceId: string; pageUrl: string };
   try {
-    const created = await createMonobankInvoice({
+    const created = await deps.createMonobankInvoice({
       amountMinor: snapshot.amountMinor,
       orderId: args.orderId,
-      redirectUrl,
-      webhookUrl,
+      redirectUrl: args.redirectUrl,
+      webhookUrl: args.webhookUrl,
       paymentType: 'debit',
+      merchantPaymInfo,
     });
     invoice = { invoiceId: created.invoiceId, pageUrl: created.pageUrl };
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : 'Invoice create failed';
+    const errorCode =
+      typeof (error as { code?: unknown }).code === 'string'
+        ? String((error as { code?: unknown }).code)
+        : 'PSP_UNAVAILABLE';
+
     logWarn('monobank_invoice_create_failed', {
       orderId: args.orderId,
       attemptId: attempt.id,
-      code: 'PSP_UNAVAILABLE',
+      code: errorCode,
       requestId: args.requestId,
       message: errorMessage,
     });
 
     try {
-      await markAttemptFailed({
+      await deps.markAttemptFailed({
         attemptId: attempt.id,
-        errorCode: 'PSP_UNAVAILABLE',
+        errorCode,
         errorMessage,
         meta: { requestId: args.requestId },
       });
@@ -281,7 +492,7 @@ export async function createMonobankAttemptAndInvoice(args: {
     }
 
     try {
-      await cancelOrderAndRelease(
+      await deps.cancelOrderAndRelease(
         args.orderId,
         'Monobank invoice create failed.'
       );
@@ -300,61 +511,85 @@ export async function createMonobankAttemptAndInvoice(args: {
     });
   }
 
-  try {
-    await db.transaction(async tx => {
-      await tx
-        .update(paymentAttempts)
-        .set({
-          status: 'active',
-          providerPaymentIntentId: invoice.invoiceId,
-          metadata: { pageUrl: invoice.pageUrl },
-          updatedAt: new Date(),
-        })
-        .where(eq(paymentAttempts.id, attempt.id));
-
-      const [order] = await tx
-        .select({ pspMetadata: orders.pspMetadata })
-        .from(orders)
-        .where(eq(orders.id, args.orderId))
-        .limit(1);
-
-      const merged = {
-        ...(order?.pspMetadata ?? {}),
-        monobank: {
-          invoiceId: invoice.invoiceId,
-          pageUrl: invoice.pageUrl,
-        },
-      };
-
-      await tx
-        .update(orders)
-        .set({
-          pspChargeId: invoice.invoiceId,
-          pspMetadata: merged,
-          updatedAt: new Date(),
-        })
-        .where(eq(orders.id, args.orderId));
-    });
-  } catch (error) {
-    logError('monobank_invoice_persist_failed', error, {
-      orderId: args.orderId,
-      attemptId: attempt.id,
-      invoiceId: invoice.invoiceId,
-      requestId: args.requestId,
-    });
-
-    await cancelMonobankInvoice(invoice.invoiceId);
-    await cancelOrderAndRelease(args.orderId, 'Invoice persistence failed.');
-
-    throw new PspInvoicePersistError('Invoice persistence failed.', {
-      orderId: args.orderId,
-    });
-  }
+  await deps.finalizeAttemptWithInvoice({
+    attemptId: attempt.id,
+    orderId: args.orderId,
+    invoiceId: invoice.invoiceId,
+    pageUrl: invoice.pageUrl,
+    requestId: args.requestId,
+  });
 
   return {
     invoiceId: invoice.invoiceId,
     pageUrl: invoice.pageUrl,
     attemptId: attempt.id,
-    attemptNumber: attempt.attemptNumber,
+  };
+}
+
+export async function createMonoAttemptAndInvoice(args: {
+  orderId: string;
+  requestId: string;
+  redirectUrl: string;
+  webhookUrl: string;
+  maxAttempts?: number;
+}): Promise<{
+  attemptId: string;
+  invoiceId: string;
+  pageUrl: string;
+}> {
+  return createMonoAttemptAndInvoiceImpl(
+    {
+      readMonobankInvoiceParams,
+      getActiveAttempt,
+      createCreatingAttempt,
+      markAttemptFailed,
+      cancelOrderAndRelease,
+      createMonobankInvoice,
+      finalizeAttemptWithInvoice,
+    },
+    args
+  );
+}
+
+export const __test__ = {
+  createMonoAttemptAndInvoiceImpl,
+  finalizeAttemptWithInvoice,
+};
+
+export async function createMonobankAttemptAndInvoice(args: {
+  orderId: string;
+  statusToken: string;
+  requestId: string;
+  maxAttempts?: number;
+}): Promise<{
+  invoiceId: string;
+  pageUrl: string;
+  attemptId: string;
+  attemptNumber: number;
+}> {
+  const redirectUrl = toAbsoluteUrl(
+    `/shop/checkout/success?orderId=${encodeURIComponent(
+      args.orderId
+    )}&statusToken=${encodeURIComponent(args.statusToken)}`
+  );
+  const webhookUrl = toAbsoluteUrl('/api/shop/webhooks/monobank');
+
+  const result = await createMonoAttemptAndInvoice({
+    orderId: args.orderId,
+    requestId: args.requestId,
+    redirectUrl,
+    webhookUrl,
+    maxAttempts: args.maxAttempts,
+  });
+
+  const [row] = await db
+    .select({ attemptNumber: paymentAttempts.attemptNumber })
+    .from(paymentAttempts)
+    .where(eq(paymentAttempts.id, result.attemptId))
+    .limit(1);
+
+  return {
+    ...result,
+    attemptNumber: row?.attemptNumber ?? 1,
   };
 }

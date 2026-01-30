@@ -12,6 +12,19 @@ describe('monobank invoice adapter', () => {
         'https://example.test/shop/checkout/success?orderId=order_test',
       webhookUrl: 'https://example.test/api/shop/webhooks/monobank',
       paymentType: 'debit',
+      merchantPaymInfo: {
+        reference: 'attempt-1',
+        destination: 'Оплата замовлення 1',
+        basketOrder: [
+          {
+            name: 'Item',
+            qty: 1,
+            sum: 1500,
+            total: 1500,
+            unit: 'шт.',
+          },
+        ],
+      },
     });
 
     expect(payload.ccy).toBe(MONO_CCY);
@@ -27,6 +40,19 @@ describe('monobank invoice adapter', () => {
           'https://example.test/shop/checkout/success?orderId=order_test',
         webhookUrl: 'https://example.test/api/shop/webhooks/monobank',
         paymentType: 'hold' as any,
+        merchantPaymInfo: {
+          reference: 'attempt-1',
+          destination: 'Оплата замовлення 1',
+          basketOrder: [
+            {
+              name: 'Item',
+              qty: 1,
+              sum: 1500,
+              total: 1500,
+              unit: 'шт.',
+            },
+          ],
+        },
       })
     ).toThrow();
   });

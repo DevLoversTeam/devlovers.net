@@ -21,6 +21,15 @@ const ALLOWED_FROM_STRIPE: Record<PaymentStatus, readonly PaymentStatus[]> = {
   failed: ['pending', 'requires_payment'],
   // allow refunds even if we missed/never persisted "paid" (webhook ordering / retries)
   refunded: ['paid', 'pending', 'requires_payment'],
+  // allow entering "needs_review" from anywhere (triage state)
+  needs_review: [
+    'pending',
+    'requires_payment',
+    'paid',
+    'failed',
+    'refunded',
+    'needs_review',
+  ],
 };
 
 // payment_provider='none' (no-payments) rules:
@@ -32,6 +41,8 @@ const ALLOWED_FROM_NONE: Record<PaymentStatus, readonly PaymentStatus[]> = {
   paid: ['paid'],
   failed: ['paid', 'failed'],
   refunded: [],
+  // provider='none': DB CHECK typically disallows needs_review (only paid/failed)
+  needs_review: [],
 };
 
 function allowedFrom(
@@ -102,9 +113,7 @@ export type GuardedPaymentUpdateResult =
       currentProvider?: PaymentProvider;
     };
 
-async function getCurrentState(
-  orderId: string
-): Promise<{
+async function getCurrentState(orderId: string): Promise<{
   paymentStatus: PaymentStatus;
   paymentProvider: PaymentProvider;
 } | null> {
@@ -128,7 +137,10 @@ export async function guardedPaymentStatusUpdate(
   // Hard reject invalid targets for no-payments before we even touch DB.
   if (
     paymentProvider === 'none' &&
-    (to === 'pending' || to === 'requires_payment' || to === 'refunded')
+    (to === 'pending' ||
+      to === 'requires_payment' ||
+      to === 'refunded' ||
+      to === 'needs_review')
   ) {
     const current = await getCurrentState(orderId);
     if (!current) return { applied: false, reason: 'NOT_FOUND' };

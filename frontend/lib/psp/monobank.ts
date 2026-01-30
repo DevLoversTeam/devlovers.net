@@ -38,7 +38,17 @@ export type MonobankInvoiceCreateInput = {
   reference: string;
   redirectUrl: string;
   webHookUrl: string;
-  merchantPaymInfo?: Record<string, unknown>;
+  merchantPaymInfo: {
+    reference: string;
+    destination: string;
+    basketOrder: Array<{
+      name: string;
+      qty: number;
+      sum: number;
+      total: number;
+      unit?: string;
+    }>;
+  };
 };
 
 export type MonobankInvoiceCreateResult = {
@@ -87,6 +97,17 @@ export type MonobankInvoiceCreateArgs = {
   redirectUrl: string;
   webhookUrl: string;
   paymentType?: MonobankPaymentType;
+  merchantPaymInfo: {
+    reference: string;
+    destination: string;
+    basketOrder: Array<{
+      name: string;
+      qty: number;
+      sum: number;
+      total: number;
+      unit?: string;
+    }>;
+  };
 };
 
 export type MonobankInvoiceResponse = {
@@ -98,10 +119,74 @@ export type MonobankInvoiceResponse = {
 type MonobankMerchantPaymInfo = {
   reference: string;
   destination: string;
+  basketOrder: Array<{
+    name: string;
+    qty: number;
+    sum: number;
+    total: number;
+    unit?: string;
+  }>;
 };
 
 type MonobankMerchantPaymInfoRaw = MonobankMerchantPaymInfo &
   Record<string, unknown>;
+
+type BasketOrderItem = MonobankMerchantPaymInfo['basketOrder'][number];
+
+function parseBasketOrderOrThrow(raw: unknown): BasketOrderItem[] {
+  if (!Array.isArray(raw) || raw.length === 0) {
+    throw new Error('merchantPaymInfo.basketOrder is required');
+  }
+
+  const out: BasketOrderItem[] = [];
+
+  for (const it of raw) {
+    if (!it || typeof it !== 'object') {
+      throw new Error('basketOrder item must be an object');
+    }
+
+    const r = it as Record<string, unknown>;
+
+    const name = typeof r.name === 'string' ? r.name.trim() : '';
+    if (!name) throw new Error('basketOrder item.name required');
+
+    const qty = r.qty;
+    const sum = r.sum;
+    const total = r.total;
+
+    for (const [k, v] of [
+      ['qty', qty],
+      ['sum', sum],
+      ['total', total],
+    ] as const) {
+      if (typeof v !== 'number' || !Number.isSafeInteger(v)) {
+        throw new Error(`basketOrder item.${k} must be safe integer`);
+      }
+    }
+
+    if ((qty as number) <= 0)
+      throw new Error('basketOrder item.qty must be > 0');
+    if ((sum as number) < 0)
+      throw new Error('basketOrder item.sum must be >= 0');
+    if ((total as number) < 0)
+      throw new Error('basketOrder item.total must be >= 0');
+
+    const unit =
+      typeof r.unit === 'string' && r.unit.trim().length > 0
+        ? r.unit.trim()
+        : undefined;
+
+    out.push({
+      name,
+      qty: qty as number,
+      sum: sum as number,
+      total: total as number,
+      ...(unit ? { unit } : {}),
+    });
+  }
+
+  return out;
+}
 
 type MonobankInvoiceCreateRequest = {
   amount: number;
@@ -158,13 +243,42 @@ export function buildMonobankInvoicePayload(
     throw new Error('Invalid invoice amount (minor units)');
   }
 
+  const merchantInfo =
+    args.merchantPaymInfo && typeof args.merchantPaymInfo === 'object'
+      ? { ...(args.merchantPaymInfo as Record<string, unknown>) }
+      : null;
+
+  if (!merchantInfo) {
+    throw new Error('merchantPaymInfo is required');
+  }
+
+  const reference =
+    typeof (merchantInfo as { reference?: unknown }).reference === 'string'
+      ? (merchantInfo as { reference: string }).reference.trim()
+      : '';
+
+  const destination =
+    typeof (merchantInfo as { destination?: unknown }).destination === 'string'
+      ? (merchantInfo as { destination: string }).destination.trim()
+      : '';
+
+  const basketOrder = (merchantInfo as { basketOrder?: unknown }).basketOrder;
+
+  if (!reference || !destination) {
+    throw new Error('merchantPaymInfo.reference and destination are required');
+  }
+
+  const basketOrderValue = parseBasketOrderOrThrow(basketOrder);
+
   const payload: MonobankInvoiceCreateRequest = {
     amount: args.amountMinor,
     ccy: MONO_CCY,
     paymentType,
     merchantPaymInfo: {
-      reference: args.orderId,
-      destination: `Order ${args.orderId}`,
+      ...(merchantInfo as Record<string, unknown>),
+      reference,
+      destination,
+      basketOrder: basketOrderValue,
     },
     redirectUrl: args.redirectUrl,
     webHookUrl: args.webhookUrl,
@@ -392,25 +506,44 @@ function buildMonobankInvoicePayloadFromInput(
   const merchantInfo =
     args.merchantPaymInfo && typeof args.merchantPaymInfo === 'object'
       ? { ...(args.merchantPaymInfo as Record<string, unknown>) }
-      : {};
+      : null;
+
+  if (!merchantInfo) {
+    throw new Error('merchantPaymInfo is required');
+  }
+
+  const referenceValue =
+    typeof (merchantInfo as { reference?: unknown }).reference === 'string'
+      ? (merchantInfo as { reference: string }).reference.trim()
+      : '';
 
   const destinationValue =
     typeof (merchantInfo as { destination?: unknown }).destination === 'string'
       ? (merchantInfo as { destination: string }).destination.trim()
       : '';
 
-  const destination = destinationValue.length
-    ? destinationValue
-    : `Order ${args.reference}`;
+  const basketOrder = (merchantInfo as { basketOrder?: unknown }).basketOrder;
+
+  if (!referenceValue || !destinationValue) {
+    throw new Error('merchantPaymInfo.reference and destination are required');
+  }
+
+  const canonical = args.reference.trim();
+  if (referenceValue !== canonical) {
+    throw new Error('merchantPaymInfo.reference must match args.reference');
+  }
+
+  const basketOrderValue = parseBasketOrderOrThrow(basketOrder);
 
   const payload: MonobankInvoiceCreateRequest = {
     amount: args.amountMinor,
     ccy: MONO_CCY,
     paymentType: 'debit',
     merchantPaymInfo: {
-      ...merchantInfo,
-      reference: args.reference,
-      destination,
+      ...(merchantInfo as Record<string, unknown>),
+      reference: referenceValue,
+      destination: destinationValue,
+      basketOrder: basketOrderValue,
     },
     redirectUrl: args.redirectUrl,
     webHookUrl: args.webHookUrl,

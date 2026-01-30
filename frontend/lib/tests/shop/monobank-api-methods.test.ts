@@ -79,9 +79,22 @@ describe('monobank api methods', () => {
   const createArgs = {
     amountMinor: 1234,
     validitySeconds: 600,
-    reference: 'order_1',
+    reference: 'attempt-1',
     redirectUrl: 'https://shop.test/redirect',
     webHookUrl: 'https://shop.test/api/shop/webhooks/monobank',
+    merchantPaymInfo: {
+      reference: 'attempt-1',
+      destination: 'Оплата замовлення 123',
+      basketOrder: [
+        {
+          name: 'Item',
+          qty: 1,
+          sum: 1234,
+          total: 1234,
+          unit: 'шт.',
+        },
+      ],
+    },
   };
 
   it('createInvoice returns normalized response on 2xx', async () => {

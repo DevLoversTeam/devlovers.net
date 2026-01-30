@@ -29,6 +29,7 @@ export const paymentStatusEnum = pgEnum('payment_status', [
   'paid',
   'failed',
   'refunded',
+  'needs_review',
 ]);
 export const currencyEnum = pgEnum('currency', ['USD', 'UAH']);
 
@@ -285,39 +286,52 @@ export const stripeEvents = pgTable(
   ]
 );
 
-export const monobankEvents = pgTable(
-  'monobank_events',
-  {
-    id: uuid('id').defaultRandom().primaryKey(),
-    provider: text('provider').notNull().default('monobank'),
-    eventKey: text('event_key').notNull(),
-    invoiceId: text('invoice_id'),
-    attemptId: uuid('attempt_id').references(() => paymentAttempts.id, {
-      onDelete: 'set null',
-    }),
-    orderId: uuid('order_id')
-      .notNull()
-      .references(() => orders.id, { onDelete: 'cascade' }),
-    providerModifiedAt: timestamp('provider_modified_at', {
-      withTimezone: true,
-    }),
-    appliedAt: timestamp('applied_at', { withTimezone: true }),
-    rawSha256: text('raw_sha256').notNull(),
-    receivedAt: timestamp('received_at', { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-  },
-  t => [
-    check(
-      'monobank_events_provider_check',
-      sql`${t.provider} in ('monobank')`
-    ),
-    uniqueIndex('monobank_events_event_key_unique').on(t.eventKey),
-    uniqueIndex('monobank_events_raw_sha256_unique').on(t.rawSha256),
-    index('monobank_events_order_id_idx').on(t.orderId),
-    index('monobank_events_attempt_id_idx').on(t.attemptId),
-  ]
-);
+  export const monobankEvents = pgTable(
+    'monobank_events',
+    {
+      id: uuid('id').defaultRandom().primaryKey(),
+      provider: text('provider').notNull().default('monobank'),
+      eventKey: text('event_key').notNull(),
+      invoiceId: text('invoice_id'),
+      status: text('status'),
+      amount: integer('amount'),
+      ccy: integer('ccy'),
+      reference: text('reference'),
+      rawPayload: jsonb('raw_payload').$type<Record<string, unknown> | null>(),
+      normalizedPayload: jsonb('normalized_payload').$type<Record<
+        string,
+        unknown
+      > | null>(),
+      attemptId: uuid('attempt_id').references(() => paymentAttempts.id, {
+        onDelete: 'set null',
+      }),
+      orderId: uuid('order_id').references(() => orders.id, {
+        onDelete: 'cascade',
+      }),
+      providerModifiedAt: timestamp('provider_modified_at', {
+        withTimezone: true,
+      }),
+      claimedAt: timestamp('claimed_at', { withTimezone: true }),
+      claimExpiresAt: timestamp('claim_expires_at', { withTimezone: true }),
+      claimedBy: text('claimed_by'),
+      appliedAt: timestamp('applied_at', { withTimezone: true }),
+      appliedResult: text('applied_result'),
+      appliedErrorCode: text('applied_error_code'),
+      appliedErrorMessage: text('applied_error_message'),
+      rawSha256: text('raw_sha256').notNull(),
+      receivedAt: timestamp('received_at', { withTimezone: true })
+        .notNull()
+        .defaultNow(),
+    },
+    t => [
+      check('monobank_events_provider_check', sql`${t.provider} in ('monobank')`),
+      uniqueIndex('monobank_events_event_key_unique').on(t.eventKey),
+      uniqueIndex('monobank_events_raw_sha256_unique').on(t.rawSha256),
+      index('monobank_events_order_id_idx').on(t.orderId),
+      index('monobank_events_attempt_id_idx').on(t.attemptId),
+      index('monobank_events_claim_expires_idx').on(t.claimExpiresAt),
+    ]
+  );
 
 export const monobankRefunds = pgTable(
   'monobank_refunds',

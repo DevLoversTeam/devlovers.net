@@ -30,7 +30,7 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
     try {
       return tColors(colorSlug);
     } catch {
-      return color; 
+      return color;
     }
   };
 

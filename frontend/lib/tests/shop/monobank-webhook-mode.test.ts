@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
-import { eq } from 'drizzle-orm';
+import { eq, or } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { monobankEvents, orders, paymentAttempts } from '@/db/schema';
@@ -73,8 +73,15 @@ async function insertOrderAndAttempt(invoiceId: string) {
   return { orderId, attemptId };
 }
 
-async function cleanup(orderId: string) {
-  await db.delete(monobankEvents).where(eq(monobankEvents.orderId, orderId));
+async function cleanup(orderId: string, invoiceId: string) {
+  await db
+    .delete(monobankEvents)
+    .where(
+      or(
+        eq(monobankEvents.orderId, orderId),
+        eq(monobankEvents.invoiceId, invoiceId)
+      )
+    );
   await db.delete(paymentAttempts).where(eq(paymentAttempts.orderId, orderId));
   await db.delete(orders).where(eq(orders.id, orderId));
 }
@@ -120,13 +127,17 @@ describe.sequential('monobank webhook mode handling', () => {
       expect(attempt?.status).toBe('active');
 
       const [event] = await db
-        .select({ id: monobankEvents.id })
+        .select({
+          invoiceId: monobankEvents.invoiceId,
+          appliedResult: monobankEvents.appliedResult,
+        })
         .from(monobankEvents)
-        .where(eq(monobankEvents.orderId, orderId))
+        .where(eq(monobankEvents.invoiceId, invoiceId))
         .limit(1);
-      expect(event).toBeUndefined();
+      expect(event?.invoiceId).toBe(invoiceId);
+      expect(event?.appliedResult).toBe('dropped');
     } finally {
-      await cleanup(orderId);
+      await cleanup(orderId, invoiceId);
     }
   });
 
@@ -150,13 +161,15 @@ describe.sequential('monobank webhook mode handling', () => {
         .select({
           rawSha256: monobankEvents.rawSha256,
           invoiceId: monobankEvents.invoiceId,
+          appliedResult: monobankEvents.appliedResult,
         })
         .from(monobankEvents)
-        .where(eq(monobankEvents.orderId, orderId))
+        .where(eq(monobankEvents.invoiceId, invoiceId))
         .limit(1);
 
       expect(event?.invoiceId).toBe(invoiceId);
       expect(event?.rawSha256).toBe(rawHash);
+      expect(event?.appliedResult).toBe('stored');
 
       const [order] = await db
         .select({ paymentStatus: orders.paymentStatus })
@@ -172,7 +185,7 @@ describe.sequential('monobank webhook mode handling', () => {
         .limit(1);
       expect(attempt?.status).toBe('active');
     } finally {
-      await cleanup(orderId);
+      await cleanup(orderId, invoiceId);
     }
   });
 
@@ -205,7 +218,7 @@ describe.sequential('monobank webhook mode handling', () => {
         .limit(1);
       expect(attempt?.status).toBe('succeeded');
     } finally {
-      await cleanup(orderId);
+      await cleanup(orderId, invoiceId);
     }
   });
 });

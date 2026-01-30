@@ -100,7 +100,7 @@ describe('P1-6 payment state machine helper', () => {
       note: 'test-forbidden',
       set: { updatedAt: new Date() } as any,
     });
-    
+
     expect(res.applied).toBe(false);
     if (res.applied) throw new Error('expected not applied');
     expect(res.reason).toBe('INVALID_TRANSITION');

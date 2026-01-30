@@ -16,17 +16,13 @@ function noStoreJson(body: unknown, init?: { status?: number }) {
   return res;
 }
 type OrderCurrency = (typeof orders.$inferSelect)['currency'];
+type OrderPaymentStatus = (typeof orders.$inferSelect)['paymentStatus'];
 type OrderDetailResponse = {
   id: string;
   userId: string | null;
   totalAmount: string;
   currency: OrderCurrency;
-  paymentStatus:
-    | 'pending'
-    | 'requires_payment'
-    | 'paid'
-    | 'failed'
-    | 'refunded';
+  paymentStatus: OrderPaymentStatus;
   paymentProvider: string;
   paymentIntentId: string | null;
   stockRestored: boolean;
@@ -196,13 +192,12 @@ export async function GET(
 
     return noStoreJson({ success: true, order: response }, { status: 200 });
   } catch (error) {
-        logError('public_order_detail_failed', error, {
+    logError('public_order_detail_failed', error, {
       ...baseMeta,
       orderId: orderIdForLog,
       code: 'PUBLIC_ORDER_DETAIL_FAILED',
       durationMs: Date.now() - startedAtMs,
     });
-
 
     return noStoreJson(
       { code: 'INTERNAL_ERROR', error: 'internal_error' },

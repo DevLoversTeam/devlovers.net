@@ -2,15 +2,11 @@ import 'server-only';
 
 import crypto from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
-import { and, eq } from 'drizzle-orm';
-
-import { db } from '@/db';
-import { monobankEvents, paymentAttempts } from '@/db/schema';
+import { applyMonoWebhookEvent } from '@/lib/services/orders/monobank-webhook';
 import { getMonobankConfig } from '@/lib/env/monobank';
 import { logError, logInfo, logWarn } from '@/lib/logging';
 import { verifyMonobankWebhookSignature } from '@/lib/psp/monobank';
-import { guardedPaymentStatusUpdate } from '@/lib/services/orders/payment-state';
-import { restockOrder } from '@/lib/services/orders/restock';
+import { InvalidPayloadError } from '@/lib/services/errors';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,19 +14,6 @@ function noStoreJson(body: unknown, init?: { status?: number }) {
   const res = NextResponse.json(body, { status: init?.status ?? 200 });
   res.headers.set('Cache-Control', 'no-store');
   return res;
-}
-
-type MonobankWebhookPayload = {
-  invoiceId?: string;
-  status?: string;
-  amount?: number;
-  ccy?: number;
-  reference?: string;
-};
-
-function normalizeStatus(raw: unknown): string {
-  if (typeof raw !== 'string') return '';
-  return raw.trim().toLowerCase();
 }
 
 export async function POST(request: NextRequest) {
@@ -68,32 +51,6 @@ export async function POST(request: NextRequest) {
     return noStoreJson({ code: 'INVALID_SIGNATURE' }, { status: 401 });
   }
 
-  let payload: MonobankWebhookPayload;
-  try {
-    payload = JSON.parse(rawBody) as MonobankWebhookPayload;
-  } catch (error) {
-    logWarn('monobank_webhook_invalid_json', {
-      ...baseMeta,
-      code: 'INVALID_PAYLOAD',
-      message: error instanceof Error ? error.message : String(error),
-    });
-    return noStoreJson({ code: 'INVALID_PAYLOAD' }, { status: 400 });
-  }
-
-  const invoiceId =
-    typeof payload.invoiceId === 'string' ? payload.invoiceId : '';
-  const status = normalizeStatus(payload.status);
-
-  if (!invoiceId || !status) {
-    logWarn('monobank_webhook_missing_fields', {
-      ...baseMeta,
-      code: 'INVALID_PAYLOAD',
-      invoiceIdPresent: Boolean(invoiceId),
-      status,
-    });
-    return noStoreJson({ code: 'INVALID_PAYLOAD' }, { status: 400 });
-  }
-
   let webhookMode: 'drop' | 'store' | 'apply' = 'drop';
   try {
     webhookMode = getMonobankConfig().webhookMode;
@@ -105,178 +62,50 @@ export async function POST(request: NextRequest) {
     webhookMode = 'drop';
   }
 
-  const rawSha256 = crypto.createHash('sha256').update(rawBody).digest('hex');
-
-  if (webhookMode === 'drop') {
-    logInfo('monobank_webhook_dropped', {
-      ...baseMeta,
-      invoiceId,
-      status,
-    });
-    return noStoreJson({ ok: true }, { status: 200 });
-  }
-
-  const [attempt] = await db
-    .select({
-      id: paymentAttempts.id,
-      orderId: paymentAttempts.orderId,
-      status: paymentAttempts.status,
-    })
-    .from(paymentAttempts)
-    .where(
-      and(
-        eq(paymentAttempts.providerPaymentIntentId, invoiceId),
-        eq(paymentAttempts.provider, 'monobank')
-      )
-    )
-    .limit(1);
-
-  if (!attempt) {
-    logWarn('monobank_webhook_unknown_invoice', {
-      ...baseMeta,
-      code: 'INVOICE_NOT_FOUND',
-      invoiceId,
-      status,
-      webhookMode,
+  try {
+    const result = await applyMonoWebhookEvent({
+      rawBody,
+      requestId,
+      mode: webhookMode,
     });
 
-    // Safety: in store/apply modes we only act on known attempts.
-    // Unknown invoice webhooks are acknowledged to avoid retries.
-    return noStoreJson({ ok: true }, { status: 200 });
-  }
-
-  const orderId = attempt.orderId;
-
-  if (webhookMode === 'store') {
-    const eventKey = `${invoiceId}:${status}:${payload.amount ?? 'na'}:${payload.ccy ?? 'na'}:${payload.reference ?? 'na'}`;
-
-    await db
-      .insert(monobankEvents)
-      .values({
-        eventKey,
-        invoiceId,
-        attemptId: attempt.id,
-        orderId,
-        rawSha256,
-      })
-      .onConflictDoNothing();
-
-    logInfo('monobank_webhook_stored', {
-      ...baseMeta,
-      orderId,
-      invoiceId,
-      status,
-    });
-
-    return noStoreJson({ ok: true }, { status: 200 });
-  }
-
-  const metadata = {
-    monobank: {
-      invoiceId,
-      status,
-      amount: payload.amount ?? null,
-      ccy: payload.ccy ?? null,
-      reference: payload.reference ?? null,
-    },
-  };
-
-  if (status === 'success') {
-    const res = await guardedPaymentStatusUpdate({
-      orderId,
-      paymentProvider: 'monobank',
-      to: 'paid',
-      source: 'monobank_webhook',
-      set: {
-        status: 'PAID',
-        pspMetadata: metadata,
-        updatedAt: new Date(),
-      },
-    });
-
-    await db
-      .update(paymentAttempts)
-      .set({
-        status: 'succeeded',
-        finalizedAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .where(eq(paymentAttempts.id, attempt.id));
-
-    logInfo('monobank_webhook_paid', {
-      ...baseMeta,
-      orderId,
-      invoiceId,
-      applied: res.applied,
-      status,
-    });
-
-    return noStoreJson({ ok: true }, { status: 200 });
-  }
-
-  if (status === 'processing' || status === 'created') {
-    return noStoreJson({ ok: true }, { status: 200 });
-  }
-
-  const terminalFailed = status === 'failure' || status === 'expired';
-  const terminalRefunded = status === 'reversed';
-
-  if (terminalFailed || terminalRefunded) {
-    const toStatus = terminalRefunded ? 'refunded' : 'failed';
-    const res = await guardedPaymentStatusUpdate({
-      orderId,
-      paymentProvider: 'monobank',
-      to: toStatus,
-      source: 'monobank_webhook',
-      set: {
-        pspStatusReason: status,
-        pspMetadata: metadata,
-        updatedAt: new Date(),
-      },
-    });
-
-    await db
-      .update(paymentAttempts)
-      .set({
-        status: terminalRefunded ? 'canceled' : 'failed',
-        finalizedAt: new Date(),
-        updatedAt: new Date(),
-        lastErrorCode: status,
-        lastErrorMessage: `Monobank status: ${status}`,
-      })
-      .where(eq(paymentAttempts.id, attempt.id));
-
-    try {
-      await restockOrder(orderId, {
-        reason: terminalRefunded ? 'refunded' : 'failed',
-        workerId: 'monobank_webhook',
-      });
-    } catch (error) {
-      logError('monobank_webhook_restock_failed', error, {
+    if (result.appliedResult === 'deduped') {
+      logInfo('monobank_webhook_deduped', {
         ...baseMeta,
-        orderId,
-        invoiceId,
-        status,
+        invoiceId: result.invoiceId,
       });
     }
 
-    logInfo('monobank_webhook_terminal', {
-      ...baseMeta,
-      orderId,
-      invoiceId,
-      status,
-      applied: res.applied,
-    });
+    if (result.appliedResult === 'stored') {
+      logInfo('monobank_webhook_stored', {
+        ...baseMeta,
+        invoiceId: result.invoiceId,
+      });
+    }
+
+    if (result.appliedResult === 'dropped') {
+      logInfo('monobank_webhook_dropped', {
+        ...baseMeta,
+        invoiceId: result.invoiceId,
+      });
+    }
 
     return noStoreJson({ ok: true }, { status: 200 });
+  } catch (error) {
+    if (error instanceof InvalidPayloadError) {
+      logWarn('monobank_webhook_invalid_payload', {
+        ...baseMeta,
+        code: error.code,
+        message: error.message,
+      });
+      return noStoreJson({ code: error.code }, { status: 400 });
+    }
+
+    logError('monobank_webhook_apply_failed', error, {
+      ...baseMeta,
+      code: 'WEBHOOK_APPLY_FAILED',
+    });
+
+    return noStoreJson({ code: 'INTERNAL_ERROR' }, { status: 500 });
   }
-
-  logWarn('monobank_webhook_status_ignored', {
-    ...baseMeta,
-    orderId,
-    invoiceId,
-    status,
-  });
-
-  return noStoreJson({ ok: true }, { status: 200 });
 }

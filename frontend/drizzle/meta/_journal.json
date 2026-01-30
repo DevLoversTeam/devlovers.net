@@ -71,6 +71,20 @@
       "when": 1769722667103,
       "tag": "0009_spicy_martin_li",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1769798192982,
+      "tag": "0010_wakeful_living_lightning",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1769810799649,
+      "tag": "0011_rich_gateway",
+      "breakpoints": true
     }
   ]
 }
