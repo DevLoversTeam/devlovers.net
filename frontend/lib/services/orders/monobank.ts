@@ -12,6 +12,7 @@ import {
 import { logError, logWarn } from '@/lib/logging';
 
 import { restockOrder } from '@/lib/services/orders/restock';
+import { toAbsoluteUrl } from '@/lib/shop/url';
 import {
   InvalidPayloadError,
   OrderNotFoundError,
@@ -186,7 +187,6 @@ async function cancelOrderAndRelease(orderId: string, reason: string) {
 
 export async function createMonobankAttemptAndInvoice(args: {
   orderId: string;
-  baseUrl: string;
   statusToken: string;
   requestId: string;
   maxAttempts?: number;
@@ -237,11 +237,12 @@ export async function createMonobankAttemptAndInvoice(args: {
     maxAttempts: args.maxAttempts ?? DEFAULT_MAX_ATTEMPTS,
   });
 
-  const base = args.baseUrl.replace(/\/$/, '');
-  const redirectUrl = `${base}/shop/checkout/success?orderId=${encodeURIComponent(
-    args.orderId
-  )}&statusToken=${encodeURIComponent(args.statusToken)}`;
-  const webhookUrl = `${base}/api/shop/webhooks/monobank`;
+  const redirectUrl = toAbsoluteUrl(
+    `/shop/checkout/success?orderId=${encodeURIComponent(
+      args.orderId
+    )}&statusToken=${encodeURIComponent(args.statusToken)}`
+  );
+  const webhookUrl = toAbsoluteUrl('/api/shop/webhooks/monobank');
 
   let invoice: { invoiceId: string; pageUrl: string };
   try {

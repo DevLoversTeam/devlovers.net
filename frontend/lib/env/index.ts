@@ -19,11 +19,22 @@ export const serverEnvSchema = z.object({
   STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
   STRIPE_MODE: z.enum(['test', 'live']).optional(),
   PAYMENTS_ENABLED: z.enum(['true', 'false']).optional().default('false'),
+  STRIPE_PAYMENTS_ENABLED: z.enum(['true', 'false']).optional(),
+
+  APP_ORIGIN: z.string().url().optional(),
   NEXT_PUBLIC_SITE_URL: z.string().url().optional(),
-  MONOBANK_ACQUIRING_TOKEN: z.string().min(1).optional(),
-  MONOBANK_ACQUIRING_PUBLIC_KEY: z.string().min(1).optional(),
-  MONOBANK_ACQUIRING_API_BASE: z.string().url().optional(),
-  MONOBANK_INVOICE_TIMEOUT_MS: z.string().optional(),
+  SHOP_BASE_URL: z.string().url().optional(),
+  MONO_MERCHANT_TOKEN: z.string().min(1).optional(),
+  MONO_WEBHOOK_MODE: z
+    .enum(['apply', 'store', 'drop'])
+    .optional()
+    .default('apply'),
+  MONO_REFUND_ENABLED: z.enum(['true', 'false']).optional().default('false'),
+  MONO_INVOICE_VALIDITY_SECONDS: z.string().optional().default('86400'),
+  MONO_TIME_SKEW_TOLERANCE_SEC: z.string().optional().default('300'),
+  MONO_PUBLIC_KEY: z.string().min(1).optional(),
+  MONO_API_BASE: z.string().url().optional(),
+  MONO_INVOICE_TIMEOUT_MS: z.string().optional(),
   SHOP_STATUS_TOKEN_SECRET: z.string().min(32).optional(),
 });
 

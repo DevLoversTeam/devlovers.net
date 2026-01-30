@@ -1,11 +1,15 @@
 import crypto from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
+import { eq } from 'drizzle-orm';
 import {
   AdminApiDisabledError,
   AdminForbiddenError,
   AdminUnauthorizedError,
   requireAdminApi,
 } from '@/lib/auth/admin';
+import { db } from '@/db';
+import { orders } from '@/db/schema';
+import { getMonobankConfig } from '@/lib/env/monobank';
 import { requireAdminCsrf } from '@/lib/security/admin-csrf';
 import { logError, logWarn } from '@/lib/logging';
 import { OrderNotFoundError, InvalidPayloadError } from '@/lib/services/errors';
@@ -74,12 +78,35 @@ export async function POST(
       });
 
       return noStoreJson(
-        { error: 'Invalid order id', code: 'INVALID_ORDER_ID' },
+        { code: 'INVALID_ORDER_ID', message: 'Invalid order id.' },
         { status: 400 }
       );
     }
 
     orderIdForLog = parsed.data.id;
+    const [targetOrder] = await db
+      .select({ paymentProvider: orders.paymentProvider })
+      .from(orders)
+      .where(eq(orders.id, orderIdForLog))
+      .limit(1);
+
+    if (targetOrder?.paymentProvider === 'monobank') {
+      const { refundEnabled } = getMonobankConfig();
+      if (!refundEnabled) {
+        logWarn('admin_orders_refund_disabled', {
+          ...baseMeta,
+          code: 'REFUND_DISABLED',
+          orderId: orderIdForLog,
+          durationMs: Date.now() - startedAtMs,
+        });
+
+        return noStoreJson(
+          { code: 'REFUND_DISABLED', message: 'Refunds are disabled.' },
+          { status: 409 }
+        );
+      }
+    }
+
     const order = await refundOrder(orderIdForLog, { requestedBy: 'admin' });
 
     const orderSummary = orderSummarySchema.parse(order);
@@ -102,8 +129,10 @@ export async function POST(
         orderId: orderIdForLog,
         durationMs: Date.now() - startedAtMs,
       });
-
-      return noStoreJson({ code: 'ADMIN_API_DISABLED' }, { status: 403 });
+      return noStoreJson(
+        { code: 'ADMIN_API_DISABLED', message: 'Admin API is disabled.' },
+        { status: 403 }
+      );
     }
 
     if (error instanceof AdminUnauthorizedError) {
@@ -113,7 +142,10 @@ export async function POST(
         orderId: orderIdForLog,
         durationMs: Date.now() - startedAtMs,
       });
-      return noStoreJson({ code: error.code }, { status: 401 });
+      return noStoreJson(
+        { code: error.code, message: 'Unauthorized.' },
+        { status: 401 }
+      );
     }
 
     if (error instanceof AdminForbiddenError) {
@@ -124,7 +156,10 @@ export async function POST(
         durationMs: Date.now() - startedAtMs,
       });
 
-      return noStoreJson({ code: error.code }, { status: 403 });
+      return noStoreJson(
+        { code: error.code, message: 'Forbidden.' },
+        { status: 403 }
+      );
     }
 
     if (error instanceof OrderNotFoundError) {
@@ -136,7 +171,7 @@ export async function POST(
       });
 
       return noStoreJson(
-        { error: error.message, code: error.code },
+        { code: error.code, message: error.message },
         { status: 404 }
       );
     }
@@ -150,7 +185,7 @@ export async function POST(
       });
 
       return noStoreJson(
-        { error: error.message, code: error.code },
+        { code: error.code, message: error.message },
         { status: 400 }
       );
     }
@@ -163,7 +198,7 @@ export async function POST(
     });
 
     return noStoreJson(
-      { error: 'Unable to refund order', code: 'INTERNAL_ERROR' },
+      { code: 'INTERNAL_ERROR', message: 'Unable to refund order.' },
       { status: 500 }
     );
   }

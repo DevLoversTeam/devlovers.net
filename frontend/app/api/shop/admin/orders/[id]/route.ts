@@ -60,7 +60,7 @@ export async function GET(
       });
 
       return noStoreJson(
-        { error: 'Invalid order id', code: 'INVALID_ORDER_ID' },
+        { code: 'INVALID_ORDER_ID', message: 'Invalid order id.' },
         { status: 400 }
       );
     }
@@ -78,7 +78,7 @@ export async function GET(
       });
 
       return noStoreJson(
-        { error: 'Order not found', code: 'ORDER_NOT_FOUND' },
+        { code: 'ORDER_NOT_FOUND', message: 'Order not found.' },
         { status: 404 }
       );
     }
@@ -105,7 +105,10 @@ export async function GET(
         orderId: orderIdForLog,
         durationMs: Date.now() - startedAtMs,
       });
-      return noStoreJson({ code: error.code }, { status: 403 });
+      return noStoreJson(
+        { code: error.code, message: 'Admin API is disabled.' },
+        { status: 403 }
+      );
     }
 
     if (error instanceof AdminUnauthorizedError) {
@@ -115,7 +118,10 @@ export async function GET(
         orderId: orderIdForLog,
         durationMs: Date.now() - startedAtMs,
       });
-      return noStoreJson({ code: error.code }, { status: 401 });
+      return noStoreJson(
+        { code: error.code, message: 'Unauthorized.' },
+        { status: 401 }
+      );
     }
 
     if (error instanceof AdminForbiddenError) {
@@ -125,7 +131,10 @@ export async function GET(
         orderId: orderIdForLog,
         durationMs: Date.now() - startedAtMs,
       });
-      return noStoreJson({ code: error.code }, { status: 403 });
+      return noStoreJson(
+        { code: error.code, message: 'Forbidden.' },
+        { status: 403 }
+      );
     }
 
     logError('admin_order_detail_failed', error, {
@@ -136,7 +145,7 @@ export async function GET(
     });
 
     return noStoreJson(
-      { error: 'internal_error', code: 'INTERNAL_ERROR' },
+      { code: 'INTERNAL_ERROR', message: 'Internal error.' },
       { status: 500 }
     );
   }

@@ -58,7 +58,7 @@ describe('P0-3.4 Stripe webhook: amount/currency mismatch (minor) must not set p
     /**
      * 1) Create an order with payments disabled (so no Stripe network calls).
      */
-    process.env.PAYMENTS_ENABLED = 'false';
+    process.env.STRIPE_PAYMENTS_ENABLED = 'false';
 
     vi.doMock('@/lib/auth', async () => {
       const actual = await vi.importActual<any>('@/lib/auth');
@@ -152,7 +152,7 @@ describe('P0-3.4 Stripe webhook: amount/currency mismatch (minor) must not set p
      * 4) Prepare mocked Stripe event with mismatched amount (expectedMinor + 1).
      *    We mock verifyWebhookSignature so we don't need real Stripe signature.
      */
-    process.env.PAYMENTS_ENABLED = 'true';
+    process.env.STRIPE_PAYMENTS_ENABLED = 'true';
     process.env.STRIPE_SECRET_KEY = 'stripe_secret_key_placeholder';
     process.env.STRIPE_WEBHOOK_SECRET = 'stripe_webhook_secret_placeholder';
 

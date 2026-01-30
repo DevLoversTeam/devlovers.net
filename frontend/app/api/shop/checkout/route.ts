@@ -7,6 +7,7 @@ import {
 } from '@/lib/security/rate-limit';
 import { getCurrentUser } from '@/lib/auth';
 import { isPaymentsEnabled } from '@/lib/env/stripe';
+import { isMonobankEnabled } from '@/lib/env/monobank';
 import { logError, logInfo, logWarn } from '@/lib/logging';
 import { resolveRequestLocale } from '@/lib/shop/request-locale';
 import { IdempotencyConflictError } from '@/lib/services/errors';
@@ -25,7 +26,6 @@ import {
   idempotencyKeySchema,
 } from '@/lib/validation/shop';
 import { createStatusToken } from '@/lib/shop/status-token';
-import { isMonobankEnabled } from '@/lib/env/monobank';
 import { type PaymentProvider, type PaymentStatus } from '@/lib/shop/payments';
 import {
   PaymentAttemptsExhaustedError,
@@ -43,7 +43,9 @@ const EXPECTED_BUSINESS_ERROR_CODES = new Set([
   'PAYMENT_ATTEMPTS_EXHAUSTED',
 ]);
 
-function parseRequestedProvider(raw: unknown): PaymentProvider | 'invalid' | null {
+function parseRequestedProvider(
+  raw: unknown
+): PaymentProvider | 'invalid' | null {
   if (raw === null || raw === undefined) return null;
   if (typeof raw !== 'string') return 'invalid';
 
@@ -258,9 +260,7 @@ export async function POST(request: NextRequest) {
       string,
       unknown
     >;
-    const parsedProvider = parseRequestedProvider(
-      paymentProvider ?? provider
-    );
+    const parsedProvider = parseRequestedProvider(paymentProvider ?? provider);
 
     if (parsedProvider === 'invalid') {
       return errorResponse(
@@ -276,17 +276,41 @@ export async function POST(request: NextRequest) {
 
   const selectedProvider: PaymentProvider = requestedProvider ?? 'stripe';
 
-  if (selectedProvider === 'monobank' && !isMonobankEnabled()) {
-    logWarn('provider_disabled', {
-      requestedProvider: 'monobank',
-      requestId,
-    });
+  if (selectedProvider === 'monobank') {
+    let enabled = false;
 
-    return errorResponse(
-      'PAYMENTS_PROVIDER_DISABLED',
-      'Requested payment provider is disabled.',
-      422
-    );
+    try {
+      enabled = isMonobankEnabled();
+    } catch (error) {
+      logError('monobank_env_invalid', error, {
+        ...baseMeta,
+        code: 'MONOBANK_ENV_INVALID',
+      });
+      enabled = false;
+    }
+
+    if (!enabled) {
+      logWarn('provider_disabled', {
+        requestedProvider: 'monobank',
+        requestId,
+      });
+
+      return errorResponse(
+        'PAYMENTS_PROVIDER_DISABLED',
+        'Requested payment provider is disabled.',
+        422
+      );
+    }
+
+    // Mono-only: do not create order / reserve stock when payments are disabled.
+    if ((process.env.PAYMENTS_ENABLED ?? '').trim() !== 'true') {
+      logWarn('monobank_payments_disabled', {
+        ...baseMeta,
+        code: 'PAYMENTS_DISABLED',
+      });
+
+      return errorResponse('PAYMENTS_DISABLED', 'Payments are disabled.', 503);
+    }
   }
 
   const parsedPayload = checkoutPayloadSchema.safeParse(payloadForValidation);
@@ -586,14 +610,12 @@ export async function POST(request: NextRequest) {
           orderId: order.id,
         });
 
-        const { createMonobankAttemptAndInvoice } = await import(
-          '@/lib/services/orders/monobank'
-        );
+        const { createMonobankAttemptAndInvoice } =
+          await import('@/lib/services/orders/monobank');
         const statusToken = createStatusToken({ orderId: order.id });
 
         await createMonobankAttemptAndInvoice({
           orderId: order.id,
-          baseUrl: request.nextUrl.origin,
           statusToken,
           requestId,
         });
@@ -638,14 +660,12 @@ export async function POST(request: NextRequest) {
         orderId: order.id,
       });
 
-      const { createMonobankAttemptAndInvoice } = await import(
-        '@/lib/services/orders/monobank'
-      );
+      const { createMonobankAttemptAndInvoice } =
+        await import('@/lib/services/orders/monobank');
       const statusToken = createStatusToken({ orderId: order.id });
 
       await createMonobankAttemptAndInvoice({
         orderId: order.id,
-        baseUrl: request.nextUrl.origin,
         statusToken,
         requestId,
       });

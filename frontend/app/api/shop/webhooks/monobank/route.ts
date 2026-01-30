@@ -5,7 +5,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { and, eq } from 'drizzle-orm';
 
 import { db } from '@/db';
-import { orders, paymentAttempts } from '@/db/schema';
+import { monobankEvents, paymentAttempts } from '@/db/schema';
+import { getMonobankConfig } from '@/lib/env/monobank';
 import { logError, logInfo, logWarn } from '@/lib/logging';
 import { verifyMonobankWebhookSignature } from '@/lib/psp/monobank';
 import { guardedPaymentStatusUpdate } from '@/lib/services/orders/payment-state';
@@ -79,7 +80,8 @@ export async function POST(request: NextRequest) {
     return noStoreJson({ code: 'INVALID_PAYLOAD' }, { status: 400 });
   }
 
-  const invoiceId = typeof payload.invoiceId === 'string' ? payload.invoiceId : '';
+  const invoiceId =
+    typeof payload.invoiceId === 'string' ? payload.invoiceId : '';
   const status = normalizeStatus(payload.status);
 
   if (!invoiceId || !status) {
@@ -90,6 +92,28 @@ export async function POST(request: NextRequest) {
       status,
     });
     return noStoreJson({ code: 'INVALID_PAYLOAD' }, { status: 400 });
+  }
+
+  let webhookMode: 'drop' | 'store' | 'apply' = 'drop';
+  try {
+    webhookMode = getMonobankConfig().webhookMode;
+  } catch (error) {
+    logError('monobank_webhook_config_invalid', error, {
+      ...baseMeta,
+      code: 'MONOBANK_ENV_INVALID',
+    });
+    webhookMode = 'drop';
+  }
+
+  const rawSha256 = crypto.createHash('sha256').update(rawBody).digest('hex');
+
+  if (webhookMode === 'drop') {
+    logInfo('monobank_webhook_dropped', {
+      ...baseMeta,
+      invoiceId,
+      status,
+    });
+    return noStoreJson({ ok: true }, { status: 200 });
   }
 
   const [attempt] = await db
@@ -113,11 +137,39 @@ export async function POST(request: NextRequest) {
       code: 'INVOICE_NOT_FOUND',
       invoiceId,
       status,
+      webhookMode,
     });
+
+    // Safety: in store/apply modes we only act on known attempts.
+    // Unknown invoice webhooks are acknowledged to avoid retries.
     return noStoreJson({ ok: true }, { status: 200 });
   }
 
   const orderId = attempt.orderId;
+
+  if (webhookMode === 'store') {
+    const eventKey = `${invoiceId}:${status}:${payload.amount ?? 'na'}:${payload.ccy ?? 'na'}:${payload.reference ?? 'na'}`;
+
+    await db
+      .insert(monobankEvents)
+      .values({
+        eventKey,
+        invoiceId,
+        attemptId: attempt.id,
+        orderId,
+        rawSha256,
+      })
+      .onConflictDoNothing();
+
+    logInfo('monobank_webhook_stored', {
+      ...baseMeta,
+      orderId,
+      invoiceId,
+      status,
+    });
+
+    return noStoreJson({ ok: true }, { status: 200 });
+  }
 
   const metadata = {
     monobank: {
