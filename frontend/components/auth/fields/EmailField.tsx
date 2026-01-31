@@ -12,7 +12,7 @@ export function EmailField({
     const t = useTranslations("auth.fields");
 
     const handleInvalid = (e: React.InvalidEvent<HTMLInputElement>) => {
-        const input = e.target;
+        const input = e.currentTarget;
         if (input.validity.valueMissing) {
             input.setCustomValidity(t("validation.required"));
         } else if (input.validity.typeMismatch) {
@@ -35,7 +35,7 @@ export function EmailField({
             onInput={handleInput}
             onChange={
                 onChange
-                    ? e => onChange(e.target.value)
+                    ? e => onChange(e.currentTarget.value)
                     : undefined
             }
         />
