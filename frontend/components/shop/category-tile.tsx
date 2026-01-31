@@ -20,10 +20,10 @@ export async function CategoryTile({ category }: CategoryTileProps) {
       href={href}
       aria-label={tCategoryTile('shopCategory', { name: categoryName })}
       className={[
-        // IMPORTANT: make it block-level so aspect-ratio + Image fill work correctly
         'group relative block w-full',
         'aspect-[4/3] overflow-hidden rounded-lg bg-muted',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+        'transition-[box-shadow] duration-500 hover:shadow-[var(--shop-card-shadow-hover)]',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-background',
       ].join(' ')}
     >
       <Image

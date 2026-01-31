@@ -5,6 +5,8 @@ import { Link } from '@/i18n/routing';
 import { Github, Linkedin, Send } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { useTranslations } from 'next-intl';
+import { useSelectedLayoutSegments } from 'next/navigation';
+import { cn } from '@/lib/utils';
 
 const SOCIAL = [
   { label: 'GitHub', href: 'https://github.com/DevLoversTeam', Icon: Github },
@@ -18,18 +20,24 @@ const SOCIAL = [
 
 export default function Footer() {
   const t = useTranslations('footer');
-
+  const segments = useSelectedLayoutSegments();
+  const isShop = segments.includes('shop');
   return (
-    <footer className="relative overflow-hidden border-t border-border bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/50">
+    <footer
+      className={cn(
+        'relative overflow-hidden border-t border-border bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/50 ' +
+          '[--footer-brand:var(--accent-primary)] [--footer-hover:var(--accent-hover)] [--theme-toggle-hover:var(--footer-hover)]',
+        isShop &&
+          '[--footer-brand:var(--foreground)] [--footer-hover:var(--foreground)] ' +
+            'dark:[--footer-brand:var(--accent-primary)] dark:[--footer-hover:var(--accent-hover)]'
+      )}
+    >
       <div className="container-main relative py-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-3">
             <p className="text-sm text-slate-700 dark:text-slate-200">
               {t('builtWith')}{' '}
-              <span
-                className="font-semibold "
-                style={{ color: 'var(--accent-primary)' }}
-              >
+              <span className="font-semibold text-[color:var(--footer-brand)]">
                 DevLovers
               </span>{' '}
               {t('byCommunity')}
@@ -39,10 +47,10 @@ export default function Footer() {
               <Link
                 href="/privacy-policy"
                 className="
-transition-colors
-hover:[color:var(--accent-hover)]
-active:[color:var(--accent-hover)]
-focus-visible:[color:var(--accent-hover)]
+                  transition-colors
+                  hover:[color:var(--footer-hover)]
+                  active:[color:var(--footer-hover)]
+                  focus-visible:[color:var(--footer-hover)]
 "
               >
                 {t('privacyPolicy')}
@@ -51,10 +59,10 @@ focus-visible:[color:var(--accent-hover)]
               <Link
                 href="/terms-of-service"
                 className="
-transition-colors
-hover:[color:var(--accent-hover)]
-active:[color:var(--accent-hover)]
-focus-visible:[color:var(--accent-hover)]
+                  transition-colors
+                  hover:[color:var(--footer-hover)]
+                  active:[color:var(--footer-hover)]
+                  focus-visible:[color:var(--footer-hover)]
 "
               >
                 {t('termsOfService')}
@@ -91,13 +99,13 @@ focus-visible:[color:var(--accent-hover)]
                       dark:text-slate-300
                       transition-all
 
-hover:-translate-y-0.5
-hover:!text-[var(--accent-hover)]
-hover:!border-[var(--accent-hover)]
+                      hover:-translate-y-0.5
+                      hover:!text-[var(--footer-hover)]
+                      hover:!border-[var(--footer-hover)]
 
-active:!text-[var(--accent-hover)]
-active:!border-[var(--accent-hover)]
-active:scale-95
+                      active:!text-[var(--footer-hover)]
+                      active:!border-[var(--footer-hover)]
+                      active:scale-95
 
 
                     "

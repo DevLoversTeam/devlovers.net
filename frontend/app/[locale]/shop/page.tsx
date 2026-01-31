@@ -4,6 +4,13 @@ import { Hero } from '@/components/shop/shop-hero';
 import { CategoryTile } from '@/components/shop/category-tile';
 import { getHomepageContent } from '@/lib/shop/data';
 import { getTranslations } from 'next-intl/server';
+import {
+  SHOP_CTA_BASE,
+  SHOP_CTA_INSET,
+  SHOP_CTA_WAVE,
+  SHOP_FOCUS,
+  shopCtaGradient,
+} from '@/lib/shop/ui-classes';
 
 export default async function HomePage({
   params,
@@ -38,10 +45,27 @@ export default async function HomePage({
 
             <Link
               href="/shop/products?filter=new"
-              className="text-sm font-medium text-muted-foreground hover:text-foreground"
+              className="
+              group inline-flex items-center gap-2 rounded-md border border-border
+              px-4 py-2
+              text-xs sm:text-sm font-semibold tracking-[0.25em] uppercase
+              text-muted-foreground hover:text-foreground
+              bg-transparent
+              shadow-none hover:shadow-[var(--shop-card-shadow-hover)]
+              transition-[transform,box-shadow,color,filter] duration-500 ease-out
+              hover:-translate-y-0.5 hover:brightness-110
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-ring)]
+              focus-visible:ring-offset-2 focus-visible:ring-offset-background
+            "
               aria-label={t('viewAll')}
             >
-              {t('viewAll')} <span aria-hidden="true">→</span>
+              <span>{t('viewAll')}</span>
+              <span
+                aria-hidden="true"
+                className="transition-transform duration-300 group-hover:translate-x-0.5"
+              >
+                →
+              </span>
             </Link>
           </header>
 
@@ -98,10 +122,40 @@ export default async function HomePage({
           <div className="mt-8">
             <Link
               href="/shop/products"
-              className="inline-flex items-center gap-2 rounded-md bg-[color:var(--shop-cta-bg)] px-6 py-3 text-sm font-semibold uppercase tracking-wide text-[color:var(--shop-cta-fg)] transition-opacity hover:opacity-90"
+              className={`
+    ${SHOP_CTA_BASE} ${SHOP_FOCUS}
+    px-8 sm:px-10 md:px-12 py-3 md:py-3.5
+    text-[color:var(--shop-cta-fg)]
+    shadow-[var(--shop-cta-shadow)] hover:shadow-[var(--shop-cta-shadow-hover)]
+  `}
               aria-label={t('hero.cta')}
             >
-              {t('hero.cta')}
+              {/* base gradient */}
+              <span
+                className="absolute inset-0"
+                style={shopCtaGradient('--shop-cta-bg', '--shop-cta-bg-hover')}
+                aria-hidden="true"
+              />
+
+              {/* hover wave overlay */}
+              <span
+                className={SHOP_CTA_WAVE}
+                style={shopCtaGradient('--shop-cta-bg-hover', '--shop-cta-bg')}
+                aria-hidden="true"
+              />
+
+              {/* glass inset */}
+              <span className={SHOP_CTA_INSET} aria-hidden="true" />
+
+              <span className="relative z-10 flex items-center gap-2">
+                <span>{t('hero.cta')}</span>
+                <span
+                  aria-hidden="true"
+                  className="transition-transform duration-300 group-hover:translate-x-0.5"
+                >
+                  →
+                </span>
+              </span>
             </Link>
           </div>
         </div>

@@ -342,7 +342,7 @@
   .animate-spin-slow {
     animation: spin 20s linear infinite;
   }
-  
+
   .animate-spin-slower {
     animation: spin 30s linear infinite reverse;
   }
@@ -354,7 +354,8 @@
 }
 
 @keyframes float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
   }
   50% {
@@ -375,6 +376,10 @@
 .shop-scope {
   /* keep shop rounding slightly tighter than platform */
   --radius: calc(var(--radius-base) - 2px);
+  
+  /* Shop header/button accent in LIGHT: no platform blue */
+  --accent-primary: var(--foreground);
+  --accent-hover: color-mix(in oklab, var(--foreground) 92%, white);
 
   /* light: shop accent = black */
   --accent: var(--foreground);
@@ -390,6 +395,43 @@
   /* CTA button: light theme (section is black) -> pink bg + white text */
   --shop-cta-bg: #ff2d55;
   --shop-cta-fg: oklch(0.985 0 0);
+
+  /* Hero CTA (top section) */
+  --shop-hero-btn-bg: var(--foreground);
+  --shop-hero-btn-bg-hover: color-mix(in oklab, var(--foreground) 92%, white);
+  --shop-hero-btn-shadow: 0 18px 45px rgba(0, 0, 0, 0.35);
+  --shop-hero-btn-shadow-hover: 0 22px 60px rgba(0, 0, 0, 0.45);
+
+  /* Card aura (product + category tiles) */
+  --shop-card-shadow-hover:
+    0 0 0 1px rgba(0, 0, 0, 0.22), 0 18px 45px rgba(0, 0, 0, 0.12);
+
+  /* Bottom CTA (inverted by theme) */
+  --shop-cta-shadow: 0 22px 60px rgba(255, 45, 85, 0.45);
+  --shop-cta-shadow-hover: 0 28px 80px rgba(255, 45, 85, 0.6);
+  --shop-cta-bg-hover: #e0264b;
+
+  /* Filters / chips (stronger than card aura) */
+  --shop-chip-shadow-hover:
+    0 0 0 1px rgba(0, 0, 0, 0.32), 0 0 0 5px rgba(0, 0, 0, 0.08),
+    0 18px 45px rgba(0, 0, 0, 0.22);
+
+  --shop-chip-shadow-selected:
+    0 0 0 2px rgba(0, 0, 0, 0.4), 0 0 0 7px rgba(0, 0, 0, 0.1),
+    0 22px 60px rgba(0, 0, 0, 0.28);
+
+  --shop-hero-btn-success-bg: color-mix(
+    in oklab,
+    var(--shop-hero-btn-bg) 88%,
+    white
+  );
+  --shop-hero-btn-success-bg-hover: color-mix(
+    in oklab,
+    var(--shop-hero-btn-bg) 80%,
+    white
+  );
+  --shop-hero-btn-success-shadow: 0 22px 60px rgba(0, 0, 0, 0.25);
+  --shop-hero-btn-success-shadow-hover: 0 28px 80px rgba(0, 0, 0, 0.32);
 }
 
 .dark .shop-scope {
@@ -402,15 +444,56 @@
   --color-accent: var(--accent-primary);
   --color-accent-foreground: var(--foreground);
   --color-ring: var(--accent-primary);
-
   --card: var(--background);
+
+  /* Shop accent in DARK: keep magenta */
+  --accent-primary: #ff2d55;
+  --accent-hover: #e0264b;
 
   /* keep borders closer to previous shop look, derived (no hex) */
   --border: color-mix(in oklab, var(--foreground) 18%, var(--background));
   --input: color-mix(in oklab, var(--foreground) 18%, var(--background));
+
   /* CTA button: dark theme (section becomes white) -> black bg + white text */
   --shop-cta-bg: var(--background);
   --shop-cta-fg: var(--foreground);
+
+  /* Hero CTA (top section) */
+  --shop-hero-btn-bg: var(--accent-primary);
+  --shop-hero-btn-bg-hover: var(--accent-hover);
+  --shop-hero-btn-shadow: 0 22px 60px rgba(255, 45, 85, 0.45);
+  --shop-hero-btn-shadow-hover: 0 28px 80px rgba(255, 45, 85, 0.6);
+
+  /* Card aura (product + category tiles) */
+  --shop-card-shadow-hover:
+    0 0 0 1px rgba(255, 45, 85, 0.28), 0 18px 45px rgba(255, 45, 85, 0.16);
+
+  /* Bottom CTA (inverted by theme) */
+  --shop-cta-shadow: 0 18px 45px rgba(0, 0, 0, 0.3);
+  --shop-cta-shadow-hover: 0 22px 60px rgba(0, 0, 0, 0.45);
+  --shop-cta-bg-hover: color-mix(in oklab, var(--background) 92%, white);
+
+  /* Filters / chips (stronger than card aura) */
+  --shop-chip-shadow-hover:
+    0 0 0 1px rgba(255, 45, 85, 0.55), 0 0 0 5px rgba(255, 45, 85, 0.18),
+    0 18px 50px rgba(255, 45, 85, 0.32);
+
+  --shop-chip-shadow-selected:
+    0 0 0 2px rgba(255, 45, 85, 0.7), 0 0 0 7px rgba(255, 45, 85, 0.22),
+    0 22px 70px rgba(255, 45, 85, 0.38);
+
+  --shop-hero-btn-success-bg: color-mix(
+    in oklab,
+    var(--accent-primary) 82%,
+    black
+  );
+  --shop-hero-btn-success-bg-hover: color-mix(
+    in oklab,
+    var(--accent-primary) 72%,
+    black
+  );
+  --shop-hero-btn-success-shadow: 0 22px 60px rgba(255, 45, 85, 0.45);
+  --shop-hero-btn-success-shadow-hover: 0 28px 80px rgba(255, 45, 85, 0.6);
 }
 
 /* about-community */
