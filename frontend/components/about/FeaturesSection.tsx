@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion"
 import { Link } from "@/i18n/routing"
-import { 
+import { useTranslations } from "next-intl"
+import {
     MessageCircle, Brain, Trophy, User, ShoppingBag, BookOpen,
     Globe, Cpu, Shield, Languages, Clock, Lightbulb, Target,
     Medal, Users, Flame, Zap, BarChart3, TrendingUp, Tag, History,
@@ -15,8 +16,8 @@ import { SectionHeading } from "@/components/ui/section-heading"
 
 interface Feature {
     icon: LucideIcon
-    label: string
-    desc: string
+    labelKey: string
+    descKey: string
     x: number
     y: number
     size: number
@@ -28,26 +29,6 @@ interface Page {
     href: string
     features: Feature[]
 }
-
-const translations: Record<string, string> = {
-    "title": "Features designed to",
-    "titleHighlight": "make you unstoppable",
-    "subtitle": "Stop searching for scattered info. We curated the ultimate toolkit to crack technical interviews.",
-    "qa.title": "Q&A",
-    "qa.description": "No fluff. Just a massive library of real interview questions with precise, recruiter-approved answers.",
-    "quiz.title": "Quizzes",
-    "quiz.description": "Validate your confidence. Fast-paced interactive quizzes to spot your weak points before the interviewer does.",
-    "leaderboard.title": "Leaderboard",
-    "leaderboard.description": "Gamify your prep. Earn points for every correct answer, keep your streak alive, and rank up against others.",
-    "blog.title": "Blog",
-    "blog.description": "Stay updated with detailed articles on tech trends, coding tutorials, and industry insights to keep you ahead of the curve.",
-    "profile.title": "Analytics",
-    "profile.description": "Don't fly blind. Visualize your progress with detailed charts to see exactly which topics you've mastered.",
-    "shop.title": "Shop",
-    "shop.description": "Upgrade your setup. High-quality developer apparel, desk accessories, and digital assets available for purchase.",
-}
-
-const t = (key: string) => translations[key] || key
 
 const decorativeDots = [
     { x: '5%', y: '20%', size: 8 },
@@ -70,10 +51,10 @@ const pages: Page[] = [
         icon: MessageCircle,
         href: "/q&a",
         features: [
-            { icon: Globe, label: "3 Languages", desc: "EN, UK & PL supported", x: -120, y: -120, size: 88 },
-            { icon: Cpu, label: "AI Helper", desc: "Select text for AI explain", x: 120, y: -120, size: 88 },
-            { icon: Lightbulb, label: "Smart Cache", desc: "Highlights learned terms", x: -120, y: 120, size: 88 },
-            { icon: Search, label: "Tech Filter", desc: "React, Git, JS & more", x: 120, y: 120, size: 88 },
+            { icon: Globe, labelKey: "bubbles.qa.languages.label", descKey: "bubbles.qa.languages.desc", x: -120, y: -120, size: 88 },
+            { icon: Cpu, labelKey: "bubbles.qa.aiHelper.label", descKey: "bubbles.qa.aiHelper.desc", x: 120, y: -120, size: 88 },
+            { icon: Lightbulb, labelKey: "bubbles.qa.smartCache.label", descKey: "bubbles.qa.smartCache.desc", x: -120, y: 120, size: 88 },
+            { icon: Search, labelKey: "bubbles.qa.techFilter.label", descKey: "bubbles.qa.techFilter.desc", x: 120, y: 120, size: 88 },
         ]
     },
     {
@@ -81,10 +62,10 @@ const pages: Page[] = [
         icon: Brain,
         href: "/quizzes",
         features: [
-            { icon: Clock, label: "Smart Timer", desc: "Race against the total time", x: -120, y: -120, size: 88 },
-            { icon: Shield, label: "Anti-Cheat", desc: "Focus loss detection", x: 120, y: -120, size: 88 },
-            { icon: Save, label: "Auto Sync", desc: "Saves progress post-login", x: -120, y: 120, size: 88 },
-            { icon: BarChart3, label: "Tracking", desc: "Best scores & attempts", x: 120, y: 120, size: 88 },
+            { icon: Clock, labelKey: "bubbles.quiz.smartTimer.label", descKey: "bubbles.quiz.smartTimer.desc", x: -120, y: -120, size: 88 },
+            { icon: Shield, labelKey: "bubbles.quiz.antiCheat.label", descKey: "bubbles.quiz.antiCheat.desc", x: 120, y: -120, size: 88 },
+            { icon: Save, labelKey: "bubbles.quiz.autoSync.label", descKey: "bubbles.quiz.autoSync.desc", x: -120, y: 120, size: 88 },
+            { icon: BarChart3, labelKey: "bubbles.quiz.tracking.label", descKey: "bubbles.quiz.tracking.desc", x: 120, y: 120, size: 88 },
         ]
     },
     {
@@ -92,10 +73,10 @@ const pages: Page[] = [
         icon: Trophy,
         href: "/leaderboard",
         features: [
-            { icon: Medal, label: "The Podium", desc: "Top 3 exclusive spotlight", x: -120, y: -120, size: 88 },
-            { icon: Globe, label: "Global Rank", desc: "Compete worldwide", x: 120, y: -120, size: 88 },
-            { icon: Zap, label: "XP System", desc: "Points for every answer", x: -120, y: 120, size: 88 },
-            { icon: Activity, label: "Live Feed", desc: "Real-time rank updates", x: 120, y: 120, size: 88 },
+            { icon: Medal, labelKey: "bubbles.leaderboard.podium.label", descKey: "bubbles.leaderboard.podium.desc", x: -120, y: -120, size: 88 },
+            { icon: Globe, labelKey: "bubbles.leaderboard.globalRank.label", descKey: "bubbles.leaderboard.globalRank.desc", x: 120, y: -120, size: 88 },
+            { icon: Zap, labelKey: "bubbles.leaderboard.xpSystem.label", descKey: "bubbles.leaderboard.xpSystem.desc", x: -120, y: 120, size: 88 },
+            { icon: Activity, labelKey: "bubbles.leaderboard.liveFeed.label", descKey: "bubbles.leaderboard.liveFeed.desc", x: 120, y: 120, size: 88 },
         ]
     },
     {
@@ -103,10 +84,10 @@ const pages: Page[] = [
         icon: User,
         href: "/dashboard",
         features: [
-            { icon: BarChart3, label: "Stats Hub", desc: "Visualize your growth", x: -120, y: -120, size: 88 },
-            { icon: History, label: "History", desc: "Track learning streaks", x: 120, y: -120, size: 88 },
-            { icon: UserCircle, label: "Identity", desc: "Manage role & profile", x: -120, y: 120, size: 88 },
-            { icon: Bell, label: "Reminders", desc: "Finish incomplete quizzes", x: 120, y: 120, size: 88 },
+            { icon: BarChart3, labelKey: "bubbles.profile.statsHub.label", descKey: "bubbles.profile.statsHub.desc", x: -120, y: -120, size: 88 },
+            { icon: History, labelKey: "bubbles.profile.history.label", descKey: "bubbles.profile.history.desc", x: 120, y: -120, size: 88 },
+            { icon: UserCircle, labelKey: "bubbles.profile.identity.label", descKey: "bubbles.profile.identity.desc", x: -120, y: 120, size: 88 },
+            { icon: Bell, labelKey: "bubbles.profile.reminders.label", descKey: "bubbles.profile.reminders.desc", x: 120, y: 120, size: 88 },
         ]
     },
     {
@@ -114,10 +95,10 @@ const pages: Page[] = [
         icon: BookOpen,
         href: "/blog",
         features: [
-            { icon: TrendingUp, label: "Tech Trends", desc: "Stay ahead of the curve", x: -120, y: -120, size: 88 },
-            { icon: PenTool, label: "Tutorials", desc: "Step-by-step guides", x: 120, y: -120, size: 88 },
-            { icon: BookOpen, label: "Deep Dives", desc: "In-depth analysis", x: -120, y: 120, size: 88 },
-            { icon: Users, label: "Community", desc: "Written by developers", x: 120, y: 120, size: 88 },
+            { icon: TrendingUp, labelKey: "bubbles.blog.techTrends.label", descKey: "bubbles.blog.techTrends.desc", x: -120, y: -120, size: 88 },
+            { icon: PenTool, labelKey: "bubbles.blog.tutorials.label", descKey: "bubbles.blog.tutorials.desc", x: 120, y: -120, size: 88 },
+            { icon: BookOpen, labelKey: "bubbles.blog.deepDives.label", descKey: "bubbles.blog.deepDives.desc", x: -120, y: 120, size: 88 },
+            { icon: Users, labelKey: "bubbles.blog.community.label", descKey: "bubbles.blog.community.desc", x: 120, y: 120, size: 88 },
         ]
     },
     {
@@ -125,24 +106,24 @@ const pages: Page[] = [
         icon: ShoppingBag,
         href: "/shop",
         features: [
-            { icon: Sparkles, label: "New Drops", desc: "Regular fresh content", x: -120, y: -120, size: 88 },
-            { icon: Tag, label: "Curated", desc: "Dev-focused collections", x: 120, y: -120, size: 88 },
-            { icon: CreditCard, label: "Checkout", desc: "Seamless Stripe flow", x: -120, y: 120, size: 88 },
-            { icon: Package, label: "Premium", desc: "High-quality material", x: 120, y: 120, size: 88 },
+            { icon: Sparkles, labelKey: "bubbles.shop.newDrops.label", descKey: "bubbles.shop.newDrops.desc", x: -120, y: -120, size: 88 },
+            { icon: Tag, labelKey: "bubbles.shop.curated.label", descKey: "bubbles.shop.curated.desc", x: 120, y: -120, size: 88 },
+            { icon: CreditCard, labelKey: "bubbles.shop.checkout.label", descKey: "bubbles.shop.checkout.desc", x: -120, y: 120, size: 88 },
+            { icon: Package, labelKey: "bubbles.shop.premium.label", descKey: "bubbles.shop.premium.desc", x: 120, y: 120, size: 88 },
         ]
     },
 ]
 
-function FeatureBubble({ feature, index, href, isMobile }: { feature: Feature; index: number; href: string; isMobile: boolean }) {
+function FeatureBubble({ feature, index, href, isMobile, t }: { feature: Feature; index: number; href: string; isMobile: boolean; t: (key: string) => string }) {
     const Icon = feature.icon
     const floatDelay = index * 0.5
     const floatDuration = 3 + index * 0.3
-    
+
     const scaleX = isMobile ? 0.55 : 1
     const scaleY = isMobile ? 1.3 : 1
     const posX = feature.x * scaleX
     const posY = feature.y * scaleY
-    
+
     const shouldReduceMotion = useReducedMotion()
 
     return (
@@ -150,10 +131,10 @@ function FeatureBubble({ feature, index, href, isMobile }: { feature: Feature; i
             className="absolute"
             style={{ left: '50%', top: '50%' }}
             initial={{ x: '-50%', y: '-50%', opacity: 0, scale: 0 }}
-            animate={{ 
-                x: `calc(-50% + ${posX}%)`, 
+            animate={{
+                x: `calc(-50% + ${posX}%)`,
                 y: `calc(-50% + ${posY}%)`,
-                opacity: 1, 
+                opacity: 1,
                 scale: 1,
             }}
             exit={{ x: '-50%', y: '-50%', opacity: 0, scale: 0 }}
@@ -164,20 +145,20 @@ function FeatureBubble({ feature, index, href, isMobile }: { feature: Feature; i
                 scale: { delay: 0.1 + index * 0.08, duration: 0.5, type: "spring", bounce: 0.4 },
             }}
         >
-            <div 
+            <div
                 className="animate-float motion-reduce:animate-none"
                 style={{ animationDelay: `${floatDelay}s`, animationDuration: `${floatDuration}s` }}
             >
                 <Link href={href} className="group block">
                     <div className="flex items-center gap-2 md:gap-3 px-2 md:px-3 py-2 md:py-2.5 w-[140px] md:w-[180px] bg-white dark:bg-neutral-900 border border-gray-200 dark:border-white/10 shadow-lg dark:shadow-black/30 rounded-xl md:rounded-2xl cursor-pointer transition-all duration-200 group-hover:border-[#1e5eff]/40 dark:group-hover:border-[#ff2d55]/40 group-hover:shadow-[0_8px_30px_rgba(30,94,255,0.25)] dark:group-hover:shadow-[0_8px_30px_rgba(255,45,85,0.25)] group-hover:scale-105">
-                        <div 
+                        <div
                             className="flex items-center justify-center shrink-0 w-8 h-8 md:w-10 md:h-10 bg-[#1e5eff]/10 dark:bg-[#ff2d55]/10 rounded-lg md:rounded-xl transition-transform duration-200 group-hover:rotate-6 group-hover:scale-110"
                         >
                             <Icon className="w-4 h-4 md:w-5 md:h-5 text-[#1e5eff] dark:text-[#ff2d55]" strokeWidth={1.5} />
                         </div>
                         <div className="min-w-0">
-                            <div className="text-xs md:text-sm font-bold text-gray-800 dark:text-white">{feature.label}</div>
-                            <div className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400">{feature.desc}</div>
+                            <div className="text-xs md:text-sm font-bold text-gray-800 dark:text-white">{t(feature.labelKey)}</div>
+                            <div className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400">{t(feature.descKey)}</div>
                         </div>
                     </div>
                 </Link>
@@ -275,16 +256,18 @@ function ConnectingLines() {
     )
 }
 
-function TabButton({ 
-    page, 
-    isActive, 
+function TabButton({
+    page,
+    isActive,
     onClick,
-    onKeyDown
-}: { 
-    page: Page; 
-    isActive: boolean; 
-    onClick: () => void 
+    onKeyDown,
+    t
+}: {
+    page: Page;
+    isActive: boolean;
+    onClick: () => void
     onKeyDown: (e: React.KeyboardEvent<HTMLButtonElement>) => void
+    t: (key: string) => string
 }) {
     return (
         <button
@@ -320,8 +303,9 @@ function TabButton({
 }
 
 export function FeaturesSection() {
+    const t = useTranslations("about.features")
     const [activeTab, setActiveTab] = useState("qa")
-    const [isMobile, setIsMobile] = useState(() => 
+    const [isMobile, setIsMobile] = useState(() =>
         typeof window !== "undefined" ? window.innerWidth < 768 : false
     )
     const activePage = pages.find(p => p.id === activeTab) || pages[0]
@@ -350,13 +334,13 @@ export function FeaturesSection() {
     return (
         <section className="relative w-full py-20 lg:py-28 overflow-hidden bg-gray-50 dark:bg-transparent">
             <DecorativeDots />
-            
+
             <div className="absolute inset-0 -z-10 pointer-events-none" aria-hidden="true">
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl h-[400px] rounded-full blur-[150px] opacity-20 bg-[#1e5eff]/20 dark:bg-[#ff2d55]/20" />
             </div>
 
             <div className="relative container-main z-10 flex flex-col items-center">
-                <SectionHeading 
+                <SectionHeading
                     title={t("title")}
                     highlight={t("titleHighlight")}
                     subtitle={t("subtitle")}
@@ -365,7 +349,7 @@ export function FeaturesSection() {
                 <div className="w-full max-w-md mx-auto aspect-square relative mb-4">
                     <OrbitRings />
                     <ConnectingLines />
-                    
+
                     <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
                         <AnimatePresence mode="wait">
                             <CentralIcon key={activeTab} page={activePage} />
@@ -385,11 +369,12 @@ export function FeaturesSection() {
                         >
                             {activePage.features.map((feature, i) => (
                                 <FeatureBubble
-                                    key={feature.label}
+                                    key={feature.labelKey}
                                     feature={feature}
                                     index={i}
                                     href={activePage.href}
                                     isMobile={isMobile}
+                                    t={t}
                                 />
                             ))}
                         </motion.div>
@@ -405,6 +390,7 @@ export function FeaturesSection() {
                                 isActive={activeTab === page.id}
                                 onClick={() => setActiveTab(page.id)}
                                 onKeyDown={(e) => onTabKeyDown(e, index)}
+                                t={t}
                             />
                         ))}
                     </div>

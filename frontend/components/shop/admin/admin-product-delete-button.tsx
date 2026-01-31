@@ -85,14 +85,14 @@ export function AdminProductDeleteButton({
   };
 
   return (
-    <div className="flex min-w-0 flex-col gap-1">
+    <div className="flex w-full min-w-0 flex-col gap-1">
       <button
         type="button"
         onClick={onDelete}
         disabled={isLoading}
         aria-busy={isLoading}
         aria-describedby={error ? errorId : undefined}
-        className="whitespace-nowrap rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
+        className="w-full max-w-full whitespace-normal break-words leading-tight rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50 text-center"
       >
         {isLoading ? t('deleting') : t('delete')}
       </button>

@@ -5,6 +5,19 @@ import type { ShopProduct } from '@/lib/shop/data';
 import { cn } from '@/lib/utils';
 import { Check, Minus, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import {
+  SHOP_CTA_BASE,
+  SHOP_CTA_INSET,
+  SHOP_CTA_WAVE,
+  shopCtaGradient,
+  SHOP_FOCUS,
+  SHOP_CHIP_INTERACTIVE,
+  SHOP_CHIP_HOVER,
+  SHOP_CHIP_SELECTED,
+  SHOP_SWATCH_BASE,
+  SHOP_SIZE_CHIP_BASE,
+  SHOP_STEPPER_BUTTON_BASE,
+} from '@/lib/shop/ui-classes';
 
 import { useCart } from './cart-provider';
 
@@ -55,6 +68,12 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
   const colorGroupId = useId();
   const sizeGroupId = useId();
   const quantityGroupId = useId();
+  const ctaBaseVar = added
+    ? '--shop-hero-btn-success-bg'
+    : '--shop-hero-btn-bg';
+  const ctaHoverVar = added
+    ? '--shop-hero-btn-success-bg-hover'
+    : '--shop-hero-btn-bg-hover';
 
   return (
     <section className="mt-8 space-y-6" aria-label={t('purchaseOptions')}>
@@ -63,7 +82,7 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
         <fieldset className="min-w-0">
           <legend
             id={colorGroupId}
-            className="text-sm font-medium text-foreground"
+            className="text-sm font-semibold uppercase tracking-wide text-foreground"
           >
             {t('color')}
           </legend>
@@ -83,10 +102,15 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
                   role="radio"
                   aria-checked={selectedColor === color}
                   className={cn(
-                    'h-9 w-9 rounded-full border-2 transition-all',
+                    SHOP_SWATCH_BASE,
+                    SHOP_CHIP_INTERACTIVE,
+                    SHOP_FOCUS,
                     selectedColor === color
-                      ? 'border-accent ring-2 ring-accent ring-offset-2 ring-offset-background'
-                      : 'border-border hover:border-muted-foreground'
+                      ? cn(
+                          SHOP_CHIP_SELECTED,
+                          'hover:shadow-[var(--shop-chip-shadow-selected)] hover:border-accent'
+                        )
+                      : 'hover:border-accent/60 hover:shadow-[var(--shop-chip-shadow-hover)]'
                   )}
                   style={{
                     background: colorMap[color] || color,
@@ -105,7 +129,7 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
         <fieldset className="min-w-0">
           <legend
             id={sizeGroupId}
-            className="text-sm font-medium text-foreground"
+            className="text-sm font-semibold uppercase tracking-wide text-foreground"
           >
             {t('size')}
           </legend>
@@ -123,10 +147,12 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
                 role="radio"
                 aria-checked={selectedSize === size}
                 className={cn(
-                  'rounded-md border px-4 py-2 text-sm font-medium transition-colors',
+                  SHOP_SIZE_CHIP_BASE,
+                  SHOP_CHIP_INTERACTIVE,
+                  SHOP_FOCUS,
                   selectedSize === size
-                    ? 'border-accent bg-accent text-accent-foreground'
-                    : 'border-border text-foreground hover:border-foreground'
+                    ? cn('bg-accent text-accent-foreground', SHOP_CHIP_SELECTED)
+                    : 'bg-transparent text-muted-foreground border-border hover:text-foreground hover:shadow-[var(--shop-chip-shadow-hover)] hover:border-accent/60'
                 )}
               >
                 {size}
@@ -140,7 +166,7 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
       <section aria-labelledby={quantityGroupId}>
         <h3
           id={quantityGroupId}
-          className="text-sm font-medium text-foreground"
+          className="text-sm font-semibold uppercase tracking-wide text-foreground"
         >
           {t('quantity')}
         </h3>
@@ -149,7 +175,12 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
           <button
             type="button"
             onClick={() => setQuantity(Math.max(1, quantity - 1))}
-            className="flex h-10 w-10 items-center justify-center rounded-md border border-border text-foreground transition-colors hover:bg-secondary"
+            className={cn(
+              SHOP_STEPPER_BUTTON_BASE,
+              SHOP_CHIP_INTERACTIVE,
+              SHOP_CHIP_HOVER,
+              SHOP_FOCUS
+            )}
             aria-label={t('decreaseQuantity')}
           >
             <Minus className="h-4 w-4" aria-hidden="true" />
@@ -162,7 +193,12 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
           <button
             type="button"
             onClick={() => setQuantity(quantity + 1)}
-            className="flex h-10 w-10 items-center justify-center rounded-md border border-border text-foreground transition-colors hover:bg-secondary"
+            className={cn(
+              SHOP_STEPPER_BUTTON_BASE,
+              SHOP_CHIP_INTERACTIVE,
+              SHOP_CHIP_HOVER,
+              SHOP_FOCUS
+            )}
             aria-label={t('increaseQuantity')}
           >
             <Plus className="h-4 w-4" aria-hidden="true" />
@@ -176,24 +212,51 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
         onClick={handleAddToCart}
         disabled={!product.inStock}
         className={cn(
-          'flex w-full items-center justify-center gap-2 rounded-md px-6 py-3 text-sm font-semibold uppercase tracking-wide transition-colors',
-          product.inStock
-            ? added
-              ? 'bg-green-600 text-white'
-              : 'bg-accent text-accent-foreground hover:bg-accent/90'
-            : 'cursor-not-allowed bg-muted text-muted-foreground'
+          SHOP_CTA_BASE,
+          SHOP_FOCUS,
+          'w-full justify-center gap-2 px-8 py-3',
+          'transition-[transform,filter] duration-700 ease-out', // transform/filter для active states
+          !product.inStock &&
+            'cursor-not-allowed bg-muted text-muted-foreground',
+          product.inStock &&
+            (added
+              ? 'text-white shadow-[var(--shop-hero-btn-success-shadow)] hover:shadow-[var(--shop-hero-btn-success-shadow-hover)]'
+              : 'text-white shadow-[var(--shop-hero-btn-shadow)] hover:shadow-[var(--shop-hero-btn-shadow-hover)]')
         )}
       >
-        {!product.inStock ? (
-          t('soldOut')
-        ) : added ? (
+        {product.inStock ? (
           <>
-            <Check className="h-5 w-5" aria-hidden="true" />
-            {t('addedToCart')}
+            {/* base gradient */}
+            <span
+              className="absolute inset-0"
+              style={shopCtaGradient(ctaBaseVar, ctaHoverVar)}
+              aria-hidden="true"
+            />
+
+            {/* hover wave overlay */}
+            <span
+              className={SHOP_CTA_WAVE}
+              style={shopCtaGradient(ctaHoverVar, ctaBaseVar)}
+              aria-hidden="true"
+            />
+
+            {/* glass inset */}
+            <span className={SHOP_CTA_INSET} aria-hidden="true" />
           </>
-        ) : (
-          t('addToCart')
-        )}
+        ) : null}
+
+        <span className="relative z-10 flex items-center gap-2">
+          {!product.inStock ? (
+            t('soldOut')
+          ) : added ? (
+            <>
+              <Check className="h-5 w-5" aria-hidden="true" />
+              {t('addedToCart')}
+            </>
+          ) : (
+            t('addToCart')
+          )}
+        </span>
       </button>
     </section>
   );

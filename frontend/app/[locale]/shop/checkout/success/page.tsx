@@ -8,6 +8,18 @@ import { formatMoney } from '@/lib/shop/currency';
 import { getOrderSummary } from '@/lib/services/orders';
 import { OrderNotFoundError } from '@/lib/services/errors';
 import { orderIdParamSchema } from '@/lib/validation/shop';
+import { cn } from '@/lib/utils';
+
+import {
+  SHOP_FOCUS,
+  SHOP_CTA_BASE,
+  SHOP_CTA_INTERACTIVE,
+  SHOP_CTA_INSET,
+  SHOP_CTA_WAVE,
+  SHOP_OUTLINE_BTN_BASE,
+  SHOP_OUTLINE_BTN_INTERACTIVE,
+  shopCtaGradient,
+} from '@/lib/shop/ui-classes';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -37,6 +49,46 @@ function isPaymentsDisabled(params: SearchParams): boolean {
 function shouldClearCart(params: SearchParams): boolean {
   const raw = getStringParam(params, 'clearCart');
   return raw === 'true' || raw === '1';
+}
+
+/** Small hero CTA (Link) */
+const SHOP_HERO_CTA_SM = cn(
+  SHOP_CTA_BASE,
+  SHOP_CTA_INTERACTIVE,
+  SHOP_FOCUS,
+  'items-center justify-center overflow-hidden',
+  'px-4 py-2 text-sm text-white',
+  'shadow-[var(--shop-hero-btn-shadow)] hover:shadow-[var(--shop-hero-btn-shadow-hover)]'
+);
+
+/** Outline secondary action (Link) */
+const SHOP_OUTLINE_BTN = cn(
+  SHOP_OUTLINE_BTN_BASE,
+  SHOP_OUTLINE_BTN_INTERACTIVE,
+  SHOP_FOCUS
+);
+
+function HeroCtaInner({ children }: { children: React.ReactNode }) {
+  return (
+    <>
+      {/* base gradient */}
+      <span
+        className="absolute inset-0"
+        style={shopCtaGradient('--shop-hero-btn-bg', '--shop-hero-btn-bg-hover')}
+        aria-hidden="true"
+      />
+      {/* hover wave overlay */}
+      <span
+        className={SHOP_CTA_WAVE}
+        style={shopCtaGradient('--shop-hero-btn-bg-hover', '--shop-hero-btn-bg')}
+        aria-hidden="true"
+      />
+      {/* glass inset */}
+      <span className={SHOP_CTA_INSET} aria-hidden="true" />
+
+      <span className="relative z-10">{children}</span>
+    </>
+  );
 }
 
 function CheckoutShell({
@@ -88,16 +140,11 @@ export default async function CheckoutSuccessPage({
         description={t('missingOrder.message')}
       >
         <nav className="mt-6 flex justify-center gap-3" aria-label="Next steps">
-          <Link
-            href="/shop/products"
-            className="inline-flex items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground hover:bg-accent/90"
-          >
-            {t('actions.backToProducts')}
+          <Link href="/shop/products" className={SHOP_HERO_CTA_SM}>
+            <HeroCtaInner>{t('actions.backToProducts')}</HeroCtaInner>
           </Link>
-          <Link
-            href="/shop/cart"
-            className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
-          >
+
+          <Link href="/shop/cart" className={SHOP_OUTLINE_BTN}>
             {t('actions.goToCart')}
           </Link>
         </nav>
@@ -121,16 +168,11 @@ export default async function CheckoutSuccessPage({
             className="mt-6 flex justify-center gap-3"
             aria-label="Next steps"
           >
-            <Link
-              href="/shop/products"
-              className="inline-flex items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground hover:bg-accent/90"
-            >
-              {t('actions.backToProducts')}
+            <Link href="/shop/products" className={SHOP_HERO_CTA_SM}>
+              <HeroCtaInner>{t('actions.backToProducts')}</HeroCtaInner>
             </Link>
-            <Link
-              href="/shop/cart"
-              className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
-            >
+
+            <Link href="/shop/cart" className={SHOP_OUTLINE_BTN}>
               {t('actions.goToCart')}
             </Link>
           </nav>
@@ -195,7 +237,9 @@ export default async function CheckoutSuccessPage({
 
             <dl className="mt-3 space-y-2 text-sm">
               <div className="flex items-center justify-between">
-                <dt className="text-muted-foreground">{t('success.totalAmount')}</dt>
+                <dt className="text-muted-foreground">
+                  {t('success.totalAmount')}
+                </dt>
                 <dd className="font-semibold text-foreground">
                   {formatMoney(totalMinor, order.currency, locale)}
                 </dd>
@@ -217,16 +261,11 @@ export default async function CheckoutSuccessPage({
         </section>
 
         <nav className="mt-8 flex flex-wrap gap-3" aria-label="Next steps">
-          <Link
-            href="/shop/products"
-            className="inline-flex items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground hover:bg-accent/90"
-          >
-            {t('success.continueShopping')}
+          <Link href="/shop/products" className={SHOP_HERO_CTA_SM}>
+            <HeroCtaInner>{t('success.continueShopping')}</HeroCtaInner>
           </Link>
-          <Link
-            href="/shop/cart"
-            className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
-          >
+
+          <Link href="/shop/cart" className={SHOP_OUTLINE_BTN}>
             {t('success.viewCart')}
           </Link>
         </nav>

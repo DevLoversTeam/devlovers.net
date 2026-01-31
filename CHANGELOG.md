@@ -209,3 +209,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Improved accessibility and visual consistency across components
 - Resolved locale duplication in Stripe checkout redirects
 - Cleaned up redundant UI states, placeholders, and legacy styles
+
+## [0.5.1] - 2026-01-31
+
+### Added
+
+- Enhanced About page experience:
+  - Refreshed Features and Pricing sections with clearer messaging
+  - Interactive particle-based backgrounds with reduced-motion support
+  - New reusable UI components: `ParticleCanvas`, `GradientBadge`,
+    `SectionHeading`
+  - Improved mobile responsiveness and layout stability
+- Blog improvements:
+  - Dynamic grid backgrounds across blog pages
+  - Featured post CTA in blog hero
+  - Author filtering via URL with adaptive header behavior
+- Improved 404 error pages:
+  - Fully localized (uk / en / pl)
+  - Unified global rendering strategy
+  - Clear navigation actions back to Home
+- AI Word Helper updates:
+  - Switched model to `llama3-70b-8192` for improved response quality
+- Accessibility & UX:
+  - Better keyboard navigation for highlighted terms
+  - Improved touch and mobile interaction handling
+
+### Changed
+
+- Home page refinements:
+  - Hero section refactored into smaller reusable components
+  - Updated color palette, spacing, animations, and mobile behavior
+- Footer styling updated to match refreshed brand visuals
+- Blog layout aligned with updated design language and spacing rules
+- Default locale updated from `uk` to `en` with safer type validation
+- Internal codebase cleanup:
+  - Improved i18n defaults and validation
+  - Better cache initialization and error handling
+
+### Fixed
+
+- Fixed blog post image rendering for latest posts
+- Resolved layout centering issues on Leaderboard
+- Improved stability of text selection detection for AI helper
+- Fixed social icon hover styles in dark mode
+- Reduced visual overlap issues on small mobile screens
