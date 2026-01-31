@@ -22,6 +22,9 @@ export function getClientIpFromHeaders(headers: Headers): string | null {
   );
   const trustCf = envBool('TRUST_CF_CONNECTING_IP', false);
 
+  const netlifyIp = (headers.get('x-nf-client-connection-ip') ?? '').trim();
+  if (netlifyIp && isIP(netlifyIp)) return netlifyIp;
+
   if (trustCf) {
     const cf = (headers.get('cf-connecting-ip') ?? '').trim();
     if (cf && isIP(cf)) return cf;

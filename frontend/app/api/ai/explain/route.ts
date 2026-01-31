@@ -1,4 +1,5 @@
 export const runtime = 'nodejs';
+export const maxDuration = 25; 
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -14,7 +15,10 @@ import { getClientIp } from '@/lib/security/client-ip';
 function logEnvironmentDiagnostics() {
   const apiKey = process.env.GROQ_API_KEY;
   console.log('[ENV] GROQ_API_KEY configured:', !!apiKey);
+  console.log('[ENV] GROQ_API_KEY length:', apiKey ? apiKey.length : 0);
   console.log('[ENV] NODE_ENV:', process.env.NODE_ENV);
+  console.log('[ENV] NETLIFY:', process.env.NETLIFY ?? 'false');
+  console.log('[ENV] CONTEXT:', process.env.CONTEXT ?? 'unknown');
 }
 
 function logRequestDiagnostics(request: NextRequest) {
@@ -49,6 +53,12 @@ function logGroqApiCall(phase: 'start' | 'success' | 'error', details?: unknown)
 }
 // =============================================================================
 
+// =============================================================================
+// RATE LIMITER (In-memory - limited effectiveness in serverless)
+// Note: This Map only persists within a single warm function instance.
+// For production, consider Upstash Redis or Netlify Blobs for true rate limiting.
+// Current behavior: works during warm instance, resets on cold start.
+// =============================================================================
 const rateLimiter = new Map<string, { count: number; resetAt: number }>();
 const MAX_REQUESTS_PER_WINDOW = 10;
 const RATE_LIMIT_WINDOW_MS = 20 * 60 * 1000;
@@ -330,15 +340,20 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET() {
+  const apiKey = process.env.GROQ_API_KEY;
   return NextResponse.json(
     {
-      status: 'ok',
+      status: apiKey ? 'ok' : 'misconfigured',
       service: 'ai-explain',
+      timestamp: new Date().toISOString(),
       env: {
-        hasGroqKey: !!process.env.GROQ_API_KEY,
+        hasGroqKey: !!apiKey,
+        groqKeyLength: apiKey ? apiKey.length : 0,
         nodeEnv: process.env.NODE_ENV,
+        isNetlify: !!process.env.NETLIFY,
+        context: process.env.CONTEXT ?? 'unknown',
       },
     },
-    { status: 200 }
+    { status: apiKey ? 200 : 503 }
   );
 }
