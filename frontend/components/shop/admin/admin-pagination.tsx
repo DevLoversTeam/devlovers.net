@@ -1,5 +1,6 @@
 import { Link } from '@/i18n/routing';
 import { cn } from '@/lib/utils';
+import { getTranslations } from 'next-intl/server';
 
 type AdminPaginationProps = {
   basePath: string; // e.g. "/shop/admin/products"
@@ -13,13 +14,14 @@ function pageHref(basePath: string, page: number) {
   return `${basePath}?page=${page}`;
 }
 
-export function AdminPagination({
+export async function AdminPagination({
   basePath,
   page,
   hasNext,
   className,
 }: AdminPaginationProps) {
   const hasPrev = page > 1;
+  const t = await getTranslations('shop.admin.pagination');
 
   const disabledClass =
     'inline-flex items-center rounded-md border border-border px-3 py-1.5 text-sm font-medium text-muted-foreground opacity-60';
@@ -27,28 +29,28 @@ export function AdminPagination({
     'inline-flex items-center rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary';
 
   return (
-    <nav aria-label="Pagination" className={cn('mt-6', className)}>
+    <nav aria-label={t('label')} className={cn('mt-6', className)}>
       <ul className="flex items-center justify-between gap-3">
         <li>
           {hasPrev ? (
             <Link
               href={pageHref(basePath, page - 1)}
               rel="prev"
-              aria-label="Previous page"
+              aria-label={t('previousPage')}
               className={linkClass}
             >
-              Previous
+              {t('previous')}
             </Link>
           ) : (
             <span aria-disabled="true" className={disabledClass}>
-              Previous
+              {t('previous')}
             </span>
           )}
         </li>
 
         <li>
           <span aria-current="page" className="text-sm text-muted-foreground">
-            Page {page}
+            {t('page', { page })}
           </span>
         </li>
 
@@ -57,14 +59,14 @@ export function AdminPagination({
             <Link
               href={pageHref(basePath, page + 1)}
               rel="next"
-              aria-label="Next page"
+              aria-label={t('nextPage')}
               className={linkClass}
             >
-              Next
+              {t('next')}
             </Link>
           ) : (
             <span aria-disabled="true" className={disabledClass}>
-              Next
+              {t('next')}
             </span>
           )}
         </li>

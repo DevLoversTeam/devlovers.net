@@ -15,6 +15,21 @@ export function PasswordField({
     const t = useTranslations("auth.fields");
     const [visible, setVisible] = useState(false);
 
+    const handleInvalid = (e: React.InvalidEvent<HTMLInputElement>) => {
+        const input = e.target;
+        if (input.validity.valueMissing) {
+            input.setCustomValidity(t("validation.required"));
+        } else if (input.validity.tooShort && minLength) {
+            input.setCustomValidity(
+                t("validation.passwordTooShort", { minLength })
+            );
+        }
+    };
+
+    const handleInput = (e: React.FormEvent<HTMLInputElement>) => {
+        e.currentTarget.setCustomValidity("");
+    };
+
     return (
         <div className="relative">
             <input
@@ -24,6 +39,8 @@ export function PasswordField({
                 required
                 minLength={minLength}
                 className="w-full rounded border px-3 py-2 pr-10"
+                onInvalid={handleInvalid}
+                onInput={handleInput}
             />
 
             <button

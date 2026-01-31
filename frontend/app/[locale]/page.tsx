@@ -1,5 +1,5 @@
 import { getTranslations } from 'next-intl/server';
-import HeroSection from '@/components/shared/HeroSection';
+import HeroSection from '@/components/home/HeroSection';
 
 export async function generateMetadata({
   params,

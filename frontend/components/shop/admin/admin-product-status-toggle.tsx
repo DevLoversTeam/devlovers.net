@@ -1,6 +1,7 @@
 'use client';
 
 import { useId, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 interface AdminProductStatusToggleProps {
   id: string;
@@ -16,6 +17,7 @@ export function AdminProductStatusToggle({
   const [isActive, setIsActive] = useState(initialIsActive);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const t = useTranslations('shop.admin.statusToggle');
 
   const errorId = useId();
 
@@ -24,7 +26,7 @@ export function AdminProductStatusToggle({
     setError(null);
 
     if (!csrfToken) {
-      setError('Security token missing. Refresh the page.');
+      setError(t('securityMissing'));
       setIsLoading(false);
       return;
     }
@@ -47,11 +49,11 @@ export function AdminProductStatusToggle({
         }
 
         if (response.status === 403 && (code === 'CSRF_MISSING' || code === 'CSRF_INVALID')) {
-          setError('Security token expired. Refresh the page and retry.');
+          setError(t('securityExpired'));
           return;
         }
 
-        setError('Failed to update status');
+        setError(t('failedUpdate'));
         return;
       }
 
@@ -60,13 +62,13 @@ export function AdminProductStatusToggle({
         setIsActive(data.product.isActive);
       }
     } catch {
-      setError('Failed to update status');
+      setError(t('failedUpdate'));
     } finally {
       setIsLoading(false);
     }
   };
 
-  const buttonLabel = isLoading ? 'Updating' : isActive ? 'Deactivate' : 'Activate';
+  const buttonLabel = isLoading ? t('updating') : isActive ? t('deactivate') : t('activate');
 
   return (
     <div className="flex min-w-0 flex-col gap-1">

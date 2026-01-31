@@ -6,6 +6,7 @@ import type { ShopProduct } from '@/lib/shop/data';
 import { cn } from '@/lib/utils';
 import { useParams } from 'next/navigation';
 import { formatMoney } from '@/lib/shop/currency';
+import { useTranslations } from 'next-intl';
 
 const PLACEHOLDER = '/placeholder.svg';
 const allowedHosts = new Set(['res.cloudinary.com', 'cdn.sanity.io']); // додай/прибери за потреби
@@ -38,6 +39,7 @@ interface ProductCardProps {
 export function ProductCard({ product }: ProductCardProps) {
   const params = useParams<{ locale?: string }>();
   const locale = params.locale ?? 'en';
+  const t = useTranslations('shop.product');
 
   const src = safeImageSrc(product.image);
 
@@ -54,7 +56,7 @@ export function ProductCard({ product }: ProductCardProps) {
             product.badge === 'NEW' && 'bg-foreground text-background'
           )}
         >
-          {product.badge}
+          {t(`badges.${product.badge}`)}
         </span>
       )}
 
@@ -90,7 +92,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
         {!product.inStock && (
           <p className="mt-2 text-xs text-muted-foreground" role="status">
-            Sold out
+            {t('soldOut')}
           </p>
         )}
       </div>

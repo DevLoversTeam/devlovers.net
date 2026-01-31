@@ -20,7 +20,7 @@ import SelectableText from '@/components/q&a/SelectableText';
 import FloatingExplainButton from '@/components/q&a/FloatingExplainButton';
 import AIWordHelper from '@/components/q&a/AIWordHelper';
 import HighlightCachedTerms from '@/components/q&a/HighlightCachedTerms';
-import { getCachedTerms } from '@/lib/ai/explainCache';
+import { getCachedTerms, CACHE_KEY } from '@/lib/ai/explainCache';
 import type {
   AnswerBlock,
   BulletListBlock,
@@ -315,7 +315,7 @@ export default function AccordionList({ items }: { items: QuestionEntry[] }) {
 
   useEffect(() => {
     const handleStorage = (e: StorageEvent) => {
-      if (e.key === 'ai-word-explanations') {
+      if (e.key === CACHE_KEY) {
         refreshCachedTerms();
       }
     };

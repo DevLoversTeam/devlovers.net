@@ -4,6 +4,7 @@ import { Link } from '@/i18n/routing';
 import { redirect } from 'next/navigation';
 import { unstable_noStore as noStore } from 'next/cache';
 import { desc, eq, sql } from 'drizzle-orm';
+import { getTranslations } from 'next-intl/server';
 
 import { db } from '@/db';
 import { orderItems, orders } from '@/db/schema';
@@ -32,25 +33,27 @@ function formatDateTime(d: Date, locale: string) {
   }
 }
 
-function statusLabel(status: PaymentStatus) {
+function statusLabel(
+  status: PaymentStatus,
+  t: Awaited<ReturnType<typeof getTranslations<'shop.orders'>>>
+) {
   switch (status) {
     case 'paid':
-      return 'Paid';
+      return t('paymentStatus.paid');
     case 'pending':
-      return 'Pending';
+      return t('paymentStatus.pending');
     case 'requires_payment':
-      return 'Payment required';
+      return t('paymentStatus.requiresPayment');
     case 'failed':
-      return 'Failed';
+      return t('paymentStatus.failed');
     case 'refunded':
-      return 'Refunded';
+      return t('paymentStatus.refunded');
     default:
       return String(status);
   }
 }
 
 function statusClassName(status: PaymentStatus) {
-  // Neutral “nav hover-ish” look as default; only make failures red.
   switch (status) {
     case 'failed':
       return 'border border-border bg-destructive/10 text-destructive';
@@ -80,15 +83,22 @@ function looksLikeUuid(s: string) {
   );
 }
 
-function buildOrderHeadline(primary: string | null, count: number, id: string) {
-  if (count === 0) return `Order ${shortOrderId(id)} (incomplete)`;
+function buildOrderHeadline(
+  primary: string | null,
+  count: number,
+  id: string,
+  t: Awaited<ReturnType<typeof getTranslations<'shop.orders'>>>
+) {
+  if (count === 0)
+    return t('orderHeadline.incomplete', { id: shortOrderId(id) });
 
   if (primary) {
-    if (count > 1) return `${primary} +${count - 1} more`;
+    if (count > 1)
+      return t('orderHeadline.withMore', { item: primary, count: count - 1 });
     return primary;
   }
 
-  return `Order ${shortOrderId(id)}`;
+  return t('orderHeadline.default', { id: shortOrderId(id) });
 }
 
 export default async function MyOrdersPage({
@@ -99,12 +109,11 @@ export default async function MyOrdersPage({
   noStore();
 
   const { locale } = await params;
+  const t = await getTranslations('shop.orders');
 
   const user = await getCurrentUser();
   if (!user) {
-    redirect(
-      `/login?next=${encodeURIComponent(`/shop/orders`)}`
-    );
+    redirect(`/${locale}/login?returnTo=${encodeURIComponent(`/${locale}/shop/orders`)}`);
   }
 
   let rows: Array<{
@@ -114,7 +123,7 @@ export default async function MyOrdersPage({
     paymentStatus: PaymentStatus;
     createdAt: Date;
     primaryItemLabel: string | null;
-    itemCount: unknown; // neon може повернути bigint/string
+    itemCount: unknown; 
   }> = [];
 
   try {
@@ -126,8 +135,6 @@ export default async function MyOrdersPage({
         paymentStatus: orders.paymentStatus,
         createdAt: orders.createdAt,
 
-        // Беремо "перший" non-null label детерміновано (ORDER BY order_items.id),
-        // без fallback на productId (UUID не повинен ставати назвою).
         primaryItemLabel: sql<string | null>`
           (
             array_agg(
@@ -174,29 +181,29 @@ export default async function MyOrdersPage({
       <header className="mb-6 flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h1 id="my-orders-heading" className="text-2xl font-semibold">
-            My orders
+            {t('title')}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Your most recent orders (up to 50).
+            {t('subtitle')}
           </p>
         </div>
 
         <nav aria-label="Orders navigation" className="flex items-center gap-3">
           <Link className="text-sm underline underline-offset-4" href="/shop">
-            Back to shop
+            {t('backToShop')}
           </Link>
         </nav>
       </header>
 
       {rows.length === 0 ? (
         <section className="rounded-md border p-4" aria-label="No orders">
-          <p className="text-sm text-muted-foreground">No orders yet.</p>
+          <p className="text-sm text-muted-foreground">{t('empty.message')}</p>
           <div className="mt-3">
             <Link
               className="text-sm underline underline-offset-4"
               href="/shop/products"
             >
-              Browse products
+              {t('empty.browseProducts')}
             </Link>
           </div>
         </section>
@@ -204,7 +211,7 @@ export default async function MyOrdersPage({
         <section className="rounded-md border" aria-label="Orders list">
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
-              <caption className="sr-only">List of your orders</caption>
+              <caption className="sr-only">{t('table.caption')}</caption>
 
               <thead className="border-b border-border">
                 <tr>
@@ -212,25 +219,25 @@ export default async function MyOrdersPage({
                     scope="col"
                     className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground"
                   >
-                    Items
+                    {t('table.items')}
                   </th>
                   <th
                     scope="col"
                     className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground"
                   >
-                    Date
+                    {t('table.date')}
                   </th>
                   <th
                     scope="col"
                     className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground"
                   >
-                    Status
+                    {t('table.status')}
                   </th>
                   <th
                     scope="col"
                     className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground"
                   >
-                    Total
+                    {t('table.total')}
                   </th>
                 </tr>
               </thead>
@@ -248,7 +255,7 @@ export default async function MyOrdersPage({
                       ? rawPrimary
                       : null;
 
-                  const headline = buildOrderHeadline(primary, count, o.id);
+                  const headline = buildOrderHeadline(primary, count, o.id, t);
 
                   return (
                     <tr
@@ -260,13 +267,13 @@ export default async function MyOrdersPage({
                           href={href}
                           className="block max-w-[24rem] truncate font-medium underline underline-offset-4"
                           title={headline}
-                          aria-label={`Open order ${o.id}`}
+                          aria-label={t('table.openOrder', { id: o.id })}
                         >
                           {headline}
                         </Link>
 
                         <div className="mt-1 text-xs text-muted-foreground">
-                          <span className="sr-only">Order id: </span>
+                          <span className="sr-only">{t('table.orderId')}: </span>
                           <span className="break-all">
                             {shortOrderId(o.id)}
                           </span>
@@ -285,7 +292,7 @@ export default async function MyOrdersPage({
                             o.paymentStatus
                           )}`}
                         >
-                          {statusLabel(o.paymentStatus)}
+                          {statusLabel(o.paymentStatus, t)}
                         </span>
                       </td>
 

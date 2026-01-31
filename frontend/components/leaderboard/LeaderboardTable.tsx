@@ -31,7 +31,7 @@ export function LeaderboardTable({
   const isUserInTop = currentUserRank > 0 && currentUserRank <= 10;
 
   return (
-    <div className="w-full max-w-4xl flex flex-col gap-4">
+    <div className="w-full flex flex-col gap-4">
       <div className="bg-white dark:bg-white/5 backdrop-blur-md rounded-2xl border border-slate-200 dark:border-white/10 overflow-hidden shadow-lg dark:shadow-2xl">
         <div className="w-full">
           <table className="w-full text-left border-separate border-spacing-0 table-fixed">
@@ -107,6 +107,7 @@ function TableRow({
   const leftBorderClass = isCurrentUser
     ? 'border-l-[1px] sm:border-l-[1px] border-l-transparent'
     : 'border-l-[1px] sm:border-l-[1px] border-l-transparent';
+
   const rightBorderClass = isCurrentUser
     ? 'border-r-[1px] sm:border-r-[1px] border-r-transparent'
     : 'border-r-[1px] sm:border-r-[1px] border-r-transparent';

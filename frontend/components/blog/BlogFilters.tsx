@@ -74,7 +74,7 @@ type Category = {
 };
 
 const SOCIAL_ICON_CLASSNAME =
-  'h-3.5 w-3.5 text-gray-900 dark:text-gray-100 transition-colors group-hover:text-[var(--accent-primary)]';
+  'h-3.5 w-3.5 text-gray-900 dark:text-gray-100 transition-colors group-hover:text-[var(--accent-primary)] dark:group-hover:text-[var(--accent-primary)]';
 
 function SocialIcon({ platform }: { platform?: string }) {
   const normalized = (platform || '').trim().toLowerCase();
@@ -109,7 +109,7 @@ function SocialIcon({ platform }: { platform?: string }) {
     return (
       <span
         aria-hidden="true"
-        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full border border-current text-[8px] font-semibold text-gray-900 transition-colors group-hover:text-[var(--accent-primary)] dark:text-gray-100"
+        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full border border-current text-[8px] font-semibold text-gray-900 transition-colors group-hover:text-[var(--accent-primary)] dark:text-gray-100 dark:group-hover:text-[var(--accent-primary)]"
       >
         B
       </span>
@@ -194,9 +194,16 @@ export default function BlogFilters({
     const name = author.name || '';
     const norm = normalizeAuthor(name);
     if (!norm) return;
-    setSelectedAuthor(prev =>
-      prev?.norm === norm ? null : { name, norm, data: author }
-    );
+    const isSame = selectedAuthor?.norm === norm;
+    setSelectedAuthor(isSame ? null : { name, norm, data: author });
+    const params = new URLSearchParams(searchParams?.toString() || '');
+    if (isSame) {
+      params.delete('author');
+    } else {
+      params.set('author', name);
+    }
+    const nextPath = params.toString() ? `${pathname}?${params}` : pathname;
+    router.replace(nextPath);
   };
 
   const clearAll = () => {
@@ -382,7 +389,7 @@ export default function BlogFilters({
   }, [selectedAuthorData]);
 
   return (
-    <div className="mt-8">
+    <div className="mt-4">
       {!resolvedAuthor && featuredPost && (
         <section className="mb-12">
           <div className="grid gap-8 md:grid-cols-[1.3fr_1fr] md:items-stretch lg:grid-cols-[1.4fr_1fr]">
@@ -400,21 +407,23 @@ export default function BlogFilters({
                 </div>
               </Link>
             )}
-            <div className="pt-2 flex flex-col h-full">
+            <div className="relative flex flex-col h-full pt-8">
               {featuredPost.categories?.[0] && (
-                <div className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--accent-primary)] -mt-2">
+                <div className="absolute top-0 left-0 text-xs font-bold uppercase tracking-[0.2em] text-[var(--accent-primary)]">
                   {featuredPost.categories[0]}
                 </div>
               )}
-              <Link
-                href={`/blog/${featuredPost.slug.current}`}
-                className="mt-3 block text-3xl font-semibold leading-tight text-gray-900 transition hover:underline underline-offset-4 dark:text-gray-100 md:text-4xl"
-              >
-                {featuredPost.title}
-              </Link>
-              <p className="mt-4 text-base leading-relaxed text-gray-600 dark:text-gray-400 line-clamp-3 whitespace-pre-line">
-                {plainTextExcerpt(featuredPost.body)}
-              </p>
+              <div className="my-auto">
+                <Link
+                  href={`/blog/${featuredPost.slug.current}`}
+                  className="mt-3 block text-3xl font-semibold leading-tight text-gray-900 transition hover:underline underline-offset-4 dark:text-gray-100 md:text-4xl"
+                >
+                  {featuredPost.title}
+                </Link>
+                <p className="mt-4 text-base leading-relaxed text-gray-600 dark:text-gray-400 line-clamp-3 whitespace-pre-line">
+                  {plainTextExcerpt(featuredPost.body)}
+                </p>
+              </div>
               {featuredPost.publishedAt && (
                 <div className="mt-auto pt-8 flex items-center justify-between text-xs tracking-[0.25em] text-gray-500 dark:text-gray-400">
                   <time
@@ -535,7 +544,7 @@ export default function BlogFilters({
               className={
                 !resolvedCategory
                   ? 'rounded-full border border-transparent px-4 py-2 text-sm font-medium text-[var(--accent-primary)] transition whitespace-nowrap sm:border-[var(--accent-primary)]'
-                  : 'rounded-full border border-transparent px-4 py-2 text-sm text-gray-600 hover:text-[var(--accent-primary)] transition whitespace-nowrap dark:text-gray-300 sm:border-gray-300 sm:text-gray-700 sm:dark:border-gray-700 sm:dark:text-gray-200'
+                  : 'rounded-full border border-transparent px-4 py-2 text-sm text-gray-600 transition whitespace-nowrap dark:text-gray-300 sm:border-gray-300 sm:text-gray-700 sm:dark:border-gray-700 sm:dark:text-gray-200 hover:bg-secondary hover:text-foreground'
               }
             >
               {t('all')}
@@ -554,7 +563,7 @@ export default function BlogFilters({
                 className={
                   resolvedCategory?.norm === category.norm
                     ? 'rounded-full border border-transparent px-4 py-2 text-sm font-medium text-[var(--accent-primary)] transition whitespace-nowrap sm:border-[var(--accent-primary)]'
-                    : 'rounded-full border border-transparent px-4 py-2 text-sm text-gray-600 hover:text-[var(--accent-primary)] transition whitespace-nowrap dark:text-gray-300 sm:border-gray-300 sm:text-gray-700 sm:dark:border-gray-700 sm:dark:text-gray-200'
+                    : 'rounded-full border border-transparent px-4 py-2 text-sm text-gray-600 transition whitespace-nowrap dark:text-gray-300 sm:border-gray-300 sm:text-gray-700 sm:dark:border-gray-700 sm:dark:text-gray-200 hover:bg-secondary hover:text-foreground'
                 }
               >
                 {getCategoryLabel(category.name)}
