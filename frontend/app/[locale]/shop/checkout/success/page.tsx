@@ -1,4 +1,3 @@
-// frontend/app/[locale]/shop/checkout/success/page.tsx
 import { Link } from '@/i18n/routing';
 import { getTranslations } from 'next-intl/server';
 
@@ -20,6 +19,13 @@ import {
   SHOP_OUTLINE_BTN_INTERACTIVE,
   shopCtaGradient,
 } from '@/lib/shop/ui-classes';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Order Confirmed| DevLovers',
+  description:
+    'Your order has been placed. You can track its status on the order page.',
+};
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -74,13 +80,19 @@ function HeroCtaInner({ children }: { children: React.ReactNode }) {
       {/* base gradient */}
       <span
         className="absolute inset-0"
-        style={shopCtaGradient('--shop-hero-btn-bg', '--shop-hero-btn-bg-hover')}
+        style={shopCtaGradient(
+          '--shop-hero-btn-bg',
+          '--shop-hero-btn-bg-hover'
+        )}
         aria-hidden="true"
       />
       {/* hover wave overlay */}
       <span
         className={SHOP_CTA_WAVE}
-        style={shopCtaGradient('--shop-hero-btn-bg-hover', '--shop-hero-btn-bg')}
+        style={shopCtaGradient(
+          '--shop-hero-btn-bg-hover',
+          '--shop-hero-btn-bg'
+        )}
         aria-hidden="true"
       />
       {/* glass inset */}

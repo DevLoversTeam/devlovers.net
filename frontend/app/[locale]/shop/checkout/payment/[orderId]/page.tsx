@@ -23,6 +23,12 @@ import {
   SHOP_OUTLINE_BTN_BASE,
   SHOP_OUTLINE_BTN_INTERACTIVE,
 } from '@/lib/shop/ui-classes';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Checkout | DevLovers',
+  description: 'Complete payment securely for order',
+};
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;

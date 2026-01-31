@@ -1,4 +1,3 @@
-// frontend/app/[locale]/shop/admin/products/page.tsx
 import { Link } from '@/i18n/routing';
 import { and, desc, eq, sql } from 'drizzle-orm';
 import { issueCsrfToken } from '@/lib/security/csrf';
@@ -17,7 +16,12 @@ import {
 import { formatMoney, resolveCurrencyFromLocale } from '@/lib/shop/currency';
 import { parsePage } from '@/lib/pagination';
 import { getTranslations } from 'next-intl/server';
+import { Metadata } from 'next';
 
+export const metadata: Metadata = {
+  title: 'Admin Products | DevLovers',
+  description: 'Create, edit, activate, and manage product catalog.',
+};
 export const dynamic = 'force-dynamic';
 
 const PAGE_SIZE = 25;

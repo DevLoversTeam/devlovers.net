@@ -1,4 +1,3 @@
-// frontend/app/[locale]/shop/admin/products/[id]/edit/page.tsx
 import { notFound } from 'next/navigation';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
@@ -12,6 +11,13 @@ import { products, productPrices } from '@/db/schema';
 import type { CurrencyCode } from '@/lib/shop/currency';
 import { currencyValues } from '@/lib/shop/currency';
 import { issueCsrfToken } from '@/lib/security/csrf';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Edit Product | DevLovers',
+  description: 'Edit an existing product in the DevLovers shop catalog.',
+};
+
 
 export const dynamic = 'force-dynamic';
 
