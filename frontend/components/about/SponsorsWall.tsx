@@ -49,7 +49,7 @@ export function SponsorsWall({ sponsors = [] }: SponsorsWallProps) {
             href="https://github.com/sponsors/DevLoversTeam"
             target="_blank"
             rel="noopener noreferrer"
-            aria-label="Become a sponsor to claim your spot"
+            aria-label={t("ctaAriaLabel")}
             className="relative flex items-center justify-center w-10 h-10 rounded-full border-2 border-dashed border-gray-300 dark:border-white/20 hover:border-[#1e5eff] dark:hover:border-[#ff2d55] bg-transparent hover:bg-[#1e5eff]/5 dark:hover:bg-[#ff2d55]/5 transition-all group/cta"
         >
             <Plus size={16} className="text-gray-400 group-hover/cta:text-[#1e5eff] dark:group-hover/cta:text-[#ff2d55] transition-colors" aria-hidden="true" />

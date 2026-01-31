@@ -46,7 +46,7 @@ export function PricingSection({ sponsors = [] }: PricingSectionProps) {
                         initial={{ opacity: 0, y: 10 }}
                         whileInView={{ opacity: 1, y: 0 }}
                     >
-                        <h2 id="pricing-heading" className="sr-only">Pricing</h2>
+                        <h2 id="pricing-heading" className="sr-only">{t("heading")}</h2>
                         <GradientBadge icon={Sparkles} text={t("badge")} className="mb-4" />
                     </motion.div>
 
