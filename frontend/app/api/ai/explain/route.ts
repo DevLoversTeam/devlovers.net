@@ -328,3 +328,17 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export async function GET() {
+  return NextResponse.json(
+    {
+      status: 'ok',
+      service: 'ai-explain',
+      env: {
+        hasGroqKey: !!process.env.GROQ_API_KEY,
+        nodeEnv: process.env.NODE_ENV,
+      },
+    },
+    { status: 200 }
+  );
+}
