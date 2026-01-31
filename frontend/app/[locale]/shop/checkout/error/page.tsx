@@ -1,4 +1,3 @@
-// frontend/app/[locale]/shop/checkout/error/page.tsx
 import { Link } from '@/i18n/routing';
 import { getTranslations } from 'next-intl/server';
 
@@ -19,6 +18,13 @@ import {
   SHOP_OUTLINE_BTN_BASE,
   SHOP_OUTLINE_BTN_INTERACTIVE,
 } from '@/lib/shop/ui-classes';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Checkout Error | DevLovers',
+  description:
+    'We couldn’t complete the checkout. Try again or contact support.',
+};
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;

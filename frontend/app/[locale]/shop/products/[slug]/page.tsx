@@ -1,5 +1,3 @@
-// app/[locale]/shop/products/[slug]/page.tsx
-
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
@@ -11,7 +9,12 @@ import { formatMoney, resolveCurrencyFromLocale } from '@/lib/shop/currency';
 import { getPublicProductBySlug } from '@/db/queries/shop/products';
 import { Link } from '@/i18n/routing';
 import { SHOP_FOCUS, SHOP_NAV_LINK_BASE } from '@/lib/shop/ui-classes';
+import { Metadata } from 'next';
 
+export const metadata: Metadata = {
+  title: 'Product name | DevLovers',
+  description: 'Details, price, and availability for product.',
+};
 export const dynamic = 'force-dynamic';
 
 export default async function ProductPage({
