@@ -2,34 +2,37 @@
 
 import { motion } from "framer-motion"
 import { ArrowUpRight } from "lucide-react"
-import { TOPICS, type Topic } from "@/data/about" 
+import { useTranslations } from "next-intl"
+import { TOPICS, type Topic } from "@/data/about"
 import Image from "next/image"
-import Link from "next/link" 
+import Link from "next/link"
 
 export function TopicsSection() {
+    const t = useTranslations("about.topics")
+
     return (
         <section id="topics" className="w-full py-20 lg:py-28 bg-gray-50 dark:bg-transparent">
             <div className="container-main">
-                    
+
                     <div className="mb-16 md:flex md:justify-between md:items-end">
                         <div className="max-w-2xl">
-                            <motion.div 
+                            <motion.div
                                 initial={{ opacity: 0, x: -20 }}
                                 whileInView={{ opacity: 1, x: 0 }}
                                 className="text-blue-600 dark:text-[#ff2d55] font-bold uppercase tracking-widest text-xs mb-4"
                             >
-                                / The Ecosystem
+                                {t("pretitle")}
                             </motion.div>
                             <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-black dark:text-white tracking-tighter">
-                                Master your <br />
+                                {t("titleStart")} <br />
                                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1e5eff] to-[#1e5eff]/70 dark:from-[#ff2d55] dark:to-[#ff2d55]/70">
-                                    entire stack
+                                    {t("titleHighlight")}
                                 </span>
                             </h2>
                         </div>
-                        
+
                         <p className="hidden md:block text-neutral-600 dark:text-neutral-400 max-w-sm text-base font-normal mt-4 md:mt-0 md:mb-2">
-                             From frontend frameworks to backend logic. <br/> We cover the key technologies for 2026.
+                             {t("description")}
                         </p>
                     </div>
 

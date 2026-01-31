@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Heart, Bug, Play, X, RotateCcw, Zap, Skull, Rabbit } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 const GAME_WIDTH_DESKTOP = 540
 const GAME_WIDTH_MOBILE = 320
@@ -37,10 +38,10 @@ const OBSTACLE_CONFIGS: Record<ObstacleType, Omit<Obstacle, 'x'>> = {
 }
 
 const LEVEL_THRESHOLDS = [
-    { score: 0, types: ['ground'] as ObstacleType[], name: 'Level 1', baseSpeed: 3.5 },
-    { score: 8, types: ['ground', 'fast'] as ObstacleType[], name: 'Level 2', baseSpeed: 4 },
-    { score: 18, types: ['ground', 'fast', 'flying'] as ObstacleType[], name: 'Level 3', baseSpeed: 4.5 },
-    { score: 30, types: ['ground', 'fast', 'flying', 'tall'] as ObstacleType[], name: 'Level 4', baseSpeed: 5 },
+    { score: 0, types: ['ground'] as ObstacleType[], nameKey: 'level1', baseSpeed: 3.5 },
+    { score: 8, types: ['ground', 'fast'] as ObstacleType[], nameKey: 'level2', baseSpeed: 4 },
+    { score: 18, types: ['ground', 'fast', 'flying'] as ObstacleType[], nameKey: 'level3', baseSpeed: 4.5 },
+    { score: 30, types: ['ground', 'fast', 'flying', 'tall'] as ObstacleType[], nameKey: 'level4', baseSpeed: 5 },
 ]
 
 function getBaseSpeed(score: number): number {
@@ -63,14 +64,14 @@ function getAvailableTypes(score: number): ObstacleType[] {
     return types
 }
 
-function getCurrentLevel(score: number): string {
-    let name = 'Level 1'
+function getCurrentLevelKey(score: number): string {
+    let nameKey = 'level1'
     for (const level of LEVEL_THRESHOLDS) {
         if (score >= level.score) {
-            name = level.name
+            nameKey = level.nameKey
         }
     }
-    return name
+    return nameKey
 }
 
 function getRandomObstacle(score: number, gameWidth: number): Obstacle {
@@ -100,6 +101,7 @@ function getRandomObstacle(score: number, gameWidth: number): Obstacle {
 }
 
 export function InteractiveGame() {
+    const t = useTranslations("about.arcade")
     const [mode, setMode] = useState<'idle' | 'preview' | 'playing'>('idle')
     const [gameOver, setGameOver] = useState(false)
     const [score, setScore] = useState(0)
@@ -138,7 +140,7 @@ export function InteractiveGame() {
     const requestRef = useRef<number | null>(null)
     const pillRef = useRef<HTMLDivElement>(null)
     const hasPassedRef = useRef(false)
-    const prevLevelRef = useRef('Level 1')
+    const prevLevelRef = useRef('level1')
 
     const exitGame = useCallback(() => {
         setMode('idle')
@@ -149,7 +151,7 @@ export function InteractiveGame() {
         setGameSpeed(3.5)
         isJumpingRef.current = false
         hasPassedRef.current = false
-        prevLevelRef.current = 'Level 1'
+        prevLevelRef.current = 'level1'
         if (requestRef.current !== null) cancelAnimationFrame(requestRef.current)
     }, [gameWidth])
 
@@ -162,7 +164,7 @@ export function InteractiveGame() {
         isJumpingRef.current = false
         hasPassedRef.current = false
         lastTimeRef.current = 0
-        prevLevelRef.current = 'Level 1'
+        prevLevelRef.current = 'level1'
     }, [gameWidth])
 
     const handleGameOver = useCallback((finalScore: number) => {
@@ -181,9 +183,9 @@ export function InteractiveGame() {
     }, [mode, gameOver])
 
     useEffect(() => {
-        const currentLevel = getCurrentLevel(score)
-        if (currentLevel !== prevLevelRef.current && score > 0) {
-            prevLevelRef.current = currentLevel
+        const currentLevelKey = getCurrentLevelKey(score)
+        if (currentLevelKey !== prevLevelRef.current && score > 0) {
+            prevLevelRef.current = currentLevelKey
             setLevelUpFlash(true)
             setTimeout(() => setLevelUpFlash(false), 500)
         }
@@ -385,12 +387,12 @@ export function InteractiveGame() {
                         <div className="flex items-center gap-2 md:gap-3">
                             <Heart className="h-4 w-4 md:h-5 md:w-5 fill-[#ff005b] text-[#ff005b]" strokeWidth={0} />
                             <span className="text-[9px] md:text-[10px] font-bold uppercase tracking-[0.15em] md:tracking-[0.2em] text-neutral-600 dark:text-neutral-300">
-                                DevLovers Arcade
+                                {t("title")}
                             </span>
                         </div>
                         <div className="flex items-center gap-2 opacity-50">
                             <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
-                            <span className="text-[8px] md:text-[9px] font-mono text-neutral-400">READY</span>
+                            <span className="text-[8px] md:text-[9px] font-mono text-neutral-400">{t("ready")}</span>
                         </div>
                     </motion.div>
                 ) : (
@@ -404,10 +406,10 @@ export function InteractiveGame() {
                                 <div className={`h-2 w-2 rounded-full ${mode === 'playing' && !gameOver ? 'bg-green-500 shadow-[0_0_8px_#22c55e]' : 'bg-red-500'}`} />
                                 <div className="flex flex-col">
                                     <span className="text-[8px] font-mono font-bold text-neutral-400 uppercase tracking-wider">
-                                        {getCurrentLevel(score)}
+                                        {t(getCurrentLevelKey(score))}
                                     </span>
                                     <span className="text-[10px] font-bold text-neutral-700 dark:text-white leading-none">
-                                        {gameOver ? "CRASHED" : "RUNNING"}
+                                        {gameOver ? t("crashed") : t("running")}
                                     </span>
                                 </div>
                             </div>
@@ -415,20 +417,20 @@ export function InteractiveGame() {
                             <div className="flex md:hidden items-center gap-2">
                                 <div className={`h-2 w-2 rounded-full ${mode === 'playing' && !gameOver ? 'bg-green-500' : 'bg-red-500'}`} />
                                 <span className="text-[8px] font-mono font-bold text-neutral-400 uppercase">
-                                    {getCurrentLevel(score)}
+                                    {t(getCurrentLevelKey(score))}
                                 </span>
                             </div>
 
                             <div className="flex items-center gap-3 md:gap-6 md:absolute md:left-1/2 md:-translate-x-1/2">
                                 <div className="flex flex-col items-center">
-                                    <span className="text-[7px] md:text-[8px] font-bold text-neutral-400 uppercase tracking-widest">High</span>
+                                    <span className="text-[7px] md:text-[8px] font-bold text-neutral-400 uppercase tracking-widest">{t("high")}</span>
                                     <span suppressHydrationWarning className="font-mono text-[10px] md:text-xs font-bold text-neutral-500">
                                         {highScore.toString().padStart(3, '0')}
                                     </span>
                                 </div>
                                 <div className="w-[1px] h-3 md:h-4 bg-neutral-300 dark:bg-white/20" />
                                 <div className="flex flex-col items-center">
-                                    <span className="text-[7px] md:text-[8px] font-bold text-[#ff005b] uppercase tracking-widest">Score</span>
+                                    <span className="text-[7px] md:text-[8px] font-bold text-[#ff005b] uppercase tracking-widest">{t("score")}</span>
                                     <span className="font-mono text-sm md:text-lg font-black text-neutral-800 dark:text-white leading-none">
                                         {score.toString().padStart(3, '0')}
                                     </span>
@@ -481,7 +483,7 @@ export function InteractiveGame() {
                                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
                                     <div className="bg-white/90 dark:bg-neutral-800/90 border border-neutral-200 dark:border-white/10 px-5 py-2 rounded-lg shadow-xl flex items-center gap-2">
                                         <Play size={10} fill="currentColor" className="text-[#ff005b]" />
-                                        <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-800 dark:text-white">Click to Start</span>
+                                        <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-800 dark:text-white">{t("clickToStart")}</span>
                                     </div>
                                 </motion.div>
                             )}
@@ -493,14 +495,14 @@ export function InteractiveGame() {
                                 >
                                     <div className="flex items-center gap-2 mb-4 text-[#ff005b]">
                                         <Zap size={18} fill="currentColor" />
-                                        <span className="text-sm font-black uppercase tracking-widest">System Failure</span>
+                                        <span className="text-sm font-black uppercase tracking-widest">{t("systemFailure")}</span>
                                     </div>
                                     <div className="flex gap-3">
                                         <button
                                             onClick={(e) => {e.stopPropagation(); handleRetry();}}
                                             className="px-6 py-2.5 bg-[#ff005b] text-white text-[10px] font-bold uppercase tracking-widest rounded-lg shadow-lg hover:brightness-110 active:scale-95 transition-all flex items-center gap-2"
                                         >
-                                            <RotateCcw size={12} /> Retry
+                                            <RotateCcw size={12} /> {t("retry")}
                                         </button>
                                     </div>
                                 </motion.div>

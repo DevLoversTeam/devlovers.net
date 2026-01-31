@@ -4,6 +4,7 @@ import { motion } from "framer-motion"
 import Image from "next/image"
 import Link from "next/link"
 import { Plus, Crown, Sparkles } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { cn } from "@/lib/utils"
 import type { Sponsor } from "@/lib/about/github-sponsors"
 import { GradientBadge } from "@/components/ui/gradient-badge"
@@ -15,15 +16,16 @@ interface SponsorsWallProps {
 const MAX_SPONSORS = 10
 
 export function SponsorsWall({ sponsors = [] }: SponsorsWallProps) {
+  const t = useTranslations("about.sponsors")
   const displaySponsors = sponsors.slice(0, MAX_SPONSORS)
 
   return (
     <div className="w-full mt-16 flex flex-col items-center">
       <div className="mb-4 opacity-100">
-          <GradientBadge icon={Sparkles} text="Latest Contributors" />
+          <GradientBadge icon={Sparkles} text={t("badge")} />
       </div>
 
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 10 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
@@ -36,36 +38,36 @@ export function SponsorsWall({ sponsors = [] }: SponsorsWallProps) {
 
              {displaySponsors.length === 0 && (
                 <div className="w-9 h-9 rounded-full bg-gray-100 dark:bg-white/5 border-2 border-white dark:border-black flex items-center justify-center">
-                    <span className="text-[8px] text-gray-400">You?</span>
+                    <span className="text-[8px] text-gray-400">{t("emptySlot")}</span>
                 </div>
              )}
         </div>
 
         <div className="h-6 w-[1px] bg-gray-200 dark:bg-white/10 mx-4" />
 
-        <Link 
-            href="https://github.com/sponsors/DevLoversTeam" 
+        <Link
+            href="https://github.com/sponsors/DevLoversTeam"
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Become a sponsor to claim your spot"
             className="relative flex items-center justify-center w-10 h-10 rounded-full border-2 border-dashed border-gray-300 dark:border-white/20 hover:border-[#1e5eff] dark:hover:border-[#ff2d55] bg-transparent hover:bg-[#1e5eff]/5 dark:hover:bg-[#ff2d55]/5 transition-all group/cta"
         >
             <Plus size={16} className="text-gray-400 group-hover/cta:text-[#1e5eff] dark:group-hover/cta:text-[#ff2d55] transition-colors" aria-hidden="true" />
-            
+
             <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 px-2 py-1 bg-[#1e5eff] dark:bg-[#ff2d55] text-white text-[10px] font-bold rounded opacity-0 group-hover/cta:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
-                Your Spot
+                {t("yourSpot")}
                 <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-[#1e5eff] dark:border-t-[#ff2d55]" />
             </div>
         </Link>
 
         <Link href="https://github.com/sponsors/DevLoversTeam" target="_blank" rel="noopener noreferrer" className="hidden sm:block ml-3 mr-2 text-xs font-bold text-gray-500 hover:text-[#1e5eff] dark:hover:text-[#ff2d55] transition-colors">
-            Join the club
+            {t("joinClub")}
         </Link>
 
       </motion.div>
 
       <p className="mt-4 text-[10px] text-gray-500 dark:text-neutral-500 font-mono">
-         100% of funds go to server costs & coffee
+         {t("fundsNote")}
       </p>
 
     </div>
