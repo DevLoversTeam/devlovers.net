@@ -672,6 +672,7 @@
       }
     },
     "pricing": {
+      "heading": "Pricing",
       "badge": "No Hidden Fees",
       "title": "Invest in your brain,",
       "titleHighlight": "not our subscriptions.",
@@ -712,7 +713,8 @@
       "emptySlot": "You?",
       "yourSpot": "Your Spot",
       "joinClub": "Join the club",
-      "fundsNote": "100% of funds go to server costs & coffee"
+      "fundsNote": "100% of funds go to server costs & coffee",
+      "ctaAriaLabel": "Become a sponsor to claim your spot"
     },
     "community": {
       "badge": "Community Love",

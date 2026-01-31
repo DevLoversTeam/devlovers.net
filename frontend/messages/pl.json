@@ -672,6 +672,7 @@
       }
     },
     "pricing": {
+      "heading": "Cennik",
       "badge": "Bez ukrytych opłat",
       "title": "Inwestuj w swój mózg,",
       "titleHighlight": "nie w nasze subskrypcje.",
@@ -712,7 +713,8 @@
       "emptySlot": "Ty?",
       "yourSpot": "Twoje miejsce",
       "joinClub": "Dołącz do klubu",
-      "fundsNote": "100% środków idzie na serwery i kawę"
+      "fundsNote": "100% środków idzie na serwery i kawę",
+      "ctaAriaLabel": "Zostań sponsorem i zajmij swoje miejsce"
     },
     "community": {
       "badge": "Miłość społeczności",
