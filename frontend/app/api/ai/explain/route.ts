@@ -9,6 +9,88 @@ import {
 } from '@/lib/ai/prompts';
 import { getClientIp } from '@/lib/security/client-ip';
 
+// =============================================================================
+// DEBUG LOGGING - TEMPORARY (remove after debugging)
+// =============================================================================
+function logEnvironmentDiagnostics() {
+  const apiKey = process.env.GROQ_API_KEY;
+  console.log('=== NETLIFY FUNCTION DIAGNOSTICS ===');
+  console.log('[ENV] GROQ_API_KEY exists:', !!apiKey);
+  console.log('[ENV] GROQ_API_KEY prefix:', apiKey ? apiKey.substring(0, 4) + '****' : 'N/A');
+  console.log('[ENV] GROQ_API_KEY length:', apiKey?.length ?? 0);
+  console.log('[ENV] NODE_ENV:', process.env.NODE_ENV);
+  console.log('[ENV] NETLIFY:', process.env.NETLIFY);
+  console.log('[ENV] AWS_LAMBDA_FUNCTION_NAME:', process.env.AWS_LAMBDA_FUNCTION_NAME);
+  console.log('[ENV] CONTEXT:', process.env.CONTEXT); // Netlify deploy context
+  console.log('[ENV] DEPLOY_URL:', process.env.DEPLOY_URL);
+  console.log('[RUNTIME] Expected: nodejs (set via export)');
+  console.log('[ENV] All GROQ-related vars:', Object.keys(process.env).filter(k => k.toLowerCase().includes('groq')));
+  console.log('====================================');
+}
+
+function logRequestDiagnostics(request: NextRequest) {
+  console.log('=== REQUEST DIAGNOSTICS ===');
+  console.log('[REQ] Method:', request.method);
+  console.log('[REQ] URL:', request.url);
+  console.log('[REQ] Headers:');
+  request.headers.forEach((value, key) => {
+    // Redact sensitive headers
+    const safeValue = ['authorization', 'cookie', 'x-api-key'].includes(key.toLowerCase())
+      ? '[REDACTED]'
+      : value;
+    console.log(`  ${key}: ${safeValue}`);
+  });
+  console.log('===========================');
+}
+
+function logBodyParsingResult(success: boolean, body?: unknown, error?: unknown) {
+  console.log('=== BODY PARSING ===');
+  console.log('[BODY] Parse success:', success);
+  if (success && body) {
+    console.log('[BODY] Parsed body:', JSON.stringify(body, null, 2));
+  }
+  if (error) {
+    console.log('[BODY] Parse error:', error instanceof Error ? error.message : String(error));
+  }
+  console.log('====================');
+}
+
+function logGroqInitialization(success: boolean, error?: unknown) {
+  console.log('=== GROQ SDK INITIALIZATION ===');
+  console.log('[GROQ] Init success:', success);
+  if (error) {
+    const err = error as Error & { status?: number; code?: string };
+    console.log('[GROQ] Init error name:', err.name);
+    console.log('[GROQ] Init error message:', err.message);
+    console.log('[GROQ] Init error status:', err.status);
+    console.log('[GROQ] Init error code:', err.code);
+  }
+  console.log('===============================');
+}
+
+function logGroqApiCall(phase: 'start' | 'success' | 'error', details?: unknown) {
+  console.log(`=== GROQ API CALL (${phase.toUpperCase()}) ===`);
+  if (phase === 'start') {
+    console.log('[GROQ] Starting API call to llama3-70b-8192');
+  } else if (phase === 'success') {
+    console.log('[GROQ] API call successful');
+    if (details && typeof details === 'object' && 'choices' in details) {
+      const response = details as { choices?: Array<{ message?: { content?: string } }> };
+      console.log('[GROQ] Response has content:', !!response.choices?.[0]?.message?.content);
+      console.log('[GROQ] Content length:', response.choices?.[0]?.message?.content?.length ?? 0);
+    }
+  } else if (phase === 'error') {
+    const err = details as Error & { status?: number; code?: string; headers?: Record<string, string> };
+    console.log('[GROQ] API error name:', err?.name);
+    console.log('[GROQ] API error message:', err?.message);
+    console.log('[GROQ] API error status:', err?.status);
+    console.log('[GROQ] API error code:', err?.code);
+    console.log('[GROQ] API error stack:', err?.stack?.substring(0, 500));
+  }
+  console.log('=====================================');
+}
+// =============================================================================
+
 const rateLimiter = new Map<string, { count: number; resetAt: number }>();
 const MAX_REQUESTS_PER_WINDOW = 10;
 const RATE_LIMIT_WINDOW_MS = 20 * 60 * 1000; 
@@ -91,20 +173,33 @@ function parseExplanationResponse(content: string): ExplanationResponse {
 }
 
 export async function POST(request: NextRequest) {
+  // DEBUG: Log environment diagnostics on every request
+  logEnvironmentDiagnostics();
+  logRequestDiagnostics(request);
+
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
-    console.error('GROQ_API_KEY is not configured');
-    console.error('Available env vars starting with GROQ:',
-      Object.keys(process.env).filter(k => k.startsWith('GROQ'))
-    );
+    console.error('[FATAL] GROQ_API_KEY is not configured');
+    console.error('[DEBUG] All env var keys:', Object.keys(process.env).sort().join(', '));
     return NextResponse.json(
-      { error: 'AI service not configured', code: 'SERVICE_UNAVAILABLE' },
+      {
+        error: 'AI service not configured',
+        code: 'SERVICE_UNAVAILABLE',
+        debug: {
+          hasKey: false,
+          nodeEnv: process.env.NODE_ENV,
+          isNetlify: !!process.env.NETLIFY,
+          context: process.env.CONTEXT,
+        }
+      },
       { status: 503 }
     );
   }
 
   const clientIp = getClientIp(request) ?? 'unknown';
+  console.log('[DEBUG] Client IP:', clientIp);
   const rateLimit = checkRateLimit(clientIp);
+  console.log('[DEBUG] Rate limit check:', rateLimit);
 
   if (!rateLimit.allowed) {
     const resetMinutes = Math.ceil(rateLimit.resetIn / 60000);
@@ -128,7 +223,9 @@ export async function POST(request: NextRequest) {
   let body: unknown;
   try {
     body = await request.json();
-  } catch {
+    logBodyParsingResult(true, body);
+  } catch (parseError) {
+    logBodyParsingResult(false, undefined, parseError);
     return NextResponse.json(
       { error: 'Invalid JSON body', code: 'INVALID_JSON' },
       { status: 400 }
@@ -137,6 +234,7 @@ export async function POST(request: NextRequest) {
 
   const validationResult = requestSchema.safeParse(body);
   if (!validationResult.success) {
+    console.log('[DEBUG] Validation failed:', validationResult.error.format());
     return NextResponse.json(
       {
         error: 'Invalid request',
@@ -148,12 +246,33 @@ export async function POST(request: NextRequest) {
   }
 
   const { term, context } = validationResult.data;
+  console.log('[DEBUG] Validated request - term:', term, 'context:', context?.substring(0, 50));
 
-  const groq = new Groq({ apiKey });
+  // DEBUG: Wrap Groq client initialization in try/catch
+  let groq: Groq;
+  try {
+    groq = new Groq({ apiKey });
+    logGroqInitialization(true);
+  } catch (initError) {
+    logGroqInitialization(false, initError);
+    return NextResponse.json(
+      {
+        error: 'Failed to initialize AI client',
+        code: 'SDK_INIT_ERROR',
+        debug: {
+          errorName: initError instanceof Error ? initError.name : 'Unknown',
+          errorMessage: initError instanceof Error ? initError.message : String(initError),
+        }
+      },
+      { status: 503 }
+    );
+  }
 
   try {
     const prompt = createExplainPrompt({ term, context });
+    console.log('[DEBUG] Prompt created, length:', prompt.length);
 
+    logGroqApiCall('start');
     const chatCompletion = await groq.chat.completions.create({
       messages: [
         {
@@ -166,14 +285,18 @@ export async function POST(request: NextRequest) {
       max_tokens: 1500,
       top_p: 1,
     });
+    logGroqApiCall('success', chatCompletion);
 
     const content = chatCompletion.choices[0]?.message?.content;
 
     if (!content) {
+      console.error('[ERROR] No content in Groq response');
       throw new Error('No content in response');
     }
 
+    console.log('[DEBUG] Parsing response, raw content length:', content.length);
     const explanation = parseExplanationResponse(content);
+    console.log('[DEBUG] Successfully parsed explanation');
 
     return NextResponse.json(explanation, {
       status: 200,
@@ -184,17 +307,23 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
+    logGroqApiCall('error', error);
     console.error('Groq API error:', error);
 
     const errorMessage =
       error instanceof Error ? error.message : 'Unknown error';
     const errorName = error instanceof Error ? error.name : 'UnknownError';
 
-    console.error('Error details:', {
+    // Enhanced error logging
+    const errorDetails = {
       name: errorName,
       message: errorMessage,
       stack: error instanceof Error ? error.stack : undefined,
-    });
+      status: (error as { status?: number }).status,
+      code: (error as { code?: string }).code,
+      type: (error as { type?: string }).type,
+    };
+    console.error('[DEBUG] Full error details:', JSON.stringify(errorDetails, null, 2));
 
     if (error instanceof Error) {
       if (
@@ -203,7 +332,11 @@ export async function POST(request: NextRequest) {
         error.message.includes('Invalid API Key')
       ) {
         return NextResponse.json(
-          { error: 'AI service authentication failed', code: 'AUTH_ERROR' },
+          {
+            error: 'AI service authentication failed',
+            code: 'AUTH_ERROR',
+            debug: { keyPrefix: apiKey.substring(0, 4) }
+          },
           { status: 503 }
         );
       }
@@ -232,10 +365,50 @@ export async function POST(request: NextRequest) {
       {
         error: 'Failed to generate explanation',
         code: 'AI_ERROR',
-        details:
-          process.env.NODE_ENV === 'development' ? errorMessage : undefined,
+        details: errorMessage, // Always include for debugging (remove in production)
+        debug: {
+          errorName,
+          nodeEnv: process.env.NODE_ENV,
+          isNetlify: !!process.env.NETLIFY,
+        }
       },
       { status: 500 }
     );
   }
+}
+
+// =============================================================================
+// DEBUG: GET handler for diagnostics (catches 405 errors, provides health check)
+// Remove after debugging
+// =============================================================================
+export async function GET(request: NextRequest) {
+  console.log('=== GET REQUEST TO /api/ai/explain (should be POST) ===');
+  logEnvironmentDiagnostics();
+  logRequestDiagnostics(request);
+
+  const apiKey = process.env.GROQ_API_KEY;
+
+  return NextResponse.json({
+    message: 'This endpoint requires POST method',
+    debug: {
+      endpoint: '/api/ai/explain',
+      expectedMethod: 'POST',
+      receivedMethod: 'GET',
+      timestamp: new Date().toISOString(),
+      environment: {
+        hasGroqApiKey: !!apiKey,
+        groqApiKeyPrefix: apiKey ? apiKey.substring(0, 4) + '****' : null,
+        groqApiKeyLength: apiKey?.length ?? 0,
+        nodeEnv: process.env.NODE_ENV,
+        isNetlify: !!process.env.NETLIFY,
+        netlifyContext: process.env.CONTEXT,
+        awsLambdaFunction: process.env.AWS_LAMBDA_FUNCTION_NAME,
+        deployUrl: process.env.DEPLOY_URL,
+        runtime: 'nodejs',
+      },
+      allGroqEnvVars: Object.keys(process.env).filter(k =>
+        k.toLowerCase().includes('groq')
+      ),
+    }
+  }, { status: 200 }); // Return 200 for diagnostics, not 405
 }

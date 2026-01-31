@@ -2,31 +2,34 @@
 
 import { Github, ArrowRight, ExternalLink, MessageCircle } from "lucide-react"
 import Link from "next/link"
+import { useTranslations } from "next-intl"
 import { TESTIMONIALS, type Testimonial } from "@/data/about"
 import { GradientBadge } from "@/components/ui/gradient-badge"
 import { SectionHeading } from "@/components/ui/section-heading"
 
 export function CommunitySection() {
+  const t = useTranslations("about.community")
+
   return (
     <section className="w-full py-20 lg:py-28 relative overflow-hidden bg-gray-50 dark:bg-transparent">
-        
+
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-[#1e5eff]/5 dark:bg-[#ff2d55]/5 blur-[80px] rounded-full pointer-events-none" />
 
         <div className="w-full relative z-10">
-            
+
             <div className="container-main mb-12 text-center">
-                <GradientBadge icon={MessageCircle} text="Community Love" className="mb-4" />
-                
-                <SectionHeading 
-                    title="Approved by"
-                    highlight="Survivors"
-                    subtitle="Join thousands of developers who stopped guessing and started shipping. Real feedback from real engineers."
+                <GradientBadge icon={MessageCircle} text={t("badge")} className="mb-4" />
+
+                <SectionHeading
+                    title={t("title")}
+                    highlight={t("titleHighlight")}
+                    subtitle={t("subtitle")}
                     className="mb-0"
                 />
             </div>
 
             <div className="relative w-full pause-on-hover mb-8 md:mb-16">
-                
+
                 <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-12 md:w-32 bg-gradient-to-r from-gray-50 dark:from-background to-transparent" />
                 <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-12 md:w-32 bg-gradient-to-l from-gray-50 dark:from-background to-transparent" />
 
@@ -60,7 +63,7 @@ export function CommunitySection() {
                             hover:text-[#1e5eff] dark:hover:text-[#ff2d55]"
                     >
                         <Github size={12} />
-                        Join Discussion
+                        {t("joinDiscussion")}
                         <ArrowRight size={10} className="group-hover:translate-x-0.5 transition-transform" />
                     </Link>
                 </div>
@@ -77,7 +80,7 @@ export function CommunitySection() {
                     hover:shadow-[0_0_30px_-5px_rgba(30,94,255,0.15)] dark:hover:shadow-[0_0_30px_-5px_rgba(255,45,85,0.15)]"
                 >
                     <span className="text-sm text-gray-700 dark:text-gray-200 font-medium">
-                        Have a success story or feature request?
+                        {t("successStory")}
                     </span>
 
                     <span className="flex items-center gap-2 px-5 py-2.5 rounded-full
@@ -88,13 +91,13 @@ export function CommunitySection() {
                         group-hover:text-white dark:group-hover:text-white"
                     >
                         <Github size={14} />
-                        Join Discussion
+                        {t("joinDiscussion")}
                         <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />
                     </span>
                 </Link>
 
                 <p className="mt-3 md:mt-6 text-[8px] md:text-[10px] text-gray-400 dark:text-gray-600 uppercase tracking-widest md:font-bold md:opacity-60 opacity-70">
-                    We read every <span className="hidden md:inline">single </span>thread
+                    {t("readThreads")}
                 </p>
             </div>
 
