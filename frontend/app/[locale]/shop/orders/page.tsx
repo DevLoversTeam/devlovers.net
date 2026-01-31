@@ -16,6 +16,13 @@ import {
   SHOP_LINK_MD,
   SHOP_NAV_LINK_BASE,
 } from '@/lib/shop/ui-classes';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'My Orders | DevLovers',
+  description: 'View your order history and payment status.',
+};
+
 export const dynamic = 'force-dynamic';
 
 type PaymentStatus = (typeof orders.$inferSelect)['paymentStatus'];

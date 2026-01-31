@@ -19,7 +19,12 @@ import {
   SHOP_LINK_MD,
   SHOP_NAV_LINK_BASE,
 } from '@/lib/shop/ui-classes';
+import { Metadata } from 'next';
 
+export const metadata: Metadata = {
+  title: 'Order Details | DevLovers',
+  description: 'Order details, items, totals, and current status.',
+};
 export const dynamic = 'force-dynamic';
 
 type OrderCurrency = (typeof orders.$inferSelect)['currency'];

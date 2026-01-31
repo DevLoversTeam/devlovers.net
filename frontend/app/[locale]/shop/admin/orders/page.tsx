@@ -13,6 +13,13 @@ import { AdminPagination } from '@/components/shop/admin/admin-pagination';
 import { guardShopAdminPage } from '@/lib/auth/guard-shop-admin-page';
 import { CSRF_FORM_FIELD, issueCsrfToken } from '@/lib/security/csrf';
 import { parsePage } from '@/lib/pagination';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Admin Orders | DevLovers',
+  description: 'View and manage orders in the DevLovers shop catalog.',
+};
+
 
 export const dynamic = 'force-dynamic';
 

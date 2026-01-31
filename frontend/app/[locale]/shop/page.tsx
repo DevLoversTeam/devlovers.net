@@ -11,6 +11,12 @@ import {
   SHOP_FOCUS,
   shopCtaGradient,
 } from '@/lib/shop/ui-classes';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Shop | DevLovers',
+  description: 'DevLovers merch shop — browse products, add to cart, and checkout.',
+};
 
 export default async function HomePage({
   params,

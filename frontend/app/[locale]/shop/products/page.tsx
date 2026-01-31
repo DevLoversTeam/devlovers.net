@@ -8,6 +8,12 @@ import { ProductsToolbar } from '@/components/shop/products-toolbar';
 import { getCatalogProducts } from '@/lib/shop/data';
 import { catalogQuerySchema } from '@/lib/validation/shop';
 import { CATALOG_PAGE_SIZE } from '@/lib/config/catalog';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Products | DevLovers',
+  description: 'Browse all DevLovers products, available sizes, and prices',
+};
 
 type RawSearchParams = {
   category?: string;
