@@ -1,5 +1,5 @@
 import 'server-only';
-
+import { cn } from '@/lib/utils';
 import { Link } from '@/i18n/routing';
 import { redirect } from 'next/navigation';
 import { unstable_noStore as noStore } from 'next/cache';
@@ -10,6 +10,18 @@ import { db } from '@/db';
 import { orderItems, orders } from '@/db/schema';
 import { getCurrentUser } from '@/lib/auth';
 import { logError } from '@/lib/logging';
+import {
+  SHOP_FOCUS,
+  SHOP_LINK_BASE,
+  SHOP_LINK_MD,
+  SHOP_NAV_LINK_BASE,
+} from '@/lib/shop/ui-classes';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'My Orders | DevLovers',
+  description: 'View your order history and payment status.',
+};
 
 export const dynamic = 'force-dynamic';
 
@@ -113,7 +125,9 @@ export default async function MyOrdersPage({
 
   const user = await getCurrentUser();
   if (!user) {
-    redirect(`/${locale}/login?returnTo=${encodeURIComponent(`/${locale}/shop/orders`)}`);
+    redirect(
+      `/${locale}/login?returnTo=${encodeURIComponent(`/${locale}/shop/orders`)}`
+    );
   }
 
   let rows: Array<{
@@ -123,7 +137,7 @@ export default async function MyOrdersPage({
     paymentStatus: PaymentStatus;
     createdAt: Date;
     primaryItemLabel: string | null;
-    itemCount: unknown; 
+    itemCount: unknown;
   }> = [];
 
   try {
@@ -172,6 +186,17 @@ export default async function MyOrdersPage({
     logError('My orders page failed', error);
     throw new Error('MY_ORDERS_LOAD_FAILED');
   }
+  // Nav/breadcrumb-ish links ("Back to shop", "Browse products")
+  const NAV_LINK = cn(SHOP_NAV_LINK_BASE, 'text-lg', SHOP_FOCUS);
+
+  // Order headline link in the table: make it match cart product link style
+  // (cart uses: cn('block truncate', SHOP_LINK_BASE, SHOP_LINK_MD, SHOP_FOCUS))
+  const ORDER_HEADLINE_LINK = cn(
+    'block max-w-[24rem] truncate',
+    SHOP_LINK_BASE,
+    SHOP_LINK_MD,
+    SHOP_FOCUS
+  );
 
   return (
     <main
@@ -183,13 +208,11 @@ export default async function MyOrdersPage({
           <h1 id="my-orders-heading" className="text-2xl font-semibold">
             {t('title')}
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {t('subtitle')}
-          </p>
+          <p className="mt-1 text-sm text-muted-foreground">{t('subtitle')}</p>
         </div>
 
         <nav aria-label="Orders navigation" className="flex items-center gap-3">
-          <Link className="text-sm underline underline-offset-4" href="/shop">
+          <Link className={NAV_LINK} href="/shop">
             {t('backToShop')}
           </Link>
         </nav>
@@ -199,10 +222,7 @@ export default async function MyOrdersPage({
         <section className="rounded-md border p-4" aria-label="No orders">
           <p className="text-sm text-muted-foreground">{t('empty.message')}</p>
           <div className="mt-3">
-            <Link
-              className="text-sm underline underline-offset-4"
-              href="/shop/products"
-            >
+            <Link className={NAV_LINK} href="/shop/products">
               {t('empty.browseProducts')}
             </Link>
           </div>
@@ -265,7 +285,7 @@ export default async function MyOrdersPage({
                       <th scope="row" className="px-4 py-3 align-top text-left">
                         <Link
                           href={href}
-                          className="block max-w-[24rem] truncate font-medium underline underline-offset-4"
+                          className={ORDER_HEADLINE_LINK}
                           title={headline}
                           aria-label={t('table.openOrder', { id: o.id })}
                         >
@@ -273,7 +293,9 @@ export default async function MyOrdersPage({
                         </Link>
 
                         <div className="mt-1 text-xs text-muted-foreground">
-                          <span className="sr-only">{t('table.orderId')}: </span>
+                          <span className="sr-only">
+                            {t('table.orderId')}:{' '}
+                          </span>
                           <span className="break-all">
                             {shortOrderId(o.id)}
                           </span>
