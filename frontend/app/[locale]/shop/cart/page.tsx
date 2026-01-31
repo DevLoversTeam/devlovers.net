@@ -3,15 +3,56 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
-import { useRouter } from '@/i18n/routing';
+import { useRouter, Link } from '@/i18n/routing';
 import { useTranslations } from 'next-intl';
-
+import { cn } from '@/lib/utils';
 import { Minus, Plus, Trash2, ShoppingBag } from 'lucide-react';
 
-import { Link } from '@/i18n/routing';
 import { useCart } from '@/components/shop/cart-provider';
 import { generateIdempotencyKey } from '@/lib/shop/idempotency';
 import { formatMoney } from '@/lib/shop/currency';
+import {
+  SHOP_FOCUS,
+  SHOP_LINK_BASE,
+  SHOP_LINK_MD,
+  SHOP_LINK_XS,
+  SHOP_DISABLED,
+  SHOP_CHIP_INTERACTIVE,
+  SHOP_CHIP_SHADOW_HOVER,
+  SHOP_CHIP_BORDER_HOVER,
+  SHOP_STEPPER_BUTTON_BASE,
+  SHOP_CTA_BASE,
+  SHOP_CTA_INTERACTIVE,
+  SHOP_CTA_INSET,
+  SHOP_CTA_WAVE,
+  shopCtaGradient,
+} from '@/lib/shop/ui-classes';
+
+const SHOP_PRODUCT_LINK = cn(
+  'block truncate',
+  SHOP_LINK_BASE,
+  SHOP_LINK_MD,
+  SHOP_FOCUS
+);
+
+const SHOP_STEPPER_BTN = cn(
+  SHOP_STEPPER_BUTTON_BASE,
+  'h-8 w-8',
+  SHOP_CHIP_INTERACTIVE,
+  SHOP_CHIP_SHADOW_HOVER,
+  SHOP_CHIP_BORDER_HOVER,
+  SHOP_FOCUS,
+  SHOP_DISABLED
+);
+
+const SHOP_HERO_CTA = cn(
+  SHOP_CTA_BASE,
+  SHOP_CTA_INTERACTIVE,
+  SHOP_FOCUS,
+  SHOP_DISABLED,
+  'w-full justify-center gap-2 px-6 py-3 text-sm text-white',
+  'shadow-[var(--shop-hero-btn-shadow)] hover:shadow-[var(--shop-hero-btn-shadow-hover)]'
+);
 
 export default function CartPage() {
   const { cart, updateQuantity, removeFromCart } = useCart();
@@ -32,7 +73,7 @@ export default function CartPage() {
     try {
       return tColors(colorSlug);
     } catch {
-      return color; 
+      return color;
     }
   };
 
@@ -67,9 +108,8 @@ export default function CartPage() {
           typeof data?.message === 'string'
             ? data.message
             : typeof data?.error === 'string'
-            ? data.error
-            : 'Unable to start checkout right now.';
-
+              ? data.error
+              : 'Unable to start checkout right now.';
         setCheckoutError(message);
         return;
       }
@@ -86,7 +126,7 @@ export default function CartPage() {
           ? data.clientSecret
           : null;
 
-      const orderId: string = String(data.orderId);
+      const orderId = String(data.orderId);
       setCreatedOrderId(orderId);
 
       if (paymentProvider === 'stripe' && clientSecret) {
@@ -95,7 +135,6 @@ export default function CartPage() {
             orderId
           )}?clientSecret=${encodeURIComponent(clientSecret)}&clearCart=1`
         );
-
         return;
       }
 
@@ -120,22 +159,28 @@ export default function CartPage() {
     return (
       <main className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
         <div className="flex flex-col items-center justify-center text-center">
-          <ShoppingBag
-            className="h-16 w-16 text-muted-foreground"
-            aria-hidden="true"
-          />
+          <ShoppingBag className="h-16 w-16 text-muted-foreground" aria-hidden="true" />
           <h1 className="mt-6 text-3xl font-bold tracking-tight text-foreground">
             {t('empty')}
           </h1>
-          <p className="mt-4 text-muted-foreground">
-            {t('emptyDescription')}
-          </p>
-          <Link
-            href={`/shop/products`}
-            className="mt-8 inline-flex items-center gap-2 rounded-md bg-accent px-6 py-3 text-sm font-semibold uppercase tracking-wide text-accent-foreground transition-colors hover:bg-accent/90"
-          >
-            {t('startShopping')}
-          </Link>
+          <p className="mt-4 text-muted-foreground">{t('emptyDescription')}</p>
+
+          <div className="mt-8 w-full max-w-md mx-auto">
+            <Link href="/shop/products" className={SHOP_HERO_CTA}>
+              <span
+                className="absolute inset-0"
+                style={shopCtaGradient('--shop-hero-btn-bg', '--shop-hero-btn-bg-hover')}
+                aria-hidden="true"
+              />
+              <span
+                className={SHOP_CTA_WAVE}
+                style={shopCtaGradient('--shop-hero-btn-bg-hover', '--shop-hero-btn-bg')}
+                aria-hidden="true"
+              />
+              <span className={SHOP_CTA_INSET} aria-hidden="true" />
+              <span className="relative z-10">{t('startShopping')}</span>
+            </Link>
+          </div>
         </div>
       </main>
     );
@@ -162,9 +207,7 @@ export default function CartPage() {
 
             {cart.items.map(item => (
               <li
-                key={`${item.productId}-${item.selectedSize ?? 'na'}-${
-                  item.selectedColor ?? 'na'
-                }`}
+                key={`${item.productId}-${item.selectedSize ?? 'na'}-${item.selectedColor ?? 'na'}`}
                 className="rounded-lg border border-border p-4"
               >
                 <article className="flex gap-4">
@@ -183,7 +226,7 @@ export default function CartPage() {
                       <div className="min-w-0">
                         <Link
                           href={`/shop/products/${item.slug}`}
-                          className="block truncate text-sm font-medium text-foreground hover:underline"
+                          className={SHOP_PRODUCT_LINK}
                         >
                           {item.title}
                         </Link>
@@ -200,11 +243,7 @@ export default function CartPage() {
                       <button
                         type="button"
                         onClick={() =>
-                          removeFromCart(
-                            item.productId,
-                            item.selectedSize,
-                            item.selectedColor
-                          )
+                          removeFromCart(item.productId, item.selectedSize, item.selectedColor)
                         }
                         className="text-muted-foreground transition-colors hover:text-foreground"
                         aria-label={t('actions.removeItem', { title: item.title })}
@@ -226,7 +265,7 @@ export default function CartPage() {
                             )
                           }
                           disabled={item.quantity <= 1}
-                          className="flex h-8 w-8 items-center justify-center rounded border border-border text-foreground transition-colors hover:bg-secondary disabled:opacity-60"
+                          className={SHOP_STEPPER_BTN}
                           aria-label={t('actions.decreaseQty')}
                         >
                           <Minus className="h-3 w-3" aria-hidden="true" />
@@ -247,28 +286,21 @@ export default function CartPage() {
                             )
                           }
                           disabled={item.quantity >= item.stock}
-                          className="flex h-8 w-8 items-center justify-center rounded border border-border text-foreground transition-colors hover:bg-secondary disabled:opacity-60"
+                          className={SHOP_STEPPER_BTN}
                           aria-label={t('actions.increaseQty')}
                         >
                           <Plus className="h-3 w-3" aria-hidden="true" />
                         </button>
 
                         {item.quantity >= item.stock && (
-                          <span
-                            className="ml-3 text-xs text-muted-foreground"
-                            role="status"
-                          >
+                          <span className="ml-3 text-xs text-muted-foreground" role="status">
                             {t('actions.maxStock', { stock: item.stock })}
                           </span>
                         )}
                       </div>
 
                       <span className="text-sm font-semibold text-foreground">
-                        {formatMoney(
-                          item.lineTotalMinor,
-                          item.currency,
-                          locale
-                        )}
+                        {formatMoney(item.lineTotalMinor, item.currency, locale)}
                       </span>
                     </div>
                   </div>
@@ -278,14 +310,8 @@ export default function CartPage() {
           </ul>
         </section>
 
-        <aside
-          className="h-fit rounded-lg border border-border p-6"
-          aria-labelledby="order-summary"
-        >
-          <h2
-            id="order-summary"
-            className="text-lg font-semibold text-foreground"
-          >
+        <aside className="h-fit rounded-lg border border-border p-6" aria-labelledby="order-summary">
+          <h2 id="order-summary" className="text-lg font-semibold text-foreground">
             {t('summary.heading')}
           </h2>
 
@@ -293,19 +319,13 @@ export default function CartPage() {
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">{t('summary.subtotal')}</span>
               <span className="font-medium text-foreground">
-                {formatMoney(
-                  cart.summary.totalAmountMinor,
-                  cart.summary.currency,
-                  locale
-                )}
+                {formatMoney(cart.summary.totalAmountMinor, cart.summary.currency, locale)}
               </span>
             </div>
 
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">{t('summary.shipping')}</span>
-              <span className="text-muted-foreground">
-                {t('summary.shippingCalc')}
-              </span>
+              <span className="text-muted-foreground">{t('summary.shippingCalc')}</span>
             </div>
 
             <div className="border-t border-border pt-4">
@@ -314,11 +334,7 @@ export default function CartPage() {
                   {t('summary.total')}
                 </span>
                 <span className="text-lg font-bold text-foreground">
-                  {formatMoney(
-                    cart.summary.totalAmountMinor,
-                    cart.summary.currency,
-                    locale
-                  )}
+                  {formatMoney(cart.summary.totalAmountMinor, cart.summary.currency, locale)}
                 </span>
               </div>
             </div>
@@ -329,10 +345,24 @@ export default function CartPage() {
               type="button"
               onClick={handleCheckout}
               disabled={isCheckingOut}
-              className="flex w-full items-center justify-center gap-2 rounded-md bg-accent px-6 py-3 text-sm font-semibold uppercase tracking-wide text-accent-foreground transition-colors hover:bg-accent/90 disabled:opacity-60"
+              className={SHOP_HERO_CTA}
               aria-busy={isCheckingOut}
             >
-              {isCheckingOut ? t('checkout.placing') : t('checkout.placeOrder')}
+              <span
+                className="absolute inset-0"
+                style={shopCtaGradient('--shop-hero-btn-bg', '--shop-hero-btn-bg-hover')}
+                aria-hidden="true"
+              />
+              <span
+                className={SHOP_CTA_WAVE}
+                style={shopCtaGradient('--shop-hero-btn-bg-hover', '--shop-hero-btn-bg')}
+                aria-hidden="true"
+              />
+              <span className={SHOP_CTA_INSET} aria-hidden="true" />
+
+              <span className="relative z-10">
+                {isCheckingOut ? t('checkout.placing') : t('checkout.placeOrder')}
+              </span>
             </button>
 
             <p className="text-center text-xs text-muted-foreground">
@@ -344,7 +374,7 @@ export default function CartPage() {
               <div className="flex justify-center">
                 <Link
                   href={`/shop/orders/${encodeURIComponent(createdOrderId)}`}
-                  className="text-xs underline underline-offset-4"
+                  className={cn(SHOP_LINK_BASE, SHOP_LINK_XS, SHOP_FOCUS)}
                 >
                   {t('checkout.notRedirected')}
                 </Link>
@@ -353,20 +383,15 @@ export default function CartPage() {
 
             {checkoutError ? (
               <div className="space-y-2">
-                <p
-                  className="text-center text-xs text-destructive"
-                  role="alert"
-                >
+                <p className="text-center text-xs text-destructive" role="alert">
                   {checkoutError}
                 </p>
 
                 {createdOrderId ? (
                   <div className="flex justify-center">
                     <Link
-                      href={`/shop/orders/${encodeURIComponent(
-                        createdOrderId
-                      )}`}
-                      className="text-xs underline underline-offset-4"
+                      href={`/shop/orders/${encodeURIComponent(createdOrderId)}`}
+                      className={cn(SHOP_LINK_BASE, SHOP_LINK_XS, SHOP_FOCUS)}
                     >
                       {t('checkout.goToOrder')}
                     </Link>
