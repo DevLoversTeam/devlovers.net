@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { usePathname, useRouter } from '@/i18n/routing';
 import BlogGrid from '@/components/blog/BlogGrid';
+import { BlogPagination } from '@/components/blog/BlogPagination';
 import { Link } from '@/i18n/routing';
 import { formatBlogDate } from '@/lib/blog/date';
 
@@ -75,6 +76,7 @@ type Category = {
 
 const SOCIAL_ICON_CLASSNAME =
   'h-3.5 w-3.5 text-gray-900 dark:text-gray-100 transition-colors group-hover:text-[var(--accent-primary)] dark:group-hover:text-[var(--accent-primary)]';
+const POSTS_PER_PAGE = 9;
 
 function SocialIcon({ platform }: { platform?: string }) {
   const normalized = (platform || '').trim().toLowerCase();
@@ -189,6 +191,15 @@ export default function BlogFilters({
     name: string;
     norm: string;
   } | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const lastFiltersRef = useRef<{
+    author: string;
+    category: string;
+    query: string;
+  } | null>(null);
+  const pendingScrollRef = useRef(false);
+  const categoryFiltersRef = useRef<HTMLDivElement>(null);
+  const postsGridRef = useRef<HTMLDivElement>(null);
 
   const toggleAuthor = (author: Author) => {
     const name = author.name || '';
@@ -278,6 +289,25 @@ export default function BlogFilters({
   }, [searchParams]);
   const searchQueryNormalized = normalizeSearchText(searchQuery);
   const didClearSearchRef = useRef(false);
+  const parsedPage = useMemo(() => {
+    const raw = searchParams?.get('page') || '';
+    const value = Number.parseInt(raw, 10);
+    return Number.isFinite(value) && value > 0 ? value : 1;
+  }, [searchParams]);
+
+  const updatePageParam = useCallback(
+    (page: number) => {
+      const params = new URLSearchParams(searchParams?.toString() || '');
+      if (page <= 1) {
+        params.delete('page');
+      } else {
+        params.set('page', String(page));
+      }
+      const nextPath = params.toString() ? `${pathname}?${params}` : pathname;
+    router.replace(nextPath, { scroll: false });
+    },
+    [pathname, router, searchParams]
+  );
 
   useEffect(() => {
     if (didClearSearchRef.current) return;
@@ -296,6 +326,11 @@ export default function BlogFilters({
     didClearSearchRef.current = true;
   }, [pathname, router, searchParams, searchQuery]);
 
+  useEffect(() => {
+    if (currentPage === parsedPage) return;
+    setCurrentPage(parsedPage);
+  }, [currentPage, parsedPage]);
+
   const resolvedAuthor = useMemo(() => {
     const normParam = normalizeAuthor(authorParam);
     if (!normParam) return selectedAuthor;
@@ -309,6 +344,35 @@ export default function BlogFilters({
       data: match?.author,
     };
   }, [authorParam, posts, selectedAuthor]);
+
+  useEffect(() => {
+    const nextFilters = {
+      author: resolvedAuthor?.norm || '',
+      category: resolvedCategory?.norm || '',
+      query: searchQueryNormalized,
+    };
+    const prevFilters = lastFiltersRef.current;
+    if (!prevFilters) {
+      lastFiltersRef.current = nextFilters;
+      return;
+    }
+    const hasChanged =
+      prevFilters.author !== nextFilters.author ||
+      prevFilters.category !== nextFilters.category ||
+      prevFilters.query !== nextFilters.query;
+    if (!hasChanged) return;
+    lastFiltersRef.current = nextFilters;
+    if (currentPage !== 1) {
+      setCurrentPage(1);
+      updatePageParam(1);
+    }
+  }, [
+    currentPage,
+    resolvedAuthor?.norm,
+    resolvedCategory?.norm,
+    searchQueryNormalized,
+    updatePageParam,
+  ]);
 
   useEffect(() => {
     const name = resolvedAuthor?.name?.trim();
@@ -377,6 +441,11 @@ export default function BlogFilters({
       return true;
     });
   }, [posts, resolvedAuthor, resolvedCategory, searchQueryNormalized]);
+  const totalPages = Math.max(1, Math.ceil(filteredPosts.length / POSTS_PER_PAGE));
+  const paginatedPosts = useMemo(() => {
+    const start = (currentPage - 1) * POSTS_PER_PAGE;
+    return filteredPosts.slice(start, start + POSTS_PER_PAGE);
+  }, [currentPage, filteredPosts]);
 
   const selectedAuthorData = useMemo(() => {
     const resolvedName = resolvedAuthor?.name;
@@ -387,6 +456,29 @@ export default function BlogFilters({
   const authorBioText = useMemo(() => {
     return plainTextFromPortableText(selectedAuthorData?.bio);
   }, [selectedAuthorData]);
+
+  useEffect(() => {
+    if (currentPage <= totalPages) return;
+    setCurrentPage(totalPages);
+    updatePageParam(totalPages);
+  }, [currentPage, totalPages, updatePageParam]);
+
+  const scrollToCategoryFilters = useCallback(() => {
+    const target = categoryFiltersRef.current || postsGridRef.current;
+    target?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!pendingScrollRef.current) return;
+    pendingScrollRef.current = false;
+    const frame = window.requestAnimationFrame(() => {
+      scrollToCategoryFilters();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [currentPage, scrollToCategoryFilters]);
 
   return (
     <div className="mt-4">
@@ -537,7 +629,10 @@ export default function BlogFilters({
 
       <div className="w-full">
         {!resolvedAuthor && allCategories.length > 0 && (
-          <div className="mt-5 flex w-full flex-nowrap justify-start gap-1 overflow-x-auto sm:flex-wrap sm:gap-3 sm:overflow-visible">
+          <div
+            ref={categoryFiltersRef}
+            className="mt-5 flex w-full flex-nowrap justify-start gap-1 overflow-x-auto sm:flex-wrap sm:gap-3 sm:overflow-visible"
+          >
             <button
               type="button"
               onClick={() => setSelectedCategory(null)}
@@ -575,11 +670,21 @@ export default function BlogFilters({
         {selectedCategory && null}
       </div>
 
-      <div className="mt-12">
+      <div className="mt-12" ref={postsGridRef}>
         <BlogGrid
-          posts={filteredPosts}
+          posts={paginatedPosts}
           onAuthorSelect={toggleAuthor}
           disableHoverColor
+        />
+        <BlogPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={page => {
+            pendingScrollRef.current = true;
+            setCurrentPage(page);
+            updatePageParam(page);
+          }}
+          accentColor="var(--accent-primary)"
         />
       </div>
     </div>

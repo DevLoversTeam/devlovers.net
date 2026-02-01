@@ -85,23 +85,170 @@ function renderPortableTextSpans(
     const marks = child?.marks || [];
     const linkKey = marks.find(mark => linkMap.has(mark));
 
-    if (linkKey) {
-      const href = linkMap.get(linkKey)!;
-      return (
-        <a
-          key={`mark-link-${index}`}
-          href={href}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-[var(--accent-primary)] underline underline-offset-4"
-        >
-          {text}
-        </a>
-      );
+    let node: React.ReactNode =
+      marks.length === 0 ? linkifyText(text) : text;
+
+    for (const mark of marks) {
+      if (linkMap.has(mark)) {
+        const href = linkMap.get(mark)!;
+        node = (
+          <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[var(--accent-primary)] underline underline-offset-4"
+          >
+            {node}
+          </a>
+        );
+        continue;
+      }
+      if (mark === 'strong') {
+        node = <strong>{node}</strong>;
+        continue;
+      }
+      if (mark === 'em') {
+        node = <em>{node}</em>;
+        continue;
+      }
+      if (mark === 'underline') {
+        node = <u>{node}</u>;
+        continue;
+      }
+      if (mark === 'code') {
+        node = (
+          <code className="rounded bg-gray-100 px-1 py-0.5 text-[0.9em] text-gray-900 dark:bg-neutral-900 dark:text-gray-100">
+            {node}
+          </code>
+        );
+        continue;
+      }
+      if (mark === 'strike-through' || mark === 'strike') {
+        node = <s>{node}</s>;
+      }
     }
 
-    return <span key={`mark-text-${index}`}>{linkifyText(text)}</span>;
+    return <span key={`mark-text-${index}`}>{node}</span>;
   });
+}
+
+function renderPortableTextBlock(
+  block: any,
+  index: number
+): React.ReactNode {
+  const children = renderPortableTextSpans(block.children, block.markDefs);
+  const style = block?.style || 'normal';
+
+  if (style === 'h1') {
+    return (
+      <h1 key={block._key || `block-${index}`}>{children}</h1>
+    );
+  }
+  if (style === 'h2') {
+    return (
+      <h2 key={block._key || `block-${index}`}>{children}</h2>
+    );
+  }
+  if (style === 'h3') {
+    return (
+      <h3 key={block._key || `block-${index}`}>{children}</h3>
+    );
+  }
+  if (style === 'h4') {
+    return (
+      <h4 key={block._key || `block-${index}`}>{children}</h4>
+    );
+  }
+  if (style === 'h5') {
+    return (
+      <h5 key={block._key || `block-${index}`}>{children}</h5>
+    );
+  }
+  if (style === 'h6') {
+    return (
+      <h6 key={block._key || `block-${index}`}>{children}</h6>
+    );
+  }
+  if (style === 'blockquote') {
+    return (
+      <blockquote key={block._key || `block-${index}`}>
+        {children}
+      </blockquote>
+    );
+  }
+
+  return (
+    <p key={block._key || `block-${index}`} className="whitespace-pre-line">
+      {children}
+    </p>
+  );
+}
+
+function renderPortableText(
+  body: any[],
+  postTitle?: string
+): React.ReactNode[] {
+  const nodes: React.ReactNode[] = [];
+  let i = 0;
+
+  while (i < body.length) {
+    const block = body[i];
+
+    if (block?._type === 'block' && block.listItem) {
+      const listType = block.listItem === 'number' ? 'ol' : 'ul';
+      const level = block.level ?? 1;
+      const items: React.ReactNode[] = [];
+      let j = i;
+
+      while (
+        j < body.length &&
+        body[j]?._type === 'block' &&
+        body[j].listItem === block.listItem &&
+        (body[j].level ?? 1) === level
+      ) {
+        const item = body[j];
+        items.push(
+          <li key={item._key || `list-item-${j}`}>
+            {renderPortableTextSpans(item.children, item.markDefs)}
+          </li>
+        );
+        j += 1;
+      }
+
+      nodes.push(
+        listType === 'ol' ? (
+          <ol key={block._key || `list-${i}`}>{items}</ol>
+        ) : (
+          <ul key={block._key || `list-${i}`}>{items}</ul>
+        )
+      );
+      i = j;
+      continue;
+    }
+
+    if (block?._type === 'block') {
+      nodes.push(renderPortableTextBlock(block, i));
+      i += 1;
+      continue;
+    }
+
+    if (block?._type === 'image' && block?.url) {
+      nodes.push(
+        <img
+          key={block._key || `image-${i}`}
+          src={block.url}
+          alt={postTitle || 'Post image'}
+          className="rounded-xl border border-gray-200 my-6"
+        />
+      );
+      i += 1;
+      continue;
+    }
+
+    i += 1;
+  }
+
+  return nodes;
 }
 
 function seededShuffle<T>(items: T[], seed: number) {
@@ -389,31 +536,7 @@ export default async function PostDetails({
 
       <div className="mx-auto w-full max-w-3xl">
         <article className="prose prose-gray max-w-none">
-          {post.body?.map((block: any, index: number) => {
-            if (block?._type === 'block') {
-              return (
-                <p
-                  key={block._key || `block-${index}`}
-                  className="whitespace-pre-line"
-                >
-                  {renderPortableTextSpans(block.children, block.markDefs)}
-                </p>
-              );
-            }
-
-            if (block?._type === 'image' && block?.url) {
-              return (
-                <img
-                  key={block._key || `image-${index}`}
-                  src={block.url}
-                  alt={post.title || 'Post image'}
-                  className="rounded-xl border border-gray-200 my-6"
-                />
-              );
-            }
-
-            return null;
-          })}
+          {renderPortableText(post.body || [], post.title)}
         </article>
       </div>
 

@@ -216,7 +216,15 @@
     "articlesBy": "Artykuły autora: {name}",
     "articlesPublished": "Opublikowano artykułów: {count}",
     "recommendedPosts": "Polecane wpisy",
-    "goBack": "Wróć"
+    "goBack": "Wróć",
+    "pagination": {
+      "label": "Paginacja",
+      "previous": "Wstecz",
+      "next": "Dalej",
+      "previousPage": "Poprzednia strona",
+      "nextPage": "Następna strona",
+      "page": "Strona {page}"
+    }
   },
   "footer": {
     "builtWith": "Zbudowane z",
