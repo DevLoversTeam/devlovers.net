@@ -216,7 +216,15 @@
     "articlesBy": "Articles by {name}",
     "articlesPublished": "{count} articles published",
     "recommendedPosts": "Recommended Posts",
-    "goBack": "Go back"
+    "goBack": "Go back",
+    "pagination": {
+      "label": "Pagination",
+      "previous": "Previous",
+      "next": "Next",
+      "previousPage": "Previous page",
+      "nextPage": "Next page",
+      "page": "Page {page}"
+    }
   },
   "footer": {
     "builtWith": "Built with",
@@ -539,7 +547,9 @@
         "items": "Items",
         "date": "Date",
         "status": "Status",
-        "total": "Total"
+        "total": "Total",
+        "openOrder": "Open order {id}",
+        "orderId": "Order ID"
       },
       "orderHeadline": {
         "incomplete": "Order {id} (incomplete)",
@@ -913,7 +923,7 @@
     }
   },
   "onlineCounter": {
-    "one": "you are one step closer to the goal",
+    "one": "one step closer to the goal",
     "two": "chasing the dream",
     "upToFive": "on the way to an offer",
     "upToTen": "closer to the dream job",
