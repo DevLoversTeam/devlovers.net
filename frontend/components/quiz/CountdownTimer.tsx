@@ -20,17 +20,17 @@ export function CountdownTimer({
 }: CountdownTimerProps) {
   const t = useTranslations('quiz.timer');
   const endTime = startedAt.getTime() + timeLimitSeconds * 1000;
-  const [remainingSeconds, setRemainingSeconds] = useState(() => 
+  const [remainingSeconds, setRemainingSeconds] = useState(() =>
     Math.max(0, Math.floor((endTime - Date.now()) / 1000))
   );
-  
+
   useEffect(() => {
     if (!isActive) return;
 
     const interval = setInterval(() => {
       const now = Date.now();
       const remaining = Math.max(0, Math.floor((endTime - now) / 1000));
-      
+
       setRemainingSeconds(remaining);
 
       if (remaining === 0) {
@@ -42,19 +42,22 @@ export function CountdownTimer({
     return () => clearInterval(interval);
   }, [isActive, onTimeUp, endTime]);
 
-  // Force update when tab becomes visible again
   useEffect(() => {
     if (!isActive) return;
 
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        const remaining = Math.max(0, Math.floor((endTime - Date.now()) / 1000));
+        const remaining = Math.max(
+          0,
+          Math.floor((endTime - Date.now()) / 1000)
+        );
         setRemainingSeconds(remaining);
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    return () =>
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [isActive, endTime]);
 
   const minutes = Math.floor(remainingSeconds / 60);
@@ -68,7 +71,7 @@ export function CountdownTimer({
     if (percentage <= 30) {
       return 'text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-950/30 border-yellow-200 dark:border-yellow-800';
     }
-return 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800';
+    return 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800';
   };
 
   const getProgressBarColor = () => {
@@ -80,11 +83,13 @@ return 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/30 bord
   if (!isActive) return null;
 
   return (
-    <div className={cn(
-      'rounded-lg border-2 p-4 transition-all',
-      getColorClasses(),
-      percentage <= 10 && 'animate-pulse'
-    )}>
+    <div
+      className={cn(
+        'rounded-lg border-2 p-4 transition-all',
+        getColorClasses(),
+        percentage <= 10 && 'animate-pulse'
+      )}
+    >
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm font-medium">{t('label')}</span>
         <span className="text-2xl font-bold font-mono">
@@ -106,7 +111,8 @@ return 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/30 bord
         <p className="text-xs mt-2 font-medium">
           {percentage <= 10 ? (
             <>
-              <AlertTriangle className="w-4 h-4 inline text-amber-500" /> {t('almostDone')}
+              <AlertTriangle className="w-4 h-4 inline text-amber-500" />{' '}
+              {t('almostDone')}
             </>
           ) : (
             <>

@@ -186,11 +186,8 @@ export default async function MyOrdersPage({
     logError('My orders page failed', error);
     throw new Error('MY_ORDERS_LOAD_FAILED');
   }
-  // Nav/breadcrumb-ish links ("Back to shop", "Browse products")
   const NAV_LINK = cn(SHOP_NAV_LINK_BASE, 'text-lg', SHOP_FOCUS);
 
-  // Order headline link in the table: make it match cart product link style
-  // (cart uses: cn('block truncate', SHOP_LINK_BASE, SHOP_LINK_MD, SHOP_FOCUS))
   const ORDER_HEADLINE_LINK = cn(
     'block max-w-[24rem] truncate',
     SHOP_LINK_BASE,
