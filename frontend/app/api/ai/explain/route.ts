@@ -1,17 +1,15 @@
 export const runtime = 'nodejs';
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import Groq from 'groq-sdk';
 import {
   createExplainPrompt,
   type ExplanationResponse,
 } from '@/lib/ai/prompts';
-import { getClientIp } from '@/lib/security/client-ip';
+import { getCurrentUser } from '@/lib/auth';
 
-// =============================================================================
-// Rate Limiter (in-memory, resets on cold start)
-// =============================================================================
+
 const rateLimiter = new Map<string, { count: number; resetAt: number }>();
 const MAX_REQUESTS_PER_WINDOW = 10;
 const RATE_LIMIT_WINDOW_MS = 20 * 60 * 1000;
@@ -24,9 +22,9 @@ function cleanupRateLimiter() {
   if (now - lastCleanup < CLEANUP_INTERVAL_MS) return;
 
   lastCleanup = now;
-  for (const [ip, entry] of rateLimiter.entries()) {
+  for (const [userId, entry] of rateLimiter.entries()) {
     if (now > entry.resetAt) {
-      rateLimiter.delete(ip);
+      rateLimiter.delete(userId);
     }
   }
 }
@@ -43,25 +41,20 @@ const requestSchema = z.object({
 });
 
 
-function checkRateLimit(ip: string): { allowed: boolean; remaining: number; resetIn: number; skipped: boolean } {
-  // Bypass rate limiting for unknown IPs (serverless safety)
-  if (ip === 'unknown') {
-    return { allowed: true, remaining: MAX_REQUESTS_PER_WINDOW, resetIn: RATE_LIMIT_WINDOW_MS, skipped: true };
-  }
-
+function checkRateLimit(userId: string): { allowed: boolean; remaining: number; resetIn: number } {
   cleanupRateLimiter();
 
   const now = Date.now();
-  const entry = rateLimiter.get(ip);
+  const entry = rateLimiter.get(userId);
 
   if (!entry || now > entry.resetAt) {
-    rateLimiter.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
-    return { allowed: true, remaining: MAX_REQUESTS_PER_WINDOW - 1, resetIn: RATE_LIMIT_WINDOW_MS, skipped: false };
+    rateLimiter.set(userId, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return { allowed: true, remaining: MAX_REQUESTS_PER_WINDOW - 1, resetIn: RATE_LIMIT_WINDOW_MS };
   }
 
   if (entry.count >= MAX_REQUESTS_PER_WINDOW) {
     const resetIn = entry.resetAt - now;
-    return { allowed: false, remaining: 0, resetIn, skipped: false };
+    return { allowed: false, remaining: 0, resetIn };
   }
 
   entry.count++;
@@ -69,7 +62,6 @@ function checkRateLimit(ip: string): { allowed: boolean; remaining: number; rese
     allowed: true,
     remaining: MAX_REQUESTS_PER_WINDOW - entry.count,
     resetIn: entry.resetAt - now,
-    skipped: false,
   };
 }
 
@@ -99,11 +91,7 @@ function parseExplanationResponse(content: string): ExplanationResponse {
   return parsed as ExplanationResponse;
 }
 
-// =============================================================================
-// POST /api/ai/explain - Generate term explanation in 3 languages
-// =============================================================================
-export async function POST(request: NextRequest) {
-  // Fail fast if API key is missing
+export async function POST(request: Request) {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
     console.error('[ai/explain] GROQ_API_KEY not configured');
@@ -113,9 +101,15 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Rate limiting
-  const clientIp = getClientIp(request) ?? 'unknown';
-  const rateLimit = checkRateLimit(clientIp);
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json(
+      { error: 'Authentication required', code: 'UNAUTHORIZED' },
+      { status: 401 }
+    );
+  }
+
+  const rateLimit = checkRateLimit(user.id);
 
   if (!rateLimit.allowed) {
     const resetMinutes = Math.ceil(rateLimit.resetIn / 60000);
