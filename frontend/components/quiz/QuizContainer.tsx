@@ -398,7 +398,7 @@ export function QuizContainer({
 
         <div className="space-y-4 text-gray-700 dark:text-gray-300">
           <div className="flex gap-3">
-            <FileText className="w-5 h-5 text-blue-500 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+            <FileText className="w-5 h-5 text-blue-500 dark:text-blue-400 flex-shrink-0 mt-0.5" aria-hidden="true"/>
             <div>
               <p className="font-medium">{tRules('general.title')}</p>
               <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -408,7 +408,7 @@ export function QuizContainer({
           </div>
 
           <div className="flex gap-3">
-            <Ban className="w-5 h-5 text-red-500 dark:text-red-400 flex-shrink-0 mt-0.5" />
+            <Ban className="w-5 h-5 text-red-500 dark:text-red-400 flex-shrink-0 mt-0.5" aria-hidden="true"/>
             <div>
               <p className="font-medium">{tRules('forbidden.title')}</p>
               <ul className="text-sm text-gray-600 dark:text-gray-400 list-disc list-inside space-y-1">
@@ -421,7 +421,7 @@ export function QuizContainer({
           </div>
 
           <div className="flex gap-3">
-            <AlertTriangle className="w-5 h-5 text-amber-500 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+            <AlertTriangle className="w-5 h-5 text-amber-500 dark:text-amber-400 flex-shrink-0 mt-0.5" aria-hidden="true"/>
             <div>
               <p className="font-medium">{tRules('control.title')}</p>
               <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -430,7 +430,7 @@ export function QuizContainer({
             </div>
           </div>
           <div className="flex gap-3">
-            <Clock className="w-5 h-5 text-blue-500 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+            <Clock className="w-5 h-5 text-blue-500 dark:text-blue-400 flex-shrink-0 mt-0.5" aria-hidden="true"/>
             <div>
               <p className="font-medium">{tRules('time.title')}</p>
               <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -492,7 +492,7 @@ export function QuizContainer({
             className="w-4 h-4"
             fill="none"
             stroke="currentColor"
-            viewBox="0 0 24 24"
+            viewBox="0 0 24 24" aria-hidden="true"
           >
             <path
               strokeLinecap="round"
@@ -501,7 +501,7 @@ export function QuizContainer({
               d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
             />
           </svg>
-          Exit Quiz
+          {tExit('button')}
         </Button>
       </div>
       <QuizProgress

@@ -178,7 +178,8 @@
       "title": "Exit Quiz?",
       "message": "Your progress will not be saved.",
       "confirm": "Exit",
-      "cancel": "Continue"
+      "cancel": "Continue",
+      "button": "Exit Quiz"
     },
     "antiCheat": {
       "copy": "Copying is not allowed during the quiz",

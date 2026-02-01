@@ -178,7 +178,8 @@
       "title": "Wyjść z Quizu?",
       "message": "Twój postęp nie zostanie zapisany.",
       "confirm": "Wyjdź",
-      "cancel": "Kontynuuj"
+      "cancel": "Kontynuuj",
+      "button": "Wyjdź z Quizu"
     },
     "antiCheat": {
       "copy": "Kopiowanie jest zabronione podczas quizu",

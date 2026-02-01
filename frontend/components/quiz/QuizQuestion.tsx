@@ -69,12 +69,12 @@ export function QuizQuestion({
               <span className="flex-1 text-base">{answer.answerText}</span>
               {showCorrect && (
                 <span className="text-green-600 dark:text-green-400 text-sm font-medium">
-                  <Check className="w-4 h-4 inline" /> {t('correct')}
+                  <Check className="w-4 h-4 inline" aria-hidden="true"/> {t('correct')}
                 </span>
               )}
               {showIncorrect && (
                 <span className="text-red-600 dark:text-red-400 text-sm font-medium">
-                 <X className="w-4 h-4 inline" /> {t('incorrect')}
+                 <X className="w-4 h-4 inline" aria-hidden="true"/> {t('incorrect')}
                 </span>
               )}
             </label>
@@ -102,7 +102,7 @@ export function QuizQuestion({
           )}
         >
           <div className="flex items-start gap-3">
-            <Lightbulb className="w-6 h-6 text-amber-500 flex-shrink-0" />
+            <Lightbulb className="w-6 h-6 text-amber-500 flex-shrink-0" aria-hidden="true" />
             <div className="flex-1">
               <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">
                 {t('recommendation.title')}

@@ -111,8 +111,7 @@ export function CountdownTimer({
         <p className="text-xs mt-2 font-medium">
           {percentage <= 10 ? (
             <>
-              <AlertTriangle className="w-4 h-4 inline text-amber-500" />{' '}
-              {t('almostDone')}
+              <AlertTriangle className="w-4 h-4 inline text-amber-500" aria-hidden="true" /> {t('almostDone')}
             </>
           ) : (
             <>

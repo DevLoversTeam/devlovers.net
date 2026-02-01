@@ -124,7 +124,7 @@ export function QuizResult({
 {violationsCount >= 3 && (
         <div className="p-4 rounded-xl bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800">
           <p className="text-center text-orange-800 dark:text-orange-200 font-medium">
-            <AlertTriangle className="w-4 h-4 inline" /> {t('violations', { count: violationsCount })}
+            <AlertTriangle className="w-4 h-4 inline" aria-hidden="true"/> {t('violations', { count: violationsCount })}
           </p>
         </div>
       )}
