@@ -44,15 +44,18 @@ const QUIZ_METADATA = {
   translations: {
     uk: {
       title: 'Основи JavaScript',
-      description: 'Перевірте свої знання базових концепцій JavaScript: змінні, типи даних, функції, асинхронність, прототипи та ES6+ можливості.',
+      description:
+        'Перевірте свої знання базових концепцій JavaScript: змінні, типи даних, функції, асинхронність, прототипи та ES6+ можливості.',
     },
     en: {
       title: 'JavaScript Fundamentals',
-      description: 'Test your knowledge of JavaScript basics: variables, data types, functions, asynchronicity, prototypes and ES6+ features.',
+      description:
+        'Test your knowledge of JavaScript basics: variables, data types, functions, asynchronicity, prototypes and ES6+ features.',
     },
     pl: {
       title: 'Podstawy JavaScript',
-      description: 'Sprawdź swoją wiedzę o podstawach JavaScript: zmienne, typy danych, funkcje, asynchroniczność, prototypy i funkcje ES6+.',
+      description:
+        'Sprawdź swoją wiedzę o podstawach JavaScript: zmienne, typy danych, funkcje, asynchroniczność, prototypy i funkcje ES6+.',
     },
   },
 };
@@ -62,7 +65,11 @@ function createExplanation(text: string) {
 }
 
 async function loadQuestions(partNumber: number): Promise<QuestionData[]> {
-  const partPath = join(process.cwd(), 'data', `javascript-quiz-part${partNumber}.json`);
+  const partPath = join(
+    process.cwd(),
+    'data',
+    `javascript-quiz-part${partNumber}.json`
+  );
   const partData: QuizPartData = JSON.parse(readFileSync(partPath, 'utf-8'));
   return partData.questions;
 }
@@ -70,7 +77,6 @@ async function loadQuestions(partNumber: number): Promise<QuestionData[]> {
 async function ensureQuizExists(): Promise<string> {
   console.log('Ensuring quiz exists...');
 
-  // Find category by slug
   const [category] = await db
     .select()
     .from(categories)
@@ -78,10 +84,11 @@ async function ensureQuizExists(): Promise<string> {
     .limit(1);
 
   if (!category) {
-    throw new Error(`Category "${CATEGORY_SLUG}" not found. Run seed:categories first.`);
+    throw new Error(
+      `Category "${CATEGORY_SLUG}" not found. Run seed:categories first.`
+    );
   }
 
-  // Clean up old quiz by slug
   const existing = await db.query.quizzes.findFirst({
     where: eq(quizzes.slug, QUIZ_METADATA.slug),
   });
@@ -90,19 +97,26 @@ async function ensureQuizExists(): Promise<string> {
       where: eq(quizAttempts.quizId, existing.id),
     });
     if (existingAttempt) {
-      throw new Error(`Quiz ${QUIZ_METADATA.slug} has existing attempts. Aborting to avoid data loss.`);
+      throw new Error(
+        `Quiz ${QUIZ_METADATA.slug} has existing attempts. Aborting to avoid data loss.`
+      );
     }
 
     await db.delete(quizQuestions).where(eq(quizQuestions.quizId, existing.id));
-    await db.delete(quizTranslations).where(eq(quizTranslations.quizId, existing.id));
-    await db.update(quizzes).set({
-      categoryId: category.id,
-      slug: QUIZ_METADATA.slug,
-      displayOrder: 1,
-      questionsCount: QUIZ_METADATA.questionsCount,
-      timeLimitSeconds: QUIZ_METADATA.timeLimitSeconds,
-      isActive: true,
-    }).where(eq(quizzes.id, existing.id));
+    await db
+      .delete(quizTranslations)
+      .where(eq(quizTranslations.quizId, existing.id));
+    await db
+      .update(quizzes)
+      .set({
+        categoryId: category.id,
+        slug: QUIZ_METADATA.slug,
+        displayOrder: 1,
+        questionsCount: QUIZ_METADATA.questionsCount,
+        timeLimitSeconds: QUIZ_METADATA.timeLimitSeconds,
+        isActive: true,
+      })
+      .where(eq(quizzes.id, existing.id));
 
     const quizId = existing.id;
     for (const locale of LOCALES) {
@@ -117,14 +131,17 @@ async function ensureQuizExists(): Promise<string> {
     return quizId;
   }
 
-  const [quiz] = await db.insert(quizzes).values({
-    categoryId: category.id,
-    slug: QUIZ_METADATA.slug,
-    displayOrder: 1,
-    questionsCount: QUIZ_METADATA.questionsCount,
-    timeLimitSeconds: QUIZ_METADATA.timeLimitSeconds,
-    isActive: true,
-  }).returning();
+  const [quiz] = await db
+    .insert(quizzes)
+    .values({
+      categoryId: category.id,
+      slug: QUIZ_METADATA.slug,
+      displayOrder: 1,
+      questionsCount: QUIZ_METADATA.questionsCount,
+      timeLimitSeconds: QUIZ_METADATA.timeLimitSeconds,
+      isActive: true,
+    })
+    .returning();
 
   for (const locale of LOCALES) {
     await db.insert(quizTranslations).values({
@@ -138,15 +155,24 @@ async function ensureQuizExists(): Promise<string> {
   return quiz.id;
 }
 
-async function seedQuestions(questions: QuestionData[], quizId: string, partNumber: number) {
-  console.log(`Seeding ${questions.length} questions from part ${partNumber}...`);
+async function seedQuestions(
+  questions: QuestionData[],
+  quizId: string,
+  partNumber: number
+) {
+  console.log(
+    `Seeding ${questions.length} questions from part ${partNumber}...`
+  );
 
   for (const question of questions) {
-    const [q] = await db.insert(quizQuestions).values({
-      quizId,
-      displayOrder: question.order,
-      difficulty: question.difficulty,
-    }).returning();
+    const [q] = await db
+      .insert(quizQuestions)
+      .values({
+        quizId,
+        displayOrder: question.order,
+        difficulty: question.difficulty,
+      })
+      .returning();
 
     for (const locale of LOCALES) {
       await db.insert(quizQuestionContent).values({
@@ -159,12 +185,15 @@ async function seedQuestions(questions: QuestionData[], quizId: string, partNumb
 
     for (let i = 0; i < question.answers.length; i++) {
       const answer = question.answers[i];
-      
-      const [a] = await db.insert(quizAnswers).values({
-        quizQuestionId: q.id,
-        displayOrder: i + 1,
-        isCorrect: answer.correct,
-      }).returning();
+
+      const [a] = await db
+        .insert(quizAnswers)
+        .values({
+          quizQuestionId: q.id,
+          displayOrder: i + 1,
+          isCorrect: answer.correct,
+        })
+        .returning();
 
       for (const locale of LOCALES) {
         await db.insert(quizAnswerTranslations).values({
@@ -185,7 +214,9 @@ async function seedQuizFromJson() {
 
   if (!partArg) {
     console.error('Error: Please specify which part to upload');
-    console.log('Usage: npx tsx db/seeds/seed-quiz-javascript.ts <part-number>');
+    console.log(
+      'Usage: npx tsx db/seeds/seed-quiz-javascript.ts <part-number>'
+    );
     console.log('Example: npx tsx db/seeds/seed-quiz-javascript.ts 1');
     console.log('Or upload all: npx tsx db/seeds/seed-quiz-javascript.ts all');
     process.exit(1);
@@ -209,7 +240,9 @@ async function seedQuizFromJson() {
       console.log('\nAll parts seeded successfully!');
       console.log(`   - 1 quiz with ${LOCALES.length} translations`);
       console.log(`   - ${totalQuestions} questions total`);
-      console.log(`   - ${totalQuestions * 4} answers with ${LOCALES.length} translations each`);
+      console.log(
+        `   - ${totalQuestions * 4} answers with ${LOCALES.length} translations each`
+      );
     } else {
       const partNumber = parseInt(partArg, 10);
 
@@ -224,7 +257,9 @@ async function seedQuizFromJson() {
       console.log('\nPart seeded successfully!');
       console.log(`   - Quiz: ${QUIZ_METADATA.translations.en.title}`);
       console.log(`   - Part ${partNumber}: ${questions.length} questions`);
-      console.log(`   - ${questions.length * 4} answers with ${LOCALES.length} translations each`);
+      console.log(
+        `   - ${questions.length * 4} answers with ${LOCALES.length} translations each`
+      );
     }
   } catch (error) {
     console.error('\nError seeding quiz:', error);
@@ -234,7 +269,7 @@ async function seedQuizFromJson() {
 
 seedQuizFromJson()
   .then(() => process.exit(0))
-  .catch((error) => {
+  .catch(error => {
     console.error(error);
     process.exit(1);
   });

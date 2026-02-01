@@ -67,7 +67,6 @@ const SHOP_HERO_CTA_SM = cn(
   'shadow-[var(--shop-hero-btn-shadow)] hover:shadow-[var(--shop-hero-btn-shadow-hover)]'
 );
 
-/** Outline secondary action (Link) */
 const SHOP_OUTLINE_BTN = cn(
   SHOP_OUTLINE_BTN_BASE,
   SHOP_OUTLINE_BTN_INTERACTIVE,
@@ -77,7 +76,6 @@ const SHOP_OUTLINE_BTN = cn(
 function HeroCtaInner({ children }: { children: React.ReactNode }) {
   return (
     <>
-      {/* base gradient */}
       <span
         className="absolute inset-0"
         style={shopCtaGradient(
@@ -86,7 +84,6 @@ function HeroCtaInner({ children }: { children: React.ReactNode }) {
         )}
         aria-hidden="true"
       />
-      {/* hover wave overlay */}
       <span
         className={SHOP_CTA_WAVE}
         style={shopCtaGradient(
@@ -95,7 +92,6 @@ function HeroCtaInner({ children }: { children: React.ReactNode }) {
         )}
         aria-hidden="true"
       />
-      {/* glass inset */}
       <span className={SHOP_CTA_INSET} aria-hidden="true" />
 
       <span className="relative z-10">{children}</span>
@@ -210,7 +206,6 @@ export default async function CheckoutSuccessPage({
     >
       <ClearCartOnMount enabled={clearCart} />
 
-      {/* auto-refresh while webhook finalizes */}
       <OrderStatusAutoRefresh paymentStatus={order.paymentStatus} />
 
       <section className="rounded-lg border border-border bg-card p-8">

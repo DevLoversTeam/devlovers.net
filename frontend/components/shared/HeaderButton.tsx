@@ -15,10 +15,6 @@ interface HeaderButtonProps {
 
   label?: string;
 
-  /**
-   * Optional badge rendered OUTSIDE the overflow-hidden button/link,
-   * so it will not be clipped by the shine/gradient container.
-   */
   badge?: React.ReactNode;
   badgeClassName?: string;
   badgeAriaLabel?: string;

@@ -884,7 +884,6 @@ async function seedReactQuiz() {
   const locales: Locale[] = ['uk', 'en', 'pl'];
 
   try {
-    // Find category by slug
     const [category] = await db
       .select()
       .from(categories)
