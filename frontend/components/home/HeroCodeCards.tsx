@@ -5,7 +5,7 @@ export function HeroCodeCards() {
     <>
       <CodeCard
         fileName="arrays.ts"
-        className="left-4 md:left-10 lg:left-8 xl:left-12 -top-2 md:-top-12 lg:-top-8 xl:-top-12 rotate-[-10deg]"
+        className="lg:left-16 lg:top-0"
         snippet={
           <>
             <span className="text-[var(--accent-primary)]">type</span> Arr1 = [
@@ -31,7 +31,7 @@ export function HeroCodeCards() {
 
       <CodeCard
         fileName="utils.js"
-        className="right-4 md:right-4 lg:right-8 xl:right-12 -bottom-2 md:-bottom-6 lg:-bottom-8 xl:-bottom-12 rotate-[8deg]"
+        className="lg:right-20 lg:bottom-16"
         snippet={
           <>
             <span className="text-[var(--accent-primary)]">function</span> sum(

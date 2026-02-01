@@ -1,53 +1,14 @@
 export const runtime = 'nodejs';
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import Groq from 'groq-sdk';
 import {
   createExplainPrompt,
   type ExplanationResponse,
 } from '@/lib/ai/prompts';
-import { getClientIp } from '@/lib/security/client-ip';
+import { getCurrentUser } from '@/lib/auth';
 
-// =============================================================================
-// SERVER-SIDE LOGGING (sanitized - no sensitive data exposed)
-// =============================================================================
-function logEnvironmentDiagnostics() {
-  const apiKey = process.env.GROQ_API_KEY;
-  console.log('[ENV] GROQ_API_KEY configured:', !!apiKey);
-  console.log('[ENV] NODE_ENV:', process.env.NODE_ENV);
-}
-
-function logRequestDiagnostics(request: NextRequest) {
-  console.log('[REQ] Method:', request.method);
-  console.log('[REQ] URL path:', new URL(request.url).pathname);
-}
-
-function logBodyParsingResult(success: boolean, error?: unknown) {
-  console.log('[BODY] Parse success:', success);
-  if (error) {
-    console.log('[BODY] Parse error:', error instanceof Error ? error.message : 'Unknown error');
-  }
-}
-
-function logGroqInitialization(success: boolean, error?: unknown) {
-  console.log('[GROQ] Init success:', success);
-  if (error) {
-    const err = error as Error & { status?: number; code?: string };
-    console.log('[GROQ] Init error:', err.name, err.message);
-  }
-}
-
-function logGroqApiCall(phase: 'start' | 'success' | 'error', details?: unknown) {
-  if (phase === 'start') {
-    console.log('[GROQ] Starting API call');
-  } else if (phase === 'success') {
-    console.log('[GROQ] API call successful');
-  } else if (phase === 'error') {
-    const err = details as Error & { status?: number; code?: string };
-    console.log('[GROQ] API error:', err?.name, err?.message);
-  }
-}
-// =============================================================================
 
 const rateLimiter = new Map<string, { count: number; resetAt: number }>();
 const MAX_REQUESTS_PER_WINDOW = 10;
@@ -61,9 +22,9 @@ function cleanupRateLimiter() {
   if (now - lastCleanup < CLEANUP_INTERVAL_MS) return;
 
   lastCleanup = now;
-  for (const [ip, entry] of rateLimiter.entries()) {
+  for (const [userId, entry] of rateLimiter.entries()) {
     if (now > entry.resetAt) {
-      rateLimiter.delete(ip);
+      rateLimiter.delete(userId);
     }
   }
 }
@@ -80,25 +41,20 @@ const requestSchema = z.object({
 });
 
 
-function checkRateLimit(ip: string): { allowed: boolean; remaining: number; resetIn: number; skipped: boolean } {
-  // Bypass rate limiting for unknown IPs (serverless safety)
-  if (ip === 'unknown') {
-    return { allowed: true, remaining: MAX_REQUESTS_PER_WINDOW, resetIn: RATE_LIMIT_WINDOW_MS, skipped: true };
-  }
-
+function checkRateLimit(userId: string): { allowed: boolean; remaining: number; resetIn: number } {
   cleanupRateLimiter();
 
   const now = Date.now();
-  const entry = rateLimiter.get(ip);
+  const entry = rateLimiter.get(userId);
 
   if (!entry || now > entry.resetAt) {
-    rateLimiter.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
-    return { allowed: true, remaining: MAX_REQUESTS_PER_WINDOW - 1, resetIn: RATE_LIMIT_WINDOW_MS, skipped: false };
+    rateLimiter.set(userId, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return { allowed: true, remaining: MAX_REQUESTS_PER_WINDOW - 1, resetIn: RATE_LIMIT_WINDOW_MS };
   }
 
   if (entry.count >= MAX_REQUESTS_PER_WINDOW) {
     const resetIn = entry.resetAt - now;
-    return { allowed: false, remaining: 0, resetIn, skipped: false };
+    return { allowed: false, remaining: 0, resetIn };
   }
 
   entry.count++;
@@ -106,7 +62,6 @@ function checkRateLimit(ip: string): { allowed: boolean; remaining: number; rese
     allowed: true,
     remaining: MAX_REQUESTS_PER_WINDOW - entry.count,
     resetIn: entry.resetAt - now,
-    skipped: false,
   };
 }
 
@@ -136,24 +91,25 @@ function parseExplanationResponse(content: string): ExplanationResponse {
   return parsed as ExplanationResponse;
 }
 
-export async function POST(request: NextRequest) {
-  logEnvironmentDiagnostics();
-  logRequestDiagnostics(request);
-
+export async function POST(request: Request) {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
-    console.error('[FATAL] GROQ_API_KEY is not configured. Check environment variables.');
+    console.error('[ai/explain] GROQ_API_KEY not configured');
     return NextResponse.json(
-      {
-        error: 'AI service not configured',
-        code: 'SERVICE_UNAVAILABLE',
-      },
+      { error: 'AI service not configured', code: 'SERVICE_UNAVAILABLE' },
       { status: 503 }
     );
   }
 
-  const clientIp = getClientIp(request) ?? 'unknown';
-  const rateLimit = checkRateLimit(clientIp);
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json(
+      { error: 'Authentication required', code: 'UNAUTHORIZED' },
+      { status: 401 }
+    );
+  }
+
+  const rateLimit = checkRateLimit(user.id);
 
   if (!rateLimit.allowed) {
     const resetMinutes = Math.ceil(rateLimit.resetIn / 60000);
@@ -174,21 +130,11 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Safe JSON body parsing for Netlify
+  // Parse and validate request body
   let body: unknown;
   try {
-    const text = await request.text();
-    if (!text || text.trim() === '') {
-      console.log('[BODY] Empty request body received');
-      return NextResponse.json(
-        { error: 'Request body is empty', code: 'EMPTY_BODY' },
-        { status: 400 }
-      );
-    }
-    body = JSON.parse(text);
-    logBodyParsingResult(true);
-  } catch (parseError) {
-    logBodyParsingResult(false, parseError);
+    body = await request.json();
+  } catch {
     return NextResponse.json(
       { error: 'Invalid JSON body', code: 'INVALID_JSON' },
       { status: 400 }
@@ -209,65 +155,28 @@ export async function POST(request: NextRequest) {
 
   const { term, context } = validationResult.data;
 
-  // Dynamic import for Netlify compatibility
-  let Groq: typeof import('groq-sdk').default;
-  try {
-    const groqModule = await import('groq-sdk');
-    Groq = groqModule.default;
-  } catch (importError) {
-    console.error('[SDK_IMPORT_ERROR] Failed to import groq-sdk:',
-      importError instanceof Error ? importError.message : String(importError)
-    );
-    return NextResponse.json(
-      {
-        error: 'Failed to load AI client',
-        code: 'SDK_IMPORT_ERROR',
-      },
-      { status: 503 }
-    );
-  }
-
-  let groq: InstanceType<typeof Groq>;
-  try {
-    groq = new Groq({ apiKey });
-    logGroqInitialization(true);
-  } catch (initError) {
-    logGroqInitialization(false, initError);
-    console.error('[SDK_INIT_ERROR] Failed to initialize Groq client:',
-      initError instanceof Error ? initError.message : String(initError)
-    );
-    return NextResponse.json(
-      {
-        error: 'Failed to initialize AI client',
-        code: 'SDK_INIT_ERROR',
-      },
-      { status: 503 }
-    );
-  }
+  // Initialize Groq client
+  const groq = new Groq({ apiKey });
 
   try {
     const prompt = createExplainPrompt({ term, context });
 
-    logGroqApiCall('start');
     const chatCompletion = await groq.chat.completions.create({
-      messages: [
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-      model: 'llama3-70b-8192',
+      messages: [{ role: 'user', content: prompt }],
+      model: 'llama-3.3-70b-versatile',
       temperature: 0.7,
       max_tokens: 1500,
       top_p: 1,
     });
-    logGroqApiCall('success', chatCompletion);
 
     const content = chatCompletion.choices[0]?.message?.content;
 
     if (!content) {
-      console.error('[ERROR] No content in Groq response');
-      throw new Error('No content in response');
+      console.error('[ai/explain] Empty response from Groq');
+      return NextResponse.json(
+        { error: 'AI returned empty response', code: 'EMPTY_RESPONSE' },
+        { status: 502 }
+      );
     }
 
     const explanation = parseExplanationResponse(content);
@@ -281,64 +190,87 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    logGroqApiCall('error', error);
-    console.error('[GROQ_ERROR]', error instanceof Error ? error.message : 'Unknown error');
-
-    if (error instanceof Error) {
-      if (
-        error.message.includes('401') ||
-        error.message.includes('authentication') ||
-        error.message.includes('Invalid API Key')
-      ) {
-        console.error('[AUTH_ERROR] API key authentication failed');
-        return NextResponse.json(
-          {
-            error: 'AI service authentication failed',
-            code: 'AUTH_ERROR',
-          },
-          { status: 503 }
-        );
-      }
-      if (
-        error.message.includes('429') ||
-        error.message.includes('rate limit')
-      ) {
-        return NextResponse.json(
-          { error: 'AI service rate limited', code: 'API_RATE_LIMITED' },
-          { status: 503 }
-        );
-      }
-      if (error.message.includes('model')) {
-        return NextResponse.json(
-          {
-            error: 'AI model not available',
-            code: 'MODEL_ERROR',
-          },
-          { status: 503 }
-        );
-      }
-    }
-
-    return NextResponse.json(
-      {
-        error: 'Failed to generate explanation',
-        code: 'AI_ERROR',
-      },
-      { status: 500 }
-    );
+    return handleGroqError(error);
   }
 }
 
+// =============================================================================
+// GET /api/ai/explain - Health check
+// =============================================================================
 export async function GET() {
+  const hasApiKey = !!process.env.GROQ_API_KEY;
+
+  if (!hasApiKey) {
+    return NextResponse.json(
+      { status: 'error', service: 'ai-explain', message: 'API key not configured' },
+      { status: 503 }
+    );
+  }
+
   return NextResponse.json(
-    {
-      status: 'ok',
-      service: 'ai-explain',
-      env: {
-        hasGroqKey: !!process.env.GROQ_API_KEY,
-        nodeEnv: process.env.NODE_ENV,
-      },
-    },
+    { status: 'ok', service: 'ai-explain' },
     { status: 200 }
+  );
+}
+
+// =============================================================================
+// Error Handling
+// =============================================================================
+function handleGroqError(error: unknown): NextResponse {
+  // Handle Groq SDK specific errors
+  if (error instanceof Groq.APIError) {
+    console.error(`[ai/explain] Groq API error: ${error.status} ${error.message}`);
+
+    if (error.status === 401) {
+      return NextResponse.json(
+        { error: 'AI service authentication failed', code: 'AUTH_ERROR' },
+        { status: 503 }
+      );
+    }
+
+    if (error.status === 429) {
+      return NextResponse.json(
+        { error: 'AI service rate limited', code: 'API_RATE_LIMITED' },
+        { status: 503 }
+      );
+    }
+
+    if (error.status === 404) {
+      return NextResponse.json(
+        { error: 'AI model not available', code: 'MODEL_ERROR' },
+        { status: 503 }
+      );
+    }
+
+    // Other API errors (500, 503, etc.)
+    return NextResponse.json(
+      { error: 'AI service temporarily unavailable', code: 'API_ERROR' },
+      { status: 503 }
+    );
+  }
+
+  // Handle JSON parse errors from response parsing
+  if (error instanceof SyntaxError) {
+    console.error('[ai/explain] Failed to parse AI response as JSON');
+    return NextResponse.json(
+      { error: 'AI returned invalid format', code: 'PARSE_ERROR' },
+      { status: 502 }
+    );
+  }
+
+  // Handle response structure validation errors
+  if (error instanceof Error && error.message === 'Invalid response structure') {
+    console.error('[ai/explain] AI response missing required fields');
+    return NextResponse.json(
+      { error: 'AI returned incomplete response', code: 'INVALID_STRUCTURE' },
+      { status: 502 }
+    );
+  }
+
+  // Unknown errors
+  console.error('[ai/explain] Unexpected error:', error);
+  return NextResponse.json(
+    { error: 'Failed to generate explanation', code: 'AI_ERROR' },
+    { status: 500 }
   );
 }

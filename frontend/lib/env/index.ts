@@ -20,6 +20,8 @@ export const serverEnvSchema = z.object({
   STRIPE_MODE: z.enum(['test', 'live']).optional(),
   PAYMENTS_ENABLED: z.enum(['true', 'false']).optional().default('false'),
   NEXT_PUBLIC_SITE_URL: z.string().url().optional(),
+  UPSTASH_REDIS_REST_URL: z.string().url().optional(),
+  UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
 });
 
 export const clientEnvSchema = z.object({
