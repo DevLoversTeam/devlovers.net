@@ -28,13 +28,18 @@ export async function getQaCache<T>(key: string) {
   const redis = getRedisClient();
   if (!redis) return null;
 
-  const cached = await redis.get<string>(key);
+  const cached = await redis.get<T | string>(key);
   if (!cached) return null;
+
+  if (typeof cached !== 'string') {
+    return cached as T;
+  }
 
   try {
     return JSON.parse(cached) as T;
   } catch (error) {
     console.warn('[qa-cache] Failed to parse cached value', error);
+    await redis.del(key);
     return null;
   }
 }
@@ -43,7 +48,7 @@ export async function setQaCache<T>(key: string, value: T) {
   const redis = getRedisClient();
   if (!redis) return;
 
-  await redis.set(key, JSON.stringify(value), { ex: QA_CACHE_TTL_SECONDS });
+  await redis.set(key, value, { ex: QA_CACHE_TTL_SECONDS });
 }
 
 export async function invalidateQaCacheByCategory(category: string) {
