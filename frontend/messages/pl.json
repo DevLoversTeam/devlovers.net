@@ -216,7 +216,15 @@
     "articlesBy": "Artykuły autora: {name}",
     "articlesPublished": "Opublikowano artykułów: {count}",
     "recommendedPosts": "Polecane wpisy",
-    "goBack": "Wróć"
+    "goBack": "Wróć",
+    "pagination": {
+      "label": "Paginacja",
+      "previous": "Wstecz",
+      "next": "Dalej",
+      "previousPage": "Poprzednia strona",
+      "nextPage": "Następna strona",
+      "page": "Strona {page}"
+    }
   },
   "footer": {
     "builtWith": "Zbudowane z",
@@ -539,7 +547,9 @@
         "items": "Produkty",
         "date": "Data",
         "status": "Status",
-        "total": "Razem"
+        "total": "Razem",
+        "openOrder": "Otwórz zamówienie {id}",
+        "orderId": "ID zamówienia"
       },
       "orderHeadline": {
         "incomplete": "Zamówienie {id} (niekompletne)",
@@ -578,7 +588,168 @@
     }
   },
   "about": {
-
+    "metaTitle": "O nas | DevLovers",
+    "metaDescription": "Dowiedz się więcej o DevLovers — platformie do przygotowań do rozmów kwalifikacyjnych",
+    "hero": {
+      "titleHighlight": "Zdebuguj swoje umiejętności",
+      "titleRest": "zanim zrobi to rekruter.",
+      "description": "Przestań zgadywać. Zamieniliśmy chaotyczny proces rozmów w uporządkowaną mapę drogową.",
+      "descriptionHighlight": "Przekształć rozproszoną wiedzę",
+      "descriptionRest": "w gotowy do produkcji zestaw umiejętności i zdobądź ofertę.",
+      "stats": {
+        "quizzesPassed": "Ukończonych quizów",
+        "githubStars": "Gwiazdek na GitHub",
+        "activeUsers": "Aktywnych użytkowników",
+        "linkedinFollowers": "Obserwujących na LinkedIn",
+        "quizzes": "Quizów",
+        "stars": "Gwiazdek",
+        "users": "Użytkowników",
+        "followers": "Obserwujących"
+      }
+    },
+    "topics": {
+      "pretitle": "/ Ekosystem",
+      "titleStart": "Opanuj swój",
+      "titleHighlight": "cały stack",
+      "description": "Od frameworków frontendowych po logikę backendową. Obejmujemy kluczowe technologie 2026 roku.",
+      "questions": "Pytań"
+    },
+    "features": {
+      "title": "Funkcje zaprojektowane, aby",
+      "titleHighlight": "uczynić cię nie do zatrzymania",
+      "subtitle": "Przestań szukać rozproszonych informacji. Zebraliśmy idealny zestaw narzędzi do zdawania rozmów technicznych.",
+      "qa": {
+        "title": "Q&A",
+        "description": "Bez lania wody. Ogromna biblioteka prawdziwych pytań z rozmów z precyzyjnymi odpowiedziami zatwierdzonymi przez rekruterów."
+      },
+      "quiz": {
+        "title": "Quizy",
+        "description": "Zweryfikuj swoją pewność. Dynamiczne interaktywne quizy, które wykryją twoje słabe punkty przed rekruterem."
+      },
+      "leaderboard": {
+        "title": "Ranking",
+        "description": "Zgamifikuj przygotowania. Zdobywaj punkty za każdą poprawną odpowiedź, utrzymuj passę i rywalizuj z innymi."
+      },
+      "blog": {
+        "title": "Blog",
+        "description": "Bądź na bieżąco z artykułami o trendach technologicznych, tutorialami programistycznymi i spostrzeżeniami z branży."
+      },
+      "profile": {
+        "title": "Analityka",
+        "description": "Nie działaj po omacku. Wizualizuj swój postęp dzięki szczegółowym wykresom i zobacz, które tematy opanowałeś."
+      },
+      "shop": {
+        "title": "Sklep",
+        "description": "Ulepsz swój setup. Wysokiej jakości odzież dla programistów, akcesoria biurowe i zasoby cyfrowe."
+      },
+      "bubbles": {
+        "qa": {
+          "languages": { "label": "3 języki", "desc": "EN, UK i PL" },
+          "aiHelper": { "label": "Pomocnik AI", "desc": "Zaznacz tekst do wyjaśnienia" },
+          "smartCache": { "label": "Inteligentny cache", "desc": "Podświetla nauczone terminy" },
+          "techFilter": { "label": "Filtr tech", "desc": "React, Git, JS i więcej" }
+        },
+        "quiz": {
+          "smartTimer": { "label": "Inteligentny timer", "desc": "Ścigaj się z czasem" },
+          "antiCheat": { "label": "Anti-Cheat", "desc": "Wykrywanie utraty fokusa" },
+          "autoSync": { "label": "Auto-synchronizacja", "desc": "Zapisuje postęp po logowaniu" },
+          "tracking": { "label": "Śledzenie", "desc": "Najlepsze wyniki i próby" }
+        },
+        "leaderboard": {
+          "podium": { "label": "Podium", "desc": "Ekskluzywny spotlight top 3" },
+          "globalRank": { "label": "Globalny ranking", "desc": "Rywalizuj na całym świecie" },
+          "xpSystem": { "label": "System XP", "desc": "Punkty za każdą odpowiedź" },
+          "liveFeed": { "label": "Live feed", "desc": "Aktualizacje rang w czasie rzeczywistym" }
+        },
+        "profile": {
+          "statsHub": { "label": "Centrum statystyk", "desc": "Wizualizuj swój rozwój" },
+          "history": { "label": "Historia", "desc": "Śledź serie nauki" },
+          "identity": { "label": "Tożsamość", "desc": "Zarządzaj rolą i profilem" },
+          "reminders": { "label": "Przypomnienia", "desc": "Dokończ niedokończone quizy" }
+        },
+        "blog": {
+          "techTrends": { "label": "Trendy tech", "desc": "Bądź o krok przed innymi" },
+          "tutorials": { "label": "Tutoriale", "desc": "Przewodniki krok po kroku" },
+          "deepDives": { "label": "Głębokie analizy", "desc": "Szczegółowy rozbiór" },
+          "community": { "label": "Społeczność", "desc": "Pisane przez developerów" }
+        },
+        "shop": {
+          "newDrops": { "label": "Nowości", "desc": "Regularne aktualizacje" },
+          "curated": { "label": "Selekcja", "desc": "Kolekcje dla developerów" },
+          "checkout": { "label": "Płatność", "desc": "Płynny proces przez Stripe" },
+          "premium": { "label": "Premium", "desc": "Wysoka jakość materiałów" }
+        }
+      }
+    },
+    "pricing": {
+      "heading": "Cennik",
+      "badge": "Bez ukrytych opłat",
+      "title": "Inwestuj w swój mózg,",
+      "titleHighlight": "nie w nasze subskrypcje.",
+      "subtitle": "Wierzymy, że wiedza powinna być dostępna. Dlatego nie sprzedajemy kursów. Ale serwery się grzeją, a kawa się kończy. Wybór należy do ciebie.",
+      "junior": {
+        "title": "Junior Engineer",
+        "description": "Dla tych, którzy chcą oferty, nie wydatków.",
+        "price": "$0",
+        "period": "/ na zawsze",
+        "features": {
+          "unlimited": "Nieograniczone pytania",
+          "fullAccess": "Pełny dostęp do quizów",
+          "noCard": "Bez karty kredytowej",
+          "noGuilt": "0% wyrzutów sumienia"
+        },
+        "noYacht": "Osobisty jacht",
+        "cta": "Rozpocznij naukę"
+      },
+      "hero": {
+        "badge": "Wysoki wpływ",
+        "title": "Open Source Hero",
+        "description": "Dla tych, którzy już dostali ofertę dzięki nam.",
+        "price": "$$$",
+        "period": "/ punkty karmy",
+        "features": {
+          "servers": "Utrzymanie serwerów przy życiu",
+          "coffee": "Kawa dla developerów",
+          "badge": "Odznaka w profilu (Big Flex)",
+          "feeling": "Ciepłe uczucie w środku"
+        },
+        "drizzle": "Naprawdę płacimy za Drizzle",
+        "cta": "Wesprzyj projekt"
+      },
+      "disclaimer": "*Żaden developer nie ucierpiał podczas tworzenia tej tabeli cenowej. Ucierpiał tylko poziom kofeiny."
+    },
+    "sponsors": {
+      "badge": "Ostatni kontrybutorzy",
+      "emptySlot": "Ty?",
+      "yourSpot": "Twoje miejsce",
+      "joinClub": "Dołącz do klubu",
+      "fundsNote": "100% środków idzie na serwery i kawę",
+      "ctaAriaLabel": "Zostań sponsorem i zajmij swoje miejsce"
+    },
+    "community": {
+      "badge": "Miłość społeczności",
+      "title": "Zatwierdzone przez",
+      "titleHighlight": "Ocalałych",
+      "subtitle": "Dołącz do tysięcy developerów, którzy przestali zgadywać i zaczęli shipować. Prawdziwe opinie od prawdziwych inżynierów.",
+      "joinDiscussion": "Dołącz do dyskusji",
+      "successStory": "Masz historię sukcesu lub propozycję funkcji?",
+      "readThreads": "Czytamy każdy wątek"
+    },
+    "arcade": {
+      "title": "DevLovers Arcade",
+      "ready": "GOTOWE",
+      "level1": "Poziom 1",
+      "level2": "Poziom 2",
+      "level3": "Poziom 3",
+      "level4": "Poziom 4",
+      "crashed": "CRASH",
+      "running": "AKTYWNY",
+      "high": "Rekord",
+      "score": "Wynik",
+      "clickToStart": "Kliknij aby zacząć",
+      "systemFailure": "Awaria systemu",
+      "retry": "Ponów"
+    }
   },
   "notFound": {
     "title": "Strona nie znaleziona",
@@ -666,14 +837,19 @@
       "showPassword": "Pokaż hasło",
       "hidePassword": "Ukryj hasło",
       "show": "Pokaż",
-      "hide": "Ukryj"
+      "hide": "Ukryj",
+      "validation": {
+        "required": "Proszę wypełnić to pole",
+        "invalidEmail": "Proszę podać prawidłowy adres email",
+        "passwordTooShort": "Hasło musi mieć minimum {minLength} znaków"
+      }
     },
     "divider": "lub"
   },
   "dashboard": {
     "metaTitle": "Panel | DevLovers",
     "metaDescription": "Śledź swój postęp i wyniki quizów.",
-    "title": "Panel",
+    "title": "Panel użytkownika",
     "subtitle": "Witaj z powrotem na swoim placu treningowym.",
     "supportLink": "Wsparcie i opinie",
     "profile": {

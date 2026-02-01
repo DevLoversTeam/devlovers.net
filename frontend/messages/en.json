@@ -216,7 +216,15 @@
     "articlesBy": "Articles by {name}",
     "articlesPublished": "{count} articles published",
     "recommendedPosts": "Recommended Posts",
-    "goBack": "Go back"
+    "goBack": "Go back",
+    "pagination": {
+      "label": "Pagination",
+      "previous": "Previous",
+      "next": "Next",
+      "previousPage": "Previous page",
+      "nextPage": "Next page",
+      "page": "Page {page}"
+    }
   },
   "footer": {
     "builtWith": "Built with",
@@ -539,7 +547,9 @@
         "items": "Items",
         "date": "Date",
         "status": "Status",
-        "total": "Total"
+        "total": "Total",
+        "openOrder": "Open order {id}",
+        "orderId": "Order ID"
       },
       "orderHeadline": {
         "incomplete": "Order {id} (incomplete)",
@@ -578,6 +588,168 @@
     }
   },
   "about": {
+    "metaTitle": "About | DevLovers",
+    "metaDescription": "Learn about DevLovers - the platform for technical interview preparation",
+    "hero": {
+      "titleHighlight": "Debug your skills",
+      "titleRest": "before the recruiter does.",
+      "description": "Stop guessing. We decoded the chaotic interview process into a structured roadmap.",
+      "descriptionHighlight": "Compile your scattered knowledge",
+      "descriptionRest": "into a production-ready skillset and land that offer.",
+      "stats": {
+        "quizzesPassed": "Quizzes Passed",
+        "githubStars": "GitHub Stars",
+        "activeUsers": "Active Users",
+        "linkedinFollowers": "LinkedIn Followers",
+        "quizzes": "Quizzes",
+        "stars": "Stars",
+        "users": "Users",
+        "followers": "Followers"
+      }
+    },
+    "topics": {
+      "pretitle": "/ The Ecosystem",
+      "titleStart": "Master your",
+      "titleHighlight": "entire stack",
+      "description": "From frontend frameworks to backend logic. We cover the key technologies for 2026.",
+      "questions": "Questions"
+    },
+    "features": {
+      "title": "Features designed to",
+      "titleHighlight": "make you unstoppable",
+      "subtitle": "Stop searching for scattered info. We curated the ultimate toolkit to crack technical interviews.",
+      "qa": {
+        "title": "Q&A",
+        "description": "No fluff. Just a massive library of real interview questions with precise, recruiter-approved answers."
+      },
+      "quiz": {
+        "title": "Quizzes",
+        "description": "Validate your confidence. Fast-paced interactive quizzes to spot your weak points before the interviewer does."
+      },
+      "leaderboard": {
+        "title": "Leaderboard",
+        "description": "Gamify your prep. Earn points for every correct answer, keep your streak alive, and rank up against others."
+      },
+      "blog": {
+        "title": "Blog",
+        "description": "Stay updated with detailed articles on tech trends, coding tutorials, and industry insights to keep you ahead of the curve."
+      },
+      "profile": {
+        "title": "Analytics",
+        "description": "Don't fly blind. Visualize your progress with detailed charts to see exactly which topics you've mastered."
+      },
+      "shop": {
+        "title": "Shop",
+        "description": "Upgrade your setup. High-quality developer apparel, desk accessories, and digital assets available for purchase."
+      },
+      "bubbles": {
+        "qa": {
+          "languages": { "label": "3 Languages", "desc": "EN, UK & PL supported" },
+          "aiHelper": { "label": "AI Helper", "desc": "Select text for AI explain" },
+          "smartCache": { "label": "Smart Cache", "desc": "Highlights learned terms" },
+          "techFilter": { "label": "Tech Filter", "desc": "React, Git, JS & more" }
+        },
+        "quiz": {
+          "smartTimer": { "label": "Smart Timer", "desc": "Race against the total time" },
+          "antiCheat": { "label": "Anti-Cheat", "desc": "Focus loss detection" },
+          "autoSync": { "label": "Auto Sync", "desc": "Saves progress post-login" },
+          "tracking": { "label": "Tracking", "desc": "Best scores & attempts" }
+        },
+        "leaderboard": {
+          "podium": { "label": "The Podium", "desc": "Top 3 exclusive spotlight" },
+          "globalRank": { "label": "Global Rank", "desc": "Compete worldwide" },
+          "xpSystem": { "label": "XP System", "desc": "Points for every answer" },
+          "liveFeed": { "label": "Live Feed", "desc": "Real-time rank updates" }
+        },
+        "profile": {
+          "statsHub": { "label": "Stats Hub", "desc": "Visualize your growth" },
+          "history": { "label": "History", "desc": "Track learning streaks" },
+          "identity": { "label": "Identity", "desc": "Manage role & profile" },
+          "reminders": { "label": "Reminders", "desc": "Finish incomplete quizzes" }
+        },
+        "blog": {
+          "techTrends": { "label": "Tech Trends", "desc": "Stay ahead of the curve" },
+          "tutorials": { "label": "Tutorials", "desc": "Step-by-step guides" },
+          "deepDives": { "label": "Deep Dives", "desc": "In-depth analysis" },
+          "community": { "label": "Community", "desc": "Written by developers" }
+        },
+        "shop": {
+          "newDrops": { "label": "New Drops", "desc": "Regular fresh content" },
+          "curated": { "label": "Curated", "desc": "Dev-focused collections" },
+          "checkout": { "label": "Checkout", "desc": "Seamless Stripe flow" },
+          "premium": { "label": "Premium", "desc": "High-quality material" }
+        }
+      }
+    },
+    "pricing": {
+      "heading": "Pricing",
+      "badge": "No Hidden Fees",
+      "title": "Invest in your brain,",
+      "titleHighlight": "not our subscriptions.",
+      "subtitle": "We believe knowledge should be accessible. So we don't sell courses. But servers heat up and coffee runs out. The choice is yours.",
+      "junior": {
+        "title": "Junior Engineer",
+        "description": "For those who want an offer, not expenses.",
+        "price": "$0",
+        "period": "/ forever",
+        "features": {
+          "unlimited": "Unlimited Questions",
+          "fullAccess": "Full Quiz Access",
+          "noCard": "No Credit Card Required",
+          "noGuilt": "0% Guilt Trip"
+        },
+        "noYacht": "Personal Yacht",
+        "cta": "Start Learning"
+      },
+      "hero": {
+        "badge": "High Impact",
+        "title": "Open Source Hero",
+        "description": "For those who already landed an offer thanks to us.",
+        "price": "$$$",
+        "period": "/ karma points",
+        "features": {
+          "servers": "Keep Servers Alive",
+          "coffee": "Buy Coffee for Developers",
+          "badge": "Profile Badge (Big Flex)",
+          "feeling": "Warm Fuzzy Feeling"
+        },
+        "drizzle": "We actually pay for Drizzle",
+        "cta": "Support the Project"
+      },
+      "disclaimer": "*No developers were harmed in the making of this pricing table. Only caffeine levels were impacted."
+    },
+    "sponsors": {
+      "badge": "Latest Contributors",
+      "emptySlot": "You?",
+      "yourSpot": "Your Spot",
+      "joinClub": "Join the club",
+      "fundsNote": "100% of funds go to server costs & coffee",
+      "ctaAriaLabel": "Become a sponsor to claim your spot"
+    },
+    "community": {
+      "badge": "Community Love",
+      "title": "Approved by",
+      "titleHighlight": "Survivors",
+      "subtitle": "Join thousands of developers who stopped guessing and started shipping. Real feedback from real engineers.",
+      "joinDiscussion": "Join Discussion",
+      "successStory": "Have a success story or feature request?",
+      "readThreads": "We read every single thread"
+    },
+    "arcade": {
+      "title": "DevLovers Arcade",
+      "ready": "READY",
+      "level1": "Level 1",
+      "level2": "Level 2",
+      "level3": "Level 3",
+      "level4": "Level 4",
+      "crashed": "CRASHED",
+      "running": "RUNNING",
+      "high": "High",
+      "score": "Score",
+      "clickToStart": "Click to Start",
+      "systemFailure": "System Failure",
+      "retry": "Retry"
+    }
   },
   "notFound": {
     "title": "Page Not Found",
@@ -665,7 +837,12 @@
       "showPassword": "Show password",
       "hidePassword": "Hide password",
       "show": "Show",
-      "hide": "Hide"
+      "hide": "Hide",
+      "validation": {
+        "required": "Please fill out this field",
+        "invalidEmail": "Please enter a valid email address",
+        "passwordTooShort": "Password must be at least {minLength} characters"
+      }
     },
     "divider": "or"
   },
@@ -746,7 +923,7 @@
     }
   },
   "onlineCounter": {
-    "one": "you are one step closer to the goal",
+    "one": "one step closer to the goal",
     "two": "chasing the dream",
     "upToFive": "on the way to an offer",
     "upToTen": "closer to the dream job",

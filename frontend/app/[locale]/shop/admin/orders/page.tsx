@@ -13,6 +13,12 @@ import { AdminPagination } from '@/components/shop/admin/admin-pagination';
 import { guardShopAdminPage } from '@/lib/auth/guard-shop-admin-page';
 import { CSRF_FORM_FIELD, issueCsrfToken } from '@/lib/security/csrf';
 import { parsePage } from '@/lib/pagination';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Admin Orders | DevLovers',
+  description: 'View and manage orders in the DevLovers shop catalog.',
+};
 
 export const dynamic = 'force-dynamic';
 
@@ -54,7 +60,6 @@ export default async function AdminOrdersPage({
   const page = parsePage(sp.page);
   const offset = (page - 1) * PAGE_SIZE;
 
-  // overfetch for hasNext without COUNT
   const { items: all } = await getAdminOrdersPage({
     limit: PAGE_SIZE + 1,
     offset,
@@ -140,12 +145,16 @@ export default async function AdminOrdersPage({
 
                     <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
                       <div>
-                        <dt className="text-muted-foreground">{t('table.items')}</dt>
+                        <dt className="text-muted-foreground">
+                          {t('table.items')}
+                        </dt>
                         <dd className="text-foreground">{vm.itemCount}</dd>
                       </div>
 
                       <div className="min-w-0">
-                        <dt className="text-muted-foreground">{t('table.provider')}</dt>
+                        <dt className="text-muted-foreground">
+                          {t('table.provider')}
+                        </dt>
                         <dd
                           className="truncate text-foreground"
                           title={vm.paymentProvider}
@@ -155,7 +164,9 @@ export default async function AdminOrdersPage({
                       </div>
 
                       <div className="col-span-2">
-                        <dt className="text-muted-foreground">{t('table.orderId')}</dt>
+                        <dt className="text-muted-foreground">
+                          {t('table.orderId')}
+                        </dt>
                         <dd
                           className="break-all font-mono text-[11px] text-muted-foreground"
                           title={vm.id}

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { categories, questions, questionTranslations } from '@/db/schema';
 import { eq, sql, and, ilike } from 'drizzle-orm';
+import { buildQaCacheKey, getQaCache, setQaCache } from '@/lib/cache/qa';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -9,6 +10,21 @@ export const revalidate = 0;
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 20;
 const DEFAULT_LOCALE = 'uk';
+type QaApiResponse = {
+  items: {
+    id: string;
+    categoryId: string;
+    sortOrder: number;
+    difficulty: string | null;
+    question: string;
+    answerBlocks: unknown;
+    locale: string;
+  }[];
+  total: number;
+  page: number;
+  totalPages: number;
+  locale: string;
+};
 
 export async function GET(
   req: Request,
@@ -31,8 +47,23 @@ export async function GET(
       DEFAULT_LOCALE;
 
     const search = searchParams.get('search')?.trim();
+    const cacheKey = buildQaCacheKey({
+      category,
+      locale,
+      page,
+      limit,
+      search,
+    });
 
-    // Find category by slug
+    const cached = await getQaCache<QaApiResponse>(cacheKey);
+
+    if (cached) {
+      const response = NextResponse.json(cached);
+      response.headers.set('Cache-Control', 'no-store');
+      response.headers.set('x-qa-cache', 'HIT');
+      return response;
+    }
+
     const [cat] = await db
       .select({ id: categories.id })
       .from(categories)
@@ -51,7 +82,6 @@ export async function GET(
       return response;
     }
 
-    // Base conditions: category match + locale match
     const baseCondition = and(
       eq(questions.categoryId, cat.id),
       eq(questionTranslations.locale, locale)
@@ -61,7 +91,6 @@ export async function GET(
       ? and(baseCondition, ilike(questionTranslations.question, `%${search}%`))
       : baseCondition;
 
-    // Count total
     const [{ count }] = await db
       .select({ count: sql<number>`count(*)` })
       .from(questions)
@@ -74,7 +103,6 @@ export async function GET(
     const total = Number(count);
     const totalPages = Math.ceil(total / limit);
 
-    // Get items with translations
     const items = await db
       .select({
         id: questions.id,
@@ -103,6 +131,16 @@ export async function GET(
       locale,
     });
     response.headers.set('Cache-Control', 'no-store');
+    response.headers.set('x-qa-cache', 'MISS');
+
+    await setQaCache(cacheKey, {
+      items,
+      total,
+      page,
+      totalPages,
+      locale,
+    });
+
     return response;
   } catch (error) {
     console.error('[GET /api/questions/:category]', error);

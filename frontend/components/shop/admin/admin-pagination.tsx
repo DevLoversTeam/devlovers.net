@@ -3,14 +3,14 @@ import { cn } from '@/lib/utils';
 import { getTranslations } from 'next-intl/server';
 
 type AdminPaginationProps = {
-  basePath: string; // e.g. "/shop/admin/products"
+  basePath: string;
   page: number;
   hasNext: boolean;
   className?: string;
 };
 
 function pageHref(basePath: string, page: number) {
-  if (page <= 1) return basePath; // canonical without ?page=1
+  if (page <= 1) return basePath;
   return `${basePath}?page=${page}`;
 }
 

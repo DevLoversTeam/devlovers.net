@@ -1,14 +1,18 @@
-// frontend/components/shop/product-sort.tsx
-
 'use client';
 
 import { useId } from 'react';
 import { useRouter } from '@/i18n/routing';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-
+import { ChevronDown } from 'lucide-react';
 import { SORT_OPTIONS } from '@/lib/config/catalog';
 import { cn } from '@/lib/utils';
+import {
+  SHOP_DISABLED,
+  SHOP_FOCUS,
+  SHOP_SELECT_BASE,
+  SHOP_SELECT_INTERACTIVE,
+} from '@/lib/shop/ui-classes';
 
 type ProductSortProps = {
   className?: string;
@@ -20,7 +24,6 @@ export function ProductSort({ className }: ProductSortProps) {
   const t = useTranslations('shop.sort');
   const tOptions = useTranslations('shop.catalog.sort');
 
-  // IMPORTANT: when using '@/i18n/routing' router, do NOT prefix locale manually.
   const basePath = '/shop/products';
 
   const currentSort = searchParams.get('sort') || 'featured';
@@ -30,10 +33,10 @@ export function ProductSort({ className }: ProductSortProps) {
 
   const getOptionLabel = (value: string) => {
     const keyMap: Record<string, string> = {
-      'featured': 'featured',
+      featured: 'featured',
       'price-asc': 'priceAsc',
       'price-desc': 'priceDesc',
-      'newest': 'newest',
+      newest: 'newest',
     };
     return tOptions(keyMap[value] || 'featured');
   };
@@ -64,26 +67,36 @@ export function ProductSort({ className }: ProductSortProps) {
         {t('sortBy')}
       </label>
 
-      <select
-        id={selectId}
-        name="sort"
-        value={currentSort}
-        onChange={e => handleSort(e.target.value)}
-        className={[
-          'h-10 w-full rounded-md border border-input px-3 text-sm transition-colors sm:w-48',
-          isActive
-            ? 'bg-muted text-foreground'
-            : 'bg-background text-muted-foreground',
-          'hover:text-foreground',
-          'focus:outline-none focus:ring-0 focus:ring-offset-0',
-        ].join(' ')}
-      >
-        {SORT_OPTIONS.map(option => (
-          <option key={option.value} value={option.value}>
-            {getOptionLabel(option.value)}
-          </option>
-        ))}
-      </select>
+      <div className="relative w-full sm:w-52">
+        <select
+          id={selectId}
+          name="sort"
+          value={currentSort}
+          onChange={e => handleSort(e.target.value)}
+          className={cn(
+            SHOP_SELECT_BASE,
+            SHOP_SELECT_INTERACTIVE,
+            SHOP_FOCUS,
+            SHOP_DISABLED,
+            isActive ? 'text-foreground' : 'text-muted-foreground'
+          )}
+        >
+          {SORT_OPTIONS.map(option => (
+            <option key={option.value} value={option.value}>
+              {getOptionLabel(option.value)}
+            </option>
+          ))}
+        </select>
+
+        <ChevronDown
+          className={cn(
+            'pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2',
+            'text-muted-foreground transition-colors',
+            'peer-hover:text-foreground peer-focus-visible:text-foreground'
+          )}
+          aria-hidden="true"
+        />
+      </div>
     </form>
   );
 }

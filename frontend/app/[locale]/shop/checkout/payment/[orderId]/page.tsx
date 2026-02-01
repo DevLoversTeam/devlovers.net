@@ -1,6 +1,7 @@
 import { Link } from '@/i18n/routing';
 import { ClearCartOnMount } from '@/components/shop/clear-cart-on-mount';
 import StripePaymentClient from '../StripePaymentClient';
+
 import { formatMoney } from '@/lib/shop/currency';
 import { getOrderSummary } from '@/lib/services/orders';
 import { OrderNotFoundError } from '@/lib/services/errors';
@@ -9,6 +10,25 @@ import { getStripeEnv } from '@/lib/env/stripe';
 import { logError } from '@/lib/logging';
 import { ensureStripePaymentIntentForOrder } from '@/lib/services/orders/payment-attempts';
 import { getTranslations } from 'next-intl/server';
+import { cn } from '@/lib/utils';
+
+import {
+  SHOP_FOCUS,
+  SHOP_DISABLED,
+  SHOP_CTA_BASE,
+  SHOP_CTA_INTERACTIVE,
+  SHOP_CTA_INSET,
+  SHOP_CTA_WAVE,
+  shopCtaGradient,
+  SHOP_OUTLINE_BTN_BASE,
+  SHOP_OUTLINE_BTN_INTERACTIVE,
+} from '@/lib/shop/ui-classes';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Checkout | DevLovers',
+  description: 'Complete payment securely for order',
+};
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -31,14 +51,8 @@ function resolveClientSecret(
 async function buildStatusMessage(status: string) {
   const t = await getTranslations('shop.checkout.payment.statusMessages');
 
-  if (status === 'paid') {
-    return t('alreadyPaid');
-  }
-
-  if (status === 'failed') {
-    return t('previousFailed');
-  }
-
+  if (status === 'paid') return t('alreadyPaid');
+  if (status === 'failed') return t('previousFailed');
   return t('completePayment');
 }
 
@@ -54,6 +68,58 @@ type PaymentPageProps = {
   params: Promise<{ locale: string; orderId: string }>;
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
+
+const SHOP_HERO_CTA_SM = cn(
+  SHOP_CTA_BASE,
+  SHOP_CTA_INTERACTIVE,
+  SHOP_FOCUS,
+  SHOP_DISABLED,
+  'items-center justify-center gap-2',
+  'px-5 py-2.5 text-xs sm:text-sm text-white',
+  'shadow-[var(--shop-hero-btn-shadow)] hover:shadow-[var(--shop-hero-btn-shadow-hover)]'
+);
+
+const SHOP_OUTLINE_BTN = cn(
+  SHOP_OUTLINE_BTN_BASE,
+  SHOP_OUTLINE_BTN_INTERACTIVE,
+  SHOP_FOCUS,
+  SHOP_DISABLED
+);
+
+function HeroCtaLink({
+  href,
+  children,
+  className,
+}: {
+  href: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <Link href={href} className={cn(SHOP_HERO_CTA_SM, className)}>
+      <span
+        className="absolute inset-0"
+        style={shopCtaGradient(
+          '--shop-hero-btn-bg',
+          '--shop-hero-btn-bg-hover'
+        )}
+        aria-hidden="true"
+      />
+      {/* hover wave overlay */}
+      <span
+        className={SHOP_CTA_WAVE}
+        style={shopCtaGradient(
+          '--shop-hero-btn-bg-hover',
+          '--shop-hero-btn-bg'
+        )}
+        aria-hidden="true"
+      />
+      <span className={SHOP_CTA_INSET} aria-hidden="true" />
+
+      <span className="relative z-10">{children}</span>
+    </Link>
+  );
+}
 
 function PageShell({
   title,
@@ -89,6 +155,7 @@ export default async function PaymentPage(props: PaymentPageProps) {
   const searchParams = props.searchParams
     ? await props.searchParams
     : undefined;
+
   const clearCart = shouldClearCart(searchParams);
   const cc = clearCart ? '&clearCart=1' : '';
   const { locale } = params;
@@ -105,18 +172,13 @@ export default async function PaymentPage(props: PaymentPageProps) {
         description={t('missingOrder.message')}
       >
         <nav className="mt-6 flex justify-center gap-3" aria-label="Next steps">
-          <Link
-            href={`${shopBase}/cart`}
-            className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
-          >
+          <Link href={`${shopBase}/cart`} className={SHOP_OUTLINE_BTN}>
             {t('actions.goToCart')}
           </Link>
-          <Link
-            href={`${shopBase}/products`}
-            className="inline-flex items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground hover:bg-accent/90"
-          >
+
+          <HeroCtaLink href={`${shopBase}/products`}>
             {t('actions.continueShopping')}
-          </Link>
+          </HeroCtaLink>
         </nav>
       </PageShell>
     );
@@ -137,18 +199,13 @@ export default async function PaymentPage(props: PaymentPageProps) {
             className="mt-6 flex justify-center gap-3"
             aria-label="Next steps"
           >
-            <Link
-              href={`${shopBase}/cart`}
-              className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
-            >
+            <Link href={`${shopBase}/cart`} className={SHOP_OUTLINE_BTN}>
               {t('actions.goToCart')}
             </Link>
-            <Link
-              href={`${shopBase}/products`}
-              className="inline-flex items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground hover:bg-accent/90"
-            >
+
+            <HeroCtaLink href={`${shopBase}/products`}>
               {t('actions.continueShopping')}
-            </Link>
+            </HeroCtaLink>
           </nav>
         </PageShell>
       );
@@ -165,6 +222,7 @@ export default async function PaymentPage(props: PaymentPageProps) {
   const stripeEnv = getStripeEnv();
   const paymentsEnabled =
     stripeEnv.paymentsEnabled && Boolean(stripeEnv.publishableKey);
+
   let clientSecret = resolveClientSecret(searchParams);
   const publishableKey = paymentsEnabled ? stripeEnv.publishableKey : null;
 
@@ -197,6 +255,7 @@ export default async function PaymentPage(props: PaymentPageProps) {
     return (
       <>
         <ClearCartOnMount enabled={clearCart} />
+
         <PageShell
           title={t('payment.statusMessages.alreadyPaid')}
           description={t('success.paymentConfirmed')}
@@ -205,16 +264,13 @@ export default async function PaymentPage(props: PaymentPageProps) {
             className="mt-6 flex justify-center gap-3"
             aria-label="Next steps"
           >
-            <Link
+            <HeroCtaLink
               href={`${shopBase}/checkout/success?orderId=${order.id}${cc}`}
-              className="inline-flex items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground hover:bg-accent/90"
             >
               {t('payment.viewConfirmation')}
-            </Link>
-            <Link
-              href={`${shopBase}/products`}
-              className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
-            >
+            </HeroCtaLink>
+
+            <Link href={`${shopBase}/products`} className={SHOP_OUTLINE_BTN}>
               {t('payment.continueShopping')}
             </Link>
           </nav>
@@ -236,9 +292,11 @@ export default async function PaymentPage(props: PaymentPageProps) {
         <p className="text-sm font-semibold uppercase tracking-wide text-accent">
           {t('payment.title')}
         </p>
+
         <h1 id="pay-order-title" className="text-3xl font-bold text-foreground">
           {t('payment.payForOrder', { orderId: order.id.slice(0, 8) })}
         </h1>
+
         <p className="mt-2 text-sm text-muted-foreground">
           {await buildStatusMessage(order.paymentStatus)}
         </p>
@@ -255,17 +313,22 @@ export default async function PaymentPage(props: PaymentPageProps) {
           <h2 className="text-lg font-semibold text-foreground">
             {t('payment.paymentDetails')}
           </h2>
+
           <p className="mt-2 text-sm text-muted-foreground">
             {t('payment.completePayment')}
           </p>
 
           <div className="mt-6 rounded-md border border-border bg-muted/30 p-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">{t('payment.amountDue')}</span>
+              <span className="text-sm text-muted-foreground">
+                {t('payment.amountDue')}
+              </span>
+
               <span className="text-xl font-bold text-foreground">
                 {formatMoney(order.totalAmountMinor, order.currency, locale)}
               </span>
             </div>
+
             <p className="mt-1 text-xs text-muted-foreground uppercase tracking-wide">
               {order.currency}
             </p>
@@ -297,12 +360,14 @@ export default async function PaymentPage(props: PaymentPageProps) {
               <dt>{t('payment.items')}</dt>
               <dd className="font-medium text-foreground">{itemsCount}</dd>
             </div>
+
             <div className="flex items-center justify-between">
               <dt>{t('payment.totalAmount')}</dt>
               <dd className="font-semibold text-foreground">
                 {formatMoney(order.totalAmountMinor, order.currency, locale)}
               </dd>
             </div>
+
             <div className="flex items-center justify-between">
               <dt>{t('payment.status')}</dt>
               <dd className="font-semibold capitalize text-foreground">

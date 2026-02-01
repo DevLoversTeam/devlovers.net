@@ -1,4 +1,3 @@
-// frontend/app/[locale]/shop/admin/products/page.tsx
 import { Link } from '@/i18n/routing';
 import { and, desc, eq, sql } from 'drizzle-orm';
 import { issueCsrfToken } from '@/lib/security/csrf';
@@ -17,7 +16,12 @@ import {
 import { formatMoney, resolveCurrencyFromLocale } from '@/lib/shop/currency';
 import { parsePage } from '@/lib/pagination';
 import { getTranslations } from 'next-intl/server';
+import { Metadata } from 'next';
 
+export const metadata: Metadata = {
+  title: 'Admin Products | DevLovers',
+  description: 'Create, edit, activate, and manage product catalog.',
+};
 export const dynamic = 'force-dynamic';
 
 const PAGE_SIZE = 25;
@@ -90,6 +94,8 @@ export default async function AdminProductsPage({
 
   const csrfTokenStatus = issueCsrfToken('admin:products:status');
   const csrfTokenDelete = issueCsrfToken('admin:products:delete');
+  const TH_BASE =
+    'px-3 py-2 text-left text-xs font-semibold text-foreground leading-tight whitespace-normal break-words';
 
   return (
     <>
@@ -109,7 +115,7 @@ export default async function AdminProductsPage({
 
           <Link
             href="/shop/admin/products/new"
-            className="inline-flex items-center justify-center rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+            className="inline-flex items-center justify-center whitespace-nowrap rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
           >
             {t('newProduct')}
           </Link>
@@ -159,7 +165,9 @@ export default async function AdminProductsPage({
 
                       <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
                         <div className="min-w-0">
-                          <dt className="text-muted-foreground">{t('table.category')}</dt>
+                          <dt className="text-muted-foreground">
+                            {t('table.category')}
+                          </dt>
                           <dd
                             className="truncate text-foreground"
                             title={row.category ?? '-'}
@@ -169,7 +177,9 @@ export default async function AdminProductsPage({
                         </div>
 
                         <div className="min-w-0">
-                          <dt className="text-muted-foreground">{t('table.type')}</dt>
+                          <dt className="text-muted-foreground">
+                            {t('table.type')}
+                          </dt>
                           <dd
                             className="truncate text-foreground"
                             title={row.type ?? '-'}
@@ -179,31 +189,43 @@ export default async function AdminProductsPage({
                         </div>
 
                         <div>
-                          <dt className="text-muted-foreground">{t('table.stock')}</dt>
+                          <dt className="text-muted-foreground">
+                            {t('table.stock')}
+                          </dt>
                           <dd className="text-foreground">{row.stock}</dd>
                         </div>
 
                         <div>
-                          <dt className="text-muted-foreground">{t('table.badge')}</dt>
+                          <dt className="text-muted-foreground">
+                            {t('table.badge')}
+                          </dt>
                           <dd className="text-foreground">{badge}</dd>
                         </div>
 
                         <div>
-                          <dt className="text-muted-foreground">{t('table.active')}</dt>
+                          <dt className="text-muted-foreground">
+                            {t('table.active')}
+                          </dt>
                           <dd className="text-foreground">
                             {row.isActive ? t('actions.yes') : t('actions.no')}
                           </dd>
                         </div>
 
                         <div>
-                          <dt className="text-muted-foreground">{t('table.featured')}</dt>
+                          <dt className="text-muted-foreground">
+                            {t('table.featured')}
+                          </dt>
                           <dd className="text-foreground">
-                            {row.isFeatured ? t('actions.yes') : t('actions.no')}
+                            {row.isFeatured
+                              ? t('actions.yes')
+                              : t('actions.no')}
                           </dd>
                         </div>
 
                         <div className="col-span-2">
-                          <dt className="text-muted-foreground">{t('table.created')}</dt>
+                          <dt className="text-muted-foreground">
+                            {t('table.created')}
+                          </dt>
                           <dd className="text-foreground">
                             {formatDate(row.createdAt, locale)}
                           </dd>
@@ -214,7 +236,9 @@ export default async function AdminProductsPage({
                         <Link
                           href={`/shop/products/${row.slug}`}
                           className="inline-flex items-center justify-center rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
-                          aria-label={t('actions.viewProduct', { title: row.title })}
+                          aria-label={t('actions.viewProduct', {
+                            title: row.title,
+                          })}
                         >
                           {t('actions.view')}
                         </Link>
@@ -222,7 +246,9 @@ export default async function AdminProductsPage({
                         <Link
                           href={`/shop/admin/products/${row.id}/edit`}
                           className="inline-flex items-center justify-center rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
-                          aria-label={t('actions.editProduct', { title: row.title })}
+                          aria-label={t('actions.editProduct', {
+                            title: row.title,
+                          })}
                         >
                           {t('actions.edit')}
                         </Link>
@@ -253,73 +279,52 @@ export default async function AdminProductsPage({
             <div className="overflow-x-auto">
               <table className="w-full table-fixed divide-y divide-border text-sm">
                 <caption className="sr-only">{t('listCaption')}</caption>
-
+                <colgroup>
+                  <col className="w-[9.5rem]" />
+                  <col className="w-[8rem]" />
+                  <col className="w-[6.5rem]" />
+                  <col className="w-[6rem]" />
+                  <col className="w-[5.5rem]" />
+                  <col className="w-[5rem]" />
+                  <col className="w-[4rem]" />
+                  <col className="w-[5rem]" />
+                  <col className="w-[5rem]" />
+                  <col className="w-[4.5rem]" />
+                  <col className="w-[11rem]" />
+                </colgroup>
                 <thead className="bg-muted/50">
                   <tr>
-                    <th
-                      scope="col"
-                      className="w-[20%] px-3 py-2 text-left font-semibold text-foreground"
-                    >
+                    <th scope="col" className={TH_BASE}>
                       {t('table.title')}
                     </th>
-                    <th
-                      scope="col"
-                      className="w-[18%] px-3 py-2 text-left font-semibold text-foreground"
-                    >
+                    <th scope="col" className={TH_BASE}>
                       {t('table.slug')}
                     </th>
-                    <th
-                      scope="col"
-                      className="w-[8%] px-3 py-2 text-left font-semibold text-foreground"
-                    >
+                    <th scope="col" className={TH_BASE}>
                       {t('table.price')}
                     </th>
-                    <th
-                      scope="col"
-                      className="w-[8%] px-3 py-2 text-left font-semibold text-foreground"
-                    >
+                    <th scope="col" className={TH_BASE}>
                       {t('table.category')}
                     </th>
-                    <th
-                      scope="col"
-                      className="w-[8%] px-3 py-2 text-left font-semibold text-foreground"
-                    >
+                    <th scope="col" className={TH_BASE}>
                       {t('table.type')}
                     </th>
-                    <th
-                      scope="col"
-                      className="w-[5%] px-3 py-2 text-left font-semibold text-foreground"
-                    >
+                    <th scope="col" className={TH_BASE}>
                       {t('table.stock')}
                     </th>
-                    <th
-                      scope="col"
-                      className="w-[5%] px-3 py-2 text-left font-semibold text-foreground"
-                    >
+                    <th scope="col" className={TH_BASE}>
                       {t('table.badge')}
                     </th>
-                    <th
-                      scope="col"
-                      className="w-[5%] px-3 py-2 text-left font-semibold text-foreground"
-                    >
+                    <th scope="col" className={TH_BASE}>
                       {t('table.active')}
                     </th>
-                    <th
-                      scope="col"
-                      className="w-[6%] px-3 py-2 text-left font-semibold text-foreground"
-                    >
+                    <th scope="col" className={TH_BASE}>
                       {t('table.featured')}
                     </th>
-                    <th
-                      scope="col"
-                      className="w-[8%] px-3 py-2 text-left font-semibold text-foreground"
-                    >
+                    <th scope="col" className={TH_BASE}>
                       {t('table.created')}
                     </th>
-                    <th
-                      scope="col"
-                      className="w-[9%] px-3 py-2 text-left font-semibold text-foreground"
-                    >
+                    <th scope="col" className={TH_BASE}>
                       {t('table.actions')}
                     </th>
                   </tr>
@@ -379,7 +384,9 @@ export default async function AdminProductsPage({
 
                         <td className="whitespace-nowrap px-3 py-2">
                           <span className="inline-flex rounded-full bg-muted px-2 py-1 text-xs font-medium text-foreground">
-                            {row.isFeatured ? t('actions.yes') : t('actions.no')}
+                            {row.isFeatured
+                              ? t('actions.yes')
+                              : t('actions.no')}
                           </span>
                         </td>
 
@@ -388,19 +395,23 @@ export default async function AdminProductsPage({
                         </td>
 
                         <td className="px-3 py-2">
-                          <div className="flex flex-wrap gap-2">
+                          <div className="grid grid-cols-2 gap-2">
                             <Link
                               href={`/shop/products/${row.slug}`}
-                              className="rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
-                              aria-label={t('actions.viewProduct', { title: row.title })}
+                              className="inline-flex items-center justify-center rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary whitespace-normal break-words leading-tight text-center"
+                              aria-label={t('actions.viewProduct', {
+                                title: row.title,
+                              })}
                             >
                               {t('actions.view')}
                             </Link>
 
                             <Link
                               href={`/shop/admin/products/${row.id}/edit`}
-                              className="rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
-                              aria-label={t('actions.editProduct', { title: row.title })}
+                              className="inline-flex items-center justify-center rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary whitespace-normal break-words leading-tight text-center"
+                              aria-label={t('actions.editProduct', {
+                                title: row.title,
+                              })}
                             >
                               {t('actions.edit')}
                             </Link>

@@ -31,7 +31,6 @@ export function ProductsToolbar() {
 
     return Array.from(root.querySelectorAll<HTMLElement>(selectors)).filter(
       el => {
-        // ignore elements that are not actually visible/clickable
         const style = window.getComputedStyle(el);
         return style.visibility !== 'hidden' && style.display !== 'none';
       }
@@ -83,7 +82,6 @@ export function ProductsToolbar() {
 
       const focusables = getFocusable(dialogEl);
       if (focusables.length === 0) {
-        // if nothing is focusable, keep focus on dialog itself
         e.preventDefault();
         dialogEl.focus();
         return;
@@ -93,7 +91,6 @@ export function ProductsToolbar() {
       const first = focusables[0]!;
       const last = focusables[focusables.length - 1]!;
 
-      // If focus somehow escaped, pull it back in.
       if (!active || !dialogEl.contains(active)) {
         e.preventDefault();
         (e.shiftKey ? last : first).focus();
@@ -116,7 +113,6 @@ export function ProductsToolbar() {
     document.documentElement.classList.add('overflow-hidden');
 
     requestAnimationFrame(() => {
-      // prefer close button, else first focusable, else dialog
       const closeEl = closeBtnRef.current;
       if (closeEl) closeEl.focus();
       else focusFirst();
@@ -131,7 +127,6 @@ export function ProductsToolbar() {
 
   return (
     <>
-      {/* No w-full here: on mobile header stretches items; on desktop it stays content-sized (fixes "center gap"). */}
       <div
         role="group"
         aria-label={t('label')}
@@ -193,7 +188,6 @@ export function ProductsToolbar() {
             </div>
 
             <div className="px-4 py-6">
-              {/* Do NOT auto-close on every click */}
               <ProductFilters />
             </div>
           </div>

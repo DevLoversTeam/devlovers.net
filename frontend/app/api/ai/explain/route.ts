@@ -1,19 +1,19 @@
 export const runtime = 'nodejs';
 
-import { NextRequest, NextResponse } from 'next/server';
-import Groq from 'groq-sdk';
+import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import Groq from 'groq-sdk';
 import {
   createExplainPrompt,
   type ExplanationResponse,
 } from '@/lib/ai/prompts';
-import { getClientIp } from '@/lib/security/client-ip';
+import { getCurrentUser } from '@/lib/auth';
 
 const rateLimiter = new Map<string, { count: number; resetAt: number }>();
 const MAX_REQUESTS_PER_WINDOW = 10;
-const RATE_LIMIT_WINDOW_MS = 20 * 60 * 1000; 
+const RATE_LIMIT_WINDOW_MS = 20 * 60 * 1000;
 
-const CLEANUP_INTERVAL_MS = 5 * 60 * 1000; 
+const CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
 let lastCleanup = Date.now();
 
 function cleanupRateLimiter() {
@@ -21,9 +21,9 @@ function cleanupRateLimiter() {
   if (now - lastCleanup < CLEANUP_INTERVAL_MS) return;
 
   lastCleanup = now;
-  for (const [ip, entry] of rateLimiter.entries()) {
+  for (const [userId, entry] of rateLimiter.entries()) {
     if (now > entry.resetAt) {
-      rateLimiter.delete(ip);
+      rateLimiter.delete(userId);
     }
   }
 }
@@ -39,16 +39,23 @@ const requestSchema = z.object({
     .optional(),
 });
 
-
-function checkRateLimit(ip: string): { allowed: boolean; remaining: number; resetIn: number } {
+function checkRateLimit(userId: string): {
+  allowed: boolean;
+  remaining: number;
+  resetIn: number;
+} {
   cleanupRateLimiter();
 
   const now = Date.now();
-  const entry = rateLimiter.get(ip);
+  const entry = rateLimiter.get(userId);
 
   if (!entry || now > entry.resetAt) {
-    rateLimiter.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
-    return { allowed: true, remaining: MAX_REQUESTS_PER_WINDOW - 1, resetIn: RATE_LIMIT_WINDOW_MS };
+    rateLimiter.set(userId, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return {
+      allowed: true,
+      remaining: MAX_REQUESTS_PER_WINDOW - 1,
+      resetIn: RATE_LIMIT_WINDOW_MS,
+    };
   }
 
   if (entry.count >= MAX_REQUESTS_PER_WINDOW) {
@@ -90,21 +97,25 @@ function parseExplanationResponse(content: string): ExplanationResponse {
   return parsed as ExplanationResponse;
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
-    console.error('GROQ_API_KEY is not configured');
-    console.error('Available env vars starting with GROQ:',
-      Object.keys(process.env).filter(k => k.startsWith('GROQ'))
-    );
+    console.error('[ai/explain] GROQ_API_KEY not configured');
     return NextResponse.json(
       { error: 'AI service not configured', code: 'SERVICE_UNAVAILABLE' },
       { status: 503 }
     );
   }
 
-  const clientIp = getClientIp(request) ?? 'unknown';
-  const rateLimit = checkRateLimit(clientIp);
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json(
+      { error: 'Authentication required', code: 'UNAUTHORIZED' },
+      { status: 401 }
+    );
+  }
+
+  const rateLimit = checkRateLimit(user.id);
 
   if (!rateLimit.allowed) {
     const resetMinutes = Math.ceil(rateLimit.resetIn / 60000);
@@ -155,13 +166,8 @@ export async function POST(request: NextRequest) {
     const prompt = createExplainPrompt({ term, context });
 
     const chatCompletion = await groq.chat.completions.create({
-      messages: [
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-      model: 'llama3-70b-8192',
+      messages: [{ role: 'user', content: prompt }],
+      model: 'llama-3.3-70b-versatile',
       temperature: 0.7,
       max_tokens: 1500,
       top_p: 1,
@@ -170,7 +176,11 @@ export async function POST(request: NextRequest) {
     const content = chatCompletion.choices[0]?.message?.content;
 
     if (!content) {
-      throw new Error('No content in response');
+      console.error('[ai/explain] Empty response from Groq');
+      return NextResponse.json(
+        { error: 'AI returned empty response', code: 'EMPTY_RESPONSE' },
+        { status: 502 }
+      );
     }
 
     const explanation = parseExplanationResponse(content);
@@ -184,58 +194,85 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Groq API error:', error);
+    return handleGroqError(error);
+  }
+}
 
-    const errorMessage =
-      error instanceof Error ? error.message : 'Unknown error';
-    const errorName = error instanceof Error ? error.name : 'UnknownError';
+export async function GET() {
+  const hasApiKey = !!process.env.GROQ_API_KEY;
 
-    console.error('Error details:', {
-      name: errorName,
-      message: errorMessage,
-      stack: error instanceof Error ? error.stack : undefined,
-    });
+  if (!hasApiKey) {
+    return NextResponse.json(
+      {
+        status: 'error',
+        service: 'ai-explain',
+        message: 'API key not configured',
+      },
+      { status: 503 }
+    );
+  }
 
-    if (error instanceof Error) {
-      if (
-        error.message.includes('401') ||
-        error.message.includes('authentication') ||
-        error.message.includes('Invalid API Key')
-      ) {
-        return NextResponse.json(
-          { error: 'AI service authentication failed', code: 'AUTH_ERROR' },
-          { status: 503 }
-        );
-      }
-      if (
-        error.message.includes('429') ||
-        error.message.includes('rate limit')
-      ) {
-        return NextResponse.json(
-          { error: 'AI service rate limited', code: 'API_RATE_LIMITED' },
-          { status: 503 }
-        );
-      }
-      if (error.message.includes('model')) {
-        return NextResponse.json(
-          {
-            error: 'AI model not available',
-            code: 'MODEL_ERROR',
-            details: errorMessage,
-          },
-          { status: 503 }
-        );
-      }
+  return NextResponse.json(
+    { status: 'ok', service: 'ai-explain' },
+    { status: 200 }
+  );
+}
+
+function handleGroqError(error: unknown): NextResponse {
+  if (error instanceof Groq.APIError) {
+    console.error(
+      `[ai/explain] Groq API error: ${error.status} ${error.message}`
+    );
+
+    if (error.status === 401) {
+      return NextResponse.json(
+        { error: 'AI service authentication failed', code: 'AUTH_ERROR' },
+        { status: 503 }
+      );
+    }
+
+    if (error.status === 429) {
+      return NextResponse.json(
+        { error: 'AI service rate limited', code: 'API_RATE_LIMITED' },
+        { status: 503 }
+      );
+    }
+
+    if (error.status === 404) {
+      return NextResponse.json(
+        { error: 'AI model not available', code: 'MODEL_ERROR' },
+        { status: 503 }
+      );
     }
 
     return NextResponse.json(
-      {
-        error: 'Failed to generate explanation',
-        code: 'AI_ERROR',
-        details:
-          process.env.NODE_ENV === 'development' ? errorMessage : undefined,
-      },
-      { status: 500 }
+      { error: 'AI service temporarily unavailable', code: 'API_ERROR' },
+      { status: 503 }
     );
   }
+
+  if (error instanceof SyntaxError) {
+    console.error('[ai/explain] Failed to parse AI response as JSON');
+    return NextResponse.json(
+      { error: 'AI returned invalid format', code: 'PARSE_ERROR' },
+      { status: 502 }
+    );
+  }
+
+  if (
+    error instanceof Error &&
+    error.message === 'Invalid response structure'
+  ) {
+    console.error('[ai/explain] AI response missing required fields');
+    return NextResponse.json(
+      { error: 'AI returned incomplete response', code: 'INVALID_STRUCTURE' },
+      { status: 502 }
+    );
+  }
+
+  console.error('[ai/explain] Unexpected error:', error);
+  return NextResponse.json(
+    { error: 'Failed to generate explanation', code: 'AI_ERROR' },
+    { status: 500 }
+  );
 }

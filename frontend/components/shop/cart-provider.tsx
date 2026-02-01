@@ -92,14 +92,12 @@ export function CartProvider({ children }: CartProviderProps) {
     } catch (error) {
       const info = getErrorInfo(error);
 
-      // Self-heal: missing price for locale currency (e.g., uk => UAH) should not crash UI.
       if (info.code === 'PRICE_CONFIG_ERROR') {
         const productId =
           typeof (info.details as any)?.productId === 'string'
             ? String((info.details as any).productId)
             : '';
 
-        // Best-effort: remove only the problematic product (if identified), retry once.
         if (productId) {
           const filtered = items.filter(i => i.productId !== productId);
 
@@ -127,7 +125,6 @@ export function CartProvider({ children }: CartProviderProps) {
           }
         }
 
-        // Fallback: clear cart to unblock the user.
         clearStoredCart();
         setCart(emptyCart);
 
@@ -140,7 +137,6 @@ export function CartProvider({ children }: CartProviderProps) {
         return;
       }
 
-      // Non-blocking: keep current cart state (avoid crashing the page).
       logWarn('cart_rehydrate_failed_client', {
         code: info.code,
         message: info.message,
@@ -156,7 +152,6 @@ export function CartProvider({ children }: CartProviderProps) {
 
     const stored = getStoredCartItems();
 
-    // Defer to avoid "setState in effect" lint rules without changing runtime behavior meaningfully.
     void Promise.resolve().then(() => syncCartWithServer(stored));
   }, [syncCartWithServer]);
 
