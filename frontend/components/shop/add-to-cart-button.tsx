@@ -64,7 +64,6 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
       'linear-gradient(135deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #8b00ff)',
   };
 
-  // ids for proper grouping semantics (no behavior changes)
   const colorGroupId = useId();
   const sizeGroupId = useId();
   const quantityGroupId = useId();
@@ -77,7 +76,6 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
 
   return (
     <section className="mt-8 space-y-6" aria-label={t('purchaseOptions')}>
-      {/* Colors */}
       {product.colors && product.colors.length > 0 ? (
         <fieldset className="min-w-0">
           <legend
@@ -124,7 +122,6 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
         </fieldset>
       ) : null}
 
-      {/* Sizes */}
       {product.sizes && product.sizes.length > 0 ? (
         <fieldset className="min-w-0">
           <legend
@@ -162,7 +159,6 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
         </fieldset>
       ) : null}
 
-      {/* Quantity */}
       <section aria-labelledby={quantityGroupId}>
         <h3
           id={quantityGroupId}
@@ -206,7 +202,6 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
         </div>
       </section>
 
-      {/* Add to Cart Button */}
       <button
         type="button"
         onClick={handleAddToCart}
@@ -215,7 +210,7 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
           SHOP_CTA_BASE,
           SHOP_FOCUS,
           'w-full justify-center gap-2 px-8 py-3',
-          'transition-[transform,filter] duration-700 ease-out', // transform/filter для active states
+          'transition-[transform,filter] duration-700 ease-out',
           !product.inStock &&
             'cursor-not-allowed bg-muted text-muted-foreground',
           product.inStock &&

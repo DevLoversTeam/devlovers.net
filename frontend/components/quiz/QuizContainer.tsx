@@ -2,7 +2,13 @@
 
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useReducer, useTransition, useState, useEffect, useCallback } from 'react';
+import {
+  useReducer,
+  useTransition,
+  useState,
+  useEffect,
+  useCallback,
+} from 'react';
 import { toast } from 'sonner';
 import { useAntiCheat } from '@/hooks/useAntiCheat';
 import { useQuizSession } from '@/hooks/useQuizSession';
@@ -12,7 +18,10 @@ import { QuizQuestion } from './QuizQuestion';
 import { QuizResult } from './QuizResult';
 import { CountdownTimer } from './CountdownTimer';
 import { submitQuizAttempt } from '@/actions/quiz';
-import { clearQuizSession, type QuizSessionData } from '@/lib/quiz/quiz-session';
+import {
+  clearQuizSession,
+  type QuizSessionData,
+} from '@/lib/quiz/quiz-session';
 import { savePendingQuizResult } from '@/lib/quiz/guest-quiz';
 import type { QuizQuestionClient } from '@/db/queries/quiz';
 import { ConfirmModal } from '@/components/ui/confirm-modal';
@@ -41,14 +50,16 @@ type QuizState = {
 type QuizAction =
   | { type: 'START_QUIZ' }
   | {
-    type: 'ANSWER_SELECTED';
-    payload: { answerId: string; isCorrect: boolean; questionId: string;};
-  }
+      type: 'ANSWER_SELECTED';
+      payload: { answerId: string; isCorrect: boolean; questionId: string };
+    }
   | { type: 'NEXT_QUESTION' }
-  | { type: 'COMPLETE_QUIZ'; payload?: { pointsAwarded?: number; isIncomplete?: boolean } }
+  | {
+      type: 'COMPLETE_QUIZ';
+      payload?: { pointsAwarded?: number; isIncomplete?: boolean };
+    }
   | { type: 'RESTART' }
   | { type: 'RESTORE_SESSION'; payload: QuizSessionData };
-
 
 function quizReducer(state: QuizState, action: QuizAction): QuizState {
   switch (action.type) {
@@ -104,7 +115,9 @@ function quizReducer(state: QuizState, action: QuizAction): QuizState {
         })),
         questionStatus: action.payload.questionStatus,
         selectedAnswerId: action.payload.selectedAnswerId,
-        startedAt: action.payload.startedAt ? new Date(action.payload.startedAt) : null,
+        startedAt: action.payload.startedAt
+          ? new Date(action.payload.startedAt)
+          : null,
       };
 
     case 'RESTART':
@@ -150,7 +163,9 @@ export function QuizContainer({
   const tRules = useTranslations('quiz.rules');
   const tExit = useTranslations('quiz.exitModal');
   const tQuestion = useTranslations('quiz.question');
-  const categoryStyle = categorySlug ? categoryTabStyles[categorySlug as keyof typeof categoryTabStyles] : null;
+  const categoryStyle = categorySlug
+    ? categoryTabStyles[categorySlug as keyof typeof categoryTabStyles]
+    : null;
   const accentColor = categoryStyle?.accent ?? '#3B82F6';
   const [isPending, startTransition] = useTransition();
   const [state, dispatch] = useReducer(quizReducer, {
@@ -169,7 +184,6 @@ export function QuizContainer({
   const locale = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
-  
 
   const isGuest = userId === null;
   const { violations, violationsCount, resetViolations } = useAntiCheat(
@@ -179,26 +193,26 @@ export function QuizContainer({
   const totalQuestions = questions.length;
 
   const handleRestoreSession = useCallback(
-  (data: QuizSessionData) => dispatch({ type: 'RESTORE_SESSION', payload: data }),
-  []
-);
+    (data: QuizSessionData) =>
+      dispatch({ type: 'RESTORE_SESSION', payload: data }),
+    []
+  );
 
-useQuizSession({
-  quizId,
-  state,
-  onRestore: handleRestoreSession,
-});
+  useQuizSession({
+    quizId,
+    state,
+    onRestore: handleRestoreSession,
+  });
 
-const { markQuitting } = useQuizGuards({
-  quizId,
-  status: state.status,
-  onExit: () => {
-    router.back();
-  },
-  resetViolations,
-});
+  const { markQuitting } = useQuizGuards({
+    quizId,
+    status: state.status,
+    onExit: () => {
+      router.back();
+    },
+    resetViolations,
+  });
 
-  // Sync seed to URL for language switch persistence
   useEffect(() => {
     if (!searchParams.has('seed')) {
       const params = new URLSearchParams(searchParams.toString());
@@ -207,76 +221,74 @@ const { markQuitting } = useQuizGuards({
     }
   }, [seed, searchParams, router]);
 
-
   const handleStart = () => {
     window.history.pushState({ quizGuard: true }, '');
     dispatch({ type: 'START_QUIZ' });
   };
 
   const verifyAnswer = async (answerId: string) => {
-  const response = await fetch('/api/quiz/verify-answer', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      questionId: currentQuestion.id,
-      answerId,
-      encryptedAnswers,
-    }),
-  });
+    const response = await fetch('/api/quiz/verify-answer', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        questionId: currentQuestion.id,
+        answerId,
+        encryptedAnswers,
+      }),
+    });
 
-  if (!response.ok) {
-    throw new Error('Verify answer failed');
-  }
-
-  const data = await response.json();
-
-  if (typeof data.isCorrect !== 'boolean') {
-    throw new Error('Invalid verify response');
-  }
-
-  return data.isCorrect;
-};
-
-const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-
-const handleAnswer = async (answerId: string) => {
-  if (state.questionStatus !== 'answering') return;
-  if (isVerifyingAnswer) return;
-
-  setIsVerifyingAnswer(true);
-
-  const maxRetries = 1;
-  let attempt = 0;
-
-  try {
-    while (true) {
-      try {
-        const isCorrect = await verifyAnswer(answerId);
-
-        dispatch({
-          type: 'ANSWER_SELECTED',
-          payload: {
-            answerId,
-            isCorrect,
-            questionId: currentQuestion.id,
-          },
-        });
-        return;
-      } catch {
-        if (attempt >= maxRetries) {
-          toast.error(tQuestion('verifyFailed'));
-          return;
-        }
-        attempt += 1;
-        toast(tQuestion('verifyRetry'));
-        await sleep(600);
-      }
+    if (!response.ok) {
+      throw new Error('Verify answer failed');
     }
-  } finally {
-    setIsVerifyingAnswer(false);
-  }
-};
+
+    const data = await response.json();
+
+    if (typeof data.isCorrect !== 'boolean') {
+      throw new Error('Invalid verify response');
+    }
+
+    return data.isCorrect;
+  };
+
+  const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+  const handleAnswer = async (answerId: string) => {
+    if (state.questionStatus !== 'answering') return;
+    if (isVerifyingAnswer) return;
+
+    setIsVerifyingAnswer(true);
+
+    const maxRetries = 1;
+    let attempt = 0;
+
+    try {
+      while (true) {
+        try {
+          const isCorrect = await verifyAnswer(answerId);
+
+          dispatch({
+            type: 'ANSWER_SELECTED',
+            payload: {
+              answerId,
+              isCorrect,
+              questionId: currentQuestion.id,
+            },
+          });
+          return;
+        } catch {
+          if (attempt >= maxRetries) {
+            toast.error(tQuestion('verifyFailed'));
+            return;
+          }
+          attempt += 1;
+          toast(tQuestion('verifyRetry'));
+          await sleep(600);
+        }
+      }
+    } finally {
+      setIsVerifyingAnswer(false);
+    }
+  };
 
   const handleNext = () => {
     if (state.currentIndex + 1 >= totalQuestions) {
@@ -290,7 +302,7 @@ const handleAnswer = async (answerId: string) => {
     clearQuizSession(quizId);
 
     const isIncomplete = state.answers.length < totalQuestions;
-    
+
     const correctAnswers = state.answers.filter(a => a.isCorrect).length;
     const percentage = (correctAnswers / totalQuestions) * 100;
     const timeSpentSeconds = state.startedAt
@@ -314,7 +326,10 @@ const handleAnswer = async (answerId: string) => {
         score: correctAnswers,
         totalQuestions,
         percentage,
-        violations: violations.map(v => ({ type: v.type, timestamp: v.timestamp.getTime() })),
+        violations: violations.map(v => ({
+          type: v.type,
+          timestamp: v.timestamp.getTime(),
+        })),
         timeSpentSeconds,
         savedAt: Date.now(),
       });
@@ -335,7 +350,7 @@ const handleAnswer = async (answerId: string) => {
       if (result.success) {
         dispatch({
           type: 'COMPLETE_QUIZ',
-          payload: { pointsAwarded: result.pointsAwarded ?? 0 }
+          payload: { pointsAwarded: result.pointsAwarded ?? 0 },
         });
       } else {
         console.error('Failed to submit quiz:', result.error);
@@ -350,18 +365,17 @@ const handleAnswer = async (answerId: string) => {
     dispatch({ type: 'RESTART' });
   };
 
-const handleQuit = () => {
-  setShowExitModal(true);
-};
+  const handleQuit = () => {
+    setShowExitModal(true);
+  };
 
-const confirmQuit = () => {
-  markQuitting();
-  clearQuizSession(quizId);
-  resetViolations();
-  const categoryParam = categorySlug ? `?category=${categorySlug}` : '';
-  window.location.href = `/${locale}/quizzes${categoryParam}`;
-};
-
+  const confirmQuit = () => {
+    markQuitting();
+    clearQuizSession(quizId);
+    resetViolations();
+    const categoryParam = categorySlug ? `?category=${categorySlug}` : '';
+    window.location.href = `/${locale}/quizzes${categoryParam}`;
+  };
 
   const handleTimeUp = () => {
     handleSubmit();
@@ -383,7 +397,7 @@ const confirmQuit = () => {
         </h2>
 
         <div className="space-y-4 text-gray-700 dark:text-gray-300">
-                   <div className="flex gap-3">
+          <div className="flex gap-3">
             <FileText className="w-5 h-5 text-blue-500 dark:text-blue-400 flex-shrink-0 mt-0.5" />
             <div>
               <p className="font-medium">{tRules('general.title')}</p>
@@ -425,21 +439,21 @@ const confirmQuit = () => {
             </div>
           </div>
         </div>
-          <button
-            onClick={handleStart}
-            className="group relative w-full overflow-hidden text-center rounded-xl border px-6 py-3 text-base font-semibold transition-all duration-300"
-            style={{
-              borderColor: `${accentColor}50`,
-              backgroundColor: `${accentColor}15`,
-              color: accentColor,
-            }}
-          >
-            {tRules('startButton')}
-            <span
-              className="pointer-events-none absolute left-1/2 top-1/2 h-[150%] w-[80%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[20px] opacity-0 transition-opacity duration-300 group-hover:opacity-30"
-              style={{ backgroundColor: accentColor }}
-            />
-          </button>
+        <button
+          onClick={handleStart}
+          className="group relative w-full overflow-hidden text-center rounded-xl border px-6 py-3 text-base font-semibold transition-all duration-300"
+          style={{
+            borderColor: `${accentColor}50`,
+            backgroundColor: `${accentColor}15`,
+            color: accentColor,
+          }}
+        >
+          {tRules('startButton')}
+          <span
+            className="pointer-events-none absolute left-1/2 top-1/2 h-[150%] w-[80%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[20px] opacity-0 transition-opacity duration-300 group-hover:opacity-30"
+            style={{ backgroundColor: accentColor }}
+          />
+        </button>
       </div>
     );
   }
@@ -469,16 +483,26 @@ const confirmQuit = () => {
     <div className="space-y-8 no-select">
       <div className="flex justify-end">
         <Button
-            variant="outline"
-            size="sm"
-            onClick={handleQuit}
-            className="gap-2 hover:border-red-500 hover:text-red-600 dark:hover:text-red-400"
+          variant="outline"
+          size="sm"
+          onClick={handleQuit}
+          className="gap-2 hover:border-red-500 hover:text-red-600 dark:hover:text-red-400"
+        >
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-            Exit Quiz
-          </Button>
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+            />
+          </svg>
+          Exit Quiz
+        </Button>
       </div>
       <QuizProgress
         current={state.currentIndex}
@@ -487,7 +511,7 @@ const confirmQuit = () => {
       />
 
       {(() => {
-        const calculatedTime = timeLimitSeconds ?? (totalQuestions * 30);
+        const calculatedTime = timeLimitSeconds ?? totalQuestions * 30;
         return (
           <CountdownTimer
             timeLimitSeconds={calculatedTime}
@@ -502,7 +526,10 @@ const confirmQuit = () => {
         question={currentQuestion}
         status={state.questionStatus}
         selectedAnswerId={state.selectedAnswerId}
-        isCorrect={state.answers.find(a => a.questionId === currentQuestion.id)?.isCorrect ?? false}
+        isCorrect={
+          state.answers.find(a => a.questionId === currentQuestion.id)
+            ?.isCorrect ?? false
+        }
         onAnswer={handleAnswer}
         onNext={handleNext}
         isLoading={isPending}

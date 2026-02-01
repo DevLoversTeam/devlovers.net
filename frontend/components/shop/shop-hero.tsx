@@ -51,7 +51,6 @@ export function Hero({ headline, subheadline, ctaText, ctaLink }: HeroProps) {
     shadow-[var(--shop-hero-btn-shadow)] hover:shadow-[var(--shop-hero-btn-shadow-hover)]
   `}
             >
-              {/* base gradient */}
               <span
                 className="absolute inset-0"
                 style={shopCtaGradient(
@@ -61,7 +60,6 @@ export function Hero({ headline, subheadline, ctaText, ctaLink }: HeroProps) {
                 aria-hidden="true"
               />
 
-              {/* hover wave overlay */}
               <span
                 className={SHOP_CTA_WAVE}
                 style={shopCtaGradient(
@@ -71,7 +69,6 @@ export function Hero({ headline, subheadline, ctaText, ctaLink }: HeroProps) {
                 aria-hidden="true"
               />
 
-              {/* glass inset */}
               <span className={SHOP_CTA_INSET} aria-hidden="true" />
 
               <span className="relative z-10 flex items-center gap-2">

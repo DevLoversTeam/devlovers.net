@@ -9,7 +9,6 @@ import {
 } from '@/lib/ai/prompts';
 import { getCurrentUser } from '@/lib/auth';
 
-
 const rateLimiter = new Map<string, { count: number; resetAt: number }>();
 const MAX_REQUESTS_PER_WINDOW = 10;
 const RATE_LIMIT_WINDOW_MS = 20 * 60 * 1000;
@@ -40,8 +39,11 @@ const requestSchema = z.object({
     .optional(),
 });
 
-
-function checkRateLimit(userId: string): { allowed: boolean; remaining: number; resetIn: number } {
+function checkRateLimit(userId: string): {
+  allowed: boolean;
+  remaining: number;
+  resetIn: number;
+} {
   cleanupRateLimiter();
 
   const now = Date.now();
@@ -49,7 +51,11 @@ function checkRateLimit(userId: string): { allowed: boolean; remaining: number; 
 
   if (!entry || now > entry.resetAt) {
     rateLimiter.set(userId, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
-    return { allowed: true, remaining: MAX_REQUESTS_PER_WINDOW - 1, resetIn: RATE_LIMIT_WINDOW_MS };
+    return {
+      allowed: true,
+      remaining: MAX_REQUESTS_PER_WINDOW - 1,
+      resetIn: RATE_LIMIT_WINDOW_MS,
+    };
   }
 
   if (entry.count >= MAX_REQUESTS_PER_WINDOW) {
@@ -130,7 +136,6 @@ export async function POST(request: Request) {
     );
   }
 
-  // Parse and validate request body
   let body: unknown;
   try {
     body = await request.json();
@@ -155,7 +160,6 @@ export async function POST(request: Request) {
 
   const { term, context } = validationResult.data;
 
-  // Initialize Groq client
   const groq = new Groq({ apiKey });
 
   try {
@@ -194,15 +198,16 @@ export async function POST(request: Request) {
   }
 }
 
-// =============================================================================
-// GET /api/ai/explain - Health check
-// =============================================================================
 export async function GET() {
   const hasApiKey = !!process.env.GROQ_API_KEY;
 
   if (!hasApiKey) {
     return NextResponse.json(
-      { status: 'error', service: 'ai-explain', message: 'API key not configured' },
+      {
+        status: 'error',
+        service: 'ai-explain',
+        message: 'API key not configured',
+      },
       { status: 503 }
     );
   }
@@ -213,13 +218,11 @@ export async function GET() {
   );
 }
 
-// =============================================================================
-// Error Handling
-// =============================================================================
 function handleGroqError(error: unknown): NextResponse {
-  // Handle Groq SDK specific errors
   if (error instanceof Groq.APIError) {
-    console.error(`[ai/explain] Groq API error: ${error.status} ${error.message}`);
+    console.error(
+      `[ai/explain] Groq API error: ${error.status} ${error.message}`
+    );
 
     if (error.status === 401) {
       return NextResponse.json(
@@ -242,14 +245,12 @@ function handleGroqError(error: unknown): NextResponse {
       );
     }
 
-    // Other API errors (500, 503, etc.)
     return NextResponse.json(
       { error: 'AI service temporarily unavailable', code: 'API_ERROR' },
       { status: 503 }
     );
   }
 
-  // Handle JSON parse errors from response parsing
   if (error instanceof SyntaxError) {
     console.error('[ai/explain] Failed to parse AI response as JSON');
     return NextResponse.json(
@@ -258,8 +259,10 @@ function handleGroqError(error: unknown): NextResponse {
     );
   }
 
-  // Handle response structure validation errors
-  if (error instanceof Error && error.message === 'Invalid response structure') {
+  if (
+    error instanceof Error &&
+    error.message === 'Invalid response structure'
+  ) {
     console.error('[ai/explain] AI response missing required fields');
     return NextResponse.json(
       { error: 'AI returned incomplete response', code: 'INVALID_STRUCTURE' },
@@ -267,7 +270,6 @@ function handleGroqError(error: unknown): NextResponse {
     );
   }
 
-  // Unknown errors
   console.error('[ai/explain] Unexpected error:', error);
   return NextResponse.json(
     { error: 'Failed to generate explanation', code: 'AI_ERROR' },

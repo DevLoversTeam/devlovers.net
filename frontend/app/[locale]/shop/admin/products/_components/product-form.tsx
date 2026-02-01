@@ -195,8 +195,6 @@ export function ProductForm({
     Partial<Record<CurrencyCode, string>>
   >({});
 
-  // Hydrate state from initialValues once per product in EDIT mode.
-  // In edit: slug must come from DB and stay stable (no title->slug regeneration).
   useEffect(() => {
     if (mode !== 'edit') {
       hydratedKeyRef.current = null;
@@ -221,8 +219,6 @@ export function ProductForm({
 
     if (hydratedKeyRef.current === key) return;
 
-    // Reset transient UI state when switching between products in EDIT mode.
-    // Do NOT do this in submit: it breaks retries (e.g., clears selected image).
     setError(null);
     setSlugError(null);
     setImageError(null);
@@ -251,8 +247,7 @@ export function ProductForm({
   }, [mode, initialValues, productId]);
 
   const slugValue = useMemo(() => {
-    if (mode === 'edit') return slug; // slug в edit має бути стабільним (з БД)
-    // In create mode, always derive from current title to avoid stale slug on fast submit.
+    if (mode === 'edit') return slug;
     return localSlugify(title);
   }, [mode, slug, title]);
 
@@ -967,8 +962,8 @@ export function ProductForm({
               ? 'Creating...'
               : 'Updating...'
             : mode === 'create'
-            ? 'Create product'
-            : 'Save changes'}
+              ? 'Create product'
+              : 'Save changes'}
         </button>
       </form>
     </section>

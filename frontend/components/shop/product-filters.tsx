@@ -84,7 +84,6 @@ export function ProductFilters() {
         </ul>
       </section>
 
-      {/* Type */}
       <section aria-labelledby={typeGroupId}>
         <h3
           id={typeGroupId}
@@ -121,7 +120,6 @@ export function ProductFilters() {
         </ul>
       </section>
 
-      {/* Color */}
       <section aria-labelledby={colorGroupId}>
         <h3
           id={colorGroupId}
@@ -145,7 +143,6 @@ export function ProductFilters() {
                 aria-pressed={isSelected}
                 className={cn(
                   SHOP_SWATCH_BASE,
-                  // у фільтрах розмір 8x8, тому override:
                   'h-8 w-8',
                   SHOP_CHIP_INTERACTIVE,
                   SHOP_FOCUS,
@@ -162,7 +159,6 @@ export function ProductFilters() {
         </div>
       </section>
 
-      {/* Size */}
       <section aria-labelledby={sizeGroupId}>
         <h3
           id={sizeGroupId}
@@ -183,7 +179,6 @@ export function ProductFilters() {
                 aria-pressed={isSelected}
                 className={cn(
                   SHOP_SIZE_CHIP_BASE,
-                  // у фільтрах інші паддінги — override:
                   'px-3 py-1.5 text-sm',
                   SHOP_CHIP_INTERACTIVE,
                   SHOP_FOCUS,

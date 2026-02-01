@@ -75,7 +75,6 @@ export function AdminProductDeleteButton({
         return;
       }
 
-      // refresh server component data
       router.refresh();
     } catch {
       setError(t('failedDelete'));

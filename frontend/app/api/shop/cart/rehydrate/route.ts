@@ -97,7 +97,6 @@ export async function POST(request: NextRequest) {
     const { items } = parsedPayload.data;
     const parsedResult = await rehydrateCartItems(items, currency);
 
-    // Success signal (avoid noise on empty carts)
     if (Array.isArray(items) && items.length > 0) {
       logInfo('cart_rehydrate_completed', {
         ...meta,
@@ -109,7 +108,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(parsedResult);
   } catch (error) {
-    // Missing price for locale currency is a CONTRACT error (4xx), but must be traceable.
     if (error instanceof PriceConfigError) {
       logWarn('cart_rehydrate_price_config_error', {
         ...meta,
@@ -124,7 +122,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Client/business rejection (4xx) must be traceable as warn (not error).
     if (error instanceof InvalidPayloadError) {
       logWarn('cart_rehydrate_rejected', {
         ...meta,
@@ -134,7 +131,6 @@ export async function POST(request: NextRequest) {
       return jsonError(400, error.code, error.message);
     }
 
-    // DB misconfiguration / invalid stored money => 500 with stable code.
     if (error instanceof MoneyValueError) {
       logError('cart_rehydrate_price_data_error', error, {
         ...meta,
