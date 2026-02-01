@@ -547,7 +547,9 @@
         "items": "Produkty",
         "date": "Data",
         "status": "Status",
-        "total": "Razem"
+        "total": "Razem",
+        "openOrder": "Otwórz zamówienie {id}",
+        "orderId": "ID zamówienia"
       },
       "orderHeadline": {
         "incomplete": "Zamówienie {id} (niekompletne)",
