@@ -36,6 +36,8 @@ export const serverEnvSchema = z.object({
   MONO_API_BASE: z.string().url().optional(),
   MONO_INVOICE_TIMEOUT_MS: z.string().optional(),
   SHOP_STATUS_TOKEN_SECRET: z.string().min(32).optional(),
+  UPSTASH_REDIS_REST_URL: z.string().url().optional(),
+  UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
 });
 
 export const clientEnvSchema = z.object({
