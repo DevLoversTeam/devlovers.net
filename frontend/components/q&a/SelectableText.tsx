@@ -41,7 +41,6 @@ export default function SelectableText({
         return;
       }
 
-      // Check if selection is within our container
       if (containerRef.current) {
         const range = selection.getRangeAt(0);
         const selectionContainer = range.commonAncestorContainer;
@@ -61,7 +60,6 @@ export default function SelectableText({
       }
     };
 
-    // Use selectionchange event - works on desktop (mouse/keyboard) and mobile (touch)
     document.addEventListener('selectionchange', handleSelectionChange);
 
     return () => {

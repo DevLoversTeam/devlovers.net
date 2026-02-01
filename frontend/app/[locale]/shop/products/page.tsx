@@ -36,7 +36,6 @@ export default async function ProductsPage({
   const resolvedSearchParams = (await searchParams) ?? {};
   const t = await getTranslations('shop.products');
 
-  // canonicalize: infinite-load page should not be shareable as ?page=N
   if (resolvedSearchParams.page) {
     const qsParams = new URLSearchParams();
 

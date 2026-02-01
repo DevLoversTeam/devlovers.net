@@ -30,13 +30,6 @@ export async function POST(request: NextRequest) {
   const requestId =
     request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
 
-  // NOTE: We intentionally keep TWO origin checks:
-  // 1) guardBrowserSameOrigin(): generic unsafe-request Origin allowlist gate
-  //    (APP_ORIGIN/APP_ADDITIONAL_ORIGINS), fail-fast before auth/body parsing.
-  // 2) isSameOrigin(): CSRF-specific strict same-origin assertion, so CSRF origin mismatch
-  //    is logged/coded separately.
-  // These checks are not equivalent and serve different error semantics (policy vs CSRF).
-
   const blocked = guardBrowserSameOrigin(request);
 
   if (blocked) {
@@ -58,10 +51,8 @@ export async function POST(request: NextRequest) {
   };
 
   try {
-    // 1) Kill-switch + auth FIRST (no body parsing)
     await requireAdminApi(request);
 
-    // 2) CSRF checks second (browser-only semantics)
     if (!isSameOrigin(request)) {
       logWarn('admin_reconcile_stale_csrf_origin_mismatch', {
         ...baseMeta,

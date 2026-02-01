@@ -422,7 +422,6 @@ export default function CartPage() {
               {t('checkout.message')}
             </p>
 
-            {/* Fallback CTA if navigation fails after order was created */}
             {createdOrderId && !checkoutError ? (
               <div className="flex justify-center">
                 <Link

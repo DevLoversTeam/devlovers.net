@@ -253,3 +253,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Improved stability of text selection detection for AI helper
 - Fixed social icon hover styles in dark mode
 - Reduced visual overlap issues on small mobile screens
+
+## [0.5.2] - 2026-02-01
+
+### Added
+
+- About page enhancements:
+  - Refreshed Features and Pricing sections with clearer messaging
+  - Interactive particle-based backgrounds with reduced-motion support
+  - New reusable UI components: ParticleCanvas, GradientBadge, SectionHeading
+  - Improved mobile responsiveness and layout stability
+- Blog improvements:
+  - Pagination support for blog listing
+  - Dynamic grid backgrounds across blog pages
+  - Featured post CTA in blog hero
+  - Author filtering via URL with adaptive header behavior
+- AI Word Helper updates:
+  - Improved error handling with simplified retry UX
+  - Backend refactor for Vercel compatibility
+  - Rate limiting enforcement for AI explanation endpoint
+- Caching & performance:
+  - Upstash Redis cache for Q&A (cache-aside strategy)
+  - Robust cache parsing and invalidation handling
+- Infrastructure & tooling:
+  - Netlify deployment configuration updates
+  - Redis environment variable support
+  - CodeRabbit automated review configuration
+
+### Changed
+
+- Home page UI refinements:
+  - Refactored Hero section into reusable components
+  - Improved primary CTA button styling and interactions
+  - Updated card layouts and online users counter visuals
+- Blog experience refined:
+  - Improved text formatting and rendering consistency
+  - Better search, filtering, and pagination UX
+- Shop UI updates:
+  - Unified storefront styles across components
+  - Improved checkout flow state handling
+  - Added metadata across shop routes for better SEO
+- Default locale changed from `uk` to `en` with safer type validation
+- Internal refactors:
+  - Codebase cleanup and structural simplification
+  - Improved cache initialization and error handling
+
+### Fixed
+
+- Fixed blog text formatting and latest post image rendering
+- Resolved layout centering issues on Leaderboard
+- Fixed social icon hover styles in dark mode
+- Improved stability of text selection detection for AI helper
+- Fixed locale duplication and routing edge cases
+- Reduced visual overlap issues on small mobile screens

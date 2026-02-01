@@ -64,7 +64,6 @@ export const products = pgTable(
     description: text('description'),
     imageUrl: text('image_url').notNull(),
     imagePublicId: text('image_public_id'),
-    // legacy mirror (USD) — keep for now
     price: numeric('price', { precision: 10, scale: 2 })
       .$type<string>()
       .notNull(),
@@ -114,22 +113,19 @@ export const orders = pgTable(
       onDelete: 'set null',
     }),
 
-    // canonical money (minor units)
     totalAmountMinor: integer('total_amount_minor').notNull(),
 
-    // legacy mirror for UI/back-compat
     totalAmount: numeric('total_amount', { precision: 10, scale: 2 })
       .$type<string>()
       .notNull(),
 
     currency: currencyEnum('currency').notNull().default('USD'),
-    // keep as enum in DB and in TS
+
     paymentStatus: paymentStatusEnum('payment_status')
       .notNull()
       .default('pending')
       .$type<PaymentStatus>(),
 
-    // provider is text + CHECK constraint (OK), but TS must be narrowed
     paymentProvider: text('payment_provider')
       .notNull()
       .default('stripe')
@@ -211,7 +207,7 @@ export const orderItems = pgTable(
     productId: uuid('product_id')
       .notNull()
       .references(() => products.id),
-    // product variants (must be NOT NULL to make UNIQUE + ON CONFLICT reliable)
+
     selectedSize: text('selected_size').notNull().default(''),
     selectedColor: text('selected_color').notNull().default(''),
     quantity: integer('quantity').notNull(),
@@ -391,11 +387,9 @@ export const productPrices = pgTable(
       .references(() => products.id, { onDelete: 'cascade' }),
     currency: currencyEnum('currency').notNull(),
 
-    // canonical money (minor units)
     priceMinor: integer('price_minor').notNull(),
     originalPriceMinor: integer('original_price_minor'),
 
-    // legacy mirror (keep for now; used by admin/UI)
     price: numeric('price', { precision: 10, scale: 2 })
       .$type<string>()
       .notNull(),
@@ -417,7 +411,6 @@ export const productPrices = pgTable(
       t.currency
     ),
 
-    // checks should enforce canonical fields
     check('product_prices_price_positive', sql`${t.priceMinor} > 0`),
     check(
       'product_prices_original_price_valid',
@@ -505,8 +498,8 @@ export const paymentAttempts = pgTable(
       .notNull()
       .references(() => orders.id, { onDelete: 'cascade' }),
 
-    provider: text('provider').notNull(), // 'stripe'
-    status: text('status').notNull().default('active'), // active|succeeded|failed|canceled
+    provider: text('provider').notNull(),
+    status: text('status').notNull().default('active'),
     attemptNumber: integer('attempt_number').notNull(),
     currency: currencyEnum('currency'),
     expectedAmountMinor: bigint('expected_amount_minor', { mode: 'number' }),
@@ -542,7 +535,6 @@ export const paymentAttempts = pgTable(
       sql`${t.provider} in ('stripe','monobank')`
     ),
 
-    // CHECKs (match SQL migration)
     check(
       'payment_attempts_status_check',
       sql`${t.status} in ('creating','active','succeeded','failed','canceled')`

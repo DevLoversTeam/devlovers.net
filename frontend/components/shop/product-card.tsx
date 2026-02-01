@@ -9,17 +9,15 @@ import { formatMoney } from '@/lib/shop/currency';
 import { useTranslations } from 'next-intl';
 
 const PLACEHOLDER = '/placeholder.svg';
-const allowedHosts = new Set(['res.cloudinary.com', 'cdn.sanity.io']); // додай/прибери за потреби
+const allowedHosts = new Set(['res.cloudinary.com', 'cdn.sanity.io']);
 
 function safeImageSrc(raw?: string | null) {
   if (!raw || raw.trim().length === 0) return PLACEHOLDER;
 
   const s = raw.trim();
 
-  // public/*
   if (s.startsWith('/')) return s;
 
-  // remote
   if (s.startsWith('http://') || s.startsWith('https://')) {
     try {
       const u = new URL(s);

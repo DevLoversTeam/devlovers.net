@@ -1,7 +1,3 @@
-// scripts/shop-janitor-restock-stale.mjs
-// Calls internal janitor endpoint on a schedule (GitHub Actions).
-// Safe defaults: sends "{}" body to avoid NextRequest.json() throwing.
-
 const url = process.env.JANITOR_URL;
 const secret = process.env.INTERNAL_JANITOR_SECRET;
 
@@ -22,7 +18,6 @@ const rawTimeout = (process.env.JANITOR_TIMEOUT_MS ?? '').trim();
 let timeoutMs = DEFAULT_TIMEOUT_MS;
 
 if (rawTimeout) {
-  // strict: only digits, no "123abc", no floats, no underscores
   if (/^\d+$/.test(rawTimeout)) {
     const n = Number(rawTimeout);
     if (Number.isSafeInteger(n) && n > 0) {
@@ -54,7 +49,6 @@ try {
   const res = await fetch(url, {
     method: 'POST',
     headers: {
-      // Send both variants to match whatever your route expects.
       'content-type': 'application/json',
       'x-internal-janitor-secret': secret,
       authorization: `Bearer ${secret}`,
@@ -67,7 +61,6 @@ try {
   console.log(`[janitor] status=${res.status}`);
   if (text) console.log(text);
 
-  // Treat RATE_LIMITED as success for schedulers (no-op, expected sometimes).
   if (res.status === 429) process.exit(0);
   if (!res.ok) process.exit(1);
 } catch (err) {

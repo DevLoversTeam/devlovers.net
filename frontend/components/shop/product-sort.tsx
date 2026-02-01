@@ -1,5 +1,3 @@
-// frontend/components/shop/product-sort.tsx
-
 'use client';
 
 import { useId } from 'react';
@@ -26,7 +24,6 @@ export function ProductSort({ className }: ProductSortProps) {
   const t = useTranslations('shop.sort');
   const tOptions = useTranslations('shop.catalog.sort');
 
-  // IMPORTANT: when using '@/i18n/routing' router, do NOT prefix locale manually.
   const basePath = '/shop/products';
 
   const currentSort = searchParams.get('sort') || 'featured';

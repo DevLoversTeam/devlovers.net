@@ -38,6 +38,5 @@ export default function OrderStatusAutoRefresh({
     return () => window.clearInterval(id);
   }, [paymentStatus, router, maxMs, intervalMs]);
 
-  // Non-visual utility component (keeps page data fresh while payment settles).
   return <span className="sr-only" aria-live="polite" />;
 }

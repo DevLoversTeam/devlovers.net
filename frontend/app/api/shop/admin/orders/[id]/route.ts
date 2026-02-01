@@ -31,9 +31,6 @@ export async function GET(
   const requestId =
     request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
 
-  // Origin posture: same-origin enforcement is applied to mutating methods;
-  // GET is intentionally unguarded.
-
   const baseMeta = {
     requestId,
     route: request.nextUrl.pathname,
@@ -44,9 +41,6 @@ export async function GET(
 
   try {
     await requireAdminApi(request);
-
-    // CSRF is enforced only for state-changing admin routes.
-    // This endpoint is read-only (GET), so we intentionally do not require CSRF.
 
     const rawParams = await context.params;
     const parsed = orderIdParamSchema.safeParse(rawParams);
