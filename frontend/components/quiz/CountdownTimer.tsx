@@ -21,8 +21,10 @@ export function CountdownTimer({
   const t = useTranslations('quiz.timer');
   const endTime = startedAt.getTime() + timeLimitSeconds * 1000;
   const [remainingSeconds, setRemainingSeconds] = useState(() =>
+  const [remainingSeconds, setRemainingSeconds] = useState(() =>
     Math.max(0, Math.floor((endTime - Date.now()) / 1000))
   );
+
 
   useEffect(() => {
     if (!isActive) return;

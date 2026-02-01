@@ -9,6 +9,13 @@ import {
   useEffect,
   useCallback,
 } from 'react';
+import {
+  useReducer,
+  useTransition,
+  useState,
+  useEffect,
+  useCallback,
+} from 'react';
 import { toast } from 'sonner';
 import { useAntiCheat } from '@/hooks/useAntiCheat';
 import { useQuizSession } from '@/hooks/useQuizSession';
