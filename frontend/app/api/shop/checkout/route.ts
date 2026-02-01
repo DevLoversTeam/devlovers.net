@@ -300,7 +300,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Mono-only: do not create order / reserve stock when payments are disabled.
     if ((process.env.PAYMENTS_ENABLED ?? '').trim() !== 'true') {
       logWarn('monobank_payments_disabled', {
         ...baseMeta,
@@ -627,7 +626,6 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      // Not Stripe flow => return existing order as-is
       return buildCheckoutResponse({
         order: {
           id: order.id,
@@ -643,9 +641,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // =========================
-    // New order path
-    // =========================
     if (monobankPaymentFlow) {
       logInfo('monobank_lazy_import_invoked', {
         requestId,
