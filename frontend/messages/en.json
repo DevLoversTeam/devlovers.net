@@ -547,7 +547,9 @@
         "items": "Items",
         "date": "Date",
         "status": "Status",
-        "total": "Total"
+        "total": "Total",
+        "openOrder": "Open order {id}",
+        "orderId": "Order ID"
       },
       "orderHeadline": {
         "incomplete": "Order {id} (incomplete)",
@@ -921,7 +923,7 @@
     }
   },
   "onlineCounter": {
-    "one": "you are one step closer to the goal",
+    "one": "one step closer to the goal",
     "two": "chasing the dream",
     "upToFive": "on the way to an offer",
     "upToTen": "closer to the dream job",
