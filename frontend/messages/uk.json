@@ -216,7 +216,15 @@
     "articlesBy": "Статті від {name}",
     "articlesPublished": "Опубліковано статей: {count}",
     "recommendedPosts": "Рекомендовані статті",
-    "goBack": "Назад"
+    "goBack": "Назад",
+    "pagination": {
+      "label": "Пагінація",
+      "previous": "Назад",
+      "next": "Далі",
+      "previousPage": "Попередня сторінка",
+      "nextPage": "Наступна сторінка",
+      "page": "Сторінка {page}"
+    }
   },
   "footer": {
     "builtWith": "Створено",

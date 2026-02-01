@@ -216,7 +216,15 @@
     "articlesBy": "Articles by {name}",
     "articlesPublished": "{count} articles published",
     "recommendedPosts": "Recommended Posts",
-    "goBack": "Go back"
+    "goBack": "Go back",
+    "pagination": {
+      "label": "Pagination",
+      "previous": "Previous",
+      "next": "Next",
+      "previousPage": "Previous page",
+      "nextPage": "Next page",
+      "page": "Page {page}"
+    }
   },
   "footer": {
     "builtWith": "Built with",
