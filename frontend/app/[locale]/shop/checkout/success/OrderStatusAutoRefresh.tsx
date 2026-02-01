@@ -1,4 +1,3 @@
-// frontend/app/[locale]/shop/checkout/success/OrderStatusAutoRefresh.tsx
 'use client';
 
 import { useEffect, useRef } from 'react';

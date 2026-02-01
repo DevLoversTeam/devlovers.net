@@ -48,7 +48,10 @@ export function AdminProductStatusToggle({
           // ignore
         }
 
-        if (response.status === 403 && (code === 'CSRF_MISSING' || code === 'CSRF_INVALID')) {
+        if (
+          response.status === 403 &&
+          (code === 'CSRF_MISSING' || code === 'CSRF_INVALID')
+        ) {
           setError(t('securityExpired'));
           return;
         }
@@ -68,10 +71,14 @@ export function AdminProductStatusToggle({
     }
   };
 
-  const buttonLabel = isLoading ? t('updating') : isActive ? t('deactivate') : t('activate');
+  const buttonLabel = isLoading
+    ? t('updating')
+    : isActive
+      ? t('deactivate')
+      : t('activate');
 
   return (
-    <div className="flex min-w-0 flex-col gap-1">
+    <div className="flex w-full min-w-0 flex-col gap-1">
       <button
         type="button"
         onClick={toggleStatus}
@@ -79,7 +86,7 @@ export function AdminProductStatusToggle({
         aria-busy={isLoading}
         aria-pressed={isActive}
         aria-describedby={error ? errorId : undefined}
-        className="whitespace-nowrap rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
+        className="w-full max-w-full whitespace-normal break-words leading-tight rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50 text-center"
       >
         {buttonLabel}
       </button>
