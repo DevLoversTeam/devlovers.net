@@ -9,17 +9,15 @@ import { formatMoney } from '@/lib/shop/currency';
 import { useTranslations } from 'next-intl';
 
 const PLACEHOLDER = '/placeholder.svg';
-const allowedHosts = new Set(['res.cloudinary.com', 'cdn.sanity.io']); // додай/прибери за потреби
+const allowedHosts = new Set(['res.cloudinary.com', 'cdn.sanity.io']);
 
 function safeImageSrc(raw?: string | null) {
   if (!raw || raw.trim().length === 0) return PLACEHOLDER;
 
   const s = raw.trim();
 
-  // public/*
   if (s.startsWith('/')) return s;
 
-  // remote
   if (s.startsWith('http://') || s.startsWith('https://')) {
     try {
       const u = new URL(s);
@@ -46,7 +44,7 @@ export function ProductCard({ product }: ProductCardProps) {
   return (
     <Link
       href={`/shop/products/${product.slug}`}
-      className="group relative flex flex-col overflow-hidden rounded-lg border border-border bg-card transition-all duration-200 hover:-translate-y-1 hover:shadow-lg"
+      className="group relative flex flex-col overflow-hidden rounded-lg border border-border bg-card transition-shadow duration-500 hover:shadow-[var(--shop-card-shadow-hover)] hover:border-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
       {product.badge && product.badge !== 'NONE' && (
         <span
@@ -90,11 +88,15 @@ export function ProductCard({ product }: ProductCardProps) {
           )}
         </div>
 
-        {!product.inStock && (
-          <p className="mt-2 text-xs text-muted-foreground" role="status">
-            {t('soldOut')}
-          </p>
-        )}
+        <p
+          className={cn(
+            'mt-2 text-xs text-muted-foreground min-h-[1rem] leading-4',
+            product.inStock && 'invisible'
+          )}
+          {...(product.inStock ? { 'aria-hidden': true } : { role: 'status' })}
+        >
+          {t('soldOut')}
+        </p>
       </div>
     </Link>
   );

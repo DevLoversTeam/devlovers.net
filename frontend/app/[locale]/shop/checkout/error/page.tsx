@@ -1,4 +1,3 @@
-// frontend/app/[locale]/shop/checkout/error/page.tsx
 import { Link } from '@/i18n/routing';
 import { getTranslations } from 'next-intl/server';
 
@@ -6,6 +5,26 @@ import { formatMoney, resolveCurrencyFromLocale } from '@/lib/shop/currency';
 import { OrderNotFoundError } from '@/lib/services/errors';
 import { getOrderSummary } from '@/lib/services/orders';
 import { orderIdParamSchema } from '@/lib/validation/shop';
+import { cn } from '@/lib/utils';
+
+import {
+  SHOP_FOCUS,
+  SHOP_DISABLED,
+  SHOP_CTA_BASE,
+  SHOP_CTA_INTERACTIVE,
+  SHOP_CTA_INSET,
+  SHOP_CTA_WAVE,
+  shopCtaGradient,
+  SHOP_OUTLINE_BTN_BASE,
+  SHOP_OUTLINE_BTN_INTERACTIVE,
+} from '@/lib/shop/ui-classes';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Checkout Error | DevLovers',
+  description:
+    'We couldn’t complete the checkout. Try again or contact support.',
+};
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -25,6 +44,22 @@ function parseOrderId(searchParams?: SearchParams): string | null {
   const parsed = orderIdParamSchema.safeParse({ id: raw });
   return parsed.success ? parsed.data.id : null;
 }
+
+const SHOP_HERO_CTA_SM = cn(
+  SHOP_CTA_BASE,
+  SHOP_CTA_INTERACTIVE,
+  SHOP_FOCUS,
+  SHOP_DISABLED,
+  'px-4 py-2 text-sm text-white',
+  'shadow-[var(--shop-hero-btn-shadow)] hover:shadow-[var(--shop-hero-btn-shadow-hover)]'
+);
+
+const SHOP_OUTLINE_BTN = cn(
+  SHOP_OUTLINE_BTN_BASE,
+  SHOP_OUTLINE_BTN_INTERACTIVE,
+  SHOP_FOCUS,
+  SHOP_DISABLED
+);
 
 export default async function CheckoutErrorPage({
   params,
@@ -64,17 +99,32 @@ export default async function CheckoutErrorPage({
             className="mt-6 flex flex-wrap justify-center gap-3"
             aria-label="Checkout navigation"
           >
-            <Link
-              href="/shop/cart"
-              className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
-            >
+            <Link href="/shop/cart" className={SHOP_OUTLINE_BTN}>
               {t('actions.backToCart')}
             </Link>
-            <Link
-              href="/shop/products"
-              className="inline-flex items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground hover:bg-accent/90"
-            >
-              {t('actions.continueShopping')}
+
+            <Link href="/shop/products" className={SHOP_HERO_CTA_SM}>
+              <span
+                className="absolute inset-0"
+                style={shopCtaGradient(
+                  '--shop-hero-btn-bg',
+                  '--shop-hero-btn-bg-hover'
+                )}
+                aria-hidden="true"
+              />
+              <span
+                className={SHOP_CTA_WAVE}
+                style={shopCtaGradient(
+                  '--shop-hero-btn-bg-hover',
+                  '--shop-hero-btn-bg'
+                )}
+                aria-hidden="true"
+              />
+              <span className={SHOP_CTA_INSET} aria-hidden="true" />
+
+              <span className="relative z-10">
+                {t('actions.continueShopping')}
+              </span>
             </Link>
           </nav>
         </section>
@@ -108,17 +158,32 @@ export default async function CheckoutErrorPage({
               className="mt-6 flex flex-wrap justify-center gap-3"
               aria-label="Checkout navigation"
             >
-              <Link
-                href="/shop/cart"
-                className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
-              >
+              <Link href="/shop/cart" className={SHOP_OUTLINE_BTN}>
                 {t('actions.backToCart')}
               </Link>
-              <Link
-                href="/shop/products"
-                className="inline-flex items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground hover:bg-accent/90"
-              >
-                {t('actions.continueShopping')}
+
+              <Link href="/shop/products" className={SHOP_HERO_CTA_SM}>
+                <span
+                  className="absolute inset-0"
+                  style={shopCtaGradient(
+                    '--shop-hero-btn-bg',
+                    '--shop-hero-btn-bg-hover'
+                  )}
+                  aria-hidden="true"
+                />
+                <span
+                  className={SHOP_CTA_WAVE}
+                  style={shopCtaGradient(
+                    '--shop-hero-btn-bg-hover',
+                    '--shop-hero-btn-bg'
+                  )}
+                  aria-hidden="true"
+                />
+                <span className={SHOP_CTA_INSET} aria-hidden="true" />
+
+                <span className="relative z-10">
+                  {t('actions.continueShopping')}
+                </span>
               </Link>
             </nav>
           </section>
@@ -148,7 +213,6 @@ export default async function CheckoutErrorPage({
 
   const isFailed = order.paymentStatus === 'failed';
 
-  // Prefer minor units if available (new schema), fallback to legacy major if present.
   const totalMinor =
     typeof (order as any).totalAmountMinor === 'number'
       ? (order as any).totalAmountMinor
@@ -198,7 +262,9 @@ export default async function CheckoutErrorPage({
             </div>
 
             <div className="flex items-center justify-between gap-4">
-              <dt className="text-muted-foreground">{t('error.statusLabel')}</dt>
+              <dt className="text-muted-foreground">
+                {t('error.statusLabel')}
+              </dt>
               <dd className="font-semibold capitalize text-foreground">
                 {order.paymentStatus}
               </dd>
@@ -207,26 +273,38 @@ export default async function CheckoutErrorPage({
         </section>
 
         <nav className="mt-6 flex flex-wrap gap-3" aria-label="Next steps">
-          <Link
-            href="/shop/cart"
-            className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
-          >
+          <Link href="/shop/cart" className={SHOP_OUTLINE_BTN}>
             {t('actions.backToCart')}
           </Link>
 
           {isFailed && order.id ? (
             <Link
               href={`/shop/checkout/payment/${order.id}`}
-              className="inline-flex items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground hover:bg-accent/90"
+              className={SHOP_HERO_CTA_SM}
             >
-              {t('error.retryPayment')}
+              <span
+                className="absolute inset-0"
+                style={shopCtaGradient(
+                  '--shop-hero-btn-bg',
+                  '--shop-hero-btn-bg-hover'
+                )}
+                aria-hidden="true"
+              />
+              <span
+                className={SHOP_CTA_WAVE}
+                style={shopCtaGradient(
+                  '--shop-hero-btn-bg-hover',
+                  '--shop-hero-btn-bg'
+                )}
+                aria-hidden="true"
+              />
+              <span className={SHOP_CTA_INSET} aria-hidden="true" />
+
+              <span className="relative z-10">{t('error.retryPayment')}</span>
             </Link>
           ) : null}
 
-          <Link
-            href="/shop/products"
-            className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
-          >
+          <Link href="/shop/products" className={SHOP_OUTLINE_BTN}>
             {t('actions.continueShopping')}
           </Link>
         </nav>

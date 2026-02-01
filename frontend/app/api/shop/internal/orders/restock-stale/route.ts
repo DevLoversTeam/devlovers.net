@@ -36,17 +36,14 @@ const DEFAULT_POLICY: SweepPolicy = {
 const BATCH_MIN = 25;
 const BATCH_MAX = 100;
 
-const MIN_MINUTES = 10; // NOT 0
+const MIN_MINUTES = 10;
 const MAX_MINUTES = 60 * 24 * 7;
 
-// 9.1: minimal max runtime
 const DEFAULT_MAX_RUNTIME_MS = 20_000;
 const MAX_RUNTIME_MIN_MS = 1_000;
 const MAX_RUNTIME_MAX_MS = 25_000;
 
-// 9.2: min interval is enforced via ENV (prod 300; dev 60)
-// request can only INCREASE it, never decrease below env.
-const DEFAULT_REQUESTED_MIN_INTERVAL_SECONDS = 1; // lets env be the real floor
+const DEFAULT_REQUESTED_MIN_INTERVAL_SECONDS = 1;
 const MIN_INTERVAL_SECONDS_MIN = 1;
 const MIN_INTERVAL_SECONDS_MAX = 60 * 60;
 
@@ -90,7 +87,6 @@ function parseOlderThanPolicy(
   req: NextRequest,
   body: unknown
 ): OlderThanPolicy | { error: string } {
-  // Legacy: ?olderThanMinutes=60 (applies to stalePending only)
   const qLegacy = req.nextUrl.searchParams.get('olderThanMinutes');
   if (qLegacy !== null && qLegacy !== undefined) {
     const n = toFiniteNumber(qLegacy);
@@ -102,7 +98,6 @@ function parseOlderThanPolicy(
     };
   }
 
-  // Body: olderThanMinutes can be number (legacy) or object (new)
   let candidate: unknown = null;
   if (body && typeof body === 'object' && 'olderThanMinutes' in body) {
     candidate = (body as Record<string, unknown>).olderThanMinutes;
@@ -110,7 +105,6 @@ function parseOlderThanPolicy(
     return DEFAULT_POLICY.olderThanMinutes;
   }
 
-  // Legacy body: { olderThanMinutes: 60 } -> stalePending only
   if (typeof candidate === 'number' || typeof candidate === 'string') {
     const n = toFiniteNumber(candidate);
     if (n === null) return { error: 'olderThanMinutes must be a number' };
@@ -121,7 +115,6 @@ function parseOlderThanPolicy(
     };
   }
 
-  // New body: { olderThanMinutes: { stuckReserving, stalePending, orphanNoPayment } }
   if (!candidate || typeof candidate !== 'object') {
     return { error: 'olderThanMinutes must be a number or an object' };
   }
@@ -197,7 +190,6 @@ function parseRequestedMinIntervalSeconds(
 }
 
 function getEnvMinIntervalSeconds(): number {
-  // tests must not be slowed down / flake because of persistent DB limiter
   if (process.env.NODE_ENV === 'test') return 0;
 
   const fallback = process.env.NODE_ENV === 'production' ? 300 : 60;
@@ -216,10 +208,6 @@ function normalizeDate(x: unknown): Date | null {
   return isNaN(d.getTime()) ? null : d;
 }
 
-/**
- * DB-backed rate limiter (cross-instance).
- * Atomic: one SQL statement with ON CONFLICT ... WHERE next_allowed_at <= now()
- */
 async function acquireJobSlot(params: {
   jobName: string;
   effectiveMinIntervalSeconds: number;
@@ -302,7 +290,6 @@ export async function POST(request: NextRequest) {
       code: 'INVALID_PAYLOAD',
       reason: error instanceof Error ? error.message : String(error),
     });
-    // ignore invalid/missing json body; query params may be used instead
   }
 
   const batchSizeParsed = parseBatchSize(request, body);
@@ -402,7 +389,6 @@ export async function POST(request: NextRequest) {
     requestedMinIntervalSeconds
   );
 
-  // DB-backed limiter: cross-instance, atomic
   const runId = crypto.randomUUID();
   const jobName = baseMeta.jobName;
   const workerId = `janitor:${runId}`;
@@ -445,7 +431,6 @@ export async function POST(request: NextRequest) {
     const startedAtMs = Date.now();
     const deadlineMs = startedAtMs + maxRuntimeMs;
 
-    // 1) stuck reserving (timeout on inventory reservation phase)
     const remaining0 = Math.max(0, deadlineMs - Date.now());
     const processedStuckReserving = await restockStuckReservingOrders({
       olderThanMinutes: policy.olderThanMinutes.stuckReserving,
@@ -454,7 +439,6 @@ export async function POST(request: NextRequest) {
       timeBudgetMs: remaining0,
     });
 
-    // 2) stale pending (stripe payment never completed)
     const remaining1 = Math.max(0, deadlineMs - Date.now());
     const processedStalePending = await restockStalePendingOrders({
       olderThanMinutes: policy.olderThanMinutes.stalePending,
@@ -462,7 +446,7 @@ export async function POST(request: NextRequest) {
       workerId,
       timeBudgetMs: remaining1,
     });
-    // 3) orphan no-payment (payments disabled flow can be "paid" but not reserved yet)
+
     const remaining2 = Math.max(0, deadlineMs - Date.now());
     const processedOrphanNoPayment = await restockStaleNoPaymentOrders({
       olderThanMinutes: policy.olderThanMinutes.orphanNoPayment,
@@ -505,7 +489,7 @@ export async function POST(request: NextRequest) {
         orphanNoPayment: processedOrphanNoPayment,
       },
       batchSize: policy.batchSize,
-      olderThanMinutes: policy.olderThanMinutes.stalePending, // legacy field
+      olderThanMinutes: policy.olderThanMinutes.stalePending,
       appliedPolicy: policy,
       maxRuntimeMs,
       minIntervalSeconds,

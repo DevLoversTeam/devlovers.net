@@ -22,6 +22,19 @@ import {
   type CurrencyCode,
 } from '@/lib/shop/currency';
 import { logError } from '@/lib/logging';
+import { cn } from '@/lib/utils';
+
+import {
+  SHOP_FOCUS,
+  SHOP_DISABLED,
+  SHOP_CTA_BASE,
+  SHOP_CTA_INTERACTIVE,
+  SHOP_CTA_INSET,
+  SHOP_CTA_WAVE,
+  shopCtaGradient,
+  SHOP_OUTLINE_BTN_BASE,
+  SHOP_OUTLINE_BTN_INTERACTIVE,
+} from '@/lib/shop/ui-classes';
 
 type PaymentFormProps = {
   orderId: string;
@@ -48,11 +61,6 @@ function toCurrencyCode(
     : resolveCurrencyFromLocale(locale);
 }
 
-/**
- * IMPORTANT:
- * - In-app navigation uses next-intl routing -> DO NOT prefix locale manually.
- * - Stripe return_url is an external redirect -> MUST include locale exactly once.
- */
 const IN_APP_SHOP_BASE = '/shop';
 
 function normalizeLocale(raw: string): string {
@@ -66,13 +74,12 @@ function buildInAppPath(path: string): string {
 
 function buildStripeReturnUrl(params: {
   locale: string;
-  inAppPath: string; // must be "/shop/..."
+  inAppPath: string;
 }): string {
   const loc = normalizeLocale(params.locale);
   const p = params.inAppPath.startsWith('/')
     ? params.inAppPath
     : `/${params.inAppPath}`;
-  // Note: p can contain query string; URL() supports it.
   return new URL(`/${loc}${p}`, window.location.origin).toString();
 }
 
@@ -87,6 +94,7 @@ function nextRouteForPaymentResult(params: {
   const failure = buildInAppPath(`/checkout/error?orderId=${id}`);
 
   if (!status) return success;
+
   if (
     status === 'succeeded' ||
     status === 'processing' ||
@@ -94,10 +102,56 @@ function nextRouteForPaymentResult(params: {
   ) {
     return success;
   }
+
   if (status === 'requires_payment_method' || status === 'canceled') {
     return failure;
   }
+
   return success;
+}
+
+const SHOP_HERO_CTA = cn(
+  SHOP_CTA_BASE,
+  SHOP_CTA_INTERACTIVE,
+  SHOP_FOCUS,
+  SHOP_DISABLED,
+  'w-full items-center justify-center gap-2',
+  'px-6 py-3 text-sm text-white',
+  'shadow-[var(--shop-hero-btn-shadow)] hover:shadow-[var(--shop-hero-btn-shadow-hover)]'
+);
+
+const SHOP_OUTLINE = cn(
+  SHOP_OUTLINE_BTN_BASE,
+  SHOP_OUTLINE_BTN_INTERACTIVE,
+  SHOP_FOCUS,
+  SHOP_DISABLED,
+  'px-5 py-2.5'
+);
+
+function HeroCtaInner({ children }: { children: React.ReactNode }) {
+  return (
+    <>
+      <span
+        className="absolute inset-0"
+        style={shopCtaGradient(
+          '--shop-hero-btn-bg',
+          '--shop-hero-btn-bg-hover'
+        )}
+        aria-hidden="true"
+      />
+      <span
+        className={SHOP_CTA_WAVE}
+        style={shopCtaGradient(
+          '--shop-hero-btn-bg-hover',
+          '--shop-hero-btn-bg'
+        )}
+        aria-hidden="true"
+      />
+      <span className={SHOP_CTA_INSET} aria-hidden="true" />
+
+      <span className="relative z-10">{children}</span>
+    </>
+  );
 }
 
 function StripePaymentForm({ orderId, locale }: PaymentFormProps) {
@@ -131,7 +185,6 @@ function StripePaymentForm({ orderId, locale }: PaymentFormProps) {
         elements,
         redirect: 'if_required',
         confirmParams: {
-          // Stripe redirect comes from outside Next.js routing — MUST include locale exactly once.
           return_url: buildStripeReturnUrl({ locale, inAppPath: inAppSuccess }),
         },
       });
@@ -170,10 +223,12 @@ function StripePaymentForm({ orderId, locale }: PaymentFormProps) {
       <button
         type="submit"
         disabled={!stripe || submitting}
-        className="flex w-full items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground transition-colors hover:bg-accent/90 disabled:opacity-60"
+        className={SHOP_HERO_CTA}
         aria-disabled={!stripe || submitting}
       >
-        {submitting ? 'Processing...' : 'Submit payment'}
+        <HeroCtaInner>
+          {submitting ? 'Processing...' : 'Submit payment'}
+        </HeroCtaInner>
       </button>
 
       {errorMessage ? (
@@ -219,18 +274,23 @@ export default function StripePaymentClient({
         aria-label="Payments disabled"
       >
         <p>Payments are disabled in this environment.</p>
-        <nav className="flex gap-3" aria-label="Next steps">
+
+        <nav
+          className="flex flex-col gap-3 sm:flex-row"
+          aria-label="Next steps"
+        >
           <Link
             href={buildInAppPath(
               `/checkout/success?orderId=${encodeURIComponent(orderId)}`
             )}
-            className="inline-flex items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground hover:bg-accent/90"
+            className={cn(SHOP_HERO_CTA, 'w-full sm:w-auto')}
           >
-            Continue
+            <HeroCtaInner>Continue</HeroCtaInner>
           </Link>
+
           <Link
             href={buildInAppPath('/cart')}
-            className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
+            className={cn(SHOP_OUTLINE, 'w-full sm:w-auto')}
           >
             Back to cart
           </Link>
@@ -246,9 +306,10 @@ export default function StripePaymentClient({
         aria-label="Payment initialization failed"
       >
         <p>Payment cannot be initialized. Please try again later.</p>
+
         <Link
           href={buildInAppPath('/cart')}
-          className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
+          className={cn(SHOP_OUTLINE, 'w-full sm:w-auto')}
         >
           Return to cart
         </Link>
@@ -275,6 +336,7 @@ export default function StripePaymentClient({
                 {formatMoney(amountMinor, uiCurrency, locale)}
               </span>
             </div>
+
             <p className="text-xs uppercase tracking-wide text-muted-foreground">
               {uiCurrency}
             </p>

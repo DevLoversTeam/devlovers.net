@@ -16,7 +16,7 @@ export function PasswordField({
     const [visible, setVisible] = useState(false);
 
     const handleInvalid = (e: React.InvalidEvent<HTMLInputElement>) => {
-        const input = e.target;
+        const input = e.currentTarget;
         if (input.validity.valueMissing) {
             input.setCustomValidity(t("validation.required"));
         } else if (input.validity.tooShort && minLength) {

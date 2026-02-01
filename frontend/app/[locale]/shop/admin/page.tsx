@@ -1,9 +1,14 @@
-// frontend/app/[locale]/shop/admin/page.tsx
 import { Link } from '@/i18n/routing';
 import { getTranslations } from 'next-intl/server';
 
 import { ShopAdminTopbar } from '@/components/shop/admin/shop-admin-topbar';
 import { guardShopAdminPage } from '@/lib/auth/guard-shop-admin-page';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Shop Admin | DevLovers',
+  description: 'Manage products, orders, and settings for your shop.',
+};
 
 export const dynamic = 'force-dynamic';
 

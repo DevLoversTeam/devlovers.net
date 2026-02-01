@@ -11,7 +11,7 @@ export async function ShopAdminTopbar() {
           aria-label={t('label')}
           className="flex flex-wrap items-center justify-between gap-3 py-3"
         >
-          <ol className="flex flex-wrap items-center gap-3">
+          <ol className="flex min-w-0 flex-wrap items-center gap-3">
             <li>
               <Link
                 href="/shop/admin"
@@ -44,7 +44,7 @@ export async function ShopAdminTopbar() {
             </li>
           </ol>
 
-          <div className="shrink-0">
+          <div className="shrink-0 whitespace-nowrap">
             <Link
               href="/shop"
               className="inline-flex items-center rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary"

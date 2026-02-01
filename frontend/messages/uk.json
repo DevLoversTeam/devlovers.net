@@ -216,7 +216,15 @@
     "articlesBy": "Статті від {name}",
     "articlesPublished": "Опубліковано статей: {count}",
     "recommendedPosts": "Рекомендовані статті",
-    "goBack": "Назад"
+    "goBack": "Назад",
+    "pagination": {
+      "label": "Пагінація",
+      "previous": "Назад",
+      "next": "Далі",
+      "previousPage": "Попередня сторінка",
+      "nextPage": "Наступна сторінка",
+      "page": "Сторінка {page}"
+    }
   },
   "footer": {
     "builtWith": "Створено",
@@ -539,7 +547,9 @@
         "items": "Товари",
         "date": "Дата",
         "status": "Статус",
-        "total": "Всього"
+        "total": "Всього",
+        "openOrder": "Відкрити замовлення {id}",
+        "orderId": "ID замовлення"
       },
       "orderHeadline": {
         "incomplete": "Замовлення {id} (незавершене)",
@@ -913,7 +923,7 @@
     }
   },
   "onlineCounter": {
-    "one": "ти на крок до цілі",
+    "one": "на крок до цілі",
     "two": "йдуть до мрії",
     "upToFive": "на шляху до оффера",
     "upToTen": "ближчі до dream job",

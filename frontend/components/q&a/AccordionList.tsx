@@ -82,7 +82,6 @@ function renderTextNode(
 ): ReactNode {
   const { text, bold, italic, code, boldItalic } = node;
 
-  // Render text with optional highlighting
   const renderText = (content: string) => {
     if (highlight && highlight.cachedTerms.size > 0) {
       return (
@@ -370,7 +369,8 @@ export default function AccordionList({ items }: { items: QuestionEntry[] }) {
         {items.map((q, idx) => {
           const key = q.id ?? idx;
           const accent =
-            categoryTabStyles[q.category as keyof typeof categoryTabStyles]?.accent;
+            categoryTabStyles[q.category as keyof typeof categoryTabStyles]
+              ?.accent;
           return (
             <AccordionItem
               key={key}
@@ -402,7 +402,6 @@ export default function AccordionList({ items }: { items: QuestionEntry[] }) {
         })}
       </Accordion>
 
-
       {selectedText && buttonPosition && !modalOpen && (
         <FloatingExplainButton
           position={buttonPosition}
@@ -410,7 +409,6 @@ export default function AccordionList({ items }: { items: QuestionEntry[] }) {
           onDismiss={handleButtonDismiss}
         />
       )}
-
 
       <AIWordHelper
         term={selectedText || ''}

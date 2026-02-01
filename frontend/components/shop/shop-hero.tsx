@@ -5,6 +5,13 @@ interface HeroProps {
   ctaText: string;
   ctaLink: string;
 }
+import {
+  SHOP_CTA_BASE,
+  SHOP_CTA_INSET,
+  SHOP_CTA_WAVE,
+  SHOP_FOCUS,
+  shopCtaGradient,
+} from '@/lib/shop/ui-classes';
 
 export function Hero({ headline, subheadline, ctaText, ctaLink }: HeroProps) {
   return (
@@ -16,22 +23,63 @@ export function Hero({ headline, subheadline, ctaText, ctaLink }: HeroProps) {
         <div className="mx-auto max-w-3xl text-center">
           <h1
             id="shop-hero-title"
-            className="text-balance text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-6xl"
+            className="relative inline-block text-balance text-4xl font-black leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl pb-2"
           >
-            {headline}
+            <span className="relative inline-block bg-gradient-to-r from-foreground/80 via-foreground to-foreground/80 bg-clip-text text-transparent dark:from-[var(--accent-primary)]/70 dark:via-[color-mix(in_srgb,var(--accent-primary)_70%,white)]/70 dark:to-[var(--accent-hover)]/70">
+              {headline}
+            </span>
+
+            <span
+              className="pointer-events-none absolute inset-0 inline-block bg-gradient-to-r from-foreground via-foreground to-foreground bg-clip-text text-transparent wave-text-gradient dark:from-[var(--accent-primary)] dark:via-[color-mix(in_srgb,var(--accent-primary)_70%,white)] dark:to-[var(--accent-hover)]"
+              aria-hidden="true"
+            >
+              {headline}
+            </span>
           </h1>
 
-          <p className="mx-auto mt-6 max-w-xl text-pretty text-lg text-muted-foreground">
+          <p className="mx-auto mt-6 max-w-xl text-pretty text-sm sm:text-base md:text-lg text-muted-foreground font-light">
             {subheadline}
           </p>
 
           <div className="mt-10">
             <Link
               href={ctaLink}
-              className="inline-flex items-center gap-2 rounded-md bg-foreground px-6 py-3 text-sm font-semibold uppercase tracking-wide text-background transition-colors hover:bg-foreground/90 dark:bg-[color:var(--accent-primary)] dark:hover:bg-[color:var(--accent-hover)] dark:text-[color:var(--foreground)]"
+              className={`
+    ${SHOP_CTA_BASE} ${SHOP_FOCUS}
+    px-8 sm:px-10 md:px-12 py-3 md:py-3.5 lg:py-4
+    text-white
+    shadow-[var(--shop-hero-btn-shadow)] hover:shadow-[var(--shop-hero-btn-shadow-hover)]
+  `}
             >
-              <span>{ctaText}</span>
-              <span aria-hidden="true">→</span>
+              <span
+                className="absolute inset-0"
+                style={shopCtaGradient(
+                  '--shop-hero-btn-bg',
+                  '--shop-hero-btn-bg-hover'
+                )}
+                aria-hidden="true"
+              />
+
+              <span
+                className={SHOP_CTA_WAVE}
+                style={shopCtaGradient(
+                  '--shop-hero-btn-bg-hover',
+                  '--shop-hero-btn-bg'
+                )}
+                aria-hidden="true"
+              />
+
+              <span className={SHOP_CTA_INSET} aria-hidden="true" />
+
+              <span className="relative z-10 flex items-center gap-2">
+                <span>{ctaText}</span>
+                <span
+                  aria-hidden="true"
+                  className="transition-transform duration-300 group-hover:translate-x-0.5"
+                >
+                  →
+                </span>
+              </span>
             </Link>
           </div>
         </div>

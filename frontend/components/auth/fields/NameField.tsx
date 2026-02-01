@@ -12,7 +12,7 @@ export function NameField({
     const t = useTranslations("auth.fields");
 
     const handleInvalid = (e: React.InvalidEvent<HTMLInputElement>) => {
-        const input = e.target;
+        const input = e.currentTarget;
         if (input.validity.valueMissing) {
             input.setCustomValidity(t("validation.required"));
         }

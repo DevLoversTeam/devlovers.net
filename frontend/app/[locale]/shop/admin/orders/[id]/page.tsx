@@ -12,6 +12,12 @@ import {
 import { fromDbMoney } from '@/lib/shop/money';
 import { ShopAdminTopbar } from '@/components/shop/admin/shop-admin-topbar';
 import { guardShopAdminPage } from '@/lib/auth/guard-shop-admin-page';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Admin Order | DevLovers',
+  description: 'Review and manage order, including refunds and status checks.',
+};
 
 export const dynamic = 'force-dynamic';
 

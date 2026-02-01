@@ -154,7 +154,6 @@ async function readJsonBody(request: NextRequest): Promise<unknown> {
     throw new Error('EMPTY_BODY');
   }
 
-  // tolerate BOM / odd whitespace
   const normalized = raw.replace(/^\uFEFF/, '');
 
   return JSON.parse(normalized);
@@ -224,8 +223,7 @@ export async function POST(request: NextRequest) {
       idempotencyKey.format?.()
     );
   }
-  // For observability: shorten to avoid oversized structured logs.
-  // Never used as an idempotency key; the full header value remains canonical.
+
   const idempotencyKeyShort = idempotencyKey.slice(0, 32);
 
   const meta = {
@@ -299,8 +297,7 @@ export async function POST(request: NextRequest) {
       );
     }
   }
-  // P1: rate limit checkout (cross-instance, DB-backed)
-  // Policy: allow reasonable retries; block abusive burst.
+
   const checkoutSubject = sessionUserId ?? getRateLimitSubject(request);
 
   const limitParsed = Number.parseInt(
@@ -418,9 +415,6 @@ export async function POST(request: NextRequest) {
     const stripePaymentFlow =
       paymentsEnabled && order.paymentProvider === 'stripe';
 
-    // =========================
-    // Existing order path
-    // =========================
     if (!result.isNew) {
       if (stripePaymentFlow) {
         try {
@@ -444,7 +438,6 @@ export async function POST(request: NextRequest) {
           });
         } catch (error) {
           if (error instanceof PaymentAttemptsExhaustedError) {
-            // Best-effort release to avoid holding reserved stock indefinitely.
             try {
               await restockOrder(order.id, { reason: 'failed' });
             } catch (restockError) {
@@ -468,7 +461,6 @@ export async function POST(request: NextRequest) {
             );
           }
 
-          // Post-create/state conflict must be 409 (not 502)
           if (error instanceof InvalidPayloadError) {
             logWarn('checkout_conflict', {
               ...orderMeta,
@@ -509,7 +501,6 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Not Stripe flow => return existing order as-is
       return buildCheckoutResponse({
         order: {
           id: order.id,
@@ -525,9 +516,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // =========================
-    // New order path
-    // =========================
     if (!stripePaymentFlow) {
       return buildCheckoutResponse({
         order: {
@@ -544,7 +532,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Stripe new order: durable attempt layer (bounded + audited)
     try {
       const ensured = await ensureStripePaymentIntentForOrder({
         orderId: order.id,
@@ -565,7 +552,6 @@ export async function POST(request: NextRequest) {
         status: 201,
       });
     } catch (error) {
-      // Conflict => 409 and DO NOT restock (leave reserved; retry/janitor)
       if (error instanceof InvalidPayloadError) {
         logWarn('checkout_conflict', {
           ...orderMeta,
@@ -581,7 +567,6 @@ export async function POST(request: NextRequest) {
         );
       }
       if (error instanceof PaymentAttemptsExhaustedError) {
-        // Best-effort release to avoid holding reserved stock indefinitely
         try {
           await restockOrder(order.id, { reason: 'failed' });
         } catch (restockError) {
