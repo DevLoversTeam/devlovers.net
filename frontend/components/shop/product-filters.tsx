@@ -2,7 +2,17 @@
 
 import { useId } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-
+import { useTranslations } from 'next-intl';
+import {
+  SHOP_FOCUS,
+  SHOP_CHIP_INTERACTIVE,
+  SHOP_CHIP_HOVER,
+  SHOP_CHIP_SELECTED,
+  SHOP_SWATCH_BASE,
+  SHOP_SIZE_CHIP_BASE,
+  SHOP_FILTER_ITEM_BASE,
+  SHOP_CHIP_BORDER_HOVER,
+} from '@/lib/shop/ui-classes';
 import { CATEGORIES, COLORS, PRODUCT_TYPES, SIZES } from '@/lib/config/catalog';
 import { cn } from '@/lib/utils';
 
@@ -10,6 +20,10 @@ export function ProductFilters() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const t = useTranslations('shop.filters');
+  const tCategories = useTranslations('shop.catalog.categories');
+  const tTypes = useTranslations('shop.catalog.productTypes');
+  const tColors = useTranslations('shop.catalog.colors');
   const currentCategory = searchParams.get('category') || 'all';
   const currentType = searchParams.get('type');
   const currentColor = searchParams.get('color');
@@ -32,14 +46,14 @@ export function ProductFilters() {
   };
 
   return (
-    <aside className="space-y-8" aria-label="Product filters">
+    <aside className="space-y-8" aria-label={t('label')}>
       {/* Category */}
       <section aria-labelledby={categoryGroupId}>
         <h3
           id={categoryGroupId}
           className="text-sm font-semibold uppercase tracking-wide text-foreground"
         >
-          Category
+          {t('category')}
         </h3>
 
         <ul className="mt-4 space-y-2" role="list">
@@ -50,13 +64,20 @@ export function ProductFilters() {
                 onClick={() => updateFilter('category', cat.slug)}
                 aria-current={currentCategory === cat.slug ? 'true' : undefined}
                 className={cn(
-                  'text-sm transition-colors',
+                  SHOP_FILTER_ITEM_BASE,
+                  SHOP_FOCUS,
                   currentCategory === cat.slug
-                    ? 'font-medium text-accent'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'text-accent'
+                    : 'text-muted-foreground hover:text-accent'
                 )}
               >
-                {cat.label}
+                {tCategories(
+                  cat.slug === 'new-arrivals'
+                    ? 'newArrivals'
+                    : cat.slug === 'best-sellers'
+                      ? 'bestSellers'
+                      : cat.slug
+                )}
               </button>
             </li>
           ))}
@@ -69,7 +90,7 @@ export function ProductFilters() {
           id={typeGroupId}
           className="text-sm font-semibold uppercase tracking-wide text-foreground"
         >
-          Type
+          {t('type')}
         </h3>
 
         <ul className="mt-4 space-y-2" role="list">
@@ -85,13 +106,14 @@ export function ProductFilters() {
                   }
                   aria-pressed={isSelected}
                   className={cn(
-                    'text-sm transition-colors',
+                    SHOP_FILTER_ITEM_BASE,
+                    SHOP_FOCUS,
                     isSelected
-                      ? 'font-medium text-accent'
-                      : 'text-muted-foreground hover:text-foreground'
+                      ? 'text-accent'
+                      : 'text-muted-foreground hover:text-accent'
                   )}
                 >
-                  {type.label}
+                  {tTypes(type.slug)}
                 </button>
               </li>
             );
@@ -105,12 +127,13 @@ export function ProductFilters() {
           id={colorGroupId}
           className="text-sm font-semibold uppercase tracking-wide text-foreground"
         >
-          Color
+          {t('color')}
         </h3>
 
         <div className="mt-4 flex flex-wrap gap-2">
           {COLORS.map(color => {
             const isSelected = currentColor === color.slug;
+            const colorLabel = tColors(color.slug);
 
             return (
               <button
@@ -121,14 +144,18 @@ export function ProductFilters() {
                 }
                 aria-pressed={isSelected}
                 className={cn(
-                  'h-7 w-7 rounded-full border-2 transition-all',
+                  SHOP_SWATCH_BASE,
+                  // у фільтрах розмір 8x8, тому override:
+                  'h-8 w-8',
+                  SHOP_CHIP_INTERACTIVE,
+                  SHOP_FOCUS,
                   isSelected
-                    ? 'border-accent ring-2 ring-accent ring-offset-2 ring-offset-background'
-                    : 'border-border hover:border-muted-foreground'
+                    ? SHOP_CHIP_SELECTED
+                    : cn(SHOP_CHIP_HOVER, SHOP_CHIP_BORDER_HOVER)
                 )}
                 style={{ background: color.hex }}
-                title={color.label}
-                aria-label={color.label}
+                title={colorLabel}
+                aria-label={colorLabel}
               />
             );
           })}
@@ -141,7 +168,7 @@ export function ProductFilters() {
           id={sizeGroupId}
           className="text-sm font-semibold uppercase tracking-wide text-foreground"
         >
-          Size
+          {t('size')}
         </h3>
 
         <div className="mt-4 flex flex-wrap gap-2">
@@ -155,10 +182,18 @@ export function ProductFilters() {
                 onClick={() => updateFilter('size', isSelected ? null : size)}
                 aria-pressed={isSelected}
                 className={cn(
-                  'rounded-md border px-3 py-1.5 text-sm transition-colors',
+                  SHOP_SIZE_CHIP_BASE,
+                  // у фільтрах інші паддінги — override:
+                  'px-3 py-1.5 text-sm',
+                  SHOP_CHIP_INTERACTIVE,
+                  SHOP_FOCUS,
                   isSelected
-                    ? 'border-accent bg-accent text-accent-foreground'
-                    : 'border-border text-muted-foreground hover:border-foreground hover:text-foreground'
+                    ? cn('bg-accent text-accent-foreground', SHOP_CHIP_SELECTED)
+                    : cn(
+                        'bg-transparent text-muted-foreground border-border hover:text-foreground',
+                        SHOP_CHIP_HOVER,
+                        SHOP_CHIP_BORDER_HOVER
+                      )
                 )}
               >
                 {size}

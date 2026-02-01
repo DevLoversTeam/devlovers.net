@@ -1,5 +1,5 @@
-// frontend/app/[locale]/shop/checkout/success/page.tsx
 import { Link } from '@/i18n/routing';
+import { getTranslations } from 'next-intl/server';
 
 import OrderStatusAutoRefresh from './OrderStatusAutoRefresh';
 import { ClearCartOnMount } from '@/components/shop/clear-cart-on-mount';
@@ -7,6 +7,25 @@ import { formatMoney } from '@/lib/shop/currency';
 import { getOrderSummary } from '@/lib/services/orders';
 import { OrderNotFoundError } from '@/lib/services/errors';
 import { orderIdParamSchema } from '@/lib/validation/shop';
+import { cn } from '@/lib/utils';
+
+import {
+  SHOP_FOCUS,
+  SHOP_CTA_BASE,
+  SHOP_CTA_INTERACTIVE,
+  SHOP_CTA_INSET,
+  SHOP_CTA_WAVE,
+  SHOP_OUTLINE_BTN_BASE,
+  SHOP_OUTLINE_BTN_INTERACTIVE,
+  shopCtaGradient,
+} from '@/lib/shop/ui-classes';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Order Confirmed| DevLovers',
+  description:
+    'Your order has been placed. You can track its status on the order page.',
+};
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -36,6 +55,52 @@ function isPaymentsDisabled(params: SearchParams): boolean {
 function shouldClearCart(params: SearchParams): boolean {
   const raw = getStringParam(params, 'clearCart');
   return raw === 'true' || raw === '1';
+}
+
+/** Small hero CTA (Link) */
+const SHOP_HERO_CTA_SM = cn(
+  SHOP_CTA_BASE,
+  SHOP_CTA_INTERACTIVE,
+  SHOP_FOCUS,
+  'items-center justify-center overflow-hidden',
+  'px-4 py-2 text-sm text-white',
+  'shadow-[var(--shop-hero-btn-shadow)] hover:shadow-[var(--shop-hero-btn-shadow-hover)]'
+);
+
+/** Outline secondary action (Link) */
+const SHOP_OUTLINE_BTN = cn(
+  SHOP_OUTLINE_BTN_BASE,
+  SHOP_OUTLINE_BTN_INTERACTIVE,
+  SHOP_FOCUS
+);
+
+function HeroCtaInner({ children }: { children: React.ReactNode }) {
+  return (
+    <>
+      {/* base gradient */}
+      <span
+        className="absolute inset-0"
+        style={shopCtaGradient(
+          '--shop-hero-btn-bg',
+          '--shop-hero-btn-bg-hover'
+        )}
+        aria-hidden="true"
+      />
+      {/* hover wave overlay */}
+      <span
+        className={SHOP_CTA_WAVE}
+        style={shopCtaGradient(
+          '--shop-hero-btn-bg-hover',
+          '--shop-hero-btn-bg'
+        )}
+        aria-hidden="true"
+      />
+      {/* glass inset */}
+      <span className={SHOP_CTA_INSET} aria-hidden="true" />
+
+      <span className="relative z-10">{children}</span>
+    </>
+  );
 }
 
 function CheckoutShell({
@@ -77,26 +142,22 @@ export default async function CheckoutSuccessPage({
   const { locale } = await params;
   const resolvedParams = await searchParams;
   const clearCart = shouldClearCart(resolvedParams);
+  const t = await getTranslations('shop.checkout');
 
   const orderId = parseOrderId(resolvedParams);
   if (!orderId) {
     return (
       <CheckoutShell
-        title="Missing order id"
-        description="We couldn't identify your order. Please return to your cart or browse products."
+        title={t('errors.missingOrderId')}
+        description={t('missingOrder.message')}
       >
         <nav className="mt-6 flex justify-center gap-3" aria-label="Next steps">
-          <Link
-            href="/shop/products"
-            className="inline-flex items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground hover:bg-accent/90"
-          >
-            Back to products
+          <Link href="/shop/products" className={SHOP_HERO_CTA_SM}>
+            <HeroCtaInner>{t('actions.backToProducts')}</HeroCtaInner>
           </Link>
-          <Link
-            href="/shop/cart"
-            className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
-          >
-            Go to cart
+
+          <Link href="/shop/cart" className={SHOP_OUTLINE_BTN}>
+            {t('actions.goToCart')}
           </Link>
         </nav>
       </CheckoutShell>
@@ -112,24 +173,19 @@ export default async function CheckoutSuccessPage({
     if (error instanceof OrderNotFoundError) {
       return (
         <CheckoutShell
-          title="Order not found"
-          description="We couldn't find this order. It may have been removed or never existed."
+          title={t('errors.orderNotFound')}
+          description={t('notFoundOrder.message')}
         >
           <nav
             className="mt-6 flex justify-center gap-3"
             aria-label="Next steps"
           >
-            <Link
-              href="/shop/products"
-              className="inline-flex items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground hover:bg-accent/90"
-            >
-              Back to products
+            <Link href="/shop/products" className={SHOP_HERO_CTA_SM}>
+              <HeroCtaInner>{t('actions.backToProducts')}</HeroCtaInner>
             </Link>
-            <Link
-              href="/shop/cart"
-              className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
-            >
-              Go to cart
+
+            <Link href="/shop/cart" className={SHOP_OUTLINE_BTN}>
+              {t('actions.goToCart')}
             </Link>
           </nav>
         </CheckoutShell>
@@ -138,8 +194,8 @@ export default async function CheckoutSuccessPage({
 
     return (
       <CheckoutShell
-        title="Unable to load order"
-        description="Please try again later."
+        title={t('errors.unableToLoad')}
+        description={t('errors.tryAgainLater')}
       />
     );
   }
@@ -159,27 +215,26 @@ export default async function CheckoutSuccessPage({
 
       <section className="rounded-lg border border-border bg-card p-8">
         <p className="text-sm font-semibold uppercase tracking-wide text-accent">
-          Thank you for your order
+          {t('success.title')}
         </p>
 
         <h1
           id="order-title"
           className="mt-2 text-3xl font-bold text-foreground"
         >
-          Order #{order.id.slice(0, 8)}
+          {t('success.orderLabel')} #{order.id.slice(0, 8)}
         </h1>
 
         <p className="mt-2 text-sm text-muted-foreground">
-          We&apos;ve received your order.
+          {t('success.received')}
           {order.paymentStatus === 'paid'
-            ? ' Payment has been confirmed.'
-            : ' Payment is still being processed. This page will update automatically.'}
+            ? ` ${t('success.paymentConfirmed')}`
+            : ` ${t('success.paymentProcessing')}`}
         </p>
 
         {paymentsDisabled ? (
           <p className="mt-3 text-sm text-amber-500" role="note">
-            Payments are disabled in this environment. You were not charged for
-            this order.
+            {t('success.paymentsDisabled')}
           </p>
         ) : null}
 
@@ -189,24 +244,26 @@ export default async function CheckoutSuccessPage({
         >
           <div className="rounded-md border border-border bg-muted/40 p-4">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              Order summary
+              {t('success.orderSummary')}
             </h2>
 
             <dl className="mt-3 space-y-2 text-sm">
               <div className="flex items-center justify-between">
-                <dt className="text-muted-foreground">Total amount</dt>
+                <dt className="text-muted-foreground">
+                  {t('success.totalAmount')}
+                </dt>
                 <dd className="font-semibold text-foreground">
                   {formatMoney(totalMinor, order.currency, locale)}
                 </dd>
               </div>
 
               <div className="flex items-center justify-between">
-                <dt className="text-muted-foreground">Items</dt>
+                <dt className="text-muted-foreground">{t('success.items')}</dt>
                 <dd className="font-medium text-foreground">{itemsCount}</dd>
               </div>
 
               <div className="flex items-center justify-between">
-                <dt className="text-muted-foreground">Status</dt>
+                <dt className="text-muted-foreground">{t('success.status')}</dt>
                 <dd className="font-semibold capitalize text-foreground">
                   {order.paymentStatus}
                 </dd>
@@ -216,17 +273,12 @@ export default async function CheckoutSuccessPage({
         </section>
 
         <nav className="mt-8 flex flex-wrap gap-3" aria-label="Next steps">
-          <Link
-            href="/shop/products"
-            className="inline-flex items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground hover:bg-accent/90"
-          >
-            Continue shopping
+          <Link href="/shop/products" className={SHOP_HERO_CTA_SM}>
+            <HeroCtaInner>{t('success.continueShopping')}</HeroCtaInner>
           </Link>
-          <Link
-            href="/shop/cart"
-            className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
-          >
-            View cart
+
+          <Link href="/shop/cart" className={SHOP_OUTLINE_BTN}>
+            {t('success.viewCart')}
           </Link>
         </nav>
       </section>

@@ -2,11 +2,14 @@
 
 import { motion } from "framer-motion"
 import { CheckCircle, Users, Star, Linkedin, ArrowDown } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { InteractiveGame } from "./InteractiveGame"
 import type { PlatformStats } from "@/lib/about/stats"
 import { DynamicGridBackground } from "@/components/shared/DynamicGridBackground"
 
 export function HeroSection({ stats }: { stats?: PlatformStats }) {
+  const t = useTranslations("about.hero")
+
   const data = stats || {
     questionsSolved: "850+",
     githubStars: "120+",
@@ -17,69 +20,69 @@ export function HeroSection({ stats }: { stats?: PlatformStats }) {
   return (
     <DynamicGridBackground showStaticGrid className="flex min-h-[calc(100svh)] items-center justify-center bg-gray-50 transition-colors duration-300 dark:bg-transparent pt-20 pb-10">
       <div className="relative z-10 grid w-full max-w-[1600px] grid-cols-1 items-center px-4 sm:px-6 lg:px-8 xl:grid-cols-12 xl:gap-8 h-full">
-        
+
         <div className="hidden h-full flex-col justify-center gap-24 xl:col-span-3 xl:flex">
              <motion.div initial={{ x: -50, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.2 }} className="self-end">
-                <GlassWidget icon={CheckCircle} color="text-green-500" bg="bg-green-500/10" label="Quizzes Passed" value={data.questionsSolved} />
+                <GlassWidget icon={CheckCircle} color="text-green-500" bg="bg-green-500/10" label={t("stats.quizzesPassed")} value={data.questionsSolved} />
              </motion.div>
              <motion.div initial={{ x: -50, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.4 }} className="self-start">
-                <GlassWidget icon={Star} color="text-yellow-500" bg="bg-yellow-500/10" label="GitHub Stars" value={data.githubStars} />
+                <GlassWidget icon={Star} color="text-yellow-500" bg="bg-yellow-500/10" label={t("stats.githubStars")} value={data.githubStars} />
              </motion.div>
         </div>
 
         <div className="flex flex-col items-center text-center xl:col-span-6">
-            
+
             <div className="scale-90 md:scale-100 mb-6">
                 <InteractiveGame />
             </div>
 
-            <motion.h1 
+            <motion.h1
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.6 }}
-              className="mt-4 mb-8 text-4xl font-black tracking-tight text-gray-900 dark:text-white md:text-6xl lg:text-7xl max-w-5xl text-balance leading-[1.1]"
+              className="mt-4 mb-8 text-4xl font-black tracking-tight text-gray-900 dark:text-white md:text-5xl lg:text-6xl xl:text-7xl max-w-5xl text-balance leading-[1.1]"
             >
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1e5eff] to-[#174ad6] dark:from-[#ff2d55] dark:to-[#e0264b]">
-                Debug your skills
-              </span> before the recruiter does.
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1e5eff] to-[#1e5eff]/70 dark:from-[#ff2d55] dark:to-[#ff2d55]/70">
+                {t("titleHighlight")} <br/>
+              </span> {t("titleRest")}
             </motion.h1>
-            
-            <motion.p 
+
+            <motion.p
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="max-w-3xl text-base font-light leading-relaxed text-gray-600 text-balance dark:text-gray-400 md:text-xl mb-10"
+              className="max-w-3xl text-sm font-light leading-relaxed text-gray-700 text-balance dark:text-gray-300 md:text-lg lg:text-xl mb-10"
             >
-              Stop guessing. We decoded the chaotic interview process into a structured roadmap. <strong className="font-medium text-gray-900 dark:text-gray-200">Compile your scattered knowledge</strong> into a production-ready skillset and land that offer.
+              {t("description")} <strong className="font-medium text-gray-900 dark:text-gray-200">{t("descriptionHighlight")}</strong> {t("descriptionRest")}
             </motion.p>
 
-            <motion.div 
+            <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
                 className="grid w-full max-w-lg grid-cols-2 gap-4 xl:hidden"
             >
-                <MobileStatItem icon={CheckCircle} color="text-green-500" bg="bg-green-500/10" label="Quizzes" value={data.questionsSolved} />
-                <MobileStatItem icon={Star} color="text-yellow-500" bg="bg-yellow-500/10" label="Stars" value={data.githubStars} />
-                <MobileStatItem icon={Users} color="text-[#ff2d55]" bg="bg-[#ff2d55]/10" label="Users" value={data.activeUsers} />
-                <MobileStatItem icon={Linkedin} color="text-blue-600" bg="bg-blue-600/10" label="Followers" value={data.linkedinFollowers} />
+                <MobileStatItem icon={CheckCircle} color="text-green-500" bg="bg-green-500/10" label={t("stats.quizzes")} value={data.questionsSolved} />
+                <MobileStatItem icon={Star} color="text-yellow-500" bg="bg-yellow-500/10" label={t("stats.stars")} value={data.githubStars} />
+                <MobileStatItem icon={Users} color="text-[#ff2d55]" bg="bg-[#ff2d55]/10" label={t("stats.users")} value={data.activeUsers} />
+                <MobileStatItem icon={Linkedin} color="text-blue-600" bg="bg-blue-600/10" label={t("stats.followers")} value={data.linkedinFollowers} />
             </motion.div>
 
-            <motion.div 
+            <motion.div
                 animate={{ y: [0, 10, 0] }}
                 transition={{ duration: 2, repeat: Infinity }}
                 className="mt-16 text-gray-400 dark:text-gray-600 hidden xl:block"
             >
-                <ArrowDown className="h-6 w-6" />
+                <ArrowDown className="h-6 w-6" aria-hidden="true" />
             </motion.div>
         </div>
 
         <div className="hidden h-full flex-col justify-center gap-24 xl:col-span-3 xl:flex">
              <motion.div initial={{ x: 50, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.3 }} className="self-start">
-                <GlassWidget icon={Users} color="text-[#ff2d55]" bg="bg-[#ff2d55]/10" label="Active Users" value={data.activeUsers} />
+                <GlassWidget icon={Users} color="text-[#ff2d55]" bg="bg-[#ff2d55]/10" label={t("stats.activeUsers")} value={data.activeUsers} />
              </motion.div>
              <motion.div initial={{ x: 50, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.5 }} className="self-end">
-                <GlassWidget icon={Linkedin} color="text-blue-600" bg="bg-blue-600/10" label="LinkedIn Followers" value={data.linkedinFollowers} />
+                <GlassWidget icon={Linkedin} color="text-blue-600" bg="bg-blue-600/10" label={t("stats.linkedinFollowers")} value={data.linkedinFollowers} />
              </motion.div>
         </div>
 
@@ -92,9 +95,9 @@ function GlassWidget({ icon: Icon, color, bg, label, value }: any) {
     return (
         <motion.div 
             whileHover={{ y: -5 }}
-            className="flex min-w-[220px] items-center gap-4 rounded-2xl border border-gray-100 bg-white/60 p-5 shadow-xl backdrop-blur-xl transition-all hover:border-[#1e5eff]/30 dark:border-white/5 dark:bg-[#111]/60 dark:hover:border-[#ff2d55]/30 dark:shadow-black/50"
+            className="flex min-w-[220px] items-center gap-4 rounded-2xl border border-gray-100 bg-white/10 p-5 shadow-xl backdrop-blur-xl transition-all hover:border-[#1e5eff]/30 dark:border-white/5 dark:bg-neutral-900/10 dark:hover:border-[#ff2d55]/30 dark:shadow-black/50"
         >
-            <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${bg} ${color}`}>
+            <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${bg} ${color}`} aria-hidden="true">
                 <Icon size={24} />
             </div>
             <div className="flex flex-col items-start">
@@ -107,8 +110,8 @@ function GlassWidget({ icon: Icon, color, bg, label, value }: any) {
 
 function MobileStatItem({ icon: Icon, color, bg, label, value }: any) {
     return (
-        <div className="flex items-center gap-3 rounded-xl border border-gray-100 bg-white/60 p-3 shadow-sm backdrop-blur-xl dark:border-white/5 dark:bg-[#111]/60">
-            <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg ${bg} ${color}`}>
+        <div className="flex items-center gap-3 rounded-xl border border-gray-100 bg-white/10 p-3 shadow-sm backdrop-blur-xl dark:border-white/5 dark:bg-neutral-900/10">
+            <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg ${bg} ${color}`} aria-hidden="true">
                 <Icon size={20} />
             </div>
             <div className="flex flex-col items-start overflow-hidden">

@@ -1,6 +1,6 @@
 {
   "name": "frontend",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -30,6 +30,7 @@
     "@sanity/image-url": "^1.2.0",
     "@stripe/react-stripe-js": "^5.4.1",
     "@stripe/stripe-js": "^8.6.0",
+    "@upstash/redis": "^1.36.1",
     "@vercel/analytics": "^1.6.1",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
@@ -53,10 +54,11 @@
     "react-dom": "^19.2.1",
     "sonner": "^2.0.7",
     "stripe": "20.0.0",
-    "tailwind-merge": "^3.4.0"
+    "tailwind-merge": "^3.4.0",
+    "zod": "^3.24.0"
   },
   "devDependencies": {
-    "@netlify/plugin-nextjs": "^5.15.1",
+    "@netlify/plugin-nextjs": "^5.15.7",
     "@tailwindcss/postcss": "^4",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.8.0",

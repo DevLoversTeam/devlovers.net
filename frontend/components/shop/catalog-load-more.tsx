@@ -1,5 +1,13 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+import { cn } from '@/lib/utils';
+import {
+  SHOP_DISABLED,
+  SHOP_FOCUS,
+  SHOP_OUTLINE_BTN_BASE,
+  SHOP_OUTLINE_BTN_INTERACTIVE,
+} from '@/lib/shop/ui-classes';
 interface CatalogLoadMoreProps {
   hasMore: boolean;
   isLoading: boolean;
@@ -11,6 +19,9 @@ export function CatalogLoadMore({
   isLoading,
   onLoadMore,
 }: CatalogLoadMoreProps) {
+  const t = useTranslations('shop.products');
+  const tCommon = useTranslations('common');
+
   if (!hasMore) return null;
 
   return (
@@ -20,9 +31,15 @@ export function CatalogLoadMore({
         onClick={onLoadMore}
         disabled={isLoading}
         aria-busy={isLoading}
-        className="rounded-md border border-border px-6 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-70"
+        className={cn(
+          SHOP_OUTLINE_BTN_BASE,
+          SHOP_OUTLINE_BTN_INTERACTIVE,
+          SHOP_FOCUS,
+          SHOP_DISABLED,
+          'gap-2 px-6 py-2.5'
+        )}
       >
-        {isLoading ? 'Loading...' : 'Load more'}
+        {isLoading ? tCommon('loading') : t('loadMore')}
       </button>
     </div>
   );

@@ -19,6 +19,10 @@
     "closeMenu": "Zamknij menu",
     "logout": "Wyloguj się"
   },
+  "mobileMenu": {
+    "newProduct": "Nowy produkt",
+    "admin": "Admin"
+  },
   "navigation": {
     "home": "Strona główna",
     "topics": "Tematy",
@@ -220,12 +224,524 @@
     "privacyPolicy": "Polityka Prywatności",
     "termsOfService": "Warunki Świadczenia Usług"
   },
+  "shop": {
+    "page": {
+      "newArrivals": "Nowości",
+      "shopByCategory": "Sklep według kategorii",
+      "viewAll": "Zobacz wszystko",
+      "hero": {
+        "headline": "Koduj. Twórz. Kolekcjonuj.",
+        "subheadline": "Dołącz do tysięcy deweloperów, którzy wyrażają swoją pasję poprzez premium merch.",
+        "cta": "Przeglądaj wszystkie produkty"
+      },
+      "comingSoon": {
+        "headline": "Wkrótce...",
+        "subheadline": "Nasz sklep wkrótce zostanie uruchomiony. Bądź na bieżąco z najnowszymi produktami i ekskluzywnymi ofertami!",
+        "cta": "Kup teraz"
+      }
+    },
+    "product": {
+      "soldOut": "Wyprzedane",
+      "color": "Kolor",
+      "size": "Rozmiar",
+      "quantity": "Ilość",
+      "addToCart": "Dodaj do koszyka",
+      "addedToCart": "Dodano do koszyka",
+      "purchaseOptions": "Opcje zakupu",
+      "decreaseQuantity": "Zmniejsz ilość",
+      "increaseQuantity": "Zwiększ ilość",
+      "badges": {
+        "NEW": "Nowość",
+        "SALE": "Wyprzedaż"
+      }
+    },
+    "categoryTile": {
+      "shopCategory": "Kategoria: {name}"
+    },
+    "filters": {
+      "category": "Kategoria",
+      "type": "Typ",
+      "color": "Kolor",
+      "size": "Rozmiar",
+      "label": "Filtry produktów"
+    },
+    "sort": {
+      "sortBy": "Sortuj według:",
+      "label": "Sortowanie produktów"
+    },
+    "toolbar": {
+      "filters": "Filtry",
+      "openFilters": "Otwórz filtry",
+      "close": "Zamknij",
+      "label": "Kontrolki listy produktów"
+    },
+    "cart": {
+      "title": "Twój koszyk",
+      "empty": "Twój koszyk jest pusty",
+      "emptyDescription": "Wygląda na to, że nie dodałeś jeszcze żadnych produktów do koszyka.",
+      "startShopping": "Rozpocznij zakupy",
+      "itemsLabel": "Produkty w koszyku",
+      "summary": {
+        "heading": "Podsumowanie zamówienia",
+        "subtotal": "Suma częściowa",
+        "shipping": "Wysyłka",
+        "shippingCalc": "Obliczone przy kasie",
+        "total": "Razem"
+      },
+      "checkout": {
+        "placeOrder": "Złóż zamówienie",
+        "placing": "Składanie zamówienia...",
+        "message": "Zostaniesz przekierowany do bezpiecznej płatności lub zobaczysz potwierdzenie, jeśli płatność nie jest wymagana w tym środowisku.",
+        "notRedirected": "Jeśli nie zostałeś automatycznie przekierowany, otwórz swoje zamówienie",
+        "goToOrder": "Przejdź do zamówienia"
+      },
+      "actions": {
+        "removeItem": "Usuń {title} z koszyka",
+        "decreaseQty": "Zmniejsz ilość",
+        "increaseQty": "Zwiększ ilość",
+        "maxStock": "Maksymalnie {stock} w magazynie"
+      },
+      "alerts": {
+        "itemsRemoved": "Niektóre produkty zostały usunięte z koszyka, ponieważ są niedostępne lub wyprzedane."
+      }
+    },
+    "admin": {
+      "page": {
+        "title": "Panel administracyjny sklepu",
+        "description": "Narzędzia administracyjne dla sklepu z gadżetami.",
+        "productsSection": {
+          "title": "Produkty",
+          "description": "Twórz, edytuj, aktywuj, promuj."
+        },
+        "ordersSection": {
+          "title": "Zamówienia",
+          "description": "Przeglądaj i zarządzaj zamówieniami."
+        }
+      },
+      "topbar": {
+        "label": "Panel administracyjny sklepu",
+        "admin": "Admin",
+        "products": "Produkty",
+        "orders": "Zamówienia",
+        "backToShop": "Wróć do sklepu"
+      },
+      "products": {
+        "title": "Admin · Produkty",
+        "newProduct": "Nowy produkt",
+        "listCaption": "Lista produktów",
+        "empty": "Brak produktów.",
+        "table": {
+          "title": "Tytuł",
+          "slug": "Slug",
+          "price": "Cena",
+          "category": "Kategoria",
+          "type": "Typ",
+          "stock": "Stan",
+          "badge": "Odznaka",
+          "active": "Aktywny",
+          "featured": "Polecany",
+          "created": "Utworzono",
+          "actions": "Akcje"
+        },
+        "actions": {
+          "view": "Zobacz",
+          "edit": "Edytuj",
+          "viewProduct": "Zobacz produkt {title}",
+          "editProduct": "Edytuj produkt {title}",
+          "yes": "Tak",
+          "no": "Nie"
+        }
+      },
+      "statusToggle": {
+        "securityMissing": "Brak tokenu bezpieczeństwa. Odśwież stronę.",
+        "securityExpired": "Token bezpieczeństwa wygasł. Odśwież stronę i spróbuj ponownie.",
+        "failedUpdate": "Nie udało się zaktualizować statusu",
+        "updating": "Aktualizowanie",
+        "deactivate": "Dezaktywuj",
+        "activate": "Aktywuj"
+      },
+      "pagination": {
+        "label": "Stronicowanie",
+        "previous": "Poprzednia",
+        "next": "Następna",
+        "page": "Strona {page}",
+        "previousPage": "Poprzednia strona",
+        "nextPage": "Następna strona"
+      },
+      "orders": {
+        "title": "Admin · Zamówienia",
+        "reconcileStale": "Uzgodnij nieaktualne",
+        "empty": "Brak zamówień.",
+        "listCaption": "Lista zamówień",
+        "viewOrder": "Zobacz zamówienie {id}",
+        "table": {
+          "created": "Utworzono",
+          "status": "Status",
+          "total": "Suma",
+          "items": "Produkty",
+          "provider": "Dostawca",
+          "orderId": "ID zamówienia",
+          "actions": "Akcje"
+        },
+        "actions": {
+          "view": "Zobacz"
+        }
+      },
+      "deleteProduct": {
+        "securityMissing": "Brak tokenu bezpieczeństwa. Odśwież stronę.",
+        "securityExpired": "Token bezpieczeństwa wygasł. Odśwież stronę i spróbuj ponownie.",
+        "confirmDelete": "Usunąć produkt \"{title}\"? Tej operacji nie można cofnąć.",
+        "notFound": "Produkt nie znaleziony (już usunięty).",
+        "referenced": "Nie można usunąć: ten produkt jest powiązany z innymi rekordami.",
+        "failedDelete": "Nie udało się usunąć produktu",
+        "deleting": "Usuwanie",
+        "delete": "Usuń"
+      },
+      "refund": {
+        "onlyForPaid": "Zwrot jest dostępny tylko dla opłaconych zamówień przez Stripe",
+        "refunding": "Zwracanie…",
+        "refund": "Zwróć"
+      },
+      "navigation": {
+        "shopNav": "Nawigacja sklepu",
+        "home": "Strona główna"
+      }
+    },
+    "catalog": {
+      "results": "Wyniki katalogu",
+      "products": "Produkty",
+      "pagination": "Stronicowanie katalogu",
+      "loadMoreFailed": "Nie udało się załadować więcej",
+      "loadMoreFailedHttp": "Nie udało się załadować więcej (HTTP {status})",
+      "categories": {
+        "all": "Wszystkie produkty",
+        "newArrivals": "Nowości",
+        "bestSellers": "Bestsellery",
+        "apparel": "Odzież",
+        "lifestyle": "Styl życia",
+        "collectibles": "Kolekcjonerskie",
+        "sale": "Wyprzedaż"
+      },
+      "productTypes": {
+        "accessories": "Akcesoria",
+        "shirts": "Koszulki",
+        "drinkware": "Naczynia",
+        "technology": "Technologia"
+      },
+      "colors": {
+        "black": "Czarny",
+        "white": "Biały",
+        "grey": "Szary",
+        "navy": "Granatowy",
+        "multicolor": "Wielokolorowy"
+      },
+      "sort": {
+        "featured": "Polecane",
+        "priceAsc": "Cena: od najniższej",
+        "priceDesc": "Cena: od najwyższej",
+        "newest": "Najnowsze"
+      }
+    },
+    "products": {
+      "title": "Wszystkie produkty",
+      "noProductsFound": "Nie znaleziono produktów",
+      "adjustFilters": "Spróbuj dostosować filtry, aby znaleźć to, czego szukasz.",
+      "backToProducts": "Wróć do wszystkich produktów",
+      "notAvailable": "Ten produkt nie jest dostępny dla twojej lokalizacji/waluty.",
+      "loadMore": "Załaduj więcej",
+      "shopNow": "Kup teraz"
+    },
+    "checkout": {
+      "errors": {
+        "missingOrderId": "Brak identyfikatora zamówienia",
+        "missingOrderIdDescription": "Nie mogliśmy zidentyfikować twojego zamówienia. Wróć do koszyka lub przeglądaj produkty.",
+        "orderNotFound": "Zamówienie nie znalezione",
+        "orderNotFoundDescription": "Nie mogliśmy znaleźć tego zamówienia. Mogło zostać usunięte lub nigdy nie istniało.",
+        "invalidOrder": "Nieprawidłowe zamówienie",
+        "unableToLoad": "Nie można załadować zamówienia",
+        "unableToCheckout": "Nie można rozpocząć procesu zakupu.",
+        "unexpectedResponse": "Nieoczekiwana odpowiedź przy zakupie.",
+        "tryAgainLater": "Spróbuj ponownie później."
+      },
+      "missingOrder": {
+        "message": "Nie mogliśmy zidentyfikować twojego zamówienia. Wróć do koszyka lub przeglądaj produkty."
+      },
+      "notFoundOrder": {
+        "message": "Nie mogliśmy znaleźć tego zamówienia. Mogło zostać usunięte lub nigdy nie istniało."
+      },
+      "success": {
+        "title": "Dziękujemy za zamówienie",
+        "orderLabel": "Zamówienie",
+        "received": "Otrzymaliśmy twoje zamówienie.",
+        "paymentConfirmed": "Płatność została potwierdzona.",
+        "paymentProcessing": "Płatność jest nadal przetwarzana. Ta strona zaktualizuje się automatycznie.",
+        "paymentsDisabled": "Płatności są wyłączone w tym środowisku. Nie zostałeś obciążony za to zamówienie.",
+        "orderSummary": "Podsumowanie zamówienia",
+        "totalAmount": "Łączna kwota",
+        "items": "Produkty",
+        "status": "Status",
+        "continueShopping": "Kontynuuj zakupy",
+        "viewCart": "Zobacz koszyk"
+      },
+      "error": {
+        "paymentFailed": "Płatność nie powiodła się",
+        "paymentFailedDescription": "Płatność za to zamówienie nie została zakończona. Możesz spróbować ponownie lub skontaktować się z pomocą.",
+        "paymentUnclear": "Status płatności nieznany",
+        "paymentUnclearDescription": "Nie mogliśmy potwierdzić błędu płatności dla tego zamówienia.",
+        "notCompleted": "Płatność za to zamówienie nie została zakończona. Możesz spróbować ponownie lub skontaktować się z pomocą.",
+        "couldNotConfirm": "Nie mogliśmy potwierdzić błędu płatności dla tego zamówienia.",
+        "orderDetails": "Szczegóły zamówienia",
+        "order": "Zamówienie",
+        "orderLabel": "Zamówienie",
+        "total": "Razem",
+        "totalLabel": "Razem",
+        "status": "Status",
+        "statusLabel": "Status",
+        "backToCart": "Wróć do koszyka",
+        "retryPayment": "Spróbuj ponownie",
+        "continueShopping": "Kontynuuj zakupy"
+      },
+      "payment": {
+        "title": "Bezpieczna płatność",
+        "payForOrder": "Zapłać za zamówienie #{orderId}",
+        "paymentDetails": "Szczegóły płatności",
+        "completePayment": "Dokończ płatność, aby złożyć zamówienie.",
+        "amountDue": "Do zapłaty",
+        "orderSummary": "Podsumowanie zamówienia",
+        "items": "Produkty",
+        "totalAmount": "Łączna kwota",
+        "status": "Status",
+        "viewConfirmation": "Zobacz potwierdzenie",
+        "continueShopping": "Kontynuuj zakupy",
+        "statusMessages": {
+          "alreadyPaid": "To zamówienie jest już opłacone.",
+          "previousFailed": "Poprzednia próba płatności nie powiodła się. Spróbuj ponownie.",
+          "completePayment": "Dokończ płatność, aby sfinalizować zamówienie."
+        }
+      },
+      "actions": {
+        "backToProducts": "Wróć do produktów",
+        "goToCart": "Przejdź do koszyka",
+        "backToCart": "Wróć do koszyka",
+        "continueShopping": "Kontynuuj zakupy"
+      }
+    },
+    "orders": {
+      "title": "Moje zamówienia",
+      "subtitle": "Twoje najnowsze zamówienia (do 50).",
+      "backToShop": "Wróć do sklepu",
+      "empty": {
+        "message": "Brak zamówień.",
+        "browseProducts": "Przeglądaj produkty"
+      },
+      "table": {
+        "caption": "Twoje zamówienia",
+        "items": "Produkty",
+        "date": "Data",
+        "status": "Status",
+        "total": "Razem"
+      },
+      "orderHeadline": {
+        "incomplete": "Zamówienie {id} (niekompletne)",
+        "withMore": "{item} +{count} więcej",
+        "default": "Zamówienie {id}"
+      },
+      "paymentStatus": {
+        "paid": "Opłacone",
+        "pending": "Oczekujące",
+        "requiresPayment": "Wymaga płatności",
+        "failed": "Nieudane",
+        "refunded": "Zwrócone"
+      },
+      "detail": {
+        "title": "Zamówienie",
+        "myOrders": "Moje zamówienia",
+        "shop": "Sklep",
+        "orderSummary": "Podsumowanie zamówienia",
+        "total": "Razem",
+        "paymentStatus": "Status płatności",
+        "created": "Utworzono",
+        "provider": "Dostawca",
+        "paymentReference": "Referencja płatności",
+        "idempotencyKey": "Klucz idempotencji",
+        "stockRestored": "Stan przywrócony",
+        "restockedAt": "Przywrócono o",
+        "items": "Produkty",
+        "sku": "SKU: {sku}",
+        "product": "Produkt: {productId}",
+        "quantity": "Ilość",
+        "unitPrice": "Cena jednostkowa",
+        "lineTotal": "Suma wiersza",
+        "yes": "Tak",
+        "no": "Nie"
+      }
+    }
+  },
   "about": {
-
+    "metaTitle": "O nas | DevLovers",
+    "metaDescription": "Dowiedz się więcej o DevLovers — platformie do przygotowań do rozmów kwalifikacyjnych",
+    "hero": {
+      "titleHighlight": "Zdebuguj swoje umiejętności",
+      "titleRest": "zanim zrobi to rekruter.",
+      "description": "Przestań zgadywać. Zamieniliśmy chaotyczny proces rozmów w uporządkowaną mapę drogową.",
+      "descriptionHighlight": "Przekształć rozproszoną wiedzę",
+      "descriptionRest": "w gotowy do produkcji zestaw umiejętności i zdobądź ofertę.",
+      "stats": {
+        "quizzesPassed": "Ukończonych quizów",
+        "githubStars": "Gwiazdek na GitHub",
+        "activeUsers": "Aktywnych użytkowników",
+        "linkedinFollowers": "Obserwujących na LinkedIn",
+        "quizzes": "Quizów",
+        "stars": "Gwiazdek",
+        "users": "Użytkowników",
+        "followers": "Obserwujących"
+      }
+    },
+    "topics": {
+      "pretitle": "/ Ekosystem",
+      "titleStart": "Opanuj swój",
+      "titleHighlight": "cały stack",
+      "description": "Od frameworków frontendowych po logikę backendową. Obejmujemy kluczowe technologie 2026 roku.",
+      "questions": "Pytań"
+    },
+    "features": {
+      "title": "Funkcje zaprojektowane, aby",
+      "titleHighlight": "uczynić cię nie do zatrzymania",
+      "subtitle": "Przestań szukać rozproszonych informacji. Zebraliśmy idealny zestaw narzędzi do zdawania rozmów technicznych.",
+      "qa": {
+        "title": "Q&A",
+        "description": "Bez lania wody. Ogromna biblioteka prawdziwych pytań z rozmów z precyzyjnymi odpowiedziami zatwierdzonymi przez rekruterów."
+      },
+      "quiz": {
+        "title": "Quizy",
+        "description": "Zweryfikuj swoją pewność. Dynamiczne interaktywne quizy, które wykryją twoje słabe punkty przed rekruterem."
+      },
+      "leaderboard": {
+        "title": "Ranking",
+        "description": "Zgamifikuj przygotowania. Zdobywaj punkty za każdą poprawną odpowiedź, utrzymuj passę i rywalizuj z innymi."
+      },
+      "blog": {
+        "title": "Blog",
+        "description": "Bądź na bieżąco z artykułami o trendach technologicznych, tutorialami programistycznymi i spostrzeżeniami z branży."
+      },
+      "profile": {
+        "title": "Analityka",
+        "description": "Nie działaj po omacku. Wizualizuj swój postęp dzięki szczegółowym wykresom i zobacz, które tematy opanowałeś."
+      },
+      "shop": {
+        "title": "Sklep",
+        "description": "Ulepsz swój setup. Wysokiej jakości odzież dla programistów, akcesoria biurowe i zasoby cyfrowe."
+      },
+      "bubbles": {
+        "qa": {
+          "languages": { "label": "3 języki", "desc": "EN, UK i PL" },
+          "aiHelper": { "label": "Pomocnik AI", "desc": "Zaznacz tekst do wyjaśnienia" },
+          "smartCache": { "label": "Inteligentny cache", "desc": "Podświetla nauczone terminy" },
+          "techFilter": { "label": "Filtr tech", "desc": "React, Git, JS i więcej" }
+        },
+        "quiz": {
+          "smartTimer": { "label": "Inteligentny timer", "desc": "Ścigaj się z czasem" },
+          "antiCheat": { "label": "Anti-Cheat", "desc": "Wykrywanie utraty fokusa" },
+          "autoSync": { "label": "Auto-synchronizacja", "desc": "Zapisuje postęp po logowaniu" },
+          "tracking": { "label": "Śledzenie", "desc": "Najlepsze wyniki i próby" }
+        },
+        "leaderboard": {
+          "podium": { "label": "Podium", "desc": "Ekskluzywny spotlight top 3" },
+          "globalRank": { "label": "Globalny ranking", "desc": "Rywalizuj na całym świecie" },
+          "xpSystem": { "label": "System XP", "desc": "Punkty za każdą odpowiedź" },
+          "liveFeed": { "label": "Live feed", "desc": "Aktualizacje rang w czasie rzeczywistym" }
+        },
+        "profile": {
+          "statsHub": { "label": "Centrum statystyk", "desc": "Wizualizuj swój rozwój" },
+          "history": { "label": "Historia", "desc": "Śledź serie nauki" },
+          "identity": { "label": "Tożsamość", "desc": "Zarządzaj rolą i profilem" },
+          "reminders": { "label": "Przypomnienia", "desc": "Dokończ niedokończone quizy" }
+        },
+        "blog": {
+          "techTrends": { "label": "Trendy tech", "desc": "Bądź o krok przed innymi" },
+          "tutorials": { "label": "Tutoriale", "desc": "Przewodniki krok po kroku" },
+          "deepDives": { "label": "Głębokie analizy", "desc": "Szczegółowy rozbiór" },
+          "community": { "label": "Społeczność", "desc": "Pisane przez developerów" }
+        },
+        "shop": {
+          "newDrops": { "label": "Nowości", "desc": "Regularne aktualizacje" },
+          "curated": { "label": "Selekcja", "desc": "Kolekcje dla developerów" },
+          "checkout": { "label": "Płatność", "desc": "Płynny proces przez Stripe" },
+          "premium": { "label": "Premium", "desc": "Wysoka jakość materiałów" }
+        }
+      }
+    },
+    "pricing": {
+      "heading": "Cennik",
+      "badge": "Bez ukrytych opłat",
+      "title": "Inwestuj w swój mózg,",
+      "titleHighlight": "nie w nasze subskrypcje.",
+      "subtitle": "Wierzymy, że wiedza powinna być dostępna. Dlatego nie sprzedajemy kursów. Ale serwery się grzeją, a kawa się kończy. Wybór należy do ciebie.",
+      "junior": {
+        "title": "Junior Engineer",
+        "description": "Dla tych, którzy chcą oferty, nie wydatków.",
+        "price": "$0",
+        "period": "/ na zawsze",
+        "features": {
+          "unlimited": "Nieograniczone pytania",
+          "fullAccess": "Pełny dostęp do quizów",
+          "noCard": "Bez karty kredytowej",
+          "noGuilt": "0% wyrzutów sumienia"
+        },
+        "noYacht": "Osobisty jacht",
+        "cta": "Rozpocznij naukę"
+      },
+      "hero": {
+        "badge": "Wysoki wpływ",
+        "title": "Open Source Hero",
+        "description": "Dla tych, którzy już dostali ofertę dzięki nam.",
+        "price": "$$$",
+        "period": "/ punkty karmy",
+        "features": {
+          "servers": "Utrzymanie serwerów przy życiu",
+          "coffee": "Kawa dla developerów",
+          "badge": "Odznaka w profilu (Big Flex)",
+          "feeling": "Ciepłe uczucie w środku"
+        },
+        "drizzle": "Naprawdę płacimy za Drizzle",
+        "cta": "Wesprzyj projekt"
+      },
+      "disclaimer": "*Żaden developer nie ucierpiał podczas tworzenia tej tabeli cenowej. Ucierpiał tylko poziom kofeiny."
+    },
+    "sponsors": {
+      "badge": "Ostatni kontrybutorzy",
+      "emptySlot": "Ty?",
+      "yourSpot": "Twoje miejsce",
+      "joinClub": "Dołącz do klubu",
+      "fundsNote": "100% środków idzie na serwery i kawę",
+      "ctaAriaLabel": "Zostań sponsorem i zajmij swoje miejsce"
+    },
+    "community": {
+      "badge": "Miłość społeczności",
+      "title": "Zatwierdzone przez",
+      "titleHighlight": "Ocalałych",
+      "subtitle": "Dołącz do tysięcy developerów, którzy przestali zgadywać i zaczęli shipować. Prawdziwe opinie od prawdziwych inżynierów.",
+      "joinDiscussion": "Dołącz do dyskusji",
+      "successStory": "Masz historię sukcesu lub propozycję funkcji?",
+      "readThreads": "Czytamy każdy wątek"
+    },
+    "arcade": {
+      "title": "DevLovers Arcade",
+      "ready": "GOTOWE",
+      "level1": "Poziom 1",
+      "level2": "Poziom 2",
+      "level3": "Poziom 3",
+      "level4": "Poziom 4",
+      "crashed": "CRASH",
+      "running": "AKTYWNY",
+      "high": "Rekord",
+      "score": "Wynik",
+      "clickToStart": "Kliknij aby zacząć",
+      "systemFailure": "Awaria systemu",
+      "retry": "Ponów"
+    }
   },
   "notFound": {
-    "metaTitle": "404 - Strona nie znaleziona | DevLovers",
-    "metaDescription": "Strona, której szukasz, nie istnieje na DevLovers.",
     "title": "Strona nie znaleziona",
     "description": "Przepraszamy, nie mogliśmy znaleźć strony, której szukasz. Mogła zostać przeniesiona lub usunięta.",
     "backHome": "Wróć na stronę główną"
@@ -311,14 +827,19 @@
       "showPassword": "Pokaż hasło",
       "hidePassword": "Ukryj hasło",
       "show": "Pokaż",
-      "hide": "Ukryj"
+      "hide": "Ukryj",
+      "validation": {
+        "required": "Proszę wypełnić to pole",
+        "invalidEmail": "Proszę podać prawidłowy adres email",
+        "passwordTooShort": "Hasło musi mieć minimum {minLength} znaków"
+      }
     },
     "divider": "lub"
   },
   "dashboard": {
     "metaTitle": "Panel | DevLovers",
     "metaDescription": "Śledź swój postęp i wyniki quizów.",
-    "title": "Panel",
+    "title": "Panel użytkownika",
     "subtitle": "Witaj z powrotem na swoim placu treningowym.",
     "supportLink": "Wsparcie i opinie",
     "profile": {
@@ -390,6 +911,13 @@
       "working": "Naprawiamy…",
       "fixing": "Magia w toku"
     }
+  },
+  "onlineCounter": {
+    "one": "o krok od celu",
+    "two": "dążą do marzeń",
+    "upToFive": "w drodze po ofertę",
+    "upToTen": "bliżej wymarzonej pracy",
+    "many": "kroczy ku sukcesowi"
   },
   "legal": {
     "back": "Wróć",

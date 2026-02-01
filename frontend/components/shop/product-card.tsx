@@ -6,6 +6,7 @@ import type { ShopProduct } from '@/lib/shop/data';
 import { cn } from '@/lib/utils';
 import { useParams } from 'next/navigation';
 import { formatMoney } from '@/lib/shop/currency';
+import { useTranslations } from 'next-intl';
 
 const PLACEHOLDER = '/placeholder.svg';
 const allowedHosts = new Set(['res.cloudinary.com', 'cdn.sanity.io']); // додай/прибери за потреби
@@ -38,13 +39,14 @@ interface ProductCardProps {
 export function ProductCard({ product }: ProductCardProps) {
   const params = useParams<{ locale?: string }>();
   const locale = params.locale ?? 'en';
+  const t = useTranslations('shop.product');
 
   const src = safeImageSrc(product.image);
 
   return (
     <Link
       href={`/shop/products/${product.slug}`}
-      className="group relative flex flex-col overflow-hidden rounded-lg border border-border bg-card transition-all duration-200 hover:-translate-y-1 hover:shadow-lg"
+      className="group relative flex flex-col overflow-hidden rounded-lg border border-border bg-card transition-shadow duration-500 hover:shadow-[var(--shop-card-shadow-hover)] hover:border-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
       {product.badge && product.badge !== 'NONE' && (
         <span
@@ -54,7 +56,7 @@ export function ProductCard({ product }: ProductCardProps) {
             product.badge === 'NEW' && 'bg-foreground text-background'
           )}
         >
-          {product.badge}
+          {t(`badges.${product.badge}`)}
         </span>
       )}
 
@@ -88,11 +90,15 @@ export function ProductCard({ product }: ProductCardProps) {
           )}
         </div>
 
-        {!product.inStock && (
-          <p className="mt-2 text-xs text-muted-foreground" role="status">
-            Sold out
-          </p>
-        )}
+        <p
+          className={cn(
+            'mt-2 text-xs text-muted-foreground min-h-[1rem] leading-4',
+            product.inStock && 'invisible'
+          )}
+          {...(product.inStock ? { 'aria-hidden': true } : { role: 'status' })}
+        >
+          {t('soldOut')}
+        </p>
       </div>
     </Link>
   );

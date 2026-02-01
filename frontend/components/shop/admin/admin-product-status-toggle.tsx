@@ -1,6 +1,7 @@
 'use client';
 
 import { useId, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 interface AdminProductStatusToggleProps {
   id: string;
@@ -16,6 +17,7 @@ export function AdminProductStatusToggle({
   const [isActive, setIsActive] = useState(initialIsActive);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const t = useTranslations('shop.admin.statusToggle');
 
   const errorId = useId();
 
@@ -24,7 +26,7 @@ export function AdminProductStatusToggle({
     setError(null);
 
     if (!csrfToken) {
-      setError('Security token missing. Refresh the page.');
+      setError(t('securityMissing'));
       setIsLoading(false);
       return;
     }
@@ -46,12 +48,15 @@ export function AdminProductStatusToggle({
           // ignore
         }
 
-        if (response.status === 403 && (code === 'CSRF_MISSING' || code === 'CSRF_INVALID')) {
-          setError('Security token expired. Refresh the page and retry.');
+        if (
+          response.status === 403 &&
+          (code === 'CSRF_MISSING' || code === 'CSRF_INVALID')
+        ) {
+          setError(t('securityExpired'));
           return;
         }
 
-        setError('Failed to update status');
+        setError(t('failedUpdate'));
         return;
       }
 
@@ -60,16 +65,20 @@ export function AdminProductStatusToggle({
         setIsActive(data.product.isActive);
       }
     } catch {
-      setError('Failed to update status');
+      setError(t('failedUpdate'));
     } finally {
       setIsLoading(false);
     }
   };
 
-  const buttonLabel = isLoading ? 'Updating' : isActive ? 'Deactivate' : 'Activate';
+  const buttonLabel = isLoading
+    ? t('updating')
+    : isActive
+      ? t('deactivate')
+      : t('activate');
 
   return (
-    <div className="flex min-w-0 flex-col gap-1">
+    <div className="flex w-full min-w-0 flex-col gap-1">
       <button
         type="button"
         onClick={toggleStatus}
@@ -77,7 +86,7 @@ export function AdminProductStatusToggle({
         aria-busy={isLoading}
         aria-pressed={isActive}
         aria-describedby={error ? errorId : undefined}
-        className="whitespace-nowrap rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
+        className="w-full max-w-full whitespace-normal break-words leading-tight rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50 text-center"
       >
         {buttonLabel}
       </button>

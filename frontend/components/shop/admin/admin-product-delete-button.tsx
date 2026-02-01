@@ -2,6 +2,7 @@
 
 import { useId, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 interface AdminProductDeleteButtonProps {
   id: string;
@@ -15,6 +16,7 @@ export function AdminProductDeleteButton({
   csrfToken,
 }: AdminProductDeleteButtonProps) {
   const router = useRouter();
+  const t = useTranslations('shop.admin.deleteProduct');
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,13 +27,11 @@ export function AdminProductDeleteButton({
     setError(null);
 
     if (!csrfToken) {
-      setError('Security token missing. Refresh the page.');
+      setError(t('securityMissing'));
       return;
     }
 
-    const ok = window.confirm(
-      `Delete product "${title}"? This cannot be undone.`
-    );
+    const ok = window.confirm(t('confirmDelete', { title }));
     if (!ok) return;
 
     setIsLoading(true);
@@ -57,46 +57,44 @@ export function AdminProductDeleteButton({
           response.status === 403 &&
           (code === 'CSRF_MISSING' || code === 'CSRF_INVALID')
         ) {
-          setError('Security token expired. Refresh the page and retry.');
+          setError(t('securityExpired'));
           return;
         }
 
         if (response.status === 404) {
-          setError('Product not found (already deleted).');
+          setError(t('notFound'));
           router.refresh();
           return;
         }
         if (response.status === 409 && code === 'PRODUCT_IN_USE') {
-          setError(
-            'Cannot delete: this product is referenced by other records.'
-          );
+          setError(t('referenced'));
           return;
         }
 
-        setError('Failed to delete product');
+        setError(t('failedDelete'));
         return;
       }
 
       // refresh server component data
       router.refresh();
     } catch {
-      setError('Failed to delete product');
+      setError(t('failedDelete'));
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="flex min-w-0 flex-col gap-1">
+    <div className="flex w-full min-w-0 flex-col gap-1">
       <button
         type="button"
         onClick={onDelete}
         disabled={isLoading}
         aria-busy={isLoading}
         aria-describedby={error ? errorId : undefined}
-        className="whitespace-nowrap rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
+        className="w-full max-w-full whitespace-normal break-words leading-tight rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50 text-center"
       >
-        {isLoading ? 'Deleting' : 'Delete'}
+        {isLoading ? t('deleting') : t('delete')}
       </button>
 
       {error ? (

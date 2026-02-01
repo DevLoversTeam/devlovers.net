@@ -15,6 +15,14 @@ interface HeaderButtonProps {
 
   label?: string;
 
+  /**
+   * Optional badge rendered OUTSIDE the overflow-hidden button/link,
+   * so it will not be clipped by the shine/gradient container.
+   */
+  badge?: React.ReactNode;
+  badgeClassName?: string;
+  badgeAriaLabel?: string;
+
   className?: string;
 }
 
@@ -26,6 +34,9 @@ export function HeaderButton({
   variant = 'default',
   showArrow = false,
   label,
+  badge,
+  badgeClassName = '',
+  badgeAriaLabel,
   className = '',
 }: HeaderButtonProps) {
   const isIconOnly = variant === 'icon';
@@ -120,8 +131,37 @@ export function HeaderButton({
     ${className}
   `;
 
-  if (!href) {
+  const wrapWithBadge = (node: React.ReactNode) => {
+    if (!badge) return node;
+
+    const defaultBadgeClasses = `
+      pointer-events-none
+      absolute -right-1 -top-1
+      flex h-5 min-w-5 items-center justify-center
+      rounded-full px-1
+      text-[11px] font-semibold leading-none tabular-nums
+      ring-2 ring-background
+    `;
+
+    const ariaProps = badgeAriaLabel
+      ? { 'aria-label': badgeAriaLabel }
+      : { 'aria-hidden': true as const };
+
     return (
+      <span className="relative inline-flex">
+        {node}
+        <span
+          className={`${defaultBadgeClasses} ${badgeClassName}`}
+          {...ariaProps}
+        >
+          {badge}
+        </span>
+      </span>
+    );
+  };
+
+  if (!href) {
+    return wrapWithBadge(
       <button
         onClick={onClick}
         className={baseClasses}
@@ -134,7 +174,7 @@ export function HeaderButton({
     );
   }
 
-  return (
+  return wrapWithBadge(
     <Link
       href={href}
       onClick={onClick}

@@ -1,9 +1,14 @@
-// frontend/app/[locale]/shop/admin/products/new/page.tsx
 import { ShopAdminTopbar } from '@/components/shop/admin/shop-admin-topbar';
 import { guardShopAdminPage } from '@/lib/auth/guard-shop-admin-page';
 import { issueCsrfToken } from '@/lib/security/csrf';
 
 import { ProductForm } from '../_components/product-form';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'New Product | DevLovers',
+  description: 'Create a new product for the DevLovers shop catalog.',
+};
 
 export const dynamic = 'force-dynamic';
 

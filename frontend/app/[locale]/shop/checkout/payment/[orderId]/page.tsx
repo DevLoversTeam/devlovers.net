@@ -1,6 +1,7 @@
 import { Link } from '@/i18n/routing';
 import { ClearCartOnMount } from '@/components/shop/clear-cart-on-mount';
 import StripePaymentClient from '../StripePaymentClient';
+
 import { formatMoney } from '@/lib/shop/currency';
 import { getOrderSummary } from '@/lib/services/orders';
 import { OrderNotFoundError } from '@/lib/services/errors';
@@ -8,6 +9,26 @@ import { orderIdParamSchema } from '@/lib/validation/shop';
 import { getStripeEnv } from '@/lib/env/stripe';
 import { logError } from '@/lib/logging';
 import { ensureStripePaymentIntentForOrder } from '@/lib/services/orders/payment-attempts';
+import { getTranslations } from 'next-intl/server';
+import { cn } from '@/lib/utils';
+
+import {
+  SHOP_FOCUS,
+  SHOP_DISABLED,
+  SHOP_CTA_BASE,
+  SHOP_CTA_INTERACTIVE,
+  SHOP_CTA_INSET,
+  SHOP_CTA_WAVE,
+  shopCtaGradient,
+  SHOP_OUTLINE_BTN_BASE,
+  SHOP_OUTLINE_BTN_INTERACTIVE,
+} from '@/lib/shop/ui-classes';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Checkout | DevLovers',
+  description: 'Complete payment securely for order',
+};
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -27,16 +48,12 @@ function resolveClientSecret(
   return raw;
 }
 
-function buildStatusMessage(status: string) {
-  if (status === 'paid') {
-    return 'This order is already paid.';
-  }
+async function buildStatusMessage(status: string) {
+  const t = await getTranslations('shop.checkout.payment.statusMessages');
 
-  if (status === 'failed') {
-    return 'The previous payment attempt failed. Please try again.';
-  }
-
-  return 'Complete payment to finish your order.';
+  if (status === 'paid') return t('alreadyPaid');
+  if (status === 'failed') return t('previousFailed');
+  return t('completePayment');
 }
 
 function shouldClearCart(
@@ -51,6 +68,60 @@ type PaymentPageProps = {
   params: Promise<{ locale: string; orderId: string }>;
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
+
+const SHOP_HERO_CTA_SM = cn(
+  SHOP_CTA_BASE,
+  SHOP_CTA_INTERACTIVE,
+  SHOP_FOCUS,
+  SHOP_DISABLED,
+  'items-center justify-center gap-2',
+  'px-5 py-2.5 text-xs sm:text-sm text-white',
+  'shadow-[var(--shop-hero-btn-shadow)] hover:shadow-[var(--shop-hero-btn-shadow-hover)]'
+);
+
+const SHOP_OUTLINE_BTN = cn(
+  SHOP_OUTLINE_BTN_BASE,
+  SHOP_OUTLINE_BTN_INTERACTIVE,
+  SHOP_FOCUS,
+  SHOP_DISABLED
+);
+
+function HeroCtaLink({
+  href,
+  children,
+  className,
+}: {
+  href: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <Link href={href} className={cn(SHOP_HERO_CTA_SM, className)}>
+      {/* base gradient */}
+      <span
+        className="absolute inset-0"
+        style={shopCtaGradient(
+          '--shop-hero-btn-bg',
+          '--shop-hero-btn-bg-hover'
+        )}
+        aria-hidden="true"
+      />
+      {/* hover wave overlay */}
+      <span
+        className={SHOP_CTA_WAVE}
+        style={shopCtaGradient(
+          '--shop-hero-btn-bg-hover',
+          '--shop-hero-btn-bg'
+        )}
+        aria-hidden="true"
+      />
+      {/* glass inset */}
+      <span className={SHOP_CTA_INSET} aria-hidden="true" />
+
+      <span className="relative z-10">{children}</span>
+    </Link>
+  );
+}
 
 function PageShell({
   title,
@@ -86,32 +157,30 @@ export default async function PaymentPage(props: PaymentPageProps) {
   const searchParams = props.searchParams
     ? await props.searchParams
     : undefined;
+
   const clearCart = shouldClearCart(searchParams);
   const cc = clearCart ? '&clearCart=1' : '';
   const { locale } = params;
   const shopBase = `/shop`;
+
+  const t = await getTranslations('shop.checkout');
 
   const orderId = getOrderId(params);
 
   if (!orderId) {
     return (
       <PageShell
-        title="Invalid order"
-        description="We couldn't identify your order. Please return to your cart."
+        title={t('errors.invalidOrder')}
+        description={t('missingOrder.message')}
       >
         <nav className="mt-6 flex justify-center gap-3" aria-label="Next steps">
-          <Link
-            href={`${shopBase}/cart`}
-            className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
-          >
-            Go to cart
+          <Link href={`${shopBase}/cart`} className={SHOP_OUTLINE_BTN}>
+            {t('actions.goToCart')}
           </Link>
-          <Link
-            href={`${shopBase}/products`}
-            className="inline-flex items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground hover:bg-accent/90"
-          >
-            Continue shopping
-          </Link>
+
+          <HeroCtaLink href={`${shopBase}/products`}>
+            {t('actions.continueShopping')}
+          </HeroCtaLink>
         </nav>
       </PageShell>
     );
@@ -125,25 +194,20 @@ export default async function PaymentPage(props: PaymentPageProps) {
     if (error instanceof OrderNotFoundError) {
       return (
         <PageShell
-          title="Order not found"
-          description="We couldn't find this order. It may have been removed or never existed."
+          title={t('errors.orderNotFound')}
+          description={t('notFoundOrder.message')}
         >
           <nav
             className="mt-6 flex justify-center gap-3"
             aria-label="Next steps"
           >
-            <Link
-              href={`${shopBase}/cart`}
-              className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
-            >
-              Go to cart
+            <Link href={`${shopBase}/cart`} className={SHOP_OUTLINE_BTN}>
+              {t('actions.goToCart')}
             </Link>
-            <Link
-              href={`${shopBase}/products`}
-              className="inline-flex items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground hover:bg-accent/90"
-            >
-              Continue shopping
-            </Link>
+
+            <HeroCtaLink href={`${shopBase}/products`}>
+              {t('actions.continueShopping')}
+            </HeroCtaLink>
           </nav>
         </PageShell>
       );
@@ -151,8 +215,8 @@ export default async function PaymentPage(props: PaymentPageProps) {
 
     return (
       <PageShell
-        title="Unable to load order"
-        description="Please try again later."
+        title={t('errors.unableToLoad')}
+        description={t('errors.tryAgainLater')}
       />
     );
   }
@@ -160,6 +224,7 @@ export default async function PaymentPage(props: PaymentPageProps) {
   const stripeEnv = getStripeEnv();
   const paymentsEnabled =
     stripeEnv.paymentsEnabled && Boolean(stripeEnv.publishableKey);
+
   let clientSecret = resolveClientSecret(searchParams);
   const publishableKey = paymentsEnabled ? stripeEnv.publishableKey : null;
 
@@ -192,25 +257,23 @@ export default async function PaymentPage(props: PaymentPageProps) {
     return (
       <>
         <ClearCartOnMount enabled={clearCart} />
+
         <PageShell
-          title="Order already paid"
-          description="We've already confirmed payment for this order."
+          title={t('payment.statusMessages.alreadyPaid')}
+          description={t('success.paymentConfirmed')}
         >
           <nav
             className="mt-6 flex justify-center gap-3"
             aria-label="Next steps"
           >
-            <Link
+            <HeroCtaLink
               href={`${shopBase}/checkout/success?orderId=${order.id}${cc}`}
-              className="inline-flex items-center justify-center rounded-md bg-accent px-4 py-2 text-sm font-semibold uppercase tracking-wide text-accent-foreground hover:bg-accent/90"
             >
-              View confirmation
-            </Link>
-            <Link
-              href={`${shopBase}/products`}
-              className="inline-flex items-center justify-center rounded-md border border-border px-4 py-2 text-sm font-semibold uppercase tracking-wide text-foreground hover:bg-secondary"
-            >
-              Continue shopping
+              {t('payment.viewConfirmation')}
+            </HeroCtaLink>
+
+            <Link href={`${shopBase}/products`} className={SHOP_OUTLINE_BTN}>
+              {t('payment.continueShopping')}
             </Link>
           </nav>
         </PageShell>
@@ -229,13 +292,15 @@ export default async function PaymentPage(props: PaymentPageProps) {
 
       <header className="mb-6">
         <p className="text-sm font-semibold uppercase tracking-wide text-accent">
-          Secure checkout
+          {t('payment.title')}
         </p>
+
         <h1 id="pay-order-title" className="text-3xl font-bold text-foreground">
-          Pay for order #{order.id.slice(0, 8)}
+          {t('payment.payForOrder', { orderId: order.id.slice(0, 8) })}
         </h1>
+
         <p className="mt-2 text-sm text-muted-foreground">
-          {buildStatusMessage(order.paymentStatus)}
+          {await buildStatusMessage(order.paymentStatus)}
         </p>
       </header>
 
@@ -248,19 +313,24 @@ export default async function PaymentPage(props: PaymentPageProps) {
           aria-label="Payment details"
         >
           <h2 className="text-lg font-semibold text-foreground">
-            Payment details
+            {t('payment.paymentDetails')}
           </h2>
+
           <p className="mt-2 text-sm text-muted-foreground">
-            Complete payment to place your order.
+            {t('payment.completePayment')}
           </p>
 
           <div className="mt-6 rounded-md border border-border bg-muted/30 p-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Amount due</span>
+              <span className="text-sm text-muted-foreground">
+                {t('payment.amountDue')}
+              </span>
+
               <span className="text-xl font-bold text-foreground">
                 {formatMoney(order.totalAmountMinor, order.currency, locale)}
               </span>
             </div>
+
             <p className="mt-1 text-xs text-muted-foreground uppercase tracking-wide">
               {order.currency}
             </p>
@@ -284,22 +354,24 @@ export default async function PaymentPage(props: PaymentPageProps) {
           aria-label="Order summary"
         >
           <h2 className="text-lg font-semibold text-foreground">
-            Order summary
+            {t('payment.orderSummary')}
           </h2>
 
           <dl className="mt-4 space-y-3 text-sm text-muted-foreground">
             <div className="flex items-center justify-between">
-              <dt>Items</dt>
+              <dt>{t('payment.items')}</dt>
               <dd className="font-medium text-foreground">{itemsCount}</dd>
             </div>
+
             <div className="flex items-center justify-between">
-              <dt>Total amount</dt>
+              <dt>{t('payment.totalAmount')}</dt>
               <dd className="font-semibold text-foreground">
                 {formatMoney(order.totalAmountMinor, order.currency, locale)}
               </dd>
             </div>
+
             <div className="flex items-center justify-between">
-              <dt>Status</dt>
+              <dt>{t('payment.status')}</dt>
               <dd className="font-semibold capitalize text-foreground">
                 {order.paymentStatus}
               </dd>
