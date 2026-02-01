@@ -141,44 +141,80 @@ function renderPortableTextBlock(
 
   if (style === 'h1') {
     return (
-      <h1 key={block._key || `block-${index}`}>{children}</h1>
+      <h1
+        key={block._key || `block-${index}`}
+        className="mt-10 mb-4 text-3xl font-bold text-gray-900 dark:text-gray-100"
+      >
+        {children}
+      </h1>
     );
   }
   if (style === 'h2') {
     return (
-      <h2 key={block._key || `block-${index}`}>{children}</h2>
+      <h2
+        key={block._key || `block-${index}`}
+        className="mt-8 mb-3 text-2xl font-semibold text-gray-900 dark:text-gray-100"
+      >
+        {children}
+      </h2>
     );
   }
   if (style === 'h3') {
     return (
-      <h3 key={block._key || `block-${index}`}>{children}</h3>
+      <h3
+        key={block._key || `block-${index}`}
+        className="mt-7 mb-3 text-xl font-semibold text-gray-900 dark:text-gray-100"
+      >
+        {children}
+      </h3>
     );
   }
   if (style === 'h4') {
     return (
-      <h4 key={block._key || `block-${index}`}>{children}</h4>
+      <h4
+        key={block._key || `block-${index}`}
+        className="mt-6 mb-2 text-lg font-semibold text-gray-900 dark:text-gray-100"
+      >
+        {children}
+      </h4>
     );
   }
   if (style === 'h5') {
     return (
-      <h5 key={block._key || `block-${index}`}>{children}</h5>
+      <h5
+        key={block._key || `block-${index}`}
+        className="mt-6 mb-2 text-base font-semibold text-gray-900 dark:text-gray-100"
+      >
+        {children}
+      </h5>
     );
   }
   if (style === 'h6') {
     return (
-      <h6 key={block._key || `block-${index}`}>{children}</h6>
+      <h6
+        key={block._key || `block-${index}`}
+        className="mt-6 mb-2 text-sm font-semibold uppercase tracking-wide text-gray-700 dark:text-gray-300"
+      >
+        {children}
+      </h6>
     );
   }
   if (style === 'blockquote') {
     return (
-      <blockquote key={block._key || `block-${index}`}>
+      <blockquote
+        key={block._key || `block-${index}`}
+        className="my-6 border-l-4 border-[color-mix(in_srgb,var(--accent-primary)_40%,transparent)] pl-4 text-gray-600 dark:text-gray-400"
+      >
         {children}
       </blockquote>
     );
   }
 
   return (
-    <p key={block._key || `block-${index}`} className="whitespace-pre-line">
+    <p
+      key={block._key || `block-${index}`}
+      className="mb-4 whitespace-pre-line text-base leading-relaxed text-gray-700 dark:text-gray-300"
+    >
       {children}
     </p>
   );
@@ -215,11 +251,26 @@ function renderPortableText(
         j += 1;
       }
 
+      const listClass =
+        listType === 'ol'
+          ? 'my-4 list-decimal pl-6'
+          : 'my-4 list-disc pl-6';
+      const levelClass = level > 1 ? 'ml-6' : '';
       nodes.push(
         listType === 'ol' ? (
-          <ol key={block._key || `list-${i}`}>{items}</ol>
+          <ol
+            key={block._key || `list-${i}`}
+            className={`${listClass} ${levelClass}`.trim()}
+          >
+            {items}
+          </ol>
         ) : (
-          <ul key={block._key || `list-${i}`}>{items}</ul>
+          <ul
+            key={block._key || `list-${i}`}
+            className={`${listClass} ${levelClass}`.trim()}
+          >
+            {items}
+          </ul>
         )
       );
       i = j;
