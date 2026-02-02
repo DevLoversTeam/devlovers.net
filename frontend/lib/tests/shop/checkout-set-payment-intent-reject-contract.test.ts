@@ -11,8 +11,6 @@ import { makeCheckoutReq } from '@/lib/tests/helpers/makeCheckoutReq';
 import { InvalidPayloadError } from '@/lib/services/errors';
 import { ensureStripePaymentIntentForOrder } from '@/lib/services/orders/payment-attempts';
 
-// Force payments enabled so route goes into Stripe flow
-// gitleaks:allow
 vi.mock('@/lib/env/stripe', () => ({
   getStripeEnv: () => ({
     paymentsEnabled: true,
@@ -20,15 +18,13 @@ vi.mock('@/lib/env/stripe', () => ({
     secretKey: 'sk_test_dummy',
     webhookSecret: 'whsec_test_dummy',
   }),
-  isPaymentsEnabled: () => true, // kept for backward compatibility
+  isPaymentsEnabled: () => true,
 }));
 
-// Avoid auth coupling
 vi.mock('@/lib/auth', () => ({
   getCurrentUser: vi.fn().mockResolvedValue(null),
 }));
 
-// Stripe: PI creation succeeds
 vi.mock('@/lib/psp/stripe', () => ({
   createPaymentIntent: vi.fn(async () => ({
     paymentIntentId: 'pi_test_attach_reject',
@@ -37,7 +33,6 @@ vi.mock('@/lib/psp/stripe', () => ({
   retrievePaymentIntent: vi.fn(),
 }));
 
-// Avoid DB coupling introduced by #6 (DB-canonical PI amount/currency)
 vi.mock('@/lib/services/orders/payment-intent', () => ({
   readStripePaymentIntentParams: vi.fn(async () => ({
     amountMinor: 1000,
@@ -45,7 +40,6 @@ vi.mock('@/lib/services/orders/payment-intent', () => ({
   })),
 }));
 
-// Mock order services
 vi.mock('@/lib/services/orders', async () => {
   const actual = await vi.importActual<any>('@/lib/services/orders');
   return {
@@ -134,7 +128,6 @@ describe('checkout: setOrderPaymentIntent rejection after order creation must no
     const json = await res.json();
     expect(json.code).toBe('CHECKOUT_CONFLICT');
 
-    // Policy: conflict should not trigger immediate restock here.
     expect(restock).not.toHaveBeenCalled();
   });
 

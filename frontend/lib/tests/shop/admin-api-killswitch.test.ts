@@ -4,7 +4,6 @@ import { NextRequest } from 'next/server';
 
 const BASE_URL = 'http://localhost';
 
-// Valid UUIDs for dynamic routes; format matters more than real existence.
 const TEST_PRODUCT_ID = '00000000-0000-4000-8000-000000000001';
 const TEST_ORDER_ID = '00000000-0000-4000-8000-000000000002';
 
@@ -78,15 +77,12 @@ function makeReq(path: string, method: string) {
   const url = `${BASE_URL}${path}`;
   const origin = process.env.APP_ORIGIN ?? 'http://localhost:3000';
 
-  // Intentionally invalid JSON payload to ensure kill-switch guard runs
-  // BEFORE any req.json()/formData() parsing.
   const init: RequestInit = {
     method,
     headers: { 'content-type': 'application/json', origin },
   };
 
   if (method !== 'GET' && method !== 'HEAD') {
-    // Using invalid JSON lets us detect incorrect handler ordering.
     (init as any).body = '{';
   }
 
@@ -98,7 +94,6 @@ async function readCodeFromResponse(
 ): Promise<{ status: number; code?: string; raw: string }> {
   const status = res.status;
 
-  // Read body ONCE to avoid "body used already"
   const raw = await res.text();
 
   if (!raw) return { status, raw: '' };
@@ -120,8 +115,6 @@ async function expectAdminDisabled(res: Response) {
 
   expect(body.status).toBe(403);
 
-  // Contract: we must surface ADMIN_API_DISABLED.
-  // Allow either {code} or {error:{code}}; also allow plain text containing the code.
   if (body.code) {
     expect(body.code).toBe('ADMIN_API_DISABLED');
   } else {
@@ -145,9 +138,7 @@ describe('P0-7.1 Admin API kill-switch coverage (production)', () => {
   beforeEach(() => {
     vi.resetModules();
 
-    // Emulate production and disabled admin API.
     vi.stubEnv('NODE_ENV', 'production');
-    // Treat anything except 'true' as disabled; empty string is explicitly disabled.
     vi.stubEnv('ENABLE_ADMIN_API', '');
     vi.stubEnv('APP_ORIGIN', 'https://admin.example.test');
   });

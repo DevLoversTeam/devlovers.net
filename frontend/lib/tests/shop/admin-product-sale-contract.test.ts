@@ -1,15 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { NextRequest } from 'next/server';
 
-/**
- * We intentionally mock:
- * - getCurrentUser() -> always admin
- * - parseAdminProductForm() -> returns controlled payload
- *
- * This isolates contract behavior of the API route:
- * returns stable code + details for SALE rule violations.
- */
-
 const { getCurrentUserMock, parseAdminProductFormMock } = vi.hoisted(() => ({
   getCurrentUserMock: vi.fn(async () => ({
     id: 'u_test_admin',

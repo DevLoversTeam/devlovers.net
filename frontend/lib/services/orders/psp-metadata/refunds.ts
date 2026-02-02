@@ -23,7 +23,6 @@ function toNonEmptyString(v: unknown): string | null {
 function toCurrency(v: unknown, fallback: string): string {
   const s = toNonEmptyString(v);
   if (!s) return fallback;
-  // keep tolerant but normalize common cases (usd -> USD)
   return s.toUpperCase();
 }
 
@@ -32,12 +31,11 @@ function toAmountMinor(v: unknown): number | null {
     typeof v === 'number'
       ? v
       : typeof v === 'string' && v.trim().length
-      ? Number(v)
-      : NaN;
+        ? Number(v)
+        : NaN;
 
   if (!Number.isFinite(n)) return null;
 
-  // money minor must be integer >= 0
   const i = Math.trunc(n);
   if (i < 0) return null;
   if (!Number.isSafeInteger(i)) return null;
@@ -58,8 +56,8 @@ function normalizeRefundRecord(
     (typeof (r as any).refundId === 'number'
       ? String((r as any).refundId)
       : typeof (r as any).id === 'number'
-      ? String((r as any).id)
-      : null);
+        ? String((r as any).id)
+        : null);
 
   if (!refundId) return null;
 
@@ -98,7 +96,6 @@ export function normalizeRefundsFromMeta(
   const m = ensureMetaObject(meta) as any;
 
   if (Array.isArray(m.refunds)) {
-    // hardening: only return validated records
     return (m.refunds as unknown[])
       .map(r => normalizeRefundRecord(r, fallback))
       .filter((r): r is RefundMetaRecord => r !== null);

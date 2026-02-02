@@ -1,4 +1,3 @@
-// lib/tests/stripe-webhook-psp-fields.test.ts
 import { describe, it, expect, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 import { eq } from 'drizzle-orm';
@@ -14,9 +13,8 @@ import {
 } from '@/db/schema';
 
 vi.mock('@/lib/psp/stripe', async () => {
-  const actual = await vi.importActual<Record<string, unknown>>(
-    '@/lib/psp/stripe'
-  );
+  const actual =
+    await vi.importActual<Record<string, unknown>>('@/lib/psp/stripe');
   return {
     ...actual,
     verifyWebhookSignature: vi.fn(),
@@ -39,7 +37,6 @@ function makeWebhookRequest(rawBody: string) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      // route calls verifyWebhookSignature(rawBody, signatureHeader)
       'Stripe-Signature': 't=1,v1=test',
     },
     body: rawBody,
@@ -53,7 +50,6 @@ async function cleanup(params: {
 }) {
   const { orderId, productId, eventId } = params;
 
-  // teardown must not mask assertion failures, but must surface cleanup problems
   try {
     await db.delete(stripeEvents).where(eq(stripeEvents.eventId, eventId));
   } catch (e) {
@@ -125,7 +121,6 @@ describe('P0-6 webhook: writes PSP fields on succeeded', () => {
     const slug = `webhook-psp-${productId.slice(0, 8)}`;
     const sku = `SKU-${productId.slice(0, 8)}`;
 
-    // Seed product + price (needed because order_items FK -> products)
     await db.insert(products).values({
       id: productId,
       slug,
@@ -157,7 +152,6 @@ describe('P0-6 webhook: writes PSP fields on succeeded', () => {
       originalPrice: null,
     });
 
-    // Seed order in the pre-payment state that webhook expects
     await db.insert(orders).values({
       id: orderId,
       totalAmountMinor: 900,
@@ -166,7 +160,7 @@ describe('P0-6 webhook: writes PSP fields on succeeded', () => {
       paymentStatus: 'requires_payment',
       paymentProvider: 'stripe',
       paymentIntentId,
-      // keep defaults for PSP fields; metadata default is {}
+
       idempotencyKey: idemKey,
       status: 'INVENTORY_RESERVED',
       inventoryStatus: 'reserved',
@@ -253,10 +247,8 @@ describe('P0-6 webhook: writes PSP fields on succeeded', () => {
       expect(updated1.length).toBe(1);
       expect(updated1[0].paymentIntentId).toBe(paymentIntentId);
 
-      // Must be marked paid (or at minimum be terminal + PSP fields set; but your flow expects paid)
       expect(updated1[0].paymentStatus).toBe('paid');
 
-      // PSP fields must be written
       expect(updated1[0].pspChargeId).toBe(chargeId);
       expect(typeof updated1[0].pspPaymentMethod).toBe('string');
       expect((updated1[0].pspPaymentMethod ?? '').length).toBeGreaterThan(0);
@@ -266,14 +258,12 @@ describe('P0-6 webhook: writes PSP fields on succeeded', () => {
         'succeeded'
       );
 
-      // pspMetadata must not stay "{}"
       expect(updated1[0].pspMetadata).toBeTruthy();
       expect(
         Object.keys((updated1[0].pspMetadata ?? {}) as Record<string, unknown>)
           .length
       ).toBeGreaterThan(0);
 
-      // stripe_events must record the eventId once
       const ev1 = await db
         .select({ eventId: stripeEvents.eventId })
         .from(stripeEvents)
@@ -281,7 +271,6 @@ describe('P0-6 webhook: writes PSP fields on succeeded', () => {
 
       expect(ev1.length).toBe(1);
 
-      // Duplicate delivery must not break (idempotency / dedupe)
       const req2 = makeWebhookRequest(rawBody);
       const res2 = await webhookPOST(req2);
       expect(res2.status).toBeGreaterThanOrEqual(200);

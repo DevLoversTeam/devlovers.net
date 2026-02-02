@@ -4,8 +4,8 @@ import React from 'react';
 import { Filter, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
-import { ProductSort } from '@/components/shop/product-sort';
-import { ProductFilters } from '@/components/shop/product-filters';
+import { ProductSort } from '@/components/shop/ProductSort';
+import { ProductFilters } from '@/components/shop/ProductFilters';
 
 export function ProductsToolbar() {
   const [open, setOpen] = React.useState(false);

@@ -104,7 +104,6 @@ async function createActiveAttempt(
     if (!row) throw new Error('Failed to insert payment_attempts row');
     return row;
   } catch (e) {
-    // race: another request may have created active attempt, return it
     const existing = await getActiveAttempt(orderId, provider);
     if (existing) return existing;
     throw e;
@@ -119,7 +118,6 @@ async function upsertBackfillAttemptForExistingPI(args: {
 }): Promise<PaymentAttemptRow> {
   const { orderId, provider, paymentIntentId, maxAttempts } = args;
 
-  // If an attempt already references this PI, reuse it.
   const found = await db
     .select()
     .from(paymentAttempts)
@@ -133,11 +131,8 @@ async function upsertBackfillAttemptForExistingPI(args: {
 
   const existingAttempt = found[0] ?? null;
   if (existingAttempt) {
-    // Guard: never reuse attempt that belongs to a different order (cross-order PI reuse).
     if (existingAttempt.orderId === orderId) return existingAttempt;
 
-    // Fail-closed: PI is already linked to another order. Do NOT create a new attempt
-    // that would bind this PI to a second order.
     throw new OrderStateInvalidError(
       'PaymentIntent is already associated with a different order.',
       {
@@ -182,21 +177,12 @@ async function upsertBackfillAttemptForExistingPI(args: {
 
     return inserted[0]!;
   } catch (e) {
-    // On conflict (active unique), return active attempt.
     const active = await getActiveAttempt(orderId, provider);
     if (active) return active;
     throw e;
   }
 }
 
-/**
- * P0.7 entrypoint:
- * - no infinite PaymentIntents per order (durable attempt)
- * - controlled init (one active attempt)
- * - audit trail (payment_attempts)
- *
- * Returns clientSecret to initialize Stripe Elements.
- */
 export async function ensureStripePaymentIntentForOrder(args: {
   orderId: string;
   existingPaymentIntentId?: string | null;
@@ -211,10 +197,8 @@ export async function ensureStripePaymentIntentForOrder(args: {
   const provider: PaymentProvider = 'stripe';
   const maxAttempts = args.maxAttempts ?? DEFAULT_MAX_ATTEMPTS;
 
-  // 1) If we already have an active attempt, prefer it.
   let attempt = await getActiveAttempt(orderId, provider);
 
-  // 2) If order already has a PI, ensure there is an attempt row for it (audit/backfill).
   if (!attempt && existingPaymentIntentId && existingPaymentIntentId.trim()) {
     attempt = await upsertBackfillAttemptForExistingPI({
       orderId,
@@ -223,12 +207,10 @@ export async function ensureStripePaymentIntentForOrder(args: {
       maxAttempts,
     });
   }
-  // 3) If still none — create new attempt (with limit).
   if (!attempt) {
     attempt = await createActiveAttempt(orderId, provider, maxAttempts);
   }
 
-  // 4) If attempt already has PI — retrieve (and handle canceled).
   if (
     attempt.providerPaymentIntentId &&
     attempt.providerPaymentIntentId.trim()
@@ -237,7 +219,6 @@ export async function ensureStripePaymentIntentForOrder(args: {
       attempt.providerPaymentIntentId.trim()
     );
 
-    // If PI was canceled, mark attempt canceled and create a new attempt (bounded by maxAttempts).
     if (pi.status === 'canceled') {
       await db
         .update(paymentAttempts)
@@ -293,7 +274,6 @@ export async function ensureStripePaymentIntentForOrder(args: {
     };
   }
 
-  // 5) No PI yet -> create PI using DB readback (P0.6 invariant), idempotent by attempt.
   try {
     const snapshot = await readStripePaymentIntentParams(orderId);
 
@@ -345,10 +325,6 @@ export async function ensureStripePaymentIntentForOrder(args: {
   }
 }
 
-/**
- * Webhook helper: mark attempt final by Stripe PI id.
- * Call this from stripe webhook route for succeeded/failed/canceled.
- */
 export async function markStripeAttemptFinal(args: {
   paymentIntentId: string;
   status: 'succeeded' | 'failed' | 'canceled';
@@ -377,7 +353,6 @@ export async function markStripeAttemptFinal(args: {
       })
       .where(eq(paymentAttempts.providerPaymentIntentId, paymentIntentId));
   } catch (error) {
-    // IMPORTANT: fail-open — не ламаємо webhook через audit layer
     logError('payment_attempt_finalize_failed', error, {
       paymentIntentId: args.paymentIntentId,
       status: args.status,

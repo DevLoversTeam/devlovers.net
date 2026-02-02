@@ -13,7 +13,7 @@ type CreateRefundInput = {
   orderId: string;
   paymentIntentId?: string | null;
   chargeId?: string | null;
-  amountMinor?: number; // full refund: pass totalAmountMinor (recommended)
+  amountMinor?: number;
   idempotencyKey?: string;
 };
 
@@ -113,7 +113,6 @@ export async function createPaymentIntent({
     throw new Error('STRIPE_DISABLED');
   }
 
-  // Stripe amount must be an integer in minor units. Fail-closed on floats/NaN/huge values.
   if (!Number.isSafeInteger(amount) || amount <= 0) {
     throw new Error('STRIPE_INVALID_AMOUNT');
   }

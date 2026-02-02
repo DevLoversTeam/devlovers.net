@@ -8,6 +8,8 @@ import { toDbMoney } from '@/lib/shop/money';
 import { applyReserveMove } from '@/lib/services/inventory';
 import { restockStuckReservingOrders } from '@/lib/services/orders';
 
+const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
+
 function readRows(res: any): any[] {
   if (Array.isArray(res)) return res;
   if (Array.isArray(res?.rows)) return res.rows;
@@ -25,7 +27,6 @@ async function countMoveKey(moveKey: string): Promise<number> {
 async function cleanupTestRows(params: { orderId: string; productId: string }) {
   const { orderId, productId } = params;
 
-  // IMPORTANT: delete children first to avoid FK failures and silent leftovers.
   await db.execute(
     sql`delete from inventory_moves where order_id = ${orderId}::uuid`
   );
@@ -46,12 +47,12 @@ describe('P0-7 stuckReserving sweep: restock exactly-once', () => {
 
     const initialStock = 5;
     const qty = 2;
-    const createdAt = new Date(Date.now() - 2 * 60 * 60 * 1000); // old enough
+    const createdAt = new Date(Date.now() - TWO_HOURS_MS);
     const idem = `test-stuck-${crypto.randomUUID()}`;
     let originalError: unknown = null;
 
     try {
-      await db.insert(products).values({
+      const productInsert = {
         id: productId,
         title: 'Test Product',
         slug,
@@ -64,9 +65,11 @@ describe('P0-7 stuckReserving sweep: restock exactly-once', () => {
         currency: 'USD',
         createdAt,
         updatedAt: createdAt,
-      } as any);
+      } satisfies typeof products.$inferInsert;
 
-      await db.insert(orders).values({
+      await db.insert(products).values(productInsert);
+
+      const orderInsert = {
         id: orderId,
         userId: null,
 
@@ -91,7 +94,9 @@ describe('P0-7 stuckReserving sweep: restock exactly-once', () => {
 
         createdAt,
         updatedAt: createdAt,
-      } as any);
+      } satisfies typeof orders.$inferInsert;
+
+      await db.insert(orders).values(orderInsert);
 
       const r = await applyReserveMove(orderId, productId, qty);
       expect(r.ok).toBe(true);
@@ -172,14 +177,12 @@ describe('P0-7 stuckReserving sweep: restock exactly-once', () => {
         await cleanupTestRows({ orderId, productId });
       } catch (cleanupError) {
         if (originalError) {
-          // cleanup failed, but do NOT hide the real test failure
           console.error('[test cleanup failed]', {
             orderId,
             productId,
             error: cleanupError,
           });
         } else {
-          // no original failure -> cleanup error is the failure
           originalError = cleanupError;
         }
       }

@@ -65,7 +65,7 @@ describe('stripe webhook rate limit env precedence', () => {
 
   it('supports partial config (field-by-field): missing_sig MAX can override while WINDOW falls back', () => {
     vi.stubEnv('STRIPE_WEBHOOK_MISSING_SIG_RL_MAX', '66');
-    vi.stubEnv('STRIPE_WEBHOOK_RL_WINDOW_SECONDS', '555'); // fallback source for window
+    vi.stubEnv('STRIPE_WEBHOOK_RL_WINDOW_SECONDS', '555');
 
     expect(resolveStripeWebhookRateLimit('missing_sig')).toEqual({
       max: 66,

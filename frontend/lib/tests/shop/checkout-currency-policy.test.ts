@@ -8,9 +8,8 @@ process.env.STRIPE_SECRET_KEY = '';
 process.env.STRIPE_WEBHOOK_SECRET = '';
 
 vi.mock('@/lib/auth', async () => {
-  const actual = await vi.importActual<typeof import('@/lib/auth')>(
-    '@/lib/auth'
-  );
+  const actual =
+    await vi.importActual<typeof import('@/lib/auth')>('@/lib/auth');
   return {
     ...actual,
     getCurrentUser: async () => null, // guest
@@ -42,9 +41,8 @@ const logErrorMock = vi.fn((..._args: any[]) => undefined);
 const logWarnMock = vi.fn((..._args: any[]) => undefined);
 
 vi.mock('@/lib/logging', async () => {
-  const actual = await vi.importActual<typeof import('@/lib/logging')>(
-    '@/lib/logging'
-  );
+  const actual =
+    await vi.importActual<typeof import('@/lib/logging')>('@/lib/logging');
   return {
     ...actual,
     logError: (...args: any[]) => logErrorMock(...args),
@@ -69,13 +67,11 @@ beforeAll(() => {
 });
 
 beforeAll(async () => {
-  // Import route after env + mocks are set
   const mod = await import('@/app/api/shop/checkout/route');
   POST = mod.POST;
 });
 
 afterAll(async () => {
-  // delete orders first (cascade order_items)
   if (createdOrderIds.length) {
     await db.delete(orders).where(inArray(orders.id, createdOrderIds));
   }
@@ -88,7 +84,6 @@ afterAll(async () => {
 });
 
 function makeIdempotencyKey(): string {
-  // 36 chars, allowed by your schema
   return crypto.randomUUID();
 }
 
@@ -127,7 +122,6 @@ async function seedProduct(options: {
       imageUrl: 'https://example.com/img.png',
       imagePublicId: null,
 
-      // legacy mirror required by schema
       price: '10.00',
       originalPrice: null,
       currency: 'USD',
@@ -165,7 +159,7 @@ async function debugIfNotExpected(res: Response, expectedStatus: number) {
   if (res.status === expectedStatus) return;
 
   const text = await res.text().catch(() => '<failed to read body>');
-  // Keep output minimal but decisive
+
   console.log('checkout failed', { status: res.status, body: text });
   console.log('logError calls', logErrorMock.mock.calls);
   console.log(

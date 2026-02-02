@@ -5,7 +5,7 @@ import { ShoppingBag } from 'lucide-react';
 import { useMounted } from '@/hooks/use-mounted';
 import { HeaderButton } from '@/components/shared/HeaderButton';
 
-import { useCart } from '../cart-provider';
+import { useCart } from '../CartProvider';
 
 export function CartButton() {
   const { cart } = useCart();

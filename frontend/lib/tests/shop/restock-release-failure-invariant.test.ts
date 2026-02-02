@@ -24,29 +24,24 @@ describe('P0 Inventory release invariants', () => {
     const slug = `t-${productId.slice(0, 8)}`;
     const sku = `SKU-${productId.slice(0, 8)}`;
 
-    // Keep references for cleanup
     const now = new Date();
 
-    // Spy/mocking: force release to fail
-    // NOTE: if applyReleaseMove throws in your impl, mockRejectedValueOnce is also OK.
     const releaseSpy = vi
       .spyOn(inventory, 'applyReleaseMove')
       .mockRejectedValue(new Error('SIMULATED_RELEASE_FAIL'));
 
     try {
-      // 1) Seed product + price
       await db.insert(products).values({
         id: productId,
         slug,
         title: 'Test product',
         description: 'Test description',
         imageUrl: 'https://example.com/test.png',
-        imagePublicId: 'test-public-id', // додай одразу, щоб не впертись у NOT NULL, якщо він є
+        imagePublicId: 'test-public-id',
         sku,
 
-        // IMPORTANT: products.price is NOT NULL (legacy)
         currency: 'USD',
-        price: toDbMoney(1000), // 10.00
+        price: toDbMoney(1000),
         originalPrice: null,
 
         stock: 1,
@@ -59,14 +54,13 @@ describe('P0 Inventory release invariants', () => {
       await db.insert(productPrices).values({
         productId,
         currency: 'USD',
-        // canonical minor (int)
+
         priceMinor: 1000,
-        // legacy fallback (numeric)
+
         price: 10,
         originalPrice: null,
       } as any);
 
-      // 2) Seed order + order item (minimal required fields)
       await db.insert(orders).values({
         id: orderId,
         totalAmountMinor: 1000,
@@ -75,10 +69,10 @@ describe('P0 Inventory release invariants', () => {
 
         paymentProvider: 'stripe',
         paymentIntentId: null,
-        paymentStatus: 'failed', // we are testing restock on "failed" path
+        paymentStatus: 'failed',
 
         status: 'INVENTORY_FAILED',
-        inventoryStatus: 'reserving', // will reserve first, then switch to release_pending
+        inventoryStatus: 'reserving',
         failureCode: 'INTERNAL_ERROR',
         failureMessage: 'fail before release',
 
@@ -111,8 +105,6 @@ describe('P0 Inventory release invariants', () => {
         productSku: sku,
       } as any);
 
-      // 3) Create an ACTUAL reservation move (so “release” is реально потрібен)
-      //    This should decrement product stock from 1 -> 0.
       const reserveRes = await inventory.applyReserveMove(
         orderId,
         productId,
@@ -128,7 +120,6 @@ describe('P0 Inventory release invariants', () => {
 
       expect(pAfterReserve?.stock).toBe(0);
 
-      // 4) Put order into release_pending so restockOrder will attempt release
       await db
         .update(orders)
         .set({
@@ -138,17 +129,30 @@ describe('P0 Inventory release invariants', () => {
         } as any)
         .where(eq(orders.id, orderId));
 
-      // 5) Call restockOrder — release fails; function may throw OR no-op, but must NOT finalize release fields
+      let restockErr: unknown;
+
       try {
         await restockOrder(orderId, {
           reason: 'failed',
           workerId: 'test',
         } as any);
-      } catch {
-        // acceptable: some implementations throw for manual/admin path
+      } catch (err) {
+        restockErr = err;
       }
 
-      // 6) Assert invariants: order NOT finalized to released/stockRestored/restockedAt
+      if (restockErr) {
+        // Accept ONLY the simulated release failure; rethrow anything else.
+        if (
+          restockErr instanceof Error &&
+          restockErr.message.includes('SIMULATED_RELEASE_FAIL')
+        ) {
+          expect(restockErr).toBeInstanceOf(Error);
+          expect(restockErr.message).toContain('SIMULATED_RELEASE_FAIL');
+        } else {
+          throw restockErr;
+        }
+      }
+
       const [o] = await db
         .select({
           inventoryStatus: orders.inventoryStatus,
@@ -161,12 +165,10 @@ describe('P0 Inventory release invariants', () => {
 
       expect(o).toBeTruthy();
 
-      // Key invariants:
       expect(o!.inventoryStatus).not.toBe('released');
       expect(o!.stockRestored).toBe(false);
       expect(o!.restockedAt).toBeNull();
 
-      // 7) Assert product stock DID NOT increment (release not confirmed)
       const [pAfterFail] = await db
         .select({ stock: products.stock })
         .from(products)
@@ -177,9 +179,7 @@ describe('P0 Inventory release invariants', () => {
     } finally {
       releaseSpy.mockRestore();
 
-      // cleanup (best-effort)
       try {
-        // delete ledger rows for this order if table exists in your schema
         if (inventoryMoves) {
           await db
             .delete(inventoryMoves as any)

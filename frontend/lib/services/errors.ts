@@ -1,7 +1,3 @@
-// export class InvalidPayloadError extends Error {
-//   code = "INVALID_PAYLOAD" as const
-// }
-
 export class IdempotencyConflictError extends Error {
   code = 'IDEMPOTENCY_CONFLICT' as const;
   details?: Record<string, unknown>;
@@ -31,9 +27,6 @@ export class OrderNotFoundError extends Error {
   }
 }
 
-// export class SlugConflictError extends Error {
-//   code = "SLUG_CONFLICT" as const
-// }
 export class InvalidPayloadError extends Error {
   code: string;
 

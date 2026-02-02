@@ -1,9 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { NextRequest } from 'next/server';
-/**
- * Silence expected stderr noise for this contract test file only.
- * We keep assertions intact; we only suppress logging side effects.
- */
+
 vi.mock('@/lib/logging', async () => {
   const actual = await vi.importActual<any>('@/lib/logging');
   return {
@@ -33,7 +30,6 @@ describe('P0-3.3 Stripe webhook contract: disabled vs invalid signature', () => 
     vi.clearAllMocks();
     process.env = { ...ORIG_ENV };
 
-    // stderr (console.error) spam is expected in these negative scenarios
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
@@ -48,7 +44,7 @@ describe('P0-3.3 Stripe webhook contract: disabled vs invalid signature', () => 
 
     process.env.STRIPE_PAYMENTS_ENABLED = 'true';
     process.env.STRIPE_SECRET_KEY = 'sk_test_dummy';
-    process.env.STRIPE_WEBHOOK_SECRET = ''; // ключове: після імпорту і саме порожній рядок
+    process.env.STRIPE_WEBHOOK_SECRET = '';
 
     const res = await POST(
       makeReq('{"id":"evt_test"}', { 'stripe-signature': 't=0,v1=deadbeef' })

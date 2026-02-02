@@ -19,7 +19,6 @@ const ALLOWED_FROM_STRIPE: Record<PaymentStatus, readonly PaymentStatus[]> = {
   requires_payment: ['pending'],
   paid: ['pending', 'requires_payment'],
   failed: ['pending', 'requires_payment'],
-  // allow refunds even if we missed/never persisted "paid" (webhook ordering / retries)
   refunded: ['paid', 'pending', 'requires_payment'],
   // allow entering "needs_review" from anywhere (triage state)
   needs_review: [
@@ -69,29 +68,14 @@ function hasSetFields(set: unknown): boolean {
 export type GuardedPaymentUpdateArgs = {
   orderId: string;
 
-  /**
-   * IMPORTANT: caller must pass the provider policy explicitly.
-   * This prevents accidental use of Stripe rules for no-payments (and vice versa).
-   */
   paymentProvider: PaymentProvider;
 
   to: PaymentStatus;
 
-  /**
-   * Extra fields updated together with paymentStatus (psp fields, status, timestamps, etc).
-   * paymentStatus MUST NOT be provided here.
-   */
   set?: Partial<Omit<typeof orders.$inferInsert, 'paymentStatus' | 'id'>>;
 
-  /**
-   * Extra WHERE conditions (stock/inventory safety gates, repair gates, etc)
-   */
   extraWhere?: SQL;
 
-  /**
-   * Allow "same-state update" to apply set (needed for repair updates).
-   * Default: true if set has any fields.
-   */
   allowSameStateUpdate?: boolean;
 
   source: PaymentTransitionSource;
@@ -114,6 +98,7 @@ export type GuardedPaymentUpdateResult =
     };
 
 async function getCurrentState(orderId: string): Promise<{
+async function getCurrentState(orderId: string): Promise<{
   paymentStatus: PaymentStatus;
   paymentProvider: PaymentProvider;
 } | null> {
@@ -134,7 +119,6 @@ export async function guardedPaymentStatusUpdate(
 ): Promise<GuardedPaymentUpdateResult> {
   const { orderId, paymentProvider, to, source, eventId, note } = args;
 
-  // Hard reject invalid targets for no-payments before we even touch DB.
   if (
     paymentProvider === 'none' &&
     (to === 'pending' ||
@@ -171,7 +155,6 @@ export async function guardedPaymentStatusUpdate(
     ? Array.from(new Set([...baseAllowed, to]))
     : baseAllowed;
 
-  // If nothing is eligible (e.g. provider none + pending), block early
   if (!eligibleFrom.length) {
     const current = await getCurrentState(orderId);
     if (!current) return { applied: false, reason: 'NOT_FOUND' };
@@ -214,7 +197,6 @@ export async function guardedPaymentStatusUpdate(
 
   if (updated.length > 0) return { applied: true };
 
-  // Diagnose why not applied
   const current = await getCurrentState(orderId);
   if (!current) return { applied: false, reason: 'NOT_FOUND' };
 
@@ -266,7 +248,6 @@ export async function guardedPaymentStatusUpdate(
     };
   }
 
-  // Transition is allowed by matrix, but blocked by extraWhere (stockRestored/inventoryStatus gates etc)
   return {
     applied: false,
     reason: 'BLOCKED',
@@ -275,5 +256,4 @@ export async function guardedPaymentStatusUpdate(
   };
 }
 
-// Export for unit testing (transition matrix)
 export const __paymentTransitions = { isAllowed, allowedFrom };

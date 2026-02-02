@@ -24,7 +24,6 @@ describe('SALE invariant: originalPriceMinor is required', () => {
   const createdProductIds: string[] = [];
 
   afterEach(async () => {
-    // cleanup (cascade deletes product_prices)
     for (const id of createdProductIds.splice(0)) {
       await db.delete(products).where(eq(products.id, id));
     }
@@ -52,7 +51,6 @@ describe('SALE invariant: originalPriceMinor is required', () => {
   it('updateProduct: existing SALE + PATCH that removes originalPriceMinor must reject (final state invariant)', async () => {
     const slug = uniqueSlug();
 
-    // Seed DB: product is SALE and has valid originalPriceMinor in DB
     const [p] = await db
       .insert(products)
       .values({
@@ -61,8 +59,8 @@ describe('SALE invariant: originalPriceMinor is required', () => {
         description: null,
         imageUrl: 'https://example.com/seed.png',
         imagePublicId: null,
-        price: toDbMoney(1000), // 10.00
-        originalPrice: toDbMoney(2000), // 20.00
+        price: toDbMoney(1000),
+        originalPrice: toDbMoney(2000),
         currency: 'USD',
         category: null,
         type: null,
@@ -87,7 +85,6 @@ describe('SALE invariant: originalPriceMinor is required', () => {
       originalPrice: toDbMoney(2000),
     });
 
-    // Attempt to "remove" originalPrice via PATCH (prices upsert with null originalPriceMinor)
     await expect(
       updateProduct(p.id, {
         prices: [
@@ -97,11 +94,9 @@ describe('SALE invariant: originalPriceMinor is required', () => {
             originalPriceMinor: null,
           },
         ],
-        // badge omitted intentionally: finalBadge derives from existing.badge (SALE)
       } as any)
     ).rejects.toThrow(/SALE badge requires originalPrice/i);
 
-    // Ensure DB was not modified by the failed update
     const [pp] = await db
       .select({
         priceMinor: productPrices.priceMinor,

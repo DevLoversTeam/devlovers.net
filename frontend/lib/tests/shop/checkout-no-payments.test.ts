@@ -24,11 +24,10 @@ vi.mock('@/lib/logging', async () => {
   const actual = await vi.importActual<any>('@/lib/logging');
   return {
     ...actual,
-    logWarn: () => {}, // silence expected business warnings in this test file
+    logWarn: () => {},
   };
 });
 
-// Force "no payments" for this whole test file.
 vi.mock('@/lib/env/stripe', async () => {
   const actual = await vi.importActual<any>('@/lib/env/stripe');
   return {
@@ -41,7 +40,7 @@ vi.mock('@/lib/auth', async () => {
   const actual = await vi.importActual<any>('@/lib/auth');
   return {
     ...actual,
-    getCurrentUser: async () => null, // critical: avoid cookies() in tests
+    getCurrentUser: async () => null,
   };
 });
 
@@ -53,19 +52,12 @@ function logTestCleanupFailed(meta: Record<string, unknown>, error: unknown) {
   });
 }
 
-/**
- * Creates an isolated product + product_prices row to avoid stock races
- * with parallel test files that also reserve/release inventory.
- *
- * Product is created as inactive by default; tests activate it only for the minimal window needed.
- */
 async function createIsolatedProductForCurrency(opts: {
   currency: 'USD' | 'UAH';
   stock: number;
 }): Promise<{ productId: string }> {
   const now = new Date();
 
-  // Clone a real product row to satisfy NOT NULL columns (schema varies).
   const [tpl] = await db
     .select()
     .from(products)
@@ -82,7 +74,6 @@ async function createIsolatedProductForCurrency(opts: {
   const slug = `t-iso-nopay-${crypto.randomUUID()}`;
   const sku = `t-iso-nopay-${crypto.randomUUID()}`;
 
-  // Keep inactive by default to avoid being picked by other tests.
   await db.insert(products).values({
     ...(tpl as any),
     id: productId,
@@ -95,7 +86,6 @@ async function createIsolatedProductForCurrency(opts: {
     updatedAt: now,
   } as any);
 
-  // Ensure price exists for requested currency (minor + legacy).
   try {
     await db.insert(productPrices).values({
       productId,
@@ -108,7 +98,6 @@ async function createIsolatedProductForCurrency(opts: {
       updatedAt: now,
     } as any);
   } catch (e) {
-    // Cleanup orphaned product on price insert failure (best-effort)
     try {
       await db.delete(products).where(eq(products.id, productId));
     } catch (cleanupError) {
@@ -130,14 +119,12 @@ async function createIsolatedProductForCurrency(opts: {
 }
 
 async function cleanupIsolatedProduct(productId: string) {
-  // Make sure it won't be visible for any selector.
   try {
     await db
       .update(products)
       .set({ isActive: false, updatedAt: new Date() } as any)
       .where(eq(products.id, productId));
   } catch (e) {
-    // Non-fatal: best-effort test teardown
     logTestCleanupFailed(
       { fn: 'cleanupIsolatedProduct', step: 'deactivate product', productId },
       e
@@ -231,8 +218,6 @@ async function countMovesForProduct(productId: string): Promise<number> {
 }
 
 async function bestEffortHardDeleteOrder(orderId: string) {
-  // Keep DB reasonably clean in dev.
-  // Use raw SQL because inventory_moves/order_items may not be exported as Drizzle tables.
   try {
     await db.execute(
       sql`delete from inventory_moves where order_id = ${orderId}::uuid`
@@ -283,7 +268,6 @@ describe.sequential('Checkout (no payments) invariants', () => {
     let orderId: string | null = null;
 
     try {
-      // Activate only for the minimal window needed by checkout.
       await db
         .update(products)
         .set({ isActive: true, updatedAt: new Date() } as any)
@@ -314,18 +298,15 @@ describe.sequential('Checkout (no payments) invariants', () => {
       expect(typeof orderId).toBe('string');
       expect(orderId.length).toBeGreaterThan(10);
 
-      // Deactivate immediately to minimize chance other parallel tests pick it.
       await db
         .update(products)
         .set({ isActive: false, updatedAt: new Date() } as any)
         .where(eq(products.id, productId));
 
-      // response-level contract
       expect(json.order.paymentProvider).toBe('none');
       expect(json.order.paymentStatus).toBe('paid');
       expect(json.order.currency).toBe('USD');
 
-      // DB contract (source of truth)
       const [row] = await db
         .select({
           id: orders.id,
@@ -342,13 +323,12 @@ describe.sequential('Checkout (no payments) invariants', () => {
 
       expect(row).toBeTruthy();
       expect(row!.paymentProvider).toBe('none');
-      expect(row!.paymentStatus).toBe('paid'); // forced by DB CHECK for provider=none
-      expect(row!.inventoryStatus).toBe('reserved'); // TRUE finality for no-payments
+      expect(row!.paymentStatus).toBe('paid');
+      expect(row!.inventoryStatus).toBe('reserved');
       expect(row!.status).toBe('PAID');
       expect(row!.currency).toBe('USD');
       expect(row!.totalAmountMinor).toBeGreaterThan(0);
 
-      // Ledger: exactly one reserve (no duplicates on single request)
       const moves = await readMoves(orderId);
       const reserves = moves.filter(m => m.type === 'reserve');
       const releases = moves.filter(m => m.type === 'release');
@@ -358,7 +338,6 @@ describe.sequential('Checkout (no payments) invariants', () => {
       expect(reserves[0]!.quantity).toBe(1);
       expect(releases.length).toBe(0);
 
-      // Stock decreased
       const [p1] = await db
         .select({ stock: products.stock })
         .from(products)
@@ -368,7 +347,6 @@ describe.sequential('Checkout (no payments) invariants', () => {
       expect(p1).toBeTruthy();
       expect(p1!.stock).toBe(stockBefore - 1);
 
-      // cleanup: restore stock via release
       const { restockOrder } = await import('@/lib/services/orders');
       await restockOrder(orderId, { reason: 'stale' });
 
@@ -384,7 +362,6 @@ describe.sequential('Checkout (no payments) invariants', () => {
       await bestEffortHardDeleteOrder(orderId);
       orderId = null;
     } finally {
-      // If test failed after creating an order, try to delete it.
       if (orderId) {
         await bestEffortHardDeleteOrder(orderId);
       }
@@ -429,13 +406,11 @@ describe.sequential('Checkout (no payments) invariants', () => {
       orderId1 = (j1?.order?.id ?? j1?.orderId) as string;
       expect(orderId1).toBeTruthy();
 
-      // Deactivate immediately (same reason as in success-path test)
       await db
         .update(products)
         .set({ isActive: false, updatedAt: new Date() } as any)
         .where(eq(products.id, productId));
 
-      // same IdemKey + same payload => same order id (no extra reserve)
       const r2 = await postCheckout({
         idemKey,
         acceptLanguage: 'en',
@@ -450,9 +425,8 @@ describe.sequential('Checkout (no payments) invariants', () => {
 
       const movesAfter2 = await readMoves(orderId1);
       const reservesAfter2 = movesAfter2.filter(m => m.type === 'reserve');
-      expect(reservesAfter2.length).toBe(1); // critical: no double-reserve
+      expect(reservesAfter2.length).toBe(1);
 
-      // same IdemKey but different payload => 409 conflict
       const r3 = await postCheckout({
         idemKey,
         acceptLanguage: 'en',
@@ -460,7 +434,6 @@ describe.sequential('Checkout (no payments) invariants', () => {
       });
       expect(r3.status).toBe(409);
 
-      // cleanup: restore stock via release
       const { restockOrder } = await import('@/lib/services/orders');
       await restockOrder(orderId1, { reason: 'stale' });
 
@@ -492,13 +465,11 @@ describe.sequential('Checkout (no payments) invariants', () => {
     let unexpectedOrderId: string | null = null;
 
     try {
-      // Activate only for the minimal window needed by checkout.
       await db
         .update(products)
         .set({ isActive: true, updatedAt: new Date() } as any)
         .where(eq(products.id, productId));
 
-      // Make variants deterministic for this test.
       await db
         .update(products)
         .set({
@@ -518,7 +489,7 @@ describe.sequential('Checkout (no payments) invariants', () => {
 
       expect(p0).toBeTruthy();
       const stockBefore = p0!.stock;
-      // ДО checkout: порахували moves
+
       const countBefore = await countMovesForProduct(productId);
 
       const res = await postCheckout({
@@ -537,7 +508,7 @@ describe.sequential('Checkout (no payments) invariants', () => {
       expect(res.status).toBe(400);
 
       const json: any = await res.json();
-      // Deactivate immediately to minimize chance other parallel tests pick it.
+
       await db
         .update(products)
         .set({ isActive: false, updatedAt: new Date() } as any)
@@ -547,7 +518,6 @@ describe.sequential('Checkout (no payments) invariants', () => {
       const countAfter = await countMovesForProduct(productId);
       expect(countAfter).toBe(countBefore);
 
-      // No order should be created for invalid variant
       const [maybeOrder] = await db
         .select({ id: orders.id })
         .from(orders)
@@ -557,7 +527,6 @@ describe.sequential('Checkout (no payments) invariants', () => {
       if (maybeOrder?.id) unexpectedOrderId = maybeOrder.id;
       expect(maybeOrder).toBeFalsy();
 
-      // Stock must not change
       const [p1] = await db
         .select({ stock: products.stock })
         .from(products)
@@ -567,7 +536,6 @@ describe.sequential('Checkout (no payments) invariants', () => {
       expect(p1).toBeTruthy();
       expect(p1!.stock).toBe(stockBefore);
     } finally {
-      // Deactivate to reduce cross-test interference.
       try {
         await db
           .update(products)
@@ -575,7 +543,6 @@ describe.sequential('Checkout (no payments) invariants', () => {
           .where(eq(products.id, productId));
       } catch {}
 
-      // If an order was unexpectedly created, remove it (keep DB clean).
       if (unexpectedOrderId) {
         await bestEffortHardDeleteOrder(unexpectedOrderId);
       }
@@ -594,13 +561,11 @@ describe.sequential('Checkout (no payments) invariants', () => {
     let unexpectedOrderId: string | null = null;
 
     try {
-      // Activate only for the minimal window needed by checkout.
       await db
         .update(products)
         .set({ isActive: true, updatedAt: new Date() } as any)
         .where(eq(products.id, productId));
 
-      // Simulate "no variants configured" (empty lists).
       await db
         .update(products)
         .set({
@@ -621,7 +586,6 @@ describe.sequential('Checkout (no payments) invariants', () => {
       expect(p0).toBeTruthy();
       const stockBefore = p0!.stock;
 
-      // ДО checkout: порахували moves
       const countBefore = await countMovesForProduct(productId);
 
       const res = await postCheckout({
@@ -631,7 +595,7 @@ describe.sequential('Checkout (no payments) invariants', () => {
           {
             productId,
             quantity: 1,
-            // Client sends options, but product has none => must be rejected.
+
             selectedSize: 'S',
             selectedColor: 'Red',
           },
@@ -642,7 +606,6 @@ describe.sequential('Checkout (no payments) invariants', () => {
 
       const json: any = await res.json();
 
-      // Deactivate immediately to minimize chance other parallel tests pick it.
       await db
         .update(products)
         .set({ isActive: false, updatedAt: new Date() } as any)
@@ -650,11 +613,9 @@ describe.sequential('Checkout (no payments) invariants', () => {
 
       expect(json?.code).toBe('INVALID_VARIANT');
 
-      // Після checkout: moves count must be unchanged
       const countAfter = await countMovesForProduct(productId);
       expect(countAfter).toBe(countBefore);
 
-      // No order should be created for this idemKey
       const [maybeOrder] = await db
         .select({ id: orders.id })
         .from(orders)
@@ -664,7 +625,6 @@ describe.sequential('Checkout (no payments) invariants', () => {
       if (maybeOrder?.id) unexpectedOrderId = maybeOrder.id;
       expect(maybeOrder).toBeFalsy();
 
-      // Stock must not change
       const [p1] = await db
         .select({ stock: products.stock })
         .from(products)
@@ -674,7 +634,6 @@ describe.sequential('Checkout (no payments) invariants', () => {
       expect(p1).toBeTruthy();
       expect(p1!.stock).toBe(stockBefore);
     } finally {
-      // Deactivate to reduce cross-test interference.
       try {
         await db
           .update(products)
@@ -682,7 +641,6 @@ describe.sequential('Checkout (no payments) invariants', () => {
           .where(eq(products.id, productId));
       } catch {}
 
-      // If an order was unexpectedly created, remove it (keep DB clean).
       if (unexpectedOrderId) {
         await bestEffortHardDeleteOrder(unexpectedOrderId);
       }
@@ -696,7 +654,6 @@ describe.sequential('Checkout (no payments) invariants', () => {
     const idemKey = crypto.randomUUID();
     const createdAt = new Date(Date.now() - 11 * 60_000);
 
-    // Insert orphan order (no inventory_moves)
     await db.insert(orders).values({
       id: orphanId,
       currency: 'USD',
@@ -721,9 +678,8 @@ describe.sequential('Checkout (no payments) invariants', () => {
     const moves0 = await readMoves(orphanId);
     expect(moves0.length).toBe(0);
 
-    const { restockStaleNoPaymentOrders } = await import(
-      '@/lib/services/orders'
-    );
+    const { restockStaleNoPaymentOrders } =
+      await import('@/lib/services/orders');
     const processed = await restockStaleNoPaymentOrders({
       olderThanMinutes: 10,
       batchSize: 50,

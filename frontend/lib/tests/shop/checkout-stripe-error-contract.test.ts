@@ -9,7 +9,6 @@ import {
 } from 'vitest';
 import { makeCheckoutReq } from '@/lib/tests/helpers/makeCheckoutReq';
 
-// 1) force payments enabled so route goes into Stripe flow
 vi.mock('@/lib/env/stripe', () => ({
   getStripeEnv: () => ({
     paymentsEnabled: true,
@@ -17,15 +16,13 @@ vi.mock('@/lib/env/stripe', () => ({
     secretKey: 'sk_test_dummy',
     webhookSecret: 'whsec_test_dummy',
   }),
-  isPaymentsEnabled: () => true, // kept for backward compatibility
+  isPaymentsEnabled: () => true,
 }));
 
-// 2) avoid auth coupling
 vi.mock('@/lib/auth', () => ({
   getCurrentUser: vi.fn().mockResolvedValue(null),
 }));
 
-// 3) force Stripe PI creation to fail AFTER "DB writes" (simulated by createOrderWithItems resolving)
 vi.mock('@/lib/psp/stripe', () => ({
   createPaymentIntent: vi.fn(async () => {
     throw new Error('STRIPE_TEST_DOWN');
@@ -33,7 +30,6 @@ vi.mock('@/lib/psp/stripe', () => ({
   retrievePaymentIntent: vi.fn(),
 }));
 
-// Avoid DB coupling introduced by #6 (DB-canonical PI amount/currency)
 vi.mock('@/lib/services/orders/payment-intent', () => ({
   readStripePaymentIntentParams: vi.fn(async () => ({
     amountMinor: 1000,
@@ -41,7 +37,6 @@ vi.mock('@/lib/services/orders/payment-intent', () => ({
   })),
 }));
 
-// 4) mock orders services so we don't depend on DB schema/seed here
 vi.mock('@/lib/services/orders', async () => {
   const actual = await vi.importActual<any>('@/lib/services/orders');
   return {

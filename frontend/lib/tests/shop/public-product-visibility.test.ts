@@ -53,7 +53,6 @@ describe('P0-5 Public products: inactive not visible', () => {
         stock: 5,
         sku: null,
 
-        // legacy mirror required by schema + checks
         price: '10.00',
         originalPrice: null,
         currency: 'USD',
@@ -64,7 +63,6 @@ describe('P0-5 Public products: inactive not visible', () => {
         productId,
         currency: 'USD',
 
-        // canonical + mirror must match checks
         priceMinor: 1000,
         originalPriceMinor: null,
         price: '10.00',
@@ -100,7 +98,6 @@ describe('P0-5 Public products: inactive not visible', () => {
         stock: 5,
         sku: null,
 
-        // legacy mirror required by schema + checks
         price: '19.99',
         originalPrice: null,
         currency: 'USD',
@@ -111,7 +108,6 @@ describe('P0-5 Public products: inactive not visible', () => {
         productId,
         currency: 'USD',
 
-        // canonical + mirror must match checks
         priceMinor: 1999,
         originalPriceMinor: null,
         price: '19.99',

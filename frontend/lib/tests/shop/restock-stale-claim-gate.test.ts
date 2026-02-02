@@ -14,7 +14,7 @@ describe('restockStalePendingOrders claim gate', () => {
     const createdAt = new Date(Date.now() - 2 * 60 * 60 * 1000);
 
     const claimNow = new Date();
-    const activeExpires = new Date(Date.now() + 5 * 60 * 1000); // not expired
+    const activeExpires = new Date(Date.now() + 5 * 60 * 1000);
 
     try {
       await db.insert(orders).values({
@@ -40,7 +40,6 @@ describe('restockStalePendingOrders claim gate', () => {
         restockedAt: null,
         idempotencyKey: idem,
 
-        // claim fields:
         sweepClaimedAt: claimNow,
         sweepClaimExpiresAt: activeExpires,
         sweepRunId: crypto.randomUUID(),
@@ -93,7 +92,7 @@ describe('restockStalePendingOrders claim gate', () => {
     const createdAt = new Date(Date.now() - 2 * 60 * 60 * 1000);
 
     const claimNow = new Date(Date.now() - 10 * 60 * 1000);
-    const expiredAt = new Date(Date.now() - 5 * 60 * 1000); // expired
+    const expiredAt = new Date(Date.now() - 5 * 60 * 1000);
 
     try {
       await db.insert(orders).values({
@@ -119,7 +118,6 @@ describe('restockStalePendingOrders claim gate', () => {
         restockedAt: null,
         idempotencyKey: idem,
 
-        // expired claim fields:
         sweepClaimedAt: claimNow,
         sweepClaimExpiresAt: expiredAt,
         sweepRunId: crypto.randomUUID(),
@@ -138,6 +136,19 @@ describe('restockStalePendingOrders claim gate', () => {
       });
 
       expect(processed).toBe(1);
+
+      const [row] = await db
+        .select({
+          stockRestored: orders.stockRestored,
+          restockedAt: orders.restockedAt,
+        })
+        .from(orders)
+        .where(eq(orders.id, orderId))
+        .limit(1);
+
+      expect(row).toBeTruthy();
+      expect(row!.stockRestored).toBe(true);
+      expect(row!.restockedAt).not.toBeNull();
     } finally {
       try {
         await db.delete(orders).where(eq(orders.id, orderId));

@@ -16,7 +16,6 @@ describe('order_items variants (selected_size/selected_color)', () => {
 
     let orderId: string | null = null;
 
-    // Arrange: create product + price row (USD)
     await db.insert(products).values({
       id: productId,
       slug,
@@ -27,7 +26,6 @@ describe('order_items variants (selected_size/selected_color)', () => {
       isActive: true,
       stock: 50,
 
-      // NEW: allow selected variants used below
       ...({
         sizes: ['S', 'M'],
         colors: ['Red'],
@@ -45,7 +43,6 @@ describe('order_items variants (selected_size/selected_color)', () => {
     });
 
     try {
-      // Act: checkout with two variants for same productId
       const idem = crypto.randomUUID();
       const result = await createOrderWithItems({
         idempotencyKey: idem,
@@ -55,14 +52,14 @@ describe('order_items variants (selected_size/selected_color)', () => {
           {
             productId,
             quantity: 1,
-            // variants:
+
             selectedSize: 'S',
             selectedColor: 'Red',
           } as any,
           {
             productId,
             quantity: 1,
-            // variants:
+
             selectedSize: 'M',
             selectedColor: 'Red',
           } as any,
@@ -71,7 +68,6 @@ describe('order_items variants (selected_size/selected_color)', () => {
 
       orderId = result.order.id;
 
-      // Assert (API-level): should keep two lines
       expect(result.order.items.length).toBe(2);
       const norm = (v: unknown) =>
         String(v ?? '')
@@ -85,8 +81,6 @@ describe('order_items variants (selected_size/selected_color)', () => {
 
       expect(sizes.sort()).toEqual(['m', 's']);
       expect(colors.sort()).toEqual(['red', 'red']);
-
-      // DB-level
 
       const rows = await db
         .select({
@@ -108,15 +102,12 @@ describe('order_items variants (selected_size/selected_color)', () => {
 
       expect(rowKeys).toEqual([`${productId}|m|red`, `${productId}|s|red`]);
     } finally {
-      // Cleanup: delete order first (cascade deletes order_items + inventory_moves)
       if (orderId) {
         await db.delete(orders).where(eq(orders.id, orderId));
       }
-      // Then delete product (cascade deletes product_prices)
+
       await db.delete(products).where(eq(products.id, productId));
 
-      // Safety: if something was left behind (shouldn't), try to clear by ids
-      // (No-throw best-effort)
       try {
         await db.execute(
           sql`delete from product_prices where product_id = ${productId}::uuid`

@@ -67,7 +67,6 @@ describe('rate limit subject', () => {
       'x-real-ip': '198.51.100.4',
     });
 
-    // cf invalid; trust disabled => must NOT accept x-real-ip
     expect(getClientIpFromHeaders(headers)).toBeNull();
   });
 

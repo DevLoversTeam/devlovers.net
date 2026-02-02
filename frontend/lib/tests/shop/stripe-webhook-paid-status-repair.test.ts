@@ -15,9 +15,9 @@ async function seedOrder(params: { orderId: string; pi: string }) {
     totalAmount: toDbMoney(2500),
     currency: 'USD',
     paymentProvider: 'stripe',
-    paymentStatus: 'paid', // mismatch: already "paid"
+    paymentStatus: 'paid',
     paymentIntentId: params.pi,
-    status: 'INVENTORY_RESERVED', // mismatch: not "PAID"
+    status: 'INVENTORY_RESERVED',
     inventoryStatus: 'reserved',
     stockRestored: false,
     restockedAt: null,
@@ -31,7 +31,6 @@ async function callWebhook(params: {
   pi: string;
   orderId: string;
 }) {
-  // Keep this pattern: reset module cache so route picks up env + mocks.
   vi.resetModules();
 
   vi.doMock('@/lib/psp/stripe', async () => {
@@ -55,7 +54,6 @@ async function callWebhook(params: {
     };
   });
 
-  // Task #5: avoid process.env mutation; use stubEnv + restore in afterEach.
   vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_dummy');
   vi.stubEnv('STRIPE_WEBHOOK_SECRET', 'whsec_test_dummy');
 
@@ -68,7 +66,7 @@ async function callWebhook(params: {
       'content-type': 'application/json',
     },
     body: JSON.stringify({ id: params.eventId }),
-    // Node-fetch/undici інколи вимагає duplex при body; безпечно лишити як any.
+
     duplex: 'half',
   } as any);
 
@@ -121,7 +119,6 @@ describe('stripe webhook: repair paid status mismatch', () => {
   let lastEventId: string | null = null;
 
   afterEach(async () => {
-    // restore env stubs to avoid cross-test coupling
     vi.unstubAllEnvs();
 
     if (lastOrderId || lastEventId) {

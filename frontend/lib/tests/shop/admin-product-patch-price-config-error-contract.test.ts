@@ -45,14 +45,12 @@ beforeEach(() => {
 function makeReq(): NextRequest {
   const fd = new FormData();
 
-  // Make payload realistic enough to pass parseAdminProductForm in PATCH
   fd.set('title', 'Test product');
   fd.set('badge', 'NONE');
   fd.set('isActive', 'true');
   fd.set('isFeatured', 'false');
   fd.set('stock', '0');
 
-  // Include USD to avoid parser-level USD requirements if any still exist
   fd.set(
     'prices',
     JSON.stringify([

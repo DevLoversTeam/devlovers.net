@@ -68,7 +68,7 @@ export function ProductFilters() {
                   SHOP_FOCUS,
                   currentCategory === cat.slug
                     ? 'text-accent'
-                    : 'text-muted-foreground hover:text-accent'
+                    : 'text-muted-foreground hover:text-accent active:text-accent'
                 )}
               >
                 {tCategories(
@@ -109,7 +109,7 @@ export function ProductFilters() {
                     SHOP_FOCUS,
                     isSelected
                       ? 'text-accent'
-                      : 'text-muted-foreground hover:text-accent'
+                      : 'text-muted-foreground hover:text-accent active:text-accent'
                   )}
                 >
                   {tTypes(type.slug)}

@@ -19,7 +19,7 @@ import {
   SHOP_STEPPER_BUTTON_BASE,
 } from '@/lib/shop/ui-classes';
 
-import { useCart } from './cart-provider';
+import { useCart } from './CartProvider';
 
 interface AddToCartButtonProps {
   product: ShopProduct;

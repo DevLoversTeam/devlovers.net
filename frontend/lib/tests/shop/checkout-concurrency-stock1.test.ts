@@ -1,4 +1,3 @@
-// lib/tests/checkout-concurrency-stock1.test.ts
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import crypto from 'crypto';
 import { NextRequest } from 'next/server';
@@ -13,13 +12,11 @@ import {
   inventoryMoves,
 } from '@/db/schema/shop';
 
-// NOTE: checkout route will be imported dynamically after mocks are installed.
-
 vi.mock('@/lib/auth', async () => {
   const actual = await vi.importActual<any>('@/lib/auth');
   return {
     ...actual,
-    getCurrentUser: async () => null, // avoid cookies() in vitest
+    getCurrentUser: async () => null,
   };
 });
 
@@ -81,7 +78,6 @@ describe('P0-8.10.1 checkout concurrency: stock=1, two parallel checkouts', () =
   });
 
   it('must allow only one success and must not double-reserve (stock must not go below 0)', async () => {
-    // ---------- Arrange: create isolated product + USD price, stock=1 ----------
     const productId = crypto.randomUUID();
     const slug = `__test_checkout_concurrency_${productId.slice(0, 8)}`;
     const now = new Date();
@@ -91,7 +87,6 @@ describe('P0-8.10.1 checkout concurrency: stock=1, two parallel checkouts', () =
       title: `TEST concurrency stock=1 (${slug})`,
       imageUrl: '/placeholder.svg',
 
-      // FIX: products.price is NOT NULL in DB (legacy column)
       price: 1000,
       originalPrice: null,
       currency: 'USD',
@@ -107,23 +102,19 @@ describe('P0-8.10.1 checkout concurrency: stock=1, two parallel checkouts', () =
       productId,
       currency: 'USD',
 
-      // minor-units
       priceMinor: 1000,
       originalPriceMinor: null,
 
-      // FIX: legacy major-unit columns are NOT NULL
-      price: 10, // 1000 minor -> 10.00
+      price: 10,
       originalPrice: null,
 
       createdAt: now,
       updatedAt: now,
     } as any);
 
-    // ---------- Helper: call checkout with given idempotency key ----------
     const baseUrl = 'http://localhost:3000';
-    const { POST: checkoutPOST } = await import(
-      '@/app/api/shop/checkout/route'
-    );
+    const { POST: checkoutPOST } =
+      await import('@/app/api/shop/checkout/route');
 
     async function callCheckout(idemKey: string) {
       const body = JSON.stringify({
@@ -147,7 +138,6 @@ describe('P0-8.10.1 checkout concurrency: stock=1, two parallel checkouts', () =
       return { status: res.status, json };
     }
 
-    // ---------- Act: run two requests in parallel (start-gated) ----------
     const idemA = crypto.randomUUID();
     const idemB = crypto.randomUUID();
 
@@ -168,7 +158,6 @@ describe('P0-8.10.1 checkout concurrency: stock=1, two parallel checkouts', () =
 
     const [r1, r2] = await Promise.all([p1, p2]);
 
-    // ---------- Assert: exactly one success, the other controlled failure ----------
     const results = [r1, r2];
     const success = results.filter(r => r.status === 201);
     const fail = results.filter(r => r.status !== 201);
@@ -194,7 +183,6 @@ describe('P0-8.10.1 checkout concurrency: stock=1, two parallel checkouts', () =
       ).toBe(true);
     }
 
-    // ---------- DB asserts: stock must be 0 ----------
     const prodRows = await db
       .select()
       .from(products)
@@ -209,7 +197,6 @@ describe('P0-8.10.1 checkout concurrency: stock=1, two parallel checkouts', () =
     expect(toNum(stock)).toBe(0);
     expect(toNum(stock)).toBeGreaterThanOrEqual(0);
 
-    // ---------- Ledger asserts: no double reserve for this product ----------
     const moves = await db
       .select()
       .from(inventoryMoves)
@@ -237,7 +224,6 @@ describe('P0-8.10.1 checkout concurrency: stock=1, two parallel checkouts', () =
     expect(reservedUnits).toBe(1);
     expect(reserveMoves.length).toBe(1);
 
-    // ---------- Cleanup: best-effort ----------
     try {
       const oi = await db
         .select({ orderId: (orderItems as any).orderId })
@@ -261,8 +247,13 @@ describe('P0-8.10.1 checkout concurrency: stock=1, two parallel checkouts', () =
       }
 
       await db.delete(products).where(eq((products as any).id, productId));
-    } catch {
-      // best-effort cleanup
+    } catch (err) {
+      // Do not swallow cleanup failures: they can leave residual rows and cause flaky follow-up tests.
+      // In CI we fail fast so flakes are visible.
+      if (process.env.CI) throw err;
+
+      // eslint-disable-next-line no-console
+      console.warn('checkout concurrency cleanup failed', err);
     }
   }, 30000);
 });

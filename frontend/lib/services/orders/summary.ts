@@ -5,10 +5,7 @@ import { orderItems, orders, products } from '@/db/schema/shop';
 import { fromCents, fromDbMoney } from '@/lib/shop/money';
 import { type OrderDetail, type OrderSummaryWithMinor } from '@/lib/types/shop';
 
-import {
-  OrderNotFoundError,
-  OrderStateInvalidError,
-} from '../errors';
+import { OrderNotFoundError, OrderStateInvalidError } from '../errors';
 
 import {
   type DbClient,
@@ -97,12 +94,8 @@ export function parseOrderSummary(
       selectedSize: item.selectedSize ?? '',
       selectedColor: item.selectedColor ?? '',
       quantity: item.quantity,
-
-      // canonical:
       unitPriceMinor,
       lineTotalMinor,
-
-      // display/legacy:
       unitPrice: fromCents(unitPriceMinor),
       lineTotal: fromCents(lineTotalMinor),
     };
@@ -130,9 +123,7 @@ export function parseOrderSummary(
 
   return {
     id: order.id,
-    // canonical:
     totalAmountMinor,
-    // display/legacy:
     totalAmount: fromCents(totalAmountMinor),
     currency: order.currency,
     paymentStatus: order.paymentStatus,
@@ -169,7 +160,6 @@ export async function getOrderSummary(
   return getOrderById(id);
 }
 
-// Internal helper (used by checkout idempotency)
 export async function getOrderByIdempotencyKey(
   dbClient: DbClient,
   key: string

@@ -2,19 +2,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, it, expect } from 'vitest';
 
-/**
- * Tripwire: fail if any code writes orders.paymentStatus via direct:
- *   - db.update(orders).set({ paymentStatus: ... })
- *   - db.insert(orders).values({ paymentStatus: ... })
- * outside an explicit allowlist.
- *
- * Scope: repo TS/TSX files (excluding node_modules/.next/dist/etc).
- * NOTE: This is NOT an AST parser. It is a scoped scan:
- *   - Finds `.set({ ... })` / `.values({ ... })`
- *   - Extracts ONLY the balanced object literal argument `{ ... }`
- *   - Detects `paymentStatus` only as a TOP-LEVEL key inside that object literal
- */
-
 const REPO_ROOT = process.cwd();
 
 const EXCLUDED_DIRS = new Set([
@@ -33,19 +20,12 @@ function norm(p: string): string {
   return p.replaceAll('\\', '/');
 }
 
-// Keep this allowlist very small on purpose.
-// Rules are per-file and per-operation (insert(values) vs update(set)).
 type AllowedWriters = { set: boolean; values: boolean };
 
 const WRITER_RULES = new Map<string, AllowedWriters>([
-  // Guarded writer (allowed): internal state machine transitions
   [norm('lib/services/orders/payment-state.ts'), { set: true, values: true }],
 
-  // Allowed ONLY for initial order creation (insert). Updates must stay guarded.
   [norm('lib/services/orders/checkout.ts'), { set: false, values: true }],
-
-  // If you ever intentionally allow route-level inserts, add explicitly:
-  // [norm('app/api/shop/checkout/route.ts'), { set: false, values: true }],
 ]);
 
 function getAllowed(rel: string): AllowedWriters {
@@ -72,10 +52,6 @@ function walk(dirAbs: string, relBase: string, out: string[]) {
 
 type ExtractedObject = { text: string; endIndex: number };
 
-/**
- * Extracts a balanced object literal starting at `braceStart` (which MUST point to '{').
- * Handles strings and comments to avoid premature brace matching.
- */
 function extractBalancedObjectLiteral(
   src: string,
   braceStart: number
@@ -89,14 +65,12 @@ function extractBalancedObjectLiteral(
 
   let depth = 0;
 
-  // For `${ ... }` inside template strings
   const templateExprDepth: number[] = [];
 
   for (let i = braceStart; i < src.length; i++) {
     const ch = src[i];
     const next = i + 1 < src.length ? src[i + 1] : '';
 
-    // --- comment/string handling ---
     if (mode() === 'line') {
       if (ch === '\n') stack.pop();
       continue;
@@ -133,18 +107,17 @@ function extractBalancedObjectLiteral(
         stack.pop();
         continue;
       }
-      // Enter template expr `${`
+
       if (ch === '$' && next === '{') {
         depth++;
         templateExprDepth.push(1);
         stack.push('code');
-        i++; // skip '{'
+        i++;
         continue;
       }
       continue;
     }
 
-    // --- code mode ---
     if (ch === '/' && next === '/') {
       stack.push('line');
       i++;
@@ -168,7 +141,6 @@ function extractBalancedObjectLiteral(
       continue;
     }
 
-    // --- braces ---
     if (ch === '{') {
       depth++;
       if (templateExprDepth.length > 0) {
@@ -182,9 +154,8 @@ function extractBalancedObjectLiteral(
         templateExprDepth[templateExprDepth.length - 1]--;
         if (templateExprDepth[templateExprDepth.length - 1] === 0) {
           templateExprDepth.pop();
-          // return to template mode (we entered code because of `${ ... }`)
           if (stack.length >= 2 && stack[stack.length - 2] === 'template') {
-            stack.pop(); // pop 'code'
+            stack.pop();
           }
         }
       }
@@ -198,10 +169,6 @@ function extractBalancedObjectLiteral(
   return null;
 }
 
-/**
- * Returns true if the extracted `{ ... }` contains a TOP-LEVEL key `paymentStatus`
- * (identifier, quoted, shorthand, or computed string literal).
- */
 function hasTopLevelPaymentStatusKey(objectLiteralWithBraces: string): boolean {
   if (
     objectLiteralWithBraces.length < 2 ||
@@ -217,7 +184,6 @@ function hasTopLevelPaymentStatusKey(objectLiteralWithBraces: string): boolean {
   const stack: Mode[] = ['code'];
   const mode = () => stack[stack.length - 1];
 
-  // nesting inside the object literal body (nested { [ ( )
   let nest = 0;
 
   const isIdentStart = (c: string) => /[A-Za-z_$]/.test(c);
@@ -250,7 +216,6 @@ function hasTopLevelPaymentStatusKey(objectLiteralWithBraces: string): boolean {
     const ch = body[i];
     const next = i + 1 < body.length ? body[i + 1] : '';
 
-    // --- comment/string handling ---
     if (mode() === 'line') {
       if (ch === '\n') stack.pop();
       continue;
@@ -290,7 +255,6 @@ function hasTopLevelPaymentStatusKey(objectLiteralWithBraces: string): boolean {
       continue;
     }
 
-    // --- code mode ---
     if (ch === '/' && next === '/') {
       stack.push('line');
       i++;
@@ -314,7 +278,6 @@ function hasTopLevelPaymentStatusKey(objectLiteralWithBraces: string): boolean {
       continue;
     }
 
-    // nesting
     if (ch === '{' || ch === '[' || ch === '(') {
       nest++;
       continue;
@@ -324,12 +287,10 @@ function hasTopLevelPaymentStatusKey(objectLiteralWithBraces: string): boolean {
       continue;
     }
 
-    // only top-level keys
     if (nest !== 0) continue;
 
     if (ch === ',' || /\s/.test(ch)) continue;
 
-    // identifier key: paymentStatus: ... OR shorthand: paymentStatus,
     if (isIdentStart(ch)) {
       let j = i + 1;
       while (j < body.length && isIdentPart(body[j])) j++;
@@ -345,7 +306,6 @@ function hasTopLevelPaymentStatusKey(objectLiteralWithBraces: string): boolean {
       continue;
     }
 
-    // quoted key: 'paymentStatus': or "paymentStatus":
     if (ch === "'" || ch === '"') {
       const q = readQuoted(body, i);
       if (q) {
@@ -359,7 +319,6 @@ function hasTopLevelPaymentStatusKey(objectLiteralWithBraces: string): boolean {
       continue;
     }
 
-    // computed key: ['paymentStatus']:
     if (ch === '[') {
       let j = skipWs(body, i + 1);
       const qch = body[j];
@@ -402,26 +361,20 @@ function hasDirectOrdersWriter(
     return /\binsert\s*\(\s*orders\s*\)/m.test(chunk);
   };
 
-  // Scan `.set({ ... })` / `.values({ ... })` call sites, then inspect ONLY their object literal argument.
   const CALL_RE = /\.(set|values)\s*\(\s*{/g;
 
   let m: RegExpExecArray | null;
   while ((m = CALL_RE.exec(source)) !== null) {
     const callKind = m[1] as 'set' | 'values';
 
-    // Only enforce for orders table chains:
-    // - db.update(orders).set({ ... })
-    // - db.insert(orders).values({ ... })
     if (callKind === 'set' && !isOrdersUpdateContext(source, m.index)) continue;
     if (callKind === 'values' && !isOrdersInsertContext(source, m.index))
       continue;
 
-    // `m[0]` ends with `{` due to the regex
     const braceStart = m.index + (m[0].length - 1);
     const extracted = extractBalancedObjectLiteral(source, braceStart);
     if (!extracted) continue;
 
-    // If this operation is explicitly allowed for this file, ignore it
     if (callKind === 'set' && allowed.set) {
       CALL_RE.lastIndex = Math.max(CALL_RE.lastIndex, extracted.endIndex);
       continue;
@@ -433,7 +386,6 @@ function hasDirectOrdersWriter(
 
     if (hasTopLevelPaymentStatusKey(extracted.text)) return true;
 
-    // jump forward to end of this object to avoid rescanning inside it
     CALL_RE.lastIndex = Math.max(CALL_RE.lastIndex, extracted.endIndex);
   }
 
@@ -448,7 +400,6 @@ describe('Task 6: Tripwire — no direct orders.paymentStatus writers outside al
     const offenders: string[] = [];
 
     for (const rel of files) {
-      // Skip tests entirely (they contain regex/fixtures that look like writers)
       if (rel.startsWith('lib/tests/')) continue;
       if (rel.endsWith('.test.ts') || rel.endsWith('.test.tsx')) continue;
       if (rel.endsWith('.spec.ts') || rel.endsWith('.spec.tsx')) continue;

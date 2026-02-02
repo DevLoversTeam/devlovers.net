@@ -18,7 +18,7 @@ async function seedOrder(args: SeedArgs): Promise<string> {
   const orderId = crypto.randomUUID();
   const now = new Date();
 
-  // NOTE: if your orders schema has extra NOT NULL columns, add them here once.
+
   const idempotencyKey = `test:${orderId}`;
 
   await db.insert(orders).values({

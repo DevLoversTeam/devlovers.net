@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 
-// Mock admin auth to "pass"
 vi.mock('@/lib/auth/admin', () => {
   class AdminApiDisabledError extends Error {
     code = 'ADMIN_API_DISABLED';
@@ -20,7 +19,6 @@ vi.mock('@/lib/auth/admin', () => {
   };
 });
 
-// Import AFTER mocking
 import { PATCH as patchStatus } from '@/app/api/shop/admin/products/[id]/status/route';
 
 describe('P0-SEC: admin CSRF required for mutating endpoints', () => {

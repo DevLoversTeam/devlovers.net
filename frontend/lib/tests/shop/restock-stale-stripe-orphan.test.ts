@@ -12,7 +12,6 @@ describe('P0-3.x Restock stale pending orders: stripe orphan cleanup', () => {
     const orderId = crypto.randomUUID();
     const idem = `test-stale-orphan-stripe-${crypto.randomUUID()}`;
 
-    // Make it old enough to be considered stale.
     const createdAt = new Date(Date.now() - 2 * 60 * 60 * 1000); // 2h ago
     const totalAmountMinor = 1234;
 
@@ -44,11 +43,10 @@ describe('P0-3.x Restock stale pending orders: stripe orphan cleanup', () => {
         updatedAt: createdAt,
       });
 
-      // Run sweep
       const processed = await restockStalePendingOrders({
         olderThanMinutes: 60,
         batchSize: 50,
-        orderIds: [orderId], // <-- add
+        orderIds: [orderId],
       });
 
       expect(processed).toBeGreaterThan(0);
@@ -78,7 +76,6 @@ describe('P0-3.x Restock stale pending orders: stripe orphan cleanup', () => {
       expect(row!.stockRestored).toBe(true);
       expect(row!.restockedAt).not.toBeNull();
     } finally {
-      // cleanup
       try {
         await db.delete(orders).where(eq(orders.id, orderId));
       } catch (error) {

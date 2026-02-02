@@ -1,5 +1,3 @@
-// frontend/lib/tests/stripe-webhook-refund-full.test.ts
-
 import crypto from 'node:crypto';
 import { eq } from 'drizzle-orm';
 import { NextRequest } from 'next/server';
@@ -7,9 +5,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type Stripe from 'stripe';
 
 vi.mock('@/lib/psp/stripe', async () => {
-  const actual = await vi.importActual<typeof import('@/lib/psp/stripe')>(
-    '@/lib/psp/stripe'
-  );
+  const actual =
+    await vi.importActual<typeof import('@/lib/psp/stripe')>(
+      '@/lib/psp/stripe'
+    );
 
   return {
     ...actual,
@@ -123,8 +122,6 @@ describe('stripe webhook refund (full only): PI fallback + terminal status + ded
   beforeEach(async () => {
     vi.clearAllMocks();
 
-    // restockOrder mocked: we don't retest inventory ledger here (it is covered by restock tests),
-    // we only assert webhook triggers it exactly-once and marks order as restocked.
     restockOrderMock.mockImplementation(async (orderId: string) => {
       await db
         .update(orders)
@@ -182,7 +179,7 @@ describe('stripe webhook refund (full only): PI fallback + terminal status + ded
       .limit(1);
 
     expect(row1.paymentStatus).toBe('refunded');
-    expect(row1.status).toBe('CANCELED'); // terminal status per current enum
+    expect(row1.status).toBe('CANCELED');
     expect(row1.stockRestored).toBe(true);
 
     expect(restockOrderMock).toHaveBeenCalledTimes(1);
@@ -190,7 +187,6 @@ describe('stripe webhook refund (full only): PI fallback + terminal status + ded
       reason: 'refunded',
     });
 
-    // 2nd call with SAME event.id -> dedupe => no side effects
     const res2 = await POST(makeRequest());
     expect(res2.status).toBe(200);
 
@@ -217,12 +213,11 @@ describe('stripe webhook refund (full only): PI fallback + terminal status + ded
       amount: 2500,
       status: 'succeeded',
       reason: null,
-      charge: chargeId, // IMPORTANT: real Stripe shape is usually string id
+      charge: chargeId,
       payment_intent: inserted.paymentIntentId,
       metadata: {},
     };
 
-    // Webhook code should retrieve the charge by id to get cumulative refunded, etc.
     retrieveChargeMock.mockResolvedValue(
       makeCharge({
         chargeId,
@@ -256,7 +251,7 @@ describe('stripe webhook refund (full only): PI fallback + terminal status + ded
     expect(row.paymentStatus).toBe('refunded');
     expect(row.status).toBe('CANCELED');
     expect(row.stockRestored).toBe(true);
-    expect(row.pspChargeId).toBe(chargeId); // requires PATCH 1 in webhook
+    expect(row.pspChargeId).toBe(chargeId);
 
     expect(retrieveChargeMock).toHaveBeenCalledTimes(1);
     expect(retrieveChargeMock).toHaveBeenCalledWith(chargeId);
@@ -279,7 +274,7 @@ describe('stripe webhook refund (full only): PI fallback + terminal status + ded
       chargeId,
       paymentIntentId: inserted.paymentIntentId,
       amount: 2500,
-      amountRefunded: 1000, // partial
+      amountRefunded: 1000,
       refunds: [{ id: refundId, amount: 1000 }],
     });
 
@@ -330,7 +325,6 @@ describe('stripe webhook refund (full only): PI fallback + terminal status + ded
       data: { object: charge },
     } as unknown as Stripe.Event);
 
-    // first call: restock throws => webhook returns 500
     restockOrderMock
       .mockImplementationOnce(async () => {
         throw new Error('RESTOCK_FAILED');
@@ -350,7 +344,6 @@ describe('stripe webhook refund (full only): PI fallback + terminal status + ded
     const res1 = await POST(makeRequest());
     expect(res1.status).toBe(500);
 
-    // same eventId retry: MUST reprocess (processedAt is still NULL) and restock succeeds
     const res2 = await POST(makeRequest());
     expect(res2.status).toBe(200);
 
@@ -387,19 +380,17 @@ describe('stripe webhook refund (full only): PI fallback + terminal status + ded
     const refund2Id = `re_${crypto.randomUUID()}`;
     const refund3Id = `re_${crypto.randomUUID()}`;
 
-    // current event refund is only 500 (not full by itself)
     const refund = {
       id: refund3Id,
       object: 'refund',
       amount: 500,
       status: 'succeeded',
       reason: null,
-      charge: chargeId, // IMPORTANT: real Stripe shape is usually string id
+      charge: chargeId,
       payment_intent: inserted.paymentIntentId,
       metadata: {},
     };
 
-    // Charge says cumulative refunded is FULL (2500), but refund.amount is only 500.
     retrieveChargeMock.mockResolvedValue(
       makeCharge({
         chargeId,
@@ -454,14 +445,13 @@ describe('stripe webhook refund (full only): PI fallback + terminal status + ded
       chargeId,
       paymentIntentId: inserted.paymentIntentId,
       amount: 2500,
-      amountRefunded: 2500, // will be deleted to force fallback
+      amountRefunded: 2500,
       refunds: [
         { id: refund1Id, amount: 1000 },
         { id: refund2Id, amount: 1500 },
       ],
     });
 
-    // force edge-case: Stripe object without amount_refunded
     delete (charge as any).amount_refunded;
 
     verifyWebhookSignatureMock.mockReturnValue({
@@ -502,14 +492,12 @@ describe('stripe webhook refund (full only): PI fallback + terminal status + ded
       chargeId,
       paymentIntentId: inserted.paymentIntentId,
       amount: 2500,
-      amountRefunded: 0, // will be deleted to force "missing"
-      refunds: [], // empty list => refund object unavailable (refund == null)
+      amountRefunded: 0,
+      refunds: [],
     });
 
-    // Edge-case: Stripe object WITHOUT amount_refunded
     delete (charge as any).amount_refunded;
 
-    // Ensure refunds list is present but empty (covers "refunds.data = []")
     (charge as any).refunds = { object: 'list', data: [] };
 
     verifyWebhookSignatureMock.mockReturnValue({
@@ -523,11 +511,9 @@ describe('stripe webhook refund (full only): PI fallback + terminal status + ded
     const res = await POST(makeRequest());
     expect(res.status).toBe(500);
 
-    // If you kept the explicit diagnostic mapping:
     const body = await res.json();
     expect(body).toEqual({ code: 'REFUND_FULLNESS_UNDETERMINED' });
 
-    // stripe_events.processed_at must remain NULL (no ack -> Stripe retries)
     const [evt] = await db
       .select({
         processedAt: stripeEvents.processedAt,
@@ -542,7 +528,6 @@ describe('stripe webhook refund (full only): PI fallback + terminal status + ded
     expect(evt.processedAt).toBeNull();
     expect(evt.paymentIntentId).toBe(inserted.paymentIntentId);
 
-    // Order must NOT change (safe no-op)
     const [row] = await db
       .select({
         paymentStatus: orders.paymentStatus,
@@ -561,7 +546,6 @@ describe('stripe webhook refund (full only): PI fallback + terminal status + ded
 
     expect(restockOrderMock).toHaveBeenCalledTimes(0);
 
-    // Optional: assert warning fired (locks observability behavior)
     expect(warnSpy).toHaveBeenCalled();
 
     const firstArg = warnSpy.mock.calls[0]?.[0];
@@ -577,7 +561,6 @@ describe('stripe webhook refund (full only): PI fallback + terminal status + ded
     expect(parsed.level).toBe('warn');
     expect(parsed.msg).toBe('stripe_webhook_refund_fullness_undetermined');
 
-    // (опційно, але корисно: зафіксувати reason)
     expect(parsed.meta?.reason).toBe(
       'missing_amount_refunded_and_empty_refunds_list'
     );

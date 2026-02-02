@@ -35,7 +35,6 @@ vi.mock('@/db', () => ({
 }));
 
 vi.mock('@/db/schema/shop', () => ({
-  // minimal runtime shape needed by payment-state.ts
   orders: {
     id: 'orders.id',
     paymentStatus: 'orders.payment_status',
@@ -86,15 +85,14 @@ describe('P1-6 payment state machine helper', () => {
   });
 
   it('forbidden transition does not change state and logs warn', async () => {
-    // simulate "no row updated"
     updateReturningRows = [];
-    // current state returned by getCurrentState() after failed update
+
     selectQueue = [[{ paymentStatus: 'failed', paymentProvider: 'stripe' }]];
 
     const res = await mod.guardedPaymentStatusUpdate({
       orderId: 'o2',
       paymentProvider: 'stripe',
-      to: 'paid', // failed -> paid is forbidden by matrix
+      to: 'paid',
       source: 'system',
       eventId: 'evt_2',
       note: 'test-forbidden',
@@ -116,13 +114,12 @@ describe('P1-6 payment state machine helper', () => {
   });
 
   it('provider=none hard-rejects invalid targets before UPDATE and logs warn', async () => {
-    // helper reads current state to log context
     selectQueue = [[{ paymentStatus: 'paid', paymentProvider: 'none' }]];
 
     const res = await mod.guardedPaymentStatusUpdate({
       orderId: 'o3',
       paymentProvider: 'none',
-      to: 'refunded', // explicitly forbidden for provider none
+      to: 'refunded',
       source: 'system',
       eventId: 'evt_3',
       note: 'test-none',

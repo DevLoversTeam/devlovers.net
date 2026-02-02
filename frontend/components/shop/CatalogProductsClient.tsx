@@ -4,8 +4,8 @@ import React from 'react';
 import { useSearchParams, type ReadonlyURLSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
-import { CatalogLoadMore } from '@/components/shop/catalog-load-more';
-import { ProductCard } from '@/components/shop/product-card';
+import { CatalogLoadMore } from '@/components/shop/CatalogLoadMore';
+import { ProductCard } from '@/components/shop/ProductCard';
 import { logError } from '@/lib/logging';
 
 type Product = React.ComponentProps<typeof ProductCard>['product'] & {
