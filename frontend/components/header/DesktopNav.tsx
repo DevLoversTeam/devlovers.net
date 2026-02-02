@@ -6,7 +6,7 @@ import { SITE_LINKS } from '@/lib/navigation';
 
 import { NavLink } from '@/components/header/NavLink';
 import { HeaderButton } from '@/components/shared/HeaderButton';
-import { NavLinks } from '@/components/shop/header/nav-links';
+import { NavLinks } from '@/components/shop/header/NavLinks';
 import { BlogCategoryLinks } from '@/components/blog/BlogCategoryLinks';
 
 type Category = {

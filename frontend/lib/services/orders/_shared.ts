@@ -4,7 +4,10 @@ import { createCartItemKey } from '@/lib/shop/cart-item-key';
 import { type PaymentProvider } from '@/lib/shop/payments';
 import { type CurrencyCode } from '@/lib/shop/currency';
 import { MAX_QUANTITY_PER_LINE } from '@/lib/validation/shop';
-import { type CheckoutItem, type OrderSummaryWithMinor } from '@/lib/types/shop';
+import {
+  type CheckoutItem,
+  type OrderSummaryWithMinor,
+} from '@/lib/types/shop';
 import { orders } from '@/db/schema/shop';
 import { db } from '@/db';
 
@@ -33,11 +36,9 @@ export function resolvePaymentProvider(
 
   if (provider === 'stripe' || provider === 'none') return provider;
 
-  // legacy / corrupted data fallback:
   if (order.paymentIntentId) return 'stripe';
   if (order.paymentStatus === 'paid') return 'none';
 
-  // safest default: treat as stripe to avoid skipping payment flows
   return 'stripe';
 }
 
@@ -92,7 +93,6 @@ export function hashIdempotencyRequest(params: {
   currency: string;
   userId: string | null;
 }) {
-  // Stable canonical form:
   const normalized = [...params.items]
     .map(i => ({
       productId: i.productId,

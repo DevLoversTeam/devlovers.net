@@ -30,14 +30,12 @@ export type OrderSummary = z.infer<typeof orderSummarySchema> & {
 export type OrderDetail = OrderSummary;
 
 export type OrderSummaryWithMinor = OrderSummary & {
-  // canonical money model (minor units)
   totalAmountMinor: number;
 };
 
 export type CheckoutResult = {
   order: OrderSummaryWithMinor;
   isNew: boolean;
-  // legacy name (keep for back-compat in client/tests)
   totalCents: number;
 };
 

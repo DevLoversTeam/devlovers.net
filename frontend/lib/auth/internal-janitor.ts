@@ -1,13 +1,9 @@
-// lib/auth/internal-janitor.ts
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 
 function timingSafeEqual(a: string, b: string) {
   const aBuf = Buffer.from(a, 'utf8');
   const bBuf = Buffer.from(b, 'utf8');
-
-  // Pad both buffers to the same length to avoid length-based early return timing leak.
-  // Ensure min length 1 because timingSafeEqual requires non-zero length buffers.
   const maxLen = Math.max(aBuf.length, bBuf.length, 1);
 
   const aPadded = Buffer.alloc(maxLen);
@@ -18,7 +14,6 @@ function timingSafeEqual(a: string, b: string) {
 
   const equalPadded = crypto.timingSafeEqual(aPadded, bPadded);
 
-  // Length check AFTER timingSafeEqual; no early return.
   const lengthEqual = aBuf.length === bBuf.length;
 
   return equalPadded && lengthEqual;

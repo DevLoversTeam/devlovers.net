@@ -5,7 +5,6 @@ type StripeWebhookRateLimitConfig = {
   windowSeconds: number;
 };
 
-// Must match previous inline defaults in the webhook route.
 const DEFAULT_STRIPE_WEBHOOK_RL_MAX = 30;
 const DEFAULT_STRIPE_WEBHOOK_RL_WINDOW_SECONDS = 60;
 
@@ -15,7 +14,6 @@ function parsePositiveIntStrict(raw: string | undefined): number | null {
   const trimmed = raw.trim();
   if (!trimmed) return null;
 
-  // Strict: digits only (no "+", "-", decimals, exponent, or "10abc").
   if (!/^\d+$/.test(trimmed)) return null;
 
   const parsed = Number.parseInt(trimmed, 10);
@@ -44,7 +42,7 @@ export function resolveStripeWebhookRateLimit(
         [
           process.env.STRIPE_WEBHOOK_MISSING_SIG_RL_MAX,
           process.env.STRIPE_WEBHOOK_RL_MAX,
-          // legacy fallback to preserve current behavior:
+
           process.env.STRIPE_WEBHOOK_INVALID_SIG_RL_MAX,
         ],
         DEFAULT_STRIPE_WEBHOOK_RL_MAX
@@ -53,7 +51,7 @@ export function resolveStripeWebhookRateLimit(
         [
           process.env.STRIPE_WEBHOOK_MISSING_SIG_RL_WINDOW_SECONDS,
           process.env.STRIPE_WEBHOOK_RL_WINDOW_SECONDS,
-          // legacy fallback to preserve current behavior:
+
           process.env.STRIPE_WEBHOOK_INVALID_SIG_RL_WINDOW_SECONDS,
         ],
         DEFAULT_STRIPE_WEBHOOK_RL_WINDOW_SECONDS

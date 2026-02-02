@@ -3,9 +3,9 @@ import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 
 import { guardShopAdminPage } from '@/lib/auth/guard-shop-admin-page';
-import { ShopAdminTopbar } from '@/components/shop/admin/shop-admin-topbar';
+import { ShopAdminTopbar } from '@/components/shop/admin/ShopAdminTopbar';
 
-import { ProductForm } from '../../_components/product-form';
+import { ProductForm } from '../../_components/ProductForm';
 import { db } from '@/db';
 import { products, productPrices } from '@/db/schema';
 import type { CurrencyCode } from '@/lib/shop/currency';

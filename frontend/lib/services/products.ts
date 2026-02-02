@@ -1,6 +1,3 @@
-// frontend/lib/services/products.ts
-// Facade: keep legacy import path stable (no index.ts required)
-
 export { createProduct } from './products/mutations/create';
 export { updateProduct } from './products/mutations/update';
 export { deleteProduct } from './products/mutations/delete';

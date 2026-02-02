@@ -7,7 +7,7 @@ import { HeaderButton } from '@/components/shared/HeaderButton';
 import { GitHubStarButton } from '@/components/shared/GitHubStarButton';
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
 import { LogoutButton } from '@/components/auth/logoutButton';
-import { CartButton } from '@/components/shop/header/cart-button';
+import { CartButton } from '@/components/shop/header/CartButton';
 import { BlogHeaderSearch } from '@/components/blog/BlogHeaderSearch';
 
 type DesktopActionsProps = {

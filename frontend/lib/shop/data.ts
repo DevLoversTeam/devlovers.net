@@ -193,11 +193,6 @@ function mapToShopProduct(product: DbProduct): ShopProduct | null {
   return parsed.data;
 }
 
-/**
- * IMPORTANT:
- * Pass `locale` from the route segment when possible (app/[locale]/...),
- * because currency policy is locale-based: uk -> UAH, otherwise USD.
- */
 export async function getCatalogProducts(
   filters: unknown,
   locale: string = 'en'
@@ -250,14 +245,12 @@ export async function getHomepageContent(
 ): Promise<HomepageContent> {
   const currency = resolveCurrencyFromLocale(locale);
 
-  // 1) primary: featured (може бути < 4)
   const featured: DbProduct[] = await getFeaturedProducts(currency, 4);
 
   const featuredProducts = featured
     .map(mapToShopProduct)
     .filter((product): product is ShopProduct => product !== null);
 
-  // helper: докомплектувати до N без дублікатів
   const fillTo = (
     primary: ShopProduct[],
     fallback: ShopProduct[],
@@ -276,8 +269,6 @@ export async function getHomepageContent(
     return merged.slice(0, count);
   };
 
-  // 2) fallback source: newest active products (щоб завжди було чим добрати до 4)
-  // беремо більше ніж 4, щоб було що фільтрувати після дедупу
   const newestCatalog = await getCatalogProducts(
     {
       category: 'all',

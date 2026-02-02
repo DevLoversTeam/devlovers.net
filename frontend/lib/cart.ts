@@ -106,7 +106,9 @@ export function persistCartItems(items: CartClientItem[]): void {
   }
 }
 
-function normalizeItemsForStorage(items: CartRehydrateItem[]): CartClientItem[] {
+function normalizeItemsForStorage(
+  items: CartRehydrateItem[]
+): CartClientItem[] {
   return items.map(item => ({
     productId: item.productId,
     quantity: item.quantity,
@@ -115,11 +117,9 @@ function normalizeItemsForStorage(items: CartRehydrateItem[]): CartClientItem[] 
   }));
 }
 
-/**
- * IMPORTANT:
- * Cart money fields are MINOR UNITS (integers).
- */
-export function computeSummaryFromItems(items: CartRehydrateItem[]): CartSummary {
+export function computeSummaryFromItems(
+  items: CartRehydrateItem[]
+): CartSummary {
   if (!items.length) {
     return {
       totalAmountMinor: 0,
@@ -135,7 +135,6 @@ export function computeSummaryFromItems(items: CartRehydrateItem[]): CartSummary
   let itemCount = 0;
 
   for (const item of items) {
-    // Production-safety: cart must not mix currencies (usually indicates locale switch + stale cart)
     if (item.currency !== currency) {
       throw new Error(
         `Cart contains mixed currencies (${currency} and ${item.currency}). Clear cart and try again.`
@@ -163,12 +162,9 @@ function extractApiError(data: unknown): {
   message: string;
   details?: unknown;
 } {
-  // legacy: { error: "..." }
   if (isRecord(data) && typeof data.error === 'string') {
     return { code: 'UNKNOWN_ERROR', message: data.error };
   }
-
-  // preferred: { error: { code, message, details } }
   if (isRecord(data) && isRecord(data.error)) {
     const errObj = data.error;
     const code =
@@ -181,8 +177,6 @@ function extractApiError(data: unknown): {
         : 'Request failed';
     return { code, message, details: errObj.details };
   }
-
-  // fallback: { code, message, details }
   if (isRecord(data)) {
     const code =
       typeof data.code === 'string' && data.code.trim().length > 0
@@ -245,7 +239,8 @@ export async function rehydrateCart(items: CartClientItem[]): Promise<Cart> {
     const apiErr = extractApiError(data);
     throw new CartRehydrateError({
       code: apiErr.code,
-      message: apiErr.message || `Unable to rehydrate cart (HTTP ${response.status})`,
+      message:
+        apiErr.message || `Unable to rehydrate cart (HTTP ${response.status})`,
       status: response.status,
       details: apiErr.details,
     });
