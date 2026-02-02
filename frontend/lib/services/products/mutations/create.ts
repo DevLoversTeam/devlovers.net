@@ -1,8 +1,6 @@
 import { eq } from 'drizzle-orm';
 
-import {
-  uploadProductImageFromFile,
-} from '@/lib/cloudinary';
+import { uploadProductImageFromFile } from '@/lib/cloudinary';
 import { db } from '@/db';
 import { products, productPrices } from '@/db/schema';
 import { logError } from '@/lib/logging';
@@ -36,7 +34,6 @@ export async function createProduct(input: ProductInput): Promise<DbProduct> {
 
   const prices = normalizePricesFromInput(input);
   if (!prices.length) {
-    // Hard fail: admin flow must provide prices
     throw new InvalidPayloadError('Product pricing is required.');
   }
 
@@ -58,8 +55,6 @@ export async function createProduct(input: ProductInput): Promise<DbProduct> {
         description: (input as any).description ?? null,
         imageUrl: uploaded?.secureUrl ?? '',
         imagePublicId: uploaded?.publicId,
-
-        // legacy mirror (USD) — required by products.price NOT NULL
         price: toDbMoney(usd.priceMinor),
         originalPrice:
           usd.originalPriceMinor == null
@@ -94,12 +89,8 @@ export async function createProduct(input: ProductInput): Promise<DbProduct> {
         return {
           productId: row.id,
           currency: p.currency,
-
-          // canonical
           priceMinor,
           originalPriceMinor: originalMinor,
-
-          // legacy mirror
           price: toDbMoney(priceMinor),
           originalPrice:
             originalMinor == null ? null : toDbMoney(originalMinor),

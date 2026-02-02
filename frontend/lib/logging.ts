@@ -45,7 +45,6 @@ function toErrorShape(
   }
 }
 
-// Simple redaction: prevents accidental leaking of secrets in logs.
 function redactJsonStringify(value: unknown): string {
   const SENSITIVE_KEY_RE =
     /(secret|token|password|authorization|cookie|api[_-]?key)/i;
@@ -75,15 +74,11 @@ function emit(
 
   const line = redactJsonStringify(payload);
 
-  // stderr for warn/error, stdout for debug/info
   if (level === 'error') console.error(line);
   else if (level === 'warn') console.warn(line);
   else console.log(line);
 }
 
-/**
- * Backward-compatible API (keep existing call sites working).
- */
 export function logError(
   context: string,
   error: unknown,

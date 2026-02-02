@@ -8,7 +8,7 @@ import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { Minus, Plus, Trash2, ShoppingBag } from 'lucide-react';
 
-import { useCart } from '@/components/shop/cart-provider';
+import { useCart } from '@/components/shop/CartProvider';
 import { generateIdempotencyKey } from '@/lib/shop/idempotency';
 import { formatMoney } from '@/lib/shop/currency';
 import {
@@ -422,7 +422,6 @@ export default function CartPage() {
               {t('checkout.message')}
             </p>
 
-            {/* Fallback CTA if navigation fails after order was created */}
             {createdOrderId && !checkoutError ? (
               <div className="flex justify-center">
                 <Link

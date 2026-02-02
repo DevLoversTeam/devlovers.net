@@ -175,7 +175,6 @@ export default async function OrderDetailPage({
       .where(whereClause)
       .orderBy(orderItems.id);
 
-    // non-admin: "не існує" == "не твій"
     if (rows.length === 0) notFound();
 
     const base = rows[0]!.order;

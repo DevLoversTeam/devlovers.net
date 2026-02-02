@@ -1,5 +1,5 @@
 import { Link } from '@/i18n/routing';
-import { ClearCartOnMount } from '@/components/shop/clear-cart-on-mount';
+import { ClearCartOnMount } from '@/components/shop/ClearCartOnMount';
 import StripePaymentClient from '../StripePaymentClient';
 
 import { formatMoney } from '@/lib/shop/currency';
@@ -97,7 +97,6 @@ function HeroCtaLink({
 }) {
   return (
     <Link href={href} className={cn(SHOP_HERO_CTA_SM, className)}>
-      {/* base gradient */}
       <span
         className="absolute inset-0"
         style={shopCtaGradient(
@@ -115,7 +114,6 @@ function HeroCtaLink({
         )}
         aria-hidden="true"
       />
-      {/* glass inset */}
       <span className={SHOP_CTA_INSET} aria-hidden="true" />
 
       <span className="relative z-10">{children}</span>

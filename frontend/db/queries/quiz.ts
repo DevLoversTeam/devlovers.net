@@ -193,7 +193,6 @@ export async function getQuizQuestions(
   quizId: string,
   locale: string = 'uk'
 ): Promise<QuizQuestionWithAnswers[]> {
-  // QUERY 1: Get all questions for this quiz
   const questionsData = await db
     .select({
       id: quizQuestions.id,
@@ -213,12 +212,10 @@ export async function getQuizQuestions(
     .where(eq(quizQuestions.quizId, quizId))
     .orderBy(quizQuestions.displayOrder);
 
-  // Early return if no questions
   if (questionsData.length === 0) return [];
 
-  // QUERY 2: Get ALL answers for ALL questions in one query
   const questionIds = questionsData.map(q => q.id);
-  
+
   const allAnswers = await db
     .select({
       id: quizAnswers.id,
@@ -238,7 +235,6 @@ export async function getQuizQuestions(
     .where(inArray(quizAnswers.quizQuestionId, questionIds))
     .orderBy(quizAnswers.displayOrder);
 
-  // GROUP answers by questionId in memory (O(n) operation)
   const answersByQuestion = new Map<string, typeof allAnswers>();
   for (const answer of allAnswers) {
     const existing = answersByQuestion.get(answer.questionId) || [];
@@ -246,7 +242,6 @@ export async function getQuizQuestions(
     answersByQuestion.set(answer.questionId, existing);
   }
 
-  // MAP questions with their answers
   return questionsData.map(question => ({
     ...question,
     answers: (answersByQuestion.get(question.id) || []).map(a => ({

@@ -20,16 +20,6 @@ function readTokenFromHeader(request: unknown): string | null {
   return typeof raw === 'string' ? raw.trim() : null;
 }
 
-/**
- * Admin CSRF gate for cookie-based auth.
- * Token source:
- * - multipart/form-data: field CSRF_FORM_FIELD
- * - otherwise: header x-csrf-token
- *
- * Fail-closed:
- * - missing/invalid token => 403
- * - CSRF secret misconfigured => 503 (not 500)
- */
 export function requireAdminCsrf(
   request: NextRequest,
   purpose: string,
@@ -48,7 +38,6 @@ export function requireAdminCsrf(
     }
     return null;
   } catch (err) {
-    // e.g. CSRF_SECRET missing -> csrf.ts throws
     logError('CSRF verification failed (misconfigured)', err);
     return NextResponse.json({ code: 'CSRF_DISABLED' }, { status: 503 });
   }

@@ -92,8 +92,6 @@ export async function PATCH(
 
     const updated = await toggleProductStatus(productIdForLog);
 
-    // no success log (avoid log noise); rely on response + metrics
-
     return noStoreJson({ success: true, product: updated }, { status: 200 });
   } catch (error) {
     if (error instanceof AdminApiDisabledError) {

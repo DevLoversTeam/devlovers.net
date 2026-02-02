@@ -55,7 +55,9 @@ export function MainSwitcher({
           showAdminLink={showAdminLink}
           blogCategories={blogCategories}
         />
-        <main className="mx-auto px-6 min-h-[80vh]">{children}</main>
+        <main className="mx-auto px-4 sm:px-6 lg:px-8 min-h-[80vh]">
+          {children}
+        </main>
       </>
     );
   }

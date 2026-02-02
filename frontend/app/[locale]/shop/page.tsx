@@ -1,7 +1,7 @@
 import { Link } from '@/i18n/routing';
-import { ProductCard } from '@/components/shop/product-card';
-import { Hero } from '@/components/shop/shop-hero';
-import { CategoryTile } from '@/components/shop/category-tile';
+import { ProductCard } from '@/components/shop/ProductCard';
+import { Hero } from '@/components/shop/ShopHero';
+import { CategoryTile } from '@/components/shop/CategoryTile';
 import { getHomepageContent } from '@/lib/shop/data';
 import { getTranslations } from 'next-intl/server';
 import {
@@ -15,7 +15,8 @@ import { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Shop | DevLovers',
-  description: 'DevLovers merch shop — browse products, add to cart, and checkout.',
+  description:
+    'DevLovers merch shop — browse products, add to cart, and checkout.',
 };
 
 export default async function HomePage({
@@ -136,21 +137,18 @@ export default async function HomePage({
   `}
               aria-label={t('hero.cta')}
             >
-              {/* base gradient */}
               <span
                 className="absolute inset-0"
                 style={shopCtaGradient('--shop-cta-bg', '--shop-cta-bg-hover')}
                 aria-hidden="true"
               />
 
-              {/* hover wave overlay */}
               <span
                 className={SHOP_CTA_WAVE}
                 style={shopCtaGradient('--shop-cta-bg-hover', '--shop-cta-bg')}
                 aria-hidden="true"
               />
 
-              {/* glass inset */}
               <span className={SHOP_CTA_INSET} aria-hidden="true" />
 
               <span className="relative z-10 flex items-center gap-2">

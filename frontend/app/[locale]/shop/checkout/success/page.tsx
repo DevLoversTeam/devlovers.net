@@ -2,7 +2,7 @@ import { Link } from '@/i18n/routing';
 import { getTranslations } from 'next-intl/server';
 
 import OrderStatusAutoRefresh from './OrderStatusAutoRefresh';
-import { ClearCartOnMount } from '@/components/shop/clear-cart-on-mount';
+import { ClearCartOnMount } from '@/components/shop/ClearCartOnMount';
 import { formatMoney } from '@/lib/shop/currency';
 import { getOrderSummary } from '@/lib/services/orders';
 import { OrderNotFoundError } from '@/lib/services/errors';
@@ -57,7 +57,6 @@ function shouldClearCart(params: SearchParams): boolean {
   return raw === 'true' || raw === '1';
 }
 
-/** Small hero CTA (Link) */
 const SHOP_HERO_CTA_SM = cn(
   SHOP_CTA_BASE,
   SHOP_CTA_INTERACTIVE,
@@ -67,7 +66,6 @@ const SHOP_HERO_CTA_SM = cn(
   'shadow-[var(--shop-hero-btn-shadow)] hover:shadow-[var(--shop-hero-btn-shadow-hover)]'
 );
 
-/** Outline secondary action (Link) */
 const SHOP_OUTLINE_BTN = cn(
   SHOP_OUTLINE_BTN_BASE,
   SHOP_OUTLINE_BTN_INTERACTIVE,
@@ -77,7 +75,6 @@ const SHOP_OUTLINE_BTN = cn(
 function HeroCtaInner({ children }: { children: React.ReactNode }) {
   return (
     <>
-      {/* base gradient */}
       <span
         className="absolute inset-0"
         style={shopCtaGradient(
@@ -86,7 +83,6 @@ function HeroCtaInner({ children }: { children: React.ReactNode }) {
         )}
         aria-hidden="true"
       />
-      {/* hover wave overlay */}
       <span
         className={SHOP_CTA_WAVE}
         style={shopCtaGradient(
@@ -95,7 +91,6 @@ function HeroCtaInner({ children }: { children: React.ReactNode }) {
         )}
         aria-hidden="true"
       />
-      {/* glass inset */}
       <span className={SHOP_CTA_INSET} aria-hidden="true" />
 
       <span className="relative z-10">{children}</span>
@@ -210,7 +205,6 @@ export default async function CheckoutSuccessPage({
     >
       <ClearCartOnMount enabled={clearCart} />
 
-      {/* auto-refresh while webhook finalizes */}
       <OrderStatusAutoRefresh paymentStatus={order.paymentStatus} />
 
       <section className="rounded-lg border border-border bg-card p-8">

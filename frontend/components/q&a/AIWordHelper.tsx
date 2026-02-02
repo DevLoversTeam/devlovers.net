@@ -3,7 +3,21 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { useParams } from 'next/navigation';
-import { X, Loader2, RefreshCw, Sparkles, GripHorizontal, Clock, Coffee, CloudOff, Wrench, Star, Github, Heart, BookOpen } from 'lucide-react';
+import {
+  X,
+  Loader2,
+  RefreshCw,
+  Sparkles,
+  GripHorizontal,
+  Clock,
+  Coffee,
+  CloudOff,
+  Wrench,
+  Star,
+  Github,
+  Heart,
+  BookOpen,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Link } from '@/i18n/routing';
 import {
@@ -35,7 +49,7 @@ interface DragState {
 
 interface RateLimitState {
   isRateLimited: boolean;
-  resetIn: number; // milliseconds
+  resetIn: number;
   retryAttempts: number;
 }
 
@@ -55,7 +69,9 @@ const SUPPORTED_LOCALES: Locale[] = ['uk', 'en', 'pl'];
 const DEFAULT_LOCALE: Locale = 'en';
 
 function isValidLocale(value: unknown): value is Locale {
-  return typeof value === 'string' && SUPPORTED_LOCALES.includes(value as Locale);
+  return (
+    typeof value === 'string' && SUPPORTED_LOCALES.includes(value as Locale)
+  );
 }
 
 function getValidLocale(value: unknown): Locale {
@@ -89,7 +105,7 @@ function formatExplanation(text: string): React.ReactNode {
   const flushCode = () => {
     if (codeBuffer.length > 0) {
       const code = codeBuffer.join('\n').trim();
-      
+
       if (code && code.length > 0) {
         result.push(
           <pre
@@ -105,14 +121,16 @@ function formatExplanation(text: string): React.ReactNode {
   };
 
   for (const line of lines) {
-
     const trimmed = line.trim();
-    const hasCodeContent = /[a-zA-Z0-9{}()=<>[\];:'".,/\\|!@#$%^&*+-]/.test(trimmed);
-    const isCodeLine = /^(\s{2,}|\t)/.test(line) && trimmed.length > 0 && hasCodeContent;
+    const hasCodeContent = /[a-zA-Z0-9{}()=<>[\];:'".,/\\|!@#$%^&*+-]/.test(
+      trimmed
+    );
+    const isCodeLine =
+      /^(\s{2,}|\t)/.test(line) && trimmed.length > 0 && hasCodeContent;
 
     if (isCodeLine) {
       flushParagraph();
-      
+
       codeBuffer.push(line.replace(/^\s{2}/, ''));
     } else {
       flushCode();
@@ -120,7 +138,6 @@ function formatExplanation(text: string): React.ReactNode {
     }
   }
 
-  
   flushCode();
   flushParagraph();
 
@@ -150,11 +167,13 @@ export default function AIWordHelper({
     resetIn: 0,
     retryAttempts: 0,
   });
-  const [serviceErrorState, setServiceErrorState] = useState<ServiceErrorState>({
-    isServiceError: false,
-    errorCode: '',
-    retryAttempts: 0,
-  });
+  const [serviceErrorState, setServiceErrorState] = useState<ServiceErrorState>(
+    {
+      isServiceError: false,
+      errorCode: '',
+      retryAttempts: 0,
+    }
+  );
 
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [dragState, setDragState] = useState<DragState>({
@@ -167,7 +186,6 @@ export default function AIWordHelper({
 
   const modalRef = useRef<HTMLDivElement>(null);
 
-  
   useEffect(() => {
     if (!isOpen) return;
 
@@ -194,7 +212,11 @@ export default function AIWordHelper({
       setExplanation(null);
       setError(null);
       setRateLimitState({ isRateLimited: false, resetIn: 0, retryAttempts: 0 });
-      setServiceErrorState({ isServiceError: false, errorCode: '', retryAttempts: 0 });
+      setServiceErrorState({
+        isServiceError: false,
+        errorCode: '',
+        retryAttempts: 0,
+      });
     }
   }, [isOpen, validatedLocale]);
 
@@ -204,7 +226,11 @@ export default function AIWordHelper({
       setExplanation(cached);
       setError(null);
       setRateLimitState({ isRateLimited: false, resetIn: 0, retryAttempts: 0 });
-      setServiceErrorState({ isServiceError: false, errorCode: '', retryAttempts: 0 });
+      setServiceErrorState({
+        isServiceError: false,
+        errorCode: '',
+        retryAttempts: 0,
+      });
       return;
     }
 
@@ -250,7 +276,11 @@ export default function AIWordHelper({
       setExplanation(data);
       setCachedExplanation(term, data);
       setRateLimitState({ isRateLimited: false, resetIn: 0, retryAttempts: 0 });
-      setServiceErrorState({ isServiceError: false, errorCode: '', retryAttempts: 0 });
+      setServiceErrorState({
+        isServiceError: false,
+        errorCode: '',
+        retryAttempts: 0,
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -274,7 +304,8 @@ export default function AIWordHelper({
     if (isOpen) {
       document.addEventListener('keydown', handleKeyDown);
       // Calculate scrollbar width and add padding to prevent layout shift
-      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+      const scrollbarWidth =
+        window.innerWidth - document.documentElement.clientWidth;
       document.body.style.overflow = 'hidden';
       document.body.style.paddingRight = `${scrollbarWidth}px`;
     }
@@ -483,255 +514,263 @@ export default function AIWordHelper({
                 </div>
               )}
 
-              {error && (() => {
-                const messages = getLocalizedMessages(activeLocale);
-                return (
-                  <div className="flex flex-col items-center justify-center gap-4 py-8">
-                    {error === 'RATE_LIMITED' ? (
-                      <>
-                        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30">
-                          {rateLimitState.retryAttempts >= 3 ? (
-                            <Coffee className="h-8 w-8 text-amber-600 dark:text-amber-400" />
-                          ) : (
-                            <Clock className="h-8 w-8 text-amber-600 dark:text-amber-400" />
-                          )}
-                        </div>
-                        <div className="text-center">
-                          <p className="text-sm font-medium text-amber-700 dark:text-amber-300">
-                            {rateLimitState.retryAttempts >= 3
-                              ? messages.rateLimit.persistent
-                              : messages.rateLimit.title}
-                          </p>
-                          <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
-                            {rateLimitState.retryAttempts >= 3
-                              ? messages.rateLimit.persistentHint
-                              : messages.rateLimit.hint.replace(
-                                  '{minutes}',
-                                  String(Math.max(1, Math.ceil(rateLimitState.resetIn / 60000)))
-                                )}
-                          </p>
-                        </div>
-                        <button
-                          onClick={fetchExplanation}
-                          disabled={rateLimitState.retryAttempts >= 5}
-                          className={cn(
-                            'flex items-center gap-2 rounded-lg px-4 py-2',
-                            'text-sm font-medium',
-                            'transition-colors',
-                            rateLimitState.retryAttempts >= 5
-                              ? 'cursor-not-allowed bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
-                              : rateLimitState.retryAttempts >= 3
-                                ? 'bg-amber-500 text-white hover:bg-amber-600'
-                                : 'bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-hover)]'
-                          )}
-                        >
-                          {rateLimitState.retryAttempts >= 5 ? (
-                            <>
-                              <Coffee className="h-4 w-4" />
-                              {messages.rateLimit.takingBreak}
-                            </>
-                          ) : rateLimitState.retryAttempts >= 3 ? (
-                            <>
-                              <Coffee className="h-4 w-4" />
-                              {messages.rateLimit.patience}
-                            </>
-                          ) : (
-                            <>
-                              <RefreshCw className="h-4 w-4" />
-                              {messages.rateLimit.tryLater}
-                            </>
-                          )}
-                        </button>
+              {error &&
+                (() => {
+                  const messages = getLocalizedMessages(activeLocale);
+                  return (
+                    <div className="flex flex-col items-center justify-center gap-4 py-8">
+                      {error === 'RATE_LIMITED' ? (
+                        <>
+                          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30">
+                            {rateLimitState.retryAttempts >= 3 ? (
+                              <Coffee className="h-8 w-8 text-amber-600 dark:text-amber-400" />
+                            ) : (
+                              <Clock className="h-8 w-8 text-amber-600 dark:text-amber-400" />
+                            )}
+                          </div>
+                          <div className="text-center">
+                            <p className="text-sm font-medium text-amber-700 dark:text-amber-300">
+                              {rateLimitState.retryAttempts >= 3
+                                ? messages.rateLimit.persistent
+                                : messages.rateLimit.title}
+                            </p>
+                            <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+                              {rateLimitState.retryAttempts >= 3
+                                ? messages.rateLimit.persistentHint
+                                : messages.rateLimit.hint.replace(
+                                    '{minutes}',
+                                    String(
+                                      Math.max(
+                                        1,
+                                        Math.ceil(
+                                          rateLimitState.resetIn / 60000
+                                        )
+                                      )
+                                    )
+                                  )}
+                            </p>
+                          </div>
+                          <button
+                            onClick={fetchExplanation}
+                            disabled={rateLimitState.retryAttempts >= 5}
+                            className={cn(
+                              'flex items-center gap-2 rounded-lg px-4 py-2',
+                              'text-sm font-medium',
+                              'transition-colors',
+                              rateLimitState.retryAttempts >= 5
+                                ? 'cursor-not-allowed bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
+                                : rateLimitState.retryAttempts >= 3
+                                  ? 'bg-amber-500 text-white hover:bg-amber-600'
+                                  : 'bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-hover)]'
+                            )}
+                          >
+                            {rateLimitState.retryAttempts >= 5 ? (
+                              <>
+                                <Coffee className="h-4 w-4" />
+                                {messages.rateLimit.takingBreak}
+                              </>
+                            ) : rateLimitState.retryAttempts >= 3 ? (
+                              <>
+                                <Coffee className="h-4 w-4" />
+                                {messages.rateLimit.patience}
+                              </>
+                            ) : (
+                              <>
+                                <RefreshCw className="h-4 w-4" />
+                                {messages.rateLimit.tryLater}
+                              </>
+                            )}
+                          </button>
 
-                        {/* Activity suggestions while waiting */}
-                        <div className="mt-4 w-full border-t border-gray-200 dark:border-neutral-700 pt-4">
-                          <p className="text-center text-xs font-medium text-gray-500 dark:text-gray-400 mb-3">
-                            {messages.rateLimit.whileWaiting}
-                          </p>
+                          {/* Activity suggestions while waiting */}
+                          <div className="mt-4 w-full border-t border-gray-200 dark:border-neutral-700 pt-4">
+                            <p className="text-center text-xs font-medium text-gray-500 dark:text-gray-400 mb-3">
+                              {messages.rateLimit.whileWaiting}
+                            </p>
 
-                          {rateLimitState.retryAttempts < 3 ? (
-                            // First suggestions: Take Quiz & Star GitHub
-                            <div className="flex flex-col gap-2">
-                              <Link
-                                href="/quizzes"
-                                onClick={onClose}
-                                className={cn(
-                                  'flex items-center gap-3 rounded-lg px-4 py-3',
-                                  'bg-gray-50 dark:bg-neutral-800',
-                                  'hover:bg-gray-100 dark:hover:bg-neutral-700',
-                                  'transition-colors',
-                                  'text-left'
-                                )}
-                              >
-                                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
-                                  <BookOpen className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                                </div>
-                                <div>
-                                  <p className="text-sm font-medium text-gray-900 dark:text-white">
-                                    {messages.rateLimit.takeQuiz}
-                                  </p>
-                                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                                    {messages.rateLimit.takeQuizHint}
-                                  </p>
-                                </div>
-                              </Link>
-                              <a
-                                href="https://github.com/DevLoversTeam"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className={cn(
-                                  'flex items-center gap-3 rounded-lg px-4 py-3',
-                                  'bg-gray-50 dark:bg-neutral-800',
-                                  'hover:bg-gray-100 dark:hover:bg-neutral-700',
-                                  'transition-colors',
-                                  'text-left'
-                                )}
-                              >
-                                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-100 dark:bg-yellow-900/30">
-                                  <Star className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
-                                </div>
-                                <div>
-                                  <p className="text-sm font-medium text-gray-900 dark:text-white">
-                                    {messages.rateLimit.starGithub}
-                                  </p>
-                                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                                    {messages.rateLimit.starGithubHint}
-                                  </p>
-                                </div>
-                              </a>
-                            </div>
-                          ) : (
-                            // After 3+ attempts: Sponsor & Review
-                            <div className="flex flex-col gap-2">
-                              <a
-                                href="https://github.com/sponsors/DevLoversTeam"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className={cn(
-                                  'flex items-center gap-3 rounded-lg px-4 py-3',
-                                  'bg-gradient-to-r from-pink-50 to-purple-50 dark:from-pink-900/20 dark:to-purple-900/20',
-                                  'hover:from-pink-100 hover:to-purple-100 dark:hover:from-pink-900/30 dark:hover:to-purple-900/30',
-                                  'border border-pink-200 dark:border-pink-800',
-                                  'transition-colors',
-                                  'text-left'
-                                )}
-                              >
-                                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-pink-100 dark:bg-pink-900/30">
-                                  <Heart className="h-5 w-5 text-pink-600 dark:text-pink-400" />
-                                </div>
-                                <div>
-                                  <p className="text-sm font-medium text-gray-900 dark:text-white">
-                                    {messages.rateLimit.becomeSponsor}
-                                  </p>
-                                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                                    {messages.rateLimit.becomeSponsorHint}
-                                  </p>
-                                </div>
-                              </a>
-                              <a
-                                href="https://github.com/DevLoversTeam"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className={cn(
-                                  'flex items-center gap-3 rounded-lg px-4 py-3',
-                                  'bg-gray-50 dark:bg-neutral-800',
-                                  'hover:bg-gray-100 dark:hover:bg-neutral-700',
-                                  'transition-colors',
-                                  'text-left'
-                                )}
-                              >
-                                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 dark:bg-neutral-700">
-                                  <Github className="h-5 w-5 text-gray-700 dark:text-gray-300" />
-                                </div>
-                                <div>
-                                  <p className="text-sm font-medium text-gray-900 dark:text-white">
-                                    {messages.rateLimit.writeReview}
-                                  </p>
-                                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                                    {messages.rateLimit.writeReviewHint}
-                                  </p>
-                                </div>
-                              </a>
-                            </div>
-                          )}
-                        </div>
-                      </>
-                    ) : error === 'SERVICE_UNAVAILABLE' ? (
-                      <>
-                        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
-                          {serviceErrorState.retryAttempts >= 3 ? (
-                            <Wrench className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-                          ) : (
-                            <CloudOff className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-                          )}
-                        </div>
-                        <div className="text-center">
-                          <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                            {serviceErrorState.retryAttempts >= 3
-                              ? messages.serviceError.persistent
-                              : messages.serviceError.title}
+                            {rateLimitState.retryAttempts < 3 ? (
+                              // First suggestions: Take Quiz & Star GitHub
+                              <div className="flex flex-col gap-2">
+                                <Link
+                                  href="/quizzes"
+                                  onClick={onClose}
+                                  className={cn(
+                                    'flex items-center gap-3 rounded-lg px-4 py-3',
+                                    'bg-gray-50 dark:bg-neutral-800',
+                                    'hover:bg-gray-100 dark:hover:bg-neutral-700',
+                                    'transition-colors',
+                                    'text-left'
+                                  )}
+                                >
+                                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
+                                    <BookOpen className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                      {messages.rateLimit.takeQuiz}
+                                    </p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                                      {messages.rateLimit.takeQuizHint}
+                                    </p>
+                                  </div>
+                                </Link>
+                                <a
+                                  href="https://github.com/DevLoversTeam"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className={cn(
+                                    'flex items-center gap-3 rounded-lg px-4 py-3',
+                                    'bg-gray-50 dark:bg-neutral-800',
+                                    'hover:bg-gray-100 dark:hover:bg-neutral-700',
+                                    'transition-colors',
+                                    'text-left'
+                                  )}
+                                >
+                                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-100 dark:bg-yellow-900/30">
+                                    <Star className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                      {messages.rateLimit.starGithub}
+                                    </p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                                      {messages.rateLimit.starGithubHint}
+                                    </p>
+                                  </div>
+                                </a>
+                              </div>
+                            ) : (
+                              // After 3+ attempts: Sponsor & Review
+                              <div className="flex flex-col gap-2">
+                                <a
+                                  href="https://github.com/sponsors/DevLoversTeam"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className={cn(
+                                    'flex items-center gap-3 rounded-lg px-4 py-3',
+                                    'bg-gradient-to-r from-pink-50 to-purple-50 dark:from-pink-900/20 dark:to-purple-900/20',
+                                    'hover:from-pink-100 hover:to-purple-100 dark:hover:from-pink-900/30 dark:hover:to-purple-900/30',
+                                    'border border-pink-200 dark:border-pink-800',
+                                    'transition-colors',
+                                    'text-left'
+                                  )}
+                                >
+                                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-pink-100 dark:bg-pink-900/30">
+                                    <Heart className="h-5 w-5 text-pink-600 dark:text-pink-400" />
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                      {messages.rateLimit.becomeSponsor}
+                                    </p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                                      {messages.rateLimit.becomeSponsorHint}
+                                    </p>
+                                  </div>
+                                </a>
+                                <a
+                                  href="https://github.com/DevLoversTeam"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className={cn(
+                                    'flex items-center gap-3 rounded-lg px-4 py-3',
+                                    'bg-gray-50 dark:bg-neutral-800',
+                                    'hover:bg-gray-100 dark:hover:bg-neutral-700',
+                                    'transition-colors',
+                                    'text-left'
+                                  )}
+                                >
+                                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 dark:bg-neutral-700">
+                                    <Github className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                      {messages.rateLimit.writeReview}
+                                    </p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                                      {messages.rateLimit.writeReviewHint}
+                                    </p>
+                                  </div>
+                                </a>
+                              </div>
+                            )}
+                          </div>
+                        </>
+                      ) : error === 'SERVICE_UNAVAILABLE' ? (
+                        <>
+                          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
+                            {serviceErrorState.retryAttempts >= 3 ? (
+                              <Wrench className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                            ) : (
+                              <CloudOff className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                            )}
+                          </div>
+                          <div className="text-center">
+                            <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                              {serviceErrorState.retryAttempts >= 3
+                                ? messages.serviceError.persistent
+                                : messages.serviceError.title}
+                            </p>
+                            <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+                              {serviceErrorState.retryAttempts >= 3
+                                ? messages.serviceError.persistentHint
+                                : messages.serviceError.hint}
+                            </p>
+                          </div>
+                          <button
+                            onClick={fetchExplanation}
+                            disabled={serviceErrorState.retryAttempts >= 5}
+                            className={cn(
+                              'flex items-center gap-2 rounded-lg px-4 py-2',
+                              'text-sm font-medium',
+                              'transition-colors',
+                              serviceErrorState.retryAttempts >= 5
+                                ? 'cursor-not-allowed bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
+                                : serviceErrorState.retryAttempts >= 3
+                                  ? 'bg-blue-500 text-white hover:bg-blue-600'
+                                  : 'bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-hover)]'
+                            )}
+                          >
+                            {serviceErrorState.retryAttempts >= 5 ? (
+                              <>
+                                <Wrench className="h-4 w-4" />
+                                {messages.serviceError.fixing}
+                              </>
+                            ) : serviceErrorState.retryAttempts >= 3 ? (
+                              <>
+                                <Wrench className="h-4 w-4" />
+                                {messages.serviceError.working}
+                              </>
+                            ) : (
+                              <>
+                                <RefreshCw className="h-4 w-4" />
+                                {messages.serviceError.tryAgain}
+                              </>
+                            )}
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-sm text-red-600 dark:text-red-400">
+                            {messages.error}
                           </p>
-                          <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
-                            {serviceErrorState.retryAttempts >= 3
-                              ? messages.serviceError.persistentHint
-                              : messages.serviceError.hint}
-                          </p>
-                        </div>
-                        <button
-                          onClick={fetchExplanation}
-                          disabled={serviceErrorState.retryAttempts >= 5}
-                          className={cn(
-                            'flex items-center gap-2 rounded-lg px-4 py-2',
-                            'text-sm font-medium',
-                            'transition-colors',
-                            serviceErrorState.retryAttempts >= 5
-                              ? 'cursor-not-allowed bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
-                              : serviceErrorState.retryAttempts >= 3
-                                ? 'bg-blue-500 text-white hover:bg-blue-600'
-                                : 'bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-hover)]'
-                          )}
-                        >
-                          {serviceErrorState.retryAttempts >= 5 ? (
-                            <>
-                              <Wrench className="h-4 w-4" />
-                              {messages.serviceError.fixing}
-                            </>
-                          ) : serviceErrorState.retryAttempts >= 3 ? (
-                            <>
-                              <Wrench className="h-4 w-4" />
-                              {messages.serviceError.working}
-                            </>
-                          ) : (
-                            <>
-                              <RefreshCw className="h-4 w-4" />
-                              {messages.serviceError.tryAgain}
-                            </>
-                          )}
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <p className="text-sm text-red-600 dark:text-red-400">
-                          {messages.error}
-                        </p>
-                        <button
-                          onClick={fetchExplanation}
-                          className={cn(
-                            'flex items-center gap-2 rounded-lg px-4 py-2',
-                            'bg-[var(--accent-primary)] text-white',
-                            'hover:bg-[var(--accent-hover)]',
-                            'transition-colors',
-                            'text-sm font-medium'
-                          )}
-                        >
-                          <RefreshCw className="h-4 w-4" />
-                          {messages.retry}
-                        </button>
-                      </>
-                    )}
-                  </div>
-                );
-              })()}
+                          <button
+                            onClick={fetchExplanation}
+                            className={cn(
+                              'flex items-center gap-2 rounded-lg px-4 py-2',
+                              'bg-[var(--accent-primary)] text-white',
+                              'hover:bg-[var(--accent-hover)]',
+                              'transition-colors',
+                              'text-sm font-medium'
+                            )}
+                          >
+                            <RefreshCw className="h-4 w-4" />
+                            {messages.retry}
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  );
+                })()}
 
               {explanation && !isLoading && !error && (
                 <div className="prose prose-sm max-w-none dark:prose-invert">

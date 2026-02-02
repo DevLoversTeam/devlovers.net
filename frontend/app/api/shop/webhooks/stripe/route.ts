@@ -23,7 +23,6 @@ import { guardNonBrowserOnly } from '@/lib/security/origin';
 
 const REFUND_FULLNESS_UNDETERMINED = 'REFUND_FULLNESS_UNDETERMINED' as const;
 
-// P0.8: multi-instance claim/lock (no transactions; safe under parallel deliveries)
 const STRIPE_WEBHOOK_INSTANCE_ID =
   (
     process.env.STRIPE_WEBHOOK_INSTANCE_ID ??
@@ -31,7 +30,7 @@ const STRIPE_WEBHOOK_INSTANCE_ID =
     ''
   ).trim() || crypto.randomUUID().slice(0, 12);
 
-const STRIPE_EVENT_CLAIM_TTL_MS = 10 * 60 * 1000; // 10 minutes
+const STRIPE_EVENT_CLAIM_TTL_MS = 10 * 60 * 1000;
 const STRIPE_EVENT_RETRY_AFTER_SECONDS = 10;
 
 function noStoreJson(
@@ -171,7 +170,6 @@ function warnRefundFullnessUndetermined(payload: {
 }) {
   logWarn('stripe_webhook_refund_fullness_undetermined', {
     ...payload,
-    // keep consistent correlation fields with stripe_webhook
     stripeEventId: payload.eventId,
     instanceId: STRIPE_WEBHOOK_INSTANCE_ID,
     provider: 'stripe',
@@ -206,10 +204,10 @@ function logWebhookEvent(payload: {
     refundId != null
       ? 'refund'
       : chargeId != null
-      ? 'charge'
-      : paymentIntentId != null
-      ? 'payment_intent'
-      : null;
+        ? 'charge'
+        : paymentIntentId != null
+          ? 'payment_intent'
+          : null;
 
   logInfo('stripe_webhook', {
     requestId,
@@ -372,7 +370,6 @@ function mergePspMetadata(params: {
     createdAtIso: params.createdAtIso,
   });
 
-  // Do NOT allow delta to overwrite refunds/refundInitiatedAt (canonical fields managed by upsertRefundIntoMeta)
   const safeDelta: any = { ...cleanedDelta };
   delete safeDelta.refunds;
   delete safeDelta.refundInitiatedAt;
@@ -386,8 +383,6 @@ function shouldRestockFromWebhook(order: {
   stockRestored: boolean | null;
   inventoryStatus: string | null;
 }) {
-  // Webhook-level gate: avoid unnecessary calls when we already restored stock
-  // or inventory has already been released.
   if (order.stockRestored === true) return false;
   if (order.inventoryStatus === 'released') return false;
   return true;
@@ -547,7 +542,6 @@ export async function POST(request: NextRequest) {
   if (eventType.startsWith('payment_intent.')) {
     paymentIntent = rawObject as Stripe.PaymentIntent;
   } else if (eventType === 'charge.refund.updated') {
-    // Stripe sends Refund object for charge.refund.updated
     refundObject = rawObject as Stripe.Refund;
   } else if (eventType.startsWith('charge.')) {
     charge = rawObject as Stripe.Charge;
@@ -596,7 +590,7 @@ export async function POST(request: NextRequest) {
 
   const bestEffortChargeId: string | null = paymentIntent
     ? getLatestChargeId(paymentIntent)
-    : charge?.id ?? bestEffortRefundChargeId ?? null;
+    : (charge?.id ?? bestEffortRefundChargeId ?? null);
 
   const bestEffortRefundId: string | null = refundObject?.id ?? null;
 
@@ -654,7 +648,6 @@ export async function POST(request: NextRequest) {
 
       return noStoreJson({ received: true }, { status: 200 });
     };
-    // 1) Insert event idempotently (no transactions)
     const inserted = await db
       .insert(stripeEvents)
       .values({
@@ -684,9 +677,8 @@ export async function POST(request: NextRequest) {
 
         return noStoreJson({ received: true }, { status: 200 });
       }
-      // processedAt is NULL => previous attempt failed; reprocess
     }
-    // P0.8: claim/lock BEFORE any business logic (multi-instance safe).
+
     const claimState = await tryClaimStripeEvent(event.id);
     if (claimState === 'already_processed') {
       logInfo('stripe_webhook_duplicate_event', {
@@ -704,9 +696,7 @@ export async function POST(request: NextRequest) {
       });
       return busyRetry();
     }
-    //2) Resolve orderId:
-    //    primary: metadata.orderId
-    //    fallback: orders.paymentIntentId == paymentIntentId (ONLY if unique match)
+
     let resolvedOrderId: string | undefined = orderId;
 
     if (!resolvedOrderId) {
@@ -745,7 +735,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // backfill stripe_events.orderId if resolved via fallback (or to normalize)
     if (resolvedOrderId && !orderId) {
       await db
         .update(stripeEvents)
@@ -753,7 +742,6 @@ export async function POST(request: NextRequest) {
         .where(eq(stripeEvents.eventId, event.id));
     }
 
-    // 3) Load order
     const [order] = await db
       .select({
         id: orders.id,
@@ -798,7 +786,6 @@ export async function POST(request: NextRequest) {
       return ack();
     }
 
-    // 4) Business logic per event type
     if (eventType === 'payment_intent.succeeded') {
       const stripeAmount =
         paymentIntent?.amount_received ?? paymentIntent?.amount ?? null;
@@ -814,8 +801,8 @@ export async function POST(request: NextRequest) {
           !amountMatches && !currencyMatches
             ? 'amount_and_currency_mismatch'
             : !amountMatches
-            ? 'amount_mismatch'
-            : 'currency_mismatch';
+              ? 'amount_mismatch'
+              : 'currency_mismatch';
 
         const chargeForIntent = getLatestCharge(paymentIntent as any);
         const latestChargeId = getLatestChargeId(paymentIntent);
@@ -833,7 +820,6 @@ export async function POST(request: NextRequest) {
                 currency: order.currency,
               },
               actual: { amountMinor: stripeAmount, currency: stripeCurrency },
-              // keep old fields for backward-compat/debug grepping
               stripeAmount,
               orderAmountMinor,
               stripeCurrency,
@@ -923,9 +909,7 @@ export async function POST(request: NextRequest) {
             isNull(orders.inventoryStatus),
             ne(orders.inventoryStatus, 'released')
           ),
-          // avoid churn when already consistent
           or(ne(orders.paymentStatus, 'paid'), ne(orders.status, 'PAID')),
-          // explicit safety gates (redundant with matrix, but keep)
           ne(orders.paymentStatus, 'failed'),
           ne(orders.paymentStatus, 'refunded')
         ),
@@ -1139,12 +1123,11 @@ export async function POST(request: NextRequest) {
             ? refund.charge
             : null
           : refund && typeof refund.charge === 'object' && refund.charge
-          ? typeof (refund.charge as any).id === 'string'
-            ? (refund.charge as any).id
-            : null
-          : null;
+            ? typeof (refund.charge as any).id === 'string'
+              ? (refund.charge as any).id
+              : null
+            : null;
 
-      // MVP: only FULL refund.
       let isFullRefund = false;
 
       if (eventType === 'charge.refunded') {
@@ -1225,7 +1208,8 @@ export async function POST(request: NextRequest) {
 
           const hasCurrent =
             refund?.id && list.some(r => r?.id && r.id === refund.id);
-          cumulativeRefunded = sumFromList + (hasCurrent ? 0 : currentAmt ?? 0);
+          cumulativeRefunded =
+            sumFromList + (hasCurrent ? 0 : (currentAmt ?? 0));
         }
 
         if (amt == null || cumulativeRefunded == null) {
@@ -1346,7 +1330,8 @@ export async function POST(request: NextRequest) {
           }
 
           const hasCurrent = list.some(r => r?.id && r.id === refund.id);
-          cumulativeRefunded = sumFromList + (hasCurrent ? 0 : currentAmt ?? 0);
+          cumulativeRefunded =
+            sumFromList + (hasCurrent ? 0 : (currentAmt ?? 0));
         }
 
         if (amt == null || cumulativeRefunded == null) {
@@ -1421,7 +1406,6 @@ export async function POST(request: NextRequest) {
           .set({
             updatedAt: now,
             pspMetadata: nextMeta,
-            // do NOT change paymentStatus/status for partial refund
             pspChargeId: charge?.id ?? refundChargeId ?? null,
             pspPaymentMethod: resolvePaymentMethod(paymentIntent, charge),
             pspStatusReason: 'PARTIAL_REFUND_IGNORED',
@@ -1466,7 +1450,7 @@ export async function POST(request: NextRequest) {
         note: eventType,
         set: {
           updatedAt: now,
-          status: 'CANCELED', // terminal in current enum
+          status: 'CANCELED',
           pspChargeId: charge?.id ?? refundChargeId ?? null,
           pspPaymentMethod: resolvePaymentMethod(paymentIntent, charge),
           pspStatusReason: refund?.reason ?? refund?.status ?? 'refunded',
@@ -1496,7 +1480,6 @@ export async function POST(request: NextRequest) {
       return ack();
     }
 
-    // default ack
     logWebhookEvent({
       requestId,
       stripeEventId,
@@ -1511,7 +1494,6 @@ export async function POST(request: NextRequest) {
     return ack();
   } catch (error) {
     if (isRefundFullnessUndeterminedError(error)) {
-      // Do NOT ack() -> keep processedAt NULL so Stripe retries.
       return noStoreJson(
         { code: REFUND_FULLNESS_UNDETERMINED },
         { status: 500 }
@@ -1525,7 +1507,6 @@ export async function POST(request: NextRequest) {
       orderId: orderId ?? null,
     });
 
-    // P0.8: release claim early so Stripe retries can be claimed immediately.
     try {
       await db
         .update(stripeEvents)
@@ -1537,9 +1518,14 @@ export async function POST(request: NextRequest) {
             isNull(stripeEvents.processedAt)
           )
         );
-    } catch {
-      // best-effort
+    } catch (err) {
+      logWarn('stripe_webhook_claim_release_failed', {
+        ...eventMeta(),
+        code: 'CLAIM_RELEASE_FAILED',
+        message: err instanceof Error ? err.message : String(err),
+      });
     }
+
     return noStoreJson({ error: 'internal_error' }, { status: 500 });
   }
 }

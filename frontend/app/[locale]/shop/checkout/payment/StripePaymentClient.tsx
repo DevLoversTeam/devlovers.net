@@ -9,7 +9,11 @@ import {
   useElements,
   useStripe,
 } from '@stripe/react-stripe-js';
-import { loadStripe, type StripeElementsOptions, type Stripe } from '@stripe/stripe-js';
+import {
+  loadStripe,
+  type StripeElementsOptions,
+  type Stripe,
+} from '@stripe/stripe-js';
 
 import {
   currencyValues,
@@ -57,11 +61,6 @@ function toCurrencyCode(
     : resolveCurrencyFromLocale(locale);
 }
 
-/**
- * IMPORTANT:
- * - In-app navigation uses next-intl routing -> DO NOT prefix locale manually.
- * - Stripe return_url is an external redirect -> MUST include locale exactly once.
- */
 const IN_APP_SHOP_BASE = '/shop';
 
 function normalizeLocale(raw: string): string {
@@ -73,13 +72,21 @@ function buildInAppPath(path: string): string {
   return `${IN_APP_SHOP_BASE}${p}`;
 }
 
-function buildStripeReturnUrl(params: { locale: string; inAppPath: string }): string {
+function buildStripeReturnUrl(params: {
+  locale: string;
+  inAppPath: string;
+}): string {
   const loc = normalizeLocale(params.locale);
-  const p = params.inAppPath.startsWith('/') ? params.inAppPath : `/${params.inAppPath}`;
+  const p = params.inAppPath.startsWith('/')
+    ? params.inAppPath
+    : `/${params.inAppPath}`;
   return new URL(`/${loc}${p}`, window.location.origin).toString();
 }
 
-function nextRouteForPaymentResult(params: { orderId: string; status?: string | null }) {
+function nextRouteForPaymentResult(params: {
+  orderId: string;
+  status?: string | null;
+}) {
   const { orderId, status } = params;
   const id = encodeURIComponent(orderId);
 
@@ -88,7 +95,11 @@ function nextRouteForPaymentResult(params: { orderId: string; status?: string | 
 
   if (!status) return success;
 
-  if (status === 'succeeded' || status === 'processing' || status === 'requires_capture') {
+  if (
+    status === 'succeeded' ||
+    status === 'processing' ||
+    status === 'requires_capture'
+  ) {
     return success;
   }
 
@@ -99,7 +110,6 @@ function nextRouteForPaymentResult(params: { orderId: string; status?: string | 
   return success;
 }
 
-/** Unified CTA (hero) */
 const SHOP_HERO_CTA = cn(
   SHOP_CTA_BASE,
   SHOP_CTA_INTERACTIVE,
@@ -110,7 +120,6 @@ const SHOP_HERO_CTA = cn(
   'shadow-[var(--shop-hero-btn-shadow)] hover:shadow-[var(--shop-hero-btn-shadow-hover)]'
 );
 
-/** Unified outline */
 const SHOP_OUTLINE = cn(
   SHOP_OUTLINE_BTN_BASE,
   SHOP_OUTLINE_BTN_INTERACTIVE,
@@ -122,19 +131,22 @@ const SHOP_OUTLINE = cn(
 function HeroCtaInner({ children }: { children: React.ReactNode }) {
   return (
     <>
-      {/* base gradient */}
       <span
         className="absolute inset-0"
-        style={shopCtaGradient('--shop-hero-btn-bg', '--shop-hero-btn-bg-hover')}
+        style={shopCtaGradient(
+          '--shop-hero-btn-bg',
+          '--shop-hero-btn-bg-hover'
+        )}
         aria-hidden="true"
       />
-      {/* hover wave overlay */}
       <span
         className={SHOP_CTA_WAVE}
-        style={shopCtaGradient('--shop-hero-btn-bg-hover', '--shop-hero-btn-bg')}
+        style={shopCtaGradient(
+          '--shop-hero-btn-bg-hover',
+          '--shop-hero-btn-bg'
+        )}
         aria-hidden="true"
       />
-      {/* glass inset */}
       <span className={SHOP_CTA_INSET} aria-hidden="true" />
 
       <span className="relative z-10">{children}</span>
@@ -155,7 +167,9 @@ function StripePaymentForm({ orderId, locale }: PaymentFormProps) {
     setErrorMessage(null);
 
     if (!stripe || !elements) {
-      setErrorMessage('Payment is not ready yet. Please try again in a moment.');
+      setErrorMessage(
+        'Payment is not ready yet. Please try again in a moment.'
+      );
       return;
     }
 
@@ -190,14 +204,20 @@ function StripePaymentForm({ orderId, locale }: PaymentFormProps) {
     } catch (error) {
       logError('stripe_payment_confirm_failed', error, { orderId });
       setErrorMessage('We couldn’t confirm your payment. Please try again.');
-      router.push(buildInAppPath(`/checkout/error?orderId=${encodeURIComponent(orderId)}`));
+      router.push(
+        buildInAppPath(`/checkout/error?orderId=${encodeURIComponent(orderId)}`)
+      );
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4" aria-label="Stripe payment form">
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-4"
+      aria-label="Stripe payment form"
+    >
       <PaymentElement />
 
       <button
@@ -206,7 +226,9 @@ function StripePaymentForm({ orderId, locale }: PaymentFormProps) {
         className={SHOP_HERO_CTA}
         aria-disabled={!stripe || submitting}
       >
-        <HeroCtaInner>{submitting ? 'Processing...' : 'Submit payment'}</HeroCtaInner>
+        <HeroCtaInner>
+          {submitting ? 'Processing...' : 'Submit payment'}
+        </HeroCtaInner>
       </button>
 
       {errorMessage ? (
@@ -227,7 +249,10 @@ export default function StripePaymentClient({
   currency,
   locale,
 }: StripePaymentClientProps) {
-  const uiCurrency = useMemo(() => toCurrencyCode(currency, locale), [currency, locale]);
+  const uiCurrency = useMemo(
+    () => toCurrencyCode(currency, locale),
+    [currency, locale]
+  );
 
   const stripePromise = useMemo(() => {
     if (!paymentsEnabled || !publishableKey) return null;
@@ -244,18 +269,29 @@ export default function StripePaymentClient({
 
   if (!paymentsEnabled) {
     return (
-      <section className="space-y-3 text-sm text-muted-foreground" aria-label="Payments disabled">
+      <section
+        className="space-y-3 text-sm text-muted-foreground"
+        aria-label="Payments disabled"
+      >
         <p>Payments are disabled in this environment.</p>
 
-        <nav className="flex flex-col gap-3 sm:flex-row" aria-label="Next steps">
+        <nav
+          className="flex flex-col gap-3 sm:flex-row"
+          aria-label="Next steps"
+        >
           <Link
-            href={buildInAppPath(`/checkout/success?orderId=${encodeURIComponent(orderId)}`)}
+            href={buildInAppPath(
+              `/checkout/success?orderId=${encodeURIComponent(orderId)}`
+            )}
             className={cn(SHOP_HERO_CTA, 'w-full sm:w-auto')}
           >
             <HeroCtaInner>Continue</HeroCtaInner>
           </Link>
 
-          <Link href={buildInAppPath('/cart')} className={cn(SHOP_OUTLINE, 'w-full sm:w-auto')}>
+          <Link
+            href={buildInAppPath('/cart')}
+            className={cn(SHOP_OUTLINE, 'w-full sm:w-auto')}
+          >
             Back to cart
           </Link>
         </nav>
@@ -265,10 +301,16 @@ export default function StripePaymentClient({
 
   if (!clientSecret || !clientSecret.trim()) {
     return (
-      <section className="space-y-3 text-sm text-muted-foreground" aria-label="Payment initialization failed">
+      <section
+        className="space-y-3 text-sm text-muted-foreground"
+        aria-label="Payment initialization failed"
+      >
         <p>Payment cannot be initialized. Please try again later.</p>
 
-        <Link href={buildInAppPath('/cart')} className={cn(SHOP_OUTLINE, 'w-full sm:w-auto')}>
+        <Link
+          href={buildInAppPath('/cart')}
+          className={cn(SHOP_OUTLINE, 'w-full sm:w-auto')}
+        >
           Return to cart
         </Link>
       </section>
@@ -295,7 +337,9 @@ export default function StripePaymentClient({
               </span>
             </div>
 
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">{uiCurrency}</p>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+              {uiCurrency}
+            </p>
           </div>
 
           <StripePaymentForm orderId={orderId} locale={locale} />

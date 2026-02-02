@@ -8,12 +8,6 @@ import {
   type CurrencyCode,
 } from "@/lib/shop/currency";
 
-/**
- * Canonical locale resolution at API boundaries:
- * 1) next-intl / custom headers (from middleware)
- * 2) locale cookies
- * 3) Accept-Language
- */
 export function resolveRequestLocale(request: NextRequest): string | null {
   const headerLocale =
     request.headers.get("x-next-intl-locale") ??

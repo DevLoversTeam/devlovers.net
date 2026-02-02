@@ -179,9 +179,6 @@ export async function GET(
   const requestId =
     request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
 
-  // Origin posture: same-origin enforcement is applied to mutating methods;
-  // GET is intentionally unguarded.
-
   const baseMeta = {
     requestId,
     route: request.nextUrl.pathname,
@@ -423,7 +420,6 @@ export async function PATCH(
         { status: 400 }
       );
     }
-    // SALE invariant is validated on parsed/normalized payload (single source of truth).
     const saleViolation = findSaleRuleViolation(parsed.data);
     if (saleViolation) {
       const message =
@@ -467,7 +463,7 @@ export async function PATCH(
       if (error instanceof PriceConfigError) {
         logWarn('admin_product_update_price_config_error', {
           ...baseMeta,
-          code: error.code, // PRICE_CONFIG_ERROR
+          code: error.code,
           productId: productIdForLog,
           currency: error.currency,
           durationMs: Date.now() - startedAtMs,
@@ -650,7 +646,6 @@ export async function DELETE(
   try {
     await requireAdminApi(request);
 
-    // DELETE can’t reliably carry FormData; CSRF is validated via header/cookie path inside requireAdminCsrf.
     const csrfRes = requireAdminCsrf(request, 'admin:products:delete');
     if (csrfRes) {
       logWarn('admin_product_delete_csrf_rejected', {
@@ -686,10 +681,8 @@ export async function DELETE(
     }
 
     productIdForLog = parsedParams.data.id;
-    // Fail fast: do not attempt DELETE if product is referenced by orders.
-    const blockerConstraint = await getProductDeleteBlockerConstraint(
-      productIdForLog
-    );
+    const blockerConstraint =
+      await getProductDeleteBlockerConstraint(productIdForLog);
     if (blockerConstraint) {
       logWarn('admin_product_delete_in_use', {
         ...baseMeta,
@@ -759,7 +752,6 @@ export async function DELETE(
     }
     const { code: pgCode, constraint } = getPgMeta(error);
 
-    // Postgres: 23503 = foreign_key_violation
     if (pgCode === '23503') {
       logWarn('admin_product_delete_in_use', {
         ...baseMeta,

@@ -2,9 +2,9 @@ import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
-import { ProductFilters } from '@/components/shop/product-filters';
-import { CatalogProductsClient } from '@/components/shop/catalog-products-client';
-import { ProductsToolbar } from '@/components/shop/products-toolbar';
+import { ProductFilters } from '@/components/shop/ProductFilters';
+import { CatalogProductsClient } from '@/components/shop/CatalogProductsClient';
+import { ProductsToolbar } from '@/components/shop/ProductsToolbar';
 import { getCatalogProducts } from '@/lib/shop/data';
 import { catalogQuerySchema } from '@/lib/validation/shop';
 import { CATALOG_PAGE_SIZE } from '@/lib/config/catalog';
@@ -36,7 +36,6 @@ export default async function ProductsPage({
   const resolvedSearchParams = (await searchParams) ?? {};
   const t = await getTranslations('shop.products');
 
-  // canonicalize: infinite-load page should not be shareable as ?page=N
   if (resolvedSearchParams.page) {
     const qsParams = new URLSearchParams();
 

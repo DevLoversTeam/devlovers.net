@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { cn } from '@/lib/utils';
-import { AddToCartButton } from '@/components/shop/add-to-cart-button';
+import { AddToCartButton } from '@/components/shop/AddToCartButton';
 import { getProductPageData } from '@/lib/shop/data';
 import { formatMoney, resolveCurrencyFromLocale } from '@/lib/shop/currency';
 import { getPublicProductBySlug } from '@/db/queries/shop/products';
@@ -26,10 +26,6 @@ export default async function ProductPage({
   const t = await getTranslations('shop.products');
   const tProduct = await getTranslations('shop.product');
 
-  // P0-5 canonical gate:
-  // - slug AND is_active=true
-  // - join product_prices by currency
-  // - missing price -> 404 (public hides existence/details)
   const currency = resolveCurrencyFromLocale(locale);
   const publicProduct = await getPublicProductBySlug(slug, currency);
   if (!publicProduct) {
@@ -42,8 +38,13 @@ export default async function ProductPage({
     notFound();
   }
   const isUnavailable = result.kind === 'unavailable';
-  const product = result.product as any; // shape differs for unavailable vs available; guard reads below
-  const NAV_LINK = cn(SHOP_NAV_LINK_BASE, SHOP_FOCUS, 'text-lg', 'items-center gap-2');
+  const product = result.product as any;
+  const NAV_LINK = cn(
+    SHOP_NAV_LINK_BASE,
+    SHOP_FOCUS,
+    'text-lg',
+    'items-center gap-2'
+  );
   const badge = product?.badge as string | undefined;
   const badgeLabel =
     badge && badge !== 'NONE'
