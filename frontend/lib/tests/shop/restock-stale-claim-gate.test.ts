@@ -136,6 +136,20 @@ describe('restockStalePendingOrders claim gate', () => {
       });
 
       expect(processed).toBe(1);
+      expect(processed).toBe(1);
+
+      const [row] = await db
+        .select({
+          stockRestored: orders.stockRestored,
+          restockedAt: orders.restockedAt,
+        })
+        .from(orders)
+        .where(eq(orders.id, orderId))
+        .limit(1);
+
+      expect(row).toBeTruthy();
+      expect(row!.stockRestored).toBe(true);
+      expect(row!.restockedAt).not.toBeNull();
     } finally {
       try {
         await db.delete(orders).where(eq(orders.id, orderId));

@@ -26,12 +26,7 @@ function isScientificNotation(s: string): boolean {
 }
 
 function parseMajorToMinor(input: string | number): MoneyCents {
-  const raw =
-    typeof input === 'string'
-      ? input.trim()
-      : Number.isFinite(input)
-        ? String(input)
-        : String(input);
+  const raw = typeof input === 'string' ? input.trim() : String(input);
 
   if (!raw.length) throw new Error('Invalid money value');
 
@@ -39,7 +34,6 @@ function parseMajorToMinor(input: string | number): MoneyCents {
     if (!Number.isFinite(input) || input < 0)
       throw new Error('Invalid money value');
   }
-
   const s = raw;
 
   if (s.startsWith('-')) throw new Error('Invalid money value');

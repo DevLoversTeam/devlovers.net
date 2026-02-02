@@ -182,7 +182,13 @@ export async function enforceRateLimit(params: {
             SELECT 1 FROM api_rate_limits WHERE key = ${normalizedKey}
           )
       `);
-    } catch {}
+    } catch (err) {
+      console.warn(
+        '[rate-limit] Failed to migrate legacy key:',
+        legacyKey,
+        err
+      );
+    }
   }
 
   const res = await db.execute<GateRow>(sql`

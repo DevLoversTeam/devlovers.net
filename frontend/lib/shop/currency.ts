@@ -11,7 +11,12 @@ export function isTwoDecimalCurrency(currency: CurrencyCode): boolean {
 }
 
 function assertMinorUnitsStrict(minor: number): number {
-  if (!Number.isFinite(minor) || !Number.isInteger(minor) || minor < 0) {
+  if (
+    !Number.isFinite(minor) ||
+    !Number.isInteger(minor) ||
+    !Number.isSafeInteger(minor) ||
+    minor < 0
+  ) {
     throw new Error('Invalid money minor-units value');
   }
   return minor;

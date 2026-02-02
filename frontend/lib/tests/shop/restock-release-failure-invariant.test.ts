@@ -129,12 +129,29 @@ describe('P0 Inventory release invariants', () => {
         } as any)
         .where(eq(orders.id, orderId));
 
+      let restockErr: unknown;
+
       try {
         await restockOrder(orderId, {
           reason: 'failed',
           workerId: 'test',
         } as any);
-      } catch {}
+      } catch (err) {
+        restockErr = err;
+      }
+
+      if (restockErr) {
+        // Accept ONLY the simulated release failure; rethrow anything else.
+        if (
+          restockErr instanceof Error &&
+          restockErr.message.includes('SIMULATED_RELEASE_FAIL')
+        ) {
+          expect(restockErr).toBeInstanceOf(Error);
+          expect(restockErr.message).toContain('SIMULATED_RELEASE_FAIL');
+        } else {
+          throw restockErr;
+        }
+      }
 
       const [o] = await db
         .select({

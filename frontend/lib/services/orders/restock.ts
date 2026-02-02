@@ -10,6 +10,8 @@ import { OrderNotFoundError, OrderStateInvalidError } from '../errors';
 import { resolvePaymentProvider } from './_shared';
 import { logWarn } from '@/lib/logging';
 
+const PAYMENT_STATUS_KEY = 'paymentStatus' as const;
+
 export type RestockReason = 'failed' | 'refunded' | 'canceled' | 'stale';
 export type RestockOptions = {
   reason?: RestockReason;
@@ -60,7 +62,7 @@ export async function restockOrder(
     .select({
       id: orders.id,
       paymentProvider: orders.paymentProvider,
-      paymentStatus: orders.paymentStatus,
+      [PAYMENT_STATUS_KEY]: orders.paymentStatus,
       paymentIntentId: orders.paymentIntentId,
       inventoryStatus: orders.inventoryStatus,
       stockRestored: orders.stockRestored,
@@ -106,7 +108,10 @@ export async function restockOrder(
     ) {
       throw new OrderStateInvalidError(
         `Cannot terminalize an orphan paid order without refund reason.`,
-        { orderId, details: { reason, paymentStatus: order.paymentStatus } }
+        {
+          orderId,
+          details: { reason, [PAYMENT_STATUS_KEY]: order.paymentStatus },
+        }
       );
     }
 
@@ -168,7 +173,10 @@ export async function restockOrder(
   if (!isNoPayment && order.paymentStatus === 'paid' && reason !== 'refunded') {
     throw new OrderStateInvalidError(
       `Cannot restock a paid order without refund reason.`,
-      { orderId, details: { reason, paymentStatus: order.paymentStatus } }
+      {
+        orderId,
+        details: { reason, [PAYMENT_STATUS_KEY]: order.paymentStatus },
+      }
     );
   }
   const claimTtlMinutes = options?.claimTtlMinutes ?? 5;

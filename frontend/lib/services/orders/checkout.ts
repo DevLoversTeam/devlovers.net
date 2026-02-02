@@ -277,7 +277,9 @@ function parseVariantList(raw: unknown): string[] {
           .filter(x => x.length > 0);
         return Array.from(new Set(out));
       }
-    } catch {}
+    } catch {
+      // Intentionally empty: fall through to delimiter-based parsing
+    }
   }
 
   const v =
@@ -506,7 +508,11 @@ export async function createOrderWithItems({
 
   for (const item of normalizedItems) {
     const cfg = variantMap.get(item.productId);
-    if (!cfg) continue;
+    if (!cfg) {
+      throw new InvalidPayloadError(
+        `Invariant violation: missing variant config for product ${item.productId} (normalizedItems=${normalizedItems.length}, uniqueProductIds=${uniqueProductIds.length}, dbProducts=${dbProducts.length}).`
+      );
+    }
 
     const selectedSize = normVariant(item.selectedSize ?? '');
     const selectedColor = normVariant(item.selectedColor ?? '');

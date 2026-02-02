@@ -37,7 +37,6 @@ function makeWebhookRequest(rawBody: string) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-
       'Stripe-Signature': 't=1,v1=test',
     },
     body: rawBody,
