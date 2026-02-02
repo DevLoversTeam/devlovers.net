@@ -136,7 +136,6 @@ describe('restockStalePendingOrders claim gate', () => {
       });
 
       expect(processed).toBe(1);
-      expect(processed).toBe(1);
 
       const [row] = await db
         .select({
