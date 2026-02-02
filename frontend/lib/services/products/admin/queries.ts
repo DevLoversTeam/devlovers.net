@@ -24,26 +24,25 @@ export async function getAdminProductById(id: string): Promise<DbProduct> {
   return mapRowToProduct(row);
 }
 
-
 export async function getAdminProductPrices(
   productId: string
 ): Promise<AdminProductPriceRow[]> {
   const rows = await db
     .select({
       currency: productPrices.currency,
-      // canonical:
+
       priceMinor: productPrices.priceMinor,
       originalPriceMinor: productPrices.originalPriceMinor,
-      // legacy (keep during rollout):
+
       price: productPrices.price,
       originalPrice: productPrices.originalPrice,
     })
     .from(productPrices)
     .where(eq(productPrices.productId, productId));
 
-  // Guard: drizzle int columns should come as number, but never trust the driver implicitly.
   return rows.map(r => ({
     currency: r.currency as CurrencyCode,
+    // Defensive: some DB drivers return NUMERIC/DECIMAL as string/unknown at runtime; enforce safe integer minor-units here.
     priceMinor: assertMoneyMinorInt(
       r.priceMinor,
       `${String(r.currency)} priceMinor`

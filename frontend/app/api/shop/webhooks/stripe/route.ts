@@ -1518,9 +1518,14 @@ export async function POST(request: NextRequest) {
             isNull(stripeEvents.processedAt)
           )
         );
-    } catch {
-      // best-effort
+    } catch (err) {
+      logWarn('stripe_webhook_claim_release_failed', {
+        ...eventMeta(),
+        code: 'CLAIM_RELEASE_FAILED',
+        message: err instanceof Error ? err.message : String(err),
+      });
     }
+
     return noStoreJson({ error: 'internal_error' }, { status: 500 });
   }
 }

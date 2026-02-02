@@ -17,7 +17,13 @@
     "searchBlog": "Szukaj w blogu",
     "toggleMenu": "Przełącz menu",
     "closeMenu": "Zamknij menu",
-    "logout": "Wyloguj się"
+    "logout": "Wyloguj się",
+    "themeSystem": "Motyw systemowy",
+    "themeLight": "Jasny motyw",
+    "themeDark": "Ciemny motyw",
+    "cart": "Koszyk",
+    "cartWithItems": "Koszyk, {count} produktów",
+    "starOnGithub": "Gwiazdka na GitHub - {count} gwiazdek"
   },
   "mobileMenu": {
     "newProduct": "Nowy produkt",
@@ -41,7 +47,17 @@
     "title": "DevLovers",
     "subtitle": "Platforma do Przygotowania do Rozmów Kwalifikacyjnych",
     "description": "Opanuj frontend, backend i full-stack development dzięki naszym pytaniom do rozmów kwalifikacyjnych, quizom i materiałom edukacyjnym.",
-    "cta": "Rozpocznij naukę"
+    "cta": "Rozpocznij naukę",
+    "ctaVariants": {
+      "1": "Bez presji. Po prostu zacznij.",
+      "2": "To może być ciekawsze, niż myślisz.",
+      "3": "Właśnie tutaj to się zaczyna.",
+      "4": "Jesteś już w połowie drogi.",
+      "5": "Jeden klik do postępu.",
+      "6": "Klik był — to się liczy.",
+      "7": "Postęp ważniejszy niż perfekcja.",
+      "8": "Zacząć to też funkcja."
+    }
   },
   "qa": {
     "title": "Pytania i Odpowiedzi",
@@ -178,7 +194,8 @@
       "title": "Wyjść z Quizu?",
       "message": "Twój postęp nie zostanie zapisany.",
       "confirm": "Wyjdź",
-      "cancel": "Kontynuuj"
+      "cancel": "Kontynuuj",
+      "exitButton": "Wyjdź z quizu"
     },
     "antiCheat": {
       "copy": "Kopiowanie jest zabronione podczas quizu",

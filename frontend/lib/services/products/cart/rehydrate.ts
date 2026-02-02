@@ -21,17 +21,13 @@ import { logWarn } from '@/lib/logging';
 import { PriceConfigError } from '../../errors';
 
 const fromMinorUnits = fromCents;
-// 2-decimal currencies (money helpers fromCents/toCents assume exponent=2)
 
 function assertTwoDecimalCurrency(currency: CurrencyCode): void {
-  // fromCents/toCents assume exponent=2.
-  // Guard against 0-decimal (JPY) / 3-decimal (BHD) and any future non-2-decimal currency.
   if (isTwoDecimalCurrency(currency)) return;
 
   throw new PriceConfigError(
     'Unsupported currency minor units exponent in cart rehydrate (expected 2-decimal currency).',
     {
-      // Keep productId to avoid breaking error-contract shape if it's required.
       productId: '__cart__',
       currency,
     }
@@ -140,8 +136,6 @@ export async function rehydrateCartItems(
 
   const productMap = new Map(rows.map(r => [r.id, r]));
   const removed: CartRemovedItem[] = [];
-
-  // Merge by canonical key AFTER sanitization (prevents duplicate lines).
   const merged = new Map<
     string,
     Omit<

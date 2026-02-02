@@ -42,6 +42,7 @@ function normalizeSearchText(value: string) {
 
 export function BlogHeaderSearch() {
   const t = useTranslations('blog');
+  const tAria = useTranslations('aria');
   const locale = useLocale();
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState('');
@@ -158,7 +159,7 @@ export function BlogHeaderSearch() {
           })
         }
         className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-        aria-label="Search blog"
+        aria-label={tAria('searchBlog')}
       >
         <Search className="h-4 w-4" aria-hidden="true" />
       </button>

@@ -17,7 +17,13 @@
     "searchBlog": "Search blog",
     "toggleMenu": "Toggle menu",
     "closeMenu": "Close menu",
-    "logout": "Log out"
+    "logout": "Log out",
+    "themeSystem": "System theme",
+    "themeLight": "Light theme",
+    "themeDark": "Dark theme",
+    "cart": "Cart",
+    "cartWithItems": "Cart, {count} items",
+    "starOnGithub": "Star on GitHub - {count} stars"
   },
   "mobileMenu": {
     "newProduct": "New product",
@@ -41,7 +47,17 @@
     "title": "DevLovers",
     "subtitle": "Platform for Technical Interview Preparation",
     "description": "Master frontend, backend, and full-stack development with our interview questions, quizzes, and learning materials.",
-    "cta": "Start Learning"
+    "cta": "Take the first step",
+    "ctaVariants": {
+      "1": "No pressure. Just start.",
+      "2": "This might actually be fun",
+      "3": "You're already halfway",
+      "4": "One click from progress",
+      "5": "You clicked. That counts.",
+      "6": "Brave move, by the way",
+      "7": "Okay, now it's happening",
+      "8": "Hello, new commit"
+    }
   },
   "qa": {
     "title": "Questions and Answers",
@@ -178,7 +194,8 @@
       "title": "Exit Quiz?",
       "message": "Your progress will not be saved.",
       "confirm": "Exit",
-      "cancel": "Continue"
+      "cancel": "Continue",
+      "exitButton": "Exit Quiz"
     },
     "antiCheat": {
       "copy": "Copying is not allowed during the quiz",

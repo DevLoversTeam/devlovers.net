@@ -23,10 +23,6 @@ export type CloudinaryEnv = {
   uploadFolder: string;
 };
 
-/**
- * Returns null if Cloudinary is not configured.
- * Never throws — safe to call anywhere (including during build).
- */
 export function getCloudinaryEnvOptional(): CloudinaryEnv | null {
   const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
   const apiKey = process.env.CLOUDINARY_API_KEY;
@@ -46,10 +42,6 @@ export function getCloudinaryEnvOptional(): CloudinaryEnv | null {
   };
 }
 
-/**
- * Throws a typed error if Cloudinary is not configured.
- * Use this ONLY in code paths that actually upload/delete images.
- */
 export function getCloudinaryEnvRequired(): CloudinaryEnv {
   const missing: string[] = [];
   if (!process.env.CLOUDINARY_CLOUD_NAME) missing.push('CLOUDINARY_CLOUD_NAME');

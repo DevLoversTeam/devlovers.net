@@ -1,5 +1,5 @@
 import { Link } from '@/i18n/routing';
-import { ClearCartOnMount } from '@/components/shop/clear-cart-on-mount';
+import { ClearCartOnMount } from '@/components/shop/ClearCartOnMount';
 import StripePaymentClient from '../StripePaymentClient';
 
 import { formatMoney } from '@/lib/shop/currency';
