@@ -11,9 +11,9 @@ export async function restockStalePendingOrders(options?: {
   olderThanMinutes?: number;
   batchSize?: number;
   orderIds?: string[];
-  claimTtlMinutes?: number; // claim TTL window
-  workerId?: string; // identify who claimed
-  timeBudgetMs?: number; // max runtime budget for this sweep
+  claimTtlMinutes?: number;
+  workerId?: string;
+  timeBudgetMs?: number;
 }): Promise<number> {
   const MIN_OLDER_MIN = 10;
   const MAX_OLDER_MIN = 60 * 24 * 7;
@@ -57,7 +57,6 @@ export async function restockStalePendingOrders(options?: {
   );
   const deadlineMs = Date.now() + timeBudgetMs;
 
-  // If explicitly provided empty list => nothing to do (test helper).
   if (options?.orderIds && options.orderIds.length === 0) return 0;
 
   const hasExplicitIds = Boolean(options?.orderIds?.length);
@@ -81,14 +80,11 @@ export async function restockStalePendingOrders(options?: {
       eq(orders.stockRestored, false),
       isNull(orders.restockedAt),
       ne(orders.inventoryStatus, 'released'),
-      // claim gate: only unclaimed or expired claims are eligible
       or(
         isNull(orders.sweepClaimExpiresAt),
         lt(orders.sweepClaimExpiresAt, now)
       ),
     ];
-
-    // If not targeting specific orders, apply age cutoff.
     if (!hasExplicitIds) {
       baseConditions.push(lt(orders.createdAt, cutoff));
     }
@@ -140,7 +136,6 @@ export async function restockStalePendingOrders(options?: {
 
   return processed;
 }
-// Cleanup for orders stuck in "reserving" phase (inventory reservation started but never completed).
 export async function restockStuckReservingOrders(options?: {
   olderThanMinutes?: number;
   batchSize?: number;
@@ -199,29 +194,23 @@ export async function restockStuckReservingOrders(options?: {
     const claimExpiresAt = new Date(Date.now() + claimTtlMinutes * 60 * 1000);
 
     const baseConditions = [
-      // Only Stripe flow here; no-payments has its own sweep.
       eq(orders.paymentProvider, 'stripe'),
 
-      // "still in progress" payment states
       inArray(orders.paymentStatus, [
         'pending',
         'requires_payment',
       ] as PaymentStatus[]),
 
-      // stuck in reserving/releasing phase (not final)
       inArray(orders.inventoryStatus, [
         'reserving',
         'release_pending',
       ] as const),
 
-      // not already restocked/finalized
       eq(orders.stockRestored, false),
       isNull(orders.restockedAt),
 
-      // age cutoff
       lt(orders.createdAt, cutoff),
 
-      // claim gate
       or(
         isNull(orders.sweepClaimExpiresAt),
         lt(orders.sweepClaimExpiresAt, now)
@@ -242,7 +231,6 @@ export async function restockStuckReservingOrders(options?: {
         sweepClaimExpiresAt: claimExpiresAt,
         sweepRunId: runId,
         sweepClaimedBy: workerId,
-        // set failure details only if absent (keeps real error if it already exists)
         failureCode: sql`coalesce(${orders.failureCode}, 'STUCK_RESERVING_TIMEOUT')`,
         failureMessage: sql`coalesce(${orders.failureMessage}, 'Order timed out while reserving inventory.')`,
         updatedAt: now,
@@ -263,7 +251,6 @@ export async function restockStuckReservingOrders(options?: {
     for (const { id } of claimed) {
       if (Date.now() >= deadlineMs) break;
 
-      // IMPORTANT: reuse hardened exactly-once restock
       await restockOrder(id, {
         reason: 'stale',
         alreadyClaimed: true,
@@ -277,7 +264,6 @@ export async function restockStuckReservingOrders(options?: {
   return processed;
 }
 
-// Cleanup for payment_provider='none' flow where payment_status may be 'paid' before inventory reservation completes.
 export async function restockStaleNoPaymentOrders(options?: {
   olderThanMinutes?: number;
   batchSize?: number;
@@ -347,7 +333,6 @@ export async function restockStaleNoPaymentOrders(options?: {
         'release_pending',
       ] as const),
 
-      // claim gate
       or(
         isNull(orders.sweepClaimExpiresAt),
         lt(orders.sweepClaimExpiresAt, now)
@@ -387,7 +372,7 @@ export async function restockStaleNoPaymentOrders(options?: {
       if (Date.now() >= deadlineMs) break;
 
       await restockOrder(id, {
-        reason: 'stale', // reuse existing terminalization semantics
+        reason: 'stale',
         alreadyClaimed: true,
         workerId,
       });
@@ -398,4 +383,3 @@ export async function restockStaleNoPaymentOrders(options?: {
 
   return processed;
 }
-

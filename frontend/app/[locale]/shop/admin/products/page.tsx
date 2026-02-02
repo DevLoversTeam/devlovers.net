@@ -1,11 +1,11 @@
 import { Link } from '@/i18n/routing';
 import { and, desc, eq, sql } from 'drizzle-orm';
 import { issueCsrfToken } from '@/lib/security/csrf';
-import { ShopAdminTopbar } from '@/components/shop/admin/shop-admin-topbar';
+import { ShopAdminTopbar } from '@/components/shop/admin/ShopAdminTopbar';
 import { guardShopAdminPage } from '@/lib/auth/guard-shop-admin-page';
-import { AdminProductDeleteButton } from '@/components/shop/admin/admin-product-delete-button';
-import { AdminProductStatusToggle } from '@/components/shop/admin/admin-product-status-toggle';
-import { AdminPagination } from '@/components/shop/admin/admin-pagination';
+import { AdminProductDeleteButton } from '@/components/shop/admin/AdminProductDeleteButton';
+import { AdminProductStatusToggle } from '@/components/shop/admin/AdminProductStatusToggle';
+import { AdminPagination } from '@/components/shop/admin/AdminPagination';
 import { db } from '@/db';
 import {
   inventoryMoves,

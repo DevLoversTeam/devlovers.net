@@ -46,9 +46,6 @@ import { getOrderById, getOrderByIdempotencyKey } from './summary';
 import { restockOrder } from './restock';
 import { guardedPaymentStatusUpdate } from './payment-state';
 
-// NOTE: PaymentStatus semantics for Stripe:
-// pending (no PI yet) -> requires_payment (PI attached) -> paid/failed/refunded via provider events.
-
 async function reconcileNoPaymentOrder(
   orderId: string
 ): Promise<OrderSummaryWithMinor> {
@@ -76,7 +73,6 @@ async function reconcileNoPaymentOrder(
     paymentStatus: row.paymentStatus as PaymentStatus,
   });
 
-  // Only reconcile "no payments" workflow.
   if (provider !== 'none') return getOrderById(orderId);
 
   if (row.paymentIntentId) {
@@ -86,16 +82,11 @@ async function reconcileNoPaymentOrder(
     );
   }
 
-  // IMPORTANT:
-  // With DB CHECK, provider='none' cannot use pending/requires_payment.
-  // Therefore paymentStatus is not a reliable "finality" signal here.
-  // Finality is inventory-driven: if inventory is reserved, the order is complete.
   if (row.inventoryStatus === 'reserved') {
     return getOrderById(orderId);
   }
 
   if (row.inventoryStatus === 'release_pending') {
-    // Do not attempt to reserve again while release is pending.
     try {
       await restockOrder(orderId, {
         reason: 'failed',
@@ -112,8 +103,6 @@ async function reconcileNoPaymentOrder(
       row.failureMessage ?? 'Order cannot be completed (release pending).'
     );
   }
-
-  // If it was already released/restocked - treat as failed.
   if (
     row.inventoryStatus === 'released' ||
     row.stockRestored ||
@@ -192,8 +181,6 @@ async function reconcileNoPaymentOrder(
     return getOrderById(orderId);
   } catch (e) {
     const failAt = new Date();
-
-    // Mark as "release pending" only. Finalization must happen via restockOrder().
     const isOos = e instanceof InsufficientStockError;
 
     await db
@@ -205,7 +192,6 @@ async function reconcileNoPaymentOrder(
         failureMessage: isOos
           ? e.message
           : 'Checkout failed after reservation attempt.',
-        // IMPORTANT: do NOT set stockRestored/restockedAt here.
         updatedAt: failAt,
       })
       .where(eq(orders.id, orderId));
@@ -216,7 +202,6 @@ async function reconcileNoPaymentOrder(
         workerId: 'reconcileNoPaymentOrder',
       });
     } catch (restockErr) {
-      // If release fails, we must not lie in order state; leave it for sweeps/janitor.
       logError(
         `[reconcileNoPaymentOrder] restock failed orderId=${orderId}`,
         restockErr
@@ -241,14 +226,11 @@ async function getProductsForCheckout(
       stock: products.stock,
       sku: products.sku,
 
-      // variant option sets (text/CSV/JSON)
       colors: products.colors,
       sizes: products.sizes,
 
-      // canonical price (minor)
       priceMinor: productPrices.priceMinor,
 
-      // legacy fallback (keep for safety during rollout)
       price: productPrices.price,
 
       originalPrice: productPrices.originalPrice,
@@ -274,21 +256,18 @@ type CheckoutProductRow = Awaited<
 function parseVariantList(raw: unknown): string[] {
   if (raw == null) return [];
 
-  // If DB returns array (e.g. text[] / jsonb)
   if (Array.isArray(raw)) {
     const out = raw.map(x => normVariant(String(x))).filter(x => x.length > 0);
     return Array.from(new Set(out));
   }
 
   if (typeof raw !== 'string') {
-    // Unknown shape -> treat as "no configured variants"
     return [];
   }
 
   const v0 = raw.trim();
   if (!v0) return [];
 
-  // JSON array: '["S","M"]'
   if (v0.startsWith('[')) {
     try {
       const parsed = JSON.parse(v0);
@@ -298,18 +277,14 @@ function parseVariantList(raw: unknown): string[] {
           .filter(x => x.length > 0);
         return Array.from(new Set(out));
       }
-    } catch {
-      // fallthrough to CSV parsing
-    }
+    } catch {}
   }
 
-  // Postgres array literal string: '{S,M}'
   const v =
     v0.startsWith('{') && v0.endsWith('}')
       ? v0.slice(1, -1).replace(/"/g, '')
       : v0;
 
-  // CSV / ';' / newline
   const out = v
     .split(/[,;\n\r]+/g)
     .map(x => normVariant(x))
@@ -329,8 +304,6 @@ function priceItems(
     if (!product) {
       throw new InvalidPayloadError('Some products are unavailable.');
     }
-    //Price must exist for requested currency.
-    // With leftJoin, missing row => priceCurrency null and both price fields null.
     if (
       !product.priceCurrency ||
       (product.priceMinor == null && product.price == null)
@@ -341,7 +314,6 @@ function priceItems(
       });
     }
 
-    // canonical: int minor
     let unitPriceCents: number | null = null;
     if (product.priceMinor !== null && product.priceMinor !== undefined) {
       if (
@@ -352,8 +324,6 @@ function priceItems(
       }
       unitPriceCents = product.priceMinor;
     }
-
-    // safety fallback (should become dead code after migration + dual-write stabilizes)
     if (unitPriceCents == null) {
       const unitPrice = coercePriceFromDb(product.price, {
         field: 'price',
@@ -405,10 +375,6 @@ export async function createOrderWithItems({
   const paymentsEnabled = isPaymentsEnabled();
   const paymentProvider: PaymentProvider = paymentsEnabled ? 'stripe' : 'none';
 
-  // paymentStatus is initialized here only; ALL transitions must go via guardedPaymentStatusUpdate.
-  // IMPORTANT: DB CHECK requires provider='none' => payment_status in ('paid','failed')
-  // Avoid the cycle: requires_payment -> pending -> requires_payment.
-  // For Stripe, start at pending and switch to requires_payment only after PI is attached.
   const initialPaymentStatus: PaymentStatus =
     paymentProvider === 'none' ? 'paid' : 'pending';
 
@@ -438,7 +404,6 @@ export async function createOrderWithItems({
 
     if (!row) throw new OrderNotFoundError('Order not found');
 
-    // currency mismatch => hard conflict
     if (row.currency !== currency) {
       throw new IdempotencyConflictError(
         'Idempotency key already used with different currency.',
@@ -446,7 +411,6 @@ export async function createOrderWithItems({
       );
     }
 
-    // If DB hash is missing (legacy), derive from persisted state (order_items + order currency + userId)
     const derivedExistingHash =
       row.idempotencyRequestHash ??
       hashIdempotencyRequest({
@@ -461,7 +425,6 @@ export async function createOrderWithItems({
       });
 
     if (!row.idempotencyRequestHash) {
-      // best-effort: backfill for future strict checks
       try {
         await db
           .update(orders)
@@ -489,7 +452,6 @@ export async function createOrderWithItems({
     }
 
     if (row.paymentStatus === 'failed') {
-      // Best-effort cleanup if inventory was left reserved due to crash.
       try {
         await restockOrder(existing.id, { reason: 'failed' });
       } catch (restockErr) {
@@ -505,12 +467,9 @@ export async function createOrderWithItems({
     }
   }
 
-  // 1) idempotency read
   const existing = await getOrderByIdempotencyKey(db, idempotencyKey);
   if (existing) {
     await assertIdempotencyCompatible(existing);
-    // If payments are disabled, we must guarantee a final consistent state
-    // (previous run could have crashed after order insert).
     if (!paymentsEnabled) {
       const reconciled = await reconcileNoPaymentOrder(existing.id);
       return {
@@ -525,8 +484,6 @@ export async function createOrderWithItems({
       totalCents: requireTotalCents(existing),
     };
   }
-
-  // 3) pricing (read-only)
   const uniqueProductIds = Array.from(
     new Set(normalizedItems.map(i => i.productId))
   );
@@ -537,7 +494,6 @@ export async function createOrderWithItems({
   }
 
   const productMap = new Map(dbProducts.map(p => [p.id, p]));
-  // 3.1) Variant validation (fail-fast; no side effects)
   const variantMap = new Map(
     dbProducts.map(p => [
       p.id,
@@ -550,7 +506,7 @@ export async function createOrderWithItems({
 
   for (const item of normalizedItems) {
     const cfg = variantMap.get(item.productId);
-    if (!cfg) continue; // product existence handled elsewhere
+    if (!cfg) continue;
 
     const selectedSize = normVariant(item.selectedSize ?? '');
     const selectedColor = normVariant(item.selectedColor ?? '');
@@ -587,7 +543,6 @@ export async function createOrderWithItems({
   const pricedItems = priceItems(normalizedItems, productMap, currency);
   const orderTotalCents = sumLineTotals(pricedItems.map(i => i.lineTotalCents));
 
-  // 4) create order skeleton (CREATED/none)
   let orderId: string;
   try {
     const [created] = await db
@@ -601,16 +556,13 @@ export async function createOrderWithItems({
         paymentProvider,
         paymentIntentId: null,
 
-        // new workflow fields:
         status: 'CREATED',
-        // IMPORTANT (no-payments): payment_status must be 'paid' due to DB CHECK,
-        // so we must track in-progress via inventory_status.
+
         inventoryStatus: paymentsEnabled ? 'none' : 'reserving',
         failureCode: null,
         failureMessage: null,
         idempotencyRequestHash: requestHash,
 
-        // legacy/idempotency:
         stockRestored: false,
         restockedAt: null,
         idempotencyKey,
@@ -624,7 +576,6 @@ export async function createOrderWithItems({
     if ((error as { code?: string }).code === '23505') {
       const existingOrder = await getOrderByIdempotencyKey(db, idempotencyKey);
       if (existingOrder) {
-        // IMPORTANT: in race conditions, we MUST still enforce hash/currency compatibility
         await assertIdempotencyCompatible(existingOrder);
         if (!paymentsEnabled) {
           const reconciled = await reconcileNoPaymentOrder(existingOrder.id);
@@ -644,7 +595,6 @@ export async function createOrderWithItems({
     throw error;
   }
 
-  // 5) upsert order_items (requires UNIQUE(order_id, product_id, selected_size, selected_color))
   if (pricedItems.length) {
     await db
       .insert(orderItems)
@@ -693,13 +643,11 @@ export async function createOrderWithItems({
     .set({ inventoryStatus: 'reserving', updatedAt: now })
     .where(eq(orders.id, orderId));
 
-  // stock is per-product => reserve aggregated by productId across variants
   const itemsToReserve = aggregateReserveByProductId(
     pricedItems.map(i => ({ productId: i.productId, quantity: i.quantity }))
   );
 
   try {
-    // 7) reserve inventory (idempotent + atomic in inventory.ts)
     for (const item of itemsToReserve) {
       const res = await applyReserveMove(
         orderId,
@@ -713,7 +661,6 @@ export async function createOrderWithItems({
       }
     }
 
-    // 8) success
     await db
       .update(orders)
       .set({
@@ -768,7 +715,6 @@ export async function createOrderWithItems({
         failureMessage: isOos
           ? e.message
           : 'Checkout failed after reservation attempt.',
-        // IMPORTANT: do NOT set stockRestored/restockedAt here.
         updatedAt: failAt,
       })
       .where(eq(orders.id, orderId));

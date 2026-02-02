@@ -2,7 +2,7 @@ import { Link } from '@/i18n/routing';
 import { getTranslations } from 'next-intl/server';
 
 import OrderStatusAutoRefresh from './OrderStatusAutoRefresh';
-import { ClearCartOnMount } from '@/components/shop/clear-cart-on-mount';
+import { ClearCartOnMount } from '@/components/shop/ClearCartOnMount';
 import { formatMoney } from '@/lib/shop/currency';
 import { getOrderSummary } from '@/lib/services/orders';
 import { OrderNotFoundError } from '@/lib/services/errors';
@@ -57,7 +57,6 @@ function shouldClearCart(params: SearchParams): boolean {
   return raw === 'true' || raw === '1';
 }
 
-/** Small hero CTA (Link) */
 const SHOP_HERO_CTA_SM = cn(
   SHOP_CTA_BASE,
   SHOP_CTA_INTERACTIVE,

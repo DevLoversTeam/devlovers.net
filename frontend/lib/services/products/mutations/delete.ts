@@ -7,8 +7,6 @@ import { logError } from '@/lib/logging';
 import { ProductNotFoundError } from '@/lib/errors/products';
 
 export async function deleteProduct(id: string): Promise<void> {
-  // Atomic delete: prices first, then product, all-or-nothing.
-  // Return imagePublicId from the deleted row to avoid stale pre-reads.
   const result = await db.execute(sql`
     WITH del_prices AS (
       DELETE FROM ${productPrices}
@@ -32,7 +30,6 @@ export async function deleteProduct(id: string): Promise<void> {
   const [deleted] = rows;
 
   if (!deleted) {
-    // not found or concurrent delete edge-case
     throw new ProductNotFoundError(id);
   }
 

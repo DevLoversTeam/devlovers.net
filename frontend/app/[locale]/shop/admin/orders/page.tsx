@@ -8,8 +8,8 @@ import {
   type CurrencyCode,
 } from '@/lib/shop/currency';
 import { fromDbMoney } from '@/lib/shop/money';
-import { ShopAdminTopbar } from '@/components/shop/admin/shop-admin-topbar';
-import { AdminPagination } from '@/components/shop/admin/admin-pagination';
+import { ShopAdminTopbar } from '@/components/shop/admin/ShopAdminTopbar';
+import { AdminPagination } from '@/components/shop/admin/AdminPagination';
 import { guardShopAdminPage } from '@/lib/auth/guard-shop-admin-page';
 import { CSRF_FORM_FIELD, issueCsrfToken } from '@/lib/security/csrf';
 import { parsePage } from '@/lib/pagination';

@@ -1,5 +1,3 @@
-// frontend/lib/errors/products.ts
-
 export class ProductNotFoundError extends Error {
   readonly code = 'PRODUCT_NOT_FOUND' as const;
 

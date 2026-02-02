@@ -1518,9 +1518,7 @@ export async function POST(request: NextRequest) {
             isNull(stripeEvents.processedAt)
           )
         );
-    } catch {
-      // best-effort
-    }
+    } catch {}
     return noStoreJson({ error: 'internal_error' }, { status: 500 });
   }
 }

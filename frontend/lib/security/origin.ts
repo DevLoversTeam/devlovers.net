@@ -13,7 +13,6 @@ function buildErrorResponse(code: string, message: string) {
     { status: 403 }
   );
 
-  // Ensure security errors are never cached by intermediaries.
   res.headers.set('Cache-Control', 'no-store');
 
   return res;
@@ -23,10 +22,8 @@ export function normalizeOrigin(input: string): string {
   const trimmed = input.trim().replace(/\/+$/, '');
 
   try {
-    // If the input is a valid URL (incl. scheme), normalize to canonical origin.
     return new URL(trimmed).origin;
   } catch {
-    // Backward-compatible fallback for values like "example.com" (no scheme).
     return trimmed;
   }
 }
