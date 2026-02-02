@@ -1,7 +1,7 @@
 import { Link } from '@/i18n/routing';
-import { ProductCard } from '@/components/shop/product-card';
-import { Hero } from '@/components/shop/shop-hero';
-import { CategoryTile } from '@/components/shop/category-tile';
+import { ProductCard } from '@/components/shop/ProductCard';
+import { Hero } from '@/components/shop/ShopHero';
+import { CategoryTile } from '@/components/shop/CategoryTile';
 import { getHomepageContent } from '@/lib/shop/data';
 import { getTranslations } from 'next-intl/server';
 import {

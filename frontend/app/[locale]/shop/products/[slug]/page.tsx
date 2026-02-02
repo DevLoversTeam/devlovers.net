@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { cn } from '@/lib/utils';
-import { AddToCartButton } from '@/components/shop/add-to-cart-button';
+import { AddToCartButton } from '@/components/shop/AddToCartButton';
 import { getProductPageData } from '@/lib/shop/data';
 import { formatMoney, resolveCurrencyFromLocale } from '@/lib/shop/currency';
 import { getPublicProductBySlug } from '@/db/queries/shop/products';

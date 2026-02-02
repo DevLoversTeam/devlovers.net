@@ -21,7 +21,6 @@ export function assertMoneyMinorInt(value: unknown, field: string): number {
     throw new InvalidPayloadError(`${field} must be a number.`);
   }
 
-  // Critical: reject fractional minor units (no truncation)
   if (!Number.isInteger(n)) {
     throw new InvalidPayloadError(`${field} must be an integer (minor units).`);
   }
@@ -92,10 +91,6 @@ function toMoneyMinorNullable(
 }
 
 export function normalizePricesFromInput(input: unknown): NormalizedPriceRow[] {
-  // Transitional-safe:
-  // - NEW: input.prices[] uses MINOR units: { currency, priceMinor, originalPriceMinor }
-  // - LEGACY: input.prices[] uses MAJOR strings: { currency, price, originalPrice }
-  // - VERY LEGACY: top-level price/originalPrice/currency
   const anyInput = input as any;
 
   const prices = anyInput?.prices;
@@ -108,7 +103,6 @@ export function normalizePricesFromInput(input: unknown): NormalizedPriceRow[] {
         );
       }
 
-      // NEW path: minor units
       if (p?.priceMinor != null) {
         const priceMinor = assertMoneyMinorInt(
           p.priceMinor,
@@ -133,7 +127,6 @@ export function normalizePricesFromInput(input: unknown): NormalizedPriceRow[] {
         return { currency, priceMinor, originalPriceMinor };
       }
 
-      // LEGACY path: major strings
       const price = String(p?.price ?? '').trim();
       const originalPrice =
         p?.originalPrice == null ? null : String(p.originalPrice).trim();
@@ -152,7 +145,6 @@ export function normalizePricesFromInput(input: unknown): NormalizedPriceRow[] {
     });
   }
 
-  // Legacy fallback (only if present)
   if (anyInput?.price != null) {
     const currency = (anyInput?.currency as CurrencyCode) ?? 'USD';
     if (!currencyValues.includes(currency as any)) {
@@ -188,7 +180,6 @@ export function requireUsd(prices: NormalizedPriceRow[]): NormalizedPriceRow {
 }
 
 export function validatePriceRows(prices: NormalizedPriceRow[]) {
-  // Safety: no duplicates even if upstream schema is bypassed
   const seen = new Set<CurrencyCode>();
   for (const p of prices) {
     if (seen.has(p.currency)) {
@@ -196,19 +187,16 @@ export function validatePriceRows(prices: NormalizedPriceRow[]) {
     }
     seen.add(p.currency);
 
-    // Runtime guard (transitional input can bypass TS/Zod)
     if (!currencyValues.includes(p.currency as any)) {
       throw new InvalidPayloadError(
         `Unsupported currency: ${String(p.currency)}.`
       );
     }
 
-    // priceMinor must be positive integer (minor units)
     if (!Number.isSafeInteger(p.priceMinor) || p.priceMinor < 1) {
       throw new InvalidPayloadError(`${p.currency}: price is required.`);
     }
 
-    // originalPriceMinor must be > priceMinor when present
     if (p.originalPriceMinor != null) {
       if (!Number.isSafeInteger(p.originalPriceMinor)) {
         throw new InvalidPayloadError(

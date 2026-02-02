@@ -10,7 +10,7 @@ import {
   type CurrencyCode,
 } from '@/lib/shop/currency';
 import { fromDbMoney } from '@/lib/shop/money';
-import { ShopAdminTopbar } from '@/components/shop/admin/shop-admin-topbar';
+import { ShopAdminTopbar } from '@/components/shop/admin/ShopAdminTopbar';
 import { guardShopAdminPage } from '@/lib/auth/guard-shop-admin-page';
 import { Metadata } from 'next';
 
