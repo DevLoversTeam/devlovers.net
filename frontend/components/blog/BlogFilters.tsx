@@ -502,7 +502,7 @@ export default function BlogFilters({
             <div className="relative flex flex-col h-full pt-8">
               {featuredPost.categories?.[0] && (
                 <div className="absolute top-0 left-0 text-xs font-bold uppercase tracking-[0.2em] text-[var(--accent-primary)]">
-                  {featuredPost.categories[0]}
+                  {getCategoryLabel(featuredPost.categories[0] === 'Growth' ? 'Career' : featuredPost.categories[0])}
                 </div>
               )}
               <div className="my-auto">
