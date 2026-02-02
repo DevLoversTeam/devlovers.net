@@ -12,13 +12,15 @@ export function InteractiveCTAButton() {
   const [variantIndex, setVariantIndex] = React.useState(1);
   const [isHovered, setIsHovered] = React.useState(false);
 
-  // Тимчасово для тестування - цифри замість текстів
   const textVariants = [
-    `${t('cta')} 1`,
-    `${t('cta')} 2`,
-    `${t('cta')} 3`,
-    `${t('cta')} 4`,
-    `${t('cta')} 5`,
+    t('ctaVariants.1'),
+    t('ctaVariants.2'),
+    t('ctaVariants.3'),
+    t('ctaVariants.4'),
+    t('ctaVariants.5'),
+    t('ctaVariants.6'),
+    t('ctaVariants.7'),
+    t('ctaVariants.8'),
   ];
 
   const defaultVariant = t('cta');
@@ -35,7 +37,6 @@ export function InteractiveCTAButton() {
     setVariantIndex(prev => (prev + 1) % textVariants.length);
   };
 
-  // Орбітальні частинки
   const particles = Array.from({ length: 12 }, (_, i) => ({
     id: i,
     angle: (i * 360) / 8,

@@ -22,6 +22,7 @@ export function DesktopActions({
   showAdminLink = false,
 }: DesktopActionsProps) {
   const t = useTranslations('navigation');
+  const tAria = useTranslations('aria');
   const isShop = variant === 'shop';
   const isBlog = variant === 'blog';
 
@@ -32,7 +33,7 @@ export function DesktopActions({
           variant="icon"
           href="/dashboard"
           icon={User}
-          label="Dashboard"
+          label={tAria('dashboard')}
         />
       )}
 
@@ -41,7 +42,7 @@ export function DesktopActions({
           variant="icon"
           href="/shop/admin"
           icon={Settings}
-          label="Shop admin"
+          label={tAria('shopAdmin')}
         />
       )}
 

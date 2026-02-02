@@ -30,7 +30,25 @@ export function AppMobileMenu({
   const tMobileMenu = useTranslations('mobileMenu');
   const tCategories = useTranslations('shop.catalog.categories');
   const tProducts = useTranslations('shop.products');
+  const tBlog = useTranslations('blog');
   const pathname = usePathname();
+
+  const getBlogCategoryLabel = (categoryName: string): string => {
+    const key = categoryName.toLowerCase() as
+      | 'tech'
+      | 'career'
+      | 'insights'
+      | 'news'
+      | 'growth';
+    const categoryTranslations: Record<string, string> = {
+      tech: tBlog('categories.tech'),
+      career: tBlog('categories.career'),
+      insights: tBlog('categories.insights'),
+      news: tBlog('categories.news'),
+      growth: tBlog('categories.growth'),
+    };
+    return categoryTranslations[key] || categoryName;
+  };
   const searchParams = useSearchParams();
   const currentCategory = searchParams.get('category');
   const [open, setOpen] = useState(false);
@@ -176,6 +194,7 @@ export function AppMobileMenu({
                     const slug = slugify(category.title || '');
                     const href = `/blog/category/${slug}`;
                     const isActive = pathname === href;
+                    const displayTitle = category.title === 'Growth' ? 'Career' : category.title;
                     return (
                       <Link
                         key={category._id}
@@ -183,7 +202,7 @@ export function AppMobileMenu({
                         onClick={close}
                         className={linkClass(isActive)}
                       >
-                        {category.title}
+                        {getBlogCategoryLabel(displayTitle)}
                       </Link>
                     );
                   })}

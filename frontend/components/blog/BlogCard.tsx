@@ -22,6 +22,24 @@ export default function BlogCard({
   disableHoverColor?: boolean;
 }) {
   const t = useTranslations('blog');
+
+  const getCategoryLabel = (categoryName: string): string => {
+    const key = categoryName.toLowerCase() as
+      | 'tech'
+      | 'career'
+      | 'insights'
+      | 'news'
+      | 'growth';
+    const categoryTranslations: Record<string, string> = {
+      tech: t('categories.tech'),
+      career: t('categories.career'),
+      insights: t('categories.insights'),
+      news: t('categories.news'),
+      growth: t('categories.growth'),
+    };
+    return categoryTranslations[key] || categoryName;
+  };
+
   const excerpt =
     (post.body ?? [])
       .filter((b): b is PortableTextBlock => b._type === 'block')
@@ -34,8 +52,9 @@ export default function BlogCard({
     () => formatBlogDate(post.publishedAt),
     [post.publishedAt]
   );
-  const categoryLabel =
+  const rawCategory =
     post.categories?.[0] === 'Growth' ? 'Career' : post.categories?.[0];
+  const categoryLabel = rawCategory ? getCategoryLabel(rawCategory) : undefined;
 
   return (
     <article

@@ -1,6 +1,7 @@
 'use client';
 
 import { Star } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useState, useEffect, useRef } from 'react';
 
 interface GitHubStarButtonProps {
@@ -8,6 +9,7 @@ interface GitHubStarButtonProps {
 }
 
 export function GitHubStarButton({ className = '' }: GitHubStarButtonProps) {
+  const t = useTranslations('aria');
   const [displayCount, setDisplayCount] = useState(0);
   const [finalCount, setFinalCount] = useState<number | null>(null);
   const githubUrl = 'https://github.com/DevLoversTeam/devlovers.net';
@@ -74,7 +76,7 @@ export function GitHubStarButton({ className = '' }: GitHubStarButtonProps) {
       href={githubUrl}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label={`Star on GitHub - ${displayCount} stars`}
+      aria-label={t('starOnGithub', { count: displayCount })}
       className={`
         hidden lg:inline-flex
         group relative
