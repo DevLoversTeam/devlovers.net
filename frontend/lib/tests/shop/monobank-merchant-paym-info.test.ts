@@ -1,181 +1,139 @@
-import { describe, expect, it } from 'vitest';
 
+import { describe, expect, it } from 'vitest';
 import {
-  buildMonoMerchantPaymInfoFromSnapshot,
-  MonobankMerchantPaymInfoError,
-} from '@/lib/psp/monobank/merchant-paym-info';
+  buildMonoMerchantPaymInfo,
+  MonoMerchantPaymInfoError,
+} from '@/lib/services/orders/monobank/merchant-paym-info';
 
 function expectCode(fn: () => unknown, code: string) {
   try {
     fn();
     throw new Error('expected error');
   } catch (error) {
-    expect(error).toBeInstanceOf(MonobankMerchantPaymInfoError);
-    const err = error as MonobankMerchantPaymInfoError;
+    expect(error).toBeInstanceOf(MonoMerchantPaymInfoError);
+    const err = error as MonoMerchantPaymInfoError;
     expect(err.code).toBe(code);
   }
 }
 
-describe('buildMonoMerchantPaymInfoFromSnapshot', () => {
+describe('buildMonoMerchantPaymInfo', () => {
   it('builds merchantPaymInfo for a valid snapshot', () => {
-    const result = buildMonoMerchantPaymInfoFromSnapshot({
+    const result = buildMonoMerchantPaymInfo({
       reference: 'attempt-1',
-      order: {
-        id: 'order-12345678',
-        currency: 'UAH',
-        totalAmountMinor: 3000,
-      },
-      items: [
-        {
-          productId: 'prod-1',
-          title: 'Hat',
-          quantity: 1,
-          unitPriceMinor: 1000,
-          lineTotalMinor: 1000,
-        },
-        {
-          productId: 'prod-2',
-          title: 'Shirt',
-          quantity: 2,
-          unitPriceMinor: 1000,
-          lineTotalMinor: 2000,
-        },
-      ],
+      destination: 'Оплата замовлення 123',
+      currency: 'UAH',
       expectedAmountMinor: 3000,
+      items: [
+        { name: 'Hat', quantity: 1, unitPriceMinor: 1000 },
+        { name: 'Shirt', quantity: 2, unitPriceMinor: 1000 },
+      ],
     });
 
     expect(result.reference).toBe('attempt-1');
-    expect(result.destination).toMatch(/Оплата замовлення/i);
+    expect(result.destination).toBe('Оплата замовлення 123');
     expect(result.basketOrder).toHaveLength(2);
     expect(result.basketOrder[0]?.sum).toBe(1000);
-    expect(result.basketOrder[0]?.total).toBe(1000);
     expect(result.basketOrder[1]?.sum).toBe(1000);
+    expect(result.basketOrder[0]?.total).toBe(1000);
     expect(result.basketOrder[1]?.total).toBe(2000);
     const total = result.basketOrder.reduce((acc, item) => acc + item.total, 0);
-    expect(total).toBe(3000);
-  });
 
-  it('throws for non-UAH currency', () => {
-    expectCode(
-      () =>
-        buildMonoMerchantPaymInfoFromSnapshot({
-          reference: 'attempt-1',
-          order: {
-            id: 'order-1',
-            currency: 'USD',
-            totalAmountMinor: 1000,
-          },
-          items: [
-            {
-              productId: 'prod-1',
-              title: 'Hat',
-              quantity: 1,
-              unitPriceMinor: 1000,
-              lineTotalMinor: 1000,
-            },
-          ],
-          expectedAmountMinor: 1000,
-        }),
-      'MONO_UAH_ONLY'
-    );
+    expect(total).toBe(3000);
   });
 
   it('throws for basket sum mismatch', () => {
     expectCode(
       () =>
-        buildMonoMerchantPaymInfoFromSnapshot({
+        buildMonoMerchantPaymInfo({
           reference: 'attempt-1',
-          order: {
-            id: 'order-1',
-            currency: 'UAH',
-            totalAmountMinor: 1500,
-          },
-          items: [
-            {
-              productId: 'prod-1',
-              title: 'Hat',
-              quantity: 1,
-              unitPriceMinor: 1000,
-              lineTotalMinor: 1000,
-            },
-          ],
+          destination: 'ÐžÐ¿Ð»Ð°Ñ‚Ð° Ð·Ð°Ð¼Ð¾Ð²Ð»ÐµÐ½Ð½Ñ 123',
+          currency: 'UAH',
           expectedAmountMinor: 1500,
+          items: [{ name: 'Hat', quantity: 1, unitPriceMinor: 1000 }],
         }),
       'MONO_BASKET_SUM_MISMATCH'
+    );
+  });
+
+  it('throws for non-UAH currency', () => {
+    expectCode(
+      () =>
+        buildMonoMerchantPaymInfo({
+          reference: 'attempt-1',
+          destination: 'ÐžÐ¿Ð»Ð°Ñ‚Ð° Ð·Ð°Ð¼Ð¾Ð²Ð»ÐµÐ½Ð½Ñ 123',
+          currency: 'USD',
+          expectedAmountMinor: 1000,
+          items: [{ name: 'Hat', quantity: 1, unitPriceMinor: 1000 }],
+        }),
+      'MONO_UAH_ONLY'
     );
   });
 
   it('throws for invalid qty', () => {
     expectCode(
       () =>
-        buildMonoMerchantPaymInfoFromSnapshot({
+        buildMonoMerchantPaymInfo({
           reference: 'attempt-1',
-          order: {
-            id: 'order-1',
-            currency: 'UAH',
-            totalAmountMinor: 1000,
-          },
-          items: [
-            {
-              productId: 'prod-1',
-              title: 'Hat',
-              quantity: 0,
-              unitPriceMinor: 1000,
-              lineTotalMinor: 0,
-            },
-          ],
+          destination: 'ÐžÐ¿Ð»Ð°Ñ‚Ð° Ð·Ð°Ð¼Ð¾Ð²Ð»ÐµÐ½Ð½Ñ 123',
+          currency: 'UAH',
           expectedAmountMinor: 1000,
+          items: [{ name: 'Hat', quantity: 0, unitPriceMinor: 1000 }],
         }),
       'MONO_INVALID_SNAPSHOT'
     );
   });
 
-  it('throws for non-integer minor units', () => {
+  it('throws for invalid unit price', () => {
     expectCode(
       () =>
-        buildMonoMerchantPaymInfoFromSnapshot({
+        buildMonoMerchantPaymInfo({
           reference: 'attempt-1',
-          order: {
-            id: 'order-1',
-            currency: 'UAH',
-            totalAmountMinor: 1000,
-          },
-          items: [
-            {
-              productId: 'prod-1',
-              title: 'Hat',
-              quantity: 1,
-              unitPriceMinor: 10.5,
-              lineTotalMinor: 10.5,
-            },
-          ],
+          destination: 'ÐžÐ¿Ð»Ð°Ñ‚Ð° Ð·Ð°Ð¼Ð¾Ð²Ð»ÐµÐ½Ð½Ñ 123',
+          currency: 'UAH',
           expectedAmountMinor: 1000,
+          items: [{ name: 'Hat', quantity: 1, unitPriceMinor: -5 }],
         }),
       'MONO_INVALID_SNAPSHOT'
     );
   });
 
-  it('throws for unsafe integer amounts', () => {
-    const tooLarge = Number.MAX_SAFE_INTEGER + 1;
+  it('throws for non-integer unit price', () => {
     expectCode(
       () =>
-        buildMonoMerchantPaymInfoFromSnapshot({
+        buildMonoMerchantPaymInfo({
           reference: 'attempt-1',
-          order: {
-            id: 'order-1',
-            currency: 'UAH',
-            totalAmountMinor: tooLarge,
-          },
-          items: [
-            {
-              productId: 'prod-1',
-              title: 'Hat',
-              quantity: 1,
-              unitPriceMinor: tooLarge,
-              lineTotalMinor: tooLarge,
-            },
-          ],
-          expectedAmountMinor: tooLarge,
+          destination: 'ÐžÐ¿Ð»Ð°Ñ‚Ð° Ð·Ð°Ð¼Ð¾Ð²Ð»ÐµÐ½Ð½Ñ 123',
+          currency: 'UAH',
+          expectedAmountMinor: 1000,
+          items: [{ name: 'Hat', quantity: 1, unitPriceMinor: 10.5 }],
+        }),
+      'MONO_INVALID_SNAPSHOT'
+    );
+  });
+
+  it('throws for non-integer expected amount', () => {
+    expectCode(
+      () =>
+        buildMonoMerchantPaymInfo({
+          reference: 'attempt-1',
+          destination: 'ÐžÐ¿Ð»Ð°Ñ‚Ð° Ð·Ð°Ð¼Ð¾Ð²Ð»ÐµÐ½Ð½Ñ 123',
+          currency: 'UAH',
+          expectedAmountMinor: 1000.5,
+          items: [{ name: 'Hat', quantity: 1, unitPriceMinor: 1000 }],
+        }),
+      'MONO_INVALID_SNAPSHOT'
+    );
+  });
+
+  it('throws for empty reference', () => {
+    expectCode(
+      () =>
+        buildMonoMerchantPaymInfo({
+          reference: '   ',
+          destination: 'ÐžÐ¿Ð»Ð°Ñ‚Ð° Ð·Ð°Ð¼Ð¾Ð²Ð»ÐµÐ½Ð½Ñ 123',
+          currency: 'UAH',
+          expectedAmountMinor: 1000,
+          items: [{ name: 'Hat', quantity: 1, unitPriceMinor: 1000 }],
         }),
       'MONO_INVALID_SNAPSHOT'
     );
