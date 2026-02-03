@@ -3,8 +3,8 @@
 import Image from 'next/image';
 
 import { TabsTrigger } from '@/components/ui/tabs';
-import { cn } from '@/lib/utils';
 import type { CategoryTabStyle } from '@/data/categoryStyles';
+import { cn } from '@/lib/utils';
 
 type CategoryTabButtonProps = {
   value: string;
@@ -23,8 +23,8 @@ export function CategoryTabButton({
     <TabsTrigger
       value={value}
       className={cn(
-        'group relative h-full min-w-[96px] !flex !w-fit !flex-none !shrink-0 !items-center !justify-start gap-2 overflow-hidden rounded-xl border border-black/5 bg-white/90 px-4 py-3 text-left text-xs font-semibold text-black shadow-sm transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-lg dark:border-white/20 dark:bg-neutral-900/80 dark:text-white',
-        'data-[state=active]:-translate-y-0.5 data-[state=active]:shadow-lg data-[state=active]:border-2 dark:data-[state=active]:border-2',
+        'group relative !flex h-full !w-fit min-w-[96px] !flex-none !shrink-0 !items-center !justify-start gap-2 overflow-hidden rounded-xl border border-black/5 bg-white/90 px-4 py-3 text-left text-xs font-semibold text-black shadow-sm transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-lg dark:border-white/20 dark:bg-neutral-900/80 dark:text-white',
+        'data-[state=active]:-translate-y-0.5 data-[state=active]:border-2 data-[state=active]:shadow-lg dark:data-[state=active]:border-2',
         style.color
       )}
     >
@@ -44,7 +44,7 @@ export function CategoryTabButton({
       <span className="whitespace-nowrap">{label}</span>
       <span
         className={cn(
-          'pointer-events-none absolute right-0 top-1/2 h-[120%] w-[55%] -translate-y-1/2 rounded-full blur-[24px] opacity-0 transition-opacity duration-500 group-hover:opacity-30',
+          'pointer-events-none absolute top-1/2 right-0 h-[120%] w-[55%] -translate-y-1/2 rounded-full opacity-0 blur-[24px] transition-opacity duration-500 group-hover:opacity-30',
           isActive && 'opacity-30',
           style.glow
         )}

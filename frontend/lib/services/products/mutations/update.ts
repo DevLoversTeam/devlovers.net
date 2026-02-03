@@ -1,26 +1,27 @@
 import { eq, sql } from 'drizzle-orm';
+
+import { db } from '@/db';
+import { productPrices,products } from '@/db/schema';
 import {
   destroyProductImage,
   uploadProductImageFromFile,
 } from '@/lib/cloudinary';
-import { db } from '@/db';
-import { products, productPrices } from '@/db/schema';
-import { logError } from '@/lib/logging';
-import { toDbMoney } from '@/lib/shop/money';
-import type { CurrencyCode } from '@/lib/shop/currency';
-import type { DbProduct, ProductUpdateInput } from '@/lib/types/shop';
-import { SlugConflictError } from '../../errors';
 import { ProductNotFoundError } from '@/lib/errors/products';
-import { mapRowToProduct } from '../mapping';
+import { logError } from '@/lib/logging';
+import type { CurrencyCode } from '@/lib/shop/currency';
+import { toDbMoney } from '@/lib/shop/money';
+import type { DbProduct, ProductUpdateInput } from '@/lib/types/shop';
 
-import { normalizeSlug } from '../slug';
+import { SlugConflictError } from '../../errors';
+import { mapRowToProduct } from '../mapping';
 import {
-  assertMoneyMinorInt,
   assertMergedPricesPolicy,
+  assertMoneyMinorInt,
   enforceSaleBadgeRequiresOriginal,
   normalizePricesFromInput,
   validatePriceRows,
 } from '../prices';
+import { normalizeSlug } from '../slug';
 import type { NormalizedPriceRow, ProductsTable } from '../types';
 
 export async function updateProduct(

@@ -1,23 +1,24 @@
-import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
-import { db } from "@/db";
-import {
-  quizAttempts,
-  quizAttemptAnswers,
-  quizQuestions,
-  quizAnswers,
-} from "@/db/schema/quiz";
-import { awardQuizPoints, calculateQuizPoints } from "@/db/queries/points";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray } from 'drizzle-orm';
+import { NextResponse } from 'next/server';
 
-export const runtime = "nodejs";
+import { db } from '@/db';
+import { awardQuizPoints, calculateQuizPoints } from '@/db/queries/points';
+import {
+  quizAnswers,
+  quizAttemptAnswers,
+  quizAttempts,
+  quizQuestions,
+} from '@/db/schema/quiz';
+import { getCurrentUser } from '@/lib/auth';
+
+export const runtime = 'nodejs';
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
 
   if (!body) {
     return NextResponse.json(
-      { success: false, error: "Invalid input" },
+      { success: false, error: 'Invalid input' },
       { status: 400 }
     );
   }
@@ -26,7 +27,7 @@ export async function POST(req: Request) {
 
   if (!quizId || !Array.isArray(answers) || answers.length === 0) {
     return NextResponse.json(
-      { success: false, error: "Invalid input" },
+      { success: false, error: 'Invalid input' },
       { status: 400 }
     );
   }
@@ -34,7 +35,7 @@ export async function POST(req: Request) {
   const session = await getCurrentUser();
   if (!session) {
     return NextResponse.json(
-      { success: false, error: "Unauthorized" },
+      { success: false, error: 'Unauthorized' },
       { status: 401 }
     );
   }
@@ -48,14 +49,14 @@ export async function POST(req: Request) {
 
   if (questionRows.length === 0) {
     return NextResponse.json(
-      { success: false, error: "Quiz not found" },
+      { success: false, error: 'Quiz not found' },
       { status: 404 }
     );
   }
 
   if (answers.length !== questionRows.length) {
     return NextResponse.json(
-      { success: false, error: "Invalid input: answers count mismatch" },
+      { success: false, error: 'Invalid input: answers count mismatch' },
       { status: 400 }
     );
   }
@@ -67,21 +68,21 @@ export async function POST(req: Request) {
   for (const answer of answers) {
     if (!answer?.questionId || !answer?.selectedAnswerId) {
       return NextResponse.json(
-        { success: false, error: "Invalid answer payload" },
+        { success: false, error: 'Invalid answer payload' },
         { status: 400 }
       );
     }
 
     if (!questionIdSet.has(answer.questionId)) {
       return NextResponse.json(
-        { success: false, error: "Invalid question in answers" },
+        { success: false, error: 'Invalid question in answers' },
         { status: 400 }
       );
     }
 
     if (seenQuestionIds.has(answer.questionId)) {
       return NextResponse.json(
-        { success: false, error: "Duplicate answer for question" },
+        { success: false, error: 'Duplicate answer for question' },
         { status: 400 }
       );
     }
@@ -101,7 +102,7 @@ export async function POST(req: Request) {
 
   if (answerRows.length !== answerIds.length) {
     return NextResponse.json(
-      { success: false, error: "Invalid answer selection" },
+      { success: false, error: 'Invalid answer selection' },
       { status: 400 }
     );
   }
@@ -116,7 +117,7 @@ export async function POST(req: Request) {
     const record = answerById.get(answer.selectedAnswerId);
     if (!record || record.quizQuestionId !== answer.questionId) {
       return NextResponse.json(
-        { success: false, error: "Answer does not match question" },
+        { success: false, error: 'Answer does not match question' },
         { status: 400 }
       );
     }
@@ -124,7 +125,7 @@ export async function POST(req: Request) {
     if (record.isCorrect) correctAnswersCount++;
 
     attemptAnswers.push({
-      attemptId: "",
+      attemptId: '',
       quizQuestionId: answer.questionId,
       selectedAnswerId: answer.selectedAnswerId,
       isCorrect: record.isCorrect,
@@ -187,9 +188,9 @@ export async function POST(req: Request) {
       pointsAwarded,
     });
   } catch (error) {
-    console.error("Failed to save guest quiz result:", error);
+    console.error('Failed to save guest quiz result:', error);
     return NextResponse.json(
-      { success: false, error: "Failed to save result" },
+      { success: false, error: 'Failed to save result' },
       { status: 500 }
     );
   }

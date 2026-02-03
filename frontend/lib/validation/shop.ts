@@ -1,4 +1,5 @@
 import { z } from 'zod';
+
 import {
   CATALOG_PAGE_SIZE,
   CATEGORIES,
@@ -12,7 +13,7 @@ import {
   paymentProviderValues,
   paymentStatusValues,
 } from '@/lib/shop/payments';
-export type { PaymentStatus, PaymentProvider } from '@/lib/shop/payments';
+export type { PaymentProvider,PaymentStatus } from '@/lib/shop/payments';
 
 export const MAX_QUANTITY_PER_LINE = 20;
 

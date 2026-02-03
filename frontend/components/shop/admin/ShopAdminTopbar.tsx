@@ -1,11 +1,12 @@
-import { Link } from '@/i18n/routing';
 import { getTranslations } from 'next-intl/server';
+
+import { Link } from '@/i18n/routing';
 
 export async function ShopAdminTopbar() {
   const t = await getTranslations('shop.admin.topbar');
 
   return (
-    <header className="border-b border-border bg-background">
+    <header className="border-border bg-background border-b">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <nav
           aria-label={t('label')}
@@ -15,7 +16,7 @@ export async function ShopAdminTopbar() {
             <li>
               <Link
                 href="/shop/admin"
-                className="text-sm font-semibold text-foreground hover:underline"
+                className="text-foreground text-sm font-semibold hover:underline"
               >
                 {t('admin')}
               </Link>
@@ -28,7 +29,7 @@ export async function ShopAdminTopbar() {
             <li>
               <Link
                 href="/shop/admin/products"
-                className="text-sm font-medium text-muted-foreground hover:text-foreground"
+                className="text-muted-foreground hover:text-foreground text-sm font-medium"
               >
                 {t('products')}
               </Link>
@@ -37,7 +38,7 @@ export async function ShopAdminTopbar() {
             <li>
               <Link
                 href="/shop/admin/orders"
-                className="text-sm font-medium text-muted-foreground hover:text-foreground"
+                className="text-muted-foreground hover:text-foreground text-sm font-medium"
               >
                 {t('orders')}
               </Link>
@@ -47,7 +48,7 @@ export async function ShopAdminTopbar() {
           <div className="shrink-0 whitespace-nowrap">
             <Link
               href="/shop"
-              className="inline-flex items-center rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+              className="border-border text-foreground hover:bg-secondary inline-flex items-center rounded-md border px-3 py-1.5 text-sm font-medium transition-colors"
             >
               {t('backToShop')}
             </Link>

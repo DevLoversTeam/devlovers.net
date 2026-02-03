@@ -1,15 +1,16 @@
 import {
-  describe,
-  it,
-  expect,
-  vi,
-  beforeEach,
-  beforeAll,
   afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
 } from 'vitest';
-import { makeCheckoutReq } from '@/lib/tests/helpers/makeCheckoutReq';
+
 import { InvalidPayloadError } from '@/lib/services/errors';
 import { ensureStripePaymentIntentForOrder } from '@/lib/services/orders/payment-attempts';
+import { makeCheckoutReq } from '@/lib/tests/helpers/makeCheckoutReq';
 
 vi.mock('@/lib/env/stripe', () => ({
   getStripeEnv: () => ({
@@ -63,8 +64,8 @@ vi.mock('@/lib/services/orders/payment-attempts', async () => {
 import { POST } from '@/app/api/shop/checkout/route';
 import {
   createOrderWithItems,
-  setOrderPaymentIntent,
   restockOrder,
+  setOrderPaymentIntent,
 } from '@/lib/services/orders';
 
 type MockedFn = ReturnType<typeof vi.fn>;

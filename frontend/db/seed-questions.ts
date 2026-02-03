@@ -1,8 +1,10 @@
 import 'dotenv/config';
+
 import { eq } from 'drizzle-orm';
+
+import rawData from '../parse/questions.json';
 import { db } from './index';
 import { categories, questions, questionTranslations } from './schema';
-import rawData from '../parse/questions.json';
 
 type RawQuestion = {
   category: string;

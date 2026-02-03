@@ -1,6 +1,7 @@
-import { defineConfig } from 'vitest/config';
-import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { defineConfig } from 'vitest/config';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -13,7 +14,11 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
-    include: ['lib/tests/**/*.test.ts', 'components/tests/**/*.test.tsx', 'components/quiz/tests/**/*.test.tsx'],
+    include: [
+      'lib/tests/**/*.test.ts',
+      'components/tests/**/*.test.tsx',
+      'components/quiz/tests/**/*.test.tsx',
+    ],
     globals: true,
     setupFiles: ['./vitest.setup.ts'],
     coverage: {

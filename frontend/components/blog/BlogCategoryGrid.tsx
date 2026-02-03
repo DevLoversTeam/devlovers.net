@@ -1,8 +1,9 @@
 'use client';
 
 import { useCallback } from 'react';
-import BlogGrid from '@/components/blog/BlogGrid';
+
 import type { Author, Post } from '@/components/blog/BlogFilters';
+import BlogGrid from '@/components/blog/BlogGrid';
 import { useRouter } from '@/i18n/routing';
 
 export function BlogCategoryGrid({ posts }: { posts: Post[] }) {

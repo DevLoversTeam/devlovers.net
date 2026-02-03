@@ -33,7 +33,11 @@ export type NumberedListBlock = {
   children: ListEntry[];
 };
 
-export type ListItemChild = TextNode | CodeBlock | BulletListBlock | NumberedListBlock;
+export type ListItemChild =
+  | TextNode
+  | CodeBlock
+  | BulletListBlock
+  | NumberedListBlock;
 
 export type ListItemBlock = {
   type: 'listItem';

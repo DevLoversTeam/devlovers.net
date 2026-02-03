@@ -1,7 +1,7 @@
 'use client';
 
-import React from 'react';
 import { useSelectedLayoutSegments } from 'next/navigation';
+import React from 'react';
 
 import { UnifiedHeader } from '@/components/header/UnifiedHeader';
 import { CartProvider } from '@/components/shop/CartProvider';

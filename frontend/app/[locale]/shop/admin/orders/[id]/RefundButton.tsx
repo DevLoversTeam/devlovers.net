@@ -1,8 +1,8 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useId, useState, useTransition } from 'react';
 import { useTranslations } from 'next-intl';
+import { useId, useState, useTransition } from 'react';
 
 type Props = {
   orderId: string;
@@ -60,14 +60,14 @@ export function RefundButton({ orderId, disabled }: Props) {
         disabled={isDisabled}
         aria-busy={isPending}
         aria-describedby={error ? errorId : undefined}
-        className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
+        className="border-border text-foreground hover:bg-secondary rounded-md border px-3 py-1.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50"
         title={disabled ? t('onlyForPaid') : undefined}
       >
         {isPending ? t('refunding') : t('refund')}
       </button>
 
       {error ? (
-        <span id={errorId} role="alert" className="text-xs text-destructive">
+        <span id={errorId} role="alert" className="text-destructive text-xs">
           {error}
         </span>
       ) : null}

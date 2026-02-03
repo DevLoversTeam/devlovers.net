@@ -1,10 +1,11 @@
-import { describe, it, expect } from 'vitest';
-import { eq } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 
+import { eq } from 'drizzle-orm';
+import { describe, expect,it } from 'vitest';
+
 import { db } from '@/db';
-import { products, productPrices } from '@/db/schema';
 import { getPublicProductBySlug } from '@/db/queries/shop/products';
+import { productPrices,products } from '@/db/schema';
 
 function logTestCleanupFailed(meta: Record<string, unknown>, error: unknown) {
   console.error('[test cleanup failed]', {

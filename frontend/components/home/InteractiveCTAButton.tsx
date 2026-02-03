@@ -1,10 +1,11 @@
 'use client';
 
-import React from 'react';
-import { useTranslations } from 'next-intl';
-import { Link } from '@/i18n/routing';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence,motion } from 'framer-motion';
 import { Heart } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import React from 'react';
+
+import { Link } from '@/i18n/routing';
 
 export function InteractiveCTAButton() {
   const t = useTranslations('homepage');
@@ -47,20 +48,7 @@ export function InteractiveCTAButton() {
       href="/q&a"
       onMouseEnter={handleEnter}
       onMouseLeave={handleLeave}
-      className="
-        group relative inline-flex items-center justify-center overflow-visible rounded-2xl
-        px-8 sm:px-10 md:px-12 py-3 md:py-3.5 lg:py-4
-        text-xs md:text-sm font-semibold tracking-[0.25em] uppercase text-white
-        shadow-[0_18px_45px_rgba(30,94,255,0.35)]
-        dark:shadow-[0_22px_60px_rgba(255,45,85,0.5)]
-        hover:shadow-[0_22px_55px_rgba(30,94,255,0.45)]
-        dark:hover:shadow-[0_28px_70px_rgba(255,45,85,0.6)]
-        transition-shadow duration-500 ease-out
-        active:scale-95
-        active:brightness-110
-        active:shadow-xl
-        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2
-      "
+      className="group relative inline-flex items-center justify-center overflow-visible rounded-2xl px-8 py-3 text-xs font-semibold tracking-[0.25em] text-white uppercase shadow-[0_18px_45px_rgba(30,94,255,0.35)] transition-shadow duration-500 ease-out hover:shadow-[0_22px_55px_rgba(30,94,255,0.45)] focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2 focus-visible:outline-none active:scale-95 active:shadow-xl active:brightness-110 sm:px-10 md:px-12 md:py-3.5 md:text-sm lg:py-4 dark:shadow-[0_22px_60px_rgba(255,45,85,0.5)] dark:hover:shadow-[0_28px_70px_rgba(255,45,85,0.6)]"
     >
       {/* Базовий градієнт з анімацією */}
       <motion.span
@@ -88,7 +76,7 @@ export function InteractiveCTAButton() {
 
       {/* М'яка неонова підсвітка */}
       <motion.span
-        className="absolute inset-0 rounded-2xl pointer-events-none"
+        className="pointer-events-none absolute inset-0 rounded-2xl"
         initial={{ opacity: 0 }}
         animate={{
           opacity: isHovered ? [0.15, 0.25, 0.15] : 0,
@@ -112,7 +100,7 @@ export function InteractiveCTAButton() {
           particles.map(particle => (
             <motion.span
               key={particle.id}
-              className="absolute w-3 h-3 pointer-events-none"
+              className="pointer-events-none absolute h-3 w-3"
               style={{
                 left: '50%',
                 top: '50%',

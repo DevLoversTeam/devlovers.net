@@ -1,8 +1,9 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
-import { cn } from '@/lib/utils';
 import { Check, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+
+import { cn } from '@/lib/utils';
 
 interface Answer {
   questionId: string;
@@ -15,7 +16,10 @@ interface QuizProgressProps {
   answers: Answer[];
 }
 
-function getVisibleIndices(current: number, total: number): (number | 'ellipsis')[] {
+function getVisibleIndices(
+  current: number,
+  total: number
+): (number | 'ellipsis')[] {
   if (total <= 7) {
     return Array.from({ length: total }, (_, i) => i);
   }
@@ -65,7 +69,7 @@ export function QuizProgress({ current, total, answers }: QuizProgressProps) {
             return (
               <span
                 key={`ellipsis-${idx}`}
-                className="px-2 text-gray-400 dark:text-gray-500 text-sm"
+                className="px-2 text-sm text-gray-400 dark:text-gray-500"
               >
                 ...
               </span>
@@ -82,34 +86,48 @@ export function QuizProgress({ current, total, answers }: QuizProgressProps) {
             <div
               key={index}
               className={cn(
-                'relative flex items-center justify-center w-9 h-9 rounded-full transition-all border text-sm font-medium',
-                isCurrent && !isAnswered && 'border-blue-500 bg-blue-500/20 dark:bg-blue-500/20',
-                isAnswered && isCorrect && 'border-green-500 bg-green-500/20 dark:bg-green-500/20',
-                isAnswered && !isCorrect && 'border-red-500 bg-red-500/20 dark:bg-red-500/20',
-                !isAnswered && !isCurrent && 'border-gray-300 dark:border-gray-600 bg-white/90 dark:bg-neutral-900/80'
+                'relative flex h-9 w-9 items-center justify-center rounded-full border text-sm font-medium transition-all',
+                isCurrent &&
+                  !isAnswered &&
+                  'border-blue-500 bg-blue-500/20 dark:bg-blue-500/20',
+                isAnswered &&
+                  isCorrect &&
+                  'border-green-500 bg-green-500/20 dark:bg-green-500/20',
+                isAnswered &&
+                  !isCorrect &&
+                  'border-red-500 bg-red-500/20 dark:bg-red-500/20',
+                !isAnswered &&
+                  !isCurrent &&
+                  'border-gray-300 bg-white/90 dark:border-gray-600 dark:bg-neutral-900/80'
               )}
             >
               {isAnswered ? (
-                <span className="text-white font-bold">
-                  {isCorrect ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
+                <span className="font-bold text-white">
+                  {isCorrect ? (
+                    <Check className="h-3 w-3" />
+                  ) : (
+                    <X className="h-3 w-3" />
+                  )}
                 </span>
               ) : (
                 <span
                   className={cn(
-                    isCurrent ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400'
+                    isCurrent
+                      ? 'text-blue-600 dark:text-blue-400'
+                      : 'text-gray-400'
                   )}
                 >
                   {index + 1}
                 </span>
               )}
               {isCurrent && (
-                <div 
+                <div
                   className={cn(
-                    "absolute inset-0 rounded-full border-1 animate-pulse",
-                    !isAnswered && "border-blue-500",
-                    isAnswered && isCorrect && "border-green-500",
-                    isAnswered && !isCorrect && "border-red-500"
-                  )} 
+                    'absolute inset-0 animate-pulse rounded-full border-1',
+                    !isAnswered && 'border-blue-500',
+                    isAnswered && isCorrect && 'border-green-500',
+                    isAnswered && !isCorrect && 'border-red-500'
+                  )}
                 />
               )}
             </div>

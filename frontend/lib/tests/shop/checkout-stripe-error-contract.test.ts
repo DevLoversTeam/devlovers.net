@@ -1,12 +1,13 @@
 import {
-  describe,
-  it,
-  expect,
-  vi,
-  beforeEach,
-  beforeAll,
   afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
 } from 'vitest';
+
 import { makeCheckoutReq } from '@/lib/tests/helpers/makeCheckoutReq';
 
 vi.mock('@/lib/env/stripe', () => ({

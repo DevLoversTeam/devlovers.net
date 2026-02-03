@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import {
   createContext,
   useCallback,
@@ -8,13 +9,12 @@ import {
   useRef,
   useState,
 } from 'react';
-import type { ReactNode } from 'react';
 
 import {
+  capQuantityByStock,
   type Cart,
   type CartClientItem,
   type CartRehydrateError,
-  capQuantityByStock,
   clearStoredCart,
   createCartItemKey,
   emptyCart,
@@ -22,8 +22,8 @@ import {
   persistCartItems,
   rehydrateCart,
 } from '@/lib/cart';
-import type { ShopProduct } from '@/lib/shop/data';
 import { logWarn } from '@/lib/logging';
+import type { ShopProduct } from '@/lib/shop/data';
 
 interface CartContextType {
   cart: Cart;

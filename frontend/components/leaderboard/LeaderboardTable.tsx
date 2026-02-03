@@ -1,10 +1,12 @@
 'use client';
 
-import { TrendingUp, Trophy, Medal } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Medal,TrendingUp, Trophy } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+
 import { cn } from '@/lib/utils';
-import { User, CurrentUser } from './types';
+
+import { CurrentUser,User } from './types';
 
 interface LeaderboardTableProps {
   users: User[];
@@ -31,21 +33,21 @@ export function LeaderboardTable({
   const isUserInTop = currentUserRank > 0 && currentUserRank <= 10;
 
   return (
-    <div className="w-full flex flex-col gap-4">
-      <div className="bg-white dark:bg-white/5 backdrop-blur-md rounded-2xl border border-slate-200 dark:border-white/10 overflow-hidden shadow-lg dark:shadow-2xl">
+    <div className="flex w-full flex-col gap-4">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg backdrop-blur-md dark:border-white/10 dark:bg-white/5 dark:shadow-2xl">
         <div className="w-full">
-          <table className="w-full text-left border-separate border-spacing-0 table-fixed">
+          <table className="w-full table-fixed border-separate border-spacing-0 text-left">
             <caption className="sr-only">{t('tableCaption')}</caption>
 
             <thead className="bg-slate-50/80 dark:bg-white/5">
               <tr>
-                <th className="px-2 sm:px-6 py-3 sm:py-5 text-center text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest w-[15%] sm:w-[12%] border-b border-slate-200 dark:border-white/10">
+                <th className="w-[15%] border-b border-slate-200 px-2 py-3 text-center text-[10px] font-bold tracking-widest text-slate-500 uppercase sm:w-[12%] sm:px-6 sm:py-5 sm:text-xs dark:border-white/10 dark:text-slate-400">
                   {t('rank')}
                 </th>
-                <th className="px-2 sm:px-6 py-3 sm:py-5 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest w-auto border-b border-slate-200 dark:border-white/10">
+                <th className="w-auto border-b border-slate-200 px-2 py-3 text-xs font-bold tracking-widest text-slate-500 uppercase sm:px-6 sm:py-5 dark:border-white/10 dark:text-slate-400">
                   {t('user')}
                 </th>
-                <th className="pl-2 pr-4 sm:px-6 py-3 sm:py-5 text-right text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest w-[25%] sm:w-[20%] border-b border-slate-200 dark:border-white/10">
+                <th className="w-[25%] border-b border-slate-200 py-3 pr-4 pl-2 text-right text-xs font-bold tracking-widest text-slate-500 uppercase sm:w-[20%] sm:px-6 sm:py-5 dark:border-white/10 dark:text-slate-400">
                   {t('score')}
                 </th>
               </tr>
@@ -73,13 +75,13 @@ export function LeaderboardTable({
 
       {!isUserInTop && matchedUser && (
         <>
-          <div className="text-center text-slate-400 dark:text-slate-600 text-xl font-bold tracking-widest select-none py-2">
+          <div className="py-2 text-center text-xl font-bold tracking-widest text-slate-400 select-none dark:text-slate-600">
             • • •
           </div>
 
-          <div className="bg-white dark:bg-white/5 backdrop-blur-md rounded-2xl border-2 border-[var(--accent-primary)] overflow-hidden shadow-[0_0_20px_var(--accent-primary)]">
+          <div className="overflow-hidden rounded-2xl border-2 border-[var(--accent-primary)] bg-white shadow-[0_0_20px_var(--accent-primary)] backdrop-blur-md dark:bg-white/5">
             <div className="w-full">
-              <table className="w-full text-left border-separate border-spacing-0 table-fixed">
+              <table className="w-full table-fixed border-separate border-spacing-0 text-left">
                 <tbody>
                   <TableRow user={matchedUser} isCurrentUser={true} t={t} />
                 </tbody>
@@ -122,38 +124,38 @@ function TableRow({
       )}
     >
       <td className={cn(cellClass, leftBorderClass)}>
-        <div className="flex justify-center items-center">
+        <div className="flex items-center justify-center">
           <RankBadge rank={user.rank} />
         </div>
       </td>
 
       <td className={cellClass}>
-        <div className="flex items-center gap-2 sm:gap-4 overflow-hidden">
+        <div className="flex items-center gap-2 overflow-hidden sm:gap-4">
           <div
             className={cn(
-              'w-8 h-8 sm:w-10 sm:h-10 rounded-full border flex-shrink-0 flex items-center justify-center text-xs sm:text-sm font-bold transition-all duration-300',
+              'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border text-xs font-bold transition-all duration-300 sm:h-10 sm:w-10 sm:text-sm',
               isCurrentUser
-                ? 'bg-[var(--accent-primary)] border-[var(--accent-primary)] text-white shadow-[0_0_1px_var(--accent-primary)]'
-                : 'bg-slate-100 border-slate-200 text-slate-600 dark:bg-gradient-to-br dark:from-slate-800 dark:to-slate-900 dark:border-white/10 dark:text-slate-300 group-hover:border-[var(--accent-primary)] group-hover:text-[var(--accent-primary)]'
+                ? 'border-[var(--accent-primary)] bg-[var(--accent-primary)] text-white shadow-[0_0_1px_var(--accent-primary)]'
+                : 'border-slate-200 bg-slate-100 text-slate-600 group-hover:border-[var(--accent-primary)] group-hover:text-[var(--accent-primary)] dark:border-white/10 dark:bg-gradient-to-br dark:from-slate-800 dark:to-slate-900 dark:text-slate-300'
             )}
             aria-hidden="true"
           >
             {user.username.slice(0, 1).toUpperCase()}
           </div>
 
-          <div className="flex flex-col min-w-0">
+          <div className="flex min-w-0 flex-col">
             <span
               className={cn(
-                'font-medium text-sm transition-colors flex items-center gap-1 sm:gap-2',
+                'flex items-center gap-1 text-sm font-medium transition-colors sm:gap-2',
                 isCurrentUser
-                  ? 'text-[var(--accent-primary)] font-black text-sm sm:text-base'
-                  : 'text-slate-700 dark:text-slate-200 group-hover:text-[var(--accent-primary)] dark:group-hover:text-[var(--accent-primary)]'
+                  ? 'text-sm font-black text-[var(--accent-primary)] sm:text-base'
+                  : 'text-slate-700 group-hover:text-[var(--accent-primary)] dark:text-slate-200 dark:group-hover:text-[var(--accent-primary)]'
               )}
             >
               <span className="truncate">{user.username}</span>
 
               {isCurrentUser && (
-                <div className="relative flex-shrink-0 flex items-center justify-center w-5 h-5 sm:w-8 sm:h-8 ml-1">
+                <div className="relative ml-1 flex h-5 w-5 flex-shrink-0 items-center justify-center sm:h-8 sm:w-8">
                   <motion.div
                     animate={{ scale: [1, 1.2, 1] }}
                     transition={{
@@ -166,7 +168,7 @@ function TableRow({
                     <svg
                       viewBox="0 0 24 24"
                       fill="currentColor"
-                      className="w-full h-full drop-shadow-md"
+                      className="h-full w-full drop-shadow-md"
                     >
                       <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
                     </svg>
@@ -176,8 +178,8 @@ function TableRow({
             </span>
 
             {user.change > 0 && (
-              <span className="hidden sm:flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wide opacity-70 group-hover:opacity-100 transition-opacity">
-                <TrendingUp className="w-3 h-3" aria-hidden="true" />
+              <span className="hidden items-center gap-1 text-[10px] font-bold tracking-wide text-emerald-600 uppercase opacity-70 transition-opacity group-hover:opacity-100 sm:flex dark:text-emerald-400">
+                <TrendingUp className="h-3 w-3" aria-hidden="true" />
                 {t('rising')}
               </span>
             )}
@@ -186,14 +188,14 @@ function TableRow({
       </td>
 
       <td
-        className={cn(cellClass, 'text-right pr-4 sm:pr-6', rightBorderClass)}
+        className={cn(cellClass, 'pr-4 text-right sm:pr-6', rightBorderClass)}
       >
         <span
           className={cn(
-            'font-mono font-bold inline-block transition-all',
+            'inline-block font-mono font-bold transition-all',
             isCurrentUser
-              ? 'text-[var(--accent-primary)] scale-110 drop-shadow-sm text-sm sm:text-lg'
-              : 'text-slate-700 dark:text-slate-300 group-hover:scale-105 text-sm sm:text-base'
+              ? 'scale-110 text-sm text-[var(--accent-primary)] drop-shadow-sm sm:text-lg'
+              : 'text-sm text-slate-700 group-hover:scale-105 sm:text-base dark:text-slate-300'
           )}
         >
           {user.points.toLocaleString()}
@@ -206,37 +208,37 @@ function TableRow({
 function RankBadge({ rank }: { rank: number }) {
   if (rank === 1) {
     return (
-      <div className="relative w-8 h-6 sm:w-14 sm:h-8 flex items-center justify-center gap-0.5 sm:gap-1.5 rounded-md sm:rounded-lg bg-yellow-100 dark:bg-yellow-500/20 border border-yellow-500/50 shadow-[0_0_10px_rgba(234,179,8,0.3)]">
-        <span className="font-black text-xs sm:text-base text-yellow-700 dark:text-yellow-400">
+      <div className="relative flex h-6 w-8 items-center justify-center gap-0.5 rounded-md border border-yellow-500/50 bg-yellow-100 shadow-[0_0_10px_rgba(234,179,8,0.3)] sm:h-8 sm:w-14 sm:gap-1.5 sm:rounded-lg dark:bg-yellow-500/20">
+        <span className="text-xs font-black text-yellow-700 sm:text-base dark:text-yellow-400">
           1
         </span>
-        <Trophy className="w-2.5 h-2.5 sm:w-4 sm:h-4 text-yellow-600 dark:text-yellow-400" />
-        <div className="absolute -top-1 -right-1 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-yellow-400 rounded-full animate-pulse" />
+        <Trophy className="h-2.5 w-2.5 text-yellow-600 sm:h-4 sm:w-4 dark:text-yellow-400" />
+        <div className="absolute -top-1 -right-1 h-1.5 w-1.5 animate-pulse rounded-full bg-yellow-400 sm:h-2 sm:w-2" />
       </div>
     );
   }
   if (rank === 2) {
     return (
-      <div className="w-8 h-6 sm:w-14 sm:h-8 flex items-center justify-center gap-0.5 sm:gap-1.5 rounded-md sm:rounded-lg bg-slate-100 dark:bg-slate-400/10 border border-slate-300 dark:border-slate-400/30">
-        <span className="font-black text-xs sm:text-base text-slate-600 dark:text-slate-300">
+      <div className="flex h-6 w-8 items-center justify-center gap-0.5 rounded-md border border-slate-300 bg-slate-100 sm:h-8 sm:w-14 sm:gap-1.5 sm:rounded-lg dark:border-slate-400/30 dark:bg-slate-400/10">
+        <span className="text-xs font-black text-slate-600 sm:text-base dark:text-slate-300">
           2
         </span>
-        <Medal className="w-2.5 h-2.5 sm:w-4 sm:h-4 text-slate-500 dark:text-slate-300" />
+        <Medal className="h-2.5 w-2.5 text-slate-500 sm:h-4 sm:w-4 dark:text-slate-300" />
       </div>
     );
   }
   if (rank === 3) {
     return (
-      <div className="w-8 h-6 sm:w-14 sm:h-8 flex items-center justify-center gap-0.5 sm:gap-1.5 rounded-md sm:rounded-lg bg-orange-50 dark:bg-orange-500/10 border border-orange-300 dark:border-orange-500/30">
-        <span className="font-black text-xs sm:text-base text-orange-700 dark:text-orange-400">
+      <div className="flex h-6 w-8 items-center justify-center gap-0.5 rounded-md border border-orange-300 bg-orange-50 sm:h-8 sm:w-14 sm:gap-1.5 sm:rounded-lg dark:border-orange-500/30 dark:bg-orange-500/10">
+        <span className="text-xs font-black text-orange-700 sm:text-base dark:text-orange-400">
           3
         </span>
-        <Medal className="w-2.5 h-2.5 sm:w-4 sm:h-4 text-orange-600 dark:text-orange-400" />
+        <Medal className="h-2.5 w-2.5 text-orange-600 sm:h-4 sm:w-4 dark:text-orange-400" />
       </div>
     );
   }
   return (
-    <span className="flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-slate-100 dark:bg-white/5 font-bold text-xs sm:text-sm text-slate-500 dark:text-slate-500">
+    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-500 sm:h-8 sm:w-8 sm:text-sm dark:bg-white/5 dark:text-slate-500">
       {rank}
     </span>
   );

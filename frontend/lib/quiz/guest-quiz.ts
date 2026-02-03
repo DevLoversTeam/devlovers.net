@@ -28,19 +28,19 @@ export function getPendingQuizResult(): PendingQuizResult | null {
   if (typeof window === 'undefined') {
     return null;
   }
-  
+
   const stored = localStorage.getItem(STORAGE_KEY);
   if (!stored) return null;
-  
+
   try {
     const result: PendingQuizResult = JSON.parse(stored);
     const expiryTime = result.savedAt + EXPIRY_HOURS * 60 * 60 * 1000;
-    
+
     if (Date.now() > expiryTime) {
       clearPendingQuizResult();
       return null;
     }
-    
+
     return result;
   } catch {
     clearPendingQuizResult();

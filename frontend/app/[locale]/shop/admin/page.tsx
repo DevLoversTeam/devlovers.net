@@ -1,9 +1,9 @@
-import { Link } from '@/i18n/routing';
+import { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
 import { ShopAdminTopbar } from '@/components/shop/admin/ShopAdminTopbar';
+import { Link } from '@/i18n/routing';
 import { guardShopAdminPage } from '@/lib/auth/guard-shop-admin-page';
-import { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Shop Admin | DevLovers',
@@ -27,11 +27,11 @@ export default async function ShopAdminHomePage() {
         <header>
           <h1
             id="shop-admin-title"
-            className="text-2xl font-bold text-foreground"
+            className="text-foreground text-2xl font-bold"
           >
             {t('title')}
           </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className="text-muted-foreground mt-2 text-sm">
             {t('description')}
           </p>
         </header>
@@ -41,12 +41,12 @@ export default async function ShopAdminHomePage() {
             <li>
               <Link
                 href="/shop/admin/products"
-                className="block rounded-lg border border-border p-4 transition-colors hover:bg-muted/50"
+                className="border-border hover:bg-muted/50 block rounded-lg border p-4 transition-colors"
               >
-                <div className="text-base font-semibold text-foreground">
+                <div className="text-foreground text-base font-semibold">
                   {t('productsSection.title')}
                 </div>
-                <div className="mt-1 text-sm text-muted-foreground">
+                <div className="text-muted-foreground mt-1 text-sm">
                   {t('productsSection.description')}
                 </div>
               </Link>
@@ -55,12 +55,12 @@ export default async function ShopAdminHomePage() {
             <li>
               <Link
                 href="/shop/admin/orders"
-                className="block rounded-lg border border-border p-4 transition-colors hover:bg-muted/50"
+                className="border-border hover:bg-muted/50 block rounded-lg border p-4 transition-colors"
               >
-                <div className="text-base font-semibold text-foreground">
+                <div className="text-foreground text-base font-semibold">
                   {t('ordersSection.title')}
                 </div>
-                <div className="mt-1 text-sm text-muted-foreground">
+                <div className="text-muted-foreground mt-1 text-sm">
                   {t('ordersSection.description')}
                 </div>
               </Link>

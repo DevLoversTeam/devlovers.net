@@ -1,6 +1,7 @@
-import { toCents } from '@/lib/shop/money';
-import { currencyValues } from '@/lib/shop/currency';
 import type { CurrencyCode } from '@/lib/shop/currency';
+import { currencyValues } from '@/lib/shop/currency';
+import { toCents } from '@/lib/shop/money';
+
 import { InvalidPayloadError, PriceConfigError } from '../errors';
 import type { NormalizedPriceRow } from './types';
 

@@ -1,15 +1,15 @@
-import { Pool } from 'pg';
 import { neon } from '@neondatabase/serverless';
-import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres';
-import { drizzle as drizzleNeon } from 'drizzle-orm/neon-http';
-import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
 import * as dotenv from 'dotenv';
+import { drizzle as drizzleNeon } from 'drizzle-orm/neon-http';
+import { drizzle as drizzlePg } from 'drizzle-orm/node-postgres';
+import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
+import { Pool } from 'pg';
 
 import * as schema from './schema';
 
 dotenv.config();
 
-type AppDatabase = PgDatabase<PgQueryResultHKT, typeof schema>
+type AppDatabase = PgDatabase<PgQueryResultHKT, typeof schema>;
 
 const APP_ENV = process.env.APP_ENV ?? 'local';
 
@@ -19,9 +19,7 @@ if (APP_ENV === 'local') {
   const url = process.env.DATABASE_URL_LOCAL;
 
   if (!url) {
-    throw new Error(
-      '[db] APP_ENV=local requires DATABASE_URL_LOCAL to be set'
-    );
+    throw new Error('[db] APP_ENV=local requires DATABASE_URL_LOCAL to be set');
   }
 
   const pool = new Pool({
@@ -37,9 +35,7 @@ if (APP_ENV === 'local') {
   const url = process.env.DATABASE_URL;
 
   if (!url) {
-    throw new Error(
-      `[db] APP_ENV=${APP_ENV} requires DATABASE_URL to be set`
-    );
+    throw new Error(`[db] APP_ENV=${APP_ENV} requires DATABASE_URL to be set`);
   }
 
   const sql = neon(url);

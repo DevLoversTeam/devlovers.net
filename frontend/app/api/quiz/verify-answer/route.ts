@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+
 import { decryptAnswers } from '@/lib/quiz/quiz-crypto';
 
 interface VerifyRequest {

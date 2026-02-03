@@ -1,15 +1,16 @@
+import { relations } from 'drizzle-orm';
 import {
+  index,
+  integer,
+  jsonb,
   pgTable,
+  primaryKey,
+  text,
+  timestamp,
   uuid,
   varchar,
-  text,
-  integer,
-  timestamp,
-  primaryKey,
-  jsonb,
-  index,
 } from 'drizzle-orm/pg-core';
-import { relations } from 'drizzle-orm';
+
 import { categories } from './categories';
 
 export const questions = pgTable(

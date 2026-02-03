@@ -1,7 +1,7 @@
 'use client';
 
-import type { ReactNode, MouseEvent } from 'react';
 import { motion, useMotionTemplate, useMotionValue } from 'framer-motion';
+import type { MouseEvent,ReactNode } from 'react';
 
 import { cn } from '@/lib/utils';
 
@@ -33,7 +33,7 @@ export function DynamicGridBackground({
     >
       {showStaticGrid && (
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808020_1px,transparent_1px),linear-gradient(to_bottom,#80808020_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_80%_80%_at_50%_50%,#000_70%,transparent_100%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808020_1px,transparent_1px),linear-gradient(to_bottom,#80808020_1px,transparent_1px)] [mask-image:radial-gradient(ellipse_80%_80%_at_50%_50%,#000_70%,transparent_100%)] bg-[size:40px_40px]" />
         </div>
       )}
 
@@ -44,7 +44,7 @@ export function DynamicGridBackground({
           WebkitMaskImage: maskImage,
         }}
       >
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e5eff_1px,transparent_1px),linear-gradient(to_bottom,#1e5eff_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#ff2d55_1px,transparent_1px),linear-gradient(to_bottom,#ff2d55_1px,transparent_1px)] bg-[size:40px_40px] opacity-20 dark:opacity-30" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e5eff_1px,transparent_1px),linear-gradient(to_bottom,#1e5eff_1px,transparent_1px)] bg-[size:40px_40px] opacity-20 dark:bg-[linear-gradient(to_right,#ff2d55_1px,transparent_1px),linear-gradient(to_bottom,#ff2d55_1px,transparent_1px)] dark:opacity-30" />
       </motion.div>
 
       {children}

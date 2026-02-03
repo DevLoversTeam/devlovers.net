@@ -1,7 +1,8 @@
 'use client';
 
-import { Link } from '@/i18n/routing';
 import type { ComponentProps } from 'react';
+
+import { Link } from '@/i18n/routing';
 
 interface AnimatedNavLinkProps {
   href: string;
@@ -25,25 +26,16 @@ export function AnimatedNavLink({
       href={href}
       onClick={onClick}
       aria-current={ariaCurrent ?? (isActive ? 'page' : undefined)}
-      className={`
-        group relative px-3 py-2 text-sm font-medium
-        transition-all duration-300 ease-out
-        ${
-          isActive
-            ? '[color:var(--accent-primary)]'
-            : 'text-muted-foreground hover:[color:var(--accent-hover)]'
-        }
-        ${className}
-      `}
+      className={`group relative px-3 py-2 text-sm font-medium transition-all duration-300 ease-out ${
+        isActive
+          ? '[color:var(--accent-primary)]'
+          : 'text-muted-foreground hover:[color:var(--accent-hover)]'
+      } ${className} `}
     >
       {children}
 
       <span
-        className={`
-          absolute inset-x-0 -bottom-3 h-12
-          transition-opacity duration-300 ease-out
-          ${isActive ? 'opacity-50' : 'opacity-0 group-hover:opacity-40'}
-        `}
+        className={`absolute inset-x-0 -bottom-3 h-12 transition-opacity duration-300 ease-out ${isActive ? 'opacity-50' : 'opacity-0 group-hover:opacity-40'} `}
         style={{
           background: `radial-gradient(ellipse 80px 40px at center bottom, ${
             isActive ? 'var(--accent-primary)' : 'var(--accent-hover)'
@@ -55,11 +47,7 @@ export function AnimatedNavLink({
 
       {isActive && (
         <span
-          className="
-            absolute bottom-[-12px] left-1/2 -translate-x-1/2
-            opacity-100 scale-100
-            transition-all duration-300 ease-out
-          "
+          className="absolute bottom-[-12px] left-1/2 -translate-x-1/2 scale-100 opacity-100 transition-all duration-300 ease-out"
           style={{
             width: 0,
             height: 0,
@@ -74,11 +62,7 @@ export function AnimatedNavLink({
 
       {isActive ? (
         <span
-          className="
-            absolute bottom-[-15px] left-1/2 -translate-x-1/2
-            h-[2px] w-full opacity-100
-            transition-all duration-300 ease-out
-          "
+          className="absolute bottom-[-15px] left-1/2 h-[2px] w-full -translate-x-1/2 opacity-100 transition-all duration-300 ease-out"
           style={{
             background: `linear-gradient(90deg, 
               transparent 0%, 
@@ -90,12 +74,7 @@ export function AnimatedNavLink({
         />
       ) : (
         <span
-          className="
-            absolute bottom-[-15px] left-1/2 -translate-x-1/2
-            h-[3px] w-0
-            opacity-0 group-hover:opacity-100 group-hover:w-full
-            transition-all duration-300 ease-out
-          "
+          className="absolute bottom-[-15px] left-1/2 h-[3px] w-0 -translate-x-1/2 opacity-0 transition-all duration-300 ease-out group-hover:w-full group-hover:opacity-100"
           style={{
             background: `linear-gradient(90deg, 
               transparent 0%,

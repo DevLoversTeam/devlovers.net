@@ -118,7 +118,6 @@ CRITICAL JSON RULES:
 `;
 }
 
-
 export interface ExplanationResponse {
   uk: string;
   en: string;

@@ -1,11 +1,13 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+
 import type { Post } from '@/components/blog/BlogFilters';
 import BlogGrid from '@/components/blog/BlogGrid';
 
 vi.mock('next-intl', () => ({
-  useTranslations: () => (key: string) => (key === 'noPosts' ? 'Статей не знайдено' : key),
+  useTranslations: () => (key: string) =>
+    key === 'noPosts' ? 'Статей не знайдено' : key,
 }));
 
 vi.mock('@/components/blog/BlogCard', () => ({

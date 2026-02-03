@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, fireEvent } from '@testing-library/react';
+import { fireEvent,render } from '@testing-library/react';
+import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
 
 import SelectableText from '@/components/q&a/SelectableText';
 

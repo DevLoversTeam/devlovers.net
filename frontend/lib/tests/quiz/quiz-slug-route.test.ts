@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { NextRequest } from 'next/server';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/db/queries/quiz', () => ({
   getQuizBySlug: vi.fn(),
@@ -10,7 +10,9 @@ import { GET } from '@/app/api/quiz/[slug]/route';
 import { getQuizBySlug, getQuizQuestionsRandomized } from '@/db/queries/quiz';
 
 const getQuizBySlugMock = getQuizBySlug as ReturnType<typeof vi.fn>;
-const getQuizQuestionsRandomizedMock = getQuizQuestionsRandomized as ReturnType<typeof vi.fn>;
+const getQuizQuestionsRandomizedMock = getQuizQuestionsRandomized as ReturnType<
+  typeof vi.fn
+>;
 
 describe('GET /api/quiz/[slug]', () => {
   beforeEach(() => {
@@ -20,8 +22,12 @@ describe('GET /api/quiz/[slug]', () => {
   it('returns 404 when quiz not found', async () => {
     getQuizBySlugMock.mockResolvedValue(null);
 
-    const request = new NextRequest('http://localhost/api/quiz/react?locale=en');
-    const response = await GET(request, { params: Promise.resolve({ slug: 'react' }) });
+    const request = new NextRequest(
+      'http://localhost/api/quiz/react?locale=en'
+    );
+    const response = await GET(request, {
+      params: Promise.resolve({ slug: 'react' }),
+    });
 
     const data = await response.json();
 
@@ -47,13 +53,22 @@ describe('GET /api/quiz/[slug]', () => {
         questionText: 'Question 1',
         explanation: null,
         answers: [
-          { id: 'a1', displayOrder: 1, isCorrect: true, answerText: 'Answer 1' },
+          {
+            id: 'a1',
+            displayOrder: 1,
+            isCorrect: true,
+            answerText: 'Answer 1',
+          },
         ],
       },
     ]);
 
-    const request = new NextRequest('http://localhost/api/quiz/react?locale=en');
-    const response = await GET(request, { params: Promise.resolve({ slug: 'react' }) });
+    const request = new NextRequest(
+      'http://localhost/api/quiz/react?locale=en'
+    );
+    const response = await GET(request, {
+      params: Promise.resolve({ slug: 'react' }),
+    });
 
     const data = await response.json();
 
@@ -83,8 +98,12 @@ describe('GET /api/quiz/[slug]', () => {
   it('returns 500 on unexpected error', async () => {
     getQuizBySlugMock.mockRejectedValue(new Error('db error'));
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const request = new NextRequest('http://localhost/api/quiz/react?locale=en');
-    const response = await GET(request, { params: Promise.resolve({ slug: 'react' }) });
+    const request = new NextRequest(
+      'http://localhost/api/quiz/react?locale=en'
+    );
+    const response = await GET(request, {
+      params: Promise.resolve({ slug: 'react' }),
+    });
 
     const data = await response.json();
 

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+
 import { clearQuizSession } from '@/lib/quiz/quiz-session';
 import { getQuizReloadKey } from '@/lib/quiz/quiz-storage-keys';
 
@@ -9,14 +10,19 @@ type UseQuizGuardsParams = {
   resetViolations: () => void;
 };
 
-export function useQuizGuards({ quizId, status, onExit, resetViolations }: UseQuizGuardsParams): { markQuitting: () => void } {
+export function useQuizGuards({
+  quizId,
+  status,
+  onExit,
+  resetViolations,
+}: UseQuizGuardsParams): { markQuitting: () => void } {
   const isReloadingRef = useRef(false);
   const statusRef = useRef(status);
   const reloadKey = getQuizReloadKey(quizId);
   const isQuittingRef = useRef(false);
   const markQuitting = () => {
-  isQuittingRef.current = true;
-};
+    isQuittingRef.current = true;
+  };
 
   useEffect(() => {
     statusRef.current = status;
@@ -73,7 +79,11 @@ export function useQuizGuards({ quizId, status, onExit, resetViolations }: UseQu
       const link = target.closest('a');
       if (!link?.href) return;
 
-      if (link.href.includes(window.location.pathname.replace(/^\/(uk|en|pl)/, ''))) {
+      if (
+        link.href.includes(
+          window.location.pathname.replace(/^\/(uk|en|pl)/, '')
+        )
+      ) {
         return;
       }
 

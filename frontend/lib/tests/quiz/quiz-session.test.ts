@@ -1,11 +1,16 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import {
-  saveQuizSession,
-  loadQuizSession,
   clearQuizSession,
+  loadQuizSession,
+  saveQuizSession,
 } from '@/lib/quiz/quiz-session';
+
+import {
+  createMockQuizSession,
+  resetFactoryCounters,
+} from '../factories/quiz/quiz';
 import { installMockLocalStorage } from './setup';
-import { createMockQuizSession, resetFactoryCounters } from '../factories/quiz/quiz';
 
 describe('quiz-session', () => {
   beforeEach(() => {
@@ -71,12 +76,9 @@ describe('quiz-session', () => {
         savedAt: thirtyOneMinutesAgo,
         status: 'in_progress',
       });
-      
+
       // Directly set localStorage to bypass saveQuizSession's timestamp update
-      localStorage.setItem(
-        'quiz_session_quiz-123',
-        JSON.stringify(session)
-      );
+      localStorage.setItem('quiz_session_quiz-123', JSON.stringify(session));
 
       const loaded = loadQuizSession('quiz-123');
 
@@ -89,11 +91,8 @@ describe('quiz-session', () => {
         savedAt: twentyMinutesAgo,
         status: 'in_progress',
       });
-      
-      localStorage.setItem(
-        'quiz_session_quiz-123',
-        JSON.stringify(session)
-      );
+
+      localStorage.setItem('quiz_session_quiz-123', JSON.stringify(session));
 
       const loaded = loadQuizSession('quiz-123');
 
@@ -127,10 +126,7 @@ describe('quiz-session', () => {
     it('clears expired session from storage', () => {
       const thirtyOneMinutesAgo = Date.now() - 31 * 60 * 1000;
       const session = createMockQuizSession({ savedAt: thirtyOneMinutesAgo });
-      localStorage.setItem(
-        'quiz_session_quiz-123',
-        JSON.stringify(session)
-      );
+      localStorage.setItem('quiz_session_quiz-123', JSON.stringify(session));
 
       loadQuizSession('quiz-123');
 

@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { vi } from 'vitest';
 import { NextRequest } from 'next/server';
+import { afterEach,beforeEach, describe, expect, it } from 'vitest';
+import { vi } from 'vitest';
 
 const BASE_URL = 'http://localhost';
 

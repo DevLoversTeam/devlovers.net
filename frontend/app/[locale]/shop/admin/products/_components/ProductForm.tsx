@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { CATEGORIES, COLORS, PRODUCT_TYPES, SIZES } from '@/lib/config/catalog';
-import type { ProductAdminInput } from '@/lib/validation/shop';
 import { logError } from '@/lib/logging';
+import type { ProductAdminInput } from '@/lib/validation/shop';
 
 const localSlugify = (input: string): string => {
   return input
@@ -460,7 +460,7 @@ export function ProductForm({
       aria-labelledby={headingId}
     >
       <header>
-        <h1 id={headingId} className="text-2xl font-bold text-foreground">
+        <h1 id={headingId} className="text-foreground text-2xl font-bold">
           {mode === 'create' ? 'Create new product' : 'Edit product'}
         </h1>
       </header>
@@ -485,7 +485,7 @@ export function ProductForm({
         <section className="grid gap-4 sm:grid-cols-2" aria-label="Basic info">
           <div>
             <label
-              className="block text-sm font-medium text-foreground"
+              className="text-foreground block text-sm font-medium"
               htmlFor="title"
             >
               Title
@@ -493,7 +493,7 @@ export function ProductForm({
             <input
               id="title"
               name="title"
-              className="w-full rounded-md border border-border px-3 py-2 text-sm"
+              className="border-border w-full rounded-md border px-3 py-2 text-sm"
               type="text"
               value={title}
               onChange={event => setTitle(event.target.value)}
@@ -504,19 +504,19 @@ export function ProductForm({
           <div>
             <div className="flex items-center justify-between">
               <label
-                className="block text-sm font-medium text-foreground"
+                className="text-foreground block text-sm font-medium"
                 htmlFor="slug"
               >
                 Slug
               </label>
-              <span id={slugHelpId} className="text-xs text-muted-foreground">
+              <span id={slugHelpId} className="text-muted-foreground text-xs">
                 Auto-generated from title
               </span>
             </div>
             <input
               id="slug"
               name="slug"
-              className="w-full rounded-md border border-border bg-muted px-3 py-2 text-sm"
+              className="border-border bg-muted w-full rounded-md border px-3 py-2 text-sm"
               type="text"
               value={slugValue}
               readOnly
@@ -536,20 +536,20 @@ export function ProductForm({
           </div>
         </section>
 
-        <fieldset className="rounded-md border border-border p-3">
-          <legend className="px-1 text-sm font-semibold text-foreground">
+        <fieldset className="border-border rounded-md border p-3">
+          <legend className="text-foreground px-1 text-sm font-semibold">
             Prices
           </legend>
 
           <div className="mt-3 grid gap-4 sm:grid-cols-2">
             <fieldset className="space-y-2">
-              <legend className="text-xs font-medium text-muted-foreground">
+              <legend className="text-muted-foreground text-xs font-medium">
                 USD (required)
               </legend>
 
               <div>
                 <label
-                  className="block text-sm font-medium text-foreground"
+                  className="text-foreground block text-sm font-medium"
                   htmlFor="price-usd"
                 >
                   Price (USD)
@@ -557,7 +557,7 @@ export function ProductForm({
                 <input
                   id="price-usd"
                   name="price-usd"
-                  className="w-full rounded-md border border-border px-3 py-2 text-sm"
+                  className="border-border w-full rounded-md border px-3 py-2 text-sm"
                   type="text"
                   inputMode="decimal"
                   placeholder="59.00"
@@ -569,7 +569,7 @@ export function ProductForm({
 
               <div>
                 <label
-                  className="block text-sm font-medium text-foreground"
+                  className="text-foreground block text-sm font-medium"
                   htmlFor="original-usd"
                 >
                   Original price (USD)
@@ -605,13 +605,13 @@ export function ProductForm({
             </fieldset>
 
             <fieldset className="space-y-2">
-              <legend className="text-xs font-medium text-muted-foreground">
+              <legend className="text-muted-foreground text-xs font-medium">
                 UAH (optional)
               </legend>
 
               <div>
                 <label
-                  className="block text-sm font-medium text-foreground"
+                  className="text-foreground block text-sm font-medium"
                   htmlFor="price-uah"
                 >
                   Price (UAH)
@@ -619,7 +619,7 @@ export function ProductForm({
                 <input
                   id="price-uah"
                   name="price-uah"
-                  className="w-full rounded-md border border-border px-3 py-2 text-sm"
+                  className="border-border w-full rounded-md border px-3 py-2 text-sm"
                   type="text"
                   inputMode="decimal"
                   placeholder="1999.00"
@@ -630,7 +630,7 @@ export function ProductForm({
 
               <div>
                 <label
-                  className="block text-sm font-medium text-foreground"
+                  className="text-foreground block text-sm font-medium"
                   htmlFor="original-uah"
                 >
                   Original price (UAH)
@@ -666,7 +666,7 @@ export function ProductForm({
             </fieldset>
           </div>
 
-          <p className="mt-3 text-xs text-muted-foreground">
+          <p className="text-muted-foreground mt-3 text-xs">
             Checkout currency is server-selected by locale. Prices must exist in{' '}
             <span className="font-mono">product_prices</span> for that currency,
             or checkout fails.
@@ -679,7 +679,7 @@ export function ProductForm({
         >
           <div>
             <label
-              className="block text-sm font-medium text-foreground"
+              className="text-foreground block text-sm font-medium"
               htmlFor="stock"
             >
               Stock
@@ -687,7 +687,7 @@ export function ProductForm({
             <input
               id="stock"
               name="stock"
-              className="w-full rounded-md border border-border px-3 py-2 text-sm"
+              className="border-border w-full rounded-md border px-3 py-2 text-sm"
               type="number"
               value={stock}
               onChange={event => setStock(event.target.value)}
@@ -698,7 +698,7 @@ export function ProductForm({
 
           <div>
             <label
-              className="block text-sm font-medium text-foreground"
+              className="text-foreground block text-sm font-medium"
               htmlFor="sku"
             >
               SKU
@@ -706,7 +706,7 @@ export function ProductForm({
             <input
               id="sku"
               name="sku"
-              className="w-full rounded-md border border-border px-3 py-2 text-sm"
+              className="border-border w-full rounded-md border px-3 py-2 text-sm"
               type="text"
               value={sku}
               onChange={event => setSku(event.target.value)}
@@ -720,7 +720,7 @@ export function ProductForm({
         >
           <div>
             <label
-              className="block text-sm font-medium text-foreground"
+              className="text-foreground block text-sm font-medium"
               htmlFor="category"
             >
               Category
@@ -728,7 +728,7 @@ export function ProductForm({
             <select
               id="category"
               name="category"
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
+              className="border-border bg-background text-foreground focus:ring-accent w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
               value={category}
               onChange={event => setCategory(event.target.value)}
             >
@@ -745,7 +745,7 @@ export function ProductForm({
 
           <div>
             <label
-              className="block text-sm font-medium text-foreground"
+              className="text-foreground block text-sm font-medium"
               htmlFor="type"
             >
               Type
@@ -753,7 +753,7 @@ export function ProductForm({
             <select
               id="type"
               name="type"
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
+              className="border-border bg-background text-foreground focus:ring-accent w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
               value={type}
               onChange={event => setType(event.target.value)}
             >
@@ -769,14 +769,14 @@ export function ProductForm({
 
         <section className="grid gap-4 sm:grid-cols-2" aria-label="Variants">
           <fieldset>
-            <legend className="block text-sm font-medium text-foreground">
+            <legend className="text-foreground block text-sm font-medium">
               Colors
             </legend>
-            <div className="mt-2 flex flex-col gap-2 rounded-md border border-border px-3 py-2">
+            <div className="border-border mt-2 flex flex-col gap-2 rounded-md border px-3 py-2">
               {COLORS.map(color => (
                 <label
                   key={color.slug}
-                  className="flex items-center gap-2 text-sm text-foreground"
+                  className="text-foreground flex items-center gap-2 text-sm"
                 >
                   <input
                     type="checkbox"
@@ -801,14 +801,14 @@ export function ProductForm({
           </fieldset>
 
           <fieldset>
-            <legend className="block text-sm font-medium text-foreground">
+            <legend className="text-foreground block text-sm font-medium">
               Sizes
             </legend>
-            <div className="mt-2 flex flex-col gap-2 rounded-md border border-border px-3 py-2">
+            <div className="border-border mt-2 flex flex-col gap-2 rounded-md border px-3 py-2">
               {SIZES.map(size => (
                 <label
                   key={size}
-                  className="flex items-center gap-2 text-sm text-foreground"
+                  className="text-foreground flex items-center gap-2 text-sm"
                 >
                   <input
                     type="checkbox"
@@ -837,7 +837,7 @@ export function ProductForm({
         >
           <div>
             <label
-              className="block text-sm font-medium text-foreground"
+              className="text-foreground block text-sm font-medium"
               htmlFor="badge"
             >
               Badge
@@ -845,7 +845,7 @@ export function ProductForm({
             <select
               id="badge"
               name="badge"
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
+              className="border-border bg-background text-foreground focus:ring-accent w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
               value={badge}
               onChange={event => {
                 const next = event.target.value as ProductAdminInput['badge'];
@@ -870,10 +870,10 @@ export function ProductForm({
                 type="checkbox"
                 checked={isActive}
                 onChange={event => setIsActive(event.target.checked)}
-                className="h-4 w-4 rounded border-border text-accent focus:ring-accent"
+                className="border-border text-accent focus:ring-accent h-4 w-4 rounded"
               />
               <label
-                className="text-sm font-medium text-foreground"
+                className="text-foreground text-sm font-medium"
                 htmlFor="isActive"
               >
                 Is Active
@@ -887,10 +887,10 @@ export function ProductForm({
                 type="checkbox"
                 checked={isFeatured}
                 onChange={event => setIsFeatured(event.target.checked)}
-                className="h-4 w-4 rounded border-border text-accent focus:ring-accent"
+                className="border-border text-accent focus:ring-accent h-4 w-4 rounded"
               />
               <label
-                className="text-sm font-medium text-foreground"
+                className="text-foreground text-sm font-medium"
                 htmlFor="isFeatured"
               >
                 Is Featured
@@ -901,7 +901,7 @@ export function ProductForm({
 
         <section aria-label="Description">
           <label
-            className="block text-sm font-medium text-foreground"
+            className="text-foreground block text-sm font-medium"
             htmlFor="description"
           >
             Description
@@ -909,7 +909,7 @@ export function ProductForm({
           <textarea
             id="description"
             name="description"
-            className="w-full rounded-md border border-border px-3 py-2 text-sm"
+            className="border-border w-full rounded-md border px-3 py-2 text-sm"
             rows={4}
             value={description}
             onChange={event => setDescription(event.target.value)}
@@ -918,7 +918,7 @@ export function ProductForm({
 
         <section aria-label="Image upload">
           <label
-            className="block text-sm font-medium text-foreground"
+            className="text-foreground block text-sm font-medium"
             htmlFor="image"
           >
             Image
@@ -926,7 +926,7 @@ export function ProductForm({
           <input
             id="image"
             name="image"
-            className="w-full rounded-md border border-border px-3 py-2 text-sm"
+            className="border-border w-full rounded-md border px-3 py-2 text-sm"
             type="file"
             accept="image/*"
             onChange={handleImageChange}
@@ -935,7 +935,7 @@ export function ProductForm({
             aria-describedby={imageError ? imageErrorId : undefined}
           />
           {existingImageUrl && !imageFile ? (
-            <p className="mt-2 text-sm text-muted-foreground">
+            <p className="text-muted-foreground mt-2 text-sm">
               Current image will be kept unless you upload a new one.
             </p>
           ) : null}
@@ -952,7 +952,7 @@ export function ProductForm({
 
         <button
           type="submit"
-          className="mt-6 w-full rounded-md bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent/90 disabled:opacity-60"
+          className="bg-accent text-accent-foreground hover:bg-accent/90 mt-6 w-full rounded-md px-4 py-2 text-sm font-semibold transition-colors disabled:opacity-60"
           disabled={isSubmitting}
           aria-disabled={isSubmitting}
           aria-busy={isSubmitting}

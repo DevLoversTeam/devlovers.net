@@ -1,11 +1,11 @@
 'use client';
 
-import { cn } from '@/lib/utils';
 import {
   SHOP_FOCUS,
   SHOP_OUTLINE_BTN_BASE,
   SHOP_OUTLINE_BTN_INTERACTIVE,
 } from '@/lib/shop/ui-classes';
+import { cn } from '@/lib/utils';
 
 type ErrorPageProps = {
   error: Error & { digest?: string };
@@ -25,8 +25,8 @@ export default function OrdersError({ reset }: ErrorPageProps) {
         <h1 className="text-2xl font-semibold">Orders</h1>
       </header>
 
-      <section className="mt-6 rounded-lg border border-border bg-card p-5">
-        <p className="text-sm text-muted-foreground">Failed to load orders.</p>
+      <section className="border-border bg-card mt-6 rounded-lg border p-5">
+        <p className="text-muted-foreground text-sm">Failed to load orders.</p>
 
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <button type="button" className={SHOP_OUTLINE_BTN} onClick={reset}>

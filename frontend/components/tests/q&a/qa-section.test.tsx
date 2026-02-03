@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import type React from 'react';
+import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
@@ -31,7 +31,9 @@ vi.mock('@/components/q&a/AccordionList', () => ({
 
 vi.mock('@/components/ui/tabs', () => ({
   Tabs: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  TabsList: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  TabsList: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
   TabsContent: ({ children }: { children: React.ReactNode }) => (
     <div>{children}</div>
   ),
