@@ -4,33 +4,23 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { MoneyValueError } from '@/db/queries/shop/orders';
 import { getCurrentUser } from '@/lib/auth';
+import { isMonobankEnabled } from '@/lib/env/monobank';
 import { isPaymentsEnabled } from '@/lib/env/stripe';
-import { logError, logWarn } from '@/lib/logging';
+import { logError, logInfo, logWarn } from '@/lib/logging';
 import { guardBrowserSameOrigin } from '@/lib/security/origin';
 import {
   enforceRateLimit,
   getRateLimitSubject,
   rateLimitResponse,
 } from '@/lib/security/rate-limit';
-<<<<<<< HEAD
-import { getCurrentUser } from '@/lib/auth';
-import { isPaymentsEnabled } from '@/lib/env/stripe';
-import { isMonobankEnabled } from '@/lib/env/monobank';
-import { logError, logInfo, logWarn } from '@/lib/logging';
-import { resolveRequestLocale } from '@/lib/shop/request-locale';
-=======
->>>>>>> 601e032c399164dfc128ab2dee5fe52dd66d2caf
 import { IdempotencyConflictError } from '@/lib/services/errors';
 import {
   InsufficientStockError,
   InvalidPayloadError,
   InvalidVariantError,
   OrderStateInvalidError,
-<<<<<<< HEAD
-  PspUnavailableError,
-=======
   PriceConfigError,
->>>>>>> 601e032c399164dfc128ab2dee5fe52dd66d2caf
+  PspUnavailableError,
 } from '@/lib/services/errors';
 import { createOrderWithItems, restockOrder } from '@/lib/services/orders';
 import {
@@ -39,21 +29,11 @@ import {
 } from '@/lib/services/orders/payment-attempts';
 import { type PaymentProvider, type PaymentStatus } from '@/lib/shop/payments';
 import { resolveRequestLocale } from '@/lib/shop/request-locale';
+import { createStatusToken } from '@/lib/shop/status-token';
 import {
   checkoutPayloadSchema,
   idempotencyKeySchema,
 } from '@/lib/validation/shop';
-<<<<<<< HEAD
-import { createStatusToken } from '@/lib/shop/status-token';
-import { type PaymentProvider, type PaymentStatus } from '@/lib/shop/payments';
-import {
-  PaymentAttemptsExhaustedError,
-  ensureStripePaymentIntentForOrder,
-} from '@/lib/services/orders/payment-attempts';
-
-import { createOrderWithItems, restockOrder } from '@/lib/services/orders';
-=======
->>>>>>> 601e032c399164dfc128ab2dee5fe52dd66d2caf
 
 const EXPECTED_BUSINESS_ERROR_CODES = new Set([
   'IDEMPOTENCY_CONFLICT',

@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/lib/logging', async () => {
   const actual = await vi.importActual<any>('@/lib/logging');

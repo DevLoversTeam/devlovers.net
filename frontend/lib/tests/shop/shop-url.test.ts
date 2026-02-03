@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { resetEnvCache } from '@/lib/env';
 import { resolveShopBaseUrl, toAbsoluteUrl } from '@/lib/shop/url';
 

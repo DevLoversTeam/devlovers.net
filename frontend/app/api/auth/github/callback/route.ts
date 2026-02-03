@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { db } from '@/db';
 import { users } from '@/db/schema/users';
-import { setAuthCookie,signAuthToken } from '@/lib/auth';
+import { setAuthCookie, signAuthToken } from '@/lib/auth';
 import { consumeOAuthState } from '@/lib/auth/oauth-state';
 import { authEnv } from '@/lib/env/auth';
 

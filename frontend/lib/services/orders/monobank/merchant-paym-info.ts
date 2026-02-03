@@ -1,10 +1,10 @@
-import type { CurrencyCode } from '@/lib/shop/currency';
 import {
   buildMonoMerchantPaymInfoFromSnapshot,
-  type MonoMerchantPaymInfo,
-  type MonoBasketOrderItem,
   MonobankMerchantPaymInfoError,
+  type MonoBasketOrderItem,
+  type MonoMerchantPaymInfo,
 } from '@/lib/psp/monobank/merchant-paym-info';
+import type { CurrencyCode } from '@/lib/shop/currency';
 
 const MAX_SAFE = BigInt(Number.MAX_SAFE_INTEGER);
 
@@ -40,7 +40,7 @@ export type MonoMerchantPaymInfoInput = {
   }>;
 };
 
-export type { MonoMerchantPaymInfo, MonoBasketOrderItem };
+export type { MonoBasketOrderItem,MonoMerchantPaymInfo };
 export { MonobankMerchantPaymInfoError as MonoMerchantPaymInfoError };
 
 export function buildMonoMerchantPaymInfo(

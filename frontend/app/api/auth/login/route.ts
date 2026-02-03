@@ -6,7 +6,7 @@ import { z } from 'zod';
 
 import { db } from '@/db';
 import { users } from '@/db/schema/users';
-import { setAuthCookie,signAuthToken } from '@/lib/auth';
+import { setAuthCookie, signAuthToken } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 

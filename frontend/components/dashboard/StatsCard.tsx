@@ -1,6 +1,6 @@
 'use client';
 
-import { History,TrendingUp } from 'lucide-react';
+import { History, TrendingUp } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import { Link } from '@/i18n/routing';

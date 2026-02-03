@@ -11,7 +11,7 @@ import { orderItems, orders } from '@/db/schema';
 import { Link } from '@/i18n/routing';
 import { getCurrentUser } from '@/lib/auth';
 import { logError } from '@/lib/logging';
-import { type CurrencyCode,formatMoney } from '@/lib/shop/currency';
+import { type CurrencyCode, formatMoney } from '@/lib/shop/currency';
 import { fromDbMoney } from '@/lib/shop/money';
 import {
   SHOP_FOCUS,

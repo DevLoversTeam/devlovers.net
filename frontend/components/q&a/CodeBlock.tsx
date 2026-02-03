@@ -1,6 +1,6 @@
 'use client';
 
-import { Check,Copy } from 'lucide-react';
+import { Check, Copy } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { Highlight, themes } from 'prism-react-renderer';
 import { useState } from 'react';

@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, useMotionTemplate, useMotionValue } from 'framer-motion';
-import type { MouseEvent,ReactNode } from 'react';
+import type { MouseEvent, ReactNode } from 'react';
 
 import { cn } from '@/lib/utils';
 

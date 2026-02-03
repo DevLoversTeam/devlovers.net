@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { getMonobankConfig, requireMonobankToken } from '@/lib/env/monobank';
+
 import { resetEnvCache } from '@/lib/env';
+import { getMonobankConfig, requireMonobankToken } from '@/lib/env/monobank';
 
 const ENV_KEYS = [
   'DATABASE_URL',

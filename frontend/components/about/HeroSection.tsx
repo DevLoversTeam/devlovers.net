@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { ArrowDown,CheckCircle, Linkedin, Star, Users } from 'lucide-react';
+import { ArrowDown, CheckCircle, Linkedin, Star, Users } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';

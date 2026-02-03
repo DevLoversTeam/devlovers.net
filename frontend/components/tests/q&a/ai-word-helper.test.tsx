@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
-import { act,render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import type React from 'react';
-import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const getCachedExplanationMock = vi.fn();
 const setCachedExplanationMock = vi.fn();

@@ -1,9 +1,9 @@
 import crypto from 'crypto';
 import { inArray } from 'drizzle-orm';
-import { products, productPrices, orders, orderItems } from '@/db/schema';
-
 import { NextRequest } from 'next/server';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+
+import { orderItems,orders, productPrices, products } from '@/db/schema';
 
 process.env.STRIPE_PAYMENTS_ENABLED = 'false';
 process.env.STRIPE_SECRET_KEY = '';
@@ -22,7 +22,8 @@ vi.mock('@/lib/env/stripe', () => ({
   isPaymentsEnabled: () => false,
 }));
 
-const createPaymentIntentMock = vi.fn((..._args: any[]) => {
+const createPaymentIntentMock = vi.fn((...args: any[]) => {
+  void args;
   throw new Error(
     'Stripe should not be called in this test (payments disabled).'
   );
@@ -30,17 +31,22 @@ const createPaymentIntentMock = vi.fn((..._args: any[]) => {
 
 vi.mock('@/lib/psp/stripe', () => ({
   createPaymentIntent: (...args: any[]) => createPaymentIntentMock(...args),
-  retrievePaymentIntent: (..._args: any[]) => {
+  retrievePaymentIntent: (...args: any[]) => {
+    void args;
     throw new Error(
       'Stripe should not be called in this test (payments disabled).'
     );
   },
 }));
 
-// checkout-currency-policy.test.ts
-
-const logErrorMock = vi.fn((..._args: any[]) => undefined);
-const logWarnMock = vi.fn((..._args: any[]) => undefined);
+const logErrorMock = vi.fn((...args: any[]) => {
+  void args;
+  return undefined;
+});
+const logWarnMock = vi.fn((...args: any[]) => {
+  void args;
+  return undefined;
+});
 
 vi.mock('@/lib/logging', async () => {
   const actual =
@@ -53,6 +59,7 @@ vi.mock('@/lib/logging', async () => {
 });
 
 import { db } from '@/db';
+
 let POST: (req: NextRequest) => Promise<Response>;
 
 const createdProductIds: string[] = [];

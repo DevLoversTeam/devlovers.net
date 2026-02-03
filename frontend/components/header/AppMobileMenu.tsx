@@ -1,6 +1,6 @@
 'use client';
 
-import { Home,LogIn, Menu, ShoppingBag, X } from 'lucide-react';
+import { Home, LogIn, Menu, ShoppingBag, X } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';

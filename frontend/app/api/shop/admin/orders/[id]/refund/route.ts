@@ -1,28 +1,21 @@
 import crypto from 'node:crypto';
 
-import { NextRequest, NextResponse } from 'next/server';
-<<<<<<< HEAD
 import { eq } from 'drizzle-orm';
-=======
+import { NextRequest, NextResponse } from 'next/server';
 
->>>>>>> 601e032c399164dfc128ab2dee5fe52dd66d2caf
+import { db } from '@/db';
+import { orders } from '@/db/schema';
 import {
   AdminApiDisabledError,
   AdminForbiddenError,
   AdminUnauthorizedError,
   requireAdminApi,
 } from '@/lib/auth/admin';
-<<<<<<< HEAD
-import { db } from '@/db';
-import { orders } from '@/db/schema';
 import { getMonobankConfig } from '@/lib/env/monobank';
-import { requireAdminCsrf } from '@/lib/security/admin-csrf';
-=======
->>>>>>> 601e032c399164dfc128ab2dee5fe52dd66d2caf
 import { logError, logWarn } from '@/lib/logging';
 import { requireAdminCsrf } from '@/lib/security/admin-csrf';
 import { guardBrowserSameOrigin } from '@/lib/security/origin';
-import { InvalidPayloadError,OrderNotFoundError } from '@/lib/services/errors';
+import { InvalidPayloadError, OrderNotFoundError } from '@/lib/services/errors';
 import { refundOrder } from '@/lib/services/orders';
 import { orderIdParamSchema, orderSummarySchema } from '@/lib/validation/shop';
 

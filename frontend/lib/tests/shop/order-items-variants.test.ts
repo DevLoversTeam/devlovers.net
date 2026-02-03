@@ -1,9 +1,9 @@
 import crypto from 'crypto';
 import { eq, sql } from 'drizzle-orm';
-import { describe, expect,it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { db } from '@/db';
-import { orderItems,orders, productPrices, products } from '@/db/schema/shop';
+import { orderItems, orders, productPrices, products } from '@/db/schema/shop';
 import { createOrderWithItems } from '@/lib/services/orders';
 
 describe('order_items variants (selected_size/selected_color)', () => {

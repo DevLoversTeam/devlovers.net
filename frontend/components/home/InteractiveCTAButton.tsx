@@ -1,6 +1,6 @@
 'use client';
 
-import { AnimatePresence,motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Heart } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import React from 'react';

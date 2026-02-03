@@ -83,7 +83,7 @@ export function NavLinks({
               href="/"
               onClick={onNavigate}
               icon={Home}
-              className={cn(isHomeActive && '[color:var(--accent-primary)]')}
+              className={cn(isHomeActive && 'text-(--accent-primary)')}
             >
               {tNav('home')}
             </HeaderButton>

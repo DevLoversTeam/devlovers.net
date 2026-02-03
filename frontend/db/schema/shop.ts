@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import {
+  bigint,
   boolean,
   check,
   index,
@@ -13,7 +14,6 @@ import {
   uniqueIndex,
   uuid,
   varchar,
-  bigint,
 } from 'drizzle-orm/pg-core';
 
 import { users } from '@/db/schema/users';

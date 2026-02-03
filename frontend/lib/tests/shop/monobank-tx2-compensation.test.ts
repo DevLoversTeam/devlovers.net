@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { orders, paymentAttempts } from '@/db/schema';
-import { PspInvoicePersistError } from '@/lib/services/errors';
 import { cancelMonobankInvoice } from '@/lib/psp/monobank';
+import { PspInvoicePersistError } from '@/lib/services/errors';
 import { restockOrder } from '@/lib/services/orders/restock';
 
 const updateCalls: Array<{ table: unknown; values: Record<string, unknown> }> =

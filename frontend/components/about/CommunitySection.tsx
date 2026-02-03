@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl';
 
 import { GradientBadge } from '@/components/ui/gradient-badge';
 import { SectionHeading } from '@/components/ui/section-heading';
-import { type Testimonial,TESTIMONIALS } from '@/data/about';
+import { type Testimonial, TESTIMONIALS } from '@/data/about';
 
 export function CommunitySection() {
   const t = useTranslations('about.community');

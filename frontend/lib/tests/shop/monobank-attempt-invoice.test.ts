@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 // E2 flow map (exact names + paths):
 // - Route: POST `frontend/app/api/shop/checkout/route.ts`
@@ -15,11 +15,11 @@ vi.mock('@/lib/logging', () => ({
   logInfo: vi.fn(),
 }));
 
-import { __test__ } from '@/lib/services/orders/monobank';
 import {
-  PspUnavailableError,
   PspInvoicePersistError,
+  PspUnavailableError,
 } from '@/lib/services/errors';
+import { __test__ } from '@/lib/services/orders/monobank';
 
 describe('createMonoAttemptAndInvoice (unit, no DB)', () => {
   const baseArgs = {

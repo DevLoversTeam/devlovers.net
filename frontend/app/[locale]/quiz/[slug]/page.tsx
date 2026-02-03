@@ -1,12 +1,10 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
-import { PendingResultHandler } from '@/components/quiz/PendingResultHandler';
 import { QuizContainer } from '@/components/quiz/QuizContainer';
 import { stripCorrectAnswers } from '@/db/queries/quiz';
 import { getQuizBySlug, getQuizQuestionsRandomized } from '@/db/queries/quiz';
 import { getCurrentUser } from '@/lib/auth';
-import { createEncryptedAnswersBlob } from '@/lib/quiz/quiz-crypto';
 
 interface QuizPageProps {
   params: Promise<{ locale: string; slug: string }>;
@@ -29,10 +27,19 @@ export default async function QuizPage({
     notFound();
   }
 
-  const seed = seedParam ? parseInt(seedParam, 10) : Date.now();
+  if (!seedParam) {
+    // eslint-disable-next-line react-hooks/purity -- redirect throws, value never used in render
+    redirect(`/${locale}/quiz/${slug}?seed=${Date.now()}`);
+  }
+
+  const seed = Number.parseInt(seedParam, 10);
+  if (Number.isNaN(seed)) {
+     // eslint-disable-next-line react-hooks/purity -- redirect throws, value never used in render
+    redirect(`/${locale}/quiz/${slug}?seed=${Date.now()}`);
+  }
+  
   const questions = await getQuizQuestionsRandomized(quiz.id, locale, seed);
 
-  const encryptedAnswers = createEncryptedAnswersBlob(questions);
   const clientQuestions = stripCorrectAnswers(questions);
 
   if (!questions.length) {
@@ -73,13 +80,11 @@ export default async function QuizPage({
           quizSlug={slug}
           quizId={quiz.id}
           questions={clientQuestions}
-          encryptedAnswers={encryptedAnswers}
           userId={user?.id ?? null}
           timeLimitSeconds={quiz.timeLimitSeconds ?? questions.length * 30}
           seed={seed}
           categorySlug={quiz.categorySlug}
         />
-        {user && <PendingResultHandler userId={user.id} />}
       </div>
     </div>
   );

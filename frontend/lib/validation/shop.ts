@@ -13,7 +13,7 @@ import {
   paymentProviderValues,
   paymentStatusValues,
 } from '@/lib/shop/payments';
-export type { PaymentProvider,PaymentStatus } from '@/lib/shop/payments';
+export type { PaymentProvider, PaymentStatus } from '@/lib/shop/payments';
 
 export const MAX_QUANTITY_PER_LINE = 20;
 

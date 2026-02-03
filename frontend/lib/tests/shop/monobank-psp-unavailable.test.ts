@@ -1,13 +1,13 @@
 import crypto from 'crypto';
-import { describe, expect, it, beforeAll, afterAll, vi } from 'vitest';
 import { eq, sql } from 'drizzle-orm';
 import { NextRequest } from 'next/server';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { db } from '@/db';
-import { orders, products, productPrices, paymentAttempts } from '@/db/schema';
+import { orders, paymentAttempts,productPrices, products } from '@/db/schema';
+import { resetEnvCache } from '@/lib/env';
 import { toDbMoney } from '@/lib/shop/money';
 import { deriveTestIpFromIdemKey } from '@/lib/tests/helpers/ip';
-import { resetEnvCache } from '@/lib/env';
 
 vi.mock('@/lib/auth', () => ({
   getCurrentUser: vi.fn().mockResolvedValue(null),
