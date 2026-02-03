@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest"
-import { NextRequest } from "next/server"
+import { NextRequest } from 'next/server';
+import { beforeEach,describe, expect, it, vi } from 'vitest';
 
 vi.mock("@/lib/auth", () => ({
   getCurrentUser: vi.fn(),
@@ -11,8 +11,8 @@ vi.mock("@/db", () => ({
   },
 }))
 
-import { getCurrentUser } from "@/lib/auth"
-import { db } from "@/db"
+import { db } from '@/db';
+import { getCurrentUser } from '@/lib/auth';
 
 type MockUser = { id: string; role: "user" | "admin" }
 

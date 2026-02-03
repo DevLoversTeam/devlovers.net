@@ -1,13 +1,13 @@
 import { and, eq, type SQL } from 'drizzle-orm';
 
 import { db } from '@/db';
-import { products, productPrices } from '@/db/schema';
+import { productPrices,products } from '@/db/schema';
+import { ProductNotFoundError } from '@/lib/errors/products';
 import type { CurrencyCode } from '@/lib/shop/currency';
 import type { DbProduct } from '@/lib/types/shop';
-import { ProductNotFoundError } from '@/lib/errors/products';
 
-import { assertMoneyMinorInt } from '../prices';
 import { mapRowToProduct } from '../mapping';
+import { assertMoneyMinorInt } from '../prices';
 import type { AdminProductPriceRow, AdminProductsFilter } from '../types';
 
 export async function getAdminProductById(id: string): Promise<DbProduct> {

@@ -3,8 +3,8 @@
 import { ShoppingBag } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
-import { useMounted } from '@/hooks/use-mounted';
 import { HeaderButton } from '@/components/shared/HeaderButton';
+import { useMounted } from '@/hooks/use-mounted';
 
 import { useCart } from '../CartProvider';
 
@@ -17,7 +17,9 @@ export function CartButton() {
   const showCount = itemCount > 0;
 
   const badgeText = itemCount > 99 ? '99+' : itemCount;
-  const label = showCount ? t('cartWithItems', { count: itemCount }) : t('cart');
+  const label = showCount
+    ? t('cartWithItems', { count: itemCount })
+    : t('cart');
 
   return (
     <HeaderButton

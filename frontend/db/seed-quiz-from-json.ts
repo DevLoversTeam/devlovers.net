@@ -1,18 +1,20 @@
 import 'dotenv/config';
+
+import { eq } from 'drizzle-orm';
 import { readFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
-import { eq } from 'drizzle-orm';
+
 import { db } from './index';
 import { categories } from './schema/categories';
 import {
-  quizzes,
-  quizTranslations,
-  quizQuestions,
-  quizQuestionContent,
   quizAnswers,
   quizAnswerTranslations,
   quizAttempts,
+  quizQuestionContent,
+  quizQuestions,
+  quizTranslations,
+  quizzes,
 } from './schema/quiz';
 
 type Locale = 'uk' | 'en' | 'pl';

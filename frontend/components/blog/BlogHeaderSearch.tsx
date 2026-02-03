@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
 import { Search } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
+import { useEffect, useMemo, useRef, useState } from 'react';
+
 import { useRouter } from '@/i18n/routing';
 
 type PostSearchItem = {
@@ -101,7 +102,9 @@ export function BlogHeaderSearch() {
     if (debounceRef.current) window.clearTimeout(debounceRef.current);
     debounceRef.current = window.setTimeout(() => {
       const query = value.trim();
-      router.replace(query ? `/blog?search=${encodeURIComponent(query)}` : '/blog');
+      router.replace(
+        query ? `/blog?search=${encodeURIComponent(query)}` : '/blog'
+      );
     }, 300);
     return () => {
       if (debounceRef.current) window.clearTimeout(debounceRef.current);
@@ -158,7 +161,7 @@ export function BlogHeaderSearch() {
             return next;
           })
         }
-        className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+        className="text-muted-foreground hover:bg-secondary hover:text-foreground flex h-9 w-9 items-center justify-center rounded-md transition-colors"
         aria-label={tAria('searchBlog')}
       >
         <Search className="h-4 w-4" aria-hidden="true" />
@@ -167,7 +170,7 @@ export function BlogHeaderSearch() {
       {open && (
         <div
           id="wrap"
-          className="absolute right-0 top-12 z-50 w-72 overflow-hidden rounded-lg border border-border bg-background shadow-lg"
+          className="border-border bg-background absolute top-12 right-0 z-50 w-72 overflow-hidden rounded-lg border shadow-lg"
         >
           <form
             action=""
@@ -188,22 +191,24 @@ export function BlogHeaderSearch() {
                   startLoading();
                 }
               }}
-                onKeyDown={event => {
-                  if (event.key === 'Escape') setOpen(false);
-                }}
+              onKeyDown={event => {
+                if (event.key === 'Escape') setOpen(false);
+              }}
               placeholder={t('searchPlaceholder')}
-              className="w-full bg-transparent text-sm text-foreground outline-none"
-              style={{ fontFamily: 'Lato, system-ui, -apple-system, sans-serif' }}
+              className="text-foreground w-full bg-transparent text-sm outline-none"
+              style={{
+                fontFamily: 'Lato, system-ui, -apple-system, sans-serif',
+              }}
             />
             <input
               id="search_submit"
               value=""
               type="submit"
-              className="text-sm font-medium text-muted-foreground hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground text-sm font-medium"
             />
           </form>
           {value && results.length > 0 && (
-            <div className="max-h-56 overflow-auto border-t border-border py-2">
+            <div className="border-border max-h-56 overflow-auto border-t py-2">
               {results.map(result => (
                 <button
                   key={result._id}
@@ -219,13 +224,13 @@ export function BlogHeaderSearch() {
                     }
                     setOpen(false);
                   }}
-                  className="block w-full px-3 py-2 text-left text-sm text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  className="text-muted-foreground hover:bg-secondary hover:text-foreground block w-full px-3 py-2 text-left text-sm"
                 >
-                  <div className="font-medium text-foreground">
+                  <div className="text-foreground font-medium">
                     {result.title}
                   </div>
                   {result.snippet && (
-                    <div className="mt-1 text-xs text-muted-foreground">
+                    <div className="text-muted-foreground mt-1 text-xs">
                       {result.snippet}
                     </div>
                   )}
@@ -234,7 +239,7 @@ export function BlogHeaderSearch() {
             </div>
           )}
           {value && !results.length && !isLoading && (
-            <div className="border-t border-border px-3 py-2 text-xs text-muted-foreground">
+            <div className="border-border text-muted-foreground border-t px-3 py-2 text-xs">
               {t('noMatches')}
             </div>
           )}

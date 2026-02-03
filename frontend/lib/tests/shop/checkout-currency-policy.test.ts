@@ -1,9 +1,9 @@
-import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
+import crypto from 'crypto';
 import { inArray } from 'drizzle-orm';
 import { products, productPrices, orders, orderItems } from '@/db/schema';
 
 import { NextRequest } from 'next/server';
-import crypto from 'crypto';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 process.env.STRIPE_PAYMENTS_ENABLED = 'false';
 process.env.STRIPE_SECRET_KEY = '';

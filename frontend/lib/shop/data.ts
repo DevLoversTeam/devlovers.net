@@ -1,27 +1,28 @@
 import {
-  CATALOG_PAGE_SIZE,
-  CATEGORY_TILES,
-  type CatalogSort,
-} from '@/lib/config/catalog';
-import {
-  catalogFilterSchema,
-  dbProductSchema,
-  productBadgeValues,
-  shopProductSchema,
-  type CatalogFilters,
-  type DbProduct,
-  type ProductBadge,
-  type ShopProduct as ValidationShopProduct,
-} from '@/lib/validation/shop';
-import {
   getActiveProductsPage,
   getFeaturedProducts,
   getPublicProductBySlug,
 } from '@/db/queries/shop/products';
-import { fromDbMoney } from './money';
-import { resolveCurrencyFromLocale } from './currency';
 import { getPublicProductBaseBySlug } from '@/db/queries/shop/products';
+import {
+  CATALOG_PAGE_SIZE,
+  type CatalogSort,
+  CATEGORY_TILES,
+} from '@/lib/config/catalog';
 import { logError } from '@/lib/logging';
+import {
+  type CatalogFilters,
+  catalogFilterSchema,
+  type DbProduct,
+  dbProductSchema,
+  type ProductBadge,
+  productBadgeValues,
+  type ShopProduct as ValidationShopProduct,
+  shopProductSchema,
+} from '@/lib/validation/shop';
+
+import { resolveCurrencyFromLocale } from './currency';
+import { fromDbMoney } from './money';
 
 export type ShopProduct = ValidationShopProduct;
 

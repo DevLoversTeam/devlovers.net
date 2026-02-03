@@ -1,18 +1,19 @@
 'use client';
 
-import { useId } from 'react';
-import { useRouter } from '@/i18n/routing';
+import { ChevronDown } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { ChevronDown } from 'lucide-react';
+import { useId } from 'react';
+
+import { useRouter } from '@/i18n/routing';
 import { SORT_OPTIONS } from '@/lib/config/catalog';
-import { cn } from '@/lib/utils';
 import {
   SHOP_DISABLED,
   SHOP_FOCUS,
   SHOP_SELECT_BASE,
   SHOP_SELECT_INTERACTIVE,
 } from '@/lib/shop/ui-classes';
+import { cn } from '@/lib/utils';
 
 type ProductSortProps = {
   className?: string;
@@ -63,7 +64,7 @@ export function ProductSort({ className }: ProductSortProps) {
       )}
       aria-label={t('label')}
     >
-      <label htmlFor={selectId} className="text-sm text-muted-foreground">
+      <label htmlFor={selectId} className="text-muted-foreground text-sm">
         {t('sortBy')}
       </label>
 
@@ -90,7 +91,7 @@ export function ProductSort({ className }: ProductSortProps) {
 
         <ChevronDown
           className={cn(
-            'pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2',
+            'pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2',
             'text-muted-foreground transition-colors',
             'peer-hover:text-foreground peer-focus-visible:text-foreground'
           )}

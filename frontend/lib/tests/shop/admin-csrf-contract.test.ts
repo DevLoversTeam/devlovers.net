@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
+import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/lib/auth/admin', () => {
   class AdminApiDisabledError extends Error {

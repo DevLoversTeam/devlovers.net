@@ -1,10 +1,11 @@
-import { describe, expect, it } from "vitest";
-import { adminPriceRowSchema } from "../../validation/shop";
+import { describe, expect, it } from 'vitest';
 
-describe("pricing validation", () => {
-  it("rejects originalPriceMinor == priceMinor (SALE must be strict)", () => {
+import { adminPriceRowSchema } from '../../validation/shop';
+
+describe('pricing validation', () => {
+  it('rejects originalPriceMinor == priceMinor (SALE must be strict)', () => {
     const r = adminPriceRowSchema.safeParse({
-      currency: "USD",
+      currency: 'USD',
       priceMinor: 1000,
       originalPriceMinor: 1000,
     });
@@ -12,9 +13,9 @@ describe("pricing validation", () => {
     expect(r.success).toBe(false);
   });
 
-  it("accepts originalPriceMinor > priceMinor", () => {
+  it('accepts originalPriceMinor > priceMinor', () => {
     const r = adminPriceRowSchema.safeParse({
-      currency: "USD",
+      currency: 'USD',
       priceMinor: 1000,
       originalPriceMinor: 1200,
     });
@@ -22,4 +23,3 @@ describe("pricing validation", () => {
     expect(r.success).toBe(true);
   });
 });
-

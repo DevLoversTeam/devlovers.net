@@ -18,8 +18,7 @@ export function getStripeEnv(): StripeEnv {
   const runtimeEnv = getRuntimeEnv();
   const clientEnv = getClientEnv();
 
-  const paymentsFlag = process.env.STRIPE_PAYMENTS_ENABLED ?? 'false';
-
+  const paymentsFlag = process.env.PAYMENTS_ENABLED ?? 'false';
   const secretKey = nonEmpty(process.env.STRIPE_SECRET_KEY);
   const webhookSecret = nonEmpty(process.env.STRIPE_WEBHOOK_SECRET);
   const publishableKey = nonEmpty(
@@ -31,7 +30,7 @@ export function getStripeEnv(): StripeEnv {
     (runtimeEnv.NODE_ENV === 'production' ? 'live' : 'test');
 
   const paymentsEnabled =
-    String(paymentsFlag).trim() === 'true' && !!secretKey && !!webhookSecret;
+    paymentsFlag === 'true' && !!secretKey && !!webhookSecret;
 
   if (!paymentsEnabled) {
     return {

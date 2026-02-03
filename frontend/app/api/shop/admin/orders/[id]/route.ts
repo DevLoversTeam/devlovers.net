@@ -1,17 +1,15 @@
 import crypto from 'node:crypto';
+
 import { NextRequest, NextResponse } from 'next/server';
 
+import { getAdminOrderDetail } from '@/db/queries/shop/admin-orders';
 import {
   AdminApiDisabledError,
   AdminForbiddenError,
   AdminUnauthorizedError,
   requireAdminApi,
 } from '@/lib/auth/admin';
-
-import { getAdminOrderDetail } from '@/db/queries/shop/admin-orders';
-
 import { logError, logWarn } from '@/lib/logging';
-
 import { orderIdParamSchema } from '@/lib/validation/shop';
 
 export const runtime = 'nodejs';

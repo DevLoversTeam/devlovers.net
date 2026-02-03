@@ -1,5 +1,6 @@
 import groq from 'groq';
 import { NextResponse } from 'next/server';
+
 import { client } from '@/client';
 
 const searchQuery = groq`

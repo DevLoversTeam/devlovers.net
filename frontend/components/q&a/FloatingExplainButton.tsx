@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
+import { useEffect, useRef } from 'react';
+
 import { cn } from '@/lib/utils';
 
 interface FloatingExplainButtonProps {
@@ -64,7 +65,7 @@ export default function FloatingExplainButton({
         'hover:bg-[var(--accent-hover)]',
         'transition-all duration-200',
         'animate-in fade-in-0 zoom-in-95',
-        'focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] focus:ring-offset-2'
+        'focus:ring-2 focus:ring-[var(--accent-primary)] focus:ring-offset-2 focus:outline-none'
       )}
       style={{
         left: `${position.x}px`,

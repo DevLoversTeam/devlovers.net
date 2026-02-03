@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
+import { NextRequest, NextResponse } from 'next/server';
 
 function timingSafeEqual(a: string, b: string) {
   const aBuf = Buffer.from(a, 'utf8');

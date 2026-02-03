@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect,it } from 'vitest';
+
 import { POST } from '@/app/api/shop/checkout/route';
 import { makeCheckoutReq } from '@/lib/tests/helpers/makeCheckoutReq';
 

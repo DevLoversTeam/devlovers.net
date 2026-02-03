@@ -1,15 +1,17 @@
 import crypto from 'node:crypto';
-import { NextRequest, NextResponse } from 'next/server';
+
 import { sql } from 'drizzle-orm';
+import { NextRequest, NextResponse } from 'next/server';
+
 import { db } from '@/db';
-import {
-  restockStalePendingOrders,
-  restockStaleNoPaymentOrders,
-  restockStuckReservingOrders,
-} from '@/lib/services/orders';
 import { requireInternalJanitorAuth } from '@/lib/auth/internal-janitor';
 import { logError, logInfo, logWarn } from '@/lib/logging';
 import { guardNonBrowserOnly } from '@/lib/security/origin';
+import {
+  restockStaleNoPaymentOrders,
+  restockStalePendingOrders,
+  restockStuckReservingOrders,
+} from '@/lib/services/orders';
 
 export const runtime = 'nodejs';
 

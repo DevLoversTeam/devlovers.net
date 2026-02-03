@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
+import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
+
 import type { Author, Post } from '@/components/blog/BlogFilters';
 import BlogFilters from '@/components/blog/BlogFilters';
 
@@ -25,7 +26,7 @@ vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => {
     const map: Record<string, string> = {
       'categories.tech': 'Технології',
-      'categories.career': 'Кар\'єра',
+      'categories.career': "Кар'єра",
       'categories.insights': 'Інсайти',
       'categories.news': 'Новини',
       author: 'Автор',
@@ -126,9 +127,7 @@ describe('BlogFilters', () => {
       expect(fetchMock).toHaveBeenCalled();
     });
 
-    expect(
-      screen.getByRole('heading', { name: 'Анна' })
-    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Анна' })).toBeInTheDocument();
 
     const grid = screen.getByTestId('blog-grid');
     expect(grid).toHaveTextContent('Пост Анни');

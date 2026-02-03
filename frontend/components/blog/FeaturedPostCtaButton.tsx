@@ -1,6 +1,7 @@
 'use client';
 
 import { ArrowUpRight } from 'lucide-react';
+
 import { HeaderButton } from '@/components/shared/HeaderButton';
 
 type FeaturedPostCtaButtonProps = {

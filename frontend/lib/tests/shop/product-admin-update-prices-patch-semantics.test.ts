@@ -1,12 +1,11 @@
 import { describe, expect, it } from 'vitest';
+
 import { productAdminUpdateSchema } from '@/lib/validation/shop';
 
 describe('productAdminUpdateSchema: prices PATCH semantics', () => {
   it('allows partial prices update without USD', () => {
     const res = productAdminUpdateSchema.safeParse({
-      prices: [
-        { currency: 'UAH', priceMinor: 1000, originalPriceMinor: 2000 },
-      ],
+      prices: [{ currency: 'UAH', priceMinor: 1000, originalPriceMinor: 2000 }],
     });
 
     expect(res.success).toBe(true);

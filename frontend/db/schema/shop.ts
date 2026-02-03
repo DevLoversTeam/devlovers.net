@@ -2,9 +2,9 @@ import { sql } from 'drizzle-orm';
 import {
   boolean,
   check,
+  index,
   integer,
   jsonb,
-  index,
   numeric,
   pgEnum,
   pgTable,
@@ -15,6 +15,7 @@ import {
   varchar,
   bigint,
 } from 'drizzle-orm/pg-core';
+
 import { users } from '@/db/schema/users';
 import type { PaymentProvider, PaymentStatus } from '@/lib/shop/payments';
 

@@ -1,6 +1,8 @@
-import PostDetails from './PostDetails';
-import { client } from '@/client';
 import groq from 'groq';
+
+import { client } from '@/client';
+
+import PostDetails from './PostDetails';
 
 export async function generateStaticParams() {
   const slugs = await client.fetch<string[]>(

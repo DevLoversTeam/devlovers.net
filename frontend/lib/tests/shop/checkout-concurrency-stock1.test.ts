@@ -1,15 +1,15 @@
-import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import crypto from 'crypto';
-import { NextRequest } from 'next/server';
 import { eq, inArray } from 'drizzle-orm';
+import { NextRequest } from 'next/server';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { db } from '@/db';
 import {
-  products,
-  productPrices,
-  orders,
-  orderItems,
   inventoryMoves,
+  orderItems,
+  orders,
+  productPrices,
+  products,
 } from '@/db/schema/shop';
 
 vi.mock('@/lib/auth', async () => {
@@ -252,7 +252,7 @@ describe('P0-8.10.1 checkout concurrency: stock=1, two parallel checkouts', () =
       // In CI we fail fast so flakes are visible.
       if (process.env.CI) throw err;
 
-      // eslint-disable-next-line no-console
+       
       console.warn('checkout concurrency cleanup failed', err);
     }
   }, 30000);

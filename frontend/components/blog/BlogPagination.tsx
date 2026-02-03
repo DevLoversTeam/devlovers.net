@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { useEffect, useState } from 'react';
+
 import { cn } from '@/lib/utils';
 
 interface BlogPaginationProps {
@@ -73,7 +74,7 @@ export function BlogPagination({
 
   return (
     <nav
-      className="flex items-center justify-center gap-1 mt-8 sm:gap-2"
+      className="mt-8 flex items-center justify-center gap-1 sm:gap-2"
       style={
         {
           '--qa-accent': accentColor,
@@ -87,18 +88,18 @@ export function BlogPagination({
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
         className={cn(
-          'px-2 py-2 text-sm font-medium rounded-lg transition-colors sm:px-3',
+          'rounded-lg px-2 py-2 text-sm font-medium transition-colors sm:px-3',
           'border border-gray-300 bg-white/90 dark:border-gray-700 dark:bg-neutral-900/80',
           currentPage === 1
-            ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
-            : 'text-gray-700 dark:text-gray-300 hover:bg-[var(--qa-accent-soft)]'
+            ? 'cursor-not-allowed text-gray-400 dark:text-gray-600'
+            : 'text-gray-700 hover:bg-[var(--qa-accent-soft)] dark:text-gray-300'
         )}
         aria-label={t('previousPage')}
       >
         ← <span className="hidden sm:inline">{t('previous')}</span>
       </button>
 
-      <div className="flex items-center gap-1 mx-1 sm:mx-2">
+      <div className="mx-1 flex items-center gap-1 sm:mx-2">
         {pages.map((page, index) =>
           page === 'ellipsis' ? (
             <span
@@ -113,10 +114,10 @@ export function BlogPagination({
               onClick={() => onPageChange(page)}
               disabled={page === currentPage}
               className={cn(
-                'min-w-[40px] px-3 py-2 text-sm font-medium rounded-lg transition-colors border border-transparent overflow-hidden bg-white/90 dark:bg-neutral-900/80',
+                'min-w-[40px] overflow-hidden rounded-lg border border-transparent bg-white/90 px-3 py-2 text-sm font-medium transition-colors dark:bg-neutral-900/80',
                 page === currentPage
-                  ? 'shadow-sm text-gray-700 dark:text-gray-300'
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-[var(--qa-accent-soft)]'
+                  ? 'text-gray-700 shadow-sm dark:text-gray-300'
+                  : 'text-gray-700 hover:bg-[var(--qa-accent-soft)] dark:text-gray-300'
               )}
               style={
                 page === currentPage
@@ -140,11 +141,11 @@ export function BlogPagination({
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
         className={cn(
-          'px-2 py-2 text-sm font-medium rounded-lg transition-colors sm:px-3',
+          'rounded-lg px-2 py-2 text-sm font-medium transition-colors sm:px-3',
           'border border-gray-300 bg-white/90 dark:border-gray-700 dark:bg-neutral-900/80',
           currentPage === totalPages
-            ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
-            : 'text-gray-700 dark:text-gray-300 hover:bg-[var(--qa-accent-soft)]'
+            ? 'cursor-not-allowed text-gray-400 dark:text-gray-600'
+            : 'text-gray-700 hover:bg-[var(--qa-accent-soft)] dark:text-gray-300'
         )}
         aria-label={t('nextPage')}
       >

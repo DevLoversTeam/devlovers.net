@@ -1,15 +1,16 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+
 import AccordionList from '@/components/q&a/AccordionList';
 import { Pagination } from '@/components/q&a/Pagination';
-import { Tabs, TabsList, TabsContent } from '@/components/ui/tabs';
-import { categoryData } from '@/data/category';
+import type { CategorySlug } from '@/components/q&a/types';
 import { useQaTabs } from '@/components/q&a/useQaTabs';
 import { CategoryTabButton } from '@/components/shared/CategoryTabButton';
+import { Tabs, TabsContent,TabsList } from '@/components/ui/tabs';
+import { categoryData } from '@/data/category';
 import { categoryTabStyles } from '@/data/categoryStyles';
 import { cn } from '@/lib/utils';
-import type { CategorySlug } from '@/components/q&a/types';
 
 export default function TabsSection() {
   const t = useTranslations('qa');
@@ -27,22 +28,22 @@ export default function TabsSection() {
   return (
     <div className="w-full">
       <Tabs value={active} onValueChange={handleCategoryChange}>
-        <TabsList className="!bg-transparent !p-0 !h-auto !w-full flex flex-wrap items-stretch justify-start gap-3 mb-6">
+        <TabsList className="mb-6 flex !h-auto !w-full flex-wrap items-stretch justify-start gap-3 !bg-transparent !p-0">
           {categoryData.map(category => {
             const slug = category.slug as keyof typeof categoryTabStyles;
             const value = slug as CategorySlug;
             return (
-            <CategoryTabButton
-              key={slug}
-              value={value}
-              label={
-                category.translations[localeKey] ??
-                category.translations.en ??
-                value
-              }
-              style={categoryTabStyles[slug]}
-              isActive={active === value}
-            />
+              <CategoryTabButton
+                key={slug}
+                value={value}
+                label={
+                  category.translations[localeKey] ??
+                  category.translations.en ??
+                  value
+                }
+                style={categoryTabStyles[slug]}
+                isActive={active === value}
+              />
             );
           })}
         </TabsList>
@@ -51,7 +52,7 @@ export default function TabsSection() {
           <TabsContent key={category.slug} value={category.slug}>
             {isLoading && (
               <div className="flex justify-center py-12">
-                <div className="animate-spin h-8 w-8 border-b-2" />
+                <div className="h-8 w-8 animate-spin border-b-2" />
               </div>
             )}
             <div
@@ -64,9 +65,7 @@ export default function TabsSection() {
               {items.length ? (
                 <AccordionList items={items} />
               ) : (
-                <p className="text-center py-12">
-                  {t('noQuestions')}
-                </p>
+                <p className="py-12 text-center">{t('noQuestions')}</p>
               )}
             </div>
           </TabsContent>
@@ -78,7 +77,9 @@ export default function TabsSection() {
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={handlePageChange}
-          accentColor={categoryTabStyles[active as keyof typeof categoryTabStyles].accent}
+          accentColor={
+            categoryTabStyles[active as keyof typeof categoryTabStyles].accent
+          }
         />
       )}
     </div>

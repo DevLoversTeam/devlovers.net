@@ -1,40 +1,41 @@
-import "dotenv/config";
-import bcrypt from "bcryptjs";
+import 'dotenv/config';
 
-import { db } from "./index";
-import { users } from "./schema";
-import { eq } from "drizzle-orm";
+import bcrypt from 'bcryptjs';
+import { eq } from 'drizzle-orm';
+
+import { db } from './index';
+import { users } from './schema';
 
 if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL is missing");
+  throw new Error('DATABASE_URL is missing');
 }
 
 async function main() {
-  console.log("[seed] Seeding users...");
+  console.log('[seed] Seeding users...');
 
-  const passwordHash = await bcrypt.hash("password123", 10);
+  const passwordHash = await bcrypt.hash('password123', 10);
 
   const seedUsers = [
     {
-      name: "Admin User",
-      email: "admin@example.com",
+      name: 'Admin User',
+      email: 'admin@example.com',
       passwordHash,
       emailVerified: new Date(),
-      role: "admin",
+      role: 'admin',
     },
     {
-      name: "Test User",
-      email: "user@example.com",
+      name: 'Test User',
+      email: 'user@example.com',
       passwordHash,
       emailVerified: null,
-      role: "user",
+      role: 'user',
     },
     {
-      name: "Google User",
-      email: "google@example.com",
+      name: 'Google User',
+      email: 'google@example.com',
       passwordHash: null,
       emailVerified: new Date(),
-      role: "user",
+      role: 'user',
     },
   ] as const;
 
@@ -54,12 +55,12 @@ async function main() {
     console.log(`[seed] Inserted user: ${user.email}`);
   }
 
-  console.log("[seed] Users seeding completed");
+  console.log('[seed] Users seeding completed');
 }
 
 main()
   .then(() => process.exit(0))
-  .catch((err) => {
-    console.error("[seed] Failed:", err);
+  .catch(err => {
+    console.error('[seed] Failed:', err);
     process.exit(1);
   });

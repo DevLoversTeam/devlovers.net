@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
+
 import { cn } from '@/lib/utils';
 
 interface HighlightCachedTermsProps {
@@ -95,9 +96,9 @@ export default function HighlightCachedTerms({
               'border-b border-dashed border-emerald-500/60',
               'bg-emerald-50/50 dark:bg-emerald-900/20',
               'hover:bg-emerald-100 dark:hover:bg-emerald-900/40',
-              'focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:ring-offset-1',
+              'focus:ring-2 focus:ring-emerald-500/50 focus:ring-offset-1 focus:outline-none',
               'transition-colors duration-150',
-              'rounded-sm px-0.5 -mx-0.5'
+              '-mx-0.5 rounded-sm px-0.5'
             )}
             title="Click to see explanation (cached)"
           >

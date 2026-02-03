@@ -1,15 +1,15 @@
 import crypto from 'crypto';
 
+import { db } from '@/db';
+import { orders } from '@/db/schema/shop';
 import { createCartItemKey } from '@/lib/shop/cart-item-key';
-import { type PaymentProvider } from '@/lib/shop/payments';
 import { type CurrencyCode } from '@/lib/shop/currency';
-import { MAX_QUANTITY_PER_LINE } from '@/lib/validation/shop';
+import { type PaymentProvider } from '@/lib/shop/payments';
 import {
   type CheckoutItem,
   type OrderSummaryWithMinor,
 } from '@/lib/types/shop';
-import { orders } from '@/db/schema/shop';
-import { db } from '@/db';
+import { MAX_QUANTITY_PER_LINE } from '@/lib/validation/shop';
 
 import { InvalidPayloadError, OrderStateInvalidError } from '../errors';
 

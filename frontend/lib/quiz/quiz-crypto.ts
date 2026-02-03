@@ -39,7 +39,9 @@ export function encryptAnswers(answers: CorrectAnswersMap): string {
 /**
  * Decrypts blob. Returns null if tampered or wrong key.
  */
-export function decryptAnswers(encryptedBlob: string): CorrectAnswersMap | null {
+export function decryptAnswers(
+  encryptedBlob: string
+): CorrectAnswersMap | null {
   try {
     const key = getEncryptionKey();
     const data = Buffer.from(encryptedBlob, 'base64');
@@ -67,7 +69,10 @@ export function decryptAnswers(encryptedBlob: string): CorrectAnswersMap | null 
  * Creates encrypted blob from quiz questions
  */
 export function createEncryptedAnswersBlob(
-  questions: Array<{ id: string; answers: Array<{ id: string; isCorrect: boolean }> }>
+  questions: Array<{
+    id: string;
+    answers: Array<{ id: string; isCorrect: boolean }>;
+  }>
 ): string {
   const answersMap: CorrectAnswersMap = {};
 

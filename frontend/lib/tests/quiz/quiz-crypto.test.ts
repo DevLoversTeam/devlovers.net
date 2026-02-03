@@ -1,15 +1,17 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { afterEach,beforeEach, describe, expect, it } from 'vitest';
+
 import {
-  encryptAnswers,
-  decryptAnswers,
   createEncryptedAnswersBlob,
+  decryptAnswers,
+  encryptAnswers,
 } from '@/lib/quiz/quiz-crypto';
-import { setupQuizTestEnv, cleanupQuizTestEnv } from './setup';
+
 import {
-  createMockQuestions,
   createCorrectAnswersMap,
+  createMockQuestions,
   resetFactoryCounters,
 } from '../factories/quiz/quiz';
+import { cleanupQuizTestEnv,setupQuizTestEnv } from './setup';
 
 describe('quiz-crypto', () => {
   // Setup: set encryption key before each test

@@ -1,7 +1,7 @@
 'use client';
 
-import { useId, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { useId, useState } from 'react';
 
 interface AdminProductStatusToggleProps {
   id: string;
@@ -86,7 +86,7 @@ export function AdminProductStatusToggle({
         aria-busy={isLoading}
         aria-pressed={isActive}
         aria-describedby={error ? errorId : undefined}
-        className="w-full max-w-full whitespace-normal break-words leading-tight rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50 text-center"
+        className="border-border text-foreground hover:bg-secondary w-full max-w-full rounded-md border px-2 py-1 text-center text-xs leading-tight font-medium break-words whitespace-normal transition-colors disabled:cursor-not-allowed disabled:opacity-50"
       >
         {buttonLabel}
       </button>

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { routerReplace, routerBack, toastMock } = vi.hoisted(() => ({
   routerReplace: vi.fn(),
@@ -19,7 +19,6 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('sonner', () => ({ toast: toastMock }));
-
 
 vi.mock('@/hooks/useAntiCheat', () => ({
   useAntiCheat: () => ({
@@ -113,6 +112,8 @@ describe('QuizContainer flow', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'nextButton' }));
 
-    expect(await screen.findByRole('button', { name: 'loginButton' })).toBeTruthy();
+    expect(
+      await screen.findByRole('button', { name: 'loginButton' })
+    ).toBeTruthy();
   });
 });

@@ -1,16 +1,18 @@
 import 'dotenv/config';
+
+import { randomUUID } from 'crypto';
 import { eq } from 'drizzle-orm';
+
 import { db } from './index';
 import { categories } from './schema/categories';
 import {
-  quizzes,
-  quizTranslations,
-  quizQuestions,
-  quizQuestionContent,
   quizAnswers,
   quizAnswerTranslations,
+  quizQuestionContent,
+  quizQuestions,
+  quizTranslations,
+  quizzes,
 } from './schema/quiz';
-import { randomUUID } from 'crypto';
 
 type Locale = 'uk' | 'en' | 'pl';
 

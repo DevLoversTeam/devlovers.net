@@ -1,14 +1,14 @@
 'use client';
 
-import { useMemo } from 'react';
-import { useSearchParams } from 'next/navigation';
 import { Home } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useMemo } from 'react';
 
-import { usePathname } from '@/i18n/routing';
-import { cn } from '@/lib/utils';
 import { AnimatedNavLink } from '@/components/shared/AnimatedNavLink';
 import { HeaderButton } from '@/components/shared/HeaderButton';
+import { usePathname } from '@/i18n/routing';
+import { cn } from '@/lib/utils';
 
 interface NavLinksProps {
   className?: string;
@@ -36,12 +36,27 @@ export function NavLinks({
   const tProducts = useTranslations('shop.products');
   const tNav = useTranslations('shop.admin.navigation');
 
-  const navLinks = useMemo(() => [
-    { href: '/shop/products', label: tProducts('title'), slug: 'all' },
-    { href: '/shop/products?category=apparel', label: t('apparel'), slug: 'apparel' },
-    { href: '/shop/products?category=lifestyle', label: t('lifestyle'), slug: 'lifestyle' },
-    { href: '/shop/products?category=collectibles', label: t('collectibles'), slug: 'collectibles' },
-  ], [t, tProducts]);
+  const navLinks = useMemo(
+    () => [
+      { href: '/shop/products', label: tProducts('title'), slug: 'all' },
+      {
+        href: '/shop/products?category=apparel',
+        label: t('apparel'),
+        slug: 'apparel',
+      },
+      {
+        href: '/shop/products?category=lifestyle',
+        label: t('lifestyle'),
+        slug: 'lifestyle',
+      },
+      {
+        href: '/shop/products?category=collectibles',
+        label: t('collectibles'),
+        slug: 'collectibles',
+      },
+    ],
+    [t, tProducts]
+  );
 
   const computed = useMemo(() => {
     return navLinks.map(link => {

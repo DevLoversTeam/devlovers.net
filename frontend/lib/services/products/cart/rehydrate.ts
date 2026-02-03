@@ -1,22 +1,22 @@
 import { and, eq, inArray } from 'drizzle-orm';
 
 import { db } from '@/db';
-import { products, productPrices } from '@/db/schema';
 import { coercePriceFromDb } from '@/db/queries/shop/orders';
+import { productPrices,products } from '@/db/schema';
+import { logWarn } from '@/lib/logging';
+import { createCartItemKey } from '@/lib/shop/cart-item-key';
+import { type CurrencyCode,isTwoDecimalCurrency } from '@/lib/shop/currency';
 import { calculateLineTotal, fromCents, toCents } from '@/lib/shop/money';
-import {
-  MAX_QUANTITY_PER_LINE,
-  cartRehydrateResultSchema,
-} from '@/lib/validation/shop';
 import type {
   CartClientItem,
   CartRehydrateItem,
   CartRehydrateResult,
   CartRemovedItem,
 } from '@/lib/validation/shop';
-import { isTwoDecimalCurrency, type CurrencyCode } from '@/lib/shop/currency';
-import { createCartItemKey } from '@/lib/shop/cart-item-key';
-import { logWarn } from '@/lib/logging';
+import {
+  cartRehydrateResultSchema,
+  MAX_QUANTITY_PER_LINE,
+} from '@/lib/validation/shop';
 
 import { PriceConfigError } from '../../errors';
 
