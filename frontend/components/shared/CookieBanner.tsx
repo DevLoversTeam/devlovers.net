@@ -2,44 +2,36 @@
 
 import { X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useEffect,useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/routing';
 
 export function CookieBanner() {
   const t = useTranslations('CookieBanner');
-  const [isVisible, setIsVisible] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
+  const [isVisible, setIsVisible] = useState<boolean | null>(null);
 
   useEffect(() => {
-    setIsMounted(true);
     const consent = localStorage.getItem('cookie-consent');
     if (!consent) {
       const timer = setTimeout(() => setIsVisible(true), 500);
       return () => clearTimeout(timer);
+    } else {
+      const timer = setTimeout(() => setIsVisible(false), 0);
+      return () => clearTimeout(timer);
     }
   }, []);
 
-  const handleAccept = () => {
+  if (isVisible === null || !isVisible) return null;
+
+  const handleAction = (type: 'accepted' | 'declined') => {
     try {
-      localStorage.setItem('cookie-consent', 'accepted');
+      localStorage.setItem('cookie-consent', type);
     } catch (error) {
       console.error('Failed to save cookie consent:', error);
     }
     setIsVisible(false);
   };
-
-  const handleDecline = () => {
-    try {
-      localStorage.setItem('cookie-consent', 'declined');
-    } catch (error) {
-      console.error('Failed to save cookie consent:', error);
-    }
-    setIsVisible(false);
-  };
-
-  if (!isMounted || !isVisible) return null;
 
   return (
     <div className="animate-in slide-in-from-bottom-full fade-in fixed right-0 bottom-0 left-0 z-[100] p-4 duration-700 md:p-6">
@@ -64,7 +56,7 @@ export function CookieBanner() {
           <Button
             variant="outline"
             size="sm"
-            onClick={handleDecline}
+            onClick={() => handleAction('declined')}
             className="w-full sm:w-auto"
           >
             {t('decline')}
@@ -72,7 +64,7 @@ export function CookieBanner() {
           <Button
             variant="primary"
             size="sm"
-            onClick={handleAccept}
+            onClick={() => handleAction('accepted')}
             className="w-full shadow-lg shadow-blue-500/20 sm:w-auto"
           >
             {t('accept')}
@@ -80,7 +72,7 @@ export function CookieBanner() {
         </div>
 
         <button
-          onClick={handleDecline}
+          onClick={() => handleAction('declined')}
           className="absolute top-2 right-2 rounded-full p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 md:hidden dark:hover:bg-gray-800 dark:hover:text-gray-300"
           aria-label={t('decline')}
         >

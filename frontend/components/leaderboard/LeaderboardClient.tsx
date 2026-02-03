@@ -7,7 +7,7 @@ import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground
 
 import { LeaderboardPodium } from './LeaderboardPodium';
 import { LeaderboardTable } from './LeaderboardTable';
-import { CurrentUser,User } from './types';
+import { CurrentUser, User } from './types';
 
 interface LeaderboardClientProps {
   initialUsers: User[];
