@@ -30,7 +30,7 @@ export default async function QAPage({
     <DynamicGridBackground className="bg-gray-50 py-10 transition-colors duration-300 dark:bg-transparent">
       <main className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <p className="text-sm font-semibold text-[var(--accent-primary)]">
+          <p className="text-sm font-semibold text-(--accent-primary)">
             {t('pretitle')}
           </p>
           <h1 className="text-3xl font-bold">{t('title')}</h1>
