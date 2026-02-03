@@ -220,7 +220,7 @@ export default function CartPage() {
                 className="border-border rounded-lg border p-4"
               >
                 <article className="flex gap-4">
-                  <div className="bg-muted relative h-24 w-24 shrink-0 overflow-hidden rounded-md">
+                  <div className="bg-muted relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-md">
                     <Image
                       src={item.imageUrl || '/placeholder.svg'}
                       alt={item.title}

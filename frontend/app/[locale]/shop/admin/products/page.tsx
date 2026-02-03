@@ -281,17 +281,17 @@ export default async function AdminProductsPage({
               <table className="divide-border w-full table-fixed divide-y text-sm">
                 <caption className="sr-only">{t('listCaption')}</caption>
                 <colgroup>
-                  <col className="w-38" />
-                  <col className="w-32" />
-                  <col className="w-26" />
-                  <col className="w-24" />
-                  <col className="w-22" />
-                  <col className="w-20" />
-                  <col className="w-16" />
-                  <col className="w-20" />
-                  <col className="w-20" />
-                  <col className="w-18" />
-                  <col className="w-44" />
+                  <col className="w-[9.5rem]" />
+                  <col className="w-[8rem]" />
+                  <col className="w-[6.5rem]" />
+                  <col className="w-[6rem]" />
+                  <col className="w-[5.5rem]" />
+                  <col className="w-[5rem]" />
+                  <col className="w-[4rem]" />
+                  <col className="w-[5rem]" />
+                  <col className="w-[5rem]" />
+                  <col className="w-[4.5rem]" />
+                  <col className="w-[11rem]" />
                 </colgroup>
                 <thead className="bg-muted/50">
                   <tr>
@@ -399,7 +399,7 @@ export default async function AdminProductsPage({
                           <div className="grid grid-cols-2 gap-2">
                             <Link
                               href={`/shop/products/${row.slug}`}
-                              className="border-border text-foreground hover:bg-secondary wrap-break-words inline-flex items-center justify-center rounded-md border px-2 py-1 text-center text-xs leading-tight font-medium whitespace-normal transition-colors"
+                              className="border-border text-foreground hover:bg-secondary break-words inline-flex items-center justify-center rounded-md border px-2 py-1 text-center text-xs leading-tight font-medium whitespace-normal transition-colors"
                               aria-label={t('actions.viewProduct', {
                                 title: row.title,
                               })}
@@ -409,7 +409,7 @@ export default async function AdminProductsPage({
 
                             <Link
                               href={`/shop/admin/products/${row.id}/edit`}
-                              className="border-border text-foreground hover:bg-secondary wrap-break-words inline-flex items-center justify-center rounded-md border px-2 py-1 text-center text-xs leading-tight font-medium whitespace-normal transition-colors"
+                              className="border-border text-foreground hover:bg-secondary break-words inline-flex items-center justify-center rounded-md border px-2 py-1 text-center text-xs leading-tight font-medium whitespace-normal transition-colors"
                               aria-label={t('actions.editProduct', {
                                 title: row.title,
                               })}
