@@ -1,4 +1,5 @@
 import { getTranslations } from 'next-intl/server';
+
 import LegalBlock from './LegalBlock';
 
 export const TERMS_LAST_UPDATED = '2025-12-14';
@@ -22,7 +23,7 @@ export default async function TermsOfServiceContent() {
       </LegalBlock>
 
       <LegalBlock id="features" title={t('features.title')}>
-        <ul className="list-disc pl-5 space-y-2">
+        <ul className="list-disc space-y-2 pl-5">
           <li>{t('features.feature1')}</li>
           <li>{t('features.feature2')}</li>
           <li>{t('features.feature3')}</li>
@@ -30,7 +31,7 @@ export default async function TermsOfServiceContent() {
       </LegalBlock>
 
       <LegalBlock id="prohibited" title={t('prohibited.title')}>
-        <ul className="list-disc pl-5 space-y-2">
+        <ul className="list-disc space-y-2 pl-5">
           <li>{t('prohibited.item1')}</li>
           <li>{t('prohibited.item2')}</li>
         </ul>

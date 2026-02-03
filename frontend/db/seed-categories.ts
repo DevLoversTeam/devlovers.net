@@ -1,7 +1,8 @@
 import 'dotenv/config';
+
+import { categoryData } from '../data/category';
 import { db } from './index';
 import { categories, categoryTranslations } from './schema';
-import { categoryData } from '../data/category';
 
 const LOCALES = ['uk', 'en', 'pl'] as const;
 

@@ -2,8 +2,8 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { describe, it, expect, afterEach } from 'vitest';
 import { eq } from 'drizzle-orm';
+import { afterEach,describe, expect, it } from 'vitest';
 
 import { db } from '@/db';
 import { orders } from '@/db/schema/shop';
@@ -18,7 +18,10 @@ async function seedOrder(args: SeedArgs): Promise<string> {
   const orderId = crypto.randomUUID();
   const now = new Date();
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 601e032c399164dfc128ab2dee5fe52dd66d2caf
   const idempotencyKey = `test:${orderId}`;
 
   await db.insert(orders).values({

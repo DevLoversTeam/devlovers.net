@@ -1,6 +1,7 @@
 import 'server-only';
 
 import crypto from 'node:crypto';
+
 import type { NextRequest } from 'next/server';
 
 export const CSRF_FORM_FIELD = 'csrfToken' as const;

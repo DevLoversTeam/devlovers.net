@@ -1,9 +1,10 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { NextRequest } from 'next/server';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import {
-  normalizeOrigin,
   guardBrowserSameOrigin,
   guardNonBrowserOnly,
+  normalizeOrigin,
 } from '@/lib/security/origin';
 
 function makeReq(init: RequestInit) {

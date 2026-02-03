@@ -1,19 +1,20 @@
 'use client';
 
-import { useId } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import {
-  SHOP_FOCUS,
-  SHOP_CHIP_INTERACTIVE,
-  SHOP_CHIP_HOVER,
-  SHOP_CHIP_SELECTED,
-  SHOP_SWATCH_BASE,
-  SHOP_SIZE_CHIP_BASE,
-  SHOP_FILTER_ITEM_BASE,
-  SHOP_CHIP_BORDER_HOVER,
-} from '@/lib/shop/ui-classes';
+import { useId } from 'react';
+
 import { CATEGORIES, COLORS, PRODUCT_TYPES, SIZES } from '@/lib/config/catalog';
+import {
+  SHOP_CHIP_BORDER_HOVER,
+  SHOP_CHIP_HOVER,
+  SHOP_CHIP_INTERACTIVE,
+  SHOP_CHIP_SELECTED,
+  SHOP_FILTER_ITEM_BASE,
+  SHOP_FOCUS,
+  SHOP_SIZE_CHIP_BASE,
+  SHOP_SWATCH_BASE,
+} from '@/lib/shop/ui-classes';
 import { cn } from '@/lib/utils';
 
 export function ProductFilters() {
@@ -51,7 +52,7 @@ export function ProductFilters() {
       <section aria-labelledby={categoryGroupId}>
         <h3
           id={categoryGroupId}
-          className="text-sm font-semibold uppercase tracking-wide text-foreground"
+          className="text-foreground text-sm font-semibold tracking-wide uppercase"
         >
           {t('category')}
         </h3>
@@ -87,7 +88,7 @@ export function ProductFilters() {
       <section aria-labelledby={typeGroupId}>
         <h3
           id={typeGroupId}
-          className="text-sm font-semibold uppercase tracking-wide text-foreground"
+          className="text-foreground text-sm font-semibold tracking-wide uppercase"
         >
           {t('type')}
         </h3>
@@ -123,7 +124,7 @@ export function ProductFilters() {
       <section aria-labelledby={colorGroupId}>
         <h3
           id={colorGroupId}
-          className="text-sm font-semibold uppercase tracking-wide text-foreground"
+          className="text-foreground text-sm font-semibold tracking-wide uppercase"
         >
           {t('color')}
         </h3>
@@ -162,7 +163,7 @@ export function ProductFilters() {
       <section aria-labelledby={sizeGroupId}>
         <h3
           id={sizeGroupId}
-          className="text-sm font-semibold uppercase tracking-wide text-foreground"
+          className="text-foreground text-sm font-semibold tracking-wide uppercase"
         >
           {t('size')}
         </h3>
@@ -185,7 +186,7 @@ export function ProductFilters() {
                   isSelected
                     ? cn('bg-accent text-accent-foreground', SHOP_CHIP_SELECTED)
                     : cn(
-                        'bg-transparent text-muted-foreground border-border hover:text-foreground',
+                        'text-muted-foreground border-border hover:text-foreground bg-transparent',
                         SHOP_CHIP_HOVER,
                         SHOP_CHIP_BORDER_HOVER
                       )

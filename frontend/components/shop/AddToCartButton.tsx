@@ -1,23 +1,24 @@
 'use client';
 
-import { useId, useState } from 'react';
-import type { ShopProduct } from '@/lib/shop/data';
-import { cn } from '@/lib/utils';
 import { Check, Minus, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useId, useState } from 'react';
+
+import type { ShopProduct } from '@/lib/shop/data';
 import {
+  SHOP_CHIP_HOVER,
+  SHOP_CHIP_INTERACTIVE,
+  SHOP_CHIP_SELECTED,
   SHOP_CTA_BASE,
   SHOP_CTA_INSET,
   SHOP_CTA_WAVE,
-  shopCtaGradient,
   SHOP_FOCUS,
-  SHOP_CHIP_INTERACTIVE,
-  SHOP_CHIP_HOVER,
-  SHOP_CHIP_SELECTED,
-  SHOP_SWATCH_BASE,
   SHOP_SIZE_CHIP_BASE,
   SHOP_STEPPER_BUTTON_BASE,
+  SHOP_SWATCH_BASE,
+  shopCtaGradient,
 } from '@/lib/shop/ui-classes';
+import { cn } from '@/lib/utils';
 
 import { useCart } from './CartProvider';
 
@@ -80,7 +81,7 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
         <fieldset className="min-w-0">
           <legend
             id={colorGroupId}
-            className="text-sm font-semibold uppercase tracking-wide text-foreground"
+            className="text-foreground text-sm font-semibold tracking-wide uppercase"
           >
             {t('color')}
           </legend>
@@ -106,7 +107,7 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
                     selectedColor === color
                       ? cn(
                           SHOP_CHIP_SELECTED,
-                          'hover:shadow-[var(--shop-chip-shadow-selected)] hover:border-accent'
+                          'hover:border-accent hover:shadow-[var(--shop-chip-shadow-selected)]'
                         )
                       : 'hover:border-accent/60 hover:shadow-[var(--shop-chip-shadow-hover)]'
                   )}
@@ -126,7 +127,7 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
         <fieldset className="min-w-0">
           <legend
             id={sizeGroupId}
-            className="text-sm font-semibold uppercase tracking-wide text-foreground"
+            className="text-foreground text-sm font-semibold tracking-wide uppercase"
           >
             {t('size')}
           </legend>
@@ -149,7 +150,7 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
                   SHOP_FOCUS,
                   selectedSize === size
                     ? cn('bg-accent text-accent-foreground', SHOP_CHIP_SELECTED)
-                    : 'bg-transparent text-muted-foreground border-border hover:text-foreground hover:shadow-[var(--shop-chip-shadow-hover)] hover:border-accent/60'
+                    : 'text-muted-foreground border-border hover:text-foreground hover:border-accent/60 bg-transparent hover:shadow-[var(--shop-chip-shadow-hover)]'
                 )}
               >
                 {size}
@@ -162,7 +163,7 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
       <section aria-labelledby={quantityGroupId}>
         <h3
           id={quantityGroupId}
-          className="text-sm font-semibold uppercase tracking-wide text-foreground"
+          className="text-foreground text-sm font-semibold tracking-wide uppercase"
         >
           {t('quantity')}
         </h3>
@@ -212,7 +213,7 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
           'w-full justify-center gap-2 px-8 py-3',
           'transition-[transform,filter] duration-700 ease-out',
           !product.inStock &&
-            'cursor-not-allowed bg-muted text-muted-foreground',
+            'bg-muted text-muted-foreground cursor-not-allowed',
           product.inStock &&
             (added
               ? 'text-white shadow-[var(--shop-hero-btn-success-shadow)] hover:shadow-[var(--shop-hero-btn-success-shadow-hover)]'

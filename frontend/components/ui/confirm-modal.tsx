@@ -33,26 +33,17 @@ export function ConfirmModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div 
-        className="absolute inset-0 bg-black/50" 
-        onClick={onCancel}
-      />
-      <div className="relative bg-white dark:bg-neutral-900 rounded-xl p-6 max-w-sm mx-4 shadow-xl border border-gray-200 dark:border-neutral-800">
-        <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+      <div className="absolute inset-0 bg-black/50" onClick={onCancel} />
+      <div className="relative mx-4 max-w-sm rounded-xl border border-gray-200 bg-white p-6 shadow-xl dark:border-neutral-800 dark:bg-neutral-900">
+        <h3 className="mb-2 text-xl font-bold text-gray-900 dark:text-gray-100">
           {title}
         </h3>
-        <p className="text-gray-600 dark:text-gray-400 mb-6">
-          {message}
-        </p>
+        <p className="mb-6 text-gray-600 dark:text-gray-400">{message}</p>
         <div className="flex gap-3">
-          <Button 
-            variant="outline" 
-            onClick={onCancel}
-            className="flex-1"
-          >
+          <Button variant="outline" onClick={onCancel} className="flex-1">
             {cancelText}
           </Button>
-          <Button 
+          <Button
             onClick={onConfirm}
             className={`flex-1 ${confirmButtonClass}`}
           >

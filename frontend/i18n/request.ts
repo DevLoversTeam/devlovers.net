@@ -1,5 +1,6 @@
 import { getRequestConfig } from 'next-intl/server';
-import { locales, defaultLocale } from './config';
+
+import { defaultLocale,locales } from './config';
 
 export default getRequestConfig(async ({ requestLocale }) => {
   let locale = await requestLocale;

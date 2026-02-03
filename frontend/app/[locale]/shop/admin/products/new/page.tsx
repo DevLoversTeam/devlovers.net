@@ -1,9 +1,17 @@
+<<<<<<< HEAD
+=======
+import { Metadata } from 'next';
+
+>>>>>>> 601e032c399164dfc128ab2dee5fe52dd66d2caf
 import { ShopAdminTopbar } from '@/components/shop/admin/ShopAdminTopbar';
 import { guardShopAdminPage } from '@/lib/auth/guard-shop-admin-page';
 import { issueCsrfToken } from '@/lib/security/csrf';
 
 import { ProductForm } from '../_components/ProductForm';
+<<<<<<< HEAD
 import { Metadata } from 'next';
+=======
+>>>>>>> 601e032c399164dfc128ab2dee5fe52dd66d2caf
 
 export const metadata: Metadata = {
   title: 'New Product | DevLovers',

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/db', () => ({
   db: {
@@ -6,8 +6,8 @@ vi.mock('@/db', () => ({
   },
 }));
 
-import { db } from '@/db';
 import { GET } from '@/app/api/questions/[category]/route';
+import { db } from '@/db';
 
 type Builder = {
   from: ReturnType<typeof vi.fn>;

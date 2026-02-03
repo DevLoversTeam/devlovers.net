@@ -1,9 +1,9 @@
-import { baseEmailLayout } from "./base-layout";
+import { baseEmailLayout } from './base-layout';
 
 export function verifyEmailTemplate(verifyUrl: string) {
-    return baseEmailLayout({
-        title: "Verify your email",
-        content: `
+  return baseEmailLayout({
+    title: 'Verify your email',
+    content: `
 <p class="text-secondary" style="margin:0 0 16px; font-size:14px; color:#374151; line-height:1.5;">
   Welcome to <strong>DevLovers</strong> 👋
 </p>
@@ -43,5 +43,5 @@ export function verifyEmailTemplate(verifyUrl: string) {
   If you didn’t create an account, you can safely ignore this email.
 </p>
 `,
-    });
+  });
 }

@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
-import type { Author, Post } from '@/components/blog/BlogFilters';
+import { fireEvent,render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+
 import BlogCard from '@/components/blog/BlogCard';
+import type { Author, Post } from '@/components/blog/BlogFilters';
 
 vi.mock('next/image', () => ({
   __esModule: true,
@@ -11,9 +12,13 @@ vi.mock('next/image', () => ({
 
 vi.mock('next/link', () => ({
   __esModule: true,
-  default: ({ href, children }: { href: string; children: React.ReactNode }) => (
-    <a href={href}>{children}</a>
-  ),
+  default: ({
+    href,
+    children,
+  }: {
+    href: string;
+    children: React.ReactNode;
+  }) => <a href={href}>{children}</a>,
 }));
 
 vi.mock('next-intl', () => ({
@@ -48,9 +53,7 @@ describe('BlogCard', () => {
 
     const onAuthorSelect = vi.fn();
 
-    render(
-      <BlogCard post={post} onAuthorSelect={onAuthorSelect} />
-    );
+    render(<BlogCard post={post} onAuthorSelect={onAuthorSelect} />);
 
     expect(screen.getByText('Пост про співбесіду')).toBeInTheDocument();
     expect(screen.getByText('Опис поста')).toBeInTheDocument();
@@ -70,9 +73,7 @@ describe('BlogCard', () => {
 
     const onAuthorSelect = vi.fn();
 
-    render(
-      <BlogCard post={post} onAuthorSelect={onAuthorSelect} />
-    );
+    render(<BlogCard post={post} onAuthorSelect={onAuthorSelect} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Анна' }));
     expect(onAuthorSelect).toHaveBeenCalledWith(author);

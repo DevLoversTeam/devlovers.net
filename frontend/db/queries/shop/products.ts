@@ -4,16 +4,17 @@ import {
   count,
   desc,
   eq,
-  or,
   inArray,
-  sql,
+  or,
   type SQL,
+  sql,
 } from 'drizzle-orm';
+
 import { db } from '@/db';
+import { productPrices,products } from '@/db/schema';
 import type { CatalogSort } from '@/lib/config/catalog';
-import { products, productPrices } from '@/db/schema';
-import { dbProductSchema, type DbProduct } from '@/lib/validation/shop';
 import type { CurrencyCode } from '@/lib/shop/currency';
+import { type DbProduct,dbProductSchema } from '@/lib/validation/shop';
 
 const publicProductBaseSelect = {
   id: products.id,

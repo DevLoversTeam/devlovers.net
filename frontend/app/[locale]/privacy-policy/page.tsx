@@ -1,4 +1,5 @@
 import { getTranslations } from 'next-intl/server';
+
 import LegalPageShell from '@/components/legal/LegalPageShell';
 import PrivacyPolicyContent, {
   PRIVACY_LAST_UPDATED,

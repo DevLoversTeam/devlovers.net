@@ -1,6 +1,7 @@
+import { getTranslations } from 'next-intl/server';
+
 import { Link } from '@/i18n/routing';
 import { cn } from '@/lib/utils';
-import { getTranslations } from 'next-intl/server';
 
 type AdminPaginationProps = {
   basePath: string;
@@ -49,7 +50,7 @@ export async function AdminPagination({
         </li>
 
         <li>
-          <span aria-current="page" className="text-sm text-muted-foreground">
+          <span aria-current="page" className="text-muted-foreground text-sm">
             {t('page', { page })}
           </span>
         </li>

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { afterEach,describe, expect, it, vi } from 'vitest';
 
 const fetchMock = vi.fn();
 
@@ -27,7 +27,9 @@ describe('GET /api/blog-search', () => {
     );
     const data = await response.json();
 
-    expect(fetchMock).toHaveBeenCalledWith(expect.any(String), { locale: 'uk' });
+    expect(fetchMock).toHaveBeenCalledWith(expect.any(String), {
+      locale: 'uk',
+    });
     expect(data).toHaveLength(1);
     expect(data[0].title).toBe('Post');
   });

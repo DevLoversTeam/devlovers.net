@@ -1,12 +1,12 @@
-import { describe, it, expect } from 'vitest';
 import crypto from 'crypto';
 import { eq, sql } from 'drizzle-orm';
+import { describe, expect,it } from 'vitest';
 
 import { db } from '@/db';
 import { orders, products } from '@/db/schema';
-import { toDbMoney } from '@/lib/shop/money';
 import { applyReserveMove } from '@/lib/services/inventory';
 import { restockOrder } from '@/lib/services/orders';
+import { toDbMoney } from '@/lib/shop/money';
 
 function readRows(res: any): any[] {
   if (Array.isArray(res)) return res;

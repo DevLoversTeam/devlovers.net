@@ -1,10 +1,10 @@
 import { and, eq, inArray, ne, sql } from 'drizzle-orm';
 
-import { applyReserveMove } from '../inventory';
-import { logError, logWarn } from '@/lib/logging';
-import { isPaymentsEnabled } from '@/lib/env/stripe';
 import { db } from '@/db';
+import { coercePriceFromDb } from '@/db/queries/shop/orders';
 import { orderItems, orders, productPrices, products } from '@/db/schema/shop';
+import { isPaymentsEnabled } from '@/lib/env/stripe';
+import { logError, logWarn } from '@/lib/logging';
 import { resolveCurrencyFromLocale } from '@/lib/shop/currency';
 import {
   calculateLineTotal,
@@ -12,28 +12,27 @@ import {
   sumLineTotals,
   toDbMoney,
 } from '@/lib/shop/money';
+import { type PaymentProvider, type PaymentStatus } from '@/lib/shop/payments';
 import {
   type CheckoutItem,
   type CheckoutResult,
   type OrderSummaryWithMinor,
 } from '@/lib/types/shop';
-import { coercePriceFromDb } from '@/db/queries/shop/orders';
-import { type PaymentProvider, type PaymentStatus } from '@/lib/shop/payments';
 
 import {
-  InsufficientStockError,
   IdempotencyConflictError,
+  InsufficientStockError,
   InvalidPayloadError,
   InvalidVariantError,
   OrderNotFoundError,
-  PriceConfigError,
   OrderStateInvalidError,
+  PriceConfigError,
 } from '../errors';
-
+import { applyReserveMove } from '../inventory';
 import {
-  type Currency,
-  type CheckoutItemWithVariant,
   aggregateReserveByProductId,
+  type CheckoutItemWithVariant,
+  type Currency,
   hashIdempotencyRequest,
   isStrictNonNegativeInt,
   mergeCheckoutItems,
@@ -41,10 +40,12 @@ import {
   requireTotalCents,
   resolvePaymentProvider,
 } from './_shared';
-
-import { getOrderById, getOrderByIdempotencyKey } from './summary';
-import { restockOrder } from './restock';
 import { guardedPaymentStatusUpdate } from './payment-state';
+<<<<<<< HEAD
+=======
+import { restockOrder } from './restock';
+import { getOrderById, getOrderByIdempotencyKey } from './summary';
+>>>>>>> 601e032c399164dfc128ab2dee5fe52dd66d2caf
 
 async function reconcileNoPaymentOrder(
   orderId: string

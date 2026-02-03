@@ -1,12 +1,13 @@
 'use client';
 
-import { Link } from '@/i18n/routing';
 import Image from 'next/image';
+import { useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+
+import { Link } from '@/i18n/routing';
+import { formatMoney } from '@/lib/shop/currency';
 import type { ShopProduct } from '@/lib/shop/data';
 import { cn } from '@/lib/utils';
-import { useParams } from 'next/navigation';
-import { formatMoney } from '@/lib/shop/currency';
-import { useTranslations } from 'next-intl';
 
 const PLACEHOLDER = '/placeholder.svg';
 const allowedHosts = new Set(['res.cloudinary.com', 'cdn.sanity.io']);
@@ -44,12 +45,12 @@ export function ProductCard({ product }: ProductCardProps) {
   return (
     <Link
       href={`/shop/products/${product.slug}`}
-      className="group relative flex flex-col overflow-hidden rounded-lg border border-border bg-card transition-shadow duration-500 hover:shadow-[var(--shop-card-shadow-hover)] hover:border-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      className="group border-border bg-card focus-visible:ring-offset-background relative flex flex-col overflow-hidden rounded-lg border transition-shadow duration-500 hover:border-transparent hover:shadow-[var(--shop-card-shadow-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--color-ring)] focus-visible:ring-offset-2 focus-visible:outline-none"
     >
       {product.badge && product.badge !== 'NONE' && (
         <span
           className={cn(
-            'absolute left-3 top-3 z-10 rounded px-2 py-1 text-xs font-semibold uppercase',
+            'absolute top-3 left-3 z-10 rounded px-2 py-1 text-xs font-semibold uppercase',
             product.badge === 'SALE' && 'bg-accent text-accent-foreground',
             product.badge === 'NEW' && 'bg-foreground text-background'
           )}
@@ -58,7 +59,7 @@ export function ProductCard({ product }: ProductCardProps) {
         </span>
       )}
 
-      <div className="relative aspect-square overflow-hidden bg-muted">
+      <div className="bg-muted relative aspect-square overflow-hidden">
         <Image
           src={src}
           alt={product.name}
@@ -69,7 +70,7 @@ export function ProductCard({ product }: ProductCardProps) {
       </div>
 
       <div className="flex flex-1 flex-col p-4">
-        <h3 className="text-sm font-medium text-foreground">{product.name}</h3>
+        <h3 className="text-foreground text-sm font-medium">{product.name}</h3>
 
         <div className="mt-2 flex items-center gap-2" aria-label="Price">
           <span
@@ -82,7 +83,7 @@ export function ProductCard({ product }: ProductCardProps) {
           </span>
 
           {product.originalPrice && (
-            <span className="text-sm text-muted-foreground line-through">
+            <span className="text-muted-foreground text-sm line-through">
               {formatMoney(product.originalPrice, product.currency, locale)}
             </span>
           )}
@@ -90,7 +91,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
         <p
           className={cn(
-            'mt-2 text-xs text-muted-foreground min-h-[1rem] leading-4',
+            'text-muted-foreground mt-2 min-h-[1rem] text-xs leading-4',
             product.inStock && 'invisible'
           )}
           {...(product.inStock ? { 'aria-hidden': true } : { role: 'status' })}

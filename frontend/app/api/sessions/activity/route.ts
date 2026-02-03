@@ -1,9 +1,10 @@
+import { randomUUID } from 'crypto';
+import { gte, lt,sql } from 'drizzle-orm';
+import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+
 import { db } from '@/db';
 import { activeSessions } from '@/db/schema/sessions';
-import { cookies } from 'next/headers';
-import { randomUUID } from 'crypto';
-import { sql, gte, lt } from 'drizzle-orm';
 
 const SESSION_TIMEOUT_MINUTES = 15;
 

@@ -1,13 +1,15 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { NextRequest } from 'next/server';
+import { afterEach,beforeEach, describe, expect, it } from 'vitest';
+
 import { POST } from '@/app/api/quiz/verify-answer/route';
 import { encryptAnswers } from '@/lib/quiz/quiz-crypto';
-import { setupQuizTestEnv, cleanupQuizTestEnv } from './setup';
+
 import {
-  createMockQuestions,
   createCorrectAnswersMap,
+  createMockQuestions,
   resetFactoryCounters,
 } from '../factories/quiz/quiz';
+import { cleanupQuizTestEnv,setupQuizTestEnv } from './setup';
 
 /**
  * Creates a mock NextRequest for POST /api/quiz/verify-answer

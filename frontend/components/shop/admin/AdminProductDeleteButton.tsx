@@ -1,8 +1,8 @@
 'use client';
 
-import { useId, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useId, useState } from 'react';
 
 interface AdminProductDeleteButtonProps {
   id: string;
@@ -91,7 +91,7 @@ export function AdminProductDeleteButton({
         disabled={isLoading}
         aria-busy={isLoading}
         aria-describedby={error ? errorId : undefined}
-        className="w-full max-w-full whitespace-normal break-words leading-tight rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50 text-center"
+        className="border-border text-foreground hover:bg-secondary w-full max-w-full rounded-md border px-2 py-1 text-center text-xs leading-tight font-medium break-words whitespace-normal transition-colors disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isLoading ? t('deleting') : t('delete')}
       </button>

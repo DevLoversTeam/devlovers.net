@@ -1,22 +1,32 @@
-import { Link } from '@/i18n/routing';
 import { and, desc, eq, sql } from 'drizzle-orm';
+<<<<<<< HEAD
 import { issueCsrfToken } from '@/lib/security/csrf';
 import { ShopAdminTopbar } from '@/components/shop/admin/ShopAdminTopbar';
 import { guardShopAdminPage } from '@/lib/auth/guard-shop-admin-page';
 import { AdminProductDeleteButton } from '@/components/shop/admin/AdminProductDeleteButton';
 import { AdminProductStatusToggle } from '@/components/shop/admin/AdminProductStatusToggle';
 import { AdminPagination } from '@/components/shop/admin/AdminPagination';
+=======
+import { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
+
+import { AdminPagination } from '@/components/shop/admin/AdminPagination';
+import { AdminProductDeleteButton } from '@/components/shop/admin/AdminProductDeleteButton';
+import { AdminProductStatusToggle } from '@/components/shop/admin/AdminProductStatusToggle';
+import { ShopAdminTopbar } from '@/components/shop/admin/ShopAdminTopbar';
+>>>>>>> 601e032c399164dfc128ab2dee5fe52dd66d2caf
 import { db } from '@/db';
 import {
   inventoryMoves,
   orderItems,
-  products,
   productPrices,
+  products,
 } from '@/db/schema';
-import { formatMoney, resolveCurrencyFromLocale } from '@/lib/shop/currency';
+import { Link } from '@/i18n/routing';
+import { guardShopAdminPage } from '@/lib/auth/guard-shop-admin-page';
 import { parsePage } from '@/lib/pagination';
-import { getTranslations } from 'next-intl/server';
-import { Metadata } from 'next';
+import { issueCsrfToken } from '@/lib/security/csrf';
+import { formatMoney, resolveCurrencyFromLocale } from '@/lib/shop/currency';
 
 export const metadata: Metadata = {
   title: 'Admin Products | DevLovers',
@@ -108,14 +118,14 @@ export default async function AdminProductsPage({
         <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <h1
             id="admin-products-title"
-            className="text-2xl font-bold text-foreground"
+            className="text-foreground text-2xl font-bold"
           >
             {t('title')}
           </h1>
 
           <Link
             href="/shop/admin/products/new"
-            className="inline-flex items-center justify-center whitespace-nowrap rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+            className="border-border text-foreground hover:bg-secondary inline-flex items-center justify-center rounded-md border px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors"
           >
             {t('newProduct')}
           </Link>
@@ -125,7 +135,7 @@ export default async function AdminProductsPage({
           {/* Mobile cards */}
           <div className="md:hidden">
             {rows.length === 0 ? (
-              <div className="rounded-md border border-border p-4 text-sm text-muted-foreground">
+              <div className="border-border text-muted-foreground rounded-md border p-4 text-sm">
                 {t('empty')}
               </div>
             ) : (
@@ -138,25 +148,25 @@ export default async function AdminProductsPage({
                   return (
                     <li
                       key={row.id}
-                      className="rounded-lg border border-border bg-background p-4"
+                      className="border-border bg-background rounded-lg border p-4"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <div
-                            className="truncate text-sm font-semibold text-foreground"
+                            className="text-foreground truncate text-sm font-semibold"
                             title={row.title}
                           >
                             {row.title}
                           </div>
                           <div
-                            className="mt-0.5 truncate text-xs text-muted-foreground"
+                            className="text-muted-foreground mt-0.5 truncate text-xs"
                             title={row.slug}
                           >
                             {row.slug}
                           </div>
                         </div>
 
-                        <div className="shrink-0 whitespace-nowrap text-right text-sm text-foreground">
+                        <div className="text-foreground shrink-0 text-right text-sm whitespace-nowrap">
                           {priceMinor == null
                             ? '-'
                             : formatMoney(priceMinor, displayCurrency, locale)}
@@ -169,7 +179,7 @@ export default async function AdminProductsPage({
                             {t('table.category')}
                           </dt>
                           <dd
-                            className="truncate text-foreground"
+                            className="text-foreground truncate"
                             title={row.category ?? '-'}
                           >
                             {row.category ?? '-'}
@@ -181,7 +191,7 @@ export default async function AdminProductsPage({
                             {t('table.type')}
                           </dt>
                           <dd
-                            className="truncate text-foreground"
+                            className="text-foreground truncate"
                             title={row.type ?? '-'}
                           >
                             {row.type ?? '-'}
@@ -235,7 +245,7 @@ export default async function AdminProductsPage({
                       <div className="mt-3 flex flex-wrap items-center gap-2">
                         <Link
                           href={`/shop/products/${row.slug}`}
-                          className="inline-flex items-center justify-center rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
+                          className="border-border text-foreground hover:bg-secondary inline-flex items-center justify-center rounded-md border px-2 py-1 text-xs font-medium transition-colors"
                           aria-label={t('actions.viewProduct', {
                             title: row.title,
                           })}
@@ -245,7 +255,7 @@ export default async function AdminProductsPage({
 
                         <Link
                           href={`/shop/admin/products/${row.id}/edit`}
-                          className="inline-flex items-center justify-center rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
+                          className="border-border text-foreground hover:bg-secondary inline-flex items-center justify-center rounded-md border px-2 py-1 text-xs font-medium transition-colors"
                           aria-label={t('actions.editProduct', {
                             title: row.title,
                           })}
@@ -277,7 +287,7 @@ export default async function AdminProductsPage({
           {/* Desktop table */}
           <div className="hidden md:block">
             <div className="overflow-x-auto">
-              <table className="w-full table-fixed divide-y divide-border text-sm">
+              <table className="divide-border w-full table-fixed divide-y text-sm">
                 <caption className="sr-only">{t('listCaption')}</caption>
                 <colgroup>
                   <col className="w-[9.5rem]" />
@@ -330,67 +340,67 @@ export default async function AdminProductsPage({
                   </tr>
                 </thead>
 
-                <tbody className="divide-y divide-border">
+                <tbody className="divide-border divide-y">
                   {rows.map(row => {
                     const priceMinor = row.priceMinor;
 
                     return (
                       <tr key={row.id} className="hover:bg-muted/50">
-                        <td className="max-w-0 px-3 py-2 font-medium text-foreground">
+                        <td className="text-foreground max-w-0 px-3 py-2 font-medium">
                           <div className="truncate" title={row.title}>
                             {row.title}
                           </div>
                         </td>
 
-                        <td className="max-w-0 px-3 py-2 text-muted-foreground">
+                        <td className="text-muted-foreground max-w-0 px-3 py-2">
                           <div className="truncate" title={row.slug}>
                             {row.slug}
                           </div>
                         </td>
 
-                        <td className="whitespace-nowrap px-3 py-2 text-foreground">
+                        <td className="text-foreground px-3 py-2 whitespace-nowrap">
                           {priceMinor == null
                             ? '-'
                             : formatMoney(priceMinor, displayCurrency, locale)}
                         </td>
 
-                        <td className="max-w-0 px-3 py-2 text-muted-foreground">
+                        <td className="text-muted-foreground max-w-0 px-3 py-2">
                           <div className="truncate" title={row.category ?? '-'}>
                             {row.category ?? '-'}
                           </div>
                         </td>
 
-                        <td className="max-w-0 px-3 py-2 text-muted-foreground">
+                        <td className="text-muted-foreground max-w-0 px-3 py-2">
                           <div className="truncate" title={row.type ?? '-'}>
                             {row.type ?? '-'}
                           </div>
                         </td>
 
-                        <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">
+                        <td className="text-muted-foreground px-3 py-2 whitespace-nowrap">
                           {row.stock}
                         </td>
 
-                        <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">
+                        <td className="text-muted-foreground px-3 py-2 whitespace-nowrap">
                           {row.badge == null || row.badge === 'NONE'
                             ? '-'
                             : row.badge}
                         </td>
 
-                        <td className="whitespace-nowrap px-3 py-2">
-                          <span className="inline-flex rounded-full bg-muted px-2 py-1 text-xs font-medium text-foreground">
+                        <td className="px-3 py-2 whitespace-nowrap">
+                          <span className="bg-muted text-foreground inline-flex rounded-full px-2 py-1 text-xs font-medium">
                             {row.isActive ? t('actions.yes') : t('actions.no')}
                           </span>
                         </td>
 
-                        <td className="whitespace-nowrap px-3 py-2">
-                          <span className="inline-flex rounded-full bg-muted px-2 py-1 text-xs font-medium text-foreground">
+                        <td className="px-3 py-2 whitespace-nowrap">
+                          <span className="bg-muted text-foreground inline-flex rounded-full px-2 py-1 text-xs font-medium">
                             {row.isFeatured
                               ? t('actions.yes')
                               : t('actions.no')}
                           </span>
                         </td>
 
-                        <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">
+                        <td className="text-muted-foreground px-3 py-2 whitespace-nowrap">
                           {formatDate(row.createdAt, locale)}
                         </td>
 
@@ -398,7 +408,7 @@ export default async function AdminProductsPage({
                           <div className="grid grid-cols-2 gap-2">
                             <Link
                               href={`/shop/products/${row.slug}`}
-                              className="inline-flex items-center justify-center rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary whitespace-normal break-words leading-tight text-center"
+                              className="border-border text-foreground hover:bg-secondary inline-flex items-center justify-center rounded-md border px-2 py-1 text-center text-xs leading-tight font-medium break-words whitespace-normal transition-colors"
                               aria-label={t('actions.viewProduct', {
                                 title: row.title,
                               })}
@@ -408,7 +418,7 @@ export default async function AdminProductsPage({
 
                             <Link
                               href={`/shop/admin/products/${row.id}/edit`}
-                              className="inline-flex items-center justify-center rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary whitespace-normal break-words leading-tight text-center"
+                              className="border-border text-foreground hover:bg-secondary inline-flex items-center justify-center rounded-md border px-2 py-1 text-center text-xs leading-tight font-medium break-words whitespace-normal transition-colors"
                               aria-label={t('actions.editProduct', {
                                 title: row.title,
                               })}
@@ -438,7 +448,7 @@ export default async function AdminProductsPage({
                   {rows.length === 0 ? (
                     <tr>
                       <td
-                        className="px-3 py-6 text-muted-foreground"
+                        className="text-muted-foreground px-3 py-6"
                         colSpan={11}
                       >
                         {t('empty')}

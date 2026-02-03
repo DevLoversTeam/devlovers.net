@@ -1,15 +1,16 @@
 'use server';
 
+import { and,eq, inArray } from 'drizzle-orm';
+
 import { db } from '@/db';
+import { awardQuizPoints, calculateQuizPoints } from '@/db/queries/points';
 import {
-  quizAttempts,
-  quizAttemptAnswers,
   quizAnswers,
+  quizAttemptAnswers,
+  quizAttempts,
   quizQuestions,
 } from '@/db/schema/quiz';
-import { awardQuizPoints,calculateQuizPoints  } from '@/db/queries/points';
 import { getCurrentUser } from '@/lib/auth';
-import { eq, inArray, and } from 'drizzle-orm';
 
 export interface UserAnswer {
   questionId: string;
@@ -93,7 +94,8 @@ export async function submitQuizAttempt(
       return { success: false, error: 'Unauthorized' };
     }
 
-    const { userId, quizId, answers, violations, startedAt, completedAt } = input;
+    const { userId, quizId, answers, violations, startedAt, completedAt } =
+      input;
 
     if (userId && userId !== session.id) {
       return { success: false, error: 'User mismatch' };
@@ -186,9 +188,10 @@ export async function submitQuizAttempt(
       };
     }
 
-    const percentage = ((correctAnswersCount / questionIds.length) * 100).toFixed(
-      2
-    );
+    const percentage = (
+      (correctAnswersCount / questionIds.length) *
+      100
+    ).toFixed(2);
     const integrityScore = calculateIntegrityScore(violations);
     const timeSpentSeconds = Math.floor(
       (completedAtDate.getTime() - startedAtDate.getTime()) / 1000

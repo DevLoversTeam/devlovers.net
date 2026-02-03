@@ -1,11 +1,12 @@
+import groq from 'groq';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
-import groq from 'groq';
 import { getTranslations } from 'next-intl/server';
+
 import { client } from '@/client';
+import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
 import { Link } from '@/i18n/routing';
 import { formatBlogDate } from '@/lib/blog/date';
-import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
 
 export const revalidate = 0;
 
@@ -189,7 +190,7 @@ function renderPortableTextBlock(block: any, index: number): React.ReactNode {
     return (
       <h6
         key={block._key || `block-${index}`}
-        className="mt-6 mb-2 text-sm font-semibold uppercase tracking-wide text-gray-700 dark:text-gray-300"
+        className="mt-6 mb-2 text-sm font-semibold tracking-wide text-gray-700 uppercase dark:text-gray-300"
       >
         {children}
       </h6>
@@ -209,7 +210,7 @@ function renderPortableTextBlock(block: any, index: number): React.ReactNode {
   return (
     <p
       key={block._key || `block-${index}`}
-      className="mb-4 whitespace-pre-line text-base leading-relaxed text-gray-700 dark:text-gray-300"
+      className="mb-4 text-base leading-relaxed whitespace-pre-line text-gray-700 dark:text-gray-300"
     >
       {children}
     </p>
@@ -283,7 +284,7 @@ function renderPortableText(
           key={block._key || `image-${i}`}
           src={block.url}
           alt={postTitle || 'Post image'}
-          className="rounded-xl border border-gray-200 my-6"
+          className="my-6 rounded-xl border border-gray-200"
         />
       );
       i += 1;
@@ -482,7 +483,7 @@ export default async function PostDetails({
     : null;
 
   return (
-    <DynamicGridBackground className="bg-gray-50 transition-colors duration-300 dark:bg-transparent py-10">
+    <DynamicGridBackground className="bg-gray-50 py-10 transition-colors duration-300 dark:bg-transparent">
       <main className="relative z-10 mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         {breadcrumbsJsonLd && (
           <script
@@ -512,7 +513,7 @@ export default async function PostDetails({
                   {!isLast && item.href ? (
                     <Link
                       href={item.href}
-                      className="transition hover:text-[var(--accent-primary)] hover:underline underline-offset-4"
+                      className="underline-offset-4 transition hover:text-[var(--accent-primary)] hover:underline"
                     >
                       {item.name}
                     </Link>
@@ -533,7 +534,7 @@ export default async function PostDetails({
 
         <div className="mx-auto w-full max-w-3xl">
           {categoryLabel && (
-            <div className="text-sm font-medium text-gray-500 dark:text-gray-400 text-center">
+            <div className="text-center text-sm font-medium text-gray-500 dark:text-gray-400">
               <Link
                 href={categoryHref || '/blog'}
                 className="inline-flex items-center gap-1 text-[var(--accent-primary)] transition"
@@ -542,7 +543,7 @@ export default async function PostDetails({
               </Link>
             </div>
           )}
-          <h1 className="mt-3 text-4xl font-bold text-gray-900 dark:text-gray-100 text-center">
+          <h1 className="mt-3 text-center text-4xl font-bold text-gray-900 dark:text-gray-100">
             {post.title}
           </h1>
 
@@ -569,7 +570,7 @@ export default async function PostDetails({
         {(post.tags?.length || 0) > 0 && null}
 
         {post.mainImage && (
-          <div className="relative w-full h-[520px] rounded-2xl overflow-hidden my-8">
+          <div className="relative my-8 h-[520px] w-full overflow-hidden rounded-2xl">
             <Image
               src={post.mainImage}
               alt={post.title || 'Post image'}
@@ -596,7 +597,7 @@ export default async function PostDetails({
                 <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
                   {t('recommendedPosts')}
                 </h2>
-                <div className="mt-6 grid gap-6 auto-rows-fr sm:grid-cols-2 lg:grid-cols-3">
+                <div className="mt-6 grid auto-rows-fr gap-6 sm:grid-cols-2 lg:grid-cols-3">
                   {recommendedPosts.map(item => {
                     const itemCategory = item.categories?.[0];
                     const itemCategoryDisplay = itemCategory
@@ -619,18 +620,18 @@ export default async function PostDetails({
                             />
                           </div>
                         )}
-                        <h3 className="mt-4 text-lg font-semibold text-gray-900 transition group-hover:underline underline-offset-4 dark:text-gray-100">
+                        <h3 className="mt-4 text-lg font-semibold text-gray-900 underline-offset-4 transition group-hover:underline dark:text-gray-100">
                           {item.title}
                         </h3>
                         {item.body && (
-                          <p className="mt-2 text-sm leading-relaxed text-gray-600 dark:text-gray-400 line-clamp-2">
+                          <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-gray-600 dark:text-gray-400">
                             {plainTextFromPortableText(item.body)}
                           </p>
                         )}
                         {(item.author?.name ||
                           itemCategoryDisplay ||
                           item.publishedAt) && (
-                          <div className="mt-auto pt-3 flex flex-wrap items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                          <div className="mt-auto flex flex-wrap items-center gap-2 pt-3 text-sm text-gray-500 dark:text-gray-400">
                             {item.author?.image && (
                               <span className="relative h-5 w-5 overflow-hidden rounded-full">
                                 <Image

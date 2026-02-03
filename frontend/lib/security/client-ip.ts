@@ -1,7 +1,8 @@
 import 'server-only';
 
-import type { NextRequest } from 'next/server';
 import { isIP } from 'node:net';
+
+import type { NextRequest } from 'next/server';
 
 function envBool(name: string, fallback: boolean): boolean {
   const raw = (process.env[name] ?? '').trim().toLowerCase();

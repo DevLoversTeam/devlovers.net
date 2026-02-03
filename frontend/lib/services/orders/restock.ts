@@ -1,14 +1,18 @@
 import crypto from 'node:crypto';
+
 import { and, eq, isNull, lt, ne, or } from 'drizzle-orm';
 
-import { applyReleaseMove } from '../inventory';
 import { db } from '@/db';
 import { inventoryMoves, orders } from '@/db/schema/shop';
-import { type PaymentStatus } from '@/lib/shop/payments';
-import { guardedPaymentStatusUpdate } from './payment-state';
-import { OrderNotFoundError, OrderStateInvalidError } from '../errors';
-import { resolvePaymentProvider } from './_shared';
 import { logWarn } from '@/lib/logging';
+import { type PaymentStatus } from '@/lib/shop/payments';
+
+import { OrderNotFoundError, OrderStateInvalidError } from '../errors';
+import { applyReleaseMove } from '../inventory';
+import { resolvePaymentProvider } from './_shared';
+import { guardedPaymentStatusUpdate } from './payment-state';
+
+const PAYMENT_STATUS_KEY = 'paymentStatus' as const;
 
 const PAYMENT_STATUS_KEY = 'paymentStatus' as const;
 

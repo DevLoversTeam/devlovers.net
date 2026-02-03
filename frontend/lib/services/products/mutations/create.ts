@@ -1,14 +1,17 @@
 import { eq } from 'drizzle-orm';
 
+<<<<<<< HEAD
 import { uploadProductImageFromFile } from '@/lib/cloudinary';
+=======
+>>>>>>> 601e032c399164dfc128ab2dee5fe52dd66d2caf
 import { db } from '@/db';
-import { products, productPrices } from '@/db/schema';
+import { productPrices,products } from '@/db/schema';
+import { uploadProductImageFromFile } from '@/lib/cloudinary';
 import { logError } from '@/lib/logging';
 import { toDbMoney } from '@/lib/shop/money';
 import type { DbProduct, ProductInput } from '@/lib/types/shop';
 
-import { SlugConflictError, InvalidPayloadError } from '../../errors';
-import { normalizeSlug } from '../slug';
+import { InvalidPayloadError,SlugConflictError } from '../../errors';
 import { mapRowToProduct } from '../mapping';
 import {
   enforceSaleBadgeRequiresOriginal,
@@ -16,6 +19,7 @@ import {
   requireUsd,
   validatePriceRows,
 } from '../prices';
+import { normalizeSlug } from '../slug';
 
 export async function createProduct(input: ProductInput): Promise<DbProduct> {
   const slug = await normalizeSlug(

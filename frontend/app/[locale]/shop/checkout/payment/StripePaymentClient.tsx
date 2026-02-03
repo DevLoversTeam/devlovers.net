@@ -1,8 +1,5 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { Link, useRouter } from '@/i18n/routing';
-
 import {
   Elements,
   PaymentElement,
@@ -11,30 +8,31 @@ import {
 } from '@stripe/react-stripe-js';
 import {
   loadStripe,
-  type StripeElementsOptions,
   type Stripe,
+  type StripeElementsOptions,
 } from '@stripe/stripe-js';
+import { useMemo, useState } from 'react';
 
+import { Link, useRouter } from '@/i18n/routing';
+import { logError } from '@/lib/logging';
 import {
+  type CurrencyCode,
   currencyValues,
   formatMoney,
   resolveCurrencyFromLocale,
-  type CurrencyCode,
 } from '@/lib/shop/currency';
-import { logError } from '@/lib/logging';
-import { cn } from '@/lib/utils';
-
 import {
-  SHOP_FOCUS,
-  SHOP_DISABLED,
   SHOP_CTA_BASE,
-  SHOP_CTA_INTERACTIVE,
   SHOP_CTA_INSET,
+  SHOP_CTA_INTERACTIVE,
   SHOP_CTA_WAVE,
-  shopCtaGradient,
+  SHOP_DISABLED,
+  SHOP_FOCUS,
   SHOP_OUTLINE_BTN_BASE,
   SHOP_OUTLINE_BTN_INTERACTIVE,
+  shopCtaGradient,
 } from '@/lib/shop/ui-classes';
+import { cn } from '@/lib/utils';
 
 type PaymentFormProps = {
   orderId: string;
@@ -232,7 +230,7 @@ function StripePaymentForm({ orderId, locale }: PaymentFormProps) {
       </button>
 
       {errorMessage ? (
-        <p className="text-sm text-destructive" role="alert">
+        <p className="text-destructive text-sm" role="alert">
           {errorMessage}
         </p>
       ) : null}
@@ -270,7 +268,7 @@ export default function StripePaymentClient({
   if (!paymentsEnabled) {
     return (
       <section
-        className="space-y-3 text-sm text-muted-foreground"
+        className="text-muted-foreground space-y-3 text-sm"
         aria-label="Payments disabled"
       >
         <p>Payments are disabled in this environment.</p>
@@ -302,7 +300,7 @@ export default function StripePaymentClient({
   if (!clientSecret || !clientSecret.trim()) {
     return (
       <section
-        className="space-y-3 text-sm text-muted-foreground"
+        className="text-muted-foreground space-y-3 text-sm"
         aria-label="Payment initialization failed"
       >
         <p>Payment cannot be initialized. Please try again later.</p>
@@ -319,7 +317,7 @@ export default function StripePaymentClient({
 
   if (!stripePromise || !options) {
     return (
-      <p className="text-sm text-muted-foreground" aria-live="polite">
+      <p className="text-muted-foreground text-sm" aria-live="polite">
         Preparing secure payment…
       </p>
     );
@@ -329,7 +327,7 @@ export default function StripePaymentClient({
     <section aria-label="Secure payment">
       <Elements stripe={stripePromise as Promise<Stripe>} options={options}>
         <div className="space-y-4">
-          <div className="rounded-md border border-border bg-muted/40 p-3 text-sm text-foreground">
+          <div className="border-border bg-muted/40 text-foreground rounded-md border p-3 text-sm">
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Pay</span>
               <span className="text-base font-semibold">
@@ -337,7 +335,7 @@ export default function StripePaymentClient({
               </span>
             </div>
 
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+            <p className="text-muted-foreground text-xs tracking-wide uppercase">
               {uiCurrency}
             </p>
           </div>

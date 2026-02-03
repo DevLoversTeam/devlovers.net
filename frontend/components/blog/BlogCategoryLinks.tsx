@@ -1,11 +1,12 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
-import { usePathname } from '@/i18n/routing';
 import { Home } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { useTranslations } from 'next-intl';
+
 import { AnimatedNavLink } from '@/components/shared/AnimatedNavLink';
 import { HeaderButton } from '@/components/shared/HeaderButton';
+import { usePathname } from '@/i18n/routing';
+import { cn } from '@/lib/utils';
 
 type Category = {
   _id: string;

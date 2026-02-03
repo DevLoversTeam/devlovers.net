@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+
 import { getQuizBySlug, getQuizQuestionsRandomized } from '@/db/queries/quiz';
 
 export async function GET(

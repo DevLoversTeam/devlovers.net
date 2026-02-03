@@ -1,6 +1,10 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+<<<<<<< HEAD
+=======
+
+>>>>>>> 601e032c399164dfc128ab2dee5fe52dd66d2caf
 import { useCart } from '@/components/shop/CartProvider';
 
 type ClearCartOnMountProps = {
