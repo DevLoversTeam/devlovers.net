@@ -97,11 +97,14 @@ export type GuardedPaymentUpdateResult =
       currentProvider?: PaymentProvider;
     };
 
-async function getCurrentState(orderId: string): Promise<{
-async function getCurrentState(orderId: string): Promise<{
+type CurrentPaymentState = {
   paymentStatus: PaymentStatus;
   paymentProvider: PaymentProvider;
-} | null> {
+};
+
+async function getCurrentState(
+  orderId: string
+): Promise<CurrentPaymentState | null> {
   const row = await db
     .select({
       paymentStatus: orders.paymentStatus,

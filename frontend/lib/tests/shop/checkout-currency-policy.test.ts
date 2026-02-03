@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { inArray } from 'drizzle-orm';
+import { products, productPrices, orders, orderItems } from '@/db/schema';
+
 import { NextRequest } from 'next/server';
 import crypto from 'crypto';
 
@@ -51,8 +53,6 @@ vi.mock('@/lib/logging', async () => {
 });
 
 import { db } from '@/db';
-import { products, productPrices, orders } from '@/db/schema';
-
 let POST: (req: NextRequest) => Promise<Response>;
 
 const createdProductIds: string[] = [];
@@ -73,12 +73,23 @@ beforeAll(async () => {
 
 afterAll(async () => {
   if (createdOrderIds.length) {
+    await db
+      .delete(orderItems)
+      .where(inArray(orderItems.orderId, createdOrderIds));
+
     await db.delete(orders).where(inArray(orders.id, createdOrderIds));
   }
+
   if (createdProductIds.length) {
+    // на випадок якщо orderId став null / не каскадиться
+    await db
+      .delete(orderItems)
+      .where(inArray(orderItems.productId, createdProductIds));
+
     await db
       .delete(productPrices)
       .where(inArray(productPrices.productId, createdProductIds));
+
     await db.delete(products).where(inArray(products.id, createdProductIds));
   }
 });

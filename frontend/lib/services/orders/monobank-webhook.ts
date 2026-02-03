@@ -8,7 +8,7 @@ import { monobankEvents, orders, paymentAttempts } from '@/db/schema';
 import { logError, logInfo } from '@/lib/logging';
 import { restockOrder } from '@/lib/services/orders/restock';
 import { InvalidPayloadError } from '@/lib/services/errors';
-import { __paymentTransitions } from '@/lib/services/orders/payment-state';
+import { guardedPaymentStatusUpdate } from '@/lib/services/orders/payment-state';
 
 type WebhookMode = 'apply' | 'store' | 'drop';
 
@@ -520,47 +520,25 @@ export async function applyMonoWebhookEvent(args: {
         metadataPatch
       )}::jsonb`;
 
-      const applyOrderPaymentStatusTx = async (input: {
-        to: string;
-        set?: Record<string, unknown>;
-      }): Promise<{ applied: boolean; reason?: string }> => {
-        if (orderRow.payment_provider !== 'monobank') {
-          return { applied: false, reason: 'PROVIDER_MISMATCH' };
-        }
+      const transitionPaymentStatus = async (to: any) => {
+        const res = await guardedPaymentStatusUpdate({
+          orderId: orderRow.id,
+          paymentProvider: 'monobank',
+          to,
+          source: 'monobank_webhook',
+          note: `event:${eventId}:${status}`,
+        });
 
-        const hasSet = Boolean(input.set && Object.keys(input.set).length > 0);
-        if (
-          orderRow.payment_status !== input.to &&
-          !__paymentTransitions.isAllowed(
-            'monobank' as any,
-            orderRow.payment_status as any,
-            input.to as any
-          )
-        ) {
-          return { applied: false, reason: 'INVALID_TRANSITION' };
-        }
+        // ok if applied OR already in desired state
+        const ok =
+          res.applied ||
+          (res.currentProvider === 'monobank' && res.from === to);
 
-        if (orderRow.payment_status === input.to && !hasSet) {
-          return { applied: false, reason: 'ALREADY_IN_STATE' };
-        }
-
-        const updated = await tx
-          .update(orders)
-          .set({
-            ...(input.set ?? {}),
-            paymentStatus: input.to as any,
-          })
-          .where(
-            and(
-              eq(orders.id, orderRow.id),
-              eq(orders.paymentProvider, 'monobank' as any)
-            )
-          )
-          .returning({ id: orders.id });
-
-        return updated.length > 0
-          ? { applied: true }
-          : { applied: false, reason: 'BLOCKED' };
+        return {
+          ok,
+          applied: res.applied,
+          reason: ok ? undefined : res.reason,
+        };
       };
 
       // 3) Amount/currency mismatch -> needs_review (never paid)
@@ -580,15 +558,25 @@ export async function applyMonoWebhookEvent(args: {
             })
             .where(eq(paymentAttempts.id, attemptRow.id));
 
-          await applyOrderPaymentStatusTx({
-            to: 'needs_review',
-            set: {
-              failureCode: 'MONO_AMOUNT_MISMATCH',
-              failureMessage:
-                mismatch.reason ?? 'Webhook amount/currency mismatch.',
-              updatedAt: now,
-            },
-          });
+          const tr = await transitionPaymentStatus('needs_review');
+          if (tr.ok) {
+            await tx
+              .update(orders)
+              .set({
+                failureCode: 'MONO_AMOUNT_MISMATCH',
+                failureMessage:
+                  mismatch.reason ?? 'Webhook amount/currency mismatch.',
+                updatedAt: now,
+              })
+              .where(
+                and(
+                  eq(orders.id, orderRow.id),
+                  eq(orders.paymentProvider, 'monobank' as any)
+                )
+              );
+          } else {
+            appliedResult = 'applied_with_issue';
+          }
         }
 
         await tx
@@ -646,14 +634,24 @@ export async function applyMonoWebhookEvent(args: {
       ) {
         appliedResult = 'applied_with_issue';
 
-        await applyOrderPaymentStatusTx({
-          to: 'needs_review',
-          set: {
-            failureCode: 'MONO_OUT_OF_ORDER',
-            failureMessage: `Out-of-order event: ${orderRow.payment_status} -> success`,
-            updatedAt: now,
-          },
-        });
+        const tr = await transitionPaymentStatus('needs_review');
+        if (tr.ok) {
+          await tx
+            .update(orders)
+            .set({
+              failureCode: 'MONO_OUT_OF_ORDER',
+              failureMessage: `Out-of-order event: ${orderRow.payment_status} -> success`,
+              updatedAt: now,
+            })
+            .where(
+              and(
+                eq(orders.id, orderRow.id),
+                eq(orders.paymentProvider, 'monobank' as any)
+              )
+            );
+        } else {
+          appliedResult = 'applied_with_issue';
+        }
 
         await tx
           .update(monobankEvents)
@@ -672,17 +670,9 @@ export async function applyMonoWebhookEvent(args: {
 
       // 7) Success
       if (status === 'success') {
-        const paidRes = await applyOrderPaymentStatusTx({
-          to: 'paid',
-          set: {
-            status: 'PAID',
-            pspChargeId: parsed.normalized.invoiceId,
-            pspMetadata: mergedMetaSql as any,
-            updatedAt: now,
-          },
-        });
+        const tr = await transitionPaymentStatus('paid');
 
-        if (!paidRes.applied) {
+        if (!tr.ok) {
           appliedResult = 'applied_with_issue';
           await tx
             .update(monobankEvents)
@@ -690,7 +680,7 @@ export async function applyMonoWebhookEvent(args: {
               appliedAt: now,
               appliedResult,
               appliedErrorCode: 'PAYMENT_STATE_BLOCKED',
-              appliedErrorMessage: `blocked transition to paid (${paidRes.reason})`,
+              appliedErrorMessage: `blocked transition to paid (${tr.reason})`,
               attemptId: attemptRow.id,
               orderId: orderRow.id,
             })
@@ -698,6 +688,22 @@ export async function applyMonoWebhookEvent(args: {
 
           return { appliedResult, restockReason, restockOrderId };
         }
+
+        // окремо апдейтимо інші поля БЕЗ paymentStatus
+        await tx
+          .update(orders)
+          .set({
+            status: 'PAID',
+            pspChargeId: parsed.normalized.invoiceId,
+            pspMetadata: mergedMetaSql as any,
+            updatedAt: now,
+          })
+          .where(
+            and(
+              eq(orders.id, orderRow.id),
+              eq(orders.paymentProvider, 'monobank' as any)
+            )
+          );
 
         await tx
           .update(paymentAttempts)
@@ -749,16 +755,9 @@ export async function applyMonoWebhookEvent(args: {
         const isRefunded = status === 'reversed';
         const nextPaymentStatus = isRefunded ? 'refunded' : 'failed';
 
-        const res = await applyOrderPaymentStatusTx({
-          to: nextPaymentStatus,
-          set: {
-            pspStatusReason: status,
-            pspMetadata: mergedMetaSql as any,
-            updatedAt: now,
-          },
-        });
+        const tr = await transitionPaymentStatus(nextPaymentStatus);
 
-        if (!res.applied) {
+        if (!tr.ok) {
           appliedResult = 'applied_with_issue';
           await tx
             .update(monobankEvents)
@@ -766,7 +765,7 @@ export async function applyMonoWebhookEvent(args: {
               appliedAt: now,
               appliedResult,
               appliedErrorCode: 'PAYMENT_STATE_BLOCKED',
-              appliedErrorMessage: `blocked transition to ${nextPaymentStatus} (${res.reason})`,
+              appliedErrorMessage: `blocked transition to ${nextPaymentStatus} (${tr.reason})`,
               attemptId: attemptRow.id,
               orderId: orderRow.id,
             })
@@ -774,6 +773,21 @@ export async function applyMonoWebhookEvent(args: {
 
           return { appliedResult, restockReason, restockOrderId };
         }
+
+        // окремо апдейтимо інші поля БЕЗ paymentStatus
+        await tx
+          .update(orders)
+          .set({
+            pspStatusReason: status,
+            pspMetadata: mergedMetaSql as any,
+            updatedAt: now,
+          })
+          .where(
+            and(
+              eq(orders.id, orderRow.id),
+              eq(orders.paymentProvider, 'monobank' as any)
+            )
+          );
 
         await tx
           .update(paymentAttempts)
@@ -800,20 +814,7 @@ export async function applyMonoWebhookEvent(args: {
         restockReason = isRefunded ? 'refunded' : 'failed';
         restockOrderId = orderRow.id;
 
-        appliedResult = 'applied';
-      } else {
-        appliedResult = 'applied_with_issue';
-        await tx
-          .update(monobankEvents)
-          .set({
-            appliedAt: now,
-            appliedResult,
-            appliedErrorCode: 'UNKNOWN_STATUS',
-            appliedErrorMessage: `Unknown status: ${status}`,
-            attemptId: attemptRow.id,
-            orderId: orderRow.id,
-          })
-          .where(eq(monobankEvents.id, eventId));
+        return { appliedResult: 'applied', restockReason, restockOrderId };
       }
 
       return { appliedResult, restockReason, restockOrderId };
