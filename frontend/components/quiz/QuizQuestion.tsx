@@ -1,9 +1,8 @@
 'use client';
 
-import { Check, Lightbulb,X } from 'lucide-react';
+import { Check, Lightbulb, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
-import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { QuizQuestionClient } from '@/db/queries/quiz';
 import { cn } from '@/lib/utils';
@@ -62,8 +61,8 @@ export function QuizQuestion({
                 isSelected &&
                   isAnswering &&
                   'border-blue-500 bg-blue-50 dark:bg-blue-950',
-                showCorrect && 'border-1 border-green-500',
-                showIncorrect && 'border-1 border-red-500',
+                showCorrect && 'border border-green-500',
+                showIncorrect && 'border border-red-500',
                 !isAnswering && 'cursor-default'
               )}
             >
@@ -71,12 +70,14 @@ export function QuizQuestion({
               <span className="flex-1 text-base">{answer.answerText}</span>
               {showCorrect && (
                 <span className="text-sm font-medium text-green-600 dark:text-green-400">
-                  <Check className="inline h-4 w-4" /> {t('correct')}
+                  <Check className="inline h-4 w-4" aria-hidden="true" />{' '}
+                  {t('correct')}
                 </span>
               )}
               {showIncorrect && (
                 <span className="text-sm font-medium text-red-600 dark:text-red-400">
-                  <X className="inline h-4 w-4" /> {t('incorrect')}
+                  <X className="inline h-4 w-4" aria-hidden="true" />{' '}
+                  {t('incorrect')}
                 </span>
               )}
             </label>
@@ -87,7 +88,7 @@ export function QuizQuestion({
         <div
           className={cn(
             'animate-in fade-in rounded-xl border p-4 duration-300',
-            'border-1 border-blue-500 dark:border-blue-500'
+            'border border-blue-500 dark:border-blue-500'
           )}
         >
           <div className="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
@@ -100,11 +101,14 @@ export function QuizQuestion({
         <div
           className={cn(
             'animate-in fade-in rounded-xl border p-4 duration-300',
-            'border-1 border-orange-500 dark:border-orange-500'
+            'border border-orange-500 dark:border-orange-500'
           )}
         >
           <div className="flex items-start gap-3">
-            <Lightbulb className="h-6 w-6 flex-shrink-0 text-amber-500" />
+            <Lightbulb
+              className="h-6 w-6 shrink-0 text-amber-500"
+              aria-hidden="true"
+            />
             <div className="flex-1">
               <h4 className="mb-1 font-semibold text-gray-900 dark:text-gray-100">
                 {t('recommendation.title')}

@@ -46,7 +46,7 @@ export function loadQuizSession(quizId: string): QuizSessionData | null {
     }
 
     // Only restore in_progress sessions
-    if (data.status !== 'in_progress') {
+    if (data.status === 'rules') {
       clearQuizSession(quizId);
       return null;
     }

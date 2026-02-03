@@ -36,7 +36,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useEffect,useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { SectionHeading } from '@/components/ui/section-heading';
 import { Link } from '@/i18n/routing';

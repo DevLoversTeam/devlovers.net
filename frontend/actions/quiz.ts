@@ -1,6 +1,6 @@
 'use server';
 
-import { and,eq, inArray } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { awardQuizPoints, calculateQuizPoints } from '@/db/queries/points';
@@ -253,5 +253,24 @@ export async function submitQuizAttempt(
       success: false,
       error: 'Failed to submit quiz attempt',
     };
+  }
+}
+
+export async function initializeQuizCache(
+  quizId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { getOrCreateQuizAnswersCache } =
+      await import('@/lib/quiz/quiz-answers-redis');
+    const success = await getOrCreateQuizAnswersCache(quizId);
+
+    if (!success) {
+      return { success: false, error: 'Quiz not found' };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Failed to initialize quiz cache:', error);
+    return { success: false, error: 'Internal server error' };
   }
 }

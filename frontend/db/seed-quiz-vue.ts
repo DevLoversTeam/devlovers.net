@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { existsSync,readFileSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 
 import { db } from './index';
