@@ -11,10 +11,10 @@ import {
 } from 'drizzle-orm';
 
 import { db } from '@/db';
-import { productPrices,products } from '@/db/schema';
+import { productPrices, products } from '@/db/schema';
 import type { CatalogSort } from '@/lib/config/catalog';
 import type { CurrencyCode } from '@/lib/shop/currency';
-import { type DbProduct,dbProductSchema } from '@/lib/validation/shop';
+import { type DbProduct, dbProductSchema } from '@/lib/validation/shop';
 
 const publicProductBaseSelect = {
   id: products.id,

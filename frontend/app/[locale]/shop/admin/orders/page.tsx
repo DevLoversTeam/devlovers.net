@@ -14,15 +14,6 @@ import {
   resolveCurrencyFromLocale,
 } from '@/lib/shop/currency';
 import { fromDbMoney } from '@/lib/shop/money';
-<<<<<<< HEAD
-import { ShopAdminTopbar } from '@/components/shop/admin/ShopAdminTopbar';
-import { AdminPagination } from '@/components/shop/admin/AdminPagination';
-import { guardShopAdminPage } from '@/lib/auth/guard-shop-admin-page';
-import { CSRF_FORM_FIELD, issueCsrfToken } from '@/lib/security/csrf';
-import { parsePage } from '@/lib/pagination';
-import { Metadata } from 'next';
-=======
->>>>>>> 601e032c399164dfc128ab2dee5fe52dd66d2caf
 
 export const metadata: Metadata = {
   title: 'Admin Orders | DevLovers',

@@ -1,15 +1,8 @@
 import { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
-<<<<<<< HEAD
-import OrderStatusAutoRefresh from './OrderStatusAutoRefresh';
-import { ClearCartOnMount } from '@/components/shop/ClearCartOnMount';
-import { formatMoney } from '@/lib/shop/currency';
-import { getOrderSummary } from '@/lib/services/orders';
-=======
 import { ClearCartOnMount } from '@/components/shop/ClearCartOnMount';
 import { Link } from '@/i18n/routing';
->>>>>>> 601e032c399164dfc128ab2dee5fe52dd66d2caf
 import { OrderNotFoundError } from '@/lib/services/errors';
 import { getOrderSummary } from '@/lib/services/orders';
 import { formatMoney } from '@/lib/shop/currency';

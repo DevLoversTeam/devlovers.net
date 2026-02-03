@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { and, eq, inArray, isNull, lt, ne,or, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNull, lt, ne, or, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { orders } from '@/db/schema/shop';

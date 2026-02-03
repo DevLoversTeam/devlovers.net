@@ -1,11 +1,5 @@
-<<<<<<< HEAD
-import { Link } from '@/i18n/routing';
-import { ClearCartOnMount } from '@/components/shop/ClearCartOnMount';
-import StripePaymentClient from '../StripePaymentClient';
-=======
 import { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
->>>>>>> 601e032c399164dfc128ab2dee5fe52dd66d2caf
 
 import { ClearCartOnMount } from '@/components/shop/ClearCartOnMount';
 import { Link } from '@/i18n/routing';

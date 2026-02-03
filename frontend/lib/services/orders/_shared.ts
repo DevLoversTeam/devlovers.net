@@ -1,17 +1,5 @@
 import crypto from 'crypto';
 
-<<<<<<< HEAD
-import { createCartItemKey } from '@/lib/shop/cart-item-key';
-import { type PaymentProvider } from '@/lib/shop/payments';
-import { type CurrencyCode } from '@/lib/shop/currency';
-import { MAX_QUANTITY_PER_LINE } from '@/lib/validation/shop';
-import {
-  type CheckoutItem,
-  type OrderSummaryWithMinor,
-} from '@/lib/types/shop';
-import { orders } from '@/db/schema/shop';
-=======
->>>>>>> 601e032c399164dfc128ab2dee5fe52dd66d2caf
 import { db } from '@/db';
 import { orders } from '@/db/schema/shop';
 import { createCartItemKey } from '@/lib/shop/cart-item-key';

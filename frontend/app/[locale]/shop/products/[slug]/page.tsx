@@ -3,15 +3,8 @@ import { Metadata } from 'next';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-<<<<<<< HEAD
-import { cn } from '@/lib/utils';
-import { AddToCartButton } from '@/components/shop/AddToCartButton';
-import { getProductPageData } from '@/lib/shop/data';
-import { formatMoney, resolveCurrencyFromLocale } from '@/lib/shop/currency';
-=======
 
 import { AddToCartButton } from '@/components/shop/AddToCartButton';
->>>>>>> 601e032c399164dfc128ab2dee5fe52dd66d2caf
 import { getPublicProductBySlug } from '@/db/queries/shop/products';
 import { Link } from '@/i18n/routing';
 import { formatMoney, resolveCurrencyFromLocale } from '@/lib/shop/currency';

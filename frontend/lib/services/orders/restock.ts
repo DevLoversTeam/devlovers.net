@@ -14,8 +14,6 @@ import { guardedPaymentStatusUpdate } from './payment-state';
 
 const PAYMENT_STATUS_KEY = 'paymentStatus' as const;
 
-const PAYMENT_STATUS_KEY = 'paymentStatus' as const;
-
 export type RestockReason = 'failed' | 'refunded' | 'canceled' | 'stale';
 export type RestockOptions = {
   reason?: RestockReason;

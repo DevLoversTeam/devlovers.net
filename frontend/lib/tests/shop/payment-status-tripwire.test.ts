@@ -1,11 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-<<<<<<< HEAD
-=======
-import { describe, expect,it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
->>>>>>> 601e032c399164dfc128ab2dee5fe52dd66d2caf
 const REPO_ROOT = process.cwd();
 
 const EXCLUDED_DIRS = new Set([

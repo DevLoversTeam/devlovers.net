@@ -11,14 +11,8 @@ import {
   resolveCurrencyFromLocale,
 } from '@/lib/shop/currency';
 import { fromDbMoney } from '@/lib/shop/money';
-<<<<<<< HEAD
-import { ShopAdminTopbar } from '@/components/shop/admin/ShopAdminTopbar';
-import { guardShopAdminPage } from '@/lib/auth/guard-shop-admin-page';
-import { Metadata } from 'next';
-=======
 
 import { RefundButton } from './RefundButton';
->>>>>>> 601e032c399164dfc128ab2dee5fe52dd66d2caf
 
 export const metadata: Metadata = {
   title: 'Admin Order | DevLovers',

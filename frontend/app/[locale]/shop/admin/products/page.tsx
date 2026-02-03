@@ -1,12 +1,4 @@
 import { and, desc, eq, sql } from 'drizzle-orm';
-<<<<<<< HEAD
-import { issueCsrfToken } from '@/lib/security/csrf';
-import { ShopAdminTopbar } from '@/components/shop/admin/ShopAdminTopbar';
-import { guardShopAdminPage } from '@/lib/auth/guard-shop-admin-page';
-import { AdminProductDeleteButton } from '@/components/shop/admin/AdminProductDeleteButton';
-import { AdminProductStatusToggle } from '@/components/shop/admin/AdminProductStatusToggle';
-import { AdminPagination } from '@/components/shop/admin/AdminPagination';
-=======
 import { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
@@ -14,7 +6,6 @@ import { AdminPagination } from '@/components/shop/admin/AdminPagination';
 import { AdminProductDeleteButton } from '@/components/shop/admin/AdminProductDeleteButton';
 import { AdminProductStatusToggle } from '@/components/shop/admin/AdminProductStatusToggle';
 import { ShopAdminTopbar } from '@/components/shop/admin/ShopAdminTopbar';
->>>>>>> 601e032c399164dfc128ab2dee5fe52dd66d2caf
 import { db } from '@/db';
 import {
   inventoryMoves,

@@ -2,10 +2,7 @@ import { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
 import { ShopAdminTopbar } from '@/components/shop/admin/ShopAdminTopbar';
-<<<<<<< HEAD
-=======
 import { Link } from '@/i18n/routing';
->>>>>>> 601e032c399164dfc128ab2dee5fe52dd66d2caf
 import { guardShopAdminPage } from '@/lib/auth/guard-shop-admin-page';
 
 export const metadata: Metadata = {

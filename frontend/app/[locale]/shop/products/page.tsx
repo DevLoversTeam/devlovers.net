@@ -3,16 +3,10 @@ import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 
-<<<<<<< HEAD
-import { ProductFilters } from '@/components/shop/ProductFilters';
-import { CatalogProductsClient } from '@/components/shop/CatalogProductsClient';
-import { ProductsToolbar } from '@/components/shop/ProductsToolbar';
-=======
 import { CatalogProductsClient } from '@/components/shop/CatalogProductsClient';
 import { ProductFilters } from '@/components/shop/ProductFilters';
 import { ProductsToolbar } from '@/components/shop/ProductsToolbar';
 import { CATALOG_PAGE_SIZE } from '@/lib/config/catalog';
->>>>>>> 601e032c399164dfc128ab2dee5fe52dd66d2caf
 import { getCatalogProducts } from '@/lib/shop/data';
 import { catalogQuerySchema } from '@/lib/validation/shop';
 

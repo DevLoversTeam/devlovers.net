@@ -41,11 +41,8 @@ import {
   resolvePaymentProvider,
 } from './_shared';
 import { guardedPaymentStatusUpdate } from './payment-state';
-<<<<<<< HEAD
-=======
 import { restockOrder } from './restock';
 import { getOrderById, getOrderByIdempotencyKey } from './summary';
->>>>>>> 601e032c399164dfc128ab2dee5fe52dd66d2caf
 
 async function reconcileNoPaymentOrder(
   orderId: string

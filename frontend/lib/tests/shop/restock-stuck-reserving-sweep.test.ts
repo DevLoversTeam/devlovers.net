@@ -1,14 +1,12 @@
 import crypto from 'crypto';
 import { eq, sql } from 'drizzle-orm';
-import { describe, expect,it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { db } from '@/db';
 import { orders, products } from '@/db/schema';
 import { applyReserveMove } from '@/lib/services/inventory';
 import { restockStuckReservingOrders } from '@/lib/services/orders';
 import { toDbMoney } from '@/lib/shop/money';
-
-const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
 
 const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
 

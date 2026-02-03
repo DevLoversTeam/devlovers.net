@@ -1,9 +1,3 @@
-<<<<<<< HEAD
-import { describe, it, expect, vi } from 'vitest';
-import { NextRequest } from 'next/server';
-import { eq } from 'drizzle-orm';
-=======
->>>>>>> 601e032c399164dfc128ab2dee5fe52dd66d2caf
 import { randomUUID } from 'crypto';
 import { eq } from 'drizzle-orm';
 import { NextRequest } from 'next/server';

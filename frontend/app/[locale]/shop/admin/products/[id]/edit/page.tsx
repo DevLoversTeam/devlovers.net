@@ -3,16 +3,9 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { z } from 'zod';
 
-<<<<<<< HEAD
-import { guardShopAdminPage } from '@/lib/auth/guard-shop-admin-page';
 import { ShopAdminTopbar } from '@/components/shop/admin/ShopAdminTopbar';
-
-import { ProductForm } from '../../_components/ProductForm';
-=======
-import { ShopAdminTopbar } from '@/components/shop/admin/ShopAdminTopbar';
->>>>>>> 601e032c399164dfc128ab2dee5fe52dd66d2caf
 import { db } from '@/db';
-import { productPrices,products } from '@/db/schema';
+import { productPrices, products } from '@/db/schema';
 import { guardShopAdminPage } from '@/lib/auth/guard-shop-admin-page';
 import { issueCsrfToken } from '@/lib/security/csrf';
 import type { CurrencyCode } from '@/lib/shop/currency';

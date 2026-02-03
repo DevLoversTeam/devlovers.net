@@ -4,13 +4,8 @@ import { Filter, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import React from 'react';
 
-<<<<<<< HEAD
-import { ProductSort } from '@/components/shop/ProductSort';
-import { ProductFilters } from '@/components/shop/ProductFilters';
-=======
 import { ProductFilters } from '@/components/shop/ProductFilters';
 import { ProductSort } from '@/components/shop/ProductSort';
->>>>>>> 601e032c399164dfc128ab2dee5fe52dd66d2caf
 
 export function ProductsToolbar() {
   const [open, setOpen] = React.useState(false);

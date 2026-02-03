@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
-=======
->>>>>>> 601e032c399164dfc128ab2dee5fe52dd66d2caf
 import crypto from 'crypto';
 import { eq, inArray } from 'drizzle-orm';
 import { NextRequest } from 'next/server';
@@ -256,11 +252,6 @@ describe('P0-8.10.1 checkout concurrency: stock=1, two parallel checkouts', () =
       // In CI we fail fast so flakes are visible.
       if (process.env.CI) throw err;
 
-<<<<<<< HEAD
-      // eslint-disable-next-line no-console
-=======
-       
->>>>>>> 601e032c399164dfc128ab2dee5fe52dd66d2caf
       console.warn('checkout concurrency cleanup failed', err);
     }
   }, 30000);

@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { afterEach,describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/lib/cloudinary', () => {
   return {
@@ -12,7 +12,7 @@ vi.mock('@/lib/cloudinary', () => {
 });
 
 import { db } from '@/db';
-import { productPrices,products } from '@/db/schema';
+import { productPrices, products } from '@/db/schema';
 import { createProduct, updateProduct } from '@/lib/services/products';
 import { toDbMoney } from '@/lib/shop/money';
 
