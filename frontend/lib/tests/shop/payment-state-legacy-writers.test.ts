@@ -17,7 +17,6 @@ type SeedArgs = {
 async function seedOrder(args: SeedArgs): Promise<string> {
   const orderId = crypto.randomUUID();
   const now = new Date();
-
   const idempotencyKey = `test:${orderId}`;
 
   await db.insert(orders).values({

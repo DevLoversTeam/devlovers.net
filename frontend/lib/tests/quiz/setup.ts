@@ -1,5 +1,8 @@
+<<<<<<< HEAD
 import { afterEach, beforeEach, vi } from 'vitest';
 
+=======
+>>>>>>> develop
 /**
  * 32-byte hex key for AES-256 (64 hex characters)
  * Only used in tests — not a real secret

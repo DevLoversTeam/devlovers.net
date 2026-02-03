@@ -1,6 +1,5 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 import {
@@ -9,8 +8,6 @@ import {
 } from '@/lib/quiz/guest-quiz';
 
 export function PostAuthQuizSync() {
-  const router = useRouter();
-
   useEffect(() => {
     queueMicrotask(() => {
       const pendingResult = getPendingQuizResult();
@@ -38,7 +35,6 @@ export function PostAuthQuizSync() {
           if (!result?.success) {
             throw new Error('Quiz save did not succeed');
           }
-
           sessionStorage.setItem(
             'quiz_just_saved',
             JSON.stringify({
@@ -50,13 +46,12 @@ export function PostAuthQuizSync() {
             })
           );
           clearPendingQuizResult();
-          router.refresh();
+          window.location.reload();
         } catch (error) {
           console.error('Failed to sync guest quiz result:', error);
         }
       })();
     });
-  }, [router]);
-
+  }, []);
   return null;
 }
