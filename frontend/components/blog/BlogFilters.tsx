@@ -329,7 +329,7 @@ export default function BlogFilters({
   useEffect(() => {
     if (currentPage === parsedPage) return;
     setCurrentPage(parsedPage);
-  }, [currentPage, parsedPage]);
+  }, [currentPage, parsedPage, setCurrentPage]);
 
   const resolvedAuthor = useMemo(() => {
     const normParam = normalizeAuthor(authorParam);
@@ -372,6 +372,7 @@ export default function BlogFilters({
     resolvedCategory?.norm,
     searchQueryNormalized,
     updatePageParam,
+    setCurrentPage,
   ]);
 
   useEffect(() => {
@@ -490,11 +491,14 @@ export default function BlogFilters({
                 href={`/blog/${featuredPost.slug.current}`}
                 className="group block"
               >
-                <div className="overflow-hidden rounded-3xl shadow-[0_12px_30px_rgba(0,0,0,0.12)] h-[300px] sm:h-[340px] md:h-full md:min-h-[400px] lg:min-h-[440px] border-0">
-                  <img
+                <div className="relative overflow-hidden rounded-3xl shadow-[0_12px_30px_rgba(0,0,0,0.12)] h-[300px] sm:h-[340px] md:h-full md:min-h-[400px] lg:min-h-[440px] border-0">
+                  <Image
                     src={featuredPost.mainImage}
                     alt={featuredPost.title}
-                    className="block w-full h-full object-cover transition-transform duration-300 scale-[1.02] group-hover:scale-[1.05] border-0"
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 60vw, 720px"
+                    className="object-cover transition-transform duration-300 scale-[1.02] group-hover:scale-[1.05]"
+                    priority
                   />
                 </div>
               </Link>

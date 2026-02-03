@@ -279,11 +279,14 @@ function renderPortableText(
 
     if (block?._type === 'image' && block?.url) {
       nodes.push(
-        <img
+        <Image
           key={block._key || `image-${i}`}
           src={block.url}
           alt={postTitle || 'Post image'}
-          className="rounded-xl border border-gray-200 my-6"
+          width={1200}
+          height={800}
+          sizes="100vw"
+          className="my-6 h-auto w-full rounded-xl border border-gray-200"
         />
       );
       i += 1;
