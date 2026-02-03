@@ -1,7 +1,8 @@
-import { db } from './index';
-import { users } from './schema/users';
-import { pointTransactions } from './schema/points';
 import { and, eq, inArray } from 'drizzle-orm';
+
+import { db } from './index';
+import { pointTransactions } from './schema/points';
+import { users } from './schema/users';
 
 async function main() {
   console.log('Seeding demo leaderboard users...');

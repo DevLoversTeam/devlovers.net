@@ -662,38 +662,98 @@
       "bubbles": {
         "qa": {
           "languages": { "label": "3 języki", "desc": "EN, UK i PL" },
-          "aiHelper": { "label": "Pomocnik AI", "desc": "Zaznacz tekst do wyjaśnienia" },
-          "smartCache": { "label": "Inteligentny cache", "desc": "Podświetla nauczone terminy" },
-          "techFilter": { "label": "Filtr tech", "desc": "React, Git, JS i więcej" }
+          "aiHelper": {
+            "label": "Pomocnik AI",
+            "desc": "Zaznacz tekst do wyjaśnienia"
+          },
+          "smartCache": {
+            "label": "Inteligentny cache",
+            "desc": "Podświetla nauczone terminy"
+          },
+          "techFilter": {
+            "label": "Filtr tech",
+            "desc": "React, Git, JS i więcej"
+          }
         },
         "quiz": {
-          "smartTimer": { "label": "Inteligentny timer", "desc": "Ścigaj się z czasem" },
-          "antiCheat": { "label": "Anti-Cheat", "desc": "Wykrywanie utraty fokusa" },
-          "autoSync": { "label": "Auto-synchronizacja", "desc": "Zapisuje postęp po logowaniu" },
-          "tracking": { "label": "Śledzenie", "desc": "Najlepsze wyniki i próby" }
+          "smartTimer": {
+            "label": "Inteligentny timer",
+            "desc": "Ścigaj się z czasem"
+          },
+          "antiCheat": {
+            "label": "Anti-Cheat",
+            "desc": "Wykrywanie utraty fokusa"
+          },
+          "autoSync": {
+            "label": "Auto-synchronizacja",
+            "desc": "Zapisuje postęp po logowaniu"
+          },
+          "tracking": {
+            "label": "Śledzenie",
+            "desc": "Najlepsze wyniki i próby"
+          }
         },
         "leaderboard": {
-          "podium": { "label": "Podium", "desc": "Ekskluzywny spotlight top 3" },
-          "globalRank": { "label": "Globalny ranking", "desc": "Rywalizuj na całym świecie" },
-          "xpSystem": { "label": "System XP", "desc": "Punkty za każdą odpowiedź" },
-          "liveFeed": { "label": "Live feed", "desc": "Aktualizacje rang w czasie rzeczywistym" }
+          "podium": {
+            "label": "Podium",
+            "desc": "Ekskluzywny spotlight top 3"
+          },
+          "globalRank": {
+            "label": "Globalny ranking",
+            "desc": "Rywalizuj na całym świecie"
+          },
+          "xpSystem": {
+            "label": "System XP",
+            "desc": "Punkty za każdą odpowiedź"
+          },
+          "liveFeed": {
+            "label": "Live feed",
+            "desc": "Aktualizacje rang w czasie rzeczywistym"
+          }
         },
         "profile": {
-          "statsHub": { "label": "Centrum statystyk", "desc": "Wizualizuj swój rozwój" },
+          "statsHub": {
+            "label": "Centrum statystyk",
+            "desc": "Wizualizuj swój rozwój"
+          },
           "history": { "label": "Historia", "desc": "Śledź serie nauki" },
-          "identity": { "label": "Tożsamość", "desc": "Zarządzaj rolą i profilem" },
-          "reminders": { "label": "Przypomnienia", "desc": "Dokończ niedokończone quizy" }
+          "identity": {
+            "label": "Tożsamość",
+            "desc": "Zarządzaj rolą i profilem"
+          },
+          "reminders": {
+            "label": "Przypomnienia",
+            "desc": "Dokończ niedokończone quizy"
+          }
         },
         "blog": {
-          "techTrends": { "label": "Trendy tech", "desc": "Bądź o krok przed innymi" },
-          "tutorials": { "label": "Tutoriale", "desc": "Przewodniki krok po kroku" },
-          "deepDives": { "label": "Głębokie analizy", "desc": "Szczegółowy rozbiór" },
-          "community": { "label": "Społeczność", "desc": "Pisane przez developerów" }
+          "techTrends": {
+            "label": "Trendy tech",
+            "desc": "Bądź o krok przed innymi"
+          },
+          "tutorials": {
+            "label": "Tutoriale",
+            "desc": "Przewodniki krok po kroku"
+          },
+          "deepDives": {
+            "label": "Głębokie analizy",
+            "desc": "Szczegółowy rozbiór"
+          },
+          "community": {
+            "label": "Społeczność",
+            "desc": "Pisane przez developerów"
+          }
         },
         "shop": {
           "newDrops": { "label": "Nowości", "desc": "Regularne aktualizacje" },
-          "curated": { "label": "Selekcja", "desc": "Kolekcje dla developerów" },
-          "checkout": { "label": "Płatność", "desc": "Płynny proces przez Stripe" },
+          "curated": {
+            "label": "Selekcja",
+            "desc": "Kolekcje dla developerów"
+          },
+          "checkout": {
+            "label": "Płatność",
+            "desc": "Płynny proces przez Stripe"
+          },
           "premium": { "label": "Premium", "desc": "Wysoka jakość materiałów" }
         }
       }

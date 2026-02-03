@@ -1,8 +1,12 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { useQuizSession } from '@/hooks/useQuizSession';
-import { QUIZ_ALLOW_RESTORE_KEY, getQuizReloadKey } from '@/lib/quiz/quiz-storage-keys';
+import {
+  getQuizReloadKey,
+  QUIZ_ALLOW_RESTORE_KEY,
+} from '@/lib/quiz/quiz-storage-keys';
 
 vi.mock('@/lib/quiz/quiz-session', () => ({
   saveQuizSession: vi.fn(),
@@ -10,7 +14,11 @@ vi.mock('@/lib/quiz/quiz-session', () => ({
   clearQuizSession: vi.fn(),
 }));
 
-import { saveQuizSession, loadQuizSession, clearQuizSession } from '@/lib/quiz/quiz-session';
+import {
+  clearQuizSession,
+  loadQuizSession,
+  saveQuizSession,
+} from '@/lib/quiz/quiz-session';
 
 type QuizState = {
   status: 'rules' | 'in_progress' | 'completed';
@@ -48,7 +56,6 @@ describe('useQuizSession', () => {
     vi.clearAllMocks();
   });
 
-
   it('restores session on reload', async () => {
     const onRestore = vi.fn();
     const reloadKey = getQuizReloadKey(quizId);
@@ -64,7 +71,9 @@ describe('useQuizSession', () => {
       savedAt: Date.now(),
     });
 
-    renderHook(() => useQuizSession({ quizId, state: createState(), onRestore }));
+    renderHook(() =>
+      useQuizSession({ quizId, state: createState(), onRestore })
+    );
 
     await waitFor(() => expect(onRestore).toHaveBeenCalledTimes(1));
     expect(clearMock).not.toHaveBeenCalled();
@@ -85,7 +94,9 @@ describe('useQuizSession', () => {
       savedAt: Date.now(),
     });
 
-    renderHook(() => useQuizSession({ quizId, state: createState(), onRestore }));
+    renderHook(() =>
+      useQuizSession({ quizId, state: createState(), onRestore })
+    );
 
     await waitFor(() => expect(onRestore).toHaveBeenCalledTimes(1));
     expect(clearMock).not.toHaveBeenCalled();
@@ -105,7 +116,9 @@ describe('useQuizSession', () => {
       savedAt: Date.now(),
     });
 
-    renderHook(() => useQuizSession({ quizId, state: createState(), onRestore }));
+    renderHook(() =>
+      useQuizSession({ quizId, state: createState(), onRestore })
+    );
 
     await waitFor(() => expect(clearMock).toHaveBeenCalledWith(quizId));
     expect(onRestore).not.toHaveBeenCalled();
@@ -116,7 +129,9 @@ describe('useQuizSession', () => {
 
     loadMock.mockReturnValue(null);
 
-    renderHook(() => useQuizSession({ quizId, state: createState(), onRestore }));
+    renderHook(() =>
+      useQuizSession({ quizId, state: createState(), onRestore })
+    );
 
     await waitFor(() => {
       expect(onRestore).not.toHaveBeenCalled();
@@ -175,7 +190,9 @@ describe('useQuizSession', () => {
   it('does not save session when status is not in_progress', async () => {
     const onRestore = vi.fn();
 
-    renderHook(() => useQuizSession({ quizId, state: createState(), onRestore }));
+    renderHook(() =>
+      useQuizSession({ quizId, state: createState(), onRestore })
+    );
 
     await waitFor(() => expect(saveMock).not.toHaveBeenCalled());
   });

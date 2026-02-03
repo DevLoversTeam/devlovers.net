@@ -2,9 +2,9 @@ import { sql } from 'drizzle-orm';
 import {
   boolean,
   check,
+  index,
   integer,
   jsonb,
-  index,
   numeric,
   pgEnum,
   pgTable,
@@ -14,6 +14,7 @@ import {
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
+
 import { users } from '@/db/schema/users';
 import type { PaymentProvider, PaymentStatus } from '@/lib/shop/payments';
 
@@ -262,7 +263,9 @@ export const stripeEvents = pgTable(
     provider: text('provider').notNull().default('stripe'),
     eventId: text('event_id').notNull(),
     paymentIntentId: text('payment_intent_id'),
-    orderId: uuid('order_id').references(() => orders.id, { onDelete: 'cascade' }),
+    orderId: uuid('order_id').references(() => orders.id, {
+      onDelete: 'cascade',
+    }),
     eventType: text('event_type').notNull(),
     paymentStatus: text('payment_status'),
     claimedAt: timestamp('claimed_at', { withTimezone: true }),

@@ -4,14 +4,15 @@ import { db } from '@/db';
 import { orders } from '@/db/schema/shop';
 import { type PaymentProvider, type PaymentStatus } from '@/lib/shop/payments';
 import { type OrderSummaryWithMinor } from '@/lib/types/shop';
+
 import {
   InvalidPayloadError,
   OrderNotFoundError,
   OrderStateInvalidError,
 } from '../errors';
 import { resolvePaymentProvider } from './_shared';
-import { getOrderItems, parseOrderSummary } from './summary';
 import { guardedPaymentStatusUpdate } from './payment-state';
+import { getOrderItems, parseOrderSummary } from './summary';
 
 export async function setOrderPaymentIntent({
   orderId,

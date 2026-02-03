@@ -32,7 +32,9 @@ let questionCounter = 0;
 /**
  * Creates a mock question with one correct answer
  */
-export function createMockQuestion(overrides?: Partial<MockQuestion>): MockQuestion {
+export function createMockQuestion(
+  overrides?: Partial<MockQuestion>
+): MockQuestion {
   questionCounter++;
   const qId = `q-${questionCounter}`;
 

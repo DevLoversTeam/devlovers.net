@@ -1,6 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+
 import { AnimatedNavLink } from '@/components/shared/AnimatedNavLink';
 
 interface NavLinkProps {

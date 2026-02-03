@@ -1,11 +1,11 @@
 'use client';
 
-import React from 'react';
 import { Filter, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import React from 'react';
 
-import { ProductSort } from '@/components/shop/ProductSort';
 import { ProductFilters } from '@/components/shop/ProductFilters';
+import { ProductSort } from '@/components/shop/ProductSort';
 
 export function ProductsToolbar() {
   const [open, setOpen] = React.useState(false);
@@ -132,7 +132,7 @@ export function ProductsToolbar() {
         aria-label={t('label')}
         className="flex flex-wrap items-end gap-3"
       >
-        <div className="min-w-0 flex-1 sm:flex-none sm:min-w-[260px]">
+        <div className="min-w-0 flex-1 sm:min-w-[260px] sm:flex-none">
           <ProductSort />
         </div>
 
@@ -140,7 +140,7 @@ export function ProductsToolbar() {
           ref={openBtnRef}
           type="button"
           onClick={() => setOpen(true)}
-          className="inline-flex h-10 shrink-0 items-center gap-2 rounded-md border border-border px-3 text-sm text-muted-foreground transition-colors hover:border-foreground hover:text-foreground lg:hidden"
+          className="border-border text-muted-foreground hover:border-foreground hover:text-foreground inline-flex h-10 shrink-0 items-center gap-2 rounded-md border px-3 text-sm transition-colors lg:hidden"
           aria-label={t('openFilters')}
           aria-controls={dialogId}
           aria-expanded={open}
@@ -166,12 +166,12 @@ export function ProductsToolbar() {
             aria-modal="true"
             tabIndex={-1}
             aria-labelledby={dialogTitleId}
-            className="absolute right-0 top-0 h-full w-full max-w-sm overflow-y-auto bg-background shadow-xl"
+            className="bg-background absolute top-0 right-0 h-full w-full max-w-sm overflow-y-auto shadow-xl"
           >
-            <div className="flex items-center justify-between border-b border-border px-4 py-4">
+            <div className="border-border flex items-center justify-between border-b px-4 py-4">
               <h2
                 id={dialogTitleId}
-                className="text-sm font-semibold text-foreground"
+                className="text-foreground text-sm font-semibold"
               >
                 {t('filters')}
               </h2>
@@ -180,7 +180,7 @@ export function ProductsToolbar() {
                 ref={closeBtnRef}
                 type="button"
                 onClick={close}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                className="text-muted-foreground hover:bg-secondary hover:text-foreground inline-flex h-9 w-9 items-center justify-center rounded-md transition-colors"
                 aria-label={t('close')}
               >
                 <X className="h-5 w-5" aria-hidden="true" />

@@ -1,16 +1,17 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+
 import { BlogCategoryLinks } from '@/components/blog/BlogCategoryLinks';
 
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => {
     const map: Record<string, string> = {
       'categories.tech': 'Технології',
-      'categories.career': 'Кар\'єра',
+      'categories.career': "Кар'єра",
       'categories.insights': 'Інсайти',
       'categories.news': 'Новини',
-      'categories.growth': 'Кар\'єра',
+      'categories.growth': "Кар'єра",
       home: 'Головна',
     };
     return map[key] || key;

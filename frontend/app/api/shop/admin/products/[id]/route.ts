@@ -1,26 +1,25 @@
 import crypto from 'node:crypto';
+
+import { sql } from 'drizzle-orm';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { sql } from 'drizzle-orm';
+
+import { db } from '@/db';
+import { parseAdminProductForm } from '@/lib/admin/parseAdminProductForm';
 import {
   AdminApiDisabledError,
   AdminForbiddenError,
   AdminUnauthorizedError,
   requireAdminApi,
 } from '@/lib/auth/admin';
-
-import {
-  InvalidPayloadError,
-  SlugConflictError,
-  PriceConfigError,
-} from '@/lib/services/errors';
-
+import { logError, logWarn } from '@/lib/logging';
 import { requireAdminCsrf } from '@/lib/security/admin-csrf';
 import { guardBrowserSameOrigin } from '@/lib/security/origin';
-
-import { parseAdminProductForm } from '@/lib/admin/parseAdminProductForm';
-import { logError, logWarn } from '@/lib/logging';
-import { db } from '@/db';
+import {
+  InvalidPayloadError,
+  PriceConfigError,
+  SlugConflictError,
+} from '@/lib/services/errors';
 import {
   deleteProduct,
   getAdminProductByIdWithPrices,

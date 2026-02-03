@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { act,renderHook } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock next-intl before importing the hook
 vi.mock('next-intl', () => ({
@@ -14,8 +14,9 @@ vi.mock('sonner', () => ({
   },
 }));
 
-import { useAntiCheat } from '@/hooks/useAntiCheat';
 import { toast } from 'sonner';
+
+import { useAntiCheat } from '@/hooks/useAntiCheat';
 
 describe('useAntiCheat', () => {
   beforeEach(() => {
@@ -45,7 +46,9 @@ describe('useAntiCheat', () => {
 
       expect(result.current.violationsCount).toBe(1);
       expect(result.current.violations[0].type).toBe('copy');
-      expect(toast.warning).toHaveBeenCalledWith('translated:copy', { duration: 3000 });
+      expect(toast.warning).toHaveBeenCalledWith('translated:copy', {
+        duration: 3000,
+      });
     });
 
     it('detects paste event and adds violation', () => {
@@ -64,7 +67,10 @@ describe('useAntiCheat', () => {
       const { result } = renderHook(() => useAntiCheat(true));
 
       act(() => {
-        const event = new Event('contextmenu', { bubbles: true, cancelable: true });
+        const event = new Event('contextmenu', {
+          bubbles: true,
+          cancelable: true,
+        });
         document.dispatchEvent(event);
       });
 
@@ -111,17 +117,16 @@ describe('useAntiCheat', () => {
     });
 
     it('sets showWarning to true when violation occurs', () => {
-        const { result } = renderHook(() => useAntiCheat(true));
+      const { result } = renderHook(() => useAntiCheat(true));
 
-        expect(result.current.showWarning).toBe(false);
+      expect(result.current.showWarning).toBe(false);
 
-        act(() => {
-            document.dispatchEvent(new Event('copy'));
-        });
+      act(() => {
+        document.dispatchEvent(new Event('copy'));
+      });
 
-        expect(result.current.showWarning).toBe(true);
+      expect(result.current.showWarning).toBe(true);
     });
-
 
     it('resetViolations clears all violations', () => {
       const { result } = renderHook(() => useAntiCheat(true));
@@ -165,10 +170,22 @@ describe('useAntiCheat', () => {
 
       unmount();
 
-      expect(removeEventListenerSpy).toHaveBeenCalledWith('copy', expect.any(Function));
-      expect(removeEventListenerSpy).toHaveBeenCalledWith('paste', expect.any(Function));
-      expect(removeEventListenerSpy).toHaveBeenCalledWith('contextmenu', expect.any(Function));
-      expect(removeEventListenerSpy).toHaveBeenCalledWith('visibilitychange', expect.any(Function));
+      expect(removeEventListenerSpy).toHaveBeenCalledWith(
+        'copy',
+        expect.any(Function)
+      );
+      expect(removeEventListenerSpy).toHaveBeenCalledWith(
+        'paste',
+        expect.any(Function)
+      );
+      expect(removeEventListenerSpy).toHaveBeenCalledWith(
+        'contextmenu',
+        expect.any(Function)
+      );
+      expect(removeEventListenerSpy).toHaveBeenCalledWith(
+        'visibilitychange',
+        expect.any(Function)
+      );
 
       removeEventListenerSpy.mockRestore();
     });

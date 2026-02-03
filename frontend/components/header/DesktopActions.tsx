@@ -1,14 +1,14 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
 import { LogIn, Settings, User } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
-import { HeaderButton } from '@/components/shared/HeaderButton';
-import { GitHubStarButton } from '@/components/shared/GitHubStarButton';
-import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
 import { LogoutButton } from '@/components/auth/logoutButton';
-import { CartButton } from '@/components/shop/header/CartButton';
 import { BlogHeaderSearch } from '@/components/blog/BlogHeaderSearch';
+import { GitHubStarButton } from '@/components/shared/GitHubStarButton';
+import { HeaderButton } from '@/components/shared/HeaderButton';
+import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
+import { CartButton } from '@/components/shop/header/CartButton';
 
 type DesktopActionsProps = {
   variant: 'platform' | 'shop' | 'blog';

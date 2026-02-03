@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
 import { eq } from 'drizzle-orm';
+import { afterEach,describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/lib/cloudinary', () => {
   return {
@@ -12,9 +12,9 @@ vi.mock('@/lib/cloudinary', () => {
 });
 
 import { db } from '@/db';
-import { products, productPrices } from '@/db/schema';
-import { toDbMoney } from '@/lib/shop/money';
+import { productPrices,products } from '@/db/schema';
 import { createProduct, updateProduct } from '@/lib/services/products';
+import { toDbMoney } from '@/lib/shop/money';
 
 function uniqueSlug(prefix = 'sale-invariant') {
   return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;

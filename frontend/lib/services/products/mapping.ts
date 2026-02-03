@@ -1,5 +1,6 @@
 import { fromCents, fromDbMoney } from '@/lib/shop/money';
 import type { DbProduct } from '@/lib/types/shop';
+
 import type { ProductRow } from './types';
 
 export function mapRowToProduct(row: ProductRow): DbProduct {

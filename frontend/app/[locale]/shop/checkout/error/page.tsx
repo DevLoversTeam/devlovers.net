@@ -1,24 +1,23 @@
-import { Link } from '@/i18n/routing';
+import { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
-import { formatMoney, resolveCurrencyFromLocale } from '@/lib/shop/currency';
+import { Link } from '@/i18n/routing';
 import { OrderNotFoundError } from '@/lib/services/errors';
 import { getOrderSummary } from '@/lib/services/orders';
-import { orderIdParamSchema } from '@/lib/validation/shop';
-import { cn } from '@/lib/utils';
-
+import { formatMoney, resolveCurrencyFromLocale } from '@/lib/shop/currency';
 import {
-  SHOP_FOCUS,
-  SHOP_DISABLED,
   SHOP_CTA_BASE,
-  SHOP_CTA_INTERACTIVE,
   SHOP_CTA_INSET,
+  SHOP_CTA_INTERACTIVE,
   SHOP_CTA_WAVE,
-  shopCtaGradient,
+  SHOP_DISABLED,
+  SHOP_FOCUS,
   SHOP_OUTLINE_BTN_BASE,
   SHOP_OUTLINE_BTN_INTERACTIVE,
+  shopCtaGradient,
 } from '@/lib/shop/ui-classes';
-import { Metadata } from 'next';
+import { cn } from '@/lib/utils';
+import { orderIdParamSchema } from '@/lib/validation/shop';
 
 export const metadata: Metadata = {
   title: 'Checkout Error | DevLovers',
@@ -84,14 +83,14 @@ export default async function CheckoutErrorPage({
         className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8"
         aria-labelledby="checkout-error-title"
       >
-        <section className="rounded-lg border border-border bg-card p-8 text-center">
+        <section className="border-border bg-card rounded-lg border p-8 text-center">
           <h1
             id="checkout-error-title"
-            className="text-2xl font-bold text-foreground"
+            className="text-foreground text-2xl font-bold"
           >
             {t('errors.missingOrderId')}
           </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className="text-muted-foreground mt-2 text-sm">
             {t('errors.missingOrderIdDescription')}
           </p>
 
@@ -143,14 +142,14 @@ export default async function CheckoutErrorPage({
           className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8"
           aria-labelledby="checkout-error-title"
         >
-          <section className="rounded-lg border border-border bg-card p-8 text-center">
+          <section className="border-border bg-card rounded-lg border p-8 text-center">
             <h1
               id="checkout-error-title"
-              className="text-2xl font-bold text-foreground"
+              className="text-foreground text-2xl font-bold"
             >
               {t('errors.orderNotFound')}
             </h1>
-            <p className="mt-2 text-sm text-muted-foreground">
+            <p className="text-muted-foreground mt-2 text-sm">
               {t('errors.orderNotFoundDescription')}
             </p>
 
@@ -196,14 +195,14 @@ export default async function CheckoutErrorPage({
         className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8"
         aria-labelledby="checkout-error-title"
       >
-        <section className="rounded-lg border border-border bg-card p-8 text-center">
+        <section className="border-border bg-card rounded-lg border p-8 text-center">
           <h1
             id="checkout-error-title"
-            className="text-2xl font-bold text-foreground"
+            className="text-foreground text-2xl font-bold"
           >
             {t('errors.unableToLoad')}
           </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className="text-muted-foreground mt-2 text-sm">
             {t('errors.tryAgainLater')}
           </p>
         </section>
@@ -225,15 +224,15 @@ export default async function CheckoutErrorPage({
       className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8"
       aria-labelledby="checkout-error-title"
     >
-      <section className="rounded-lg border border-border bg-card p-8 shadow-sm">
+      <section className="border-border bg-card rounded-lg border p-8 shadow-sm">
         <header>
           <h1
             id="checkout-error-title"
-            className="text-3xl font-bold text-foreground"
+            className="text-foreground text-3xl font-bold"
           >
             {isFailed ? t('error.paymentFailed') : t('error.paymentUnclear')}
           </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className="text-muted-foreground mt-2 text-sm">
             {isFailed
               ? t('error.paymentFailedDescription')
               : t('error.paymentUnclearDescription')}
@@ -241,20 +240,20 @@ export default async function CheckoutErrorPage({
         </header>
 
         <section
-          className="mt-6 rounded-md border border-border bg-muted/30 p-4 text-sm text-foreground"
+          className="border-border bg-muted/30 text-foreground mt-6 rounded-md border p-4 text-sm"
           aria-label="Order details"
         >
           <dl className="space-y-2">
             <div className="flex items-center justify-between gap-4">
               <dt className="text-muted-foreground">{t('error.orderLabel')}</dt>
-              <dd className="font-mono text-xs text-muted-foreground">
+              <dd className="text-muted-foreground font-mono text-xs">
                 {order.id}
               </dd>
             </div>
 
             <div className="flex items-center justify-between gap-4">
               <dt className="text-muted-foreground">{t('error.totalLabel')}</dt>
-              <dd className="font-semibold text-foreground">
+              <dd className="text-foreground font-semibold">
                 {totalMinor == null
                   ? '-'
                   : formatMoney(totalMinor, currency, locale)}
@@ -265,7 +264,7 @@ export default async function CheckoutErrorPage({
               <dt className="text-muted-foreground">
                 {t('error.statusLabel')}
               </dt>
-              <dd className="font-semibold capitalize text-foreground">
+              <dd className="text-foreground font-semibold capitalize">
                 {order.paymentStatus}
               </dd>
             </div>

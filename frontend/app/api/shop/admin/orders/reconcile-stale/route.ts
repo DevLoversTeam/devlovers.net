@@ -1,5 +1,7 @@
 import crypto from 'node:crypto';
+
 import { NextRequest, NextResponse } from 'next/server';
+
 import {
   AdminApiDisabledError,
   AdminForbiddenError,
@@ -7,13 +9,13 @@ import {
   requireAdminApi,
 } from '@/lib/auth/admin';
 import { logError, logInfo, logWarn } from '@/lib/logging';
-import { restockStalePendingOrders } from '@/lib/services/orders';
 import {
   CSRF_FORM_FIELD,
   isSameOrigin,
   verifyCsrfToken,
 } from '@/lib/security/csrf';
 import { guardBrowserSameOrigin } from '@/lib/security/origin';
+import { restockStalePendingOrders } from '@/lib/services/orders';
 export const runtime = 'nodejs';
 
 function noStoreJson(body: unknown, init?: { status?: number }) {

@@ -1,15 +1,16 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { afterEach,beforeEach, describe, expect, it } from 'vitest';
+
 import {
+  createCorrectAnswersMap,
   createMockQuestion,
   createMockQuestions,
   createMockQuizSession,
-  createCorrectAnswersMap,
   resetFactoryCounters,
 } from '../factories/quiz/quiz';
 import {
-  setupQuizTestEnv,
   cleanupQuizTestEnv,
   installMockLocalStorage,
+  setupQuizTestEnv,
   TEST_ENCRYPTION_KEY,
 } from './setup';
 

@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import {
-  savePendingQuizResult,
-  getPendingQuizResult,
   clearPendingQuizResult,
+  getPendingQuizResult,
+  savePendingQuizResult,
 } from '@/lib/quiz/guest-quiz';
 
 describe('guest-quiz storage', () => {
@@ -92,7 +93,10 @@ describe('guest-quiz storage', () => {
   });
 
   it('clears pending quiz result', () => {
-    localStorage.setItem('devlovers_pending_quiz', JSON.stringify({ quizId: 'q1' }));
+    localStorage.setItem(
+      'devlovers_pending_quiz',
+      JSON.stringify({ quizId: 'q1' })
+    );
 
     clearPendingQuizResult();
 

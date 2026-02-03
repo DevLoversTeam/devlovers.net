@@ -2,11 +2,12 @@
 import crypto from 'crypto';
 import { eq, sql } from 'drizzle-orm';
 import { NextRequest } from 'next/server';
-import { deriveTestIpFromIdemKey } from '@/lib/tests/helpers/ip';
+import { afterAll,beforeAll, describe, expect, it, vi } from 'vitest';
+
 import { db } from '@/db';
-import { orders, products, productPrices } from '@/db/schema';
+import { orders, productPrices,products } from '@/db/schema';
 import { toDbMoney } from '@/lib/shop/money';
-import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
+import { deriveTestIpFromIdemKey } from '@/lib/tests/helpers/ip';
 
 const __prevRateLimitDisabled = process.env.RATE_LIMIT_DISABLED;
 

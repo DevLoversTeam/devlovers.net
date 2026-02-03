@@ -14,7 +14,7 @@ export function BlogPageHeader({ title, subtitle }: BlogPageHeaderProps) {
 
   return (
     <>
-      <h1 className="text-5xl font-extrabold mb-3 text-center leading-[1.1] bg-gradient-to-b from-[color-mix(in_srgb,var(--accent-primary)_70%,white)] to-[var(--accent-hover)] bg-clip-text text-transparent">
+      <h1 className="mb-3 bg-gradient-to-b from-[color-mix(in_srgb,var(--accent-primary)_70%,white)] to-[var(--accent-hover)] bg-clip-text text-center text-5xl leading-[1.1] font-extrabold text-transparent">
         {title}
       </h1>
       <p className="mx-auto mb-10 max-w-2xl text-center text-base text-gray-500 dark:text-gray-400">

@@ -1,13 +1,14 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { cn } from '@/lib/utils';
+
 import {
   SHOP_DISABLED,
   SHOP_FOCUS,
   SHOP_OUTLINE_BTN_BASE,
   SHOP_OUTLINE_BTN_INTERACTIVE,
 } from '@/lib/shop/ui-classes';
+import { cn } from '@/lib/utils';
 interface CatalogLoadMoreProps {
   hasMore: boolean;
   isLoading: boolean;

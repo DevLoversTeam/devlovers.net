@@ -2,8 +2,8 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { describe, it, expect, afterEach } from 'vitest';
 import { eq } from 'drizzle-orm';
+import { afterEach,describe, expect, it } from 'vitest';
 
 import { db } from '@/db';
 import { orders } from '@/db/schema/shop';
@@ -17,7 +17,6 @@ type SeedArgs = {
 async function seedOrder(args: SeedArgs): Promise<string> {
   const orderId = crypto.randomUUID();
   const now = new Date();
-
 
   const idempotencyKey = `test:${orderId}`;
 

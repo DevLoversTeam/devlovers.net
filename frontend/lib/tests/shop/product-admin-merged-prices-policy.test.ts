@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { assertMergedPricesPolicy } from '@/lib/services/products/prices';
+
 import { PriceConfigError } from '@/lib/services/errors';
+import { assertMergedPricesPolicy } from '@/lib/services/products/prices';
 
 describe('assertMergedPricesPolicy (merged-state)', () => {
   it('throws PRICE_CONFIG_ERROR when USD is missing after merge', () => {

@@ -1,13 +1,14 @@
 import 'server-only';
-import { cn } from '@/lib/utils';
-import { Link } from '@/i18n/routing';
-import { redirect } from 'next/navigation';
-import { unstable_noStore as noStore } from 'next/cache';
+
 import { desc, eq, sql } from 'drizzle-orm';
+import { Metadata } from 'next';
+import { unstable_noStore as noStore } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
 import { db } from '@/db';
 import { orderItems, orders } from '@/db/schema';
+import { Link } from '@/i18n/routing';
 import { getCurrentUser } from '@/lib/auth';
 import { logError } from '@/lib/logging';
 import {
@@ -16,7 +17,7 @@ import {
   SHOP_LINK_MD,
   SHOP_NAV_LINK_BASE,
 } from '@/lib/shop/ui-classes';
-import { Metadata } from 'next';
+import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = {
   title: 'My Orders | DevLovers',
@@ -205,7 +206,7 @@ export default async function MyOrdersPage({
           <h1 id="my-orders-heading" className="text-2xl font-semibold">
             {t('title')}
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">{t('subtitle')}</p>
+          <p className="text-muted-foreground mt-1 text-sm">{t('subtitle')}</p>
         </div>
 
         <nav aria-label="Orders navigation" className="flex items-center gap-3">
@@ -217,7 +218,7 @@ export default async function MyOrdersPage({
 
       {rows.length === 0 ? (
         <section className="rounded-md border p-4" aria-label="No orders">
-          <p className="text-sm text-muted-foreground">{t('empty.message')}</p>
+          <p className="text-muted-foreground text-sm">{t('empty.message')}</p>
           <div className="mt-3">
             <Link className={NAV_LINK} href="/shop/products">
               {t('empty.browseProducts')}
@@ -230,29 +231,29 @@ export default async function MyOrdersPage({
             <table className="w-full border-collapse">
               <caption className="sr-only">{t('table.caption')}</caption>
 
-              <thead className="border-b border-border">
+              <thead className="border-border border-b">
                 <tr>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground"
+                    className="text-muted-foreground px-4 py-3 text-left text-xs font-semibold"
                   >
                     {t('table.items')}
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground"
+                    className="text-muted-foreground px-4 py-3 text-left text-xs font-semibold"
                   >
                     {t('table.date')}
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground"
+                    className="text-muted-foreground px-4 py-3 text-left text-xs font-semibold"
                   >
                     {t('table.status')}
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground"
+                    className="text-muted-foreground px-4 py-3 text-right text-xs font-semibold"
                   >
                     {t('table.total')}
                   </th>
@@ -277,9 +278,9 @@ export default async function MyOrdersPage({
                   return (
                     <tr
                       key={o.id}
-                      className="border-b border-border last:border-b-0 hover:bg-muted/20"
+                      className="border-border hover:bg-muted/20 border-b last:border-b-0"
                     >
-                      <th scope="row" className="px-4 py-3 align-top text-left">
+                      <th scope="row" className="px-4 py-3 text-left align-top">
                         <Link
                           href={href}
                           className={ORDER_HEADLINE_LINK}
@@ -289,7 +290,7 @@ export default async function MyOrdersPage({
                           {headline}
                         </Link>
 
-                        <div className="mt-1 text-xs text-muted-foreground">
+                        <div className="text-muted-foreground mt-1 text-xs">
                           <span className="sr-only">
                             {t('table.orderId')}:{' '}
                           </span>
@@ -315,7 +316,7 @@ export default async function MyOrdersPage({
                         </span>
                       </td>
 
-                      <td className="px-4 py-3 align-top text-right text-sm font-medium">
+                      <td className="px-4 py-3 text-right align-top text-sm font-medium">
                         {String(o.totalAmount)} {String(o.currency)}
                       </td>
                     </tr>

@@ -1,11 +1,11 @@
-import { describe, it, expect } from 'vitest';
 import crypto from 'crypto';
 import { eq } from 'drizzle-orm';
+import { describe, expect,it } from 'vitest';
 
 import { db } from '@/db';
 import { orders } from '@/db/schema';
-import { toDbMoney } from '@/lib/shop/money';
 import { restockStalePendingOrders } from '@/lib/services/orders';
+import { toDbMoney } from '@/lib/shop/money';
 
 describe('restockStalePendingOrders claim', () => {
   it('two concurrent sweeps must not both process the same order', async () => {

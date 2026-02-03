@@ -1,9 +1,9 @@
 'use client';
 
-import { useTheme } from 'next-themes';
-import { useTranslations } from 'next-intl';
-import { Monitor, Sun, Moon } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Monitor, Moon,Sun } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
 
 const themes = [
@@ -52,7 +52,7 @@ export function ThemeToggle() {
               transition={{ type: 'spring', stiffness: 400, damping: 30 }}
             />
           )}
-          <Icon className="relative z-10 h-4 w-4 text-neutral-500 dark:text-neutral-400 transition-colors" />
+          <Icon className="relative z-10 h-4 w-4 text-neutral-500 transition-colors dark:text-neutral-400" />
         </button>
       ))}
 

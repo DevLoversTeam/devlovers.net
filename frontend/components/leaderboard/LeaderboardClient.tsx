@@ -2,10 +2,12 @@
 
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
+
 import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
+
 import { LeaderboardPodium } from './LeaderboardPodium';
 import { LeaderboardTable } from './LeaderboardTable';
-import { User, CurrentUser } from './types';
+import { CurrentUser,User } from './types';
 
 interface LeaderboardClientProps {
   initialUsers: User[];
@@ -27,18 +29,18 @@ export default function LeaderboardClient({
       <div className="fixed inset-0 z-0">
         <DynamicGridBackground
           showStaticGrid
-          className="w-full h-full bg-gray-50 transition-colors duration-300 dark:bg-transparent"
+          className="h-full w-full bg-gray-50 transition-colors duration-300 dark:bg-transparent"
         />
       </div>
 
-      <div className="relative z-10 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center pt-20 pb-10">
-        <header className="text-center mb-16 max-w-3xl">
+      <div className="relative z-10 mx-auto flex w-full max-w-5xl flex-col items-center px-4 pt-20 pb-10 sm:px-6 lg:px-8">
+        <header className="mb-16 max-w-3xl text-center">
           <motion.div
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.6 }}
           >
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-black tracking-tight text-[var(--accent-primary)] mb-6 drop-shadow-sm">
+            <h1 className="mb-6 text-4xl font-black tracking-tight text-[var(--accent-primary)] drop-shadow-sm md:text-6xl lg:text-7xl">
               {t('title')}
             </h1>
           </motion.div>
@@ -47,24 +49,24 @@ export default function LeaderboardClient({
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-lg md:text-xl text-gray-600 dark:text-gray-400 font-light leading-relaxed"
+            className="text-lg leading-relaxed font-light text-gray-600 md:text-xl dark:text-gray-400"
           >
             {t('subtitle')}
           </motion.p>
         </header>
 
-        <div className="w-full flex flex-col items-center">
-          <div className="w-full mb-24">
+        <div className="flex w-full flex-col items-center">
+          <div className="mb-24 w-full">
             {hasResults ? (
               <LeaderboardPodium topThree={topThree} />
             ) : (
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="text-center py-20 rounded-2xl border border-gray-200 dark:border-white/10 bg-white/60 dark:bg-[#111]/60 backdrop-blur-xl shadow-xl"
+                className="rounded-2xl border border-gray-200 bg-white/60 py-20 text-center shadow-xl backdrop-blur-xl dark:border-white/10 dark:bg-[#111]/60"
               >
-                <p className="text-6xl mb-4 grayscale opacity-50">🏆</p>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                <p className="mb-4 text-6xl opacity-50 grayscale">🏆</p>
+                <h2 className="mb-2 text-2xl font-bold text-gray-900 dark:text-white">
                   {t('noResults')}
                 </h2>
                 <p className="text-gray-600 dark:text-gray-400">
@@ -74,7 +76,7 @@ export default function LeaderboardClient({
             )}
           </div>
 
-          <div className="w-full animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
+          <div className="animate-in fade-in slide-in-from-bottom-8 w-full delay-200 duration-700">
             <LeaderboardTable users={allUsers} currentUser={currentUser} />
           </div>
         </div>
