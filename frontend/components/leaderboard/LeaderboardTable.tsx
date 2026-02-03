@@ -1,12 +1,12 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Medal,TrendingUp, Trophy } from 'lucide-react';
+import { Medal, TrendingUp, Trophy } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import { cn } from '@/lib/utils';
 
-import { CurrentUser,User } from './types';
+import { CurrentUser, User } from './types';
 
 interface LeaderboardTableProps {
   users: User[];
