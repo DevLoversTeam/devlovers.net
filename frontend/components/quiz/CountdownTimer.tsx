@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertTriangle } from 'lucide-react';
+import { TriangleAlert } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
@@ -112,7 +112,10 @@ export function CountdownTimer({
         <p className="mt-2 text-xs font-medium">
           {percentage <= 10 ? (
             <>
-              <AlertTriangle className="inline h-4 w-4 text-amber-500" />{' '}
+              <TriangleAlert
+                className="inline h-4 w-4 text-amber-500"
+                aria-hidden="true"
+              />{' '}
               {t('almostDone')}
             </>
           ) : (

@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import {
   clearQuizSession,
@@ -99,7 +99,7 @@ describe('quiz-session', () => {
       expect(loaded).not.toBeNull();
     });
 
-    it('returns null for completed session', () => {
+    it('returns completed session (for guest result screen language switch)', () => {
       const session = createMockQuizSession({ status: 'completed' });
       localStorage.setItem(
         'quiz_session_quiz-123',
@@ -108,7 +108,8 @@ describe('quiz-session', () => {
 
       const loaded = loadQuizSession('quiz-123');
 
-      expect(loaded).toBeNull();
+      expect(loaded).not.toBeNull();
+      expect(loaded?.status).toBe('completed');
     });
 
     it('returns null for rules session', () => {

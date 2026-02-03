@@ -71,7 +71,7 @@ export function QuizProgress({ current, total, answers }: QuizProgressProps) {
                 key={`ellipsis-${idx}`}
                 className="px-2 text-sm text-gray-400 dark:text-gray-500"
               >
-                ...
+                …
               </span>
             );
           }
@@ -104,9 +104,9 @@ export function QuizProgress({ current, total, answers }: QuizProgressProps) {
               {isAnswered ? (
                 <span className="font-bold text-white">
                   {isCorrect ? (
-                    <Check className="h-3 w-3" />
+                    <Check className="h-3 w-3" aria-hidden="true" />
                   ) : (
-                    <X className="h-3 w-3" />
+                    <X className="h-3 w-3" aria-hidden="true" />
                   )}
                 </span>
               ) : (

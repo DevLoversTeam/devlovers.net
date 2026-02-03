@@ -6,7 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 
-import { type Topic,TOPICS } from '@/data/about';
+import { type Topic, TOPICS } from '@/data/about';
 
 export function TopicsSection() {
   const t = useTranslations('about.topics');

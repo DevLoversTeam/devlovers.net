@@ -1,6 +1,6 @@
 'use client';
 import { motion } from 'framer-motion';
-import { ArrowRight,Check, Heart, Server, Sparkles, X } from 'lucide-react';
+import { ArrowRight, Check, Heart, Server, Sparkles, X } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';

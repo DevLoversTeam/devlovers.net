@@ -989,7 +989,7 @@ async function seedReactQuiz() {
   }
 }
 
-async function cleanupReactQuiz() {
+async function _cleanupReactQuiz() {
   console.log('🧹 Cleaning up React quiz...');
 
   await db.delete(quizAnswerTranslations);
@@ -1008,10 +1008,3 @@ seedReactQuiz()
     console.error(error);
     process.exit(1);
   });
-
-// cleanupReactQuiz()
-//   .then(() => process.exit(0))
-//   .catch((error) => {
-//     console.error(error);
-//     process.exit(1);
-//   });
