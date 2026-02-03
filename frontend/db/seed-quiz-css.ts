@@ -1,16 +1,17 @@
 import { eq } from 'drizzle-orm';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+
 import { db } from './index';
 import { categories } from './schema/categories';
 import {
-  quizzes,
-  quizTranslations,
-  quizQuestions,
-  quizQuestionContent,
   quizAnswers,
   quizAnswerTranslations,
   quizAttempts,
+  quizQuestionContent,
+  quizQuestions,
+  quizTranslations,
+  quizzes,
 } from './schema/quiz';
 
 type Locale = 'uk' | 'en' | 'pl';

@@ -1,21 +1,19 @@
-import type React from 'react';
-import { Toaster } from 'sonner';
+import groq from 'groq';
+import { notFound } from 'next/navigation';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
-import { notFound } from 'next/navigation';
-import groq from 'groq';
+import type React from 'react';
+import { Toaster } from 'sonner';
 
-import { locales } from '@/i18n/config';
-import Footer from '@/components/shared/Footer';
-import { ThemeProvider } from '@/components/theme/ThemeProvider';
-import { getCurrentUser } from '@/lib/auth';
 import { client } from '@/client';
-
-import { MainSwitcher } from '@/components/header/MainSwitcher';
 import { AppChrome } from '@/components/header/AppChrome';
-
+import { MainSwitcher } from '@/components/header/MainSwitcher';
 import { CookieBanner } from '@/components/shared/CookieBanner';
+import Footer from '@/components/shared/Footer';
 import { OnlineCounterPopup } from '@/components/shared/OnlineCounterPopup';
+import { ThemeProvider } from '@/components/theme/ThemeProvider';
+import { locales } from '@/i18n/config';
+import { getCurrentUser } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 

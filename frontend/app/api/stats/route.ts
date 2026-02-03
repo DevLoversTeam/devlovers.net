@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+
 import { getPlatformStats } from '@/lib/about/stats';
 
 export async function GET() {

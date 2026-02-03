@@ -1,4 +1,5 @@
 import { getTranslations } from 'next-intl/server';
+
 import LegalBlock from './LegalBlock';
 
 export const PRIVACY_LAST_UPDATED = '2025-12-14';
@@ -24,7 +25,7 @@ export default async function PrivacyPolicyContent() {
       </LegalBlock>
 
       <LegalBlock id="data-we-collect" title={t('dataWeCollect.title')}>
-        <ul className="list-disc pl-5 space-y-2">
+        <ul className="list-disc space-y-2 pl-5">
           <li>
             <strong>{t('dataWeCollect.accountData')}</strong>{' '}
             {t('dataWeCollect.accountDataDesc')}
@@ -41,7 +42,7 @@ export default async function PrivacyPolicyContent() {
       </LegalBlock>
 
       <LegalBlock id="why-we-collect" title={t('whyWeCollect.title')}>
-        <ul className="list-disc pl-5 space-y-2">
+        <ul className="list-disc space-y-2 pl-5">
           <li>{t('whyWeCollect.reason1')}</li>
           <li>{t('whyWeCollect.reason2')}</li>
           <li>{t('whyWeCollect.reason3')}</li>
@@ -72,7 +73,7 @@ export default async function PrivacyPolicyContent() {
 
       <LegalBlock id="gdpr" title={t('gdpr.title')}>
         <p className="mb-4">{t('gdpr.intro')}</p>
-        <ul className="list-disc pl-5 space-y-2">
+        <ul className="list-disc space-y-2 pl-5">
           <li>
             <strong>{t('gdpr.rightAccess')}</strong> {t('gdpr.rightAccessDesc')}
           </li>
@@ -81,7 +82,8 @@ export default async function PrivacyPolicyContent() {
             {t('gdpr.rightRectificationDesc')}
           </li>
           <li>
-            <strong>{t('gdpr.rightErasure')}</strong> {t('gdpr.rightErasureDesc')}
+            <strong>{t('gdpr.rightErasure')}</strong>{' '}
+            {t('gdpr.rightErasureDesc')}
           </li>
           <li>
             <strong>{t('gdpr.rightRestriction')}</strong>{' '}

@@ -1,6 +1,7 @@
 import groq from 'groq';
 import { unstable_noStore as noStore } from 'next/cache';
 import { getTranslations } from 'next-intl/server';
+
 import { client } from '@/client';
 import BlogFilters from '@/components/blog/BlogFilters';
 import { BlogPageHeader } from '@/components/blog/BlogPageHeader';
@@ -33,8 +34,7 @@ export default async function BlogPage({
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'blog' });
   const sp = searchParams ? await searchParams : undefined;
-  const authorParam =
-    typeof sp?.author === 'string' ? sp.author.trim() : '';
+  const authorParam = typeof sp?.author === 'string' ? sp.author.trim() : '';
   const hasAuthorFilter = authorParam.length > 0;
 
   const posts = await client.withConfig({ useCdn: false }).fetch(
@@ -85,8 +85,8 @@ export default async function BlogPage({
   const featuredPost = posts?.[0];
 
   return (
-    <DynamicGridBackground className="bg-gray-50 transition-colors duration-300 dark:bg-transparent py-10">
-      <main className="relative z-10 mx-auto max-w-7xl px-4 pt-6 pb-12 sm:px-6 lg:px-8">
+    <DynamicGridBackground className="bg-gray-50 py-10 transition-colors duration-300 dark:bg-transparent">
+      <main className="relative z-10 mx-auto max-w-7xl pt-6 pb-12">
         {!hasAuthorFilter && (
           <BlogPageHeader title={t('title')} subtitle={t('subtitle')} />
         )}

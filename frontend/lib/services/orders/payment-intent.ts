@@ -4,14 +4,15 @@ import { db } from '@/db';
 import { orders } from '@/db/schema/shop';
 import { type PaymentProvider, type PaymentStatus } from '@/lib/shop/payments';
 import { type OrderSummaryWithMinor } from '@/lib/types/shop';
+
 import {
   InvalidPayloadError,
   OrderNotFoundError,
   OrderStateInvalidError,
 } from '../errors';
 import { resolvePaymentProvider } from './_shared';
-import { getOrderItems, parseOrderSummary } from './summary';
 import { guardedPaymentStatusUpdate } from './payment-state';
+import { getOrderItems, parseOrderSummary } from './summary';
 
 export async function setOrderPaymentIntent({
   orderId,
@@ -35,8 +36,6 @@ export async function setOrderPaymentIntent({
     );
   }
 
-  // New flow: pending -> requires_payment when attaching PI.
-  // Keep requires_payment only for backward-compat (old orders created before this change).
   const allowed: PaymentStatus[] = ['pending', 'requires_payment'];
   if (!allowed.includes(existing.paymentStatus as PaymentStatus)) {
     throw new InvalidPayloadError(
@@ -71,8 +70,6 @@ export async function setOrderPaymentIntent({
   });
 
   if (!res.applied) {
-    // Keep error semantics consistent with previous validation rules.
-    // This also guarantees we won't ever do failed/refunded -> requires_payment.
     throw new InvalidPayloadError(
       `Order payment intent update blocked (${res.reason}).`
     );
@@ -110,7 +107,6 @@ export async function readStripePaymentIntentParams(orderId: string): Promise<{
     );
   }
 
-  // Payable-state gate: fail-closed for paid/failed/refunded/canceled/etc.
   const allowed: PaymentStatus[] = ['pending', 'requires_payment'];
   if (!allowed.includes(existing.paymentStatus as PaymentStatus)) {
     throw new OrderStateInvalidError(
@@ -130,7 +126,6 @@ export async function readStripePaymentIntentParams(orderId: string): Promise<{
 
   const amountMinor = existing.totalAmountMinor;
 
-  // Canonical money source = DB minor units. Fail-closed on invalid totals.
   if (!Number.isSafeInteger(amountMinor) || amountMinor <= 0) {
     throw new OrderStateInvalidError(
       'Invalid order total for Stripe payment intent creation.',

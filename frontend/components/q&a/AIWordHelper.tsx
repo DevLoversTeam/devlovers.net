@@ -1,34 +1,34 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useTranslations } from 'next-intl';
-import { useParams } from 'next/navigation';
 import {
-  X,
+  BookOpen,
+  Clock,
+  CloudOff,
+  Coffee,
+  Github,
+  GripHorizontal,
+  Heart,
   Loader2,
   RefreshCw,
   Sparkles,
-  GripHorizontal,
-  Clock,
-  Coffee,
-  CloudOff,
-  Wrench,
   Star,
-  Github,
-  Heart,
-  BookOpen,
+  Wrench,
+  X,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+
 import { Link } from '@/i18n/routing';
 import {
   getCachedExplanation,
   setCachedExplanation,
 } from '@/lib/ai/explainCache';
 import type { ExplanationResponse } from '@/lib/ai/prompts';
-
-import ukMessages from '@/messages/uk.json';
+import { cn } from '@/lib/utils';
 import enMessages from '@/messages/en.json';
 import plMessages from '@/messages/pl.json';
+import ukMessages from '@/messages/uk.json';
 
 type Locale = 'uk' | 'en' | 'pl';
 
@@ -303,7 +303,6 @@ export default function AIWordHelper({
 
     if (isOpen) {
       document.addEventListener('keydown', handleKeyDown);
-      // Calculate scrollbar width and add padding to prevent layout shift
       const scrollbarWidth =
         window.innerWidth - document.documentElement.clientWidth;
       document.body.style.overflow = 'hidden';
@@ -432,7 +431,7 @@ export default function AIWordHelper({
           'bg-white dark:bg-neutral-900',
           'rounded-xl',
           'border border-gray-200 dark:border-neutral-800',
-          'max-w-lg w-full',
+          'w-full max-w-lg',
           'max-h-[80vh] overflow-hidden',
           'flex flex-col',
           'animate-in zoom-in-95 duration-200',
@@ -446,7 +445,7 @@ export default function AIWordHelper({
       >
         <div
           className={cn(
-            'flex items-center justify-between p-4 border-b border-gray-200 dark:border-neutral-800',
+            'flex items-center justify-between border-b border-gray-200 p-4 dark:border-neutral-800',
             'cursor-grab active:cursor-grabbing',
             'select-none'
           )}
@@ -469,7 +468,7 @@ export default function AIWordHelper({
               'text-gray-500 dark:text-gray-400',
               'hover:bg-gray-100 dark:hover:bg-neutral-800',
               'transition-colors',
-              'focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]'
+              'focus:ring-2 focus:ring-[var(--accent-primary)] focus:outline-none'
             )}
             aria-label={t('close')}
           >
@@ -582,14 +581,12 @@ export default function AIWordHelper({
                             )}
                           </button>
 
-                          {/* Activity suggestions while waiting */}
-                          <div className="mt-4 w-full border-t border-gray-200 dark:border-neutral-700 pt-4">
-                            <p className="text-center text-xs font-medium text-gray-500 dark:text-gray-400 mb-3">
+                          <div className="mt-4 w-full border-t border-gray-200 pt-4 dark:border-neutral-700">
+                            <p className="mb-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
                               {messages.rateLimit.whileWaiting}
                             </p>
 
                             {rateLimitState.retryAttempts < 3 ? (
-                              // First suggestions: Take Quiz & Star GitHub
                               <div className="flex flex-col gap-2">
                                 <Link
                                   href="/quizzes"
@@ -640,7 +637,6 @@ export default function AIWordHelper({
                                 </a>
                               </div>
                             ) : (
-                              // After 3+ attempts: Sponsor & Review
                               <div className="flex flex-col gap-2">
                                 <a
                                   href="https://github.com/sponsors/DevLoversTeam"
@@ -773,8 +769,8 @@ export default function AIWordHelper({
                 })()}
 
               {explanation && !isLoading && !error && (
-                <div className="prose prose-sm max-w-none dark:prose-invert">
-                  <div className="whitespace-pre-wrap leading-relaxed text-gray-800 dark:text-gray-200 [&>*]:my-2">
+                <div className="prose prose-sm dark:prose-invert max-w-none">
+                  <div className="leading-relaxed whitespace-pre-wrap text-gray-800 dark:text-gray-200 [&>*]:my-2">
                     {formatExplanation(explanation[activeLocale])}
                   </div>
                 </div>

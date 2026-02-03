@@ -1,23 +1,22 @@
-import { notFound } from 'next/navigation';
 import { eq } from 'drizzle-orm';
+import { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { z } from 'zod';
 
-import { guardShopAdminPage } from '@/lib/auth/guard-shop-admin-page';
-import { ShopAdminTopbar } from '@/components/shop/admin/shop-admin-topbar';
-
-import { ProductForm } from '../../_components/product-form';
+import { ShopAdminTopbar } from '@/components/shop/admin/ShopAdminTopbar';
 import { db } from '@/db';
-import { products, productPrices } from '@/db/schema';
+import { productPrices, products } from '@/db/schema';
+import { guardShopAdminPage } from '@/lib/auth/guard-shop-admin-page';
+import { issueCsrfToken } from '@/lib/security/csrf';
 import type { CurrencyCode } from '@/lib/shop/currency';
 import { currencyValues } from '@/lib/shop/currency';
-import { issueCsrfToken } from '@/lib/security/csrf';
-import { Metadata } from 'next';
+
+import { ProductForm } from '../../_components/ProductForm';
 
 export const metadata: Metadata = {
   title: 'Edit Product | DevLovers',
   description: 'Edit an existing product in the DevLovers shop catalog.',
 };
-
 
 export const dynamic = 'force-dynamic';
 

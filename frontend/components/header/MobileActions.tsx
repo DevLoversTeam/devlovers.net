@@ -1,9 +1,9 @@
 'use client';
 
-import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
-import { CartButton } from '@/components/shop/header/cart-button';
 import { BlogHeaderSearch } from '@/components/blog/BlogHeaderSearch';
 import { AppMobileMenu } from '@/components/header/AppMobileMenu';
+import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
+import { CartButton } from '@/components/shop/header/CartButton';
 
 type Category = {
   _id: string;

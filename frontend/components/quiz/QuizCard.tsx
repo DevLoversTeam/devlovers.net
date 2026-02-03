@@ -1,10 +1,11 @@
 'use client';
 
+import { Clock, FileText } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { Link } from '@/i18n/routing';
+
 import { Badge } from '@/components/ui/badge';
-import { FileText, Clock } from 'lucide-react';
 import { categoryTabStyles } from '@/data/categoryStyles';
+import { Link } from '@/i18n/routing';
 
 interface QuizCardProps {
   quiz: {
@@ -27,7 +28,8 @@ interface QuizCardProps {
 export function QuizCard({ quiz, userProgress }: QuizCardProps) {
   const t = useTranslations('quiz.card');
   const slug = quiz.categorySlug as keyof typeof categoryTabStyles | null;
-  const style = slug && categoryTabStyles[slug] ? categoryTabStyles[slug] : null;
+  const style =
+    slug && categoryTabStyles[slug] ? categoryTabStyles[slug] : null;
   const accentColor = style?.accent ?? '#3B82F6'; // fallback blue
 
   const percentage =
@@ -36,16 +38,16 @@ export function QuizCard({ quiz, userProgress }: QuizCardProps) {
       : 0;
 
   return (
-    <div 
-      className="group/card relative flex flex-col rounded-xl border border-black/10 dark:border-white/10 hover:!border-[var(--accent)] bg-white dark:bg-neutral-900 p-5 shadow-sm overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+    <div
+      className="group/card relative flex flex-col overflow-hidden rounded-xl border border-black/10 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:!border-[var(--accent)] hover:shadow-xl dark:border-white/10 dark:bg-neutral-900"
       style={{ '--accent': `${accentColor}60` } as React.CSSProperties}
     >
       <span
-        className="pointer-events-none absolute -top-6 -right-6 w-24 h-24 rounded-full blur-[40px] opacity-0 group-hover/card:opacity-20 transition-opacity duration-500"
+        className="pointer-events-none absolute -top-6 -right-6 h-24 w-24 rounded-full opacity-0 blur-[40px] transition-opacity duration-500 group-hover/card:opacity-20"
         style={{ backgroundColor: accentColor }}
       />
       <div className="flex-grow">
-        <div className="flex gap-2 mb-3">
+        <div className="mb-3 flex gap-2">
           <Badge
             variant="default"
             style={{
@@ -57,21 +59,21 @@ export function QuizCard({ quiz, userProgress }: QuizCardProps) {
           </Badge>
           {userProgress && <Badge variant="success">{t('completed')}</Badge>}
         </div>
-        <h2 className="text-xl font-semibold mb-2">
+        <h2 className="mb-2 text-xl font-semibold">
           {quiz.title ?? quiz.slug}
         </h2>
         {quiz.description && (
-          <p className="line-clamp-2 text-sm text-gray-600 dark:text-gray-400 mb-3">
+          <p className="mb-3 line-clamp-2 text-sm text-gray-600 dark:text-gray-400">
             {quiz.description}
           </p>
         )}
-        <div className="flex gap-3 text-xs text-gray-500 mb-3">
+        <div className="mb-3 flex gap-3 text-xs text-gray-500">
           <span className="flex items-center gap-1">
-           <FileText className="w-3.5 h-3.5" style={{ color: accentColor }} />
+            <FileText className="h-3.5 w-3.5" style={{ color: accentColor }} />
             {quiz.questionsCount} {t('questions')}
           </span>
           <span className="flex items-center gap-1">
-            <Clock className="w-3.5 h-3.5" style={{ color: accentColor }} />
+            <Clock className="h-3.5 w-3.5" style={{ color: accentColor }} />
             {Math.floor(
               (quiz.timeLimitSeconds ?? quiz.questionsCount * 30) / 60
             )}{' '}
@@ -81,7 +83,7 @@ export function QuizCard({ quiz, userProgress }: QuizCardProps) {
       </div>
       {userProgress && (
         <div className="mb-6">
-          <div className="flex justify-between text-xs mb-1.5">
+          <div className="mb-1.5 flex justify-between text-xs">
             <span className="text-gray-600 dark:text-gray-400">
               {t('best')} {userProgress.bestScore}/{userProgress.totalQuestions}
             </span>
@@ -93,7 +95,7 @@ export function QuizCard({ quiz, userProgress }: QuizCardProps) {
               {percentage}%
             </span>
           </div>
-          <div className="h-1.5 bg-gray-200 dark:bg-neutral-800 rounded-full overflow-hidden">
+          <div className="h-1.5 overflow-hidden rounded-full bg-gray-200 dark:bg-neutral-800">
             <div
               className="h-full rounded-full transition-all"
               style={{ width: `${percentage}%`, backgroundColor: accentColor }}
@@ -103,7 +105,7 @@ export function QuizCard({ quiz, userProgress }: QuizCardProps) {
       )}
       <Link
         href={`/quiz/${quiz.slug}`}
-        className="group relative block w-full overflow-hidden text-center rounded-xl border px-4 py-2.5 text-sm font-semibold transition-all duration-300"
+        className="group relative block w-full overflow-hidden rounded-xl border px-4 py-2.5 text-center text-sm font-semibold transition-all duration-300"
         style={{
           borderColor: `${accentColor}50`,
           backgroundColor: `${accentColor}15`,
@@ -112,7 +114,7 @@ export function QuizCard({ quiz, userProgress }: QuizCardProps) {
       >
         {userProgress ? t('retake') : t('start')}
         <span
-          className="pointer-events-none absolute left-1/2 top-1/2 h-[150%] w-[80%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[20px] opacity-0 transition-opacity duration-300 group-hover:opacity-30"
+          className="pointer-events-none absolute top-1/2 left-1/2 h-[150%] w-[80%] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-0 blur-[20px] transition-opacity duration-300 group-hover:opacity-30"
           style={{ backgroundColor: accentColor }}
         />
       </Link>

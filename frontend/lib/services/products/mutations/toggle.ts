@@ -1,12 +1,11 @@
-// frontend/lib/services/products/mutations/toggle.ts
 import { eq } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { products } from '@/db/schema';
+import { ProductNotFoundError } from '@/lib/errors/products';
 import type { DbProduct } from '@/lib/types/shop';
 
 import { mapRowToProduct } from '../mapping';
-import { ProductNotFoundError } from '@/lib/errors/products';
 
 export async function toggleProductStatus(id: string): Promise<DbProduct> {
   const [current] = await db
@@ -26,7 +25,6 @@ export async function toggleProductStatus(id: string): Promise<DbProduct> {
     .returning();
 
   if (!updated) {
-    // concurrent delete between SELECT and UPDATE
     throw new ProductNotFoundError(id);
   }
 

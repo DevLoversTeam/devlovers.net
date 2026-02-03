@@ -1,5 +1,5 @@
 const STORAGE_KEY_PREFIX = 'quiz_session_';
-const SESSION_TTL_MS = 30 * 60 * 1000; // 30 minutes
+const SESSION_TTL_MS = 30 * 60 * 1000;
 
 export interface QuizSessionData {
   status: 'rules' | 'in_progress' | 'completed';
@@ -21,7 +21,10 @@ export function saveQuizSession(quizId: string, state: QuizSessionData): void {
 
   try {
     const data = { ...state, savedAt: Date.now() };
-    localStorage.setItem(`${STORAGE_KEY_PREFIX}${quizId}`, JSON.stringify(data));
+    localStorage.setItem(
+      `${STORAGE_KEY_PREFIX}${quizId}`,
+      JSON.stringify(data)
+    );
   } catch (e) {
     console.error('Failed to save quiz session:', e);
   }
@@ -36,14 +39,12 @@ export function loadQuizSession(quizId: string): QuizSessionData | null {
 
     const data: QuizSessionData = JSON.parse(raw);
 
-    // Discard sessions older than 30 minutes
     if (Date.now() - data.savedAt > SESSION_TTL_MS) {
       clearQuizSession(quizId);
       return null;
     }
 
-    // Only restore in_progress sessions
-    if (data.status !== 'in_progress') {
+    if (data.status === 'rules') {
       clearQuizSession(quizId);
       return null;
     }

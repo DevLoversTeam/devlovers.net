@@ -1,27 +1,28 @@
 import {
-  CATALOG_PAGE_SIZE,
-  CATEGORY_TILES,
-  type CatalogSort,
-} from '@/lib/config/catalog';
-import {
-  catalogFilterSchema,
-  dbProductSchema,
-  productBadgeValues,
-  shopProductSchema,
-  type CatalogFilters,
-  type DbProduct,
-  type ProductBadge,
-  type ShopProduct as ValidationShopProduct,
-} from '@/lib/validation/shop';
-import {
   getActiveProductsPage,
   getFeaturedProducts,
   getPublicProductBySlug,
 } from '@/db/queries/shop/products';
-import { fromDbMoney } from './money';
-import { resolveCurrencyFromLocale } from './currency';
 import { getPublicProductBaseBySlug } from '@/db/queries/shop/products';
+import {
+  CATALOG_PAGE_SIZE,
+  type CatalogSort,
+  CATEGORY_TILES,
+} from '@/lib/config/catalog';
 import { logError } from '@/lib/logging';
+import {
+  type CatalogFilters,
+  catalogFilterSchema,
+  type DbProduct,
+  dbProductSchema,
+  type ProductBadge,
+  productBadgeValues,
+  type ShopProduct as ValidationShopProduct,
+  shopProductSchema,
+} from '@/lib/validation/shop';
+
+import { resolveCurrencyFromLocale } from './currency';
+import { fromDbMoney } from './money';
 
 export type ShopProduct = ValidationShopProduct;
 
@@ -193,11 +194,6 @@ function mapToShopProduct(product: DbProduct): ShopProduct | null {
   return parsed.data;
 }
 
-/**
- * IMPORTANT:
- * Pass `locale` from the route segment when possible (app/[locale]/...),
- * because currency policy is locale-based: uk -> UAH, otherwise USD.
- */
 export async function getCatalogProducts(
   filters: unknown,
   locale: string = 'en'
@@ -250,14 +246,12 @@ export async function getHomepageContent(
 ): Promise<HomepageContent> {
   const currency = resolveCurrencyFromLocale(locale);
 
-  // 1) primary: featured (може бути < 4)
   const featured: DbProduct[] = await getFeaturedProducts(currency, 4);
 
   const featuredProducts = featured
     .map(mapToShopProduct)
     .filter((product): product is ShopProduct => product !== null);
 
-  // helper: докомплектувати до N без дублікатів
   const fillTo = (
     primary: ShopProduct[],
     fallback: ShopProduct[],
@@ -276,8 +270,6 @@ export async function getHomepageContent(
     return merged.slice(0, count);
   };
 
-  // 2) fallback source: newest active products (щоб завжди було чим добрати до 4)
-  // беремо більше ніж 4, щоб було що фільтрувати після дедупу
   const newestCatalog = await getCatalogProducts(
     {
       category: 'all',

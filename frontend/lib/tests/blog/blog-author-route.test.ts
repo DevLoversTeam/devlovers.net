@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const fetchMock = vi.fn();
 
@@ -29,7 +29,9 @@ describe('GET /api/blog-author', () => {
     fetchMock.mockResolvedValueOnce({ name: 'Анна' });
 
     const response = await GET(
-      new Request('http://localhost/api/blog-author?name=%D0%90%D0%BD%D0%BD%D0%B0&locale=uk')
+      new Request(
+        'http://localhost/api/blog-author?name=%D0%90%D0%BD%D0%BD%D0%B0&locale=uk'
+      )
     );
     const data = await response.json();
 

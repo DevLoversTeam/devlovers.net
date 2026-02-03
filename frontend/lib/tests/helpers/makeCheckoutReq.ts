@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+
 import { deriveTestIpFromIdemKey } from '@/lib/tests/helpers/ip';
 
 export type CheckoutItemInput = {
@@ -10,7 +11,7 @@ export type CheckoutItemInput = {
 
 export function makeCheckoutReq(params: {
   idempotencyKey: string;
-  locale?: string; // mapped to Accept-Language
+  locale?: string;
   items?: CheckoutItemInput[];
   userId?: string;
   origin?: string | null;
@@ -24,7 +25,6 @@ export function makeCheckoutReq(params: {
     {
       productId: '11111111-1111-4111-8111-111111111111',
       quantity: 1,
-      // IMPORTANT: не форсимо selectedSize/selectedColor
     },
   ];
 

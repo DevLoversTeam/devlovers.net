@@ -1,17 +1,17 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { NextRequest } from 'next/server';
-import { POST } from '@/app/api/quiz/verify-answer/route';
-import { encryptAnswers } from '@/lib/quiz/quiz-crypto';
-import { setupQuizTestEnv, cleanupQuizTestEnv } from './setup';
-import {
-  createMockQuestions,
-  createCorrectAnswersMap,
-  resetFactoryCounters,
-} from '../factories/quiz/quiz';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-/**
- * Creates a mock NextRequest for POST /api/quiz/verify-answer
- */
+import { POST } from '@/app/api/quiz/verify-answer/route';
+
+// Mock the Redis module
+vi.mock('@/lib/quiz/quiz-answers-redis', () => ({
+  getCorrectAnswer: vi.fn(),
+}));
+
+import { getCorrectAnswer } from '@/lib/quiz/quiz-answers-redis';
+
+const mockGetCorrectAnswer = vi.mocked(getCorrectAnswer);
+
 function createVerifyRequest(body: unknown): NextRequest {
   return new NextRequest('http://localhost/api/quiz/verify-answer', {
     method: 'POST',
@@ -20,69 +20,76 @@ function createVerifyRequest(body: unknown): NextRequest {
   });
 }
 
-describe('POST /api/quiz/verify-answer', () => {
+describe('POST /api/quiz/verify-answer (Redis)', () => {
   beforeEach(() => {
-    setupQuizTestEnv();
-    resetFactoryCounters();
-  });
-
-  afterEach(() => {
-    cleanupQuizTestEnv();
+    vi.clearAllMocks();
   });
 
   describe('successful verification', () => {
     it('returns isCorrect: true for correct answer', async () => {
-      const questions = createMockQuestions(3);
-      const correctAnswersMap = createCorrectAnswersMap(questions);
-      const encryptedAnswers = encryptAnswers(correctAnswersMap);
+      const quizId = 'quiz-123';
+      const questionId = 'question-1';
+      const correctAnswerId = 'answer-a';
 
-      const questionId = questions[0].id;
-      const correctAnswerId = correctAnswersMap[questionId];
+      mockGetCorrectAnswer.mockResolvedValue(correctAnswerId);
 
       const request = createVerifyRequest({
+        quizId,
         questionId,
-        answerId: correctAnswerId,
-        encryptedAnswers,
+        selectedAnswerId: correctAnswerId,
       });
 
       const response = await POST(request);
       const data = await response.json();
 
       expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
       expect(data.isCorrect).toBe(true);
+      expect(mockGetCorrectAnswer).toHaveBeenCalledWith(quizId, questionId);
     });
 
     it('returns isCorrect: false for wrong answer', async () => {
-      const questions = createMockQuestions(3);
-      const correctAnswersMap = createCorrectAnswersMap(questions);
-      const encryptedAnswers = encryptAnswers(correctAnswersMap);
+      const quizId = 'quiz-123';
+      const questionId = 'question-1';
+      const correctAnswerId = 'answer-a';
+      const wrongAnswerId = 'answer-b';
 
-      const questionId = questions[0].id;
-      const wrongAnswerId = questions[0].answers[1].id; // second answer is wrong
+      mockGetCorrectAnswer.mockResolvedValue(correctAnswerId);
 
       const request = createVerifyRequest({
+        quizId,
         questionId,
-        answerId: wrongAnswerId,
-        encryptedAnswers,
+        selectedAnswerId: wrongAnswerId,
       });
 
       const response = await POST(request);
       const data = await response.json();
 
       expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
       expect(data.isCorrect).toBe(false);
     });
   });
 
   describe('validation errors (400)', () => {
-    it('returns 400 for missing questionId', async () => {
-      const questions = createMockQuestions(1);
-      const correctAnswersMap = createCorrectAnswersMap(questions);
-      const encryptedAnswers = encryptAnswers(correctAnswersMap);
-
+    it('returns 400 for missing quizId', async () => {
       const request = createVerifyRequest({
-        answerId: 'some-answer',
-        encryptedAnswers,
+        questionId: 'q-1',
+        selectedAnswerId: 'a-1',
+      });
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(data.success).toBe(false);
+      expect(data.error).toBe('Missing required fields');
+    });
+
+    it('returns 400 for missing questionId', async () => {
+      const request = createVerifyRequest({
+        quizId: 'quiz-123',
+        selectedAnswerId: 'a-1',
       });
 
       const response = await POST(request);
@@ -92,25 +99,10 @@ describe('POST /api/quiz/verify-answer', () => {
       expect(data.error).toBe('Missing required fields');
     });
 
-    it('returns 400 for missing answerId', async () => {
-      const questions = createMockQuestions(1);
-      const correctAnswersMap = createCorrectAnswersMap(questions);
-      const encryptedAnswers = encryptAnswers(correctAnswersMap);
-
+    it('returns 400 for missing selectedAnswerId', async () => {
       const request = createVerifyRequest({
-        questionId: questions[0].id,
-        encryptedAnswers,
-      });
-
-      const response = await POST(request);
-
-      expect(response.status).toBe(400);
-    });
-
-    it('returns 400 for missing encryptedAnswers', async () => {
-      const request = createVerifyRequest({
+        quizId: 'quiz-123',
         questionId: 'q-1',
-        answerId: 'a-1',
       });
 
       const response = await POST(request);
@@ -118,33 +110,15 @@ describe('POST /api/quiz/verify-answer', () => {
       expect(response.status).toBe(400);
     });
 
-    it('returns 400 for tampered encryptedAnswers', async () => {
-      const questions = createMockQuestions(1);
-      const correctAnswersMap = createCorrectAnswersMap(questions);
-      const encryptedAnswers = encryptAnswers(correctAnswersMap);
-
-      // Tamper with the encrypted data
-      const tamperedAnswers = encryptedAnswers.slice(0, -10) + 'XXXXXXXXXX';
-
-      const request = createVerifyRequest({
-        questionId: questions[0].id,
-        answerId: questions[0].answers[0].id,
-        encryptedAnswers: tamperedAnswers,
-      });
-
-      const response = await POST(request);
-      const data = await response.json();
-
-      expect(response.status).toBe(400);
-      expect(data.error).toBe('Invalid encrypted data');
-    });
-
-    it('returns 400 for invalid base64 encryptedAnswers', async () => {
-      const request = createVerifyRequest({
-        questionId: 'q-1',
-        answerId: 'a-1',
-        encryptedAnswers: 'not-valid-base64!!!',
-      });
+    it('returns 400 for invalid JSON body', async () => {
+      const request = new NextRequest(
+        'http://localhost/api/quiz/verify-answer',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: 'not-valid-json',
+        }
+      );
 
       const response = await POST(request);
 
@@ -153,22 +127,41 @@ describe('POST /api/quiz/verify-answer', () => {
   });
 
   describe('not found (404)', () => {
-    it('returns 404 for unknown questionId', async () => {
-      const questions = createMockQuestions(1);
-      const correctAnswersMap = createCorrectAnswersMap(questions);
-      const encryptedAnswers = encryptAnswers(correctAnswersMap);
+    it('returns 404 when question not in cache', async () => {
+      mockGetCorrectAnswer.mockResolvedValue(null);
 
       const request = createVerifyRequest({
-        questionId: 'unknown-question-id',
-        answerId: 'some-answer',
-        encryptedAnswers,
+        quizId: 'quiz-123',
+        questionId: 'unknown-question',
+        selectedAnswerId: 'a-1',
       });
 
       const response = await POST(request);
       const data = await response.json();
 
       expect(response.status).toBe(404);
-      expect(data.error).toBe('Question not found');
+      expect(data.success).toBe(false);
+      expect(data.error).toBe('Question not found in cache');
+    });
+  });
+
+  describe('Redis integration', () => {
+    it('calls getCorrectAnswer with correct params', async () => {
+      mockGetCorrectAnswer.mockResolvedValue('correct-id');
+
+      const request = createVerifyRequest({
+        quizId: 'my-quiz',
+        questionId: 'my-question',
+        selectedAnswerId: 'my-answer',
+      });
+
+      await POST(request);
+
+      expect(mockGetCorrectAnswer).toHaveBeenCalledTimes(1);
+      expect(mockGetCorrectAnswer).toHaveBeenCalledWith(
+        'my-quiz',
+        'my-question'
+      );
     });
   });
 });

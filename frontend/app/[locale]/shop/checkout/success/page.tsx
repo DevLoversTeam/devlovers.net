@@ -1,25 +1,25 @@
-import { Link } from '@/i18n/routing';
+import { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
-import OrderStatusAutoRefresh from './OrderStatusAutoRefresh';
-import { ClearCartOnMount } from '@/components/shop/clear-cart-on-mount';
-import { formatMoney } from '@/lib/shop/currency';
-import { getOrderSummary } from '@/lib/services/orders';
+import { ClearCartOnMount } from '@/components/shop/ClearCartOnMount';
+import { Link } from '@/i18n/routing';
 import { OrderNotFoundError } from '@/lib/services/errors';
-import { orderIdParamSchema } from '@/lib/validation/shop';
-import { cn } from '@/lib/utils';
-
+import { getOrderSummary } from '@/lib/services/orders';
+import { formatMoney } from '@/lib/shop/currency';
 import {
-  SHOP_FOCUS,
   SHOP_CTA_BASE,
-  SHOP_CTA_INTERACTIVE,
   SHOP_CTA_INSET,
+  SHOP_CTA_INTERACTIVE,
   SHOP_CTA_WAVE,
+  SHOP_FOCUS,
   SHOP_OUTLINE_BTN_BASE,
   SHOP_OUTLINE_BTN_INTERACTIVE,
   shopCtaGradient,
 } from '@/lib/shop/ui-classes';
-import { Metadata } from 'next';
+import { cn } from '@/lib/utils';
+import { orderIdParamSchema } from '@/lib/validation/shop';
+
+import OrderStatusAutoRefresh from './OrderStatusAutoRefresh';
 
 export const metadata: Metadata = {
   title: 'Order Confirmed| DevLovers',
@@ -57,7 +57,6 @@ function shouldClearCart(params: SearchParams): boolean {
   return raw === 'true' || raw === '1';
 }
 
-/** Small hero CTA (Link) */
 const SHOP_HERO_CTA_SM = cn(
   SHOP_CTA_BASE,
   SHOP_CTA_INTERACTIVE,
@@ -113,13 +112,13 @@ function CheckoutShell({
       className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8"
       aria-labelledby="checkout-title"
     >
-      <section className="rounded-lg border border-border bg-card p-8 text-center">
-        <h1 id="checkout-title" className="text-2xl font-bold text-foreground">
+      <section className="border-border bg-card rounded-lg border p-8 text-center">
+        <h1 id="checkout-title" className="text-foreground text-2xl font-bold">
           {title}
         </h1>
 
         {description ? (
-          <p className="mt-2 text-sm text-muted-foreground">{description}</p>
+          <p className="text-muted-foreground mt-2 text-sm">{description}</p>
         ) : null}
 
         {children}
@@ -208,19 +207,19 @@ export default async function CheckoutSuccessPage({
 
       <OrderStatusAutoRefresh paymentStatus={order.paymentStatus} />
 
-      <section className="rounded-lg border border-border bg-card p-8">
-        <p className="text-sm font-semibold uppercase tracking-wide text-accent">
+      <section className="border-border bg-card rounded-lg border p-8">
+        <p className="text-accent text-sm font-semibold tracking-wide uppercase">
           {t('success.title')}
         </p>
 
         <h1
           id="order-title"
-          className="mt-2 text-3xl font-bold text-foreground"
+          className="text-foreground mt-2 text-3xl font-bold"
         >
           {t('success.orderLabel')} #{order.id.slice(0, 8)}
         </h1>
 
-        <p className="mt-2 text-sm text-muted-foreground">
+        <p className="text-muted-foreground mt-2 text-sm">
           {t('success.received')}
           {order.paymentStatus === 'paid'
             ? ` ${t('success.paymentConfirmed')}`
@@ -237,8 +236,8 @@ export default async function CheckoutSuccessPage({
           className="mt-6 grid gap-6 md:grid-cols-2"
           aria-label="Order summary"
         >
-          <div className="rounded-md border border-border bg-muted/40 p-4">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          <div className="border-border bg-muted/40 rounded-md border p-4">
+            <h2 className="text-muted-foreground text-sm font-semibold tracking-wide uppercase">
               {t('success.orderSummary')}
             </h2>
 
@@ -247,19 +246,19 @@ export default async function CheckoutSuccessPage({
                 <dt className="text-muted-foreground">
                   {t('success.totalAmount')}
                 </dt>
-                <dd className="font-semibold text-foreground">
+                <dd className="text-foreground font-semibold">
                   {formatMoney(totalMinor, order.currency, locale)}
                 </dd>
               </div>
 
               <div className="flex items-center justify-between">
                 <dt className="text-muted-foreground">{t('success.items')}</dt>
-                <dd className="font-medium text-foreground">{itemsCount}</dd>
+                <dd className="text-foreground font-medium">{itemsCount}</dd>
               </div>
 
               <div className="flex items-center justify-between">
                 <dt className="text-muted-foreground">{t('success.status')}</dt>
-                <dd className="font-semibold capitalize text-foreground">
+                <dd className="text-foreground font-semibold capitalize">
                   {order.paymentStatus}
                 </dd>
               </div>

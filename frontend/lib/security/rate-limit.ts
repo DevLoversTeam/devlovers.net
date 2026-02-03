@@ -1,10 +1,11 @@
 import 'server-only';
 
+import { createHash } from 'node:crypto';
+import { isIP } from 'node:net';
+
+import { sql } from 'drizzle-orm';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { isIP } from 'node:net';
-import { createHash } from 'node:crypto';
-import { sql } from 'drizzle-orm';
 
 import { db } from '@/db';
 
@@ -114,14 +115,11 @@ export function getClientIpFromHeaders(headers: Headers): string | null {
   );
   const trustCf = envBool('TRUST_CF_CONNECTING_IP', false);
 
-  // Allow Cloudflare canonical header (highest priority) only when explicitly trusted.
   if (trustCf) {
     const cf = (headers.get('cf-connecting-ip') ?? '').trim();
     if (cf && isIP(cf)) return cf;
   }
 
-  // Trusted boundary: if we don't trust forwarded headers,
-  // do NOT fall back to spoofable headers.
   if (!trustForwarded) return null;
 
   const xr = (headers.get('x-real-ip') ?? '').trim();
@@ -144,7 +142,6 @@ export function getClientIp(request: NextRequest): string | null {
 
 export function getRateLimitSubject(request: NextRequest): string {
   const ip = getClientIp(request);
-  // Keep subject clean/stable for IPv6 (no ":"), consistent with key normalization.
   if (ip) return normalizeRateLimitSubject(ip);
 
   const ua = (request.headers.get('user-agent') ?? '').trim();
@@ -158,11 +155,6 @@ export type RateLimitOk = { ok: true; remaining: number };
 export type RateLimitNo = { ok: false; retryAfterSeconds: number };
 export type RateLimitDecision = RateLimitOk | RateLimitNo;
 
-/**
- * DB-backed fixed-window limiter (cross-instance).
- * - Atomic insert/update with conditional WHERE to avoid going above limit.
- * - If limited: computes Retry-After from stored window_started_at.
- */
 export async function enforceRateLimit(params: {
   key: string;
   limit: number;
@@ -173,7 +165,6 @@ export async function enforceRateLimit(params: {
   const { legacyKey, normalizedKey } = normalizeRateLimitKey(params.key);
   const key = normalizedKey;
 
-  // Allow disabling via env (for emergency): RATE_LIMIT_DISABLED=1
   if (envInt('RATE_LIMIT_DISABLED', 0) === 1) {
     return { ok: true, remaining: Number.MAX_SAFE_INTEGER };
   }
@@ -192,8 +183,12 @@ export async function enforceRateLimit(params: {
             SELECT 1 FROM api_rate_limits WHERE key = ${normalizedKey}
           )
       `);
-    } catch {
-      // Ignore conflicts; fall through to use normalizedKey for enforcement.
+    } catch (err) {
+      console.warn(
+        '[rate-limit] Failed to migrate legacy key:',
+        legacyKey,
+        err
+      );
     }
   }
 

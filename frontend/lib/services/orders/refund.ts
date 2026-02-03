@@ -3,12 +3,13 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { orders } from '@/db/schema/shop';
 import { createRefund } from '@/lib/psp/stripe';
+
 import { InvalidPayloadError, OrderNotFoundError } from '../errors';
-import { getOrderById } from './summary';
 import {
   appendRefundToMeta,
   normalizeRefundsFromMeta,
 } from './psp-metadata/refunds';
+import { getOrderById } from './summary';
 
 function invalid(code: string, message: string): InvalidPayloadError {
   return new InvalidPayloadError(message, { code });
@@ -36,7 +37,6 @@ export async function refundOrder(
 
   if (!order) throw new OrderNotFoundError(orderId);
 
-  // Preconditions (fail-closed)
   if (order.paymentProvider !== 'stripe') {
     throw invalid(
       'REFUND_PROVIDER_NOT_STRIPE',
@@ -79,7 +79,6 @@ export async function refundOrder(
     currency
   );
 
-  // Domain idempotency: if already recorded in metadata — return summary
   const existingRefunds = normalizeRefundsFromMeta(order.pspMetadata, {
     currency,
     createdAt: order.createdAt.toISOString(),
@@ -92,7 +91,6 @@ export async function refundOrder(
     return await getOrderById(orderId);
   }
 
-  // Real Stripe call (Stripe-idempotent)
   const { refundId, status } = await createRefund({
     orderId,
     paymentIntentId,
@@ -117,7 +115,6 @@ export async function refundOrder(
     },
   });
 
-  // Persist ONLY metadata. payment_status not touched (source of truth = webhook)
   await db
     .update(orders)
     .set({

@@ -1,9 +1,11 @@
 import 'server-only';
-import { cache } from 'react';
+
 import { eq, sql } from 'drizzle-orm';
+import { cache } from 'react';
+
 import { db } from '@/db';
-import { users } from '@/db/schema/users';
 import { pointTransactions } from '@/db/schema/points';
+import { users } from '@/db/schema/users';
 
 export const getUserProfile = cache(async (userId: string) => {
   const user = await db.query.users.findFirst({

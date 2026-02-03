@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
-import { and, eq } from "drizzle-orm";
+import { and, eq } from 'drizzle-orm';
+import { NextRequest, NextResponse } from 'next/server';
 
-import { db } from "@/db";
-import { users } from "@/db/schema/users";
-import { signAuthToken, setAuthCookie } from "@/lib/auth";
-import { authEnv } from "@/lib/env/auth";
-import { consumeOAuthState } from "@/lib/auth/oauth-state";
+import { db } from '@/db';
+import { users } from '@/db/schema/users';
+import { setAuthCookie, signAuthToken } from '@/lib/auth';
+import { consumeOAuthState } from '@/lib/auth/oauth-state';
+import { authEnv } from '@/lib/env/auth';
 
 type GoogleTokenResponse = {
   access_token: string;
@@ -23,42 +23,41 @@ type GoogleProfile = {
 };
 
 export async function GET(req: NextRequest) {
-  const code = req.nextUrl.searchParams.get("code");
+  const code = req.nextUrl.searchParams.get('code');
 
   if (!code) {
-    return NextResponse.redirect(new URL("/login", req.url));
+    return NextResponse.redirect(new URL('/login', req.url));
   }
 
-  const state = req.nextUrl.searchParams.get("state");
+  const state = req.nextUrl.searchParams.get('state');
 
   if (!(await consumeOAuthState(state))) {
-    return NextResponse.redirect(new URL("/login", req.url));
+    return NextResponse.redirect(new URL('/login', req.url));
   }
 
-  const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
-    method: "POST",
+  const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
     headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
+      'Content-Type': 'application/x-www-form-urlencoded',
     },
     body: new URLSearchParams({
       code,
       client_id: authEnv.google.clientId,
       client_secret: authEnv.google.clientSecret,
       redirect_uri: authEnv.google.redirectUri,
-      grant_type: "authorization_code",
+      grant_type: 'authorization_code',
     }),
   });
 
   if (!tokenRes.ok) {
-    console.error(
-      "Google token exchange failed", await tokenRes.text())
-    return NextResponse.redirect(new URL("/login", req.url));
+    console.error('Google token exchange failed', await tokenRes.text());
+    return NextResponse.redirect(new URL('/login', req.url));
   }
 
   const tokenData = (await tokenRes.json()) as GoogleTokenResponse;
 
   const profileRes = await fetch(
-    "https://www.googleapis.com/oauth2/v2/userinfo",
+    'https://www.googleapis.com/oauth2/v2/userinfo',
     {
       headers: {
         Authorization: `Bearer ${tokenData.access_token}`,
@@ -67,14 +66,16 @@ export async function GET(req: NextRequest) {
   );
 
   if (!profileRes.ok) {
-    return NextResponse.redirect(new URL("/login", req.url));
+    return NextResponse.redirect(new URL('/login', req.url));
   }
 
   const profile = (await profileRes.json()) as GoogleProfile;
 
   if (!profile.verified_email) {
-    console.warn("Google email not verified", profile);
-    return NextResponse.redirect(new URL("/login?error=unverified_email", req.url));
+    console.warn('Google email not verified', profile);
+    return NextResponse.redirect(
+      new URL('/login?error=unverified_email', req.url)
+    );
   }
 
   const email = profile.email;
@@ -89,13 +90,12 @@ export async function GET(req: NextRequest) {
       role: users.role,
     })
     .from(users)
-    .where(and(eq(users.providerId, googleId), eq(users.provider, "google")))
+    .where(and(eq(users.providerId, googleId), eq(users.provider, 'google')))
     .limit(1);
 
   if (googleUser) {
     user = googleUser;
   } else {
-
     const [emailUser] = await db
       .select({
         id: users.id,
@@ -109,13 +109,13 @@ export async function GET(req: NextRequest) {
 
     if (emailUser) {
       const image =
-        emailUser.image && emailUser.image !== "null"
+        emailUser.image && emailUser.image !== 'null'
           ? emailUser.image
           : profile.picture;
       const [updatedUser] = await db
         .update(users)
         .set({
-          provider: "google",
+          provider: 'google',
           providerId: googleId,
           emailVerified: emailUser.emailVerified ?? new Date(),
           image,
@@ -126,14 +126,13 @@ export async function GET(req: NextRequest) {
 
       user = updatedUser;
     } else {
-
       const [created] = await db
         .insert(users)
         .values({
           email,
           name: profile.name,
           image: profile.picture,
-          provider: "google",
+          provider: 'google',
           providerId: googleId,
           emailVerified: new Date(),
         })
@@ -143,14 +142,13 @@ export async function GET(req: NextRequest) {
     }
   }
 
-
   const token = signAuthToken({
     userId: user.id,
     email: user.email,
-    role: user.role === "admin" ? "admin" : "user",
+    role: user.role === 'admin' ? 'admin' : 'user',
   });
 
   await setAuthCookie(token);
 
-  return NextResponse.redirect(new URL("/dashboard", req.url));
-}   
+  return NextResponse.redirect(new URL('/dashboard', req.url));
+}

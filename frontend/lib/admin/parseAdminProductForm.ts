@@ -1,10 +1,11 @@
 import { z } from 'zod';
+
+import { type CurrencyCode, currencyValues } from '@/lib/shop/currency';
+import { toCents } from '@/lib/shop/money';
 import {
   productAdminSchema,
   productAdminUpdateSchema,
 } from '@/lib/validation/shop';
-import { currencyValues, type CurrencyCode } from '@/lib/shop/currency';
-import { toCents } from '@/lib/shop/money';
 
 type ParsedResult<T> =
   | { ok: true; data: T }
@@ -83,8 +84,8 @@ function parseMajorToMinor(
     typeof value === 'string'
       ? value.trim()
       : typeof value === 'number'
-      ? String(value)
-      : '';
+        ? String(value)
+        : '';
 
   if (!raw) return null;
 
@@ -104,12 +105,6 @@ function parseLegacyPriceMinorField(
   return toCents(v);
 }
 
-/**
- * Legacy optional field semantics:
- * - if field missing => undefined (PATCH omit)
- * - if present but empty => null (explicit clear)
- * - if present and value => cents int
- */
 function parseLegacyOptionalOriginalMinorField(
   formData: FormData,
   name: string
@@ -135,8 +130,8 @@ function parseMinorInt(
     typeof value === 'number'
       ? value
       : typeof value === 'string'
-      ? Number(value.trim())
-      : NaN;
+        ? Number(value.trim())
+        : NaN;
 
   if (!Number.isFinite(raw) || !Number.isInteger(raw) || raw < 0) {
     throw zodPricesJsonError(`Invalid ${opts.field} for ${opts.currency}`);
@@ -149,7 +144,6 @@ function requirePositivePriceMinor(
   priceMinor: number | null,
   currency: string
 ) {
-  // DB check: priceMinor > 0
   if (priceMinor == null || priceMinor <= 0) {
     throw zodPricesJsonError(`Missing price for ${currency}`);
   }
@@ -206,13 +200,11 @@ function parsePricesJsonField(formData: FormData, mode: ParseMode) {
         throw zodPricesJsonError('Invalid currency in prices payload');
       }
 
-      // Prefer canonical minor payload
       let priceMinor = parseMinorInt(row?.priceMinor, {
         field: 'priceMinor',
         currency: currency as string,
       });
 
-      // Legacy major fallback
       if (priceMinor == null) {
         priceMinor = parseMajorToMinor(row?.price, {
           field: 'price',
@@ -240,10 +232,8 @@ function parsePricesJsonField(formData: FormData, mode: ParseMode) {
         });
       }
 
-      // Normalize: empty -> null
       if (originalPriceMinor == null) originalPriceMinor = null;
 
-      // DB invariant: originalPriceMinor is null OR > priceMinor
       if (originalPriceMinor !== null && priceMinor != null) {
         if (originalPriceMinor <= priceMinor) {
           throw zodPricesJsonError(
@@ -285,13 +275,11 @@ export function parseAdminProductForm(
 > {
   const mode: ParseMode = options.mode ?? 'create';
 
-  // 1) Prefer canonical "prices" JSON payload if present
   const pricesJson = parsePricesJsonField(formData, mode);
   if (pricesJson && 'ok' in pricesJson && pricesJson.ok === false) {
     return { ok: false, error: pricesJson.error };
   }
 
-  // 2) Legacy fallback (priceUsd/priceUah) -> MINOR units
   const priceUsdMinor = parseLegacyPriceMinorField(formData, 'priceUsd');
   const originalPriceUsdMinor = parseLegacyOptionalOriginalMinorField(
     formData,
@@ -325,13 +313,12 @@ export function parseAdminProductForm(
       : []),
   ];
 
-  // Resolve final prices with PATCH semantics
   const prices =
     pricesJson && 'value' in pricesJson
       ? pricesJson.value
       : mode === 'update' && legacyRawPrices.length === 0
-      ? undefined
-      : legacyRawPrices;
+        ? undefined
+        : legacyRawPrices;
 
   const payload = {
     title: getStringField(formData, 'title'),

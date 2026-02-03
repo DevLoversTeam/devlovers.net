@@ -1,8 +1,9 @@
 'use client';
 
+import { LogOut } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { useTranslations } from 'next-intl';
-import { LogOut } from 'lucide-react';
+
 import { logout } from '@/lib/logout';
 
 type LogoutButtonProps = {
@@ -25,7 +26,7 @@ export function LogoutButton({ iconOnly = false }: LogoutButtonProps) {
         onClick={handleLogout}
         aria-label={t('logout')}
         title={t('logout')}
-        className="flex h-10 w-10 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground active:bg-secondary active:text-foreground"
+        className="text-muted-foreground hover:bg-secondary hover:text-foreground active:bg-secondary active:text-foreground flex h-10 w-10 items-center justify-center rounded-md transition-colors"
       >
         <LogOut className="h-5 w-5" />
       </button>
@@ -36,7 +37,7 @@ export function LogoutButton({ iconOnly = false }: LogoutButtonProps) {
     <button
       type="button"
       onClick={handleLogout}
-      className="group relative inline-flex w-fit items-center gap-2 overflow-hidden rounded-lg bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground transition-all duration-500 hover:text-white active:text-white"
+      className="group bg-secondary text-secondary-foreground relative inline-flex w-fit items-center gap-2 overflow-hidden rounded-lg px-4 py-2 text-sm font-medium transition-all duration-500 hover:text-white active:text-white"
     >
       <span
         className="absolute inset-0 opacity-0 transition-opacity duration-500 ease-out group-hover:opacity-100 group-active:opacity-100"

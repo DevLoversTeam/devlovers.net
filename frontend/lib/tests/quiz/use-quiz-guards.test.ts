@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { useQuizGuards } from '@/hooks/useQuizGuards';
 import { getQuizReloadKey } from '@/lib/quiz/quiz-storage-keys';
 
@@ -10,12 +11,14 @@ vi.mock('@/lib/quiz/quiz-session', () => ({
 
 import { clearQuizSession } from '@/lib/quiz/quiz-session';
 
-const createParams = (overrides: Partial<{
-  quizId: string;
-  status: 'rules' | 'in_progress' | 'completed';
-  onExit: () => void;
-  resetViolations: () => void;
-}> = {}) => ({
+const createParams = (
+  overrides: Partial<{
+    quizId: string;
+    status: 'rules' | 'in_progress' | 'completed';
+    onExit: () => void;
+    resetViolations: () => void;
+  }> = {}
+) => ({
   quizId: 'quiz-1',
   status: 'in_progress' as const,
   onExit: vi.fn(),
@@ -41,9 +44,7 @@ describe('useQuizGuards', () => {
   });
 
   it('does not push guard when status is not in_progress', () => {
-    renderHook(() =>
-      useQuizGuards(createParams({ status: 'rules' }))
-    );
+    renderHook(() => useQuizGuards(createParams({ status: 'rules' })));
 
     expect(window.history.state?.quizGuard).toBeUndefined();
   });
@@ -66,7 +67,7 @@ describe('useQuizGuards', () => {
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
 
     renderHook(() => useQuizGuards(params));
-    
+
     window.history.pushState({}, '', '/en/quizzes');
     const link = document.createElement('a');
     link.setAttribute('href', 'javascript:void(0)');

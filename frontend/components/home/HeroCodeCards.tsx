@@ -5,7 +5,7 @@ export function HeroCodeCards() {
     <>
       <CodeCard
         fileName="arrays.ts"
-        className="lg:left-16 lg:top-0"
+        className="lg:top-0 lg:left-16"
         snippet={
           <>
             <span className="text-[var(--accent-primary)]">type</span> Arr1 = [

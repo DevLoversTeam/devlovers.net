@@ -1,9 +1,9 @@
-import { baseEmailLayout } from "./base-layout";
+import { baseEmailLayout } from './base-layout';
 
 export function resetPasswordTemplate(resetUrl: string) {
-    return baseEmailLayout({
-        title: "Reset your password",
-        content: `
+  return baseEmailLayout({
+    title: 'Reset your password',
+    content: `
 <p class="text-secondary" style="margin:0 0 16px; font-size:14px; color:#374151; line-height:1.5;">
   We received a request to reset your password.
 </p>
@@ -43,5 +43,5 @@ export function resetPasswordTemplate(resetUrl: string) {
   If you didn’t request this, you can safely ignore this email.
 </p>
 `,
-    });
+  });
 }

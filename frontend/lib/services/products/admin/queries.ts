@@ -1,13 +1,13 @@
 import { and, eq, type SQL } from 'drizzle-orm';
 
 import { db } from '@/db';
-import { products, productPrices } from '@/db/schema';
+import { productPrices, products } from '@/db/schema';
+import { ProductNotFoundError } from '@/lib/errors/products';
 import type { CurrencyCode } from '@/lib/shop/currency';
 import type { DbProduct } from '@/lib/types/shop';
-import { ProductNotFoundError } from '@/lib/errors/products';
 
-import { assertMoneyMinorInt } from '../prices';
 import { mapRowToProduct } from '../mapping';
+import { assertMoneyMinorInt } from '../prices';
 import type { AdminProductPriceRow, AdminProductsFilter } from '../types';
 
 export async function getAdminProductById(id: string): Promise<DbProduct> {
@@ -24,26 +24,25 @@ export async function getAdminProductById(id: string): Promise<DbProduct> {
   return mapRowToProduct(row);
 }
 
-
 export async function getAdminProductPrices(
   productId: string
 ): Promise<AdminProductPriceRow[]> {
   const rows = await db
     .select({
       currency: productPrices.currency,
-      // canonical:
+
       priceMinor: productPrices.priceMinor,
       originalPriceMinor: productPrices.originalPriceMinor,
-      // legacy (keep during rollout):
+
       price: productPrices.price,
       originalPrice: productPrices.originalPrice,
     })
     .from(productPrices)
     .where(eq(productPrices.productId, productId));
 
-  // Guard: drizzle int columns should come as number, but never trust the driver implicitly.
   return rows.map(r => ({
     currency: r.currency as CurrencyCode,
+    // Defensive: some DB drivers return NUMERIC/DECIMAL as string/unknown at runtime; enforce safe integer minor-units here.
     priceMinor: assertMoneyMinorInt(
       r.priceMinor,
       `${String(r.currency)} priceMinor`

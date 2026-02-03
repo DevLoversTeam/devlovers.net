@@ -1,18 +1,18 @@
+import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
-import { Link } from '@/i18n/routing';
-import { RefundButton } from './RefundButton';
-
+import { ShopAdminTopbar } from '@/components/shop/admin/ShopAdminTopbar';
 import { getAdminOrderDetail } from '@/db/queries/shop/admin-orders';
+import { Link } from '@/i18n/routing';
+import { guardShopAdminPage } from '@/lib/auth/guard-shop-admin-page';
 import {
+  type CurrencyCode,
   formatMoney,
   resolveCurrencyFromLocale,
-  type CurrencyCode,
 } from '@/lib/shop/currency';
 import { fromDbMoney } from '@/lib/shop/money';
-import { ShopAdminTopbar } from '@/components/shop/admin/shop-admin-topbar';
-import { guardShopAdminPage } from '@/lib/auth/guard-shop-admin-page';
-import { Metadata } from 'next';
+
+import { RefundButton } from './RefundButton';
 
 export const metadata: Metadata = {
   title: 'Admin Order | DevLovers',
@@ -76,10 +76,10 @@ export default async function AdminOrderDetailPage({
       >
         <header className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <h1 id="order-title" className="text-2xl font-bold text-foreground">
+            <h1 id="order-title" className="text-foreground text-2xl font-bold">
               Order
             </h1>
-            <p className="mt-1 font-mono text-xs text-muted-foreground break-all">
+            <p className="text-muted-foreground mt-1 font-mono text-xs break-all">
               {order.id}
             </p>
           </div>
@@ -87,7 +87,7 @@ export default async function AdminOrderDetailPage({
           <div className="flex shrink-0 flex-wrap items-center gap-2">
             <Link
               href="/shop/admin/orders"
-              className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+              className="border-border text-foreground hover:bg-secondary rounded-md border px-3 py-1.5 text-sm font-medium transition-colors"
             >
               Back
             </Link>
@@ -101,12 +101,12 @@ export default async function AdminOrderDetailPage({
           aria-label="Order details"
         >
           <article
-            className="rounded-lg border border-border p-4"
+            className="border-border rounded-lg border p-4"
             aria-labelledby="summary-title"
           >
             <h2
               id="summary-title"
-              className="text-sm font-semibold text-foreground"
+              className="text-foreground text-sm font-semibold"
             >
               Summary
             </h2>
@@ -129,14 +129,14 @@ export default async function AdminOrderDetailPage({
 
               <div className="flex justify-between gap-4">
                 <dt className="text-muted-foreground">Payment intent</dt>
-                <dd className="font-mono text-xs text-muted-foreground break-all">
+                <dd className="text-muted-foreground font-mono text-xs break-all">
                   {order.paymentIntentId ?? '-'}
                 </dd>
               </div>
 
               <div className="flex justify-between gap-4">
                 <dt className="text-muted-foreground">Idempotency key</dt>
-                <dd className="font-mono text-xs text-muted-foreground break-all">
+                <dd className="text-muted-foreground font-mono text-xs break-all">
                   {order.idempotencyKey}
                 </dd>
               </div>
@@ -144,12 +144,12 @@ export default async function AdminOrderDetailPage({
           </article>
 
           <article
-            className="rounded-lg border border-border p-4"
+            className="border-border rounded-lg border p-4"
             aria-labelledby="stock-title"
           >
             <h2
               id="stock-title"
-              className="text-sm font-semibold text-foreground"
+              className="text-foreground text-sm font-semibold"
             >
               Stock / timestamps
             </h2>
@@ -191,40 +191,40 @@ export default async function AdminOrderDetailPage({
             Order items
           </h2>
 
-          <div className="overflow-x-auto rounded-lg border border-border">
-            <table className="min-w-full divide-y divide-border text-sm">
+          <div className="border-border overflow-x-auto rounded-lg border">
+            <table className="divide-border min-w-full divide-y text-sm">
               <caption className="sr-only">Line items for this order</caption>
 
               <thead className="bg-muted/50">
                 <tr>
                   <th
                     scope="col"
-                    className="px-3 py-2 text-left font-semibold text-foreground"
+                    className="text-foreground px-3 py-2 text-left font-semibold"
                   >
                     Product
                   </th>
                   <th
                     scope="col"
-                    className="px-3 py-2 text-left font-semibold text-foreground"
+                    className="text-foreground px-3 py-2 text-left font-semibold"
                   >
                     Qty
                   </th>
                   <th
                     scope="col"
-                    className="px-3 py-2 text-left font-semibold text-foreground"
+                    className="text-foreground px-3 py-2 text-left font-semibold"
                   >
                     Unit
                   </th>
                   <th
                     scope="col"
-                    className="px-3 py-2 text-left font-semibold text-foreground"
+                    className="text-foreground px-3 py-2 text-left font-semibold"
                   >
                     Line total
                   </th>
                 </tr>
               </thead>
 
-              <tbody className="divide-y divide-border">
+              <tbody className="divide-border divide-y">
                 {order.items.map(item => {
                   const unitMinor = pickMinor(
                     item.unitPriceMinor,
@@ -248,10 +248,10 @@ export default async function AdminOrderDetailPage({
                   return (
                     <tr key={item.id} className="hover:bg-muted/50">
                       <td className="px-3 py-2">
-                        <div className="font-medium text-foreground">
+                        <div className="text-foreground font-medium">
                           {item.productTitle ?? '-'}
                         </div>
-                        <div className="text-xs text-muted-foreground">
+                        <div className="text-muted-foreground text-xs">
                           <span className="font-mono">
                             {item.productSlug ?? '-'}
                           </span>
@@ -261,15 +261,15 @@ export default async function AdminOrderDetailPage({
                         </div>
                       </td>
 
-                      <td className="px-3 py-2 text-muted-foreground">
+                      <td className="text-muted-foreground px-3 py-2">
                         {item.quantity}
                       </td>
 
-                      <td className="px-3 py-2 text-foreground">
+                      <td className="text-foreground px-3 py-2">
                         {unitFormatted}
                       </td>
 
-                      <td className="px-3 py-2 text-foreground">
+                      <td className="text-foreground px-3 py-2">
                         {lineFormatted}
                       </td>
                     </tr>
@@ -278,7 +278,7 @@ export default async function AdminOrderDetailPage({
 
                 {order.items.length === 0 ? (
                   <tr>
-                    <td className="px-3 py-6 text-muted-foreground" colSpan={4}>
+                    <td className="text-muted-foreground px-3 py-6" colSpan={4}>
                       No items found for this order.
                     </td>
                   </tr>

@@ -1,9 +1,11 @@
-import { Link } from '@/i18n/routing';
-import { ProductCard } from '@/components/shop/product-card';
-import { Hero } from '@/components/shop/shop-hero';
-import { CategoryTile } from '@/components/shop/category-tile';
-import { getHomepageContent } from '@/lib/shop/data';
+import { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+
+import { CategoryTile } from '@/components/shop/CategoryTile';
+import { ProductCard } from '@/components/shop/ProductCard';
+import { Hero } from '@/components/shop/ShopHero';
+import { Link } from '@/i18n/routing';
+import { getHomepageContent } from '@/lib/shop/data';
 import {
   SHOP_CTA_BASE,
   SHOP_CTA_INSET,
@@ -11,7 +13,6 @@ import {
   SHOP_FOCUS,
   shopCtaGradient,
 } from '@/lib/shop/ui-classes';
-import { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Shop | DevLovers',
@@ -38,32 +39,21 @@ export default async function HomePage({
       />
 
       <section
-        className="border-t border-border bg-background py-16"
+        className="border-border bg-background border-t py-16"
         aria-labelledby="new-arrivals-heading"
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <h2
               id="new-arrivals-heading"
-              className="text-2xl font-bold tracking-tight text-foreground"
+              className="text-foreground text-2xl font-bold tracking-tight"
             >
               {t('newArrivals')}
             </h2>
 
             <Link
               href="/shop/products?filter=new"
-              className="
-              group inline-flex items-center gap-2 rounded-md border border-border
-              px-4 py-2
-              text-xs sm:text-sm font-semibold tracking-[0.25em] uppercase
-              text-muted-foreground hover:text-foreground
-              bg-transparent
-              shadow-none hover:shadow-[var(--shop-card-shadow-hover)]
-              transition-[transform,box-shadow,color,filter] duration-500 ease-out
-              hover:-translate-y-0.5 hover:brightness-110
-              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-ring)]
-              focus-visible:ring-offset-2 focus-visible:ring-offset-background
-            "
+              className="group border-border text-muted-foreground hover:text-foreground focus-visible:ring-offset-background inline-flex items-center gap-2 rounded-md border bg-transparent px-4 py-2 text-xs font-semibold tracking-[0.25em] uppercase shadow-none transition-[transform,box-shadow,color,filter] duration-500 ease-out hover:-translate-y-0.5 hover:shadow-[var(--shop-card-shadow-hover)] hover:brightness-110 focus-visible:ring-2 focus-visible:ring-[color:var(--color-ring)] focus-visible:ring-offset-2 focus-visible:outline-none sm:text-sm"
               aria-label={t('viewAll')}
             >
               <span>{t('viewAll')}</span>
@@ -87,14 +77,14 @@ export default async function HomePage({
       </section>
 
       <section
-        className="border-t border-border bg-background py-16"
+        className="border-border bg-background border-t py-16"
         aria-labelledby="shop-by-category-heading"
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <header className="flex items-center justify-between">
             <h2
               id="shop-by-category-heading"
-              className="text-2xl font-bold tracking-tight text-foreground"
+              className="text-foreground text-2xl font-bold tracking-tight"
             >
               {t('shopByCategory')}
             </h2>
@@ -111,7 +101,7 @@ export default async function HomePage({
       </section>
 
       <section
-        className="bg-foreground py-16 text-background"
+        className="bg-foreground text-background py-16"
         aria-labelledby="shop-cta-heading"
       >
         <div className="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
@@ -122,19 +112,14 @@ export default async function HomePage({
             {t('hero.headline')}
           </h2>
 
-          <p className="mx-auto mt-4 max-w-xl text-background/80">
+          <p className="text-background/80 mx-auto mt-4 max-w-xl">
             {t('hero.subheadline')}
           </p>
 
           <div className="mt-8">
             <Link
               href="/shop/products"
-              className={`
-    ${SHOP_CTA_BASE} ${SHOP_FOCUS}
-    px-8 sm:px-10 md:px-12 py-3 md:py-3.5
-    text-[color:var(--shop-cta-fg)]
-    shadow-[var(--shop-cta-shadow)] hover:shadow-[var(--shop-cta-shadow-hover)]
-  `}
+              className={` ${SHOP_CTA_BASE} ${SHOP_FOCUS} px-8 py-3 text-[color:var(--shop-cta-fg)] shadow-[var(--shop-cta-shadow)] hover:shadow-[var(--shop-cta-shadow-hover)] sm:px-10 md:px-12 md:py-3.5`}
               aria-label={t('hero.cta')}
             >
               <span

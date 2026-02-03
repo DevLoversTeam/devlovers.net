@@ -1,26 +1,18 @@
 'use client';
 
 import {
-  useState,
-  useCallback,
-  useEffect,
   type CSSProperties,
   type ReactNode,
+  useCallback,
+  useEffect,
+  useState,
 } from 'react';
-import {
-  Accordion,
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
-} from '@/components/ui/accordion';
-import { categoryTabStyles } from '@/data/categoryStyles';
 
-import CodeBlock from '@/components/q&a/CodeBlock';
-import SelectableText from '@/components/q&a/SelectableText';
-import FloatingExplainButton from '@/components/q&a/FloatingExplainButton';
 import AIWordHelper from '@/components/q&a/AIWordHelper';
+import CodeBlock from '@/components/q&a/CodeBlock';
+import FloatingExplainButton from '@/components/q&a/FloatingExplainButton';
 import HighlightCachedTerms from '@/components/q&a/HighlightCachedTerms';
-import { getCachedTerms, CACHE_KEY } from '@/lib/ai/explainCache';
+import SelectableText from '@/components/q&a/SelectableText';
 import type {
   AnswerBlock,
   BulletListBlock,
@@ -35,6 +27,14 @@ import type {
   TableBlock,
   TextNode,
 } from '@/components/q&a/types';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
+import { categoryTabStyles } from '@/data/categoryStyles';
+import { CACHE_KEY, getCachedTerms } from '@/lib/ai/explainCache';
 
 function isListItemBlock(value: ListEntry): value is ListItemBlock {
   return (

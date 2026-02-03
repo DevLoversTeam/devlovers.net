@@ -1,4 +1,5 @@
 import { sql } from 'drizzle-orm';
+
 import { db } from '@/db';
 
 type ReserveResult =
@@ -12,26 +13,19 @@ function releaseKey(orderId: string, productId: string) {
   return `release:${orderId}:${productId}`;
 }
 
-// Robust status extractor for Drizzle/Neon variations.
-// We do NOT treat "unknown shape" as "insufficient" because that breaks invariants.
 function readStatus(res: unknown): string {
   const r: any = res as any;
 
-  // Common shapes:
-  // 1) { rows: [ { status: '...' } ] }
-  // 2) [ { status: '...' } ]
-  // 3) { rowCount, rows } but keys can be uppercase depending on driver
   const rows = Array.isArray(r)
     ? r
     : Array.isArray(r?.rows)
-    ? r.rows
-    : undefined;
+      ? r.rows
+      : undefined;
   const row = rows?.[0];
 
   const status = row?.status ?? row?.STATUS;
   if (typeof status === 'string' && status.length > 0) return status;
 
-  // Fail hard: better than silently turning into OUT_OF_STOCK and doing release.
   throw new Error(
     `inventory: unexpected db.execute result shape (missing status). ` +
       `Got: ${JSON.stringify(

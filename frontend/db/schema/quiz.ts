@@ -1,20 +1,21 @@
+import { relations } from 'drizzle-orm';
 import {
+  boolean,
+  decimal,
+  index,
+  integer,
+  jsonb,
   pgTable,
+  primaryKey,
+  text,
+  timestamp,
+  unique,
   uuid,
   varchar,
-  text,
-  integer,
-  boolean,
-  timestamp,
-  decimal,
-  jsonb,
-  primaryKey,
-  index,
-  unique,
 } from 'drizzle-orm/pg-core';
-import { relations } from 'drizzle-orm';
-import { users } from './users';
+
 import { categories } from './categories';
+import { users } from './users';
 
 export const quizzes = pgTable(
   'quizzes',
@@ -151,7 +152,7 @@ export const quizAttempts = pgTable(
       .defaultNow(),
   },
   table => ({
-    userIdIdx: index('quiz_attempts_user_id_idx').on(table.userId),       // ← NEW
+    userIdIdx: index('quiz_attempts_user_id_idx').on(table.userId), // ← NEW
     quizIdIdx: index('quiz_attempts_quiz_id_idx').on(table.quizId),
     userCompletedAtIdx: index('quiz_attempts_user_completed_at_idx').on(
       table.userId,

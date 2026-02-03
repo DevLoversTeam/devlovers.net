@@ -1,12 +1,10 @@
 export { createOrderWithItems } from './orders/checkout';
-export { getOrderById, getOrderSummary } from './orders/summary';
 export { setOrderPaymentIntent } from './orders/payment-intent';
-
-export { restockOrder, restockOrder as restock } from './orders/restock';
+export { refundOrder } from './orders/refund';
+export { restockOrder as restock, restockOrder } from './orders/restock';
+export { getOrderById, getOrderSummary } from './orders/summary';
 export {
+  restockStaleNoPaymentOrders,
   restockStalePendingOrders,
   restockStuckReservingOrders,
-  restockStaleNoPaymentOrders,
 } from './orders/sweeps';
-
-export { refundOrder } from './orders/refund';

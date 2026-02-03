@@ -1,7 +1,8 @@
+import { and, eq, ilike, sql } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
+
 import { db } from '@/db';
 import { categories, questions, questionTranslations } from '@/db/schema';
-import { eq, sql, and, ilike } from 'drizzle-orm';
 import { buildQaCacheKey, getQaCache, setQaCache } from '@/lib/cache/qa';
 
 export const dynamic = 'force-dynamic';

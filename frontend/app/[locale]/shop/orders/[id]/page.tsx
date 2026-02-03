@@ -1,17 +1,17 @@
 import 'server-only';
-import { cn } from '@/lib/utils';
-import { Link } from '@/i18n/routing';
-import { notFound, redirect } from 'next/navigation';
-import { unstable_noStore as noStore } from 'next/cache';
+
 import { and, eq } from 'drizzle-orm';
+import { Metadata } from 'next';
+import { unstable_noStore as noStore } from 'next/cache';
+import { notFound, redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
 import { db } from '@/db';
 import { orderItems, orders } from '@/db/schema';
+import { Link } from '@/i18n/routing';
 import { getCurrentUser } from '@/lib/auth';
-import { orderIdParamSchema } from '@/lib/validation/shop';
 import { logError } from '@/lib/logging';
-import { formatMoney, type CurrencyCode } from '@/lib/shop/currency';
+import { type CurrencyCode, formatMoney } from '@/lib/shop/currency';
 import { fromDbMoney } from '@/lib/shop/money';
 import {
   SHOP_FOCUS,
@@ -19,7 +19,8 @@ import {
   SHOP_LINK_MD,
   SHOP_NAV_LINK_BASE,
 } from '@/lib/shop/ui-classes';
-import { Metadata } from 'next';
+import { cn } from '@/lib/utils';
+import { orderIdParamSchema } from '@/lib/validation/shop';
 
 export const metadata: Metadata = {
   title: 'Order Details | DevLovers',
@@ -230,7 +231,7 @@ export default async function OrderDetailPage({
           <h1 id="order-heading" className="truncate text-2xl font-semibold">
             {t('title')}
           </h1>
-          <div className="mt-1 truncate text-xs text-muted-foreground">
+          <div className="text-muted-foreground mt-1 truncate text-xs">
             {order.id}
           </div>
         </div>
@@ -249,7 +250,7 @@ export default async function OrderDetailPage({
       </header>
 
       <section
-        className="mb-6 rounded-md border border-border p-4"
+        className="border-border mb-6 rounded-md border p-4"
         aria-labelledby="order-summary-heading"
       >
         <h2 id="order-summary-heading" className="sr-only">
@@ -258,12 +259,12 @@ export default async function OrderDetailPage({
 
         <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
-            <dt className="text-xs text-muted-foreground">{t('total')}</dt>
+            <dt className="text-muted-foreground text-xs">{t('total')}</dt>
             <dd className="text-sm font-medium">{totalFormatted}</dd>
           </div>
 
           <div>
-            <dt className="text-xs text-muted-foreground">
+            <dt className="text-muted-foreground text-xs">
               {t('paymentStatus')}
             </dt>
             <dd className="text-sm font-medium">
@@ -272,13 +273,13 @@ export default async function OrderDetailPage({
           </div>
 
           <div>
-            <dt className="text-xs text-muted-foreground">{t('created')}</dt>
+            <dt className="text-muted-foreground text-xs">{t('created')}</dt>
             <dd className="text-sm">{createdFormatted}</dd>
           </div>
 
           {isAdmin && (
             <div>
-              <dt className="text-xs text-muted-foreground">{t('provider')}</dt>
+              <dt className="text-muted-foreground text-xs">{t('provider')}</dt>
               <dd className="text-sm">{String(order.paymentProvider)}</dd>
             </div>
           )}
@@ -287,7 +288,7 @@ export default async function OrderDetailPage({
         {isAdmin && (
           <dl className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <dt className="text-xs text-muted-foreground">
+              <dt className="text-muted-foreground text-xs">
                 {t('paymentReference')}
               </dt>
               <dd className="text-sm break-all">
@@ -295,7 +296,7 @@ export default async function OrderDetailPage({
               </dd>
             </div>
             <div>
-              <dt className="text-xs text-muted-foreground">
+              <dt className="text-muted-foreground text-xs">
                 {t('idempotencyKey')}
               </dt>
               <dd className="text-sm break-all">{order.idempotencyKey}</dd>
@@ -306,7 +307,7 @@ export default async function OrderDetailPage({
         {isAdmin && (
           <dl className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <dt className="text-xs text-muted-foreground">
+              <dt className="text-muted-foreground text-xs">
                 {t('stockRestored')}
               </dt>
               <dd className="text-sm">
@@ -314,7 +315,7 @@ export default async function OrderDetailPage({
               </dd>
             </div>
             <div>
-              <dt className="text-xs text-muted-foreground">
+              <dt className="text-muted-foreground text-xs">
                 {t('restockedAt')}
               </dt>
               <dd className="text-sm">{restockedFormatted}</dd>
@@ -324,16 +325,16 @@ export default async function OrderDetailPage({
       </section>
 
       <section
-        className="rounded-md border border-border"
+        className="border-border rounded-md border"
         aria-labelledby="order-items-heading"
       >
-        <div className="border-b border-border p-4">
+        <div className="border-border border-b p-4">
           <h2 id="order-items-heading" className="text-lg font-semibold">
             {t('items')}
           </h2>
         </div>
 
-        <ul className="divide-y divide-border" aria-label={t('items')}>
+        <ul className="divide-border divide-y" aria-label={t('items')}>
           {order.items.map(it => (
             <li key={it.id} className="p-4">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
@@ -354,7 +355,7 @@ export default async function OrderDetailPage({
                     </div>
                   )}
 
-                  <div className="mt-1 break-all text-xs text-muted-foreground">
+                  <div className="text-muted-foreground mt-1 text-xs break-all">
                     {it.productSku
                       ? t('sku', { sku: it.productSku })
                       : t('product', { productId: it.productId })}
@@ -368,7 +369,7 @@ export default async function OrderDetailPage({
                   </div>
                   <div>
                     <dt className="sr-only">{t('unitPrice')}</dt>
-                    <dd className="text-sm text-muted-foreground">
+                    <dd className="text-muted-foreground text-sm">
                       Unit:{' '}
                       {safeFormatMoneyMajor(it.unitPrice, currency, locale)}
                     </dd>

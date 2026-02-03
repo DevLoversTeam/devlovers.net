@@ -1,4 +1,5 @@
 import { z } from 'zod';
+
 import {
   CATALOG_PAGE_SIZE,
   CATEGORIES,
@@ -12,7 +13,7 @@ import {
   paymentProviderValues,
   paymentStatusValues,
 } from '@/lib/shop/payments';
-export type { PaymentStatus, PaymentProvider } from '@/lib/shop/payments';
+export type { PaymentProvider, PaymentStatus } from '@/lib/shop/payments';
 
 export const MAX_QUANTITY_PER_LINE = 20;
 
@@ -99,8 +100,6 @@ export const dbProductSchema = z.object({
     .string()
     .nullish()
     .transform(value => value ?? undefined),
-  // NOTE: DB shape is still "price/originalPrice" here (whatever your query returns).
-  // You convert to minor in the mapper (fromDbMoney), so we keep these permissive.
   price: z.coerce.number(),
   originalPrice: z.coerce
     .number()
@@ -137,7 +136,6 @@ export const dbProductSchema = z.object({
   updatedAt: z.coerce.date(),
 });
 
-// IMPORTANT: shopProduct.price/originalPrice are MINOR units (integers).
 export const shopProductSchema = z.object({
   id: z.string(),
   slug: z.string(),
@@ -166,7 +164,6 @@ const booleanFromString = z.preprocess(value => {
   return undefined;
 }, z.boolean().optional());
 
-// Money in MINOR units (integers)
 const moneyMinor = z.number().int().min(0);
 const moneyMinorPositive = z.number().int().min(1);
 
@@ -177,7 +174,6 @@ export const adminPriceRowSchema = z
     originalPriceMinor: moneyMinor.optional().nullable(),
   })
   .superRefine((v, ctx) => {
-    // priceMinor already validated > 0
     if (v.originalPriceMinor != null) {
       if (!Number.isFinite(v.originalPriceMinor)) {
         ctx.addIssue({
@@ -239,10 +235,8 @@ export const productAdminSchema = z
     isFeatured: booleanFromString.default(false),
   })
   .superRefine((data, ctx) => {
-    // 1) no duplicate currencies
     refineNoDuplicateCurrencies(data.prices, ctx);
 
-    // 2) USD is required
     const usd = data.prices.find(p => p.currency === 'USD');
     if (!usd) {
       ctx.addIssue({
@@ -251,7 +245,7 @@ export const productAdminSchema = z
         message: 'USD price is required',
       });
     }
-    // 3) SALE badge requires compare-at/original price for every provided currency
+
     if (data.badge === 'SALE') {
       data.prices.forEach((p, idx) => {
         if (p.originalPriceMinor == null) {
@@ -358,10 +352,10 @@ export const cartRehydratedItemSchema = z.object({
   slug: z.string(),
   title: z.string(),
   quantity: z.number().int().min(1).max(MAX_QUANTITY_PER_LINE),
-  // canonical:
+
   unitPriceMinor: moneyMinorPositive,
   lineTotalMinor: moneyMinor,
-  // display/legacy:
+
   unitPrice: z.number().min(0),
   lineTotal: z.number().min(0),
 
@@ -381,9 +375,8 @@ export const cartRehydrateResultSchema = z.object({
   items: z.array(cartRehydratedItemSchema),
   removed: z.array(cartRemovedItemSchema),
   summary: z.object({
-    // canonical:
     totalAmountMinor: moneyMinor,
-    // display/legacy:
+
     totalAmount: z.number().min(0),
     itemCount: z.number().int().min(0),
     currency: currencySchema,
@@ -396,9 +389,9 @@ export const orderIdParamSchema = z.object({
 
 export const orderSummarySchema = z.object({
   id: z.string().uuid(),
-  // canonical:
+
   totalAmountMinor: moneyMinor,
-  // display/legacy:
+
   totalAmount: z.number().min(0),
   currency: currencySchema,
   paymentStatus: paymentStatusSchema,
@@ -414,10 +407,10 @@ export const orderSummarySchema = z.object({
       productTitle: z.string(),
       productSlug: z.string(),
       quantity: z.number().int().min(1),
-      // canonical:
+
       unitPriceMinor: moneyMinorPositive,
       lineTotalMinor: moneyMinor,
-      // display/legacy:
+
       unitPrice: z.number().min(0),
       lineTotal: z.number().min(0),
     })

@@ -1,16 +1,18 @@
 import 'dotenv/config';
+
+import { randomUUID } from 'crypto';
 import { eq } from 'drizzle-orm';
+
 import { db } from './index';
 import { categories } from './schema/categories';
 import {
-  quizzes,
-  quizTranslations,
-  quizQuestions,
-  quizQuestionContent,
   quizAnswers,
   quizAnswerTranslations,
+  quizQuestionContent,
+  quizQuestions,
+  quizTranslations,
+  quizzes,
 } from './schema/quiz';
-import { randomUUID } from 'crypto';
 
 type Locale = 'uk' | 'en' | 'pl';
 
@@ -987,7 +989,7 @@ async function seedReactQuiz() {
   }
 }
 
-async function cleanupReactQuiz() {
+async function _cleanupReactQuiz() {
   console.log('🧹 Cleaning up React quiz...');
 
   await db.delete(quizAnswerTranslations);
@@ -1006,10 +1008,3 @@ seedReactQuiz()
     console.error(error);
     process.exit(1);
   });
-
-// cleanupReactQuiz()
-//   .then(() => process.exit(0))
-//   .catch((error) => {
-//     console.error(error);
-//     process.exit(1);
-//   });

@@ -1,10 +1,11 @@
 import crypto from 'node:crypto';
+
 import { NextRequest, NextResponse } from 'next/server';
 
-import { getCatalogProducts } from '@/lib/shop/data';
-import { catalogQuerySchema } from '@/lib/validation/shop';
 import { CATALOG_PAGE_SIZE } from '@/lib/config/catalog';
 import { logError, logWarn } from '@/lib/logging';
+import { getCatalogProducts } from '@/lib/shop/data';
+import { catalogQuerySchema } from '@/lib/validation/shop';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

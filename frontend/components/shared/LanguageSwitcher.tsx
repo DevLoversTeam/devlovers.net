@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { useParams, usePathname, useSearchParams } from 'next/navigation';
-import { locales, type Locale } from '@/i18n/config';
-import { Link } from '@/i18n/routing';
 import { Globe } from 'lucide-react';
+import { useParams, usePathname, useSearchParams } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
+
+import { type Locale, locales } from '@/i18n/config';
+import { Link } from '@/i18n/routing';
 
 const localeLabels: Record<Locale, string> = {
   uk: 'UA',
@@ -43,7 +44,7 @@ export default function LanguageSwitcher() {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="group flex items-center gap-1.5 text-muted-foreground font-medium transition-colors active:text-[var(--accent-hover)]"
+        className="group text-muted-foreground flex items-center gap-1.5 font-medium transition-colors active:text-[var(--accent-hover)]"
         aria-label="Change language"
       >
         <Globe className="h-4 w-4 transition-colors group-hover:[color:var(--accent-hover)] group-active:[color:var(--accent-hover)]" />
@@ -68,7 +69,7 @@ export default function LanguageSwitcher() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 py-2 w-20 bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 rounded-md shadow-lg z-[60]">
+        <div className="absolute right-0 z-[60] mt-2 w-20 rounded-md border border-gray-200 bg-white py-2 shadow-lg dark:border-neutral-800 dark:bg-neutral-900">
           {locales.map(locale => (
             <Link
               key={locale}
@@ -82,7 +83,7 @@ export default function LanguageSwitcher() {
               }}
               className={`block px-4 py-2 text-sm transition active:text-[var(--accent-hover)] ${
                 currentLocale === locale
-                  ? 'text-muted-foreground font-medium [background-color:color-mix(in_srgb,var(--accent-primary)_10%,transparent)]'
+                  ? 'text-muted-foreground [background-color:color-mix(in_srgb,var(--accent-primary)_10%,transparent)] font-medium'
                   : 'text-muted-foreground hover:bg-secondary active:bg-secondary'
               }`}
             >

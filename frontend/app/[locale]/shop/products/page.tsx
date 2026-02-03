@@ -1,14 +1,14 @@
-import { Suspense } from 'react';
+import { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+import { Suspense } from 'react';
 
-import { ProductFilters } from '@/components/shop/product-filters';
-import { CatalogProductsClient } from '@/components/shop/catalog-products-client';
-import { ProductsToolbar } from '@/components/shop/products-toolbar';
+import { CatalogProductsClient } from '@/components/shop/CatalogProductsClient';
+import { ProductFilters } from '@/components/shop/ProductFilters';
+import { ProductsToolbar } from '@/components/shop/ProductsToolbar';
+import { CATALOG_PAGE_SIZE } from '@/lib/config/catalog';
 import { getCatalogProducts } from '@/lib/shop/data';
 import { catalogQuerySchema } from '@/lib/validation/shop';
-import { CATALOG_PAGE_SIZE } from '@/lib/config/catalog';
-import { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Products | DevLovers',
@@ -74,8 +74,8 @@ export default async function ProductsPage({
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <header className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+      <header className="border-border flex flex-col gap-4 border-b pb-6 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-foreground text-2xl font-bold tracking-tight sm:text-3xl">
           {t('title')}
         </h1>
 
@@ -101,10 +101,10 @@ export default async function ProductsPage({
               className="flex flex-col items-center justify-center py-16 text-center"
               role="status"
             >
-              <p className="text-lg font-medium text-foreground">
+              <p className="text-foreground text-lg font-medium">
                 {t('noProductsFound')}
               </p>
-              <p className="mt-2 text-sm text-muted-foreground">
+              <p className="text-muted-foreground mt-2 text-sm">
                 {t('adjustFilters')}
               </p>
             </div>

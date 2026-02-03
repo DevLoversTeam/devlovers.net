@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, act } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import type React from 'react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const getCachedExplanationMock = vi.fn();
 const setCachedExplanationMock = vi.fn();
@@ -28,7 +28,13 @@ vi.mock('@/i18n/routing', () => ({
 
 import AIWordHelper from '@/components/q&a/AIWordHelper';
 
-function mockFetchSequence(responses: Array<{ ok: boolean; status: number; json: () => Promise<unknown> }>) {
+function mockFetchSequence(
+  responses: Array<{
+    ok: boolean;
+    status: number;
+    json: () => Promise<unknown>;
+  }>
+) {
   const fetchMock = vi.fn();
   responses.forEach(response => {
     fetchMock.mockResolvedValueOnce(response);
@@ -56,13 +62,7 @@ describe('AIWordHelper', () => {
       },
     ]);
 
-    render(
-      <AIWordHelper
-        term="CSS"
-        isOpen
-        onClose={vi.fn()}
-      />
-    );
+    render(<AIWordHelper term="CSS" isOpen onClose={vi.fn()} />);
 
     expect(await screen.findByText('guest.title')).toBeTruthy();
   });
@@ -82,13 +82,7 @@ describe('AIWordHelper', () => {
       },
     ]);
 
-    render(
-      <AIWordHelper
-        term="Git"
-        isOpen
-        onClose={vi.fn()}
-      />
-    );
+    render(<AIWordHelper term="Git" isOpen onClose={vi.fn()} />);
 
     expect(await screen.findByText('Cached')).toBeTruthy();
     expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -112,13 +106,7 @@ describe('AIWordHelper', () => {
       },
     ]);
 
-    render(
-      <AIWordHelper
-        term="Git"
-        isOpen
-        onClose={vi.fn()}
-      />
-    );
+    render(<AIWordHelper term="Git" isOpen onClose={vi.fn()} />);
 
     expect(await screen.findByText('Hello')).toBeTruthy();
     expect(setCachedExplanationMock).toHaveBeenCalled();
@@ -138,13 +126,7 @@ describe('AIWordHelper', () => {
       },
     ]);
 
-    render(
-      <AIWordHelper
-        term="Git"
-        isOpen
-        onClose={vi.fn()}
-      />
-    );
+    render(<AIWordHelper term="Git" isOpen onClose={vi.fn()} />);
 
     expect(await screen.findByText('Give it a moment')).toBeTruthy();
   });
@@ -163,13 +145,7 @@ describe('AIWordHelper', () => {
       },
     ]);
 
-    render(
-      <AIWordHelper
-        term="Git"
-        isOpen
-        onClose={vi.fn()}
-      />
-    );
+    render(<AIWordHelper term="Git" isOpen onClose={vi.fn()} />);
 
     expect(await screen.findByText('AI is taking a nap')).toBeTruthy();
   });
@@ -197,13 +173,7 @@ describe('AIWordHelper', () => {
       },
     ]);
 
-    render(
-      <AIWordHelper
-        term="Git"
-        isOpen
-        onClose={vi.fn()}
-      />
-    );
+    render(<AIWordHelper term="Git" isOpen onClose={vi.fn()} />);
 
     expect(await screen.findByText('Give it a moment')).toBeTruthy();
 
@@ -234,13 +204,7 @@ describe('AIWordHelper', () => {
       },
     ]);
 
-    render(
-      <AIWordHelper
-        term="Git"
-        isOpen
-        onClose={vi.fn()}
-      />
-    );
+    render(<AIWordHelper term="Git" isOpen onClose={vi.fn()} />);
 
     expect(await screen.findByText('loading')).toBeTruthy();
     expect(fetchMock).toHaveBeenCalled();
@@ -268,13 +232,7 @@ describe('AIWordHelper', () => {
       },
     ]);
 
-    render(
-      <AIWordHelper
-        term="Git"
-        isOpen
-        onClose={vi.fn()}
-      />
-    );
+    render(<AIWordHelper term="Git" isOpen onClose={vi.fn()} />);
 
     expect(await screen.findByText('Missing locales')).toBeTruthy();
   });

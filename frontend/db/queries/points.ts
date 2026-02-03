@@ -1,8 +1,9 @@
+import { and, eq, sql } from 'drizzle-orm';
 import { revalidateTag } from 'next/cache';
+
 import { db } from '../index';
 import { pointTransactions } from '../schema/points';
 import { quizAttempts } from '../schema/quiz';
-import { eq, and, sql } from 'drizzle-orm';
 
 export function calculateQuizPoints(params: {
   score: number;
@@ -52,9 +53,7 @@ export async function awardQuizPoints(params: {
     return 0;
   }
 
-  await db
-  .insert(pointTransactions)
-  .values({
+  await db.insert(pointTransactions).values({
     userId,
     points: pointsToAward,
     source: 'quiz',

@@ -1,14 +1,14 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
 import { LogIn, Settings, User } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
-import { HeaderButton } from '@/components/shared/HeaderButton';
-import { GitHubStarButton } from '@/components/shared/GitHubStarButton';
-import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
 import { LogoutButton } from '@/components/auth/logoutButton';
-import { CartButton } from '@/components/shop/header/cart-button';
 import { BlogHeaderSearch } from '@/components/blog/BlogHeaderSearch';
+import { GitHubStarButton } from '@/components/shared/GitHubStarButton';
+import { HeaderButton } from '@/components/shared/HeaderButton';
+import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
+import { CartButton } from '@/components/shop/header/CartButton';
 
 type DesktopActionsProps = {
   variant: 'platform' | 'shop' | 'blog';
@@ -22,6 +22,7 @@ export function DesktopActions({
   showAdminLink = false,
 }: DesktopActionsProps) {
   const t = useTranslations('navigation');
+  const tAria = useTranslations('aria');
   const isShop = variant === 'shop';
   const isBlog = variant === 'blog';
 
@@ -32,7 +33,7 @@ export function DesktopActions({
           variant="icon"
           href="/dashboard"
           icon={User}
-          label="Dashboard"
+          label={tAria('dashboard')}
         />
       )}
 
@@ -41,7 +42,7 @@ export function DesktopActions({
           variant="icon"
           href="/shop/admin"
           icon={Settings}
-          label="Shop admin"
+          label={tAria('shopAdmin')}
         />
       )}
 

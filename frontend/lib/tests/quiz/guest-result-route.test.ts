@@ -1,4 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { POST } from '@/app/api/quiz/guest-result/route';
 
 vi.mock('@/lib/auth', () => ({
@@ -17,9 +18,9 @@ vi.mock('@/db', () => ({
   },
 }));
 
-import { getCurrentUser } from '@/lib/auth';
-import { calculateQuizPoints, awardQuizPoints } from '@/db/queries/points';
 import { db } from '@/db';
+import { awardQuizPoints, calculateQuizPoints } from '@/db/queries/points';
+import { getCurrentUser } from '@/lib/auth';
 
 const getCurrentUserMock = getCurrentUser as ReturnType<typeof vi.fn>;
 const calculateQuizPointsMock = calculateQuizPoints as ReturnType<typeof vi.fn>;
@@ -135,7 +136,9 @@ describe('POST /api/quiz/guest-result', () => {
     awardQuizPointsMock.mockResolvedValue(7);
 
     selectMock
-      .mockImplementationOnce(() => makeSelectChain([{ id: 'q1' }, { id: 'q2' }]))
+      .mockImplementationOnce(() =>
+        makeSelectChain([{ id: 'q1' }, { id: 'q2' }])
+      )
       .mockImplementationOnce(() =>
         makeSelectChain([
           { id: 'a1', quizQuestionId: 'q1', isCorrect: true },

@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { usePathname, Link } from '@/i18n/routing';
-import { useSearchParams } from 'next/navigation';
 import groq from 'groq';
+import { useSearchParams } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
+
 import { client } from '@/client';
+import { Link, usePathname } from '@/i18n/routing';
 import { cn } from '@/lib/utils';
 
 type Category = {
@@ -80,7 +81,9 @@ export function BlogNavLinks({
           aria-current={category.isActive ? 'page' : undefined}
           className={cn(
             baseLink,
-            category.isActive ? 'bg-muted text-foreground' : 'text-muted-foreground'
+            category.isActive
+              ? 'bg-muted text-foreground'
+              : 'text-muted-foreground'
           )}
         >
           {category.title}

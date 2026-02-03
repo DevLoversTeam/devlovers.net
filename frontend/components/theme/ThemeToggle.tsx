@@ -1,18 +1,20 @@
 'use client';
 
-import { useTheme } from 'next-themes';
-import { Monitor, Sun, Moon } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Monitor, Moon, Sun } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
 
 const themes = [
-  { value: 'system', icon: Monitor, label: 'System theme' },
-  { value: 'light', icon: Sun, label: 'Light theme' },
-  { value: 'dark', icon: Moon, label: 'Dark theme' },
+  { value: 'system', icon: Monitor, labelKey: 'themeSystem' },
+  { value: 'light', icon: Sun, labelKey: 'themeLight' },
+  { value: 'dark', icon: Moon, labelKey: 'themeDark' },
 ] as const;
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
+  const t = useTranslations('aria');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -36,11 +38,11 @@ export function ThemeToggle() {
 
   return (
     <div className="flex h-9 items-center gap-1 rounded-full bg-neutral-100 p-1 dark:border dark:border-neutral-800 dark:bg-neutral-950">
-      {themes.map(({ value, icon: Icon, label }) => (
+      {themes.map(({ value, icon: Icon, labelKey }) => (
         <button
           key={value}
           onClick={() => setTheme(value)}
-          aria-label={label}
+          aria-label={t(labelKey)}
           className="theme-toggle-btn relative flex h-7 w-7 items-center justify-center rounded-full"
         >
           {theme === value && (
@@ -50,7 +52,7 @@ export function ThemeToggle() {
               transition={{ type: 'spring', stiffness: 400, damping: 30 }}
             />
           )}
-          <Icon className="relative z-10 h-4 w-4 text-neutral-500 dark:text-neutral-400 transition-colors" />
+          <Icon className="relative z-10 h-4 w-4 text-neutral-500 transition-colors dark:text-neutral-400" />
         </button>
       ))}
 

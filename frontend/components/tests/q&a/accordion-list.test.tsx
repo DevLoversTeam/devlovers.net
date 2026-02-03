@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const getCachedTermsMock = vi.fn();
 
@@ -25,13 +25,9 @@ vi.mock('@/components/ui/accordion', () => ({
 
 vi.mock('@/components/q&a/CodeBlock', () => ({
   __esModule: true,
-  default: ({
-    code,
-    content,
-  }: {
-    code?: string;
-    content?: string;
-  }) => <pre data-testid="code-block">{content ?? code}</pre>,
+  default: ({ code, content }: { code?: string; content?: string }) => (
+    <pre data-testid="code-block">{content ?? code}</pre>
+  ),
 }));
 
 vi.mock('@/components/q&a/SelectableText', () => ({
@@ -82,16 +78,8 @@ vi.mock('@/components/q&a/FloatingExplainButton', () => ({
 
 vi.mock('@/components/q&a/AIWordHelper', () => ({
   __esModule: true,
-  default: ({
-    term,
-    isOpen,
-  }: {
-    term: string;
-    isOpen: boolean;
-  }) => (
-    <div data-testid="ai-helper">
-      {isOpen ? `open:${term}` : 'closed'}
-    </div>
+  default: ({ term, isOpen }: { term: string; isOpen: boolean }) => (
+    <div data-testid="ai-helper">{isOpen ? `open:${term}` : 'closed'}</div>
   ),
 }));
 

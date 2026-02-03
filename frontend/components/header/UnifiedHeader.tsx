@@ -1,9 +1,9 @@
 'use client';
 
-import { Logo } from '@/components/shared/Logo';
-import { DesktopNav } from '@/components/header/DesktopNav';
 import { DesktopActions } from '@/components/header/DesktopActions';
+import { DesktopNav } from '@/components/header/DesktopNav';
 import { MobileActions } from '@/components/header/MobileActions';
+import { Logo } from '@/components/shared/Logo';
 
 export type UnifiedHeaderVariant = 'platform' | 'shop' | 'blog';
 
@@ -24,7 +24,7 @@ export function UnifiedHeader({
     variant === 'shop' ? '/shop' : variant === 'blog' ? '/blog' : '/';
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="border-border bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 w-full border-b backdrop-blur">
       <div className="container-main flex h-16 items-center justify-between">
         <Logo href={brandHref} />
 

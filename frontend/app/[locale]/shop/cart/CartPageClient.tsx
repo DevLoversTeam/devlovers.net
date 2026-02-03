@@ -1,32 +1,32 @@
 'use client';
 
-import { useState } from 'react';
+import { Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
-import { useRouter, Link } from '@/i18n/routing';
 import { useTranslations } from 'next-intl';
-import { cn } from '@/lib/utils';
-import { Minus, Plus, Trash2, ShoppingBag } from 'lucide-react';
+import { useState } from 'react';
 
-import { useCart } from '@/components/shop/cart-provider';
-import { generateIdempotencyKey } from '@/lib/shop/idempotency';
+import { useCart } from '@/components/shop/CartProvider';
+import { Link, useRouter } from '@/i18n/routing';
 import { formatMoney } from '@/lib/shop/currency';
+import { generateIdempotencyKey } from '@/lib/shop/idempotency';
 import {
+  SHOP_CHIP_BORDER_HOVER,
+  SHOP_CHIP_INTERACTIVE,
+  SHOP_CHIP_SHADOW_HOVER,
+  SHOP_CTA_BASE,
+  SHOP_CTA_INSET,
+  SHOP_CTA_INTERACTIVE,
+  SHOP_CTA_WAVE,
+  SHOP_DISABLED,
   SHOP_FOCUS,
   SHOP_LINK_BASE,
   SHOP_LINK_MD,
   SHOP_LINK_XS,
-  SHOP_DISABLED,
-  SHOP_CHIP_INTERACTIVE,
-  SHOP_CHIP_SHADOW_HOVER,
-  SHOP_CHIP_BORDER_HOVER,
   SHOP_STEPPER_BUTTON_BASE,
-  SHOP_CTA_BASE,
-  SHOP_CTA_INTERACTIVE,
-  SHOP_CTA_INSET,
-  SHOP_CTA_WAVE,
   shopCtaGradient,
 } from '@/lib/shop/ui-classes';
+import { cn } from '@/lib/utils';
 
 const SHOP_PRODUCT_LINK = cn(
   'block truncate',
@@ -160,15 +160,15 @@ export default function CartPage() {
       <main className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
         <div className="flex flex-col items-center justify-center text-center">
           <ShoppingBag
-            className="h-16 w-16 text-muted-foreground"
+            className="text-muted-foreground h-16 w-16"
             aria-hidden="true"
           />
-          <h1 className="mt-6 text-3xl font-bold tracking-tight text-foreground">
+          <h1 className="text-foreground mt-6 text-3xl font-bold tracking-tight">
             {t('empty')}
           </h1>
-          <p className="mt-4 text-muted-foreground">{t('emptyDescription')}</p>
+          <p className="text-muted-foreground mt-4">{t('emptyDescription')}</p>
 
-          <div className="mt-8 w-full max-w-md mx-auto">
+          <div className="mx-auto mt-8 w-full max-w-md">
             <Link href="/shop/products" className={SHOP_HERO_CTA}>
               <span
                 className="absolute inset-0"
@@ -197,7 +197,7 @@ export default function CartPage() {
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <h1 className="text-3xl font-bold tracking-tight text-foreground">
+      <h1 className="text-foreground text-3xl font-bold tracking-tight">
         {t('title')}
       </h1>
 
@@ -217,10 +217,10 @@ export default function CartPage() {
             {cart.items.map(item => (
               <li
                 key={`${item.productId}-${item.selectedSize ?? 'na'}-${item.selectedColor ?? 'na'}`}
-                className="rounded-lg border border-border p-4"
+                className="border-border rounded-lg border p-4"
               >
                 <article className="flex gap-4">
-                  <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-md bg-muted">
+                  <div className="bg-muted relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-md">
                     <Image
                       src={item.imageUrl || '/placeholder.svg'}
                       alt={item.title}
@@ -241,7 +241,7 @@ export default function CartPage() {
                         </Link>
 
                         {(item.selectedSize || item.selectedColor) && (
-                          <p className="mt-1 text-xs text-muted-foreground">
+                          <p className="text-muted-foreground mt-1 text-xs">
                             {[
                               translateColor(item.selectedColor),
                               item.selectedSize,
@@ -261,7 +261,7 @@ export default function CartPage() {
                             item.selectedColor
                           )
                         }
-                        className="text-muted-foreground transition-colors hover:text-foreground"
+                        className="text-muted-foreground hover:text-foreground transition-colors"
                         aria-label={t('actions.removeItem', {
                           title: item.title,
                         })}
@@ -312,7 +312,7 @@ export default function CartPage() {
 
                         {item.quantity >= item.stock && (
                           <span
-                            className="ml-3 text-xs text-muted-foreground"
+                            className="text-muted-foreground ml-3 text-xs"
                             role="status"
                           >
                             {t('actions.maxStock', { stock: item.stock })}
@@ -320,7 +320,7 @@ export default function CartPage() {
                         )}
                       </div>
 
-                      <span className="text-sm font-semibold text-foreground">
+                      <span className="text-foreground text-sm font-semibold">
                         {formatMoney(
                           item.lineTotalMinor,
                           item.currency,
@@ -336,12 +336,12 @@ export default function CartPage() {
         </section>
 
         <aside
-          className="h-fit rounded-lg border border-border p-6"
+          className="border-border h-fit rounded-lg border p-6"
           aria-labelledby="order-summary"
         >
           <h2
             id="order-summary"
-            className="text-lg font-semibold text-foreground"
+            className="text-foreground text-lg font-semibold"
           >
             {t('summary.heading')}
           </h2>
@@ -351,7 +351,7 @@ export default function CartPage() {
               <span className="text-muted-foreground">
                 {t('summary.subtotal')}
               </span>
-              <span className="font-medium text-foreground">
+              <span className="text-foreground font-medium">
                 {formatMoney(
                   cart.summary.totalAmountMinor,
                   cart.summary.currency,
@@ -369,12 +369,12 @@ export default function CartPage() {
               </span>
             </div>
 
-            <div className="border-t border-border pt-4">
+            <div className="border-border border-t pt-4">
               <div className="flex items-center justify-between">
-                <span className="text-base font-semibold text-foreground">
+                <span className="text-foreground text-base font-semibold">
                   {t('summary.total')}
                 </span>
-                <span className="text-lg font-bold text-foreground">
+                <span className="text-foreground text-lg font-bold">
                   {formatMoney(
                     cart.summary.totalAmountMinor,
                     cart.summary.currency,
@@ -418,7 +418,7 @@ export default function CartPage() {
               </span>
             </button>
 
-            <p className="text-center text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-center text-xs">
               {t('checkout.message')}
             </p>
 
@@ -436,7 +436,7 @@ export default function CartPage() {
             {checkoutError ? (
               <div className="space-y-2">
                 <p
-                  className="text-center text-xs text-destructive"
+                  className="text-destructive text-center text-xs"
                   role="alert"
                 >
                   {checkoutError}

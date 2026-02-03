@@ -1,9 +1,9 @@
 'use client';
 
-import { Highlight, themes } from 'prism-react-renderer';
+import { Check, Copy } from 'lucide-react';
 import { useTheme } from 'next-themes';
+import { Highlight, themes } from 'prism-react-renderer';
 import { useState } from 'react';
-import { Copy, Check } from 'lucide-react';
 
 type Props = {
   code: string;
@@ -30,11 +30,11 @@ export default function CodeBlock({ code, language }: Props) {
     >
       {({ className, style, tokens, getLineProps, getTokenProps }) => (
         <pre
-          className={`${className} relative rounded-lg p-4 text-sm overflow-x-auto`}
+          className={`${className} relative overflow-x-auto rounded-lg p-4 text-sm`}
           style={style}
         >
           {language && (
-            <div className="absolute left-3 top-2 text-xs uppercase text-gray-400 font-mono">
+            <div className="absolute top-2 left-3 font-mono text-xs text-gray-400 uppercase">
               {language}
             </div>
           )}
@@ -42,10 +42,7 @@ export default function CodeBlock({ code, language }: Props) {
           <button
             onClick={handleCopy}
             aria-label="Copy code"
-            className="absolute right-3 top-2 flex items-center gap-1 rounded-md px-2 py-1 text-xs
-              text-gray-400 hover:text-gray-700 dark:hover:text-gray-200
-              bg-white/70 dark:bg-black/40 backdrop-blur
-              transition-colors cursor-pointer"
+            className="absolute top-2 right-3 flex cursor-pointer items-center gap-1 rounded-md bg-white/70 px-2 py-1 text-xs text-gray-400 backdrop-blur transition-colors hover:text-gray-700 dark:bg-black/40 dark:hover:text-gray-200"
           >
             {copied ? (
               <>

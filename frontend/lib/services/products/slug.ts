@@ -2,6 +2,7 @@ import { and, eq, ne } from 'drizzle-orm';
 
 import { products } from '@/db/schema';
 import { slugify } from '@/lib/shop/slug';
+
 import { SlugConflictError } from '../errors';
 import type { DbClient } from './types';
 

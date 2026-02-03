@@ -1,7 +1,8 @@
 'use client';
 
-import { Link } from '@/i18n/routing';
 import type { LucideIcon } from 'lucide-react';
+
+import { Link } from '@/i18n/routing';
 
 interface HeaderButtonProps {
   href?: string;
@@ -63,11 +64,7 @@ export function HeaderButton({
   const content = (
     <>
       <span
-        className="
-          absolute inset-0
-          opacity-0 group-hover:opacity-100 group-active:opacity-100
-          transition-opacity duration-500 ease-out
-        "
+        className="absolute inset-0 opacity-0 transition-opacity duration-500 ease-out group-hover:opacity-100 group-active:opacity-100"
         style={{
           background:
             'linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-hover) 100%)',
@@ -76,14 +73,7 @@ export function HeaderButton({
       />
 
       <span
-        className="
-          absolute inset-0
-          [--tw-translate-x:-100%]
-          group-hover:[--tw-translate-x:100%]
-          group-active:[--tw-translate-x:100%]
-          transition-transform duration-1000 ease-in-out
-          [transform:translateX(var(--tw-translate-x))_skewX(-20deg)]
-        "
+        className="absolute inset-0 [--tw-translate-x:-100%] [transform:translateX(var(--tw-translate-x))_skewX(-20deg)] transition-transform duration-1000 ease-in-out group-hover:[--tw-translate-x:100%] group-active:[--tw-translate-x:100%]"
         style={{
           background: `linear-gradient(90deg, transparent 0%, rgba(255,255,255,${
             isIconOnly ? '0.3' : '0.4'

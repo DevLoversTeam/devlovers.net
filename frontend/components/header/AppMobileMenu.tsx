@@ -1,14 +1,14 @@
 'use client';
 
-import { Menu, X, LogIn, ShoppingBag, Home } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { Home, LogIn, Menu, ShoppingBag, X } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
-import { Link, usePathname } from '@/i18n/routing';
+import { useTranslations } from 'next-intl';
+import { useEffect, useMemo, useState } from 'react';
 
-import { SITE_LINKS } from '@/lib/navigation';
 import { LogoutButton } from '@/components/auth/logoutButton';
 import { HeaderButton } from '@/components/shared/HeaderButton';
+import { Link, usePathname } from '@/i18n/routing';
+import { SITE_LINKS } from '@/lib/navigation';
 
 export type AppMobileMenuVariant = 'platform' | 'shop' | 'blog';
 
@@ -30,7 +30,25 @@ export function AppMobileMenu({
   const tMobileMenu = useTranslations('mobileMenu');
   const tCategories = useTranslations('shop.catalog.categories');
   const tProducts = useTranslations('shop.products');
+  const tBlog = useTranslations('blog');
   const pathname = usePathname();
+
+  const getBlogCategoryLabel = (categoryName: string): string => {
+    const key = categoryName.toLowerCase() as
+      | 'tech'
+      | 'career'
+      | 'insights'
+      | 'news'
+      | 'growth';
+    const categoryTranslations: Record<string, string> = {
+      tech: tBlog('categories.tech'),
+      career: tBlog('categories.career'),
+      insights: tBlog('categories.insights'),
+      news: tBlog('categories.news'),
+      growth: tBlog('categories.growth'),
+    };
+    return categoryTranslations[key] || categoryName;
+  };
   const searchParams = useSearchParams();
   const currentCategory = searchParams.get('category');
   const [open, setOpen] = useState(false);
@@ -61,12 +79,27 @@ export function AppMobileMenu({
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [open]);
 
-  const shopLinks = useMemo(() => [
-    { href: '/shop/products', label: tProducts('title'), category: null },
-    { href: '/shop/products?category=apparel', label: tCategories('apparel'), category: 'apparel' },
-    { href: '/shop/products?category=lifestyle', label: tCategories('lifestyle'), category: 'lifestyle' },
-    { href: '/shop/products?category=collectibles', label: tCategories('collectibles'), category: 'collectibles' },
-  ], [tProducts, tCategories]);
+  const shopLinks = useMemo(
+    () => [
+      { href: '/shop/products', label: tProducts('title'), category: null },
+      {
+        href: '/shop/products?category=apparel',
+        label: tCategories('apparel'),
+        category: 'apparel',
+      },
+      {
+        href: '/shop/products?category=lifestyle',
+        label: tCategories('lifestyle'),
+        category: 'lifestyle',
+      },
+      {
+        href: '/shop/products?category=collectibles',
+        label: tCategories('collectibles'),
+        category: 'collectibles',
+      },
+    ],
+    [tProducts, tCategories]
+  );
 
   const links = useMemo(() => {
     if (variant === 'shop') return shopLinks;
@@ -113,7 +146,7 @@ export function AppMobileMenu({
       <button
         type="button"
         onClick={toggle}
-        className="flex h-9 w-9 items-center justify-center rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+        className="focus-visible:ring-accent-primary flex h-9 w-9 items-center justify-center rounded-md transition-colors focus:outline-none focus-visible:ring-2"
         style={{
           color: open ? 'var(--accent-primary)' : 'var(--muted-foreground)',
         }}
@@ -127,7 +160,7 @@ export function AppMobileMenu({
       {open && (
         <>
           <div
-            className={`fixed inset-x-0 top-16 bottom-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden transition-opacity duration-200 ${
+            className={`fixed inset-x-0 top-16 bottom-0 z-40 bg-black/50 backdrop-blur-sm transition-opacity duration-200 lg:hidden ${
               isAnimating ? 'opacity-100' : 'opacity-0'
             }`}
             onClick={close}
@@ -136,7 +169,7 @@ export function AppMobileMenu({
 
           <nav
             id="app-mobile-nav"
-            className={`fixed left-0 right-0 top-16 z-50 h-[calc(100dvh-4rem)] overflow-y-auto bg-background px-4 sm:px-6 lg:px-8 py-4 lg:hidden overscroll-contain transition-transform duration-300 ease-out ${
+            className={`bg-background fixed top-16 right-0 left-0 z-50 h-[calc(100dvh-4rem)] overflow-y-auto overscroll-contain px-4 py-4 transition-transform duration-300 ease-out sm:px-6 lg:hidden lg:px-8 ${
               isAnimating ? 'translate-y-0' : '-translate-y-4'
             }`}
             style={{
@@ -151,8 +184,11 @@ export function AppMobileMenu({
                     {t('home')}
                   </HeaderButton>
                   {links.map(link => {
-                    const isActive = pathname === '/shop/products' &&
-                      ('category' in link ? link.category === currentCategory : currentCategory === null);
+                    const isActive =
+                      pathname === '/shop/products' &&
+                      ('category' in link
+                        ? link.category === currentCategory
+                        : currentCategory === null);
                     return (
                       <Link
                         key={link.href}
@@ -176,6 +212,8 @@ export function AppMobileMenu({
                     const slug = slugify(category.title || '');
                     const href = `/blog/category/${slug}`;
                     const isActive = pathname === href;
+                    const displayTitle =
+                      category.title === 'Growth' ? 'Career' : category.title;
                     return (
                       <Link
                         key={category._id}
@@ -183,7 +221,7 @@ export function AppMobileMenu({
                         onClick={close}
                         className={linkClass(isActive)}
                       >
-                        {category.title}
+                        {getBlogCategoryLabel(displayTitle)}
                       </Link>
                     );
                   })}
@@ -226,7 +264,7 @@ export function AppMobileMenu({
                 </Link>
               ) : null}
 
-              <div className="my-2 h-px bg-border" />
+              <div className="bg-border my-2 h-px" />
 
               {userExists ? (
                 <>

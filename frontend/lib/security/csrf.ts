@@ -1,12 +1,12 @@
 import 'server-only';
 
 import crypto from 'node:crypto';
+
 import type { NextRequest } from 'next/server';
 
 export const CSRF_FORM_FIELD = 'csrfToken' as const;
 
-const DEFAULT_TTL_SECONDS = 60 * 60; // 1h
-
+const DEFAULT_TTL_SECONDS = 60 * 60;
 function getSecret(): string {
   const secret = process.env.CSRF_SECRET;
   if (!secret) throw new Error('Missing env var: CSRF_SECRET');
@@ -35,10 +35,6 @@ function b64urlDecodeUtf8(input: string): string {
   return Buffer.from(input, 'base64url').toString('utf8');
 }
 
-/**
- * Stateless CSRF token: payload(JSON)->base64url + HMAC signature.
- * TTL enforced via exp (unix seconds).
- */
 export function issueCsrfToken(
   purpose: string,
   ttlSeconds = DEFAULT_TTL_SECONDS
@@ -80,17 +76,12 @@ export function verifyCsrfToken(token: string, purpose: string): boolean {
   if (typeof iat !== 'number' || !Number.isFinite(iat)) return false;
   if (typeof exp !== 'number' || !Number.isFinite(exp)) return false;
 
-  // TTL + basic sanity: exp must be >= now and not before iat
   if (exp < now) return false;
   if (exp < iat) return false;
 
   return true;
 }
 
-/**
- * Secondary defense: same-origin check.
- * Use Origin when present, otherwise fall back to Referer.
- */
 export function isSameOrigin(req: NextRequest): boolean {
   const expected = req.nextUrl.origin;
 

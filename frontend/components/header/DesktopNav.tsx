@@ -1,13 +1,13 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
 import { ShoppingBag } from 'lucide-react';
-import { SITE_LINKS } from '@/lib/navigation';
+import { useTranslations } from 'next-intl';
 
+import { BlogCategoryLinks } from '@/components/blog/BlogCategoryLinks';
 import { NavLink } from '@/components/header/NavLink';
 import { HeaderButton } from '@/components/shared/HeaderButton';
-import { NavLinks } from '@/components/shop/header/nav-links';
-import { BlogCategoryLinks } from '@/components/blog/BlogCategoryLinks';
+import { NavLinks } from '@/components/shop/header/NavLinks';
+import { SITE_LINKS } from '@/lib/navigation';
 
 type Category = {
   _id: string;
