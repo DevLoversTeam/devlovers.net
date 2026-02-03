@@ -1,6 +1,6 @@
 'use client';
-
-import { AlertTriangle, Ban, Clock,FileText } from 'lucide-react';
+import { useTranslations,useLocale } from 'next-intl';
+import { TriangleAlert, Ban, Clock,FileText } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   useReducer,
@@ -9,15 +9,7 @@ import {
   useEffect,
   useCallback,
 } from 'react';
-import {
-  useCallback,
-  useEffect,
-  useReducer,
-  useState,
-  useTransition,
-} from 'react';
 import { toast } from 'sonner';
-
 import { submitQuizAttempt } from '@/actions/quiz';
 import { Button } from '@/components/ui/button';
 import { ConfirmModal } from '@/components/ui/confirm-modal';
@@ -429,7 +421,7 @@ export function QuizContainer({
           </div>
 
           <div className="flex gap-3">
-            <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-500 dark:text-amber-400" aria-hidden="true"/>
+            <TriangleAlert className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-500 dark:text-amber-400" aria-hidden="true"/>
             <div>
               <p className="font-medium">{tRules('control.title')}</p>
               <p className="text-sm text-gray-600 dark:text-gray-400">

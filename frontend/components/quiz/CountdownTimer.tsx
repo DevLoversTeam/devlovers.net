@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertTriangle } from 'lucide-react';
+import { TriangleAlert } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
@@ -21,7 +21,6 @@ export function CountdownTimer({
 }: CountdownTimerProps) {
   const t = useTranslations('quiz.timer');
   const endTime = startedAt.getTime() + timeLimitSeconds * 1000;
-  const [remainingSeconds, setRemainingSeconds] = useState(() =>
   const [remainingSeconds, setRemainingSeconds] = useState(() =>
     Math.max(0, Math.floor((endTime - Date.now()) / 1000))
   );
@@ -114,7 +113,7 @@ export function CountdownTimer({
         <p className="mt-2 text-xs font-medium">
           {percentage <= 10 ? (
             <>
-              <AlertTriangle className="inline h-4 w-4 text-amber-500" aria-hidden="true" /> {t('almostDone')}
+              <TriangleAlert className="inline h-4 w-4 text-amber-500" aria-hidden="true" /> {t('almostDone')}
             </>
           ) : (
             <>
