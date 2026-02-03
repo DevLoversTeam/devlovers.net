@@ -1,8 +1,9 @@
-"use client";
+'use client';
 
-import { useTranslations } from "next-intl";
+import { History,TrendingUp } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+
 import { Link } from '@/i18n/routing';
-import { TrendingUp, History } from 'lucide-react';
 
 interface StatsCardProps {
   stats?: {
@@ -13,7 +14,7 @@ interface StatsCardProps {
 }
 
 export function StatsCard({ stats }: StatsCardProps) {
-  const t = useTranslations("dashboard.stats");
+  const t = useTranslations('dashboard.stats');
   const hasActivity = stats && stats.totalAttempts > 0;
 
   const cardStyles = `
@@ -38,7 +39,7 @@ export function StatsCard({ stats }: StatsCardProps) {
   return (
     <section className={cardStyles} aria-labelledby="stats-heading">
       <div
-        className="mb-6 p-4 rounded-full bg-slate-50 dark:bg-slate-800/50 shadow-inner"
+        className="mb-6 rounded-full bg-slate-50 p-4 shadow-inner dark:bg-slate-800/50"
         aria-hidden="true"
       >
         <span className="text-4xl">📊</span>
@@ -46,38 +47,38 @@ export function StatsCard({ stats }: StatsCardProps) {
 
       <h3
         id="stats-heading"
-        className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2"
+        className="mb-2 text-xl font-bold text-slate-800 dark:text-slate-100"
       >
-        {t("title")}
+        {t('title')}
       </h3>
 
       {!hasActivity ? (
         <>
-          <p className="text-slate-500 dark:text-slate-400 mb-8 max-w-xs mx-auto">
-            {t("noActivity")}
+          <p className="mx-auto mb-8 max-w-xs text-slate-500 dark:text-slate-400">
+            {t('noActivity')}
           </p>
           <Link href="/quizzes" className={primaryBtnStyles}>
-            <span className="relative z-10">{t("startQuiz")}</span>
+            <span className="relative z-10">{t('startQuiz')}</span>
             <span
-              className="absolute inset-0 rounded-full bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"
+              className="absolute inset-0 rounded-full bg-gradient-to-r from-white/20 to-transparent opacity-0 transition-opacity group-hover:opacity-100"
               aria-hidden="true"
             />
           </Link>
         </>
       ) : (
-        <dl className="w-full grid grid-cols-2 gap-4 mt-2">
-          <div className="p-4 rounded-2xl bg-slate-50/50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700">
-            <dt className="flex items-center justify-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
-              <History className="w-3 h-3" /> {t("attempts")}
+        <dl className="mt-2 grid w-full grid-cols-2 gap-4">
+          <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-4 dark:border-slate-700 dark:bg-slate-800/50">
+            <dt className="mb-1 flex items-center justify-center gap-2 text-xs font-semibold tracking-wider text-slate-400 uppercase">
+              <History className="h-3 w-3" /> {t('attempts')}
             </dt>
             <dd className="text-2xl font-black text-slate-800 dark:text-white">
               {stats?.totalAttempts}
             </dd>
           </div>
 
-          <div className="p-4 rounded-2xl bg-slate-50/50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700">
-            <dt className="flex items-center justify-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
-              <TrendingUp className="w-3 h-3" /> {t("avgScore")}
+          <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-4 dark:border-slate-700 dark:bg-slate-800/50">
+            <dt className="mb-1 flex items-center justify-center gap-2 text-xs font-semibold tracking-wider text-slate-400 uppercase">
+              <TrendingUp className="h-3 w-3" /> {t('avgScore')}
             </dt>
             <dd className="text-2xl font-black text-slate-800 dark:text-white">
               {stats?.averageScore}%
@@ -86,7 +87,7 @@ export function StatsCard({ stats }: StatsCardProps) {
 
           <div className="col-span-2 mt-4">
             <Link href="/q&a" className={primaryBtnStyles}>
-              <span className="relative z-10">{t("continueLearning")}</span>
+              <span className="relative z-10">{t('continueLearning')}</span>
             </Link>
           </div>
         </dl>

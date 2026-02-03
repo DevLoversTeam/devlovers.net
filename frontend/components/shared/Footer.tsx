@@ -1,11 +1,11 @@
 'use client';
 
-import { Link } from '@/i18n/routing';
-
 import { Github, Linkedin, Send } from 'lucide-react';
-import { ThemeToggle } from '@/components/theme/ThemeToggle';
-import { useTranslations } from 'next-intl';
 import { useSelectedLayoutSegments } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
+import { Link } from '@/i18n/routing';
 import { cn } from '@/lib/utils';
 
 const SOCIAL = [
@@ -25,7 +25,7 @@ export default function Footer() {
   return (
     <footer
       className={cn(
-        'relative overflow-hidden border-t border-border bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/50 ' +
+        'border-border bg-background/90 supports-[backdrop-filter]:bg-background/50 relative overflow-hidden border-t backdrop-blur ' +
           '[--footer-brand:var(--accent-primary)] [--footer-hover:var(--accent-hover)] [--theme-toggle-hover:var(--footer-hover)]',
         isShop &&
           '[--footer-brand:var(--foreground)] [--footer-hover:var(--foreground)] ' +
@@ -46,24 +46,14 @@ export default function Footer() {
             <p className="text-sm text-slate-500 dark:text-slate-400">
               <Link
                 href="/privacy-policy"
-                className="
-                  transition-colors
-                  hover:[color:var(--footer-hover)]
-                  active:[color:var(--footer-hover)]
-                  focus-visible:[color:var(--footer-hover)]
-"
+                className="transition-colors hover:[color:var(--footer-hover)] focus-visible:[color:var(--footer-hover)] active:[color:var(--footer-hover)]"
               >
                 {t('privacyPolicy')}
               </Link>
               <span className="px-2 opacity-60">|</span>
               <Link
                 href="/terms-of-service"
-                className="
-                  transition-colors
-                  hover:[color:var(--footer-hover)]
-                  active:[color:var(--footer-hover)]
-                  focus-visible:[color:var(--footer-hover)]
-"
+                className="transition-colors hover:[color:var(--footer-hover)] focus-visible:[color:var(--footer-hover)] active:[color:var(--footer-hover)]"
               >
                 {t('termsOfService')}
               </Link>
@@ -71,12 +61,7 @@ export default function Footer() {
           </div>
 
           <div className="flex items-center gap-3 sm:justify-end">
-            <div
-              className="
-                inline-flex items-center gap-2
-
-              "
-            >
+            <div className="inline-flex items-center gap-2">
               <ThemeToggle />
 
               <span className="mx-1 h-5 w-px bg-gray-200/70 dark:bg-neutral-800/70" />
@@ -89,26 +74,7 @@ export default function Footer() {
                     target="_blank"
                     rel="noreferrer"
                     aria-label={label}
-                    className="
-                      inline-flex h-9 w-9 items-center justify-center
-                      rounded-full border border-gray-200/60
-                      bg-white/40
-                      text-slate-600
-                      dark:border-neutral-800/60
-                      dark:bg-neutral-950/30
-                      dark:text-slate-300
-                      transition-all
-
-                      hover:-translate-y-0.5
-                      hover:!text-[var(--footer-hover)]
-                      hover:!border-[var(--footer-hover)]
-
-                      active:!text-[var(--footer-hover)]
-                      active:!border-[var(--footer-hover)]
-                      active:scale-95
-
-
-                    "
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200/60 bg-white/40 text-slate-600 transition-all hover:-translate-y-0.5 hover:!border-[var(--footer-hover)] hover:!text-[var(--footer-hover)] active:scale-95 active:!border-[var(--footer-hover)] active:!text-[var(--footer-hover)] dark:border-neutral-800/60 dark:bg-neutral-950/30 dark:text-slate-300"
                   >
                     <Icon className="h-5 w-5" />
                   </a>

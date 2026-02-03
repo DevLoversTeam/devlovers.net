@@ -1,4 +1,5 @@
 import { getTranslations } from 'next-intl/server';
+
 import LegalPageShell from '@/components/legal/LegalPageShell';
 import TermsOfServiceContent, {
   TERMS_LAST_UPDATED,

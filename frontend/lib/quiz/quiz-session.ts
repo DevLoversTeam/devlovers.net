@@ -21,7 +21,10 @@ export function saveQuizSession(quizId: string, state: QuizSessionData): void {
 
   try {
     const data = { ...state, savedAt: Date.now() };
-    localStorage.setItem(`${STORAGE_KEY_PREFIX}${quizId}`, JSON.stringify(data));
+    localStorage.setItem(
+      `${STORAGE_KEY_PREFIX}${quizId}`,
+      JSON.stringify(data)
+    );
   } catch (e) {
     console.error('Failed to save quiz session:', e);
   }

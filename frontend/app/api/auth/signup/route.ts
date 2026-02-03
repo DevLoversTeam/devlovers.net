@@ -1,23 +1,21 @@
-import { NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
-import { z } from "zod";
-import { eq } from "drizzle-orm";
+import bcrypt from 'bcryptjs';
+import { eq } from 'drizzle-orm';
+import { headers } from 'next/headers';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
 
-import { db } from "@/db";
-import { users } from "@/db/schema/users";
-import { createEmailVerificationToken } from "@/lib/auth/email-verification";
-import { sendVerificationEmail } from "@/lib/email/sendVerificationEmail";
-import { headers } from "next/headers";
-import { resolveBaseUrl } from "@/lib/http/getBaseUrl";
+import { db } from '@/db';
+import { users } from '@/db/schema/users';
+import { createEmailVerificationToken } from '@/lib/auth/email-verification';
+import { sendVerificationEmail } from '@/lib/email/sendVerificationEmail';
+import { resolveBaseUrl } from '@/lib/http/getBaseUrl';
 
-
-export const runtime = "nodejs";
-
+export const runtime = 'nodejs';
 
 const signupSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  email: z.string().email("Invalid email"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  name: z.string().min(1, 'Name is required'),
+  email: z.string().email('Invalid email'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
 });
 
 export async function POST(req: Request) {
@@ -43,7 +41,7 @@ export async function POST(req: Request) {
 
     if (existingUser.length > 0) {
       return NextResponse.json(
-        { error: "Email already in use" },
+        { error: 'Email already in use' },
         { status: 409 }
       );
     }
@@ -56,36 +54,37 @@ export async function POST(req: Request) {
         name,
         email: normalizedEmail,
         passwordHash,
-        provider: "credentials",
+        provider: 'credentials',
         emailVerified: null,
-        role: "user",
+        role: 'user',
       })
       .returning();
 
-    const token = await createEmailVerificationToken(user.id)
+    const token = await createEmailVerificationToken(user.id);
 
     const h = await headers();
     const baseUrl = resolveBaseUrl({
-      origin: h.get("origin"),
-      host: h.get("host"),
+      origin: h.get('origin'),
+      host: h.get('host'),
     });
 
     await sendVerificationEmail({
       to: normalizedEmail,
-      verifyUrl: `${baseUrl}/api/auth/verify-email?token=${token}`
-    })
+      verifyUrl: `${baseUrl}/api/auth/verify-email?token=${token}`,
+    });
 
-    return NextResponse.json({
-      success: true,
-      verificationRequired: true
-    }, { status: 201 })
-
-  } catch (error) {
-    console.error("Signup failed:", error);
-    const message =
-      error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
-      { error: "Signup failed", details: message },
+      {
+        success: true,
+        verificationRequired: true,
+      },
+      { status: 201 }
+    );
+  } catch (error) {
+    console.error('Signup failed:', error);
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json(
+      { error: 'Signup failed', details: message },
       { status: 500 }
     );
   }

@@ -1,8 +1,8 @@
 'use client';
 
-import React from 'react';
-import { useSearchParams, type ReadonlyURLSearchParams } from 'next/navigation';
+import { type ReadonlyURLSearchParams,useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import React from 'react';
 
 import { CatalogLoadMore } from '@/components/shop/CatalogLoadMore';
 import { ProductCard } from '@/components/shop/ProductCard';
@@ -139,7 +139,7 @@ export function CatalogProductsClient({
         />
 
         {error ? (
-          <p className="text-sm text-muted-foreground" role="status">
+          <p className="text-muted-foreground text-sm" role="status">
             {error}
           </p>
         ) : null}

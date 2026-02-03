@@ -1,11 +1,15 @@
 import { useEffect } from 'react';
+
 import {
-  saveQuizSession,
-  loadQuizSession,
   clearQuizSession,
+  loadQuizSession,
   type QuizSessionData,
+  saveQuizSession,
 } from '@/lib/quiz/quiz-session';
-import { QUIZ_ALLOW_RESTORE_KEY, getQuizReloadKey } from '@/lib/quiz/quiz-storage-keys';
+import {
+  getQuizReloadKey,
+  QUIZ_ALLOW_RESTORE_KEY,
+} from '@/lib/quiz/quiz-storage-keys';
 
 type Answer = {
   questionId: string;
@@ -29,7 +33,11 @@ type UseQuizSessionParams = {
   onRestore: (data: QuizSessionData) => void;
 };
 
-export function useQuizSession({ quizId, state, onRestore }: UseQuizSessionParams): void {
+export function useQuizSession({
+  quizId,
+  state,
+  onRestore,
+}: UseQuizSessionParams): void {
   const reloadKey = getQuizReloadKey(quizId);
 
   useEffect(() => {

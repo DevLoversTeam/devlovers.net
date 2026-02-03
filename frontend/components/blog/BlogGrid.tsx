@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+
 import BlogCard from '@/components/blog/BlogCard';
 import type { Author, Post } from '@/components/blog/BlogFilters';
 
@@ -20,7 +21,7 @@ export default function BlogGrid({
   }
 
   return (
-    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-12">
+    <div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-3">
       {posts.map(post => (
         <BlogCard
           key={post._id}

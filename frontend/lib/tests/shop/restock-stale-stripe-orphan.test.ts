@@ -1,11 +1,11 @@
-import { describe, it, expect } from 'vitest';
 import crypto from 'crypto';
 import { eq } from 'drizzle-orm';
+import { describe, expect,it } from 'vitest';
 
 import { db } from '@/db';
 import { orders } from '@/db/schema';
-import { toDbMoney } from '@/lib/shop/money';
 import { restockStalePendingOrders } from '@/lib/services/orders';
+import { toDbMoney } from '@/lib/shop/money';
 
 describe('P0-3.x Restock stale pending orders: stripe orphan cleanup', () => {
   it('marks stale stripe orphan (no inventory_moves) as terminal failed and releases to avoid infinite sweep re-pick', async () => {

@@ -1,9 +1,10 @@
+import { Metadata } from 'next';
+
 import { ShopAdminTopbar } from '@/components/shop/admin/ShopAdminTopbar';
 import { guardShopAdminPage } from '@/lib/auth/guard-shop-admin-page';
 import { issueCsrfToken } from '@/lib/security/csrf';
 
 import { ProductForm } from '../_components/ProductForm';
-import { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'New Product | DevLovers',

@@ -1,32 +1,29 @@
-"use client";
+'use client';
 
-import { Button } from "@/components/ui/button";
-import { ReactNode } from "react";
+import { ReactNode } from 'react';
+
+import { Button } from '@/components/ui/button';
 
 type ProviderButtonProps = {
-    provider: "google" | "github";
-    label: string;
-    icon: ReactNode;
+  provider: 'google' | 'github';
+  label: string;
+  icon: ReactNode;
 };
 
-export function ProviderButton({
-    provider,
-    label,
-    icon,
-}: ProviderButtonProps) {
-    function oauthLogin() {
-        window.location.href = `/api/auth/${provider}`;
-    }
+export function ProviderButton({ provider, label, icon }: ProviderButtonProps) {
+  function oauthLogin() {
+    window.location.href = `/api/auth/${provider}`;
+  }
 
-    return (
-        <Button
-            type="button"
-            variant="outline"
-            className="w-full flex items-center justify-center gap-2"
-            onClick={oauthLogin}
-        >
-            {icon}
-            <span>{label}</span>
-        </Button>
-    );
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      className="flex w-full items-center justify-center gap-2"
+      onClick={oauthLogin}
+    >
+      {icon}
+      <span>{label}</span>
+    </Button>
+  );
 }

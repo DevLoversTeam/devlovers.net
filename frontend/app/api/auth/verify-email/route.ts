@@ -1,58 +1,56 @@
-import { NextRequest, NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
+import { eq } from 'drizzle-orm';
+import { NextRequest, NextResponse } from 'next/server';
 
-import { db } from "@/db";
-import { users } from "@/db/schema/users";
-import { emailVerificationTokens } from "@/db/schema/emailVerificationTokens";
+import { db } from '@/db';
+import { emailVerificationTokens } from '@/db/schema/emailVerificationTokens';
+import { users } from '@/db/schema/users';
 
 export async function GET(req: NextRequest) {
-    const token = req.nextUrl.searchParams.get("token");
+  const token = req.nextUrl.searchParams.get('token');
 
-    if (!token) {
-        return NextResponse.redirect(
-            new URL("/login?error=invalid_token", req.url)
-        );
-    }
+  if (!token) {
+    return NextResponse.redirect(
+      new URL('/login?error=invalid_token', req.url)
+    );
+  }
 
-    const now = new Date();
+  const now = new Date();
 
-    const rows = await db
-        .select({
-            userId: emailVerificationTokens.userId,
-            expiresAt: emailVerificationTokens.expiresAt,
-        })
-        .from(emailVerificationTokens)
-        .where(eq(emailVerificationTokens.token, token))
-        .limit(1);
+  const rows = await db
+    .select({
+      userId: emailVerificationTokens.userId,
+      expiresAt: emailVerificationTokens.expiresAt,
+    })
+    .from(emailVerificationTokens)
+    .where(eq(emailVerificationTokens.token, token))
+    .limit(1);
 
-    if (rows.length === 0) {
-        return NextResponse.redirect(
-            new URL("/login?error=invalid_token", req.url)
-        );
-    }
+  if (rows.length === 0) {
+    return NextResponse.redirect(
+      new URL('/login?error=invalid_token', req.url)
+    );
+  }
 
-    const { userId, expiresAt } = rows[0];
+  const { userId, expiresAt } = rows[0];
 
-    if (expiresAt < now) {
-        await db
-            .delete(emailVerificationTokens)
-            .where(eq(emailVerificationTokens.token, token));
-
-        return NextResponse.redirect(
-            new URL("/login?error=token_expired", req.url)
-        );
-    }
-
+  if (expiresAt < now) {
     await db
-        .update(users)
-        .set({ emailVerified: now })
-        .where(eq(users.id, userId));
-
-    await db
-        .delete(emailVerificationTokens)
-        .where(eq(emailVerificationTokens.token, token));
+      .delete(emailVerificationTokens)
+      .where(eq(emailVerificationTokens.token, token));
 
     return NextResponse.redirect(
-        new URL("/login?verified=1", req.url)
+      new URL('/login?error=token_expired', req.url)
     );
+  }
+
+  await db
+    .update(users)
+    .set({ emailVerified: now })
+    .where(eq(users.id, userId));
+
+  await db
+    .delete(emailVerificationTokens)
+    .where(eq(emailVerificationTokens.token, token));
+
+  return NextResponse.redirect(new URL('/login?verified=1', req.url));
 }

@@ -1,38 +1,34 @@
-import { getTranslations } from "next-intl/server"
-import { getPlatformStats } from "@/lib/about/stats"
-import { getSponsors } from "@/lib/about/github-sponsors"
+import { getTranslations } from 'next-intl/server';
 
-import { HeroSection } from "@/components/about/HeroSection"
-import { TopicsSection } from "@/components/about/TopicsSection"
-import { FeaturesSection } from "@/components/about/FeaturesSection"
-import { PricingSection } from "@/components/about/PricingSection"
-import { CommunitySection } from "@/components/about/CommunitySection"
+import { CommunitySection } from '@/components/about/CommunitySection';
+import { FeaturesSection } from '@/components/about/FeaturesSection';
+import { HeroSection } from '@/components/about/HeroSection';
+import { PricingSection } from '@/components/about/PricingSection';
+import { TopicsSection } from '@/components/about/TopicsSection';
+import { getSponsors } from '@/lib/about/github-sponsors';
+import { getPlatformStats } from '@/lib/about/stats';
 
 export async function generateMetadata() {
-  const t = await getTranslations("about")
+  const t = await getTranslations('about');
   return {
-    title: t("metaTitle"),
-    description: t("metaDescription"),
-  }
+    title: t('metaTitle'),
+    description: t('metaDescription'),
+  };
 }
 
 export default async function AboutPage() {
   const [stats, sponsors] = await Promise.all([
     getPlatformStats(),
-    getSponsors()
-  ])
+    getSponsors(),
+  ]);
 
   return (
-    <main className="min-h-screen bg-gray-50 dark:bg-black overflow-hidden text-gray-900 dark:text-white
-      w-[100vw] relative left-[50%] right-[50%] -ml-[50vw] -mr-[50vw]"
-    >
-
+    <main className="relative right-[50%] left-[50%] -mr-[50vw] -ml-[50vw] min-h-screen w-[100vw] overflow-hidden bg-gray-50 text-gray-900 dark:bg-black dark:text-white">
       <HeroSection stats={stats} />
       <TopicsSection />
       <FeaturesSection />
       <PricingSection sponsors={sponsors} />
       <CommunitySection />
-
     </main>
-  )
+  );
 }

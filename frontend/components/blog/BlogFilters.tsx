@@ -1,24 +1,25 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import Image from 'next/image';
-import { useLocale, useTranslations } from 'next-intl';
-import { useSearchParams } from 'next/navigation';
 import {
   Dribbble,
   Facebook,
   Github,
   Globe,
   Instagram,
-  Linkedin,
   Link as LinkIcon,
+  Linkedin,
   Send,
   Twitter,
   Youtube,
 } from 'lucide-react';
-import { usePathname, useRouter } from '@/i18n/routing';
+import Image from 'next/image';
+import { useSearchParams } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
 import BlogGrid from '@/components/blog/BlogGrid';
 import { BlogPagination } from '@/components/blog/BlogPagination';
+import { usePathname, useRouter } from '@/i18n/routing';
 import { Link } from '@/i18n/routing';
 import { formatBlogDate } from '@/lib/blog/date';
 
@@ -304,7 +305,7 @@ export default function BlogFilters({
         params.set('page', String(page));
       }
       const nextPath = params.toString() ? `${pathname}?${params}` : pathname;
-    router.replace(nextPath, { scroll: false });
+      router.replace(nextPath, { scroll: false });
     },
     [pathname, router, searchParams]
   );
@@ -442,7 +443,10 @@ export default function BlogFilters({
       return true;
     });
   }, [posts, resolvedAuthor, resolvedCategory, searchQueryNormalized]);
-  const totalPages = Math.max(1, Math.ceil(filteredPosts.length / POSTS_PER_PAGE));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredPosts.length / POSTS_PER_PAGE)
+  );
   const paginatedPosts = useMemo(() => {
     const start = (currentPage - 1) * POSTS_PER_PAGE;
     return filteredPosts.slice(start, start + POSTS_PER_PAGE);
@@ -503,25 +507,29 @@ export default function BlogFilters({
                 </div>
               </Link>
             )}
-            <div className="relative flex flex-col h-full pt-8">
+            <div className="relative flex h-full flex-col pt-8">
               {featuredPost.categories?.[0] && (
-                <div className="absolute top-0 left-0 text-xs font-bold uppercase tracking-[0.2em] text-[var(--accent-primary)]">
-                  {featuredPost.categories[0]}
+                <div className="absolute top-0 left-0 text-xs font-bold tracking-[0.2em] text-[var(--accent-primary)] uppercase">
+                  {getCategoryLabel(
+                    featuredPost.categories[0] === 'Growth'
+                      ? 'Career'
+                      : featuredPost.categories[0]
+                  )}
                 </div>
               )}
               <div className="my-auto">
                 <Link
                   href={`/blog/${featuredPost.slug.current}`}
-                  className="mt-3 block text-3xl font-semibold leading-tight text-gray-900 transition hover:underline underline-offset-4 dark:text-gray-100 md:text-4xl"
+                  className="mt-3 block text-3xl leading-tight font-semibold text-gray-900 underline-offset-4 transition hover:underline md:text-4xl dark:text-gray-100"
                 >
                   {featuredPost.title}
                 </Link>
-                <p className="mt-4 text-base leading-relaxed text-gray-600 dark:text-gray-400 line-clamp-3 whitespace-pre-line">
+                <p className="mt-4 line-clamp-3 text-base leading-relaxed whitespace-pre-line text-gray-600 dark:text-gray-400">
                   {plainTextExcerpt(featuredPost.body)}
                 </p>
               </div>
               {featuredPost.publishedAt && (
-                <div className="mt-auto pt-8 flex items-center justify-between text-xs tracking-[0.25em] text-gray-500 dark:text-gray-400">
+                <div className="mt-auto flex items-center justify-between pt-8 text-xs tracking-[0.25em] text-gray-500 dark:text-gray-400">
                   <time
                     dateTime={featuredPost.publishedAt}
                     className="uppercase"
@@ -530,7 +538,7 @@ export default function BlogFilters({
                   </time>
                   <Link
                     href={`/blog/${featuredPost.slug.current}`}
-                    className="text-sm font-medium tracking-normal text-[var(--accent-primary)] transition hover:underline underline-offset-4"
+                    className="text-sm font-medium tracking-normal text-[var(--accent-primary)] underline-offset-4 transition hover:underline"
                   >
                     {t('readMore')} <span aria-hidden="true">→</span>
                   </Link>
@@ -547,7 +555,7 @@ export default function BlogFilters({
             <button
               type="button"
               onClick={clearAll}
-              className="transition hover:text-[var(--accent-primary)] hover:underline underline-offset-4"
+              className="underline-offset-4 transition hover:text-[var(--accent-primary)] hover:underline"
             >
               {tNav('blog')}
             </button>
@@ -573,7 +581,7 @@ export default function BlogFilters({
                 {selectedAuthorData.name && (
                   <h2
                     ref={authorHeadingRef}
-                    className="text-2xl font-semibold text-gray-900 dark:text-gray-100 scroll-mt-24"
+                    className="scroll-mt-24 text-2xl font-semibold text-gray-900 dark:text-gray-100"
                   >
                     {selectedAuthorData.name}
                   </h2>
@@ -592,7 +600,7 @@ export default function BlogFilters({
                   </p>
                 )}
                 {authorBioText && (
-                  <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+                  <p className="mt-3 text-sm leading-relaxed whitespace-pre-line text-gray-600 dark:text-gray-400">
                     {authorBioText}
                   </p>
                 )}
@@ -606,7 +614,7 @@ export default function BlogFilters({
                           href={item.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="group inline-flex items-center gap-2 rounded-full border border-gray-200 px-3 py-1 text-xs text-gray-600 transition hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)] dark:border-gray-700 dark:text-gray-300 dark:hover:text-[var(--accent-primary)] dark:hover:border-[var(--accent-primary)]"
+                          className="group inline-flex items-center gap-2 rounded-full border border-gray-200 px-3 py-1 text-xs text-gray-600 transition hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] dark:border-gray-700 dark:text-gray-300 dark:hover:border-[var(--accent-primary)] dark:hover:text-[var(--accent-primary)]"
                         >
                           <SocialIcon platform={item.platform} />
                           {item.platform || 'link'}
@@ -642,8 +650,8 @@ export default function BlogFilters({
               onClick={() => setSelectedCategory(null)}
               className={
                 !resolvedCategory
-                  ? 'rounded-full border border-transparent px-4 py-2 text-sm font-medium text-[var(--accent-primary)] transition whitespace-nowrap sm:border-[var(--accent-primary)]'
-                  : 'rounded-full border border-transparent px-4 py-2 text-sm text-gray-600 transition whitespace-nowrap dark:text-gray-300 sm:border-gray-300 sm:text-gray-700 sm:dark:border-gray-700 sm:dark:text-gray-200 hover:bg-secondary hover:text-foreground'
+                  ? 'rounded-full border border-transparent px-4 py-2 text-sm font-medium whitespace-nowrap text-[var(--accent-primary)] transition sm:border-[var(--accent-primary)]'
+                  : 'hover:bg-secondary hover:text-foreground rounded-full border border-transparent px-4 py-2 text-sm whitespace-nowrap text-gray-600 transition sm:border-gray-300 sm:text-gray-700 dark:text-gray-300 sm:dark:border-gray-700 sm:dark:text-gray-200'
               }
             >
               {t('all')}
@@ -661,8 +669,8 @@ export default function BlogFilters({
                 }
                 className={
                   resolvedCategory?.norm === category.norm
-                    ? 'rounded-full border border-transparent px-4 py-2 text-sm font-medium text-[var(--accent-primary)] transition whitespace-nowrap sm:border-[var(--accent-primary)]'
-                    : 'rounded-full border border-transparent px-4 py-2 text-sm text-gray-600 transition whitespace-nowrap dark:text-gray-300 sm:border-gray-300 sm:text-gray-700 sm:dark:border-gray-700 sm:dark:text-gray-200 hover:bg-secondary hover:text-foreground'
+                    ? 'rounded-full border border-transparent px-4 py-2 text-sm font-medium whitespace-nowrap text-[var(--accent-primary)] transition sm:border-[var(--accent-primary)]'
+                    : 'hover:bg-secondary hover:text-foreground rounded-full border border-transparent px-4 py-2 text-sm whitespace-nowrap text-gray-600 transition sm:border-gray-300 sm:text-gray-700 dark:text-gray-300 sm:dark:border-gray-700 sm:dark:text-gray-200'
                 }
               >
                 {getCategoryLabel(category.name)}

@@ -1,18 +1,19 @@
 import crypto from 'node:crypto';
+
 import { eq } from 'drizzle-orm';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { db } from '@/db';
 import {
-  orders,
-  orderItems,
-  products,
-  productPrices,
   inventoryMoves,
+  orderItems,
+  orders,
+  productPrices,
+  products,
 } from '@/db/schema/shop';
-import { toDbMoney } from '@/lib/shop/money';
-import { restockOrder } from '@/lib/services/orders/restock';
 import * as inventory from '@/lib/services/inventory';
+import { restockOrder } from '@/lib/services/orders/restock';
+import { toDbMoney } from '@/lib/shop/money';
 
 describe('P0 Inventory release invariants', () => {
   it('must NOT mark released/stockRestored/restockedAt when applyReleaseMove fails (leave safe for janitor)', async () => {

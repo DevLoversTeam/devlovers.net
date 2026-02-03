@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useLocale } from 'next-intl';
-import { useRouter } from '@/i18n/routing';
-import { categoryData } from '@/data/category';
+import { useCallback,useEffect, useState } from 'react';
+
 import {
   type CategorySlug,
   type Locale,
@@ -12,6 +11,8 @@ import {
   type QuestionApiItem,
   type QuestionEntry,
 } from '@/components/q&a/types';
+import { categoryData } from '@/data/category';
+import { useRouter } from '@/i18n/routing';
 
 const CATEGORY_SLUGS = categoryData.map(category => category.slug);
 const DEFAULT_CATEGORY = CATEGORY_SLUGS[0] || 'html';

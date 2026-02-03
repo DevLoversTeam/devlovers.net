@@ -1,13 +1,15 @@
-import { db } from './index';
+import { eq, sql } from 'drizzle-orm';
+
 import {
-  quizzes,
-  quizTranslations,
-  quizQuestions,
-  quizQuestionContent,
   quizAnswers,
   quizAnswerTranslations,
+  quizQuestionContent,
+  quizQuestions,
+  quizTranslations,
+  quizzes,
 } from '@/db/schema/quiz';
-import { eq, sql } from 'drizzle-orm';
+
+import { db } from './index';
 
 async function verifyQuizSeed() {
   console.log('Verifying quiz seed data...\n');

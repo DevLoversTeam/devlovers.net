@@ -1,42 +1,39 @@
-import {
-  pgTable,
-  text,
-  timestamp,
-  uniqueIndex,
-} from "drizzle-orm/pg-core";
-import { relations, sql } from "drizzle-orm";
-import { quizAttempts } from "./quiz";
+import { relations, sql } from 'drizzle-orm';
+import { pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
+
+import { quizAttempts } from './quiz';
 
 export const users = pgTable(
-  "users",
+  'users',
   {
-    id: text("id")
+    id: text('id')
       .primaryKey()
       .notNull()
       .default(sql`gen_random_uuid()`),
 
-    name: text("name"),
+    name: text('name'),
 
-    email: text("email").notNull().unique(),
+    email: text('email').notNull().unique(),
 
-    passwordHash: text("password_hash"),
+    passwordHash: text('password_hash'),
 
-    provider: text("provider").notNull().default("credentials"),
+    provider: text('provider').notNull().default('credentials'),
 
-    providerId: text("provider_id"),
+    providerId: text('provider_id'),
 
-    emailVerified: timestamp("email_verified", { mode: "date" }),
+    emailVerified: timestamp('email_verified', { mode: 'date' }),
 
-    image: text("image"),
+    image: text('image'),
 
-    role: text("role").notNull().default("user"),
+    role: text('role').notNull().default('user'),
 
-    createdAt: timestamp("created_at").notNull().defaultNow(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
   },
   table => ({
-    providerProviderIdUq: uniqueIndex(
-      "users_provider_provider_id_unique"
-    ).on(table.provider, table.providerId),
+    providerProviderIdUq: uniqueIndex('users_provider_provider_id_unique').on(
+      table.provider,
+      table.providerId
+    ),
   })
 );
 

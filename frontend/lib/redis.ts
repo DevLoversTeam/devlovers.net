@@ -1,4 +1,5 @@
 import { Redis } from '@upstash/redis';
+
 import { getServerEnv } from '@/lib/env';
 
 let cachedRedis: Redis | null = null;

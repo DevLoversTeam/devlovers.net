@@ -1,7 +1,8 @@
 'use client';
 
-import type { ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
+import type { ReactNode } from 'react';
+
 import { UnifiedHeader } from '@/components/header/UnifiedHeader';
 
 function isShopPath(pathname: string): boolean {
@@ -55,7 +56,11 @@ export function MainSwitcher({
           showAdminLink={showAdminLink}
           blogCategories={blogCategories}
         />
+<<<<<<< HEAD
         <main className="mx-auto px-4 sm:px-6 lg:px-8 min-h-[80vh]">
+=======
+        <main className="mx-auto min-h-[80vh] px-4 sm:px-6 lg:px-8">
+>>>>>>> develop
           {children}
         </main>
       </>
@@ -63,7 +68,7 @@ export function MainSwitcher({
   }
 
   return (
-    <main className={isQa || isHome ? 'mx-auto' : 'mx-auto px-6 min-h-[80vh]'}>
+    <main className={isQa || isHome ? 'mx-auto' : 'mx-auto min-h-[80vh] px-6'}>
       {children}
     </main>
   );

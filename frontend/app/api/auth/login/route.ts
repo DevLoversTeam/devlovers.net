@@ -1,19 +1,18 @@
-import { NextResponse } from "next/server";
+import bcrypt from 'bcryptjs';
+import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
-import bcrypt from "bcryptjs";
-import { z } from "zod";
-import { eq } from "drizzle-orm";
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
 
-import { db } from "@/db";
-import { users } from "@/db/schema/users";
-import { signAuthToken, setAuthCookie } from "@/lib/auth";
+import { db } from '@/db';
+import { users } from '@/db/schema/users';
+import { setAuthCookie,signAuthToken } from '@/lib/auth';
 
-export const runtime = "nodejs";
-
+export const runtime = 'nodejs';
 
 const loginSchema = z.object({
-  email: z.string().email("Invalid email"),
-  password: z.string().min(1, "Password is required"),
+  email: z.string().email('Invalid email'),
+  password: z.string().min(1, 'Password is required'),
 });
 
 export async function POST(req: Request) {
@@ -21,10 +20,7 @@ export async function POST(req: Request) {
   const parsed = loginSchema.safeParse(body);
 
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Invalid credentials" },
-      { status: 401 }
-    );
+    return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
   }
 
   const { email, password } = parsed.data;
@@ -44,22 +40,25 @@ export async function POST(req: Request) {
 
   if (result.length === 0) {
     return NextResponse.json(
-      { error: "Invalid email or password" },
+      { error: 'Invalid email or password' },
       { status: 401 }
     );
   }
 
-  const user = result[0]
+  const user = result[0];
 
   if (!user.provider) {
-    throw new Error("User record missing provider");
+    throw new Error('User record missing provider');
   }
 
-  if (user.provider === "credentials" && user.emailVerified === null) {
-    return NextResponse.json({
-      error: "Email is not verified",
-      code: "EMAIL_NOT_VERIFIED",
-    }, { status: 403 })
+  if (user.provider === 'credentials' && user.emailVerified === null) {
+    return NextResponse.json(
+      {
+        error: 'Email is not verified',
+        code: 'EMAIL_NOT_VERIFIED',
+      },
+      { status: 403 }
+    );
   }
 
   if (
@@ -67,14 +66,14 @@ export async function POST(req: Request) {
     !(await bcrypt.compare(password, user.passwordHash))
   ) {
     return NextResponse.json(
-      { error: "Invalid email or password" },
+      { error: 'Invalid email or password' },
       { status: 401 }
     );
   }
 
   const token = signAuthToken({
     userId: result[0].id,
-    role: result[0].role as "user" | "admin",
+    role: result[0].role as 'user' | 'admin',
     email: normalizedEmail,
   });
 

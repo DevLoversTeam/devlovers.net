@@ -1,11 +1,13 @@
 import crypto from 'node:crypto';
+
 import { NextRequest, NextResponse } from 'next/server';
+
 import { MoneyValueError } from '@/db/queries/shop/orders';
-import { resolveLocaleAndCurrency } from '@/lib/shop/request-locale';
-import { rehydrateCartItems } from '@/lib/services/products';
-import { cartRehydratePayloadSchema } from '@/lib/validation/shop';
-import { InvalidPayloadError, PriceConfigError } from '@/lib/services/errors';
 import { logError, logInfo, logWarn } from '@/lib/logging';
+import { InvalidPayloadError, PriceConfigError } from '@/lib/services/errors';
+import { rehydrateCartItems } from '@/lib/services/products';
+import { resolveLocaleAndCurrency } from '@/lib/shop/request-locale';
+import { cartRehydratePayloadSchema } from '@/lib/validation/shop';
 
 function normalizeCartPayload(body: unknown) {
   if (!body || typeof body !== 'object') return body;

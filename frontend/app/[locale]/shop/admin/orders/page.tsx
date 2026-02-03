@@ -1,19 +1,19 @@
-import { Link } from '@/i18n/routing';
+import { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
+import { AdminPagination } from '@/components/shop/admin/AdminPagination';
+import { ShopAdminTopbar } from '@/components/shop/admin/ShopAdminTopbar';
 import { getAdminOrdersPage } from '@/db/queries/shop/admin-orders';
+import { Link } from '@/i18n/routing';
+import { guardShopAdminPage } from '@/lib/auth/guard-shop-admin-page';
+import { parsePage } from '@/lib/pagination';
+import { CSRF_FORM_FIELD, issueCsrfToken } from '@/lib/security/csrf';
 import {
+  type CurrencyCode,
   formatMoney,
   resolveCurrencyFromLocale,
-  type CurrencyCode,
 } from '@/lib/shop/currency';
 import { fromDbMoney } from '@/lib/shop/money';
-import { ShopAdminTopbar } from '@/components/shop/admin/ShopAdminTopbar';
-import { AdminPagination } from '@/components/shop/admin/AdminPagination';
-import { guardShopAdminPage } from '@/lib/auth/guard-shop-admin-page';
-import { CSRF_FORM_FIELD, issueCsrfToken } from '@/lib/security/csrf';
-import { parsePage } from '@/lib/pagination';
-import { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Admin Orders | DevLovers',
@@ -96,7 +96,7 @@ export default async function AdminOrdersPage({
         <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <h1
             id="admin-orders-title"
-            className="text-2xl font-bold text-foreground"
+            className="text-foreground text-2xl font-bold"
           >
             {t('title')}
           </h1>
@@ -105,7 +105,7 @@ export default async function AdminOrdersPage({
             <input type="hidden" name={CSRF_FORM_FIELD} value={csrfToken} />
             <button
               type="submit"
-              className="inline-flex w-full items-center justify-center rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary sm:w-auto"
+              className="border-border text-foreground hover:bg-secondary inline-flex w-full items-center justify-center rounded-md border px-3 py-1.5 text-sm font-medium transition-colors sm:w-auto"
             >
               {t('reconcileStale')}
             </button>
@@ -116,7 +116,7 @@ export default async function AdminOrdersPage({
           {/* Mobile cards */}
           <div className="md:hidden">
             {viewModels.length === 0 ? (
-              <div className="rounded-md border border-border p-4 text-sm text-muted-foreground">
+              <div className="border-border text-muted-foreground rounded-md border p-4 text-sm">
                 {t('empty')}
               </div>
             ) : (
@@ -124,21 +124,21 @@ export default async function AdminOrdersPage({
                 {viewModels.map(vm => (
                   <li
                     key={vm.id}
-                    className="rounded-lg border border-border bg-background p-4"
+                    className="border-border bg-background rounded-lg border p-4"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <div className="text-xs text-muted-foreground">
+                        <div className="text-muted-foreground text-xs">
                           {vm.createdAt}
                         </div>
                         <div className="mt-1">
-                          <span className="inline-flex rounded-full bg-muted px-2 py-1 text-xs font-medium text-foreground">
+                          <span className="bg-muted text-foreground inline-flex rounded-full px-2 py-1 text-xs font-medium">
                             {vm.paymentStatus}
                           </span>
                         </div>
                       </div>
 
-                      <div className="shrink-0 whitespace-nowrap text-right text-sm font-medium text-foreground">
+                      <div className="text-foreground shrink-0 text-right text-sm font-medium whitespace-nowrap">
                         {vm.totalFormatted}
                       </div>
                     </div>
@@ -156,7 +156,7 @@ export default async function AdminOrdersPage({
                           {t('table.provider')}
                         </dt>
                         <dd
-                          className="truncate text-foreground"
+                          className="text-foreground truncate"
                           title={vm.paymentProvider}
                         >
                           {vm.paymentProvider}
@@ -168,7 +168,7 @@ export default async function AdminOrdersPage({
                           {t('table.orderId')}
                         </dt>
                         <dd
-                          className="break-all font-mono text-[11px] text-muted-foreground"
+                          className="text-muted-foreground font-mono text-[11px] break-all"
                           title={vm.id}
                         >
                           {vm.id}
@@ -179,7 +179,7 @@ export default async function AdminOrdersPage({
                     <div className="mt-3">
                       <Link
                         href={vm.viewHref}
-                        className="inline-flex items-center justify-center rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
+                        className="border-border text-foreground hover:bg-secondary inline-flex items-center justify-center rounded-md border px-2 py-1 text-xs font-medium transition-colors"
                         aria-label={vm.viewAriaLabel}
                       >
                         {t('actions.view')}
@@ -194,61 +194,61 @@ export default async function AdminOrdersPage({
           {/* Desktop table */}
           <div className="hidden md:block">
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-border text-sm">
+              <table className="divide-border min-w-full divide-y text-sm">
                 <caption className="sr-only">{t('listCaption')}</caption>
 
                 <thead className="bg-muted/50">
                   <tr>
                     <th
                       scope="col"
-                      className="px-3 py-2 text-left font-semibold text-foreground"
+                      className="text-foreground px-3 py-2 text-left font-semibold"
                     >
                       {t('table.created')}
                     </th>
                     <th
                       scope="col"
-                      className="px-3 py-2 text-left font-semibold text-foreground"
+                      className="text-foreground px-3 py-2 text-left font-semibold"
                     >
                       {t('table.status')}
                     </th>
                     <th
                       scope="col"
-                      className="px-3 py-2 text-left font-semibold text-foreground"
+                      className="text-foreground px-3 py-2 text-left font-semibold"
                     >
                       {t('table.total')}
                     </th>
                     <th
                       scope="col"
-                      className="px-3 py-2 text-left font-semibold text-foreground"
+                      className="text-foreground px-3 py-2 text-left font-semibold"
                     >
                       {t('table.items')}
                     </th>
                     <th
                       scope="col"
-                      className="px-3 py-2 text-left font-semibold text-foreground"
+                      className="text-foreground px-3 py-2 text-left font-semibold"
                     >
                       {t('table.provider')}
                     </th>
                     <th
                       scope="col"
-                      className="px-3 py-2 text-left font-semibold text-foreground"
+                      className="text-foreground px-3 py-2 text-left font-semibold"
                     >
                       {t('table.orderId')}
                     </th>
                     <th
                       scope="col"
-                      className="px-3 py-2 text-left font-semibold text-foreground"
+                      className="text-foreground px-3 py-2 text-left font-semibold"
                     >
                       {t('table.actions')}
                     </th>
                   </tr>
                 </thead>
 
-                <tbody className="divide-y divide-border">
+                <tbody className="divide-border divide-y">
                   {viewModels.length === 0 ? (
                     <tr>
                       <td
-                        className="px-3 py-6 text-muted-foreground"
+                        className="text-muted-foreground px-3 py-6"
                         colSpan={7}
                       >
                         {t('empty')}
@@ -257,36 +257,36 @@ export default async function AdminOrdersPage({
                   ) : (
                     viewModels.map(vm => (
                       <tr key={vm.id} className="hover:bg-muted/50">
-                        <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
+                        <td className="text-muted-foreground px-3 py-2 whitespace-nowrap">
                           {vm.createdAt}
                         </td>
 
                         <td className="px-3 py-2 whitespace-nowrap">
-                          <span className="inline-flex rounded-full bg-muted px-2 py-1 text-xs font-medium text-foreground">
+                          <span className="bg-muted text-foreground inline-flex rounded-full px-2 py-1 text-xs font-medium">
                             {vm.paymentStatus}
                           </span>
                         </td>
 
-                        <td className="px-3 py-2 text-foreground whitespace-nowrap">
+                        <td className="text-foreground px-3 py-2 whitespace-nowrap">
                           {vm.totalFormatted}
                         </td>
 
-                        <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
+                        <td className="text-muted-foreground px-3 py-2 whitespace-nowrap">
                           {vm.itemCount}
                         </td>
 
-                        <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
+                        <td className="text-muted-foreground px-3 py-2 whitespace-nowrap">
                           {vm.paymentProvider}
                         </td>
 
-                        <td className="px-3 py-2 font-mono text-xs text-muted-foreground break-all">
+                        <td className="text-muted-foreground px-3 py-2 font-mono text-xs break-all">
                           {vm.id}
                         </td>
 
                         <td className="px-3 py-2 whitespace-nowrap">
                           <Link
                             href={vm.viewHref}
-                            className="rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
+                            className="border-border text-foreground hover:bg-secondary rounded-md border px-2 py-1 text-xs font-medium transition-colors"
                             aria-label={vm.viewAriaLabel}
                           >
                             {t('actions.view')}

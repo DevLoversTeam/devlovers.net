@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
+import crypto from 'crypto';
 import { inArray } from 'drizzle-orm';
 import { NextRequest } from 'next/server';
-import crypto from 'crypto';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 process.env.STRIPE_PAYMENTS_ENABLED = 'false';
 process.env.STRIPE_SECRET_KEY = '';
@@ -51,7 +51,7 @@ vi.mock('@/lib/logging', async () => {
 });
 
 import { db } from '@/db';
-import { products, productPrices, orders } from '@/db/schema';
+import { orders,productPrices, products } from '@/db/schema';
 
 let POST: (req: NextRequest) => Promise<Response>;
 
