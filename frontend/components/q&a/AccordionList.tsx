@@ -34,7 +34,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { categoryTabStyles } from '@/data/categoryStyles';
-import { CACHE_KEY,getCachedTerms } from '@/lib/ai/explainCache';
+import { CACHE_KEY, getCachedTerms } from '@/lib/ai/explainCache';
 
 function isListItemBlock(value: ListEntry): value is ListItemBlock {
   return (

@@ -1,13 +1,13 @@
 import { eq } from 'drizzle-orm';
 
 import { db } from '@/db';
-import { productPrices,products } from '@/db/schema';
+import { productPrices, products } from '@/db/schema';
 import { uploadProductImageFromFile } from '@/lib/cloudinary';
 import { logError } from '@/lib/logging';
 import { toDbMoney } from '@/lib/shop/money';
 import type { DbProduct, ProductInput } from '@/lib/types/shop';
 
-import { InvalidPayloadError,SlugConflictError } from '../../errors';
+import { InvalidPayloadError, SlugConflictError } from '../../errors';
 import { mapRowToProduct } from '../mapping';
 import {
   enforceSaleBadgeRequiresOriginal,

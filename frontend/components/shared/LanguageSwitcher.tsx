@@ -2,9 +2,9 @@
 
 import { Globe } from 'lucide-react';
 import { useParams, usePathname, useSearchParams } from 'next/navigation';
-import { useEffect,useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
-import { type Locale,locales } from '@/i18n/config';
+import { type Locale, locales } from '@/i18n/config';
 import { Link } from '@/i18n/routing';
 
 const localeLabels: Record<Locale, string> = {

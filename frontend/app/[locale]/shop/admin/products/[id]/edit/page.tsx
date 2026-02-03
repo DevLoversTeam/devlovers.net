@@ -5,7 +5,7 @@ import { z } from 'zod';
 
 import { ShopAdminTopbar } from '@/components/shop/admin/ShopAdminTopbar';
 import { db } from '@/db';
-import { productPrices,products } from '@/db/schema';
+import { productPrices, products } from '@/db/schema';
 import { guardShopAdminPage } from '@/lib/auth/guard-shop-admin-page';
 import { issueCsrfToken } from '@/lib/security/csrf';
 import type { CurrencyCode } from '@/lib/shop/currency';

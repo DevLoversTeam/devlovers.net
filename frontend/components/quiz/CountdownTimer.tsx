@@ -25,7 +25,6 @@ export function CountdownTimer({
     Math.max(0, Math.floor((endTime - Date.now()) / 1000))
   );
 
-
   useEffect(() => {
     if (!isActive) return;
 
@@ -113,7 +112,11 @@ export function CountdownTimer({
         <p className="mt-2 text-xs font-medium">
           {percentage <= 10 ? (
             <>
-              <TriangleAlert className="inline h-4 w-4 text-amber-500" aria-hidden="true" /> {t('almostDone')}
+              <TriangleAlert
+                className="inline h-4 w-4 text-amber-500"
+                aria-hidden="true"
+              />{' '}
+              {t('almostDone')}
             </>
           ) : (
             <>

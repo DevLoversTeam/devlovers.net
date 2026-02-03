@@ -1,49 +1,41 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
-import { decryptAnswers } from '@/lib/quiz/quiz-crypto';
+import { getCorrectAnswer } from '@/lib/quiz/quiz-answers-redis';
 
-interface VerifyRequest {
-  questionId: string;
-  answerId: string;
-  encryptedAnswers: string;
-}
+export const runtime = 'nodejs';
 
-export async function POST(request: NextRequest) {
+export async function POST(req: Request) {
   try {
-    const body: VerifyRequest = await request.json();
-    const { questionId, answerId, encryptedAnswers } = body;
+    const body = await req.json().catch(() => null);
 
-    if (!questionId || !answerId || !encryptedAnswers) {
+    if (!body?.quizId || !body?.questionId || !body?.selectedAnswerId) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { success: false, error: 'Missing required fields' },
         { status: 400 }
       );
     }
 
-    const correctAnswersMap = decryptAnswers(encryptedAnswers);
+    const { quizId, questionId, selectedAnswerId } = body;
 
-    if (!correctAnswersMap) {
-      return NextResponse.json(
-        { error: 'Invalid encrypted data' },
-        { status: 400 }
-      );
-    }
-
-    const correctAnswerId = correctAnswersMap[questionId];
+    const correctAnswerId = await getCorrectAnswer(quizId, questionId);
 
     if (!correctAnswerId) {
       return NextResponse.json(
-        { error: 'Question not found' },
+        { success: false, error: 'Question not found in cache' },
         { status: 404 }
       );
     }
 
+    const isCorrect = selectedAnswerId === correctAnswerId;
+
     return NextResponse.json({
-      isCorrect: answerId === correctAnswerId,
+      success: true,
+      isCorrect,
     });
-  } catch {
+  } catch (error) {
+    console.error('Failed to verify answer:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }

@@ -1,16 +1,17 @@
 'use client';
-import { useTranslations,useLocale } from 'next-intl';
-import { TriangleAlert, Ban, Clock,FileText } from 'lucide-react';
+import { Ban, Clock, FileText, TriangleAlert } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
 import {
-  useReducer,
-  useTransition,
-  useState,
-  useEffect,
   useCallback,
+  useEffect,
+  useReducer,
+  useState,
+  useTransition,
 } from 'react';
 import { toast } from 'sonner';
-import { submitQuizAttempt } from '@/actions/quiz';
+
+import { initializeQuizCache, submitQuizAttempt } from '@/actions/quiz';
 import { Button } from '@/components/ui/button';
 import { ConfirmModal } from '@/components/ui/confirm-modal';
 import { categoryTabStyles } from '@/data/categoryStyles';
@@ -140,7 +141,6 @@ function quizReducer(state: QuizState, action: QuizAction): QuizState {
 interface QuizContainerProps {
   quizId: string;
   questions: QuizQuestionClient[];
-  encryptedAnswers: string;
   userId: string | null;
   quizSlug: string;
   timeLimitSeconds: number | null;
@@ -153,7 +153,6 @@ export function QuizContainer({
   quizSlug,
   quizId,
   questions,
-  encryptedAnswers,
   userId,
   timeLimitSeconds,
   seed,
@@ -192,11 +191,9 @@ export function QuizContainer({
   const currentQuestion = questions[state.currentIndex];
   const totalQuestions = questions.length;
 
-  const handleRestoreSession = useCallback(
-    (data: QuizSessionData) =>
-      dispatch({ type: 'RESTORE_SESSION', payload: data }),
-    []
-  );
+  const handleRestoreSession = useCallback((data: QuizSessionData) => {
+    dispatch({ type: 'RESTORE_SESSION', payload: data });
+  }, []);
 
   useQuizSession({
     quizId,
@@ -221,9 +218,20 @@ export function QuizContainer({
     }
   }, [seed, searchParams, router]);
 
-  const handleStart = () => {
-    window.history.pushState({ quizGuard: true }, '');
-    dispatch({ type: 'START_QUIZ' });
+  const handleStart = async () => {
+    try {
+      const result = await initializeQuizCache(quizId);
+
+      if (!result.success) {
+        toast.error('Failed to start quiz session');
+        return;
+      }
+
+      window.history.pushState({ quizGuard: true }, '');
+      dispatch({ type: 'START_QUIZ' });
+    } catch {
+      toast.error('Failed to start quiz session');
+    }
   };
 
   const verifyAnswer = async (answerId: string) => {
@@ -232,8 +240,8 @@ export function QuizContainer({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         questionId: currentQuestion.id,
-        answerId,
-        encryptedAnswers,
+        selectedAnswerId: answerId,
+        quizId,
       }),
     });
 
@@ -299,10 +307,10 @@ export function QuizContainer({
   };
 
   const handleSubmit = () => {
-    clearQuizSession(quizId);
-
     const isIncomplete = state.answers.length < totalQuestions;
-
+    if (!isGuest) {
+      clearQuizSession(quizId);
+    }
     const correctAnswers = state.answers.filter(a => a.isCorrect).length;
     const percentage = (correctAnswers / totalQuestions) * 100;
     const timeSpentSeconds = state.startedAt
@@ -398,7 +406,10 @@ export function QuizContainer({
 
         <div className="space-y-4 text-gray-700 dark:text-gray-300">
           <div className="flex gap-3">
-            <FileText className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-500 dark:text-blue-400" aria-hidden="true"/>
+            <FileText
+              className="mt-0.5 h-5 w-5 shrink-0 text-blue-500 dark:text-blue-400"
+              aria-hidden="true"
+            />
             <div>
               <p className="font-medium">{tRules('general.title')}</p>
               <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -408,7 +419,10 @@ export function QuizContainer({
           </div>
 
           <div className="flex gap-3">
-            <Ban className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-500 dark:text-red-400" aria-hidden="true"/>
+            <Ban
+              className="mt-0.5 h-5 w-5 shrink-0 text-red-500 dark:text-red-400"
+              aria-hidden="true"
+            />
             <div>
               <p className="font-medium">{tRules('forbidden.title')}</p>
               <ul className="list-inside list-disc space-y-1 text-sm text-gray-600 dark:text-gray-400">
@@ -421,7 +435,10 @@ export function QuizContainer({
           </div>
 
           <div className="flex gap-3">
-            <TriangleAlert className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-500 dark:text-amber-400" aria-hidden="true"/>
+            <TriangleAlert
+              className="mt-0.5 h-5 w-5 shrink-0 text-amber-500 dark:text-amber-400"
+              aria-hidden="true"
+            />
             <div>
               <p className="font-medium">{tRules('control.title')}</p>
               <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -430,7 +447,10 @@ export function QuizContainer({
             </div>
           </div>
           <div className="flex gap-3">
-            <Clock className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-500 dark:text-blue-400" aria-hidden="true"/>
+            <Clock
+              className="mt-0.5 h-5 w-5 shrink-0 text-blue-500 dark:text-blue-400"
+              aria-hidden="true"
+            />
             <div>
               <p className="font-medium">{tRules('time.title')}</p>
               <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -492,7 +512,8 @@ export function QuizContainer({
             className="h-4 w-4"
             fill="none"
             stroke="currentColor"
-            viewBox="0 0 24 24" aria-hidden="true"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
           >
             <path
               strokeLinecap="round"

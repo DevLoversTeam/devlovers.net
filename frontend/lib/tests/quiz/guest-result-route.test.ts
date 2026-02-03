@@ -19,7 +19,7 @@ vi.mock('@/db', () => ({
 }));
 
 import { db } from '@/db';
-import { awardQuizPoints,calculateQuizPoints } from '@/db/queries/points';
+import { awardQuizPoints, calculateQuizPoints } from '@/db/queries/points';
 import { getCurrentUser } from '@/lib/auth';
 
 const getCurrentUserMock = getCurrentUser as ReturnType<typeof vi.fn>;

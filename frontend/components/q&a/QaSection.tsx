@@ -7,7 +7,7 @@ import { Pagination } from '@/components/q&a/Pagination';
 import type { CategorySlug } from '@/components/q&a/types';
 import { useQaTabs } from '@/components/q&a/useQaTabs';
 import { CategoryTabButton } from '@/components/shared/CategoryTabButton';
-import { Tabs, TabsContent,TabsList } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList } from '@/components/ui/tabs';
 import { categoryData } from '@/data/category';
 import { categoryTabStyles } from '@/data/categoryStyles';
 import { cn } from '@/lib/utils';

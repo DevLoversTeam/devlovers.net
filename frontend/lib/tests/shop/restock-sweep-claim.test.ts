@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { eq } from 'drizzle-orm';
-import { describe, expect,it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { db } from '@/db';
 import { orders } from '@/db/schema';

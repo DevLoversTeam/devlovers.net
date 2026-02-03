@@ -1,10 +1,10 @@
 'use client';
 
 import {
-  AlertTriangle,
   BookOpen,
   Clock,
   TrendingUp,
+  TriangleAlert,
   Trophy,
 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
@@ -34,7 +34,6 @@ export function QuizResult({
   violationsCount = 0,
   pointsAwarded,
   isGuest = false,
-  quizSlug = '',
   isIncomplete = false,
   onRestart,
   onBackToTopics,
@@ -131,7 +130,7 @@ export function QuizResult({
       {violationsCount >= 3 && (
         <div className="rounded-xl border border-orange-200 bg-orange-50 p-4 dark:border-orange-800 dark:bg-orange-900/20">
           <p className="text-center font-medium text-orange-800 dark:text-orange-200">
-            <AlertTriangle className="inline h-4 w-4" aria-hidden="true"/>{' '}
+            <TriangleAlert className="inline h-4 w-4" aria-hidden="true" />{' '}
             {t('violations', { count: violationsCount })}
           </p>
         </div>
@@ -169,7 +168,7 @@ export function QuizResult({
           <div className="flex flex-col justify-center gap-3 sm:flex-row">
             <Button
               onClick={() => {
-                const url = `/${locale}/login?returnTo=/quiz/${quizSlug}`;
+                const url = `/${locale}/login?returnTo=/dashboard`;
                 window.location.href = url;
               }}
             >
@@ -177,7 +176,7 @@ export function QuizResult({
             </Button>
             <Button
               onClick={() =>
-                (window.location.href = `/${locale}/signup?returnTo=/quiz/${quizSlug}`)
+                (window.location.href = `/${locale}/signup?returnTo=/dashboard`)
               }
               variant="secondary"
             >

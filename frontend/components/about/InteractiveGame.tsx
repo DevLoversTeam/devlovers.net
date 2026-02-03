@@ -1,6 +1,6 @@
 'use client';
 
-import { AnimatePresence,motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   Bug,
   Heart,
@@ -12,7 +12,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useCallback,useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 const GAME_WIDTH_DESKTOP = 540;
 const GAME_WIDTH_MOBILE = 320;

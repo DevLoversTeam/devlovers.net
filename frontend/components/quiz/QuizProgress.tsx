@@ -104,9 +104,9 @@ export function QuizProgress({ current, total, answers }: QuizProgressProps) {
               {isAnswered ? (
                 <span className="font-bold text-white">
                   {isCorrect ? (
-                    <Check className="h-3 w-3" aria-hidden="true"/>
+                    <Check className="h-3 w-3" aria-hidden="true" />
                   ) : (
-                    <X className="h-3 w-3" aria-hidden="true"/>
+                    <X className="h-3 w-3" aria-hidden="true" />
                   )}
                 </span>
               ) : (
