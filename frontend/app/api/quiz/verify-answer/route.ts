@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { getCorrectAnswer } from '@/lib/quiz/quiz-answers-redis';
+import { getCorrectAnswer, getOrCreateQuizAnswersCache } from '@/lib/quiz/quiz-answers-redis';
 
 export const runtime = 'nodejs';
 
@@ -17,7 +17,14 @@ export async function POST(req: Request) {
 
     const { quizId, questionId, selectedAnswerId } = body;
 
-    const correctAnswerId = await getCorrectAnswer(quizId, questionId);
+    let correctAnswerId = await getCorrectAnswer(quizId, questionId);
+
+    if (!correctAnswerId) {
+      const cacheReady = await getOrCreateQuizAnswersCache(quizId);
+      if (cacheReady) {
+        correctAnswerId = await getCorrectAnswer(quizId, questionId);
+      }
+    }
 
     if (!correctAnswerId) {
       return NextResponse.json(

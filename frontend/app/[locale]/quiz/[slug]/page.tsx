@@ -32,7 +32,12 @@ export default async function QuizPage({
     redirect(`/${locale}/quiz/${slug}?seed=${Date.now()}`);
   }
 
-  const seed = parseInt(seedParam, 10);
+  const seed = Number.parseInt(seedParam, 10);
+  if (Number.isNaN(seed)) {
+     // eslint-disable-next-line react-hooks/purity -- redirect throws, value never used in render
+    redirect(`/${locale}/quiz/${slug}?seed=${Date.now()}`);
+  }
+  
   const questions = await getQuizQuestionsRandomized(quiz.id, locale, seed);
 
   const clientQuestions = stripCorrectAnswers(questions);

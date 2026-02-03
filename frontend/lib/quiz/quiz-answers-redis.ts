@@ -69,16 +69,29 @@ export async function getCorrectAnswer(
   questionId: string
 ): Promise<string | null> {
   const redis = getRedisClient();
-  if (!redis) {
-    return null;
+  
+  if (redis) {
+    const key = getCacheKey(quizId);
+    const cache = await redis.get<QuizAnswersCache>(key);
+    if (cache) {
+      return cache.answers[questionId] ?? null;
+    }
   }
 
-  const key = getCacheKey(quizId);
-  const cache = await redis.get<QuizAnswersCache>(key);
+  // DB fallback when Redis unavailable or cache miss
+  const result = await db
+    .select({ answerId: quizAnswers.id })
+    .from(quizAnswers)
+    .innerJoin(quizQuestions, eq(quizAnswers.quizQuestionId, quizQuestions.id))
+    .where(
+      and(
+        eq(quizQuestions.quizId, quizId),
+        eq(quizQuestions.id, questionId),
+        eq(quizAnswers.isCorrect, true)
+      )
+    )
+    .limit(1);
 
-  if (!cache) {
-    return null;
-  }
-
-  return cache.answers[questionId] ?? null;
+  return result[0]?.answerId ?? null;
 }
+
