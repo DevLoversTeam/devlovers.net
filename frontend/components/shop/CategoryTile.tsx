@@ -1,7 +1,8 @@
 import Image from 'next/image';
+import { getTranslations } from 'next-intl/server';
+
 import { Link } from '@/i18n/routing';
 import type { ShopCategory } from '@/lib/shop/data';
-import { getTranslations } from 'next-intl/server';
 
 interface CategoryTileProps {
   category: ShopCategory;
@@ -21,9 +22,9 @@ export async function CategoryTile({ category }: CategoryTileProps) {
       aria-label={tCategoryTile('shopCategory', { name: categoryName })}
       className={[
         'group relative block w-full',
-        'aspect-[4/3] overflow-hidden rounded-lg bg-muted',
+        'bg-muted aspect-[4/3] overflow-hidden rounded-lg',
         'transition-[box-shadow] duration-500 hover:shadow-[var(--shop-card-shadow-hover)]',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+        'focus-visible:ring-offset-background focus-visible:ring-2 focus-visible:ring-[color:var(--color-ring)] focus-visible:ring-offset-2 focus-visible:outline-none',
       ].join(' ')}
     >
       <Image

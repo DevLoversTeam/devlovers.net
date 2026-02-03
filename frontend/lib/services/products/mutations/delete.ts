@@ -1,10 +1,10 @@
 import { sql } from 'drizzle-orm';
 
-import { destroyProductImage } from '@/lib/cloudinary';
 import { db } from '@/db';
-import { products, productPrices } from '@/db/schema';
-import { logError } from '@/lib/logging';
+import { productPrices,products } from '@/db/schema';
+import { destroyProductImage } from '@/lib/cloudinary';
 import { ProductNotFoundError } from '@/lib/errors/products';
+import { logError } from '@/lib/logging';
 
 export async function deleteProduct(id: string): Promise<void> {
   const result = await db.execute(sql`

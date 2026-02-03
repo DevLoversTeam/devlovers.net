@@ -1,8 +1,9 @@
 export const runtime = 'nodejs';
 
+import Groq from 'groq-sdk';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import Groq from 'groq-sdk';
+
 import {
   createExplainPrompt,
   type ExplanationResponse,

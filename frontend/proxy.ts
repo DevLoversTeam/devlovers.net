@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
-import { routing } from './i18n/routing';
+
 import { AuthTokenPayload } from '@/lib/auth';
+
+import { routing } from './i18n/routing';
 
 const AUTH_COOKIE_NAME = 'auth_session';
 
@@ -11,20 +13,23 @@ if (!AUTH_SECRET) {
 }
 
 function decodeAuthToken(token: string): AuthTokenPayload | null {
-  const parts = token.split(".");
+  const parts = token.split('.');
   if (parts.length < 2) return null;
 
-  const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-  const padded = base64.padEnd(base64.length + (4 - (base64.length % 4)) % 4, "=");
+  const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+  const padded = base64.padEnd(
+    base64.length + ((4 - (base64.length % 4)) % 4),
+    '='
+  );
 
   try {
     const json = atob(padded);
     const payload = JSON.parse(json) as Partial<AuthTokenPayload>;
     if (
-      typeof payload.userId !== "string" ||
-      (payload.role !== "user" && payload.role !== "admin") ||
-      typeof payload.email !== "string" ||
-      typeof payload.exp !== "number"
+      typeof payload.userId !== 'string' ||
+      (payload.role !== 'user' && payload.role !== 'admin') ||
+      typeof payload.email !== 'string' ||
+      typeof payload.exp !== 'number'
     ) {
       return null;
     }
@@ -55,11 +60,11 @@ function authMiddleware(req: NextRequest) {
     pathname.replace(/^\/(uk|en|pl)(?=\/|$)/, '') || '/';
 
   if (pathnameWithoutLocale.startsWith('/dashboard')) {
-  if (!authenticated) {
-    const locale = pathname.split('/')[1] || 'en';
-    return NextResponse.redirect(new URL(`/${locale}/login`, req.url));
+    if (!authenticated) {
+      const locale = pathname.split('/')[1] || 'en';
+      return NextResponse.redirect(new URL(`/${locale}/login`, req.url));
+    }
   }
-}
 
   return null;
 }

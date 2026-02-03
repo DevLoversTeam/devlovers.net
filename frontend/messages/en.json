@@ -17,7 +17,13 @@
     "searchBlog": "Search blog",
     "toggleMenu": "Toggle menu",
     "closeMenu": "Close menu",
-    "logout": "Log out"
+    "logout": "Log out",
+    "themeSystem": "System theme",
+    "themeLight": "Light theme",
+    "themeDark": "Dark theme",
+    "cart": "Cart",
+    "cartWithItems": "Cart, {count} items",
+    "starOnGithub": "Star on GitHub - {count} stars"
   },
   "mobileMenu": {
     "newProduct": "New product",
@@ -41,7 +47,17 @@
     "title": "DevLovers",
     "subtitle": "Platform for Technical Interview Preparation",
     "description": "Master frontend, backend, and full-stack development with our interview questions, quizzes, and learning materials.",
-    "cta": "Start Learning"
+    "cta": "Take the first step",
+    "ctaVariants": {
+      "1": "No pressure. Just start.",
+      "2": "This might actually be fun",
+      "3": "You're already halfway",
+      "4": "One click from progress",
+      "5": "You clicked. That counts.",
+      "6": "Brave move, by the way",
+      "7": "Okay, now it's happening",
+      "8": "Hello, new commit"
+    }
   },
   "qa": {
     "title": "Questions and Answers",
@@ -179,7 +195,7 @@
       "message": "Your progress will not be saved.",
       "confirm": "Exit",
       "cancel": "Continue",
-      "button": "Exit Quiz"
+      "exitButton": "Exit Quiz"
     },
     "antiCheat": {
       "copy": "Copying is not allowed during the quiz",
@@ -645,31 +661,64 @@
       },
       "bubbles": {
         "qa": {
-          "languages": { "label": "3 Languages", "desc": "EN, UK & PL supported" },
-          "aiHelper": { "label": "AI Helper", "desc": "Select text for AI explain" },
-          "smartCache": { "label": "Smart Cache", "desc": "Highlights learned terms" },
-          "techFilter": { "label": "Tech Filter", "desc": "React, Git, JS & more" }
+          "languages": {
+            "label": "3 Languages",
+            "desc": "EN, UK & PL supported"
+          },
+          "aiHelper": {
+            "label": "AI Helper",
+            "desc": "Select text for AI explain"
+          },
+          "smartCache": {
+            "label": "Smart Cache",
+            "desc": "Highlights learned terms"
+          },
+          "techFilter": {
+            "label": "Tech Filter",
+            "desc": "React, Git, JS & more"
+          }
         },
         "quiz": {
-          "smartTimer": { "label": "Smart Timer", "desc": "Race against the total time" },
-          "antiCheat": { "label": "Anti-Cheat", "desc": "Focus loss detection" },
-          "autoSync": { "label": "Auto Sync", "desc": "Saves progress post-login" },
+          "smartTimer": {
+            "label": "Smart Timer",
+            "desc": "Race against the total time"
+          },
+          "antiCheat": {
+            "label": "Anti-Cheat",
+            "desc": "Focus loss detection"
+          },
+          "autoSync": {
+            "label": "Auto Sync",
+            "desc": "Saves progress post-login"
+          },
           "tracking": { "label": "Tracking", "desc": "Best scores & attempts" }
         },
         "leaderboard": {
-          "podium": { "label": "The Podium", "desc": "Top 3 exclusive spotlight" },
+          "podium": {
+            "label": "The Podium",
+            "desc": "Top 3 exclusive spotlight"
+          },
           "globalRank": { "label": "Global Rank", "desc": "Compete worldwide" },
-          "xpSystem": { "label": "XP System", "desc": "Points for every answer" },
+          "xpSystem": {
+            "label": "XP System",
+            "desc": "Points for every answer"
+          },
           "liveFeed": { "label": "Live Feed", "desc": "Real-time rank updates" }
         },
         "profile": {
           "statsHub": { "label": "Stats Hub", "desc": "Visualize your growth" },
           "history": { "label": "History", "desc": "Track learning streaks" },
           "identity": { "label": "Identity", "desc": "Manage role & profile" },
-          "reminders": { "label": "Reminders", "desc": "Finish incomplete quizzes" }
+          "reminders": {
+            "label": "Reminders",
+            "desc": "Finish incomplete quizzes"
+          }
         },
         "blog": {
-          "techTrends": { "label": "Tech Trends", "desc": "Stay ahead of the curve" },
+          "techTrends": {
+            "label": "Tech Trends",
+            "desc": "Stay ahead of the curve"
+          },
           "tutorials": { "label": "Tutorials", "desc": "Step-by-step guides" },
           "deepDives": { "label": "Deep Dives", "desc": "In-depth analysis" },
           "community": { "label": "Community", "desc": "Written by developers" }

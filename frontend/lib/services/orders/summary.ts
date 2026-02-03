@@ -6,7 +6,6 @@ import { fromCents, fromDbMoney } from '@/lib/shop/money';
 import { type OrderDetail, type OrderSummaryWithMinor } from '@/lib/types/shop';
 
 import { OrderNotFoundError, OrderStateInvalidError } from '../errors';
-
 import {
   type DbClient,
   type OrderRow,

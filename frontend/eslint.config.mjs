@@ -1,24 +1,43 @@
-import { defineConfig, globalIgnores } from "eslint/config";
-import nextVitals from "eslint-config-next/core-web-vitals";
-import nextTs from "eslint-config-next/typescript";
+import { defineConfig, globalIgnores } from 'eslint/config';
+import nextVitals from 'eslint-config-next/core-web-vitals';
+import nextTs from 'eslint-config-next/typescript';
+import reactHooks from 'eslint-plugin-react-hooks';
+import simpleImportSort from 'eslint-plugin-simple-import-sort';
 
-const eslintConfig = defineConfig([
+export default defineConfig([
   ...nextVitals,
   ...nextTs,
 
-  globalIgnores([
-    ".next/**",
-    "out/**",
-    "build/**",
-    "next-env.d.ts",
-  ]),
+  globalIgnores(['.next/**', 'out/**', 'build/**', 'next-env.d.ts']),
 
-  // Allow explicit any
   {
+    plugins: {
+      'react-hooks': reactHooks,
+      'simple-import-sort': simpleImportSort,
+    },
+
     rules: {
-      "@typescript-eslint/no-explicit-any": "off",
+      /**
+       * React hooks — must have
+       */
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'warn',
+
+      /**
+       * Import sorting (auto-fix)
+       */
+      'simple-import-sort/imports': 'error',
+      'simple-import-sort/exports': 'error',
+
+      /**
+       * TS relax
+       */
+      '@typescript-eslint/no-explicit-any': 'off',
+
+      /**
+       * Let Prettier handle formatting
+       */
+      'react/jsx-curly-newline': 'off',
     },
   },
 ]);
-
-export default eslintConfig;

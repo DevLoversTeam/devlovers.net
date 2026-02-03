@@ -1,6 +1,6 @@
 'use client';
 
-import { useLocale, useTranslations } from 'next-intl';
+import { AlertTriangle, Ban, Clock,FileText } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   useReducer,
@@ -10,31 +10,32 @@ import {
   useCallback,
 } from 'react';
 import {
-  useReducer,
-  useTransition,
-  useState,
-  useEffect,
   useCallback,
+  useEffect,
+  useReducer,
+  useState,
+  useTransition,
 } from 'react';
 import { toast } from 'sonner';
-import { useAntiCheat } from '@/hooks/useAntiCheat';
-import { useQuizSession } from '@/hooks/useQuizSession';
-import { useQuizGuards } from '@/hooks/useQuizGuards';
-import { QuizProgress } from './QuizProgress';
-import { QuizQuestion } from './QuizQuestion';
-import { QuizResult } from './QuizResult';
-import { CountdownTimer } from './CountdownTimer';
+
 import { submitQuizAttempt } from '@/actions/quiz';
+import { Button } from '@/components/ui/button';
+import { ConfirmModal } from '@/components/ui/confirm-modal';
+import { categoryTabStyles } from '@/data/categoryStyles';
+import type { QuizQuestionClient } from '@/db/queries/quiz';
+import { useAntiCheat } from '@/hooks/useAntiCheat';
+import { useQuizGuards } from '@/hooks/useQuizGuards';
+import { useQuizSession } from '@/hooks/useQuizSession';
+import { savePendingQuizResult } from '@/lib/quiz/guest-quiz';
 import {
   clearQuizSession,
   type QuizSessionData,
 } from '@/lib/quiz/quiz-session';
-import { savePendingQuizResult } from '@/lib/quiz/guest-quiz';
-import type { QuizQuestionClient } from '@/db/queries/quiz';
-import { ConfirmModal } from '@/components/ui/confirm-modal';
-import { Button } from '@/components/ui/button';
-import { FileText, Ban, AlertTriangle, Clock } from 'lucide-react';
-import { categoryTabStyles } from '@/data/categoryStyles';
+
+import { CountdownTimer } from './CountdownTimer';
+import { QuizProgress } from './QuizProgress';
+import { QuizQuestion } from './QuizQuestion';
+import { QuizResult } from './QuizResult';
 
 interface Answer {
   questionId: string;
@@ -398,14 +399,14 @@ export function QuizContainer({
 
   if (state.status === 'rules') {
     return (
-      <div className="max-w-2xl mx-auto space-y-6 p-6 rounded-xl border border-gray-200 dark:border-gray-800">
+      <div className="mx-auto max-w-2xl space-y-6 rounded-xl border border-gray-200 p-6 dark:border-gray-800">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
           {tRules('title')}
         </h2>
 
         <div className="space-y-4 text-gray-700 dark:text-gray-300">
           <div className="flex gap-3">
-            <FileText className="w-5 h-5 text-blue-500 dark:text-blue-400 flex-shrink-0 mt-0.5" aria-hidden="true"/>
+            <FileText className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-500 dark:text-blue-400" aria-hidden="true"/>
             <div>
               <p className="font-medium">{tRules('general.title')}</p>
               <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -415,10 +416,10 @@ export function QuizContainer({
           </div>
 
           <div className="flex gap-3">
-            <Ban className="w-5 h-5 text-red-500 dark:text-red-400 flex-shrink-0 mt-0.5" aria-hidden="true"/>
+            <Ban className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-500 dark:text-red-400" aria-hidden="true"/>
             <div>
               <p className="font-medium">{tRules('forbidden.title')}</p>
-              <ul className="text-sm text-gray-600 dark:text-gray-400 list-disc list-inside space-y-1">
+              <ul className="list-inside list-disc space-y-1 text-sm text-gray-600 dark:text-gray-400">
                 <li>{tRules('forbidden.copyPaste')}</li>
                 <li>{tRules('forbidden.contextMenu')}</li>
                 <li>{tRules('forbidden.tabSwitch')}</li>
@@ -428,7 +429,7 @@ export function QuizContainer({
           </div>
 
           <div className="flex gap-3">
-            <AlertTriangle className="w-5 h-5 text-amber-500 dark:text-amber-400 flex-shrink-0 mt-0.5" aria-hidden="true"/>
+            <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-500 dark:text-amber-400" aria-hidden="true"/>
             <div>
               <p className="font-medium">{tRules('control.title')}</p>
               <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -437,7 +438,7 @@ export function QuizContainer({
             </div>
           </div>
           <div className="flex gap-3">
-            <Clock className="w-5 h-5 text-blue-500 dark:text-blue-400 flex-shrink-0 mt-0.5" aria-hidden="true"/>
+            <Clock className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-500 dark:text-blue-400" aria-hidden="true"/>
             <div>
               <p className="font-medium">{tRules('time.title')}</p>
               <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -448,7 +449,7 @@ export function QuizContainer({
         </div>
         <button
           onClick={handleStart}
-          className="group relative w-full overflow-hidden text-center rounded-xl border px-6 py-3 text-base font-semibold transition-all duration-300"
+          className="group relative w-full overflow-hidden rounded-xl border px-6 py-3 text-center text-base font-semibold transition-all duration-300"
           style={{
             borderColor: `${accentColor}50`,
             backgroundColor: `${accentColor}15`,
@@ -457,7 +458,7 @@ export function QuizContainer({
         >
           {tRules('startButton')}
           <span
-            className="pointer-events-none absolute left-1/2 top-1/2 h-[150%] w-[80%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[20px] opacity-0 transition-opacity duration-300 group-hover:opacity-30"
+            className="pointer-events-none absolute top-1/2 left-1/2 h-[150%] w-[80%] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-0 blur-[20px] transition-opacity duration-300 group-hover:opacity-30"
             style={{ backgroundColor: accentColor }}
           />
         </button>
@@ -487,7 +488,7 @@ export function QuizContainer({
   }
 
   return (
-    <div className="space-y-8 no-select">
+    <div className="no-select space-y-8">
       <div className="flex justify-end">
         <Button
           variant="outline"
@@ -496,7 +497,7 @@ export function QuizContainer({
           className="gap-2 hover:border-red-500 hover:text-red-600 dark:hover:text-red-400"
         >
           <svg
-            className="w-4 h-4"
+            className="h-4 w-4"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24" aria-hidden="true"
@@ -508,7 +509,7 @@ export function QuizContainer({
               d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
             />
           </svg>
-          {tExit('button')}
+          {tExit('exitButton')}
         </Button>
       </div>
       <QuizProgress

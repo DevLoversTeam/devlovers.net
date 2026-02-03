@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { NextRequest } from 'next/server';
+import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { getCurrentUserMock, parseAdminProductFormMock } = vi.hoisted(() => ({
   getCurrentUserMock: vi.fn(async () => ({

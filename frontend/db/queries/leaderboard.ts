@@ -1,10 +1,12 @@
-import { cache } from 'react';
+import { desc, eq,sql } from 'drizzle-orm';
 import { unstable_cache } from 'next/cache';
-import { db } from '../index';
-import { users } from '../schema/users';
-import { pointTransactions } from '../schema/points';
-import { desc, sql, eq } from 'drizzle-orm';
+import { cache } from 'react';
+
 import { User } from '@/components/leaderboard/types';
+
+import { db } from '../index';
+import { pointTransactions } from '../schema/points';
+import { users } from '../schema/users';
 
 const getLeaderboardDataCached = unstable_cache(
   async (): Promise<User[]> => {

@@ -1,29 +1,29 @@
-import { Link } from '@/i18n/routing';
-import { ClearCartOnMount } from '@/components/shop/ClearCartOnMount';
-import StripePaymentClient from '../StripePaymentClient';
+import { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 
-import { formatMoney } from '@/lib/shop/currency';
-import { getOrderSummary } from '@/lib/services/orders';
-import { OrderNotFoundError } from '@/lib/services/errors';
-import { orderIdParamSchema } from '@/lib/validation/shop';
+import { ClearCartOnMount } from '@/components/shop/ClearCartOnMount';
+import { Link } from '@/i18n/routing';
 import { getStripeEnv } from '@/lib/env/stripe';
 import { logError } from '@/lib/logging';
+import { OrderNotFoundError } from '@/lib/services/errors';
+import { getOrderSummary } from '@/lib/services/orders';
 import { ensureStripePaymentIntentForOrder } from '@/lib/services/orders/payment-attempts';
-import { getTranslations } from 'next-intl/server';
-import { cn } from '@/lib/utils';
-
+import { formatMoney } from '@/lib/shop/currency';
 import {
-  SHOP_FOCUS,
-  SHOP_DISABLED,
   SHOP_CTA_BASE,
-  SHOP_CTA_INTERACTIVE,
   SHOP_CTA_INSET,
+  SHOP_CTA_INTERACTIVE,
   SHOP_CTA_WAVE,
-  shopCtaGradient,
+  SHOP_DISABLED,
+  SHOP_FOCUS,
   SHOP_OUTLINE_BTN_BASE,
   SHOP_OUTLINE_BTN_INTERACTIVE,
+  shopCtaGradient,
 } from '@/lib/shop/ui-classes';
-import { Metadata } from 'next';
+import { cn } from '@/lib/utils';
+import { orderIdParamSchema } from '@/lib/validation/shop';
+
+import StripePaymentClient from '../StripePaymentClient';
 
 export const metadata: Metadata = {
   title: 'Checkout | DevLovers',
@@ -75,7 +75,7 @@ const SHOP_HERO_CTA_SM = cn(
   SHOP_FOCUS,
   SHOP_DISABLED,
   'items-center justify-center gap-2',
-  'px-5 py-2.5 text-xs sm:text-sm text-white',
+  'px-5 py-2.5 text-xs text-white sm:text-sm',
   'shadow-[var(--shop-hero-btn-shadow)] hover:shadow-[var(--shop-hero-btn-shadow-hover)]'
 );
 
@@ -135,13 +135,13 @@ function PageShell({
       className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8"
       aria-labelledby="payment-title"
     >
-      <section className="rounded-lg border border-border bg-card p-8 text-center">
-        <h1 id="payment-title" className="text-2xl font-bold text-foreground">
+      <section className="border-border bg-card rounded-lg border p-8 text-center">
+        <h1 id="payment-title" className="text-foreground text-2xl font-bold">
           {title}
         </h1>
 
         {description ? (
-          <p className="mt-2 text-sm text-muted-foreground">{description}</p>
+          <p className="text-muted-foreground mt-2 text-sm">{description}</p>
         ) : null}
 
         {children}
@@ -289,15 +289,15 @@ export default async function PaymentPage(props: PaymentPageProps) {
       <ClearCartOnMount enabled={clearCart} />
 
       <header className="mb-6">
-        <p className="text-sm font-semibold uppercase tracking-wide text-accent">
+        <p className="text-accent text-sm font-semibold tracking-wide uppercase">
           {t('payment.title')}
         </p>
 
-        <h1 id="pay-order-title" className="text-3xl font-bold text-foreground">
+        <h1 id="pay-order-title" className="text-foreground text-3xl font-bold">
           {t('payment.payForOrder', { orderId: order.id.slice(0, 8) })}
         </h1>
 
-        <p className="mt-2 text-sm text-muted-foreground">
+        <p className="text-muted-foreground mt-2 text-sm">
           {await buildStatusMessage(order.paymentStatus)}
         </p>
       </header>
@@ -307,29 +307,29 @@ export default async function PaymentPage(props: PaymentPageProps) {
         aria-label="Payment and order summary"
       >
         <section
-          className="rounded-lg border border-border bg-card p-6"
+          className="border-border bg-card rounded-lg border p-6"
           aria-label="Payment details"
         >
-          <h2 className="text-lg font-semibold text-foreground">
+          <h2 className="text-foreground text-lg font-semibold">
             {t('payment.paymentDetails')}
           </h2>
 
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className="text-muted-foreground mt-2 text-sm">
             {t('payment.completePayment')}
           </p>
 
-          <div className="mt-6 rounded-md border border-border bg-muted/30 p-4">
+          <div className="border-border bg-muted/30 mt-6 rounded-md border p-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">
+              <span className="text-muted-foreground text-sm">
                 {t('payment.amountDue')}
               </span>
 
-              <span className="text-xl font-bold text-foreground">
+              <span className="text-foreground text-xl font-bold">
                 {formatMoney(order.totalAmountMinor, order.currency, locale)}
               </span>
             </div>
 
-            <p className="mt-1 text-xs text-muted-foreground uppercase tracking-wide">
+            <p className="text-muted-foreground mt-1 text-xs tracking-wide uppercase">
               {order.currency}
             </p>
           </div>
@@ -348,29 +348,29 @@ export default async function PaymentPage(props: PaymentPageProps) {
         </section>
 
         <aside
-          className="rounded-lg border border-border bg-card p-6"
+          className="border-border bg-card rounded-lg border p-6"
           aria-label="Order summary"
         >
-          <h2 className="text-lg font-semibold text-foreground">
+          <h2 className="text-foreground text-lg font-semibold">
             {t('payment.orderSummary')}
           </h2>
 
-          <dl className="mt-4 space-y-3 text-sm text-muted-foreground">
+          <dl className="text-muted-foreground mt-4 space-y-3 text-sm">
             <div className="flex items-center justify-between">
               <dt>{t('payment.items')}</dt>
-              <dd className="font-medium text-foreground">{itemsCount}</dd>
+              <dd className="text-foreground font-medium">{itemsCount}</dd>
             </div>
 
             <div className="flex items-center justify-between">
               <dt>{t('payment.totalAmount')}</dt>
-              <dd className="font-semibold text-foreground">
+              <dd className="text-foreground font-semibold">
                 {formatMoney(order.totalAmountMinor, order.currency, locale)}
               </dd>
             </div>
 
             <div className="flex items-center justify-between">
               <dt>{t('payment.status')}</dt>
-              <dd className="font-semibold capitalize text-foreground">
+              <dd className="text-foreground font-semibold capitalize">
                 {order.paymentStatus}
               </dd>
             </div>

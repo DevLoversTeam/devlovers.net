@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import { resolveStripeWebhookRateLimit } from '@/lib/security/stripe-webhook-rate-limit';
 
 describe('stripe webhook rate limit env precedence', () => {

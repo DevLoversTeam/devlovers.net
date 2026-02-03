@@ -1,17 +1,17 @@
 import crypto from 'node:crypto';
+
 import { NextRequest, NextResponse } from 'next/server';
 
+import { parseAdminProductForm } from '@/lib/admin/parseAdminProductForm';
 import {
   AdminApiDisabledError,
   AdminForbiddenError,
   AdminUnauthorizedError,
   requireAdminApi,
 } from '@/lib/auth/admin';
+import { logError, logWarn } from '@/lib/logging';
 import { requireAdminCsrf } from '@/lib/security/admin-csrf';
 import { guardBrowserSameOrigin } from '@/lib/security/origin';
-
-import { parseAdminProductForm } from '@/lib/admin/parseAdminProductForm';
-import { logError, logWarn } from '@/lib/logging';
 import { InvalidPayloadError, SlugConflictError } from '@/lib/services/errors';
 import { createProduct } from '@/lib/services/products';
 
@@ -298,13 +298,13 @@ export async function POST(request: NextRequest) {
 
       const errCode =
         error instanceof InvalidPayloadError
-          ? (error as any).code ?? 'INVALID_PAYLOAD'
+          ? ((error as any).code ?? 'INVALID_PAYLOAD')
           : error instanceof SlugConflictError
-          ? error.code
-          : error instanceof Error &&
-            error.message === 'Failed to upload image to Cloudinary'
-          ? 'IMAGE_UPLOAD_FAILED'
-          : 'ADMIN_PRODUCT_CREATE_FAILED';
+            ? error.code
+            : error instanceof Error &&
+                error.message === 'Failed to upload image to Cloudinary'
+              ? 'IMAGE_UPLOAD_FAILED'
+              : 'ADMIN_PRODUCT_CREATE_FAILED';
 
       const isExpected =
         error instanceof InvalidPayloadError ||

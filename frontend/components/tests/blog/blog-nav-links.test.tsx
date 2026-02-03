@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
+import { afterEach,describe, expect, it, vi } from 'vitest';
+
 import { BlogNavLinks } from '@/components/blog/BlogNavLinks';
 
 const fetchMock = vi.fn();

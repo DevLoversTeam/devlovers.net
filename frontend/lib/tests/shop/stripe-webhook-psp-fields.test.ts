@@ -1,14 +1,14 @@
-import { describe, it, expect, vi } from 'vitest';
-import { NextRequest } from 'next/server';
-import { eq } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
+import { eq } from 'drizzle-orm';
+import { NextRequest } from 'next/server';
+import { describe, expect, it, vi } from 'vitest';
 
 import { db } from '@/db';
 import {
-  products,
-  productPrices,
-  orders,
   orderItems,
+  orders,
+  productPrices,
+  products,
   stripeEvents,
 } from '@/db/schema';
 
@@ -21,8 +21,8 @@ vi.mock('@/lib/psp/stripe', async () => {
   };
 });
 
-import { verifyWebhookSignature } from '@/lib/psp/stripe';
 import { POST as webhookPOST } from '@/app/api/shop/webhooks/stripe/route';
+import { verifyWebhookSignature } from '@/lib/psp/stripe';
 
 function logTestCleanupFailed(meta: Record<string, unknown>, error: unknown) {
   console.error('[test cleanup failed]', {

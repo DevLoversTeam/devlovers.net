@@ -1,9 +1,11 @@
 'use client';
 
-import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Crown } from 'lucide-react';
+import Image from 'next/image';
+
 import { cn } from '@/lib/utils';
+
 import { User } from './types';
 
 const rankConfig = {
@@ -50,7 +52,7 @@ export function LeaderboardPodium({ topThree }: { topThree: User[] }) {
   ].filter(Boolean) as User[];
 
   return (
-    <div className="flex items-end justify-center gap-4 md:gap-8 h-[350px] w-full max-w-3xl mx-auto">
+    <div className="mx-auto flex h-[350px] w-full max-w-3xl items-end justify-center gap-4 md:gap-8">
       {podiumOrder.map(user => {
         const rank = user.rank as 1 | 2 | 3;
         const isFirst = rank === 1;
@@ -61,29 +63,29 @@ export function LeaderboardPodium({ topThree }: { topThree: User[] }) {
         return (
           <div
             key={user.id}
-            className="relative flex flex-col items-center justify-end w-1/3 h-full"
+            className="relative flex h-full w-1/3 flex-col items-center justify-end"
           >
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: delay + 0.5, duration: 0.5 }}
-              className="mb-3 md:mb-4 flex flex-col items-center text-center z-10"
+              className="z-10 mb-3 flex flex-col items-center text-center md:mb-4"
             >
               <div className="relative mb-2">
                 {isFirst && (
                   <Crown
-                    className="absolute -top-6 md:-top-8 left-1/2 -translate-x-1/2 w-5 h-5 md:w-6 md:h-6 text-yellow-500 animate-bounce"
+                    className="absolute -top-6 left-1/2 h-5 w-5 -translate-x-1/2 animate-bounce text-yellow-500 md:-top-8 md:h-6 md:w-6"
                     fill="currentColor"
                   />
                 )}
 
                 <div
                   className={cn(
-                    'relative w-14 h-14 md:w-20 md:h-20 rounded-full p-1 transition-colors duration-300 border-2',
+                    'relative h-14 w-14 rounded-full border-2 p-1 transition-colors duration-300 md:h-20 md:w-20',
                     style.ring
                   )}
                 >
-                  <div className="relative w-full h-full rounded-full overflow-hidden bg-gray-100 dark:bg-black">
+                  <div className="relative h-full w-full overflow-hidden rounded-full bg-gray-100 dark:bg-black">
                     <Image
                       src={user.avatar}
                       alt={user.username}
@@ -94,7 +96,7 @@ export function LeaderboardPodium({ topThree }: { topThree: User[] }) {
 
                   <div
                     className={cn(
-                      'absolute -bottom-2 left-1/2 -translate-x-1/2 w-5 h-5 md:w-6 md:h-6 rounded-full flex items-center justify-center text-[10px] md:text-xs font-bold text-white shadow-sm transition-colors duration-300',
+                      'absolute -bottom-2 left-1/2 flex h-5 w-5 -translate-x-1/2 items-center justify-center rounded-full text-[10px] font-bold text-white shadow-sm transition-colors duration-300 md:h-6 md:w-6 md:text-xs',
                       style.badge
                     )}
                   >
@@ -103,13 +105,13 @@ export function LeaderboardPodium({ topThree }: { topThree: User[] }) {
                 </div>
               </div>
 
-              <div className="font-bold text-gray-900 dark:text-white text-xs md:text-base truncate max-w-[90px] md:max-w-[140px]">
+              <div className="max-w-[90px] truncate text-xs font-bold text-gray-900 md:max-w-[140px] md:text-base dark:text-white">
                 {user.username}
               </div>
 
               <div
                 className={cn(
-                  'font-mono font-bold mt-0.5 text-base md:text-lg',
+                  'mt-0.5 font-mono text-base font-bold md:text-lg',
                   style.text
                 )}
               >
@@ -128,7 +130,7 @@ export function LeaderboardPodium({ topThree }: { topThree: User[] }) {
                 damping: 15,
               }}
               className={cn(
-                'w-full rounded-t-xl md:rounded-t-2xl relative overflow-hidden backdrop-blur-md border-x border-t transition-colors duration-300',
+                'relative w-full overflow-hidden rounded-t-xl border-x border-t backdrop-blur-md transition-colors duration-300 md:rounded-t-2xl',
                 style.bg,
                 style.border
               )}

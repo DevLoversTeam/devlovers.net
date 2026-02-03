@@ -29,8 +29,7 @@ const renderText = (node: TextNode, index: number) => {
     text = (
       <code
         key={index}
-        className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-sm
-  font-mono"
+        className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-sm dark:bg-gray-800"
       >
         {node.text}
       </code>
@@ -77,9 +76,9 @@ export default function ExplanationRenderer({
             return (
               <pre
                 key={blockIndex}
-                className="bg-gray-900 text-gray-100 p-6 rounded-lg overflow-x-auto"
+                className="overflow-x-auto rounded-lg bg-gray-900 p-6 text-gray-100"
               >
-                <code className="text-sm font-mono block leading-relaxed">
+                <code className="block font-mono text-sm leading-relaxed">
                   {block.children
                     .map(child => (child as TextNode).text)
                     .join('')}
@@ -91,7 +90,7 @@ export default function ExplanationRenderer({
             return (
               <ol
                 key={blockIndex}
-                className="list-decimal list-inside space-y-2 ml-4"
+                className="ml-4 list-inside list-decimal space-y-2"
               >
                 {renderChildren(block.children)}
               </ol>
@@ -101,7 +100,7 @@ export default function ExplanationRenderer({
             return (
               <ul
                 key={blockIndex}
-                className="list-disc list-inside space-y-2 ml-4"
+                className="ml-4 list-inside list-disc space-y-2"
               >
                 {renderChildren(block.children)}
               </ul>

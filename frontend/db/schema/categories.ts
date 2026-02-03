@@ -1,13 +1,13 @@
+import { relations } from 'drizzle-orm';
 import {
+  integer,
   pgTable,
+  primaryKey,
+  text,
+  timestamp,
   uuid,
   varchar,
-  text,
-  integer,
-  timestamp,
-  primaryKey,
 } from 'drizzle-orm/pg-core';
-import { relations } from 'drizzle-orm';
 
 export const categories = pgTable('categories', {
   id: uuid('id').defaultRandom().primaryKey(),

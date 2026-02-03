@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useTranslations } from 'next-intl';
-import { cn } from '@/lib/utils';
 import { AlertTriangle } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { useEffect, useState } from 'react';
+
+import { cn } from '@/lib/utils';
 
 interface CountdownTimerProps {
   timeLimitSeconds: number;
@@ -92,14 +93,14 @@ export function CountdownTimer({
         percentage <= 10 && 'animate-pulse'
       )}
     >
-      <div className="flex items-center justify-between mb-2">
+      <div className="mb-2 flex items-center justify-between">
         <span className="text-sm font-medium">{t('label')}</span>
-        <span className="text-2xl font-bold font-mono">
+        <span className="font-mono text-2xl font-bold">
           {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
         </span>
       </div>
 
-      <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+      <div className="h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
         <div
           className={cn(
             'h-full transition-all duration-1000 ease-linear',
@@ -110,10 +111,10 @@ export function CountdownTimer({
       </div>
 
       {percentage <= 30 && (
-        <p className="text-xs mt-2 font-medium">
+        <p className="mt-2 text-xs font-medium">
           {percentage <= 10 ? (
             <>
-              <AlertTriangle className="w-4 h-4 inline text-amber-500" aria-hidden="true" /> {t('almostDone')}
+              <AlertTriangle className="inline h-4 w-4 text-amber-500" aria-hidden="true" /> {t('almostDone')}
             </>
           ) : (
             <>

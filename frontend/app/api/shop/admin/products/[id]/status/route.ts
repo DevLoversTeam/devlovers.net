@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -8,11 +9,10 @@ import {
   AdminUnauthorizedError,
   requireAdminApi,
 } from '@/lib/auth/admin';
+import { ProductNotFoundError } from '@/lib/errors/products';
+import { logError, logWarn } from '@/lib/logging';
 import { requireAdminCsrf } from '@/lib/security/admin-csrf';
 import { guardBrowserSameOrigin } from '@/lib/security/origin';
-
-import { logError, logWarn } from '@/lib/logging';
-import { ProductNotFoundError } from '@/lib/errors/products';
 import { toggleProductStatus } from '@/lib/services/products';
 
 export const runtime = 'nodejs';

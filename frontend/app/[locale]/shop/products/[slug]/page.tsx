@@ -1,15 +1,16 @@
+import { ArrowLeft } from 'lucide-react';
+import { Metadata } from 'next';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
-import { cn } from '@/lib/utils';
+
 import { AddToCartButton } from '@/components/shop/AddToCartButton';
-import { getProductPageData } from '@/lib/shop/data';
-import { formatMoney, resolveCurrencyFromLocale } from '@/lib/shop/currency';
 import { getPublicProductBySlug } from '@/db/queries/shop/products';
 import { Link } from '@/i18n/routing';
+import { formatMoney, resolveCurrencyFromLocale } from '@/lib/shop/currency';
+import { getProductPageData } from '@/lib/shop/data';
 import { SHOP_FOCUS, SHOP_NAV_LINK_BASE } from '@/lib/shop/ui-classes';
-import { Metadata } from 'next';
+import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = {
   title: 'Product name | DevLovers',
@@ -66,10 +67,10 @@ export default async function ProductPage({
       </nav>
 
       <div className="mt-8 grid gap-8 lg:grid-cols-2 lg:gap-16">
-        <div className="relative aspect-square overflow-hidden rounded-lg bg-muted">
+        <div className="bg-muted relative aspect-square overflow-hidden rounded-lg">
           {product.badge && (
             <span
-              className={`absolute left-4 top-4 z-10 rounded px-2 py-1 text-xs font-semibold uppercase ${
+              className={`absolute top-4 left-4 z-10 rounded px-2 py-1 text-xs font-semibold uppercase ${
                 badge === 'SALE'
                   ? 'bg-accent text-accent-foreground'
                   : 'bg-foreground text-background'
@@ -90,13 +91,13 @@ export default async function ProductPage({
         </div>
 
         <div className="flex flex-col">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+          <h1 className="text-foreground text-3xl font-bold tracking-tight">
             {product.name}
           </h1>
 
           {isUnavailable ? (
             <div
-              className="mt-4 rounded-md border border-border bg-muted/30 p-4 text-sm text-muted-foreground"
+              className="border-border bg-muted/30 text-muted-foreground mt-4 rounded-md border p-4 text-sm"
               role="status"
               aria-live="polite"
             >
@@ -116,7 +117,7 @@ export default async function ProductPage({
               </span>
 
               {product.originalPrice && (
-                <span className="text-lg text-muted-foreground line-through">
+                <span className="text-muted-foreground text-lg line-through">
                   {formatMoney(product.originalPrice, product.currency, locale)}
                 </span>
               )}
@@ -124,7 +125,7 @@ export default async function ProductPage({
           )}
 
           {product.description && (
-            <p className="mt-6 text-muted-foreground">{product.description}</p>
+            <p className="text-muted-foreground mt-6">{product.description}</p>
           )}
 
           {!isUnavailable && (

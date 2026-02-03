@@ -1,8 +1,8 @@
 import 'server-only';
 
-import { cookies } from 'next/headers';
-import jwt from 'jsonwebtoken';
 import { eq } from 'drizzle-orm';
+import jwt from 'jsonwebtoken';
+import { cookies } from 'next/headers';
 
 import { db } from '@/db';
 import { users } from '@/db/schema/users';

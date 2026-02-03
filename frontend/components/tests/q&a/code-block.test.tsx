@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { act,fireEvent, render, screen } from '@testing-library/react';
+import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('next-themes', () => ({
   useTheme: () => ({ resolvedTheme: 'light' }),
@@ -16,8 +16,12 @@ vi.mock('prism-react-renderer', () => ({
       className: string;
       style: Record<string, unknown>;
       tokens: Array<Array<{ content: string; types: string[] }>>;
-      getLineProps: (args: { line: { content: string }[] }) => Record<string, unknown>;
-      getTokenProps: (args: { token: { content: string } }) => Record<string, unknown>;
+      getLineProps: (args: {
+        line: { content: string }[];
+      }) => Record<string, unknown>;
+      getTokenProps: (args: {
+        token: { content: string };
+      }) => Record<string, unknown>;
     }) => unknown;
   }) =>
     children({
@@ -57,7 +61,9 @@ describe('CodeBlock', () => {
       await Promise.resolve();
     });
 
-    const writeText = navigator.clipboard.writeText as unknown as ReturnType<typeof vi.fn>;
+    const writeText = navigator.clipboard.writeText as unknown as ReturnType<
+      typeof vi.fn
+    >;
     expect(writeText).toHaveBeenCalledWith('const a = 1;');
 
     expect(screen.getByText('Copied')).toBeTruthy();

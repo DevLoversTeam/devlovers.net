@@ -1,16 +1,17 @@
 import { eq } from 'drizzle-orm';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+
 import { db } from './index';
 import { categories } from './schema/categories';
 import {
-  quizzes,
-  quizTranslations,
-  quizQuestions,
-  quizQuestionContent,
   quizAnswers,
   quizAnswerTranslations,
   quizAttempts,
+  quizQuestionContent,
+  quizQuestions,
+  quizTranslations,
+  quizzes,
 } from './schema/quiz';
 
 type Locale = 'uk' | 'en' | 'pl';
@@ -44,15 +45,18 @@ const QUIZ_METADATA = {
   translations: {
     uk: {
       title: 'TypeScript Advanced',
-      description: 'Поглиблений квіз з TypeScript: декоратори, рефлексія, утилітні типи, infer, template literal types, патерни проектування та інтеграція з фреймворками.',
+      description:
+        'Поглиблений квіз з TypeScript: декоратори, рефлексія, утилітні типи, infer, template literal types, патерни проектування та інтеграція з фреймворками.',
     },
     en: {
       title: 'TypeScript Advanced',
-      description: 'Advanced TypeScript quiz: decorators, reflection, utility types, infer, template literal types, design patterns and framework integration.',
+      description:
+        'Advanced TypeScript quiz: decorators, reflection, utility types, infer, template literal types, design patterns and framework integration.',
     },
     pl: {
       title: 'TypeScript Advanced',
-      description: 'Zaawansowany quiz z TypeScript: dekoratory, refleksja, typy narzędziowe, infer, template literal types, wzorce projektowe i integracja z frameworkami.',
+      description:
+        'Zaawansowany quiz z TypeScript: dekoratory, refleksja, typy narzędziowe, infer, template literal types, wzorce projektowe i integracja z frameworkami.',
     },
   },
 };
@@ -62,7 +66,13 @@ function createExplanation(text: string) {
 }
 
 async function loadQuestions(partNumber: number): Promise<QuestionData[]> {
-  const partPath = join(process.cwd(), 'parse', 'typescript', 'advanced', `typescript-advanced-quiz-part${partNumber}.json`);
+  const partPath = join(
+    process.cwd(),
+    'parse',
+    'typescript',
+    'advanced',
+    `typescript-advanced-quiz-part${partNumber}.json`
+  );
   const partData: QuizPartData = JSON.parse(readFileSync(partPath, 'utf-8'));
   return partData.questions;
 }
@@ -77,7 +87,9 @@ async function ensureQuizExists(): Promise<string> {
     .limit(1);
 
   if (!category) {
-    throw new Error(`Category "${CATEGORY_SLUG}" not found. Run seed:categories first.`);
+    throw new Error(
+      `Category "${CATEGORY_SLUG}" not found. Run seed:categories first.`
+    );
   }
 
   const existing = await db.query.quizzes.findFirst({
@@ -88,19 +100,26 @@ async function ensureQuizExists(): Promise<string> {
       where: eq(quizAttempts.quizId, existing.id),
     });
     if (existingAttempt) {
-      throw new Error(`Quiz ${QUIZ_METADATA.slug} has existing attempts. Aborting to avoid data loss.`);
+      throw new Error(
+        `Quiz ${QUIZ_METADATA.slug} has existing attempts. Aborting to avoid data loss.`
+      );
     }
 
     await db.delete(quizQuestions).where(eq(quizQuestions.quizId, existing.id));
-    await db.delete(quizTranslations).where(eq(quizTranslations.quizId, existing.id));
-    await db.update(quizzes).set({
-      categoryId: category.id,
-      slug: QUIZ_METADATA.slug,
-      displayOrder: 2,
-      questionsCount: QUIZ_METADATA.questionsCount,
-      timeLimitSeconds: QUIZ_METADATA.timeLimitSeconds,
-      isActive: true,
-    }).where(eq(quizzes.id, existing.id));
+    await db
+      .delete(quizTranslations)
+      .where(eq(quizTranslations.quizId, existing.id));
+    await db
+      .update(quizzes)
+      .set({
+        categoryId: category.id,
+        slug: QUIZ_METADATA.slug,
+        displayOrder: 2,
+        questionsCount: QUIZ_METADATA.questionsCount,
+        timeLimitSeconds: QUIZ_METADATA.timeLimitSeconds,
+        isActive: true,
+      })
+      .where(eq(quizzes.id, existing.id));
 
     const quizId = existing.id;
     for (const locale of LOCALES) {
@@ -115,14 +134,17 @@ async function ensureQuizExists(): Promise<string> {
     return quizId;
   }
 
-  const [quiz] = await db.insert(quizzes).values({
-    categoryId: category.id,
-    slug: QUIZ_METADATA.slug,
-    displayOrder: 2,
-    questionsCount: QUIZ_METADATA.questionsCount,
-    timeLimitSeconds: QUIZ_METADATA.timeLimitSeconds,
-    isActive: true,
-  }).returning();
+  const [quiz] = await db
+    .insert(quizzes)
+    .values({
+      categoryId: category.id,
+      slug: QUIZ_METADATA.slug,
+      displayOrder: 2,
+      questionsCount: QUIZ_METADATA.questionsCount,
+      timeLimitSeconds: QUIZ_METADATA.timeLimitSeconds,
+      isActive: true,
+    })
+    .returning();
 
   for (const locale of LOCALES) {
     await db.insert(quizTranslations).values({
@@ -136,15 +158,24 @@ async function ensureQuizExists(): Promise<string> {
   return quiz.id;
 }
 
-async function seedQuestions(questions: QuestionData[], quizId: string, partNumber: number) {
-  console.log(`Seeding ${questions.length} questions from part ${partNumber}...`);
+async function seedQuestions(
+  questions: QuestionData[],
+  quizId: string,
+  partNumber: number
+) {
+  console.log(
+    `Seeding ${questions.length} questions from part ${partNumber}...`
+  );
 
   for (const question of questions) {
-    const [q] = await db.insert(quizQuestions).values({
-      quizId,
-      displayOrder: question.order,
-      difficulty: question.difficulty,
-    }).returning();
+    const [q] = await db
+      .insert(quizQuestions)
+      .values({
+        quizId,
+        displayOrder: question.order,
+        difficulty: question.difficulty,
+      })
+      .returning();
 
     for (const locale of LOCALES) {
       await db.insert(quizQuestionContent).values({
@@ -157,12 +188,15 @@ async function seedQuestions(questions: QuestionData[], quizId: string, partNumb
 
     for (let i = 0; i < question.answers.length; i++) {
       const answer = question.answers[i];
-      
-      const [a] = await db.insert(quizAnswers).values({
-        quizQuestionId: q.id,
-        displayOrder: i + 1,
-        isCorrect: answer.correct,
-      }).returning();
+
+      const [a] = await db
+        .insert(quizAnswers)
+        .values({
+          quizQuestionId: q.id,
+          displayOrder: i + 1,
+          isCorrect: answer.correct,
+        })
+        .returning();
 
       for (const locale of LOCALES) {
         await db.insert(quizAnswerTranslations).values({
@@ -183,9 +217,13 @@ async function seedQuizFromJson() {
 
   if (!partArg) {
     console.error('Error: Please specify which part to upload');
-    console.log('Usage: npx tsx db/seeds/seed-quiz-typescript-advanced.ts <part-number>');
+    console.log(
+      'Usage: npx tsx db/seeds/seed-quiz-typescript-advanced.ts <part-number>'
+    );
     console.log('Example: npx tsx db/seeds/seed-quiz-typescript-advanced.ts 1');
-    console.log('Or upload all: npx tsx db/seeds/seed-quiz-typescript-advanced.ts all');
+    console.log(
+      'Or upload all: npx tsx db/seeds/seed-quiz-typescript-advanced.ts all'
+    );
     process.exit(1);
   }
 
@@ -207,7 +245,9 @@ async function seedQuizFromJson() {
       console.log('\nAll parts seeded successfully!');
       console.log(`   - 1 quiz with ${LOCALES.length} translations`);
       console.log(`   - ${totalQuestions} questions total`);
-      console.log(`   - ${totalQuestions * 4} answers with ${LOCALES.length} translations each`);
+      console.log(
+        `   - ${totalQuestions * 4} answers with ${LOCALES.length} translations each`
+      );
     } else {
       const partNumber = parseInt(partArg, 10);
 
@@ -222,7 +262,9 @@ async function seedQuizFromJson() {
       console.log('\nPart seeded successfully!');
       console.log(`   - Quiz: ${QUIZ_METADATA.translations.en.title}`);
       console.log(`   - Part ${partNumber}: ${questions.length} questions`);
-      console.log(`   - ${questions.length * 4} answers with ${LOCALES.length} translations each`);
+      console.log(
+        `   - ${questions.length * 4} answers with ${LOCALES.length} translations each`
+      );
     }
   } catch (error) {
     console.error('\nError seeding quiz:', error);
@@ -232,7 +274,7 @@ async function seedQuizFromJson() {
 
 seedQuizFromJson()
   .then(() => process.exit(0))
-  .catch((error) => {
+  .catch(error => {
     console.error(error);
     process.exit(1);
   });

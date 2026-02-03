@@ -1,13 +1,10 @@
 type BaseEmailLayoutParams = {
-    title: string;
-    content: string;
+  title: string;
+  content: string;
 };
 
-export function baseEmailLayout({
-    title,
-    content,
-}: BaseEmailLayoutParams) {
-    return `
+export function baseEmailLayout({ title, content }: BaseEmailLayoutParams) {
+  return `
 <!DOCTYPE html>
 <html>
   <head>
