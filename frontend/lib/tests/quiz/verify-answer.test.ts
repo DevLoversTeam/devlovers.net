@@ -1,20 +1,8 @@
 import { NextRequest } from 'next/server';
-<<<<<<< HEAD
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-=======
 import { beforeEach, describe, expect, it, vi } from 'vitest';
->>>>>>> develop
 
 import { POST } from '@/app/api/quiz/verify-answer/route';
 
-<<<<<<< HEAD
-import {
-  createCorrectAnswersMap,
-  createMockQuestions,
-  resetFactoryCounters,
-} from '../factories/quiz/quiz';
-import { cleanupQuizTestEnv, setupQuizTestEnv } from './setup';
-=======
 // Mock the Redis module
 vi.mock('@/lib/quiz/quiz-answers-redis', () => ({
   getCorrectAnswer: vi.fn(),
@@ -23,7 +11,6 @@ vi.mock('@/lib/quiz/quiz-answers-redis', () => ({
 import { getCorrectAnswer } from '@/lib/quiz/quiz-answers-redis';
 
 const mockGetCorrectAnswer = vi.mocked(getCorrectAnswer);
->>>>>>> develop
 
 function createVerifyRequest(body: unknown): NextRequest {
   return new NextRequest('http://localhost/api/quiz/verify-answer', {
