@@ -56,11 +56,7 @@ export function MainSwitcher({
           showAdminLink={showAdminLink}
           blogCategories={blogCategories}
         />
-<<<<<<< HEAD
-        <main className="mx-auto px-4 sm:px-6 lg:px-8 min-h-[80vh]">
-=======
         <main className="mx-auto min-h-[80vh] px-4 sm:px-6 lg:px-8">
->>>>>>> develop
           {children}
         </main>
       </>

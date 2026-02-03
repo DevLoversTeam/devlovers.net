@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { render, screen, waitFor } from '@testing-library/react';
-import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { Author, Post } from '@/components/blog/BlogFilters';
 import BlogFilters from '@/components/blog/BlogFilters';

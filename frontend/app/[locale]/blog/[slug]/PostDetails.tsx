@@ -84,7 +84,6 @@ function renderPortableTextSpans(
     const text = child?.text || '';
     if (!text) return null;
     const marks = child?.marks || [];
-    const linkKey = marks.find(mark => linkMap.has(mark));
 
     let node: React.ReactNode = marks.length === 0 ? linkifyText(text) : text;
 

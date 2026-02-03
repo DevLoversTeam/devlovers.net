@@ -1,4 +1,4 @@
-import { afterEach,beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
   createEncryptedAnswersBlob,
@@ -11,7 +11,7 @@ import {
   createMockQuestions,
   resetFactoryCounters,
 } from '../factories/quiz/quiz';
-import { cleanupQuizTestEnv,setupQuizTestEnv } from './setup';
+import { cleanupQuizTestEnv, setupQuizTestEnv } from './setup';
 
 describe('quiz-crypto', () => {
   // Setup: set encryption key before each test

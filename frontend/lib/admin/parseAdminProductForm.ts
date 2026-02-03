@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { type CurrencyCode,currencyValues } from '@/lib/shop/currency';
+import { type CurrencyCode, currencyValues } from '@/lib/shop/currency';
 import { toCents } from '@/lib/shop/money';
 import {
   productAdminSchema,

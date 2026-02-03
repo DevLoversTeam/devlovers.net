@@ -2,7 +2,7 @@
 
 import { useSearchParams } from 'next/navigation';
 import { useLocale } from 'next-intl';
-import { useCallback,useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import {
   type CategorySlug,

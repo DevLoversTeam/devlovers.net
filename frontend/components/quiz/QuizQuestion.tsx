@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, Lightbulb,X } from 'lucide-react';
+import { Check, Lightbulb, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import { Button } from '@/components/ui/button';

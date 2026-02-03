@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { fireEvent,render, screen } from '@testing-library/react';
-import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,

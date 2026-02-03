@@ -1,10 +1,10 @@
 'use client';
 
-import { useParams, useRouter,useSearchParams } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
 import { CategoryTabButton } from '@/components/shared/CategoryTabButton';
-import { Tabs, TabsContent,TabsList } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList } from '@/components/ui/tabs';
 import { categoryData } from '@/data/category';
 import { categoryTabStyles } from '@/data/categoryStyles';
 

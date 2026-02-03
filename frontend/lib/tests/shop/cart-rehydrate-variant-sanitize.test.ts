@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { db } from '@/db';
-import { productPrices,products } from '@/db/schema';
+import { productPrices, products } from '@/db/schema';
 import { rehydrateCartItems } from '@/lib/services/products';
 
 let productId: string;

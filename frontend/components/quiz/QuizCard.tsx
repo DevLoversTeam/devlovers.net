@@ -1,6 +1,6 @@
 'use client';
 
-import { Clock,FileText } from 'lucide-react';
+import { Clock, FileText } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import { Badge } from '@/components/ui/badge';

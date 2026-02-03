@@ -51,7 +51,7 @@ vi.mock('@/lib/logging', async () => {
 });
 
 import { db } from '@/db';
-import { orders,productPrices, products } from '@/db/schema';
+import { orders, productPrices, products } from '@/db/schema';
 
 let POST: (req: NextRequest) => Promise<Response>;
 

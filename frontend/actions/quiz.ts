@@ -1,6 +1,6 @@
 'use server';
 
-import { and,eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { awardQuizPoints, calculateQuizPoints } from '@/db/queries/points';

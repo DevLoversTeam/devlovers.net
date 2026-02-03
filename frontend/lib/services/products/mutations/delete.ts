@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm';
 
 import { db } from '@/db';
-import { productPrices,products } from '@/db/schema';
+import { productPrices, products } from '@/db/schema';
 import { destroyProductImage } from '@/lib/cloudinary';
 import { ProductNotFoundError } from '@/lib/errors/products';
 import { logError } from '@/lib/logging';

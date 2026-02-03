@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { afterEach,beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { POST } from '@/app/api/quiz/verify-answer/route';
 import { encryptAnswers } from '@/lib/quiz/quiz-crypto';
@@ -9,7 +9,7 @@ import {
   createMockQuestions,
   resetFactoryCounters,
 } from '../factories/quiz/quiz';
-import { cleanupQuizTestEnv,setupQuizTestEnv } from './setup';
+import { cleanupQuizTestEnv, setupQuizTestEnv } from './setup';
 
 /**
  * Creates a mock NextRequest for POST /api/quiz/verify-answer

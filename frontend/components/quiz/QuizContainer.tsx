@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertTriangle, Ban, Clock,FileText } from 'lucide-react';
+import { AlertTriangle, Ban, Clock, FileText } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import {

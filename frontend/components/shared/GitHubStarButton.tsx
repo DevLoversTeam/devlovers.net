@@ -2,7 +2,7 @@
 
 import { Star } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useEffect, useRef,useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface GitHubStarButtonProps {
   className?: string;
