@@ -132,7 +132,7 @@ export function ProductsToolbar() {
         aria-label={t('label')}
         className="flex flex-wrap items-end gap-3"
       >
-        <div className="min-w-0 flex-1 sm:min-w-[260px] sm:flex-none">
+        <div className="min-w-0 flex-1 sm:min-w-65 sm:flex-none">
           <ProductSort />
         </div>
 

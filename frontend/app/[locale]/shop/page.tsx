@@ -53,7 +53,7 @@ export default async function HomePage({
 
             <Link
               href="/shop/products?filter=new"
-              className="group border-border text-muted-foreground hover:text-foreground focus-visible:ring-offset-background inline-flex items-center gap-2 rounded-md border bg-transparent px-4 py-2 text-xs font-semibold tracking-[0.25em] uppercase shadow-none transition-[transform,box-shadow,color,filter] duration-500 ease-out hover:-translate-y-0.5 hover:shadow-[var(--shop-card-shadow-hover)] hover:brightness-110 focus-visible:ring-2 focus-visible:ring-[color:var(--color-ring)] focus-visible:ring-offset-2 focus-visible:outline-none sm:text-sm"
+              className="group border-border text-muted-foreground hover:text-foreground focus-visible:ring-offset-background inline-flex items-center gap-2 rounded-md border bg-transparent px-4 py-2 text-xs font-semibold tracking-[0.25em] uppercase shadow-none transition-[transform,box-shadow,color,filter] duration-500 ease-out hover:-translate-y-0.5 hover:shadow-(--shop-card-shadow-hover) hover:brightness-110 focus-visible:ring-2 focus-visible:ring-(--color-ring) focus-visible:ring-offset-2 focus-visible:outline-none sm:text-sm"
               aria-label={t('viewAll')}
             >
               <span>{t('viewAll')}</span>
@@ -119,7 +119,7 @@ export default async function HomePage({
           <div className="mt-8">
             <Link
               href="/shop/products"
-              className={` ${SHOP_CTA_BASE} ${SHOP_FOCUS} px-8 py-3 text-[color:var(--shop-cta-fg)] shadow-[var(--shop-cta-shadow)] hover:shadow-[var(--shop-cta-shadow-hover)] sm:px-10 md:px-12 md:py-3.5`}
+              className={` ${SHOP_CTA_BASE} ${SHOP_FOCUS} px-8 py-3 text-(--shop-cta-fg) shadow-(--shop-cta-shadow) hover:shadow-(--shop-cta-shadow-hover) sm:px-10 md:px-12 md:py-3.5`}
               aria-label={t('hero.cta')}
             >
               <span
