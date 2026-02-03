@@ -28,6 +28,12 @@ function isHomePath(pathname: string): boolean {
   );
 }
 
+function isQuizzesPath(pathname: string): boolean {
+  const segments = pathname.split('/').filter(Boolean);
+  return segments[0] === 'quizzes' || segments[1] === 'quizzes' ||
+         segments[0] === 'quiz' || segments[1] === 'quiz';
+}
+
 type MainSwitcherProps = {
   children: ReactNode;
   userExists: boolean;
@@ -64,7 +70,7 @@ export function MainSwitcher({
   }
 
   return (
-    <main className={isQa || isHome ? 'mx-auto' : 'mx-auto min-h-[80vh] px-6'}>
+    <main className={isQa || isHome || isQuizzesPath(pathname) ? 'mx-auto' : 'mx-auto min-h-[80vh] px-6'}>
       {children}
     </main>
   );
