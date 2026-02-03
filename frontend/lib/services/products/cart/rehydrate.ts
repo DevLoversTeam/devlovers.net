@@ -2,10 +2,10 @@ import { and, eq, inArray } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { coercePriceFromDb } from '@/db/queries/shop/orders';
-import { productPrices,products } from '@/db/schema';
+import { productPrices, products } from '@/db/schema';
 import { logWarn } from '@/lib/logging';
 import { createCartItemKey } from '@/lib/shop/cart-item-key';
-import { type CurrencyCode,isTwoDecimalCurrency } from '@/lib/shop/currency';
+import { type CurrencyCode, isTwoDecimalCurrency } from '@/lib/shop/currency';
 import { calculateLineTotal, fromCents, toCents } from '@/lib/shop/money';
 import type {
   CartClientItem,

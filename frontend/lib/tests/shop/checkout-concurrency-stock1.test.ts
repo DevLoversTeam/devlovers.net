@@ -252,7 +252,6 @@ describe('P0-8.10.1 checkout concurrency: stock=1, two parallel checkouts', () =
       // In CI we fail fast so flakes are visible.
       if (process.env.CI) throw err;
 
-       
       console.warn('checkout concurrency cleanup failed', err);
     }
   }, 30000);

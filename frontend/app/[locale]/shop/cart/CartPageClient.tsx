@@ -1,13 +1,13 @@
 'use client';
 
-import { Minus, Plus, ShoppingBag,Trash2 } from 'lucide-react';
+import { Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 import { useCart } from '@/components/shop/CartProvider';
-import { Link,useRouter } from '@/i18n/routing';
+import { Link, useRouter } from '@/i18n/routing';
 import { formatMoney } from '@/lib/shop/currency';
 import { generateIdempotencyKey } from '@/lib/shop/idempotency';
 import {

@@ -399,7 +399,7 @@ export default async function AdminProductsPage({
                           <div className="grid grid-cols-2 gap-2">
                             <Link
                               href={`/shop/products/${row.slug}`}
-                              className="border-border text-foreground hover:bg-secondary inline-flex items-center justify-center rounded-md border px-2 py-1 text-center text-xs leading-tight font-medium break-words whitespace-normal transition-colors"
+                              className="border-border text-foreground hover:bg-secondary break-words inline-flex items-center justify-center rounded-md border px-2 py-1 text-center text-xs leading-tight font-medium whitespace-normal transition-colors"
                               aria-label={t('actions.viewProduct', {
                                 title: row.title,
                               })}
@@ -409,7 +409,7 @@ export default async function AdminProductsPage({
 
                             <Link
                               href={`/shop/admin/products/${row.id}/edit`}
-                              className="border-border text-foreground hover:bg-secondary inline-flex items-center justify-center rounded-md border px-2 py-1 text-center text-xs leading-tight font-medium break-words whitespace-normal transition-colors"
+                              className="border-border text-foreground hover:bg-secondary break-words inline-flex items-center justify-center rounded-md border px-2 py-1 text-center text-xs leading-tight font-medium whitespace-normal transition-colors"
                               aria-label={t('actions.editProduct', {
                                 title: row.title,
                               })}

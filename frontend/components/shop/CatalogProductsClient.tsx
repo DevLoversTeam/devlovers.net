@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReadonlyURLSearchParams,useSearchParams } from 'next/navigation';
+import { type ReadonlyURLSearchParams, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import React from 'react';
 
