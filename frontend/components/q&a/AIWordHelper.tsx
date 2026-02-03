@@ -303,7 +303,6 @@ export default function AIWordHelper({
 
     if (isOpen) {
       document.addEventListener('keydown', handleKeyDown);
-      // Calculate scrollbar width and add padding to prevent layout shift
       const scrollbarWidth =
         window.innerWidth - document.documentElement.clientWidth;
       document.body.style.overflow = 'hidden';
@@ -582,14 +581,12 @@ export default function AIWordHelper({
                             )}
                           </button>
 
-                          {/* Activity suggestions while waiting */}
                           <div className="mt-4 w-full border-t border-gray-200 pt-4 dark:border-neutral-700">
                             <p className="mb-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
                               {messages.rateLimit.whileWaiting}
                             </p>
 
                             {rateLimitState.retryAttempts < 3 ? (
-                              // First suggestions: Take Quiz & Star GitHub
                               <div className="flex flex-col gap-2">
                                 <Link
                                   href="/quizzes"
@@ -640,7 +637,6 @@ export default function AIWordHelper({
                                 </a>
                               </div>
                             ) : (
-                              // After 3+ attempts: Sponsor & Review
                               <div className="flex flex-col gap-2">
                                 <a
                                   href="https://github.com/sponsors/DevLoversTeam"

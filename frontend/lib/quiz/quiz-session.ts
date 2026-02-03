@@ -1,5 +1,5 @@
 const STORAGE_KEY_PREFIX = 'quiz_session_';
-const SESSION_TTL_MS = 30 * 60 * 1000; // 30 minutes
+const SESSION_TTL_MS = 30 * 60 * 1000;
 
 export interface QuizSessionData {
   status: 'rules' | 'in_progress' | 'completed';
@@ -39,13 +39,11 @@ export function loadQuizSession(quizId: string): QuizSessionData | null {
 
     const data: QuizSessionData = JSON.parse(raw);
 
-    // Discard sessions older than 30 minutes
     if (Date.now() - data.savedAt > SESSION_TTL_MS) {
       clearQuizSession(quizId);
       return null;
     }
 
-    // Only restore in_progress sessions
     if (data.status === 'rules') {
       clearQuizSession(quizId);
       return null;
