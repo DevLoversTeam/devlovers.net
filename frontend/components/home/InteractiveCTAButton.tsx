@@ -45,7 +45,7 @@ export const InteractiveCTAButton = React.forwardRef<HTMLAnchorElement>(
 
     const particles = Array.from({ length: 12 }, (_, i) => ({
       id: i,
-      angle: (i * 360) / 8,
+      angle: (i * 360) / 12,
     }));
 
     return (

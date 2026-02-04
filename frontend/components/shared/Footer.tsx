@@ -3,6 +3,7 @@
 import { Github, Linkedin, Send } from 'lucide-react';
 import { useSelectedLayoutSegments } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import type { Ref } from 'react';
 
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { Link } from '@/i18n/routing';
@@ -21,7 +22,7 @@ const SOCIAL = [
 export default function Footer({
   footerRef,
 }: {
-  footerRef?: React.RefObject<HTMLElement>;
+  footerRef?: Ref<HTMLElement>;
 }) {
   const t = useTranslations('footer');
   const segments = useSelectedLayoutSegments();
