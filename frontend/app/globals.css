@@ -237,7 +237,8 @@
     will-change: transform;
   }
 
-  .lg\:left-16.animate-card-breathe {
+  .lg\:left-16.animate-card-breathe,
+  .xl\:left-8.animate-card-breathe {
     transform: rotate(-10deg);
     --card-x: -20px;
     --card-y: -15px;
@@ -246,7 +247,8 @@
     animation-delay: 0s;
   }
 
-  .lg\:right-20.animate-card-breathe {
+  .lg\:right-20.animate-card-breathe,
+  .xl\:right-8.animate-card-breathe {
     transform: rotate(8deg);
     --card-x: 20px;
     --card-y: 15px;

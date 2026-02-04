@@ -19,7 +19,6 @@ export default function SelectableText({
   const onTextSelectRef = useRef(onTextSelect);
   const onSelectionClearRef = useRef(onSelectionClear);
 
-  // Keep refs updated with latest callbacks
   useEffect(() => {
     onTextSelectRef.current = onTextSelect;
     onSelectionClearRef.current = onSelectionClear;

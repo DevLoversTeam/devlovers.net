@@ -1,7 +1,5 @@
 import { getRedisClient } from '@/lib/redis';
 
-const QA_CACHE_TTL_SECONDS = 60 * 60 * 12;
-
 type QaCacheKeyInput = {
   category: string;
   locale: string;
@@ -48,7 +46,7 @@ export async function setQaCache<T>(key: string, value: T) {
   const redis = getRedisClient();
   if (!redis) return;
 
-  await redis.set(key, value, { ex: QA_CACHE_TTL_SECONDS });
+  await redis.set(key, value);
 }
 
 export async function invalidateQaCacheByCategory(category: string) {
@@ -97,7 +95,3 @@ export async function invalidateAllQaCache() {
 
   return deleted;
 }
-
-export const qaCacheConfig = {
-  ttlSeconds: QA_CACHE_TTL_SECONDS,
-};

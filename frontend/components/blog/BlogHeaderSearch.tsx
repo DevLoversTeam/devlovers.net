@@ -95,7 +95,7 @@ export function BlogHeaderSearch() {
     return () => {
       active = false;
     };
-  }, [open, items.length, isLoading]);
+  }, [open, items.length, isLoading, locale]);
 
   useEffect(() => {
     if (!open) return;
