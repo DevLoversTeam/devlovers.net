@@ -23,6 +23,14 @@ export function CountdownTimer({
   const endTime = startedAt.getTime() + timeLimitSeconds * 1000;
   const [remainingSeconds, setRemainingSeconds] = useState(timeLimitSeconds);
   const [isSynced, setIsSynced] = useState(false);
+  const [prevEndTime, setPrevEndTime] = useState(endTime);
+
+    if (endTime !== prevEndTime) {
+      setPrevEndTime(endTime);
+      setIsSynced(false);
+      setRemainingSeconds(timeLimitSeconds);
+    }
+
 
   useEffect(() => {
     if (!isActive) return;
@@ -55,6 +63,7 @@ export function CountdownTimer({
 
     const handleVisibilityChange = () => {
       if (!document.hidden) {
+        setIsSynced(false);
         const remaining = Math.max(
           0,
           Math.floor((endTime - Date.now()) / 1000)

@@ -1,3 +1,5 @@
+import 'dotenv/config';
+
 import { eq } from 'drizzle-orm';
 import { readFileSync } from 'fs';
 import { join } from 'path';
@@ -75,7 +77,7 @@ async function loadQuestions(partNumber: number): Promise<QuestionData[]> {
   return partData.questions;
 }
 
-async function ensureQuizExists(): Promise<string> {
+async function ensureQuizExists(forceDelete: boolean): Promise<string> {
   console.log('Ensuring quiz exists...');
 
   const [category] = await db
@@ -93,14 +95,24 @@ async function ensureQuizExists(): Promise<string> {
   const existing = await db.query.quizzes.findFirst({
     where: eq(quizzes.slug, QUIZ_METADATA.slug),
   });
+
   if (existing) {
-    const existingAttempt = await db.query.quizAttempts.findFirst({
-      where: eq(quizAttempts.quizId, existing.id),
-    });
-    if (existingAttempt) {
-      throw new Error(
-        `Quiz ${QUIZ_METADATA.slug} has existing attempts. Aborting to avoid data loss.`
-      );
+    const existingAttempts = await db
+      .select()
+      .from(quizAttempts)
+      .where(eq(quizAttempts.quizId, existing.id))
+      .limit(1);
+
+    if (existingAttempts.length > 0) {
+      if (!forceDelete) {
+        throw new Error(
+          `Quiz ${QUIZ_METADATA.slug} has existing attempts. Use --force to delete them.`
+        );
+      }
+
+      console.log('Deleting existing attempts (--force flag used)...');
+      await db.delete(quizAttempts).where(eq(quizAttempts.quizId, existing.id));
+      console.log('Attempts deleted.');
     }
 
     await db.delete(quizQuestions).where(eq(quizQuestions.quizId, existing.id));
@@ -211,22 +223,24 @@ async function seedQuestions(
 
 async function seedQuizFromJson() {
   const args = process.argv.slice(2);
-  const partArg = args[0];
+  const forceDelete = args.includes('--force');
+  const partArg = args.find(arg => arg !== '--force');
 
   if (!partArg) {
     console.error('Error: Please specify which part to upload');
-    console.log(
-      'Usage: npx tsx db/seeds/seed-quiz-javascript.ts <part-number>'
-    );
-    console.log('Example: npx tsx db/seeds/seed-quiz-javascript.ts 1');
-    console.log('Or upload all: npx tsx db/seeds/seed-quiz-javascript.ts all');
+    console.log('Usage: npx tsx db/seed-quiz-javascript.ts <part-number> [--force]');
+    console.log('Example: npx tsx db/seed-quiz-javascript.ts 1');
+    console.log('         npx tsx db/seed-quiz-javascript.ts all --force');
     process.exit(1);
   }
 
   console.log('Starting JavaScript quiz seed...\n');
+  if (forceDelete) {
+    console.log('WARNING: --force flag used. Existing attempts will be deleted.\n');
+  }
 
   try {
-    const quizId = await ensureQuizExists();
+    const quizId = await ensureQuizExists(forceDelete);
 
     if (partArg.toLowerCase() === 'all') {
       console.log('Uploading all parts...\n');
