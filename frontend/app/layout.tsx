@@ -2,6 +2,10 @@ import './globals.css';
 
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
+import { Analytics } from '@vercel/analytics/next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
+import './globals.css';
+
 
 export const metadata: Metadata = {
   icons: {
@@ -59,6 +63,8 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} bg-gray-50 text-gray-900 antialiased transition-colors duration-300 dark:bg-neutral-950 dark:text-gray-100`}
       >
         {children}
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
