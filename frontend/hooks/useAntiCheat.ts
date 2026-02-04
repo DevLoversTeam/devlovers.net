@@ -22,6 +22,7 @@ export function useAntiCheat(isActive: boolean = true) {
   const [isTabActive, setIsTabActive] = useState(true);
   const [showWarning, setShowWarning] = useState(false);
   const warningTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastInteractionWasTouch = useRef(false);
 
   const addViolation = useCallback(
     (type: AntiCheatViolation['type']) => {
@@ -64,7 +65,10 @@ export function useAntiCheat(isActive: boolean = true) {
 
     const handleContextMenu = (e: MouseEvent) => {
       e.preventDefault();
-      addViolation('context-menu');
+      
+      if (!lastInteractionWasTouch.current) {
+        addViolation('context-menu');
+      }
     };
 
     const handleVisibilityChange = () => {
@@ -76,16 +80,29 @@ export function useAntiCheat(isActive: boolean = true) {
       }
     };
 
+    const handleTouchStart = () => {
+      lastInteractionWasTouch.current = true;
+    };
+
+    const handleMouseDown = () => {
+      lastInteractionWasTouch.current = false;
+    };
+
     document.addEventListener('copy', handleCopy);
     document.addEventListener('paste', handlePaste);
     document.addEventListener('contextmenu', handleContextMenu);
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    document.addEventListener('touchstart', handleTouchStart, { passive: true });
+    document.addEventListener('mousedown', handleMouseDown);
+
 
     return () => {
       document.removeEventListener('copy', handleCopy);
       document.removeEventListener('paste', handlePaste);
       document.removeEventListener('contextmenu', handleContextMenu);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      document.removeEventListener('touchstart', handleTouchStart);
+      document.removeEventListener('mousedown', handleMouseDown);
 
       if (warningTimeoutRef.current) {
         clearTimeout(warningTimeoutRef.current);

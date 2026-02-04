@@ -21,18 +21,24 @@ export function CountdownTimer({
 }: CountdownTimerProps) {
   const t = useTranslations('quiz.timer');
   const endTime = startedAt.getTime() + timeLimitSeconds * 1000;
-  const [remainingSeconds, setRemainingSeconds] = useState(() =>
-    Math.max(0, Math.floor((endTime - Date.now()) / 1000))
-  );
+  const [remainingSeconds, setRemainingSeconds] = useState(timeLimitSeconds);
+  const [isSynced, setIsSynced] = useState(false);
 
   useEffect(() => {
     if (!isActive) return;
+
+    let synced = false;
 
     const interval = setInterval(() => {
       const now = Date.now();
       const remaining = Math.max(0, Math.floor((endTime - now) / 1000));
 
       setRemainingSeconds(remaining);
+
+      if (!synced) {
+        synced = true;
+        setIsSynced(true);
+      }
 
       if (remaining === 0) {
         clearInterval(interval);
@@ -42,6 +48,7 @@ export function CountdownTimer({
 
     return () => clearInterval(interval);
   }, [isActive, onTimeUp, endTime]);
+
 
   useEffect(() => {
     if (!isActive) return;
@@ -100,10 +107,12 @@ export function CountdownTimer({
 
       <div className="h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
         <div
-          className={cn(
-            'h-full transition-all duration-1000 ease-linear',
-            getProgressBarColor()
-          )}
+            className={cn(
+              'h-full',
+              isSynced && 'transition-all duration-1000 ease-linear',
+              getProgressBarColor()
+            )}
+
           style={{ width: `${percentage}%` }}
         />
       </div>

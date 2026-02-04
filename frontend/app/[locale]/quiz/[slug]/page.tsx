@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: MetadataProps): Promise<Metad
   
   return {
     title: `${quiz.title} | ${t('metaSuffix')}`,
-    description: quiz.description || t('metaDescriptionFallback', { title: quiz.title }),
+    description: quiz.description ?? t('metaDescriptionFallback', { title: quiz.title ?? '' }),
   };
 }
 
