@@ -10,7 +10,6 @@ import { AppChrome } from '@/components/header/AppChrome';
 import { MainSwitcher } from '@/components/header/MainSwitcher';
 import { CookieBanner } from '@/components/shared/CookieBanner';
 import Footer from '@/components/shared/Footer';
-import { OnlineCounterPopup } from '@/components/shared/OnlineCounterPopup';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
 import { locales } from '@/i18n/config';
 import { getCurrentUser } from '@/lib/auth';
@@ -73,7 +72,6 @@ export default async function LocaleLayout({
             {children}
           </MainSwitcher>
         </AppChrome>
-        <OnlineCounterPopup />
 
         <Footer />
         <Toaster position="top-right" richColors expand />
