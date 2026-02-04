@@ -1,6 +1,6 @@
 'use client';
 
-import { TriangleAlert } from 'lucide-react';
+import { Clock, TriangleAlert } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
@@ -120,7 +120,7 @@ export function CountdownTimer({
             </>
           ) : (
             <>
-              <span aria-hidden="true">⏰</span> {t('hurryUp')}
+              <Clock className="inline h-4 w-4" aria-hidden="true" /> {t('hurryUp')}
             </>
           )}
         </p>

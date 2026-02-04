@@ -85,12 +85,17 @@
     "metaTitle": "Quizzes | DevLovers",
     "metaDescription": "Test your knowledge with interactive quizzes",
     "page": {
+      "notFoundTitle": "Quiz Not Found",
+      "metaSuffix": "DevLovers Quiz",
+      "metaDescriptionFallback": "Take the {title} quiz and test your knowledge.",
       "noQuestions": "No questions available for this quiz",
       "questionsLabel": "Questions",
       "timeLabel": "Time",
       "minutes": "min"
     },
     "list": {
+      "metaTitle": "Quizzes | DevLovers",
+      "metaDescription": "Test your knowledge with interactive quizzes on React, Angular, Vue, Node.js and more.",
       "title": "Quizzes",
       "practice": "Practice",
       "subtitle": "Choose a quiz to test your knowledge",
