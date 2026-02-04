@@ -7,7 +7,8 @@ import type { Author, Post } from '@/components/blog/BlogFilters';
 
 vi.mock('next/image', () => ({
   __esModule: true,
-  default: (props: any) => <img {...props} />,
+  // eslint-disable-next-line @next/next/no-img-element
+  default: (props: any) => <img alt={props.alt ?? ''} {...props} />,
 }));
 
 vi.mock('next/link', () => ({

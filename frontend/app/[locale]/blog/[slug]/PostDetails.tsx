@@ -84,7 +84,6 @@ function renderPortableTextSpans(
     const text = child?.text || '';
     if (!text) return null;
     const marks = child?.marks || [];
-    const linkKey = marks.find(mark => linkMap.has(mark));
 
     let node: React.ReactNode = marks.length === 0 ? linkifyText(text) : text;
 
@@ -280,11 +279,14 @@ function renderPortableText(
 
     if (block?._type === 'image' && block?.url) {
       nodes.push(
-        <img
+        <Image
           key={block._key || `image-${i}`}
           src={block.url}
           alt={postTitle || 'Post image'}
-          className="my-6 rounded-xl border border-gray-200"
+          width={1200}
+          height={800}
+          sizes="100vw"
+          className="my-6 h-auto w-full rounded-xl border border-gray-200"
         />
       );
       i += 1;
