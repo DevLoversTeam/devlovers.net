@@ -18,17 +18,19 @@ export function CodeCard({ fileName, snippet, className }: CodeCardProps) {
 
       <div className="absolute top-2/3 -right-1 -bottom-2 -left-1 rounded-2xl bg-[var(--accent-primary)]/15 blur-md" />
 
-      <div className="bg-card/90 relative max-w-[200px] min-w-[180px] overflow-hidden rounded-2xl border border-[var(--accent-primary)]/20 px-3.5 py-3 shadow-2xl backdrop-blur-xl dark:shadow-[var(--accent-primary)]/10">
-        <div className="text-muted-foreground/80 mb-2 flex items-center justify-between text-[9px]">
+      <div className="bg-card/90 relative max-w-[200px] min-w-[180px] overflow-hidden rounded-2xl border border-[var(--accent-primary)]/20 px-3.5 py-3 shadow-2xl backdrop-blur-xl lg:max-w-[220px] lg:min-w-[200px] lg:px-4 lg:py-3.5 xl:max-w-[240px] xl:min-w-[220px] xl:px-4 xl:py-3.5 dark:shadow-[var(--accent-primary)]/10">
+        <div className="text-muted-foreground/80 mb-2 flex items-center justify-between text-[9px] lg:text-[10px] xl:text-xs">
           <div className="flex items-center gap-1">
-            <span className="h-1.5 w-1.5 rounded-full bg-red-400/80 shadow-sm" />
-            <span className="h-1.5 w-1.5 rounded-full bg-yellow-400/80 shadow-sm" />
-            <span className="h-1.5 w-1.5 rounded-full bg-green-400/80 shadow-sm" />
+            <span className="h-1.5 w-1.5 rounded-full bg-red-400/80 shadow-sm lg:h-2 lg:w-2 xl:h-2.5 xl:w-2.5" />
+            <span className="h-1.5 w-1.5 rounded-full bg-yellow-400/80 shadow-sm lg:h-2 lg:w-2 xl:h-2.5 xl:w-2.5" />
+            <span className="xl:w-2. h-1.5 w-1.5 rounded-full bg-green-400/80 shadow-sm lg:h-2 lg:w-2 xl:h-2.5" />
           </div>
-          <span className="text-[8.5px] font-medium">{fileName}</span>
+          <span className="text-[8.5px] font-medium lg:text-[9.5px] xl:text-[10.5px]">
+            {fileName}
+          </span>
         </div>
 
-        <code className="text-foreground/85 relative z-10 block font-mono text-[10px] leading-relaxed whitespace-pre">
+        <code className="text-foreground/85 relative z-10 block font-mono text-[10px] leading-relaxed whitespace-pre lg:text-[11px] xl:text-xs">
           {snippet}
         </code>
       </div>

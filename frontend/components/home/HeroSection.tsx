@@ -1,16 +1,20 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import * as React from 'react';
+
+import { OnlineCounterPopup } from '@/components/shared/OnlineCounterPopup';
 
 import { HeroBackground } from './HeroBackground';
 import { HeroCodeCards } from './HeroCodeCards';
 import { InteractiveCTAButton } from './InteractiveCTAButton';
 
 export default function HeroSection() {
+  const ctaRef = React.useRef<HTMLAnchorElement>(null);
   const t = useTranslations('homepage');
 
   return (
-    <section className="relative flex min-h-[calc(100vh-260px)] items-center overflow-hidden bg-gray-50 transition-colors duration-300 sm:min-h-[calc(100vh-280px)] md:min-h-[85vh] lg:min-h-[100vh] dark:bg-black">
+    <section className="relative flex min-h-[calc(100vh-200px)] items-center overflow-hidden bg-gray-50 transition-colors duration-300 sm:min-h-[calc(100vh-280px)] md:min-h-[85vh] lg:min-h-screen dark:bg-black">
       <HeroBackground />
 
       <div className="relative mx-auto flex w-full max-w-5xl flex-col items-center px-6 py-8 text-center sm:py-12 md:py-28 lg:py-[7.5rem] xl:py-32">
@@ -40,7 +44,8 @@ export default function HeroSection() {
         </p>
 
         <div className="mt-6 sm:mt-8 md:mt-14 lg:mt-16">
-          <InteractiveCTAButton />
+          <InteractiveCTAButton ref={ctaRef} />
+          <OnlineCounterPopup ctaRef={ctaRef} />
         </div>
       </div>
     </section>

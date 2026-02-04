@@ -18,12 +18,17 @@ const SOCIAL = [
   { label: 'Telegram', href: 'https://t.me/devloversteam', Icon: Send },
 ] as const;
 
-export default function Footer() {
+export default function Footer({
+  footerRef,
+}: {
+  footerRef?: React.RefObject<HTMLElement>;
+}) {
   const t = useTranslations('footer');
   const segments = useSelectedLayoutSegments();
   const isShop = segments.includes('shop');
   return (
     <footer
+      ref={footerRef}
       className={cn(
         'border-border bg-background/90 supports-[backdrop-filter]:bg-background/50 relative overflow-hidden border-t backdrop-blur ' +
           '[--footer-brand:var(--accent-primary)] [--footer-hover:var(--accent-hover)] [--theme-toggle-hover:var(--footer-hover)]',
