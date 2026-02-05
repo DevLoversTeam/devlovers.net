@@ -37,12 +37,12 @@ export function QuizSavedBanner() {
   if (!info) return null;
 
   return (
-    <div className="mb-6 rounded-xl border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-900/20">
+    <div className="mb-6 rounded-xl border border-green-500/20 bg-green-500/10 p-4 backdrop-blur-sm">
       <div className="space-y-2 text-center">
-        <p className="text-lg font-medium text-green-800 dark:text-green-200">
+        <p className="text-lg font-medium text-green-700 dark:text-green-300">
           🎉 {t('title')}
         </p>
-        <p className="text-green-700 dark:text-green-300">
+        <p className="text-green-600 dark:text-green-400">
           {t('scored')}{' '}
           <strong>
             {info.score}/{info.total}
@@ -62,13 +62,13 @@ export function QuizSavedBanner() {
         <div className="flex justify-center gap-3 pt-2">
           <Link
             href="/leaderboard"
-            className="text-green-600 underline hover:no-underline dark:text-green-400"
+            className="font-medium text-green-600 underline hover:no-underline dark:text-green-400"
           >
             {t('viewLeaderboard')}
           </Link>
           <Link
             href={`/quiz/${info.quizSlug}`}
-            className="text-green-600 underline hover:no-underline dark:text-green-400"
+            className="font-medium text-green-600 underline hover:no-underline dark:text-green-400"
           >
             {t('tryAgain')}
           </Link>
