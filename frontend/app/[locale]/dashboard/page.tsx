@@ -4,6 +4,7 @@ import { PostAuthQuizSync } from '@/components/auth/PostAuthQuizSync';
 import { ProfileCard } from '@/components/dashboard/ProfileCard';
 import { QuizSavedBanner } from '@/components/dashboard/QuizSavedBanner';
 import { StatsCard } from '@/components/dashboard/StatsCard';
+import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
 import { getUserQuizStats } from '@/db/queries/quiz';
 import { getUserProfile } from '@/db/queries/users';
 import { redirect } from '@/i18n/routing';
@@ -75,42 +76,35 @@ export default async function DashboardPage({
   };
 
   const outlineBtnStyles =
-    'inline-flex items-center justify-center rounded-full border border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm px-6 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 transition-colors hover:bg-white hover:text-sky-600 dark:hover:bg-slate-800 dark:hover:text-sky-400';
+    'inline-flex items-center justify-center rounded-full border border-gray-200 dark:border-white/10 bg-white/50 dark:bg-neutral-900/50 backdrop-blur-sm px-6 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 transition-colors hover:bg-white hover:text-(--accent-primary) dark:hover:bg-neutral-800 dark:hover:text-(--accent-primary)';
 
   return (
-    <main className="relative min-h-[calc(100vh-80px)] overflow-hidden">
+    <div className="min-h-screen">
       <PostAuthQuizSync />
-      <div
-        className="pointer-events-none absolute inset-0 -z-10"
-        aria-hidden="true"
+      <DynamicGridBackground
+        showStaticGrid
+        className="min-h-screen bg-gray-50 py-12 transition-colors duration-300 dark:bg-transparent"
       >
-        <div className="absolute inset-0 bg-linear-to-b from-sky-50 via-white to-rose-50 dark:from-slate-950 dark:via-slate-950 dark:to-black" />
-        <div className="absolute top-0 left-1/4 h-96 w-xl -translate-x-1/2 rounded-full bg-sky-300/20 blur-3xl dark:bg-sky-500/10" />
-        <div className="absolute right-0 bottom-0 h-104 w-104 rounded-full bg-violet-300/30 blur-3xl dark:bg-violet-500/10" />
-        <div className="absolute bottom-10 left-10 h-80 w-[20rem] rounded-full bg-pink-300/20 blur-3xl dark:bg-fuchsia-500/10" />
-      </div>
+        <main className="relative z-10 mx-auto max-w-5xl px-6">
+          <header className="mb-12 flex flex-col justify-between gap-6 md:flex-row md:items-center">
+            <div>
+              <h1 className="text-4xl font-black tracking-tight md:text-5xl">
+                <span className="text-(--accent-primary)">{t('title')}</span>
+              </h1>
+              <p className="mt-2 text-lg text-gray-600 dark:text-gray-400">
+                {t('subtitle')}
+              </p>
+            </div>
 
-      <div className="relative z-10 mx-auto max-w-5xl px-6 py-12">
-        <header className="mb-12 flex flex-col justify-between gap-6 md:flex-row md:items-center">
-          <div>
-            <h1 className="text-4xl font-black tracking-tight drop-shadow-sm md:text-5xl">
-              <span className="bg-linear-to-r from-sky-400 via-violet-400 to-pink-400 bg-clip-text text-transparent dark:from-sky-400 dark:via-indigo-400 dark:to-fuchsia-500">
-                {t('title')}
-              </span>
-            </h1>
-            <p className="mt-2 text-lg text-slate-600 dark:text-slate-400">
-              {t('subtitle')}
-            </p>
+            <span className={outlineBtnStyles}>{t('supportLink')}</span>
+          </header>
+          <QuizSavedBanner />
+          <div className="grid gap-8 md:grid-cols-2">
+            <ProfileCard user={userForDisplay} locale={locale} />
+            <StatsCard stats={stats} />
           </div>
-
-          <span className={outlineBtnStyles}>{t('supportLink')}</span>
-        </header>
-        <QuizSavedBanner />
-        <div className="grid gap-8 md:grid-cols-2">
-          <ProfileCard user={userForDisplay} locale={locale} />
-          <StatsCard stats={stats} />
-        </div>
-      </div>
-    </main>
+        </main>
+      </DynamicGridBackground>
+    </div>
   );
 }

@@ -1,11 +1,11 @@
 import { Metadata } from 'next';
-import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 
 import { CatalogProductsClient } from '@/components/shop/CatalogProductsClient';
 import { ProductFilters } from '@/components/shop/ProductFilters';
 import { ProductsToolbar } from '@/components/shop/ProductsToolbar';
+import { redirect } from '@/i18n/routing';
 import { CATALOG_PAGE_SIZE } from '@/lib/config/catalog';
 import { getCatalogProducts } from '@/lib/shop/data';
 import { catalogQuerySchema } from '@/lib/validation/shop';
@@ -22,6 +22,7 @@ type RawSearchParams = {
   size?: string;
   sort?: string;
   page?: string;
+  filter?: string;
 };
 
 interface ProductsPageProps {
@@ -36,19 +37,26 @@ export default async function ProductsPage({
   const resolvedSearchParams = (await searchParams) ?? {};
   const t = await getTranslations('shop.products');
 
-  if (resolvedSearchParams.page) {
+  const hasLegacyFilter = resolvedSearchParams.filter === 'new';
+  const needsCanonical = hasLegacyFilter;
+
+  if (needsCanonical) {
     const qsParams = new URLSearchParams();
 
     for (const [k, v] of Object.entries(resolvedSearchParams)) {
       if (!v) continue;
-      if (k === 'page') continue;
+      if (k === 'filter') continue;
       qsParams.set(k, v);
+    }
+
+    if (hasLegacyFilter && !resolvedSearchParams.sort) {
+      qsParams.set('sort', 'newest');
     }
 
     const qs = qsParams.toString();
     const basePath = `/shop/products`;
 
-    redirect(qs ? `${basePath}?${qs}` : basePath);
+    redirect({ href: qs ? `${basePath}?${qs}` : basePath, locale });
   }
 
   const parsedParams = catalogQuerySchema.safeParse(resolvedSearchParams);

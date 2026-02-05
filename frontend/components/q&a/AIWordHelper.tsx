@@ -373,7 +373,7 @@ export default function AIWordHelper({
 
   const renderGuestCTA = () => (
     <div className="flex flex-col items-center justify-center gap-4 px-4 py-8 text-center">
-      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600">
+      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-linear-to-br from-blue-500 to-purple-600">
         <Sparkles className="h-8 w-8 text-white" />
       </div>
       <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
@@ -387,8 +387,8 @@ export default function AIWordHelper({
           href="/login"
           className={cn(
             'rounded-lg px-4 py-2 text-sm font-medium',
-            'bg-[var(--accent-primary)] text-white',
-            'hover:bg-[var(--accent-hover)]',
+            'bg-(--accent-primary) text-white',
+            'hover:bg-(--accent-hover)',
             'transition-colors'
           )}
         >
@@ -468,7 +468,7 @@ export default function AIWordHelper({
               'text-gray-500 dark:text-gray-400',
               'hover:bg-gray-100 dark:hover:bg-neutral-800',
               'transition-colors',
-              'focus:ring-2 focus:ring-[var(--accent-primary)] focus:outline-none'
+              'focus:ring-2 focus:ring-(--accent-primary) focus:outline-none'
             )}
             aria-label={t('close')}
           >
@@ -494,7 +494,7 @@ export default function AIWordHelper({
                   className={cn(
                     'rounded-lg px-4 py-2 text-sm font-medium transition-colors',
                     activeLocale === loc
-                      ? 'bg-[var(--accent-primary)] text-white'
+                      ? 'bg-(--accent-primary) text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-neutral-800 dark:text-gray-300 dark:hover:bg-neutral-700'
                   )}
                 >
@@ -506,7 +506,7 @@ export default function AIWordHelper({
             <div className="flex-1 overflow-y-auto p-4">
               {isLoading && (
                 <div className="flex flex-col items-center justify-center gap-3 py-8">
-                  <Loader2 className="h-8 w-8 animate-spin text-[var(--accent-primary)]" />
+                  <Loader2 className="h-8 w-8 animate-spin text-(--accent-primary)" />
                   <p className="text-sm text-gray-600 dark:text-gray-400">
                     {t('loading')}
                   </p>
@@ -560,7 +560,7 @@ export default function AIWordHelper({
                                 ? 'cursor-not-allowed bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
                                 : rateLimitState.retryAttempts >= 3
                                   ? 'bg-amber-500 text-white hover:bg-amber-600'
-                                  : 'bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-hover)]'
+                                  : 'bg-(--accent-primary) text-white hover:bg-(--accent-hover)'
                             )}
                           >
                             {rateLimitState.retryAttempts >= 5 ? (
@@ -644,7 +644,7 @@ export default function AIWordHelper({
                                   rel="noopener noreferrer"
                                   className={cn(
                                     'flex items-center gap-3 rounded-lg px-4 py-3',
-                                    'bg-gradient-to-r from-pink-50 to-purple-50 dark:from-pink-900/20 dark:to-purple-900/20',
+                                    'bg-linear-to-r from-pink-50 to-purple-50 dark:from-pink-900/20 dark:to-purple-900/20',
                                     'hover:from-pink-100 hover:to-purple-100 dark:hover:from-pink-900/30 dark:hover:to-purple-900/30',
                                     'border border-pink-200 dark:border-pink-800',
                                     'transition-colors',
@@ -723,7 +723,7 @@ export default function AIWordHelper({
                                 ? 'cursor-not-allowed bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
                                 : serviceErrorState.retryAttempts >= 3
                                   ? 'bg-blue-500 text-white hover:bg-blue-600'
-                                  : 'bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-hover)]'
+                                  : 'bg-(--accent-primary) text-white hover:bg-(--accent-hover)'
                             )}
                           >
                             {serviceErrorState.retryAttempts >= 5 ? (
@@ -753,8 +753,8 @@ export default function AIWordHelper({
                             onClick={fetchExplanation}
                             className={cn(
                               'flex items-center gap-2 rounded-lg px-4 py-2',
-                              'bg-[var(--accent-primary)] text-white',
-                              'hover:bg-[var(--accent-hover)]',
+                              'bg-(--accent-primary) text-white',
+                              'hover:bg-(--accent-hover)',
                               'transition-colors',
                               'text-sm font-medium'
                             )}
@@ -770,7 +770,7 @@ export default function AIWordHelper({
 
               {explanation && !isLoading && !error && (
                 <div className="prose prose-sm dark:prose-invert max-w-none">
-                  <div className="leading-relaxed whitespace-pre-wrap text-gray-800 dark:text-gray-200 [&>*]:my-2">
+                  <div className="leading-relaxed whitespace-pre-wrap text-gray-800 *:my-2 dark:text-gray-200">
                     {formatExplanation(explanation[activeLocale])}
                   </div>
                 </div>

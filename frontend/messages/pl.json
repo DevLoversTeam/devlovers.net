@@ -46,17 +46,17 @@
   "homepage": {
     "title": "DevLovers",
     "subtitle": "Platforma do Przygotowania do Rozmów Kwalifikacyjnych",
-    "description": "Opanuj frontend, backend i full-stack development dzięki naszym pytaniom do rozmów kwalifikacyjnych, quizom i materiałom edukacyjnym.",
+    "description": "Zbuduj prawdziwą pewność w frontend, backend i full-stack development dzięki interaktywnym pytaniom rekrutacyjnym, quizom i praktycznym wyjaśnieniom",
     "cta": "Rozpocznij naukę",
     "ctaVariants": {
-      "1": "Bez presji. Po prostu zacznij.",
-      "2": "To może być ciekawsze, niż myślisz.",
-      "3": "Właśnie tutaj to się zaczyna.",
-      "4": "Jesteś już w połowie drogi.",
-      "5": "Jeden klik do postępu.",
-      "6": "Klik był — to się liczy.",
-      "7": "Postęp ważniejszy niż perfekcja.",
-      "8": "Zacząć to też funkcja."
+      "1": "Bez presji. Po prostu zacznij",
+      "2": "To może być ciekawsze, niż myślisz",
+      "3": "Właśnie tutaj to się zaczyna",
+      "4": "Jesteś już w połowie drogi",
+      "5": "Jeden klik do postępu",
+      "6": "Klik był — to się liczy",
+      "7": "Postęp ważniejszy niż perfekcja",
+      "8": "Zacząć to też funkcja"
     }
   },
   "qa": {
@@ -85,12 +85,17 @@
     "metaTitle": "Quizy | DevLovers",
     "metaDescription": "Sprawdź swoją wiedzę dzięki interaktywnym quizom",
     "page": {
+      "notFoundTitle": "Quiz nie znaleziony",
+      "metaSuffix": "Quiz DevLovers",
+      "metaDescriptionFallback": "Rozwiąż quiz {title} i sprawdź swoją wiedzę.",
       "noQuestions": "Brak dostępnych pytań dla tego quizu",
       "questionsLabel": "Pytania",
       "timeLabel": "Czas",
       "minutes": "min"
     },
     "list": {
+      "metaTitle": "Quizy | DevLovers",
+      "metaDescription": "Sprawdź swoją wiedzę z React, Angular, Vue, Node.js i innych technologii.",
       "title": "Quizy",
       "practice": "Ćwicz",
       "subtitle": "Wybierz quiz, aby sprawdzić swoją wiedzę",
@@ -206,7 +211,7 @@
   },
   "blog": {
     "title": "Wszystkie Wpisy na Blogu",
-    "subtitle": "Poznaj najnowsze artykuły z Tech, News i Career Growth — trendy, idee i praktyczne wskazówki.",
+    "subtitle": "Poznaj najnowsze artykuły z Tech, News i Career Growth — trendy, idee i praktyczne wskazówki",
     "metaTitle": "Blog | DevLovers",
     "metaDescription": "Odkryj najnowsze artykuły i spostrzeżenia",
     "all": "Wszystkie",
@@ -256,7 +261,7 @@
       "viewAll": "Zobacz wszystko",
       "hero": {
         "headline": "Koduj. Twórz. Kolekcjonuj.",
-        "subheadline": "Dołącz do tysięcy deweloperów, którzy wyrażają swoją pasję poprzez premium merch.",
+        "subheadline": "Dołącz do tysięcy deweloperów, którzy wyrażają swoją pasję poprzez premium merch",
         "cta": "Przeglądaj wszystkie produkty"
       },
       "comingSoon": {
@@ -267,6 +272,7 @@
     },
     "product": {
       "soldOut": "Wyprzedane",
+      "maxStock": "Maksymalnie {stock} w magazynie",
       "color": "Kolor",
       "size": "Rozmiar",
       "quantity": "Ilość",
@@ -303,7 +309,7 @@
     "cart": {
       "title": "Twój koszyk",
       "empty": "Twój koszyk jest pusty",
-      "emptyDescription": "Wygląda na to, że nie dodałeś jeszcze żadnych produktów do koszyka.",
+      "emptyDescription": "Wygląda na to, że nie dodałeś jeszcze żadnych produktów do koszyka",
       "startShopping": "Rozpocznij zakupy",
       "itemsLabel": "Produkty w koszyku",
       "summary": {
@@ -316,7 +322,7 @@
       "checkout": {
         "placeOrder": "Złóż zamówienie",
         "placing": "Składanie zamówienia...",
-        "message": "Zostaniesz przekierowany do bezpiecznej płatności lub zobaczysz potwierdzenie, jeśli płatność nie jest wymagana w tym środowisku.",
+        "message": "Zostaniesz przekierowany do bezpiecznej płatności lub zobaczysz potwierdzenie, jeśli płatność nie jest wymagana w tym środowisku",
         "notRedirected": "Jeśli nie zostałeś automatycznie przekierowany, otwórz swoje zamówienie",
         "goToOrder": "Przejdź do zamówienia"
       },
@@ -327,20 +333,20 @@
         "maxStock": "Maksymalnie {stock} w magazynie"
       },
       "alerts": {
-        "itemsRemoved": "Niektóre produkty zostały usunięte z koszyka, ponieważ są niedostępne lub wyprzedane."
+        "itemsRemoved": "Niektóre produkty zostały usunięte z koszyka, ponieważ są niedostępne lub wyprzedane"
       }
     },
     "admin": {
       "page": {
         "title": "Panel administracyjny sklepu",
-        "description": "Narzędzia administracyjne dla sklepu z gadżetami.",
+        "description": "Narzędzia administracyjne dla sklepu z gadżetami",
         "productsSection": {
           "title": "Produkty",
-          "description": "Twórz, edytuj, aktywuj, promuj."
+          "description": "Twórz, edytuj, aktywuj, promuj"
         },
         "ordersSection": {
           "title": "Zamówienia",
-          "description": "Przeglądaj i zarządzaj zamówieniami."
+          "description": "Przeglądaj i zarządzaj zamówieniami"
         }
       },
       "topbar": {
@@ -462,45 +468,45 @@
       },
       "sort": {
         "featured": "Polecane",
-        "priceAsc": "Cena: od najniższej",
-        "priceDesc": "Cena: od najwyższej",
+        "priceAsc": "Cena ↑",
+        "priceDesc": "Cena ↓",
         "newest": "Najnowsze"
       }
     },
     "products": {
       "title": "Wszystkie produkty",
       "noProductsFound": "Nie znaleziono produktów",
-      "adjustFilters": "Spróbuj dostosować filtry, aby znaleźć to, czego szukasz.",
+      "adjustFilters": "Spróbuj dostosować filtry, aby znaleźć to, czego szukasz",
       "backToProducts": "Wróć do wszystkich produktów",
-      "notAvailable": "Ten produkt nie jest dostępny dla twojej lokalizacji/waluty.",
+      "notAvailable": "Ten produkt nie jest dostępny dla twojej lokalizacji/waluty",
       "loadMore": "Załaduj więcej",
       "shopNow": "Kup teraz"
     },
     "checkout": {
       "errors": {
         "missingOrderId": "Brak identyfikatora zamówienia",
-        "missingOrderIdDescription": "Nie mogliśmy zidentyfikować twojego zamówienia. Wróć do koszyka lub przeglądaj produkty.",
+        "missingOrderIdDescription": "Nie mogliśmy zidentyfikować twojego zamówienia. Wróć do koszyka lub przeglądaj produkty",
         "orderNotFound": "Zamówienie nie znalezione",
-        "orderNotFoundDescription": "Nie mogliśmy znaleźć tego zamówienia. Mogło zostać usunięte lub nigdy nie istniało.",
+        "orderNotFoundDescription": "Nie mogliśmy znaleźć tego zamówienia. Mogło zostać usunięte lub nigdy nie istniało",
         "invalidOrder": "Nieprawidłowe zamówienie",
         "unableToLoad": "Nie można załadować zamówienia",
-        "unableToCheckout": "Nie można rozpocząć procesu zakupu.",
-        "unexpectedResponse": "Nieoczekiwana odpowiedź przy zakupie.",
-        "tryAgainLater": "Spróbuj ponownie później."
+        "unableToCheckout": "Nie można rozpocząć procesu zakupu",
+        "unexpectedResponse": "Nieoczekiwana odpowiedź przy zakupie",
+        "tryAgainLater": "Spróbuj ponownie później"
       },
       "missingOrder": {
-        "message": "Nie mogliśmy zidentyfikować twojego zamówienia. Wróć do koszyka lub przeglądaj produkty."
+        "message": "Nie mogliśmy zidentyfikować twojego zamówienia. Wróć do koszyka lub przeglądaj produkty"
       },
       "notFoundOrder": {
-        "message": "Nie mogliśmy znaleźć tego zamówienia. Mogło zostać usunięte lub nigdy nie istniało."
+        "message": "Nie mogliśmy znaleźć tego zamówienia. Mogło zostać usunięte lub nigdy nie istniało"
       },
       "success": {
         "title": "Dziękujemy za zamówienie",
         "orderLabel": "Zamówienie",
-        "received": "Otrzymaliśmy twoje zamówienie.",
-        "paymentConfirmed": "Płatność została potwierdzona.",
-        "paymentProcessing": "Płatność jest nadal przetwarzana. Ta strona zaktualizuje się automatycznie.",
-        "paymentsDisabled": "Płatności są wyłączone w tym środowisku. Nie zostałeś obciążony za to zamówienie.",
+        "received": "Otrzymaliśmy twoje zamówienie",
+        "paymentConfirmed": "Płatność została potwierdzona",
+        "paymentProcessing": "Płatność jest nadal przetwarzana. Ta strona zaktualizuje się automatycznie",
+        "paymentsDisabled": "Płatności są wyłączone w tym środowisku. Nie zostałeś obciążony za to zamówienie",
         "orderSummary": "Podsumowanie zamówienia",
         "totalAmount": "Łączna kwota",
         "items": "Produkty",
@@ -510,11 +516,11 @@
       },
       "error": {
         "paymentFailed": "Płatność nie powiodła się",
-        "paymentFailedDescription": "Płatność za to zamówienie nie została zakończona. Możesz spróbować ponownie lub skontaktować się z pomocą.",
+        "paymentFailedDescription": "Płatność za to zamówienie nie została zakończona. Możesz spróbować ponownie lub skontaktować się z pomocą",
         "paymentUnclear": "Status płatności nieznany",
-        "paymentUnclearDescription": "Nie mogliśmy potwierdzić błędu płatności dla tego zamówienia.",
-        "notCompleted": "Płatność za to zamówienie nie została zakończona. Możesz spróbować ponownie lub skontaktować się z pomocą.",
-        "couldNotConfirm": "Nie mogliśmy potwierdzić błędu płatności dla tego zamówienia.",
+        "paymentUnclearDescription": "Nie mogliśmy potwierdzić błędu płatności dla tego zamówienia",
+        "notCompleted": "Płatność za to zamówienie nie została zakończona. Możesz spróbować ponownie lub skontaktować się z pomocą",
+        "couldNotConfirm": "Nie mogliśmy potwierdzić błędu płatności dla tego zamówienia",
         "orderDetails": "Szczegóły zamówienia",
         "order": "Zamówienie",
         "orderLabel": "Zamówienie",
@@ -530,7 +536,7 @@
         "title": "Bezpieczna płatność",
         "payForOrder": "Zapłać za zamówienie #{orderId}",
         "paymentDetails": "Szczegóły płatności",
-        "completePayment": "Dokończ płatność, aby złożyć zamówienie.",
+        "completePayment": "Dokończ płatność, aby złożyć zamówienie",
         "amountDue": "Do zapłaty",
         "orderSummary": "Podsumowanie zamówienia",
         "items": "Produkty",
@@ -539,9 +545,9 @@
         "viewConfirmation": "Zobacz potwierdzenie",
         "continueShopping": "Kontynuuj zakupy",
         "statusMessages": {
-          "alreadyPaid": "To zamówienie jest już opłacone.",
-          "previousFailed": "Poprzednia próba płatności nie powiodła się. Spróbuj ponownie.",
-          "completePayment": "Dokończ płatność, aby sfinalizować zamówienie."
+          "alreadyPaid": "To zamówienie jest już opłacone",
+          "previousFailed": "Poprzednia próba płatności nie powiodła się. Spróbuj ponownie",
+          "completePayment": "Dokończ płatność, aby sfinalizować zamówienie"
         }
       },
       "actions": {
@@ -553,10 +559,10 @@
     },
     "orders": {
       "title": "Moje zamówienia",
-      "subtitle": "Twoje najnowsze zamówienia (do 50).",
+      "subtitle": "Twoje najnowsze zamówienia (do 50)",
       "backToShop": "Wróć do sklepu",
       "empty": {
-        "message": "Brak zamówień.",
+        "message": "Brak zamówień",
         "browseProducts": "Przeglądaj produkty"
       },
       "table": {
@@ -609,10 +615,10 @@
     "metaDescription": "Dowiedz się więcej o DevLovers — platformie do przygotowań do rozmów kwalifikacyjnych",
     "hero": {
       "titleHighlight": "Zdebuguj swoje umiejętności",
-      "titleRest": "zanim zrobi to rekruter.",
+      "titleRest": "zanim zrobi to rekruter",
       "description": "Przestań zgadywać. Zamieniliśmy chaotyczny proces rozmów w uporządkowaną mapę drogową.",
       "descriptionHighlight": "Przekształć rozproszoną wiedzę",
-      "descriptionRest": "w gotowy do produkcji zestaw umiejętności i zdobądź ofertę.",
+      "descriptionRest": "w gotowy do produkcji zestaw umiejętności i zdobądź ofertę",
       "stats": {
         "quizzesPassed": "Ukończonych quizów",
         "githubStars": "Gwiazdek na GitHub",
@@ -762,7 +768,7 @@
       "heading": "Cennik",
       "badge": "Bez ukrytych opłat",
       "title": "Inwestuj w swój mózg,",
-      "titleHighlight": "nie w nasze subskrypcje.",
+      "titleHighlight": "nie w nasze subskrypcje",
       "subtitle": "Wierzymy, że wiedza powinna być dostępna. Dlatego nie sprzedajemy kursów. Ale serwery się grzeją, a kawa się kończy. Wybór należy do ciebie.",
       "junior": {
         "title": "Junior Engineer",
@@ -925,9 +931,9 @@
   },
   "dashboard": {
     "metaTitle": "Panel | DevLovers",
-    "metaDescription": "Śledź swój postęp i wyniki quizów.",
+    "metaDescription": "Śledź swój postęp i wyniki quizów",
     "title": "Panel użytkownika",
-    "subtitle": "Witaj z powrotem na swoim placu treningowym.",
+    "subtitle": "Witaj z powrotem na swoim placu treningowym",
     "supportLink": "Wsparcie i opinie",
     "profile": {
       "defaultName": "Programista",
@@ -937,7 +943,7 @@
     },
     "stats": {
       "title": "Statystyki quizów",
-      "noActivity": "Gotowy na rozwój? Sprawdź się w nowym quizie.",
+      "noActivity": "Gotowy na rozwój? Sprawdź się w nowym quizie",
       "startQuiz": "Rozpocznij quiz",
       "attempts": "Próby",
       "avgScore": "Średni wynik",
@@ -967,7 +973,7 @@
     },
     "guest": {
       "title": "Odblokuj wyjaśnienia AI",
-      "description": "Zaloguj się lub utwórz konto, aby otrzymywać natychmiastowe wyjaśnienia terminów technicznych generowane przez AI.",
+      "description": "Zaloguj się lub utwórz konto, aby otrzymywać natychmiastowe wyjaśnienia terminów technicznych generowane przez AI",
       "login": "Zaloguj się",
       "signup": "Zarejestruj się"
     },
