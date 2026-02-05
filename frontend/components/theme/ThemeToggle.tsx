@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Monitor, Moon, Sun } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
@@ -45,13 +45,15 @@ export function ThemeToggle() {
           aria-label={t(labelKey)}
           className="theme-toggle-btn relative flex h-7 w-7 items-center justify-center rounded-full"
         >
-          {theme === value && (
-            <motion.div
-              layoutId="theme-active"
-              className="absolute inset-0 rounded-full bg-white shadow-sm dark:bg-neutral-800"
-              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-            />
-          )}
+          <AnimatePresence mode="wait">
+            {theme === value && (
+              <motion.div
+                layoutId="theme-indicator"
+                className="absolute inset-0 rounded-full bg-white shadow-sm dark:bg-neutral-800"
+                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              />
+            )}
+          </AnimatePresence>
           <Icon className="relative z-10 h-4 w-4 text-neutral-500 transition-colors dark:text-neutral-400" />
         </button>
       ))}
