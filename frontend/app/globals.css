@@ -1,5 +1,4 @@
 @import url(https://fonts.googleapis.com/css?family=Lato:100,300,400,700);
-@import url(https://raw.github.com/FortAwesome/Font-Awesome/master/docs/assets/css/font-awesome.min.css);
 @import 'tailwindcss';
 
 @custom-variant dark (&:is(.dark *));
@@ -146,11 +145,13 @@
   border-color: var(--qa-accent);
 }
 
-.no-select {
-  -webkit-user-select: none; /* Safari */
-  -moz-user-select: none; /* Firefox */
-  -ms-user-select: none; /* IE10+/Edge */
-  user-select: none; /* Standard */
+.no-select,
+.no-select * {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 
 @keyframes progress {
@@ -237,7 +238,8 @@
     will-change: transform;
   }
 
-  .lg\:left-16.animate-card-breathe {
+  .lg\:left-16.animate-card-breathe,
+  .xl\:left-8.animate-card-breathe {
     transform: rotate(-10deg);
     --card-x: -20px;
     --card-y: -15px;
@@ -246,7 +248,8 @@
     animation-delay: 0s;
   }
 
-  .lg\:right-20.animate-card-breathe {
+  .lg\:right-20.animate-card-breathe,
+  .xl\:right-8.animate-card-breathe {
     transform: rotate(8deg);
     --card-x: 20px;
     --card-y: 15px;

@@ -192,7 +192,6 @@ export default function BlogFilters({
     name: string;
     norm: string;
   } | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
   const lastFiltersRef = useRef<{
     author: string;
     category: string;
@@ -327,11 +326,6 @@ export default function BlogFilters({
     didClearSearchRef.current = true;
   }, [pathname, router, searchParams, searchQuery]);
 
-  useEffect(() => {
-    if (currentPage === parsedPage) return;
-    setCurrentPage(parsedPage);
-  }, [currentPage, parsedPage]);
-
   const resolvedAuthor = useMemo(() => {
     const normParam = normalizeAuthor(authorParam);
     if (!normParam) return selectedAuthor;
@@ -363,12 +357,11 @@ export default function BlogFilters({
       prevFilters.query !== nextFilters.query;
     if (!hasChanged) return;
     lastFiltersRef.current = nextFilters;
-    if (currentPage !== 1) {
-      setCurrentPage(1);
+    if (parsedPage !== 1) {
       updatePageParam(1);
     }
   }, [
-    currentPage,
+    parsedPage,
     resolvedAuthor?.norm,
     resolvedCategory?.norm,
     searchQueryNormalized,
@@ -402,7 +395,7 @@ export default function BlogFilters({
   }, [locale, resolvedAuthor?.name]);
 
   useEffect(() => {
-    if (!resolvedAuthor) return;
+    if (!resolvedAuthor?.norm) return;
     const frame = window.requestAnimationFrame(() => {
       authorHeadingRef.current?.scrollIntoView({
         behavior: 'smooth',
@@ -446,6 +439,7 @@ export default function BlogFilters({
     1,
     Math.ceil(filteredPosts.length / POSTS_PER_PAGE)
   );
+  const currentPage = Math.min(parsedPage, totalPages);
   const paginatedPosts = useMemo(() => {
     const start = (currentPage - 1) * POSTS_PER_PAGE;
     return filteredPosts.slice(start, start + POSTS_PER_PAGE);
@@ -462,10 +456,9 @@ export default function BlogFilters({
   }, [selectedAuthorData]);
 
   useEffect(() => {
-    if (currentPage <= totalPages) return;
-    setCurrentPage(totalPages);
+    if (parsedPage <= totalPages) return;
     updatePageParam(totalPages);
-  }, [currentPage, totalPages, updatePageParam]);
+  }, [parsedPage, totalPages, updatePageParam]);
 
   const scrollToCategoryFilters = useCallback(() => {
     const target = categoryFiltersRef.current || postsGridRef.current;
@@ -494,11 +487,14 @@ export default function BlogFilters({
                 href={`/blog/${featuredPost.slug.current}`}
                 className="group block"
               >
-                <div className="h-[300px] overflow-hidden rounded-3xl border-0 shadow-[0_12px_30px_rgba(0,0,0,0.12)] sm:h-[340px] md:h-full md:min-h-[400px] lg:min-h-[440px]">
-                  <img
+                <div className="relative h-[300px] overflow-hidden rounded-3xl border-0 shadow-[0_12px_30px_rgba(0,0,0,0.12)] sm:h-[340px] md:h-full md:min-h-[400px] lg:min-h-[440px]">
+                  <Image
                     src={featuredPost.mainImage}
                     alt={featuredPost.title}
-                    className="block h-full w-full scale-[1.02] border-0 object-cover transition-transform duration-300 group-hover:scale-[1.05]"
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 60vw, 720px"
+                    className="scale-[1.02] object-cover transition-transform duration-300 group-hover:scale-[1.05]"
+                    priority
                   />
                 </div>
               </Link>
@@ -689,7 +685,6 @@ export default function BlogFilters({
           totalPages={totalPages}
           onPageChange={page => {
             pendingScrollRef.current = true;
-            setCurrentPage(page);
             updatePageParam(page);
           }}
           accentColor="var(--accent-primary)"

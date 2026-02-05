@@ -52,7 +52,7 @@ export default async function HomePage({
             </h2>
 
             <Link
-              href="/shop/products?filter=new"
+              href="/shop/products?filter=newest"
               className="group border-border text-muted-foreground hover:text-foreground focus-visible:ring-offset-background inline-flex items-center gap-2 rounded-md border bg-transparent px-4 py-2 text-xs font-semibold tracking-[0.25em] uppercase shadow-none transition-[transform,box-shadow,color,filter] duration-500 ease-out hover:-translate-y-0.5 hover:shadow-[var(--shop-card-shadow-hover)] hover:brightness-110 focus-visible:ring-2 focus-visible:ring-[color:var(--color-ring)] focus-visible:ring-offset-2 focus-visible:outline-none sm:text-sm"
               aria-label={t('viewAll')}
             >

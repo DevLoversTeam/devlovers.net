@@ -1,6 +1,6 @@
 'use client';
 
-import { TriangleAlert } from 'lucide-react';
+import { Clock, TriangleAlert } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
@@ -21,18 +21,31 @@ export function CountdownTimer({
 }: CountdownTimerProps) {
   const t = useTranslations('quiz.timer');
   const endTime = startedAt.getTime() + timeLimitSeconds * 1000;
-  const [remainingSeconds, setRemainingSeconds] = useState(() =>
-    Math.max(0, Math.floor((endTime - Date.now()) / 1000))
-  );
+  const [remainingSeconds, setRemainingSeconds] = useState(timeLimitSeconds);
+  const [isSynced, setIsSynced] = useState(false);
+  const [prevEndTime, setPrevEndTime] = useState(endTime);
+
+  if (endTime !== prevEndTime) {
+    setPrevEndTime(endTime);
+    setIsSynced(false);
+    setRemainingSeconds(timeLimitSeconds);
+  }
 
   useEffect(() => {
     if (!isActive) return;
+
+    let synced = false;
 
     const interval = setInterval(() => {
       const now = Date.now();
       const remaining = Math.max(0, Math.floor((endTime - now) / 1000));
 
       setRemainingSeconds(remaining);
+
+      if (!synced) {
+        synced = true;
+        setIsSynced(true);
+      }
 
       if (remaining === 0) {
         clearInterval(interval);
@@ -48,6 +61,7 @@ export function CountdownTimer({
 
     const handleVisibilityChange = () => {
       if (!document.hidden) {
+        setIsSynced(false);
         const remaining = Math.max(
           0,
           Math.floor((endTime - Date.now()) / 1000)
@@ -101,7 +115,8 @@ export function CountdownTimer({
       <div className="h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
         <div
           className={cn(
-            'h-full transition-all duration-1000 ease-linear',
+            'h-full',
+            isSynced && 'transition-all duration-1000 ease-linear',
             getProgressBarColor()
           )}
           style={{ width: `${percentage}%` }}
@@ -120,7 +135,8 @@ export function CountdownTimer({
             </>
           ) : (
             <>
-              <span aria-hidden="true">⏰</span> {t('hurryUp')}
+              <Clock className="inline h-4 w-4" aria-hidden="true" />{' '}
+              {t('hurryUp')}
             </>
           )}
         </p>

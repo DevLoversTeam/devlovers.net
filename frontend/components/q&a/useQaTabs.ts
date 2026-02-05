@@ -131,7 +131,6 @@ export function useQaTabs() {
     (page: number) => {
       setCurrentPage(page);
       updateUrl(active, page);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
     },
     [active, updateUrl]
   );

@@ -58,14 +58,14 @@ export default function FloatingExplainButton({
         'fixed z-50',
         'px-3 py-1.5',
         'text-sm font-medium',
-        'bg-[var(--accent-primary)] text-white',
+        'bg-(--accent-primary) text-white',
         'rounded-full',
         'border border-transparent',
         'shadow-lg',
-        'hover:bg-[var(--accent-hover)]',
+        'hover:bg-(--accent-hover)',
         'transition-all duration-200',
         'animate-in fade-in-0 zoom-in-95',
-        'focus:ring-2 focus:ring-[var(--accent-primary)] focus:ring-offset-2 focus:outline-none'
+        'focus:ring-2 focus:ring-(--accent-primary) focus:ring-offset-2 focus:outline-none'
       )}
       style={{
         left: `${position.x}px`,

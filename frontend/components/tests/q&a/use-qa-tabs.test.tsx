@@ -44,7 +44,6 @@ describe('useQaTabs', () => {
       }),
     });
     vi.stubGlobal('fetch', fetchMock);
-    vi.stubGlobal('scrollTo', vi.fn());
     routerReplace.mockClear();
     searchParamsValue = new URLSearchParams();
   });
@@ -85,7 +84,6 @@ describe('useQaTabs', () => {
     expect(routerReplace).toHaveBeenCalledWith('/q&a?page=2', {
       scroll: false,
     });
-    expect(window.scrollTo).toHaveBeenCalled();
   });
 
   it('updates category and URL on category change', async () => {
