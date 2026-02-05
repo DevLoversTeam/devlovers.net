@@ -352,3 +352,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Fixed ESLint, Prettier, and test configuration inconsistencies
 - Removed unused files, dead code, and outdated utilities
 - Improved reliability of quiz session restoration and state handling
+
+## [0.5.4] - 2026-02-05
+
+### Added
+
+- Quiz SEO & performance improvements:
+  - Dynamic metadata generation for quizzes list and quiz detail pages
+  - i18n-aware meta titles and descriptions (en / uk / pl)
+  - Browserslist configuration targeting modern browsers
+- Quiz content updates:
+  - Expanded JavaScript Fundamentals quiz from 10 to 40 questions
+- Dashboard UI improvements:
+  - New DynamicGridBackground for cleaner visual hierarchy
+  - Refined ProfileCard and StatsCard layouts
+- Accessibility & i18n:
+  - Improved aria-label coverage across navigation and UI controls
+  - Refined English, Polish, and Ukrainian UI copy and punctuation
+
+### Changed
+
+- Quiz UX refinements:
+  - Countdown timer animation stabilized on tab switch and session restore
+  - Emoji replaced with icon-based indicators for consistent styling
+  - Anti-cheat logic improved to distinguish touch vs mouse events
+- Q&A experience improvements:
+  - Pagination scroll now targets section instead of page top
+  - Mobile tap lock resolved by clearing text selection on interaction
+- Home & layout updates:
+  - Improved code card sizing and responsive behavior
+  - Online users counter repositioned for better mobile UX
+- Shop UX refinements:
+  - Canonicalized legacy “View all” filters
+  - Improved cart CTA behavior and badge layering
+- Blog & CMS:
+  - Refactored blog image rendering and filtering logic
+  - Improved pagination state handling
+- Styling & consistency:
+  - Fixed Tailwind v4 canonical class warnings
+  - Unified token-based styling across dashboard, 404 page, and controls
+
+### Fixed
+
+- Fixed mobile anti-cheat false positives on quiz pages
+- Removed render-blocking Font Awesome CSS
+- Fixed quiz timer progress bar desynchronization
+- Improved table text contrast in dark mode
+- Fixed cart badge overlay issues in header
+- Resolved multiple mobile spacing and padding inconsistencies
