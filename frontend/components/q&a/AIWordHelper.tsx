@@ -770,7 +770,7 @@ export default function AIWordHelper({
 
               {explanation && !isLoading && !error && (
                 <div className="prose prose-sm dark:prose-invert max-w-none">
-                  <div className="leading-relaxed whitespace-pre-wrap text-gray-800 **:my-2 dark:text-gray-200">
+                  <div className="leading-relaxed whitespace-pre-wrap text-gray-800 *:my-2 dark:text-gray-200">
                     {formatExplanation(explanation[activeLocale])}
                   </div>
                 </div>
