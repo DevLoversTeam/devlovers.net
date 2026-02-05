@@ -46,14 +46,14 @@
   "homepage": {
     "title": "DevLovers",
     "subtitle": "Platform for Technical Interview Preparation",
-    "description": "Master frontend, backend, and full-stack development with our interview questions, quizzes, and learning materials.",
+    "description": "Build real confidence in frontend, backend, and full-stack development through interactive interview questions, quizzes, and practical explanations",
     "cta": "Take the first step",
     "ctaVariants": {
-      "1": "No pressure. Just start.",
+      "1": "No pressure, just start",
       "2": "This might actually be fun",
       "3": "You're already halfway",
       "4": "One click from progress",
-      "5": "You clicked. That counts.",
+      "5": "You clicked, that counts",
       "6": "Brave move, by the way",
       "7": "Okay, now it's happening",
       "8": "Hello, new commit"
@@ -211,7 +211,7 @@
   },
   "blog": {
     "title": "All Blog Posts",
-    "subtitle": "Explore the latest articles in Tech, News, and Career Growth, covering trends, ideas, and practical insights.",
+    "subtitle": "Explore the latest articles in Tech, News, and Career Growth, covering trends, ideas, and practical insights",
     "metaTitle": "Blog | DevLovers",
     "metaDescription": "Explore the latest articles and insights",
     "all": "All",
@@ -261,7 +261,7 @@
       "viewAll": "View all",
       "hero": {
         "headline": "Code. Create. Collect.",
-        "subheadline": "Join thousands of developers who express their passion through premium merch.",
+        "subheadline": "Join thousands of developers who express their passion through premium merch",
         "cta": "Browse all products"
       },
       "comingSoon": {
@@ -272,6 +272,7 @@
     },
     "product": {
       "soldOut": "Sold out",
+      "maxStock": "Max {stock} in stock",
       "color": "Color",
       "size": "Size",
       "quantity": "Quantity",
@@ -308,7 +309,7 @@
     "cart": {
       "title": "Your cart",
       "empty": "Your cart is empty",
-      "emptyDescription": "Looks like you haven't added any items to your cart yet.",
+      "emptyDescription": "Looks like you haven't added any items to your cart yet",
       "startShopping": "Start shopping",
       "itemsLabel": "Cart items",
       "summary": {
@@ -321,7 +322,7 @@
       "checkout": {
         "placeOrder": "Place order",
         "placing": "Placing order...",
-        "message": "You'll either be redirected to secure payment or see confirmation if payment is not required in this environment.",
+        "message": "You'll either be redirected to secure payment or see confirmation if payment is not required in this environment",
         "notRedirected": "If you are not redirected automatically, open your order",
         "goToOrder": "Go to order"
       },
@@ -332,20 +333,20 @@
         "maxStock": "Max {stock} in stock"
       },
       "alerts": {
-        "itemsRemoved": "Some items were removed from your cart because they are unavailable or out of stock."
+        "itemsRemoved": "Some items were removed from your cart because they are unavailable or out of stock"
       }
     },
     "admin": {
       "page": {
         "title": "Shop Admin",
-        "description": "Administrative tools for the merch shop.",
+        "description": "Administrative tools for the merch shop",
         "productsSection": {
           "title": "Products",
-          "description": "Create, edit, activate, feature."
+          "description": "Create, edit, activate, feature"
         },
         "ordersSection": {
           "title": "Orders",
-          "description": "Review and manage orders."
+          "description": "Review and manage orders"
         }
       },
       "topbar": {
@@ -467,45 +468,45 @@
       },
       "sort": {
         "featured": "Featured",
-        "priceAsc": "Price: Low to High",
-        "priceDesc": "Price: High to Low",
+        "priceAsc": "Price ↑",
+        "priceDesc": "Price ↓",
         "newest": "Newest"
       }
     },
     "products": {
       "title": "All Products",
       "noProductsFound": "No products found",
-      "adjustFilters": "Try adjusting your filters to find what you're looking for.",
+      "adjustFilters": "Try adjusting your filters to find what you're looking for",
       "backToProducts": "Back to all products",
-      "notAvailable": "This product is not available in your locale/currency.",
+      "notAvailable": "This product is not available in your locale/currency",
       "loadMore": "Load more",
       "shopNow": "Shop now"
     },
     "checkout": {
       "errors": {
         "missingOrderId": "Missing order id",
-        "missingOrderIdDescription": "We couldn't identify your order. Please return to your cart or browse products.",
+        "missingOrderIdDescription": "We couldn't identify your order. Please return to your cart or browse products",
         "orderNotFound": "Order not found",
-        "orderNotFoundDescription": "We couldn't find this order. It may have been removed or never existed.",
+        "orderNotFoundDescription": "We couldn't find this order. It may have been removed or never existed",
         "invalidOrder": "Invalid order",
         "unableToLoad": "Unable to load order",
-        "unableToCheckout": "Unable to start checkout right now.",
-        "unexpectedResponse": "Unexpected checkout response.",
-        "tryAgainLater": "Please try again later."
+        "unableToCheckout": "Unable to start checkout right now",
+        "unexpectedResponse": "Unexpected checkout response",
+        "tryAgainLater": "Please try again later"
       },
       "missingOrder": {
-        "message": "We couldn't identify your order. Please return to your cart or browse products."
+        "message": "We couldn't identify your order. Please return to your cart or browse products"
       },
       "notFoundOrder": {
-        "message": "We couldn't find this order. It may have been removed or never existed."
+        "message": "We couldn't find this order. It may have been removed or never existed"
       },
       "success": {
         "title": "Thank you for your order",
         "orderLabel": "Order",
-        "received": "We've received your order.",
-        "paymentConfirmed": "Payment has been confirmed.",
-        "paymentProcessing": "Payment is still being processed. This page will update automatically.",
-        "paymentsDisabled": "Payments are disabled in this environment. You were not charged for this order.",
+        "received": "We've received your order",
+        "paymentConfirmed": "Payment has been confirmed",
+        "paymentProcessing": "Payment is still being processed. This page will update automatically",
+        "paymentsDisabled": "Payments are disabled in this environment. You were not charged for this order",
         "orderSummary": "Order summary",
         "totalAmount": "Total amount",
         "items": "Items",
@@ -515,11 +516,11 @@
       },
       "error": {
         "paymentFailed": "Payment failed",
-        "paymentFailedDescription": "The payment for this order was not completed. You can try again or contact support.",
+        "paymentFailedDescription": "The payment for this order was not completed. You can try again or contact support",
         "paymentUnclear": "Payment status unclear",
-        "paymentUnclearDescription": "We could not confirm a payment failure for this order.",
-        "notCompleted": "The payment for this order was not completed. You can try again or contact support.",
-        "couldNotConfirm": "We could not confirm a payment failure for this order.",
+        "paymentUnclearDescription": "We could not confirm a payment failure for this order",
+        "notCompleted": "The payment for this order was not completed. You can try again or contact support",
+        "couldNotConfirm": "We could not confirm a payment failure for this order",
         "orderDetails": "Order details",
         "order": "Order",
         "orderLabel": "Order",
@@ -535,7 +536,7 @@
         "title": "Secure checkout",
         "payForOrder": "Pay for order #{orderId}",
         "paymentDetails": "Payment details",
-        "completePayment": "Complete payment to place your order.",
+        "completePayment": "Complete payment to place your order",
         "amountDue": "Amount due",
         "orderSummary": "Order summary",
         "items": "Items",
@@ -544,9 +545,9 @@
         "viewConfirmation": "View confirmation",
         "continueShopping": "Continue shopping",
         "statusMessages": {
-          "alreadyPaid": "This order is already paid.",
-          "previousFailed": "The previous payment attempt failed. Please try again.",
-          "completePayment": "Complete payment to finish your order."
+          "alreadyPaid": "This order is already paid",
+          "previousFailed": "The previous payment attempt failed. Please try again",
+          "completePayment": "Complete payment to finish your order"
         }
       },
       "actions": {
@@ -558,10 +559,10 @@
     },
     "orders": {
       "title": "My orders",
-      "subtitle": "Your most recent orders (up to 50).",
+      "subtitle": "Your most recent orders (up to 50)",
       "backToShop": "Back to shop",
       "empty": {
-        "message": "No orders yet.",
+        "message": "No orders yet",
         "browseProducts": "Browse products"
       },
       "table": {
@@ -614,10 +615,10 @@
     "metaDescription": "Learn about DevLovers - the platform for technical interview preparation",
     "hero": {
       "titleHighlight": "Debug your skills",
-      "titleRest": "before the recruiter does.",
+      "titleRest": "before the recruiter does",
       "description": "Stop guessing. We decoded the chaotic interview process into a structured roadmap.",
       "descriptionHighlight": "Compile your scattered knowledge",
-      "descriptionRest": "into a production-ready skillset and land that offer.",
+      "descriptionRest": "into a production-ready skillset and land that offer",
       "stats": {
         "quizzesPassed": "Quizzes Passed",
         "githubStars": "GitHub Stars",
@@ -740,7 +741,7 @@
       "heading": "Pricing",
       "badge": "No Hidden Fees",
       "title": "Invest in your brain,",
-      "titleHighlight": "not our subscriptions.",
+      "titleHighlight": "not our subscriptions",
       "subtitle": "We believe knowledge should be accessible. So we don't sell courses. But servers heat up and coffee runs out. The choice is yours.",
       "junior": {
         "title": "Junior Engineer",
@@ -903,9 +904,9 @@
   },
   "dashboard": {
     "metaTitle": "Dashboard | DevLovers",
-    "metaDescription": "Track your progress and quiz performance.",
+    "metaDescription": "Track your progress and quiz performance",
     "title": "Dashboard",
-    "subtitle": "Welcome back to your training ground.",
+    "subtitle": "Welcome back to your training ground",
     "supportLink": "Support & Feedback",
     "profile": {
       "defaultName": "Developer",
@@ -915,7 +916,7 @@
     },
     "stats": {
       "title": "Quiz Statistics",
-      "noActivity": "Ready to level up? Challenge yourself with a new quiz.",
+      "noActivity": "Ready to level up? Challenge yourself with a new quiz",
       "startQuiz": "Start a Quiz",
       "attempts": "Attempts",
       "avgScore": "Avg Score",
@@ -945,7 +946,7 @@
     },
     "guest": {
       "title": "Unlock AI Explanations",
-      "description": "Sign in or create an account to get instant AI-powered explanations of technical terms.",
+      "description": "Sign in or create an account to get instant AI-powered explanations of technical terms",
       "login": "Log In",
       "signup": "Sign Up"
     },

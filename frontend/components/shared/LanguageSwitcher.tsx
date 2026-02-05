@@ -44,15 +44,15 @@ export default function LanguageSwitcher() {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="group text-muted-foreground flex items-center gap-1.5 font-medium transition-colors active:text-[var(--accent-hover)]"
+        className="group text-muted-foreground flex items-center gap-1.5 font-medium transition-colors active:text-(--accent-hover)"
         aria-label="Change language"
       >
-        <Globe className="h-4 w-4 transition-colors group-hover:[color:var(--accent-hover)] group-active:[color:var(--accent-hover)]" />
-        <span className="transition-colors group-hover:[color:var(--accent-hover)] group-active:[color:var(--accent-hover)]">
+        <Globe className="h-4 w-4 transition-colors group-hover:text-(--accent-hover) group-active:text-(--accent-hover)" />
+        <span className="transition-colors group-hover:text-(--accent-hover) group-active:text-(--accent-hover)">
           {localeLabels[currentLocale]}
         </span>
         <svg
-          className={`h-4 w-4 transition-all group-hover:[color:var(--accent-hover)] group-active:[color:var(--accent-hover)] ${
+          className={`h-4 w-4 transition-all group-hover:text-(--accent-hover) group-active:text-(--accent-hover) ${
             isOpen ? 'rotate-180' : ''
           }`}
           fill="none"
@@ -69,7 +69,7 @@ export default function LanguageSwitcher() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 z-[60] mt-2 w-20 rounded-md border border-gray-200 bg-white py-2 shadow-lg dark:border-neutral-800 dark:bg-neutral-900">
+        <div className="absolute right-0 z-50 mt-2 w-20 rounded-md border border-gray-200 bg-white py-2 shadow-lg dark:border-neutral-800 dark:bg-neutral-900">
           {locales.map(locale => (
             <Link
               key={locale}
@@ -81,9 +81,9 @@ export default function LanguageSwitcher() {
                 }
                 setIsOpen(false);
               }}
-              className={`block px-4 py-2 text-sm transition active:text-[var(--accent-hover)] ${
+              className={`block px-4 py-2 text-sm transition active:text-(--accent-hover) ${
                 currentLocale === locale
-                  ? 'text-muted-foreground [background-color:color-mix(in_srgb,var(--accent-primary)_10%,transparent)] font-medium'
+                  ? 'text-muted-foreground bg-(--accent-primary)/10 font-medium'
                   : 'text-muted-foreground hover:bg-secondary active:bg-secondary'
               }`}
             >
