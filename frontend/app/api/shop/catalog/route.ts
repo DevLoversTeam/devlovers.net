@@ -26,6 +26,7 @@ type RawSearchParams = {
   page?: string;
   limit?: string;
   locale?: string;
+  filter?: string;
 };
 
 function normalizeLocale(input: unknown): 'en' | 'uk' {
@@ -50,10 +51,16 @@ export async function GET(request: NextRequest) {
     request.nextUrl.searchParams.entries()
   ) as RawSearchParams;
 
-  const { locale, ...rest } = raw;
+  const { locale, filter, ...rest } = raw;
   const effectiveLocale = normalizeLocale(locale);
 
-  const parsed = catalogQuerySchema.safeParse(rest);
+  // legacy support: ?filter=new => sort=newest (only if sort not provided)
+  const normalizedRest: Record<string, string | undefined> = { ...rest };
+  if (filter === 'new' && !normalizedRest.sort) {
+    normalizedRest.sort = 'newest';
+  }
+
+  const parsed = catalogQuerySchema.safeParse(normalizedRest);
 
   if (!parsed.success) {
     logWarn('shop_catalog_invalid_query', {

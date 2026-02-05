@@ -51,8 +51,7 @@ export function ProductCard({ product }: ProductCardProps) {
         <span
           className={cn(
             'absolute top-3 left-3 z-10 rounded px-2 py-1 text-xs font-semibold uppercase',
-            product.badge === 'SALE' && 'bg-accent text-accent-foreground',
-            product.badge === 'NEW' && 'bg-foreground text-background'
+            'bg-foreground text-background dark:bg-accent dark:text-accent-foreground'
           )}
         >
           {t(`badges.${product.badge}`)}
