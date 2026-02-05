@@ -21,6 +21,7 @@ type CatalogPayload = {
 function stripPageParam(sp: ReadonlyURLSearchParams | null): string {
   const p = new URLSearchParams(sp?.toString() ?? '');
   p.delete('page');
+  p.delete('filter');
   return p.toString();
 }
 

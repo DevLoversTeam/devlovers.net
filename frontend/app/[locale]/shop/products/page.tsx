@@ -22,6 +22,7 @@ type RawSearchParams = {
   size?: string;
   sort?: string;
   page?: string;
+  filter?: string;
 };
 
 interface ProductsPageProps {
@@ -36,13 +37,22 @@ export default async function ProductsPage({
   const resolvedSearchParams = (await searchParams) ?? {};
   const t = await getTranslations('shop.products');
 
-  if (resolvedSearchParams.page) {
+  const needsCanonical =
+    !!resolvedSearchParams.page || !!resolvedSearchParams.filter;
+
+  if (needsCanonical) {
     const qsParams = new URLSearchParams();
 
     for (const [k, v] of Object.entries(resolvedSearchParams)) {
       if (!v) continue;
       if (k === 'page') continue;
+      if (k === 'filter') continue;
       qsParams.set(k, v);
+    }
+
+    // support legacy ?filter=new => sort=newest
+    if (resolvedSearchParams.filter === 'new' && !resolvedSearchParams.sort) {
+      qsParams.set('sort', 'newest');
     }
 
     const qs = qsParams.toString();
