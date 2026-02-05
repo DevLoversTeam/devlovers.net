@@ -1,6 +1,6 @@
 'use client';
 import { motion } from 'framer-motion';
-import { ArrowRight, Check, Heart, Server, Sparkles, X } from 'lucide-react';
+import { ArrowRight, BadgeDollarSign, Check, Heart, Server, Sparkles, X } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -46,7 +46,7 @@ export function PricingSection({ sponsors = [] }: PricingSectionProps) {
         aria-hidden="true"
       />
 
-      <div className="pointer-events-none absolute inset-0 z-0">
+      <div className="pointer-events-none absolute inset-0 z-0 hidden md:block">
         <ParticleCanvas activeShape={activeShape} className="h-full w-full" />
       </div>
 
@@ -59,7 +59,7 @@ export function PricingSection({ sponsors = [] }: PricingSectionProps) {
             <h2 id="pricing-heading" className="sr-only">
               {t('heading')}
             </h2>
-            <GradientBadge icon={Sparkles} text={t('badge')} className="mb-4" />
+            <GradientBadge icon={BadgeDollarSign} text={t('badge')} className="mb-4" />
           </motion.div>
 
           <SectionHeading
@@ -205,7 +205,7 @@ export function PricingSection({ sponsors = [] }: PricingSectionProps) {
           </motion.div>
         </div>
 
-        <p className="mx-auto mb-16 max-w-lg text-center font-mono text-[10px] leading-relaxed text-gray-400 dark:text-neutral-600">
+        <p className="mx-auto mb-16 max-w-lg text-center font-mono text-xs leading-relaxed text-gray-400 dark:text-neutral-600">
           {t('disclaimer')}
         </p>
 

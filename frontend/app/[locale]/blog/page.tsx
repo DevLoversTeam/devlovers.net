@@ -86,7 +86,7 @@ export default async function BlogPage({
 
   return (
     <DynamicGridBackground className="bg-gray-50 py-10 transition-colors duration-300 dark:bg-transparent">
-      <main className="relative z-10 mx-auto max-w-7xl pt-6 pb-12">
+      <main className="relative z-10 mx-auto max-w-7xl px-4 pt-6 pb-12 sm:px-6 lg:px-8">
         {!hasAuthorFilter && (
           <BlogPageHeader title={t('title')} subtitle={t('subtitle')} />
         )}
