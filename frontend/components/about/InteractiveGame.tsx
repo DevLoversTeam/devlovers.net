@@ -475,26 +475,26 @@ export function InteractiveGame() {
                 <div
                   className={`h-2 w-2 rounded-full ${mode === 'playing' && !gameOver ? 'bg-green-500' : 'bg-red-500'}`}
                 />
-                <span className="font-mono text-[8px] font-bold text-neutral-400 uppercase">
+                <span className="font-mono text-[9px] font-bold text-neutral-400 uppercase">
                   {t(getCurrentLevelKey(score))}
                 </span>
               </div>
 
-              <div className="flex items-center gap-3 md:absolute md:left-1/2 md:-translate-x-1/2 md:gap-6">
+              <div className="flex items-center gap-2 md:absolute md:left-1/2 md:-translate-x-1/2 md:gap-6">
                 <div className="flex flex-col items-center">
-                  <span className="text-[7px] font-bold tracking-widest text-neutral-400 uppercase md:text-[8px]">
+                  <span className="text-[9px] font-bold tracking-widest text-neutral-400 uppercase md:text-[8px]">
                     {t('high')}
                   </span>
                   <span
                     suppressHydrationWarning
-                    className="font-mono text-[10px] font-bold text-neutral-500 md:text-xs"
+                    className="font-mono text-[11px] font-bold text-neutral-500 md:text-xs"
                   >
                     {highScore.toString().padStart(3, '0')}
                   </span>
                 </div>
                 <div className="h-3 w-[1px] bg-neutral-300 md:h-4 dark:bg-white/20" />
                 <div className="flex flex-col items-center">
-                  <span className="text-[7px] font-bold tracking-widest text-[#ff005b] uppercase md:text-[8px]">
+                  <span className="text-[9px] font-bold tracking-widest text-[#ff005b] uppercase md:text-[8px]">
                     {t('score')}
                   </span>
                   <span className="font-mono text-sm leading-none font-black text-neutral-800 md:text-lg dark:text-white">
@@ -508,9 +508,9 @@ export function InteractiveGame() {
                   e.stopPropagation();
                   exitGame();
                 }}
-                className="-mr-1 p-1.5 transition-colors hover:text-[#ff005b] md:-mr-2 md:p-2"
+                className="-mr-1 p-2 transition-colors hover:text-[#ff005b] md:-mr-2"
               >
-                <X size={14} className="text-neutral-400 md:h-4 md:w-4" />
+                <X size={16} className="text-neutral-400 md:h-4 md:w-4" />
               </button>
             </div>
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Crown, Plus, Sparkles } from 'lucide-react';
+import { Crown, Heart, Plus } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
@@ -23,7 +23,7 @@ export function SponsorsWall({ sponsors = [] }: SponsorsWallProps) {
   return (
     <div className="mt-16 flex w-full flex-col items-center">
       <div className="mb-4 opacity-100">
-        <GradientBadge icon={Sparkles} text={t('badge')} />
+        <GradientBadge icon={Heart} text={t('badge')} />
       </div>
 
       <motion.div
@@ -75,7 +75,7 @@ export function SponsorsWall({ sponsors = [] }: SponsorsWallProps) {
         </Link>
       </motion.div>
 
-      <p className="mt-4 font-mono text-[10px] text-gray-500 dark:text-neutral-500">
+      <p className="mt-4 font-mono text-[10px] text-gray-400 dark:text-neutral-600">
         {t('fundsNote')}
       </p>
     </div>
