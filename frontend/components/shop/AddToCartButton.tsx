@@ -12,6 +12,7 @@ import {
   SHOP_CTA_BASE,
   SHOP_CTA_INSET,
   SHOP_CTA_WAVE,
+  SHOP_DISABLED,
   SHOP_FOCUS,
   SHOP_SIZE_CHIP_BASE,
   SHOP_STEPPER_BUTTON_BASE,
@@ -29,7 +30,9 @@ interface AddToCartButtonProps {
 export function AddToCartButton({ product }: AddToCartButtonProps) {
   const { addToCart } = useCart();
   const t = useTranslations('shop.product');
+  const tCartActions = useTranslations('shop.cart.actions');
   const tColors = useTranslations('shop.catalog.colors');
+
   const [selectedSize, setSelectedSize] = useState<string | undefined>(
     product.sizes?.[0]
   );
@@ -38,6 +41,17 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
   );
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
+
+  const stockRaw = (product as any).stock as unknown;
+  const stockNum =
+    typeof stockRaw === 'number'
+      ? stockRaw
+      : typeof stockRaw === 'string' && stockRaw.trim().length > 0
+        ? Number(stockRaw)
+        : NaN;
+
+  const maxQty =
+    Number.isFinite(stockNum) && stockNum > 0 ? Math.floor(stockNum) : null;
 
   const translateColor = (color: string): string => {
     const colorSlug = color.toLowerCase();
@@ -51,7 +65,12 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
   const handleAddToCart = () => {
     if (!product.inStock) return;
 
-    addToCart(product, quantity, selectedSize, selectedColor);
+    const safeQty =
+      maxQty === null ? quantity : Math.min(Math.max(1, quantity), maxQty);
+
+    if (safeQty !== quantity) setQuantity(safeQty);
+
+    addToCart(product, safeQty, selectedSize, selectedColor);
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
   };
@@ -68,12 +87,16 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
   const colorGroupId = useId();
   const sizeGroupId = useId();
   const quantityGroupId = useId();
+
   const ctaBaseVar = added
     ? '--shop-hero-btn-success-bg'
     : '--shop-hero-btn-bg';
   const ctaHoverVar = added
     ? '--shop-hero-btn-success-bg-hover'
     : '--shop-hero-btn-bg-hover';
+
+  const decDisabled = quantity <= 1;
+  const incDisabled = maxQty !== null ? quantity >= maxQty : false;
 
   return (
     <section className="mt-8 space-y-6" aria-label={t('purchaseOptions')}>
@@ -171,12 +194,14 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
         <div className="mt-3 flex items-center gap-3">
           <button
             type="button"
-            onClick={() => setQuantity(Math.max(1, quantity - 1))}
+            onClick={() => setQuantity(q => Math.max(1, q - 1))}
+            disabled={decDisabled}
             className={cn(
               SHOP_STEPPER_BUTTON_BASE,
               SHOP_CHIP_INTERACTIVE,
               SHOP_CHIP_HOVER,
-              SHOP_FOCUS
+              SHOP_FOCUS,
+              SHOP_DISABLED
             )}
             aria-label={t('decreaseQuantity')}
           >
@@ -189,17 +214,32 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
 
           <button
             type="button"
-            onClick={() => setQuantity(quantity + 1)}
+            onClick={() =>
+              setQuantity(q =>
+                maxQty === null ? q + 1 : Math.min(maxQty, q + 1)
+              )
+            }
+            disabled={incDisabled}
             className={cn(
               SHOP_STEPPER_BUTTON_BASE,
               SHOP_CHIP_INTERACTIVE,
               SHOP_CHIP_HOVER,
-              SHOP_FOCUS
+              SHOP_FOCUS,
+              SHOP_DISABLED
             )}
             aria-label={t('increaseQuantity')}
           >
             <Plus className="h-4 w-4" aria-hidden="true" />
           </button>
+
+          {maxQty !== null && incDisabled ? (
+            <span
+              className="text-muted-foreground ml-3 text-xs whitespace-nowrap"
+              role="status"
+            >
+              {tCartActions('maxStock', { stock: maxQty })}
+            </span>
+          ) : null}
         </div>
       </section>
 
@@ -222,21 +262,16 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
       >
         {product.inStock ? (
           <>
-            {/* base gradient */}
             <span
               className="absolute inset-0"
               style={shopCtaGradient(ctaBaseVar, ctaHoverVar)}
               aria-hidden="true"
             />
-
-            {/* hover wave overlay */}
             <span
               className={SHOP_CTA_WAVE}
               style={shopCtaGradient(ctaHoverVar, ctaBaseVar)}
               aria-hidden="true"
             />
-
-            {/* glass inset */}
             <span className={SHOP_CTA_INSET} aria-hidden="true" />
           </>
         ) : null}

@@ -101,7 +101,7 @@ export function HeaderButton({
   );
 
   const baseClasses = `
-    group relative
+    group relative z-0
     inline-flex items-center
     text-sm font-medium
     rounded-lg
@@ -122,7 +122,7 @@ export function HeaderButton({
 
     const defaultBadgeClasses = `
       pointer-events-none
-      absolute -right-1 -top-1
+      absolute -right-1 -top-1  z-20
       flex h-5 min-w-5 items-center justify-center
       rounded-full px-1
       text-[11px] font-semibold leading-none tabular-nums

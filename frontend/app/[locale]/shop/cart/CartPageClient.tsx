@@ -1,6 +1,6 @@
 'use client';
 
-import { Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react';
+import { Loader2, Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -411,10 +411,23 @@ export default function CartPage() {
               />
               <span className={SHOP_CTA_INSET} aria-hidden="true" />
 
-              <span className="relative z-10">
-                {isCheckingOut
-                  ? t('checkout.placing')
-                  : t('checkout.placeOrder')}
+              <span className="relative z-10 inline-flex min-w-0 items-center justify-center gap-2">
+                {isCheckingOut ? (
+                  <Loader2
+                    className="h-4 w-4 animate-spin"
+                    aria-hidden="true"
+                  />
+                ) : null}
+
+                {/* visible label stays stable to avoid wrapping/layout shift */}
+                <span className="truncate whitespace-nowrap">
+                  {t('checkout.placeOrder')}
+                </span>
+
+                {/* screen readers can still get the “placing” state */}
+                {isCheckingOut ? (
+                  <span className="sr-only">{t('checkout.placing')}</span>
+                ) : null}
               </span>
             </button>
 

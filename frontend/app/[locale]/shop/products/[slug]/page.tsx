@@ -39,7 +39,15 @@ export default async function ProductPage({
     notFound();
   }
   const isUnavailable = result.kind === 'unavailable';
-  const product = result.product as any;
+  const resultProduct = (result as any).product ?? {};
+
+  const product = {
+    ...(publicProduct as any),
+    ...Object.fromEntries(
+      Object.entries(resultProduct).filter(([, v]) => v !== undefined)
+    ),
+  } as any;
+
   const NAV_LINK = cn(
     SHOP_NAV_LINK_BASE,
     SHOP_FOCUS,
@@ -68,13 +76,12 @@ export default async function ProductPage({
 
       <div className="mt-8 grid gap-8 lg:grid-cols-2 lg:gap-16">
         <div className="bg-muted relative aspect-square overflow-hidden rounded-lg">
-          {product.badge && (
+          {badge && badge !== 'NONE' && (
             <span
-              className={`absolute top-4 left-4 z-10 rounded px-2 py-1 text-xs font-semibold uppercase ${
-                badge === 'SALE'
-                  ? 'bg-accent text-accent-foreground'
-                  : 'bg-foreground text-background'
-              }`}
+              className={cn(
+                'absolute top-4 left-4 z-10 rounded px-2 py-1 text-xs font-semibold uppercase',
+                'bg-foreground text-background dark:bg-accent dark:text-accent-foreground'
+              )}
             >
               {badgeLabel}
             </span>

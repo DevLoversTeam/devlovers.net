@@ -75,6 +75,7 @@ export function ProductSort({ className }: ProductSortProps) {
           value={currentSort}
           onChange={e => handleSort(e.target.value)}
           className={cn(
+            'peer',
             SHOP_SELECT_BASE,
             SHOP_SELECT_INTERACTIVE,
             SHOP_FOCUS,
