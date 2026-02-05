@@ -25,12 +25,11 @@ export function CountdownTimer({
   const [isSynced, setIsSynced] = useState(false);
   const [prevEndTime, setPrevEndTime] = useState(endTime);
 
-    if (endTime !== prevEndTime) {
-      setPrevEndTime(endTime);
-      setIsSynced(false);
-      setRemainingSeconds(timeLimitSeconds);
-    }
-
+  if (endTime !== prevEndTime) {
+    setPrevEndTime(endTime);
+    setIsSynced(false);
+    setRemainingSeconds(timeLimitSeconds);
+  }
 
   useEffect(() => {
     if (!isActive) return;
@@ -56,7 +55,6 @@ export function CountdownTimer({
 
     return () => clearInterval(interval);
   }, [isActive, onTimeUp, endTime]);
-
 
   useEffect(() => {
     if (!isActive) return;
@@ -116,12 +114,11 @@ export function CountdownTimer({
 
       <div className="h-2 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
         <div
-            className={cn(
-              'h-full',
-              isSynced && 'transition-all duration-1000 ease-linear',
-              getProgressBarColor()
-            )}
-
+          className={cn(
+            'h-full',
+            isSynced && 'transition-all duration-1000 ease-linear',
+            getProgressBarColor()
+          )}
           style={{ width: `${percentage}%` }}
         />
       </div>
@@ -138,7 +135,8 @@ export function CountdownTimer({
             </>
           ) : (
             <>
-              <Clock className="inline h-4 w-4" aria-hidden="true" /> {t('hurryUp')}
+              <Clock className="inline h-4 w-4" aria-hidden="true" />{' '}
+              {t('hurryUp')}
             </>
           )}
         </p>

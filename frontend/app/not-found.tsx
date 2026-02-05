@@ -28,7 +28,7 @@ export default async function NotFound() {
       <div className="pointer-events-none absolute inset-0 opacity-60">
         <div className="absolute -top-32 left-1/2 h-96 w-xl -translate-x-1/2 rounded-full bg-(--accent-primary)/20 blur-3xl" />
         <div className="absolute -bottom-48 left-1/4 h-88 w-88 rounded-full bg-(--accent-hover)/15 blur-3xl" />
-        <div className="absolute -bottom-40 right-0 h-104 w-104 rounded-full bg-(--accent-primary)/25 blur-3xl" />
+        <div className="absolute right-0 -bottom-40 h-104 w-104 rounded-full bg-(--accent-primary)/25 blur-3xl" />
       </div>
 
       <div className="pointer-events-none absolute inset-0 opacity-40 dark:opacity-60">

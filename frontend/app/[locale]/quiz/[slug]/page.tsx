@@ -9,18 +9,22 @@ import { getCurrentUser } from '@/lib/auth';
 
 type MetadataProps = { params: Promise<{ locale: string; slug: string }> };
 
-export async function generateMetadata({ params }: MetadataProps): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: MetadataProps): Promise<Metadata> {
   const { locale, slug } = await params;
   const t = await getTranslations({ locale, namespace: 'quiz.page' });
   const quiz = await getQuizBySlug(slug, locale);
-  
+
   if (!quiz) {
     return { title: t('notFoundTitle') };
   }
-  
+
   return {
     title: `${quiz.title} | ${t('metaSuffix')}`,
-    description: quiz.description ?? t('metaDescriptionFallback', { title: quiz.title ?? '' }),
+    description:
+      quiz.description ??
+      t('metaDescriptionFallback', { title: quiz.title ?? '' }),
   };
 }
 
@@ -52,10 +56,10 @@ export default async function QuizPage({
 
   const seed = Number.parseInt(seedParam, 10);
   if (Number.isNaN(seed)) {
-     // eslint-disable-next-line react-hooks/purity -- redirect throws, value never used in render
+    // eslint-disable-next-line react-hooks/purity -- redirect throws, value never used in render
     redirect(`/${locale}/quiz/${slug}?seed=${Date.now()}`);
   }
-  
+
   const questions = await getQuizQuestionsRandomized(quiz.id, locale, seed);
 
   const clientQuestions = stripCorrectAnswers(questions);
