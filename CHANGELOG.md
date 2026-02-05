@@ -306,3 +306,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Improved stability of text selection detection for AI helper
 - Fixed locale duplication and routing edge cases
 - Reduced visual overlap issues on small mobile screens
+
+## [0.5.3] - 2026-02-04
+
+### Added
+
+- Quiz performance improvements:
+  - Redis-based answer verification replacing AES encryption
+  - Server-side quiz cache initialization to reduce verification latency
+  - Debug endpoints for inspecting and clearing quiz caches (development only)
+- Caching & data layer:
+  - Persistent Redis caching for static Quiz and Q&A data (TTL removed)
+  - Cache-aside strategy for quiz answers and Q&A content
+- Internationalization & accessibility:
+  - Translations for blog categories, CTA variants, and UI components (en / uk / pl)
+  - Improved aria-label coverage for navigation, cart, theme toggle, and search
+- Developer experience:
+  - Finalized ESLint Flat Config for frontend
+  - Stable Prettier + Tailwind class sorting workflow
+  - Consistent format-on-save behavior across the team
+
+### Changed
+
+- Quiz system refactor:
+  - Simplified answer verification flow using Redis lookups
+  - Improved guest session restoration after quiz completion
+  - Language switch now preserves quiz results for guest users
+- Layout & UI refinements:
+  - Removed duplicate padding on quiz routes
+  - Improved mobile alignment for Quiz Rules and headers
+  - Refined leaderboard component structure and lint stability
+- Shop module cleanup:
+  - Normalized component naming (PascalCase)
+  - Reorganized test structure under domain boundaries
+  - Unified active-state and hover styling across shop routes
+- Blog UI improvements:
+  - Fixed mobile paddings and spacing consistency
+  - Improved responsive header and layout behavior
+
+### Fixed
+
+- Fixed mobile layout misalignment on quiz pages
+- Fixed guest language switch issues on quiz result screen
+- Improved WCAG color contrast compliance across quiz UI
+- Fixed ESLint, Prettier, and test configuration inconsistencies
+- Removed unused files, dead code, and outdated utilities
+- Improved reliability of quiz session restoration and state handling

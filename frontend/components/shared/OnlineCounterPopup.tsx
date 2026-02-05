@@ -2,12 +2,20 @@
 
 import { Users } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 
-export function OnlineCounterPopup() {
+type OnlineCounterPopupProps = {
+  ctaRef: React.RefObject<HTMLAnchorElement | null>;
+};
+
+export function OnlineCounterPopup({ ctaRef }: OnlineCounterPopupProps) {
   const t = useTranslations('onlineCounter');
   const [online, setOnline] = useState<number | null>(null);
   const [show, setShow] = useState(false);
+  const [position, setPosition] = useState<{ top: number; isMobile: boolean }>({
+    top: 0,
+    isMobile: true,
+  });
 
   useEffect(() => {
     if (sessionStorage.getItem('shown')) return;
@@ -23,6 +31,51 @@ export function OnlineCounterPopup() {
       .catch(() => setOnline(null));
   }, []);
 
+  useLayoutEffect(() => {
+    const calculatePosition = () => {
+      const mobile = window.innerWidth < 768;
+      let newTop = 0;
+
+      if (mobile && ctaRef.current) {
+        const rect = ctaRef.current.getBoundingClientRect();
+        const desired = rect.bottom + window.scrollY + rect.height + 14;
+        const popupHeight = 56;
+        const safeBottom = 16;
+        const max =
+          window.scrollY + window.innerHeight - popupHeight - safeBottom;
+        newTop = Math.min(desired, max);
+      }
+
+      setPosition({ top: newTop, isMobile: mobile });
+    };
+
+    calculatePosition();
+  }, [ctaRef]);
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      let newTop = 0;
+
+      if (mobile && ctaRef.current) {
+        const rect = ctaRef.current.getBoundingClientRect();
+        const desired = rect.bottom + window.scrollY + rect.height + 14;
+        const popupHeight = 56;
+        const safeBottom = 16;
+        const max =
+          window.scrollY + window.innerHeight - popupHeight - safeBottom;
+        newTop = Math.min(desired, max);
+      }
+
+      setPosition({ top: newTop, isMobile: mobile });
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [ctaRef]);
+
   if (!online) return null;
 
   const getText = (count: number) => {
@@ -34,13 +87,16 @@ export function OnlineCounterPopup() {
   };
 
   return (
-    <div className="fixed right-0 bottom-[30vh] left-0 z-50 flex justify-center md:right-12 md:bottom-[10vh] md:left-auto md:justify-end md:pr-0">
+    <div
+      className="fixed right-0 left-0 z-50 flex justify-center md:right-12 md:bottom-[10vh] md:left-auto md:justify-end"
+      style={position.isMobile ? { top: position.top } : undefined}
+    >
       <div
         className={`transition-all duration-500 ease-out ${
           show
             ? 'translate-y-0 scale-100 opacity-100'
             : 'translate-y-4 scale-90 opacity-0'
-        } `}
+        }`}
       >
         <div className="relative">
           <div className="absolute -inset-1.5 rounded-3xl bg-[var(--accent-primary)]/15 blur-xl sm:-inset-2 dark:bg-[var(--accent-primary)]/20" />
@@ -94,7 +150,6 @@ export function OnlineCounterPopup() {
             </div>
 
             <div className="absolute top-0 right-0 left-0 h-px bg-gradient-to-r from-transparent via-[var(--accent-primary)]/30 to-transparent" />
-
             <div className="absolute top-1/4 bottom-1/4 left-0 w-px bg-gradient-to-b from-transparent via-[var(--accent-primary)]/20 to-transparent" />
             <div className="absolute top-1/4 right-0 bottom-1/4 w-px bg-gradient-to-b from-transparent via-[var(--accent-primary)]/20 to-transparent" />
           </div>
@@ -108,7 +163,6 @@ export function OnlineCounterPopup() {
             className="absolute -top-1.5 left-1/3 h-1 w-1 animate-ping rounded-full bg-[var(--accent-primary)]/50 dark:bg-[var(--accent-primary)]/60"
             style={{ animationDelay: '1s' }}
           />
-
           <div
             className="absolute top-1/4 -left-1 h-1 w-1 animate-ping rounded-full bg-[var(--accent-primary)]/40 dark:bg-[var(--accent-primary)]/50"
             style={{ animationDelay: '1.5s' }}
@@ -117,7 +171,6 @@ export function OnlineCounterPopup() {
             className="absolute top-2/3 -right-1 h-1 w-1 animate-ping rounded-full bg-[var(--accent-primary)]/40 dark:bg-[var(--accent-primary)]/50"
             style={{ animationDelay: '2s' }}
           />
-
           <div
             className="absolute -bottom-1 left-1/4 h-0.5 w-0.5 animate-ping rounded-full bg-[var(--accent-primary)]/50 sm:h-1 sm:w-1 dark:bg-[var(--accent-primary)]/60"
             style={{ animationDelay: '0.8s' }}
