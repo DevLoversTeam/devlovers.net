@@ -85,12 +85,17 @@
     "metaTitle": "Квізи | DevLovers",
     "metaDescription": "Перевірте свої знання з допомогою інтерактивних квізів",
     "page": {
+      "notFoundTitle": "Квіз не знайдено",
+      "metaSuffix": "Квіз DevLovers",
+      "metaDescriptionFallback": "Пройдіть квіз {title} та перевірте свої знання.",
       "noQuestions": "Немає питань для цього квізу",
       "questionsLabel": "Питань",
       "timeLabel": "Час",
       "minutes": "хв"
     },
     "list": {
+      "metaTitle": "Квізи | DevLovers",
+      "metaDescription": "Перевірте свої знання з React, Angular, Vue, Node.js та інших технологій.",
       "title": "Квізи",
       "practice": "Практика",
       "subtitle": "Оберіть квіз, щоб перевірити свої знання",
