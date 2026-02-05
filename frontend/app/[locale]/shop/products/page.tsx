@@ -37,21 +37,19 @@ export default async function ProductsPage({
   const resolvedSearchParams = (await searchParams) ?? {};
   const t = await getTranslations('shop.products');
 
-  const needsCanonical =
-    !!resolvedSearchParams.page || !!resolvedSearchParams.filter;
+  const hasLegacyFilter = resolvedSearchParams.filter === 'new';
+  const needsCanonical = hasLegacyFilter;
 
   if (needsCanonical) {
     const qsParams = new URLSearchParams();
 
     for (const [k, v] of Object.entries(resolvedSearchParams)) {
       if (!v) continue;
-      if (k === 'page') continue;
       if (k === 'filter') continue;
       qsParams.set(k, v);
     }
 
-    // support legacy ?filter=new => sort=newest
-    if (resolvedSearchParams.filter === 'new' && !resolvedSearchParams.sort) {
+    if (hasLegacyFilter && !resolvedSearchParams.sort) {
       qsParams.set('sort', 'newest');
     }
 
