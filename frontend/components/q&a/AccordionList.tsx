@@ -244,7 +244,7 @@ function renderTable(
 ): ReactNode {
   return (
     <div key={index} className="my-2 overflow-x-auto">
-      <table className="min-w-full border-collapse border border-gray-300 text-sm">
+      <table className="min-w-full border-collapse border border-gray-300 text-sm text-gray-900 dark:text-gray-900">
         <thead>
           <tr className="bg-gray-100">
             {block.header.map((cell, i) => (
@@ -363,6 +363,14 @@ export default function AccordionList({ items }: { items: QuestionEntry[] }) {
     onTermClick: handleCachedTermClick,
   };
 
+  const clearSelection = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    const selection = window.getSelection?.();
+    if (selection && !selection.isCollapsed) {
+      selection.removeAllRanges();
+    }
+  }, []);
+
   return (
     <>
       <Accordion type="single" collapsible className="w-full">
@@ -382,7 +390,10 @@ export default function AccordionList({ items }: { items: QuestionEntry[] }) {
                   : undefined
               }
             >
-              <AccordionTrigger className="px-4 hover:no-underline">
+              <AccordionTrigger
+                className="px-4 hover:no-underline"
+                onPointerDown={clearSelection}
+              >
                 {q.question}
               </AccordionTrigger>
               <AccordionContent className="px-4">

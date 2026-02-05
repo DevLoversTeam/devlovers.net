@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { useCallback, useEffect, useRef } from 'react';
 
 import AccordionList from '@/components/q&a/AccordionList';
 import { Pagination } from '@/components/q&a/Pagination';
@@ -14,6 +15,8 @@ import { cn } from '@/lib/utils';
 
 export default function TabsSection() {
   const t = useTranslations('qa');
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const pendingScrollRef = useRef(false);
   const {
     active,
     currentPage,
@@ -25,8 +28,37 @@ export default function TabsSection() {
     totalPages,
   } = useQaTabs();
 
+  const clearSelection = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    const selection = window.getSelection?.();
+    if (selection && !selection.isCollapsed) {
+      selection.removeAllRanges();
+    }
+  }, []);
+
+  const onPageChange = useCallback(
+    (page: number) => {
+      clearSelection();
+      pendingScrollRef.current = true;
+      handlePageChange(page);
+    },
+    [clearSelection, handlePageChange]
+  );
+
+  useEffect(() => {
+    if (!pendingScrollRef.current || isLoading) return;
+    pendingScrollRef.current = false;
+    const frame = window.requestAnimationFrame(() => {
+      sectionRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [currentPage, isLoading]);
+
   return (
-    <div className="w-full">
+    <div className="w-full" ref={sectionRef}>
       <Tabs value={active} onValueChange={handleCategoryChange}>
         <TabsList className="mb-6 flex !h-auto !w-full flex-wrap items-stretch justify-start gap-3 !bg-transparent !p-0">
           {categoryData.map(category => {
@@ -76,7 +108,7 @@ export default function TabsSection() {
         <Pagination
           currentPage={currentPage}
           totalPages={totalPages}
-          onPageChange={handlePageChange}
+          onPageChange={onPageChange}
           accentColor={
             categoryTabStyles[active as keyof typeof categoryTabStyles].accent
           }
