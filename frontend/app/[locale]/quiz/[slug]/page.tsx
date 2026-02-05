@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
@@ -5,6 +6,23 @@ import { QuizContainer } from '@/components/quiz/QuizContainer';
 import { stripCorrectAnswers } from '@/db/queries/quiz';
 import { getQuizBySlug, getQuizQuestionsRandomized } from '@/db/queries/quiz';
 import { getCurrentUser } from '@/lib/auth';
+
+type MetadataProps = { params: Promise<{ locale: string; slug: string }> };
+
+export async function generateMetadata({ params }: MetadataProps): Promise<Metadata> {
+  const { locale, slug } = await params;
+  const t = await getTranslations({ locale, namespace: 'quiz.page' });
+  const quiz = await getQuizBySlug(slug, locale);
+  
+  if (!quiz) {
+    return { title: t('notFoundTitle') };
+  }
+  
+  return {
+    title: `${quiz.title} | ${t('metaSuffix')}`,
+    description: quiz.description ?? t('metaDescriptionFallback', { title: quiz.title ?? '' }),
+  };
+}
 
 interface QuizPageProps {
   params: Promise<{ locale: string; slug: string }>;

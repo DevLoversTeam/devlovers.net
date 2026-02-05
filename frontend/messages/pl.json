@@ -85,12 +85,17 @@
     "metaTitle": "Quizy | DevLovers",
     "metaDescription": "Sprawdź swoją wiedzę dzięki interaktywnym quizom",
     "page": {
+      "notFoundTitle": "Quiz nie znaleziony",
+      "metaSuffix": "Quiz DevLovers",
+      "metaDescriptionFallback": "Rozwiąż quiz {title} i sprawdź swoją wiedzę.",
       "noQuestions": "Brak dostępnych pytań dla tego quizu",
       "questionsLabel": "Pytania",
       "timeLabel": "Czas",
       "minutes": "min"
     },
     "list": {
+      "metaTitle": "Quizy | DevLovers",
+      "metaDescription": "Sprawdź swoją wiedzę z React, Angular, Vue, Node.js i innych technologii.",
       "title": "Quizy",
       "practice": "Ćwicz",
       "subtitle": "Wybierz quiz, aby sprawdzić swoją wiedzę",
