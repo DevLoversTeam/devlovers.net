@@ -60,7 +60,7 @@ export const TOPICS = [
     color:
       'group-hover:border-[#F05032]/50 dark:group-hover:border-[#F05032]/50 group-hover:bg-[#F05032]/10',
     glow: 'bg-[#F05032]',
-    href: '/q&a',
+    href: '/q&a/?category=git',
   },
   {
     id: 'html',

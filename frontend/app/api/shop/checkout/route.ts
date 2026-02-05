@@ -334,6 +334,17 @@ export async function POST(request: NextRequest) {
     });
   }
 
+  const paymentsEnabled = isPaymentsEnabled();
+
+  if (!paymentsEnabled) {
+    logWarn('checkout_payments_disabled', {
+      ...authMeta,
+      code: 'PAYMENTS_DISABLED',
+    });
+
+    return errorResponse('PAYMENTS_DISABLED', 'Payments are disabled.', 503);
+  }
+
   try {
     const result = await createOrderWithItems({
       items,
@@ -350,68 +361,6 @@ export async function POST(request: NextRequest) {
       paymentStatus: order.paymentStatus,
       paymentIntentId: order.paymentIntentId ?? null,
     };
-
-    const paymentsEnabled = isPaymentsEnabled();
-
-    if (!paymentsEnabled) {
-      if (
-        order.paymentProvider === 'none' &&
-        order.paymentStatus === 'failed'
-      ) {
-        logWarn('checkout_failed', {
-          ...orderMeta,
-          code: 'CHECKOUT_FAILED',
-        });
-
-        return errorResponse(
-          'CHECKOUT_FAILED',
-          'Order could not be completed.',
-          409,
-          {
-            orderId: order.id,
-          }
-        );
-      }
-
-      if (
-        order.paymentProvider === 'stripe' &&
-        order.paymentStatus !== 'paid'
-      ) {
-        logWarn('checkout_payments_disabled_requires_payment', {
-          ...orderMeta,
-          code: 'PAYMENTS_DISABLED',
-        });
-
-        return errorResponse(
-          'PAYMENTS_DISABLED',
-          'Payments are disabled. This order requires payment and cannot be processed.',
-          409,
-          { orderId: order.id, paymentStatus: order.paymentStatus }
-        );
-      }
-
-      if (order.paymentProvider === 'none') {
-        if (
-          !['paid', 'failed'].includes(order.paymentStatus) ||
-          order.paymentIntentId
-        ) {
-          logError(
-            'checkout_order_state_invalid',
-            new Error('ORDER_STATE_INVALID'),
-            {
-              ...orderMeta,
-              code: 'ORDER_STATE_INVALID',
-            }
-          );
-
-          return errorResponse(
-            'ORDER_STATE_INVALID',
-            'Order state is invalid for payments disabled.',
-            500
-          );
-        }
-      }
-    }
 
     const stripePaymentFlow =
       paymentsEnabled && order.paymentProvider === 'stripe';

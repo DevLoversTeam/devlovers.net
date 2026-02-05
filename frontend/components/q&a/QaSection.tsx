@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import AccordionList from '@/components/q&a/AccordionList';
 import { Pagination } from '@/components/q&a/Pagination';
@@ -17,6 +17,7 @@ export default function TabsSection() {
   const t = useTranslations('qa');
   const sectionRef = useRef<HTMLDivElement>(null);
   const pendingScrollRef = useRef(false);
+  const [isMobile, setIsMobile] = useState(false);
   const {
     active,
     currentPage,
@@ -27,6 +28,14 @@ export default function TabsSection() {
     localeKey,
     totalPages,
   } = useQaTabs();
+
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 640px)');
+    const update = () => setIsMobile(media.matches);
+    update();
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
 
   const clearSelection = useCallback(() => {
     if (typeof window === 'undefined') return;
@@ -39,14 +48,14 @@ export default function TabsSection() {
   const onPageChange = useCallback(
     (page: number) => {
       clearSelection();
-      pendingScrollRef.current = true;
+      pendingScrollRef.current = isMobile;
       handlePageChange(page);
     },
-    [clearSelection, handlePageChange]
+    [clearSelection, handlePageChange, isMobile]
   );
 
   useEffect(() => {
-    if (!pendingScrollRef.current || isLoading) return;
+    if (!pendingScrollRef.current || isLoading || !isMobile) return;
     pendingScrollRef.current = false;
     const frame = window.requestAnimationFrame(() => {
       sectionRef.current?.scrollIntoView({
@@ -55,7 +64,7 @@ export default function TabsSection() {
       });
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [currentPage, isLoading]);
+  }, [currentPage, isLoading, isMobile]);
 
   return (
     <div className="w-full" ref={sectionRef}>
