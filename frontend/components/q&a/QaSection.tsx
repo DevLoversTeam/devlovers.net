@@ -1,9 +1,10 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import AccordionList from '@/components/q&a/AccordionList';
+import { QaLoader } from '@/components/shared/QaLoader';
 import { Pagination } from '@/components/q&a/Pagination';
 import type { CategorySlug } from '@/components/q&a/types';
 import { useQaTabs } from '@/components/q&a/useQaTabs';
@@ -28,6 +29,10 @@ export default function TabsSection() {
     localeKey,
     totalPages,
   } = useQaTabs();
+  const animationKey = useMemo(
+    () => `qa-${active}-${currentPage}`,
+    [active, currentPage]
+  );
 
   useEffect(() => {
     const media = window.matchMedia('(max-width: 640px)');
@@ -93,7 +98,7 @@ export default function TabsSection() {
           <TabsContent key={category.slug} value={category.slug}>
             {isLoading && (
               <div className="flex justify-center py-12">
-                <div className="h-8 w-8 animate-spin border-b-2" />
+                <QaLoader className="mx-auto" size={240} />
               </div>
             )}
             <div
@@ -104,7 +109,7 @@ export default function TabsSection() {
               aria-busy={isLoading}
             >
               {items.length ? (
-                <AccordionList items={items} />
+                <AccordionList key={animationKey} items={items} />
               ) : (
                 <p className="py-12 text-center">{t('noQuestions')}</p>
               )}
