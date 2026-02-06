@@ -50,26 +50,31 @@ export default function TabsSection() {
     }
   }, []);
 
+  const scrollToTop = useCallback((behavior: ScrollBehavior = 'auto') => {
+    if (typeof window === 'undefined') return;
+    const root = document.scrollingElement || document.documentElement;
+    root.scrollTo({ top: 0, behavior });
+    window.scrollTo({ top: 0, behavior });
+  }, []);
+
   const onPageChange = useCallback(
     (page: number) => {
       clearSelection();
-      pendingScrollRef.current = isMobile;
+      scrollToTop('auto');
+      pendingScrollRef.current = true;
       handlePageChange(page);
     },
-    [clearSelection, handlePageChange, isMobile]
+    [clearSelection, handlePageChange, scrollToTop]
   );
 
   useEffect(() => {
-    if (!pendingScrollRef.current || isLoading || !isMobile) return;
+    if (!pendingScrollRef.current || isLoading) return;
     pendingScrollRef.current = false;
     const frame = window.requestAnimationFrame(() => {
-      sectionRef.current?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
-      });
+      scrollToTop('auto');
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [currentPage, isLoading, isMobile]);
+  }, [currentPage, isLoading, scrollToTop]);
 
   return (
     <div className="w-full" ref={sectionRef}>
