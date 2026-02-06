@@ -433,3 +433,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Resolved multiple mobile UI issues on About page
 - Prevented checkout edge case creating paid orders when payments are disabled
 - Improved accessibility and readability across updated UI sections
+
+## [0.5.6] - 2026-02-06
+
+### Added
+
+- Q&A UI enhancements:
+  - Smooth staggered accordion entrance animations after data fetch
+  - Shared animated loader component reused across Q&A sections
+- Leaderboard visual improvements:
+  - Reused Q&A DynamicGridBackground for visual consistency
+  - Enhanced title animation with gradient wave effect
+
+### Changed
+
+- Q&A layout refinements:
+  - Removed square backdrop for cleaner visual hierarchy
+  - Ensured background fills full viewport height
+- Navigation behavior:
+  - Pagination now consistently resets scroll position to the top of content
+
+### Fixed
+
+- Fixed inconsistent scroll behavior when navigating Q&A pages
+- Improved UX predictability across desktop and mobile devices
