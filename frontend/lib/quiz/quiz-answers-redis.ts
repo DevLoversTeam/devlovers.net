@@ -42,9 +42,13 @@ export async function getOrCreateQuizAnswersCache(
 
   const key = getAnswersCacheKey(quizId);
 
-  const existing = await redis.get<QuizAnswersCache>(key);
-  if (existing) {
-    return true;
+  try {
+    const existing = await redis.get<QuizAnswersCache>(key);
+    if (existing) {
+      return true;
+    }
+  } catch (err) {
+    console.warn('Redis cache read failed:', err);
   }
 
   const correctAnswers = await db
@@ -89,10 +93,14 @@ export async function getCorrectAnswer(
   const redis = getRedisClient();
 
   if (redis) {
-    const key = getAnswersCacheKey(quizId);
-    const cache = await redis.get<QuizAnswersCache>(key);
-    if (cache) {
-      return cache.answers[questionId] ?? null;
+    try {
+      const key = getAnswersCacheKey(quizId);
+      const cache = await redis.get<QuizAnswersCache>(key);
+      if (cache) {
+        return cache.answers[questionId] ?? null;
+      }
+    } catch (err) {
+      console.warn('Redis cache read failed, falling back to DB:', err);
     }
   }
 
@@ -123,9 +131,13 @@ export async function getOrCreateQuestionsCache(
 
   const key = getQuestionsCacheKey(quizId, locale);
 
-  const existing = await redis.get<QuizQuestionsCache>(key);
-  if (existing) {
-    return existing.questions;
+  try {
+    const existing = await redis.get<QuizQuestionsCache>(key);
+    if (existing) {
+      return existing.questions;
+    }
+  } catch (err) {
+    console.warn('Redis cache read failed, falling back to DB:', err);
   }
 
   const questionsData = await db
