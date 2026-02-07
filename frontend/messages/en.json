@@ -44,13 +44,13 @@
     "dashboard": "Dashboard"
   },
   "homepage": {
-    "title": "DevLovers",
+    "title": "DevLovers — Technical Interview Platform",
     "subtitle": "Platform for Technical Interview Preparation",
-    "description": "Build real confidence in frontend, backend, and full-stack development through interactive interview questions, quizzes, and practical explanations",
+    "description": "Prepare for technical interviews with Q&A, quizzes, leaderboards, and AI-powered explanations.",
     "ogImageAlt": "DevLovers — Technical Interview Platform",
     "cta": "Take the first step",
     "ctaVariants": {
-      "1": "No pressure, just start",
+      "1": "No pressure. Just start",
       "2": "This might actually be fun",
       "3": "You're already halfway",
       "4": "One click from progress",
