@@ -142,7 +142,18 @@ export async function getOrCreateQuestionsCache(
     .where(eq(quizQuestions.quizId, quizId))
     .orderBy(quizQuestions.displayOrder);
 
-  if (questionsData.length === 0) {
+    if (questionsData.length === 0) {
+    const cacheData: QuizQuestionsCache = {
+      quizId,
+      locale,
+      questions: [],
+      cachedAt: Date.now(),
+    };
+    try {
+      await redis.set(key, cacheData);
+    } catch (e) {
+      console.warn('Redis cache write failed:', e);
+    }
     return [];
   }
 
@@ -192,7 +203,11 @@ export async function getOrCreateQuestionsCache(
     cachedAt: Date.now(),
   };
 
+  try {
   await redis.set(key, cacheData);
+  } catch (e) {
+    console.warn('Redis cache write failed:', e);
+  }
 
   return questions;
 }
