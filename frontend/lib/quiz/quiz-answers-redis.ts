@@ -73,8 +73,13 @@ export async function getOrCreateQuizAnswersCache(
     cachedAt: Date.now(),
   };
 
-  await redis.set(key, cacheData);
-  return true;
+  try {
+    await redis.set(key, cacheData);
+  } catch (err) {
+    console.warn('Failed to cache quiz answers in Redis', err);
+  }
+    return true;
+
 }
 
 export async function getCorrectAnswer(
