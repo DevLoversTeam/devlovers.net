@@ -47,6 +47,7 @@
     "title": "DevLovers",
     "subtitle": "Platforma do Przygotowania do Rozmów Kwalifikacyjnych",
     "description": "Zbuduj prawdziwą pewność w frontend, backend i full-stack development dzięki interaktywnym pytaniom rekrutacyjnym, quizom i praktycznym wyjaśnieniom",
+    "ogImageAlt": "DevLovers — platforma do przygotowania do rozmów kwalifikacyjnych",
     "cta": "Rozpocznij naukę",
     "ctaVariants": {
       "1": "Bez presji. Po prostu zacznij",

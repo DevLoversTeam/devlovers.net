@@ -40,7 +40,7 @@ export async function generateMetadata({
           url: '/og.png',
           width: 1200,
           height: 630,
-          alt: 'DevLovers — Technical Interview Platform',
+          alt: t('ogImageAlt'),
         },
       ],
       locale: ogLocale,
