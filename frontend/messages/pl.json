@@ -44,10 +44,10 @@
     "dashboard": "Panel"
   },
   "homepage": {
-    "title": "DevLovers",
+    "title": "DevLovers — Technical Interview Platform",
     "subtitle": "Platforma do Przygotowania do Rozmów Kwalifikacyjnych",
-    "description": "Zbuduj prawdziwą pewność w frontend, backend i full-stack development dzięki interaktywnym pytaniom rekrutacyjnym, quizom i praktycznym wyjaśnieniom",
-    "ogImageAlt": "DevLovers — platforma do przygotowania do rozmów kwalifikacyjnych",
+    "description": "Prepare for technical interviews with Q&A, quizzes, leaderboards, and AI-powered explanations.",
+    "ogImageAlt": "DevLovers — Technical Interview Platform",
     "cta": "Rozpocznij naukę",
     "ctaVariants": {
       "1": "Bez presji. Po prostu zacznij",
