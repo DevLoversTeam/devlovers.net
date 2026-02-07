@@ -6,8 +6,33 @@ import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import './globals.css';
 
-
 export const metadata: Metadata = {
+  title: 'DevLovers — Technical Interview Platform',
+  description:
+    'DevLovers is a modern platform for developers to prepare for technical interviews: Q&A, quizzes, leaderboards, AI explanations, and multi-language support.',
+  openGraph: {
+    title: 'DevLovers — Technical Interview Platform',
+    description:
+      'Prepare for technical interviews with Q&A, quizzes, leaderboards, and AI-powered explanations.',
+    url: 'https://devlovers.net',
+    siteName: 'DevLovers',
+    images: [
+      {
+        url: 'https://devlovers.net/og.png',
+        width: 1200,
+        height: 630,
+        alt: 'DevLovers — Technical Interview Platform',
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'DevLovers — Technical Interview Platform',
+    description: 'Modern interview preparation platform for developers.',
+    images: ['https://devlovers.net/og.png'],
+  },
   icons: {
     icon: [
       {
