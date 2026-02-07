@@ -10,6 +10,8 @@ export async function generateMetadata({
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'homepage' });
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://devlovers.net';
+  const canonicalUrl =
+    locale === 'en' ? `${siteUrl}/en` : `${siteUrl}/${locale}`;
   const localeMap: Record<string, string> = {
     en: 'en_US',
     pl: 'pl_PL',
@@ -20,10 +22,18 @@ export async function generateMetadata({
   return {
     title: t('title'),
     description: t('description'),
+    alternates: {
+      canonical: canonicalUrl,
+      languages: {
+        en: `${siteUrl}/en`,
+        pl: `${siteUrl}/pl`,
+        uk: `${siteUrl}/uk`,
+      },
+    },
     openGraph: {
       title: t('title'),
       description: t('description'),
-      url: siteUrl,
+      url: canonicalUrl,
       siteName: 'DevLovers',
       images: [
         {
