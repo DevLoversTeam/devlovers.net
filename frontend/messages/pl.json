@@ -44,11 +44,11 @@
     "dashboard": "Panel"
   },
   "homepage": {
-    "title": "DevLovers — Technical Interview Platform",
-    "subtitle": "Platforma do Przygotowania do Rozmów Kwalifikacyjnych",
-    "description": "Prepare for technical interviews with Q&A, quizzes, leaderboards, and AI-powered explanations.",
-    "ogImageAlt": "DevLovers — Technical Interview Platform",
-    "cta": "Rozpocznij naukę",
+    "title": "DevLovers — Platforma do przygotowania do rozmów technicznych",
+    "subtitle": "Platforma do przygotowania do rozmów kwalifikacyjnych",
+    "description": "Przygotuj się do rozmów technicznych dzięki pytaniom, quizom, rankingom i wyjaśnieniom wspieranym przez AI.",
+    "ogImageAlt": "DevLovers — platforma do przygotowania do rozmów technicznych",
+    "cta": "Rozpocznij",
     "ctaVariants": {
       "1": "Bez presji. Po prostu zacznij",
       "2": "To może być ciekawsze, niż myślisz",

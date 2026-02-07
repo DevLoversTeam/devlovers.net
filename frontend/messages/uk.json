@@ -44,10 +44,10 @@
     "dashboard": "Панель користувача"
   },
   "homepage": {
-    "title": "DevLovers — Technical Interview Platform",
+    "title": "DevLovers — Платформа для підготовки до технічних співбесід",
     "subtitle": "Платформа для підготовки до технічних співбесід",
-    "description": "Prepare for technical interviews with Q&A, quizzes, leaderboards, and AI-powered explanations.",
-    "ogImageAlt": "DevLovers — Technical Interview Platform",
+    "description": "Готуйся до технічних співбесід за допомогою питань, квізів, рейтингу та пояснень на базі AI.",
+    "ogImageAlt": "DevLovers — платформа для підготовки до технічних співбесід",
     "cta": "Зроби перший крок",
     "ctaVariants": {
       "1": "Без тиску. Просто почни",
