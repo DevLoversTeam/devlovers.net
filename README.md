@@ -154,3 +154,5 @@ Task tracking via [GitHub Projects](https://github.com/DevLoversTeam/devlovers.n
 ## License
 
 **MIT**
+
+**Contact me:** [contact@devlovers.net](mailto:contact@devlovers.net)
