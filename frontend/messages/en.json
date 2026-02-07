@@ -47,6 +47,7 @@
     "title": "DevLovers",
     "subtitle": "Platform for Technical Interview Preparation",
     "description": "Build real confidence in frontend, backend, and full-stack development through interactive interview questions, quizzes, and practical explanations",
+    "ogImageAlt": "DevLovers — Technical Interview Platform",
     "cta": "Take the first step",
     "ctaVariants": {
       "1": "No pressure, just start",
