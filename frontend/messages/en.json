@@ -250,8 +250,8 @@
     }
   },
   "footer": {
-    "builtWith": "Built with",
-    "byCommunity": "by the community.",
+    "builtWith": "Built by",
+    "byCommunity": "community.",
     "privacyPolicy": "Privacy Policy",
     "termsOfService": "Terms of Service"
   },
@@ -930,6 +930,16 @@
       "noPoints": "No points awarded (result not improved)",
       "viewLeaderboard": "View leaderboard",
       "tryAgain": "Try again"
+    },
+    "explainedTerms": {
+      "title": "Learned Terms",
+      "subtitle": "AI explanations you've saved",
+      "empty": "You haven't saved any explanations yet",
+      "emptyHint": "Select any term in Q&A to get an AI explanation",
+      "termCount": "{count} terms saved",
+      "explainedTermsButton": "Explained Terms ({count})",
+      "hideExplainedTerms": "Hide Terms",
+      "noHiddenTerms": "No hidden terms"
     }
   },
   "aiHelper": {
@@ -940,6 +950,7 @@
     "error": "Failed to generate explanation",
     "retry": "Try again",
     "close": "Close",
+    "cachedTooltip": "Click to see explanation (cached)",
     "languages": {
       "uk": "UA",
       "en": "EN",
@@ -1009,25 +1020,25 @@
       },
       "whyWeCollect": {
         "title": "3. Why we collect data",
-        "reason1": "To provide and secure authorization and account access.",
-        "reason2": "To run quizzes, store results, and show progress/leaderboards.",
+        "reason1": "To provide secure authorization and account access.",
+        "reason2": "To run quizzes, store results, and display progress/leaderboards.",
         "reason3": "To improve performance, reliability, and user experience."
       },
       "cookies": {
         "title": "4. Cookies and similar technologies",
-        "content": "We may use cookies/local storage to keep you signed in, store preferences (e.g. theme), and protect the service. If we add analytics cookies, we will update this section."
+        "content": "We may use cookies/local storage to keep you signed in, store preferences (e.g. theme), and protect the service. If we add analytics cookies, this section will be updated."
       },
       "sharing": {
         "title": "5. Sharing of data",
-        "content": "We do not sell personal data. We may share limited data with trusted service providers (e.g. hosting, database, error monitoring) strictly to operate DevLovers."
+        "content": "We do not sell personal data. We may share limited data with trusted service providers (e.g. hosting, database, error monitoring) for sctrictly necessary DevLovers platform functionality."
       },
       "retention": {
         "title": "6. Data retention",
-        "content": "We keep personal data only as long as needed for the purposes described above or as required by law."
+        "content": "We retain personal data only as long as needed for the purposes described above or as required by law."
       },
       "rights": {
         "title": "7. Your rights",
-        "content": "Depending on your location, you may have rights to access, correct, delete, or export your data. Contact us at"
+        "content": "Depending on your location, you may have rights to access, correct, delete, or export your data. For more information contact us at"
       },
       "gdpr": {
         "title": "8. GDPR compliance (EU users)",
@@ -1049,7 +1060,7 @@
       },
       "changes": {
         "title": "9. Changes to this policy",
-        "content": "We may update this Privacy Policy. The latest version will always be available on this page."
+        "content": "We may update this Privacy Policy without notice. The latest version will always be available on this page."
       }
     },
     "terms": {
@@ -1066,9 +1077,9 @@
       },
       "features": {
         "title": "3. Service features",
-        "feature1": "Q&A content and interview preparation materials",
-        "feature2": "Quizzes, results, and progress tracking",
-        "feature3": "Leaderboards"
+        "feature1": "Q&A content and interview preparation materials.",
+        "feature2": "Quizzes, results, and progress tracking.",
+        "feature3": "Leaderboards."
       },
       "prohibited": {
         "title": "4. Prohibited use",
@@ -1085,11 +1096,11 @@
       },
       "liability": {
         "title": "7. Limitation of liability",
-        "content": "To the maximum extent permitted by law, DevLovers shall not be liable for indirect or consequential damages."
+        "content": "To the maximum extent permitted by law, DevLovers will not be liable for indirect or consequential damages."
       },
       "termination": {
         "title": "8. Termination",
-        "content": "We may suspend or terminate access if we reasonably believe you violated these Terms or abused the service."
+        "content": "We may suspend or terminate platform access if we reasonably believe you violated these Terms or abused the service."
       },
       "changes": {
         "title": "9. Changes to terms",

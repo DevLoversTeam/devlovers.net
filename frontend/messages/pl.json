@@ -250,7 +250,7 @@
     }
   },
   "footer": {
-    "builtWith": "Zbudowane z",
+    "builtWith": "Zbudowane wokół",
     "byCommunity": "przez społeczność.",
     "privacyPolicy": "Polityka Prywatności",
     "termsOfService": "Warunki Świadczenia Usług"
@@ -957,6 +957,16 @@
       "noPoints": "Nie przyznano punktów (wynik nie uległ poprawie)",
       "viewLeaderboard": "Zobacz ranking",
       "tryAgain": "Spróbuj ponownie"
+    },
+    "explainedTerms": {
+      "title": "Nauczone Terminy",
+      "subtitle": "Wyjaśnienia AI, które zapisałeś",
+      "empty": "Nie zapisałeś jeszcze żadnych wyjaśnień",
+      "emptyHint": "Zaznacz dowolny termin w Q&A, aby otrzymać wyjaśnienie AI",
+      "termCount": "{count} terminów zapisanych",
+      "explainedTermsButton": "Wyjaśnione Terminy ({count})",
+      "hideExplainedTerms": "Ukryj Terminy",
+      "noHiddenTerms": "Brak ukrytych terminów"
     }
   },
   "aiHelper": {
@@ -967,6 +977,7 @@
     "error": "Nie udało się wygenerować wyjaśnienia",
     "retry": "Spróbuj ponownie",
     "close": "Zamknij",
+    "cachedTooltip": "Kliknij, aby zobaczyć wyjaśnienie (zapisane w pamięci podręcznej)",
     "languages": {
       "uk": "UA",
       "en": "EN",
