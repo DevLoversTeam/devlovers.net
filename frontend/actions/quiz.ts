@@ -238,29 +238,14 @@ export async function initializeQuizCache(
     const { getOrCreateQuizAnswersCache, clearVerifiedQuestions } =
       await import('@/lib/quiz/quiz-answers-redis');
 
-    // Resolve identifier (same logic as verify-answer route)
+    const { resolveRequestIdentifier } = await import('@/lib/quiz/resolve-identifier');
     const { headers } = await import('next/headers');
-    const { verifyAuthToken } = await import('@/lib/auth');
     const headersList = await headers();
-    let identifier: string;
+    const identifier = resolveRequestIdentifier(headersList);
 
-    const cookieHeader = headersList.get('cookie') ?? '';
-    const authCookie = cookieHeader
-      .split(';')
-      .find(c => c.trim().startsWith('auth_session='));
-
-    if (authCookie) {
-      const token = authCookie.split('=').slice(1).join('=').trim();
-      const payload = verifyAuthToken(token);
-      identifier = payload?.userId ?? 'unknown';
-    } else {
-      identifier =
-        headersList.get('x-forwarded-for')?.split(',')[0]?.trim() ??
-        headersList.get('x-real-ip') ??
-        'unknown';
+    if (identifier) {
+      await clearVerifiedQuestions(quizId, identifier);
     }
-
-    await clearVerifiedQuestions(quizId, identifier);
 
     const success = await getOrCreateQuizAnswersCache(quizId);
 

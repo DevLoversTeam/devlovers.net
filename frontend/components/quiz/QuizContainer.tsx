@@ -468,18 +468,16 @@ export function QuizContainer({
             </div>
             <div className="flex flex-col gap-3 sm:flex-row">
               <Link
-                href={`/login?returnTo=/quiz/${quizSlug}`}
-                className="flex-1"
+                href={`/login?returnTo=/${locale}/quiz/${quizSlug}`}
+                className="flex-1 inline-flex items-center justify-center rounded-xl font-medium transition-colors px-6 py-3 text-base bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-hover)] active:brightness-90 text-center"
               >
-                <Button className="w-full">{tResult('loginButton')}</Button>
+                {tResult('loginButton')}
               </Link>
               <Link
-                href={`/signup?returnTo=/quiz/${quizSlug}`}
-                className="flex-1"
+                href={`/signup?returnTo=/${locale}/quiz/${quizSlug}`}
+                className="flex-1 inline-flex items-center justify-center rounded-xl font-medium transition-colors px-6 py-3 text-base bg-gray-200 text-gray-900 hover:bg-gray-300 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700 text-center"
               >
-                <Button variant="secondary" className="w-full">
-                  {tResult('signupButton')}
-                </Button>
+                {tResult('signupButton')}
               </Link>
               <button
                 onClick={handleStart}
