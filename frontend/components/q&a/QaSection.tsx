@@ -4,11 +4,11 @@ import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import AccordionList from '@/components/q&a/AccordionList';
-import { QaLoader } from '@/components/shared/QaLoader';
 import { Pagination } from '@/components/q&a/Pagination';
 import type { CategorySlug } from '@/components/q&a/types';
 import { useQaTabs } from '@/components/q&a/useQaTabs';
 import { CategoryTabButton } from '@/components/shared/CategoryTabButton';
+import { Loader } from '@/components/shared/Loader';
 import { Tabs, TabsContent, TabsList } from '@/components/ui/tabs';
 import { categoryData } from '@/data/category';
 import { categoryTabStyles } from '@/data/categoryStyles';
@@ -103,7 +103,7 @@ export default function TabsSection() {
           <TabsContent key={category.slug} value={category.slug}>
             {isLoading && (
               <div className="flex justify-center py-12">
-                <QaLoader className="mx-auto" size={240} />
+                <Loader className="mx-auto" size={240} />
               </div>
             )}
             <div

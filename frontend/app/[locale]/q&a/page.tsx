@@ -2,8 +2,8 @@ import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 
 import QaSection from '@/components/q&a/QaSection';
-import { QaLoader } from '@/components/shared/QaLoader';
 import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
+import { Loader } from '@/components/shared/Loader';
 
 export async function generateMetadata({
   params,
@@ -40,7 +40,7 @@ export default async function QAPage({
         <Suspense
           fallback={
             <div className="flex justify-center py-16">
-              <QaLoader className="mx-auto" size={260} />
+              <Loader className="mx-auto" size={260} />
             </div>
           }
         >

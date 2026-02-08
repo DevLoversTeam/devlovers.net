@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 
 import { Badge } from '@/components/ui/badge';
 import { categoryTabStyles } from '@/data/categoryStyles';
-import { Link } from '@/i18n/routing';
+import { useRouter } from '@/i18n/routing';
 
 interface QuizCardProps {
   quiz: {
@@ -25,17 +25,29 @@ interface QuizCardProps {
   } | null;
 }
 
+function makeSeed(): number {
+  const buf = new Uint32Array(1);
+  crypto.getRandomValues(buf);
+  return buf[0]!;
+}
+
 export function QuizCard({ quiz, userProgress }: QuizCardProps) {
+  const router = useRouter();
   const t = useTranslations('quiz.card');
   const slug = quiz.categorySlug as keyof typeof categoryTabStyles | null;
   const style =
     slug && categoryTabStyles[slug] ? categoryTabStyles[slug] : null;
-  const accentColor = style?.accent ?? '#3B82F6'; // fallback blue
+  const accentColor = style?.accent ?? '#3B82F6';
 
   const percentage =
     userProgress && userProgress.totalQuestions > 0
       ? Math.round((userProgress.bestScore / userProgress.totalQuestions) * 100)
       : 0;
+
+    const handleStart = () => {
+    const seed = makeSeed(); // runs on click, not render
+    router.push(`/quiz/${quiz.slug}?seed=${seed}`);
+  };
 
   return (
     <div
@@ -103,8 +115,8 @@ export function QuizCard({ quiz, userProgress }: QuizCardProps) {
           </div>
         </div>
       )}
-      <Link
-        href={`/quiz/${quiz.slug}`}
+      <button
+        type="button" onClick={handleStart} 
         className="group relative block w-full overflow-hidden rounded-xl border px-4 py-2.5 text-center text-sm font-semibold transition-all duration-300"
         style={{
           borderColor: `${accentColor}50`,
@@ -117,7 +129,7 @@ export function QuizCard({ quiz, userProgress }: QuizCardProps) {
           className="pointer-events-none absolute top-1/2 left-1/2 h-[150%] w-[80%] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-0 blur-[20px] transition-opacity duration-300 group-hover:opacity-30"
           style={{ backgroundColor: accentColor }}
         />
-      </Link>
+      </button>
     </div>
   );
 }

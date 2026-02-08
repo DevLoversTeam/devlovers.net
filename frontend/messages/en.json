@@ -117,13 +117,11 @@
       },
       "control": {
         "title": "Control System",
-        "description": "Rule violations are automatically detected. With 3+ violations, the result will not count towards the leaderboard."
+        "description": "Rule violations are automatically detected. For registered users, results are always saved to your profile, but with 4+ violations points will not count towards the leaderboard."
       },
-      "time": {
-        "title": "Time Requirements",
-        "description": "Minimum time: {seconds} seconds (3 seconds per question). Results that are too fast will not be counted."
-      },
-      "startButton": "Start Quiz"
+      "startButton": "Start Quiz",
+      "guestWarning": "You are playing as a guest. Your result will not be saved.",
+      "continueAsGuest": "Continue as Guest"
     },
     "question": {
       "correct": "Correct",

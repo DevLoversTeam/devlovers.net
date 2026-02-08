@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { notFound, redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
 import { QuizContainer } from '@/components/quiz/QuizContainer';
@@ -49,16 +49,10 @@ export default async function QuizPage({
     notFound();
   }
 
-  if (!seedParam) {
-    // eslint-disable-next-line react-hooks/purity -- redirect throws, value never used in render
-    redirect(`/${locale}/quiz/${slug}?seed=${Date.now()}`);
-  }
-
-  const seed = Number.parseInt(seedParam, 10);
-  if (Number.isNaN(seed)) {
-    // eslint-disable-next-line react-hooks/purity -- redirect throws, value never used in render
-    redirect(`/${locale}/quiz/${slug}?seed=${Date.now()}`);
-  }
+  const parsedSeed = seedParam ? Number.parseInt(seedParam, 10) : Number.NaN;
+  const seed = Number.isFinite(parsedSeed)
+    ? parsedSeed
+    : crypto.getRandomValues(new Uint32Array(1))[0]!;
 
   const questions = await getQuizQuestionsRandomized(quiz.id, locale, seed);
 
