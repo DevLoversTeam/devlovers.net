@@ -2,6 +2,9 @@ import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import { unstable_cache } from 'next/cache';
 import { cache } from 'react';
 
+import { getOrCreateQuestionsCache } from '@/lib/quiz/quiz-answers-redis';
+import type { QuizQuestionWithAnswers } from '@/types/quiz';
+
 import { db } from '../index';
 import { categories, categoryTranslations } from '../schema/categories';
 import {
@@ -14,6 +17,7 @@ import {
   quizTranslations,
   quizzes,
 } from '../schema/quiz';
+export type { QuizAnswer, QuizQuestion, QuizQuestionWithAnswers } from '@/types/quiz';
 
 export interface Quiz {
   id: string;
@@ -27,24 +31,6 @@ export interface Quiz {
   categoryName: string | null;
 }
 
-export interface QuizQuestion {
-  id: string;
-  displayOrder: number;
-  difficulty: string | null;
-  questionText: string | null;
-  explanation: any;
-}
-
-export interface QuizAnswer {
-  id: string;
-  displayOrder: number;
-  isCorrect: boolean;
-  answerText: string | null;
-}
-
-export interface QuizQuestionWithAnswers extends QuizQuestion {
-  answers: QuizAnswer[];
-}
 
 export interface QuizAnswerClient {
   id: string;
@@ -194,6 +180,10 @@ export async function getQuizQuestions(
   quizId: string,
   locale: string = 'uk'
 ): Promise<QuizQuestionWithAnswers[]> {
+  const cached = await getOrCreateQuestionsCache(quizId, locale);
+  if (cached !== null) {
+    return cached;
+  }
   const questionsData = await db
     .select({
       id: quizQuestions.id,

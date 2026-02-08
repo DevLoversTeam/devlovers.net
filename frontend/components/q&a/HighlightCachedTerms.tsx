@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import React, { useMemo } from 'react';
 
 import { cn } from '@/lib/utils';
@@ -17,6 +18,8 @@ export default function HighlightCachedTerms({
   onTermClick,
   className,
 }: HighlightCachedTermsProps) {
+  const t = useTranslations('aiHelper');
+
   const segments = useMemo(() => {
     if (cachedTerms.size === 0) {
       return [{ text, isCached: false }];
@@ -34,7 +37,10 @@ export default function HighlightCachedTerms({
       return [{ text, isCached: false }];
     }
 
-    const pattern = new RegExp(`\\b(${escapedTerms.join('|')})\\b`, 'gi');
+    const pattern = new RegExp(
+      `(?<![\\p{L}\\p{N}])(${escapedTerms.join('|')})(?![\\p{L}\\p{N}])`,
+      'giu'
+    );
 
     const result: { text: string; isCached: boolean; originalTerm?: string }[] =
       [];
@@ -92,15 +98,14 @@ export default function HighlightCachedTerms({
               }
             }}
             className={cn(
-              'cursor-pointer',
-              'border-b border-dashed border-emerald-500/60',
+              'cursor-pointer inline-block',
+              'border-b-2 border-dashed border-emerald-500/60',
               'bg-emerald-50/50 dark:bg-emerald-900/20',
               'hover:bg-emerald-100 dark:hover:bg-emerald-900/40',
               'focus:ring-2 focus:ring-emerald-500/50 focus:ring-offset-1 focus:outline-none',
-              'transition-colors duration-150',
-              '-mx-0.5 rounded-sm px-0.5'
+              'transition-colors duration-150'
             )}
-            title="Click to see explanation (cached)"
+            title={t('cachedTooltip')}
           >
             {segment.text}
           </span>

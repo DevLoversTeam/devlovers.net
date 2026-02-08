@@ -1,8 +1,13 @@
-import { and, eq } from 'drizzle-orm';
+import { and, eq,inArray  } from 'drizzle-orm';
 
 import { db } from '@/db';
-import { quizAnswers, quizQuestions } from '@/db/schema/quiz';
+import { 
+  quizAnswers, 
+  quizAnswerTranslations,
+  quizQuestionContent,
+  quizQuestions} from '@/db/schema/quiz';
 import { getRedisClient } from '@/lib/redis';
+import type { QuizQuestionWithAnswers } from '@/types/quiz';
 
 interface QuizAnswersCache {
   quizId: string;
@@ -10,7 +15,19 @@ interface QuizAnswersCache {
   cachedAt: number;
 }
 
-function getCacheKey(quizId: string): string {
+interface QuizQuestionsCache {
+  quizId: string;
+  locale: string;
+  questions: QuizQuestionWithAnswers[];
+  cachedAt: number;
+}
+
+function getQuestionsCacheKey(quizId: string, locale: string): string {
+  return `quiz:questions:${quizId}:${locale}`;
+}
+
+
+function getAnswersCacheKey(quizId: string): string {
   return `quiz:answers:${quizId}`;
 }
 
@@ -23,11 +40,15 @@ export async function getOrCreateQuizAnswersCache(
     return true;
   }
 
-  const key = getCacheKey(quizId);
+  const key = getAnswersCacheKey(quizId);
 
-  const existing = await redis.get<QuizAnswersCache>(key);
-  if (existing) {
-    return true;
+  try {
+    const existing = await redis.get<QuizAnswersCache>(key);
+    if (existing) {
+      return true;
+    }
+  } catch (err) {
+    console.warn('Redis cache read failed:', err);
   }
 
   const correctAnswers = await db
@@ -56,8 +77,13 @@ export async function getOrCreateQuizAnswersCache(
     cachedAt: Date.now(),
   };
 
-  await redis.set(key, cacheData);
-  return true;
+  try {
+    await redis.set(key, cacheData);
+  } catch (err) {
+    console.warn('Failed to cache quiz answers in Redis', err);
+  }
+    return true;
+
 }
 
 export async function getCorrectAnswer(
@@ -67,10 +93,14 @@ export async function getCorrectAnswer(
   const redis = getRedisClient();
 
   if (redis) {
-    const key = getCacheKey(quizId);
-    const cache = await redis.get<QuizAnswersCache>(key);
-    if (cache) {
-      return cache.answers[questionId] ?? null;
+    try {
+      const key = getAnswersCacheKey(quizId);
+      const cache = await redis.get<QuizAnswersCache>(key);
+      if (cache) {
+        return cache.answers[questionId] ?? null;
+      }
+    } catch (err) {
+      console.warn('Redis cache read failed, falling back to DB:', err);
     }
   }
 
@@ -88,4 +118,113 @@ export async function getCorrectAnswer(
     .limit(1);
 
   return result[0]?.answerId ?? null;
+}
+
+export async function getOrCreateQuestionsCache(
+  quizId: string,
+  locale: string
+): Promise<QuizQuestionWithAnswers[] | null> {
+  const redis = getRedisClient();
+  if (!redis) {
+    return null;
+  }
+
+  const key = getQuestionsCacheKey(quizId, locale);
+
+  try {
+    const existing = await redis.get<QuizQuestionsCache>(key);
+    if (existing) {
+      return existing.questions;
+    }
+  } catch (err) {
+    console.warn('Redis cache read failed, falling back to DB:', err);
+  }
+
+  const questionsData = await db
+    .select({
+      id: quizQuestions.id,
+      displayOrder: quizQuestions.displayOrder,
+      difficulty: quizQuestions.difficulty,
+      questionText: quizQuestionContent.questionText,
+      explanation: quizQuestionContent.explanation,
+    })
+    .from(quizQuestions)
+    .leftJoin(
+      quizQuestionContent,
+      and(
+        eq(quizQuestionContent.quizQuestionId, quizQuestions.id),
+        eq(quizQuestionContent.locale, locale)
+      )
+    )
+    .where(eq(quizQuestions.quizId, quizId))
+    .orderBy(quizQuestions.displayOrder);
+
+    if (questionsData.length === 0) {
+    const cacheData: QuizQuestionsCache = {
+      quizId,
+      locale,
+      questions: [],
+      cachedAt: Date.now(),
+    };
+    try {
+      await redis.set(key, cacheData);
+    } catch (e) {
+      console.warn('Redis cache write failed:', e);
+    }
+    return [];
+  }
+
+  const questionIds = questionsData.map(q => q.id);
+
+  const allAnswers = await db
+    .select({
+      id: quizAnswers.id,
+      questionId: quizAnswers.quizQuestionId,
+      displayOrder: quizAnswers.displayOrder,
+      isCorrect: quizAnswers.isCorrect,
+      answerText: quizAnswerTranslations.answerText,
+    })
+    .from(quizAnswers)
+    .leftJoin(
+      quizAnswerTranslations,
+      and(
+        eq(quizAnswerTranslations.quizAnswerId, quizAnswers.id),
+        eq(quizAnswerTranslations.locale, locale)
+      )
+    )
+    .where(inArray(quizAnswers.quizQuestionId, questionIds))
+    .orderBy(quizAnswers.displayOrder);
+
+  const answersByQuestion = new Map<string, typeof allAnswers>();
+  for (const answer of allAnswers) {
+    const arr = answersByQuestion.get(answer.questionId) || [];
+    arr.push(answer);
+    answersByQuestion.set(answer.questionId, arr);
+  }
+
+
+  const questions: QuizQuestionWithAnswers[] = questionsData.map(q => ({
+    ...q,
+    answers: (answersByQuestion.get(q.id) || []).map(a => ({
+      id: a.id,
+      displayOrder: a.displayOrder,
+      isCorrect: a.isCorrect,
+      answerText: a.answerText,
+    })),
+  }));
+
+  const cacheData: QuizQuestionsCache = {
+    quizId,
+    locale,
+    questions,
+    cachedAt: Date.now(),
+  };
+
+  try {
+  await redis.set(key, cacheData);
+  } catch (e) {
+    console.warn('Redis cache write failed:', e);
+  }
+
+  return questions;
 }
