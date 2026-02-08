@@ -20,7 +20,7 @@ export function ExplainedTermsCard() {
   const [showMore, setShowMore] = useState(false);
   const [selectedTerm, setSelectedTerm] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [draggedTerm, setDraggedTerm] = useState<string | null>(null);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
@@ -57,37 +57,30 @@ export function ExplainedTermsCard() {
     });
   };
 
-  const handleDragStart = (term: string) => {
-    setDraggedTerm(term);
+  const handleDragStart = (index: number) => {
+    setDraggedIndex(index);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
   };
 
-  const handleDrop = (targetTerm: string) => {
-    if (!draggedTerm || draggedTerm === targetTerm) {
-      setDraggedTerm(null);
+  const handleDrop = (targetIndex: number) => {
+    if (draggedIndex === null || draggedIndex === targetIndex) {
+      setDraggedIndex(null);
       return;
     }
 
     setTerms(prevTerms => {
       const newTerms = [...prevTerms];
-      const draggedIndex = newTerms.indexOf(draggedTerm);
-      const targetIndex = newTerms.indexOf(targetTerm);
-
-      if (draggedIndex === -1 || targetIndex === -1) {
-        return prevTerms;
-      }
-
-      newTerms.splice(draggedIndex, 1);
-      newTerms.splice(targetIndex, 0, draggedTerm);
+      const [dragged] = newTerms.splice(draggedIndex, 1);
+      newTerms.splice(targetIndex, 0, dragged);
 
       saveTermOrder(newTerms);
       return newTerms;
     });
 
-    setDraggedTerm(null);
+    setDraggedIndex(null);
   };
 
   const handleTermClick = (term: string) => {
@@ -134,26 +127,27 @@ export function ExplainedTermsCard() {
             </div>
           </div>
 
-          {hasTerms && (
+          {hasTerms ? (
             <>
               <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">
                 {t('termCount', { count: terms.length })}
               </p>
             <div className="flex flex-wrap gap-2">
-              {terms.map(term => (
+              {terms.map((term, index) => (
                 <div
-                  key={term}
+                  key={`${term}-${index}`}
                   onDragOver={handleDragOver}
-                  onDrop={() => handleDrop(term)}
+                  onDrop={() => handleDrop(index)}
                   className={`group relative inline-flex items-center gap-1 rounded-lg border px-2 py-2 pr-8 transition-all ${
-                    draggedTerm === term ? 'opacity-50' : ''
+                    draggedIndex === index ? 'opacity-50' : ''
                   } border-gray-100 bg-gray-50/50 hover:border-(--accent-primary)/30 hover:bg-white dark:border-white/5 dark:bg-neutral-800/50 dark:hover:border-(--accent-primary)/30 dark:hover:bg-neutral-800`}
                 >
                   <button
                     draggable
-                    onDragStart={() => handleDragStart(term)}
+                    onDragStart={() => handleDragStart(index)}
+                    aria-label={t('ariaDragHandle', { term })}
                     className={`cursor-grab active:cursor-grabbing touch-none ${
-                      draggedTerm === term ? 'cursor-grabbing' : ''
+                      draggedIndex === index ? 'cursor-grabbing' : ''
                     }`}
                   >
                     <GripVertical className="h-4 w-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" />
@@ -169,6 +163,7 @@ export function ExplainedTermsCard() {
                       e.stopPropagation();
                       handleRemoveTerm(term);
                     }}
+                    aria-label={t('ariaHide', { term })}
                     className="absolute -right-1 -top-1 rounded-full bg-white p-1 text-gray-400 opacity-0 shadow-sm transition-opacity hover:bg-red-50 hover:text-red-500 group-hover:opacity-100 dark:bg-neutral-800 dark:hover:bg-red-900/20 dark:hover:text-red-400"
                   >
                     <X className="h-3 w-3" />
@@ -177,6 +172,15 @@ export function ExplainedTermsCard() {
               ))}
             </div>
             </>
+          ) : (
+            <div className="py-6 text-center">
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                {t('empty')}
+              </p>
+              <p className="mt-1 text-sm text-gray-400 dark:text-gray-500">
+                {t('emptyHint')}
+              </p>
+            </div>
           )}
 
           {/* Explained Terms Section */}
@@ -215,6 +219,7 @@ export function ExplainedTermsCard() {
                                 e.stopPropagation();
                                 handleRestoreTerm(term);
                               }}
+                              aria-label={t('ariaRestore', { term })}
                               className="absolute -right-1 -top-1 rounded-full bg-white p-1 text-gray-400 opacity-0 shadow-sm transition-opacity hover:bg-green-50 hover:text-green-600 group-hover:opacity-100 dark:bg-neutral-800 dark:hover:bg-green-900/20 dark:hover:text-green-400"
                             >
                               <RotateCcw className="h-3 w-3" />

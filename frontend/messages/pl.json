@@ -250,7 +250,7 @@
     }
   },
   "footer": {
-    "builtWith": "Zbudowane wokół",
+    "builtWith": "Zbudowane przez",
     "byCommunity": "przez społeczność.",
     "privacyPolicy": "Polityka Prywatności",
     "termsOfService": "Warunki Świadczenia Usług"
@@ -966,7 +966,10 @@
       "termCount": "{count} terminów zapisanych",
       "explainedTermsButton": "Wyjaśnione Terminy ({count})",
       "hideExplainedTerms": "Ukryj Terminy",
-      "noHiddenTerms": "Brak ukrytych terminów"
+      "noHiddenTerms": "Brak ukrytych terminów",
+      "ariaDragHandle": "Przeciągnij, aby zmienić kolejność {term}",
+      "ariaHide": "Ukryj {term}",
+      "ariaRestore": "Przywróć {term}"
     }
   },
   "aiHelper": {
