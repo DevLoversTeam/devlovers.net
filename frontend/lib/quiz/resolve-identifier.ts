@@ -9,7 +9,9 @@ export function resolveRequestIdentifier(headersList: Headers): string | null {
   if (authCookie) {
     const token = authCookie.split('=').slice(1).join('=').trim();
     const payload = verifyAuthToken(token);
-    return payload?.userId ?? null;
+    if (payload?.userId) {
+      return payload.userId;
+    }
   }
 
   return (

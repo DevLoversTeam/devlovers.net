@@ -1,13 +1,13 @@
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 
-import { resolveRequestIdentifier } from '@/lib/quiz/resolve-identifier'
 import {
   getCorrectAnswer,
   getOrCreateQuizAnswersCache,
   isQuestionAlreadyVerified,
   markQuestionVerified,
 } from '@/lib/quiz/quiz-answers-redis';
+import { resolveRequestIdentifier } from '@/lib/quiz/resolve-identifier'
 
 export const runtime = 'nodejs';
 
@@ -26,7 +26,7 @@ export async function POST(req: Request) {
 
     // Identify user: userId for authenticated, IP for guests
     const headersList = await headers();
-    const identifier = resolveRequestIdentifier(headersList)
+    const identifier = resolveRequestIdentifier(headersList);
      if (identifier) {
       const alreadyVerified = await isQuestionAlreadyVerified(
         quizId,
@@ -61,7 +61,7 @@ export async function POST(req: Request) {
     const ttl = typeof timeLimitSeconds === 'number' && timeLimitSeconds > 0
       ? Math.min(timeLimitSeconds + 60, MAX_TTL)
       : 900;
-      
+
      if (identifier) {
       await markQuestionVerified(quizId, questionId, identifier, ttl);
     }
