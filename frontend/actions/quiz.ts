@@ -49,19 +49,6 @@ function calculateIntegrityScore(violations: ViolationEvent[]): number {
   return Math.max(0, 100 - penalty);
 }
 
-function validateTimeSpent(
-  startedAt: Date,
-  completedAt: Date,
-  questionCount: number
-): boolean {
-  const MIN_SECONDS_PER_QUESTION = 1;
-  const timeSpentSeconds = Math.floor(
-    (completedAt.getTime() - startedAt.getTime()) / 1000
-  );
-  const minRequiredTime = questionCount * MIN_SECONDS_PER_QUESTION;
-
-  return timeSpentSeconds >= minRequiredTime;
-}
 
 async function getQuizQuestionIds(quizId: string): Promise<string[]> {
   const rows = await db
@@ -176,18 +163,6 @@ export async function submitQuizAttempt(
       return { success: false, error: 'Invalid time values' };
     }
 
-    const isValidTime = validateTimeSpent(
-      startedAtDate,
-      completedAtDate,
-      questionIds.length
-    );
-    if (!isValidTime) {
-      return {
-        success: false,
-        error: 'Invalid time spent: quiz completed too quickly',
-      };
-    }
-
     const percentage = (
       (correctAnswersCount / questionIds.length) *
       100
@@ -260,8 +235,33 @@ export async function initializeQuizCache(
   quizId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const { getOrCreateQuizAnswersCache } =
+    const { getOrCreateQuizAnswersCache, clearVerifiedQuestions } =
       await import('@/lib/quiz/quiz-answers-redis');
+
+    // Resolve identifier (same logic as verify-answer route)
+    const { headers } = await import('next/headers');
+    const { verifyAuthToken } = await import('@/lib/auth');
+    const headersList = await headers();
+    let identifier: string;
+
+    const cookieHeader = headersList.get('cookie') ?? '';
+    const authCookie = cookieHeader
+      .split(';')
+      .find(c => c.trim().startsWith('auth_session='));
+
+    if (authCookie) {
+      const token = authCookie.split('=').slice(1).join('=').trim();
+      const payload = verifyAuthToken(token);
+      identifier = payload?.userId ?? 'unknown';
+    } else {
+      identifier =
+        headersList.get('x-forwarded-for')?.split(',')[0]?.trim() ??
+        headersList.get('x-real-ip') ??
+        'unknown';
+    }
+
+    await clearVerifiedQuestions(quizId, identifier);
+
     const success = await getOrCreateQuizAnswersCache(quizId);
 
     if (!success) {

@@ -1,5 +1,5 @@
 'use client';
-import { Ban, Clock, FileText, TriangleAlert } from 'lucide-react';
+import { Ban, FileText, TriangleAlert, UserRound } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import {
@@ -19,6 +19,7 @@ import type { QuizQuestionClient } from '@/db/queries/quiz';
 import { useAntiCheat } from '@/hooks/useAntiCheat';
 import { useQuizGuards } from '@/hooks/useQuizGuards';
 import { useQuizSession } from '@/hooks/useQuizSession';
+import { Link } from '@/i18n/routing';
 import { savePendingQuizResult } from '@/lib/quiz/guest-quiz';
 import {
   clearQuizSession,
@@ -160,12 +161,14 @@ export function QuizContainer({
   onBackToTopics,
 }: QuizContainerProps) {
   const tRules = useTranslations('quiz.rules');
+  const tResult = useTranslations('quiz.result');
   const tExit = useTranslations('quiz.exitModal');
   const tQuestion = useTranslations('quiz.question');
   const categoryStyle = categorySlug
     ? categoryTabStyles[categorySlug as keyof typeof categoryTabStyles]
     : null;
   const accentColor = categoryStyle?.accent ?? '#3B82F6';
+  const [isStarting, setIsStarting] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [state, dispatch] = useReducer(quizReducer, {
     status: 'rules',
@@ -219,11 +222,13 @@ export function QuizContainer({
   }, [seed, searchParams, router]);
 
   const handleStart = async () => {
+    setIsStarting(true);
     try {
       const result = await initializeQuizCache(quizId);
 
       if (!result.success) {
         toast.error('Failed to start quiz session');
+        setIsStarting(false);
         return;
       }
 
@@ -231,6 +236,7 @@ export function QuizContainer({
       dispatch({ type: 'START_QUIZ' });
     } catch {
       toast.error('Failed to start quiz session');
+      setIsStarting(false);
     }
   };
 
@@ -242,6 +248,7 @@ export function QuizContainer({
         questionId: currentQuestion.id,
         selectedAnswerId: answerId,
         quizId,
+        timeLimitSeconds,
       }),
     });
 
@@ -370,6 +377,7 @@ export function QuizContainer({
   const handleRestart = () => {
     clearQuizSession(quizId);
     resetViolations();
+    setIsStarting(false);
     dispatch({ type: 'RESTART' });
   };
 
@@ -446,22 +454,52 @@ export function QuizContainer({
               </p>
             </div>
           </div>
-          <div className="flex gap-3">
-            <Clock
-              className="mt-0.5 h-5 w-5 shrink-0 text-blue-500 dark:text-blue-400"
-              aria-hidden="true"
-            />
-            <div>
-              <p className="font-medium">{tRules('time.title')}</p>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {tRules('time.description', { seconds: totalQuestions * 3 })}
+        </div>
+        {isGuest ? (
+          <>
+            <div className="flex gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/20">
+              <UserRound
+                className="mt-0.5 h-5 w-5 shrink-0 text-amber-500 dark:text-amber-400"
+                aria-hidden="true"
+              />
+              <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                {tRules('guestWarning')}
               </p>
             </div>
-          </div>
-        </div>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Link
+                href={`/login?returnTo=/quiz/${quizSlug}`}
+                className="flex-1"
+              >
+                <Button className="w-full">{tResult('loginButton')}</Button>
+              </Link>
+              <Link
+                href={`/signup?returnTo=/quiz/${quizSlug}`}
+                className="flex-1"
+              >
+                <Button variant="secondary" className="w-full">
+                  {tResult('signupButton')}
+                </Button>
+              </Link>
+              <button
+                onClick={handleStart}
+                disabled={isStarting}
+                className="disabled:opacity-50 disabled:cursor-not-allowed flex-1 rounded-xl border px-6 py-3 text-center text-base font-semibold transition-all duration-300"
+                style={{
+                  borderColor: `${accentColor}50`,
+                  backgroundColor: `${accentColor}15`,
+                  color: accentColor,
+                }}
+              >
+                {tRules('continueAsGuest')}
+              </button>
+            </div>
+          </>
+      ) : (
         <button
           onClick={handleStart}
-          className="group relative w-full overflow-hidden rounded-xl border px-6 py-3 text-center text-base font-semibold transition-all duration-300"
+          disabled={isStarting}
+          className="disabled:opacity-50 disabled:cursor-not-allowed group relative w-full overflow-hidden rounded-xl border px-6 py-3 text-center text-base font-semibold transition-all duration-300"
           style={{
             borderColor: `${accentColor}50`,
             backgroundColor: `${accentColor}15`,
@@ -474,6 +512,7 @@ export function QuizContainer({
             style={{ backgroundColor: accentColor }}
           />
         </button>
+      )}
       </div>
     );
   }
