@@ -35,14 +35,14 @@ export function ProfileCard({ user, locale }: ProfileCardProps) {
           </div>
         </div>
 
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <h2
             id="profile-heading"
             className="text-2xl font-bold text-gray-900 dark:text-white"
           >
             {user.name || t('defaultName')}
           </h2>
-          <p className="font-mono text-sm text-gray-500 dark:text-gray-400">
+          <p className="truncate font-mono text-sm text-gray-500 dark:text-gray-400">
             {user.email}
           </p>
 
