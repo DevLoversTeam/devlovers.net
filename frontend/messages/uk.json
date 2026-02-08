@@ -942,7 +942,10 @@
       "termCount": "{count} термінів збережено",
       "explainedTermsButton": "Пояснені терміни ({count})",
       "hideExplainedTerms": "Приховати терміни",
-      "noHiddenTerms": "Немає прихованих термінів"
+      "noHiddenTerms": "Немає прихованих термінів",
+      "ariaDragHandle": "Перетягніть для зміни порядку {term}",
+      "ariaHide": "Приховати {term}",
+      "ariaRestore": "Відновити {term}"
     }
   },
   "aiHelper": {

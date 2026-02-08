@@ -939,7 +939,10 @@
       "termCount": "{count} terms saved",
       "explainedTermsButton": "Explained Terms ({count})",
       "hideExplainedTerms": "Hide Terms",
-      "noHiddenTerms": "No hidden terms"
+      "noHiddenTerms": "No hidden terms",
+      "ariaDragHandle": "Drag to reorder {term}",
+      "ariaHide": "Hide {term}",
+      "ariaRestore": "Restore {term}"
     }
   },
   "aiHelper": {
@@ -1030,7 +1033,7 @@
       },
       "sharing": {
         "title": "5. Sharing of data",
-        "content": "We do not sell personal data. We may share limited data with trusted service providers (e.g. hosting, database, error monitoring) for sctrictly necessary DevLovers platform functionality."
+        "content": "We do not sell personal data. We may share limited data with trusted service providers (e.g. hosting, database, error monitoring) for strictly necessary DevLovers platform functionality."
       },
       "retention": {
         "title": "6. Data retention",
