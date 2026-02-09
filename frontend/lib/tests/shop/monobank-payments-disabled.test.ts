@@ -4,7 +4,7 @@ import { NextRequest } from 'next/server';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { db } from '@/db';
-import { orders, paymentAttempts,productPrices, products } from '@/db/schema';
+import { orders, paymentAttempts, productPrices, products } from '@/db/schema';
 import { resetEnvCache } from '@/lib/env';
 import { toDbMoney } from '@/lib/shop/money';
 import { deriveTestIpFromIdemKey } from '@/lib/tests/helpers/ip';
@@ -26,17 +26,15 @@ vi.mock('@/lib/logging', async () => {
 const __prevRateLimitDisabled = process.env.RATE_LIMIT_DISABLED;
 const __prevPaymentsEnabled = process.env.PAYMENTS_ENABLED;
 const __prevMonoMerchantToken = process.env.MONO_MERCHANT_TOKEN;
-const __prevMonoToken = process.env.MONO_MERCHANT_TOKEN;
 const __prevStatusSecret = process.env.SHOP_STATUS_TOKEN_SECRET;
 const __prevAppOrigin = process.env.APP_ORIGIN;
 const __prevDatabaseUrl = process.env.DATABASE_URL;
 
 beforeAll(() => {
   process.env.RATE_LIMIT_DISABLED = '1';
-  // Ensure Monobank provider is "enabled" for this test; otherwise checkout returns 422 PAYMENTS_PROVIDER_DISABLED.
+  // Ensure Monobank provider is "enabled" for this test; otherwise checkout returns 422 INVALID_REQUEST.
   process.env.MONO_MERCHANT_TOKEN = 'test_mono_token';
   process.env.PAYMENTS_ENABLED = 'false';
-  process.env.MONO_MERCHANT_TOKEN = 'test_mono_token';
   process.env.APP_ORIGIN = 'http://localhost:3000';
   process.env.SHOP_STATUS_TOKEN_SECRET =
     'test_status_token_secret_test_status_token_secret';
@@ -57,9 +55,6 @@ afterAll(() => {
   if (__prevMonoMerchantToken === undefined)
     delete process.env.MONO_MERCHANT_TOKEN;
   else process.env.MONO_MERCHANT_TOKEN = __prevMonoMerchantToken;
-
-  if (__prevMonoToken === undefined) delete process.env.MONO_MERCHANT_TOKEN;
-  else process.env.MONO_MERCHANT_TOKEN = __prevMonoToken;
 
   if (__prevAppOrigin === undefined) delete process.env.APP_ORIGIN;
   else process.env.APP_ORIGIN = __prevAppOrigin;
@@ -156,7 +151,7 @@ async function postCheckout(idemKey: string, productId: string) {
 }
 
 describe.sequential('monobank payments disabled', () => {
-  it('returns 503 PAYMENTS_DISABLED before PSP call', async () => {
+  it('returns 503 PSP_UNAVAILABLE before PSP call', async () => {
     const { productId } = await createIsolatedProduct(2);
     const idemKey = crypto.randomUUID();
     let orderId: string | null = null;
@@ -165,7 +160,7 @@ describe.sequential('monobank payments disabled', () => {
       const res = await postCheckout(idemKey, productId);
       expect(res.status).toBe(503);
       const json: any = await res.json();
-      expect(json.code).toBe('PAYMENTS_DISABLED');
+      expect(json.code).toBe('PSP_UNAVAILABLE');
 
       const [row] = await db
         .select({ id: orders.id })

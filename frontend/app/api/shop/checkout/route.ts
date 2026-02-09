@@ -34,6 +34,8 @@ import {
   idempotencyKeySchema,
 } from '@/lib/validation/shop';
 
+type CheckoutRequestedProvider = 'stripe' | 'monobank';
+
 const EXPECTED_BUSINESS_ERROR_CODES = new Set([
   'IDEMPOTENCY_CONFLICT',
   'INVALID_PAYLOAD',
@@ -45,7 +47,7 @@ const EXPECTED_BUSINESS_ERROR_CODES = new Set([
 
 function parseRequestedProvider(
   raw: unknown
-): PaymentProvider | 'invalid' | null {
+): CheckoutRequestedProvider | 'invalid' | null {
   if (raw === null || raw === undefined) return null;
   if (typeof raw !== 'string') return 'invalid';
 
@@ -57,6 +59,11 @@ function parseRequestedProvider(
   }
 
   return 'invalid';
+}
+
+function isMonoAlias(raw: unknown): boolean {
+  if (typeof raw !== 'string') return false;
+  return raw.trim().toLowerCase() === 'mono';
 }
 
 function stripMonobankClientMoneyFields(payload: unknown): unknown {
@@ -87,6 +94,102 @@ function getErrorCode(err: unknown): string | null {
 
   const e = err as { code?: unknown };
   return typeof e.code === 'string' ? e.code : null;
+}
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error && error.message) return error.message;
+  return fallback;
+}
+
+function isMonobankInvalidRequestError(error: unknown): boolean {
+  const code = getErrorCode(error);
+
+  if (error instanceof InvalidPayloadError) return true;
+  if (error instanceof InvalidVariantError) return true;
+  if (code === 'INVALID_PAYLOAD' || code === 'INVALID_VARIANT') return true;
+
+  if (!error || typeof error !== 'object') return false;
+
+  const maybeIssues = (error as { issues?: unknown }).issues;
+  if (Array.isArray(maybeIssues)) return true;
+
+  const maybeName = (error as { name?: unknown }).name;
+  if (typeof maybeName === 'string' && maybeName === 'ZodError') return true;
+
+  return false;
+}
+
+function mapMonobankCheckoutError(error: unknown) {
+  const code = getErrorCode(error);
+
+  if (isMonobankInvalidRequestError(error)) {
+    return {
+      code: 'INVALID_REQUEST',
+      message: getErrorMessage(error, 'Invalid request.'),
+      status: 400,
+    } as const;
+  }
+
+  if (
+    error instanceof InsufficientStockError ||
+    code === 'INSUFFICIENT_STOCK' ||
+    code === 'OUT_OF_STOCK'
+  ) {
+    return {
+      code: 'OUT_OF_STOCK',
+      message: getErrorMessage(error, 'Insufficient stock.'),
+      status: 409,
+    } as const;
+  }
+
+  if (error instanceof PriceConfigError || code === 'PRICE_CONFIG_ERROR') {
+    return {
+      code: 'PRICE_CONFIG_ERROR',
+      message: getErrorMessage(error, 'Price configuration error.'),
+      status: 422,
+      details:
+        error instanceof PriceConfigError
+          ? {
+              productId: error.productId,
+              currency: error.currency,
+            }
+          : undefined,
+    } as const;
+  }
+
+  if (
+    error instanceof PspUnavailableError ||
+    code === 'PSP_UNAVAILABLE' ||
+    code === 'PSP_INVOICE_PERSIST_FAILED'
+  ) {
+    return {
+      code: 'PSP_UNAVAILABLE',
+      message: 'Payment provider unavailable.',
+      status: 503,
+    } as const;
+  }
+
+  if (
+    error instanceof IdempotencyConflictError ||
+    code === 'IDEMPOTENCY_CONFLICT'
+  ) {
+    return {
+      code: 'CHECKOUT_IDEMPOTENCY_CONFLICT',
+      message:
+        error instanceof IdempotencyConflictError
+          ? error.message
+          : 'Checkout idempotency conflict.',
+      status: 409,
+      details:
+        error instanceof IdempotencyConflictError ? error.details : undefined,
+    } as const;
+  }
+
+  return {
+    code: 'CHECKOUT_FAILED',
+    message: 'Unable to process checkout.',
+    status: 500,
+  } as const;
 }
 
 function isExpectedBusinessError(err: unknown): boolean {
@@ -177,6 +280,54 @@ function buildCheckoutResponse({
   return res;
 }
 
+function buildMonobankCheckoutResponse({
+  order,
+  itemCount,
+  status,
+  attemptId,
+  pageUrl,
+  currency,
+  totalAmountMinor,
+}: {
+  order: CheckoutOrderShape;
+  itemCount: number;
+  status: number;
+  attemptId: string;
+  pageUrl: string;
+  currency: 'UAH';
+  totalAmountMinor: number;
+}) {
+  const res = NextResponse.json(
+    {
+      success: true,
+      order: {
+        id: order.id,
+        currency: order.currency,
+        totalAmount: order.totalAmount,
+        itemCount,
+        paymentStatus: order.paymentStatus,
+        paymentProvider: order.paymentProvider,
+        paymentIntentId: order.paymentIntentId,
+        clientSecret: null,
+      },
+      orderId: order.id,
+      paymentStatus: order.paymentStatus,
+      paymentProvider: order.paymentProvider,
+      paymentIntentId: order.paymentIntentId,
+      clientSecret: null,
+      attemptId,
+      pageUrl,
+      provider: 'mono' as const,
+      currency,
+      totalAmountMinor,
+    },
+    { status }
+  );
+
+  res.headers.set('Cache-Control', 'no-store');
+  return res;
+}
+
 function getSessionUserId(user: unknown): string | null {
   if (!user || typeof user !== 'object') return null;
 
@@ -237,6 +388,16 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  let monobankRequestHint = false;
+  if (body && typeof body === 'object' && !Array.isArray(body)) {
+    const { paymentProvider, provider } = body as Record<string, unknown>;
+    const rawProvider = paymentProvider ?? provider;
+    const parsedProvider = parseRequestedProvider(rawProvider);
+    monobankRequestHint =
+      parsedProvider === 'monobank' ||
+      (parsedProvider === 'invalid' && isMonoAlias(rawProvider));
+  }
+
   const idempotencyKey = getIdempotencyKey(request);
 
   if (idempotencyKey === null) {
@@ -244,6 +405,14 @@ export async function POST(request: NextRequest) {
       ...baseMeta,
       code: 'MISSING_IDEMPOTENCY_KEY',
     });
+
+    if (monobankRequestHint) {
+      return errorResponse(
+        'INVALID_REQUEST',
+        'Idempotency-Key header is required.',
+        400
+      );
+    }
 
     return errorResponse(
       'MISSING_IDEMPOTENCY_KEY',
@@ -257,6 +426,15 @@ export async function POST(request: NextRequest) {
       ...baseMeta,
       code: 'INVALID_IDEMPOTENCY_KEY',
     });
+
+    if (monobankRequestHint) {
+      return errorResponse(
+        'INVALID_REQUEST',
+        'Idempotency key must be 16-128 chars and contain only A-Z a-z 0-9 _ -.',
+        400,
+        idempotencyKey.format?.()
+      );
+    }
 
     return errorResponse(
       'INVALID_IDEMPOTENCY_KEY',
@@ -273,7 +451,7 @@ export async function POST(request: NextRequest) {
     idempotencyKey: idempotencyKeyShort,
   };
 
-  let requestedProvider: PaymentProvider | null = null;
+  let requestedProvider: CheckoutRequestedProvider | null = null;
   let payloadForValidation: unknown = body;
 
   if (body && typeof body === 'object' && !Array.isArray(body)) {
@@ -281,9 +459,14 @@ export async function POST(request: NextRequest) {
       string,
       unknown
     >;
-    const parsedProvider = parseRequestedProvider(paymentProvider ?? provider);
+    const rawProvider = paymentProvider ?? provider;
+    const parsedProvider = parseRequestedProvider(rawProvider);
 
     if (parsedProvider === 'invalid') {
+      if (isMonoAlias(rawProvider)) {
+        return errorResponse('INVALID_REQUEST', 'Invalid request.', 422);
+      }
+
       return errorResponse(
         'PAYMENTS_PROVIDER_INVALID',
         'Invalid payment provider.',
@@ -295,10 +478,10 @@ export async function POST(request: NextRequest) {
     payloadForValidation = rest;
   }
 
-  const selectedProvider: PaymentProvider = requestedProvider ?? 'stripe';
+  const selectedProvider: CheckoutRequestedProvider =
+    requestedProvider ?? 'stripe';
   if (selectedProvider === 'monobank') {
-    payloadForValidation =
-      stripMonobankClientMoneyFields(payloadForValidation);
+    payloadForValidation = stripMonobankClientMoneyFields(payloadForValidation);
   }
 
   const paymentsEnabled =
@@ -325,11 +508,7 @@ export async function POST(request: NextRequest) {
         requestId,
       });
 
-      return errorResponse(
-        'PAYMENTS_PROVIDER_DISABLED',
-        'Requested payment provider is disabled.',
-        422
-      );
+      return errorResponse('INVALID_REQUEST', 'Invalid request.', 422);
     }
 
     if (!paymentsEnabled) {
@@ -338,13 +517,32 @@ export async function POST(request: NextRequest) {
         code: 'PAYMENTS_DISABLED',
       });
 
-      return errorResponse('PAYMENTS_DISABLED', 'Payments are disabled.', 503);
+      return errorResponse(
+        'PSP_UNAVAILABLE',
+        'Payment provider unavailable.',
+        503
+      );
     }
   }
 
   const parsedPayload = checkoutPayloadSchema.safeParse(payloadForValidation);
 
   if (!parsedPayload.success) {
+    if (selectedProvider === 'monobank') {
+      logWarn('checkout_invalid_request', {
+        ...meta,
+        code: 'INVALID_REQUEST',
+        issuesCount: parsedPayload.error.issues?.length ?? 0,
+      });
+
+      return errorResponse(
+        'INVALID_REQUEST',
+        'Invalid request.',
+        400,
+        parsedPayload.error.format()
+      );
+    }
+
     logWarn('checkout_invalid_payload', {
       ...meta,
       code: 'INVALID_PAYLOAD',
@@ -388,6 +586,14 @@ export async function POST(request: NextRequest) {
         code: 'USER_ID_NOT_ALLOWED',
       });
 
+      if (selectedProvider === 'monobank') {
+        return errorResponse(
+          'INVALID_REQUEST',
+          'userId is not allowed for guest checkout.',
+          400
+        );
+      }
+
       return errorResponse(
         'USER_ID_NOT_ALLOWED',
         'userId is not allowed for guest checkout.',
@@ -400,6 +606,14 @@ export async function POST(request: NextRequest) {
         ...authMeta,
         code: 'USER_MISMATCH',
       });
+
+      if (selectedProvider === 'monobank') {
+        return errorResponse(
+          'INVALID_REQUEST',
+          'Authenticated user does not match payload userId.',
+          400
+        );
+      }
 
       return errorResponse(
         'USER_MISMATCH',
@@ -444,15 +658,15 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  if (selectedProvider === 'stripe' && !stripePaymentsEnabled) {
-    logWarn('checkout_payments_disabled', {
-      ...authMeta,
-      code: 'PAYMENTS_DISABLED',
-      provider: 'stripe',
-    });
+  // if (selectedProvider === 'stripe' && !stripePaymentsEnabled) {
+  //   logWarn('checkout_payments_disabled', {
+  //     ...authMeta,
+  //     code: 'PAYMENTS_DISABLED',
+  //     provider: 'stripe',
+  //   });
 
-    return errorResponse('PAYMENTS_DISABLED', 'Payments are disabled.', 503);
-  }
+  //   return errorResponse('PAYMENTS_DISABLED', 'Payments are disabled.', 503);
+  // }
 
   try {
     const result = await createOrderWithItems({
@@ -472,9 +686,16 @@ export async function POST(request: NextRequest) {
       paymentIntentId: order.paymentIntentId ?? null,
     };
 
+    // NOTE: Some schemas/types still narrow order.paymentProvider to 'stripe'|'none'.
+    // Runtime may be 'monobank' here; widen locally to avoid TS2367.
+    const orderProvider = order.paymentProvider as unknown as
+      | 'stripe'
+      | 'monobank'
+      | 'none';
+
     const stripePaymentFlow =
-      stripePaymentsEnabled && order.paymentProvider === 'stripe';
-    const monobankPaymentFlow = order.paymentProvider === 'monobank';
+      stripePaymentsEnabled && orderProvider === 'stripe';
+    const monobankPaymentFlow = orderProvider === 'monobank';
 
     if (!result.isNew) {
       if (stripePaymentFlow) {
@@ -572,13 +793,32 @@ export async function POST(request: NextRequest) {
           await import('@/lib/services/orders/monobank');
         const statusToken = createStatusToken({ orderId: order.id });
 
-        await createMonobankAttemptAndInvoice({
+        const monobankAttempt = await createMonobankAttemptAndInvoice({
           orderId: order.id,
           statusToken,
           requestId,
         });
 
-        return buildCheckoutResponse({
+        if (result.totalCents !== monobankAttempt.totalAmountMinor) {
+          logError(
+            'checkout_mono_amount_mismatch',
+            new Error('Monobank amount mismatch'),
+            {
+              ...orderMeta,
+              code: 'MONO_AMOUNT_MISMATCH',
+              totalCents: result.totalCents,
+              totalAmountMinor: monobankAttempt.totalAmountMinor,
+            }
+          );
+
+          return errorResponse(
+            'CHECKOUT_FAILED',
+            'Unable to process checkout.',
+            500
+          );
+        }
+
+        return buildMonobankCheckoutResponse({
           order: {
             id: order.id,
             currency: order.currency,
@@ -588,8 +828,11 @@ export async function POST(request: NextRequest) {
             paymentIntentId: order.paymentIntentId ?? null,
           },
           itemCount,
-          clientSecret: null,
           status: 200,
+          attemptId: monobankAttempt.attemptId,
+          pageUrl: monobankAttempt.pageUrl,
+          currency: monobankAttempt.currency,
+          totalAmountMinor: monobankAttempt.totalAmountMinor,
         });
       }
 
@@ -618,13 +861,32 @@ export async function POST(request: NextRequest) {
         await import('@/lib/services/orders/monobank');
       const statusToken = createStatusToken({ orderId: order.id });
 
-      await createMonobankAttemptAndInvoice({
+      const monobankAttempt = await createMonobankAttemptAndInvoice({
         orderId: order.id,
         statusToken,
         requestId,
       });
 
-      return buildCheckoutResponse({
+      if (result.totalCents !== monobankAttempt.totalAmountMinor) {
+        logError(
+          'checkout_mono_amount_mismatch',
+          new Error('Monobank amount mismatch'),
+          {
+            ...orderMeta,
+            code: 'MONO_AMOUNT_MISMATCH',
+            totalCents: result.totalCents,
+            totalAmountMinor: monobankAttempt.totalAmountMinor,
+          }
+        );
+
+        return errorResponse(
+          'CHECKOUT_FAILED',
+          'Unable to process checkout.',
+          500
+        );
+      }
+
+      return buildMonobankCheckoutResponse({
         order: {
           id: order.id,
           currency: order.currency,
@@ -634,8 +896,11 @@ export async function POST(request: NextRequest) {
           paymentIntentId: order.paymentIntentId ?? null,
         },
         itemCount,
-        clientSecret: null,
         status: 201,
+        attemptId: monobankAttempt.attemptId,
+        pageUrl: monobankAttempt.pageUrl,
+        currency: monobankAttempt.currency,
+        totalAmountMinor: monobankAttempt.totalAmountMinor,
       });
     }
 
@@ -760,6 +1025,16 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    if (selectedProvider === 'monobank') {
+      const mapped = mapMonobankCheckoutError(error);
+      return errorResponse(
+        mapped.code,
+        mapped.message,
+        mapped.status,
+        mapped.details
+      );
+    }
+
     if (error instanceof InvalidPayloadError) {
       return errorResponse(
         error.code,
@@ -791,8 +1066,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (error instanceof PriceConfigError) {
-      const status = selectedProvider === 'monobank' ? 422 : 400;
-      return errorResponse(error.code, error.message, status, {
+      return errorResponse(error.code, error.message, 400, {
         productId: error.productId,
         currency: error.currency,
       });

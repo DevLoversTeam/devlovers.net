@@ -87,7 +87,7 @@ describe('checkout monobank parse/validation', () => {
 
     expect(res.status).toBe(400);
     const json = await res.json();
-    expect(json.code).toBe('MISSING_IDEMPOTENCY_KEY');
+    expect(json.code).toBe('INVALID_REQUEST');
     expect(createOrderWithItems).not.toHaveBeenCalled();
   });
 

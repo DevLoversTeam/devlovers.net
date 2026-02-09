@@ -93,7 +93,7 @@ describe('createMonoAttemptAndInvoice (unit, no DB)', () => {
         metadata: { pageUrl: 'https://pay.test/inv_1' },
       })),
       createCreatingAttempt: vi.fn(),
-      readMonobankInvoiceParams: vi.fn(),
+      readMonobankInvoiceParams: vi.fn(async () => snapshot()),
       createMonobankInvoice: vi.fn(),
       markAttemptFailed: vi.fn(),
       cancelOrderAndRelease: vi.fn(),

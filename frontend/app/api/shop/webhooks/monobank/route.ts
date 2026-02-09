@@ -53,15 +53,18 @@ export async function POST(request: NextRequest) {
     return noStoreJson({ code: 'INVALID_SIGNATURE' }, { status: 401 });
   }
 
-  let webhookMode: 'drop' | 'store' | 'apply' = 'drop';
-  try {
-    webhookMode = getMonobankConfig().webhookMode;
-  } catch (error) {
-    logError('monobank_webhook_config_invalid', error, {
+  const rawMode = (process.env.MONO_WEBHOOK_MODE ?? '').trim().toLowerCase();
+  const webhookMode: 'drop' | 'store' | 'apply' =
+    rawMode === 'store' || rawMode === 'apply' || rawMode === 'drop'
+      ? (rawMode as 'drop' | 'store' | 'apply')
+      : 'drop';
+
+  if (rawMode && webhookMode === 'drop' && rawMode !== 'drop') {
+    logWarn('monobank_webhook_mode_invalid', {
       ...baseMeta,
-      code: 'MONOBANK_ENV_INVALID',
+      code: 'MONO_WEBHOOK_MODE_INVALID',
+      rawMode,
     });
-    webhookMode = 'drop';
   }
 
   try {

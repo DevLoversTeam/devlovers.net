@@ -236,22 +236,49 @@ async function finalizeAttemptWithInvoice(args: {
   let lastError: unknown = null;
 
   const now = new Date();
-  const attemptMetaPatchJson = JSON.stringify({
-    pageUrl: args.pageUrl,
-    invoiceId: args.invoiceId,
-  });
-  const orderMetaPatchJson = JSON.stringify({
-    monobank: { invoiceId: args.invoiceId, pageUrl: args.pageUrl },
-  });
+
+  const asObj = (v: unknown): Record<string, unknown> => {
+    if (!v || typeof v !== 'object' || Array.isArray(v)) return {};
+    return v as Record<string, unknown>;
+  };
+
+  const mergeMonobankMeta = (
+    base: Record<string, unknown>
+  ): Record<string, unknown> => {
+    const mono = asObj(base.monobank);
+    return {
+      ...base,
+      monobank: {
+        ...mono,
+        invoiceId: args.invoiceId,
+        pageUrl: args.pageUrl,
+      },
+    };
+  };
+
   for (let attempt = 0; attempt < maxRetries; attempt += 1) {
     try {
-      // NOTE: neon-http has no real transactions. Keep persistence idempotent.
+      const [attemptRow] = await db
+        .select({ metadata: paymentAttempts.metadata })
+        .from(paymentAttempts)
+        .where(eq(paymentAttempts.id, args.attemptId))
+        .limit(1);
+
+      if (!attemptRow) {
+        throw new Error('Payment attempt not found during invoice finalize');
+      }
+
+      const nextAttemptMeta = {
+        ...asObj(attemptRow.metadata),
+        pageUrl: args.pageUrl,
+        invoiceId: args.invoiceId,
+      };
+
       const updatedAttempt = await db
         .update(paymentAttempts)
         .set({
-          status: 'active',
           providerPaymentIntentId: args.invoiceId,
-          metadata: sql`coalesce(${paymentAttempts.metadata}, '{}'::jsonb) || ${attemptMetaPatchJson}::jsonb`,
+          metadata: nextAttemptMeta,
           updatedAt: now,
         })
         .where(eq(paymentAttempts.id, args.attemptId))
@@ -261,11 +288,23 @@ async function finalizeAttemptWithInvoice(args: {
         throw new Error('Payment attempt not found during invoice finalize');
       }
 
+      const [orderRow] = await db
+        .select({ pspMetadata: orders.pspMetadata })
+        .from(orders)
+        .where(eq(orders.id, args.orderId))
+        .limit(1);
+
+      if (!orderRow) {
+        throw new Error('Order not found during invoice finalize');
+      }
+
+      const nextOrderMeta = mergeMonobankMeta(asObj(orderRow.pspMetadata));
+
       const updatedOrder = await db
         .update(orders)
         .set({
           pspChargeId: args.invoiceId,
-          pspMetadata: sql`coalesce(${orders.pspMetadata}, '{}'::jsonb) || ${orderMetaPatchJson}::jsonb`,
+          pspMetadata: nextOrderMeta,
           updatedAt: now,
         })
         .where(eq(orders.id, args.orderId))
@@ -289,18 +328,25 @@ async function finalizeAttemptWithInvoice(args: {
   });
 
   try {
-    const pendingPatchJson = JSON.stringify({
+    const [attemptRow] = await db
+      .select({ metadata: paymentAttempts.metadata })
+      .from(paymentAttempts)
+      .where(eq(paymentAttempts.id, args.attemptId))
+      .limit(1);
+
+    const nextAttemptMeta = {
+      ...asObj(attemptRow?.metadata),
       pageUrl: args.pageUrl,
       invoiceId: args.invoiceId,
       requestId: args.requestId,
       finalizePending: true,
-    });
+    };
+
     await db
       .update(paymentAttempts)
       .set({
-        status: 'active',
         providerPaymentIntentId: args.invoiceId,
-        metadata: sql`coalesce(${paymentAttempts.metadata}, '{}'::jsonb) || ${pendingPatchJson}::jsonb`,
+        metadata: nextAttemptMeta,
         updatedAt: new Date(),
       })
       .where(eq(paymentAttempts.id, args.attemptId));
@@ -344,7 +390,13 @@ async function createMonoAttemptAndInvoiceImpl(
     webhookUrl: string;
     maxAttempts?: number;
   }
-): Promise<{ attemptId: string; invoiceId: string; pageUrl: string }> {
+): Promise<{
+  attemptId: string;
+  invoiceId: string;
+  pageUrl: string;
+  currency: 'UAH';
+  totalAmountMinor: number;
+}> {
   const snapshot = await deps.readMonobankInvoiceParams(args.orderId);
 
   const existing = await deps.getActiveAttempt(args.orderId);
@@ -355,6 +407,8 @@ async function createMonoAttemptAndInvoiceImpl(
         invoiceId: existing.providerPaymentIntentId,
         pageUrl,
         attemptId: existing.id,
+        currency: MONO_CURRENCY,
+        totalAmountMinor: snapshot.amountMinor,
       };
     }
 
@@ -399,6 +453,8 @@ async function createMonoAttemptAndInvoiceImpl(
             invoiceId: reused.providerPaymentIntentId,
             pageUrl,
             attemptId: reused.id,
+            currency: MONO_CURRENCY,
+            totalAmountMinor: snapshot.amountMinor,
           };
         }
       }
@@ -523,6 +579,8 @@ async function createMonoAttemptAndInvoiceImpl(
     invoiceId: invoice.invoiceId,
     pageUrl: invoice.pageUrl,
     attemptId: attempt.id,
+    currency: MONO_CURRENCY,
+    totalAmountMinor: snapshot.amountMinor,
   };
 }
 
@@ -536,6 +594,8 @@ export async function createMonoAttemptAndInvoice(args: {
   attemptId: string;
   invoiceId: string;
   pageUrl: string;
+  currency: 'UAH';
+  totalAmountMinor: number;
 }> {
   return createMonoAttemptAndInvoiceImpl(
     {
@@ -566,6 +626,8 @@ export async function createMonobankAttemptAndInvoice(args: {
   pageUrl: string;
   attemptId: string;
   attemptNumber: number;
+  currency: 'UAH';
+  totalAmountMinor: number;
 }> {
   const redirectUrl = toAbsoluteUrl(
     `/shop/checkout/success?orderId=${encodeURIComponent(
