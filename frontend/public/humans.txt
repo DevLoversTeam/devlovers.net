@@ -1,7 +1,7 @@
 /* TEAM */
 
 Name: Viktor Svertoka
-Role: Team Lead | Full-Stack Developer 
+Role: Team Lead | Full-Stack Developer
 GitHub: https://github.com/ViktorSvertoka
 LinkedIn: https://www.linkedin.com/in/viktorsvertoka
 Location: Ukraine
