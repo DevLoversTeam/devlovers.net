@@ -1,0 +1,95 @@
+/* TEAM */
+
+Name: Viktor Svertoka
+Role: Team Lead | Full-Stack Developer 
+GitHub: https://github.com/ViktorSvertoka
+LinkedIn: https://www.linkedin.com/in/viktorsvertoka
+Location: Ukraine
+
+Name: Andrew Motko
+Role: Head of Product | Full-Stack Developer
+GitHub: https://github.com/AM1007
+LinkedIn: https://www.linkedin.com/in/motko
+Location: Ukraine
+
+Name: Lesia Soloviova
+Role: Full-Stack Developer
+GitHub: https://github.com/LesiaUKR
+LinkedIn: https://www.linkedin.com/in/lesia-soloviova
+Location: United Kingdom
+
+Name: Liudmyla Sovetovs
+Role: Full-Stack Developer
+GitHub: https://github.com/liudmylasovetovs
+LinkedIn: https://www.linkedin.com/in/liudmylasovetovs
+Location: United States
+
+Name: Yevhenii Datsenko
+Role: IT Project Manager | Frontend Developer | Product Designer
+GitHub: https://github.com/yevheniidatsenko
+LinkedIn: https://www.linkedin.com/in/yevhenii-datsenko
+Location: Ukraine
+
+Name: Alex Kryvosheyin
+Role: Backend Developer | QA Engineer
+GitHub: https://github.com/kryvosheyin
+LinkedIn: https://www.linkedin.com/in/alex-kryvosheyin
+Location: Ireland
+
+Name: Hanna Komrakova
+Role: Full-Stack Developer | Manual QA Engineer
+GitHub: https://github.com/KomrakovaAnna
+LinkedIn: https://www.linkedin.com/in/anna-komrakova
+Location: United Kingdom
+
+Name: Tetiana Zorii
+Role: Full-Stack Developer
+GitHub: https://github.com/TiZorii
+LinkedIn: https://www.linkedin.com/in/zorii-tetiana
+Location: United States
+
+Name: Yuliia Nazymko
+Role: Full-Stack Developer
+GitHub: https://github.com/YNazymko12
+LinkedIn: https://www.linkedin.com/in/yuliia-nazymko
+Location: Germany
+
+Name: Alina Riabova
+Role: Frontend Developer
+GitHub: https://github.com/AlinaRyabova
+LinkedIn: https://www.linkedin.com/in/alina-ryabova
+Location: Ukraine
+
+
+/* PROJECT */
+
+Name: DevLovers
+Role: Technical Interview Preparation Platform
+Website: https://devlovers.net
+
+Mission:
+Helping developers prepare for technical interviews
+through interactive learning, quizzes, leaderboards, and AI-powered explanations.
+
+
+/* TECHNOLOGY */
+
+Next.js (App Router)
+React
+TypeScript
+Tailwind CSS
+Drizzle ORM
+Neon PostgreSQL
+Upstash Redis
+Vercel
+
+
+/ * CONTACT */
+
+Email: contact@devlovers.net
+GitHub: https://github.com/DevLoversTeam
+
+
+/ * NOTE */
+
+Built with passion by developers, for developers.
