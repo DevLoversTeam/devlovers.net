@@ -117,13 +117,11 @@
       },
       "control": {
         "title": "System Kontroli",
-        "description": "Naruszenia zasad są wykrywane automatycznie. Przy 3+ naruszeniach wynik nie będzie liczony do rankingu."
+        "description": "Naruszenia zasad są wykrywane automatycznie. Dla zarejestrowanych użytkowników wynik jest zawsze zapisywany w profilu, ale przy 4+ naruszeniach punkty nie będą liczone do rankingu."
       },
-      "time": {
-        "title": "Wymagania Czasowe",
-        "description": "Minimalny czas: {seconds} sekund (3 sekundy na pytanie). Wyniki zbyt szybkie nie będą liczone."
-      },
-      "startButton": "Rozpocznij Quiz"
+      "startButton": "Rozpocznij Quiz",
+      "guestWarning": "Grasz jako gość. Twój wynik nie zostanie zapisany.",
+      "continueAsGuest": "Kontynuuj jako gość"
     },
     "question": {
       "correct": "Poprawnie",

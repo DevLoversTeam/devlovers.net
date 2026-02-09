@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 
 import { cn } from '@/lib/utils';
 
-interface QaLoaderProps {
+interface LoaderProps {
   className?: string;
   size?: number;
 }
@@ -22,7 +22,7 @@ interface ParticleState {
 
 const TWO_PI = Math.PI * 2;
 
-export function QaLoader({ className, size = 240 }: QaLoaderProps) {
+export function Loader({ className, size = 240 }: LoaderProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const particlesRef = useRef<ParticleState[]>([]);
   const animationRef = useRef<number | null>(null);

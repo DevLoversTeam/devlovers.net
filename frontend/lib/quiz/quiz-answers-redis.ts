@@ -228,3 +228,58 @@ export async function getOrCreateQuestionsCache(
 
   return questions;
 }
+
+export async function isQuestionAlreadyVerified(
+  quizId: string,
+  questionId: string,
+  clientIp: string
+): Promise<boolean> {
+  const redis = getRedisClient();
+  if (!redis) return false;
+
+  const key = `quiz:verified:${quizId}:${clientIp}:${questionId}`;
+  try {
+    const exists = await redis.get(key);
+    return exists !== null;
+  } catch {
+    return false;
+  }
+}
+
+export async function markQuestionVerified(
+  quizId: string,
+  questionId: string,
+  clientIp: string,
+  ttlSeconds: number = 900
+): Promise<void> {
+  const redis = getRedisClient();
+  if (!redis) return;
+
+  const key = `quiz:verified:${quizId}:${clientIp}:${questionId}`;
+  try {
+    await redis.set(key, 1, { ex: ttlSeconds });
+  } catch {
+    // silent fail — verification still works without tracking
+  }
+}
+export async function clearVerifiedQuestions(
+  quizId: string,
+  identifier: string
+): Promise<void> {
+  const redis = getRedisClient();
+  if (!redis) return;
+
+  const pattern = `quiz:verified:${quizId}:${identifier}:*`;
+  try {
+    let cursor = '0';
+    do {
+      const [nextCursor, keys] = await redis.scan(cursor, { match: pattern, count: 100 });
+      cursor = nextCursor;
+      if (keys.length > 0) {
+        await redis.del(...keys);
+      }
+    } while (cursor !== '0');
+  } catch (err) {
+    console.warn('Failed to clear verified questions:', err);
+  }
+}
