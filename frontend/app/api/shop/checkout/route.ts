@@ -5,7 +5,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { MoneyValueError } from '@/db/queries/shop/orders';
 import { getCurrentUser } from '@/lib/auth';
 import { isMonobankEnabled } from '@/lib/env/monobank';
-import { isPaymentsEnabled } from '@/lib/env/stripe';
 import { logError, logInfo, logWarn } from '@/lib/logging';
 import { guardBrowserSameOrigin } from '@/lib/security/origin';
 import {
@@ -58,6 +57,29 @@ function parseRequestedProvider(
   }
 
   return 'invalid';
+}
+
+function stripMonobankClientMoneyFields(payload: unknown): unknown {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    return payload;
+  }
+
+  const {
+    amount,
+    amountMinor,
+    totalAmount,
+    totalAmountMinor,
+    currency,
+    ...rest
+  } = payload as Record<string, unknown>;
+
+  void amount;
+  void amountMinor;
+  void totalAmount;
+  void totalAmountMinor;
+  void currency;
+
+  return rest;
 }
 
 function getErrorCode(err: unknown): string | null {
@@ -274,6 +296,10 @@ export async function POST(request: NextRequest) {
   }
 
   const selectedProvider: PaymentProvider = requestedProvider ?? 'stripe';
+  if (selectedProvider === 'monobank') {
+    payloadForValidation =
+      stripMonobankClientMoneyFields(payloadForValidation);
+  }
 
   const paymentsEnabled =
     (process.env.PAYMENTS_ENABLED ?? '').trim() === 'true';
