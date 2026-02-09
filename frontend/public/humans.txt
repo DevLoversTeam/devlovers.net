@@ -84,12 +84,12 @@ Upstash Redis
 Vercel
 
 
-/ * CONTACT */
+/* CONTACT */
 
 Email: contact@devlovers.net
 GitHub: https://github.com/DevLoversTeam
 
 
-/ * NOTE */
+/* NOTE */
 
 Built with passion by developers, for developers.
