@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { orderItems, orders, paymentAttempts } from '@/db/schema';
@@ -49,7 +49,7 @@ async function getActiveAttempt(
       and(
         eq(paymentAttempts.orderId, orderId),
         eq(paymentAttempts.provider, 'monobank'),
-        sql`${paymentAttempts.status} in ('creating','active')`
+        inArray(paymentAttempts.status, ['creating', 'active'])
       )
     )
     .limit(1);
@@ -230,7 +230,7 @@ async function cancelOrderAndRelease(orderId: string, reason: string) {
       and(
         eq(orders.id, orderId),
         eq(orders.paymentProvider, 'monobank'),
-        sql`${orders.paymentStatus} in ('pending','requires_payment')`
+        inArray(orders.paymentStatus, ['pending', 'requires_payment'])
       )
     )
     .returning({ id: orders.id });
@@ -458,6 +458,7 @@ async function createMonoAttemptAndInvoiceImpl(
   }
 ): Promise<{
   attemptId: string;
+  attemptNumber: number;
   invoiceId: string;
   pageUrl: string;
   currency: 'UAH';
@@ -473,6 +474,7 @@ async function createMonoAttemptAndInvoiceImpl(
         invoiceId: existing.providerPaymentIntentId,
         pageUrl,
         attemptId: existing.id,
+        attemptNumber: existing.attemptNumber,
         currency: MONO_CURRENCY,
         totalAmountMinor: snapshot.amountMinor,
       };
@@ -535,6 +537,7 @@ async function createMonoAttemptAndInvoiceImpl(
             invoiceId: reused.providerPaymentIntentId,
             pageUrl,
             attemptId: reused.id,
+            attemptNumber: reused.attemptNumber,
             currency: MONO_CURRENCY,
             totalAmountMinor: snapshot.amountMinor,
           };
@@ -579,10 +582,18 @@ async function createMonoAttemptAndInvoiceImpl(
       });
     }
 
-    await deps.cancelOrderAndRelease(
-      args.orderId,
-      'Monobank snapshot validation failed.'
-    );
+    try {
+      await deps.cancelOrderAndRelease(
+        args.orderId,
+        'Monobank snapshot validation failed.'
+      );
+    } catch (cancelErr) {
+      logError('monobank_cancel_order_failed', cancelErr, {
+        orderId: args.orderId,
+        attemptId: attempt.id,
+        requestId: args.requestId,
+      });
+    }
 
     throw error;
   }
@@ -673,6 +684,7 @@ async function createMonoAttemptAndInvoiceImpl(
     invoiceId: invoice.invoiceId,
     pageUrl: invoice.pageUrl,
     attemptId: attempt.id,
+    attemptNumber: attempt.attemptNumber,
     currency: MONO_CURRENCY,
     totalAmountMinor: snapshot.amountMinor,
   };
@@ -686,6 +698,7 @@ export async function createMonoAttemptAndInvoice(args: {
   maxAttempts?: number;
 }): Promise<{
   attemptId: string;
+  attemptNumber: number;
   invoiceId: string;
   pageUrl: string;
   currency: 'UAH';
@@ -738,14 +751,5 @@ export async function createMonobankAttemptAndInvoice(args: {
     maxAttempts: args.maxAttempts,
   });
 
-  const [row] = await db
-    .select({ attemptNumber: paymentAttempts.attemptNumber })
-    .from(paymentAttempts)
-    .where(eq(paymentAttempts.id, result.attemptId))
-    .limit(1);
-
-  return {
-    ...result,
-    attemptNumber: row?.attemptNumber ?? 1,
-  };
+  return result;
 }

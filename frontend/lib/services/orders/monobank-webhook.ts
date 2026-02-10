@@ -583,7 +583,10 @@ export async function applyMonoWebhookEvent(args: {
         orderId,
       };
     }
-    if (orderRow.payment_status === 'paid' && status !== 'success') {
+    if (
+      orderRow.payment_status === 'paid' &&
+      (status === 'success' || status === 'processing' || status === 'created')
+    ) {
       appliedResult = 'applied_noop';
       await dbx
         .update(monobankEvents)

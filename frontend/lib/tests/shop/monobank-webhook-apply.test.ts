@@ -227,7 +227,7 @@ describe.sequential('monobank webhook apply (persist-first)', () => {
     }
   });
 
-  it('paid is terminal: later failure event is applied_noop', async () => {
+  it('paid does not block: later expired event is applied_with_issue (transition blocked)', async () => {
     const invoiceId = `inv_${crypto.randomUUID()}`;
     const { orderId } = await insertOrderAndAttempt({
       invoiceId,
@@ -262,7 +262,7 @@ describe.sequential('monobank webhook apply (persist-first)', () => {
         mode: 'apply',
       });
 
-      expect(second.appliedResult).toBe('applied_noop');
+      expect(second.appliedResult).toBe('applied_with_issue');
 
       const [order] = await db
         .select({ paymentStatus: orders.paymentStatus })
@@ -272,7 +272,10 @@ describe.sequential('monobank webhook apply (persist-first)', () => {
       expect(order?.paymentStatus).toBe('paid');
 
       const [event] = await db
-        .select({ appliedResult: monobankEvents.appliedResult })
+        .select({
+          appliedResult: monobankEvents.appliedResult,
+          appliedErrorCode: monobankEvents.appliedErrorCode,
+        })
         .from(monobankEvents)
         .where(
           and(
@@ -281,7 +284,8 @@ describe.sequential('monobank webhook apply (persist-first)', () => {
           )
         )
         .limit(1);
-      expect(event?.appliedResult).toBe('applied_noop');
+      expect(event?.appliedResult).toBe('applied_with_issue');
+      expect(event?.appliedErrorCode).toBe('PAYMENT_STATE_BLOCKED');
     } finally {
       await cleanup(orderId, invoiceId);
     }
