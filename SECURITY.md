@@ -7,14 +7,12 @@ appreciate your help in resolving it responsibly. Here's how you can report it:
 
 1. **Contact me:**  
    Please send an email to
-   **[devlovers.net@gmail.com](mailto:devlovers.net@gmail.com)** with:
-
+   **[contact@devlovers.net](mailto:contact@devlovers.net)** with:
    - A clear description of the issue.
    - Steps to reproduce the vulnerability.
    - Any relevant code or logs for better understanding.
 
 2. **Handling process:**
-
    - I will acknowledge your report within **48 hours**.
    - Together, we will work on resolving the issue as quickly as possible.
 

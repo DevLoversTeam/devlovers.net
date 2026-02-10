@@ -44,10 +44,11 @@
     "dashboard": "Panel"
   },
   "homepage": {
-    "title": "DevLovers",
-    "subtitle": "Platforma do Przygotowania do Rozmów Kwalifikacyjnych",
-    "description": "Zbuduj prawdziwą pewność w frontend, backend i full-stack development dzięki interaktywnym pytaniom rekrutacyjnym, quizom i praktycznym wyjaśnieniom",
-    "cta": "Rozpocznij naukę",
+    "title": "DevLovers — Platforma do przygotowania do rozmów technicznych",
+    "subtitle": "Platforma do przygotowania do rozmów kwalifikacyjnych",
+    "description": "Przygotuj się do rozmów technicznych dzięki pytaniom, quizom, rankingom i wyjaśnieniom wspieranym przez AI.",
+    "ogImageAlt": "DevLovers — platforma do przygotowania do rozmów technicznych",
+    "cta": "Rozpocznij",
     "ctaVariants": {
       "1": "Bez presji. Po prostu zacznij",
       "2": "To może być ciekawsze, niż myślisz",
@@ -116,13 +117,11 @@
       },
       "control": {
         "title": "System Kontroli",
-        "description": "Naruszenia zasad są wykrywane automatycznie. Przy 3+ naruszeniach wynik nie będzie liczony do rankingu."
+        "description": "Naruszenia zasad są wykrywane automatycznie. Dla zarejestrowanych użytkowników wynik jest zawsze zapisywany w profilu, ale przy 4+ naruszeniach punkty nie będą liczone do rankingu."
       },
-      "time": {
-        "title": "Wymagania Czasowe",
-        "description": "Minimalny czas: {seconds} sekund (3 sekundy na pytanie). Wyniki zbyt szybkie nie będą liczone."
-      },
-      "startButton": "Rozpocznij Quiz"
+      "startButton": "Rozpocznij Quiz",
+      "guestWarning": "Grasz jako gość. Twój wynik nie zostanie zapisany.",
+      "continueAsGuest": "Kontynuuj jako gość"
     },
     "question": {
       "correct": "Poprawnie",
@@ -175,11 +174,12 @@
       "pointsAwarded": "+{points} punktów dodano do rankingu",
       "noPointsAwarded": "Nie przyznano punktów (wynik nie uległ poprawie)",
       "disqualified": "Nie przyznano punktów (zdyskwalifikowany z powodu naruszeń)",
-      "guestMessage": "Aby zapisać swój wynik i pojawić się w rankingu, zaloguj się lub zarejestruj",
+      "guestMessage": "Aby zapisać swój wynik, przejrzeć błędy i pojawić się w rankingu, zaloguj się lub zarejestruj",
       "loginButton": "Zaloguj się",
       "signupButton": "Zarejestruj się",
       "retryButton": "Spróbuj Ponownie",
-      "backButton": "Wróć do Tematów"
+      "backButton": "Wróć do Tematów",
+      "reviewButton": "Przejrzyj błędy"
     },
     "card": {
       "uncategorized": "Nieskategoryzowane",
@@ -249,7 +249,7 @@
     }
   },
   "footer": {
-    "builtWith": "Zbudowane z",
+    "builtWith": "Zbudowane przez",
     "byCommunity": "przez społeczność.",
     "privacyPolicy": "Polityka Prywatności",
     "termsOfService": "Warunki Świadczenia Usług"
@@ -435,7 +435,8 @@
       },
       "navigation": {
         "shopNav": "Nawigacja sklepu",
-        "home": "Strona główna"
+        "home": "Strona główna",
+        "shop": "Sklep"
       }
     },
     "catalog": {
@@ -956,6 +957,50 @@
       "noPoints": "Nie przyznano punktów (wynik nie uległ poprawie)",
       "viewLeaderboard": "Zobacz ranking",
       "tryAgain": "Spróbuj ponownie"
+    },
+        "quizResults": {
+      "title": "Wyniki quizów",
+      "noAttempts": "Nie przeszedłeś jeszcze żadnego quizu",
+      "startQuiz": "Spróbuj",
+      "score": "Wynik",
+      "integrity": "Czystość",
+      "points": "Punkty",
+      "scoreHint": "Liczba poprawnych odpowiedzi z ogólnej liczby",
+      "integrityHint": "Wskaźnik uczciwego przejścia (bez naruszeń)",
+      "pointsHint": "Punkty przyznane za poprawę wyniku",
+      "timeAgo": "{value} temu",
+      "mastered": "Opanowane",
+      "needsReview": "Powtórka",
+      "study": "Nauka",
+      "date": "Data",
+      "status": "Status"
+    },
+    "quizReview": {
+      "title": "Analiza błędów",
+      "subtitle": "{incorrect} z {total} — niepoprawnie",
+      "allCorrect": "Wszystkie odpowiedzi poprawne!",
+      "allCorrectHint": "Odpowiedziałeś poprawnie na wszystkie pytania",
+      "yourAnswer": "Twoja odpowiedź",
+      "correctAnswer": "Poprawna odpowiedź",
+      "explanation": "Wyjaśnienie",
+      "retakeQuiz": "Rozwiąż ponownie",
+      "backToDashboard": "Wróć do panelu",
+      "notFound": "Nie znaleziono próby",
+      "expandAll": "Rozwiń wszystko",
+      "collapseAll": "Zwiń wszystko"
+    },
+    "explainedTerms": {
+      "title": "Nauczone Terminy",
+      "subtitle": "Wyjaśnienia AI, które zapisałeś",
+      "empty": "Nie zapisałeś jeszcze żadnych wyjaśnień",
+      "emptyHint": "Zaznacz dowolny termin w Q&A, aby otrzymać wyjaśnienie AI",
+      "termCount": "{count} terminów zapisanych",
+      "explainedTermsButton": "Wyjaśnione Terminy ({count})",
+      "hideExplainedTerms": "Ukryj Terminy",
+      "noHiddenTerms": "Brak ukrytych terminów",
+      "ariaDragHandle": "Przeciągnij, aby zmienić kolejność {term}",
+      "ariaHide": "Ukryj {term}",
+      "ariaRestore": "Przywróć {term}"
     }
   },
   "aiHelper": {
@@ -966,6 +1011,7 @@
     "error": "Nie udało się wygenerować wyjaśnienia",
     "retry": "Spróbuj ponownie",
     "close": "Zamknij",
+    "cachedTooltip": "Kliknij, aby zobaczyć wyjaśnienie (zapisane w pamięci podręcznej)",
     "languages": {
       "uk": "UA",
       "en": "EN",

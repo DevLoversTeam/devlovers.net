@@ -7,6 +7,7 @@ import { Link } from '@/i18n/routing';
 interface HeaderButtonProps {
   href?: string;
   onClick?: () => void;
+  onLinkClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void;
 
   icon?: LucideIcon;
   children?: React.ReactNode;
@@ -15,6 +16,8 @@ interface HeaderButtonProps {
   showArrow?: boolean;
 
   label?: string;
+
+  isActive?: boolean;
 
   badge?: React.ReactNode;
   badgeClassName?: string;
@@ -26,10 +29,12 @@ interface HeaderButtonProps {
 export function HeaderButton({
   href,
   onClick,
+  onLinkClick,
   icon: Icon,
   children,
   variant = 'default',
   showArrow = false,
+  isActive = false,
   label,
   badge,
   badgeClassName = '',
@@ -64,7 +69,7 @@ export function HeaderButton({
   const content = (
     <>
       <span
-        className="absolute inset-0 opacity-0 transition-opacity duration-500 ease-out group-hover:opacity-100 group-active:opacity-100"
+        className={`absolute inset-0 transition-opacity duration-500 ease-out group-hover:opacity-100 group-active:opacity-100 ${isActive ? 'opacity-100' : 'opacity-0'}`}
         style={{
           background:
             'linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-hover) 100%)',
@@ -114,6 +119,7 @@ export function HeaderButton({
     }
     hover:text-white
     active:text-white
+    ${isActive ? 'text-white' : ''}
     ${className}
   `;
 
@@ -163,7 +169,7 @@ export function HeaderButton({
   return wrapWithBadge(
     <Link
       href={href}
-      onClick={onClick}
+      onClick={onLinkClick ?? onClick}
       className={baseClasses}
       aria-label={resolvedLabel}
       title={resolvedLabel}

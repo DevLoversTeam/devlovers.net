@@ -1,11 +1,12 @@
 'use client';
 
-import { Home, LogIn, Menu, ShoppingBag, X } from 'lucide-react';
+import { BookOpen, LogIn, Menu, ShoppingBag, X } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 
 import { LogoutButton } from '@/components/auth/logoutButton';
+import { useMobileMenu } from '@/components/header/MobileMenuContext';
 import { HeaderButton } from '@/components/shared/HeaderButton';
 import { Link, usePathname } from '@/i18n/routing';
 import { SITE_LINKS } from '@/lib/navigation';
@@ -32,6 +33,31 @@ export function AppMobileMenu({
   const tProducts = useTranslations('shop.products');
   const tBlog = useTranslations('blog');
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const {
+    isOpen: open,
+    isAnimating,
+    close,
+    toggle,
+    startNavigation,
+  } = useMobileMenu();
+
+  const currentCategory = searchParams.get('category');
+
+  const handleLinkClick = (
+    e: React.MouseEvent<HTMLAnchorElement>,
+    href: string
+  ) => {
+    e.preventDefault();
+    startNavigation(href);
+  };
+
+  const handleHeaderButtonLinkClick =
+    (href: string) => (e: React.MouseEvent<HTMLAnchorElement>) => {
+      e.preventDefault();
+      startNavigation(href);
+    };
 
   const getBlogCategoryLabel = (categoryName: string): string => {
     const key = categoryName.toLowerCase() as
@@ -40,44 +66,15 @@ export function AppMobileMenu({
       | 'insights'
       | 'news'
       | 'growth';
-    const categoryTranslations: Record<string, string> = {
+    const translations: Record<string, string> = {
       tech: tBlog('categories.tech'),
       career: tBlog('categories.career'),
       insights: tBlog('categories.insights'),
       news: tBlog('categories.news'),
       growth: tBlog('categories.growth'),
     };
-    return categoryTranslations[key] || categoryName;
+    return translations[key] || categoryName;
   };
-  const searchParams = useSearchParams();
-  const currentCategory = searchParams.get('category');
-  const [open, setOpen] = useState(false);
-  const [isAnimating, setIsAnimating] = useState(false);
-
-  const close = () => {
-    setIsAnimating(false);
-    setTimeout(() => setOpen(false), 200);
-  };
-
-  const toggle = () => {
-    if (open) {
-      close();
-    } else {
-      setOpen(true);
-      setTimeout(() => setIsAnimating(true), 10);
-    }
-  };
-
-  useEffect(() => {
-    if (!open) return;
-
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') close();
-    };
-
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [open]);
 
   const shopLinks = useMemo(
     () => [
@@ -107,25 +104,12 @@ export function AppMobileMenu({
     return [];
   }, [variant, shopLinks]);
 
-  useEffect(() => {
-    if (open) {
-      const scrollY = window.scrollY;
-
-      document.body.style.position = 'fixed';
-      document.body.style.top = `-${scrollY}px`;
-      document.body.style.width = '100%';
-      document.body.style.overflow = 'hidden';
-
-      return () => {
-        document.body.style.position = '';
-        document.body.style.top = '';
-        document.body.style.width = '';
-        document.body.style.overflow = '';
-
-        window.scrollTo(0, scrollY);
-      };
-    }
-  }, [open]);
+  const slugify = (value: string) =>
+    value
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-');
 
   const linkClass = (isActive: boolean) =>
     `rounded-md px-3 py-2 text-sm font-medium transition-colors ${
@@ -134,12 +118,28 @@ export function AppMobileMenu({
         : 'text-muted-foreground active:text-[var(--accent-hover)]'
     }`;
 
-  const slugify = (value: string) =>
-    value
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-');
+  // Lock body scroll when menu is open
+  useEffect(() => {
+    if (open) {
+      const scrollY = window.scrollY;
+      Object.assign(document.body.style, {
+        position: 'fixed',
+        top: `-${scrollY}px`,
+        width: '100%',
+        overflow: 'hidden',
+      });
+
+      return () => {
+        Object.assign(document.body.style, {
+          position: '',
+          top: '',
+          width: '',
+          overflow: '',
+        });
+        window.scrollTo(0, scrollY);
+      };
+    }
+  }, [open]);
 
   return (
     <>
@@ -151,7 +151,7 @@ export function AppMobileMenu({
           color: open ? 'var(--accent-primary)' : 'var(--muted-foreground)',
         }}
         aria-label={tAria('toggleMenu')}
-        aria-expanded={open ? 'true' : 'false'}
+        aria-expanded={open}
         aria-controls={open ? 'app-mobile-nav' : undefined}
       >
         {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -178,10 +178,15 @@ export function AppMobileMenu({
             }}
           >
             <div className="flex flex-col gap-1">
-              {variant === 'shop' ? (
+              {variant === 'shop' && (
                 <>
-                  <HeaderButton href="/" icon={Home} onClick={close}>
-                    {t('home')}
+                  <HeaderButton
+                    href="/shop"
+                    icon={ShoppingBag}
+                    isActive={pathname === '/shop'}
+                    onLinkClick={handleHeaderButtonLinkClick('/shop')}
+                  >
+                    {t('shop')}
                   </HeaderButton>
                   {links.map(link => {
                     const isActive =
@@ -189,11 +194,12 @@ export function AppMobileMenu({
                       ('category' in link
                         ? link.category === currentCategory
                         : currentCategory === null);
+
                     return (
                       <Link
                         key={link.href}
                         href={link.href}
-                        onClick={close}
+                        onClick={e => handleLinkClick(e, link.href)}
                         className={linkClass(isActive)}
                       >
                         {'labelKey' in link ? t(link.labelKey) : link.label}
@@ -201,12 +207,17 @@ export function AppMobileMenu({
                     );
                   })}
                 </>
-              ) : null}
+              )}
 
-              {variant === 'blog' ? (
+              {variant === 'blog' && (
                 <>
-                  <HeaderButton href="/" icon={Home} onClick={close}>
-                    {t('home')}
+                  <HeaderButton
+                    href="/blog"
+                    icon={BookOpen}
+                    isActive={pathname === '/blog'}
+                    onLinkClick={handleHeaderButtonLinkClick('/blog')}
+                  >
+                    {t('blog')}
                   </HeaderButton>
                   {blogCategories.map(category => {
                     const slug = slugify(category.title || '');
@@ -214,11 +225,12 @@ export function AppMobileMenu({
                     const isActive = pathname === href;
                     const displayTitle =
                       category.title === 'Growth' ? 'Career' : category.title;
+
                     return (
                       <Link
                         key={category._id}
                         href={href}
-                        onClick={close}
+                        onClick={e => handleLinkClick(e, href)}
                         className={linkClass(isActive)}
                       >
                         {getBlogCategoryLabel(displayTitle)}
@@ -226,9 +238,9 @@ export function AppMobileMenu({
                     );
                   })}
                 </>
-              ) : null}
+              )}
 
-              {variant === 'platform' ? (
+              {variant === 'platform' && (
                 <>
                   {links
                     .filter(link => link.href !== '/shop')
@@ -236,7 +248,7 @@ export function AppMobileMenu({
                       <Link
                         key={link.href}
                         href={link.href}
-                        onClick={close}
+                        onClick={e => handleLinkClick(e, link.href)}
                         className={linkClass(pathname === link.href)}
                       >
                         {'labelKey' in link ? t(link.labelKey) : link.label}
@@ -247,22 +259,22 @@ export function AppMobileMenu({
                     href="/shop"
                     icon={ShoppingBag}
                     showArrow
-                    onClick={close}
+                    onLinkClick={handleHeaderButtonLinkClick('/shop')}
                   >
                     {t('shop')}
                   </HeaderButton>
                 </>
-              ) : null}
+              )}
 
-              {variant === 'shop' && showAdminLink ? (
+              {variant === 'shop' && showAdminLink && (
                 <Link
                   href="/shop/admin/products/new"
-                  onClick={close}
+                  onClick={e => handleLinkClick(e, '/shop/admin/products/new')}
                   className={linkClass(pathname === '/shop/admin/products/new')}
                 >
                   {tMobileMenu('newProduct')}
                 </Link>
-              ) : null}
+              )}
 
               <div className="bg-border my-2 h-px" />
 
@@ -270,23 +282,23 @@ export function AppMobileMenu({
                 <>
                   <Link
                     href="/dashboard"
-                    onClick={close}
+                    onClick={e => handleLinkClick(e, '/dashboard')}
                     className={linkClass(pathname === '/dashboard')}
                   >
                     {t('dashboard')}
                   </Link>
 
-                  {showAdminLink ? (
+                  {showAdminLink && (
                     <Link
                       href="/shop/admin"
                       aria-label={tAria('shopAdmin')}
                       title={tAria('shopAdmin')}
-                      onClick={close}
+                      onClick={e => handleLinkClick(e, '/shop/admin')}
                       className={linkClass(pathname === '/shop/admin')}
                     >
                       {tMobileMenu('admin')}
                     </Link>
-                  ) : null}
+                  )}
 
                   <div onClick={close}>
                     <LogoutButton />

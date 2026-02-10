@@ -49,19 +49,6 @@ function calculateIntegrityScore(violations: ViolationEvent[]): number {
   return Math.max(0, 100 - penalty);
 }
 
-function validateTimeSpent(
-  startedAt: Date,
-  completedAt: Date,
-  questionCount: number
-): boolean {
-  const MIN_SECONDS_PER_QUESTION = 1;
-  const timeSpentSeconds = Math.floor(
-    (completedAt.getTime() - startedAt.getTime()) / 1000
-  );
-  const minRequiredTime = questionCount * MIN_SECONDS_PER_QUESTION;
-
-  return timeSpentSeconds >= minRequiredTime;
-}
 
 async function getQuizQuestionIds(quizId: string): Promise<string[]> {
   const rows = await db
@@ -176,18 +163,6 @@ export async function submitQuizAttempt(
       return { success: false, error: 'Invalid time values' };
     }
 
-    const isValidTime = validateTimeSpent(
-      startedAtDate,
-      completedAtDate,
-      questionIds.length
-    );
-    if (!isValidTime) {
-      return {
-        success: false,
-        error: 'Invalid time spent: quiz completed too quickly',
-      };
-    }
-
     const percentage = (
       (correctAnswersCount / questionIds.length) *
       100
@@ -260,8 +235,18 @@ export async function initializeQuizCache(
   quizId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const { getOrCreateQuizAnswersCache } =
+    const { getOrCreateQuizAnswersCache, clearVerifiedQuestions } =
       await import('@/lib/quiz/quiz-answers-redis');
+
+    const { resolveRequestIdentifier } = await import('@/lib/quiz/resolve-identifier');
+    const { headers } = await import('next/headers');
+    const headersList = await headers();
+    const identifier = resolveRequestIdentifier(headersList);
+
+    if (identifier) {
+      await clearVerifiedQuestions(quizId, identifier);
+    }
+
     const success = await getOrCreateQuizAnswersCache(quizId);
 
     if (!success) {

@@ -1,8 +1,9 @@
 'use client';
 
-import { Home } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
+import { useMobileMenu } from '@/components/header/MobileMenuContext';
 import { AnimatedNavLink } from '@/components/shared/AnimatedNavLink';
 import { HeaderButton } from '@/components/shared/HeaderButton';
 import { usePathname } from '@/i18n/routing';
@@ -29,6 +30,7 @@ export function BlogCategoryLinks({
   const t = useTranslations('blog');
   const tNav = useTranslations('navigation');
   const pathname = usePathname();
+  const { startNavigation } = useMobileMenu();
 
   const getCategoryLabel = (categoryName: string): string => {
     const key = categoryName.toLowerCase() as
@@ -60,8 +62,17 @@ export function BlogCategoryLinks({
       className={cn('flex items-center gap-2', className)}
       aria-label="Blog categories"
     >
-      <HeaderButton href="/" onClick={onNavigate} icon={Home}>
-        {tNav('home')}
+      <HeaderButton
+        href="/blog"
+        onLinkClick={e => {
+          e.preventDefault();
+          if (onNavigate) onNavigate();
+          startNavigation('/blog');
+        }}
+        icon={BookOpen}
+        isActive={pathname === '/blog'}
+      >
+        {tNav('blog')}
       </HeaderButton>
 
       {items.map(category => {
