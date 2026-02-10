@@ -42,7 +42,7 @@ describe('P0-3.3 Stripe webhook contract: disabled vs invalid signature', () => 
   it('returns 500 WEBHOOK_DISABLED when webhook env is missing/disabled', async () => {
     const { POST } = await import('@/app/api/shop/webhooks/stripe/route');
 
-    process.env.PAYMENTS_ENABLED = 'true';
+    process.env.STRIPE_PAYMENTS_ENABLED = 'true';
     process.env.STRIPE_SECRET_KEY = 'sk_test_dummy';
     process.env.STRIPE_WEBHOOK_SECRET = '';
 
@@ -56,7 +56,7 @@ describe('P0-3.3 Stripe webhook contract: disabled vs invalid signature', () => 
   });
 
   it('returns 400 INVALID_SIGNATURE when signature is invalid', async () => {
-    process.env.PAYMENTS_ENABLED = 'true';
+    process.env.STRIPE_PAYMENTS_ENABLED = 'true';
     process.env.STRIPE_SECRET_KEY = 'sk_test_dummy';
     process.env.STRIPE_WEBHOOK_SECRET = 'whsec_test_dummy';
 

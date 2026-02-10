@@ -4,10 +4,11 @@ export const paymentStatusValues = [
   'paid',
   'failed',
   'refunded',
+  'needs_review',
 ] as const;
 
 export type PaymentStatus = (typeof paymentStatusValues)[number];
 
-export const paymentProviderValues = ['stripe', 'none'] as const;
+export const paymentProviderValues = ['stripe', 'monobank', 'none'] as const;
 
 export type PaymentProvider = (typeof paymentProviderValues)[number];

@@ -88,7 +88,6 @@ const publicProductSelect = {
   createdAt: products.createdAt,
   updatedAt: products.updatedAt,
 
-  // PRICE SOURCE OF TRUTH:
   price: productPrices.price,
   originalPrice: productPrices.originalPrice,
   currency: productPrices.currency,
@@ -145,15 +144,12 @@ function buildWhereClause(options: {
 
   if (options.category && options.category !== 'all') {
     if (options.category === 'new-arrivals') {
-      // "New Arrivals" is derived, not "featured".
-      // Back-compat: also allow products.category='new-arrivals' if you already saved such rows.
       const clause = or(
         eq(products.badge, 'NEW'),
         eq(products.category, 'new-arrivals')
       );
       if (clause) conditions.push(clause);
     } else if (options.category === 'sale') {
-      // sale = has compare-at/original price for the selected currency
       conditions.push(sql`${productPrices.originalPriceMinor} IS NOT NULL`);
     } else {
       conditions.push(eq(products.category, options.category));

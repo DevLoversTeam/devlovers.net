@@ -1,8 +1,10 @@
-import { sql } from 'drizzle-orm';
+import { and, desc, eq, gt, sql } from 'drizzle-orm';
 import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { db } from '@/db';
+import { productPrices, products } from '@/db/schema/shop';
+import { createOrderWithItems } from '@/lib/services/orders';
 
 const ORIG_ENV = process.env;
 
@@ -22,23 +24,30 @@ function makeReq(url: string, body: string, headers?: Record<string, string>) {
 }
 
 async function pickActiveProductIdForCurrency(currency: 'UAH' | 'USD') {
-  const res = (await db.execute(sql`
-    select p.id
-    from products p
-    inner join product_prices pp
-      on pp.product_id = p.id
-     and pp.currency = ${currency}
-    where p.is_active = true
-      and p.stock > 0
-      and pp.price_minor > 0
-    order by p.updated_at desc
-    limit 1
-  `)) as DbRows<{ id: string }>;
+  const [row] = await db
+    .select({ id: products.id })
+    .from(products)
+    .innerJoin(
+      productPrices,
+      and(
+        eq(productPrices.productId, products.id),
+        eq(productPrices.currency, currency)
+      )
+    )
+    .where(
+      and(
+        eq(products.isActive, true),
+        gt(products.stock, 0),
+        gt(productPrices.priceMinor, 0)
+      )
+    )
+    .orderBy(desc(products.updatedAt))
+    .limit(1);
 
-  const id = res.rows?.[0]?.id;
+  const id = row?.id;
   if (!id) {
     throw new Error(
-      `No active product found for currency=${currency}. Ensure DB has products.is_active=true, stock>0, and product_prices row.`
+      `No active product found for currency=${currency}. Ensure DB has products.isActive=true, stock>0, and product_prices row.`
     );
   }
   return id;
@@ -56,7 +65,7 @@ describe('P0-3.4 Stripe webhook: amount/currency mismatch (minor) must not set p
   });
 
   it('mismatch: does NOT set paid and stores pspStatusReason + pspMetadata(expected/actual + event id)', async () => {
-    process.env.PAYMENTS_ENABLED = 'false';
+    process.env.STRIPE_PAYMENTS_ENABLED = 'false';
 
     vi.doMock('@/lib/auth', async () => {
       const actual = await vi.importActual<any>('@/lib/auth');
@@ -82,34 +91,21 @@ describe('P0-3.4 Stripe webhook: amount/currency mismatch (minor) must not set p
         }),
       };
     });
-    const { POST: checkoutPOST } =
-      await import('@/app/api/shop/checkout/route');
-
     const productId = await pickActiveProductIdForCurrency('UAH');
     const idemKey =
       typeof crypto !== 'undefined' && 'randomUUID' in crypto
         ? crypto.randomUUID()
         : `idem_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 
-    const checkoutBody = JSON.stringify({
+    const { order } = await createOrderWithItems({
       items: [{ productId, quantity: 1 }],
+      idempotencyKey: idemKey,
+      userId: null,
+      locale: 'uk',
     });
 
-    const checkoutRes = await checkoutPOST(
-      makeReq('http://localhost/api/shop/checkout', checkoutBody, {
-        'accept-language': 'uk-UA,uk;q=0.9',
-        'idempotency-key': idemKey,
-        origin: 'http://localhost:3000',
-      })
-    );
+    const orderId: string = order.id;
 
-    expect([200, 201]).toContain(checkoutRes.status);
-
-    const checkoutJson: any = await checkoutRes.json();
-    expect(checkoutJson?.success).toBe(true);
-
-    const orderId: string =
-      checkoutJson?.order?.id ?? checkoutJson?.orderId ?? '';
     expect(orderId).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
     );
@@ -137,7 +133,7 @@ describe('P0-3.4 Stripe webhook: amount/currency mismatch (minor) must not set p
       where id = ${orderId}
     `);
 
-    process.env.PAYMENTS_ENABLED = 'true';
+    process.env.STRIPE_PAYMENTS_ENABLED = 'true';
     process.env.STRIPE_SECRET_KEY = 'stripe_secret_key_placeholder';
     process.env.STRIPE_WEBHOOK_SECRET = 'stripe_webhook_secret_placeholder';
 

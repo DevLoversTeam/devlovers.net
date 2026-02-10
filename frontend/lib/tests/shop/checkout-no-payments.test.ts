@@ -1,4 +1,3 @@
-// frontend/lib/tests/checkout-no-payments.test.ts
 import crypto from 'crypto';
 import { eq, sql } from 'drizzle-orm';
 import { NextRequest } from 'next/server';
