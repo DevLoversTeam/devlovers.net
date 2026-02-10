@@ -1,6 +1,6 @@
 [build]
   base = "frontend"
-  command = "npm run build"
+  command = "npm ci --include=optional && npm run build"
   publish = ".next"
 
 [functions]
