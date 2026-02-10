@@ -56,9 +56,6 @@ describe('P0-3.4 Stripe webhook: amount/currency mismatch (minor) must not set p
   });
 
   it('mismatch: does NOT set paid and stores pspStatusReason + pspMetadata(expected/actual + event id)', async () => {
-    /**
-     * 1) Create an order with payments disabled (so no Stripe network calls).
-     */
     process.env.STRIPE_PAYMENTS_ENABLED = 'false';
 
     vi.doMock('@/lib/auth', async () => {
@@ -70,14 +67,12 @@ describe('P0-3.4 Stripe webhook: amount/currency mismatch (minor) must not set p
       };
     });
 
-    // IMPORTANT: mock stripe module BEFORE importing ANY route modules
-    // so webhook route doesn't cache the real module.
     vi.doMock('@/lib/psp/stripe', async () => {
       const actual = await vi.importActual<any>('@/lib/psp/stripe');
       return {
         __esModule: true,
         ...actual,
-        // IMPORTANT: route.ts calls this SYNC (no await). So mock MUST be sync.
+
         verifyWebhookSignature: vi.fn((params: any) => {
           const rawBody = params?.rawBody;
           if (typeof rawBody !== 'string' || !rawBody.trim()) {
@@ -87,9 +82,8 @@ describe('P0-3.4 Stripe webhook: amount/currency mismatch (minor) must not set p
         }),
       };
     });
-    const { POST: checkoutPOST } = await import(
-      '@/app/api/shop/checkout/route'
-    );
+    const { POST: checkoutPOST } =
+      await import('@/app/api/shop/checkout/route');
 
     const productId = await pickActiveProductIdForCurrency('UAH');
     const idemKey =
@@ -120,9 +114,6 @@ describe('P0-3.4 Stripe webhook: amount/currency mismatch (minor) must not set p
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
     );
 
-    /**
-     * 2) Read expected total_amount_minor + currency from DB.
-     */
     const row0 = (await db.execute(sql`
       select total_amount_minor, currency
       from orders
@@ -137,9 +128,6 @@ describe('P0-3.4 Stripe webhook: amount/currency mismatch (minor) must not set p
     expect(expectedMinor).toBeGreaterThan(0);
     expect(expectedCurrency).toBe('UAH');
 
-    /**
-     * 3) Turn this order into a "Stripe" order in DB (no real Stripe PI needed).
-     */
     const piId = `pi_test_mismatch_${orderId.slice(0, 8)}`;
     await db.execute(sql`
       update orders
@@ -149,10 +137,6 @@ describe('P0-3.4 Stripe webhook: amount/currency mismatch (minor) must not set p
       where id = ${orderId}
     `);
 
-    /**
-     * 4) Prepare mocked Stripe event with mismatched amount (expectedMinor + 1).
-     *    We mock verifyWebhookSignature so we don't need real Stripe signature.
-     */
     process.env.STRIPE_PAYMENTS_ENABLED = 'true';
     process.env.STRIPE_SECRET_KEY = 'stripe_secret_key_placeholder';
     process.env.STRIPE_WEBHOOK_SECRET = 'stripe_webhook_secret_placeholder';
@@ -176,9 +160,8 @@ describe('P0-3.4 Stripe webhook: amount/currency mismatch (minor) must not set p
       },
     };
 
-    const { POST: webhookPOST } = await import(
-      '@/app/api/shop/webhooks/stripe/route'
-    );
+    const { POST: webhookPOST } =
+      await import('@/app/api/shop/webhooks/stripe/route');
 
     const webhookRes = await webhookPOST(
       makeReq(
@@ -190,12 +173,8 @@ describe('P0-3.4 Stripe webhook: amount/currency mismatch (minor) must not set p
       )
     );
 
-    // webhook handler should accept the event and record mismatch (usually 200)
     expect([200, 202]).toContain(webhookRes.status);
 
-    /**
-     * 5) Assert DB: not paid + pspStatusReason set + pspMetadata contains expected/actual + event id.
-     */
     const row1 = (await db.execute(sql`
       select payment_status, psp_status_reason, psp_metadata
       from orders
@@ -215,7 +194,7 @@ describe('P0-3.4 Stripe webhook: amount/currency mismatch (minor) must not set p
     expect(reason && reason.length > 0).toBe(true);
 
     const metaObj =
-      typeof metaRaw === 'string' ? JSON.parse(metaRaw) : metaRaw ?? {};
+      typeof metaRaw === 'string' ? JSON.parse(metaRaw) : (metaRaw ?? {});
 
     expect(metaObj?.mismatch?.eventId).toBe(evtId);
     expect(metaObj?.mismatch?.expected?.amountMinor).toBe(expectedMinor);

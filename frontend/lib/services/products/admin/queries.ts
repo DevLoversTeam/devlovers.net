@@ -42,7 +42,6 @@ export async function getAdminProductPrices(
 
   return rows.map(r => ({
     currency: r.currency as CurrencyCode,
-    // Defensive: some DB drivers return NUMERIC/DECIMAL as string/unknown at runtime; enforce safe integer minor-units here.
     priceMinor: assertMoneyMinorInt(
       r.priceMinor,
       `${String(r.currency)} priceMinor`

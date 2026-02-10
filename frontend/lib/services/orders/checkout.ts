@@ -276,7 +276,6 @@ function parseVariantList(raw: unknown): string[] {
         return Array.from(new Set(out));
       }
     } catch {
-      // Intentionally empty: fall through to delimiter-based parsing
     }
   }
 

@@ -64,7 +64,6 @@ describe('monobank http client error mapping', () => {
 
     const { fetchWebhookPubKey, PspError } = await import('@/lib/psp/monobank');
 
-    // Attach rejection handler immediately to avoid PromiseRejectionHandledWarning
     const p = fetchWebhookPubKey().then(
       () => null,
       e => e

@@ -3,7 +3,6 @@ import 'server-only';
 import crypto from 'node:crypto';
 
 import { getMonobankEnv } from '@/lib/env/monobank';
-// import { MONO_CCY, SHOP_CURRENCY } from '@/lib/shop/currency';
 import { logError } from '@/lib/logging';
 export const MONO_CCY = 980 as const;
 export const MONO_CURRENCY = 'UAH' as const;
@@ -282,7 +281,6 @@ export function buildMonobankInvoicePayload(
     },
     redirectUrl: args.redirectUrl,
     webHookUrl: args.webhookUrl,
-    // validity: ... (не чіпаємо в D0)
   };
 
   return payload;
@@ -397,7 +395,6 @@ async function requestMono<T>(
     body: args.body === undefined ? undefined : JSON.stringify(args.body),
     signal: controller.signal,
   });
-  // If timeout wins the race, fetch may reject later (AbortError). Prevent unhandled rejection noise.
   void fetchPromise.catch(() => undefined);
 
   try {
@@ -729,13 +726,9 @@ export async function removeInvoice(
     baseUrl: env.apiBaseUrl,
   });
 
-  // Monobank can return 200 with empty body for invoice/remove.
-  // Treat 2xx as success even when res.data is null.
   if (res.data === null || res.data === undefined) {
     return { invoiceId, removed: true };
   }
-
-  // If body exists, keep it as raw for observability, but do not require invoiceId/status.
   if (typeof res.data !== 'object') {
     throw new Error('Monobank remove invoice returned invalid payload');
   }

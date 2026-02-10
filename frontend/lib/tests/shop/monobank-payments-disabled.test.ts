@@ -32,7 +32,6 @@ const __prevDatabaseUrl = process.env.DATABASE_URL;
 
 beforeAll(() => {
   process.env.RATE_LIMIT_DISABLED = '1';
-  // Ensure Monobank provider is "enabled" for this test; otherwise checkout returns 422 INVALID_REQUEST.
   process.env.MONO_MERCHANT_TOKEN = 'test_mono_token';
   process.env.PAYMENTS_ENABLED = 'false';
   process.env.APP_ORIGIN = 'http://localhost:3000';

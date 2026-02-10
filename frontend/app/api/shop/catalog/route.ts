@@ -54,7 +54,6 @@ export async function GET(request: NextRequest) {
   const { locale, filter, ...rest } = raw;
   const effectiveLocale = normalizeLocale(locale);
 
-  // legacy support: ?filter=new => sort=newest (only if sort not provided)
   const normalizedRest: Record<string, string | undefined> = { ...rest };
   if (filter === 'new' && !normalizedRest.sort) {
     normalizedRest.sort = 'newest';

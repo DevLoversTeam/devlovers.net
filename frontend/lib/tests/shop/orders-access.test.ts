@@ -38,7 +38,6 @@ describe("P0-SEC-1.1: GET /api/shop/orders/[id] access control", () => {
       method: "GET",
     })
 
-    // route expects: context: { params: Promise<{ id: string }> }
     const res = await (GET as any)(req, { params: Promise.resolve({ id }) })
     return res as Response
   }
@@ -59,7 +58,7 @@ describe("P0-SEC-1.1: GET /api/shop/orders/[id] access control", () => {
     const user: MockUser = { id: otherUserId, role: "user" }
     ;(getCurrentUser as any).mockResolvedValue(user)
 
-    mockDbRows([]) // whereClause should filter out чужий order => 0 rows
+    mockDbRows([]) 
 
     const res = await callGet(orderId)
     expect(res.status).toBe(404)

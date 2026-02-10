@@ -20,7 +20,6 @@ const updateMock = vi.fn((table: unknown) => ({
   set: (values: Record<string, unknown>) => {
     updateCalls.push({ table, values });
 
-    // Simulate Tx#2 persistence failure specifically on attempts update
     if (table === paymentAttempts) {
       throw new Error('UPDATE_FAIL');
     }
@@ -30,7 +29,6 @@ const updateMock = vi.fn((table: unknown) => ({
 }));
 
 const transactionMock = vi.fn(async (fn: any) => {
-  // Run the tx callback so the failure happens at the intended line (Tx#2 update).
   return await fn({ select: selectMock, update: updateMock });
 });
 
@@ -39,7 +37,6 @@ const dbMock = {
   select: selectMock,
   update: updateMock,
 };
-
 
 vi.mock('@/db', () => ({
   db: dbMock,

@@ -12,7 +12,7 @@ describe('P0-3.x Restock stale pending orders: stripe orphan cleanup', () => {
     const orderId = crypto.randomUUID();
     const idem = `test-stale-orphan-stripe-${crypto.randomUUID()}`;
 
-    const createdAt = new Date(Date.now() - 2 * 60 * 60 * 1000); // 2h ago
+    const createdAt = new Date(Date.now() - 2 * 60 * 60 * 1000);
     const totalAmountMinor = 1234;
 
     try {

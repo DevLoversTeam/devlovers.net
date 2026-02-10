@@ -19,7 +19,6 @@ function safeLineTotalMinor(qty: unknown, unit: unknown): number {
   ) {
     return 0;
   }
-  // qty must be >0; unit can be 0, but not negative (canonical builder should reject too)
   if (qty <= 0 || unit < 0) return 0;
 
   const total = BigInt(qty) * BigInt(unit);

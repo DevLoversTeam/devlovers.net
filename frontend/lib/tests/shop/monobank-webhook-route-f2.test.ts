@@ -10,7 +10,9 @@ import { resetEnvCache } from '@/lib/env';
 import { buildMonobankAttemptIdempotencyKey } from '@/lib/services/orders/attempt-idempotency';
 import { toDbMoney } from '@/lib/shop/money';
 
-const verifyWebhookSignatureWithRefreshMock = vi.fn(async () => true);
+const verifyWebhookSignatureWithRefreshMock = vi.fn(
+  async (..._args: unknown[]) => true
+);
 
 vi.mock('@/lib/psp/monobank', () => ({
   verifyWebhookSignatureWithRefresh: (args: unknown) =>

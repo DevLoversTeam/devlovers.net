@@ -14,7 +14,7 @@ vi.mock('@/lib/auth', async () => {
     await vi.importActual<typeof import('@/lib/auth')>('@/lib/auth');
   return {
     ...actual,
-    getCurrentUser: async () => null, // guest
+    getCurrentUser: async () => null, 
   };
 });
 
@@ -88,7 +88,6 @@ afterAll(async () => {
   }
 
   if (createdProductIds.length) {
-    // на випадок якщо orderId став null / не каскадиться
     await db
       .delete(orderItems)
       .where(inArray(orderItems.productId, createdProductIds));

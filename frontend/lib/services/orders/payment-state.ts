@@ -14,14 +14,12 @@ export type PaymentTransitionSource =
   | 'janitor'
   | 'system';
 
-// Stripe/Monobank flow transitions
 const ALLOWED_FROM_STRIPE: Record<PaymentStatus, readonly PaymentStatus[]> = {
   pending: ['requires_payment'],
   requires_payment: ['pending'],
   paid: ['pending', 'requires_payment'],
   failed: ['pending', 'requires_payment'],
   refunded: ['paid', 'pending', 'requires_payment'],
-  // allow entering "needs_review" from anywhere (triage state)
   needs_review: [
     'pending',
     'requires_payment',
@@ -32,16 +30,12 @@ const ALLOWED_FROM_STRIPE: Record<PaymentStatus, readonly PaymentStatus[]> = {
   ],
 };
 
-// payment_provider='none' (no-payments) rules:
-// DB CHECK already enforces only ('paid','failed'), and in this workflow 'paid' is not finality.
-// We allow paid -> failed (e.g. inventory failed / stale orphan), but NOT failed -> paid.
 const ALLOWED_FROM_NONE: Record<PaymentStatus, readonly PaymentStatus[]> = {
   pending: [],
   requires_payment: [],
   paid: ['paid'],
   failed: ['paid', 'failed'],
   refunded: [],
-  // provider='none': DB CHECK typically disallows needs_review (only paid/failed)
   needs_review: [],
 };
 

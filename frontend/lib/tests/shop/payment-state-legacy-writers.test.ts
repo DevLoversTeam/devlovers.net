@@ -106,8 +106,7 @@ function findMatchingBrace(src: string, start: number): number {
         continue;
       }
       if (ch === '`') inTemplate = false;
-      // IMPORTANT: ignore everything inside template literals so braces there
-      // do not affect object-literal matching.
+
       continue;
     }
 
@@ -162,7 +161,6 @@ function hasDirectPaymentStatusWriter(src: string): boolean {
     let i = idx + '.set('.length;
     while (i < src.length && /\s/.test(src[i]!)) i++;
 
-    // Only count direct object-literal writes: .set({ ... })
     if (src[i] !== '{') {
       from = i;
       continue;
@@ -170,7 +168,6 @@ function hasDirectPaymentStatusWriter(src: string): boolean {
 
     const end = findMatchingBrace(src, i);
     if (end === -1) {
-      // malformed/unexpected; skip to avoid false positives
       from = i + 1;
       continue;
     }

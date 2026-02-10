@@ -658,16 +658,6 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  // if (selectedProvider === 'stripe' && !stripePaymentsEnabled) {
-  //   logWarn('checkout_payments_disabled', {
-  //     ...authMeta,
-  //     code: 'PAYMENTS_DISABLED',
-  //     provider: 'stripe',
-  //   });
-
-  //   return errorResponse('PAYMENTS_DISABLED', 'Payments are disabled.', 503);
-  // }
-
   try {
     const result = await createOrderWithItems({
       items,
@@ -686,8 +676,6 @@ export async function POST(request: NextRequest) {
       paymentIntentId: order.paymentIntentId ?? null,
     };
 
-    // NOTE: Some schemas/types still narrow order.paymentProvider to 'stripe'|'none'.
-    // Runtime may be 'monobank' here; widen locally to avoid TS2367.
     const orderProvider = order.paymentProvider as unknown as
       | 'stripe'
       | 'monobank'

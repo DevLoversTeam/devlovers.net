@@ -120,7 +120,6 @@ function parseWebhookPayload(rawBody: string): {
 
 function parseTimestampMs(value: unknown): number | null {
   if (typeof value === 'number' && Number.isFinite(value)) {
-    // Heuristic: values under 1e11 are likely seconds, otherwise ms.
     const ms = value < 1e11 ? value * 1000 : value;
     return Number.isFinite(ms) ? ms : null;
   }
@@ -327,15 +326,12 @@ export async function applyMonoWebhookEvent(args: {
 
   const { appliedResult, restockOrderId, restockReason } =
     await (async (): Promise<MonobankApplyOutcome> => {
-      // neon-http driver: no db.transaction() support
       const tx = db;
       let restockReason: 'failed' | 'refunded' | null = null;
       let restockOrderId: string | null = null;
       let appliedResult: ApplyResult = 'applied';
 
       const now = new Date();
-
-      // 1) Find attempt (prefer reference UUID if provided) + lock
       const referenceAttemptId =
         parsed.normalized.reference && UUID_RE.test(parsed.normalized.reference)
           ? parsed.normalized.reference
@@ -381,7 +377,6 @@ export async function applyMonoWebhookEvent(args: {
         return { appliedResult, restockReason, restockOrderId };
       }
 
-      // 2) Load order + lock
       const orderRes = (await tx.execute(sql`
         select id, payment_status, payment_provider, status, currency, total_amount_minor, psp_metadata
         from orders
@@ -428,7 +423,6 @@ export async function applyMonoWebhookEvent(args: {
           ? providerModifiedAt
           : attemptProviderModifiedAt;
 
-      // Ordering guard (providerModifiedAt monotonic)
       if (
         providerModifiedAt &&
         attemptProviderModifiedAt &&
@@ -482,8 +476,6 @@ export async function applyMonoWebhookEvent(args: {
           source: 'monobank_webhook',
           note: `event:${eventId}:${status}`,
         });
-
-        // ok if applied OR already in desired state
         const ok =
           res.applied ||
           (res.currentProvider === 'monobank' && res.from === to);
@@ -495,7 +487,6 @@ export async function applyMonoWebhookEvent(args: {
         };
       };
 
-      // 3) Amount/currency mismatch -> needs_review (never paid)
       if (mismatch.mismatch) {
         appliedResult = 'applied_with_issue';
 
@@ -547,8 +538,6 @@ export async function applyMonoWebhookEvent(args: {
 
         return { appliedResult, restockReason, restockOrderId };
       }
-
-      // 4) Paid is terminal: any later non-success => noop
       if (orderRow.payment_status === 'paid' && status !== 'success') {
         appliedResult = 'applied_noop';
         await tx
@@ -564,7 +553,6 @@ export async function applyMonoWebhookEvent(args: {
         return { appliedResult, restockReason, restockOrderId };
       }
 
-      // 5) Once needs_review -> don't auto-flip anymore
       if (orderRow.payment_status === 'needs_review') {
         appliedResult = 'applied_noop';
         await tx
@@ -580,7 +568,6 @@ export async function applyMonoWebhookEvent(args: {
         return { appliedResult, restockReason, restockOrderId };
       }
 
-      // 6) Out-of-order: failed/refunded -> success => needs_review
       if (
         (orderRow.payment_status === 'failed' ||
           orderRow.payment_status === 'refunded') &&
@@ -622,7 +609,6 @@ export async function applyMonoWebhookEvent(args: {
         return { appliedResult, restockReason, restockOrderId };
       }
 
-      // 7) Success
       if (status === 'success') {
         const tr = await transitionPaymentStatus('paid');
 
@@ -643,7 +629,6 @@ export async function applyMonoWebhookEvent(args: {
           return { appliedResult, restockReason, restockOrderId };
         }
 
-        // окремо апдейтимо інші поля БЕЗ paymentStatus
         await tx
           .update(orders)
           .set({
@@ -684,7 +669,6 @@ export async function applyMonoWebhookEvent(args: {
         return { appliedResult: 'applied', restockReason, restockOrderId };
       }
 
-      // 8) Processing/created => noop
       if (status === 'processing' || status === 'created') {
         appliedResult = 'applied_noop';
         await tx
@@ -700,7 +684,6 @@ export async function applyMonoWebhookEvent(args: {
         return { appliedResult, restockReason, restockOrderId };
       }
 
-      // 9) Failure/expired/reversed
       if (
         status === 'failure' ||
         status === 'expired' ||
@@ -728,7 +711,6 @@ export async function applyMonoWebhookEvent(args: {
           return { appliedResult, restockReason, restockOrderId };
         }
 
-        // окремо апдейтимо інші поля БЕЗ paymentStatus
         await tx
           .update(orders)
           .set({

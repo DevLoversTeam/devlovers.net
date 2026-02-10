@@ -479,8 +479,6 @@ export async function cancelMonobankUnpaidPayment(args: {
   let pspResponse: Record<string, unknown> | null = null;
 
   try {
-    // For unpaid checkout cancellation we tear down the hosted invoice via
-    // Monobank `invoice/remove` (not payment cancel/refund semantics).
     const result = await removeInvoice(cancelRow.invoiceId);
     pspResponse =
       result && typeof result === 'object' && !Array.isArray(result)

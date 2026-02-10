@@ -1,14 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
 
-// E2 flow map (exact names + paths):
-// - Route: POST `frontend/app/api/shop/checkout/route.ts`
-// - Service: `createMonoAttemptAndInvoice` + `createMonobankAttemptAndInvoice`
-//   in `frontend/lib/services/orders/monobank.ts`
-// - Tx#1 attempt insert: `createCreatingAttempt` (same file)
-// - PSP call: `createMonobankInvoice` (`frontend/lib/psp/monobank.ts`)
-// - Tx#2 finalize: `finalizeAttemptWithInvoice` (same file)
-// - Cancel + restock: `cancelOrderAndRelease` (same file)
-
 vi.mock('@/lib/logging', () => ({
   logWarn: vi.fn(),
   logError: vi.fn(),
