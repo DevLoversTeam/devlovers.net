@@ -18,8 +18,12 @@ import { getOrderById } from './summary';
 type MonobankRefundRow = typeof monobankRefunds.$inferSelect;
 type RefundStatus = MonobankRefundRow['status'];
 
-function invalid(code: string, message: string): InvalidPayloadError {
-  return new InvalidPayloadError(message, { code });
+function invalid(
+  code: string,
+  message: string,
+  details?: Record<string, unknown>
+): InvalidPayloadError {
+  return new InvalidPayloadError(message, { code, details });
 }
 
 function toTrimmedOrNull(value: unknown): string | null {
@@ -309,9 +313,15 @@ export async function requestMonobankFullRefund(args: {
     if (!inserted[0]) {
       const conflict = await getExistingRefund(extRef);
       if (!conflict) {
-        throw new PspUnavailableError('Refund idempotency conflict.', {
+        logWarn('monobank_refund_idempotency_conflict', {
           orderId: args.orderId,
           requestId: args.requestId,
+          extRef,
+        });
+        throw invalid('REFUND_CONFLICT', 'Refund idempotency conflict.', {
+          orderId: args.orderId,
+          requestId: args.requestId,
+          extRef,
         });
       }
 

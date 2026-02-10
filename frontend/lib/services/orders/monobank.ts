@@ -197,22 +197,28 @@ async function markAttemptFailed(args: {
   errorMessage: string;
   meta?: Record<string, unknown>;
 }) {
+  const now = new Date();
+  const metaPatch = args.meta ?? {};
   await db
     .update(paymentAttempts)
     .set({
       status: 'failed',
-      finalizedAt: new Date(),
-      updatedAt: new Date(),
+      finalizedAt: now,
+      updatedAt: now,
       lastErrorCode: args.errorCode,
       lastErrorMessage: args.errorMessage,
-      metadata: { ...(args.meta ?? {}) },
+      metadata:
+        sql`coalesce(${paymentAttempts.metadata}, '{}'::jsonb) || ${JSON.stringify(
+          metaPatch
+        )}::jsonb` as any,
     })
     .where(eq(paymentAttempts.id, args.attemptId));
 }
 
 async function cancelOrderAndRelease(orderId: string, reason: string) {
   const now = new Date();
-  await db
+
+  const updated = await db
     .update(orders)
     .set({
       status: 'CANCELED',
@@ -220,9 +226,24 @@ async function cancelOrderAndRelease(orderId: string, reason: string) {
       failureMessage: reason,
       updatedAt: now,
     })
-    .where(eq(orders.id, orderId));
+    .where(
+      and(
+        eq(orders.id, orderId),
+        eq(orders.paymentProvider, 'monobank'),
+        sql`${orders.paymentStatus} in ('pending','requires_payment')`
+      )
+    )
+    .returning({ id: orders.id });
 
-  await restockOrder(orderId, { reason: 'canceled', workerId: 'monobank' });
+  if (updated[0]?.id) {
+    await restockOrder(orderId, { reason: 'canceled', workerId: 'monobank' });
+    return;
+  }
+
+  logWarn('monobank_cancel_order_skipped', {
+    orderId,
+    reason,
+  });
 }
 
 async function finalizeAttemptWithInvoice(args: {
@@ -234,6 +255,7 @@ async function finalizeAttemptWithInvoice(args: {
 }) {
   const maxRetries = 2;
   let lastError: unknown = null;
+  let fallbackError: unknown = null;
 
   const now = new Date();
 
@@ -320,49 +342,94 @@ async function finalizeAttemptWithInvoice(args: {
     }
   }
 
+  const lastMsg =
+    lastError instanceof Error && lastError.message
+      ? lastError.message
+      : 'Invoice persistence failed.';
+  try {
+    const patch = {
+      pageUrl: args.pageUrl,
+      invoiceId: args.invoiceId,
+    };
+
+    const updatedAttempt = await db
+      .update(paymentAttempts)
+      .set({
+        providerPaymentIntentId: args.invoiceId,
+        metadata:
+          sql`coalesce(${paymentAttempts.metadata}, '{}'::jsonb) || ${JSON.stringify(
+            patch
+          )}::jsonb` as any,
+        updatedAt: now,
+      })
+      .where(eq(paymentAttempts.id, args.attemptId))
+      .returning({ id: paymentAttempts.id });
+
+        if (updatedAttempt[0]?.id) {
+      logWarn('monobank_invoice_persist_partial_attempt_only', {
+        orderId: args.orderId,
+        attemptId: args.attemptId,
+        invoiceId: args.invoiceId,
+        requestId: args.requestId,
+        issue: lastMsg,
+      });
+    }
+
+  } catch (err) {
+    fallbackError = err;
+  }
+
   logError('monobank_invoice_persist_retry_exhausted', lastError, {
     orderId: args.orderId,
     attemptId: args.attemptId,
     invoiceId: args.invoiceId,
     requestId: args.requestId,
+    fallbackError:
+      fallbackError instanceof Error
+        ? `${fallbackError.name}: ${fallbackError.message}`
+        : fallbackError,
   });
 
   try {
-    const [attemptRow] = await db
-      .select({ metadata: paymentAttempts.metadata })
-      .from(paymentAttempts)
-      .where(eq(paymentAttempts.id, args.attemptId))
-      .limit(1);
-
-    const nextAttemptMeta = {
-      ...asObj(attemptRow?.metadata),
-      pageUrl: args.pageUrl,
-      invoiceId: args.invoiceId,
-      requestId: args.requestId,
-      finalizePending: true,
-    };
-
-    await db
-      .update(paymentAttempts)
-      .set({
-        providerPaymentIntentId: args.invoiceId,
-        metadata: nextAttemptMeta,
-        updatedAt: new Date(),
-      })
-      .where(eq(paymentAttempts.id, args.attemptId));
+    await markAttemptFailed({
+      attemptId: args.attemptId,
+      errorCode: 'PSP_INVOICE_PERSIST_FAILED',
+      errorMessage: lastMsg,
+      meta: {
+        requestId: args.requestId,
+        invoiceId: args.invoiceId,
+        pageUrl: args.pageUrl,
+        reason: 'persist_retry_exhausted',
+      },
+    });
   } catch (error) {
-    logError('monobank_invoice_persist_failed', error, {
+    logError('monobank_attempt_mark_failed', error, {
       orderId: args.orderId,
       attemptId: args.attemptId,
       invoiceId: args.invoiceId,
       requestId: args.requestId,
     });
+  }
 
+  try {
     await cancelMonobankInvoice(args.invoiceId);
-    await cancelOrderAndRelease(args.orderId, 'Invoice persistence failed.');
-
-    throw new PspInvoicePersistError('Invoice persistence failed.', {
+  } catch (error) {
+    logError('monobank_invoice_cancel_failed', error, {
       orderId: args.orderId,
+      attemptId: args.attemptId,
+      invoiceId: args.invoiceId,
+      requestId: args.requestId,
+    });
+  }
+
+  try {
+    await cancelOrderAndRelease(args.orderId, 'Invoice persistence failed.');
+  } catch (error) {
+    logError('monobank_cancel_order_failed', error, {
+      orderId: args.orderId,
+      attemptId: args.attemptId,
+      invoiceId: args.invoiceId,
+      requestId: args.requestId,
     });
   }
 
@@ -422,7 +489,6 @@ async function createMonoAttemptAndInvoiceImpl(
       );
     }
 
-    // D: stale creating/active without pageUrl -> fail attempt, do NOT cancel order
     logWarn('monobank_attempt_stale_missing_invoice', {
       orderId: args.orderId,
       attemptId: existing.id,

@@ -105,9 +105,9 @@ Key endpoints:
 | Mode | Behavior | Notes |
 
 |---|---|---|
-| `drop` | Verify signature, then return 200 `{ ok: true }` and **do not store or apply** | Logs `monobank_webhook_dropped`. |
-| `store` | Verify signature, store event in `monobank_events`, **do not apply** | Logs `monobank_webhook_stored`. |
-| `apply` | Verify signature, **apply order/payment updates** | Current implementation does **not** store events in this mode. |
+| `drop` | Verify signature + store event (insertEvent), then return 200 `{ ok: true }` and **do not apply updates** | Logs `monobank_webhook_dropped`. |
+| `store` | Verify signature + store event (insertEvent), **do not apply updates** | Logs `monobank_webhook_stored`. |
+| `apply` | Verify signature + store event (insertEvent) + **apply updates** | Logs `monobank_webhook_applied`. |
 
 ### MONO_REFUND_ENABLED
 
@@ -199,6 +199,10 @@ Admin refund disabled (Monobank order):
 Invoke-RestMethod -Method Post `
   -Uri "https://<host>/api/shop/admin/orders/<orderId>/refund" `
   -Headers @{ "Origin" = "https://<host>" }
-```
+  ```
 
 ## Notes / follow‑ups
+  
+- `MONO_WEBHOOK_MODE=drop` is not “no-op”: webhook signature is still verified and the event is still persisted (insertEvent); only state transitions are skipped.
+- `MONO_WEBHOOK_MODE=apply` also stores the event before applying updates (audit + dedupe + troubleshooting).
+- Consider adding retention/cleanup for old terminal events in `monobank_events` if the table growth becomes an ops concern.

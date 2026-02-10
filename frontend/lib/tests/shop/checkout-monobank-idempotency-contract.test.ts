@@ -67,9 +67,10 @@ beforeAll(() => {
   process.env.SHOP_BASE_URL = 'http://localhost:3000';
   process.env.SHOP_STATUS_TOKEN_SECRET =
     'test_status_token_secret_test_status_token_secret';
-  if (!process.env.DATABASE_URL && __prevDatabaseUrl) {
+  if (__prevDatabaseUrl !== undefined) {
     process.env.DATABASE_URL = __prevDatabaseUrl;
   }
+
   resetEnvCache();
 });
 
@@ -157,7 +158,6 @@ async function seedTemplateProductIfMissing(): Promise<any> {
 
   __seedTemplateProductId = productId;
 
-  // Build a minimal INSERT based on current DB constraints (stable on "clean" DB).
   const infoRes = await db.execute(sql`
     select
       column_name,
@@ -254,7 +254,6 @@ async function seedTemplateProductIfMissing(): Promise<any> {
     values (${sql.join(insertVals, sql`, `)})
   `);
 
-  // Seed prices as requested (products + productPrices via toDbMoney)
   await db.insert(productPrices).values([
     {
       productId,
@@ -349,11 +348,18 @@ async function cleanupProduct(productId: string) {
   await db.delete(products).where(eq(products.id, productId));
 }
 
+function warnCleanup(step: string, err: unknown) {
+  console.warn('[checkout-monobank-idempotency-contract.test] cleanup failed', {
+    step,
+    err: err instanceof Error ? { name: err.name, message: err.message } : err,
+  });
+}
+
 afterAll(async () => {
   if (!__seedTemplateProductId) return;
   try {
     await cleanupProduct(__seedTemplateProductId);
-  } catch {}
+  } catch (e) { warnCleanup('cleanupSeedTemplateProduct', e); }
   __seedTemplateProductId = null;
 });
 
@@ -451,6 +457,8 @@ describe.sequential('checkout monobank contract', () => {
       expect(res2.status).toBe(200);
 
       const json1: any = await res1.json();
+      orderId = json1.orderId;
+
       const json2: any = await res2.json();
 
       expect(json1.success).toBe(true);
@@ -472,8 +480,6 @@ describe.sequential('checkout monobank contract', () => {
       expect(json1.totalAmountMinor).toBeGreaterThan(0);
       expect(json1.totalAmountMinor).toBe(json2.totalAmountMinor);
 
-      orderId = json1.orderId;
-
       const [dbOrder] = await db
         .select({ id: orders.id })
         .from(orders)
@@ -494,8 +500,8 @@ describe.sequential('checkout monobank contract', () => {
 
       expect(createMonobankInvoiceMock).toHaveBeenCalledTimes(1);
     } finally {
-      if (orderId) await cleanupOrder(orderId);
-      await cleanupProduct(productId);
+      if (orderId) await cleanupOrder(orderId).catch(() => {});
+      await cleanupProduct(productId).catch(() => {});
     }
   }, 20_000);
 
@@ -513,7 +519,7 @@ describe.sequential('checkout monobank contract', () => {
       expect(json.code).toBe('PRICE_CONFIG_ERROR');
       expect(createMonobankInvoiceMock).not.toHaveBeenCalled();
     } finally {
-      await cleanupProduct(productId);
+      await cleanupProduct(productId).catch(() => {});
     }
   }, 20_000);
 });

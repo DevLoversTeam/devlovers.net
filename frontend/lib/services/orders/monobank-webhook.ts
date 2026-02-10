@@ -262,9 +262,9 @@ export async function applyMonoWebhookEvent(args: {
   rawBody: string;
   requestId: string;
   mode: WebhookMode;
+  rawSha256: string;
   parsedPayload?: Record<string, unknown>;
   eventKey?: string;
-  rawSha256?: string;
 }): Promise<{
   deduped: boolean;
   appliedResult: ApplyResult;
@@ -274,9 +274,17 @@ export async function applyMonoWebhookEvent(args: {
   const parsed = args.parsedPayload
     ? normalizeWebhookPayload(args.parsedPayload)
     : parseWebhookPayload(args.rawBody);
-  const rawSha256 =
-    args.rawSha256 ??
-    crypto.createHash('sha256').update(args.rawBody).digest('hex');
+
+  if (
+    typeof args.rawSha256 !== 'string' ||
+    !/^[0-9a-f]{64}$/i.test(args.rawSha256)
+  ) {
+    throw new InvalidPayloadError('Missing or invalid rawSha256', {
+      code: 'INVALID_PAYLOAD',
+    });
+  }
+
+  const rawSha256 = args.rawSha256;
   const eventKey = args.eventKey ?? buildEventKey(rawSha256);
 
   const { eventId, deduped } = await insertEvent({

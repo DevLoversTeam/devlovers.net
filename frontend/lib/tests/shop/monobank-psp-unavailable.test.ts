@@ -37,7 +37,6 @@ const __prevMonoToken = process.env.MONO_MERCHANT_TOKEN;
 const __prevAppOrigin = process.env.APP_ORIGIN;
 const __prevShopBaseUrl = process.env.SHOP_BASE_URL;
 const __prevStatusSecret = process.env.SHOP_STATUS_TOKEN_SECRET;
-const __prevDatabaseUrl = process.env.DATABASE_URL;
 
 beforeAll(() => {
   process.env.RATE_LIMIT_DISABLED = '1';
@@ -47,9 +46,6 @@ beforeAll(() => {
   process.env.SHOP_BASE_URL = 'http://localhost:3000';
   process.env.SHOP_STATUS_TOKEN_SECRET =
     'test_status_token_secret_test_status_token_secret';
-  if (!process.env.DATABASE_URL && __prevDatabaseUrl) {
-    process.env.DATABASE_URL = __prevDatabaseUrl;
-  }
   resetEnvCache();
 });
 
@@ -71,11 +67,15 @@ afterAll(() => {
   if (__prevStatusSecret === undefined)
     delete process.env.SHOP_STATUS_TOKEN_SECRET;
   else process.env.SHOP_STATUS_TOKEN_SECRET = __prevStatusSecret;
-
-  if (__prevDatabaseUrl === undefined) delete process.env.DATABASE_URL;
-  else process.env.DATABASE_URL = __prevDatabaseUrl;
   resetEnvCache();
 });
+
+function warnCleanup(step: string, err: unknown) {
+  console.warn('[monobank-psp-unavailable.test] cleanup failed', {
+    step,
+    err: err instanceof Error ? { name: err.name, message: err.message } : err,
+  });
+}
 
 async function createIsolatedProduct(stock: number) {
   const [tpl] = await db
@@ -120,30 +120,19 @@ async function createIsolatedProduct(stock: number) {
 }
 
 async function cleanupOrder(orderId: string) {
-  await db.execute(
-    sql`delete from inventory_moves where order_id = ${orderId}::uuid`
-  );
-  await db.execute(
-    sql`delete from order_items where order_id = ${orderId}::uuid`
-  );
+  await db.execute(sql`delete from inventory_moves where order_id = ${orderId}::uuid`);
+  await db.execute(sql`delete from order_items where order_id = ${orderId}::uuid`);
   await db.delete(paymentAttempts).where(eq(paymentAttempts.orderId, orderId));
   await db.delete(orders).where(eq(orders.id, orderId));
 }
 
 async function cleanupProduct(productId: string) {
-  try {
-    await db.execute(
-      sql`delete from inventory_moves where product_id = ${productId}::uuid`
-    );
-  } catch {}
-  try {
-    await db.execute(
-      sql`delete from order_items where product_id = ${productId}::uuid`
-    );
-  } catch {}
+  await db.execute(sql`delete from inventory_moves where product_id = ${productId}::uuid`);
+  await db.execute(sql`delete from order_items where product_id = ${productId}::uuid`);
   await db.delete(productPrices).where(eq(productPrices.productId, productId));
   await db.delete(products).where(eq(products.id, productId));
 }
+
 
 async function postCheckout(idemKey: string, productId: string) {
   const mod = (await import('@/app/api/shop/checkout/route')) as unknown as {
@@ -248,11 +237,13 @@ describe.sequential('monobank PSP_UNAVAILABLE invariant', () => {
         if (orderId) {
           await cleanupOrder(orderId);
         }
-      } catch {}
+      } catch (e) { warnCleanup('cleanupOrder', e); }
 
       try {
         await cleanupProduct(productId);
-      } catch {}
+      } catch (e) {
+        warnCleanup('cleanupProduct', e);
+      }
     }
   }, 20_000);
 });

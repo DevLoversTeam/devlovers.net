@@ -16,15 +16,32 @@ const selectMock = vi.fn(() => ({
   }),
 }));
 
+function makeUpdateQuery<T>(rows: T[]) {
+  return {
+    returning: async () => rows,
+    then: (resolve: any, reject: any) =>
+      Promise.resolve(rows).then(resolve, reject),
+  };
+}
+
 const updateMock = vi.fn((table: unknown) => ({
   set: (values: Record<string, unknown>) => {
     updateCalls.push({ table, values });
 
-    if (table === paymentAttempts) {
+    if (table === orders && 'pspChargeId' in values) {
       throw new Error('UPDATE_FAIL');
     }
 
-    return { where: async () => [] };
+    const rows =
+      table === paymentAttempts
+        ? [{ id: 'attempt-1' }]
+        : table === orders && (values as any).status === 'CANCELED'
+          ? [{ id: 'order-1' }]
+          : [];
+
+    return {
+      where: () => makeUpdateQuery(rows),
+    };
   },
 }));
 
@@ -90,12 +107,17 @@ describe('finalizeAttemptWithInvoice compensation', () => {
       workerId: 'monobank',
     });
 
-    const orderUpdate = updateCalls.find(c => c.table === orders);
-    expect(orderUpdate).toBeTruthy();
-    expect(orderUpdate?.values.status).toBe('CANCELED');
-    expect(orderUpdate?.values.failureCode).toBe('PSP_UNAVAILABLE');
+    const canceledOrderUpdate = updateCalls.find(
+      c => c.table === orders && (c.values as any).status === 'CANCELED'
+    );
+    expect(canceledOrderUpdate).toBeTruthy();
 
-    const attemptUpdate = updateCalls.find(c => c.table === paymentAttempts);
-    expect(attemptUpdate).toBeTruthy();
+    const failedAttemptUpdate = updateCalls.find(
+      c => c.table === paymentAttempts && (c.values as any).status === 'failed'
+    );
+    expect(failedAttemptUpdate).toBeTruthy();
+    expect((failedAttemptUpdate?.values as any).lastErrorCode).toBe(
+      'PSP_INVOICE_PERSIST_FAILED'
+    );
   });
 });

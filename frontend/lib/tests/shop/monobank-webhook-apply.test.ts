@@ -27,6 +27,9 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
+const sha256HexUtf8 = (s: string) =>
+  crypto.createHash('sha256').update(Buffer.from(s, 'utf8')).digest('hex');
+
 async function insertOrderAndAttempt(args: {
   invoiceId: string;
   amountMinor: number;
@@ -91,12 +94,14 @@ describe.sequential('monobank webhook apply (persist-first)', () => {
     try {
       await applyMonoWebhookEvent({
         rawBody: expiredBody,
+        rawSha256: sha256HexUtf8(expiredBody),
         requestId: 'req_ooo_1',
         mode: 'apply',
       });
 
       const second = await applyMonoWebhookEvent({
         rawBody: successBody,
+        rawSha256: sha256HexUtf8(successBody),
         requestId: 'req_ooo_2',
         mode: 'apply',
       });
@@ -130,11 +135,13 @@ describe.sequential('monobank webhook apply (persist-first)', () => {
     try {
       const first = await applyMonoWebhookEvent({
         rawBody,
+        rawSha256: sha256HexUtf8(rawBody),
         requestId: 'req_dedupe_1',
         mode: 'apply',
       });
       const second = await applyMonoWebhookEvent({
         rawBody,
+        rawSha256: sha256HexUtf8(rawBody),
         requestId: 'req_dedupe_2',
         mode: 'apply',
       });
@@ -177,11 +184,13 @@ describe.sequential('monobank webhook apply (persist-first)', () => {
       const [first, second] = await Promise.all([
         applyMonoWebhookEvent({
           rawBody,
+          rawSha256: sha256HexUtf8(rawBody),
           requestId: 'req_claim_1',
           mode: 'apply',
         }),
         applyMonoWebhookEvent({
           rawBody,
+          rawSha256: sha256HexUtf8(rawBody),
           requestId: 'req_claim_2',
           mode: 'apply',
         }),
@@ -241,12 +250,14 @@ describe.sequential('monobank webhook apply (persist-first)', () => {
     try {
       await applyMonoWebhookEvent({
         rawBody: paidBody,
+        rawSha256: sha256HexUtf8(paidBody),
         requestId: 'req_paid',
         mode: 'apply',
       });
 
       const second = await applyMonoWebhookEvent({
         rawBody: failedBody,
+        rawSha256: sha256HexUtf8(failedBody),
         requestId: 'req_failed',
         mode: 'apply',
       });
@@ -302,12 +313,14 @@ describe.sequential('monobank webhook apply (persist-first)', () => {
     try {
       await applyMonoWebhookEvent({
         rawBody: paidBody,
+        rawSha256: sha256HexUtf8(paidBody),
         requestId: 'req_paid_ordering',
         mode: 'apply',
       });
 
       const second = await applyMonoWebhookEvent({
         rawBody: olderSuccessBody,
+        rawSha256: sha256HexUtf8(olderSuccessBody),
         requestId: 'req_old_success',
         mode: 'apply',
       });
@@ -358,6 +371,7 @@ describe.sequential('monobank webhook apply (persist-first)', () => {
       const res = await applyMonoWebhookEvent({
         rawBody: mismatchBody,
         requestId: 'req_mismatch',
+        rawSha256: sha256HexUtf8(mismatchBody),
         mode: 'apply',
       });
 

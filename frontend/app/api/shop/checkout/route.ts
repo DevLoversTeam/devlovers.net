@@ -563,8 +563,14 @@ export async function POST(request: NextRequest) {
 
   const paymentsEnabled =
     (process.env.PAYMENTS_ENABLED ?? '').trim() === 'true';
+
+  const rawStripePaymentsEnabled = (
+    process.env.STRIPE_PAYMENTS_ENABLED ?? ''
+  ).trim();
   const stripePaymentsEnabled =
-    (process.env.STRIPE_PAYMENTS_ENABLED ?? '').trim() === 'true';
+    rawStripePaymentsEnabled.length > 0
+      ? rawStripePaymentsEnabled === 'true'
+      : paymentsEnabled;
 
   if (selectedProvider === 'monobank') {
     let enabled = false;
@@ -758,9 +764,21 @@ export async function POST(request: NextRequest) {
       | 'monobank'
       | 'none';
 
-    const stripePaymentFlow =
-      stripePaymentsEnabled && orderProvider === 'stripe';
+    const stripePaymentFlow = orderProvider === 'stripe';
     const monobankPaymentFlow = orderProvider === 'monobank';
+
+    if (stripePaymentFlow && !stripePaymentsEnabled) {
+      logWarn('checkout_stripe_payments_disabled', {
+        ...orderMeta,
+        code: 'PAYMENTS_DISABLED',
+      });
+
+      return errorResponse(
+        'PSP_UNAVAILABLE',
+        'Payment provider unavailable.',
+        503
+      );
+    }
 
     if (!result.isNew) {
       if (stripePaymentFlow) {
