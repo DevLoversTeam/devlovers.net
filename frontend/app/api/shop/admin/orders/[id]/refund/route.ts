@@ -15,7 +15,11 @@ import { getMonobankConfig } from '@/lib/env/monobank';
 import { logError, logWarn } from '@/lib/logging';
 import { requireAdminCsrf } from '@/lib/security/admin-csrf';
 import { guardBrowserSameOrigin } from '@/lib/security/origin';
-import { InvalidPayloadError, OrderNotFoundError } from '@/lib/services/errors';
+import {
+  InvalidPayloadError,
+  OrderNotFoundError,
+  PspUnavailableError,
+} from '@/lib/services/errors';
 import { refundOrder } from '@/lib/services/orders';
 import { orderIdParamSchema, orderSummarySchema } from '@/lib/validation/shop';
 
@@ -109,6 +113,33 @@ export async function POST(
       }
     }
 
+    if (targetOrder?.paymentProvider === 'monobank') {
+      const { requestMonobankFullRefund } = await import(
+        '@/lib/services/orders/monobank-refund'
+      );
+      const result = await requestMonobankFullRefund({
+        orderId: orderIdForLog,
+        requestId,
+      });
+
+      const orderSummary = orderSummarySchema.parse(result.order);
+
+      return noStoreJson({
+        success: true,
+        order: {
+          ...orderSummary,
+          createdAt:
+            orderSummary.createdAt instanceof Date
+              ? orderSummary.createdAt.toISOString()
+              : String(orderSummary.createdAt),
+        },
+        refund: {
+          ...result.refund,
+          deduped: result.deduped,
+        },
+      });
+    }
+
     const order = await refundOrder(orderIdForLog, { requestedBy: 'admin' });
 
     const orderSummary = orderSummarySchema.parse(order);
@@ -189,6 +220,20 @@ export async function POST(
       return noStoreJson(
         { code: error.code, message: error.message },
         { status: 400 }
+      );
+    }
+
+    if (error instanceof PspUnavailableError) {
+      logWarn('admin_orders_refund_psp_unavailable', {
+        ...baseMeta,
+        code: 'PSP_UNAVAILABLE',
+        orderId: orderIdForLog,
+        durationMs: Date.now() - startedAtMs,
+      });
+
+      return noStoreJson(
+        { code: 'PSP_UNAVAILABLE', message: 'Payment provider unavailable.' },
+        { status: 503 }
       );
     }
 

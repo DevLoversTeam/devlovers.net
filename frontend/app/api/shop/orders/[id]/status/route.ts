@@ -9,8 +9,11 @@ import { db } from '@/db';
 import { orders } from '@/db/schema';
 import { getCurrentUser } from '@/lib/auth';
 import { logError, logWarn } from '@/lib/logging';
-import { OrderNotFoundError, OrderStateInvalidError } from '@/lib/services/errors';
-import { getOrderSummary } from '@/lib/services/orders/summary';
+import {
+  OrderNotFoundError,
+  OrderStateInvalidError,
+} from '@/lib/services/errors';
+import { getOrderAttemptSummary, getOrderSummary } from '@/lib/services/orders/summary';
 import { verifyStatusToken } from '@/lib/shop/status-token';
 import { orderIdParamSchema } from '@/lib/validation/shop';
 
@@ -30,25 +33,16 @@ export async function GET(
   const requestId =
     request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
 
-  const baseMeta = {
-    requestId,
-    route: request.nextUrl.pathname,
-    method: request.method,
-  };
-
   const rawParams = await context.params;
   const parsed = orderIdParamSchema.safeParse(rawParams);
   if (!parsed.success) {
     logWarn('order_status_invalid_order_id', {
-      ...baseMeta,
+      requestId,
       code: 'INVALID_ORDER_ID',
-      issuesCount: parsed.error.issues?.length ?? 0,
+      orderId: null,
       durationMs: Date.now() - startedAtMs,
     });
-    return noStoreJson(
-      { code: 'INVALID_ORDER_ID', error: 'Invalid order id' },
-      { status: 400 }
-    );
+    return noStoreJson({ code: 'INVALID_ORDER_ID' }, { status: 400 });
   }
 
   const orderId = parsed.data.id;
@@ -76,6 +70,12 @@ export async function GET(
       if (!statusToken || !statusToken.trim()) {
         const status = user ? 403 : 401;
         const code = user ? 'FORBIDDEN' : 'STATUS_TOKEN_REQUIRED';
+        logWarn('order_status_access_denied', {
+          requestId,
+          orderId,
+          code,
+          durationMs: Date.now() - startedAtMs,
+        });
         return noStoreJson({ code }, { status });
       }
 
@@ -84,16 +84,40 @@ export async function GET(
         orderId,
       });
       if (!tokenResult.ok) {
+        if (tokenResult.reason === 'missing_secret') {
+          logError(
+            'order_status_token_misconfigured',
+            new Error('SHOP_STATUS_TOKEN_SECRET is not configured'),
+            {
+              requestId,
+              orderId,
+              code: 'STATUS_TOKEN_MISCONFIGURED',
+              durationMs: Date.now() - startedAtMs,
+            }
+          );
+          return noStoreJson(
+            { code: 'STATUS_TOKEN_MISCONFIGURED' },
+            { status: 500 }
+          );
+        }
+
+        logWarn('order_status_token_invalid', {
+          requestId,
+          orderId,
+          code: 'STATUS_TOKEN_INVALID',
+          durationMs: Date.now() - startedAtMs,
+        });
         return noStoreJson({ code: 'STATUS_TOKEN_INVALID' }, { status: 403 });
       }
     }
 
     const order = await getOrderSummary(orderId);
-    return noStoreJson({ success: true, order }, { status: 200 });
+    const attempt = await getOrderAttemptSummary(orderId);
+    return noStoreJson({ success: true, order, attempt }, { status: 200 });
   } catch (error) {
     if (error instanceof OrderNotFoundError) {
       logWarn('order_status_not_found', {
-        ...baseMeta,
+        requestId,
         code: 'ORDER_NOT_FOUND',
         orderId,
         durationMs: Date.now() - startedAtMs,
@@ -103,24 +127,21 @@ export async function GET(
 
     if (error instanceof OrderStateInvalidError) {
       logError('order_status_state_invalid', error, {
-        ...baseMeta,
-        code: error.code,
+        requestId,
+        code: 'INTERNAL_ERROR',
         orderId,
         durationMs: Date.now() - startedAtMs,
       });
-      return noStoreJson({ code: error.code }, { status: 500 });
+      return noStoreJson({ code: 'INTERNAL_ERROR' }, { status: 500 });
     }
 
     logError('order_status_failed', error, {
-      ...baseMeta,
+      requestId,
       code: 'ORDER_STATUS_FAILED',
       orderId,
       durationMs: Date.now() - startedAtMs,
     });
 
-    return noStoreJson(
-      { code: 'INTERNAL_ERROR', error: 'internal_error' },
-      { status: 500 }
-    );
+    return noStoreJson({ code: 'INTERNAL_ERROR' }, { status: 500 });
   }
 }
