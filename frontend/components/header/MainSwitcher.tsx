@@ -30,8 +30,12 @@ function isHomePath(pathname: string): boolean {
 
 function isQuizzesPath(pathname: string): boolean {
   const segments = pathname.split('/').filter(Boolean);
-  return segments[0] === 'quizzes' || segments[1] === 'quizzes' ||
-         segments[0] === 'quiz' || segments[1] === 'quiz';
+  return (
+    segments[0] === 'quizzes' ||
+    segments[1] === 'quizzes' ||
+    segments[0] === 'quiz' ||
+    segments[1] === 'quiz'
+  );
 }
 
 function isDashboardPath(pathname: string): boolean {
@@ -67,15 +71,19 @@ export function MainSwitcher({
           showAdminLink={showAdminLink}
           blogCategories={blogCategories}
         />
-        <main className="mx-auto min-h-[80vh]">
-          {children}
-        </main>
+        <main className="mx-auto min-h-[80vh]">{children}</main>
       </>
     );
   }
 
   return (
-    <main className={isQa || isHome || isQuizzesPath(pathname) || isDashboardPath(pathname) ? 'mx-auto' : 'mx-auto min-h-[80vh] px-6'}>
+    <main
+      className={
+        isQa || isHome || isQuizzesPath(pathname) || isDashboardPath(pathname)
+          ? 'mx-auto'
+          : 'mx-auto min-h-[80vh] px-6'
+      }
+    >
       {children}
     </main>
   );
