@@ -16,3 +16,47 @@ export interface QuizAnswer {
 export interface QuizQuestionWithAnswers extends QuizQuestion {
   answers: QuizAnswer[];
 }
+
+export interface UserLastAttempt {
+  attemptId: string;
+  quizId: string;
+  quizSlug: string;
+  quizTitle: string | null;
+  categorySlug: string | null;
+  categoryName: string | null;
+  score: number;
+  totalQuestions: number;
+  percentage: string;
+  pointsEarned: number;
+  integrityScore: number | null;
+  completedAt: Date;
+}
+
+export interface AttemptAnswerDetail {
+  id: string;
+  answerText: string | null;
+  isCorrect: boolean;
+  isSelected: boolean;
+}
+
+export interface AttemptQuestionDetail {
+  questionId: string;
+  questionText: string | null;
+  explanation: any;
+  answers: AttemptAnswerDetail[];
+  selectedAnswerId: string | null;
+}
+
+export interface AttemptReview {
+  attemptId: string;
+  quizTitle: string | null;
+  quizSlug: string;
+  categorySlug: string | null;
+  score: number;
+  totalQuestions: number;
+  percentage: string;
+  pointsEarned: number;
+  integrityScore: number | null;
+  completedAt: Date;
+  incorrectQuestions: AttemptQuestionDetail[];
+}

@@ -174,11 +174,12 @@
       "pointsAwarded": "+{points} points added to rating",
       "noPointsAwarded": "No points awarded (result not improved)",
       "disqualified": "No points awarded (disqualified due to violations)",
-      "guestMessage": "To save your result and appear on the leaderboard, log in or sign up",
+      "guestMessage": "To save your result, review your mistakes, and appear on the leaderboard, log in or sign up",
       "loginButton": "Log In",
       "signupButton": "Sign Up",
       "retryButton": "Try Again",
-      "backButton": "Back to Topics"
+      "backButton": "Back to Topics",
+      "reviewButton": "Review Mistakes"
     },
     "card": {
       "uncategorized": "Uncategorized",
@@ -929,6 +930,37 @@
       "noPoints": "No points awarded (result not improved)",
       "viewLeaderboard": "View leaderboard",
       "tryAgain": "Try again"
+    },
+        "quizResults": {
+      "title": "Quiz Results",
+      "noAttempts": "You haven't taken any quizzes yet",
+      "startQuiz": "Try one",
+      "score": "Score",
+      "integrity": "Integrity",
+      "points": "Points",
+      "scoreHint": "Number of correct answers out of total questions",
+      "integrityHint": "Fair play score (no violations detected)",
+      "pointsHint": "Points earned for improving your previous result",
+      "timeAgo": "{value} ago",
+      "mastered": "Mastered",
+      "needsReview": "Review",
+      "study": "Study",
+      "date": "Date",
+      "status": "Status"
+    },
+    "quizReview": {
+      "title": "Error Analysis",
+      "subtitle": "{incorrect} of {total} — incorrect",
+      "allCorrect": "All answers are correct!",
+      "allCorrectHint": "You answered all questions correctly",
+      "yourAnswer": "Your answer",
+      "correctAnswer": "Correct answer",
+      "explanation": "Explanation",
+      "retakeQuiz": "Retake Quiz",
+      "backToDashboard": "Back to Dashboard",
+      "notFound": "Attempt not found",
+      "expandAll": "Expand all",
+      "collapseAll": "Collapse all"
     },
     "explainedTerms": {
       "title": "Learned Terms",

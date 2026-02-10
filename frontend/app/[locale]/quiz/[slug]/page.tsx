@@ -1,6 +1,10 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+import Image from 'next/image';
+
+import { categoryTabStyles } from '@/data/categoryStyles';
+import { cn } from '@/lib/utils';
 
 import { QuizContainer } from '@/components/quiz/QuizContainer';
 import { stripCorrectAnswers } from '@/db/queries/quiz';
@@ -49,6 +53,11 @@ export default async function QuizPage({
     notFound();
   }
 
+  const categoryStyle =
+    quiz.categorySlug && quiz.categorySlug in categoryTabStyles
+      ? categoryTabStyles[quiz.categorySlug as keyof typeof categoryTabStyles]
+      : null;
+
   const parsedSeed = seedParam ? Number.parseInt(seedParam, 10) : Number.NaN;
   const seed = Number.isFinite(parsedSeed)
     ? parsedSeed
@@ -70,7 +79,17 @@ export default async function QuizPage({
     <div className="min-h-screen bg-white dark:bg-black">
       <div className="mx-auto max-w-3xl px-4 py-8">
         <div className="mb-8">
-          <h1 className="mb-2 text-3xl font-bold text-gray-900 dark:text-gray-100">
+          <h1 className="mb-2 flex items-center gap-3 text-3xl font-bold text-gray-900 dark:text-gray-100">
+            {categoryStyle && (
+              <span className="relative h-8 w-8 shrink-0 sm:h-10 sm:w-10">
+                <Image
+                  src={categoryStyle.icon}
+                  alt=""
+                  fill
+                  className={cn('object-contain', 'iconClassName' in categoryStyle && categoryStyle.iconClassName)}
+                />
+              </span>
+            )}
             {quiz.title}
           </h1>
           {quiz.description && (

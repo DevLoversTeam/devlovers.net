@@ -1,12 +1,13 @@
 import { getTranslations } from 'next-intl/server';
 
 import { PostAuthQuizSync } from '@/components/auth/PostAuthQuizSync';
+import { QuizResultsSection } from '@/components/dashboard/QuizResultsSection';
 import { ExplainedTermsCard } from '@/components/dashboard/ExplainedTermsCard';
 import { ProfileCard } from '@/components/dashboard/ProfileCard';
 import { QuizSavedBanner } from '@/components/dashboard/QuizSavedBanner';
 import { StatsCard } from '@/components/dashboard/StatsCard';
 import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
-import { getUserQuizStats } from '@/db/queries/quiz';
+import { getUserLastAttemptPerQuiz, getUserQuizStats } from '@/db/queries/quiz';
 import { getUserProfile } from '@/db/queries/users';
 import { redirect } from '@/i18n/routing';
 import { getCurrentUser } from '@/lib/auth';
@@ -46,6 +47,7 @@ export default async function DashboardPage({
   const t = await getTranslations('dashboard');
 
   const attempts = await getUserQuizStats(session.id);
+  const lastAttempts = await getUserLastAttemptPerQuiz(session.id, locale);
 
   const totalAttempts = attempts.length;
 
@@ -110,8 +112,11 @@ export default async function DashboardPage({
             <ProfileCard user={userForDisplay} locale={locale} />
             <StatsCard stats={stats} />
           </div>
-          <div className="mt-8">
+                    <div className="mt-8">
             <ExplainedTermsCard />
+          </div>
+          <div className="mt-8">
+            <QuizResultsSection attempts={lastAttempts} locale={locale} />
           </div>
         </main>
       </DynamicGridBackground>
