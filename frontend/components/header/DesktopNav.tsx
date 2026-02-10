@@ -9,6 +9,8 @@ import { HeaderButton } from '@/components/shared/HeaderButton';
 import { NavLinks } from '@/components/shop/header/NavLinks';
 import { SITE_LINKS } from '@/lib/navigation';
 
+import { useMobileMenu } from './MobileMenuContext';
+
 type Category = {
   _id: string;
   title: string;
@@ -21,6 +23,12 @@ type DesktopNavProps = {
 
 export function DesktopNav({ variant, blogCategories = [] }: DesktopNavProps) {
   const t = useTranslations('navigation');
+  const { startNavigation } = useMobileMenu();
+
+  const handleShopClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    startNavigation('/shop');
+  };
 
   if (variant === 'shop') {
     return <NavLinks className="lg:flex" includeHomeLink />;
@@ -40,7 +48,12 @@ export function DesktopNav({ variant, blogCategories = [] }: DesktopNavProps) {
         ))}
       </div>
 
-      <HeaderButton href="/shop" icon={ShoppingBag} showArrow>
+      <HeaderButton
+        href="/shop"
+        icon={ShoppingBag}
+        showArrow
+        onLinkClick={handleShopClick}
+      >
         {t('shop')}
       </HeaderButton>
     </div>
