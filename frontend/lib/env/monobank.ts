@@ -12,6 +12,27 @@ export type MonobankEnv = {
 
 export type MonobankWebhookMode = 'apply' | 'store' | 'drop';
 
+function parseWebhookMode(raw: string | undefined): MonobankWebhookMode {
+  const v = (raw ?? 'apply').trim().toLowerCase();
+  if (v === 'apply' || v === 'store' || v === 'drop') return v;
+  return 'apply';
+}
+
+export function getMonobankConfig(): MonobankConfig {
+  const env = getServerEnv();
+
+  const rawMode = process.env.MONO_WEBHOOK_MODE ?? env.MONO_WEBHOOK_MODE;
+
+  return {
+    webhookMode: parseWebhookMode(rawMode),
+    refundEnabled: env.MONO_REFUND_ENABLED === 'true',
+    invoiceValiditySeconds: parsePositiveInt(env.MONO_INVOICE_VALIDITY_SECONDS, 86400),
+    timeSkewToleranceSec: parsePositiveInt(env.MONO_TIME_SKEW_TOLERANCE_SEC, 300),
+    baseUrlSource: resolveBaseUrlSource(),
+  };
+}
+
+
 export type MonobankConfig = {
   webhookMode: MonobankWebhookMode;
   refundEnabled: boolean;
@@ -54,24 +75,6 @@ function resolveBaseUrlSource(): MonobankConfig['baseUrlSource'] {
   if (nonEmpty(env.NEXT_PUBLIC_SITE_URL ?? undefined))
     return 'next_public_site_url';
   return 'unknown';
-}
-
-export function getMonobankConfig(): MonobankConfig {
-  const env = getServerEnv();
-
-  return {
-    webhookMode: env.MONO_WEBHOOK_MODE ?? 'apply',
-    refundEnabled: env.MONO_REFUND_ENABLED === 'true',
-    invoiceValiditySeconds: parsePositiveInt(
-      env.MONO_INVOICE_VALIDITY_SECONDS,
-      86400
-    ),
-    timeSkewToleranceSec: parsePositiveInt(
-      env.MONO_TIME_SKEW_TOLERANCE_SEC,
-      300
-    ),
-    baseUrlSource: resolveBaseUrlSource(),
-  };
 }
 
 export function requireMonobankToken(): string {

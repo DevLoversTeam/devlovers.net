@@ -58,22 +58,11 @@ function normalizeStatus(raw: unknown): string {
   return raw.trim().toLowerCase();
 }
 
-function parseWebhookPayload(rawBody: string): {
+function normalizeWebhookPayload(raw: Record<string, unknown>): {
   raw: Record<string, unknown>;
   normalized: NormalizedWebhook;
-  providerEventId: string | null;
-  eventTimeBucket: number | null;
   providerModifiedAt: Date | null;
 } {
-  let raw: Record<string, unknown>;
-  try {
-    raw = JSON.parse(rawBody) as Record<string, unknown>;
-  } catch {
-    throw new InvalidPayloadError('Invalid JSON payload', {
-      code: 'INVALID_PAYLOAD',
-    });
-  }
-
   const invoiceId =
     typeof raw.invoiceId === 'string' ? raw.invoiceId.trim() : '';
   const status = normalizeStatus(raw.status);
@@ -97,16 +86,6 @@ function parseWebhookPayload(rawBody: string): {
       ? raw.reference.trim()
       : null;
 
-  const providerEventId =
-    typeof raw.eventId === 'string'
-      ? raw.eventId
-      : typeof raw.event_id === 'string'
-        ? raw.event_id
-        : typeof raw.id === 'string'
-          ? raw.id
-          : null;
-
-  const eventTimeBucket = extractEventTimeBucket(raw);
   const providerModifiedAt = extractProviderModifiedAt(raw);
 
   return {
@@ -118,10 +97,25 @@ function parseWebhookPayload(rawBody: string): {
       ccy,
       reference,
     },
-    providerEventId,
-    eventTimeBucket,
     providerModifiedAt,
   };
+}
+
+function parseWebhookPayload(rawBody: string): {
+  raw: Record<string, unknown>;
+  normalized: NormalizedWebhook;
+  providerModifiedAt: Date | null;
+} {
+  let raw: Record<string, unknown>;
+  try {
+    raw = JSON.parse(rawBody) as Record<string, unknown>;
+  } catch {
+    throw new InvalidPayloadError('Invalid JSON payload', {
+      code: 'INVALID_PAYLOAD',
+    });
+  }
+
+  return normalizeWebhookPayload(raw);
 }
 
 function parseTimestampMs(value: unknown): number | null {
@@ -134,27 +128,6 @@ function parseTimestampMs(value: unknown): number | null {
     const parsed = Date.parse(value);
     if (!Number.isNaN(parsed)) return parsed;
   }
-  return null;
-}
-
-function extractEventTimeBucket(raw: Record<string, unknown>): number | null {
-  const candidates = [
-    raw.createdDate,
-    raw.createdAt,
-    raw.modifiedDate,
-    raw.modifiedAt,
-    raw.updatedAt,
-    raw.time,
-    raw.timestamp,
-  ];
-
-  for (const candidate of candidates) {
-    const ms = parseTimestampMs(candidate);
-    if (ms !== null) {
-      return Math.floor(ms / 60000);
-    }
-  }
-
   return null;
 }
 
@@ -177,31 +150,8 @@ function extractProviderModifiedAt(raw: Record<string, unknown>): Date | null {
   return null;
 }
 
-function buildEventKey(args: {
-  providerEventId: string | null;
-  normalized: NormalizedWebhook;
-  eventTimeBucket: number | null;
-}): string {
-  if (args.providerEventId && args.providerEventId.trim()) {
-    return `mono:${args.providerEventId.trim()}`;
-  }
-
-  const base = {
-    invoiceId: args.normalized.invoiceId,
-    status: args.normalized.status,
-    amount: args.normalized.amount ?? null,
-    ccy: args.normalized.ccy ?? null,
-    reference: args.normalized.reference ?? null,
-    timeBucket: args.eventTimeBucket ?? null,
-  };
-
-  const normalizedHash = crypto
-    .createHash('sha256')
-    .update(JSON.stringify(base))
-    .digest('hex')
-    .slice(0, 16);
-
-  return `mono:${base.invoiceId}:${base.status}:${normalizedHash}`;
+function buildEventKey(rawSha256: string): string {
+  return rawSha256;
 }
 
 async function insertEvent(args: {
@@ -301,22 +251,22 @@ export async function applyMonoWebhookEvent(args: {
   rawBody: string;
   requestId: string;
   mode: WebhookMode;
+  parsedPayload?: Record<string, unknown>;
+  eventKey?: string;
+  rawSha256?: string;
 }): Promise<{
   deduped: boolean;
   appliedResult: ApplyResult;
   eventId: string | null;
   invoiceId: string;
 }> {
-  const parsed = parseWebhookPayload(args.rawBody);
-  const rawSha256 = crypto
-    .createHash('sha256')
-    .update(args.rawBody)
-    .digest('hex');
-  const eventKey = buildEventKey({
-    providerEventId: parsed.providerEventId,
-    normalized: parsed.normalized,
-    eventTimeBucket: parsed.eventTimeBucket,
-  });
+  const parsed = args.parsedPayload
+    ? normalizeWebhookPayload(args.parsedPayload)
+    : parseWebhookPayload(args.rawBody);
+  const rawSha256 =
+    args.rawSha256 ??
+    crypto.createHash('sha256').update(args.rawBody).digest('hex');
+  const eventKey = args.eventKey ?? buildEventKey(rawSha256);
 
   const { eventId, deduped } = await insertEvent({
     eventKey,
@@ -339,12 +289,15 @@ export async function applyMonoWebhookEvent(args: {
     };
   }
 
-  if (args.mode === 'drop' || args.mode === 'store') {
-    const appliedResult = args.mode === 'drop' ? 'dropped' : 'stored';
+  if (args.mode === 'store' || args.mode === 'drop') {
+    const now = new Date();
+    const appliedResult: ApplyResult =
+      args.mode === 'drop' ? 'dropped' : 'stored';
+
     await db
       .update(monobankEvents)
       .set({
-        appliedAt: new Date(),
+        appliedAt: now,
         appliedResult,
       })
       .where(eq(monobankEvents.id, eventId));
@@ -841,4 +794,30 @@ export async function applyMonoWebhookEvent(args: {
     eventId,
     invoiceId: parsed.normalized.invoiceId,
   };
+}
+
+export async function handleMonobankWebhook(args: {
+  rawBodyBytes: Uint8Array;
+  parsedPayload: Record<string, unknown>;
+  eventKey: string;
+  requestId: string;
+  mode: WebhookMode;
+}) {
+  const rawBodyBuffer = Buffer.isBuffer(args.rawBodyBytes)
+    ? args.rawBodyBytes
+    : Buffer.from(args.rawBodyBytes);
+  const rawBody = rawBodyBuffer.toString('utf8');
+  const rawSha256 = crypto
+    .createHash('sha256')
+    .update(rawBodyBuffer)
+    .digest('hex');
+
+  return applyMonoWebhookEvent({
+    rawBody,
+    parsedPayload: args.parsedPayload,
+    eventKey: args.eventKey,
+    rawSha256,
+    requestId: args.requestId,
+    mode: args.mode,
+  });
 }
