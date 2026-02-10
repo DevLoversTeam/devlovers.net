@@ -365,7 +365,7 @@ async function finalizeAttemptWithInvoice(args: {
       .where(eq(paymentAttempts.id, args.attemptId))
       .returning({ id: paymentAttempts.id });
 
-        if (updatedAttempt[0]?.id) {
+    if (updatedAttempt[0]?.id) {
       logWarn('monobank_invoice_persist_partial_attempt_only', {
         orderId: args.orderId,
         attemptId: args.attemptId,
@@ -374,7 +374,6 @@ async function finalizeAttemptWithInvoice(args: {
         issue: lastMsg,
       });
     }
-
   } catch (err) {
     fallbackError = err;
   }
@@ -630,24 +629,36 @@ async function createMonoAttemptAndInvoiceImpl(
       });
     }
 
+    let cancelError: unknown = null;
+
     try {
       await deps.cancelOrderAndRelease(
         args.orderId,
         'Monobank invoice create failed.'
       );
-    } catch (cancelError) {
-      logError('monobank_cancel_order_failed', cancelError, {
+    } catch (err) {
+      cancelError = err;
+
+      logError('monobank_cancel_order_failed', err, {
         orderId: args.orderId,
         attemptId: attempt.id,
         requestId: args.requestId,
       });
-      throw cancelError;
     }
 
     throw new PspUnavailableError('Monobank invoice unavailable.', {
       orderId: args.orderId,
       requestId: args.requestId,
-    });
+
+      attemptId: attempt.id,
+
+      cause:
+        cancelError instanceof Error
+          ? `${cancelError.name}: ${cancelError.message}`
+          : cancelError
+            ? String(cancelError)
+            : undefined,
+    } as any);
   }
 
   await deps.finalizeAttemptWithInvoice({

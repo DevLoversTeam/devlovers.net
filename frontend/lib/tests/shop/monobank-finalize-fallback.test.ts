@@ -41,7 +41,7 @@ async function cleanup(orderId: string) {
 }
 
 describe.sequential('monobank finalizeAttemptWithInvoice fallback', () => {
-  it('does not throw if order persist fails but payment_attempts persist succeeds', async () => {
+  it('rejects with PspInvoicePersistError, but persists payment_attempt and cancels invoice (fallback)', async () => {
     const orderId = crypto.randomUUID();
     const attemptId = crypto.randomUUID();
     const invoiceId = `inv_${crypto.randomUUID()}`;

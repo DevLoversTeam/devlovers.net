@@ -17,11 +17,8 @@ const selectMock = vi.fn(() => ({
 }));
 
 function makeUpdateQuery<T>(rows: T[]) {
-  return {
-    returning: async () => rows,
-    then: (resolve: any, reject: any) =>
-      Promise.resolve(rows).then(resolve, reject),
-  };
+  const p = Promise.resolve(rows);
+  return Object.assign(p, { returning: async () => rows });
 }
 
 const updateMock = vi.fn((table: unknown) => ({

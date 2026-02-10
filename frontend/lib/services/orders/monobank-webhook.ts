@@ -39,7 +39,7 @@ type MonobankApplyOutcome = {
 };
 
 const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const CLAIM_TTL_MS = (() => {
   const raw = process.env.MONO_WEBHOOK_CLAIM_TTL_MS;
@@ -842,7 +842,26 @@ export async function applyMonoWebhookEvent(args: {
       };
     }
 
-    return { appliedResult, restockReason, restockOrderId, attemptId, orderId };
+    appliedResult = 'applied_noop';
+    await dbx
+      .update(monobankEvents)
+      .set({
+        appliedAt: now,
+        appliedResult,
+        appliedErrorCode: 'UNKNOWN_STATUS',
+        appliedErrorMessage: `Unrecognized Monobank status: ${status}`,
+        attemptId: attemptRow.id,
+        orderId: orderRow.id,
+      })
+      .where(eq(monobankEvents.id, eventId));
+
+    return {
+      appliedResult,
+      restockReason,
+      restockOrderId,
+      attemptId,
+      orderId,
+    };
   })();
 
   const { appliedResult, restockOrderId, restockReason } = outcome;
