@@ -1,10 +1,11 @@
 'use client';
 
-import { Home } from 'lucide-react';
+import { Store } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 
+import { useMobileMenu } from '@/components/header/MobileMenuContext';
 import { AnimatedNavLink } from '@/components/shared/AnimatedNavLink';
 import { HeaderButton } from '@/components/shared/HeaderButton';
 import { usePathname } from '@/i18n/routing';
@@ -31,7 +32,8 @@ export function NavLinks({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const currentCategory = searchParams.get('category');
-  const isHomeActive = pathname.startsWith('/shop');
+  const isShopHome = pathname === '/shop';
+  const { startNavigation } = useMobileMenu();
   const t = useTranslations('shop.catalog.categories');
   const tProducts = useTranslations('shop.products');
   const tNav = useTranslations('shop.admin.navigation');
@@ -80,12 +82,16 @@ export function NavLinks({
         {includeHomeLink ? (
           <li>
             <HeaderButton
-              href="/"
-              onClick={onNavigate}
-              icon={Home}
-              className={cn(isHomeActive && 'text-(--accent-primary)')}
+              href="/shop"
+              onLinkClick={e => {
+                e.preventDefault();
+                if (onNavigate) onNavigate();
+                startNavigation('/shop');
+              }}
+              icon={Store}
+              isActive={isShopHome}
             >
-              {tNav('home')}
+              {tNav('shop')}
             </HeaderButton>
           </li>
         ) : null}

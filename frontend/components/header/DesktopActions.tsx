@@ -5,7 +5,6 @@ import { useTranslations } from 'next-intl';
 
 import { LogoutButton } from '@/components/auth/logoutButton';
 import { BlogHeaderSearch } from '@/components/blog/BlogHeaderSearch';
-import { GitHubStarButton } from '@/components/shared/GitHubStarButton';
 import { HeaderButton } from '@/components/shared/HeaderButton';
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
 import { CartButton } from '@/components/shop/header/CartButton';
@@ -49,7 +48,6 @@ export function DesktopActions({
       {isBlog && <BlogHeaderSearch />}
 
       <LanguageSwitcher />
-      <GitHubStarButton />
 
       {isShop && <CartButton />}
 
