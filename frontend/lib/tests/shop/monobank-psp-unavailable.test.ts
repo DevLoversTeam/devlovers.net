@@ -4,7 +4,7 @@ import { NextRequest } from 'next/server';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { db } from '@/db';
-import { orders, paymentAttempts,productPrices, products } from '@/db/schema';
+import { orders, paymentAttempts, productPrices, products } from '@/db/schema';
 import { resetEnvCache } from '@/lib/env';
 import { toDbMoney } from '@/lib/shop/money';
 import { deriveTestIpFromIdemKey } from '@/lib/tests/helpers/ip';
@@ -131,6 +131,16 @@ async function cleanupOrder(orderId: string) {
 }
 
 async function cleanupProduct(productId: string) {
+  try {
+    await db.execute(
+      sql`delete from inventory_moves where product_id = ${productId}::uuid`
+    );
+  } catch {}
+  try {
+    await db.execute(
+      sql`delete from order_items where product_id = ${productId}::uuid`
+    );
+  } catch {}
   await db.delete(productPrices).where(eq(productPrices.productId, productId));
   await db.delete(products).where(eq(products.id, productId));
 }
@@ -225,10 +235,24 @@ describe.sequential('monobank PSP_UNAVAILABLE invariant', () => {
       expect(attempt!.expectedAmountMinor).toBeGreaterThan(0);
       expect(attempt!.finalizedAt).not.toBeNull();
     } finally {
-      if (orderId) {
-        await cleanupOrder(orderId);
-      }
-      await cleanupProduct(productId);
+      try {
+        if (!orderId) {
+          const [row] = await db
+            .select({ id: orders.id })
+            .from(orders)
+            .where(eq(orders.idempotencyKey, idemKey))
+            .limit(1);
+          orderId = row?.id ?? null;
+        }
+
+        if (orderId) {
+          await cleanupOrder(orderId);
+        }
+      } catch {}
+
+      try {
+        await cleanupProduct(productId);
+      } catch {}
     }
   }, 20_000);
 });

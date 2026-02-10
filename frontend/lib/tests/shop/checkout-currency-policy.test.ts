@@ -3,7 +3,7 @@ import { inArray } from 'drizzle-orm';
 import { NextRequest } from 'next/server';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { orderItems,orders, productPrices, products } from '@/db/schema';
+import { inventoryMoves, orderItems, orders, productPrices, products } from '@/db/schema';
 
 process.env.STRIPE_PAYMENTS_ENABLED = 'false';
 process.env.STRIPE_SECRET_KEY = '';
@@ -80,6 +80,9 @@ beforeAll(async () => {
 
 afterAll(async () => {
   if (createdOrderIds.length) {
+     await db
+      .delete(inventoryMoves)
+      .where(inArray(inventoryMoves.orderId, createdOrderIds));
     await db
       .delete(orderItems)
       .where(inArray(orderItems.orderId, createdOrderIds));
@@ -88,6 +91,9 @@ afterAll(async () => {
   }
 
   if (createdProductIds.length) {
+    await db
+      .delete(inventoryMoves)
+      .where(inArray(inventoryMoves.productId, createdProductIds));
     await db
       .delete(orderItems)
       .where(inArray(orderItems.productId, createdProductIds));

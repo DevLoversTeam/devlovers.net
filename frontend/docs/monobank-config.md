@@ -44,7 +44,7 @@ Key endpoints:
 
 ## Environment variables (canonical)
 
-> **Canonical names are `MONO_*`.** T
+> **Canonical names are `MONO_*`.**
 > If you still rely on the legacy names, file a follow‑up issue to add backward‑compat or rename those envs.
 
 ### Required for Monobank invoice creation

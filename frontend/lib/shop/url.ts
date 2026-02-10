@@ -36,12 +36,12 @@ export function toAbsoluteUrl(pathOrUrl: string): string {
   }
 
   if (/^https?:\/\//i.test(trimmed)) {
-    const url = toUrl(trimmed, 'absolute URL');
+    const url = toUrl(trimmed, 'provided URL');
     if (
       getRuntimeEnv().NODE_ENV === 'production' &&
       url.protocol !== 'https:'
     ) {
-      throw new Error('Shop base URL must be https in production.');
+      throw new Error('Provided URL must be https in production.');
     }
     return url.toString();
   }

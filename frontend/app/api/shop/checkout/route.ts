@@ -328,6 +328,83 @@ function buildMonobankCheckoutResponse({
   return res;
 }
 
+async function runMonobankCheckoutFlow(args: {
+  order: CheckoutOrderShape;
+  itemCount: number;
+  status: number;
+  requestId: string;
+  totalCents: number;
+  orderMeta: Record<string, unknown>;
+}) {
+  try {
+    logInfo('monobank_lazy_import_invoked', {
+      requestId: args.requestId,
+      orderId: args.order.id,
+    });
+
+    const { createMonobankAttemptAndInvoice } =
+      await import('@/lib/services/orders/monobank');
+
+    const statusToken = createStatusToken({ orderId: args.order.id });
+
+    const monobankAttempt = await createMonobankAttemptAndInvoice({
+      orderId: args.order.id,
+      statusToken,
+      requestId: args.requestId,
+    });
+
+    if (args.totalCents !== monobankAttempt.totalAmountMinor) {
+      logError(
+        'checkout_mono_amount_mismatch',
+        new Error('Monobank amount mismatch'),
+        {
+          ...args.orderMeta,
+          code: 'MONO_AMOUNT_MISMATCH',
+          totalCents: args.totalCents,
+          totalAmountMinor: monobankAttempt.totalAmountMinor,
+        }
+      );
+
+      return errorResponse(
+        'CHECKOUT_FAILED',
+        'Unable to process checkout.',
+        500
+      );
+    }
+
+    return buildMonobankCheckoutResponse({
+      order: args.order,
+      itemCount: args.itemCount,
+      status: args.status,
+      attemptId: monobankAttempt.attemptId,
+      pageUrl: monobankAttempt.pageUrl,
+      currency: monobankAttempt.currency,
+      totalAmountMinor: monobankAttempt.totalAmountMinor,
+    });
+  } catch (error) {
+    const mapped = mapMonobankCheckoutError(error);
+
+    if (mapped.status >= 500) {
+      logError('checkout_mono_flow_failed', error, {
+        ...args.orderMeta,
+        code: mapped.code,
+      });
+    } else {
+      logWarn('checkout_mono_flow_rejected', {
+        ...args.orderMeta,
+        code: mapped.code,
+      });
+    }
+
+    return errorResponse(
+      mapped.code,
+      mapped.message,
+      mapped.status,
+      mapped.details
+    );
+  }
+}
+
 function getSessionUserId(user: unknown): string | null {
   if (!user || typeof user !== 'object') return null;
 
@@ -770,43 +847,8 @@ export async function POST(request: NextRequest) {
           );
         }
       }
-
       if (monobankPaymentFlow) {
-        logInfo('monobank_lazy_import_invoked', {
-          requestId,
-          orderId: order.id,
-        });
-
-        const { createMonobankAttemptAndInvoice } =
-          await import('@/lib/services/orders/monobank');
-        const statusToken = createStatusToken({ orderId: order.id });
-
-        const monobankAttempt = await createMonobankAttemptAndInvoice({
-          orderId: order.id,
-          statusToken,
-          requestId,
-        });
-
-        if (result.totalCents !== monobankAttempt.totalAmountMinor) {
-          logError(
-            'checkout_mono_amount_mismatch',
-            new Error('Monobank amount mismatch'),
-            {
-              ...orderMeta,
-              code: 'MONO_AMOUNT_MISMATCH',
-              totalCents: result.totalCents,
-              totalAmountMinor: monobankAttempt.totalAmountMinor,
-            }
-          );
-
-          return errorResponse(
-            'CHECKOUT_FAILED',
-            'Unable to process checkout.',
-            500
-          );
-        }
-
-        return buildMonobankCheckoutResponse({
+        return runMonobankCheckoutFlow({
           order: {
             id: order.id,
             currency: order.currency,
@@ -817,10 +859,9 @@ export async function POST(request: NextRequest) {
           },
           itemCount,
           status: 200,
-          attemptId: monobankAttempt.attemptId,
-          pageUrl: monobankAttempt.pageUrl,
-          currency: monobankAttempt.currency,
-          totalAmountMinor: monobankAttempt.totalAmountMinor,
+          requestId,
+          totalCents: result.totalCents,
+          orderMeta,
         });
       }
 
@@ -840,41 +881,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (monobankPaymentFlow) {
-      logInfo('monobank_lazy_import_invoked', {
-        requestId,
-        orderId: order.id,
-      });
-
-      const { createMonobankAttemptAndInvoice } =
-        await import('@/lib/services/orders/monobank');
-      const statusToken = createStatusToken({ orderId: order.id });
-
-      const monobankAttempt = await createMonobankAttemptAndInvoice({
-        orderId: order.id,
-        statusToken,
-        requestId,
-      });
-
-      if (result.totalCents !== monobankAttempt.totalAmountMinor) {
-        logError(
-          'checkout_mono_amount_mismatch',
-          new Error('Monobank amount mismatch'),
-          {
-            ...orderMeta,
-            code: 'MONO_AMOUNT_MISMATCH',
-            totalCents: result.totalCents,
-            totalAmountMinor: monobankAttempt.totalAmountMinor,
-          }
-        );
-
-        return errorResponse(
-          'CHECKOUT_FAILED',
-          'Unable to process checkout.',
-          500
-        );
-      }
-
-      return buildMonobankCheckoutResponse({
+      return runMonobankCheckoutFlow({
         order: {
           id: order.id,
           currency: order.currency,
@@ -885,10 +892,9 @@ export async function POST(request: NextRequest) {
         },
         itemCount,
         status: 201,
-        attemptId: monobankAttempt.attemptId,
-        pageUrl: monobankAttempt.pageUrl,
-        currency: monobankAttempt.currency,
-        totalAmountMinor: monobankAttempt.totalAmountMinor,
+        requestId,
+        totalCents: result.totalCents,
+        orderMeta,
       });
     }
 

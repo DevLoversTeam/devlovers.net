@@ -12,10 +12,10 @@ vi.mock('@/lib/auth/admin', () => ({
   requireAdminApi: vi.fn(async () => {}),
   AdminApiDisabledError: class AdminApiDisabledError extends Error {},
   AdminUnauthorizedError: class AdminUnauthorizedError extends Error {
-    code = 'ADMIN_UNAUTHORIZED';
+    code = 'UNAUTHORIZED';
   },
   AdminForbiddenError: class AdminForbiddenError extends Error {
-    code = 'ADMIN_FORBIDDEN';
+    code = 'FORBIDDEN';
   },
 }));
 

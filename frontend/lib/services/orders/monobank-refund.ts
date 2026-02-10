@@ -50,7 +50,9 @@ function mapRefundRow(row: MonobankRefundRow) {
   };
 }
 
-async function getExistingRefund(extRef: string): Promise<MonobankRefundRow | null> {
+async function getExistingRefund(
+  extRef: string
+): Promise<MonobankRefundRow | null> {
   const rows = await db
     .select()
     .from(monobankRefunds)
@@ -66,7 +68,11 @@ function readAttemptInvoiceId(row: {
   const direct = toTrimmedOrNull(row.providerPaymentIntentId);
   if (direct) return direct;
 
-  if (!row.metadata || typeof row.metadata !== 'object' || Array.isArray(row.metadata)) {
+  if (
+    !row.metadata ||
+    typeof row.metadata !== 'object' ||
+    Array.isArray(row.metadata)
+  ) {
     return null;
   }
 
@@ -245,6 +251,13 @@ export async function requestMonobankFullRefund(args: {
       };
     }
 
+    if (orderRow.paymentStatus !== 'paid') {
+      throw invalid(
+        'REFUND_ORDER_NOT_PAID',
+        'Order is not refundable in current state'
+      );
+    }
+
     const now = new Date();
     const retried = await db
       .update(monobankRefunds)
@@ -260,7 +273,7 @@ export async function requestMonobankFullRefund(args: {
     deduped = false;
   }
 
-  if (orderRow.paymentStatus !== 'paid') {
+  if (!refundRowForPsp && orderRow.paymentStatus !== 'paid') {
     throw invalid(
       'REFUND_ORDER_NOT_PAID',
       'Order is not refundable in current state'
@@ -321,6 +334,13 @@ export async function requestMonobankFullRefund(args: {
           refund: mapRefundRow(reconciled),
           deduped: true,
         };
+      }
+
+      if (orderRow.paymentStatus !== 'paid') {
+        throw invalid(
+          'REFUND_ORDER_NOT_PAID',
+          'Order is not refundable in current state'
+        );
       }
 
       const now = new Date();

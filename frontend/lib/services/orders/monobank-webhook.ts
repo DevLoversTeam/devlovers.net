@@ -34,6 +34,8 @@ type MonobankApplyOutcome = {
   appliedResult: ApplyResult;
   restockOrderId: string | null;
   restockReason: 'failed' | 'refunded' | null;
+  attemptId: string | null;
+  orderId: string | null;
 };
 
 const UUID_RE =
@@ -52,6 +54,16 @@ const INSTANCE_ID = (() => {
   const value = `${base}:${suffix}`;
   return value.length > 64 ? value.slice(0, 64) : value;
 })();
+
+function toIssueMessage(error: unknown): string {
+  const msg =
+    error instanceof Error
+      ? `${error.name}: ${error.message}`
+      : typeof error === 'string'
+        ? error
+        : 'Unknown error';
+  return msg.length > 500 ? msg.slice(0, 500) : msg;
+}
 
 function normalizeStatus(raw: unknown): string {
   if (typeof raw !== 'string') return '';
@@ -324,20 +336,21 @@ export async function applyMonoWebhookEvent(args: {
     };
   }
 
-  const { appliedResult, restockOrderId, restockReason } =
-    await (async (): Promise<MonobankApplyOutcome> => {
-      const tx = db;
-      let restockReason: 'failed' | 'refunded' | null = null;
-      let restockOrderId: string | null = null;
-      let appliedResult: ApplyResult = 'applied';
+  const outcome = await (async (): Promise<MonobankApplyOutcome> => {
+    const dbx = db;
+    let restockReason: 'failed' | 'refunded' | null = null;
+    let restockOrderId: string | null = null;
+    let appliedResult: ApplyResult = 'applied';
+    let attemptId: string | null = null;
+    let orderId: string | null = null;
 
-      const now = new Date();
-      const referenceAttemptId =
-        parsed.normalized.reference && UUID_RE.test(parsed.normalized.reference)
-          ? parsed.normalized.reference
-          : null;
+    const now = new Date();
+    const referenceAttemptId =
+      parsed.normalized.reference && UUID_RE.test(parsed.normalized.reference)
+        ? parsed.normalized.reference
+        : null;
 
-      const attemptRes = (await tx.execute(sql`
+    const attemptRes = (await dbx.execute(sql`
         select id, order_id, status, expected_amount_minor, provider_payment_intent_id, provider_modified_at
         from payment_attempts
         where provider = 'monobank'
@@ -352,236 +365,183 @@ export async function applyMonoWebhookEvent(args: {
         limit 1
       `)) as unknown as { rows?: Array<any> };
 
-      const attemptRow = attemptRes.rows?.[0] as
-        | {
-            id: string;
-            order_id: string;
-            status: string;
-            expected_amount_minor: number | null;
-            provider_payment_intent_id: string | null;
-            provider_modified_at: Date | string | null;
-          }
-        | undefined;
+    const attemptRow = attemptRes.rows?.[0] as
+      | {
+          id: string;
+          order_id: string;
+          status: string;
+          expected_amount_minor: number | null;
+          provider_payment_intent_id: string | null;
+          provider_modified_at: Date | string | null;
+        }
+      | undefined;
 
-      if (!attemptRow) {
-        appliedResult = 'unmatched';
-        await tx
-          .update(monobankEvents)
-          .set({
-            appliedAt: now,
-            appliedResult,
-            appliedErrorCode: 'ATTEMPT_NOT_FOUND',
-            appliedErrorMessage: 'No matching payment attempt',
-          })
-          .where(eq(monobankEvents.id, eventId));
-        return { appliedResult, restockReason, restockOrderId };
-      }
-
-      const orderRes = (await tx.execute(sql`
+    if (!attemptRow) {
+      appliedResult = 'unmatched';
+      await dbx
+        .update(monobankEvents)
+        .set({
+          appliedAt: now,
+          appliedResult,
+          appliedErrorCode: 'ATTEMPT_NOT_FOUND',
+          appliedErrorMessage: 'No matching payment attempt',
+        })
+        .where(eq(monobankEvents.id, eventId));
+      return {
+        appliedResult,
+        restockReason,
+        restockOrderId,
+        attemptId,
+        orderId,
+      };
+    }
+    attemptId = attemptRow.id;
+    const orderRes = (await dbx.execute(sql`
         select id, payment_status, payment_provider, status, currency, total_amount_minor, psp_metadata
         from orders
         where id = ${attemptRow.order_id}::uuid
         limit 1
       `)) as unknown as { rows?: Array<any> };
 
-      const orderRow = orderRes.rows?.[0] as
-        | {
-            id: string;
-            payment_status: string;
-            payment_provider: string;
-            status: string;
-            currency: string;
-            total_amount_minor: number;
-            psp_metadata: Record<string, unknown> | null;
-          }
-        | undefined;
-
-      if (!orderRow) {
-        appliedResult = 'unmatched';
-        await tx
-          .update(monobankEvents)
-          .set({
-            appliedAt: now,
-            appliedResult,
-            appliedErrorCode: 'ORDER_NOT_FOUND',
-            appliedErrorMessage: 'Order not found for attempt',
-            attemptId: attemptRow.id,
-          })
-          .where(eq(monobankEvents.id, eventId));
-        return { appliedResult, restockReason, restockOrderId };
-      }
-
-      const status = parsed.normalized.status;
-      const providerModifiedAt = parsed.providerModifiedAt;
-      const attemptProviderModifiedAt = attemptRow.provider_modified_at
-        ? new Date(attemptRow.provider_modified_at)
-        : null;
-      const nextProviderModifiedAt =
-        providerModifiedAt &&
-        (!attemptProviderModifiedAt ||
-          providerModifiedAt > attemptProviderModifiedAt)
-          ? providerModifiedAt
-          : attemptProviderModifiedAt;
-
-      if (
-        providerModifiedAt &&
-        attemptProviderModifiedAt &&
-        providerModifiedAt <= attemptProviderModifiedAt
-      ) {
-        appliedResult = 'applied_noop';
-        await tx
-          .update(monobankEvents)
-          .set({
-            appliedAt: now,
-            appliedResult,
-            appliedErrorCode: 'OUT_OF_ORDER',
-            appliedErrorMessage: 'provider_modified_at older than latest',
-            attemptId: attemptRow.id,
-            orderId: orderRow.id,
-          })
-          .where(eq(monobankEvents.id, eventId));
-        return { appliedResult, restockReason, restockOrderId };
-      }
-
-      const mismatch = amountMismatch({
-        payloadAmount: parsed.normalized.amount,
-        payloadCcy: parsed.normalized.ccy,
-        orderCurrency: orderRow.currency,
-        orderTotal: Number(orderRow.total_amount_minor ?? 0),
-        expectedAmount:
-          attemptRow.expected_amount_minor != null
-            ? Number(attemptRow.expected_amount_minor)
-            : null,
-      });
-
-      const metadataPatch = {
-        monobank: {
-          invoiceId: parsed.normalized.invoiceId,
-          status,
-          amount: parsed.normalized.amount ?? null,
-          ccy: parsed.normalized.ccy ?? null,
-          reference: parsed.normalized.reference ?? null,
-        },
-      };
-
-      const mergedMetaSql = sql`coalesce(${orders.pspMetadata}, '{}'::jsonb) || ${JSON.stringify(
-        metadataPatch
-      )}::jsonb`;
-
-      const transitionPaymentStatus = async (to: any) => {
-        const res = await guardedPaymentStatusUpdate({
-          orderId: orderRow.id,
-          paymentProvider: 'monobank',
-          to,
-          source: 'monobank_webhook',
-          note: `event:${eventId}:${status}`,
-        });
-        const ok =
-          res.applied ||
-          (res.currentProvider === 'monobank' && res.from === to);
-
-        return {
-          ok,
-          applied: res.applied,
-          reason: ok ? undefined : res.reason,
-        };
-      };
-
-      if (mismatch.mismatch) {
-        appliedResult = 'applied_with_issue';
-
-        if (orderRow.payment_status !== 'paid') {
-          await tx
-            .update(paymentAttempts)
-            .set({
-              status: 'failed',
-              finalizedAt: now,
-              updatedAt: now,
-              lastErrorCode: 'AMOUNT_MISMATCH',
-              lastErrorMessage: mismatch.reason ?? 'Mismatch',
-              providerModifiedAt: nextProviderModifiedAt ?? null,
-            })
-            .where(eq(paymentAttempts.id, attemptRow.id));
-
-          const tr = await transitionPaymentStatus('needs_review');
-          if (tr.ok) {
-            await tx
-              .update(orders)
-              .set({
-                failureCode: 'MONO_AMOUNT_MISMATCH',
-                failureMessage:
-                  mismatch.reason ?? 'Webhook amount/currency mismatch.',
-                updatedAt: now,
-              })
-              .where(
-                and(
-                  eq(orders.id, orderRow.id),
-                  eq(orders.paymentProvider, 'monobank' as any)
-                )
-              );
-          } else {
-            appliedResult = 'applied_with_issue';
-          }
+    const orderRow = orderRes.rows?.[0] as
+      | {
+          id: string;
+          payment_status: string;
+          payment_provider: string;
+          status: string;
+          currency: string;
+          total_amount_minor: number;
+          psp_metadata: Record<string, unknown> | null;
         }
+      | undefined;
 
-        await tx
-          .update(monobankEvents)
+    if (!orderRow) {
+      appliedResult = 'unmatched';
+      await dbx
+        .update(monobankEvents)
+        .set({
+          appliedAt: now,
+          appliedResult,
+          appliedErrorCode: 'ORDER_NOT_FOUND',
+          appliedErrorMessage: 'Order not found for attempt',
+          attemptId: attemptRow.id,
+        })
+        .where(eq(monobankEvents.id, eventId));
+      return {
+        appliedResult,
+        restockReason,
+        restockOrderId,
+        attemptId,
+        orderId,
+      };
+    }
+    orderId = orderRow.id;
+
+    const status = parsed.normalized.status;
+    const providerModifiedAt = parsed.providerModifiedAt;
+    const attemptProviderModifiedAt = attemptRow.provider_modified_at
+      ? new Date(attemptRow.provider_modified_at)
+      : null;
+    const nextProviderModifiedAt =
+      providerModifiedAt &&
+      (!attemptProviderModifiedAt ||
+        providerModifiedAt > attemptProviderModifiedAt)
+        ? providerModifiedAt
+        : attemptProviderModifiedAt;
+
+    if (
+      providerModifiedAt &&
+      attemptProviderModifiedAt &&
+      providerModifiedAt <= attemptProviderModifiedAt
+    ) {
+      appliedResult = 'applied_noop';
+      await dbx
+        .update(monobankEvents)
+        .set({
+          appliedAt: now,
+          appliedResult,
+          appliedErrorCode: 'OUT_OF_ORDER',
+          appliedErrorMessage: 'provider_modified_at older than latest',
+          attemptId: attemptRow.id,
+          orderId: orderRow.id,
+        })
+        .where(eq(monobankEvents.id, eventId));
+      return {
+        appliedResult,
+        restockReason,
+        restockOrderId,
+        attemptId,
+        orderId,
+      };
+    }
+
+    const mismatch = amountMismatch({
+      payloadAmount: parsed.normalized.amount,
+      payloadCcy: parsed.normalized.ccy,
+      orderCurrency: orderRow.currency,
+      orderTotal: Number(orderRow.total_amount_minor ?? 0),
+      expectedAmount:
+        attemptRow.expected_amount_minor != null
+          ? Number(attemptRow.expected_amount_minor)
+          : null,
+    });
+
+    const metadataPatch = {
+      monobank: {
+        invoiceId: parsed.normalized.invoiceId,
+        status,
+        amount: parsed.normalized.amount ?? null,
+        ccy: parsed.normalized.ccy ?? null,
+        reference: parsed.normalized.reference ?? null,
+      },
+    };
+
+    const mergedMetaSql = sql`coalesce(${orders.pspMetadata}, '{}'::jsonb) || ${JSON.stringify(
+      metadataPatch
+    )}::jsonb`;
+
+    const transitionPaymentStatus = async (to: any) => {
+      const res = await guardedPaymentStatusUpdate({
+        orderId: orderRow.id,
+        paymentProvider: 'monobank',
+        to,
+        source: 'monobank_webhook',
+        note: `event:${eventId}:${status}`,
+      });
+      const ok =
+        res.applied || (res.currentProvider === 'monobank' && res.from === to);
+
+      return {
+        ok,
+        applied: res.applied,
+        reason: ok ? undefined : res.reason,
+      };
+    };
+
+    if (mismatch.mismatch) {
+      appliedResult = 'applied_with_issue';
+
+      if (orderRow.payment_status !== 'paid') {
+        await dbx
+          .update(paymentAttempts)
           .set({
-            appliedAt: now,
-            appliedResult,
-            appliedErrorCode: 'AMOUNT_MISMATCH',
-            appliedErrorMessage: mismatch.reason ?? 'Mismatch',
-            attemptId: attemptRow.id,
-            orderId: orderRow.id,
+            status: 'failed',
+            finalizedAt: now,
+            updatedAt: now,
+            lastErrorCode: 'AMOUNT_MISMATCH',
+            lastErrorMessage: mismatch.reason ?? 'Mismatch',
+            providerModifiedAt: nextProviderModifiedAt ?? null,
           })
-          .where(eq(monobankEvents.id, eventId));
-
-        return { appliedResult, restockReason, restockOrderId };
-      }
-      if (orderRow.payment_status === 'paid' && status !== 'success') {
-        appliedResult = 'applied_noop';
-        await tx
-          .update(monobankEvents)
-          .set({
-            appliedAt: now,
-            appliedResult,
-            attemptId: attemptRow.id,
-            orderId: orderRow.id,
-          })
-          .where(eq(monobankEvents.id, eventId));
-
-        return { appliedResult, restockReason, restockOrderId };
-      }
-
-      if (orderRow.payment_status === 'needs_review') {
-        appliedResult = 'applied_noop';
-        await tx
-          .update(monobankEvents)
-          .set({
-            appliedAt: now,
-            appliedResult,
-            attemptId: attemptRow.id,
-            orderId: orderRow.id,
-          })
-          .where(eq(monobankEvents.id, eventId));
-
-        return { appliedResult, restockReason, restockOrderId };
-      }
-
-      if (
-        (orderRow.payment_status === 'failed' ||
-          orderRow.payment_status === 'refunded') &&
-        status === 'success'
-      ) {
-        appliedResult = 'applied_with_issue';
+          .where(eq(paymentAttempts.id, attemptRow.id));
 
         const tr = await transitionPaymentStatus('needs_review');
         if (tr.ok) {
-          await tx
+          await dbx
             .update(orders)
             .set({
-              failureCode: 'MONO_OUT_OF_ORDER',
-              failureMessage: `Out-of-order event: ${orderRow.payment_status} -> success`,
+              failureCode: 'MONO_AMOUNT_MISMATCH',
+              failureMessage:
+                mismatch.reason ?? 'Webhook amount/currency mismatch.',
               updatedAt: now,
             })
             .where(
@@ -593,48 +553,84 @@ export async function applyMonoWebhookEvent(args: {
         } else {
           appliedResult = 'applied_with_issue';
         }
-
-        await tx
-          .update(monobankEvents)
-          .set({
-            appliedAt: now,
-            appliedResult,
-            appliedErrorCode: 'OUT_OF_ORDER',
-            appliedErrorMessage: `Out-of-order: ${orderRow.payment_status} -> success`,
-            attemptId: attemptRow.id,
-            orderId: orderRow.id,
-          })
-          .where(eq(monobankEvents.id, eventId));
-
-        return { appliedResult, restockReason, restockOrderId };
       }
 
-      if (status === 'success') {
-        const tr = await transitionPaymentStatus('paid');
+      await dbx
+        .update(monobankEvents)
+        .set({
+          appliedAt: now,
+          appliedResult,
+          appliedErrorCode: 'AMOUNT_MISMATCH',
+          appliedErrorMessage: mismatch.reason ?? 'Mismatch',
+          attemptId: attemptRow.id,
+          orderId: orderRow.id,
+        })
+        .where(eq(monobankEvents.id, eventId));
 
-        if (!tr.ok) {
-          appliedResult = 'applied_with_issue';
-          await tx
-            .update(monobankEvents)
-            .set({
-              appliedAt: now,
-              appliedResult,
-              appliedErrorCode: 'PAYMENT_STATE_BLOCKED',
-              appliedErrorMessage: `blocked transition to paid (${tr.reason})`,
-              attemptId: attemptRow.id,
-              orderId: orderRow.id,
-            })
-            .where(eq(monobankEvents.id, eventId));
+      return {
+        appliedResult,
+        restockReason,
+        restockOrderId,
+        attemptId,
+        orderId,
+      };
+    }
+    if (orderRow.payment_status === 'paid' && status !== 'success') {
+      appliedResult = 'applied_noop';
+      await dbx
+        .update(monobankEvents)
+        .set({
+          appliedAt: now,
+          appliedResult,
+          attemptId: attemptRow.id,
+          orderId: orderRow.id,
+        })
+        .where(eq(monobankEvents.id, eventId));
 
-          return { appliedResult, restockReason, restockOrderId };
-        }
+      return {
+        appliedResult,
+        restockReason,
+        restockOrderId,
+        attemptId,
+        orderId,
+      };
+    }
 
-        await tx
+    if (orderRow.payment_status === 'needs_review') {
+      appliedResult = 'applied_noop';
+      await dbx
+        .update(monobankEvents)
+        .set({
+          appliedAt: now,
+          appliedResult,
+          attemptId: attemptRow.id,
+          orderId: orderRow.id,
+        })
+        .where(eq(monobankEvents.id, eventId));
+
+      return {
+        appliedResult,
+        restockReason,
+        restockOrderId,
+        attemptId,
+        orderId,
+      };
+    }
+
+    if (
+      (orderRow.payment_status === 'failed' ||
+        orderRow.payment_status === 'refunded') &&
+      status === 'success'
+    ) {
+      appliedResult = 'applied_with_issue';
+
+      const tr = await transitionPaymentStatus('needs_review');
+      if (tr.ok) {
+        await dbx
           .update(orders)
           .set({
-            status: 'PAID',
-            pspChargeId: parsed.normalized.invoiceId,
-            pspMetadata: mergedMetaSql as any,
+            failureCode: 'MONO_OUT_OF_ORDER',
+            failureMessage: `Out-of-order event: ${orderRow.payment_status} -> success`,
             updatedAt: now,
           })
           .where(
@@ -643,118 +639,205 @@ export async function applyMonoWebhookEvent(args: {
               eq(orders.paymentProvider, 'monobank' as any)
             )
           );
-
-        await tx
-          .update(paymentAttempts)
-          .set({
-            status: 'succeeded',
-            finalizedAt: now,
-            updatedAt: now,
-            lastErrorCode: null,
-            lastErrorMessage: null,
-            providerModifiedAt: nextProviderModifiedAt ?? null,
-          })
-          .where(eq(paymentAttempts.id, attemptRow.id));
-
-        await tx
-          .update(monobankEvents)
-          .set({
-            appliedAt: now,
-            appliedResult: 'applied',
-            attemptId: attemptRow.id,
-            orderId: orderRow.id,
-          })
-          .where(eq(monobankEvents.id, eventId));
-
-        return { appliedResult: 'applied', restockReason, restockOrderId };
+      } else {
+        appliedResult = 'applied_with_issue';
       }
 
-      if (status === 'processing' || status === 'created') {
-        appliedResult = 'applied_noop';
-        await tx
+      await dbx
+        .update(monobankEvents)
+        .set({
+          appliedAt: now,
+          appliedResult,
+          appliedErrorCode: 'OUT_OF_ORDER',
+          appliedErrorMessage: `Out-of-order: ${orderRow.payment_status} -> success`,
+          attemptId: attemptRow.id,
+          orderId: orderRow.id,
+        })
+        .where(eq(monobankEvents.id, eventId));
+
+      return {
+        appliedResult,
+        restockReason,
+        restockOrderId,
+        attemptId,
+        orderId,
+      };
+    }
+
+    if (status === 'success') {
+      const tr = await transitionPaymentStatus('paid');
+
+      if (!tr.ok) {
+        appliedResult = 'applied_with_issue';
+        await dbx
           .update(monobankEvents)
           .set({
             appliedAt: now,
             appliedResult,
+            appliedErrorCode: 'PAYMENT_STATE_BLOCKED',
+            appliedErrorMessage: `blocked transition to paid (${tr.reason})`,
             attemptId: attemptRow.id,
             orderId: orderRow.id,
           })
           .where(eq(monobankEvents.id, eventId));
 
-        return { appliedResult, restockReason, restockOrderId };
+        return {
+          appliedResult,
+          restockReason,
+          restockOrderId,
+          attemptId,
+          orderId,
+        };
       }
 
-      if (
-        status === 'failure' ||
-        status === 'expired' ||
-        status === 'reversed'
-      ) {
-        const isRefunded = status === 'reversed';
-        const nextPaymentStatus = isRefunded ? 'refunded' : 'failed';
+      await dbx
+        .update(orders)
+        .set({
+          status: 'PAID',
+          pspChargeId: parsed.normalized.invoiceId,
+          pspMetadata: mergedMetaSql as any,
+          updatedAt: now,
+        })
+        .where(
+          and(
+            eq(orders.id, orderRow.id),
+            eq(orders.paymentProvider, 'monobank' as any)
+          )
+        );
 
-        const tr = await transitionPaymentStatus(nextPaymentStatus);
+      await dbx
+        .update(paymentAttempts)
+        .set({
+          status: 'succeeded',
+          finalizedAt: now,
+          updatedAt: now,
+          lastErrorCode: null,
+          lastErrorMessage: null,
+          providerModifiedAt: nextProviderModifiedAt ?? null,
+        })
+        .where(eq(paymentAttempts.id, attemptRow.id));
 
-        if (!tr.ok) {
-          appliedResult = 'applied_with_issue';
-          await tx
-            .update(monobankEvents)
-            .set({
-              appliedAt: now,
-              appliedResult,
-              appliedErrorCode: 'PAYMENT_STATE_BLOCKED',
-              appliedErrorMessage: `blocked transition to ${nextPaymentStatus} (${tr.reason})`,
-              attemptId: attemptRow.id,
-              orderId: orderRow.id,
-            })
-            .where(eq(monobankEvents.id, eventId));
+      await dbx
+        .update(monobankEvents)
+        .set({
+          appliedAt: now,
+          appliedResult: 'applied',
+          attemptId: attemptRow.id,
+          orderId: orderRow.id,
+        })
+        .where(eq(monobankEvents.id, eventId));
 
-          return { appliedResult, restockReason, restockOrderId };
-        }
+      return {
+        appliedResult: 'applied',
+        restockReason,
+        restockOrderId,
+        attemptId,
+        orderId,
+      };
+    }
 
-        await tx
-          .update(orders)
-          .set({
-            pspStatusReason: status,
-            pspMetadata: mergedMetaSql as any,
-            updatedAt: now,
-          })
-          .where(
-            and(
-              eq(orders.id, orderRow.id),
-              eq(orders.paymentProvider, 'monobank' as any)
-            )
-          );
+    if (status === 'processing' || status === 'created') {
+      appliedResult = 'applied_noop';
+      await dbx
+        .update(monobankEvents)
+        .set({
+          appliedAt: now,
+          appliedResult,
+          attemptId: attemptRow.id,
+          orderId: orderRow.id,
+        })
+        .where(eq(monobankEvents.id, eventId));
 
-        await tx
-          .update(paymentAttempts)
-          .set({
-            status: isRefunded ? 'canceled' : 'failed',
-            finalizedAt: now,
-            updatedAt: now,
-            lastErrorCode: status,
-            lastErrorMessage: `Monobank status: ${status}`,
-            providerModifiedAt: nextProviderModifiedAt ?? null,
-          })
-          .where(eq(paymentAttempts.id, attemptRow.id));
+      return {
+        appliedResult,
+        restockReason,
+        restockOrderId,
+        attemptId,
+        orderId,
+      };
+    }
 
-        await tx
+    if (status === 'failure' || status === 'expired' || status === 'reversed') {
+      const isRefunded = status === 'reversed';
+      const nextPaymentStatus = isRefunded ? 'refunded' : 'failed';
+
+      const tr = await transitionPaymentStatus(nextPaymentStatus);
+
+      if (!tr.ok) {
+        appliedResult = 'applied_with_issue';
+        await dbx
           .update(monobankEvents)
           .set({
             appliedAt: now,
-            appliedResult: 'applied',
+            appliedResult,
+            appliedErrorCode: 'PAYMENT_STATE_BLOCKED',
+            appliedErrorMessage: `blocked transition to ${nextPaymentStatus} (${tr.reason})`,
             attemptId: attemptRow.id,
             orderId: orderRow.id,
           })
           .where(eq(monobankEvents.id, eventId));
 
-        restockReason = isRefunded ? 'refunded' : 'failed';
-        restockOrderId = orderRow.id;
-
-        return { appliedResult: 'applied', restockReason, restockOrderId };
+        return {
+          appliedResult,
+          restockReason,
+          restockOrderId,
+          attemptId,
+          orderId,
+        };
       }
 
-      return { appliedResult, restockReason, restockOrderId };
-    })();
+      await dbx
+        .update(orders)
+        .set({
+          pspStatusReason: status,
+          pspMetadata: mergedMetaSql as any,
+          updatedAt: now,
+        })
+        .where(
+          and(
+            eq(orders.id, orderRow.id),
+            eq(orders.paymentProvider, 'monobank' as any)
+          )
+        );
+
+      await dbx
+        .update(paymentAttempts)
+        .set({
+          status: isRefunded ? 'canceled' : 'failed',
+          finalizedAt: now,
+          updatedAt: now,
+          lastErrorCode: status,
+          lastErrorMessage: `Monobank status: ${status}`,
+          providerModifiedAt: nextProviderModifiedAt ?? null,
+        })
+        .where(eq(paymentAttempts.id, attemptRow.id));
+
+      await dbx
+        .update(monobankEvents)
+        .set({
+          appliedAt: now,
+          appliedResult: 'applied',
+          attemptId: attemptRow.id,
+          orderId: orderRow.id,
+        })
+        .where(eq(monobankEvents.id, eventId));
+
+      restockReason = isRefunded ? 'refunded' : 'failed';
+      restockOrderId = orderRow.id;
+
+      return {
+        appliedResult: 'applied',
+        restockReason,
+        restockOrderId,
+        attemptId,
+        orderId,
+      };
+    }
+
+    return { appliedResult, restockReason, restockOrderId, attemptId, orderId };
+  })();
+
+  const { appliedResult, restockOrderId, restockReason } = outcome;
 
   if (restockReason && restockOrderId) {
     try {
@@ -767,6 +850,34 @@ export async function applyMonoWebhookEvent(args: {
         requestId: args.requestId,
         invoiceId: parsed.normalized.invoiceId,
       });
+      const now = new Date();
+      const issueMsg = toIssueMessage(error);
+
+      if (eventId) {
+        await db
+          .update(monobankEvents)
+          .set({
+            appliedResult: 'applied_with_issue',
+            appliedErrorCode:
+              sql`coalesce(${monobankEvents.appliedErrorCode}, 'RESTOCK_FAILED')` as any,
+            appliedErrorMessage:
+              sql`coalesce(${monobankEvents.appliedErrorMessage}, ${issueMsg})` as any,
+          })
+          .where(eq(monobankEvents.id, eventId));
+      }
+
+      if (outcome.attemptId) {
+        await db
+          .update(paymentAttempts)
+          .set({
+            lastErrorCode:
+              sql`coalesce(${paymentAttempts.lastErrorCode}, 'RESTOCK_FAILED')` as any,
+            lastErrorMessage:
+              sql`coalesce(${paymentAttempts.lastErrorMessage}, ${issueMsg})` as any,
+            updatedAt: now,
+          })
+          .where(eq(paymentAttempts.id, outcome.attemptId));
+      }
     }
   }
 

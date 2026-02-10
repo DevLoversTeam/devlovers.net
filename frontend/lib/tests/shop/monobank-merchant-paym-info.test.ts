@@ -1,4 +1,3 @@
-
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -47,7 +46,7 @@ describe('buildMonoMerchantPaymInfo', () => {
       () =>
         buildMonoMerchantPaymInfo({
           reference: 'attempt-1',
-          destination: 'ÐžÐ¿Ð»Ð°Ñ‚Ð° Ð·Ð°Ð¼Ð¾Ð²Ð»ÐµÐ½Ð½Ñ 123',
+          destination: 'Оплата замовлення 123',
           currency: 'UAH',
           expectedAmountMinor: 1500,
           items: [{ name: 'Hat', quantity: 1, unitPriceMinor: 1000 }],
@@ -61,7 +60,7 @@ describe('buildMonoMerchantPaymInfo', () => {
       () =>
         buildMonoMerchantPaymInfo({
           reference: 'attempt-1',
-          destination: 'ÐžÐ¿Ð»Ð°Ñ‚Ð° Ð·Ð°Ð¼Ð¾Ð²Ð»ÐµÐ½Ð½Ñ 123',
+          destination: 'Оплата замовлення 123',
           currency: 'USD',
           expectedAmountMinor: 1000,
           items: [{ name: 'Hat', quantity: 1, unitPriceMinor: 1000 }],
@@ -75,7 +74,7 @@ describe('buildMonoMerchantPaymInfo', () => {
       () =>
         buildMonoMerchantPaymInfo({
           reference: 'attempt-1',
-          destination: 'ÐžÐ¿Ð»Ð°Ñ‚Ð° Ð·Ð°Ð¼Ð¾Ð²Ð»ÐµÐ½Ð½Ñ 123',
+          destination: 'Оплата замовлення 123',
           currency: 'UAH',
           expectedAmountMinor: 1000,
           items: [{ name: 'Hat', quantity: 0, unitPriceMinor: 1000 }],
@@ -89,7 +88,7 @@ describe('buildMonoMerchantPaymInfo', () => {
       () =>
         buildMonoMerchantPaymInfo({
           reference: 'attempt-1',
-          destination: 'ÐžÐ¿Ð»Ð°Ñ‚Ð° Ð·Ð°Ð¼Ð¾Ð²Ð»ÐµÐ½Ð½Ñ 123',
+          destination: 'Оплата замовлення 123',
           currency: 'UAH',
           expectedAmountMinor: 1000,
           items: [{ name: 'Hat', quantity: 1, unitPriceMinor: -5 }],
@@ -103,7 +102,7 @@ describe('buildMonoMerchantPaymInfo', () => {
       () =>
         buildMonoMerchantPaymInfo({
           reference: 'attempt-1',
-          destination: 'ÐžÐ¿Ð»Ð°Ñ‚Ð° Ð·Ð°Ð¼Ð¾Ð²Ð»ÐµÐ½Ð½Ñ 123',
+          destination: 'Оплата замовлення 123',
           currency: 'UAH',
           expectedAmountMinor: 1000,
           items: [{ name: 'Hat', quantity: 1, unitPriceMinor: 10.5 }],
@@ -117,7 +116,7 @@ describe('buildMonoMerchantPaymInfo', () => {
       () =>
         buildMonoMerchantPaymInfo({
           reference: 'attempt-1',
-          destination: 'ÐžÐ¿Ð»Ð°Ñ‚Ð° Ð·Ð°Ð¼Ð¾Ð²Ð»ÐµÐ½Ð½Ñ 123',
+          destination: 'Оплата замовлення 123',
           currency: 'UAH',
           expectedAmountMinor: 1000.5,
           items: [{ name: 'Hat', quantity: 1, unitPriceMinor: 1000 }],
@@ -131,7 +130,7 @@ describe('buildMonoMerchantPaymInfo', () => {
       () =>
         buildMonoMerchantPaymInfo({
           reference: '   ',
-          destination: 'ÐžÐ¿Ð»Ð°Ñ‚Ð° Ð·Ð°Ð¼Ð¾Ð²Ð»ÐµÐ½Ð½Ñ 123',
+          destination: 'Оплата замовлення 123',
           currency: 'UAH',
           expectedAmountMinor: 1000,
           items: [{ name: 'Hat', quantity: 1, unitPriceMinor: 1000 }],

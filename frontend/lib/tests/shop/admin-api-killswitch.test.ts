@@ -165,7 +165,7 @@ describe('P0-7.1 Admin API kill-switch coverage (production)', () => {
       }
 
       const path = c.path(c.id);
-      const ctx = { params: { id: c.id } };
+      const ctx = { params: Promise.resolve({ id: c.id }) };
 
       await runAllMutationMethods(mod, path, ctx);
     }

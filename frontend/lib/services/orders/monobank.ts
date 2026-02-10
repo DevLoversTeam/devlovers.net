@@ -399,7 +399,7 @@ async function createMonoAttemptAndInvoiceImpl(
 }> {
   const snapshot = await deps.readMonobankInvoiceParams(args.orderId);
 
-  const existing = await deps.getActiveAttempt(args.orderId);
+  let existing = await deps.getActiveAttempt(args.orderId);
   if (existing) {
     const pageUrl = readPageUrlFromMetadata(existing);
     if (existing.providerPaymentIntentId && pageUrl) {
@@ -414,6 +414,7 @@ async function createMonoAttemptAndInvoiceImpl(
 
     const ageMs =
       Date.now() - new Date(existing.updatedAt ?? existing.createdAt).getTime();
+
     if (existing.status === 'creating' && ageMs < CREATING_STALE_MS) {
       throw new InvalidPayloadError(
         'Payment initialization already in progress. Retry shortly.',
@@ -421,19 +422,35 @@ async function createMonoAttemptAndInvoiceImpl(
       );
     }
 
-    await deps.markAttemptFailed({
-      attemptId: existing.id,
-      errorCode: 'invoice_missing',
-      errorMessage: 'Active attempt missing invoice details.',
-    });
-    await deps.cancelOrderAndRelease(
-      args.orderId,
-      'Invoice creation incomplete.'
-    );
-    throw new PspUnavailableError('Invoice creation incomplete.', {
+    // D: stale creating/active without pageUrl -> fail attempt, do NOT cancel order
+    logWarn('monobank_attempt_stale_missing_invoice', {
       orderId: args.orderId,
+      attemptId: existing.id,
+      status: existing.status,
+      ageMs,
       requestId: args.requestId,
     });
+
+    try {
+      await deps.markAttemptFailed({
+        attemptId: existing.id,
+        errorCode: 'invoice_missing',
+        errorMessage: 'Active attempt missing invoice details (stale).',
+        meta: { requestId: args.requestId, ageMs, status: existing.status },
+      });
+    } catch (markError) {
+      logError('monobank_attempt_mark_failed', markError, {
+        orderId: args.orderId,
+        attemptId: existing.id,
+        requestId: args.requestId,
+      });
+      throw new PspUnavailableError('Attempt cleanup failed.', {
+        orderId: args.orderId,
+        requestId: args.requestId,
+      });
+    }
+
+    existing = null;
   }
 
   let attempt: PaymentAttemptRow;
