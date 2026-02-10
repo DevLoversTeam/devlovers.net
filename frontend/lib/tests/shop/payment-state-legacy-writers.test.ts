@@ -57,6 +57,130 @@ function walkFiles(dir: string, out: string[]) {
     else if (entry.isFile() && p.endsWith('.ts')) out.push(p);
   }
 }
+function findMatchingBrace(src: string, start: number): number {
+  let depth = 0;
+  let inSingle = false;
+  let inDouble = false;
+  let inTemplate = false;
+  let inLineComment = false;
+  let inBlockComment = false;
+
+  for (let i = start; i < src.length; i++) {
+    const ch = src[i];
+    const next = src[i + 1];
+
+    if (inLineComment) {
+      if (ch === '\n') inLineComment = false;
+      continue;
+    }
+
+    if (inBlockComment) {
+      if (ch === '*' && next === '/') {
+        inBlockComment = false;
+        i++;
+      }
+      continue;
+    }
+
+    if (inSingle) {
+      if (ch === '\\') {
+        i++;
+        continue;
+      }
+      if (ch === "'") inSingle = false;
+      continue;
+    }
+
+    if (inDouble) {
+      if (ch === '\\') {
+        i++;
+        continue;
+      }
+      if (ch === '"') inDouble = false;
+      continue;
+    }
+
+    if (inTemplate) {
+      if (ch === '\\') {
+        i++;
+        continue;
+      }
+      if (ch === '`') inTemplate = false;
+      // IMPORTANT: ignore everything inside template literals so braces there
+      // do not affect object-literal matching.
+      continue;
+    }
+
+    if (ch === '/' && next === '/') {
+      inLineComment = true;
+      i++;
+      continue;
+    }
+
+    if (ch === '/' && next === '*') {
+      inBlockComment = true;
+      i++;
+      continue;
+    }
+
+    if (ch === "'") {
+      inSingle = true;
+      continue;
+    }
+
+    if (ch === '"') {
+      inDouble = true;
+      continue;
+    }
+
+    if (ch === '`') {
+      inTemplate = true;
+      continue;
+    }
+
+    if (ch === '{') {
+      depth++;
+      continue;
+    }
+
+    if (ch === '}') {
+      depth--;
+      if (depth === 0) return i;
+      continue;
+    }
+  }
+
+  return -1;
+}
+
+function hasDirectPaymentStatusWriter(src: string): boolean {
+  let from = 0;
+  while (true) {
+    const idx = src.indexOf('.set(', from);
+    if (idx === -1) return false;
+
+    let i = idx + '.set('.length;
+    while (i < src.length && /\s/.test(src[i]!)) i++;
+
+    // Only count direct object-literal writes: .set({ ... })
+    if (src[i] !== '{') {
+      from = i;
+      continue;
+    }
+
+    const end = findMatchingBrace(src, i);
+    if (end === -1) {
+      // malformed/unexpected; skip to avoid false positives
+      from = i + 1;
+      continue;
+    }
+
+    const objLiteral = src.slice(i, end + 1);
+    if (/\bpaymentStatus\s*:/.test(objLiteral)) return true;
+
+    from = end + 1;
+  }
+}
 
 describe('Task 5: guarded payment transitions block legacy/forbidden paths', () => {
   const created: string[] = [];
@@ -173,9 +297,7 @@ describe('Task 5: guarded payment transitions block legacy/forbidden paths', () 
       if (f.endsWith(path.join('orders', 'payment-state.ts'))) continue;
 
       const s = fs.readFileSync(f, 'utf8');
-      const hasDirectWriter = /\.set\(\s*{[\s\S]{0,800}?paymentStatus\s*:/.test(
-        s
-      );
+      const hasDirectWriter = hasDirectPaymentStatusWriter(s);
       if (hasDirectWriter) offenders.push(path.relative(process.cwd(), f));
     }
 

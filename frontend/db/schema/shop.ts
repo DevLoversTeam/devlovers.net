@@ -379,6 +379,42 @@ export const monobankRefunds = pgTable(
   ]
 );
 
+export const monobankPaymentCancels = pgTable(
+  'monobank_payment_cancels',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    orderId: uuid('order_id')
+      .notNull()
+      .references(() => orders.id, { onDelete: 'cascade' }),
+    extRef: text('ext_ref').notNull(),
+    invoiceId: text('invoice_id').notNull(),
+    attemptId: uuid('attempt_id').references(() => paymentAttempts.id, {
+      onDelete: 'set null',
+    }),
+    status: text('status').notNull().default('requested'),
+    requestId: text('request_id').notNull(),
+    errorCode: text('error_code'),
+    errorMessage: text('error_message'),
+    pspResponse: jsonb('psp_response').$type<Record<string, unknown> | null>(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  t => [
+    check(
+      'monobank_payment_cancels_status_check',
+      sql`${t.status} in ('requested','processing','success','failure')`
+    ),
+    uniqueIndex('monobank_payment_cancels_ext_ref_unique').on(t.extRef),
+    index('monobank_payment_cancels_order_id_idx').on(t.orderId),
+    index('monobank_payment_cancels_attempt_id_idx').on(t.attemptId),
+  ]
+);
+
 export const productPrices = pgTable(
   'product_prices',
   {
@@ -589,3 +625,4 @@ export type DbPaymentAttempt = typeof paymentAttempts.$inferSelect;
 export type DbApiRateLimit = typeof apiRateLimits.$inferSelect;
 export type DbMonobankEvent = typeof monobankEvents.$inferSelect;
 export type DbMonobankRefund = typeof monobankRefunds.$inferSelect;
+export type DbMonobankPaymentCancel = typeof monobankPaymentCancels.$inferSelect;

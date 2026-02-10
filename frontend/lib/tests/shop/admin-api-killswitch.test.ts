@@ -59,6 +59,13 @@ const cases: RouteCase[] = [
     id: TEST_ORDER_ID,
   },
   {
+    name: 'admin/orders/[id]/cancel-payment',
+    importPath: '@/app/api/shop/admin/orders/[id]/cancel-payment/route',
+    path: (id: string) => `/api/shop/admin/orders/${id}/cancel-payment`,
+    kind: 'dynamic-id',
+    id: TEST_ORDER_ID,
+  },
+  {
     name: 'admin/orders/[id]/refund',
     importPath: '@/app/api/shop/admin/orders/[id]/refund/route',
     path: (id: string) => `/api/shop/admin/orders/${id}/refund`,
