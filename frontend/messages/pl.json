@@ -434,7 +434,8 @@
       },
       "navigation": {
         "shopNav": "Nawigacja sklepu",
-        "home": "Strona główna"
+        "home": "Strona główna",
+        "shop": "Sklep"
       }
     },
     "catalog": {
