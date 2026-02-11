@@ -1,18 +1,19 @@
-// This file configures the initialization of Sentry on the client.
-// The added config here will be used whenever a users loads a page in their browser.
-// https://docs.sentry.io/platforms/javascript/guides/nextjs/
+import * as Sentry from '@sentry/nextjs';
 
-import * as Sentry from "@sentry/nextjs";
+const isProduction =
+  process.env.NEXT_PUBLIC_VERCEL_ENV === 'production' ||
+  process.env.NODE_ENV === 'production';
 
 Sentry.init({
-  dsn: "https://16e778fdd33f20dbbafb972d65657c9c@o4510867573374976.ingest.de.sentry.io/4510867589169232",
+  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
 
-  // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
-  tracesSampleRate: 1,
+  enabled: isProduction,
 
-  // Enable sending user PII (Personally Identifiable Information)
-  // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
-  sendDefaultPii: true,
+  tracesSampleRate: 0.1,
+
+  environment: process.env.NEXT_PUBLIC_VERCEL_ENV || process.env.NODE_ENV,
+
+  release: process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA,
+
+  sendDefaultPii: false,
 });
-
-export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
