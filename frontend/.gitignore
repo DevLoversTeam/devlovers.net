@@ -48,3 +48,6 @@ next-env.d.ts
 CLAUDE.md
 _dev-notes/
 .claude
+
+# Sentry Config File
+.env.sentry-build-plugin
