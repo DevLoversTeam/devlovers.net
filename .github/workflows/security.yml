@@ -1,0 +1,31 @@
+name: Security Check
+
+on:
+    pull_request:
+    push:
+        branches: [main, develop]
+
+jobs:
+    safe-chain:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+                  cache: npm
+
+            - name: Install Safe-chain
+              run: curl -fsSL https://github.com/AikidoSec/safe-chain/releases/latest/download/install-safe-chain.sh | sh -s -- --ci
+
+            - name: Install dependencies
+              working-directory: frontend
+              run: npm ci
+
+            - name: Build
+              working-directory: frontend
+              run: npm run build
