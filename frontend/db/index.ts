@@ -7,57 +7,43 @@ import { Pool } from 'pg';
 
 import * as schema from './schema';
 
-dotenv.config({ path: '.env', quiet: true });
-dotenv.config({ path: 'frontend/.env', quiet: true });
+dotenv.config();
 
 type AppDatabase = PgDatabase<PgQueryResultHKT, typeof schema>;
 
 const APP_ENV = process.env.APP_ENV ?? 'local';
-const DATABASE_URL = process.env.DATABASE_URL;
-const DATABASE_URL_LOCAL = process.env.DATABASE_URL_LOCAL;
 
 let db: AppDatabase;
-function createMissingDbProxy(message: string): AppDatabase {
-  return new Proxy({} as AppDatabase, {
-    get() {
-      throw new Error(message);
-    },
-  });
-}
 
 if (APP_ENV === 'local') {
-  const url = DATABASE_URL_LOCAL ?? DATABASE_URL;
+  const url = process.env.DATABASE_URL_LOCAL;
 
   if (!url) {
-    db = createMissingDbProxy(
-      '[db] APP_ENV=local requires DATABASE_URL_LOCAL or DATABASE_URL to be set'
-    );
-  } else {
-    const pool = new Pool({
-      connectionString: url,
-    });
+    throw new Error('[db] APP_ENV=local requires DATABASE_URL_LOCAL to be set');
+  }
 
-    db = drizzlePg(pool, { schema });
+  const pool = new Pool({
+    connectionString: url,
+  });
 
-    if (process.env.NODE_ENV !== 'test') {
-      console.log('[db] using local PostgreSQL (pg)');
-    }
+  db = drizzlePg(pool, { schema });
+
+  if (process.env.NODE_ENV !== 'test') {
+    console.log('[db] using local PostgreSQL (pg)');
   }
 } else {
-  const url = DATABASE_URL ?? DATABASE_URL_LOCAL;
+  const url = process.env.DATABASE_URL;
 
   if (!url) {
-    db = createMissingDbProxy(
-      `[db] APP_ENV=${APP_ENV} requires DATABASE_URL or DATABASE_URL_LOCAL to be set`
-    );
-  } else {
-    const sql = neon(url);
+    throw new Error(`[db] APP_ENV=${APP_ENV} requires DATABASE_URL to be set`);
+  }
 
-    db = drizzleNeon(sql, { schema });
+  const sql = neon(url);
 
-    if (process.env.NODE_ENV !== 'test') {
-      console.log('[db] using production database (neon http)');
-    }
+  db = drizzleNeon(sql, { schema });
+
+  if (process.env.NODE_ENV !== 'test') {
+    console.log('[db] using production database (neon http)');
   }
 }
 
