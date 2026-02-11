@@ -2,11 +2,10 @@
 
 import { motion } from 'framer-motion';
 import { Crown } from 'lucide-react';
-import Image from 'next/image';
-
 import { cn } from '@/lib/utils';
 
 import { User } from './types';
+import { UserAvatar } from './UserAvatar';
 
 const rankConfig = {
   1: {
@@ -86,11 +85,9 @@ export function LeaderboardPodium({ topThree }: { topThree: User[] }) {
                   )}
                 >
                   <div className="relative h-full w-full overflow-hidden rounded-full bg-gray-100 dark:bg-black">
-                    <Image
+                    <UserAvatar
                       src={user.avatar}
-                      alt={user.username}
-                      fill
-                      className="object-cover"
+                      username={user.username}
                     />
                   </div>
 

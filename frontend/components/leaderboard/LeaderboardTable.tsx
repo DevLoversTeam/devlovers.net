@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 
 import { CurrentUser, User } from './types';
+import { UserAvatar } from './UserAvatar';
 
 interface LeaderboardTableProps {
   users: User[];
@@ -133,14 +134,16 @@ function TableRow({
         <div className="flex items-center gap-2 overflow-hidden sm:gap-4">
           <div
             className={cn(
-              'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border text-xs font-bold transition-all duration-300 sm:h-10 sm:w-10 sm:text-sm',
+              'relative h-8 w-8 flex-shrink-0 overflow-hidden rounded-full border transition-all duration-300 sm:h-10 sm:w-10',
               isCurrentUser
-                ? 'border-[var(--accent-primary)] bg-[var(--accent-primary)] text-white shadow-[0_0_1px_var(--accent-primary)]'
-                : 'border-slate-200 bg-slate-100 text-slate-600 group-hover:border-[var(--accent-primary)] group-hover:text-[var(--accent-primary)] dark:border-white/10 dark:bg-gradient-to-br dark:from-slate-800 dark:to-slate-900 dark:text-slate-300'
+                ? 'border-[var(--accent-primary)] shadow-[0_0_1px_var(--accent-primary)]'
+                : 'border-slate-200 group-hover:border-[var(--accent-primary)] dark:border-white/10'
             )}
-            aria-hidden="true"
           >
-            {user.username.slice(0, 1).toUpperCase()}
+            <UserAvatar
+              src={user.avatar}
+              username={user.username}
+            />
           </div>
 
           <div className="flex min-w-0 flex-col">
