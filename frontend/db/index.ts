@@ -17,40 +17,47 @@ const DATABASE_URL = process.env.DATABASE_URL;
 const DATABASE_URL_LOCAL = process.env.DATABASE_URL_LOCAL;
 
 let db: AppDatabase;
+function createMissingDbProxy(message: string): AppDatabase {
+  return new Proxy({} as AppDatabase, {
+    get() {
+      throw new Error(message);
+    },
+  });
+}
 
 if (APP_ENV === 'local') {
   const url = DATABASE_URL_LOCAL ?? DATABASE_URL;
 
   if (!url) {
-    throw new Error(
+    db = createMissingDbProxy(
       '[db] APP_ENV=local requires DATABASE_URL_LOCAL or DATABASE_URL to be set'
     );
-  }
+  } else {
+    const pool = new Pool({
+      connectionString: url,
+    });
 
-  const pool = new Pool({
-    connectionString: url,
-  });
+    db = drizzlePg(pool, { schema });
 
-  db = drizzlePg(pool, { schema });
-
-  if (process.env.NODE_ENV !== 'test') {
-    console.log('[db] using local PostgreSQL (pg)');
+    if (process.env.NODE_ENV !== 'test') {
+      console.log('[db] using local PostgreSQL (pg)');
+    }
   }
 } else {
   const url = DATABASE_URL ?? DATABASE_URL_LOCAL;
 
   if (!url) {
-    throw new Error(
+    db = createMissingDbProxy(
       `[db] APP_ENV=${APP_ENV} requires DATABASE_URL or DATABASE_URL_LOCAL to be set`
     );
-  }
+  } else {
+    const sql = neon(url);
 
-  const sql = neon(url);
+    db = drizzleNeon(sql, { schema });
 
-  db = drizzleNeon(sql, { schema });
-
-  if (process.env.NODE_ENV !== 'test') {
-    console.log('[db] using production database (neon http)');
+    if (process.env.NODE_ENV !== 'test') {
+      console.log('[db] using production database (neon http)');
+    }
   }
 }
 
