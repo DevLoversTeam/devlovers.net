@@ -8,6 +8,7 @@ import { orders, paymentAttempts, productPrices, products } from '@/db/schema';
 import { resetEnvCache } from '@/lib/env';
 import { toDbMoney } from '@/lib/shop/money';
 import { deriveTestIpFromIdemKey } from '@/lib/tests/helpers/ip';
+import { isUuidV1toV5 } from '@/lib/utils/uuid';
 
 vi.mock('@/lib/auth', () => ({
   getCurrentUser: vi.fn().mockResolvedValue(null),
@@ -120,19 +121,40 @@ async function createIsolatedProduct(stock: number) {
 }
 
 async function cleanupOrder(orderId: string) {
-  await db.execute(sql`delete from inventory_moves where order_id = ${orderId}::uuid`);
-  await db.execute(sql`delete from order_items where order_id = ${orderId}::uuid`);
-  await db.delete(paymentAttempts).where(eq(paymentAttempts.orderId, orderId));
-  await db.delete(orders).where(eq(orders.id, orderId));
+  if (!isUuidV1toV5(orderId))
+    throw new Error(`cleanupOrder: invalid uuid: ${orderId}`);
+
+  await db.execute(
+    sql`delete from inventory_moves where order_id = ${orderId}::uuid`
+  );
+  await db.execute(
+    sql`delete from order_items where order_id = ${orderId}::uuid`
+  );
+  await db.execute(
+    sql`delete from payment_attempts where order_id = ${orderId}::uuid`
+  );
+  await db.execute(sql`delete from orders where id = ${orderId}::uuid`);
 }
 
-async function cleanupProduct(productId: string) {
-  await db.execute(sql`delete from inventory_moves where product_id = ${productId}::uuid`);
-  await db.execute(sql`delete from order_items where product_id = ${productId}::uuid`);
-  await db.delete(productPrices).where(eq(productPrices.productId, productId));
-  await db.delete(products).where(eq(products.id, productId));
+async function archiveProduct(productId: string) {
+  if (!isUuidV1toV5(productId))
+    throw new Error(`archiveProduct: invalid uuid: ${productId}`);
+  const TEST_ARCHIVE_PREFIX = '[TEST-ARCHIVED] ';
+  await db
+    .update(products)
+    .set({
+      isActive: false,
+      stock: 0,
+      title: sql<string>`
+        case
+          when ${products.title} like ${TEST_ARCHIVE_PREFIX + '%'} then ${products.title}
+          else ${TEST_ARCHIVE_PREFIX} || ${products.title}
+        end
+      `,
+      updatedAt: new Date(),
+    } as any)
+    .where(eq(products.id, productId));
 }
-
 
 async function postCheckout(idemKey: string, productId: string) {
   const mod = (await import('@/app/api/shop/checkout/route')) as unknown as {
@@ -237,12 +259,14 @@ describe.sequential('monobank PSP_UNAVAILABLE invariant', () => {
         if (orderId) {
           await cleanupOrder(orderId);
         }
-      } catch (e) { warnCleanup('cleanupOrder', e); }
+      } catch (e) {
+        warnCleanup('cleanupOrder', e);
+      }
 
       try {
-        await cleanupProduct(productId);
+        await archiveProduct(productId);
       } catch (e) {
-        warnCleanup('cleanupProduct', e);
+        warnCleanup('archiveProduct', e);
       }
     }
   }, 20_000);
