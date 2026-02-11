@@ -8,6 +8,7 @@ import { orders, paymentAttempts, productPrices, products } from '@/db/schema';
 import { resetEnvCache } from '@/lib/env';
 import { toDbMoney } from '@/lib/shop/money';
 import { deriveTestIpFromIdemKey } from '@/lib/tests/helpers/ip';
+import { isUuidV1toV5 } from '@/lib/utils/uuid';
 
 vi.mock('@/lib/auth', () => ({
   getCurrentUser: vi.fn().mockResolvedValue(null),
@@ -77,12 +78,6 @@ function warnCleanup(step: string, err: unknown) {
   });
 }
 
-function isUuid(v: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-    v
-  );
-}
-
 async function createIsolatedProduct(stock: number) {
   const [tpl] = await db
     .select()
@@ -126,7 +121,7 @@ async function createIsolatedProduct(stock: number) {
 }
 
 async function cleanupOrder(orderId: string) {
-  if (!isUuid(orderId))
+  if (!isUuidV1toV5(orderId))
     throw new Error(`cleanupOrder: invalid uuid: ${orderId}`);
 
   await db.execute(
@@ -142,7 +137,7 @@ async function cleanupOrder(orderId: string) {
 }
 
 async function archiveProduct(productId: string) {
-  if (!isUuid(productId))
+  if (!isUuidV1toV5(productId))
     throw new Error(`archiveProduct: invalid uuid: ${productId}`);
   const TEST_ARCHIVE_PREFIX = '[TEST-ARCHIVED] ';
   await db

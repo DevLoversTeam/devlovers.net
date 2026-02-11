@@ -10,6 +10,7 @@ import { logError, logInfo } from '@/lib/logging';
 import { InvalidPayloadError } from '@/lib/services/errors';
 import { guardedPaymentStatusUpdate } from '@/lib/services/orders/payment-state';
 import { restockOrder } from '@/lib/services/orders/restock';
+import { isUuidV1toV5 } from '@/lib/utils/uuid';
 
 type WebhookMode = 'apply' | 'store' | 'drop';
 
@@ -38,31 +39,30 @@ type MonobankApplyOutcome = {
   orderId: string | null;
 };
 
-type AttemptRow = {
-  id: string;
-  order_id: string;
-  status: string;
-  expected_amount_minor: number | null;
-  provider_payment_intent_id: string | null;
-  provider_modified_at: Date | string | null;
-};
+type AttemptRow = Pick<
+  typeof paymentAttempts.$inferSelect,
+  | 'id'
+  | 'orderId'
+  | 'status'
+  | 'expectedAmountMinor'
+  | 'providerPaymentIntentId'
+  | 'providerModifiedAt'
+>;
 
-type OrderRow = {
-  id: string;
-  payment_status: string;
-  payment_provider: string;
-  status: string;
-  currency: string;
-  total_amount_minor: number;
-  psp_metadata: Record<string, unknown> | null;
-};
+type OrderRow = Pick<
+  typeof orders.$inferSelect,
+  | 'id'
+  | 'paymentStatus'
+  | 'paymentProvider'
+  | 'status'
+  | 'currency'
+  | 'totalAmountMinor'
+  | 'pspMetadata'
+>;
 
 type PaymentStatusTarget = Parameters<
   typeof guardedPaymentStatusUpdate
 >[0]['to'];
-
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const CLAIM_TTL_MS = (() => {
   const raw = process.env.MONO_WEBHOOK_CLAIM_TTL_MS;
@@ -86,6 +86,13 @@ function toIssueMessage(error: unknown): string {
         ? error
         : 'Unknown error';
   return msg.length > 500 ? msg.slice(0, 500) : msg;
+}
+
+function readDbRows<T>(res: unknown): T[] {
+  if (Array.isArray(res)) return res as T[];
+  const anyRes = res as any;
+  if (Array.isArray(anyRes?.rows)) return anyRes.rows as T[];
+  return [];
 }
 
 function normalizeStatus(raw: unknown): string {
@@ -298,7 +305,7 @@ function buildApplyOutcome(args: {
 }
 
 function getReferenceAttemptId(reference: string | null): string | null {
-  return reference && UUID_RE.test(reference) ? reference : null;
+  return reference && isUuidV1toV5(reference) ? reference : null;
 }
 
 async function fetchAttemptForWebhook(args: {
@@ -306,7 +313,13 @@ async function fetchAttemptForWebhook(args: {
   referenceAttemptId: string | null;
 }): Promise<AttemptRow | null> {
   const attemptRes = (await db.execute(sql`
-    select id, order_id, status, expected_amount_minor, provider_payment_intent_id, provider_modified_at
+    select
+      id as "id",
+      order_id as "orderId",
+      status as "status",
+      expected_amount_minor as "expectedAmountMinor",
+      provider_payment_intent_id as "providerPaymentIntentId",
+      provider_modified_at as "providerModifiedAt"
     from payment_attempts
     where provider = 'monobank'
       and (
@@ -325,7 +338,14 @@ async function fetchAttemptForWebhook(args: {
 
 async function fetchOrderForAttempt(orderId: string): Promise<OrderRow | null> {
   const orderRes = (await db.execute(sql`
-    select id, payment_status, payment_provider, status, currency, total_amount_minor, psp_metadata
+    select
+      id as "id",
+      payment_status as "paymentStatus",
+      payment_provider as "paymentProvider",
+      status as "status",
+      currency as "currency",
+      total_amount_minor as "totalAmountMinor",
+      psp_metadata as "pspMetadata"
     from orders
     where id = ${orderId}::uuid
     limit 1
@@ -340,7 +360,8 @@ function computeNextProviderModifiedAt(
 ): Date | null {
   if (
     providerModifiedAt &&
-    (!attemptProviderModifiedAt || providerModifiedAt > attemptProviderModifiedAt)
+    (!attemptProviderModifiedAt ||
+      providerModifiedAt > attemptProviderModifiedAt)
   ) {
     return providerModifiedAt;
   }
@@ -427,6 +448,98 @@ function buildMergedMetaSql(normalized: NormalizedWebhook) {
   )}::jsonb`;
 }
 
+async function atomicMarkPaidOrderAndSucceedAttempt(args: {
+  now: Date;
+  orderId: string;
+  attemptId: string;
+  invoiceId: string;
+  mergedMetaSql: ReturnType<typeof buildMergedMetaSql>;
+  nextProviderModifiedAt: Date | null;
+}): Promise<boolean> {
+  const res = await db.execute(sql`
+    with updated_order as (
+      update orders
+      set status = 'PAID',
+          psp_charge_id = ${args.invoiceId},
+          psp_metadata = ${args.mergedMetaSql},
+          updated_at = ${args.now}
+      where id = ${args.orderId}::uuid
+        and payment_provider = 'monobank'
+        and exists (
+          select 1
+          from payment_attempts
+          where id = ${args.attemptId}::uuid
+        )
+      returning id
+    ),
+    updated_attempt as (
+      update payment_attempts
+      set status = 'succeeded',
+          finalized_at = ${args.now},
+          updated_at = ${args.now},
+          last_error_code = null,
+          last_error_message = null,
+          provider_modified_at = ${args.nextProviderModifiedAt ?? null}
+      where id = ${args.attemptId}::uuid
+        and exists (select 1 from updated_order)
+      returning id
+    )
+    select
+      (select id from updated_order) as order_id,
+      (select id from updated_attempt) as attempt_id
+  `);
+
+  const row = readDbRows<{ order_id?: string; attempt_id?: string }>(res)[0];
+  return Boolean(row?.order_id && row?.attempt_id);
+}
+
+async function atomicFinalizeOrderAndAttempt(args: {
+  now: Date;
+  orderId: string;
+  attemptId: string;
+  pspStatusReason: string;
+  mergedMetaSql: ReturnType<typeof buildMergedMetaSql>;
+  attemptStatus: 'failed' | 'canceled';
+  lastErrorCode: string;
+  lastErrorMessage: string;
+  nextProviderModifiedAt: Date | null;
+}): Promise<boolean> {
+  const res = await db.execute(sql`
+    with updated_order as (
+      update orders
+      set psp_status_reason = ${args.pspStatusReason},
+          psp_metadata = ${args.mergedMetaSql},
+          updated_at = ${args.now}
+      where id = ${args.orderId}::uuid
+        and payment_provider = 'monobank'
+        and exists (
+          select 1
+          from payment_attempts
+          where id = ${args.attemptId}::uuid
+        )
+      returning id
+    ),
+    updated_attempt as (
+      update payment_attempts
+      set status = ${args.attemptStatus},
+          finalized_at = ${args.now},
+          updated_at = ${args.now},
+          last_error_code = ${args.lastErrorCode},
+          last_error_message = ${args.lastErrorMessage},
+          provider_modified_at = ${args.nextProviderModifiedAt ?? null}
+      where id = ${args.attemptId}::uuid
+        and exists (select 1 from updated_order)
+      returning id
+    )
+    select
+      (select id from updated_order) as order_id,
+      (select id from updated_attempt) as attempt_id
+  `);
+
+  const row = readDbRows<{ order_id?: string; attempt_id?: string }>(res)[0];
+  return Boolean(row?.order_id && row?.attempt_id);
+}
+
 async function applyWebhookToMatchedOrderAttemptEvent(args: {
   eventId: string;
   now: Date;
@@ -439,8 +552,8 @@ async function applyWebhookToMatchedOrderAttemptEvent(args: {
     args;
 
   const status = normalized.status;
-  const attemptProviderModifiedAt = attemptRow.provider_modified_at
-    ? new Date(attemptRow.provider_modified_at)
+  const attemptProviderModifiedAt = attemptRow.providerModifiedAt
+    ? new Date(attemptRow.providerModifiedAt)
     : null;
   const nextProviderModifiedAt = computeNextProviderModifiedAt(
     providerModifiedAt,
@@ -474,17 +587,17 @@ async function applyWebhookToMatchedOrderAttemptEvent(args: {
     payloadAmount: normalized.amount,
     payloadCcy: normalized.ccy,
     orderCurrency: orderRow.currency,
-    orderTotal: Number(orderRow.total_amount_minor ?? 0),
+    orderTotal: Number(orderRow.totalAmountMinor ?? 0),
     expectedAmount:
-      attemptRow.expected_amount_minor != null
-        ? Number(attemptRow.expected_amount_minor)
+      attemptRow.expectedAmountMinor != null
+        ? Number(attemptRow.expectedAmountMinor)
         : null,
   });
 
   if (mismatch.mismatch) {
-    let appliedResult: ApplyResult = 'applied_with_issue';
+    const appliedResult: ApplyResult = 'applied_with_issue';
 
-    if (orderRow.payment_status !== 'paid') {
+    if (orderRow.paymentStatus !== 'paid') {
       await db
         .update(paymentAttempts)
         .set({
@@ -509,7 +622,8 @@ async function applyWebhookToMatchedOrderAttemptEvent(args: {
           .update(orders)
           .set({
             failureCode: 'MONO_AMOUNT_MISMATCH',
-            failureMessage: mismatch.reason ?? 'Webhook amount/currency mismatch.',
+            failureMessage:
+              mismatch.reason ?? 'Webhook amount/currency mismatch.',
             updatedAt: now,
           })
           .where(
@@ -519,7 +633,7 @@ async function applyWebhookToMatchedOrderAttemptEvent(args: {
             )
           );
       } else {
-        appliedResult = 'applied_with_issue';
+        // transition blocked, appliedResult already 'applied_with_issue'
       }
     }
 
@@ -541,7 +655,7 @@ async function applyWebhookToMatchedOrderAttemptEvent(args: {
   }
 
   if (
-    orderRow.payment_status === 'paid' &&
+    orderRow.paymentStatus === 'paid' &&
     (status === 'success' || status === 'processing' || status === 'created')
   ) {
     const appliedResult: ApplyResult = 'applied_noop';
@@ -559,7 +673,7 @@ async function applyWebhookToMatchedOrderAttemptEvent(args: {
     });
   }
 
-  if (orderRow.payment_status === 'needs_review') {
+  if (orderRow.paymentStatus === 'needs_review') {
     const appliedResult: ApplyResult = 'applied_noop';
     await persistEventOutcome({
       eventId,
@@ -576,11 +690,11 @@ async function applyWebhookToMatchedOrderAttemptEvent(args: {
   }
 
   if (
-    (orderRow.payment_status === 'failed' ||
-      orderRow.payment_status === 'refunded') &&
+    (orderRow.paymentStatus === 'failed' ||
+      orderRow.paymentStatus === 'refunded') &&
     status === 'success'
   ) {
-    let appliedResult: ApplyResult = 'applied_with_issue';
+    const appliedResult: ApplyResult = 'applied_with_issue';
 
     const tr = await transitionPaymentStatus({
       orderId: orderRow.id,
@@ -588,12 +702,13 @@ async function applyWebhookToMatchedOrderAttemptEvent(args: {
       eventId,
       to: 'needs_review',
     });
+
     if (tr.ok) {
       await db
         .update(orders)
         .set({
           failureCode: 'MONO_OUT_OF_ORDER',
-          failureMessage: `Out-of-order event: ${orderRow.payment_status} -> success`,
+          failureMessage: `Out-of-order event: ${orderRow.paymentStatus} -> success`,
           updatedAt: now,
         })
         .where(
@@ -603,7 +718,7 @@ async function applyWebhookToMatchedOrderAttemptEvent(args: {
           )
         );
     } else {
-      appliedResult = 'applied_with_issue';
+      // transition blocked, appliedResult already 'applied_with_issue'
     }
 
     await persistEventOutcome({
@@ -611,7 +726,7 @@ async function applyWebhookToMatchedOrderAttemptEvent(args: {
       now,
       appliedResult,
       appliedErrorCode: 'OUT_OF_ORDER',
-      appliedErrorMessage: `Out-of-order: ${orderRow.payment_status} -> success`,
+      appliedErrorMessage: `Out-of-order: ${orderRow.paymentStatus} -> success`,
       attemptId: attemptRow.id,
       orderId: orderRow.id,
     });
@@ -650,32 +765,41 @@ async function applyWebhookToMatchedOrderAttemptEvent(args: {
       });
     }
 
-    await db
-      .update(orders)
-      .set({
-        status: 'PAID',
-        pspChargeId: normalized.invoiceId,
-        pspMetadata: mergedMetaSql as any,
-        updatedAt: now,
-      })
-      .where(
-        and(
-          eq(orders.id, orderRow.id),
-          eq(orders.paymentProvider, 'monobank' as any)
-        )
-      );
+    const ok = await atomicMarkPaidOrderAndSucceedAttempt({
+      now,
+      orderId: orderRow.id,
+      attemptId: attemptRow.id,
+      invoiceId: normalized.invoiceId,
+      mergedMetaSql,
+      nextProviderModifiedAt: nextProviderModifiedAt ?? null,
+    });
 
-    await db
-      .update(paymentAttempts)
-      .set({
-        status: 'succeeded',
-        finalizedAt: now,
-        updatedAt: now,
-        lastErrorCode: null,
-        lastErrorMessage: null,
-        providerModifiedAt: nextProviderModifiedAt ?? null,
-      })
-      .where(eq(paymentAttempts.id, attemptRow.id));
+    if (!ok) {
+      logError('monobank_webhook_atomic_update_failed', undefined, {
+        eventId,
+        orderId: orderRow.id,
+        attemptId: attemptRow.id,
+        status,
+      });
+
+      const appliedResult: ApplyResult = 'applied_with_issue';
+      await persistEventOutcome({
+        eventId,
+        now,
+        appliedResult,
+        appliedErrorCode: 'DB_WRITE_FAILED',
+        appliedErrorMessage:
+          'atomic update (paid+succeeded) did not update both rows',
+        attemptId: attemptRow.id,
+        orderId: orderRow.id,
+      });
+
+      return buildApplyOutcome({
+        appliedResult,
+        attemptId: attemptRow.id,
+        orderId: orderRow.id,
+      });
+    }
 
     const appliedResult: ApplyResult = 'applied';
     await persistEventOutcome({
@@ -742,31 +866,47 @@ async function applyWebhookToMatchedOrderAttemptEvent(args: {
       });
     }
 
-    await db
-      .update(orders)
-      .set({
-        pspStatusReason: status,
-        pspMetadata: mergedMetaSql as any,
-        updatedAt: now,
-      })
-      .where(
-        and(
-          eq(orders.id, orderRow.id),
-          eq(orders.paymentProvider, 'monobank' as any)
-        )
-      );
+    const attemptStatus = isRefunded ? 'canceled' : 'failed';
+    const lastErrorMessage = `Monobank status: ${status}`;
 
-    await db
-      .update(paymentAttempts)
-      .set({
-        status: isRefunded ? 'canceled' : 'failed',
-        finalizedAt: now,
-        updatedAt: now,
-        lastErrorCode: status,
-        lastErrorMessage: `Monobank status: ${status}`,
-        providerModifiedAt: nextProviderModifiedAt ?? null,
-      })
-      .where(eq(paymentAttempts.id, attemptRow.id));
+    const ok = await atomicFinalizeOrderAndAttempt({
+      now,
+      orderId: orderRow.id,
+      attemptId: attemptRow.id,
+      pspStatusReason: status,
+      mergedMetaSql,
+      attemptStatus,
+      lastErrorCode: status,
+      lastErrorMessage,
+      nextProviderModifiedAt: nextProviderModifiedAt ?? null,
+    });
+
+    if (!ok) {
+      logError('monobank_webhook_atomic_update_failed', undefined, {
+        eventId,
+        orderId: orderRow.id,
+        attemptId: attemptRow.id,
+        status,
+      });
+
+      const appliedResult: ApplyResult = 'applied_with_issue';
+      await persistEventOutcome({
+        eventId,
+        now,
+        appliedResult,
+        appliedErrorCode: 'DB_WRITE_FAILED',
+        appliedErrorMessage:
+          'atomic update (finalize) did not update both rows',
+        attemptId: attemptRow.id,
+        orderId: orderRow.id,
+      });
+
+      return buildApplyOutcome({
+        appliedResult,
+        attemptId: attemptRow.id,
+        orderId: orderRow.id,
+      });
+    }
 
     const appliedResult: ApplyResult = 'applied';
     await persistEventOutcome({
@@ -785,6 +925,14 @@ async function applyWebhookToMatchedOrderAttemptEvent(args: {
       orderId: orderRow.id,
     });
   }
+
+  logError('MONO_WEBHOOK_UNKNOWN_STATUS', undefined, {
+    eventId,
+    status,
+    invoiceId: normalized.invoiceId,
+    orderId: orderRow.id,
+    attemptId: attemptRow.id,
+  });
 
   const appliedResult: ApplyResult = 'applied_noop';
   await persistEventOutcome({
@@ -829,7 +977,7 @@ async function applyWebhookToOrderAttemptEvent(args: {
     return buildApplyOutcome({ appliedResult });
   }
 
-  const orderRow = await fetchOrderForAttempt(attemptRow.order_id);
+  const orderRow = await fetchOrderForAttempt(attemptRow.orderId);
   if (!orderRow) {
     const appliedResult: ApplyResult = 'unmatched';
     await persistEventOutcome({
@@ -893,6 +1041,7 @@ export async function applyMonoWebhookEvent(args: {
     normalizedPayload: parsed.normalized,
     providerModifiedAt: parsed.providerModifiedAt,
   });
+
   if (!eventId) {
     logInfo('monobank_webhook_deduped', {
       requestId: args.requestId,
@@ -965,18 +1114,16 @@ export async function applyMonoWebhookEvent(args: {
       const now = new Date();
       const issueMsg = toIssueMessage(error);
 
-      if (eventId) {
-        await db
-          .update(monobankEvents)
-          .set({
-            appliedResult: 'applied_with_issue',
-            appliedErrorCode:
-              sql`coalesce(${monobankEvents.appliedErrorCode}, 'RESTOCK_FAILED')` as any,
-            appliedErrorMessage:
-              sql`coalesce(${monobankEvents.appliedErrorMessage}, ${issueMsg})` as any,
-          })
-          .where(eq(monobankEvents.id, eventId));
-      }
+      await db
+        .update(monobankEvents)
+        .set({
+          appliedResult: 'applied_with_issue',
+          appliedErrorCode:
+            sql`coalesce(${monobankEvents.appliedErrorCode}, 'RESTOCK_FAILED')` as any,
+          appliedErrorMessage:
+            sql`coalesce(${monobankEvents.appliedErrorMessage}, ${issueMsg})` as any,
+        })
+        .where(eq(monobankEvents.id, eventId));
 
       if (outcome.attemptId) {
         await db
@@ -1026,4 +1173,3 @@ export async function handleMonobankWebhook(args: {
     mode: args.mode,
   });
 }
-

@@ -111,7 +111,8 @@ describe.sequential(
         });
 
         eventId = res.eventId;
-
+        expect(eventId).toBeTruthy();
+        const expectedNote = `event:${eventId!}:${payload.status}`;
         expect(res.appliedResult).toBe('applied');
 
         const [attempt] = await db
@@ -133,6 +134,7 @@ describe.sequential(
             paymentProvider: 'monobank',
             to: 'refunded',
             source: 'monobank_webhook',
+            note: expectedNote,
           })
         );
 
