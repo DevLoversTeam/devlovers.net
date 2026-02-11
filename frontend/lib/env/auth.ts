@@ -1,4 +1,9 @@
 type AppEnv = 'local' | 'develop' | 'production';
+type OAuthProviderEnv = {
+  clientId: string;
+  clientSecret: string;
+  redirectUri: string;
+};
 
 const validAppEnvs = ['local', 'develop', 'production'];
 const rawAppEnv = process.env.APP_ENV;
@@ -26,19 +31,21 @@ function requireEnv(name: string): string {
 export const authEnv = {
   appEnv: APP_ENV,
 
-  google: {
-    clientId: requireEnv('GOOGLE_CLIENT_ID'),
-    clientSecret: requireEnv('GOOGLE_CLIENT_SECRET'),
-    redirectUri:
-      APP_ENV === 'local'
-        ? requireEnv('GOOGLE_CLIENT_REDIRECT_URI_LOCAL')
-        : APP_ENV === 'develop'
-          ? requireEnv('GOOGLE_CLIENT_REDIRECT_URI_DEVELOP')
-          : requireEnv('GOOGLE_CLIENT_REDIRECT_URI_PROD'),
+  get google(): OAuthProviderEnv {
+    return {
+      clientId: requireEnv('GOOGLE_CLIENT_ID'),
+      clientSecret: requireEnv('GOOGLE_CLIENT_SECRET'),
+      redirectUri:
+        APP_ENV === 'local'
+          ? requireEnv('GOOGLE_CLIENT_REDIRECT_URI_LOCAL')
+          : APP_ENV === 'develop'
+            ? requireEnv('GOOGLE_CLIENT_REDIRECT_URI_DEVELOP')
+            : requireEnv('GOOGLE_CLIENT_REDIRECT_URI_PROD'),
+    };
   },
 
-  github:
-    APP_ENV === 'local'
+  get github(): OAuthProviderEnv {
+    return APP_ENV === 'local'
       ? {
           clientId: requireEnv('GITHUB_CLIENT_ID_LOCAL'),
           clientSecret: requireEnv('GITHUB_CLIENT_SECRET_LOCAL'),
@@ -54,5 +61,6 @@ export const authEnv = {
             clientId: requireEnv('GITHUB_CLIENT_ID_PROD'),
             clientSecret: requireEnv('GITHUB_CLIENT_SECRET_PROD'),
             redirectUri: requireEnv('GITHUB_CLIENT_REDIRECT_URI_PROD'),
-          },
+          };
+  },
 };
