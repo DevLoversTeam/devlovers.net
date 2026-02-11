@@ -2,11 +2,11 @@
 
 import { motion } from 'framer-motion';
 import { Crown } from 'lucide-react';
-import Image from 'next/image';
 
 import { cn } from '@/lib/utils';
 
 import { User } from './types';
+import { UserAvatar } from './UserAvatar';
 
 const rankConfig = {
   1: {
@@ -52,7 +52,7 @@ export function LeaderboardPodium({ topThree }: { topThree: User[] }) {
   ].filter(Boolean) as User[];
 
   return (
-    <div className="mx-auto flex h-[350px] w-full max-w-3xl items-end justify-center gap-4 md:gap-8">
+    <div className="mx-auto flex h-87.5 w-full max-w-3xl items-end justify-center gap-4 md:gap-8">
       {podiumOrder.map(user => {
         const rank = user.rank as 1 | 2 | 3;
         const isFirst = rank === 1;
@@ -86,11 +86,11 @@ export function LeaderboardPodium({ topThree }: { topThree: User[] }) {
                   )}
                 >
                   <div className="relative h-full w-full overflow-hidden rounded-full bg-gray-100 dark:bg-black">
-                    <Image
+                    <UserAvatar
                       src={user.avatar}
-                      alt={user.username}
-                      fill
-                      className="object-cover"
+                      username={user.username}
+                      userId={user.userId}
+                      sizes="(min-width: 768px) 80px, 56px"
                     />
                   </div>
 
@@ -105,7 +105,7 @@ export function LeaderboardPodium({ topThree }: { topThree: User[] }) {
                 </div>
               </div>
 
-              <div className="max-w-[90px] truncate text-xs font-bold text-gray-900 md:max-w-[140px] md:text-base dark:text-white">
+              <div className="max-w-22.5 truncate text-xs font-bold text-gray-900 md:max-w-35 md:text-base dark:text-white">
                 {user.username}
               </div>
 

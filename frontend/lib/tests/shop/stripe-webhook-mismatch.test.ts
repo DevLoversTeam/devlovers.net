@@ -1,3 +1,5 @@
+import crypto from 'node:crypto';
+
 import { sql } from 'drizzle-orm';
 import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -21,27 +23,60 @@ function makeReq(url: string, body: string, headers?: Record<string, string>) {
   );
 }
 
-async function pickActiveProductIdForCurrency(currency: 'UAH' | 'USD') {
-  const res = (await db.execute(sql`
-    select p.id
-    from products p
-    inner join product_prices pp
-      on pp.product_id = p.id
-     and pp.currency = ${currency}
-    where p.is_active = true
-      and p.stock > 0
-      and pp.price_minor > 0
-    order by p.updated_at desc
-    limit 1
-  `)) as DbRows<{ id: string }>;
+function safeCurrencyLiteral(currency: 'USD' | 'UAH'): 'USD' | 'UAH' {
+  return currency === 'UAH' ? 'UAH' : 'USD';
+}
 
-  const id = res.rows?.[0]?.id;
-  if (!id) {
-    throw new Error(
-      `No active product found for currency=${currency}. Ensure DB has products.is_active=true, stock>0, and product_prices row.`
-    );
-  }
-  return id;
+async function createStripeOrderFixture(args: { currency: 'USD' | 'UAH' }) {
+  const currency = safeCurrencyLiteral(args.currency);
+
+  const orderId = crypto.randomUUID();
+  const totalMinor = 12_345; 
+  const piId = `pi_test_mismatch_${orderId.slice(0, 8)}`;
+  const idemKey = `test_${crypto.randomUUID()}`;
+  const now = new Date();
+
+  await db.execute(sql`
+    insert into orders (
+      id,
+      user_id,
+      total_amount_minor,
+      total_amount,
+      currency,
+      payment_status,
+      payment_provider,
+      payment_intent_id,
+      status,
+      inventory_status,
+      failure_code,
+      failure_message,
+      idempotency_key,
+      idempotency_request_hash,
+      stock_restored,
+      restocked_at,
+      updated_at
+    ) values (
+      ${orderId}::uuid,
+      null,
+      ${totalMinor},
+      (${totalMinor}::numeric / 100),
+      ${sql.raw(`'${currency}'`)},
+      'requires_payment',
+      'stripe',
+      ${piId},
+      'INVENTORY_RESERVED',
+      'reserved',
+      null,
+      null,
+      ${idemKey},
+      ${`hash_${idemKey}`},
+      false,
+      null,
+      ${now}
+    )
+  `);
+
+  return { orderId, piId, totalMinor, currency };
 }
 
 describe('P0-3.4 Stripe webhook: amount/currency mismatch (minor) must not set paid', () => {
@@ -55,151 +90,127 @@ describe('P0-3.4 Stripe webhook: amount/currency mismatch (minor) must not set p
     vi.restoreAllMocks();
   });
 
-  it('mismatch: does NOT set paid and stores pspStatusReason + pspMetadata(expected/actual + event id)', async () => {
-    process.env.PAYMENTS_ENABLED = 'false';
+  it(
+    'mismatch: does NOT set paid and stores pspStatusReason + pspMetadata(expected/actual + event id)',
+    async () => {
+      process.env.PAYMENTS_ENABLED = 'true';
+      process.env.STRIPE_PAYMENTS_ENABLED = 'false';
 
-    vi.doMock('@/lib/auth', async () => {
-      const actual = await vi.importActual<any>('@/lib/auth');
-      return {
-        __esModule: true,
-        ...actual,
-        getCurrentUser: vi.fn(async () => null),
-      };
-    });
+      vi.doMock('@/lib/auth', async () => {
+        const actual = await vi.importActual<any>('@/lib/auth');
+        return {
+          __esModule: true,
+          ...actual,
+          getCurrentUser: vi.fn(async () => null),
+        };
+      });
 
-    vi.doMock('@/lib/psp/stripe', async () => {
-      const actual = await vi.importActual<any>('@/lib/psp/stripe');
-      return {
-        __esModule: true,
-        ...actual,
+      vi.doMock('@/lib/psp/stripe', async () => {
+        const actual = await vi.importActual<any>('@/lib/psp/stripe');
+        return {
+          __esModule: true,
+          ...actual,
+          verifyWebhookSignature: vi.fn((params: any) => {
+            const rawBody = params?.rawBody;
+            if (typeof rawBody !== 'string' || !rawBody.trim()) {
+              throw new Error('TEST_INVALID_RAW_BODY');
+            }
+            return JSON.parse(rawBody);
+          }),
+        };
+      });
 
-        verifyWebhookSignature: vi.fn((params: any) => {
-          const rawBody = params?.rawBody;
-          if (typeof rawBody !== 'string' || !rawBody.trim()) {
-            throw new Error('TEST_INVALID_RAW_BODY');
-          }
-          return JSON.parse(rawBody);
-        }),
-      };
-    });
-    const { POST: checkoutPOST } =
-      await import('@/app/api/shop/checkout/route');
+      const { orderId, piId, totalMinor, currency } =
+        await createStripeOrderFixture({ currency: 'USD' });
 
-    const productId = await pickActiveProductIdForCurrency('UAH');
-    const idemKey =
-      typeof crypto !== 'undefined' && 'randomUUID' in crypto
-        ? crypto.randomUUID()
-        : `idem_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+      expect(orderId).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+      );
 
-    const checkoutBody = JSON.stringify({
-      items: [{ productId, quantity: 1 }],
-    });
+      const row0 = (await db.execute(sql`
+        select total_amount_minor, currency
+        from orders
+        where id = ${orderId}::uuid
+        limit 1
+      `)) as DbRows<{ total_amount_minor: number | string; currency: string }>;
 
-    const checkoutRes = await checkoutPOST(
-      makeReq('http://localhost/api/shop/checkout', checkoutBody, {
-        'accept-language': 'uk-UA,uk;q=0.9',
-        'idempotency-key': idemKey,
-        origin: 'http://localhost:3000',
-      })
-    );
+      const expectedMinor = Number(row0.rows?.[0]?.total_amount_minor);
+      const expectedCurrency = String(row0.rows?.[0]?.currency);
 
-    expect([200, 201]).toContain(checkoutRes.status);
+      expect(Number.isFinite(expectedMinor)).toBe(true);
+      expect(expectedMinor).toBe(totalMinor);
+      expect(expectedMinor).toBeGreaterThan(0);
+      expect(expectedCurrency).toBe(currency);
 
-    const checkoutJson: any = await checkoutRes.json();
-    expect(checkoutJson?.success).toBe(true);
+      process.env.STRIPE_PAYMENTS_ENABLED = 'true';
+      process.env.STRIPE_SECRET_KEY = 'stripe_secret_key_placeholder';
+      process.env.STRIPE_WEBHOOK_SECRET = 'stripe_webhook_secret_placeholder';
 
-    const orderId: string =
-      checkoutJson?.order?.id ?? checkoutJson?.orderId ?? '';
-    expect(orderId).toMatch(
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-    );
+      const evtId = `evt_mismatch_${orderId.slice(0, 8)}`;
+      const actualMinor = expectedMinor + 1;
 
-    const row0 = (await db.execute(sql`
-      select total_amount_minor, currency
-      from orders
-      where id = ${orderId}
-      limit 1
-    `)) as DbRows<{ total_amount_minor: number | string; currency: string }>;
-
-    const expectedMinor = Number(row0.rows?.[0]?.total_amount_minor);
-    const expectedCurrency = String(row0.rows?.[0]?.currency);
-
-    expect(Number.isFinite(expectedMinor)).toBe(true);
-    expect(expectedMinor).toBeGreaterThan(0);
-    expect(expectedCurrency).toBe('UAH');
-
-    const piId = `pi_test_mismatch_${orderId.slice(0, 8)}`;
-    await db.execute(sql`
-      update orders
-      set payment_provider = 'stripe',
-          payment_status = 'requires_payment',
-          payment_intent_id = ${piId}
-      where id = ${orderId}
-    `);
-
-    process.env.PAYMENTS_ENABLED = 'true';
-    process.env.STRIPE_SECRET_KEY = 'stripe_secret_key_placeholder';
-    process.env.STRIPE_WEBHOOK_SECRET = 'stripe_webhook_secret_placeholder';
-
-    const evtId = `evt_mismatch_${orderId.slice(0, 8)}`;
-    const actualMinor = expectedMinor + 1;
-
-    const mockedEvent = {
-      id: evtId,
-      type: 'payment_intent.succeeded',
-      data: {
-        object: {
-          id: piId,
-          object: 'payment_intent',
-          status: 'succeeded',
-          currency: 'uah',
-          amount: actualMinor,
-          amount_received: actualMinor,
-          metadata: { orderId },
+      const mockedEvent = {
+        id: evtId,
+        type: 'payment_intent.succeeded',
+        data: {
+          object: {
+            id: piId,
+            object: 'payment_intent',
+            status: 'succeeded',
+            currency: 'usd',
+            amount: actualMinor,
+            amount_received: actualMinor,
+            metadata: { orderId },
+          },
         },
-      },
-    };
+      };
 
-    const { POST: webhookPOST } =
-      await import('@/app/api/shop/webhooks/stripe/route');
+      const { POST: webhookPOST } = await import(
+        '@/app/api/shop/webhooks/stripe/route'
+      );
 
-    const webhookRes = await webhookPOST(
-      makeReq(
-        'http://localhost/api/shop/webhooks/stripe',
-        JSON.stringify(mockedEvent),
-        {
-          'stripe-signature': 't=0,v1=deadbeef',
-        }
-      )
-    );
+      const webhookRes = await webhookPOST(
+        makeReq(
+          'http://localhost/api/shop/webhooks/stripe',
+          JSON.stringify(mockedEvent),
+          { 'stripe-signature': 't=0,v1=deadbeef' }
+        )
+      );
 
-    expect([200, 202]).toContain(webhookRes.status);
+      expect([200, 202]).toContain(webhookRes.status);
 
-    const row1 = (await db.execute(sql`
-      select payment_status, psp_status_reason, psp_metadata
-      from orders
-      where id = ${orderId}
-      limit 1
-    `)) as DbRows<{
-      payment_status: string;
-      psp_status_reason: string | null;
-      psp_metadata: unknown;
-    }>;
+      const row1 = (await db.execute(sql`
+        select payment_status, psp_status_reason, psp_metadata
+        from orders
+        where id = ${orderId}::uuid
+        limit 1
+      `)) as DbRows<{
+        payment_status: string;
+        psp_status_reason: string | null;
+        psp_metadata: unknown;
+      }>;
 
-    const paymentStatus = String(row1.rows?.[0]?.payment_status ?? '');
-    const reason = row1.rows?.[0]?.psp_status_reason ?? null;
-    const metaRaw = row1.rows?.[0]?.psp_metadata;
+      const paymentStatus = String(row1.rows?.[0]?.payment_status ?? '');
+      const reason = row1.rows?.[0]?.psp_status_reason ?? null;
+      const metaRaw = row1.rows?.[0]?.psp_metadata;
 
-    expect(paymentStatus).not.toBe('paid');
-    expect(reason && reason.length > 0).toBe(true);
+      expect(paymentStatus).not.toBe('paid');
+      expect(reason && reason.length > 0).toBe(true);
 
-    const metaObj =
-      typeof metaRaw === 'string' ? JSON.parse(metaRaw) : (metaRaw ?? {});
+      const metaObj =
+        typeof metaRaw === 'string' ? JSON.parse(metaRaw) : (metaRaw ?? {});
 
-    expect(metaObj?.mismatch?.eventId).toBe(evtId);
-    expect(metaObj?.mismatch?.expected?.amountMinor).toBe(expectedMinor);
-    expect(metaObj?.mismatch?.actual?.amountMinor).toBe(actualMinor);
-    expect(String(metaObj?.mismatch?.expected?.currency)).toBe('UAH');
-    expect(String(metaObj?.mismatch?.actual?.currency)).toBe('uah');
-  }, 30_000);
+      expect(metaObj?.mismatch?.eventId).toBe(evtId);
+      expect(metaObj?.mismatch?.expected?.amountMinor).toBe(expectedMinor);
+      expect(metaObj?.mismatch?.actual?.amountMinor).toBe(actualMinor);
+      expect(String(metaObj?.mismatch?.expected?.currency)).toBe(currency);
+      expect(String(metaObj?.mismatch?.actual?.currency)).toBe('usd');
+
+      await db.execute(sql`
+        delete from orders
+        where id = ${orderId}::uuid
+      `);
+    },
+    30_000
+  );
 });

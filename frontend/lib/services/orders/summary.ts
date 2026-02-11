@@ -1,7 +1,7 @@
 import { eq, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
-import { orderItems, orders, products } from '@/db/schema/shop';
+import { orderItems, orders, paymentAttempts, products } from '@/db/schema/shop';
 import { fromCents, fromDbMoney } from '@/lib/shop/money';
 import { type OrderDetail, type OrderSummaryWithMinor } from '@/lib/types/shop';
 
@@ -157,6 +157,62 @@ export async function getOrderSummary(
   id: string
 ): Promise<OrderSummaryWithMinor> {
   return getOrderById(id);
+}
+
+type OrderAttemptSummary = {
+  status: string;
+  providerRef: string | null;
+  checkoutUrl: string | null;
+};
+
+function readAttemptCheckoutUrl(row: {
+  checkoutUrl: string | null;
+  metadata: unknown;
+}): string | null {
+  if (row.checkoutUrl && row.checkoutUrl.trim()) return row.checkoutUrl.trim();
+
+  const meta =
+    row.metadata && typeof row.metadata === 'object' && !Array.isArray(row.metadata)
+      ? (row.metadata as Record<string, unknown>)
+      : null;
+  const fromMeta = meta?.pageUrl;
+  if (typeof fromMeta === 'string' && fromMeta.trim()) return fromMeta.trim();
+
+  return null;
+}
+
+export async function getOrderAttemptSummary(
+  orderId: string
+): Promise<OrderAttemptSummary | null> {
+  const rows = await db
+    .select({
+      status: paymentAttempts.status,
+      providerRef: paymentAttempts.providerPaymentIntentId,
+      checkoutUrl: paymentAttempts.checkoutUrl,
+      metadata: paymentAttempts.metadata,
+    })
+    .from(paymentAttempts)
+    .where(eq(paymentAttempts.orderId, orderId))
+    .orderBy(
+      sql`case when ${paymentAttempts.status} in ('creating','active') then 0 else 1 end`,
+      sql`${paymentAttempts.updatedAt} desc`,
+      sql`${paymentAttempts.createdAt} desc`,
+      sql`${paymentAttempts.attemptNumber} desc`,
+      sql`${paymentAttempts.id} desc`
+    )
+    .limit(1);
+
+  const row = rows[0];
+  if (!row) return null;
+
+  return {
+    status: row.status,
+    providerRef: row.providerRef ?? null,
+    checkoutUrl: readAttemptCheckoutUrl({
+      checkoutUrl: row.checkoutUrl ?? null,
+      metadata: row.metadata,
+    }),
+  };
 }
 
 export async function getOrderByIdempotencyKey(

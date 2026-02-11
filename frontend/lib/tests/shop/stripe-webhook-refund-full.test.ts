@@ -163,7 +163,6 @@ describe('stripe webhook refund (full only): PI fallback + terminal status + ded
       data: { object: charge },
     } as unknown as Stripe.Event);
 
-    // 1st call
     const res1 = await POST(makeRequest());
     expect(res1.status).toBe(200);
     const json1 = await res1.json();

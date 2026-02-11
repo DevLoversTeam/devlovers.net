@@ -248,8 +248,6 @@ describe('P0-8.10.1 checkout concurrency: stock=1, two parallel checkouts', () =
 
       await db.delete(products).where(eq((products as any).id, productId));
     } catch (err) {
-      // Do not swallow cleanup failures: they can leave residual rows and cause flaky follow-up tests.
-      // In CI we fail fast so flakes are visible.
       if (process.env.CI) throw err;
 
       console.warn('checkout concurrency cleanup failed', err);

@@ -30,6 +30,7 @@
     "@radix-ui/react-tabs": "^1.1.13",
     "@sanity/client": "^7.12.1",
     "@sanity/image-url": "^1.2.0",
+    "@sentry/nextjs": "^10.10.0",
     "@stripe/react-stripe-js": "^5.4.1",
     "@stripe/stripe-js": "^8.6.0",
     "@upstash/redis": "^1.36.1",

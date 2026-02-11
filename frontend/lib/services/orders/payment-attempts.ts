@@ -10,6 +10,8 @@ import { OrderStateInvalidError } from '@/lib/services/errors';
 import { setOrderPaymentIntent } from '@/lib/services/orders';
 import { readStripePaymentIntentParams } from '@/lib/services/orders/payment-intent';
 
+import { buildStripeAttemptIdempotencyKey } from './attempt-idempotency';
+
 export type PaymentProvider = 'stripe';
 export type PaymentAttemptStatus =
   | 'active'
@@ -80,7 +82,11 @@ async function createActiveAttempt(
     throw new PaymentAttemptsExhaustedError(orderId, provider);
   }
 
-  const idempotencyKey = `pi:${provider}:${orderId}:${next}`;
+  const idempotencyKey = buildStripeAttemptIdempotencyKey(
+    provider,
+    orderId,
+    next
+  );
 
   try {
     const inserted = await db
@@ -150,7 +156,11 @@ async function upsertBackfillAttemptForExistingPI(args: {
     throw new PaymentAttemptsExhaustedError(orderId, provider);
   }
 
-  const idempotencyKey = `pi:${provider}:${orderId}:${next}`;
+  const idempotencyKey = buildStripeAttemptIdempotencyKey(
+    provider,
+    orderId,
+    next
+  );
 
   try {
     const inserted = await db

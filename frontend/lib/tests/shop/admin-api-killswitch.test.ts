@@ -59,6 +59,13 @@ const cases: RouteCase[] = [
     id: TEST_ORDER_ID,
   },
   {
+    name: 'admin/orders/[id]/cancel-payment',
+    importPath: '@/app/api/shop/admin/orders/[id]/cancel-payment/route',
+    path: (id: string) => `/api/shop/admin/orders/${id}/cancel-payment`,
+    kind: 'dynamic-id',
+    id: TEST_ORDER_ID,
+  },
+  {
     name: 'admin/orders/[id]/refund',
     importPath: '@/app/api/shop/admin/orders/[id]/refund/route',
     path: (id: string) => `/api/shop/admin/orders/${id}/refund`,
@@ -158,7 +165,7 @@ describe('P0-7.1 Admin API kill-switch coverage (production)', () => {
       }
 
       const path = c.path(c.id);
-      const ctx = { params: { id: c.id } };
+      const ctx = { params: Promise.resolve({ id: c.id }) };
 
       await runAllMutationMethods(mod, path, ctx);
     }
