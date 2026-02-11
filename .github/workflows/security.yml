@@ -30,9 +30,15 @@ jobs:
       - name: Install Safe-chain
         run: curl -fsSL https://github.com/AikidoSec/safe-chain/releases/download/v1.4.2/install-safe-chain.sh | sh -s -- --ci
 
+      - name: Add Safe-chain to PATH
+        run: |
+          echo "$HOME/.safe-chain/bin" >> "$GITHUB_PATH"
+          echo "$HOME/.safe-chain/shims" >> "$GITHUB_PATH"
+
       - name: Verify Safe-chain is active
         run: |
           set -euo pipefail
+          command -v safe-chain
           safe-chain --version
           NPM_BIN="$(command -v npm)"
           echo "npm path: ${NPM_BIN}"
