@@ -12,10 +12,6 @@ jobs:
   safe-chain:
     runs-on: ubuntu-latest
 
-    env:
-      APP_ENV: production
-      NODE_ENV: production
-
     defaults:
       run:
         working-directory: frontend
@@ -34,8 +30,8 @@ jobs:
       - name: Install Safe-chain
         run: curl -fsSL https://github.com/AikidoSec/safe-chain/releases/download/v1.4.2/install-safe-chain.sh | sh -s -- --ci
 
+      - name: Verify Safe-chain is active
+        run: npm safe-chain-verify
+
       - name: Install dependencies
         run: npm ci --include=dev
-
-      - name: Build
-        run: npm run build
