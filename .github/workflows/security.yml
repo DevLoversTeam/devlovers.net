@@ -28,7 +28,10 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install Safe-chain
-        run: curl -fsSL https://github.com/AikidoSec/safe-chain/releases/download/v1.4.2/install-safe-chain.sh | sh -s -- --ci
+        run: npm install -g @aikidosec/safe-chain@1.4.2
+
+      - name: Setup Safe-chain for CI
+        run: safe-chain setup-ci
 
       - name: Add Safe-chain to PATH
         run: |
