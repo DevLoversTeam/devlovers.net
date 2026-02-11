@@ -34,6 +34,7 @@ const getLeaderboardDataCached = unstable_cache(
 
       return {
         id: index + 1,
+        userId: u.id,
         rank: index + 1,
         username,
         points: Number(u.points) || 0,

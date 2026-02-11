@@ -80,7 +80,7 @@ export function LeaderboardTable({
             • • •
           </div>
 
-          <div className="overflow-hidden rounded-2xl border-2 border-[var(--accent-primary)] bg-white shadow-[0_0_20px_var(--accent-primary)] backdrop-blur-md dark:bg-white/5">
+          <div className="overflow-hidden rounded-2xl border-2 border-(--accent-primary) bg-white shadow-[0_0_20px_var(--accent-primary)] backdrop-blur-md dark:bg-white/5">
             <div className="w-full">
               <table className="w-full table-fixed border-separate border-spacing-0 text-left">
                 <tbody>
@@ -107,13 +107,8 @@ function TableRow({
   const cellClass =
     'px-2 sm:px-6 py-3 sm:py-4 border-b border-slate-100 dark:border-white/5';
 
-  const leftBorderClass = isCurrentUser
-    ? 'border-l-[1px] sm:border-l-[1px] border-l-transparent'
-    : 'border-l-[1px] sm:border-l-[1px] border-l-transparent';
-
-  const rightBorderClass = isCurrentUser
-    ? 'border-r-[1px] sm:border-r-[1px] border-r-transparent'
-    : 'border-r-[1px] sm:border-r-[1px] border-r-transparent';
+  const leftBorderClass = 'border-l border-l-transparent';
+  const rightBorderClass = 'border-r border-r-transparent';
 
   return (
     <tr
@@ -121,7 +116,7 @@ function TableRow({
         'group transition-all duration-300',
         isCurrentUser
           ? 'bg-[color-mix(in_srgb,var(--accent-primary),transparent_90%)] shadow-inner'
-          : 'hover:bg-slate-50/60 dark:hover:bg-white/[0.04]'
+          : 'hover:bg-slate-50/60 dark:hover:bg-white/4'
       )}
     >
       <td className={cn(cellClass, leftBorderClass)}>
@@ -134,15 +129,16 @@ function TableRow({
         <div className="flex items-center gap-2 overflow-hidden sm:gap-4">
           <div
             className={cn(
-              'relative h-8 w-8 flex-shrink-0 overflow-hidden rounded-full border transition-all duration-300 sm:h-10 sm:w-10',
+              'relative h-8 w-8 shrink-0 overflow-hidden rounded-full border transition-all duration-300 sm:h-10 sm:w-10',
               isCurrentUser
-                ? 'border-[var(--accent-primary)] shadow-[0_0_1px_var(--accent-primary)]'
-                : 'border-slate-200 group-hover:border-[var(--accent-primary)] dark:border-white/10'
+                ? 'border-(--accent-primary) shadow-[0_0_1px_var(--accent-primary)]'
+                : 'border-slate-200 group-hover:border-(--accent-primary) dark:border-white/10'
             )}
           >
             <UserAvatar
               src={user.avatar}
               username={user.username}
+              userId={user.userId}
             />
           </div>
 
@@ -151,14 +147,14 @@ function TableRow({
               className={cn(
                 'flex items-center gap-1 text-sm font-medium transition-colors sm:gap-2',
                 isCurrentUser
-                  ? 'text-sm font-black text-[var(--accent-primary)] sm:text-base'
-                  : 'text-slate-700 group-hover:text-[var(--accent-primary)] dark:text-slate-200 dark:group-hover:text-[var(--accent-primary)]'
+                  ? 'text-sm font-black text-(--accent-primary) sm:text-base'
+                  : 'text-slate-700 group-hover:text-(--accent-primary) dark:text-slate-200 dark:group-hover:text-(--accent-primary)'
               )}
             >
               <span className="truncate">{user.username}</span>
 
               {isCurrentUser && (
-                <div className="relative ml-1 flex h-5 w-5 flex-shrink-0 items-center justify-center sm:h-8 sm:w-8">
+                <div className="relative ml-1 flex h-5 w-5 shrink-0 items-center justify-center sm:h-8 sm:w-8">
                   <motion.div
                     animate={{ scale: [1, 1.2, 1] }}
                     transition={{
@@ -166,7 +162,7 @@ function TableRow({
                       duration: 0.8,
                       ease: 'easeInOut',
                     }}
-                    className="absolute inset-0 text-[var(--accent-primary)]"
+                    className="absolute inset-0 text-(--accent-primary)"
                   >
                     <svg
                       viewBox="0 0 24 24"
@@ -197,7 +193,7 @@ function TableRow({
           className={cn(
             'inline-block font-mono font-bold transition-all',
             isCurrentUser
-              ? 'scale-110 text-sm text-[var(--accent-primary)] drop-shadow-sm sm:text-lg'
+              ? 'scale-110 text-sm text-(--accent-primary) drop-shadow-sm sm:text-lg'
               : 'text-sm text-slate-700 group-hover:scale-105 sm:text-base dark:text-slate-300'
           )}
         >
