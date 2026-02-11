@@ -31,7 +31,18 @@ jobs:
         run: curl -fsSL https://github.com/AikidoSec/safe-chain/releases/download/v1.4.2/install-safe-chain.sh | sh -s -- --ci
 
       - name: Verify Safe-chain is active
-        run: npm safe-chain-verify
+        run: |
+          set -euo pipefail
+          safe-chain --version
+          NPM_BIN="$(command -v npm)"
+          echo "npm path: ${NPM_BIN}"
+          case "${NPM_BIN}" in
+            *".safe-chain/shims/"*) ;;
+            *)
+              echo "Safe-chain npm shim is not active"
+              exit 1
+              ;;
+          esac
 
       - name: Install dependencies
         run: npm ci --include=dev
