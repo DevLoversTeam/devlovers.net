@@ -206,10 +206,12 @@ export function ExplainedTermsCard() {
 
     node.addEventListener('touchmove', onTouchMove, { passive: false });
     node.addEventListener('touchend', onTouchEnd);
+    node.addEventListener('touchcancel', onTouchEnd);
 
     cleanupRef.current = () => {
       node.removeEventListener('touchmove', onTouchMove);
       node.removeEventListener('touchend', onTouchEnd);
+      node.removeEventListener('touchcancel', onTouchEnd);
     };
   }, []);
 

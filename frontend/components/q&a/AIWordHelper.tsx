@@ -383,12 +383,14 @@ export default function AIWordHelper({
     document.addEventListener('mouseup', handleDragEnd);
     document.addEventListener('touchmove', handleTouchMove, { passive: false });
     document.addEventListener('touchend', handleDragEnd);
+    document.addEventListener('touchcancel', handleDragEnd);
 
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleDragEnd);
       document.removeEventListener('touchmove', handleTouchMove);
       document.removeEventListener('touchend', handleDragEnd);
+      document.removeEventListener('touchcancel', handleDragEnd);
     };
   }, [dragState]);
 
