@@ -931,6 +931,37 @@
       "viewLeaderboard": "View leaderboard",
       "tryAgain": "Try again"
     },
+    "quizResults": {
+      "title": "Quiz Results",
+      "noAttempts": "You haven't taken any quizzes yet",
+      "startQuiz": "Try one",
+      "score": "Score",
+      "integrity": "Integrity",
+      "points": "Points",
+      "scoreHint": "Number of correct answers out of total questions",
+      "integrityHint": "Fair play score (no violations detected)",
+      "pointsHint": "Points earned for improving your previous result",
+      "timeAgo": "{value} ago",
+      "mastered": "Mastered",
+      "needsReview": "Review",
+      "study": "Study",
+      "date": "Date",
+      "status": "Status"
+    },
+    "quizReview": {
+      "title": "Error Analysis",
+      "subtitle": "{incorrect} of {total} — incorrect",
+      "allCorrect": "All answers are correct!",
+      "allCorrectHint": "You answered all questions correctly",
+      "yourAnswer": "Your answer",
+      "correctAnswer": "Correct answer",
+      "explanation": "Explanation",
+      "retakeQuiz": "Retake Quiz",
+      "backToDashboard": "Back to Dashboard",
+      "notFound": "Attempt not found",
+      "expandAll": "Expand all",
+      "collapseAll": "Collapse all"
+    },
     "explainedTerms": {
       "title": "Learned Terms",
       "subtitle": "AI explanations you've saved",

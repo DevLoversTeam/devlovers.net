@@ -958,6 +958,37 @@
       "viewLeaderboard": "Zobacz ranking",
       "tryAgain": "Spróbuj ponownie"
     },
+    "quizResults": {
+      "title": "Wyniki quizów",
+      "noAttempts": "Nie przeszedłeś jeszcze żadnego quizu",
+      "startQuiz": "Spróbuj",
+      "score": "Wynik",
+      "integrity": "Czystość",
+      "points": "Punkty",
+      "scoreHint": "Liczba poprawnych odpowiedzi z ogólnej liczby",
+      "integrityHint": "Wskaźnik uczciwego przejścia (bez naruszeń)",
+      "pointsHint": "Punkty przyznane za poprawę wyniku",
+      "timeAgo": "{value} temu",
+      "mastered": "Opanowane",
+      "needsReview": "Powtórka",
+      "study": "Nauka",
+      "date": "Data",
+      "status": "Status"
+    },
+    "quizReview": {
+      "title": "Analiza błędów",
+      "subtitle": "{incorrect} z {total} — niepoprawnie",
+      "allCorrect": "Wszystkie odpowiedzi poprawne!",
+      "allCorrectHint": "Odpowiedziałeś poprawnie na wszystkie pytania",
+      "yourAnswer": "Twoja odpowiedź",
+      "correctAnswer": "Poprawna odpowiedź",
+      "explanation": "Wyjaśnienie",
+      "retakeQuiz": "Rozwiąż ponownie",
+      "backToDashboard": "Wróć do panelu",
+      "notFound": "Nie znaleziono próby",
+      "expandAll": "Rozwiń wszystko",
+      "collapseAll": "Zwiń wszystko"
+    },
     "explainedTerms": {
       "title": "Nauczone Terminy",
       "subtitle": "Wyjaśnienia AI, które zapisałeś",
