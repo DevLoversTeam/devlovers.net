@@ -16,3 +16,18 @@ export interface QuizAnswer {
 export interface QuizQuestionWithAnswers extends QuizQuestion {
   answers: QuizAnswer[];
 }
+
+export interface UserLastAttempt {
+  attemptId: string;
+  quizId: string;
+  quizSlug: string;
+  quizTitle: string | null;
+  categorySlug: string | null;
+  categoryName: string | null;
+  score: number;
+  totalQuestions: number;
+  percentage: number;
+  pointsEarned: number;
+  integrityScore: number | null;
+  completedAt: Date;
+}
