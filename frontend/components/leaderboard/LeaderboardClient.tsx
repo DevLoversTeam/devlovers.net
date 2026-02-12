@@ -34,11 +34,11 @@ export default function LeaderboardClient({
             transition={{ duration: 0.6 }}
           >
             <h1 className="relative mb-6 inline-block pb-2 text-4xl font-black tracking-tight md:text-6xl lg:text-7xl">
-              <span className="relative inline-block bg-gradient-to-r from-[var(--accent-primary)]/70 via-[color-mix(in_srgb,var(--accent-primary)_70%,white)]/70 to-[var(--accent-hover)]/70 bg-clip-text text-transparent">
+              <span className="relative inline-block bg-linear-to-r from-(--accent-primary)/70 via-[color-mix(in_srgb,var(--accent-primary)_70%,white)]/70 to-(--accent-hover)/70 bg-clip-text text-transparent">
                 {t('title')}
               </span>
               <span
-                className="wave-text-gradient pointer-events-none absolute inset-0 inline-block bg-gradient-to-r from-[var(--accent-primary)] via-[color-mix(in_srgb,var(--accent-primary)_70%,white)] to-[var(--accent-hover)] bg-clip-text text-transparent"
+                className="wave-text-gradient pointer-events-none absolute inset-0 inline-block bg-linear-to-r from-(--accent-primary) via-[color-mix(in_srgb,var(--accent-primary)_70%,white)] to-(--accent-hover) bg-clip-text text-transparent"
                 aria-hidden="true"
               >
                 {t('title')}

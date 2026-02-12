@@ -64,8 +64,10 @@ export default async function DashboardPage({
       : null;
 
   const userForDisplay = {
+    id: user.id,
     name: user.name ?? null,
     email: user.email ?? '',
+    image: user.image ?? null,
     role: user.role ?? null,
     points: user.points,
     createdAt: user.createdAt ?? null,

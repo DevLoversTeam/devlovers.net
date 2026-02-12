@@ -43,6 +43,11 @@ function isDashboardPath(pathname: string): boolean {
   return segments[0] === 'dashboard' || segments[1] === 'dashboard';
 }
 
+function isLeaderboardPath(pathname: string): boolean {
+  const segments = pathname.split('/').filter(Boolean);
+  return segments[0] === 'leaderboard' || segments[1] === 'leaderboard';
+}
+
 type MainSwitcherProps = {
   children: ReactNode;
   userExists: boolean;
@@ -79,7 +84,7 @@ export function MainSwitcher({
   return (
     <main
       className={
-        isQa || isHome || isQuizzesPath(pathname) || isDashboardPath(pathname)
+        isQa || isHome || isQuizzesPath(pathname) || isDashboardPath(pathname) || isLeaderboardPath(pathname)
           ? 'mx-auto'
           : 'mx-auto min-h-[80vh] px-6'
       }
