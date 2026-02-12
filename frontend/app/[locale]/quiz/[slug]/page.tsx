@@ -85,7 +85,12 @@ export default async function QuizPage({
                   alt={quiz.categoryName ?? quiz.categorySlug ?? 'Category'}
                   fill
                   sizes="(min-width: 640px) 40px, 32px"
-                  className={cn('object-contain', categoryStyle.iconClassName)}
+                  className={cn(
+                    'object-contain',
+                    'iconClassName' in categoryStyle
+                      ? categoryStyle.iconClassName
+                      : undefined
+                  )}
                 />
               </span>
             )}
