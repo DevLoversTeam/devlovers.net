@@ -29,19 +29,16 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic';
 
 type OrderCurrency = (typeof orders.$inferSelect)['currency'];
+type OrderPaymentStatus = (typeof orders.$inferSelect)['paymentStatus'];
+type OrderPaymentProvider = (typeof orders.$inferSelect)['paymentProvider'];
 
 type OrderDetail = {
   id: string;
   userId: string | null;
   totalAmount: string;
   currency: OrderCurrency;
-  paymentStatus:
-    | 'pending'
-    | 'requires_payment'
-    | 'paid'
-    | 'failed'
-    | 'refunded';
-  paymentProvider: string;
+  paymentStatus: OrderPaymentStatus;
+  paymentProvider: OrderPaymentProvider;
   paymentIntentId: string | null;
   stockRestored: boolean;
   restockedAt: string | null;

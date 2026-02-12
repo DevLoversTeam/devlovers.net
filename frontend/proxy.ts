@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
 
+import { defaultLocale, locales } from '@/i18n/config';
 import { AuthTokenPayload } from '@/lib/auth';
 
 import { routing } from './i18n/routing';
@@ -52,6 +53,13 @@ function isAuthenticated(req: NextRequest): boolean {
 
 const intlMiddleware = createIntlMiddleware(routing);
 
+function resolveLocaleFromPathname(pathname: string): string {
+  const maybeLocale = pathname.split('/')[1];
+  return locales.includes(maybeLocale as (typeof locales)[number])
+    ? maybeLocale
+    : defaultLocale;
+}
+
 function authMiddleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const authenticated = isAuthenticated(req);
@@ -61,7 +69,7 @@ function authMiddleware(req: NextRequest) {
 
   if (pathnameWithoutLocale.startsWith('/dashboard')) {
     if (!authenticated) {
-      const locale = pathname.split('/')[1] || 'en';
+      const locale = resolveLocaleFromPathname(pathname);
       return NextResponse.redirect(new URL(`/${locale}/login`, req.url));
     }
   }
@@ -81,7 +89,7 @@ export function proxy(req: NextRequest) {
     return NextResponse.redirect(new URL('/en', req.url));
   }
 
-  const locale = req.nextUrl.pathname.split('/')[1] || 'en';
+  const locale = resolveLocaleFromPathname(req.nextUrl.pathname);
 
   const authResponse = authMiddleware(req);
   if (authResponse) return authResponse;

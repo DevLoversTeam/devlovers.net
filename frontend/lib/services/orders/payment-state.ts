@@ -9,6 +9,7 @@ export type PaymentTransitionSource =
   | 'checkout'
   | 'payment_intent'
   | 'stripe_webhook'
+  | 'monobank_webhook'
   | 'admin'
   | 'janitor'
   | 'system';
@@ -19,6 +20,14 @@ const ALLOWED_FROM_STRIPE: Record<PaymentStatus, readonly PaymentStatus[]> = {
   paid: ['pending', 'requires_payment'],
   failed: ['pending', 'requires_payment'],
   refunded: ['paid', 'pending', 'requires_payment'],
+  needs_review: [
+    'pending',
+    'requires_payment',
+    'paid',
+    'failed',
+    'refunded',
+    'needs_review',
+  ],
 };
 
 const ALLOWED_FROM_NONE: Record<PaymentStatus, readonly PaymentStatus[]> = {
@@ -27,6 +36,7 @@ const ALLOWED_FROM_NONE: Record<PaymentStatus, readonly PaymentStatus[]> = {
   paid: ['paid'],
   failed: ['paid', 'failed'],
   refunded: [],
+  needs_review: [],
 };
 
 function allowedFrom(
@@ -82,10 +92,14 @@ export type GuardedPaymentUpdateResult =
       currentProvider?: PaymentProvider;
     };
 
-async function getCurrentState(orderId: string): Promise<{
+type CurrentPaymentState = {
   paymentStatus: PaymentStatus;
   paymentProvider: PaymentProvider;
-} | null> {
+};
+
+async function getCurrentState(
+  orderId: string
+): Promise<CurrentPaymentState | null> {
   const row = await db
     .select({
       paymentStatus: orders.paymentStatus,
@@ -105,7 +119,10 @@ export async function guardedPaymentStatusUpdate(
 
   if (
     paymentProvider === 'none' &&
-    (to === 'pending' || to === 'requires_payment' || to === 'refunded')
+    (to === 'pending' ||
+      to === 'requires_payment' ||
+      to === 'refunded' ||
+      to === 'needs_review')
   ) {
     const current = await getCurrentState(orderId);
     if (!current) return { applied: false, reason: 'NOT_FOUND' };

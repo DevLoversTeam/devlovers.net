@@ -142,7 +142,6 @@ describe('P0 Inventory release invariants', () => {
       }
 
       if (restockErr) {
-        // Accept ONLY the simulated release failure; rethrow anything else.
         if (
           restockErr instanceof Error &&
           restockErr.message.includes('SIMULATED_RELEASE_FAIL')

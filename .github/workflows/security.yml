@@ -1,0 +1,57 @@
+name: Security Check
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+  push:
+    branches: [main, develop]
+
+jobs:
+  safe-chain:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Safe-chain
+        run: npm install -g @aikidosec/safe-chain@1.4.2
+
+      - name: Setup Safe-chain for CI
+        run: safe-chain setup-ci
+
+      - name: Add Safe-chain to PATH
+        run: |
+          echo "$HOME/.safe-chain/bin" >> "$GITHUB_PATH"
+          echo "$HOME/.safe-chain/shims" >> "$GITHUB_PATH"
+
+      - name: Verify Safe-chain is active
+        run: |
+          set -euo pipefail
+          command -v safe-chain
+          safe-chain --version
+          NPM_BIN="$(command -v npm)"
+          echo "npm path: ${NPM_BIN}"
+          case "${NPM_BIN}" in
+            *".safe-chain/shims/"*) ;;
+            *)
+              echo "Safe-chain npm shim is not active"
+              exit 1
+              ;;
+          esac
+
+      - name: Install dependencies
+        run: npm ci --include=dev

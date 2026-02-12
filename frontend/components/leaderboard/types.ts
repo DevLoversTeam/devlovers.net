@@ -1,5 +1,6 @@
 export interface User {
   id: number;
+  userId: string;
   rank: number;
   username: string;
   points: number;

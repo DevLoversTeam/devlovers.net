@@ -26,7 +26,7 @@ const getLeaderboardDataCached = unstable_cache(
     return dbUsers.map((u, index) => {
       const username = u.username || 'Anonymous';
       const avatar =
-        u.avatar && u.avatar !== 'null'
+        u.avatar && u.avatar.trim() !== '' && u.avatar !== 'null'
           ? u.avatar
           : `https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(
               `${username}-${u.id}`
@@ -34,6 +34,7 @@ const getLeaderboardDataCached = unstable_cache(
 
       return {
         id: index + 1,
+        userId: u.id,
         rank: index + 1,
         username,
         points: Number(u.points) || 0,

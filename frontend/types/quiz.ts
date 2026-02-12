@@ -26,25 +26,23 @@ export interface UserLastAttempt {
   categoryName: string | null;
   score: number;
   totalQuestions: number;
-  percentage: string;
+  percentage: number | string;
   pointsEarned: number;
   integrityScore: number | null;
   completedAt: Date;
-}
-
-export interface AttemptAnswerDetail {
-  id: string;
-  answerText: string | null;
-  isCorrect: boolean;
-  isSelected: boolean;
 }
 
 export interface AttemptQuestionDetail {
   questionId: string;
   questionText: string | null;
   explanation: any;
-  answers: AttemptAnswerDetail[];
   selectedAnswerId: string | null;
+  answers: Array<{
+    id: string;
+    answerText: string | null;
+    isCorrect: boolean;
+    isSelected: boolean;
+  }>;
 }
 
 export interface AttemptReview {
@@ -54,7 +52,7 @@ export interface AttemptReview {
   categorySlug: string | null;
   score: number;
   totalQuestions: number;
-  percentage: string;
+  percentage: number | string;
   pointsEarned: number;
   integrityScore: number | null;
   completedAt: Date;

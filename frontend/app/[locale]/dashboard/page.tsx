@@ -1,7 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 
 import { PostAuthQuizSync } from '@/components/auth/PostAuthQuizSync';
-import { QuizResultsSection } from '@/components/dashboard/QuizResultsSection';
 import { ExplainedTermsCard } from '@/components/dashboard/ExplainedTermsCard';
 import { ProfileCard } from '@/components/dashboard/ProfileCard';
 import { QuizSavedBanner } from '@/components/dashboard/QuizSavedBanner';
@@ -112,11 +111,8 @@ export default async function DashboardPage({
             <ProfileCard user={userForDisplay} locale={locale} />
             <StatsCard stats={stats} />
           </div>
-                    <div className="mt-8">
-            <ExplainedTermsCard />
-          </div>
           <div className="mt-8">
-            <QuizResultsSection attempts={lastAttempts} locale={locale} />
+            <ExplainedTermsCard />
           </div>
         </main>
       </DynamicGridBackground>

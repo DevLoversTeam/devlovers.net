@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import {
+  bigint,
   boolean,
   check,
   index,
@@ -29,6 +30,7 @@ export const paymentStatusEnum = pgEnum('payment_status', [
   'paid',
   'failed',
   'refunded',
+  'needs_review',
 ]);
 export const currencyEnum = pgEnum('currency', ['USD', 'UAH']);
 
@@ -164,8 +166,9 @@ export const orders = pgTable(
   table => [
     check(
       'orders_payment_provider_valid',
-      sql`${table.paymentProvider} in ('stripe', 'none')`
+      sql`${table.paymentProvider} in ('stripe', 'monobank', 'none')`
     ),
+
     check(
       'orders_total_amount_minor_non_negative',
       sql`${table.totalAmountMinor} >= 0`
@@ -277,6 +280,138 @@ export const stripeEvents = pgTable(
   table => [
     uniqueIndex('stripe_events_event_id_idx').on(table.eventId),
     index('stripe_events_claim_expires_idx').on(table.claimExpiresAt),
+  ]
+);
+
+export const monobankEvents = pgTable(
+  'monobank_events',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    provider: text('provider').notNull().default('monobank'),
+    eventKey: text('event_key').notNull(),
+    invoiceId: text('invoice_id'),
+    status: text('status'),
+    amount: integer('amount'),
+    ccy: integer('ccy'),
+    reference: text('reference'),
+    rawPayload: jsonb('raw_payload').$type<Record<string, unknown> | null>(),
+    normalizedPayload: jsonb('normalized_payload').$type<Record<
+      string,
+      unknown
+    > | null>(),
+    attemptId: uuid('attempt_id').references(() => paymentAttempts.id, {
+      onDelete: 'set null',
+    }),
+    orderId: uuid('order_id').references(() => orders.id, {
+      onDelete: 'cascade',
+    }),
+    providerModifiedAt: timestamp('provider_modified_at', {
+      withTimezone: true,
+    }),
+    claimedAt: timestamp('claimed_at', { withTimezone: true }),
+    claimExpiresAt: timestamp('claim_expires_at', { withTimezone: true }),
+    claimedBy: text('claimed_by'),
+    appliedAt: timestamp('applied_at', { withTimezone: true }),
+    appliedResult: text('applied_result'),
+    appliedErrorCode: text('applied_error_code'),
+    appliedErrorMessage: text('applied_error_message'),
+    rawSha256: text('raw_sha256').notNull(),
+    receivedAt: timestamp('received_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  t => [
+    check('monobank_events_provider_check', sql`${t.provider} in ('monobank')`),
+    uniqueIndex('monobank_events_event_key_unique').on(t.eventKey),
+    uniqueIndex('monobank_events_raw_sha256_unique').on(t.rawSha256),
+    index('monobank_events_order_id_idx').on(t.orderId),
+    index('monobank_events_attempt_id_idx').on(t.attemptId),
+    index('monobank_events_claim_expires_idx').on(t.claimExpiresAt),
+  ]
+);
+
+export const monobankRefunds = pgTable(
+  'monobank_refunds',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    provider: text('provider').notNull().default('monobank'),
+    orderId: uuid('order_id')
+      .notNull()
+      .references(() => orders.id, { onDelete: 'cascade' }),
+    attemptId: uuid('attempt_id').references(() => paymentAttempts.id, {
+      onDelete: 'set null',
+    }),
+    extRef: text('ext_ref').notNull(),
+    status: text('status').notNull().default('requested'),
+    amountMinor: bigint('amount_minor', { mode: 'number' }).notNull(),
+    currency: currencyEnum('currency').notNull().default('UAH'),
+    providerCreatedAt: timestamp('provider_created_at', {
+      withTimezone: true,
+    }),
+    providerModifiedAt: timestamp('provider_modified_at', {
+      withTimezone: true,
+    }),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  t => [
+    check(
+      'monobank_refunds_provider_check',
+      sql`${t.provider} in ('monobank')`
+    ),
+    check(
+      'monobank_refunds_status_check',
+      sql`${t.status} in ('requested','processing','success','failure','needs_review')`
+    ),
+    check(
+      'monobank_refunds_amount_minor_non_negative',
+      sql`${t.amountMinor} >= 0`
+    ),
+    check('monobank_refunds_currency_uah', sql`${t.currency} = 'UAH'`),
+    uniqueIndex('monobank_refunds_ext_ref_unique').on(t.extRef),
+    index('monobank_refunds_order_id_idx').on(t.orderId),
+    index('monobank_refunds_attempt_id_idx').on(t.attemptId),
+  ]
+);
+
+export const monobankPaymentCancels = pgTable(
+  'monobank_payment_cancels',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    orderId: uuid('order_id')
+      .notNull()
+      .references(() => orders.id, { onDelete: 'cascade' }),
+    extRef: text('ext_ref').notNull(),
+    invoiceId: text('invoice_id').notNull(),
+    attemptId: uuid('attempt_id').references(() => paymentAttempts.id, {
+      onDelete: 'set null',
+    }),
+    status: text('status').notNull().default('requested'),
+    requestId: text('request_id').notNull(),
+    errorCode: text('error_code'),
+    errorMessage: text('error_message'),
+    pspResponse: jsonb('psp_response').$type<Record<string, unknown> | null>(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  t => [
+    check(
+      'monobank_payment_cancels_status_check',
+      sql`${t.status} in ('requested','processing','success','failure')`
+    ),
+    uniqueIndex('monobank_payment_cancels_ext_ref_unique').on(t.extRef),
+    index('monobank_payment_cancels_order_id_idx').on(t.orderId),
+    index('monobank_payment_cancels_attempt_id_idx').on(t.attemptId),
   ]
 );
 
@@ -403,9 +538,16 @@ export const paymentAttempts = pgTable(
     provider: text('provider').notNull(),
     status: text('status').notNull().default('active'),
     attemptNumber: integer('attempt_number').notNull(),
+    currency: currencyEnum('currency'),
+    expectedAmountMinor: bigint('expected_amount_minor', { mode: 'number' }),
 
     idempotencyKey: text('idempotency_key').notNull(),
     providerPaymentIntentId: text('provider_payment_intent_id'),
+    checkoutUrl: text('checkout_url'),
+    providerCreatedAt: timestamp('provider_created_at', { withTimezone: true }),
+    providerModifiedAt: timestamp('provider_modified_at', {
+      withTimezone: true,
+    }),
 
     lastErrorCode: text('last_error_code'),
     lastErrorMessage: text('last_error_message'),
@@ -425,15 +567,27 @@ export const paymentAttempts = pgTable(
     finalizedAt: timestamp('finalized_at', { withTimezone: true }),
   },
   t => [
-    check('payment_attempts_provider_check', sql`${t.provider} in ('stripe')`),
+    check(
+      'payment_attempts_provider_check',
+      sql`${t.provider} in ('stripe','monobank')`
+    ),
 
     check(
       'payment_attempts_status_check',
-      sql`${t.status} in ('active','succeeded','failed','canceled')`
+      sql`${t.status} in ('creating','active','succeeded','failed','canceled')`
     ),
+
     check(
       'payment_attempts_attempt_number_check',
       sql`${t.attemptNumber} >= 1`
+    ),
+    check(
+      'payment_attempts_expected_amount_minor_non_negative',
+      sql`${t.expectedAmountMinor} is null or ${t.expectedAmountMinor} >= 0`
+    ),
+    check(
+      'payment_attempts_mono_currency_uah',
+      sql`${t.provider} <> 'monobank' OR ${t.currency} = 'UAH'`
     ),
 
     uniqueIndex('payment_attempts_order_provider_attempt_unique').on(
@@ -453,7 +607,12 @@ export const paymentAttempts = pgTable(
 
     uniqueIndex('payment_attempts_order_provider_active_unique')
       .on(t.orderId, t.provider)
-      .where(sql`${t.status} = 'active'`),
+      .where(sql`${t.status} in ('active','creating')`),
+    index('payment_attempts_provider_status_updated_idx').on(
+      t.provider,
+      t.status,
+      t.updatedAt
+    ),
   ]
 );
 
@@ -464,3 +623,6 @@ export type DbInventoryMove = typeof inventoryMoves.$inferSelect;
 export type DbInternalJobState = typeof internalJobState.$inferSelect;
 export type DbPaymentAttempt = typeof paymentAttempts.$inferSelect;
 export type DbApiRateLimit = typeof apiRateLimits.$inferSelect;
+export type DbMonobankEvent = typeof monobankEvents.$inferSelect;
+export type DbMonobankRefund = typeof monobankRefunds.$inferSelect;
+export type DbMonobankPaymentCancel = typeof monobankPaymentCancels.$inferSelect;
