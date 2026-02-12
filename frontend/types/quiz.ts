@@ -31,3 +31,30 @@ export interface UserLastAttempt {
   integrityScore: number | null;
   completedAt: Date;
 }
+
+export interface AttemptQuestionDetail {
+  questionId: string;
+  questionText: string | null;
+  explanation: any;
+  selectedAnswerId: string | null;
+  answers: Array<{
+    id: string;
+    answerText: string | null;
+    isCorrect: boolean;
+    isSelected: boolean;
+  }>;
+}
+
+export interface AttemptReview {
+  attemptId: string;
+  quizTitle: string | null;
+  quizSlug: string;
+  categorySlug: string | null;
+  score: number;
+  totalQuestions: number;
+  percentage: number;
+  pointsEarned: number;
+  integrityScore: number | null;
+  completedAt: Date;
+  incorrectQuestions: AttemptQuestionDetail[];
+}
