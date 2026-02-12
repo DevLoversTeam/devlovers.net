@@ -3,7 +3,12 @@ import { unstable_cache } from 'next/cache';
 import { cache } from 'react';
 
 import { getOrCreateQuestionsCache } from '@/lib/quiz/quiz-answers-redis';
-import type { QuizQuestionWithAnswers } from '@/types/quiz';
+import type {
+  AttemptReview,
+  AttemptQuestionDetail,
+  QuizQuestionWithAnswers,
+  UserLastAttempt,
+} from '@/types/quiz';
 
 import { db } from '../index';
 import { categories, categoryTranslations } from '../schema/categories';
@@ -17,7 +22,14 @@ import {
   quizTranslations,
   quizzes,
 } from '../schema/quiz';
-export type { QuizAnswer, QuizQuestion, QuizQuestionWithAnswers } from '@/types/quiz';
+export type {
+  AttemptReview,
+  AttemptQuestionDetail,
+  QuizAnswer,
+  QuizQuestion,
+  QuizQuestionWithAnswers,
+  UserLastAttempt,
+} from '@/types/quiz';
 
 export interface Quiz {
   id: string;
