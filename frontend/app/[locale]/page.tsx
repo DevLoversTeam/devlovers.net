@@ -19,6 +19,8 @@ export async function generateMetadata({
   };
   const ogLocale = localeMap[locale] ?? 'en_US';
 
+  const ogTitle = t('subtitle');
+
   return {
     title: t('title'),
     description: t('description'),
@@ -31,7 +33,7 @@ export async function generateMetadata({
       },
     },
     openGraph: {
-      title: t('title'),
+      title: ogTitle,
       description: t('description'),
       url: canonicalUrl,
       siteName: 'DevLovers',
@@ -48,7 +50,7 @@ export async function generateMetadata({
     },
     twitter: {
       card: 'summary_large_image',
-      title: t('title'),
+      title: ogTitle,
       description: t('description'),
       images: ['/og.png'],
     },

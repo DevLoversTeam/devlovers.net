@@ -2,8 +2,8 @@ import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import { unstable_cache } from 'next/cache';
 import { cache } from 'react';
 
-import { cacheAttemptReview, getCachedAttemptReview, getOrCreateQuestionsCache } from '@/lib/quiz/quiz-answers-redis';
-import type { AttemptQuestionDetail, AttemptReview, QuizQuestionWithAnswers, UserLastAttempt } from '@/types/quiz';
+import { getOrCreateQuestionsCache } from '@/lib/quiz/quiz-answers-redis';
+import type { QuizQuestionWithAnswers } from '@/types/quiz';
 
 import { db } from '../index';
 import { categories, categoryTranslations } from '../schema/categories';
@@ -17,7 +17,7 @@ import {
   quizTranslations,
   quizzes,
 } from '../schema/quiz';
-export type { AttemptAnswerDetail, AttemptQuestionDetail, AttemptReview, QuizAnswer, QuizQuestion, QuizQuestionWithAnswers, UserLastAttempt } from '@/types/quiz';
+export type { QuizAnswer, QuizQuestion, QuizQuestionWithAnswers } from '@/types/quiz';
 
 export interface Quiz {
   id: string;
@@ -45,6 +45,27 @@ export interface QuizQuestionClient {
   questionText: string | null;
   explanation: any;
   answers: QuizAnswerClient[];
+}
+
+const attemptReviewCache = new Map<string, AttemptReview>();
+
+function getAttemptReviewCacheKey(attemptId: string, locale: string) {
+  return `${attemptId}:${locale}`;
+}
+
+async function getCachedAttemptReview(
+  attemptId: string,
+  locale: string
+): Promise<AttemptReview | null> {
+  return attemptReviewCache.get(getAttemptReviewCacheKey(attemptId, locale)) ?? null;
+}
+
+async function cacheAttemptReview(
+  attemptId: string,
+  locale: string,
+  review: AttemptReview
+): Promise<void> {
+  attemptReviewCache.set(getAttemptReviewCacheKey(attemptId, locale), review);
 }
 
 export function stripCorrectAnswers(

@@ -9,12 +9,14 @@ interface FloatingExplainButtonProps {
   position: { x: number; y: number };
   onClick: () => void;
   onDismiss: () => void;
+  placement?: 'above' | 'below';
 }
 
 export default function FloatingExplainButton({
   position,
   onClick,
   onDismiss,
+  placement = 'above',
 }: FloatingExplainButtonProps) {
   const t = useTranslations('aiHelper');
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -70,7 +72,10 @@ export default function FloatingExplainButton({
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`,
-        transform: 'translate(-50%, -100%) translateY(-8px)',
+        transform:
+          placement === 'below'
+            ? 'translate(-50%, 0) translateY(8px)'
+            : 'translate(-50%, -100%) translateY(-8px)',
       }}
       aria-label={t('buttonText')}
     >

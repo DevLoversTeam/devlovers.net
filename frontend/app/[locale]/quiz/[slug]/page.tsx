@@ -1,12 +1,11 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import Image from 'next/image';
-
-import { categoryTabStyles } from '@/data/categoryStyles';
-import { cn } from '@/lib/utils';
 
 import { QuizContainer } from '@/components/quiz/QuizContainer';
+import { categoryTabStyles } from '@/data/categoryStyles';
+import { cn } from '@/lib/utils';
 import { stripCorrectAnswers } from '@/db/queries/quiz';
 import { getQuizBySlug, getQuizQuestionsRandomized } from '@/db/queries/quiz';
 import { getCurrentUser } from '@/lib/auth';
@@ -84,9 +83,15 @@ export default async function QuizPage({
               <span className="relative h-8 w-8 shrink-0 sm:h-10 sm:w-10">
                 <Image
                   src={categoryStyle.icon}
-                  alt=""
+                  alt={quiz.categoryName ?? quiz.categorySlug ?? 'Category'}
                   fill
-                  className={cn('object-contain', 'iconClassName' in categoryStyle && categoryStyle.iconClassName)}
+                  sizes="(min-width: 640px) 40px, 32px"
+                  className={cn(
+                    'object-contain',
+                    'iconClassName' in categoryStyle
+                      ? categoryStyle.iconClassName
+                      : undefined
+                  )}
                 />
               </span>
             )}

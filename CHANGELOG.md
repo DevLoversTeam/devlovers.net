@@ -457,3 +457,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - Fixed inconsistent scroll behavior when navigating Q&A pages
 - Improved UX predictability across desktop and mobile devices
+
+## [0.5.7] - 2026-02-12
+
+### Added
+
+- Monitoring & observability:
+  - Production error and performance monitoring via Sentry
+  - Global error boundary and release tracking
+- Security & CI:
+  - Safe-chain dependency malware protection in GitHub Actions
+  - Automated dependency validation on push and pull requests
+- SEO & social metadata:
+  - Full Open Graph and Twitter Card support
+  - Localized OG metadata and alt text
+  - Canonical URL handling via metadataBase
+- Quiz platform improvements:
+  - Redis caching for quiz questions to reduce database load
+  - Guest warning with Login / Sign up / Continue as guest options
+  - Bot protection: single verification per question attempt
+- Shop enhancements:
+  - Monobank payment integration (UAH-only, feature-gated)
+  - Secure webhook processing with signature validation and idempotency
+  - Admin refund and cancel endpoints
+- Platform transparency:
+  - Added `/public/humans.txt` with team, mission, and technology stack
+
+### Changed
+
+- Navigation & UX:
+  - Added global page transition loading indicators
+  - Context-aware header behavior for Blog and Shop
+  - Improved mobile menu interactions and auto-close behavior
+- Leaderboard:
+  - User avatars with DiceBear fallback for missing images
+- Home & SEO:
+  - Home title standardized to "DevLovers"
+  - Subtitle used for OG/Twitter previews
+- Authentication & routing:
+  - Improved locale detection and dashboard redirect handling
+  - OAuth and database configuration stability improvements
+
+### Fixed
+
+- Fixed missing locale handling for `/dashboard` redirects
+- Restored authentication flow after environment configuration issues
+- Improved handling of missing or invalid avatar data
+- Fixed OG preview URL resolution issues
+- Improved reliability of environment configuration and credentials
+
+### Performance
+
+- Reduced database load for quiz pages via Redis caching
+- Improved frontend loading experience during navigation
