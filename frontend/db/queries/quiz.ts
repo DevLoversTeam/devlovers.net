@@ -462,7 +462,7 @@ export async function getUserLastAttemptPerQuiz(
       qa.score,
       qa.total_questions AS "totalQuestions",
       qa.percentage,
-      qa.points_earned AS "pointsEarned",
+      COALESCE(pt_sum.total, 0)::int AS "pointsEarned",
       qa.integrity_score AS "integrityScore",
       qa.completed_at AS "completedAt"
     FROM quiz_attempts qa
@@ -470,6 +470,12 @@ export async function getUserLastAttemptPerQuiz(
     LEFT JOIN quiz_translations qt ON qt.quiz_id = q.id AND qt.locale = ${locale}
     LEFT JOIN categories c ON c.id = q.category_id
     LEFT JOIN category_translations ct ON ct.category_id = c.id AND ct.locale = ${locale}
+    LEFT JOIN (
+      SELECT (metadata->>'quizId')::uuid AS quiz_id, SUM(points) AS total
+      FROM point_transactions
+      WHERE user_id = ${userId} AND source = 'quiz'
+      GROUP BY (metadata->>'quizId')::uuid
+    ) pt_sum ON pt_sum.quiz_id = qa.quiz_id
     WHERE qa.user_id = ${userId}
     ORDER BY qa.quiz_id, qa.completed_at DESC
   `);
