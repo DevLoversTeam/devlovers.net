@@ -1,4 +1,5 @@
 'use client';
+import { useEffect, useRef } from 'react';
 
 import { BookOpen, Check, Lightbulb, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -35,6 +36,14 @@ export function QuizQuestion({
   const isRevealed = status === 'revealed';
 
   const isCorrectAnswer = isRevealed && isCorrect;
+
+    const nextButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (isRevealed) {
+      nextButtonRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [isRevealed]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -130,6 +139,7 @@ export function QuizQuestion({
       )}
       {isRevealed && (
         <button
+          ref={nextButtonRef}
           onClick={onNext}
           disabled={isLoading}
           className="group animate-in fade-in slide-in-from-bottom-2 relative mt-2 w-full overflow-hidden rounded-xl border px-6 py-3 text-center text-base font-semibold transition-all duration-300 disabled:opacity-50"

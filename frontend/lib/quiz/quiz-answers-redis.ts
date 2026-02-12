@@ -286,19 +286,20 @@ export async function clearVerifiedQuestions(
 
 const ATTEMPT_REVIEW_TTL = 48 * 60 * 60; // 48 hours
 
-function getAttemptReviewCacheKey(attemptId: string, locale: string): string {
-  return `quiz:attempt-review:${attemptId}:${locale}`;
+function getAttemptReviewCacheKey(attemptId: string, userId: string | undefined, locale: string): string {
+  return `quiz:attempt-review:${attemptId}:${userId}:${locale}`;
 }
 
 export async function getCachedAttemptReview(
   attemptId: string,
+  userId: string | undefined,
   locale: string
 ): Promise<AttemptReview | null> {
   const redis = getRedisClient();
   if (!redis) return null;
 
   try {
-    return await redis.get<AttemptReview>(getAttemptReviewCacheKey(attemptId, locale));
+    return await redis.get<AttemptReview>(getAttemptReviewCacheKey(attemptId, userId, locale));
   } catch (err) {
     console.warn('Redis attempt review cache read failed:', err);
     return null;
@@ -307,6 +308,7 @@ export async function getCachedAttemptReview(
 
 export async function cacheAttemptReview(
   attemptId: string,
+  userId: string | undefined,
   locale: string,
   data: AttemptReview
 ): Promise<void> {
@@ -314,7 +316,7 @@ export async function cacheAttemptReview(
   if (!redis) return;
 
   try {
-    await redis.set(getAttemptReviewCacheKey(attemptId, locale), data, {
+    await redis.set(getAttemptReviewCacheKey(attemptId, userId, locale), data, {
       ex: ATTEMPT_REVIEW_TTL,
     });
   } catch (err) {

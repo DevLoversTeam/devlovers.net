@@ -479,7 +479,7 @@ export async function getAttemptReviewDetails(
   userId: string,
   locale: string = 'uk'
 ): Promise<AttemptReview | null> {
-  const cached = await getCachedAttemptReview(attemptId, locale);
+  const cached = await getCachedAttemptReview(attemptId, userId, locale);
   if (cached) return cached;
 
   const attemptRow = await db
@@ -540,7 +540,7 @@ export async function getAttemptReviewDetails(
       completedAt: attempt.completedAt,
       incorrectQuestions: [],
     };
-    await cacheAttemptReview(attemptId, locale, review);
+    await cacheAttemptReview(attemptId, userId, locale, review);
     return review;
   }
 
@@ -623,6 +623,6 @@ export async function getAttemptReviewDetails(
     incorrectQuestions,
   };
 
-  await cacheAttemptReview(attemptId, locale, review);
+  await cacheAttemptReview(attemptId, userId, locale, review);
   return review;
 }
