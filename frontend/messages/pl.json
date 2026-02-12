@@ -206,7 +206,8 @@
       "copy": "Kopiowanie jest zabronione podczas quizu",
       "paste": "Wklejanie jest zabronione podczas quizu",
       "contextMenu": "Menu kontekstowe jest zabronione podczas quizu",
-      "tabSwitch": "Wykryto przełączenie karty"
+      "tabSwitch": "Wykryto przełączenie karty",
+      "counter": "{count} {count, plural, one {naruszenie} few {naruszenia} other {naruszeń}}"
     }
   },
   "blog": {

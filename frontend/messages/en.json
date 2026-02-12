@@ -206,7 +206,8 @@
       "copy": "Copying is not allowed during the quiz",
       "paste": "Pasting is not allowed during the quiz",
       "contextMenu": "Context menu is not allowed during the quiz",
-      "tabSwitch": "Tab switch detected"
+      "tabSwitch": "Tab switch detected",
+      "counter": "{count} {count, plural, one {violation} other {violations}}"
     }
   },
   "blog": {
