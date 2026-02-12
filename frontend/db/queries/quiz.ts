@@ -3,7 +3,12 @@ import { unstable_cache } from 'next/cache';
 import { cache } from 'react';
 
 import { getOrCreateQuestionsCache } from '@/lib/quiz/quiz-answers-redis';
-import type { QuizQuestionWithAnswers } from '@/types/quiz';
+import type {
+  AttemptQuestionDetail,
+  AttemptReview,
+  QuizQuestionWithAnswers,
+  UserLastAttempt,
+} from '@/types/quiz';
 
 import { db } from '../index';
 import { categories, categoryTranslations } from '../schema/categories';
@@ -49,23 +54,25 @@ export interface QuizQuestionClient {
 
 const attemptReviewCache = new Map<string, AttemptReview>();
 
-function getAttemptReviewCacheKey(attemptId: string, locale: string) {
-  return `${attemptId}:${locale}`;
+function getAttemptReviewCacheKey(attemptId: string, userId: string, locale: string) {
+  return `${attemptId}:${userId}:${locale}`;
 }
 
 async function getCachedAttemptReview(
   attemptId: string,
+  userId: string,
   locale: string
 ): Promise<AttemptReview | null> {
-  return attemptReviewCache.get(getAttemptReviewCacheKey(attemptId, locale)) ?? null;
+  return attemptReviewCache.get(getAttemptReviewCacheKey(attemptId, userId, locale)) ?? null;
 }
 
 async function cacheAttemptReview(
   attemptId: string,
+  userId: string,
   locale: string,
   review: AttemptReview
 ): Promise<void> {
-  attemptReviewCache.set(getAttemptReviewCacheKey(attemptId, locale), review);
+  attemptReviewCache.set(getAttemptReviewCacheKey(attemptId, userId, locale), review);
 }
 
 export function stripCorrectAnswers(
