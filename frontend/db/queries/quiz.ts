@@ -59,6 +59,27 @@ export interface QuizQuestionClient {
   answers: QuizAnswerClient[];
 }
 
+const attemptReviewCache = new Map<string, AttemptReview>();
+
+function getAttemptReviewCacheKey(attemptId: string, locale: string) {
+  return `${attemptId}:${locale}`;
+}
+
+async function getCachedAttemptReview(
+  attemptId: string,
+  locale: string
+): Promise<AttemptReview | null> {
+  return attemptReviewCache.get(getAttemptReviewCacheKey(attemptId, locale)) ?? null;
+}
+
+async function cacheAttemptReview(
+  attemptId: string,
+  locale: string,
+  review: AttemptReview
+): Promise<void> {
+  attemptReviewCache.set(getAttemptReviewCacheKey(attemptId, locale), review);
+}
+
 export function stripCorrectAnswers(
   questions: QuizQuestionWithAnswers[]
 ): QuizQuestionClient[] {
