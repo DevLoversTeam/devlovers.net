@@ -5,10 +5,10 @@ import { getTranslations } from 'next-intl/server';
 
 import { QuizContainer } from '@/components/quiz/QuizContainer';
 import { categoryTabStyles } from '@/data/categoryStyles';
-import { cn } from '@/lib/utils';
 import { stripCorrectAnswers } from '@/db/queries/quiz';
 import { getQuizBySlug, getQuizQuestionsRandomized } from '@/db/queries/quiz';
 import { getCurrentUser } from '@/lib/auth';
+import { cn } from '@/lib/utils';
 
 type MetadataProps = { params: Promise<{ locale: string; slug: string }> };
 

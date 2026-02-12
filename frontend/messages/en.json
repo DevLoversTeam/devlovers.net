@@ -931,7 +931,7 @@
       "viewLeaderboard": "View leaderboard",
       "tryAgain": "Try again"
     },
-        "quizResults": {
+    "quizResults": {
       "title": "Quiz Results",
       "noAttempts": "You haven't taken any quizzes yet",
       "startQuiz": "Try one",
