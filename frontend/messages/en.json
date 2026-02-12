@@ -44,7 +44,7 @@
     "dashboard": "Dashboard"
   },
   "homepage": {
-    "title": "DevLovers",
+    "title": "DevLovers — Technical Interview Platform",
     "subtitle": "Platform for Technical Interview Preparation",
     "description": "Prepare for technical interviews with Q&A, quizzes, leaderboards, and AI-powered explanations.",
     "ogImageAlt": "DevLovers — Technical Interview Platform",
@@ -174,11 +174,12 @@
       "pointsAwarded": "+{points} points added to rating",
       "noPointsAwarded": "No points awarded (result not improved)",
       "disqualified": "No points awarded (disqualified due to violations)",
-      "guestMessage": "To save your result and appear on the leaderboard, log in or sign up",
+      "guestMessage": "To save your result, review your mistakes, and appear on the leaderboard, log in or sign up",
       "loginButton": "Log In",
       "signupButton": "Sign Up",
       "retryButton": "Try Again",
-      "backButton": "Back to Topics"
+      "backButton": "Back to Topics",
+      "reviewButton": "Review Mistakes"
     },
     "card": {
       "uncategorized": "Uncategorized",

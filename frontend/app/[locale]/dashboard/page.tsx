@@ -6,7 +6,7 @@ import { ProfileCard } from '@/components/dashboard/ProfileCard';
 import { QuizSavedBanner } from '@/components/dashboard/QuizSavedBanner';
 import { StatsCard } from '@/components/dashboard/StatsCard';
 import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
-import { getUserQuizStats } from '@/db/queries/quiz';
+import { getUserLastAttemptPerQuiz, getUserQuizStats } from '@/db/queries/quiz';
 import { getUserProfile } from '@/db/queries/users';
 import { redirect } from '@/i18n/routing';
 import { getCurrentUser } from '@/lib/auth';
@@ -46,6 +46,7 @@ export default async function DashboardPage({
   const t = await getTranslations('dashboard');
 
   const attempts = await getUserQuizStats(session.id);
+  const lastAttempts = await getUserLastAttemptPerQuiz(session.id, locale);
 
   const totalAttempts = attempts.length;
 

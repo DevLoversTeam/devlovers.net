@@ -174,11 +174,12 @@
       "pointsAwarded": "+{points} punktów dodano do rankingu",
       "noPointsAwarded": "Nie przyznano punktów (wynik nie uległ poprawie)",
       "disqualified": "Nie przyznano punktów (zdyskwalifikowany z powodu naruszeń)",
-      "guestMessage": "Aby zapisać swój wynik i pojawić się w rankingu, zaloguj się lub zarejestruj",
+      "guestMessage": "Aby zapisać swój wynik, przejrzeć błędy i pojawić się w rankingu, zaloguj się lub zarejestruj",
       "loginButton": "Zaloguj się",
       "signupButton": "Zarejestruj się",
       "retryButton": "Spróbuj Ponownie",
-      "backButton": "Wróć do Tematów"
+      "backButton": "Wróć do Tematów",
+      "reviewButton": "Przejrzyj błędy"
     },
     "card": {
       "uncategorized": "Nieskategoryzowane",

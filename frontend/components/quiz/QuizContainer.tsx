@@ -46,6 +46,7 @@ type QuizState = {
   selectedAnswerId: string | null;
   startedAt: Date | null;
   pointsAwarded: number | null;
+  attemptId: string | null;
   isIncomplete: boolean;
 };
 
@@ -58,7 +59,7 @@ type QuizAction =
   | { type: 'NEXT_QUESTION' }
   | {
       type: 'COMPLETE_QUIZ';
-      payload?: { pointsAwarded?: number; isIncomplete?: boolean };
+      payload?: { pointsAwarded?: number; isIncomplete?: boolean; attemptId?: string };
     }
   | { type: 'RESTART' }
   | { type: 'RESTORE_SESSION'; payload: QuizSessionData };
@@ -104,6 +105,7 @@ function quizReducer(state: QuizState, action: QuizAction): QuizState {
         ...state,
         status: 'completed',
         pointsAwarded: action.payload?.pointsAwarded ?? null,
+        attemptId: action.payload?.attemptId ?? null,
         isIncomplete: action.payload?.isIncomplete ?? false,
       };
     case 'RESTORE_SESSION':
@@ -131,6 +133,7 @@ function quizReducer(state: QuizState, action: QuizAction): QuizState {
         selectedAnswerId: null,
         startedAt: null,
         pointsAwarded: null,
+        attemptId: null,
         isIncomplete: false,
       };
 
@@ -178,6 +181,7 @@ export function QuizContainer({
     selectedAnswerId: null,
     startedAt: null,
     pointsAwarded: null,
+    attemptId: null,
     isIncomplete: false,
   });
   const [showExitModal, setShowExitModal] = useState(false);
@@ -365,7 +369,7 @@ export function QuizContainer({
       if (result.success) {
         dispatch({
           type: 'COMPLETE_QUIZ',
-          payload: { pointsAwarded: result.pointsAwarded ?? 0 },
+          payload: { pointsAwarded: result.pointsAwarded ?? 0, attemptId: result.attemptId ?? undefined },
         });
       } else {
         console.error('Failed to submit quiz:', result.error);
@@ -532,6 +536,7 @@ export function QuizContainer({
         onBackToTopics={handleBackToTopicsClick}
         isGuest={isGuest}
         quizSlug={quizSlug}
+        attemptId={state.attemptId ?? undefined}
       />
     );
   }
