@@ -26,7 +26,7 @@ export interface UserLastAttempt {
   categoryName: string | null;
   score: number;
   totalQuestions: number;
-  percentage: number;
+  percentage: number | string;
   pointsEarned: number;
   integrityScore: number | null;
   completedAt: Date;
@@ -52,7 +52,7 @@ export interface AttemptReview {
   categorySlug: string | null;
   score: number;
   totalQuestions: number;
-  percentage: number;
+  percentage: number | string;
   pointsEarned: number;
   integrityScore: number | null;
   completedAt: Date;
