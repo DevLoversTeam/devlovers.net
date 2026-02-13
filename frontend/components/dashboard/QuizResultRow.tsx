@@ -2,11 +2,11 @@
 
 import { ChevronRight, Shield } from 'lucide-react';
 import Image from 'next/image';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 import { Badge, type BadgeProps } from '@/components/ui/badge';
-import { categoryTabStyles, type CategoryTabStyle } from '@/data/categoryStyles';
+import { type CategoryTabStyle,categoryTabStyles } from '@/data/categoryStyles';
 import type { UserLastAttempt } from '@/types/quiz';
 
 interface QuizResultRowProps {

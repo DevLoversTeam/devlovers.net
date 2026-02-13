@@ -1,15 +1,14 @@
-import Image from 'next/image';
-import { categoryTabStyles } from '@/data/categoryStyles';
-
 import { ArrowLeft, CheckCircle, RotateCcw, SearchX } from 'lucide-react';
+import Image from 'next/image';
 import { getTranslations } from 'next-intl/server';
-import { cn } from '@/lib/utils';
 
 import { QuizReviewList } from '@/components/dashboard/QuizReviewList';
 import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
+import { categoryTabStyles } from '@/data/categoryStyles';
 import { getAttemptReviewDetails } from '@/db/queries/quiz';
 import { Link, redirect } from '@/i18n/routing';
 import { getCurrentUser } from '@/lib/auth';
+import { cn } from '@/lib/utils';
 
 export async function generateMetadata({
   params,
@@ -38,6 +37,7 @@ export default async function QuizReviewPage({
   }
 
   const t = await getTranslations('dashboard.quizReview');
+  const tNav = await getTranslations('navigation');
   const review = await getAttemptReviewDetails(attemptId, session.id, locale);
 
   const cardStyles =
@@ -109,6 +109,21 @@ export default async function QuizReviewPage({
   return (
     <DynamicGridBackground className="min-h-screen bg-gray-50 py-10 dark:bg-transparent">
       <main className="relative z-10 mx-auto max-w-4xl px-4 sm:px-6">
+        <nav className="mb-4" aria-label="Breadcrumb">
+          <ol className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+            <li className="flex items-center gap-2">
+              <Link href="/dashboard" className="underline-offset-4 transition hover:text-[var(--accent-primary)] hover:underline">
+                {tNav('dashboard')}
+              </Link>
+              <span>&gt;</span>
+            </li>
+            <li>
+              <span className="text-[var(--accent-primary)]" aria-current="page">
+                {review.quizTitle ?? review.quizSlug}
+              </span>
+            </li>
+          </ol>
+        </nav>
         <header className="mb-8">
           <div className="flex items-center gap-3">
           {categoryStyle && (
