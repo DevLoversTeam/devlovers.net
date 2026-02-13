@@ -183,7 +183,9 @@
     },
     "card": {
       "uncategorized": "Nieskategoryzowane",
-      "completed": "✓ Ukończono",
+      "mastered": "Opanowane",
+      "needsReview": "Powtórka",
+      "study": "Nauka",
       "questions": "pytań",
       "min": "min",
       "best": "Najlepszy:",

@@ -183,7 +183,9 @@
     },
     "card": {
       "uncategorized": "Uncategorized",
-      "completed": "✓ Completed",
+      "mastered": "Mastered",
+      "needsReview": "Review",
+      "study": "Study",
       "questions": "questions",
       "min": "min",
       "best": "Best:",

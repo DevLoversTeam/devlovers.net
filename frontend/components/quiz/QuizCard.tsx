@@ -44,6 +44,18 @@ export function QuizCard({ quiz, userProgress }: QuizCardProps) {
       ? Math.round((userProgress.bestScore / userProgress.totalQuestions) * 100)
       : 0;
 
+  const getStatusBadge = () => {
+    if (!userProgress) return null;
+    if (percentage === 100)
+      return { variant: 'success' as const, label: t('mastered'), dot: 'bg-emerald-500' };
+    if (percentage >= 70)
+      return { variant: 'warning' as const, label: t('needsReview'), dot: 'bg-amber-500' };
+    return { variant: 'danger' as const, label: t('study'), dot: 'bg-red-500' };
+  };
+
+  const statusBadge = getStatusBadge();
+
+
     const handleStart = () => {
     const seed = makeSeed(); // runs on click, not render
     router.push(`/quiz/${quiz.slug}?seed=${seed}`);
@@ -69,7 +81,12 @@ export function QuizCard({ quiz, userProgress }: QuizCardProps) {
           >
             {quiz.categoryName ?? t('uncategorized')}
           </Badge>
-          {userProgress && <Badge variant="success">{t('completed')}</Badge>}
+          {statusBadge && (
+          <Badge variant={statusBadge.variant} className="gap-1.5 rounded-full">
+            <span className={`h-1.5 w-1.5 rounded-full ${statusBadge.dot}`} />
+            {statusBadge.label}
+          </Badge>
+        )}
         </div>
         <h2 className="mb-2 text-xl font-semibold">
           {quiz.title ?? quiz.slug}

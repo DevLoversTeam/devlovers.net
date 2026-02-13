@@ -96,7 +96,7 @@ export function QuizResultRow({ attempt, locale }: QuizResultRowProps) {
       onKeyDown={isMastered ? undefined : (e) => { if (e.key === 'Enter') handleClick(); }}
     >
       {/* Mobile layout: left content + right badge */}
-      <div className="flex items-center gap-3 md:hidden">
+      <div className="flex items-center gap-3 sm:grid sm:grid-cols-[minmax(0,2fr)_1fr_auto_20px] md:hidden">
         <div className="min-w-0 flex-1 space-y-1.5">
           <div className="flex items-center gap-2.5">
             {catStyle && (
@@ -120,13 +120,13 @@ export function QuizResultRow({ attempt, locale }: QuizResultRowProps) {
             <span className="sm:hidden tabular-nums">{attempt.score}/{attempt.totalQuestions}</span>
             <span className="sm:hidden text-gray-200 dark:text-gray-700">&middot;</span>
             <span className="sm:hidden tabular-nums">{Math.round(pct)}%</span>
-            {attempt.pointsEarned > 0 && (
-              <>
-                <span className="sm:hidden text-gray-200 dark:text-gray-700">&middot;</span>
-                <span className="sm:hidden font-medium text-emerald-600 dark:text-emerald-400">
-                  +{attempt.pointsEarned}
-                </span>
-              </>
+            <span className="sm:hidden text-gray-200 dark:text-gray-700">&middot;</span>
+            {attempt.pointsEarned > 0 ? (
+              <span className="sm:hidden font-medium text-emerald-600 dark:text-emerald-400">
+                +{attempt.pointsEarned}
+              </span>
+            ) : (
+              <span className="sm:hidden text-gray-300 dark:text-gray-600">&mdash;</span>
             )}
           </div>
         </div>
@@ -134,19 +134,22 @@ export function QuizResultRow({ attempt, locale }: QuizResultRowProps) {
           <span className="tabular-nums">{attempt.score}/{attempt.totalQuestions}</span>
           <span className="text-gray-200 dark:text-gray-700">&middot;</span>
           <span className="tabular-nums">{Math.round(pct)}%</span>
-          {attempt.pointsEarned > 0 && (
-            <>
-              <span className="text-gray-200 dark:text-gray-700">&middot;</span>
-              <span className="font-medium text-emerald-600 dark:text-emerald-400">
-                +{attempt.pointsEarned}
-              </span>
-            </>
+          <span className="text-gray-200 dark:text-gray-700">&middot;</span>
+          {attempt.pointsEarned > 0 ? (
+            <span className="font-medium text-emerald-600 dark:text-emerald-400">
+              +{attempt.pointsEarned}
+            </span>
+          ) : (
+            <span className="text-gray-300 dark:text-gray-600">&mdash;</span>
           )}
         </div>
         <Badge variant={status.variant} className="shrink-0 gap-1.5 rounded-full">
           <span className={`h-1.5 w-1.5 rounded-full ${status.dotColor}`} />
           {t(status.label)}
         </Badge>
+                {!isMastered && (
+          <ChevronRight className="h-4 w-4 shrink-0 text-gray-300 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:text-[var(--accent-primary)] dark:text-gray-600" />
+        )}
       </div>
 
       {/* Desktop layout — CSS Grid */}

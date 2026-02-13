@@ -183,7 +183,9 @@
     },
     "card": {
       "uncategorized": "Без категорії",
-      "completed": "✓ Завершено",
+      "mastered": "Засвоєно",
+      "needsReview": "Повторити",
+      "study": "Вивчити",
       "questions": "питань",
       "min": "хв",
       "best": "Найкращий:",
