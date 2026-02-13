@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 
-import HeroSection from '@/components/home/HeroSection';
+import FeaturesHeroSection from '@/components/home/FeaturesHeroSection';
 
 export async function generateMetadata({
   params,
@@ -57,10 +57,13 @@ export async function generateMetadata({
   };
 }
 
+import WelcomeHeroSection from '@/components/home/WelcomeHeroSection';
+
 export default function Home() {
   return (
     <>
-      <HeroSection />
+      <WelcomeHeroSection />
+      <FeaturesHeroSection />
     </>
   );
 }

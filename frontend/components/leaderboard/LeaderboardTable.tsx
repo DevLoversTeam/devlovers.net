@@ -39,6 +39,11 @@ export function LeaderboardTable({
         <div className="w-full">
           <table className="w-full table-fixed border-separate border-spacing-0 text-left">
             <caption className="sr-only">{t('tableCaption')}</caption>
+            <colgroup>
+              <col className="w-[15%] sm:w-[12%]" />
+              <col />
+              <col className="w-[25%] sm:w-[20%]" />
+            </colgroup>
 
             <thead className="bg-slate-50/80 dark:bg-white/5">
               <tr>
@@ -83,6 +88,11 @@ export function LeaderboardTable({
           <div className="overflow-hidden rounded-2xl border-2 border-(--accent-primary) bg-white shadow-[0_0_20px_var(--accent-primary)] backdrop-blur-md dark:bg-white/5">
             <div className="w-full">
               <table className="w-full table-fixed border-separate border-spacing-0 text-left">
+                <colgroup>
+                  <col className="w-[15%] sm:w-[12%]" />
+                  <col />
+                  <col className="w-[25%] sm:w-[20%]" />
+                </colgroup>
                 <tbody>
                   <TableRow user={matchedUser} isCurrentUser={true} t={t} />
                 </tbody>

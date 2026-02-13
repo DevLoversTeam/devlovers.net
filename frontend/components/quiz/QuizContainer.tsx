@@ -1,4 +1,5 @@
 'use client';
+import { ViolationsCounter } from '@/components/quiz/ViolationsCounter';
 import { Ban, FileText, TriangleAlert, UserRound } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
@@ -543,7 +544,8 @@ export function QuizContainer({
 
   return (
     <div className="no-select space-y-8">
-      <div className="flex justify-end">
+      <div className="sticky top-0 z-10 flex items-center justify-between bg-white/80 py-2 backdrop-blur-sm dark:bg-gray-950/80">
+        <ViolationsCounter count={violationsCount} />
         <Button
           variant="outline"
           size="sm"

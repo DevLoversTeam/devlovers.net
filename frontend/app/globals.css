@@ -277,6 +277,19 @@
   .animate-dash-flow {
     animation: dash-flow 2s linear infinite;
   }
+
+  /* 3D Flip Card */
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+
+  .preserve-3d {
+    transform-style: preserve-3d;
+  }
+
+  .backface-hidden {
+    backface-visibility: hidden;
+  }
 }
 
 @keyframes float {
