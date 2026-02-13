@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import type { Ref } from 'react';
 
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
+import { locales } from '@/i18n/config';
 import { Link } from '@/i18n/routing';
 import { cn } from '@/lib/utils';
 
@@ -35,7 +36,8 @@ export default function Footer({
   const pathSegments = pathname.split('/').filter(Boolean);
   const isHome =
     pathSegments.length === 0 ||
-    (pathSegments.length === 1 && ['en', 'pl', 'uk'].includes(pathSegments[0]));
+    (pathSegments.length === 1 &&
+      locales.includes(pathSegments[0] as (typeof locales)[number]));
 
   if (isHome && !forceVisible) {
     return null;

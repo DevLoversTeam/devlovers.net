@@ -50,12 +50,12 @@ export const metadata: Metadata = {
 };
 
 const geistSans = Geist({
-  subsets: ['latin'],
+  subsets: ['latin', 'cyrillic'],
   variable: '--font-geist-sans',
 });
 
 const geistMono = Geist_Mono({
-  subsets: ['latin'],
+  subsets: ['latin', 'cyrillic'],
   variable: '--font-geist-mono',
 });
 

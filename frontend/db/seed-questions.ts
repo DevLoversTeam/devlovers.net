@@ -84,10 +84,18 @@ async function seedQuestions() {
           .returning({ id: questions.id })
       )[0]!.id;
 
-    const translations = Object.entries(q.translations ?? {}).map(
+    const normalizedTranslations = new Map<
+      string,
+      { question: string; answerBlocks: unknown }
+    >();
+    for (const [locale, content] of Object.entries(q.translations ?? {})) {
+      normalizedTranslations.set(normalizeLocale(locale), content);
+    }
+
+    const translations = Array.from(normalizedTranslations.entries()).map(
       ([locale, content]) => ({
         questionId,
-        locale: normalizeLocale(locale),
+        locale,
         question: content.question,
         answerBlocks: content.answerBlocks,
       })

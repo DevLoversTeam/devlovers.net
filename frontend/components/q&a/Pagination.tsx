@@ -166,7 +166,7 @@ export function Pagination({
           className={cn(
             'rounded-lg px-2 py-2 text-sm font-medium transition-colors sm:px-3',
             'border border-gray-300 bg-white/90 dark:border-gray-700 dark:bg-neutral-900/80',
-            currentPage === totalPages
+            currentPage >= effectiveTotalPages
               ? 'cursor-not-allowed text-gray-400 dark:text-gray-600'
               : 'text-gray-700 hover:bg-[var(--qa-accent-soft)] dark:text-gray-300'
           )}
