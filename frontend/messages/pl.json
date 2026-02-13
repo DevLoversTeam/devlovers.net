@@ -46,6 +46,7 @@
   "homepage": {
     "title": "DevLovers",
     "subtitle": "Platforma do Przygotowania do Rozmów Kwalifikacyjnych",
+    "welcomeDescription": "Przygotuj się do rozmów technicznych z Q&A, quizami, rankingiem i wyjaśnieniami AI.",
     "description": "Zbuduj prawdziwą pewność w frontend, backend i full-stack development dzięki interaktywnym pytaniom rekrutacyjnym, quizom i praktycznym wyjaśnieniom",
     "cta": "Rozpocznij naukę",
     "ctaVariants": {
@@ -57,6 +58,19 @@
       "6": "Klik był — to się liczy",
       "7": "Postęp ważniejszy niż perfekcja",
       "8": "Zacząć to też funkcja"
+    },
+    "featuresHeading": {
+      "aceYourNext": "Zdaj kolejną ",
+      "technicalInterview": "rozmowę perfekcyjnie"
+    },
+    "featureBadges": {
+      "smartQA": "Inteligentne Q&A",
+      "adaptiveQuizzes": "Adaptacyjne quizy",
+      "performance": "Wydajność"
+    },
+    "featuresCta": {
+      "browseQuestions": "Przeglądaj wszystkie pytania",
+      "takeQuiz": "Rozwiąż quiz"
     }
   },
   "qa": {

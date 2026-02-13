@@ -46,6 +46,7 @@
   "homepage": {
     "title": "DevLovers",
     "subtitle": "Platform for Technical Interview Preparation",
+    "welcomeDescription": "Prepare for technical interviews with Q&A, quizzes, leaderboards, and AI-powered explanations.",
     "description": "Build real confidence in frontend, backend, and full-stack development through interactive interview questions, quizzes, and practical explanations",
     "cta": "Take the first step",
     "ctaVariants": {
@@ -57,6 +58,19 @@
       "6": "Brave move, by the way",
       "7": "Okay, now it's happening",
       "8": "Hello, new commit"
+    },
+    "featuresHeading": {
+      "aceYourNext": "Ace Your Next",
+      "technicalInterview": "Technical Interview"
+    },
+    "featureBadges": {
+      "smartQA": "Smart Q&A",
+      "adaptiveQuizzes": "Adaptive Quizzes",
+      "performance": "Performance"
+    },
+    "featuresCta": {
+      "browseQuestions": "Browse All Questions",
+      "takeQuiz": "Take a Quiz"
     }
   },
   "qa": {

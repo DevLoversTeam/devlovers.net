@@ -1,0 +1,390 @@
+'use client';
+
+import { motion, useMotionValue, useReducedMotion, useSpring, useTransform } from 'framer-motion';
+import { RotateCw } from 'lucide-react';
+import Image from 'next/image';
+import { useEffect, useState } from 'react';
+
+interface Question {
+  id: number;
+  question: string;
+  answer: React.ReactNode;
+  category: string;
+  tip?: string;
+}
+
+const questions: Question[] = [
+  {
+    id: 1,
+    question: 'When should you actually use useMemo?',
+    answer: (
+      <>
+        Don&apos;t prematurely optimize! Use it only for <strong>expensive calculations</strong> or when passing objects as props to children wrapped in <strong>React.memo</strong> to prevent unnecessary re-renders.
+      </>
+    ),
+    category: 'React',
+    tip: 'Overusing it can hurt performance due to dependency comparison overhead.',
+  },
+  {
+    id: 2,
+    question: 'Why is "Event Delegation" better than direct binding?',
+    answer: (
+      <>
+        It attaches a <strong>single listener</strong> to a parent instead of thousands on children. This uses less memory and automatically handles <strong>dynamically added elements</strong> via event bubbling.
+      </>
+    ),
+    category: 'JavaScript',
+    tip: 'Perfect for lists, tables, and infinite scroll feeds.',
+  },
+  {
+    id: 3,
+    question: 'How does the Node.js Event Loop handle I/O?',
+    answer: (
+      <>
+        Node.js offloads I/O operations to the system kernel. When an operation completes, the kernel notifies Node.js, and the callback is added to the <strong>Poll phase</strong> to be executed.
+      </>
+    ),
+    category: 'Node.js',
+    tip: 'This is why Node.js is "non-blocking" despite being single-threaded.',
+  },
+  {
+    id: 4,
+    question: 'Should you use SSR, SSG, or ISR?',
+    answer: (
+      <>
+        Use <strong>SSG</strong> for static blogs (fastest). Use <strong>SSR</strong> for personalized dashboards (freshest). Use <strong>ISR</strong> to update static pages incrementally without a full rebuild.
+      </>
+    ),
+    category: 'Next.js',
+    tip: 'Start with SSG/ISR by default for better performance.',
+  },
+  {
+    id: 5,
+    question: 'Why use Generics in TypeScript?',
+    answer: (
+      <>
+        They let you write <strong>reusable code</strong> that works with any type while keeping full type safety. It&apos;s like function arguments, but for <strong>types</strong>.
+      </>
+    ),
+    category: 'TypeScript',
+    tip: 'Commonly used in API wrappers, hooks, and utility functions.',
+  },
+];
+
+const categoryIcons: Record<string, string> = {
+  React: '/icons/react.svg',
+  JavaScript: '/icons/javascript.svg',
+  'Node.js': '/icons/nodejs.svg',
+  'Next.js': '/icons/nextjs.svg',
+  TypeScript: '/icons/typescript.svg',
+};
+
+const categoryColors: Record<string, string> = {
+  React: '#61DAFB',
+  JavaScript: '#F7DF1E',
+  'Node.js': '#339933',
+  'Next.js': '#FFFFFF', 
+  TypeScript: '#3178C6',
+};
+
+export function FlipCardQA() {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isFlipped, setIsFlipped] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const shouldReduceMotion = useReducedMotion();
+
+  const currentQuestion = questions[currentIndex];
+  const categoryIcon = categoryIcons[currentQuestion.category];
+  const categoryColor = categoryColors[currentQuestion.category];
+
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+
+  const rotateX = useTransform(y, [-100, 100], [10, -10]); 
+  const rotateY = useTransform(x, [-100, 100], [-10, 10]);
+  
+  const springConfig = { damping: 25, stiffness: 150 };
+  const rotateXSpring = useSpring(rotateX, springConfig);
+  const rotateYSpring = useSpring(rotateY, springConfig);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  useEffect(() => {
+    if (isFlipped || isPaused) {
+      setProgress(0);
+      return;
+    }
+
+    const duration = 8000;
+    const interval = 50;
+    let elapsed = 0;
+
+    const timer = setInterval(() => {
+      elapsed += interval;
+      const newProgress = (elapsed / duration) * 100;
+      
+      if (newProgress >= 100) {
+        setIsFlipped(true);
+        
+        setTimeout(() => {
+          setCurrentIndex((prev) => (prev + 1) % questions.length);
+        }, 300);
+        
+        setTimeout(() => {
+          setIsFlipped(false);
+          setProgress(0);
+        }, 600);
+      } else {
+        setProgress(newProgress);
+      }
+    }, interval);
+
+    return () => clearInterval(timer);
+  }, [isFlipped, isPaused, currentIndex]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === ' ' || e.key === 'Enter') {
+        e.preventDefault();
+        setIsFlipped((prev) => !prev);
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        setIsFlipped(false);
+        setCurrentIndex((prev) => (prev + 1) % questions.length);
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        setIsFlipped(false);
+        setCurrentIndex((prev) => (prev - 1 + questions.length) % questions.length);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const handleFlip = () => {
+    setIsFlipped(!isFlipped);
+  };
+
+  const handleNavigate = (index: number) => {
+    setIsFlipped(false);
+    setCurrentIndex(index);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (isMobile) return;
+    
+    const rect = e.currentTarget.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+    
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+    
+    const xPct = (mouseX / width - 0.5) * 200; // -100 to 100
+    const yPct = (mouseY / height - 0.5) * 200; // -100 to 100
+    
+    x.set(xPct);
+    y.set(yPct);
+  };
+
+  const handleMouseLeave = () => {
+    if (isMobile) return;
+    x.set(0);
+    y.set(0);
+    setIsPaused(false);
+  };
+
+  const handleMouseEnter = () => {
+    if (isMobile) return;
+    setIsPaused(true);
+  };
+
+  return (
+    <div className="relative w-full max-w-xl">
+      <div 
+        className="relative h-[320px] perspective-1000 sm:h-[340px]"
+        onMouseMove={handleMouseMove}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        <motion.div
+  className="relative h-full w-full cursor-pointer preserve-3d"
+  style={{
+    rotateX: rotateXSpring,
+    rotateY: rotateYSpring,
+  }}
+  animate={{ 
+    rotateY: isFlipped ? 180 : 0,
+  }}
+  transition={{ duration: 0.6, type: 'spring', stiffness: 260, damping: 20 }}
+  onClick={handleFlip}
+  role="button"
+  tabIndex={0}
+  aria-label={`Question card. ${isFlipped ? 'Showing answer' : 'Showing question'}. Press space or enter to flip.`}
+>
+          <div className="backface-hidden absolute inset-0 flex flex-col overflow-hidden rounded-3xl border border-gray-200 bg-white/80 p-6 shadow-xl backdrop-blur-xl sm:p-8 dark:border-white/10 dark:bg-white/5 dark:shadow-2xl">
+            {categoryIcon && (
+              <div className="pointer-events-none absolute -bottom-10 -right-10 opacity-[0.08] dark:opacity-[0.07]">
+                <Image
+                  src={categoryIcon}
+                  alt=""
+                  width={240}
+                  height={240}
+                  className="rotate-[-15deg] object-contain grayscale"
+                />
+              </div>
+            )}
+          
+            <div className="relative z-10 flex h-10 items-center justify-center">
+              <div 
+                className="flex items-center gap-2 rounded-full px-4 py-2 backdrop-blur-md transition-colors"
+                style={{
+                  backgroundColor: `${categoryColor}15`,
+                  border: `1px solid ${categoryColor}30`,
+                }}
+              >
+                {categoryIcon && (
+                  <div className="relative h-5 w-5 shrink-0">
+                    <Image
+                      src={categoryIcon}
+                      alt=""
+                      width={20}
+                      height={20}
+                      className="object-contain"
+                    />
+                  </div>
+                )}
+                <span className="text-xs font-semibold text-gray-900 dark:text-white sm:text-sm">
+                  {currentQuestion.category}
+                </span>
+              </div>
+            </div>
+
+            <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-2 py-4 sm:py-6">
+              <h3 className="text-center text-xl font-bold leading-tight text-gray-900 drop-shadow-sm sm:text-2xl sm:leading-snug dark:text-white">
+                {currentQuestion.question}
+              </h3>
+            </div>
+
+            <div className="relative z-10 flex h-16 flex-col items-center justify-center gap-3">
+              <div className="flex items-center gap-2 opacity-60">
+                <div 
+                  className="h-px w-8"
+                  style={{ backgroundColor: categoryColor }}
+                />
+                <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: categoryColor }} />
+                <div 
+                  className="h-px w-8"
+                  style={{ backgroundColor: categoryColor }}
+                />
+              </div>
+              
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-600 transition-colors hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200">
+                {isMobile ? 'Tap' : 'Click'} to reveal
+              </p>
+            </div>
+          </div>
+
+          <div className="backface-hidden absolute inset-0 flex flex-col overflow-hidden rounded-3xl border border-gray-200 bg-white/90 p-6 shadow-sm backdrop-blur-md sm:p-8 [transform:rotateY(180deg)] dark:border-neutral-800 dark:bg-neutral-900/10">
+            {categoryIcon && (
+              <div className="pointer-events-none absolute -bottom-10 -right-10 opacity-[0.08] dark:opacity-[0.07]">
+                <Image
+                  src={categoryIcon}
+                  alt=""
+                  width={240}
+                  height={240}
+                  className="rotate-[-15deg] object-contain grayscale"
+                />
+              </div>
+            )}
+
+            <div className="relative z-10 flex h-10 items-center justify-center">
+              <div 
+                className="flex items-center gap-2 rounded-full bg-green-100 px-4 py-2 backdrop-blur-sm dark:bg-green-500/20"
+                style={{
+                  border: '1px solid rgba(34, 197, 94, 0.4)',
+                }}
+              >
+                {categoryIcon && (
+                  <div className="relative h-5 w-5 shrink-0">
+                    <Image
+                      src={categoryIcon}
+                      alt=""
+                      width={20}
+                      height={20}
+                      className="object-contain"
+                    />
+                  </div>
+                )}
+                <span className="text-xs font-semibold text-green-800 dark:text-green-100 sm:text-sm">
+                  Answer
+                </span>
+              </div>
+            </div>
+
+            <div className="relative z-10 flex flex-1 items-center justify-center px-4 py-4 sm:px-6 sm:py-6">
+              <p className="text-center text-sm leading-relaxed text-gray-700 sm:text-base sm:leading-relaxed dark:text-neutral-300">
+                {currentQuestion.answer}
+              </p>
+            </div>
+
+            <div className="relative z-10 flex min-h-[4rem] items-center justify-center px-4">
+              {currentQuestion.tip ? (
+                <div className="flex flex-col items-center">
+                  <span className="mb-1 text-[10px] font-bold uppercase tracking-wider text-indigo-600 opacity-90 dark:text-indigo-300 dark:opacity-70">
+                    Pro Tip
+                  </span>
+                  <p className="text-center text-xs font-medium text-gray-600 dark:text-gray-400">
+                    {currentQuestion.tip}
+                  </p>
+                </div>
+              ) : (
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  {isMobile ? 'Tap' : 'Click'} again to see question
+                </p>
+              )}
+            </div>
+          </div>
+        </motion.div>
+
+
+      </div>
+
+      <div className="mt-6 flex justify-center gap-2">
+        {questions.map((_, index) => (
+          <button
+            key={index}
+            onClick={() => handleNavigate(index)}
+            className="relative focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] focus:ring-offset-2"
+            aria-label={`Go to question ${index + 1}`}
+            aria-current={index === currentIndex ? 'true' : 'false'}
+          >
+            {index === currentIndex ? (
+              <div className="relative h-2 w-8">
+                <div className="absolute inset-0 rounded-full bg-gray-300 dark:bg-gray-700" />
+                <motion.div
+                  className="absolute inset-0 rounded-full bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-hover)]"
+                  initial={{ width: '0%' }}
+                  animate={{ width: `${progress}%` }}
+                  transition={{ duration: 0.05, ease: 'linear' }}
+                />
+              </div>
+            ) : (
+              <div className="h-2 w-2 rounded-full bg-gray-300 transition-colors hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600" />
+            )}
+          </button>
+        ))}
+      </div>
+
+
+    </div>
+  );
+}
