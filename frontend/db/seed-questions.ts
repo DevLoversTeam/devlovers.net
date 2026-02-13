@@ -1,6 +1,6 @@
 import 'dotenv/config';
 
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 
 import rawData from '../parse/questions.json';
 import { db } from './index';
@@ -20,11 +20,32 @@ type RawQuestion = {
 
 const data = Array.isArray(rawData) ? (rawData as RawQuestion[]) : [];
 
+function normalizeLocale(locale: string) {
+  return locale.trim().toLowerCase();
+}
+
 async function seedQuestions() {
   if (!data.length) {
     console.log('No questions to seed - skipping.');
     return;
   }
+
+  const localeTotals = new Map<string, number>();
+  for (const q of data) {
+    for (const locale of Object.keys(q.translations ?? {})) {
+      const normalized = normalizeLocale(locale);
+      localeTotals.set(normalized, (localeTotals.get(normalized) ?? 0) + 1);
+    }
+  }
+
+  console.log(
+    `[seed] Loaded ${data.length} questions with locales: ${Array.from(
+      localeTotals.entries()
+    )
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([locale, count]) => `${locale}(${count})`)
+      .join(', ')}`
+  );
 
   for (const q of data) {
     const [category] = await db
@@ -38,24 +59,75 @@ async function seedQuestions() {
       continue;
     }
 
-    const [question] = await db
-      .insert(questions)
-      .values({
-        categoryId: category.id,
-        sortOrder: q.order ?? 0,
-      })
-      .returning();
+    const sortOrder = q.order ?? 0;
 
-    const translations = Object.entries(q.translations).map(
+    const [existingQuestion] = await db
+      .select({ id: questions.id })
+      .from(questions)
+      .where(
+        and(
+          eq(questions.categoryId, category.id),
+          eq(questions.sortOrder, sortOrder)
+        )
+      )
+      .limit(1);
+
+    const questionId =
+      existingQuestion?.id ??
+      (
+        await db
+          .insert(questions)
+          .values({
+            categoryId: category.id,
+            sortOrder,
+          })
+          .returning({ id: questions.id })
+      )[0]!.id;
+
+    const translations = Object.entries(q.translations ?? {}).map(
       ([locale, content]) => ({
-        questionId: question.id,
-        locale,
+        questionId,
+        locale: normalizeLocale(locale),
         question: content.question,
         answerBlocks: content.answerBlocks,
       })
     );
 
-    await db.insert(questionTranslations).values(translations);
+    if (!translations.length) {
+      console.warn(
+        `[seed] Question in category ${q.category} has no translations, skipping translations insert`
+      );
+      continue;
+    }
+
+    const insertedLocales: string[] = [];
+    for (const translation of translations) {
+      const [inserted] = await db
+        .insert(questionTranslations)
+        .values(translation)
+        .onConflictDoUpdate({
+          target: [questionTranslations.questionId, questionTranslations.locale],
+          set: {
+            question: translation.question,
+            answerBlocks: translation.answerBlocks,
+          },
+        })
+        .returning({ locale: questionTranslations.locale });
+      if (inserted?.locale) {
+        insertedLocales.push(inserted.locale);
+      }
+    }
+
+    const expectedLocales = translations.map(t => t.locale).sort();
+    const uniqueInsertedLocales = Array.from(new Set(insertedLocales)).sort();
+
+    if (uniqueInsertedLocales.join(',') !== expectedLocales.join(',')) {
+      console.warn(
+        `[seed] Translation insert mismatch for question ${questionId}: expected [${expectedLocales.join(
+          ', '
+        )}] but inserted [${uniqueInsertedLocales.join(', ')}]`
+      );
+    }
   }
 
   console.log('Questions seeded!');
