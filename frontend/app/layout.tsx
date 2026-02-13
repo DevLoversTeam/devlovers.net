@@ -2,9 +2,8 @@ import './globals.css';
 
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
-import { GeistMono } from 'geist/font/mono';
-import { GeistSans } from 'geist/font/sans';
 import type { Metadata } from 'next';
+import { Geist, Geist_Mono } from 'next/font/google';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://devlovers.net';
 
@@ -50,8 +49,15 @@ export const metadata: Metadata = {
   },
 };
 
-const geistSans = GeistSans;
-const geistMono = GeistMono;
+const geistSans = Geist({
+  subsets: ['latin', 'cyrillic'],
+  variable: '--font-geist-sans',
+});
+
+const geistMono = Geist_Mono({
+  subsets: ['latin', 'cyrillic'],
+  variable: '--font-geist-mono',
+});
 
 export default function RootLayout({
   children,

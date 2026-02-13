@@ -1,6 +1,6 @@
 'use client';
 
-import { ShoppingBag } from 'lucide-react';
+import { BookOpen, ShoppingBag } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import { BlogCategoryLinks } from '@/components/blog/BlogCategoryLinks';
@@ -41,12 +41,18 @@ export function DesktopNav({ variant, blogCategories = [] }: DesktopNavProps) {
   return (
     <div className="flex items-center gap-2">
       <div className="flex items-center gap-1">
-        {SITE_LINKS.filter(link => link.href !== '/shop').map(link => (
+        {SITE_LINKS.filter(
+          link => link.href !== '/shop' && link.href !== '/blog'
+        ).map(link => (
           <NavLink key={link.href} href={link.href}>
             {t(link.labelKey)}
           </NavLink>
         ))}
       </div>
+
+      <HeaderButton href="/blog" icon={BookOpen} showArrow>
+        {t('blog')}
+      </HeaderButton>
 
       <HeaderButton
         href="/shop"

@@ -139,4 +139,27 @@ describe('useQaTabs', () => {
     expect(result.current.totalPages).toBe(0);
     consoleSpy.mockRestore();
   });
+
+  it('updates page size and URL on size change', async () => {
+    const { result } = renderHook(() => useQaTabs());
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    act(() => {
+      result.current.handlePageSizeChange(40);
+    });
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        '/api/questions/git?page=1&limit=40&locale=en',
+        expect.objectContaining({ signal: expect.any(AbortSignal) })
+      );
+    });
+
+    expect(routerReplace).toHaveBeenCalledWith('/q&a?size=40', {
+      scroll: false,
+    });
+  });
 });

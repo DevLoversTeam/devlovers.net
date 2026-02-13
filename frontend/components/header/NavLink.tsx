@@ -19,7 +19,10 @@ export function NavLink({ href, children, className = '' }: NavLinkProps) {
     if (href === '/' && cleanPathname === '/') return true;
 
     if (href !== '/') {
-      return cleanPathname === href || cleanPathname.startsWith(`${href}/`);
+      if (cleanPathname === href || cleanPathname.startsWith(`${href}/`))
+        return true;
+      if (href === '/quizzes' && cleanPathname.startsWith('/quiz/'))
+        return true;
     }
 
     return false;

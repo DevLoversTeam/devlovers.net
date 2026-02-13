@@ -1,10 +1,9 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
-import React from 'react';
 import { motion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
-
+import { useTranslations } from 'next-intl';
+import React from 'react';
 
 import { InteractiveConstellation } from '@/components/home/InteractiveConstellation';
 import { InteractiveCTAButton } from '@/components/home/InteractiveCTAButton';
@@ -14,7 +13,7 @@ export default function WelcomeHeroSection() {
   const t = useTranslations('homepage');
 
   return (
-    <section className="relative flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center overflow-hidden px-4 md:px-8 lg:px-12">
+    <section className="relative flex min-h-[calc(100dvh-4rem)] flex-col items-center justify-center overflow-hidden px-4 md:px-8 lg:px-12">
       <WelcomeHeroBackground />
       <InteractiveConstellation />
       <div className="z-10 flex w-full max-w-5xl flex-col items-center text-center">

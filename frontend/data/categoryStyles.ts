@@ -57,7 +57,7 @@ export const categoryTabStyles = {
       'group-hover:border-black/50 dark:group-hover:border-white/50 group-hover:bg-black/5 dark:group-hover:bg-white/10 data-[state=active]:border-black/50 dark:data-[state=active]:border-white/50 data-[state=active]:bg-black/5 dark:data-[state=active]:bg-white/10',
     glow: 'bg-black dark:bg-white',
     iconClassName: 'dark:invert',
-    accent: '#111111',
+    accent: '#A1A1AA',
   },
   vue: {
     icon: '/icons/vuejs.svg',
