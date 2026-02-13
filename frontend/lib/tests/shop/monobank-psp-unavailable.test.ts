@@ -1,0 +1,273 @@
+import crypto from 'crypto';
+import { eq, sql } from 'drizzle-orm';
+import { NextRequest } from 'next/server';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+
+import { db } from '@/db';
+import { orders, paymentAttempts, productPrices, products } from '@/db/schema';
+import { resetEnvCache } from '@/lib/env';
+import { toDbMoney } from '@/lib/shop/money';
+import { deriveTestIpFromIdemKey } from '@/lib/tests/helpers/ip';
+import { isUuidV1toV5 } from '@/lib/utils/uuid';
+
+vi.mock('@/lib/auth', () => ({
+  getCurrentUser: vi.fn().mockResolvedValue(null),
+}));
+
+vi.mock('@/lib/logging', async () => {
+  const actual = await vi.importActual<any>('@/lib/logging');
+  return {
+    ...actual,
+    logWarn: () => {},
+    logError: () => {},
+    logInfo: () => {},
+  };
+});
+
+vi.mock('@/lib/psp/monobank', () => ({
+  MONO_CURRENCY: 'UAH',
+  createMonobankInvoice: vi.fn(async () => {
+    throw new Error('MONO_TIMEOUT');
+  }),
+  cancelMonobankInvoice: vi.fn(async () => {}),
+}));
+
+const __prevRateLimitDisabled = process.env.RATE_LIMIT_DISABLED;
+const __prevPaymentsEnabled = process.env.PAYMENTS_ENABLED;
+const __prevMonoToken = process.env.MONO_MERCHANT_TOKEN;
+const __prevAppOrigin = process.env.APP_ORIGIN;
+const __prevShopBaseUrl = process.env.SHOP_BASE_URL;
+const __prevStatusSecret = process.env.SHOP_STATUS_TOKEN_SECRET;
+
+beforeAll(() => {
+  process.env.RATE_LIMIT_DISABLED = '1';
+  process.env.PAYMENTS_ENABLED = 'true';
+  process.env.MONO_MERCHANT_TOKEN = 'test_mono_token';
+  process.env.APP_ORIGIN = 'http://localhost:3000';
+  process.env.SHOP_BASE_URL = 'http://localhost:3000';
+  process.env.SHOP_STATUS_TOKEN_SECRET =
+    'test_status_token_secret_test_status_token_secret';
+  resetEnvCache();
+});
+
+afterAll(() => {
+  if (__prevRateLimitDisabled === undefined)
+    delete process.env.RATE_LIMIT_DISABLED;
+  else process.env.RATE_LIMIT_DISABLED = __prevRateLimitDisabled;
+
+  if (__prevPaymentsEnabled === undefined) delete process.env.PAYMENTS_ENABLED;
+  else process.env.PAYMENTS_ENABLED = __prevPaymentsEnabled;
+
+  if (__prevMonoToken === undefined) delete process.env.MONO_MERCHANT_TOKEN;
+  else process.env.MONO_MERCHANT_TOKEN = __prevMonoToken;
+
+  if (__prevAppOrigin === undefined) delete process.env.APP_ORIGIN;
+  else process.env.APP_ORIGIN = __prevAppOrigin;
+  if (__prevShopBaseUrl === undefined) delete process.env.SHOP_BASE_URL;
+  else process.env.SHOP_BASE_URL = __prevShopBaseUrl;
+  if (__prevStatusSecret === undefined)
+    delete process.env.SHOP_STATUS_TOKEN_SECRET;
+  else process.env.SHOP_STATUS_TOKEN_SECRET = __prevStatusSecret;
+  resetEnvCache();
+});
+
+function warnCleanup(step: string, err: unknown) {
+  console.warn('[monobank-psp-unavailable.test] cleanup failed', {
+    step,
+    err: err instanceof Error ? { name: err.name, message: err.message } : err,
+  });
+}
+
+async function createIsolatedProduct(stock: number) {
+  const [tpl] = await db
+    .select()
+    .from(products)
+    .where(eq(products.isActive as any, true))
+    .limit(1);
+
+  if (!tpl) {
+    throw new Error('No template product found to clone.');
+  }
+
+  const productId = crypto.randomUUID();
+  const slug = `t-mono-${crypto.randomUUID()}`;
+  const sku = `t-mono-${crypto.randomUUID()}`;
+  const now = new Date();
+
+  await db.insert(products).values({
+    ...(tpl as any),
+    id: productId,
+    slug,
+    sku,
+    title: `Test ${slug}`,
+    stock,
+    isActive: true,
+    createdAt: now,
+    updatedAt: now,
+  } as any);
+
+  await db.insert(productPrices).values({
+    productId,
+    currency: 'UAH',
+    priceMinor: 1000,
+    originalPriceMinor: null,
+    price: toDbMoney(1000),
+    originalPrice: null,
+    createdAt: now,
+    updatedAt: now,
+  } as any);
+
+  return { productId };
+}
+
+async function cleanupOrder(orderId: string) {
+  if (!isUuidV1toV5(orderId))
+    throw new Error(`cleanupOrder: invalid uuid: ${orderId}`);
+
+  await db.execute(
+    sql`delete from inventory_moves where order_id = ${orderId}::uuid`
+  );
+  await db.execute(
+    sql`delete from order_items where order_id = ${orderId}::uuid`
+  );
+  await db.execute(
+    sql`delete from payment_attempts where order_id = ${orderId}::uuid`
+  );
+  await db.execute(sql`delete from orders where id = ${orderId}::uuid`);
+}
+
+async function archiveProduct(productId: string) {
+  if (!isUuidV1toV5(productId))
+    throw new Error(`archiveProduct: invalid uuid: ${productId}`);
+  const TEST_ARCHIVE_PREFIX = '[TEST-ARCHIVED] ';
+  await db
+    .update(products)
+    .set({
+      isActive: false,
+      stock: 0,
+      title: sql<string>`
+        case
+          when ${products.title} like ${TEST_ARCHIVE_PREFIX + '%'} then ${products.title}
+          else ${TEST_ARCHIVE_PREFIX} || ${products.title}
+        end
+      `,
+      updatedAt: new Date(),
+    } as any)
+    .where(eq(products.id, productId));
+}
+
+async function postCheckout(idemKey: string, productId: string) {
+  const mod = (await import('@/app/api/shop/checkout/route')) as unknown as {
+    POST: (req: NextRequest) => Promise<Response>;
+  };
+
+  const req = new NextRequest('http://localhost/api/shop/checkout', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'accept-language': 'uk-UA',
+      'idempotency-key': idemKey,
+      'x-request-id': 'mono-req-1',
+      'x-forwarded-for': deriveTestIpFromIdemKey(idemKey),
+      origin: 'http://localhost:3000',
+    },
+    body: JSON.stringify({
+      items: [{ productId, quantity: 1 }],
+      paymentProvider: 'monobank',
+    }),
+  });
+
+  return mod.POST(req);
+}
+
+describe.sequential('monobank PSP_UNAVAILABLE invariant', () => {
+  it('cancel+restock on invoice/create failure', async () => {
+    const { productId } = await createIsolatedProduct(2);
+    const idemKey = crypto.randomUUID();
+    let orderId: string | null = null;
+
+    try {
+      const res = await postCheckout(idemKey, productId);
+      expect(res.status).toBe(503);
+      const json: any = await res.json();
+      expect(json.code).toBe('PSP_UNAVAILABLE');
+
+      const [row] = await db
+        .select({
+          id: orders.id,
+          currency: orders.currency,
+          status: orders.status,
+          paymentStatus: orders.paymentStatus,
+          inventoryStatus: orders.inventoryStatus,
+          stockRestored: orders.stockRestored,
+          failureCode: orders.failureCode,
+        })
+        .from(orders)
+        .where(eq(orders.idempotencyKey, idemKey))
+        .limit(1);
+
+      expect(row).toBeTruthy();
+      orderId = row!.id;
+      expect(row!.currency).toBe('UAH');
+      expect(row!.status).toBe('CANCELED');
+      expect(row!.failureCode).toBe('PSP_UNAVAILABLE');
+      expect(row!.paymentStatus).toBe('failed');
+      expect(row!.inventoryStatus).toBe('released');
+      expect(row!.stockRestored).toBe(true);
+
+      const moves = (await db.execute(
+        sql`select type from inventory_moves where order_id = ${orderId}::uuid`
+      )) as unknown as { rows?: Array<{ type: unknown }> };
+
+      const moveTypes = (moves.rows ?? []).map(r => String(r.type ?? ''));
+      expect(moveTypes).toContain('reserve');
+      expect(moveTypes).toContain('release');
+
+      const [attempt] = await db
+        .select({
+          status: paymentAttempts.status,
+          lastErrorCode: paymentAttempts.lastErrorCode,
+          metadata: paymentAttempts.metadata,
+          currency: paymentAttempts.currency,
+          expectedAmountMinor: paymentAttempts.expectedAmountMinor,
+          finalizedAt: paymentAttempts.finalizedAt,
+        })
+        .from(paymentAttempts)
+        .where(eq(paymentAttempts.orderId, orderId))
+        .limit(1);
+
+      expect(attempt).toBeTruthy();
+      expect(attempt!.status).toBe('failed');
+      expect(attempt!.lastErrorCode).toBe('PSP_UNAVAILABLE');
+      expect((attempt!.metadata as Record<string, unknown>)?.requestId).toBe(
+        'mono-req-1'
+      );
+      expect(attempt!.currency).toBe('UAH');
+      expect(attempt!.expectedAmountMinor).toBeGreaterThan(0);
+      expect(attempt!.finalizedAt).not.toBeNull();
+    } finally {
+      try {
+        if (!orderId) {
+          const [row] = await db
+            .select({ id: orders.id })
+            .from(orders)
+            .where(eq(orders.idempotencyKey, idemKey))
+            .limit(1);
+          orderId = row?.id ?? null;
+        }
+
+        if (orderId) {
+          await cleanupOrder(orderId);
+        }
+      } catch (e) {
+        warnCleanup('cleanupOrder', e);
+      }
+
+      try {
+        await archiveProduct(productId);
+      } catch (e) {
+        warnCleanup('archiveProduct', e);
+      }
+    }
+  }, 20_000);
+});

@@ -34,7 +34,8 @@ export function resolvePaymentProvider(
 ): PaymentProvider {
   const provider = order.paymentProvider;
 
-  if (provider === 'stripe' || provider === 'none') return provider;
+  if (provider === 'stripe' || provider === 'monobank' || provider === 'none')
+    return provider;
 
   if (order.paymentIntentId) return 'stripe';
   if (order.paymentStatus === 'paid') return 'none';

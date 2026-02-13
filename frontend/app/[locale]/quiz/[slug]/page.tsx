@@ -1,11 +1,14 @@
 import type { Metadata } from 'next';
-import { notFound, redirect } from 'next/navigation';
+import Image from 'next/image';
+import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
 import { QuizContainer } from '@/components/quiz/QuizContainer';
+import { categoryTabStyles } from '@/data/categoryStyles';
 import { stripCorrectAnswers } from '@/db/queries/quiz';
 import { getQuizBySlug, getQuizQuestionsRandomized } from '@/db/queries/quiz';
 import { getCurrentUser } from '@/lib/auth';
+import { cn } from '@/lib/utils';
 
 type MetadataProps = { params: Promise<{ locale: string; slug: string }> };
 
@@ -49,16 +52,15 @@ export default async function QuizPage({
     notFound();
   }
 
-  if (!seedParam) {
-    // eslint-disable-next-line react-hooks/purity -- redirect throws, value never used in render
-    redirect(`/${locale}/quiz/${slug}?seed=${Date.now()}`);
-  }
+  const categoryStyle =
+    quiz.categorySlug && quiz.categorySlug in categoryTabStyles
+      ? categoryTabStyles[quiz.categorySlug as keyof typeof categoryTabStyles]
+      : null;
 
-  const seed = Number.parseInt(seedParam, 10);
-  if (Number.isNaN(seed)) {
-    // eslint-disable-next-line react-hooks/purity -- redirect throws, value never used in render
-    redirect(`/${locale}/quiz/${slug}?seed=${Date.now()}`);
-  }
+  const parsedSeed = seedParam ? Number.parseInt(seedParam, 10) : Number.NaN;
+  const seed = Number.isFinite(parsedSeed)
+    ? parsedSeed
+    : crypto.getRandomValues(new Uint32Array(1))[0]!;
 
   const questions = await getQuizQuestionsRandomized(quiz.id, locale, seed);
 
@@ -76,7 +78,23 @@ export default async function QuizPage({
     <div className="min-h-screen bg-white dark:bg-black">
       <div className="mx-auto max-w-3xl px-4 py-8">
         <div className="mb-8">
-          <h1 className="mb-2 text-3xl font-bold text-gray-900 dark:text-gray-100">
+          <h1 className="mb-2 flex items-center gap-3 text-3xl font-bold text-gray-900 dark:text-gray-100">
+            {categoryStyle && (
+              <span className="relative h-8 w-8 shrink-0 sm:h-10 sm:w-10">
+                <Image
+                  src={categoryStyle.icon}
+                  alt={quiz.categoryName ?? quiz.categorySlug ?? 'Category'}
+                  fill
+                  sizes="(min-width: 640px) 40px, 32px"
+                  className={cn(
+                    'object-contain',
+                    'iconClassName' in categoryStyle
+                      ? categoryStyle.iconClassName
+                      : undefined
+                  )}
+                />
+              </span>
+            )}
             {quiz.title}
           </h1>
           {quiz.description && (

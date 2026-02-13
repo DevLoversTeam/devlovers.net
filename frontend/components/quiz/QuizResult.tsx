@@ -22,6 +22,7 @@ interface QuizResultProps {
   quizSlug?: string;
   pointsAwarded?: number | null;
   isIncomplete?: boolean;
+  attemptId?: string;
   onRestart: () => void;
   onBackToTopics: () => void;
 }
@@ -35,6 +36,7 @@ export function QuizResult({
   pointsAwarded,
   isGuest = false,
   isIncomplete = false,
+  attemptId,
   onRestart,
   onBackToTopics,
 }: QuizResultProps) {
@@ -189,6 +191,14 @@ export function QuizResult({
           <Button onClick={onRestart} variant="primary">
             {t('retryButton')}
           </Button>
+          {!isGuest && attemptId && score < total && (
+            <Button
+              onClick={() => (window.location.href = `/${locale}/dashboard/quiz-review/${attemptId}`)}
+              variant="secondary"
+            >
+              {t('reviewButton')}
+            </Button>
+          )}
           <Button onClick={onBackToTopics} variant="secondary">
             {t('backButton')}
           </Button>

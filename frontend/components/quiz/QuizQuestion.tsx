@@ -1,7 +1,7 @@
 'use client';
-
-import { Check, Lightbulb, X } from 'lucide-react';
+import { BookOpen, Check, Lightbulb, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useEffect, useRef } from 'react';
 
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { QuizQuestionClient } from '@/db/queries/quiz';
@@ -35,6 +35,14 @@ export function QuizQuestion({
   const isRevealed = status === 'revealed';
 
   const isCorrectAnswer = isRevealed && isCorrect;
+
+    const nextButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (isRevealed) {
+      nextButtonRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [isRevealed]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -91,10 +99,18 @@ export function QuizQuestion({
             'border border-blue-500 dark:border-blue-500'
           )}
         >
-          <div className="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
-            {t('explanationLabel')}
+          <div className="flex items-start gap-3">
+            <BookOpen
+              className="h-6 w-6 shrink-0 text-blue-500"
+              aria-hidden="true"
+            />
+            <div className="flex-1">
+              <h4 className="mb-2 font-semibold text-gray-900 dark:text-gray-100">
+                {t('explanationLabel')}
+              </h4>
+              <ExplanationRenderer blocks={question.explanation} />
+            </div>
           </div>
-          <ExplanationRenderer blocks={question.explanation} />
         </div>
       )}
       {isRevealed && !isCorrectAnswer && (
@@ -122,6 +138,7 @@ export function QuizQuestion({
       )}
       {isRevealed && (
         <button
+          ref={nextButtonRef}
           onClick={onNext}
           disabled={isLoading}
           className="group animate-in fade-in slide-in-from-bottom-2 relative mt-2 w-full overflow-hidden rounded-xl border px-6 py-3 text-center text-base font-semibold transition-all duration-300 disabled:opacity-50"

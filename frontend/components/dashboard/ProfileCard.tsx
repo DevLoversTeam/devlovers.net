@@ -2,10 +2,14 @@
 
 import { useTranslations } from 'next-intl';
 
+import { UserAvatar } from '@/components/leaderboard/UserAvatar';
+
 interface ProfileCardProps {
   user: {
+    id: string;
     name: string | null;
     email: string;
+    image: string | null;
     role: string | null;
     points: number;
     createdAt: Date | null;
@@ -15,6 +19,11 @@ interface ProfileCardProps {
 
 export function ProfileCard({ user, locale }: ProfileCardProps) {
   const t = useTranslations('dashboard.profile');
+  const username = user.name || user.email.split('@')[0];
+  const seed = `${username}-${user.id}`;
+  const avatarSrc =
+    user.image ||
+    `https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(seed)}`;
 
   const cardStyles = `
     relative overflow-hidden rounded-2xl
@@ -27,22 +36,26 @@ export function ProfileCard({ user, locale }: ProfileCardProps) {
     <section className={cardStyles} aria-labelledby="profile-heading">
       <div className="flex items-start gap-6">
         <div
-          className="relative rounded-full bg-linear-to-br from-(--accent-primary) to-(--accent-hover) p-0.75"
-          aria-hidden="true"
+          className="relative shrink-0 rounded-full bg-linear-to-br from-(--accent-primary) to-(--accent-hover) p-0.75"
         >
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white text-3xl font-bold text-gray-700 dark:bg-neutral-900 dark:text-gray-200">
-            {user.name?.[0]?.toUpperCase() || user.email[0].toUpperCase()}
+          <div className="relative h-20 w-20 overflow-hidden rounded-full bg-white dark:bg-neutral-900">
+            <UserAvatar
+              src={avatarSrc}
+              username={username}
+              userId={user.id}
+              sizes="80px"
+            />
           </div>
         </div>
 
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <h2
             id="profile-heading"
             className="text-2xl font-bold text-gray-900 dark:text-white"
           >
             {user.name || t('defaultName')}
           </h2>
-          <p className="font-mono text-sm text-gray-500 dark:text-gray-400">
+          <p className="truncate font-mono text-sm text-gray-500 dark:text-gray-400">
             {user.email}
           </p>
 

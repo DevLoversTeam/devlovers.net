@@ -3,6 +3,8 @@ import { inArray } from 'drizzle-orm';
 import { NextRequest } from 'next/server';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
+import { inventoryMoves, orderItems, orders, productPrices, products } from '@/db/schema';
+
 process.env.STRIPE_PAYMENTS_ENABLED = 'false';
 process.env.STRIPE_SECRET_KEY = '';
 process.env.STRIPE_WEBHOOK_SECRET = '';
@@ -12,7 +14,7 @@ vi.mock('@/lib/auth', async () => {
     await vi.importActual<typeof import('@/lib/auth')>('@/lib/auth');
   return {
     ...actual,
-    getCurrentUser: async () => null, // guest
+    getCurrentUser: async () => null, 
   };
 });
 
@@ -57,7 +59,6 @@ vi.mock('@/lib/logging', async () => {
 });
 
 import { db } from '@/db';
-import { orders, productPrices, products } from '@/db/schema';
 
 let POST: (req: NextRequest) => Promise<Response>;
 
@@ -79,12 +80,28 @@ beforeAll(async () => {
 
 afterAll(async () => {
   if (createdOrderIds.length) {
+     await db
+      .delete(inventoryMoves)
+      .where(inArray(inventoryMoves.orderId, createdOrderIds));
+    await db
+      .delete(orderItems)
+      .where(inArray(orderItems.orderId, createdOrderIds));
+
     await db.delete(orders).where(inArray(orders.id, createdOrderIds));
   }
+
   if (createdProductIds.length) {
+    await db
+      .delete(inventoryMoves)
+      .where(inArray(inventoryMoves.productId, createdProductIds));
+    await db
+      .delete(orderItems)
+      .where(inArray(orderItems.productId, createdProductIds));
+
     await db
       .delete(productPrices)
       .where(inArray(productPrices.productId, createdProductIds));
+
     await db.delete(products).where(inArray(products.id, createdProductIds));
   }
 });

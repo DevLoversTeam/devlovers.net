@@ -1,6 +1,13 @@
+import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 
-import { getCorrectAnswer, getOrCreateQuizAnswersCache } from '@/lib/quiz/quiz-answers-redis';
+import {
+  getCorrectAnswer,
+  getOrCreateQuizAnswersCache,
+  isQuestionAlreadyVerified,
+  markQuestionVerified,
+} from '@/lib/quiz/quiz-answers-redis';
+import { resolveRequestIdentifier } from '@/lib/quiz/resolve-identifier'
 
 export const runtime = 'nodejs';
 
@@ -15,7 +22,24 @@ export async function POST(req: Request) {
       );
     }
 
-    const { quizId, questionId, selectedAnswerId } = body;
+    const { quizId, questionId, selectedAnswerId, timeLimitSeconds } = body;
+
+    // Identify user: userId for authenticated, IP for guests
+    const headersList = await headers();
+    const identifier = resolveRequestIdentifier(headersList);
+     if (identifier) {
+      const alreadyVerified = await isQuestionAlreadyVerified(
+        quizId,
+        questionId,
+        identifier
+      );
+      if (alreadyVerified) {
+        return NextResponse.json(
+          { success: false, error: 'Question already answered' },
+          { status: 409 }
+        );
+      }
+    }
 
     let correctAnswerId = await getCorrectAnswer(quizId, questionId);
 
@@ -33,6 +57,14 @@ export async function POST(req: Request) {
       );
     }
 
+     const MAX_TTL = 3600;
+    const ttl = typeof timeLimitSeconds === 'number' && timeLimitSeconds > 0
+      ? Math.min(timeLimitSeconds + 60, MAX_TTL)
+      : 900;
+
+     if (identifier) {
+      await markQuestionVerified(quizId, questionId, identifier, ttl);
+    }
     const isCorrect = selectedAnswerId === correctAnswerId;
 
     return NextResponse.json({

@@ -52,7 +52,6 @@ async function cleanupByIds(params: { orderId?: string; productId: string }) {
   const { orderId, productId } = params;
 
   if (orderId) {
-    // delete children first
     await db.delete(inventoryMoves).where(eq(inventoryMoves.orderId, orderId));
     await db.delete(orderItems).where(eq(orderItems.orderId, orderId));
     await db.delete(orders).where(eq(orders.id, orderId));
@@ -154,7 +153,6 @@ describe('P0-6 snapshots: order_items immutability', () => {
       expect(before[0].productSku).toBe(skuV1);
       expect(before[0].unitPriceMinor).toBe(900);
       expect(before[0].lineTotalMinor).toBe(900);
-
       const titleV2 = `${titleV1} UPDATED`;
       const slugV2 = `${slugV1}-updated`;
       const skuV2 = `${skuV1}-UPDATED`;

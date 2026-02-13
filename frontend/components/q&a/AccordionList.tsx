@@ -302,6 +302,9 @@ export default function AccordionList({ items }: { items: QuestionEntry[] }) {
     x: number;
     y: number;
   } | null>(null);
+  const [buttonPlacement, setButtonPlacement] = useState<'above' | 'below'>(
+    'above'
+  );
   const [modalOpen, setModalOpen] = useState(false);
   const [cachedTerms, setCachedTerms] = useState<Set<string>>(
     () => new Set(getCachedTerms())
@@ -331,6 +334,7 @@ export default function AccordionList({ items }: { items: QuestionEntry[] }) {
     (text: string, position: { x: number; y: number }) => {
       setSelectedText(text);
       setButtonPosition(position);
+      setButtonPlacement(window.innerWidth < 640 ? 'below' : 'above');
     },
     []
   );
@@ -379,16 +383,18 @@ export default function AccordionList({ items }: { items: QuestionEntry[] }) {
           const accent =
             categoryTabStyles[q.category as keyof typeof categoryTabStyles]
               ?.accent;
+          const animationDelay = `${Math.min(idx, 10) * 60}ms`;
+          const itemStyle: CSSProperties = {
+            animationDelay,
+            animationFillMode: 'both',
+            ...(accent ? ({ '--qa-accent': accent } as CSSProperties) : {}),
+          };
           return (
             <AccordionItem
               key={key}
               value={String(key)}
-              className="qa-accordion-item mb-3 rounded-xl border border-black/5 bg-white/90 shadow-sm transition-colors last:mb-0 last:border-b dark:border-white/10 dark:bg-neutral-900/80"
-              style={
-                accent
-                  ? ({ '--qa-accent': accent } as CSSProperties)
-                  : undefined
-              }
+              className="qa-accordion-item mb-3 rounded-xl border border-black/5 bg-white/90 shadow-sm transition-colors last:mb-0 last:border-b dark:border-white/10 dark:bg-neutral-900/80 animate-in fade-in slide-in-from-bottom-2 duration-500"
+              style={itemStyle}
             >
               <AccordionTrigger
                 className="px-4 hover:no-underline"
@@ -418,6 +424,7 @@ export default function AccordionList({ items }: { items: QuestionEntry[] }) {
           position={buttonPosition}
           onClick={handleExplainClick}
           onDismiss={handleButtonDismiss}
+          placement={buttonPlacement}
         />
       )}
 

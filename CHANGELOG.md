@@ -400,3 +400,113 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Improved table text contrast in dark mode
 - Fixed cart badge overlay issues in header
 - Resolved multiple mobile spacing and padding inconsistencies
+
+## [0.5.5] - 2026-02-06
+
+### Added
+
+- About page UX improvements:
+  - Updated icons in pricing and sponsorship sections
+  - Renamed “Latest Contributors” to “Open Source Heroes” (en / uk / pl)
+  - Improved mobile readability for disclaimers and interactive game text
+  - Performance optimization: ParticleCanvas disabled on mobile devices
+- Q&A navigation improvements:
+  - Category-aware Git topic navigation
+  - Prevented unintended scroll on desktop pagination
+- Platform documentation updates
+
+### Changed
+
+- About page refinements:
+  - Improved visual consistency and spacing across sections
+  - Optimized theme toggle animation for smoother transitions
+  - Updated LinkedIn follower count display
+- Blog layout:
+  - Fixed background paddings for better responsive consistency
+- Shop backend behavior:
+  - Checkout now hard-blocked when PAYMENTS_ENABLED=false
+  - Early 503 response prevents order creation and inventory reservation
+
+### Fixed
+
+- Fixed incorrect Git topic links in Q&A cards
+- Resolved multiple mobile UI issues on About page
+- Prevented checkout edge case creating paid orders when payments are disabled
+- Improved accessibility and readability across updated UI sections
+
+## [0.5.6] - 2026-02-06
+
+### Added
+
+- Q&A UI enhancements:
+  - Smooth staggered accordion entrance animations after data fetch
+  - Shared animated loader component reused across Q&A sections
+- Leaderboard visual improvements:
+  - Reused Q&A DynamicGridBackground for visual consistency
+  - Enhanced title animation with gradient wave effect
+
+### Changed
+
+- Q&A layout refinements:
+  - Removed square backdrop for cleaner visual hierarchy
+  - Ensured background fills full viewport height
+- Navigation behavior:
+  - Pagination now consistently resets scroll position to the top of content
+
+### Fixed
+
+- Fixed inconsistent scroll behavior when navigating Q&A pages
+- Improved UX predictability across desktop and mobile devices
+
+## [0.5.7] - 2026-02-12
+
+### Added
+
+- Monitoring & observability:
+  - Production error and performance monitoring via Sentry
+  - Global error boundary and release tracking
+- Security & CI:
+  - Safe-chain dependency malware protection in GitHub Actions
+  - Automated dependency validation on push and pull requests
+- SEO & social metadata:
+  - Full Open Graph and Twitter Card support
+  - Localized OG metadata and alt text
+  - Canonical URL handling via metadataBase
+- Quiz platform improvements:
+  - Redis caching for quiz questions to reduce database load
+  - Guest warning with Login / Sign up / Continue as guest options
+  - Bot protection: single verification per question attempt
+- Shop enhancements:
+  - Monobank payment integration (UAH-only, feature-gated)
+  - Secure webhook processing with signature validation and idempotency
+  - Admin refund and cancel endpoints
+- Platform transparency:
+  - Added `/public/humans.txt` with team, mission, and technology stack
+
+### Changed
+
+- Navigation & UX:
+  - Added global page transition loading indicators
+  - Context-aware header behavior for Blog and Shop
+  - Improved mobile menu interactions and auto-close behavior
+- Leaderboard:
+  - User avatars with DiceBear fallback for missing images
+- Home & SEO:
+  - Home title standardized to "DevLovers"
+  - Subtitle used for OG/Twitter previews
+- Authentication & routing:
+  - Improved locale detection and dashboard redirect handling
+  - OAuth and database configuration stability improvements
+
+### Fixed
+
+- Fixed missing locale handling for `/dashboard` redirects
+- Restored authentication flow after environment configuration issues
+- Improved handling of missing or invalid avatar data
+- Fixed OG preview URL resolution issues
+- Improved reliability of environment configuration and credentials
+
+### Performance
+
+- Reduced database load for quiz pages via Redis caching
+- Improved frontend loading experience during navigation

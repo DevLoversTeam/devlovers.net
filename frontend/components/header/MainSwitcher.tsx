@@ -30,8 +30,22 @@ function isHomePath(pathname: string): boolean {
 
 function isQuizzesPath(pathname: string): boolean {
   const segments = pathname.split('/').filter(Boolean);
-  return segments[0] === 'quizzes' || segments[1] === 'quizzes' ||
-         segments[0] === 'quiz' || segments[1] === 'quiz';
+  return (
+    segments[0] === 'quizzes' ||
+    segments[1] === 'quizzes' ||
+    segments[0] === 'quiz' ||
+    segments[1] === 'quiz'
+  );
+}
+
+function isDashboardPath(pathname: string): boolean {
+  const segments = pathname.split('/').filter(Boolean);
+  return segments[0] === 'dashboard' || segments[1] === 'dashboard';
+}
+
+function isLeaderboardPath(pathname: string): boolean {
+  const segments = pathname.split('/').filter(Boolean);
+  return segments[0] === 'leaderboard' || segments[1] === 'leaderboard';
 }
 
 type MainSwitcherProps = {
@@ -62,15 +76,19 @@ export function MainSwitcher({
           showAdminLink={showAdminLink}
           blogCategories={blogCategories}
         />
-        <main className="mx-auto min-h-[80vh] px-4 sm:px-6 lg:px-8">
-          {children}
-        </main>
+        <main className="mx-auto min-h-[80vh]">{children}</main>
       </>
     );
   }
 
   return (
-    <main className={isQa || isHome || isQuizzesPath(pathname) ? 'mx-auto' : 'mx-auto min-h-[80vh] px-6'}>
+    <main
+      className={
+        isQa || isHome || isQuizzesPath(pathname) || isDashboardPath(pathname) || isLeaderboardPath(pathname)
+          ? 'mx-auto'
+          : 'mx-auto min-h-[80vh] px-6'
+      }
+    >
       {children}
     </main>
   );

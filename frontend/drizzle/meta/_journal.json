@@ -43,6 +43,62 @@
       "when": 1768782782399,
       "tag": "0005_modern_bromley",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1769708885020,
+      "tag": "0006_certain_shocker",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1769709728438,
+      "tag": "0007_outstanding_shocker",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1769721614504,
+      "tag": "0008_wide_zzzax",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1769722667103,
+      "tag": "0009_spicy_martin_li",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1769798192982,
+      "tag": "0010_wakeful_living_lightning",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1769810799649,
+      "tag": "0011_rich_gateway",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1769972400000,
+      "tag": "0012_atomic_mono_cancel_payment",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1770912000000,
+      "tag": "0013_monobank_janitor_claim_attempts",
+      "breakpoints": true
     }
   ]
 }

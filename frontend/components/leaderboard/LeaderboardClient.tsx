@@ -25,14 +25,7 @@ export default function LeaderboardClient({
   const hasResults = topThree.length > 0;
 
   return (
-    <div className="relative min-h-screen w-full">
-      <div className="fixed inset-0 z-0">
-        <DynamicGridBackground
-          showStaticGrid
-          className="h-full w-full bg-gray-50 transition-colors duration-300 dark:bg-transparent"
-        />
-      </div>
-
+    <DynamicGridBackground className="min-h-screen bg-gray-50 transition-colors duration-300 dark:bg-transparent">
       <div className="relative z-10 mx-auto flex w-full max-w-5xl flex-col items-center px-4 pt-20 pb-10 sm:px-6 lg:px-8">
         <header className="mb-16 max-w-3xl text-center">
           <motion.div
@@ -40,8 +33,16 @@ export default function LeaderboardClient({
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.6 }}
           >
-            <h1 className="mb-6 text-4xl font-black tracking-tight text-[var(--accent-primary)] drop-shadow-sm md:text-6xl lg:text-7xl">
-              {t('title')}
+            <h1 className="relative mb-6 inline-block pb-2 text-4xl font-black tracking-tight md:text-6xl lg:text-7xl">
+              <span className="relative inline-block bg-linear-to-r from-(--accent-primary)/70 via-[color-mix(in_srgb,var(--accent-primary)_70%,white)]/70 to-(--accent-hover)/70 bg-clip-text text-transparent">
+                {t('title')}
+              </span>
+              <span
+                className="wave-text-gradient pointer-events-none absolute inset-0 inline-block bg-linear-to-r from-(--accent-primary) via-[color-mix(in_srgb,var(--accent-primary)_70%,white)] to-(--accent-hover) bg-clip-text text-transparent"
+                aria-hidden="true"
+              >
+                {t('title')}
+              </span>
             </h1>
           </motion.div>
 
@@ -81,6 +82,6 @@ export default function LeaderboardClient({
           </div>
         </div>
       </div>
-    </div>
+    </DynamicGridBackground>
   );
 }

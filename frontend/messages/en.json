@@ -44,13 +44,14 @@
     "dashboard": "Dashboard"
   },
   "homepage": {
-    "title": "DevLovers",
+    "title": "DevLovers — Technical Interview Platform",
     "subtitle": "Platform for Technical Interview Preparation",
     "welcomeDescription": "Prepare for technical interviews with Q&A, quizzes, leaderboards, and AI-powered explanations.",
     "description": "Build real confidence in frontend, backend, and full-stack development through interactive interview questions, quizzes, and practical explanations",
+    "ogImageAlt": "DevLovers — Technical Interview Platform",
     "cta": "Take the first step",
     "ctaVariants": {
-      "1": "No pressure, just start",
+      "1": "No pressure. Just start",
       "2": "This might actually be fun",
       "3": "You're already halfway",
       "4": "One click from progress",
@@ -130,13 +131,11 @@
       },
       "control": {
         "title": "Control System",
-        "description": "Rule violations are automatically detected. With 3+ violations, the result will not count towards the leaderboard."
+        "description": "Rule violations are automatically detected. For registered users, results are always saved to your profile, but with 4+ violations points will not count towards the leaderboard."
       },
-      "time": {
-        "title": "Time Requirements",
-        "description": "Minimum time: {seconds} seconds (3 seconds per question). Results that are too fast will not be counted."
-      },
-      "startButton": "Start Quiz"
+      "startButton": "Start Quiz",
+      "guestWarning": "You are playing as a guest. Your result will not be saved.",
+      "continueAsGuest": "Continue as Guest"
     },
     "question": {
       "correct": "Correct",
@@ -189,11 +188,12 @@
       "pointsAwarded": "+{points} points added to rating",
       "noPointsAwarded": "No points awarded (result not improved)",
       "disqualified": "No points awarded (disqualified due to violations)",
-      "guestMessage": "To save your result and appear on the leaderboard, log in or sign up",
+      "guestMessage": "To save your result, review your mistakes, and appear on the leaderboard, log in or sign up",
       "loginButton": "Log In",
       "signupButton": "Sign Up",
       "retryButton": "Try Again",
-      "backButton": "Back to Topics"
+      "backButton": "Back to Topics",
+      "reviewButton": "Review Mistakes"
     },
     "card": {
       "uncategorized": "Uncategorized",
@@ -263,8 +263,8 @@
     }
   },
   "footer": {
-    "builtWith": "Built with",
-    "byCommunity": "by the community.",
+    "builtWith": "Built by",
+    "byCommunity": "community.",
     "privacyPolicy": "Privacy Policy",
     "termsOfService": "Terms of Service"
   },
@@ -449,7 +449,8 @@
       },
       "navigation": {
         "shopNav": "Shop navigation",
-        "home": "Home"
+        "home": "Home",
+        "shop": "Shop"
       }
     },
     "catalog": {
@@ -943,6 +944,50 @@
       "noPoints": "No points awarded (result not improved)",
       "viewLeaderboard": "View leaderboard",
       "tryAgain": "Try again"
+    },
+    "quizResults": {
+      "title": "Quiz Results",
+      "noAttempts": "You haven't taken any quizzes yet",
+      "startQuiz": "Try one",
+      "score": "Score",
+      "integrity": "Integrity",
+      "points": "Points",
+      "scoreHint": "Number of correct answers out of total questions",
+      "integrityHint": "Fair play score (no violations detected)",
+      "pointsHint": "Points earned for improving your previous result",
+      "timeAgo": "{value} ago",
+      "mastered": "Mastered",
+      "needsReview": "Review",
+      "study": "Study",
+      "date": "Date",
+      "status": "Status"
+    },
+    "quizReview": {
+      "title": "Error Analysis",
+      "subtitle": "{incorrect} of {total} — incorrect",
+      "allCorrect": "All answers are correct!",
+      "allCorrectHint": "You answered all questions correctly",
+      "yourAnswer": "Your answer",
+      "correctAnswer": "Correct answer",
+      "explanation": "Explanation",
+      "retakeQuiz": "Retake Quiz",
+      "backToDashboard": "Back to Dashboard",
+      "notFound": "Attempt not found",
+      "expandAll": "Expand all",
+      "collapseAll": "Collapse all"
+    },
+    "explainedTerms": {
+      "title": "Learned Terms",
+      "subtitle": "AI explanations you've saved",
+      "empty": "You haven't saved any explanations yet",
+      "emptyHint": "Select any term in Q&A to get an AI explanation",
+      "termCount": "{count} terms saved",
+      "explainedTermsButton": "Explained Terms ({count})",
+      "hideExplainedTerms": "Hide Terms",
+      "noHiddenTerms": "No hidden terms",
+      "ariaDragHandle": "Drag to reorder {term}",
+      "ariaHide": "Hide {term}",
+      "ariaRestore": "Restore {term}"
     }
   },
   "aiHelper": {
@@ -953,6 +998,7 @@
     "error": "Failed to generate explanation",
     "retry": "Try again",
     "close": "Close",
+    "cachedTooltip": "Click to see explanation (cached)",
     "languages": {
       "uk": "UA",
       "en": "EN",
@@ -1022,25 +1068,25 @@
       },
       "whyWeCollect": {
         "title": "3. Why we collect data",
-        "reason1": "To provide and secure authorization and account access.",
-        "reason2": "To run quizzes, store results, and show progress/leaderboards.",
+        "reason1": "To provide secure authorization and account access.",
+        "reason2": "To run quizzes, store results, and display progress/leaderboards.",
         "reason3": "To improve performance, reliability, and user experience."
       },
       "cookies": {
         "title": "4. Cookies and similar technologies",
-        "content": "We may use cookies/local storage to keep you signed in, store preferences (e.g. theme), and protect the service. If we add analytics cookies, we will update this section."
+        "content": "We may use cookies/local storage to keep you signed in, store preferences (e.g. theme), and protect the service. If we add analytics cookies, this section will be updated."
       },
       "sharing": {
         "title": "5. Sharing of data",
-        "content": "We do not sell personal data. We may share limited data with trusted service providers (e.g. hosting, database, error monitoring) strictly to operate DevLovers."
+        "content": "We do not sell personal data. We may share limited data with trusted service providers (e.g. hosting, database, error monitoring) for strictly necessary DevLovers platform functionality."
       },
       "retention": {
         "title": "6. Data retention",
-        "content": "We keep personal data only as long as needed for the purposes described above or as required by law."
+        "content": "We retain personal data only as long as needed for the purposes described above or as required by law."
       },
       "rights": {
         "title": "7. Your rights",
-        "content": "Depending on your location, you may have rights to access, correct, delete, or export your data. Contact us at"
+        "content": "Depending on your location, you may have rights to access, correct, delete, or export your data. For more information contact us at"
       },
       "gdpr": {
         "title": "8. GDPR compliance (EU users)",
@@ -1062,7 +1108,7 @@
       },
       "changes": {
         "title": "9. Changes to this policy",
-        "content": "We may update this Privacy Policy. The latest version will always be available on this page."
+        "content": "We may update this Privacy Policy without notice. The latest version will always be available on this page."
       }
     },
     "terms": {
@@ -1079,9 +1125,9 @@
       },
       "features": {
         "title": "3. Service features",
-        "feature1": "Q&A content and interview preparation materials",
-        "feature2": "Quizzes, results, and progress tracking",
-        "feature3": "Leaderboards"
+        "feature1": "Q&A content and interview preparation materials.",
+        "feature2": "Quizzes, results, and progress tracking.",
+        "feature3": "Leaderboards."
       },
       "prohibited": {
         "title": "4. Prohibited use",
@@ -1098,11 +1144,11 @@
       },
       "liability": {
         "title": "7. Limitation of liability",
-        "content": "To the maximum extent permitted by law, DevLovers shall not be liable for indirect or consequential damages."
+        "content": "To the maximum extent permitted by law, DevLovers will not be liable for indirect or consequential damages."
       },
       "termination": {
         "title": "8. Termination",
-        "content": "We may suspend or terminate access if we reasonably believe you violated these Terms or abused the service."
+        "content": "We may suspend or terminate platform access if we reasonably believe you violated these Terms or abused the service."
       },
       "changes": {
         "title": "9. Changes to terms",
