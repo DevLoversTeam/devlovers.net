@@ -123,6 +123,9 @@ function quizReducer(state: QuizState, action: QuizAction): QuizState {
         startedAt: action.payload.startedAt
           ? new Date(action.payload.startedAt)
           : null,
+        pointsAwarded: action.payload.pointsAwarded ?? null,
+        attemptId: action.payload.attemptId ?? null,
+        isIncomplete: action.payload.isIncomplete ?? false,
       };
 
     case 'RESTART':
@@ -320,9 +323,6 @@ export function QuizContainer({
 
   const handleSubmit = () => {
     const isIncomplete = state.answers.length < totalQuestions;
-    if (!isGuest) {
-      clearQuizSession(quizId);
-    }
     const correctAnswers = state.answers.filter(a => a.isCorrect).length;
     const percentage = (correctAnswers / totalQuestions) * 100;
     const timeSpentSeconds = state.startedAt
@@ -403,6 +403,7 @@ export function QuizContainer({
   };
 
   const handleBackToTopicsClick = () => {
+    clearQuizSession(quizId);
     if (onBackToTopics) {
       onBackToTopics();
     } else {
