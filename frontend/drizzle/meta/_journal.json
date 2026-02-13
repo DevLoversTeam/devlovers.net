@@ -92,6 +92,13 @@
       "when": 1769972400000,
       "tag": "0012_atomic_mono_cancel_payment",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1770912000000,
+      "tag": "0013_monobank_janitor_claim_attempts",
+      "breakpoints": true
     }
   ]
 }
