@@ -60,13 +60,22 @@ export function FlipCardQA() {
   const categoryIcon = categoryIcons[currentQuestion.category] || categoryIcons['JavaScript'];
   const categoryColor = categoryColors[currentQuestion.category] || categoryColors['JavaScript'];
 
+  const flipRotation = useMotionValue(0);
+  
+  // Sync flip state with motion value
+  useEffect(() => {
+    flipRotation.set(isFlipped ? 180 : 0);
+  }, [isFlipped, flipRotation]);
+
   const x = useMotionValue(0);
   const y = useMotionValue(0);
 
-  const rotateX = useTransform(y, [-100, 100], [10, -10]);
-  const rotateY = useTransform(x, [-100, 100], [-10, 10]);
-
-  const springConfig = { damping: 25, stiffness: 150 };
+  const rotateX = useTransform(y, [-100, 100], [10, -10]); 
+  // Combine tilt (from x) and flip (from state)
+  const tiltY = useTransform(x, [-100, 100], [-10, 10]);
+  const rotateY = useTransform([tiltY, flipRotation], ([tilt, flip]: [number, number]) => tilt + flip);
+  
+  const springConfig = { damping: 20, stiffness: 260 }; // Use snappier config for both
   const rotateXSpring = useSpring(rotateX, springConfig);
   const rotateYSpring = useSpring(rotateY, springConfig);
 
@@ -120,25 +129,20 @@ export function FlipCardQA() {
     };
   }, [isFlipped, isPaused, currentIndex, questions.length]);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === ' ' || e.key === 'Enter') {
-        e.preventDefault();
-        setIsFlipped((prev) => !prev);
-      } else if (e.key === 'ArrowRight') {
-        e.preventDefault();
-        setIsFlipped(false);
-        setCurrentIndex((prev) => (prev + 1) % questions.length);
-      } else if (e.key === 'ArrowLeft') {
-        e.preventDefault();
-        setIsFlipped(false);
-        setCurrentIndex((prev) => (prev - 1 + questions.length) % questions.length);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [questions.length]);
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === ' ' || e.key === 'Enter') {
+      e.preventDefault();
+      setIsFlipped((prev) => !prev);
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      setIsFlipped(false);
+      setCurrentIndex((prev) => (prev + 1) % questions.length);
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      setIsFlipped(false);
+      setCurrentIndex((prev) => (prev - 1 + questions.length) % questions.length);
+    }
+  };
 
   const handleFlip = () => {
     setIsFlipped(!isFlipped);
@@ -192,11 +196,8 @@ export function FlipCardQA() {
             rotateX: rotateXSpring,
             rotateY: rotateYSpring,
           }}
-          animate={{
-            rotateY: isFlipped ? 180 : 0,
-          }}
-          transition={{ duration: 0.6, type: 'spring', stiffness: 260, damping: 20 }}
           onClick={handleFlip}
+          onKeyDown={handleKeyDown}
           role="button"
           tabIndex={0}
           aria-label={`${t('ui.answer')}. ${isFlipped ? t('ui.clickAgain') : t('ui.clickToReveal')}.`}
