@@ -934,6 +934,37 @@
       "viewLeaderboard": "Переглянути рейтинг",
       "tryAgain": "Пройти ще раз"
     },
+    "quizResults": {
+      "title": "Результати квізів",
+      "noAttempts": "Ви ще не проходили жодного квізу",
+      "startQuiz": "Спробувати",
+      "score": "Результат",
+      "integrity": "Чистота",
+      "points": "Балів",
+      "scoreHint": "Кількість правильних відповідей з загальної кількості",
+      "integrityHint": "Показник чесного проходження (без порушень)",
+      "pointsHint": "Бали, нараховані за покращення результату",
+      "timeAgo": "{value} тому",
+      "mastered": "Засвоєно",
+      "needsReview": "Повторити",
+      "study": "Вивчити",
+      "date": "Дата",
+      "status": "Статус"
+    },
+    "quizReview": {
+      "title": "Аналіз помилок",
+      "subtitle": "{incorrect} з {total} — неправильно",
+      "allCorrect": "Всі відповіді правильні!",
+      "allCorrectHint": "Ви відповіли на всі питання вірно",
+      "yourAnswer": "Ваша відповідь",
+      "correctAnswer": "Правильна відповідь",
+      "explanation": "Пояснення",
+      "retakeQuiz": "Пройти ще раз",
+      "backToDashboard": "Назад до кабінету",
+      "notFound": "Спроба не знайдена",
+      "expandAll": "Розгорнути все",
+      "collapseAll": "Згорнути все"
+    },
     "explainedTerms": {
       "title": "Вивчені терміни",
       "subtitle": "AI-пояснення, які ви зберегли",

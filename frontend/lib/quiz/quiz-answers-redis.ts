@@ -7,7 +7,7 @@ import {
   quizQuestionContent,
   quizQuestions} from '@/db/schema/quiz';
 import { getRedisClient } from '@/lib/redis';
-import type { QuizQuestionWithAnswers } from '@/types/quiz';
+import type { QuizQuestionWithAnswers, AttemptReview} from '@/types/quiz';
 
 interface QuizAnswersCache {
   quizId: string;
@@ -281,5 +281,45 @@ export async function clearVerifiedQuestions(
     } while (cursor !== '0');
   } catch (err) {
     console.warn('Failed to clear verified questions:', err);
+  }
+}
+
+const ATTEMPT_REVIEW_TTL = 48 * 60 * 60; // 48 hours
+
+function getAttemptReviewCacheKey(attemptId: string, userId: string | undefined, locale: string): string {
+  return `quiz:attempt-review:${attemptId}:${userId}:${locale}`;
+}
+
+export async function getCachedAttemptReview(
+  attemptId: string,
+  userId: string | undefined,
+  locale: string
+): Promise<AttemptReview | null> {
+  const redis = getRedisClient();
+  if (!redis) return null;
+
+  try {
+    return await redis.get<AttemptReview>(getAttemptReviewCacheKey(attemptId, userId, locale));
+  } catch (err) {
+    console.warn('Redis attempt review cache read failed:', err);
+    return null;
+  }
+}
+
+export async function cacheAttemptReview(
+  attemptId: string,
+  userId: string | undefined,
+  locale: string,
+  data: AttemptReview
+): Promise<void> {
+  const redis = getRedisClient();
+  if (!redis) return;
+
+  try {
+    await redis.set(getAttemptReviewCacheKey(attemptId, userId, locale), data, {
+      ex: ATTEMPT_REVIEW_TTL,
+    });
+  } catch (err) {
+    console.warn('Redis attempt review cache write failed:', err);
   }
 }

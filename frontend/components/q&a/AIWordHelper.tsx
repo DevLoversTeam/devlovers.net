@@ -336,6 +336,21 @@ export default function AIWordHelper({
     [position]
   );
 
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      const touch = e.touches[0];
+      if (!touch) return;
+      setDragState({
+        isDragging: true,
+        startX: touch.clientX,
+        startY: touch.clientY,
+        offsetX: position.x,
+        offsetY: position.y,
+      });
+    },
+    [position]
+  );
+
   useEffect(() => {
     if (!dragState.isDragging) return;
 
@@ -348,16 +363,34 @@ export default function AIWordHelper({
       });
     };
 
-    const handleMouseUp = () => {
+    const handleTouchMove = (e: TouchEvent) => {
+      const touch = e.touches[0];
+      if (!touch) return;
+      e.preventDefault();
+      const deltaX = touch.clientX - dragState.startX;
+      const deltaY = touch.clientY - dragState.startY;
+      setPosition({
+        x: dragState.offsetX + deltaX,
+        y: dragState.offsetY + deltaY,
+      });
+    };
+
+    const handleDragEnd = () => {
       setDragState(prev => ({ ...prev, isDragging: false }));
     };
 
     document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener('mouseup', handleDragEnd);
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+    document.addEventListener('touchend', handleDragEnd);
+    document.addEventListener('touchcancel', handleDragEnd);
 
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('mouseup', handleDragEnd);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleDragEnd);
+      document.removeEventListener('touchcancel', handleDragEnd);
     };
   }, [dragState]);
 
@@ -447,9 +480,10 @@ export default function AIWordHelper({
           className={cn(
             'flex items-center justify-between border-b border-gray-200 p-4 dark:border-neutral-800',
             'cursor-grab active:cursor-grabbing',
-            'select-none'
+            'select-none touch-none'
           )}
           onMouseDown={handleDragStart}
+          onTouchStart={handleTouchStart}
         >
           <div className="flex items-center gap-2">
             <GripHorizontal className="h-4 w-4 text-gray-400" />
@@ -463,6 +497,7 @@ export default function AIWordHelper({
           <button
             onClick={onClose}
             onMouseDown={e => e.stopPropagation()}
+            onTouchStart={e => e.stopPropagation()}
             className={cn(
               'rounded-lg p-1.5',
               'text-gray-500 dark:text-gray-400',

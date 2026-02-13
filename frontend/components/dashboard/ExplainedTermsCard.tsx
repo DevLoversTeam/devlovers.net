@@ -2,7 +2,7 @@
 
 import { BookOpen, ChevronDown, GripVertical, RotateCcw, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import AIWordHelper from '@/components/q&a/AIWordHelper';
 import { getCachedTerms } from '@/lib/ai/explainCache';
@@ -21,6 +21,13 @@ export function ExplainedTermsCard() {
   const [selectedTerm, setSelectedTerm] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [touchDragState, setTouchDragState] = useState<{
+    sourceIndex: number;
+    targetIndex: number;
+    x: number;
+    y: number;
+    label: string;
+  } | null>(null);
 
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
@@ -83,6 +90,131 @@ export function ExplainedTermsCard() {
     setDraggedIndex(null);
   };
 
+  // Touch drag support for mobile
+  const touchDragIndex = useRef<number | null>(null);
+  const termRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+  const dragTargetIndex = useRef<number | null>(null);
+  const cleanupRef = useRef<(() => void) | null>(null);
+
+  const setTermRef = useCallback(
+    (index: number) => (el: HTMLDivElement | null) => {
+      if (el) {
+        termRefs.current.set(index, el);
+      } else {
+        termRefs.current.delete(index);
+      }
+    },
+    []
+  );
+
+  const setTouchDragStateRef = useRef(setTouchDragState);
+  useEffect(() => {
+    setTouchDragStateRef.current = setTouchDragState;
+  }, [setTouchDragState]);
+
+  const termsRef = useRef(terms);
+  useEffect(() => {
+    termsRef.current = terms;
+  }, [terms]);
+
+  const handleTouchStart = useCallback(
+    (index: number, e: React.TouchEvent) => {
+      const touch = e.touches[0];
+      if (!touch) return;
+      touchDragIndex.current = index;
+      dragTargetIndex.current = index;
+      setDraggedIndex(index);
+      setTouchDragStateRef.current({
+        sourceIndex: index,
+        targetIndex: index,
+        x: touch.clientX,
+        y: touch.clientY,
+        label: termsRef.current[index] ?? '',
+      });
+    },
+    []
+  );
+
+  const containerCallbackRef = useCallback((node: HTMLDivElement | null) => {
+    if (cleanupRef.current) {
+      cleanupRef.current();
+      cleanupRef.current = null;
+    }
+
+    if (!node) return;
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (touchDragIndex.current === null) return;
+      e.preventDefault();
+
+      const touch = e.touches[0];
+      if (!touch) return;
+
+      let newTarget = dragTargetIndex.current;
+
+      for (const [index, el] of termRefs.current.entries()) {
+        const rect = el.getBoundingClientRect();
+        if (
+          touch.clientX >= rect.left &&
+          touch.clientX <= rect.right &&
+          touch.clientY >= rect.top &&
+          touch.clientY <= rect.bottom &&
+          index !== touchDragIndex.current
+        ) {
+          newTarget = index;
+          break;
+        }
+      }
+
+      dragTargetIndex.current = newTarget;
+      setDraggedIndex(newTarget);
+      setTouchDragStateRef.current(prev =>
+        prev
+          ? {
+              ...prev,
+              targetIndex: newTarget ?? prev.targetIndex,
+              x: touch.clientX,
+              y: touch.clientY,
+            }
+          : null
+      );
+    };
+
+    const onTouchEnd = () => {
+      const fromIndex = touchDragIndex.current;
+      const toIndex = dragTargetIndex.current;
+
+      if (
+        fromIndex !== null &&
+        toIndex !== null &&
+        fromIndex !== toIndex
+      ) {
+        setTerms(prevTerms => {
+          const newTerms = [...prevTerms];
+          const [dragged] = newTerms.splice(fromIndex, 1);
+          newTerms.splice(toIndex, 0, dragged);
+          saveTermOrder(newTerms);
+          return newTerms;
+        });
+      }
+
+      touchDragIndex.current = null;
+      dragTargetIndex.current = null;
+      setDraggedIndex(null);
+      setTouchDragStateRef.current(null);
+    };
+
+    node.addEventListener('touchmove', onTouchMove, { passive: false });
+    node.addEventListener('touchend', onTouchEnd);
+    node.addEventListener('touchcancel', onTouchEnd);
+
+    cleanupRef.current = () => {
+      node.removeEventListener('touchmove', onTouchMove);
+      node.removeEventListener('touchend', onTouchEnd);
+      node.removeEventListener('touchcancel', onTouchEnd);
+    };
+  }, []);
+
   const handleTermClick = (term: string) => {
     setSelectedTerm(term);
     setIsModalOpen(true);
@@ -132,19 +264,39 @@ export function ExplainedTermsCard() {
               <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">
                 {t('termCount', { count: terms.length })}
               </p>
-            <div className="flex flex-wrap gap-2">
-              {terms.map((term, index) => (
+            <div
+              ref={containerCallbackRef}
+              className="flex flex-wrap gap-2"
+            >
+              {terms.map((term, index) => {
+                const isSource =
+                  touchDragState !== null &&
+                  index === touchDragState.sourceIndex;
+                const isDropTarget =
+                  touchDragState !== null &&
+                  index === touchDragState.targetIndex &&
+                  index !== touchDragState.sourceIndex;
+
+                return (
                 <div
                   key={`${term}-${index}`}
+                  ref={setTermRef(index)}
                   onDragOver={handleDragOver}
                   onDrop={() => handleDrop(index)}
                   className={`group relative inline-flex items-center gap-1 rounded-lg border px-2 py-2 pr-8 transition-all ${
-                    draggedIndex === index ? 'opacity-50' : ''
+                    isSource
+                      ? 'scale-95 opacity-40'
+                      : isDropTarget
+                        ? 'border-(--accent-primary) bg-(--accent-primary)/10 scale-105'
+                        : draggedIndex === index
+                          ? 'opacity-50'
+                          : ''
                   } border-gray-100 bg-gray-50/50 hover:border-(--accent-primary)/30 hover:bg-white dark:border-white/5 dark:bg-neutral-800/50 dark:hover:border-(--accent-primary)/30 dark:hover:bg-neutral-800`}
                 >
                   <button
                     draggable
                     onDragStart={() => handleDragStart(index)}
+                    onTouchStart={e => handleTouchStart(index, e)}
                     aria-label={t('ariaDragHandle', { term })}
                     className={`cursor-grab active:cursor-grabbing touch-none ${
                       draggedIndex === index ? 'cursor-grabbing' : ''
@@ -164,12 +316,13 @@ export function ExplainedTermsCard() {
                       handleRemoveTerm(term);
                     }}
                     aria-label={t('ariaHide', { term })}
-                    className="absolute -right-1 -top-1 rounded-full bg-white p-1 text-gray-400 opacity-0 shadow-sm transition-opacity hover:bg-red-50 hover:text-red-500 group-hover:opacity-100 dark:bg-neutral-800 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+                    className="absolute -right-1 -top-1 rounded-full bg-white p-1 text-gray-400 opacity-100 shadow-sm transition-opacity hover:bg-red-50 hover:text-red-500 sm:opacity-0 sm:group-hover:opacity-100 dark:bg-neutral-800 dark:hover:bg-red-900/20 dark:hover:text-red-400"
                   >
                     <X className="h-3 w-3" />
                   </button>
                 </div>
-              ))}
+                );
+              })}
             </div>
             </>
           ) : (
@@ -220,7 +373,7 @@ export function ExplainedTermsCard() {
                                 handleRestoreTerm(term);
                               }}
                               aria-label={t('ariaRestore', { term })}
-                              className="absolute -right-1 -top-1 rounded-full bg-white p-1 text-gray-400 opacity-0 shadow-sm transition-opacity hover:bg-green-50 hover:text-green-600 group-hover:opacity-100 dark:bg-neutral-800 dark:hover:bg-green-900/20 dark:hover:text-green-400"
+                              className="absolute -right-1 -top-1 rounded-full bg-white p-1 text-gray-400 opacity-100 shadow-sm transition-opacity hover:bg-green-50 hover:text-green-600 sm:opacity-0 sm:group-hover:opacity-100 dark:bg-neutral-800 dark:hover:bg-green-900/20 dark:hover:text-green-400"
                             >
                               <RotateCcw className="h-3 w-3" />
                             </button>
@@ -244,6 +397,20 @@ export function ExplainedTermsCard() {
           isOpen={isModalOpen}
           onClose={handleModalClose}
         />
+      )}
+
+      {touchDragState && (
+        <div
+          className="pointer-events-none fixed z-50 inline-flex items-center gap-1 rounded-lg border border-(--accent-primary) bg-white px-3 py-2 font-medium text-gray-900 shadow-xl dark:bg-neutral-800 dark:text-white"
+          style={{
+            left: touchDragState.x,
+            top: touchDragState.y,
+            transform: 'translate(-50%, -120%)',
+          }}
+        >
+          <GripVertical className="h-4 w-4 text-(--accent-primary)" />
+          {touchDragState.label}
+        </div>
       )}
     </>
   );
