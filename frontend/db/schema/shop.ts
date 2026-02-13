@@ -548,6 +548,10 @@ export const paymentAttempts = pgTable(
     providerModifiedAt: timestamp('provider_modified_at', {
       withTimezone: true,
     }),
+    janitorClaimedUntil: timestamp('janitor_claimed_until', {
+      withTimezone: true,
+    }),
+    janitorClaimedBy: text('janitor_claimed_by'),
 
     lastErrorCode: text('last_error_code'),
     lastErrorMessage: text('last_error_message'),
@@ -611,6 +615,12 @@ export const paymentAttempts = pgTable(
     index('payment_attempts_provider_status_updated_idx').on(
       t.provider,
       t.status,
+      t.updatedAt
+    ),
+    index('payment_attempts_janitor_claim_idx').on(
+      t.provider,
+      t.status,
+      t.janitorClaimedUntil,
       t.updatedAt
     ),
   ]

@@ -1005,6 +1005,87 @@ async function applyWebhookToOrderAttemptEvent(args: {
   });
 }
 
+async function finalizeOutcomeWithRestock(args: {
+  eventId: string;
+  requestId: string;
+  normalized: NormalizedWebhook;
+  outcome: MonobankApplyOutcome;
+}): Promise<ApplyResult> {
+  const { appliedResult, restockOrderId, restockReason } = args.outcome;
+
+  if (restockReason && restockOrderId) {
+    try {
+      await restockOrder(restockOrderId, {
+        reason: restockReason,
+        workerId: 'monobank_webhook',
+      });
+    } catch (error) {
+      logError('monobank_webhook_restock_failed', error, {
+        requestId: args.requestId,
+        invoiceId: args.normalized.invoiceId,
+      });
+      const now = new Date();
+      const issueMsg = toIssueMessage(error);
+
+      await db
+        .update(monobankEvents)
+        .set({
+          appliedResult: 'applied_with_issue',
+          appliedErrorCode:
+            sql`coalesce(${monobankEvents.appliedErrorCode}, 'RESTOCK_FAILED')` as any,
+          appliedErrorMessage:
+            sql`coalesce(${monobankEvents.appliedErrorMessage}, ${issueMsg})` as any,
+        })
+        .where(eq(monobankEvents.id, args.eventId));
+
+      if (args.outcome.attemptId) {
+        await db
+          .update(paymentAttempts)
+          .set({
+            lastErrorCode:
+              sql`coalesce(${paymentAttempts.lastErrorCode}, 'RESTOCK_FAILED')` as any,
+            lastErrorMessage:
+              sql`coalesce(${paymentAttempts.lastErrorMessage}, ${issueMsg})` as any,
+            updatedAt: now,
+          })
+          .where(eq(paymentAttempts.id, args.outcome.attemptId));
+      }
+    }
+  }
+
+  return appliedResult;
+}
+
+export async function applyStoredMonobankEvent(args: {
+  eventId: string;
+  requestId: string;
+  parsedPayload: Record<string, unknown>;
+}): Promise<{
+  appliedResult: ApplyResult;
+  eventId: string;
+  invoiceId: string;
+}> {
+  const parsed = normalizeWebhookPayload(args.parsedPayload);
+  const outcome = await applyWebhookToOrderAttemptEvent({
+    eventId: args.eventId,
+    normalized: parsed.normalized,
+    providerModifiedAt: parsed.providerModifiedAt,
+  });
+
+  const appliedResult = await finalizeOutcomeWithRestock({
+    eventId: args.eventId,
+    requestId: args.requestId,
+    normalized: parsed.normalized,
+    outcome,
+  });
+
+  return {
+    appliedResult,
+    eventId: args.eventId,
+    invoiceId: parsed.normalized.invoiceId,
+  };
+}
+
 export async function applyMonoWebhookEvent(args: {
   rawBody: string;
   requestId: string;
@@ -1097,48 +1178,12 @@ export async function applyMonoWebhookEvent(args: {
     normalized: parsed.normalized,
     providerModifiedAt: parsed.providerModifiedAt,
   });
-
-  const { appliedResult, restockOrderId, restockReason } = outcome;
-
-  if (restockReason && restockOrderId) {
-    try {
-      await restockOrder(restockOrderId, {
-        reason: restockReason,
-        workerId: 'monobank_webhook',
-      });
-    } catch (error) {
-      logError('monobank_webhook_restock_failed', error, {
-        requestId: args.requestId,
-        invoiceId: parsed.normalized.invoiceId,
-      });
-      const now = new Date();
-      const issueMsg = toIssueMessage(error);
-
-      await db
-        .update(monobankEvents)
-        .set({
-          appliedResult: 'applied_with_issue',
-          appliedErrorCode:
-            sql`coalesce(${monobankEvents.appliedErrorCode}, 'RESTOCK_FAILED')` as any,
-          appliedErrorMessage:
-            sql`coalesce(${monobankEvents.appliedErrorMessage}, ${issueMsg})` as any,
-        })
-        .where(eq(monobankEvents.id, eventId));
-
-      if (outcome.attemptId) {
-        await db
-          .update(paymentAttempts)
-          .set({
-            lastErrorCode:
-              sql`coalesce(${paymentAttempts.lastErrorCode}, 'RESTOCK_FAILED')` as any,
-            lastErrorMessage:
-              sql`coalesce(${paymentAttempts.lastErrorMessage}, ${issueMsg})` as any,
-            updatedAt: now,
-          })
-          .where(eq(paymentAttempts.id, outcome.attemptId));
-      }
-    }
-  }
+  const appliedResult = await finalizeOutcomeWithRestock({
+    eventId,
+    requestId: args.requestId,
+    normalized: parsed.normalized,
+    outcome,
+  });
 
   return {
     deduped,
