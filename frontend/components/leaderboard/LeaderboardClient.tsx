@@ -57,7 +57,7 @@ export default function LeaderboardClient({
         </header>
 
         <div className="flex w-full flex-col items-center">
-          <div className="mb-24 w-full">
+          <div className="mb-10 w-full">
             {hasResults ? (
               <LeaderboardPodium topThree={topThree} />
             ) : (

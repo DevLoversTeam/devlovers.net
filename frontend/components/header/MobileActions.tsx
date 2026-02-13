@@ -28,8 +28,8 @@ export function MobileActions({
 
   return (
     <div className="flex items-center gap-1 lg:hidden">
-      {isBlog && <BlogHeaderSearch />}
       <LanguageSwitcher />
+      {isBlog && <BlogHeaderSearch />}
       {isShop && <CartButton />}
       <AppMobileMenu
         variant={variant}

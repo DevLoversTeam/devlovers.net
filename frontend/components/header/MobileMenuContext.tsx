@@ -1,6 +1,6 @@
 'use client';
 
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import {
   createContext,
   ReactNode,
@@ -10,6 +10,8 @@ import {
   useRef,
   useState,
 } from 'react';
+
+import { useRouter } from '@/i18n/routing';
 
 type MobileMenuContextType = {
   isOpen: boolean;
@@ -71,9 +73,7 @@ export function MobileMenuProvider({ children }: { children: ReactNode }) {
       const [targetPath, targetSearch = ''] = href.split('?');
       const currentSearch = searchParams.toString();
 
-      // pathname from next/navigation includes the locale prefix (e.g. /uk/shop)
-      // Strip it so we can compare with href which has no locale (e.g. /shop)
-      const strippedPathname = pathname.replace(/^\/(uk|en|pl)/, '') || '/';
+      const strippedPathname = pathname.replace(/^\/(en|uk|pl)/, '') || '/';
 
       if (strippedPathname === targetPath && targetSearch === currentSearch) {
         return;

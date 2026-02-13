@@ -2,7 +2,7 @@ import { ArrowLeft } from 'lucide-react';
 import { Metadata } from 'next';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
-import { getTranslations } from 'next-intl/server';
+import { getMessages, getTranslations } from 'next-intl/server';
 
 import { AddToCartButton } from '@/components/shop/AddToCartButton';
 import { getPublicProductBySlug } from '@/db/queries/shop/products';
@@ -54,6 +54,9 @@ export default async function ProductPage({
     'text-lg',
     'items-center gap-2'
   );
+  const messages = await getMessages();
+  const productDescriptions =
+    (messages as any).shop?.productDescriptions ?? {};
   const badge = product?.badge as string | undefined;
   const badgeLabel =
     badge && badge !== 'NONE'
@@ -131,9 +134,18 @@ export default async function ProductPage({
             </section>
           )}
 
-          {product.description && (
-            <p className="text-muted-foreground mt-6">{product.description}</p>
-          )}
+          {(() => {
+            const desc =
+              (productDescriptions[slug] as string) || product.description;
+            if (!desc) return null;
+            return (
+              <div className="text-muted-foreground mt-6 space-y-2">
+                {desc.split('\n').map((line: string, i: number) => (
+                  <p key={i}>{line}</p>
+                ))}
+              </div>
+            );
+          })()}
 
           {!isUnavailable && (
             <section aria-label="Purchase">
