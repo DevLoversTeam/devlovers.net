@@ -45,10 +45,11 @@
   },
   "homepage": {
     "title": "DevLovers",
-    "subtitle": "Platforma do przygotowania do rozmów kwalifikacyjnych",
-    "description": "Przygotuj się do rozmów technicznych dzięki pytaniom, quizom, rankingom i wyjaśnieniom wspieranym przez AI.",
+    "subtitle": "Platforma do Przygotowania do Rozmów Kwalifikacyjnych",
+    "welcomeDescription": "Przygotuj się do rozmów technicznych z Q&A, quizami, rankingiem i wyjaśnieniami AI.",
+    "description": "Zbuduj prawdziwą pewność w frontend, backend i full-stack development dzięki interaktywnym pytaniom rekrutacyjnym, quizom i praktycznym wyjaśnieniom",
     "ogImageAlt": "DevLovers — platforma do przygotowania do rozmów technicznych",
-    "cta": "Rozpocznij",
+    "cta": "Rozpocznij naukę",
     "ctaVariants": {
       "1": "Bez presji. Po prostu zacznij",
       "2": "To może być ciekawsze, niż myślisz",
@@ -58,6 +59,61 @@
       "6": "Klik był — to się liczy",
       "7": "Postęp ważniejszy niż perfekcja",
       "8": "Zacząć to też funkcja"
+    },
+    "featuresHeading": {
+      "aceYourNext": "Zdaj kolejną",
+      "technicalInterview": "rozmowę perfekcyjnie"
+    },
+    "featureBadges": {
+      "smartQA": "Inteligentne Q&A",
+      "adaptiveQuizzes": "Adaptacyjne quizy",
+      "performance": "Wydajność"
+    },
+    "featuresCta": {
+      "browseQuestions": "Przeglądaj wszystkie pytania",
+      "takeQuiz": "Rozwiąż quiz"
+    },
+    "flipCard": {
+      "ui": {
+        "tapToReveal": "Dotknij, aby odkryć",
+        "clickToReveal": "Kliknij, aby odkryć",
+        "tapAgain": "Dotknij ponownie, aby zobaczyć pytanie",
+        "clickAgain": "Kliknij ponownie, aby zobaczyć pytanie",
+        "answer": "Odpowiedź",
+        "proTip": "Wskazówka"
+      },
+      "questions": {
+        "1": {
+          "question": "Kiedy faktycznie używać useMemo?",
+          "answer": "Nie optymalizuj przedwcześnie! Używaj tylko do <strong>kosztownych obliczeń</strong> lub przy przekazywaniu obiektów jako props do dzieci owiniętych w <strong>React.memo</strong>, aby zapobiec niepotrzebnym renderowaniom.",
+          "category": "React",
+          "tip": "Nadużywanie może zaszkodzić wydajności przez narzut porównywania zależności."
+        },
+        "2": {
+          "question": "Dlaczego \"Delegacja Zdarzeń\" jest lepsza niż bezpośrednie wiązanie?",
+          "answer": "Dołącza <strong>pojedynczy nasłuchiwacz</strong> do rodzica zamiast tysięcy do dzieci. Zużywa mniej pamięci i automatycznie obsługuje <strong>dynamicznie dodawane elementy</strong> poprzez bąbelkowanie zdarzeń.",
+          "category": "JavaScript",
+          "tip": "Idealne dla list, tabel i nieskończonych przewijań."
+        },
+        "3": {
+          "question": "Jak Event Loop w Node.js obsługuje I/O?",
+          "answer": "Node.js zleca operacje I/O jądru systemu. Gdy operacja się kończy, jądro powiadamia Node.js, a callback trafia do <strong>fazy Poll</strong> w celu wykonania.",
+          "category": "Node.js",
+          "tip": "Dlatego Node.js jest \"nieblokujący\" mimo bycia jednowątkowym."
+        },
+        "4": {
+          "question": "Co wybrać: SSR, SSG czy ISR?",
+          "answer": "Używaj <strong>SSG</strong> dla statycznych blogów (najszybsze). Używaj <strong>SSR</strong> dla spersonalizowanych kokpitów (najświeższe). Używaj <strong>ISR</strong> do aktualizacji statycznych stron bez pełnej przebudowy.",
+          "category": "Next.js",
+          "tip": "Zacznij od SSG/ISR domyślnie dla lepszej wydajności."
+        },
+        "5": {
+          "question": "Po co używać Generics w TypeScript?",
+          "answer": "Pozwalają pisać <strong>kod wielokrotnego użytku</strong>, który działa z każdym typem, zachowując pełne bezpieczeństwo typów. To jak argumenty funkcji, ale dla <strong>typów</strong>.",
+          "category": "TypeScript",
+          "tip": "Powszechnie używane w wrapperach API, hookach i funkcjach użytkowych."
+        }
+      }
     }
   },
   "qa": {
