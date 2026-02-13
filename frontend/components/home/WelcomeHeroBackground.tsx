@@ -1,8 +1,10 @@
-export function HeroBackground() {
+import React from 'react';
+
+export function WelcomeHeroBackground() {
   return (
     <>
-      <div className="pointer-events-none absolute inset-0 opacity-60">
-        <div className="absolute -top-32 left-1/2 h-96 w-[36rem] -translate-x-1/2 rounded-full bg-[var(--accent-primary)]/20 blur-3xl" />
+      <div className="absolute top-0 left-0 -z-10 h-full w-full overflow-hidden">
+        <div className="absolute top-[-10rem] left-[-10rem] h-[30rem] w-[30rem] rounded-full bg-[var(--accent-primary)]/20 blur-3xl" />
         <div className="absolute bottom-[-12rem] left-1/4 h-[22rem] w-[22rem] rounded-full bg-[var(--accent-hover)]/15 blur-3xl" />
         <div className="absolute right-0 bottom-[-10rem] h-[26rem] w-[26rem] rounded-full bg-[var(--accent-primary)]/25 blur-3xl" />
       </div>
