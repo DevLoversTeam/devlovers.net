@@ -61,7 +61,7 @@
       "8": "Hello, new commit"
     },
     "featuresHeading": {
-      "aceYourNext": "Ace Your Next",
+      "aceYourNext": "Ace Your Next ",
       "technicalInterview": "Technical Interview"
     },
     "featureBadges": {
@@ -72,6 +72,48 @@
     "featuresCta": {
       "browseQuestions": "Browse All Questions",
       "takeQuiz": "Take a Quiz"
+    },
+    "flipCard": {
+      "ui": {
+        "tapToReveal": "Tap to reveal",
+        "clickToReveal": "Click to reveal",
+        "tapAgain": "Tap again to see question",
+        "clickAgain": "Click again to see question",
+        "answer": "Answer",
+        "proTip": "Pro Tip"
+      },
+      "questions": {
+        "1": {
+          "question": "When should you actually use useMemo?",
+          "answer": "Don't prematurely optimize! Use it only for <strong>expensive calculations</strong> or when passing objects as props to children wrapped in <strong>React.memo</strong> to prevent unnecessary re-renders.",
+          "category": "React",
+          "tip": "Overusing it can hurt performance due to dependency comparison overhead."
+        },
+        "2": {
+          "question": "Why is \"Event Delegation\" better than direct binding?",
+          "answer": "It attaches a <strong>single listener</strong> to a parent instead of thousands on children. This uses less memory and automatically handles <strong>dynamically added elements</strong> via event bubbling.",
+          "category": "JavaScript",
+          "tip": "Perfect for lists, tables, and infinite scroll feeds."
+        },
+        "3": {
+          "question": "How does the Node.js Event Loop handle I/O?",
+          "answer": "Node.js offloads I/O operations to the system kernel. When an operation completes, the kernel notifies Node.js, and the callback is added to the <strong>Poll phase</strong> to be executed.",
+          "category": "Node.js",
+          "tip": "This is why Node.js is \"non-blocking\" despite being single-threaded."
+        },
+        "4": {
+          "question": "Should you use SSR, SSG, or ISR?",
+          "answer": "Use <strong>SSG</strong> for static blogs (fastest). Use <strong>SSR</strong> for personalized dashboards (freshest). Use <strong>ISR</strong> to update static pages incrementally without a full rebuild.",
+          "category": "Next.js",
+          "tip": "Start with SSG/ISR by default for better performance."
+        },
+        "5": {
+          "question": "Why use Generics in TypeScript?",
+          "answer": "They let you write <strong>reusable code</strong> that works with any type while keeping full type safety. It's like function arguments, but for <strong>types</strong>.",
+          "category": "TypeScript",
+          "tip": "Commonly used in API wrappers, hooks, and utility functions."
+        }
+      }
     }
   },
   "qa": {
