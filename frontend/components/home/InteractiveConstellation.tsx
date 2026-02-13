@@ -189,8 +189,9 @@ export function InteractiveConstellation() {
         
         if (dist < interactionRadius) {
             const force = (interactionRadius - dist) / interactionRadius;
-             p.vx -= (dx / dist) * force * magneticForce * 0.2;
-             p.vy -= (dy / dist) * force * magneticForce * 0.2;
+            const safeDist = Math.max(dist, 0.1);
+             p.vx -= (dx / safeDist) * force * magneticForce * 0.2;
+             p.vy -= (dy / safeDist) * force * magneticForce * 0.2;
         }
 
         const centerX = canvas.width / 2;
@@ -202,8 +203,9 @@ export function InteractiveConstellation() {
 
         if (distCenter < centerClearRadius) {
             const force = (centerClearRadius - distCenter) / centerClearRadius;
-             p.vx += (dxCenter / distCenter) * force * 2.0; 
-             p.vy += (dyCenter / distCenter) * force * 2.0;
+            const safeDistCenter = Math.max(distCenter, 0.1);
+             p.vx += (dxCenter / safeDistCenter) * force * 2.0; 
+             p.vy += (dyCenter / safeDistCenter) * force * 2.0;
         }
 
         for (let j = 0; j < particles.length; j++) {
@@ -216,8 +218,9 @@ export function InteractiveConstellation() {
           
           if (dist2 < minDistance && dist2 > 0) {
             const repulsionForce = (minDistance - dist2) / minDistance;
-            const pushX = (dx2 / dist2) * repulsionForce * 0.5;
-            const pushY = (dy2 / dist2) * repulsionForce * 0.5;
+            const safeDist2 = Math.max(dist2, 0.1);
+            const pushX = (dx2 / safeDist2) * repulsionForce * 0.5;
+            const pushY = (dy2 / safeDist2) * repulsionForce * 0.5;
             p.vx += pushX;
             p.vy += pushY;
           }

@@ -49,20 +49,20 @@ export default function WelcomeHeroSection() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1, duration: 1 }}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-white/50"
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-gray-400 dark:text-white/50"
       >
-        <div className="relative h-8 w-5 rounded-full border-2 border-white/30 p-1">
+        <div className="relative h-8 w-5 rounded-full border-2 border-gray-300 p-1 dark:border-white/30">
            <motion.div 
               animate={{ y: [0, 8, 0] }}
               transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-              className="h-1.5 w-1 rounded-full bg-white/70 mx-auto"
+              className="mx-auto h-1.5 w-1 rounded-full bg-gray-400 dark:bg-white/70"
            />
         </div>
         <motion.div
            animate={{ y: [0, 4, 0] }}
            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut", delay: 0.2 }}
         >
-            <ChevronDown className="w-4 h-4 text-white/50" />
+            <ChevronDown className="h-4 w-4 text-gray-400 dark:text-white/50" />
         </motion.div>
       </motion.div>
     </section>

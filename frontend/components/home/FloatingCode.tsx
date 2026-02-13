@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface CodeSnippet {
   id: string;
@@ -74,6 +74,12 @@ function CodeBlock({ snippet }: { snippet: CodeSnippet }) {
   const [displayedCode, setDisplayedCode] = useState('');
   const [isTyping, setIsTyping] = useState(false);
 
+  // Refs for cleanup
+  const typeIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const resetTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const startTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const initialTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
     let currentIndex = 0;
     const code = snippet.code;
@@ -84,26 +90,33 @@ function CodeBlock({ snippet }: { snippet: CodeSnippet }) {
       setDisplayedCode('');
       currentIndex = 0;
 
-      const typeInterval = setInterval(() => {
+      // Clear any existing interval just in case
+      if (typeIntervalRef.current) clearInterval(typeIntervalRef.current);
+
+      typeIntervalRef.current = setInterval(() => {
         if (currentIndex < code.length) {
           setDisplayedCode(code.substring(0, currentIndex + 1));
           currentIndex++;
         } else {
-          clearInterval(typeInterval);
+          if (typeIntervalRef.current) clearInterval(typeIntervalRef.current);
           setIsTyping(false);
           
-          setTimeout(() => {
+          resetTimeoutRef.current = setTimeout(() => {
             setDisplayedCode('');
-            setTimeout(startTyping, 1000 + Math.random() * 2000);
+            startTimeoutRef.current = setTimeout(startTyping, 1000 + Math.random() * 2000);
           }, 4000 + Math.random() * 2000); 
         }
       }, typingSpeed);
-
-      return () => clearInterval(typeInterval);
     };
 
-    const timeout = setTimeout(startTyping, snippet.delay * 1000);
-    return () => clearTimeout(timeout);
+    initialTimeoutRef.current = setTimeout(startTyping, snippet.delay * 1000);
+
+    return () => {
+      if (initialTimeoutRef.current) clearTimeout(initialTimeoutRef.current);
+      if (typeIntervalRef.current) clearInterval(typeIntervalRef.current);
+      if (resetTimeoutRef.current) clearTimeout(resetTimeoutRef.current);
+      if (startTimeoutRef.current) clearTimeout(startTimeoutRef.current);
+    };
   }, [snippet.code, snippet.delay]);
 
   return (

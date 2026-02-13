@@ -73,7 +73,7 @@ export function FlipCardQA() {
   const rotateX = useTransform(y, [-100, 100], [10, -10]); 
   // Combine tilt (from x) and flip (from state)
   const tiltY = useTransform(x, [-100, 100], [-10, 10]);
-  const rotateY = useTransform([tiltY, flipRotation], ([tilt, flip]: [number, number]) => tilt + flip);
+  const rotateY = useTransform([tiltY, flipRotation], (latest: any[]) => latest[0] + latest[1]);
   
   const springConfig = { damping: 20, stiffness: 260 }; // Use snappier config for both
   const rotateXSpring = useSpring(rotateX, springConfig);
@@ -86,22 +86,37 @@ export function FlipCardQA() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Refs for tracking state inside interval without dependencies
+  const isFlippedRef = useRef(isFlipped);
+  const isPausedRef = useRef(isPaused);
+  
   useEffect(() => {
-    if (isFlipped || isPaused) {
-      setProgress(0);
-      return;
-    }
+    isFlippedRef.current = isFlipped;
+  }, [isFlipped]);
 
+  useEffect(() => {
+    isPausedRef.current = isPaused;
+  }, [isPaused]);
+
+  useEffect(() => {
     const duration = 8000;
     const interval = 50;
     let elapsed = 0;
 
     const timer = setInterval(() => {
+      // Check refs instead of state directly
+      if (isFlippedRef.current || isPausedRef.current) {
+        elapsed = 0; 
+        setProgress(0);
+        return;
+      }
+
       elapsed += interval;
       const newProgress = (elapsed / duration) * 100;
 
       if (newProgress >= 100) {
         setIsFlipped(true);
+        elapsed = 0; // Reset elapsed
 
         // Clear any existing timeouts to be safe
         if (nextCardTimerRef.current) clearTimeout(nextCardTimerRef.current);
@@ -127,7 +142,7 @@ export function FlipCardQA() {
       if (nextCardTimerRef.current) clearTimeout(nextCardTimerRef.current);
       if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
     };
-  }, [isFlipped, isPaused, currentIndex, questions.length]);
+  }, [questions.length]); // Only depend on props/stable values
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === ' ' || e.key === 'Enter') {
