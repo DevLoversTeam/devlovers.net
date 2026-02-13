@@ -135,7 +135,9 @@
       "next": "Następna",
       "previousPage": "Poprzednia strona",
       "nextPage": "Następna strona",
-      "page": "Strona {page}"
+      "page": "Strona {page}",
+      "itemsPerPage": "Na stronę",
+      "itemsPerPageAria": "Liczba pytań na stronie"
     }
   },
   "quiz": {

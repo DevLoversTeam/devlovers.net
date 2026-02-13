@@ -135,7 +135,9 @@
       "next": "Next",
       "previousPage": "Previous page",
       "nextPage": "Next page",
-      "page": "Page {page}"
+      "page": "Page {page}",
+      "itemsPerPage": "Per page",
+      "itemsPerPageAria": "Questions per page"
     }
   },
   "quiz": {

@@ -135,7 +135,9 @@
       "next": "Вперед",
       "previousPage": "Попередня сторінка",
       "nextPage": "Наступна сторінка",
-      "page": "Сторінка {page}"
+      "page": "Сторінка {page}",
+      "itemsPerPage": "На сторінці",
+      "itemsPerPageAria": "Кількість питань на сторінці"
     }
   },
   "quiz": {

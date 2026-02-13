@@ -1,6 +1,9 @@
 import { getTranslations } from 'next-intl/server';
 
 import FeaturesHeroSection from '@/components/home/FeaturesHeroSection';
+import HomePageScroll from '@/components/home/HomePageScroll';
+import WelcomeHeroSection from '@/components/home/WelcomeHeroSection';
+import Footer from '@/components/shared/Footer';
 
 export async function generateMetadata({
   params,
@@ -57,13 +60,22 @@ export async function generateMetadata({
   };
 }
 
-import WelcomeHeroSection from '@/components/home/WelcomeHeroSection';
-
 export default function Home() {
   return (
-    <>
-      <WelcomeHeroSection />
-      <FeaturesHeroSection />
-    </>
+    <HomePageScroll>
+      <div
+        data-home-step
+        className="h-[calc(100dvh-4rem)] shrink-0 snap-start [scroll-snap-stop:always]"
+      >
+        <WelcomeHeroSection />
+      </div>
+      <div
+        data-home-step
+        className="min-h-[calc(100dvh-4rem)] shrink-0 snap-start [scroll-snap-stop:always]"
+      >
+        <FeaturesHeroSection />
+      </div>
+      <Footer forceVisible />
+    </HomePageScroll>
   );
 }
