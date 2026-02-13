@@ -23,7 +23,7 @@ export default function FeaturesHeroSection() {
       <div className="relative z-10 flex w-full max-w-6xl flex-col items-center px-6 py-8 text-center sm:py-12">
         
         <h1 className="mb-4 text-2xl font-black tracking-tight text-gray-900 sm:text-4xl md:text-5xl dark:text-white">
-          {t('featuresHeading.aceYourNext')}<br className="sm:hidden" />
+          {t('featuresHeading.aceYourNext')}{' '}<br className="sm:hidden" />
           <span className="bg-gradient-to-r from-[var(--accent-primary)] via-[color-mix(in_srgb,var(--accent-primary)_70%,white)] to-[var(--accent-hover)] bg-clip-text text-transparent">
             {t('featuresHeading.technicalInterview')}
           </span>

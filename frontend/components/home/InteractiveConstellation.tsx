@@ -176,7 +176,6 @@ export function InteractiveConstellation() {
       const g = isDark ? 45 : 94;
       const b = isDark ? 85 : 255;
       
-      const particleColor = `rgba(${r}, ${g}, ${b}, 0.8)`;
       
       particles.forEach((p, i) => {
         const pulse = Math.sin((Date.now() * 0.002) + p.rotation * 5) * 0.5 + 0.5;

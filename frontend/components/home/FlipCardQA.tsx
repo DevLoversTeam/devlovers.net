@@ -55,14 +55,11 @@ export function FlipCardQA() {
   }));
 
   const currentQuestion = questions[currentIndex];
-  // Helper to safely get category icon/color since translation might return a string not in the keys if logic changed
-  // But here categories are 'React', etc. matching the keys.
   const categoryIcon = categoryIcons[currentQuestion.category] || categoryIcons['JavaScript'];
   const categoryColor = categoryColors[currentQuestion.category] || categoryColors['JavaScript'];
 
   const flipRotation = useMotionValue(0);
   
-  // Sync flip state with motion value
   useEffect(() => {
     flipRotation.set(isFlipped ? 180 : 0);
   }, [isFlipped, flipRotation]);
@@ -71,11 +68,10 @@ export function FlipCardQA() {
   const y = useMotionValue(0);
 
   const rotateX = useTransform(y, [-100, 100], [10, -10]); 
-  // Combine tilt (from x) and flip (from state)
   const tiltY = useTransform(x, [-100, 100], [-10, 10]);
   const rotateY = useTransform([tiltY, flipRotation], (latest: any[]) => latest[0] + latest[1]);
   
-  const springConfig = { damping: 20, stiffness: 260 }; // Use snappier config for both
+  const springConfig = { damping: 20, stiffness: 260 }; 
   const rotateXSpring = useSpring(rotateX, springConfig);
   const rotateYSpring = useSpring(rotateY, springConfig);
 
@@ -86,7 +82,6 @@ export function FlipCardQA() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Refs for tracking state inside interval without dependencies
   const isFlippedRef = useRef(isFlipped);
   const isPausedRef = useRef(isPaused);
   
@@ -104,7 +99,6 @@ export function FlipCardQA() {
     let elapsed = 0;
 
     const timer = setInterval(() => {
-      // Check refs instead of state directly
       if (isFlippedRef.current || isPausedRef.current) {
         elapsed = 0; 
         setProgress(0);
@@ -116,9 +110,8 @@ export function FlipCardQA() {
 
       if (newProgress >= 100) {
         setIsFlipped(true);
-        elapsed = 0; // Reset elapsed
+        elapsed = 0; 
 
-        // Clear any existing timeouts to be safe
         if (nextCardTimerRef.current) clearTimeout(nextCardTimerRef.current);
         if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
 
@@ -178,8 +171,8 @@ export function FlipCardQA() {
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
 
-    const xPct = (mouseX / width - 0.5) * 200; // -100 to 100
-    const yPct = (mouseY / height - 0.5) * 200; // -100 to 100
+    const xPct = (mouseX / width - 0.5) * 200; 
+    const yPct = (mouseY / height - 0.5) * 200; 
 
     x.set(xPct);
     y.set(yPct);
