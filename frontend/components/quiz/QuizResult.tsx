@@ -129,7 +129,7 @@ export function QuizResult({
         </h3>
         <p className="text-gray-600 dark:text-gray-400">{motivation.message}</p>
       </div>
-      {violationsCount >= 3 && (
+      {violationsCount >= 4 && (
         <div className="rounded-xl border border-orange-200 bg-orange-50 p-4 dark:border-orange-800 dark:bg-orange-900/20">
           <p className="text-center font-medium text-orange-800 dark:text-orange-200">
             <TriangleAlert className="inline h-4 w-4" aria-hidden="true" />{' '}
@@ -154,7 +154,7 @@ export function QuizResult({
           >
             {pointsAwarded > 0
               ? t('pointsAwarded', { points: pointsAwarded })
-              : violationsCount >= 3
+              : violationsCount >= 4
                 ? t('disqualified')
                 : t('noPointsAwarded')}
           </p>

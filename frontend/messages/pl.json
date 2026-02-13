@@ -184,7 +184,7 @@
       "incorrect": "Niepoprawnie",
       "explanationLabel": "Wyjaśnienie:",
       "recommendation": {
-        "title": "Rekomendacja",
+        "title": "Wskazówka",
         "description": "Zalecamy przejrzenie tego tematu po zakończeniu quizu"
       },
       "loading": "Ładowanie...",
@@ -239,7 +239,9 @@
     },
     "card": {
       "uncategorized": "Nieskategoryzowane",
-      "completed": "✓ Ukończono",
+      "mastered": "Opanowane",
+      "needsReview": "Powtórka",
+      "study": "Nauka",
       "questions": "pytań",
       "min": "min",
       "best": "Najlepszy:",
@@ -262,7 +264,8 @@
       "copy": "Kopiowanie jest zabronione podczas quizu",
       "paste": "Wklejanie jest zabronione podczas quizu",
       "contextMenu": "Menu kontekstowe jest zabronione podczas quizu",
-      "tabSwitch": "Wykryto przełączenie karty"
+      "tabSwitch": "Wykryto przełączenie karty",
+      "counter": "{count} {count, plural, one {naruszenie} few {naruszenia} other {naruszeń}}"
     }
   },
   "blog": {

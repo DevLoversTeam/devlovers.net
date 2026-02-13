@@ -184,7 +184,7 @@
       "incorrect": "Incorrect",
       "explanationLabel": "Explanation:",
       "recommendation": {
-        "title": "Recommendation",
+        "title": "Tip",
         "description": "We recommend reviewing this topic after completing the quiz"
       },
       "loading": "Loading...",
@@ -239,7 +239,9 @@
     },
     "card": {
       "uncategorized": "Uncategorized",
-      "completed": "✓ Completed",
+      "mastered": "Mastered",
+      "needsReview": "Review",
+      "study": "Study",
       "questions": "questions",
       "min": "min",
       "best": "Best:",
@@ -262,7 +264,8 @@
       "copy": "Copying is not allowed during the quiz",
       "paste": "Pasting is not allowed during the quiz",
       "contextMenu": "Context menu is not allowed during the quiz",
-      "tabSwitch": "Tab switch detected"
+      "tabSwitch": "Tab switch detected",
+      "counter": "{count} {count, plural, one {violation} other {violations}}"
     }
   },
   "blog": {
