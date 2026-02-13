@@ -126,4 +126,26 @@ describe('Pagination', () => {
 
     expect(screen.getAllByLabelText(/page-/).length).toBe(4);
   });
+
+  it('calls onPageSizeChange when selecting a different size', () => {
+    const onPageChange = vi.fn();
+    const onPageSizeChange = vi.fn();
+
+    render(
+      <Pagination
+        currentPage={1}
+        totalPages={4}
+        onPageChange={onPageChange}
+        onPageSizeChange={onPageSizeChange}
+        pageSize={10}
+        pageSizeOptions={[10, 20, 40]}
+        accentColor="#ff0000"
+      />
+    );
+
+    const select = screen.getByLabelText('itemsPerPageAria');
+    fireEvent.change(select, { target: { value: '40' } });
+
+    expect(onPageSizeChange).toHaveBeenCalledWith(40);
+  });
 });

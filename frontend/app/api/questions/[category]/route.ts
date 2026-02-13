@@ -37,7 +37,7 @@ export async function GET(
 
     const page = Math.max(1, Number(searchParams.get('page') ?? DEFAULT_PAGE));
     const limit = Math.min(
-      50,
+      100,
       Math.max(1, Number(searchParams.get('limit') ?? DEFAULT_LIMIT))
     );
     const offset = (page - 1) * limit;
