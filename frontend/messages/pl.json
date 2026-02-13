@@ -324,7 +324,19 @@
         "placing": "Składanie zamówienia...",
         "message": "Zostaniesz przekierowany do bezpiecznej płatności lub zobaczysz potwierdzenie, jeśli płatność nie jest wymagana w tym środowisku",
         "notRedirected": "Jeśli nie zostałeś automatycznie przekierowany, otwórz swoje zamówienie",
-        "goToOrder": "Przejdź do zamówienia"
+        "goToOrder": "Przejdź do zamówienia",
+        "errors": {
+          "unexpectedResponse": "Nieoczekiwana odpowiedź checkout.",
+          "startFailed": "Nie można teraz rozpocząć checkoutu."
+        },
+        "paymentMethod": {
+          "label": "Metoda płatności",
+          "stripe": "Stripe",
+          "monobank": "Monobank",
+          "monobankUahOnlyHint": "Monobank jest dostępny tylko dla płatności w UAH.",
+          "monobankUnavailable": "Monobank jest niedostępny w tym środowisku.",
+          "noAvailable": "Brak dostępnych metod płatności."
+        }
       },
       "actions": {
         "removeItem": "Usuń {title} z koszyka",
@@ -513,7 +525,24 @@
         "items": "Produkty",
         "status": "Status",
         "continueShopping": "Kontynuuj zakupy",
-        "viewCart": "Zobacz koszyk"
+        "viewCart": "Zobacz koszyk",
+        "refreshStatus": "Odśwież status",
+        "refreshingStatus": "Odświeżanie...",
+        "statusAccessDenied": "Nie można zweryfikować statusu płatności dla tego zamówienia.",
+        "needsReviewContact": "Skontaktuj się z pomocą i podaj ID zamówienia: {orderId}",
+        "statusHeadlines": {
+          "pending": "Płatność jest potwierdzana",
+          "paid": "Płatność potwierdzona",
+          "canceled": "Płatność nie została zakończona",
+          "needsReview": "Płatność wymaga ręcznej weryfikacji"
+        },
+        "statusMessages": {
+          "pending": "Nadal potwierdzamy Twoją płatność. Ta strona aktualizuje się automatycznie.",
+          "pendingUnknown": "Nadal potwierdzamy status Twojej płatności.",
+          "paid": "Twoja płatność została potwierdzona.",
+          "canceled": "Ta płatność nie została zakończona lub została anulowana.",
+          "needsReview": "Nie udało się automatycznie potwierdzić tej płatności."
+        }
       },
       "error": {
         "paymentFailed": "Płatność nie powiodła się",

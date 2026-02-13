@@ -4,7 +4,7 @@ import { Loader2, Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { useCart } from '@/components/shop/CartProvider';
 import { Link, useRouter } from '@/i18n/routing';
@@ -54,7 +54,14 @@ const SHOP_HERO_CTA = cn(
   'shadow-[var(--shop-hero-btn-shadow)] hover:shadow-[var(--shop-hero-btn-shadow-hover)]'
 );
 
-export default function CartPage() {
+type Props = {
+  stripeEnabled: boolean;
+  monobankEnabled: boolean;
+};
+
+type CheckoutProvider = 'stripe' | 'monobank';
+
+export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
   const { cart, updateQuantity, removeFromCart } = useCart();
   const router = useRouter();
   const t = useTranslations('shop.cart');
@@ -62,10 +69,26 @@ export default function CartPage() {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
+  const [selectedProvider, setSelectedProvider] =
+    useState<CheckoutProvider>('stripe');
 
   const params = useParams<{ locale?: string }>();
   const locale = params.locale ?? 'en';
   const shopBase = '/shop';
+  const isUahCheckout = cart.summary.currency === 'UAH';
+  const canUseStripe = stripeEnabled;
+  const canUseMonobank = monobankEnabled && isUahCheckout;
+  const hasSelectableProvider = canUseStripe || canUseMonobank;
+
+  useEffect(() => {
+    if (selectedProvider === 'stripe' && !canUseStripe && canUseMonobank) {
+      setSelectedProvider('monobank');
+      return;
+    }
+    if (selectedProvider === 'monobank' && !canUseMonobank && canUseStripe) {
+      setSelectedProvider('stripe');
+    }
+  }, [canUseMonobank, canUseStripe, selectedProvider]);
 
   const translateColor = (color: string | null | undefined): string | null => {
     if (!color) return null;
@@ -78,6 +101,23 @@ export default function CartPage() {
   };
 
   async function handleCheckout() {
+    if (!hasSelectableProvider) {
+      setCheckoutError(t('checkout.paymentMethod.noAvailable'));
+      return;
+    }
+    if (selectedProvider === 'stripe' && !canUseStripe) {
+      setCheckoutError(t('checkout.paymentMethod.noAvailable'));
+      return;
+    }
+    if (selectedProvider === 'monobank' && !canUseMonobank) {
+      setCheckoutError(
+        monobankEnabled
+          ? t('checkout.paymentMethod.monobankUahOnlyHint')
+          : t('checkout.paymentMethod.monobankUnavailable')
+      );
+      return;
+    }
+
     setCheckoutError(null);
     setCreatedOrderId(null);
     setIsCheckingOut(true);
@@ -92,6 +132,7 @@ export default function CartPage() {
           'Idempotency-Key': idempotencyKey,
         },
         body: JSON.stringify({
+          paymentProvider: selectedProvider,
           items: cart.items.map(item => ({
             productId: item.productId,
             quantity: item.quantity,
@@ -109,13 +150,13 @@ export default function CartPage() {
             ? data.message
             : typeof data?.error === 'string'
               ? data.error
-              : 'Unable to start checkout right now.';
+              : t('checkout.errors.startFailed');
         setCheckoutError(message);
         return;
       }
 
       if (!data?.orderId) {
-        setCheckoutError('Unexpected checkout response.');
+        setCheckoutError(t('checkout.errors.unexpectedResponse'));
         return;
       }
 
@@ -124,6 +165,10 @@ export default function CartPage() {
         typeof data.clientSecret === 'string' &&
         data.clientSecret.trim().length > 0
           ? data.clientSecret
+          : null;
+      const monobankPageUrl: string | null =
+        typeof data.pageUrl === 'string' && data.pageUrl.trim().length > 0
+          ? data.pageUrl
           : null;
 
       const orderId = String(data.orderId);
@@ -135,6 +180,14 @@ export default function CartPage() {
             orderId
           )}?clientSecret=${encodeURIComponent(clientSecret)}&clearCart=1`
         );
+        return;
+      }
+      if (paymentProvider === 'monobank' && monobankPageUrl) {
+        window.location.assign(monobankPageUrl);
+        return;
+      }
+      if (paymentProvider === 'monobank' && !monobankPageUrl) {
+        setCheckoutError(t('checkout.errors.unexpectedResponse'));
         return;
       }
 
@@ -149,7 +202,7 @@ export default function CartPage() {
         )}&clearCart=1${paymentsDisabledFlag}`
       );
     } catch {
-      setCheckoutError('Unable to start checkout right now.');
+      setCheckoutError(t('checkout.errors.startFailed'));
     } finally {
       setIsCheckingOut(false);
     }
@@ -385,11 +438,69 @@ export default function CartPage() {
             </div>
           </div>
 
+          <fieldset className="border-border mt-6 rounded-md border p-4">
+            <legend className="text-foreground px-1 text-sm font-semibold">
+              {t('checkout.paymentMethod.label')}
+            </legend>
+
+            <div className="mt-3 space-y-2">
+              {canUseStripe ? (
+                <label className="border-border flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2">
+                  <input
+                    type="radio"
+                    name="payment-provider"
+                    value="stripe"
+                    checked={selectedProvider === 'stripe'}
+                    onChange={() => setSelectedProvider('stripe')}
+                    className="h-4 w-4"
+                  />
+                  <span className="text-sm font-medium">
+                    {t('checkout.paymentMethod.stripe')}
+                  </span>
+                </label>
+              ) : null}
+
+              <label
+                className={cn(
+                  'border-border flex items-center gap-2 rounded-md border px-3 py-2',
+                  canUseMonobank ? 'cursor-pointer' : 'opacity-60'
+                )}
+              >
+                <input
+                  type="radio"
+                  name="payment-provider"
+                  value="monobank"
+                  checked={selectedProvider === 'monobank'}
+                  onChange={() => setSelectedProvider('monobank')}
+                  disabled={!canUseMonobank}
+                  className="h-4 w-4"
+                />
+                <span className="text-sm font-medium">
+                  {t('checkout.paymentMethod.monobank')}
+                </span>
+              </label>
+
+              {!canUseMonobank ? (
+                <p className="text-muted-foreground text-xs">
+                  {monobankEnabled
+                    ? t('checkout.paymentMethod.monobankUahOnlyHint')
+                    : t('checkout.paymentMethod.monobankUnavailable')}
+                </p>
+              ) : null}
+
+              {!hasSelectableProvider ? (
+                <p className="text-destructive text-xs" role="status">
+                  {t('checkout.paymentMethod.noAvailable')}
+                </p>
+              ) : null}
+            </div>
+          </fieldset>
+
           <div className="mt-6 space-y-3">
             <button
               type="button"
               onClick={handleCheckout}
-              disabled={isCheckingOut}
+              disabled={isCheckingOut || !hasSelectableProvider}
               className={SHOP_HERO_CTA}
               aria-busy={isCheckingOut}
             >

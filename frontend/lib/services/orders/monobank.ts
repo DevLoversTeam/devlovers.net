@@ -737,7 +737,7 @@ export async function createMonobankAttemptAndInvoice(args: {
   totalAmountMinor: number;
 }> {
   const redirectUrl = toAbsoluteUrl(
-    `/shop/checkout/success?orderId=${encodeURIComponent(
+    `/shop/checkout/success?flow=monobank&orderId=${encodeURIComponent(
       args.orderId
     )}&statusToken=${encodeURIComponent(args.statusToken)}`
   );
