@@ -46,6 +46,14 @@ const EXPECTED_BUSINESS_ERROR_CODES = new Set([
   'PAYMENT_ATTEMPTS_EXHAUSTED',
 ]);
 
+const DEFAULT_CHECKOUT_RATE_LIMIT_MAX = 10;
+const DEFAULT_CHECKOUT_RATE_LIMIT_WINDOW_SECONDS = 300;
+
+function readPositiveIntEnv(name: string, fallback: number): number {
+  const parsed = Number.parseInt(process.env[name] ?? '', 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
 function parseRequestedProvider(
   raw: unknown
 ): CheckoutRequestedProvider | 'invalid' | null {
@@ -717,19 +725,14 @@ export async function POST(request: NextRequest) {
 
   const checkoutSubject = sessionUserId ?? getRateLimitSubject(request);
 
-  const limitParsed = Number.parseInt(
-    process.env.CHECKOUT_RATE_LIMIT_MAX ?? '',
-    10
+  const limit = readPositiveIntEnv(
+    'CHECKOUT_RATE_LIMIT_MAX',
+    DEFAULT_CHECKOUT_RATE_LIMIT_MAX
   );
-  const windowParsed = Number.parseInt(
-    process.env.CHECKOUT_RATE_LIMIT_WINDOW_SECONDS ?? '',
-    10
+  const windowSeconds = readPositiveIntEnv(
+    'CHECKOUT_RATE_LIMIT_WINDOW_SECONDS',
+    DEFAULT_CHECKOUT_RATE_LIMIT_WINDOW_SECONDS
   );
-
-  const limit =
-    Number.isFinite(limitParsed) && limitParsed > 0 ? limitParsed : 10;
-  const windowSeconds =
-    Number.isFinite(windowParsed) && windowParsed > 0 ? windowParsed : 300;
 
   const decision = await enforceRateLimit({
     key: `checkout:${checkoutSubject}`,

@@ -100,3 +100,36 @@ export function guardNonBrowserOnly(req: NextRequest): NextResponse | null {
 
   return null;
 }
+
+function hasAnySecFetchHeader(req: NextRequest): boolean {
+  for (const key of req.headers.keys()) {
+    if (key.toLowerCase().startsWith('sec-fetch-')) {
+      return true;
+    }
+  }
+  return false;
+}
+
+export function guardNonBrowserFailClosed(
+  req: NextRequest,
+  meta?: { surface?: string }
+): NextResponse | null {
+  const origin = req.headers.get('origin');
+  const referer = req.headers.get('referer');
+  const hasSecFetch = hasAnySecFetchHeader(req);
+
+  if (!origin && !referer && !hasSecFetch) {
+    return null;
+  }
+
+  const res = NextResponse.json(
+    {
+      success: false,
+      code: 'ORIGIN_BLOCKED',
+      surface: meta?.surface ?? 'non_browser',
+    },
+    { status: 403 }
+  );
+  res.headers.set('Cache-Control', 'no-store');
+  return res;
+}

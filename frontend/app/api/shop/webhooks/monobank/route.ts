@@ -15,11 +15,27 @@ import {
   monoSha256Raw,
 } from '@/lib/logging/monobank';
 import { verifyWebhookSignatureWithRefresh } from '@/lib/psp/monobank';
+import { guardNonBrowserFailClosed } from '@/lib/security/origin';
+import {
+  enforceRateLimit,
+  getRateLimitSubject,
+  rateLimitResponse,
+} from '@/lib/security/rate-limit';
 import { handleMonobankWebhook } from '@/lib/services/orders/monobank-webhook';
 
 export const dynamic = 'force-dynamic';
 
 type WebhookMode = 'drop' | 'store' | 'apply';
+
+const DEFAULT_MONO_WEBHOOK_MISSING_SIG_LIMIT = 30;
+const DEFAULT_MONO_WEBHOOK_MISSING_SIG_WINDOW_SECONDS = 60;
+const DEFAULT_MONO_WEBHOOK_INVALID_SIG_LIMIT = 30;
+const DEFAULT_MONO_WEBHOOK_INVALID_SIG_WINDOW_SECONDS = 60;
+
+function readPositiveIntEnv(name: string, fallback: number): number {
+  const parsed = Number.parseInt(process.env[name] ?? '', 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
 
 function parseWebhookMode(raw: unknown): WebhookMode {
   const v = typeof raw === 'string' ? raw.trim().toLowerCase() : '';
@@ -55,6 +71,21 @@ function parseWebhookPayload(
 export async function POST(request: NextRequest) {
   const requestId =
     request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
+  const originBlocked = guardNonBrowserFailClosed(request, {
+    surface: 'monobank_webhook',
+  });
+  if (originBlocked) {
+    logWarn('monobank_webhook_origin_blocked', {
+      requestId,
+      route: request.nextUrl.pathname,
+      method: request.method,
+      code: 'ORIGIN_BLOCKED',
+      surface: 'monobank_webhook',
+    });
+    originBlocked.headers.set('X-Request-Id', requestId);
+    return originBlocked;
+  }
+
   const signature = request.headers.get('x-sign');
   const hasXSign = typeof signature === 'string' && signature.trim().length > 0;
 
@@ -102,6 +133,7 @@ export async function POST(request: NextRequest) {
   const rawSha256 = monoSha256Raw(rawBodyBytes);
   const rawBytesLen = rawBodyBytes.byteLength;
   const eventKey = rawSha256;
+  const rateLimitSubject = getRateLimitSubject(request);
   const diagMeta = {
     ...baseMeta,
     mode: webhookMode,
@@ -109,6 +141,37 @@ export async function POST(request: NextRequest) {
     rawSha256,
     rawBytesLen,
   };
+
+  if (!hasXSign) {
+    const decision = await enforceRateLimit({
+      key: `monobank_webhook:missing_sig:${rateLimitSubject}`,
+      limit: readPositiveIntEnv(
+        'MONOBANK_WEBHOOK_MISSING_SIG_RATE_LIMIT_MAX',
+        DEFAULT_MONO_WEBHOOK_MISSING_SIG_LIMIT
+      ),
+      windowSeconds: readPositiveIntEnv(
+        'MONOBANK_WEBHOOK_MISSING_SIG_RATE_LIMIT_WINDOW_SECONDS',
+        DEFAULT_MONO_WEBHOOK_MISSING_SIG_WINDOW_SECONDS
+      ),
+    });
+
+    if (!decision.ok) {
+      monoLogWarn(MONO_SIG_INVALID, {
+        ...diagMeta,
+        reason: 'SIG_MISSING_RATE_LIMITED',
+      });
+      return rateLimitResponse({
+        retryAfterSeconds: decision.retryAfterSeconds,
+        details: { scope: 'monobank_webhook_invalid_signature' },
+      });
+    }
+
+    monoLogWarn(MONO_SIG_INVALID, {
+      ...diagMeta,
+      reason: 'SIG_MISSING',
+    });
+    return noStoreJson({ ok: true }, { status: 200 });
+  }
 
   let validSignature = false;
   try {
@@ -124,6 +187,29 @@ export async function POST(request: NextRequest) {
   }
 
   if (!validSignature) {
+    const decision = await enforceRateLimit({
+      key: `monobank_webhook:invalid_sig:${rateLimitSubject}`,
+      limit: readPositiveIntEnv(
+        'MONOBANK_WEBHOOK_INVALID_SIG_RATE_LIMIT_MAX',
+        DEFAULT_MONO_WEBHOOK_INVALID_SIG_LIMIT
+      ),
+      windowSeconds: readPositiveIntEnv(
+        'MONOBANK_WEBHOOK_INVALID_SIG_RATE_LIMIT_WINDOW_SECONDS',
+        DEFAULT_MONO_WEBHOOK_INVALID_SIG_WINDOW_SECONDS
+      ),
+    });
+
+    if (!decision.ok) {
+      monoLogWarn(MONO_SIG_INVALID, {
+        ...diagMeta,
+        reason: 'SIG_INVALID_RATE_LIMITED',
+      });
+      return rateLimitResponse({
+        retryAfterSeconds: decision.retryAfterSeconds,
+        details: { scope: 'monobank_webhook_invalid_signature' },
+      });
+    }
+
     monoLogWarn(MONO_SIG_INVALID, {
       ...diagMeta,
       reason: 'SIG_INVALID',

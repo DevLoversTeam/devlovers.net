@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   guardBrowserSameOrigin,
+  guardNonBrowserFailClosed,
   guardNonBrowserOnly,
   normalizeOrigin,
 } from '@/lib/security/origin';
@@ -100,6 +101,39 @@ describe('origin posture helpers', () => {
   it('guardNonBrowserOnly allows when no browser signals are present', () => {
     const req = makeReq({ method: 'POST' });
     const res = guardNonBrowserOnly(req);
+    expect(res).toBeNull();
+  });
+
+  it('guardNonBrowserFailClosed blocks when Referer is present', async () => {
+    const req = makeReq({
+      method: 'POST',
+      headers: { referer: 'http://localhost:3000/shop' },
+    });
+    const res = guardNonBrowserFailClosed(req, { surface: 'test_surface' });
+    expect(res?.status).toBe(403);
+    const body = await res?.json();
+    expect(body).toMatchObject({
+      success: false,
+      code: 'ORIGIN_BLOCKED',
+      surface: 'test_surface',
+    });
+    expect(res?.headers.get('Cache-Control')).toBe('no-store');
+  });
+
+  it('guardNonBrowserFailClosed blocks when Sec-Fetch-* headers are present', async () => {
+    const req = makeReq({
+      method: 'POST',
+      headers: { 'sec-fetch-site': 'none' },
+    });
+    const res = guardNonBrowserFailClosed(req, { surface: 'test_surface' });
+    expect(res?.status).toBe(403);
+    const body = await res?.json();
+    expect(body?.code).toBe('ORIGIN_BLOCKED');
+  });
+
+  it('guardNonBrowserFailClosed allows when no browser signals are present', () => {
+    const req = makeReq({ method: 'POST' });
+    const res = guardNonBrowserFailClosed(req, { surface: 'test_surface' });
     expect(res).toBeNull();
   });
 });

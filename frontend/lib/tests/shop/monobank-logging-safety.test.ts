@@ -75,8 +75,6 @@ function isMonobankRelated(rel: string, text: string) {
   const r = toPosix(rel).toLowerCase();
   if (r.includes('monobank')) return true;
   if (r.includes('/app/api/shop/checkout/route.ts')) return true;
-
-  // heuristic: files using MONO_ codes or the word "monobank"
   if (text.includes('MONO_')) return true;
   if (text.toLowerCase().includes('monobank')) return true;
   if (text.includes("provider: 'monobank'")) return true;
@@ -87,7 +85,7 @@ function isMonobankRelated(rel: string, text: string) {
 
 async function loadFrontendEntries(): Promise<FileEntry[]> {
   const here = path.dirname(fileURLToPath(import.meta.url));
-  const frontendRoot = path.resolve(here, '../../..'); // .../frontend
+  const frontendRoot = path.resolve(here, '../../..'); 
 
   const roots = [
     path.join(frontendRoot, 'app'),
@@ -171,31 +169,19 @@ describe('monobank logging safety (I1)', () => {
     function hasForbiddenMetaKey(chunk: string): boolean {
       for (const key of forbidden) {
         const simpleIdent = /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(key);
-
-        // identifier key: body:
         if (simpleIdent) {
           const rx = new RegExp(`(^|[,{]\\s*)${key}\\s*:`, 'i');
           if (rx.test(chunk)) return true;
         }
-
-        // quoted key: "set-cookie":  or 'set-cookie':
         const qrx = new RegExp(`(^|[,{]\\s*)(['"])${key}\\2\\s*:`, 'i');
         if (qrx.test(chunk)) return true;
       }
       return false;
     }
-
-    const keyRx = new RegExp(`\\b(${forbidden.join('|')})\\b`, 'i');
-
-    // NOTE: no ES2018 dotAll "s" flag. Use [\s\S]*? to span lines.
     const patterns: RegExp[] = [
-      // logInfo('x', { ... }) / logWarn('x', { ... })
       /(logInfo|logWarn)\(\s*['"`][^'"`]+['"`]\s*,\s*{[\s\S]*?}\s*\)/g,
-      // logError('x', err, { ... })
       /logError\(\s*['"`][^'"`]+['"`]\s*,\s*[^,]+,\s*{[\s\S]*?}\s*\)/g,
-      // monoLogWarn(MONO_CODE, { ... })
       /monoLogWarn\(\s*[^,]+,\s*{[\s\S]*?}\s*\)/g,
-      // monoLogError(MONO_CODE, err, { ... })
       /monoLogError\(\s*[^,]+,\s*[^,]+,\s*{[\s\S]*?}\s*\)/g,
     ];
 
