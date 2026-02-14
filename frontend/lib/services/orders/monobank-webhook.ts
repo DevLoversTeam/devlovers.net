@@ -6,7 +6,16 @@ import { and, eq, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { monobankEvents, orders, paymentAttempts } from '@/db/schema';
-import { logError, logInfo } from '@/lib/logging';
+import { logError } from '@/lib/logging';
+import {
+  MONO_DEDUP,
+  MONO_MISMATCH,
+  MONO_OLD_EVENT,
+  MONO_PAID_APPLIED,
+  MONO_STORE_MODE,
+  monoLogInfo,
+  monoLogWarn,
+} from '@/lib/logging/monobank';
 import { InvalidPayloadError } from '@/lib/services/errors';
 import { guardedPaymentStatusUpdate } from '@/lib/services/orders/payment-state';
 import { restockOrder } from '@/lib/services/orders/restock';
@@ -566,6 +575,14 @@ async function applyWebhookToMatchedOrderAttemptEvent(args: {
     attemptProviderModifiedAt &&
     providerModifiedAt <= attemptProviderModifiedAt
   ) {
+    monoLogInfo(MONO_OLD_EVENT, {
+      eventId,
+      invoiceId: normalized.invoiceId,
+      orderId: orderRow.id,
+      attemptId: attemptRow.id,
+      status,
+      reason: 'provider_modified_at_older_or_equal',
+    });
     const appliedResult: ApplyResult = 'applied_noop';
     await persistEventOutcome({
       eventId,
@@ -595,6 +612,14 @@ async function applyWebhookToMatchedOrderAttemptEvent(args: {
   });
 
   if (mismatch.mismatch) {
+    monoLogWarn(MONO_MISMATCH, {
+      eventId,
+      invoiceId: normalized.invoiceId,
+      orderId: orderRow.id,
+      attemptId: attemptRow.id,
+      status,
+      reason: mismatch.reason ?? 'mismatch',
+    });
     const appliedResult: ApplyResult = 'applied_with_issue';
 
     if (orderRow.paymentStatus !== 'paid') {
@@ -808,6 +833,14 @@ async function applyWebhookToMatchedOrderAttemptEvent(args: {
       appliedResult,
       attemptId: attemptRow.id,
       orderId: orderRow.id,
+    });
+    monoLogInfo(MONO_PAID_APPLIED, {
+      eventId,
+      invoiceId: normalized.invoiceId,
+      orderId: orderRow.id,
+      attemptId: attemptRow.id,
+      status,
+      appliedResult,
     });
 
     return buildApplyOutcome({
@@ -1124,10 +1157,12 @@ export async function applyMonoWebhookEvent(args: {
   });
 
   if (!eventId) {
-    logInfo('monobank_webhook_deduped', {
+    monoLogInfo(MONO_DEDUP, {
       requestId: args.requestId,
       invoiceId: parsed.normalized.invoiceId,
       status: parsed.normalized.status,
+      deduped: true,
+      reason: 'insert_conflict',
     });
     return {
       deduped: true,
@@ -1141,6 +1176,13 @@ export async function applyMonoWebhookEvent(args: {
     const now = new Date();
     const appliedResult: ApplyResult =
       args.mode === 'drop' ? 'dropped' : 'stored';
+    monoLogInfo(MONO_STORE_MODE, {
+      requestId: args.requestId,
+      mode: args.mode,
+      storeDecision: appliedResult,
+      eventId,
+      invoiceId: parsed.normalized.invoiceId,
+    });
 
     await db
       .update(monobankEvents)

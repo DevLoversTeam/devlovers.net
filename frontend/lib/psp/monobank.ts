@@ -4,6 +4,13 @@ import crypto from 'node:crypto';
 
 import { getMonobankEnv } from '@/lib/env/monobank';
 import { logError } from '@/lib/logging';
+import {
+  MONO_PUBKEY_REFRESHED,
+  MONO_SIG_INVALID,
+  monoLogError,
+  monoLogInfo,
+  monoLogWarn,
+} from '@/lib/logging/monobank';
 export const MONO_CCY = 980 as const;
 export const MONO_CURRENCY = 'UAH' as const;
 
@@ -369,6 +376,7 @@ async function requestMono<T>(
 ): Promise<MonoRequestResult<T>> {
   const endpoint = args.path.startsWith('/') ? args.path : `/${args.path}`;
   const url = normalizeEndpoint(args.baseUrl, args.path);
+  const startedAt = Date.now();
   const controller = new AbortController();
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
@@ -402,6 +410,7 @@ async function requestMono<T>(
     if (timeoutId) clearTimeout(timeoutId);
 
     const status = res.status;
+    const durationMs = Date.now() - startedAt;
     const text = await res.text();
 
     if (!res.ok) {
@@ -412,6 +421,7 @@ async function requestMono<T>(
           endpoint,
           method: args.method,
           httpStatus: status,
+          durationMs,
         });
       }
 
@@ -420,6 +430,7 @@ async function requestMono<T>(
           endpoint,
           method: args.method,
           httpStatus: status,
+          durationMs,
           ...(parsed.monoCode ? { monoCode: parsed.monoCode } : {}),
           ...(parsed.monoMessage ? { monoMessage: parsed.monoMessage } : {}),
           ...(parsed.responseSnippet
@@ -432,6 +443,7 @@ async function requestMono<T>(
         endpoint,
         method: args.method,
         httpStatus: status,
+        durationMs,
       });
     }
 
@@ -454,12 +466,14 @@ async function requestMono<T>(
         endpoint,
         method: args.method,
         timeoutMs: args.timeoutMs,
+        durationMs: Date.now() - startedAt,
       });
     }
 
     throw new PspError('PSP_UNKNOWN', 'Monobank request failed', {
       endpoint,
       method: args.method,
+      durationMs: Date.now() - startedAt,
     });
   }
 }
@@ -844,7 +858,12 @@ export async function verifyWebhookSignatureWithRefresh(args: {
   let key: Uint8Array;
   try {
     key = await fetchWebhookPubKey();
-  } catch {
+  } catch (error) {
+    monoLogWarn(MONO_SIG_INVALID, {
+      endpoint: '/api/merchant/pubkey',
+      reason: 'pubkey_fetch_failed',
+      errorCode: error instanceof Error ? error.name : 'UNKNOWN',
+    });
     return false;
   }
 
@@ -854,8 +873,18 @@ export async function verifyWebhookSignatureWithRefresh(args: {
 
   try {
     const refreshed = await fetchWebhookPubKey({ forceRefresh: true });
-    return verifyWebhookSignature(args.rawBodyBytes, args.signature, refreshed);
-  } catch {
+    const ok = verifyWebhookSignature(args.rawBodyBytes, args.signature, refreshed);
+    monoLogInfo(MONO_PUBKEY_REFRESHED, {
+      endpoint: '/api/merchant/pubkey',
+      reason: 'refresh_once_after_verify_failed',
+      status: ok ? 'verified' : 'invalid_signature',
+    });
+    return ok;
+  } catch (error) {
+    monoLogError(MONO_PUBKEY_REFRESHED, error, {
+      endpoint: '/api/merchant/pubkey',
+      reason: 'refresh_failed',
+    });
     return false;
   }
 }

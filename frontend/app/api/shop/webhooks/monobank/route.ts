@@ -6,6 +6,14 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { getMonobankConfig } from '@/lib/env/monobank';
 import { logError, logInfo, logWarn } from '@/lib/logging';
+import {
+  MONO_SIG_INVALID,
+  MONO_STORE_MODE,
+  monoLogError,
+  monoLogInfo,
+  monoLogWarn,
+  monoSha256Raw,
+} from '@/lib/logging/monobank';
 import { verifyWebhookSignatureWithRefresh } from '@/lib/psp/monobank';
 import { handleMonobankWebhook } from '@/lib/services/orders/monobank-webhook';
 
@@ -47,6 +55,8 @@ function parseWebhookPayload(
 export async function POST(request: NextRequest) {
   const requestId =
     request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
+  const signature = request.headers.get('x-sign');
+  const hasXSign = typeof signature === 'string' && signature.trim().length > 0;
 
   const baseMeta = {
     requestId,
@@ -68,6 +78,11 @@ export async function POST(request: NextRequest) {
       webhookMode = 'apply';
     }
   }
+  monoLogInfo(MONO_STORE_MODE, {
+    ...baseMeta,
+    mode: webhookMode,
+    storeDecision: webhookMode,
+  });
 
   let rawBodyBytes: Buffer;
   try {
@@ -75,17 +90,25 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     logError('monobank_webhook_body_read_failed', error, {
       ...baseMeta,
+      mode: webhookMode,
+      hasXSign,
+      rawBytesLen: 0,
+      reason: 'BODY_READ_FAILED',
       code: 'MONO_BODY_READ_FAILED',
     });
     return noStoreJson({ ok: true }, { status: 200 });
   }
 
-  const rawSha256 = crypto
-    .createHash('sha256')
-    .update(rawBodyBytes)
-    .digest('hex');
+  const rawSha256 = monoSha256Raw(rawBodyBytes);
+  const rawBytesLen = rawBodyBytes.byteLength;
   const eventKey = rawSha256;
-  const signature = request.headers.get('x-sign');
+  const diagMeta = {
+    ...baseMeta,
+    mode: webhookMode,
+    hasXSign,
+    rawSha256,
+    rawBytesLen,
+  };
 
   let validSignature = false;
   try {
@@ -94,18 +117,16 @@ export async function POST(request: NextRequest) {
       signature,
     });
   } catch (error) {
-    logError('monobank_webhook_signature_error', error, {
-      ...baseMeta,
-      code: 'MONO_SIG_INVALID',
-      rawSha256,
+    monoLogError(MONO_SIG_INVALID, error, {
+      ...diagMeta,
+      reason: 'SIG_VERIFY_ERROR',
     });
   }
 
   if (!validSignature) {
-    logWarn('monobank_webhook_signature_invalid', {
-      ...baseMeta,
-      code: 'MONO_SIG_INVALID',
-      rawSha256,
+    monoLogWarn(MONO_SIG_INVALID, {
+      ...diagMeta,
+      reason: 'SIG_INVALID',
     });
     return noStoreJson({ ok: true }, { status: 200 });
   }
@@ -113,10 +134,10 @@ export async function POST(request: NextRequest) {
   const parsedPayload = parseWebhookPayload(rawBodyBytes);
   if (!parsedPayload) {
     logWarn('monobank_webhook_payload_invalid', {
-      ...baseMeta,
+      ...diagMeta,
       code: 'INVALID_PAYLOAD',
       eventKey,
-      rawSha256,
+      reason: 'INVALID_PAYLOAD',
     });
     return noStoreJson({ ok: true }, { status: 200 });
   }
@@ -130,20 +151,31 @@ export async function POST(request: NextRequest) {
       mode: webhookMode,
     });
 
+    if (result.appliedResult === 'stored' || result.appliedResult === 'dropped') {
+      monoLogInfo(MONO_STORE_MODE, {
+        ...diagMeta,
+        mode: webhookMode,
+        storeDecision: result.appliedResult,
+        eventKey,
+        invoiceId: result.invoiceId,
+        reason: 'STORE_MODE_RESULT',
+      });
+    }
+
     logInfo('monobank_webhook_processed', {
-      ...baseMeta,
+      ...diagMeta,
       eventKey,
-      rawSha256,
       invoiceId: result.invoiceId,
       appliedResult: result.appliedResult,
       deduped: result.deduped,
+      reason: 'PROCESSED',
     });
   } catch (error) {
     logError('monobank_webhook_apply_failed', error, {
-      ...baseMeta,
+      ...diagMeta,
       code: 'WEBHOOK_APPLY_FAILED',
       eventKey,
-      rawSha256,
+      reason: 'WEBHOOK_APPLY_FAILED',
     });
   }
 

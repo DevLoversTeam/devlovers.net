@@ -18,31 +18,17 @@ function resolveStripeCheckoutEnabled(): boolean {
   const stripeFlag = (process.env.STRIPE_PAYMENTS_ENABLED ?? '').trim();
 
   return (
-    paymentsEnabled &&
-    (stripeFlag.length > 0 ? stripeFlag === 'true' : true)
+    paymentsEnabled && (stripeFlag.length > 0 ? stripeFlag === 'true' : true)
   );
 }
 
 function resolveMonobankCheckoutEnabled(): boolean {
   const paymentsEnabled = isFlagEnabled(process.env.PAYMENTS_ENABLED);
-  if (!paymentsEnabled) {
-    console.warn('[shop][cart] monobank disabled: PAYMENTS_ENABLED is not true');
-    return false;
-  }
+  if (!paymentsEnabled) return false;
 
   try {
-    const enabled = isMonobankEnabled();
-    if (!enabled) {
-      console.warn(
-        '[shop][cart] monobank disabled: config missing or feature disabled'
-      );
-    }
-    return enabled;
-  } catch (err) {
-    console.warn(
-      '[shop][cart] monobank disabled:',
-      err instanceof Error ? err.message : String(err)
-    );
+    return isMonobankEnabled();
+  } catch {
     return false;
   }
 }

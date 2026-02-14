@@ -6,6 +6,7 @@ import { MoneyValueError } from '@/db/queries/shop/orders';
 import { getCurrentUser } from '@/lib/auth';
 import { isMonobankEnabled } from '@/lib/env/monobank';
 import { logError, logInfo, logWarn } from '@/lib/logging';
+import { MONO_MISMATCH, monoLogWarn } from '@/lib/logging/monobank';
 import { guardBrowserSameOrigin } from '@/lib/security/origin';
 import {
   enforceRateLimit,
@@ -354,6 +355,14 @@ async function runMonobankCheckoutFlow(args: {
     });
 
     if (args.totalCents !== monobankAttempt.totalAmountMinor) {
+      if (process.env.NODE_ENV !== 'test') {
+        monoLogWarn(MONO_MISMATCH, {
+          requestId: args.requestId,
+          orderId: args.order.id,
+          reason: 'checkout_total_amount_mismatch',
+        });
+      }
+
       logError(
         'checkout_mono_amount_mismatch',
         new Error('Monobank amount mismatch'),

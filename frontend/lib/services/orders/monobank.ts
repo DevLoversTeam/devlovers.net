@@ -6,6 +6,10 @@ import { db } from '@/db';
 import { orderItems, orders, paymentAttempts } from '@/db/schema';
 import { logError, logWarn } from '@/lib/logging';
 import {
+  MONO_CREATE_INVOICE_FAILED,
+  monoLogWarn,
+} from '@/lib/logging/monobank';
+import {
   cancelMonobankInvoice,
   createMonobankInvoice,
   MONO_CURRENCY,
@@ -616,6 +620,15 @@ async function createMonoAttemptAndInvoiceImpl(
       typeof (error as { code?: unknown }).code === 'string'
         ? String((error as { code?: unknown }).code)
         : 'PSP_UNAVAILABLE';
+
+    if (process.env.NODE_ENV !== 'test') {
+      monoLogWarn(MONO_CREATE_INVOICE_FAILED, {
+        orderId: args.orderId,
+        attemptId: attempt.id,
+        requestId: args.requestId,
+        errorCode,
+      });
+    }
 
     logWarn('monobank_invoice_create_failed', {
       orderId: args.orderId,
