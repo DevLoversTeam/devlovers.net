@@ -21,6 +21,7 @@ interface ParticleState {
 }
 
 const TWO_PI = Math.PI * 2;
+const STARTUP_WARMUP_FRAMES = 100;
 
 export function Loader({ className, size = 240 }: LoaderProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -125,6 +126,12 @@ export function Loader({ className, size = 240 }: LoaderProps) {
       draw();
       tick += 1;
     };
+
+    for (let i = 0; i < STARTUP_WARMUP_FRAMES; i += 1) {
+      step();
+      tick += 1;
+    }
+    draw();
 
     animationRef.current = requestAnimationFrame(loop);
 

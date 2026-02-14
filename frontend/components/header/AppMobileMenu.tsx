@@ -243,7 +243,9 @@ export function AppMobileMenu({
               {variant === 'platform' && (
                 <>
                   {links
-                    .filter(link => link.href !== '/shop')
+                    .filter(
+                      link => link.href !== '/shop' && link.href !== '/blog'
+                    )
                     .map(link => (
                       <Link
                         key={link.href}
@@ -254,6 +256,15 @@ export function AppMobileMenu({
                         {'labelKey' in link ? t(link.labelKey) : link.label}
                       </Link>
                     ))}
+
+                  <HeaderButton
+                    href="/blog"
+                    icon={BookOpen}
+                    showArrow
+                    onLinkClick={handleHeaderButtonLinkClick('/blog')}
+                  >
+                    {t('blog')}
+                  </HeaderButton>
 
                   <HeaderButton
                     href="/shop"

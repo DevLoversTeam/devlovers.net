@@ -5,10 +5,10 @@ import { getTranslations } from 'next-intl/server';
 
 import { QuizContainer } from '@/components/quiz/QuizContainer';
 import { categoryTabStyles } from '@/data/categoryStyles';
-import { cn } from '@/lib/utils';
 import { stripCorrectAnswers } from '@/db/queries/quiz';
 import { getQuizBySlug, getQuizQuestionsRandomized } from '@/db/queries/quiz';
 import { getCurrentUser } from '@/lib/auth';
+import { cn } from '@/lib/utils';
 
 type MetadataProps = { params: Promise<{ locale: string; slug: string }> };
 
@@ -52,9 +52,10 @@ export default async function QuizPage({
     notFound();
   }
 
-  const categoryStyle = quiz.categorySlug
-    ? categoryTabStyles[quiz.categorySlug as keyof typeof categoryTabStyles]
-    : null;
+  const categoryStyle =
+    quiz.categorySlug && quiz.categorySlug in categoryTabStyles
+      ? categoryTabStyles[quiz.categorySlug as keyof typeof categoryTabStyles]
+      : null;
 
   const parsedSeed = seedParam ? Number.parseInt(seedParam, 10) : Number.NaN;
   const seed = Number.isFinite(parsedSeed)

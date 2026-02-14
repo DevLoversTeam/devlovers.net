@@ -4,8 +4,8 @@ import { cache } from 'react';
 
 import { getOrCreateQuestionsCache } from '@/lib/quiz/quiz-answers-redis';
 import type {
-  AttemptReview,
   AttemptQuestionDetail,
+  AttemptReview,
   QuizQuestionWithAnswers,
   UserLastAttempt,
 } from '@/types/quiz';
@@ -22,14 +22,7 @@ import {
   quizTranslations,
   quizzes,
 } from '../schema/quiz';
-export type {
-  AttemptReview,
-  AttemptQuestionDetail,
-  QuizAnswer,
-  QuizQuestion,
-  QuizQuestionWithAnswers,
-  UserLastAttempt,
-} from '@/types/quiz';
+export type { QuizAnswer, QuizQuestion, QuizQuestionWithAnswers } from '@/types/quiz';
 
 export interface Quiz {
   id: string;
@@ -61,23 +54,25 @@ export interface QuizQuestionClient {
 
 const attemptReviewCache = new Map<string, AttemptReview>();
 
-function getAttemptReviewCacheKey(attemptId: string, locale: string) {
-  return `${attemptId}:${locale}`;
+function getAttemptReviewCacheKey(attemptId: string, userId: string, locale: string) {
+  return `${attemptId}:${userId}:${locale}`;
 }
 
 async function getCachedAttemptReview(
   attemptId: string,
+  userId: string,
   locale: string
 ): Promise<AttemptReview | null> {
-  return attemptReviewCache.get(getAttemptReviewCacheKey(attemptId, locale)) ?? null;
+  return attemptReviewCache.get(getAttemptReviewCacheKey(attemptId, userId, locale)) ?? null;
 }
 
 async function cacheAttemptReview(
   attemptId: string,
+  userId: string,
   locale: string,
   review: AttemptReview
 ): Promise<void> {
-  attemptReviewCache.set(getAttemptReviewCacheKey(attemptId, locale), review);
+  attemptReviewCache.set(getAttemptReviewCacheKey(attemptId, userId, locale), review);
 }
 
 export function stripCorrectAnswers(
@@ -467,7 +462,7 @@ export async function getUserLastAttemptPerQuiz(
       qa.score,
       qa.total_questions AS "totalQuestions",
       qa.percentage,
-      qa.points_earned AS "pointsEarned",
+      COALESCE(pt_sum.total, 0)::int AS "pointsEarned",
       qa.integrity_score AS "integrityScore",
       qa.completed_at AS "completedAt"
     FROM quiz_attempts qa
@@ -475,6 +470,12 @@ export async function getUserLastAttemptPerQuiz(
     LEFT JOIN quiz_translations qt ON qt.quiz_id = q.id AND qt.locale = ${locale}
     LEFT JOIN categories c ON c.id = q.category_id
     LEFT JOIN category_translations ct ON ct.category_id = c.id AND ct.locale = ${locale}
+    LEFT JOIN (
+      SELECT (metadata->>'quizId')::uuid AS quiz_id, SUM(points) AS total
+      FROM point_transactions
+      WHERE user_id = ${userId} AND source = 'quiz'
+      GROUP BY (metadata->>'quizId')::uuid
+    ) pt_sum ON pt_sum.quiz_id = qa.quiz_id
     WHERE qa.user_id = ${userId}
     ORDER BY qa.quiz_id, qa.completed_at DESC
   `);
@@ -491,7 +492,7 @@ export async function getAttemptReviewDetails(
   userId: string,
   locale: string = 'uk'
 ): Promise<AttemptReview | null> {
-  const cached = await getCachedAttemptReview(attemptId, locale);
+  const cached = await getCachedAttemptReview(attemptId, userId, locale);
   if (cached) return cached;
 
   const attemptRow = await db
@@ -552,7 +553,7 @@ export async function getAttemptReviewDetails(
       completedAt: attempt.completedAt,
       incorrectQuestions: [],
     };
-    await cacheAttemptReview(attemptId, locale, review);
+    await cacheAttemptReview(attemptId, userId, locale, review);
     return review;
   }
 
@@ -635,6 +636,6 @@ export async function getAttemptReviewDetails(
     incorrectQuestions,
   };
 
-  await cacheAttemptReview(attemptId, locale, review);
+  await cacheAttemptReview(attemptId, userId, locale, review);
   return review;
 }

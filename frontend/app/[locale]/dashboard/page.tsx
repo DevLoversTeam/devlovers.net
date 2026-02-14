@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server';
 import { PostAuthQuizSync } from '@/components/auth/PostAuthQuizSync';
 import { ExplainedTermsCard } from '@/components/dashboard/ExplainedTermsCard';
 import { ProfileCard } from '@/components/dashboard/ProfileCard';
+import { QuizResultsSection } from '@/components/dashboard/QuizResultsSection';
 import { QuizSavedBanner } from '@/components/dashboard/QuizSavedBanner';
 import { StatsCard } from '@/components/dashboard/StatsCard';
 import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
@@ -64,8 +65,10 @@ export default async function DashboardPage({
       : null;
 
   const userForDisplay = {
+    id: user.id,
     name: user.name ?? null,
     email: user.email ?? '',
+    image: user.image ?? null,
     role: user.role ?? null,
     points: user.points,
     createdAt: user.createdAt ?? null,
@@ -113,6 +116,9 @@ export default async function DashboardPage({
           </div>
           <div className="mt-8">
             <ExplainedTermsCard />
+          </div>
+          <div className="mt-8">
+            <QuizResultsSection attempts={lastAttempts} locale={locale} />
           </div>
         </main>
       </DynamicGridBackground>

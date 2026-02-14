@@ -8,8 +8,8 @@ import { type Locale, locales } from '@/i18n/config';
 import { Link } from '@/i18n/routing';
 
 const localeLabels: Record<Locale, string> = {
-  uk: 'UA',
   en: 'EN',
+  uk: 'UA',
   pl: 'PL',
 };
 
@@ -69,7 +69,7 @@ export default function LanguageSwitcher() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 z-[70] mt-2 w-20 rounded-md border border-gray-200 bg-white py-2 shadow-lg dark:border-neutral-800 dark:bg-neutral-900">
+        <div className="absolute right-0 z-70 mt-2 w-20 rounded-md border border-gray-200 bg-white py-2 shadow-lg dark:border-neutral-800 dark:bg-neutral-900">
           {locales.map(locale => (
             <Link
               key={locale}

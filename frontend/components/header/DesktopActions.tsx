@@ -27,6 +27,10 @@ export function DesktopActions({
 
   return (
     <div className="hidden items-center gap-2 lg:flex">
+      {isBlog && <BlogHeaderSearch />}
+
+      <LanguageSwitcher />
+
       {userExists && (
         <HeaderButton
           variant="icon"
@@ -44,10 +48,6 @@ export function DesktopActions({
           label={tAria('shopAdmin')}
         />
       )}
-
-      {isBlog && <BlogHeaderSearch />}
-
-      <LanguageSwitcher />
 
       {isShop && <CartButton />}
 

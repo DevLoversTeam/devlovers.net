@@ -302,6 +302,9 @@ export default function AccordionList({ items }: { items: QuestionEntry[] }) {
     x: number;
     y: number;
   } | null>(null);
+  const [buttonPlacement, setButtonPlacement] = useState<'above' | 'below'>(
+    'above'
+  );
   const [modalOpen, setModalOpen] = useState(false);
   const [cachedTerms, setCachedTerms] = useState<Set<string>>(
     () => new Set(getCachedTerms())
@@ -331,6 +334,7 @@ export default function AccordionList({ items }: { items: QuestionEntry[] }) {
     (text: string, position: { x: number; y: number }) => {
       setSelectedText(text);
       setButtonPosition(position);
+      setButtonPlacement(window.innerWidth < 640 ? 'below' : 'above');
     },
     []
   );
@@ -420,6 +424,7 @@ export default function AccordionList({ items }: { items: QuestionEntry[] }) {
           position={buttonPosition}
           onClick={handleExplainClick}
           onDismiss={handleButtonDismiss}
+          placement={buttonPlacement}
         />
       )}
 

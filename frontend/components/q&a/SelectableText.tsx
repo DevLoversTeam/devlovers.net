@@ -49,10 +49,11 @@ export default function SelectableText({
         }
 
         const rect = range.getBoundingClientRect();
+        const isMobile = window.innerWidth < 640;
 
         const position = {
           x: rect.left + rect.width / 2,
-          y: rect.top,
+          y: isMobile ? rect.bottom : rect.top,
         };
 
         onTextSelectRef.current(selectedText, position);

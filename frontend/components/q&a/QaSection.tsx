@@ -24,9 +24,12 @@ export default function TabsSection() {
     currentPage,
     handleCategoryChange,
     handlePageChange,
+    handlePageSizeChange,
     isLoading,
     items,
     localeKey,
+    pageSize,
+    pageSizeOptions,
     totalPages,
   } = useQaTabs();
   const animationKey = useMemo(
@@ -123,11 +126,14 @@ export default function TabsSection() {
         ))}
       </Tabs>
 
-      {!isLoading && totalPages > 1 && (
+      {!isLoading && items.length > 0 && (
         <Pagination
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={onPageChange}
+          pageSize={pageSize}
+          pageSizeOptions={pageSizeOptions}
+          onPageSizeChange={handlePageSizeChange}
           accentColor={
             categoryTabStyles[active as keyof typeof categoryTabStyles].accent
           }

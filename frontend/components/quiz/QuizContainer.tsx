@@ -1,4 +1,5 @@
 'use client';
+import { ViolationsCounter } from '@/components/quiz/ViolationsCounter';
 import { Ban, FileText, TriangleAlert, UserRound } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
@@ -122,6 +123,9 @@ function quizReducer(state: QuizState, action: QuizAction): QuizState {
         startedAt: action.payload.startedAt
           ? new Date(action.payload.startedAt)
           : null,
+        pointsAwarded: action.payload.pointsAwarded ?? null,
+        attemptId: action.payload.attemptId ?? null,
+        isIncomplete: action.payload.isIncomplete ?? false,
       };
 
     case 'RESTART':
@@ -319,9 +323,6 @@ export function QuizContainer({
 
   const handleSubmit = () => {
     const isIncomplete = state.answers.length < totalQuestions;
-    if (!isGuest) {
-      clearQuizSession(quizId);
-    }
     const correctAnswers = state.answers.filter(a => a.isCorrect).length;
     const percentage = (correctAnswers / totalQuestions) * 100;
     const timeSpentSeconds = state.startedAt
@@ -402,6 +403,7 @@ export function QuizContainer({
   };
 
   const handleBackToTopicsClick = () => {
+    clearQuizSession(quizId);
     if (onBackToTopics) {
       onBackToTopics();
     } else {
@@ -543,7 +545,8 @@ export function QuizContainer({
 
   return (
     <div className="no-select space-y-8">
-      <div className="flex justify-end">
+      <div className="sticky top-0 z-10 flex items-center justify-between bg-white/80 py-2 backdrop-blur-sm dark:bg-gray-950/80">
+        <ViolationsCounter count={violationsCount} />
         <Button
           variant="outline"
           size="sm"

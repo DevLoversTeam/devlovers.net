@@ -1,11 +1,10 @@
-import { desc, eq, sql } from 'drizzle-orm';
+import { desc, sql } from 'drizzle-orm';
 import { unstable_cache } from 'next/cache';
 import { cache } from 'react';
 
 import { User } from '@/components/leaderboard/types';
 
 import { db } from '../index';
-import { pointTransactions } from '../schema/points';
 import { users } from '../schema/users';
 
 const getLeaderboardDataCached = unstable_cache(
@@ -15,12 +14,20 @@ const getLeaderboardDataCached = unstable_cache(
         id: users.id,
         username: users.name,
         avatar: users.image,
-        points: sql<number>`COALESCE(SUM(${pointTransactions.points}), 0)`,
+        points: sql<number>`COALESCE(pt_valid.total, 0)`,
       })
       .from(users)
-      .leftJoin(pointTransactions, eq(pointTransactions.userId, users.id))
-      .groupBy(users.id, users.name, users.image)
-      .orderBy(desc(sql`COALESCE(SUM(${pointTransactions.points}), 0)`))
+      .leftJoin(
+        sql`(
+          SELECT pt.user_id, SUM(pt.points)::int AS total
+          FROM point_transactions pt
+          WHERE pt.source = 'quiz'
+            AND (pt.source_id IS NULL OR pt.source_id IN (SELECT id FROM quiz_attempts))
+          GROUP BY pt.user_id
+        ) pt_valid`,
+        sql`pt_valid.user_id = ${users.id}`
+      )
+      .orderBy(desc(sql`COALESCE(pt_valid.total, 0)`))
       .limit(50);
 
     return dbUsers.map((u, index) => {

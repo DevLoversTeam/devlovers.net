@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
 
 import { UnifiedHeader } from '@/components/header/UnifiedHeader';
+import { locales } from '@/i18n/config';
 
 function isShopPath(pathname: string): boolean {
   const segments = pathname.split('/').filter(Boolean);
@@ -24,7 +25,8 @@ function isHomePath(pathname: string): boolean {
   const segments = pathname.split('/').filter(Boolean);
   return (
     segments.length === 0 ||
-    (segments.length === 1 && ['en', 'pl', 'uk'].includes(segments[0]))
+    (segments.length === 1 &&
+      locales.includes(segments[0] as (typeof locales)[number]))
   );
 }
 
@@ -41,6 +43,11 @@ function isQuizzesPath(pathname: string): boolean {
 function isDashboardPath(pathname: string): boolean {
   const segments = pathname.split('/').filter(Boolean);
   return segments[0] === 'dashboard' || segments[1] === 'dashboard';
+}
+
+function isLeaderboardPath(pathname: string): boolean {
+  const segments = pathname.split('/').filter(Boolean);
+  return segments[0] === 'leaderboard' || segments[1] === 'leaderboard';
 }
 
 type MainSwitcherProps = {
@@ -79,7 +86,7 @@ export function MainSwitcher({
   return (
     <main
       className={
-        isQa || isHome || isQuizzesPath(pathname) || isDashboardPath(pathname)
+        isQa || isHome || isQuizzesPath(pathname) || isDashboardPath(pathname) || isLeaderboardPath(pathname)
           ? 'mx-auto'
           : 'mx-auto min-h-[80vh] px-6'
       }

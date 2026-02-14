@@ -45,10 +45,11 @@
   },
   "homepage": {
     "title": "DevLovers",
-    "subtitle": "Platforma do przygotowania do rozmów kwalifikacyjnych",
-    "description": "Przygotuj się do rozmów technicznych dzięki pytaniom, quizom, rankingom i wyjaśnieniom wspieranym przez AI.",
+    "subtitle": "Platforma do Przygotowania do Rozmów Kwalifikacyjnych",
+    "welcomeDescription": "Przygotuj się do rozmów technicznych z Q&A, quizami, rankingiem i wyjaśnieniami AI.",
+    "description": "Zbuduj prawdziwą pewność w frontend, backend i full-stack development dzięki interaktywnym pytaniom rekrutacyjnym, quizom i praktycznym wyjaśnieniom",
     "ogImageAlt": "DevLovers — platforma do przygotowania do rozmów technicznych",
-    "cta": "Rozpocznij",
+    "cta": "Rozpocznij naukę",
     "ctaVariants": {
       "1": "Bez presji. Po prostu zacznij",
       "2": "To może być ciekawsze, niż myślisz",
@@ -58,6 +59,61 @@
       "6": "Klik był — to się liczy",
       "7": "Postęp ważniejszy niż perfekcja",
       "8": "Zacząć to też funkcja"
+    },
+    "featuresHeading": {
+      "aceYourNext": "Zdaj kolejną",
+      "technicalInterview": "rozmowę perfekcyjnie"
+    },
+    "featureBadges": {
+      "smartQA": "Inteligentne Q&A",
+      "adaptiveQuizzes": "Adaptacyjne quizy",
+      "performance": "Wydajność"
+    },
+    "featuresCta": {
+      "browseQuestions": "Przeglądaj wszystkie pytania",
+      "takeQuiz": "Rozwiąż quiz"
+    },
+    "flipCard": {
+      "ui": {
+        "tapToReveal": "Dotknij, aby odkryć",
+        "clickToReveal": "Kliknij, aby odkryć",
+        "tapAgain": "Dotknij ponownie, aby zobaczyć pytanie",
+        "clickAgain": "Kliknij ponownie, aby zobaczyć pytanie",
+        "answer": "Odpowiedź",
+        "proTip": "Wskazówka"
+      },
+      "questions": {
+        "1": {
+          "question": "Kiedy faktycznie używać useMemo?",
+          "answer": "Nie optymalizuj przedwcześnie! Używaj tylko do <strong>kosztownych obliczeń</strong> lub przy przekazywaniu obiektów jako props do dzieci owiniętych w <strong>React.memo</strong>, aby zapobiec niepotrzebnym renderowaniom.",
+          "category": "React",
+          "tip": "Nadużywanie może zaszkodzić wydajności przez narzut porównywania zależności."
+        },
+        "2": {
+          "question": "Dlaczego \"Delegacja Zdarzeń\" jest lepsza niż bezpośrednie wiązanie?",
+          "answer": "Dołącza <strong>pojedynczy nasłuchiwacz</strong> do rodzica zamiast tysięcy do dzieci. Zużywa mniej pamięci i automatycznie obsługuje <strong>dynamicznie dodawane elementy</strong> poprzez bąbelkowanie zdarzeń.",
+          "category": "JavaScript",
+          "tip": "Idealne dla list, tabel i nieskończonych przewijań."
+        },
+        "3": {
+          "question": "Jak Event Loop w Node.js obsługuje I/O?",
+          "answer": "Node.js zleca operacje I/O jądru systemu. Gdy operacja się kończy, jądro powiadamia Node.js, a callback trafia do <strong>fazy Poll</strong> w celu wykonania.",
+          "category": "Node.js",
+          "tip": "Dlatego Node.js jest \"nieblokujący\" mimo bycia jednowątkowym."
+        },
+        "4": {
+          "question": "Co wybrać: SSR, SSG czy ISR?",
+          "answer": "Używaj <strong>SSG</strong> dla statycznych blogów (najszybsze). Używaj <strong>SSR</strong> dla spersonalizowanych kokpitów (najświeższe). Używaj <strong>ISR</strong> do aktualizacji statycznych stron bez pełnej przebudowy.",
+          "category": "Next.js",
+          "tip": "Zacznij od SSG/ISR domyślnie dla lepszej wydajności."
+        },
+        "5": {
+          "question": "Po co używać Generics w TypeScript?",
+          "answer": "Pozwalają pisać <strong>kod wielokrotnego użytku</strong>, który działa z każdym typem, zachowując pełne bezpieczeństwo typów. To jak argumenty funkcji, ale dla <strong>typów</strong>.",
+          "category": "TypeScript",
+          "tip": "Powszechnie używane w wrapperach API, hookach i funkcjach użytkowych."
+        }
+      }
     }
   },
   "qa": {
@@ -79,7 +135,9 @@
       "next": "Następna",
       "previousPage": "Poprzednia strona",
       "nextPage": "Następna strona",
-      "page": "Strona {page}"
+      "page": "Strona {page}",
+      "itemsPerPage": "Na stronę",
+      "itemsPerPageAria": "Liczba pytań na stronie"
     }
   },
   "quiz": {
@@ -128,7 +186,7 @@
       "incorrect": "Niepoprawnie",
       "explanationLabel": "Wyjaśnienie:",
       "recommendation": {
-        "title": "Rekomendacja",
+        "title": "Wskazówka",
         "description": "Zalecamy przejrzenie tego tematu po zakończeniu quizu"
       },
       "loading": "Ładowanie...",
@@ -154,17 +212,17 @@
         "title": "Wszystkie Odpowiedzi Niepoprawne",
         "message": "Zalecamy dokładne przestudiowanie materiału przed kolejną próbą"
       },
-      "needPractice": {
+      "study": {
         "title": "Potrzebujesz Więcej Praktyki",
-        "message": "Zalecamy poświęcenie więcej czasu na teorię i praktykę"
+        "message": "Skup się na teorii i ćwicz dalej — dasz radę"
       },
-      "goodJob": {
-        "title": "Dobra Robota!",
-        "message": "Przejrzyj trudne tematy i spróbuj ponownie"
+      "review": {
+        "title": "Prawie Idealnie!",
+        "message": "Dobrze znasz materiał. Powtórz trudne tematy i celuj w perfekcyjny wynik"
       },
-      "excellent": {
-        "title": "Doskonała Praca!",
-        "message": "Świetnie opanowałeś materiał"
+      "mastered": {
+        "title": "Perfekcyjny Wynik!",
+        "message": "W pełni opanowałeś ten temat"
       },
       "incomplete": {
         "title": "Czas minął",
@@ -183,7 +241,9 @@
     },
     "card": {
       "uncategorized": "Nieskategoryzowane",
-      "completed": "✓ Ukończono",
+      "mastered": "Opanowane",
+      "needsReview": "Powtórka",
+      "study": "Nauka",
       "questions": "pytań",
       "min": "min",
       "best": "Najlepszy:",
@@ -206,7 +266,8 @@
       "copy": "Kopiowanie jest zabronione podczas quizu",
       "paste": "Wklejanie jest zabronione podczas quizu",
       "contextMenu": "Menu kontekstowe jest zabronione podczas quizu",
-      "tabSwitch": "Wykryto przełączenie karty"
+      "tabSwitch": "Wykryto przełączenie karty",
+      "counter": "{count} {count, plural, one {naruszenie} few {naruszenia} other {naruszeń}}"
     }
   },
   "blog": {
@@ -609,6 +670,29 @@
         "yes": "Tak",
         "no": "Nie"
       }
+    },
+    "productDescriptions": {
+      "t-shirt-curve": "Biały T-shirt Code-Heart\nCzysty biały T-shirt z wyrazistym czarnym symbolem DevLovers code-heart.\nKontrastowy nadruk nadaje nowoczesny, ostry charakter i świetnie łączy się z jeansami, joggerami oraz warstwowymi stylizacjami streetwear.\nProsty, minimalistyczny i łatwy do noszenia na co dzień.",
+      "duck": "Kaczka-team lead w trybie „tylko jeden PR przed snem”: bluza z kapturem, headset i laptop oklejony stickerami tak gęsto, że mógłby mieć własny DevOps.\nNa kubku widnieje napis „Team Lead”, obok siedzi pingwin-stażysta, a sama kaczka ma minę osoby, która właśnie powiedziała:\n„To nie bug, to feature… ale i tak domknijmy to w tym sprincie”.",
+      "hoodie-logo": "Bluza DevLovers Minimal Logo (grafit)\nCzysta, codzienna bluza z subtelnym znakiem DevLovers na piersi w stylu haftu. Zaprojektowana dla osób, które lubią stonowany branding i nowoczesną sylwetkę — grafitowy kolor łatwo dopasować do casualowej garderoby.\nMiękka, praktyczna i wygodna: klasyczny kaptur ze sznurkami oraz kieszeń kangurka. Idealna na sesje pracy, chłodniejsze wieczory i codzienne warstwowanie.",
+      "hoodie-graph": "Bluza DevLovers Blueprint Graph (off-white)\nCzysta bluza na co dzień z mocnym nadrukiem na plecach: motyw blueprint-heart DevLovers w kodowych klamrach. Minimalistyczna baza off-white łatwo łączy się z jeansami, joggerami i streetwearowymi warstwami.\nStworzona na długie dni pracy i spokojne weekendy: luźny krój oraz wygoda bez zbędnej objętości. Jeśli lubisz subtelny przód i wyrazisty nadruk z tyłu — to model dla Ciebie.",
+      "hoodie-back": "Bluza DevLovers Binary Heart (czarna)\nCzarna bluza z mocnym nadrukiem na plecach zbudowanym z kodu binarnego i symbolu DevLovers „serce w klamrach”. Z przodu minimalistyczna, z tyłu wyrazista — dla osób, które cenią subtelny styl z charakterem.\nLuźny krój unisex\nMiękki komfort na co dzień\nKaptur ze sznurkami\nKieszeń kangurka\nDuży nadruk na plecach (binary + symbol DevLovers)",
+      "hoodie-sketch": "Bluza DevLovers Blueprint Sketch (charcoal)\nCzysta, techniczna bluza z charakterystycznym motywem blueprint-heart DevLovers na froncie. Charcoalowa baza i cienka biała linia tworzą nowoczesny, minimalistyczny look, który dobrze działa solo i warstwowo.\nNa co dzień: luźny krój unisex, regulowany kaptur ze sznurkami i przednia kieszeń kangurka.",
+      "t-shirt-pink": "Różowy T-shirt DevLovers — nadruk {♥}\nMiękki różowy T-shirt z charakterystycznym nadrukiem {♥} na przodzie w wyrazistym czerwono-cyjanowym offsecie.\nCzysty, lekko playful i łatwy do łączenia z codziennymi stylizacjami.\nŚwietny na casual, meetupy i jako prezent dla ulubionego developera.",
+      "hoodie-black": "Czarna bluza DevLovers — nadruk {♥}\nCzysta czarna bluza typu pullover z charakterystycznym nadrukiem {♥} na froncie i mocnym czerwono-cyjanowym efektem offsetu.\nTo wyrazisty element codziennych stylizacji, łączący minimalizm z tożsamością developera.\nIdealna na casual, coding sessions i chłodniejsze dni.",
+      "stickers-set": "Zestaw naklejek DevLovers\nPodkręć swój setup mocnym zestawem naklejek w klimacie dev.\nW paczce znajdziesz 9 unikalnych wariantów logo {❤️} — od czystego monochromu po style glitch — na jednym wygodnym arkuszu. Świetny wybór na laptop, notes, biurko i zestawy prezentowe.\n9 unikalnych wzorów.\nMieszane style wizualne (classic, dark, glitch, textured).\nPrecyzyjnie wycięte kształty na jednej karcie.\nDla developerów, studentów i fanów tech.",
+      "tee-graph": "T-shirt DevLovers Math Graph (charcoal)\nMinimalistyczny charcoalowy T-shirt dla osób, które lubią kod, matematykę i czysty design. Nadruk łączy wykres krzywej, parametryczną geometrię serca i zapis w stylu wzorów z subtelnymi kodowymi klamrami — technicznie, nerdowo i stylowo bez przesady.",
+      "t-shirt-stereo": "Granatowy T-shirt Glitch Code-Heart\nGłęboki granatowy T-shirt z żywym nadrukiem DevLovers code-heart w stylu glitch (cyjan + czerwony).\nEfekt przesunięcia kolorów dodaje dynamiki i energii, zachowując czysty, centralny układ.\nDobry wybór, jeśli chcesz mocniejszy akcent wizualny bez utraty developerskiej estetyki.",
+      "hoodie-blue": "Bluza DevLovers Glitch Heart (sky blue)\nŚwieża błękitna bluza z wyrazistą grafiką DevLovers „serce w klamrach” w glitchowym offsecie kolorów. Czysta sylwetka i mocny nadruk na froncie — na co dzień z tech-street klimatem.\nLuźny krój unisex.\nMiękka, przyjemna tkanina.\nRegulowany kaptur ze sznurkami.\nPrzednia kieszeń kangurka.\nWyrazista grafika z przodu (glitch-style DevLovers heart).",
+      "bottle-bl": "Smukła beżowa butelka z wyrazistą czarną grafiką „serce w klamrach” i neonowymi akcentami cyan/blue.\nTa wersja ma mocniejszy kontrast i bardziej edgy, technologiczny charakter.\nIdealna dla osób, które chcą praktycznego nawodnienia z wyraźną estetyką developera.",
+      "t-shirt-flow": "Kremowy T-shirt DevLovers z nadrukiem 3D {♥}\nCzysty kremowy T-shirt typu crew neck z mocnym czarnym nadrukiem 3D {♥} DevLovers na klatce.\nMiękki, minimalistyczny i łatwy do łączenia — zaprojektowany do codziennego noszenia w nowoczesnym tech stylu.",
+      "t-shirt-flow-inf": "Czarny T-shirt DevLovers z metalicznym nadrukiem 3D {♥}\nMinimalistyczny czarny T-shirt typu crew neck z metalicznym emblematem 3D {♥} DevLovers na klatce.\nCzysty, nowoczesny look i mocny kontrast — na co dzień i na wydarzenia tech.",
+      "note": "Brązowy notes z elegancką okładką w stylu skóry, tłoczoną symbolem {♥}.\nMa czysty, premium wygląd i świetnie sprawdza się do codziennych notatek, planowania oraz pomysłów.\nŚwietny dodatek na biurko albo przemyślany prezent dla developera.",
+      "sticker-md": "Minimalistyczna biała naklejka w stylu code z napisem markdown # <3 DevLovers {♥}.\nWysoki kontrast czarnego nadruku, cienka ramka i czysty layout — idealna na laptop, notes lub miejsce pracy.",
+      "t-shirt-volume-heart": "T-shirt DevLovers Mesh Orb (fioletowy)\nWyrazisty fioletowy T-shirt z techniczno-artystyczną grafiką na froncie: pleciona sfera mesh w kodowych klamrach. Łączy abstrakcyjną teksturę 3D z estetyką developera — czysto, ale z charakterem.\nKrój unisex regular fit.\nDuży nadruk statement na froncie.\nLekka sylwetka na co dzień.\nŁatwy do stylizacji z denimem, joggerami i warstwowym streetwearem.\nŚwietny wybór dla fanów dev/design, którzy lubią minimalny branding i mocny detal wizualny.",
+      "bootle-devl": "Smukła butelka DevLovers ze stali nierdzewnej z czystym srebrnym wykończeniem, subtelnym nadrukiem code all-over i wyrazistym pionowym logo.\nMinimalistyczna zakrętka sprawia, że to stylowy towarzysz na co dzień: do pracy, nauki i nawodnienia w drodze.",
+      "t-shirt-black-illusion": "Czarny tonalny T-shirt Code-Heart\nDyskretny czarny T-shirt z subtelnym nadrukiem DevLovers code-heart czarny na czarnym.\nTa wersja jest stonowana i elegancka — dla osób, które preferują low-key design z technicznym charakterem.\nUniwersalna baza do monochromatycznych i minimalistycznych stylizacji.",
+      "hoodie-bright": "Żółta bluza DevLovers z nadrukiem 3D {♥}\nWyrazista żółta bluza z mocnym, trójwymiarowym nadrukiem {♥} w stylu DevLovers.\nKlasyczny krój: kaptur, długie rękawy, kieszeń kangurka oraz ściągacze przy mankietach i dole.\nKontrastowy czarny nadruk na intensywnie żółtej bazie tworzy mocny codzienny statement."
     }
   },
   "about": {
@@ -957,6 +1041,37 @@
       "noPoints": "Nie przyznano punktów (wynik nie uległ poprawie)",
       "viewLeaderboard": "Zobacz ranking",
       "tryAgain": "Spróbuj ponownie"
+    },
+    "quizResults": {
+      "title": "Wyniki quizów",
+      "noAttempts": "Nie przeszedłeś jeszcze żadnego quizu",
+      "startQuiz": "Spróbuj",
+      "score": "Wynik",
+      "integrity": "Czystość",
+      "points": "Punkty",
+      "scoreHint": "Liczba poprawnych odpowiedzi z ogólnej liczby",
+      "integrityHint": "Wskaźnik uczciwego przejścia (bez naruszeń)",
+      "pointsHint": "Punkty przyznane za poprawę wyniku",
+      "timeAgo": "{value} temu",
+      "mastered": "Opanowane",
+      "needsReview": "Powtórka",
+      "study": "Nauka",
+      "date": "Data",
+      "status": "Status"
+    },
+    "quizReview": {
+      "title": "Analiza błędów",
+      "subtitle": "{incorrect} z {total} — niepoprawnie",
+      "allCorrect": "Wszystkie odpowiedzi poprawne!",
+      "allCorrectHint": "Odpowiedziałeś poprawnie na wszystkie pytania",
+      "yourAnswer": "Twoja odpowiedź",
+      "correctAnswer": "Poprawna odpowiedź",
+      "explanation": "Wyjaśnienie",
+      "retakeQuiz": "Rozwiąż ponownie",
+      "backToDashboard": "Wróć do panelu",
+      "notFound": "Nie znaleziono próby",
+      "expandAll": "Rozwiń wszystko",
+      "collapseAll": "Zwiń wszystko"
     },
     "explainedTerms": {
       "title": "Nauczone Terminy",

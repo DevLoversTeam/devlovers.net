@@ -46,7 +46,8 @@
   "homepage": {
     "title": "DevLovers — Technical Interview Platform",
     "subtitle": "Platform for Technical Interview Preparation",
-    "description": "Prepare for technical interviews with Q&A, quizzes, leaderboards, and AI-powered explanations.",
+    "welcomeDescription": "Prepare for technical interviews with Q&A, quizzes, leaderboards, and AI-powered explanations.",
+    "description": "Build real confidence in frontend, backend, and full-stack development through interactive interview questions, quizzes, and practical explanations",
     "ogImageAlt": "DevLovers — Technical Interview Platform",
     "cta": "Take the first step",
     "ctaVariants": {
@@ -58,6 +59,61 @@
       "6": "Brave move, by the way",
       "7": "Okay, now it's happening",
       "8": "Hello, new commit"
+    },
+    "featuresHeading": {
+      "aceYourNext": "Ace Your Next",
+      "technicalInterview": "Technical Interview"
+    },
+    "featureBadges": {
+      "smartQA": "Smart Q&A",
+      "adaptiveQuizzes": "Adaptive Quizzes",
+      "performance": "Performance"
+    },
+    "featuresCta": {
+      "browseQuestions": "Browse All Questions",
+      "takeQuiz": "Take a Quiz"
+    },
+    "flipCard": {
+      "ui": {
+        "tapToReveal": "Tap to reveal",
+        "clickToReveal": "Click to reveal",
+        "tapAgain": "Tap again to see question",
+        "clickAgain": "Click again to see question",
+        "answer": "Answer",
+        "proTip": "Pro Tip"
+      },
+      "questions": {
+        "1": {
+          "question": "When should you actually use useMemo?",
+          "answer": "Don't prematurely optimize! Use it only for <strong>expensive calculations</strong> or when passing objects as props to children wrapped in <strong>React.memo</strong> to prevent unnecessary re-renders.",
+          "category": "React",
+          "tip": "Overusing it can hurt performance due to dependency comparison overhead."
+        },
+        "2": {
+          "question": "Why is \"Event Delegation\" better than direct binding?",
+          "answer": "It attaches a <strong>single listener</strong> to a parent instead of thousands on children. This uses less memory and automatically handles <strong>dynamically added elements</strong> via event bubbling.",
+          "category": "JavaScript",
+          "tip": "Perfect for lists, tables, and infinite scroll feeds."
+        },
+        "3": {
+          "question": "How does the Node.js Event Loop handle I/O?",
+          "answer": "Node.js offloads I/O operations to the system kernel. When an operation completes, the kernel notifies Node.js, and the callback is added to the <strong>Poll phase</strong> to be executed.",
+          "category": "Node.js",
+          "tip": "This is why Node.js is \"non-blocking\" despite being single-threaded."
+        },
+        "4": {
+          "question": "Should you use SSR, SSG, or ISR?",
+          "answer": "Use <strong>SSG</strong> for static blogs (fastest). Use <strong>SSR</strong> for personalized dashboards (freshest). Use <strong>ISR</strong> to update static pages incrementally without a full rebuild.",
+          "category": "Next.js",
+          "tip": "Start with SSG/ISR by default for better performance."
+        },
+        "5": {
+          "question": "Why use Generics in TypeScript?",
+          "answer": "They let you write <strong>reusable code</strong> that works with any type while keeping full type safety. It's like function arguments, but for <strong>types</strong>.",
+          "category": "TypeScript",
+          "tip": "Commonly used in API wrappers, hooks, and utility functions."
+        }
+      }
     }
   },
   "qa": {
@@ -79,7 +135,9 @@
       "next": "Next",
       "previousPage": "Previous page",
       "nextPage": "Next page",
-      "page": "Page {page}"
+      "page": "Page {page}",
+      "itemsPerPage": "Per page",
+      "itemsPerPageAria": "Questions per page"
     }
   },
   "quiz": {
@@ -128,7 +186,7 @@
       "incorrect": "Incorrect",
       "explanationLabel": "Explanation:",
       "recommendation": {
-        "title": "Recommendation",
+        "title": "Tip",
         "description": "We recommend reviewing this topic after completing the quiz"
       },
       "loading": "Loading...",
@@ -154,17 +212,17 @@
         "title": "All Answers Incorrect",
         "message": "We recommend thoroughly studying the material before your next attempt"
       },
-      "needPractice": {
+      "study": {
         "title": "Need More Practice",
-        "message": "We recommend spending more time on theory and practice"
+        "message": "Focus on the theory and keep practicing — you'll get there"
       },
-      "goodJob": {
-        "title": "Good Job!",
-        "message": "Review the difficult topics and try again"
+      "review": {
+        "title": "Almost There!",
+        "message": "You know the material well. Review the tricky parts and aim for a perfect score"
       },
-      "excellent": {
-        "title": "Excellent Work!",
-        "message": "You have mastered the material well"
+      "mastered": {
+        "title": "Perfect Score!",
+        "message": "You have fully mastered this topic"
       },
       "incomplete": {
         "title": "Time's up",
@@ -183,7 +241,9 @@
     },
     "card": {
       "uncategorized": "Uncategorized",
-      "completed": "✓ Completed",
+      "mastered": "Mastered",
+      "needsReview": "Review",
+      "study": "Study",
       "questions": "questions",
       "min": "min",
       "best": "Best:",
@@ -206,7 +266,8 @@
       "copy": "Copying is not allowed during the quiz",
       "paste": "Pasting is not allowed during the quiz",
       "contextMenu": "Context menu is not allowed during the quiz",
-      "tabSwitch": "Tab switch detected"
+      "tabSwitch": "Tab switch detected",
+      "counter": "{count} {count, plural, one {violation} other {violations}}"
     }
   },
   "blog": {
@@ -609,6 +670,29 @@
         "yes": "Yes",
         "no": "No"
       }
+    },
+    "productDescriptions": {
+      "t-shirt-curve": "White Code-Heart Tee\nA clean white T-shirt featuring the DevLovers code-heart symbol in bold black.\nThe high-contrast graphic gives it a sharp, modern look that works with jeans, joggers, or layered streetwear.\nSimple, minimal, and easy to style for everyday wear.",
+      "duck": "Team-lead duck in “just one PR before sleep” mode: hoodie on, headset on, and a laptop covered in stickers so densely it could host its own DevOps.\nThe coffee cup says “Team Lead”, a penguin intern sits nearby, and the duck has the exact look of someone who just said:\n“It’s not a bug, it’s a feature… but let’s still close it in this sprint.”",
+      "hoodie-logo": "DevLovers Minimal Logo Hoodie (Graphite)\nA clean, everyday hoodie with a subtle embroidered-style DevLovers chest mark. Designed for people who prefer low-key branding and a modern silhouette, this graphite piece fits effortlessly into any casual wardrobe.\nSoft, practical, and easy to wear, it features a classic drawstring hood and kangaroo pocket—ideal for work sessions, cool evenings, and daily layering.",
+      "hoodie-graph": "DevLovers Blueprint Graph Hoodie (Off-White)\nA clean, everyday hoodie with a bold back graphic: the DevLovers blueprint-heart design framed by code-style braces. The minimalist off-white base keeps it easy to pair with jeans, joggers, or layered streetwear looks.\nBuilt for long workdays and weekend downtime, this hoodie gives a relaxed fit and a cozy feel without looking bulky. If you like subtle front styling and a statement back print, this is the one.",
+      "hoodie-back": "DevLovers Binary Heart Hoodie (Black)\nA clean black hoodie with a bold back print built from binary code and a DevLovers heart-in-braces symbol. Minimal from the front, statement from the back—made for developers who like subtle style with strong identity.\nUnisex relaxed fit\nSoft everyday comfort\nDrawstring hood\nKangaroo pocket\nLarge back graphic (binary + DevLovers symbol)",
+      "hoodie-sketch": "DevLovers Blueprint Sketch Hoodie (Charcoal)\nA clean, technical hoodie with the DevLovers signature blueprint-heart graphic on the front. The charcoal base and fine white linework give it a minimal, modern look that works on its own or layered.\nMade for everyday wear, this hoodie combines a relaxed unisex fit with classic details: adjustable drawstring hood and a front kangaroo pocket.",
+      "t-shirt-pink": "Pink DevLovers Tee — {♥} Graphic\nA soft pink T-shirt with the signature {♥} front print in a bold red/cyan offset style.\nClean, playful, and easy to pair with everyday outfits.\nGreat for casual wear, meetups, and gifting to your favorite developer.",
+      "hoodie-black": "Black DevLovers Hoodie — {♥} Graphic\nA clean black pullover hoodie featuring the signature {♥} front print with a bold red/cyan offset effect.\nIt’s a standout everyday piece that blends minimal style with developer identity.\nPerfect for casual wear, coding sessions, and cool-weather layering.",
+      "stickers-set": "DevLovers Sticker Pack\nUpgrade your setup with a bold set of dev-themed stickers.\nThis pack includes 9 unique {❤️} logo variations in clean monochrome and glitch-style designs, presented on one easy-to-use sticker sheet. A solid pick for laptops, notebooks, desk gear, and gift bundles.\n9 distinct designs.\nMixed visual styles (classic, dark, glitch, textured).\nClean-cut shapes on a single backing card.\nMade for developers, students, and tech fans.",
+      "tee-graph": "DevLovers Math Graph Tee (Charcoal)\nA minimalist charcoal T-shirt for people who love code, math, and clean design. The front print combines a plotted curve, parametric heart geometry, and formula-style notation with subtle code-brace details—technical, nerdy, and stylish without being loud.",
+      "t-shirt-stereo": "Navy Glitch Code-Heart Tee\nA deep navy T-shirt with a vibrant cyan-and-red glitch-style DevLovers code-heart graphic.\nThe color-shift effect adds motion and energy while keeping the design clean and centered.\nIdeal if you want a stronger visual statement without losing a developer aesthetic.",
+      "hoodie-blue": "DevLovers Glitch Heart Hoodie (Sky Blue)\nA fresh sky-blue hoodie with a bold DevLovers braces-and-heart graphic in a glitch-inspired color offset. Clean silhouette, standout front print—made for everyday wear with a tech-street vibe.\nUnisex relaxed fit.\nSoft, cozy fabric feel.\nAdjustable drawstring hood.\nFront kangaroo pocket.\nStatement front graphic (glitch-style DevLovers heart).",
+      "bottle-bl": "A sleek beige bottle featuring a bold black heart-in-braces graphic with cool neon cyan/blue highlights.\nThis version has a stronger, higher-contrast look that feels more edgy and tech-forward.\nIdeal for anyone who wants practical hydration with a distinct developer aesthetic.",
+      "t-shirt-flow": "Ivory DevLovers T-Shirt with 3D {♥} Print\nClean ivory crew-neck T-shirt featuring a bold black 3D {♥} DevLovers graphic on the chest.\nSoft, minimal, and easy to pair—designed for everyday wear with a modern tech-style look.",
+      "t-shirt-flow-inf": "Black DevLovers T-Shirt with Metallic 3D {♥} Print\nMinimal black crew-neck T-shirt featuring a metallic-style 3D {♥} DevLovers emblem on the chest.\nClean, modern look with strong contrast—suited for everyday casual wear or tech-event styling.",
+      "note": "A brown notebook with a sleek leather-style cover embossed with the {♥} symbol.\nIt has a clean, premium look and is ideal for daily notes, planning, and ideas.\nA great desk accessory or thoughtful gift for a developer.",
+      "sticker-md": "A minimalist white sticker in a code-inspired style featuring markdown # <3 DevLovers {♥}.\nWith high-contrast black print, a thin border, and a clean layout, it’s perfect for a laptop, notebook, or workspace.",
+      "t-shirt-volume-heart": "DevLovers Mesh Orb Tee (Purple)\nA bold purple T-shirt with a technical-art front graphic: a woven mesh sphere framed by code braces. It blends abstract 3D texture with developer aesthetics for a clean but standout look.\nUnisex regular fit.\nLarge front statement print.\nLightweight everyday silhouette.\nEasy to style with denim, joggers, or layered streetwear.\nGreat pick for dev/design fans who like minimal branding with strong visual detail.",
+      "bootle-devl": "Sleek DevLovers stainless-steel bottle with a clean silver finish, subtle code-inspired all-over print, and a bold vertical logo.\nIts minimalist screw-cap design makes it a stylish everyday companion for work, study, and on-the-go hydration.",
+      "t-shirt-black-illusion": "Black Tonal Code-Heart Tee\nA stealth black T-shirt with a subtle black-on-black DevLovers code-heart print.\nThis version is understated and sleek, made for people who prefer low-key design with a technical edge.\nA versatile staple for monochrome outfits and minimalist wardrobes.",
+      "hoodie-bright": "Yellow DevLovers Hoodie with 3D {♥} Print\nA bold yellow hoodie featuring a standout 3D DevLovers-style {♥} graphic.\nClassic fit with a hood, long sleeves, a kangaroo pocket, and ribbed cuffs and hem.\nThe high-contrast black print on the bright yellow base makes it a strong everyday statement piece."
     }
   },
   "about": {
@@ -930,6 +1014,37 @@
       "noPoints": "No points awarded (result not improved)",
       "viewLeaderboard": "View leaderboard",
       "tryAgain": "Try again"
+    },
+    "quizResults": {
+      "title": "Quiz Results",
+      "noAttempts": "You haven't taken any quizzes yet",
+      "startQuiz": "Try one",
+      "score": "Score",
+      "integrity": "Integrity",
+      "points": "Points",
+      "scoreHint": "Number of correct answers out of total questions",
+      "integrityHint": "Fair play score (no violations detected)",
+      "pointsHint": "Points earned for improving your previous result",
+      "timeAgo": "{value} ago",
+      "mastered": "Mastered",
+      "needsReview": "Review",
+      "study": "Study",
+      "date": "Date",
+      "status": "Status"
+    },
+    "quizReview": {
+      "title": "Error Analysis",
+      "subtitle": "{incorrect} of {total} — incorrect",
+      "allCorrect": "All answers are correct!",
+      "allCorrectHint": "You answered all questions correctly",
+      "yourAnswer": "Your answer",
+      "correctAnswer": "Correct answer",
+      "explanation": "Explanation",
+      "retakeQuiz": "Retake Quiz",
+      "backToDashboard": "Back to Dashboard",
+      "notFound": "Attempt not found",
+      "expandAll": "Expand all",
+      "collapseAll": "Collapse all"
     },
     "explainedTerms": {
       "title": "Learned Terms",

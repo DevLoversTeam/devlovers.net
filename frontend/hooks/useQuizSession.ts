@@ -25,6 +25,9 @@ type QuizState = {
   questionStatus: 'answering' | 'revealed';
   selectedAnswerId: string | null;
   startedAt: Date | null;
+  pointsAwarded: number | null;
+  attemptId: string | null;
+  isIncomplete: boolean;
 };
 
 type UseQuizSessionParams = {
@@ -62,7 +65,7 @@ export function useQuizSession({
   }, [quizId, reloadKey, onRestore]);
 
   useEffect(() => {
-    if (state.status !== 'in_progress') return;
+    if (state.status === 'rules') return;
 
     const sessionData: QuizSessionData = {
       status: state.status,
@@ -77,6 +80,9 @@ export function useQuizSession({
       selectedAnswerId: state.selectedAnswerId,
       startedAt: state.startedAt?.getTime() ?? null,
       savedAt: Date.now(),
+      pointsAwarded: state.pointsAwarded,
+      attemptId: state.attemptId,
+      isIncomplete: state.isIncomplete,
     };
 
     saveQuizSession(quizId, sessionData);
