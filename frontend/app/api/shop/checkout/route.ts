@@ -297,6 +297,7 @@ function buildMonobankCheckoutResponse({
   pageUrl,
   currency,
   totalAmountMinor,
+  statusToken,
 }: {
   order: CheckoutOrderShape;
   itemCount: number;
@@ -305,6 +306,7 @@ function buildMonobankCheckoutResponse({
   pageUrl: string;
   currency: 'UAH';
   totalAmountMinor: number;
+  statusToken: string;
 }) {
   const res = NextResponse.json(
     {
@@ -329,6 +331,7 @@ function buildMonobankCheckoutResponse({
       provider: 'mono' as const,
       currency,
       totalAmountMinor,
+      statusToken,
     },
     { status }
   );
@@ -397,6 +400,7 @@ async function runMonobankCheckoutFlow(args: {
       pageUrl: monobankAttempt.pageUrl,
       currency: monobankAttempt.currency,
       totalAmountMinor: monobankAttempt.totalAmountMinor,
+      statusToken,
     });
   } catch (error) {
     const mapped = mapMonobankCheckoutError(error);

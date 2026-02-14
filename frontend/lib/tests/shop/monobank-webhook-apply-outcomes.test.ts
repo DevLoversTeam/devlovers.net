@@ -83,6 +83,7 @@ vi.mock('@/lib/logging', () => {
 import { logError } from '@/lib/logging';
 import { applyMonoWebhookEvent } from '@/lib/services/orders/monobank-webhook';
 import { guardedPaymentStatusUpdate } from '@/lib/services/orders/payment-state';
+import { assertNotProductionDb } from '@/lib/tests/helpers/db-safety';
 
 function sha256Hex(buf: Buffer): string {
   return crypto.createHash('sha256').update(buf).digest('hex');
@@ -200,6 +201,7 @@ async function fetchEventByRawSha256(rawSha256: string) {
       id,
       invoice_id,
       status,
+      applied_at,
       applied_result,
       applied_error_code,
       applied_error_message,
@@ -212,6 +214,34 @@ async function fetchEventByRawSha256(rawSha256: string) {
   `)) as unknown as { rows?: any[] };
 
   return res.rows?.[0] ?? null;
+}
+
+async function fetchOrderAttemptState(args: { orderId: string; attemptId: string }) {
+  const orderRes = await db.execute(sql`
+    select
+      id,
+      payment_status,
+      payment_provider
+    from orders
+    where id = ${args.orderId}::uuid
+    limit 1
+  `);
+  const attemptRes = await db.execute(sql`
+    select
+      id,
+      status,
+      last_error_code,
+      provider_modified_at,
+      finalized_at
+    from payment_attempts
+    where id = ${args.attemptId}::uuid
+    limit 1
+  `);
+
+  return {
+    order: readRows<any>(orderRes)[0] ?? null,
+    attempt: readRows<any>(attemptRes)[0] ?? null,
+  };
 }
 
 async function cleanup(args: {
@@ -229,6 +259,8 @@ async function cleanup(args: {
 }
 
 describe('monobank-webhook apply outcomes', () => {
+  assertNotProductionDb();
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -419,6 +451,246 @@ describe('monobank-webhook apply outcomes', () => {
       expect(meta?.invoiceId).toBe(invoiceId);
       expect(meta?.orderId).toBe(orderId);
       expect(meta?.attemptId).toBe(attemptId);
+    } finally {
+      await cleanup({ orderId, attemptId, rawSha256 });
+    }
+  });
+
+  it('paid-is-sticky out-of-order: success first, then older processing keeps order paid', async () => {
+    (
+      guardedPaymentStatusUpdate as unknown as ReturnType<typeof vi.fn>
+    ).mockResolvedValue({
+      applied: false,
+      currentProvider: 'monobank',
+      from: 'paid',
+      reason: 'already_in_state',
+    });
+
+    const orderId = uuid();
+    const attemptId = uuid();
+    const invoiceId = 'inv_' + uuid().replace(/-/g, '').slice(0, 24);
+    const now = Date.now();
+
+    await insertOrder({
+      orderId,
+      currency: 'UAH',
+      totalAmountMinor: 100,
+      paymentProvider: 'monobank',
+      paymentStatus: 'paid',
+    });
+    await insertAttempt({
+      attemptId,
+      orderId,
+      status: 'succeeded',
+      expectedAmountMinor: 100,
+      invoiceId,
+      providerModifiedAt: new Date(now),
+    });
+
+    const successPayload = {
+      invoiceId,
+      status: 'success',
+      amount: 100,
+      ccy: 980,
+      reference: attemptId,
+      modifiedAt: new Date(now).toISOString(),
+    };
+    const processingPayload = {
+      invoiceId,
+      status: 'processing',
+      amount: 100,
+      ccy: 980,
+      reference: attemptId,
+      modifiedAt: new Date(now - 60_000).toISOString(),
+    };
+
+    const successRaw = JSON.stringify(successPayload);
+    const processingRaw = JSON.stringify(processingPayload);
+    const successRawSha256 = sha256Hex(Buffer.from(successRaw, 'utf8'));
+    const processingRawSha256 = sha256Hex(Buffer.from(processingRaw, 'utf8'));
+
+    try {
+      const first = await applyMonoWebhookEvent({
+        rawBody: successRaw,
+        parsedPayload: successPayload as any,
+        requestId: 'test_paid_sticky_success_first',
+        mode: 'apply',
+        rawSha256: successRawSha256,
+        eventKey: successRawSha256,
+      });
+      expect(first.appliedResult).toBe('applied_noop');
+
+      const second = await applyMonoWebhookEvent({
+        rawBody: processingRaw,
+        parsedPayload: processingPayload as any,
+        requestId: 'test_paid_sticky_older_processing',
+        mode: 'apply',
+        rawSha256: processingRawSha256,
+        eventKey: processingRawSha256,
+      });
+
+      expect(second.appliedResult).toBe('applied_noop');
+
+      const state = await fetchOrderAttemptState({ orderId, attemptId });
+      expect(state.order?.payment_status).toBe('paid');
+      expect(state.attempt?.status).toBe('succeeded');
+
+      const secondEvent = await fetchEventByRawSha256(processingRawSha256);
+      expect(secondEvent?.applied_result).toBe('applied_noop');
+      expect(secondEvent?.applied_error_code).toBe('OUT_OF_ORDER');
+    } finally {
+      await db.execute(
+        sql`delete from monobank_events where raw_sha256 in (${successRawSha256}, ${processingRawSha256})`
+      );
+      await db.execute(
+        sql`delete from payment_attempts where id = ${attemptId}::uuid`
+      );
+      await db.execute(sql`delete from orders where id = ${orderId}::uuid`);
+    }
+  });
+
+  it('dedupe: second processing of the same event is no-op and does not rewrite applied timestamp', async () => {
+    (
+      guardedPaymentStatusUpdate as unknown as ReturnType<typeof vi.fn>
+    ).mockResolvedValue({
+      applied: true,
+      currentProvider: 'monobank',
+      from: 'pending',
+      reason: null,
+    });
+
+    const orderId = uuid();
+    const attemptId = uuid();
+    const invoiceId = 'inv_' + uuid().replace(/-/g, '').slice(0, 24);
+
+    await insertOrder({
+      orderId,
+      currency: 'UAH',
+      totalAmountMinor: 100,
+      paymentProvider: 'monobank',
+      paymentStatus: 'pending',
+    });
+    await insertAttempt({
+      attemptId,
+      orderId,
+      status: 'pending',
+      expectedAmountMinor: 100,
+      invoiceId,
+      providerModifiedAt: null,
+    });
+
+    const payload = {
+      invoiceId,
+      status: 'success',
+      amount: 100,
+      ccy: 980,
+      reference: attemptId,
+    };
+    const rawBody = JSON.stringify(payload);
+    const rawSha256 = sha256Hex(Buffer.from(rawBody, 'utf8'));
+
+    try {
+      const first = await applyMonoWebhookEvent({
+        rawBody,
+        parsedPayload: payload as any,
+        requestId: 'test_dedupe_first',
+        mode: 'apply',
+        rawSha256,
+        eventKey: rawSha256,
+      });
+      expect(first.appliedResult).toBe('applied');
+      expect(first.deduped).toBe(false);
+
+      const beforeEvent = await fetchEventByRawSha256(rawSha256);
+      const beforeState = await fetchOrderAttemptState({ orderId, attemptId });
+
+      const second = await applyMonoWebhookEvent({
+        rawBody,
+        parsedPayload: payload as any,
+        requestId: 'test_dedupe_second',
+        mode: 'apply',
+        rawSha256,
+        eventKey: rawSha256,
+      });
+
+      expect(second.appliedResult).toBe('deduped');
+      expect(second.deduped).toBe(true);
+
+      const afterEvent = await fetchEventByRawSha256(rawSha256);
+      const afterState = await fetchOrderAttemptState({ orderId, attemptId });
+
+      expect(afterEvent?.id).toBe(beforeEvent?.id);
+      expect(afterEvent?.applied_result).toBe(beforeEvent?.applied_result);
+      expect(
+        String(afterEvent?.applied_at ?? '')
+      ).toBe(String(beforeEvent?.applied_at ?? ''));
+      expect(afterState).toEqual(beforeState);
+    } finally {
+      await cleanup({ orderId, attemptId, rawSha256 });
+    }
+  });
+
+  it('mismatch must NOT set paid: applied_with_issue and attempt failure markers are persisted', async () => {
+    (
+      guardedPaymentStatusUpdate as unknown as ReturnType<typeof vi.fn>
+    ).mockResolvedValue({
+      applied: false,
+      currentProvider: 'monobank',
+      from: 'pending',
+      reason: 'blocked_for_test',
+    });
+
+    const orderId = uuid();
+    const attemptId = uuid();
+    const invoiceId = 'inv_' + uuid().replace(/-/g, '').slice(0, 24);
+
+    await insertOrder({
+      orderId,
+      currency: 'UAH',
+      totalAmountMinor: 100,
+      paymentProvider: 'monobank',
+      paymentStatus: 'pending',
+    });
+    await insertAttempt({
+      attemptId,
+      orderId,
+      status: 'pending',
+      expectedAmountMinor: 100,
+      invoiceId,
+      providerModifiedAt: null,
+    });
+
+    const payload = {
+      invoiceId,
+      status: 'success',
+      amount: 101,
+      ccy: 980,
+      reference: attemptId,
+    };
+    const rawBody = JSON.stringify(payload);
+    const rawSha256 = sha256Hex(Buffer.from(rawBody, 'utf8'));
+
+    try {
+      const res = await applyMonoWebhookEvent({
+        rawBody,
+        parsedPayload: payload as any,
+        requestId: 'test_mismatch_not_paid',
+        mode: 'apply',
+        rawSha256,
+        eventKey: rawSha256,
+      });
+
+      expect(res.appliedResult).toBe('applied_with_issue');
+
+      const state = await fetchOrderAttemptState({ orderId, attemptId });
+      expect(state.order?.payment_status).not.toBe('paid');
+      expect(state.order?.payment_status).toBe('pending');
+      expect(state.attempt?.status).toBe('failed');
+      expect(state.attempt?.last_error_code).toBe('AMOUNT_MISMATCH');
+
+      const ev = await fetchEventByRawSha256(rawSha256);
+      expect(ev?.applied_result).toBe('applied_with_issue');
+      expect(ev?.applied_error_code).toBe('AMOUNT_MISMATCH');
     } finally {
       await cleanup({ orderId, attemptId, rawSha256 });
     }
