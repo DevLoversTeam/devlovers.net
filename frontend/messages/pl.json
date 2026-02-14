@@ -135,7 +135,9 @@
       "next": "Następna",
       "previousPage": "Poprzednia strona",
       "nextPage": "Następna strona",
-      "page": "Strona {page}"
+      "page": "Strona {page}",
+      "itemsPerPage": "Na stronę",
+      "itemsPerPageAria": "Liczba pytań na stronie"
     }
   },
   "quiz": {
@@ -210,17 +212,17 @@
         "title": "Wszystkie Odpowiedzi Niepoprawne",
         "message": "Zalecamy dokładne przestudiowanie materiału przed kolejną próbą"
       },
-      "needPractice": {
+      "study": {
         "title": "Potrzebujesz Więcej Praktyki",
-        "message": "Zalecamy poświęcenie więcej czasu na teorię i praktykę"
+        "message": "Skup się na teorii i ćwicz dalej — dasz radę"
       },
-      "goodJob": {
-        "title": "Dobra Robota!",
-        "message": "Przejrzyj trudne tematy i spróbuj ponownie"
+      "review": {
+        "title": "Prawie Idealnie!",
+        "message": "Dobrze znasz materiał. Powtórz trudne tematy i celuj w perfekcyjny wynik"
       },
-      "excellent": {
-        "title": "Doskonała Praca!",
-        "message": "Świetnie opanowałeś materiał"
+      "mastered": {
+        "title": "Perfekcyjny Wynik!",
+        "message": "W pełni opanowałeś ten temat"
       },
       "incomplete": {
         "title": "Czas minął",

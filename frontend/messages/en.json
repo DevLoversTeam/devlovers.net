@@ -135,7 +135,9 @@
       "next": "Next",
       "previousPage": "Previous page",
       "nextPage": "Next page",
-      "page": "Page {page}"
+      "page": "Page {page}",
+      "itemsPerPage": "Per page",
+      "itemsPerPageAria": "Questions per page"
     }
   },
   "quiz": {
@@ -210,17 +212,17 @@
         "title": "All Answers Incorrect",
         "message": "We recommend thoroughly studying the material before your next attempt"
       },
-      "needPractice": {
+      "study": {
         "title": "Need More Practice",
-        "message": "We recommend spending more time on theory and practice"
+        "message": "Focus on the theory and keep practicing — you'll get there"
       },
-      "goodJob": {
-        "title": "Good Job!",
-        "message": "Review the difficult topics and try again"
+      "review": {
+        "title": "Almost There!",
+        "message": "You know the material well. Review the tricky parts and aim for a perfect score"
       },
-      "excellent": {
-        "title": "Excellent Work!",
-        "message": "You have mastered the material well"
+      "mastered": {
+        "title": "Perfect Score!",
+        "message": "You have fully mastered this topic"
       },
       "incomplete": {
         "title": "Time's up",

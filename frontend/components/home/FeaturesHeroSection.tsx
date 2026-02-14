@@ -1,9 +1,9 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
-import Link from 'next/link';
-import * as React from 'react';
 import { BrainCircuit, MessageCircleQuestion, TrendingUp } from 'lucide-react';
+import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import * as React from 'react';
 
 import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
 
@@ -16,7 +16,7 @@ export default function FeaturesHeroSection() {
   return (
     <DynamicGridBackground
       showStaticGrid
-      className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gray-50 transition-colors duration-300 dark:bg-black"
+      className="relative flex min-h-[calc(100dvh-4rem)] items-center justify-center overflow-hidden bg-gray-50 transition-colors duration-300 dark:bg-black"
     >
       <FloatingCode />
 

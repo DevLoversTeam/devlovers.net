@@ -1,11 +1,12 @@
 'use client';
 
 import { Github, Linkedin, Send } from 'lucide-react';
-import { useSelectedLayoutSegments } from 'next/navigation';
+import { usePathname, useSelectedLayoutSegments } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import type { Ref } from 'react';
 
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
+import { locales } from '@/i18n/config';
 import { Link } from '@/i18n/routing';
 import { cn } from '@/lib/utils';
 
@@ -21,12 +22,27 @@ const SOCIAL = [
 
 export default function Footer({
   footerRef,
+  className,
+  forceVisible = false,
 }: {
   footerRef?: Ref<HTMLElement>;
+  className?: string;
+  forceVisible?: boolean;
 }) {
   const t = useTranslations('footer');
   const segments = useSelectedLayoutSegments();
+  const pathname = usePathname();
   const isShop = segments.includes('shop');
+  const pathSegments = pathname.split('/').filter(Boolean);
+  const isHome =
+    pathSegments.length === 0 ||
+    (pathSegments.length === 1 &&
+      locales.includes(pathSegments[0] as (typeof locales)[number]));
+
+  if (isHome && !forceVisible) {
+    return null;
+  }
+
   return (
     <footer
       ref={footerRef}
@@ -35,7 +51,8 @@ export default function Footer({
           '[--footer-brand:var(--accent-primary)] [--footer-hover:var(--accent-hover)] [--theme-toggle-hover:var(--footer-hover)]',
         isShop &&
           '[--footer-brand:var(--foreground)] [--footer-hover:var(--foreground)] ' +
-            'dark:[--footer-brand:var(--accent-primary)] dark:[--footer-hover:var(--accent-hover)]'
+            'dark:[--footer-brand:var(--accent-primary)] dark:[--footer-hover:var(--accent-hover)]',
+        className
       )}
     >
       <div className="container-main relative py-6">

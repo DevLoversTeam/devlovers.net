@@ -14,6 +14,9 @@ export interface QuizSessionData {
   selectedAnswerId: string | null;
   startedAt: number | null;
   savedAt: number;
+  pointsAwarded?: number | null;
+  attemptId?: string | null;
+  isIncomplete?: boolean;
 }
 
 export function saveQuizSession(quizId: string, state: QuizSessionData): void {

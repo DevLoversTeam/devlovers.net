@@ -69,26 +69,26 @@ export function QuizResult({
       };
     }
 
-    if (percentage < 50) {
+    if (percentage < 70) {
       return {
         icon: <BookOpen className="h-14 w-14 text-red-500" />,
-        title: t('needPractice.title'),
-        message: t('needPractice.message'),
+        title: t('study.title'),
+        message: t('study.message'),
         color: 'text-red-600 dark:text-red-400',
       };
-    } else if (percentage < 80) {
+    } else if (percentage < 100) {
       return {
-        icon: <TrendingUp className="h-14 w-14 text-orange-500" />,
-        title: t('goodJob.title'),
-        message: t('goodJob.message'),
-        color: 'text-orange-600 dark:text-orange-400',
+        icon: <TrendingUp className="h-14 w-14 text-amber-500" />,
+        title: t('review.title'),
+        message: t('review.message'),
+        color: 'text-amber-600 dark:text-amber-400',
       };
     } else {
       return {
-        icon: <Trophy className="h-14 w-14 text-amber-500" />,
-        title: t('excellent.title'),
-        message: t('excellent.message'),
-        color: 'text-green-600 dark:text-green-400',
+        icon: <Trophy className="h-14 w-14 text-emerald-500" />,
+        title: t('mastered.title'),
+        message: t('mastered.message'),
+        color: 'text-emerald-600 dark:text-emerald-400',
       };
     }
   };
@@ -113,9 +113,9 @@ export function QuizResult({
               <div
                 className={cn(
                   'h-full transition-all duration-1000 ease-out',
-                  percentage < 50 && 'bg-red-500',
-                  percentage >= 50 && percentage < 80 && 'bg-orange-500',
-                  percentage >= 80 && 'bg-green-500'
+                  percentage < 70 && 'bg-red-500',
+                  percentage >= 70 && percentage < 100 && 'bg-amber-500',
+                  percentage >= 100 && 'bg-emerald-500'
                 )}
                 style={{ width: `${percentage}%` }}
               />
