@@ -5,6 +5,7 @@ import crypto from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getMonobankConfig } from '@/lib/env/monobank';
+import { readPositiveIntEnv } from '@/lib/env/readPositiveIntEnv';
 import { logError, logInfo, logWarn } from '@/lib/logging';
 import {
   MONO_SIG_INVALID,
@@ -31,11 +32,6 @@ const DEFAULT_MONO_WEBHOOK_MISSING_SIG_LIMIT = 30;
 const DEFAULT_MONO_WEBHOOK_MISSING_SIG_WINDOW_SECONDS = 60;
 const DEFAULT_MONO_WEBHOOK_INVALID_SIG_LIMIT = 30;
 const DEFAULT_MONO_WEBHOOK_INVALID_SIG_WINDOW_SECONDS = 60;
-
-function readPositiveIntEnv(name: string, fallback: number): number {
-  const parsed = Number.parseInt(process.env[name] ?? '', 10);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
-}
 
 function parseWebhookMode(raw: unknown): WebhookMode {
   const v = typeof raw === 'string' ? raw.trim().toLowerCase() : '';

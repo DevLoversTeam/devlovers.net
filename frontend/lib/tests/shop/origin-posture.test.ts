@@ -113,10 +113,10 @@ describe('origin posture helpers', () => {
     expect(res?.status).toBe(403);
     const body = await res?.json();
     expect(body).toMatchObject({
-      success: false,
-      code: 'ORIGIN_BLOCKED',
+      error: { code: 'ORIGIN_BLOCKED' },
       surface: 'test_surface',
     });
+    expect(typeof body?.error?.message).toBe('string');
     expect(res?.headers.get('Cache-Control')).toBe('no-store');
   });
 
@@ -128,7 +128,8 @@ describe('origin posture helpers', () => {
     const res = guardNonBrowserFailClosed(req, { surface: 'test_surface' });
     expect(res?.status).toBe(403);
     const body = await res?.json();
-    expect(body?.code).toBe('ORIGIN_BLOCKED');
+    expect(body?.error?.code).toBe('ORIGIN_BLOCKED');
+   expect(body?.surface).toBe('test_surface');
   });
 
   it('guardNonBrowserFailClosed allows when no browser signals are present', () => {

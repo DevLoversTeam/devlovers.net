@@ -621,14 +621,12 @@ async function createMonoAttemptAndInvoiceImpl(
         ? String((error as { code?: unknown }).code)
         : 'PSP_UNAVAILABLE';
 
-    if (process.env.NODE_ENV !== 'test') {
-      monoLogWarn(MONO_CREATE_INVOICE_FAILED, {
-        orderId: args.orderId,
-        attemptId: attempt.id,
-        requestId: args.requestId,
-        errorCode,
-      });
-    }
+    monoLogWarn(MONO_CREATE_INVOICE_FAILED, {
+      orderId: args.orderId,
+      attemptId: attempt.id,
+      requestId: args.requestId,
+      errorCode,
+    });
 
     logWarn('monobank_invoice_create_failed', {
       orderId: args.orderId,

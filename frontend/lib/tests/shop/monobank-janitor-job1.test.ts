@@ -230,8 +230,7 @@ describe.sequential('monobank janitor job1', () => {
   });
 
   it('rerun is idempotent: second run is noop and does not re-apply transitions', async () => {
-    const graceSeconds = 10 * 365 * 24 * 60 * 60; 
-    vi.stubEnv('MONO_JANITOR_JOB1_GRACE_SECONDS', String(graceSeconds));
+    vi.stubEnv('MONO_JANITOR_JOB1_GRACE_SECONDS', '1');
 
     const invoiceId = `inv_${crypto.randomUUID()}`;
 

@@ -31,11 +31,10 @@ function restoreEnv() {
 }
 
 function makeOkResponse(body: string) {
-  return {
-    ok: true,
+  return new Response(body, {
     status: 200,
-    text: async () => body,
-  };
+    headers: { 'content-type': 'application/json; charset=utf-8' },
+  });
 }
 
 beforeEach(() => {
@@ -64,7 +63,9 @@ describe('monobank webhook signature verify', () => {
   it('valid signature passes', async () => {
     const { verifyWebhookSignature } = await import('@/lib/psp/monobank');
 
-    const rawBody = Buffer.from('{"invoiceId":"inv_sig_ok","status":"success"}');
+    const rawBody = Buffer.from(
+      '{"invoiceId":"inv_sig_ok","status":"success"}'
+    );
     const { publicKey, privateKey } = crypto.generateKeyPairSync('ec', {
       namedCurve: 'prime256v1',
     });
@@ -72,16 +73,25 @@ describe('monobank webhook signature verify', () => {
     const signature = crypto
       .sign('sha256', rawBody, privateKey)
       .toString('base64');
-    const publicPem = publicKey.export({ type: 'spki', format: 'pem' }) as string;
+    const publicPem = publicKey.export({
+      type: 'spki',
+      format: 'pem',
+    }) as string;
 
-    const ok = verifyWebhookSignature(rawBody, signature, Buffer.from(publicPem));
+    const ok = verifyWebhookSignature(
+      rawBody,
+      signature,
+      Buffer.from(publicPem)
+    );
     expect(ok).toBe(true);
   });
 
   it('invalid signature fails', async () => {
     const { verifyWebhookSignature } = await import('@/lib/psp/monobank');
 
-    const rawBody = Buffer.from('{"invoiceId":"inv_sig_bad","status":"success"}');
+    const rawBody = Buffer.from(
+      '{"invoiceId":"inv_sig_bad","status":"success"}'
+    );
     const { publicKey, privateKey } = crypto.generateKeyPairSync('ec', {
       namedCurve: 'prime256v1',
     });
@@ -89,12 +99,19 @@ describe('monobank webhook signature verify', () => {
     const signature = crypto
       .sign('sha256', rawBody, privateKey)
       .toString('base64');
-    const publicPem = publicKey.export({ type: 'spki', format: 'pem' }) as string;
+    const publicPem = publicKey.export({
+      type: 'spki',
+      format: 'pem',
+    }) as string;
 
     const tampered = Buffer.from(rawBody);
     tampered[0] = tampered[0] ^ 0xff;
 
-    const ok = verifyWebhookSignature(tampered, signature, Buffer.from(publicPem));
+    const ok = verifyWebhookSignature(
+      tampered,
+      signature,
+      Buffer.from(publicPem)
+    );
     expect(ok).toBe(false);
   });
 

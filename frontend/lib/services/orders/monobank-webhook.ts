@@ -6,13 +6,13 @@ import { and, eq, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { monobankEvents, orders, paymentAttempts } from '@/db/schema';
-import { logError } from '@/lib/logging';
 import {
   MONO_DEDUP,
   MONO_MISMATCH,
   MONO_OLD_EVENT,
   MONO_PAID_APPLIED,
   MONO_STORE_MODE,
+  monoLogError,
   monoLogInfo,
   monoLogWarn,
 } from '@/lib/logging/monobank';
@@ -800,7 +800,7 @@ async function applyWebhookToMatchedOrderAttemptEvent(args: {
     });
 
     if (!ok) {
-      logError('monobank_webhook_atomic_update_failed', undefined, {
+      monoLogError('monobank_webhook_atomic_update_failed' as any, undefined, {
         eventId,
         orderId: orderRow.id,
         attemptId: attemptRow.id,
@@ -915,7 +915,7 @@ async function applyWebhookToMatchedOrderAttemptEvent(args: {
     });
 
     if (!ok) {
-      logError('monobank_webhook_atomic_update_failed', undefined, {
+      monoLogError('monobank_webhook_atomic_update_failed' as any, undefined, {
         eventId,
         orderId: orderRow.id,
         attemptId: attemptRow.id,
@@ -959,7 +959,7 @@ async function applyWebhookToMatchedOrderAttemptEvent(args: {
     });
   }
 
-  logError('MONO_WEBHOOK_UNKNOWN_STATUS', undefined, {
+  monoLogError('MONO_WEBHOOK_UNKNOWN_STATUS' as any, undefined, {
     eventId,
     status,
     invoiceId: normalized.invoiceId,
@@ -1053,7 +1053,7 @@ async function finalizeOutcomeWithRestock(args: {
         workerId: 'monobank_webhook',
       });
     } catch (error) {
-      logError('monobank_webhook_restock_failed', error, {
+      monoLogError('monobank_webhook_restock_failed' as any, error, {
         requestId: args.requestId,
         invoiceId: args.normalized.invoiceId,
       });

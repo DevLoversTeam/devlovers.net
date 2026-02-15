@@ -12,6 +12,7 @@ import {
   requireAdminApi,
 } from '@/lib/auth/admin';
 import { getMonobankConfig } from '@/lib/env/monobank';
+import { readPositiveIntEnv } from '@/lib/env/readPositiveIntEnv';
 import { logError, logWarn } from '@/lib/logging';
 import { requireAdminCsrf } from '@/lib/security/admin-csrf';
 import { guardBrowserSameOrigin } from '@/lib/security/origin';
@@ -37,11 +38,6 @@ function noStoreJson(body: unknown, init?: { status?: number }) {
 
 const DEFAULT_ADMIN_REFUND_RATE_LIMIT_MAX = 5;
 const DEFAULT_ADMIN_REFUND_RATE_LIMIT_WINDOW_SECONDS = 60;
-
-function readPositiveIntEnv(name: string, fallback: number): number {
-  const parsed = Number.parseInt(process.env[name] ?? '', 10);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
-}
 
 export async function POST(
   request: NextRequest,

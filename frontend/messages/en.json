@@ -605,6 +605,16 @@
           "needsReview": "We could not automatically confirm this payment."
         }
       },
+      "paymentStatus": {
+        "confirming": "Payment is being confirmed",
+        "paid": "Payment confirmed",
+        "failed": "Payment failed",
+        "needsReview": "Payment needs review",
+        "refunded": "Payment refunded",
+        "canceled": "Payment canceled",
+        "pending": "Payment pending",
+        "unknown": "Payment status unavailable"
+      },
       "error": {
         "paymentFailed": "Payment failed",
         "paymentFailedDescription": "The payment for this order was not completed. You can try again or contact support",

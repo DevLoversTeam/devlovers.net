@@ -48,6 +48,12 @@ vi.mock('@/lib/services/orders/monobank-webhook', () => ({
     handleMonobankWebhookMock(...args),
 }));
 
+vi.mock('@/lib/security/rate-limit', () => ({
+  getRateLimitSubject: vi.fn(() => 'rl_test_subject'),
+  enforceRateLimit: vi.fn(async () => ({ ok: true, remaining: 999 })),
+  rateLimitResponse: vi.fn(() => new Response('rate_limited', { status: 429 })),
+}));
+
 function expectNoUnsafeMeta(meta: Record<string, unknown>) {
   const forbidden = [
     'rawBodyBytes',

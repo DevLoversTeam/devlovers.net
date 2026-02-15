@@ -605,6 +605,16 @@
           "needsReview": "Nie udało się automatycznie potwierdzić tej płatności."
         }
       },
+      "paymentStatus": {
+        "confirming": "Płatność jest potwierdzana",
+        "paid": "Płatność potwierdzona",
+        "failed": "Płatność nie powiodła się",
+        "needsReview": "Płatność wymaga weryfikacji",
+        "refunded": "Płatność zwrócona",
+        "canceled": "Płatność anulowana",
+        "pending": "Płatność oczekująca",
+        "unknown": "Status płatności niedostępny"
+      },
       "error": {
         "paymentFailed": "Płatność nie powiodła się",
         "paymentFailedDescription": "Płatność za to zamówienie nie została zakończona. Możesz spróbować ponownie lub skontaktować się z pomocą",

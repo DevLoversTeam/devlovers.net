@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 
 import { and, eq } from 'drizzle-orm';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { db } from '@/db';
 import { monobankEvents, orders, paymentAttempts } from '@/db/schema';
@@ -77,9 +77,13 @@ async function insertPersistedEvent(args: {
         ? Math.trunc(args.payload.amount)
         : null,
     ccy:
-      typeof args.payload.ccy === 'number' ? Math.trunc(args.payload.ccy) : null,
+      typeof args.payload.ccy === 'number'
+        ? Math.trunc(args.payload.ccy)
+        : null,
     reference:
-      typeof args.payload.reference === 'string' ? args.payload.reference : null,
+      typeof args.payload.reference === 'string'
+        ? args.payload.reference
+        : null,
     rawPayload: args.payload,
     normalizedPayload: args.payload,
     attemptId: args.attemptId,
@@ -97,7 +101,9 @@ async function cleanup(orderId: string, invoiceId: string) {
 }
 
 describe.sequential('monobank webhook multi-instance apply', () => {
-  assertNotProductionDb();
+  beforeAll(() => {
+    assertNotProductionDb();
+  });
 
   it('persisted event + parallel apply -> exactly one apply and no double side effects', async () => {
     const invoiceId = `inv_${crypto.randomUUID()}`;

@@ -124,12 +124,15 @@ export function guardNonBrowserFailClosed(
 
   const res = NextResponse.json(
     {
-      success: false,
-      code: 'ORIGIN_BLOCKED',
+      error: {
+        code: 'ORIGIN_BLOCKED',
+        message: 'Browser context is not allowed for this endpoint.',
+      },
       surface: meta?.surface ?? 'non_browser',
     },
     { status: 403 }
   );
+
   res.headers.set('Cache-Control', 'no-store');
   return res;
 }

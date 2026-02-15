@@ -61,6 +61,20 @@ type Props = {
 
 type CheckoutProvider = 'stripe' | 'monobank';
 
+function resolveInitialProvider(args: {
+  stripeEnabled: boolean;
+  monobankEnabled: boolean;
+  currency: string | null | undefined;
+}): CheckoutProvider {
+  const isUah = args.currency === 'UAH';
+  const canUseStripe = args.stripeEnabled;
+  const canUseMonobank = args.monobankEnabled && isUah;
+
+  if (canUseStripe) return 'stripe';
+  if (canUseMonobank) return 'monobank';
+  return 'stripe';
+}
+
 export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
   const { cart, updateQuantity, removeFromCart } = useCart();
   const router = useRouter();
@@ -69,8 +83,14 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
-  const [selectedProvider, setSelectedProvider] =
-    useState<CheckoutProvider>('stripe');
+  const [selectedProvider, setSelectedProvider] = useState<CheckoutProvider>(
+    () =>
+      resolveInitialProvider({
+        stripeEnabled,
+        monobankEnabled,
+        currency: cart?.summary?.currency,
+      })
+  );
 
   const params = useParams<{ locale?: string }>();
   const locale = params.locale ?? 'en';

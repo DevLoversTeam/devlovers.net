@@ -85,10 +85,10 @@ describe('internal monobank janitor origin posture', () => {
     expect(res.headers.get('Cache-Control')).toBe('no-store');
     expect(res.headers.get('X-Request-Id')).toBe('req-origin-blocked');
     expect(json).toMatchObject({
-      success: false,
-      code: 'ORIGIN_BLOCKED',
+      error: { code: 'ORIGIN_BLOCKED' },
       surface: 'monobank_janitor',
     });
+    expect(typeof json?.error?.message).toBe('string');
     expect(dbExecuteMock).not.toHaveBeenCalled();
     expect(runMonobankJanitorJob1Mock).not.toHaveBeenCalled();
     expect(failIfBodyRead).not.toHaveBeenCalled();

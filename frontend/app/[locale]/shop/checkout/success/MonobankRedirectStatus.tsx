@@ -42,7 +42,13 @@ type RefreshOutcome =
   | { kind: 'order'; paymentStatus: string }
   | { kind: 'error'; code: string };
 
-type StatusUiState = 'pending' | 'paid' | 'canceled' | 'needs_review';
+type StatusUiState =
+  | 'pending'
+  | 'paid'
+  | 'needs_review'
+  | 'failed'
+  | 'refunded'
+  | 'canceled';
 
 type StatusUiViewModel = {
   uiState: StatusUiState;
@@ -50,6 +56,15 @@ type StatusUiViewModel = {
   messageKey: string;
   isTerminal: boolean;
 };
+
+const UI_STATE_TO_PAYMENT_STATUS_KEY = {
+  pending: 'paymentStatus.pending',
+  paid: 'paymentStatus.paid',
+  needs_review: 'paymentStatus.needsReview',
+  failed: 'paymentStatus.failed',
+  refunded: 'paymentStatus.refunded',
+  canceled: 'paymentStatus.canceled',
+} as const;
 
 const STATUS_TOKEN_KEY_PREFIX = 'shop:order-status-token:';
 const POLL_MAX_ATTEMPTS = 10;
@@ -232,7 +247,16 @@ function isTerminalPaymentStatus(status: string): boolean {
   return !POLL_ACTIVE_STATUSES.has(status as PaymentStatus);
 }
 
-function mapPaymentStatusToUi(status: PaymentStatus | string): StatusUiViewModel {
+function getPaymentStatusKey(uiState: string): string {
+  return (
+    UI_STATE_TO_PAYMENT_STATUS_KEY[uiState as StatusUiState] ??
+    'paymentStatus.unknown'
+  );
+}
+
+function mapPaymentStatusToUi(
+  status: PaymentStatus | string
+): StatusUiViewModel {
   if (status === 'pending' || status === 'requires_payment') {
     return {
       uiState: 'pending',
@@ -260,7 +284,25 @@ function mapPaymentStatusToUi(status: PaymentStatus | string): StatusUiViewModel
     };
   }
 
-  if (status === 'failed' || status === 'refunded' || status === 'canceled') {
+  if (status === 'failed') {
+    return {
+      uiState: 'failed',
+      headlineKey: 'success.statusHeadlines.canceled',
+      messageKey: 'success.statusMessages.canceled',
+      isTerminal: true,
+    };
+  }
+
+  if (status === 'refunded') {
+    return {
+      uiState: 'refunded',
+      headlineKey: 'success.statusHeadlines.canceled',
+      messageKey: 'success.statusMessages.canceled',
+      isTerminal: true,
+    };
+  }
+
+  if (status === 'canceled') {
     return {
       uiState: 'canceled',
       headlineKey: 'success.statusHeadlines.canceled',
@@ -382,7 +424,10 @@ export default function MonobankRedirectStatus({
     const outcome = await refreshStatus();
     if (!outcome) return;
 
-    if (outcome.kind === 'order' && isTerminalPaymentStatus(outcome.paymentStatus)) {
+    if (
+      outcome.kind === 'order' &&
+      isTerminalPaymentStatus(outcome.paymentStatus)
+    ) {
       clearPollTimer();
       return;
     }
@@ -479,6 +524,9 @@ export default function MonobankRedirectStatus({
   const statusMessage = isLoading
     ? t('success.statusMessages.pending')
     : t(statusVm.messageKey);
+  const localizedPaymentStatus = isLoading
+    ? t('paymentStatus.confirming')
+    : t(getPaymentStatusKey(statusVm.uiState));
 
   const errorText = useMemo(() => {
     if (!statusCode) return null;
@@ -517,7 +565,11 @@ export default function MonobankRedirectStatus({
       ) : null}
 
       {errorText ? (
-        <p className="mt-3 text-sm text-amber-500" role="status" aria-live="polite">
+        <p
+          className="mt-3 text-sm text-amber-500"
+          role="status"
+          aria-live="polite"
+        >
           {errorText}
         </p>
       ) : null}
@@ -533,10 +585,16 @@ export default function MonobankRedirectStatus({
 
           <dl className="mt-3 space-y-2 text-sm">
             <div className="flex items-center justify-between">
-              <dt className="text-muted-foreground">{t('success.totalAmount')}</dt>
+              <dt className="text-muted-foreground">
+                {t('success.totalAmount')}
+              </dt>
               <dd className="text-foreground font-semibold">
                 {order
-                  ? formatMoneyCode(order.totalAmountMinor, order.currency, locale)
+                  ? formatMoneyCode(
+                      order.totalAmountMinor,
+                      order.currency,
+                      locale
+                    )
                   : '...'}
               </dd>
             </div>
@@ -550,8 +608,8 @@ export default function MonobankRedirectStatus({
 
             <div className="flex items-center justify-between">
               <dt className="text-muted-foreground">{t('success.status')}</dt>
-              <dd className="text-foreground font-semibold capitalize">
-                {paymentStatus}
+              <dd className="text-foreground font-semibold">
+                {localizedPaymentStatus}
               </dd>
             </div>
           </dl>

@@ -307,7 +307,7 @@ async function getOrderStatus(
     (await import('@/app/api/shop/orders/[id]/status/route')) as unknown as {
       GET: (
         req: NextRequest,
-        ctx: { params: { id: string } }
+        ctx: { params: Promise<{ id: string }> }
       ) => Promise<Response>;
     };
 
@@ -326,7 +326,7 @@ async function getOrderStatus(
     },
   });
 
-  const res = await mod.GET(req, { params: { id: orderId } });
+  const res = await mod.GET(req, { params: Promise.resolve({ id: orderId }) });
 
   let json: any = null;
   try {
@@ -362,7 +362,6 @@ describe.sequential('orders/[id]/status ownership (J)', () => {
       createdOrderIds.push(orderA);
 
       const tokA = extractStatusToken(jsonA, orderA);
-
 
       const resB = await postCheckout(crypto.randomUUID(), productId);
       expect(resB.status).toBe(201);

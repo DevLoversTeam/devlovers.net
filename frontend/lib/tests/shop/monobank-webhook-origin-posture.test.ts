@@ -79,10 +79,10 @@ describe('monobank webhook origin posture', () => {
     expect(res.status).toBe(403);
     expect(res.headers.get('Cache-Control')).toBe('no-store');
     expect(json).toMatchObject({
-      success: false,
-      code: 'ORIGIN_BLOCKED',
+      error: { code: 'ORIGIN_BLOCKED' },
       surface: 'monobank_webhook',
     });
+    expect(typeof json?.error?.message).toBe('string');
     expect(verifyWebhookSignatureWithRefreshMock).not.toHaveBeenCalled();
     expect(handleMonobankWebhookMock).not.toHaveBeenCalled();
     expect(enforceRateLimitMock).not.toHaveBeenCalled();

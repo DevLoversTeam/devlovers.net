@@ -1,5 +1,4 @@
 import { Metadata } from 'next';
-import { unstable_noStore as noStore } from 'next/cache';
 import { getTranslations } from 'next-intl/server';
 
 import { ClearCartOnMount } from '@/components/shop/ClearCartOnMount';
@@ -30,7 +29,6 @@ export const metadata: Metadata = {
 };
 
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -152,7 +150,6 @@ export default async function CheckoutSuccessPage({
 }) {
   const { locale } = await params;
   const resolvedParams = await searchParams;
-  noStore();
 
   const clearCart = shouldClearCart(resolvedParams);
   const t = await getTranslations('shop.checkout');
