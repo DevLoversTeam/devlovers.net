@@ -25,8 +25,13 @@ export function OnlineCounterPopup({ ctaRef }: OnlineCounterPopupProps) {
 
   const fetchActivity = useCallback(() => {
     fetch('/api/sessions/activity', { method: 'POST' })
-      .then(r => r.json())
-      .then(data => setOnline(data.online))
+      .then(r => {
+        if (!r.ok) throw new Error(r.statusText);
+        return r.json();
+      })
+      .then(data => {
+        if (typeof data.online === 'number') setOnline(data.online);
+      })
       .catch(() => {});
   }, []);
 
