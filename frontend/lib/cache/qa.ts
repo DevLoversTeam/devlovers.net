@@ -1,6 +1,6 @@
 import { getRedisClient } from '@/lib/redis';
 
-const QA_CACHE_VERSION = 'v2';
+const QA_CACHE_VERSION = 'v3';
 const QA_CACHE_TTL_SECONDS = 60 * 30;
 
 type QaCacheKeyInput = {

@@ -68,15 +68,23 @@ describe('GET /api/questions/[category]', () => {
     const selectMock = db.select as ReturnType<typeof vi.fn>;
     selectMock
       .mockReturnValueOnce(makeBuilder('limit', [{ id: 'cat-1' }]))
-      .mockReturnValueOnce(makeBuilder('where', [{ count: 2 }]))
       .mockReturnValueOnce(
-        makeBuilder('offset', [
+        makeBuilder('orderBy', [
           {
             id: 'q1',
             categoryId: 'cat-1',
             sortOrder: 1,
             difficulty: null,
             question: 'Question 1',
+            answerBlocks: [],
+            locale: 'en',
+          },
+          {
+            id: 'q2',
+            categoryId: 'cat-1',
+            sortOrder: 2,
+            difficulty: null,
+            question: 'Question 2',
             answerBlocks: [],
             locale: 'en',
           },
@@ -93,7 +101,7 @@ describe('GET /api/questions/[category]', () => {
     const data = await res.json();
 
     expect(res.status).toBe(200);
-    expect(data.items).toHaveLength(1);
+    expect(data.items).toHaveLength(2);
     expect(data.items[0].question).toBe('Question 1');
     expect(data.total).toBe(2);
     expect(data.totalPages).toBe(1);
@@ -127,9 +135,8 @@ describe('GET /api/questions/[category]', () => {
 
     selectMock
       .mockReturnValueOnce(makeBuilder('limit', [{ id: 'cat-1' }]))
-      .mockReturnValueOnce(makeBuilder('where', [{ count: 3 }]))
       .mockReturnValueOnce(
-        makeBuilder('offset', [
+        makeBuilder('orderBy', [
           {
             id: 'q1',
             categoryId: 'cat-1',
