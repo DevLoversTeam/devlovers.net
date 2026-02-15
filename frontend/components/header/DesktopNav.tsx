@@ -31,7 +31,7 @@ export function DesktopNav({ variant, blogCategories = [] }: DesktopNavProps) {
   };
 
   if (variant === 'shop') {
-    return <NavLinks className="lg:flex" includeHomeLink />;
+    return <NavLinks className="min-[1050px]:flex" includeHomeLink />;
   }
 
   if (variant === 'blog') {

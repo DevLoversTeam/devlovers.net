@@ -160,7 +160,7 @@ export function AppMobileMenu({
       {open && (
         <>
           <div
-            className={`fixed inset-x-0 top-16 bottom-0 z-40 bg-black/50 backdrop-blur-sm transition-opacity duration-200 lg:hidden ${
+            className={`fixed inset-x-0 top-16 bottom-0 z-40 bg-black/50 backdrop-blur-sm transition-opacity duration-200 min-[1050px]:hidden ${
               isAnimating ? 'opacity-100' : 'opacity-0'
             }`}
             onClick={close}
@@ -169,7 +169,7 @@ export function AppMobileMenu({
 
           <nav
             id="app-mobile-nav"
-            className={`bg-background fixed top-16 right-0 left-0 z-50 h-[calc(100dvh-4rem)] overflow-y-auto overscroll-contain px-4 py-4 transition-transform duration-300 ease-out sm:px-6 lg:hidden lg:px-8 ${
+            className={`bg-background fixed top-16 right-0 left-0 z-50 h-[calc(100dvh-4rem)] overflow-y-auto overscroll-contain px-4 py-4 transition-transform duration-300 ease-out sm:px-6 min-[1050px]:hidden ${
               isAnimating ? 'translate-y-0' : '-translate-y-4'
             }`}
             style={{

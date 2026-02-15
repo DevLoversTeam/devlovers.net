@@ -8,9 +8,11 @@ import React from 'react';
 import { InteractiveConstellation } from '@/components/home/InteractiveConstellation';
 import { InteractiveCTAButton } from '@/components/home/InteractiveCTAButton';
 import { WelcomeHeroBackground } from '@/components/home/WelcomeHeroBackground';
+import { OnlineCounterPopup } from '@/components/shared/OnlineCounterPopup';
 
 export default function WelcomeHeroSection() {
   const t = useTranslations('homepage');
+  const ctaRef = React.useRef<HTMLAnchorElement>(null);
 
   return (
     <section className="relative flex min-h-[calc(100dvh-4rem)] flex-col items-center justify-center overflow-hidden px-4 md:px-8 lg:px-12">
@@ -40,9 +42,11 @@ export default function WelcomeHeroSection() {
         </p>
 
         <div className="mt-6 sm:mt-8 md:mt-14 lg:mt-16">
-          <InteractiveCTAButton />
+          <InteractiveCTAButton ref={ctaRef} />
         </div>
       </div>
+
+      <OnlineCounterPopup ctaRef={ctaRef} />
 
       <motion.div 
         initial={{ opacity: 0, y: 20 }}

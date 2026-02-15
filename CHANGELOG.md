@@ -579,3 +579,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Redis caching for quiz questions and review data
 - Environment configuration cleanup and standardization
 - Improved build stability and dependency management
+
+## [1.0.1] - 2026-02-15
+
+### Added
+
+- Shop / Payments reliability improvements:
+  - Monobank janitor map documentation as a source of truth
+  - Internal Monobank janitor endpoint scaffold with strict auth and rate-limit guards
+  - Post-redirect payment status UX with secure `/status` polling (no-store)
+- Homepage engagement:
+  - Online users counter popup integrated into Hero section
+  - Single fetch per visit to reduce Neon usage
+
+### Changed
+
+- Header responsiveness:
+  - Desktop breakpoint adjusted from 1024px to 1050px
+  - Reduced glow/shimmer intensity in light theme
+- Navigation and layout polish:
+  - Improved loader positioning to avoid overlap with navigation
+  - Optimized counter positioning logic
+
+### Fixed
+
+- Q&A data integrity:
+  - Fixed duplicated questions in API responses
+  - Added Redis cache versioning (`qa:v2:*`)
+  - Implemented automatic deduplication and cache rewrite on inconsistent data
+  - Improved pagination total count accuracy
+- Cache stability:
+  - Added TTL for Q&A cache
+  - Automatic cache invalidation after content seeding
+- Header layout issues after counter integration
+
+### Security
+
+- Hardened Monobank flows:
+  - Stronger origin checks and structured logging without PII
+  - Ownership protection for `/orders/[id]/status` (IDOR prevention)
+  - Pre-production test gate improvements
+
+### Infrastructure
+
+- Improved Redis cache reliability for Q&A
+- Extended automated tests for caching and payment flows
