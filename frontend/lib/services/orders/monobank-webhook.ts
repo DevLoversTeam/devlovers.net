@@ -803,12 +803,16 @@ async function applyWebhookToMatchedOrderAttemptEvent(args: {
     });
 
     if (!ok) {
-      monoLogError(MONO_WEBHOOK_ATOMIC_UPDATE_FAILED, undefined, {
-        eventId,
-        orderId: orderRow.id,
-        attemptId: attemptRow.id,
-        status,
-      });
+      monoLogError(
+        MONO_WEBHOOK_ATOMIC_UPDATE_FAILED,
+        new Error('Atomic update (paid+succeeded) did not update both rows'),
+        {
+          eventId,
+          orderId: orderRow.id,
+          attemptId: attemptRow.id,
+          status,
+        }
+      );
 
       const appliedResult: ApplyResult = 'applied_with_issue';
       await persistEventOutcome({
@@ -918,12 +922,16 @@ async function applyWebhookToMatchedOrderAttemptEvent(args: {
     });
 
     if (!ok) {
-      monoLogError(MONO_WEBHOOK_ATOMIC_UPDATE_FAILED, undefined, {
-        eventId,
-        orderId: orderRow.id,
-        attemptId: attemptRow.id,
-        status,
-      });
+      monoLogError(
+        MONO_WEBHOOK_ATOMIC_UPDATE_FAILED,
+        new Error('Atomic update (finalize) did not update both rows'),
+        {
+          eventId,
+          orderId: orderRow.id,
+          attemptId: attemptRow.id,
+          status,
+        }
+      );
 
       const appliedResult: ApplyResult = 'applied_with_issue';
       await persistEventOutcome({
@@ -962,13 +970,17 @@ async function applyWebhookToMatchedOrderAttemptEvent(args: {
     });
   }
 
-  monoLogError(MONO_WEBHOOK_UNKNOWN_STATUS, undefined, {
-    eventId,
-    status,
-    invoiceId: normalized.invoiceId,
-    orderId: orderRow.id,
-    attemptId: attemptRow.id,
-  });
+  monoLogError(
+    MONO_WEBHOOK_UNKNOWN_STATUS,
+    new Error('Unrecognized Monobank status'),
+    {
+      eventId,
+      status,
+      invoiceId: normalized.invoiceId,
+      orderId: orderRow.id,
+      attemptId: attemptRow.id,
+    }
+  );
 
   const appliedResult: ApplyResult = 'applied_noop';
   await persistEventOutcome({
@@ -1240,6 +1252,7 @@ export async function applyMonoWebhookEvent(args: {
 
 export async function handleMonobankWebhook(args: {
   rawBodyBytes: Uint8Array;
+  rawSha256: string;
   parsedPayload: Record<string, unknown>;
   eventKey: string;
   requestId: string;
@@ -1249,16 +1262,12 @@ export async function handleMonobankWebhook(args: {
     ? args.rawBodyBytes
     : Buffer.from(args.rawBodyBytes);
   const rawBody = rawBodyBuffer.toString('utf8');
-  const rawSha256 = crypto
-    .createHash('sha256')
-    .update(rawBodyBuffer)
-    .digest('hex');
 
   return applyMonoWebhookEvent({
     rawBody,
     parsedPayload: args.parsedPayload,
     eventKey: args.eventKey,
-    rawSha256,
+    rawSha256: args.rawSha256,
     requestId: args.requestId,
     mode: args.mode,
   });

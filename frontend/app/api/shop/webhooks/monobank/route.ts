@@ -105,11 +105,13 @@ export async function POST(request: NextRequest) {
       webhookMode = 'apply';
     }
   }
-  monoLogInfo(MONO_STORE_MODE, {
-    ...baseMeta,
-    mode: webhookMode,
-    storeDecision: webhookMode,
-  });
+  if (webhookMode !== 'apply') {
+    monoLogInfo(MONO_STORE_MODE, {
+      ...baseMeta,
+      mode: webhookMode,
+      storeDecision: webhookMode,
+    });
+  }
 
   let rawBodyBytes: Buffer;
   try {
@@ -158,7 +160,7 @@ export async function POST(request: NextRequest) {
       });
       return rateLimitResponse({
         retryAfterSeconds: decision.retryAfterSeconds,
-        details: { scope: 'monobank_webhook_invalid_signature' },
+        details: { scope: 'monobank_webhook_missing_signature' },
       });
     }
 
@@ -227,6 +229,7 @@ export async function POST(request: NextRequest) {
   try {
     const result = await handleMonobankWebhook({
       rawBodyBytes,
+      rawSha256,
       parsedPayload,
       eventKey,
       requestId,

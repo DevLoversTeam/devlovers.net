@@ -42,7 +42,7 @@ export function normalizeOrigin(input: string): string {
   try {
     return new URL(trimmed).origin;
   } catch {
-    return trimmed;
+    return '';
   }
 }
 
@@ -51,7 +51,8 @@ export function getAllowedOrigins(): string[] {
 
   const appOrigin = (process.env.APP_ORIGIN ?? '').trim();
   if (appOrigin) {
-    allowed.add(normalizeOrigin(appOrigin));
+    const normalized = normalizeOrigin(appOrigin);
+    if (normalized) allowed.add(normalized);
   }
 
   const additionalRaw = (process.env.APP_ADDITIONAL_ORIGINS ?? '').trim();
@@ -59,7 +60,8 @@ export function getAllowedOrigins(): string[] {
     for (const entry of additionalRaw.split(',')) {
       const candidate = entry.trim();
       if (!candidate) continue;
-      allowed.add(normalizeOrigin(candidate));
+      const normalized = normalizeOrigin(candidate);
+      if (normalized) allowed.add(normalized);
     }
   }
 

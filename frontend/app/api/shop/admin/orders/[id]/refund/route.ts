@@ -81,13 +81,10 @@ export async function POST(
       csrfRes.headers.set('Cache-Control', 'no-store');
       return csrfRes;
     }
-    const adminId =
-      adminUser && typeof adminUser === 'object'
-        ? (adminUser as Record<string, unknown>).id
-        : undefined;
+    const adminId = adminUser?.id;
 
     const adminSubject =
-      typeof adminId === 'string'
+      typeof adminId === 'string' && adminId.trim().length > 0
         ? `admin_${normalizeRateLimitSubject(adminId)}`
         : getRateLimitSubject(request);
 
