@@ -27,6 +27,41 @@ type QaApiResponse = {
   locale: string;
 };
 
+function dedupeItems(items: QaApiResponse['items']) {
+  const seenById = new Set<string>();
+  const seenByText = new Set<string>();
+  const unique: QaApiResponse['items'] = [];
+
+  for (const item of items) {
+    if (seenById.has(item.id)) {
+      continue;
+    }
+
+    const textKey = `${item.locale}:${item.question.trim().toLowerCase()}`;
+    if (seenByText.has(textKey)) {
+      continue;
+    }
+
+    seenById.add(item.id);
+    seenByText.add(textKey);
+    unique.push(item);
+  }
+
+  return unique;
+}
+
+function normalizeResponse(data: QaApiResponse): QaApiResponse {
+  const uniqueItems = dedupeItems(data.items);
+  if (uniqueItems.length === data.items.length) {
+    return data;
+  }
+
+  return {
+    ...data,
+    items: uniqueItems,
+  };
+}
+
 export async function GET(
   req: Request,
   ctx: { params: Promise<{ category: string }> }
@@ -59,9 +94,15 @@ export async function GET(
     const cached = await getQaCache<QaApiResponse>(cacheKey);
 
     if (cached) {
-      const response = NextResponse.json(cached);
+      const normalizedCached = normalizeResponse(cached);
+      const response = NextResponse.json(normalizedCached);
       response.headers.set('Cache-Control', 'no-store');
       response.headers.set('x-qa-cache', 'HIT');
+
+      if (normalizedCached.items.length !== cached.items.length) {
+        await setQaCache(cacheKey, normalizedCached);
+      }
+
       return response;
     }
 
@@ -124,23 +165,18 @@ export async function GET(
       .limit(limit)
       .offset(offset);
 
-    const response = NextResponse.json({
+    const payload = normalizeResponse({
       items,
       total,
       page,
       totalPages,
       locale,
     });
+    const response = NextResponse.json(payload);
     response.headers.set('Cache-Control', 'no-store');
     response.headers.set('x-qa-cache', 'MISS');
 
-    await setQaCache(cacheKey, {
-      items,
-      total,
-      page,
-      totalPages,
-      locale,
-    });
+    await setQaCache(cacheKey, payload);
 
     return response;
   } catch (error) {
