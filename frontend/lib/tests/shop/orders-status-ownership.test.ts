@@ -198,7 +198,6 @@ function extractStatusToken(
   json: any,
   orderId: string
 ): { token: string; paramName: string } {
-  // 1) direct fields (existing + a few common alternates)
   const directCandidates: Array<[string, unknown]> = [
     ['statusToken', json?.statusToken],
     ['status_token', json?.status_token],
@@ -214,7 +213,6 @@ function extractStatusToken(
     }
   }
 
-  // 2) URL fields (existing + alternates)
   const urlFields = [
     'statusUrl',
     'status_url',
@@ -338,7 +336,9 @@ async function getOrderStatus(
 }
 
 describe.sequential('orders/[id]/status ownership (J)', () => {
-  assertNotProductionDb();
+  beforeAll(() => {
+    assertNotProductionDb();
+  });
 
   it('no token -> 401/403; correct token -> 200; foreign token -> 403/404 (no IDOR)', async () => {
     const { productId } = await insertTestProductWithUAHPrice({
@@ -389,9 +389,28 @@ describe.sequential('orders/[id]/status ownership (J)', () => {
           tokA.token
         );
         expect(res.status).toBe(200);
-        if (json && (json.orderId || json.id)) {
-          expect(json.orderId ?? json.id).toBe(orderA);
+
+        expect(json).toBeTruthy();
+        expect((json as any).success).toBe(true);
+        expect((json as any).order).toBeTruthy();
+
+        const returnedId =
+          (json as any).orderId ?? (json as any).id ?? (json as any).order?.id;
+
+        if (!returnedId) {
+          const topKeys =
+            json && typeof json === 'object' ? Object.keys(json) : [];
+          const orderKeys =
+            (json as any)?.order && typeof (json as any).order === 'object'
+              ? Object.keys((json as any).order)
+              : [];
+          throw new Error(
+            `[ownership-test] status 200 response missing order identifier. ` +
+              `topKeys=${JSON.stringify(topKeys)} orderKeys=${JSON.stringify(orderKeys)}`
+          );
         }
+
+        expect(returnedId).toBe(orderA);
       }
 
       {

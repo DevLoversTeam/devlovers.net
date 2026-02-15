@@ -626,13 +626,6 @@ async function createMonoAttemptAndInvoiceImpl(
       attemptId: attempt.id,
       requestId: args.requestId,
       errorCode,
-    });
-
-    logWarn('monobank_invoice_create_failed', {
-      orderId: args.orderId,
-      attemptId: attempt.id,
-      code: errorCode,
-      requestId: args.requestId,
       message: errorMessage,
     });
 

@@ -1,20 +1,21 @@
 import { describe, expect, it, vi } from 'vitest';
 
-const monoLogWarnMock = vi.fn();
-
 vi.mock('@/lib/logging', () => ({
   logWarn: vi.fn(),
   logError: vi.fn(),
   logInfo: vi.fn(),
 }));
 
-vi.mock('@/lib/logging/monobank', async () => {
-  const actual = await vi.importActual<any>('@/lib/logging/monobank');
-  return {
-    ...actual,
-    monoLogWarn: (...args: unknown[]) => monoLogWarnMock(...args),
-  };
-});
+vi.mock('@/db', () => ({
+  db: new Proxy(
+    {},
+    {
+      get() {
+        throw new Error('[unit-test] DB access is not allowed here');
+      },
+    }
+  ),
+}));
 
 import {
   PspInvoicePersistError,

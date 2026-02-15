@@ -81,10 +81,14 @@ export async function POST(
       csrfRes.headers.set('Cache-Control', 'no-store');
       return csrfRes;
     }
+    const adminId =
+      adminUser && typeof adminUser === 'object'
+        ? (adminUser as Record<string, unknown>).id
+        : undefined;
 
     const adminSubject =
-      typeof (adminUser as { id?: unknown })?.id === 'string'
-        ? `admin_${normalizeRateLimitSubject((adminUser as { id: string }).id)}`
+      typeof adminId === 'string'
+        ? `admin_${normalizeRateLimitSubject(adminId)}`
         : getRateLimitSubject(request);
 
     const limit = readPositiveIntEnv(
@@ -156,12 +160,9 @@ export async function POST(
           { status: 409 }
         );
       }
-    }
 
-    if (targetOrder?.paymentProvider === 'monobank') {
-      const { requestMonobankFullRefund } = await import(
-        '@/lib/services/orders/monobank-refund'
-      );
+      const { requestMonobankFullRefund } =
+        await import('@/lib/services/orders/monobank-refund');
       const result = await requestMonobankFullRefund({
         orderId: orderIdForLog,
         requestId,

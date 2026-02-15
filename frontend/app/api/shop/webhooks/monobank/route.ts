@@ -233,10 +233,12 @@ export async function POST(request: NextRequest) {
       mode: webhookMode,
     });
 
-    if (result.appliedResult === 'stored' || result.appliedResult === 'dropped') {
+    if (
+      result.appliedResult === 'stored' ||
+      result.appliedResult === 'dropped'
+    ) {
       monoLogInfo(MONO_STORE_MODE, {
         ...diagMeta,
-        mode: webhookMode,
         storeDecision: result.appliedResult,
         eventKey,
         invoiceId: result.invoiceId,

@@ -2,13 +2,31 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const LOCALHOST_ORIGIN = 'http://localhost:3000';
 
-function buildErrorResponse(code: string, message: string) {
+function buildErrorResponse(
+  code: string,
+  message: string,
+  extraBody?: Record<string, unknown>,
+  extraError?: Record<string, unknown>
+) {
+  const safeBody = extraBody ? { ...extraBody } : undefined;
+  if (safeBody && 'error' in safeBody) {
+    delete (safeBody as Record<string, unknown>).error;
+  }
+
+  const safeError = extraError ? { ...extraError } : undefined;
+  if (safeError) {
+    delete (safeError as Record<string, unknown>).code;
+    delete (safeError as Record<string, unknown>).message;
+  }
   const res = NextResponse.json(
     {
       error: {
         code,
         message,
+        ...(safeError ?? {}),
       },
+
+      ...(safeBody ?? {}),
     },
     { status: 403 }
   );
@@ -122,17 +140,9 @@ export function guardNonBrowserFailClosed(
     return null;
   }
 
-  const res = NextResponse.json(
-    {
-      error: {
-        code: 'ORIGIN_BLOCKED',
-        message: 'Browser context is not allowed for this endpoint.',
-      },
-      surface: meta?.surface ?? 'non_browser',
-    },
-    { status: 403 }
+  return buildErrorResponse(
+    'ORIGIN_BLOCKED',
+    'Browser context is not allowed for this endpoint.',
+    { surface: meta?.surface ?? 'non_browser' }
   );
-
-  res.headers.set('Cache-Control', 'no-store');
-  return res;
 }
