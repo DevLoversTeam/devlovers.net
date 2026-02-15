@@ -510,3 +510,117 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - Reduced database load for quiz pages via Redis caching
 - Improved frontend loading experience during navigation
+
+## [1.0.0] - 2026-02-14
+
+### Added
+
+- Complete production-ready DevLovers platform:
+  - Interactive Home with redesigned Hero and Features sections
+  - Full Quiz learning cycle: play, results, review, and dashboard history
+  - Quiz integrity system with violations counter and status badges
+  - Breadcrumb navigation for quiz review flow
+- Dashboard improvements:
+  - Quiz Results history with scores, percentages, and mastery status
+  - User avatars with automatic fallback generation
+- Q&A improvements:
+  - Next.js category enhancements and optimized loader behavior
+  - Configurable pagination size (10–100 items) with URL persistence
+- Leaderboard enhancements:
+  - User avatars in podium and table rows
+  - Improved layout consistency across devices
+- Platform transparency:
+  - Public `/humans.txt` with team and project information
+- Observability & monitoring:
+  - Full Sentry integration for production error and performance tracking
+- CI & supply-chain security:
+  - Safe-chain dependency protection in GitHub Actions
+- Shop & payments:
+  - Monobank acquiring flow (UAH-only, feature-gated)
+  - Webhook verification, idempotent processing, and admin operations
+  - Internal Monobank janitor jobs for payment state consistency
+
+### Changed
+
+- Home page redesigned with improved UX, animations, and full localization
+- Header and navigation refined with contextual behavior and loading states
+- Quiz UX improvements:
+  - Unified result thresholds (Study / Review / Mastered)
+  - Locale switch now preserves result screen
+  - Auto-scroll to Next action after answering
+- Mobile experience significantly improved across:
+  - Dashboard
+  - Leaderboard
+  - AI Word Helper
+- SEO & social sharing:
+  - Localized Open Graph and Twitter metadata
+  - MetadataBase configuration for correct preview URLs
+- Product experience:
+  - Multi-language product descriptions
+  - Improved rendering and formatting
+
+### Fixed
+
+- Points mismatch between dashboard and leaderboard
+- Locale redirect issues for dashboard and quiz result pages
+- Review cache isolation to prevent cross-user data leakage
+- Quiz result locale switch losing state
+- Multiple Tailwind v4 canonical class warnings
+- Various mobile layout and interaction issues
+
+### Security
+
+- CI dependency scanning with Safe-chain
+- OAuth and environment configuration stabilization
+- Internal operational endpoints protected with secret-based access
+
+### Infrastructure
+
+- Redis caching for quiz questions and review data
+- Environment configuration cleanup and standardization
+- Improved build stability and dependency management
+
+## [1.0.1] - 2026-02-15
+
+### Added
+
+- Shop / Payments reliability improvements:
+  - Monobank janitor map documentation as a source of truth
+  - Internal Monobank janitor endpoint scaffold with strict auth and rate-limit guards
+  - Post-redirect payment status UX with secure `/status` polling (no-store)
+- Homepage engagement:
+  - Online users counter popup integrated into Hero section
+  - Single fetch per visit to reduce Neon usage
+
+### Changed
+
+- Header responsiveness:
+  - Desktop breakpoint adjusted from 1024px to 1050px
+  - Reduced glow/shimmer intensity in light theme
+- Navigation and layout polish:
+  - Improved loader positioning to avoid overlap with navigation
+  - Optimized counter positioning logic
+
+### Fixed
+
+- Q&A data integrity:
+  - Fixed duplicated questions in API responses
+  - Added Redis cache versioning (`qa:v2:*`)
+  - Implemented automatic deduplication and cache rewrite on inconsistent data
+  - Improved pagination total count accuracy
+- Cache stability:
+  - Added TTL for Q&A cache
+  - Automatic cache invalidation after content seeding
+- Header layout issues after counter integration
+
+### Security
+
+- Hardened Monobank flows:
+  - Stronger origin checks and structured logging without PII
+  - Ownership protection for `/orders/[id]/status` (IDOR prevention)
+  - Pre-production test gate improvements
+
+### Infrastructure
+
+- Improved Redis cache reliability for Q&A
+- Extended automated tests for caching and payment flows

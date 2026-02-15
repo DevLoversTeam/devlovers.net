@@ -6,7 +6,19 @@ import { and, eq, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { monobankEvents, orders, paymentAttempts } from '@/db/schema';
-import { logError, logInfo } from '@/lib/logging';
+import {
+  MONO_DEDUP,
+  MONO_MISMATCH,
+  MONO_OLD_EVENT,
+  MONO_PAID_APPLIED,
+  MONO_STORE_MODE,
+  MONO_WEBHOOK_ATOMIC_UPDATE_FAILED,
+  MONO_WEBHOOK_RESTOCK_FAILED,
+  MONO_WEBHOOK_UNKNOWN_STATUS,
+  monoLogError,
+  monoLogInfo,
+  monoLogWarn,
+} from '@/lib/logging/monobank';
 import { InvalidPayloadError } from '@/lib/services/errors';
 import { guardedPaymentStatusUpdate } from '@/lib/services/orders/payment-state';
 import { restockOrder } from '@/lib/services/orders/restock';
@@ -566,6 +578,14 @@ async function applyWebhookToMatchedOrderAttemptEvent(args: {
     attemptProviderModifiedAt &&
     providerModifiedAt <= attemptProviderModifiedAt
   ) {
+    monoLogInfo(MONO_OLD_EVENT, {
+      eventId,
+      invoiceId: normalized.invoiceId,
+      orderId: orderRow.id,
+      attemptId: attemptRow.id,
+      status,
+      reason: 'provider_modified_at_older_or_equal',
+    });
     const appliedResult: ApplyResult = 'applied_noop';
     await persistEventOutcome({
       eventId,
@@ -595,6 +615,14 @@ async function applyWebhookToMatchedOrderAttemptEvent(args: {
   });
 
   if (mismatch.mismatch) {
+    monoLogWarn(MONO_MISMATCH, {
+      eventId,
+      invoiceId: normalized.invoiceId,
+      orderId: orderRow.id,
+      attemptId: attemptRow.id,
+      status,
+      reason: mismatch.reason ?? 'mismatch',
+    });
     const appliedResult: ApplyResult = 'applied_with_issue';
 
     if (orderRow.paymentStatus !== 'paid') {
@@ -775,12 +803,16 @@ async function applyWebhookToMatchedOrderAttemptEvent(args: {
     });
 
     if (!ok) {
-      logError('monobank_webhook_atomic_update_failed', undefined, {
-        eventId,
-        orderId: orderRow.id,
-        attemptId: attemptRow.id,
-        status,
-      });
+      monoLogError(
+        MONO_WEBHOOK_ATOMIC_UPDATE_FAILED,
+        new Error('Atomic update (paid+succeeded) did not update both rows'),
+        {
+          eventId,
+          orderId: orderRow.id,
+          attemptId: attemptRow.id,
+          status,
+        }
+      );
 
       const appliedResult: ApplyResult = 'applied_with_issue';
       await persistEventOutcome({
@@ -808,6 +840,14 @@ async function applyWebhookToMatchedOrderAttemptEvent(args: {
       appliedResult,
       attemptId: attemptRow.id,
       orderId: orderRow.id,
+    });
+    monoLogInfo(MONO_PAID_APPLIED, {
+      eventId,
+      invoiceId: normalized.invoiceId,
+      orderId: orderRow.id,
+      attemptId: attemptRow.id,
+      status,
+      appliedResult,
     });
 
     return buildApplyOutcome({
@@ -882,12 +922,16 @@ async function applyWebhookToMatchedOrderAttemptEvent(args: {
     });
 
     if (!ok) {
-      logError('monobank_webhook_atomic_update_failed', undefined, {
-        eventId,
-        orderId: orderRow.id,
-        attemptId: attemptRow.id,
-        status,
-      });
+      monoLogError(
+        MONO_WEBHOOK_ATOMIC_UPDATE_FAILED,
+        new Error('Atomic update (finalize) did not update both rows'),
+        {
+          eventId,
+          orderId: orderRow.id,
+          attemptId: attemptRow.id,
+          status,
+        }
+      );
 
       const appliedResult: ApplyResult = 'applied_with_issue';
       await persistEventOutcome({
@@ -926,13 +970,17 @@ async function applyWebhookToMatchedOrderAttemptEvent(args: {
     });
   }
 
-  logError('MONO_WEBHOOK_UNKNOWN_STATUS', undefined, {
-    eventId,
-    status,
-    invoiceId: normalized.invoiceId,
-    orderId: orderRow.id,
-    attemptId: attemptRow.id,
-  });
+  monoLogError(
+    MONO_WEBHOOK_UNKNOWN_STATUS,
+    new Error('Unrecognized Monobank status'),
+    {
+      eventId,
+      status,
+      invoiceId: normalized.invoiceId,
+      orderId: orderRow.id,
+      attemptId: attemptRow.id,
+    }
+  );
 
   const appliedResult: ApplyResult = 'applied_noop';
   await persistEventOutcome({
@@ -1020,7 +1068,7 @@ async function finalizeOutcomeWithRestock(args: {
         workerId: 'monobank_webhook',
       });
     } catch (error) {
-      logError('monobank_webhook_restock_failed', error, {
+      monoLogError(MONO_WEBHOOK_RESTOCK_FAILED, error, {
         requestId: args.requestId,
         invoiceId: args.normalized.invoiceId,
       });
@@ -1124,10 +1172,12 @@ export async function applyMonoWebhookEvent(args: {
   });
 
   if (!eventId) {
-    logInfo('monobank_webhook_deduped', {
+    monoLogInfo(MONO_DEDUP, {
       requestId: args.requestId,
       invoiceId: parsed.normalized.invoiceId,
       status: parsed.normalized.status,
+      deduped: true,
+      reason: 'insert_conflict',
     });
     return {
       deduped: true,
@@ -1141,6 +1191,13 @@ export async function applyMonoWebhookEvent(args: {
     const now = new Date();
     const appliedResult: ApplyResult =
       args.mode === 'drop' ? 'dropped' : 'stored';
+    monoLogInfo(MONO_STORE_MODE, {
+      requestId: args.requestId,
+      mode: args.mode,
+      storeDecision: appliedResult,
+      eventId,
+      invoiceId: parsed.normalized.invoiceId,
+    });
 
     await db
       .update(monobankEvents)
@@ -1195,6 +1252,7 @@ export async function applyMonoWebhookEvent(args: {
 
 export async function handleMonobankWebhook(args: {
   rawBodyBytes: Uint8Array;
+  rawSha256: string;
   parsedPayload: Record<string, unknown>;
   eventKey: string;
   requestId: string;
@@ -1204,16 +1262,12 @@ export async function handleMonobankWebhook(args: {
     ? args.rawBodyBytes
     : Buffer.from(args.rawBodyBytes);
   const rawBody = rawBodyBuffer.toString('utf8');
-  const rawSha256 = crypto
-    .createHash('sha256')
-    .update(rawBodyBuffer)
-    .digest('hex');
 
   return applyMonoWebhookEvent({
     rawBody,
     parsedPayload: args.parsedPayload,
     eventKey: args.eventKey,
-    rawSha256,
+    rawSha256: args.rawSha256,
     requestId: args.requestId,
     mode: args.mode,
   });

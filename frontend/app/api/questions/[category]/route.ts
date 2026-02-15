@@ -1,4 +1,4 @@
-import { and, eq, ilike, sql } from 'drizzle-orm';
+import { and, eq, ilike } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
 import { db } from '@/db';
@@ -26,6 +26,47 @@ type QaApiResponse = {
   totalPages: number;
   locale: string;
 };
+
+function dedupeItems(items: QaApiResponse['items']) {
+  const seenById = new Set<string>();
+  const seenByText = new Set<string>();
+  const unique: QaApiResponse['items'] = [];
+
+  for (const item of items) {
+    if (seenById.has(item.id)) {
+      continue;
+    }
+
+    const textKey = `${item.locale}:${item.question.trim().toLowerCase()}`;
+    if (seenByText.has(textKey)) {
+      continue;
+    }
+
+    seenById.add(item.id);
+    seenByText.add(textKey);
+    unique.push(item);
+  }
+
+  return unique;
+}
+
+function normalizeResponse(data: QaApiResponse, limit: number): QaApiResponse {
+  const uniqueItems = dedupeItems(data.items);
+  if (uniqueItems.length === data.items.length) {
+    return data;
+  }
+
+  const removed = data.items.length - uniqueItems.length;
+  const total = Math.max(0, data.total - removed);
+  const totalPages = Math.ceil(total / limit);
+
+  return {
+    ...data,
+    items: uniqueItems,
+    total,
+    totalPages,
+  };
+}
 
 export async function GET(
   req: Request,
@@ -59,9 +100,15 @@ export async function GET(
     const cached = await getQaCache<QaApiResponse>(cacheKey);
 
     if (cached) {
-      const response = NextResponse.json(cached);
+      const normalizedCached = normalizeResponse(cached, limit);
+      const response = NextResponse.json(normalizedCached);
       response.headers.set('Cache-Control', 'no-store');
       response.headers.set('x-qa-cache', 'HIT');
+
+      if (normalizedCached.items.length !== cached.items.length) {
+        await setQaCache(cacheKey, normalizedCached);
+      }
+
       return response;
     }
 
@@ -92,19 +139,7 @@ export async function GET(
       ? and(baseCondition, ilike(questionTranslations.question, `%${search}%`))
       : baseCondition;
 
-    const [{ count }] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(questions)
-      .innerJoin(
-        questionTranslations,
-        eq(questions.id, questionTranslations.questionId)
-      )
-      .where(whereCondition);
-
-    const total = Number(count);
-    const totalPages = Math.ceil(total / limit);
-
-    const items = await db
+    const allItems = await db
       .select({
         id: questions.id,
         categoryId: questions.categoryId,
@@ -120,27 +155,25 @@ export async function GET(
         eq(questions.id, questionTranslations.questionId)
       )
       .where(whereCondition)
-      .orderBy(questions.sortOrder)
-      .limit(limit)
-      .offset(offset);
+      .orderBy(questions.sortOrder, questions.id);
 
-    const response = NextResponse.json({
+    const uniqueItems = dedupeItems(allItems);
+    const total = uniqueItems.length;
+    const totalPages = Math.ceil(total / limit);
+    const items = uniqueItems.slice(offset, offset + limit);
+
+    const payload = {
       items,
       total,
       page,
       totalPages,
       locale,
-    });
+    } satisfies QaApiResponse;
+    const response = NextResponse.json(payload);
     response.headers.set('Cache-Control', 'no-store');
     response.headers.set('x-qa-cache', 'MISS');
 
-    await setQaCache(cacheKey, {
-      items,
-      total,
-      page,
-      totalPages,
-      locale,
-    });
+    await setQaCache(cacheKey, payload);
 
     return response;
   } catch (error) {

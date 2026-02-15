@@ -26,7 +26,7 @@ export function DesktopActions({
   const isBlog = variant === 'blog';
 
   return (
-    <div className="hidden items-center gap-2 lg:flex">
+    <div className="hidden items-center gap-2 min-[1050px]:flex">
       {isBlog && <BlogHeaderSearch />}
 
       <LanguageSwitcher />

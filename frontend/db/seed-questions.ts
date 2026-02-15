@@ -3,6 +3,7 @@ import 'dotenv/config';
 import { and, eq } from 'drizzle-orm';
 
 import rawData from '../parse/questions.json';
+import { invalidateAllQaCache } from '../lib/cache/qa';
 import { db } from './index';
 import { categories, questions, questionTranslations } from './schema';
 
@@ -136,6 +137,13 @@ async function seedQuestions() {
         )}] but inserted [${uniqueInsertedLocales.join(', ')}]`
       );
     }
+  }
+
+  try {
+    const deleted = await invalidateAllQaCache();
+    console.log(`[seed] Cleared Q&A cache keys: ${deleted}`);
+  } catch (error) {
+    console.warn('[seed] Failed to clear Q&A cache:', error);
   }
 
   console.log('Questions seeded!');
