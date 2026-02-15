@@ -6,6 +6,10 @@ import { db } from '@/db';
 import { orderItems, orders, paymentAttempts } from '@/db/schema';
 import { logError, logWarn } from '@/lib/logging';
 import {
+  MONO_CREATE_INVOICE_FAILED,
+  monoLogWarn,
+} from '@/lib/logging/monobank';
+import {
   cancelMonobankInvoice,
   createMonobankInvoice,
   MONO_CURRENCY,
@@ -617,11 +621,11 @@ async function createMonoAttemptAndInvoiceImpl(
         ? String((error as { code?: unknown }).code)
         : 'PSP_UNAVAILABLE';
 
-    logWarn('monobank_invoice_create_failed', {
+    monoLogWarn(MONO_CREATE_INVOICE_FAILED, {
       orderId: args.orderId,
       attemptId: attempt.id,
-      code: errorCode,
       requestId: args.requestId,
+      errorCode,
       message: errorMessage,
     });
 
@@ -737,7 +741,7 @@ export async function createMonobankAttemptAndInvoice(args: {
   totalAmountMinor: number;
 }> {
   const redirectUrl = toAbsoluteUrl(
-    `/shop/checkout/success?orderId=${encodeURIComponent(
+    `/shop/checkout/success?flow=monobank&orderId=${encodeURIComponent(
       args.orderId
     )}&statusToken=${encodeURIComponent(args.statusToken)}`
   );

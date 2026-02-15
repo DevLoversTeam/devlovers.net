@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { and, eq } from 'drizzle-orm';
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { db } from '@/db';
@@ -9,7 +9,7 @@ import { resetEnvCache } from '@/lib/env';
 import { toDbMoney } from '@/lib/shop/money';
 
 vi.mock('@/lib/auth/admin', () => ({
-  requireAdminApi: vi.fn(async () => {}),
+  requireAdminApi: vi.fn(async () => ({ id: 'admin:root', role: 'admin' })),
   AdminApiDisabledError: class AdminApiDisabledError extends Error {},
   AdminUnauthorizedError: class AdminUnauthorizedError extends Error {
     code = 'ADMIN_UNAUTHORIZED';
@@ -22,6 +22,35 @@ vi.mock('@/lib/auth/admin', () => ({
 vi.mock('@/lib/security/admin-csrf', () => ({
   requireAdminCsrf: vi.fn(() => null),
 }));
+
+vi.mock('@/lib/security/rate-limit', async () => {
+  const actual = await vi.importActual<any>('@/lib/security/rate-limit');
+  return {
+    ...actual,
+    getRateLimitSubject: vi.fn(() => 'rl_admin_refund_test'),
+    enforceRateLimit: vi.fn(async () => ({ ok: true, retryAfterSeconds: 0 })),
+    rateLimitResponse: ({
+      retryAfterSeconds,
+      details,
+    }: {
+      retryAfterSeconds: number;
+      details?: Record<string, unknown>;
+    }) => {
+      const res = NextResponse.json(
+        {
+          success: false,
+          code: 'RATE_LIMITED',
+          retryAfterSeconds,
+          ...(details ? { details } : {}),
+        },
+        { status: 429 }
+      );
+      res.headers.set('Retry-After', String(retryAfterSeconds));
+      res.headers.set('Cache-Control', 'no-store');
+      return res;
+    },
+  };
+});
 
 vi.mock('@/lib/services/orders', () => ({
   refundOrder: vi.fn(async () => {

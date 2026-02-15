@@ -19,6 +19,7 @@ import {
 import { cn } from '@/lib/utils';
 import { orderIdParamSchema } from '@/lib/validation/shop';
 
+import MonobankRedirectStatus from './MonobankRedirectStatus';
 import OrderStatusAutoRefresh from './OrderStatusAutoRefresh';
 
 export const metadata: Metadata = {
@@ -28,7 +29,6 @@ export const metadata: Metadata = {
 };
 
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -44,6 +44,20 @@ function parseOrderId(params: SearchParams): string | null {
   const parsed = orderIdParamSchema.safeParse({ id: raw });
   if (!parsed.success) return null;
   return parsed.data.id;
+}
+
+function parseStatusToken(params: SearchParams): string | null {
+  const raw = getStringParam(params, 'statusToken').trim();
+  return raw.length ? raw : null;
+}
+
+function isMonobankRedirectFlow(
+  params: SearchParams,
+  statusToken: string | null
+): boolean {
+  if (statusToken) return true;
+  const flow = getStringParam(params, 'flow').trim().toLowerCase();
+  return flow === 'monobank';
 }
 
 function isPaymentsDisabled(params: SearchParams): boolean {
@@ -136,6 +150,7 @@ export default async function CheckoutSuccessPage({
 }) {
   const { locale } = await params;
   const resolvedParams = await searchParams;
+
   const clearCart = shouldClearCart(resolvedParams);
   const t = await getTranslations('shop.checkout');
 
@@ -156,6 +171,24 @@ export default async function CheckoutSuccessPage({
           </Link>
         </nav>
       </CheckoutShell>
+    );
+  }
+
+  const statusToken = parseStatusToken(resolvedParams);
+  if (isMonobankRedirectFlow(resolvedParams, statusToken)) {
+    return (
+      <main
+        className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8"
+        aria-labelledby="order-title"
+      >
+        <ClearCartOnMount enabled={clearCart} />
+        <MonobankRedirectStatus
+          orderId={orderId}
+          locale={locale}
+          initialStatusToken={statusToken}
+          paymentsDisabled={isPaymentsDisabled(resolvedParams)}
+        />
+      </main>
     );
   }
 

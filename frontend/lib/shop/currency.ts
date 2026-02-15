@@ -70,15 +70,20 @@ function normalizeLocaleForIntl(
 }
 
 const formatterCache = new Map<string, Intl.NumberFormat>();
-function getFormatter(locale: string, currency: CurrencyCode) {
-  const key = `${locale}::${currency}`;
+function getFormatter(
+  locale: string,
+  currency: CurrencyCode,
+  currencyDisplay: Intl.NumberFormatOptions['currencyDisplay'] = 'narrowSymbol'
+) {
+  const display = currencyDisplay ?? 'narrowSymbol';
+  const key = `${locale}::${currency}::${display}`;
   const cached = formatterCache.get(key);
   if (cached) return cached;
 
   const created = new Intl.NumberFormat(locale, {
     style: 'currency',
     currency,
-    currencyDisplay: 'narrowSymbol',
+    currencyDisplay: display,
   });
 
   formatterCache.set(key, created);
@@ -106,7 +111,22 @@ export function formatMoney(
     const minor = assertMinorUnitsStrict(amountMinor);
     const intlLocale = normalizeLocaleForIntl(locale, currency);
     const major = minorToMajor(minor, currency);
-    return getFormatter(intlLocale, currency).format(major);
+    return getFormatter(intlLocale, currency, 'narrowSymbol').format(major);
+  } catch {
+    return '-';
+  }
+}
+
+export function formatMoneyCode(
+  amountMinor: number,
+  currency: CurrencyCode,
+  locale?: string | null
+): string {
+  try {
+    const minor = assertMinorUnitsStrict(amountMinor);
+    const intlLocale = normalizeLocaleForIntl(locale, currency);
+    const major = minorToMajor(minor, currency);
+    return getFormatter(intlLocale, currency, 'code').format(major);
   } catch {
     return '-';
   }

@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { requireInternalJanitorAuth } from '@/lib/auth/internal-janitor';
 import { logError, logInfo, logWarn } from '@/lib/logging';
-import { guardNonBrowserOnly } from '@/lib/security/origin';
+import { guardNonBrowserFailClosed } from '@/lib/security/origin';
 import {
   restockStaleNoPaymentOrders,
   restockStalePendingOrders,
@@ -260,7 +260,9 @@ export async function POST(request: NextRequest) {
     jobName: 'restock-stale',
   };
 
-  const blocked = guardNonBrowserOnly(request);
+  const blocked = guardNonBrowserFailClosed(request, {
+    surface: 'orders_restock_stale_janitor',
+  });
   if (blocked) {
     logWarn('internal_janitor_origin_blocked', {
       ...baseMeta,

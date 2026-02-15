@@ -385,7 +385,19 @@
         "placing": "Placing order...",
         "message": "You'll either be redirected to secure payment or see confirmation if payment is not required in this environment",
         "notRedirected": "If you are not redirected automatically, open your order",
-        "goToOrder": "Go to order"
+        "goToOrder": "Go to order",
+        "errors": {
+          "unexpectedResponse": "Unexpected checkout response.",
+          "startFailed": "Unable to start checkout right now."
+        },
+        "paymentMethod": {
+          "label": "Payment method",
+          "stripe": "Stripe",
+          "monobank": "Monobank",
+          "monobankUahOnlyHint": "Monobank is available only for UAH checkout.",
+          "monobankUnavailable": "Monobank is unavailable in this environment.",
+          "noAvailable": "No payment methods are currently available."
+        }
       },
       "actions": {
         "removeItem": "Remove {title} from cart",
@@ -574,7 +586,34 @@
         "items": "Items",
         "status": "Status",
         "continueShopping": "Continue shopping",
-        "viewCart": "View cart"
+        "viewCart": "View cart",
+        "refreshStatus": "Refresh status",
+        "refreshingStatus": "Refreshing...",
+        "statusAccessDenied": "Unable to verify payment status for this order.",
+        "needsReviewContact": "Please contact support and provide Order ID: {orderId}",
+        "statusHeadlines": {
+          "pending": "Payment is being confirmed",
+          "paid": "Payment confirmed",
+          "canceled": "Payment not completed",
+          "needsReview": "Payment needs manual review"
+        },
+        "statusMessages": {
+          "pending": "We are still confirming your payment. This page updates automatically.",
+          "pendingUnknown": "We are still confirming your payment status.",
+          "paid": "Your payment has been confirmed.",
+          "canceled": "This payment was not completed or was canceled.",
+          "needsReview": "We could not automatically confirm this payment."
+        }
+      },
+      "paymentStatus": {
+        "confirming": "Payment is being confirmed",
+        "paid": "Payment confirmed",
+        "failed": "Payment failed",
+        "needsReview": "Payment needs review",
+        "refunded": "Payment refunded",
+        "canceled": "Payment canceled",
+        "pending": "Payment pending",
+        "unknown": "Payment status unavailable"
       },
       "error": {
         "paymentFailed": "Payment failed",
