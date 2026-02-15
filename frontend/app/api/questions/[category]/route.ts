@@ -50,15 +50,21 @@ function dedupeItems(items: QaApiResponse['items']) {
   return unique;
 }
 
-function normalizeResponse(data: QaApiResponse): QaApiResponse {
+function normalizeResponse(data: QaApiResponse, limit: number): QaApiResponse {
   const uniqueItems = dedupeItems(data.items);
   if (uniqueItems.length === data.items.length) {
     return data;
   }
 
+  const removed = data.items.length - uniqueItems.length;
+  const total = Math.max(0, data.total - removed);
+  const totalPages = Math.ceil(total / limit);
+
   return {
     ...data,
     items: uniqueItems,
+    total,
+    totalPages,
   };
 }
 
@@ -94,7 +100,7 @@ export async function GET(
     const cached = await getQaCache<QaApiResponse>(cacheKey);
 
     if (cached) {
-      const normalizedCached = normalizeResponse(cached);
+      const normalizedCached = normalizeResponse(cached, limit);
       const response = NextResponse.json(normalizedCached);
       response.headers.set('Cache-Control', 'no-store');
       response.headers.set('x-qa-cache', 'HIT');
@@ -165,13 +171,16 @@ export async function GET(
       .limit(limit)
       .offset(offset);
 
-    const payload = normalizeResponse({
+    const payload = normalizeResponse(
+      {
       items,
       total,
       page,
       totalPages,
       locale,
-    });
+      },
+      limit
+    );
     const response = NextResponse.json(payload);
     response.headers.set('Cache-Control', 'no-store');
     response.headers.set('x-qa-cache', 'MISS');

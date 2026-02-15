@@ -173,6 +173,8 @@ describe('GET /api/questions/[category]', () => {
     expect(data.items.map((item: { question: string }) => item.question)).toEqual(
       ['What is JavaScript?', 'What is closure?']
     );
+    expect(data.total).toBe(2);
+    expect(data.totalPages).toBe(1);
     expect(setQaCacheMock).toHaveBeenCalledOnce();
   });
 });
