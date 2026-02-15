@@ -2,7 +2,16 @@
 
 import { Users } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useEffect, useLayoutEffect, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
+
+const SHOW_DURATION_MS = 10_000;
+const SESSION_KEY = 'onlineCounterShown';
 
 type OnlineCounterPopupProps = {
   ctaRef: React.RefObject<HTMLAnchorElement | null>;
@@ -12,71 +21,63 @@ export function OnlineCounterPopup({ ctaRef }: OnlineCounterPopupProps) {
   const t = useTranslations('onlineCounter');
   const [online, setOnline] = useState<number | null>(null);
   const [show, setShow] = useState(false);
-  const [position, setPosition] = useState<{ top: number; isMobile: boolean }>({
-    top: 0,
-    isMobile: true,
-  });
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
 
-  useEffect(() => {
-    if (sessionStorage.getItem('shown')) return;
-
+  const fetchActivity = useCallback(() => {
     fetch('/api/sessions/activity', { method: 'POST' })
       .then(r => r.json())
-      .then(data => {
-        setOnline(data.online);
-        setTimeout(() => setShow(true), 500);
-        sessionStorage.setItem('shown', '1');
-        setTimeout(() => setShow(false), 10000);
-      })
-      .catch(() => setOnline(null));
+      .then(data => setOnline(data.online))
+      .catch(() => {});
   }, []);
 
-  useLayoutEffect(() => {
-    const calculatePosition = () => {
-      const mobile = window.innerWidth < 768;
-      let newTop = 0;
-
-      if (mobile && ctaRef.current) {
-        const rect = ctaRef.current.getBoundingClientRect();
-        const desired = rect.bottom + window.scrollY + rect.height + 14;
-        const popupHeight = 56;
-        const safeBottom = 16;
-        const max =
-          window.scrollY + window.innerHeight - popupHeight - safeBottom;
-        newTop = Math.min(desired, max);
-      }
-
-      setPosition({ top: newTop, isMobile: mobile });
-    };
-
-    calculatePosition();
-  }, [ctaRef]);
   useEffect(() => {
-    const handleResize = () => {
-      const mobile = window.innerWidth < 768;
-      let newTop = 0;
+    const alreadyShown = sessionStorage.getItem(SESSION_KEY);
 
-      if (mobile && ctaRef.current) {
-        const rect = ctaRef.current.getBoundingClientRect();
-        const desired = rect.bottom + window.scrollY + rect.height + 14;
-        const popupHeight = 56;
-        const safeBottom = 16;
-        const max =
-          window.scrollY + window.innerHeight - popupHeight - safeBottom;
-        newTop = Math.min(desired, max);
-      }
+    fetchActivity();
 
-      setPosition({ top: newTop, isMobile: mobile });
-    };
+    if (!alreadyShown) {
+      const showTimer = setTimeout(() => setShow(true), 500);
+      sessionStorage.setItem(SESSION_KEY, '1');
 
-    window.addEventListener('resize', handleResize);
+      hideTimerRef.current = setTimeout(
+        () => setShow(false),
+        SHOW_DURATION_MS + 500
+      );
 
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
-  }, [ctaRef]);
+      return () => {
+        clearTimeout(showTimer);
+        if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+      };
+    }
+  }, [fetchActivity]);
 
-  if (!online) return null;
+  const subscribe = useCallback((cb: () => void) => {
+    window.addEventListener('resize', cb);
+    return () => window.removeEventListener('resize', cb);
+  }, []);
+
+  const isMobile = useSyncExternalStore(
+    subscribe,
+    () => window.innerWidth < 768,
+    () => true
+  );
+
+  const top = useSyncExternalStore(
+    subscribe,
+    () => {
+      if (!isMobile || !ctaRef.current) return 0;
+      const rect = ctaRef.current.getBoundingClientRect();
+      const desired = rect.bottom + window.scrollY + rect.height + 14;
+      const popupHeight = 56;
+      const safeBottom = 16;
+      const max =
+        window.scrollY + window.innerHeight - popupHeight - safeBottom;
+      return Math.min(desired, max);
+    },
+    () => 0
+  );
+
+  if (online === null) return null;
 
   const getText = (count: number) => {
     if (count === 1) return t('one');
@@ -89,7 +90,7 @@ export function OnlineCounterPopup({ ctaRef }: OnlineCounterPopupProps) {
   return (
     <div
       className="fixed right-0 left-0 z-50 flex justify-center md:right-12 md:bottom-[10vh] md:left-auto md:justify-end"
-      style={position.isMobile ? { top: position.top } : undefined}
+      style={isMobile ? { top } : undefined}
     >
       <div
         className={`transition-all duration-500 ease-out ${
