@@ -1,4 +1,4 @@
-import { and, eq, ilike, sql } from 'drizzle-orm';
+import { and, eq, ilike } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
 import { db } from '@/db';
@@ -139,19 +139,7 @@ export async function GET(
       ? and(baseCondition, ilike(questionTranslations.question, `%${search}%`))
       : baseCondition;
 
-    const [{ count }] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(questions)
-      .innerJoin(
-        questionTranslations,
-        eq(questions.id, questionTranslations.questionId)
-      )
-      .where(whereCondition);
-
-    const total = Number(count);
-    const totalPages = Math.ceil(total / limit);
-
-    const items = await db
+    const allItems = await db
       .select({
         id: questions.id,
         categoryId: questions.categoryId,
@@ -167,20 +155,20 @@ export async function GET(
         eq(questions.id, questionTranslations.questionId)
       )
       .where(whereCondition)
-      .orderBy(questions.sortOrder)
-      .limit(limit)
-      .offset(offset);
+      .orderBy(questions.sortOrder, questions.id);
 
-    const payload = normalizeResponse(
-      {
+    const uniqueItems = dedupeItems(allItems);
+    const total = uniqueItems.length;
+    const totalPages = Math.ceil(total / limit);
+    const items = uniqueItems.slice(offset, offset + limit);
+
+    const payload = {
       items,
       total,
       page,
       totalPages,
       locale,
-      },
-      limit
-    );
+    } satisfies QaApiResponse;
     const response = NextResponse.json(payload);
     response.headers.set('Cache-Control', 'no-store');
     response.headers.set('x-qa-cache', 'MISS');
