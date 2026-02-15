@@ -35,7 +35,7 @@ function HeaderContent({
           <Logo href={brandHref} />
 
           <nav
-            className="hidden items-center justify-center lg:flex"
+            className="hidden items-center justify-center min-[1050px]:flex"
             aria-label="Primary"
           >
             <DesktopNav variant={variant} blogCategories={blogCategories} />
@@ -60,7 +60,7 @@ function HeaderContent({
       </header>
 
       {isPending && (
-        <div className="bg-background/95 fixed top-[65px] right-0 bottom-0 left-0 z-[60] flex items-center justify-center backdrop-blur-md">
+        <div className="bg-background/95 fixed top-[67px] right-0 bottom-0 left-0 z-[60] flex items-center justify-center backdrop-blur-md">
           <Loader size={120} />
         </div>
       )}
