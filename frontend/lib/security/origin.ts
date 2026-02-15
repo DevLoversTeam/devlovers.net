@@ -2,13 +2,31 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const LOCALHOST_ORIGIN = 'http://localhost:3000';
 
-function buildErrorResponse(code: string, message: string) {
+function buildErrorResponse(
+  code: string,
+  message: string,
+  extraBody?: Record<string, unknown>,
+  extraError?: Record<string, unknown>
+) {
+  const safeBody = extraBody ? { ...extraBody } : undefined;
+  if (safeBody && 'error' in safeBody) {
+    delete (safeBody as Record<string, unknown>).error;
+  }
+
+  const safeError = extraError ? { ...extraError } : undefined;
+  if (safeError) {
+    delete (safeError as Record<string, unknown>).code;
+    delete (safeError as Record<string, unknown>).message;
+  }
   const res = NextResponse.json(
     {
       error: {
         code,
         message,
+        ...(safeError ?? {}),
       },
+
+      ...(safeBody ?? {}),
     },
     { status: 403 }
   );
@@ -24,7 +42,7 @@ export function normalizeOrigin(input: string): string {
   try {
     return new URL(trimmed).origin;
   } catch {
-    return trimmed;
+    return '';
   }
 }
 
@@ -33,7 +51,8 @@ export function getAllowedOrigins(): string[] {
 
   const appOrigin = (process.env.APP_ORIGIN ?? '').trim();
   if (appOrigin) {
-    allowed.add(normalizeOrigin(appOrigin));
+    const normalized = normalizeOrigin(appOrigin);
+    if (normalized) allowed.add(normalized);
   }
 
   const additionalRaw = (process.env.APP_ADDITIONAL_ORIGINS ?? '').trim();
@@ -41,7 +60,8 @@ export function getAllowedOrigins(): string[] {
     for (const entry of additionalRaw.split(',')) {
       const candidate = entry.trim();
       if (!candidate) continue;
-      allowed.add(normalizeOrigin(candidate));
+      const normalized = normalizeOrigin(candidate);
+      if (normalized) allowed.add(normalized);
     }
   }
 
@@ -99,4 +119,32 @@ export function guardNonBrowserOnly(req: NextRequest): NextResponse | null {
   }
 
   return null;
+}
+
+function hasAnySecFetchHeader(req: NextRequest): boolean {
+  for (const key of req.headers.keys()) {
+    if (key.toLowerCase().startsWith('sec-fetch-')) {
+      return true;
+    }
+  }
+  return false;
+}
+
+export function guardNonBrowserFailClosed(
+  req: NextRequest,
+  meta?: { surface?: string }
+): NextResponse | null {
+  const origin = req.headers.get('origin');
+  const referer = req.headers.get('referer');
+  const hasSecFetch = hasAnySecFetchHeader(req);
+
+  if (!origin && !referer && !hasSecFetch) {
+    return null;
+  }
+
+  return buildErrorResponse(
+    'ORIGIN_BLOCKED',
+    'Browser context is not allowed for this endpoint.',
+    { surface: meta?.surface ?? 'non_browser' }
+  );
 }

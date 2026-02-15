@@ -6,6 +6,17 @@ vi.mock('@/lib/logging', () => ({
   logInfo: vi.fn(),
 }));
 
+vi.mock('@/db', () => ({
+  db: new Proxy(
+    {},
+    {
+      get() {
+        throw new Error('[unit-test] DB access is not allowed here');
+      },
+    }
+  ),
+}));
+
 import {
   PspInvoicePersistError,
   PspUnavailableError,

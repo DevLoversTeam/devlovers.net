@@ -7,6 +7,7 @@ import { sql } from 'drizzle-orm';
 import { db } from '@/db';
 import { getMonobankConfig } from '@/lib/env/monobank';
 import { logError, logInfo, logWarn } from '@/lib/logging';
+import { MONO_EXPIRED_RECONCILED, monoLogInfo } from '@/lib/logging/monobank';
 import { getInvoiceStatus } from '@/lib/psp/monobank';
 import {
   claimNextMonobankEvent,
@@ -640,6 +641,16 @@ export async function runMonobankJanitorJob1(
 
       if (isAppliedResult(appliedResult.appliedResult)) {
         applied += 1;
+        monoLogInfo(MONO_EXPIRED_RECONCILED, {
+          requestId: args.requestId,
+          runId: args.runId,
+          job: 'job1',
+          orderId: attempt.order_id,
+          attemptId: attempt.id,
+          invoiceId,
+          appliedResult: appliedResult.appliedResult,
+          reason: 'stale_attempt_reconciled_from_psp_status',
+        });
       } else {
         noop += 1;
       }
@@ -771,6 +782,15 @@ export async function runMonobankJanitorJob2(
       });
 
       applied += 1;
+      monoLogInfo(MONO_EXPIRED_RECONCILED, {
+        requestId: args.requestId,
+        runId: args.runId,
+        job: 'job2',
+        orderId: transitionedOrderId,
+        attemptId: attempt.id,
+        appliedResult: 'applied',
+        reason: 'expired_creating_attempt_canceled',
+      });
     } catch (error) {
       failed += 1;
       logError('internal_monobank_janitor_job2_attempt_failed', error, {

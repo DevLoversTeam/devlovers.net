@@ -6,6 +6,12 @@ import { db } from '@/db';
 import { monobankRefunds, orders, paymentAttempts } from '@/db/schema';
 import { getMonobankConfig } from '@/lib/env/monobank';
 import { logWarn } from '@/lib/logging';
+import {
+  MONO_DEDUP,
+  MONO_REFUND_APPLIED,
+  monoLogInfo,
+  monoLogWarn,
+} from '@/lib/logging/monobank';
 import { cancelInvoicePayment, PspError } from '@/lib/psp/monobank';
 
 import {
@@ -240,6 +246,14 @@ export async function requestMonobankFullRefund(args: {
     });
 
     if (isDedupedRefundStatus(reconciled.status)) {
+      monoLogInfo(MONO_REFUND_APPLIED, {
+        requestId: args.requestId,
+        orderId: args.orderId,
+        attemptId: reconciled.attemptId,
+        status: reconciled.status,
+        deduped: true,
+        reason: 'existing_refund',
+      });
       return {
         order: await getOrderById(args.orderId),
         refund: mapRefundRow(reconciled),
@@ -248,6 +262,14 @@ export async function requestMonobankFullRefund(args: {
     }
 
     if (!isRetryableRefundStatus(reconciled.status)) {
+      monoLogInfo(MONO_REFUND_APPLIED, {
+        requestId: args.requestId,
+        orderId: args.orderId,
+        attemptId: reconciled.attemptId,
+        status: reconciled.status,
+        deduped: true,
+        reason: 'existing_terminal_refund',
+      });
       return {
         order: await getOrderById(args.orderId),
         refund: mapRefundRow(reconciled),
@@ -313,10 +335,10 @@ export async function requestMonobankFullRefund(args: {
     if (!inserted[0]) {
       const conflict = await getExistingRefund(extRef);
       if (!conflict) {
-        logWarn('monobank_refund_idempotency_conflict', {
+        monoLogWarn(MONO_DEDUP, {
           orderId: args.orderId,
           requestId: args.requestId,
-          extRef,
+          reason: 'refund_insert_conflict_without_existing_row',
         });
         throw invalid('REFUND_CONFLICT', 'Refund idempotency conflict.', {
           orderId: args.orderId,
@@ -331,6 +353,14 @@ export async function requestMonobankFullRefund(args: {
       });
 
       if (isDedupedRefundStatus(reconciled.status)) {
+        monoLogInfo(MONO_REFUND_APPLIED, {
+          requestId: args.requestId,
+          orderId: args.orderId,
+          attemptId: reconciled.attemptId,
+          status: reconciled.status,
+          deduped: true,
+          reason: 'conflict_existing_refund',
+        });
         return {
           order: await getOrderById(args.orderId),
           refund: mapRefundRow(reconciled),
@@ -339,6 +369,14 @@ export async function requestMonobankFullRefund(args: {
       }
 
       if (!isRetryableRefundStatus(reconciled.status)) {
+        monoLogInfo(MONO_REFUND_APPLIED, {
+          requestId: args.requestId,
+          orderId: args.orderId,
+          attemptId: reconciled.attemptId,
+          status: reconciled.status,
+          deduped: true,
+          reason: 'conflict_existing_terminal_refund',
+        });
         return {
           order: await getOrderById(args.orderId),
           refund: mapRefundRow(reconciled),
@@ -419,6 +457,16 @@ export async function requestMonobankFullRefund(args: {
     })
     .where(eq(monobankRefunds.id, refundRowForPsp.id))
     .returning();
+
+  monoLogInfo(MONO_REFUND_APPLIED, {
+    requestId: args.requestId,
+    orderId: args.orderId,
+    attemptId,
+    invoiceId,
+    status: (processing ?? refundRowForPsp).status,
+    deduped,
+    reason: 'refund_requested',
+  });
 
   return {
     order: await getOrderById(args.orderId),

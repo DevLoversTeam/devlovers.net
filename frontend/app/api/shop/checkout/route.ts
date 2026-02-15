@@ -5,7 +5,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { MoneyValueError } from '@/db/queries/shop/orders';
 import { getCurrentUser } from '@/lib/auth';
 import { isMonobankEnabled } from '@/lib/env/monobank';
+import { readPositiveIntEnv } from '@/lib/env/readPositiveIntEnv';
 import { logError, logInfo, logWarn } from '@/lib/logging';
+import { MONO_MISMATCH, monoLogWarn } from '@/lib/logging/monobank';
 import { guardBrowserSameOrigin } from '@/lib/security/origin';
 import {
   enforceRateLimit,
@@ -44,6 +46,9 @@ const EXPECTED_BUSINESS_ERROR_CODES = new Set([
   'PRICE_CONFIG_ERROR',
   'PAYMENT_ATTEMPTS_EXHAUSTED',
 ]);
+
+const DEFAULT_CHECKOUT_RATE_LIMIT_MAX = 10;
+const DEFAULT_CHECKOUT_RATE_LIMIT_WINDOW_SECONDS = 300;
 
 function parseRequestedProvider(
   raw: unknown
@@ -288,6 +293,7 @@ function buildMonobankCheckoutResponse({
   pageUrl,
   currency,
   totalAmountMinor,
+  statusToken,
 }: {
   order: CheckoutOrderShape;
   itemCount: number;
@@ -296,6 +302,7 @@ function buildMonobankCheckoutResponse({
   pageUrl: string;
   currency: 'UAH';
   totalAmountMinor: number;
+  statusToken: string;
 }) {
   const res = NextResponse.json(
     {
@@ -320,6 +327,7 @@ function buildMonobankCheckoutResponse({
       provider: 'mono' as const,
       currency,
       totalAmountMinor,
+      statusToken,
     },
     { status }
   );
@@ -354,6 +362,12 @@ async function runMonobankCheckoutFlow(args: {
     });
 
     if (args.totalCents !== monobankAttempt.totalAmountMinor) {
+      monoLogWarn(MONO_MISMATCH, {
+        requestId: args.requestId,
+        orderId: args.order.id,
+        reason: 'checkout_total_amount_mismatch',
+      });
+
       logError(
         'checkout_mono_amount_mismatch',
         new Error('Monobank amount mismatch'),
@@ -380,6 +394,7 @@ async function runMonobankCheckoutFlow(args: {
       pageUrl: monobankAttempt.pageUrl,
       currency: monobankAttempt.currency,
       totalAmountMinor: monobankAttempt.totalAmountMinor,
+      statusToken,
     });
   } catch (error) {
     const mapped = mapMonobankCheckoutError(error);
@@ -708,19 +723,14 @@ export async function POST(request: NextRequest) {
 
   const checkoutSubject = sessionUserId ?? getRateLimitSubject(request);
 
-  const limitParsed = Number.parseInt(
-    process.env.CHECKOUT_RATE_LIMIT_MAX ?? '',
-    10
+  const limit = readPositiveIntEnv(
+    'CHECKOUT_RATE_LIMIT_MAX',
+    DEFAULT_CHECKOUT_RATE_LIMIT_MAX
   );
-  const windowParsed = Number.parseInt(
-    process.env.CHECKOUT_RATE_LIMIT_WINDOW_SECONDS ?? '',
-    10
+  const windowSeconds = readPositiveIntEnv(
+    'CHECKOUT_RATE_LIMIT_WINDOW_SECONDS',
+    DEFAULT_CHECKOUT_RATE_LIMIT_WINDOW_SECONDS
   );
-
-  const limit =
-    Number.isFinite(limitParsed) && limitParsed > 0 ? limitParsed : 10;
-  const windowSeconds =
-    Number.isFinite(windowParsed) && windowParsed > 0 ? windowParsed : 300;
 
   const decision = await enforceRateLimit({
     key: `checkout:${checkoutSubject}`,

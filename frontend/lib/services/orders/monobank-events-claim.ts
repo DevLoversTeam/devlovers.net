@@ -42,21 +42,27 @@ export async function claimNextMonobankEvent(
 ): Promise<MonobankEventRow | null> {
   try {
     const result = await db.execute<MonobankEventRow>(sql`
-      WITH picked AS (
+      WITH clock AS (
+        SELECT now() AS ts
+      ),
+      picked AS (
         SELECT id
         FROM monobank_events
+        CROSS JOIN clock
         WHERE applied_at IS NULL
-          AND (claim_expires_at IS NULL OR claim_expires_at < now())
+          AND (claim_expires_at IS NULL OR claim_expires_at <= clock.ts)
         ORDER BY provider_modified_at ASC NULLS LAST, received_at ASC, id ASC
         LIMIT 1
         FOR UPDATE SKIP LOCKED
       )
       UPDATE monobank_events e
-      SET claimed_at = now(),
-          claim_expires_at = now() + interval '45 seconds',
+      SET claimed_at = clock.ts,
+          claim_expires_at = clock.ts + interval '45 seconds',
           claimed_by = ${claimedBy}
-      FROM picked
+      FROM picked, clock
       WHERE e.id = picked.id
+        AND e.applied_at IS NULL
+        AND (e.claim_expires_at IS NULL OR e.claim_expires_at <= clock.ts)
       RETURNING e.*
     `);
 

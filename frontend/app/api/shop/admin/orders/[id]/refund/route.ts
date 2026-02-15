@@ -12,9 +12,16 @@ import {
   requireAdminApi,
 } from '@/lib/auth/admin';
 import { getMonobankConfig } from '@/lib/env/monobank';
+import { readPositiveIntEnv } from '@/lib/env/readPositiveIntEnv';
 import { logError, logWarn } from '@/lib/logging';
 import { requireAdminCsrf } from '@/lib/security/admin-csrf';
 import { guardBrowserSameOrigin } from '@/lib/security/origin';
+import {
+  enforceRateLimit,
+  getRateLimitSubject,
+  normalizeRateLimitSubject,
+  rateLimitResponse,
+} from '@/lib/security/rate-limit';
 import {
   InvalidPayloadError,
   OrderNotFoundError,
@@ -28,6 +35,9 @@ function noStoreJson(body: unknown, init?: { status?: number }) {
   res.headers.set('Cache-Control', 'no-store');
   return res;
 }
+
+const DEFAULT_ADMIN_REFUND_RATE_LIMIT_MAX = 5;
+const DEFAULT_ADMIN_REFUND_RATE_LIMIT_WINDOW_SECONDS = 60;
 
 export async function POST(
   request: NextRequest,
@@ -58,7 +68,7 @@ export async function POST(
   };
   let orderIdForLog: string | null = null;
   try {
-    await requireAdminApi(request);
+    const adminUser = await requireAdminApi(request);
     const csrfRes = requireAdminCsrf(request, 'admin:orders:refund');
     if (csrfRes) {
       logWarn('admin_orders_refund_csrf_rejected', {
@@ -70,6 +80,42 @@ export async function POST(
 
       csrfRes.headers.set('Cache-Control', 'no-store');
       return csrfRes;
+    }
+    const adminId = adminUser?.id;
+
+    const adminSubject =
+      typeof adminId === 'string' && adminId.trim().length > 0
+        ? `admin_${normalizeRateLimitSubject(adminId)}`
+        : getRateLimitSubject(request);
+
+    const limit = readPositiveIntEnv(
+      'ADMIN_REFUND_RATE_LIMIT_MAX',
+      DEFAULT_ADMIN_REFUND_RATE_LIMIT_MAX
+    );
+    const windowSeconds = readPositiveIntEnv(
+      'ADMIN_REFUND_RATE_LIMIT_WINDOW_SECONDS',
+      DEFAULT_ADMIN_REFUND_RATE_LIMIT_WINDOW_SECONDS
+    );
+
+    const decision = await enforceRateLimit({
+      key: `admin_refund:${adminSubject}`,
+      limit,
+      windowSeconds,
+    });
+
+    if (!decision.ok) {
+      logWarn('admin_orders_refund_rate_limited', {
+        ...baseMeta,
+        code: 'RATE_LIMITED',
+        orderId: orderIdForLog,
+        retryAfterSeconds: decision.retryAfterSeconds,
+        durationMs: Date.now() - startedAtMs,
+      });
+
+      return rateLimitResponse({
+        retryAfterSeconds: decision.retryAfterSeconds,
+        details: { scope: 'admin_refund' },
+      });
     }
 
     const rawParams = await context.params;
@@ -111,12 +157,9 @@ export async function POST(
           { status: 409 }
         );
       }
-    }
 
-    if (targetOrder?.paymentProvider === 'monobank') {
-      const { requestMonobankFullRefund } = await import(
-        '@/lib/services/orders/monobank-refund'
-      );
+      const { requestMonobankFullRefund } =
+        await import('@/lib/services/orders/monobank-refund');
       const result = await requestMonobankFullRefund({
         orderId: orderIdForLog,
         requestId,

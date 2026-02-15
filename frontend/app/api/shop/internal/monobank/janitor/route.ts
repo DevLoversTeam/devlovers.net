@@ -6,7 +6,7 @@ import { z } from 'zod';
 
 import { db } from '@/db';
 import { logError, logInfo, logWarn } from '@/lib/logging';
-import { guardNonBrowserOnly } from '@/lib/security/origin';
+import { guardNonBrowserFailClosed } from '@/lib/security/origin';
 import {
   runMonobankJanitorJob1,
   runMonobankJanitorJob2,
@@ -202,7 +202,9 @@ export async function POST(request: NextRequest) {
     jobName: 'monobank-janitor',
   };
 
-  const blocked = guardNonBrowserOnly(request);
+  const blocked = guardNonBrowserFailClosed(request, {
+    surface: 'monobank_janitor',
+  });
   if (blocked) {
     blocked.headers.set('X-Request-Id', requestId);
     logWarn('internal_monobank_janitor_origin_blocked', {

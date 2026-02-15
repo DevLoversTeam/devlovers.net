@@ -1,5 +1,8 @@
 import { getRedisClient } from '@/lib/redis';
 
+const QA_CACHE_VERSION = 'v3';
+const QA_CACHE_TTL_SECONDS = 60 * 30;
+
 type QaCacheKeyInput = {
   category: string;
   locale: string;
@@ -19,7 +22,7 @@ export function buildQaCacheKey({
   const normalizedLocale = locale.toLowerCase();
   const searchKey = search?.trim() ? search.trim().toLowerCase() : 'all';
 
-  return `qa:category:${normalizedCategory}:locale:${normalizedLocale}:page:${page}:limit:${limit}:search:${searchKey}`;
+  return `qa:${QA_CACHE_VERSION}:category:${normalizedCategory}:locale:${normalizedLocale}:page:${page}:limit:${limit}:search:${searchKey}`;
 }
 
 export async function getQaCache<T>(key: string) {
@@ -46,7 +49,7 @@ export async function setQaCache<T>(key: string, value: T) {
   const redis = getRedisClient();
   if (!redis) return;
 
-  await redis.set(key, value);
+  await redis.set(key, value, { ex: QA_CACHE_TTL_SECONDS });
 }
 
 export async function invalidateQaCacheByCategory(category: string) {
@@ -82,7 +85,7 @@ export async function invalidateAllQaCache() {
 
   do {
     const [nextCursor, keys] = await redis.scan(cursor, {
-      match: 'qa:*',
+      match: `qa:*`,
       count: 200,
     });
     cursor = Number(nextCursor);
