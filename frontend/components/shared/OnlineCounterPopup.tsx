@@ -67,11 +67,10 @@ export function OnlineCounterPopup({ ctaRef }: OnlineCounterPopupProps) {
     () => {
       if (!isMobile || !ctaRef.current) return 0;
       const rect = ctaRef.current.getBoundingClientRect();
-      const desired = rect.bottom + window.scrollY + rect.height + 14;
+      const desired = rect.bottom + rect.height + 14;
       const popupHeight = 56;
       const safeBottom = 16;
-      const max =
-        window.scrollY + window.innerHeight - popupHeight - safeBottom;
+      const max = window.innerHeight - popupHeight - safeBottom;
       return Math.min(desired, max);
     },
     () => 0
