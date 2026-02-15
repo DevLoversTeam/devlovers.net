@@ -27,7 +27,7 @@ export function MobileActions({
   const isBlog = variant === 'blog';
 
   return (
-    <div className="flex items-center gap-1 lg:hidden">
+    <div className="flex items-center gap-1 min-[1050px]:hidden">
       <LanguageSwitcher />
       {isBlog && <BlogHeaderSearch />}
       {isShop && <CartButton />}

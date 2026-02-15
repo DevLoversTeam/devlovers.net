@@ -45,7 +45,9 @@ export function AnimatedNavLink({
 
       <span
         className={`absolute inset-x-0 -bottom-3 h-12 transition-opacity duration-300 ease-out ${
-          isActive ? 'opacity-50' : 'opacity-0 group-hover:opacity-40'
+          isActive
+            ? 'opacity-25 dark:opacity-50'
+            : 'opacity-0 group-hover:opacity-20 dark:group-hover:opacity-40'
         }`}
         style={{
           background: `radial-gradient(ellipse 80px 40px at center bottom, ${
@@ -62,10 +64,10 @@ export function AnimatedNavLink({
           style={{
             width: 0,
             height: 0,
-            borderLeft: '8px solid transparent',
-            borderRight: '8px solid transparent',
-            borderBottom: '8px solid var(--accent-primary)',
-            filter: 'drop-shadow(0 0 6px var(--accent-primary))',
+            borderLeft: '6px solid transparent',
+            borderRight: '6px solid transparent',
+            borderBottom: '6px solid var(--accent-primary)',
+            filter: 'drop-shadow(0 0 3px var(--accent-primary))',
           }}
           aria-hidden="true"
         />
@@ -73,24 +75,24 @@ export function AnimatedNavLink({
 
       {isActive ? (
         <span
-          className="absolute bottom-[-15px] left-1/2 h-[2px] w-full -translate-x-1/2 opacity-100 transition-all duration-300 ease-out"
+          className="absolute bottom-[-13px] left-1/2 h-[1.5px] w-full -translate-x-1/2 opacity-100 transition-all duration-300 ease-out"
           style={{
             background:
               'linear-gradient(90deg, transparent 0%, var(--accent-primary) 50%, transparent 100%)',
             boxShadow:
-              '0 0 12px 2px var(--accent-primary), 0 0 6px 1px var(--accent-primary)',
+              '0 0 6px 1px var(--accent-primary), 0 0 3px 0.5px var(--accent-primary)',
           }}
           aria-hidden="true"
         />
       ) : (
         <span
-          className="absolute bottom-[-15px] left-1/2 h-[3px] w-0 -translate-x-1/2 opacity-0 transition-all duration-300 ease-out group-hover:w-full group-hover:opacity-100"
+          className="absolute bottom-[-13px] left-1/2 h-[2px] w-0 -translate-x-1/2 opacity-0 transition-all duration-300 ease-out group-hover:w-full group-hover:opacity-100"
           style={{
             background:
               'linear-gradient(90deg, transparent 0%, var(--accent-hover) 20%, transparent 40%, var(--accent-hover) 60%, transparent 80%, var(--accent-hover) 100%)',
             backgroundSize: '200% 100%',
             animation: 'shimmer 2s ease-in-out infinite',
-            boxShadow: '0 0 10px 2px var(--accent-hover)',
+            boxShadow: '0 0 5px 1px var(--accent-hover)',
           }}
           aria-hidden="true"
         />
