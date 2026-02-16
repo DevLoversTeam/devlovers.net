@@ -6,6 +6,7 @@ export interface User {
   points: number;
   avatar: string;
   change: number;
+  isSponsor?: boolean;
 }
 
 export interface CurrentUser {

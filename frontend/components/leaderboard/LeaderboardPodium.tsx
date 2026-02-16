@@ -1,7 +1,8 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Crown } from 'lucide-react';
+import { Crown, Heart } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 import { cn } from '@/lib/utils';
 
@@ -45,6 +46,7 @@ const rankConfig = {
 } as const;
 
 export function LeaderboardPodium({ topThree }: { topThree: User[] }) {
+  const t = useTranslations('leaderboard');
   const podiumOrder = [
     topThree.find(u => u.rank === 2),
     topThree.find(u => u.rank === 1),
@@ -108,6 +110,18 @@ export function LeaderboardPodium({ topThree }: { topThree: User[] }) {
               <div className="max-w-22.5 truncate text-xs font-bold text-gray-900 md:max-w-35 md:text-base dark:text-white">
                 {user.username}
               </div>
+
+              {user.isSponsor && (
+                <a
+                  href="https://github.com/sponsors/DevLoversTeam"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700 transition-colors hover:bg-amber-200 dark:bg-amber-500/15 dark:text-amber-400 dark:hover:bg-amber-500/25"
+                >
+                  <Heart className="h-2.5 w-2.5 fill-current" />
+                  <span className="hidden md:inline">{t('sponsor')}</span>
+                </a>
+              )}
 
               <div
                 className={cn(

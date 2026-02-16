@@ -37,7 +37,7 @@ export function QuizSavedBanner() {
   if (!info) return null;
 
   return (
-    <div className="mb-6 rounded-xl border border-green-500/20 bg-green-500/10 p-4 backdrop-blur-sm">
+    <div className="mb-6 rounded-2xl border border-gray-200 dark:border-white/10 bg-green-500/10 p-4 backdrop-blur-sm">
       <div className="space-y-2 text-center">
         <p className="text-lg font-medium text-green-700 dark:text-green-300">
           🎉 {t('title')}

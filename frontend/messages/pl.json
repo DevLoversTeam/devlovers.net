@@ -983,7 +983,8 @@
     "topThreeLabel": "Top 3 Liderów",
     "pts": "pkt",
     "tableCaption": "Tabela rankingowa pozostałych uczestników",
-    "you": "Ty"
+    "you": "Ty",
+    "sponsor": "Sponsor"
   },
   "auth": {
     "login": {
@@ -1062,6 +1063,10 @@
     "profile": {
       "defaultName": "Programista",
       "defaultRole": "użytkownik",
+      "sponsor": "Sponsor",
+      "becomeSponsor": "Zostań sponsorem",
+      "sponsorThanks": "Dziękujemy za wsparcie!",
+      "sponsorMore": "Wesprzyj jeszcze więcej",
       "totalPoints": "Łączna liczba punktów",
       "joined": "Dołączył"
     },
@@ -1083,6 +1088,7 @@
     },
     "quizResults": {
       "title": "Wyniki quizów",
+      "subtitle": "Twoje ostatnie wyniki quizów",
       "noAttempts": "Nie przeszedłeś jeszcze żadnego quizu",
       "startQuiz": "Spróbuj",
       "score": "Wynik",
@@ -1124,6 +1130,24 @@
       "ariaDragHandle": "Przeciągnij, aby zmienić kolejność {term}",
       "ariaHide": "Ukryj {term}",
       "ariaRestore": "Przywróć {term}"
+    },
+    "feedback": {
+      "title": "Wyślij opinię",
+      "description": "Pomóż nam ulepszyć DevLovers",
+      "name": "Twoje imię",
+      "email": "Twój email",
+      "category": "Kategoria",
+      "categoryBug": "Zgłoszenie błędu",
+      "categorySuggestion": "Sugestia",
+      "categoryQuestion": "Pytanie",
+      "categoryOther": "Inne",
+      "message": "Twoja wiadomość",
+      "messagePlaceholder": "Powiedz nam, co myślisz...",
+      "submit": "Wyślij opinię",
+      "submitting": "Wysyłanie...",
+      "success": "Dziękujemy! Twoja opinia została wysłana.",
+      "error": "Coś poszło nie tak. Spróbuj ponownie.",
+      "requiredField": "Proszę wypełnić to pole."
     }
   },
   "aiHelper": {

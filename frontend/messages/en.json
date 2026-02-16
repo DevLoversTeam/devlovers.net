@@ -956,7 +956,8 @@
     "topThreeLabel": "Top 3 Leaders",
     "pts": "pts",
     "tableCaption": "Leaderboard ranking for other participants",
-    "you": "You"
+    "you": "You",
+    "sponsor": "Sponsor"
   },
   "auth": {
     "login": {
@@ -1035,6 +1036,10 @@
     "profile": {
       "defaultName": "Developer",
       "defaultRole": "user",
+      "sponsor": "Sponsor",
+      "becomeSponsor": "Become a Sponsor",
+      "sponsorThanks": "Thank you for your support!",
+      "sponsorMore": "Support even more",
       "totalPoints": "Total Points",
       "joined": "Joined"
     },
@@ -1056,6 +1061,7 @@
     },
     "quizResults": {
       "title": "Quiz Results",
+      "subtitle": "Your recent quiz performance",
       "noAttempts": "You haven't taken any quizzes yet",
       "startQuiz": "Try one",
       "score": "Score",
@@ -1097,6 +1103,24 @@
       "ariaDragHandle": "Drag to reorder {term}",
       "ariaHide": "Hide {term}",
       "ariaRestore": "Restore {term}"
+    },
+    "feedback": {
+      "title": "Send Feedback",
+      "description": "Help us improve DevLovers",
+      "name": "Your name",
+      "email": "Your email",
+      "category": "Category",
+      "categoryBug": "Bug Report",
+      "categorySuggestion": "Suggestion",
+      "categoryQuestion": "Question",
+      "categoryOther": "Other",
+      "message": "Your message",
+      "messagePlaceholder": "Tell us what you think...",
+      "submit": "Send Feedback",
+      "submitting": "Sending...",
+      "success": "Thank you! Your feedback has been sent.",
+      "error": "Something went wrong. Please try again.",
+      "requiredField": "Please fill out this field."
     }
   },
   "aiHelper": {

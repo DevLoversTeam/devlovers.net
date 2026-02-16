@@ -78,7 +78,7 @@ export function QuizResultRow({ attempt, locale }: QuizResultRowProps) {
 
   const baseStyles = 'rounded-xl border border-gray-100 dark:border-white/5 px-3 py-2.5 md:px-4 md:py-3 transition-all duration-300';
   const interactiveStyles = !isMastered
-    ? 'group cursor-pointer bg-white/60 dark:bg-neutral-900/60 hover:-translate-y-0.5 hover:shadow-md hover:border-[var(--accent-primary)]/30 dark:hover:border-[var(--accent-primary)]/30'
+    ? 'group cursor-pointer bg-white/60 dark:bg-neutral-900/60 hover:-translate-y-0.5 hover:shadow-md hover:border-(--accent-primary)/30 dark:hover:border-(--accent-primary)/30'
     : 'bg-white/40 dark:bg-neutral-900/40 opacity-60';
 
   const handleClick = () => {
@@ -148,7 +148,7 @@ export function QuizResultRow({ attempt, locale }: QuizResultRowProps) {
           {t(status.label)}
         </Badge>
                 {!isMastered && (
-          <ChevronRight className="h-4 w-4 shrink-0 text-gray-300 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:text-[var(--accent-primary)] dark:text-gray-600" />
+          <ChevronRight className="h-4 w-4 shrink-0 text-gray-300 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:text-(--accent-primary) dark:text-gray-600" />
         )}
       </div>
 
@@ -228,7 +228,7 @@ export function QuizResultRow({ attempt, locale }: QuizResultRowProps) {
         {/* Arrow */}
         <div className="text-center">
           {!isMastered && (
-            <ChevronRight className="h-4 w-4 text-gray-300 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:text-[var(--accent-primary)] dark:text-gray-600" />
+            <ChevronRight className="h-4 w-4 text-gray-300 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:text-(--accent-primary) dark:text-gray-600" />
           )}
         </div>
       </div>
