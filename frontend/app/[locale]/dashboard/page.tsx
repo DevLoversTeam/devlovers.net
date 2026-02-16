@@ -2,6 +2,7 @@ import { getTranslations } from 'next-intl/server';
 
 import { PostAuthQuizSync } from '@/components/auth/PostAuthQuizSync';
 import { ExplainedTermsCard } from '@/components/dashboard/ExplainedTermsCard';
+import { FeedbackForm } from '@/components/dashboard/FeedbackForm';
 import { ProfileCard } from '@/components/dashboard/ProfileCard';
 import { QuizResultsSection } from '@/components/dashboard/QuizResultsSection';
 import { QuizSavedBanner } from '@/components/dashboard/QuizSavedBanner';
@@ -10,6 +11,7 @@ import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground
 import { getUserLastAttemptPerQuiz, getUserQuizStats } from '@/db/queries/quiz';
 import { getUserProfile } from '@/db/queries/users';
 import { redirect } from '@/i18n/routing';
+import { getSponsors } from '@/lib/about/github-sponsors';
 import { getCurrentUser } from '@/lib/auth';
 
 export async function generateMetadata({
@@ -45,6 +47,24 @@ export default async function DashboardPage({
   }
 
   const t = await getTranslations('dashboard');
+
+  const sponsors = await getSponsors();
+  const userEmail = user.email.toLowerCase();
+  const userName = (user.name ?? '').toLowerCase();
+  const userImage = user.image ?? '';
+  const matchedSponsor = sponsors.find(s => {
+    if (s.email && s.email.toLowerCase() === userEmail) return true;
+    if (userName && s.login && s.login.toLowerCase() === userName) return true;
+    if (userName && s.name && s.name.toLowerCase() === userName) return true;
+    if (
+      userImage &&
+      s.avatarUrl &&
+      s.avatarUrl.trim().length > 0 &&
+      userImage.includes(s.avatarUrl.split('?')[0])
+    )
+      return true;
+    return false;
+  });
 
   const attempts = await getUserQuizStats(session.id);
   const lastAttempts = await getUserLastAttemptPerQuiz(session.id, locale);
@@ -101,9 +121,7 @@ export default async function DashboardPage({
             </div>
 
             <a
-              href="https://t.me/devloversteam"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="#feedback"
               className={outlineBtnStyles}
             >
               {t('supportLink')}
@@ -111,14 +129,24 @@ export default async function DashboardPage({
           </header>
           <QuizSavedBanner />
           <div className="grid gap-8 md:grid-cols-2">
-            <ProfileCard user={userForDisplay} locale={locale} />
+            <ProfileCard
+              user={userForDisplay}
+              locale={locale}
+              isSponsor={!!matchedSponsor}
+            />
             <StatsCard stats={stats} />
+          </div>
+          <div className="mt-8">
+            <QuizResultsSection attempts={lastAttempts} locale={locale} />
           </div>
           <div className="mt-8">
             <ExplainedTermsCard />
           </div>
-          <div className="mt-8">
-            <QuizResultsSection attempts={lastAttempts} locale={locale} />
+          <div id="feedback" className="mt-8 scroll-mt-24">
+            <FeedbackForm
+              userName={userForDisplay.name}
+              userEmail={userForDisplay.email}
+            />
           </div>
         </main>
       </DynamicGridBackground>
