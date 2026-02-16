@@ -3,6 +3,7 @@ import 'server-only';
 export interface Sponsor {
   login: string;
   name: string;
+  email: string;
   avatarUrl: string;
   tierName: string;
   tierColor: 'gold' | 'silver' | 'bronze';
@@ -35,8 +36,8 @@ export async function getSponsors(): Promise<Sponsor[]> {
           nodes {
             tier { monthlyPriceInDollars }
             sponsorEntity {
-              ... on User { login name avatarUrl }
-              ... on Organization { login name avatarUrl }
+              ... on User { login name email avatarUrl }
+              ... on Organization { login name email avatarUrl }
             }
           }
         }
@@ -79,6 +80,7 @@ export async function getSponsors(): Promise<Sponsor[]> {
         return {
           login: node.sponsorEntity.login,
           name: node.sponsorEntity.name || node.sponsorEntity.login,
+          email: node.sponsorEntity.email || '',
           avatarUrl: node.sponsorEntity.avatarUrl,
           monthlyPrice: price,
           tierName: name,

@@ -959,7 +959,8 @@
     "topThreeLabel": "Топ-3 лідери",
     "pts": "б.",
     "tableCaption": "Рейтингова таблиця інших учасників",
-    "you": "Ви"
+    "you": "Ви",
+    "sponsor": "Спонсор"
   },
   "auth": {
     "login": {
@@ -1038,6 +1039,10 @@
     "profile": {
       "defaultName": "Розробник",
       "defaultRole": "користувач",
+      "sponsor": "Спонсор",
+      "becomeSponsor": "Стати спонсором",
+      "sponsorThanks": "Дякуємо за вашу підтримку!",
+      "sponsorMore": "Підтримати ще більше",
       "totalPoints": "Загальна кількість балів",
       "joined": "Приєднався"
     },
@@ -1059,6 +1064,7 @@
     },
     "quizResults": {
       "title": "Результати квізів",
+      "subtitle": "Ваші останні результати квізів",
       "noAttempts": "Ви ще не проходили жодного квізу",
       "startQuiz": "Спробувати",
       "score": "Результат",
@@ -1100,6 +1106,24 @@
       "ariaDragHandle": "Перетягніть для зміни порядку {term}",
       "ariaHide": "Приховати {term}",
       "ariaRestore": "Відновити {term}"
+    },
+    "feedback": {
+      "title": "Надіслати відгук",
+      "description": "Допоможіть нам покращити DevLovers",
+      "name": "Ваше ім'я",
+      "email": "Ваш email",
+      "category": "Категорія",
+      "categoryBug": "Звіт про помилку",
+      "categorySuggestion": "Пропозиція",
+      "categoryQuestion": "Питання",
+      "categoryOther": "Інше",
+      "message": "Ваше повідомлення",
+      "messagePlaceholder": "Розкажіть, що ви думаєте...",
+      "submit": "Надіслати відгук",
+      "submitting": "Надсилання...",
+      "success": "Дякуємо! Ваш відгук надіслано.",
+      "error": "Щось пішло не так. Спробуйте ще раз.",
+      "requiredField": "Будь ласка, заповніть це поле."
     }
   },
   "aiHelper": {
