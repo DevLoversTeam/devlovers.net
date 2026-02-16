@@ -85,10 +85,20 @@ export function FeedbackForm({ userName, userEmail }: FeedbackFormProps) {
     setLoading(true);
     setStatus('idle');
 
+    const accessKey = process.env.NEXT_PUBLIC_WEB3FORMS_KEY;
+    if (!accessKey) {
+      console.error(
+        'FeedbackForm: NEXT_PUBLIC_WEB3FORMS_KEY is not defined. Add it to your .env file.'
+      );
+      setStatus('error');
+      setLoading(false);
+      return;
+    }
+
     const formData = new FormData(e.currentTarget);
 
     const data = {
-      access_key: process.env.NEXT_PUBLIC_WEB3FORMS_KEY,
+      access_key: accessKey,
       subject: `DevLovers Feedback: ${formData.get('category')}`,
       from_name: formData.get('name'),
       email: formData.get('email'),

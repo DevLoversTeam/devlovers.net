@@ -52,13 +52,19 @@ export default async function DashboardPage({
   const userEmail = user.email.toLowerCase();
   const userName = (user.name ?? '').toLowerCase();
   const userImage = user.image ?? '';
-  const matchedSponsor = sponsors.find(
-    s =>
-      (s.email && s.email.toLowerCase() === userEmail) ||
-      (userName && s.login.toLowerCase() === userName) ||
-      (userName && s.name.toLowerCase() === userName) ||
-      (userImage && s.avatarUrl && userImage.includes(s.avatarUrl.split('?')[0]))
-  );
+  const matchedSponsor = sponsors.find(s => {
+    if (s.email && s.email.toLowerCase() === userEmail) return true;
+    if (userName && s.login && s.login.toLowerCase() === userName) return true;
+    if (userName && s.name && s.name.toLowerCase() === userName) return true;
+    if (
+      userImage &&
+      s.avatarUrl &&
+      s.avatarUrl.trim().length > 0 &&
+      userImage.includes(s.avatarUrl.split('?')[0])
+    )
+      return true;
+    return false;
+  });
 
   const attempts = await getUserQuizStats(session.id);
   const lastAttempts = await getUserLastAttemptPerQuiz(session.id, locale);
