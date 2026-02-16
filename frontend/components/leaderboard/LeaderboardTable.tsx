@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Medal, TrendingUp, Trophy } from 'lucide-react';
+import { Heart, Medal, TrendingUp, Trophy } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import { cn } from '@/lib/utils';
@@ -20,7 +20,7 @@ export function LeaderboardTable({
 }: LeaderboardTableProps) {
   const t = useTranslations('leaderboard');
 
-  const topUsers = users.slice(0, 10);
+  const topUsers = users.slice(0, 20);
   const normalizedCurrentUserId = currentUser ? String(currentUser.id) : null;
   const currentUsername = currentUser?.username;
 
@@ -31,7 +31,7 @@ export function LeaderboardTable({
   );
 
   const currentUserRank = matchedUser?.rank || 0;
-  const isUserInTop = currentUserRank > 0 && currentUserRank <= 10;
+  const isUserInTop = currentUserRank > 0 && currentUserRank <= 20;
 
   return (
     <div className="flex w-full flex-col gap-4">
@@ -162,6 +162,18 @@ function TableRow({
               )}
             >
               <span className="truncate">{user.username}</span>
+
+              {user.isSponsor && (
+                <a
+                  href="https://github.com/sponsors/DevLoversTeam"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700 transition-colors hover:bg-amber-200 dark:bg-amber-500/15 dark:text-amber-400 dark:hover:bg-amber-500/25"
+                >
+                  <Heart className="h-2.5 w-2.5 fill-current" />
+                  <span className="hidden sm:inline">{t('sponsor')}</span>
+                </a>
+              )}
 
               {isCurrentUser && (
                 <div className="relative ml-1 flex h-5 w-5 shrink-0 items-center justify-center sm:h-8 sm:w-8">

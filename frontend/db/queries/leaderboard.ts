@@ -7,12 +7,17 @@ import { User } from '@/components/leaderboard/types';
 import { db } from '../index';
 import { users } from '../schema/users';
 
+export interface LeaderboardRow extends User {
+  email: string;
+}
+
 const getLeaderboardDataCached = unstable_cache(
-  async (): Promise<User[]> => {
+  async (): Promise<LeaderboardRow[]> => {
     const dbUsers = await db
       .select({
         id: users.id,
         username: users.name,
+        email: users.email,
         avatar: users.image,
         points: sql<number>`COALESCE(pt_valid.total, 0)`,
       })
@@ -46,6 +51,7 @@ const getLeaderboardDataCached = unstable_cache(
         username,
         points: Number(u.points) || 0,
         avatar,
+        email: u.email,
         change: 0,
       };
     });
@@ -54,6 +60,6 @@ const getLeaderboardDataCached = unstable_cache(
   { revalidate: 3600, tags: ['leaderboard'] }
 );
 
-export const getLeaderboardData = cache(async (): Promise<User[]> => {
+export const getLeaderboardData = cache(async (): Promise<LeaderboardRow[]> => {
   return getLeaderboardDataCached();
 });

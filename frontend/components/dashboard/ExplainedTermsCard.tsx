@@ -230,9 +230,9 @@ export function ExplainedTermsCard() {
 
   const cardStyles = `
     relative overflow-hidden rounded-2xl
-    border border-gray-100 dark:border-white/5
+    border border-gray-200 dark:border-white/10
     bg-white/60 dark:bg-neutral-900/60 backdrop-blur-xl
-    p-8 transition-all hover:border-[var(--accent-primary)]/30 dark:hover:border-[var(--accent-primary)]/30
+    p-4 sm:p-6 md:p-8 transition-all hover:border-(--accent-primary)/30 dark:hover:border-(--accent-primary)/30
   `;
 
   return (
