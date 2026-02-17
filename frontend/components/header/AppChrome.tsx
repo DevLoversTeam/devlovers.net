@@ -8,6 +8,7 @@ import { CartProvider } from '@/components/shop/CartProvider';
 
 type AppChromeProps = {
   userExists: boolean;
+  userId?: string | null;
   showAdminLink?: boolean;
   blogCategories?: Array<{ _id: string; title: string }>;
   children: React.ReactNode;
@@ -15,6 +16,7 @@ type AppChromeProps = {
 
 export function AppChrome({
   userExists,
+  userId = null,
   showAdminLink = false,
   blogCategories = [],
   children,
@@ -25,7 +27,7 @@ export function AppChrome({
 
   if (isShop) {
     return (
-      <CartProvider>
+      <CartProvider cartOwnerId={userId} key={`cart:${userId ?? 'guest'}`}>
         <div className="shop-scope min-h-screen">
           <UnifiedHeader
             variant="shop"
@@ -33,7 +35,6 @@ export function AppChrome({
             showAdminLink={showAdminLink}
             blogCategories={blogCategories}
           />
-
           {children}
         </div>
       </CartProvider>

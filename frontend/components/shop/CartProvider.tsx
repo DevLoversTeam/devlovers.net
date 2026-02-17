@@ -76,84 +76,86 @@ function getErrorInfo(error: unknown): {
 
 type CartProviderProps = {
   children: ReactNode;
+  cartOwnerId?: string | null;
 };
 
-export function CartProvider({ children }: CartProviderProps) {
+export function CartProvider({ children, cartOwnerId }: CartProviderProps) {
   const [cart, setCart] = useState<Cart>(emptyCart);
 
-  const syncCartWithServer = useCallback(async (items: CartClientItem[]) => {
-    persistCartItems(items);
+  const syncCartWithServer = useCallback(
+    async (items: CartClientItem[]) => {
+      persistCartItems(items, cartOwnerId);
 
-    try {
-      const nextCart = await rehydrateCart(items);
+      try {
+        const nextCart = await rehydrateCart(items, cartOwnerId);
+        setCart(nextCart);
+        return;
+      } catch (error) {
+        const info = getErrorInfo(error);
 
-      setCart(nextCart);
-      return;
-    } catch (error) {
-      const info = getErrorInfo(error);
+        if (info.code === 'PRICE_CONFIG_ERROR') {
+          const productId =
+            typeof (info.details as any)?.productId === 'string'
+              ? String((info.details as any).productId)
+              : '';
 
-      if (info.code === 'PRICE_CONFIG_ERROR') {
-        const productId =
-          typeof (info.details as any)?.productId === 'string'
-            ? String((info.details as any).productId)
-            : '';
+          if (productId) {
+            const filtered = items.filter(i => i.productId !== productId);
 
-        if (productId) {
-          const filtered = items.filter(i => i.productId !== productId);
+            if (filtered.length !== items.length) {
+              persistCartItems(filtered, cartOwnerId);
 
-          if (filtered.length !== items.length) {
-            persistCartItems(filtered);
+              try {
+                const retriedCart = await rehydrateCart(filtered, cartOwnerId);
+                setCart(retriedCart);
 
-            try {
-              const retriedCart = await rehydrateCart(filtered);
+                logWarn('cart_rehydrate_recovered_by_removing_item', {
+                  code: info.code,
+                  removedProductId: productId,
+                });
 
-              setCart(retriedCart);
-
-              logWarn('cart_rehydrate_recovered_by_removing_item', {
-                code: info.code,
-                removedProductId: productId,
-              });
-
-              return;
-            } catch (retryError) {
-              const retryInfo = getErrorInfo(retryError);
-              logWarn('cart_rehydrate_retry_failed', {
-                code: retryInfo.code,
-                message: retryInfo.message,
-              });
+                return;
+              } catch (retryError) {
+                const retryInfo = getErrorInfo(retryError);
+                logWarn('cart_rehydrate_retry_failed', {
+                  code: retryInfo.code,
+                  message: retryInfo.message,
+                });
+              }
             }
           }
+
+          clearStoredCart(cartOwnerId);
+          setCart(emptyCart);
+
+          logWarn('cart_cleared_due_to_rehydrate_error', {
+            code: info.code,
+            message: info.message,
+            details: info.details,
+          });
+
+          return;
         }
 
-        clearStoredCart();
-        setCart(emptyCart);
-
-        logWarn('cart_cleared_due_to_rehydrate_error', {
+        logWarn('cart_rehydrate_failed_client', {
           code: info.code,
           message: info.message,
-          details: info.details,
         });
-
-        return;
       }
+    },
+    [cartOwnerId]
+  );
 
-      logWarn('cart_rehydrate_failed_client', {
-        code: info.code,
-        message: info.message,
-      });
-    }
-  }, []);
-
-  const didHydrate = useRef(false);
+  const lastHydratedOwnerRef = useRef<string | null | undefined>(undefined);
 
   useEffect(() => {
-    if (didHydrate.current) return;
-    didHydrate.current = true;
+    const ownerKey = cartOwnerId ?? null;
+    if (lastHydratedOwnerRef.current === ownerKey) return;
+    lastHydratedOwnerRef.current = ownerKey;
 
-    const stored = getStoredCartItems();
-
+    const stored = getStoredCartItems(cartOwnerId);
     void Promise.resolve().then(() => syncCartWithServer(stored));
-  }, [syncCartWithServer]);
+  }, [syncCartWithServer, cartOwnerId]);
 
   const addToCart = useCallback(
     (
@@ -162,7 +164,7 @@ export function CartProvider({ children }: CartProviderProps) {
       selectedSize?: string,
       selectedColor?: string
     ) => {
-      const storedItems = getStoredCartItems();
+      const storedItems = getStoredCartItems(cartOwnerId);
       const key = createCartItemKey(product.id, selectedSize, selectedColor);
       const existingIndex = storedItems.findIndex(
         item =>
@@ -212,7 +214,7 @@ export function CartProvider({ children }: CartProviderProps) {
 
       void syncCartWithServer(updatedItems);
     },
-    [cart.items, syncCartWithServer]
+    [cart.items, syncCartWithServer, cartOwnerId]
   );
 
   const updateQuantity = useCallback(
@@ -222,7 +224,7 @@ export function CartProvider({ children }: CartProviderProps) {
       selectedSize?: string,
       selectedColor?: string
     ) => {
-      const storedItems = getStoredCartItems();
+      const storedItems = getStoredCartItems(cartOwnerId);
       const key = createCartItemKey(productId, selectedSize, selectedColor);
       const index = storedItems.findIndex(
         item =>
@@ -261,7 +263,7 @@ export function CartProvider({ children }: CartProviderProps) {
 
       void syncCartWithServer(updatedItems);
     },
-    [cart.items, syncCartWithServer]
+    [cart.items, syncCartWithServer, cartOwnerId]
   );
 
   const removeFromCart = useCallback(
@@ -272,9 +274,9 @@ export function CartProvider({ children }: CartProviderProps) {
   );
 
   const clearCart = useCallback(() => {
-    clearStoredCart();
+    clearStoredCart(cartOwnerId);
     setCart(emptyCart);
-  }, []);
+  }, [cartOwnerId]);
 
   return (
     <CartContext.Provider

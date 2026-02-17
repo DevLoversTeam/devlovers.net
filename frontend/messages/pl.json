@@ -370,6 +370,7 @@
     "cart": {
       "title": "Twój koszyk",
       "empty": "Twój koszyk jest pusty",
+      "loading": "Ładowanie…",
       "emptyDescription": "Wygląda na to, że nie dodałeś jeszcze żadnych produktów do koszyka",
       "startShopping": "Rozpocznij zakupy",
       "itemsLabel": "Produkty w koszyku",
