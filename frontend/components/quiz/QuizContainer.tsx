@@ -1,5 +1,4 @@
 'use client';
-import { ViolationsCounter } from '@/components/quiz/ViolationsCounter';
 import { Ban, FileText, TriangleAlert, UserRound } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
@@ -13,9 +12,10 @@ import {
 import { toast } from 'sonner';
 
 import { initializeQuizCache, submitQuizAttempt } from '@/actions/quiz';
+import { ViolationsCounter } from '@/components/quiz/ViolationsCounter';
 import { Button } from '@/components/ui/button';
 import { ConfirmModal } from '@/components/ui/confirm-modal';
-import { categoryTabStyles } from '@/data/categoryStyles';
+import { getCategoryTabStyle } from '@/data/categoryStyles';
 import type { QuizQuestionClient } from '@/db/queries/quiz';
 import { useAntiCheat } from '@/hooks/useAntiCheat';
 import { useQuizGuards } from '@/hooks/useQuizGuards';
@@ -171,10 +171,9 @@ export function QuizContainer({
   const tResult = useTranslations('quiz.result');
   const tExit = useTranslations('quiz.exitModal');
   const tQuestion = useTranslations('quiz.question');
-  const categoryStyle = categorySlug
-    ? categoryTabStyles[categorySlug as keyof typeof categoryTabStyles]
-    : null;
-  const accentColor = categoryStyle?.accent ?? '#3B82F6';
+  const accentColor = categorySlug
+    ? getCategoryTabStyle(categorySlug).accent
+    : '#3B82F6';
   const [isStarting, setIsStarting] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [state, dispatch] = useReducer(quizReducer, {

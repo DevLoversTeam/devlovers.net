@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl';
 import { CategoryTabButton } from '@/components/shared/CategoryTabButton';
 import { Tabs, TabsContent, TabsList } from '@/components/ui/tabs';
 import { categoryData } from '@/data/category';
-import { categoryTabStyles } from '@/data/categoryStyles';
+import { getCategoryTabStyle } from '@/data/categoryStyles';
 
 import { QuizCard } from './QuizCard';
 
@@ -64,7 +64,7 @@ export default function QuizzesSection({
       <Tabs value={activeCategory} onValueChange={handleCategoryChange}>
         <TabsList className="mb-6 flex !h-auto !w-full flex-wrap items-stretch justify-start gap-3 !bg-transparent !p-0">
           {categoryData.map(category => {
-            const slug = category.slug as keyof typeof categoryTabStyles;
+            const slug = category.slug;
             return (
               <CategoryTabButton
                 key={slug}
@@ -74,7 +74,7 @@ export default function QuizzesSection({
                   category.translations.en ??
                   slug
                 }
-                style={categoryTabStyles[slug]}
+                style={getCategoryTabStyle(slug)}
                 isActive={activeCategory === slug}
               />
             );
