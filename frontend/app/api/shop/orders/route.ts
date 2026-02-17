@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
       );
     }
     const totalCountRows = await db
-      .select({ value: sql<number>`count(*)` })
+      .select({ value: sql<string>`count(*)` })
       .from(orders)
       .where(eq(orders.userId, user.id));
 
@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
             )
           )[1]
         `,
-        itemCount: sql`count(${orderItems.id})`,
+        itemCount: sql<string>`count(${orderItems.id})`,
       })
       .from(orders)
       .leftJoin(orderItems, eq(orderItems.orderId, orders.id))
@@ -115,6 +115,14 @@ export async function GET(request: NextRequest) {
       primaryItemLabel: r.primaryItemLabel ?? null,
       itemCount: toCount(r.itemCount),
     }));
+
+    logInfo('public_orders_list_success', {
+      ...baseMeta,
+      code: 'OK',
+      durationMs: Date.now() - startedAtMs,
+      totalCount,
+      returnedCount: response.length,
+    });
 
     return noStoreJson(
       { success: true, orders: response, totalCount },

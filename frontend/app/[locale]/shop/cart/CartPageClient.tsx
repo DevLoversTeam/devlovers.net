@@ -161,15 +161,92 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
           return;
         }
 
-        const data: unknown = await res.json().catch(() => null);
-        if (!res.ok || !data || typeof data !== 'object') return;
+        const devWarn = (message: string, meta: Record<string, unknown>) => {
+          if (process.env.NODE_ENV === 'production') return;
+
+          const g = globalThis as unknown as {
+            __DEVLOVERS_SHOP_DEBUG_LOGS__?: Array<{
+              level: 'warn';
+              message: string;
+              meta: Record<string, unknown>;
+              ts: number;
+            }>;
+          };
+
+          if (!g.__DEVLOVERS_SHOP_DEBUG_LOGS__) {
+            g.__DEVLOVERS_SHOP_DEBUG_LOGS__ = [];
+          }
+
+          g.__DEVLOVERS_SHOP_DEBUG_LOGS__.push({
+            level: 'warn',
+            message,
+            meta,
+            ts: Date.now(),
+          });
+        };
+
+        let rawBody: string | null = null;
+        let data: unknown = null;
+        let parseError: unknown = null;
+
+        try {
+          rawBody = await res.text();
+          if (rawBody && rawBody.trim().length > 0) {
+            try {
+              data = JSON.parse(rawBody) as unknown;
+            } catch (err) {
+              parseError = err;
+              data = null;
+            }
+          }
+        } catch (err) {
+          parseError = err;
+          data = null;
+        }
+
+        const bodyPreview = rawBody ? rawBody.slice(0, 500) : null;
+        const parseErrorMessage =
+          parseError instanceof Error
+            ? parseError.message
+            : parseError
+              ? String(parseError)
+              : null;
+
+        if (!res.ok) {
+          devWarn('[shop.cart] orders summary fetch non-OK', {
+            status: res.status,
+            statusText: res.statusText,
+            bodyPreview,
+            parseError: parseErrorMessage,
+          });
+          return;
+        }
+
+        if (!data || typeof data !== 'object') {
+          devWarn('[shop.cart] orders summary fetch invalid JSON', {
+            status: res.status,
+            statusText: res.statusText,
+            bodyType: data === null ? 'null' : typeof data,
+            bodyPreview,
+            parseError: parseErrorMessage,
+          });
+          return;
+        }
 
         const maybe = data as {
           success?: unknown;
           orders?: unknown;
           totalCount?: unknown;
         };
-        if (maybe.success !== true || !Array.isArray(maybe.orders)) return;
+
+        if (maybe.success !== true || !Array.isArray(maybe.orders)) {
+          devWarn('[shop.cart] orders summary fetch unexpected shape', {
+            status: res.status,
+            statusText: res.statusText,
+            bodyPreview,
+          });
+          return;
+        }
 
         const orders = maybe.orders as Array<{ id?: unknown }>;
 
@@ -364,12 +441,22 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
       ) : null}
     </div>
   ) : null;
+  const loadingAnnouncement = (() => {
+    try {
+      return t('loading');
+    } catch {
+      return 'Loading…';
+    }
+  })();
 
   if (!isClientReady) {
     return (
       <main className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
         <div className="flex flex-col items-center justify-center gap-4">
           <Loader size={160} className="opacity-90" />
+          <span className="sr-only" role="status" aria-live="polite">
+            {loadingAnnouncement}
+          </span>
         </div>
       </main>
     );
