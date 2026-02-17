@@ -1,10 +1,8 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
-import { ShopAdminTopbar } from '@/components/shop/admin/ShopAdminTopbar';
 import { getAdminOrderDetail } from '@/db/queries/shop/admin-orders';
 import { Link } from '@/i18n/routing';
-import { guardShopAdminPage } from '@/lib/auth/guard-shop-admin-page';
 import {
   type CurrencyCode,
   formatMoney,
@@ -19,7 +17,6 @@ export const metadata: Metadata = {
   description: 'Review and manage order, including refunds and status checks.',
 };
 
-export const dynamic = 'force-dynamic';
 
 function pickMinor(minor: unknown, legacyMajor: unknown): number | null {
   if (typeof minor === 'number') return minor;
@@ -48,7 +45,6 @@ export default async function AdminOrderDetailPage({
 }: {
   params: Promise<{ locale: string; id: string }>;
 }) {
-  await guardShopAdminPage();
 
   const { locale, id } = await params;
 
@@ -67,8 +63,6 @@ export default async function AdminOrderDetailPage({
     totalMinor === null ? '-' : formatMoney(totalMinor, currency, locale);
 
   return (
-    <>
-      <ShopAdminTopbar />
 
       <main
         className="mx-auto max-w-6xl px-4 py-8"
@@ -86,7 +80,7 @@ export default async function AdminOrderDetailPage({
 
           <div className="flex shrink-0 flex-wrap items-center gap-2">
             <Link
-              href="/shop/admin/orders"
+              href="/admin/shop/orders"
               className="border-border text-foreground hover:bg-secondary rounded-md border px-3 py-1.5 text-sm font-medium transition-colors"
             >
               Back
@@ -288,6 +282,5 @@ export default async function AdminOrderDetailPage({
           </div>
         </section>
       </main>
-    </>
   );
 }

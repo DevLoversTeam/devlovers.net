@@ -43,9 +43,9 @@ export function DesktopActions({
       {showAdminLink && (
         <HeaderButton
           variant="icon"
-          href="/shop/admin"
+          href="/admin/shop"
           icon={Settings}
-          label={tAria('shopAdmin')}
+          label={tAria('admin')}
         />
       )}
 

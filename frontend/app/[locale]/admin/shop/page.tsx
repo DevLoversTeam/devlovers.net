@@ -1,25 +1,19 @@
 import { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
-import { ShopAdminTopbar } from '@/components/shop/admin/ShopAdminTopbar';
 import { Link } from '@/i18n/routing';
-import { guardShopAdminPage } from '@/lib/auth/guard-shop-admin-page';
 
 export const metadata: Metadata = {
   title: 'Shop Admin | DevLovers',
   description: 'Manage products, orders, and settings for your shop.',
 };
 
-export const dynamic = 'force-dynamic';
 
 export default async function ShopAdminHomePage() {
-  await guardShopAdminPage();
+
   const t = await getTranslations('shop.admin.page');
 
   return (
-    <>
-      <ShopAdminTopbar />
-
       <main
         className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8"
         aria-labelledby="shop-admin-title"
@@ -40,7 +34,7 @@ export default async function ShopAdminHomePage() {
           <ul className="grid gap-4 sm:grid-cols-2">
             <li>
               <Link
-                href="/shop/admin/products"
+                href="/admin/shop/products"
                 className="border-border hover:bg-muted/50 block rounded-lg border p-4 transition-colors"
               >
                 <div className="text-foreground text-base font-semibold">
@@ -54,7 +48,7 @@ export default async function ShopAdminHomePage() {
 
             <li>
               <Link
-                href="/shop/admin/orders"
+                href="/admin/shop/orders"
                 className="border-border hover:bg-muted/50 block rounded-lg border p-4 transition-colors"
               >
                 <div className="text-foreground text-base font-semibold">
@@ -68,6 +62,5 @@ export default async function ShopAdminHomePage() {
           </ul>
         </section>
       </main>
-    </>
   );
 }
