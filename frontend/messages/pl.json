@@ -12,7 +12,7 @@
   "aria": {
     "primaryNav": "Nawigacja główna",
     "dashboard": "Panel",
-    "shopAdmin": "Panel administracyjny sklepu",
+    "admin": "Admin panel",
     "blogCategories": "Kategorie bloga",
     "searchBlog": "Szukaj w blogu",
     "toggleMenu": "Przełącz menu",

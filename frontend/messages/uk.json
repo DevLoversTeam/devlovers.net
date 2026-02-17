@@ -12,7 +12,7 @@
   "aria": {
     "primaryNav": "Головна навігація",
     "dashboard": "Панель керування",
-    "shopAdmin": "Адміністрування магазину",
+    "admin": "Admin panel",
     "blogCategories": "Категорії блогу",
     "searchBlog": "Пошук у блозі",
     "toggleMenu": "Відкрити/закрити меню",

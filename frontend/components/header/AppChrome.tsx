@@ -50,6 +50,7 @@ export function AppChrome({
       <UnifiedHeader
         variant="platform"
         userExists={userExists}
+        showAdminLink={showAdminLink}
         blogCategories={blogCategories}
       />
       {children}

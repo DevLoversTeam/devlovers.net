@@ -1,11 +1,9 @@
 import { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
-import { AdminPagination } from '@/components/shop/admin/AdminPagination';
-import { ShopAdminTopbar } from '@/components/shop/admin/ShopAdminTopbar';
+import { AdminPagination } from '@/components/admin/shop/AdminPagination';
 import { getAdminOrdersPage } from '@/db/queries/shop/admin-orders';
 import { Link } from '@/i18n/routing';
-import { guardShopAdminPage } from '@/lib/auth/guard-shop-admin-page';
 import { parsePage } from '@/lib/pagination';
 import { CSRF_FORM_FIELD, issueCsrfToken } from '@/lib/security/csrf';
 import {
@@ -20,7 +18,6 @@ export const metadata: Metadata = {
   description: 'View and manage orders in the DevLovers shop catalog.',
 };
 
-export const dynamic = 'force-dynamic';
 
 const PAGE_SIZE = 25;
 
@@ -50,7 +47,6 @@ export default async function AdminOrdersPage({
   params: Promise<{ locale: string }>;
   searchParams: Promise<{ page?: string }>;
 }) {
-  await guardShopAdminPage();
 
   const { locale } = await params;
   const sp = await searchParams;
@@ -80,14 +76,12 @@ export default async function AdminOrdersPage({
         totalMinor === null ? '-' : formatMoney(totalMinor, currency, locale),
       itemCount: order.itemCount,
       paymentProvider: order.paymentProvider ?? '-',
-      viewHref: `/shop/admin/orders/${order.id}`,
+      viewHref: `/admin/shop/orders/${order.id}`,
       viewAriaLabel: t('viewOrder', { id: order.id }),
     };
   });
 
   return (
-    <>
-      <ShopAdminTopbar />
 
       <main
         className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8"
@@ -101,7 +95,7 @@ export default async function AdminOrdersPage({
             {t('title')}
           </h1>
 
-          <form action="/api/shop/admin/orders/reconcile-stale" method="post">
+          <form action="/api/admin/shop/orders/reconcile-stale" method="post">
             <input type="hidden" name={CSRF_FORM_FIELD} value={csrfToken} />
             <button
               type="submit"
@@ -302,13 +296,12 @@ export default async function AdminOrdersPage({
 
           <div className="mt-4">
             <AdminPagination
-              basePath="/shop/admin/orders"
+              basePath="/admin/shop/orders"
               page={page}
               hasNext={hasNext}
             />
           </div>
         </section>
       </main>
-    </>
   );
 }

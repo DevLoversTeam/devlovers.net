@@ -279,9 +279,9 @@ export function AppMobileMenu({
 
               {variant === 'shop' && showAdminLink && (
                 <Link
-                  href="/shop/admin/products/new"
-                  onClick={e => handleLinkClick(e, '/shop/admin/products/new')}
-                  className={linkClass(pathname === '/shop/admin/products/new')}
+                  href="/admin/shop/products/new"
+                  onClick={e => handleLinkClick(e, '/admin/shop/products/new')}
+                  className={linkClass(pathname === '/admin/shop/products/new')}
                 >
                   {tMobileMenu('newProduct')}
                 </Link>
@@ -301,11 +301,11 @@ export function AppMobileMenu({
 
                   {showAdminLink && (
                     <Link
-                      href="/shop/admin"
-                      aria-label={tAria('shopAdmin')}
-                      title={tAria('shopAdmin')}
-                      onClick={e => handleLinkClick(e, '/shop/admin')}
-                      className={linkClass(pathname === '/shop/admin')}
+                      href="/admin"
+                      aria-label={tAria('admin')}
+                      title={tAria('admin')}
+                      onClick={e => handleLinkClick(e, '/admin')}
+                      className={linkClass(pathname === '/admin')}
                     >
                       {tMobileMenu('admin')}
                     </Link>
