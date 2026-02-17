@@ -57,6 +57,12 @@ export async function GET(request: NextRequest) {
         { status: 401 }
       );
     }
+    const totalCountRows = await db
+      .select({ value: sql<number>`count(*)` })
+      .from(orders)
+      .where(eq(orders.userId, user.id));
+
+    const totalCount = toCount(totalCountRows[0]?.value);
 
     const rows = await db
       .select({
@@ -110,7 +116,10 @@ export async function GET(request: NextRequest) {
       itemCount: toCount(r.itemCount),
     }));
 
-    return noStoreJson({ success: true, orders: response }, { status: 200 });
+    return noStoreJson(
+      { success: true, orders: response, totalCount },
+      { status: 200 }
+    );
   } catch (error) {
     logError('public_orders_list_failed', error, {
       ...baseMeta,

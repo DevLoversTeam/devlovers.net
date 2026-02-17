@@ -156,7 +156,7 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
 
         if (res.status === 401 || res.status === 403) {
           if (!cancelled) {
-            setOrdersSummary({ count: 0, latestOrderId: null });
+            setOrdersSummary(null);
           }
           return;
         }
@@ -164,11 +164,29 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
         const data: unknown = await res.json().catch(() => null);
         if (!res.ok || !data || typeof data !== 'object') return;
 
-        const maybe = data as { success?: unknown; orders?: unknown };
+        const maybe = data as {
+          success?: unknown;
+          orders?: unknown;
+          totalCount?: unknown;
+        };
         if (maybe.success !== true || !Array.isArray(maybe.orders)) return;
 
         const orders = maybe.orders as Array<{ id?: unknown }>;
-        const count = orders.length;
+
+        const totalCountRaw = maybe.totalCount;
+        const totalCountNum =
+          typeof totalCountRaw === 'number'
+            ? totalCountRaw
+            : typeof totalCountRaw === 'string'
+              ? Number(totalCountRaw)
+              : typeof totalCountRaw === 'bigint'
+                ? Number(totalCountRaw)
+                : NaN;
+
+        const count = Number.isFinite(totalCountNum)
+          ? Math.max(0, Math.trunc(totalCountNum))
+          : orders.length;
+
         const latestOrderId =
           typeof orders[0]?.id === 'string' ? orders[0].id : null;
 
@@ -310,7 +328,7 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
       setIsCheckingOut(false);
     }
   }
-  
+
   const ordersCard = ordersSummary ? (
     <div className={ORDERS_CARD}>
       <div className="flex items-center justify-between gap-3">
