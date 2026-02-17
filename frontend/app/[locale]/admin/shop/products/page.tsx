@@ -2,10 +2,9 @@ import { and, desc, eq, sql } from 'drizzle-orm';
 import { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
-import { AdminPagination } from '@/components/shop/admin/AdminPagination';
-import { AdminProductDeleteButton } from '@/components/shop/admin/AdminProductDeleteButton';
-import { AdminProductStatusToggle } from '@/components/shop/admin/AdminProductStatusToggle';
-import { ShopAdminTopbar } from '@/components/shop/admin/ShopAdminTopbar';
+import { AdminPagination } from '@/components/admin/shop/AdminPagination';
+import { AdminProductDeleteButton } from '@/components/admin/shop/AdminProductDeleteButton';
+import { AdminProductStatusToggle } from '@/components/admin/shop/AdminProductStatusToggle';
 import { db } from '@/db';
 import {
   inventoryMoves,
@@ -14,7 +13,6 @@ import {
   products,
 } from '@/db/schema';
 import { Link } from '@/i18n/routing';
-import { guardShopAdminPage } from '@/lib/auth/guard-shop-admin-page';
 import { parsePage } from '@/lib/pagination';
 import { issueCsrfToken } from '@/lib/security/csrf';
 import { formatMoney, resolveCurrencyFromLocale } from '@/lib/shop/currency';
@@ -23,7 +21,6 @@ export const metadata: Metadata = {
   title: 'Admin Products | DevLovers',
   description: 'Create, edit, activate, and manage product catalog.',
 };
-export const dynamic = 'force-dynamic';
 
 const PAGE_SIZE = 25;
 
@@ -39,7 +36,6 @@ export default async function AdminProductsPage({
   params: Promise<{ locale: string }>;
   searchParams: Promise<{ page?: string }>;
 }) {
-  await guardShopAdminPage();
 
   const { locale } = await params;
   const sp = await searchParams;
@@ -99,9 +95,6 @@ export default async function AdminProductsPage({
     'px-3 py-2 text-left text-xs font-semibold text-foreground leading-tight whitespace-normal break-words';
 
   return (
-    <>
-      <ShopAdminTopbar />
-
       <main
         className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8"
         aria-labelledby="admin-products-title"
@@ -115,7 +108,7 @@ export default async function AdminProductsPage({
           </h1>
 
           <Link
-            href="/shop/admin/products/new"
+            href="/admin/shop/products/new"
             className="border-border text-foreground hover:bg-secondary inline-flex items-center justify-center rounded-md border px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors"
           >
             {t('newProduct')}
@@ -245,7 +238,7 @@ export default async function AdminProductsPage({
                         </Link>
 
                         <Link
-                          href={`/shop/admin/products/${row.id}/edit`}
+                          href={`/admin/shop/products/${row.id}/edit`}
                           className="border-border text-foreground hover:bg-secondary inline-flex items-center justify-center rounded-md border px-2 py-1 text-xs font-medium transition-colors"
                           aria-label={t('actions.editProduct', {
                             title: row.title,
@@ -408,7 +401,7 @@ export default async function AdminProductsPage({
                             </Link>
 
                             <Link
-                              href={`/shop/admin/products/${row.id}/edit`}
+                              href={`/admin/shop/products/${row.id}/edit`}
                               className="border-border text-foreground hover:bg-secondary break-words inline-flex items-center justify-center rounded-md border px-2 py-1 text-center text-xs leading-tight font-medium whitespace-normal transition-colors"
                               aria-label={t('actions.editProduct', {
                                 title: row.title,
@@ -453,13 +446,12 @@ export default async function AdminProductsPage({
 
           <div className="mt-4">
             <AdminPagination
-              basePath="/shop/admin/products"
+              basePath="/admin/shop/products"
               page={page}
               hasNext={hasNext}
             />
           </div>
         </section>
       </main>
-    </>
   );
 }

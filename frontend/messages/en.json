@@ -12,7 +12,7 @@
   "aria": {
     "primaryNav": "Primary navigation",
     "dashboard": "Dashboard",
-    "shopAdmin": "Shop admin",
+    "admin": "Admin panel",
     "blogCategories": "Blog categories",
     "searchBlog": "Search blog",
     "toggleMenu": "Toggle menu",

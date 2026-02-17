@@ -3,10 +3,8 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { z } from 'zod';
 
-import { ShopAdminTopbar } from '@/components/shop/admin/ShopAdminTopbar';
 import { db } from '@/db';
 import { productPrices, products } from '@/db/schema';
-import { guardShopAdminPage } from '@/lib/auth/guard-shop-admin-page';
 import { issueCsrfToken } from '@/lib/security/csrf';
 import type { CurrencyCode } from '@/lib/shop/currency';
 import { currencyValues } from '@/lib/shop/currency';
@@ -18,7 +16,6 @@ export const metadata: Metadata = {
   description: 'Edit an existing product in the DevLovers shop catalog.',
 };
 
-export const dynamic = 'force-dynamic';
 
 const paramsSchema = z.object({ id: z.string().uuid() });
 
@@ -37,7 +34,7 @@ export default async function EditProductPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await guardShopAdminPage();
+
 
   const rawParams = await params;
   const parsed = paramsSchema.safeParse(rawParams);
@@ -84,8 +81,6 @@ export default async function EditProductPage({
   const csrfToken = issueCsrfToken('admin:products:update');
 
   return (
-    <>
-      <ShopAdminTopbar />
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <ProductForm
           mode="edit"
@@ -109,6 +104,5 @@ export default async function EditProductPage({
           }}
         />
       </main>
-    </>
   );
 }

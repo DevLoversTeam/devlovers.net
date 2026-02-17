@@ -7,7 +7,7 @@ import {
   requireAdminPage,
 } from '@/lib/auth/admin';
 
-export async function guardShopAdminPage(): Promise<void> {
+export async function guardAdminPage(): Promise<void> {
   try {
     await requireAdminPage();
   } catch (err) {
