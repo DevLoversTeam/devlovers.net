@@ -146,11 +146,12 @@ export function CartProvider({ children, cartOwnerId }: CartProviderProps) {
     [cartOwnerId]
   );
 
-  const didHydrate = useRef(false);
+  const lastHydratedOwnerRef = useRef<string | null | undefined>(undefined);
 
   useEffect(() => {
-    if (didHydrate.current) return;
-    didHydrate.current = true;
+    const ownerKey = cartOwnerId ?? null;
+    if (lastHydratedOwnerRef.current === ownerKey) return;
+    lastHydratedOwnerRef.current = ownerKey;
 
     const stored = getStoredCartItems(cartOwnerId);
     void Promise.resolve().then(() => syncCartWithServer(stored));
