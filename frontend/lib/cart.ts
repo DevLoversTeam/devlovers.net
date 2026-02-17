@@ -13,7 +13,8 @@ import {
   MAX_QUANTITY_PER_LINE,
 } from '@/lib/validation/shop';
 
-const CART_KEY = 'devlovers-cart';
+const CART_KEY_BASE = 'devlovers-cart';
+const CART_KEY_LEGACY = CART_KEY_BASE;
 
 export type Cart = CartRehydrateResult;
 export type CartItem = CartRehydrateItem;
@@ -49,6 +50,38 @@ const legacyStoredCartItemSchema = z.object({
 
 export { createCartItemKey };
 
+export function resolveCartStorageKey(ownerId?: string | null): string {
+  const normalized = typeof ownerId === 'string' ? ownerId.trim() : '';
+  return normalized ? `${CART_KEY_BASE}:${normalized}` : `${CART_KEY_BASE}:guest`;
+}
+
+/**
+ * Security-safe migration:
+ * - old global key `devlovers-cart` could belong to any user on a shared browser
+ * - move it ONLY into guest bucket (never auto-assign to a logged-in user)
+ */
+function migrateLegacyCartStorageOnce(): void {
+  if (typeof window === 'undefined') return;
+
+  try {
+    const legacy = window.localStorage.getItem(CART_KEY_LEGACY);
+    if (!legacy) return;
+
+    const guestKey = resolveCartStorageKey(null);
+
+    // If guest bucket empty, keep legacy as guest cart. Otherwise drop legacy.
+    if (!window.localStorage.getItem(guestKey)) {
+      window.localStorage.setItem(guestKey, legacy);
+    }
+
+    window.localStorage.removeItem(CART_KEY_LEGACY);
+  } catch (error) {
+    logWarn('cart_migration_failed', {
+      message: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
+
 export function capQuantityByStock(quantity: number, stock: number): number {
   return Math.max(
     0,
@@ -73,11 +106,15 @@ function normalizeStoredItem(rawItem: unknown): CartClientItem | null {
   return null;
 }
 
-export function getStoredCartItems(): CartClientItem[] {
+export function getStoredCartItems(ownerId?: string | null): CartClientItem[] {
   if (typeof window === 'undefined') return [];
 
+  migrateLegacyCartStorageOnce();
+
+  const key = resolveCartStorageKey(ownerId);
+
   try {
-    const stored = window.localStorage.getItem(CART_KEY);
+    const stored = window.localStorage.getItem(key);
     if (!stored) return [];
 
     const parsed = JSON.parse(stored);
@@ -88,27 +125,34 @@ export function getStoredCartItems(): CartClientItem[] {
       .filter((item): item is CartClientItem => item !== null);
   } catch (error) {
     logWarn('cart_read_failed', {
+      key,
       message: error instanceof Error ? error.message : String(error),
     });
     return [];
   }
 }
 
-export function persistCartItems(items: CartClientItem[]): void {
+export function persistCartItems(
+  items: CartClientItem[],
+  ownerId?: string | null
+): void {
   if (typeof window === 'undefined') return;
 
+  migrateLegacyCartStorageOnce();
+
+  const key = resolveCartStorageKey(ownerId);
+
   try {
-    window.localStorage.setItem(CART_KEY, JSON.stringify(items));
+    window.localStorage.setItem(key, JSON.stringify(items));
   } catch (error) {
     logWarn('cart_save_failed', {
+      key,
       message: error instanceof Error ? error.message : String(error),
     });
   }
 }
 
-function normalizeItemsForStorage(
-  items: CartRehydrateItem[]
-): CartClientItem[] {
+function normalizeItemsForStorage(items: CartRehydrateItem[]): CartClientItem[] {
   return items.map(item => ({
     productId: item.productId,
     quantity: item.quantity,
@@ -117,9 +161,7 @@ function normalizeItemsForStorage(
   }));
 }
 
-export function computeSummaryFromItems(
-  items: CartRehydrateItem[]
-): CartSummary {
+export function computeSummaryFromItems(items: CartRehydrateItem[]): CartSummary {
   if (!items.length) {
     return {
       totalAmountMinor: 0,
@@ -221,9 +263,12 @@ async function readJsonSafe(response: Response): Promise<unknown> {
   }
 }
 
-export async function rehydrateCart(items: CartClientItem[]): Promise<Cart> {
+export async function rehydrateCart(
+  items: CartClientItem[],
+  ownerId?: string | null
+): Promise<Cart> {
   if (!items.length) {
-    persistCartItems([]);
+    persistCartItems([], ownerId);
     return emptyCart;
   }
 
@@ -248,7 +293,7 @@ export async function rehydrateCart(items: CartClientItem[]): Promise<Cart> {
 
   const parsed = cartRehydrateResultSchema.parse(data);
   const normalizedForStorage = normalizeItemsForStorage(parsed.items);
-  persistCartItems(normalizedForStorage);
+  persistCartItems(normalizedForStorage, ownerId);
 
   return parsed;
 }
@@ -261,8 +306,19 @@ export function buildCartFromItems(
   return { items, removed, summary };
 }
 
-export function clearStoredCart(): void {
-  if (typeof window !== 'undefined') {
-    window.localStorage.removeItem(CART_KEY);
+export function clearStoredCart(ownerId?: string | null): void {
+  if (typeof window === 'undefined') return;
+
+  migrateLegacyCartStorageOnce();
+
+  const key = resolveCartStorageKey(ownerId);
+
+  try {
+    window.localStorage.removeItem(key);
+  } catch (error) {
+    logWarn('cart_clear_failed', {
+      key,
+      message: error instanceof Error ? error.message : String(error),
+    });
   }
 }

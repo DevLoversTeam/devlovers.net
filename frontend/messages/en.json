@@ -370,6 +370,7 @@
     "cart": {
       "title": "Your cart",
       "empty": "Your cart is empty",
+      "loading": "Loading...",
       "emptyDescription": "Looks like you haven't added any items to your cart yet",
       "startShopping": "Start shopping",
       "itemsLabel": "Cart items",

@@ -50,6 +50,7 @@ export default async function LocaleLayout({
 
   const isAdmin = user?.role === 'admin';
   const showAdminNavLink = Boolean(user) && isAdmin && enableAdmin;
+  const userId = user?.id ?? null;
 
   return (
     <NextIntlClientProvider messages={messages}>
@@ -61,6 +62,7 @@ export default async function LocaleLayout({
       >
         <AppChrome
           userExists={userExists}
+          userId={userId}
           showAdminLink={showAdminNavLink}
           blogCategories={blogCategories}
         >
