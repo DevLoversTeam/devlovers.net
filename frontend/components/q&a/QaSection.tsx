@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import AccordionList from '@/components/q&a/AccordionList';
 import { Pagination } from '@/components/q&a/Pagination';
@@ -11,14 +11,13 @@ import { CategoryTabButton } from '@/components/shared/CategoryTabButton';
 import { Loader } from '@/components/shared/Loader';
 import { Tabs, TabsContent, TabsList } from '@/components/ui/tabs';
 import { categoryData } from '@/data/category';
-import { categoryTabStyles } from '@/data/categoryStyles';
+import { getCategoryTabStyle } from '@/data/categoryStyles';
 import { cn } from '@/lib/utils';
 
 export default function TabsSection() {
   const t = useTranslations('qa');
   const sectionRef = useRef<HTMLDivElement>(null);
   const pendingScrollRef = useRef(false);
-  const [isMobile, setIsMobile] = useState(false);
   const {
     active,
     currentPage,
@@ -36,14 +35,6 @@ export default function TabsSection() {
     () => `qa-${active}-${currentPage}`,
     [active, currentPage]
   );
-
-  useEffect(() => {
-    const media = window.matchMedia('(max-width: 640px)');
-    const update = () => setIsMobile(media.matches);
-    update();
-    media.addEventListener('change', update);
-    return () => media.removeEventListener('change', update);
-  }, []);
 
   const clearSelection = useCallback(() => {
     if (typeof window === 'undefined') return;
@@ -84,18 +75,17 @@ export default function TabsSection() {
       <Tabs value={active} onValueChange={handleCategoryChange}>
         <TabsList className="mb-6 flex !h-auto !w-full flex-wrap items-stretch justify-start gap-3 !bg-transparent !p-0">
           {categoryData.map(category => {
-            const slug = category.slug as keyof typeof categoryTabStyles;
-            const value = slug as CategorySlug;
+            const value = category.slug as CategorySlug;
             return (
               <CategoryTabButton
-                key={slug}
+                key={value}
                 value={value}
                 label={
                   category.translations[localeKey] ??
                   category.translations.en ??
                   value
                 }
-                style={categoryTabStyles[slug]}
+                style={getCategoryTabStyle(value)}
                 isActive={active === value}
               />
             );
@@ -134,9 +124,7 @@ export default function TabsSection() {
           pageSize={pageSize}
           pageSizeOptions={pageSizeOptions}
           onPageSizeChange={handlePageSizeChange}
-          accentColor={
-            categoryTabStyles[active as keyof typeof categoryTabStyles].accent
-          }
+          accentColor={getCategoryTabStyle(active).accent}
         />
       )}
     </div>
