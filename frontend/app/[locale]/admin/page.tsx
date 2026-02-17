@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { FileQuestion, ShoppingBag } from 'lucide-react';
+import { FileQuestion, MessageSquare, ShoppingBag } from 'lucide-react';
 
 import { Link } from '@/i18n/routing';
 
@@ -20,6 +20,12 @@ const SECTIONS = [
     description: 'Edit quizzes, questions, and view statistics',
     href: '/admin/quiz' as const,
     icon: FileQuestion,
+  },
+  {
+    title: 'Q&A',
+    description: 'Manage interview questions and answers',
+    href: '/admin/q&a' as const,
+    icon: MessageSquare,
   },
 ];
 

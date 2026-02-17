@@ -95,7 +95,7 @@ export default async function AdminOrdersPage({
             {t('title')}
           </h1>
 
-          <form action="/api/admin/shop/orders/reconcile-stale" method="post">
+          <form action="/api/shop/admin/orders/reconcile-stale" method='post'>
             <input type="hidden" name={CSRF_FORM_FIELD} value={csrfToken} />
             <button
               type="submit"
