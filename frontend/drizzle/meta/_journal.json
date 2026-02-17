@@ -99,6 +99,13 @@
       "when": 1770912000000,
       "tag": "0013_monobank_janitor_claim_attempts",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1771302242966,
+      "tag": "0014_curvy_ironclad",
+      "breakpoints": true
     }
   ]
 }

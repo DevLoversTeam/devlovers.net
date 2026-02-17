@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { orderItems, orders } from '@/db/schema';
 import { getCurrentUser } from '@/lib/auth';
-import { logError, logWarn } from '@/lib/logging';
+import { logError, logInfo } from '@/lib/logging';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      logWarn('public_orders_list_unauthorized', {
+      logInfo('public_orders_list_unauthorized', {
         ...baseMeta,
         code: 'UNAUTHORIZED',
         durationMs: Date.now() - startedAtMs,
