@@ -97,9 +97,11 @@ export function LeaderboardTable({
 
       {!isUserInTop && matchedUser && contextRows.length > 0 && (
         <>
-          <div className="py-2 text-center text-xl font-bold tracking-widest text-slate-400 select-none dark:text-slate-600">
-            • • •
-          </div>
+          {contextRows[0].rank > TOP_COUNT + 1 && (
+            <div className="py-2 text-center text-xl font-bold tracking-widest text-slate-400 select-none dark:text-slate-600">
+              • • •
+            </div>
+          )}
 
           <div className="overflow-hidden rounded-2xl border-2 border-(--accent-primary) bg-white shadow-[0_0_20px_var(--accent-primary)] backdrop-blur-md dark:bg-white/5">
             <div className="w-full">
@@ -113,7 +115,7 @@ export function LeaderboardTable({
                 <tbody>
                   {contextRows.map(user => {
                     const isMe =
-                      String(user.id) === normalizedCurrentUserId ||
+                      user.userId === normalizedCurrentUserId ||
                       (currentUsername && user.username === currentUsername);
 
                     return (

@@ -114,7 +114,8 @@
           "tip": "Powszechnie używane w wrapperach API, hookach i funkcjach użytkowych."
         }
       }
-    }
+    },
+    "scrollToNextSection": "Przewiń do następnej sekcji"
   },
   "qa": {
     "title": "Pytania i Odpowiedzi",

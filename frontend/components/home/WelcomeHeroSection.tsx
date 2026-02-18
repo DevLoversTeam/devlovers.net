@@ -58,7 +58,7 @@ export default function WelcomeHeroSection() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1, duration: 1 }}
         className="absolute bottom-8 left-1/2 -translate-x-1/2 flex cursor-pointer flex-col items-center gap-2 text-gray-400 transition-colors hover:text-(--accent-primary) dark:text-white/50 dark:hover:text-(--accent-primary)"
-        aria-label="Scroll to next section"
+        aria-label={t('scrollToNextSection')}
       >
         <div className="relative h-8 w-5 rounded-full border-2 border-current p-1 opacity-75">
            <motion.div

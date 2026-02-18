@@ -93,14 +93,14 @@ export function OnlineCounterPopup({ ctaRef }: OnlineCounterPopupProps) {
 
   return (
     <div
-      className="fixed right-0 left-0 z-50 flex justify-center md:right-12 md:bottom-[10vh] md:left-auto md:justify-end"
+      className="pointer-events-none fixed right-0 left-0 z-50 flex justify-center md:right-12 md:bottom-[10vh] md:left-auto md:justify-end"
       style={isMobile ? { top } : undefined}
     >
       <div
         className={`transition-all duration-500 ease-out ${
           show
-            ? 'translate-y-0 scale-100 opacity-100'
-            : 'translate-y-4 scale-90 opacity-0'
+            ? 'pointer-events-auto translate-y-0 scale-100 opacity-100'
+            : 'pointer-events-none translate-y-4 scale-90 opacity-0'
         }`}
       >
         <div className="relative">

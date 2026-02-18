@@ -114,7 +114,8 @@
           "tip": "Commonly used in API wrappers, hooks, and utility functions."
         }
       }
-    }
+    },
+    "scrollToNextSection": "Scroll to next section"
   },
   "qa": {
     "title": "Questions and Answers",
