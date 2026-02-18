@@ -64,16 +64,15 @@ export function ProfileCard({
           </p>
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            {isSponsor ? (
+            <span className="inline-flex items-center rounded-full bg-(--accent-primary)/10 px-3 py-1 text-xs font-bold tracking-wider text-(--accent-primary) uppercase">
+              {user.role || t('defaultRole')}
+            </span>
+            {isSponsor && (
               <span
                 className="inline-flex items-center gap-1.5 rounded-full bg-(--sponsor)/10 px-3 py-1 text-xs font-bold tracking-wider text-(--sponsor) uppercase dark:bg-(--sponsor)/15 dark:text-(--sponsor)"
               >
                 <Heart className="h-3 w-3 fill-current" />
                 {t('sponsor')}
-              </span>
-            ) : (
-              <span className="inline-flex items-center rounded-full bg-(--accent-primary)/10 px-3 py-1 text-xs font-bold tracking-wider text-(--accent-primary) uppercase">
-                {user.role || t('defaultRole')}
               </span>
             )}
           </div>

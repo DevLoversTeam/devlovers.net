@@ -29,7 +29,7 @@ export function LeaderboardTable({
 
   const matchedUser = users.find(
     u =>
-      String(u.id) === normalizedCurrentUserId ||
+      u.userId === normalizedCurrentUserId ||
       (currentUsername && u.username === currentUsername)
   );
 
@@ -38,11 +38,7 @@ export function LeaderboardTable({
 
   const contextRows: User[] = [];
   if (!isUserInTop && matchedUser) {
-    const userIndex = users.findIndex(
-      u =>
-        String(u.id) === normalizedCurrentUserId ||
-        (currentUsername && u.username === currentUsername)
-    );
+    const userIndex = users.indexOf(matchedUser);
 
     if (userIndex !== -1) {
       const start = Math.max(TOP_COUNT, userIndex - CONTEXT_RANGE);
@@ -82,7 +78,7 @@ export function LeaderboardTable({
             <tbody>
               {topUsers.map(user => {
                 const isMe =
-                  String(user.id) === normalizedCurrentUserId ||
+                  user.userId === normalizedCurrentUserId ||
                   (currentUsername && user.username === currentUsername);
 
                 return (
@@ -108,6 +104,7 @@ export function LeaderboardTable({
           <div className="overflow-hidden rounded-2xl border-2 border-(--accent-primary) bg-white shadow-[0_0_20px_var(--accent-primary)] backdrop-blur-md dark:bg-white/5">
             <div className="w-full">
               <table className="w-full table-fixed border-separate border-spacing-0 text-left">
+                <caption className="sr-only">{t('contextTableCaption')}</caption>
                 <colgroup>
                   <col className="w-[15%] sm:w-[12%]" />
                   <col />

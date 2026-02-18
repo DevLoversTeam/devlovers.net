@@ -32,7 +32,8 @@ const getLeaderboardDataCached = unstable_cache(
         ) pt_valid`,
         sql`pt_valid.user_id = ${users.id}`
       )
-      .orderBy(desc(sql`COALESCE(pt_valid.total, 0)`));
+      .orderBy(desc(sql`COALESCE(pt_valid.total, 0)`))
+      .limit(1000);
 
     return dbUsers.map((u, index) => {
       const username = u.username || 'Anonymous';

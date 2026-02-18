@@ -60,18 +60,18 @@ export default function WelcomeHeroSection() {
         className="absolute bottom-8 left-1/2 -translate-x-1/2 flex cursor-pointer flex-col items-center gap-2 text-gray-400 transition-colors hover:text-(--accent-primary) dark:text-white/50 dark:hover:text-(--accent-primary)"
         aria-label="Scroll to next section"
       >
-        <div className="relative h-8 w-5 rounded-full border-2 border-gray-300 p-1 dark:border-white/30">
+        <div className="relative h-8 w-5 rounded-full border-2 border-current p-1 opacity-75">
            <motion.div
               animate={{ y: [0, 8, 0] }}
               transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-              className="mx-auto h-1.5 w-1 rounded-full bg-gray-400 dark:bg-white/70"
+              className="mx-auto h-1.5 w-1 rounded-full bg-current"
            />
         </div>
         <motion.div
            animate={{ y: [0, 4, 0] }}
            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut", delay: 0.2 }}
         >
-            <ChevronDown className="h-4 w-4 text-gray-400 dark:text-white/50" />
+            <ChevronDown className="h-4 w-4" />
         </motion.div>
       </motion.button>
     </section>
