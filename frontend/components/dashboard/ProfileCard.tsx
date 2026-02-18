@@ -66,7 +66,7 @@ export function ProfileCard({
           <div className="mt-3 flex flex-wrap items-center gap-2">
             {isSponsor ? (
               <span
-                className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-bold tracking-wider text-amber-700 uppercase dark:bg-amber-500/15 dark:text-amber-400"
+                className="inline-flex items-center gap-1.5 rounded-full bg-(--sponsor)/10 px-3 py-1 text-xs font-bold tracking-wider text-(--sponsor) uppercase dark:bg-(--sponsor)/15 dark:text-(--sponsor)"
               >
                 <Heart className="h-3 w-3 fill-current" />
                 {t('sponsor')}
@@ -107,10 +107,12 @@ export function ProfileCard({
             href="https://github.com/sponsors/DevLoversTeam"
             target="_blank"
             rel="noopener noreferrer"
-            className="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-full border border-emerald-200 bg-emerald-50 px-8 py-3 text-sm font-semibold tracking-widest uppercase text-emerald-700 transition-all hover:scale-105 hover:border-(--accent-primary) hover:bg-(--accent-primary) hover:text-white dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-400 dark:hover:border-(--accent-primary) dark:hover:bg-(--accent-primary) dark:hover:text-white"
+            className="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-full border border-(--sponsor)/30 bg-(--sponsor)/10 px-8 py-3 text-sm font-semibold tracking-widest uppercase text-(--sponsor) transition-all hover:scale-105 hover:border-(--accent-primary)/30 hover:bg-(--accent-primary) hover:text-white dark:border-(--sponsor)/30 dark:bg-(--sponsor)/15 dark:text-(--sponsor) dark:hover:border-(--accent-primary)/30 dark:hover:bg-(--accent-primary) dark:hover:text-white"
           >
             <Heart className="h-4 w-4 fill-current group-hover:fill-none" />
-            <span className="grid">
+            {/* Mobile: static text, Desktop: text swap on hover */}
+            <span className="sm:hidden">{t('sponsorThanks')}</span>
+            <span className="hidden sm:grid">
               <span className="col-start-1 row-start-1 transition-all group-hover:translate-y-full group-hover:opacity-0">
                 {t('sponsorThanks')}
               </span>
@@ -124,7 +126,8 @@ export function ProfileCard({
             href="https://github.com/sponsors/DevLoversTeam"
             target="_blank"
             rel="noopener noreferrer"
-            className="group relative inline-flex items-center justify-center gap-2 rounded-full px-8 py-3 text-sm font-semibold tracking-widest uppercase text-white bg-(--accent-primary) hover:bg-(--accent-hover) transition-all hover:scale-105"
+            className="group relative inline-flex items-center justify-center gap-2 rounded-full bg-(--accent-primary) px-8 py-3 text-sm font-semibold tracking-widest uppercase text-white transition-all hover:scale-105 hover:bg-(--accent-hover)"
+
           >
             <Heart className="h-4 w-4" />
             <span className="relative z-10">{t('becomeSponsor')}</span>

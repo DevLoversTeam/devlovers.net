@@ -70,6 +70,9 @@
 
   --accent-primary: #1e5eff;
   --accent-hover: #174ad6;
+
+  --sponsor: #bf3989;
+  --sponsor-hover: #9a2f6e;
 }
 
 .dark {
@@ -108,6 +111,9 @@
 
   --accent-primary: #ff2d55;
   --accent-hover: #e0264b;
+
+  --sponsor: #db61a2;
+  --sponsor-hover: #bf3989;
 }
 
 @layer base {

@@ -24,12 +24,12 @@ export default function WelcomeHeroSection() {
         </span>
         <div className="relative">
           <h1 className="select-none text-5xl font-extrabold tracking-tight sm:text-6xl md:text-7xl lg:text-8xl">
-            <span className="relative inline-block bg-gradient-to-r from-[var(--accent-primary)]/70 via-[color-mix(in_srgb,var(--accent-primary)_70%,white)]/70 to-[var(--accent-hover)]/70 bg-clip-text text-transparent">
+            <span className="relative inline-block bg-linear-to-r from-(--accent-primary)/70 via-[color-mix(in_srgb,var(--accent-primary)_70%,white)]/70 to-(--accent-hover)/70 bg-clip-text text-transparent">
               DevLovers
             </span>
 
             <span
-              className="wave-text-gradient absolute inset-0 inline-block bg-gradient-to-r from-[var(--accent-primary)] via-[color-mix(in_srgb,var(--accent-primary)_70%,white)] to-[var(--accent-hover)] bg-clip-text text-transparent"
+              className="wave-text-gradient absolute inset-0 inline-block bg-linear-to-r from-(--accent-primary) via-[color-mix(in_srgb,var(--accent-primary)_70%,white)] to-(--accent-hover) bg-clip-text text-transparent"
               aria-hidden="true"
             >
               DevLovers
@@ -48,14 +48,20 @@ export default function WelcomeHeroSection() {
 
       <OnlineCounterPopup ctaRef={ctaRef} />
 
-      <motion.div 
+      <motion.button
+        type="button"
+        onClick={() => {
+          const steps = document.querySelectorAll<HTMLElement>('[data-home-step]');
+          if (steps[1]) steps[1].scrollIntoView({ behavior: 'smooth' });
+        }}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1, duration: 1 }}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-gray-400 dark:text-white/50"
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex cursor-pointer flex-col items-center gap-2 text-gray-400 transition-colors hover:text-(--accent-primary) dark:text-white/50 dark:hover:text-(--accent-primary)"
+        aria-label="Scroll to next section"
       >
         <div className="relative h-8 w-5 rounded-full border-2 border-gray-300 p-1 dark:border-white/30">
-           <motion.div 
+           <motion.div
               animate={{ y: [0, 8, 0] }}
               transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
               className="mx-auto h-1.5 w-1 rounded-full bg-gray-400 dark:bg-white/70"
@@ -67,7 +73,7 @@ export default function WelcomeHeroSection() {
         >
             <ChevronDown className="h-4 w-4 text-gray-400 dark:text-white/50" />
         </motion.div>
-      </motion.div>
+      </motion.button>
     </section>
   );
 }

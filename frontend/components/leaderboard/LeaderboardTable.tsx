@@ -14,13 +14,16 @@ interface LeaderboardTableProps {
   currentUser?: CurrentUser | null;
 }
 
+const TOP_COUNT = 15;
+const CONTEXT_RANGE = 2;
+
 export function LeaderboardTable({
   users,
   currentUser,
 }: LeaderboardTableProps) {
   const t = useTranslations('leaderboard');
 
-  const topUsers = users.slice(0, 20);
+  const topUsers = users.slice(0, TOP_COUNT);
   const normalizedCurrentUserId = currentUser ? String(currentUser.id) : null;
   const currentUsername = currentUser?.username;
 
@@ -31,7 +34,24 @@ export function LeaderboardTable({
   );
 
   const currentUserRank = matchedUser?.rank || 0;
-  const isUserInTop = currentUserRank > 0 && currentUserRank <= 20;
+  const isUserInTop = currentUserRank > 0 && currentUserRank <= TOP_COUNT;
+
+  const contextRows: User[] = [];
+  if (!isUserInTop && matchedUser) {
+    const userIndex = users.findIndex(
+      u =>
+        String(u.id) === normalizedCurrentUserId ||
+        (currentUsername && u.username === currentUsername)
+    );
+
+    if (userIndex !== -1) {
+      const start = Math.max(TOP_COUNT, userIndex - CONTEXT_RANGE);
+      const end = Math.min(users.length - 1, userIndex + CONTEXT_RANGE);
+      for (let i = start; i <= end; i++) {
+        contextRows.push(users[i]);
+      }
+    }
+  }
 
   return (
     <div className="flex w-full flex-col gap-4">
@@ -79,7 +99,7 @@ export function LeaderboardTable({
         </div>
       </div>
 
-      {!isUserInTop && matchedUser && (
+      {!isUserInTop && matchedUser && contextRows.length > 0 && (
         <>
           <div className="py-2 text-center text-xl font-bold tracking-widest text-slate-400 select-none dark:text-slate-600">
             • • •
@@ -94,7 +114,20 @@ export function LeaderboardTable({
                   <col className="w-[25%] sm:w-[20%]" />
                 </colgroup>
                 <tbody>
-                  <TableRow user={matchedUser} isCurrentUser={true} t={t} />
+                  {contextRows.map(user => {
+                    const isMe =
+                      String(user.id) === normalizedCurrentUserId ||
+                      (currentUsername && user.username === currentUsername);
+
+                    return (
+                      <TableRow
+                        key={user.id}
+                        user={user}
+                        isCurrentUser={!!isMe}
+                        t={t}
+                      />
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -168,7 +201,7 @@ function TableRow({
                   href="https://github.com/sponsors/DevLoversTeam"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700 transition-colors hover:bg-amber-200 dark:bg-amber-500/15 dark:text-amber-400 dark:hover:bg-amber-500/25"
+                  className="inline-flex shrink-0 items-center gap-1 rounded-full bg-(--sponsor)/10 px-2 py-0.5 text-[10px] font-bold text-(--sponsor) transition-colors hover:bg-(--sponsor)/20 dark:bg-(--sponsor)/15 dark:text-(--sponsor) dark:hover:bg-(--sponsor)/25"
                 >
                   <Heart className="h-2.5 w-2.5 fill-current" />
                   <span className="hidden sm:inline">{t('sponsor')}</span>
