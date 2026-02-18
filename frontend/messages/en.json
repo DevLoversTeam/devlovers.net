@@ -114,7 +114,8 @@
           "tip": "Commonly used in API wrappers, hooks, and utility functions."
         }
       }
-    }
+    },
+    "scrollToNextSection": "Scroll to next section"
   },
   "qa": {
     "title": "Questions and Answers",
@@ -957,6 +958,7 @@
     "topThreeLabel": "Top 3 Leaders",
     "pts": "pts",
     "tableCaption": "Leaderboard ranking for other participants",
+    "contextTableCaption": "Your position on the leaderboard",
     "you": "You",
     "sponsor": "Sponsor"
   },

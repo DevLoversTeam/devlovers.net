@@ -70,6 +70,9 @@
 
   --accent-primary: #1e5eff;
   --accent-hover: #174ad6;
+
+  --sponsor: #bf3989;
+  --sponsor-hover: #9a2f6e;
 }
 
 .dark {
@@ -108,6 +111,43 @@
 
   --accent-primary: #ff2d55;
   --accent-hover: #e0264b;
+
+  --sponsor: #db61a2;
+  --sponsor-hover: #bf3989;
+}
+
+html {
+  overflow-x: hidden;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 3px;
+}
+
+:is(.dark) *::-webkit-scrollbar-thumb,
+.dark::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+@supports (-moz-appearance: none) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.25) transparent;
+  }
+
+  :is(.dark) * {
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  }
 }
 
 @layer base {
@@ -130,6 +170,7 @@
   .btn {
     background-color: var(--accent-primary);
   }
+
   .btn:hover {
     background-color: var(--accent-hover);
   }
@@ -158,6 +199,7 @@
   from {
     width: 100%;
   }
+
   to {
     width: 0%;
   }
@@ -167,38 +209,37 @@
   from {
     transform: scaleX(1);
   }
+
   to {
     transform: scaleX(0);
   }
 }
 
 @keyframes wave-clip {
+
   0%,
   100% {
-    clip-path: polygon(
-      0% 50%,
-      15% 48%,
-      32% 52%,
-      54% 60%,
-      70% 62%,
-      84% 60%,
-      100% 55%,
-      100% 100%,
-      0% 100%
-    );
+    clip-path: polygon(0% 50%,
+        15% 48%,
+        32% 52%,
+        54% 60%,
+        70% 62%,
+        84% 60%,
+        100% 55%,
+        100% 100%,
+        0% 100%);
   }
+
   50% {
-    clip-path: polygon(
-      0% 65%,
-      16% 70%,
-      34% 72%,
-      51% 68%,
-      67% 58%,
-      84% 52%,
-      100% 48%,
-      100% 100%,
-      0% 100%
-    );
+    clip-path: polygon(0% 65%,
+        16% 70%,
+        34% 72%,
+        51% 68%,
+        67% 58%,
+        84% 52%,
+        100% 48%,
+        100% 100%,
+        0% 100%);
   }
 }
 
@@ -206,6 +247,7 @@
   0% {
     clip-path: inset(100% 0 0 0);
   }
+
   100% {
     clip-path: inset(0 0 0 0);
   }
@@ -215,10 +257,11 @@
   0% {
     transform: translate(0, 0) scale(1) rotate(var(--card-rotate, 0deg));
   }
+
   50% {
-    transform: translate(var(--card-x, 0), var(--card-y, 0)) scale(1.05)
-      rotate(calc(var(--card-rotate, 0deg) + var(--card-rotate-offset, 0deg)));
+    transform: translate(var(--card-x, 0), var(--card-y, 0)) scale(1.05) rotate(calc(var(--card-rotate, 0deg) + var(--card-rotate-offset, 0deg)));
   }
+
   100% {
     transform: translate(0, 0) scale(1) rotate(var(--card-rotate, 0deg));
   }
@@ -293,10 +336,12 @@
 }
 
 @keyframes float {
+
   0%,
   100% {
     transform: translateY(0);
   }
+
   50% {
     transform: translateY(-8px);
   }
@@ -306,6 +351,7 @@
   0% {
     stroke-dashoffset: 0;
   }
+
   100% {
     stroke-dashoffset: 20;
   }
@@ -359,16 +405,12 @@
     0 0 0 2px rgba(0, 0, 0, 0.4), 0 0 0 7px rgba(0, 0, 0, 0.1),
     0 22px 60px rgba(0, 0, 0, 0.28);
 
-  --shop-hero-btn-success-bg: color-mix(
-    in oklab,
-    var(--shop-hero-btn-bg) 88%,
-    white
-  );
-  --shop-hero-btn-success-bg-hover: color-mix(
-    in oklab,
-    var(--shop-hero-btn-bg) 80%,
-    white
-  );
+  --shop-hero-btn-success-bg: color-mix(in oklab,
+      var(--shop-hero-btn-bg) 88%,
+      white);
+  --shop-hero-btn-success-bg-hover: color-mix(in oklab,
+      var(--shop-hero-btn-bg) 80%,
+      white);
   --shop-hero-btn-success-shadow: 0 22px 60px rgba(0, 0, 0, 0.25);
   --shop-hero-btn-success-shadow-hover: 0 28px 80px rgba(0, 0, 0, 0.32);
 }
@@ -421,16 +463,12 @@
     0 0 0 2px rgba(255, 45, 85, 0.7), 0 0 0 7px rgba(255, 45, 85, 0.22),
     0 22px 70px rgba(255, 45, 85, 0.38);
 
-  --shop-hero-btn-success-bg: color-mix(
-    in oklab,
-    var(--accent-primary) 82%,
-    black
-  );
-  --shop-hero-btn-success-bg-hover: color-mix(
-    in oklab,
-    var(--accent-primary) 72%,
-    black
-  );
+  --shop-hero-btn-success-bg: color-mix(in oklab,
+      var(--accent-primary) 82%,
+      black);
+  --shop-hero-btn-success-bg-hover: color-mix(in oklab,
+      var(--accent-primary) 72%,
+      black);
   --shop-hero-btn-success-shadow: 0 22px 60px rgba(255, 45, 85, 0.45);
   --shop-hero-btn-success-shadow-hover: 0 28px 80px rgba(255, 45, 85, 0.6);
 }
@@ -440,6 +478,7 @@
   from {
     transform: translateX(0);
   }
+
   to {
     transform: translateX(-100%);
   }
@@ -458,9 +497,12 @@
   0% {
     transform: translateY(0);
   }
+
   100% {
     transform: translateY(-50%);
-  } /* Рухаємось на 50%, бо контент дубльовано */
+  }
+
+  /* Рухаємось на 50%, бо контент дубльовано */
 }
 
 .animate-marquee-vertical {
@@ -474,14 +516,19 @@
 
 /* Hide scrollbar for horizontal scroll containers */
 .scrollbar-hide {
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
 }
+
 .scrollbar-hide::-webkit-scrollbar {
-  display: none; /* Chrome, Safari and Opera */
+  display: none;
+  /* Chrome, Safari and Opera */
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   .animate-float,
   .animate-spin-slow,
   .animate-spin-slower,

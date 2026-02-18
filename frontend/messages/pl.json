@@ -114,7 +114,8 @@
           "tip": "Powszechnie używane w wrapperach API, hookach i funkcjach użytkowych."
         }
       }
-    }
+    },
+    "scrollToNextSection": "Przewiń do następnej sekcji"
   },
   "qa": {
     "title": "Pytania i Odpowiedzi",
@@ -984,6 +985,7 @@
     "topThreeLabel": "Top 3 Liderów",
     "pts": "pkt",
     "tableCaption": "Tabela rankingowa pozostałych uczestników",
+    "contextTableCaption": "Twoja pozycja w rankingu",
     "you": "Ty",
     "sponsor": "Sponsor"
   },
