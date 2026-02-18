@@ -85,6 +85,7 @@ export const InteractiveCTAButton = React.forwardRef<HTMLAnchorElement>(
     return (
       <MotionLink
         href="/q&a"
+		data-testid="cta-btn"
         ref={(node: HTMLAnchorElement) => {
              internalRef.current = node;
              if (typeof forwardedRef === 'function') forwardedRef(node);
