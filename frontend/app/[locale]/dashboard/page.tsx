@@ -8,7 +8,7 @@ import { QuizResultsSection } from '@/components/dashboard/QuizResultsSection';
 import { QuizSavedBanner } from '@/components/dashboard/QuizSavedBanner';
 import { StatsCard } from '@/components/dashboard/StatsCard';
 import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
-import { getUserLastAttemptPerQuiz, getUserQuizStats } from '@/db/queries/quiz';
+import { getUserLastAttemptPerQuiz, getUserQuizStats } from '@/db/queries/quizzes/quiz';
 import { getUserProfile } from '@/db/queries/users';
 import { redirect } from '@/i18n/routing';
 import { getSponsors } from '@/lib/about/github-sponsors';

@@ -1,10 +1,15 @@
 import { Metadata } from 'next';
 
+import { QuizListTable } from '@/components/admin/quiz/QuizListTable';
+import { getAdminQuizList } from '@/db/queries/quizzes/admin-quiz';
+
 export const metadata: Metadata = {
   title: 'Quiz Admin | DevLovers',
 };
 
-export default function AdminQuizPage() {
+export default async function AdminQuizPage() {
+  const quizzes = await getAdminQuizList();
+
   return (
     <div className="mx-auto max-w-5xl px-6 py-8">
       <h1 className="text-foreground text-2xl font-bold">Quizzes</h1>
@@ -12,8 +17,8 @@ export default function AdminQuizPage() {
         Manage quiz content, questions, and answers
       </p>
 
-      <div className="border-border text-muted-foreground mt-6 rounded-lg border border-dashed p-8 text-center text-sm">
-        Quiz list and editor will be implemented here
+      <div className="mt-6">
+        <QuizListTable quizzes={quizzes} />
       </div>
     </div>
   );

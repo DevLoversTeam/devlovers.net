@@ -5,7 +5,7 @@ import { getTranslations } from 'next-intl/server';
 import { QuizReviewList } from '@/components/dashboard/QuizReviewList';
 import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
 import { categoryTabStyles } from '@/data/categoryStyles';
-import { getAttemptReviewDetails } from '@/db/queries/quiz';
+import { getAttemptReviewDetails } from '@/db/queries/quizzes/quiz';
 import { Link, redirect } from '@/i18n/routing';
 import { getCurrentUser } from '@/lib/auth';
 import { cn } from '@/lib/utils';
