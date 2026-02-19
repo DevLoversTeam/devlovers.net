@@ -5,40 +5,86 @@ import { useState } from 'react';
 
 type PasswordFieldProps = {
   name?: string;
+  id?: string;
   minLength?: number;
+  maxLength?: number;
+  pattern?: string;
+  onChange?: (value: string) => void;
+  customError?: string | null;
+
+  placeholder?: string;
+  autoComplete?: string;
+  ariaLabel?: string;
+  onBlur?: React.FocusEventHandler<HTMLInputElement>;
 };
 
 export function PasswordField({
   name = 'password',
+  id,
   minLength,
+  maxLength,
+  pattern,
+  onChange,
+  customError,
+  placeholder,
+  autoComplete = 'new-password',
+  ariaLabel,
+  onBlur,
 }: PasswordFieldProps) {
   const t = useTranslations('auth.fields');
   const [visible, setVisible] = useState(false);
 
   const handleInvalid = (e: React.InvalidEvent<HTMLInputElement>) => {
     const input = e.currentTarget;
+
     if (input.validity.valueMissing) {
       input.setCustomValidity(t('validation.required'));
-    } else if (input.validity.tooShort && minLength) {
+      return;
+    }
+
+    if (input.validity.tooShort && minLength) {
       input.setCustomValidity(t('validation.passwordTooShort', { minLength }));
+      return;
+    }
+
+    if (input.validity.tooLong && maxLength) {
+      input.setCustomValidity(`Password must be at most ${maxLength} characters.`);
+      return;
+    }
+
+    if (input.validity.patternMismatch) {
+      input.setCustomValidity(
+        'Password must include at least one capital letter and one special character.'
+      );
+      return;
     }
   };
 
   const handleInput = (e: React.FormEvent<HTMLInputElement>) => {
-    e.currentTarget.setCustomValidity('');
+    const input = e.currentTarget;
+    input.setCustomValidity(customError ?? '');
   };
+
+  const resolvedPlaceholder = placeholder ?? t('password');
 
   return (
     <div className="relative">
       <input
+        id={id}
         name={name}
         type={visible ? 'text' : 'password'}
-        placeholder={t('password')}
+        placeholder={resolvedPlaceholder}
+        aria-label={ariaLabel ?? resolvedPlaceholder}
+        autoComplete={autoComplete}
         required
         minLength={minLength}
+        maxLength={maxLength}
+        pattern={pattern}
         className="w-full rounded border px-3 py-2 pr-10"
         onInvalid={handleInvalid}
         onInput={handleInput}
+        onBlur={onBlur}
+        onChange={onChange ? e => onChange(e.currentTarget.value) : undefined}
       />
 
       <button
