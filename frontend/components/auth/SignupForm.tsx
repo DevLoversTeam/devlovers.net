@@ -36,13 +36,11 @@ export function SignupForm({ locale, returnTo }: SignupFormProps) {
   const [verificationRequired, setVerificationRequired] = useState(false);
   const [email, setEmail] = useState('');
 
-  // Live values
   const [nameValue, setNameValue] = useState('');
   const [emailValueLive, setEmailValueLive] = useState('');
   const [passwordValue, setPasswordValue] = useState('');
   const [confirmPasswordValue, setConfirmPasswordValue] = useState('');
 
-  // Touched flags (show messages only after blur)
   const [nameTouched, setNameTouched] = useState(false);
   const [emailTouched, setEmailTouched] = useState(false);
   const [passwordTouched, setPasswordTouched] = useState(false);
@@ -94,7 +92,7 @@ export function SignupForm({ locale, returnTo }: SignupFormProps) {
   const emailErrorText = useMemo(() => {
     if (!emailTouched) return null;
 
-    if (!emailTrimmed) return null;
+    if (!emailTrimmed) return "Email is required";
 
     if (emailTrimmed.length > EMAIL_MAX_LEN) {
       return `Email must not exceed ${EMAIL_MAX_LEN} characters.`;
@@ -117,7 +115,7 @@ export function SignupForm({ locale, returnTo }: SignupFormProps) {
 
   const confirmPolicyErrorText =
     confirmPasswordTouched && !confirmPasswordPolicyOk
-      ? `Repeat password must meet requirements: ${passwordRequirementsText}`
+      ? `Password must meet requirements: ${passwordRequirementsText}`
       : null;
 
   const mismatchErrorText =
@@ -282,7 +280,7 @@ export function SignupForm({ locale, returnTo }: SignupFormProps) {
             <PasswordField
               id="confirmPassword"
               name="confirmPassword"
-              placeholder="Repeat password"
+              placeholder="Confirm password"
               autoComplete="new-password"
               minLength={PASSWORD_MIN_LEN}
               maxLength={PASSWORD_MAX_LEN}

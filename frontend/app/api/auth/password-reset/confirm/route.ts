@@ -25,19 +25,34 @@ const schema = z.object({
       `Password must be at most ${PASSWORD_MAX_LEN} characters`
     )
     .regex(/[A-Z]/, 'Password must contain at least one capital letter')
-    .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character')
+    .regex(
+      /[^A-Za-z0-9]/,
+      'Password must contain at least one special character'
+    )
     .regex(PASSWORD_POLICY_REGEX, 'Password does not meet the required policy'),
 });
+
+function firstFieldErrorMessage(
+  fieldErrors: Record<string, string[] | undefined>
+): string | null {
+  for (const key of Object.keys(fieldErrors)) {
+    const msgs = fieldErrors[key];
+    if (Array.isArray(msgs) && msgs.length > 0 && msgs[0]) {
+      return msgs[0];
+    }
+  }
+  return null;
+}
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   const parsed = schema.safeParse(body);
 
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: parsed.error.flatten().fieldErrors },
-      { status: 400 }
-    );
+    const flattened = parsed.error.flatten().fieldErrors;
+    const firstMsg =
+      firstFieldErrorMessage(flattened) ?? 'Invalid request';
+    return NextResponse.json({ error: firstMsg }, { status: 400 });
   }
 
   const { token, password } = parsed.data;
