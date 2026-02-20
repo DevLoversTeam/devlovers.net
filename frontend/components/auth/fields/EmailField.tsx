@@ -45,13 +45,11 @@ export function EmailField({
     e.currentTarget.setCustomValidity('');
   };
 
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+  const handleBlur: React.FocusEventHandler<HTMLInputElement> = (e) => {
     const input = e.currentTarget;
     const trimmed = input.value.trim();
 
-    if (trimmed !== input.value) {
-      input.value = trimmed;
-    }
+    input.value = trimmed;
 
     onChange?.(trimmed);
     onBlur?.(e);
@@ -68,7 +66,7 @@ export function EmailField({
       className="w-full rounded border px-3 py-2"
       onInvalid={handleInvalid}
       onInput={handleInput}
-      onChange={onChange ? e => onChange(e.currentTarget.value) : undefined}
+      onChange={e => onChange?.(e.currentTarget.value)}
       onBlur={handleBlur}
     />
   );

@@ -15,7 +15,7 @@ export function NameField({
   minLength,
   maxLength,
   onChange,
-  onBlur
+  onBlur,
 }: NameFieldProps) {
   const t = useTranslations('auth.fields');
 

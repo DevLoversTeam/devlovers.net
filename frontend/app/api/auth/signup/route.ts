@@ -12,7 +12,7 @@ import {
   EMAIL_MIN_LEN,
   NAME_MAX_LEN,
   NAME_MIN_LEN,
-  PASSWORD_MAX_LEN,
+  PASSWORD_MAX_BYTES,
   PASSWORD_MIN_LEN,
   PASSWORD_POLICY_REGEX,
 } from '@/lib/auth/signup-constraints';
@@ -20,6 +20,20 @@ import { sendVerificationEmail } from '@/lib/email/sendVerificationEmail';
 import { resolveBaseUrl } from '@/lib/http/getBaseUrl';
 
 export const runtime = 'nodejs';
+
+const passwordSchema = z
+  .string()
+  .min(
+    PASSWORD_MIN_LEN,
+    `Password must be at least ${PASSWORD_MIN_LEN} characters`
+  )
+  .regex(/[A-Z]/, 'Password must contain at least one capital letter')
+  .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character')
+  .regex(PASSWORD_POLICY_REGEX, 'Password does not meet the required policy')
+  .refine(
+    val => Buffer.byteLength(val, 'utf8') <= PASSWORD_MAX_BYTES,
+    `Password must be at most ${PASSWORD_MAX_BYTES} bytes`
+  );
 
 const signupSchema = z
   .object({
@@ -34,14 +48,8 @@ const signupSchema = z
       .min(EMAIL_MIN_LEN, `Email must be at least ${EMAIL_MIN_LEN} characters`)
       .max(EMAIL_MAX_LEN, `Email must be at most ${EMAIL_MAX_LEN} characters`)
       .email('Invalid email'),
-    password: z
-      .string()
-      .min(PASSWORD_MIN_LEN, `Password must be at least ${PASSWORD_MIN_LEN} characters`)
-      .max(PASSWORD_MAX_LEN, `Password must be at most ${PASSWORD_MAX_LEN} characters`)
-      .regex(/[A-Z]/, 'Password must contain at least one capital letter')
-      .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character')
-      .regex(PASSWORD_POLICY_REGEX, 'Password does not meet the required policy'),
-    confirmPassword: z.string(),
+    password: passwordSchema,
+    confirmPassword: passwordSchema,
   })
   .superRefine((val, ctx) => {
     if (val.password !== val.confirmPassword) {
@@ -109,10 +117,7 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json(
-      {
-        success: true,
-        verificationRequired: true,
-      },
+      { success: true, verificationRequired: true },
       { status: 201 }
     );
   } catch (error) {

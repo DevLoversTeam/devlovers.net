@@ -18,7 +18,7 @@ import {
   EMAIL_MIN_LEN,
   NAME_MAX_LEN,
   NAME_MIN_LEN,
-  PASSWORD_MAX_LEN,
+  PASSWORD_MAX_BYTES,
   PASSWORD_MIN_LEN,
   PASSWORD_POLICY_REGEX,
 } from '@/lib/auth/signup-constraints';
@@ -28,8 +28,13 @@ type SignupFormProps = {
   returnTo: string;
 };
 
+function utf8ByteLength(value: string): number {
+  return new TextEncoder().encode(value).length;
+}
+
 export function SignupForm({ locale, returnTo }: SignupFormProps) {
   const t = useTranslations('auth.signup');
+  const tf = useTranslations('auth.fields');
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -68,15 +73,17 @@ export function SignupForm({ locale, returnTo }: SignupFormProps) {
   const passwordPolicyOk = useMemo(() => {
     if (!passwordValue) return false;
     if (passwordValue.length < PASSWORD_MIN_LEN) return false;
-    if (passwordValue.length > PASSWORD_MAX_LEN) return false;
-    return PASSWORD_POLICY_REGEX.test(passwordValue);
+    if (!PASSWORD_POLICY_REGEX.test(passwordValue)) return false;
+    if (utf8ByteLength(passwordValue) > PASSWORD_MAX_BYTES) return false;
+    return true;
   }, [passwordValue]);
 
   const confirmPasswordPolicyOk = useMemo(() => {
     if (!confirmPasswordValue) return false;
     if (confirmPasswordValue.length < PASSWORD_MIN_LEN) return false;
-    if (confirmPasswordValue.length > PASSWORD_MAX_LEN) return false;
-    return PASSWORD_POLICY_REGEX.test(confirmPasswordValue);
+    if (!PASSWORD_POLICY_REGEX.test(confirmPasswordValue)) return false;
+    if (utf8ByteLength(confirmPasswordValue) > PASSWORD_MAX_BYTES) return false;
+    return true;
   }, [confirmPasswordValue]);
 
   const passwordsMatch = useMemo(() => {
@@ -86,36 +93,37 @@ export function SignupForm({ locale, returnTo }: SignupFormProps) {
 
   const nameErrorText =
     nameTouched && !nameLooksValid
-      ? `Name must be at least ${NAME_MIN_LEN} characters and at most ${NAME_MAX_LEN} characters`
+      ? tf('validation.invalidName', { NAME_MIN_LEN, NAME_MAX_LEN })
       : null;
 
   const emailErrorText = useMemo(() => {
     if (!emailTouched) return null;
-
-    if (!emailTrimmed) return "Email is required";
+    if (!emailTrimmed) return null;
 
     if (emailTrimmed.length > EMAIL_MAX_LEN) {
-      return `Email must not exceed ${EMAIL_MAX_LEN} characters.`;
+      return tf('validation.emailTooLong', { EMAIL_MAX_LEN });
     }
 
     if (!emailFormatOk) {
-      return 'Email format is invalid.';
+      return tf('validation.invalidEmail');
     }
 
     return null;
-  }, [emailTouched, emailTrimmed, emailFormatOk]);
+  }, [emailTouched, emailTrimmed, emailFormatOk, tf]);
 
-  const passwordRequirementsText =
-    '8–128 characters, at least one capital letter, and at least one special character.';
+  const passwordRequirementsText = tf('validation.passwordRequirements', {
+    PASSWORD_MIN_LEN,
+    PASSWORD_MAX_BYTES,
+  });
 
   const passwordErrorText =
     passwordTouched && !passwordPolicyOk
-      ? `Password must meet requirements: ${passwordRequirementsText}`
+      ? tf('validation.invalidPassword', { passwordRequirementsText })
       : null;
 
   const confirmPolicyErrorText =
     confirmPasswordTouched && !confirmPasswordPolicyOk
-      ? `Password must meet requirements: ${passwordRequirementsText}`
+      ? tf('validation.invalidPassword', { passwordRequirementsText })
       : null;
 
   const mismatchErrorText =
@@ -124,11 +132,10 @@ export function SignupForm({ locale, returnTo }: SignupFormProps) {
       passwordValue.length > 0 &&
       confirmPasswordValue.length > 0 &&
       !passwordsMatch
-      ? 'Passwords do not match.'
+      ? tf('validation.passwordsDontMatch')
       : null;
 
-  const confirmPasswordErrorText =
-    mismatchErrorText ?? confirmPolicyErrorText ?? null;
+  const confirmPasswordErrorText = mismatchErrorText ?? confirmPolicyErrorText ?? null;
 
   const submitDisabled =
     loading ||
@@ -238,9 +245,7 @@ export function SignupForm({ locale, returnTo }: SignupFormProps) {
               onChange={setNameValue}
               onBlur={() => setNameTouched(true)}
             />
-            {nameErrorText && (
-              <p className="text-sm text-red-600">{nameErrorText}</p>
-            )}
+            {nameErrorText && <p className="text-sm text-red-600">{nameErrorText}</p>}
           </div>
 
           <div className="space-y-1">
@@ -250,23 +255,19 @@ export function SignupForm({ locale, returnTo }: SignupFormProps) {
               onChange={value => {
                 setEmailValueLive(value);
                 setEmail(value);
-
               }}
               onBlur={() => setEmailTouched(true)}
             />
-            {emailErrorText && (
-              <p className="text-sm text-red-600">{emailErrorText}</p>
-            )}
+            {emailErrorText && <p className="text-sm text-red-600">{emailErrorText}</p>}
           </div>
 
           <div className="space-y-1">
             <PasswordField
               id="password"
               name="password"
-              placeholder="Password"
+              placeholder={tf('password')}
               autoComplete="new-password"
               minLength={PASSWORD_MIN_LEN}
-              maxLength={PASSWORD_MAX_LEN}
               pattern={PASSWORD_POLICY_REGEX.source}
               onChange={setPasswordValue}
               onBlur={() => setPasswordTouched(true)}
@@ -274,16 +275,20 @@ export function SignupForm({ locale, returnTo }: SignupFormProps) {
             {passwordErrorText && (
               <p className="text-sm text-red-600">{passwordErrorText}</p>
             )}
+            {passwordTouched && utf8ByteLength(passwordValue) > PASSWORD_MAX_BYTES && (
+              <p className="text-sm text-red-600">
+                {tf('validation.passwordTooLongBytes', { PASSWORD_MAX_BYTES })}
+              </p>
+            )}
           </div>
 
           <div className="space-y-1">
             <PasswordField
               id="confirmPassword"
               name="confirmPassword"
-              placeholder="Confirm password"
+              placeholder={tf('confirmPassword')}
               autoComplete="new-password"
               minLength={PASSWORD_MIN_LEN}
-              maxLength={PASSWORD_MAX_LEN}
               pattern={PASSWORD_POLICY_REGEX.source}
               onChange={setConfirmPasswordValue}
               onBlur={() => setConfirmPasswordTouched(true)}
@@ -291,6 +296,12 @@ export function SignupForm({ locale, returnTo }: SignupFormProps) {
             {confirmPasswordErrorText && (
               <p className="text-sm text-red-600">{confirmPasswordErrorText}</p>
             )}
+            {confirmPasswordTouched &&
+              utf8ByteLength(confirmPasswordValue) > PASSWORD_MAX_BYTES && (
+                <p className="text-sm text-red-600">
+                  {tf('validation.passwordTooLongBytes', { PASSWORD_MAX_BYTES })}
+                </p>
+              )}
           </div>
 
           {error && <AuthErrorBanner message={error} />}

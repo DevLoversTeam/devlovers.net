@@ -7,10 +7,8 @@ type PasswordFieldProps = {
   name?: string;
   id?: string;
   minLength?: number;
-  maxLength?: number;
   pattern?: string;
   onChange?: (value: string) => void;
-  customError?: string | null;
 
   placeholder?: string;
   autoComplete?: string;
@@ -22,10 +20,8 @@ export function PasswordField({
   name = 'password',
   id,
   minLength,
-  maxLength,
   pattern,
   onChange,
-  customError,
   placeholder,
   autoComplete = 'new-password',
   ariaLabel,
@@ -47,11 +43,6 @@ export function PasswordField({
       return;
     }
 
-    if (input.validity.tooLong && maxLength) {
-      input.setCustomValidity(`Password must be at most ${maxLength} characters.`);
-      return;
-    }
-
     if (input.validity.patternMismatch) {
       input.setCustomValidity(
         'Password must include at least one capital letter and one special character.'
@@ -61,8 +52,7 @@ export function PasswordField({
   };
 
   const handleInput = (e: React.FormEvent<HTMLInputElement>) => {
-    const input = e.currentTarget;
-    input.setCustomValidity(customError ?? '');
+    e.currentTarget.setCustomValidity('');
   };
 
   const resolvedPlaceholder = placeholder ?? t('password');
@@ -78,7 +68,6 @@ export function PasswordField({
         autoComplete={autoComplete}
         required
         minLength={minLength}
-        maxLength={maxLength}
         pattern={pattern}
         className="w-full rounded border px-3 py-2 pr-10"
         onInvalid={handleInvalid}

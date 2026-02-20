@@ -9,7 +9,7 @@ import { AuthSuccessBanner } from '@/components/auth/AuthSuccessBanner';
 import { PasswordField } from '@/components/auth/fields/PasswordField';
 import { Button } from '@/components/ui/button';
 import {
-  PASSWORD_MAX_LEN,
+  PASSWORD_MAX_BYTES,
   PASSWORD_MIN_LEN,
   PASSWORD_POLICY_REGEX,
 } from '@/lib/auth/signup-constraints';
@@ -20,6 +20,7 @@ type ResetPasswordFormProps = {
 
 export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
   const t = useTranslations('auth.resetPassword');
+  const tf = useTranslations('auth.fields');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -30,16 +31,16 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
   const passwordPolicyOk = useMemo(() => {
     if (!passwordValue) return false;
     if (passwordValue.length < PASSWORD_MIN_LEN) return false;
-    if (passwordValue.length > PASSWORD_MAX_LEN) return false;
+    if (passwordValue.length > PASSWORD_MAX_BYTES) return false;
     return PASSWORD_POLICY_REGEX.test(passwordValue);
   }, [passwordValue]);
 
   const passwordRequirementsText =
-    '8–128 characters, at least one capital letter, and at least one special character.';
+    tf('validation.passwordRequirements', { PASSWORD_MIN_LEN, PASSWORD_MAX_BYTES });
 
   const passwordErrorText =
     passwordTouched && !passwordPolicyOk
-      ? `Password must meet requirements: ${passwordRequirementsText}`
+      ? tf('validation.invalidPassword', { passwordRequirementsText })
       : null;
 
   const submitDisabled = loading || !passwordPolicyOk;
@@ -93,10 +94,9 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
             <PasswordField
               id="password"
               name="password"
-              placeholder="New password"
+              placeholder={tf('setNewPassword')}
               autoComplete="new-password"
               minLength={PASSWORD_MIN_LEN}
-              maxLength={PASSWORD_MAX_LEN}
               pattern={PASSWORD_POLICY_REGEX.source}
               onChange={setPasswordValue}
               onBlur={() => setPasswordTouched(true)}

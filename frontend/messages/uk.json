@@ -793,7 +793,10 @@
       },
       "bubbles": {
         "qa": {
-          "languages": { "label": "3 мови", "desc": "EN, UK та PL" },
+          "languages": {
+            "label": "3 мови",
+            "desc": "EN, UK та PL"
+          },
           "aiHelper": {
             "label": "AI-помічник",
             "desc": "Виділи текст для пояснення"
@@ -812,7 +815,10 @@
             "label": "Розумний таймер",
             "desc": "Змагайся з часом"
           },
-          "antiCheat": { "label": "Античіт", "desc": "Детекція втрати фокусу" },
+          "antiCheat": {
+            "label": "Античіт",
+            "desc": "Детекція втрати фокусу"
+          },
           "autoSync": {
             "label": "Синхронізація",
             "desc": "Зберігає прогрес після входу"
@@ -823,7 +829,10 @@
           }
         },
         "leaderboard": {
-          "podium": { "label": "Подіум", "desc": "Топ-3 в центрі уваги" },
+          "podium": {
+            "label": "Подіум",
+            "desc": "Топ-3 в центрі уваги"
+          },
           "globalRank": {
             "label": "Глобальний рейтинг",
             "desc": "Змагайся зі світом"
@@ -842,27 +851,54 @@
             "label": "Центр статистики",
             "desc": "Візуалізуй своє зростання"
           },
-          "history": { "label": "Історія", "desc": "Відстежуй серії навчання" },
-          "identity": { "label": "Профіль", "desc": "Керуй роллю та даними" },
+          "history": {
+            "label": "Історія",
+            "desc": "Відстежуй серії навчання"
+          },
+          "identity": {
+            "label": "Профіль",
+            "desc": "Керуй роллю та даними"
+          },
           "reminders": {
             "label": "Нагадування",
             "desc": "Заверши незакінчені квізи"
           }
         },
         "blog": {
-          "techTrends": { "label": "Tech-тренди", "desc": "Будь попереду" },
-          "tutorials": { "label": "Туторіали", "desc": "Покрокові гайди" },
+          "techTrends": {
+            "label": "Tech-тренди",
+            "desc": "Будь попереду"
+          },
+          "tutorials": {
+            "label": "Туторіали",
+            "desc": "Покрокові гайди"
+          },
           "deepDives": {
             "label": "Глибокий аналіз",
             "desc": "Детальний розбір"
           },
-          "community": { "label": "Спільнота", "desc": "Написано розробниками" }
+          "community": {
+            "label": "Спільнота",
+            "desc": "Написано розробниками"
+          }
         },
         "shop": {
-          "newDrops": { "label": "Новинки", "desc": "Регулярні оновлення" },
-          "curated": { "label": "Добірка", "desc": "Колекції для девелоперів" },
-          "checkout": { "label": "Оплата", "desc": "Зручний Stripe checkout" },
-          "premium": { "label": "Преміум", "desc": "Висока якість матеріалів" }
+          "newDrops": {
+            "label": "Новинки",
+            "desc": "Регулярні оновлення"
+          },
+          "curated": {
+            "label": "Добірка",
+            "desc": "Колекції для девелоперів"
+          },
+          "checkout": {
+            "label": "Оплата",
+            "desc": "Зручний Stripe checkout"
+          },
+          "premium": {
+            "label": "Преміум",
+            "desc": "Висока якість матеріалів"
+          }
         }
       }
     },
@@ -1020,15 +1056,22 @@
     "fields": {
       "email": "Email",
       "password": "Пароль",
+      "confirmPassword": "Повторіть пароль",
+      "setNewPassword": "Новий пароль",
       "name": "Ім'я",
       "showPassword": "Показати пароль",
       "hidePassword": "Сховати пароль",
       "show": "Показати",
       "hide": "Сховати",
       "validation": {
-        "required": "Будь ласка, заповніть це поле",
-        "invalidEmail": "Будь ласка, введіть коректну email адресу",
-        "passwordTooShort": "Пароль має містити мінімум {minLength} символів"
+        "emailRequired": "Будь ласка, введіть email",
+        "invalidName": "Ім'я має містити не менше {NAME_MIN_LEN} символів та не більше {NAME_MAX_LEN} символів",
+        "emailTooShort": "Електронна адреса має містити щонайменше {EMAIL_MIN_LEN} символів",
+        "emailTooLong": "Електронна адреса не повинна перевищувати {EMAIL_MAX_LEN} символів",
+        "invalidEmail": "Будь ласка, введіть дійсну адресу електронної пошти",
+        "passwordRequirements": "{PASSWORD_MIN_LEN}-{PASSWORD_MAX_BYTES} символи, принаймні одна велика літера та принаймні один спеціальний символ",
+        "invalidPassword": "Пароль має відповідати вимогам: {passwordRequirementsText}",
+        "passwordsDontMatch": "Паролі не співпадають"
       }
     },
     "divider": "або"

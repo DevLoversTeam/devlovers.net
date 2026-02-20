@@ -6,30 +6,20 @@ import { z } from 'zod';
 import { db } from '@/db';
 import { passwordResetTokens } from '@/db/schema/passwordResetTokens';
 import { users } from '@/db/schema/users';
-import {
-  PASSWORD_MAX_LEN,
-  PASSWORD_MIN_LEN,
-  PASSWORD_POLICY_REGEX,
-} from '@/lib/auth/signup-constraints';
+import { PASSWORD_MAX_BYTES, PASSWORD_MIN_LEN, PASSWORD_POLICY_REGEX } from '@/lib/auth/signup-constraints';
 
 const schema = z.object({
   token: z.string().uuid(),
   password: z
     .string()
-    .min(
-      PASSWORD_MIN_LEN,
-      `Password must be at least ${PASSWORD_MIN_LEN} characters`
-    )
-    .max(
-      PASSWORD_MAX_LEN,
-      `Password must be at most ${PASSWORD_MAX_LEN} characters`
-    )
+    .min(PASSWORD_MIN_LEN, `Password must be at least ${PASSWORD_MIN_LEN} characters`)
     .regex(/[A-Z]/, 'Password must contain at least one capital letter')
-    .regex(
-      /[^A-Za-z0-9]/,
-      'Password must contain at least one special character'
+    .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character')
+    .regex(PASSWORD_POLICY_REGEX, 'Password does not meet the required policy')
+    .refine(
+      (val) => Buffer.byteLength(val, 'utf8') <= PASSWORD_MAX_BYTES,
+      `Password must be at most ${PASSWORD_MAX_BYTES} bytes`
     )
-    .regex(PASSWORD_POLICY_REGEX, 'Password does not meet the required policy'),
 });
 
 function firstFieldErrorMessage(
