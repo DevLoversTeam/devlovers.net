@@ -323,3 +323,19 @@ export async function cacheAttemptReview(
     console.warn('Redis attempt review cache write failed:', err);
   }
 }
+
+export async function invalidateQuizCache(quizId: string): Promise<void> {
+  const redis = getRedisClient();
+  if (!redis) return;
+
+  try {
+    await Promise.all([
+      redis.del(`quiz:answers:${quizId}`),
+      redis.del(`quiz:questions:${quizId}:en`),
+      redis.del(`quiz:questions:${quizId}:uk`),
+      redis.del(`quiz:questions:${quizId}:pl`),
+    ]);
+  } catch (err) {
+    console.warn('Failed to invalidate quiz cache:', err);
+  }
+}

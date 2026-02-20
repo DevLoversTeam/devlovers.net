@@ -114,7 +114,8 @@
           "tip": "Commonly used in API wrappers, hooks, and utility functions."
         }
       }
-    }
+    },
+    "scrollToNextSection": "Scroll to next section"
   },
   "qa": {
     "title": "Questions and Answers",
@@ -822,24 +823,42 @@
             "label": "Auto Sync",
             "desc": "Saves progress post-login"
           },
-          "tracking": { "label": "Tracking", "desc": "Best scores & attempts" }
+          "tracking": {
+            "label": "Tracking",
+            "desc": "Best scores & attempts"
+          }
         },
         "leaderboard": {
           "podium": {
             "label": "The Podium",
             "desc": "Top 3 exclusive spotlight"
           },
-          "globalRank": { "label": "Global Rank", "desc": "Compete worldwide" },
+          "globalRank": {
+            "label": "Global Rank",
+            "desc": "Compete worldwide"
+          },
           "xpSystem": {
             "label": "XP System",
             "desc": "Points for every answer"
           },
-          "liveFeed": { "label": "Live Feed", "desc": "Real-time rank updates" }
+          "liveFeed": {
+            "label": "Live Feed",
+            "desc": "Real-time rank updates"
+          }
         },
         "profile": {
-          "statsHub": { "label": "Stats Hub", "desc": "Visualize your growth" },
-          "history": { "label": "History", "desc": "Track learning streaks" },
-          "identity": { "label": "Identity", "desc": "Manage role & profile" },
+          "statsHub": {
+            "label": "Stats Hub",
+            "desc": "Visualize your growth"
+          },
+          "history": {
+            "label": "History",
+            "desc": "Track learning streaks"
+          },
+          "identity": {
+            "label": "Identity",
+            "desc": "Manage role & profile"
+          },
           "reminders": {
             "label": "Reminders",
             "desc": "Finish incomplete quizzes"
@@ -850,15 +869,36 @@
             "label": "Tech Trends",
             "desc": "Stay ahead of the curve"
           },
-          "tutorials": { "label": "Tutorials", "desc": "Step-by-step guides" },
-          "deepDives": { "label": "Deep Dives", "desc": "In-depth analysis" },
-          "community": { "label": "Community", "desc": "Written by developers" }
+          "tutorials": {
+            "label": "Tutorials",
+            "desc": "Step-by-step guides"
+          },
+          "deepDives": {
+            "label": "Deep Dives",
+            "desc": "In-depth analysis"
+          },
+          "community": {
+            "label": "Community",
+            "desc": "Written by developers"
+          }
         },
         "shop": {
-          "newDrops": { "label": "New Drops", "desc": "Regular fresh content" },
-          "curated": { "label": "Curated", "desc": "Dev-focused collections" },
-          "checkout": { "label": "Checkout", "desc": "Seamless Stripe flow" },
-          "premium": { "label": "Premium", "desc": "High-quality material" }
+          "newDrops": {
+            "label": "New Drops",
+            "desc": "Regular fresh content"
+          },
+          "curated": {
+            "label": "Curated",
+            "desc": "Dev-focused collections"
+          },
+          "checkout": {
+            "label": "Checkout",
+            "desc": "Seamless Stripe flow"
+          },
+          "premium": {
+            "label": "Premium",
+            "desc": "High-quality material"
+          }
         }
       }
     },
@@ -957,6 +997,7 @@
     "topThreeLabel": "Top 3 Leaders",
     "pts": "pts",
     "tableCaption": "Leaderboard ranking for other participants",
+    "contextTableCaption": "Your position on the leaderboard",
     "you": "You",
     "sponsor": "Sponsor"
   },
@@ -1015,15 +1056,22 @@
     "fields": {
       "email": "Email",
       "password": "Password",
+      "confirmPassword": "Confirm password",
+      "setNewPassword": "New password",
       "name": "Name",
       "showPassword": "Show password",
       "hidePassword": "Hide password",
       "show": "Show",
       "hide": "Hide",
       "validation": {
-        "required": "Please fill out this field",
+        "emailRequired": "Email is required",
+        "invalidName": "Name must be at least {NAME_MIN_LEN} characters and at most {NAME_MAX_LEN} characters",
+        "emailTooShort": "Email must be at least {EMAIL_MIN_LEN} characters",
+        "emailTooLong": "Email must not exceed {EMAIL_MAX_LEN} characters",
         "invalidEmail": "Please enter a valid email address",
-        "passwordTooShort": "Password must be at least {minLength} characters"
+        "passwordRequirements": "{PASSWORD_MIN_LEN}-{PASSWORD_MAX_BYTES} characters, at least one capital letter, and at least one special character",
+        "invalidPassword": "Password must meet requirements: {passwordRequirementsText}",
+        "passwordsDontMatch": "Passwords don't match"
       }
     },
     "divider": "or"
