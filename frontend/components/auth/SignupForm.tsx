@@ -55,7 +55,9 @@ export function SignupForm({ locale, returnTo }: SignupFormProps) {
   const emailTrimmed = useMemo(() => emailValueLive.trim(), [emailValueLive]);
 
   const nameLooksValid = useMemo(() => {
-    return nameTrimmed.length >= NAME_MIN_LEN && nameTrimmed.length <= NAME_MAX_LEN;
+    return (
+      nameTrimmed.length >= NAME_MIN_LEN && nameTrimmed.length <= NAME_MAX_LEN
+    );
   }, [nameTrimmed]);
 
   const emailFormatOk = useMemo(() => {
@@ -77,14 +79,6 @@ export function SignupForm({ locale, returnTo }: SignupFormProps) {
     if (utf8ByteLength(passwordValue) > PASSWORD_MAX_BYTES) return false;
     return true;
   }, [passwordValue]);
-
-  const confirmPasswordPolicyOk = useMemo(() => {
-    if (!confirmPasswordValue) return false;
-    if (confirmPasswordValue.length < PASSWORD_MIN_LEN) return false;
-    if (!PASSWORD_POLICY_REGEX.test(confirmPasswordValue)) return false;
-    if (utf8ByteLength(confirmPasswordValue) > PASSWORD_MAX_BYTES) return false;
-    return true;
-  }, [confirmPasswordValue]);
 
   const passwordsMatch = useMemo(() => {
     if (!passwordValue || !confirmPasswordValue) return false;
@@ -121,10 +115,8 @@ export function SignupForm({ locale, returnTo }: SignupFormProps) {
       ? tf('validation.invalidPassword', { passwordRequirementsText })
       : null;
 
-  const confirmPolicyErrorText =
-    confirmPasswordTouched && !confirmPasswordPolicyOk
-      ? tf('validation.invalidPassword', { passwordRequirementsText })
-      : null;
+  const passwordBytesTooLong =
+    passwordTouched && utf8ByteLength(passwordValue) > PASSWORD_MAX_BYTES;
 
   const mismatchErrorText =
     confirmPasswordTouched &&
@@ -135,14 +127,11 @@ export function SignupForm({ locale, returnTo }: SignupFormProps) {
       ? tf('validation.passwordsDontMatch')
       : null;
 
-  const confirmPasswordErrorText = mismatchErrorText ?? confirmPolicyErrorText ?? null;
-
   const submitDisabled =
     loading ||
     !nameLooksValid ||
     !emailLooksValid ||
     !passwordPolicyOk ||
-    !confirmPasswordPolicyOk ||
     !passwordsMatch;
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -172,7 +161,9 @@ export function SignupForm({ locale, returnTo }: SignupFormProps) {
 
       if (!res.ok) {
         const msg =
-          typeof data?.error === 'string' ? data.error : t('errors.signupFailed');
+          typeof data?.error === 'string'
+            ? data.error
+            : t('errors.signupFailed');
         setError(msg);
         return;
       }
@@ -245,7 +236,9 @@ export function SignupForm({ locale, returnTo }: SignupFormProps) {
               onChange={setNameValue}
               onBlur={() => setNameTouched(true)}
             />
-            {nameErrorText && <p className="text-sm text-red-600">{nameErrorText}</p>}
+            {nameErrorText && (
+              <p className="text-sm text-red-600">{nameErrorText}</p>
+            )}
           </div>
 
           <div className="space-y-1">
@@ -258,7 +251,9 @@ export function SignupForm({ locale, returnTo }: SignupFormProps) {
               }}
               onBlur={() => setEmailTouched(true)}
             />
-            {emailErrorText && <p className="text-sm text-red-600">{emailErrorText}</p>}
+            {emailErrorText && (
+              <p className="text-sm text-red-600">{emailErrorText}</p>
+            )}
           </div>
 
           <div className="space-y-1">
@@ -275,7 +270,7 @@ export function SignupForm({ locale, returnTo }: SignupFormProps) {
             {passwordErrorText && (
               <p className="text-sm text-red-600">{passwordErrorText}</p>
             )}
-            {passwordTouched && utf8ByteLength(passwordValue) > PASSWORD_MAX_BYTES && (
+            {passwordBytesTooLong && (
               <p className="text-sm text-red-600">
                 {tf('validation.passwordTooLongBytes', { PASSWORD_MAX_BYTES })}
               </p>
@@ -289,19 +284,12 @@ export function SignupForm({ locale, returnTo }: SignupFormProps) {
               placeholder={tf('confirmPassword')}
               autoComplete="new-password"
               minLength={PASSWORD_MIN_LEN}
-              pattern={PASSWORD_POLICY_REGEX.source}
               onChange={setConfirmPasswordValue}
               onBlur={() => setConfirmPasswordTouched(true)}
             />
-            {confirmPasswordErrorText && (
-              <p className="text-sm text-red-600">{confirmPasswordErrorText}</p>
+            {mismatchErrorText && (
+              <p className="text-sm text-red-600">{mismatchErrorText}</p>
             )}
-            {confirmPasswordTouched &&
-              utf8ByteLength(confirmPasswordValue) > PASSWORD_MAX_BYTES && (
-                <p className="text-sm text-red-600">
-                  {tf('validation.passwordTooLongBytes', { PASSWORD_MAX_BYTES })}
-                </p>
-              )}
           </div>
 
           {error && <AuthErrorBanner message={error} />}

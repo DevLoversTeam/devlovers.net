@@ -49,7 +49,8 @@ const signupSchema = z
       .max(EMAIL_MAX_LEN, `Email must be at most ${EMAIL_MAX_LEN} characters`)
       .email('Invalid email'),
     password: passwordSchema,
-    confirmPassword: passwordSchema,
+
+    confirmPassword: z.string(),
   })
   .superRefine((val, ctx) => {
     if (val.password !== val.confirmPassword) {
