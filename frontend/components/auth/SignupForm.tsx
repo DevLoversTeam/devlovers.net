@@ -1,7 +1,8 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { z } from 'zod';
 
 import { AuthErrorBanner } from '@/components/auth/AuthErrorBanner';
 import { AuthProvidersBlock } from '@/components/auth/AuthProvidersBlock';
@@ -12,21 +13,131 @@ import { NameField } from '@/components/auth/fields/NameField';
 import { PasswordField } from '@/components/auth/fields/PasswordField';
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/routing';
+import {
+  EMAIL_MAX_LEN,
+  EMAIL_MIN_LEN,
+  NAME_MAX_LEN,
+  NAME_MIN_LEN,
+  PASSWORD_MAX_BYTES,
+  PASSWORD_MIN_LEN,
+  PASSWORD_POLICY_REGEX,
+} from '@/lib/auth/signup-constraints';
 
 type SignupFormProps = {
   locale: string;
   returnTo: string;
 };
 
+function utf8ByteLength(value: string): number {
+  return new TextEncoder().encode(value).length;
+}
+
 export function SignupForm({ locale, returnTo }: SignupFormProps) {
   const t = useTranslations('auth.signup');
+  const tf = useTranslations('auth.fields');
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [verificationRequired, setVerificationRequired] = useState(false);
   const [email, setEmail] = useState('');
 
+  const [nameValue, setNameValue] = useState('');
+  const [emailValueLive, setEmailValueLive] = useState('');
+  const [passwordValue, setPasswordValue] = useState('');
+  const [confirmPasswordValue, setConfirmPasswordValue] = useState('');
+
+  const [nameTouched, setNameTouched] = useState(false);
+  const [emailTouched, setEmailTouched] = useState(false);
+  const [passwordTouched, setPasswordTouched] = useState(false);
+  const [confirmPasswordTouched, setConfirmPasswordTouched] = useState(false);
+
+  const nameTrimmed = useMemo(() => nameValue.trim(), [nameValue]);
+  const emailTrimmed = useMemo(() => emailValueLive.trim(), [emailValueLive]);
+
+  const nameLooksValid = useMemo(() => {
+    return (
+      nameTrimmed.length >= NAME_MIN_LEN && nameTrimmed.length <= NAME_MAX_LEN
+    );
+  }, [nameTrimmed]);
+
+  const emailFormatOk = useMemo(() => {
+    if (!emailTrimmed) return false;
+    return z.string().email().safeParse(emailTrimmed).success;
+  }, [emailTrimmed]);
+
+  const emailLooksValid = useMemo(() => {
+    if (!emailTrimmed) return false;
+    if (emailTrimmed.length < EMAIL_MIN_LEN) return false;
+    if (emailTrimmed.length > EMAIL_MAX_LEN) return false;
+    return emailFormatOk;
+  }, [emailTrimmed, emailFormatOk]);
+
+  const passwordPolicyOk = useMemo(() => {
+    if (!passwordValue) return false;
+    if (passwordValue.length < PASSWORD_MIN_LEN) return false;
+    if (!PASSWORD_POLICY_REGEX.test(passwordValue)) return false;
+    if (utf8ByteLength(passwordValue) > PASSWORD_MAX_BYTES) return false;
+    return true;
+  }, [passwordValue]);
+
+  const passwordsMatch = useMemo(() => {
+    if (!passwordValue || !confirmPasswordValue) return false;
+    return passwordValue === confirmPasswordValue;
+  }, [passwordValue, confirmPasswordValue]);
+
+  const nameErrorText =
+    nameTouched && !nameLooksValid
+      ? tf('validation.invalidName', { NAME_MIN_LEN, NAME_MAX_LEN })
+      : null;
+
+  const emailErrorText = useMemo(() => {
+    if (!emailTouched) return null;
+    if (!emailTrimmed) return null;
+
+    if (emailTrimmed.length > EMAIL_MAX_LEN) {
+      return tf('validation.emailTooLong', { EMAIL_MAX_LEN });
+    }
+
+    if (!emailFormatOk) {
+      return tf('validation.invalidEmail');
+    }
+
+    return null;
+  }, [emailTouched, emailTrimmed, emailFormatOk, tf]);
+
+  const passwordRequirementsText = tf('validation.passwordRequirements', {
+    PASSWORD_MIN_LEN,
+    PASSWORD_MAX_BYTES,
+  });
+
+  const passwordErrorText =
+    passwordTouched && !passwordPolicyOk
+      ? tf('validation.invalidPassword', { passwordRequirementsText })
+      : null;
+
+  const passwordBytesTooLong =
+    passwordTouched && utf8ByteLength(passwordValue) > PASSWORD_MAX_BYTES;
+
+  const mismatchErrorText =
+    confirmPasswordTouched &&
+      passwordTouched &&
+      passwordValue.length > 0 &&
+      confirmPasswordValue.length > 0 &&
+      !passwordsMatch
+      ? tf('validation.passwordsDontMatch')
+      : null;
+
+  const submitDisabled =
+    loading ||
+    !nameLooksValid ||
+    !emailLooksValid ||
+    !passwordPolicyOk ||
+    !passwordsMatch;
+
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (submitDisabled) return;
+
     setLoading(true);
     setError(null);
 
@@ -42,13 +153,18 @@ export function SignupForm({ locale, returnTo }: SignupFormProps) {
           name: formData.get('name'),
           email: emailValue,
           password: formData.get('password'),
+          confirmPassword: formData.get('confirmPassword'),
         }),
       });
 
       const data = await res.json().catch(() => null);
 
       if (!res.ok) {
-        setError(data?.error ?? t('errors.signupFailed'));
+        const msg =
+          typeof data?.error === 'string'
+            ? data.error
+            : t('errors.signupFailed');
+        setError(msg);
         return;
       }
 
@@ -95,7 +211,6 @@ export function SignupForm({ locale, returnTo }: SignupFormProps) {
               <p>
                 {t('verificationSent')} <strong>{email}</strong>.
               </p>
-
               <p className="mt-2">{t('checkInbox')}</p>
             </>
           }
@@ -114,15 +229,72 @@ export function SignupForm({ locale, returnTo }: SignupFormProps) {
         />
       ) : (
         <form onSubmit={onSubmit} className="space-y-4">
-          <NameField />
+          <div className="space-y-1">
+            <NameField
+              minLength={NAME_MIN_LEN}
+              maxLength={NAME_MAX_LEN}
+              onChange={setNameValue}
+              onBlur={() => setNameTouched(true)}
+            />
+            {nameErrorText && (
+              <p className="text-sm text-red-600">{nameErrorText}</p>
+            )}
+          </div>
 
-          <EmailField />
+          <div className="space-y-1">
+            <EmailField
+              minLength={EMAIL_MIN_LEN}
+              maxLength={EMAIL_MAX_LEN}
+              onChange={value => {
+                setEmailValueLive(value);
+                setEmail(value);
+              }}
+              onBlur={() => setEmailTouched(true)}
+            />
+            {emailErrorText && (
+              <p className="text-sm text-red-600">{emailErrorText}</p>
+            )}
+          </div>
 
-          <PasswordField minLength={8} />
+          <div className="space-y-1">
+            <PasswordField
+              id="password"
+              name="password"
+              placeholder={tf('password')}
+              autoComplete="new-password"
+              minLength={PASSWORD_MIN_LEN}
+              pattern={PASSWORD_POLICY_REGEX.source}
+              onChange={setPasswordValue}
+              onBlur={() => setPasswordTouched(true)}
+            />
+            {passwordErrorText && (
+              <p className="text-sm text-red-600">{passwordErrorText}</p>
+            )}
+            {passwordBytesTooLong && (
+              <p className="text-sm text-red-600">
+                {tf('validation.passwordTooLongBytes', { PASSWORD_MAX_BYTES })}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-1">
+            <PasswordField
+              id="confirmPassword"
+              name="confirmPassword"
+              placeholder={tf('confirmPassword')}
+              autoComplete="new-password"
+              minLength={PASSWORD_MIN_LEN}
+              onChange={setConfirmPasswordValue}
+              onBlur={() => setConfirmPasswordTouched(true)}
+            />
+            {mismatchErrorText && (
+              <p className="text-sm text-red-600">{mismatchErrorText}</p>
+            )}
+          </div>
 
           {error && <AuthErrorBanner message={error} />}
 
-          <Button type="submit" disabled={loading} className="w-full">
+          <Button type="submit" disabled={submitDisabled} className="w-full">
             {loading ? t('submitting') : t('submit')}
           </Button>
         </form>
