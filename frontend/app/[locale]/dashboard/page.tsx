@@ -1,5 +1,5 @@
-import { getTranslations } from 'next-intl/server';
 import { Heart, MessageSquare } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
 
 import { PostAuthQuizSync } from '@/components/auth/PostAuthQuizSync';
 import { AchievementsSection } from '@/components/dashboard/AchievementsSection';
@@ -12,11 +12,11 @@ import { QuizSavedBanner } from '@/components/dashboard/QuizSavedBanner';
 import { StatsCard } from '@/components/dashboard/StatsCard';
 import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
 import { getUserLastAttemptPerQuiz, getUserQuizStats } from '@/db/queries/quizzes/quiz';
-import { getUserProfile, getUserGlobalRank } from '@/db/queries/users';
+import { getUserGlobalRank, getUserProfile } from '@/db/queries/users';
 import { redirect } from '@/i18n/routing';
-import { getSponsors, getAllSponsors } from '@/lib/about/github-sponsors';
-import { getCurrentUser } from '@/lib/auth';
+import { getAllSponsors, getSponsors } from '@/lib/about/github-sponsors';
 import { computeAchievements } from '@/lib/achievements';
+import { getCurrentUser } from '@/lib/auth';
 import { checkHasStarredRepo, resolveGitHubLogin } from '@/lib/github-stars';
 
 export async function generateMetadata({
@@ -188,7 +188,6 @@ export default async function DashboardPage({
   const highScores = attempts.filter((a) => Number(a.percentage) >= 90).length;
   const uniqueQuizzes = lastAttempts.length;
 
-  // Night Owl: any attempt completed between 00:00 and 05:00 local time
   const hasNightOwl = attempts.some((a) => {
     if (!a.completedAt) return false;
     const hour = new Date(a.completedAt).getHours();
@@ -205,7 +204,7 @@ export default async function DashboardPage({
     totalPoints: user.points,
     topLeaderboard: false,
     hasStarredRepo,
-    sponsorCount: matchedSponsor ? 1 : 0, // TODO: wire to actual sponsorship history count
+    sponsorCount: matchedSponsor ? 1 : 0, 
     hasNightOwl,
   });
 
@@ -257,7 +256,7 @@ export default async function DashboardPage({
               totalAttempts={totalAttempts}
               globalRank={globalRank}
             />
-            <div className="grid gap-8 lg:grid-cols-2">
+            <div id="stats" className="grid gap-8 lg:grid-cols-2 scroll-mt-8">
               <StatsCard stats={stats} attempts={attempts} />
               <ActivityHeatmapCard attempts={attempts} locale={locale} currentStreak={currentStreak} />
             </div>
@@ -265,7 +264,7 @@ export default async function DashboardPage({
           <div className="mt-8">
             <AchievementsSection achievements={achievements} />
           </div>
-          <div className="mt-8">
+          <div id="quiz-results" className="mt-8 scroll-mt-8">
             <QuizResultsSection attempts={lastAttempts} locale={locale} />
           </div>
           <div className="mt-8">

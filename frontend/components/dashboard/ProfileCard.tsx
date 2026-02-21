@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 import { UserAvatar } from '@/components/leaderboard/UserAvatar';
+import { Link } from '@/i18n/routing';
 
 interface ProfileCardProps {
   user: {
@@ -41,13 +42,15 @@ export function ProfileCard({
     user.image ||
     `https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(seed)}`;
 
-  const cardStyles = `
-    relative z-10 flex flex-col overflow-hidden rounded-3xl
-    border border-gray-200 bg-white/10 shadow-sm backdrop-blur-md
-    dark:border-neutral-800 dark:bg-neutral-900/10
-    p-5 sm:p-6 lg:p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-md
-    hover:border-(--accent-primary)/30 dark:hover:border-(--accent-primary)/30
-  `;
+  const cardStyles = 'dashboard-card flex flex-col p-5 sm:p-6 lg:p-8';
+
+  const scrollTo = (id: string) => (e: React.MouseEvent) => {
+    e.preventDefault();
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const statItemBase =
+    'flex flex-row items-center gap-2 sm:gap-3 rounded-2xl border border-gray-100 bg-white/50 p-2 sm:p-3 text-left dark:border-white/5 dark:bg-black/20 xl:flex-row-reverse xl:items-center xl:text-right xl:p-3 xl:px-4 transition-all hover:border-(--accent-primary)/40 hover:bg-gray-50 dark:hover:bg-white/5 dark:hover:border-(--accent-primary)/20';
 
   return (
     <section className={cardStyles} aria-labelledby="profile-heading">
@@ -76,15 +79,14 @@ export function ProfileCard({
             </p>
 
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              {isSponsor ? (
+              <span className="inline-flex items-center rounded-full bg-(--accent-primary)/10 px-3 py-1 text-xs font-bold tracking-wider text-(--accent-primary) uppercase">
+                {user.role || t('defaultRole')}
+              </span>
+              {isSponsor && (
                 <span className="relative inline-flex items-center gap-1.5 rounded-full bg-(--accent-primary)/10 px-3 py-1 text-xs font-bold tracking-wider text-(--accent-primary) uppercase overflow-hidden border border-(--accent-primary)/20">
-                  <span className="absolute inset-0 bg-linear-to-r from-transparent via-(--accent-primary)/10 to-transparent translate-x-[-100%] animate-[shimmer_2s_infinite]" />
+                  <span className="absolute inset-0 bg-linear-to-r from-transparent via-(--accent-primary)/10 to-transparent -translate-x-full animate-[shimmer_2s_infinite]" />
                   <Heart className="h-3 w-3 fill-(--accent-primary) drop-shadow-[0_0_8px_rgba(var(--accent-primary-rgb),0.8)]" />
                   <span className="relative z-10">{t('sponsor')}</span>
-                </span>
-              ) : (
-                <span className="inline-flex items-center rounded-full bg-(--accent-primary)/10 px-3 py-1 text-xs font-bold tracking-wider text-(--accent-primary) uppercase">
-                  {user.role || t('defaultRole')}
                 </span>
               )}
             </div>
@@ -92,7 +94,7 @@ export function ProfileCard({
         </div>
         <dl className="grid w-full grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-4 xl:w-auto xl:flex xl:flex-nowrap xl:items-center xl:justify-end xl:gap-2 2xl:gap-3">
             {/* Attempts */}
-            <div className="flex flex-row items-center gap-2 sm:gap-3 rounded-2xl border border-gray-100 bg-white/50 p-2 sm:p-3 text-left dark:border-white/5 dark:bg-black/20 xl:flex-row-reverse xl:items-center xl:text-right xl:p-3 xl:px-4">
+            <a href="#quiz-results" onClick={scrollTo('quiz-results')} className={statItemBase}>
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-100/80 ring-1 ring-black/5 dark:bg-purple-500/20 dark:ring-white/10 xl:h-auto xl:w-auto xl:p-2.5">
                 <Target className="h-5 w-5 text-purple-600 dark:text-purple-400" />
               </div>
@@ -104,10 +106,10 @@ export function ProfileCard({
                   {totalAttempts}
                 </dd>
               </div>
-            </div>
+            </a>
 
             {/* Points */}
-            <div className="flex flex-row items-center gap-2 sm:gap-3 rounded-2xl border border-gray-100 bg-white/50 p-2 sm:p-3 text-left dark:border-white/5 dark:bg-black/20 xl:flex-row-reverse xl:items-center xl:text-right xl:p-3 xl:px-4">
+            <a href="#stats" onClick={scrollTo('stats')} className={statItemBase}>
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100/80 ring-1 ring-black/5 dark:bg-amber-500/20 dark:ring-white/10 xl:h-auto xl:w-auto xl:p-2.5">
                 <Trophy className="h-5 w-5 text-amber-600 dark:text-amber-400" />
               </div>
@@ -119,10 +121,10 @@ export function ProfileCard({
                   {user.points}
                 </dd>
               </div>
-            </div>
+            </a>
 
             {/* Global rank */}
-            <div className="flex flex-row items-center gap-2 sm:gap-3 rounded-2xl border border-gray-100 bg-white/50 p-2 sm:p-3 text-left dark:border-white/5 dark:bg-black/20 xl:flex-row-reverse xl:items-center xl:text-right xl:p-3 xl:px-4">
+            <Link href="/leaderboard" className={statItemBase}>
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-100/80 ring-1 ring-black/5 dark:bg-teal-500/20 dark:ring-white/10 xl:h-auto xl:w-auto xl:p-2.5">
                 <Globe className="h-5 w-5 text-teal-600 dark:text-teal-400" />
               </div>
@@ -134,7 +136,7 @@ export function ProfileCard({
                   {globalRank ? `#${globalRank}` : '—'}
                 </dd>
               </div>
-            </div>
+            </Link>
 
             {/* Joined */}
             <div className="flex flex-row items-center gap-2 sm:gap-3 rounded-2xl border border-gray-100 bg-white/50 p-2 sm:p-3 text-left dark:border-white/5 dark:bg-black/20 xl:flex-row-reverse xl:items-center xl:text-right xl:p-3 xl:px-4">

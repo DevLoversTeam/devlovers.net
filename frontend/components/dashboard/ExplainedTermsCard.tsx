@@ -225,13 +225,7 @@ export function ExplainedTermsCard() {
   const hasTerms = terms.length > 0;
   const hasHiddenTerms = hiddenTerms.length > 0;
 
-  const cardStyles = `
-    relative z-10 flex flex-col overflow-hidden rounded-3xl
-    border border-gray-200 bg-white/10 shadow-sm backdrop-blur-md
-    dark:border-neutral-800 dark:bg-neutral-900/10
-    p-6 sm:p-8 lg:p-10 transition-all duration-300 hover:-translate-y-1 hover:shadow-md
-    hover:border-(--accent-primary)/30 dark:hover:border-(--accent-primary)/30
-  `;
+  const cardStyles = 'dashboard-card flex flex-col p-6 sm:p-8 lg:p-10';
 
   return (
     <>

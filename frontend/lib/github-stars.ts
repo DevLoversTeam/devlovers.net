@@ -38,6 +38,52 @@ export async function resolveGitHubLogin(providerId: string): Promise<string | n
   }
 }
 
+export interface StargazerEntry {
+  /** lowercase GitHub login */
+  login: string;
+  /** avatar URL without query string — used for avatar-based matching */
+  avatarBase: string;
+}
+
+/**
+ * Fetches ALL stargazers for the DevLovers repo in one paginated pass.
+ * Returns an array of { login, avatarBase } for efficient Set-based lookups.
+ * Cached 1 h per page via Next.js fetch cache.
+ */
+export async function getAllStargazers(): Promise<StargazerEntry[]> {
+  const token = getToken();
+  if (!token) return [];
+
+  const all: StargazerEntry[] = [];
+
+  for (let page = 1; page <= MAX_PAGES; page++) {
+    const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/stargazers?per_page=100&page=${page}`;
+    try {
+      const res = await fetch(url, {
+        headers: makeHeaders(),
+        next: { revalidate: 3600 },
+      });
+      if (!res.ok) break;
+
+      const page_data: { login: string; avatar_url: string }[] = await res.json();
+      if (page_data.length === 0) break;
+
+      for (const s of page_data) {
+        all.push({
+          login: s.login.toLowerCase(),
+          avatarBase: s.avatar_url.split('?')[0],
+        });
+      }
+
+      if (page_data.length < 100) break;
+    } catch {
+      break;
+    }
+  }
+
+  return all;
+}
+
 /**
  * Checks whether a given GitHub login has starred the DevLovers repo.
  * Uses the GITHUB_SPONSORS_TOKEN (server-side org PAT) — no user token needed.

@@ -15,8 +15,7 @@ interface QuizResultsSectionProps {
 export function QuizResultsSection({ attempts, locale }: QuizResultsSectionProps) {
   const t = useTranslations('dashboard.quizResults');
 
-  const cardStyles =
-    'relative z-10 flex flex-col overflow-hidden rounded-3xl border border-gray-200 bg-white/10 p-6 sm:p-8 lg:p-10 shadow-sm backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-(--accent-primary)/30 dark:border-neutral-800 dark:bg-neutral-900/10 dark:hover:border-(--accent-primary)/30';
+  const cardStyles = 'dashboard-card flex flex-col p-6 sm:p-8 lg:p-10';
 
   const primaryBtnStyles =
     'group relative inline-flex items-center justify-center rounded-full px-8 py-3 text-sm font-semibold tracking-widest uppercase text-white bg-(--accent-primary) hover:bg-(--accent-hover) transition-all hover:scale-105';

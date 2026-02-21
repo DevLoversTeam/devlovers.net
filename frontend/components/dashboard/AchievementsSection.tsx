@@ -18,8 +18,7 @@ export function AchievementsSection({ achievements }: AchievementsSectionProps) 
 
   const earnedCount = achievements.filter((a) => a.earned).length;
 
-  const cardStyles =
-    'relative z-10 overflow-hidden rounded-3xl border border-gray-200 bg-white/10 shadow-sm backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-(--accent-primary)/30 dark:border-neutral-800 dark:bg-neutral-900/10 dark:hover:border-(--accent-primary)/30';
+  const cardStyles = 'dashboard-card';
 
   const previewBadges = achievements.slice(0, 6);
   const remainingBadges = achievements.slice(6);

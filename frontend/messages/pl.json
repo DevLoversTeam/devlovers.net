@@ -1088,6 +1088,7 @@
     "profile": {
       "title": "Profil",
       "subtitle": "Zarządzaj swoim profilem publicznym i preferencjami",
+      "sponsor": "Sponsor",
       "becomeSponsor": "Zostań sponsorem",
       "supportAgain": "Okaż więcej wsparcia",
       "points": "Pkt",
@@ -1212,7 +1213,9 @@
         "expand": "Zobacz wszystkie",
         "collapse": "Zwiń",
         "clickInfo": "Kliknij po info",
-        "clickBack": "Kliknij, aby wrócić"
+        "clickBack": "Kliknij, aby wrócić",
+        "more": "więcej",
+        "moreCount": "{count} więcej"
       },
       "badges": {
         "first_blood": {
