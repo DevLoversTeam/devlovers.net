@@ -51,7 +51,7 @@ export function LeaderboardTable({
 
   return (
     <div className="flex w-full flex-col gap-4">
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg backdrop-blur-md dark:border-white/10 dark:bg-white/5 dark:shadow-2xl">
+      <div className="overflow-hidden rounded-3xl border border-gray-200 bg-white/10 shadow-sm backdrop-blur-md dark:border-neutral-800 dark:bg-neutral-900/10">
         <div className="w-full">
           <table className="w-full table-fixed border-separate border-spacing-0 text-left">
             <caption className="sr-only">{t('tableCaption')}</caption>
@@ -61,15 +61,15 @@ export function LeaderboardTable({
               <col className="w-[25%] sm:w-[20%]" />
             </colgroup>
 
-            <thead className="bg-slate-50/80 dark:bg-white/5">
+            <thead className="bg-gray-50/50 dark:bg-neutral-800/20">
               <tr>
-                <th className="w-[15%] border-b border-slate-200 px-2 py-3 text-center text-[10px] font-bold tracking-widest text-slate-500 uppercase sm:w-[12%] sm:px-6 sm:py-5 sm:text-xs dark:border-white/10 dark:text-slate-400">
+                <th className="w-[15%] border-b border-gray-200/50 px-2 py-3 text-center text-[10px] font-bold tracking-widest text-gray-500 uppercase sm:w-[12%] sm:px-6 sm:py-5 sm:text-xs dark:border-white/10 dark:text-gray-400">
                   {t('rank')}
                 </th>
-                <th className="w-auto border-b border-slate-200 px-2 py-3 text-xs font-bold tracking-widest text-slate-500 uppercase sm:px-6 sm:py-5 dark:border-white/10 dark:text-slate-400">
+                <th className="w-auto border-b border-gray-200/50 px-2 py-3 text-xs font-bold tracking-widest text-gray-500 uppercase sm:px-6 sm:py-5 dark:border-white/10 dark:text-gray-400">
                   {t('user')}
                 </th>
-                <th className="w-[25%] border-b border-slate-200 py-3 pr-4 pl-2 text-right text-xs font-bold tracking-widest text-slate-500 uppercase sm:w-[20%] sm:px-6 sm:py-5 dark:border-white/10 dark:text-slate-400">
+                <th className="w-[25%] border-b border-gray-200/50 py-3 pr-4 pl-2 text-right text-xs font-bold tracking-widest text-gray-500 uppercase sm:w-[20%] sm:px-6 sm:py-5 dark:border-white/10 dark:text-gray-400">
                   {t('score')}
                 </th>
               </tr>
@@ -98,12 +98,12 @@ export function LeaderboardTable({
       {!isUserInTop && matchedUser && contextRows.length > 0 && (
         <>
           {contextRows[0].rank > TOP_COUNT + 1 && (
-            <div className="py-2 text-center text-xl font-bold tracking-widest text-slate-400 select-none dark:text-slate-600">
+            <div className="py-2 text-center text-xl font-bold tracking-widest text-gray-400/50 select-none dark:text-white/20">
               • • •
             </div>
           )}
 
-          <div className="overflow-hidden rounded-2xl border-2 border-(--accent-primary) bg-white shadow-[0_0_20px_var(--accent-primary)] backdrop-blur-md dark:bg-white/5">
+          <div className="overflow-hidden rounded-3xl border-2 border-(--accent-primary)/50 bg-white/10 shadow-[0_0_20px_var(--accent-primary)] backdrop-blur-md dark:bg-neutral-900/10">
             <div className="w-full">
               <table className="w-full table-fixed border-separate border-spacing-0 text-left">
                 <caption className="sr-only">{t('contextTableCaption')}</caption>
@@ -147,7 +147,7 @@ function TableRow({
   t: ReturnType<typeof useTranslations>;
 }) {
   const cellClass =
-    'px-2 sm:px-6 py-3 sm:py-4 border-b border-slate-100 dark:border-white/5';
+    'px-2 sm:px-6 py-3 sm:py-4 border-b border-gray-200/50 dark:border-white/5';
 
   const leftBorderClass = 'border-l border-l-transparent';
   const rightBorderClass = 'border-r border-r-transparent';
@@ -158,7 +158,7 @@ function TableRow({
         'group transition-all duration-300',
         isCurrentUser
           ? 'bg-[color-mix(in_srgb,var(--accent-primary),transparent_90%)] shadow-inner'
-          : 'hover:bg-slate-50/60 dark:hover:bg-white/4'
+          : 'hover:bg-white/30 dark:hover:bg-white/5'
       )}
     >
       <td className={cn(cellClass, leftBorderClass)}>
@@ -174,7 +174,7 @@ function TableRow({
               'relative h-8 w-8 shrink-0 overflow-hidden rounded-full border transition-all duration-300 sm:h-10 sm:w-10',
               isCurrentUser
                 ? 'border-(--accent-primary) shadow-[0_0_1px_var(--accent-primary)]'
-                : 'border-slate-200 group-hover:border-(--accent-primary) dark:border-white/10'
+                : 'border-white/20 group-hover:border-(--accent-primary) dark:border-white/10'
             )}
           >
             <UserAvatar
@@ -190,7 +190,7 @@ function TableRow({
                 'flex items-center gap-1 text-sm font-medium transition-colors sm:gap-2',
                 isCurrentUser
                   ? 'text-sm font-black text-(--accent-primary) sm:text-base'
-                  : 'text-slate-700 group-hover:text-(--accent-primary) dark:text-slate-200 dark:group-hover:text-(--accent-primary)'
+                  : 'text-gray-800 group-hover:text-(--accent-primary) dark:text-gray-200 dark:group-hover:text-(--accent-primary)'
               )}
             >
               <span className="truncate">{user.username}</span>
@@ -248,7 +248,7 @@ function TableRow({
             'inline-block font-mono font-bold transition-all',
             isCurrentUser
               ? 'scale-110 text-sm text-(--accent-primary) drop-shadow-sm sm:text-lg'
-              : 'text-sm text-slate-700 group-hover:scale-105 sm:text-base dark:text-slate-300'
+              : 'text-sm text-gray-800 group-hover:scale-105 sm:text-base dark:text-gray-200'
           )}
         >
           {user.points.toLocaleString()}
@@ -261,8 +261,8 @@ function TableRow({
 function RankBadge({ rank }: { rank: number }) {
   if (rank === 1) {
     return (
-      <div className="relative flex h-6 w-8 items-center justify-center gap-0.5 rounded-md border border-yellow-500/50 bg-yellow-100 shadow-[0_0_10px_rgba(234,179,8,0.3)] sm:h-8 sm:w-14 sm:gap-1.5 sm:rounded-lg dark:bg-yellow-500/20">
-        <span className="text-xs font-black text-yellow-700 sm:text-base dark:text-yellow-400">
+      <div className="relative flex h-6 w-8 items-center justify-center gap-0.5 rounded-md border border-yellow-500/30 bg-yellow-500/10 shadow-[0_0_10px_rgba(234,179,8,0.3)] sm:h-8 sm:w-14 sm:gap-1.5 sm:rounded-lg">
+        <span className="text-xs font-black text-yellow-600 sm:text-base dark:text-yellow-400">
           1
         </span>
         <Trophy className="h-2.5 w-2.5 text-yellow-600 sm:h-4 sm:w-4 dark:text-yellow-400" />
@@ -272,7 +272,7 @@ function RankBadge({ rank }: { rank: number }) {
   }
   if (rank === 2) {
     return (
-      <div className="flex h-6 w-8 items-center justify-center gap-0.5 rounded-md border border-slate-300 bg-slate-100 sm:h-8 sm:w-14 sm:gap-1.5 sm:rounded-lg dark:border-slate-400/30 dark:bg-slate-400/10">
+      <div className="flex h-6 w-8 items-center justify-center gap-0.5 rounded-md border border-slate-500/30 bg-slate-500/10 sm:h-8 sm:w-14 sm:gap-1.5 sm:rounded-lg">
         <span className="text-xs font-black text-slate-600 sm:text-base dark:text-slate-300">
           2
         </span>
@@ -282,8 +282,8 @@ function RankBadge({ rank }: { rank: number }) {
   }
   if (rank === 3) {
     return (
-      <div className="flex h-6 w-8 items-center justify-center gap-0.5 rounded-md border border-orange-300 bg-orange-50 sm:h-8 sm:w-14 sm:gap-1.5 sm:rounded-lg dark:border-orange-500/30 dark:bg-orange-500/10">
-        <span className="text-xs font-black text-orange-700 sm:text-base dark:text-orange-400">
+      <div className="flex h-6 w-8 items-center justify-center gap-0.5 rounded-md border border-orange-500/30 bg-orange-500/10 sm:h-8 sm:w-14 sm:gap-1.5 sm:rounded-lg">
+        <span className="text-xs font-black text-orange-600 sm:text-base dark:text-orange-400">
           3
         </span>
         <Medal className="h-2.5 w-2.5 text-orange-600 sm:h-4 sm:w-4 dark:text-orange-400" />
@@ -291,7 +291,7 @@ function RankBadge({ rank }: { rank: number }) {
     );
   }
   return (
-    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-500 sm:h-8 sm:w-8 sm:text-sm dark:bg-white/5 dark:text-slate-500">
+    <span className="flex h-6 w-6 items-center justify-center rounded-full border border-gray-500/20 bg-gray-500/10 text-xs font-bold text-gray-500 sm:h-8 sm:w-8 sm:text-sm dark:border-white/10 dark:bg-white/5 dark:text-gray-400">
       {rank}
     </span>
   );

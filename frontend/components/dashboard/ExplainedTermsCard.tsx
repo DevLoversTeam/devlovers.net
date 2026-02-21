@@ -29,7 +29,6 @@ export function ExplainedTermsCard() {
     label: string;
   } | null>(null);
 
-  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     const cached = getCachedTerms();
     const hidden = getHiddenTerms();
@@ -46,7 +45,6 @@ export function ExplainedTermsCard() {
     );
     setHiddenTerms(sortTermsByOrder(hiddenArray));
   }, []);
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleRemoveTerm = (term: string) => {
     hideTermFromDashboard(term);
@@ -90,7 +88,6 @@ export function ExplainedTermsCard() {
     setDraggedIndex(null);
   };
 
-  // Touch drag support for mobile
   const touchDragIndex = useRef<number | null>(null);
   const termRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const dragTargetIndex = useRef<number | null>(null);
@@ -229,22 +226,23 @@ export function ExplainedTermsCard() {
   const hasHiddenTerms = hiddenTerms.length > 0;
 
   const cardStyles = `
-    relative overflow-hidden rounded-2xl
-    border border-gray-200 dark:border-white/10
-    bg-white/60 dark:bg-neutral-900/60 backdrop-blur-xl
-    p-4 sm:p-6 md:p-8 transition-all hover:border-(--accent-primary)/30 dark:hover:border-(--accent-primary)/30
+    relative z-10 flex flex-col overflow-hidden rounded-3xl
+    border border-gray-200 bg-white/10 shadow-sm backdrop-blur-md
+    dark:border-neutral-800 dark:bg-neutral-900/10
+    p-6 sm:p-8 lg:p-10 transition-all duration-300 hover:-translate-y-1 hover:shadow-md
+    hover:border-(--accent-primary)/30 dark:hover:border-(--accent-primary)/30
   `;
 
   return (
     <>
       <section className={cardStyles} aria-labelledby="explained-terms-heading">
         <div>
-          <div className="mb-6 flex items-center gap-3">
+          <div className="mb-6 flex items-center gap-3 w-full">
             <div
-              className="rounded-full bg-gray-100 p-3 dark:bg-neutral-800/50"
+              className="rounded-xl bg-gray-100/50 p-3 ring-1 ring-black/5 dark:bg-neutral-800/50 dark:ring-white/10 shrink-0"
               aria-hidden="true"
             >
-              <BookOpen className="h-6 w-6 text-(--accent-primary)" />
+              <BookOpen className="h-6 w-6 text-(--accent-primary) drop-shadow-[0_0_8px_rgba(var(--accent-primary-rgb),0.6)]" />
             </div>
             <div>
               <h3

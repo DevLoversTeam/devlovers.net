@@ -64,7 +64,7 @@ export default function LeaderboardClient({
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="rounded-2xl border border-gray-200 bg-white/60 py-20 text-center shadow-xl backdrop-blur-xl dark:border-white/10 dark:bg-[#111]/60"
+                className="rounded-3xl border border-gray-200 bg-white/10 py-20 text-center shadow-sm backdrop-blur-md dark:border-neutral-800 dark:bg-neutral-900/10"
               >
                 <p className="mb-4 text-6xl opacity-50 grayscale">🏆</p>
                 <h2 className="mb-2 text-2xl font-bold text-gray-900 dark:text-white">
