@@ -92,13 +92,9 @@ export default async function DashboardPage({
     githubLogin = user.name ?? '';
   }
 
-  console.log('[star_gazer] provider:', user.provider, '| providerId:', user.providerId, '| resolved login:', githubLogin);
-
   const hasStarredRepo = githubLogin
     ? await checkHasStarredRepo(githubLogin)
     : false;
-
-  console.log('[star_gazer] hasStarredRepo:', hasStarredRepo);
 
   const attempts = await getUserQuizStats(session.id);
   const lastAttempts = await getUserLastAttemptPerQuiz(session.id, locale);
@@ -120,27 +116,34 @@ export default async function DashboardPage({
 
   const globalRank = await getUserGlobalRank(session.id);
 
-  // 1. Calculate Daily Streak
-  const uniqueAttemptDates = Array.from(
-    new Set(attempts.map(a => new Date(a.completedAt).setHours(0, 0, 0, 0)))
-  ).sort((a, b) => b - a);
-  
+  // 1. Calculate Daily Streak (using calendar-day strings to avoid DST issues)
+  const toDateStr = (d: Date) =>
+    `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+
+  const uniqueAttemptDays = Array.from(
+    new Set(attempts.map(a => toDateStr(new Date(a.completedAt))))
+  );
+
+  const getPrevDay = (d: Date): Date => {
+    const prev = new Date(d);
+    prev.setDate(prev.getDate() - 1);
+    return prev;
+  };
+
+  const now = new Date();
+  const todayStr = toDateStr(now);
+  const yesterdayStr = toDateStr(getPrevDay(now));
+
   let currentStreak = 0;
-  const today = new Date().setHours(0, 0, 0, 0);
-  const yesterday = new Date(today - 86400000).setHours(0, 0, 0, 0);
-  
-  if (uniqueAttemptDates.length > 0) {
-    const lastActive = uniqueAttemptDates[0];
-    if (lastActive === today || lastActive === yesterday) {
-      currentStreak = 1;
-      let checkDate = lastActive;
-      for (let i = 1; i < uniqueAttemptDates.length; i++) {
-        checkDate -= 86400000;
-        if (uniqueAttemptDates[i] === checkDate) {
-          currentStreak++;
-        } else {
-          break;
-        }
+  if (uniqueAttemptDays.includes(todayStr) || uniqueAttemptDays.includes(yesterdayStr)) {
+    let checkDate = uniqueAttemptDays.includes(todayStr) ? now : getPrevDay(now);
+    currentStreak = 1;
+    while (true) {
+      checkDate = getPrevDay(checkDate);
+      if (uniqueAttemptDays.includes(toDateStr(checkDate))) {
+        currentStreak++;
+      } else {
+        break;
       }
     }
   }

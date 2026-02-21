@@ -77,12 +77,7 @@ export interface UserStats {
 }
 
 export function computeAchievements(stats: UserStats): EarnedAchievement[] {
-  // Mock date for demo purposes
-  const MOCK_DATE = new Date().toLocaleDateString('en-US', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
+
 
   return ACHIEVEMENTS.map((a) => {
     let earned = false;
@@ -126,7 +121,7 @@ export function computeAchievements(stats: UserStats): EarnedAchievement[] {
       ...a,
       earned,
       progress,
-      earnedAt: earned ? MOCK_DATE : undefined,
+      earnedAt: undefined,
     };
   });
 }
