@@ -56,6 +56,41 @@ export const inventoryMoveTypeEnum = pgEnum('inventory_move_type', [
   'release',
 ]);
 
+export const shippingPayerEnum = pgEnum('shipping_payer', [
+  'customer',
+  'merchant',
+]);
+
+export const shippingProviderEnum = pgEnum('shipping_provider', [
+  'nova_poshta',
+  'ukrposhta',
+]);
+
+export const shippingMethodCodeEnum = pgEnum('shipping_method_code', [
+  'NP_WAREHOUSE',
+  'NP_LOCKER',
+  'NP_COURIER',
+]);
+
+export const shippingStatusEnum = pgEnum('shipping_status', [
+  'pending',
+  'queued',
+  'creating_label',
+  'label_created',
+  'shipped',
+  'delivered',
+  'cancelled',
+  'needs_attention',
+]);
+
+export const shippingShipmentStatusEnum = pgEnum('shipping_shipment_status', [
+  'queued',
+  'processing',
+  'succeeded',
+  'failed',
+  'needs_attention',
+]);
+
 export const products = pgTable(
   'products',
   {
@@ -121,6 +156,15 @@ export const orders = pgTable(
       .notNull(),
 
     currency: currencyEnum('currency').notNull().default('USD'),
+
+    shippingRequired: boolean('shipping_required'),
+    shippingPayer: shippingPayerEnum('shipping_payer'),
+    shippingProvider: shippingProviderEnum('shipping_provider'),
+    shippingMethodCode: shippingMethodCodeEnum('shipping_method_code'),
+    shippingAmountMinor: integer('shipping_amount_minor'),
+    shippingStatus: shippingStatusEnum('shipping_status'),
+    trackingNumber: text('tracking_number'),
+    shippingProviderRef: text('shipping_provider_ref'),
 
     paymentStatus: paymentStatusEnum('payment_status')
       .notNull()
@@ -195,6 +239,7 @@ export const orders = pgTable(
     ),
     index('orders_sweep_claim_expires_idx').on(table.sweepClaimExpiresAt),
     index('idx_orders_user_id_created_at').on(table.userId, table.createdAt),
+    index('orders_shipping_status_idx').on(table.shippingStatus, table.updatedAt),
   ]
 );
 
@@ -500,6 +545,121 @@ export const inventoryMoves = pgTable(
   ]
 );
 
+export const orderShipping = pgTable(
+  'order_shipping',
+  {
+    orderId: uuid('order_id')
+      .primaryKey()
+      .references(() => orders.id, { onDelete: 'cascade' }),
+    shippingAddress: jsonb('shipping_address')
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  table => [index('order_shipping_updated_idx').on(table.updatedAt)]
+);
+
+export const shippingShipments = pgTable(
+  'shipping_shipments',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    orderId: uuid('order_id')
+      .notNull()
+      .references(() => orders.id, { onDelete: 'cascade' }),
+    provider: shippingProviderEnum('provider').notNull().default('nova_poshta'),
+    status: shippingShipmentStatusEnum('status').notNull().default('queued'),
+    attemptCount: integer('attempt_count').notNull().default(0),
+    nextAttemptAt: timestamp('next_attempt_at', { withTimezone: true }),
+    lastErrorCode: text('last_error_code'),
+    lastErrorMessage: text('last_error_message'),
+    providerRef: text('provider_ref'),
+    trackingNumber: text('tracking_number'),
+    leaseOwner: varchar('lease_owner', { length: 64 }),
+    leaseExpiresAt: timestamp('lease_expires_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  table => [
+    uniqueIndex('shipping_shipments_order_id_uq').on(table.orderId),
+    index('shipping_shipments_queue_idx').on(table.status, table.nextAttemptAt),
+    index('shipping_shipments_lease_idx').on(table.leaseExpiresAt),
+    index('shipping_shipments_provider_ref_idx').on(table.providerRef),
+  ]
+);
+
+export const npCities = pgTable(
+  'np_cities',
+  {
+    ref: text('ref').primaryKey(),
+    nameUa: text('name_ua').notNull(),
+    nameRu: text('name_ru'),
+    area: text('area'),
+    region: text('region'),
+    settlementType: text('settlement_type'),
+    isActive: boolean('is_active').notNull().default(true),
+    lastSyncRunId: uuid('last_sync_run_id'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  table => [
+    index('np_cities_active_name_idx').on(table.isActive, table.nameUa),
+    index('np_cities_last_sync_run_idx').on(table.lastSyncRunId),
+  ]
+);
+
+export const npWarehouses = pgTable(
+  'np_warehouses',
+  {
+    ref: text('ref').primaryKey(),
+    cityRef: text('city_ref'),
+    settlementRef: text('settlement_ref').references(() => npCities.ref, {
+      onDelete: 'set null',
+    }),
+    number: text('number'),
+    type: text('type'),
+    name: text('name').notNull(),
+    nameRu: text('name_ru'),
+    address: text('address'),
+    addressRu: text('address_ru'),
+    isPostMachine: boolean('is_post_machine').notNull().default(false),
+    isActive: boolean('is_active').notNull().default(true),
+    lastSyncRunId: uuid('last_sync_run_id'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  table => [
+    index('np_warehouses_settlement_active_idx').on(
+      table.settlementRef,
+      table.isActive
+    ),
+    index('np_warehouses_city_active_idx').on(table.cityRef, table.isActive),
+    index('np_warehouses_active_name_idx').on(table.isActive, table.name),
+    index('np_warehouses_last_sync_run_idx').on(table.lastSyncRunId),
+  ]
+);
+
 export const internalJobState = pgTable('internal_job_state', {
   jobName: text('job_name').primaryKey(),
   nextAllowedAt: timestamp('next_allowed_at', { withTimezone: true }).notNull(),
@@ -638,3 +798,7 @@ export type DbMonobankEvent = typeof monobankEvents.$inferSelect;
 export type DbMonobankRefund = typeof monobankRefunds.$inferSelect;
 export type DbMonobankPaymentCancel =
   typeof monobankPaymentCancels.$inferSelect;
+export type DbOrderShipping = typeof orderShipping.$inferSelect;
+export type DbShippingShipment = typeof shippingShipments.$inferSelect;
+export type DbNpCity = typeof npCities.$inferSelect;
+export type DbNpWarehouse = typeof npWarehouses.$inferSelect;

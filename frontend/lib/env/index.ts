@@ -38,6 +38,33 @@ export const serverEnvSchema = z.object({
   SHOP_STATUS_TOKEN_SECRET: z.string().min(32).optional(),
   UPSTASH_REDIS_REST_URL: z.string().url().optional(),
   UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
+
+  SHOP_SHIPPING_ENABLED: z.enum(['true', 'false']).optional().default('false'),
+  SHOP_SHIPPING_NP_ENABLED: z
+    .enum(['true', 'false'])
+    .optional()
+    .default('false'),
+  SHOP_SHIPPING_SYNC_ENABLED: z
+    .enum(['true', 'false'])
+    .optional()
+    .default('false'),
+  SHOP_SHIPPING_RETENTION_ENABLED: z
+    .enum(['true', 'false'])
+    .optional()
+    .default('false'),
+  SHOP_SHIPPING_RETENTION_DAYS: z.string().optional().default('180'),
+
+  NP_API_KEY: z.string().min(1).optional(),
+  NP_API_BASE: z.string().url().optional(),
+  NP_SENDER_CITY_REF: z.string().min(1).optional(),
+  NP_SENDER_WAREHOUSE_REF: z.string().min(1).optional(),
+  NP_SENDER_REF: z.string().min(1).optional(),
+  NP_SENDER_CONTACT_REF: z.string().min(1).optional(),
+  NP_SENDER_NAME: z.string().min(1).optional(),
+  NP_SENDER_PHONE: z.string().min(1).optional(),
+  NP_SENDER_EDRPOU: z.string().min(1).optional(),
+  NP_DEFAULT_CARGO_TYPE: z.string().min(1).optional().default('Cargo'),
+  NP_DEFAULT_WEIGHT_GRAMS: z.string().optional().default('1000'),
 });
 
 export const clientEnvSchema = z.object({
