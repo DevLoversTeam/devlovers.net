@@ -203,6 +203,9 @@
       "hurryUp": "Hurry up!"
     },
     "result": {
+      "accuracy": "Accuracy",
+      "integrity": "Integrity",
+      "violationsLabel": "Violations",
       "correctAnswers": "correct answers",
       "timeUp": {
         "title": "Time's Up",
@@ -822,24 +825,42 @@
             "label": "Auto Sync",
             "desc": "Saves progress post-login"
           },
-          "tracking": { "label": "Tracking", "desc": "Best scores & attempts" }
+          "tracking": {
+            "label": "Tracking",
+            "desc": "Best scores & attempts"
+          }
         },
         "leaderboard": {
           "podium": {
             "label": "The Podium",
             "desc": "Top 3 exclusive spotlight"
           },
-          "globalRank": { "label": "Global Rank", "desc": "Compete worldwide" },
+          "globalRank": {
+            "label": "Global Rank",
+            "desc": "Compete worldwide"
+          },
           "xpSystem": {
             "label": "XP System",
             "desc": "Points for every answer"
           },
-          "liveFeed": { "label": "Live Feed", "desc": "Real-time rank updates" }
+          "liveFeed": {
+            "label": "Live Feed",
+            "desc": "Real-time rank updates"
+          }
         },
         "profile": {
-          "statsHub": { "label": "Stats Hub", "desc": "Visualize your growth" },
-          "history": { "label": "History", "desc": "Track learning streaks" },
-          "identity": { "label": "Identity", "desc": "Manage role & profile" },
+          "statsHub": {
+            "label": "Stats Hub",
+            "desc": "Visualize your growth"
+          },
+          "history": {
+            "label": "History",
+            "desc": "Track learning streaks"
+          },
+          "identity": {
+            "label": "Identity",
+            "desc": "Manage role & profile"
+          },
           "reminders": {
             "label": "Reminders",
             "desc": "Finish incomplete quizzes"
@@ -850,15 +871,36 @@
             "label": "Tech Trends",
             "desc": "Stay ahead of the curve"
           },
-          "tutorials": { "label": "Tutorials", "desc": "Step-by-step guides" },
-          "deepDives": { "label": "Deep Dives", "desc": "In-depth analysis" },
-          "community": { "label": "Community", "desc": "Written by developers" }
+          "tutorials": {
+            "label": "Tutorials",
+            "desc": "Step-by-step guides"
+          },
+          "deepDives": {
+            "label": "Deep Dives",
+            "desc": "In-depth analysis"
+          },
+          "community": {
+            "label": "Community",
+            "desc": "Written by developers"
+          }
         },
         "shop": {
-          "newDrops": { "label": "New Drops", "desc": "Regular fresh content" },
-          "curated": { "label": "Curated", "desc": "Dev-focused collections" },
-          "checkout": { "label": "Checkout", "desc": "Seamless Stripe flow" },
-          "premium": { "label": "Premium", "desc": "High-quality material" }
+          "newDrops": {
+            "label": "New Drops",
+            "desc": "Regular fresh content"
+          },
+          "curated": {
+            "label": "Curated",
+            "desc": "Dev-focused collections"
+          },
+          "checkout": {
+            "label": "Checkout",
+            "desc": "Seamless Stripe flow"
+          },
+          "premium": {
+            "label": "Premium",
+            "desc": "High-quality material"
+          }
         }
       }
     },
@@ -1033,24 +1075,52 @@
     "metaDescription": "Track your progress and quiz performance",
     "title": "Dashboard",
     "subtitle": "Welcome back to your training ground",
-    "supportLink": "Support & Feedback",
+    "supportLink": "Feedback",
     "profile": {
       "defaultName": "Developer",
       "defaultRole": "user",
       "sponsor": "Sponsor",
       "becomeSponsor": "Become a Sponsor",
+      "supportAgain": "Show More Love",
       "sponsorThanks": "Thank you for your support!",
       "sponsorMore": "Support even more",
-      "totalPoints": "Total Points",
-      "joined": "Joined"
+      "totalPoints": "Points",
+      "joined": "Joined",
+      "globalRank": "Global Rank",
+      "dayStreak": "Day Streak",
+      "daysStreak": "Days Streak",
+      "settings": "Settings",
+      "editProfile": "Edit Profile",
+      "changeName": "Change Name",
+      "saveChanges": "Save changes",
+      "changePassword": "Change Password",
+      "currentPassword": "Current password",
+      "newPassword": "New password",
+      "saving": "Saving..."
     },
     "stats": {
       "title": "Quiz Statistics",
-      "noActivity": "Ready to level up? Challenge yourself with a new quiz",
-      "startQuiz": "Start a Quiz",
+      "scoreDistribution": "Score Distribution",
+      "scoreDistributionSubtext": "Based on your recent attempts",
+      "activityHeatmap": "Activity Heatmap",
       "attempts": "Attempts",
-      "avgScore": "Avg Score",
-      "continueLearning": "Continue Learning"
+      "avgScore": "Average Score",
+      "mastered": "Mastered",
+      "review": "Review",
+      "study": "Study",
+      "totalAttempts": "Quizzes",
+      "noActivity": "You haven't taken any quizzes yet. Start learning and track your progress here!",
+      "startQuiz": "Start your first quiz",
+      "continueLearning": "Continue Learning",
+      "less": "Less",
+      "more": "More",
+      "attemptsInPeriod": "{count} attempts in the period",
+      "last3Months": "Last 3 Months",
+      "last5Months": "Last 5 Months",
+      "last6Months": "Last 6 Months",
+      "lastYear": "This Year",
+      "totalActiveDays": "Active Days",
+      "mostActiveMonth": "Active Month"
     },
     "quizSaved": {
       "title": "Quiz result saved!",
@@ -1066,6 +1136,7 @@
       "noAttempts": "You haven't taken any quizzes yet",
       "startQuiz": "Try one",
       "score": "Score",
+      "accuracy": "Accuracy",
       "integrity": "Integrity",
       "points": "Points",
       "scoreHint": "Number of correct answers out of total questions",
@@ -1119,9 +1190,112 @@
       "messagePlaceholder": "Tell us what you think...",
       "submit": "Send Feedback",
       "submitting": "Sending...",
+      "attachFile": "Attach File",
       "success": "Thank you! Your feedback has been sent.",
       "error": "Something went wrong. Please try again.",
       "requiredField": "Please fill out this field."
+    },
+    "achievements": {
+      "title": "Achievements",
+      "subtitle": "{earned} of {total} earned",
+      "ui": {
+        "expand": "View all",
+        "collapse": "Collapse",
+        "clickInfo": "Click for info",
+        "clickBack": "Click to flip back"
+      },
+      "badges": {
+        "first_blood": {
+          "name": "First Blood",
+          "desc": "Completed your first quiz!",
+          "hint": "Complete 1 quiz to unlock"
+        },
+        "sharpshooter": {
+          "name": "Sharpshooter",
+          "desc": "Scored 100% on a quiz!",
+          "hint": "Score 100% on any quiz"
+        },
+        "on_a_roll": {
+          "name": "On a Roll",
+          "desc": "Completed 3 quizzes!",
+          "hint": "Complete 3 quizzes to unlock"
+        },
+        "big_brain": {
+          "name": "Big Brain",
+          "desc": "Completed 10 quizzes!",
+          "hint": "Complete 10 quizzes to unlock"
+        },
+        "diamond_mind": {
+          "name": "Diamond Mind",
+          "desc": "Scored 90%+ on 5 quizzes!",
+          "hint": "Score 90%+ on 5 quizzes"
+        },
+        "perfectionist": {
+          "name": "Perfectionist",
+          "desc": "3 perfect scores achieved!",
+          "hint": "Score 100% on 3 quizzes"
+        },
+        "supporter": {
+          "name": "Supporter",
+          "desc": "Thank you for sponsoring!",
+          "hint": "Become a GitHub sponsor"
+        },
+        "legend": {
+          "name": "Legend",
+          "desc": "Completed 10 unique quizzes!",
+          "hint": "Complete 10 different quizzes"
+        },
+        "rocket_start": {
+          "name": "Rocket Start",
+          "desc": "Completed 5 quizzes!",
+          "hint": "Complete 5 quizzes to unlock"
+        },
+        "royalty": {
+          "name": "Royalty",
+          "desc": "Reached the top of the leaderboard!",
+          "hint": "Reach the top leaderboard position"
+        },
+        "code_wizard": {
+          "name": "Code Wizard",
+          "desc": "Mastered 5 different quiz topics!",
+          "hint": "Complete 5 unique quiz topics"
+        },
+        "endless": {
+          "name": "Endless",
+          "desc": "Earned 1000+ total points!",
+          "hint": "Earn 1000 total points"
+        },
+        "star_gazer": {
+          "name": "Star Gazer",
+          "desc": "You starred the DevLovers repo on GitHub!",
+          "hint": "Star our GitHub repository to unlock"
+        },
+        "silver_patron": {
+          "name": "Silver Patron",
+          "desc": "You've sponsored us twice — thank you!",
+          "hint": "Sponsor DevLovers a 2nd time to unlock"
+        },
+        "golden_patron": {
+          "name": "Golden Patron",
+          "desc": "You've sponsored us 3+ times — legendary!",
+          "hint": "Sponsor DevLovers a 3rd time to unlock"
+        },
+        "night_owl": {
+          "name": "Night Owl",
+          "desc": "Completed a quiz after midnight!",
+          "hint": "Complete a quiz after midnight"
+        },
+        "centurion": {
+          "name": "Centurion",
+          "desc": "Reached 100 total points!",
+          "hint": "Earn 100 total points"
+        },
+        "deep_diver": {
+          "name": "Deep Diver",
+          "desc": "Averaged 80%+ across 10+ quizzes!",
+          "hint": "Average 80%+ across 10 or more attempts"
+        }
+      }
     }
   },
   "aiHelper": {

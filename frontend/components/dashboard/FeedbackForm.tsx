@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronDown, MessageSquare, Send } from 'lucide-react';
+import { ChevronDown, MessageSquare, Send, Paperclip } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 
@@ -16,6 +16,7 @@ export function FeedbackForm({ userName, userEmail }: FeedbackFormProps) {
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [category, setCategory] = useState('');
   const [categoryError, setCategoryError] = useState(false);
+  const [attachmentName, setAttachmentName] = useState<string | null>(null);
   const categoryRef = useRef<HTMLDivElement>(null);
   const successTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -59,10 +60,10 @@ export function FeedbackForm({ userName, userEmail }: FeedbackFormProps) {
   }, []);
 
   const cardStyles = `
-    relative overflow-hidden rounded-2xl
-    border border-gray-200 dark:border-white/10
-    bg-white/60 dark:bg-neutral-900/60 backdrop-blur-xl
-    p-4 sm:p-6 md:p-8 transition-all hover:border-(--accent-primary)/30 dark:hover:border-(--accent-primary)/30
+    relative overflow-hidden rounded-3xl
+    border border-gray-200 bg-white/10 shadow-sm backdrop-blur-md
+    dark:border-neutral-800 dark:bg-neutral-900/10
+    p-6 sm:p-8 lg:p-10
   `;
 
   const inputStyles =
@@ -72,7 +73,7 @@ export function FeedbackForm({ userName, userEmail }: FeedbackFormProps) {
     group relative inline-flex items-center justify-center gap-2 rounded-full
     px-8 py-3 text-sm font-semibold tracking-widest uppercase text-white
     bg-(--accent-primary) hover:bg-(--accent-hover)
-    transition-all hover:scale-105 disabled:opacity-50 disabled:hover:scale-100
+    disabled:opacity-75
   `;
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -96,22 +97,13 @@ export function FeedbackForm({ userName, userEmail }: FeedbackFormProps) {
     }
 
     const formData = new FormData(e.currentTarget);
-
-    const data = {
-      access_key: accessKey,
-      subject: `DevLovers Feedback: ${formData.get('category')}`,
-      from_name: formData.get('name'),
-      email: formData.get('email'),
-      category: formData.get('category'),
-      message: formData.get('message'),
-      botcheck: '',
-    };
-
+    formData.append('access_key', accessKey);
+    formData.append('subject', `DevLovers Feedback: ${formData.get('category')}`);
     try {
       const res = await fetch('https://api.web3forms.com/submit', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify(data),
+        headers: { Accept: 'application/json' },
+        body: formData,
       });
 
       const result = await res.json();
@@ -119,6 +111,7 @@ export function FeedbackForm({ userName, userEmail }: FeedbackFormProps) {
       if (result.success) {
         setStatus('success');
         setCategory('');
+        setAttachmentName(null);
         (e.target as HTMLFormElement).reset();
         successTimerRef.current = setTimeout(() => setStatus('idle'), 5000);
       } else {
@@ -134,12 +127,12 @@ export function FeedbackForm({ userName, userEmail }: FeedbackFormProps) {
   return (
     <section className={cardStyles} aria-labelledby="feedback-heading">
       <div className="mb-6 flex items-center gap-3">
-        <div
-          className="rounded-full bg-gray-100 p-3 dark:bg-neutral-800/50"
-          aria-hidden="true"
-        >
-          <MessageSquare className="h-5 w-5 text-(--accent-primary)" />
-        </div>
+          <div
+            className="rounded-xl bg-gray-100/50 p-3 ring-1 ring-black/5 dark:bg-neutral-800/50 dark:ring-white/10"
+            aria-hidden="true"
+          >
+            <MessageSquare className="h-5 w-5 text-(--accent-primary)" />
+          </div>
         <div>
           <h3
             id="feedback-heading"
@@ -243,11 +236,32 @@ export function FeedbackForm({ userName, userEmail }: FeedbackFormProps) {
             </div>
           )}
 
-          <div className="flex justify-center">
-            <button type="submit" disabled={loading} className={primaryBtnStyles}>
+          <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between pt-2">
+            <button type="submit" disabled={loading} className={`${primaryBtnStyles} w-full sm:w-auto shrink-0`}>
               <Send className="h-4 w-4" />
               <span>{loading ? t('submitting') : t('submit')}</span>
             </button>
+
+            <div className="w-full sm:w-auto">
+              <input
+                type="file"
+                name="attachment"
+                id="feedback-attachment"
+                accept="image/png, image/jpeg, image/jpg, image/webp"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  setAttachmentName(file ? file.name : null);
+                }}
+              />
+              <label
+                htmlFor="feedback-attachment"
+                className={`w-full sm:w-auto inline-flex cursor-pointer items-center justify-center gap-2 rounded-full border border-gray-200 bg-white/50 px-8 py-3 text-sm font-semibold tracking-widest uppercase text-gray-600 transition-colors hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-(--accent-primary)/50 dark:border-white/10 dark:bg-neutral-900/50 dark:text-gray-300 dark:hover:bg-neutral-800`}
+              >
+                <Paperclip className="h-4 w-4" />
+                <span className="max-w-[150px] sm:max-w-none truncate">{attachmentName || t('attachFile')}</span>
+              </label>
+            </div>
           </div>
         </form>
       )}

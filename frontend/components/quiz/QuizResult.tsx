@@ -100,13 +100,30 @@ export function QuizResult({
       <div className="flex justify-center">{motivation.icon}</div>
       {!isIncomplete && (
         <>
-          <div className="space-y-2 text-center">
-            <h2 className="text-4xl font-bold text-gray-900 dark:text-gray-100">
-              {score} / {total}
-            </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-400">
-              {percentage.toFixed(0)}% {t('correctAnswers')}
-            </p>
+          <div className="flex flex-row justify-center gap-12 sm:gap-24 text-center">
+            <div className="flex flex-col items-center">
+              <span className="mb-2 text-sm font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">
+                {t('accuracy', { fallback: 'Accuracy' })}
+              </span>
+              <h2 className="flex items-baseline justify-center gap-1 bg-gradient-to-br from-(--accent-primary) to-purple-600 bg-clip-text text-5xl font-black text-transparent sm:text-6xl dark:from-(--accent-primary) dark:to-purple-400">
+                {percentage.toFixed(0)}<span className="text-3xl text-gray-400">%</span>
+              </h2>
+              <p className="mt-2 text-sm font-medium text-gray-500 dark:text-gray-400">
+                {score} / {total} {t('correctAnswers')}
+              </p>
+            </div>
+
+            <div className="flex flex-col items-center">
+              <span className="mb-2 text-sm font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">
+                {t('integrity', { fallback: 'Integrity' })}
+              </span>
+              <h2 className="flex items-baseline justify-center gap-1 bg-gradient-to-br from-emerald-500 to-teal-600 bg-clip-text text-5xl font-black text-transparent sm:text-6xl dark:from-emerald-400 dark:to-teal-500">
+                {Math.max(0, 100 - (violationsCount || 0) * 10)}<span className="text-3xl text-gray-400">%</span>
+              </h2>
+              <p className="mt-2 text-sm font-medium text-gray-500 dark:text-gray-400">
+                {violationsCount || 0} {t('violationsLabel', { fallback: 'Violations' })}
+              </p>
+            </div>
           </div>
           <div className="space-y-2">
             <div className="h-4 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800">

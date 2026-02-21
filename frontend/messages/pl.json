@@ -203,6 +203,9 @@
       "hurryUp": "Pośpiesz się!"
     },
     "result": {
+      "accuracy": "Skuteczność",
+      "integrity": "Uczciwość",
+      "violationsLabel": "Naruszenia",
       "correctAnswers": "poprawnych odpowiedzi",
       "timeUp": {
         "title": "Czas Minął",
@@ -792,7 +795,10 @@
       },
       "bubbles": {
         "qa": {
-          "languages": { "label": "3 języki", "desc": "EN, UK i PL" },
+          "languages": {
+            "label": "3 języki",
+            "desc": "EN, UK i PL"
+          },
           "aiHelper": {
             "label": "Pomocnik AI",
             "desc": "Zaznacz tekst do wyjaśnienia"
@@ -847,7 +853,10 @@
             "label": "Centrum statystyk",
             "desc": "Wizualizuj swój rozwój"
           },
-          "history": { "label": "Historia", "desc": "Śledź serie nauki" },
+          "history": {
+            "label": "Historia",
+            "desc": "Śledź serie nauki"
+          },
           "identity": {
             "label": "Tożsamość",
             "desc": "Zarządzaj rolą i profilem"
@@ -876,7 +885,10 @@
           }
         },
         "shop": {
-          "newDrops": { "label": "Nowości", "desc": "Regularne aktualizacje" },
+          "newDrops": {
+            "label": "Nowości",
+            "desc": "Regularne aktualizacje"
+          },
           "curated": {
             "label": "Selekcja",
             "desc": "Kolekcje dla developerów"
@@ -885,7 +897,10 @@
             "label": "Płatność",
             "desc": "Płynny proces przez Stripe"
           },
-          "premium": { "label": "Premium", "desc": "Wysoka jakość materiałów" }
+          "premium": {
+            "label": "Premium",
+            "desc": "Wysoka jakość materiałów"
+          }
         }
       }
     },
@@ -1060,24 +1075,53 @@
     "metaDescription": "Śledź swój postęp i wyniki quizów",
     "title": "Panel użytkownika",
     "subtitle": "Witaj z powrotem na swoim placu treningowym",
-    "supportLink": "Wsparcie i opinie",
+    "supportLink": "Opinie",
     "profile": {
-      "defaultName": "Programista",
-      "defaultRole": "użytkownik",
-      "sponsor": "Sponsor",
+      "title": "Profil",
+      "subtitle": "Zarządzaj swoim profilem publicznym i preferencjami",
       "becomeSponsor": "Zostań sponsorem",
+      "supportAgain": "Okaż więcej wsparcia",
+      "points": "Pkt",
+      "quizzesTaken": "Quizy",
+      "joined": "Dołączył",
+      "globalRank": "Miejsce",
+      "dayStreak": "Dzień z rzędu",
+      "daysStreak": "Dni z rzędu",
       "sponsorThanks": "Dziękujemy za wsparcie!",
       "sponsorMore": "Wesprzyj jeszcze więcej",
       "totalPoints": "Łączna liczba punktów",
-      "joined": "Dołączył"
+      "settings": "Ustawienia",
+      "editProfile": "Edytuj profil",
+      "changeName": "Zmień imię",
+      "saveChanges": "Zapisz zmiany",
+      "changePassword": "Zmień hasło",
+      "currentPassword": "Aktualne hasło",
+      "newPassword": "Nowe hasło",
+      "saving": "Zapisywanie..."
     },
     "stats": {
       "title": "Statystyki quizów",
-      "noActivity": "Gotowy na rozwój? Sprawdź się w nowym quizie",
-      "startQuiz": "Rozpocznij quiz",
+      "scoreDistribution": "Rozkład wyników",
+      "scoreDistributionSubtext": "Na podstawie ostatnich podejść",
+      "activityHeatmap": "Wykres aktywności",
       "attempts": "Próby",
       "avgScore": "Średni wynik",
-      "continueLearning": "Kontynuuj naukę"
+      "mastered": "Opanowane",
+      "review": "Wymaga powtórki",
+      "study": "Nauka",
+      "totalAttempts": "Wszystkie próby",
+      "noActivity": "Nie rozwiązałeś jeszcze żadnego quizu. Rozpocznij naukę i śledź swoje postępy tutaj!",
+      "startQuiz": "Rozpocznij pierwszy quiz",
+      "continueLearning": "Kontynuuj naukę",
+      "less": "Mniej",
+      "more": "Więcej",
+      "attemptsInPeriod": "{count} prób w tym okresie",
+      "last3Months": "Ostatnie 3 miesiące",
+      "last5Months": "Ostatnie 5 miesięcy",
+      "last6Months": "Ostatnie 6 miesięcy",
+      "lastYear": "Ten rok",
+      "totalActiveDays": "Aktywne dni",
+      "mostActiveMonth": "Aktywny miesiąc"
     },
     "quizSaved": {
       "title": "Wynik quizu zapisany!",
@@ -1093,6 +1137,7 @@
       "noAttempts": "Nie przeszedłeś jeszcze żadnego quizu",
       "startQuiz": "Spróbuj",
       "score": "Wynik",
+      "accuracy": "Skuteczność",
       "integrity": "Czystość",
       "points": "Punkty",
       "scoreHint": "Liczba poprawnych odpowiedzi z ogólnej liczby",
@@ -1146,9 +1191,112 @@
       "messagePlaceholder": "Powiedz nam, co myślisz...",
       "submit": "Wyślij opinię",
       "submitting": "Wysyłanie...",
+      "attachFile": "Dołącz plik",
       "success": "Dziękujemy! Twoja opinia została wysłana.",
       "error": "Coś poszło nie tak. Spróbuj ponownie.",
       "requiredField": "Proszę wypełnić to pole."
+    },
+    "achievements": {
+      "title": "Osiągnięcia",
+      "subtitle": "{earned} z {total} odblokowanych",
+      "ui": {
+        "expand": "Zobacz wszystkie",
+        "collapse": "Zwiń",
+        "clickInfo": "Kliknij po info",
+        "clickBack": "Kliknij, aby wrócić"
+      },
+      "badges": {
+        "first_blood": {
+          "name": "Pierwszy krok",
+          "desc": "Ukończyłeś pierwszy quiz!",
+          "hint": "Ukończ 1 quiz"
+        },
+        "sharpshooter": {
+          "name": "Snajper",
+          "desc": "100% w quizie!",
+          "hint": "Zdobądź 100% w dowolnym quizie"
+        },
+        "on_a_roll": {
+          "name": "W biegu",
+          "desc": "Ukończyłeś 3 quizy!",
+          "hint": "Ukończ 3 quizy"
+        },
+        "big_brain": {
+          "name": "Wielki mózg",
+          "desc": "Ukończyłeś 10 quizów!",
+          "hint": "Ukończ 10 quizów"
+        },
+        "diamond_mind": {
+          "name": "Diamentowy umysł",
+          "desc": "90%+ w 5 quizach!",
+          "hint": "Zdobądź 90%+ w 5 quizach"
+        },
+        "perfectionist": {
+          "name": "Perfekcjonista",
+          "desc": "3 idealne wyniki!",
+          "hint": "Zdobądź 100% w 3 quizach"
+        },
+        "supporter": {
+          "name": "Wspierający",
+          "desc": "Dziękujemy za wsparcie!",
+          "hint": "Zostań sponsorem na GitHub"
+        },
+        "legend": {
+          "name": "Legenda",
+          "desc": "10 różnych quizów ukończonych!",
+          "hint": "Ukończ 10 różnych quizów"
+        },
+        "rocket_start": {
+          "name": "Rakietowy Start",
+          "desc": "Ukończyłeś 5 quizów!",
+          "hint": "Ukończ 5 quizów"
+        },
+        "royalty": {
+          "name": "Royalty",
+          "desc": "Dotarłeś na szczyt rankingu!",
+          "hint": "Zajmij pierwsze miejsce w rankingu"
+        },
+        "code_wizard": {
+          "name": "Czarodziej Kodu",
+          "desc": "Opanowałeś 5 różnych tematów!",
+          "hint": "Ukończ 5 różnych tematów quizów"
+        },
+        "endless": {
+          "name": "Nieskończony",
+          "desc": "Zdobyłeś 1000+ punktów!",
+          "hint": "Zdobądź 1000 punktów"
+        },
+        "star_gazer": {
+          "name": "Gwiazdozbiór",
+          "desc": "Dodałeś gwiazdkę do repozytorium DevLovers na GitHub!",
+          "hint": "Dodaj gwiazdkę do naszego repozytorium GitHub"
+        },
+        "silver_patron": {
+          "name": "Srebrny Patron",
+          "desc": "Sponsorowałeś nas dwukrotnie — dziękujemy!",
+          "hint": "Sponsoruj DevLovers po raz drugi"
+        },
+        "golden_patron": {
+          "name": "Złoty Patron",
+          "desc": "Sponsorowałeś nas 3+ razy — legendarne!",
+          "hint": "Sponsoruj DevLovers po raz trzeci"
+        },
+        "night_owl": {
+          "name": "Nocna Sowa",
+          "desc": "Ukończyłeś quiz po północy!",
+          "hint": "Ukończ quiz po północy"
+        },
+        "centurion": {
+          "name": "Centurion",
+          "desc": "Osiągnąłeś 100 punktów!",
+          "hint": "Zdobądź 100 punktów"
+        },
+        "deep_diver": {
+          "name": "Głębinowiec",
+          "desc": "Średnia 80%+ przez 10+ quizów!",
+          "hint": "Utrzymaj średnią 80%+ w 10 lub więcej próbach"
+        }
+      }
     }
   },
   "aiHelper": {
