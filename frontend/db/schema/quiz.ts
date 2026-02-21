@@ -29,6 +29,7 @@ export const quizzes = pgTable(
     questionsCount: integer('questions_count').notNull().default(10),
     timeLimitSeconds: integer('time_limit_seconds'),
     isActive: boolean('is_active').notNull().default(true),
+    status: varchar('status', { length: 20 }).notNull().default('ready'),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),

@@ -191,7 +191,7 @@ export const getActiveQuizzes = cache(
               eq(categoryTranslations.locale, locale)
             )
           )
-          .where(eq(quizzes.isActive, true))
+          .where(and(eq(quizzes.isActive, true), eq(quizzes.status, 'ready')))
           .orderBy(categories.displayOrder, quizzes.displayOrder);
 
         return rows;

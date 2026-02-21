@@ -29,6 +29,7 @@ type AnswerState = {
 type EditorState = {
   locales: Record<AdminLocale, LocaleContent>;
   answers: AnswerState[];
+  difficulty: string;
 };
 
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
@@ -59,6 +60,7 @@ function initEditorState(question: AdminQuizQuestion): EditorState {
         pl: a.translations.pl?.answerText ?? '',
       },
     })),
+   difficulty: question.difficulty!,
   };
 }
 
@@ -79,12 +81,13 @@ function validate(state: EditorState): string | null {
   return null;
 }
 
-
 interface QuestionEditorProps {
   question: AdminQuizQuestion;
   index: number;
   quizId: string;
   csrfToken: string;
+  csrfTokenDelete?: string;
+  isDraft?: boolean;
   isEditing: boolean;
   isDisabled: boolean;
   onEditStart: () => void;
@@ -96,6 +99,8 @@ export function QuestionEditor({
   index,
   quizId,
   csrfToken,
+  csrfTokenDelete,
+  isDraft,
   isEditing,
   isDisabled,
   onEditStart,
@@ -115,7 +120,37 @@ export function QuestionEditor({
   const [saveError, setSaveError] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  const isDirty = dirtyLocales.size > 0;
+  const isDirty = dirtyLocales.size > 0 || editorState.difficulty !== initialStateRef.current.difficulty;
+
+    const [deleting, setDeleting] = useState(false);
+
+  async function handleDelete() {
+    const confirmed = window.confirm('Delete this question? This cannot be undone.');
+    if (!confirmed) return;
+
+    setDeleting(true);
+    try {
+      const res = await fetch(
+        `/api/admin/quiz/${quizId}/questions/${question.id}`,
+        {
+          method: 'DELETE',
+          headers: { 'x-csrf-token': csrfTokenDelete ?? '' },
+        }
+      );
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error ?? 'Failed to delete question');
+        return;
+      }
+
+      router.refresh();
+    } catch {
+      alert('Network error');
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   // Reset all edit state when entering edit mode.
   // question prop is stable (server-fetched at page load) so it's safe to omit from deps.
@@ -195,6 +230,10 @@ export function QuestionEditor({
     setDirtyLocales(new Set(ALL_LOCALES));
   }
 
+  function handleDifficultyChange(value: string) {
+    setEditorState(prev => ({ ...prev, difficulty: value }));
+  }
+
   function handleCancel() {
     if (isDirty) {
       const confirmed = window.confirm('Discard unsaved changes?');
@@ -235,6 +274,9 @@ export function QuestionEditor({
     try {
       const body = {
         dirtyLocales: Array.from(dirtyLocales),
+        difficulty: editorState.difficulty !== initialStateRef.current.difficulty
+          ? editorState.difficulty
+          : undefined,
         translations: {
           en: {
             questionText: editorState.locales.en.questionText,
@@ -313,22 +355,37 @@ export function QuestionEditor({
             question.content.uk?.questionText ??
             'Untitled question'}
         </span>
+                <span className="text-muted-foreground shrink-0 text-xs">
+          {question.difficulty}
+        </span>
         {missingLocales.size > 0 && (
           <span className="h-2 w-2 shrink-0 rounded-full bg-red-500" />
         )}
-        <button
-          type="button"
-          onClick={onEditStart}
-          disabled={isDisabled}
-          className={cn(
-            'shrink-0 rounded-md px-3 py-1 text-xs font-medium transition-colors',
-            isDisabled
-              ? 'text-muted-foreground cursor-not-allowed opacity-40'
-              : 'bg-muted text-foreground hover:bg-muted/70'
+                <div className="flex shrink-0 gap-2">
+          <button
+            type="button"
+            onClick={onEditStart}
+            disabled={isDisabled}
+            className={cn(
+              'rounded-md px-3 py-1 text-xs font-medium transition-colors',
+              isDisabled
+                ? 'text-muted-foreground cursor-not-allowed opacity-40'
+                : 'bg-muted text-foreground hover:bg-muted/70'
+            )}
+          >
+            Edit
+          </button>
+          {isDraft && csrfTokenDelete && (
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={isDisabled || deleting}
+              className="rounded-md px-3 py-1 text-xs font-medium text-red-500 transition-colors hover:bg-red-500/10 disabled:opacity-40"
+            >
+              {deleting ? '...' : 'Delete'}
+            </button>
           )}
-        >
-          Edit
-        </button>
+        </div>
       </div>
     );
   }
@@ -352,6 +409,20 @@ export function QuestionEditor({
       </div>
 
       <div className="space-y-4 px-4 py-4">
+                <div>
+          <label className="text-foreground mb-1 block text-xs font-medium">
+            Difficulty
+          </label>
+          <select
+            value={editorState.difficulty}
+            onChange={e => handleDifficultyChange(e.target.value)}
+            className="border-border bg-background text-foreground rounded-md border px-3 py-2 text-sm"
+          >
+            <option value="beginner">Beginner</option>
+            <option value="medium">Medium</option>
+            <option value="advanced">Advanced</option>
+          </select>
+        </div>
         <LocaleTabs
           active={activeLocale}
           onChange={setActiveLocale}

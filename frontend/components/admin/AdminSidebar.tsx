@@ -9,6 +9,7 @@ import {
   Package,
   PanelLeftClose,
   PanelLeftOpen,
+  Plus,
   ShoppingBag,
 } from 'lucide-react';
 import { useSyncExternalStore } from 'react';
@@ -48,6 +49,7 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { label: 'Quizzes', href: '/admin/quiz', icon: FileQuestion },
       { label: 'Statistics', href: '/admin/quiz/statistics', icon: BarChart3 },
+      { label: 'New Quiz', href: '/admin/quiz/new', icon: Plus },
     ],
   },
   {
