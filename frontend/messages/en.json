@@ -124,7 +124,7 @@
     "searchPlaceholder": "Search questions...",
     "clearSearch": "Clear search",
     "noResults": "Nothing found for \"{query}\"",
-    "noQuestions": "No questions found",
+    "noQuestions": "No questions yet…\nBut they’re already in development.\nStay tuned - new content coming soon!",
     "metaTitle": "Q&A | DevLovers",
     "metaDescription": "Questions and answers for technical interview preparation",
     "frontend": "Frontend",

@@ -51,6 +51,7 @@ export default function FloatingExplainButton({
 
   return (
     <button
+      type="button"
       ref={buttonRef}
       onClick={e => {
         e.stopPropagation();
@@ -67,6 +68,7 @@ export default function FloatingExplainButton({
         'hover:bg-(--accent-hover)',
         'transition-all duration-200',
         'animate-in fade-in-0 zoom-in-95',
+        'motion-reduce:animate-none motion-reduce:transition-none',
         'focus:ring-2 focus:ring-(--accent-primary) focus:ring-offset-2 focus:outline-none'
       )}
       style={{
