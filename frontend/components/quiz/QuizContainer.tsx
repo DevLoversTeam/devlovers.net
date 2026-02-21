@@ -16,7 +16,7 @@ import { ViolationsCounter } from '@/components/quiz/ViolationsCounter';
 import { Button } from '@/components/ui/button';
 import { ConfirmModal } from '@/components/ui/confirm-modal';
 import { getCategoryTabStyle } from '@/data/categoryStyles';
-import type { QuizQuestionClient } from '@/db/queries/quiz';
+import type { QuizQuestionClient } from '@/db/queries/quizzes/quiz';
 import { useAntiCheat } from '@/hooks/useAntiCheat';
 import { useQuizGuards } from '@/hooks/useQuizGuards';
 import { useQuizSession } from '@/hooks/useQuizSession';

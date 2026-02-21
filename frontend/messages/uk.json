@@ -114,7 +114,8 @@
           "tip": "Часто використовується в обгортках API, хуках та утилітах."
         }
       }
-    }
+    },
+    "scrollToNextSection": "Прокрутити до наступного розділу"
   },
   "qa": {
     "title": "Питання та Відповіді",
@@ -999,6 +1000,7 @@
     "topThreeLabel": "Топ-3 лідери",
     "pts": "б.",
     "tableCaption": "Рейтингова таблиця інших учасників",
+    "contextTableCaption": "Ваша позиція в рейтингу",
     "you": "Ви",
     "sponsor": "Спонсор"
   },
@@ -1057,15 +1059,22 @@
     "fields": {
       "email": "Email",
       "password": "Пароль",
+      "confirmPassword": "Повторіть пароль",
+      "setNewPassword": "Новий пароль",
       "name": "Ім'я",
       "showPassword": "Показати пароль",
       "hidePassword": "Сховати пароль",
       "show": "Показати",
       "hide": "Сховати",
       "validation": {
-        "required": "Будь ласка, заповніть це поле",
-        "invalidEmail": "Будь ласка, введіть коректну email адресу",
-        "passwordTooShort": "Пароль має містити мінімум {minLength} символів"
+        "emailRequired": "Будь ласка, введіть email",
+        "invalidName": "Ім'я має містити не менше {NAME_MIN_LEN} символів та не більше {NAME_MAX_LEN} символів",
+        "emailTooShort": "Електронна адреса має містити щонайменше {EMAIL_MIN_LEN} символів",
+        "emailTooLong": "Електронна адреса не повинна перевищувати {EMAIL_MAX_LEN} символів",
+        "invalidEmail": "Будь ласка, введіть дійсну адресу електронної пошти",
+        "passwordRequirements": "{PASSWORD_MIN_LEN}-{PASSWORD_MAX_BYTES} символи, принаймні одна велика літера та принаймні один спеціальний символ",
+        "invalidPassword": "Пароль має відповідати вимогам: {passwordRequirementsText}",
+        "passwordsDontMatch": "Паролі не співпадають"
       }
     },
     "divider": "або"

@@ -117,7 +117,7 @@ export function LeaderboardPodium({ topThree }: { topThree: User[] }) {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={t('sponsor')}
-                  className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700 transition-colors hover:bg-amber-200 dark:bg-amber-500/15 dark:text-amber-400 dark:hover:bg-amber-500/25"
+                  className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-(--sponsor)/10 px-2 py-0.5 text-[10px] font-bold text-(--sponsor) transition-colors hover:bg-(--sponsor)/20 dark:bg-(--sponsor)/15 dark:text-(--sponsor) dark:hover:bg-(--sponsor)/25"
                 >
                   <Heart className="h-2.5 w-2.5 fill-current" aria-hidden="true" />
                   <span className="hidden md:inline">{t('sponsor')}</span>

@@ -10,8 +10,8 @@ import type {
   UserLastAttempt,
 } from '@/types/quiz';
 
-import { db } from '../index';
-import { categories, categoryTranslations } from '../schema/categories';
+import { db } from '../../index';
+import { categories, categoryTranslations } from '../../schema/categories';
 import {
   quizAnswers,
   quizAnswerTranslations,
@@ -21,7 +21,7 @@ import {
   quizQuestions,
   quizTranslations,
   quizzes,
-} from '../schema/quiz';
+} from '../../schema/quiz';
 export type { QuizAnswer, QuizQuestion, QuizQuestionWithAnswers } from '@/types/quiz';
 
 export interface Quiz {

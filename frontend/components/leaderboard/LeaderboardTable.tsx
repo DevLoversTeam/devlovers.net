@@ -14,24 +14,40 @@ interface LeaderboardTableProps {
   currentUser?: CurrentUser | null;
 }
 
+const TOP_COUNT = 15;
+const CONTEXT_RANGE = 2;
+
 export function LeaderboardTable({
   users,
   currentUser,
 }: LeaderboardTableProps) {
   const t = useTranslations('leaderboard');
 
-  const topUsers = users.slice(0, 20);
+  const topUsers = users.slice(0, TOP_COUNT);
   const normalizedCurrentUserId = currentUser ? String(currentUser.id) : null;
   const currentUsername = currentUser?.username;
 
   const matchedUser = users.find(
     u =>
-      String(u.id) === normalizedCurrentUserId ||
+      u.userId === normalizedCurrentUserId ||
       (currentUsername && u.username === currentUsername)
   );
 
   const currentUserRank = matchedUser?.rank || 0;
-  const isUserInTop = currentUserRank > 0 && currentUserRank <= 20;
+  const isUserInTop = currentUserRank > 0 && currentUserRank <= TOP_COUNT;
+
+  const contextRows: User[] = [];
+  if (!isUserInTop && matchedUser) {
+    const userIndex = users.indexOf(matchedUser);
+
+    if (userIndex !== -1) {
+      const start = Math.max(TOP_COUNT, userIndex - CONTEXT_RANGE);
+      const end = Math.min(users.length - 1, userIndex + CONTEXT_RANGE);
+      for (let i = start; i <= end; i++) {
+        contextRows.push(users[i]);
+      }
+    }
+  }
 
   return (
     <div className="flex w-full flex-col gap-4">
@@ -62,7 +78,7 @@ export function LeaderboardTable({
             <tbody>
               {topUsers.map(user => {
                 const isMe =
-                  String(user.id) === normalizedCurrentUserId ||
+                  user.userId === normalizedCurrentUserId ||
                   (currentUsername && user.username === currentUsername);
 
                 return (
@@ -79,22 +95,38 @@ export function LeaderboardTable({
         </div>
       </div>
 
-      {!isUserInTop && matchedUser && (
+      {!isUserInTop && matchedUser && contextRows.length > 0 && (
         <>
-          <div className="py-2 text-center text-xl font-bold tracking-widest text-gray-400/50 select-none dark:text-white/20">
-            • • •
-          </div>
+          {contextRows[0].rank > TOP_COUNT + 1 && (
+            <div className="py-2 text-center text-xl font-bold tracking-widest text-gray-400/50 select-none dark:text-white/20">
+              • • •
+            </div>
+          )}
 
           <div className="overflow-hidden rounded-3xl border-2 border-(--accent-primary)/50 bg-white/10 shadow-[0_0_20px_var(--accent-primary)] backdrop-blur-md dark:bg-neutral-900/10">
             <div className="w-full">
               <table className="w-full table-fixed border-separate border-spacing-0 text-left">
+                <caption className="sr-only">{t('contextTableCaption')}</caption>
                 <colgroup>
                   <col className="w-[15%] sm:w-[12%]" />
                   <col />
                   <col className="w-[25%] sm:w-[20%]" />
                 </colgroup>
                 <tbody>
-                  <TableRow user={matchedUser} isCurrentUser={true} t={t} />
+                  {contextRows.map(user => {
+                    const isMe =
+                      user.userId === normalizedCurrentUserId ||
+                      (currentUsername && user.username === currentUsername);
+
+                    return (
+                      <TableRow
+                        key={user.id}
+                        user={user}
+                        isCurrentUser={!!isMe}
+                        t={t}
+                      />
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -168,7 +200,7 @@ function TableRow({
                   href="https://github.com/sponsors/DevLoversTeam"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700 transition-colors hover:bg-amber-200 dark:bg-amber-500/15 dark:text-amber-400 dark:hover:bg-amber-500/25"
+                  className="inline-flex shrink-0 items-center gap-1 rounded-full bg-(--sponsor)/10 px-2 py-0.5 text-[10px] font-bold text-(--sponsor) transition-colors hover:bg-(--sponsor)/20 dark:bg-(--sponsor)/15 dark:text-(--sponsor) dark:hover:bg-(--sponsor)/25"
                 >
                   <Heart className="h-2.5 w-2.5 fill-current" />
                   <span className="hidden sm:inline">{t('sponsor')}</span>

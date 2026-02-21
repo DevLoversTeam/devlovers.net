@@ -114,7 +114,8 @@
           "tip": "Powszechnie używane w wrapperach API, hookach i funkcjach użytkowych."
         }
       }
-    }
+    },
+    "scrollToNextSection": "Przewiń do następnej sekcji"
   },
   "qa": {
     "title": "Pytania i Odpowiedzi",
@@ -999,6 +1000,7 @@
     "topThreeLabel": "Top 3 Liderów",
     "pts": "pkt",
     "tableCaption": "Tabela rankingowa pozostałych uczestników",
+    "contextTableCaption": "Twoja pozycja w rankingu",
     "you": "Ty",
     "sponsor": "Sponsor"
   },
@@ -1057,15 +1059,22 @@
     "fields": {
       "email": "Email",
       "password": "Hasło",
+      "confirmPassword": "Potwierdź hasło",
+      "setNewPassword": "Nowe hasło",
       "name": "Imię",
       "showPassword": "Pokaż hasło",
       "hidePassword": "Ukryj hasło",
       "show": "Pokaż",
       "hide": "Ukryj",
       "validation": {
-        "required": "Proszę wypełnić to pole",
+        "emailRequired": "Proszę wypełnić to pole",
+        "invalidName": "Imię i nazwisko musi mieć co najmniej {NAME_MIN_LEN} znaków i nie więcej niż {NAME_MAX_LEN} znaków",
+        "emailTooShort": "Adres e-mail musi mieć co najmniej {EMAIL_MIN_LEN} znaków",
+        "emailTooLong": "Adres e-mail nie może mieć więcej niż {EMAIL_MAX_LEN} znaków",
         "invalidEmail": "Proszę podać prawidłowy adres email",
-        "passwordTooShort": "Hasło musi mieć minimum {minLength} znaków"
+        "passwordRequirements": "{PASSWORD_MIN_LEN}–{PASSWORD_MAX_BYTES} znaków, co najmniej jedną wielką literę i co najmniej jeden znak specjalny",
+        "invalidPassword": "Hasło musi spełniać wymagania: {passwordRequirementsText}",
+        "passwordsDontMatch": "Hasła nie zgadzają się"
       }
     },
     "divider": "lub"

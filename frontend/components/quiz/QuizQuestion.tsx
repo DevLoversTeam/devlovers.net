@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useRef } from 'react';
 
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { QuizQuestionClient } from '@/db/queries/quiz';
+import { QuizQuestionClient } from '@/db/queries/quizzes/quiz';
 import { cn } from '@/lib/utils';
 
 import ExplanationRenderer from './ExplanationRenderer';

@@ -6,18 +6,52 @@ import { z } from 'zod';
 import { db } from '@/db';
 import { passwordResetTokens } from '@/db/schema/passwordResetTokens';
 import { users } from '@/db/schema/users';
+import {
+  PASSWORD_MAX_BYTES,
+  PASSWORD_MIN_LEN,
+  PASSWORD_POLICY_REGEX,
+} from '@/lib/auth/signup-constraints';
 
 const schema = z.object({
   token: z.string().uuid(),
-  password: z.string().min(8),
+  password: z
+    .string()
+    .min(
+      PASSWORD_MIN_LEN,
+      `Password must be at least ${PASSWORD_MIN_LEN} characters`
+    )
+    .regex(/[A-Z]/, 'Password must contain at least one capital letter')
+    .regex(
+      /[^A-Za-z0-9]/,
+      'Password must contain at least one special character'
+    )
+    .regex(PASSWORD_POLICY_REGEX, 'Password does not meet the required policy')
+    .refine(
+      val => Buffer.byteLength(val, 'utf8') <= PASSWORD_MAX_BYTES,
+      `Password must be at most ${PASSWORD_MAX_BYTES} bytes`
+    ),
 });
+
+function firstFieldErrorMessage(
+  fieldErrors: Record<string, string[] | undefined>
+): string | null {
+  for (const key of Object.keys(fieldErrors)) {
+    const msgs = fieldErrors[key];
+    if (Array.isArray(msgs) && msgs.length > 0 && msgs[0]) {
+      return msgs[0];
+    }
+  }
+  return null;
+}
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   const parsed = schema.safeParse(body);
 
   if (!parsed.success) {
-    return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
+    const flattened = parsed.error.flatten().fieldErrors;
+    const firstMsg = firstFieldErrorMessage(flattened) ?? 'Invalid request';
+    return NextResponse.json({ error: firstMsg }, { status: 400 });
   }
 
   const { token, password } = parsed.data;
