@@ -266,37 +266,6 @@ export function ProfileCard({
         </AnimatePresence>
       </div>
 
-      <div className="mt-auto flex justify-center pt-6">
-        {isSponsor ? (
-          <a
-            href="https://github.com/sponsors/DevLoversTeam"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-full border border-(--sponsor)/30 bg-(--sponsor)/10 px-8 py-3 text-sm font-semibold tracking-widest uppercase text-(--sponsor) transition-all hover:scale-105 hover:border-(--accent-primary)/30 hover:bg-(--accent-primary) hover:text-white dark:border-(--sponsor)/30 dark:bg-(--sponsor)/15 dark:text-(--sponsor) dark:hover:border-(--accent-primary)/30 dark:hover:bg-(--accent-primary) dark:hover:text-white"
-          >
-            <Heart className="h-4 w-4 fill-current group-hover:fill-none" />
-            <span className="sm:hidden">{t('sponsorThanks')}</span>
-            <span className="hidden sm:grid">
-              <span className="col-start-1 row-start-1 transition-all group-hover:translate-y-full group-hover:opacity-0">
-                {t('sponsorThanks')}
-              </span>
-              <span className="col-start-1 row-start-1 -translate-y-full opacity-0 transition-all group-hover:translate-y-0 group-hover:opacity-100">
-                {t('sponsorMore')}
-              </span>
-            </span>
-          </a>
-        ) : (
-          <a
-            href="https://github.com/sponsors/DevLoversTeam"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group relative inline-flex items-center justify-center gap-2 rounded-full bg-(--accent-primary) px-8 py-3 text-sm font-semibold tracking-widest uppercase text-white transition-all hover:scale-105 hover:bg-(--accent-hover)"
-          >
-            <Heart className="h-4 w-4" />
-            <span className="relative z-10">{t('becomeSponsor')}</span>
-          </a>
-        )}
-      </div>
     </section>
   );
 }
