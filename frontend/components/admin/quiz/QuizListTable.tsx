@@ -1,7 +1,6 @@
+import type { AdminQuizListItem } from '@/db/queries/quizzes/admin-quiz';
 import { Link } from '@/i18n/routing';
 import { cn } from '@/lib/utils';
-
-import type { AdminQuizListItem } from '@/db/queries/quizzes/admin-quiz';
 
 import { DeleteQuizButton } from './DeleteQuizButton';
 

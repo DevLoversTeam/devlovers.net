@@ -2,9 +2,9 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 import { QuizEditorList } from '@/components/admin/quiz/QuizEditorList';
-import { UploadMoreQuestions } from '@/components/admin/quiz/UploadMoreQuestions';
-import { QuizStatusControls } from '@/components/admin/quiz/QuizStatusControls';
 import { QuizMetadataEditor } from '@/components/admin/quiz/QuizMetadataEditor';
+import { QuizStatusControls } from '@/components/admin/quiz/QuizStatusControls';
+import { UploadMoreQuestions } from '@/components/admin/quiz/UploadMoreQuestions';
 import { getAdminQuizFull } from '@/db/queries/quizzes/admin-quiz';
 import { Link } from '@/i18n/routing';
 import { issueCsrfToken } from '@/lib/security/csrf';

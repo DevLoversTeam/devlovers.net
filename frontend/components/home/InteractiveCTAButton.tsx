@@ -8,7 +8,8 @@ import {
   useSpring,
 } from 'framer-motion';
 import { useTranslations } from 'next-intl';
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useEffect,useRef, useState } from 'react';
+
 import { Link } from '@/i18n/routing';
 
 const MotionLink = motion(Link);

@@ -3,12 +3,12 @@ import { eq, inArray, sql } from 'drizzle-orm';
 import { db } from '../../index';
 import { categories, categoryTranslations } from '../../schema/categories';
 import {
-  quizQuestions,
-  quizTranslations,
-  quizzes,
   quizAnswers,
   quizAnswerTranslations,
   quizQuestionContent,
+  quizQuestions,
+  quizTranslations,
+  quizzes,
 } from '../../schema/quiz';
 
 const ADMIN_LOCALE = 'en';
