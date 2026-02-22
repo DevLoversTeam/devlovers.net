@@ -1,5 +1,6 @@
 'use client';
 
+import { LogIn } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import { BlogHeaderSearch } from '@/components/blog/BlogHeaderSearch';
