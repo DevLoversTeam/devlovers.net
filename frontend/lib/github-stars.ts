@@ -21,7 +21,9 @@ function makeHeaders(): Record<string, string> {
  * Used when the user signed in via GitHub OAuth — the DB stores the numeric
  * `providerId`, but the stargazers API works with logins.
  */
-export async function resolveGitHubLogin(providerId: string): Promise<string | null> {
+export async function resolveGitHubLogin(
+  providerId: string
+): Promise<string | null> {
   const token = getToken();
   if (!token || !providerId) return null;
 
@@ -57,11 +59,14 @@ export async function getAllStargazers(): Promise<StargazerEntry[]> {
         next: { revalidate: 3600 },
       });
       if (!res.ok) {
-        console.warn(`⚠️ GitHub stargazers API error [${url}]: ${res.status} ${res.statusText}`);
+        console.warn(
+          `⚠️ GitHub stargazers API error [${url}]: ${res.status} ${res.statusText}`
+        );
         break;
       }
 
-      const pageData: { login: string; avatar_url: string }[] = await res.json();
+      const pageData: { login: string; avatar_url: string }[] =
+        await res.json();
       if (pageData.length === 0) break;
 
       for (const s of pageData) {
@@ -82,7 +87,7 @@ export async function getAllStargazers(): Promise<StargazerEntry[]> {
 }
 
 export async function checkHasStarredRepo(
-  githubLogin: string,
+  githubLogin: string
 ): Promise<boolean> {
   const token = getToken();
   if (!token || !githubLogin) return false;
@@ -95,7 +100,7 @@ export async function checkHasStarredRepo(
     try {
       const res = await fetch(url, {
         headers: makeHeaders(),
-        next: { revalidate: 3600 }, 
+        next: { revalidate: 3600 },
       });
 
       if (!res.ok) {
@@ -107,7 +112,7 @@ export async function checkHasStarredRepo(
 
       if (stargazers.length === 0) return false;
 
-      if (stargazers.some((s) => s.login.toLowerCase() === loginLower)) {
+      if (stargazers.some(s => s.login.toLowerCase() === loginLower)) {
         return true;
       }
       if (stargazers.length < 100) return false;

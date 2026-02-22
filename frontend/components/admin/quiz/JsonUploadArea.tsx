@@ -32,7 +32,11 @@ export function JsonUploadArea({ onQuestionsChange }: JsonUploadAreaProps) {
 
     for (const file of Array.from(fileList)) {
       if (!file.name.endsWith('.json')) {
-        newFiles.push({ name: file.name, questions: [], error: 'Not a .json file' });
+        newFiles.push({
+          name: file.name,
+          questions: [],
+          error: 'Not a .json file',
+        });
         continue;
       }
 
@@ -42,13 +46,20 @@ export function JsonUploadArea({ onQuestionsChange }: JsonUploadAreaProps) {
         const parsed = jsonQuestionsFileSchema.safeParse(raw);
 
         if (!parsed.success) {
-          const issues = parsed.error.issues.slice(0, 3).map(i => i.message).join('; ');
+          const issues = parsed.error.issues
+            .slice(0, 3)
+            .map(i => i.message)
+            .join('; ');
           newFiles.push({ name: file.name, questions: [], error: issues });
         } else {
           newFiles.push({ name: file.name, questions: parsed.data.questions });
         }
       } catch {
-        newFiles.push({ name: file.name, questions: [], error: 'Invalid JSON' });
+        newFiles.push({
+          name: file.name,
+          questions: [],
+          error: 'Invalid JSON',
+        });
       }
     }
 

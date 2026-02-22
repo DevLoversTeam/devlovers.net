@@ -115,7 +115,10 @@ async function seedQuestions() {
         .insert(questionTranslations)
         .values(translation)
         .onConflictDoUpdate({
-          target: [questionTranslations.questionId, questionTranslations.locale],
+          target: [
+            questionTranslations.questionId,
+            questionTranslations.locale,
+          ],
           set: {
             question: translation.question,
             answerBlocks: translation.answerBlocks,

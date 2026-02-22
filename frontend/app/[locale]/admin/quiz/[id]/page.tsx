@@ -37,7 +37,6 @@ export default async function AdminQuizEditPage({
     : undefined;
   const csrfTokenUpdate = issueCsrfToken('admin:quiz:update');
 
-
   return (
     <div className="mx-auto max-w-5xl px-6 py-8">
       <div className="mb-6">
@@ -83,7 +82,7 @@ export default async function AdminQuizEditPage({
           csrfToken={csrfTokenUpdate}
         />
       </div>
-            <div className="mb-6">
+      <div className="mb-6">
         <QuizMetadataEditor
           quizId={quiz.id}
           translations={quiz.translations}

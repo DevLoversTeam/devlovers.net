@@ -149,7 +149,7 @@ function TableRow({
   // inContext = true  → glow applied on <tr>; cells stay plain
   // inContext = false → top-15 row; accent borders drawn on cells directly
   const cellClass = cn(
-    'px-2 sm:px-6 py-3 sm:py-4 border-b',
+    'border-b px-2 py-3 sm:px-6 sm:py-4',
     isCurrentUser && !inContext
       ? 'border-t border-t-(--accent-primary)/60 border-b-(--accent-primary)/60'
       : 'border-b-gray-200/50 dark:border-b-white/5'
@@ -212,7 +212,7 @@ function TableRow({
             >
               <span className="truncate">{user.username}</span>
 
-{user.achievements && user.achievements.length > 0 && (
+              {user.achievements && user.achievements.length > 0 && (
                 <AchievementPips achievements={user.achievements} />
               )}
             </span>

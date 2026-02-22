@@ -61,7 +61,7 @@ function initEditorState(question: AdminQuizQuestion): EditorState {
         pl: a.translations.pl?.answerText ?? '',
       },
     })),
-   difficulty: question.difficulty as Difficulty,
+    difficulty: question.difficulty as Difficulty,
   };
 }
 
@@ -113,20 +113,22 @@ export function QuestionEditor({
   const [editorState, setEditorState] = useState<EditorState>(() =>
     initEditorState(question)
   );
-  const [dirtyLocales, setDirtyLocales] = useState<Set<AdminLocale>>(
-    new Set()
-  );
+  const [dirtyLocales, setDirtyLocales] = useState<Set<AdminLocale>>(new Set());
   const [activeLocale, setActiveLocale] = useState<AdminLocale>('en');
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const [saveError, setSaveError] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  const isDirty = dirtyLocales.size > 0 || editorState.difficulty !== initialStateRef.current.difficulty;
+  const isDirty =
+    dirtyLocales.size > 0 ||
+    editorState.difficulty !== initialStateRef.current.difficulty;
 
-    const [deleting, setDeleting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   async function handleDelete() {
-    const confirmed = window.confirm('Delete this question? This cannot be undone.');
+    const confirmed = window.confirm(
+      'Delete this question? This cannot be undone.'
+    );
     if (!confirmed) return;
 
     setDeleting(true);
@@ -155,7 +157,7 @@ export function QuestionEditor({
 
   // Reset all edit state when entering edit mode.
   // question prop is stable (server-fetched at page load) so it's safe to omit from deps.
-   
+
   useEffect(() => {
     if (isEditing) {
       const initial = initEditorState(question);
@@ -177,7 +179,6 @@ export function QuestionEditor({
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
   }, [isEditing, isDirty]);
-
 
   function markLocaleDirty(locale: AdminLocale) {
     setDirtyLocales(prev => new Set(prev).add(locale));
@@ -278,9 +279,10 @@ export function QuestionEditor({
     try {
       const body = {
         dirtyLocales: Array.from(dirtyLocales),
-        difficulty: editorState.difficulty !== initialStateRef.current.difficulty
-          ? editorState.difficulty
-          : undefined,
+        difficulty:
+          editorState.difficulty !== initialStateRef.current.difficulty
+            ? editorState.difficulty
+            : undefined,
         translations: {
           en: {
             questionText: editorState.locales.en.questionText,
@@ -359,13 +361,13 @@ export function QuestionEditor({
             question.content.uk?.questionText ??
             'Untitled question'}
         </span>
-                <span className="text-muted-foreground shrink-0 text-xs">
+        <span className="text-muted-foreground shrink-0 text-xs">
           {question.difficulty}
         </span>
         {missingLocales.size > 0 && (
           <span className="h-2 w-2 shrink-0 rounded-full bg-red-500" />
         )}
-                <div className="flex shrink-0 gap-2">
+        <div className="flex shrink-0 gap-2">
           <button
             type="button"
             onClick={onEditStart}
@@ -397,7 +399,7 @@ export function QuestionEditor({
   // ── Edit view ──
 
   return (
-    <div className="border-[var(--accent-primary)] rounded-lg border-2">
+    <div className="rounded-lg border-2 border-[var(--accent-primary)]">
       <div className="border-border flex items-center gap-3 border-b px-4 py-3">
         <span className="text-muted-foreground text-xs font-medium tabular-nums">
           Q{index + 1}
@@ -413,7 +415,7 @@ export function QuestionEditor({
       </div>
 
       <div className="space-y-4 px-4 py-4">
-                <div>
+        <div>
           <label className="text-foreground mb-1 block text-xs font-medium">
             Difficulty
           </label>
@@ -444,7 +446,7 @@ export function QuestionEditor({
               handleQuestionTextChange(activeLocale, e.target.value)
             }
             rows={3}
-            className="border-border bg-background text-foreground w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+            className="border-border bg-background text-foreground w-full rounded-md border px-3 py-2 text-sm focus:ring-1 focus:ring-[var(--accent-primary)] focus:outline-none"
           />
         </div>
 

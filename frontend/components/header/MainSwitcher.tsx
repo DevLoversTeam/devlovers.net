@@ -86,7 +86,11 @@ export function MainSwitcher({
   return (
     <main
       className={
-        isQa || isHome || isQuizzesPath(pathname) || isDashboardPath(pathname) || isLeaderboardPath(pathname)
+        isQa ||
+        isHome ||
+        isQuizzesPath(pathname) ||
+        isDashboardPath(pathname) ||
+        isLeaderboardPath(pathname)
           ? 'mx-auto'
           : 'mx-auto min-h-[80vh] px-6'
       }

@@ -53,9 +53,7 @@ async function insertAttempt(args: {
   metadata?: Record<string, unknown>;
   updatedAt?: Date;
 }) {
-  const createdAt = new Date(
-    (args.updatedAt ?? new Date()).getTime() - 1_000
-  );
+  const createdAt = new Date((args.updatedAt ?? new Date()).getTime() - 1_000);
 
   await db.insert(paymentAttempts).values({
     id: crypto.randomUUID(),

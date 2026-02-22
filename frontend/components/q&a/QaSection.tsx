@@ -119,17 +119,17 @@ export default function TabsSection() {
               ) : (
                 <div className="py-20 text-center">
                   {emptyStateLines[0] && (
-                    <p className="text-lg font-semibold text-gray-900 motion-safe:animate-fade-up motion-reduce:opacity-100 dark:text-white">
+                    <p className="motion-safe:animate-fade-up text-lg font-semibold text-gray-900 motion-reduce:opacity-100 dark:text-white">
                       {emptyStateLines[0]}
                     </p>
                   )}
                   {emptyStateLines[1] && (
-                    <p className="mt-2 text-gray-400 motion-safe:animate-fade-up motion-safe:[animation-delay:150ms] motion-reduce:opacity-100 dark:text-gray-300">
+                    <p className="motion-safe:animate-fade-up mt-2 text-gray-400 motion-safe:[animation-delay:150ms] motion-reduce:opacity-100 dark:text-gray-300">
                       {emptyStateLines[1]}
                     </p>
                   )}
                   {emptyStateLines[2] && (
-                    <p className="mt-1 text-gray-500 motion-safe:animate-fade-up motion-safe:[animation-delay:300ms] motion-reduce:opacity-100 dark:text-gray-400">
+                    <p className="motion-safe:animate-fade-up mt-1 text-gray-500 motion-safe:[animation-delay:300ms] motion-reduce:opacity-100 dark:text-gray-400">
                       {emptyStateLines[2]}
                     </p>
                   )}

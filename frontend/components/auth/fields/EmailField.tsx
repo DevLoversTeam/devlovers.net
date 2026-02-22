@@ -26,7 +26,9 @@ export function EmailField({
     }
 
     if (input.validity.tooShort && minLength) {
-      input.setCustomValidity(`Email must be at least ${minLength} characters.`);
+      input.setCustomValidity(
+        `Email must be at least ${minLength} characters.`
+      );
       return;
     }
 
@@ -45,7 +47,7 @@ export function EmailField({
     e.currentTarget.setCustomValidity('');
   };
 
-  const handleBlur: React.FocusEventHandler<HTMLInputElement> = (e) => {
+  const handleBlur: React.FocusEventHandler<HTMLInputElement> = e => {
     const input = e.currentTarget;
     const trimmed = input.value.trim();
 

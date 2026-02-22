@@ -13,7 +13,7 @@ export default function AchievementsDemoPage() {
     uniqueQuizzes: 4,
     totalPoints: 80,
     topLeaderboard: false,
-    hasStarredRepo: true,  // demo: show star_gazer as earned
+    hasStarredRepo: true, // demo: show star_gazer as earned
     sponsorCount: 0,
     hasNightOwl: false,
   });

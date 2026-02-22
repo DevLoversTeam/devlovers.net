@@ -127,12 +127,12 @@ export function FeedbackForm({ userName, userEmail }: FeedbackFormProps) {
   return (
     <section className={cardStyles} aria-labelledby="feedback-heading">
       <div className="mb-6 flex items-center gap-3">
-          <div
-            className="rounded-xl bg-gray-100/50 p-3 ring-1 ring-black/5 dark:bg-neutral-800/50 dark:ring-white/10"
-            aria-hidden="true"
-          >
-            <MessageSquare className="h-5 w-5 text-(--accent-primary)" />
-          </div>
+        <div
+          className="rounded-xl bg-gray-100/50 p-3 ring-1 ring-black/5 dark:bg-neutral-800/50 dark:ring-white/10"
+          aria-hidden="true"
+        >
+          <MessageSquare className="h-5 w-5 text-(--accent-primary)" />
+        </div>
         <div>
           <h3
             id="feedback-heading"
@@ -159,8 +159,14 @@ export function FeedbackForm({ userName, userEmail }: FeedbackFormProps) {
               placeholder={t('name')}
               defaultValue={userName ?? ''}
               required
-              onInvalid={e => (e.target as HTMLInputElement).setCustomValidity(t('requiredField'))}
-              onInput={e => (e.target as HTMLInputElement).setCustomValidity('')}
+              onInvalid={e =>
+                (e.target as HTMLInputElement).setCustomValidity(
+                  t('requiredField')
+                )
+              }
+              onInput={e =>
+                (e.target as HTMLInputElement).setCustomValidity('')
+              }
               className={inputStyles}
             />
             <input
@@ -180,7 +186,11 @@ export function FeedbackForm({ userName, userEmail }: FeedbackFormProps) {
               onClick={() => setCategoryOpen(!categoryOpen)}
               className={`flex w-full items-center justify-between rounded-xl border bg-gray-50/50 px-4 py-3 text-left text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:bg-neutral-800/50 dark:text-gray-300 dark:hover:bg-neutral-800 ${categoryError ? 'border-red-400 dark:border-red-500/50' : 'border-gray-200 dark:border-white/5'}`}
             >
-              <span className={selectedLabel ? '' : 'text-gray-400 dark:text-gray-500'}>
+              <span
+                className={
+                  selectedLabel ? '' : 'text-gray-400 dark:text-gray-500'
+                }
+              >
                 {selectedLabel ?? t('category')}
               </span>
               <ChevronDown
@@ -220,8 +230,14 @@ export function FeedbackForm({ userName, userEmail }: FeedbackFormProps) {
             name="message"
             placeholder={t('messagePlaceholder')}
             required
-            onInvalid={e => (e.target as HTMLTextAreaElement).setCustomValidity(t('requiredField'))}
-            onInput={e => (e.target as HTMLTextAreaElement).setCustomValidity('')}
+            onInvalid={e =>
+              (e.target as HTMLTextAreaElement).setCustomValidity(
+                t('requiredField')
+              )
+            }
+            onInput={e =>
+              (e.target as HTMLTextAreaElement).setCustomValidity('')
+            }
             rows={4}
             className={`${inputStyles} resize-none`}
           />
@@ -232,8 +248,12 @@ export function FeedbackForm({ userName, userEmail }: FeedbackFormProps) {
             </div>
           )}
 
-          <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between pt-2">
-            <button type="submit" disabled={loading} className={`${primaryBtnStyles} w-full sm:w-auto shrink-0`}>
+          <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
+            <button
+              type="submit"
+              disabled={loading}
+              className={`${primaryBtnStyles} w-full shrink-0 sm:w-auto`}
+            >
               <Send className="h-4 w-4" />
               <span>{loading ? t('submitting') : t('submit')}</span>
             </button>
@@ -247,7 +267,7 @@ export function FeedbackForm({ userName, userEmail }: FeedbackFormProps) {
                 accept="image/png, image/jpeg, image/jpg, image/webp, image/gif, application/pdf, text/plain, .doc, .docx, .xls, .xlsx"
                 multiple
                 className="hidden"
-                onChange={(e) => {
+                onChange={e => {
                   const newFiles = Array.from(e.target.files ?? []);
                   const merged = [...accumulatedFilesRef.current];
                   let limitReached = false;
@@ -269,7 +289,7 @@ export function FeedbackForm({ userName, userEmail }: FeedbackFormProps) {
               />
               <label
                 htmlFor="feedback-attachment"
-                className="w-full sm:w-auto inline-flex cursor-pointer items-center justify-center gap-2 rounded-full border border-gray-200 bg-white/50 px-8 py-3 text-sm font-semibold tracking-widest uppercase text-gray-600 transition-colors hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-(--accent-primary)/50 dark:border-white/10 dark:bg-neutral-900/50 dark:text-gray-300 dark:hover:bg-neutral-800"
+                className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-gray-200 bg-white/50 px-8 py-3 text-sm font-semibold tracking-widest text-gray-600 uppercase transition-colors hover:bg-gray-50 focus:ring-2 focus:ring-(--accent-primary)/50 focus:outline-hidden sm:w-auto dark:border-white/10 dark:bg-neutral-900/50 dark:text-gray-300 dark:hover:bg-neutral-800"
               >
                 <Paperclip className="h-4 w-4" />
                 <span>{t('attachFile')}</span>

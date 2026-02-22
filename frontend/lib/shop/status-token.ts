@@ -29,7 +29,8 @@ function base64UrlEncode(buf: Buffer): string {
 
 function base64UrlDecode(input: string): Buffer {
   const normalized = input.replace(/-/g, '+').replace(/_/g, '/');
-  const pad = normalized.length % 4 === 0 ? '' : '='.repeat(4 - (normalized.length % 4));
+  const pad =
+    normalized.length % 4 === 0 ? '' : '='.repeat(4 - (normalized.length % 4));
   return Buffer.from(normalized + pad, 'base64');
 }
 
@@ -95,12 +96,15 @@ export function verifyStatusToken(args: {
 
   let payload: TokenPayload;
   try {
-    payload = JSON.parse(base64UrlDecode(body).toString('utf-8')) as TokenPayload;
+    payload = JSON.parse(
+      base64UrlDecode(body).toString('utf-8')
+    ) as TokenPayload;
   } catch {
     return { ok: false, reason: 'invalid_payload' };
   }
 
-  if (!payload || payload.v !== 1) return { ok: false, reason: 'invalid_payload' };
+  if (!payload || payload.v !== 1)
+    return { ok: false, reason: 'invalid_payload' };
   if (payload.orderId !== args.orderId) {
     return { ok: false, reason: 'order_mismatch' };
   }

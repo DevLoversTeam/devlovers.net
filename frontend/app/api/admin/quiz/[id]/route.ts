@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { db } from '@/db';
-import { quizAttempts, quizTranslations,quizzes } from '@/db/schema/quiz';
+import { quizAttempts, quizTranslations, quizzes } from '@/db/schema/quiz';
 import {
   AdminApiDisabledError,
   AdminForbiddenError,
@@ -50,7 +50,10 @@ export async function PATCH(
     const rawParams = await context.params;
     const parsedParams = paramsSchema.safeParse(rawParams);
     if (!parsedParams.success) {
-      return noStoreJson({ error: 'Invalid params', code: 'INVALID_PARAMS' }, { status: 400 });
+      return noStoreJson(
+        { error: 'Invalid params', code: 'INVALID_PARAMS' },
+        { status: 400 }
+      );
     }
 
     const { id: quizId } = parsedParams.data;
@@ -59,13 +62,20 @@ export async function PATCH(
     try {
       rawBody = await request.json();
     } catch {
-      return noStoreJson({ error: 'Invalid JSON body', code: 'INVALID_BODY' }, { status: 400 });
+      return noStoreJson(
+        { error: 'Invalid JSON body', code: 'INVALID_BODY' },
+        { status: 400 }
+      );
     }
 
     const parsed = patchQuizSchema.safeParse(rawBody);
     if (!parsed.success) {
       return noStoreJson(
-        { error: 'Invalid payload', code: 'INVALID_PAYLOAD', details: parsed.error.format() },
+        {
+          error: 'Invalid payload',
+          code: 'INVALID_PAYLOAD',
+          details: parsed.error.format(),
+        },
         { status: 400 }
       );
     }
@@ -78,7 +88,10 @@ export async function PATCH(
       .limit(1);
 
     if (!quiz) {
-      return noStoreJson({ error: 'Quiz not found', code: 'NOT_FOUND' }, { status: 404 });
+      return noStoreJson(
+        { error: 'Quiz not found', code: 'NOT_FOUND' },
+        { status: 404 }
+      );
     }
 
     const { status, isActive } = parsed.data;
@@ -88,7 +101,11 @@ export async function PATCH(
       const validationErrors = await validateQuizForPublish(quizId);
       if (validationErrors.length > 0) {
         return noStoreJson(
-          { error: 'Quiz is not ready for publishing', code: 'PUBLISH_VALIDATION_FAILED', details: validationErrors },
+          {
+            error: 'Quiz is not ready for publishing',
+            code: 'PUBLISH_VALIDATION_FAILED',
+            details: validationErrors,
+          },
           { status: 422 }
         );
       }
@@ -98,7 +115,8 @@ export async function PATCH(
     const updateData: Record<string, unknown> = {};
     if (status !== undefined) updateData.status = status;
     if (isActive !== undefined) updateData.isActive = isActive;
-    if (parsed.data.timeLimitSeconds !== undefined) updateData.timeLimitSeconds = parsed.data.timeLimitSeconds;
+    if (parsed.data.timeLimitSeconds !== undefined)
+      updateData.timeLimitSeconds = parsed.data.timeLimitSeconds;
 
     await db.update(quizzes).set(updateData).where(eq(quizzes.id, quizId));
     const { translations } = parsed.data;
@@ -126,7 +144,10 @@ export async function PATCH(
     await invalidateQuizCache(quizId);
     revalidateTag('active-quizzes', 'default');
 
-    return noStoreJson({ success: true, quiz: { id: quizId, status: status ?? quiz.status, isActive } });
+    return noStoreJson({
+      success: true,
+      quiz: { id: quizId, status: status ?? quiz.status, isActive },
+    });
   } catch (error) {
     if (error instanceof AdminApiDisabledError) {
       return noStoreJson({ code: error.code }, { status: 403 });
@@ -143,7 +164,10 @@ export async function PATCH(
       method: request.method,
     });
 
-    return noStoreJson({ error: 'Internal error', code: 'INTERNAL_ERROR' }, { status: 500 });
+    return noStoreJson(
+      { error: 'Internal error', code: 'INTERNAL_ERROR' },
+      { status: 500 }
+    );
   }
 }
 
@@ -169,7 +193,10 @@ export async function DELETE(
     const rawParams = await context.params;
     const parsedParams = paramsSchema.safeParse(rawParams);
     if (!parsedParams.success) {
-      return noStoreJson({ error: 'Invalid params', code: 'INVALID_PARAMS' }, { status: 400 });
+      return noStoreJson(
+        { error: 'Invalid params', code: 'INVALID_PARAMS' },
+        { status: 400 }
+      );
     }
 
     const { id: quizId } = parsedParams.data;
@@ -185,7 +212,10 @@ export async function DELETE(
       .limit(1);
 
     if (!quiz) {
-      return noStoreJson({ error: 'Quiz not found', code: 'NOT_FOUND' }, { status: 404 });
+      return noStoreJson(
+        { error: 'Quiz not found', code: 'NOT_FOUND' },
+        { status: 404 }
+      );
     }
 
     if (quiz.status !== 'draft') {
@@ -209,7 +239,10 @@ export async function DELETE(
 
     if (total > 0) {
       return noStoreJson(
-        { error: `Cannot delete: ${total} attempt(s) exist`, code: 'HAS_ATTEMPTS' },
+        {
+          error: `Cannot delete: ${total} attempt(s) exist`,
+          code: 'HAS_ATTEMPTS',
+        },
         { status: 409 }
       );
     }
@@ -235,6 +268,9 @@ export async function DELETE(
       method: request.method,
     });
 
-    return noStoreJson({ error: 'Internal error', code: 'INTERNAL_ERROR' }, { status: 500 });
+    return noStoreJson(
+      { error: 'Internal error', code: 'INTERNAL_ERROR' },
+      { status: 500 }
+    );
   }
 }

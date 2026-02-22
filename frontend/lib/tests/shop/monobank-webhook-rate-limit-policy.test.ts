@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const enforceRateLimitMock = vi.fn(
-  async (..._args: any[]) => ({ ok: false, retryAfterSeconds: 12 })
-);
+const enforceRateLimitMock = vi.fn(async (..._args: any[]) => ({
+  ok: false,
+  retryAfterSeconds: 12,
+}));
 const verifyWebhookSignatureWithRefreshMock = vi.fn(
   async (..._args: any[]) => true
 );

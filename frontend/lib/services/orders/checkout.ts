@@ -275,8 +275,7 @@ function parseVariantList(raw: unknown): string[] {
           .filter(x => x.length > 0);
         return Array.from(new Set(out));
       }
-    } catch {
-    }
+    } catch {}
   }
 
   const v =

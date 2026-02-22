@@ -1,4 +1,4 @@
-import { and,eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { db } from '@/db';
@@ -74,7 +74,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    const { categoryId, slug, timeLimitSeconds, translations, questions } = parsed.data;
+    const { categoryId, slug, timeLimitSeconds, translations, questions } =
+      parsed.data;
 
     // Check duplicate slug within category
     const [existing] = await db
@@ -85,7 +86,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     if (existing) {
       return noStoreJson(
-        { error: 'Quiz with this slug already exists in this category', code: 'DUPLICATE_SLUG' },
+        {
+          error: 'Quiz with this slug already exists in this category',
+          code: 'DUPLICATE_SLUG',
+        },
         { status: 409 }
       );
     }

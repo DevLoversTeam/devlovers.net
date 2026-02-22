@@ -1,9 +1,16 @@
 import { NextRequest } from 'next/server';
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 
 import { POST } from '@/app/api/shop/checkout/route';
 import { createOrderWithItems } from '@/lib/services/orders';
-
 
 vi.mock('@/lib/auth', () => ({
   getCurrentUser: vi.fn().mockResolvedValue(null),
@@ -80,7 +87,9 @@ describe('checkout monobank parse/validation', () => {
       makeMonobankCheckoutReq({
         body: {
           paymentProvider: 'monobank',
-          items: [{ productId: '11111111-1111-4111-8111-111111111111', quantity: 1 }],
+          items: [
+            { productId: '11111111-1111-4111-8111-111111111111', quantity: 1 },
+          ],
         },
       })
     );
@@ -92,7 +101,8 @@ describe('checkout monobank parse/validation', () => {
   });
 
   it('ignores client currency/amount fields for monobank payload validation', async () => {
-    const createOrderWithItemsMock = createOrderWithItems as unknown as MockedFn;
+    const createOrderWithItemsMock =
+      createOrderWithItems as unknown as MockedFn;
 
     createOrderWithItemsMock.mockResolvedValueOnce({
       order: {
@@ -113,7 +123,9 @@ describe('checkout monobank parse/validation', () => {
         idempotencyKey: idem,
         body: {
           paymentProvider: 'monobank',
-          items: [{ productId: '11111111-1111-4111-8111-111111111111', quantity: 1 }],
+          items: [
+            { productId: '11111111-1111-4111-8111-111111111111', quantity: 1 },
+          ],
           currency: 'USD',
           amount: 999999,
           amountMinor: 999999,

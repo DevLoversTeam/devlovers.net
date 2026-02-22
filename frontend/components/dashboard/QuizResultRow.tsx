@@ -6,7 +6,10 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
 import { Badge, type BadgeProps } from '@/components/ui/badge';
-import { type CategoryTabStyle,categoryTabStyles } from '@/data/categoryStyles';
+import {
+  type CategoryTabStyle,
+  categoryTabStyles,
+} from '@/data/categoryStyles';
 import type { UserLastAttempt } from '@/types/quiz';
 
 interface QuizResultRowProps {
@@ -39,8 +42,18 @@ type StatusConfig = {
 };
 
 function getStatus(percentage: number): StatusConfig {
-  if (percentage === 100) return { variant: 'success', label: 'mastered', dotColor: 'bg-emerald-500' };
-  if (percentage >= 70) return { variant: 'warning', label: 'needsReview', dotColor: 'bg-amber-500' };
+  if (percentage === 100)
+    return {
+      variant: 'success',
+      label: 'mastered',
+      dotColor: 'bg-emerald-500',
+    };
+  if (percentage >= 70)
+    return {
+      variant: 'warning',
+      label: 'needsReview',
+      dotColor: 'bg-amber-500',
+    };
   return { variant: 'danger', label: 'study', dotColor: 'bg-red-500' };
 }
 
@@ -64,7 +77,14 @@ function ProgressBar({ percentage }: { percentage: number }) {
 
 function getCategoryStyle(slug: string | null): CategoryTabStyle | null {
   if (!slug) return null;
-  return (categoryTabStyles as Record<string, (typeof categoryTabStyles)[keyof typeof categoryTabStyles]>)[slug] ?? null;
+  return (
+    (
+      categoryTabStyles as Record<
+        string,
+        (typeof categoryTabStyles)[keyof typeof categoryTabStyles]
+      >
+    )[slug] ?? null
+  );
 }
 
 export function QuizResultRow({ attempt, locale }: QuizResultRowProps) {
@@ -76,7 +96,8 @@ export function QuizResultRow({ attempt, locale }: QuizResultRowProps) {
   const isMastered = pct === 100;
   const catStyle = getCategoryStyle(attempt.categorySlug);
 
-  const baseStyles = 'rounded-xl border border-gray-100 dark:border-white/5 px-3 py-2.5 md:px-4 md:py-3 transition-all duration-300';
+  const baseStyles =
+    'rounded-xl border border-gray-100 dark:border-white/5 px-3 py-2.5 md:px-4 md:py-3 transition-all duration-300';
   const interactiveStyles = !isMastered
     ? 'group cursor-pointer bg-white/60 dark:bg-neutral-900/60 hover:-translate-y-0.5 hover:shadow-md hover:border-(--accent-primary)/30 dark:hover:border-(--accent-primary)/30'
     : 'bg-white/40 dark:bg-neutral-900/40 opacity-60';
@@ -93,12 +114,18 @@ export function QuizResultRow({ attempt, locale }: QuizResultRowProps) {
       onClick={isMastered ? undefined : handleClick}
       role={isMastered ? undefined : 'link'}
       tabIndex={isMastered ? undefined : 0}
-      onKeyDown={isMastered ? undefined : (e) => { if (e.key === 'Enter') handleClick(); }}
+      onKeyDown={
+        isMastered
+          ? undefined
+          : e => {
+              if (e.key === 'Enter') handleClick();
+            }
+      }
     >
       {/* Mobile layout: left content + right badge */}
       <div className="flex items-center gap-3 sm:grid sm:grid-cols-[minmax(0,2fr)_1fr_auto_20px] md:hidden">
         <div className="min-w-0 flex-1 space-y-1.5">
-          <div className="flex items-center gap-2.5 max-w-50 sm:max-w-35">
+          <div className="flex max-w-50 items-center gap-2.5 sm:max-w-35">
             {catStyle && (
               <Image
                 src={catStyle.icon}
@@ -112,26 +139,43 @@ export function QuizResultRow({ attempt, locale }: QuizResultRowProps) {
               {attempt.quizTitle ?? attempt.quizSlug}
             </div>
           </div>
-          <div className="flex items-center gap-1.5 text-[11px] sm:text-xs text-gray-400 overflow-hidden whitespace-nowrap max-w-full">
-            <span style={catStyle ? { color: catStyle.accent } : undefined} className="truncate max-w-17.5 sm:max-w-none">
+          <div className="flex max-w-full items-center gap-1.5 overflow-hidden text-[11px] whitespace-nowrap text-gray-400 sm:text-xs">
+            <span
+              style={catStyle ? { color: catStyle.accent } : undefined}
+              className="max-w-17.5 truncate sm:max-w-none"
+            >
               {attempt.categoryName ?? attempt.categorySlug ?? ''}
             </span>
-            <span className="sm:hidden shrink-0 text-gray-200 dark:text-gray-700">&middot;</span>
-            <span className="sm:hidden shrink-0 tabular-nums">{attempt.score}/{attempt.totalQuestions}</span>
-            <span className="sm:hidden shrink-0 text-gray-200 dark:text-gray-700">&middot;</span>
-            <span className="sm:hidden shrink-0 tabular-nums">{Math.round(pct)}%</span>
-            <span className="sm:hidden shrink-0 text-gray-200 dark:text-gray-700">&middot;</span>
+            <span className="shrink-0 text-gray-200 sm:hidden dark:text-gray-700">
+              &middot;
+            </span>
+            <span className="shrink-0 tabular-nums sm:hidden">
+              {attempt.score}/{attempt.totalQuestions}
+            </span>
+            <span className="shrink-0 text-gray-200 sm:hidden dark:text-gray-700">
+              &middot;
+            </span>
+            <span className="shrink-0 tabular-nums sm:hidden">
+              {Math.round(pct)}%
+            </span>
+            <span className="shrink-0 text-gray-200 sm:hidden dark:text-gray-700">
+              &middot;
+            </span>
             {attempt.pointsEarned > 0 ? (
-              <span className="sm:hidden shrink-0 font-medium text-emerald-600 dark:text-emerald-400">
+              <span className="shrink-0 font-medium text-emerald-600 sm:hidden dark:text-emerald-400">
                 +{attempt.pointsEarned}
               </span>
             ) : (
-              <span className="sm:hidden shrink-0 text-gray-300 dark:text-gray-600">&mdash;</span>
+              <span className="shrink-0 text-gray-300 sm:hidden dark:text-gray-600">
+                &mdash;
+              </span>
             )}
           </div>
         </div>
         <div className="hidden flex-1 items-center justify-end gap-2 text-xs text-gray-400 sm:flex md:hidden">
-          <span className="tabular-nums">{attempt.score}/{attempt.totalQuestions}</span>
+          <span className="tabular-nums">
+            {attempt.score}/{attempt.totalQuestions}
+          </span>
           <span className="text-gray-200 dark:text-gray-700">&middot;</span>
           <span className="tabular-nums">{Math.round(pct)}%</span>
           <span className="text-gray-200 dark:text-gray-700">&middot;</span>
@@ -143,8 +187,11 @@ export function QuizResultRow({ attempt, locale }: QuizResultRowProps) {
             <span className="text-gray-300 dark:text-gray-600">&mdash;</span>
           )}
         </div>
-        <div className="shrink-0 flex items-center justify-end min-w-20">
-          <Badge variant={status.variant} className="gap-1.5 rounded-full px-2 py-0.5 text-[10px] sm:px-2.5 sm:py-0.5 sm:text-xs">
+        <div className="flex min-w-20 shrink-0 items-center justify-end">
+          <Badge
+            variant={status.variant}
+            className="gap-1.5 rounded-full px-2 py-0.5 text-[10px] sm:px-2.5 sm:py-0.5 sm:text-xs"
+          >
             <span className={`h-1.5 w-1.5 rounded-full ${status.dotColor}`} />
             {t(status.label)}
           </Badge>
@@ -179,14 +226,14 @@ export function QuizResultRow({ attempt, locale }: QuizResultRowProps) {
         </div>
 
         {/* Score */}
-        <div className="text-center text-sm tabular-nums text-gray-600 dark:text-gray-400">
+        <div className="text-center text-sm text-gray-600 tabular-nums dark:text-gray-400">
           {attempt.score}/{attempt.totalQuestions}
         </div>
 
         {/* Percentage + bar */}
         <div className="flex items-center gap-1.5">
           <ProgressBar percentage={pct} />
-          <span className="w-9 text-center text-xs tabular-nums text-gray-500">
+          <span className="w-9 text-center text-xs text-gray-500 tabular-nums">
             {Math.round(pct)}%
           </span>
         </div>

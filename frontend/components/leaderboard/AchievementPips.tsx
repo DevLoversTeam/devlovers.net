@@ -81,7 +81,7 @@ export function AchievementPips({ achievements }: AchievementPipsProps) {
   const mounted = useSyncExternalStore(
     () => () => {},
     () => true,
-    () => false,
+    () => false
   );
 
   if (!achievements.length) return null;
@@ -194,7 +194,7 @@ export function AchievementPips({ achievements }: AchievementPipsProps) {
         tooltip &&
         createPortal(
           <div
-            className="pointer-events-none fixed z-9999 whitespace-nowrap rounded-lg border border-gray-200 bg-white px-2 py-1 text-[10px] font-semibold text-gray-700 shadow-md dark:border-white/10 dark:bg-neutral-800 dark:text-gray-200"
+            className="pointer-events-none fixed z-9999 rounded-lg border border-gray-200 bg-white px-2 py-1 text-[10px] font-semibold whitespace-nowrap text-gray-700 shadow-md dark:border-white/10 dark:bg-neutral-800 dark:text-gray-200"
             style={{
               left: tooltip.x,
               top: tooltip.y - 6,

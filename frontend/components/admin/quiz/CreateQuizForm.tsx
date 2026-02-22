@@ -74,7 +74,7 @@ export function CreateQuizForm({
   }
 
   function getDifficultyStats() {
-    const counts = { beginner: 0, medium: 0, advanced: 0};
+    const counts = { beginner: 0, medium: 0, advanced: 0 };
     for (const q of questions) {
       counts[q.difficulty]++;
     }
@@ -214,9 +214,7 @@ export function CreateQuizForm({
 
         <textarea
           value={translations[activeLocale].description}
-          onChange={e =>
-            handleTranslationChange('description', e.target.value)
-          }
+          onChange={e => handleTranslationChange('description', e.target.value)}
           placeholder={`Quiz description (${activeLocale.toUpperCase()})`}
           rows={3}
           className="border-border bg-background text-foreground w-full rounded-md border px-3 py-2 text-sm"
@@ -275,9 +273,7 @@ export function CreateQuizForm({
       )}
 
       {/* Error */}
-      {error && (
-        <p className="text-sm text-red-500">{error}</p>
-      )}
+      {error && <p className="text-sm text-red-500">{error}</p>}
 
       {/* Submit */}
       <button
