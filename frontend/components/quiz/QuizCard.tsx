@@ -112,15 +112,17 @@ export function QuizCard({ quiz, userProgress }: QuizCardProps) {
       </div>
       {userProgress && (
         <div className="mb-6">
-          <div className="mb-1.5 flex justify-between text-xs">
+          <div className="mb-1.5 flex justify-end items-center gap-2 text-xs">
             <span className="text-gray-600 dark:text-gray-400">
-              {t('best')} {userProgress.bestScore}/{userProgress.totalQuestions}
+              {t('best')} <span className="font-semibold text-gray-900 dark:text-gray-100">{userProgress.bestScore}/{userProgress.totalQuestions}</span>
             </span>
-            <span className="text-gray-500">
-              {userProgress.attemptsCount}{' '}
+            <span className="text-gray-300 dark:text-gray-700 mx-0.5">&middot;</span>
+            <span className="text-gray-600 dark:text-gray-400">
+              <span className="font-semibold text-gray-900 dark:text-gray-100">{userProgress.attemptsCount}</span>{' '}
               {userProgress.attemptsCount === 1 ? t('attempt') : t('attempts')}
             </span>
-            <span className="font-medium text-gray-900 dark:text-gray-100">
+            <span className="text-gray-300 dark:text-gray-700 mx-0.5">&middot;</span>
+            <span className="font-bold text-gray-900 dark:text-gray-100">
               {percentage}%
             </span>
           </div>

@@ -16,6 +16,8 @@ export const getUserProfile = cache(async (userId: string) => {
       email: true,
       image: true,
       role: true,
+      provider: true,
+      providerId: true,
       createdAt: true,
     },
     with: {
@@ -39,4 +41,32 @@ export const getUserProfile = cache(async (userId: string) => {
     ...user,
     points: Number(pointsResult[0]?.total) || 0,
   };
+});
+
+export const getUserGlobalRank = cache(async (userId: string) => {
+  // Get all users' total points by grouping transactions
+  const rankQuery = sql`
+    WITH user_scores AS (
+      SELECT user_id, COALESCE(SUM(points), 0) as total_points
+      FROM point_transactions
+      GROUP BY user_id
+    ),
+    ranked_users AS (
+      SELECT user_id, total_points,
+             RANK() OVER (ORDER BY total_points DESC) as rank
+      FROM user_scores
+    )
+    SELECT rank
+    FROM ranked_users
+    WHERE user_id = ${userId}
+  `;
+
+  const result = await db.execute(rankQuery);
+  const rankRow = (result as { rows: any[] }).rows[0];
+  
+  if (!rankRow || !rankRow.rank) {
+    return null; 
+  }
+  
+  return Number(rankRow.rank);
 });

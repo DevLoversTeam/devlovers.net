@@ -14,33 +14,33 @@ const rankConfig = {
     height: '70%',
     delay: 0.4,
     style: {
-      border: 'border-yellow-400 dark:border-yellow-500',
-      bg: 'bg-yellow-400/20 dark:bg-yellow-500/10',
+      border: 'border-yellow-400/50 dark:border-yellow-500/50',
+      bg: 'bg-yellow-400/10 dark:bg-yellow-500/5',
       text: 'text-yellow-600 dark:text-yellow-400',
-      badge: 'bg-yellow-400 dark:bg-yellow-500',
-      ring: 'border-yellow-400 dark:border-yellow-500',
+      badge: 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 backdrop-blur-sm',
+      ring: 'border-yellow-400/30 dark:border-yellow-500/30',
     },
   },
   2: {
     height: '40%',
     delay: 0.2,
     style: {
-      border: 'border-slate-300 dark:border-slate-500',
-      bg: 'bg-slate-300/20 dark:bg-slate-500/10',
+      border: 'border-slate-300/50 dark:border-slate-500/50',
+      bg: 'bg-slate-300/10 dark:bg-slate-500/5',
       text: 'text-slate-600 dark:text-slate-400',
-      badge: 'bg-slate-400 dark:bg-slate-500',
-      ring: 'border-slate-300 dark:border-slate-500',
+      badge: 'bg-slate-500/20 text-slate-500 border border-slate-500/30 backdrop-blur-sm',
+      ring: 'border-slate-300/50 dark:border-slate-500/30',
     },
   },
   3: {
     height: '20%',
     delay: 0.6,
     style: {
-      border: 'border-orange-300 dark:border-orange-500',
-      bg: 'bg-orange-300/20 dark:bg-orange-500/10',
+      border: 'border-orange-300/50 dark:border-orange-500/50',
+      bg: 'bg-orange-300/10 dark:bg-orange-500/5',
       text: 'text-orange-600 dark:text-orange-400',
-      badge: 'bg-orange-400 dark:bg-orange-500',
-      ring: 'border-orange-300 dark:border-orange-500',
+      badge: 'bg-orange-500/20 text-orange-500 border border-orange-500/30 backdrop-blur-sm',
+      ring: 'border-orange-300/50 dark:border-orange-500/30',
     },
   },
 } as const;
@@ -98,7 +98,7 @@ export function LeaderboardPodium({ topThree }: { topThree: User[] }) {
 
                   <div
                     className={cn(
-                      'absolute -bottom-2 left-1/2 flex h-5 w-5 -translate-x-1/2 items-center justify-center rounded-full text-[10px] font-bold text-white shadow-sm transition-colors duration-300 md:h-6 md:w-6 md:text-xs',
+                      'absolute -bottom-2 left-1/2 flex h-5 w-5 -translate-x-1/2 items-center justify-center rounded-full text-[10px] font-bold shadow-sm transition-colors duration-300 md:h-6 md:w-6 md:text-xs',
                       style.badge
                     )}
                   >
