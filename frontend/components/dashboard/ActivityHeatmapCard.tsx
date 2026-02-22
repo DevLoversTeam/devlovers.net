@@ -56,9 +56,10 @@ export function ActivityHeatmapCard({ attempts, locale, currentStreak }: Activit
     relative z-10 flex flex-col justify-between overflow-hidden rounded-3xl
     border border-gray-200 bg-white/10 shadow-sm backdrop-blur-md
     dark:border-neutral-800 dark:bg-neutral-900/10
-    p-6 sm:p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-md
-    hover:border-(--accent-primary)/30 dark:hover:border-(--accent-primary)/30
+    p-6 sm:p-8
   `;
+
+  const iconBoxStyles = 'shrink-0 rounded-xl bg-white/40 border border-white/20 shadow-xs backdrop-blur-xs p-3 dark:bg-white/5 dark:border-white/10';
 
   const todayStart = useMemo(() => {
     const d = new Date();
@@ -258,7 +259,7 @@ export function ActivityHeatmapCard({ attempts, locale, currentStreak }: Activit
         <div className="mb-4 sm:mb-6 flex flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 w-full min-w-0">
           <div className="flex items-center gap-3 min-w-0">
             <div
-              className="rounded-xl bg-gray-100/50 p-3 ring-1 ring-black/5 dark:bg-neutral-800/50 dark:ring-white/10 shrink-0"
+              className={iconBoxStyles}
               aria-hidden="true"
             >
               <Activity className="h-5 w-5 text-(--accent-primary) drop-shadow-[0_0_8px_rgba(var(--accent-primary-rgb),0.6)]" />

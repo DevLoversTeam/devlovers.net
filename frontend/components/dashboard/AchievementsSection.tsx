@@ -20,7 +20,8 @@ export function AchievementsSection({
 
   const earnedCount = achievements.filter(a => a.earned).length;
 
-  const cardStyles = 'dashboard-card';
+  const cardStyles = 'dashboard-card hover:translate-y-0 hover:shadow-sm';
+  const iconBoxStyles = 'shrink-0 rounded-xl bg-white/40 border border-white/20 shadow-xs backdrop-blur-xs p-3 dark:bg-white/5 dark:border-white/10';
 
   const previewBadges = achievements.slice(0, 6);
   const remainingBadges = achievements.slice(6);
@@ -30,7 +31,7 @@ export function AchievementsSection({
       <div className="flex w-full flex-row items-center justify-between gap-3 p-4 sm:p-6 md:p-8">
         <div className="flex min-w-0 items-center gap-3">
           <div
-            className="shrink-0 rounded-xl bg-gray-100/50 p-3 ring-1 ring-black/5 dark:bg-neutral-800/50 dark:ring-white/10"
+            className={iconBoxStyles}
             aria-hidden="true"
           >
             <Trophy className="h-5 w-5 text-(--accent-primary) drop-shadow-[0_0_8px_rgba(var(--accent-primary-rgb),0.6)]" />

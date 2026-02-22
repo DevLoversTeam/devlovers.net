@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, FileText, ShoppingBag, Trophy, Info, CheckCircle2 } from 'lucide-react';
+import { Bell, FileText, ShoppingBag, Trophy, Info, CheckCircle2, User } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -38,6 +38,7 @@ export function NotificationBell() {
   
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [displayLimit, setDisplayLimit] = useState(5);
 
   const fetchNotifications = async () => {
     try {
@@ -105,6 +106,8 @@ export function NotificationBell() {
         return <FileText className="h-4 w-4" />;
       case 'SHOP':
         return <ShoppingBag className="h-4 w-4" />;
+      case 'SYSTEM':
+        return <User className="h-4 w-4" />;
       default:
         return <Info className="h-4 w-4" />;
     }
@@ -118,6 +121,8 @@ export function NotificationBell() {
         return 'bg-blue-500/10 text-blue-500';
       case 'SHOP':
         return 'bg-purple-500/10 text-purple-500';
+      case 'SYSTEM':
+        return 'bg-emerald-500/10 text-emerald-500';
       default:
         return 'bg-gray-500/10 text-gray-500';
     }
@@ -142,20 +147,20 @@ export function NotificationBell() {
       <AnimatePresence>
         {isOpen && (
           <motion.div 
-            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute top-full right-0 z-70 mt-3 w-80 rounded-2xl border border-gray-200/50 bg-white/95 p-4 shadow-xl backdrop-blur-3xl sm:w-96 dark:border-white/10 dark:bg-neutral-900/95"
+            className="absolute top-full right-0 z-70 mt-3 w-80 rounded-2xl border border-gray-200/50 bg-white/95 p-2 shadow-lg backdrop-blur-3xl sm:w-96 dark:border-white/10 dark:bg-neutral-900/95"
           >
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-sm font-semibold tracking-wide text-gray-900 dark:text-white">
+            <div className="mb-2 flex items-center justify-between border-b border-gray-100/50 px-2 pb-2 dark:border-white/10">
+              <p className="text-sm font-semibold tracking-wide text-gray-900 dark:text-white">
                 Notifications
-              </h3>
+              </p>
               {unreadCount > 0 && (
                 <button
                   onClick={handleMarkAllAsRead}
-                  className="group flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-(--accent-primary)"
+                  className="group flex items-center gap-1.5 text-xs font-semibold text-(--accent-primary) transition-colors hover:text-(--accent-hover)"
                 >
                   <CheckCircle2 className="h-3.5 w-3.5 transition-transform group-hover:scale-110" />
                   Mark all as read
@@ -163,72 +168,82 @@ export function NotificationBell() {
               )}
             </div>
 
-            <div className="flex max-h-[350px] flex-col gap-2 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-white/10">
+            <div className="flex max-h-[400px] flex-col gap-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-200 hover:scrollbar-thumb-gray-300 dark:scrollbar-thumb-white/10 dark:hover:scrollbar-thumb-white/20">
               {loading ? (
-                <div className="flex flex-col items-center justify-center py-10 opacity-50">
+                <div className="flex flex-col items-center justify-center py-10 opacity-50 px-4">
                   <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} className="mb-3">
                     <Bell className="h-5 w-5 text-muted-foreground" />
                   </motion.div>
-                  <p className="text-xs tracking-wider text-muted-foreground uppercase">Syncing</p>
+                  <p className="text-xs tracking-wider text-muted-foreground uppercase text-center">Syncing</p>
                 </div>
               ) : notifications.length === 0 ? (
                 <motion.div 
-                  initial={{ opacity: 0 }} 
-                  animate={{ opacity: 1 }} 
-                  className="flex flex-col items-center justify-center py-12 text-center"
+                  initial={{ opacity: 0, scale: 0.95 }} 
+                  animate={{ opacity: 1, scale: 1 }} 
+                  className="flex flex-col items-center justify-center py-12 text-center px-4"
                 >
-                  <div className="relative mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-secondary dark:bg-white/5">
-                    <Bell className="h-6 w-6 text-muted-foreground opacity-50" />
+                  <div className="relative mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-secondary ring-8 ring-secondary/30 dark:bg-white/5 dark:ring-white/5">
+                    <Bell className="h-7 w-7 text-muted-foreground opacity-50" />
                     <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-white dark:bg-neutral-900 border-2 border-transparent">
                       <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                     </div>
                   </div>
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-200">All caught up!</p>
-                  <p className="text-xs text-muted-foreground mt-1">You have no new notifications.</p>
+                  <p className="text-sm font-bold text-gray-900 dark:text-white">All caught up!</p>
+                  <p className="text-xs text-muted-foreground mt-1 max-w-[200px] mx-auto">You've handled all your recent activity.</p>
                 </motion.div>
               ) : (
-                notifications.map((notification, index) => (
-                  <motion.div
-                    key={notification.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05, duration: 0.2 }}
-                    onClick={() => handleMarkAsRead(notification.id, notification.isRead)}
-                    className={`relative flex cursor-pointer items-start gap-3 rounded-xl p-3 transition-all duration-200 ${
-                      notification.isRead 
-                        ? 'hover:bg-gray-100/50 dark:hover:bg-white/5 opacity-80 hover:opacity-100' 
-                        : 'bg-white shadow-xs hover:shadow-sm dark:bg-white/5 dark:hover:bg-white/10 ring-1 ring-black/5 dark:ring-white/10'
-                    }`}
-                  >
-                    <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${getIconStylesForType(notification.type)}`}>
-                      {getIconForType(notification.type)}
-                    </div>
-                    <div className="flex-1 space-y-1">
-                      <p className={`text-sm tracking-tight ${notification.isRead ? 'text-gray-600 dark:text-gray-400 font-normal' : 'text-gray-900 dark:text-white font-medium'}`}>
-                        {notification.title}
-                      </p>
-                      <p className="text-xs leading-relaxed text-muted-foreground line-clamp-2">
-                        {notification.message}
-                      </p>
-                      <p className="mt-1.5 text-[10px] uppercase tracking-wider text-muted-foreground/60 font-medium">
-                        {getRelativeTime(notification.createdAt)}
-                      </p>
-                    </div>
-                    {!notification.isRead && (
-                      <div className="bg-(--accent-primary) mt-1.5 h-2 w-2 shrink-0 rounded-full shadow-[0_0_8px_var(--accent-primary)]"></div>
-                    )}
-                  </motion.div>
-                ))
+                <AnimatePresence mode="popLayout" initial={false}>
+                  {notifications.map((notification, index) => (
+                    <motion.div
+                      key={notification.id}
+                      layout
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 10 }}
+                      transition={{ 
+                        type: 'spring',
+                        stiffness: 400,
+                        damping: 30,
+                        delay: index * 0.02 
+                      }}
+                      onClick={() => handleMarkAsRead(notification.id, notification.isRead)}
+                      className={`relative flex cursor-pointer items-start gap-3 rounded-lg p-3 transition-colors duration-200 group ${
+                        notification.isRead 
+                          ? 'text-muted-foreground hover:bg-secondary hover:text-foreground active:bg-secondary' 
+                          : 'bg-(--accent-primary)/10 text-gray-900 dark:text-white'
+                      }`}
+                    >
+                      <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full shadow-xs transition-transform group-hover:scale-105 ${getIconStylesForType(notification.type)}`}>
+                        {getIconForType(notification.type)}
+                      </div>
+                      <div className="flex-1 space-y-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className={`text-sm leading-tight pt-0.5 ${notification.isRead ? 'font-medium' : 'font-bold'}`}>
+                            {notification.title}
+                          </p>
+                          {!notification.isRead && (
+                            <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-(--accent-primary) shadow-[0_0_8px_var(--accent-primary)]" title="Unread" />
+                          )}
+                        </div>
+                        <p className={`text-xs leading-relaxed line-clamp-2 ${notification.isRead ? 'opacity-70' : 'opacity-90'}`}>
+                          {notification.message}
+                        </p>
+                        <div className="mt-2 flex items-center gap-2">
+                           <span className="text-[10px] font-bold uppercase tracking-widest opacity-50">
+                             {getIconForType(notification.type).type.name === 'User' ? 'System' : notification.type}
+                           </span>
+                           <span className="h-0.5 w-0.5 rounded-full bg-muted-foreground/30" />
+                           <span className="text-[10px] font-medium opacity-40">
+                             {getRelativeTime(notification.createdAt)}
+                           </span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
               )}
             </div>
             
-            {notifications.length > 0 && (
-              <div className="mt-3 border-t border-gray-100/50 pt-3 text-center dark:border-white/10">
-                <button className="text-xs font-semibold tracking-wide text-(--accent-primary) transition-colors hover:text-(--accent-hover)">
-                  View all notifications
-                </button>
-              </div>
-            )}
           </motion.div>
         )}
       </AnimatePresence>

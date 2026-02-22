@@ -1105,6 +1105,8 @@
       "changePassword": "Change Password",
       "currentPassword": "Current password",
       "newPassword": "New password",
+      "nameUpdateSuccess": "Name updated successfully",
+      "passwordUpdateSuccess": "Password updated successfully",
       "saving": "Saving..."
     },
     "stats": {
@@ -1508,6 +1510,18 @@
       "contact": {
         "title": "10. Contact",
         "content": "Questions:"
+      }
+    }
+  },
+  "notifications": {
+    "account": {
+      "nameChanged": {
+        "title": "Account Updated",
+        "message": "Your display name has been changed to {name}"
+      },
+      "passwordChanged": {
+        "title": "Security Update",
+        "message": "Your password has been successfully updated"
       }
     }
   }
