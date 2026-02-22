@@ -38,11 +38,45 @@ export async function resolveGitHubLogin(providerId: string): Promise<string | n
   }
 }
 
-/**
- * Checks whether a given GitHub login has starred the DevLovers repo.
- * Uses the GITHUB_SPONSORS_TOKEN (server-side org PAT) — no user token needed.
- * Paginates through stargazers up to MAX_PAGES × 100 entries.
- */
+export interface StargazerEntry {
+  login: string;
+  avatarBase: string;
+}
+
+export async function getAllStargazers(): Promise<StargazerEntry[]> {
+  const token = getToken();
+  if (!token) return [];
+
+  const all: StargazerEntry[] = [];
+
+  for (let page = 1; page <= MAX_PAGES; page++) {
+    const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/stargazers?per_page=100&page=${page}`;
+    try {
+      const res = await fetch(url, {
+        headers: makeHeaders(),
+        next: { revalidate: 3600 },
+      });
+      if (!res.ok) break;
+
+      const pageData: { login: string; avatar_url: string }[] = await res.json();
+      if (pageData.length === 0) break;
+
+      for (const s of pageData) {
+        all.push({
+          login: s.login.toLowerCase(),
+          avatarBase: s.avatar_url.split('?')[0],
+        });
+      }
+
+      if (pageData.length < 100) break;
+    } catch {
+      break;
+    }
+  }
+
+  return all;
+}
+
 export async function checkHasStarredRepo(
   githubLogin: string,
 ): Promise<boolean> {
@@ -57,7 +91,7 @@ export async function checkHasStarredRepo(
     try {
       const res = await fetch(url, {
         headers: makeHeaders(),
-        next: { revalidate: 3600 }, // cache 1 hour per page
+        next: { revalidate: 3600 }, 
       });
 
       if (!res.ok) {
@@ -67,14 +101,11 @@ export async function checkHasStarredRepo(
 
       const stargazers: { login: string }[] = await res.json();
 
-      // Empty page = we've exhausted all stargazers
       if (stargazers.length === 0) return false;
 
       if (stargazers.some((s) => s.login.toLowerCase() === loginLower)) {
         return true;
       }
-
-      // Last page (less than 100 results) — user not found
       if (stargazers.length < 100) return false;
     } catch (err) {
       console.error('❌ Failed to check GitHub stargazers:', err);

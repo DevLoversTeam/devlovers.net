@@ -1211,7 +1211,9 @@
         "expand": "View all",
         "collapse": "Collapse",
         "clickInfo": "Click for info",
-        "clickBack": "Click to flip back"
+        "clickBack": "Click to flip back",
+        "more": "more",
+        "moreCount": "{count} more"
       },
       "badges": {
         "first_blood": {

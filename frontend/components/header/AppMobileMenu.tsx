@@ -121,22 +121,14 @@ export function AppMobileMenu({
   // Lock body scroll when menu is open
   useEffect(() => {
     if (open) {
-      const scrollY = window.scrollY;
-      Object.assign(document.body.style, {
-        position: 'fixed',
-        top: `-${scrollY}px`,
-        width: '100%',
-        overflow: 'hidden',
-      });
+      // Use overflow:hidden on <html> instead of position:fixed on <body>.
+      // position:fixed shifts the body by -scrollY which hides the sticky
+      // header; overflow:hidden keeps everything in place.
+      const prev = document.documentElement.style.overflowY;
+      document.documentElement.style.overflowY = 'hidden';
 
       return () => {
-        Object.assign(document.body.style, {
-          position: '',
-          top: '',
-          width: '',
-          overflow: '',
-        });
-        window.scrollTo(0, scrollY);
+        document.documentElement.style.overflowY = prev;
       };
     }
   }, [open]);

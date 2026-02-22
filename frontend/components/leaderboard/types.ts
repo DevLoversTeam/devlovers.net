@@ -1,3 +1,5 @@
+import type { Achievement } from '@/lib/achievements';
+
 export interface User {
   id: number;
   userId: string;
@@ -7,6 +9,7 @@ export interface User {
   avatar: string;
   change: number;
   isSponsor?: boolean;
+  achievements?: Achievement[];
 }
 
 export interface CurrentUser {

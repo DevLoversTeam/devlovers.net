@@ -98,7 +98,7 @@ export function QuizResultRow({ attempt, locale }: QuizResultRowProps) {
       {/* Mobile layout: left content + right badge */}
       <div className="flex items-center gap-3 sm:grid sm:grid-cols-[minmax(0,2fr)_1fr_auto_20px] md:hidden">
         <div className="min-w-0 flex-1 space-y-1.5">
-          <div className="flex items-center gap-2.5 max-w-[200px] sm:max-w-[140px]">
+          <div className="flex items-center gap-2.5 max-w-50 sm:max-w-35">
             {catStyle && (
               <Image
                 src={catStyle.icon}
@@ -113,7 +113,7 @@ export function QuizResultRow({ attempt, locale }: QuizResultRowProps) {
             </div>
           </div>
           <div className="flex items-center gap-1.5 text-[11px] sm:text-xs text-gray-400 overflow-hidden whitespace-nowrap max-w-full">
-            <span style={catStyle ? { color: catStyle.accent } : undefined} className="truncate max-w-[70px] sm:max-w-none">
+            <span style={catStyle ? { color: catStyle.accent } : undefined} className="truncate max-w-17.5 sm:max-w-none">
               {attempt.categoryName ?? attempt.categorySlug ?? ''}
             </span>
             <span className="sm:hidden shrink-0 text-gray-200 dark:text-gray-700">&middot;</span>
@@ -143,7 +143,7 @@ export function QuizResultRow({ attempt, locale }: QuizResultRowProps) {
             <span className="text-gray-300 dark:text-gray-600">&mdash;</span>
           )}
         </div>
-        <div className="shrink-0 flex items-center justify-end min-w-[80px]">
+        <div className="shrink-0 flex items-center justify-end min-w-20">
           <Badge variant={status.variant} className="gap-1.5 rounded-full px-2 py-0.5 text-[10px] sm:px-2.5 sm:py-0.5 sm:text-xs">
             <span className={`h-1.5 w-1.5 rounded-full ${status.dotColor}`} />
             {t(status.label)}
