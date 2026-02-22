@@ -230,7 +230,8 @@ export function ExplainedTermsCard() {
   const hasTerms = terms.length > 0;
   const hasHiddenTerms = hiddenTerms.length > 0;
 
-  const cardStyles = 'dashboard-card flex flex-col p-6 sm:p-8 lg:p-10';
+  const cardStyles = 'dashboard-card flex flex-col p-6 sm:p-8 lg:p-10 hover:translate-y-0 hover:shadow-sm';
+  const iconBoxStyles = 'shrink-0 rounded-xl bg-white/40 border border-white/20 shadow-xs backdrop-blur-xs p-3 dark:bg-white/5 dark:border-white/10';
 
   return (
     <>
@@ -238,7 +239,7 @@ export function ExplainedTermsCard() {
         <div>
           <div className="mb-6 flex w-full items-center gap-3">
             <div
-              className="shrink-0 rounded-xl bg-gray-100/50 p-3 ring-1 ring-black/5 dark:bg-neutral-800/50 dark:ring-white/10"
+              className={iconBoxStyles}
               aria-hidden="true"
             >
               <BookOpen className="h-6 w-6 text-(--accent-primary) drop-shadow-[0_0_8px_rgba(var(--accent-primary-rgb),0.6)]" />

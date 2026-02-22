@@ -1109,6 +1109,8 @@
       "changePassword": "Змінити пароль",
       "currentPassword": "Поточний пароль",
       "newPassword": "Новий пароль",
+      "nameUpdateSuccess": "Ім'я успішно оновлено",
+      "passwordUpdateSuccess": "Пароль успішно оновлено",
       "saving": "Збереження..."
     },
     "stats": {
@@ -1510,6 +1512,18 @@
       "contact": {
         "title": "10. Контакти",
         "content": "Питання:"
+      }
+    }
+  },
+  "notifications": {
+    "account": {
+      "nameChanged": {
+        "title": "Профіль оновлено",
+        "message": "Ваше відображуване ім'я змінено на {name}"
+      },
+      "passwordChanged": {
+        "title": "Оновлення безпеки",
+        "message": "Ваш пароль успішно оновлено"
       }
     }
   }

@@ -13,6 +13,9 @@ import {
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
+import { toast } from 'sonner';
+
+import { updateName, updatePassword } from '@/actions/profile';
 import { UserAvatar } from '@/components/leaderboard/UserAvatar';
 import { Link } from '@/i18n/routing';
 
@@ -57,8 +60,46 @@ export function ProfileCard({
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const handleUpdateName = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsSaving(true);
+    const formData = new FormData(e.currentTarget);
+    
+    try {
+      const result = await updateName(formData);
+      if (!result.success) {
+        toast.error(result.error || 'Failed to update name');
+      }
+    } catch (error) {
+      toast.error('Something went wrong');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleUpdatePassword = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsSaving(true);
+    const formData = new FormData(e.currentTarget);
+    
+    try {
+      const result = await updatePassword(formData);
+      if (result.success) {
+        (e.target as HTMLFormElement).reset();
+      } else {
+        toast.error(result.error || 'Failed to update password');
+      }
+    } catch (error) {
+      toast.error('Something went wrong');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const statItemBase =
-    'flex flex-row items-center gap-2 sm:gap-3 rounded-2xl border border-gray-100 bg-white/50 p-2 sm:p-3 text-left dark:border-white/5 dark:bg-black/20 xl:flex-row-reverse xl:items-center xl:text-right xl:p-3 xl:px-4 transition-all hover:border-(--accent-primary)/40 hover:bg-gray-50 dark:hover:bg-white/5 dark:hover:border-(--accent-primary)/20';
+    'flex flex-row items-center gap-2 sm:gap-3 rounded-2xl border border-gray-100 bg-white/50 p-2 sm:p-3 text-left dark:border-white/5 dark:bg-black/20 xl:flex-row-reverse xl:items-center xl:text-right xl:p-3 xl:px-4';
+
+  const iconBoxStyles = 'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/40 border border-white/20 shadow-xs backdrop-blur-xs xl:h-auto xl:w-auto xl:p-2.5 dark:bg-white/5 dark:border-white/10';
 
   return (
     <section className={cardStyles} aria-labelledby="profile-heading">
@@ -102,12 +143,8 @@ export function ProfileCard({
         </div>
         <dl className="grid w-full grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3 xl:flex xl:w-auto xl:flex-nowrap xl:items-center xl:justify-end xl:gap-2 2xl:gap-3">
           {/* Attempts */}
-          <a
-            href="#quiz-results"
-            onClick={scrollTo('quiz-results')}
-            className={statItemBase}
-          >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-100/80 ring-1 ring-black/5 xl:h-auto xl:w-auto xl:p-2.5 dark:bg-purple-500/20 dark:ring-white/10">
+          <div className={statItemBase}>
+            <div className={iconBoxStyles}>
               <Target className="h-5 w-5 text-purple-600 dark:text-purple-400" />
             </div>
             <div className="flex w-full flex-col items-start overflow-hidden xl:items-end">
@@ -118,11 +155,11 @@ export function ProfileCard({
                 {totalAttempts}
               </dd>
             </div>
-          </a>
+          </div>
 
           {/* Points */}
-          <a href="#stats" onClick={scrollTo('stats')} className={statItemBase}>
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100/80 ring-1 ring-black/5 xl:h-auto xl:w-auto xl:p-2.5 dark:bg-amber-500/20 dark:ring-white/10">
+          <div className={statItemBase}>
+            <div className={iconBoxStyles}>
               <Trophy className="h-5 w-5 text-amber-600 dark:text-amber-400" />
             </div>
             <div className="flex w-full flex-col items-start overflow-hidden xl:items-end">
@@ -133,11 +170,11 @@ export function ProfileCard({
                 {user.points}
               </dd>
             </div>
-          </a>
+          </div>
 
           {/* Global rank */}
-          <Link href="/leaderboard" className={statItemBase}>
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-100/80 ring-1 ring-black/5 xl:h-auto xl:w-auto xl:p-2.5 dark:bg-teal-500/20 dark:ring-white/10">
+          <div className={statItemBase}>
+            <div className={iconBoxStyles}>
               <Globe className="h-5 w-5 text-teal-600 dark:text-teal-400" />
             </div>
             <div className="flex w-full flex-col items-start overflow-hidden xl:items-end">
@@ -148,11 +185,11 @@ export function ProfileCard({
                 {globalRank ? `#${globalRank}` : '—'}
               </dd>
             </div>
-          </Link>
+          </div>
 
           {/* Joined */}
           <div className="flex flex-row items-center gap-2 rounded-2xl border border-gray-100 bg-white/50 p-2 text-left sm:gap-3 sm:p-3 xl:flex-row-reverse xl:items-center xl:p-3 xl:px-4 xl:text-right dark:border-white/5 dark:bg-black/20">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-100/80 ring-1 ring-black/5 xl:h-auto xl:w-auto xl:p-2.5 dark:bg-blue-500/20 dark:ring-white/10">
+            <div className={iconBoxStyles}>
               <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             </div>
             <div className="flex w-full flex-col items-start overflow-hidden xl:items-end">
@@ -204,20 +241,14 @@ export function ProfileCard({
                   <h3 className="mb-4 text-sm font-semibold tracking-wide text-gray-900 uppercase dark:text-white">
                     {t('changeName')}
                   </h3>
-                  <form
-                    onSubmit={e => {
-                      e.preventDefault();
-                      setIsSaving(true);
-                      setTimeout(() => setIsSaving(false), 1000);
-                    }}
-                    className="flex flex-col gap-4 sm:flex-row sm:items-end"
-                  >
+                  <form onSubmit={handleUpdateName} className="flex flex-col gap-4 sm:flex-row sm:items-end">
                     <div className="flex-1">
                       <label htmlFor="name-input" className="sr-only">
                         {t('changeName')}
                       </label>
                       <input
                         id="name-input"
+                        name="name"
                         type="text"
                         defaultValue={user.name || ''}
                         className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm transition-all outline-none placeholder:text-gray-400 focus:border-(--accent-primary) focus:ring-1 focus:ring-(--accent-primary) dark:border-neutral-800 dark:bg-neutral-900 dark:text-white"
@@ -240,20 +271,11 @@ export function ProfileCard({
                   <h3 className="mb-4 text-sm font-semibold tracking-wide text-gray-900 uppercase dark:text-white">
                     {t('changePassword')}
                   </h3>
-                  <form
-                    onSubmit={e => {
-                      e.preventDefault();
-                      if (e.currentTarget.checkValidity()) {
-                        setIsSaving(true);
-                        setTimeout(() => setIsSaving(false), 1000);
-                        e.currentTarget.reset();
-                      }
-                    }}
-                    className="flex flex-col gap-4"
-                  >
+                  <form onSubmit={handleUpdatePassword} className="flex flex-col gap-4">
                     <div>
                       <input
                         type="password"
+                        name="currentPassword"
                         placeholder={t('currentPassword')}
                         className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm transition-all outline-none placeholder:text-gray-400 focus:border-(--accent-primary) focus:ring-1 focus:ring-(--accent-primary) dark:border-neutral-800 dark:bg-neutral-900 dark:text-white"
                         required
@@ -262,6 +284,7 @@ export function ProfileCard({
                     <div>
                       <input
                         type="password"
+                        name="newPassword"
                         placeholder={t('newPassword')}
                         minLength={8}
                         className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm transition-all outline-none placeholder:text-gray-400 focus:border-(--accent-primary) focus:ring-1 focus:ring-(--accent-primary) dark:border-neutral-800 dark:bg-neutral-900 dark:text-white"
