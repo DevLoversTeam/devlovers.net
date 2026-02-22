@@ -183,7 +183,24 @@ html {
 .qa-accordion-item:hover,
 .qa-accordion-item:focus-within,
 .qa-accordion-item[data-state='open'] {
-  border-color: var(--qa-accent);
+  border-color: var(--qa-accent, var(--accent-primary));
+}
+
+.qa-accordion-item {
+  position: relative;
+  overflow: hidden;
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    transparent 54%,
+    var(--qa-accent-soft, rgba(161, 161, 170, 0.22)) 100%
+  );
+}
+
+.qa-accordion-item:hover,
+.qa-accordion-item:focus-within,
+.qa-accordion-item[data-state='open'] {
+  background-image: none;
 }
 
 .no-select,
@@ -193,6 +210,31 @@ html {
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
+}
+
+@keyframes fade-up {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.6s ease-out forwards;
+  opacity: 0;
+}
+
+.delay-150 {
+  animation-delay: 0.15s;
+}
+
+.delay-300 {
+  animation-delay: 0.3s;
 }
 
 @keyframes progress {

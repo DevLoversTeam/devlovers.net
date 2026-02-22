@@ -124,7 +124,7 @@
     "searchPlaceholder": "Szukaj pytań...",
     "clearSearch": "Wyczyść wyszukiwanie",
     "noResults": "Nic nie znaleziono dla \"{query}\"",
-    "noQuestions": "Nie znaleziono pytań",
+    "noQuestions": "Brak pytań na ten moment…\nAle już są w przygotowaniu.\nBądź na bieżąco - wkrótce pojawią się nowe materiały!",
     "metaTitle": "Q&A | DevLovers",
     "metaDescription": "Pytania i odpowiedzi do przygotowania do rozmów kwalifikacyjnych",
     "frontend": "Frontend",

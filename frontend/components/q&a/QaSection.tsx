@@ -35,6 +35,14 @@ export default function TabsSection() {
     () => `qa-${active}-${currentPage}`,
     [active, currentPage]
   );
+  const emptyStateLines = useMemo(
+    () =>
+      t('noQuestions')
+        .split('\n')
+        .map(line => line.trim())
+        .filter(Boolean),
+    [t]
+  );
 
   const clearSelection = useCallback(() => {
     if (typeof window === 'undefined') return;
@@ -109,7 +117,23 @@ export default function TabsSection() {
               {items.length ? (
                 <AccordionList key={animationKey} items={items} />
               ) : (
-                <p className="py-12 text-center">{t('noQuestions')}</p>
+                <div className="py-20 text-center">
+                  {emptyStateLines[0] && (
+                    <p className="text-lg font-semibold text-gray-900 motion-safe:animate-fade-up motion-reduce:opacity-100 dark:text-white">
+                      {emptyStateLines[0]}
+                    </p>
+                  )}
+                  {emptyStateLines[1] && (
+                    <p className="mt-2 text-gray-400 motion-safe:animate-fade-up motion-safe:delay-150 motion-reduce:opacity-100">
+                      {emptyStateLines[1]}
+                    </p>
+                  )}
+                  {emptyStateLines[2] && (
+                    <p className="mt-1 text-gray-500 motion-safe:animate-fade-up motion-safe:delay-300 motion-reduce:opacity-100">
+                      {emptyStateLines[2]}
+                    </p>
+                  )}
+                </div>
               )}
             </div>
           </TabsContent>
