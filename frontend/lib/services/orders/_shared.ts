@@ -2,7 +2,6 @@ import crypto from 'crypto';
 
 import { db } from '@/db';
 import { orders } from '@/db/schema/shop';
-import { createCartItemKey } from '@/lib/shop/cart-item-key';
 import { type CurrencyCode } from '@/lib/shop/currency';
 import { type PaymentProvider } from '@/lib/shop/payments';
 import {
@@ -18,11 +17,94 @@ export type OrderRow = typeof orders.$inferSelect;
 export type CheckoutItemWithVariant = CheckoutItem & {
   selectedSize?: string | null;
   selectedColor?: string | null;
+  variantKey?: string | null;
+  options?: Record<string, string> | null;
 };
 
 export function normVariant(v?: string | null): string {
   const s = (v ?? '').trim();
   return s;
+}
+
+function normalizeOptionKey(key: string): string {
+  return key.trim().toLowerCase();
+}
+
+function normalizeOptionValue(value: unknown): string {
+  return String(value ?? '').trim();
+}
+
+export function normalizeVariantOptions(
+  raw: unknown
+): Record<string, string> | undefined {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+
+  const next = new Map<string, string>();
+  for (const [rawKey, rawValue] of Object.entries(raw)) {
+    const key = normalizeOptionKey(rawKey);
+    const value = normalizeOptionValue(rawValue);
+    if (!key || !value) continue;
+    next.set(key, value);
+  }
+
+  if (!next.size) return undefined;
+
+  return Object.fromEntries(
+    Array.from(next.entries()).sort(([a], [b]) => a.localeCompare(b))
+  );
+}
+
+function optionValue(
+  options: Record<string, string> | undefined,
+  keys: string[]
+): string {
+  if (!options) return '';
+  for (const key of keys) {
+    const value = options[key];
+    if (value) return normVariant(value);
+  }
+  return '';
+}
+
+export function normalizeCheckoutItem(
+  item: CheckoutItemWithVariant
+): CheckoutItemWithVariant {
+  const normalizedOptions = normalizeVariantOptions(item.options ?? undefined);
+  const selectedSize =
+    normVariant(item.selectedSize) ||
+    optionValue(normalizedOptions, ['size', 'selectedsize']);
+  const selectedColor =
+    normVariant(item.selectedColor) ||
+    optionValue(normalizedOptions, ['color', 'selectedcolor']);
+
+  const variantKey = normVariant(item.variantKey);
+  let options = normalizedOptions;
+  if (selectedSize || selectedColor) {
+    options = {
+      ...(options ?? {}),
+      ...(selectedSize ? { size: selectedSize } : {}),
+      ...(selectedColor ? { color: selectedColor } : {}),
+    };
+  }
+
+  return {
+    ...item,
+    selectedSize,
+    selectedColor,
+    variantKey,
+    options: options ?? undefined,
+  };
+}
+
+function checkoutItemMergeKey(item: CheckoutItemWithVariant): string {
+  const normalized = normalizeCheckoutItem(item);
+  return JSON.stringify({
+    productId: normalized.productId,
+    selectedSize: normalized.selectedSize ?? '',
+    selectedColor: normalized.selectedColor ?? '',
+    variantKey: normalized.variantKey ?? '',
+    options: normalized.options ?? {},
+  });
 }
 
 export type DbClient = typeof db;
@@ -57,14 +139,12 @@ export function mergeCheckoutItems(items: CheckoutItem[]): CheckoutItem[] {
   const map = new Map<string, CheckoutItemWithVariant>();
 
   for (const item of items) {
-    const it = item as CheckoutItemWithVariant;
-    const selectedSize = normVariant(it.selectedSize);
-    const selectedColor = normVariant(it.selectedColor);
-    const key = createCartItemKey(item.productId, selectedSize, selectedColor);
+    const it = normalizeCheckoutItem(item as CheckoutItemWithVariant);
+    const key = checkoutItemMergeKey(it);
 
     const existing = map.get(key);
     if (!existing) {
-      map.set(key, { ...it, selectedSize, selectedColor });
+      map.set(key, { ...it });
       continue;
     }
     const mergedQty = existing.quantity + item.quantity;
@@ -92,33 +172,39 @@ export function aggregateReserveByProductId(
 export function hashIdempotencyRequest(params: {
   items: CheckoutItemWithVariant[];
   currency: string;
-  userId: string | null;
+  locale: string | null;
+  paymentProvider: PaymentProvider;
+  shipping:
+    | {
+        provider: 'nova_poshta';
+        methodCode: 'NP_WAREHOUSE' | 'NP_LOCKER' | 'NP_COURIER';
+        cityRef: string;
+        warehouseRef: string | null;
+      }
+    | null;
 }) {
   const normalized = [...params.items]
-    .map(i => ({
-      productId: i.productId,
-      quantity: i.quantity,
-      selectedSize: normVariant(i.selectedSize),
-      selectedColor: normVariant(i.selectedColor),
-    }))
+    .map(i => {
+      const normalizedItem = normalizeCheckoutItem(i);
+      return {
+        productId: normalizedItem.productId,
+        quantity: normalizedItem.quantity,
+        variantKey: normVariant(normalizedItem.variantKey),
+        options: normalizedItem.options ?? {},
+      };
+    })
     .sort((a, b) => {
-      const ka = createCartItemKey(
-        a.productId,
-        a.selectedSize ?? undefined,
-        a.selectedColor ?? undefined
-      );
-      const kb = createCartItemKey(
-        b.productId,
-        b.selectedSize ?? undefined,
-        b.selectedColor ?? undefined
-      );
+      const ka = JSON.stringify(a);
+      const kb = JSON.stringify(b);
       return ka.localeCompare(kb);
     });
 
   const payload = JSON.stringify({
-    v: 1,
+    v: 2,
     currency: params.currency,
-    userId: params.userId,
+    locale: normVariant(params.locale).toLowerCase(),
+    paymentProvider: params.paymentProvider,
+    shipping: params.shipping,
     items: normalized,
   });
 
