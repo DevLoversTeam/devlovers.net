@@ -73,6 +73,13 @@ const cases: RouteCase[] = [
     id: TEST_ORDER_ID,
   },
   {
+    name: 'admin/orders/[id]/shipping',
+    importPath: '@/app/api/shop/admin/orders/[id]/shipping/route',
+    path: (id: string) => `/api/shop/admin/orders/${id}/shipping`,
+    kind: 'dynamic-id',
+    id: TEST_ORDER_ID,
+  },
+  {
     name: 'admin/orders/reconcile-stale',
     importPath: '@/app/api/shop/admin/orders/reconcile-stale/route',
     path: '/api/shop/admin/orders/reconcile-stale',

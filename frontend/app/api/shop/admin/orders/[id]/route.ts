@@ -20,6 +20,73 @@ function noStoreJson(body: unknown, init?: { status?: number }) {
   return res;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function toStringOrNull(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function maskName(value: string | null): string | null {
+  if (!value) return null;
+  const v = value.trim();
+  if (v.length <= 2) return `${v[0] ?? '*'}*`;
+  return `${v.slice(0, 1)}***${v.slice(-1)}`;
+}
+
+function maskPhone(value: string | null): string | null {
+  if (!value) return null;
+  const v = value.trim();
+  if (v.startsWith('+380') && v.length >= 13) {
+    return `${v.slice(0, 4)}******${v.slice(-3)}`;
+  }
+  if (v.length <= 4) return '**';
+  return `${v.slice(0, 2)}***${v.slice(-2)}`;
+}
+
+function maskEmail(value: string | null): string | null {
+  if (!value) return null;
+  const v = value.trim();
+  const at = v.indexOf('@');
+  if (at <= 1) return '***';
+  return `${v.slice(0, 1)}***${v.slice(at - 1)}`;
+}
+
+function maskAddress(value: string | null): string | null {
+  if (!value) return null;
+  const v = value.trim();
+  if (v.length <= 6) return `${v.slice(0, 1)}***`;
+  return `${v.slice(0, 6)}***`;
+}
+
+function maskShippingAddress(raw: unknown): Record<string, unknown> | null {
+  if (!isRecord(raw)) return null;
+  const selection = isRecord(raw.selection) ? raw.selection : {};
+  const recipient = isRecord(raw.recipient) ? raw.recipient : {};
+
+  return {
+    provider: toStringOrNull(raw.provider),
+    methodCode: toStringOrNull(raw.methodCode),
+    selection: {
+      cityRef: toStringOrNull(selection.cityRef),
+      cityNameUa: toStringOrNull(selection.cityNameUa),
+      cityNameRu: toStringOrNull(selection.cityNameRu),
+      warehouseRef: toStringOrNull(selection.warehouseRef),
+      warehouseName: toStringOrNull(selection.warehouseName),
+      addressLine1: maskAddress(toStringOrNull(selection.addressLine1)),
+      addressLine2: maskAddress(toStringOrNull(selection.addressLine2)),
+    },
+    recipient: {
+      fullName: maskName(toStringOrNull(recipient.fullName)),
+      phone: maskPhone(toStringOrNull(recipient.phone)),
+      email: maskEmail(toStringOrNull(recipient.email)),
+    },
+  };
+}
+
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -80,6 +147,7 @@ export async function GET(
         success: true,
         order: {
           ...order,
+          shippingAddress: maskShippingAddress(order.shippingAddress),
           createdAt: order.createdAt.toISOString(),
           updatedAt: order.updatedAt.toISOString(),
           restockedAt: order.restockedAt

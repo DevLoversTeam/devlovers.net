@@ -40,6 +40,8 @@ type OrderDetail = {
   paymentStatus: OrderPaymentStatus;
   paymentProvider: OrderPaymentProvider;
   paymentIntentId: string | null;
+  shippingStatus: string | null;
+  trackingNumber: string | null;
   stockRestored: boolean;
   restockedAt: string | null;
   idempotencyKey: string;
@@ -151,6 +153,8 @@ export default async function OrderDetailPage({
           paymentStatus: orders.paymentStatus,
           paymentProvider: orders.paymentProvider,
           paymentIntentId: orders.paymentIntentId,
+          shippingStatus: orders.shippingStatus,
+          trackingNumber: orders.trackingNumber,
           stockRestored: orders.stockRestored,
           restockedAt: orders.restockedAt,
           idempotencyKey: orders.idempotencyKey,
@@ -266,6 +270,18 @@ export default async function OrderDetailPage({
             </dt>
             <dd className="text-sm font-medium">
               {String(order.paymentStatus)}
+            </dd>
+          </div>
+
+          <div>
+            <dt className="text-muted-foreground text-xs">Shipping status</dt>
+            <dd className="text-sm font-medium">{order.shippingStatus ?? '-'}</dd>
+          </div>
+
+          <div>
+            <dt className="text-muted-foreground text-xs">Tracking number</dt>
+            <dd className="text-sm font-medium break-all">
+              {order.trackingNumber ?? '-'}
             </dd>
           </div>
 
