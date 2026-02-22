@@ -2,7 +2,7 @@
 
 import { BookOpen, ChevronDown, GripVertical, RotateCcw, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { startTransition, useCallback, useEffect, useRef, useState } from 'react';
 
 import AIWordHelper from '@/components/q&a/AIWordHelper';
 import { getCachedTerms } from '@/lib/ai/explainCache';
@@ -17,6 +17,15 @@ export function ExplainedTermsCard() {
   const t = useTranslations('dashboard.explainedTerms');
   const [terms, setTerms] = useState<string[]>([]);
   const [hiddenTerms, setHiddenTerms] = useState<string[]>([]);
+
+  useEffect(() => {
+    const cached = getCachedTerms();
+    const hidden = getHiddenTerms();
+    startTransition(() => {
+      setTerms(sortTermsByOrder(cached.filter(term => !hidden.has(term.toLowerCase().trim()))));
+      setHiddenTerms(sortTermsByOrder(cached.filter(term => hidden.has(term.toLowerCase().trim()))));
+    });
+  }, []);
   const [showMore, setShowMore] = useState(false);
   const [selectedTerm, setSelectedTerm] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -28,23 +37,6 @@ export function ExplainedTermsCard() {
     y: number;
     label: string;
   } | null>(null);
-
-  useEffect(() => {
-    const cached = getCachedTerms();
-    const hidden = getHiddenTerms();
-
-    const visibleTerms = cached.filter(
-      term => !hidden.has(term.toLowerCase().trim())
-    );
-
-    const sortedTerms = sortTermsByOrder(visibleTerms);
-
-    setTerms(sortedTerms);
-    const hiddenArray = cached.filter(term =>
-      hidden.has(term.toLowerCase().trim())
-    );
-    setHiddenTerms(sortTermsByOrder(hiddenArray));
-  }, []);
 
   const handleRemoveTerm = (term: string) => {
     hideTermFromDashboard(term);
@@ -225,13 +217,7 @@ export function ExplainedTermsCard() {
   const hasTerms = terms.length > 0;
   const hasHiddenTerms = hiddenTerms.length > 0;
 
-  const cardStyles = `
-    relative z-10 flex flex-col overflow-hidden rounded-3xl
-    border border-gray-200 bg-white/10 shadow-sm backdrop-blur-md
-    dark:border-neutral-800 dark:bg-neutral-900/10
-    p-6 sm:p-8 lg:p-10 transition-all duration-300 hover:-translate-y-1 hover:shadow-md
-    hover:border-(--accent-primary)/30 dark:hover:border-(--accent-primary)/30
-  `;
+  const cardStyles = 'dashboard-card flex flex-col p-6 sm:p-8 lg:p-10';
 
   return (
     <>

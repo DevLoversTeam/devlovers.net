@@ -1,8 +1,10 @@
 'use client';
 
-import { ChevronDown, MessageSquare, Send, Paperclip } from 'lucide-react';
+import { ChevronDown, MessageSquare, Paperclip, Send, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
+
+const MAX_FILES = 5;
 
 interface FeedbackFormProps {
   userName?: string | null;
@@ -16,9 +18,12 @@ export function FeedbackForm({ userName, userEmail }: FeedbackFormProps) {
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [category, setCategory] = useState('');
   const [categoryError, setCategoryError] = useState(false);
-  const [attachmentName, setAttachmentName] = useState<string | null>(null);
+  const [attachmentNames, setAttachmentNames] = useState<string[]>([]);
+  const [fileLimitError, setFileLimitError] = useState(false);
   const categoryRef = useRef<HTMLDivElement>(null);
   const successTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const accumulatedFilesRef = useRef<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const categories = [
     { value: 'Bug Report', label: t('categoryBug') },
@@ -28,6 +33,13 @@ export function FeedbackForm({ userName, userEmail }: FeedbackFormProps) {
   ];
 
   const selectedLabel = categories.find(c => c.value === category)?.label;
+
+  function removeFile(name: string) {
+    const updated = accumulatedFilesRef.current.filter(f => f.name !== name);
+    accumulatedFilesRef.current = updated;
+    setAttachmentNames(updated.map(f => f.name));
+    if (updated.length < MAX_FILES) setFileLimitError(false);
+  }
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -59,12 +71,7 @@ export function FeedbackForm({ userName, userEmail }: FeedbackFormProps) {
     };
   }, []);
 
-  const cardStyles = `
-    relative overflow-hidden rounded-3xl
-    border border-gray-200 bg-white/10 shadow-sm backdrop-blur-md
-    dark:border-neutral-800 dark:bg-neutral-900/10
-    p-6 sm:p-8 lg:p-10
-  `;
+  const cardStyles = 'dashboard-card p-6 sm:p-8 lg:p-10';
 
   const inputStyles =
     'w-full rounded-xl border border-gray-200 dark:border-white/10 bg-white/50 dark:bg-neutral-800/50 px-4 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none transition-colors focus:border-(--accent-primary) focus:ring-1 focus:ring-(--accent-primary)';
@@ -86,23 +93,15 @@ export function FeedbackForm({ userName, userEmail }: FeedbackFormProps) {
     setLoading(true);
     setStatus('idle');
 
-    const accessKey = process.env.NEXT_PUBLIC_WEB3FORMS_KEY;
-    if (!accessKey) {
-      console.error(
-        'FeedbackForm: NEXT_PUBLIC_WEB3FORMS_KEY is not defined. Add it to your .env file.'
-      );
-      setStatus('error');
-      setLoading(false);
-      return;
-    }
-
     const formData = new FormData(e.currentTarget);
-    formData.append('access_key', accessKey);
-    formData.append('subject', `DevLovers Feedback: ${formData.get('category')}`);
+    // Replace the stale file input value with our accumulated files
+    formData.delete('attachment');
+    for (const f of accumulatedFilesRef.current) {
+      formData.append('attachment', f);
+    }
     try {
-      const res = await fetch('https://api.web3forms.com/submit', {
+      const res = await fetch('/api/feedback', {
         method: 'POST',
-        headers: { Accept: 'application/json' },
         body: formData,
       });
 
@@ -111,7 +110,8 @@ export function FeedbackForm({ userName, userEmail }: FeedbackFormProps) {
       if (result.success) {
         setStatus('success');
         setCategory('');
-        setAttachmentName(null);
+        setAttachmentNames([]);
+        accumulatedFilesRef.current = [];
         (e.target as HTMLFormElement).reset();
         successTimerRef.current = setTimeout(() => setStatus('idle'), 5000);
       } else {
@@ -152,8 +152,6 @@ export function FeedbackForm({ userName, userEmail }: FeedbackFormProps) {
         </div>
       ) : (
         <form onSubmit={onSubmit} className="space-y-4">
-          <input type="hidden" name="botcheck" className="hidden" />
-
           <div className="grid gap-4 sm:grid-cols-2">
             <input
               name="name"
@@ -170,10 +168,8 @@ export function FeedbackForm({ userName, userEmail }: FeedbackFormProps) {
               type="email"
               placeholder={t('email')}
               defaultValue={userEmail ?? ''}
-              required
-              onInvalid={e => (e.target as HTMLInputElement).setCustomValidity(t('requiredField'))}
-              onInput={e => (e.target as HTMLInputElement).setCustomValidity('')}
-              className={inputStyles}
+              readOnly
+              className={`${inputStyles} cursor-default select-none`}
             />
           </div>
 
@@ -244,25 +240,70 @@ export function FeedbackForm({ userName, userEmail }: FeedbackFormProps) {
 
             <div className="w-full sm:w-auto">
               <input
+                ref={fileInputRef}
                 type="file"
                 name="attachment"
                 id="feedback-attachment"
-                accept="image/png, image/jpeg, image/jpg, image/webp"
+                accept="image/png, image/jpeg, image/jpg, image/webp, image/gif, application/pdf, text/plain, .doc, .docx, .xls, .xlsx"
+                multiple
                 className="hidden"
                 onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  setAttachmentName(file ? file.name : null);
+                  const newFiles = Array.from(e.target.files ?? []);
+                  const merged = [...accumulatedFilesRef.current];
+                  let limitReached = false;
+                  for (const f of newFiles) {
+                    if (!merged.some(ex => ex.name === f.name)) {
+                      if (merged.length >= MAX_FILES) {
+                        limitReached = true;
+                        break;
+                      }
+                      merged.push(f);
+                    }
+                  }
+                  if (limitReached) setFileLimitError(true);
+                  accumulatedFilesRef.current = merged;
+                  setAttachmentNames(merged.map(f => f.name));
+                  // Reset so the same file can be re-picked and input is ready for next selection
+                  if (fileInputRef.current) fileInputRef.current.value = '';
                 }}
               />
               <label
                 htmlFor="feedback-attachment"
-                className={`w-full sm:w-auto inline-flex cursor-pointer items-center justify-center gap-2 rounded-full border border-gray-200 bg-white/50 px-8 py-3 text-sm font-semibold tracking-widest uppercase text-gray-600 transition-colors hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-(--accent-primary)/50 dark:border-white/10 dark:bg-neutral-900/50 dark:text-gray-300 dark:hover:bg-neutral-800`}
+                className="w-full sm:w-auto inline-flex cursor-pointer items-center justify-center gap-2 rounded-full border border-gray-200 bg-white/50 px-8 py-3 text-sm font-semibold tracking-widest uppercase text-gray-600 transition-colors hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-(--accent-primary)/50 dark:border-white/10 dark:bg-neutral-900/50 dark:text-gray-300 dark:hover:bg-neutral-800"
               >
                 <Paperclip className="h-4 w-4" />
-                <span className="max-w-[150px] sm:max-w-none truncate">{attachmentName || t('attachFile')}</span>
+                <span>{t('attachFile')}</span>
               </label>
             </div>
           </div>
+
+          {fileLimitError && (
+            <p className="text-xs text-red-500 dark:text-red-400">
+              {t('tooManyFiles', { max: MAX_FILES })}
+            </p>
+          )}
+
+          {attachmentNames.length > 0 && (
+            <ul className="flex flex-wrap gap-2">
+              {attachmentNames.map(name => (
+                <li
+                  key={name}
+                  className="flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs text-gray-600 dark:border-white/10 dark:bg-neutral-800 dark:text-gray-300"
+                >
+                  <Paperclip className="h-3 w-3 shrink-0" />
+                  <span className="max-w-40 truncate">{name}</span>
+                  <button
+                    type="button"
+                    onClick={() => removeFile(name)}
+                    className="ml-0.5 rounded-full p-0.5 hover:bg-gray-200 dark:hover:bg-neutral-700"
+                    aria-label={t('removeFile', { name })}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </form>
       )}
     </section>
