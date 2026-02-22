@@ -56,7 +56,10 @@ export async function getAllStargazers(): Promise<StargazerEntry[]> {
         headers: makeHeaders(),
         next: { revalidate: 3600 },
       });
-      if (!res.ok) break;
+      if (!res.ok) {
+        console.warn(`⚠️ GitHub stargazers API error [${url}]: ${res.status} ${res.statusText}`);
+        break;
+      }
 
       const pageData: { login: string; avatar_url: string }[] = await res.json();
       if (pageData.length === 0) break;
@@ -69,7 +72,8 @@ export async function getAllStargazers(): Promise<StargazerEntry[]> {
       }
 
       if (pageData.length < 100) break;
-    } catch {
+    } catch (err) {
+      console.error(`❌ Failed to fetch GitHub stargazers [${url}]:`, err);
       break;
     }
   }

@@ -1202,7 +1202,9 @@
       "attachFile": "Attach File",
       "success": "Thank you! Your feedback has been sent.",
       "error": "Something went wrong. Please try again.",
-      "requiredField": "Please fill out this field."
+      "requiredField": "Please fill out this field.",
+      "tooManyFiles": "You can attach up to {max} files.",
+      "removeFile": "Remove {name}"
     },
     "achievements": {
       "title": "Achievements",

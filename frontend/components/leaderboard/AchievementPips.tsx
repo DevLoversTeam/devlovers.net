@@ -21,7 +21,7 @@ import {
   Waves,
 } from '@phosphor-icons/react';
 import { useTranslations } from 'next-intl';
-import { useState, useSyncExternalStore } from 'react';
+import { useRef, useState, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 
 import type { Achievement, AchievementIconName } from '@/lib/achievements';
@@ -49,6 +49,10 @@ const ICON_MAP: Record<AchievementIconName, React.ElementType> = {
 
 const HEX = 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)';
 
+// Half the maximum tooltip width (generous estimate for longest badge label).
+// Used to clamp the tooltip anchor so it never overflows the viewport edge.
+const TOOLTIP_HALF_W = 60;
+
 interface TooltipState {
   label: string;
   x: number;
@@ -73,6 +77,7 @@ function getSponsorBadgeClasses(id: string): string {
 export function AchievementPips({ achievements }: AchievementPipsProps) {
   const t = useTranslations('dashboard.achievements');
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+  const scrollResizeCleanupRef = useRef<(() => void) | null>(null);
   const mounted = useSyncExternalStore(
     () => () => {},
     () => true,
@@ -102,14 +107,27 @@ export function AchievementPips({ achievements }: AchievementPipsProps) {
     achievement: Achievement
   ) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    setTooltip({
-      label: t(`badges.${achievement.id}.name`),
-      x: rect.left + rect.width / 2,
-      y: rect.top,
-    });
+    const rawX = rect.left + rect.width / 2;
+    const x = Math.min(
+      Math.max(rawX, TOOLTIP_HALF_W),
+      window.innerWidth - TOOLTIP_HALF_W
+    );
+    setTooltip({ label: t(`badges.${achievement.id}.name`), x, y: rect.top });
+
+    const hide = () => setTooltip(null);
+    window.addEventListener('scroll', hide, { passive: true, capture: true });
+    window.addEventListener('resize', hide, { passive: true });
+    scrollResizeCleanupRef.current = () => {
+      window.removeEventListener('scroll', hide, { capture: true });
+      window.removeEventListener('resize', hide);
+    };
   };
 
-  const handleMouseLeave = () => setTooltip(null);
+  const handleMouseLeave = () => {
+    setTooltip(null);
+    scrollResizeCleanupRef.current?.();
+    scrollResizeCleanupRef.current = null;
+  };
 
   return (
     <>

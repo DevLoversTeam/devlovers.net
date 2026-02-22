@@ -2,7 +2,7 @@
 
 import { BookOpen, ChevronDown, GripVertical, RotateCcw, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { startTransition, useCallback, useEffect, useRef, useState } from 'react';
 
 import AIWordHelper from '@/components/q&a/AIWordHelper';
 import { getCachedTerms } from '@/lib/ai/explainCache';
@@ -15,22 +15,17 @@ import { saveTermOrder, sortTermsByOrder } from '@/lib/ai/termOrder';
 
 export function ExplainedTermsCard() {
   const t = useTranslations('dashboard.explainedTerms');
-  const [terms, setTerms] = useState<string[]>(() => {
-    if (typeof window === 'undefined') return [];
+  const [terms, setTerms] = useState<string[]>([]);
+  const [hiddenTerms, setHiddenTerms] = useState<string[]>([]);
+
+  useEffect(() => {
     const cached = getCachedTerms();
     const hidden = getHiddenTerms();
-    return sortTermsByOrder(
-      cached.filter(term => !hidden.has(term.toLowerCase().trim()))
-    );
-  });
-  const [hiddenTerms, setHiddenTerms] = useState<string[]>(() => {
-    if (typeof window === 'undefined') return [];
-    const cached = getCachedTerms();
-    const hidden = getHiddenTerms();
-    return sortTermsByOrder(
-      cached.filter(term => hidden.has(term.toLowerCase().trim()))
-    );
-  });
+    startTransition(() => {
+      setTerms(sortTermsByOrder(cached.filter(term => !hidden.has(term.toLowerCase().trim()))));
+      setHiddenTerms(sortTermsByOrder(cached.filter(term => hidden.has(term.toLowerCase().trim()))));
+    });
+  }, []);
   const [showMore, setShowMore] = useState(false);
   const [selectedTerm, setSelectedTerm] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);

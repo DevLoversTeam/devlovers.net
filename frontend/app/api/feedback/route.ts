@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
 
+import {
+  enforceRateLimit,
+  getRateLimitSubject,
+  rateLimitResponse,
+} from '@/lib/security/rate-limit';
+
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 const MAX_FILES = 5;
+const EMAIL_RE = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]{1,64}@[a-zA-Z0-9.-]{1,253}$/;
 
 function escapeHtml(str: string): string {
   return str
@@ -14,6 +21,14 @@ function escapeHtml(str: string): string {
 }
 
 export async function POST(req: NextRequest) {
+  const subject = getRateLimitSubject(req);
+  const rl = await enforceRateLimit({
+    key: `feedback:${subject}`,
+    limit: 5,
+    windowSeconds: 3600, // 5 submissions per IP per hour
+  });
+  if (!rl.ok) return rateLimitResponse({ retryAfterSeconds: rl.retryAfterSeconds });
+
   const gmailUser = process.env.GMAIL_USER;
   const gmailPass = process.env.GMAIL_APP_PASSWORD;
   const emailFrom = process.env.EMAIL_FROM;
@@ -38,6 +53,13 @@ export async function POST(req: NextRequest) {
   if (!name || !email || !category || !message) {
     return NextResponse.json({ success: false }, { status: 400 });
   }
+
+  if (!EMAIL_RE.test(email)) {
+    return NextResponse.json({ success: false }, { status: 400 });
+  }
+
+  // Strip CRLF and RFC 5322 specials from email before use in headers
+  const safeEmail = email.replace(/[\r\n<>"]/g, '');
 
   const rawFiles = formData.getAll('attachment');
   const files = rawFiles.filter((f): f is File => f instanceof File && f.size > 0);
@@ -67,9 +89,9 @@ export async function POST(req: NextRequest) {
   try {
     await mailer.sendMail({
       from: emailFrom,
-      replyTo: safeNameForHeader ? `"${safeNameForHeader}" <${email}>` : email,
+      replyTo: safeNameForHeader ? `"${safeNameForHeader}" <${safeEmail}>` : safeEmail,
       to: emailFrom,
-      subject: `DevLovers Feedback: ${escapeHtml(category)}`,
+      subject: `DevLovers Feedback: ${category.replace(/[\r\n]/g, '')}`,
       html: `
         <p><strong>Name:</strong> ${escapeHtml(name)}</p>
         <p><strong>Email:</strong> ${escapeHtml(email)}</p>

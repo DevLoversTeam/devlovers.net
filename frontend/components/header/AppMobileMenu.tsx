@@ -118,19 +118,29 @@ export function AppMobileMenu({
         : 'text-muted-foreground active:text-[var(--accent-hover)]'
     }`;
 
-  // Lock body scroll when menu is open
+  // Lock body scroll when menu is open.
+  // overflow:hidden on <html> works on desktop but iOS Safari ignores it for
+  // touch events. Adding a non-passive touchmove listener lets us call
+  // preventDefault() to block background scrolling while still allowing the
+  // nav itself (which has overflow-y-auto) to scroll normally.
   useEffect(() => {
-    if (open) {
-      // Use overflow:hidden on <html> instead of position:fixed on <body>.
-      // position:fixed shifts the body by -scrollY which hides the sticky
-      // header; overflow:hidden keeps everything in place.
-      const prev = document.documentElement.style.overflowY;
-      document.documentElement.style.overflowY = 'hidden';
+    if (!open) return;
 
-      return () => {
-        document.documentElement.style.overflowY = prev;
-      };
-    }
+    const prev = document.documentElement.style.overflowY;
+    document.documentElement.style.overflowY = 'hidden';
+
+    const preventTouchMove = (e: TouchEvent) => {
+      const nav = document.getElementById('app-mobile-nav');
+      if (nav && nav.contains(e.target as Node)) return;
+      e.preventDefault();
+    };
+
+    document.addEventListener('touchmove', preventTouchMove, { passive: false });
+
+    return () => {
+      document.documentElement.style.overflowY = prev;
+      document.removeEventListener('touchmove', preventTouchMove);
+    };
   }, [open]);
 
   return (

@@ -4,6 +4,8 @@ import { ChevronDown, MessageSquare, Paperclip, Send, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 
+const MAX_FILES = 5;
+
 interface FeedbackFormProps {
   userName?: string | null;
   userEmail?: string | null;
@@ -17,6 +19,7 @@ export function FeedbackForm({ userName, userEmail }: FeedbackFormProps) {
   const [category, setCategory] = useState('');
   const [categoryError, setCategoryError] = useState(false);
   const [attachmentNames, setAttachmentNames] = useState<string[]>([]);
+  const [fileLimitError, setFileLimitError] = useState(false);
   const categoryRef = useRef<HTMLDivElement>(null);
   const successTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const accumulatedFilesRef = useRef<File[]>([]);
@@ -35,6 +38,7 @@ export function FeedbackForm({ userName, userEmail }: FeedbackFormProps) {
     const updated = accumulatedFilesRef.current.filter(f => f.name !== name);
     accumulatedFilesRef.current = updated;
     setAttachmentNames(updated.map(f => f.name));
+    if (updated.length < MAX_FILES) setFileLimitError(false);
   }
 
   useEffect(() => {
@@ -246,11 +250,17 @@ export function FeedbackForm({ userName, userEmail }: FeedbackFormProps) {
                 onChange={(e) => {
                   const newFiles = Array.from(e.target.files ?? []);
                   const merged = [...accumulatedFilesRef.current];
+                  let limitReached = false;
                   for (const f of newFiles) {
                     if (!merged.some(ex => ex.name === f.name)) {
+                      if (merged.length >= MAX_FILES) {
+                        limitReached = true;
+                        break;
+                      }
                       merged.push(f);
                     }
                   }
+                  if (limitReached) setFileLimitError(true);
                   accumulatedFilesRef.current = merged;
                   setAttachmentNames(merged.map(f => f.name));
                   // Reset so the same file can be re-picked and input is ready for next selection
@@ -267,6 +277,12 @@ export function FeedbackForm({ userName, userEmail }: FeedbackFormProps) {
             </div>
           </div>
 
+          {fileLimitError && (
+            <p className="text-xs text-red-500 dark:text-red-400">
+              {t('tooManyFiles', { max: MAX_FILES })}
+            </p>
+          )}
+
           {attachmentNames.length > 0 && (
             <ul className="flex flex-wrap gap-2">
               {attachmentNames.map(name => (
@@ -280,7 +296,7 @@ export function FeedbackForm({ userName, userEmail }: FeedbackFormProps) {
                     type="button"
                     onClick={() => removeFile(name)}
                     className="ml-0.5 rounded-full p-0.5 hover:bg-gray-200 dark:hover:bg-neutral-700"
-                    aria-label={`Remove ${name}`}
+                    aria-label={t('removeFile', { name })}
                   >
                     <X className="h-3 w-3" />
                   </button>

@@ -104,37 +104,30 @@ export function LeaderboardTable({
           )}
 
           <div className="overflow-hidden rounded-3xl border border-gray-200 bg-white/10 shadow-sm backdrop-blur-md dark:border-neutral-800 dark:bg-neutral-900/10">
-            {contextRows.map(user => {
-              const isMe =
-                user.userId === normalizedCurrentUserId ||
-                (currentUsername && user.username === currentUsername);
+            <table className="w-full table-fixed border-separate border-spacing-0 text-left">
+              <colgroup>
+                <col className="w-[15%] sm:w-[12%]" />
+                <col />
+                <col className="w-[25%] sm:w-[20%]" />
+              </colgroup>
+              <tbody>
+                {contextRows.map(user => {
+                  const isMe =
+                    user.userId === normalizedCurrentUserId ||
+                    (currentUsername && user.username === currentUsername);
 
-              return (
-                <div
-                  key={user.id}
-                  className={cn(
-                    isMe &&
-                      '[box-shadow:inset_0_0_0_2px_color-mix(in_srgb,var(--accent-primary)_70%,transparent),inset_0_0_20px_color-mix(in_srgb,var(--accent-primary)_30%,transparent)]'
-                  )}
-                >
-                  <table className="w-full table-fixed border-separate border-spacing-0 text-left">
-                    <colgroup>
-                      <col className="w-[15%] sm:w-[12%]" />
-                      <col />
-                      <col className="w-[25%] sm:w-[20%]" />
-                    </colgroup>
-                    <tbody>
-                      <TableRow
-                        user={user}
-                        isCurrentUser={!!isMe}
-                        inContext
-                        t={t}
-                      />
-                    </tbody>
-                  </table>
-                </div>
-              );
-            })}
+                  return (
+                    <TableRow
+                      key={user.id}
+                      user={user}
+                      isCurrentUser={!!isMe}
+                      inContext
+                      t={t}
+                    />
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </>
       )}
@@ -153,7 +146,7 @@ function TableRow({
   inContext?: boolean;
   t: ReturnType<typeof useTranslations>;
 }) {
-  // inContext = true  → glow is on the wrapper div; cells stay plain
+  // inContext = true  → glow applied on <tr>; cells stay plain
   // inContext = false → top-15 row; accent borders drawn on cells directly
   const cellClass = cn(
     'px-2 sm:px-6 py-3 sm:py-4 border-b',
@@ -179,7 +172,10 @@ function TableRow({
         'group transition-all duration-300',
         isCurrentUser
           ? 'bg-[color-mix(in_srgb,var(--accent-primary),transparent_90%)]'
-          : 'hover:bg-white/30 dark:hover:bg-white/5'
+          : 'hover:bg-white/30 dark:hover:bg-white/5',
+        isCurrentUser &&
+          inContext &&
+          '[box-shadow:inset_0_0_0_2px_color-mix(in_srgb,var(--accent-primary)_70%,transparent),inset_0_0_20px_color-mix(in_srgb,var(--accent-primary)_30%,transparent)]'
       )}
     >
       <td className={cn(cellClass, leftBorderClass)}>

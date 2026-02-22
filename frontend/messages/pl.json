@@ -1204,7 +1204,9 @@
       "attachFile": "Dołącz plik",
       "success": "Dziękujemy! Twoja opinia została wysłana.",
       "error": "Coś poszło nie tak. Spróbuj ponownie.",
-      "requiredField": "Proszę wypełnić to pole."
+      "requiredField": "Proszę wypełnić to pole.",
+      "tooManyFiles": "Możesz dołączyć maksymalnie {max} pliki.",
+      "removeFile": "Usuń {name}"
     },
     "achievements": {
       "title": "Osiągnięcia",
