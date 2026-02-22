@@ -119,46 +119,53 @@ export async function POST(
         }))
       )
       .returning({ id: quizQuestions.id });
+    try {
+      // 2. Insert question content
+      await db.insert(quizQuestionContent).values(
+        insertedQuestions.flatMap((dbQ, i) =>
+          LOCALES.map(locale => ({
+            quizQuestionId: dbQ.id,
+            locale,
+            questionText: questions[i][locale].q,
+            explanation: textToExplanationBlocks(questions[i][locale].exp),
+          }))
+        )
+      );
 
-    // 2. Insert question content
-    await db.insert(quizQuestionContent).values(
-      insertedQuestions.flatMap((dbQ, i) =>
-        LOCALES.map(locale => ({
+      // 3. Insert answers
+      const answerValues = insertedQuestions.flatMap((dbQ, i) =>
+        questions[i].answers.map((a, aIdx) => ({
           quizQuestionId: dbQ.id,
-          locale,
-          questionText: questions[i][locale].q,
-          explanation: textToExplanationBlocks(questions[i][locale].exp),
+          displayOrder: aIdx + 1,
+          isCorrect: a.correct,
         }))
-      )
-    );
+      );
 
-    // 3. Insert answers
-    const answerValues = insertedQuestions.flatMap((dbQ, i) =>
-      questions[i].answers.map((a, aIdx) => ({
-        quizQuestionId: dbQ.id,
-        displayOrder: aIdx + 1,
-        isCorrect: a.correct,
-      }))
-    );
+      const insertedAnswers = await db
+        .insert(quizAnswers)
+        .values(answerValues)
+        .returning({ id: quizAnswers.id });
 
-    const insertedAnswers = await db
-      .insert(quizAnswers)
-      .values(answerValues)
-      .returning({ id: quizAnswers.id });
-
-    // 4. Insert answer translations
-    await db.insert(quizAnswerTranslations).values(
-      insertedAnswers.flatMap((dbA, i) => {
-        const qIdx = Math.floor(i / 4);
-        const aIdx = i % 4;
-        return LOCALES.map(locale => ({
-          quizAnswerId: dbA.id,
-          locale,
-          answerText: questions[qIdx].answers[aIdx][locale],
-        }));
-      })
-    );
-
+      // 4. Insert answer translations
+      await db.insert(quizAnswerTranslations).values(
+        insertedAnswers.flatMap((dbA, i) => {
+          const qIdx = Math.floor(i / 4);
+          const aIdx = i % 4;
+          return LOCALES.map(locale => ({
+            quizAnswerId: dbA.id,
+            locale,
+            answerText: questions[qIdx].answers[aIdx][locale],
+          }));
+        })
+      );
+    } catch(insertError) {
+      // Delete inserted questions — CASCADE removes content, answers, translations
+      const questionIds = insertedQuestions.map(q => q.id);
+      await db.delete(quizQuestions).where(
+        sql`${quizQuestions.id} IN ${questionIds}`
+      );
+      throw insertError;
+    }
     // 5. Update questionsCount
     const [countRow] = await db
       .select({ count: sql<number>`COUNT(*)::int` })

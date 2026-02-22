@@ -74,6 +74,9 @@ export function JsonUploadArea({ onQuestionsChange }: JsonUploadAreaProps) {
       <div
         className="border-border hover:border-foreground/30 cursor-pointer rounded-lg border-2 border-dashed p-6 text-center transition-colors"
         onClick={() => inputRef.current?.click()}
+        role="button"
+        tabIndex={0}
+        onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && inputRef.current?.click()}
       >
         <input
           ref={inputRef}

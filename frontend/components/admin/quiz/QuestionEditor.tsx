@@ -14,6 +14,8 @@ import { type AdminLocale, LocaleTabs } from './LocaleTabs';
 
 const ALL_LOCALES: AdminLocale[] = ['en', 'uk', 'pl'];
 
+type Difficulty = 'beginner' | 'medium' | 'advanced';
+
 type LocaleContent = {
   questionText: string;
   explanation: AnswerBlock[];
@@ -29,7 +31,7 @@ type AnswerState = {
 type EditorState = {
   locales: Record<AdminLocale, LocaleContent>;
   answers: AnswerState[];
-  difficulty: string;
+  difficulty: Difficulty;
 };
 
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
@@ -60,7 +62,7 @@ function initEditorState(question: AdminQuizQuestion): EditorState {
         pl: a.translations.pl?.answerText ?? '',
       },
     })),
-   difficulty: question.difficulty!,
+   difficulty: question.difficulty as Difficulty,
   };
 }
 
@@ -230,7 +232,7 @@ export function QuestionEditor({
     setDirtyLocales(new Set(ALL_LOCALES));
   }
 
-  function handleDifficultyChange(value: string) {
+  function handleDifficultyChange(value: Difficulty) {
     setEditorState(prev => ({ ...prev, difficulty: value }));
   }
 
@@ -248,14 +250,17 @@ export function QuestionEditor({
   }
 
   async function handleSave() {
-    const error = validate(editorState);
-    if (error) {
-      setValidationError(error);
-      return;
+    // Skip locale validation for difficulty-only saves
+    if (dirtyLocales.size > 0) {
+      const error = validate(editorState);
+      if (error) {
+        setValidationError(error);
+        return;
+      }
     }
     setValidationError(null);
 
-    if (dirtyLocales.size < 3) {
+    if (dirtyLocales.size > 0 && dirtyLocales.size < 3) {
       const untouched = ALL_LOCALES.filter(l => !dirtyLocales.has(l))
         .map(l => l.toUpperCase())
         .join(', ');
@@ -415,7 +420,7 @@ export function QuestionEditor({
           </label>
           <select
             value={editorState.difficulty}
-            onChange={e => handleDifficultyChange(e.target.value)}
+            onChange={e => handleDifficultyChange(e.target.value as Difficulty)}
             className="border-border bg-background text-foreground rounded-md border px-3 py-2 text-sm"
           >
             <option value="beginner">Beginner</option>

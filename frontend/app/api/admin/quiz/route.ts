@@ -110,66 +110,72 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const quizId = quiz.id;
 
-    // 2. Insert quiz translations
-    await db.insert(quizTranslations).values(
-      LOCALES.map(locale => ({
-        quizId,
-        locale,
-        title: translations[locale].title,
-        description: translations[locale].description,
-      }))
-    );
-
-    // 3. Insert questions + get IDs
-    const insertedQuestions = await db
-      .insert(quizQuestions)
-      .values(
-        questions.map(q => ({
-          quizId,
-          displayOrder: q.order,
-          difficulty: q.difficulty,
-        }))
-      )
-      .returning({ id: quizQuestions.id });
-
-    // 4. Insert question content (3 locales per question)
-    await db.insert(quizQuestionContent).values(
-      insertedQuestions.flatMap((dbQ, i) =>
+    try {
+      // 2. Insert quiz translations
+      await db.insert(quizTranslations).values(
         LOCALES.map(locale => ({
-          quizQuestionId: dbQ.id,
+          quizId,
           locale,
-          questionText: questions[i][locale].q,
-          explanation: textToExplanationBlocks(questions[i][locale].exp),
+          title: translations[locale].title,
+          description: translations[locale].description,
         }))
-      )
-    );
+      );
 
-    // 5. Insert answers (4 per question) + get IDs
-    const answerValues = insertedQuestions.flatMap((dbQ, i) =>
-      questions[i].answers.map((a, aIdx) => ({
-        quizQuestionId: dbQ.id,
-        displayOrder: aIdx + 1,
-        isCorrect: a.correct,
-      }))
-    );
+      // 3. Insert questions + get IDs
+      const insertedQuestions = await db
+        .insert(quizQuestions)
+        .values(
+          questions.map(q => ({
+            quizId,
+            displayOrder: q.order,
+            difficulty: q.difficulty,
+          }))
+        )
+        .returning({ id: quizQuestions.id });
 
-    const insertedAnswers = await db
-      .insert(quizAnswers)
-      .values(answerValues)
-      .returning({ id: quizAnswers.id });
+      // 4. Insert question content (3 locales per question)
+      await db.insert(quizQuestionContent).values(
+        insertedQuestions.flatMap((dbQ, i) =>
+          LOCALES.map(locale => ({
+            quizQuestionId: dbQ.id,
+            locale,
+            questionText: questions[i][locale].q,
+            explanation: textToExplanationBlocks(questions[i][locale].exp),
+          }))
+        )
+      );
 
-    // 6. Insert answer translations (3 locales per answer)
-    await db.insert(quizAnswerTranslations).values(
-      insertedAnswers.flatMap((dbA, i) => {
-        const qIdx = Math.floor(i / 4);
-        const aIdx = i % 4;
-        return LOCALES.map(locale => ({
-          quizAnswerId: dbA.id,
-          locale,
-          answerText: questions[qIdx].answers[aIdx][locale],
-        }));
-      })
-    );
+      // 5. Insert answers (4 per question) + get IDs
+      const answerValues = insertedQuestions.flatMap((dbQ, i) =>
+        questions[i].answers.map((a, aIdx) => ({
+          quizQuestionId: dbQ.id,
+          displayOrder: aIdx + 1,
+          isCorrect: a.correct,
+        }))
+      );
+
+      const insertedAnswers = await db
+        .insert(quizAnswers)
+        .values(answerValues)
+        .returning({ id: quizAnswers.id });
+
+      // 6. Insert answer translations (3 locales per answer)
+      await db.insert(quizAnswerTranslations).values(
+        insertedAnswers.flatMap((dbA, i) => {
+          const qIdx = Math.floor(i / 4);
+          const aIdx = i % 4;
+          return LOCALES.map(locale => ({
+            quizAnswerId: dbA.id,
+            locale,
+            answerText: questions[qIdx].answers[aIdx][locale],
+          }));
+        })
+      );
+    } catch (insertError) {
+      // Delete quiz — CASCADE removes translations, questions, content, answers, answer translations
+      await db.delete(quizzes).where(eq(quizzes.id, quizId));
+      throw insertError;
+    }
 
     return noStoreJson({ success: true, quizId });
   } catch (error) {

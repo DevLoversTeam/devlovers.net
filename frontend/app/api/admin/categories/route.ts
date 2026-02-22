@@ -57,20 +57,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const { slug, translations } = parsed.data;
 
-    // Check duplicate slug
-    const [existing] = await db
-      .select({ id: categories.id })
-      .from(categories)
-      .where(eq(categories.slug, slug))
-      .limit(1);
-
-    if (existing) {
-      return noStoreJson(
-        { error: 'Category with this slug already exists', code: 'DUPLICATE_SLUG' },
-        { status: 409 }
-      );
-    }
-
     // Auto displayOrder
     const [maxRow] = await db
       .select({ maxOrder: max(categories.displayOrder) })
@@ -78,20 +64,35 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const displayOrder = (maxRow?.maxOrder ?? 0) + 1;
 
-    // Insert category
-    const [category] = await db
+    // Insert category (onConflictDoNothing handles duplicate slug race)
+    const rows = await db
       .insert(categories)
       .values({ slug, displayOrder })
+      .onConflictDoNothing({ target: categories.slug })
       .returning({ id: categories.id });
 
-    // Insert translations
-    await db.insert(categoryTranslations).values(
-      LOCALES.map(locale => ({
-        categoryId: category.id,
-        locale,
-        title: translations[locale].title,
-      }))
-    );
+    if (rows.length === 0) {
+      return noStoreJson(
+        { error: 'Category with this slug already exists', code: 'DUPLICATE_SLUG' },
+        { status: 409 }
+      );
+    }
+
+    const category = rows[0];
+
+    // Insert translations (cleanup orphan category on failure)
+    try {
+      await db.insert(categoryTranslations).values(
+        LOCALES.map(locale => ({
+          categoryId: category.id,
+          locale,
+          title: translations[locale].title,
+        }))
+      );
+    } catch (translationError) {
+      await db.delete(categories).where(eq(categories.id, category.id));
+      throw translationError;
+    }
 
     return noStoreJson({
       success: true,

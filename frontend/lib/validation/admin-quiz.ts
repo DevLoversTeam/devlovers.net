@@ -15,9 +15,7 @@ const patchQuestionAnswerSchema = z.object({
 });
 
 export const patchQuestionSchema = z.object({
-  dirtyLocales: z
-    .array(localeSchema)
-    .min(1, 'At least one locale must be dirty'),
+  dirtyLocales: z.array(localeSchema),
   difficulty: z.enum(['beginner', 'medium', 'advanced']).optional(),
     translations: z.object({
     en: z.object({
@@ -39,7 +37,10 @@ export const patchQuestionSchema = z.object({
         answers => answers.filter(a => a.isCorrect).length === 1,
         { message: 'Exactly one correct answer required' }
     ),
-});
+}).refine(
+  data => data.dirtyLocales.length > 0 || data.difficulty !== undefined,
+  { message: 'At least one locale must be dirty or difficulty must be provided' }
+);
 
 export type PatchQuestionBody = z.infer<typeof patchQuestionSchema>;
 
@@ -53,7 +54,7 @@ const jsonQuestionAnswerSchema = z.object({
 });
 
 export const jsonQuestionSchema = z.object({
-  id: z.string().optional(),
+  id: z.string().uuid().optional(),
   order: z.number().int().positive(),
   difficulty: z.enum(['beginner', 'medium', 'advanced']),
   uk: z.object({

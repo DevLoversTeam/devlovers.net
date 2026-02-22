@@ -135,7 +135,7 @@ export function QuizMetadataEditor({
             <h3 className="text-foreground text-sm font-medium">Metadata</h3>
             <p className="text-muted-foreground mt-1 text-xs">
               {t.title || 'No title'} &middot;{' '}
-              {timeLimitSeconds ? `${timeLimitSeconds / 60} min` : 'No time limit'}
+              {timeLimitSeconds ? `${Math.round(timeLimitSeconds / 60)} min` : 'No time limit'}
             </p>
           </div>
           <button
