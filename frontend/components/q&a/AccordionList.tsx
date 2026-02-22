@@ -36,6 +36,24 @@ import {
 import { categoryTabStyles } from '@/data/categoryStyles';
 import { CACHE_KEY, getCachedTerms } from '@/lib/ai/explainCache';
 
+type QaItemStyle = CSSProperties & {
+  '--qa-accent': string;
+  '--qa-accent-soft': string;
+};
+
+function normalizeCachedTerm(term: string): string {
+  return term.toLowerCase().trim();
+}
+
+function hexToRgba(hex: string, alpha: number): string {
+  const normalized = hex.replace('#', '');
+  if (normalized.length !== 6) return `rgba(0, 0, 0, ${alpha})`;
+  const r = parseInt(normalized.slice(0, 2), 16);
+  const g = parseInt(normalized.slice(2, 4), 16);
+  const b = parseInt(normalized.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 function isListItemBlock(value: ListEntry): value is ListItemBlock {
   return (
     !!value &&
@@ -307,11 +325,11 @@ export default function AccordionList({ items }: { items: QuestionEntry[] }) {
   );
   const [modalOpen, setModalOpen] = useState(false);
   const [cachedTerms, setCachedTerms] = useState<Set<string>>(
-    () => new Set(getCachedTerms())
+    () => new Set(getCachedTerms().map(normalizeCachedTerm))
   );
 
   const refreshCachedTerms = useCallback(() => {
-    const terms = getCachedTerms();
+    const terms = getCachedTerms().map(normalizeCachedTerm);
     setCachedTerms(new Set(terms));
   }, []);
 
@@ -380,20 +398,21 @@ export default function AccordionList({ items }: { items: QuestionEntry[] }) {
       <Accordion type="single" collapsible className="w-full">
         {items.map((q, idx) => {
           const key = q.id ?? idx;
-          const accent =
+          const accentColor =
             categoryTabStyles[q.category as keyof typeof categoryTabStyles]
-              ?.accent;
+              ?.accent ?? '#A1A1AA';
           const animationDelay = `${Math.min(idx, 10) * 60}ms`;
-          const itemStyle: CSSProperties = {
+          const itemStyle: QaItemStyle = {
             animationDelay,
             animationFillMode: 'both',
-            ...(accent ? ({ '--qa-accent': accent } as CSSProperties) : {}),
+            '--qa-accent': accentColor,
+            '--qa-accent-soft': hexToRgba(accentColor, 0.22),
           };
           return (
             <AccordionItem
               key={key}
               value={String(key)}
-              className="qa-accordion-item mb-3 rounded-xl border border-black/5 bg-white/90 shadow-sm transition-colors last:mb-0 last:border-b dark:border-white/10 dark:bg-neutral-900/80 animate-in fade-in slide-in-from-bottom-2 duration-500"
+              className="qa-accordion-item mb-3 rounded-xl border border-black/5 bg-white/90 shadow-sm transition-colors last:mb-0 last:border-b dark:border-white/10 dark:bg-neutral-900/80 animate-in fade-in slide-in-from-bottom-2 duration-500 motion-reduce:animate-none"
               style={itemStyle}
             >
               <AccordionTrigger
