@@ -92,41 +92,89 @@ export interface UserStats {
 }
 
 export function computeAchievements(stats: UserStats): EarnedAchievement[] {
-
-
-  return ACHIEVEMENTS.map((a) => {
+  return ACHIEVEMENTS.map(a => {
     let earned = false;
     let progress = 0;
 
     switch (a.id) {
-      case 'first_blood':    earned = stats.totalAttempts >= 1;    progress = earned ? 100 : 0; break;
-      case 'sharpshooter':   earned = stats.perfectScores >= 1;    progress = earned ? 100 : 0; break;
-      case 'royalty':        earned = stats.topLeaderboard;         progress = earned ? 100 : 0; break;
-      case 'supporter':      earned = stats.isSponsor;              progress = earned ? 100 : 0; break;
-      case 'star_gazer':     earned = stats.hasStarredRepo;         progress = earned ? 100 : 0; break;
-      case 'night_owl':      earned = stats.hasNightOwl;            progress = earned ? 100 : 0; break;
+      case 'first_blood':
+        earned = stats.totalAttempts >= 1;
+        progress = earned ? 100 : 0;
+        break;
+      case 'sharpshooter':
+        earned = stats.perfectScores >= 1;
+        progress = earned ? 100 : 0;
+        break;
+      case 'royalty':
+        earned = stats.topLeaderboard;
+        progress = earned ? 100 : 0;
+        break;
+      case 'supporter':
+        earned = stats.isSponsor;
+        progress = earned ? 100 : 0;
+        break;
+      case 'star_gazer':
+        earned = stats.hasStarredRepo;
+        progress = earned ? 100 : 0;
+        break;
+      case 'night_owl':
+        earned = stats.hasNightOwl;
+        progress = earned ? 100 : 0;
+        break;
 
-      case 'on_a_roll':      earned = stats.totalAttempts >= 3;     progress = Math.min((stats.totalAttempts / 3)    * 100, 100); break;
-      case 'big_brain':      earned = stats.totalAttempts >= 10;    progress = Math.min((stats.totalAttempts / 10)   * 100, 100); break;
-      case 'rocket_start':   earned = stats.totalAttempts >= 5;     progress = Math.min((stats.totalAttempts / 5)    * 100, 100); break;
-      case 'diamond_mind':   earned = stats.highScores >= 5;        progress = Math.min((stats.highScores / 5)       * 100, 100); break;
-      case 'perfectionist':  earned = stats.perfectScores >= 3;     progress = Math.min((stats.perfectScores / 3)   * 100, 100); break;
-      case 'legend':         earned = stats.uniqueQuizzes >= 10;    progress = Math.min((stats.uniqueQuizzes / 10)  * 100, 100); break;
-      case 'code_wizard':    earned = stats.uniqueQuizzes >= 5;     progress = Math.min((stats.uniqueQuizzes / 5)   * 100, 100); break;
-      case 'endless':        earned = stats.totalPoints >= 1000;    progress = Math.min((stats.totalPoints / 1000)  * 100, 100); break;
-      case 'centurion':      earned = stats.totalPoints >= 100;     progress = Math.min((stats.totalPoints / 100)   * 100, 100); break;
-      case 'golden_patron':  earned = stats.sponsorCount >= 3;      progress = Math.min((stats.sponsorCount / 3)    * 100, 100); break;
+      case 'on_a_roll':
+        earned = stats.totalAttempts >= 3;
+        progress = Math.min((stats.totalAttempts / 3) * 100, 100);
+        break;
+      case 'big_brain':
+        earned = stats.totalAttempts >= 10;
+        progress = Math.min((stats.totalAttempts / 10) * 100, 100);
+        break;
+      case 'rocket_start':
+        earned = stats.totalAttempts >= 5;
+        progress = Math.min((stats.totalAttempts / 5) * 100, 100);
+        break;
+      case 'diamond_mind':
+        earned = stats.highScores >= 5;
+        progress = Math.min((stats.highScores / 5) * 100, 100);
+        break;
+      case 'perfectionist':
+        earned = stats.perfectScores >= 3;
+        progress = Math.min((stats.perfectScores / 3) * 100, 100);
+        break;
+      case 'legend':
+        earned = stats.uniqueQuizzes >= 10;
+        progress = Math.min((stats.uniqueQuizzes / 10) * 100, 100);
+        break;
+      case 'code_wizard':
+        earned = stats.uniqueQuizzes >= 5;
+        progress = Math.min((stats.uniqueQuizzes / 5) * 100, 100);
+        break;
+      case 'endless':
+        earned = stats.totalPoints >= 1000;
+        progress = Math.min((stats.totalPoints / 1000) * 100, 100);
+        break;
+      case 'centurion':
+        earned = stats.totalPoints >= 100;
+        progress = Math.min((stats.totalPoints / 100) * 100, 100);
+        break;
+      case 'golden_patron':
+        earned = stats.sponsorCount >= 3;
+        progress = Math.min((stats.sponsorCount / 3) * 100, 100);
+        break;
 
       case 'silver_patron':
-        earned   = stats.sponsorCount >= 2;
-        progress = stats.sponsorCount >= 2 ? 100 : stats.sponsorCount >= 1 ? 50 : 0;
+        earned = stats.sponsorCount >= 2;
+        progress =
+          stats.sponsorCount >= 2 ? 100 : stats.sponsorCount >= 1 ? 50 : 0;
         break;
 
       case 'deep_diver':
-        earned   = stats.totalAttempts >= 10 && stats.averageScore >= 80;
-        progress = stats.totalAttempts < 10
-          ? Math.min((stats.totalAttempts / 10) * 100, 100)
-          : Math.min((stats.averageScore   / 80) * 100, 100);
+        earned = stats.totalAttempts >= 10 && stats.averageScore >= 80;
+        progress =
+          stats.totalAttempts < 10
+            ? Math.min((stats.totalAttempts / 10) * 100, 100)
+            : Math.min((stats.averageScore / 80) * 100, 100);
         break;
 
       // ── Hard / Dedicated ─────────────────────────────────────

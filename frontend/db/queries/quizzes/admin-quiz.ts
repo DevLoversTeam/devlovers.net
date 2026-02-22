@@ -1,16 +1,15 @@
 import { eq, inArray, sql } from 'drizzle-orm';
 
-import { db } from '../../index'
+import { db } from '../../index';
 import { categories, categoryTranslations } from '../../schema/categories';
-  import {
-    quizQuestions,
-    quizTranslations,
-    quizzes,
-    quizAnswers,
-   quizAnswerTranslations,
-   quizQuestionContent,
-  } from '../../schema/quiz';
-
+import {
+  quizAnswers,
+  quizAnswerTranslations,
+  quizQuestionContent,
+  quizQuestions,
+  quizTranslations,
+  quizzes,
+} from '../../schema/quiz';
 
 const ADMIN_LOCALE = 'en';
 
@@ -22,6 +21,7 @@ export interface AdminQuizListItem {
   questionsCount: number;
   attemptCount: number;
   isActive: boolean;
+  status: string;
   createdAt: Date;
 }
 
@@ -38,6 +38,7 @@ export async function getAdminQuizList(): Promise<AdminQuizListItem[]> {
       attemptCount: sql<number>`(
         SELECT COUNT(*)::int FROM quiz_attempts WHERE quiz_id = ${quizzes.id}
       )`,
+      status: quizzes.status,
       isActive: quizzes.isActive,
       createdAt: quizzes.createdAt,
     })
@@ -83,6 +84,7 @@ export interface AdminQuizFull {
   slug: string;
   questionsCount: number;
   timeLimitSeconds: number | null;
+  status: string;
   isActive: boolean;
   categoryId: string;
   translations: Record<string, AdminQuizTranslation>;
@@ -99,6 +101,7 @@ export async function getAdminQuizFull(
     .select({
       id: quizzes.id,
       slug: quizzes.slug,
+      status: quizzes.status,
       questionsCount: quizzes.questionsCount,
       timeLimitSeconds: quizzes.timeLimitSeconds,
       isActive: quizzes.isActive,
@@ -183,16 +186,17 @@ export async function getAdminQuizFull(
 
   const answerIds = answersData.map(a => a.id);
 
-  const answerTransRows = answerIds.length > 0
-    ? await db
-        .select({
-          quizAnswerId: quizAnswerTranslations.quizAnswerId,
-          locale: quizAnswerTranslations.locale,
-          answerText: quizAnswerTranslations.answerText,
-        })
-        .from(quizAnswerTranslations)
-        .where(inArray(quizAnswerTranslations.quizAnswerId, answerIds))
-    : [];
+  const answerTransRows =
+    answerIds.length > 0
+      ? await db
+          .select({
+            quizAnswerId: quizAnswerTranslations.quizAnswerId,
+            locale: quizAnswerTranslations.locale,
+            answerText: quizAnswerTranslations.answerText,
+          })
+          .from(quizAnswerTranslations)
+          .where(inArray(quizAnswerTranslations.quizAnswerId, answerIds))
+      : [];
 
   const transById = new Map<string, Record<string, { answerText: string }>>();
   for (const row of answerTransRows) {

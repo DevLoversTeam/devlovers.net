@@ -124,7 +124,7 @@
     "searchPlaceholder": "Search questions...",
     "clearSearch": "Clear search",
     "noResults": "Nothing found for \"{query}\"",
-    "noQuestions": "No questions found",
+    "noQuestions": "No questions yet…\nBut they’re already in development.\nStay tuned - new content coming soon!",
     "metaTitle": "Q&A | DevLovers",
     "metaDescription": "Questions and answers for technical interview preparation",
     "frontend": "Frontend",
@@ -257,7 +257,7 @@
       "start": "Start Quiz"
     },
     "section": {
-      "noQuizzes": "No quizzes in this category yet."
+      "noQuizzes": "No quizzes yet...\nBut they're already in development.\nStay tuned - new quizzes coming soon!"
     },
     "exitModal": {
       "title": "Exit Quiz?",
@@ -1202,7 +1202,9 @@
       "attachFile": "Attach File",
       "success": "Thank you! Your feedback has been sent.",
       "error": "Something went wrong. Please try again.",
-      "requiredField": "Please fill out this field."
+      "requiredField": "Please fill out this field.",
+      "tooManyFiles": "You can attach up to {max} files.",
+      "removeFile": "Remove {name}"
     },
     "achievements": {
       "title": "Achievements",
@@ -1211,7 +1213,9 @@
         "expand": "View all",
         "collapse": "Collapse",
         "clickInfo": "Click for info",
-        "clickBack": "Click to flip back"
+        "clickBack": "Click to flip back",
+        "more": "more",
+        "moreCount": "{count} more"
       },
       "badges": {
         "first_blood": {

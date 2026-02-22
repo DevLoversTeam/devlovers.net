@@ -29,8 +29,10 @@ function listEntryToTipTap(entry: ListEntry): JSONContent {
   if ('type' in entry && entry.type === 'listItem') {
     const children = entry.children.map(child => {
       if ('type' in child) {
-        if (child.type === 'bulletList') return listBlockToTipTap(child, 'bulletList');
-        if (child.type === 'numberedList') return listBlockToTipTap(child, 'orderedList');
+        if (child.type === 'bulletList')
+          return listBlockToTipTap(child, 'bulletList');
+        if (child.type === 'numberedList')
+          return listBlockToTipTap(child, 'orderedList');
         if (child.type === 'code') return codeBlockToTipTap(child);
       }
       return textNodeToTipTap(child as TextNode);
@@ -51,7 +53,9 @@ function listEntryToTipTap(entry: ListEntry): JSONContent {
   // Plain TextNode as list item
   return {
     type: 'listItem',
-    content: [{ type: 'paragraph', content: [textNodeToTipTap(entry as TextNode)] }],
+    content: [
+      { type: 'paragraph', content: [textNodeToTipTap(entry as TextNode)] },
+    ],
   };
 }
 
@@ -134,7 +138,12 @@ function tipTapToListEntries(items: JSONContent[]): ListEntry[] {
       return { text: '' } as TextNode;
     }
 
-    const children: (TextNode | CodeBlock | BulletListBlock | NumberedListBlock)[] = [];
+    const children: (
+      | TextNode
+      | CodeBlock
+      | BulletListBlock
+      | NumberedListBlock
+    )[] = [];
 
     for (const child of item.content) {
       if (child.type === 'paragraph' && child.content) {
@@ -203,7 +212,11 @@ export function tipTapToAnswerBlocks(doc: JSONContent): AnswerBlock[] {
 
       case 'heading': {
         const children = (node.content ?? []).map(tipTapToTextNode);
-        blocks.push({ type: 'heading', level: node.attrs?.level ?? 3, children });
+        blocks.push({
+          type: 'heading',
+          level: node.attrs?.level ?? 3,
+          children,
+        });
         break;
       }
 

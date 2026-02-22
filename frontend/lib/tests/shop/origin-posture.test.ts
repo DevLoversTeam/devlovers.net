@@ -129,7 +129,7 @@ describe('origin posture helpers', () => {
     expect(res?.status).toBe(403);
     const body = await res?.json();
     expect(body?.error?.code).toBe('ORIGIN_BLOCKED');
-   expect(body?.surface).toBe('test_surface');
+    expect(body?.surface).toBe('test_surface');
   });
 
   it('guardNonBrowserFailClosed allows when no browser signals are present', () => {

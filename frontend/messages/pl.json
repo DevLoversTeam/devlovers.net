@@ -124,7 +124,7 @@
     "searchPlaceholder": "Szukaj pytań...",
     "clearSearch": "Wyczyść wyszukiwanie",
     "noResults": "Nic nie znaleziono dla \"{query}\"",
-    "noQuestions": "Nie znaleziono pytań",
+    "noQuestions": "Brak pytań na ten moment…\nAle już są w przygotowaniu.\nBądź na bieżąco - wkrótce pojawią się nowe materiały!",
     "metaTitle": "Q&A | DevLovers",
     "metaDescription": "Pytania i odpowiedzi do przygotowania do rozmów kwalifikacyjnych",
     "frontend": "Frontend",
@@ -257,7 +257,7 @@
       "start": "Rozpocznij Quiz"
     },
     "section": {
-      "noQuizzes": "Brak quizów w tej kategorii."
+      "noQuizzes": "Brak quizów na ten moment…\nAle już są w przygotowaniu.\nBądź na bieżąco - wkrótce pojawią się nowe quizy!"
     },
     "exitModal": {
       "title": "Wyjść z Quizu?",
@@ -1088,6 +1088,7 @@
     "profile": {
       "title": "Profil",
       "subtitle": "Zarządzaj swoim profilem publicznym i preferencjami",
+      "sponsor": "Sponsor",
       "becomeSponsor": "Zostań sponsorem",
       "supportAgain": "Okaż więcej wsparcia",
       "points": "Pkt",
@@ -1203,7 +1204,9 @@
       "attachFile": "Dołącz plik",
       "success": "Dziękujemy! Twoja opinia została wysłana.",
       "error": "Coś poszło nie tak. Spróbuj ponownie.",
-      "requiredField": "Proszę wypełnić to pole."
+      "requiredField": "Proszę wypełnić to pole.",
+      "tooManyFiles": "Możesz dołączyć maksymalnie {max} pliki.",
+      "removeFile": "Usuń {name}"
     },
     "achievements": {
       "title": "Osiągnięcia",
@@ -1212,7 +1215,9 @@
         "expand": "Zobacz wszystkie",
         "collapse": "Zwiń",
         "clickInfo": "Kliknij po info",
-        "clickBack": "Kliknij, aby wrócić"
+        "clickBack": "Kliknij, aby wrócić",
+        "more": "więcej",
+        "moreCount": "{count} więcej"
       },
       "badges": {
         "first_blood": {

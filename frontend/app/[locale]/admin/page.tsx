@@ -1,5 +1,5 @@
-import { Metadata } from 'next';
 import { FileQuestion, MessageSquare, ShoppingBag } from 'lucide-react';
+import { Metadata } from 'next';
 
 import { Link } from '@/i18n/routing';
 

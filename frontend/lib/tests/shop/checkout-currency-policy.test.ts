@@ -3,7 +3,13 @@ import { inArray } from 'drizzle-orm';
 import { NextRequest } from 'next/server';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { inventoryMoves, orderItems, orders, productPrices, products } from '@/db/schema';
+import {
+  inventoryMoves,
+  orderItems,
+  orders,
+  productPrices,
+  products,
+} from '@/db/schema';
 
 process.env.STRIPE_PAYMENTS_ENABLED = 'false';
 process.env.STRIPE_SECRET_KEY = '';
@@ -14,7 +20,7 @@ vi.mock('@/lib/auth', async () => {
     await vi.importActual<typeof import('@/lib/auth')>('@/lib/auth');
   return {
     ...actual,
-    getCurrentUser: async () => null, 
+    getCurrentUser: async () => null,
   };
 });
 
@@ -80,7 +86,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   if (createdOrderIds.length) {
-     await db
+    await db
       .delete(inventoryMoves)
       .where(inArray(inventoryMoves.orderId, createdOrderIds));
     await db

@@ -52,7 +52,6 @@ function calculateIntegrityScore(violations: ViolationEvent[]): number {
   return Math.max(0, 100 - penalty);
 }
 
-
 async function getQuizQuestionIds(quizId: string): Promise<string[]> {
   const rows = await db
     .select({ id: quizQuestions.id })
@@ -270,7 +269,8 @@ export async function initializeQuizCache(
     const { getOrCreateQuizAnswersCache, clearVerifiedQuestions } =
       await import('@/lib/quiz/quiz-answers-redis');
 
-    const { resolveRequestIdentifier } = await import('@/lib/quiz/resolve-identifier');
+    const { resolveRequestIdentifier } =
+      await import('@/lib/quiz/resolve-identifier');
     const { headers } = await import('next/headers');
     const headersList = await headers();
     const identifier = resolveRequestIdentifier(headersList);

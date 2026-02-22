@@ -2,8 +2,8 @@ import 'dotenv/config';
 
 import { and, eq } from 'drizzle-orm';
 
-import rawData from '../parse/questions.json';
 import { invalidateAllQaCache } from '../lib/cache/qa';
+import rawData from '../parse/questions.json';
 import { db } from './index';
 import { categories, questions, questionTranslations } from './schema';
 
@@ -115,7 +115,10 @@ async function seedQuestions() {
         .insert(questionTranslations)
         .values(translation)
         .onConflictDoUpdate({
-          target: [questionTranslations.questionId, questionTranslations.locale],
+          target: [
+            questionTranslations.questionId,
+            questionTranslations.locale,
+          ],
           set: {
             question: translation.question,
             answerBlocks: translation.answerBlocks,

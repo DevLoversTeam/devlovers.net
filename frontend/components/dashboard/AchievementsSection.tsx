@@ -1,6 +1,6 @@
 'use client';
 
-import { AnimatePresence,motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, Trophy } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -12,24 +12,25 @@ interface AchievementsSectionProps {
   achievements: EarnedAchievement[];
 }
 
-export function AchievementsSection({ achievements }: AchievementsSectionProps) {
+export function AchievementsSection({
+  achievements,
+}: AchievementsSectionProps) {
   const t = useTranslations('dashboard.achievements');
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const earnedCount = achievements.filter((a) => a.earned).length;
+  const earnedCount = achievements.filter(a => a.earned).length;
 
-  const cardStyles =
-    'relative z-10 overflow-hidden rounded-3xl border border-gray-200 bg-white/10 shadow-sm backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-(--accent-primary)/30 dark:border-neutral-800 dark:bg-neutral-900/10 dark:hover:border-(--accent-primary)/30';
+  const cardStyles = 'dashboard-card';
 
   const previewBadges = achievements.slice(0, 6);
   const remainingBadges = achievements.slice(6);
 
   return (
     <section className={cardStyles} aria-labelledby="achievements-heading">
-      <div className="flex flex-row items-center justify-between gap-3 p-4 sm:p-6 md:p-8 w-full">
-        <div className="flex items-center gap-3 min-w-0">
+      <div className="flex w-full flex-row items-center justify-between gap-3 p-4 sm:p-6 md:p-8">
+        <div className="flex min-w-0 items-center gap-3">
           <div
-            className="rounded-xl bg-gray-100/50 p-3 ring-1 ring-black/5 dark:bg-neutral-800/50 dark:ring-white/10 shrink-0"
+            className="shrink-0 rounded-xl bg-gray-100/50 p-3 ring-1 ring-black/5 dark:bg-neutral-800/50 dark:ring-white/10"
             aria-hidden="true"
           >
             <Trophy className="h-5 w-5 text-(--accent-primary) drop-shadow-[0_0_8px_rgba(var(--accent-primary-rgb),0.6)]" />
@@ -37,23 +38,28 @@ export function AchievementsSection({ achievements }: AchievementsSectionProps) 
           <div className="min-w-0">
             <h3
               id="achievements-heading"
-              className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white leading-tight"
+              className="text-lg leading-tight font-bold text-gray-900 sm:text-xl dark:text-white"
             >
               {t('title')}
             </h3>
-            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">
-              {t('subtitle', { earned: earnedCount, total: achievements.length })}
+            <p className="truncate text-xs text-gray-500 sm:text-sm dark:text-gray-400">
+              {t('subtitle', {
+                earned: earnedCount,
+                total: achievements.length,
+              })}
             </p>
           </div>
         </div>
 
         <button
-          onClick={() => setIsExpanded((p) => !p)}
+          onClick={() => setIsExpanded(p => !p)}
           aria-expanded={isExpanded}
           aria-controls="achievements-grid"
-          className="shrink-0 flex items-center gap-1.5 rounded-full border border-gray-200 bg-white/50 px-2.5 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-gray-600 backdrop-blur-sm transition-all hover:bg-white hover:text-(--accent-primary) dark:border-white/10 dark:bg-neutral-900/50 dark:text-gray-300 dark:hover:bg-neutral-800 dark:hover:text-(--accent-primary)"
+          className="flex shrink-0 items-center gap-1.5 rounded-full border border-gray-200 bg-white/50 px-2.5 py-1.5 text-xs font-medium text-gray-600 backdrop-blur-sm transition-all hover:bg-white hover:text-(--accent-primary) sm:px-4 sm:py-2 sm:text-sm dark:border-white/10 dark:bg-neutral-900/50 dark:text-gray-300 dark:hover:bg-neutral-800 dark:hover:text-(--accent-primary)"
         >
-          <span className="hidden sm:inline">{isExpanded ? t('ui.collapse') : t('ui.expand')}</span>
+          <span className="hidden sm:inline">
+            {isExpanded ? t('ui.collapse') : t('ui.expand')}
+          </span>
           <motion.span
             animate={{ rotate: isExpanded ? 180 : 0 }}
             transition={{ duration: 0.25, ease: 'easeInOut' }}
@@ -65,8 +71,8 @@ export function AchievementsSection({ achievements }: AchievementsSectionProps) 
       </div>
 
       <div className="px-4 pb-4 sm:px-6 sm:pb-6 md:px-8 md:pb-8">
-        <div className="grid grid-cols-3 md:grid-cols-6 gap-3 sm:gap-4">
-          {previewBadges.map((achievement) => (
+        <div className="grid grid-cols-3 gap-3 sm:gap-4 md:grid-cols-6">
+          {previewBadges.map(achievement => (
             <AchievementBadge key={achievement.id} achievement={achievement} />
           ))}
         </div>
@@ -81,9 +87,12 @@ export function AchievementsSection({ achievements }: AchievementsSectionProps) 
               transition={{ duration: 0.35, ease: 'easeInOut' }}
               className="overflow-hidden"
             >
-              <div className="mt-4 grid grid-cols-3 md:grid-cols-6 gap-3 border-t border-gray-100 pt-6 sm:gap-4 dark:border-white/5">
-                {remainingBadges.map((achievement) => (
-                  <AchievementBadge key={achievement.id} achievement={achievement} />
+              <div className="mt-4 grid grid-cols-3 gap-3 border-t border-gray-100 pt-6 sm:gap-4 md:grid-cols-6 dark:border-white/5">
+                {remainingBadges.map(achievement => (
+                  <AchievementBadge
+                    key={achievement.id}
+                    achievement={achievement}
+                  />
                 ))}
               </div>
             </motion.div>

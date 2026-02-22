@@ -55,8 +55,7 @@ export default async function ProductPage({
     'items-center gap-2'
   );
   const messages = await getMessages();
-  const productDescriptions =
-    (messages as any).shop?.productDescriptions ?? {};
+  const productDescriptions = (messages as any).shop?.productDescriptions ?? {};
   const badge = product?.badge as string | undefined;
   const badgeLabel =
     badge && badge !== 'NONE'

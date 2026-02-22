@@ -117,27 +117,31 @@ export function AppMobileMenu({
         : 'text-muted-foreground active:text-[var(--accent-hover)]'
     }`;
 
-  // Lock body scroll when menu is open
+  // Lock body scroll when menu is open.
+  // overflow:hidden on <html> works on desktop but iOS Safari ignores it for
+  // touch events. Adding a non-passive touchmove listener lets us call
+  // preventDefault() to block background scrolling while still allowing the
+  // nav itself (which has overflow-y-auto) to scroll normally.
   useEffect(() => {
-    if (open) {
-      const scrollY = window.scrollY;
-      Object.assign(document.body.style, {
-        position: 'fixed',
-        top: `-${scrollY}px`,
-        width: '100%',
-        overflow: 'hidden',
-      });
+    if (!open) return;
 
-      return () => {
-        Object.assign(document.body.style, {
-          position: '',
-          top: '',
-          width: '',
-          overflow: '',
-        });
-        window.scrollTo(0, scrollY);
-      };
-    }
+    const prev = document.documentElement.style.overflowY;
+    document.documentElement.style.overflowY = 'hidden';
+
+    const preventTouchMove = (e: TouchEvent) => {
+      const nav = document.getElementById('app-mobile-nav');
+      if (nav && nav.contains(e.target as Node)) return;
+      e.preventDefault();
+    };
+
+    document.addEventListener('touchmove', preventTouchMove, {
+      passive: false,
+    });
+
+    return () => {
+      document.documentElement.style.overflowY = prev;
+      document.removeEventListener('touchmove', preventTouchMove);
+    };
   }, [open]);
 
   return (
@@ -168,7 +172,7 @@ export function AppMobileMenu({
 
           <nav
             id="app-mobile-nav"
-            className={`bg-background fixed top-16 right-0 left-0 z-50 h-[calc(100dvh-4rem)] overflow-y-auto overscroll-contain px-4 py-4 transition-transform duration-300 ease-out sm:px-6 min-[1050px]:hidden ${
+            className={`bg-background fixed top-16 right-0 left-0 z-50 h-[calc(100dvh-4rem)] overflow-y-auto overscroll-contain px-4 py-4 transition-transform duration-300 ease-out min-[1050px]:hidden sm:px-6 ${
               isAnimating ? 'translate-y-0' : '-translate-y-4'
             }`}
             style={{

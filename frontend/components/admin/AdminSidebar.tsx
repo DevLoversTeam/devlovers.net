@@ -9,6 +9,7 @@ import {
   Package,
   PanelLeftClose,
   PanelLeftOpen,
+  Plus,
   ShoppingBag,
 } from 'lucide-react';
 import { useSyncExternalStore } from 'react';
@@ -48,15 +49,14 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { label: 'Quizzes', href: '/admin/quiz', icon: FileQuestion },
       { label: 'Statistics', href: '/admin/quiz/statistics', icon: BarChart3 },
+      { label: 'New Quiz', href: '/admin/quiz/new', icon: Plus },
     ],
   },
   {
     label: 'Q&A',
     icon: MessageSquare,
     basePath: '/admin/q&a',
-    items: [
-      { label: 'Questions', href: '/admin/q&a', icon: MessageSquare },
-    ],
+    items: [{ label: 'Questions', href: '/admin/q&a', icon: MessageSquare }],
   },
 ];
 
@@ -83,17 +83,16 @@ function getCollapsedServerSnapshot() {
   return false;
 }
 
-
 export function AdminSidebar() {
   const pathname = usePathname();
 
   const collapsed = useSyncExternalStore(
-  subscribeToStorage,
-  getCollapsedSnapshot,
-  getCollapsedServerSnapshot
-);
+    subscribeToStorage,
+    getCollapsedSnapshot,
+    getCollapsedServerSnapshot
+  );
 
-const toggle = () => {
+  const toggle = () => {
     const next = !collapsed;
     try {
       localStorage.setItem(STORAGE_KEY, String(next));
@@ -109,12 +108,14 @@ const toggle = () => {
     if (pathname === href) return true;
     if (pathname.startsWith(href + '/')) {
       return !allHrefs.some(
-        other => other !== href && other.length > href.length && pathname.startsWith(other)
+        other =>
+          other !== href &&
+          other.length > href.length &&
+          pathname.startsWith(other)
       );
     }
     return false;
   };
-
 
   return (
     <aside
@@ -126,7 +127,7 @@ const toggle = () => {
       <button
         type="button"
         onClick={toggle}
-        className="bg-background border-border text-muted-foreground hover:text-foreground absolute -right-3 top-5 z-10 flex h-6 w-6 items-center justify-center rounded-full border shadow-sm transition-colors"
+        className="bg-background border-border text-muted-foreground hover:text-foreground absolute top-5 -right-3 z-10 flex h-6 w-6 items-center justify-center rounded-full border shadow-sm transition-colors"
         aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       >
         {collapsed ? (
@@ -139,13 +140,13 @@ const toggle = () => {
       <div className="border-border flex h-14 items-center border-b px-3">
         <Link
           href="/admin"
-            className={cn(
-              'flex items-center gap-2 font-semibold',
-              pathname === '/admin'
-                ? 'text-[var(--accent-primary)]'
-                : 'text-foreground',
-              collapsed && 'justify-center'
-            )}
+          className={cn(
+            'flex items-center gap-2 font-semibold',
+            pathname === '/admin'
+              ? 'text-[var(--accent-primary)]'
+              : 'text-foreground',
+            collapsed && 'justify-center'
+          )}
           title="Admin Dashboard"
         >
           <LayoutDashboard className="h-5 w-5 shrink-0" />
@@ -160,7 +161,7 @@ const toggle = () => {
             {!collapsed && (
               <div
                 className={cn(
-                  'px-3 pb-1 text-[11px] font-medium uppercase tracking-wider',
+                  'px-3 pb-1 text-[11px] font-medium tracking-wider uppercase',
                   pathname.startsWith(section.basePath)
                     ? 'text-[var(--accent-primary)]'
                     : 'text-muted-foreground'

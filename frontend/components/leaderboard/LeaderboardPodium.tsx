@@ -9,6 +9,20 @@ import { cn } from '@/lib/utils';
 import { User } from './types';
 import { UserAvatar } from './UserAvatar';
 
+const SPONSOR_TIER_STYLE: Record<string, string> = {
+  golden_patron:
+    'bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 dark:text-amber-400 dark:bg-amber-500/15 dark:hover:bg-amber-500/25',
+  silver_patron:
+    'bg-slate-400/10 text-slate-600 hover:bg-slate-400/20 dark:text-slate-300 dark:bg-slate-400/15 dark:hover:bg-slate-400/25',
+};
+
+function getSponsorAchievement(user: User) {
+  return (
+    user.achievements?.find(a => a.id === 'golden_patron') ||
+    user.achievements?.find(a => a.id === 'silver_patron')
+  );
+}
+
 const rankConfig = {
   1: {
     height: '70%',
@@ -17,7 +31,8 @@ const rankConfig = {
       border: 'border-yellow-400/50 dark:border-yellow-500/50',
       bg: 'bg-yellow-400/10 dark:bg-yellow-500/5',
       text: 'text-yellow-600 dark:text-yellow-400',
-      badge: 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 backdrop-blur-sm',
+      badge:
+        'bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 backdrop-blur-sm',
       ring: 'border-yellow-400/30 dark:border-yellow-500/30',
     },
   },
@@ -28,7 +43,8 @@ const rankConfig = {
       border: 'border-slate-300/50 dark:border-slate-500/50',
       bg: 'bg-slate-300/10 dark:bg-slate-500/5',
       text: 'text-slate-600 dark:text-slate-400',
-      badge: 'bg-slate-500/20 text-slate-500 border border-slate-500/30 backdrop-blur-sm',
+      badge:
+        'bg-slate-500/20 text-slate-500 border border-slate-500/30 backdrop-blur-sm',
       ring: 'border-slate-300/50 dark:border-slate-500/30',
     },
   },
@@ -39,14 +55,15 @@ const rankConfig = {
       border: 'border-orange-300/50 dark:border-orange-500/50',
       bg: 'bg-orange-300/10 dark:bg-orange-500/5',
       text: 'text-orange-600 dark:text-orange-400',
-      badge: 'bg-orange-500/20 text-orange-500 border border-orange-500/30 backdrop-blur-sm',
+      badge:
+        'bg-orange-500/20 text-orange-500 border border-orange-500/30 backdrop-blur-sm',
       ring: 'border-orange-300/50 dark:border-orange-500/30',
     },
   },
 } as const;
 
 export function LeaderboardPodium({ topThree }: { topThree: User[] }) {
-  const t = useTranslations('leaderboard');
+  const tBadges = useTranslations('dashboard.achievements.badges');
   const podiumOrder = [
     topThree.find(u => u.rank === 2),
     topThree.find(u => u.rank === 1),
@@ -111,18 +128,33 @@ export function LeaderboardPodium({ topThree }: { topThree: User[] }) {
                 {user.username}
               </div>
 
-              {user.isSponsor && (
-                <a
-                  href="https://github.com/sponsors/DevLoversTeam"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={t('sponsor')}
-                  className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-(--sponsor)/10 px-2 py-0.5 text-[10px] font-bold text-(--sponsor) transition-colors hover:bg-(--sponsor)/20 dark:bg-(--sponsor)/15 dark:text-(--sponsor) dark:hover:bg-(--sponsor)/25"
-                >
-                  <Heart className="h-2.5 w-2.5 fill-current" aria-hidden="true" />
-                  <span className="hidden md:inline">{t('sponsor')}</span>
-                </a>
-              )}
+              {(() => {
+                const sponsorAch = getSponsorAchievement(user);
+                if (!sponsorAch) return null;
+                const tierStyle =
+                  SPONSOR_TIER_STYLE[sponsorAch.id] ??
+                  SPONSOR_TIER_STYLE['silver_patron'];
+                return (
+                  <a
+                    href="https://github.com/sponsors/DevLoversTeam"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={tBadges(`${sponsorAch.id}.name`)}
+                    className={cn(
+                      'mt-0.5 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold transition-colors',
+                      tierStyle
+                    )}
+                  >
+                    <Heart
+                      className="h-2.5 w-2.5 fill-current"
+                      aria-hidden="true"
+                    />
+                    <span className="hidden md:inline">
+                      {tBadges(`${sponsorAch.id}.name`)}
+                    </span>
+                  </a>
+                );
+              })()}
 
               <div
                 className={cn(

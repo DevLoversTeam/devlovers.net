@@ -1,5 +1,5 @@
-import { getTranslations } from 'next-intl/server';
 import { Heart, MessageSquare } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
 
 import { PostAuthQuizSync } from '@/components/auth/PostAuthQuizSync';
 import { AchievementsSection } from '@/components/dashboard/AchievementsSection';
@@ -11,8 +11,11 @@ import { QuizResultsSection } from '@/components/dashboard/QuizResultsSection';
 import { QuizSavedBanner } from '@/components/dashboard/QuizSavedBanner';
 import { StatsCard } from '@/components/dashboard/StatsCard';
 import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
-import { getUserLastAttemptPerQuiz, getUserQuizStats } from '@/db/queries/quizzes/quiz';
-import { getUserProfile, getUserGlobalRank } from '@/db/queries/users';
+import {
+  getUserLastAttemptPerQuiz,
+  getUserQuizStats,
+} from '@/db/queries/quizzes/quiz';
+import { getUserGlobalRank, getUserProfile } from '@/db/queries/users';
 import { redirect } from '@/i18n/routing';
 import { getCurrentUser } from '@/lib/auth';
 import { computeAchievements } from '@/lib/achievements';
@@ -91,8 +94,13 @@ export default async function DashboardPage({
   const yesterdayStr = toDateStr(getPrevDay(now));
 
   let currentStreak = 0;
-  if (uniqueAttemptDays.includes(todayStr) || uniqueAttemptDays.includes(yesterdayStr)) {
-    let checkDate = uniqueAttemptDays.includes(todayStr) ? now : getPrevDay(now);
+  if (
+    uniqueAttemptDays.includes(todayStr) ||
+    uniqueAttemptDays.includes(yesterdayStr)
+  ) {
+    let checkDate = uniqueAttemptDays.includes(todayStr)
+      ? now
+      : getPrevDay(now);
     currentStreak = 1;
     while (true) {
       checkDate = getPrevDay(checkDate);
@@ -109,17 +117,26 @@ export default async function DashboardPage({
   if (attempts.length >= 6) {
     const last3 = attempts.slice(0, 3);
     const prev3 = attempts.slice(3, 6);
-    
-    const last3Avg = last3.reduce((acc, curr) => acc + Number(curr.percentage), 0) / 3;
-    const prev3Avg = prev3.reduce((acc, curr) => acc + Number(curr.percentage), 0) / 3;
-    
+
+    const last3Avg =
+      last3.reduce((acc, curr) => acc + Number(curr.percentage), 0) / 3;
+    const prev3Avg =
+      prev3.reduce((acc, curr) => acc + Number(curr.percentage), 0) / 3;
+
     trendPercentage = Math.round(last3Avg - prev3Avg);
   } else if (attempts.length > 2) {
-     const lastPart = attempts.slice(0, Math.floor(attempts.length / 2));
-     const prevPart = attempts.slice(Math.floor(attempts.length / 2), Math.floor(attempts.length / 2) * 2);
-     const lastAvg = lastPart.reduce((acc, curr) => acc + Number(curr.percentage), 0) / lastPart.length;
-     const prevAvg = prevPart.reduce((acc, curr) => acc + Number(curr.percentage), 0) / prevPart.length;
-     trendPercentage = Math.round(lastAvg - prevAvg);
+    const lastPart = attempts.slice(0, Math.floor(attempts.length / 2));
+    const prevPart = attempts.slice(
+      Math.floor(attempts.length / 2),
+      Math.floor(attempts.length / 2) * 2
+    );
+    const lastAvg =
+      lastPart.reduce((acc, curr) => acc + Number(curr.percentage), 0) /
+      lastPart.length;
+    const prevAvg =
+      prevPart.reduce((acc, curr) => acc + Number(curr.percentage), 0) /
+      prevPart.length;
+    trendPercentage = Math.round(lastAvg - prevAvg);
   }
 
   const userForDisplay = {
@@ -154,9 +171,7 @@ export default async function DashboardPage({
   return (
     <div className="min-h-screen">
       <PostAuthQuizSync />
-      <DynamicGridBackground
-        className="min-h-screen bg-gray-50 py-10 transition-colors duration-300 dark:bg-transparent"
-      >
+      <DynamicGridBackground className="min-h-screen bg-gray-50 py-10 transition-colors duration-300 dark:bg-transparent">
         <main className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <header className="mb-12 flex flex-col justify-between gap-6 md:flex-row md:items-center">
             <div>
@@ -209,7 +224,7 @@ export default async function DashboardPage({
           <div className="mt-8">
             <AchievementsSection achievements={achievements} />
           </div>
-          <div className="mt-8">
+          <div id="quiz-results" className="mt-8 scroll-mt-8">
             <QuizResultsSection attempts={lastAttempts} locale={locale} />
           </div>
           <div className="mt-8">

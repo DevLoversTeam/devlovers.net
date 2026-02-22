@@ -1,11 +1,11 @@
 'use client';
 
-import { motion } from 'framer-motion';
-import { Heart, Medal, TrendingUp, Trophy } from 'lucide-react';
+import { Medal, TrendingUp, Trophy } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import { cn } from '@/lib/utils';
 
+import { AchievementPips } from './AchievementPips';
 import { CurrentUser, User } from './types';
 import { UserAvatar } from './UserAvatar';
 
@@ -103,33 +103,31 @@ export function LeaderboardTable({
             </div>
           )}
 
-          <div className="overflow-hidden rounded-3xl border-2 border-(--accent-primary)/50 bg-white/10 shadow-[0_0_20px_var(--accent-primary)] backdrop-blur-md dark:bg-neutral-900/10">
-            <div className="w-full">
-              <table className="w-full table-fixed border-separate border-spacing-0 text-left">
-                <caption className="sr-only">{t('contextTableCaption')}</caption>
-                <colgroup>
-                  <col className="w-[15%] sm:w-[12%]" />
-                  <col />
-                  <col className="w-[25%] sm:w-[20%]" />
-                </colgroup>
-                <tbody>
-                  {contextRows.map(user => {
-                    const isMe =
-                      user.userId === normalizedCurrentUserId ||
-                      (currentUsername && user.username === currentUsername);
+          <div className="overflow-hidden rounded-3xl border border-gray-200 bg-white/10 shadow-sm backdrop-blur-md dark:border-neutral-800 dark:bg-neutral-900/10">
+            <table className="w-full table-fixed border-separate border-spacing-0 text-left">
+              <colgroup>
+                <col className="w-[15%] sm:w-[12%]" />
+                <col />
+                <col className="w-[25%] sm:w-[20%]" />
+              </colgroup>
+              <tbody>
+                {contextRows.map(user => {
+                  const isMe =
+                    user.userId === normalizedCurrentUserId ||
+                    (currentUsername && user.username === currentUsername);
 
-                    return (
-                      <TableRow
-                        key={user.id}
-                        user={user}
-                        isCurrentUser={!!isMe}
-                        t={t}
-                      />
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                  return (
+                    <TableRow
+                      key={user.id}
+                      user={user}
+                      isCurrentUser={!!isMe}
+                      inContext
+                      t={t}
+                    />
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </>
       )}
@@ -140,25 +138,44 @@ export function LeaderboardTable({
 function TableRow({
   user,
   isCurrentUser,
+  inContext = false,
   t,
 }: {
   user: User;
   isCurrentUser: boolean;
+  inContext?: boolean;
   t: ReturnType<typeof useTranslations>;
 }) {
-  const cellClass =
-    'px-2 sm:px-6 py-3 sm:py-4 border-b border-gray-200/50 dark:border-white/5';
+  // inContext = true  → glow applied on <tr>; cells stay plain
+  // inContext = false → top-15 row; accent borders drawn on cells directly
+  const cellClass = cn(
+    'border-b px-2 py-3 sm:px-6 sm:py-4',
+    isCurrentUser && !inContext
+      ? 'border-t border-t-(--accent-primary)/60 border-b-(--accent-primary)/60'
+      : 'border-b-gray-200/50 dark:border-b-white/5'
+  );
 
-  const leftBorderClass = 'border-l border-l-transparent';
-  const rightBorderClass = 'border-r border-r-transparent';
+  const leftBorderClass = cn(
+    isCurrentUser && !inContext
+      ? 'border-l-2 border-l-(--accent-primary)/70'
+      : 'border-l border-l-transparent'
+  );
+  const rightBorderClass = cn(
+    isCurrentUser && !inContext
+      ? 'border-r-2 border-r-(--accent-primary)/70'
+      : 'border-r border-r-transparent'
+  );
 
   return (
     <tr
       className={cn(
         'group transition-all duration-300',
         isCurrentUser
-          ? 'bg-[color-mix(in_srgb,var(--accent-primary),transparent_90%)] shadow-inner'
-          : 'hover:bg-white/30 dark:hover:bg-white/5'
+          ? 'bg-[color-mix(in_srgb,var(--accent-primary),transparent_90%)]'
+          : 'hover:bg-white/30 dark:hover:bg-white/5',
+        isCurrentUser &&
+          inContext &&
+          '[box-shadow:inset_0_0_0_2px_color-mix(in_srgb,var(--accent-primary)_70%,transparent),inset_0_0_20px_color-mix(in_srgb,var(--accent-primary)_30%,transparent)]'
       )}
     >
       <td className={cn(cellClass, leftBorderClass)}>
@@ -195,38 +212,8 @@ function TableRow({
             >
               <span className="truncate">{user.username}</span>
 
-              {user.isSponsor && (
-                <a
-                  href="https://github.com/sponsors/DevLoversTeam"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex shrink-0 items-center gap-1 rounded-full bg-(--sponsor)/10 px-2 py-0.5 text-[10px] font-bold text-(--sponsor) transition-colors hover:bg-(--sponsor)/20 dark:bg-(--sponsor)/15 dark:text-(--sponsor) dark:hover:bg-(--sponsor)/25"
-                >
-                  <Heart className="h-2.5 w-2.5 fill-current" />
-                  <span className="hidden sm:inline">{t('sponsor')}</span>
-                </a>
-              )}
-
-              {isCurrentUser && (
-                <div className="relative ml-1 flex h-5 w-5 shrink-0 items-center justify-center sm:h-8 sm:w-8">
-                  <motion.div
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{
-                      repeat: Infinity,
-                      duration: 0.8,
-                      ease: 'easeInOut',
-                    }}
-                    className="absolute inset-0 text-(--accent-primary)"
-                  >
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
-                      className="h-full w-full drop-shadow-md"
-                    >
-                      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                    </svg>
-                  </motion.div>
-                </div>
+              {user.achievements && user.achievements.length > 0 && (
+                <AchievementPips achievements={user.achievements} />
               )}
             </span>
 

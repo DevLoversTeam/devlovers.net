@@ -1,24 +1,23 @@
 'use client';
 
-import { motion, useMotionValue, useReducedMotion, useSpring, useTransform } from 'framer-motion';
 import {
-  Fire,
-  Target,
-  Lightning,
   Brain,
-  Diamond,
-  Star,
-  Heart,
-  Trophy,
-  Rocket,
-  Crown,
   Code,
-  Infinity as InfinityIcon,
+  Crown,
+  Diamond,
+  Fire,
   GithubLogo,
+  Heart,
+  Infinity as InfinityIcon,
+  Lightning,
   Medal,
-  Seal,
   Moon,
+  Rocket,
+  Seal,
   Shield,
+  Star,
+  Target,
+  Trophy,
   Waves,
   Meteor,
   Sparkle,
@@ -27,10 +26,20 @@ import {
   Sun,
   Anchor,
 } from '@phosphor-icons/react';
+import {
+  motion,
+  useMotionValue,
+  useReducedMotion,
+  useSpring,
+  useTransform,
+} from 'framer-motion';
 import { useTranslations } from 'next-intl';
-import { useState, useEffect } from 'react';
+import { useEffect,useState } from 'react';
 
-import type { EarnedAchievement, AchievementIconName } from '@/lib/achievements';
+import type {
+  AchievementIconName,
+  EarnedAchievement,
+} from '@/lib/achievements';
 
 const ICON_MAP: Record<AchievementIconName, React.ElementType> = {
   Fire,
@@ -113,7 +122,7 @@ export function AchievementBadge({ achievement }: AchievementBadgeProps) {
   const rotateX = useTransform(y, [-60, 60], [14, -14]);
   const tiltY = useTransform(x, [-60, 60], [-14, 14]);
   const flipRotation = isFlipped ? 180 : 0;
-  const rotateY = useTransform(tiltY, (v) => v + flipRotation);
+  const rotateY = useTransform(tiltY, v => v + flipRotation);
 
   const springConfig = { damping: 22, stiffness: 280 };
   const rotateXSpring = useSpring(rotateX, springConfig);
@@ -143,10 +152,21 @@ export function AchievementBadge({ achievement }: AchievementBadgeProps) {
 
   const locked = {
     bezel: isDark
-      ? [{ o: '0%',   c: '#334155' }, { o: '30%', c: '#475569' }, { o: '60%', c: '#1e293b' }, { o: '100%', c: '#334155' }]
-      : [{ o: '0%',   c: '#c8d0da' }, { o: '25%', c: '#e8edf3' }, { o: '55%', c: '#a8b0bc' }, { o: '80%', c: '#dce2ea' }, { o: '100%', c: '#b8c0cc' }],
+      ? [
+          { o: '0%', c: '#334155' },
+          { o: '30%', c: '#475569' },
+          { o: '60%', c: '#1e293b' },
+          { o: '100%', c: '#334155' },
+        ]
+      : [
+          { o: '0%', c: '#c8d0da' },
+          { o: '25%', c: '#e8edf3' },
+          { o: '55%', c: '#a8b0bc' },
+          { o: '80%', c: '#dce2ea' },
+          { o: '100%', c: '#b8c0cc' },
+        ],
     bodyFrom: isDark ? '#1e293b' : '#eef0f4',
-    bodyTo:   isDark ? '#0f172a' : '#dde0e8',
+    bodyTo: isDark ? '#0f172a' : '#dde0e8',
     iconColor: isDark ? 'rgba(148,163,184,0.55)' : 'rgba(100,116,139,0.65)',
     iconFilter: isDark
       ? 'drop-shadow(0 1px 3px rgba(0,0,0,0.6))'
@@ -168,75 +188,137 @@ export function AchievementBadge({ achievement }: AchievementBadgeProps) {
       onMouseLeave={handleMouseLeave}
     >
       <motion.div
-        className="perspective-[800px] w-20 h-20 sm:w-28 sm:h-28 md:w-[110px] md:h-[110px] xl:w-[140px] xl:h-[140px]"
+        className="h-20 w-20 perspective-[800px] sm:h-28 sm:w-28 md:h-[110px] md:w-[110px] xl:h-[140px] xl:w-[140px]"
         whileHover={shouldReduceMotion ? {} : { scale: 1.06 }}
         transition={{ type: 'spring', stiffness: 350, damping: 20 }}
       >
         <motion.div
-          className="relative h-full w-full cursor-pointer preserve-3d"
+          className="preserve-3d relative h-full w-full cursor-pointer"
           style={{
             rotateX: shouldReduceMotion ? 0 : rotateXSpring,
             rotateY: shouldReduceMotion ? flipRotation : rotateYSpring,
           }}
-          onClick={() => setIsFlipped((p) => !p)}
+          onClick={() => setIsFlipped(p => !p)}
           role="button"
           tabIndex={0}
           aria-label={`${badgeLabel}. ${isFlipped ? t('ui.clickBack') : t('ui.clickInfo')}`}
-          onKeyDown={(e) => {
+          onKeyDown={e => {
             if (e.key === ' ' || e.key === 'Enter') {
               e.preventDefault();
-              setIsFlipped((p) => !p);
+              setIsFlipped(p => !p);
             }
           }}
         >
-
-          <div className="backface-hidden absolute inset-0">
-            <svg viewBox="0 0 160 160" className="absolute inset-0 w-full h-full overflow-visible" aria-hidden="true">
+          <div className="absolute inset-0 backface-hidden">
+            <svg
+              viewBox="0 0 160 160"
+              className="absolute inset-0 h-full w-full overflow-visible"
+              aria-hidden="true"
+            >
               <defs>
-                <linearGradient id={`metal-${achievement.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                <linearGradient
+                  id={`metal-${achievement.id}`}
+                  x1="0%"
+                  y1="0%"
+                  x2="100%"
+                  y2="100%"
+                >
                   {achievement.earned ? (
                     <>
-                      <stop offset="0%"   stopColor="#d8d8d8" />
-                      <stop offset="22%"  stopColor="#ffffff" />
-                      <stop offset="48%"  stopColor="#b0b0b0" />
-                      <stop offset="72%"  stopColor="#eeeeee" />
+                      <stop offset="0%" stopColor="#d8d8d8" />
+                      <stop offset="22%" stopColor="#ffffff" />
+                      <stop offset="48%" stopColor="#b0b0b0" />
+                      <stop offset="72%" stopColor="#eeeeee" />
                       <stop offset="100%" stopColor="#cccccc" />
                     </>
                   ) : (
                     <>
-                      {locked.bezel.map((s) => (
+                      {locked.bezel.map(s => (
                         <stop key={s.o} offset={s.o} stopColor={s.c} />
                       ))}
                     </>
                   )}
                 </linearGradient>
 
-                <linearGradient id={`body-${achievement.id}`} x1="20%" y1="0%" x2="80%" y2="100%">
-                  <stop offset="0%"   stopColor={achievement.earned ? from : locked.bodyFrom} />
-                  <stop offset="100%" stopColor={achievement.earned ? to   : locked.bodyTo} />
+                <linearGradient
+                  id={`body-${achievement.id}`}
+                  x1="20%"
+                  y1="0%"
+                  x2="80%"
+                  y2="100%"
+                >
+                  <stop
+                    offset="0%"
+                    stopColor={achievement.earned ? from : locked.bodyFrom}
+                  />
+                  <stop
+                    offset="100%"
+                    stopColor={achievement.earned ? to : locked.bodyTo}
+                  />
                 </linearGradient>
 
-                <radialGradient id={`hl-${achievement.id}`} cx="35%" cy="25%" r="55%">
-                  <stop offset="0%"   stopColor={achievement.earned ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.0)'} />
+                <radialGradient
+                  id={`hl-${achievement.id}`}
+                  cx="35%"
+                  cy="25%"
+                  r="55%"
+                >
+                  <stop
+                    offset="0%"
+                    stopColor={
+                      achievement.earned
+                        ? 'rgba(255,255,255,0.28)'
+                        : 'rgba(255,255,255,0.0)'
+                    }
+                  />
                   <stop offset="100%" stopColor="rgba(0,0,0,0)" />
                 </radialGradient>
 
-                <linearGradient id={`arc-${achievement.id}`} x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%"   stopColor={from} />
+                <linearGradient
+                  id={`arc-${achievement.id}`}
+                  x1="0%"
+                  y1="0%"
+                  x2="100%"
+                  y2="0%"
+                >
+                  <stop offset="0%" stopColor={from} />
                   <stop offset="100%" stopColor={to} />
                 </linearGradient>
 
-                <linearGradient id={`shine-${achievement.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%"   stopColor="rgba(255,255,255,0.85)" />
-                  <stop offset="35%"  stopColor="rgba(255,255,255,0.1)" />
+                <linearGradient
+                  id={`shine-${achievement.id}`}
+                  x1="0%"
+                  y1="0%"
+                  x2="100%"
+                  y2="100%"
+                >
+                  <stop offset="0%" stopColor="rgba(255,255,255,0.85)" />
+                  <stop offset="35%" stopColor="rgba(255,255,255,0.1)" />
                   <stop offset="100%" stopColor="rgba(255,255,255,0)" />
                 </linearGradient>
 
-                <filter id={`shadow-${achievement.id}`} x="-20%" y="-20%" width="140%" height="140%">
-                  <feDropShadow dx="0" dy="5" stdDeviation="7" floodColor="rgba(0,0,0,0.6)" />
+                <filter
+                  id={`shadow-${achievement.id}`}
+                  x="-20%"
+                  y="-20%"
+                  width="140%"
+                  height="140%"
+                >
+                  <feDropShadow
+                    dx="0"
+                    dy="5"
+                    stdDeviation="7"
+                    floodColor="rgba(0,0,0,0.6)"
+                  />
                 </filter>
 
-                <filter id={`glow-${achievement.id}`} x="-50%" y="-50%" width="200%" height="200%">
+                <filter
+                  id={`glow-${achievement.id}`}
+                  x="-50%"
+                  y="-50%"
+                  width="200%"
+                  height="200%"
+                >
                   <feGaussianBlur stdDeviation="7" result="blur" />
                   <feMerge>
                     <feMergeNode in="blur" />
@@ -251,16 +333,24 @@ export function AchievementBadge({ achievement }: AchievementBadgeProps) {
                 filter={`url(#shadow-${achievement.id})`}
               />
 
-              <polygon points={innerPts} fill={`url(#body-${achievement.id})`} />
+              <polygon
+                points={innerPts}
+                fill={`url(#body-${achievement.id})`}
+              />
 
               {achievement.earned && (
-                <polygon points={innerPts} fill={`url(#hl-${achievement.id})`} />
+                <polygon
+                  points={innerPts}
+                  fill={`url(#hl-${achievement.id})`}
+                />
               )}
 
               <polygon
                 points={innerPts}
                 fill="none"
-                stroke={achievement.earned ? 'rgba(0,0,0,0.18)' : locked.bevelStroke}
+                stroke={
+                  achievement.earned ? 'rgba(0,0,0,0.18)' : locked.bevelStroke
+                }
                 strokeWidth="2"
               />
 
@@ -310,8 +400,12 @@ export function AchievementBadge({ achievement }: AchievementBadgeProps) {
             <div className="absolute inset-0 flex items-center justify-center">
               <Icon
                 weight={achievement.earned ? 'fill' : 'regular'}
-                className="w-8 h-8 sm:w-10 sm:h-10 md:w-10 md:h-10 xl:w-[52px] xl:h-[52px]"
-                color={achievement.earned ? 'rgba(255,255,255,0.97)' : locked.iconColor}
+                className="h-8 w-8 sm:h-10 sm:w-10 md:h-10 md:w-10 xl:h-[52px] xl:w-[52px]"
+                color={
+                  achievement.earned
+                    ? 'rgba(255,255,255,0.97)'
+                    : locked.iconColor
+                }
                 style={{
                   filter: achievement.earned
                     ? `drop-shadow(0 0 10px ${achievement.glow}) drop-shadow(0 2px 5px rgba(0,0,0,0.6))`
@@ -321,31 +415,69 @@ export function AchievementBadge({ achievement }: AchievementBadgeProps) {
             </div>
           </div>
 
-          <div className="backface-hidden absolute inset-0 [transform:rotateY(180deg)]">
-            <svg viewBox="0 0 160 160" className="absolute inset-0 w-full h-full overflow-visible" aria-hidden="true">
+          <div className="absolute inset-0 [transform:rotateY(180deg)] backface-hidden">
+            <svg
+              viewBox="0 0 160 160"
+              className="absolute inset-0 h-full w-full overflow-visible"
+              aria-hidden="true"
+            >
               <defs>
-                <linearGradient id={`back-body-${achievement.id}`} x1="20%" y1="0%" x2="80%" y2="100%">
+                <linearGradient
+                  id={`back-body-${achievement.id}`}
+                  x1="20%"
+                  y1="0%"
+                  x2="80%"
+                  y2="100%"
+                >
                   {achievement.earned ? (
                     <>
-                      <stop offset="0%"   stopColor={`${from}ee`} />
+                      <stop offset="0%" stopColor={`${from}ee`} />
                       <stop offset="100%" stopColor={`${to}cc`} />
                     </>
                   ) : (
                     <>
-                      <stop offset="0%"   stopColor={isDark ? '#334155' : '#94a3b8'} />
-                      <stop offset="100%" stopColor={isDark ? '#1e293b' : '#64748b'} />
+                      <stop
+                        offset="0%"
+                        stopColor={isDark ? '#334155' : '#94a3b8'}
+                      />
+                      <stop
+                        offset="100%"
+                        stopColor={isDark ? '#1e293b' : '#64748b'}
+                      />
                     </>
                   )}
                 </linearGradient>
-                <radialGradient id={`back-hl-${achievement.id}`} cx="38%" cy="22%" r="55%">
-                  <stop offset="0%"   stopColor="rgba(255,255,255,0.22)" />
+                <radialGradient
+                  id={`back-hl-${achievement.id}`}
+                  cx="38%"
+                  cy="22%"
+                  r="55%"
+                >
+                  <stop offset="0%" stopColor="rgba(255,255,255,0.22)" />
                   <stop offset="100%" stopColor="rgba(255,255,255,0)" />
                 </radialGradient>
-                <filter id={`back-shadow-${achievement.id}`} x="-20%" y="-20%" width="140%" height="140%">
-                  <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="rgba(0,0,0,0.5)" />
+                <filter
+                  id={`back-shadow-${achievement.id}`}
+                  x="-20%"
+                  y="-20%"
+                  width="140%"
+                  height="140%"
+                >
+                  <feDropShadow
+                    dx="0"
+                    dy="4"
+                    stdDeviation="6"
+                    floodColor="rgba(0,0,0,0.5)"
+                  />
                 </filter>
                 {achievement.earned && (
-                  <filter id={`back-glow-${achievement.id}`} x="-50%" y="-50%" width="200%" height="200%">
+                  <filter
+                    id={`back-glow-${achievement.id}`}
+                    x="-50%"
+                    y="-50%"
+                    width="200%"
+                    height="200%"
+                  >
                     <feGaussianBlur stdDeviation="6" result="blur" />
                     <feMerge>
                       <feMergeNode in="blur" />
@@ -353,14 +485,26 @@ export function AchievementBadge({ achievement }: AchievementBadgeProps) {
                     </feMerge>
                   </filter>
                 )}
-                <linearGradient id={`back-shine-${achievement.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%"   stopColor="rgba(255,255,255,0.85)" />
-                  <stop offset="35%"  stopColor="rgba(255,255,255,0.1)" />
+                <linearGradient
+                  id={`back-shine-${achievement.id}`}
+                  x1="0%"
+                  y1="0%"
+                  x2="100%"
+                  y2="100%"
+                >
+                  <stop offset="0%" stopColor="rgba(255,255,255,0.85)" />
+                  <stop offset="35%" stopColor="rgba(255,255,255,0.1)" />
                   <stop offset="100%" stopColor="rgba(255,255,255,0)" />
                 </linearGradient>
                 {!achievement.earned && progress > 0 && (
                   <clipPath id={`progress-clip-${achievement.id}`}>
-                    <rect x="35" y="0" width={`${progress * 0.9}`} height="5" rx="2.5" />
+                    <rect
+                      x="35"
+                      y="0"
+                      width={`${progress * 0.9}`}
+                      height="5"
+                      rx="2.5"
+                    />
                   </clipPath>
                 )}
               </defs>
@@ -371,9 +515,15 @@ export function AchievementBadge({ achievement }: AchievementBadgeProps) {
                 filter={`url(#back-shadow-${achievement.id})`}
               />
 
-              <polygon points={innerPts} fill={`url(#back-body-${achievement.id})`} />
+              <polygon
+                points={innerPts}
+                fill={`url(#back-body-${achievement.id})`}
+              />
 
-              <polygon points={innerPts} fill={`url(#back-hl-${achievement.id})`} />
+              <polygon
+                points={innerPts}
+                fill={`url(#back-hl-${achievement.id})`}
+              />
               {achievement.earned && (
                 <polygon
                   points={outerPts}
@@ -410,71 +560,85 @@ export function AchievementBadge({ achievement }: AchievementBadgeProps) {
                     fontFamily: 'system-ui, sans-serif',
                   }}
                 >
-                  <p style={{
-                    fontSize: '9px',
-                    fontWeight: 900,
-                    letterSpacing: '0.1em',
-                    textTransform: 'uppercase',
-                    color: 'rgba(255,255,255,0.95)',
-                    lineHeight: 1.2,
-                    margin: 0,
-                  }}>
+                  <p
+                    style={{
+                      fontSize: '9px',
+                      fontWeight: 900,
+                      letterSpacing: '0.1em',
+                      textTransform: 'uppercase',
+                      color: 'rgba(255,255,255,0.95)',
+                      lineHeight: 1.2,
+                      margin: 0,
+                    }}
+                  >
                     {badgeLabel}
                   </p>
 
-                  <div style={{
-                    width: '28px',
-                    height: '1px',
-                    background: 'rgba(255,255,255,0.35)',
-                    flexShrink: 0,
-                  }} />
+                  <div
+                    style={{
+                      width: '28px',
+                      height: '1px',
+                      background: 'rgba(255,255,255,0.35)',
+                      flexShrink: 0,
+                    }}
+                  />
 
-                  <p style={{
-                    fontSize: '8px',
-                    fontWeight: 500,
-                    color: 'rgba(255,255,255,0.82)',
-                    lineHeight: 1.45,
-                    margin: 0,
-                    maxWidth: '100px',
-                  }}>
+                  <p
+                    style={{
+                      fontSize: '8px',
+                      fontWeight: 500,
+                      color: 'rgba(255,255,255,0.82)',
+                      lineHeight: 1.45,
+                      margin: 0,
+                      maxWidth: '100px',
+                    }}
+                  >
                     {achievement.earned ? badgeDesc : badgeHint}
                   </p>
 
                   {!achievement.earned && progress > 0 && (
                     <div style={{ width: '80px', marginTop: '4px' }}>
-                      <div style={{
-                        height: '4px',
-                        background: 'rgba(255,255,255,0.15)',
-                        borderRadius: '2px',
-                        overflow: 'hidden',
-                      }}>
-                        <div style={{
-                          height: '100%',
-                          width: `${progress}%`,
-                          background: `linear-gradient(90deg, ${from}, ${to})`,
+                      <div
+                        style={{
+                          height: '4px',
+                          background: 'rgba(255,255,255,0.15)',
                           borderRadius: '2px',
-                        }} />
+                          overflow: 'hidden',
+                        }}
+                      >
+                        <div
+                          style={{
+                            height: '100%',
+                            width: `${progress}%`,
+                            background: `linear-gradient(90deg, ${from}, ${to})`,
+                            borderRadius: '2px',
+                          }}
+                        />
                       </div>
-                      <p style={{
-                        fontSize: '7px',
-                        fontWeight: 700,
-                        color: 'rgba(255,255,255,0.55)',
-                        marginTop: '2px',
-                        letterSpacing: '0.05em',
-                      }}>
+                      <p
+                        style={{
+                          fontSize: '7px',
+                          fontWeight: 700,
+                          color: 'rgba(255,255,255,0.55)',
+                          marginTop: '2px',
+                          letterSpacing: '0.05em',
+                        }}
+                      >
                         {Math.round(progress)}%
                       </p>
                     </div>
                   )}
 
                   {achievement.earned && achievement.earnedAt && (
-                    <p style={{
-                      fontSize: '7px',
-                      fontWeight: 500,
-                      color: 'rgba(255,255,255,0.5)',
-                      marginTop: '1px',
-                      letterSpacing: '0.04em',
-                    }}>
+                    <p
+                      style={{
+                        fontSize: '7px',
+                        fontWeight: 500,
+                        color: 'rgba(255,255,255,0.5)',
+                        marginTop: '1px',
+                        letterSpacing: '0.04em',
+                      }}
+                    >
                       {achievement.earnedAt}
                     </p>
                   )}
@@ -482,14 +646,15 @@ export function AchievementBadge({ achievement }: AchievementBadgeProps) {
               </foreignObject>
             </svg>
           </div>
-
         </motion.div>
       </motion.div>
 
-      <p className="max-w-[140px] text-balance text-center text-[10.5px] font-bold leading-tight tracking-wider uppercase">
+      <p className="max-w-[140px] text-center text-[10.5px] leading-tight font-bold tracking-wider text-balance uppercase">
         <span
           style={{ color: achievement.earned ? from : undefined }}
-          className={achievement.earned ? '' : 'text-neutral-400 dark:text-neutral-500'}
+          className={
+            achievement.earned ? '' : 'text-neutral-400 dark:text-neutral-500'
+          }
         >
           {badgeLabel}
         </span>

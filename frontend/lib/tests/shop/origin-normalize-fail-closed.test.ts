@@ -27,7 +27,8 @@ describe('origin normalize fail-closed (P1)', () => {
     if (originalAppOrigin === undefined) delete process.env.APP_ORIGIN;
     else process.env.APP_ORIGIN = originalAppOrigin;
 
-    if (originalAdditional === undefined) delete process.env.APP_ADDITIONAL_ORIGINS;
+    if (originalAdditional === undefined)
+      delete process.env.APP_ADDITIONAL_ORIGINS;
     else process.env.APP_ADDITIONAL_ORIGINS = originalAdditional;
   });
 

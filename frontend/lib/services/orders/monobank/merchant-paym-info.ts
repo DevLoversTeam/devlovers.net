@@ -39,7 +39,7 @@ export type MonoMerchantPaymInfoInput = {
   }>;
 };
 
-export type { MonoBasketOrderItem,MonoMerchantPaymInfo };
+export type { MonoBasketOrderItem, MonoMerchantPaymInfo };
 export { MonobankMerchantPaymInfoError as MonoMerchantPaymInfoError };
 
 export function buildMonoMerchantPaymInfo(
