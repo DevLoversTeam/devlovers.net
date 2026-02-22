@@ -52,13 +52,7 @@ export function ActivityHeatmapCard({ attempts, locale, currentStreak }: Activit
     left: number;
   } | null>(null);
   
-  const cardStyles = `
-    relative z-10 flex flex-col justify-between overflow-hidden rounded-3xl
-    border border-gray-200 bg-white/10 shadow-sm backdrop-blur-md
-    dark:border-neutral-800 dark:bg-neutral-900/10
-    p-6 sm:p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-md
-    hover:border-(--accent-primary)/30 dark:hover:border-(--accent-primary)/30
-  `;
+  const cardStyles = 'dashboard-card flex flex-col justify-between p-6 sm:p-8';
 
   const todayStart = useMemo(() => {
     const d = new Date();
@@ -278,7 +272,7 @@ export function ActivityHeatmapCard({ attempts, locale, currentStreak }: Activit
 
           <div className="flex flex-col items-end gap-2 shrink-0 sm:flex-row sm:items-center">
             {currentStreak !== undefined && currentStreak > 0 && (
-              <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-orange-500/10 px-2 py-0.5 text-[10px] sm:px-2.5 sm:py-1 sm:text-[11px] h-[22px] sm:h-auto font-bold tracking-wide text-orange-600 dark:bg-orange-500/20 dark:text-orange-400 border border-orange-500/20">
+              <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-orange-500/10 px-2 py-0.5 text-[10px] sm:px-2.5 sm:py-1 sm:text-[11px] h-5.5 sm:h-auto font-bold tracking-wide text-orange-600 dark:bg-orange-500/20 dark:text-orange-400 border border-orange-500/20">
                 <Flame className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                 <span className="hidden xs:inline">
                   {currentStreak} {currentStreak === 1 ? tProfile('dayStreak', { fallback: 'Day Streak' }) : tProfile('daysStreak', { fallback: 'Days Streak' })}
@@ -294,7 +288,7 @@ export function ActivityHeatmapCard({ attempts, locale, currentStreak }: Activit
                 aria-expanded={isDropdownOpen}
                 aria-haspopup="listbox"
               >
-                <span className="hidden sm:block min-w-[70px] text-center">
+                <span className="hidden sm:block min-w-17.5 text-center">
                   {periodOptions.find(o => o.value === periodOffset)?.label}
                 </span>
                 <motion.span
@@ -352,7 +346,7 @@ export function ActivityHeatmapCard({ attempts, locale, currentStreak }: Activit
         </div>
 
       <div className="relative flex w-full flex-1 flex-col justify-center -mb-2">
-        <div className="absolute left-0 inset-y-0 z-10 w-[44px] pointer-events-none flex flex-col justify-center pb-1">
+        <div className="absolute left-0 inset-y-0 z-10 w-11 pointer-events-none flex flex-col justify-center pb-1">
           <svg width={44} height={svgHeight} className="block">
             {monthsData.map((m, i) => (
               <text key={`l-${i}`} x="32" y={16 + i * 34 + 3} fontSize="9" textAnchor="end" className="fill-gray-400 dark:fill-gray-500 font-bold uppercase tracking-widest">
@@ -458,14 +452,14 @@ export function ActivityHeatmapCard({ attempts, locale, currentStreak }: Activit
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 4 }}
             transition={{ duration: 0.1 }}
-            className="fixed z-[9999] pointer-events-none"
+            className="fixed z-9999 pointer-events-none"
             style={{
               top: tooltip.top,
               left: tooltip.left,
               transform: 'translate(-50%, -100%)',
             }}
           >
-            <div className="bg-gray-900 dark:bg-white rounded-xl px-3 py-2 shadow-xl shadow-black/30 text-center min-w-[110px]">
+            <div className="bg-gray-900 dark:bg-white rounded-xl px-3 py-2 shadow-xl shadow-black/30 text-center min-w-27.5">
               <p className="text-[11px] font-semibold text-white dark:text-gray-900">
                 {tooltip.date.toLocaleDateString(locale, { weekday: 'short', month: 'short', day: 'numeric' })}
               </p>

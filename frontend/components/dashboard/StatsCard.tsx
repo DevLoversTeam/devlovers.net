@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { History, Target,TrendingUp } from 'lucide-react';
+import { Target } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import { Link } from '@/i18n/routing';
@@ -26,13 +26,7 @@ export function StatsCard({ stats, attempts = [] }: StatsCardProps) {
   const tProfile = useTranslations('dashboard.profile');
   const hasActivity = stats && stats.totalAttempts > 0;
 
-  const cardStyles = `
-    relative z-10 flex flex-col justify-between overflow-hidden rounded-3xl
-    border border-gray-200 bg-white/10 shadow-sm backdrop-blur-md
-    dark:border-neutral-800 dark:bg-neutral-900/10
-    p-6 sm:p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-md
-    hover:border-(--accent-primary)/30 dark:hover:border-(--accent-primary)/30
-  `;
+  const cardStyles = 'dashboard-card flex flex-col justify-between p-6 sm:p-8';
 
   const primaryBtnStyles = `
     group relative inline-flex items-center justify-center rounded-full
@@ -93,7 +87,7 @@ export function StatsCard({ stats, attempts = [] }: StatsCardProps) {
       ) : (
         <>
           <div className="flex w-full flex-col md:flex-row items-center md:items-start gap-6 pt-2">
-            <div className="relative flex w-[220px] md:w-[260px] aspect-[2/1] shrink-0 items-end justify-center mx-auto md:mx-0">
+            <div className="relative flex w-55 md:w-65 aspect-2/1 shrink-0 items-end justify-center mx-auto md:mx-0">
               <svg className="absolute inset-x-0 bottom-0 h-full w-full overflow-visible drop-shadow-[0_4px_10px_rgba(0,0,0,0.05)] dark:drop-shadow-[0_4px_10px_rgba(0,0,0,0.2)]" viewBox="0 0 100 55">
                 <defs>
                   <linearGradient id="neonGradientMastered" x1="0%" y1="0%" x2="100%" y2="0%">
