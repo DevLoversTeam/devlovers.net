@@ -43,11 +43,14 @@ function makeReq(args: {
     headers.set('x-request-id', args.requestId);
   }
 
-  return new NextRequest('http://localhost/api/shop/internal/monobank/janitor', {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(args.body),
-  });
+  return new NextRequest(
+    'http://localhost/api/shop/internal/monobank/janitor',
+    {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(args.body),
+    }
+  );
 }
 
 describe('internal monobank janitor route (G1)', () => {
@@ -352,11 +355,9 @@ describe('internal monobank janitor route (G1)', () => {
   });
 
   it('returns 429 RATE_LIMITED with Retry-After when DB gate blocks', async () => {
-    dbExecuteMock
-      .mockResolvedValueOnce({ rows: [] })
-      .mockResolvedValueOnce({
-        rows: [{ next_allowed_at: new Date(Date.now() + 5000).toISOString() }],
-      });
+    dbExecuteMock.mockResolvedValueOnce({ rows: [] }).mockResolvedValueOnce({
+      rows: [{ next_allowed_at: new Date(Date.now() + 5000).toISOString() }],
+    });
 
     const res = await POST(
       makeReq({

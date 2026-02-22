@@ -49,7 +49,9 @@ function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-function isPaidLike(order: Pick<OrderCancelRow, 'paymentStatus' | 'status'>): boolean {
+function isPaidLike(
+  order: Pick<OrderCancelRow, 'paymentStatus' | 'status'>
+): boolean {
   return (
     order.paymentStatus === 'paid' ||
     order.paymentStatus === 'refunded' ||
@@ -57,7 +59,9 @@ function isPaidLike(order: Pick<OrderCancelRow, 'paymentStatus' | 'status'>): bo
   );
 }
 
-function isFinalCanceled(order: Pick<OrderCancelRow, 'status' | 'inventoryStatus' | 'stockRestored'>): boolean {
+function isFinalCanceled(
+  order: Pick<OrderCancelRow, 'status' | 'inventoryStatus' | 'stockRestored'>
+): boolean {
   return (
     order.status === 'CANCELED' &&
     order.inventoryStatus === 'released' &&
@@ -91,7 +95,11 @@ function readInvoiceFromAttempt(row: {
   const direct = toTrimmedOrNull(row.providerPaymentIntentId);
   if (direct) return direct;
 
-  if (!row.metadata || typeof row.metadata !== 'object' || Array.isArray(row.metadata)) {
+  if (
+    !row.metadata ||
+    typeof row.metadata !== 'object' ||
+    Array.isArray(row.metadata)
+  ) {
     return null;
   }
 
@@ -132,7 +140,10 @@ async function findInvoiceAttempt(
   };
 }
 
-async function resolveInvoiceForCancel(orderId: string, pspChargeId: string | null) {
+async function resolveInvoiceForCancel(
+  orderId: string,
+  pspChargeId: string | null
+) {
   const direct = toTrimmedOrNull(pspChargeId);
   if (direct) return { invoiceId: direct, attemptId: null as string | null };
 
@@ -253,7 +264,12 @@ async function finalizeProcessingCancel(args: {
   requestId: string;
 }): Promise<{
   order: Awaited<ReturnType<typeof getOrderById>>;
-  cancel: { id: string | null; extRef: string; status: string; deduped: boolean };
+  cancel: {
+    id: string | null;
+    extRef: string;
+    status: string;
+    deduped: boolean;
+  };
 }> {
   try {
     await restockOrder(args.orderId, {
@@ -345,7 +361,10 @@ export async function cancelMonobankUnpaidPayment(args: {
     };
   }
 
-  const resolved = await resolveInvoiceForCancel(args.orderId, order.pspChargeId);
+  const resolved = await resolveInvoiceForCancel(
+    args.orderId,
+    order.pspChargeId
+  );
   if (!resolved.invoiceId) {
     throw invalid(
       'CANCEL_MISSING_PROVIDER_REF',
@@ -485,8 +504,10 @@ export async function cancelMonobankUnpaidPayment(args: {
         ? (result as Record<string, unknown>)
         : null;
   } catch (error) {
-    const errorCode = error instanceof PspError ? error.code : 'PSP_UNAVAILABLE';
-    const errorMessage = error instanceof Error ? error.message : 'PSP unavailable';
+    const errorCode =
+      error instanceof PspError ? error.code : 'PSP_UNAVAILABLE';
+    const errorMessage =
+      error instanceof Error ? error.message : 'PSP unavailable';
 
     await updateCancelStatus({
       cancelId: cancelRow.id,

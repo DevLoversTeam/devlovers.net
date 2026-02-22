@@ -1,13 +1,12 @@
 'use client';
 
-import { BookOpen, LogIn, Menu, ShoppingBag, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo } from 'react';
 
 import { LogoutButton } from '@/components/auth/logoutButton';
 import { useMobileMenu } from '@/components/header/MobileMenuContext';
-import { HeaderButton } from '@/components/shared/HeaderButton';
 import { Link, usePathname } from '@/i18n/routing';
 import { SITE_LINKS } from '@/lib/navigation';
 
@@ -118,27 +117,31 @@ export function AppMobileMenu({
         : 'text-muted-foreground active:text-[var(--accent-hover)]'
     }`;
 
-  // Lock body scroll when menu is open
+  // Lock body scroll when menu is open.
+  // overflow:hidden on <html> works on desktop but iOS Safari ignores it for
+  // touch events. Adding a non-passive touchmove listener lets us call
+  // preventDefault() to block background scrolling while still allowing the
+  // nav itself (which has overflow-y-auto) to scroll normally.
   useEffect(() => {
-    if (open) {
-      const scrollY = window.scrollY;
-      Object.assign(document.body.style, {
-        position: 'fixed',
-        top: `-${scrollY}px`,
-        width: '100%',
-        overflow: 'hidden',
-      });
+    if (!open) return;
 
-      return () => {
-        Object.assign(document.body.style, {
-          position: '',
-          top: '',
-          width: '',
-          overflow: '',
-        });
-        window.scrollTo(0, scrollY);
-      };
-    }
+    const prev = document.documentElement.style.overflowY;
+    document.documentElement.style.overflowY = 'hidden';
+
+    const preventTouchMove = (e: TouchEvent) => {
+      const nav = document.getElementById('app-mobile-nav');
+      if (nav && nav.contains(e.target as Node)) return;
+      e.preventDefault();
+    };
+
+    document.addEventListener('touchmove', preventTouchMove, {
+      passive: false,
+    });
+
+    return () => {
+      document.documentElement.style.overflowY = prev;
+      document.removeEventListener('touchmove', preventTouchMove);
+    };
   }, [open]);
 
   return (
@@ -169,7 +172,7 @@ export function AppMobileMenu({
 
           <nav
             id="app-mobile-nav"
-            className={`bg-background fixed top-16 right-0 left-0 z-50 h-[calc(100dvh-4rem)] overflow-y-auto overscroll-contain px-4 py-4 transition-transform duration-300 ease-out sm:px-6 min-[1050px]:hidden ${
+            className={`bg-background fixed top-16 right-0 left-0 z-50 h-[calc(100dvh-4rem)] overflow-y-auto overscroll-contain px-4 py-4 transition-transform duration-300 ease-out min-[1050px]:hidden sm:px-6 ${
               isAnimating ? 'translate-y-0' : '-translate-y-4'
             }`}
             style={{
@@ -180,14 +183,13 @@ export function AppMobileMenu({
             <div className="flex flex-col gap-1">
               {variant === 'shop' && (
                 <>
-                  <HeaderButton
+                  <Link
                     href="/shop"
-                    icon={ShoppingBag}
-                    isActive={pathname === '/shop'}
-                    onLinkClick={handleHeaderButtonLinkClick('/shop')}
+                    onClick={(e) => handleLinkClick(e, '/shop')}
+                    className={linkClass(pathname === '/shop')}
                   >
                     {t('shop')}
-                  </HeaderButton>
+                  </Link>
                   {links.map(link => {
                     const isActive =
                       pathname === '/shop/products' &&
@@ -211,14 +213,13 @@ export function AppMobileMenu({
 
               {variant === 'blog' && (
                 <>
-                  <HeaderButton
+                  <Link
                     href="/blog"
-                    icon={BookOpen}
-                    isActive={pathname === '/blog'}
-                    onLinkClick={handleHeaderButtonLinkClick('/blog')}
+                    onClick={(e) => handleLinkClick(e, '/blog')}
+                    className={linkClass(pathname === '/blog')}
                   >
                     {t('blog')}
-                  </HeaderButton>
+                  </Link>
                   {blogCategories.map(category => {
                     const slug = slugify(category.title || '');
                     const href = `/blog/category/${slug}`;
@@ -243,9 +244,6 @@ export function AppMobileMenu({
               {variant === 'platform' && (
                 <>
                   {links
-                    .filter(
-                      link => link.href !== '/shop' && link.href !== '/blog'
-                    )
                     .map(link => (
                       <Link
                         key={link.href}
@@ -256,32 +254,14 @@ export function AppMobileMenu({
                         {'labelKey' in link ? t(link.labelKey) : link.label}
                       </Link>
                     ))}
-
-                  <HeaderButton
-                    href="/blog"
-                    icon={BookOpen}
-                    showArrow
-                    onLinkClick={handleHeaderButtonLinkClick('/blog')}
-                  >
-                    {t('blog')}
-                  </HeaderButton>
-
-                  <HeaderButton
-                    href="/shop"
-                    icon={ShoppingBag}
-                    showArrow
-                    onLinkClick={handleHeaderButtonLinkClick('/shop')}
-                  >
-                    {t('shop')}
-                  </HeaderButton>
                 </>
               )}
 
               {variant === 'shop' && showAdminLink && (
                 <Link
-                  href="/shop/admin/products/new"
-                  onClick={e => handleLinkClick(e, '/shop/admin/products/new')}
-                  className={linkClass(pathname === '/shop/admin/products/new')}
+                  href="/admin/shop/products/new"
+                  onClick={e => handleLinkClick(e, '/admin/shop/products/new')}
+                  className={linkClass(pathname === '/admin/shop/products/new')}
                 >
                   {tMobileMenu('newProduct')}
                 </Link>
@@ -301,24 +281,28 @@ export function AppMobileMenu({
 
                   {showAdminLink && (
                     <Link
-                      href="/shop/admin"
-                      aria-label={tAria('shopAdmin')}
-                      title={tAria('shopAdmin')}
-                      onClick={e => handleLinkClick(e, '/shop/admin')}
-                      className={linkClass(pathname === '/shop/admin')}
+                      href="/admin"
+                      aria-label={tAria('admin')}
+                      title={tAria('admin')}
+                      onClick={e => handleLinkClick(e, '/admin')}
+                      className={linkClass(pathname === '/admin')}
                     >
                       {tMobileMenu('admin')}
                     </Link>
                   )}
 
-                  <div onClick={close}>
+                  <div onClick={close} className="px-3 py-2 cursor-pointer text-muted-foreground hover:text-foreground transition-colors font-medium text-sm">
                     <LogoutButton />
                   </div>
                 </>
               ) : (
-                <HeaderButton href="/login" icon={LogIn} onClick={close}>
+                <Link
+                  href="/login"
+                  onClick={(e) => handleLinkClick(e, '/login')}
+                  className={linkClass(pathname === '/login')}
+                >
                   {t('login')}
-                </HeaderButton>
+                </Link>
               )}
             </div>
           </nav>

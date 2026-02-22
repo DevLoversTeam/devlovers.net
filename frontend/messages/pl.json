@@ -12,7 +12,7 @@
   "aria": {
     "primaryNav": "Nawigacja główna",
     "dashboard": "Panel",
-    "shopAdmin": "Panel administracyjny sklepu",
+    "admin": "Admin panel",
     "blogCategories": "Kategorie bloga",
     "searchBlog": "Szukaj w blogu",
     "toggleMenu": "Przełącz menu",
@@ -114,7 +114,8 @@
           "tip": "Powszechnie używane w wrapperach API, hookach i funkcjach użytkowych."
         }
       }
-    }
+    },
+    "scrollToNextSection": "Przewiń do następnej sekcji"
   },
   "qa": {
     "title": "Pytania i Odpowiedzi",
@@ -123,7 +124,7 @@
     "searchPlaceholder": "Szukaj pytań...",
     "clearSearch": "Wyczyść wyszukiwanie",
     "noResults": "Nic nie znaleziono dla \"{query}\"",
-    "noQuestions": "Nie znaleziono pytań",
+    "noQuestions": "Brak pytań na ten moment…\nAle już są w przygotowaniu.\nBądź na bieżąco - wkrótce pojawią się nowe materiały!",
     "metaTitle": "Q&A | DevLovers",
     "metaDescription": "Pytania i odpowiedzi do przygotowania do rozmów kwalifikacyjnych",
     "frontend": "Frontend",
@@ -203,6 +204,9 @@
       "hurryUp": "Pośpiesz się!"
     },
     "result": {
+      "accuracy": "Skuteczność",
+      "integrity": "Uczciwość",
+      "violationsLabel": "Naruszenia",
       "correctAnswers": "poprawnych odpowiedzi",
       "timeUp": {
         "title": "Czas Minął",
@@ -253,7 +257,7 @@
       "start": "Rozpocznij Quiz"
     },
     "section": {
-      "noQuizzes": "Brak quizów w tej kategorii."
+      "noQuizzes": "Brak quizów na ten moment…\nAle już są w przygotowaniu.\nBądź na bieżąco - wkrótce pojawią się nowe quizy!"
     },
     "exitModal": {
       "title": "Wyjść z Quizu?",
@@ -370,6 +374,7 @@
     "cart": {
       "title": "Twój koszyk",
       "empty": "Twój koszyk jest pusty",
+      "loading": "Ładowanie…",
       "emptyDescription": "Wygląda na to, że nie dodałeś jeszcze żadnych produktów do koszyka",
       "startShopping": "Rozpocznij zakupy",
       "itemsLabel": "Produkty w koszyku",
@@ -791,7 +796,10 @@
       },
       "bubbles": {
         "qa": {
-          "languages": { "label": "3 języki", "desc": "EN, UK i PL" },
+          "languages": {
+            "label": "3 języki",
+            "desc": "EN, UK i PL"
+          },
           "aiHelper": {
             "label": "Pomocnik AI",
             "desc": "Zaznacz tekst do wyjaśnienia"
@@ -846,7 +854,10 @@
             "label": "Centrum statystyk",
             "desc": "Wizualizuj swój rozwój"
           },
-          "history": { "label": "Historia", "desc": "Śledź serie nauki" },
+          "history": {
+            "label": "Historia",
+            "desc": "Śledź serie nauki"
+          },
           "identity": {
             "label": "Tożsamość",
             "desc": "Zarządzaj rolą i profilem"
@@ -875,7 +886,10 @@
           }
         },
         "shop": {
-          "newDrops": { "label": "Nowości", "desc": "Regularne aktualizacje" },
+          "newDrops": {
+            "label": "Nowości",
+            "desc": "Regularne aktualizacje"
+          },
           "curated": {
             "label": "Selekcja",
             "desc": "Kolekcje dla developerów"
@@ -884,7 +898,10 @@
             "label": "Płatność",
             "desc": "Płynny proces przez Stripe"
           },
-          "premium": { "label": "Premium", "desc": "Wysoka jakość materiałów" }
+          "premium": {
+            "label": "Premium",
+            "desc": "Wysoka jakość materiałów"
+          }
         }
       }
     },
@@ -983,7 +1000,9 @@
     "topThreeLabel": "Top 3 Liderów",
     "pts": "pkt",
     "tableCaption": "Tabela rankingowa pozostałych uczestników",
-    "you": "Ty"
+    "contextTableCaption": "Twoja pozycja w rankingu",
+    "you": "Ty",
+    "sponsor": "Sponsor"
   },
   "auth": {
     "login": {
@@ -1040,15 +1059,22 @@
     "fields": {
       "email": "Email",
       "password": "Hasło",
+      "confirmPassword": "Potwierdź hasło",
+      "setNewPassword": "Nowe hasło",
       "name": "Imię",
       "showPassword": "Pokaż hasło",
       "hidePassword": "Ukryj hasło",
       "show": "Pokaż",
       "hide": "Ukryj",
       "validation": {
-        "required": "Proszę wypełnić to pole",
+        "emailRequired": "Proszę wypełnić to pole",
+        "invalidName": "Imię i nazwisko musi mieć co najmniej {NAME_MIN_LEN} znaków i nie więcej niż {NAME_MAX_LEN} znaków",
+        "emailTooShort": "Adres e-mail musi mieć co najmniej {EMAIL_MIN_LEN} znaków",
+        "emailTooLong": "Adres e-mail nie może mieć więcej niż {EMAIL_MAX_LEN} znaków",
         "invalidEmail": "Proszę podać prawidłowy adres email",
-        "passwordTooShort": "Hasło musi mieć minimum {minLength} znaków"
+        "passwordRequirements": "{PASSWORD_MIN_LEN}–{PASSWORD_MAX_BYTES} znaków, co najmniej jedną wielką literę i co najmniej jeden znak specjalny",
+        "invalidPassword": "Hasło musi spełniać wymagania: {passwordRequirementsText}",
+        "passwordsDontMatch": "Hasła nie zgadzają się"
       }
     },
     "divider": "lub"
@@ -1058,20 +1084,54 @@
     "metaDescription": "Śledź swój postęp i wyniki quizów",
     "title": "Panel użytkownika",
     "subtitle": "Witaj z powrotem na swoim placu treningowym",
-    "supportLink": "Wsparcie i opinie",
+    "supportLink": "Opinie",
     "profile": {
-      "defaultName": "Programista",
-      "defaultRole": "użytkownik",
-      "totalPoints": "Łączna liczba punktów",
-      "joined": "Dołączył"
+      "title": "Profil",
+      "subtitle": "Zarządzaj swoim profilem publicznym i preferencjami",
+      "sponsor": "Sponsor",
+      "becomeSponsor": "Zostań sponsorem",
+      "supportAgain": "Okaż więcej wsparcia",
+      "points": "Pkt",
+      "quizzesTaken": "Quizy",
+      "joined": "Dołączył",
+      "globalRank": "Miejsce",
+      "dayStreak": "Dzień z rzędu",
+      "daysStreak": "Dni z rzędu",
+      "sponsorThanks": "Dziękujemy za wsparcie!",
+      "sponsorMore": "Wesprzyj jeszcze więcej",
+      "totalPoints": "Liczba punktów",
+      "settings": "Ustawienia",
+      "editProfile": "Edytuj profil",
+      "changeName": "Zmień imię",
+      "saveChanges": "Zapisz zmiany",
+      "changePassword": "Zmień hasło",
+      "currentPassword": "Aktualne hasło",
+      "newPassword": "Nowe hasło",
+      "saving": "Zapisywanie..."
     },
     "stats": {
       "title": "Statystyki quizów",
-      "noActivity": "Gotowy na rozwój? Sprawdź się w nowym quizie",
-      "startQuiz": "Rozpocznij quiz",
+      "scoreDistribution": "Rozkład wyników",
+      "scoreDistributionSubtext": "Na podstawie ostatnich podejść",
+      "activityHeatmap": "Wykres aktywności",
       "attempts": "Próby",
       "avgScore": "Średni wynik",
-      "continueLearning": "Kontynuuj naukę"
+      "mastered": "Opanowane",
+      "review": "Wymaga powtórki",
+      "study": "Nauka",
+      "totalAttempts": "Wszystkie próby",
+      "noActivity": "Nie rozwiązałeś jeszcze żadnego quizu. Rozpocznij naukę i śledź swoje postępy tutaj!",
+      "startQuiz": "Rozpocznij pierwszy quiz",
+      "continueLearning": "Kontynuuj naukę",
+      "less": "Mniej",
+      "more": "Więcej",
+      "attemptsInPeriod": "{count} prób w tym okresie",
+      "last3Months": "Ostatnie 3 miesiące",
+      "last5Months": "Ostatnie 5 miesięcy",
+      "last6Months": "Ostatnie 6 miesięcy",
+      "lastYear": "Ten rok",
+      "totalActiveDays": "Aktywne dni",
+      "mostActiveMonth": "Aktywny miesiąc"
     },
     "quizSaved": {
       "title": "Wynik quizu zapisany!",
@@ -1083,9 +1143,11 @@
     },
     "quizResults": {
       "title": "Wyniki quizów",
+      "subtitle": "Twoje ostatnie wyniki quizów",
       "noAttempts": "Nie przeszedłeś jeszcze żadnego quizu",
       "startQuiz": "Spróbuj",
       "score": "Wynik",
+      "accuracy": "Skuteczność",
       "integrity": "Czystość",
       "points": "Punkty",
       "scoreHint": "Liczba poprawnych odpowiedzi z ogólnej liczby",
@@ -1124,6 +1186,161 @@
       "ariaDragHandle": "Przeciągnij, aby zmienić kolejność {term}",
       "ariaHide": "Ukryj {term}",
       "ariaRestore": "Przywróć {term}"
+    },
+    "feedback": {
+      "title": "Wyślij opinię",
+      "description": "Pomóż nam ulepszyć DevLovers",
+      "name": "Twoje imię",
+      "email": "Twój email",
+      "category": "Kategoria",
+      "categoryBug": "Zgłoszenie błędu",
+      "categorySuggestion": "Sugestia",
+      "categoryQuestion": "Pytanie",
+      "categoryOther": "Inne",
+      "message": "Twoja wiadomość",
+      "messagePlaceholder": "Powiedz nam, co myślisz...",
+      "submit": "Wyślij opinię",
+      "submitting": "Wysyłanie...",
+      "attachFile": "Dołącz plik",
+      "success": "Dziękujemy! Twoja opinia została wysłana.",
+      "error": "Coś poszło nie tak. Spróbuj ponownie.",
+      "requiredField": "Proszę wypełnić to pole.",
+      "tooManyFiles": "Możesz dołączyć maksymalnie {max} pliki.",
+      "removeFile": "Usuń {name}"
+    },
+    "achievements": {
+      "title": "Osiągnięcia",
+      "subtitle": "{earned} z {total} odblokowanych",
+      "ui": {
+        "expand": "Zobacz wszystkie",
+        "collapse": "Zwiń",
+        "clickInfo": "Kliknij po info",
+        "clickBack": "Kliknij, aby wrócić",
+        "more": "więcej",
+        "moreCount": "{count} więcej"
+      },
+      "badges": {
+        "first_blood": {
+          "name": "Pierwszy krok",
+          "desc": "Ukończyłeś pierwszy quiz!",
+          "hint": "Ukończ 1 quiz"
+        },
+        "sharpshooter": {
+          "name": "Snajper",
+          "desc": "100% w quizie!",
+          "hint": "Zdobądź 100% w dowolnym quizie"
+        },
+        "on_a_roll": {
+          "name": "W biegu",
+          "desc": "Ukończyłeś 3 quizy!",
+          "hint": "Ukończ 3 quizy"
+        },
+        "big_brain": {
+          "name": "Wielki mózg",
+          "desc": "Ukończyłeś 10 quizów!",
+          "hint": "Ukończ 10 quizów"
+        },
+        "diamond_mind": {
+          "name": "Diamentowy umysł",
+          "desc": "90%+ w 5 quizach!",
+          "hint": "Zdobądź 90%+ w 5 quizach"
+        },
+        "perfectionist": {
+          "name": "Perfekcjonista",
+          "desc": "3 idealne wyniki!",
+          "hint": "Zdobądź 100% w 3 quizach"
+        },
+        "supporter": {
+          "name": "Wspierający",
+          "desc": "Dziękujemy za wsparcie!",
+          "hint": "Zostań sponsorem na GitHub"
+        },
+        "legend": {
+          "name": "Legenda",
+          "desc": "10 różnych quizów ukończonych!",
+          "hint": "Ukończ 10 różnych quizów"
+        },
+        "rocket_start": {
+          "name": "Rakietowy Start",
+          "desc": "Ukończyłeś 5 quizów!",
+          "hint": "Ukończ 5 quizów"
+        },
+        "royalty": {
+          "name": "Royalty",
+          "desc": "Dotarłeś na szczyt rankingu!",
+          "hint": "Zajmij pierwsze miejsce w rankingu"
+        },
+        "code_wizard": {
+          "name": "Czarodziej Kodu",
+          "desc": "Opanowałeś 5 różnych tematów!",
+          "hint": "Ukończ 5 różnych tematów quizów"
+        },
+        "endless": {
+          "name": "Nieskończony",
+          "desc": "Zdobyłeś 1000+ punktów!",
+          "hint": "Zdobądź 1000 punktów"
+        },
+        "star_gazer": {
+          "name": "Gwiazdozbiór",
+          "desc": "Dodałeś gwiazdkę do repozytorium DevLovers na GitHub!",
+          "hint": "Dodaj gwiazdkę do naszego repozytorium GitHub"
+        },
+        "silver_patron": {
+          "name": "Srebrny Patron",
+          "desc": "Sponsorowałeś nas dwukrotnie — dziękujemy!",
+          "hint": "Sponsoruj DevLovers po raz drugi"
+        },
+        "golden_patron": {
+          "name": "Złoty Patron",
+          "desc": "Sponsorowałeś nas 3+ razy — legendarne!",
+          "hint": "Sponsoruj DevLovers po raz trzeci"
+        },
+        "night_owl": {
+          "name": "Nocna Sowa",
+          "desc": "Ukończyłeś quiz po północy!",
+          "hint": "Ukończ quiz po północy"
+        },
+        "centurion": {
+          "name": "Centurion",
+          "desc": "Osiągnąłeś 100 punktów!",
+          "hint": "Zdobądź 100 punktów"
+        },
+        "deep_diver": {
+          "name": "Głębinowiec",
+          "desc": "Średnia 80%+ przez 10+ quizów!",
+          "hint": "Utrzymaj średnią 80%+ w 10 lub więcej próbach"
+        },
+        "unstoppable": {
+          "name": "Niepowstrzymana Siła",
+          "desc": "Ukończyłeś 100 podejść do quizów!",
+          "hint": "Ukończ 100 prób rozwiązania quizów"
+        },
+        "flawless": {
+          "name": "Nieskazitelne Zwycięstwo",
+          "desc": "Osiągnąłeś 25 perfekcyjnych wyników!",
+          "hint": "Zdobądź 25 perfekcyjnych wyników (100% skuteczności)"
+        },
+        "grandmaster": {
+          "name": "Arcymistrz",
+          "desc": "Średnia 95%+ przez 50+ quizów!",
+          "hint": "Utrzymaj średnią 95%+ w 50 lub więcej próbach"
+        },
+        "polymath": {
+          "name": "Polimata",
+          "desc": "Ukończyłeś 50 różnych quizów!",
+          "hint": "Ukończ 50 unikalnych quizów na platformie"
+        },
+        "deity": {
+          "name": "Bóstwo DevLovers",
+          "desc": "Zdobyłeś potężną sumę 10 000 punktów!",
+          "hint": "Zgromadź łącznie 10 000 punktów"
+        },
+        "abyssal": {
+          "name": "Nurek Głębinowy",
+          "desc": "Średnia 90%+ przez 50+ quizów!",
+          "hint": "Utrzymaj średnią 90%+ w 50 lub więcej próbach"
+        }
+      }
     }
   },
   "aiHelper": {

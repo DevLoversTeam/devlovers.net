@@ -1,50 +1,69 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Crown } from 'lucide-react';
+import { Crown, Heart } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 import { cn } from '@/lib/utils';
 
 import { User } from './types';
 import { UserAvatar } from './UserAvatar';
 
+const SPONSOR_TIER_STYLE: Record<string, string> = {
+  golden_patron:
+    'bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 dark:text-amber-400 dark:bg-amber-500/15 dark:hover:bg-amber-500/25',
+  silver_patron:
+    'bg-slate-400/10 text-slate-600 hover:bg-slate-400/20 dark:text-slate-300 dark:bg-slate-400/15 dark:hover:bg-slate-400/25',
+};
+
+function getSponsorAchievement(user: User) {
+  return (
+    user.achievements?.find(a => a.id === 'golden_patron') ||
+    user.achievements?.find(a => a.id === 'silver_patron')
+  );
+}
+
 const rankConfig = {
   1: {
     height: '70%',
     delay: 0.4,
     style: {
-      border: 'border-yellow-400 dark:border-yellow-500',
-      bg: 'bg-yellow-400/20 dark:bg-yellow-500/10',
+      border: 'border-yellow-400/50 dark:border-yellow-500/50',
+      bg: 'bg-yellow-400/10 dark:bg-yellow-500/5',
       text: 'text-yellow-600 dark:text-yellow-400',
-      badge: 'bg-yellow-400 dark:bg-yellow-500',
-      ring: 'border-yellow-400 dark:border-yellow-500',
+      badge:
+        'bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 backdrop-blur-sm',
+      ring: 'border-yellow-400/30 dark:border-yellow-500/30',
     },
   },
   2: {
     height: '40%',
     delay: 0.2,
     style: {
-      border: 'border-slate-300 dark:border-slate-500',
-      bg: 'bg-slate-300/20 dark:bg-slate-500/10',
+      border: 'border-slate-300/50 dark:border-slate-500/50',
+      bg: 'bg-slate-300/10 dark:bg-slate-500/5',
       text: 'text-slate-600 dark:text-slate-400',
-      badge: 'bg-slate-400 dark:bg-slate-500',
-      ring: 'border-slate-300 dark:border-slate-500',
+      badge:
+        'bg-slate-500/20 text-slate-500 border border-slate-500/30 backdrop-blur-sm',
+      ring: 'border-slate-300/50 dark:border-slate-500/30',
     },
   },
   3: {
     height: '20%',
     delay: 0.6,
     style: {
-      border: 'border-orange-300 dark:border-orange-500',
-      bg: 'bg-orange-300/20 dark:bg-orange-500/10',
+      border: 'border-orange-300/50 dark:border-orange-500/50',
+      bg: 'bg-orange-300/10 dark:bg-orange-500/5',
       text: 'text-orange-600 dark:text-orange-400',
-      badge: 'bg-orange-400 dark:bg-orange-500',
-      ring: 'border-orange-300 dark:border-orange-500',
+      badge:
+        'bg-orange-500/20 text-orange-500 border border-orange-500/30 backdrop-blur-sm',
+      ring: 'border-orange-300/50 dark:border-orange-500/30',
     },
   },
 } as const;
 
 export function LeaderboardPodium({ topThree }: { topThree: User[] }) {
+  const tBadges = useTranslations('dashboard.achievements.badges');
   const podiumOrder = [
     topThree.find(u => u.rank === 2),
     topThree.find(u => u.rank === 1),
@@ -96,7 +115,7 @@ export function LeaderboardPodium({ topThree }: { topThree: User[] }) {
 
                   <div
                     className={cn(
-                      'absolute -bottom-2 left-1/2 flex h-5 w-5 -translate-x-1/2 items-center justify-center rounded-full text-[10px] font-bold text-white shadow-sm transition-colors duration-300 md:h-6 md:w-6 md:text-xs',
+                      'absolute -bottom-2 left-1/2 flex h-5 w-5 -translate-x-1/2 items-center justify-center rounded-full text-[10px] font-bold shadow-sm transition-colors duration-300 md:h-6 md:w-6 md:text-xs',
                       style.badge
                     )}
                   >
@@ -108,6 +127,34 @@ export function LeaderboardPodium({ topThree }: { topThree: User[] }) {
               <div className="max-w-22.5 truncate text-xs font-bold text-gray-900 md:max-w-35 md:text-base dark:text-white">
                 {user.username}
               </div>
+
+              {(() => {
+                const sponsorAch = getSponsorAchievement(user);
+                if (!sponsorAch) return null;
+                const tierStyle =
+                  SPONSOR_TIER_STYLE[sponsorAch.id] ??
+                  SPONSOR_TIER_STYLE['silver_patron'];
+                return (
+                  <a
+                    href="https://github.com/sponsors/DevLoversTeam"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={tBadges(`${sponsorAch.id}.name`)}
+                    className={cn(
+                      'mt-0.5 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold transition-colors',
+                      tierStyle
+                    )}
+                  >
+                    <Heart
+                      className="h-2.5 w-2.5 fill-current"
+                      aria-hidden="true"
+                    />
+                    <span className="hidden md:inline">
+                      {tBadges(`${sponsorAch.id}.name`)}
+                    </span>
+                  </a>
+                );
+              })()}
 
               <div
                 className={cn(

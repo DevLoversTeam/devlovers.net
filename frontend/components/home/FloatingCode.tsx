@@ -83,7 +83,7 @@ function CodeBlock({ snippet }: { snippet: CodeSnippet }) {
   useEffect(() => {
     let currentIndex = 0;
     const code = snippet.code;
-    const typingSpeed = 50 + Math.random() * 30; 
+    const typingSpeed = 50 + Math.random() * 30;
 
     const startTyping = () => {
       setIsTyping(true);
@@ -100,11 +100,17 @@ function CodeBlock({ snippet }: { snippet: CodeSnippet }) {
         } else {
           if (typeIntervalRef.current) clearInterval(typeIntervalRef.current);
           setIsTyping(false);
-          
-          resetTimeoutRef.current = setTimeout(() => {
-            setDisplayedCode('');
-            startTimeoutRef.current = setTimeout(startTyping, 1000 + Math.random() * 2000);
-          }, 4000 + Math.random() * 2000); 
+
+          resetTimeoutRef.current = setTimeout(
+            () => {
+              setDisplayedCode('');
+              startTimeoutRef.current = setTimeout(
+                startTyping,
+                1000 + Math.random() * 2000
+              );
+            },
+            4000 + Math.random() * 2000
+          );
         }
       }, typingSpeed);
     };
@@ -121,18 +127,18 @@ function CodeBlock({ snippet }: { snippet: CodeSnippet }) {
 
   return (
     <motion.div
-      className="absolute -translate-x-1/2 -translate-y-1/2 pointer-events-auto select-none"      
+      className="pointer-events-auto absolute -translate-x-1/2 -translate-y-1/2 select-none"
       style={{
         left: snippet.position.x,
         top: snippet.position.y,
       }}
       initial={{ opacity: 0, scale: 0.8, y: 20 }}
-      animate={{ 
+      animate={{
         opacity: 0.7,
         scale: 1,
         y: 0,
       }}
-      whileHover={{ 
+      whileHover={{
         scale: 1.1,
         opacity: 1,
         zIndex: 50,
@@ -144,17 +150,17 @@ function CodeBlock({ snippet }: { snippet: CodeSnippet }) {
       }}
     >
       <motion.div
-        className="relative overflow-hidden rounded-lg border bg-white/80 p-3 backdrop-blur-md dark:bg-gray-950/60" 
+        className="relative overflow-hidden rounded-lg border bg-white/80 p-3 backdrop-blur-md dark:bg-gray-950/60"
         style={{
           borderColor: `${snippet.color}30`,
-          boxShadow: `0 8px 32px -4px ${snippet.color}15`, 
+          boxShadow: `0 8px 32px -4px ${snippet.color}15`,
         }}
         animate={{
           y: [0, -12, 0],
           rotate: [snippet.rotate, snippet.rotate + 2, snippet.rotate],
         }}
         transition={{
-          duration: 5 + Math.random() * 3, 
+          duration: 5 + Math.random() * 3,
           repeat: Infinity,
           ease: 'easeInOut',
           delay: snippet.delay,
@@ -164,11 +170,14 @@ function CodeBlock({ snippet }: { snippet: CodeSnippet }) {
           <code>
             {displayedCode.split('\n').map((line, i) => (
               <div key={i} className="flex min-h-[1.5em]">
-                <span className="mr-3 w-3 select-none text-right opacity-30 text-xs">{i + 1}</span>
-                <span 
-                  style={{ 
+                <span className="mr-3 w-3 text-right text-xs opacity-30 select-none">
+                  {i + 1}
+                </span>
+                <span
+                  style={{
                     color: i === 0 ? snippet.color : 'inherit',
-                    textShadow: i === 0 ? `0 0 10px ${snippet.color}40` : 'none',
+                    textShadow:
+                      i === 0 ? `0 0 10px ${snippet.color}40` : 'none',
                     fontWeight: i === 0 ? 600 : 400,
                   }}
                 >
@@ -177,7 +186,7 @@ function CodeBlock({ snippet }: { snippet: CodeSnippet }) {
                     <motion.span
                       animate={{ opacity: [1, 0, 1] }}
                       transition={{ duration: 0.8, repeat: Infinity }}
-                      className="ml-0.5 inline-block h-3 w-1.5 align-middle bg-current opacity-70"
+                      className="ml-0.5 inline-block h-3 w-1.5 bg-current align-middle opacity-70"
                     />
                   )}
                 </span>
@@ -200,8 +209,11 @@ export function FloatingCode() {
   if (!isMounted) return null;
 
   return (
-    <div className="pointer-events-none absolute inset-0 hidden lg:block overflow-hidden" aria-hidden="true">
-      {snippets.map((snippet) => (
+    <div
+      className="pointer-events-none absolute inset-0 hidden overflow-hidden lg:block"
+      aria-hidden="true"
+    >
+      {snippets.map(snippet => (
         <CodeBlock key={snippet.id} snippet={snippet} />
       ))}
     </div>

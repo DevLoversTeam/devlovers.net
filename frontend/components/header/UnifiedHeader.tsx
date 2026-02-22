@@ -31,11 +31,11 @@ function HeaderContent({
   return (
     <>
       <header className="border-border bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 w-full border-b backdrop-blur">
-        <div className="container-main flex h-16 items-center justify-between">
+        <div className="container-main relative flex h-16 items-center justify-between">
           <Logo href={brandHref} />
 
           <nav
-            className="hidden items-center justify-center min-[1050px]:flex"
+            className="absolute left-1/2 hidden -translate-x-1/2 items-center justify-center min-[1050px]:flex"
             aria-label="Primary"
           >
             <DesktopNav variant={variant} blogCategories={blogCategories} />

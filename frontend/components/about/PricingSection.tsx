@@ -1,6 +1,14 @@
 'use client';
 import { motion } from 'framer-motion';
-import { ArrowRight, BadgeDollarSign, Check, Heart, Server, Sparkles, X } from 'lucide-react';
+import {
+  ArrowRight,
+  BadgeDollarSign,
+  Check,
+  Heart,
+  Server,
+  Sparkles,
+  X,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -59,7 +67,11 @@ export function PricingSection({ sponsors = [] }: PricingSectionProps) {
             <h2 id="pricing-heading" className="sr-only">
               {t('heading')}
             </h2>
-            <GradientBadge icon={BadgeDollarSign} text={t('badge')} className="mb-4" />
+            <GradientBadge
+              icon={BadgeDollarSign}
+              text={t('badge')}
+              className="mb-4"
+            />
           </motion.div>
 
           <SectionHeading

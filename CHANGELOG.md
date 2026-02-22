@@ -624,3 +624,63 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - Improved Redis cache reliability for Q&A
 - Extended automated tests for caching and payment flows
+
+## [1.0.2] - 2026-02-23
+
+### Added
+
+- Dashboard engagement system:
+  - Activity Heatmap with daily streak tracking and tooltips
+  - Expanded Achievements system (24 badges across multiple categories)
+  - Score distribution visualization and improved analytics
+- Profile & account management:
+  - User name update with validation
+  - Secure password change (bcrypt hashing)
+  - Localized system notifications with Notification Center
+- Admin platform expansion:
+  - Unified admin panel under `/admin` with collapsible sidebar
+  - Quiz Admin: full create workflow via JSON upload
+  - Draft → Ready → Activate publishing flow with translation validation
+  - Edit existing quizzes with locale-aware editor and Redis invalidation
+- Content & learning:
+  - Added SQL, PostgreSQL, MongoDB category to Q&A
+- User engagement:
+  - In-app feedback form with multiple attachments
+  - Sponsor recognition and GitHub star achievements
+- Shop UX:
+  - “My Orders” summary card on Cart page
+
+### Changed
+
+- Dashboard UX:
+  - Unified glassmorphism visual language across cards
+  - Clickable stats sections with smooth navigation
+- Leaderboard:
+  - Top 15 users with contextual ranking around current user
+  - Improved sponsor styling and visual consistency
+- Header & navigation:
+  - Unified dropdown styles (Notifications / Profile / Language)
+- Dependencies:
+  - Upgraded Next.js to **16.1.6**
+- Codebase:
+  - Large-scale formatting and structural refactoring
+
+### Fixed
+
+- Dashboard profile logic and statistics inconsistencies
+- Notification rendering and layout issues
+- Quiz editor Save button now disabled when no changes made
+- Admin quiz cache invalidation when status changes
+- Improved mobile menu scroll locking
+- Fixed Vercel build issues and migration conflicts
+
+### Performance & Reliability
+
+- Improved Redis cache invalidation for quizzes
+- Optimized dashboard data fetching
+- Safer database migration handling
+
+### Security
+
+- Stronger password validation and confirmation flow
+- Improved server-side validation and error reporting

@@ -51,7 +51,7 @@ export function MobileMenuProvider({ children }: { children: ReactNode }) {
     setTimeout(() => {
       setIsOpen(false);
       wasNavigatingRef.current = false;
-    }, 200);
+    }, 310);
   }, []);
 
   const open = useCallback(() => {
@@ -76,6 +76,7 @@ export function MobileMenuProvider({ children }: { children: ReactNode }) {
       const strippedPathname = pathname.replace(/^\/(en|uk|pl)/, '') || '/';
 
       if (strippedPathname === targetPath && targetSearch === currentSearch) {
+        close();
         return;
       }
 
@@ -85,7 +86,7 @@ export function MobileMenuProvider({ children }: { children: ReactNode }) {
       setIsNavigating(true);
       router.push(href);
     },
-    [router, pathname, searchParams]
+    [router, pathname, searchParams, close]
   );
 
   useEffect(() => {

@@ -873,7 +873,11 @@ export async function verifyWebhookSignatureWithRefresh(args: {
 
   try {
     const refreshed = await fetchWebhookPubKey({ forceRefresh: true });
-    const ok = verifyWebhookSignature(args.rawBodyBytes, args.signature, refreshed);
+    const ok = verifyWebhookSignature(
+      args.rawBodyBytes,
+      args.signature,
+      refreshed
+    );
     monoLogInfo(MONO_PUBKEY_REFRESHED, {
       endpoint: '/api/merchant/pubkey',
       reason: 'refresh_once_after_verify_failed',

@@ -1,6 +1,7 @@
 'use client';
 
-import { History, TrendingUp } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Target } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import { Link } from '@/i18n/routing';
@@ -10,43 +11,72 @@ interface StatsCardProps {
     totalAttempts: number;
     averageScore: number;
     lastActiveDate: string | null;
+    totalScore?: number;
+    trendPercentage?: number | null;
   };
+  attempts?: {
+    percentage: string | number;
+    score: number;
+    completedAt: Date;
+  }[];
 }
 
-export function StatsCard({ stats }: StatsCardProps) {
+export function StatsCard({ stats, attempts = [] }: StatsCardProps) {
   const t = useTranslations('dashboard.stats');
+  const tProfile = useTranslations('dashboard.profile');
   const hasActivity = stats && stats.totalAttempts > 0;
 
-  const cardStyles = `
-    relative overflow-hidden rounded-2xl
-    border border-gray-100 dark:border-white/5
-    bg-white/60 dark:bg-neutral-900/60 backdrop-blur-xl
-    p-8 transition-all hover:border-[var(--accent-primary)]/30 dark:hover:border-[var(--accent-primary)]/30
-    flex flex-col items-center justify-center text-center
-  `;
+  const cardStyles = 'dashboard-card flex flex-col justify-between p-6 sm:p-8 hover:translate-y-0 hover:shadow-sm';
 
-  const primaryBtnStyles = `
-    group relative inline-flex items-center justify-center rounded-full
-    px-8 py-3 text-sm font-semibold tracking-widest uppercase text-white
-    bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)]
-    transition-all hover:scale-105
-  `;
+  const iconBoxStyles = 'shrink-0 rounded-xl bg-white/40 border border-white/20 shadow-xs backdrop-blur-xs p-3 dark:bg-white/5 dark:border-white/10';
+
+  const primaryBtnStyles =
+    'group relative inline-flex items-center justify-center rounded-full px-8 py-3 text-sm font-semibold tracking-widest uppercase text-white bg-(--accent-primary) hover:bg-(--accent-hover) transition-all hover:scale-105';
+
+  // Calculate chart metrics
+  const excellent = attempts.filter(a => Number(a.percentage) >= 100).length;
+  const good = attempts.filter(
+    a => Number(a.percentage) >= 70 && Number(a.percentage) < 100
+  ).length;
+  const needsReview = attempts.filter(a => Number(a.percentage) < 70).length;
+  const total = attempts.length || 1;
+
+  const excellentPct = (excellent / total) * 100;
+  const goodPct = (good / total) * 100;
+  const needsReviewPct = (needsReview / total) * 100;
+
+  const radius = 42;
+  const circumference = 2 * Math.PI * radius;
+  const halfCircumference = Math.PI * radius;
+
+  const masteredLength = (excellentPct / 100) * halfCircumference;
+  const reviewLength = ((excellentPct + goodPct) / 100) * halfCircumference;
+  const studyLength =
+    ((excellentPct + goodPct + needsReviewPct) / 100) * halfCircumference;
 
   return (
     <section className={cardStyles} aria-labelledby="stats-heading">
-      <div
-        className="mb-6 rounded-full bg-gray-100 p-4 dark:bg-neutral-800/50"
-        aria-hidden="true"
-      >
-        <span className="text-4xl">📊</span>
+      <div className="mb-6 flex w-full items-center gap-3">
+        <div
+          className={iconBoxStyles}
+          aria-hidden="true"
+        >
+          <Target className="h-5 w-5 text-(--accent-primary) drop-shadow-[0_0_8px_rgba(var(--accent-primary-rgb),0.6)]" />
+        </div>
+        <div>
+          <h3
+            id="stats-heading"
+            className="text-xl font-bold text-gray-900 dark:text-white"
+          >
+            {t('scoreDistribution')}
+          </h3>
+          <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
+            {t('scoreDistributionSubtext', {
+              fallback: 'Based on your recent attempts',
+            })}
+          </p>
+        </div>
       </div>
-
-      <h3
-        id="stats-heading"
-        className="mb-2 text-xl font-bold text-gray-900 dark:text-white"
-      >
-        {t('title')}
-      </h3>
 
       {!hasActivity ? (
         <>
@@ -58,31 +88,206 @@ export function StatsCard({ stats }: StatsCardProps) {
           </Link>
         </>
       ) : (
-        <dl className="mt-2 grid w-full grid-cols-2 gap-4">
-          <div className="rounded-xl border border-gray-100 bg-gray-50/50 p-4 dark:border-white/5 dark:bg-neutral-800/50">
-            <dt className="mb-1 flex items-center justify-center gap-2 text-xs font-semibold tracking-wider text-gray-400 uppercase">
-              <History className="h-3 w-3" /> {t('attempts')}
-            </dt>
-            <dd className="text-2xl font-black text-gray-900 dark:text-white">
-              {stats?.totalAttempts}
-            </dd>
-          </div>
+        <>
+          <div className="flex w-full flex-col items-center gap-6 pt-2 md:flex-row md:items-start">
+            <div className="relative mx-auto flex aspect-2/1 w-55 shrink-0 items-end justify-center md:mx-0 md:w-65">
+              <svg
+                className="absolute inset-x-0 bottom-0 h-full w-full overflow-visible drop-shadow-[0_4px_10px_rgba(0,0,0,0.05)] dark:drop-shadow-[0_4px_10px_rgba(0,0,0,0.2)]"
+                viewBox="0 0 100 55"
+              >
+                <defs>
+                  <linearGradient
+                    id="neonGradientMastered"
+                    x1="0%"
+                    y1="0%"
+                    x2="100%"
+                    y2="0%"
+                  >
+                    <stop offset="0%" stopColor="#34D399" />
+                    <stop offset="100%" stopColor="#059669" />
+                  </linearGradient>
+                  <linearGradient
+                    id="neonGradientReview"
+                    x1="0%"
+                    y1="0%"
+                    x2="100%"
+                    y2="0%"
+                  >
+                    <stop offset="0%" stopColor="#FBBF24" />
+                    <stop offset="100%" stopColor="#D97706" />
+                  </linearGradient>
+                  <linearGradient
+                    id="neonGradientStudy"
+                    x1="0%"
+                    y1="0%"
+                    x2="100%"
+                    y2="0%"
+                  >
+                    <stop offset="0%" stopColor="#F87171" />
+                    <stop offset="100%" stopColor="#DC2626" />
+                  </linearGradient>
+                  <filter
+                    id="neonGlow"
+                    x="-20%"
+                    y="-20%"
+                    width="140%"
+                    height="140%"
+                  >
+                    <feGaussianBlur stdDeviation="3" result="blur" />
+                    <feComposite
+                      in="SourceGraphic"
+                      in2="blur"
+                      operator="over"
+                    />
+                  </filter>
+                </defs>
 
-          <div className="rounded-xl border border-gray-100 bg-gray-50/50 p-4 dark:border-white/5 dark:bg-neutral-800/50">
-            <dt className="mb-1 flex items-center justify-center gap-2 text-xs font-semibold tracking-wider text-gray-400 uppercase">
-              <TrendingUp className="h-3 w-3" /> {t('avgScore')}
-            </dt>
-            <dd className="text-2xl font-black text-gray-900 dark:text-white">
-              {stats?.averageScore}%
-            </dd>
-          </div>
+                <motion.circle
+                  initial={{ strokeDasharray: `0 ${circumference}` }}
+                  animate={{
+                    strokeDasharray: `${halfCircumference} ${circumference}`,
+                  }}
+                  transition={{ duration: 1, ease: 'easeOut' }}
+                  cx="50"
+                  cy="50"
+                  r={radius}
+                  fill="transparent"
+                  className="stroke-gray-100 dark:stroke-neutral-800"
+                  strokeWidth="14"
+                  strokeLinecap="round"
+                  transform="rotate(180 50 50)"
+                />
 
-          <div className="col-span-2 mt-4">
-            <Link href="/q&a" className={primaryBtnStyles}>
-              <span className="relative z-10">{t('continueLearning')}</span>
-            </Link>
+                {/* 1. Study Overlay (Red - Bottom Layer) */}
+                <motion.circle
+                  initial={{ strokeDasharray: `0 ${circumference}` }}
+                  animate={{
+                    strokeDasharray: `${studyLength} ${circumference}`,
+                  }}
+                  transition={{ duration: 1, delay: 0.1, ease: 'easeOut' }}
+                  cx="50"
+                  cy="50"
+                  r={radius}
+                  fill="transparent"
+                  stroke="url(#neonGradientStudy)"
+                  strokeWidth="14"
+                  strokeLinecap="round"
+                  transform="rotate(180 50 50)"
+                  filter="url(#neonGlow)"
+                />
+
+                {/* 2. Review Overlay (Amber - Middle Layer) */}
+                <motion.circle
+                  initial={{ strokeDasharray: `0 ${circumference}` }}
+                  animate={{
+                    strokeDasharray: `${reviewLength} ${circumference}`,
+                  }}
+                  transition={{ duration: 1, delay: 0.2, ease: 'easeOut' }}
+                  cx="50"
+                  cy="50"
+                  r={radius}
+                  fill="transparent"
+                  stroke="url(#neonGradientReview)"
+                  strokeWidth="14"
+                  strokeLinecap="round"
+                  transform="rotate(180 50 50)"
+                  filter="url(#neonGlow)"
+                />
+
+                {/* 3. Mastered Overlay (Emerald - Top Layer) */}
+                <motion.circle
+                  initial={{ strokeDasharray: `0 ${circumference}` }}
+                  animate={{
+                    strokeDasharray: `${masteredLength} ${circumference}`,
+                  }}
+                  transition={{ duration: 1, delay: 0.3, ease: 'easeOut' }}
+                  cx="50"
+                  cy="50"
+                  r={radius}
+                  fill="transparent"
+                  stroke="url(#neonGradientMastered)"
+                  strokeWidth="14"
+                  strokeLinecap="round"
+                  transform="rotate(180 50 50)"
+                  filter="url(#neonGlow)"
+                />
+              </svg>
+              <div className="pointer-events-none relative z-10 mb-1 flex flex-col items-center">
+                <span
+                  className="text-3xl leading-none font-black tracking-tighter text-gray-900 sm:text-4xl dark:text-white"
+                  style={{ textShadow: '0 2px 10px rgba(0,0,0,0.1)' }}
+                >
+                  {stats?.averageScore}%
+                </span>
+                <span className="mt-0.5 text-[10px] font-bold tracking-widest text-gray-400 uppercase">
+                  Score
+                </span>
+              </div>
+            </div>
+
+            {/* Legend & Stats */}
+            <div className="flex w-full flex-1 flex-col justify-center gap-3">
+              <div className="flex w-full items-center justify-between text-sm">
+                <div className="flex items-center gap-2">
+                  <div className="h-3 w-3 shrink-0 rounded-full bg-linear-to-br from-emerald-400 to-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                  <span className="flex-1 truncate text-gray-600 dark:text-gray-300">
+                    {t('mastered')}{' '}
+                    <span className="ml-1 font-mono text-xs text-gray-400 dark:text-gray-500">
+                      ({total > 0 ? excellentPct.toFixed(0) : 0}%)
+                    </span>
+                  </span>
+                </div>
+                <span className="font-bold text-gray-900 tabular-nums dark:text-white">
+                  {excellent}
+                </span>
+              </div>
+              <div className="flex w-full items-center justify-between text-sm">
+                <div className="flex items-center gap-2">
+                  <div className="h-3 w-3 shrink-0 rounded-full bg-linear-to-br from-amber-400 to-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]" />
+                  <span className="flex-1 truncate text-gray-600 dark:text-gray-300">
+                    {t('review')}{' '}
+                    <span className="ml-1 font-mono text-xs text-gray-400 dark:text-gray-500">
+                      ({total > 0 ? goodPct.toFixed(0) : 0}%)
+                    </span>
+                  </span>
+                </div>
+                <span className="font-bold text-gray-900 tabular-nums dark:text-white">
+                  {good}
+                </span>
+              </div>
+              <div className="flex w-full items-center justify-between text-sm">
+                <div className="flex items-center gap-2">
+                  <div className="h-3 w-3 shrink-0 rounded-full bg-linear-to-br from-red-400 to-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]" />
+                  <span className="flex-1 truncate text-gray-600 dark:text-gray-300">
+                    {t('study')}{' '}
+                    <span className="ml-1 font-mono text-xs text-gray-400 dark:text-gray-500">
+                      ({total > 0 ? needsReviewPct.toFixed(0) : 0}%)
+                    </span>
+                  </span>
+                </div>
+                <span className="font-bold text-gray-900 tabular-nums dark:text-white">
+                  {needsReview}
+                </span>
+              </div>
+              <div className="mt-2 flex items-center justify-between border-t border-gray-100 pt-3 text-sm dark:border-white/5">
+                <span className="font-semibold text-gray-500">
+                  {t('totalAttempts')}
+                </span>
+                <span className="font-black text-(--accent-primary)">
+                  {stats?.totalAttempts}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-semibold text-gray-500">
+                  {tProfile('totalPoints')}
+                </span>
+                <span className="font-black text-amber-500">
+                  {stats?.totalScore ?? 0}
+                </span>
+              </div>
+            </div>
           </div>
-        </dl>
+        </>
       )}
     </section>
   );

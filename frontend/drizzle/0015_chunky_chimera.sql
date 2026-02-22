@@ -1,0 +1,1 @@
+ALTER TABLE "quizzes" ADD COLUMN "status" varchar(20) DEFAULT 'ready' NOT NULL;

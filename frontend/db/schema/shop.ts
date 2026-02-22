@@ -194,6 +194,7 @@ export const orders = pgTable(
       sql`${table.paymentProvider} <> 'none' OR ${table.paymentStatus} in ('paid','failed')`
     ),
     index('orders_sweep_claim_expires_idx').on(table.sweepClaimExpiresAt),
+    index('idx_orders_user_id_created_at').on(table.userId, table.createdAt),
   ]
 );
 
@@ -635,4 +636,5 @@ export type DbPaymentAttempt = typeof paymentAttempts.$inferSelect;
 export type DbApiRateLimit = typeof apiRateLimits.$inferSelect;
 export type DbMonobankEvent = typeof monobankEvents.$inferSelect;
 export type DbMonobankRefund = typeof monobankRefunds.$inferSelect;
-export type DbMonobankPaymentCancel = typeof monobankPaymentCancels.$inferSelect;
+export type DbMonobankPaymentCancel =
+  typeof monobankPaymentCancels.$inferSelect;

@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { afterEach,beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Hoisted mocks: MUST be before importing the route module.
 vi.mock('@/lib/security/rate-limit', () => {

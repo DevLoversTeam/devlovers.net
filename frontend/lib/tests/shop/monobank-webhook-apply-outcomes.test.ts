@@ -216,7 +216,10 @@ async function fetchEventByRawSha256(rawSha256: string) {
   return res.rows?.[0] ?? null;
 }
 
-async function fetchOrderAttemptState(args: { orderId: string; attemptId: string }) {
+async function fetchOrderAttemptState(args: {
+  orderId: string;
+  attemptId: string;
+}) {
   const orderRes = await db.execute(sql`
     select
       id,
@@ -621,9 +624,9 @@ describe('monobank-webhook apply outcomes', () => {
 
       expect(afterEvent?.id).toBe(beforeEvent?.id);
       expect(afterEvent?.applied_result).toBe(beforeEvent?.applied_result);
-      expect(
-        String(afterEvent?.applied_at ?? '')
-      ).toBe(String(beforeEvent?.applied_at ?? ''));
+      expect(String(afterEvent?.applied_at ?? '')).toBe(
+        String(beforeEvent?.applied_at ?? '')
+      );
       expect(afterState).toEqual(beforeState);
     } finally {
       await cleanup({ orderId, attemptId, rawSha256 });

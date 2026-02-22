@@ -234,7 +234,7 @@ describe.sequential('monobank janitor job1', () => {
 
     const invoiceId = `inv_${crypto.randomUUID()}`;
 
-    const veryOld = new Date(Date.now() - 20 * 365 * 24 * 60 * 60 * 1000); 
+    const veryOld = new Date(Date.now() - 20 * 365 * 24 * 60 * 60 * 1000);
     const { orderId, attemptId } = await insertOrderAndAttempt({
       invoiceId,
       updatedAt: veryOld,
@@ -267,7 +267,6 @@ describe.sequential('monobank janitor job1', () => {
       expect(second).toEqual({ processed: 1, applied: 0, noop: 1, failed: 0 });
 
       expect(getInvoiceStatusMock).toHaveBeenCalledTimes(2);
-
     } finally {
       await cleanup(orderId, invoiceId);
     }

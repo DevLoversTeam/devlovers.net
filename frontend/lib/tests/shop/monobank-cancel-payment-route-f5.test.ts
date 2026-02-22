@@ -1,7 +1,15 @@
 import crypto from 'crypto';
 import { and, eq } from 'drizzle-orm';
 import { NextRequest } from 'next/server';
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 
 import { db } from '@/db';
 import {
@@ -64,9 +72,8 @@ beforeAll(async () => {
   process.env.MONO_MERCHANT_TOKEN = 'test_mono_token';
   resetEnvCache();
 
-  ({ POST: postRoute } = await import(
-    '@/app/api/shop/admin/orders/[id]/cancel-payment/route'
-  ));
+  ({ POST: postRoute } =
+    await import('@/app/api/shop/admin/orders/[id]/cancel-payment/route'));
 });
 
 afterAll(() => {
@@ -114,7 +121,12 @@ async function insertProductWithReservedStock(orderId: string) {
 
 async function insertOrder(args: {
   orderId: string;
-  paymentStatus: 'pending' | 'requires_payment' | 'paid' | 'failed' | 'refunded';
+  paymentStatus:
+    | 'pending'
+    | 'requires_payment'
+    | 'paid'
+    | 'failed'
+    | 'refunded';
   status: 'INVENTORY_RESERVED' | 'PAID' | 'CANCELED' | 'INVENTORY_FAILED';
   inventoryStatus: 'reserved' | 'released' | 'none';
   stockRestored?: boolean;
@@ -216,136 +228,128 @@ function makeReq(orderId: string) {
 }
 
 describe.sequential('monobank cancel payment route (F5)', () => {
-  it(
-    'happy path unpaid order: PSP once, order canceled, inventory released',
-    async () => {
-      const orderId = crypto.randomUUID();
-      const invoiceId = `inv_${crypto.randomUUID()}`;
+  it('happy path unpaid order: PSP once, order canceled, inventory released', async () => {
+    const orderId = crypto.randomUUID();
+    const invoiceId = `inv_${crypto.randomUUID()}`;
 
-      await insertOrder({
-        orderId,
-        paymentStatus: 'pending',
-        status: 'INVENTORY_RESERVED',
-        inventoryStatus: 'reserved',
-        pspChargeId: invoiceId,
-      });
-      const { productId } = await insertProductWithReservedStock(orderId);
+    await insertOrder({
+      orderId,
+      paymentStatus: 'pending',
+      status: 'INVENTORY_RESERVED',
+      inventoryStatus: 'reserved',
+      pspChargeId: invoiceId,
+    });
+    const { productId } = await insertProductWithReservedStock(orderId);
 
-      removeInvoiceMock.mockResolvedValue({
-        invoiceId,
-        removed: true,
-      });
+    removeInvoiceMock.mockResolvedValue({
+      invoiceId,
+      removed: true,
+    });
 
-      try {
-        const res = await postRoute(makeReq(orderId), {
-          params: Promise.resolve({ id: orderId }),
-        });
-
-        expect(res.status).toBe(200);
-        const json: any = await res.json();
-        expect(json.success).toBe(true);
-        expect(json.cancel.extRef).toBe(`mono_cancel:${orderId}`);
-        expect(json.cancel.status).toBe('success');
-        expect(json.cancel.deduped).toBe(false);
-
-        expect(removeInvoiceMock).toHaveBeenCalledTimes(1);
-        expect(removeInvoiceMock).toHaveBeenCalledWith(invoiceId);
-
-        const [cancelRow] = await db
-          .select({
-            id: monobankPaymentCancels.id,
-            status: monobankPaymentCancels.status,
-            extRef: monobankPaymentCancels.extRef,
-          })
-          .from(monobankPaymentCancels)
-          .where(eq(monobankPaymentCancels.orderId, orderId))
-          .limit(1);
-
-        expect(cancelRow?.status).toBe('success');
-        expect(cancelRow?.extRef).toBe(`mono_cancel:${orderId}`);
-
-        const [orderRow] = await db
-          .select({
-            status: orders.status,
-            inventoryStatus: orders.inventoryStatus,
-            paymentStatus: orders.paymentStatus,
-            stockRestored: orders.stockRestored,
-          })
-          .from(orders)
-          .where(eq(orders.id, orderId))
-          .limit(1);
-
-        expect(orderRow?.status).toBe('CANCELED');
-        expect(orderRow?.inventoryStatus).toBe('released');
-        expect(orderRow?.paymentStatus).toBe('failed');
-        expect(orderRow?.stockRestored).toBe(true);
-
-        const [product] = await db
-          .select({ stock: products.stock })
-          .from(products)
-          .where(eq(products.id, productId))
-          .limit(1);
-
-        expect(product?.stock).toBe(10);
-      } finally {
-        await cleanup(orderId);
-      }
-    },
-    15000
-  );
-
-  it(
-    'idempotency sequential: second call deduped=true, PSP once, one release move',
-    async () => {
-      const orderId = crypto.randomUUID();
-      const invoiceId = `inv_${crypto.randomUUID()}`;
-
-      await insertOrder({
-        orderId,
-        paymentStatus: 'pending',
-        status: 'INVENTORY_RESERVED',
-        inventoryStatus: 'reserved',
-        pspChargeId: invoiceId,
-      });
-      await insertProductWithReservedStock(orderId);
-
-      removeInvoiceMock.mockResolvedValue({
-        invoiceId,
-        removed: true,
+    try {
+      const res = await postRoute(makeReq(orderId), {
+        params: Promise.resolve({ id: orderId }),
       });
 
-      try {
-        const res1 = await postRoute(makeReq(orderId), {
-          params: Promise.resolve({ id: orderId }),
-        });
-        expect(res1.status).toBe(200);
+      expect(res.status).toBe(200);
+      const json: any = await res.json();
+      expect(json.success).toBe(true);
+      expect(json.cancel.extRef).toBe(`mono_cancel:${orderId}`);
+      expect(json.cancel.status).toBe('success');
+      expect(json.cancel.deduped).toBe(false);
 
-        const res2 = await postRoute(makeReq(orderId), {
-          params: Promise.resolve({ id: orderId }),
-        });
-        expect(res2.status).toBe(200);
+      expect(removeInvoiceMock).toHaveBeenCalledTimes(1);
+      expect(removeInvoiceMock).toHaveBeenCalledWith(invoiceId);
 
-        const json2: any = await res2.json();
-        expect(json2.cancel.deduped).toBe(true);
+      const [cancelRow] = await db
+        .select({
+          id: monobankPaymentCancels.id,
+          status: monobankPaymentCancels.status,
+          extRef: monobankPaymentCancels.extRef,
+        })
+        .from(monobankPaymentCancels)
+        .where(eq(monobankPaymentCancels.orderId, orderId))
+        .limit(1);
 
-        expect(removeInvoiceMock).toHaveBeenCalledTimes(1);
+      expect(cancelRow?.status).toBe('success');
+      expect(cancelRow?.extRef).toBe(`mono_cancel:${orderId}`);
 
-        const releaseMoves = await db
-          .select({ id: inventoryMoves.id })
-          .from(inventoryMoves)
-          .where(
-            and(
-              eq(inventoryMoves.orderId, orderId),
-              eq(inventoryMoves.type, 'release')
-            )
-          );
-        expect(releaseMoves).toHaveLength(1);
-      } finally {
-        await cleanup(orderId);
-      }
-    },
-    15000
-  );
+      const [orderRow] = await db
+        .select({
+          status: orders.status,
+          inventoryStatus: orders.inventoryStatus,
+          paymentStatus: orders.paymentStatus,
+          stockRestored: orders.stockRestored,
+        })
+        .from(orders)
+        .where(eq(orders.id, orderId))
+        .limit(1);
+
+      expect(orderRow?.status).toBe('CANCELED');
+      expect(orderRow?.inventoryStatus).toBe('released');
+      expect(orderRow?.paymentStatus).toBe('failed');
+      expect(orderRow?.stockRestored).toBe(true);
+
+      const [product] = await db
+        .select({ stock: products.stock })
+        .from(products)
+        .where(eq(products.id, productId))
+        .limit(1);
+
+      expect(product?.stock).toBe(10);
+    } finally {
+      await cleanup(orderId);
+    }
+  }, 15000);
+
+  it('idempotency sequential: second call deduped=true, PSP once, one release move', async () => {
+    const orderId = crypto.randomUUID();
+    const invoiceId = `inv_${crypto.randomUUID()}`;
+
+    await insertOrder({
+      orderId,
+      paymentStatus: 'pending',
+      status: 'INVENTORY_RESERVED',
+      inventoryStatus: 'reserved',
+      pspChargeId: invoiceId,
+    });
+    await insertProductWithReservedStock(orderId);
+
+    removeInvoiceMock.mockResolvedValue({
+      invoiceId,
+      removed: true,
+    });
+
+    try {
+      const res1 = await postRoute(makeReq(orderId), {
+        params: Promise.resolve({ id: orderId }),
+      });
+      expect(res1.status).toBe(200);
+
+      const res2 = await postRoute(makeReq(orderId), {
+        params: Promise.resolve({ id: orderId }),
+      });
+      expect(res2.status).toBe(200);
+
+      const json2: any = await res2.json();
+      expect(json2.cancel.deduped).toBe(true);
+
+      expect(removeInvoiceMock).toHaveBeenCalledTimes(1);
+
+      const releaseMoves = await db
+        .select({ id: inventoryMoves.id })
+        .from(inventoryMoves)
+        .where(
+          and(
+            eq(inventoryMoves.orderId, orderId),
+            eq(inventoryMoves.type, 'release')
+          )
+        );
+      expect(releaseMoves).toHaveLength(1);
+    } finally {
+      await cleanup(orderId);
+    }
+  }, 15000);
 
   it('paid guard: 409 CANCEL_NOT_ALLOWED, PSP not called', async () => {
     const orderId = crypto.randomUUID();
@@ -373,70 +377,66 @@ describe.sequential('monobank cancel payment route (F5)', () => {
     }
   });
 
-  it(
-    'PSP failure then retry: first 503+failure, second 200 success',
-    async () => {
-      const orderId = crypto.randomUUID();
-      const invoiceId = `inv_${crypto.randomUUID()}`;
+  it('PSP failure then retry: first 503+failure, second 200 success', async () => {
+    const orderId = crypto.randomUUID();
+    const invoiceId = `inv_${crypto.randomUUID()}`;
 
-      await insertOrder({
-        orderId,
-        paymentStatus: 'pending',
-        status: 'INVENTORY_RESERVED',
-        inventoryStatus: 'reserved',
-        pspChargeId: invoiceId,
+    await insertOrder({
+      orderId,
+      paymentStatus: 'pending',
+      status: 'INVENTORY_RESERVED',
+      inventoryStatus: 'reserved',
+      pspChargeId: invoiceId,
+    });
+    await insertProductWithReservedStock(orderId);
+
+    removeInvoiceMock
+      .mockRejectedValueOnce(new Error('psp down'))
+      .mockResolvedValueOnce({ invoiceId, removed: true });
+
+    try {
+      const res1 = await postRoute(makeReq(orderId), {
+        params: Promise.resolve({ id: orderId }),
       });
-      await insertProductWithReservedStock(orderId);
+      expect(res1.status).toBe(503);
+      const json1: any = await res1.json();
+      expect(json1.code).toBe('PSP_UNAVAILABLE');
 
-      removeInvoiceMock
-        .mockRejectedValueOnce(new Error('psp down'))
-        .mockResolvedValueOnce({ invoiceId, removed: true });
+      const [rowAfterFail] = await db
+        .select({
+          status: monobankPaymentCancels.status,
+        })
+        .from(monobankPaymentCancels)
+        .where(eq(monobankPaymentCancels.orderId, orderId))
+        .limit(1);
+      expect(rowAfterFail?.status).toBe('failure');
 
-      try {
-        const res1 = await postRoute(makeReq(orderId), {
-          params: Promise.resolve({ id: orderId }),
-        });
-        expect(res1.status).toBe(503);
-        const json1: any = await res1.json();
-        expect(json1.code).toBe('PSP_UNAVAILABLE');
+      const [orderAfterFail] = await db
+        .select({
+          status: orders.status,
+          inventoryStatus: orders.inventoryStatus,
+          stockRestored: orders.stockRestored,
+        })
+        .from(orders)
+        .where(eq(orders.id, orderId))
+        .limit(1);
+      expect(orderAfterFail?.status).toBe('INVENTORY_RESERVED');
+      expect(orderAfterFail?.inventoryStatus).toBe('reserved');
+      expect(orderAfterFail?.stockRestored).toBe(false);
 
-        const [rowAfterFail] = await db
-          .select({
-            status: monobankPaymentCancels.status,
-          })
-          .from(monobankPaymentCancels)
-          .where(eq(monobankPaymentCancels.orderId, orderId))
-          .limit(1);
-        expect(rowAfterFail?.status).toBe('failure');
+      const res2 = await postRoute(makeReq(orderId), {
+        params: Promise.resolve({ id: orderId }),
+      });
+      expect(res2.status).toBe(200);
+      const json2: any = await res2.json();
+      expect(json2.cancel.status).toBe('success');
+      expect(json2.cancel.deduped).toBe(false);
 
-        const [orderAfterFail] = await db
-          .select({
-            status: orders.status,
-            inventoryStatus: orders.inventoryStatus,
-            stockRestored: orders.stockRestored,
-          })
-          .from(orders)
-          .where(eq(orders.id, orderId))
-          .limit(1);
-        expect(orderAfterFail?.status).toBe('INVENTORY_RESERVED');
-        expect(orderAfterFail?.inventoryStatus).toBe('reserved');
-        expect(orderAfterFail?.stockRestored).toBe(false);
-
-        const res2 = await postRoute(makeReq(orderId), {
-          params: Promise.resolve({ id: orderId }),
-        });
-        expect(res2.status).toBe(200);
-        const json2: any = await res2.json();
-        expect(json2.cancel.status).toBe('success');
-        expect(json2.cancel.deduped).toBe(false);
-
-        expect(removeInvoiceMock).toHaveBeenCalledTimes(2);
-      } finally {
-        await cleanup(orderId);
-      }
-    },
-    15000
-  );
+      expect(removeInvoiceMock).toHaveBeenCalledTimes(2);
+    } finally {
+      await cleanup(orderId);
+    }
+  }, 15000);
 
   it('service gate disabled: 409 CANCEL_DISABLED, PSP not called', async () => {
     const orderId = crypto.randomUUID();
@@ -517,111 +517,106 @@ describe.sequential('monobank cancel payment route (F5)', () => {
     }
   });
 
-  it(
-    'concurrency: two parallel POSTs perform single PSP call',
-    async () => {
-      const orderId = crypto.randomUUID();
-      const invoiceId = `inv_${crypto.randomUUID()}`;
+  it('concurrency: two parallel POSTs perform single PSP call', async () => {
+    const orderId = crypto.randomUUID();
+    const invoiceId = `inv_${crypto.randomUUID()}`;
 
-      await insertOrder({
-        orderId,
-        paymentStatus: 'pending',
-        status: 'INVENTORY_RESERVED',
-        inventoryStatus: 'reserved',
-        pspChargeId: invoiceId,
-      });
-      await insertProductWithReservedStock(orderId);
+    await insertOrder({
+      orderId,
+      paymentStatus: 'pending',
+      status: 'INVENTORY_RESERVED',
+      inventoryStatus: 'reserved',
+      pspChargeId: invoiceId,
+    });
+    await insertProductWithReservedStock(orderId);
 
-      removeInvoiceMock.mockImplementation(async () => {
-        await new Promise(resolve => setTimeout(resolve, 50));
-        return { invoiceId, removed: true };
-      });
+    removeInvoiceMock.mockImplementation(async () => {
+      await new Promise(resolve => setTimeout(resolve, 50));
+      return { invoiceId, removed: true };
+    });
 
-      try {
-        const [res1, res2] = await Promise.all([
-          postRoute(makeReq(orderId), { params: Promise.resolve({ id: orderId }) }),
-          postRoute(makeReq(orderId), { params: Promise.resolve({ id: orderId }) }),
-        ]);
+    try {
+      const [res1, res2] = await Promise.all([
+        postRoute(makeReq(orderId), {
+          params: Promise.resolve({ id: orderId }),
+        }),
+        postRoute(makeReq(orderId), {
+          params: Promise.resolve({ id: orderId }),
+        }),
+      ]);
 
-        expect(res1.status).toBe(200);
-        expect(res2.status).toBe(200);
+      expect(res1.status).toBe(200);
+      expect(res2.status).toBe(200);
 
-        const json1: any = await res1.json();
-        const json2: any = await res2.json();
+      const json1: any = await res1.json();
+      const json2: any = await res2.json();
 
-        expect(removeInvoiceMock).toHaveBeenCalledTimes(1);
+      expect(removeInvoiceMock).toHaveBeenCalledTimes(1);
 
-        const dedupedValues = [json1.cancel.deduped, json2.cancel.deduped].sort();
-        expect(dedupedValues).toEqual([false, true]);
+      const dedupedValues = [json1.cancel.deduped, json2.cancel.deduped].sort();
+      expect(dedupedValues).toEqual([false, true]);
 
-        const releaseMoves = await db
-          .select({ id: inventoryMoves.id })
-          .from(inventoryMoves)
-          .where(
-            and(
-              eq(inventoryMoves.orderId, orderId),
-              eq(inventoryMoves.type, 'release')
-            )
-          );
-        expect(releaseMoves).toHaveLength(1);
+      const releaseMoves = await db
+        .select({ id: inventoryMoves.id })
+        .from(inventoryMoves)
+        .where(
+          and(
+            eq(inventoryMoves.orderId, orderId),
+            eq(inventoryMoves.type, 'release')
+          )
+        );
+      expect(releaseMoves).toHaveLength(1);
 
-        const [cancelRow] = await db
-          .select({ status: monobankPaymentCancels.status })
-          .from(monobankPaymentCancels)
-          .where(eq(monobankPaymentCancels.orderId, orderId))
-          .limit(1);
-        expect(cancelRow?.status).toBe('success');
-      } finally {
-        await cleanup(orderId);
-      }
-    },
-    20000
-  );
+      const [cancelRow] = await db
+        .select({ status: monobankPaymentCancels.status })
+        .from(monobankPaymentCancels)
+        .where(eq(monobankPaymentCancels.orderId, orderId))
+        .limit(1);
+      expect(cancelRow?.status).toBe('success');
+    } finally {
+      await cleanup(orderId);
+    }
+  }, 20000);
 
-  it(
-    'follower in requested state returns 409 CANCEL_IN_PROGRESS while leader is in-flight',
-    async () => {
-      const orderId = crypto.randomUUID();
-      const invoiceId = `inv_${crypto.randomUUID()}`;
+  it('follower in requested state returns 409 CANCEL_IN_PROGRESS while leader is in-flight', async () => {
+    const orderId = crypto.randomUUID();
+    const invoiceId = `inv_${crypto.randomUUID()}`;
 
-      await insertOrder({
-        orderId,
-        paymentStatus: 'pending',
-        status: 'INVENTORY_RESERVED',
-        inventoryStatus: 'reserved',
-        pspChargeId: invoiceId,
-      });
-      await insertProductWithReservedStock(orderId);
+    await insertOrder({
+      orderId,
+      paymentStatus: 'pending',
+      status: 'INVENTORY_RESERVED',
+      inventoryStatus: 'reserved',
+      pspChargeId: invoiceId,
+    });
+    await insertProductWithReservedStock(orderId);
 
-      removeInvoiceMock.mockImplementation(async () => {
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        return { invoiceId, removed: true };
-      });
+    removeInvoiceMock.mockImplementation(async () => {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      return { invoiceId, removed: true };
+    });
 
-      const leaderPromise = postRoute(makeReq(orderId), {
+    const leaderPromise = postRoute(makeReq(orderId), {
+      params: Promise.resolve({ id: orderId }),
+    });
+
+    try {
+      await waitForCancelStatus(`mono_cancel:${orderId}`, 'requested');
+
+      const followerRes = await postRoute(makeReq(orderId), {
         params: Promise.resolve({ id: orderId }),
       });
 
-      try {
-        await waitForCancelStatus(`mono_cancel:${orderId}`, 'requested');
+      expect(followerRes.status).toBe(409);
+      const followerJson: any = await followerRes.json();
+      expect(followerJson.code).toBe('CANCEL_IN_PROGRESS');
 
-        const followerRes = await postRoute(makeReq(orderId), {
-          params: Promise.resolve({ id: orderId }),
-        });
+      const leaderRes = await leaderPromise;
+      expect(leaderRes.status).toBe(200);
 
-        expect(followerRes.status).toBe(409);
-        const followerJson: any = await followerRes.json();
-        expect(followerJson.code).toBe('CANCEL_IN_PROGRESS');
-
-        const leaderRes = await leaderPromise;
-        expect(leaderRes.status).toBe(200);
-
-        expect(removeInvoiceMock).toHaveBeenCalledTimes(1);
-      } finally {
-        await cleanup(orderId);
-      }
-    },
-    15000
-  );
+      expect(removeInvoiceMock).toHaveBeenCalledTimes(1);
+    } finally {
+      await cleanup(orderId);
+    }
+  }, 15000);
 });
-

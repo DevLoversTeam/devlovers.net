@@ -24,7 +24,10 @@ vi.mock('@/lib/logging', async () => {
 });
 
 function sha256HexUtf8(value: string) {
-  return crypto.createHash('sha256').update(Buffer.from(value, 'utf8')).digest('hex');
+  return crypto
+    .createHash('sha256')
+    .update(Buffer.from(value, 'utf8'))
+    .digest('hex');
 }
 
 async function insertOrderAndAttempt(args: {
@@ -76,7 +79,9 @@ async function cleanup(args: {
         args.processingRawSha256,
       ])
     );
-  await db.delete(paymentAttempts).where(eq(paymentAttempts.id, args.attemptId));
+  await db
+    .delete(paymentAttempts)
+    .where(eq(paymentAttempts.id, args.attemptId));
   await db.delete(orders).where(eq(orders.id, args.orderId));
 }
 

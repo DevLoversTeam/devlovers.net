@@ -1,5 +1,4 @@
 'use client';
-import { ViolationsCounter } from '@/components/quiz/ViolationsCounter';
 import { Ban, FileText, TriangleAlert, UserRound } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
@@ -13,10 +12,11 @@ import {
 import { toast } from 'sonner';
 
 import { initializeQuizCache, submitQuizAttempt } from '@/actions/quiz';
+import { ViolationsCounter } from '@/components/quiz/ViolationsCounter';
 import { Button } from '@/components/ui/button';
 import { ConfirmModal } from '@/components/ui/confirm-modal';
-import { categoryTabStyles } from '@/data/categoryStyles';
-import type { QuizQuestionClient } from '@/db/queries/quiz';
+import { getCategoryTabStyle } from '@/data/categoryStyles';
+import type { QuizQuestionClient } from '@/db/queries/quizzes/quiz';
 import { useAntiCheat } from '@/hooks/useAntiCheat';
 import { useQuizGuards } from '@/hooks/useQuizGuards';
 import { useQuizSession } from '@/hooks/useQuizSession';
@@ -60,7 +60,11 @@ type QuizAction =
   | { type: 'NEXT_QUESTION' }
   | {
       type: 'COMPLETE_QUIZ';
-      payload?: { pointsAwarded?: number; isIncomplete?: boolean; attemptId?: string };
+      payload?: {
+        pointsAwarded?: number;
+        isIncomplete?: boolean;
+        attemptId?: string;
+      };
     }
   | { type: 'RESTART' }
   | { type: 'RESTORE_SESSION'; payload: QuizSessionData };
@@ -171,10 +175,9 @@ export function QuizContainer({
   const tResult = useTranslations('quiz.result');
   const tExit = useTranslations('quiz.exitModal');
   const tQuestion = useTranslations('quiz.question');
-  const categoryStyle = categorySlug
-    ? categoryTabStyles[categorySlug as keyof typeof categoryTabStyles]
-    : null;
-  const accentColor = categoryStyle?.accent ?? '#3B82F6';
+  const accentColor = categorySlug
+    ? getCategoryTabStyle(categorySlug).accent
+    : '#3B82F6';
   const [isStarting, setIsStarting] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [state, dispatch] = useReducer(quizReducer, {
@@ -370,7 +373,10 @@ export function QuizContainer({
       if (result.success) {
         dispatch({
           type: 'COMPLETE_QUIZ',
-          payload: { pointsAwarded: result.pointsAwarded ?? 0, attemptId: result.attemptId ?? undefined },
+          payload: {
+            pointsAwarded: result.pointsAwarded ?? 0,
+            attemptId: result.attemptId ?? undefined,
+          },
         });
       } else {
         console.error('Failed to submit quiz:', result.error);
@@ -475,20 +481,20 @@ export function QuizContainer({
             <div className="flex flex-col gap-3 sm:flex-row">
               <Link
                 href={`/login?returnTo=/${locale}/quiz/${quizSlug}`}
-                className="flex-1 inline-flex items-center justify-center rounded-xl font-medium transition-colors px-6 py-3 text-base bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-hover)] active:brightness-90 text-center"
+                className="inline-flex flex-1 items-center justify-center rounded-xl bg-[var(--accent-primary)] px-6 py-3 text-center text-base font-medium text-white transition-colors hover:bg-[var(--accent-hover)] active:brightness-90"
               >
                 {tResult('loginButton')}
               </Link>
               <Link
                 href={`/signup?returnTo=/${locale}/quiz/${quizSlug}`}
-                className="flex-1 inline-flex items-center justify-center rounded-xl font-medium transition-colors px-6 py-3 text-base bg-gray-200 text-gray-900 hover:bg-gray-300 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700 text-center"
+                className="inline-flex flex-1 items-center justify-center rounded-xl bg-gray-200 px-6 py-3 text-center text-base font-medium text-gray-900 transition-colors hover:bg-gray-300 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
               >
                 {tResult('signupButton')}
               </Link>
               <button
                 onClick={handleStart}
                 disabled={isStarting}
-                className="disabled:opacity-50 disabled:cursor-not-allowed flex-1 rounded-xl border px-6 py-3 text-center text-base font-semibold transition-all duration-300"
+                className="flex-1 rounded-xl border px-6 py-3 text-center text-base font-semibold transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50"
                 style={{
                   borderColor: `${accentColor}50`,
                   backgroundColor: `${accentColor}15`,
@@ -499,24 +505,24 @@ export function QuizContainer({
               </button>
             </div>
           </>
-      ) : (
-        <button
-          onClick={handleStart}
-          disabled={isStarting}
-          className="disabled:opacity-50 disabled:cursor-not-allowed group relative w-full overflow-hidden rounded-xl border px-6 py-3 text-center text-base font-semibold transition-all duration-300"
-          style={{
-            borderColor: `${accentColor}50`,
-            backgroundColor: `${accentColor}15`,
-            color: accentColor,
-          }}
-        >
-          {tRules('startButton')}
-          <span
-            className="pointer-events-none absolute top-1/2 left-1/2 h-[150%] w-[80%] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-0 blur-[20px] transition-opacity duration-300 group-hover:opacity-30"
-            style={{ backgroundColor: accentColor }}
-          />
-        </button>
-      )}
+        ) : (
+          <button
+            onClick={handleStart}
+            disabled={isStarting}
+            className="group relative w-full overflow-hidden rounded-xl border px-6 py-3 text-center text-base font-semibold transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50"
+            style={{
+              borderColor: `${accentColor}50`,
+              backgroundColor: `${accentColor}15`,
+              color: accentColor,
+            }}
+          >
+            {tRules('startButton')}
+            <span
+              className="pointer-events-none absolute top-1/2 left-1/2 h-[150%] w-[80%] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-0 blur-[20px] transition-opacity duration-300 group-hover:opacity-30"
+              style={{ backgroundColor: accentColor }}
+            />
+          </button>
+        )}
       </div>
     );
   }

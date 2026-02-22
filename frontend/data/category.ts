@@ -19,4 +19,8 @@ export const categoryData = [
   createCategory('vue', 'Vue.js', 7),
   createCategory('angular', 'Angular', 8),
   createCategory('node', 'Node.js', 9),
+  createCategory('sql', 'SQL', 10),
+  createCategory('postgresql', 'PostgreSQL', 11),
+  createCategory('mongodb', 'MongoDB', 12),
+  createCategory('python', 'Python', 13),
 ];

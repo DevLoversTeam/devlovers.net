@@ -70,6 +70,9 @@
 
   --accent-primary: #1e5eff;
   --accent-hover: #174ad6;
+
+  --sponsor: #bf3989;
+  --sponsor-hover: #9a2f6e;
 }
 
 .dark {
@@ -108,6 +111,43 @@
 
   --accent-primary: #ff2d55;
   --accent-hover: #e0264b;
+
+  --sponsor: #db61a2;
+  --sponsor-hover: #bf3989;
+}
+
+html {
+  overflow-x: hidden;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 3px;
+}
+
+:is(.dark) *::-webkit-scrollbar-thumb,
+.dark::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+@supports (-moz-appearance: none) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.25) transparent;
+  }
+
+  :is(.dark) * {
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  }
 }
 
 @layer base {
@@ -130,8 +170,27 @@
   .btn {
     background-color: var(--accent-primary);
   }
+
   .btn:hover {
     background-color: var(--accent-hover);
+  }
+
+  .dashboard-card {
+    @apply relative z-10 overflow-hidden rounded-3xl border border-gray-200 bg-white/10 shadow-sm backdrop-blur-md transition-all duration-300;
+
+    &:hover {
+      @apply -translate-y-1 shadow-md;
+
+      border-color: color-mix(in srgb, var(--accent-primary) 30%, transparent);
+    }
+
+    &:is(.dark *) {
+      @apply border-neutral-800 bg-neutral-900/10;
+    }
+
+    &:is(.dark *):hover {
+      border-color: color-mix(in srgb, #ff2d55 30%, transparent);
+    }
   }
 }
 
@@ -142,7 +201,24 @@
 .qa-accordion-item:hover,
 .qa-accordion-item:focus-within,
 .qa-accordion-item[data-state='open'] {
-  border-color: var(--qa-accent);
+  border-color: var(--qa-accent, var(--accent-primary));
+}
+
+.qa-accordion-item {
+  position: relative;
+  overflow: hidden;
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    transparent 54%,
+    var(--qa-accent-soft, rgba(161, 161, 170, 0.22)) 100%
+  );
+}
+
+.qa-accordion-item:hover,
+.qa-accordion-item:focus-within,
+.qa-accordion-item[data-state='open'] {
+  background-image: none;
 }
 
 .no-select,
@@ -154,10 +230,36 @@
   user-select: none;
 }
 
+@keyframes fade-up {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.6s ease-out forwards;
+  opacity: 0;
+}
+
+.delay-150 {
+  animation-delay: 0.15s;
+}
+
+.delay-300 {
+  animation-delay: 0.3s;
+}
+
 @keyframes progress {
   from {
     width: 100%;
   }
+
   to {
     width: 0%;
   }
@@ -167,6 +269,7 @@
   from {
     transform: scaleX(1);
   }
+
   to {
     transform: scaleX(0);
   }
@@ -187,6 +290,7 @@
       0% 100%
     );
   }
+
   50% {
     clip-path: polygon(
       0% 65%,
@@ -206,6 +310,7 @@
   0% {
     clip-path: inset(100% 0 0 0);
   }
+
   100% {
     clip-path: inset(0 0 0 0);
   }
@@ -215,10 +320,12 @@
   0% {
     transform: translate(0, 0) scale(1) rotate(var(--card-rotate, 0deg));
   }
+
   50% {
     transform: translate(var(--card-x, 0), var(--card-y, 0)) scale(1.05)
       rotate(calc(var(--card-rotate, 0deg) + var(--card-rotate-offset, 0deg)));
   }
+
   100% {
     transform: translate(0, 0) scale(1) rotate(var(--card-rotate, 0deg));
   }
@@ -297,6 +404,7 @@
   100% {
     transform: translateY(0);
   }
+
   50% {
     transform: translateY(-8px);
   }
@@ -306,6 +414,7 @@
   0% {
     stroke-dashoffset: 0;
   }
+
   100% {
     stroke-dashoffset: 20;
   }
@@ -440,6 +549,7 @@
   from {
     transform: translateX(0);
   }
+
   to {
     transform: translateX(-100%);
   }
@@ -458,9 +568,12 @@
   0% {
     transform: translateY(0);
   }
+
   100% {
     transform: translateY(-50%);
-  } /* Рухаємось на 50%, бо контент дубльовано */
+  }
+
+  /* Рухаємось на 50%, бо контент дубльовано */
 }
 
 .animate-marquee-vertical {
@@ -474,11 +587,15 @@
 
 /* Hide scrollbar for horizontal scroll containers */
 .scrollbar-hide {
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
 }
+
 .scrollbar-hide::-webkit-scrollbar {
-  display: none; /* Chrome, Safari and Opera */
+  display: none;
+  /* Chrome, Safari and Opera */
 }
 
 @media (prefers-reduced-motion: reduce) {

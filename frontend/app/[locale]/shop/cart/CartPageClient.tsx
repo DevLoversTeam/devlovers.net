@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
+import { Loader } from '@/components/shared/Loader';
 import { useCart } from '@/components/shop/CartProvider';
 import { Link, useRouter } from '@/i18n/routing';
 import { formatMoney } from '@/lib/shop/currency';
@@ -54,6 +55,14 @@ const SHOP_HERO_CTA = cn(
   'shadow-[var(--shop-hero-btn-shadow)] hover:shadow-[var(--shop-hero-btn-shadow-hover)]'
 );
 
+const ORDERS_LINK = cn(SHOP_LINK_BASE, SHOP_LINK_MD, SHOP_FOCUS);
+
+const ORDERS_COUNT_BADGE = cn(
+  'border-border bg-muted/40 text-foreground inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold tabular-nums'
+);
+
+const ORDERS_CARD = cn('border-border rounded-md border p-4');
+
 type Props = {
   stripeEnabled: boolean;
   monobankEnabled: boolean;
@@ -75,14 +84,27 @@ function resolveInitialProvider(args: {
   return 'stripe';
 }
 
+type OrdersSummaryState = {
+  count: number;
+  latestOrderId: string | null;
+};
+
 export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
   const { cart, updateQuantity, removeFromCart } = useCart();
   const router = useRouter();
   const t = useTranslations('shop.cart');
+  const tOrders = useTranslations('shop.orders');
   const tColors = useTranslations('shop.catalog.colors');
+
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
+
+  const [ordersSummary, setOrdersSummary] = useState<OrdersSummaryState | null>(
+    null
+  );
+  const [isOrdersLoading, setIsOrdersLoading] = useState(false);
+
   const [selectedProvider, setSelectedProvider] = useState<CheckoutProvider>(
     () =>
       resolveInitialProvider({
@@ -91,6 +113,11 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
         currency: cart?.summary?.currency,
       })
   );
+  const [isClientReady, setIsClientReady] = useState(false);
+
+  useEffect(() => {
+    setIsClientReady(true);
+  }, []);
 
   const params = useParams<{ locale?: string }>();
   const locale = params.locale ?? 'en';
@@ -109,6 +136,157 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
       setSelectedProvider('stripe');
     }
   }, [canUseMonobank, canUseStripe, selectedProvider]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const controller = new AbortController();
+
+    async function loadOrdersSummary() {
+      setIsOrdersLoading(true);
+
+      const timeoutId = setTimeout(() => controller.abort(), 2500);
+
+      try {
+        const res = await fetch('/api/shop/orders', {
+          method: 'GET',
+          headers: { Accept: 'application/json' },
+          cache: 'no-store',
+          signal: controller.signal,
+        });
+
+        if (res.status === 401 || res.status === 403) {
+          if (!cancelled) {
+            setOrdersSummary(null);
+          }
+          return;
+        }
+
+        const devWarn = (message: string, meta: Record<string, unknown>) => {
+          if (process.env.NODE_ENV === 'production') return;
+
+          const g = globalThis as unknown as {
+            __DEVLOVERS_SHOP_DEBUG_LOGS__?: Array<{
+              level: 'warn';
+              message: string;
+              meta: Record<string, unknown>;
+              ts: number;
+            }>;
+          };
+
+          if (!g.__DEVLOVERS_SHOP_DEBUG_LOGS__) {
+            g.__DEVLOVERS_SHOP_DEBUG_LOGS__ = [];
+          }
+
+          g.__DEVLOVERS_SHOP_DEBUG_LOGS__.push({
+            level: 'warn',
+            message,
+            meta,
+            ts: Date.now(),
+          });
+        };
+
+        let rawBody: string | null = null;
+        let data: unknown = null;
+        let parseError: unknown = null;
+
+        try {
+          rawBody = await res.text();
+          if (rawBody && rawBody.trim().length > 0) {
+            try {
+              data = JSON.parse(rawBody) as unknown;
+            } catch (err) {
+              parseError = err;
+              data = null;
+            }
+          }
+        } catch (err) {
+          parseError = err;
+          data = null;
+        }
+
+        const bodyPreview = rawBody ? rawBody.slice(0, 500) : null;
+        const parseErrorMessage =
+          parseError instanceof Error
+            ? parseError.message
+            : parseError
+              ? String(parseError)
+              : null;
+
+        if (!res.ok) {
+          devWarn('[shop.cart] orders summary fetch non-OK', {
+            status: res.status,
+            statusText: res.statusText,
+            bodyPreview,
+            parseError: parseErrorMessage,
+          });
+          return;
+        }
+
+        if (!data || typeof data !== 'object') {
+          devWarn('[shop.cart] orders summary fetch invalid JSON', {
+            status: res.status,
+            statusText: res.statusText,
+            bodyType: data === null ? 'null' : typeof data,
+            bodyPreview,
+            parseError: parseErrorMessage,
+          });
+          return;
+        }
+
+        const maybe = data as {
+          success?: unknown;
+          orders?: unknown;
+          totalCount?: unknown;
+        };
+
+        if (maybe.success !== true || !Array.isArray(maybe.orders)) {
+          devWarn('[shop.cart] orders summary fetch unexpected shape', {
+            status: res.status,
+            statusText: res.statusText,
+            bodyPreview,
+          });
+          return;
+        }
+
+        const orders = maybe.orders as Array<{ id?: unknown }>;
+
+        const totalCountRaw = maybe.totalCount;
+        const totalCountNum =
+          typeof totalCountRaw === 'number'
+            ? totalCountRaw
+            : typeof totalCountRaw === 'string'
+              ? Number(totalCountRaw)
+              : typeof totalCountRaw === 'bigint'
+                ? Number(totalCountRaw)
+                : NaN;
+
+        const count = Number.isFinite(totalCountNum)
+          ? Math.max(0, Math.trunc(totalCountNum))
+          : orders.length;
+
+        const latestOrderId =
+          typeof orders[0]?.id === 'string' ? orders[0].id : null;
+
+        if (!cancelled) {
+          setOrdersSummary({ count, latestOrderId });
+        }
+      } catch {
+        // ignore (timeout/network) — we just don't show summary
+      } finally {
+        clearTimeout(timeoutId);
+        if (!cancelled) {
+          setIsOrdersLoading(false);
+        }
+      }
+    }
+
+    void loadOrdersSummary();
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, []);
 
   const translateColor = (color: string | null | undefined): string | null => {
     if (!color) return null;
@@ -228,6 +406,62 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
     }
   }
 
+  const ordersCard = ordersSummary ? (
+    <div className={ORDERS_CARD}>
+      <div className="flex items-center justify-between gap-3">
+        <Link href="/shop/orders" className={ORDERS_LINK}>
+          {tOrders('title')}
+        </Link>
+
+        {isOrdersLoading ? (
+          <Loader2
+            className="text-muted-foreground h-4 w-4 animate-spin"
+            aria-hidden="true"
+          />
+        ) : (
+          <span className={ORDERS_COUNT_BADGE} aria-live="polite">
+            {ordersSummary.count}
+          </span>
+        )}
+      </div>
+
+      <p className="text-muted-foreground mt-2 text-xs">
+        {tOrders('subtitle')}
+      </p>
+
+      {ordersSummary.latestOrderId ? (
+        <div className="mt-2">
+          <Link
+            href={`/shop/orders/${encodeURIComponent(ordersSummary.latestOrderId)}`}
+            className={cn(SHOP_LINK_BASE, SHOP_LINK_XS, SHOP_FOCUS)}
+          >
+            {t('checkout.goToOrder')}
+          </Link>
+        </div>
+      ) : null}
+    </div>
+  ) : null;
+  const loadingAnnouncement = (() => {
+    try {
+      return t('loading');
+    } catch {
+      return 'Loading…';
+    }
+  })();
+
+  if (!isClientReady) {
+    return (
+      <main className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+        <div className="flex flex-col items-center justify-center gap-4">
+          <Loader size={160} className="opacity-90" />
+          <span className="sr-only" role="status" aria-live="polite">
+            {loadingAnnouncement}
+          </span>
+        </div>
+      </main>
+    );
+  }
+
   if (cart.items.length === 0) {
     return (
       <main className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
@@ -262,6 +496,8 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
               <span className={SHOP_CTA_INSET} aria-hidden="true" />
               <span className="relative z-10">{t('startShopping')}</span>
             </Link>
+
+            {ordersCard ? <div className="mt-6">{ordersCard}</div> : null}
           </div>
         </div>
       </main>
@@ -406,6 +642,7 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
               </li>
             ))}
           </ul>
+          {ordersCard ? <div className="mt-6">{ordersCard}</div> : null}
         </section>
 
         <aside
@@ -550,12 +787,10 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
                   />
                 ) : null}
 
-                {/* visible label stays stable to avoid wrapping/layout shift */}
                 <span className="truncate whitespace-nowrap">
                   {t('checkout.placeOrder')}
                 </span>
 
-                {/* screen readers can still get the “placing” state */}
                 {isCheckingOut ? (
                   <span className="sr-only">{t('checkout.placing')}</span>
                 ) : null}

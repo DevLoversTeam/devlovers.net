@@ -1,8 +1,23 @@
 'use client';
 
+import { AnimatePresence, motion } from 'framer-motion';
+import {
+  Calendar,
+  ChevronDown,
+  Globe,
+  Heart,
+  Settings,
+  Target,
+  Trophy,
+} from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 
+import { toast } from 'sonner';
+
+import { updateName, updatePassword } from '@/actions/profile';
 import { UserAvatar } from '@/components/leaderboard/UserAvatar';
+import { Link } from '@/i18n/routing';
 
 interface ProfileCardProps {
   user: {
@@ -15,77 +30,281 @@ interface ProfileCardProps {
     createdAt: Date | null;
   };
   locale: string;
+  isSponsor?: boolean;
+  totalAttempts?: number;
+  globalRank?: number | null;
 }
 
-export function ProfileCard({ user, locale }: ProfileCardProps) {
+export function ProfileCard({
+  user,
+  locale,
+  isSponsor,
+  totalAttempts = 0,
+  globalRank,
+}: ProfileCardProps) {
   const t = useTranslations('dashboard.profile');
+  const tStats = useTranslations('dashboard.stats');
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
   const username = user.name || user.email.split('@')[0];
   const seed = `${username}-${user.id}`;
   const avatarSrc =
     user.image ||
     `https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(seed)}`;
 
-  const cardStyles = `
-    relative overflow-hidden rounded-2xl
-    border border-gray-100 dark:border-white/5
-    bg-white/60 dark:bg-neutral-900/60 backdrop-blur-xl
-    p-8 transition-all hover:border-(--accent-primary)/30 dark:hover:border-(--accent-primary)/30
-  `;
+  const cardStyles = 'dashboard-card flex flex-col p-5 sm:p-6 lg:p-8';
+
+  const scrollTo = (id: string) => (e: React.MouseEvent) => {
+    e.preventDefault();
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleUpdateName = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsSaving(true);
+    const formData = new FormData(e.currentTarget);
+    
+    try {
+      const result = await updateName(formData);
+      if (!result.success) {
+        toast.error(result.error || 'Failed to update name');
+      }
+    } catch (error) {
+      toast.error('Something went wrong');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleUpdatePassword = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsSaving(true);
+    const formData = new FormData(e.currentTarget);
+    
+    try {
+      const result = await updatePassword(formData);
+      if (result.success) {
+        (e.target as HTMLFormElement).reset();
+      } else {
+        toast.error(result.error || 'Failed to update password');
+      }
+    } catch (error) {
+      toast.error('Something went wrong');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const statItemBase =
+    'flex flex-row items-center gap-2 sm:gap-3 rounded-2xl border border-gray-100 bg-white/50 p-2 sm:p-3 text-left dark:border-white/5 dark:bg-black/20 xl:flex-row-reverse xl:items-center xl:text-right xl:p-3 xl:px-4';
+
+  const iconBoxStyles = 'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/40 border border-white/20 shadow-xs backdrop-blur-xs xl:h-auto xl:w-auto xl:p-2.5 dark:bg-white/5 dark:border-white/10';
 
   return (
     <section className={cardStyles} aria-labelledby="profile-heading">
-      <div className="flex items-start gap-6">
-        <div
-          className="relative shrink-0 rounded-full bg-linear-to-br from-(--accent-primary) to-(--accent-hover) p-0.75"
-        >
-          <div className="relative h-20 w-20 overflow-hidden rounded-full bg-white dark:bg-neutral-900">
-            <UserAvatar
-              src={avatarSrc}
-              username={username}
-              userId={user.id}
-              sizes="80px"
-            />
+      <div className="flex flex-col gap-5 sm:gap-6 xl:flex-row xl:items-start xl:justify-between">
+        <div className="flex w-full min-w-0 items-start gap-4 sm:gap-6 xl:w-auto xl:flex-1">
+          <div className="relative shrink-0 rounded-full bg-linear-to-br from-(--accent-primary) to-(--accent-hover) p-0.75">
+            <div className="relative h-16 w-16 overflow-hidden rounded-full bg-white sm:h-20 sm:w-20 lg:h-24 lg:w-24 dark:bg-neutral-900">
+              <UserAvatar
+                src={avatarSrc}
+                username={username}
+                userId={user.id}
+                sizes="96px"
+              />
+            </div>
+          </div>
+
+          <div className="flex w-full min-w-0 flex-col items-start">
+            <h2
+              id="profile-heading"
+              className="text-2xl font-bold text-gray-900 sm:text-3xl dark:text-white"
+            >
+              {user.name || t('defaultName')}
+            </h2>
+            <p className="truncate font-mono text-sm text-gray-500 sm:text-base dark:text-gray-400">
+              {user.email}
+            </p>
+
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center rounded-full bg-(--accent-primary)/10 px-3 py-1 text-xs font-bold tracking-wider text-(--accent-primary) uppercase">
+                {user.role || t('defaultRole')}
+              </span>
+              {isSponsor && (
+                <span className="relative inline-flex items-center gap-1.5 overflow-hidden rounded-full border border-(--accent-primary)/20 bg-(--accent-primary)/10 px-3 py-1 text-xs font-bold tracking-wider text-(--accent-primary) uppercase">
+                  <span className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-linear-to-r from-transparent via-(--accent-primary)/10 to-transparent" />
+                  <Heart className="h-3 w-3 fill-(--accent-primary) drop-shadow-[0_0_8px_rgba(var(--accent-primary-rgb),0.8)]" />
+                  <span className="relative z-10">{t('sponsor')}</span>
+                </span>
+              )}
+            </div>
           </div>
         </div>
-
-        <div className="flex-1 min-w-0">
-          <h2
-            id="profile-heading"
-            className="text-2xl font-bold text-gray-900 dark:text-white"
-          >
-            {user.name || t('defaultName')}
-          </h2>
-          <p className="truncate font-mono text-sm text-gray-500 dark:text-gray-400">
-            {user.email}
-          </p>
-
-          <div className="mt-3 inline-flex items-center rounded-full bg-(--accent-primary)/10 px-3 py-1 text-xs font-bold tracking-wider text-(--accent-primary) uppercase">
-            {user.role || t('defaultRole')}
+        <dl className="grid w-full grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3 xl:flex xl:w-auto xl:flex-nowrap xl:items-center xl:justify-end xl:gap-2 2xl:gap-3">
+          {/* Attempts */}
+          <div className={statItemBase}>
+            <div className={iconBoxStyles}>
+              <Target className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+            </div>
+            <div className="flex w-full flex-col items-start overflow-hidden xl:items-end">
+              <dt className="truncate text-[10px] font-medium tracking-wider text-gray-500 uppercase xl:mb-0.5 xl:font-bold xl:text-gray-400 dark:text-gray-400">
+                {tStats('totalAttempts')}
+              </dt>
+              <dd className="truncate text-base leading-tight font-bold text-gray-900 sm:text-lg xl:text-xl xl:font-black dark:text-white">
+                {totalAttempts}
+              </dd>
+            </div>
           </div>
-        </div>
+
+          {/* Points */}
+          <div className={statItemBase}>
+            <div className={iconBoxStyles}>
+              <Trophy className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div className="flex w-full flex-col items-start overflow-hidden xl:items-end">
+              <dt className="truncate text-[10px] font-medium tracking-wider text-gray-500 uppercase xl:mb-0.5 xl:font-bold xl:text-gray-400 dark:text-gray-400">
+                {t('totalPoints')}
+              </dt>
+              <dd className="truncate text-base leading-tight font-bold text-gray-900 sm:text-lg xl:text-xl xl:font-black dark:text-white">
+                {user.points}
+              </dd>
+            </div>
+          </div>
+
+          {/* Global rank */}
+          <div className={statItemBase}>
+            <div className={iconBoxStyles}>
+              <Globe className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+            </div>
+            <div className="flex w-full flex-col items-start overflow-hidden xl:items-end">
+              <dt className="truncate text-[10px] font-medium tracking-wider text-gray-500 uppercase xl:mb-0.5 xl:font-bold xl:text-gray-400 dark:text-gray-400">
+                {t('globalRank')}
+              </dt>
+              <dd className="truncate text-base leading-tight font-bold text-gray-900 sm:text-lg xl:text-xl xl:font-black dark:text-white">
+                {globalRank ? `#${globalRank}` : '—'}
+              </dd>
+            </div>
+          </div>
+
+          {/* Joined */}
+          <div className="flex flex-row items-center gap-2 rounded-2xl border border-gray-100 bg-white/50 p-2 text-left sm:gap-3 sm:p-3 xl:flex-row-reverse xl:items-center xl:p-3 xl:px-4 xl:text-right dark:border-white/5 dark:bg-black/20">
+            <div className={iconBoxStyles}>
+              <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div className="flex w-full flex-col items-start overflow-hidden xl:items-end">
+              <dt className="truncate text-[10px] font-medium tracking-wider text-gray-500 uppercase xl:mb-0.5 xl:font-bold xl:text-gray-400 dark:text-gray-400">
+                {t('joined')}
+              </dt>
+              <dd className="truncate text-sm leading-tight font-bold whitespace-nowrap text-gray-700 sm:text-base xl:text-lg dark:text-gray-300 xl:dark:text-gray-300">
+                {user.createdAt
+                  ? new Date(user.createdAt).toLocaleDateString(locale, {
+                      year: 'numeric',
+                      month: 'short',
+                    })
+                  : '—'}
+              </dd>
+            </div>
+          </div>
+        </dl>
       </div>
 
-      <dl className="mt-8 grid grid-cols-2 gap-6 border-t border-gray-100 pt-6 dark:border-white/5">
-        <div>
-          <dt className="text-xs font-semibold tracking-wider text-gray-400 uppercase">
-            {t('totalPoints')}
-          </dt>
+      <div className="mt-6 border-t border-gray-100 pt-5 dark:border-white/5">
+        <button
+          onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+          className="group flex w-full items-center justify-between text-left"
+          aria-expanded={isSettingsOpen}
+        >
+          <div className="flex items-center gap-2 text-gray-700 transition-colors group-hover:text-(--accent-primary) dark:text-gray-300">
+            <Settings className="h-5 w-5" />
+            <span className="font-semibold">{t('settings')}</span>
+          </div>
+          <ChevronDown
+            className={`h-5 w-5 text-gray-400 transition-transform duration-300 ${
+              isSettingsOpen ? 'rotate-180 text-(--accent-primary)' : ''
+            }`}
+          />
+        </button>
 
-          <dd className="mt-1 text-3xl font-black text-gray-900 dark:text-white">
-            {user.points}
-          </dd>
-        </div>
-        <div>
-          <dt className="text-xs font-semibold tracking-wider text-gray-400 uppercase">
-            {t('joined')}
-          </dt>
-          <dd className="mt-2 text-lg font-medium text-gray-700 dark:text-gray-300">
-            {user.createdAt
-              ? new Date(user.createdAt).toLocaleDateString(locale)
-              : '-'}
-          </dd>
-        </div>
-      </dl>
+        <AnimatePresence>
+          {isSettingsOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="overflow-hidden"
+            >
+              <div className="mt-6 flex flex-col gap-6">
+                {/* Edit Name Form */}
+                <div className="rounded-2xl border border-gray-100 bg-gray-50/50 p-5 dark:border-white/5 dark:bg-black/20">
+                  <h3 className="mb-4 text-sm font-semibold tracking-wide text-gray-900 uppercase dark:text-white">
+                    {t('changeName')}
+                  </h3>
+                  <form onSubmit={handleUpdateName} className="flex flex-col gap-4 sm:flex-row sm:items-end">
+                    <div className="flex-1">
+                      <label htmlFor="name-input" className="sr-only">
+                        {t('changeName')}
+                      </label>
+                      <input
+                        id="name-input"
+                        name="name"
+                        type="text"
+                        defaultValue={user.name || ''}
+                        className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm transition-all outline-none placeholder:text-gray-400 focus:border-(--accent-primary) focus:ring-1 focus:ring-(--accent-primary) dark:border-neutral-800 dark:bg-neutral-900 dark:text-white"
+                        placeholder={t('defaultName')}
+                        required
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={isSaving}
+                      className="inline-flex h-10 w-full items-center justify-center rounded-xl bg-(--accent-primary) px-6 text-sm font-medium text-white transition-all hover:bg-(--accent-hover) disabled:opacity-50 sm:w-auto"
+                    >
+                      {isSaving ? t('saving') : t('saveChanges')}
+                    </button>
+                  </form>
+                </div>
+
+                {/* Edit Password Form */}
+                <div className="rounded-2xl border border-gray-100 bg-gray-50/50 p-5 dark:border-white/5 dark:bg-black/20">
+                  <h3 className="mb-4 text-sm font-semibold tracking-wide text-gray-900 uppercase dark:text-white">
+                    {t('changePassword')}
+                  </h3>
+                  <form onSubmit={handleUpdatePassword} className="flex flex-col gap-4">
+                    <div>
+                      <input
+                        type="password"
+                        name="currentPassword"
+                        placeholder={t('currentPassword')}
+                        className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm transition-all outline-none placeholder:text-gray-400 focus:border-(--accent-primary) focus:ring-1 focus:ring-(--accent-primary) dark:border-neutral-800 dark:bg-neutral-900 dark:text-white"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <input
+                        type="password"
+                        name="newPassword"
+                        placeholder={t('newPassword')}
+                        minLength={8}
+                        className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm transition-all outline-none placeholder:text-gray-400 focus:border-(--accent-primary) focus:ring-1 focus:ring-(--accent-primary) dark:border-neutral-800 dark:bg-neutral-900 dark:text-white"
+                        required
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={isSaving}
+                      className="mt-2 inline-flex h-10 w-full items-center justify-center self-start rounded-xl bg-(--accent-primary) px-6 text-sm font-medium text-white transition-all hover:bg-(--accent-hover) disabled:opacity-50 sm:w-auto"
+                    >
+                      {isSaving ? t('saving') : t('saveChanges')}
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </section>
   );
 }
