@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 
-import { and, eq, isNull, lt, ne, or } from 'drizzle-orm';
+import { and, eq, isNull, lt, ne, or, sql } from 'drizzle-orm';
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 
@@ -22,6 +22,11 @@ import {
   appendRefundToMeta,
   type RefundMetaRecord,
 } from '@/lib/services/orders/psp-metadata/refunds';
+import {
+  inventoryCommittedForShippingSql,
+  isInventoryCommittedForShipping,
+} from '@/lib/services/shop/shipping/inventory-eligibility';
+import { recordShippingMetric } from '@/lib/services/shop/shipping/metrics';
 
 const REFUND_FULLNESS_UNDETERMINED = 'REFUND_FULLNESS_UNDETERMINED' as const;
 
@@ -390,6 +395,114 @@ function shouldRestockFromWebhook(order: {
   return true;
 }
 
+function readDbRows<T>(res: unknown): T[] {
+  if (Array.isArray(res)) return res as T[];
+  const anyRes = res as { rows?: unknown };
+  return Array.isArray(anyRes?.rows) ? (anyRes.rows as T[]) : [];
+}
+
+type StripePaidApplyArgs = {
+  now: Date;
+  orderId: string;
+  pspChargeId: string | null;
+  pspPaymentMethod: string | null;
+  pspStatusReason: string;
+  pspMetadata: Record<string, unknown>;
+  paymentBecamePaidInThisApply: boolean;
+  shippingRequired: boolean | null;
+  shippingProvider: string | null;
+  shippingMethodCode: string | null;
+  inventoryStatus: string | null;
+};
+
+async function applyStripePaidAndQueueShipmentAtomic(
+  args: StripePaidApplyArgs
+): Promise<{ applied: boolean; shipmentQueued: boolean }> {
+  const shouldAttemptEnqueue =
+    args.paymentBecamePaidInThisApply &&
+    args.shippingRequired === true &&
+    args.shippingProvider === 'nova_poshta' &&
+    Boolean(args.shippingMethodCode) &&
+    isInventoryCommittedForShipping(args.inventoryStatus);
+
+  const res = await db.execute(sql`
+    with updated_order as (
+      update orders
+      set payment_status = 'paid',
+          status = 'PAID',
+          shipping_status = case
+            when ${shouldAttemptEnqueue} then 'queued'::shipping_status
+            else shipping_status
+          end,
+          updated_at = ${args.now},
+          psp_charge_id = ${args.pspChargeId},
+          psp_payment_method = ${args.pspPaymentMethod},
+          psp_status_reason = ${args.pspStatusReason},
+          psp_metadata = ${JSON.stringify(args.pspMetadata)}::jsonb
+      where id = ${args.orderId}::uuid
+        and payment_provider = 'stripe'
+        and payment_status in ('pending', 'requires_payment', 'paid')
+        and (stock_restored is null or stock_restored = false)
+        and (inventory_status is null or inventory_status <> 'released')
+        and (payment_status <> 'paid' or status <> 'PAID')
+        and payment_status <> 'failed'
+        and payment_status <> 'refunded'
+      returning
+        id,
+        payment_status,
+        inventory_status,
+        shipping_required,
+        shipping_provider,
+        shipping_method_code
+    ),
+    eligible_for_enqueue as (
+      select id
+      from updated_order
+      where ${shouldAttemptEnqueue}
+        and payment_status = 'paid'
+        and shipping_required = true
+        and shipping_provider = 'nova_poshta'
+        and shipping_method_code is not null
+        and ${inventoryCommittedForShippingSql(
+          'updated_order.inventory_status'
+        )}
+    ),
+    inserted_shipment as (
+      insert into shipping_shipments (
+        order_id,
+        provider,
+        status,
+        attempt_count,
+        created_at,
+        updated_at
+      )
+      select
+        id,
+        'nova_poshta',
+        'queued',
+        0,
+        ${args.now},
+        ${args.now}
+      from eligible_for_enqueue
+      on conflict (order_id) do nothing
+      returning order_id
+    )
+    select
+      (select count(*)::int from updated_order) as updated_count,
+      (select count(*)::int from inserted_shipment) as inserted_shipment_count
+  `);
+
+  const row = readDbRows<{
+    updated_count?: number;
+    inserted_shipment_count?: number;
+  }>(res)[0];
+
+  return {
+    applied: Number(row?.updated_count ?? 0) > 0,
+    shipmentQueued: Number(row?.inserted_shipment_count ?? 0) > 0,
+  };
+}
+
 export async function POST(request: NextRequest) {
   const startedAtMs = Date.now();
 
@@ -754,6 +867,10 @@ export async function POST(request: NextRequest) {
         status: orders.status,
         stockRestored: orders.stockRestored,
         inventoryStatus: orders.inventoryStatus,
+        shippingRequired: orders.shippingRequired,
+        shippingProvider: orders.shippingProvider,
+        shippingMethodCode: orders.shippingMethodCode,
+        shippingStatus: orders.shippingStatus,
         pspMetadata: orders.pspMetadata,
       })
       .from(orders)
@@ -887,35 +1004,28 @@ export async function POST(request: NextRequest) {
         createdAtIso,
       });
 
-      await guardedPaymentStatusUpdate({
+      const applyResult = await applyStripePaidAndQueueShipmentAtomic({
+        now,
         orderId: order.id,
-        paymentProvider: 'stripe',
-        to: 'paid',
-        source: 'stripe_webhook',
-        eventId: event.id,
-        note: eventType,
-        set: {
-          status: 'PAID',
-          updatedAt: now,
-          pspChargeId: latestChargeId ?? chargeForIntent?.id ?? null,
-          pspPaymentMethod: resolvePaymentMethod(
-            paymentIntent,
-            chargeForIntent
-          ),
-          pspStatusReason: paymentIntent?.status ?? 'succeeded',
-          pspMetadata: nextMeta,
-        },
-        extraWhere: and(
-          or(isNull(orders.stockRestored), eq(orders.stockRestored, false)),
-          or(
-            isNull(orders.inventoryStatus),
-            ne(orders.inventoryStatus, 'released')
-          ),
-          or(ne(orders.paymentStatus, 'paid'), ne(orders.status, 'PAID')),
-          ne(orders.paymentStatus, 'failed'),
-          ne(orders.paymentStatus, 'refunded')
-        ),
+        pspChargeId: latestChargeId ?? chargeForIntent?.id ?? null,
+        pspPaymentMethod: resolvePaymentMethod(paymentIntent, chargeForIntent),
+        pspStatusReason: paymentIntent?.status ?? 'succeeded',
+        pspMetadata: nextMeta,
+        paymentBecamePaidInThisApply: order.paymentStatus !== 'paid',
+        shippingRequired: order.shippingRequired,
+        shippingProvider: order.shippingProvider,
+        shippingMethodCode: order.shippingMethodCode,
+        inventoryStatus: order.inventoryStatus,
       });
+
+      if (applyResult.shipmentQueued) {
+        recordShippingMetric({
+          name: 'queued',
+          source: 'stripe_webhook',
+          orderId: order.id,
+          requestId,
+        });
+      }
       await markStripeAttemptFinal({
         paymentIntentId,
         status: 'succeeded',

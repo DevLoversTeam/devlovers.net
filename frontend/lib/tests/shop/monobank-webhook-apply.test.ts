@@ -4,7 +4,7 @@ import { and, eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { db } from '@/db';
-import { monobankEvents, orders, paymentAttempts } from '@/db/schema';
+import { monobankEvents, orders, paymentAttempts, shippingShipments } from '@/db/schema';
 import { buildMonobankAttemptIdempotencyKey } from '@/lib/services/orders/attempt-idempotency';
 import { applyMonoWebhookEvent } from '@/lib/services/orders/monobank-webhook';
 import { toDbMoney } from '@/lib/shop/money';
@@ -33,6 +33,14 @@ const sha256HexUtf8 = (s: string) =>
 async function insertOrderAndAttempt(args: {
   invoiceId: string;
   amountMinor: number;
+  inventoryStatus?:
+    | 'none'
+    | 'reserving'
+    | 'reserved'
+    | 'release_pending'
+    | 'released'
+    | 'failed';
+  withShippingNp?: boolean;
 }) {
   const orderId = crypto.randomUUID();
   await db.insert(orders).values({
@@ -43,7 +51,17 @@ async function insertOrderAndAttempt(args: {
     paymentProvider: 'monobank',
     paymentStatus: 'pending',
     status: 'INVENTORY_RESERVED',
-    inventoryStatus: 'reserved',
+    inventoryStatus: args.inventoryStatus ?? 'reserved',
+    ...(args.withShippingNp
+      ? {
+          shippingRequired: true,
+          shippingPayer: 'customer',
+          shippingProvider: 'nova_poshta',
+          shippingMethodCode: 'NP_WAREHOUSE',
+          shippingAmountMinor: null,
+          shippingStatus: 'pending',
+        }
+      : {}),
     idempotencyKey: crypto.randomUUID(),
   } as any);
 
@@ -64,6 +82,9 @@ async function insertOrderAndAttempt(args: {
 }
 
 async function cleanup(orderId: string, invoiceId: string) {
+  await db
+    .delete(shippingShipments)
+    .where(eq(shippingShipments.orderId, orderId));
   await db
     .delete(monobankEvents)
     .where(eq(monobankEvents.invoiceId, invoiceId));
@@ -123,6 +144,8 @@ describe.sequential('monobank webhook apply (persist-first)', () => {
     const { orderId } = await insertOrderAndAttempt({
       invoiceId,
       amountMinor: 1000,
+      withShippingNp: true,
+      inventoryStatus: 'reserved',
     });
 
     const rawBody = JSON.stringify({
@@ -156,11 +179,72 @@ describe.sequential('monobank webhook apply (persist-first)', () => {
       expect(events.length).toBe(1);
 
       const [order] = await db
-        .select({ paymentStatus: orders.paymentStatus })
+        .select({
+          paymentStatus: orders.paymentStatus,
+          shippingStatus: orders.shippingStatus,
+        })
         .from(orders)
         .where(eq(orders.id, orderId))
         .limit(1);
       expect(order?.paymentStatus).toBe('paid');
+      expect(order?.shippingStatus).toBe('queued');
+
+      const queued = await db
+        .select({
+          id: shippingShipments.id,
+          status: shippingShipments.status,
+        })
+        .from(shippingShipments)
+        .where(eq(shippingShipments.orderId, orderId));
+      expect(queued.length).toBe(1);
+      expect(queued[0]?.status).toBe('queued');
+    } finally {
+      await cleanup(orderId, invoiceId);
+    }
+  });
+
+  it('does not enqueue shipment when inventory is not committed', async () => {
+    const invoiceId = `inv_${crypto.randomUUID()}`;
+    const { orderId } = await insertOrderAndAttempt({
+      invoiceId,
+      amountMinor: 1000,
+      withShippingNp: true,
+      inventoryStatus: 'reserving',
+    });
+
+    const rawBody = JSON.stringify({
+      invoiceId,
+      status: 'success',
+      amount: 1000,
+      ccy: 980,
+    });
+
+    try {
+      const first = await applyMonoWebhookEvent({
+        rawBody,
+        rawSha256: sha256HexUtf8(rawBody),
+        requestId: 'req_ineligible_inv_1',
+        mode: 'apply',
+      });
+
+      expect(first.appliedResult).toBe('applied');
+
+      const [order] = await db
+        .select({
+          paymentStatus: orders.paymentStatus,
+          shippingStatus: orders.shippingStatus,
+        })
+        .from(orders)
+        .where(eq(orders.id, orderId))
+        .limit(1);
+      expect(order?.paymentStatus).toBe('paid');
+      expect(order?.shippingStatus).toBe('pending');
+
+      const queued = await db
+        .select({ id: shippingShipments.id })
+        .from(shippingShipments)
+        .where(eq(shippingShipments.orderId, orderId));
+      expect(queued.length).toBe(0);
     } finally {
       await cleanup(orderId, invoiceId);
     }

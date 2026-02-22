@@ -22,6 +22,11 @@ import {
 import { InvalidPayloadError } from '@/lib/services/errors';
 import { guardedPaymentStatusUpdate } from '@/lib/services/orders/payment-state';
 import { restockOrder } from '@/lib/services/orders/restock';
+import {
+  inventoryCommittedForShippingSql,
+  isInventoryCommittedForShipping,
+} from '@/lib/services/shop/shipping/inventory-eligibility';
+import { recordShippingMetric } from '@/lib/services/shop/shipping/metrics';
 import { isUuidV1toV5 } from '@/lib/utils/uuid';
 
 type WebhookMode = 'apply' | 'store' | 'drop';
@@ -69,6 +74,10 @@ type OrderRow = Pick<
   | 'status'
   | 'currency'
   | 'totalAmountMinor'
+  | 'inventoryStatus'
+  | 'shippingRequired'
+  | 'shippingProvider'
+  | 'shippingMethodCode'
   | 'pspMetadata'
 >;
 
@@ -357,6 +366,10 @@ async function fetchOrderForAttempt(orderId: string): Promise<OrderRow | null> {
       status as "status",
       currency as "currency",
       total_amount_minor as "totalAmountMinor",
+      inventory_status as "inventoryStatus",
+      shipping_required as "shippingRequired",
+      shipping_provider as "shippingProvider",
+      shipping_method_code as "shippingMethodCode",
       psp_metadata as "pspMetadata"
     from orders
     where id = ${orderId}::uuid
@@ -467,11 +480,16 @@ async function atomicMarkPaidOrderAndSucceedAttempt(args: {
   invoiceId: string;
   mergedMetaSql: ReturnType<typeof buildMergedMetaSql>;
   nextProviderModifiedAt: Date | null;
-}): Promise<boolean> {
+  enqueueShipment: boolean;
+}): Promise<{ ok: boolean; shipmentQueued: boolean }> {
   const res = await db.execute(sql`
     with updated_order as (
       update orders
       set status = 'PAID',
+          shipping_status = case
+            when ${args.enqueueShipment} then 'queued'::shipping_status
+            else shipping_status
+          end,
           psp_charge_id = ${args.invoiceId},
           psp_metadata = ${args.mergedMetaSql},
           updated_at = ${args.now}
@@ -482,7 +500,13 @@ async function atomicMarkPaidOrderAndSucceedAttempt(args: {
           from payment_attempts
           where id = ${args.attemptId}::uuid
         )
-      returning id
+      returning
+        id,
+        payment_status,
+        inventory_status,
+        shipping_required,
+        shipping_provider,
+        shipping_method_code
     ),
     updated_attempt as (
       update payment_attempts
@@ -495,14 +519,54 @@ async function atomicMarkPaidOrderAndSucceedAttempt(args: {
       where id = ${args.attemptId}::uuid
         and exists (select 1 from updated_order)
       returning id
+    ),
+    eligible_for_enqueue as (
+      select id
+      from updated_order
+      where ${args.enqueueShipment}
+        and payment_status = 'paid'
+        and shipping_required = true
+        and shipping_provider = 'nova_poshta'
+        and shipping_method_code is not null
+        and ${inventoryCommittedForShippingSql(
+          'updated_order.inventory_status'
+        )}
+    ),
+    inserted_shipment as (
+      insert into shipping_shipments (
+        order_id,
+        provider,
+        status,
+        attempt_count,
+        created_at,
+        updated_at
+      )
+      select
+        id,
+        'nova_poshta',
+        'queued',
+        0,
+        ${args.now},
+        ${args.now}
+      from eligible_for_enqueue
+      on conflict (order_id) do nothing
+      returning order_id
     )
     select
       (select id from updated_order) as order_id,
-      (select id from updated_attempt) as attempt_id
+      (select id from updated_attempt) as attempt_id,
+      (select count(*)::int from inserted_shipment) as inserted_shipment_count
   `);
 
-  const row = readDbRows<{ order_id?: string; attempt_id?: string }>(res)[0];
-  return Boolean(row?.order_id && row?.attempt_id);
+  const row = readDbRows<{
+    order_id?: string;
+    attempt_id?: string;
+    inserted_shipment_count?: number;
+  }>(res)[0];
+  return {
+    ok: Boolean(row?.order_id && row?.attempt_id),
+    shipmentQueued: Number(row?.inserted_shipment_count ?? 0) > 0,
+  };
 }
 
 async function atomicFinalizeOrderAndAttempt(args: {
@@ -793,16 +857,24 @@ async function applyWebhookToMatchedOrderAttemptEvent(args: {
       });
     }
 
-    const ok = await atomicMarkPaidOrderAndSucceedAttempt({
+    const enqueueShipment =
+      tr.applied &&
+      orderRow.shippingRequired === true &&
+      orderRow.shippingProvider === 'nova_poshta' &&
+      Boolean(orderRow.shippingMethodCode) &&
+      isInventoryCommittedForShipping(orderRow.inventoryStatus);
+
+    const atomicResult = await atomicMarkPaidOrderAndSucceedAttempt({
       now,
       orderId: orderRow.id,
       attemptId: attemptRow.id,
       invoiceId: normalized.invoiceId,
       mergedMetaSql,
       nextProviderModifiedAt: nextProviderModifiedAt ?? null,
+      enqueueShipment,
     });
 
-    if (!ok) {
+    if (!atomicResult.ok) {
       monoLogError(
         MONO_WEBHOOK_ATOMIC_UPDATE_FAILED,
         new Error('Atomic update (paid+succeeded) did not update both rows'),
@@ -829,6 +901,14 @@ async function applyWebhookToMatchedOrderAttemptEvent(args: {
       return buildApplyOutcome({
         appliedResult,
         attemptId: attemptRow.id,
+        orderId: orderRow.id,
+      });
+    }
+
+    if (atomicResult.shipmentQueued) {
+      recordShippingMetric({
+        name: 'queued',
+        source: 'monobank_webhook',
         orderId: orderRow.id,
       });
     }
