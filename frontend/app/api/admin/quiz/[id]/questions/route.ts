@@ -1,4 +1,4 @@
-import { eq, sql } from 'drizzle-orm';
+import { eq, inArray, sql } from 'drizzle-orm';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -162,7 +162,7 @@ export async function POST(
       // Delete inserted questions — CASCADE removes content, answers, translations
       const questionIds = insertedQuestions.map(q => q.id);
       await db.delete(quizQuestions).where(
-        sql`${quizQuestions.id} IN ${questionIds}`
+        inArray(quizQuestions.id, questionIds)
       );
       throw insertError;
     }
