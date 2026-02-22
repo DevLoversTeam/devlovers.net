@@ -36,6 +36,11 @@ import {
 import { categoryTabStyles } from '@/data/categoryStyles';
 import { CACHE_KEY, getCachedTerms } from '@/lib/ai/explainCache';
 
+type QaItemStyle = CSSProperties & {
+  '--qa-accent': string;
+  '--qa-accent-soft': string;
+};
+
 function normalizeCachedTerm(term: string): string {
   return term.toLowerCase().trim();
 }
@@ -397,7 +402,7 @@ export default function AccordionList({ items }: { items: QuestionEntry[] }) {
             categoryTabStyles[q.category as keyof typeof categoryTabStyles]
               ?.accent ?? '#A1A1AA';
           const animationDelay = `${Math.min(idx, 10) * 60}ms`;
-          const itemStyle: CSSProperties = {
+          const itemStyle: QaItemStyle = {
             animationDelay,
             animationFillMode: 'both',
             '--qa-accent': accentColor,
@@ -407,7 +412,7 @@ export default function AccordionList({ items }: { items: QuestionEntry[] }) {
             <AccordionItem
               key={key}
               value={String(key)}
-              className="qa-accordion-item mb-3 rounded-xl border border-black/5 bg-white/90 shadow-sm transition-colors last:mb-0 last:border-b dark:border-white/10 dark:bg-neutral-900/80 animate-in fade-in slide-in-from-bottom-2 duration-500 motion-reduce:animate-none motion-reduce:transition-none"
+              className="qa-accordion-item mb-3 rounded-xl border border-black/5 bg-white/90 shadow-sm transition-colors last:mb-0 last:border-b dark:border-white/10 dark:bg-neutral-900/80 animate-in fade-in slide-in-from-bottom-2 duration-500 motion-reduce:animate-none"
               style={itemStyle}
             >
               <AccordionTrigger

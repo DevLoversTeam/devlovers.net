@@ -124,12 +124,12 @@ export default function TabsSection() {
                     </p>
                   )}
                   {emptyStateLines[1] && (
-                    <p className="mt-2 text-gray-400 motion-safe:animate-fade-up motion-safe:delay-150 motion-reduce:opacity-100">
+                    <p className="mt-2 text-gray-400 motion-safe:animate-fade-up motion-safe:[animation-delay:150ms] motion-reduce:opacity-100 dark:text-gray-300">
                       {emptyStateLines[1]}
                     </p>
                   )}
                   {emptyStateLines[2] && (
-                    <p className="mt-1 text-gray-500 motion-safe:animate-fade-up motion-safe:delay-300 motion-reduce:opacity-100">
+                    <p className="mt-1 text-gray-500 motion-safe:animate-fade-up motion-safe:[animation-delay:300ms] motion-reduce:opacity-100 dark:text-gray-400">
                       {emptyStateLines[2]}
                     </p>
                   )}
