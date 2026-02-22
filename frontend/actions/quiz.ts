@@ -11,6 +11,9 @@ import {
   quizQuestions,
 } from '@/db/schema/quiz';
 import { getCurrentUser } from '@/lib/auth';
+import { ACHIEVEMENTS, computeAchievements } from '@/lib/achievements';
+import { getUserStatsForAchievements } from '@/lib/user-stats';
+import { createNotification } from './notifications';
 
 export interface UserAnswer {
   questionId: string;
@@ -86,6 +89,16 @@ export async function submitQuizAttempt(
     if (userId && userId !== session.id) {
       return { success: false, error: 'User mismatch' };
     }
+
+    // Capture user achievements state BEFORE saving this attempt
+    const statsBefore = await getUserStatsForAchievements(session.id);
+    const earnedBefore = new Set(
+      statsBefore
+        ? computeAchievements(statsBefore)
+            .filter(a => a.earned)
+            .map(a => a.id)
+        : []
+    );
 
     if (!quizId || !Array.isArray(answers) || answers.length === 0) {
       return {
@@ -211,6 +224,25 @@ export async function submitQuizAttempt(
       score: correctAnswersCount,
       integrityScore,
     });
+
+    // Capture user achievements state AFTER saving this attempt
+    const statsAfter = await getUserStatsForAchievements(session.id);
+    if (statsAfter) {
+      const earnedAfter = computeAchievements(statsAfter).filter(a => a.earned);
+      const newlyEarned = earnedAfter.filter(a => !earnedBefore.has(a.id));
+
+      // Trigger notifications for any newly earned achievements
+      for (const achievement of newlyEarned) {
+        // Find full object to get the fancy translated string (if needed) or just generic name
+        await createNotification({
+          userId: session.id,
+          type: 'ACHIEVEMENT',
+          title: 'Achievement Unlocked!',
+          message: `You just earned the ${achievement.id} badge!`,
+          metadata: { badgeId: achievement.id, icon: achievement.icon },
+        });
+      }
+    }
 
     return {
       success: true,

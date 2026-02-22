@@ -1,13 +1,12 @@
 'use client';
 
-import { BookOpen, LogIn, Menu, ShoppingBag, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo } from 'react';
 
 import { LogoutButton } from '@/components/auth/logoutButton';
 import { useMobileMenu } from '@/components/header/MobileMenuContext';
-import { HeaderButton } from '@/components/shared/HeaderButton';
 import { Link, usePathname } from '@/i18n/routing';
 import { SITE_LINKS } from '@/lib/navigation';
 
@@ -184,14 +183,13 @@ export function AppMobileMenu({
             <div className="flex flex-col gap-1">
               {variant === 'shop' && (
                 <>
-                  <HeaderButton
+                  <Link
                     href="/shop"
-                    icon={ShoppingBag}
-                    isActive={pathname === '/shop'}
-                    onLinkClick={handleHeaderButtonLinkClick('/shop')}
+                    onClick={(e) => handleLinkClick(e, '/shop')}
+                    className={linkClass(pathname === '/shop')}
                   >
                     {t('shop')}
-                  </HeaderButton>
+                  </Link>
                   {links.map(link => {
                     const isActive =
                       pathname === '/shop/products' &&
@@ -215,14 +213,13 @@ export function AppMobileMenu({
 
               {variant === 'blog' && (
                 <>
-                  <HeaderButton
+                  <Link
                     href="/blog"
-                    icon={BookOpen}
-                    isActive={pathname === '/blog'}
-                    onLinkClick={handleHeaderButtonLinkClick('/blog')}
+                    onClick={(e) => handleLinkClick(e, '/blog')}
+                    className={linkClass(pathname === '/blog')}
                   >
                     {t('blog')}
-                  </HeaderButton>
+                  </Link>
                   {blogCategories.map(category => {
                     const slug = slugify(category.title || '');
                     const href = `/blog/category/${slug}`;
@@ -247,9 +244,6 @@ export function AppMobileMenu({
               {variant === 'platform' && (
                 <>
                   {links
-                    .filter(
-                      link => link.href !== '/shop' && link.href !== '/blog'
-                    )
                     .map(link => (
                       <Link
                         key={link.href}
@@ -260,24 +254,6 @@ export function AppMobileMenu({
                         {'labelKey' in link ? t(link.labelKey) : link.label}
                       </Link>
                     ))}
-
-                  <HeaderButton
-                    href="/blog"
-                    icon={BookOpen}
-                    showArrow
-                    onLinkClick={handleHeaderButtonLinkClick('/blog')}
-                  >
-                    {t('blog')}
-                  </HeaderButton>
-
-                  <HeaderButton
-                    href="/shop"
-                    icon={ShoppingBag}
-                    showArrow
-                    onLinkClick={handleHeaderButtonLinkClick('/shop')}
-                  >
-                    {t('shop')}
-                  </HeaderButton>
                 </>
               )}
 
@@ -315,14 +291,18 @@ export function AppMobileMenu({
                     </Link>
                   )}
 
-                  <div onClick={close}>
+                  <div onClick={close} className="px-3 py-2 cursor-pointer text-muted-foreground hover:text-foreground transition-colors font-medium text-sm">
                     <LogoutButton />
                   </div>
                 </>
               ) : (
-                <HeaderButton href="/login" icon={LogIn} onClick={close}>
+                <Link
+                  href="/login"
+                  onClick={(e) => handleLinkClick(e, '/login')}
+                  className={linkClass(pathname === '/login')}
+                >
                   {t('login')}
-                </HeaderButton>
+                </Link>
               )}
             </div>
           </nav>

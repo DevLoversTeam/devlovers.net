@@ -1,6 +1,6 @@
 'use client';
 
-import { ClipboardList } from 'lucide-react';
+import { Shield, Star, ClipboardList } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import { QuizResultRow } from '@/components/dashboard/QuizResultRow';
@@ -12,13 +12,11 @@ interface QuizResultsSectionProps {
   locale: string;
 }
 
-export function QuizResultsSection({
-  attempts,
-  locale,
-}: QuizResultsSectionProps) {
+export function QuizResultsSection({ attempts, locale }: QuizResultsSectionProps) {
   const t = useTranslations('dashboard.quizResults');
 
-  const cardStyles = 'dashboard-card flex flex-col p-6 sm:p-8 lg:p-10';
+  const cardStyles =
+    'relative z-10 flex flex-col overflow-hidden rounded-3xl border border-gray-200 bg-white/10 p-6 sm:p-8 lg:p-10 shadow-sm backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-(--accent-primary)/30 dark:border-neutral-800 dark:bg-neutral-900/10 dark:hover:border-(--accent-primary)/30';
 
   const primaryBtnStyles =
     'group relative inline-flex items-center justify-center rounded-full px-8 py-3 text-sm font-semibold tracking-widest uppercase text-white bg-(--accent-primary) hover:bg-(--accent-hover) transition-all hover:scale-105';
@@ -44,8 +42,7 @@ export function QuizResultsSection({
     );
   }
 
-  const headerCellStyles =
-    'flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-gray-400';
+  const headerCellStyles = 'flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-gray-400';
 
   return (
     <section className={cardStyles}>
@@ -67,8 +64,12 @@ export function QuizResultsSection({
       </div>
 
       <div className="mb-2 hidden items-center gap-2 px-4 md:grid md:grid-cols-[minmax(0,4fr)_1fr_1.5fr_1fr_1fr_1fr_20px] lg:grid-cols-[minmax(0,4fr)_1fr_1.5fr_1fr_1fr_1fr_1.2fr_20px]">
-        <div className={headerCellStyles}>Quiz</div>
-        <div className={`justify-center ${headerCellStyles}`}>{t('score')}</div>
+        <div className={headerCellStyles}>
+          Quiz
+        </div>
+        <div className={`justify-center ${headerCellStyles}`}>
+          {t('score')}
+        </div>
         <div className={`justify-center ${headerCellStyles}`}>
           {t('accuracy', { fallback: 'Accuracy' })}
         </div>
@@ -89,13 +90,30 @@ export function QuizResultsSection({
 
       {/* Rows */}
       <div className="flex flex-col gap-2">
-        {attempts.map(attempt => (
-          <QuizResultRow
-            key={attempt.attemptId}
-            attempt={attempt}
-            locale={locale}
-          />
-        ))}
+        {[...attempts]
+          .sort((a, b) => {
+            const scoreA = Number(a.percentage);
+            const scoreB = Number(b.percentage);
+            
+            // Bucket values: Study = 1, Review = 2, Mastered = 3
+            // So that Study (1) comes before Review (2) before Mastered (3)
+            const bucketA = scoreA < 70 ? 1 : scoreA < 100 ? 2 : 3;
+            const bucketB = scoreB < 70 ? 1 : scoreB < 100 ? 2 : 3;
+            
+            if (bucketA !== bucketB) {
+              return bucketA - bucketB; // Ascending order of buckets
+            }
+            
+            // If they are in the same bucket, sort by most recent first
+            return new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime();
+          })
+          .map((attempt) => (
+            <QuizResultRow
+              key={attempt.attemptId}
+              attempt={attempt}
+              locale={locale}
+            />
+          ))}
       </div>
     </section>
   );

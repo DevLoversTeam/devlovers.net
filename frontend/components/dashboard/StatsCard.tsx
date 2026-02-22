@@ -15,7 +15,7 @@ interface StatsCardProps {
     trendPercentage?: number | null;
   };
   attempts?: {
-    percentage: string;
+    percentage: string | number;
     score: number;
     completedAt: Date;
   }[];

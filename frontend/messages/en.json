@@ -1307,6 +1307,36 @@
           "name": "Deep Diver",
           "desc": "Averaged 80%+ across 10+ quizzes!",
           "hint": "Average 80%+ across 10 or more attempts"
+        },
+        "unstoppable": {
+          "name": "Unstoppable Force",
+          "desc": "Conquered 100 total quiz attempts!",
+          "hint": "Complete 100 total quiz attempts"
+        },
+        "flawless": {
+          "name": "Flawless Victory",
+          "desc": "Achieved 25 perfect scores!",
+          "hint": "Achieve 25 perfect scores (100% accuracy)"
+        },
+        "grandmaster": {
+          "name": "Grandmaster",
+          "desc": "Averaged 95%+ across 50+ quizzes!",
+          "hint": "Average 95%+ across 50 or more attempts"
+        },
+        "polymath": {
+          "name": "Polymath",
+          "desc": "Completed 50 unique quizzes!",
+          "hint": "Complete 50 unique quizzes on the platform"
+        },
+        "deity": {
+          "name": "DevLover Deity",
+          "desc": "Earned a massive 10,000 total points!",
+          "hint": "Accumulate 10,000 total points"
+        },
+        "abyssal": {
+          "name": "Abyssal Diver",
+          "desc": "Averaged 90%+ across 50+ quizzes!",
+          "hint": "Average 90%+ across 50 or more attempts"
         }
       }
     }

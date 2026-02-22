@@ -53,10 +53,11 @@ export const getPlatformStats = unstable_cache(
         db.select({ value: count() }).from(quizAttempts),
       ]);
 
-      if (u) totalUsers = u.value;
-      if (q) solvedTests = q.value;
+      if (u) totalUsers = Number(u.value);
+      if (q) solvedTests = Number(q.value);
     } catch (e) {
       console.error('DB Fetch Error:', e);
+      throw e; // Throw to prevent caching fallback values if DB fails
     }
 
     return {
@@ -66,6 +67,6 @@ export const getPlatformStats = unstable_cache(
       questionsSolved: formatMetric(solvedTests),
     };
   },
-  ['platform-stats'],
+  ['platform-stats-v2'],
   { revalidate: 3600 }
 );

@@ -19,6 +19,12 @@ import {
   Target,
   Trophy,
   Waves,
+  Meteor,
+  Sparkle,
+  GraduationCap,
+  Atom,
+  Sun,
+  Anchor,
 } from '@phosphor-icons/react';
 import { useTranslations } from 'next-intl';
 import { useRef, useState, useSyncExternalStore } from 'react';
@@ -45,6 +51,12 @@ const ICON_MAP: Record<AchievementIconName, React.ElementType> = {
   Moon,
   Shield,
   Waves,
+  Meteor,
+  Sparkle,
+  GraduationCap,
+  Atom,
+  Sun,
+  Anchor,
 };
 
 const HEX = 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)';

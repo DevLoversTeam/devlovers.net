@@ -19,6 +19,12 @@ import {
   Target,
   Trophy,
   Waves,
+  Meteor,
+  Sparkle,
+  GraduationCap,
+  Atom,
+  Sun,
+  Anchor,
 } from '@phosphor-icons/react';
 import {
   motion,
@@ -54,6 +60,12 @@ const ICON_MAP: Record<AchievementIconName, React.ElementType> = {
   Moon,
   Shield,
   Waves,
+  Meteor,
+  Sparkle,
+  GraduationCap,
+  Atom,
+  Sun,
+  Anchor,
 };
 
 interface AchievementBadgeProps {

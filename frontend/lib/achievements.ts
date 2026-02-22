@@ -17,7 +17,14 @@ export type AchievementIconName =
   | 'Seal'
   | 'Moon'
   | 'Shield'
-  | 'Waves';
+  | 'Waves'
+  // batch 3
+  | 'Meteor'
+  | 'Sparkle'
+  | 'GraduationCap'
+  | 'Atom'
+  | 'Sun'
+  | 'Anchor';
 
 export interface Achievement {
   id: string;
@@ -37,119 +44,37 @@ export interface EarnedAchievement extends Achievement {
 }
 
 export const ACHIEVEMENTS: Achievement[] = [
-  // ── Group 1: Quiz progression (attempts & points) ─────────────────
-  {
-    id: 'first_blood',
-    icon: 'Fire',
-    gradient: ['#f97316', '#ef4444'],
-    glow: 'rgba(249,115,22,0.55)',
-  },
-  {
-    id: 'on_a_roll',
-    icon: 'Lightning',
-    gradient: ['#eab308', '#f59e0b'],
-    glow: 'rgba(234,179,8,0.55)',
-  },
-  {
-    id: 'rocket_start',
-    icon: 'Rocket',
-    gradient: ['#10b981', '#059669'],
-    glow: 'rgba(16,185,129,0.55)',
-  },
-  {
-    id: 'big_brain',
-    icon: 'Brain',
-    gradient: ['#06b6d4', '#3b82f6'],
-    glow: 'rgba(6,182,212,0.55)',
-  },
-  {
-    id: 'centurion',
-    icon: 'Shield',
-    gradient: ['#10b981', '#14b8a6'],
-    glow: 'rgba(16,185,129,0.6)',
-  },
-  {
-    id: 'endless',
-    icon: 'Infinity',
-    gradient: ['#14b8a6', '#0ea5e9'],
-    glow: 'rgba(20,184,166,0.55)',
-  },
+  // ── Group 1: Progression (Attempts) ────────────────────────────────
+  { id: 'first_blood',   icon: 'Fire',      gradient: ['#f97316', '#ef4444'], glow: 'rgba(249,115,22,0.55)' },
+  { id: 'on_a_roll',     icon: 'Lightning', gradient: ['#eab308', '#f59e0b'], glow: 'rgba(234,179,8,0.55)'  },
+  { id: 'rocket_start',  icon: 'Rocket',    gradient: ['#10b981', '#059669'], glow: 'rgba(16,185,129,0.55)' },
+  { id: 'big_brain',     icon: 'Brain',     gradient: ['#06b6d4', '#3b82f6'], glow: 'rgba(6,182,212,0.55)'  },
+  { id: 'unstoppable',   icon: 'Meteor',    gradient: ['#dc2626', '#7f1d1d'], glow: 'rgba(220,38,38,0.6)'   },
 
-  // ── Group 2: Skill / accuracy ──────────────────────────────────────
-  {
-    id: 'sharpshooter',
-    icon: 'Target',
-    gradient: ['#6366f1', '#8b5cf6'],
-    glow: 'rgba(99,102,241,0.55)',
-  },
-  {
-    id: 'perfectionist',
-    icon: 'Star',
-    gradient: ['#f59e0b', '#fbbf24'],
-    glow: 'rgba(251,191,36,0.55)',
-  },
-  {
-    id: 'diamond_mind',
-    icon: 'Diamond',
-    gradient: ['#67e8f9', '#a78bfa'],
-    glow: 'rgba(167,139,250,0.55)',
-  },
-  {
-    id: 'deep_diver',
-    icon: 'Waves',
-    gradient: ['#0ea5e9', '#6366f1'],
-    glow: 'rgba(14,165,233,0.6)',
-  },
-  {
-    id: 'code_wizard',
-    icon: 'Code',
-    gradient: ['#8b5cf6', '#6366f1'],
-    glow: 'rgba(139,92,246,0.55)',
-  },
-  {
-    id: 'legend',
-    icon: 'Trophy',
-    gradient: ['#d97706', '#b45309'],
-    glow: 'rgba(217,119,6,0.55)',
-  },
+  // ── Group 2: Uniqueness & Points ───────────────────────────────────
+  { id: 'code_wizard',   icon: 'Code',      gradient: ['#8b5cf6', '#6366f1'], glow: 'rgba(139,92,246,0.55)' },
+  { id: 'legend',        icon: 'Trophy',    gradient: ['#d97706', '#b45309'], glow: 'rgba(217,119,6,0.55)'  },
+  { id: 'polymath',      icon: 'Atom',      gradient: ['#a855f7', '#4c1d95'], glow: 'rgba(168,85,247,0.6)'  },
+  { id: 'centurion',     icon: 'Shield',    gradient: ['#10b981', '#14b8a6'], glow: 'rgba(16,185,129,0.6)'  },
+  { id: 'endless',       icon: 'Infinity',  gradient: ['#14b8a6', '#0ea5e9'], glow: 'rgba(20,184,166,0.55)' },
+  { id: 'deity',         icon: 'Sun',       gradient: ['#14b8a6', '#042f2e'], glow: 'rgba(20,184,166,0.6)'  },
 
-  // ── Group 3: Social / special / sponsor ───────────────────────────
-  {
-    id: 'royalty',
-    icon: 'Crown',
-    gradient: ['#f59e0b', '#dc2626'],
-    glow: 'rgba(245,158,11,0.55)',
-  },
-  {
-    id: 'night_owl',
-    icon: 'Moon',
-    gradient: ['#6366f1', '#8b5cf6'],
-    glow: 'rgba(99,102,241,0.6)',
-  },
-  {
-    id: 'star_gazer',
-    icon: 'GithubLogo',
-    gradient: ['#fbbf24', '#f59e0b'],
-    glow: 'rgba(251,191,36,0.7)',
-  },
-  {
-    id: 'supporter',
-    icon: 'Heart',
-    gradient: ['#ec4899', '#f43f5e'],
-    glow: 'rgba(236,72,153,0.55)',
-  },
-  {
-    id: 'silver_patron',
-    icon: 'Medal',
-    gradient: ['#94a3b8', '#e2e8f0'],
-    glow: 'rgba(148,163,184,0.6)',
-  },
-  {
-    id: 'golden_patron',
-    icon: 'Seal',
-    gradient: ['#f59e0b', '#b45309'],
-    glow: 'rgba(245,158,11,0.7)',
-  },
+  // ── Group 3: Accuracy & Consistency ────────────────────────────────
+  { id: 'sharpshooter',  icon: 'Target',    gradient: ['#6366f1', '#8b5cf6'], glow: 'rgba(99,102,241,0.55)' },
+  { id: 'perfectionist', icon: 'Star',      gradient: ['#f59e0b', '#fbbf24'], glow: 'rgba(251,191,36,0.55)' },
+  { id: 'diamond_mind',  icon: 'Diamond',   gradient: ['#67e8f9', '#a78bfa'], glow: 'rgba(167,139,250,0.55)'},
+  { id: 'flawless',      icon: 'Sparkle',   gradient: ['#f472b6', '#be185d'], glow: 'rgba(244,114,182,0.6)' },
+  { id: 'deep_diver',    icon: 'Waves',     gradient: ['#0ea5e9', '#6366f1'], glow: 'rgba(14,165,233,0.6)'  },
+  { id: 'abyssal',       icon: 'Anchor',    gradient: ['#0284c7', '#082f49'], glow: 'rgba(2,132,199,0.6)'   },
+  { id: 'grandmaster',   icon: 'GraduationCap', gradient: ['#fbbf24', '#b45309'], glow: 'rgba(251,191,36,0.7)'  },
+
+  // ── Group 4: Social & Special ──────────────────────────────────────
+  { id: 'night_owl',     icon: 'Moon',      gradient: ['#6366f1', '#8b5cf6'], glow: 'rgba(99,102,241,0.6)'  },
+  { id: 'star_gazer',    icon: 'GithubLogo',gradient: ['#fbbf24', '#f59e0b'], glow: 'rgba(251,191,36,0.7)'  },
+  { id: 'royalty',       icon: 'Crown',     gradient: ['#f59e0b', '#dc2626'], glow: 'rgba(245,158,11,0.55)' },
+  { id: 'supporter',     icon: 'Heart',     gradient: ['#ec4899', '#f43f5e'], glow: 'rgba(236,72,153,0.55)' },
+  { id: 'silver_patron', icon: 'Medal',     gradient: ['#94a3b8', '#e2e8f0'], glow: 'rgba(148,163,184,0.6)' },
+  { id: 'golden_patron', icon: 'Seal',      gradient: ['#f59e0b', '#b45309'], glow: 'rgba(245,158,11,0.7)'  },
 ];
 
 export interface UserStats {
@@ -252,9 +177,42 @@ export function computeAchievements(stats: UserStats): EarnedAchievement[] {
             : Math.min((stats.averageScore / 80) * 100, 100);
         break;
 
-      default:
-        earned = false;
-        progress = 0;
+      // ── Hard / Dedicated ─────────────────────────────────────
+      case 'unstoppable':
+        earned   = stats.totalAttempts >= 100;
+        progress = Math.min((stats.totalAttempts / 100) * 100, 100);
+        break;
+
+      case 'flawless':
+        earned   = stats.perfectScores >= 25;
+        progress = Math.min((stats.perfectScores / 25) * 100, 100);
+        break;
+
+      case 'grandmaster':
+        earned   = stats.totalAttempts >= 50 && stats.averageScore >= 95;
+        progress = stats.totalAttempts < 50
+          ? Math.min((stats.totalAttempts / 50) * 100, 100)
+          : Math.min((stats.averageScore / 95) * 100, 100);
+        break;
+
+      case 'polymath':
+        earned   = stats.uniqueQuizzes >= 50;
+        progress = Math.min((stats.uniqueQuizzes / 50) * 100, 100);
+        break;
+
+      case 'deity':
+        earned   = stats.totalPoints >= 10000;
+        progress = Math.min((stats.totalPoints / 10000) * 100, 100);
+        break;
+
+      case 'abyssal':
+        earned   = stats.totalAttempts >= 50 && stats.averageScore >= 90;
+        progress = stats.totalAttempts < 50
+          ? Math.min((stats.totalAttempts / 50) * 100, 100)
+          : Math.min((stats.averageScore / 90) * 100, 100);
+        break;
+
+      default: earned = false; progress = 0;
     }
 
     return {
