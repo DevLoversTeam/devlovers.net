@@ -1,6 +1,7 @@
 import { relations, sql } from 'drizzle-orm';
 import { pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core';
 
+import { notifications } from './notifications';
 import { quizAttempts } from './quiz';
 
 export const users = pgTable(
@@ -39,4 +40,5 @@ export const users = pgTable(
 
 export const usersRelations = relations(users, ({ many }) => ({
   quizAttempts: many(quizAttempts),
+  notifications: many(notifications),
 }));

@@ -90,13 +90,30 @@ export function QuizResultsSection({ attempts, locale }: QuizResultsSectionProps
 
       {/* Rows */}
       <div className="flex flex-col gap-2">
-        {attempts.map((attempt) => (
-          <QuizResultRow
-            key={attempt.attemptId}
-            attempt={attempt}
-            locale={locale}
-          />
-        ))}
+        {[...attempts]
+          .sort((a, b) => {
+            const scoreA = Number(a.percentage);
+            const scoreB = Number(b.percentage);
+            
+            // Bucket values: Study = 1, Review = 2, Mastered = 3
+            // So that Study (1) comes before Review (2) before Mastered (3)
+            const bucketA = scoreA < 70 ? 1 : scoreA < 100 ? 2 : 3;
+            const bucketB = scoreB < 70 ? 1 : scoreB < 100 ? 2 : 3;
+            
+            if (bucketA !== bucketB) {
+              return bucketA - bucketB; // Ascending order of buckets
+            }
+            
+            // If they are in the same bucket, sort by most recent first
+            return new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime();
+          })
+          .map((attempt) => (
+            <QuizResultRow
+              key={attempt.attemptId}
+              attempt={attempt}
+              locale={locale}
+            />
+          ))}
       </div>
     </section>
   );

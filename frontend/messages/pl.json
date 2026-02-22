@@ -1098,7 +1098,7 @@
       "daysStreak": "Dni z rzędu",
       "sponsorThanks": "Dziękujemy za wsparcie!",
       "sponsorMore": "Wesprzyj jeszcze więcej",
-      "totalPoints": "Łączna liczba punktów",
+      "totalPoints": "Liczba punktów",
       "settings": "Ustawienia",
       "editProfile": "Edytuj profil",
       "changeName": "Zmień imię",
@@ -1304,6 +1304,36 @@
           "name": "Głębinowiec",
           "desc": "Średnia 80%+ przez 10+ quizów!",
           "hint": "Utrzymaj średnią 80%+ w 10 lub więcej próbach"
+        },
+        "unstoppable": {
+          "name": "Niepowstrzymana Siła",
+          "desc": "Ukończyłeś 100 podejść do quizów!",
+          "hint": "Ukończ 100 prób rozwiązania quizów"
+        },
+        "flawless": {
+          "name": "Nieskazitelne Zwycięstwo",
+          "desc": "Osiągnąłeś 25 perfekcyjnych wyników!",
+          "hint": "Zdobądź 25 perfekcyjnych wyników (100% skuteczności)"
+        },
+        "grandmaster": {
+          "name": "Arcymistrz",
+          "desc": "Średnia 95%+ przez 50+ quizów!",
+          "hint": "Utrzymaj średnią 95%+ w 50 lub więcej próbach"
+        },
+        "polymath": {
+          "name": "Polimata",
+          "desc": "Ukończyłeś 50 różnych quizów!",
+          "hint": "Ukończ 50 unikalnych quizów na platformie"
+        },
+        "deity": {
+          "name": "Bóstwo DevLovers",
+          "desc": "Zdobyłeś potężną sumę 10 000 punktów!",
+          "hint": "Zgromadź łącznie 10 000 punktów"
+        },
+        "abyssal": {
+          "name": "Nurek Głębinowy",
+          "desc": "Średnia 90%+ przez 50+ quizów!",
+          "hint": "Utrzymaj średnią 90%+ w 50 lub więcej próbach"
         }
       }
     }

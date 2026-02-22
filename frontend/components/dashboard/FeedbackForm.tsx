@@ -67,12 +67,13 @@ export function FeedbackForm({ userName, userEmail }: FeedbackFormProps) {
   `;
 
   const inputStyles =
-    'w-full rounded-xl border border-gray-200 dark:border-white/10 bg-white/50 dark:bg-neutral-800/50 px-4 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none transition-colors focus:border-(--accent-primary) focus:ring-1 focus:ring-(--accent-primary)';
+    'w-full rounded-xl border border-gray-200/50 bg-white/20 dark:border-white/10 dark:bg-neutral-800/40 px-4 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none backdrop-blur-md transition-all hover:bg-white/40 dark:hover:bg-neutral-800/60 focus:border-(--accent-primary)/50 focus:bg-white/60 dark:focus:bg-neutral-800/80 focus:ring-1 focus:ring-(--accent-primary)';
 
   const primaryBtnStyles = `
     group relative inline-flex items-center justify-center gap-2 rounded-full
     px-8 py-3 text-sm font-semibold tracking-widest uppercase text-white
-    bg-(--accent-primary) hover:bg-(--accent-hover)
+    bg-(--accent-primary) hover:bg-(--accent-hover) hover:shadow-[0_4px_12px_rgba(var(--accent-primary-rgb),0.3)]
+    transition-all hover:-translate-y-0.5
     disabled:opacity-75
   `;
 

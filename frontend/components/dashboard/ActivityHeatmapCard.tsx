@@ -376,7 +376,7 @@ export function ActivityHeatmapCard({ attempts, locale, currentStreak }: Activit
             <div className="w-full min-w-max pb-1">
               <svg width={svgWidth} height={svgHeight} viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="block">
             <defs>
-              <filter id="neonGlow" x="-50%" y="-50%" width="200%" height="200%">
+              <filter id="neonGlow" x="-200%" y="-200%" width="500%" height="500%">
                 <feGaussianBlur stdDeviation="3" result="blur" />
                 <feMerge>
                   <feMergeNode in="blur" />

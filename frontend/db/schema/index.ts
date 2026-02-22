@@ -7,3 +7,4 @@ export * from './quiz';
 export * from './sessions';
 export * from './shop';
 export * from './users';
+export * from './notifications';

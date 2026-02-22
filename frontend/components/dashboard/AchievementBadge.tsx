@@ -20,6 +20,12 @@ import {
   Moon,
   Shield,
   Waves,
+  Meteor,
+  Sparkle,
+  GraduationCap,
+  Atom,
+  Sun,
+  Anchor,
 } from '@phosphor-icons/react';
 import { useTranslations } from 'next-intl';
 import { useState, useEffect } from 'react';
@@ -45,6 +51,12 @@ const ICON_MAP: Record<AchievementIconName, React.ElementType> = {
   Moon,
   Shield,
   Waves,
+  Meteor,
+  Sparkle,
+  GraduationCap,
+  Atom,
+  Sun,
+  Anchor,
 };
 
 interface AchievementBadgeProps {

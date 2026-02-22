@@ -14,10 +14,9 @@ import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground
 import { getUserLastAttemptPerQuiz, getUserQuizStats } from '@/db/queries/quizzes/quiz';
 import { getUserProfile, getUserGlobalRank } from '@/db/queries/users';
 import { redirect } from '@/i18n/routing';
-import { getSponsors, getAllSponsors } from '@/lib/about/github-sponsors';
 import { getCurrentUser } from '@/lib/auth';
 import { computeAchievements } from '@/lib/achievements';
-import { checkHasStarredRepo, resolveGitHubLogin } from '@/lib/github-stars';
+import { getUserStatsForAchievements } from '@/lib/user-stats';
 
 export async function generateMetadata({
   params,
@@ -53,59 +52,16 @@ export default async function DashboardPage({
 
   const t = await getTranslations('dashboard');
 
-  // Active sponsors — used for the sponsor badge / button display in the UI
-  const sponsors = await getSponsors();
-  // All-time sponsors (active + past) — used for the Supporter achievement check
-  const allSponsors = await getAllSponsors();
-
-  const userEmail = user.email.toLowerCase();
-  const userName = (user.name ?? '').toLowerCase();
-  const userImage = user.image ?? '';
-
-  function findSponsor(list: typeof sponsors) {
-    return list.find(s => {
-      if (s.email && s.email.toLowerCase() === userEmail) return true;
-      if (userName && s.login && s.login.toLowerCase() === userName) return true;
-      if (userName && s.name && s.name.toLowerCase() === userName) return true;
-      if (
-        userImage &&
-        s.avatarUrl &&
-        s.avatarUrl.trim().length > 0 &&
-        userImage.includes(s.avatarUrl.split('?')[0])
-      ) return true;
-      return false;
-    });
-  }
-
-  const matchedSponsor    = findSponsor(sponsors);   // active — for UI display
-  const everSponsor       = findSponsor(allSponsors); // all-time — for achievements
-
-  // Determine the GitHub login to check against the stargazers list.
-  // Priority:
-  //   1. Matched sponsor login (most reliable — org PAT already resolved it)
-  //   2. For GitHub-OAuth users: resolve login from numeric providerId
-  //   3. user.name as last resort (may be a display name, not a login!)
-  let githubLogin = matchedSponsor?.login || '';
-  if (!githubLogin && user.provider === 'github' && user.providerId) {
-    githubLogin = (await resolveGitHubLogin(user.providerId)) ?? user.name ?? '';
-  } else if (!githubLogin) {
-    githubLogin = user.name ?? '';
-  }
-
-  const hasStarredRepo = githubLogin
-    ? await checkHasStarredRepo(githubLogin)
-    : false;
-
   const attempts = await getUserQuizStats(session.id);
   const lastAttempts = await getUserLastAttemptPerQuiz(session.id, locale);
 
   const totalAttempts = attempts.length;
 
   const averageScore =
-    totalAttempts > 0
+    lastAttempts.length > 0
       ? Math.round(
-          attempts.reduce((acc, curr) => acc + Number(curr.percentage), 0) /
-            totalAttempts
+          lastAttempts.reduce((acc, curr) => acc + Number(curr.percentage), 0) /
+            lastAttempts.length
         )
       : 0;
 
@@ -184,33 +140,16 @@ export default async function DashboardPage({
     trendPercentage,
   };
 
-  const perfectScores = attempts.filter((a) => Number(a.percentage) === 100).length;
-  const highScores = attempts.filter((a) => Number(a.percentage) >= 90).length;
-  const uniqueQuizzes = lastAttempts.length;
+  const userStats = await getUserStatsForAchievements(session.id);
+  const achievements = userStats ? computeAchievements(userStats) : [];
 
-  // Night Owl: any attempt completed between 00:00 and 05:00 local time
-  const hasNightOwl = attempts.some((a) => {
-    if (!a.completedAt) return false;
-    const hour = new Date(a.completedAt).getHours();
-    return hour >= 0 && hour < 5;
-  });
-
-  const achievements = computeAchievements({
-    totalAttempts,
-    averageScore,
-    perfectScores,
-    highScores,
-    isSponsor: !!everSponsor,
-    uniqueQuizzes,
-    totalPoints: user.points,
-    topLeaderboard: false,
-    hasStarredRepo,
-    sponsorCount: matchedSponsor ? 1 : 0, // TODO: wire to actual sponsorship history count
-    hasNightOwl,
-  });
+  const isMatchedSponsor = userStats ? userStats.sponsorCount > 0 : false;
 
   const outlineBtnStyles =
-    'inline-flex items-center justify-center rounded-full border border-gray-200 dark:border-white/10 bg-white/50 dark:bg-neutral-900/50 backdrop-blur-sm px-6 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 transition-colors hover:bg-white hover:text-(--accent-primary) dark:hover:bg-neutral-800 dark:hover:text-(--accent-primary)';
+    'inline-flex items-center justify-center rounded-full border border-gray-200/50 bg-white/10 px-6 py-2.5 text-sm font-semibold tracking-wide text-gray-700 backdrop-blur-md transition-all hover:-translate-y-0.5 hover:bg-white/20 hover:shadow-md hover:border-gray-300 dark:border-white/10 dark:bg-neutral-900/40 dark:text-gray-200 dark:hover:bg-neutral-800/80 dark:hover:border-white/20';
+
+  const sponsorBtnStyles = 
+    'group relative inline-flex items-center justify-center gap-2 rounded-full border border-(--accent-primary)/30 bg-(--accent-primary)/10 px-6 py-2.5 text-sm font-semibold tracking-wide text-(--accent-primary) backdrop-blur-md transition-all hover:-translate-y-0.5 hover:bg-(--accent-primary)/20 hover:shadow-[0_4px_12px_rgba(var(--accent-primary-rgb),0.2)] hover:border-(--accent-primary)/50 dark:border-(--accent-primary)/20 dark:bg-(--accent-primary)/5 dark:hover:bg-(--accent-primary)/20 dark:hover:border-(--accent-primary)/40 dark:hover:shadow-[0_4px_15px_rgba(var(--accent-primary-rgb),0.3)] overflow-hidden';
 
   return (
     <div className="min-h-screen">
@@ -234,17 +173,22 @@ export default async function DashboardPage({
                 href="#feedback"
                 className={`group flex items-center gap-2 ${outlineBtnStyles}`}
               >
-                <MessageSquare className="h-4 w-4 transition-transform group-hover:-translate-y-0.5" />
+                <MessageSquare className="h-4 w-4 transition-transform group-hover:-translate-y-0.5 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-white" />
                 {t('supportLink')}
               </a>
               <a
                 href="https://github.com/sponsors/DevLoversTeam"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group inline-flex items-center justify-center gap-2 rounded-full border border-(--accent-primary) bg-(--accent-primary)/10 px-6 py-2 text-sm font-medium text-(--accent-primary) transition-colors hover:bg-(--accent-primary) hover:text-white dark:border-(--accent-primary)/50 dark:bg-(--accent-primary)/10 dark:text-(--accent-primary) dark:hover:bg-(--accent-primary) dark:hover:text-white"
+                className={sponsorBtnStyles}
               >
-                <Heart className="h-4 w-4 transition-transform group-hover:scale-110" />
-                {!!matchedSponsor ? t('profile.supportAgain') : t('profile.becomeSponsor')}
+                {/* Subtle gradient glow background effect */}
+                <div className="absolute inset-0 z-0 bg-linear-to-r from-transparent via-(--accent-primary)/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                
+                <span className="relative z-10 flex items-center gap-2">
+                  <Heart className="h-4 w-4 transition-transform group-hover:scale-110 group-hover:fill-(--accent-primary)/20" />
+                  {isMatchedSponsor ? t('profile.supportAgain') : t('profile.becomeSponsor')}
+                </span>
               </a>
             </div>
           </header>
@@ -253,12 +197,12 @@ export default async function DashboardPage({
             <ProfileCard
               user={userForDisplay}
               locale={locale}
-              isSponsor={!!matchedSponsor}
+              isSponsor={isMatchedSponsor}
               totalAttempts={totalAttempts}
               globalRank={globalRank}
             />
             <div className="grid gap-8 lg:grid-cols-2">
-              <StatsCard stats={stats} attempts={attempts} />
+              <StatsCard stats={stats} attempts={lastAttempts} />
               <ActivityHeatmapCard attempts={attempts} locale={locale} currentStreak={currentStreak} />
             </div>
           </div>
