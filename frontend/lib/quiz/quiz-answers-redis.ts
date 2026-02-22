@@ -8,7 +8,7 @@ import {
   quizQuestions,
 } from '@/db/schema/quiz';
 import { getRedisClient } from '@/lib/redis';
-import type { QuizQuestionWithAnswers, AttemptReview } from '@/types/quiz';
+import type { AttemptReview,QuizQuestionWithAnswers } from '@/types/quiz';
 
 interface QuizAnswersCache {
   quizId: string;

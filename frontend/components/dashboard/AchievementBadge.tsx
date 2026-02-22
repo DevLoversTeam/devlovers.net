@@ -1,38 +1,38 @@
 'use client';
 
 import {
+  Brain,
+  Code,
+  Crown,
+  Diamond,
+  Fire,
+  GithubLogo,
+  Heart,
+  Infinity as InfinityIcon,
+  Lightning,
+  Medal,
+  Moon,
+  Rocket,
+  Seal,
+  Shield,
+  Star,
+  Target,
+  Trophy,
+  Waves,
+} from '@phosphor-icons/react';
+import {
   motion,
   useMotionValue,
   useReducedMotion,
   useSpring,
   useTransform,
 } from 'framer-motion';
-import {
-  Fire,
-  Target,
-  Lightning,
-  Brain,
-  Diamond,
-  Star,
-  Heart,
-  Trophy,
-  Rocket,
-  Crown,
-  Code,
-  Infinity as InfinityIcon,
-  GithubLogo,
-  Medal,
-  Seal,
-  Moon,
-  Shield,
-  Waves,
-} from '@phosphor-icons/react';
 import { useTranslations } from 'next-intl';
-import { useState, useEffect } from 'react';
+import { useEffect,useState } from 'react';
 
 import type {
-  EarnedAchievement,
   AchievementIconName,
+  EarnedAchievement,
 } from '@/lib/achievements';
 
 const ICON_MAP: Record<AchievementIconName, React.ElementType> = {

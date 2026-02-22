@@ -257,7 +257,7 @@
       "start": "Start Quiz"
     },
     "section": {
-      "noQuizzes": "No quizzes in this category yet."
+      "noQuizzes": "No quizzes yet...\nBut they're already in development.\nStay tuned - new quizzes coming soon!"
     },
     "exitModal": {
       "title": "Exit Quiz?",

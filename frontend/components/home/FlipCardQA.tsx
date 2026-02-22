@@ -9,8 +9,8 @@ import {
 } from 'framer-motion';
 import { RotateCw } from 'lucide-react';
 import Image from 'next/image';
-import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { useEffect, useRef, useState } from 'react';
 
 interface Question {
   id: number;

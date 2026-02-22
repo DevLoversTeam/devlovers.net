@@ -1,12 +1,11 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-import { useRouter } from 'next/navigation';
-
 import type { AdminCategoryItem } from '@/db/queries/categories/admin-categories';
-import type { JsonQuestion } from '@/lib/validation/admin-quiz';
 import { slugify } from '@/lib/shop/slug';
+import type { JsonQuestion } from '@/lib/validation/admin-quiz';
 
 import { InlineCategoryForm } from './InlineCategoryForm';
 import { JsonUploadArea } from './JsonUploadArea';

@@ -2,8 +2,8 @@ import 'dotenv/config';
 
 import { and, eq } from 'drizzle-orm';
 
-import rawData from '../parse/questions.json';
 import { invalidateAllQaCache } from '../lib/cache/qa';
+import rawData from '../parse/questions.json';
 import { db } from './index';
 import { categories, questions, questionTranslations } from './schema';
 
