@@ -1,8 +1,20 @@
 'use client';
 
-import { BookOpen, ChevronDown, GripVertical, RotateCcw, X } from 'lucide-react';
+import {
+  BookOpen,
+  ChevronDown,
+  GripVertical,
+  RotateCcw,
+  X,
+} from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { startTransition, useCallback, useEffect, useRef, useState } from 'react';
+import {
+  startTransition,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 
 import AIWordHelper from '@/components/q&a/AIWordHelper';
 import { getCachedTerms } from '@/lib/ai/explainCache';
@@ -22,8 +34,16 @@ export function ExplainedTermsCard() {
     const cached = getCachedTerms();
     const hidden = getHiddenTerms();
     startTransition(() => {
-      setTerms(sortTermsByOrder(cached.filter(term => !hidden.has(term.toLowerCase().trim()))));
-      setHiddenTerms(sortTermsByOrder(cached.filter(term => hidden.has(term.toLowerCase().trim()))));
+      setTerms(
+        sortTermsByOrder(
+          cached.filter(term => !hidden.has(term.toLowerCase().trim()))
+        )
+      );
+      setHiddenTerms(
+        sortTermsByOrder(
+          cached.filter(term => hidden.has(term.toLowerCase().trim()))
+        )
+      );
     });
   }, []);
   const [showMore, setShowMore] = useState(false);
@@ -106,23 +126,20 @@ export function ExplainedTermsCard() {
     termsRef.current = terms;
   }, [terms]);
 
-  const handleTouchStart = useCallback(
-    (index: number, e: React.TouchEvent) => {
-      const touch = e.touches[0];
-      if (!touch) return;
-      touchDragIndex.current = index;
-      dragTargetIndex.current = index;
-      setDraggedIndex(index);
-      setTouchDragStateRef.current({
-        sourceIndex: index,
-        targetIndex: index,
-        x: touch.clientX,
-        y: touch.clientY,
-        label: termsRef.current[index] ?? '',
-      });
-    },
-    []
-  );
+  const handleTouchStart = useCallback((index: number, e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    if (!touch) return;
+    touchDragIndex.current = index;
+    dragTargetIndex.current = index;
+    setDraggedIndex(index);
+    setTouchDragStateRef.current({
+      sourceIndex: index,
+      targetIndex: index,
+      x: touch.clientX,
+      y: touch.clientY,
+      label: termsRef.current[index] ?? '',
+    });
+  }, []);
 
   const containerCallbackRef = useCallback((node: HTMLDivElement | null) => {
     if (cleanupRef.current) {
@@ -173,11 +190,7 @@ export function ExplainedTermsCard() {
       const fromIndex = touchDragIndex.current;
       const toIndex = dragTargetIndex.current;
 
-      if (
-        fromIndex !== null &&
-        toIndex !== null &&
-        fromIndex !== toIndex
-      ) {
+      if (fromIndex !== null && toIndex !== null && fromIndex !== toIndex) {
         setTerms(prevTerms => {
           const newTerms = [...prevTerms];
           const [dragged] = newTerms.splice(fromIndex, 1);
@@ -223,9 +236,9 @@ export function ExplainedTermsCard() {
     <>
       <section className={cardStyles} aria-labelledby="explained-terms-heading">
         <div>
-          <div className="mb-6 flex items-center gap-3 w-full">
+          <div className="mb-6 flex w-full items-center gap-3">
             <div
-              className="rounded-xl bg-gray-100/50 p-3 ring-1 ring-black/5 dark:bg-neutral-800/50 dark:ring-white/10 shrink-0"
+              className="shrink-0 rounded-xl bg-gray-100/50 p-3 ring-1 ring-black/5 dark:bg-neutral-800/50 dark:ring-white/10"
               aria-hidden="true"
             >
               <BookOpen className="h-6 w-6 text-(--accent-primary) drop-shadow-[0_0_8px_rgba(var(--accent-primary-rgb),0.6)]" />
@@ -248,66 +261,63 @@ export function ExplainedTermsCard() {
               <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">
                 {t('termCount', { count: terms.length })}
               </p>
-            <div
-              ref={containerCallbackRef}
-              className="flex flex-wrap gap-2"
-            >
-              {terms.map((term, index) => {
-                const isSource =
-                  touchDragState !== null &&
-                  index === touchDragState.sourceIndex;
-                const isDropTarget =
-                  touchDragState !== null &&
-                  index === touchDragState.targetIndex &&
-                  index !== touchDragState.sourceIndex;
+              <div ref={containerCallbackRef} className="flex flex-wrap gap-2">
+                {terms.map((term, index) => {
+                  const isSource =
+                    touchDragState !== null &&
+                    index === touchDragState.sourceIndex;
+                  const isDropTarget =
+                    touchDragState !== null &&
+                    index === touchDragState.targetIndex &&
+                    index !== touchDragState.sourceIndex;
 
-                return (
-                <div
-                  key={`${term}-${index}`}
-                  ref={setTermRef(index)}
-                  onDragOver={handleDragOver}
-                  onDrop={() => handleDrop(index)}
-                  className={`group relative inline-flex items-center gap-1 rounded-lg border px-2 py-2 pr-8 transition-all ${
-                    isSource
-                      ? 'scale-95 opacity-40'
-                      : isDropTarget
-                        ? 'border-(--accent-primary) bg-(--accent-primary)/10 scale-105'
-                        : draggedIndex === index
-                          ? 'opacity-50'
-                          : ''
-                  } border-gray-100 bg-gray-50/50 hover:border-(--accent-primary)/30 hover:bg-white dark:border-white/5 dark:bg-neutral-800/50 dark:hover:border-(--accent-primary)/30 dark:hover:bg-neutral-800`}
-                >
-                  <button
-                    draggable
-                    onDragStart={() => handleDragStart(index)}
-                    onTouchStart={e => handleTouchStart(index, e)}
-                    aria-label={t('ariaDragHandle', { term })}
-                    className={`cursor-grab active:cursor-grabbing touch-none ${
-                      draggedIndex === index ? 'cursor-grabbing' : ''
-                    }`}
-                  >
-                    <GripVertical className="h-4 w-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" />
-                  </button>
-                  <button
-                    onClick={() => handleTermClick(term)}
-                    className="font-medium text-gray-900 dark:text-white"
-                  >
-                    {term}
-                  </button>
-                  <button
-                    onClick={e => {
-                      e.stopPropagation();
-                      handleRemoveTerm(term);
-                    }}
-                    aria-label={t('ariaHide', { term })}
-                    className="absolute -right-1 -top-1 rounded-full bg-white p-1 text-gray-400 opacity-100 shadow-sm transition-opacity hover:bg-red-50 hover:text-red-500 sm:opacity-0 sm:group-hover:opacity-100 dark:bg-neutral-800 dark:hover:bg-red-900/20 dark:hover:text-red-400"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-                );
-              })}
-            </div>
+                  return (
+                    <div
+                      key={`${term}-${index}`}
+                      ref={setTermRef(index)}
+                      onDragOver={handleDragOver}
+                      onDrop={() => handleDrop(index)}
+                      className={`group relative inline-flex items-center gap-1 rounded-lg border px-2 py-2 pr-8 transition-all ${
+                        isSource
+                          ? 'scale-95 opacity-40'
+                          : isDropTarget
+                            ? 'scale-105 border-(--accent-primary) bg-(--accent-primary)/10'
+                            : draggedIndex === index
+                              ? 'opacity-50'
+                              : ''
+                      } border-gray-100 bg-gray-50/50 hover:border-(--accent-primary)/30 hover:bg-white dark:border-white/5 dark:bg-neutral-800/50 dark:hover:border-(--accent-primary)/30 dark:hover:bg-neutral-800`}
+                    >
+                      <button
+                        draggable
+                        onDragStart={() => handleDragStart(index)}
+                        onTouchStart={e => handleTouchStart(index, e)}
+                        aria-label={t('ariaDragHandle', { term })}
+                        className={`cursor-grab touch-none active:cursor-grabbing ${
+                          draggedIndex === index ? 'cursor-grabbing' : ''
+                        }`}
+                      >
+                        <GripVertical className="h-4 w-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" />
+                      </button>
+                      <button
+                        onClick={() => handleTermClick(term)}
+                        className="font-medium text-gray-900 dark:text-white"
+                      >
+                        {term}
+                      </button>
+                      <button
+                        onClick={e => {
+                          e.stopPropagation();
+                          handleRemoveTerm(term);
+                        }}
+                        aria-label={t('ariaHide', { term })}
+                        className="absolute -top-1 -right-1 rounded-full bg-white p-1 text-gray-400 opacity-100 shadow-sm transition-opacity hover:bg-red-50 hover:text-red-500 sm:opacity-0 sm:group-hover:opacity-100 dark:bg-neutral-800 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
             </>
           ) : (
             <div className="py-6 text-center">
@@ -322,58 +332,58 @@ export function ExplainedTermsCard() {
 
           {/* Explained Terms Section */}
           <div className="mt-6">
-              <button
-                onClick={() => setShowMore(!showMore)}
-                className="mb-3 flex w-full items-center justify-between rounded-lg border border-gray-200 bg-gray-50/50 px-4 py-2 text-left text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:border-white/5 dark:bg-neutral-800/50 dark:text-gray-300 dark:hover:bg-neutral-800"
-              >
-                <span>
-                  {showMore
-                    ? t('hideExplainedTerms')
-                    : t('explainedTermsButton', { count: hiddenTerms.length })}
-                </span>
-                <ChevronDown
-                  className={`h-4 w-4 transition-transform ${showMore ? 'rotate-180' : ''}`}
-                />
-              </button>
+            <button
+              onClick={() => setShowMore(!showMore)}
+              className="mb-3 flex w-full items-center justify-between rounded-lg border border-gray-200 bg-gray-50/50 px-4 py-2 text-left text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:border-white/5 dark:bg-neutral-800/50 dark:text-gray-300 dark:hover:bg-neutral-800"
+            >
+              <span>
+                {showMore
+                  ? t('hideExplainedTerms')
+                  : t('explainedTermsButton', { count: hiddenTerms.length })}
+              </span>
+              <ChevronDown
+                className={`h-4 w-4 transition-transform ${showMore ? 'rotate-180' : ''}`}
+              />
+            </button>
 
-                {showMore && (
-                  <div>
-                    {hasHiddenTerms ? (
-                      <div className="flex flex-wrap gap-2">
-                        {hiddenTerms.map(term => (
-                          <div
-                            key={term}
-                            className="group relative inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-100/50 px-3 py-2 pr-8 opacity-60 transition-all hover:opacity-100 dark:border-white/10 dark:bg-neutral-800/30"
-                          >
-                            <button
-                              onClick={() => handleTermClick(term)}
-                              className="font-medium text-gray-700 dark:text-gray-400"
-                            >
-                              {term}
-                            </button>
-                            <button
-                              onClick={e => {
-                                e.stopPropagation();
-                                handleRestoreTerm(term);
-                              }}
-                              aria-label={t('ariaRestore', { term })}
-                              className="absolute -right-1 -top-1 rounded-full bg-white p-1 text-gray-400 opacity-100 shadow-sm transition-opacity hover:bg-green-50 hover:text-green-600 sm:opacity-0 sm:group-hover:opacity-100 dark:bg-neutral-800 dark:hover:bg-green-900/20 dark:hover:text-green-400"
-                            >
-                              <RotateCcw className="h-3 w-3" />
-                            </button>
-                          </div>
-                        ))}
+            {showMore && (
+              <div>
+                {hasHiddenTerms ? (
+                  <div className="flex flex-wrap gap-2">
+                    {hiddenTerms.map(term => (
+                      <div
+                        key={term}
+                        className="group relative inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-100/50 px-3 py-2 pr-8 opacity-60 transition-all hover:opacity-100 dark:border-white/10 dark:bg-neutral-800/30"
+                      >
+                        <button
+                          onClick={() => handleTermClick(term)}
+                          className="font-medium text-gray-700 dark:text-gray-400"
+                        >
+                          {term}
+                        </button>
+                        <button
+                          onClick={e => {
+                            e.stopPropagation();
+                            handleRestoreTerm(term);
+                          }}
+                          aria-label={t('ariaRestore', { term })}
+                          className="absolute -top-1 -right-1 rounded-full bg-white p-1 text-gray-400 opacity-100 shadow-sm transition-opacity hover:bg-green-50 hover:text-green-600 sm:opacity-0 sm:group-hover:opacity-100 dark:bg-neutral-800 dark:hover:bg-green-900/20 dark:hover:text-green-400"
+                        >
+                          <RotateCcw className="h-3 w-3" />
+                        </button>
                       </div>
-                    ) : (
-                      <p className="text-center text-sm text-gray-500 dark:text-gray-400">
-                        {t('noHiddenTerms')}
-                      </p>
-                    )}
+                    ))}
                   </div>
+                ) : (
+                  <p className="text-center text-sm text-gray-500 dark:text-gray-400">
+                    {t('noHiddenTerms')}
+                  </p>
                 )}
               </div>
-            </div>
-        </section>
+            )}
+          </div>
+        </div>
+      </section>
 
       {selectedTerm && (
         <AIWordHelper

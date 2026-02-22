@@ -94,10 +94,7 @@ export async function PATCH(
       .select({ id: quizQuestions.id })
       .from(quizQuestions)
       .where(
-        and(
-          eq(quizQuestions.id, questionId),
-          eq(quizQuestions.quizId, quizId)
-        )
+        and(eq(quizQuestions.id, questionId), eq(quizQuestions.quizId, quizId))
       )
       .limit(1);
 
@@ -108,7 +105,7 @@ export async function PATCH(
       );
     }
 
-        // Update difficulty if provided
+    // Update difficulty if provided
     if (parsed.data.difficulty) {
       await db
         .update(quizQuestions)
@@ -246,7 +243,10 @@ export async function DELETE(
     const rawParams = await context.params;
     const parsedParams = paramsSchema.safeParse(rawParams);
     if (!parsedParams.success) {
-      return noStoreJson({ error: 'Invalid params', code: 'INVALID_PARAMS' }, { status: 400 });
+      return noStoreJson(
+        { error: 'Invalid params', code: 'INVALID_PARAMS' },
+        { status: 400 }
+      );
     }
 
     const { id: quizId, questionId } = parsedParams.data;
@@ -259,12 +259,18 @@ export async function DELETE(
       .limit(1);
 
     if (!quiz) {
-      return noStoreJson({ error: 'Quiz not found', code: 'NOT_FOUND' }, { status: 404 });
+      return noStoreJson(
+        { error: 'Quiz not found', code: 'NOT_FOUND' },
+        { status: 404 }
+      );
     }
 
     if (quiz.status !== 'draft') {
       return noStoreJson(
-        { error: 'Can only delete questions from draft quizzes', code: 'NOT_DRAFT' },
+        {
+          error: 'Can only delete questions from draft quizzes',
+          code: 'NOT_DRAFT',
+        },
         { status: 409 }
       );
     }
@@ -274,15 +280,15 @@ export async function DELETE(
       .select({ id: quizQuestions.id })
       .from(quizQuestions)
       .where(
-        and(
-          eq(quizQuestions.id, questionId),
-          eq(quizQuestions.quizId, quizId)
-        )
+        and(eq(quizQuestions.id, questionId), eq(quizQuestions.quizId, quizId))
       )
       .limit(1);
 
     if (!question) {
-      return noStoreJson({ error: 'Question not found', code: 'QUESTION_NOT_FOUND' }, { status: 404 });
+      return noStoreJson(
+        { error: 'Question not found', code: 'QUESTION_NOT_FOUND' },
+        { status: 404 }
+      );
     }
 
     // Delete question (cascades content, answers, answer translations)
@@ -318,6 +324,9 @@ export async function DELETE(
       method: request.method,
     });
 
-    return noStoreJson({ error: 'Internal error', code: 'INTERNAL_ERROR' }, { status: 500 });
+    return noStoreJson(
+      { error: 'Internal error', code: 'INTERNAL_ERROR' },
+      { status: 500 }
+    );
   }
 }

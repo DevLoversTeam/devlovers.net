@@ -11,7 +11,10 @@ import { QuizResultsSection } from '@/components/dashboard/QuizResultsSection';
 import { QuizSavedBanner } from '@/components/dashboard/QuizSavedBanner';
 import { StatsCard } from '@/components/dashboard/StatsCard';
 import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
-import { getUserLastAttemptPerQuiz, getUserQuizStats } from '@/db/queries/quizzes/quiz';
+import {
+  getUserLastAttemptPerQuiz,
+  getUserQuizStats,
+} from '@/db/queries/quizzes/quiz';
 import { getUserGlobalRank, getUserProfile } from '@/db/queries/users';
 import { redirect } from '@/i18n/routing';
 import { getAllSponsors, getSponsors } from '@/lib/about/github-sponsors';
@@ -65,20 +68,22 @@ export default async function DashboardPage({
   function findSponsor(list: typeof sponsors) {
     return list.find(s => {
       if (s.email && s.email.toLowerCase() === userEmail) return true;
-      if (userName && s.login && s.login.toLowerCase() === userName) return true;
+      if (userName && s.login && s.login.toLowerCase() === userName)
+        return true;
       if (userName && s.name && s.name.toLowerCase() === userName) return true;
       if (
         userImage &&
         s.avatarUrl &&
         s.avatarUrl.trim().length > 0 &&
         userImage.includes(s.avatarUrl.split('?')[0])
-      ) return true;
+      )
+        return true;
       return false;
     });
   }
 
-  const matchedSponsor    = findSponsor(sponsors);   // active — for UI display
-  const everSponsor       = findSponsor(allSponsors); // all-time — for achievements
+  const matchedSponsor = findSponsor(sponsors); // active — for UI display
+  const everSponsor = findSponsor(allSponsors); // all-time — for achievements
 
   // Determine the GitHub login to check against the stargazers list.
   // Priority:
@@ -87,7 +92,8 @@ export default async function DashboardPage({
   //   3. user.name as last resort (may be a display name, not a login!)
   let githubLogin = matchedSponsor?.login || '';
   if (!githubLogin && user.provider === 'github' && user.providerId) {
-    githubLogin = (await resolveGitHubLogin(user.providerId)) ?? user.name ?? '';
+    githubLogin =
+      (await resolveGitHubLogin(user.providerId)) ?? user.name ?? '';
   } else if (!githubLogin) {
     githubLogin = user.name ?? '';
   }
@@ -135,8 +141,13 @@ export default async function DashboardPage({
   const yesterdayStr = toDateStr(getPrevDay(now));
 
   let currentStreak = 0;
-  if (uniqueAttemptDays.includes(todayStr) || uniqueAttemptDays.includes(yesterdayStr)) {
-    let checkDate = uniqueAttemptDays.includes(todayStr) ? now : getPrevDay(now);
+  if (
+    uniqueAttemptDays.includes(todayStr) ||
+    uniqueAttemptDays.includes(yesterdayStr)
+  ) {
+    let checkDate = uniqueAttemptDays.includes(todayStr)
+      ? now
+      : getPrevDay(now);
     currentStreak = 1;
     while (true) {
       checkDate = getPrevDay(checkDate);
@@ -153,17 +164,26 @@ export default async function DashboardPage({
   if (attempts.length >= 6) {
     const last3 = attempts.slice(0, 3);
     const prev3 = attempts.slice(3, 6);
-    
-    const last3Avg = last3.reduce((acc, curr) => acc + Number(curr.percentage), 0) / 3;
-    const prev3Avg = prev3.reduce((acc, curr) => acc + Number(curr.percentage), 0) / 3;
-    
+
+    const last3Avg =
+      last3.reduce((acc, curr) => acc + Number(curr.percentage), 0) / 3;
+    const prev3Avg =
+      prev3.reduce((acc, curr) => acc + Number(curr.percentage), 0) / 3;
+
     trendPercentage = Math.round(last3Avg - prev3Avg);
   } else if (attempts.length > 2) {
-     const lastPart = attempts.slice(0, Math.floor(attempts.length / 2));
-     const prevPart = attempts.slice(Math.floor(attempts.length / 2), Math.floor(attempts.length / 2) * 2);
-     const lastAvg = lastPart.reduce((acc, curr) => acc + Number(curr.percentage), 0) / lastPart.length;
-     const prevAvg = prevPart.reduce((acc, curr) => acc + Number(curr.percentage), 0) / prevPart.length;
-     trendPercentage = Math.round(lastAvg - prevAvg);
+    const lastPart = attempts.slice(0, Math.floor(attempts.length / 2));
+    const prevPart = attempts.slice(
+      Math.floor(attempts.length / 2),
+      Math.floor(attempts.length / 2) * 2
+    );
+    const lastAvg =
+      lastPart.reduce((acc, curr) => acc + Number(curr.percentage), 0) /
+      lastPart.length;
+    const prevAvg =
+      prevPart.reduce((acc, curr) => acc + Number(curr.percentage), 0) /
+      prevPart.length;
+    trendPercentage = Math.round(lastAvg - prevAvg);
   }
 
   const userForDisplay = {
@@ -184,11 +204,13 @@ export default async function DashboardPage({
     trendPercentage,
   };
 
-  const perfectScores = attempts.filter((a) => Number(a.percentage) === 100).length;
-  const highScores = attempts.filter((a) => Number(a.percentage) >= 90).length;
+  const perfectScores = attempts.filter(
+    a => Number(a.percentage) === 100
+  ).length;
+  const highScores = attempts.filter(a => Number(a.percentage) >= 90).length;
   const uniqueQuizzes = lastAttempts.length;
 
-  const hasNightOwl = attempts.some((a) => {
+  const hasNightOwl = attempts.some(a => {
     if (!a.completedAt) return false;
     const hour = new Date(a.completedAt).getHours();
     return hour >= 0 && hour < 5;
@@ -204,7 +226,7 @@ export default async function DashboardPage({
     totalPoints: user.points,
     topLeaderboard: false,
     hasStarredRepo,
-    sponsorCount: matchedSponsor ? 1 : 0, 
+    sponsorCount: matchedSponsor ? 1 : 0,
     hasNightOwl,
   });
 
@@ -214,9 +236,7 @@ export default async function DashboardPage({
   return (
     <div className="min-h-screen">
       <PostAuthQuizSync />
-      <DynamicGridBackground
-        className="min-h-screen bg-gray-50 py-10 transition-colors duration-300 dark:bg-transparent"
-      >
+      <DynamicGridBackground className="min-h-screen bg-gray-50 py-10 transition-colors duration-300 dark:bg-transparent">
         <main className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <header className="mb-12 flex flex-col justify-between gap-6 md:flex-row md:items-center">
             <div>
@@ -243,7 +263,9 @@ export default async function DashboardPage({
                 className="group inline-flex items-center justify-center gap-2 rounded-full border border-(--accent-primary) bg-(--accent-primary)/10 px-6 py-2 text-sm font-medium text-(--accent-primary) transition-colors hover:bg-(--accent-primary) hover:text-white dark:border-(--accent-primary)/50 dark:bg-(--accent-primary)/10 dark:text-(--accent-primary) dark:hover:bg-(--accent-primary) dark:hover:text-white"
               >
                 <Heart className="h-4 w-4 transition-transform group-hover:scale-110" />
-                {!!matchedSponsor ? t('profile.supportAgain') : t('profile.becomeSponsor')}
+                {!!matchedSponsor
+                  ? t('profile.supportAgain')
+                  : t('profile.becomeSponsor')}
               </a>
             </div>
           </header>
@@ -256,9 +278,13 @@ export default async function DashboardPage({
               totalAttempts={totalAttempts}
               globalRank={globalRank}
             />
-            <div id="stats" className="grid gap-8 lg:grid-cols-2 scroll-mt-8">
+            <div id="stats" className="grid scroll-mt-8 gap-8 lg:grid-cols-2">
               <StatsCard stats={stats} attempts={attempts} />
-              <ActivityHeatmapCard attempts={attempts} locale={locale} currentStreak={currentStreak} />
+              <ActivityHeatmapCard
+                attempts={attempts}
+                locale={locale}
+                currentStreak={currentStreak}
+              />
             </div>
           </div>
           <div className="mt-8">

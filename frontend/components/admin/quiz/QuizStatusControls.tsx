@@ -48,7 +48,10 @@ export function QuizStatusControls({
       const data = await res.json();
 
       if (!res.ok) {
-        if (data.code === 'PUBLISH_VALIDATION_FAILED' && Array.isArray(data.details)) {
+        if (
+          data.code === 'PUBLISH_VALIDATION_FAILED' &&
+          Array.isArray(data.details)
+        ) {
           setErrors(data.details);
         } else {
           setErrors([data.error ?? 'Operation failed']);
@@ -67,7 +70,8 @@ export function QuizStatusControls({
   function requestMarkReady() {
     setModal({
       title: 'Mark as Ready',
-      message: 'Change status from Draft to Ready? The quiz will be validated for completeness (all translations must be present).',
+      message:
+        'Change status from Draft to Ready? The quiz will be validated for completeness (all translations must be present).',
       variant: 'default',
       action: () => patchQuiz({ status: 'ready' }),
     });
@@ -76,7 +80,8 @@ export function QuizStatusControls({
   function requestRevertDraft() {
     setModal({
       title: 'Revert to Draft',
-      message: 'Change status from Ready back to Draft? You will be able to add/delete questions and upload more content.',
+      message:
+        'Change status from Ready back to Draft? You will be able to add/delete questions and upload more content.',
       variant: 'danger',
       action: () => patchQuiz({ status: 'draft' }),
     });
@@ -94,7 +99,8 @@ export function QuizStatusControls({
   function requestDeactivate() {
     setModal({
       title: 'Deactivate Quiz',
-      message: 'Hide this quiz from the public quiz list? Users with active sessions can still finish.',
+      message:
+        'Hide this quiz from the public quiz list? Users with active sessions can still finish.',
       variant: 'danger',
       action: () => patchQuiz({ isActive: false }),
     });
@@ -174,8 +180,12 @@ export function QuizStatusControls({
             onClick={() => setModal(null)}
           />
           <div className="bg-background border-border relative z-10 w-full max-w-md rounded-lg border p-6 shadow-lg">
-            <h3 className="text-foreground text-lg font-semibold">{modal.title}</h3>
-            <p className="text-muted-foreground mt-2 text-sm">{modal.message}</p>
+            <h3 className="text-foreground text-lg font-semibold">
+              {modal.title}
+            </h3>
+            <p className="text-muted-foreground mt-2 text-sm">
+              {modal.message}
+            </p>
             <div className="mt-6 flex justify-end gap-2">
               <button
                 type="button"

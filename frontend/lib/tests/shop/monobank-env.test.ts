@@ -64,7 +64,7 @@ describe('monobank env config', () => {
     );
   });
 
-   it('returns token when MONO_MERCHANT_TOKEN is set', () => {
+  it('returns token when MONO_MERCHANT_TOKEN is set', () => {
     process.env.MONO_MERCHANT_TOKEN = 'mono_token';
     resetEnvCache();
 

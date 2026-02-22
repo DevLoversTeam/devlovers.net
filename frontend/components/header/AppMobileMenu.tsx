@@ -135,7 +135,9 @@ export function AppMobileMenu({
       e.preventDefault();
     };
 
-    document.addEventListener('touchmove', preventTouchMove, { passive: false });
+    document.addEventListener('touchmove', preventTouchMove, {
+      passive: false,
+    });
 
     return () => {
       document.documentElement.style.overflowY = prev;
@@ -171,7 +173,7 @@ export function AppMobileMenu({
 
           <nav
             id="app-mobile-nav"
-            className={`bg-background fixed top-16 right-0 left-0 z-50 h-[calc(100dvh-4rem)] overflow-y-auto overscroll-contain px-4 py-4 transition-transform duration-300 ease-out sm:px-6 min-[1050px]:hidden ${
+            className={`bg-background fixed top-16 right-0 left-0 z-50 h-[calc(100dvh-4rem)] overflow-y-auto overscroll-contain px-4 py-4 transition-transform duration-300 ease-out min-[1050px]:hidden sm:px-6 ${
               isAnimating ? 'translate-y-0' : '-translate-y-4'
             }`}
             style={{

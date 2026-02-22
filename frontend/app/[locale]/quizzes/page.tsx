@@ -3,7 +3,10 @@ import { getTranslations } from 'next-intl/server';
 
 import QuizzesSection from '@/components/quiz/QuizzesSection';
 import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
-import { getActiveQuizzes, getUserQuizzesProgress } from '@/db/queries/quizzes/quiz';
+import {
+  getActiveQuizzes,
+  getUserQuizzesProgress,
+} from '@/db/queries/quizzes/quiz';
 import { getCurrentUser } from '@/lib/auth';
 
 type PageProps = { params: Promise<{ locale: string }> };

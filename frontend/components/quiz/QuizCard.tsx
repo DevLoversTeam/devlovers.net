@@ -47,16 +47,23 @@ export function QuizCard({ quiz, userProgress }: QuizCardProps) {
   const getStatusBadge = () => {
     if (!userProgress) return null;
     if (percentage === 100)
-      return { variant: 'success' as const, label: t('mastered'), dot: 'bg-emerald-500' };
+      return {
+        variant: 'success' as const,
+        label: t('mastered'),
+        dot: 'bg-emerald-500',
+      };
     if (percentage >= 70)
-      return { variant: 'warning' as const, label: t('needsReview'), dot: 'bg-amber-500' };
+      return {
+        variant: 'warning' as const,
+        label: t('needsReview'),
+        dot: 'bg-amber-500',
+      };
     return { variant: 'danger' as const, label: t('study'), dot: 'bg-red-500' };
   };
 
   const statusBadge = getStatusBadge();
 
-
-    const handleStart = () => {
+  const handleStart = () => {
     const seed = makeSeed(); // runs on click, not render
     router.push(`/quiz/${quiz.slug}?seed=${seed}`);
   };
@@ -82,11 +89,14 @@ export function QuizCard({ quiz, userProgress }: QuizCardProps) {
             {quiz.categoryName ?? t('uncategorized')}
           </Badge>
           {statusBadge && (
-          <Badge variant={statusBadge.variant} className="gap-1.5 rounded-full">
-            <span className={`h-1.5 w-1.5 rounded-full ${statusBadge.dot}`} />
-            {statusBadge.label}
-          </Badge>
-        )}
+            <Badge
+              variant={statusBadge.variant}
+              className="gap-1.5 rounded-full"
+            >
+              <span className={`h-1.5 w-1.5 rounded-full ${statusBadge.dot}`} />
+              {statusBadge.label}
+            </Badge>
+          )}
         </div>
         <h2 className="mb-2 text-xl font-semibold">
           {quiz.title ?? quiz.slug}
@@ -112,16 +122,25 @@ export function QuizCard({ quiz, userProgress }: QuizCardProps) {
       </div>
       {userProgress && (
         <div className="mb-6">
-          <div className="mb-1.5 flex justify-end items-center gap-2 text-xs">
+          <div className="mb-1.5 flex items-center justify-end gap-2 text-xs">
             <span className="text-gray-600 dark:text-gray-400">
-              {t('best')} <span className="font-semibold text-gray-900 dark:text-gray-100">{userProgress.bestScore}/{userProgress.totalQuestions}</span>
+              {t('best')}{' '}
+              <span className="font-semibold text-gray-900 dark:text-gray-100">
+                {userProgress.bestScore}/{userProgress.totalQuestions}
+              </span>
             </span>
-            <span className="text-gray-300 dark:text-gray-700 mx-0.5">&middot;</span>
+            <span className="mx-0.5 text-gray-300 dark:text-gray-700">
+              &middot;
+            </span>
             <span className="text-gray-600 dark:text-gray-400">
-              <span className="font-semibold text-gray-900 dark:text-gray-100">{userProgress.attemptsCount}</span>{' '}
+              <span className="font-semibold text-gray-900 dark:text-gray-100">
+                {userProgress.attemptsCount}
+              </span>{' '}
               {userProgress.attemptsCount === 1 ? t('attempt') : t('attempts')}
             </span>
-            <span className="text-gray-300 dark:text-gray-700 mx-0.5">&middot;</span>
+            <span className="mx-0.5 text-gray-300 dark:text-gray-700">
+              &middot;
+            </span>
             <span className="font-bold text-gray-900 dark:text-gray-100">
               {percentage}%
             </span>
@@ -135,7 +154,8 @@ export function QuizCard({ quiz, userProgress }: QuizCardProps) {
         </div>
       )}
       <button
-        type="button" onClick={handleStart} 
+        type="button"
+        onClick={handleStart}
         className="group relative block w-full overflow-hidden rounded-xl border px-4 py-2.5 text-center text-sm font-semibold transition-all duration-300"
         style={{
           borderColor: `${accentColor}50`,

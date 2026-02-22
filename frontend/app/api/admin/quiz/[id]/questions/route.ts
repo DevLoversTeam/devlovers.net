@@ -60,7 +60,10 @@ export async function POST(
     const rawParams = await context.params;
     const parsedParams = paramsSchema.safeParse(rawParams);
     if (!parsedParams.success) {
-      return noStoreJson({ error: 'Invalid params', code: 'INVALID_PARAMS' }, { status: 400 });
+      return noStoreJson(
+        { error: 'Invalid params', code: 'INVALID_PARAMS' },
+        { status: 400 }
+      );
     }
 
     const { id: quizId } = parsedParams.data;
@@ -73,12 +76,18 @@ export async function POST(
       .limit(1);
 
     if (!quiz) {
-      return noStoreJson({ error: 'Quiz not found', code: 'NOT_FOUND' }, { status: 404 });
+      return noStoreJson(
+        { error: 'Quiz not found', code: 'NOT_FOUND' },
+        { status: 404 }
+      );
     }
 
     if (quiz.status !== 'draft') {
       return noStoreJson(
-        { error: 'Can only add questions to draft quizzes. Unpublish first.', code: 'NOT_DRAFT' },
+        {
+          error: 'Can only add questions to draft quizzes. Unpublish first.',
+          code: 'NOT_DRAFT',
+        },
         { status: 409 }
       );
     }
@@ -87,13 +96,20 @@ export async function POST(
     try {
       rawBody = await request.json();
     } catch {
-      return noStoreJson({ error: 'Invalid JSON body', code: 'INVALID_BODY' }, { status: 400 });
+      return noStoreJson(
+        { error: 'Invalid JSON body', code: 'INVALID_BODY' },
+        { status: 400 }
+      );
     }
 
     const parsed = addQuestionsSchema.safeParse(rawBody);
     if (!parsed.success) {
       return noStoreJson(
-        { error: 'Invalid payload', code: 'INVALID_PAYLOAD', details: parsed.error.format() },
+        {
+          error: 'Invalid payload',
+          code: 'INVALID_PAYLOAD',
+          details: parsed.error.format(),
+        },
         { status: 400 }
       );
     }
@@ -158,12 +174,12 @@ export async function POST(
           }));
         })
       );
-    } catch(insertError) {
+    } catch (insertError) {
       // Delete inserted questions — CASCADE removes content, answers, translations
       const questionIds = insertedQuestions.map(q => q.id);
-      await db.delete(quizQuestions).where(
-        inArray(quizQuestions.id, questionIds)
-      );
+      await db
+        .delete(quizQuestions)
+        .where(inArray(quizQuestions.id, questionIds));
       throw insertError;
     }
     // 5. Update questionsCount
@@ -200,6 +216,9 @@ export async function POST(
       method: request.method,
     });
 
-    return noStoreJson({ error: 'Internal error', code: 'INTERNAL_ERROR' }, { status: 500 });
+    return noStoreJson(
+      { error: 'Internal error', code: 'INTERNAL_ERROR' },
+      { status: 500 }
+    );
   }
 }

@@ -51,7 +51,9 @@ export function UploadMoreQuestions({
         return;
       }
 
-      setSuccess(`Added ${data.addedCount} questions (total: ${data.totalCount})`);
+      setSuccess(
+        `Added ${data.addedCount} questions (total: ${data.totalCount})`
+      );
       setQuestions([]);
       setExpanded(false);
       router.refresh();
@@ -88,7 +90,9 @@ export function UploadMoreQuestions({
             disabled={uploading || questions.length === 0}
             className="bg-foreground text-background hover:bg-foreground/90 rounded-md px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50"
           >
-            {uploading ? 'Uploading...' : `Upload ${questions.length} Questions`}
+            {uploading
+              ? 'Uploading...'
+              : `Upload ${questions.length} Questions`}
           </button>
         </div>
       )}

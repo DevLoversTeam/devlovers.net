@@ -1,16 +1,15 @@
 import { eq, inArray, sql } from 'drizzle-orm';
 
-import { db } from '../../index'
+import { db } from '../../index';
 import { categories, categoryTranslations } from '../../schema/categories';
-  import {
-    quizQuestions,
-    quizTranslations,
-    quizzes,
-    quizAnswers,
-   quizAnswerTranslations,
-   quizQuestionContent,
-  } from '../../schema/quiz';
-
+import {
+  quizQuestions,
+  quizTranslations,
+  quizzes,
+  quizAnswers,
+  quizAnswerTranslations,
+  quizQuestionContent,
+} from '../../schema/quiz';
 
 const ADMIN_LOCALE = 'en';
 
@@ -85,7 +84,7 @@ export interface AdminQuizFull {
   slug: string;
   questionsCount: number;
   timeLimitSeconds: number | null;
-  status: string,
+  status: string;
   isActive: boolean;
   categoryId: string;
   translations: Record<string, AdminQuizTranslation>;
@@ -187,16 +186,17 @@ export async function getAdminQuizFull(
 
   const answerIds = answersData.map(a => a.id);
 
-  const answerTransRows = answerIds.length > 0
-    ? await db
-        .select({
-          quizAnswerId: quizAnswerTranslations.quizAnswerId,
-          locale: quizAnswerTranslations.locale,
-          answerText: quizAnswerTranslations.answerText,
-        })
-        .from(quizAnswerTranslations)
-        .where(inArray(quizAnswerTranslations.quizAnswerId, answerIds))
-    : [];
+  const answerTransRows =
+    answerIds.length > 0
+      ? await db
+          .select({
+            quizAnswerId: quizAnswerTranslations.quizAnswerId,
+            locale: quizAnswerTranslations.locale,
+            answerText: quizAnswerTranslations.answerText,
+          })
+          .from(quizAnswerTranslations)
+          .where(inArray(quizAnswerTranslations.quizAnswerId, answerIds))
+      : [];
 
   const transById = new Map<string, Record<string, { answerText: string }>>();
   for (const row of answerTransRows) {

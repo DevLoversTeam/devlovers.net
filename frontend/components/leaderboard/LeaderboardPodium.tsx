@@ -31,7 +31,8 @@ const rankConfig = {
       border: 'border-yellow-400/50 dark:border-yellow-500/50',
       bg: 'bg-yellow-400/10 dark:bg-yellow-500/5',
       text: 'text-yellow-600 dark:text-yellow-400',
-      badge: 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 backdrop-blur-sm',
+      badge:
+        'bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 backdrop-blur-sm',
       ring: 'border-yellow-400/30 dark:border-yellow-500/30',
     },
   },
@@ -42,7 +43,8 @@ const rankConfig = {
       border: 'border-slate-300/50 dark:border-slate-500/50',
       bg: 'bg-slate-300/10 dark:bg-slate-500/5',
       text: 'text-slate-600 dark:text-slate-400',
-      badge: 'bg-slate-500/20 text-slate-500 border border-slate-500/30 backdrop-blur-sm',
+      badge:
+        'bg-slate-500/20 text-slate-500 border border-slate-500/30 backdrop-blur-sm',
       ring: 'border-slate-300/50 dark:border-slate-500/30',
     },
   },
@@ -53,7 +55,8 @@ const rankConfig = {
       border: 'border-orange-300/50 dark:border-orange-500/50',
       bg: 'bg-orange-300/10 dark:bg-orange-500/5',
       text: 'text-orange-600 dark:text-orange-400',
-      badge: 'bg-orange-500/20 text-orange-500 border border-orange-500/30 backdrop-blur-sm',
+      badge:
+        'bg-orange-500/20 text-orange-500 border border-orange-500/30 backdrop-blur-sm',
       ring: 'border-orange-300/50 dark:border-orange-500/30',
     },
   },
@@ -129,7 +132,8 @@ export function LeaderboardPodium({ topThree }: { topThree: User[] }) {
                 const sponsorAch = getSponsorAchievement(user);
                 if (!sponsorAch) return null;
                 const tierStyle =
-                  SPONSOR_TIER_STYLE[sponsorAch.id] ?? SPONSOR_TIER_STYLE['silver_patron'];
+                  SPONSOR_TIER_STYLE[sponsorAch.id] ??
+                  SPONSOR_TIER_STYLE['silver_patron'];
                 return (
                   <a
                     href="https://github.com/sponsors/DevLoversTeam"
@@ -141,7 +145,10 @@ export function LeaderboardPodium({ topThree }: { topThree: User[] }) {
                       tierStyle
                     )}
                   >
-                    <Heart className="h-2.5 w-2.5 fill-current" aria-hidden="true" />
+                    <Heart
+                      className="h-2.5 w-2.5 fill-current"
+                      aria-hidden="true"
+                    />
                     <span className="hidden md:inline">
                       {tBadges(`${sponsorAch.id}.name`)}
                     </span>

@@ -25,7 +25,9 @@ export function QuizMetadataEditor({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  const [draft, setDraft] = useState(() => buildDraft(translations, timeLimitSeconds));
+  const [draft, setDraft] = useState(() =>
+    buildDraft(translations, timeLimitSeconds)
+  );
 
   function buildDraft(
     trans: Record<string, { title: string; description: string | null }>,
@@ -38,11 +40,15 @@ export function QuizMetadataEditor({
         description: trans[locale]?.description ?? '',
       };
     }
-    return { translations: t, timeLimitMinutes: timeLimit ? String(timeLimit / 60) : '' };
+    return {
+      translations: t,
+      timeLimitMinutes: timeLimit ? String(timeLimit / 60) : '',
+    };
   }
 
   const isDirty =
-    JSON.stringify(draft) !== JSON.stringify(buildDraft(translations, timeLimitSeconds));
+    JSON.stringify(draft) !==
+    JSON.stringify(buildDraft(translations, timeLimitSeconds));
 
   useEffect(() => {
     if (!isDirty) return;
@@ -58,7 +64,11 @@ export function QuizMetadataEditor({
     setError('');
   }
 
-  function updateField(locale: string, field: 'title' | 'description', value: string) {
+  function updateField(
+    locale: string,
+    field: 'title' | 'description',
+    value: string
+  ) {
     setDraft(prev => ({
       ...prev,
       translations: {
@@ -134,7 +144,9 @@ export function QuizMetadataEditor({
             <h3 className="text-foreground text-sm font-medium">Metadata</h3>
             <p className="text-muted-foreground mt-1 text-xs">
               {t.title || 'No title'} &middot;{' '}
-              {timeLimitSeconds ? `${Math.round(timeLimitSeconds / 60)} min` : 'No time limit'}
+              {timeLimitSeconds
+                ? `${Math.round(timeLimitSeconds / 60)} min`
+                : 'No time limit'}
             </p>
           </div>
           <button
@@ -150,7 +162,7 @@ export function QuizMetadataEditor({
   }
 
   return (
-    <div className="border-border rounded-lg border p-4 space-y-4">
+    <div className="border-border space-y-4 rounded-lg border p-4">
       <h3 className="text-foreground text-sm font-medium">Edit Metadata</h3>
 
       {/* Locale tabs */}
@@ -191,7 +203,9 @@ export function QuizMetadataEditor({
           <textarea
             rows={3}
             value={draft.translations[activeLocale].description}
-            onChange={e => updateField(activeLocale, 'description', e.target.value)}
+            onChange={e =>
+              updateField(activeLocale, 'description', e.target.value)
+            }
             className="border-border bg-background text-foreground w-full rounded-md border px-3 py-2 text-sm"
           />
         </div>
@@ -207,7 +221,9 @@ export function QuizMetadataEditor({
           min="1"
           step="1"
           value={draft.timeLimitMinutes}
-          onChange={e => setDraft(prev => ({ ...prev, timeLimitMinutes: e.target.value }))}
+          onChange={e =>
+            setDraft(prev => ({ ...prev, timeLimitMinutes: e.target.value }))
+          }
           placeholder="No limit"
           className="border-border bg-background text-foreground w-40 rounded-md border px-3 py-2 text-sm"
         />

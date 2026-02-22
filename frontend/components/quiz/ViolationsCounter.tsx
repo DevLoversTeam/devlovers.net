@@ -32,9 +32,7 @@ export function ViolationsCounter({ count }: ViolationsCounterProps) {
     >
       <ShieldAlert className="h-4 w-4" aria-hidden="true" />
       <span className="sm:hidden">{count}</span>
-      <span className="hidden sm:inline">
-        {t('counter', { count })}
-      </span>
+      <span className="hidden sm:inline">{t('counter', { count })}</span>
     </div>
   );
 }

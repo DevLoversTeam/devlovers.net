@@ -52,8 +52,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
       : null;
 
   const passwordBytesTooLong =
-    passwordTouched &&
-    utf8ByteLength(passwordValue) > PASSWORD_MAX_BYTES;
+    passwordTouched && utf8ByteLength(passwordValue) > PASSWORD_MAX_BYTES;
 
   const submitDisabled = loading || !passwordPolicyOk;
 
@@ -114,9 +113,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
             />
 
             {passwordErrorText && (
-              <p className="text-sm text-red-600">
-                {passwordErrorText}
-              </p>
+              <p className="text-sm text-red-600">{passwordErrorText}</p>
             )}
 
             {passwordBytesTooLong && (

@@ -7,7 +7,7 @@ import {
   isQuestionAlreadyVerified,
   markQuestionVerified,
 } from '@/lib/quiz/quiz-answers-redis';
-import { resolveRequestIdentifier } from '@/lib/quiz/resolve-identifier'
+import { resolveRequestIdentifier } from '@/lib/quiz/resolve-identifier';
 
 export const runtime = 'nodejs';
 
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
     // Identify user: userId for authenticated, IP for guests
     const headersList = await headers();
     const identifier = resolveRequestIdentifier(headersList);
-     if (identifier) {
+    if (identifier) {
       const alreadyVerified = await isQuestionAlreadyVerified(
         quizId,
         questionId,
@@ -57,12 +57,13 @@ export async function POST(req: Request) {
       );
     }
 
-     const MAX_TTL = 3600;
-    const ttl = typeof timeLimitSeconds === 'number' && timeLimitSeconds > 0
-      ? Math.min(timeLimitSeconds + 60, MAX_TTL)
-      : 900;
+    const MAX_TTL = 3600;
+    const ttl =
+      typeof timeLimitSeconds === 'number' && timeLimitSeconds > 0
+        ? Math.min(timeLimitSeconds + 60, MAX_TTL)
+        : 900;
 
-     if (identifier) {
+    if (identifier) {
       await markQuestionVerified(quizId, questionId, identifier, ttl);
     }
     const isCorrect = selectedAnswerId === correctAnswerId;

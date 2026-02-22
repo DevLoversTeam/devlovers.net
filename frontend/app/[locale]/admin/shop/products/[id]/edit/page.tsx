@@ -16,7 +16,6 @@ export const metadata: Metadata = {
   description: 'Edit an existing product in the DevLovers shop catalog.',
 };
 
-
 const paramsSchema = z.object({ id: z.string().uuid() });
 
 function parseMajorToMinor(value: string | number): number {
@@ -34,8 +33,6 @@ export default async function EditProductPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-
-
   const rawParams = await params;
   const parsed = paramsSchema.safeParse(rawParams);
   if (!parsed.success) notFound();
@@ -81,28 +78,28 @@ export default async function EditProductPage({
   const csrfToken = issueCsrfToken('admin:products:update');
 
   return (
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <ProductForm
-          mode="edit"
-          productId={product.id}
-          csrfToken={csrfToken}
-          initialValues={{
-            title: product.title,
-            slug: product.slug,
-            prices: initialPrices,
-            description: product.description ?? undefined,
-            category: product.category ?? undefined,
-            type: product.type ?? undefined,
-            colors: product.colors ?? [],
-            sizes: product.sizes ?? [],
-            badge: product.badge ?? undefined,
-            isActive: product.isActive,
-            isFeatured: product.isFeatured,
-            stock: product.stock,
-            sku: product.sku ?? undefined,
-            imageUrl: product.imageUrl,
-          }}
-        />
-      </main>
+    <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <ProductForm
+        mode="edit"
+        productId={product.id}
+        csrfToken={csrfToken}
+        initialValues={{
+          title: product.title,
+          slug: product.slug,
+          prices: initialPrices,
+          description: product.description ?? undefined,
+          category: product.category ?? undefined,
+          type: product.type ?? undefined,
+          colors: product.colors ?? [],
+          sizes: product.sizes ?? [],
+          badge: product.badge ?? undefined,
+          isActive: product.isActive,
+          isFeatured: product.isFeatured,
+          stock: product.stock,
+          sku: product.sku ?? undefined,
+          imageUrl: product.imageUrl,
+        }}
+      />
+    </main>
   );
 }

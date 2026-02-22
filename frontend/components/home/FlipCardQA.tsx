@@ -1,6 +1,12 @@
 'use client';
 
-import { motion, useMotionValue, useReducedMotion, useSpring, useTransform } from 'framer-motion';
+import {
+  motion,
+  useMotionValue,
+  useReducedMotion,
+  useSpring,
+  useTransform,
+} from 'framer-motion';
 import { RotateCw } from 'lucide-react';
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
@@ -18,7 +24,7 @@ const categoryIcons: Record<string, string> = {
   React: '/icons/react.svg',
   JavaScript: '/icons/javascript.svg',
   'Node.js': '/icons/nodejs.svg',
-  'Next.js': '/icons/nextjs.svg', 
+  'Next.js': '/icons/nextjs.svg',
   TypeScript: '/icons/typescript.svg',
 };
 
@@ -44,22 +50,24 @@ export function FlipCardQA() {
   const nextCardTimerRef = useRef<NodeJS.Timeout | null>(null);
   const resetTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const questions: Question[] = [1, 2, 3, 4, 5].map((id) => ({
+  const questions: Question[] = [1, 2, 3, 4, 5].map(id => ({
     id,
     question: t(`questions.${id}.question`),
     answer: t.rich(`questions.${id}.answer`, {
-      strong: (chunks) => <strong>{chunks}</strong>,
+      strong: chunks => <strong>{chunks}</strong>,
     }),
     category: t(`questions.${id}.category`),
     tip: t(`questions.${id}.tip`),
   }));
 
   const currentQuestion = questions[currentIndex];
-  const categoryIcon = categoryIcons[currentQuestion.category] || categoryIcons['JavaScript'];
-  const categoryColor = categoryColors[currentQuestion.category] || categoryColors['JavaScript'];
+  const categoryIcon =
+    categoryIcons[currentQuestion.category] || categoryIcons['JavaScript'];
+  const categoryColor =
+    categoryColors[currentQuestion.category] || categoryColors['JavaScript'];
 
   const flipRotation = useMotionValue(0);
-  
+
   useEffect(() => {
     flipRotation.set(isFlipped ? 180 : 0);
   }, [isFlipped, flipRotation]);
@@ -67,11 +75,14 @@ export function FlipCardQA() {
   const x = useMotionValue(0);
   const y = useMotionValue(0);
 
-  const rotateX = useTransform(y, [-100, 100], [10, -10]); 
+  const rotateX = useTransform(y, [-100, 100], [10, -10]);
   const tiltY = useTransform(x, [-100, 100], [-10, 10]);
-  const rotateY = useTransform([tiltY, flipRotation], (latest: any[]) => latest[0] + latest[1]);
-  
-  const springConfig = { damping: 20, stiffness: 260 }; 
+  const rotateY = useTransform(
+    [tiltY, flipRotation],
+    (latest: any[]) => latest[0] + latest[1]
+  );
+
+  const springConfig = { damping: 20, stiffness: 260 };
   const rotateXSpring = useSpring(rotateX, springConfig);
   const rotateYSpring = useSpring(rotateY, springConfig);
 
@@ -84,7 +95,7 @@ export function FlipCardQA() {
 
   const isFlippedRef = useRef(isFlipped);
   const isPausedRef = useRef(isPaused);
-  
+
   useEffect(() => {
     isFlippedRef.current = isFlipped;
   }, [isFlipped]);
@@ -100,7 +111,7 @@ export function FlipCardQA() {
 
     const timer = setInterval(() => {
       if (isFlippedRef.current || isPausedRef.current) {
-        elapsed = 0; 
+        elapsed = 0;
         setProgress(0);
         return;
       }
@@ -110,13 +121,13 @@ export function FlipCardQA() {
 
       if (newProgress >= 100) {
         setIsFlipped(true);
-        elapsed = 0; 
+        elapsed = 0;
 
         if (nextCardTimerRef.current) clearTimeout(nextCardTimerRef.current);
         if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
 
         nextCardTimerRef.current = setTimeout(() => {
-          setCurrentIndex((prev) => (prev + 1) % questions.length);
+          setCurrentIndex(prev => (prev + 1) % questions.length);
         }, 300);
 
         resetTimerRef.current = setTimeout(() => {
@@ -140,15 +151,15 @@ export function FlipCardQA() {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === ' ' || e.key === 'Enter') {
       e.preventDefault();
-      setIsFlipped((prev) => !prev);
+      setIsFlipped(prev => !prev);
     } else if (e.key === 'ArrowRight') {
       e.preventDefault();
       setIsFlipped(false);
-      setCurrentIndex((prev) => (prev + 1) % questions.length);
+      setCurrentIndex(prev => (prev + 1) % questions.length);
     } else if (e.key === 'ArrowLeft') {
       e.preventDefault();
       setIsFlipped(false);
-      setCurrentIndex((prev) => (prev - 1 + questions.length) % questions.length);
+      setCurrentIndex(prev => (prev - 1 + questions.length) % questions.length);
     }
   };
 
@@ -171,8 +182,8 @@ export function FlipCardQA() {
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
 
-    const xPct = (mouseX / width - 0.5) * 200; 
-    const yPct = (mouseY / height - 0.5) * 200; 
+    const xPct = (mouseX / width - 0.5) * 200;
+    const yPct = (mouseY / height - 0.5) * 200;
 
     x.set(xPct);
     y.set(yPct);
@@ -193,13 +204,13 @@ export function FlipCardQA() {
   return (
     <div className="relative w-full max-w-xl">
       <div
-        className="relative h-[320px] perspective-1000 sm:h-[340px]"
+        className="perspective-1000 relative h-[320px] sm:h-[340px]"
         onMouseMove={handleMouseMove}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
         <motion.div
-          className="relative h-full w-full cursor-pointer preserve-3d"
+          className="preserve-3d relative h-full w-full cursor-pointer"
           style={{
             rotateX: rotateXSpring,
             rotateY: rotateYSpring,
@@ -210,9 +221,9 @@ export function FlipCardQA() {
           tabIndex={0}
           aria-label={`${t('ui.answer')}. ${isFlipped ? t('ui.clickAgain') : t('ui.clickToReveal')}.`}
         >
-          <div className="backface-hidden absolute inset-0 flex flex-col overflow-hidden rounded-3xl border border-gray-200 bg-white/80 p-6 shadow-xl backdrop-blur-xl sm:p-8 dark:border-white/10 dark:bg-white/5 dark:shadow-2xl">
+          <div className="absolute inset-0 flex flex-col overflow-hidden rounded-3xl border border-gray-200 bg-white/80 p-6 shadow-xl backdrop-blur-xl backface-hidden sm:p-8 dark:border-white/10 dark:bg-white/5 dark:shadow-2xl">
             {categoryIcon && (
-              <div className="pointer-events-none absolute -bottom-10 -right-10 opacity-[0.08] dark:opacity-[0.07]">
+              <div className="pointer-events-none absolute -right-10 -bottom-10 opacity-[0.08] dark:opacity-[0.07]">
                 <Image
                   src={categoryIcon}
                   alt=""
@@ -242,14 +253,14 @@ export function FlipCardQA() {
                     />
                   </div>
                 )}
-                <span className="text-xs font-semibold text-gray-900 dark:text-white sm:text-sm">
+                <span className="text-xs font-semibold text-gray-900 sm:text-sm dark:text-white">
                   {currentQuestion.category}
                 </span>
               </div>
             </div>
 
             <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-2 py-4 sm:py-6">
-              <h3 className="text-center text-xl font-bold leading-tight text-gray-900 drop-shadow-sm sm:text-2xl sm:leading-snug dark:text-white">
+              <h3 className="text-center text-xl leading-tight font-bold text-gray-900 drop-shadow-sm sm:text-2xl sm:leading-snug dark:text-white">
                 {currentQuestion.question}
               </h3>
             </div>
@@ -260,22 +271,25 @@ export function FlipCardQA() {
                   className="h-px w-8"
                   style={{ backgroundColor: categoryColor }}
                 />
-                <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: categoryColor }} />
+                <div
+                  className="h-1.5 w-1.5 rounded-full"
+                  style={{ backgroundColor: categoryColor }}
+                />
                 <div
                   className="h-px w-8"
                   style={{ backgroundColor: categoryColor }}
                 />
               </div>
 
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-600 transition-colors hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200">
+              <p className="text-[10px] font-semibold tracking-wider text-gray-600 uppercase transition-colors hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200">
                 {isMobile ? t('ui.tapToReveal') : t('ui.clickToReveal')}
               </p>
             </div>
           </div>
 
-          <div className="backface-hidden absolute inset-0 flex flex-col overflow-hidden rounded-3xl border border-gray-200 bg-white/90 p-6 shadow-sm backdrop-blur-md sm:p-8 [transform:rotateY(180deg)] dark:border-neutral-800 dark:bg-neutral-900/10">
+          <div className="absolute inset-0 flex [transform:rotateY(180deg)] flex-col overflow-hidden rounded-3xl border border-gray-200 bg-white/90 p-6 shadow-sm backdrop-blur-md backface-hidden sm:p-8 dark:border-neutral-800 dark:bg-neutral-900/10">
             {categoryIcon && (
-              <div className="pointer-events-none absolute -bottom-10 -right-10 opacity-[0.08] dark:opacity-[0.07]">
+              <div className="pointer-events-none absolute -right-10 -bottom-10 opacity-[0.08] dark:opacity-[0.07]">
                 <Image
                   src={categoryIcon}
                   alt=""
@@ -304,7 +318,7 @@ export function FlipCardQA() {
                     />
                   </div>
                 )}
-                <span className="text-xs font-semibold text-green-800 dark:text-green-100 sm:text-sm">
+                <span className="text-xs font-semibold text-green-800 sm:text-sm dark:text-green-100">
                   {t('ui.answer')}
                 </span>
               </div>
@@ -319,7 +333,7 @@ export function FlipCardQA() {
             <div className="relative z-10 flex min-h-[4rem] items-center justify-center px-4">
               {currentQuestion.tip ? (
                 <div className="flex flex-col items-center">
-                  <span className="mb-1 text-[10px] font-bold uppercase tracking-wider text-indigo-600 opacity-90 dark:text-indigo-300 dark:opacity-70">
+                  <span className="mb-1 text-[10px] font-bold tracking-wider text-indigo-600 uppercase opacity-90 dark:text-indigo-300 dark:opacity-70">
                     {t('ui.proTip')}
                   </span>
                   <p className="text-center text-xs font-medium text-gray-600 dark:text-gray-400">
@@ -334,8 +348,6 @@ export function FlipCardQA() {
             </div>
           </div>
         </motion.div>
-
-
       </div>
 
       <div className="mt-6 flex justify-center gap-2">
@@ -343,7 +355,7 @@ export function FlipCardQA() {
           <button
             key={index}
             onClick={() => handleNavigate(index)}
-            className="relative focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] focus:ring-offset-2"
+            className="relative focus:ring-2 focus:ring-[var(--accent-primary)] focus:ring-offset-2 focus:outline-none"
             aria-label={`Go to question ${index + 1}`}
             aria-current={index === currentIndex ? 'true' : 'false'}
           >
@@ -363,8 +375,6 @@ export function FlipCardQA() {
           </button>
         ))}
       </div>
-
-
     </div>
   );
 }

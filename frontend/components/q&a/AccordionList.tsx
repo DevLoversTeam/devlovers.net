@@ -412,7 +412,7 @@ export default function AccordionList({ items }: { items: QuestionEntry[] }) {
             <AccordionItem
               key={key}
               value={String(key)}
-              className="qa-accordion-item mb-3 rounded-xl border border-black/5 bg-white/90 shadow-sm transition-colors last:mb-0 last:border-b dark:border-white/10 dark:bg-neutral-900/80 animate-in fade-in slide-in-from-bottom-2 duration-500 motion-reduce:animate-none"
+              className="qa-accordion-item animate-in fade-in slide-in-from-bottom-2 mb-3 rounded-xl border border-black/5 bg-white/90 shadow-sm transition-colors duration-500 last:mb-0 last:border-b motion-reduce:animate-none dark:border-white/10 dark:bg-neutral-900/80"
               style={itemStyle}
             >
               <AccordionTrigger

@@ -42,7 +42,9 @@ export default async function LeaderboardPage() {
         (s.email && s.email.toLowerCase() === emailLower) ||
         (nameLower && s.login && s.login.toLowerCase() === nameLower) ||
         (nameLower && s.name && s.name.toLowerCase() === nameLower) ||
-        (user.avatar && s.avatarUrl && user.avatar.includes(s.avatarUrl.split('?')[0]))
+        (user.avatar &&
+          s.avatarUrl &&
+          user.avatar.includes(s.avatarUrl.split('?')[0]))
     );
 
     const isSponsor = !!matchedSponsor;
@@ -54,7 +56,12 @@ export default async function LeaderboardPage() {
       const def = ACHIEVEMENTS.find(a => a.id === achievementId);
       if (def && !achievements.some(a => a.id === achievementId)) {
         achievements = [
-          { id: def.id, icon: def.icon, gradient: def.gradient, glow: def.glow },
+          {
+            id: def.id,
+            icon: def.icon,
+            gradient: def.gradient,
+            glow: def.glow,
+          },
           ...achievements,
         ];
       }
@@ -72,7 +79,12 @@ export default async function LeaderboardPage() {
       const def = ACHIEVEMENTS.find(a => a.id === 'star_gazer');
       if (def) {
         achievements = [
-          { id: def.id, icon: def.icon, gradient: def.gradient, glow: def.glow },
+          {
+            id: def.id,
+            icon: def.icon,
+            gradient: def.gradient,
+            glow: def.glow,
+          },
           ...achievements,
         ];
       }

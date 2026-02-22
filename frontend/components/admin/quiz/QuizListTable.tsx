@@ -5,7 +5,8 @@ import type { AdminQuizListItem } from '@/db/queries/quizzes/admin-quiz';
 
 import { DeleteQuizButton } from './DeleteQuizButton';
 
-const TH = 'px-3 py-2 text-left text-xs font-semibold text-foreground whitespace-nowrap';
+const TH =
+  'px-3 py-2 text-left text-xs font-semibold text-foreground whitespace-nowrap';
 const TD = 'px-3 py-2 text-sm';
 
 function StatusBadge({ status }: { status: string }) {
@@ -52,7 +53,10 @@ interface QuizListTableProps {
   csrfTokenDelete: string;
 }
 
-export function QuizListTable({ quizzes, csrfTokenDelete }: QuizListTableProps) {
+export function QuizListTable({
+  quizzes,
+  csrfTokenDelete,
+}: QuizListTableProps) {
   if (quizzes.length === 0) {
     return (
       <div className="border-border text-muted-foreground rounded-lg border border-dashed p-8 text-center text-sm">
@@ -99,7 +103,9 @@ export function QuizListTable({ quizzes, csrfTokenDelete }: QuizListTableProps) 
               </div>
               <div>
                 <dt className="text-muted-foreground">Created</dt>
-                <dd className="text-foreground">{formatDate(quiz.createdAt)}</dd>
+                <dd className="text-foreground">
+                  {formatDate(quiz.createdAt)}
+                </dd>
               </div>
             </dl>
 
@@ -111,7 +117,10 @@ export function QuizListTable({ quizzes, csrfTokenDelete }: QuizListTableProps) 
                 Edit
               </Link>
               {canDelete(quiz) && (
-                <DeleteQuizButton quizId={quiz.id} csrfToken={csrfTokenDelete} />
+                <DeleteQuizButton
+                  quizId={quiz.id}
+                  csrfToken={csrfTokenDelete}
+                />
               )}
             </div>
           </div>
@@ -138,7 +147,10 @@ export function QuizListTable({ quizzes, csrfTokenDelete }: QuizListTableProps) 
               {quizzes.map(quiz => (
                 <tr key={quiz.id} className="hover:bg-muted/50">
                   <td className={cn(TD, 'text-foreground font-medium')}>
-                    <div className="max-w-[200px] truncate" title={quiz.title ?? quiz.slug}>
+                    <div
+                      className="max-w-[200px] truncate"
+                      title={quiz.title ?? quiz.slug}
+                    >
                       {quiz.title ?? quiz.slug}
                     </div>
                   </td>
@@ -157,7 +169,12 @@ export function QuizListTable({ quizzes, csrfTokenDelete }: QuizListTableProps) 
                   <td className={TD}>
                     <ActiveBadge active={quiz.isActive} />
                   </td>
-                  <td className={cn(TD, 'text-muted-foreground whitespace-nowrap')}>
+                  <td
+                    className={cn(
+                      TD,
+                      'text-muted-foreground whitespace-nowrap'
+                    )}
+                  >
                     {formatDate(quiz.createdAt)}
                   </td>
                   <td className={TD}>
@@ -169,7 +186,10 @@ export function QuizListTable({ quizzes, csrfTokenDelete }: QuizListTableProps) 
                         Edit
                       </Link>
                       {canDelete(quiz) && (
-                        <DeleteQuizButton quizId={quiz.id} csrfToken={csrfTokenDelete} />
+                        <DeleteQuizButton
+                          quizId={quiz.id}
+                          csrfToken={csrfTokenDelete}
+                        />
                       )}
                     </div>
                   </td>

@@ -120,10 +120,10 @@ export function SignupForm({ locale, returnTo }: SignupFormProps) {
 
   const mismatchErrorText =
     confirmPasswordTouched &&
-      passwordTouched &&
-      passwordValue.length > 0 &&
-      confirmPasswordValue.length > 0 &&
-      !passwordsMatch
+    passwordTouched &&
+    passwordValue.length > 0 &&
+    confirmPasswordValue.length > 0 &&
+    !passwordsMatch
       ? tf('validation.passwordsDontMatch')
       : null;
 

@@ -15,7 +15,13 @@ interface QuizReviewCardProps {
   onToggle: () => void;
 }
 
-export function QuizReviewCard({ question, index, accentColor, isOpen, onToggle }: QuizReviewCardProps) {
+export function QuizReviewCard({
+  question,
+  index,
+  accentColor,
+  isOpen,
+  onToggle,
+}: QuizReviewCardProps) {
   const t = useTranslations('dashboard.quizReview');
 
   return (
@@ -33,15 +39,17 @@ export function QuizReviewCard({ question, index, accentColor, isOpen, onToggle 
           style={{ color: accentColor }}
         />
         <div className="min-w-0 flex-1 text-lg font-medium text-gray-900 dark:text-gray-100">
-          <span className="mr-2" style={{ color: accentColor }}>#{index}</span>
+          <span className="mr-2" style={{ color: accentColor }}>
+            #{index}
+          </span>
           {question.questionText}
         </div>
       </button>
 
       {isOpen && (
-        <div className="px-4 pb-4 pt-0 sm:px-6 sm:pb-6">
+        <div className="px-4 pt-0 pb-4 sm:px-6 sm:pb-6">
           <div className="flex flex-col gap-3">
-            {question.answers.map((answer) => {
+            {question.answers.map(answer => {
               const isUserWrong = answer.isSelected && !answer.isCorrect;
               const isCorrectAnswer = answer.isCorrect;
 

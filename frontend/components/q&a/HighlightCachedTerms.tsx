@@ -98,7 +98,7 @@ export default function HighlightCachedTerms({
               }
             }}
             className={cn(
-              'cursor-pointer inline-block',
+              'inline-block cursor-pointer',
               'border-b-2 border-dashed border-emerald-500/60',
               'bg-emerald-50/50 dark:bg-emerald-900/20',
               'hover:bg-emerald-100 dark:hover:bg-emerald-900/40',

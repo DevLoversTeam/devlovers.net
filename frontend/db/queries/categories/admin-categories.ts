@@ -29,7 +29,9 @@ export async function getAdminCategoryList(): Promise<AdminCategoryItem[]> {
   return rows;
 }
 
-export async function getMaxQuizDisplayOrder(categoryId: string): Promise<number> {
+export async function getMaxQuizDisplayOrder(
+  categoryId: string
+): Promise<number> {
   const [row] = await db
     .select({ maxOrder: max(quizzes.displayOrder) })
     .from(quizzes)

@@ -142,7 +142,10 @@ function readRows<T>(res: unknown): T[] {
 }
 
 function sha256Utf8(value: string): string {
-  return crypto.createHash('sha256').update(Buffer.from(value, 'utf8')).digest('hex');
+  return crypto
+    .createHash('sha256')
+    .update(Buffer.from(value, 'utf8'))
+    .digest('hex');
 }
 
 function buildApplyPayload(args: {
@@ -285,7 +288,9 @@ function compareJob3Rows(a: Job3CandidateRow, b: Job3CandidateRow): number {
   return a.id.localeCompare(b.id);
 }
 
-function sortJob3RowsByCanonicalOrder(rows: Job3CandidateRow[]): Job3CandidateRow[] {
+function sortJob3RowsByCanonicalOrder(
+  rows: Job3CandidateRow[]
+): Job3CandidateRow[] {
   const groups = new Map<string, Job3CandidateRow[]>();
 
   for (const row of rows) {
@@ -332,9 +337,13 @@ function toJob3CandidateRow(row: MonobankEventRow): Job3CandidateRow {
   return {
     id: row.id,
     invoice_id:
-      typeof row.invoice_id === 'string' ? row.invoice_id : row.invoice_id ?? null,
+      typeof row.invoice_id === 'string'
+        ? row.invoice_id
+        : (row.invoice_id ?? null),
     attempt_id:
-      typeof row.attempt_id === 'string' ? row.attempt_id : row.attempt_id ?? null,
+      typeof row.attempt_id === 'string'
+        ? row.attempt_id
+        : (row.attempt_id ?? null),
     provider_modified_at: row.provider_modified_at,
     received_at: row.received_at,
     raw_payload: row.raw_payload,
@@ -764,12 +773,14 @@ export async function runMonobankJanitorJob2(
     processed += 1;
 
     try {
-      const transitionedOrderId = await atomicCancelOrderAndFailCreatingAttempt({
-        attemptId: attempt.id,
-        runId: args.runId,
-        ttlSeconds,
-        now: new Date(),
-      });
+      const transitionedOrderId = await atomicCancelOrderAndFailCreatingAttempt(
+        {
+          attemptId: attempt.id,
+          runId: args.runId,
+          ttlSeconds,
+          now: new Date(),
+        }
+      );
 
       if (!transitionedOrderId) {
         noop += 1;

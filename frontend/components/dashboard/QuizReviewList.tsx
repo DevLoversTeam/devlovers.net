@@ -13,7 +13,10 @@ interface QuizReviewListProps {
   accentColor?: string;
 }
 
-export function QuizReviewList({ questions, accentColor }: QuizReviewListProps) {
+export function QuizReviewList({
+  questions,
+  accentColor,
+}: QuizReviewListProps) {
   const t = useTranslations('dashboard.quizReview');
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
@@ -23,12 +26,12 @@ export function QuizReviewList({ questions, accentColor }: QuizReviewListProps) 
     if (allExpanded) {
       setExpandedIds(new Set());
     } else {
-      setExpandedIds(new Set(questions.map((q) => q.questionId)));
+      setExpandedIds(new Set(questions.map(q => q.questionId)));
     }
   }, [allExpanded, questions]);
 
   const handleToggle = useCallback((questionId: string) => {
-    setExpandedIds((prev) => {
+    setExpandedIds(prev => {
       const next = new Set(prev);
       if (next.has(questionId)) {
         next.delete(questionId);

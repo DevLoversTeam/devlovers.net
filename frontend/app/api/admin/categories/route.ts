@@ -44,13 +44,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     try {
       rawBody = await request.json();
     } catch {
-      return noStoreJson({ error: 'Invalid JSON body', code: 'INVALID_BODY' }, { status: 400 });
+      return noStoreJson(
+        { error: 'Invalid JSON body', code: 'INVALID_BODY' },
+        { status: 400 }
+      );
     }
 
     const parsed = createCategorySchema.safeParse(rawBody);
     if (!parsed.success) {
       return noStoreJson(
-        { error: 'Invalid payload', code: 'INVALID_PAYLOAD', details: parsed.error.format() },
+        {
+          error: 'Invalid payload',
+          code: 'INVALID_PAYLOAD',
+          details: parsed.error.format(),
+        },
         { status: 400 }
       );
     }
@@ -73,7 +80,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     if (rows.length === 0) {
       return noStoreJson(
-        { error: 'Category with this slug already exists', code: 'DUPLICATE_SLUG' },
+        {
+          error: 'Category with this slug already exists',
+          code: 'DUPLICATE_SLUG',
+        },
         { status: 409 }
       );
     }
@@ -114,6 +124,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       method: request.method,
     });
 
-    return noStoreJson({ error: 'Internal error', code: 'INTERNAL_ERROR' }, { status: 500 });
+    return noStoreJson(
+      { error: 'Internal error', code: 'INTERNAL_ERROR' },
+      { status: 500 }
+    );
   }
 }

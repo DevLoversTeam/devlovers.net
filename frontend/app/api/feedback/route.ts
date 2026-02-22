@@ -27,7 +27,8 @@ export async function POST(req: NextRequest) {
     limit: 5,
     windowSeconds: 3600, // 5 submissions per IP per hour
   });
-  if (!rl.ok) return rateLimitResponse({ retryAfterSeconds: rl.retryAfterSeconds });
+  if (!rl.ok)
+    return rateLimitResponse({ retryAfterSeconds: rl.retryAfterSeconds });
 
   const gmailUser = process.env.GMAIL_USER;
   const gmailPass = process.env.GMAIL_APP_PASSWORD;
@@ -62,20 +63,33 @@ export async function POST(req: NextRequest) {
   const safeEmail = email.replace(/[\r\n<>"]/g, '');
 
   const rawFiles = formData.getAll('attachment');
-  const files = rawFiles.filter((f): f is File => f instanceof File && f.size > 0);
+  const files = rawFiles.filter(
+    (f): f is File => f instanceof File && f.size > 0
+  );
 
   if (files.length > MAX_FILES) {
     return NextResponse.json({ success: false }, { status: 400 });
   }
 
-  const attachments: { filename: string; content: Buffer; contentType: string }[] = [];
+  const attachments: {
+    filename: string;
+    content: Buffer;
+    contentType: string;
+  }[] = [];
 
   for (const f of files) {
     if (f.size > MAX_FILE_SIZE) {
-      return NextResponse.json({ success: false, tooLarge: true }, { status: 413 });
+      return NextResponse.json(
+        { success: false, tooLarge: true },
+        { status: 413 }
+      );
     }
     const buffer = Buffer.from(await f.arrayBuffer());
-    attachments.push({ filename: f.name, content: buffer, contentType: f.type });
+    attachments.push({
+      filename: f.name,
+      content: buffer,
+      contentType: f.type,
+    });
   }
 
   const mailer = nodemailer.createTransport({
@@ -89,7 +103,9 @@ export async function POST(req: NextRequest) {
   try {
     await mailer.sendMail({
       from: emailFrom,
-      replyTo: safeNameForHeader ? `"${safeNameForHeader}" <${safeEmail}>` : safeEmail,
+      replyTo: safeNameForHeader
+        ? `"${safeNameForHeader}" <${safeEmail}>`
+        : safeEmail,
       to: emailFrom,
       subject: `DevLovers Feedback: ${category.replace(/[\r\n]/g, '')}`,
       html: `
