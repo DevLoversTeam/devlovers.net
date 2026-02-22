@@ -1,8 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-
 import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 const LOCALES = ['en', 'uk', 'pl'] as const;
 const LOCALE_LABELS: Record<string, string> = { en: 'EN', uk: 'UK', pl: 'PL' };

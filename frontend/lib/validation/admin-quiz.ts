@@ -54,7 +54,7 @@ const jsonQuestionAnswerSchema = z.object({
 });
 
 export const jsonQuestionSchema = z.object({
-  id: z.string().uuid().optional(),
+  id: z.string().optional(),
   order: z.number().int().positive(),
   difficulty: z.enum(['beginner', 'medium', 'advanced']),
   uk: z.object({

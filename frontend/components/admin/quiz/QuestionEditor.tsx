@@ -1,8 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-
 import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
 
 import type { AnswerBlock } from '@/components/q&a/types';
 import type { AdminQuizQuestion } from '@/db/queries/quizzes/admin-quiz';
@@ -156,7 +155,7 @@ export function QuestionEditor({
 
   // Reset all edit state when entering edit mode.
   // question prop is stable (server-fetched at page load) so it's safe to omit from deps.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   useEffect(() => {
     if (isEditing) {
       const initial = initEditorState(question);

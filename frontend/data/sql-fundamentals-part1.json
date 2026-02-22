@@ -1,0 +1,434 @@
+{
+  "questions": [
+    {
+      "id": "sql-fundamentals-q01",
+      "order": 1,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Що таке SQL?",
+        "exp": "SQL (Structured Query Language) — це стандартизована мова для роботи з реляційними базами даних: читання, зміна даних, керування структурою та доступом."
+      },
+      "en": {
+        "q": "What is SQL?",
+        "exp": "SQL (Structured Query Language) is a standardized language for working with relational databases: reading, modifying data, managing structure and access."
+      },
+      "pl": {
+        "q": "Czym jest SQL?",
+        "exp": "SQL (Structured Query Language) to standardowy język do pracy z relacyjnymi bazami danych: odczyt, modyfikacja danych, zarządzanie strukturą i dostępem."
+      },
+      "answers": [
+        {
+          "uk": "Стандартизована мова для роботи з реляційними БД",
+          "en": "A standardized language for working with relational DBs",
+          "pl": "Standardowy język do pracy z relacyjnymi bazami danych",
+          "correct": true
+        },
+        {
+          "uk": "Серверний фреймворк для обробки HTTP-запитів",
+          "en": "A server-side framework for handling HTTP requests",
+          "pl": "Framework serwerowy do obsługi żądań HTTP",
+          "correct": false
+        },
+        {
+          "uk": "Мова розмітки для побудови структури веб-сторінок",
+          "en": "A markup language for building web page structure",
+          "pl": "Język znaczników do budowania struktury stron internetowych",
+          "correct": false
+        },
+        {
+          "uk": "Операційна система для керування серверами даних",
+          "en": "An operating system for managing data server clusters",
+          "pl": "System operacyjny do zarządzania klastrem serwerów danych",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "sql-fundamentals-q02",
+      "order": 2,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "У чому різниця між SQL і MySQL?",
+        "exp": "SQL — це мова запитів (стандарт), а MySQL — конкретна СУБД, яка реалізує SQL. Інші СУБД, такі як PostgreSQL чи Oracle, також використовують SQL."
+      },
+      "en": {
+        "q": "What is the difference between SQL and MySQL?",
+        "exp": "SQL is a query language (standard), while MySQL is a specific DBMS that implements SQL. Other systems like PostgreSQL or Oracle also use SQL."
+      },
+      "pl": {
+        "q": "Jaka jest różnica między SQL a MySQL?",
+        "exp": "SQL to język zapytań (standard), a MySQL to konkretny SZBD, który implementuje SQL. Inne systemy jak PostgreSQL czy Oracle również używają SQL."
+      },
+      "answers": [
+        {
+          "uk": "SQL — мова запитів, MySQL — СУБД, що реалізує цю мову",
+          "en": "SQL is a query language, MySQL is a DBMS implementing it",
+          "pl": "SQL to język zapytań, MySQL to SZBD, który go implementuje",
+          "correct": true
+        },
+        {
+          "uk": "MySQL — це оновлена і покращена версія стандарту SQL",
+          "en": "MySQL is an updated and improved version of the SQL standard",
+          "pl": "MySQL to zaktualizowana i ulepszona wersja standardu SQL",
+          "correct": false
+        },
+        {
+          "uk": "SQL працює лише в MySQL і не підтримується в інших СУБД",
+          "en": "SQL works only in MySQL and is not supported in other DBMS",
+          "pl": "SQL działa tylko w MySQL i nie jest obsługiwany w innych SZBD",
+          "correct": false
+        },
+        {
+          "uk": "MySQL — це мова, а SQL — програмне забезпечення для неї",
+          "en": "MySQL is a language, and SQL is the software that runs it",
+          "pl": "MySQL to język, a SQL to oprogramowanie, które go uruchamia",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "sql-fundamentals-q03",
+      "order": 3,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "До якої категорії SQL-команд належить SELECT?",
+        "exp": "SELECT належить до DQL (Data Query Language) — категорії команд для читання даних із бази."
+      },
+      "en": {
+        "q": "Which category of SQL commands does SELECT belong to?",
+        "exp": "SELECT belongs to DQL (Data Query Language) — the category of commands for reading data from a database."
+      },
+      "pl": {
+        "q": "Do jakiej kategorii poleceń SQL należy SELECT?",
+        "exp": "SELECT należy do DQL (Data Query Language) — kategorii poleceń do odczytu danych z bazy."
+      },
+      "answers": [
+        {
+          "uk": "DDL — визначення структури даних",
+          "en": "DDL — data structure definition",
+          "pl": "DDL — definiowanie struktury danych",
+          "correct": false
+        },
+        {
+          "uk": "DQL — запити для читання даних",
+          "en": "DQL — data query reading language",
+          "pl": "DQL — język zapytań do odczytu danych",
+          "correct": true
+        },
+        {
+          "uk": "DCL — керування правами доступу",
+          "en": "DCL — data access control language",
+          "pl": "DCL — kontrola dostępu do danych",
+          "correct": false
+        },
+        {
+          "uk": "DML — маніпулювання даними",
+          "en": "DML — data manipulation language",
+          "pl": "DML — manipulowanie danymi",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "sql-fundamentals-q04",
+      "order": 4,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Які команди належать до DDL (Data Definition Language)?",
+        "exp": "DDL керує структурою бази даних. До цієї категорії входять CREATE, ALTER, DROP і TRUNCATE."
+      },
+      "en": {
+        "q": "Which commands belong to DDL (Data Definition Language)?",
+        "exp": "DDL manages database structure. This category includes CREATE, ALTER, DROP, and TRUNCATE."
+      },
+      "pl": {
+        "q": "Które polecenia należą do DDL (Data Definition Language)?",
+        "exp": "DDL zarządza strukturą bazy danych. Do tej kategorii należą CREATE, ALTER, DROP i TRUNCATE."
+      },
+      "answers": [
+        {
+          "uk": "SELECT, INSERT, UPDATE, DELETE",
+          "en": "SELECT, INSERT, UPDATE, DELETE",
+          "pl": "SELECT, INSERT, UPDATE, DELETE",
+          "correct": false
+        },
+        {
+          "uk": "GRANT, REVOKE, DENY, AUDIT",
+          "en": "GRANT, REVOKE, DENY, AUDIT",
+          "pl": "GRANT, REVOKE, DENY, AUDIT",
+          "correct": false
+        },
+        {
+          "uk": "BEGIN, COMMIT, ROLLBACK, SAVEPOINT",
+          "en": "BEGIN, COMMIT, ROLLBACK, SAVEPOINT",
+          "pl": "BEGIN, COMMIT, ROLLBACK, SAVEPOINT",
+          "correct": false
+        },
+        {
+          "uk": "CREATE, ALTER, DROP, TRUNCATE",
+          "en": "CREATE, ALTER, DROP, TRUNCATE",
+          "pl": "CREATE, ALTER, DROP, TRUNCATE",
+          "correct": true
+        }
+      ]
+    },
+    {
+      "id": "sql-fundamentals-q05",
+      "order": 5,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Що таке таблиця в реляційній базі даних?",
+        "exp": "Таблиця — це об'єкт БД, у якому дані зберігаються у вигляді стовпців (структура) і рядків (записи)."
+      },
+      "en": {
+        "q": "What is a table in a relational database?",
+        "exp": "A table is a database object that stores data in columns (structure) and rows (records)."
+      },
+      "pl": {
+        "q": "Czym jest tabela w relacyjnej bazie danych?",
+        "exp": "Tabela to obiekt bazy danych przechowujący dane w kolumnach (struktura) i wierszach (rekordy)."
+      },
+      "answers": [
+        {
+          "uk": "Текстовий файл із даними, збережений на диску",
+          "en": "A text file with data stored on the server disk",
+          "pl": "Plik tekstowy z danymi zapisany na dysku serwera",
+          "correct": false
+        },
+        {
+          "uk": "Збережений SQL-запит для повторного використання",
+          "en": "A saved SQL query intended for repeated execution",
+          "pl": "Zapisane zapytanie SQL do wielokrotnego użycia",
+          "correct": false
+        },
+        {
+          "uk": "Об'єкт БД, що зберігає дані у стовпцях і рядках",
+          "en": "A DB object that stores data in columns and rows",
+          "pl": "Obiekt BD przechowujący dane w kolumnach i wierszach",
+          "correct": true
+        },
+        {
+          "uk": "Спеціальна структура для прискорення пошуку",
+          "en": "A special structure designed for faster data lookup",
+          "pl": "Specjalna struktura do szybszego wyszukiwania danych",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "sql-fundamentals-q06",
+      "order": 6,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Що описує стовпець (column) у таблиці?",
+        "exp": "Стовпець — це поле таблиці з визначеним типом даних і правилами. Рядок — це один конкретний запис із значеннями у стовпцях."
+      },
+      "en": {
+        "q": "What does a column describe in a table?",
+        "exp": "A column is a table field with a defined data type and rules. A row is a single record with values in those columns."
+      },
+      "pl": {
+        "q": "Co opisuje kolumna (column) w tabeli?",
+        "exp": "Kolumna to pole tabeli z określonym typem danych i regułami. Wiersz to pojedynczy rekord z wartościami w tych kolumnach."
+      },
+      "answers": [
+        {
+          "uk": "Один конкретний запис із набором значень",
+          "en": "A single specific record with a set of values",
+          "pl": "Pojedynczy konkretny rekord z zestawem wartości",
+          "correct": false
+        },
+        {
+          "uk": "Зв'язок між двома різними таблицями в БД",
+          "en": "A relationship between two different DB tables",
+          "pl": "Relacja między dwiema różnymi tabelami w BD",
+          "correct": false
+        },
+        {
+          "uk": "Атрибут із визначеним типом даних і правилами",
+          "en": "An attribute with a defined data type and rules",
+          "pl": "Atrybut z określonym typem danych i regułami",
+          "correct": true
+        },
+        {
+          "uk": "Унікальний ідентифікатор для кожного рядка",
+          "en": "A unique identifier assigned to every single row",
+          "pl": "Unikalny identyfikator przypisany do każdego wiersza",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "sql-fundamentals-q07",
+      "order": 7,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Які властивості має PRIMARY KEY?",
+        "exp": "PRIMARY KEY однозначно ідентифікує кожен рядок таблиці. Він не допускає NULL і дублікатів, і може бути лише один на таблицю."
+      },
+      "en": {
+        "q": "What properties does a PRIMARY KEY have?",
+        "exp": "A PRIMARY KEY uniquely identifies each row in a table. It does not allow NULL or duplicates, and there can be only one per table."
+      },
+      "pl": {
+        "q": "Jakie właściwości ma PRIMARY KEY?",
+        "exp": "PRIMARY KEY jednoznacznie identyfikuje każdy wiersz tabeli. Nie dopuszcza NULL ani duplikatów i może być tylko jeden na tabelę."
+      },
+      "answers": [
+        {
+          "uk": "Допускає NULL, але забороняє повторювані значення",
+          "en": "Allows NULL values but forbids any duplicate entries",
+          "pl": "Dopuszcza NULL, ale zabrania duplikatów wartości",
+          "correct": false
+        },
+        {
+          "uk": "Допускає дублікати, але забороняє значення NULL",
+          "en": "Allows duplicate entries but forbids NULL value usage",
+          "pl": "Dopuszcza duplikaty, ale zabrania wartości NULL",
+          "correct": false
+        },
+        {
+          "uk": "Може бути кілька PRIMARY KEY на одну таблицю в БД",
+          "en": "Multiple PRIMARY KEYs can exist within a single table",
+          "pl": "Może być kilka PRIMARY KEY w jednej tabeli bazy",
+          "correct": false
+        },
+        {
+          "uk": "Лише унікальні значення, NULL заборонено, один на таблицю",
+          "en": "Only unique values, NULL is forbidden, one per table",
+          "pl": "Tylko unikalne wartości, NULL zabroniony, jeden na tabelę",
+          "correct": true
+        }
+      ]
+    },
+    {
+      "id": "sql-fundamentals-q08",
+      "order": 8,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Яку роль виконує FOREIGN KEY?",
+        "exp": "FOREIGN KEY задає зв'язок між дочірньою та батьківською таблицями, гарантуючи, що значення в дочірній таблиці посилається на існуючий запис."
+      },
+      "en": {
+        "q": "What role does a FOREIGN KEY play?",
+        "exp": "A FOREIGN KEY establishes a link between a child and parent table, ensuring that a value in the child table references an existing record."
+      },
+      "pl": {
+        "q": "Jaką rolę pełni FOREIGN KEY?",
+        "exp": "FOREIGN KEY tworzy powiązanie między tabelą podrzędną a nadrzędną, zapewniając, że wartość w tabeli podrzędnej odwołuje się do istniejącego rekordu."
+      },
+      "answers": [
+        {
+          "uk": "Автоматично генерує унікальні id для нових записів",
+          "en": "Automatically generates unique IDs for every new record",
+          "pl": "Automatycznie generuje unikalne ID dla nowych rekordów",
+          "correct": false
+        },
+        {
+          "uk": "Створює зв'язок між таблицями, захищає від невалідних посилань",
+          "en": "Creates a link between tables, protects against bad references",
+          "pl": "Tworzy powiązanie między tabelami, chroni przed złymi odwołaniami",
+          "correct": true
+        },
+        {
+          "uk": "Забороняє вставку будь-яких NULL-значень у таблицю",
+          "en": "Forbids inserting any NULL values into the target table",
+          "pl": "Zabrania wstawiania wartości NULL do tabeli docelowej",
+          "correct": false
+        },
+        {
+          "uk": "Створює індекс для прискорення SELECT-запитів",
+          "en": "Creates an index to speed up SELECT query performance",
+          "pl": "Tworzy indeks przyspieszający wykonywanie zapytań SELECT",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "sql-fundamentals-q09",
+      "order": 9,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Що робить обмеження NOT NULL?",
+        "exp": "NOT NULL забороняє зберігати NULL у стовпці. Значення для такого поля обов'язкове при вставці та оновленні."
+      },
+      "en": {
+        "q": "What does the NOT NULL constraint do?",
+        "exp": "NOT NULL forbids storing NULL in a column. A value for such a field is required during insert and update."
+      },
+      "pl": {
+        "q": "Co robi ograniczenie NOT NULL?",
+        "exp": "NOT NULL zabrania przechowywania NULL w kolumnie. Wartość dla takiego pola jest wymagana przy wstawianiu i aktualizacji."
+      },
+      "answers": [
+        {
+          "uk": "Забороняє зберігати порожнє значення NULL у стовпці",
+          "en": "Forbids storing an empty NULL value in the column",
+          "pl": "Zabrania przechowywania pustej wartości NULL w kolumnie",
+          "correct": true
+        },
+        {
+          "uk": "Гарантує унікальність кожного значення у стовпці",
+          "en": "Guarantees that every value in the column is unique",
+          "pl": "Gwarantuje unikalność każdej wartości w kolumnie",
+          "correct": false
+        },
+        {
+          "uk": "Задає автоматичне значення при вставці нового запису",
+          "en": "Sets an automatic value when inserting a new record",
+          "pl": "Ustawia automatyczną wartość przy wstawianiu nowego rekordu",
+          "correct": false
+        },
+        {
+          "uk": "Перевіряє, чи значення входить у допустимий діапазон",
+          "en": "Checks whether the value falls within an allowed range",
+          "pl": "Sprawdza, czy wartość mieści się w dozwolonym zakresie",
+          "correct": false
+        }
+      ]
+    },
+    {
+      "id": "sql-fundamentals-q10",
+      "order": 10,
+      "difficulty": "beginner",
+      "uk": {
+        "q": "Для чого використовується обмеження UNIQUE?",
+        "exp": "UNIQUE гарантує, що значення у стовпці або комбінації стовпців не повторюються. Часто застосовується для email, username та бізнес-ідентифікаторів."
+      },
+      "en": {
+        "q": "What is the UNIQUE constraint used for?",
+        "exp": "UNIQUE guarantees that values in a column or combination of columns are not repeated. Often used for email, username, and business identifiers."
+      },
+      "pl": {
+        "q": "Do czego służy ograniczenie UNIQUE?",
+        "exp": "UNIQUE gwarantuje, że wartości w kolumnie lub kombinacji kolumn się nie powtarzają. Często stosowane dla email, username i identyfikatorów biznesowych."
+      },
+      "answers": [
+        {
+          "uk": "Забороняє зберігати NULL у вказаному стовпці",
+          "en": "Forbids storing NULL in the specified column",
+          "pl": "Zabrania przechowywania NULL w wskazanej kolumnie",
+          "correct": false
+        },
+        {
+          "uk": "Автоматично індексує стовпець для пошуку",
+          "en": "Automatically indexes a column for lookups",
+          "pl": "Automatycznie indeksuje kolumnę do wyszukiwania",
+          "correct": false
+        },
+        {
+          "uk": "Задає зв'язок між двома різними таблицями",
+          "en": "Establishes a relationship between two tables",
+          "pl": "Ustanawia relację między dwiema tabelami",
+          "correct": false
+        },
+        {
+          "uk": "Забороняє повторення значень у стовпці або їх комбінації",
+          "en": "Forbids repeating values in a column or combination",
+          "pl": "Zabrania powtarzania wartości w kolumnie lub kombinacji",
+          "correct": true
+        }
+      ]
+    }
+  ]
+}
