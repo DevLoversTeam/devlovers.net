@@ -1,9 +1,10 @@
 import { count, eq } from 'drizzle-orm';
+import { revalidateTag } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { db } from '@/db';
-import { quizAttempts, quizzes, quizTranslations } from '@/db/schema/quiz';
+import { quizAttempts, quizTranslations,quizzes } from '@/db/schema/quiz';
 import {
   AdminApiDisabledError,
   AdminForbiddenError,
@@ -12,10 +13,10 @@ import {
 } from '@/lib/auth/admin';
 import { logError } from '@/lib/logging';
 import { invalidateQuizCache } from '@/lib/quiz/quiz-answers-redis';
-import { validateQuizForPublish } from '@/lib/validation/quiz-publish-validation';
 import { requireAdminCsrf } from '@/lib/security/admin-csrf';
 import { guardBrowserSameOrigin } from '@/lib/security/origin';
 import { patchQuizSchema } from '@/lib/validation/admin-quiz';
+import { validateQuizForPublish } from '@/lib/validation/quiz-publish-validation';
 
 export const runtime = 'nodejs';
 
@@ -123,6 +124,7 @@ export async function PATCH(
     }
 
     await invalidateQuizCache(quizId);
+    revalidateTag('active-quizzes', 'default');
 
     return noStoreJson({ success: true, quiz: { id: quizId, status: status ?? quiz.status, isActive } });
   } catch (error) {

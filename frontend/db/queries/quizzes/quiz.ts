@@ -197,7 +197,7 @@ export const getActiveQuizzes = cache(
         return rows;
       },
       ['active-quizzes', locale],
-      { revalidate: 300 }
+      { revalidate: 300, tags: ['active-quizzes'] }
     );
 
     return cached();
