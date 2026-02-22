@@ -10,12 +10,16 @@ interface QuizEditorListProps {
   questions: AdminQuizQuestion[];
   quizId: string;
   csrfToken: string;
+  csrfTokenDelete?: string;
+  isDraft?: boolean;
 }
 
 export function QuizEditorList({
   questions,
   quizId,
   csrfToken,
+  csrfTokenDelete,
+  isDraft,
 }: QuizEditorListProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -28,6 +32,8 @@ export function QuizEditorList({
           index={index}
           quizId={quizId}
           csrfToken={csrfToken}
+          csrfTokenDelete={csrfTokenDelete}
+          isDraft={isDraft}
           isEditing={editingId === question.id}
           isDisabled={editingId !== null && editingId !== question.id}
           onEditStart={() => setEditingId(question.id)}
