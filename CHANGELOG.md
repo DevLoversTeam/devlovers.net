@@ -692,6 +692,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Blog (Sanity):
   - Fixed images not rendering on Vercel production
   - Improved image optimization across blog pages and components
+- SSR hydration mismatch in AchievementBadge (client/server state sync)
+- Header hardcoded locale issues
+- Notification rendering consistency
 
 ### Changed
 
@@ -707,12 +710,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   - Unified dashboard cards styling using shared `dashboard-card` class
   - Clickable profile stats with smooth scroll navigation
   - Improved avatar detection logic
-
-### Fixed
-
-- SSR hydration mismatch in AchievementBadge (client/server state sync)
-- Header hardcoded locale issues
-- Notification rendering consistency
 
 ### Performance & Stability
 

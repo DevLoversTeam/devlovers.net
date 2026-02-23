@@ -1,6 +1,6 @@
 import { getUserLastAttemptPerQuiz, getUserQuizStats } from '@/db/queries/quizzes/quiz';
 import { getUserProfile } from '@/db/queries/users';
-import { getAllSponsors,getSponsors } from '@/lib/about/github-sponsors';
+import { getAllSponsors, getSponsors } from '@/lib/about/github-sponsors';
 import { type UserStats } from '@/lib/achievements';
 import { checkHasStarredRepo, resolveGitHubLogin } from '@/lib/github-stars';
 
