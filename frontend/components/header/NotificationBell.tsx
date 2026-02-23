@@ -2,9 +2,8 @@
 
 import { AnimatePresence, motion } from 'framer-motion';
 import { Bell, CheckCircle2, FileText, Info, ShoppingBag, Trophy, User } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
-
 import { useLocale, useTranslations } from 'next-intl';
+import { useEffect, useRef, useState } from 'react';
 
 import { getNotifications, markAllAsRead, markAsRead } from '@/actions/notifications';
 
@@ -112,8 +111,14 @@ export function NotificationBell() {
 
   const getNotificationMessage = (n: NotificationItem) => {
     if (n.type === 'ACHIEVEMENT' && n.metadata?.badgeId) {
-      const badgeName = tAch(`badges.${n.metadata.badgeId}.name`);
-      return tUnlocked('message', { name: badgeName });
+      const key = `badges.${n.metadata.badgeId}.name`;
+       
+      if (tAch.has(key as any)) {
+         
+        const badgeName = tAch(key as any);
+        return tUnlocked('message', { name: badgeName });
+      }
+      return n.message;
     }
     return n.message;
   };
