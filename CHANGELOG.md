@@ -684,3 +684,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - Stronger password validation and confirmation flow
 - Improved server-side validation and error reporting
+
+## [1.0.3] - 2026-02-23
+
+### Fixed
+
+- Blog (Sanity):
+  - Fixed images not rendering on Vercel production
+  - Improved image optimization across blog pages and components
+
+### Changed
+
+- Q&A UI:
+  - Updated Git category tab color for stronger visual distinction from HTML
+
+- Header & Localization:
+  - Translated all header UI strings (en / uk / pl)
+  - Notifications now fully localized with locale-aware relative time
+  - LanguageSwitcher and User menu labels localized
+
+- Dashboard UX:
+  - Unified dashboard cards styling using shared `dashboard-card` class
+  - Clickable profile stats with smooth scroll navigation
+  - Improved avatar detection logic
+
+### Fixed
+
+- SSR hydration mismatch in AchievementBadge (client/server state sync)
+- Header hardcoded locale issues
+- Notification rendering consistency
+
+### Performance & Stability
+
+- Improved client-render guards using stable subscription pattern
+- Reduced hydration inconsistencies in production
