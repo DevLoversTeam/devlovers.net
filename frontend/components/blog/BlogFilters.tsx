@@ -22,6 +22,7 @@ import { BlogPagination } from '@/components/blog/BlogPagination';
 import { usePathname, useRouter } from '@/i18n/routing';
 import { Link } from '@/i18n/routing';
 import { formatBlogDate } from '@/lib/blog/date';
+import { shouldBypassImageOptimization } from '@/lib/blog/image';
 
 export type PortableTextSpan = {
   _type: 'span';
@@ -492,6 +493,9 @@ export default function BlogFilters({
                     src={featuredPost.mainImage}
                     alt={featuredPost.title}
                     fill
+                    unoptimized={shouldBypassImageOptimization(
+                      featuredPost.mainImage
+                    )}
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 60vw, 720px"
                     className="scale-[1.02] object-cover transition-transform duration-300 group-hover:scale-[1.05]"
                     priority
@@ -565,6 +569,9 @@ export default function BlogFilters({
                     src={selectedAuthorData.image}
                     alt={selectedAuthorData.name || t('author')}
                     fill
+                    unoptimized={shouldBypassImageOptimization(
+                      selectedAuthorData.image
+                    )}
                     className="object-cover"
                   />
                 </div>
