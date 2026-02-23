@@ -70,10 +70,16 @@ export default async function LeaderboardPage() {
     // ── Inject star_gazer if user has starred the repo ─────────────────
     // Match by GitHub login (username) or by avatar URL base
     const avatarBase = user.avatar?.split('?')[0] ?? '';
+    const isGitHubAvatar = (() => {
+      try {
+        return new URL(avatarBase).hostname === 'avatars.githubusercontent.com';
+      } catch {
+        return false;
+      }
+    })();
     const hasStarred =
       stargazerLogins.has(nameLower) ||
-      (avatarBase.includes('avatars.githubusercontent.com') &&
-        stargazerAvatars.has(avatarBase));
+      (isGitHubAvatar && stargazerAvatars.has(avatarBase));
 
     if (hasStarred && !achievements.some(a => a.id === 'star_gazer')) {
       const def = ACHIEVEMENTS.find(a => a.id === 'star_gazer');

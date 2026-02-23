@@ -130,22 +130,32 @@ html {
 }
 
 *::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.25);
+  background: rgba(0, 0, 0, 0);
   border-radius: 3px;
+  transition: background 0.3s ease;
 }
 
-:is(.dark) *::-webkit-scrollbar-thumb,
-.dark::-webkit-scrollbar-thumb {
+html.is-scrolling *::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+html.is-scrolling:is(.dark) *::-webkit-scrollbar-thumb,
+html.is-scrolling .dark *::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.2);
 }
 
 @supports (-moz-appearance: none) {
   * {
     scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+    transition: scrollbar-color 0.3s ease;
+  }
+
+  html.is-scrolling * {
     scrollbar-color: rgba(0, 0, 0, 0.25) transparent;
   }
 
-  :is(.dark) * {
+  html.is-scrolling:is(.dark) * {
     scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
   }
 }
@@ -207,12 +217,10 @@ html {
 .qa-accordion-item {
   position: relative;
   overflow: hidden;
-  background-image: linear-gradient(
-    90deg,
-    transparent 0%,
-    transparent 54%,
-    var(--qa-accent-soft, rgba(161, 161, 170, 0.22)) 100%
-  );
+  background-image: linear-gradient(90deg,
+      transparent 0%,
+      transparent 54%,
+      var(--qa-accent-soft, rgba(161, 161, 170, 0.22)) 100%);
 }
 
 .qa-accordion-item:hover,
@@ -276,33 +284,30 @@ html {
 }
 
 @keyframes wave-clip {
+
   0%,
   100% {
-    clip-path: polygon(
-      0% 50%,
-      15% 48%,
-      32% 52%,
-      54% 60%,
-      70% 62%,
-      84% 60%,
-      100% 55%,
-      100% 100%,
-      0% 100%
-    );
+    clip-path: polygon(0% 50%,
+        15% 48%,
+        32% 52%,
+        54% 60%,
+        70% 62%,
+        84% 60%,
+        100% 55%,
+        100% 100%,
+        0% 100%);
   }
 
   50% {
-    clip-path: polygon(
-      0% 65%,
-      16% 70%,
-      34% 72%,
-      51% 68%,
-      67% 58%,
-      84% 52%,
-      100% 48%,
-      100% 100%,
-      0% 100%
-    );
+    clip-path: polygon(0% 65%,
+        16% 70%,
+        34% 72%,
+        51% 68%,
+        67% 58%,
+        84% 52%,
+        100% 48%,
+        100% 100%,
+        0% 100%);
   }
 }
 
@@ -322,8 +327,7 @@ html {
   }
 
   50% {
-    transform: translate(var(--card-x, 0), var(--card-y, 0)) scale(1.05)
-      rotate(calc(var(--card-rotate, 0deg) + var(--card-rotate-offset, 0deg)));
+    transform: translate(var(--card-x, 0), var(--card-y, 0)) scale(1.05) rotate(calc(var(--card-rotate, 0deg) + var(--card-rotate-offset, 0deg)));
   }
 
   100% {
@@ -400,6 +404,7 @@ html {
 }
 
 @keyframes float {
+
   0%,
   100% {
     transform: translateY(0);
@@ -468,16 +473,12 @@ html {
     0 0 0 2px rgba(0, 0, 0, 0.4), 0 0 0 7px rgba(0, 0, 0, 0.1),
     0 22px 60px rgba(0, 0, 0, 0.28);
 
-  --shop-hero-btn-success-bg: color-mix(
-    in oklab,
-    var(--shop-hero-btn-bg) 88%,
-    white
-  );
-  --shop-hero-btn-success-bg-hover: color-mix(
-    in oklab,
-    var(--shop-hero-btn-bg) 80%,
-    white
-  );
+  --shop-hero-btn-success-bg: color-mix(in oklab,
+      var(--shop-hero-btn-bg) 88%,
+      white);
+  --shop-hero-btn-success-bg-hover: color-mix(in oklab,
+      var(--shop-hero-btn-bg) 80%,
+      white);
   --shop-hero-btn-success-shadow: 0 22px 60px rgba(0, 0, 0, 0.25);
   --shop-hero-btn-success-shadow-hover: 0 28px 80px rgba(0, 0, 0, 0.32);
 }
@@ -530,16 +531,12 @@ html {
     0 0 0 2px rgba(255, 45, 85, 0.7), 0 0 0 7px rgba(255, 45, 85, 0.22),
     0 22px 70px rgba(255, 45, 85, 0.38);
 
-  --shop-hero-btn-success-bg: color-mix(
-    in oklab,
-    var(--accent-primary) 82%,
-    black
-  );
-  --shop-hero-btn-success-bg-hover: color-mix(
-    in oklab,
-    var(--accent-primary) 72%,
-    black
-  );
+  --shop-hero-btn-success-bg: color-mix(in oklab,
+      var(--accent-primary) 82%,
+      black);
+  --shop-hero-btn-success-bg-hover: color-mix(in oklab,
+      var(--accent-primary) 72%,
+      black);
   --shop-hero-btn-success-shadow: 0 22px 60px rgba(255, 45, 85, 0.45);
   --shop-hero-btn-success-shadow-hover: 0 28px 80px rgba(255, 45, 85, 0.6);
 }
@@ -599,6 +596,7 @@ html {
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   .animate-float,
   .animate-spin-slow,
   .animate-spin-slower,

@@ -1,5 +1,6 @@
 export * from './categories';
 export * from './emailVerificationTokens';
+export * from './notifications';
 export * from './passwordResetTokens';
 export * from './points';
 export * from './questions';
@@ -7,4 +8,3 @@ export * from './quiz';
 export * from './sessions';
 export * from './shop';
 export * from './users';
-export * from './notifications';

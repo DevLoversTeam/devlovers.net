@@ -41,7 +41,11 @@
     "login": "Zaloguj się",
     "logout": "Wyloguj się",
     "signup": "Zarejestruj się",
-    "dashboard": "Panel"
+    "dashboard": "Panel",
+    "myAccount": "Moje konto",
+    "languageSwitcher": {
+      "title": "Język"
+    }
   },
   "homepage": {
     "title": "DevLovers",
@@ -1146,6 +1150,7 @@
       "subtitle": "Twoje ostatnie wyniki quizów",
       "noAttempts": "Nie przeszedłeś jeszcze żadnego quizu",
       "startQuiz": "Spróbuj",
+      "quiz": "Quiz",
       "score": "Wynik",
       "accuracy": "Skuteczność",
       "integrity": "Czystość",
@@ -1510,6 +1515,38 @@
       "contact": {
         "title": "10. Kontakt",
         "content": "Pytania:"
+      }
+    }
+  },
+  "notifications": {
+    "ui": {
+      "title": "Powiadomienia",
+      "markAllRead": "Zaznacz wszystkie jako przeczytane",
+      "syncing": "Synchronizowanie",
+      "emptyTitle": "Wszystko przejrzane!",
+      "emptySubtitle": "Przejrzałeś całą ostatnią aktywność.",
+      "justNow": "Przed chwilą",
+      "types": {
+        "SYSTEM": "System",
+        "ACHIEVEMENT": "Osiągnięcie",
+        "ARTICLE": "Artykuł",
+        "SHOP": "Sklep"
+      }
+    },
+    "achievement": {
+      "unlocked": {
+        "title": "Osiągnięcie odblokowane!",
+        "message": "Właśnie zdobyłeś odznakę {id}!"
+      }
+    },
+    "account": {
+      "nameChanged": {
+        "title": "Profil zaktualizowany",
+        "message": "Twoja nazwa wyświetlana została zmieniona na {name}"
+      },
+      "passwordChanged": {
+        "title": "Aktualizacja bezpieczeństwa",
+        "message": "Twoje hasło zostało pomyślnie zaktualizowane"
       }
     }
   }

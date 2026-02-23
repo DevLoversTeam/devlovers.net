@@ -1,20 +1,23 @@
 'use client';
 
-import { Bell, FileText, ShoppingBag, Trophy, Info, CheckCircle2, User } from 'lucide-react';
-import { useTranslations } from 'next-intl';
-import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { Bell, CheckCircle2, FileText, Info, ShoppingBag, Trophy, User } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+
+import { useLocale, useTranslations } from 'next-intl';
+
 import { getNotifications, markAllAsRead, markAsRead } from '@/actions/notifications';
 
-function getRelativeTime(date: Date) {
-  const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
-  const daysDifference = Math.round((date.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+function getRelativeTime(date: Date, locale: string, justNow: string) {
+  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
+  const now = new Date().getTime();
+  const daysDifference = Math.round((date.getTime() - now) / (1000 * 60 * 60 * 24));
   if (daysDifference === 0) {
-    const hoursDifference = Math.round((date.getTime() - new Date().getTime()) / (1000 * 60 * 60));
+    const hoursDifference = Math.round((date.getTime() - now) / (1000 * 60 * 60));
     if (hoursDifference === 0) {
-       const minutesDifference = Math.round((date.getTime() - new Date().getTime()) / (1000 * 60));
-       if (minutesDifference === 0) return 'Just now';
-       return rtf.format(minutesDifference, 'minute');
+      const minutesDifference = Math.round((date.getTime() - now) / (1000 * 60));
+      if (minutesDifference === 0) return justNow;
+      return rtf.format(minutesDifference, 'minute');
     }
     return rtf.format(hoursDifference, 'hour');
   }
@@ -32,13 +35,13 @@ type NotificationItem = {
 };
 
 export function NotificationBell() {
+  const t = useTranslations('notifications.ui');
+  const locale = useLocale();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const t = useTranslations('navigation');
-  
+
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [displayLimit, setDisplayLimit] = useState(5);
 
   const fetchNotifications = async () => {
     try {
@@ -132,7 +135,7 @@ export function NotificationBell() {
     <div className="relative flex items-center" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="text-muted-foreground hover:bg-secondary active:bg-secondary relative flex h-9 w-9 items-center justify-center rounded-md transition-colors"
+        className="text-muted-foreground hover:bg-secondary active:bg-secondary hover:text-(--accent-primary) relative flex h-9 w-9 items-center justify-center rounded-full border border-transparent transition-colors hover:border-gray-200 dark:hover:border-neutral-800"
         aria-label="Notifications"
       >
         <Bell className="h-4 w-4" />
@@ -155,7 +158,7 @@ export function NotificationBell() {
           >
             <div className="mb-2 flex items-center justify-between border-b border-gray-100/50 px-2 pb-2 dark:border-white/10">
               <p className="text-sm font-semibold tracking-wide text-gray-900 dark:text-white">
-                Notifications
+                {t('title')}
               </p>
               {unreadCount > 0 && (
                 <button
@@ -163,18 +166,18 @@ export function NotificationBell() {
                   className="group flex items-center gap-1.5 text-xs font-semibold text-(--accent-primary) transition-colors hover:text-(--accent-hover)"
                 >
                   <CheckCircle2 className="h-3.5 w-3.5 transition-transform group-hover:scale-110" />
-                  Mark all as read
+                  {t('markAllRead')}
                 </button>
               )}
             </div>
 
-            <div className="flex max-h-[400px] flex-col gap-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-200 hover:scrollbar-thumb-gray-300 dark:scrollbar-thumb-white/10 dark:hover:scrollbar-thumb-white/20">
+            <div className="flex max-h-100 flex-col gap-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-200 hover:scrollbar-thumb-gray-300 dark:scrollbar-thumb-white/10 dark:hover:scrollbar-thumb-white/20">
               {loading ? (
                 <div className="flex flex-col items-center justify-center py-10 opacity-50 px-4">
                   <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} className="mb-3">
                     <Bell className="h-5 w-5 text-muted-foreground" />
                   </motion.div>
-                  <p className="text-xs tracking-wider text-muted-foreground uppercase text-center">Syncing</p>
+                  <p className="text-xs tracking-wider text-muted-foreground uppercase text-center">{t('syncing')}</p>
                 </div>
               ) : notifications.length === 0 ? (
                 <motion.div 
@@ -188,8 +191,8 @@ export function NotificationBell() {
                       <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                     </div>
                   </div>
-                  <p className="text-sm font-bold text-gray-900 dark:text-white">All caught up!</p>
-                  <p className="text-xs text-muted-foreground mt-1 max-w-[200px] mx-auto">You've handled all your recent activity.</p>
+                  <p className="text-sm font-bold text-gray-900 dark:text-white">{t('emptyTitle')}</p>
+                  <p className="text-xs text-muted-foreground mt-1 max-w-50 mx-auto">{t('emptySubtitle')}</p>
                 </motion.div>
               ) : (
                 <AnimatePresence mode="popLayout" initial={false}>
@@ -230,11 +233,11 @@ export function NotificationBell() {
                         </p>
                         <div className="mt-2 flex items-center gap-2">
                            <span className="text-[10px] font-bold uppercase tracking-widest opacity-50">
-                             {getIconForType(notification.type).type.name === 'User' ? 'System' : notification.type}
+                             {t(`types.${notification.type as 'SYSTEM' | 'ACHIEVEMENT' | 'ARTICLE' | 'SHOP'}` as const)}
                            </span>
                            <span className="h-0.5 w-0.5 rounded-full bg-muted-foreground/30" />
                            <span className="text-[10px] font-medium opacity-40">
-                             {getRelativeTime(notification.createdAt)}
+                             {getRelativeTime(notification.createdAt, locale, t('justNow'))}
                            </span>
                         </div>
                       </div>

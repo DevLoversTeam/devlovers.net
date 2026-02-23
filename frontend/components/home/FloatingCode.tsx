@@ -1,7 +1,9 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+
+const emptySubscribe = () => () => {};
 
 interface CodeSnippet {
   id: string;
@@ -200,13 +202,8 @@ function CodeBlock({ snippet }: { snippet: CodeSnippet }) {
 }
 
 export function FloatingCode() {
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  if (!isMounted) return null;
+  const isClient = useSyncExternalStore(emptySubscribe, () => true, () => false);
+  if (!isClient) return null;
 
   return (
     <div

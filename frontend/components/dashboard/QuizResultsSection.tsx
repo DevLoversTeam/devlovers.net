@@ -1,6 +1,6 @@
 'use client';
 
-import { Shield, Star, ClipboardList } from 'lucide-react';
+import { ClipboardList } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import { QuizResultRow } from '@/components/dashboard/QuizResultRow';
@@ -15,8 +15,7 @@ interface QuizResultsSectionProps {
 export function QuizResultsSection({ attempts, locale }: QuizResultsSectionProps) {
   const t = useTranslations('dashboard.quizResults');
 
-  const cardStyles =
-    'relative z-10 flex flex-col overflow-hidden rounded-3xl border border-gray-200 bg-white/10 p-6 sm:p-8 lg:p-10 shadow-sm backdrop-blur-md dark:border-neutral-800 dark:bg-neutral-900/10';
+  const cardStyles = 'dashboard-card flex flex-col p-6 sm:p-8 lg:p-10';
 
   const iconBoxStyles = 'shrink-0 rounded-xl bg-white/40 border border-white/20 shadow-xs backdrop-blur-xs p-3 dark:bg-white/5 dark:border-white/10';
 
@@ -67,7 +66,7 @@ export function QuizResultsSection({ attempts, locale }: QuizResultsSectionProps
 
       <div className="mb-2 hidden items-center gap-2 px-4 md:grid md:grid-cols-[minmax(0,4fr)_1fr_1.5fr_1fr_1fr_1fr_20px] lg:grid-cols-[minmax(0,4fr)_1fr_1.5fr_1fr_1fr_1fr_1.2fr_20px]">
         <div className={headerCellStyles}>
-          Quiz
+          {t('quiz')}
         </div>
         <div className={`justify-center ${headerCellStyles}`}>
           {t('score')}

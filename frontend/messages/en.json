@@ -41,7 +41,11 @@
     "login": "Log in",
     "logout": "Log out",
     "signup": "Sign up",
-    "dashboard": "Dashboard"
+    "dashboard": "Dashboard",
+    "myAccount": "My Account",
+    "languageSwitcher": {
+      "title": "Language"
+    }
   },
   "homepage": {
     "title": "DevLovers — Technical Interview Platform",
@@ -1146,6 +1150,7 @@
       "subtitle": "Your recent quiz performance",
       "noAttempts": "You haven't taken any quizzes yet",
       "startQuiz": "Try one",
+      "quiz": "Quiz",
       "score": "Score",
       "accuracy": "Accuracy",
       "integrity": "Integrity",
@@ -1514,6 +1519,26 @@
     }
   },
   "notifications": {
+    "ui": {
+      "title": "Notifications",
+      "markAllRead": "Mark all as read",
+      "syncing": "Syncing",
+      "emptyTitle": "All caught up!",
+      "emptySubtitle": "You've handled all your recent activity.",
+      "justNow": "Just now",
+      "types": {
+        "SYSTEM": "System",
+        "ACHIEVEMENT": "Achievement",
+        "ARTICLE": "Article",
+        "SHOP": "Shop"
+      }
+    },
+    "achievement": {
+      "unlocked": {
+        "title": "Achievement Unlocked!",
+        "message": "You just earned the {id} badge!"
+      }
+    },
     "account": {
       "nameChanged": {
         "title": "Account Updated",

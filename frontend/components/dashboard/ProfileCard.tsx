@@ -12,7 +12,6 @@ import {
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-
 import { toast } from 'sonner';
 
 import { updateName, updatePassword } from '@/actions/profile';
@@ -55,11 +54,6 @@ export function ProfileCard({
 
   const cardStyles = 'dashboard-card flex flex-col p-5 sm:p-6 lg:p-8';
 
-  const scrollTo = (id: string) => (e: React.MouseEvent) => {
-    e.preventDefault();
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-  };
-
   const handleUpdateName = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSaving(true);
@@ -70,7 +64,7 @@ export function ProfileCard({
       if (!result.success) {
         toast.error(result.error || 'Failed to update name');
       }
-    } catch (error) {
+    } catch {
       toast.error('Something went wrong');
     } finally {
       setIsSaving(false);
@@ -89,7 +83,7 @@ export function ProfileCard({
       } else {
         toast.error(result.error || 'Failed to update password');
       }
-    } catch (error) {
+    } catch {
       toast.error('Something went wrong');
     } finally {
       setIsSaving(false);
@@ -97,7 +91,7 @@ export function ProfileCard({
   };
 
   const statItemBase =
-    'flex flex-row items-center gap-2 sm:gap-3 rounded-2xl border border-gray-100 bg-white/50 p-2 sm:p-3 text-left dark:border-white/5 dark:bg-black/20 xl:flex-row-reverse xl:items-center xl:text-right xl:p-3 xl:px-4';
+    'flex flex-row items-center gap-2 sm:gap-3 rounded-2xl border border-gray-100 bg-white/50 p-2 sm:p-3 text-left dark:border-white/5 dark:bg-black/20 xl:flex-row-reverse xl:items-center xl:text-right xl:p-3 xl:px-4 transition-all hover:-translate-y-0.5 hover:border-(--accent-primary)/30 hover:bg-white/80 dark:hover:border-(--accent-primary)/20 dark:hover:bg-black/40';
 
   const iconBoxStyles = 'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/40 border border-white/20 shadow-xs backdrop-blur-xs xl:h-auto xl:w-auto xl:p-2.5 dark:bg-white/5 dark:border-white/10';
 
@@ -141,9 +135,13 @@ export function ProfileCard({
             </div>
           </div>
         </div>
-        <dl className="grid w-full grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3 xl:flex xl:w-auto xl:flex-nowrap xl:items-center xl:justify-end xl:gap-2 2xl:gap-3">
+        <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3 xl:flex xl:w-auto xl:flex-nowrap xl:items-center xl:justify-end xl:gap-2 2xl:gap-3">
           {/* Attempts */}
-          <div className={statItemBase}>
+          <a
+            href="#quiz-results"
+            className={statItemBase}
+            onClick={e => { e.preventDefault(); document.getElementById('quiz-results')?.scrollIntoView({ behavior: 'smooth' }); }}
+          >
             <div className={iconBoxStyles}>
               <Target className="h-5 w-5 text-purple-600 dark:text-purple-400" />
             </div>
@@ -155,10 +153,14 @@ export function ProfileCard({
                 {totalAttempts}
               </dd>
             </div>
-          </div>
+          </a>
 
           {/* Points */}
-          <div className={statItemBase}>
+          <a
+            href="#stats"
+            className={statItemBase}
+            onClick={e => { e.preventDefault(); document.getElementById('stats')?.scrollIntoView({ behavior: 'smooth' }); }}
+          >
             <div className={iconBoxStyles}>
               <Trophy className="h-5 w-5 text-amber-600 dark:text-amber-400" />
             </div>
@@ -170,10 +172,10 @@ export function ProfileCard({
                 {user.points}
               </dd>
             </div>
-          </div>
+          </a>
 
           {/* Global rank */}
-          <div className={statItemBase}>
+          <Link href="/leaderboard" className={statItemBase}>
             <div className={iconBoxStyles}>
               <Globe className="h-5 w-5 text-teal-600 dark:text-teal-400" />
             </div>
@@ -185,7 +187,7 @@ export function ProfileCard({
                 {globalRank ? `#${globalRank}` : '—'}
               </dd>
             </div>
-          </div>
+          </Link>
 
           {/* Joined */}
           <div className="flex flex-row items-center gap-2 rounded-2xl border border-gray-100 bg-white/50 p-2 text-left sm:gap-3 sm:p-3 xl:flex-row-reverse xl:items-center xl:p-3 xl:px-4 xl:text-right dark:border-white/5 dark:bg-black/20">
@@ -206,7 +208,7 @@ export function ProfileCard({
               </dd>
             </div>
           </div>
-        </dl>
+        </div>
       </div>
 
       <div className="mt-6 border-t border-gray-100 pt-5 dark:border-white/5">

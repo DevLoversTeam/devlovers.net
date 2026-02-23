@@ -52,12 +52,7 @@ export function ActivityHeatmapCard({ attempts, locale, currentStreak }: Activit
     left: number;
   } | null>(null);
   
-  const cardStyles = `
-    relative z-10 flex flex-col justify-between overflow-hidden rounded-3xl
-    border border-gray-200 bg-white/10 shadow-sm backdrop-blur-md
-    dark:border-neutral-800 dark:bg-neutral-900/10
-    p-6 sm:p-8
-  `;
+  const cardStyles = 'dashboard-card flex flex-col justify-between p-6 sm:p-8';
 
   const iconBoxStyles = 'shrink-0 rounded-xl bg-white/40 border border-white/20 shadow-xs backdrop-blur-xs p-3 dark:bg-white/5 dark:border-white/10';
 
