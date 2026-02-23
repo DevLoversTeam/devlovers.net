@@ -1,7 +1,6 @@
 'use server';
 
 import { eq, inArray } from 'drizzle-orm';
-import { getTranslations } from 'next-intl/server';
 
 import { db } from '@/db';
 import { awardQuizPoints, calculateQuizPoints } from '@/db/queries/points';
@@ -232,14 +231,15 @@ export async function submitQuizAttempt(
       const earnedAfter = computeAchievements(statsAfter).filter(a => a.earned);
       const newlyEarned = earnedAfter.filter(a => !earnedBefore.has(a.id));
 
-      // Trigger notifications for any newly earned achievements
-      const tNotify = await getTranslations('notifications.achievement.unlocked');
+      // Trigger notifications for any newly earned achievements.
+      // title/message are stable English fallbacks; NotificationBell renders
+      // them dynamically in the viewer's locale using metadata.badgeId.
       for (const achievement of newlyEarned) {
         await createNotification({
           userId: session.id,
           type: 'ACHIEVEMENT',
-          title: tNotify('title'),
-          message: tNotify('message', { id: achievement.id }),
+          title: 'Achievement Unlocked!',
+          message: achievement.id,
           metadata: { badgeId: achievement.id, icon: achievement.icon },
         });
       }

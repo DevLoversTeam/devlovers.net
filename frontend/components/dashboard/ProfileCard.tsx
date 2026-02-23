@@ -47,6 +47,8 @@ export function ProfileCard({
   const [isSaving, setIsSaving] = useState(false);
 
   const username = user.name || user.email.split('@')[0];
+  const roleLabel =
+    user.role === 'admin' ? t('roles.admin') : t('roles.user');
   const seed = `${username}-${user.id}`;
   const avatarSrc =
     user.image ||
@@ -123,7 +125,7 @@ export function ProfileCard({
 
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center rounded-full bg-(--accent-primary)/10 px-3 py-1 text-xs font-bold tracking-wider text-(--accent-primary) uppercase">
-                {user.role || t('defaultRole')}
+                {roleLabel}
               </span>
               {isSponsor && (
                 <span className="relative inline-flex items-center gap-1.5 overflow-hidden rounded-full border border-(--accent-primary)/20 bg-(--accent-primary)/10 px-3 py-1 text-xs font-bold tracking-wider text-(--accent-primary) uppercase">
@@ -146,12 +148,12 @@ export function ProfileCard({
               <Target className="h-5 w-5 text-purple-600 dark:text-purple-400" />
             </div>
             <div className="flex w-full flex-col items-start overflow-hidden xl:items-end">
-              <dt className="truncate text-[10px] font-medium tracking-wider text-gray-500 uppercase xl:mb-0.5 xl:font-bold xl:text-gray-400 dark:text-gray-400">
+              <span className="truncate text-[10px] font-medium tracking-wider text-gray-500 uppercase xl:mb-0.5 xl:font-bold xl:text-gray-400 dark:text-gray-400">
                 {tStats('totalAttempts')}
-              </dt>
-              <dd className="truncate text-base leading-tight font-bold text-gray-900 sm:text-lg xl:text-xl xl:font-black dark:text-white">
+              </span>
+              <span className="truncate text-base leading-tight font-bold text-gray-900 sm:text-lg xl:text-xl xl:font-black dark:text-white">
                 {totalAttempts}
-              </dd>
+              </span>
             </div>
           </a>
 
@@ -165,12 +167,12 @@ export function ProfileCard({
               <Trophy className="h-5 w-5 text-amber-600 dark:text-amber-400" />
             </div>
             <div className="flex w-full flex-col items-start overflow-hidden xl:items-end">
-              <dt className="truncate text-[10px] font-medium tracking-wider text-gray-500 uppercase xl:mb-0.5 xl:font-bold xl:text-gray-400 dark:text-gray-400">
+              <span className="truncate text-[10px] font-medium tracking-wider text-gray-500 uppercase xl:mb-0.5 xl:font-bold xl:text-gray-400 dark:text-gray-400">
                 {t('totalPoints')}
-              </dt>
-              <dd className="truncate text-base leading-tight font-bold text-gray-900 sm:text-lg xl:text-xl xl:font-black dark:text-white">
+              </span>
+              <span className="truncate text-base leading-tight font-bold text-gray-900 sm:text-lg xl:text-xl xl:font-black dark:text-white">
                 {user.points}
-              </dd>
+              </span>
             </div>
           </a>
 
@@ -180,12 +182,12 @@ export function ProfileCard({
               <Globe className="h-5 w-5 text-teal-600 dark:text-teal-400" />
             </div>
             <div className="flex w-full flex-col items-start overflow-hidden xl:items-end">
-              <dt className="truncate text-[10px] font-medium tracking-wider text-gray-500 uppercase xl:mb-0.5 xl:font-bold xl:text-gray-400 dark:text-gray-400">
+              <span className="truncate text-[10px] font-medium tracking-wider text-gray-500 uppercase xl:mb-0.5 xl:font-bold xl:text-gray-400 dark:text-gray-400">
                 {t('globalRank')}
-              </dt>
-              <dd className="truncate text-base leading-tight font-bold text-gray-900 sm:text-lg xl:text-xl xl:font-black dark:text-white">
+              </span>
+              <span className="truncate text-base leading-tight font-bold text-gray-900 sm:text-lg xl:text-xl xl:font-black dark:text-white">
                 {globalRank ? `#${globalRank}` : '—'}
-              </dd>
+              </span>
             </div>
           </Link>
 
@@ -195,17 +197,17 @@ export function ProfileCard({
               <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             </div>
             <div className="flex w-full flex-col items-start overflow-hidden xl:items-end">
-              <dt className="truncate text-[10px] font-medium tracking-wider text-gray-500 uppercase xl:mb-0.5 xl:font-bold xl:text-gray-400 dark:text-gray-400">
+              <span className="truncate text-[10px] font-medium tracking-wider text-gray-500 uppercase xl:mb-0.5 xl:font-bold xl:text-gray-400 dark:text-gray-400">
                 {t('joined')}
-              </dt>
-              <dd className="truncate text-sm leading-tight font-bold whitespace-nowrap text-gray-700 sm:text-base xl:text-lg dark:text-gray-300 xl:dark:text-gray-300">
+              </span>
+              <span className="truncate text-sm leading-tight font-bold whitespace-nowrap text-gray-700 sm:text-base xl:text-lg dark:text-gray-300 xl:dark:text-gray-300">
                 {user.createdAt
                   ? new Date(user.createdAt).toLocaleDateString(locale, {
                       year: 'numeric',
                       month: 'short',
                     })
                   : '—'}
-              </dd>
+              </span>
             </div>
           </div>
         </div>

@@ -36,6 +36,8 @@ type NotificationItem = {
 
 export function NotificationBell() {
   const t = useTranslations('notifications.ui');
+  const tUnlocked = useTranslations('notifications.achievement.unlocked');
+  const tAch = useTranslations('dashboard.achievements');
   const locale = useLocale();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -100,6 +102,29 @@ export function NotificationBell() {
       prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
     );
   };
+
+  const getNotificationTitle = (n: NotificationItem) => {
+    if (n.type === 'ACHIEVEMENT' && n.metadata?.badgeId) {
+      return tUnlocked('title');
+    }
+    return n.title;
+  };
+
+  const getNotificationMessage = (n: NotificationItem) => {
+    if (n.type === 'ACHIEVEMENT' && n.metadata?.badgeId) {
+      const badgeName = tAch(`badges.${n.metadata.badgeId}.name`);
+      return tUnlocked('message', { name: badgeName });
+    }
+    return n.message;
+  };
+
+  const KNOWN_TYPES = ['SYSTEM', 'ACHIEVEMENT', 'ARTICLE', 'SHOP'] as const;
+  type KnownType = (typeof KNOWN_TYPES)[number];
+
+  const getSafeNotificationType = (type: string): KnownType =>
+    (KNOWN_TYPES as readonly string[]).includes(type)
+      ? (type as KnownType)
+      : 'SYSTEM';
 
   const getIconForType = (type: string) => {
     switch (type) {
@@ -222,18 +247,18 @@ export function NotificationBell() {
                       <div className="flex-1 space-y-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
                           <p className={`text-sm leading-tight pt-0.5 ${notification.isRead ? 'font-medium' : 'font-bold'}`}>
-                            {notification.title}
+                            {getNotificationTitle(notification)}
                           </p>
                           {!notification.isRead && (
                             <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-(--accent-primary) shadow-[0_0_8px_var(--accent-primary)]" title="Unread" />
                           )}
                         </div>
                         <p className={`text-xs leading-relaxed line-clamp-2 ${notification.isRead ? 'opacity-70' : 'opacity-90'}`}>
-                          {notification.message}
+                          {getNotificationMessage(notification)}
                         </p>
                         <div className="mt-2 flex items-center gap-2">
                            <span className="text-[10px] font-bold uppercase tracking-widest opacity-50">
-                             {t(`types.${notification.type as 'SYSTEM' | 'ACHIEVEMENT' | 'ARTICLE' | 'SHOP'}` as const)}
+                             {t(`types.${getSafeNotificationType(notification.type)}` as const)}
                            </span>
                            <span className="h-0.5 w-0.5 rounded-full bg-muted-foreground/30" />
                            <span className="text-[10px] font-medium opacity-40">

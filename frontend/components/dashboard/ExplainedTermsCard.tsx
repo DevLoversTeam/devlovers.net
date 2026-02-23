@@ -274,7 +274,7 @@ export function ExplainedTermsCard() {
 
                   return (
                     <div
-                      key={`${term}-${index}`}
+                      key={term}
                       ref={setTermRef(index)}
                       onDragOver={handleDragOver}
                       onDrop={() => handleDrop(index)}

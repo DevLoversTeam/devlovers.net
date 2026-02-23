@@ -116,8 +116,16 @@
   --sponsor-hover: #bf3989;
 }
 
+@property --scroll-thumb-alpha {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+
 html {
   overflow-x: hidden;
+  --scroll-thumb-alpha: 0;
+  transition: --scroll-thumb-alpha 0.3s ease;
 }
 
 *::-webkit-scrollbar {
@@ -130,18 +138,22 @@ html {
 }
 
 *::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0);
+  background: rgba(0, 0, 0, var(--scroll-thumb-alpha));
   border-radius: 3px;
-  transition: background 0.3s ease;
 }
 
-html.is-scrolling *::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.25);
+html:is(.dark) *::-webkit-scrollbar-thumb,
+html .dark *::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, var(--scroll-thumb-alpha));
 }
 
-html.is-scrolling:is(.dark) *::-webkit-scrollbar-thumb,
-html.is-scrolling .dark *::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
+html.is-scrolling {
+  --scroll-thumb-alpha: 0.25;
+}
+
+html.is-scrolling:is(.dark),
+html.is-scrolling .dark {
+  --scroll-thumb-alpha: 0.2;
 }
 
 @supports (-moz-appearance: none) {
@@ -392,6 +404,10 @@ html.is-scrolling .dark *::-webkit-scrollbar-thumb {
   /* 3D Flip Card */
   .perspective-1000 {
     perspective: 1000px;
+  }
+
+  .perspective-midrange {
+    perspective: 800px;
   }
 
   .preserve-3d {

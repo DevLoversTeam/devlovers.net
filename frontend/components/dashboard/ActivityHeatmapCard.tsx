@@ -471,8 +471,8 @@ export function ActivityHeatmapCard({ attempts, locale, currentStreak }: Activit
                   : 'text-(--accent-primary)'
               }`}>
                 {tooltip.count === 0
-                  ? 'No activity'
-                  : `${tooltip.count} ${tooltip.count === 1 ? 'attempt' : 'attempts'}`}
+                  ? t('heatmapNoActivity')
+                  : t('heatmapAttempts', { count: tooltip.count })}
               </p>
               <div className="absolute left-1/2 -translate-x-1/2 top-full w-2 h-2 overflow-hidden">
                 <div className="w-2 h-2 bg-gray-900 dark:bg-white rotate-45 -translate-y-1" />
@@ -508,7 +508,7 @@ export function ActivityHeatmapCard({ attempts, locale, currentStreak }: Activit
           {totalActiveDays > 0 && (
             <span className="flex items-center gap-1">
               <CalendarDays className="h-3 w-3" />
-              <span>{totalActiveDays} active day{totalActiveDays !== 1 ? 's' : ''}</span>
+              <span>{t('heatmapActiveDays', { count: totalActiveDays })}</span>
             </span>
           )}
         </div>

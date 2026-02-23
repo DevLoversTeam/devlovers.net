@@ -12,7 +12,7 @@
   "aria": {
     "primaryNav": "Nawigacja główna",
     "dashboard": "Panel",
-    "admin": "Admin panel",
+    "admin": "Panel administratora",
     "blogCategories": "Kategorie bloga",
     "searchBlog": "Szukaj w blogu",
     "toggleMenu": "Przełącz menu",
@@ -27,7 +27,7 @@
   },
   "mobileMenu": {
     "newProduct": "Nowy produkt",
-    "admin": "Admin"
+    "admin": "Administrator"
   },
   "navigation": {
     "home": "Strona główna",
@@ -1086,12 +1086,18 @@
   "dashboard": {
     "metaTitle": "Panel | DevLovers",
     "metaDescription": "Śledź swój postęp i wyniki quizów",
-    "title": "Panel użytkownika",
+    "title": "Panel",
     "subtitle": "Witaj z powrotem na swoim placu treningowym",
     "supportLink": "Opinie",
     "profile": {
       "title": "Profil",
       "subtitle": "Zarządzaj swoim profilem publicznym i preferencjami",
+      "defaultName": "Programista",
+      "defaultRole": "użytkownik",
+      "roles": {
+        "user": "Użytkownik",
+        "admin": "Administrator"
+      },
       "sponsor": "Sponsor",
       "becomeSponsor": "Zostań sponsorem",
       "supportAgain": "Okaż więcej wsparcia",
@@ -1135,7 +1141,10 @@
       "last6Months": "Ostatnie 6 miesięcy",
       "lastYear": "Ten rok",
       "totalActiveDays": "Aktywne dni",
-      "mostActiveMonth": "Aktywny miesiąc"
+      "mostActiveMonth": "Aktywny miesiąc",
+      "heatmapNoActivity": "Brak aktywności",
+      "heatmapAttempts": "{count, plural, one {# próba} few {# próby} many {# prób} other {# próby}}",
+      "heatmapActiveDays": "{count, plural, one {# aktywny dzień} few {# aktywne dni} many {# aktywnych dni} other {# aktywnych dni}}"
     },
     "quizSaved": {
       "title": "Wynik quizu zapisany!",
@@ -1536,7 +1545,7 @@
     "achievement": {
       "unlocked": {
         "title": "Osiągnięcie odblokowane!",
-        "message": "Właśnie zdobyłeś odznakę {id}!"
+        "message": "Właśnie zdobyłeś odznakę {name}!"
       }
     },
     "account": {

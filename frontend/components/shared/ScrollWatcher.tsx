@@ -18,6 +18,7 @@ export function ScrollWatcher() {
     return () => {
       window.removeEventListener('scroll', onScroll);
       clearTimeout(timeout);
+      document.documentElement.classList.remove('is-scrolling');
     };
   }, []);
 
