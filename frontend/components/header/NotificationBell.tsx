@@ -161,7 +161,7 @@ export function NotificationBell() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="text-muted-foreground hover:bg-secondary active:bg-secondary hover:text-(--accent-primary) relative flex h-9 w-9 items-center justify-center rounded-full border border-transparent transition-colors hover:border-gray-200 dark:hover:border-neutral-800"
-        aria-label="Notifications"
+        aria-label={t('title')}
       >
         <Bell className="h-4 w-4" />
         {unreadCount > 0 && (
