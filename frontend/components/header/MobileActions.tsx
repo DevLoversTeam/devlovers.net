@@ -4,6 +4,7 @@ import { BlogHeaderSearch } from '@/components/blog/BlogHeaderSearch';
 import { AppMobileMenu } from '@/components/header/AppMobileMenu';
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
 import { CartButton } from '@/components/shop/header/CartButton';
+
 import { NotificationBell } from './NotificationBell';
 
 type Category = {

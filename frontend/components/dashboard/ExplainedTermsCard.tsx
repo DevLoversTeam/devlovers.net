@@ -230,7 +230,7 @@ export function ExplainedTermsCard() {
   const hasTerms = terms.length > 0;
   const hasHiddenTerms = hiddenTerms.length > 0;
 
-  const cardStyles = 'dashboard-card flex flex-col p-6 sm:p-8 lg:p-10 hover:translate-y-0 hover:shadow-sm';
+  const cardStyles = 'dashboard-card flex flex-col p-6 sm:p-8 lg:p-10';
   const iconBoxStyles = 'shrink-0 rounded-xl bg-white/40 border border-white/20 shadow-xs backdrop-blur-xs p-3 dark:bg-white/5 dark:border-white/10';
 
   return (
@@ -274,7 +274,7 @@ export function ExplainedTermsCard() {
 
                   return (
                     <div
-                      key={`${term}-${index}`}
+                      key={term}
                       ref={setTermRef(index)}
                       onDragOver={handleDragOver}
                       onDrop={() => handleDrop(index)}

@@ -20,7 +20,7 @@ export function AchievementsSection({
 
   const earnedCount = achievements.filter(a => a.earned).length;
 
-  const cardStyles = 'dashboard-card hover:translate-y-0 hover:shadow-sm';
+  const cardStyles = 'dashboard-card';
   const iconBoxStyles = 'shrink-0 rounded-xl bg-white/40 border border-white/20 shadow-xs backdrop-blur-xs p-3 dark:bg-white/5 dark:border-white/10';
 
   const previewBadges = achievements.slice(0, 6);

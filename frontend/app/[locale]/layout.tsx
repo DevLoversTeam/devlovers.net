@@ -10,6 +10,7 @@ import { AppChrome } from '@/components/header/AppChrome';
 import { MainSwitcher } from '@/components/header/MainSwitcher';
 import { CookieBanner } from '@/components/shared/CookieBanner';
 import Footer from '@/components/shared/Footer';
+import { ScrollWatcher } from '@/components/shared/ScrollWatcher';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
 import { locales } from '@/i18n/config';
 import { getCurrentUser } from '@/lib/auth';
@@ -78,6 +79,7 @@ export default async function LocaleLayout({
         <Footer />
         <Toaster position="top-right" richColors expand />
         <CookieBanner />
+        <ScrollWatcher />
       </ThemeProvider>
     </NextIntlClientProvider>
   );

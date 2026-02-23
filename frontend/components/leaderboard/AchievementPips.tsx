@@ -1,30 +1,30 @@
 'use client';
 
 import {
+  Anchor,
+  Atom,
   Brain,
   Code,
   Crown,
   Diamond,
   Fire,
   GithubLogo,
+  GraduationCap,
   Heart,
   Infinity as InfinityIcon,
   Lightning,
   Medal,
+  Meteor,
   Moon,
   Rocket,
   Seal,
   Shield,
+  Sparkle,
   Star,
+  Sun,
   Target,
   Trophy,
   Waves,
-  Meteor,
-  Sparkle,
-  GraduationCap,
-  Atom,
-  Sun,
-  Anchor,
 } from '@phosphor-icons/react';
 import { useTranslations } from 'next-intl';
 import { useRef, useState, useSyncExternalStore } from 'react';

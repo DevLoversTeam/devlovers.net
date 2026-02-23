@@ -22,7 +22,6 @@ export function DesktopActions({
   showAdminLink = false,
 }: DesktopActionsProps) {
   const t = useTranslations('navigation');
-  const tAria = useTranslations('aria');
   const isShop = variant === 'shop';
   const isBlog = variant === 'blog';
 
@@ -31,6 +30,8 @@ export function DesktopActions({
       {isBlog && <BlogHeaderSearch />}
 
       <LanguageSwitcher />
+
+      {isShop && <CartButton />}
 
       {!userExists ? (
         <HeaderButton href="/login" icon={LogIn}>

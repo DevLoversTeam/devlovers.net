@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 
 import { formatBlogDate } from '@/lib/blog/date';
+import { shouldBypassImageOptimization } from '@/lib/blog/image';
 
 import type {
   Author,
@@ -69,6 +70,7 @@ export default function BlogCard({
             src={post.mainImage}
             alt={post.title}
             fill
+            unoptimized={shouldBypassImageOptimization(post.mainImage)}
             className="scale-[1.03] object-cover brightness-95 contrast-110 transition-transform duration-300 group-hover:scale-[1.06]"
             priority={false}
           />
@@ -109,6 +111,9 @@ export default function BlogCard({
                         src={post.author.image}
                         alt={post.author.name || 'Author'}
                         fill
+                        unoptimized={shouldBypassImageOptimization(
+                          post.author.image
+                        )}
                         className="object-cover"
                       />
                     </span>

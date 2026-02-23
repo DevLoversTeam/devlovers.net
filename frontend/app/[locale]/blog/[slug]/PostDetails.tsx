@@ -7,6 +7,7 @@ import { client } from '@/client';
 import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
 import { Link } from '@/i18n/routing';
 import { formatBlogDate } from '@/lib/blog/date';
+import { shouldBypassImageOptimization } from '@/lib/blog/image';
 
 export const revalidate = 0;
 
@@ -285,6 +286,7 @@ function renderPortableText(
           alt={postTitle || 'Post image'}
           width={1200}
           height={800}
+          unoptimized={shouldBypassImageOptimization(block.url)}
           sizes="100vw"
           className="my-6 h-auto w-full rounded-xl border border-gray-200"
         />
@@ -577,6 +579,7 @@ export default async function PostDetails({
               src={post.mainImage}
               alt={post.title || 'Post image'}
               fill
+              unoptimized={shouldBypassImageOptimization(post.mainImage)}
               className="object-contain"
             />
           </div>
@@ -618,6 +621,9 @@ export default async function PostDetails({
                               src={item.mainImage}
                               alt={item.title || 'Post image'}
                               fill
+                              unoptimized={shouldBypassImageOptimization(
+                                item.mainImage
+                              )}
                               className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
                             />
                           </div>
@@ -640,6 +646,9 @@ export default async function PostDetails({
                                   src={item.author.image}
                                   alt={item.author.name || 'Author'}
                                   fill
+                                  unoptimized={shouldBypassImageOptimization(
+                                    item.author.image
+                                  )}
                                   className="object-cover"
                                 />
                               </span>
