@@ -1,8 +1,8 @@
 import { getUserLastAttemptPerQuiz, getUserQuizStats } from '@/db/queries/quizzes/quiz';
 import { getUserProfile } from '@/db/queries/users';
-import { getSponsors, getAllSponsors } from '@/lib/about/github-sponsors';
-import { checkHasStarredRepo, resolveGitHubLogin } from '@/lib/github-stars';
+import { getAllSponsors,getSponsors } from '@/lib/about/github-sponsors';
 import { type UserStats } from '@/lib/achievements';
+import { checkHasStarredRepo, resolveGitHubLogin } from '@/lib/github-stars';
 
 /**
  * Fetches and resolves all necessary dependencies to compute a user's `UserStats`

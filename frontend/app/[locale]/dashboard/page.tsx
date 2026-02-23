@@ -17,8 +17,8 @@ import {
 } from '@/db/queries/quizzes/quiz';
 import { getUserGlobalRank, getUserProfile } from '@/db/queries/users';
 import { redirect } from '@/i18n/routing';
-import { getCurrentUser } from '@/lib/auth';
 import { computeAchievements } from '@/lib/achievements';
+import { getCurrentUser } from '@/lib/auth';
 import { getUserStatsForAchievements } from '@/lib/user-stats';
 
 export async function generateMetadata({
@@ -216,7 +216,7 @@ export default async function DashboardPage({
               totalAttempts={totalAttempts}
               globalRank={globalRank}
             />
-            <div className="grid gap-8 lg:grid-cols-2">
+            <div id="stats" className="grid gap-8 scroll-mt-8 lg:grid-cols-2">
               <StatsCard stats={stats} attempts={lastAttempts} />
               <ActivityHeatmapCard attempts={attempts} locale={locale} currentStreak={currentStreak} />
             </div>

@@ -52,12 +52,6 @@ export function AppMobileMenu({
     startNavigation(href);
   };
 
-  const handleHeaderButtonLinkClick =
-    (href: string) => (e: React.MouseEvent<HTMLAnchorElement>) => {
-      e.preventDefault();
-      startNavigation(href);
-    };
-
   const getBlogCategoryLabel = (categoryName: string): string => {
     const key = categoryName.toLowerCase() as
       | 'tech'

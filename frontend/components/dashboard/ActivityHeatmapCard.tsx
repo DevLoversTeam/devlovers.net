@@ -52,12 +52,7 @@ export function ActivityHeatmapCard({ attempts, locale, currentStreak }: Activit
     left: number;
   } | null>(null);
   
-  const cardStyles = `
-    relative z-10 flex flex-col justify-between overflow-hidden rounded-3xl
-    border border-gray-200 bg-white/10 shadow-sm backdrop-blur-md
-    dark:border-neutral-800 dark:bg-neutral-900/10
-    p-6 sm:p-8
-  `;
+  const cardStyles = 'dashboard-card flex flex-col justify-between p-6 sm:p-8';
 
   const iconBoxStyles = 'shrink-0 rounded-xl bg-white/40 border border-white/20 shadow-xs backdrop-blur-xs p-3 dark:bg-white/5 dark:border-white/10';
 
@@ -476,8 +471,8 @@ export function ActivityHeatmapCard({ attempts, locale, currentStreak }: Activit
                   : 'text-(--accent-primary)'
               }`}>
                 {tooltip.count === 0
-                  ? 'No activity'
-                  : `${tooltip.count} ${tooltip.count === 1 ? 'attempt' : 'attempts'}`}
+                  ? t('heatmapNoActivity')
+                  : t('heatmapAttempts', { count: tooltip.count })}
               </p>
               <div className="absolute left-1/2 -translate-x-1/2 top-full w-2 h-2 overflow-hidden">
                 <div className="w-2 h-2 bg-gray-900 dark:bg-white rotate-45 -translate-y-1" />
@@ -513,7 +508,7 @@ export function ActivityHeatmapCard({ attempts, locale, currentStreak }: Activit
           {totalActiveDays > 0 && (
             <span className="flex items-center gap-1">
               <CalendarDays className="h-3 w-3" />
-              <span>{totalActiveDays} active day{totalActiveDays !== 1 ? 's' : ''}</span>
+              <span>{t('heatmapActiveDays', { count: totalActiveDays })}</span>
             </span>
           )}
         </div>

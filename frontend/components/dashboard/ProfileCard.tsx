@@ -12,7 +12,6 @@ import {
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-
 import { toast } from 'sonner';
 
 import { updateName, updatePassword } from '@/actions/profile';
@@ -48,17 +47,14 @@ export function ProfileCard({
   const [isSaving, setIsSaving] = useState(false);
 
   const username = user.name || user.email.split('@')[0];
+  const roleLabel =
+    user.role === 'admin' ? t('roles.admin') : t('roles.user');
   const seed = `${username}-${user.id}`;
   const avatarSrc =
     user.image ||
     `https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(seed)}`;
 
   const cardStyles = 'dashboard-card flex flex-col p-5 sm:p-6 lg:p-8';
-
-  const scrollTo = (id: string) => (e: React.MouseEvent) => {
-    e.preventDefault();
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-  };
 
   const handleUpdateName = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -70,7 +66,7 @@ export function ProfileCard({
       if (!result.success) {
         toast.error(result.error || 'Failed to update name');
       }
-    } catch (error) {
+    } catch {
       toast.error('Something went wrong');
     } finally {
       setIsSaving(false);
@@ -89,7 +85,7 @@ export function ProfileCard({
       } else {
         toast.error(result.error || 'Failed to update password');
       }
-    } catch (error) {
+    } catch {
       toast.error('Something went wrong');
     } finally {
       setIsSaving(false);
@@ -97,7 +93,7 @@ export function ProfileCard({
   };
 
   const statItemBase =
-    'flex flex-row items-center gap-2 sm:gap-3 rounded-2xl border border-gray-100 bg-white/50 p-2 sm:p-3 text-left dark:border-white/5 dark:bg-black/20 xl:flex-row-reverse xl:items-center xl:text-right xl:p-3 xl:px-4';
+    'flex flex-row items-center gap-2 sm:gap-3 rounded-2xl border border-gray-100 bg-white/50 p-2 sm:p-3 text-left dark:border-white/5 dark:bg-black/20 xl:flex-row-reverse xl:items-center xl:text-right xl:p-3 xl:px-4 transition-all hover:-translate-y-0.5 hover:border-(--accent-primary)/30 hover:bg-white/80 dark:hover:border-(--accent-primary)/20 dark:hover:bg-black/40';
 
   const iconBoxStyles = 'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/40 border border-white/20 shadow-xs backdrop-blur-xs xl:h-auto xl:w-auto xl:p-2.5 dark:bg-white/5 dark:border-white/10';
 
@@ -129,7 +125,7 @@ export function ProfileCard({
 
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center rounded-full bg-(--accent-primary)/10 px-3 py-1 text-xs font-bold tracking-wider text-(--accent-primary) uppercase">
-                {user.role || t('defaultRole')}
+                {roleLabel}
               </span>
               {isSponsor && (
                 <span className="relative inline-flex items-center gap-1.5 overflow-hidden rounded-full border border-(--accent-primary)/20 bg-(--accent-primary)/10 px-3 py-1 text-xs font-bold tracking-wider text-(--accent-primary) uppercase">
@@ -141,51 +137,59 @@ export function ProfileCard({
             </div>
           </div>
         </div>
-        <dl className="grid w-full grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3 xl:flex xl:w-auto xl:flex-nowrap xl:items-center xl:justify-end xl:gap-2 2xl:gap-3">
+        <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3 xl:flex xl:w-auto xl:flex-nowrap xl:items-center xl:justify-end xl:gap-2 2xl:gap-3">
           {/* Attempts */}
-          <div className={statItemBase}>
+          <a
+            href="#quiz-results"
+            className={statItemBase}
+            onClick={e => { e.preventDefault(); document.getElementById('quiz-results')?.scrollIntoView({ behavior: 'smooth' }); }}
+          >
             <div className={iconBoxStyles}>
               <Target className="h-5 w-5 text-purple-600 dark:text-purple-400" />
             </div>
             <div className="flex w-full flex-col items-start overflow-hidden xl:items-end">
-              <dt className="truncate text-[10px] font-medium tracking-wider text-gray-500 uppercase xl:mb-0.5 xl:font-bold xl:text-gray-400 dark:text-gray-400">
+              <span className="truncate text-[10px] font-medium tracking-wider text-gray-500 uppercase xl:mb-0.5 xl:font-bold xl:text-gray-400 dark:text-gray-400">
                 {tStats('totalAttempts')}
-              </dt>
-              <dd className="truncate text-base leading-tight font-bold text-gray-900 sm:text-lg xl:text-xl xl:font-black dark:text-white">
+              </span>
+              <span className="truncate text-base leading-tight font-bold text-gray-900 sm:text-lg xl:text-xl xl:font-black dark:text-white">
                 {totalAttempts}
-              </dd>
+              </span>
             </div>
-          </div>
+          </a>
 
           {/* Points */}
-          <div className={statItemBase}>
+          <a
+            href="#stats"
+            className={statItemBase}
+            onClick={e => { e.preventDefault(); document.getElementById('stats')?.scrollIntoView({ behavior: 'smooth' }); }}
+          >
             <div className={iconBoxStyles}>
               <Trophy className="h-5 w-5 text-amber-600 dark:text-amber-400" />
             </div>
             <div className="flex w-full flex-col items-start overflow-hidden xl:items-end">
-              <dt className="truncate text-[10px] font-medium tracking-wider text-gray-500 uppercase xl:mb-0.5 xl:font-bold xl:text-gray-400 dark:text-gray-400">
+              <span className="truncate text-[10px] font-medium tracking-wider text-gray-500 uppercase xl:mb-0.5 xl:font-bold xl:text-gray-400 dark:text-gray-400">
                 {t('totalPoints')}
-              </dt>
-              <dd className="truncate text-base leading-tight font-bold text-gray-900 sm:text-lg xl:text-xl xl:font-black dark:text-white">
+              </span>
+              <span className="truncate text-base leading-tight font-bold text-gray-900 sm:text-lg xl:text-xl xl:font-black dark:text-white">
                 {user.points}
-              </dd>
+              </span>
             </div>
-          </div>
+          </a>
 
           {/* Global rank */}
-          <div className={statItemBase}>
+          <Link href="/leaderboard" className={statItemBase}>
             <div className={iconBoxStyles}>
               <Globe className="h-5 w-5 text-teal-600 dark:text-teal-400" />
             </div>
             <div className="flex w-full flex-col items-start overflow-hidden xl:items-end">
-              <dt className="truncate text-[10px] font-medium tracking-wider text-gray-500 uppercase xl:mb-0.5 xl:font-bold xl:text-gray-400 dark:text-gray-400">
+              <span className="truncate text-[10px] font-medium tracking-wider text-gray-500 uppercase xl:mb-0.5 xl:font-bold xl:text-gray-400 dark:text-gray-400">
                 {t('globalRank')}
-              </dt>
-              <dd className="truncate text-base leading-tight font-bold text-gray-900 sm:text-lg xl:text-xl xl:font-black dark:text-white">
+              </span>
+              <span className="truncate text-base leading-tight font-bold text-gray-900 sm:text-lg xl:text-xl xl:font-black dark:text-white">
                 {globalRank ? `#${globalRank}` : '—'}
-              </dd>
+              </span>
             </div>
-          </div>
+          </Link>
 
           {/* Joined */}
           <div className="flex flex-row items-center gap-2 rounded-2xl border border-gray-100 bg-white/50 p-2 text-left sm:gap-3 sm:p-3 xl:flex-row-reverse xl:items-center xl:p-3 xl:px-4 xl:text-right dark:border-white/5 dark:bg-black/20">
@@ -193,20 +197,20 @@ export function ProfileCard({
               <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             </div>
             <div className="flex w-full flex-col items-start overflow-hidden xl:items-end">
-              <dt className="truncate text-[10px] font-medium tracking-wider text-gray-500 uppercase xl:mb-0.5 xl:font-bold xl:text-gray-400 dark:text-gray-400">
+              <span className="truncate text-[10px] font-medium tracking-wider text-gray-500 uppercase xl:mb-0.5 xl:font-bold xl:text-gray-400 dark:text-gray-400">
                 {t('joined')}
-              </dt>
-              <dd className="truncate text-sm leading-tight font-bold whitespace-nowrap text-gray-700 sm:text-base xl:text-lg dark:text-gray-300 xl:dark:text-gray-300">
+              </span>
+              <span className="truncate text-sm leading-tight font-bold whitespace-nowrap text-gray-700 sm:text-base xl:text-lg dark:text-gray-300 xl:dark:text-gray-300">
                 {user.createdAt
                   ? new Date(user.createdAt).toLocaleDateString(locale, {
                       year: 'numeric',
                       month: 'short',
                     })
                   : '—'}
-              </dd>
+              </span>
             </div>
           </div>
-        </dl>
+        </div>
       </div>
 
       <div className="mt-6 border-t border-gray-100 pt-5 dark:border-white/5">

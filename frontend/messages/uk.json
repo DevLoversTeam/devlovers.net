@@ -11,8 +11,8 @@
   },
   "aria": {
     "primaryNav": "Головна навігація",
-    "dashboard": "Панель керування",
-    "admin": "Admin panel",
+    "dashboard": "Кабінет",
+    "admin": "Панель адміністратора",
     "blogCategories": "Категорії блогу",
     "searchBlog": "Пошук у блозі",
     "toggleMenu": "Відкрити/закрити меню",
@@ -41,7 +41,11 @@
     "login": "Увійти",
     "logout": "Вийти",
     "signup": "Зареєструватися",
-    "dashboard": "Панель користувача"
+    "dashboard": "Кабінет користувача",
+    "myAccount": "Мій акаунт",
+    "languageSwitcher": {
+      "title": "Мова"
+    }
   },
   "homepage": {
     "title": "DevLovers — Платформа для підготовки до технічних співбесід",
@@ -1080,9 +1084,9 @@
     "divider": "або"
   },
   "dashboard": {
-    "metaTitle": "Панель | DevLovers",
+    "metaTitle": "Кабінет | DevLovers",
     "metaDescription": "Відстежуйте свій прогрес та результати квізів",
-    "title": "Кабінет користувача",
+    "title": "Кабінет",
     "subtitle": "З поверненням на вашу навчальну площадку",
     "supportLink": "Відгук",
     "profile": {
@@ -1090,6 +1094,10 @@
       "subtitle": "Керуйте своїм публічним профілем та налаштуваннями",
       "defaultName": "Розробник",
       "defaultRole": "користувач",
+      "roles": {
+        "user": "Користувач",
+        "admin": "Адміністратор"
+      },
       "sponsor": "Спонсор",
       "becomeSponsor": "Стати спонсором",
       "supportAgain": "Проявити більше любові",
@@ -1135,7 +1143,10 @@
       "last6Months": "Останні 6 місяців",
       "lastYear": "Цей рік",
       "totalActiveDays": "Активні дні",
-      "mostActiveMonth": "Активний місяць"
+      "mostActiveMonth": "Активний місяць",
+      "heatmapNoActivity": "Немає активності",
+      "heatmapAttempts": "{count, plural, one {# спроба} few {# спроби} many {# спроб} other {# спроби}}",
+      "heatmapActiveDays": "{count, plural, one {# активний день} few {# активні дні} many {# активних днів} other {# активні дні}}"
     },
     "quizSaved": {
       "title": "Результат квізу збережено!",
@@ -1150,6 +1161,7 @@
       "subtitle": "Ваші останні результати квізів",
       "noAttempts": "Ви ще не проходили жодного квізу",
       "startQuiz": "Спробувати",
+      "quiz": "Квіз",
       "score": "Результат",
       "accuracy": "Точність",
       "integrity": "Чистота",
@@ -1516,6 +1528,26 @@
     }
   },
   "notifications": {
+    "ui": {
+      "title": "Сповіщення",
+      "markAllRead": "Позначити всі як прочитані",
+      "syncing": "Синхронізація",
+      "emptyTitle": "Все переглянуто!",
+      "emptySubtitle": "Ви переглянули всю останню активність.",
+      "justNow": "Щойно",
+      "types": {
+        "SYSTEM": "Система",
+        "ACHIEVEMENT": "Досягнення",
+        "ARTICLE": "Стаття",
+        "SHOP": "Магазин"
+      }
+    },
+    "achievement": {
+      "unlocked": {
+        "title": "Досягнення розблоковано!",
+        "message": "Ви щойно отримали значок {name}!"
+      }
+    },
     "account": {
       "nameChanged": {
         "title": "Профіль оновлено",

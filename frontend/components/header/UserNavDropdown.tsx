@@ -48,7 +48,7 @@ export function UserNavDropdown({ showAdminLink = false }: UserNavDropdownProps)
       {isOpen && (
         <div className="absolute top-full right-0 z-70 mt-3 w-56 rounded-2xl border border-gray-200/50 bg-white/95 p-2 shadow-lg backdrop-blur-3xl dark:border-white/10 dark:bg-neutral-900/95">
           <div className="mb-2 border-b border-gray-100/50 px-2 pb-2 dark:border-white/10">
-            <p className="text-sm font-semibold tracking-wide text-gray-900 dark:text-white">My Account</p>
+            <p className="text-sm font-semibold tracking-wide text-gray-900 dark:text-white">{t('myAccount')}</p>
           </div>
           <div className="flex flex-col gap-1">
             <Link

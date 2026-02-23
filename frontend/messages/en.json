@@ -41,7 +41,11 @@
     "login": "Log in",
     "logout": "Log out",
     "signup": "Sign up",
-    "dashboard": "Dashboard"
+    "dashboard": "Dashboard",
+    "myAccount": "My Account",
+    "languageSwitcher": {
+      "title": "Language"
+    }
   },
   "homepage": {
     "title": "DevLovers — Technical Interview Platform",
@@ -1088,6 +1092,10 @@
     "profile": {
       "defaultName": "Developer",
       "defaultRole": "user",
+      "roles": {
+        "user": "User",
+        "admin": "Admin"
+      },
       "sponsor": "Sponsor",
       "becomeSponsor": "Become a Sponsor",
       "supportAgain": "Show More Love",
@@ -1131,7 +1139,10 @@
       "last6Months": "Last 6 Months",
       "lastYear": "This Year",
       "totalActiveDays": "Active Days",
-      "mostActiveMonth": "Active Month"
+      "mostActiveMonth": "Active Month",
+      "heatmapNoActivity": "No activity",
+      "heatmapAttempts": "{count, plural, one {# attempt} other {# attempts}}",
+      "heatmapActiveDays": "{count, plural, one {# active day} other {# active days}}"
     },
     "quizSaved": {
       "title": "Quiz result saved!",
@@ -1146,6 +1157,7 @@
       "subtitle": "Your recent quiz performance",
       "noAttempts": "You haven't taken any quizzes yet",
       "startQuiz": "Try one",
+      "quiz": "Quiz",
       "score": "Score",
       "accuracy": "Accuracy",
       "integrity": "Integrity",
@@ -1514,6 +1526,26 @@
     }
   },
   "notifications": {
+    "ui": {
+      "title": "Notifications",
+      "markAllRead": "Mark all as read",
+      "syncing": "Syncing",
+      "emptyTitle": "All caught up!",
+      "emptySubtitle": "You've handled all your recent activity.",
+      "justNow": "Just now",
+      "types": {
+        "SYSTEM": "System",
+        "ACHIEVEMENT": "Achievement",
+        "ARTICLE": "Article",
+        "SHOP": "Shop"
+      }
+    },
+    "achievement": {
+      "unlocked": {
+        "title": "Achievement Unlocked!",
+        "message": "You just earned the {name} badge!"
+      }
+    },
     "account": {
       "nameChanged": {
         "title": "Account Updated",

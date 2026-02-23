@@ -231,14 +231,15 @@ export async function submitQuizAttempt(
       const earnedAfter = computeAchievements(statsAfter).filter(a => a.earned);
       const newlyEarned = earnedAfter.filter(a => !earnedBefore.has(a.id));
 
-      // Trigger notifications for any newly earned achievements
+      // Trigger notifications for any newly earned achievements.
+      // title/message are stable English fallbacks; NotificationBell renders
+      // them dynamically in the viewer's locale using metadata.badgeId.
       for (const achievement of newlyEarned) {
-        // Find full object to get the fancy translated string (if needed) or just generic name
         await createNotification({
           userId: session.id,
           type: 'ACHIEVEMENT',
           title: 'Achievement Unlocked!',
-          message: `You just earned the ${achievement.id} badge!`,
+          message: achievement.id,
           metadata: { badgeId: achievement.id, icon: achievement.icon },
         });
       }

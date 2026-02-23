@@ -4,7 +4,9 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Monitor, Moon, Sun } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
-import { useEffect, useState } from 'react';
+import { useSyncExternalStore } from 'react';
+
+const emptySubscribe = () => () => {};
 
 const themes = [
   { value: 'system', icon: Monitor, labelKey: 'themeSystem' },
@@ -15,11 +17,7 @@ const themes = [
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
   const t = useTranslations('aria');
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
 
   if (!mounted) {
     return (

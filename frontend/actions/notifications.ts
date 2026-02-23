@@ -1,11 +1,10 @@
 'use server';
 
-import { desc, eq, and } from 'drizzle-orm';
+import { and,desc, eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 
 import { db } from '@/db';
 import { notifications } from '@/db/schema/notifications';
-
 import { getCurrentUser } from '@/lib/auth';
 
 export async function getNotifications() {

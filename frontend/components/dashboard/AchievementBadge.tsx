@@ -1,30 +1,30 @@
 'use client';
 
 import {
+  Anchor,
+  Atom,
   Brain,
   Code,
   Crown,
   Diamond,
   Fire,
   GithubLogo,
+  GraduationCap,
   Heart,
   Infinity as InfinityIcon,
   Lightning,
   Medal,
+  Meteor,
   Moon,
   Rocket,
   Seal,
   Shield,
+  Sparkle,
   Star,
+  Sun,
   Target,
   Trophy,
   Waves,
-  Meteor,
-  Sparkle,
-  GraduationCap,
-  Atom,
-  Sun,
-  Anchor,
 } from '@phosphor-icons/react';
 import {
   motion,
@@ -34,7 +34,7 @@ import {
   useTransform,
 } from 'framer-motion';
 import { useTranslations } from 'next-intl';
-import { useEffect,useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import type {
   AchievementIconName,
@@ -107,12 +107,14 @@ export function AchievementBadge({ achievement }: AchievementBadgeProps) {
 
   const [isDark, setIsDark] = useState(false);
   useEffect(() => {
-    const root = document.documentElement;
-    setIsDark(root.classList.contains('dark'));
-    const observer = new MutationObserver(() => {
-      setIsDark(root.classList.contains('dark'));
+    const update = () =>
+      setIsDark(document.documentElement.classList.contains('dark'));
+    update();
+    const observer = new MutationObserver(update);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
     });
-    observer.observe(root, { attributes: true, attributeFilter: ['class'] });
     return () => observer.disconnect();
   }, []);
 
@@ -188,7 +190,7 @@ export function AchievementBadge({ achievement }: AchievementBadgeProps) {
       onMouseLeave={handleMouseLeave}
     >
       <motion.div
-        className="h-20 w-20 perspective-[800px] sm:h-28 sm:w-28 md:h-[110px] md:w-[110px] xl:h-[140px] xl:w-[140px]"
+        className="h-20 w-20 perspective-midrange sm:h-28 sm:w-28 md:h-27.5 md:w-27.5 xl:h-35 xl:w-35"
         whileHover={shouldReduceMotion ? {} : { scale: 1.06 }}
         transition={{ type: 'spring', stiffness: 350, damping: 20 }}
       >
@@ -400,7 +402,7 @@ export function AchievementBadge({ achievement }: AchievementBadgeProps) {
             <div className="absolute inset-0 flex items-center justify-center">
               <Icon
                 weight={achievement.earned ? 'fill' : 'regular'}
-                className="h-8 w-8 sm:h-10 sm:w-10 md:h-10 md:w-10 xl:h-[52px] xl:w-[52px]"
+                className="h-8 w-8 sm:h-10 sm:w-10 md:h-10 md:w-10 xl:h-13 xl:w-13"
                 color={
                   achievement.earned
                     ? 'rgba(255,255,255,0.97)'
@@ -415,7 +417,7 @@ export function AchievementBadge({ achievement }: AchievementBadgeProps) {
             </div>
           </div>
 
-          <div className="absolute inset-0 [transform:rotateY(180deg)] backface-hidden">
+          <div className="absolute inset-0 transform-[rotateY(180deg)] backface-hidden">
             <svg
               viewBox="0 0 160 160"
               className="absolute inset-0 h-full w-full overflow-visible"
@@ -649,7 +651,7 @@ export function AchievementBadge({ achievement }: AchievementBadgeProps) {
         </motion.div>
       </motion.div>
 
-      <p className="max-w-[140px] text-center text-[10.5px] leading-tight font-bold tracking-wider text-balance uppercase">
+      <p className="max-w-35 text-center text-[10.5px] leading-tight font-bold tracking-wider text-balance uppercase">
         <span
           style={{ color: achievement.earned ? from : undefined }}
           className={
