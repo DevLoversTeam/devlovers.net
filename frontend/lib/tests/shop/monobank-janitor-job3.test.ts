@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { db } from '@/db';
@@ -149,7 +149,6 @@ describe.sequential('monobank janitor job3', () => {
     vi.stubEnv('MONO_JANITOR_LEASE_SECONDS', '120');
     resetEnvCache();
   });
-
   afterEach(() => {
     vi.unstubAllEnvs();
     resetEnvCache();

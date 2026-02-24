@@ -10,12 +10,7 @@ import { logError, logInfo, logWarn } from '@/lib/logging';
 import { MONO_EXPIRED_RECONCILED, monoLogInfo } from '@/lib/logging/monobank';
 import { getInvoiceStatus } from '@/lib/psp/monobank';
 import {
-  claimNextMonobankEvent,
-  type MonobankEventRow,
-} from '@/lib/services/orders/monobank-events-claim';
-import {
   applyMonoWebhookEvent,
-  applyStoredMonobankEvent,
 } from '@/lib/services/orders/monobank-webhook';
 import { restockOrder } from '@/lib/services/orders/restock';
 
@@ -35,7 +30,6 @@ const JOB2_ORDER_FAILURE_MESSAGE = 'Monobank invoice create failed.';
 const JOB2_ATTEMPT_ERROR_CODE = 'invoice_missing';
 const JOB2_ATTEMPT_ERROR_MESSAGE =
   'Active attempt missing invoice details (stale).';
-const JOB3_EVENT_ERROR_CODE = 'JANITOR_JOB3_APPLY_FAILED';
 const JOB3_MODE_MISMATCH_CODE = 'MONO_WEBHOOK_MODE_NOT_STORE';
 const DEFAULT_JOB4_NEEDS_REVIEW_AGE_HOURS = 24;
 const NEEDS_REVIEW_AGE_HOURS_MIN = 0;
@@ -60,6 +54,7 @@ type Job3CandidateRow = {
   provider_modified_at: unknown;
   received_at: unknown;
   raw_payload: unknown;
+  raw_sha256: string | null;
 };
 
 type Job4CandidateRow = {
@@ -313,7 +308,8 @@ async function readDryRunJob3Candidates(args: {
       me.attempt_id,
       me.provider_modified_at,
       me.received_at,
-      me.raw_payload
+      me.raw_payload,
+      me.raw_sha256
     from monobank_events me
     where me.provider = 'monobank'
       and me.applied_at is null
@@ -328,61 +324,14 @@ async function readDryRunJob3Candidates(args: {
   return readRows<Job3CandidateRow>(res);
 }
 
-function toJob3CandidateRow(row: MonobankEventRow): Job3CandidateRow {
-  return {
-    id: row.id,
-    invoice_id:
-      typeof row.invoice_id === 'string' ? row.invoice_id : row.invoice_id ?? null,
-    attempt_id:
-      typeof row.attempt_id === 'string' ? row.attempt_id : row.attempt_id ?? null,
-    provider_modified_at: row.provider_modified_at,
-    received_at: row.received_at,
-    raw_payload: row.raw_payload,
-  };
-}
-
-async function claimJob3Events(args: {
-  limit: number;
-  runId: string;
-}): Promise<Job3CandidateRow[]> {
-  const claimed: Job3CandidateRow[] = [];
-
-  for (let i = 0; i < args.limit; i += 1) {
-    const next = await claimNextMonobankEvent(args.runId);
-    if (!next) break;
-    claimed.push(toJob3CandidateRow(next));
-  }
-
-  return claimed;
-}
-
-async function markJob3EventFailed(args: {
-  eventId: string;
-  runId: string;
-  error: unknown;
-}) {
-  const errorMessage =
-    args.error instanceof Error ? args.error.message : String(args.error);
-  await db.execute(sql`
-    update monobank_events
-    set applied_at = now(),
-        applied_result = 'applied_with_issue',
-        applied_error_code = coalesce(applied_error_code, ${JOB3_EVENT_ERROR_CODE}),
-        applied_error_message = coalesce(applied_error_message, ${errorMessage})
-    where id = ${args.eventId}::uuid
-      and claimed_by = ${args.runId}
-      and applied_at is null
-  `);
-}
-
-async function releaseEventLease(args: { eventId: string; runId: string }) {
+async function clearAppliedEventClaim(args: { eventId: string }) {
   await db.execute(sql`
     update monobank_events
     set claimed_at = null,
         claim_expires_at = null,
         claimed_by = null
     where id = ${args.eventId}::uuid
-      and claimed_by = ${args.runId}
+      and applied_at is not null
   `);
 }
 
@@ -873,11 +822,10 @@ export async function runMonobankJanitorJob3(
     };
   }
 
-  const claimed = await claimJob3Events({
+  const candidates = await readDryRunJob3Candidates({
     limit: args.limit,
-    runId: args.runId,
   });
-  const ordered = sortJob3RowsByCanonicalOrder(claimed);
+  const ordered = sortJob3RowsByCanonicalOrder(candidates);
 
   let processed = 0;
   let applied = 0;
@@ -893,16 +841,30 @@ export async function runMonobankJanitorJob3(
         throw new Error('Stored event has invalid raw payload');
       }
 
-      const result = await applyStoredMonobankEvent({
-        eventId: eventRow.id,
-        requestId: args.requestId,
+      const rawBody = JSON.stringify(parsedPayload);
+      const rawSha256 =
+        typeof eventRow.raw_sha256 === 'string' &&
+        /^[0-9a-f]{64}$/i.test(eventRow.raw_sha256)
+          ? eventRow.raw_sha256
+          : sha256Utf8(rawBody);
+
+      const result = await applyMonoWebhookEvent({
+        rawBody,
         parsedPayload,
+        rawSha256,
+        eventKey: rawSha256,
+        requestId: args.requestId,
+        mode: 'apply',
       });
 
       if (isAppliedResult(result.appliedResult)) {
         applied += 1;
       } else {
         noop += 1;
+      }
+
+      if (result.eventId) {
+        await clearAppliedEventClaim({ eventId: result.eventId });
       }
     } catch (error) {
       failed += 1;
@@ -914,38 +876,6 @@ export async function runMonobankJanitorJob3(
         invoiceId: eventRow.invoice_id,
         attemptId: eventRow.attempt_id,
       });
-
-      try {
-        await markJob3EventFailed({
-          eventId: eventRow.id,
-          runId: args.runId,
-          error,
-        });
-      } catch (markError) {
-        logWarn('internal_monobank_janitor_job3_mark_failed_failed', {
-          ...args.baseMeta,
-          code: 'JANITOR_JOB3_MARK_FAILED_FAILED',
-          runId: args.runId,
-          eventId: eventRow.id,
-          error:
-            markError instanceof Error ? markError.message : String(markError),
-        });
-      }
-    } finally {
-      try {
-        await releaseEventLease({ eventId: eventRow.id, runId: args.runId });
-      } catch (releaseError) {
-        logWarn('internal_monobank_janitor_job3_release_failed', {
-          ...args.baseMeta,
-          code: 'JANITOR_JOB3_RELEASE_FAILED',
-          runId: args.runId,
-          eventId: eventRow.id,
-          error:
-            releaseError instanceof Error
-              ? releaseError.message
-              : String(releaseError),
-        });
-      }
     }
   }
 
@@ -955,7 +885,7 @@ export async function runMonobankJanitorJob3(
     runId: args.runId,
     dryRun: false,
     limit: args.limit,
-    claimed: claimed.length,
+    candidates: candidates.length,
     processed,
     applied,
     noop,

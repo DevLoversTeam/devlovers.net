@@ -150,12 +150,14 @@ async function insertAttempt(args: {
   invoiceId: string;
   providerModifiedAt: Date | null;
 }) {
-  const attemptStatus =
+    const attemptStatus =
     args.status ??
     (await pickEnumLabelByColumn('payment_attempts', 'status', [
-      'pending',
+      'active',
+      'creating',
       'created',
       'requires_action',
+      'pending',
     ]));
 
   const attemptNumberRes = await db.execute(sql`
@@ -290,7 +292,7 @@ describe('monobank-webhook apply outcomes', () => {
     await insertAttempt({
       attemptId,
       orderId,
-      status: 'pending',
+      status: 'active',
       expectedAmountMinor: 100,
       invoiceId,
       providerModifiedAt: null,
@@ -349,7 +351,7 @@ describe('monobank-webhook apply outcomes', () => {
     await insertAttempt({
       attemptId,
       orderId,
-      status: 'pending',
+      status: 'active',
       expectedAmountMinor: 100,
       invoiceId,
       providerModifiedAt: attemptModifiedAt,
@@ -406,7 +408,7 @@ describe('monobank-webhook apply outcomes', () => {
     await insertAttempt({
       attemptId,
       orderId,
-      status: 'pending',
+      status: 'active',
       expectedAmountMinor: 100,
       invoiceId,
       providerModifiedAt: null,
@@ -573,7 +575,7 @@ describe('monobank-webhook apply outcomes', () => {
     await insertAttempt({
       attemptId,
       orderId,
-      status: 'pending',
+      status: 'active',
       expectedAmountMinor: 100,
       invoiceId,
       providerModifiedAt: null,
@@ -654,7 +656,7 @@ describe('monobank-webhook apply outcomes', () => {
     await insertAttempt({
       attemptId,
       orderId,
-      status: 'pending',
+      status: 'active',
       expectedAmountMinor: 100,
       invoiceId,
       providerModifiedAt: null,
