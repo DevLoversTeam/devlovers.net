@@ -108,10 +108,32 @@ export default function QuizzesSection({
                   </div>
                 </div>
               ) : (
-                <div className="py-12 text-center">
-                  <p className="text-gray-600 dark:text-gray-400">
-                    {t('noQuizzes')}
-                  </p>
+                <div className="py-20 text-center">
+                  {(() => {
+                    const lines = t('noQuizzes')
+                      .split('\n')
+                      .map(l => l.trim())
+                      .filter(Boolean);
+                    return (
+                      <>
+                        {lines[0] && (
+                          <p className="motion-safe:animate-fade-up text-lg font-semibold text-gray-900 motion-reduce:opacity-100 dark:text-white">
+                            {lines[0]}
+                          </p>
+                        )}
+                        {lines[1] && (
+                          <p className="motion-safe:animate-fade-up mt-2 text-gray-400 motion-safe:[animation-delay:150ms] motion-reduce:opacity-100 dark:text-gray-300">
+                            {lines[1]}
+                          </p>
+                        )}
+                        {lines[2] && (
+                          <p className="motion-safe:animate-fade-up mt-1 text-gray-500 motion-safe:[animation-delay:300ms] motion-reduce:opacity-100 dark:text-gray-400">
+                            {lines[2]}
+                          </p>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
               )}
             </TabsContent>

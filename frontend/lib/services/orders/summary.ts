@@ -1,7 +1,12 @@
 import { eq, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
-import { orderItems, orders, paymentAttempts, products } from '@/db/schema/shop';
+import {
+  orderItems,
+  orders,
+  paymentAttempts,
+  products,
+} from '@/db/schema/shop';
 import { fromCents, fromDbMoney } from '@/lib/shop/money';
 import { type OrderDetail, type OrderSummaryWithMinor } from '@/lib/types/shop';
 
@@ -172,7 +177,9 @@ function readAttemptCheckoutUrl(row: {
   if (row.checkoutUrl && row.checkoutUrl.trim()) return row.checkoutUrl.trim();
 
   const meta =
-    row.metadata && typeof row.metadata === 'object' && !Array.isArray(row.metadata)
+    row.metadata &&
+    typeof row.metadata === 'object' &&
+    !Array.isArray(row.metadata)
       ? (row.metadata as Record<string, unknown>)
       : null;
   const fromMeta = meta?.pageUrl;

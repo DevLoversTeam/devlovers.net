@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const enforceRateLimitMock = vi.fn(
-  async (..._args: any[]) => ({ ok: false, retryAfterSeconds: 9 })
-);
-const requireAdminApiMock = vi.fn(
-  async (..._args: any[]) => ({ id: 'admin:root', role: 'admin' })
-);
+const enforceRateLimitMock = vi.fn(async (..._args: any[]) => ({
+  ok: false,
+  retryAfterSeconds: 9,
+}));
+const requireAdminApiMock = vi.fn(async (..._args: any[]) => ({
+  id: 'admin:root',
+  role: 'admin',
+}));
 
 vi.mock('@/lib/logging', async () => {
   const actual = await vi.importActual<any>('@/lib/logging');
@@ -98,8 +100,8 @@ describe('monobank admin refund rate limit policy', () => {
     expect(json.details?.scope).toBe('admin_refund');
     expect(enforceRateLimitMock).toHaveBeenCalledTimes(1);
     expect(requireAdminApiMock).toHaveBeenCalledTimes(1);
-    expect((enforceRateLimitMock.mock.calls[0]?.[0]?.key as string) ?? '').toContain(
-      'admin_refund:admin_'
-    );
+    expect(
+      (enforceRateLimitMock.mock.calls[0]?.[0]?.key as string) ?? ''
+    ).toContain('admin_refund:admin_');
   });
 });

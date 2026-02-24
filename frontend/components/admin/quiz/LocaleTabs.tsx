@@ -43,10 +43,10 @@ export function LocaleTabs({
           >
             {label}
             {isDirty && (
-              <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-orange-400" />
+              <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-orange-400" />
             )}
             {!isDirty && isMissing && (
-              <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-red-500" />
+              <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-red-500" />
             )}
           </button>
         );

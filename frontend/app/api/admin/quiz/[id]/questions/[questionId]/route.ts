@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -8,6 +8,7 @@ import {
   quizAnswerTranslations,
   quizQuestionContent,
   quizQuestions,
+  quizzes,
 } from '@/db/schema/quiz';
 import {
   AdminApiDisabledError,
@@ -93,10 +94,7 @@ export async function PATCH(
       .select({ id: quizQuestions.id })
       .from(quizQuestions)
       .where(
-        and(
-          eq(quizQuestions.id, questionId),
-          eq(quizQuestions.quizId, quizId)
-        )
+        and(eq(quizQuestions.id, questionId), eq(quizQuestions.quizId, quizId))
       )
       .limit(1);
 
@@ -105,6 +103,14 @@ export async function PATCH(
         { error: 'Question not found', code: 'QUESTION_NOT_FOUND' },
         { status: 404 }
       );
+    }
+
+    // Update difficulty if provided
+    if (parsed.data.difficulty) {
+      await db
+        .update(quizQuestions)
+        .set({ difficulty: parsed.data.difficulty })
+        .where(eq(quizQuestions.id, questionId));
     }
 
     // Verify all submitted answer IDs belong to this question
@@ -204,6 +210,116 @@ export async function PATCH(
     }
 
     logError('admin_quiz_question_patch_failed', error, {
+      route: request.nextUrl.pathname,
+      method: request.method,
+    });
+
+    return noStoreJson(
+      { error: 'Internal error', code: 'INTERNAL_ERROR' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  context: { params: Promise<{ id: string; questionId: string }> }
+): Promise<NextResponse> {
+  const blocked = guardBrowserSameOrigin(request);
+  if (blocked) {
+    blocked.headers.set('Cache-Control', 'no-store');
+    return blocked;
+  }
+
+  try {
+    await requireAdminApi(request);
+
+    const csrfResult = requireAdminCsrf(request, 'admin:quiz:question:delete');
+    if (csrfResult) {
+      csrfResult.headers.set('Cache-Control', 'no-store');
+      return csrfResult;
+    }
+
+    const rawParams = await context.params;
+    const parsedParams = paramsSchema.safeParse(rawParams);
+    if (!parsedParams.success) {
+      return noStoreJson(
+        { error: 'Invalid params', code: 'INVALID_PARAMS' },
+        { status: 400 }
+      );
+    }
+
+    const { id: quizId, questionId } = parsedParams.data;
+
+    // Verify quiz is draft
+    const [quiz] = await db
+      .select({ id: quizzes.id, status: quizzes.status })
+      .from(quizzes)
+      .where(eq(quizzes.id, quizId))
+      .limit(1);
+
+    if (!quiz) {
+      return noStoreJson(
+        { error: 'Quiz not found', code: 'NOT_FOUND' },
+        { status: 404 }
+      );
+    }
+
+    if (quiz.status !== 'draft') {
+      return noStoreJson(
+        {
+          error: 'Can only delete questions from draft quizzes',
+          code: 'NOT_DRAFT',
+        },
+        { status: 409 }
+      );
+    }
+
+    // Verify question belongs to quiz
+    const [question] = await db
+      .select({ id: quizQuestions.id })
+      .from(quizQuestions)
+      .where(
+        and(eq(quizQuestions.id, questionId), eq(quizQuestions.quizId, quizId))
+      )
+      .limit(1);
+
+    if (!question) {
+      return noStoreJson(
+        { error: 'Question not found', code: 'QUESTION_NOT_FOUND' },
+        { status: 404 }
+      );
+    }
+
+    // Delete question (cascades content, answers, answer translations)
+    await db.delete(quizQuestions).where(eq(quizQuestions.id, questionId));
+
+    // Update questionsCount
+    const [countRow] = await db
+      .select({ total: sql<number>`COUNT(*)::int` })
+      .from(quizQuestions)
+      .where(eq(quizQuestions.quizId, quizId));
+
+    await db
+      .update(quizzes)
+      .set({ questionsCount: countRow.total })
+      .where(eq(quizzes.id, quizId));
+
+    await invalidateQuizCache(quizId);
+
+    return noStoreJson({ success: true, questionsCount: countRow.total });
+  } catch (error) {
+    if (error instanceof AdminApiDisabledError) {
+      return noStoreJson({ code: error.code }, { status: 403 });
+    }
+    if (error instanceof AdminUnauthorizedError) {
+      return noStoreJson({ code: error.code }, { status: 401 });
+    }
+    if (error instanceof AdminForbiddenError) {
+      return noStoreJson({ code: error.code }, { status: 403 });
+    }
+
+    logError('admin_quiz_question_delete_failed', error, {
       route: request.nextUrl.pathname,
       method: request.method,
     });

@@ -480,7 +480,7 @@ export default function AIWordHelper({
           className={cn(
             'flex items-center justify-between border-b border-gray-200 p-4 dark:border-neutral-800',
             'cursor-grab active:cursor-grabbing',
-            'select-none touch-none'
+            'touch-none select-none'
           )}
           onMouseDown={handleDragStart}
           onTouchStart={handleTouchStart}

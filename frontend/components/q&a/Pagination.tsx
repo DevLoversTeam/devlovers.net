@@ -61,7 +61,11 @@ export function Pagination({
       pages.push(1);
 
       if (currentPage <= 3) {
-        for (let i = 2; i <= Math.min(maxVisible, effectiveTotalPages - 1); i++) {
+        for (
+          let i = 2;
+          i <= Math.min(maxVisible, effectiveTotalPages - 1);
+          i++
+        ) {
           pages.push(i);
         }
         if (effectiveTotalPages > maxVisible) {
@@ -196,7 +200,7 @@ export function Pagination({
               value={pageSize}
               onChange={event => onPageSizeChange(Number(event.target.value))}
               aria-label={t('itemsPerPageAria')}
-              className="min-w-20 appearance-none bg-transparent px-3 py-2 pr-9 text-sm font-medium text-gray-800 outline-none transition-colors hover:bg-[var(--qa-accent-soft)] focus:bg-[var(--qa-accent-soft)] dark:text-gray-200"
+              className="min-w-20 appearance-none bg-transparent px-3 py-2 pr-9 text-sm font-medium text-gray-800 transition-colors outline-none hover:bg-[var(--qa-accent-soft)] focus:bg-[var(--qa-accent-soft)] dark:text-gray-200"
             >
               {pageSizeOptions.map(size => (
                 <option key={size} value={size}>

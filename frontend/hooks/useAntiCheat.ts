@@ -65,7 +65,7 @@ export function useAntiCheat(isActive: boolean = true) {
 
     const handleContextMenu = (e: MouseEvent) => {
       e.preventDefault();
-      
+
       if (!lastInteractionWasTouch.current) {
         addViolation('context-menu');
       }
@@ -92,9 +92,10 @@ export function useAntiCheat(isActive: boolean = true) {
     document.addEventListener('paste', handlePaste);
     document.addEventListener('contextmenu', handleContextMenu);
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    document.addEventListener('touchstart', handleTouchStart, { passive: true });
+    document.addEventListener('touchstart', handleTouchStart, {
+      passive: true,
+    });
     document.addEventListener('mousedown', handleMouseDown);
-
 
     return () => {
       document.removeEventListener('copy', handleCopy);

@@ -57,7 +57,10 @@ function ToolbarButton({
   );
 }
 
-export function ExplanationEditor({ blocks, onChange }: ExplanationEditorProps) {
+export function ExplanationEditor({
+  blocks,
+  onChange,
+}: ExplanationEditorProps) {
   const editor = useEditor({
     extensions: EXTENSIONS,
     content: answerBlocksToTipTap(blocks),
@@ -122,15 +125,15 @@ export function ExplanationEditor({ blocks, onChange }: ExplanationEditorProps) 
       <EditorContent
         editor={editor}
         className={cn(
-          'px-3 py-2 text-sm text-foreground focus-within:outline-none',
+          'text-foreground px-3 py-2 text-sm focus-within:outline-none',
           '[&_.ProseMirror]:min-h-[80px] [&_.ProseMirror]:outline-none',
           '[&_.ProseMirror_p]:mb-2',
           '[&_.ProseMirror_ul]:mb-2 [&_.ProseMirror_ul]:list-disc [&_.ProseMirror_ul]:pl-5',
           '[&_.ProseMirror_ol]:mb-2 [&_.ProseMirror_ol]:list-decimal [&_.ProseMirror_ol]:pl-5',
           '[&_.ProseMirror_li]:mb-1',
           '[&_.ProseMirror_pre]:mb-2 [&_.ProseMirror_pre]:rounded-md [&_.ProseMirror_pre]:bg-gray-900 [&_.ProseMirror_pre]:p-3 [&_.ProseMirror_pre]:text-gray-100',
-          '[&_.ProseMirror_code]:rounded [&_.ProseMirror_code]:bg-muted [&_.ProseMirror_code]:px-1 [&_.ProseMirror_code]:py-0.5 [&_.ProseMirror_code]:text-xs',
-          '[&_.ProseMirror_pre_code]:bg-transparent [&_.ProseMirror_pre_code]:p-0 [&_.ProseMirror_pre_code]:text-inherit',
+          '[&_.ProseMirror_code]:bg-muted [&_.ProseMirror_code]:rounded [&_.ProseMirror_code]:px-1 [&_.ProseMirror_code]:py-0.5 [&_.ProseMirror_code]:text-xs',
+          '[&_.ProseMirror_pre_code]:bg-transparent [&_.ProseMirror_pre_code]:p-0 [&_.ProseMirror_pre_code]:text-inherit'
         )}
       />
     </div>

@@ -12,7 +12,7 @@
   "aria": {
     "primaryNav": "Nawigacja główna",
     "dashboard": "Panel",
-    "admin": "Admin panel",
+    "admin": "Panel administratora",
     "blogCategories": "Kategorie bloga",
     "searchBlog": "Szukaj w blogu",
     "toggleMenu": "Przełącz menu",
@@ -27,7 +27,7 @@
   },
   "mobileMenu": {
     "newProduct": "Nowy produkt",
-    "admin": "Admin"
+    "admin": "Administrator"
   },
   "navigation": {
     "home": "Strona główna",
@@ -41,7 +41,11 @@
     "login": "Zaloguj się",
     "logout": "Wyloguj się",
     "signup": "Zarejestruj się",
-    "dashboard": "Panel"
+    "dashboard": "Panel",
+    "myAccount": "Moje konto",
+    "languageSwitcher": {
+      "title": "Język"
+    }
   },
   "homepage": {
     "title": "DevLovers",
@@ -124,7 +128,7 @@
     "searchPlaceholder": "Szukaj pytań...",
     "clearSearch": "Wyczyść wyszukiwanie",
     "noResults": "Nic nie znaleziono dla \"{query}\"",
-    "noQuestions": "Nie znaleziono pytań",
+    "noQuestions": "Brak pytań na ten moment…\nAle już są w przygotowaniu.\nBądź na bieżąco - wkrótce pojawią się nowe materiały!",
     "metaTitle": "Q&A | DevLovers",
     "metaDescription": "Pytania i odpowiedzi do przygotowania do rozmów kwalifikacyjnych",
     "frontend": "Frontend",
@@ -257,7 +261,7 @@
       "start": "Rozpocznij Quiz"
     },
     "section": {
-      "noQuizzes": "Brak quizów w tej kategorii."
+      "noQuizzes": "Brak quizów na ten moment…\nAle już są w przygotowaniu.\nBądź na bieżąco - wkrótce pojawią się nowe quizy!"
     },
     "exitModal": {
       "title": "Wyjść z Quizu?",
@@ -1082,12 +1086,19 @@
   "dashboard": {
     "metaTitle": "Panel | DevLovers",
     "metaDescription": "Śledź swój postęp i wyniki quizów",
-    "title": "Panel użytkownika",
+    "title": "Panel",
     "subtitle": "Witaj z powrotem na swoim placu treningowym",
     "supportLink": "Opinie",
     "profile": {
       "title": "Profil",
       "subtitle": "Zarządzaj swoim profilem publicznym i preferencjami",
+      "defaultName": "Programista",
+      "defaultRole": "użytkownik",
+      "roles": {
+        "user": "Użytkownik",
+        "admin": "Administrator"
+      },
+      "sponsor": "Sponsor",
       "becomeSponsor": "Zostań sponsorem",
       "supportAgain": "Okaż więcej wsparcia",
       "points": "Pkt",
@@ -1098,7 +1109,7 @@
       "daysStreak": "Dni z rzędu",
       "sponsorThanks": "Dziękujemy za wsparcie!",
       "sponsorMore": "Wesprzyj jeszcze więcej",
-      "totalPoints": "Łączna liczba punktów",
+      "totalPoints": "Liczba punktów",
       "settings": "Ustawienia",
       "editProfile": "Edytuj profil",
       "changeName": "Zmień imię",
@@ -1130,7 +1141,10 @@
       "last6Months": "Ostatnie 6 miesięcy",
       "lastYear": "Ten rok",
       "totalActiveDays": "Aktywne dni",
-      "mostActiveMonth": "Aktywny miesiąc"
+      "mostActiveMonth": "Aktywny miesiąc",
+      "heatmapNoActivity": "Brak aktywności",
+      "heatmapAttempts": "{count, plural, one {# próba} few {# próby} many {# prób} other {# próby}}",
+      "heatmapActiveDays": "{count, plural, one {# aktywny dzień} few {# aktywne dni} many {# aktywnych dni} other {# aktywnych dni}}"
     },
     "quizSaved": {
       "title": "Wynik quizu zapisany!",
@@ -1145,6 +1159,7 @@
       "subtitle": "Twoje ostatnie wyniki quizów",
       "noAttempts": "Nie przeszedłeś jeszcze żadnego quizu",
       "startQuiz": "Spróbuj",
+      "quiz": "Quiz",
       "score": "Wynik",
       "accuracy": "Skuteczność",
       "integrity": "Czystość",
@@ -1203,7 +1218,9 @@
       "attachFile": "Dołącz plik",
       "success": "Dziękujemy! Twoja opinia została wysłana.",
       "error": "Coś poszło nie tak. Spróbuj ponownie.",
-      "requiredField": "Proszę wypełnić to pole."
+      "requiredField": "Proszę wypełnić to pole.",
+      "tooManyFiles": "Możesz dołączyć maksymalnie {max} pliki.",
+      "removeFile": "Usuń {name}"
     },
     "achievements": {
       "title": "Osiągnięcia",
@@ -1212,7 +1229,9 @@
         "expand": "Zobacz wszystkie",
         "collapse": "Zwiń",
         "clickInfo": "Kliknij po info",
-        "clickBack": "Kliknij, aby wrócić"
+        "clickBack": "Kliknij, aby wrócić",
+        "more": "więcej",
+        "moreCount": "{count} więcej"
       },
       "badges": {
         "first_blood": {
@@ -1304,6 +1323,36 @@
           "name": "Głębinowiec",
           "desc": "Średnia 80%+ przez 10+ quizów!",
           "hint": "Utrzymaj średnią 80%+ w 10 lub więcej próbach"
+        },
+        "unstoppable": {
+          "name": "Niepowstrzymana Siła",
+          "desc": "Ukończyłeś 100 podejść do quizów!",
+          "hint": "Ukończ 100 prób rozwiązania quizów"
+        },
+        "flawless": {
+          "name": "Nieskazitelne Zwycięstwo",
+          "desc": "Osiągnąłeś 25 perfekcyjnych wyników!",
+          "hint": "Zdobądź 25 perfekcyjnych wyników (100% skuteczności)"
+        },
+        "grandmaster": {
+          "name": "Arcymistrz",
+          "desc": "Średnia 95%+ przez 50+ quizów!",
+          "hint": "Utrzymaj średnią 95%+ w 50 lub więcej próbach"
+        },
+        "polymath": {
+          "name": "Polimata",
+          "desc": "Ukończyłeś 50 różnych quizów!",
+          "hint": "Ukończ 50 unikalnych quizów na platformie"
+        },
+        "deity": {
+          "name": "Bóstwo DevLovers",
+          "desc": "Zdobyłeś potężną sumę 10 000 punktów!",
+          "hint": "Zgromadź łącznie 10 000 punktów"
+        },
+        "abyssal": {
+          "name": "Nurek Głębinowy",
+          "desc": "Średnia 90%+ przez 50+ quizów!",
+          "hint": "Utrzymaj średnią 90%+ w 50 lub więcej próbach"
         }
       }
     }
@@ -1475,6 +1524,38 @@
       "contact": {
         "title": "10. Kontakt",
         "content": "Pytania:"
+      }
+    }
+  },
+  "notifications": {
+    "ui": {
+      "title": "Powiadomienia",
+      "markAllRead": "Zaznacz wszystkie jako przeczytane",
+      "syncing": "Synchronizowanie",
+      "emptyTitle": "Wszystko przejrzane!",
+      "emptySubtitle": "Przejrzałeś całą ostatnią aktywność.",
+      "justNow": "Przed chwilą",
+      "types": {
+        "SYSTEM": "System",
+        "ACHIEVEMENT": "Osiągnięcie",
+        "ARTICLE": "Artykuł",
+        "SHOP": "Sklep"
+      }
+    },
+    "achievement": {
+      "unlocked": {
+        "title": "Osiągnięcie odblokowane!",
+        "message": "Właśnie zdobyłeś odznakę {name}!"
+      }
+    },
+    "account": {
+      "nameChanged": {
+        "title": "Profil zaktualizowany",
+        "message": "Twoja nazwa wyświetlana została zmieniona na {name}"
+      },
+      "passwordChanged": {
+        "title": "Aktualizacja bezpieczeństwa",
+        "message": "Twoje hasło zostało pomyślnie zaktualizowane"
       }
     }
   }

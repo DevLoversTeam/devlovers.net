@@ -36,11 +36,14 @@ export function QuizQuestion({
 
   const isCorrectAnswer = isRevealed && isCorrect;
 
-    const nextButtonRef = useRef<HTMLButtonElement>(null);
+  const nextButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (isRevealed) {
-      nextButtonRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      nextButtonRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
     }
   }, [isRevealed]);
 

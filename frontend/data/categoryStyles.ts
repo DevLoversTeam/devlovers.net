@@ -20,9 +20,9 @@ export const categoryTabStyles = {
   git: {
     icon: '/icons/git.svg',
     color:
-      'group-hover:border-[#F05032]/50 group-hover:bg-[#F05032]/10 data-[state=active]:border-[#F05032]/50 data-[state=active]:bg-[#F05032]/10',
-    glow: 'bg-[#F05032]',
-    accent: '#F05032',
+      'group-hover:border-[#C1121F]/50 group-hover:bg-[#C1121F]/10 data-[state=active]:border-[#C1121F]/50 data-[state=active]:bg-[#C1121F]/10',
+    glow: 'bg-[#C1121F]',
+    accent: '#C1121F',
   },
   html: {
     icon: '/icons/html5.svg',

@@ -45,7 +45,7 @@ export function AnswerEditor({
         value={answerText}
         onChange={e => onTextChange(e.target.value)}
         placeholder={`Answer ${label}...`}
-        className="border-border bg-background text-foreground placeholder:text-muted-foreground flex-1 rounded-md border px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent-primary)]"
+        className="border-border bg-background text-foreground placeholder:text-muted-foreground flex-1 rounded-md border px-3 py-1.5 text-sm focus:ring-1 focus:ring-[var(--accent-primary)] focus:outline-none"
         id={`answer-${answerId}`}
       />
     </div>

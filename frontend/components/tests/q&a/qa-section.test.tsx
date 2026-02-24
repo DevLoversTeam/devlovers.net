@@ -60,6 +60,7 @@ describe('QaSection', () => {
 
   it('renders category tabs and pagination', () => {
     qaState.totalPages = 3;
+    qaState.items = [{ id: 'q1' }];
     render(<QaSection />);
 
     const buttons = screen.getAllByRole('button');

@@ -16,7 +16,10 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: 'dashboard.quizReview' });
+  const t = await getTranslations({
+    locale,
+    namespace: 'dashboard.quizReview',
+  });
 
   return {
     title: t('title'),
@@ -112,13 +115,19 @@ export default async function QuizReviewPage({
         <nav className="mb-4" aria-label="Breadcrumb">
           <ol className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
             <li className="flex items-center gap-2">
-              <Link href="/dashboard" className="underline-offset-4 transition hover:text-[var(--accent-primary)] hover:underline">
+              <Link
+                href="/dashboard"
+                className="underline-offset-4 transition hover:text-[var(--accent-primary)] hover:underline"
+              >
                 {tNav('dashboard')}
               </Link>
               <span>&gt;</span>
             </li>
             <li>
-              <span className="text-[var(--accent-primary)]" aria-current="page">
+              <span
+                className="text-[var(--accent-primary)]"
+                aria-current="page"
+              >
                 {review.quizTitle ?? review.quizSlug}
               </span>
             </li>
@@ -126,16 +135,20 @@ export default async function QuizReviewPage({
         </nav>
         <header className="mb-8">
           <div className="flex items-center gap-3">
-          {categoryStyle && (
-            <span className="relative h-8 w-8 shrink-0 sm:h-10 sm:w-10">
-              <Image
-                src={categoryStyle.icon}
-                alt=""
-                fill
-                className={cn('object-contain', 'iconClassName' in categoryStyle && categoryStyle.iconClassName)}
-              />
-            </span>
-          )}
+            {categoryStyle && (
+              <span className="relative h-8 w-8 shrink-0 sm:h-10 sm:w-10">
+                <Image
+                  src={categoryStyle.icon}
+                  alt=""
+                  fill
+                  className={cn(
+                    'object-contain',
+                    'iconClassName' in categoryStyle &&
+                      categoryStyle.iconClassName
+                  )}
+                />
+              </span>
+            )}
             <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
               {review.quizTitle ?? review.quizSlug}
             </h1>
@@ -148,10 +161,10 @@ export default async function QuizReviewPage({
             })}
           </p>
         </header>
-          <QuizReviewList
-            questions={review.incorrectQuestions}
-            accentColor={categoryStyle?.accent}
-          />
+        <QuizReviewList
+          questions={review.incorrectQuestions}
+          accentColor={categoryStyle?.accent}
+        />
         <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
           <Link href="/dashboard" className={btnOutline}>
             <ArrowLeft className="h-4 w-4" />

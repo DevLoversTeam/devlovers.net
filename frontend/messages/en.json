@@ -41,7 +41,11 @@
     "login": "Log in",
     "logout": "Log out",
     "signup": "Sign up",
-    "dashboard": "Dashboard"
+    "dashboard": "Dashboard",
+    "myAccount": "My Account",
+    "languageSwitcher": {
+      "title": "Language"
+    }
   },
   "homepage": {
     "title": "DevLovers — Technical Interview Platform",
@@ -124,7 +128,7 @@
     "searchPlaceholder": "Search questions...",
     "clearSearch": "Clear search",
     "noResults": "Nothing found for \"{query}\"",
-    "noQuestions": "No questions found",
+    "noQuestions": "No questions yet…\nBut they’re already in development.\nStay tuned - new content coming soon!",
     "metaTitle": "Q&A | DevLovers",
     "metaDescription": "Questions and answers for technical interview preparation",
     "frontend": "Frontend",
@@ -257,7 +261,7 @@
       "start": "Start Quiz"
     },
     "section": {
-      "noQuizzes": "No quizzes in this category yet."
+      "noQuizzes": "No quizzes yet...\nBut they're already in development.\nStay tuned - new quizzes coming soon!"
     },
     "exitModal": {
       "title": "Exit Quiz?",
@@ -1088,6 +1092,10 @@
     "profile": {
       "defaultName": "Developer",
       "defaultRole": "user",
+      "roles": {
+        "user": "User",
+        "admin": "Admin"
+      },
       "sponsor": "Sponsor",
       "becomeSponsor": "Become a Sponsor",
       "supportAgain": "Show More Love",
@@ -1105,6 +1113,8 @@
       "changePassword": "Change Password",
       "currentPassword": "Current password",
       "newPassword": "New password",
+      "nameUpdateSuccess": "Name updated successfully",
+      "passwordUpdateSuccess": "Password updated successfully",
       "saving": "Saving..."
     },
     "stats": {
@@ -1129,7 +1139,10 @@
       "last6Months": "Last 6 Months",
       "lastYear": "This Year",
       "totalActiveDays": "Active Days",
-      "mostActiveMonth": "Active Month"
+      "mostActiveMonth": "Active Month",
+      "heatmapNoActivity": "No activity",
+      "heatmapAttempts": "{count, plural, one {# attempt} other {# attempts}}",
+      "heatmapActiveDays": "{count, plural, one {# active day} other {# active days}}"
     },
     "quizSaved": {
       "title": "Quiz result saved!",
@@ -1144,6 +1157,7 @@
       "subtitle": "Your recent quiz performance",
       "noAttempts": "You haven't taken any quizzes yet",
       "startQuiz": "Try one",
+      "quiz": "Quiz",
       "score": "Score",
       "accuracy": "Accuracy",
       "integrity": "Integrity",
@@ -1202,7 +1216,9 @@
       "attachFile": "Attach File",
       "success": "Thank you! Your feedback has been sent.",
       "error": "Something went wrong. Please try again.",
-      "requiredField": "Please fill out this field."
+      "requiredField": "Please fill out this field.",
+      "tooManyFiles": "You can attach up to {max} files.",
+      "removeFile": "Remove {name}"
     },
     "achievements": {
       "title": "Achievements",
@@ -1211,7 +1227,9 @@
         "expand": "View all",
         "collapse": "Collapse",
         "clickInfo": "Click for info",
-        "clickBack": "Click to flip back"
+        "clickBack": "Click to flip back",
+        "more": "more",
+        "moreCount": "{count} more"
       },
       "badges": {
         "first_blood": {
@@ -1303,6 +1321,36 @@
           "name": "Deep Diver",
           "desc": "Averaged 80%+ across 10+ quizzes!",
           "hint": "Average 80%+ across 10 or more attempts"
+        },
+        "unstoppable": {
+          "name": "Unstoppable Force",
+          "desc": "Conquered 100 total quiz attempts!",
+          "hint": "Complete 100 total quiz attempts"
+        },
+        "flawless": {
+          "name": "Flawless Victory",
+          "desc": "Achieved 25 perfect scores!",
+          "hint": "Achieve 25 perfect scores (100% accuracy)"
+        },
+        "grandmaster": {
+          "name": "Grandmaster",
+          "desc": "Averaged 95%+ across 50+ quizzes!",
+          "hint": "Average 95%+ across 50 or more attempts"
+        },
+        "polymath": {
+          "name": "Polymath",
+          "desc": "Completed 50 unique quizzes!",
+          "hint": "Complete 50 unique quizzes on the platform"
+        },
+        "deity": {
+          "name": "DevLover Deity",
+          "desc": "Earned a massive 10,000 total points!",
+          "hint": "Accumulate 10,000 total points"
+        },
+        "abyssal": {
+          "name": "Abyssal Diver",
+          "desc": "Averaged 90%+ across 50+ quizzes!",
+          "hint": "Average 90%+ across 50 or more attempts"
         }
       }
     }
@@ -1474,6 +1522,38 @@
       "contact": {
         "title": "10. Contact",
         "content": "Questions:"
+      }
+    }
+  },
+  "notifications": {
+    "ui": {
+      "title": "Notifications",
+      "markAllRead": "Mark all as read",
+      "syncing": "Syncing",
+      "emptyTitle": "All caught up!",
+      "emptySubtitle": "You've handled all your recent activity.",
+      "justNow": "Just now",
+      "types": {
+        "SYSTEM": "System",
+        "ACHIEVEMENT": "Achievement",
+        "ARTICLE": "Article",
+        "SHOP": "Shop"
+      }
+    },
+    "achievement": {
+      "unlocked": {
+        "title": "Achievement Unlocked!",
+        "message": "You just earned the {name} badge!"
+      }
+    },
+    "account": {
+      "nameChanged": {
+        "title": "Account Updated",
+        "message": "Your display name has been changed to {name}"
+      },
+      "passwordChanged": {
+        "title": "Security Update",
+        "message": "Your password has been successfully updated"
       }
     }
   }

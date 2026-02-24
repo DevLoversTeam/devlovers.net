@@ -63,10 +63,25 @@ export const getUserGlobalRank = cache(async (userId: string) => {
 
   const result = await db.execute(rankQuery);
   const rankRow = (result as { rows: any[] }).rows[0];
-  
+
   if (!rankRow || !rankRow.rank) {
-    return null; 
+    return null;
   }
-  
+
   return Number(rankRow.rank);
 });
+
+export const updateUser = async (
+  userId: string,
+  data: { name?: string; passwordHash?: string }
+) => {
+  return await db
+    .update(users)
+    .set(data)
+    .where(eq(users.id, userId))
+    .returning({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+    });
+};

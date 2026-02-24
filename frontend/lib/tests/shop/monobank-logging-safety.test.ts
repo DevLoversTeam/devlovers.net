@@ -85,7 +85,7 @@ function isMonobankRelated(rel: string, text: string) {
 
 async function loadFrontendEntries(): Promise<FileEntry[]> {
   const here = path.dirname(fileURLToPath(import.meta.url));
-  const frontendRoot = path.resolve(here, '../../..'); 
+  const frontendRoot = path.resolve(here, '../../..');
 
   const roots = [
     path.join(frontendRoot, 'app'),

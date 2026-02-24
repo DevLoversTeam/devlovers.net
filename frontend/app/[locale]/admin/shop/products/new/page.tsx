@@ -9,13 +9,12 @@ export const metadata: Metadata = {
   description: 'Create a new product for the DevLovers shop catalog.',
 };
 
-
 export default async function NewProductPage() {
   const csrfToken = issueCsrfToken('admin:products:create');
 
   return (
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <ProductForm mode="create" csrfToken={csrfToken} />
-      </main>
+    <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <ProductForm mode="create" csrfToken={csrfToken} />
+    </main>
   );
 }

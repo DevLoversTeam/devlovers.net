@@ -1,6 +1,6 @@
 'use client';
 
-import { Shield, Star, ClipboardList } from 'lucide-react';
+import { ClipboardList } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import { QuizResultRow } from '@/components/dashboard/QuizResultRow';
@@ -15,8 +15,9 @@ interface QuizResultsSectionProps {
 export function QuizResultsSection({ attempts, locale }: QuizResultsSectionProps) {
   const t = useTranslations('dashboard.quizResults');
 
-  const cardStyles =
-    'relative z-10 flex flex-col overflow-hidden rounded-3xl border border-gray-200 bg-white/10 p-6 sm:p-8 lg:p-10 shadow-sm backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-(--accent-primary)/30 dark:border-neutral-800 dark:bg-neutral-900/10 dark:hover:border-(--accent-primary)/30';
+  const cardStyles = 'dashboard-card flex flex-col p-6 sm:p-8 lg:p-10';
+
+  const iconBoxStyles = 'shrink-0 rounded-xl bg-white/40 border border-white/20 shadow-xs backdrop-blur-xs p-3 dark:bg-white/5 dark:border-white/10';
 
   const primaryBtnStyles =
     'group relative inline-flex items-center justify-center rounded-full px-8 py-3 text-sm font-semibold tracking-widest uppercase text-white bg-(--accent-primary) hover:bg-(--accent-hover) transition-all hover:scale-105';
@@ -48,7 +49,7 @@ export function QuizResultsSection({ attempts, locale }: QuizResultsSectionProps
     <section className={cardStyles}>
       <div className="mb-6 flex items-center gap-3">
         <div
-          className="rounded-xl bg-gray-100/50 p-3 ring-1 ring-black/5 dark:bg-neutral-800/50 dark:ring-white/10"
+          className={iconBoxStyles}
           aria-hidden="true"
         >
           <ClipboardList className="h-5 w-5 text-(--accent-primary) drop-shadow-[0_0_8px_rgba(var(--accent-primary-rgb),0.6)]" />
@@ -65,7 +66,7 @@ export function QuizResultsSection({ attempts, locale }: QuizResultsSectionProps
 
       <div className="mb-2 hidden items-center gap-2 px-4 md:grid md:grid-cols-[minmax(0,4fr)_1fr_1.5fr_1fr_1fr_1fr_20px] lg:grid-cols-[minmax(0,4fr)_1fr_1.5fr_1fr_1fr_1fr_1.2fr_20px]">
         <div className={headerCellStyles}>
-          Quiz
+          {t('quiz')}
         </div>
         <div className={`justify-center ${headerCellStyles}`}>
           {t('score')}
@@ -90,13 +91,30 @@ export function QuizResultsSection({ attempts, locale }: QuizResultsSectionProps
 
       {/* Rows */}
       <div className="flex flex-col gap-2">
-        {attempts.map((attempt) => (
-          <QuizResultRow
-            key={attempt.attemptId}
-            attempt={attempt}
-            locale={locale}
-          />
-        ))}
+        {[...attempts]
+          .sort((a, b) => {
+            const scoreA = Number(a.percentage);
+            const scoreB = Number(b.percentage);
+            
+            // Bucket values: Study = 1, Review = 2, Mastered = 3
+            // So that Study (1) comes before Review (2) before Mastered (3)
+            const bucketA = scoreA < 70 ? 1 : scoreA < 100 ? 2 : 3;
+            const bucketB = scoreB < 70 ? 1 : scoreB < 100 ? 2 : 3;
+            
+            if (bucketA !== bucketB) {
+              return bucketA - bucketB; // Ascending order of buckets
+            }
+            
+            // If they are in the same bucket, sort by most recent first
+            return new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime();
+          })
+          .map((attempt) => (
+            <QuizResultRow
+              key={attempt.attemptId}
+              attempt={attempt}
+              locale={locale}
+            />
+          ))}
       </div>
     </section>
   );

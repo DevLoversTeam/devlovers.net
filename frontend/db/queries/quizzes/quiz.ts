@@ -22,7 +22,11 @@ import {
   quizTranslations,
   quizzes,
 } from '../../schema/quiz';
-export type { QuizAnswer, QuizQuestion, QuizQuestionWithAnswers } from '@/types/quiz';
+export type {
+  QuizAnswer,
+  QuizQuestion,
+  QuizQuestionWithAnswers,
+} from '@/types/quiz';
 
 export interface Quiz {
   id: string;
@@ -35,7 +39,6 @@ export interface Quiz {
   categorySlug: string | null;
   categoryName: string | null;
 }
-
 
 export interface QuizAnswerClient {
   id: string;
@@ -54,7 +57,11 @@ export interface QuizQuestionClient {
 
 const attemptReviewCache = new Map<string, AttemptReview>();
 
-function getAttemptReviewCacheKey(attemptId: string, userId: string, locale: string) {
+function getAttemptReviewCacheKey(
+  attemptId: string,
+  userId: string,
+  locale: string
+) {
   return `${attemptId}:${userId}:${locale}`;
 }
 
@@ -63,7 +70,11 @@ async function getCachedAttemptReview(
   userId: string,
   locale: string
 ): Promise<AttemptReview | null> {
-  return attemptReviewCache.get(getAttemptReviewCacheKey(attemptId, userId, locale)) ?? null;
+  return (
+    attemptReviewCache.get(
+      getAttemptReviewCacheKey(attemptId, userId, locale)
+    ) ?? null
+  );
 }
 
 async function cacheAttemptReview(
@@ -72,7 +83,10 @@ async function cacheAttemptReview(
   locale: string,
   review: AttemptReview
 ): Promise<void> {
-  attemptReviewCache.set(getAttemptReviewCacheKey(attemptId, userId, locale), review);
+  attemptReviewCache.set(
+    getAttemptReviewCacheKey(attemptId, userId, locale),
+    review
+  );
 }
 
 export function stripCorrectAnswers(
@@ -191,13 +205,13 @@ export const getActiveQuizzes = cache(
               eq(categoryTranslations.locale, locale)
             )
           )
-          .where(eq(quizzes.isActive, true))
+          .where(and(eq(quizzes.isActive, true), eq(quizzes.status, 'ready')))
           .orderBy(categories.displayOrder, quizzes.displayOrder);
 
         return rows;
       },
       ['active-quizzes', locale],
-      { revalidate: 300 }
+      { revalidate: 300, tags: ['active-quizzes'] }
     );
 
     return cached();
@@ -483,7 +497,8 @@ export async function getUserLastAttemptPerQuiz(
   const attempts = (rows as { rows: unknown[] }).rows as UserLastAttempt[];
 
   return attempts.sort(
-    (a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
+    (a, b) =>
+      new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
   );
 }
 

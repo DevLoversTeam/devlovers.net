@@ -359,7 +359,9 @@ afterAll(async () => {
   if (!__seedTemplateProductId) return;
   try {
     await cleanupProduct(__seedTemplateProductId);
-  } catch (e) { warnCleanup('cleanupSeedTemplateProduct', e); }
+  } catch (e) {
+    warnCleanup('cleanupSeedTemplateProduct', e);
+  }
   __seedTemplateProductId = null;
 });
 

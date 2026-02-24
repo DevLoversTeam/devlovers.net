@@ -177,9 +177,9 @@ describe('GET /api/questions/[category]', () => {
 
     expect(res.status).toBe(200);
     expect(data.items).toHaveLength(2);
-    expect(data.items.map((item: { question: string }) => item.question)).toEqual(
-      ['What is JavaScript?', 'What is closure?']
-    );
+    expect(
+      data.items.map((item: { question: string }) => item.question)
+    ).toEqual(['What is JavaScript?', 'What is closure?']);
     expect(data.total).toBe(2);
     expect(data.totalPages).toBe(1);
     expect(setQaCacheMock).toHaveBeenCalledOnce();

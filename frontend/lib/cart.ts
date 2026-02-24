@@ -52,7 +52,9 @@ export { createCartItemKey };
 
 export function resolveCartStorageKey(ownerId?: string | null): string {
   const normalized = typeof ownerId === 'string' ? ownerId.trim() : '';
-  return normalized ? `${CART_KEY_BASE}:${normalized}` : `${CART_KEY_BASE}:guest`;
+  return normalized
+    ? `${CART_KEY_BASE}:${normalized}`
+    : `${CART_KEY_BASE}:guest`;
 }
 
 /**
@@ -152,7 +154,9 @@ export function persistCartItems(
   }
 }
 
-function normalizeItemsForStorage(items: CartRehydrateItem[]): CartClientItem[] {
+function normalizeItemsForStorage(
+  items: CartRehydrateItem[]
+): CartClientItem[] {
   return items.map(item => ({
     productId: item.productId,
     quantity: item.quantity,
@@ -161,7 +165,9 @@ function normalizeItemsForStorage(items: CartRehydrateItem[]): CartClientItem[] 
   }));
 }
 
-export function computeSummaryFromItems(items: CartRehydrateItem[]): CartSummary {
+export function computeSummaryFromItems(
+  items: CartRehydrateItem[]
+): CartSummary {
   if (!items.length) {
     return {
       totalAmountMinor: 0,

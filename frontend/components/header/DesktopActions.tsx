@@ -1,13 +1,14 @@
 'use client';
 
-import { LogIn, Settings, User } from 'lucide-react';
+import { LogIn } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
-import { LogoutButton } from '@/components/auth/logoutButton';
 import { BlogHeaderSearch } from '@/components/blog/BlogHeaderSearch';
 import { HeaderButton } from '@/components/shared/HeaderButton';
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher';
 import { CartButton } from '@/components/shop/header/CartButton';
+import { NotificationBell } from './NotificationBell';
+import { UserNavDropdown } from './UserNavDropdown';
 
 type DesktopActionsProps = {
   variant: 'platform' | 'shop' | 'blog';
@@ -21,7 +22,6 @@ export function DesktopActions({
   showAdminLink = false,
 }: DesktopActionsProps) {
   const t = useTranslations('navigation');
-  const tAria = useTranslations('aria');
   const isShop = variant === 'shop';
   const isBlog = variant === 'blog';
 
@@ -31,24 +31,6 @@ export function DesktopActions({
 
       <LanguageSwitcher />
 
-      {userExists && (
-        <HeaderButton
-          variant="icon"
-          href="/dashboard"
-          icon={User}
-          label={tAria('dashboard')}
-        />
-      )}
-
-      {showAdminLink && (
-        <HeaderButton
-          variant="icon"
-          href="/admin/shop"
-          icon={Settings}
-          label={tAria('admin')}
-        />
-      )}
-
       {isShop && <CartButton />}
 
       {!userExists ? (
@@ -56,7 +38,10 @@ export function DesktopActions({
           {t('login')}
         </HeaderButton>
       ) : (
-        <LogoutButton />
+        <>
+          <NotificationBell />
+          <UserNavDropdown showAdminLink={showAdminLink} />
+        </>
       )}
     </div>
   );

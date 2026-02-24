@@ -6,7 +6,10 @@ import { getTranslations } from 'next-intl/server';
 import { QuizContainer } from '@/components/quiz/QuizContainer';
 import { categoryTabStyles } from '@/data/categoryStyles';
 import { stripCorrectAnswers } from '@/db/queries/quizzes/quiz';
-import { getQuizBySlug, getQuizQuestionsRandomized } from '@/db/queries/quizzes/quiz';
+import {
+  getQuizBySlug,
+  getQuizQuestionsRandomized,
+} from '@/db/queries/quizzes/quiz';
 import { getCurrentUser } from '@/lib/auth';
 import { cn } from '@/lib/utils';
 

@@ -26,12 +26,17 @@ export function getMonobankConfig(): MonobankConfig {
   return {
     webhookMode: parseWebhookMode(rawMode),
     refundEnabled: env.MONO_REFUND_ENABLED === 'true',
-    invoiceValiditySeconds: parsePositiveInt(env.MONO_INVOICE_VALIDITY_SECONDS, 86400),
-    timeSkewToleranceSec: parsePositiveInt(env.MONO_TIME_SKEW_TOLERANCE_SEC, 300),
+    invoiceValiditySeconds: parsePositiveInt(
+      env.MONO_INVOICE_VALIDITY_SECONDS,
+      86400
+    ),
+    timeSkewToleranceSec: parsePositiveInt(
+      env.MONO_TIME_SKEW_TOLERANCE_SEC,
+      300
+    ),
     baseUrlSource: resolveBaseUrlSource(),
   };
 }
-
 
 export type MonobankConfig = {
   webhookMode: MonobankWebhookMode;

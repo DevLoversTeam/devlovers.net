@@ -9,6 +9,7 @@ import { FeaturedPostCtaButton } from '@/components/blog/FeaturedPostCtaButton';
 import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
 import { Link } from '@/i18n/routing';
 import { formatBlogDate } from '@/lib/blog/date';
+import { shouldBypassImageOptimization } from '@/lib/blog/image';
 
 export const revalidate = 0;
 
@@ -121,6 +122,9 @@ export default async function BlogCategoryPage({
                   alt={featuredPost.title}
                   width={1400}
                   height={800}
+                  unoptimized={shouldBypassImageOptimization(
+                    featuredPost.mainImage
+                  )}
                   className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
                   priority={false}
                 />
@@ -142,6 +146,9 @@ export default async function BlogCategoryPage({
                       alt={featuredPost.author.name || 'Author'}
                       width={28}
                       height={28}
+                      unoptimized={shouldBypassImageOptimization(
+                        featuredPost.author.image
+                      )}
                       className="h-7 w-7 rounded-full object-cover"
                     />
                   )}

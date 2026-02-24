@@ -1,17 +1,20 @@
 # Monobank B3 Verification (Read-Only)
 
-This script verifies Monobank data invariants without modifying data. It is safe to run in DEV/UAT/PROD.
+This script verifies Monobank data invariants without modifying data. It is safe
+to run in DEV/UAT/PROD.
 
 ## What it checks
 
-- All **checkout-eligible** products have a UAH price row (currency = `UAH`) with a non-negative minor price.
+- All **checkout-eligible** products have a UAH price row (currency = `UAH`)
+  with a non-negative minor price.
 - Required indexes exist on `payment_attempts`:
   - `payment_attempts_order_provider_active_unique`
   - `payment_attempts_provider_status_updated_idx`
 
 Checkout-eligible predicate is derived from shop code:
 
-- `products.is_active = true` (see `frontend/db/queries/shop/products.ts` and `frontend/lib/services/orders/checkout.ts`).
+- `products.is_active = true` (see `frontend/db/queries/shop/products.ts` and
+  `frontend/lib/services/orders/checkout.ts`).
 
 ## Run (PowerShell)
 

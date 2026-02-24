@@ -177,7 +177,24 @@ export default async function AdminOrderDetailPage({
             {order.id}
           </p>
         </div>
+    <main className="mx-auto max-w-6xl px-4 py-8" aria-labelledby="order-title">
+      <header className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h1 id="order-title" className="text-foreground text-2xl font-bold">
+            Order
+          </h1>
+          <p className="text-muted-foreground mt-1 font-mono text-xs break-all">
+            {order.id}
+          </p>
+        </div>
 
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <Link
+            href="/admin/shop/orders"
+            className="border-border text-foreground hover:bg-secondary rounded-md border px-3 py-1.5 text-sm font-medium transition-colors"
+          >
+            Back
+          </Link>
         <div className="flex shrink-0 flex-wrap items-center gap-2">
           <Link
             href="/admin/shop/orders"
@@ -208,12 +225,25 @@ export default async function AdminOrderDetailPage({
               <dt className="text-muted-foreground">Payment status</dt>
               <dd className="text-foreground">{order.paymentStatus}</dd>
             </div>
+          <dl className="mt-3 space-y-2 text-sm">
+            <div className="flex justify-between gap-4">
+              <dt className="text-muted-foreground">Payment status</dt>
+              <dd className="text-foreground">{order.paymentStatus}</dd>
+            </div>
 
             <div className="flex justify-between gap-4">
               <dt className="text-muted-foreground">Total</dt>
               <dd className="text-foreground">{totalFormatted}</dd>
             </div>
+            <div className="flex justify-between gap-4">
+              <dt className="text-muted-foreground">Total</dt>
+              <dd className="text-foreground">{totalFormatted}</dd>
+            </div>
 
+            <div className="flex justify-between gap-4">
+              <dt className="text-muted-foreground">Provider</dt>
+              <dd className="text-foreground">{order.paymentProvider}</dd>
+            </div>
             <div className="flex justify-between gap-4">
               <dt className="text-muted-foreground">Provider</dt>
               <dd className="text-foreground">{order.paymentProvider}</dd>
@@ -225,7 +255,21 @@ export default async function AdminOrderDetailPage({
                 {order.paymentIntentId ?? '-'}
               </dd>
             </div>
+            <div className="flex justify-between gap-4">
+              <dt className="text-muted-foreground">Payment intent</dt>
+              <dd className="text-muted-foreground font-mono text-xs break-all">
+                {order.paymentIntentId ?? '-'}
+              </dd>
+            </div>
 
+            <div className="flex justify-between gap-4">
+              <dt className="text-muted-foreground">Idempotency key</dt>
+              <dd className="text-muted-foreground font-mono text-xs break-all">
+                {order.idempotencyKey}
+              </dd>
+            </div>
+          </dl>
+        </article>
             <div className="flex justify-between gap-4">
               <dt className="text-muted-foreground">Idempotency key</dt>
               <dd className="text-muted-foreground font-mono text-xs break-all">
@@ -402,11 +446,46 @@ export default async function AdminOrderDetailPage({
         <h2 id="items-title" className="sr-only">
           Order items
         </h2>
+      <section className="mt-6" aria-labelledby="items-title">
+        <h2 id="items-title" className="sr-only">
+          Order items
+        </h2>
 
         <div className="border-border overflow-x-auto rounded-lg border">
           <table className="divide-border min-w-full divide-y text-sm">
             <caption className="sr-only">Line items for this order</caption>
+        <div className="border-border overflow-x-auto rounded-lg border">
+          <table className="divide-border min-w-full divide-y text-sm">
+            <caption className="sr-only">Line items for this order</caption>
 
+            <thead className="bg-muted/50">
+              <tr>
+                <th
+                  scope="col"
+                  className="text-foreground px-3 py-2 text-left font-semibold"
+                >
+                  Product
+                </th>
+                <th
+                  scope="col"
+                  className="text-foreground px-3 py-2 text-left font-semibold"
+                >
+                  Qty
+                </th>
+                <th
+                  scope="col"
+                  className="text-foreground px-3 py-2 text-left font-semibold"
+                >
+                  Unit
+                </th>
+                <th
+                  scope="col"
+                  className="text-foreground px-3 py-2 text-left font-semibold"
+                >
+                  Line total
+                </th>
+              </tr>
+            </thead>
             <thead className="bg-muted/50">
               <tr>
                 <th
@@ -468,6 +547,18 @@ export default async function AdminOrderDetailPage({
                 );
               })}
 
+              {order.items.length === 0 ? (
+                <tr>
+                  <td className="text-muted-foreground px-3 py-6" colSpan={4}>
+                    No items found for this order.
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
               {order.items.length === 0 ? (
                 <tr>
                   <td className="text-muted-foreground px-3 py-6" colSpan={4}>

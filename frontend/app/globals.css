@@ -116,8 +116,17 @@
   --sponsor-hover: #bf3989;
 }
 
+@property --scroll-thumb-alpha {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+
 html {
   overflow-x: hidden;
+  --scroll-thumb-alpha: 0;
+
+  transition: --scroll-thumb-alpha 0.3s ease;
 }
 
 *::-webkit-scrollbar {
@@ -130,22 +139,37 @@ html {
 }
 
 *::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.25);
+  background: rgba(0, 0, 0, var(--scroll-thumb-alpha));
   border-radius: 3px;
 }
 
-:is(.dark) *::-webkit-scrollbar-thumb,
-.dark::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
+html:is(.dark) *::-webkit-scrollbar-thumb,
+html .dark *::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, var(--scroll-thumb-alpha));
+}
+
+html.is-scrolling {
+  --scroll-thumb-alpha: 0.25;
+}
+
+html.is-scrolling:is(.dark),
+html.is-scrolling .dark {
+  --scroll-thumb-alpha: 0.2;
 }
 
 @supports (-moz-appearance: none) {
   * {
     scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+    transition: scrollbar-color 0.3s ease;
+  }
+
+  html.is-scrolling * {
     scrollbar-color: rgba(0, 0, 0, 0.25) transparent;
   }
 
-  :is(.dark) * {
+  html.is-scrolling:is(.dark) *,
+  html.is-scrolling .dark * {
     scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
   }
 }
@@ -174,6 +198,24 @@ html {
   .btn:hover {
     background-color: var(--accent-hover);
   }
+
+  .dashboard-card {
+    @apply relative z-10 overflow-hidden rounded-3xl border border-gray-200 bg-white/10 shadow-sm backdrop-blur-md transition-all duration-300;
+
+    &:hover {
+      @apply -translate-y-1 shadow-md;
+
+      border-color: color-mix(in srgb, var(--accent-primary) 30%, transparent);
+    }
+
+    &:is(.dark *) {
+      @apply border-neutral-800 bg-neutral-900/10;
+    }
+
+    &:is(.dark *):hover {
+      border-color: color-mix(in srgb, #ff2d55 30%, transparent);
+    }
+  }
 }
 
 .container-main {
@@ -183,7 +225,22 @@ html {
 .qa-accordion-item:hover,
 .qa-accordion-item:focus-within,
 .qa-accordion-item[data-state='open'] {
-  border-color: var(--qa-accent);
+  border-color: var(--qa-accent, var(--accent-primary));
+}
+
+.qa-accordion-item {
+  position: relative;
+  overflow: hidden;
+  background-image: linear-gradient(90deg,
+      transparent 0%,
+      transparent 54%,
+      var(--qa-accent-soft, rgba(161, 161, 170, 0.22)) 100%);
+}
+
+.qa-accordion-item:hover,
+.qa-accordion-item:focus-within,
+.qa-accordion-item[data-state='open'] {
+  background-image: none;
 }
 
 .no-select,
@@ -193,6 +250,31 @@ html {
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
+}
+
+@keyframes fade-up {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.6s ease-out forwards;
+  opacity: 0;
+}
+
+.delay-150 {
+  animation-delay: 0.15s;
+}
+
+.delay-300 {
+  animation-delay: 0.3s;
 }
 
 @keyframes progress {
@@ -324,6 +406,10 @@ html {
   /* 3D Flip Card */
   .perspective-1000 {
     perspective: 1000px;
+  }
+
+  .perspective-midrange {
+    perspective: 800px;
   }
 
   .preserve-3d {

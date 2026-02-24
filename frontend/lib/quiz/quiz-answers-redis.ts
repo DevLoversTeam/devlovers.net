@@ -1,13 +1,14 @@
-import { and, eq,inArray  } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 
 import { db } from '@/db';
-import { 
-  quizAnswers, 
+import {
+  quizAnswers,
   quizAnswerTranslations,
   quizQuestionContent,
-  quizQuestions} from '@/db/schema/quiz';
+  quizQuestions,
+} from '@/db/schema/quiz';
 import { getRedisClient } from '@/lib/redis';
-import type { QuizQuestionWithAnswers, AttemptReview} from '@/types/quiz';
+import type { AttemptReview,QuizQuestionWithAnswers } from '@/types/quiz';
 
 interface QuizAnswersCache {
   quizId: string;
@@ -25,7 +26,6 @@ interface QuizQuestionsCache {
 function getQuestionsCacheKey(quizId: string, locale: string): string {
   return `quiz:questions:${quizId}:${locale}`;
 }
-
 
 function getAnswersCacheKey(quizId: string): string {
   return `quiz:answers:${quizId}`;
@@ -82,8 +82,7 @@ export async function getOrCreateQuizAnswersCache(
   } catch (err) {
     console.warn('Failed to cache quiz answers in Redis', err);
   }
-    return true;
-
+  return true;
 }
 
 export async function getCorrectAnswer(
@@ -159,7 +158,7 @@ export async function getOrCreateQuestionsCache(
     .where(eq(quizQuestions.quizId, quizId))
     .orderBy(quizQuestions.displayOrder);
 
-    if (questionsData.length === 0) {
+  if (questionsData.length === 0) {
     const cacheData: QuizQuestionsCache = {
       quizId,
       locale,
@@ -202,7 +201,6 @@ export async function getOrCreateQuestionsCache(
     answersByQuestion.set(answer.questionId, arr);
   }
 
-
   const questions: QuizQuestionWithAnswers[] = questionsData.map(q => ({
     ...q,
     answers: (answersByQuestion.get(q.id) || []).map(a => ({
@@ -221,7 +219,7 @@ export async function getOrCreateQuestionsCache(
   };
 
   try {
-  await redis.set(key, cacheData);
+    await redis.set(key, cacheData);
   } catch (e) {
     console.warn('Redis cache write failed:', e);
   }
@@ -273,7 +271,10 @@ export async function clearVerifiedQuestions(
   try {
     let cursor = '0';
     do {
-      const [nextCursor, keys] = await redis.scan(cursor, { match: pattern, count: 100 });
+      const [nextCursor, keys] = await redis.scan(cursor, {
+        match: pattern,
+        count: 100,
+      });
       cursor = nextCursor;
       if (keys.length > 0) {
         await redis.del(...keys);
@@ -286,7 +287,11 @@ export async function clearVerifiedQuestions(
 
 const ATTEMPT_REVIEW_TTL = 48 * 60 * 60; // 48 hours
 
-function getAttemptReviewCacheKey(attemptId: string, userId: string | undefined, locale: string): string {
+function getAttemptReviewCacheKey(
+  attemptId: string,
+  userId: string | undefined,
+  locale: string
+): string {
   return `quiz:attempt-review:${attemptId}:${userId}:${locale}`;
 }
 
@@ -299,7 +304,9 @@ export async function getCachedAttemptReview(
   if (!redis) return null;
 
   try {
-    return await redis.get<AttemptReview>(getAttemptReviewCacheKey(attemptId, userId, locale));
+    return await redis.get<AttemptReview>(
+      getAttemptReviewCacheKey(attemptId, userId, locale)
+    );
   } catch (err) {
     console.warn('Redis attempt review cache read failed:', err);
     return null;
