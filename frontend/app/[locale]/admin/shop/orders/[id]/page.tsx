@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { and, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { Metadata } from 'next';
 import { unstable_noStore as noStore } from 'next/cache';
 import { notFound, redirect } from 'next/navigation';
@@ -126,7 +126,7 @@ export default async function OrderDetailPage({
   if (!user) {
     redirect(
       `/${locale}/login?returnTo=${encodeURIComponent(
-        `/${locale}/shop/orders/${id}`
+        `/${locale}/admin/shop/orders/${id}`
       )}`
     );
   }
@@ -135,50 +135,56 @@ export default async function OrderDetailPage({
   if (!parsed.success) notFound();
 
   const isAdmin = user.role === 'admin';
+  if (!isAdmin) notFound();
 
   let order: OrderDetail;
 
+  const whereClause = eq(orders.id, parsed.data.id);
+
+  const rows = await (async () => {
+    try {
+      return await db
+        .select({
+          order: {
+            id: orders.id,
+            userId: orders.userId,
+            totalAmount: orders.totalAmount,
+            currency: orders.currency,
+            paymentStatus: orders.paymentStatus,
+            paymentProvider: orders.paymentProvider,
+            paymentIntentId: orders.paymentIntentId,
+            shippingStatus: orders.shippingStatus,
+            trackingNumber: orders.trackingNumber,
+            stockRestored: orders.stockRestored,
+            restockedAt: orders.restockedAt,
+            idempotencyKey: orders.idempotencyKey,
+            createdAt: orders.createdAt,
+            updatedAt: orders.updatedAt,
+          },
+          item: {
+            id: orderItems.id,
+            productId: orderItems.productId,
+            productTitle: orderItems.productTitle,
+            productSlug: orderItems.productSlug,
+            productSku: orderItems.productSku,
+            quantity: orderItems.quantity,
+            unitPrice: orderItems.unitPrice,
+            lineTotal: orderItems.lineTotal,
+          },
+        })
+        .from(orders)
+        .leftJoin(orderItems, eq(orderItems.orderId, orders.id))
+        .where(whereClause)
+        .orderBy(orderItems.id);
+    } catch (error) {
+      logError('Admin order detail page failed', error);
+      throw new Error('ORDER_DETAIL_LOAD_FAILED');
+    }
+  })();
+
+  if (rows.length === 0) notFound();
+
   try {
-    const whereClause = isAdmin
-      ? eq(orders.id, parsed.data.id)
-      : and(eq(orders.id, parsed.data.id), eq(orders.userId, user.id));
-
-    const rows = await db
-      .select({
-        order: {
-          id: orders.id,
-          userId: orders.userId,
-          totalAmount: orders.totalAmount,
-          currency: orders.currency,
-          paymentStatus: orders.paymentStatus,
-          paymentProvider: orders.paymentProvider,
-          paymentIntentId: orders.paymentIntentId,
-          shippingStatus: orders.shippingStatus,
-          trackingNumber: orders.trackingNumber,
-          stockRestored: orders.stockRestored,
-          restockedAt: orders.restockedAt,
-          idempotencyKey: orders.idempotencyKey,
-          createdAt: orders.createdAt,
-          updatedAt: orders.updatedAt,
-        },
-        item: {
-          id: orderItems.id,
-          productId: orderItems.productId,
-          productTitle: orderItems.productTitle,
-          productSlug: orderItems.productSlug,
-          productSku: orderItems.productSku,
-          quantity: orderItems.quantity,
-          unitPrice: orderItems.unitPrice,
-          lineTotal: orderItems.lineTotal,
-        },
-      })
-      .from(orders)
-      .leftJoin(orderItems, eq(orderItems.orderId, orders.id))
-      .where(whereClause)
-      .orderBy(orderItems.id);
-
-    if (rows.length === 0) notFound();
-
     const base = rows[0]!.order;
 
     const items = rows
@@ -193,7 +199,7 @@ export default async function OrderDetailPage({
       items,
     };
   } catch (error) {
-    logError('User order detail page failed', error);
+    logError('Admin order detail page failed', error);
     throw new Error('ORDER_DETAIL_LOAD_FAILED');
   }
 
@@ -241,10 +247,10 @@ export default async function OrderDetailPage({
           className="flex flex-wrap items-center justify-end gap-3"
           aria-label="Order navigation"
         >
-          <Link className={NAV_LINK} href="/shop/orders">
+          <Link className={NAV_LINK} href="/admin/shop/orders">
             {t('myOrders')}
           </Link>
-          <Link className={NAV_LINK} href="/shop">
+          <Link className={NAV_LINK} href="/admin/shop">
             {t('shop')}
           </Link>
         </nav>

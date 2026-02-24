@@ -529,7 +529,7 @@ async function atomicMarkPaidOrderAndSucceedAttempt(args: {
         and shipping_provider = 'nova_poshta'
         and shipping_method_code is not null
         and ${inventoryCommittedForShippingSql(
-          'updated_order.inventory_status'
+          sql`updated_order.inventory_status`
         )}
     ),
     inserted_shipment as (

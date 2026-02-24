@@ -387,7 +387,47 @@
         "subtotal": "Проміжний підсумок",
         "shipping": "Доставка",
         "shippingCalc": "Розраховується при оформленні",
-        "total": "Всього"
+        "total": "Всього",
+        "shippingInformationalOnly": "Лише інформаційно",
+        "shippingPayOnDeliveryNote": "Доставка оплачується перевізнику при отриманні; зараз списуємо лише товари."
+      },
+      "delivery": {
+        "legend": "Доставка",
+        "methodsLoading": "Завантаження способів доставки...",
+        "unavailableFallback": "Доставка зараз недоступна.",
+        "city": {
+          "label": "Місто",
+          "placeholder": "Почніть вводити назву міста (мін. 2 символи)",
+          "selected": "Вибране місто: {city}",
+          "searching": "Пошук міст..."
+        },
+        "warehouse": {
+          "label": "Відділення / поштомат",
+          "placeholder": "Введіть назву або номер відділення",
+          "selected": "Вибране відділення: {warehouse}",
+          "searching": "Пошук відділень..."
+        },
+        "courierAddress": {
+          "label": "Адреса кур’єра",
+          "line1Placeholder": "Вулиця, будинок, квартира",
+          "line2Placeholder": "Додаткова інформація про адресу (необов’язково)"
+        },
+        "recipientName": {
+          "label": "ПІБ отримувача",
+          "placeholder": "Повне ім’я"
+        },
+        "recipientPhone": {
+          "label": "Телефон отримувача",
+          "placeholder": "+380XXXXXXXXX або 0XXXXXXXXX"
+        },
+        "recipientEmail": {
+          "label": "Email отримувача (необов’язково)",
+          "placeholder": "email@example.com"
+        },
+        "recipientComment": {
+          "label": "Коментар (необов’язково)",
+          "placeholder": "Коментар до доставки"
+        }
       },
       "checkout": {
         "placeOrder": "Оформити замовлення",
@@ -716,7 +756,12 @@
         "unitPrice": "Ціна за одиницю",
         "lineTotal": "Всього за рядок",
         "yes": "Так",
-        "no": "Ні"
+        "no": "Ні",
+        "shippingStatus": "Статус доставки",
+        "trackingNumber": "Номер відстеження",
+        "qtyShort": "К-сть",
+        "unitShort": "За од.",
+        "lineShort": "Сума"
       }
     },
     "productDescriptions": {

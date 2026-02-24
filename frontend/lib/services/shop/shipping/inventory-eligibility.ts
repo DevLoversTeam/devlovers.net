@@ -1,8 +1,9 @@
-import { sql, type SQL } from 'drizzle-orm';
+import { type SQL, sql, type SQLWrapper } from 'drizzle-orm';
 
 import { inventoryStatusEnum } from '@/db/schema/shop';
 
-export type InventoryStatusValue = (typeof inventoryStatusEnum.enumValues)[number];
+export type InventoryStatusValue =
+  (typeof inventoryStatusEnum.enumValues)[number];
 
 const INVENTORY_COMMITTED_FOR_SHIPPING: readonly InventoryStatusValue[] = [
   'reserved',
@@ -21,8 +22,10 @@ export function isInventoryCommittedForShipping(
   );
 }
 
-export function inventoryCommittedForShippingSql(columnReference: string): SQL {
-  return sql`${sql.raw(columnReference)} in (${sql.join(
+export function inventoryCommittedForShippingSql(
+  columnReference: SQLWrapper
+): SQL {
+  return sql`${columnReference} in (${sql.join(
     INVENTORY_COMMITTED_FOR_SHIPPING.map(value => sql`${value}`),
     sql`, `
   )})`;

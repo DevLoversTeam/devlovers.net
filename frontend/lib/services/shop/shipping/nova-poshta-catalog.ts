@@ -7,9 +7,9 @@ import { logWarn } from '@/lib/logging';
 
 import {
   getWarehousesBySettlementRef,
-  searchSettlements,
   type NovaPoshtaSettlement,
   type NovaPoshtaWarehouse,
+  searchSettlements,
 } from './nova-poshta-client';
 
 type CityRow = {
@@ -102,7 +102,10 @@ export async function findCachedCities(args: {
   q: string;
   limit: number;
 }): Promise<ShippingCity[]> {
-  const like = `%${args.q}%`;
+  const q = args.q.trim();
+  if (!q) return [];
+
+  const like = `%${q}%`;
   const res = await db.execute<CityRow>(sql`
     SELECT ref, name_ua, name_ru, area, region, settlement_type
     FROM np_cities
@@ -365,6 +368,18 @@ export async function findWarehousesWithCacheOnMiss(args: {
   });
   if (localResults.length > 0) {
     return localResults.slice(0, args.limit);
+  }
+
+  const hasQ = !!args.q?.trim();
+  if (hasQ) {
+    const anyCachedForSettlement = await findCachedWarehouses({
+      settlementRef: args.settlementRef,
+      limit: 1,
+    });
+
+    if (anyCachedForSettlement.length > 0) {
+      return [];
+    }
   }
 
   try {

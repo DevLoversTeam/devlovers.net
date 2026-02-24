@@ -57,27 +57,37 @@ export function normalizeVariantOptions(
 function optionValue(
   options: Record<string, string> | undefined,
   keys: string[]
-): string {
-  if (!options) return '';
+): string | undefined {
+  if (!options) return undefined;
+
   for (const key of keys) {
     const value = options[key];
-    if (value) return normVariant(value);
+    if (!value) continue;
+
+    const normalized = normVariant(value);
+    if (normalized) return normalized;
   }
-  return '';
+
+  return undefined;
 }
 
 export function normalizeCheckoutItem(
   item: CheckoutItemWithVariant
 ): CheckoutItemWithVariant {
   const normalizedOptions = normalizeVariantOptions(item.options ?? undefined);
+
   const selectedSize =
     normVariant(item.selectedSize) ||
-    optionValue(normalizedOptions, ['size', 'selectedsize']);
+    optionValue(normalizedOptions, ['size', 'selectedsize']) ||
+    undefined;
+
   const selectedColor =
     normVariant(item.selectedColor) ||
-    optionValue(normalizedOptions, ['color', 'selectedcolor']);
+    optionValue(normalizedOptions, ['color', 'selectedcolor']) ||
+    undefined;
 
-  const variantKey = normVariant(item.variantKey);
+  const variantKey = normVariant(item.variantKey) || undefined;
+
   let options = normalizedOptions;
   if (selectedSize || selectedColor) {
     options = {
@@ -92,7 +102,7 @@ export function normalizeCheckoutItem(
     selectedSize,
     selectedColor,
     variantKey,
-    options: options ?? undefined,
+    options: normalizeVariantOptions(options),
   };
 }
 
@@ -135,11 +145,13 @@ export function requireTotalCents(summary: OrderSummaryWithMinor): number {
   return v;
 }
 
-export function mergeCheckoutItems(items: CheckoutItem[]): CheckoutItem[] {
+export function mergeCheckoutItems(
+  items: CheckoutItemWithVariant[]
+): CheckoutItemWithVariant[] {
   const map = new Map<string, CheckoutItemWithVariant>();
 
   for (const item of items) {
-    const it = normalizeCheckoutItem(item as CheckoutItemWithVariant);
+    const it = normalizeCheckoutItem(item);
     const key = checkoutItemMergeKey(it);
 
     const existing = map.get(key);
@@ -174,14 +186,12 @@ export function hashIdempotencyRequest(params: {
   currency: string;
   locale: string | null;
   paymentProvider: PaymentProvider;
-  shipping:
-    | {
-        provider: 'nova_poshta';
-        methodCode: 'NP_WAREHOUSE' | 'NP_LOCKER' | 'NP_COURIER';
-        cityRef: string;
-        warehouseRef: string | null;
-      }
-    | null;
+  shipping: {
+    provider: 'nova_poshta';
+    methodCode: 'NP_WAREHOUSE' | 'NP_LOCKER' | 'NP_COURIER';
+    cityRef: string;
+    warehouseRef: string | null;
+  } | null;
 }) {
   const normalized = [...params.items]
     .map(i => {
@@ -189,7 +199,7 @@ export function hashIdempotencyRequest(params: {
       return {
         productId: normalizedItem.productId,
         quantity: normalizedItem.quantity,
-        variantKey: normVariant(normalizedItem.variantKey),
+        variantKey: normalizedItem.variantKey ?? undefined,
         options: normalizedItem.options ?? {},
       };
     })

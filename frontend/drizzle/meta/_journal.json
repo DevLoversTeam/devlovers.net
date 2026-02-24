@@ -127,6 +127,13 @@
       "when": 1771894576421,
       "tag": "0017_shop_shipping_core",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1771958820907,
+      "tag": "0018_shop_orders_shipping_invariants",
+      "breakpoints": true
     }
   ]
 }

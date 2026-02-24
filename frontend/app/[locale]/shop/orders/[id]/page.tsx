@@ -274,12 +274,18 @@ export default async function OrderDetailPage({
           </div>
 
           <div>
-            <dt className="text-muted-foreground text-xs">Shipping status</dt>
-            <dd className="text-sm font-medium">{order.shippingStatus ?? '-'}</dd>
+            <dt className="text-muted-foreground text-xs">
+              {t('shippingStatus')}
+            </dt>
+            <dd className="text-sm font-medium">
+              {order.shippingStatus ?? '-'}
+            </dd>
           </div>
 
           <div>
-            <dt className="text-muted-foreground text-xs">Tracking number</dt>
+            <dt className="text-muted-foreground text-xs">
+              {t('trackingNumber')}
+            </dt>
             <dd className="text-sm font-medium break-all">
               {order.trackingNumber ?? '-'}
             </dd>
@@ -378,19 +384,21 @@ export default async function OrderDetailPage({
                 <dl className="flex flex-col items-start gap-1 sm:items-end">
                   <div>
                     <dt className="sr-only">{t('quantity')}</dt>
-                    <dd className="text-sm">Qty: {it.quantity}</dd>
+                    <dd className="text-sm">
+                      {t('qtyShort')}: {it.quantity}
+                    </dd>
                   </div>
                   <div>
                     <dt className="sr-only">{t('unitPrice')}</dt>
                     <dd className="text-muted-foreground text-sm">
-                      Unit:{' '}
+                      {t('unitShort')}:{' '}
                       {safeFormatMoneyMajor(it.unitPrice, currency, locale)}
                     </dd>
                   </div>
                   <div>
                     <dt className="sr-only">{t('lineTotal')}</dt>
                     <dd className="text-sm font-medium">
-                      Line:{' '}
+                      {t('lineShort')}:{' '}
                       {safeFormatMoneyMajor(it.lineTotal, currency, locale)}
                     </dd>
                   </div>

@@ -1,6 +1,7 @@
 import 'server-only';
 
-import { resolveCurrencyFromLocale, type CurrencyCode } from '@/lib/shop/currency';
+import { type CurrencyCode } from '@/lib/shop/currency';
+import { localeToCountry } from '@/lib/shop/locale';
 
 export type ShippingAvailabilityReasonCode =
   | 'OK'
@@ -39,19 +40,12 @@ function normalizeCountry(input: string | null | undefined): string | null {
   return raw;
 }
 
-function inferCountryFromLocale(locale: string | null): string | null {
-  if (!locale) return null;
-  const primary = locale.split(/[-_]/)[0]?.toLowerCase() ?? '';
-  if (primary === 'uk') return 'UA';
-  return null;
-}
-
 export function resolveShippingAvailability(
   input: ShippingAvailabilityInput
 ): ShippingAvailabilityDecision {
   const locale = normalizeLocale(input.locale);
-  const country = normalizeCountry(input.country) ?? inferCountryFromLocale(locale);
-  const currency = input.currency ?? resolveCurrencyFromLocale(locale);
+  const country = normalizeCountry(input.country) ?? localeToCountry(locale);
+  const currency = input.currency;
 
   if (!input.shippingEnabled) {
     return {

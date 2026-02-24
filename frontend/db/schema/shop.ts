@@ -237,9 +237,34 @@ export const orders = pgTable(
       'orders_payment_status_valid_when_none',
       sql`${table.paymentProvider} <> 'none' OR ${table.paymentStatus} in ('paid','failed')`
     ),
+    check(
+      'orders_shipping_null_when_not_required_chk',
+      sql`
+    ${table.shippingRequired} IS TRUE
+    OR (
+      ${table.shippingProvider} IS NULL
+      AND ${table.shippingMethodCode} IS NULL
+      AND ${table.shippingStatus} IS NULL
+    )
+  `
+    ),
+    check(
+      'orders_shipping_present_when_required_chk',
+      sql`
+    ${table.shippingRequired} IS DISTINCT FROM TRUE
+    OR (
+      ${table.shippingProvider} IS NOT NULL
+      AND ${table.shippingMethodCode} IS NOT NULL
+      AND ${table.shippingStatus} IS NOT NULL
+    )
+  `
+    ),
     index('orders_sweep_claim_expires_idx').on(table.sweepClaimExpiresAt),
     index('idx_orders_user_id_created_at').on(table.userId, table.createdAt),
-    index('orders_shipping_status_idx').on(table.shippingStatus, table.updatedAt),
+    index('orders_shipping_status_idx').on(
+      table.shippingStatus,
+      table.updatedAt
+    ),
   ]
 );
 

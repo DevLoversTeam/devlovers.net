@@ -387,7 +387,47 @@
         "subtotal": "Subtotal",
         "shipping": "Shipping",
         "shippingCalc": "Calculated at checkout",
-        "total": "Total"
+        "total": "Total",
+        "shippingInformationalOnly": "Informational only",
+        "shippingPayOnDeliveryNote": "Shipping is paid to the carrier on delivery; we currently charge only for goods."
+      },
+      "delivery": {
+        "legend": "Delivery",
+        "methodsLoading": "Loading delivery methods...",
+        "unavailableFallback": "Shipping is unavailable right now.",
+        "city": {
+          "label": "City",
+          "placeholder": "Start typing city name (min 2 chars)",
+          "selected": "Selected city: {city}",
+          "searching": "Searching cities..."
+        },
+        "warehouse": {
+          "label": "Warehouse / parcel locker",
+          "placeholder": "Type warehouse name or number",
+          "selected": "Selected warehouse: {warehouse}",
+          "searching": "Searching warehouses..."
+        },
+        "courierAddress": {
+          "label": "Courier address",
+          "line1Placeholder": "Street, house, apartment",
+          "line2Placeholder": "Additional address info (optional)"
+        },
+        "recipientName": {
+          "label": "Recipient full name",
+          "placeholder": "Full name"
+        },
+        "recipientPhone": {
+          "label": "Recipient phone",
+          "placeholder": "+380XXXXXXXXX or 0XXXXXXXXX"
+        },
+        "recipientEmail": {
+          "label": "Recipient email (optional)",
+          "placeholder": "email@example.com"
+        },
+        "recipientComment": {
+          "label": "Comment (optional)",
+          "placeholder": "Delivery comment"
+        }
       },
       "checkout": {
         "placeOrder": "Place order",
@@ -716,7 +756,12 @@
         "unitPrice": "Unit price",
         "lineTotal": "Line total",
         "yes": "Yes",
-        "no": "No"
+        "no": "No",
+        "shippingStatus": "Shipping status",
+        "trackingNumber": "Tracking number",
+        "qtyShort": "Qty",
+        "unitShort": "Unit",
+        "lineShort": "Line"
       }
     },
     "productDescriptions": {

@@ -11,9 +11,9 @@ import { useCart } from '@/components/shop/CartProvider';
 import { Link, useRouter } from '@/i18n/routing';
 import {
   buildCheckoutShippingPayload,
+  type CheckoutDeliveryMethodCode,
   countryFromLocale,
   shippingUnavailableMessage,
-  type CheckoutDeliveryMethodCode,
   type ShippingUnavailableReasonCode,
 } from '@/lib/services/shop/shipping/checkout-payload';
 import { formatMoney } from '@/lib/shop/currency';
@@ -113,7 +113,9 @@ type ShippingWarehouse = {
   address: string | null;
 };
 
-function isWarehouseMethod(methodCode: CheckoutDeliveryMethodCode | null): boolean {
+function isWarehouseMethod(
+  methodCode: CheckoutDeliveryMethodCode | null
+): boolean {
   return methodCode === 'NP_WAREHOUSE' || methodCode === 'NP_LOCKER';
 }
 
@@ -239,7 +241,8 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
         }
 
         const available = data?.available === true;
-        const reasonCode = (data?.reasonCode ?? null) as ShippingUnavailableReasonCode | null;
+        const reasonCode = (data?.reasonCode ??
+          null) as ShippingUnavailableReasonCode | null;
         const methods = Array.isArray(data?.methods)
           ? (data.methods as ShippingMethod[])
           : [];
@@ -256,7 +259,10 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
         }
 
         setSelectedShippingMethod(current => {
-          if (current && methods.some(method => method.methodCode === current)) {
+          if (
+            current &&
+            methods.some(method => method.methodCode === current)
+          ) {
             return current;
           }
           return methods[0]!.methodCode;
@@ -372,7 +378,9 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
           locale,
           currency: cart.summary.currency,
           ...(country ? { country } : {}),
-          ...(warehouseQuery.trim().length > 0 ? { q: warehouseQuery.trim() } : {}),
+          ...(warehouseQuery.trim().length > 0
+            ? { q: warehouseQuery.trim() }
+            : {}),
         });
 
         const response = await fetch(
@@ -1009,7 +1017,9 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
               <span className="text-muted-foreground">
                 {t('summary.shipping')}
               </span>
-              <span className="text-muted-foreground">Informational only</span>
+              <span className="text-muted-foreground">
+                {t('summary.shippingInformationalOnly')}
+              </span>
             </div>
 
             <div className="border-border border-t pt-4">
@@ -1028,23 +1038,24 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
             </div>
 
             <p className="text-muted-foreground text-xs">
-              Доставка оплачується перевізнику при отриманні; зараз списуємо лише
-              товари.
+              {t('summary.shippingPayOnDeliveryNote')}
             </p>
           </div>
 
           <fieldset className="border-border mt-6 rounded-md border p-4">
             <legend className="text-foreground px-1 text-sm font-semibold">
-              Delivery
+              {t('delivery.legend')}
             </legend>
 
             {shippingMethodsLoading ? (
-              <p className="text-muted-foreground text-xs">Loading delivery methods...</p>
+              <p className="text-muted-foreground text-xs">
+                {t('delivery.methodsLoading')}
+              </p>
             ) : null}
 
             {!shippingMethodsLoading && !shippingAvailable ? (
               <p className="text-muted-foreground text-xs" role="status">
-                {shippingUnavailableText ?? 'Shipping is unavailable right now.'}
+                {shippingUnavailableText ?? t('delivery.unavailableFallback')}
               </p>
             ) : null}
 
@@ -1061,17 +1072,24 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
                         name="delivery-method"
                         value={method.methodCode}
                         checked={selectedShippingMethod === method.methodCode}
-                        onChange={() => setSelectedShippingMethod(method.methodCode)}
+                        onChange={() =>
+                          setSelectedShippingMethod(method.methodCode)
+                        }
                         className="h-4 w-4"
                       />
-                      <span className="text-sm font-medium">{method.title}</span>
+                      <span className="text-sm font-medium">
+                        {method.title}
+                      </span>
                     </label>
                   ))}
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-muted-foreground text-xs" htmlFor="shipping-city-search">
-                    City
+                  <label
+                    className="text-muted-foreground text-xs"
+                    htmlFor="shipping-city-search"
+                  >
+                    {t('delivery.city.label')}
                   </label>
                   <input
                     id="shipping-city-search"
@@ -1082,18 +1100,22 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
                       setSelectedCityRef(null);
                       setSelectedCityName(null);
                     }}
-                    placeholder="Start typing city name (min 2 chars)"
+                    placeholder={t('delivery.city.placeholder')}
                     className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
                   />
 
                   {selectedCityRef ? (
                     <p className="text-muted-foreground text-xs">
-                      Selected city: {selectedCityName ?? selectedCityRef}
+                      {t('delivery.city.selected', {
+                        city: selectedCityName ?? selectedCityRef,
+                      })}
                     </p>
                   ) : null}
 
                   {citiesLoading ? (
-                    <p className="text-muted-foreground text-xs">Searching cities...</p>
+                    <p className="text-muted-foreground text-xs">
+                      {t('delivery.city.searching')}
+                    </p>
                   ) : null}
 
                   {!citiesLoading && cityOptions.length > 0 ? (
@@ -1118,12 +1140,11 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
 
                 {isWarehouseSelectionMethod ? (
                   <div className="space-y-2">
-                    <label
-                      className="text-muted-foreground text-xs"
-                      htmlFor="shipping-warehouse-search"
-                    >
-                      Warehouse / parcel locker
-                    </label>
+                    {citiesLoading ? (
+                      <p className="text-muted-foreground text-xs">
+                        {t('delivery.city.searching')}
+                      </p>
+                    ) : null}
                     <input
                       id="shipping-warehouse-search"
                       type="text"
@@ -1133,19 +1154,24 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
                         setSelectedWarehouseRef(null);
                         setSelectedWarehouseName(null);
                       }}
-                      placeholder="Type warehouse name or number"
+                      placeholder={t('delivery.warehouse.placeholder')}
                       className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
                       disabled={!selectedCityRef}
                     />
 
                     {selectedWarehouseRef ? (
                       <p className="text-muted-foreground text-xs">
-                        Selected warehouse: {selectedWarehouseName ?? selectedWarehouseRef}
+                        {t('delivery.warehouse.selected', {
+                          warehouse:
+                            selectedWarehouseName ?? selectedWarehouseRef,
+                        })}
                       </p>
                     ) : null}
 
                     {warehousesLoading ? (
-                      <p className="text-muted-foreground text-xs">Searching warehouses...</p>
+                      <p className="text-muted-foreground text-xs">
+                        {t('delivery.warehouse.searching')}
+                      </p>
                     ) : null}
 
                     {!warehousesLoading && warehouseOptions.length > 0 ? (
@@ -1176,78 +1202,101 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
 
                 {selectedShippingMethod === 'NP_COURIER' ? (
                   <div className="space-y-2">
-                    <label className="text-muted-foreground text-xs" htmlFor="shipping-address-1">
-                      Courier address
+                    <label
+                      className="text-muted-foreground text-xs"
+                      htmlFor="shipping-address-1"
+                    >
+                      {t('delivery.courierAddress.label')}
                     </label>
                     <input
                       id="shipping-address-1"
                       type="text"
                       value={courierAddressLine1}
-                      onChange={event => setCourierAddressLine1(event.target.value)}
-                      placeholder="Street, house, apartment"
+                      onChange={event =>
+                        setCourierAddressLine1(event.target.value)
+                      }
+                      placeholder={t(
+                        'delivery.courierAddress.line1Placeholder'
+                      )}
                       className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
                     />
                     <input
                       type="text"
                       value={courierAddressLine2}
-                      onChange={event => setCourierAddressLine2(event.target.value)}
-                      placeholder="Additional address info (optional)"
+                      onChange={event =>
+                        setCourierAddressLine2(event.target.value)
+                      }
+                      placeholder={t(
+                        'delivery.courierAddress.line2Placeholder'
+                      )}
                       className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
                     />
                   </div>
                 ) : null}
 
                 <div className="space-y-2">
-                  <label className="text-muted-foreground text-xs" htmlFor="recipient-name">
-                    Recipient full name
+                  <label
+                    className="text-muted-foreground text-xs"
+                    htmlFor="recipient-name"
+                  >
+                    {t('delivery.recipientName.label')}
                   </label>
                   <input
                     id="recipient-name"
                     type="text"
                     value={recipientName}
                     onChange={event => setRecipientName(event.target.value)}
-                    placeholder="Full name"
+                    placeholder={t('delivery.recipientName.placeholder')}
                     className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-muted-foreground text-xs" htmlFor="recipient-phone">
-                    Recipient phone
+                  <label
+                    className="text-muted-foreground text-xs"
+                    htmlFor="recipient-phone"
+                  >
+                    {t('delivery.recipientPhone.label')}
                   </label>
                   <input
                     id="recipient-phone"
                     type="tel"
                     value={recipientPhone}
                     onChange={event => setRecipientPhone(event.target.value)}
-                    placeholder="+380XXXXXXXXX or 0XXXXXXXXX"
+                    placeholder={t('delivery.recipientPhone.placeholder')}
                     className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-muted-foreground text-xs" htmlFor="recipient-email">
-                    Recipient email (optional)
+                  <label
+                    className="text-muted-foreground text-xs"
+                    htmlFor="recipient-email"
+                  >
+                    {t('delivery.recipientEmail.label')}
                   </label>
                   <input
                     id="recipient-email"
                     type="email"
                     value={recipientEmail}
                     onChange={event => setRecipientEmail(event.target.value)}
-                    placeholder="email@example.com"
+                    placeholder={t('delivery.recipientEmail.placeholder')}
                     className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-muted-foreground text-xs" htmlFor="recipient-comment">
-                    Comment (optional)
+                  <label
+                    className="text-muted-foreground text-xs"
+                    htmlFor="recipient-comment"
+                  >
+                    {t('delivery.recipientComment.label')}
                   </label>
                   <textarea
                     id="recipient-comment"
                     value={recipientComment}
                     onChange={event => setRecipientComment(event.target.value)}
-                    placeholder="Delivery comment"
+                    placeholder={t('delivery.recipientComment.placeholder')}
                     rows={2}
                     className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
                   />

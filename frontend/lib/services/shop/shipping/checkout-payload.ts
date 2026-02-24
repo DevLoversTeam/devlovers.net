@@ -1,9 +1,11 @@
+import { localeToCountry } from '@/lib/shop/locale';
+
 export type CheckoutDeliveryMethodCode =
   | 'NP_WAREHOUSE'
   | 'NP_LOCKER'
   | 'NP_COURIER';
 
-export type ShippingUnavailableReasonCode =
+export type ShippingAvailabilityReasonCode =
   | 'OK'
   | 'SHOP_SHIPPING_DISABLED'
   | 'NP_DISABLED'
@@ -30,7 +32,7 @@ export type CheckoutShippingPayload = {
 
 export type BuildCheckoutShippingPayloadInput = {
   shippingAvailable: boolean;
-  reasonCode: ShippingUnavailableReasonCode | null;
+  reasonCode: ShippingAvailabilityReasonCode | null;
   locale: string;
   methodCode: CheckoutDeliveryMethodCode | null;
   cityRef: string | null;
@@ -70,15 +72,8 @@ function trimOrNull(value: string | null | undefined): string | null {
 
 const UA_PHONE_REGEX = /^(?:\+380\d{9}|0\d{9})$/;
 
-export function countryFromLocale(locale: string | null | undefined): string | null {
-  const normalized = trimOrNull(locale)?.toLowerCase() ?? '';
-  const primary = normalized.split(/[-_]/)[0] ?? '';
-  if (primary === 'uk') return 'UA';
-  return null;
-}
-
 export function shippingUnavailableMessage(
-  reasonCode: ShippingUnavailableReasonCode | null
+  reasonCode: ShippingAvailabilityReasonCode | null
 ): string {
   switch (reasonCode) {
     case 'SHOP_SHIPPING_DISABLED':
@@ -176,7 +171,7 @@ export function buildCheckoutShippingPayload(
 
   return {
     ok: true,
-    country: countryFromLocale(input.locale),
+    country: localeToCountry(input.locale),
     shipping: {
       provider: 'nova_poshta',
       methodCode,

@@ -73,7 +73,9 @@ function first<T>(res: unknown): T | null {
   return readRows<T>(res)[0] ?? null;
 }
 
-function assertOrderIsShippable(state: ShippingStateRow | null): asserts state is ShippingStateRow {
+function assertOrderIsShippable(
+  state: ShippingStateRow | null
+): asserts state is ShippingStateRow {
   if (!state) {
     throw new ShippingAdminActionError(
       'ORDER_NOT_FOUND',
@@ -111,7 +113,9 @@ function assertOrderIsShippable(state: ShippingStateRow | null): asserts state i
   }
 }
 
-async function loadShippingState(orderId: string): Promise<ShippingStateRow | null> {
+async function loadShippingState(
+  orderId: string
+): Promise<ShippingStateRow | null> {
   const res = await db.execute<ShippingStateRow>(sql`
     select
       o.id as order_id,
@@ -125,6 +129,7 @@ async function loadShippingState(orderId: string): Promise<ShippingStateRow | nu
     from orders o
     left join shipping_shipments s on s.order_id = o.id
     where o.id = ${orderId}::uuid
+    order by s.created_at desc nulls last
     limit 1
   `);
   return first<ShippingStateRow>(res);
@@ -216,6 +221,7 @@ async function loadShipmentStatus(orderId: string): Promise<string | null> {
     select status
     from shipping_shipments
     where order_id = ${orderId}::uuid
+    order by created_at desc nulls last
     limit 1
   `);
   return first<ShipmentStatusRow>(res)?.status ?? null;
@@ -354,6 +360,14 @@ export async function applyShippingAdminAction(args: {
       changed: true,
       action: args.action,
     };
+  }
+
+  if (args.action !== 'mark_delivered') {
+    throw new ShippingAdminActionError(
+      'UNSUPPORTED_SHIPPING_ACTION',
+      `Unsupported shipping admin action: ${args.action}`,
+      400
+    );
   }
 
   if (state.shipping_status === 'delivered') {

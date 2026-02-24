@@ -1,6 +1,9 @@
 import 'server-only';
 
-import { getNovaPoshtaConfig, NovaPoshtaConfigError } from '@/lib/env/nova-poshta';
+import {
+  getNovaPoshtaConfig,
+  NovaPoshtaConfigError,
+} from '@/lib/env/nova-poshta';
 
 type NovaPoshtaEnvelope<T> = {
   success: boolean;
@@ -104,7 +107,12 @@ export class NovaPoshtaApiError extends Error {
   status: number;
   code: string;
 
-  constructor(code: string, message: string, status = 503, options?: ErrorOptions) {
+  constructor(
+    code: string,
+    message: string,
+    status = 503,
+    options?: ErrorOptions
+  ) {
     super(message, options);
     this.name = 'NovaPoshtaApiError';
     this.status = status;
@@ -118,6 +126,29 @@ function readString(value: unknown): string | null {
   return trimmed.length > 0 ? trimmed : null;
 }
 
+function isPostMachineByLabels(
+  ...labels: Array<string | null | undefined>
+): boolean {
+  const haystack = labels
+    .filter((v): v is string => typeof v === 'string' && v.trim().length > 0)
+    .map(v => v.toLowerCase())
+    .join(' | ');
+
+  if (!haystack) return false;
+
+  return (
+    haystack.includes('поштомат') ||
+    haystack.includes('постомат') ||
+    haystack.includes('postomat') ||
+    haystack.includes('parcel locker') ||
+    haystack.includes('post machine') ||
+    haystack.includes('postmachine') ||
+    haystack.includes('locker') ||
+    haystack.includes('postfinance') ||
+    haystack.includes('post finance')
+  );
+}
+
 function firstMessage(
   errors?: string[],
   warnings?: string[],
@@ -128,6 +159,79 @@ function firstMessage(
     warnings?.find(x => x.trim().length > 0) ??
     info?.find(x => x.trim().length > 0);
   return candidate ?? 'Nova Poshta request failed';
+}
+
+function normalizeNpBusinessErrorCode(args: {
+  rawCode: string | null | undefined;
+  message: string;
+}): string {
+  const rawCode = readString(args.rawCode);
+  const msg = args.message.toLowerCase();
+
+  if (
+    msg.includes('телефон') ||
+    msg.includes('phone') ||
+    msg.includes('mobile')
+  ) {
+    return 'NP_RECIPIENT_PHONE_INVALID';
+  }
+
+  if (
+    msg.includes('отримувач') ||
+    msg.includes('получател') ||
+    msg.includes('recipient') ||
+    msg.includes('full name') ||
+    msg.includes("ім'я") ||
+    msg.includes('имя')
+  ) {
+    return 'NP_RECIPIENT_INVALID';
+  }
+
+  if (
+    msg.includes('поштомат') ||
+    msg.includes('постомат') ||
+    msg.includes('відділен') ||
+    msg.includes('отделен') ||
+    msg.includes('warehouse') ||
+    msg.includes('branch') ||
+    msg.includes('locker')
+  ) {
+    return 'NP_WAREHOUSE_INVALID';
+  }
+
+  if (
+    msg.includes('міст') ||
+    msg.includes('город') ||
+    msg.includes('населен') ||
+    msg.includes('city') ||
+    msg.includes('settlement')
+  ) {
+    return 'NP_CITY_INVALID';
+  }
+
+  if (
+    msg.includes('адрес') ||
+    msg.includes('address') ||
+    msg.includes('courier') ||
+    msg.includes('вулиц') ||
+    msg.includes('street')
+  ) {
+    return 'NP_ADDRESS_INVALID';
+  }
+
+  if (
+    msg.includes('invalid') ||
+    msg.includes('невір') ||
+    msg.includes('некорект') ||
+    msg.includes('required') ||
+    msg.includes('обов') ||
+    msg.includes('помилк') ||
+    msg.includes('ошиб')
+  ) {
+    return 'NP_VALIDATION_ERROR';
+  }
+
+  return rawCode ?? 'NP_API_ERROR';
 }
 
 async function callNp<T>(params: {
@@ -182,9 +286,18 @@ async function callNp<T>(params: {
   }
 
   if (!payload.success) {
+    const message = firstMessage(
+      payload.errors,
+      payload.warnings,
+      payload.info
+    );
+
     throw new NovaPoshtaApiError(
-      payload.errorCodes?.[0] ?? 'NP_API_ERROR',
-      firstMessage(payload.errors, payload.warnings, payload.info),
+      normalizeNpBusinessErrorCode({
+        rawCode: payload.errorCodes?.[0],
+        message,
+      }),
+      message,
       503
     );
   }
@@ -192,15 +305,6 @@ async function callNp<T>(params: {
   return payload.data ?? [];
 }
 
-/**
- * NP method:
- * - modelName: Address
- * - calledMethod: searchSettlements
- * Key fields mapped:
- * - Addresses[].Ref -> settlement ref used by UI as cityRef
- * - Addresses[].Present/MainDescription -> display name
- * - Addresses[].Area/Region/SettlementTypeDescription
- */
 export async function searchSettlements(args: {
   q: string;
   page?: number;
@@ -276,24 +380,31 @@ export async function getWarehousesBySettlementRef(
     if (!ref || !description || seen.has(ref)) continue;
     seen.add(ref);
 
-    const category = readString(item.CategoryOfWarehouse)?.toLowerCase() ?? '';
-    const type = readString(item.TypeOfWarehouse)?.toLowerCase() ?? '';
-    const isPostMachine =
-      category.includes('postomat') ||
-      type.includes('postomat') ||
-      category.includes('parcel locker') ||
-      type.includes('parcel locker');
+    const category = readString(item.CategoryOfWarehouse);
+    const type = readString(item.TypeOfWarehouse);
+    const descriptionRu = readString(item.DescriptionRu);
+    const shortAddress = readString(item.ShortAddress);
+    const shortAddressRu = readString(item.ShortAddressRu);
+
+    const isPostMachine = isPostMachineByLabels(
+      category,
+      type,
+      description,
+      descriptionRu,
+      shortAddress,
+      shortAddressRu
+    );
 
     out.push({
       ref,
       settlementRef: readString(item.SettlementRef),
       cityRef: readString(item.CityRef),
       number: readString(item.Number),
-      type: readString(item.TypeOfWarehouse) ?? readString(item.CategoryOfWarehouse),
+      type: type ?? category,
       name: description,
-      nameRu: readString(item.DescriptionRu),
-      address: readString(item.ShortAddress),
-      addressRu: readString(item.ShortAddressRu),
+      nameRu: descriptionRu,
+      address: shortAddress,
+      addressRu: shortAddressRu,
       isPostMachine,
     });
   }
@@ -301,14 +412,6 @@ export async function getWarehousesBySettlementRef(
   return out;
 }
 
-/**
- * NP method:
- * - modelName: InternetDocument
- * - calledMethod: save
- * Key fields mapped:
- * - data[0].Ref -> provider reference
- * - data[0].IntDocNumber -> TTN/tracking number
- */
 export async function createInternetDocument(
   input: NovaPoshtaCreateTtnInput
 ): Promise<NovaPoshtaCreatedTtn> {

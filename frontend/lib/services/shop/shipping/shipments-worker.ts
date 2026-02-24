@@ -3,15 +3,18 @@ import 'server-only';
 import { sql } from 'drizzle-orm';
 
 import { db } from '@/db';
-import { getNovaPoshtaConfig, NovaPoshtaConfigError } from '@/lib/env/nova-poshta';
+import {
+  getNovaPoshtaConfig,
+  NovaPoshtaConfigError,
+} from '@/lib/env/nova-poshta';
 import { logInfo, logWarn } from '@/lib/logging';
+import { sanitizeShippingErrorMessage } from '@/lib/services/shop/shipping/log-sanitizer';
+import { recordShippingMetric } from '@/lib/services/shop/shipping/metrics';
 import {
   createInternetDocument,
   NovaPoshtaApiError,
   type NovaPoshtaCreateTtnInput,
 } from '@/lib/services/shop/shipping/nova-poshta-client';
-import { sanitizeShippingErrorMessage } from '@/lib/services/shop/shipping/log-sanitizer';
-import { recordShippingMetric } from '@/lib/services/shop/shipping/metrics';
 
 type ClaimedShipmentRow = {
   id: string;
@@ -72,6 +75,26 @@ const SHIPPING_METHOD_TO_SERVICE_TYPE: Record<
   NP_COURIER: 'WarehouseDoors',
 };
 
+const PERMANENT_NP_ERROR_CODES = new Set<string>([
+  'NP_VALIDATION_ERROR',
+  'NP_ADDRESS_INVALID',
+  'NP_CITY_INVALID',
+  'NP_CITY_REF_INVALID',
+  'NP_WAREHOUSE_INVALID',
+  'NP_WAREHOUSE_REF_INVALID',
+  'NP_RECIPIENT_INVALID',
+  'NP_RECIPIENT_NAME_INVALID',
+  'NP_RECIPIENT_PHONE_INVALID',
+  'NP_PHONE_INVALID',
+]);
+
+function isPermanentNovaPoshtaErrorCode(
+  code: string | null | undefined
+): boolean {
+  if (!code) return false;
+  return PERMANENT_NP_ERROR_CODES.has(code);
+}
+
 function readRows<T>(res: unknown): T[] {
   if (Array.isArray(res)) return res as T[];
   const anyRes = res as { rows?: unknown };
@@ -126,7 +149,13 @@ function asShipmentError(
         transient: true,
       };
     }
-
+    if (isPermanentNovaPoshtaErrorCode(error.code)) {
+      return {
+        code: error.code,
+        message: 'Nova Poshta rejected shipment data.',
+        transient: false,
+      };
+    }
     return {
       code: error.code || 'NP_API_ERROR',
       message: 'Nova Poshta API request failed.',
@@ -194,7 +223,10 @@ function parseSnapshot(raw: unknown): ParsedShipmentSnapshot {
     );
   }
 
-  if ((methodCode === 'NP_WAREHOUSE' || methodCode === 'NP_LOCKER') && !warehouseRef) {
+  if (
+    (methodCode === 'NP_WAREHOUSE' || methodCode === 'NP_LOCKER') &&
+    !warehouseRef
+  ) {
     throw buildFailure(
       'SHIPPING_SNAPSHOT_INVALID',
       'warehouseRef is required for selected shipping method.',
@@ -233,7 +265,10 @@ function declaredCostUahFromMinor(totalMinor: number): number {
   return Math.floor((Math.trunc(totalMinor) + 50) / 100);
 }
 
-function computeBackoffSeconds(attemptCount: number, baseBackoffSeconds: number): number {
+function computeBackoffSeconds(
+  attemptCount: number,
+  baseBackoffSeconds: number
+): number {
   const cappedAttempt = Math.max(1, Math.min(attemptCount, 8));
   const exponential = Math.pow(2, cappedAttempt - 1);
   const backoff = baseBackoffSeconds * exponential;
@@ -257,7 +292,9 @@ function toNpPayload(args: {
     );
   }
 
-  const declaredCostUah = declaredCostUahFromMinor(args.order.total_amount_minor);
+  const declaredCostUah = declaredCostUahFromMinor(
+    args.order.total_amount_minor
+  );
   const serviceType = SHIPPING_METHOD_TO_SERVICE_TYPE[args.snapshot.methodCode];
 
   return {
@@ -339,7 +376,9 @@ export async function claimQueuedShipmentsForProcessing(args: {
   return readRows<ClaimedShipmentRow>(res);
 }
 
-async function loadOrderShippingDetails(orderId: string): Promise<OrderShippingDetailsRow | null> {
+async function loadOrderShippingDetails(
+  orderId: string
+): Promise<OrderShippingDetailsRow | null> {
   const res = await db.execute<OrderShippingDetailsRow>(sql`
     select
       o.id as order_id,
@@ -518,7 +557,8 @@ async function processClaimedShipment(args: {
       ? null
       : new Date(
           Date.now() +
-            computeBackoffSeconds(nextAttemptCount, args.baseBackoffSeconds) * 1000
+            computeBackoffSeconds(nextAttemptCount, args.baseBackoffSeconds) *
+              1000
         );
 
     await markFailed({

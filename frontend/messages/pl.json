@@ -387,7 +387,47 @@
         "subtotal": "Suma częściowa",
         "shipping": "Wysyłka",
         "shippingCalc": "Obliczone przy kasie",
-        "total": "Razem"
+        "total": "Razem",
+        "shippingInformationalOnly": "Tylko informacyjnie",
+        "shippingPayOnDeliveryNote": "Dostawa jest opłacana przewoźnikowi przy odbiorze; obecnie pobieramy opłatę tylko za produkty."
+      },
+      "delivery": {
+        "legend": "Dostawa",
+        "methodsLoading": "Ładowanie metod dostawy...",
+        "unavailableFallback": "Dostawa jest obecnie niedostępna.",
+        "city": {
+          "label": "Miasto",
+          "placeholder": "Zacznij wpisywać nazwę miasta (min. 2 znaki)",
+          "selected": "Wybrane miasto: {city}",
+          "searching": "Wyszukiwanie miast..."
+        },
+        "warehouse": {
+          "label": "Oddział / automat paczkowy",
+          "placeholder": "Wpisz nazwę lub numer oddziału",
+          "selected": "Wybrany oddział: {warehouse}",
+          "searching": "Wyszukiwanie oddziałów..."
+        },
+        "courierAddress": {
+          "label": "Adres kuriera",
+          "line1Placeholder": "Ulica, numer domu, mieszkanie",
+          "line2Placeholder": "Dodatkowe informacje o adresie (opcjonalnie)"
+        },
+        "recipientName": {
+          "label": "Imię i nazwisko odbiorcy",
+          "placeholder": "Imię i nazwisko"
+        },
+        "recipientPhone": {
+          "label": "Telefon odbiorcy",
+          "placeholder": "+48XXXXXXXXX"
+        },
+        "recipientEmail": {
+          "label": "Email odbiorcy (opcjonalnie)",
+          "placeholder": "email@example.com"
+        },
+        "recipientComment": {
+          "label": "Komentarz (opcjonalnie)",
+          "placeholder": "Komentarz do dostawy"
+        }
       },
       "checkout": {
         "placeOrder": "Złóż zamówienie",
@@ -716,7 +756,12 @@
         "unitPrice": "Cena jednostkowa",
         "lineTotal": "Suma wiersza",
         "yes": "Tak",
-        "no": "Nie"
+        "no": "Nie",
+        "shippingStatus": "Status dostawy",
+        "trackingNumber": "Numer śledzenia",
+        "qtyShort": "Ilość",
+        "unitShort": "Cena",
+        "lineShort": "Suma"
       }
     },
     "productDescriptions": {

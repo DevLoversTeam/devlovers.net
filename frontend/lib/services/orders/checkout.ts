@@ -6,15 +6,17 @@ import {
   npCities,
   npWarehouses,
   orderItems,
-  orderShipping,
   orders,
+  orderShipping,
   productPrices,
   products,
 } from '@/db/schema/shop';
 import { getShopShippingFlags } from '@/lib/env/nova-poshta';
 import { isPaymentsEnabled } from '@/lib/env/stripe';
 import { logError, logWarn } from '@/lib/logging';
+import { resolveShippingAvailability } from '@/lib/services/shop/shipping/availability';
 import { resolveCurrencyFromLocale } from '@/lib/shop/currency';
+import { localeToCountry } from '@/lib/shop/locale';
 import {
   calculateLineTotal,
   fromCents,
@@ -22,11 +24,10 @@ import {
   toDbMoney,
 } from '@/lib/shop/money';
 import { type PaymentProvider, type PaymentStatus } from '@/lib/shop/payments';
-import { resolveShippingAvailability } from '@/lib/services/shop/shipping/availability';
 import {
   type CheckoutItem,
-  type CheckoutShippingInput,
   type CheckoutResult,
+  type CheckoutShippingInput,
   type OrderSummaryWithMinor,
 } from '@/lib/types/shop';
 
@@ -324,12 +325,6 @@ type PreparedShipping = {
   snapshot: Record<string, unknown> | null;
 };
 
-function mapLocaleToCountry(locale: string | null | undefined): string | null {
-  const primary = normVariant(locale).toLowerCase().split(/[-_]/)[0] ?? '';
-  if (primary === 'uk') return 'UA';
-  return null;
-}
-
 function readShippingRefFromSnapshot(
   value: unknown,
   field: 'cityRef' | 'warehouseRef'
@@ -401,12 +396,14 @@ async function prepareCheckoutShipping(args: {
     shippingEnabled: flags.shippingEnabled,
     npEnabled: flags.npEnabled,
     locale: args.locale ?? null,
-    country: args.country ?? mapLocaleToCountry(args.locale),
+    country: args.country ?? localeToCountry(args.locale),
     currency: args.currency,
   });
 
   if (!availability.available) {
-    const mapped = shippingValidationCodeFromAvailability(availability.reasonCode);
+    const mapped = shippingValidationCodeFromAvailability(
+      availability.reasonCode
+    );
     throw new InvalidPayloadError(mapped.message, { code: mapped.code });
   }
 
@@ -444,9 +441,12 @@ async function prepareCheckoutShipping(args: {
 
   if (methodCode === 'NP_WAREHOUSE' || methodCode === 'NP_LOCKER') {
     if (!warehouseRef) {
-      throw new InvalidPayloadError('warehouseRef is required for this method.', {
-        code: 'INVALID_SHIPPING_ADDRESS',
-      });
+      throw new InvalidPayloadError(
+        'warehouseRef is required for this method.',
+        {
+          code: 'INVALID_SHIPPING_ADDRESS',
+        }
+      );
     }
 
     const [resolved] = await db
@@ -532,12 +532,15 @@ async function prepareCheckoutShipping(args: {
     snapshot,
   };
 }
-
+type OrderShippingSnapshotDbClient = Pick<typeof db, 'insert'>;
 async function ensureOrderShippingSnapshot(args: {
   orderId: string;
   snapshot: Record<string, unknown>;
+  dbClient?: OrderShippingSnapshotDbClient;
 }) {
-  await db
+  const client = args.dbClient ?? db;
+
+  await client
     .insert(orderShipping)
     .values({
       orderId: args.orderId,
@@ -647,9 +650,9 @@ export async function createOrderWithItems({
   const initialPaymentStatus: PaymentStatus =
     paymentProvider === 'none' ? 'paid' : 'pending';
 
-  const normalizedItems = mergeCheckoutItems(
-    items
-  ).map(item => normalizeCheckoutItem(item as CheckoutItemWithVariant));
+  const normalizedItems = mergeCheckoutItems(items).map(item =>
+    normalizeCheckoutItem(item)
+  );
 
   const preparedShipping = await prepareCheckoutShipping({
     shipping: shipping ?? null,
@@ -876,41 +879,53 @@ export async function createOrderWithItems({
 
   let orderId: string;
   try {
-    const [created] = await db
-      .insert(orders)
-      .values({
-        totalAmountMinor: orderTotalCents,
-        totalAmount: toDbMoney(orderTotalCents),
+    orderId = await db.transaction(async tx => {
+      const [created] = await tx
+        .insert(orders)
+        .values({
+          totalAmountMinor: orderTotalCents,
+          totalAmount: toDbMoney(orderTotalCents),
 
-        currency,
-        paymentStatus: initialPaymentStatus,
-        paymentProvider,
-        paymentIntentId: null,
-        shippingRequired: preparedShipping.orderSummary.shippingRequired,
-        shippingPayer: preparedShipping.orderSummary.shippingPayer,
-        shippingProvider: preparedShipping.orderSummary.shippingProvider,
-        shippingMethodCode: preparedShipping.orderSummary.shippingMethodCode,
-        shippingAmountMinor: preparedShipping.orderSummary.shippingAmountMinor,
-        shippingStatus: preparedShipping.orderSummary.shippingStatus,
-        trackingNumber: null,
-        shippingProviderRef: null,
+          currency,
+          paymentStatus: initialPaymentStatus,
+          paymentProvider,
+          paymentIntentId: null,
+          shippingRequired: preparedShipping.orderSummary.shippingRequired,
+          shippingPayer: preparedShipping.orderSummary.shippingPayer,
+          shippingProvider: preparedShipping.orderSummary.shippingProvider,
+          shippingMethodCode: preparedShipping.orderSummary.shippingMethodCode,
+          shippingAmountMinor:
+            preparedShipping.orderSummary.shippingAmountMinor,
+          shippingStatus: preparedShipping.orderSummary.shippingStatus,
+          trackingNumber: null,
+          shippingProviderRef: null,
 
-        status: 'CREATED',
+          status: 'CREATED',
 
-        inventoryStatus: paymentsEnabled ? 'none' : 'reserving',
-        failureCode: null,
-        failureMessage: null,
-        idempotencyRequestHash: requestHash,
+          inventoryStatus: paymentsEnabled ? 'none' : 'reserving',
+          failureCode: null,
+          failureMessage: null,
+          idempotencyRequestHash: requestHash,
 
-        stockRestored: false,
-        restockedAt: null,
-        idempotencyKey,
-        userId: userId ?? null,
-      })
-      .returning({ id: orders.id });
+          stockRestored: false,
+          restockedAt: null,
+          idempotencyKey,
+          userId: userId ?? null,
+        })
+        .returning({ id: orders.id });
 
-    if (!created) throw new Error('Failed to create order');
-    orderId = created.id;
+      if (!created) throw new Error('Failed to create order');
+
+      if (preparedShipping.required && preparedShipping.snapshot) {
+        await ensureOrderShippingSnapshot({
+          orderId: created.id,
+          snapshot: preparedShipping.snapshot,
+          dbClient: tx,
+        });
+      }
+
+      return created.id;
+    });
   } catch (error) {
     if ((error as { code?: string }).code === '23505') {
       const existingOrder = await getOrderByIdempotencyKey(db, idempotencyKey);
@@ -938,13 +953,6 @@ export async function createOrderWithItems({
       }
     }
     throw error;
-  }
-
-  if (preparedShipping.required && preparedShipping.snapshot) {
-    await ensureOrderShippingSnapshot({
-      orderId,
-      snapshot: preparedShipping.snapshot,
-    });
   }
 
   if (pricedItems.length) {

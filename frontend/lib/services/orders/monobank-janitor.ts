@@ -135,11 +135,41 @@ function readRows<T>(res: unknown): T[] {
   return [];
 }
 
+const SHA256_HEX_RE = /^[0-9a-f]{64}$/i;
+
 function sha256Utf8(value: string): string {
   return crypto
     .createHash('sha256')
     .update(Buffer.from(value, 'utf8'))
     .digest('hex');
+}
+
+function normalizeSha256Hex(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const v = value.trim();
+  if (!SHA256_HEX_RE.test(v)) return null;
+  return v.toLowerCase();
+}
+
+function getJob3ApplyKeys(
+  row: Job3CandidateRow,
+  rawBody: string
+): { rawSha256: string; eventKey: string; usedStoredRawSha256: boolean } {
+  const storedRawSha256 = normalizeSha256Hex(row.raw_sha256);
+
+  if (storedRawSha256) {
+    return {
+      rawSha256: storedRawSha256,
+      eventKey: storedRawSha256,
+      usedStoredRawSha256: true,
+    };
+  }
+
+  return {
+    rawSha256: sha256Utf8(rawBody),
+    eventKey: row.id,
+    usedStoredRawSha256: false,
+  };
 }
 
 function buildApplyPayload(args: {
@@ -302,7 +332,7 @@ function sortJob3RowsByCanonicalOrder(
   return sortedGroups.flat();
 }
 
-async function readDryRunJob3Candidates(args: {
+async function readUnclaimedJob3Candidates(args: {
   limit: number;
 }): Promise<Job3CandidateRow[]> {
   const res = await db.execute<Job3CandidateRow>(sql`
@@ -807,7 +837,7 @@ export async function runMonobankJanitorJob3(
   }
 
   if (args.dryRun) {
-    const candidates = await readDryRunJob3Candidates({
+    const candidates = await readUnclaimedJob3Candidates({
       limit: args.limit,
     });
 
@@ -828,7 +858,7 @@ export async function runMonobankJanitorJob3(
     };
   }
 
-  const candidates = await readDryRunJob3Candidates({
+  const candidates = await readUnclaimedJob3Candidates({
     limit: args.limit,
   });
   const ordered = sortJob3RowsByCanonicalOrder(candidates);
@@ -848,17 +878,27 @@ export async function runMonobankJanitorJob3(
       }
 
       const rawBody = JSON.stringify(parsedPayload);
-      const rawSha256 =
-        typeof eventRow.raw_sha256 === 'string' &&
-        /^[0-9a-f]{64}$/i.test(eventRow.raw_sha256)
-          ? eventRow.raw_sha256
-          : sha256Utf8(rawBody);
+      const { rawSha256, eventKey, usedStoredRawSha256 } = getJob3ApplyKeys(
+        eventRow,
+        rawBody
+      );
+
+      if (!usedStoredRawSha256) {
+        logWarn('internal_monobank_janitor_job3_raw_sha256_fallback', {
+          ...args.baseMeta,
+          code: 'JANITOR_JOB3_RAW_SHA256_FALLBACK',
+          runId: args.runId,
+          eventId: eventRow.id,
+          invoiceId: eventRow.invoice_id,
+          attemptId: eventRow.attempt_id,
+        });
+      }
 
       const result = await applyMonoWebhookEvent({
         rawBody,
         parsedPayload,
         rawSha256,
-        eventKey: rawSha256,
+        eventKey,
         requestId: args.requestId,
         mode: 'apply',
       });
@@ -870,7 +910,23 @@ export async function runMonobankJanitorJob3(
       }
 
       if (result.eventId) {
-        await clearAppliedEventClaim({ eventId: result.eventId });
+        try {
+          await clearAppliedEventClaim({ eventId: result.eventId });
+        } catch (clearError) {
+          logWarn('internal_monobank_janitor_job3_clear_claim_failed', {
+            ...args.baseMeta,
+            code: 'JANITOR_JOB3_CLEAR_CLAIM_FAILED',
+            runId: args.runId,
+            eventId: eventRow.id,
+            appliedEventId: result.eventId,
+            invoiceId: eventRow.invoice_id,
+            attemptId: eventRow.attempt_id,
+            error:
+              clearError instanceof Error
+                ? clearError.message
+                : String(clearError),
+          });
+        }
       }
     } catch (error) {
       failed += 1;
