@@ -1,4 +1,6 @@
-export function localeToCountry(input: string | null | undefined): string | null {
+export function localeToCountry(
+  input: string | null | undefined
+): string | null {
   const locale = (input ?? '').trim().toLowerCase();
   if (!locale) return null;
 
@@ -7,3 +9,5 @@ export function localeToCountry(input: string | null | undefined): string | null
 
   return null;
 }
+
+export const countryFromLocale = localeToCountry;

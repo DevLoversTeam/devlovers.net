@@ -12,12 +12,12 @@ import { Link, useRouter } from '@/i18n/routing';
 import {
   buildCheckoutShippingPayload,
   type CheckoutDeliveryMethodCode,
-  countryFromLocale,
+  type ShippingAvailabilityReasonCode,
   shippingUnavailableMessage,
-  type ShippingUnavailableReasonCode,
 } from '@/lib/services/shop/shipping/checkout-payload';
 import { formatMoney } from '@/lib/shop/currency';
 import { generateIdempotencyKey } from '@/lib/shop/idempotency';
+import { localeToCountry } from '@/lib/shop/locale';
 import {
   SHOP_CHIP_BORDER_HOVER,
   SHOP_CHIP_INTERACTIVE,
@@ -148,7 +148,7 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
   const [shippingMethodsLoading, setShippingMethodsLoading] = useState(false);
   const [shippingAvailable, setShippingAvailable] = useState(false);
   const [shippingReasonCode, setShippingReasonCode] =
-    useState<ShippingUnavailableReasonCode | null>(null);
+    useState<ShippingAvailabilityReasonCode | null>(null);
   const [selectedShippingMethod, setSelectedShippingMethod] =
     useState<CheckoutDeliveryMethodCode | null>(null);
 
@@ -190,7 +190,7 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
   const canUseStripe = stripeEnabled;
   const canUseMonobank = monobankEnabled && isUahCheckout;
   const hasSelectableProvider = canUseStripe || canUseMonobank;
-  const country = countryFromLocale(locale);
+  const country = localeToCountry(locale);
   const shippingUnavailableHardBlock =
     shippingReasonCode === 'COUNTRY_NOT_SUPPORTED' ||
     shippingReasonCode === 'CURRENCY_NOT_SUPPORTED' ||
@@ -242,7 +242,7 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
 
         const available = data?.available === true;
         const reasonCode = (data?.reasonCode ??
-          null) as ShippingUnavailableReasonCode | null;
+          null) as ShippingAvailabilityReasonCode | null;
         const methods = Array.isArray(data?.methods)
           ? (data.methods as ShippingMethod[])
           : [];
