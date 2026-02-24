@@ -9,9 +9,7 @@ import { getMonobankConfig } from '@/lib/env/monobank';
 import { logError, logInfo, logWarn } from '@/lib/logging';
 import { MONO_EXPIRED_RECONCILED, monoLogInfo } from '@/lib/logging/monobank';
 import { getInvoiceStatus } from '@/lib/psp/monobank';
-import {
-  applyMonoWebhookEvent,
-} from '@/lib/services/orders/monobank-webhook';
+import { applyMonoWebhookEvent } from '@/lib/services/orders/monobank-webhook';
 import { restockOrder } from '@/lib/services/orders/restock';
 
 const ACTIVE_MONOBANK_ATTEMPT_STATUSES = ['creating', 'active'] as const;
@@ -30,6 +28,7 @@ const JOB2_ORDER_FAILURE_MESSAGE = 'Monobank invoice create failed.';
 const JOB2_ATTEMPT_ERROR_CODE = 'invoice_missing';
 const JOB2_ATTEMPT_ERROR_MESSAGE =
   'Active attempt missing invoice details (stale).';
+
 const JOB3_MODE_MISMATCH_CODE = 'MONO_WEBHOOK_MODE_NOT_STORE';
 const DEFAULT_JOB4_NEEDS_REVIEW_AGE_HOURS = 24;
 const NEEDS_REVIEW_AGE_HOURS_MIN = 0;
@@ -329,58 +328,7 @@ async function readDryRunJob3Candidates(args: {
   return readRows<Job3CandidateRow>(res);
 }
 
-function toJob3CandidateRow(row: MonobankEventRow): Job3CandidateRow {
-  return {
-    id: row.id,
-    invoice_id:
-      typeof row.invoice_id === 'string'
-        ? row.invoice_id
-        : (row.invoice_id ?? null),
-    attempt_id:
-      typeof row.attempt_id === 'string'
-        ? row.attempt_id
-        : (row.attempt_id ?? null),
-    provider_modified_at: row.provider_modified_at,
-    received_at: row.received_at,
-    raw_payload: row.raw_payload,
-  };
-}
-
-async function claimJob3Events(args: {
-  limit: number;
-  runId: string;
-}): Promise<Job3CandidateRow[]> {
-  const claimed: Job3CandidateRow[] = [];
-
-  for (let i = 0; i < args.limit; i += 1) {
-    const next = await claimNextMonobankEvent(args.runId);
-    if (!next) break;
-    claimed.push(toJob3CandidateRow(next));
-  }
-
-  return claimed;
-}
-
-async function markJob3EventFailed(args: {
-  eventId: string;
-  runId: string;
-  error: unknown;
-}) {
-  const errorMessage =
-    args.error instanceof Error ? args.error.message : String(args.error);
-  await db.execute(sql`
-    update monobank_events
-    set applied_at = now(),
-        applied_result = 'applied_with_issue',
-        applied_error_code = coalesce(applied_error_code, ${JOB3_EVENT_ERROR_CODE}),
-        applied_error_message = coalesce(applied_error_message, ${errorMessage})
-    where id = ${args.eventId}::uuid
-      and claimed_by = ${args.runId}
-      and applied_at is null
-  `);
-}
-
-async function releaseEventLease(args: { eventId: string; runId: string }) {
+async function clearAppliedEventClaim(args: { eventId: string }) {
   await db.execute(sql`
     update monobank_events
     set claimed_at = null,
