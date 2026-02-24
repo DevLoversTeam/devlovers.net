@@ -120,6 +120,13 @@
       "when": 1771789023328,
       "tag": "0016_vengeful_vin_gonzales",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1771894576421,
+      "tag": "0017_shop_shipping_core",
+      "breakpoints": true
     }
   ]
 }
