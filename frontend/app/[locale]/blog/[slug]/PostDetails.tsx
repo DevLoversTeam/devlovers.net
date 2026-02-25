@@ -9,8 +9,6 @@ import { Link } from '@/i18n/routing';
 import { formatBlogDate } from '@/lib/blog/date';
 import { shouldBypassImageOptimization } from '@/lib/blog/image';
 
-export const revalidate = 0;
-
 type SocialLink = {
   _key?: string;
   platform?: string;
@@ -383,18 +381,14 @@ export default async function PostDetails({
   const slugParam = String(slug || '').trim();
   if (!slugParam) return notFound();
 
-  const post: Post | null = await client
-    .withConfig({ useCdn: false })
-    .fetch(query, {
-      slug: slugParam,
-      locale,
-    });
-  const recommendedAll: Post[] = await client
-    .withConfig({ useCdn: false })
-    .fetch(recommendedQuery, {
-      slug: slugParam,
-      locale,
-    });
+  const post: Post | null = await client.fetch(query, {
+    slug: slugParam,
+    locale,
+  });
+  const recommendedAll: Post[] = await client.fetch(recommendedQuery, {
+    slug: slugParam,
+    locale,
+  });
   const recommendedPosts = seededShuffle(
     recommendedAll,
     hashString(slugParam)
