@@ -9,7 +9,10 @@ import { getMonobankConfig } from '@/lib/env/monobank';
 import { logError, logInfo, logWarn } from '@/lib/logging';
 import { MONO_EXPIRED_RECONCILED, monoLogInfo } from '@/lib/logging/monobank';
 import { getInvoiceStatus } from '@/lib/psp/monobank';
-import { applyMonoWebhookEvent } from '@/lib/services/orders/monobank-webhook';
+import {
+  applyMonoWebhookEvent,
+  applyStoredMonobankEvent,
+} from '@/lib/services/orders/monobank-webhook';
 import { restockOrder } from '@/lib/services/orders/restock';
 
 const ACTIVE_MONOBANK_ATTEMPT_STATUSES = ['creating', 'active'] as const;
@@ -135,41 +138,11 @@ function readRows<T>(res: unknown): T[] {
   return [];
 }
 
-const SHA256_HEX_RE = /^[0-9a-f]{64}$/i;
-
 function sha256Utf8(value: string): string {
   return crypto
     .createHash('sha256')
     .update(Buffer.from(value, 'utf8'))
     .digest('hex');
-}
-
-function normalizeSha256Hex(value: unknown): string | null {
-  if (typeof value !== 'string') return null;
-  const v = value.trim();
-  if (!SHA256_HEX_RE.test(v)) return null;
-  return v.toLowerCase();
-}
-
-function getJob3ApplyKeys(
-  row: Job3CandidateRow,
-  rawBody: string
-): { rawSha256: string; eventKey: string; usedStoredRawSha256: boolean } {
-  const storedRawSha256 = normalizeSha256Hex(row.raw_sha256);
-
-  if (storedRawSha256) {
-    return {
-      rawSha256: storedRawSha256,
-      eventKey: storedRawSha256,
-      usedStoredRawSha256: true,
-    };
-  }
-
-  return {
-    rawSha256: sha256Utf8(rawBody),
-    eventKey: row.id,
-    usedStoredRawSha256: false,
-  };
 }
 
 function buildApplyPayload(args: {
@@ -358,13 +331,58 @@ async function readUnclaimedJob3Candidates(args: {
   return readRows<Job3CandidateRow>(res);
 }
 
-async function clearAppliedEventClaim(args: { eventId: string }) {
+async function claimJob3Events(args: {
+  limit: number;
+  leaseSeconds: number;
+  runId: string;
+}): Promise<Job3CandidateRow[]> {
+  const res = await db.execute<Job3CandidateRow>(sql`
+    with candidates as (
+      select me.id
+      from monobank_events me
+      where me.provider = 'monobank'
+        and me.applied_at is null
+        and (me.claim_expires_at is null or me.claim_expires_at < now())
+      order by
+        me.provider_modified_at asc nulls last,
+        me.received_at asc,
+        me.id asc
+      for update skip locked
+      limit ${args.limit}
+    ),
+    claimed as (
+      update monobank_events me
+      set claimed_at = now(),
+          claim_expires_at = now() + make_interval(secs => ${args.leaseSeconds}),
+          claimed_by = ${args.runId}
+      where me.id in (select id from candidates)
+        and me.applied_at is null
+       and (me.claim_expires_at is null or me.claim_expires_at < now())
+      returning
+        me.id,
+       me.invoice_id,
+        me.attempt_id,
+        me.provider_modified_at,
+        me.received_at,
+        me.raw_payload,
+        me.raw_sha256
+    )
+    select * from claimed
+  `);
+
+  return readRows<Job3CandidateRow>(res);
+}
+async function clearAppliedEventClaim(args: {
+  eventId: string;
+  runId: string;
+}) {
   await db.execute(sql`
     update monobank_events
     set claimed_at = null,
         claim_expires_at = null,
         claimed_by = null
     where id = ${args.eventId}::uuid
+      and claimed_by = ${args.runId}
       and applied_at is not null
   `);
 }
@@ -835,7 +853,12 @@ export async function runMonobankJanitorJob3(
   if (webhookMode !== 'store') {
     throw new MonobankJanitorJob3ModeError();
   }
-
+  const leaseSeconds = parseEnvInt(
+    'MONO_JANITOR_LEASE_SECONDS',
+    DEFAULT_JANITOR_LEASE_SECONDS,
+    LEASE_SECONDS_MIN,
+    LEASE_SECONDS_MAX
+  );
   if (args.dryRun) {
     const candidates = await readUnclaimedJob3Candidates({
       limit: args.limit,
@@ -847,6 +870,7 @@ export async function runMonobankJanitorJob3(
       runId: args.runId,
       dryRun: true,
       limit: args.limit,
+      leaseSeconds,
       candidates: candidates.length,
     });
 
@@ -858,10 +882,12 @@ export async function runMonobankJanitorJob3(
     };
   }
 
-  const candidates = await readUnclaimedJob3Candidates({
+  const claimed = await claimJob3Events({
     limit: args.limit,
+    leaseSeconds,
+    runId: args.runId,
   });
-  const ordered = sortJob3RowsByCanonicalOrder(candidates);
+  const ordered = sortJob3RowsByCanonicalOrder(claimed);
 
   let processed = 0;
   let applied = 0;
@@ -877,30 +903,10 @@ export async function runMonobankJanitorJob3(
         throw new Error('Stored event has invalid raw payload');
       }
 
-      const rawBody = JSON.stringify(parsedPayload);
-      const { rawSha256, eventKey, usedStoredRawSha256 } = getJob3ApplyKeys(
-        eventRow,
-        rawBody
-      );
-
-      if (!usedStoredRawSha256) {
-        logWarn('internal_monobank_janitor_job3_raw_sha256_fallback', {
-          ...args.baseMeta,
-          code: 'JANITOR_JOB3_RAW_SHA256_FALLBACK',
-          runId: args.runId,
-          eventId: eventRow.id,
-          invoiceId: eventRow.invoice_id,
-          attemptId: eventRow.attempt_id,
-        });
-      }
-
-      const result = await applyMonoWebhookEvent({
-        rawBody,
-        parsedPayload,
-        rawSha256,
-        eventKey,
+      const result = await applyStoredMonobankEvent({
+        eventId: eventRow.id,
         requestId: args.requestId,
-        mode: 'apply',
+        parsedPayload,
       });
 
       if (isAppliedResult(result.appliedResult)) {
@@ -909,24 +915,24 @@ export async function runMonobankJanitorJob3(
         noop += 1;
       }
 
-      if (result.eventId) {
-        try {
-          await clearAppliedEventClaim({ eventId: result.eventId });
-        } catch (clearError) {
-          logWarn('internal_monobank_janitor_job3_clear_claim_failed', {
-            ...args.baseMeta,
-            code: 'JANITOR_JOB3_CLEAR_CLAIM_FAILED',
-            runId: args.runId,
-            eventId: eventRow.id,
-            appliedEventId: result.eventId,
-            invoiceId: eventRow.invoice_id,
-            attemptId: eventRow.attempt_id,
-            error:
-              clearError instanceof Error
-                ? clearError.message
-                : String(clearError),
-          });
-        }
+      try {
+        await clearAppliedEventClaim({
+          eventId: eventRow.id,
+          runId: args.runId,
+        });
+      } catch (clearError) {
+        logWarn('internal_monobank_janitor_job3_clear_claim_failed', {
+          ...args.baseMeta,
+          code: 'JANITOR_JOB3_CLEAR_CLAIM_FAILED',
+          runId: args.runId,
+          eventId: eventRow.id,
+          invoiceId: eventRow.invoice_id,
+          attemptId: eventRow.attempt_id,
+          error:
+            clearError instanceof Error
+              ? clearError.message
+              : String(clearError),
+        });
       }
     } catch (error) {
       failed += 1;
@@ -947,7 +953,8 @@ export async function runMonobankJanitorJob3(
     runId: args.runId,
     dryRun: false,
     limit: args.limit,
-    candidates: candidates.length,
+    leaseSeconds,
+    claimed: claimed.length,
     processed,
     applied,
     noop,

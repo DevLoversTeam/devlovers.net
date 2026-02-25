@@ -430,10 +430,6 @@ async function applyStripePaidAndQueueShipmentAtomic(
       update orders
       set payment_status = 'paid',
           status = 'PAID',
-          shipping_status = case
-            when ${shouldAttemptEnqueue} then 'queued'::shipping_status
-            else shipping_status
-          end,
           updated_at = ${args.now},
           psp_charge_id = ${args.pspChargeId},
           psp_payment_method = ${args.pspPaymentMethod},
@@ -486,10 +482,19 @@ async function applyStripePaidAndQueueShipmentAtomic(
       from eligible_for_enqueue
       on conflict (order_id) do nothing
       returning order_id
+    ),
+    mark_queued as (
+      update orders
+      set shipping_status = 'queued'::shipping_status,
+          updated_at = ${args.now}
+      from inserted_shipment
+      where orders.id = inserted_shipment.order_id
+      returning orders.id
     )
     select
       (select count(*)::int from updated_order) as updated_count,
-      (select count(*)::int from inserted_shipment) as inserted_shipment_count
+      (select count(*)::int from inserted_shipment) as inserted_shipment_count,
+      (select count(*)::int from mark_queued) as mark_queued_count
   `);
 
   const row = readDbRows<{
@@ -1004,7 +1009,7 @@ export async function POST(request: NextRequest) {
         createdAtIso,
       });
 
-      const applyResult = await applyStripePaidAndQueueShipmentAtomic({
+      const appliedArgs = {
         now,
         orderId: order.id,
         pspChargeId: latestChargeId ?? chargeForIntent?.id ?? null,
@@ -1016,7 +1021,24 @@ export async function POST(request: NextRequest) {
         shippingProvider: order.shippingProvider,
         shippingMethodCode: order.shippingMethodCode,
         inventoryStatus: order.inventoryStatus,
-      });
+      };
+
+      const applyResult =
+        await applyStripePaidAndQueueShipmentAtomic(appliedArgs);
+
+      if (!applyResult.applied) {
+        logWarn('stripe_webhook_paid_apply_noop', {
+          ...eventMeta(),
+          code: 'PAID_APPLY_NOOP',
+          orderId: order.id,
+          paymentIntentId,
+          pspChargeId: appliedArgs.pspChargeId,
+          pspPaymentMethod: appliedArgs.pspPaymentMethod,
+          paymentStatus: order.paymentStatus,
+          status: order.status,
+          reason: 'applyResult.applied=false',
+        });
+      }
 
       if (applyResult.shipmentQueued) {
         recordShippingMetric({
@@ -1026,6 +1048,7 @@ export async function POST(request: NextRequest) {
           requestId,
         });
       }
+
       await markStripeAttemptFinal({
         paymentIntentId,
         status: 'succeeded',

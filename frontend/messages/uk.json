@@ -395,6 +395,24 @@
         "legend": "Доставка",
         "methodsLoading": "Завантаження способів доставки...",
         "unavailableFallback": "Доставка зараз недоступна.",
+        "unavailable": {
+          "shippingDisabled": "Доставка зараз вимкнена.",
+          "npDisabled": "Доставка Новою поштою зараз вимкнена.",
+          "countryNotSupported": "Доставка доступна лише в Україні.",
+          "currencyNotSupported": "Нова пошта доступна лише для замовлень у гривні (UAH).",
+          "internalError": "Не вдалося завантажити способи доставки.",
+          "shopShippingDisabled": "Доставка наразі вимкнена."
+        },
+        "validation": {
+          "invalid": "Перевірте дані доставки.",
+          "methodRequired": "Оберіть спосіб доставки.",
+          "cityRequired": "Оберіть місто.",
+          "warehouseRequired": "Оберіть відділення або поштомат.",
+          "addressRequired": "Вкажіть адресу доставки кур’єром.",
+          "recipientNameRequired": "Вкажіть ПІБ отримувача.",
+          "recipientPhoneRequired": "Вкажіть коректний український номер телефону.",
+          "recipientEmailInvalid": "Вкажіть коректну email-адресу."
+        },
         "city": {
           "label": "Місто",
           "placeholder": "Почніть вводити назву міста (мін. 2 символи)",

@@ -244,6 +244,10 @@ async function callNp<T>(params: {
     throw new NovaPoshtaConfigError('Nova Poshta shipping is not configured');
   }
 
+  const controller = new AbortController();
+  const timeoutMs = 15_000;
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
   let response: Response;
   try {
     response = await fetch(config.apiBaseUrl, {
@@ -259,13 +263,24 @@ async function callNp<T>(params: {
         methodProperties: params.methodProperties,
       }),
       cache: 'no-store',
+      signal: controller.signal,
     });
   } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw new NovaPoshtaApiError(
+        'NP_TIMEOUT',
+        'Nova Poshta request timed out',
+        504,
+        { cause: error }
+      );
+    }
+
     throw new NovaPoshtaApiError('NP_FETCH_FAILED', 'fetch failed', 0, {
       cause: error,
     });
+  } finally {
+    clearTimeout(timeoutId);
   }
-
   if (!response.ok) {
     throw new NovaPoshtaApiError(
       'NP_HTTP_ERROR',
@@ -348,28 +363,43 @@ export async function searchSettlements(args: {
   return out;
 }
 
-/**
- * NP method:
- * - modelName: Address
- * - calledMethod: getWarehouses
- * Key fields mapped:
- * - Ref, SettlementRef, CityRef
- * - Number, TypeOfWarehouse/CategoryOfWarehouse
- * - Description/DescriptionRu, ShortAddress/ShortAddressRu
- */
 export async function getWarehousesBySettlementRef(
   settlementRef: string
 ): Promise<NovaPoshtaWarehouse[]> {
-  const rows = await callNp<WarehouseItem>({
-    modelName: 'Address',
-    calledMethod: 'getWarehouses',
-    methodProperties: {
-      SettlementRef: settlementRef,
-      Limit: 500,
-      Page: 1,
-      Language: 'ua',
-    },
-  });
+  const LIMIT = 500;
+  const MAX_PAGES = 20;
+
+  const rows: WarehouseItem[] = [];
+  let page = 1;
+
+  while (true) {
+    if (page > MAX_PAGES) {
+      throw new NovaPoshtaApiError(
+        'NP_PAGINATION_LIMIT',
+        `Nova Poshta warehouses pagination exceeded ${MAX_PAGES} pages`,
+        503
+      );
+    }
+
+    const batch = await callNp<WarehouseItem>({
+      modelName: 'Address',
+      calledMethod: 'getWarehouses',
+      methodProperties: {
+        SettlementRef: settlementRef,
+        Limit: LIMIT,
+        Page: page,
+        Language: 'ua',
+      },
+    });
+
+    if (batch.length === 0) break;
+
+    rows.push(...batch);
+
+    if (batch.length < LIMIT) break;
+
+    page += 1;
+  }
 
   const out: NovaPoshtaWarehouse[] = [];
   const seen = new Set<string>();
@@ -437,9 +467,9 @@ export async function createInternetDocument(
       CityRecipient: input.recipient.cityRef,
       RecipientAddress: input.recipient.warehouseRef ?? undefined,
       RecipientAddressName:
-        input.recipient.addressLine1 ||
-        input.recipient.addressLine2 ||
-        undefined,
+        [input.recipient.addressLine1, input.recipient.addressLine2]
+          .filter(Boolean)
+          .join(', ') || undefined,
       RecipientFullName: input.recipient.fullName,
       RecipientName: input.recipient.fullName,
       RecipientsPhone: input.recipient.phone,

@@ -259,6 +259,18 @@ export const orders = pgTable(
     )
   `
     ),
+    check(
+      'orders_shipping_amount_minor_non_negative_chk',
+      sql`${table.shippingAmountMinor} IS NULL OR ${table.shippingAmountMinor} >= 0`
+    ),
+    check(
+      'orders_shipping_payer_null_when_not_required_chk',
+      sql`${table.shippingRequired} IS TRUE OR ${table.shippingPayer} IS NULL`
+    ),
+    check(
+      'orders_shipping_payer_present_when_required_chk',
+      sql`${table.shippingRequired} IS DISTINCT FROM TRUE OR ${table.shippingPayer} IS NOT NULL`
+    ),
     index('orders_sweep_claim_expires_idx').on(table.sweepClaimExpiresAt),
     index('idx_orders_user_id_created_at').on(table.userId, table.createdAt),
     index('orders_shipping_status_idx').on(
@@ -621,6 +633,10 @@ export const shippingShipments = pgTable(
     index('shipping_shipments_queue_idx').on(table.status, table.nextAttemptAt),
     index('shipping_shipments_lease_idx').on(table.leaseExpiresAt),
     index('shipping_shipments_provider_ref_idx').on(table.providerRef),
+    check(
+      'shipping_shipments_attempt_count_non_negative_chk',
+      sql`${table.attemptCount} >= 0`
+    ),
   ]
 );
 
@@ -646,6 +662,7 @@ export const npCities = pgTable(
   table => [
     index('np_cities_active_name_idx').on(table.isActive, table.nameUa),
     index('np_cities_last_sync_run_idx').on(table.lastSyncRunId),
+    index('np_cities_active_name_prefix_idx').on(table.isActive, table.nameUa),
   ]
 );
 

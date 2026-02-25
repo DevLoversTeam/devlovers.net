@@ -395,6 +395,24 @@
         "legend": "Delivery",
         "methodsLoading": "Loading delivery methods...",
         "unavailableFallback": "Shipping is unavailable right now.",
+        "unavailable": {
+          "shippingDisabled": "Shipping is currently disabled.",
+          "npDisabled": "Nova Poshta shipping is currently disabled.",
+          "countryNotSupported": "Shipping is available only for Ukraine.",
+          "currencyNotSupported": "Nova Poshta shipping is available only for UAH orders.",
+          "internalError": "Unable to load shipping methods right now.",
+          "shopShippingDisabled": "Shipping is currently disabled."
+        },
+        "validation": {
+          "invalid": "Please check delivery details.",
+          "methodRequired": "Select a delivery method.",
+          "cityRequired": "Select a city.",
+          "warehouseRequired": "Select a branch or parcel locker.",
+          "addressRequired": "Enter courier delivery address.",
+          "recipientNameRequired": "Enter recipient full name.",
+          "recipientPhoneRequired": "Enter a valid UA phone number.",
+          "recipientEmailInvalid": "Enter a valid email address."
+        },
         "city": {
           "label": "City",
           "placeholder": "Start typing city name (min 2 chars)",

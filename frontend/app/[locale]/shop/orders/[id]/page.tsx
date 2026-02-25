@@ -138,12 +138,12 @@ export default async function OrderDetailPage({
 
   let order: OrderDetail;
 
-  try {
-    const whereClause = isAdmin
-      ? eq(orders.id, parsed.data.id)
-      : and(eq(orders.id, parsed.data.id), eq(orders.userId, user.id));
+  const whereClause = isAdmin
+    ? eq(orders.id, parsed.data.id)
+    : and(eq(orders.id, parsed.data.id), eq(orders.userId, user.id));
 
-    const rows = await db
+  const fetchRows = () =>
+    db
       .select({
         order: {
           id: orders.id,
@@ -177,8 +177,17 @@ export default async function OrderDetailPage({
       .where(whereClause)
       .orderBy(orderItems.id);
 
-    if (rows.length === 0) notFound();
+  let rows: Awaited<ReturnType<typeof fetchRows>>;
+  try {
+    rows = await fetchRows();
+  } catch (error) {
+    logError('User order detail page failed', error);
+    throw new Error('ORDER_DETAIL_LOAD_FAILED');
+  }
 
+  if (rows.length === 0) notFound();
+
+  try {
     const base = rows[0]!.order;
 
     const items = rows

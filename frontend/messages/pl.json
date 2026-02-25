@@ -395,6 +395,24 @@
         "legend": "Dostawa",
         "methodsLoading": "Ładowanie metod dostawy...",
         "unavailableFallback": "Dostawa jest obecnie niedostępna.",
+        "unavailable": {
+          "shippingDisabled": "Dostawa jest obecnie wyłączona.",
+          "npDisabled": "Dostawa Nova Poshta jest obecnie wyłączona.",
+          "countryNotSupported": "Dostawa jest dostępna tylko na Ukrainie.",
+          "currencyNotSupported": "Nova Poshta jest dostępna tylko dla zamówień w UAH.",
+          "internalError": "Nie można teraz załadować metod dostawy.",
+          "shopShippingDisabled": "Dostawa jest obecnie wyłączona."
+        },
+        "validation": {
+          "invalid": "Sprawdź dane dostawy.",
+          "methodRequired": "Wybierz metodę dostawy.",
+          "cityRequired": "Wybierz miasto.",
+          "warehouseRequired": "Wybierz oddział lub automat paczkowy.",
+          "addressRequired": "Podaj adres dostawy kurierem.",
+          "recipientNameRequired": "Podaj imię i nazwisko odbiorcy.",
+          "recipientPhoneRequired": "Podaj poprawny ukraiński numer telefonu.",
+          "recipientEmailInvalid": "Podaj poprawny adres email."
+        },
         "city": {
           "label": "Miasto",
           "placeholder": "Zacznij wpisywać nazwę miasta (min. 2 znaki)",
@@ -418,7 +436,7 @@
         },
         "recipientPhone": {
           "label": "Telefon odbiorcy",
-          "placeholder": "+48XXXXXXXXX"
+          "placeholder": "+380XXXXXXXXX lub 0XXXXXXXXX"
         },
         "recipientEmail": {
           "label": "Email odbiorcy (opcjonalnie)",

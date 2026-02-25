@@ -262,7 +262,11 @@ function declaredCostUahFromMinor(totalMinor: number): number {
     );
   }
 
-  return Math.floor((Math.trunc(totalMinor) + 50) / 100);
+  const MIN_NP_DECLARED_COST_UAH = 300;
+
+  const rounded = Math.floor((Math.trunc(totalMinor) + 50) / 100);
+
+  return Math.max(MIN_NP_DECLARED_COST_UAH, rounded);
 }
 
 function computeBackoffSeconds(

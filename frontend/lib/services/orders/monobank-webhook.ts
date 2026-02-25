@@ -487,7 +487,13 @@ async function atomicMarkPaidOrderAndSucceedAttempt(args: {
       update orders
       set status = 'PAID',
           shipping_status = case
-            when ${args.enqueueShipment} then 'queued'::shipping_status
+            when ${args.enqueueShipment}
+              and payment_status = 'paid'
+              and shipping_required = true
+              and shipping_provider = 'nova_poshta'
+              and shipping_method_code is not null
+              and ${inventoryCommittedForShippingSql(sql`orders.inventory_status`)}
+            then 'queued'::shipping_status
             else shipping_status
           end,
           psp_charge_id = ${args.invoiceId},

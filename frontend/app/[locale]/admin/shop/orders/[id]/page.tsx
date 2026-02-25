@@ -280,14 +280,18 @@ export default async function OrderDetailPage({
           </div>
 
           <div>
-            <dt className="text-muted-foreground text-xs">Shipping status</dt>
+            <dt className="text-muted-foreground text-xs">
+              {t('shippingStatus')}
+            </dt>
             <dd className="text-sm font-medium">
               {order.shippingStatus ?? '-'}
             </dd>
           </div>
 
           <div>
-            <dt className="text-muted-foreground text-xs">Tracking number</dt>
+            <dt className="text-muted-foreground text-xs">
+              {t('trackingNumber')}
+            </dt>
             <dd className="text-sm font-medium break-all">
               {order.trackingNumber ?? '-'}
             </dd>

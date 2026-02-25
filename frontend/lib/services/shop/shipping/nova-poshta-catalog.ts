@@ -163,46 +163,52 @@ export async function findCachedWarehouses(args: {
 async function upsertCities(rows: NovaPoshtaSettlement[], runId: string) {
   if (!rows.length) return;
 
-  const values = rows.map(item => {
-    return sql`(
-      ${item.ref},
-      ${item.nameUa},
-      ${item.nameRu},
-      ${item.area},
-      ${item.region},
-      ${item.settlementType},
-      true,
-      ${runId}::uuid,
-      now(),
-      now()
-    )`;
-  });
+  const CHUNK_SIZE = 300; 
 
-  await db.execute(sql`
-    INSERT INTO np_cities (
-      ref,
-      name_ua,
-      name_ru,
-      area,
-      region,
-      settlement_type,
-      is_active,
-      last_sync_run_id,
-      created_at,
-      updated_at
-    )
-    VALUES ${sql.join(values, sql`, `)}
-    ON CONFLICT (ref) DO UPDATE
-      SET
-        name_ua = EXCLUDED.name_ua,
-        name_ru = EXCLUDED.name_ru,
-        area = EXCLUDED.area,
-        region = EXCLUDED.region,
-        settlement_type = EXCLUDED.settlement_type,
-        is_active = true,
-        last_sync_run_id = EXCLUDED.last_sync_run_id,
-        updated_at = now()
-  `);
+  for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
+    const chunk = rows.slice(i, i + CHUNK_SIZE);
+
+    const values = chunk.map(item => {
+      return sql`(
+        ${item.ref},
+        ${item.nameUa},
+        ${item.nameRu},
+        ${item.area},
+        ${item.region},
+        ${item.settlementType},
+        true,
+        ${runId}::uuid,
+        now(),
+        now()
+      )`;
+    });
+
+    await db.execute(sql`
+      INSERT INTO np_cities (
+        ref,
+        name_ua,
+        name_ru,
+        area,
+        region,
+        settlement_type,
+        is_active,
+        last_sync_run_id,
+        created_at,
+        updated_at
+      )
+      VALUES ${sql.join(values, sql`, `)}
+      ON CONFLICT (ref) DO UPDATE
+        SET
+          name_ua = EXCLUDED.name_ua,
+          name_ru = EXCLUDED.name_ru,
+          area = EXCLUDED.area,
+          region = EXCLUDED.region,
+          settlement_type = EXCLUDED.settlement_type,
+          is_active = true,
+          last_sync_run_id = EXCLUDED.last_sync_run_id,
+          updated_at = now()
+    `);
+  }
 }
 
 async function upsertWarehouses(rows: NovaPoshtaWarehouse[], runId: string) {
@@ -266,33 +272,42 @@ async function deactivateMissingWarehouses(args: {
   settlementRef: string;
   keepRefs: string[];
   runId: string;
-}) {
+}): Promise<number> {
   const keepRefs = args.keepRefs.filter(x => x.trim().length > 0);
 
   if (!keepRefs.length) {
-    await db.execute(sql`
+    const res = await db.execute(sql`
       UPDATE np_warehouses
       SET
         is_active = false,
         last_sync_run_id = ${args.runId}::uuid,
         updated_at = now()
       WHERE settlement_ref = ${args.settlementRef}
+        AND is_active = true
     `);
-    return;
-  }
 
+    const rowCount =
+      typeof (res as any)?.rowCount === 'number' ? (res as any).rowCount : 0;
+
+    return rowCount;
+  }
   const refs = keepRefs.map(ref => sql`${ref}`);
-  await db.execute(sql`
+  const res = await db.execute(sql`
     UPDATE np_warehouses
     SET
       is_active = false,
       last_sync_run_id = ${args.runId}::uuid,
       updated_at = now()
     WHERE settlement_ref = ${args.settlementRef}
+      AND is_active = true
       AND ref NOT IN (${sql.join(refs, sql`, `)})
   `);
-}
 
+  const rowCount =
+    typeof (res as any)?.rowCount === 'number' ? (res as any).rowCount : 0;
+
+  return rowCount;
+}
 export async function cacheSettlementsByQuery(args: {
   q: string;
   runId: string;
@@ -313,14 +328,16 @@ export async function cacheWarehousesBySettlement(args: {
 }): Promise<{ upserted: number; deactivated: number }> {
   const warehouses = await getWarehousesBySettlementRef(args.settlementRef);
   await upsertWarehouses(warehouses, args.runId);
-  await deactivateMissingWarehouses({
+
+  const deactivated = await deactivateMissingWarehouses({
     settlementRef: args.settlementRef,
     keepRefs: warehouses.map(x => x.ref),
     runId: args.runId,
   });
+
   return {
     upserted: warehouses.length,
-    deactivated: 0,
+    deactivated,
   };
 }
 

@@ -55,13 +55,13 @@ export type BuildCheckoutShippingPayloadResult =
       ok: false;
       code:
         | 'SHIPPING_UNAVAILABLE'
-        | 'MISSING_SHIPPING_METHOD'
-        | 'MISSING_SHIPPING_CITY'
-        | 'MISSING_SHIPPING_WAREHOUSE'
-        | 'MISSING_SHIPPING_ADDRESS'
-        | 'MISSING_RECIPIENT_NAME'
-        | 'INVALID_RECIPIENT_PHONE';
-      message: string;
+        | 'SHIPPING_METHOD_REQUIRED'
+        | 'CITY_REQUIRED'
+        | 'WAREHOUSE_REQUIRED'
+        | 'ADDRESS_REQUIRED'
+        | 'RECIPIENT_NAME_REQUIRED'
+        | 'RECIPIENT_PHONE_REQUIRED'
+        | 'RECIPIENT_EMAIL_INVALID';
     };
 
 function trimOrNull(value: string | null | undefined): string | null {
@@ -71,25 +71,7 @@ function trimOrNull(value: string | null | undefined): string | null {
 }
 
 const UA_PHONE_REGEX = /^(?:\+380\d{9}|0\d{9})$/;
-
-export function shippingUnavailableMessage(
-  reasonCode: ShippingAvailabilityReasonCode | null
-): string {
-  switch (reasonCode) {
-    case 'SHOP_SHIPPING_DISABLED':
-      return 'Shipping is currently disabled.';
-    case 'NP_DISABLED':
-      return 'Nova Poshta shipping is currently disabled.';
-    case 'COUNTRY_NOT_SUPPORTED':
-      return 'Shipping is available only for Ukraine.';
-    case 'CURRENCY_NOT_SUPPORTED':
-      return 'Nova Poshta shipping is available only for UAH orders.';
-    case 'INTERNAL_ERROR':
-      return 'Unable to load shipping methods right now.';
-    default:
-      return 'Shipping method is unavailable.';
-  }
-}
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function buildCheckoutShippingPayload(
   input: BuildCheckoutShippingPayloadInput
@@ -98,15 +80,13 @@ export function buildCheckoutShippingPayload(
     return {
       ok: false,
       code: 'SHIPPING_UNAVAILABLE',
-      message: shippingUnavailableMessage(input.reasonCode),
     };
   }
 
   if (!input.methodCode) {
     return {
       ok: false,
-      code: 'MISSING_SHIPPING_METHOD',
-      message: 'Select a delivery method.',
+      code: 'SHIPPING_METHOD_REQUIRED',
     };
   }
 
@@ -114,8 +94,7 @@ export function buildCheckoutShippingPayload(
   if (!cityRef) {
     return {
       ok: false,
-      code: 'MISSING_SHIPPING_CITY',
-      message: 'Select a city.',
+      code: 'CITY_REQUIRED',
     };
   }
 
@@ -132,8 +111,7 @@ export function buildCheckoutShippingPayload(
     if (!warehouseRef) {
       return {
         ok: false,
-        code: 'MISSING_SHIPPING_WAREHOUSE',
-        message: 'Select a branch or parcel locker.',
+        code: 'WAREHOUSE_REQUIRED',
       };
     }
   }
@@ -141,24 +119,28 @@ export function buildCheckoutShippingPayload(
   if (methodCode === 'NP_COURIER' && !addressLine1) {
     return {
       ok: false,
-      code: 'MISSING_SHIPPING_ADDRESS',
-      message: 'Enter courier delivery address.',
+      code: 'ADDRESS_REQUIRED',
     };
   }
 
   if (!recipientFullName) {
     return {
       ok: false,
-      code: 'MISSING_RECIPIENT_NAME',
-      message: 'Enter recipient full name.',
+      code: 'RECIPIENT_NAME_REQUIRED',
     };
   }
 
   if (!recipientPhone || !UA_PHONE_REGEX.test(recipientPhone)) {
     return {
       ok: false,
-      code: 'INVALID_RECIPIENT_PHONE',
-      message: 'Enter a valid UA phone number.',
+      code: 'RECIPIENT_PHONE_REQUIRED',
+    };
+  }
+
+  if (recipientEmail && !EMAIL_REGEX.test(recipientEmail)) {
+    return {
+      ok: false,
+      code: 'RECIPIENT_EMAIL_INVALID',
     };
   }
 

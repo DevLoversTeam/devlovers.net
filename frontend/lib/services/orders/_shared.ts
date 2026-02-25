@@ -107,13 +107,12 @@ export function normalizeCheckoutItem(
 }
 
 function checkoutItemMergeKey(item: CheckoutItemWithVariant): string {
-  const normalized = normalizeCheckoutItem(item);
   return JSON.stringify({
-    productId: normalized.productId,
-    selectedSize: normalized.selectedSize ?? '',
-    selectedColor: normalized.selectedColor ?? '',
-    variantKey: normalized.variantKey ?? '',
-    options: normalized.options ?? {},
+    productId: item.productId,
+    selectedSize: item.selectedSize ?? '',
+    selectedColor: item.selectedColor ?? '',
+    variantKey: item.variantKey ?? '',
+    options: item.options ?? {},
   });
 }
 
@@ -159,7 +158,7 @@ export function mergeCheckoutItems(
       map.set(key, { ...it });
       continue;
     }
-    const mergedQty = existing.quantity + item.quantity;
+    const mergedQty = existing.quantity + it.quantity;
     if (mergedQty > MAX_QUANTITY_PER_LINE) {
       throw new InvalidPayloadError('Quantity exceeds maximum per line.');
     }

@@ -13,7 +13,6 @@ import {
   buildCheckoutShippingPayload,
   type CheckoutDeliveryMethodCode,
   type ShippingAvailabilityReasonCode,
-  shippingUnavailableMessage,
 } from '@/lib/services/shop/shipping/checkout-payload';
 import { formatMoney } from '@/lib/shop/currency';
 import { generateIdempotencyKey } from '@/lib/shop/idempotency';
@@ -145,7 +144,7 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
   );
   const [isClientReady, setIsClientReady] = useState(false);
   const [shippingMethods, setShippingMethods] = useState<ShippingMethod[]>([]);
-  const [shippingMethodsLoading, setShippingMethodsLoading] = useState(false);
+  const [shippingMethodsLoading, setShippingMethodsLoading] = useState(true);
   const [shippingAvailable, setShippingAvailable] = useState(false);
   const [shippingReasonCode, setShippingReasonCode] =
     useState<ShippingAvailabilityReasonCode | null>(null);
@@ -192,10 +191,61 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
   const hasSelectableProvider = canUseStripe || canUseMonobank;
   const country = localeToCountry(locale);
   const shippingUnavailableHardBlock =
+    shippingReasonCode === 'SHOP_SHIPPING_DISABLED' ||
+    shippingReasonCode === 'NP_DISABLED' ||
     shippingReasonCode === 'COUNTRY_NOT_SUPPORTED' ||
     shippingReasonCode === 'CURRENCY_NOT_SUPPORTED' ||
     shippingReasonCode === 'INTERNAL_ERROR';
   const isWarehouseSelectionMethod = isWarehouseMethod(selectedShippingMethod);
+  const safeT = (key: string, fallback: string) => {
+    try {
+      return t(key as any);
+    } catch {
+      return fallback;
+    }
+  };
+
+  const SHIPPING_AVAILABILITY_REASON_TO_T_KEY: Record<string, string> = {
+    SHOP_SHIPPING_DISABLED: 'delivery.unavailable.shopShippingDisabled',
+    NP_DISABLED: 'delivery.unavailable.npDisabled',
+    COUNTRY_NOT_SUPPORTED: 'delivery.unavailable.countryNotSupported',
+    CURRENCY_NOT_SUPPORTED: 'delivery.unavailable.currencyNotSupported',
+    INTERNAL_ERROR: 'delivery.unavailable.internalError',
+  };
+
+  const resolveShippingUnavailableText = (
+    code: ShippingAvailabilityReasonCode | null
+  ): string | null => {
+    if (!code || code === 'OK') return null;
+    const key =
+      SHIPPING_AVAILABILITY_REASON_TO_T_KEY[String(code)] ??
+      'delivery.unavailableFallback';
+    return safeT(key, String(code));
+  };
+
+  const SHIPPING_PAYLOAD_ERROR_CODE_TO_T_KEY: Record<string, string> = {
+    SHIPPING_METHOD_REQUIRED: 'delivery.validation.methodRequired',
+    CITY_REQUIRED: 'delivery.validation.cityRequired',
+    WAREHOUSE_REQUIRED: 'delivery.validation.warehouseRequired',
+    ADDRESS_REQUIRED: 'delivery.validation.addressRequired',
+    RECIPIENT_NAME_REQUIRED: 'delivery.validation.recipientNameRequired',
+    RECIPIENT_PHONE_REQUIRED: 'delivery.validation.recipientPhoneRequired',
+    RECIPIENT_EMAIL_INVALID: 'delivery.validation.recipientEmailInvalid',
+  };
+
+  const resolveShippingPayloadErrorText = (result: unknown): string => {
+    const code =
+      result && typeof result === 'object' && 'code' in result
+        ? typeof (result as any).code === 'string'
+          ? String((result as any).code)
+          : null
+        : null;
+
+    const key = code ? SHIPPING_PAYLOAD_ERROR_CODE_TO_T_KEY[code] : null;
+
+    if (key) return safeT(key, code ?? 'SHIPPING_INVALID');
+    return safeT('delivery.validation.invalid', code ?? 'SHIPPING_INVALID');
+  };
 
   useEffect(() => {
     if (selectedProvider === 'stripe' && !canUseStripe && canUseMonobank) {
@@ -612,8 +662,16 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
       );
       return;
     }
+    if (shippingMethodsLoading) {
+      setCheckoutError(safeT('delivery.methodsLoading', 'METHODS_LOADING'));
+      return;
+    }
+
     if (shippingUnavailableHardBlock) {
-      setCheckoutError(shippingUnavailableMessage(shippingReasonCode));
+      setCheckoutError(
+        resolveShippingUnavailableText(shippingReasonCode) ??
+          safeT('delivery.unavailableFallback', 'SHIPPING_UNAVAILABLE')
+      );
       return;
     }
 
@@ -641,8 +699,9 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
         : null;
 
       if (shippingPayloadResult && !shippingPayloadResult.ok) {
-        setDeliveryUiError(shippingPayloadResult.message);
-        setCheckoutError(shippingPayloadResult.message);
+        const msg = resolveShippingPayloadErrorText(shippingPayloadResult);
+        setDeliveryUiError(msg);
+        setCheckoutError(msg);
         return;
       }
 
@@ -740,9 +799,7 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
   }
 
   const shippingUnavailableText =
-    shippingReasonCode && shippingReasonCode !== 'OK'
-      ? shippingUnavailableMessage(shippingReasonCode)
-      : null;
+    resolveShippingUnavailableText(shippingReasonCode);
   const canPlaceOrder =
     hasSelectableProvider &&
     !shippingMethodsLoading &&
@@ -1145,6 +1202,14 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
                         {t('delivery.city.searching')}
                       </p>
                     ) : null}
+
+                    <label
+                      className="text-muted-foreground text-xs"
+                      htmlFor="shipping-warehouse-search"
+                    >
+                      {t('delivery.warehouse.label')}
+                    </label>
+
                     <input
                       id="shipping-warehouse-search"
                       type="text"
