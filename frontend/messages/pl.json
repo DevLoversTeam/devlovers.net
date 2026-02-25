@@ -387,7 +387,65 @@
         "subtotal": "Suma częściowa",
         "shipping": "Wysyłka",
         "shippingCalc": "Obliczone przy kasie",
-        "total": "Razem"
+        "total": "Razem",
+        "shippingInformationalOnly": "Tylko informacyjnie",
+        "shippingPayOnDeliveryNote": "Dostawa jest opłacana przewoźnikowi przy odbiorze; obecnie pobieramy opłatę tylko za produkty."
+      },
+      "delivery": {
+        "legend": "Dostawa",
+        "methodsLoading": "Ładowanie metod dostawy...",
+        "unavailableFallback": "Dostawa jest obecnie niedostępna.",
+        "unavailable": {
+          "shippingDisabled": "Dostawa jest obecnie wyłączona.",
+          "npDisabled": "Dostawa Nova Poshta jest obecnie wyłączona.",
+          "countryNotSupported": "Dostawa jest dostępna tylko na Ukrainie.",
+          "currencyNotSupported": "Nova Poshta jest dostępna tylko dla zamówień w UAH.",
+          "internalError": "Nie można teraz załadować metod dostawy.",
+          "shopShippingDisabled": "Dostawa jest obecnie wyłączona."
+        },
+        "validation": {
+          "invalid": "Sprawdź dane dostawy.",
+          "methodRequired": "Wybierz metodę dostawy.",
+          "cityRequired": "Wybierz miasto.",
+          "warehouseRequired": "Wybierz oddział lub automat paczkowy.",
+          "addressRequired": "Podaj adres dostawy kurierem.",
+          "recipientNameRequired": "Podaj imię i nazwisko odbiorcy.",
+          "recipientPhoneRequired": "Podaj poprawny ukraiński numer telefonu.",
+          "recipientEmailInvalid": "Podaj poprawny adres email."
+        },
+        "city": {
+          "label": "Miasto",
+          "placeholder": "Zacznij wpisywać nazwę miasta (min. 2 znaki)",
+          "selected": "Wybrane miasto: {city}",
+          "searching": "Wyszukiwanie miast..."
+        },
+        "warehouse": {
+          "label": "Oddział / automat paczkowy",
+          "placeholder": "Wpisz nazwę lub numer oddziału",
+          "selected": "Wybrany oddział: {warehouse}",
+          "searching": "Wyszukiwanie oddziałów..."
+        },
+        "courierAddress": {
+          "label": "Adres kuriera",
+          "line1Placeholder": "Ulica, numer domu, mieszkanie",
+          "line2Placeholder": "Dodatkowe informacje o adresie (opcjonalnie)"
+        },
+        "recipientName": {
+          "label": "Imię i nazwisko odbiorcy",
+          "placeholder": "Imię i nazwisko"
+        },
+        "recipientPhone": {
+          "label": "Telefon odbiorcy",
+          "placeholder": "+380XXXXXXXXX lub 0XXXXXXXXX"
+        },
+        "recipientEmail": {
+          "label": "Email odbiorcy (opcjonalnie)",
+          "placeholder": "email@example.com"
+        },
+        "recipientComment": {
+          "label": "Komentarz (opcjonalnie)",
+          "placeholder": "Komentarz do dostawy"
+        }
       },
       "checkout": {
         "placeOrder": "Złóż zamówienie",
@@ -716,7 +774,12 @@
         "unitPrice": "Cena jednostkowa",
         "lineTotal": "Suma wiersza",
         "yes": "Tak",
-        "no": "Nie"
+        "no": "Nie",
+        "shippingStatus": "Status dostawy",
+        "trackingNumber": "Numer śledzenia",
+        "qtyShort": "Ilość",
+        "unitShort": "Cena",
+        "lineShort": "Suma"
       }
     },
     "productDescriptions": {

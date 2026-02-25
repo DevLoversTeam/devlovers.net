@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import {
   checkoutItemSchema,
+  checkoutShippingSchema,
   dbProductSchema,
   orderSummarySchema,
   paymentProviderSchema,
@@ -22,6 +23,7 @@ export type ProductUpdateInput = z.infer<typeof productAdminUpdateSchema> & {
 export type DbProduct = z.infer<typeof dbProductSchema>;
 
 export type CheckoutItem = z.infer<typeof checkoutItemSchema>;
+export type CheckoutShippingInput = z.infer<typeof checkoutShippingSchema>;
 
 export type OrderSummary = z.infer<typeof orderSummarySchema> & {
   totalCents?: number;

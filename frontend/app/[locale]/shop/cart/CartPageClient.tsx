@@ -9,8 +9,14 @@ import { useEffect, useState } from 'react';
 import { Loader } from '@/components/shared/Loader';
 import { useCart } from '@/components/shop/CartProvider';
 import { Link, useRouter } from '@/i18n/routing';
+import {
+  buildCheckoutShippingPayload,
+  type CheckoutDeliveryMethodCode,
+  type ShippingAvailabilityReasonCode,
+} from '@/lib/services/shop/shipping/checkout-payload';
 import { formatMoney } from '@/lib/shop/currency';
 import { generateIdempotencyKey } from '@/lib/shop/idempotency';
+import { localeToCountry } from '@/lib/shop/locale';
 import {
   SHOP_CHIP_BORDER_HOVER,
   SHOP_CHIP_INTERACTIVE,
@@ -89,6 +95,29 @@ type OrdersSummaryState = {
   latestOrderId: string | null;
 };
 
+type ShippingMethod = {
+  provider: 'nova_poshta';
+  methodCode: CheckoutDeliveryMethodCode;
+  title: string;
+};
+
+type ShippingCity = {
+  ref: string;
+  nameUa: string;
+};
+
+type ShippingWarehouse = {
+  ref: string;
+  name: string;
+  address: string | null;
+};
+
+function isWarehouseMethod(
+  methodCode: CheckoutDeliveryMethodCode | null
+): boolean {
+  return methodCode === 'NP_WAREHOUSE' || methodCode === 'NP_LOCKER';
+}
+
 export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
   const { cart, updateQuantity, removeFromCart } = useCart();
   const router = useRouter();
@@ -114,6 +143,40 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
       })
   );
   const [isClientReady, setIsClientReady] = useState(false);
+  const [shippingMethods, setShippingMethods] = useState<ShippingMethod[]>([]);
+  const [shippingMethodsLoading, setShippingMethodsLoading] = useState(true);
+  const [shippingAvailable, setShippingAvailable] = useState(true);
+  const [shippingReasonCode, setShippingReasonCode] =
+    useState<ShippingAvailabilityReasonCode | null>(null);
+  const [selectedShippingMethod, setSelectedShippingMethod] =
+    useState<CheckoutDeliveryMethodCode | null>(null);
+
+  const [cityQuery, setCityQuery] = useState('');
+  const [cityOptions, setCityOptions] = useState<ShippingCity[]>([]);
+  const [selectedCityRef, setSelectedCityRef] = useState<string | null>(null);
+  const [selectedCityName, setSelectedCityName] = useState<string | null>(null);
+  const [citiesLoading, setCitiesLoading] = useState(false);
+
+  const [warehouseQuery, setWarehouseQuery] = useState('');
+  const [warehouseOptions, setWarehouseOptions] = useState<ShippingWarehouse[]>(
+    []
+  );
+  const [selectedWarehouseRef, setSelectedWarehouseRef] = useState<
+    string | null
+  >(null);
+  const [selectedWarehouseName, setSelectedWarehouseName] = useState<
+    string | null
+  >(null);
+  const [warehousesLoading, setWarehousesLoading] = useState(false);
+
+  const [courierAddressLine1, setCourierAddressLine1] = useState('');
+  const [courierAddressLine2, setCourierAddressLine2] = useState('');
+  const [recipientName, setRecipientName] = useState('');
+  const [recipientPhone, setRecipientPhone] = useState('');
+  const [recipientEmail, setRecipientEmail] = useState('');
+  const [recipientComment, setRecipientComment] = useState('');
+
+  const [deliveryUiError, setDeliveryUiError] = useState<string | null>(null);
 
   useEffect(() => {
     setIsClientReady(true);
@@ -126,6 +189,63 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
   const canUseStripe = stripeEnabled;
   const canUseMonobank = monobankEnabled && isUahCheckout;
   const hasSelectableProvider = canUseStripe || canUseMonobank;
+  const country = localeToCountry(locale);
+  const shippingUnavailableHardBlock =
+    shippingReasonCode === 'SHOP_SHIPPING_DISABLED' ||
+    shippingReasonCode === 'NP_DISABLED' ||
+    shippingReasonCode === 'COUNTRY_NOT_SUPPORTED' ||
+    shippingReasonCode === 'CURRENCY_NOT_SUPPORTED' ||
+    shippingReasonCode === 'INTERNAL_ERROR';
+  const isWarehouseSelectionMethod = isWarehouseMethod(selectedShippingMethod);
+  const safeT = (key: string, fallback: string) => {
+    try {
+      return t(key as any);
+    } catch {
+      return fallback;
+    }
+  };
+
+  const SHIPPING_AVAILABILITY_REASON_TO_T_KEY: Record<string, string> = {
+    SHOP_SHIPPING_DISABLED: 'delivery.unavailable.shopShippingDisabled',
+    NP_DISABLED: 'delivery.unavailable.npDisabled',
+    COUNTRY_NOT_SUPPORTED: 'delivery.unavailable.countryNotSupported',
+    CURRENCY_NOT_SUPPORTED: 'delivery.unavailable.currencyNotSupported',
+    INTERNAL_ERROR: 'delivery.unavailable.internalError',
+  };
+
+  const resolveShippingUnavailableText = (
+    code: ShippingAvailabilityReasonCode | null
+  ): string | null => {
+    if (!code || code === 'OK') return null;
+    const key =
+      SHIPPING_AVAILABILITY_REASON_TO_T_KEY[String(code)] ??
+      'delivery.unavailableFallback';
+    return safeT(key, String(code));
+  };
+
+  const SHIPPING_PAYLOAD_ERROR_CODE_TO_T_KEY: Record<string, string> = {
+    SHIPPING_METHOD_REQUIRED: 'delivery.validation.methodRequired',
+    CITY_REQUIRED: 'delivery.validation.cityRequired',
+    WAREHOUSE_REQUIRED: 'delivery.validation.warehouseRequired',
+    ADDRESS_REQUIRED: 'delivery.validation.addressRequired',
+    RECIPIENT_NAME_REQUIRED: 'delivery.validation.recipientNameRequired',
+    RECIPIENT_PHONE_REQUIRED: 'delivery.validation.recipientPhoneRequired',
+    RECIPIENT_EMAIL_INVALID: 'delivery.validation.recipientEmailInvalid',
+  };
+
+  const resolveShippingPayloadErrorText = (result: unknown): string => {
+    const code =
+      result && typeof result === 'object' && 'code' in result
+        ? typeof (result as any).code === 'string'
+          ? String((result as any).code)
+          : null
+        : null;
+
+    const key = code ? SHIPPING_PAYLOAD_ERROR_CODE_TO_T_KEY[code] : null;
+
+    if (key) return safeT(key, code ?? 'SHIPPING_INVALID');
+    return safeT('delivery.validation.invalid', code ?? 'SHIPPING_INVALID');
+  };
 
   useEffect(() => {
     if (selectedProvider === 'stripe' && !canUseStripe && canUseMonobank) {
@@ -136,6 +256,299 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
       setSelectedProvider('stripe');
     }
   }, [canUseMonobank, canUseStripe, selectedProvider]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const controller = new AbortController();
+
+    async function loadShippingMethods() {
+      setShippingMethodsLoading(true);
+      setDeliveryUiError(null);
+
+      try {
+        const qs = new URLSearchParams({
+          locale,
+          currency: cart.summary.currency,
+          ...(country ? { country } : {}),
+        });
+
+        const response = await fetch(`/api/shop/shipping/methods?${qs}`, {
+          method: 'GET',
+          headers: { Accept: 'application/json' },
+          cache: 'no-store',
+          signal: controller.signal,
+        });
+
+        const data = await response.json().catch(() => null);
+
+        if (!response.ok) {
+          if (!cancelled) {
+            setShippingAvailable(false);
+            setShippingReasonCode('INTERNAL_ERROR');
+            setShippingMethods([]);
+          }
+          return;
+        }
+
+        const VALID_REASON_CODES = new Set<string>([
+          'OK',
+          'SHOP_SHIPPING_DISABLED',
+          'NP_DISABLED',
+          'COUNTRY_NOT_SUPPORTED',
+          'CURRENCY_NOT_SUPPORTED',
+          'INTERNAL_ERROR',
+        ]);
+
+        const hardBlock = () => {
+          setShippingAvailable(false);
+          setShippingReasonCode('INTERNAL_ERROR');
+          setShippingMethods([]);
+          setSelectedShippingMethod(null);
+        };
+
+        if (cancelled) return;
+
+        if (!data || typeof data !== 'object' || Array.isArray(data)) {
+          hardBlock();
+          return;
+        }
+
+        const obj = data as Record<string, unknown>;
+
+        if (typeof obj.available !== 'boolean') {
+          hardBlock();
+          return;
+        }
+
+        const available = obj.available;
+
+        const reasonRaw = obj.reasonCode;
+        const reasonCode =
+          typeof reasonRaw === 'string' && VALID_REASON_CODES.has(reasonRaw)
+            ? (reasonRaw as ShippingAvailabilityReasonCode)
+            : null;
+
+        const methodsRaw = obj.methods;
+        if (!Array.isArray(methodsRaw)) {
+          hardBlock();
+          return;
+        }
+
+        const methods: ShippingMethod[] = [];
+        for (const item of methodsRaw) {
+          if (!item || typeof item !== 'object' || Array.isArray(item)) {
+            hardBlock();
+            return;
+          }
+          const m = item as Record<string, unknown>;
+
+          const providerOk = m.provider === 'nova_poshta';
+          const methodCodeOk =
+            typeof m.methodCode === 'string' && m.methodCode.trim().length > 0;
+          const titleOk =
+            typeof m.title === 'string' && m.title.trim().length > 0;
+
+          if (!providerOk || !methodCodeOk || !titleOk) {
+            hardBlock();
+            return;
+          }
+
+          methods.push({
+            provider: 'nova_poshta',
+            methodCode: m.methodCode as CheckoutDeliveryMethodCode,
+            title: String(m.title),
+          });
+        }
+
+        if (available === false && reasonCode == null) {
+          hardBlock();
+          return;
+        }
+
+        setShippingAvailable(available);
+        setShippingReasonCode(reasonCode);
+        setShippingMethods(methods);
+
+        if (!available || methods.length === 0) {
+          setSelectedShippingMethod(null);
+          return;
+        }
+
+        setSelectedShippingMethod(current => {
+          if (
+            current &&
+            methods.some(method => method.methodCode === current)
+          ) {
+            return current;
+          }
+          return methods[0]!.methodCode;
+        });
+      } catch {
+        if (!cancelled) {
+          setShippingAvailable(false);
+          setShippingReasonCode('INTERNAL_ERROR');
+          setShippingMethods([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setShippingMethodsLoading(false);
+        }
+      }
+    }
+
+    void loadShippingMethods();
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [cart.summary.currency, country, locale]);
+
+  useEffect(() => {
+    setSelectedWarehouseRef(null);
+    setSelectedWarehouseName(null);
+    setWarehouseOptions([]);
+    setWarehouseQuery('');
+  }, [selectedCityRef, selectedShippingMethod]);
+
+  useEffect(() => {
+    if (!shippingAvailable) {
+      setCityOptions([]);
+      setCitiesLoading(false);
+      return;
+    }
+
+    const query = cityQuery.trim();
+    if (query.length < 2) {
+      setCityOptions([]);
+      setCitiesLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(async () => {
+      setCitiesLoading(true);
+      try {
+        const qs = new URLSearchParams({
+          q: query,
+          locale,
+          currency: cart.summary.currency,
+          ...(country ? { country } : {}),
+        });
+
+        const response = await fetch(`/api/shop/shipping/np/cities?${qs}`, {
+          method: 'GET',
+          headers: { Accept: 'application/json' },
+          cache: 'no-store',
+          signal: controller.signal,
+        });
+
+        const data = await response.json().catch(() => null);
+
+        if (!response.ok || !data || data.available === false) {
+          if (!cancelled) {
+            setCityOptions([]);
+          }
+          return;
+        }
+
+        if (!cancelled) {
+          const next = Array.isArray(data.items)
+            ? (data.items as ShippingCity[])
+            : [];
+          setCityOptions(next);
+        }
+      } catch {
+        if (!cancelled) {
+          setCityOptions([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setCitiesLoading(false);
+        }
+      }
+    }, 250);
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+      clearTimeout(timeoutId);
+    };
+  }, [cart.summary.currency, cityQuery, country, locale, shippingAvailable]);
+
+  useEffect(() => {
+    if (!shippingAvailable || !selectedCityRef || !isWarehouseSelectionMethod) {
+      setWarehouseOptions([]);
+      setWarehousesLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(async () => {
+      setWarehousesLoading(true);
+      try {
+        const qs = new URLSearchParams({
+          cityRef: selectedCityRef,
+          locale,
+          currency: cart.summary.currency,
+          ...(country ? { country } : {}),
+          ...(warehouseQuery.trim().length > 0
+            ? { q: warehouseQuery.trim() }
+            : {}),
+        });
+
+        const response = await fetch(
+          `/api/shop/shipping/np/warehouses?${qs.toString()}`,
+          {
+            method: 'GET',
+            headers: { Accept: 'application/json' },
+            cache: 'no-store',
+            signal: controller.signal,
+          }
+        );
+
+        const data = await response.json().catch(() => null);
+
+        if (!response.ok || !data || data.available === false) {
+          if (!cancelled) {
+            setWarehouseOptions([]);
+          }
+          return;
+        }
+
+        if (!cancelled) {
+          const next = Array.isArray(data.items)
+            ? (data.items as ShippingWarehouse[])
+            : [];
+          setWarehouseOptions(next);
+        }
+      } catch {
+        if (!cancelled) {
+          setWarehouseOptions([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setWarehousesLoading(false);
+        }
+      }
+    }, 250);
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+      clearTimeout(timeoutId);
+    };
+  }, [
+    cart.summary.currency,
+    country,
+    isWarehouseSelectionMethod,
+    locale,
+    selectedCityRef,
+    shippingAvailable,
+    warehouseQuery,
+  ]);
 
   useEffect(() => {
     let cancelled = false;
@@ -315,12 +728,49 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
       );
       return;
     }
+    if (shippingMethodsLoading) {
+      setCheckoutError(safeT('delivery.methodsLoading', 'METHODS_LOADING'));
+      return;
+    }
+
+    if (shippingUnavailableHardBlock) {
+      setCheckoutError(
+        resolveShippingUnavailableText(shippingReasonCode) ??
+          safeT('delivery.unavailableFallback', 'SHIPPING_UNAVAILABLE')
+      );
+      return;
+    }
 
     setCheckoutError(null);
+    setDeliveryUiError(null);
     setCreatedOrderId(null);
     setIsCheckingOut(true);
 
     try {
+      const shippingPayloadResult = shippingAvailable
+        ? buildCheckoutShippingPayload({
+            shippingAvailable,
+            reasonCode: shippingReasonCode,
+            locale,
+            methodCode: selectedShippingMethod,
+            cityRef: selectedCityRef,
+            warehouseRef: selectedWarehouseRef,
+            addressLine1: courierAddressLine1,
+            addressLine2: courierAddressLine2,
+            recipientFullName: recipientName,
+            recipientPhone: recipientPhone,
+            recipientEmail,
+            recipientComment,
+          })
+        : null;
+
+      if (shippingPayloadResult && !shippingPayloadResult.ok) {
+        const msg = resolveShippingPayloadErrorText(shippingPayloadResult);
+        setDeliveryUiError(msg);
+        setCheckoutError(msg);
+        return;
+      }
+
       const idempotencyKey = generateIdempotencyKey();
 
       const response = await fetch('/api/shop/checkout', {
@@ -331,6 +781,14 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
         },
         body: JSON.stringify({
           paymentProvider: selectedProvider,
+          ...(shippingPayloadResult?.ok
+            ? {
+                shipping: shippingPayloadResult.shipping,
+                ...(shippingPayloadResult.country
+                  ? { country: shippingPayloadResult.country }
+                  : {}),
+              }
+            : {}),
           items: cart.items.map(item => ({
             productId: item.productId,
             quantity: item.quantity,
@@ -405,6 +863,14 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
       setIsCheckingOut(false);
     }
   }
+
+  const shippingUnavailableText =
+    resolveShippingUnavailableText(shippingReasonCode);
+  const canPlaceOrder =
+    hasSelectableProvider &&
+    !shippingMethodsLoading &&
+    !shippingUnavailableHardBlock &&
+    (!shippingAvailable || !!selectedShippingMethod);
 
   const ordersCard = ordersSummary ? (
     <div className={ORDERS_CARD}>
@@ -675,7 +1141,7 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
                 {t('summary.shipping')}
               </span>
               <span className="text-muted-foreground">
-                {t('summary.shippingCalc')}
+                {t('summary.shippingInformationalOnly')}
               </span>
             </div>
 
@@ -693,7 +1159,288 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
                 </span>
               </div>
             </div>
+
+            <p className="text-muted-foreground text-xs">
+              {t('summary.shippingPayOnDeliveryNote')}
+            </p>
           </div>
+
+          <fieldset className="border-border mt-6 rounded-md border p-4">
+            <legend className="text-foreground px-1 text-sm font-semibold">
+              {t('delivery.legend')}
+            </legend>
+
+            {shippingMethodsLoading ? (
+              <p className="text-muted-foreground text-xs">
+                {t('delivery.methodsLoading')}
+              </p>
+            ) : null}
+
+            {!shippingMethodsLoading && !shippingAvailable ? (
+              <p className="text-muted-foreground text-xs" role="status">
+                {shippingUnavailableText ?? t('delivery.unavailableFallback')}
+              </p>
+            ) : null}
+
+            {shippingAvailable ? (
+              <div className="mt-3 space-y-3">
+                <div className="space-y-2">
+                  {shippingMethods.map(method => (
+                    <label
+                      key={method.methodCode}
+                      className="border-border flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2"
+                    >
+                      <input
+                        type="radio"
+                        name="delivery-method"
+                        value={method.methodCode}
+                        checked={selectedShippingMethod === method.methodCode}
+                        onChange={() =>
+                          setSelectedShippingMethod(method.methodCode)
+                        }
+                        className="h-4 w-4"
+                      />
+                      <span className="text-sm font-medium">
+                        {method.title}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+
+                <div className="space-y-2">
+                  <label
+                    className="text-muted-foreground text-xs"
+                    htmlFor="shipping-city-search"
+                  >
+                    {t('delivery.city.label')}
+                  </label>
+                  <input
+                    id="shipping-city-search"
+                    type="text"
+                    value={cityQuery}
+                    onChange={event => {
+                      setCityQuery(event.target.value);
+                      setSelectedCityRef(null);
+                      setSelectedCityName(null);
+                    }}
+                    placeholder={t('delivery.city.placeholder')}
+                    className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
+                  />
+
+                  {selectedCityRef ? (
+                    <p className="text-muted-foreground text-xs">
+                      {t('delivery.city.selected', {
+                        city: selectedCityName ?? selectedCityRef,
+                      })}
+                    </p>
+                  ) : null}
+
+                  {citiesLoading ? (
+                    <p className="text-muted-foreground text-xs">
+                      {t('delivery.city.searching')}
+                    </p>
+                  ) : null}
+
+                  {!citiesLoading && cityOptions.length > 0 ? (
+                    <div className="max-h-36 space-y-1 overflow-auto rounded-md border p-2">
+                      {cityOptions.map(city => (
+                        <button
+                          key={city.ref}
+                          type="button"
+                          onClick={() => {
+                            setSelectedCityRef(city.ref);
+                            setSelectedCityName(city.nameUa);
+                            setCityQuery(city.nameUa);
+                          }}
+                          className="hover:bg-secondary block w-full rounded px-2 py-1 text-left text-xs"
+                        >
+                          {city.nameUa}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+
+                {isWarehouseSelectionMethod ? (
+                  <div className="space-y-2">
+                    {citiesLoading ? (
+                      <p className="text-muted-foreground text-xs">
+                        {t('delivery.city.searching')}
+                      </p>
+                    ) : null}
+
+                    <label
+                      className="text-muted-foreground text-xs"
+                      htmlFor="shipping-warehouse-search"
+                    >
+                      {t('delivery.warehouse.label')}
+                    </label>
+
+                    <input
+                      id="shipping-warehouse-search"
+                      type="text"
+                      value={warehouseQuery}
+                      onChange={event => {
+                        setWarehouseQuery(event.target.value);
+                        setSelectedWarehouseRef(null);
+                        setSelectedWarehouseName(null);
+                      }}
+                      placeholder={t('delivery.warehouse.placeholder')}
+                      className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
+                      disabled={!selectedCityRef}
+                    />
+
+                    {selectedWarehouseRef ? (
+                      <p className="text-muted-foreground text-xs">
+                        {t('delivery.warehouse.selected', {
+                          warehouse:
+                            selectedWarehouseName ?? selectedWarehouseRef,
+                        })}
+                      </p>
+                    ) : null}
+
+                    {warehousesLoading ? (
+                      <p className="text-muted-foreground text-xs">
+                        {t('delivery.warehouse.searching')}
+                      </p>
+                    ) : null}
+
+                    {!warehousesLoading && warehouseOptions.length > 0 ? (
+                      <div className="max-h-36 space-y-1 overflow-auto rounded-md border p-2">
+                        {warehouseOptions.map(warehouse => (
+                          <button
+                            key={warehouse.ref}
+                            type="button"
+                            onClick={() => {
+                              setSelectedWarehouseRef(warehouse.ref);
+                              setSelectedWarehouseName(warehouse.name);
+                              setWarehouseQuery(
+                                warehouse.address
+                                  ? `${warehouse.name} (${warehouse.address})`
+                                  : warehouse.name
+                              );
+                            }}
+                            className="hover:bg-secondary block w-full rounded px-2 py-1 text-left text-xs"
+                          >
+                            {warehouse.name}
+                            {warehouse.address ? `, ${warehouse.address}` : ''}
+                          </button>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                {selectedShippingMethod === 'NP_COURIER' ? (
+                  <div className="space-y-2">
+                    <label
+                      className="text-muted-foreground text-xs"
+                      htmlFor="shipping-address-1"
+                    >
+                      {t('delivery.courierAddress.label')}
+                    </label>
+                    <input
+                      id="shipping-address-1"
+                      type="text"
+                      value={courierAddressLine1}
+                      onChange={event =>
+                        setCourierAddressLine1(event.target.value)
+                      }
+                      placeholder={t(
+                        'delivery.courierAddress.line1Placeholder'
+                      )}
+                      className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
+                    />
+                    <input
+                      type="text"
+                      value={courierAddressLine2}
+                      onChange={event =>
+                        setCourierAddressLine2(event.target.value)
+                      }
+                      placeholder={t(
+                        'delivery.courierAddress.line2Placeholder'
+                      )}
+                      className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
+                    />
+                  </div>
+                ) : null}
+
+                <div className="space-y-2">
+                  <label
+                    className="text-muted-foreground text-xs"
+                    htmlFor="recipient-name"
+                  >
+                    {t('delivery.recipientName.label')}
+                  </label>
+                  <input
+                    id="recipient-name"
+                    type="text"
+                    value={recipientName}
+                    onChange={event => setRecipientName(event.target.value)}
+                    placeholder={t('delivery.recipientName.placeholder')}
+                    className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label
+                    className="text-muted-foreground text-xs"
+                    htmlFor="recipient-phone"
+                  >
+                    {t('delivery.recipientPhone.label')}
+                  </label>
+                  <input
+                    id="recipient-phone"
+                    type="tel"
+                    value={recipientPhone}
+                    onChange={event => setRecipientPhone(event.target.value)}
+                    placeholder={t('delivery.recipientPhone.placeholder')}
+                    className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label
+                    className="text-muted-foreground text-xs"
+                    htmlFor="recipient-email"
+                  >
+                    {t('delivery.recipientEmail.label')}
+                  </label>
+                  <input
+                    id="recipient-email"
+                    type="email"
+                    value={recipientEmail}
+                    onChange={event => setRecipientEmail(event.target.value)}
+                    placeholder={t('delivery.recipientEmail.placeholder')}
+                    className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label
+                    className="text-muted-foreground text-xs"
+                    htmlFor="recipient-comment"
+                  >
+                    {t('delivery.recipientComment.label')}
+                  </label>
+                  <textarea
+                    id="recipient-comment"
+                    value={recipientComment}
+                    onChange={event => setRecipientComment(event.target.value)}
+                    placeholder={t('delivery.recipientComment.placeholder')}
+                    rows={2}
+                    className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
+                  />
+                </div>
+
+                {deliveryUiError ? (
+                  <p className="text-destructive text-xs" role="alert">
+                    {deliveryUiError}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+          </fieldset>
 
           <fieldset className="border-border mt-6 rounded-md border p-4">
             <legend className="text-foreground px-1 text-sm font-semibold">
@@ -757,7 +1504,7 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
             <button
               type="button"
               onClick={handleCheckout}
-              disabled={isCheckingOut || !hasSelectableProvider}
+              disabled={isCheckingOut || !canPlaceOrder}
               className={SHOP_HERO_CTA}
               aria-busy={isCheckingOut}
             >

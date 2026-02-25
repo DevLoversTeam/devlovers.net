@@ -1,279 +1,407 @@
+import 'server-only';
+
+import { eq } from 'drizzle-orm';
 import { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 
-import { getAdminOrderDetail } from '@/db/queries/shop/admin-orders';
+import { db } from '@/db';
+import { orderItems, orders } from '@/db/schema';
 import { Link } from '@/i18n/routing';
-import {
-  type CurrencyCode,
-  formatMoney,
-  resolveCurrencyFromLocale,
-} from '@/lib/shop/currency';
+import { getCurrentUser } from '@/lib/auth';
+import { logError } from '@/lib/logging';
+import { type CurrencyCode, formatMoney } from '@/lib/shop/currency';
 import { fromDbMoney } from '@/lib/shop/money';
-
-import { RefundButton } from './RefundButton';
+import {
+  SHOP_FOCUS,
+  SHOP_LINK_BASE,
+  SHOP_LINK_MD,
+  SHOP_NAV_LINK_BASE,
+} from '@/lib/shop/ui-classes';
+import { cn } from '@/lib/utils';
+import { orderIdParamSchema } from '@/lib/validation/shop';
 
 export const metadata: Metadata = {
-  title: 'Admin Order | DevLovers',
-  description: 'Review and manage order, including refunds and status checks.',
+  title: 'Order Details | DevLovers',
+  description: 'Order details, items, totals, and current status.',
+};
+export const dynamic = 'force-dynamic';
+
+type OrderCurrency = (typeof orders.$inferSelect)['currency'];
+type OrderPaymentStatus = (typeof orders.$inferSelect)['paymentStatus'];
+type OrderPaymentProvider = (typeof orders.$inferSelect)['paymentProvider'];
+
+type OrderDetail = {
+  id: string;
+  userId: string | null;
+  totalAmount: string;
+  currency: OrderCurrency;
+  paymentStatus: OrderPaymentStatus;
+  paymentProvider: OrderPaymentProvider;
+  paymentIntentId: string | null;
+  shippingStatus: string | null;
+  trackingNumber: string | null;
+  stockRestored: boolean;
+  restockedAt: string | null;
+  idempotencyKey: string;
+  createdAt: string;
+  updatedAt: string;
+  items: Array<{
+    id: string;
+    productId: string;
+    productTitle: string | null;
+    productSlug: string | null;
+    productSku: string | null;
+    quantity: number;
+    unitPrice: string;
+    lineTotal: string;
+  }>;
 };
 
-function pickMinor(minor: unknown, legacyMajor: unknown): number | null {
-  if (typeof minor === 'number') return minor;
-  if (legacyMajor === null || legacyMajor === undefined) return null;
-  return fromDbMoney(legacyMajor);
-}
-
-function orderCurrency(
-  order: { currency?: string | null },
-  locale: string
-): CurrencyCode {
-  const c = order.currency ?? resolveCurrencyFromLocale(locale);
-  return c === 'UAH' ? 'UAH' : 'USD';
-}
-
-function formatDateTime(
-  value: Date | null | undefined,
+function safeFormatMoneyMajor(
+  major: string,
+  currency: CurrencyCode,
   locale: string
 ): string {
-  if (!value) return '-';
-  return value.toLocaleString(locale);
+  try {
+    return formatMoney(fromDbMoney(major), currency, locale);
+  } catch {
+    return `${major} ${currency}`;
+  }
 }
 
-export default async function AdminOrderDetailPage({
+function safeFormatDateTime(iso: string, dtf: Intl.DateTimeFormat): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return dtf.format(d);
+}
+
+function toOrderItem(
+  item: {
+    id: string | null;
+    productId: string | null;
+    productTitle: string | null;
+    productSlug: string | null;
+    productSku: string | null;
+    quantity: number | null;
+    unitPrice: string | null;
+    lineTotal: string | null;
+  } | null
+): OrderDetail['items'][number] | null {
+  if (!item || !item.id) return null;
+
+  if (
+    !item.productId ||
+    item.quantity === null ||
+    !item.unitPrice ||
+    !item.lineTotal
+  ) {
+    throw new Error('Corrupt order item row: required columns are null');
+  }
+
+  return {
+    id: item.id,
+    productId: item.productId,
+    productTitle: item.productTitle,
+    productSlug: item.productSlug,
+    productSku: item.productSku,
+    quantity: item.quantity,
+    unitPrice: item.unitPrice,
+    lineTotal: item.lineTotal,
+  };
+}
+
+export default async function OrderDetailPage({
   params,
 }: {
   params: Promise<{ locale: string; id: string }>;
 }) {
   const { locale, id } = await params;
+  const t = await getTranslations('shop.orders.detail');
 
-  const order = await getAdminOrderDetail(id);
-  if (!order) notFound();
+  const user = await getCurrentUser();
+  if (!user) {
+    redirect(
+      `/${locale}/login?returnTo=${encodeURIComponent(
+        `/${locale}/admin/shop/orders/${id}`
+      )}`
+    );
+  }
 
-  const canRefund =
-    order.paymentProvider === 'stripe' &&
-    order.paymentStatus === 'paid' &&
-    !!order.paymentIntentId;
+  const parsed = orderIdParamSchema.safeParse({ id });
+  if (!parsed.success) notFound();
 
-  const currency = orderCurrency(order, locale);
+  const isAdmin = user.role === 'admin';
+  if (!isAdmin) notFound();
 
-  const totalMinor = pickMinor(order.totalAmountMinor, order.totalAmount);
-  const totalFormatted =
-    totalMinor === null ? '-' : formatMoney(totalMinor, currency, locale);
+  let order: OrderDetail;
+
+  const whereClause = eq(orders.id, parsed.data.id);
+
+  const rows = await (async () => {
+    try {
+      return await db
+        .select({
+          order: {
+            id: orders.id,
+            userId: orders.userId,
+            totalAmount: orders.totalAmount,
+            currency: orders.currency,
+            paymentStatus: orders.paymentStatus,
+            paymentProvider: orders.paymentProvider,
+            paymentIntentId: orders.paymentIntentId,
+            shippingStatus: orders.shippingStatus,
+            trackingNumber: orders.trackingNumber,
+            stockRestored: orders.stockRestored,
+            restockedAt: orders.restockedAt,
+            idempotencyKey: orders.idempotencyKey,
+            createdAt: orders.createdAt,
+            updatedAt: orders.updatedAt,
+          },
+          item: {
+            id: orderItems.id,
+            productId: orderItems.productId,
+            productTitle: orderItems.productTitle,
+            productSlug: orderItems.productSlug,
+            productSku: orderItems.productSku,
+            quantity: orderItems.quantity,
+            unitPrice: orderItems.unitPrice,
+            lineTotal: orderItems.lineTotal,
+          },
+        })
+        .from(orders)
+        .leftJoin(orderItems, eq(orderItems.orderId, orders.id))
+        .where(whereClause)
+        .orderBy(orderItems.id);
+    } catch (error) {
+      logError('Admin order detail page failed', error);
+      throw new Error('ORDER_DETAIL_LOAD_FAILED');
+    }
+  })();
+
+  if (rows.length === 0) notFound();
+
+  try {
+    const base = rows[0]!.order;
+
+    const items = rows
+      .map(r => toOrderItem(r.item))
+      .filter((i): i is NonNullable<typeof i> => i !== null);
+
+    order = {
+      ...base,
+      createdAt: base.createdAt.toISOString(),
+      updatedAt: base.updatedAt.toISOString(),
+      restockedAt: base.restockedAt ? base.restockedAt.toISOString() : null,
+      items,
+    };
+  } catch (error) {
+    logError('Admin order detail page failed', error);
+    throw new Error('ORDER_DETAIL_LOAD_FAILED');
+  }
+
+  const currency: CurrencyCode = order.currency === 'UAH' ? 'UAH' : 'USD';
+  const dtf = new Intl.DateTimeFormat(locale, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  });
+
+  const totalFormatted = safeFormatMoneyMajor(
+    order.totalAmount,
+    currency,
+    locale
+  );
+  const createdFormatted = safeFormatDateTime(order.createdAt, dtf);
+  const restockedFormatted = order.restockedAt
+    ? safeFormatDateTime(order.restockedAt, dtf)
+    : '—';
+  const NAV_LINK = cn(SHOP_NAV_LINK_BASE, 'text-lg', SHOP_FOCUS);
+
+  const PRODUCT_LINK = cn(
+    SHOP_LINK_BASE,
+    SHOP_LINK_MD,
+    SHOP_FOCUS,
+    'truncate',
+    '!underline !decoration-2 !underline-offset-4'
+  );
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-8" aria-labelledby="order-title">
-      <header className="flex items-start justify-between gap-4">
+    <main
+      className="mx-auto w-full max-w-3xl px-4 py-8"
+      aria-labelledby="order-heading"
+    >
+      <header className="mb-6 flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h1 id="order-title" className="text-foreground text-2xl font-bold">
-            Order
+          <h1 id="order-heading" className="truncate text-2xl font-semibold">
+            {t('title')}
           </h1>
-          <p className="text-muted-foreground mt-1 font-mono text-xs break-all">
+          <div className="text-muted-foreground mt-1 truncate text-xs">
             {order.id}
-          </p>
+          </div>
         </div>
 
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
-          <Link
-            href="/admin/shop/orders"
-            className="border-border text-foreground hover:bg-secondary rounded-md border px-3 py-1.5 text-sm font-medium transition-colors"
-          >
-            Back
+        <nav
+          className="flex flex-wrap items-center justify-end gap-3"
+          aria-label="Order navigation"
+        >
+          <Link className={NAV_LINK} href="/admin/shop/orders">
+            {t('myOrders')}
           </Link>
-
-          <RefundButton orderId={order.id} disabled={!canRefund} />
-        </div>
+          <Link className={NAV_LINK} href="/admin/shop">
+            {t('shop')}
+          </Link>
+        </nav>
       </header>
 
       <section
-        className="mt-6 grid gap-4 md:grid-cols-2"
-        aria-label="Order details"
+        className="border-border mb-6 rounded-md border p-4"
+        aria-labelledby="order-summary-heading"
       >
-        <article
-          className="border-border rounded-lg border p-4"
-          aria-labelledby="summary-title"
-        >
-          <h2
-            id="summary-title"
-            className="text-foreground text-sm font-semibold"
-          >
-            Summary
-          </h2>
-
-          <dl className="mt-3 space-y-2 text-sm">
-            <div className="flex justify-between gap-4">
-              <dt className="text-muted-foreground">Payment status</dt>
-              <dd className="text-foreground">{order.paymentStatus}</dd>
-            </div>
-
-            <div className="flex justify-between gap-4">
-              <dt className="text-muted-foreground">Total</dt>
-              <dd className="text-foreground">{totalFormatted}</dd>
-            </div>
-
-            <div className="flex justify-between gap-4">
-              <dt className="text-muted-foreground">Provider</dt>
-              <dd className="text-foreground">{order.paymentProvider}</dd>
-            </div>
-
-            <div className="flex justify-between gap-4">
-              <dt className="text-muted-foreground">Payment intent</dt>
-              <dd className="text-muted-foreground font-mono text-xs break-all">
-                {order.paymentIntentId ?? '-'}
-              </dd>
-            </div>
-
-            <div className="flex justify-between gap-4">
-              <dt className="text-muted-foreground">Idempotency key</dt>
-              <dd className="text-muted-foreground font-mono text-xs break-all">
-                {order.idempotencyKey}
-              </dd>
-            </div>
-          </dl>
-        </article>
-
-        <article
-          className="border-border rounded-lg border p-4"
-          aria-labelledby="stock-title"
-        >
-          <h2
-            id="stock-title"
-            className="text-foreground text-sm font-semibold"
-          >
-            Stock / timestamps
-          </h2>
-
-          <dl className="mt-3 space-y-2 text-sm">
-            <div className="flex justify-between gap-4">
-              <dt className="text-muted-foreground">Created</dt>
-              <dd className="text-foreground">
-                {formatDateTime(order.createdAt, locale)}
-              </dd>
-            </div>
-
-            <div className="flex justify-between gap-4">
-              <dt className="text-muted-foreground">Updated</dt>
-              <dd className="text-foreground">
-                {formatDateTime(order.updatedAt, locale)}
-              </dd>
-            </div>
-
-            <div className="flex justify-between gap-4">
-              <dt className="text-muted-foreground">Stock restored</dt>
-              <dd className="text-foreground">
-                {order.stockRestored ? 'Yes' : 'No'}
-              </dd>
-            </div>
-
-            <div className="flex justify-between gap-4">
-              <dt className="text-muted-foreground">Restocked at</dt>
-              <dd className="text-foreground">
-                {formatDateTime(order.restockedAt, locale)}
-              </dd>
-            </div>
-          </dl>
-        </article>
-      </section>
-
-      <section className="mt-6" aria-labelledby="items-title">
-        <h2 id="items-title" className="sr-only">
-          Order items
+        <h2 id="order-summary-heading" className="sr-only">
+          {t('orderSummary')}
         </h2>
 
-        <div className="border-border overflow-x-auto rounded-lg border">
-          <table className="divide-border min-w-full divide-y text-sm">
-            <caption className="sr-only">Line items for this order</caption>
+        <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div>
+            <dt className="text-muted-foreground text-xs">{t('total')}</dt>
+            <dd className="text-sm font-medium">{totalFormatted}</dd>
+          </div>
 
-            <thead className="bg-muted/50">
-              <tr>
-                <th
-                  scope="col"
-                  className="text-foreground px-3 py-2 text-left font-semibold"
-                >
-                  Product
-                </th>
-                <th
-                  scope="col"
-                  className="text-foreground px-3 py-2 text-left font-semibold"
-                >
-                  Qty
-                </th>
-                <th
-                  scope="col"
-                  className="text-foreground px-3 py-2 text-left font-semibold"
-                >
-                  Unit
-                </th>
-                <th
-                  scope="col"
-                  className="text-foreground px-3 py-2 text-left font-semibold"
-                >
-                  Line total
-                </th>
-              </tr>
-            </thead>
+          <div>
+            <dt className="text-muted-foreground text-xs">
+              {t('paymentStatus')}
+            </dt>
+            <dd className="text-sm font-medium">
+              {String(order.paymentStatus)}
+            </dd>
+          </div>
 
-            <tbody className="divide-border divide-y">
-              {order.items.map(item => {
-                const unitMinor = pickMinor(
-                  item.unitPriceMinor,
-                  item.unitPrice
-                );
-                const lineMinor = pickMinor(
-                  item.lineTotalMinor,
-                  item.lineTotal
-                );
+          <div>
+            <dt className="text-muted-foreground text-xs">
+              {t('shippingStatus')}
+            </dt>
+            <dd className="text-sm font-medium">
+              {order.shippingStatus ?? '-'}
+            </dd>
+          </div>
 
-                const unitFormatted =
-                  unitMinor === null
-                    ? '-'
-                    : formatMoney(unitMinor, currency, locale);
+          <div>
+            <dt className="text-muted-foreground text-xs">
+              {t('trackingNumber')}
+            </dt>
+            <dd className="text-sm font-medium break-all">
+              {order.trackingNumber ?? '-'}
+            </dd>
+          </div>
 
-                const lineFormatted =
-                  lineMinor === null
-                    ? '-'
-                    : formatMoney(lineMinor, currency, locale);
+          <div>
+            <dt className="text-muted-foreground text-xs">{t('created')}</dt>
+            <dd className="text-sm">{createdFormatted}</dd>
+          </div>
 
-                return (
-                  <tr key={item.id} className="hover:bg-muted/50">
-                    <td className="px-3 py-2">
-                      <div className="text-foreground font-medium">
-                        {item.productTitle ?? '-'}
-                      </div>
-                      <div className="text-muted-foreground text-xs">
-                        <span className="font-mono">
-                          {item.productSlug ?? '-'}
-                        </span>
-                        {item.productSku ? (
-                          <span> · {item.productSku}</span>
-                        ) : null}
-                      </div>
-                    </td>
+          <div>
+            <dt className="text-muted-foreground text-xs">{t('provider')}</dt>
+            <dd className="text-sm">{String(order.paymentProvider)}</dd>
+          </div>
+        </dl>
 
-                    <td className="text-muted-foreground px-3 py-2">
-                      {item.quantity}
-                    </td>
+        <dl className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div>
+            <dt className="text-muted-foreground text-xs">
+              {t('paymentReference')}
+            </dt>
+            <dd className="text-sm break-all">
+              {order.paymentIntentId ?? '—'}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-muted-foreground text-xs">
+              {t('idempotencyKey')}
+            </dt>
+            <dd className="text-sm break-all">{order.idempotencyKey}</dd>
+          </div>
+        </dl>
 
-                    <td className="text-foreground px-3 py-2">
-                      {unitFormatted}
-                    </td>
+        <dl className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div>
+            <dt className="text-muted-foreground text-xs">
+              {t('stockRestored')}
+            </dt>
+            <dd className="text-sm">
+              {order.stockRestored ? t('yes') : t('no')}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-muted-foreground text-xs">
+              {t('restockedAt')}
+            </dt>
+            <dd className="text-sm">{restockedFormatted}</dd>
+          </div>
+        </dl>
+      </section>
 
-                    <td className="text-foreground px-3 py-2">
-                      {lineFormatted}
-                    </td>
-                  </tr>
-                );
-              })}
-
-              {order.items.length === 0 ? (
-                <tr>
-                  <td className="text-muted-foreground px-3 py-6" colSpan={4}>
-                    No items found for this order.
-                  </td>
-                </tr>
-              ) : null}
-            </tbody>
-          </table>
+      <section
+        className="border-border rounded-md border"
+        aria-labelledby="order-items-heading"
+      >
+        <div className="border-border border-b p-4">
+          <h2 id="order-items-heading" className="text-lg font-semibold">
+            {t('items')}
+          </h2>
         </div>
+
+        <ul className="divide-border divide-y" aria-label={t('items')}>
+          {order.items.map(it => (
+            <li key={it.id} className="p-4">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0">
+                  {it.productSlug ? (
+                    <Link
+                      href={`/shop/products/${it.productSlug}`}
+                      className={PRODUCT_LINK}
+                    >
+                      {it.productTitle ??
+                        it.productSlug ??
+                        it.productSku ??
+                        it.productId}
+                    </Link>
+                  ) : (
+                    <div className="truncate font-medium">
+                      {it.productTitle ?? it.productSku ?? it.productId}
+                    </div>
+                  )}
+
+                  <div className="text-muted-foreground mt-1 text-xs break-all">
+                    {it.productSku
+                      ? t('sku', { sku: it.productSku })
+                      : t('product', { productId: it.productId })}
+                  </div>
+                </div>
+
+                <dl className="flex flex-col items-start gap-1 sm:items-end">
+                  <div>
+                    <dt className="sr-only">{t('quantity')}</dt>
+                    <dd className="text-sm">Qty: {it.quantity}</dd>
+                  </div>
+                  <div>
+                    <dt className="sr-only">{t('unitPrice')}</dt>
+                    <dd className="text-muted-foreground text-sm">
+                      Unit:{' '}
+                      {safeFormatMoneyMajor(it.unitPrice, currency, locale)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="sr-only">{t('lineTotal')}</dt>
+                    <dd className="text-sm font-medium">
+                      Line:{' '}
+                      {safeFormatMoneyMajor(it.lineTotal, currency, locale)}
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+            </li>
+          ))}
+        </ul>
       </section>
     </main>
   );

@@ -40,6 +40,8 @@ type OrderDetail = {
   paymentStatus: OrderPaymentStatus;
   paymentProvider: OrderPaymentProvider;
   paymentIntentId: string | null;
+  shippingStatus: string | null;
+  trackingNumber: string | null;
   stockRestored: boolean;
   restockedAt: string | null;
   idempotencyKey: string;
@@ -136,12 +138,12 @@ export default async function OrderDetailPage({
 
   let order: OrderDetail;
 
-  try {
-    const whereClause = isAdmin
-      ? eq(orders.id, parsed.data.id)
-      : and(eq(orders.id, parsed.data.id), eq(orders.userId, user.id));
+  const whereClause = isAdmin
+    ? eq(orders.id, parsed.data.id)
+    : and(eq(orders.id, parsed.data.id), eq(orders.userId, user.id));
 
-    const rows = await db
+  const fetchRows = () =>
+    db
       .select({
         order: {
           id: orders.id,
@@ -151,6 +153,8 @@ export default async function OrderDetailPage({
           paymentStatus: orders.paymentStatus,
           paymentProvider: orders.paymentProvider,
           paymentIntentId: orders.paymentIntentId,
+          shippingStatus: orders.shippingStatus,
+          trackingNumber: orders.trackingNumber,
           stockRestored: orders.stockRestored,
           restockedAt: orders.restockedAt,
           idempotencyKey: orders.idempotencyKey,
@@ -173,8 +177,17 @@ export default async function OrderDetailPage({
       .where(whereClause)
       .orderBy(orderItems.id);
 
-    if (rows.length === 0) notFound();
+  let rows: Awaited<ReturnType<typeof fetchRows>>;
+  try {
+    rows = await fetchRows();
+  } catch (error) {
+    logError('User order detail page failed', error);
+    throw new Error('ORDER_DETAIL_LOAD_FAILED');
+  }
 
+  if (rows.length === 0) notFound();
+
+  try {
     const base = rows[0]!.order;
 
     const items = rows
@@ -266,6 +279,24 @@ export default async function OrderDetailPage({
             </dt>
             <dd className="text-sm font-medium">
               {String(order.paymentStatus)}
+            </dd>
+          </div>
+
+          <div>
+            <dt className="text-muted-foreground text-xs">
+              {t('shippingStatus')}
+            </dt>
+            <dd className="text-sm font-medium">
+              {order.shippingStatus ?? '-'}
+            </dd>
+          </div>
+
+          <div>
+            <dt className="text-muted-foreground text-xs">
+              {t('trackingNumber')}
+            </dt>
+            <dd className="text-sm font-medium break-all">
+              {order.trackingNumber ?? '-'}
             </dd>
           </div>
 
@@ -362,19 +393,21 @@ export default async function OrderDetailPage({
                 <dl className="flex flex-col items-start gap-1 sm:items-end">
                   <div>
                     <dt className="sr-only">{t('quantity')}</dt>
-                    <dd className="text-sm">Qty: {it.quantity}</dd>
+                    <dd className="text-sm">
+                      {t('qtyShort')}: {it.quantity}
+                    </dd>
                   </div>
                   <div>
                     <dt className="sr-only">{t('unitPrice')}</dt>
                     <dd className="text-muted-foreground text-sm">
-                      Unit:{' '}
+                      {t('unitShort')}:{' '}
                       {safeFormatMoneyMajor(it.unitPrice, currency, locale)}
                     </dd>
                   </div>
                   <div>
                     <dt className="sr-only">{t('lineTotal')}</dt>
                     <dd className="text-sm font-medium">
-                      Line:{' '}
+                      {t('lineShort')}:{' '}
                       {safeFormatMoneyMajor(it.lineTotal, currency, locale)}
                     </dd>
                   </div>

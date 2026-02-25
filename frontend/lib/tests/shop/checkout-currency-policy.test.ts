@@ -12,8 +12,8 @@ import {
 } from '@/db/schema';
 
 process.env.STRIPE_PAYMENTS_ENABLED = 'false';
-process.env.STRIPE_SECRET_KEY = '';
-process.env.STRIPE_WEBHOOK_SECRET = '';
+process.env.STRIPE_SECRET_KEY = 'sk_test_dummy';
+process.env.STRIPE_WEBHOOK_SECRET = 'whsec_dummy';
 
 vi.mock('@/lib/auth', async () => {
   const actual =

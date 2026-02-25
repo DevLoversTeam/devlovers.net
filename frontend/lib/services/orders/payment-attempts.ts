@@ -239,6 +239,14 @@ export async function ensureStripePaymentIntentForOrder(args: {
       );
 
       const snapshot = await readStripePaymentIntentParams(orderId);
+      await db
+        .update(paymentAttempts)
+        .set({
+          currency: snapshot.currency,
+          expectedAmountMinor: snapshot.amountMinor,
+          updatedAt: new Date(),
+        })
+        .where(eq(paymentAttempts.id, nextAttempt.id));
       const created = await createPaymentIntent({
         amount: snapshot.amountMinor,
         currency: snapshot.currency,
@@ -267,6 +275,18 @@ export async function ensureStripePaymentIntentForOrder(args: {
       };
     }
 
+    if (!attempt.currency || attempt.expectedAmountMinor === null) {
+      const snapshot = await readStripePaymentIntentParams(orderId);
+      await db
+        .update(paymentAttempts)
+        .set({
+          currency: snapshot.currency,
+          expectedAmountMinor: snapshot.amountMinor,
+          updatedAt: new Date(),
+        })
+        .where(eq(paymentAttempts.id, attempt.id));
+    }
+
     return {
       paymentIntentId: attempt.providerPaymentIntentId.trim(),
       clientSecret: pi.clientSecret,
@@ -277,6 +297,14 @@ export async function ensureStripePaymentIntentForOrder(args: {
 
   try {
     const snapshot = await readStripePaymentIntentParams(orderId);
+    await db
+      .update(paymentAttempts)
+      .set({
+        currency: snapshot.currency,
+        expectedAmountMinor: snapshot.amountMinor,
+        updatedAt: new Date(),
+      })
+      .where(eq(paymentAttempts.id, attempt.id));
 
     const created = await createPaymentIntent({
       amount: snapshot.amountMinor,
