@@ -145,7 +145,7 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
   const [isClientReady, setIsClientReady] = useState(false);
   const [shippingMethods, setShippingMethods] = useState<ShippingMethod[]>([]);
   const [shippingMethodsLoading, setShippingMethodsLoading] = useState(true);
-  const [shippingAvailable, setShippingAvailable] = useState(false);
+  const [shippingAvailable, setShippingAvailable] = useState(true);
   const [shippingReasonCode, setShippingReasonCode] =
     useState<ShippingAvailabilityReasonCode | null>(null);
   const [selectedShippingMethod, setSelectedShippingMethod] =
