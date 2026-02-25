@@ -22,10 +22,7 @@ import {
   appendRefundToMeta,
   type RefundMetaRecord,
 } from '@/lib/services/orders/psp-metadata/refunds';
-import {
-  inventoryCommittedForShippingSql,
-  isInventoryCommittedForShipping,
-} from '@/lib/services/shop/shipping/inventory-eligibility';
+import { inventoryCommittedForShippingSql } from '@/lib/services/shop/shipping/inventory-eligibility';
 import { recordShippingMetric } from '@/lib/services/shop/shipping/metrics';
 
 const REFUND_FULLNESS_UNDETERMINED = 'REFUND_FULLNESS_UNDETERMINED' as const;
@@ -409,21 +406,12 @@ type StripePaidApplyArgs = {
   pspStatusReason: string;
   pspMetadata: Record<string, unknown>;
   paymentBecamePaidInThisApply: boolean;
-  shippingRequired: boolean | null;
-  shippingProvider: string | null;
-  shippingMethodCode: string | null;
-  inventoryStatus: string | null;
 };
 
 async function applyStripePaidAndQueueShipmentAtomic(
   args: StripePaidApplyArgs
 ): Promise<{ applied: boolean; shipmentQueued: boolean }> {
-  const shouldAttemptEnqueue =
-    args.paymentBecamePaidInThisApply &&
-    args.shippingRequired === true &&
-    args.shippingProvider === 'nova_poshta' &&
-    Boolean(args.shippingMethodCode) &&
-    isInventoryCommittedForShipping(args.inventoryStatus);
+  const shouldAttemptEnqueue = args.paymentBecamePaidInThisApply;
 
   const res = await db.execute(sql`
     with updated_order as (
@@ -1017,12 +1005,7 @@ export async function POST(request: NextRequest) {
         pspStatusReason: paymentIntent?.status ?? 'succeeded',
         pspMetadata: nextMeta,
         paymentBecamePaidInThisApply: order.paymentStatus !== 'paid',
-        shippingRequired: order.shippingRequired,
-        shippingProvider: order.shippingProvider,
-        shippingMethodCode: order.shippingMethodCode,
-        inventoryStatus: order.inventoryStatus,
       };
-
       const applyResult =
         await applyStripePaidAndQueueShipmentAtomic(appliedArgs);
 

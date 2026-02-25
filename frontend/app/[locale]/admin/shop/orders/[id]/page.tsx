@@ -2,7 +2,6 @@ import 'server-only';
 
 import { eq } from 'drizzle-orm';
 import { Metadata } from 'next';
-import { unstable_noStore as noStore } from 'next/cache';
 import { notFound, redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
@@ -117,8 +116,6 @@ export default async function OrderDetailPage({
 }: {
   params: Promise<{ locale: string; id: string }>;
 }) {
-  noStore();
-
   const { locale, id } = await params;
   const t = await getTranslations('shop.orders.detail');
 
@@ -302,51 +299,45 @@ export default async function OrderDetailPage({
             <dd className="text-sm">{createdFormatted}</dd>
           </div>
 
-          {isAdmin && (
-            <div>
-              <dt className="text-muted-foreground text-xs">{t('provider')}</dt>
-              <dd className="text-sm">{String(order.paymentProvider)}</dd>
-            </div>
-          )}
+          <div>
+            <dt className="text-muted-foreground text-xs">{t('provider')}</dt>
+            <dd className="text-sm">{String(order.paymentProvider)}</dd>
+          </div>
         </dl>
 
-        {isAdmin && (
-          <dl className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div>
-              <dt className="text-muted-foreground text-xs">
-                {t('paymentReference')}
-              </dt>
-              <dd className="text-sm break-all">
-                {order.paymentIntentId ?? '—'}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-muted-foreground text-xs">
-                {t('idempotencyKey')}
-              </dt>
-              <dd className="text-sm break-all">{order.idempotencyKey}</dd>
-            </div>
-          </dl>
-        )}
+        <dl className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div>
+            <dt className="text-muted-foreground text-xs">
+              {t('paymentReference')}
+            </dt>
+            <dd className="text-sm break-all">
+              {order.paymentIntentId ?? '—'}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-muted-foreground text-xs">
+              {t('idempotencyKey')}
+            </dt>
+            <dd className="text-sm break-all">{order.idempotencyKey}</dd>
+          </div>
+        </dl>
 
-        {isAdmin && (
-          <dl className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div>
-              <dt className="text-muted-foreground text-xs">
-                {t('stockRestored')}
-              </dt>
-              <dd className="text-sm">
-                {order.stockRestored ? t('yes') : t('no')}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-muted-foreground text-xs">
-                {t('restockedAt')}
-              </dt>
-              <dd className="text-sm">{restockedFormatted}</dd>
-            </div>
-          </dl>
-        )}
+        <dl className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div>
+            <dt className="text-muted-foreground text-xs">
+              {t('stockRestored')}
+            </dt>
+            <dd className="text-sm">
+              {order.stockRestored ? t('yes') : t('no')}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-muted-foreground text-xs">
+              {t('restockedAt')}
+            </dt>
+            <dd className="text-sm">{restockedFormatted}</dd>
+          </div>
+        </dl>
       </section>
 
       <section

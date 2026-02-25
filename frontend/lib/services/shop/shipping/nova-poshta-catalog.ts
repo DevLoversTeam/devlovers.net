@@ -163,7 +163,7 @@ export async function findCachedWarehouses(args: {
 async function upsertCities(rows: NovaPoshtaSettlement[], runId: string) {
   if (!rows.length) return;
 
-  const CHUNK_SIZE = 300; 
+  const CHUNK_SIZE = 300;
 
   for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
     const chunk = rows.slice(i, i + CHUNK_SIZE);
@@ -214,58 +214,64 @@ async function upsertCities(rows: NovaPoshtaSettlement[], runId: string) {
 async function upsertWarehouses(rows: NovaPoshtaWarehouse[], runId: string) {
   if (!rows.length) return;
 
-  const values = rows.map(item => {
-    return sql`(
-      ${item.ref},
-      ${item.cityRef},
-      ${item.settlementRef},
-      ${item.number},
-      ${item.type},
-      ${item.name},
-      ${item.nameRu},
-      ${item.address},
-      ${item.addressRu},
-      ${item.isPostMachine},
-      true,
-      ${runId}::uuid,
-      now(),
-      now()
-    )`;
-  });
+  const CHUNK_SIZE = 300;
 
-  await db.execute(sql`
-    INSERT INTO np_warehouses (
-      ref,
-      city_ref,
-      settlement_ref,
-      number,
-      type,
-      name,
-      name_ru,
-      address,
-      address_ru,
-      is_post_machine,
-      is_active,
-      last_sync_run_id,
-      created_at,
-      updated_at
-    )
-    VALUES ${sql.join(values, sql`, `)}
-    ON CONFLICT (ref) DO UPDATE
-      SET
-        city_ref = EXCLUDED.city_ref,
-        settlement_ref = EXCLUDED.settlement_ref,
-        number = EXCLUDED.number,
-        type = EXCLUDED.type,
-        name = EXCLUDED.name,
-        name_ru = EXCLUDED.name_ru,
-        address = EXCLUDED.address,
-        address_ru = EXCLUDED.address_ru,
-        is_post_machine = EXCLUDED.is_post_machine,
-        is_active = true,
-        last_sync_run_id = EXCLUDED.last_sync_run_id,
-        updated_at = now()
-  `);
+  for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
+    const chunk = rows.slice(i, i + CHUNK_SIZE);
+
+    const values = chunk.map(item => {
+      return sql`(
+        ${item.ref},
+        ${item.cityRef},
+        ${item.settlementRef},
+        ${item.number},
+        ${item.type},
+        ${item.name},
+        ${item.nameRu},
+        ${item.address},
+        ${item.addressRu},
+        ${item.isPostMachine},
+        true,
+        ${runId}::uuid,
+        now(),
+        now()
+      )`;
+    });
+
+    await db.execute(sql`
+      INSERT INTO np_warehouses (
+        ref,
+        city_ref,
+        settlement_ref,
+        number,
+        type,
+        name,
+        name_ru,
+        address,
+        address_ru,
+        is_post_machine,
+        is_active,
+        last_sync_run_id,
+        created_at,
+        updated_at
+      )
+      VALUES ${sql.join(values, sql`, `)}
+      ON CONFLICT (ref) DO UPDATE
+        SET
+          city_ref = EXCLUDED.city_ref,
+          settlement_ref = EXCLUDED.settlement_ref,
+          number = EXCLUDED.number,
+          type = EXCLUDED.type,
+          name = EXCLUDED.name,
+          name_ru = EXCLUDED.name_ru,
+          address = EXCLUDED.address,
+          address_ru = EXCLUDED.address_ru,
+          is_post_machine = EXCLUDED.is_post_machine,
+          is_active = true,
+          last_sync_run_id = EXCLUDED.last_sync_run_id,
+          updated_at = now()
+    `);
+  }
 }
 
 async function deactivateMissingWarehouses(args: {
@@ -276,37 +282,35 @@ async function deactivateMissingWarehouses(args: {
   const keepRefs = args.keepRefs.filter(x => x.trim().length > 0);
 
   if (!keepRefs.length) {
-    const res = await db.execute(sql`
-      UPDATE np_warehouses
-      SET
-        is_active = false,
-        last_sync_run_id = ${args.runId}::uuid,
-        updated_at = now()
-      WHERE settlement_ref = ${args.settlementRef}
-        AND is_active = true
-    `);
+    const res = await db.execute<{ ref: string }>(sql`
+  UPDATE np_warehouses
+  SET
+    is_active = false,
+    last_sync_run_id = ${args.runId}::uuid,
+    updated_at = now()
+  WHERE settlement_ref = ${args.settlementRef}
+    AND is_active = true
+  RETURNING ref
+`);
 
-    const rowCount =
-      typeof (res as any)?.rowCount === 'number' ? (res as any).rowCount : 0;
-
-    return rowCount;
+    const rows = ((res as any).rows ?? []) as Array<{ ref?: string }>;
+    return Array.isArray(rows) ? rows.length : 0;
   }
   const refs = keepRefs.map(ref => sql`${ref}`);
-  const res = await db.execute(sql`
-    UPDATE np_warehouses
-    SET
-      is_active = false,
-      last_sync_run_id = ${args.runId}::uuid,
-      updated_at = now()
-    WHERE settlement_ref = ${args.settlementRef}
-      AND is_active = true
-      AND ref NOT IN (${sql.join(refs, sql`, `)})
-  `);
+  const res = await db.execute<{ ref: string }>(sql`
+  UPDATE np_warehouses
+  SET
+    is_active = false,
+    last_sync_run_id = ${args.runId}::uuid,
+    updated_at = now()
+  WHERE settlement_ref = ${args.settlementRef}
+    AND is_active = true
+    AND ref NOT IN (${sql.join(refs, sql`, `)})
+  RETURNING ref
+`);
 
-  const rowCount =
-    typeof (res as any)?.rowCount === 'number' ? (res as any).rowCount : 0;
-
-  return rowCount;
+  const rows = ((res as any).rows ?? []) as Array<{ ref?: string }>;
+  return Array.isArray(rows) ? rows.length : 0;
 }
 export async function cacheSettlementsByQuery(args: {
   q: string;

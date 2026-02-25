@@ -483,86 +483,87 @@ async function atomicMarkPaidOrderAndSucceedAttempt(args: {
   enqueueShipment: boolean;
 }): Promise<{ ok: boolean; shipmentQueued: boolean }> {
   const res = await db.execute(sql`
-    with updated_order as (
-      update orders
-      set status = 'PAID',
-          shipping_status = case
-            when ${args.enqueueShipment}
-              and payment_status = 'paid'
-              and shipping_required = true
-              and shipping_provider = 'nova_poshta'
-              and shipping_method_code is not null
-              and ${inventoryCommittedForShippingSql(sql`orders.inventory_status`)}
-            then 'queued'::shipping_status
-            else shipping_status
-          end,
-          psp_charge_id = ${args.invoiceId},
-          psp_metadata = ${args.mergedMetaSql},
-          updated_at = ${args.now}
-      where id = ${args.orderId}::uuid
-        and payment_provider = 'monobank'
-        and exists (
-          select 1
-          from payment_attempts
-          where id = ${args.attemptId}::uuid
-        )
-      returning
-        id,
-        payment_status,
-        inventory_status,
-        shipping_required,
-        shipping_provider,
-        shipping_method_code
-    ),
-    updated_attempt as (
-      update payment_attempts
-      set status = 'succeeded',
-          finalized_at = ${args.now},
-          updated_at = ${args.now},
-          last_error_code = null,
-          last_error_message = null,
-          provider_modified_at = ${args.nextProviderModifiedAt ?? null}
-      where id = ${args.attemptId}::uuid
-        and exists (select 1 from updated_order)
-      returning id
-    ),
-    eligible_for_enqueue as (
-      select id
-      from updated_order
-      where ${args.enqueueShipment}
-        and payment_status = 'paid'
-        and shipping_required = true
-        and shipping_provider = 'nova_poshta'
-        and shipping_method_code is not null
-        and ${inventoryCommittedForShippingSql(
-          sql`updated_order.inventory_status`
-        )}
-    ),
-    inserted_shipment as (
-      insert into shipping_shipments (
-        order_id,
-        provider,
-        status,
-        attempt_count,
-        created_at,
-        updated_at
+  with updated_order as (
+    update orders
+    set status = 'PAID',
+        psp_charge_id = ${args.invoiceId},
+        psp_metadata = ${args.mergedMetaSql},
+        updated_at = ${args.now}
+    where id = ${args.orderId}::uuid
+      and payment_provider = 'monobank'
+      and exists (
+        select 1
+        from payment_attempts
+        where id = ${args.attemptId}::uuid
       )
-      select
-        id,
-        'nova_poshta',
-        'queued',
-        0,
-        ${args.now},
-        ${args.now}
-      from eligible_for_enqueue
-      on conflict (order_id) do nothing
-      returning order_id
+    returning
+      id,
+      payment_status,
+      inventory_status,
+      shipping_required,
+      shipping_provider,
+      shipping_method_code
+  ),
+  updated_attempt as (
+    update payment_attempts
+    set status = 'succeeded',
+        finalized_at = ${args.now},
+        updated_at = ${args.now},
+        last_error_code = null,
+        last_error_message = null,
+        provider_modified_at = ${args.nextProviderModifiedAt ?? null}
+    where id = ${args.attemptId}::uuid
+      and exists (select 1 from updated_order)
+    returning id
+  ),
+  eligible_for_enqueue as (
+    select id
+    from updated_order
+    where ${args.enqueueShipment}
+      and payment_status = 'paid'
+      and shipping_required = true
+      and shipping_provider = 'nova_poshta'
+      and shipping_method_code is not null
+      and ${inventoryCommittedForShippingSql(sql`updated_order.inventory_status`)}
+  ),
+  inserted_shipment as (
+    insert into shipping_shipments (
+      order_id,
+      provider,
+      status,
+      attempt_count,
+      created_at,
+      updated_at
     )
     select
-      (select id from updated_order) as order_id,
-      (select id from updated_attempt) as attempt_id,
-      (select count(*)::int from inserted_shipment) as inserted_shipment_count
-  `);
+      id,
+      'nova_poshta',
+      'queued',
+      0,
+      ${args.now},
+      ${args.now}
+    from eligible_for_enqueue
+    on conflict (order_id) do nothing
+    returning order_id
+  ),
+  queued_shipment as (
+    select s.order_id
+    from shipping_shipments s
+    where s.order_id in (select id from eligible_for_enqueue)
+      and s.status = 'queued'
+  ),
+  shipping_status_update as (
+    update orders
+    set shipping_status = 'queued'::shipping_status,
+        updated_at = ${args.now}
+    where id in (select order_id from queued_shipment)
+    returning id
+  )
+  select
+    (select id from updated_order) as order_id,
+    (select id from updated_attempt) as attempt_id,
+    (select count(*)::int from inserted_shipment) as inserted_shipment_count
+`);
 
   const row = readDbRows<{
     order_id?: string;

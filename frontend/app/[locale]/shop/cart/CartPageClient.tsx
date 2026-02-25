@@ -290,14 +290,80 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
           return;
         }
 
-        const available = data?.available === true;
-        const reasonCode = (data?.reasonCode ??
-          null) as ShippingAvailabilityReasonCode | null;
-        const methods = Array.isArray(data?.methods)
-          ? (data.methods as ShippingMethod[])
-          : [];
+        const VALID_REASON_CODES = new Set<string>([
+          'OK',
+          'SHOP_SHIPPING_DISABLED',
+          'NP_DISABLED',
+          'COUNTRY_NOT_SUPPORTED',
+          'CURRENCY_NOT_SUPPORTED',
+          'INTERNAL_ERROR',
+        ]);
+
+        const hardBlock = () => {
+          setShippingAvailable(false);
+          setShippingReasonCode('INTERNAL_ERROR');
+          setShippingMethods([]);
+          setSelectedShippingMethod(null);
+        };
 
         if (cancelled) return;
+
+        if (!data || typeof data !== 'object' || Array.isArray(data)) {
+          hardBlock();
+          return;
+        }
+
+        const obj = data as Record<string, unknown>;
+
+        if (typeof obj.available !== 'boolean') {
+          hardBlock();
+          return;
+        }
+
+        const available = obj.available;
+
+        const reasonRaw = obj.reasonCode;
+        const reasonCode =
+          typeof reasonRaw === 'string' && VALID_REASON_CODES.has(reasonRaw)
+            ? (reasonRaw as ShippingAvailabilityReasonCode)
+            : null;
+
+        const methodsRaw = obj.methods;
+        if (!Array.isArray(methodsRaw)) {
+          hardBlock();
+          return;
+        }
+
+        const methods: ShippingMethod[] = [];
+        for (const item of methodsRaw) {
+          if (!item || typeof item !== 'object' || Array.isArray(item)) {
+            hardBlock();
+            return;
+          }
+          const m = item as Record<string, unknown>;
+
+          const providerOk = m.provider === 'nova_poshta';
+          const methodCodeOk =
+            typeof m.methodCode === 'string' && m.methodCode.trim().length > 0;
+          const titleOk =
+            typeof m.title === 'string' && m.title.trim().length > 0;
+
+          if (!providerOk || !methodCodeOk || !titleOk) {
+            hardBlock();
+            return;
+          }
+
+          methods.push({
+            provider: 'nova_poshta',
+            methodCode: m.methodCode as CheckoutDeliveryMethodCode,
+            title: String(m.title),
+          });
+        }
+
+        if (available === false && reasonCode == null) {
+          hardBlock();
+          return;
+        }
 
         setShippingAvailable(available);
         setShippingReasonCode(reasonCode);

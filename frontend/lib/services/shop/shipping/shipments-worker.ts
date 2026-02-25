@@ -524,6 +524,15 @@ async function processClaimedShipment(args: {
     }
 
     const parsedSnapshot = parseSnapshot(details.shipping_address);
+
+    if (parsedSnapshot.methodCode !== details.shipping_method_code) {
+      throw buildFailure(
+        'SHIPPING_METHOD_MISMATCH',
+        'Shipping method does not match persisted order method.',
+        false
+      );
+    }
+
     const payload = toNpPayload({
       order: details,
       snapshot: parsedSnapshot,
@@ -531,12 +540,22 @@ async function processClaimedShipment(args: {
 
     const created = await createInternetDocument(payload);
 
-    await markSucceeded({
+    const marked = await markSucceeded({
       shipmentId: args.claim.id,
       runId: args.runId,
       providerRef: created.providerRef,
       trackingNumber: created.trackingNumber,
     });
+
+    if (!marked) {
+      logWarn('shipping_shipments_worker_lease_lost', {
+        runId: args.runId,
+        shipmentId: args.claim.id,
+        orderId: args.claim.order_id,
+        code: 'SHIPMENT_LEASE_LOST',
+      });
+      return 'retried';
+    }
 
     recordShippingMetric({
       name: 'succeeded',

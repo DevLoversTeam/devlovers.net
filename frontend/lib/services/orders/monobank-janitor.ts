@@ -944,6 +944,31 @@ export async function runMonobankJanitorJob3(
         invoiceId: eventRow.invoice_id,
         attemptId: eventRow.attempt_id,
       });
+
+      try {
+        await db.execute(sql`
+      update monobank_events
+      set claimed_at = null,
+          claim_expires_at = null,
+          claimed_by = null
+      where id = ${eventRow.id}::uuid
+        and claimed_by = ${args.runId}
+        and applied_at is null
+    `);
+      } catch (releaseError) {
+        logWarn('internal_monobank_janitor_job3_release_failed', {
+          ...args.baseMeta,
+          code: 'JANITOR_JOB3_RELEASE_FAILED',
+          runId: args.runId,
+          eventId: eventRow.id,
+          invoiceId: eventRow.invoice_id,
+          attemptId: eventRow.attempt_id,
+          error:
+            releaseError instanceof Error
+              ? releaseError.message
+              : String(releaseError),
+        });
+      }
     }
   }
 
