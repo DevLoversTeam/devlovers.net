@@ -80,4 +80,4 @@ CREATE INDEX "shipping_shipments_queue_idx" ON "shipping_shipments" USING btree 
 CREATE INDEX "shipping_shipments_lease_idx" ON "shipping_shipments" USING btree ("lease_expires_at");--> statement-breakpoint
 CREATE INDEX "shipping_shipments_provider_ref_idx" ON "shipping_shipments" USING btree ("provider_ref");--> statement-breakpoint
 CREATE INDEX "orders_shipping_status_idx" ON "orders" USING btree ("shipping_status","updated_at");--> statement-breakpoint
-ALTER TABLE "products" DROP COLUMN "status";
+ALTER TABLE "products" DROP COLUMN IF EXISTS "status";
