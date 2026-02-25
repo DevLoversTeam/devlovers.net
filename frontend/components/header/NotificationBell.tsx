@@ -1,20 +1,38 @@
 'use client';
 
 import { AnimatePresence, motion } from 'framer-motion';
-import { Bell, CheckCircle2, FileText, Info, ShoppingBag, Trophy, User } from 'lucide-react';
+import {
+  Bell,
+  CheckCircle2,
+  FileText,
+  Info,
+  ShoppingBag,
+  Trophy,
+  User,
+} from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 
-import { getNotifications, markAllAsRead, markAsRead } from '@/actions/notifications';
+import {
+  getNotifications,
+  markAllAsRead,
+  markAsRead,
+} from '@/actions/notifications';
 
 function getRelativeTime(date: Date, locale: string, justNow: string) {
   const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
   const now = new Date().getTime();
-  const daysDifference = Math.round((date.getTime() - now) / (1000 * 60 * 60 * 24));
+  const daysDifference = Math.round(
+    (date.getTime() - now) / (1000 * 60 * 60 * 24)
+  );
   if (daysDifference === 0) {
-    const hoursDifference = Math.round((date.getTime() - now) / (1000 * 60 * 60));
+    const hoursDifference = Math.round(
+      (date.getTime() - now) / (1000 * 60 * 60)
+    );
     if (hoursDifference === 0) {
-      const minutesDifference = Math.round((date.getTime() - now) / (1000 * 60));
+      const minutesDifference = Math.round(
+        (date.getTime() - now) / (1000 * 60)
+      );
       if (minutesDifference === 0) return justNow;
       return rtf.format(minutesDifference, 'minute');
     }
@@ -47,10 +65,9 @@ export function NotificationBell() {
   const fetchNotifications = async () => {
     try {
       const data = await getNotifications();
-      // data from db may have Date strings or objects, map accordingly
       const parsed = data.map(n => ({
         ...n,
-        createdAt: new Date(n.createdAt)
+        createdAt: new Date(n.createdAt),
       }));
       setNotifications(parsed);
     } catch (error) {
@@ -62,12 +79,18 @@ export function NotificationBell() {
 
   useEffect(() => {
     fetchNotifications();
-    // Poll every 30 seconds for new notifications just in case
-    const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        fetchNotifications();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () =>
+      document.removeEventListener('visibilitychange', handleVisibility);
   }, []);
 
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
+  const unreadCount = notifications.filter(n => !n.isRead).length;
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -81,7 +104,6 @@ export function NotificationBell() {
 
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
-      // Re-fetch when opening so we know it's fresh
       fetchNotifications();
     }
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -89,16 +111,14 @@ export function NotificationBell() {
 
   const handleMarkAllAsRead = async () => {
     await markAllAsRead();
-    setNotifications((prev) =>
-      prev.map((n) => ({ ...n, isRead: true }))
-    );
+    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
   };
 
   const handleMarkAsRead = async (id: string, isRead: boolean) => {
     if (isRead) return;
     await markAsRead(id);
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
+    setNotifications(prev =>
+      prev.map(n => (n.id === id ? { ...n, isRead: true } : n))
     );
   };
 
@@ -112,9 +132,8 @@ export function NotificationBell() {
   const getNotificationMessage = (n: NotificationItem) => {
     if (n.type === 'ACHIEVEMENT' && n.metadata?.badgeId) {
       const key = `badges.${n.metadata.badgeId}.name`;
-       
+
       if (tAch.has(key as any)) {
-         
         const badgeName = tAch(key as any);
         return tUnlocked('message', { name: badgeName });
       }
@@ -165,21 +184,21 @@ export function NotificationBell() {
     <div className="relative flex items-center" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="text-muted-foreground hover:bg-secondary active:bg-secondary hover:text-(--accent-primary) relative flex h-9 w-9 items-center justify-center rounded-full border border-transparent transition-colors hover:border-gray-200 dark:hover:border-neutral-800"
+        className="text-muted-foreground hover:bg-secondary active:bg-secondary relative flex h-9 w-9 items-center justify-center rounded-full border border-transparent transition-colors hover:border-gray-200 hover:text-(--accent-primary) dark:hover:border-neutral-800"
         aria-label={t('title')}
       >
         <Bell className="h-4 w-4" />
         {unreadCount > 0 && (
           <span className="absolute top-1.5 right-1.5 flex h-2.5 w-2.5">
-            <span className="bg-(--accent-primary) absolute inline-flex h-full w-full animate-ping rounded-full opacity-75"></span>
-            <span className="bg-(--accent-primary) relative inline-flex h-2.5 w-2.5 rounded-full shadow-[0_0_8px_var(--accent-primary)] border border-white dark:border-neutral-900"></span>
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-(--accent-primary) opacity-75"></span>
+            <span className="relative inline-flex h-2.5 w-2.5 rounded-full border border-white bg-(--accent-primary) shadow-[0_0_8px_var(--accent-primary)] dark:border-neutral-900"></span>
           </span>
         )}
       </button>
 
       <AnimatePresence>
         {isOpen && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
@@ -201,28 +220,42 @@ export function NotificationBell() {
               )}
             </div>
 
-            <div className="flex max-h-100 flex-col gap-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-200 hover:scrollbar-thumb-gray-300 dark:scrollbar-thumb-white/10 dark:hover:scrollbar-thumb-white/20">
+            <div className="scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-200 hover:scrollbar-thumb-gray-300 dark:scrollbar-thumb-white/10 dark:hover:scrollbar-thumb-white/20 flex max-h-100 flex-col gap-1 overflow-y-auto">
               {loading ? (
-                <div className="flex flex-col items-center justify-center py-10 opacity-50 px-4">
-                  <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }} className="mb-3">
-                    <Bell className="h-5 w-5 text-muted-foreground" />
+                <div className="flex flex-col items-center justify-center px-4 py-10 opacity-50">
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{
+                      repeat: Infinity,
+                      duration: 1,
+                      ease: 'linear',
+                    }}
+                    className="mb-3"
+                  >
+                    <Bell className="text-muted-foreground h-5 w-5" />
                   </motion.div>
-                  <p className="text-xs tracking-wider text-muted-foreground uppercase text-center">{t('syncing')}</p>
+                  <p className="text-muted-foreground text-center text-xs tracking-wider uppercase">
+                    {t('syncing')}
+                  </p>
                 </div>
               ) : notifications.length === 0 ? (
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.95 }} 
-                  animate={{ opacity: 1, scale: 1 }} 
-                  className="flex flex-col items-center justify-center py-12 text-center px-4"
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="flex flex-col items-center justify-center px-4 py-12 text-center"
                 >
-                  <div className="relative mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-secondary ring-8 ring-secondary/30 dark:bg-white/5 dark:ring-white/5">
-                    <Bell className="h-7 w-7 text-muted-foreground opacity-50" />
-                    <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-white dark:bg-neutral-900 border-2 border-transparent">
+                  <div className="bg-secondary ring-secondary/30 relative mb-4 flex h-16 w-16 items-center justify-center rounded-full ring-8 dark:bg-white/5 dark:ring-white/5">
+                    <Bell className="text-muted-foreground h-7 w-7 opacity-50" />
+                    <div className="absolute -right-1 -bottom-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-transparent bg-white dark:bg-neutral-900">
                       <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                     </div>
                   </div>
-                  <p className="text-sm font-bold text-gray-900 dark:text-white">{t('emptyTitle')}</p>
-                  <p className="text-xs text-muted-foreground mt-1 max-w-50 mx-auto">{t('emptySubtitle')}</p>
+                  <p className="text-sm font-bold text-gray-900 dark:text-white">
+                    {t('emptyTitle')}
+                  </p>
+                  <p className="text-muted-foreground mx-auto mt-1 max-w-50 text-xs">
+                    {t('emptySubtitle')}
+                  </p>
                 </motion.div>
               ) : (
                 <AnimatePresence mode="popLayout" initial={false}>
@@ -233,42 +266,59 @@ export function NotificationBell() {
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: 10 }}
-                      transition={{ 
+                      transition={{
                         type: 'spring',
                         stiffness: 400,
                         damping: 30,
-                        delay: index * 0.02 
+                        delay: index * 0.02,
                       }}
-                      onClick={() => handleMarkAsRead(notification.id, notification.isRead)}
-                      className={`relative flex cursor-pointer items-start gap-3 rounded-lg p-3 transition-colors duration-200 group ${
-                        notification.isRead 
-                          ? 'text-muted-foreground hover:bg-secondary hover:text-foreground active:bg-secondary' 
+                      onClick={() =>
+                        handleMarkAsRead(notification.id, notification.isRead)
+                      }
+                      className={`group relative flex cursor-pointer items-start gap-3 rounded-lg p-3 transition-colors duration-200 ${
+                        notification.isRead
+                          ? 'text-muted-foreground hover:bg-secondary hover:text-foreground active:bg-secondary'
                           : 'bg-(--accent-primary)/10 text-gray-900 dark:text-white'
                       }`}
                     >
-                      <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full shadow-xs transition-transform group-hover:scale-105 ${getIconStylesForType(notification.type)}`}>
+                      <div
+                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full shadow-xs transition-transform group-hover:scale-105 ${getIconStylesForType(notification.type)}`}
+                      >
                         {getIconForType(notification.type)}
                       </div>
-                      <div className="flex-1 space-y-1 min-w-0">
+                      <div className="min-w-0 flex-1 space-y-1">
                         <div className="flex items-start justify-between gap-2">
-                          <p className={`text-sm leading-tight pt-0.5 ${notification.isRead ? 'font-medium' : 'font-bold'}`}>
+                          <p
+                            className={`pt-0.5 text-sm leading-tight ${notification.isRead ? 'font-medium' : 'font-bold'}`}
+                          >
                             {getNotificationTitle(notification)}
                           </p>
                           {!notification.isRead && (
-                            <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-(--accent-primary) shadow-[0_0_8px_var(--accent-primary)]" title="Unread" />
+                            <div
+                              className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-(--accent-primary) shadow-[0_0_8px_var(--accent-primary)]"
+                              title="Unread"
+                            />
                           )}
                         </div>
-                        <p className={`text-xs leading-relaxed line-clamp-2 ${notification.isRead ? 'opacity-70' : 'opacity-90'}`}>
+                        <p
+                          className={`line-clamp-2 text-xs leading-relaxed ${notification.isRead ? 'opacity-70' : 'opacity-90'}`}
+                        >
                           {getNotificationMessage(notification)}
                         </p>
                         <div className="mt-2 flex items-center gap-2">
-                           <span className="text-[10px] font-bold uppercase tracking-widest opacity-50">
-                             {t(`types.${getSafeNotificationType(notification.type)}` as const)}
-                           </span>
-                           <span className="h-0.5 w-0.5 rounded-full bg-muted-foreground/30" />
-                           <span className="text-[10px] font-medium opacity-40">
-                             {getRelativeTime(notification.createdAt, locale, t('justNow'))}
-                           </span>
+                          <span className="text-[10px] font-bold tracking-widest uppercase opacity-50">
+                            {t(
+                              `types.${getSafeNotificationType(notification.type)}` as const
+                            )}
+                          </span>
+                          <span className="bg-muted-foreground/30 h-0.5 w-0.5 rounded-full" />
+                          <span className="text-[10px] font-medium opacity-40">
+                            {getRelativeTime(
+                              notification.createdAt,
+                              locale,
+                              t('justNow')
+                            )}
+                          </span>
                         </div>
                       </div>
                     </motion.div>
@@ -276,7 +326,6 @@ export function NotificationBell() {
                 </AnimatePresence>
               )}
             </div>
-            
           </motion.div>
         )}
       </AnimatePresence>

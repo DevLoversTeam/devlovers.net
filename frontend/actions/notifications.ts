@@ -1,7 +1,6 @@
 'use server';
 
 import { and,desc, eq } from 'drizzle-orm';
-import { revalidatePath } from 'next/cache';
 
 import { db } from '@/db';
 import { notifications } from '@/db/schema/notifications';
@@ -39,7 +38,6 @@ export async function markAsRead(notificationId: string) {
         )
       );
 
-    revalidatePath('/', 'layout');
     return { success: true };
   } catch (error) {
     console.error('Failed to mark notification as read:', error);
@@ -57,7 +55,6 @@ export async function markAllAsRead() {
       .set({ isRead: true })
       .where(and(eq(notifications.userId, session.id), eq(notifications.isRead, false)));
 
-    revalidatePath('/', 'layout');
     return { success: true };
   } catch (error) {
     console.error('Failed to mark all notifications as read:', error);
@@ -86,7 +83,6 @@ export async function createNotification(data: {
       })
       .returning();
 
-    revalidatePath('/', 'layout');
     return result;
   } catch (error) {
     console.error('Failed to create notification:', error);

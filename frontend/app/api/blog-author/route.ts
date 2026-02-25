@@ -32,9 +32,7 @@ export async function GET(request: Request) {
     return NextResponse.json(null, { status: 400 });
   }
 
-  const author = await client
-    .withConfig({ useCdn: false })
-    .fetch(authorQuery, { name, locale });
+  const author = await client.fetch(authorQuery, { name, locale });
 
   return NextResponse.json(author || null, {
     headers: { 'Cache-Control': 'no-store' },
