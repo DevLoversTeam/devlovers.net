@@ -10,12 +10,21 @@ interface GitHubStarButtonProps {
 
 export function GitHubStarButton({ className = '' }: GitHubStarButtonProps) {
   const t = useTranslations('aria');
-  const [displayCount, setDisplayCount] = useState(0);
-  const [finalCount, setFinalCount] = useState<number | null>(null);
+  const STORAGE_KEY = 'github-stars';
+  const cached = useRef<number | null>(null);
+
+  if (cached.current === null && typeof sessionStorage !== 'undefined') {
+    const stored = sessionStorage.getItem(STORAGE_KEY);
+    if (stored) cached.current = parseInt(stored, 10);
+  }
+
+  const [displayCount, setDisplayCount] = useState(cached.current ?? 0);
+  const [finalCount, setFinalCount] = useState<number | null>(cached.current);
   const githubUrl = 'https://github.com/DevLoversTeam/devlovers.net';
-  const hasAnimated = useRef(false);
 
   useEffect(() => {
+    if (cached.current !== null) return;
+
     const fetchStars = async () => {
       try {
         const response = await fetch('/api/stats');
@@ -46,9 +55,8 @@ export function GitHubStarButton({ className = '' }: GitHubStarButtonProps) {
   }, []);
 
   useEffect(() => {
-    if (finalCount === null || hasAnimated.current) return;
+    if (finalCount === null || cached.current !== null) return;
 
-    hasAnimated.current = true;
     const duration = 2000;
     const steps = 60;
     const increment = finalCount / steps;
@@ -59,6 +67,9 @@ export function GitHubStarButton({ className = '' }: GitHubStarButtonProps) {
       if (current >= finalCount) {
         setDisplayCount(finalCount);
         clearInterval(timer);
+        try {
+          sessionStorage.setItem(STORAGE_KEY, String(finalCount));
+        } catch {}
       } else {
         setDisplayCount(Math.floor(current));
       }

@@ -5,9 +5,7 @@ import QuizzesSection from '@/components/quiz/QuizzesSection';
 import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
 import {
   getActiveQuizzes,
-  getUserQuizzesProgress,
 } from '@/db/queries/quizzes/quiz';
-import { getCurrentUser } from '@/lib/auth';
 
 type PageProps = { params: Promise<{ locale: string }> };
 
@@ -23,21 +21,13 @@ export async function generateMetadata({
   };
 }
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 300
 
 export default async function QuizzesPage({ params }: PageProps) {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'quiz.list' });
-  const session = await getCurrentUser();
 
   const quizzes = await getActiveQuizzes(locale);
-
-  let userProgressMap: Record<string, any> = {};
-
-  if (session?.id) {
-    const progressMapData = await getUserQuizzesProgress(session.id);
-    userProgressMap = Object.fromEntries(progressMapData);
-  }
 
   if (!quizzes.length) {
     return (
@@ -50,7 +40,7 @@ export default async function QuizzesPage({ params }: PageProps) {
 
   return (
     <DynamicGridBackground className="min-h-screen bg-gray-50 py-10 transition-colors duration-300 dark:bg-transparent">
-      <main className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <section className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           <p className="text-sm font-semibold text-(--accent-primary)">
             {t('practice')}
@@ -59,8 +49,8 @@ export default async function QuizzesPage({ params }: PageProps) {
           <p className="text-gray-600 dark:text-gray-400">{t('subtitle')}</p>
         </div>
 
-        <QuizzesSection quizzes={quizzes} userProgressMap={userProgressMap} />
-      </main>
+        <QuizzesSection quizzes={quizzes} userProgressMap={{}} />
+      </section>
     </DynamicGridBackground>
   );
 }
