@@ -2,7 +2,17 @@
 
 import { Star } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
+
+const STORAGE_KEY = 'github-stars';
+
+function getStoredStars(): number | null {
+  if (typeof sessionStorage === 'undefined') return null;
+  const stored = sessionStorage.getItem(STORAGE_KEY);
+  if (!stored) return null;
+  const parsed = parseInt(stored, 10);
+  return Number.isNaN(parsed) ? null : parsed;
+}
 
 interface GitHubStarButtonProps {
   className?: string;
@@ -10,12 +20,14 @@ interface GitHubStarButtonProps {
 
 export function GitHubStarButton({ className = '' }: GitHubStarButtonProps) {
   const t = useTranslations('aria');
-  const [displayCount, setDisplayCount] = useState(0);
-  const [finalCount, setFinalCount] = useState<number | null>(null);
+  const [storedStars] = useState(getStoredStars);
+  const [displayCount, setDisplayCount] = useState(storedStars ?? 0);
+  const [finalCount, setFinalCount] = useState<number | null>(storedStars);
   const githubUrl = 'https://github.com/DevLoversTeam/devlovers.net';
-  const hasAnimated = useRef(false);
 
   useEffect(() => {
+    if (storedStars !== null) return;
+
     const fetchStars = async () => {
       try {
         const response = await fetch('/api/stats');
@@ -46,9 +58,8 @@ export function GitHubStarButton({ className = '' }: GitHubStarButtonProps) {
   }, []);
 
   useEffect(() => {
-    if (finalCount === null || hasAnimated.current) return;
+    if (finalCount === null || storedStars !== null) return;
 
-    hasAnimated.current = true;
     const duration = 2000;
     const steps = 60;
     const increment = finalCount / steps;
@@ -59,13 +70,16 @@ export function GitHubStarButton({ className = '' }: GitHubStarButtonProps) {
       if (current >= finalCount) {
         setDisplayCount(finalCount);
         clearInterval(timer);
+        try {
+          sessionStorage.setItem(STORAGE_KEY, String(finalCount));
+        } catch {}
       } else {
         setDisplayCount(Math.floor(current));
       }
     }, duration / steps);
 
     return () => clearInterval(timer);
-  }, [finalCount]);
+  }, [finalCount, storedStars]);
 
   const formatStarCount = (count: number): string => {
     return count.toLocaleString();
@@ -93,7 +107,7 @@ export function GitHubStarButton({ className = '' }: GitHubStarButtonProps) {
           {formatStarCount(displayCount)}
         </span>
         <Star
-          className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-all duration-300 group-hover:rotate-12 group-hover:text-yellow-400 group-hover:drop-shadow-[0_0_6px_rgba(250,204,21,0.5)] group-active:rotate-12 group-active:text-yellow-400 group-active:drop-shadow-[0_0_6px_rgba(250,204,21,0.5)]"
+          className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-[transform,color] duration-300 group-hover:rotate-12 group-hover:text-yellow-400 group-hover:drop-shadow-[0_0_6px_rgba(250,204,21,0.5)] group-active:rotate-12 group-active:text-yellow-400 group-active:drop-shadow-[0_0_6px_rgba(250,204,21,0.5)]"
           fill="currentColor"
           aria-hidden="true"
         />
