@@ -2,6 +2,7 @@
 
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useEffect, useState } from 'react';
 
 import { CategoryTabButton } from '@/components/shared/CategoryTabButton';
 import { Tabs, TabsContent, TabsList } from '@/components/ui/tabs';
@@ -47,16 +48,37 @@ export default function QuizzesSection({
     ? (locale as 'uk' | 'en' | 'pl')
     : 'en';
 
+  const [progressMap, setProgressMap] =
+    useState<Record<string, UserProgress>>(userProgressMap);
+    const [progressLoaded, setProgressLoaded] = useState(
+    Object.keys(userProgressMap).length > 0
+  );
+  
+   useEffect(() => {
+  fetch('/api/quiz/progress')
+    .then(res => res.ok ? res.json() : {})
+    .then(data => {
+      setProgressMap(data);
+      setProgressLoaded(true);
+    })
+    .catch(() => {
+      setProgressLoaded(true);
+    });
+  }, []);
+      
   const DEFAULT_CATEGORY = categoryData[0]?.slug || 'git';
 
   const categoryFromUrl = searchParams.get('category');
   const validCategory = categoryData.some(c => c.slug === categoryFromUrl);
-  const activeCategory = validCategory ? categoryFromUrl! : DEFAULT_CATEGORY;
+    const [activeCategory, setActiveCategory] = useState(
+    validCategory ? categoryFromUrl! : DEFAULT_CATEGORY
+  );
 
   const handleCategoryChange = (category: string) => {
+    setActiveCategory(category);
     const params = new URLSearchParams(searchParams.toString());
     params.set('category', category);
-    router.replace(`?${params.toString()}`, { scroll: false });
+    window.history.replaceState(null, '', `?${params.toString()}`);
   };
 
   return (
@@ -85,26 +107,51 @@ export default function QuizzesSection({
             quiz => quiz.categorySlug === category.slug
           );
           return (
-            <TabsContent key={category.slug} value={category.slug}>
+            <TabsContent
+            key={category.slug}
+            value={category.slug}
+            forceMount
+            className={activeCategory !== category.slug ? 'hidden' : ''}
+            >
               {categoryQuizzes.length > 0 ? (
                 <div className="max-w-5xl">
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    {categoryQuizzes.map(quiz => (
-                      <QuizCard
-                        key={quiz.id}
-                        quiz={{
-                          id: quiz.id,
-                          slug: quiz.slug,
-                          title: quiz.title,
-                          description: quiz.description,
-                          questionsCount: quiz.questionsCount,
-                          timeLimitSeconds: quiz.timeLimitSeconds,
-                          categoryName: quiz.categoryName ?? category.slug,
-                          categorySlug: quiz.categorySlug ?? category.slug,
-                        }}
-                        userProgress={userProgressMap[quiz.id] || null}
-                      />
-                    ))}
+                    {!progressLoaded
+                      ? categoryQuizzes.map(quiz => (
+                          <div
+                            key={quiz.id}
+                            className="flex flex-col rounded-xl border border-black/10 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-neutral-900"
+                          >
+                            <div className="animate-pulse">
+                              <div className="mb-3 flex gap-2">
+                                <div className="h-5 w-16 rounded-full bg-gray-200 dark:bg-neutral-700" />
+                              </div>
+                              <div className="mb-2 h-6 w-3/4 rounded bg-gray-200 dark:bg-neutral-700" />
+                              <div className="mb-3 h-4 w-full rounded bg-gray-200 dark:bg-neutral-700" />
+                              <div className="mb-3 flex gap-3">
+                                <div className="h-3.5 w-20 rounded bg-gray-200 dark:bg-neutral-700" />
+                                <div className="h-3.5 w-16 rounded bg-gray-200 dark:bg-neutral-700" />
+                              </div>
+                            </div>
+                            <div className="mt-auto h-10 rounded-xl bg-gray-200 dark:bg-neutral-700" />
+                          </div>
+                        ))
+                      : categoryQuizzes.map(quiz => (
+                          <QuizCard
+                            key={quiz.id}
+                            quiz={{
+                              id: quiz.id,
+                              slug: quiz.slug,
+                              title: quiz.title,
+                              description: quiz.description,
+                              questionsCount: quiz.questionsCount,
+                              timeLimitSeconds: quiz.timeLimitSeconds,
+                              categoryName: quiz.categoryName ?? category.slug,
+                              categorySlug: quiz.categorySlug ?? category.slug,
+                            }}
+                            userProgress={progressMap[quiz.id] || null}
+                          />
+                        ))}
                   </div>
                 </div>
               ) : (

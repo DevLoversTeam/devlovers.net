@@ -32,6 +32,12 @@ export type AuthUser = {
   username: string;
 };
 
+export type AuthSession = {
+  id: string;
+  email: string;
+  role: 'user' | 'admin';
+};
+
 export function signAuthToken(payload: AuthTokenPayload): string {
   return jwt.sign(payload, AUTH_SECRET, {
     expiresIn: AUTH_TOKEN_MAX_AGE,
@@ -89,7 +95,7 @@ export async function clearAuthCookie() {
   cookieStore.delete(AUTH_COOKIE_NAME);
 }
 
-export async function getCurrentUser(): Promise<AuthUser | null> {
+export async function getAuthSession(): Promise<AuthSession | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get(AUTH_COOKIE_NAME)?.value;
   if (!token) {
@@ -97,6 +103,19 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
   }
 
   const payload = verifyAuthToken(token);
+  if (!payload) {
+    return null;
+  }
+
+  return {
+    id: payload.userId,
+    email: payload.email,
+    role: payload.role,
+  };
+}
+
+export async function getCurrentUser(): Promise<AuthUser | null> {
+  const payload = await getAuthSession();
   if (!payload) {
     return null;
   }
@@ -109,7 +128,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
       username: users.name,
     })
     .from(users)
-    .where(eq(users.id, payload.userId))
+    .where(eq(users.id, payload.id))
     .limit(1);
 
   if (result.length === 0) {

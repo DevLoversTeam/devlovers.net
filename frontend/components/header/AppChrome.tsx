@@ -5,25 +5,24 @@ import React from 'react';
 
 import { UnifiedHeader } from '@/components/header/UnifiedHeader';
 import { CartProvider } from '@/components/shop/CartProvider';
+import { useAuth } from '@/hooks/useAuth';
 
 type AppChromeProps = {
-  userExists: boolean;
-  userId?: string | null;
-  showAdminLink?: boolean;
+  enableAdminFeature?: boolean;
   blogCategories?: Array<{ _id: string; title: string }>;
   children: React.ReactNode;
 };
 
 export function AppChrome({
-  userExists,
-  userId = null,
-  showAdminLink = false,
+  enableAdminFeature = false,
   blogCategories = [],
   children,
 }: AppChromeProps) {
+  const { userExists, userId, isAdmin } = useAuth();
   const segments = useSelectedLayoutSegments();
   const isShop = segments.includes('shop');
   const isBlog = segments.includes('blog');
+  const showAdminLink = userExists && isAdmin && enableAdminFeature;
 
   if (isShop) {
     return (

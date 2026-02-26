@@ -11,6 +11,7 @@ import { EmailField } from '@/components/auth/fields/EmailField';
 import { PasswordField } from '@/components/auth/fields/PasswordField';
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/routing';
+import { broadcastAuthUpdated } from '@/lib/auth-sync';
 
 type LoginFormProps = {
   locale: string;
@@ -59,6 +60,7 @@ export function LoginForm({ locale, returnTo }: LoginFormProps) {
         return;
       }
 
+      broadcastAuthUpdated();
       window.location.href = returnTo || `/${locale}/dashboard`;
     } catch (err) {
       console.error('Login request failed:', err);
