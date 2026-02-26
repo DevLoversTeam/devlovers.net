@@ -7,9 +7,10 @@ import { useId, useState, useTransition } from 'react';
 type Props = {
   orderId: string;
   disabled: boolean;
+  csrfToken: string;
 };
 
-export function RefundButton({ orderId, disabled }: Props) {
+export function RefundButton({ orderId, disabled, csrfToken }: Props) {
   const router = useRouter();
   const t = useTranslations('shop.admin.refund');
   const [isPending, startTransition] = useTransition();
@@ -24,7 +25,10 @@ export function RefundButton({ orderId, disabled }: Props) {
       res = await fetch(`/api/shop/admin/orders/${orderId}/refund`, {
         method: 'POST',
         credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-csrf-token': csrfToken,
+        },
       });
     } catch (err) {
       const msg =

@@ -11,7 +11,7 @@ import { Link } from '@/i18n/routing';
 import { formatBlogDate } from '@/lib/blog/date';
 import { shouldBypassImageOptimization } from '@/lib/blog/image';
 
-export const revalidate = 0;
+export const revalidate = 3600;
 
 type Author = {
   name?: string;
@@ -50,9 +50,7 @@ export default async function BlogCategoryPage({
   const t = await getTranslations({ locale, namespace: 'blog' });
   const tNav = await getTranslations({ locale, namespace: 'navigation' });
   const categoryKey = String(category || '').toLowerCase();
-  const categories: Category[] = await client
-    .withConfig({ useCdn: false })
-    .fetch(categoriesQuery);
+  const categories: Category[] = await client.fetch(categoriesQuery);
   const matchedCategory = categories.find(
     item => slugify(item.title) === categoryKey
   );
@@ -61,7 +59,7 @@ export default async function BlogCategoryPage({
   const categoryTitle = matchedCategory.title;
   const categoryDisplay = getCategoryLabel(categoryTitle, t);
 
-  const posts: Post[] = await client.withConfig({ useCdn: false }).fetch(
+  const posts: Post[] = await client.fetch(
     groq`
       *[_type == "post" && defined(slug.current) && $category in categories[]->title]
         | order(coalesce(publishedAt, _createdAt) desc) {

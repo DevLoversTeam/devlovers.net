@@ -45,10 +45,25 @@ const EXPECTED_BUSINESS_ERROR_CODES = new Set([
   'INSUFFICIENT_STOCK',
   'PRICE_CONFIG_ERROR',
   'PAYMENT_ATTEMPTS_EXHAUSTED',
+  'MISSING_SHIPPING_ADDRESS',
+  'INVALID_SHIPPING_ADDRESS',
+  'SHIPPING_METHOD_UNAVAILABLE',
+  'SHIPPING_CURRENCY_UNSUPPORTED',
 ]);
 
 const DEFAULT_CHECKOUT_RATE_LIMIT_MAX = 10;
 const DEFAULT_CHECKOUT_RATE_LIMIT_WINDOW_SECONDS = 300;
+
+const SHIPPING_ERROR_STATUS_MAP: Record<string, number> = {
+  MISSING_SHIPPING_ADDRESS: 400,
+  INVALID_SHIPPING_ADDRESS: 400,
+  SHIPPING_METHOD_UNAVAILABLE: 422,
+  SHIPPING_CURRENCY_UNSUPPORTED: 422,
+};
+
+function shippingErrorStatus(code: string): number | null {
+  return SHIPPING_ERROR_STATUS_MAP[code] ?? null;
+}
 
 function parseRequestedProvider(
   raw: unknown
@@ -126,6 +141,17 @@ function isMonobankInvalidRequestError(error: unknown): boolean {
 
 function mapMonobankCheckoutError(error: unknown) {
   const code = getErrorCode(error);
+
+  if (code) {
+    const status = shippingErrorStatus(code);
+    if (status) {
+      return {
+        code,
+        message: getErrorMessage(error, 'Invalid request.'),
+        status,
+      } as const;
+    }
+  }
 
   if (isMonobankInvalidRequestError(error)) {
     return {
@@ -655,7 +681,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { items, userId } = parsedPayload.data;
+  const { items, userId, shipping, country } = parsedPayload.data;
   const itemCount = items.reduce((total, item) => total + item.quantity, 0);
   const locale = resolveRequestLocale(request);
 
@@ -757,6 +783,8 @@ export async function POST(request: NextRequest) {
       idempotencyKey,
       userId: sessionUserId,
       locale,
+      country: country ?? null,
+      shipping: shipping ?? null,
       paymentProvider: selectedProvider === 'monobank' ? 'monobank' : undefined,
     });
 
@@ -1058,10 +1086,11 @@ export async function POST(request: NextRequest) {
     }
 
     if (error instanceof InvalidPayloadError) {
+      const customStatus = shippingErrorStatus(error.code);
       return errorResponse(
         error.code,
         error.message || 'Invalid checkout payload',
-        400
+        customStatus ?? 400
       );
     }
 

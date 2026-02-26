@@ -1,4 +1,5 @@
 import groq from 'groq';
+import { unstable_cache } from 'next/cache';
 import { notFound } from 'next/navigation';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
@@ -17,6 +18,18 @@ import { getCurrentUser } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
+const getCachedBlogCategories = unstable_cache(
+  async () =>
+    client.fetch<Array<{ _id: string; title: string }>>(groq`
+      *[_type == "category"] | order(orderRank asc) {
+        _id,
+        title
+      }
+    `),
+  ['blog-categories'],
+  { revalidate: 3600, tags: ['blog-categories'] }
+);
+
 export default async function LocaleLayout({
   children,
   params,
@@ -30,16 +43,7 @@ export default async function LocaleLayout({
 
   const messages = await getMessages({ locale });
   const user = await getCurrentUser();
-  const blogCategories: Array<{ _id: string; title: string }> = await client
-    .withConfig({ useCdn: false })
-    .fetch(
-      groq`
-        *[_type == "category"] | order(orderRank asc) {
-          _id,
-          title
-        }
-      `
-    );
+  const blogCategories = await getCachedBlogCategories();
 
   const userExists = Boolean(user);
   const enableAdmin =

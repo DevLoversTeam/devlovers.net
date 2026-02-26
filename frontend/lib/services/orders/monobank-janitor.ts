@@ -10,10 +10,6 @@ import { logError, logInfo, logWarn } from '@/lib/logging';
 import { MONO_EXPIRED_RECONCILED, monoLogInfo } from '@/lib/logging/monobank';
 import { getInvoiceStatus } from '@/lib/psp/monobank';
 import {
-  claimNextMonobankEvent,
-  type MonobankEventRow,
-} from '@/lib/services/orders/monobank-events-claim';
-import {
   applyMonoWebhookEvent,
   applyStoredMonobankEvent,
 } from '@/lib/services/orders/monobank-webhook';
@@ -35,7 +31,7 @@ const JOB2_ORDER_FAILURE_MESSAGE = 'Monobank invoice create failed.';
 const JOB2_ATTEMPT_ERROR_CODE = 'invoice_missing';
 const JOB2_ATTEMPT_ERROR_MESSAGE =
   'Active attempt missing invoice details (stale).';
-const JOB3_EVENT_ERROR_CODE = 'JANITOR_JOB3_APPLY_FAILED';
+
 const JOB3_MODE_MISMATCH_CODE = 'MONO_WEBHOOK_MODE_NOT_STORE';
 const DEFAULT_JOB4_NEEDS_REVIEW_AGE_HOURS = 24;
 const NEEDS_REVIEW_AGE_HOURS_MIN = 0;
@@ -60,6 +56,7 @@ type Job3CandidateRow = {
   provider_modified_at: unknown;
   received_at: unknown;
   raw_payload: unknown;
+  raw_sha256: string | null;
 };
 
 type Job4CandidateRow = {
@@ -308,7 +305,7 @@ function sortJob3RowsByCanonicalOrder(
   return sortedGroups.flat();
 }
 
-async function readDryRunJob3Candidates(args: {
+async function readUnclaimedJob3Candidates(args: {
   limit: number;
 }): Promise<Job3CandidateRow[]> {
   const res = await db.execute<Job3CandidateRow>(sql`
@@ -318,7 +315,8 @@ async function readDryRunJob3Candidates(args: {
       me.attempt_id,
       me.provider_modified_at,
       me.received_at,
-      me.raw_payload
+      me.raw_payload,
+      me.raw_sha256
     from monobank_events me
     where me.provider = 'monobank'
       and me.applied_at is null
@@ -333,58 +331,51 @@ async function readDryRunJob3Candidates(args: {
   return readRows<Job3CandidateRow>(res);
 }
 
-function toJob3CandidateRow(row: MonobankEventRow): Job3CandidateRow {
-  return {
-    id: row.id,
-    invoice_id:
-      typeof row.invoice_id === 'string'
-        ? row.invoice_id
-        : (row.invoice_id ?? null),
-    attempt_id:
-      typeof row.attempt_id === 'string'
-        ? row.attempt_id
-        : (row.attempt_id ?? null),
-    provider_modified_at: row.provider_modified_at,
-    received_at: row.received_at,
-    raw_payload: row.raw_payload,
-  };
-}
-
 async function claimJob3Events(args: {
   limit: number;
+  leaseSeconds: number;
   runId: string;
 }): Promise<Job3CandidateRow[]> {
-  const claimed: Job3CandidateRow[] = [];
+  const res = await db.execute<Job3CandidateRow>(sql`
+    with candidates as (
+      select me.id
+      from monobank_events me
+      where me.provider = 'monobank'
+        and me.applied_at is null
+        and (me.claim_expires_at is null or me.claim_expires_at < now())
+      order by
+        me.provider_modified_at asc nulls last,
+        me.received_at asc,
+        me.id asc
+      for update skip locked
+      limit ${args.limit}
+    ),
+    claimed as (
+      update monobank_events me
+      set claimed_at = now(),
+          claim_expires_at = now() + make_interval(secs => ${args.leaseSeconds}),
+          claimed_by = ${args.runId}
+      where me.id in (select id from candidates)
+        and me.applied_at is null
+       and (me.claim_expires_at is null or me.claim_expires_at < now())
+      returning
+        me.id,
+       me.invoice_id,
+        me.attempt_id,
+        me.provider_modified_at,
+        me.received_at,
+        me.raw_payload,
+        me.raw_sha256
+    )
+    select * from claimed
+  `);
 
-  for (let i = 0; i < args.limit; i += 1) {
-    const next = await claimNextMonobankEvent(args.runId);
-    if (!next) break;
-    claimed.push(toJob3CandidateRow(next));
-  }
-
-  return claimed;
+  return readRows<Job3CandidateRow>(res);
 }
-
-async function markJob3EventFailed(args: {
+async function clearAppliedEventClaim(args: {
   eventId: string;
   runId: string;
-  error: unknown;
 }) {
-  const errorMessage =
-    args.error instanceof Error ? args.error.message : String(args.error);
-  await db.execute(sql`
-    update monobank_events
-    set applied_at = now(),
-        applied_result = 'applied_with_issue',
-        applied_error_code = coalesce(applied_error_code, ${JOB3_EVENT_ERROR_CODE}),
-        applied_error_message = coalesce(applied_error_message, ${errorMessage})
-    where id = ${args.eventId}::uuid
-      and claimed_by = ${args.runId}
-      and applied_at is null
-  `);
-}
-
-async function releaseEventLease(args: { eventId: string; runId: string }) {
   await db.execute(sql`
     update monobank_events
     set claimed_at = null,
@@ -392,6 +383,7 @@ async function releaseEventLease(args: { eventId: string; runId: string }) {
         claimed_by = null
     where id = ${args.eventId}::uuid
       and claimed_by = ${args.runId}
+      and applied_at is not null
   `);
 }
 
@@ -861,9 +853,14 @@ export async function runMonobankJanitorJob3(
   if (webhookMode !== 'store') {
     throw new MonobankJanitorJob3ModeError();
   }
-
+  const leaseSeconds = parseEnvInt(
+    'MONO_JANITOR_LEASE_SECONDS',
+    DEFAULT_JANITOR_LEASE_SECONDS,
+    LEASE_SECONDS_MIN,
+    LEASE_SECONDS_MAX
+  );
   if (args.dryRun) {
-    const candidates = await readDryRunJob3Candidates({
+    const candidates = await readUnclaimedJob3Candidates({
       limit: args.limit,
     });
 
@@ -873,6 +870,7 @@ export async function runMonobankJanitorJob3(
       runId: args.runId,
       dryRun: true,
       limit: args.limit,
+      leaseSeconds,
       candidates: candidates.length,
     });
 
@@ -886,6 +884,7 @@ export async function runMonobankJanitorJob3(
 
   const claimed = await claimJob3Events({
     limit: args.limit,
+    leaseSeconds,
     runId: args.runId,
   });
   const ordered = sortJob3RowsByCanonicalOrder(claimed);
@@ -915,6 +914,26 @@ export async function runMonobankJanitorJob3(
       } else {
         noop += 1;
       }
+
+      try {
+        await clearAppliedEventClaim({
+          eventId: eventRow.id,
+          runId: args.runId,
+        });
+      } catch (clearError) {
+        logWarn('internal_monobank_janitor_job3_clear_claim_failed', {
+          ...args.baseMeta,
+          code: 'JANITOR_JOB3_CLEAR_CLAIM_FAILED',
+          runId: args.runId,
+          eventId: eventRow.id,
+          invoiceId: eventRow.invoice_id,
+          attemptId: eventRow.attempt_id,
+          error:
+            clearError instanceof Error
+              ? clearError.message
+              : String(clearError),
+        });
+      }
     } catch (error) {
       failed += 1;
       logError('internal_monobank_janitor_job3_event_failed', error, {
@@ -927,30 +946,23 @@ export async function runMonobankJanitorJob3(
       });
 
       try {
-        await markJob3EventFailed({
-          eventId: eventRow.id,
-          runId: args.runId,
-          error,
-        });
-      } catch (markError) {
-        logWarn('internal_monobank_janitor_job3_mark_failed_failed', {
-          ...args.baseMeta,
-          code: 'JANITOR_JOB3_MARK_FAILED_FAILED',
-          runId: args.runId,
-          eventId: eventRow.id,
-          error:
-            markError instanceof Error ? markError.message : String(markError),
-        });
-      }
-    } finally {
-      try {
-        await releaseEventLease({ eventId: eventRow.id, runId: args.runId });
+        await db.execute(sql`
+      update monobank_events
+      set claimed_at = null,
+          claim_expires_at = null,
+          claimed_by = null
+      where id = ${eventRow.id}::uuid
+        and claimed_by = ${args.runId}
+        and applied_at is null
+    `);
       } catch (releaseError) {
         logWarn('internal_monobank_janitor_job3_release_failed', {
           ...args.baseMeta,
           code: 'JANITOR_JOB3_RELEASE_FAILED',
           runId: args.runId,
           eventId: eventRow.id,
+          invoiceId: eventRow.invoice_id,
+          attemptId: eventRow.attempt_id,
           error:
             releaseError instanceof Error
               ? releaseError.message
@@ -966,6 +978,7 @@ export async function runMonobankJanitorJob3(
     runId: args.runId,
     dryRun: false,
     limit: args.limit,
+    leaseSeconds,
     claimed: claimed.length,
     processed,
     applied,

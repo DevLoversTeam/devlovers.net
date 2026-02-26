@@ -9,6 +9,7 @@ import {
   orders,
   productPrices,
   products,
+  shippingShipments,
   stripeEvents,
 } from '@/db/schema';
 
@@ -55,6 +56,17 @@ async function cleanup(params: {
   } catch (e) {
     logTestCleanupFailed(
       { step: 'delete stripeEvents by eventId', eventId, orderId, productId },
+      e
+    );
+  }
+
+  try {
+    await db
+      .delete(shippingShipments)
+      .where(eq(shippingShipments.orderId, orderId));
+  } catch (e) {
+    logTestCleanupFailed(
+      { step: 'delete shippingShipments by orderId', orderId, eventId, productId },
       e
     );
   }
@@ -157,6 +169,12 @@ describe('P0-6 webhook: writes PSP fields on succeeded', () => {
       totalAmountMinor: 900,
       totalAmount: '9.00',
       currency: 'USD',
+      shippingRequired: true,
+      shippingPayer: 'customer',
+      shippingProvider: 'nova_poshta',
+      shippingMethodCode: 'NP_WAREHOUSE',
+      shippingAmountMinor: null,
+      shippingStatus: 'pending',
       paymentStatus: 'requires_payment',
       paymentProvider: 'stripe',
       paymentIntentId,
@@ -236,6 +254,7 @@ describe('P0-6 webhook: writes PSP fields on succeeded', () => {
           id: orders.id,
           paymentStatus: orders.paymentStatus,
           paymentIntentId: orders.paymentIntentId,
+          shippingStatus: orders.shippingStatus,
           pspChargeId: orders.pspChargeId,
           pspPaymentMethod: orders.pspPaymentMethod,
           pspStatusReason: orders.pspStatusReason,
@@ -248,6 +267,7 @@ describe('P0-6 webhook: writes PSP fields on succeeded', () => {
       expect(updated1[0].paymentIntentId).toBe(paymentIntentId);
 
       expect(updated1[0].paymentStatus).toBe('paid');
+      expect(updated1[0].shippingStatus).toBe('queued');
 
       expect(updated1[0].pspChargeId).toBe(chargeId);
       expect(typeof updated1[0].pspPaymentMethod).toBe('string');
@@ -271,6 +291,12 @@ describe('P0-6 webhook: writes PSP fields on succeeded', () => {
 
       expect(ev1.length).toBe(1);
 
+      const queued1 = await db
+        .select({ id: shippingShipments.id })
+        .from(shippingShipments)
+        .where(eq(shippingShipments.orderId, orderId));
+      expect(queued1.length).toBe(1);
+
       const req2 = makeWebhookRequest(rawBody);
       const res2 = await webhookPOST(req2);
       expect(res2.status).toBeGreaterThanOrEqual(200);
@@ -286,6 +312,7 @@ describe('P0-6 webhook: writes PSP fields on succeeded', () => {
       const updated2 = await db
         .select({
           paymentStatus: orders.paymentStatus,
+          shippingStatus: orders.shippingStatus,
           pspChargeId: orders.pspChargeId,
           pspStatusReason: orders.pspStatusReason,
           pspMetadata: orders.pspMetadata,
@@ -295,11 +322,18 @@ describe('P0-6 webhook: writes PSP fields on succeeded', () => {
 
       expect(updated2.length).toBe(1);
       expect(updated2[0].paymentStatus).toBe('paid');
+      expect(updated2[0].shippingStatus).toBe('queued');
       expect(updated2[0].pspChargeId).toBe(chargeId);
       expect(
         Object.keys((updated2[0].pspMetadata ?? {}) as Record<string, unknown>)
           .length
       ).toBeGreaterThan(0);
+
+      const queued2 = await db
+        .select({ id: shippingShipments.id })
+        .from(shippingShipments)
+        .where(eq(shippingShipments.orderId, orderId));
+      expect(queued2.length).toBe(1);
     } finally {
       await cleanup({ orderId, productId, eventId });
     }

@@ -715,3 +715,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - Improved client-render guards using stable subscription pattern
 - Reduced hydration inconsistencies in production
+
+## [1.0.4] - 2026-02-26
+
+### Added
+
+- Shop shipping foundation:
+  - Nova Poshta delivery support (cities, warehouses, courier)
+  - Checkout shipping persistence with PII-safe snapshot
+  - Async shipment label creation workflow
+  - Admin shipping actions (retry label, mark shipped/delivered)
+  - Shipping status and tracking in order details
+
+### Changed
+
+- Performance & cost optimization (Vercel):
+  - Blog ISR enabled (revalidate: 3600)
+  - Sanity CDN enabled globally
+  - Cached blog categories via unstable_cache
+  - Notification polling replaced with visibility-based refresh
+  - Analytics runs only in production
+  - Speed Insights removed
+
+### Fixed
+
+- Reduced unnecessary layout revalidation after notification actions
+- Improved cache consistency for blog content and categories
+
+### Performance & Infrastructure
+
+- Lower Vercel Function Invocations and CPU usage
+- Reduced origin data transfer for blog content
+- Improved overall runtime efficiency

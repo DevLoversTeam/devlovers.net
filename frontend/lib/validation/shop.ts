@@ -306,13 +306,97 @@ export const checkoutItemSchema = z
     quantity: z.coerce.number().int().min(1).max(MAX_QUANTITY_PER_LINE),
     selectedSize: z.string().optional(),
     selectedColor: z.string().optional(),
+    variantKey: z.string().trim().min(1).max(120).optional(),
+    options: z
+      .record(
+        z.string().trim().min(1).max(64),
+        z
+          .union([z.string(), z.number(), z.boolean()])
+          .transform(value => String(value).trim())
+          .refine(value => value.length > 0 && value.length <= 120)
+      )
+      .optional(),
   })
   .strict();
+
+const npRefSchema = z
+  .string()
+  .trim()
+  .min(20)
+  .max(64)
+  .regex(/^[A-Za-z0-9-]+$/);
+
+export const checkoutShippingMethodCodeSchema = z.enum([
+  'NP_WAREHOUSE',
+  'NP_LOCKER',
+  'NP_COURIER',
+]);
+
+export const checkoutShippingProviderSchema = z.literal('nova_poshta');
+
+const checkoutShippingSelectionSchema = z
+  .object({
+    cityRef: npRefSchema,
+    warehouseRef: npRefSchema.optional(),
+    addressLine1: z.string().trim().min(3).max(180).optional(),
+    addressLine2: z.string().trim().max(180).optional(),
+  })
+  .strict();
+
+const recipientPhoneSchema = z
+  .string()
+  .trim()
+  .regex(/^(?:\+380\d{9}|0\d{9})$/);
+
+const checkoutShippingRecipientSchema = z
+  .object({
+    fullName: z.string().trim().min(2).max(120),
+    phone: recipientPhoneSchema,
+    email: z.string().trim().email().max(254).optional(),
+    comment: z.string().trim().max(500).optional(),
+  })
+  .strict();
+
+export const checkoutShippingSchema = z
+  .object({
+    provider: checkoutShippingProviderSchema,
+    methodCode: checkoutShippingMethodCodeSchema,
+    selection: checkoutShippingSelectionSchema,
+    recipient: checkoutShippingRecipientSchema,
+  })
+  .strict()
+  .superRefine((value, ctx) => {
+    if (
+      (value.methodCode === 'NP_WAREHOUSE' || value.methodCode === 'NP_LOCKER') &&
+      !value.selection.warehouseRef
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['selection', 'warehouseRef'],
+        message: 'warehouseRef is required for warehouse/locker delivery',
+      });
+    }
+
+    if (value.methodCode === 'NP_COURIER' && !value.selection.addressLine1) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['selection', 'addressLine1'],
+        message: 'addressLine1 is required for courier delivery',
+      });
+    }
+  });
 
 export const checkoutPayloadSchema = z
   .object({
     items: z.array(checkoutItemSchema).min(1),
     userId: z.string().uuid().optional(),
+    country: z
+      .string()
+      .trim()
+      .length(2)
+      .transform(value => value.toUpperCase())
+      .optional(),
+    shipping: checkoutShippingSchema.optional(),
   })
   .strict();
 
@@ -430,4 +514,5 @@ export type CartRemovedItem = z.infer<typeof cartRemovedItemSchema>;
 export type CartRehydrateResult = z.infer<typeof cartRehydrateResultSchema>;
 export type CheckoutItemInput = z.infer<typeof checkoutItemSchema>;
 export type CheckoutPayload = z.infer<typeof checkoutPayloadSchema>;
+export type CheckoutShippingPayload = z.infer<typeof checkoutShippingSchema>;
 export type OrderIdParams = z.infer<typeof orderIdParamSchema>;

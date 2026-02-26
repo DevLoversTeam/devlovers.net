@@ -4,6 +4,8 @@ import { client } from '@/client';
 
 import PostDetails from './PostDetails';
 
+export const revalidate = 3600;
+
 export async function generateStaticParams() {
   const slugs = await client.fetch<string[]>(
     groq`*[_type == "post" && defined(slug.current)][].slug.current`

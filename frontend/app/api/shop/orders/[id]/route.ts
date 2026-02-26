@@ -28,6 +28,8 @@ type OrderDetailResponse = {
   paymentStatus: OrderPaymentStatus;
   paymentProvider: string;
   paymentIntentId: string | null;
+  shippingStatus: string | null;
+  trackingNumber: string | null;
   stockRestored: boolean;
   restockedAt: string | null;
   idempotencyKey: string;
@@ -146,6 +148,8 @@ export async function GET(
           paymentStatus: orders.paymentStatus,
           paymentProvider: orders.paymentProvider,
           paymentIntentId: orders.paymentIntentId,
+          shippingStatus: orders.shippingStatus,
+          trackingNumber: orders.trackingNumber,
           stockRestored: orders.stockRestored,
           restockedAt: orders.restockedAt,
           idempotencyKey: orders.idempotencyKey,
