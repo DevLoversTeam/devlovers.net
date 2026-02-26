@@ -747,3 +747,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Lower Vercel Function Invocations and CPU usage
 - Reduced origin data transfer for blog content
 - Improved overall runtime efficiency
+
+## [1.0.5] - 2026-02-26
+
+### Added
+
+- Auth improvements:
+  - Cross-tab authentication sync via BroadcastChannel
+  - Client-side auth handling in Header for faster UI updates
+
+### Changed
+
+- Quizzes performance:
+  - Quizzes page now uses ISR (revalidate: 300)
+  - User progress moved from SSR to client-side API (`/api/quiz/progress`)
+  - URL tab sync via `history.replaceState` without navigation
+  - GitHub stars cached in `sessionStorage` to prevent refetch and re-animation
+- Rendering optimization:
+  - Removed `force-dynamic` from locale layout
+  - Reduced authentication overhead and dynamic rendering
+  - Replaced nested `<main>` structure with semantic `<section>`
+
+### Fixed
+
+- Fixed quiz timer flash when switching language
+- Fixed layout shift on quizzes page (skeleton grid during progress loading)
+- Fixed GitHub star button hover trembling
+- Fixed React 19 `useRef` render warning (lazy `useState` initializer)
+- Prevented stale auth state across tabs
+- Eliminated layout shift when switching quiz tabs
+
+### Performance
+
+- Reduced server load by moving auth and progress logic to client
+- Improved ISR caching efficiency for quizzes page
+- Faster navigation and more stable UI during locale and tab changes
