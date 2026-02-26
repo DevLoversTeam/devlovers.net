@@ -107,7 +107,7 @@ export function GitHubStarButton({ className = '' }: GitHubStarButtonProps) {
           {formatStarCount(displayCount)}
         </span>
         <Star
-          className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-all duration-300 group-hover:rotate-12 group-hover:text-yellow-400 group-hover:drop-shadow-[0_0_6px_rgba(250,204,21,0.5)] group-active:rotate-12 group-active:text-yellow-400 group-active:drop-shadow-[0_0_6px_rgba(250,204,21,0.5)]"
+          className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-[transform,color] duration-300 group-hover:rotate-12 group-hover:text-yellow-400 group-hover:drop-shadow-[0_0_6px_rgba(250,204,21,0.5)] group-active:rotate-12 group-active:text-yellow-400 group-active:drop-shadow-[0_0_6px_rgba(250,204,21,0.5)]"
           fill="currentColor"
           aria-hidden="true"
         />
