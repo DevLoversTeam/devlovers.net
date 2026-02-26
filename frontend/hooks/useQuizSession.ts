@@ -33,36 +33,27 @@ type QuizState = {
 type UseQuizSessionParams = {
   quizId: string;
   state: QuizState;
-  onRestore: (data: QuizSessionData) => void;
 };
 
 export function useQuizSession({
   quizId,
   state,
-  onRestore,
 }: UseQuizSessionParams): void {
   const reloadKey = getQuizReloadKey(quizId);
 
   useEffect(() => {
     const isReload = sessionStorage.getItem(reloadKey);
-    if (isReload) {
-      sessionStorage.removeItem(reloadKey);
-    }
+    if (isReload) sessionStorage.removeItem(reloadKey);
 
     const allowRestore = sessionStorage.getItem(QUIZ_ALLOW_RESTORE_KEY);
-    if (allowRestore) {
-      sessionStorage.removeItem(QUIZ_ALLOW_RESTORE_KEY);
-    }
+    if (allowRestore) sessionStorage.removeItem(QUIZ_ALLOW_RESTORE_KEY);
 
-    const saved = loadQuizSession(quizId);
-    if (!saved) return;
-
-    if (isReload || allowRestore) {
-      onRestore(saved);
-    } else {
-      clearQuizSession(quizId);
+    // Fresh visit (no restore flag) — clear any stale session
+    if (!isReload && !allowRestore) {
+      const saved = loadQuizSession(quizId);
+      if (saved) clearQuizSession(quizId);
     }
-  }, [quizId, reloadKey, onRestore]);
+  }, [quizId, reloadKey]);
 
   useEffect(() => {
     if (state.status === 'rules') return;
