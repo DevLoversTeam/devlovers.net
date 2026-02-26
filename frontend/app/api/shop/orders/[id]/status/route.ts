@@ -8,13 +8,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { orders } from '@/db/schema';
 import { getCurrentUser } from '@/lib/auth';
-import { logError, logWarn } from '@/lib/logging';
+import { logError, logInfo, logWarn } from '@/lib/logging';
 import {
   OrderNotFoundError,
   OrderStateInvalidError,
 } from '@/lib/services/errors';
 import {
   getOrderAttemptSummary,
+  getOrderStatusLiteSummary,
   getOrderSummary,
 } from '@/lib/services/orders/summary';
 import { verifyStatusToken } from '@/lib/shop/status-token';
@@ -33,6 +34,8 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   const startedAtMs = Date.now();
+  const responseMode =
+    request.nextUrl.searchParams.get('view') === 'lite' ? 'lite' : 'full';
   const requestId =
     request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
 
@@ -43,6 +46,7 @@ export async function GET(
       requestId,
       code: 'INVALID_ORDER_ID',
       orderId: null,
+      responseMode,
       durationMs: Date.now() - startedAtMs,
     });
     return noStoreJson({ code: 'INVALID_ORDER_ID' }, { status: 400 });
@@ -77,6 +81,7 @@ export async function GET(
           requestId,
           orderId,
           code,
+          responseMode,
           durationMs: Date.now() - startedAtMs,
         });
         return noStoreJson({ code }, { status });
@@ -95,6 +100,7 @@ export async function GET(
               requestId,
               orderId,
               code: 'STATUS_TOKEN_MISCONFIGURED',
+              responseMode,
               durationMs: Date.now() - startedAtMs,
             }
           );
@@ -108,14 +114,32 @@ export async function GET(
           requestId,
           orderId,
           code: 'STATUS_TOKEN_INVALID',
+          responseMode,
           durationMs: Date.now() - startedAtMs,
         });
         return noStoreJson({ code: 'STATUS_TOKEN_INVALID' }, { status: 403 });
       }
     }
 
+    if (responseMode === 'lite') {
+      const liteOrder = await getOrderStatusLiteSummary(orderId);
+      logInfo('order_status_responded', {
+        requestId,
+        orderId,
+        responseMode,
+        durationMs: Date.now() - startedAtMs,
+      });
+      return noStoreJson(liteOrder, { status: 200 });
+    }
+
     const order = await getOrderSummary(orderId);
     const attempt = await getOrderAttemptSummary(orderId);
+    logInfo('order_status_responded', {
+      requestId,
+      orderId,
+      responseMode,
+      durationMs: Date.now() - startedAtMs,
+    });
     return noStoreJson({ success: true, order, attempt }, { status: 200 });
   } catch (error) {
     if (error instanceof OrderNotFoundError) {
@@ -123,6 +147,7 @@ export async function GET(
         requestId,
         code: 'ORDER_NOT_FOUND',
         orderId,
+        responseMode,
         durationMs: Date.now() - startedAtMs,
       });
       return noStoreJson({ code: 'ORDER_NOT_FOUND' }, { status: 404 });
@@ -133,6 +158,7 @@ export async function GET(
         requestId,
         code: 'INTERNAL_ERROR',
         orderId,
+        responseMode,
         durationMs: Date.now() - startedAtMs,
       });
       return noStoreJson({ code: 'INTERNAL_ERROR' }, { status: 500 });
@@ -142,6 +168,7 @@ export async function GET(
       requestId,
       code: 'ORDER_STATUS_FAILED',
       orderId,
+      responseMode,
       durationMs: Date.now() - startedAtMs,
     });
 

@@ -164,6 +164,62 @@ export async function getOrderSummary(
   return getOrderById(id);
 }
 
+export type OrderStatusLiteSummary = {
+  id: string;
+  paymentStatus: string;
+  totalAmountMinor: number;
+  currency: string;
+  itemsCount: number;
+  updatedAt: Date;
+};
+
+export async function getOrderStatusLiteSummary(
+  orderId: string
+): Promise<OrderStatusLiteSummary> {
+  const rows = await db
+    .select({
+      id: orders.id,
+      paymentStatus: orders.paymentStatus,
+      totalAmountMinor: orders.totalAmountMinor,
+      totalAmount: orders.totalAmount,
+      currency: orders.currency,
+      updatedAt: orders.updatedAt,
+      itemsCount: sql<number>`count(${orderItems.id})::int`,
+    })
+    .from(orders)
+    .leftJoin(orderItems, eq(orderItems.orderId, orders.id))
+    .where(eq(orders.id, orderId))
+    .groupBy(
+      orders.id,
+      orders.paymentStatus,
+      orders.totalAmountMinor,
+      orders.totalAmount,
+      orders.currency,
+      orders.updatedAt
+    )
+    .limit(1);
+
+  const row = rows[0];
+  if (!row) throw new OrderNotFoundError('Order not found');
+
+  const totalAmountMinor =
+    row.totalAmountMinor == null
+      ? fromDbMoney(row.totalAmount)
+      : requireMinor(row.totalAmountMinor, {
+          orderId: row.id,
+          field: 'orders.totalAmountMinor',
+        });
+
+  return {
+    id: row.id,
+    paymentStatus: row.paymentStatus,
+    totalAmountMinor,
+    currency: row.currency,
+    itemsCount: Number.isFinite(row.itemsCount) ? row.itemsCount : 0,
+    updatedAt: row.updatedAt,
+  };
+}
+
 type OrderAttemptSummary = {
   status: string;
   providerRef: string | null;
