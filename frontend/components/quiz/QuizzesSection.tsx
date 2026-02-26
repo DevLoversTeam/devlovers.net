@@ -116,22 +116,42 @@ export default function QuizzesSection({
               {categoryQuizzes.length > 0 ? (
                 <div className="max-w-5xl">
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    {categoryQuizzes.map(quiz => (
-                      <QuizCard
-                        key={quiz.id}
-                        quiz={{
-                          id: quiz.id,
-                          slug: quiz.slug,
-                          title: quiz.title,
-                          description: quiz.description,
-                          questionsCount: quiz.questionsCount,
-                          timeLimitSeconds: quiz.timeLimitSeconds,
-                          categoryName: quiz.categoryName ?? category.slug,
-                          categorySlug: quiz.categorySlug ?? category.slug,
-                        }}
-                        userProgress={progressLoaded ? (progressMap[quiz.id] || null) : null}
-                      />
-                    ))}
+                    {!progressLoaded
+                      ? categoryQuizzes.map(quiz => (
+                          <div
+                            key={quiz.id}
+                            className="flex flex-col rounded-xl border border-black/10 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-neutral-900"
+                          >
+                            <div className="animate-pulse">
+                              <div className="mb-3 flex gap-2">
+                                <div className="h-5 w-16 rounded-full bg-gray-200 dark:bg-neutral-700" />
+                              </div>
+                              <div className="mb-2 h-6 w-3/4 rounded bg-gray-200 dark:bg-neutral-700" />
+                              <div className="mb-3 h-4 w-full rounded bg-gray-200 dark:bg-neutral-700" />
+                              <div className="mb-3 flex gap-3">
+                                <div className="h-3.5 w-20 rounded bg-gray-200 dark:bg-neutral-700" />
+                                <div className="h-3.5 w-16 rounded bg-gray-200 dark:bg-neutral-700" />
+                              </div>
+                            </div>
+                            <div className="mt-auto h-10 rounded-xl bg-gray-200 dark:bg-neutral-700" />
+                          </div>
+                        ))
+                      : categoryQuizzes.map(quiz => (
+                          <QuizCard
+                            key={quiz.id}
+                            quiz={{
+                              id: quiz.id,
+                              slug: quiz.slug,
+                              title: quiz.title,
+                              description: quiz.description,
+                              questionsCount: quiz.questionsCount,
+                              timeLimitSeconds: quiz.timeLimitSeconds,
+                              categoryName: quiz.categoryName ?? category.slug,
+                              categorySlug: quiz.categorySlug ?? category.slug,
+                            }}
+                            userProgress={progressMap[quiz.id] || null}
+                          />
+                        ))}
                   </div>
                 </div>
               ) : (
