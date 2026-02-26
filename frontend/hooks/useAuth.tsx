@@ -7,6 +7,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 
@@ -46,42 +47,50 @@ async function fetchAuth(signal?: AbortSignal): Promise<AuthApiUser> {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthApiUser>(null);
   const [loading, setLoading] = useState(true);
+  const latestRequestIdRef = useRef(0);
 
-  const refresh = useCallback(async () => {
+  const runAuthRequest = useCallback(async (signal?: AbortSignal) => {
+    const requestId = ++latestRequestIdRef.current;
     setLoading(true);
+
     try {
-      const nextUser = await fetchAuth();
+      const nextUser = await fetchAuth(signal);
+
+      if (latestRequestIdRef.current !== requestId) {
+        return;
+      }
+
       setUser(nextUser);
-    } catch {
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        return;
+      }
+
+      if (latestRequestIdRef.current !== requestId) {
+        return;
+      }
+
       setUser(null);
     } finally {
-      setLoading(false);
+      if (latestRequestIdRef.current === requestId) {
+        setLoading(false);
+      }
     }
   }, []);
+
+  const refresh = useCallback(async () => {
+    await runAuthRequest();
+  }, [runAuthRequest]);
 
   useEffect(() => {
     const controller = new AbortController();
 
-    const loadAuth = async () => {
-      try {
-        const nextUser = await fetchAuth(controller.signal);
-        setUser(nextUser);
-      } catch (error) {
-        if (error instanceof DOMException && error.name === 'AbortError') {
-          return;
-        }
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    void loadAuth();
+    void runAuthRequest(controller.signal);
 
     return () => {
       controller.abort();
     };
-  }, []);
+  }, [runAuthRequest]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
