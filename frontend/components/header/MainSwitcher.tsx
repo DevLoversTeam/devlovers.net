@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
 
 import { UnifiedHeader } from '@/components/header/UnifiedHeader';
+import { useAuth } from '@/hooks/useAuth';
 import { locales } from '@/i18n/config';
 
 function isShopPath(pathname: string): boolean {
@@ -52,20 +53,20 @@ function isLeaderboardPath(pathname: string): boolean {
 
 type MainSwitcherProps = {
   children: ReactNode;
-  userExists: boolean;
-  showAdminLink?: boolean;
+  enableAdminFeature?: boolean;
   blogCategories?: Array<{ _id: string; title: string }>;
 };
 
 export function MainSwitcher({
   children,
-  userExists,
-  showAdminLink = false,
+  enableAdminFeature = false,
   blogCategories = [],
 }: MainSwitcherProps) {
+  const { userExists, isAdmin } = useAuth();
   const pathname = usePathname();
   const isQa = isQaPath(pathname);
   const isHome = isHomePath(pathname);
+  const showAdminLink = userExists && isAdmin && enableAdminFeature;
 
   if (isShopPath(pathname)) return <>{children}</>;
 

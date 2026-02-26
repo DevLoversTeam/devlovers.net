@@ -6,5 +6,14 @@ import { getCurrentUser } from '@/lib/auth';
 
 export async function GET() {
   const user = await getCurrentUser();
-  return NextResponse.json({ user }, { status: 200 });
+  const payload = user
+    ? { id: user.id, role: user.role, username: user.username }
+    : null;
+
+  return NextResponse.json(payload, {
+    status: 200,
+    headers: {
+      'Cache-Control': 'no-store',
+    },
+  });
 }
