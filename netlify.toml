@@ -7,7 +7,7 @@
   node_bundler = "esbuild"
 
 [build.environment]
-  NODE_VERSION = "20.11.1"
+  NODE_VERSION = "20.19.0"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
