@@ -22,6 +22,7 @@ import {
   PASSWORD_MIN_LEN,
   PASSWORD_POLICY_REGEX,
 } from '@/lib/auth/signup-constraints';
+import { broadcastAuthUpdated } from '@/lib/auth-sync';
 
 type SignupFormProps = {
   locale: string;
@@ -173,6 +174,7 @@ export function SignupForm({ locale, returnTo }: SignupFormProps) {
         return;
       }
 
+      broadcastAuthUpdated();
       window.location.href = returnTo || `/${locale}/dashboard`;
     } catch {
       setError(t('errors.networkError'));
