@@ -54,18 +54,18 @@ export default function QuizzesSection({
     Object.keys(userProgressMap).length > 0
   );
   
-    useEffect(() => {
-    fetch('/api/quiz/progress')
-      .then(res => res.ok ? res.json() : {})
-      .then(data => {
-        if (Object.keys(data).length > 0) {
-          setProgressMap(data);
-          setProgressLoaded(true);
-        }
-      })
-      .catch(() => {});
+   useEffect(() => {
+  fetch('/api/quiz/progress')
+    .then(res => res.ok ? res.json() : {})
+    .then(data => {
+      setProgressMap(data);
+      setProgressLoaded(true);
+    })
+    .catch(() => {
+      setProgressLoaded(true);
+    });
   }, []);
-    
+      
   const DEFAULT_CATEGORY = categoryData[0]?.slug || 'git';
 
   const categoryFromUrl = searchParams.get('category');
