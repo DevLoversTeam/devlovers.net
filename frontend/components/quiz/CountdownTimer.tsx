@@ -21,22 +21,20 @@ export function CountdownTimer({
 }: CountdownTimerProps) {
   const t = useTranslations('quiz.timer');
   const endTime = startedAt.getTime() + timeLimitSeconds * 1000;
-  const [remainingSeconds, setRemainingSeconds] = useState(timeLimitSeconds);
-  const [isSynced, setIsSynced] = useState(false);
-  const [prevEndTime, setPrevEndTime] = useState(endTime);
+  // Timer needs current time on mount to show correct remaining (e.g. after language switch restore).
+  const [remainingSeconds, setRemainingSeconds] = useState(() =>
+    Math.max(0, Math.floor((endTime - Date.now()) / 1000))
+  );
 
-  if (endTime !== prevEndTime) {
-    setPrevEndTime(endTime);
-    setIsSynced(false);
-    setRemainingSeconds(timeLimitSeconds);
-  }
+  const [isSynced, setIsSynced] = useState(false);
+
 
   useEffect(() => {
     if (!isActive) return;
 
     let synced = false;
 
-    const interval = setInterval(() => {
+    const tick = () => {
       const now = Date.now();
       const remaining = Math.max(0, Math.floor((endTime - now) / 1000));
 
@@ -48,12 +46,16 @@ export function CountdownTimer({
       }
 
       if (remaining === 0) {
-        clearInterval(interval);
+        clearInterval(intervalId);
         queueMicrotask(onTimeUp);
       }
-    }, 100);
+    };
 
-    return () => clearInterval(interval);
+    const intervalId = setInterval(tick, 1000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
   }, [isActive, onTimeUp, endTime]);
 
   useEffect(() => {

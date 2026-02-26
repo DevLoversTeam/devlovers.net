@@ -3,7 +3,6 @@ import { Ban, FileText, TriangleAlert, UserRound } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import {
-  useCallback,
   useEffect,
   useReducer,
   useState,
@@ -24,8 +23,13 @@ import { Link } from '@/i18n/routing';
 import { savePendingQuizResult } from '@/lib/quiz/guest-quiz';
 import {
   clearQuizSession,
+  loadQuizSession,
   type QuizSessionData,
 } from '@/lib/quiz/quiz-session';
+import {
+  getQuizReloadKey,
+  QUIZ_ALLOW_RESTORE_KEY,
+} from '@/lib/quiz/quiz-storage-keys';
 
 import { CountdownTimer } from './CountdownTimer';
 import { QuizProgress } from './QuizProgress';
@@ -180,16 +184,44 @@ export function QuizContainer({
     : '#3B82F6';
   const [isStarting, setIsStarting] = useState(false);
   const [isPending, startTransition] = useTransition();
-  const [state, dispatch] = useReducer(quizReducer, {
-    status: 'rules',
-    currentIndex: 0,
-    answers: [],
-    questionStatus: 'answering',
-    selectedAnswerId: null,
-    startedAt: null,
-    pointsAwarded: null,
-    attemptId: null,
-    isIncomplete: false,
+  const [state, dispatch] = useReducer(quizReducer, quizId, (id) => {
+    const defaultState: QuizState = {
+      status: 'rules',
+      currentIndex: 0,
+      answers: [],
+      questionStatus: 'answering',
+      selectedAnswerId: null,
+      startedAt: null,
+      pointsAwarded: null,
+      attemptId: null,
+      isIncomplete: false,
+    };
+
+    if (typeof window === 'undefined') return defaultState;
+
+    const allowRestore = sessionStorage.getItem(QUIZ_ALLOW_RESTORE_KEY);
+    const reloadKey = getQuizReloadKey(id);
+    const isReload = sessionStorage.getItem(reloadKey);
+
+    if (!allowRestore && !isReload) return defaultState;
+
+    const saved = loadQuizSession(id);
+    if (!saved) return defaultState;
+
+    return {
+      status: saved.status,
+      currentIndex: saved.currentIndex,
+      answers: saved.answers.map(a => ({
+        ...a,
+        answeredAt: new Date(a.answeredAt),
+      })),
+      questionStatus: saved.questionStatus,
+      selectedAnswerId: saved.selectedAnswerId,
+      startedAt: saved.startedAt ? new Date(saved.startedAt) : null,
+      pointsAwarded: saved.pointsAwarded ?? null,
+      attemptId: saved.attemptId ?? null,
+      isIncomplete: saved.isIncomplete ?? false,
+    };
   });
   const [showExitModal, setShowExitModal] = useState(false);
   const [isVerifyingAnswer, setIsVerifyingAnswer] = useState(false);
@@ -205,14 +237,9 @@ export function QuizContainer({
   const currentQuestion = questions[state.currentIndex];
   const totalQuestions = questions.length;
 
-  const handleRestoreSession = useCallback((data: QuizSessionData) => {
-    dispatch({ type: 'RESTORE_SESSION', payload: data });
-  }, []);
-
   useQuizSession({
     quizId,
     state,
-    onRestore: handleRestoreSession,
   });
 
   const { markQuitting } = useQuizGuards({
