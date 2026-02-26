@@ -1,5 +1,4 @@
 import groq from 'groq';
-import { unstable_noStore as noStore } from 'next/cache';
 import { getTranslations } from 'next-intl/server';
 
 import { client } from '@/client';
@@ -7,7 +6,7 @@ import BlogFilters from '@/components/blog/BlogFilters';
 import { BlogPageHeader } from '@/components/blog/BlogPageHeader';
 import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
 
-export const revalidate = 0;
+export const revalidate = 3600;
 
 export async function generateMetadata({
   params,
@@ -25,19 +24,13 @@ export async function generateMetadata({
 
 export default async function BlogPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  noStore();
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'blog' });
-  const sp = searchParams ? await searchParams : undefined;
-  const authorParam = typeof sp?.author === 'string' ? sp.author.trim() : '';
-  const hasAuthorFilter = authorParam.length > 0;
 
-  const posts = await client.withConfig({ useCdn: false }).fetch(
+  const posts = await client.fetch(
     groq`
       *[_type == "post" && defined(slug.current)]
         | order(coalesce(publishedAt, _createdAt) desc) {
@@ -74,7 +67,7 @@ export default async function BlogPage({
     `,
     { locale }
   );
-  const categories = await client.withConfig({ useCdn: false }).fetch(
+  const categories = await client.fetch(
     groq`
       *[_type == "category"] | order(orderRank asc) {
         _id,
@@ -87,9 +80,7 @@ export default async function BlogPage({
   return (
     <DynamicGridBackground className="bg-gray-50 py-10 transition-colors duration-300 dark:bg-transparent">
       <main className="relative z-10 mx-auto max-w-7xl px-4 pt-6 pb-12 sm:px-6 lg:px-8">
-        {!hasAuthorFilter && (
-          <BlogPageHeader title={t('title')} subtitle={t('subtitle')} />
-        )}
+        <BlogPageHeader title={t('title')} subtitle={t('subtitle')} />
         <BlogFilters
           posts={posts}
           categories={categories}

@@ -19,6 +19,7 @@ import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
+import { useAuth } from '@/hooks/useAuth';
 import { Link } from '@/i18n/routing';
 import {
   getCachedExplanation,
@@ -160,8 +161,8 @@ export default function AIWordHelper({
   );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const { userExists, loading: isCheckingAuth } = useAuth();
+  const isAuthenticated = userExists;
   const [rateLimitState, setRateLimitState] = useState<RateLimitState>({
     isRateLimited: false,
     resetIn: 0,
@@ -185,25 +186,6 @@ export default function AIWordHelper({
   });
 
   const modalRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const checkAuth = async () => {
-      setIsCheckingAuth(true);
-      try {
-        const response = await fetch('/api/auth/me');
-        const data = await response.json();
-        setIsAuthenticated(Boolean(data.user));
-      } catch {
-        setIsAuthenticated(false);
-      } finally {
-        setIsCheckingAuth(false);
-      }
-    };
-
-    checkAuth();
-  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen) {
