@@ -3,6 +3,7 @@ import { and, eq, inArray, isNull, lt, ne, or, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { orders } from '@/db/schema/shop';
+import { logDebug } from '@/lib/logging';
 import { type PaymentStatus } from '@/lib/shop/payments';
 
 import { restockOrder } from './restock';
@@ -63,62 +64,74 @@ export async function restockStalePendingOrders(options?: {
   const cutoff = new Date(Date.now() - olderThanMinutes * 60 * 1000);
 
   let processed = 0;
+  let loopCount = 0;
   const runId = crypto.randomUUID();
 
   while (true) {
     if (Date.now() >= deadlineMs) break;
+    loopCount += 1;
 
     const now = new Date();
     const claimExpiresAt = new Date(Date.now() + claimTtlMinutes * 60 * 1000);
 
-    const baseConditions = [
-      eq(orders.paymentProvider, 'stripe'),
-      inArray(orders.paymentStatus, [
-        'pending',
-        'requires_payment',
-      ] as PaymentStatus[]),
-      eq(orders.stockRestored, false),
-      isNull(orders.restockedAt),
-      ne(orders.inventoryStatus, 'released'),
-      or(
-        isNull(orders.sweepClaimExpiresAt),
-        lt(orders.sweepClaimExpiresAt, now)
-      ),
-    ];
-    if (!hasExplicitIds) {
-      baseConditions.push(lt(orders.createdAt, cutoff));
-    }
+    const claimed = await db.transaction(async tx => {
+      const baseConditions = [
+        eq(orders.paymentProvider, 'stripe'),
+        inArray(orders.paymentStatus, [
+          'pending',
+          'requires_payment',
+        ] as PaymentStatus[]),
+        eq(orders.stockRestored, false),
+        isNull(orders.restockedAt),
+        ne(orders.inventoryStatus, 'released'),
+        or(
+          isNull(orders.sweepClaimExpiresAt),
+          lt(orders.sweepClaimExpiresAt, now)
+        ),
+      ];
+      if (!hasExplicitIds) {
+        baseConditions.push(lt(orders.createdAt, cutoff));
+      }
 
-    if (hasExplicitIds && options?.orderIds?.length) {
-      baseConditions.push(inArray(orders.id, options.orderIds));
-    }
+      if (hasExplicitIds && options?.orderIds?.length) {
+        baseConditions.push(inArray(orders.id, options.orderIds));
+      }
 
-    const claimable = db
-      .select({ id: orders.id })
-      .from(orders)
-      .where(and(...baseConditions))
-      .orderBy(orders.createdAt)
-      .limit(batchSize);
+      const claimable = tx
+        .select({ id: orders.id })
+        .from(orders)
+        .where(and(...baseConditions))
+        .orderBy(orders.createdAt)
+        .limit(batchSize)
+        .for('update', { skipLocked: true });
 
-    const claimed = await db
-      .update(orders)
-      .set({
-        sweepClaimedAt: now,
-        sweepClaimExpiresAt: claimExpiresAt,
-        sweepRunId: runId,
-        sweepClaimedBy: workerId,
-        updatedAt: now,
-      })
-      .where(
-        and(
-          inArray(orders.id, claimable),
-          or(
-            isNull(orders.sweepClaimExpiresAt),
-            lt(orders.sweepClaimExpiresAt, now)
+      return tx
+        .update(orders)
+        .set({
+          sweepClaimedAt: now,
+          sweepClaimExpiresAt: claimExpiresAt,
+          sweepRunId: runId,
+          sweepClaimedBy: workerId,
+          updatedAt: now,
+        })
+        .where(
+          and(
+            inArray(orders.id, claimable),
+            or(
+              isNull(orders.sweepClaimExpiresAt),
+              lt(orders.sweepClaimExpiresAt, now)
+            )
           )
         )
-      )
-      .returning({ id: orders.id });
+        .returning({ id: orders.id });
+    });
+
+    logDebug('orders_sweep_claim_batch', {
+      sweep: 'stale_pending',
+      runId,
+      loopCount,
+      claimedCount: claimed.length,
+    });
 
     if (!claimed.length) break;
 
@@ -185,66 +198,78 @@ export async function restockStuckReservingOrders(options?: {
   const cutoff = new Date(Date.now() - olderThanMinutes * 60 * 1000);
 
   let processed = 0;
+  let loopCount = 0;
   const runId = crypto.randomUUID();
 
   while (true) {
     if (Date.now() >= deadlineMs) break;
+    loopCount += 1;
 
     const now = new Date();
     const claimExpiresAt = new Date(Date.now() + claimTtlMinutes * 60 * 1000);
 
-    const baseConditions = [
-      eq(orders.paymentProvider, 'stripe'),
+    const claimed = await db.transaction(async tx => {
+      const baseConditions = [
+        eq(orders.paymentProvider, 'stripe'),
 
-      inArray(orders.paymentStatus, [
-        'pending',
-        'requires_payment',
-      ] as PaymentStatus[]),
+        inArray(orders.paymentStatus, [
+          'pending',
+          'requires_payment',
+        ] as PaymentStatus[]),
 
-      inArray(orders.inventoryStatus, [
-        'reserving',
-        'release_pending',
-      ] as const),
+        inArray(orders.inventoryStatus, [
+          'reserving',
+          'release_pending',
+        ] as const),
 
-      eq(orders.stockRestored, false),
-      isNull(orders.restockedAt),
+        eq(orders.stockRestored, false),
+        isNull(orders.restockedAt),
 
-      lt(orders.createdAt, cutoff),
+        lt(orders.createdAt, cutoff),
 
-      or(
-        isNull(orders.sweepClaimExpiresAt),
-        lt(orders.sweepClaimExpiresAt, now)
-      ),
-    ];
+        or(
+          isNull(orders.sweepClaimExpiresAt),
+          lt(orders.sweepClaimExpiresAt, now)
+        ),
+      ];
 
-    const claimable = db
-      .select({ id: orders.id })
-      .from(orders)
-      .where(and(...baseConditions))
-      .orderBy(orders.createdAt)
-      .limit(batchSize);
+      const claimable = tx
+        .select({ id: orders.id })
+        .from(orders)
+        .where(and(...baseConditions))
+        .orderBy(orders.createdAt)
+        .limit(batchSize)
+        .for('update', { skipLocked: true });
 
-    const claimed = await db
-      .update(orders)
-      .set({
-        sweepClaimedAt: now,
-        sweepClaimExpiresAt: claimExpiresAt,
-        sweepRunId: runId,
-        sweepClaimedBy: workerId,
-        failureCode: sql`coalesce(${orders.failureCode}, 'STUCK_RESERVING_TIMEOUT')`,
-        failureMessage: sql`coalesce(${orders.failureMessage}, 'Order timed out while reserving inventory.')`,
-        updatedAt: now,
-      })
-      .where(
-        and(
-          inArray(orders.id, claimable),
-          or(
-            isNull(orders.sweepClaimExpiresAt),
-            lt(orders.sweepClaimExpiresAt, now)
+      return tx
+        .update(orders)
+        .set({
+          sweepClaimedAt: now,
+          sweepClaimExpiresAt: claimExpiresAt,
+          sweepRunId: runId,
+          sweepClaimedBy: workerId,
+          failureCode: sql`coalesce(${orders.failureCode}, 'STUCK_RESERVING_TIMEOUT')`,
+          failureMessage: sql`coalesce(${orders.failureMessage}, 'Order timed out while reserving inventory.')`,
+          updatedAt: now,
+        })
+        .where(
+          and(
+            inArray(orders.id, claimable),
+            or(
+              isNull(orders.sweepClaimExpiresAt),
+              lt(orders.sweepClaimExpiresAt, now)
+            )
           )
         )
-      )
-      .returning({ id: orders.id });
+        .returning({ id: orders.id });
+    });
+
+    logDebug('orders_sweep_claim_batch', {
+      sweep: 'stuck_reserving',
+      runId,
+      loopCount,
+      claimedCount: claimed.length,
+    });
 
     if (!claimed.length) break;
 
@@ -313,58 +338,70 @@ export async function restockStaleNoPaymentOrders(options?: {
   const cutoff = new Date(Date.now() - olderThanMinutes * 60 * 1000);
 
   let processed = 0;
+  let loopCount = 0;
   const runId = crypto.randomUUID();
 
   while (true) {
     if (Date.now() >= deadlineMs) break;
+    loopCount += 1;
 
     const now = new Date();
     const claimExpiresAt = new Date(Date.now() + claimTtlMinutes * 60 * 1000);
 
-    const baseConditions = [
-      eq(orders.paymentProvider, 'none'),
-      eq(orders.stockRestored, false),
-      isNull(orders.restockedAt),
-      lt(orders.createdAt, cutoff),
+    const claimed = await db.transaction(async tx => {
+      const baseConditions = [
+        eq(orders.paymentProvider, 'none'),
+        eq(orders.stockRestored, false),
+        isNull(orders.restockedAt),
+        lt(orders.createdAt, cutoff),
 
-      inArray(orders.inventoryStatus, [
-        'none',
-        'reserving',
-        'release_pending',
-      ] as const),
+        inArray(orders.inventoryStatus, [
+          'none',
+          'reserving',
+          'release_pending',
+        ] as const),
 
-      or(
-        isNull(orders.sweepClaimExpiresAt),
-        lt(orders.sweepClaimExpiresAt, now)
-      ),
-    ];
+        or(
+          isNull(orders.sweepClaimExpiresAt),
+          lt(orders.sweepClaimExpiresAt, now)
+        ),
+      ];
 
-    const claimable = db
-      .select({ id: orders.id })
-      .from(orders)
-      .where(and(...baseConditions))
-      .orderBy(orders.createdAt)
-      .limit(batchSize);
+      const claimable = tx
+        .select({ id: orders.id })
+        .from(orders)
+        .where(and(...baseConditions))
+        .orderBy(orders.createdAt)
+        .limit(batchSize)
+        .for('update', { skipLocked: true });
 
-    const claimed = await db
-      .update(orders)
-      .set({
-        sweepClaimedAt: now,
-        sweepClaimExpiresAt: claimExpiresAt,
-        sweepRunId: runId,
-        sweepClaimedBy: workerId,
-        updatedAt: now,
-      })
-      .where(
-        and(
-          inArray(orders.id, claimable),
-          or(
-            isNull(orders.sweepClaimExpiresAt),
-            lt(orders.sweepClaimExpiresAt, now)
+      return tx
+        .update(orders)
+        .set({
+          sweepClaimedAt: now,
+          sweepClaimExpiresAt: claimExpiresAt,
+          sweepRunId: runId,
+          sweepClaimedBy: workerId,
+          updatedAt: now,
+        })
+        .where(
+          and(
+            inArray(orders.id, claimable),
+            or(
+              isNull(orders.sweepClaimExpiresAt),
+              lt(orders.sweepClaimExpiresAt, now)
+            )
           )
         )
-      )
-      .returning({ id: orders.id });
+        .returning({ id: orders.id });
+    });
+
+    logDebug('orders_sweep_claim_batch', {
+      sweep: 'stale_no_payment',
+      runId,
+      loopCount,
+      claimedCount: claimed.length,
+    });
 
     if (!claimed.length) break;
 
