@@ -12,6 +12,9 @@ import {
 
 const SHOW_DURATION_MS = 10_000;
 const SESSION_KEY = 'onlineCounterShown';
+const ACTIVITY_THROTTLE_MS = 60_000;
+const ACTIVITY_LAST_SENT_AT_KEY = 'onlineCounterActivityLastSentAt';
+const ACTIVITY_LAST_ONLINE_KEY = 'onlineCounterActivityLastOnline';
 
 type OnlineCounterPopupProps = {
   ctaRef: React.RefObject<HTMLAnchorElement | null>;
@@ -19,7 +22,16 @@ type OnlineCounterPopupProps = {
 
 export function OnlineCounterPopup({ ctaRef }: OnlineCounterPopupProps) {
   const t = useTranslations('onlineCounter');
-  const [online, setOnline] = useState<number | null>(null);
+  const [online, setOnline] = useState<number | null>(() => {
+    try {
+      const raw = sessionStorage.getItem(ACTIVITY_LAST_ONLINE_KEY);
+      if (raw === null) return null;
+      const n = Number(raw);
+      return Number.isFinite(n) ? n : null;
+    } catch {
+      return null;
+    }
+  });
   const [show, setShow] = useState(false);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
 
@@ -30,19 +42,54 @@ export function OnlineCounterPopup({ ctaRef }: OnlineCounterPopupProps) {
         return r.json();
       })
       .then(data => {
-        if (typeof data.online === 'number') setOnline(data.online);
+        if (typeof data.online === 'number') {
+          setOnline(data.online);
+          try {
+            sessionStorage.setItem(
+              ACTIVITY_LAST_ONLINE_KEY,
+              String(data.online)
+            );
+          } catch {
+            // Best effort only.
+          }
+        }
       })
       .catch(() => {});
   }, []);
 
   useEffect(() => {
-    const alreadyShown = sessionStorage.getItem(SESSION_KEY);
+    let alreadyShown: string | null = null;
+    let shouldSendActivity = true;
+    const now = Date.now();
 
-    fetchActivity();
+    try {
+      alreadyShown = sessionStorage.getItem(SESSION_KEY);
+
+      const lastSentAtRaw = sessionStorage.getItem(ACTIVITY_LAST_SENT_AT_KEY);
+      const lastSentAt =
+        lastSentAtRaw === null ? NaN : Number.parseInt(lastSentAtRaw, 10);
+
+      if (
+        Number.isFinite(lastSentAt) &&
+        now - lastSentAt < ACTIVITY_THROTTLE_MS
+      ) {
+        shouldSendActivity = false;
+      } else {
+        sessionStorage.setItem(ACTIVITY_LAST_SENT_AT_KEY, String(now));
+      }
+    } catch {
+      shouldSendActivity = true;
+    }
+
+    if (shouldSendActivity) fetchActivity();
 
     if (!alreadyShown) {
       const showTimer = setTimeout(() => setShow(true), 500);
-      sessionStorage.setItem(SESSION_KEY, '1');
+      try {
+        sessionStorage.setItem(SESSION_KEY, '1');
+      } catch {
+        // Best effort only.
+      }
 
       hideTimerRef.current = setTimeout(
         () => setShow(false),

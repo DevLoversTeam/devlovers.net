@@ -7,6 +7,7 @@ import { db } from '@/db';
 import { activeSessions } from '@/db/schema/sessions';
 
 const SESSION_TIMEOUT_MINUTES = 15;
+const HEARTBEAT_THROTTLE_MS = 60_000;
 
 export async function POST() {
   try {
@@ -17,15 +18,19 @@ export async function POST() {
       sessionId = randomUUID();
     }
 
+    const now = new Date();
+    const heartbeatThreshold = new Date(now.getTime() - HEARTBEAT_THROTTLE_MS);
+
     await db
       .insert(activeSessions)
       .values({
         sessionId,
-        lastActivity: new Date(),
+        lastActivity: now,
       })
       .onConflictDoUpdate({
         target: activeSessions.sessionId,
-        set: { lastActivity: new Date() },
+        set: { lastActivity: now },
+        setWhere: lt(activeSessions.lastActivity, heartbeatThreshold),
       });
 
     if (Math.random() < 0.05) {
@@ -44,7 +49,7 @@ export async function POST() {
 
     const result = await db
       .select({
-        total: sql<number>`count(distinct session_id)`,
+        total: sql<number>`count(*)`,
       })
       .from(activeSessions)
       .where(gte(activeSessions.lastActivity, countThreshold));
