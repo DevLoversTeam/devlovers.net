@@ -16,17 +16,11 @@ export function getInventoryCommittedForShippingStatuses(): readonly InventorySt
 export function isInventoryCommittedForShipping(
   status: InventoryStatusValue | string | null | undefined
 ): boolean {
-  if (!status) return false;
-  return INVENTORY_COMMITTED_FOR_SHIPPING.includes(
-    status as InventoryStatusValue
-  );
+  return status === 'reserved';
 }
 
 export function inventoryCommittedForShippingSql(
   columnReference: SQLWrapper
 ): SQL {
-  return sql`${columnReference} in (${sql.join(
-    INVENTORY_COMMITTED_FOR_SHIPPING.map(value => sql`${value}`),
-    sql`, `
-  )})`;
+  return sql`${columnReference} = 'reserved'`;
 }

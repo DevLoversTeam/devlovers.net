@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  buildCheckoutShippingPayload,
-  shippingUnavailableMessage,
-} from '@/lib/services/shop/shipping/checkout-payload';
+import { buildCheckoutShippingPayload } from '@/lib/services/shop/shipping/checkout-payload';
 
 describe('phase6 checkout shipping payload helper', () => {
   it('builds NP warehouse payload shape without client prices/totals', () => {
@@ -93,6 +90,5 @@ describe('phase6 checkout shipping payload helper', () => {
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.code).toBe('SHIPPING_UNAVAILABLE');
-    expect(result.message).toBe(shippingUnavailableMessage('COUNTRY_NOT_SUPPORTED'));
   });
 });

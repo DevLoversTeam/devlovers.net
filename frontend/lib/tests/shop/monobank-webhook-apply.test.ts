@@ -4,7 +4,12 @@ import { and, eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { db } from '@/db';
-import { monobankEvents, orders, paymentAttempts, shippingShipments } from '@/db/schema';
+import {
+  monobankEvents,
+  orders,
+  paymentAttempts,
+  shippingShipments,
+} from '@/db/schema';
 import { buildMonobankAttemptIdempotencyKey } from '@/lib/services/orders/attempt-idempotency';
 import { applyMonoWebhookEvent } from '@/lib/services/orders/monobank-webhook';
 import { toDbMoney } from '@/lib/shop/money';

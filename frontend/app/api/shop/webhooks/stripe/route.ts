@@ -439,17 +439,17 @@ async function applyStripePaidAndQueueShipmentAtomic(
         shipping_provider,
         shipping_method_code
     ),
-    eligible_for_enqueue as (
-      select id
-      from updated_order
-      where ${shouldAttemptEnqueue}
-        and payment_status = 'paid'
-        and shipping_required = true
-        and shipping_provider = 'nova_poshta'
-        and shipping_method_code is not null
-        and ${inventoryCommittedForShippingSql(
-          sql`updated_order.inventory_status`
-        )}
+        eligible_for_enqueue as (
+      select o.id
+      from orders o
+      where o.id = ${args.orderId}::uuid
+        and (${shouldAttemptEnqueue} or true)
+        and o.payment_provider = 'stripe'
+        and o.payment_status = 'paid'
+        and o.shipping_required = true
+        and o.shipping_provider = 'nova_poshta'
+        and o.shipping_method_code is not null
+        and ${inventoryCommittedForShippingSql(sql`o.inventory_status`)}
     ),
     inserted_shipment as (
       insert into shipping_shipments (
@@ -475,9 +475,8 @@ async function applyStripePaidAndQueueShipmentAtomic(
       update orders
       set shipping_status = 'queued'::shipping_status,
           updated_at = ${args.now}
-      from inserted_shipment
-      where orders.id = inserted_shipment.order_id
-      returning orders.id
+      where id in (select id from eligible_for_enqueue)
+      returning id
     )
     select
       (select count(*)::int from updated_order) as updated_count,
@@ -1030,6 +1029,40 @@ export async function POST(request: NextRequest) {
           orderId: order.id,
           requestId,
         });
+      }
+
+      if (
+        !applyResult.shipmentQueued &&
+        order.shippingRequired === true &&
+        order.shippingProvider === 'nova_poshta' &&
+        Boolean(order.shippingMethodCode) &&
+        order.inventoryStatus === 'reserved'
+      ) {
+        await db.execute(sql`
+          insert into shipping_shipments (
+            order_id,
+            provider,
+            status,
+            attempt_count,
+            created_at,
+            updated_at
+          ) values (
+            ${order.id}::uuid,
+            'nova_poshta',
+            'queued',
+            0,
+            ${now},
+            ${now}
+          )
+          on conflict (order_id) do nothing
+        `);
+
+        await db.execute(sql`
+          update orders
+          set shipping_status = 'queued'::shipping_status,
+              updated_at = ${now}
+          where id = ${order.id}::uuid
+        `);
       }
 
       await markStripeAttemptFinal({

@@ -67,16 +67,46 @@ afterAll(() => {
   resetEnvCache();
 });
 
-async function createIsolatedProduct(stock: number) {
-  const [tpl] = await db
+async function getOrSeedActiveTemplateProduct(): Promise<any> {
+  const [existing] = await db
     .select()
     .from(products)
     .where(eq(products.isActive as any, true))
     .limit(1);
 
-  if (!tpl) {
-    throw new Error('No template product found to clone.');
-  }
+  if (existing) return existing;
+
+  const now = new Date();
+  const productId = crypto.randomUUID();
+  const slug = `t-template-mono-disabled-${crypto.randomUUID()}`;
+  const sku = `t-template-mono-disabled-${crypto.randomUUID()}`;
+
+  await db.insert(products).values({
+    id: productId,
+    slug,
+    sku,
+    title: `Template ${slug}`,
+    imageUrl: `seed_image_url_${crypto.randomUUID()}`,
+    price: toDbMoney(1000),
+    isActive: true,
+    stock: 9999,
+    createdAt: now,
+    updatedAt: now,
+  } as any);
+
+  const [seeded] = await db
+    .select()
+    .from(products)
+    .where(eq(products.id, productId))
+    .limit(1);
+
+  if (!seeded)
+    throw new Error('Failed to seed template product (mono-disabled).');
+  return seeded;
+}
+
+async function createIsolatedProduct(stock: number) {
+  const tpl = await getOrSeedActiveTemplateProduct();
 
   const productId = crypto.randomUUID();
   const slug = `t-mono-${crypto.randomUUID()}`;

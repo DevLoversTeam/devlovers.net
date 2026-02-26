@@ -220,10 +220,14 @@ async function seedTemplateProductIfMissing(): Promise<any> {
       case 'smallint':
       case 'integer':
       case 'bigint':
+        insertVals.push(sql`0`);
+        break;
+
       case 'numeric':
       case 'real':
       case 'double precision':
-        insertVals.push(sql`0`);
+        if (/price/i.test(col)) insertVals.push(sql`1`);
+        else insertVals.push(sql`0`);
         break;
       case 'uuid':
         insertVals.push(sql`${crypto.randomUUID()}::uuid`);
