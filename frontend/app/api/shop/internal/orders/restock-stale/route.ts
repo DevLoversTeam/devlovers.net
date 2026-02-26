@@ -194,14 +194,14 @@ function parseRequestedMinIntervalSeconds(
 function getEnvMinIntervalSeconds(): number {
   if (process.env.NODE_ENV === 'test') return 0;
 
-  const fallback = process.env.NODE_ENV === 'production' ? 300 : 60;
+  const fallback = process.env.NODE_ENV === 'production' ? 900 : 60;
   const n = toFiniteNumber(process.env.INTERNAL_JANITOR_MIN_INTERVAL_SECONDS);
   const v = n === null ? fallback : n;
 
   return clampInt(v, 0, MIN_INTERVAL_SECONDS_MAX);
 }
 
-type GateRow = { next_allowed_at: unknown };
+type GateRow = { next_allowed_at: unknown; updated_at: unknown };
 
 function normalizeDate(x: unknown): Date | null {
   if (!x) return null;
@@ -230,14 +230,19 @@ async function acquireJobSlot(params: {
           last_run_id = ${runId}::uuid,
           updated_at = now()
       WHERE internal_job_state.next_allowed_at <= now()
-    RETURNING next_allowed_at
+    RETURNING next_allowed_at, updated_at
   `);
 
   const rows = (res as any).rows ?? [];
-  if (rows.length > 0) return { ok: true as const };
+  if (rows.length > 0) {
+    return {
+      ok: true as const,
+      lastRunTs: normalizeDate(rows[0]?.updated_at),
+    };
+  }
 
   const res2 = await db.execute<GateRow>(sql`
-    SELECT next_allowed_at
+    SELECT next_allowed_at, updated_at
     FROM internal_job_state
     WHERE job_name = ${jobName}
     LIMIT 1
@@ -245,8 +250,9 @@ async function acquireJobSlot(params: {
 
   const rows2 = (res2 as any).rows ?? [];
   const nextAllowedAt = normalizeDate(rows2[0]?.next_allowed_at);
+  const lastRunTs = normalizeDate(rows2[0]?.updated_at);
 
-  return { ok: false as const, nextAllowedAt };
+  return { ok: false as const, nextAllowedAt, lastRunTs };
 }
 
 export async function POST(request: NextRequest) {
@@ -388,10 +394,11 @@ export async function POST(request: NextRequest) {
   const envMinIntervalSeconds = getEnvMinIntervalSeconds();
   const requestedMinIntervalSeconds = requestedMinIntervalParsed;
 
-  const minIntervalSeconds = Math.max(
+  const effectiveIntervalSeconds = Math.max(
     envMinIntervalSeconds,
     requestedMinIntervalSeconds
   );
+  const minIntervalSeconds = effectiveIntervalSeconds;
 
   const runId = crypto.randomUUID();
   const jobName = baseMeta.jobName;
@@ -399,9 +406,11 @@ export async function POST(request: NextRequest) {
 
   const gate = await acquireJobSlot({
     jobName,
-    effectiveMinIntervalSeconds: minIntervalSeconds,
+    effectiveMinIntervalSeconds: effectiveIntervalSeconds,
     runId,
   });
+  const nowTs = new Date().toISOString();
+  const lastRunTs = gate.lastRunTs ? gate.lastRunTs.toISOString() : null;
 
   if (!gate.ok) {
     const retryAfterSeconds = gate.nextAllowedAt
@@ -416,6 +425,10 @@ export async function POST(request: NextRequest) {
       runId,
       workerId,
       retryAfterSeconds,
+      effectiveIntervalSeconds,
+      gateDecision: 'skipped',
+      nowTs,
+      lastRunTs,
       minIntervalSeconds,
     });
 
@@ -479,6 +492,10 @@ export async function POST(request: NextRequest) {
       batchSize: policy.batchSize,
       appliedPolicy: policy,
       maxRuntimeMs,
+      effectiveIntervalSeconds,
+      gateDecision: 'ran',
+      nowTs,
+      lastRunTs,
       minIntervalSeconds,
       runtimeMs: Date.now() - startedAtMs,
     });
