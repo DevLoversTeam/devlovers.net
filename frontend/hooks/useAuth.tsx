@@ -11,10 +11,11 @@ import {
   useState,
 } from 'react';
 
+import { subscribeToAuthUpdates } from '@/lib/auth-sync';
+
 type AuthApiUser = {
   id: string;
   role: 'user' | 'admin';
-  username: string;
 } | null;
 
 type AuthContextValue = {
@@ -22,12 +23,16 @@ type AuthContextValue = {
   userExists: boolean;
   userId: string | null;
   isAdmin: boolean;
-  username: string | null;
   loading: boolean;
   refresh: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+let authUserCache: AuthApiUser | undefined;
+let authUserCacheAt = 0;
+let inFlightAuthPromise: Promise<AuthApiUser> | null = null;
+
+const AUTH_CACHE_TTL_MS = 60_000;
 
 async function fetchAuth(signal?: AbortSignal): Promise<AuthApiUser> {
   const response = await fetch('/api/auth/me', {
@@ -44,22 +49,49 @@ async function fetchAuth(signal?: AbortSignal): Promise<AuthApiUser> {
   return (await response.json()) as AuthApiUser;
 }
 
+function isCacheFresh(): boolean {
+  if (authUserCache === undefined) return false;
+  return Date.now() - authUserCacheAt < AUTH_CACHE_TTL_MS;
+}
+
+function fetchAuthDeduped(): Promise<AuthApiUser> {
+  if (inFlightAuthPromise) {
+    return inFlightAuthPromise;
+  }
+
+  inFlightAuthPromise = fetchAuth().finally(() => {
+    inFlightAuthPromise = null;
+  });
+
+  return inFlightAuthPromise;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthApiUser>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<AuthApiUser>(authUserCache ?? null);
+  const [loading, setLoading] = useState(authUserCache === undefined);
   const latestRequestIdRef = useRef(0);
 
-  const runAuthRequest = useCallback(async (signal?: AbortSignal) => {
+  const runAuthRequest = useCallback(async (options?: { force?: boolean }) => {
+    const force = options?.force ?? false;
+
+    if (!force && isCacheFresh()) {
+      setUser(authUserCache ?? null);
+      setLoading(false);
+      return;
+    }
+
     const requestId = ++latestRequestIdRef.current;
-    setLoading(true);
+    setLoading(authUserCache === undefined || force);
 
     try {
-      const nextUser = await fetchAuth(signal);
+      const nextUser = await fetchAuthDeduped();
 
       if (latestRequestIdRef.current !== requestId) {
         return;
       }
 
+      authUserCache = nextUser;
+      authUserCacheAt = Date.now();
       setUser(nextUser);
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') {
@@ -70,6 +102,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
+      authUserCache = null;
+      authUserCacheAt = Date.now();
       setUser(null);
     } finally {
       if (latestRequestIdRef.current === requestId) {
@@ -79,17 +113,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refresh = useCallback(async () => {
-    await runAuthRequest();
+    await runAuthRequest({ force: true });
   }, [runAuthRequest]);
 
   useEffect(() => {
-    const controller = new AbortController();
+    void runAuthRequest();
+  }, [runAuthRequest]);
 
-    void runAuthRequest(controller.signal);
-
-    return () => {
-      controller.abort();
+  useEffect(() => {
+    const handleFocus = () => {
+      void runAuthRequest();
     };
+
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [runAuthRequest]);
+
+  useEffect(() => {
+    return subscribeToAuthUpdates(() => {
+      void runAuthRequest({ force: true });
+    });
   }, [runAuthRequest]);
 
   const value = useMemo<AuthContextValue>(
@@ -98,7 +143,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       userExists: Boolean(user),
       userId: user?.id ?? null,
       isAdmin: user?.role === 'admin',
-      username: user?.username ?? null,
       loading,
       refresh,
     }),

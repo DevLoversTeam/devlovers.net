@@ -2,13 +2,11 @@ import 'server-only';
 
 import { NextResponse } from 'next/server';
 
-import { getCurrentUser } from '@/lib/auth';
+import { getAuthSession } from '@/lib/auth';
 
 export async function GET() {
-  const user = await getCurrentUser();
-  const payload = user
-    ? { id: user.id, role: user.role, username: user.username }
-    : null;
+  const session = await getAuthSession();
+  const payload = session ? { id: session.id, role: session.role } : null;
 
   return NextResponse.json(payload, {
     status: 200,
