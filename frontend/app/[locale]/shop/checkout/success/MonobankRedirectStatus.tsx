@@ -132,6 +132,27 @@ function normalizeToken(value: string | null | undefined): string | null {
 function parseOrderStatusPayload(payload: unknown): OrderStatusModel | null {
   if (!payload || typeof payload !== 'object') return null;
   const root = payload as Record<string, unknown>;
+
+  if (
+    typeof root.id === 'string' &&
+    root.id.trim() &&
+    root.currency === 'UAH' &&
+    typeof root.totalAmountMinor === 'number' &&
+    Number.isFinite(root.totalAmountMinor) &&
+    typeof root.paymentStatus === 'string' &&
+    root.paymentStatus.trim() &&
+    typeof root.itemsCount === 'number' &&
+    Number.isFinite(root.itemsCount)
+  ) {
+    return {
+      id: root.id,
+      currency: root.currency,
+      totalAmountMinor: root.totalAmountMinor,
+      paymentStatus: root.paymentStatus,
+      itemsCount: root.itemsCount,
+    };
+  }
+
   if (root.success !== true) return null;
 
   const orderRaw = root.order;
@@ -181,6 +202,7 @@ async function fetchOrderStatus(args: {
 }): Promise<StatusResult> {
   try {
     const qp = new URLSearchParams();
+    qp.set('view', 'lite');
     if (args.statusToken) {
       qp.set('statusToken', args.statusToken);
     }
