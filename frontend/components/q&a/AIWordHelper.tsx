@@ -194,7 +194,7 @@ export default function AIWordHelper({
       try {
         const response = await fetch('/api/auth/me');
         const data = await response.json();
-        setIsAuthenticated(Boolean(data.user));
+        setIsAuthenticated(Boolean(data?.id));
       } catch {
         setIsAuthenticated(false);
       } finally {
