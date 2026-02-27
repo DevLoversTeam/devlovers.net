@@ -16,7 +16,10 @@ import {
   cacheSettlementsByQuery,
   cacheWarehousesBySettlement,
 } from '@/lib/services/shop/shipping/nova-poshta-catalog';
-import { internalNpSyncPayloadSchema } from '@/lib/validation/shop-shipping';
+import {
+  getInternalShippingMinIntervalFloorSeconds,
+  internalNpSyncPayloadSchema,
+} from '@/lib/validation/shop-shipping';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -159,14 +162,19 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const effectiveIntervalSeconds = parsed.data.minIntervalSeconds;
+  const requestedMinIntervalSeconds = parsed.data.minIntervalSeconds;
+  const effectiveIntervalSeconds = Math.max(
+    getInternalShippingMinIntervalFloorSeconds(),
+    requestedMinIntervalSeconds
+  );
+  const wasClamped = effectiveIntervalSeconds !== requestedMinIntervalSeconds;
 
   logInfo('shop_shipping_job_interval_applied', {
     ...baseMeta,
     jobName: JOB_NAME,
-    requestedMinIntervalSeconds: effectiveIntervalSeconds,
+    requestedMinIntervalSeconds,
     effectiveIntervalSeconds,
-    wasClamped: false,
+    wasClamped,
   });
 
   const gate = await acquireJobSlot({

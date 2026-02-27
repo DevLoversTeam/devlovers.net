@@ -465,30 +465,45 @@ async function applyStripePaidAndQueueShipmentAtomic(
         ${args.now},
         ${args.now}
       from eligible_for_enqueue
-      on conflict (order_id) do nothing
+      on conflict (order_id) do update
+      set status = 'queued',
+          updated_at = ${args.now}
+      where shipping_shipments.provider = 'nova_poshta'
+        and shipping_shipments.status is distinct from 'queued'
       returning order_id
+    ),
+    queued_order_ids as (
+      select order_id from inserted_shipment
+      union
+      select s.order_id
+      from shipping_shipments s
+      where s.order_id in (select id from eligible_for_enqueue)
+        and s.status = 'queued'
     ),
     mark_queued as (
       update orders
       set shipping_status = 'queued'::shipping_status,
           updated_at = ${args.now}
-      where id in (select id from eligible_for_enqueue)
+      where id in (select order_id from queued_order_ids)
+        and shipping_status is distinct from 'queued'::shipping_status
       returning id
     )
     select
       (select count(*)::int from updated_order) as updated_count,
       (select count(*)::int from inserted_shipment) as inserted_shipment_count,
+      (select count(*)::int from queued_order_ids) as queued_shipment_count,
       (select count(*)::int from mark_queued) as mark_queued_count
   `);
 
   const row = readDbRows<{
     updated_count?: number;
     inserted_shipment_count?: number;
+    queued_shipment_count?: number;
   }>(res)[0];
 
   return {
     applied: Number(row?.updated_count ?? 0) > 0,
-    shipmentQueued: Number(row?.inserted_shipment_count ?? 0) > 0,
+    shipmentQueued: Number(row?.queued_shipment_count ?? 0) > 0,
   };
 }
 
@@ -1052,13 +1067,18 @@ export async function POST(request: NextRequest) {
               ${now},
               ${now}
             )
-            on conflict (order_id) do nothing
+            on conflict (order_id) do update
+            set status = 'queued',
+                updated_at = ${now}
+            where shipping_shipments.provider = 'nova_poshta'
+              and shipping_shipments.status is distinct from 'queued'
             returning order_id
           ),
           existing_shipment as (
             select order_id
             from shipping_shipments
             where order_id = ${order.id}::uuid
+              and status = 'queued'
           ),
           shipment_order_ids as (
             select order_id from ensured_shipment

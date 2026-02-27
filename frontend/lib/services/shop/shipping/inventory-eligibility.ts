@@ -1,4 +1,4 @@
-import { type SQL, sql, type SQLWrapper } from 'drizzle-orm';
+import { inArray, type SQL, sql, type SQLWrapper } from 'drizzle-orm';
 
 import { inventoryStatusEnum } from '@/db/schema/shop';
 
@@ -25,6 +25,5 @@ export function isInventoryCommittedForShipping(
 export function inventoryCommittedForShippingSql(
   columnReference: SQLWrapper
 ): SQL {
-  const values = INVENTORY_COMMITTED_FOR_SHIPPING.map(v => `'${v}'`).join(', ');
-  return sql`${columnReference} IN (${sql.raw(values)})`;
+  return inArray(columnReference, INVENTORY_COMMITTED_FOR_SHIPPING);
 }
