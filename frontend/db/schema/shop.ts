@@ -111,6 +111,14 @@ export const notificationChannelEnum = pgEnum('notification_channel', [
   'sms',
 ]);
 
+export const returnRequestStatusEnum = pgEnum('return_request_status', [
+  'requested',
+  'approved',
+  'rejected',
+  'received',
+  'refunded',
+]);
+
 export const products = pgTable(
   'products',
   {
@@ -943,6 +951,107 @@ export const notificationOutbox = pgTable(
   ]
 );
 
+export const returnRequests = pgTable(
+  'return_requests',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    orderId: uuid('order_id')
+      .notNull()
+      .references(() => orders.id, { onDelete: 'cascade' }),
+    userId: text('user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    status: returnRequestStatusEnum('status').notNull().default('requested'),
+    reason: text('reason'),
+    policyRestock: boolean('policy_restock').notNull().default(true),
+    refundAmountMinor: bigint('refund_amount_minor', { mode: 'number' })
+      .notNull()
+      .default(0),
+    currency: currencyEnum('currency').notNull(),
+    idempotencyKey: varchar('idempotency_key', { length: 128 }).notNull(),
+    approvedAt: timestamp('approved_at', { withTimezone: true, mode: 'date' }),
+    approvedBy: text('approved_by').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    rejectedAt: timestamp('rejected_at', { withTimezone: true, mode: 'date' }),
+    rejectedBy: text('rejected_by').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    receivedAt: timestamp('received_at', { withTimezone: true, mode: 'date' }),
+    receivedBy: text('received_by').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    refundedAt: timestamp('refunded_at', { withTimezone: true, mode: 'date' }),
+    refundedBy: text('refunded_by').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    refundProviderRef: text('refund_provider_ref'),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  table => [
+    uniqueIndex('return_requests_order_id_uq').on(table.orderId),
+    uniqueIndex('return_requests_idempotency_key_uq').on(table.idempotencyKey),
+    index('return_requests_status_created_idx').on(table.status, table.createdAt),
+    index('return_requests_user_id_created_idx').on(table.userId, table.createdAt),
+    check(
+      'return_requests_refund_amount_minor_non_negative_chk',
+      sql`${table.refundAmountMinor} >= 0`
+    ),
+  ]
+);
+
+export const returnItems = pgTable(
+  'return_items',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    returnRequestId: uuid('return_request_id')
+      .notNull()
+      .references(() => returnRequests.id, { onDelete: 'cascade' }),
+    orderId: uuid('order_id')
+      .notNull()
+      .references(() => orders.id, { onDelete: 'cascade' }),
+    orderItemId: uuid('order_item_id').references(() => orderItems.id, {
+      onDelete: 'set null',
+    }),
+    productId: uuid('product_id').references(() => products.id, {
+      onDelete: 'set null',
+    }),
+    quantity: integer('quantity').notNull(),
+    unitPriceMinor: integer('unit_price_minor').notNull(),
+    lineTotalMinor: integer('line_total_minor').notNull(),
+    currency: currencyEnum('currency').notNull(),
+    idempotencyKey: varchar('idempotency_key', { length: 200 }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })
+      .notNull()
+      .defaultNow(),
+  },
+  table => [
+    uniqueIndex('return_items_idempotency_key_uq').on(table.idempotencyKey),
+    index('return_items_return_request_idx').on(table.returnRequestId),
+    index('return_items_order_id_idx').on(table.orderId),
+    index('return_items_product_id_idx').on(table.productId),
+    check('return_items_quantity_positive_chk', sql`${table.quantity} > 0`),
+    check(
+      'return_items_unit_price_minor_non_negative_chk',
+      sql`${table.unitPriceMinor} >= 0`
+    ),
+    check(
+      'return_items_line_total_minor_non_negative_chk',
+      sql`${table.lineTotalMinor} >= 0`
+    ),
+    check(
+      'return_items_line_total_consistent_chk',
+      sql`${table.lineTotalMinor} = (${table.unitPriceMinor} * ${table.quantity})`
+    ),
+  ]
+);
+
 export const npCities = pgTable(
   'np_cities',
   {
@@ -1150,5 +1259,7 @@ export type DbOrderShipping = typeof orderShipping.$inferSelect;
 export type DbShippingShipment = typeof shippingShipments.$inferSelect;
 export type DbShippingQuote = typeof shippingQuotes.$inferSelect;
 export type DbNotificationOutbox = typeof notificationOutbox.$inferSelect;
+export type DbReturnRequest = typeof returnRequests.$inferSelect;
+export type DbReturnItem = typeof returnItems.$inferSelect;
 export type DbNpCity = typeof npCities.$inferSelect;
 export type DbNpWarehouse = typeof npWarehouses.$inferSelect;

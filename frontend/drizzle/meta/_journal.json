@@ -169,6 +169,13 @@
       "when": 1772223636248,
       "tag": "0023_clean_madame_masque",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1772225141854,
+      "tag": "0024_gigantic_annihilus",
+      "breakpoints": true
     }
   ]
 }
