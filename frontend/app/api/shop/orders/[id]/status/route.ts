@@ -13,6 +13,7 @@ import {
   OrderNotFoundError,
   OrderStateInvalidError,
 } from '@/lib/services/errors';
+import { writeAdminAudit } from '@/lib/services/shop/events/write-admin-audit';
 import {
   getOrderAttemptSummary,
   getOrderStatusLiteSummary,
@@ -34,7 +35,7 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   const startedAtMs = Date.now();
-  const responseMode =
+  const requestedResponseMode =
     request.nextUrl.searchParams.get('view') === 'lite' ? 'lite' : 'full';
   const requestId =
     request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
@@ -46,7 +47,7 @@ export async function GET(
       requestId,
       code: 'INVALID_ORDER_ID',
       orderId: null,
-      responseMode,
+      responseMode: requestedResponseMode,
       durationMs: Date.now() - startedAtMs,
     });
     return noStoreJson({ code: 'INVALID_ORDER_ID' }, { status: 400 });
@@ -58,6 +59,14 @@ export async function GET(
   try {
     const user = await getCurrentUser();
     let authorized = false;
+    let accessByStatusToken = false;
+    let tokenAuditSeed:
+      | {
+          nonce: string;
+          iat: number;
+          exp: number;
+        }
+      | null = null;
 
     if (user) {
       const isAdmin = user.role === 'admin';
@@ -81,7 +90,7 @@ export async function GET(
           requestId,
           orderId,
           code,
-          responseMode,
+          responseMode: requestedResponseMode,
           durationMs: Date.now() - startedAtMs,
         });
         return noStoreJson({ code }, { status });
@@ -100,7 +109,7 @@ export async function GET(
               requestId,
               orderId,
               code: 'STATUS_TOKEN_MISCONFIGURED',
-              responseMode,
+              responseMode: requestedResponseMode,
               durationMs: Date.now() - startedAtMs,
             }
           );
@@ -114,19 +123,55 @@ export async function GET(
           requestId,
           orderId,
           code: 'STATUS_TOKEN_INVALID',
-          responseMode,
+          responseMode: requestedResponseMode,
           durationMs: Date.now() - startedAtMs,
         });
         return noStoreJson({ code: 'STATUS_TOKEN_INVALID' }, { status: 403 });
       }
+
+      accessByStatusToken = true;
+      tokenAuditSeed = {
+        nonce: tokenResult.payload.nonce,
+        iat: tokenResult.payload.iat,
+        exp: tokenResult.payload.exp,
+      };
+      authorized = true;
     }
 
-    if (responseMode === 'lite') {
+    const effectiveResponseMode = accessByStatusToken
+      ? 'lite'
+      : requestedResponseMode;
+
+    if (accessByStatusToken && tokenAuditSeed) {
+      await writeAdminAudit({
+        orderId,
+        actorUserId: null,
+        action: 'guest_status_token.used',
+        targetType: 'order_status',
+        targetId: orderId,
+        requestId,
+        payload: {
+          scope: 'status_lite',
+          tokenNonce: tokenAuditSeed.nonce,
+          tokenIat: tokenAuditSeed.iat,
+          tokenExp: tokenAuditSeed.exp,
+        },
+        dedupeSeed: {
+          domain: 'guest_status_token_use',
+          orderId,
+          tokenNonce: tokenAuditSeed.nonce,
+          scope: 'status_lite',
+        },
+      });
+    }
+
+    if (effectiveResponseMode === 'lite') {
       const liteOrder = await getOrderStatusLiteSummary(orderId);
       logInfo('order_status_responded', {
         requestId,
         orderId,
-        responseMode,
+        responseMode: effectiveResponseMode,
+        authMode: accessByStatusToken ? 'guest_token' : 'session',
         durationMs: Date.now() - startedAtMs,
       });
       return noStoreJson(liteOrder, { status: 200 });
@@ -137,7 +182,8 @@ export async function GET(
     logInfo('order_status_responded', {
       requestId,
       orderId,
-      responseMode,
+      responseMode: effectiveResponseMode,
+      authMode: 'session',
       durationMs: Date.now() - startedAtMs,
     });
     return noStoreJson({ success: true, order, attempt }, { status: 200 });
@@ -147,7 +193,7 @@ export async function GET(
         requestId,
         code: 'ORDER_NOT_FOUND',
         orderId,
-        responseMode,
+        responseMode: requestedResponseMode,
         durationMs: Date.now() - startedAtMs,
       });
       return noStoreJson({ code: 'ORDER_NOT_FOUND' }, { status: 404 });
@@ -158,7 +204,7 @@ export async function GET(
         requestId,
         code: 'INTERNAL_ERROR',
         orderId,
-        responseMode,
+        responseMode: requestedResponseMode,
         durationMs: Date.now() - startedAtMs,
       });
       return noStoreJson({ code: 'INTERNAL_ERROR' }, { status: 500 });
@@ -168,7 +214,7 @@ export async function GET(
       requestId,
       code: 'ORDER_STATUS_FAILED',
       orderId,
-      responseMode,
+      responseMode: requestedResponseMode,
       durationMs: Date.now() - startedAtMs,
     });
 
