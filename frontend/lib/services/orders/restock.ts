@@ -6,6 +6,7 @@ import { db } from '@/db';
 import { inventoryMoves, orders } from '@/db/schema/shop';
 import { logWarn } from '@/lib/logging';
 import { type PaymentStatus } from '@/lib/shop/payments';
+import { isOrderNonPaymentStatusTransitionAllowed } from '@/lib/services/shop/transitions/order-state';
 
 import { OrderNotFoundError, OrderStateInvalidError } from '../errors';
 import { applyReleaseMove } from '../inventory';
@@ -63,6 +64,7 @@ export async function restockOrder(
   const [order] = await db
     .select({
       id: orders.id,
+      status: orders.status,
       paymentProvider: orders.paymentProvider,
       [PAYMENT_STATUS_KEY]: orders.paymentStatus,
       paymentIntentId: orders.paymentIntentId,
@@ -122,6 +124,32 @@ export async function restockOrder(
     const now = new Date();
     const shouldCancel = reason === 'canceled';
     const shouldFail = reason === 'failed' || reason === 'stale';
+    const targetOrderStatus = shouldFail
+      ? 'INVENTORY_FAILED'
+      : shouldCancel
+        ? 'CANCELED'
+        : null;
+
+    if (
+      targetOrderStatus &&
+      !isOrderNonPaymentStatusTransitionAllowed(
+        order.status,
+        targetOrderStatus,
+        { includeSame: true }
+      )
+    ) {
+      throw new OrderStateInvalidError(
+        `Invalid order status transition: ${order.status} -> ${targetOrderStatus}`,
+        {
+          orderId,
+          details: {
+            reason,
+            fromStatus: order.status,
+            toStatus: targetOrderStatus,
+          },
+        }
+      );
+    }
 
     const orphanFailureCode =
       order.failureCode ??
@@ -290,6 +318,31 @@ export async function restockOrder(
 
   const shouldCancel = reason === 'canceled';
   const shouldFail = reason === 'failed' || reason === 'stale';
+  const targetOrderStatus = shouldFail
+    ? 'INVENTORY_FAILED'
+    : shouldCancel
+      ? 'CANCELED'
+      : null;
+
+  if (
+    targetOrderStatus &&
+    !isOrderNonPaymentStatusTransitionAllowed(order.status, targetOrderStatus, {
+      includeSame: true,
+    })
+  ) {
+    throw new OrderStateInvalidError(
+      `Invalid order status transition: ${order.status} -> ${targetOrderStatus}`,
+      {
+        orderId,
+        details: {
+          reason,
+          fromStatus: order.status,
+          toStatus: targetOrderStatus,
+        },
+      }
+    );
+  }
+
   await db
     .update(orders)
     .set({

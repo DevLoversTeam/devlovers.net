@@ -26,6 +26,7 @@ import {
 import { buildPaymentEventDedupeKey } from '@/lib/services/shop/events/dedupe-key';
 import { inventoryCommittedForShippingSql } from '@/lib/services/shop/shipping/inventory-eligibility';
 import { recordShippingMetric } from '@/lib/services/shop/shipping/metrics';
+import { shippingStatusTransitionWhereSql } from '@/lib/services/shop/transitions/shipping-state';
 
 const REFUND_FULLNESS_UNDETERMINED = 'REFUND_FULLNESS_UNDETERMINED' as const;
 
@@ -532,6 +533,11 @@ async function applyStripePaidAndQueueShipmentAtomic(
               updated_at = ${args.now}
           where id in (select order_id from queued_order_ids)
             and shipping_status is distinct from 'queued'::shipping_status
+            and ${shippingStatusTransitionWhereSql({
+              column: sql`shipping_status`,
+              to: 'queued',
+              allowNullFrom: true,
+            })}
           returning id
         )
         select
@@ -615,6 +621,11 @@ async function applyStripePaidAndQueueShipmentAtomic(
               updated_at = ${args.now}
           where id in (select order_id from queued_order_ids)
             and shipping_status is distinct from 'queued'::shipping_status
+            and ${shippingStatusTransitionWhereSql({
+              column: sql`shipping_status`,
+              to: 'queued',
+              allowNullFrom: true,
+            })}
           returning id
         )
         select
@@ -1320,6 +1331,11 @@ export async function POST(request: NextRequest) {
               updated_at = ${now}
           where id in (select order_id from shipment_order_ids)
             and shipping_status is distinct from 'queued'::shipping_status
+            and ${shippingStatusTransitionWhereSql({
+              column: sql`shipping_status`,
+              to: 'queued',
+              allowNullFrom: true,
+            })}
         `);
       }
 
@@ -1370,6 +1386,11 @@ export async function POST(request: NextRequest) {
               updated_at = ${now}
           where id in (select order_id from shipment_order_ids)
             and shipping_status is distinct from 'queued'::shipping_status
+            and ${shippingStatusTransitionWhereSql({
+              column: sql`shipping_status`,
+              to: 'queued',
+              allowNullFrom: true,
+            })}
         `);
       }
 

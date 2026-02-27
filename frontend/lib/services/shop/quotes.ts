@@ -14,16 +14,14 @@ import { applyReleaseMove, applyReserveMove } from '@/lib/services/inventory';
 import { aggregateReserveByProductId } from '@/lib/services/orders/_shared';
 import { restockOrder } from '@/lib/services/orders';
 import { buildShippingEventDedupeKey } from '@/lib/services/shop/events/dedupe-key';
+import {
+  isOrderQuoteStatusTransitionAllowed,
+  orderQuoteTransitionWhereSql,
+  type OrderQuoteStatus,
+} from '@/lib/services/shop/transitions/order-state';
 import { InvalidPayloadError, OrderNotFoundError } from '@/lib/services/errors';
 
-type QuoteStatus =
-  | 'none'
-  | 'requested'
-  | 'offered'
-  | 'accepted'
-  | 'declined'
-  | 'expired'
-  | 'requires_requote';
+type QuoteStatus = OrderQuoteStatus;
 
 type FulfillmentMode = 'ua_np' | 'intl';
 
@@ -243,6 +241,10 @@ async function atomicExpireQuote(args: {
       where o.id in (select order_id from updated_quote)
         and o.fulfillment_mode = 'intl'
         and o.quote_version = ${args.version}
+        and ${orderQuoteTransitionWhereSql({
+          column: sql`o.quote_status`,
+          to: 'expired',
+        })}
       returning o.id
     ),
     inserted_event as (
@@ -322,6 +324,14 @@ export async function requestIntlQuote(args: {
     };
   }
 
+  if (!isOrderQuoteStatusTransitionAllowed(order.quoteStatus, 'requested')) {
+    throw quoteError(
+      'QUOTE_NOT_APPLICABLE',
+      `Invalid quote transition from ${order.quoteStatus} to requested.`,
+      { statusFrom: order.quoteStatus, statusTo: 'requested' }
+    );
+  }
+
   const dedupeKey = makeQuoteEventDedupeKey({
     action: 'quote_requested',
     orderId: order.id,
@@ -339,7 +349,10 @@ export async function requestIntlQuote(args: {
           updated_at = ${now}
       where o.id = ${order.id}::uuid
         and o.fulfillment_mode = 'intl'
-        and o.quote_status in ('none', 'declined', 'expired', 'requires_requote')
+        and ${orderQuoteTransitionWhereSql({
+          column: sql`o.quote_status`,
+          to: 'requested',
+        })}
       returning o.id
     ),
     inserted_event as (
@@ -415,6 +428,14 @@ export async function offerIntlQuote(args: {
     throw quoteError(
       'QUOTE_VERSION_CONFLICT',
       'Current quote must be accepted, declined, or expired before offering a new version.'
+    );
+  }
+
+  if (!isOrderQuoteStatusTransitionAllowed(order.quoteStatus, 'offered')) {
+    throw quoteError(
+      'QUOTE_NOT_APPLICABLE',
+      `Invalid quote transition from ${order.quoteStatus} to offered.`,
+      { statusFrom: order.quoteStatus, statusTo: 'offered' }
     );
   }
 
@@ -630,6 +651,14 @@ export async function acceptIntlQuote(args: {
     throw quoteError('QUOTE_NOT_OFFERED', 'Quote is not in offered state.');
   }
 
+  if (!isOrderQuoteStatusTransitionAllowed(quote.status, 'accepted')) {
+    throw quoteError(
+      'QUOTE_NOT_OFFERED',
+      `Invalid quote transition from ${quote.status} to accepted.`,
+      { statusFrom: quote.status, statusTo: 'accepted' }
+    );
+  }
+
   if (quote.expiresAt.getTime() <= now.getTime()) {
     await atomicExpireQuote({
       orderId: order.id,
@@ -706,6 +735,10 @@ export async function acceptIntlQuote(args: {
             updated_at = ${now}
         where o.id in (select order_id from updated_quote)
           and o.fulfillment_mode = 'intl'
+          and ${orderQuoteTransitionWhereSql({
+            column: sql`o.quote_status`,
+            to: 'requires_requote',
+          })}
         returning o.id
       ),
       inserted_event as (
@@ -818,6 +851,10 @@ export async function acceptIntlQuote(args: {
         from updated_quote uq
         where o.id = uq.order_id
           and o.fulfillment_mode = 'intl'
+          and ${orderQuoteTransitionWhereSql({
+            column: sql`o.quote_status`,
+            to: 'accepted',
+          })}
         returning o.id, o.total_amount_minor, o.currency, o.quote_payment_deadline_at
       ),
       inserted_event as (
@@ -925,6 +962,14 @@ export async function declineIntlQuote(args: {
     throw quoteError('QUOTE_NOT_OFFERED', 'No offered quote to decline.');
   }
 
+  if (!isOrderQuoteStatusTransitionAllowed(latestQuote.status, 'declined')) {
+    throw quoteError(
+      'QUOTE_NOT_OFFERED',
+      `Invalid quote transition from ${latestQuote.status} to declined.`,
+      { statusFrom: latestQuote.status, statusTo: 'declined' }
+    );
+  }
+
   const dedupeKey = makeQuoteEventDedupeKey({
     action: 'quote_declined',
     orderId: order.id,
@@ -952,6 +997,10 @@ export async function declineIntlQuote(args: {
       where o.id in (select order_id from updated_quote)
         and o.fulfillment_mode = 'intl'
         and o.quote_version = ${version}
+        and ${orderQuoteTransitionWhereSql({
+          column: sql`o.quote_status`,
+          to: 'declined',
+        })}
       returning o.id
     ),
     inserted_event as (
@@ -1183,7 +1232,10 @@ export async function sweepAcceptedIntlQuotePaymentTimeouts(options?: {
             updated_at = ${now}
         where o.id in (select order_id from updated_quote)
           and o.fulfillment_mode = 'intl'
-          and o.quote_status = 'accepted'
+          and ${orderQuoteTransitionWhereSql({
+            column: sql`o.quote_status`,
+            to: 'requires_requote',
+          })}
         returning o.id
       ),
       inserted_event as (
