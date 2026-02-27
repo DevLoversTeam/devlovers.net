@@ -413,6 +413,116 @@ export const monobankEvents = pgTable(
   ]
 );
 
+export const paymentEvents = pgTable(
+  'payment_events',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    orderId: uuid('order_id')
+      .notNull()
+      .references(() => orders.id, { onDelete: 'cascade' }),
+    provider: text('provider').notNull(),
+    eventName: text('event_name').notNull(),
+    eventSource: text('event_source').notNull(),
+    eventRef: text('event_ref'),
+    attemptId: uuid('attempt_id').references(() => paymentAttempts.id, {
+      onDelete: 'set null',
+    }),
+    providerPaymentIntentId: text('provider_payment_intent_id'),
+    providerChargeId: text('provider_charge_id'),
+    amountMinor: bigint('amount_minor', { mode: 'number' }).notNull(),
+    currency: currencyEnum('currency').notNull(),
+    payload: jsonb('payload')
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+    dedupeKey: text('dedupe_key').notNull(),
+    occurredAt: timestamp('occurred_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  t => [
+    uniqueIndex('payment_events_dedupe_key_uq').on(t.dedupeKey),
+    index('payment_events_order_id_idx').on(t.orderId),
+    index('payment_events_attempt_id_idx').on(t.attemptId),
+    index('payment_events_event_ref_idx').on(t.eventRef),
+    index('payment_events_occurred_at_idx').on(t.occurredAt),
+  ]
+);
+
+export const shippingEvents = pgTable(
+  'shipping_events',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    orderId: uuid('order_id')
+      .notNull()
+      .references(() => orders.id, { onDelete: 'cascade' }),
+    shipmentId: uuid('shipment_id').references(() => shippingShipments.id, {
+      onDelete: 'set null',
+    }),
+    provider: text('provider').notNull(),
+    eventName: text('event_name').notNull(),
+    eventSource: text('event_source').notNull(),
+    eventRef: text('event_ref'),
+    statusFrom: text('status_from'),
+    statusTo: text('status_to'),
+    trackingNumber: text('tracking_number'),
+    payload: jsonb('payload')
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+    dedupeKey: text('dedupe_key').notNull(),
+    occurredAt: timestamp('occurred_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  t => [
+    uniqueIndex('shipping_events_dedupe_key_uq').on(t.dedupeKey),
+    index('shipping_events_order_id_idx').on(t.orderId),
+    index('shipping_events_shipment_id_idx').on(t.shipmentId),
+    index('shipping_events_occurred_at_idx').on(t.occurredAt),
+  ]
+);
+
+export const adminAuditLog = pgTable(
+  'admin_audit_log',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    orderId: uuid('order_id').references(() => orders.id, {
+      onDelete: 'set null',
+    }),
+    actorUserId: text('actor_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    action: text('action').notNull(),
+    targetType: text('target_type').notNull(),
+    targetId: text('target_id').notNull(),
+    requestId: text('request_id'),
+    payload: jsonb('payload')
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+    dedupeKey: text('dedupe_key').notNull(),
+    occurredAt: timestamp('occurred_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  t => [
+    uniqueIndex('admin_audit_log_dedupe_key_uq').on(t.dedupeKey),
+    index('admin_audit_log_order_id_idx').on(t.orderId),
+    index('admin_audit_log_actor_user_id_idx').on(t.actorUserId),
+    index('admin_audit_log_occurred_at_idx').on(t.occurredAt),
+  ]
+);
+
 export const monobankRefunds = pgTable(
   'monobank_refunds',
   {
@@ -837,6 +947,9 @@ export type DbInternalJobState = typeof internalJobState.$inferSelect;
 export type DbPaymentAttempt = typeof paymentAttempts.$inferSelect;
 export type DbApiRateLimit = typeof apiRateLimits.$inferSelect;
 export type DbMonobankEvent = typeof monobankEvents.$inferSelect;
+export type DbPaymentEvent = typeof paymentEvents.$inferSelect;
+export type DbShippingEvent = typeof shippingEvents.$inferSelect;
+export type DbAdminAuditLog = typeof adminAuditLog.$inferSelect;
 export type DbMonobankRefund = typeof monobankRefunds.$inferSelect;
 export type DbMonobankPaymentCancel =
   typeof monobankPaymentCancels.$inferSelect;

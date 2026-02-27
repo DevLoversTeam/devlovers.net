@@ -6,6 +6,7 @@ import Stripe from 'stripe';
 
 import { db } from '@/db';
 import { orders, stripeEvents } from '@/db/schema';
+import { isCanonicalEventsDualWriteEnabled } from '@/lib/env/shop-canonical-events';
 import { logError, logInfo, logWarn } from '@/lib/logging';
 import { retrieveCharge, verifyWebhookSignature } from '@/lib/psp/stripe';
 import { guardNonBrowserOnly } from '@/lib/security/origin';
@@ -22,6 +23,7 @@ import {
   appendRefundToMeta,
   type RefundMetaRecord,
 } from '@/lib/services/orders/psp-metadata/refunds';
+import { buildPaymentEventDedupeKey } from '@/lib/services/shop/events/dedupe-key';
 import { inventoryCommittedForShippingSql } from '@/lib/services/shop/shipping/inventory-eligibility';
 import { recordShippingMetric } from '@/lib/services/shop/shipping/metrics';
 
@@ -401,99 +403,226 @@ function readDbRows<T>(res: unknown): T[] {
 type StripePaidApplyArgs = {
   now: Date;
   orderId: string;
+  paymentIntentId: string | null;
+  stripeEventId: string;
   pspChargeId: string | null;
   pspPaymentMethod: string | null;
   pspStatusReason: string;
   pspMetadata: Record<string, unknown>;
   paymentBecamePaidInThisApply: boolean;
+  canonicalDualWriteEnabled: boolean;
+  canonicalEventDedupeKey: string;
+  canonicalEventPayload: Record<string, unknown>;
 };
 
 async function applyStripePaidAndQueueShipmentAtomic(
   args: StripePaidApplyArgs
 ): Promise<{ applied: boolean; shipmentQueued: boolean }> {
-  const res = await db.execute(sql`
-    with updated_order as (
-      update orders
-      set payment_status = 'paid',
-          status = 'PAID',
-          updated_at = ${args.now},
-          psp_charge_id = ${args.pspChargeId},
-          psp_payment_method = ${args.pspPaymentMethod},
-          psp_status_reason = ${args.pspStatusReason},
-          psp_metadata = ${JSON.stringify(args.pspMetadata)}::jsonb
-      where id = ${args.orderId}::uuid
-        and payment_provider = 'stripe'
-        and payment_status in ('pending', 'requires_payment', 'paid')
-        and (stock_restored is null or stock_restored = false)
-        and (inventory_status is null or inventory_status <> 'released')
-        and (payment_status <> 'paid' or status <> 'PAID')
-        and payment_status <> 'failed'
-        and payment_status <> 'refunded'
-      returning
-        id,
-        payment_status,
-        inventory_status,
-        shipping_required,
-        shipping_provider,
-        shipping_method_code
-    ),
+  const res = args.canonicalDualWriteEnabled
+    ? await db.execute(sql`
+        with updated_order as (
+          update orders
+          set payment_status = 'paid',
+              status = 'PAID',
+              updated_at = ${args.now},
+              psp_charge_id = ${args.pspChargeId},
+              psp_payment_method = ${args.pspPaymentMethod},
+              psp_status_reason = ${args.pspStatusReason},
+              psp_metadata = ${JSON.stringify(args.pspMetadata)}::jsonb
+          where id = ${args.orderId}::uuid
+            and payment_provider = 'stripe'
+            and payment_status in ('pending', 'requires_payment', 'paid')
+            and (stock_restored is null or stock_restored = false)
+            and (inventory_status is null or inventory_status <> 'released')
+            and (payment_status <> 'paid' or status <> 'PAID')
+            and payment_status <> 'failed'
+            and payment_status <> 'refunded'
+          returning
+            id,
+            total_amount_minor,
+            currency,
+            payment_status,
+            inventory_status,
+            shipping_required,
+            shipping_provider,
+            shipping_method_code
+        ),
+        inserted_payment_event as (
+          insert into payment_events (
+            order_id,
+            provider,
+            event_name,
+            event_source,
+            event_ref,
+            attempt_id,
+            provider_payment_intent_id,
+            provider_charge_id,
+            amount_minor,
+            currency,
+            payload,
+            dedupe_key,
+            occurred_at,
+            created_at
+          )
+          select
+            uo.id,
+            'stripe',
+            'paid_applied',
+            'stripe_webhook',
+            ${args.stripeEventId},
+            null,
+            ${args.paymentIntentId},
+            ${args.pspChargeId},
+            uo.total_amount_minor::bigint,
+            uo.currency,
+            ${JSON.stringify(args.canonicalEventPayload)}::jsonb,
+            ${args.canonicalEventDedupeKey},
+            ${args.now},
+            ${args.now}
+          from updated_order uo
+          on conflict (dedupe_key) do nothing
+          returning id
+        ),
         eligible_for_enqueue as (
-      select o.id
-      from orders o
-      where o.id = ${args.orderId}::uuid
-        and o.payment_provider = 'stripe'
-        and o.payment_status = 'paid'
-        and o.shipping_required = true
-        and o.shipping_provider = 'nova_poshta'
-        and o.shipping_method_code is not null
-        and ${inventoryCommittedForShippingSql(sql`o.inventory_status`)}
-    ),
-    inserted_shipment as (
-      insert into shipping_shipments (
-        order_id,
-        provider,
-        status,
-        attempt_count,
-        created_at,
-        updated_at
-      )
-      select
-        id,
-        'nova_poshta',
-        'queued',
-        0,
-        ${args.now},
-        ${args.now}
-      from eligible_for_enqueue
-      on conflict (order_id) do update
-      set status = 'queued',
-          updated_at = ${args.now}
-      where shipping_shipments.provider = 'nova_poshta'
-        and shipping_shipments.status is distinct from 'queued'
-      returning order_id
-    ),
-    queued_order_ids as (
-      select order_id from inserted_shipment
-      union
-      select s.order_id
-      from shipping_shipments s
-      where s.order_id in (select id from eligible_for_enqueue)
-        and s.status = 'queued'
-    ),
-    mark_queued as (
-      update orders
-      set shipping_status = 'queued'::shipping_status,
-          updated_at = ${args.now}
-      where id in (select order_id from queued_order_ids)
-        and shipping_status is distinct from 'queued'::shipping_status
-      returning id
-    )
-    select
-      (select count(*)::int from updated_order) as updated_count,
-      (select count(*)::int from inserted_shipment) as inserted_shipment_count,
-      (select count(*)::int from queued_order_ids) as queued_shipment_count,
-      (select count(*)::int from mark_queued) as mark_queued_count
-  `);
+          select o.id
+          from orders o
+          where o.id = ${args.orderId}::uuid
+            and o.payment_provider = 'stripe'
+            and o.payment_status = 'paid'
+            and o.shipping_required = true
+            and o.shipping_provider = 'nova_poshta'
+            and o.shipping_method_code is not null
+            and ${inventoryCommittedForShippingSql(sql`o.inventory_status`)}
+        ),
+        inserted_shipment as (
+          insert into shipping_shipments (
+            order_id,
+            provider,
+            status,
+            attempt_count,
+            created_at,
+            updated_at
+          )
+          select
+            id,
+            'nova_poshta',
+            'queued',
+            0,
+            ${args.now},
+            ${args.now}
+          from eligible_for_enqueue
+          on conflict (order_id) do update
+          set status = 'queued',
+              updated_at = ${args.now}
+          where shipping_shipments.provider = 'nova_poshta'
+            and shipping_shipments.status is distinct from 'queued'
+          returning order_id
+        ),
+        queued_order_ids as (
+          select order_id from inserted_shipment
+          union
+          select s.order_id
+          from shipping_shipments s
+          where s.order_id in (select id from eligible_for_enqueue)
+            and s.status = 'queued'
+        ),
+        mark_queued as (
+          update orders
+          set shipping_status = 'queued'::shipping_status,
+              updated_at = ${args.now}
+          where id in (select order_id from queued_order_ids)
+            and shipping_status is distinct from 'queued'::shipping_status
+          returning id
+        )
+        select
+          (select count(*)::int from updated_order) as updated_count,
+          (select count(*)::int from inserted_shipment) as inserted_shipment_count,
+          (select count(*)::int from queued_order_ids) as queued_shipment_count,
+          (select count(*)::int from mark_queued) as mark_queued_count
+      `)
+    : await db.execute(sql`
+        with updated_order as (
+          update orders
+          set payment_status = 'paid',
+              status = 'PAID',
+              updated_at = ${args.now},
+              psp_charge_id = ${args.pspChargeId},
+              psp_payment_method = ${args.pspPaymentMethod},
+              psp_status_reason = ${args.pspStatusReason},
+              psp_metadata = ${JSON.stringify(args.pspMetadata)}::jsonb
+          where id = ${args.orderId}::uuid
+            and payment_provider = 'stripe'
+            and payment_status in ('pending', 'requires_payment', 'paid')
+            and (stock_restored is null or stock_restored = false)
+            and (inventory_status is null or inventory_status <> 'released')
+            and (payment_status <> 'paid' or status <> 'PAID')
+            and payment_status <> 'failed'
+            and payment_status <> 'refunded'
+          returning
+            id,
+            payment_status,
+            inventory_status,
+            shipping_required,
+            shipping_provider,
+            shipping_method_code
+        ),
+        eligible_for_enqueue as (
+          select o.id
+          from orders o
+          where o.id = ${args.orderId}::uuid
+            and o.payment_provider = 'stripe'
+            and o.payment_status = 'paid'
+            and o.shipping_required = true
+            and o.shipping_provider = 'nova_poshta'
+            and o.shipping_method_code is not null
+            and ${inventoryCommittedForShippingSql(sql`o.inventory_status`)}
+        ),
+        inserted_shipment as (
+          insert into shipping_shipments (
+            order_id,
+            provider,
+            status,
+            attempt_count,
+            created_at,
+            updated_at
+          )
+          select
+            id,
+            'nova_poshta',
+            'queued',
+            0,
+            ${args.now},
+            ${args.now}
+          from eligible_for_enqueue
+          on conflict (order_id) do update
+          set status = 'queued',
+              updated_at = ${args.now}
+          where shipping_shipments.provider = 'nova_poshta'
+            and shipping_shipments.status is distinct from 'queued'
+          returning order_id
+        ),
+        queued_order_ids as (
+          select order_id from inserted_shipment
+          union
+          select s.order_id
+          from shipping_shipments s
+          where s.order_id in (select id from eligible_for_enqueue)
+            and s.status = 'queued'
+        ),
+        mark_queued as (
+          update orders
+          set shipping_status = 'queued'::shipping_status,
+              updated_at = ${args.now}
+          where id in (select order_id from queued_order_ids)
+            and shipping_status is distinct from 'queued'::shipping_status
+          returning id
+        )
+        select
+          (select count(*)::int from updated_order) as updated_count,
+          (select count(*)::int from inserted_shipment) as inserted_shipment_count,
+          (select count(*)::int from queued_order_ids) as queued_shipment_count,
+          (select count(*)::int from mark_queued) as mark_queued_count
+      `);
 
   const row = readDbRows<{
     updated_count?: number;
@@ -504,6 +633,87 @@ async function applyStripePaidAndQueueShipmentAtomic(
   return {
     applied: Number(row?.updated_count ?? 0) > 0,
     shipmentQueued: Number(row?.queued_shipment_count ?? 0) > 0,
+  };
+}
+
+type StripeRefundApplyArgs = {
+  now: Date;
+  orderId: string;
+  paymentIntentId: string | null;
+  stripeEventId: string;
+  pspChargeId: string | null;
+  pspPaymentMethod: string | null;
+  pspStatusReason: string;
+  pspMetadata: Record<string, unknown>;
+  canonicalDualWriteEnabled: boolean;
+  canonicalEventDedupeKey: string;
+  canonicalEventPayload: Record<string, unknown>;
+};
+
+async function applyStripeRefundedAtomic(
+  args: StripeRefundApplyArgs
+): Promise<{ applied: boolean }> {
+  const res = await db.execute(sql`
+    with updated_order as (
+      update orders
+      set payment_status = 'refunded',
+          status = 'CANCELED',
+          updated_at = ${args.now},
+          psp_charge_id = ${args.pspChargeId},
+          psp_payment_method = ${args.pspPaymentMethod},
+          psp_status_reason = ${args.pspStatusReason},
+          psp_metadata = ${JSON.stringify(args.pspMetadata)}::jsonb
+      where id = ${args.orderId}::uuid
+        and payment_provider = 'stripe'
+        and payment_status = 'paid'
+      returning
+        id,
+        total_amount_minor,
+        currency
+    ),
+    inserted_payment_event as (
+      insert into payment_events (
+        order_id,
+        provider,
+        event_name,
+        event_source,
+        event_ref,
+        attempt_id,
+        provider_payment_intent_id,
+        provider_charge_id,
+        amount_minor,
+        currency,
+        payload,
+        dedupe_key,
+        occurred_at,
+        created_at
+      )
+      select
+        uo.id,
+        'stripe',
+        'refund_applied',
+        'stripe_webhook',
+        ${args.stripeEventId},
+        null,
+        ${args.paymentIntentId},
+        ${args.pspChargeId},
+        uo.total_amount_minor::bigint,
+        uo.currency,
+        ${JSON.stringify(args.canonicalEventPayload)}::jsonb,
+        ${args.canonicalEventDedupeKey},
+        ${args.now},
+        ${args.now}
+      from updated_order uo
+      where ${args.canonicalDualWriteEnabled} = true
+      on conflict (dedupe_key) do nothing
+      returning id
+    )
+    select (select count(*)::int from updated_order) as updated_count
+  `);
+
+  const row = readDbRows<{ updated_count?: number }>(res)[0];
+  return {
+    applied: Number(row?.updated_count ?? 0) > 0,
   };
 }
 
@@ -520,6 +730,7 @@ export async function POST(request: NextRequest) {
     provider: 'stripe',
     instanceId: STRIPE_WEBHOOK_INSTANCE_ID,
   };
+  const canonicalDualWriteEnabled = isCanonicalEventsDualWriteEnabled();
 
   const meta = (extra: Record<string, unknown> = {}) => ({
     ...baseMeta,
@@ -1011,11 +1222,30 @@ export async function POST(request: NextRequest) {
       const appliedArgs = {
         now,
         orderId: order.id,
+        paymentIntentId,
+        stripeEventId: event.id,
         pspChargeId: latestChargeId ?? chargeForIntent?.id ?? null,
         pspPaymentMethod: resolvePaymentMethod(paymentIntent, chargeForIntent),
         pspStatusReason: paymentIntent?.status ?? 'succeeded',
         pspMetadata: nextMeta,
         paymentBecamePaidInThisApply: order.paymentStatus !== 'paid',
+        canonicalDualWriteEnabled,
+        canonicalEventDedupeKey: buildPaymentEventDedupeKey({
+          provider: 'stripe',
+          orderId: order.id,
+          eventName: 'paid_applied',
+          eventSource: 'stripe_webhook',
+          stripeEventId: event.id,
+          paymentIntentId,
+          chargeId: latestChargeId ?? chargeForIntent?.id ?? null,
+        }),
+        canonicalEventPayload: {
+          stripeEventId: event.id,
+          eventType,
+          paymentIntentId,
+          chargeId: latestChargeId ?? chargeForIntent?.id ?? null,
+          paymentIntentStatus: paymentIntent?.status ?? null,
+        },
       };
       const applyResult =
         await applyStripePaidAndQueueShipmentAtomic(appliedArgs);
@@ -1620,26 +1850,59 @@ export async function POST(request: NextRequest) {
         createdAtIso,
       });
 
-      const refundRes = await guardedPaymentStatusUpdate({
-        orderId: order.id,
-        paymentProvider: 'stripe',
-        to: 'refunded',
-        source: 'stripe_webhook',
-        eventId: event.id,
-        note: eventType,
-        set: {
-          updatedAt: now,
-          status: 'CANCELED',
+      let canRestock = false;
+      if (canonicalDualWriteEnabled) {
+        const refundApply = await applyStripeRefundedAtomic({
+          now,
+          orderId: order.id,
+          paymentIntentId,
+          stripeEventId: event.id,
           pspChargeId: charge?.id ?? refundChargeId ?? null,
           pspPaymentMethod: resolvePaymentMethod(paymentIntent, charge),
           pspStatusReason: refund?.reason ?? refund?.status ?? 'refunded',
           pspMetadata: nextMeta,
-        },
-      });
+          canonicalDualWriteEnabled,
+          canonicalEventDedupeKey: buildPaymentEventDedupeKey({
+            provider: 'stripe',
+            orderId: order.id,
+            eventName: 'refund_applied',
+            eventSource: 'stripe_webhook',
+            stripeEventId: event.id,
+            paymentIntentId,
+            chargeId: charge?.id ?? refundChargeId ?? null,
+            refundId: refund?.id ?? null,
+          }),
+          canonicalEventPayload: {
+            stripeEventId: event.id,
+            eventType,
+            paymentIntentId,
+            chargeId: charge?.id ?? refundChargeId ?? null,
+            refundId: refund?.id ?? null,
+          },
+        });
+        canRestock = refundApply.applied || order.paymentStatus === 'refunded';
+      } else {
+        const refundRes = await guardedPaymentStatusUpdate({
+          orderId: order.id,
+          paymentProvider: 'stripe',
+          to: 'refunded',
+          source: 'stripe_webhook',
+          eventId: event.id,
+          note: eventType,
+          set: {
+            updatedAt: now,
+            status: 'CANCELED',
+            pspChargeId: charge?.id ?? refundChargeId ?? null,
+            pspPaymentMethod: resolvePaymentMethod(paymentIntent, charge),
+            pspStatusReason: refund?.reason ?? refund?.status ?? 'refunded',
+            pspMetadata: nextMeta,
+          },
+        });
 
-      const canRestock =
-        refundRes.applied ||
-        (!refundRes.applied && refundRes.reason === 'ALREADY_IN_STATE');
+        canRestock =
+          refundRes.applied ||
+          (!refundRes.applied && refundRes.reason === 'ALREADY_IN_STATE');
+      }
 
       if (canRestock && shouldRestockFromWebhook(order)) {
         await restockOrder(order.id, { reason: 'refunded' });
