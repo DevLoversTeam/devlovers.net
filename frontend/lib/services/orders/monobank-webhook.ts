@@ -734,6 +734,7 @@ async function atomicMarkPaidOrderAndSucceedAttempt(args: {
     attempt_id?: string;
     inserted_shipment_count?: number;
     queued_order_ids_count?: number;
+    shipping_status_update_count?: number;
     shipment_is_queued?: boolean;
     order_shipping_is_queued?: boolean | null;
   }>(res)[0];
@@ -741,7 +742,8 @@ async function atomicMarkPaidOrderAndSucceedAttempt(args: {
   return {
     ok: Boolean(row?.order_id && row?.attempt_id),
     shipmentQueued:
-      Boolean(row?.shipment_is_queued) && Boolean(row?.order_shipping_is_queued),
+      Boolean(row?.shipment_is_queued) &&
+      Boolean(row?.order_shipping_is_queued),
   };
 }
 
@@ -774,11 +776,11 @@ async function ensureQueuedShipmentAndOrderShippingStatus(args: {
       and o.shipping_method_code is not null
       and ${inventoryCommittedForShippingSql(sql`o.inventory_status`)}
     on conflict (order_id) do update
-  set status = 'queued',
-      updated_at = ${args.now}
-  where shipping_shipments.provider = 'nova_poshta'
-    and shipping_shipments.status is distinct from 'queued'
-returning order_id
+      set status = 'queued',
+          updated_at = ${args.now}
+    where shipping_shipments.provider = 'nova_poshta'
+      and shipping_shipments.status is distinct from 'queued'
+    returning order_id
   `);
 
   const insertedShipment =
@@ -1170,7 +1172,6 @@ async function applyWebhookToMatchedOrderAttemptEvent(args: {
         orderId: orderRow.id,
       });
     }
-
     const appliedResult: ApplyResult = 'applied';
     await persistEventOutcome({
       eventId,

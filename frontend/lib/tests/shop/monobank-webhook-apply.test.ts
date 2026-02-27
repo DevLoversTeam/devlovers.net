@@ -7,8 +7,8 @@ import { db } from '@/db';
 import {
   monobankEvents,
   orders,
-  paymentEvents,
   paymentAttempts,
+  paymentEvents,
   shippingShipments,
 } from '@/db/schema';
 import { buildMonobankAttemptIdempotencyKey } from '@/lib/services/orders/attempt-idempotency';

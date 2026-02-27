@@ -1323,6 +1323,56 @@ export async function POST(request: NextRequest) {
         `);
       }
 
+      if (
+        !applyResult.shipmentQueued &&
+        order.shippingRequired === true &&
+        order.shippingProvider === 'nova_poshta' &&
+        Boolean(order.shippingMethodCode) &&
+        order.inventoryStatus === 'reserved'
+      ) {
+        await db.execute(sql`
+          with ensured_shipment as (
+            insert into shipping_shipments (
+              order_id,
+              provider,
+              status,
+              attempt_count,
+              created_at,
+              updated_at
+            ) values (
+              ${order.id}::uuid,
+              'nova_poshta',
+              'queued',
+              0,
+              ${now},
+              ${now}
+            )
+            on conflict (order_id) do update
+            set status = 'queued',
+                updated_at = ${now}
+            where shipping_shipments.provider = 'nova_poshta'
+              and shipping_shipments.status is distinct from 'queued'
+            returning order_id
+          ),
+          existing_shipment as (
+            select order_id
+            from shipping_shipments
+            where order_id = ${order.id}::uuid
+              and status = 'queued'
+          ),
+          shipment_order_ids as (
+            select order_id from ensured_shipment
+            union
+            select order_id from existing_shipment
+          )
+          update orders
+          set shipping_status = 'queued'::shipping_status,
+              updated_at = ${now}
+          where id in (select order_id from shipment_order_ids)
+            and shipping_status is distinct from 'queued'::shipping_status
+        `);
+      }
+
       await markStripeAttemptFinal({
         paymentIntentId,
         status: 'succeeded',
