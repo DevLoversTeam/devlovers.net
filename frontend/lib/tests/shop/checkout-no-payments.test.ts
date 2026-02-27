@@ -7,6 +7,7 @@ import { db } from '@/db';
 import { orders, productPrices, products } from '@/db/schema';
 import { toDbMoney } from '@/lib/shop/money';
 import { deriveTestIpFromIdemKey } from '@/lib/tests/helpers/ip';
+import { getOrSeedActiveTemplateProduct } from '@/lib/tests/helpers/seed-product';
 
 const __prevRateLimitDisabled = process.env.RATE_LIMIT_DISABLED;
 
@@ -58,17 +59,7 @@ async function createIsolatedProductForCurrency(opts: {
 }): Promise<{ productId: string }> {
   const now = new Date();
 
-  const [tpl] = await db
-    .select()
-    .from(products)
-    .where(eq(products.isActive as any, true))
-    .limit(1);
-
-  if (!tpl) {
-    throw new Error(
-      'No template product found to clone (need at least 1 active product).'
-    );
-  }
+  const tpl = await getOrSeedActiveTemplateProduct();
 
   const productId = crypto.randomUUID();
   const slug = `t-iso-nopay-${crypto.randomUUID()}`;

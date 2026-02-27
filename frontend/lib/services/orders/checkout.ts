@@ -879,53 +879,66 @@ export async function createOrderWithItems({
 
   let orderId: string;
   try {
-    orderId = await db.transaction(async tx => {
-      const [created] = await tx
-        .insert(orders)
-        .values({
-          totalAmountMinor: orderTotalCents,
-          totalAmount: toDbMoney(orderTotalCents),
+    const [created] = await db
+      .insert(orders)
+      .values({
+        totalAmountMinor: orderTotalCents,
+        totalAmount: toDbMoney(orderTotalCents),
 
-          currency,
-          paymentStatus: initialPaymentStatus,
-          paymentProvider,
-          paymentIntentId: null,
-          shippingRequired: preparedShipping.orderSummary.shippingRequired,
-          shippingPayer: preparedShipping.orderSummary.shippingPayer,
-          shippingProvider: preparedShipping.orderSummary.shippingProvider,
-          shippingMethodCode: preparedShipping.orderSummary.shippingMethodCode,
-          shippingAmountMinor:
-            preparedShipping.orderSummary.shippingAmountMinor,
-          shippingStatus: preparedShipping.orderSummary.shippingStatus,
-          trackingNumber: null,
-          shippingProviderRef: null,
+        currency,
+        paymentStatus: initialPaymentStatus,
+        paymentProvider,
+        paymentIntentId: null,
+        shippingRequired: preparedShipping.orderSummary.shippingRequired,
+        shippingPayer: preparedShipping.orderSummary.shippingPayer,
+        shippingProvider: preparedShipping.orderSummary.shippingProvider,
+        shippingMethodCode: preparedShipping.orderSummary.shippingMethodCode,
+        shippingAmountMinor: preparedShipping.orderSummary.shippingAmountMinor,
+        shippingStatus: preparedShipping.orderSummary.shippingStatus,
+        trackingNumber: null,
+        shippingProviderRef: null,
 
-          status: 'CREATED',
+        status: 'CREATED',
 
-          inventoryStatus: paymentsEnabled ? 'none' : 'reserving',
-          failureCode: null,
-          failureMessage: null,
-          idempotencyRequestHash: requestHash,
+        inventoryStatus: paymentsEnabled ? 'none' : 'reserving',
+        failureCode: null,
+        failureMessage: null,
+        idempotencyRequestHash: requestHash,
 
-          stockRestored: false,
-          restockedAt: null,
-          idempotencyKey,
-          userId: userId ?? null,
-        })
-        .returning({ id: orders.id });
+        stockRestored: false,
+        restockedAt: null,
+        idempotencyKey,
+        userId: userId ?? null,
+      })
+      .returning({ id: orders.id });
 
-      if (!created) throw new Error('Failed to create order');
+    if (!created) throw new Error('Failed to create order');
 
-      if (preparedShipping.required && preparedShipping.snapshot) {
+    if (preparedShipping.required && preparedShipping.snapshot) {
+      try {
         await ensureOrderShippingSnapshot({
           orderId: created.id,
           snapshot: preparedShipping.snapshot,
-          dbClient: tx,
         });
+      } catch (e) {
+        // Neon HTTP: no interactive transactions. Do compensating cleanup.
+        logError(
+          `[createOrderWithItems] orderShipping snapshot insert failed orderId=${created.id}`,
+          e
+        );
+        try {
+          await db.delete(orders).where(eq(orders.id, created.id));
+        } catch (cleanupErr) {
+          logError(
+            `[createOrderWithItems] cleanup delete failed orderId=${created.id}`,
+            cleanupErr
+          );
+        }
+        throw e;
       }
+    }
 
-      return created.id;
-    });
+    orderId = created.id;
   } catch (error) {
     if ((error as { code?: string }).code === '23505') {
       const existingOrder = await getOrderByIdempotencyKey(db, idempotencyKey);
