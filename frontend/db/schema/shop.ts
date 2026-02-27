@@ -42,6 +42,21 @@ export const orderStatusEnum = pgEnum('order_status', [
   'CANCELED',
 ]);
 
+export const fulfillmentModeEnum = pgEnum('fulfillment_mode', [
+  'ua_np',
+  'intl',
+]);
+
+export const quoteStatusEnum = pgEnum('quote_status', [
+  'none',
+  'requested',
+  'offered',
+  'accepted',
+  'declined',
+  'expired',
+  'requires_requote',
+]);
+
 export const inventoryStatusEnum = pgEnum('inventory_status', [
   'none',
   'reserving',
@@ -156,6 +171,23 @@ export const orders = pgTable(
       .notNull(),
 
     currency: currencyEnum('currency').notNull().default('USD'),
+    fulfillmentMode: fulfillmentModeEnum('fulfillment_mode')
+      .notNull()
+      .default('ua_np'),
+    quoteStatus: quoteStatusEnum('quote_status').notNull().default('none'),
+    quoteVersion: integer('quote_version'),
+    shippingQuoteMinor: bigint('shipping_quote_minor', { mode: 'number' }),
+    itemsSubtotalMinor: bigint('items_subtotal_minor', { mode: 'number' })
+      .notNull()
+      .default(0),
+    quoteAcceptedAt: timestamp('quote_accepted_at', {
+      withTimezone: true,
+      mode: 'date',
+    }),
+    quotePaymentDeadlineAt: timestamp('quote_payment_deadline_at', {
+      withTimezone: true,
+      mode: 'date',
+    }),
 
     shippingRequired: boolean('shipping_required'),
     shippingPayer: shippingPayerEnum('shipping_payer'),
@@ -218,6 +250,14 @@ export const orders = pgTable(
       sql`${table.totalAmountMinor} >= 0`
     ),
     check(
+      'orders_items_subtotal_minor_non_negative',
+      sql`${table.itemsSubtotalMinor} >= 0`
+    ),
+    check(
+      'orders_shipping_quote_minor_non_negative',
+      sql`${table.shippingQuoteMinor} is null or ${table.shippingQuoteMinor} >= 0`
+    ),
+    check(
       'orders_payment_intent_id_null_when_none',
       sql`${table.paymentProvider} <> 'none' OR ${table.paymentIntentId} IS NULL`
     ),
@@ -271,10 +311,23 @@ export const orders = pgTable(
       'orders_shipping_payer_present_when_required_chk',
       sql`${table.shippingRequired} IS DISTINCT FROM TRUE OR ${table.shippingPayer} IS NOT NULL`
     ),
+    check(
+      'orders_intl_provider_restriction_chk',
+      sql`${table.fulfillmentMode} <> 'intl' OR ${table.paymentProvider} in ('stripe', 'none')`
+    ),
     index('orders_sweep_claim_expires_idx').on(table.sweepClaimExpiresAt),
     index('idx_orders_user_id_created_at').on(table.userId, table.createdAt),
     index('orders_shipping_status_idx').on(
       table.shippingStatus,
+      table.updatedAt
+    ),
+    index('orders_quote_status_deadline_idx').on(
+      table.fulfillmentMode,
+      table.quoteStatus,
+      table.quotePaymentDeadlineAt
+    ),
+    index('orders_quote_status_updated_idx').on(
+      table.quoteStatus,
       table.updatedAt
     ),
   ]
@@ -750,6 +803,65 @@ export const shippingShipments = pgTable(
   ]
 );
 
+export const shippingQuotes = pgTable(
+  'shipping_quotes',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    orderId: uuid('order_id')
+      .notNull()
+      .references(() => orders.id, { onDelete: 'cascade' }),
+    version: integer('version').notNull(),
+    status: quoteStatusEnum('status').notNull(),
+    currency: currencyEnum('currency').notNull(),
+    shippingQuoteMinor: bigint('shipping_quote_minor', {
+      mode: 'number',
+    }).notNull(),
+    offeredBy: text('offered_by').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    offeredAt: timestamp('offered_at', { withTimezone: true, mode: 'date' })
+      .notNull()
+      .defaultNow(),
+    expiresAt: timestamp('expires_at', {
+      withTimezone: true,
+      mode: 'date',
+    }).notNull(),
+    acceptedAt: timestamp('accepted_at', { withTimezone: true, mode: 'date' }),
+    declinedAt: timestamp('declined_at', { withTimezone: true, mode: 'date' }),
+    payload: jsonb('payload')
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  table => [
+    uniqueIndex('shipping_quotes_order_version_uq').on(
+      table.orderId,
+      table.version
+    ),
+    index('shipping_quotes_order_status_idx').on(table.orderId, table.status),
+    index('shipping_quotes_status_expires_idx').on(
+      table.status,
+      table.expiresAt
+    ),
+    index('shipping_quotes_order_updated_idx').on(
+      table.orderId,
+      table.updatedAt
+    ),
+    check('shipping_quotes_version_positive_chk', sql`${table.version} >= 1`),
+    check(
+      'shipping_quotes_quote_minor_non_negative_chk',
+      sql`${table.shippingQuoteMinor} >= 0`
+    ),
+  ]
+);
+
 export const npCities = pgTable(
   'np_cities',
   {
@@ -955,5 +1067,6 @@ export type DbMonobankPaymentCancel =
   typeof monobankPaymentCancels.$inferSelect;
 export type DbOrderShipping = typeof orderShipping.$inferSelect;
 export type DbShippingShipment = typeof shippingShipments.$inferSelect;
+export type DbShippingQuote = typeof shippingQuotes.$inferSelect;
 export type DbNpCity = typeof npCities.$inferSelect;
 export type DbNpWarehouse = typeof npWarehouses.$inferSelect;

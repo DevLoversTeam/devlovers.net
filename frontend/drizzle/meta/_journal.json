@@ -155,6 +155,13 @@
       "when": 1772213459590,
       "tag": "0021_solid_sage",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1772219957446,
+      "tag": "0022_demonic_vapor",
+      "breakpoints": true
     }
   ]
 }

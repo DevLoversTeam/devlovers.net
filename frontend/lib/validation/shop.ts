@@ -501,6 +501,34 @@ export const orderSummarySchema = z.object({
   ),
 });
 
+export const intlQuoteOfferPayloadSchema = z
+  .object({
+    version: z.coerce.number().int().min(1),
+    shippingQuoteMinor: z.coerce.number().int().min(0),
+    currency: currencySchema,
+    expiresAt: z.coerce.date().optional(),
+    payload: z.record(z.string(), z.unknown()).optional(),
+  })
+  .strict();
+
+export const intlQuoteAcceptPayloadSchema = z
+  .object({
+    version: z.coerce.number().int().min(1),
+  })
+  .strict();
+
+export const intlQuoteDeclinePayloadSchema = z
+  .object({
+    version: z.coerce.number().int().min(1).optional(),
+  })
+  .strict();
+
+export const orderPaymentInitPayloadSchema = z
+  .object({
+    provider: z.enum(['stripe']).default('stripe'),
+  })
+  .strict();
+
 export type CatalogQuery = z.infer<typeof catalogQuerySchema>;
 export type CatalogFilters = z.infer<typeof catalogFilterSchema>;
 export type DbProduct = z.infer<typeof dbProductSchema>;
@@ -516,3 +544,11 @@ export type CheckoutItemInput = z.infer<typeof checkoutItemSchema>;
 export type CheckoutPayload = z.infer<typeof checkoutPayloadSchema>;
 export type CheckoutShippingPayload = z.infer<typeof checkoutShippingSchema>;
 export type OrderIdParams = z.infer<typeof orderIdParamSchema>;
+export type IntlQuoteOfferPayload = z.infer<typeof intlQuoteOfferPayloadSchema>;
+export type IntlQuoteAcceptPayload = z.infer<typeof intlQuoteAcceptPayloadSchema>;
+export type IntlQuoteDeclinePayload = z.infer<
+  typeof intlQuoteDeclinePayloadSchema
+>;
+export type OrderPaymentInitPayload = z.infer<
+  typeof orderPaymentInitPayloadSchema
+>;
