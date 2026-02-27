@@ -5,6 +5,10 @@ import { sql } from 'drizzle-orm';
 import { db } from '@/db';
 import { isCanonicalEventsDualWriteEnabled } from '@/lib/env/shop-canonical-events';
 import { buildAdminAuditDedupeKey } from '@/lib/services/shop/events/dedupe-key';
+import {
+  isShippingStatusTransitionAllowed,
+  shippingStatusTransitionWhereSql,
+} from '@/lib/services/shop/transitions/shipping-state';
 import { recordShippingMetric } from '@/lib/services/shop/shipping/metrics';
 
 export type ShippingAdminAction =
@@ -243,6 +247,11 @@ async function requeueShipment(args: {
             ),
             updated_at = now()
         where o.id in (select order_id from updated_shipment)
+          and ${shippingStatusTransitionWhereSql({
+            column: sql`o.shipping_status`,
+            to: 'queued',
+            allowNullFrom: true,
+          })}
         returning o.id, o.shipping_status, o.tracking_number
       )
       select * from updated_order
@@ -277,6 +286,11 @@ async function requeueShipment(args: {
           ),
           updated_at = now()
       where o.id in (select order_id from updated_shipment)
+        and ${shippingStatusTransitionWhereSql({
+          column: sql`o.shipping_status`,
+          to: 'queued',
+          allowNullFrom: true,
+        })}
       returning o.id, o.shipping_status, o.tracking_number
     ),
     inserted_admin_audit as (
@@ -335,6 +349,10 @@ async function updateOrderShippingStatus(args: {
           updated_at = now()
       where o.id = ${args.orderId}::uuid
         and o.shipping_status = ${args.expectedStatus}
+        and ${shippingStatusTransitionWhereSql({
+          column: sql`o.shipping_status`,
+          to: args.nextStatus,
+        })}
       returning o.id, o.shipping_status, o.tracking_number
     `);
     return first<ResultRow>(res);
@@ -354,6 +372,10 @@ async function updateOrderShippingStatus(args: {
           updated_at = now()
       where o.id = ${args.orderId}::uuid
         and o.shipping_status = ${args.expectedStatus}
+        and ${shippingStatusTransitionWhereSql({
+          column: sql`o.shipping_status`,
+          to: args.nextStatus,
+        })}
       returning o.id, o.shipping_status, o.tracking_number
     ),
     inserted_admin_audit as (
@@ -453,6 +475,18 @@ export async function applyShippingAdminAction(args: {
       );
     }
 
+    if (
+      !isShippingStatusTransitionAllowed(state.shipping_status, 'queued', {
+        allowNullFrom: true,
+      })
+    ) {
+      throw new ShippingAdminActionError(
+        'INVALID_SHIPPING_TRANSITION',
+        `retry_label_creation is not allowed from ${state.shipping_status ?? 'null'}.`,
+        409
+      );
+    }
+
     const updated = await requeueShipment({
       orderId: args.orderId,
       auditEntry: {
@@ -540,7 +574,9 @@ export async function applyShippingAdminAction(args: {
       };
     }
 
-    if (state.shipping_status !== 'label_created') {
+    if (
+      !isShippingStatusTransitionAllowed(state.shipping_status, 'shipped')
+    ) {
       throw new ShippingAdminActionError(
         'INVALID_SHIPPING_TRANSITION',
         'mark_shipped is allowed only from label_created.',
@@ -637,7 +673,7 @@ export async function applyShippingAdminAction(args: {
     };
   }
 
-  if (state.shipping_status !== 'shipped') {
+  if (!isShippingStatusTransitionAllowed(state.shipping_status, 'delivered')) {
     throw new ShippingAdminActionError(
       'INVALID_SHIPPING_TRANSITION',
       'mark_delivered is allowed only from shipped.',

@@ -13,8 +13,10 @@ import { createRefund } from '@/lib/psp/stripe';
 import { InvalidPayloadError } from '@/lib/services/errors';
 import { buildAdminAuditDedupeKey } from '@/lib/services/shop/events/dedupe-key';
 import { buildShippingEventDedupeKey } from '@/lib/services/shop/events/dedupe-key';
-
-type ReturnStatus = 'requested' | 'approved' | 'rejected' | 'received' | 'refunded';
+import {
+  isReturnStatusTransitionAllowed,
+  type ReturnStatus,
+} from '@/lib/services/shop/transitions/return-state';
 
 type ReturnRequestRow = {
   id: string;
@@ -713,6 +715,17 @@ async function applyTransition(args: {
   if (current.status === args.statusTo) {
     return { changed: false, row: current };
   }
+  if (!isReturnStatusTransitionAllowed(current.status, args.statusTo)) {
+    throw returnError(
+      'RETURN_TRANSITION_INVALID',
+      `Invalid return transition from ${current.status} to ${args.statusTo}.`,
+      {
+        returnRequestId: current.id,
+        statusFrom: current.status,
+        statusTo: args.statusTo,
+      }
+    );
+  }
   if (current.status !== args.expectedFrom) {
     throw returnError(
       'RETURN_TRANSITION_INVALID',
@@ -900,7 +913,7 @@ export async function receiveReturnRequest(args: {
   if (current.status === 'received') {
     return { changed: false, row: current };
   }
-  if (current.status !== 'approved') {
+  if (!isReturnStatusTransitionAllowed(current.status, 'received')) {
     throw returnError(
       'RETURN_TRANSITION_INVALID',
       `Invalid return transition from ${current.status} to received.`,
@@ -945,7 +958,7 @@ export async function refundReturnRequest(args: {
   if (current.status === 'refunded') {
     return { changed: false, row: current };
   }
-  if (current.status !== 'received') {
+  if (!isReturnStatusTransitionAllowed(current.status, 'refunded')) {
     throw returnError(
       'RETURN_REFUND_STATE_INVALID',
       'Refund is allowed only after return is received.',

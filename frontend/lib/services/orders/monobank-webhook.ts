@@ -29,6 +29,7 @@ import {
   isInventoryCommittedForShipping,
 } from '@/lib/services/shop/shipping/inventory-eligibility';
 import { recordShippingMetric } from '@/lib/services/shop/shipping/metrics';
+import { shippingStatusTransitionWhereSql } from '@/lib/services/shop/transitions/shipping-state';
 import { isUuidV1toV5 } from '@/lib/utils/uuid';
 
 type WebhookMode = 'apply' | 'store' | 'drop';
@@ -610,6 +611,11 @@ async function atomicMarkPaidOrderAndSucceedAttempt(args: {
           updated_at = ${args.now}
       where id in (select order_id from queued_order_ids)
         and shipping_status is distinct from 'queued'::shipping_status
+        and ${shippingStatusTransitionWhereSql({
+          column: sql`shipping_status`,
+          to: 'queued',
+          allowNullFrom: true,
+        })}
       returning id
     )
     select
@@ -709,6 +715,11 @@ async function atomicMarkPaidOrderAndSucceedAttempt(args: {
           updated_at = ${args.now}
       where id in (select order_id from queued_order_ids)
         and shipping_status is distinct from 'queued'::shipping_status
+        and ${shippingStatusTransitionWhereSql({
+          column: sql`shipping_status`,
+          to: 'queued',
+          allowNullFrom: true,
+        })}
       returning id
     )
     select
@@ -790,6 +801,11 @@ returning order_id
         updated_at = ${args.now}
     where id = ${args.orderId}::uuid
       and shipping_status is distinct from 'queued'::shipping_status
+      and ${shippingStatusTransitionWhereSql({
+        column: sql`shipping_status`,
+        to: 'queued',
+        allowNullFrom: true,
+      })}
       and exists (
         select 1
         from shipping_shipments s

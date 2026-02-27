@@ -15,6 +15,7 @@ import {
   NovaPoshtaApiError,
   type NovaPoshtaCreateTtnInput,
 } from '@/lib/services/shop/shipping/nova-poshta-client';
+import { shippingStatusTransitionWhereSql } from '@/lib/services/shop/transitions/shipping-state';
 
 type ClaimedShipmentRow = {
   id: string;
@@ -368,10 +369,12 @@ export async function claimQueuedShipmentsForProcessing(args: {
       set shipping_status = 'creating_label',
           updated_at = now()
       where o.id in (select order_id from claimed)
-        and (
-          o.shipping_status is null
-          or o.shipping_status in ('pending', 'queued', 'creating_label')
-        )
+        and ${shippingStatusTransitionWhereSql({
+          column: sql`o.shipping_status`,
+          to: 'creating_label',
+          allowNullFrom: true,
+          includeSame: true,
+        })}
       returning o.id
     )
     select * from claimed
@@ -431,6 +434,11 @@ async function markSucceeded(args: {
           shipping_provider_ref = ${args.providerRef},
           updated_at = now()
       where o.id in (select order_id from updated_shipment)
+        and ${shippingStatusTransitionWhereSql({
+          column: sql`o.shipping_status`,
+          to: 'label_created',
+          allowNullFrom: true,
+        })}
       returning o.id
     )
     select order_id from updated_shipment
@@ -473,6 +481,12 @@ async function markFailed(args: {
           updated_at = now()
       where o.id = ${args.orderId}::uuid
         and exists (select 1 from updated_shipment)
+        and ${shippingStatusTransitionWhereSql({
+          column: sql`o.shipping_status`,
+          to: args.terminalNeedsAttention ? 'needs_attention' : 'queued',
+          allowNullFrom: true,
+          includeSame: true,
+        })}
       returning o.id
     )
     select 1
