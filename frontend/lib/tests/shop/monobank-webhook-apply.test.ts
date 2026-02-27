@@ -7,6 +7,7 @@ import { db } from '@/db';
 import {
   monobankEvents,
   orders,
+  paymentEvents,
   paymentAttempts,
   shippingShipments,
 } from '@/db/schema';
@@ -90,6 +91,11 @@ async function cleanup(orderId: string, invoiceId: string) {
   await db
     .delete(shippingShipments)
     .where(eq(shippingShipments.orderId, orderId));
+  try {
+    await db.delete(paymentEvents).where(eq(paymentEvents.orderId, orderId));
+  } catch {
+    // migration not applied in the local DB yet
+  }
   await db
     .delete(monobankEvents)
     .where(eq(monobankEvents.invoiceId, invoiceId));
@@ -145,6 +151,9 @@ describe.sequential('monobank webhook apply (persist-first)', () => {
     }
   }, 15000);
   it('dedupes identical events and applies once', async () => {
+    const prevDualWrite = process.env.SHOP_CANONICAL_EVENTS_DUAL_WRITE;
+    process.env.SHOP_CANONICAL_EVENTS_DUAL_WRITE = 'true';
+
     const invoiceId = `inv_${crypto.randomUUID()}`;
     const { orderId } = await insertOrderAndAttempt({
       invoiceId,
@@ -182,6 +191,17 @@ describe.sequential('monobank webhook apply (persist-first)', () => {
         .from(monobankEvents)
         .where(eq(monobankEvents.invoiceId, invoiceId));
       expect(events.length).toBe(1);
+      const canonical = await db
+        .select({
+          id: paymentEvents.id,
+          eventName: paymentEvents.eventName,
+          eventRef: paymentEvents.eventRef,
+        })
+        .from(paymentEvents)
+        .where(eq(paymentEvents.orderId, orderId));
+      expect(canonical.length).toBe(1);
+      expect(canonical[0]?.eventName).toBe('paid_applied');
+      expect(canonical[0]?.eventRef).toBe(events[0]?.id ?? null);
 
       const [order] = await db
         .select({
@@ -204,6 +224,11 @@ describe.sequential('monobank webhook apply (persist-first)', () => {
       expect(queued.length).toBe(1);
       expect(queued[0]?.status).toBe('queued');
     } finally {
+      if (prevDualWrite === undefined) {
+        delete process.env.SHOP_CANONICAL_EVENTS_DUAL_WRITE;
+      } else {
+        process.env.SHOP_CANONICAL_EVENTS_DUAL_WRITE = prevDualWrite;
+      }
       await cleanup(orderId, invoiceId);
     }
   });
