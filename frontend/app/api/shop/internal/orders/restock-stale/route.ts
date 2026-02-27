@@ -398,6 +398,7 @@ export async function POST(request: NextRequest) {
     envMinIntervalSeconds,
     requestedMinIntervalSeconds
   );
+  // Alias kept for backward compatibility in API responses and logs.
   const minIntervalSeconds = effectiveIntervalSeconds;
 
   const runId = crypto.randomUUID();

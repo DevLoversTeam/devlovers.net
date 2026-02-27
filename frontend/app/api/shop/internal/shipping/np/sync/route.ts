@@ -16,10 +16,7 @@ import {
   cacheSettlementsByQuery,
   cacheWarehousesBySettlement,
 } from '@/lib/services/shop/shipping/nova-poshta-catalog';
-import {
-  getInternalShippingMinIntervalFloorSeconds,
-  internalNpSyncPayloadSchema,
-} from '@/lib/validation/shop-shipping';
+import { internalNpSyncPayloadSchema } from '@/lib/validation/shop-shipping';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -84,7 +81,8 @@ function retryAfterSeconds(nextAllowedAt: Date | null): number {
 }
 
 export async function POST(request: NextRequest) {
-  const requestId = request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
+  const requestId =
+    request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
   const runId = crypto.randomUUID();
   const baseMeta = {
     requestId,
@@ -161,20 +159,14 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const requestedMinIntervalSeconds = parsed.data.minIntervalSeconds;
-  const floorSeconds = getInternalShippingMinIntervalFloorSeconds();
-  const effectiveIntervalSeconds = Math.max(
-    floorSeconds,
-    requestedMinIntervalSeconds
-  );
-  const wasClamped = effectiveIntervalSeconds !== requestedMinIntervalSeconds;
+  const effectiveIntervalSeconds = parsed.data.minIntervalSeconds;
 
   logInfo('shop_shipping_job_interval_applied', {
     ...baseMeta,
     jobName: JOB_NAME,
-    requestedMinIntervalSeconds,
+    requestedMinIntervalSeconds: effectiveIntervalSeconds,
     effectiveIntervalSeconds,
-    wasClamped,
+    wasClamped: false,
   });
 
   const gate = await acquireJobSlot({

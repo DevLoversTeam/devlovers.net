@@ -71,7 +71,7 @@ describe('phase6 checkout shipping payload helper', () => {
     });
   });
 
-  it('returns shipping unavailable UX message for unsupported country', () => {
+  it('returns SHIPPING_UNAVAILABLE code for unsupported country', () => {
     const result = buildCheckoutShippingPayload({
       shippingAvailable: false,
       reasonCode: 'COUNTRY_NOT_SUPPORTED',

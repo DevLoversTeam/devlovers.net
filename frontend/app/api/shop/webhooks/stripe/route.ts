@@ -411,8 +411,6 @@ type StripePaidApplyArgs = {
 async function applyStripePaidAndQueueShipmentAtomic(
   args: StripePaidApplyArgs
 ): Promise<{ applied: boolean; shipmentQueued: boolean }> {
-  const shouldAttemptEnqueue = args.paymentBecamePaidInThisApply;
-
   const res = await db.execute(sql`
     with updated_order as (
       update orders
@@ -443,7 +441,6 @@ async function applyStripePaidAndQueueShipmentAtomic(
       select o.id
       from orders o
       where o.id = ${args.orderId}::uuid
-        and (${shouldAttemptEnqueue} or true)
         and o.payment_provider = 'stripe'
         and o.payment_status = 'paid'
         and o.shipping_required = true
@@ -1039,29 +1036,40 @@ export async function POST(request: NextRequest) {
         order.inventoryStatus === 'reserved'
       ) {
         await db.execute(sql`
-          insert into shipping_shipments (
-            order_id,
-            provider,
-            status,
-            attempt_count,
-            created_at,
-            updated_at
-          ) values (
-            ${order.id}::uuid,
-            'nova_poshta',
-            'queued',
-            0,
-            ${now},
-            ${now}
+          with ensured_shipment as (
+            insert into shipping_shipments (
+              order_id,
+              provider,
+              status,
+              attempt_count,
+              created_at,
+              updated_at
+            ) values (
+              ${order.id}::uuid,
+              'nova_poshta',
+              'queued',
+              0,
+              ${now},
+              ${now}
+            )
+            on conflict (order_id) do nothing
+            returning order_id
+          ),
+          existing_shipment as (
+            select order_id
+            from shipping_shipments
+            where order_id = ${order.id}::uuid
+          ),
+          shipment_order_ids as (
+            select order_id from ensured_shipment
+            union
+            select order_id from existing_shipment
           )
-          on conflict (order_id) do nothing
-        `);
-
-        await db.execute(sql`
           update orders
           set shipping_status = 'queued'::shipping_status,
               updated_at = ${now}
-          where id = ${order.id}::uuid
+          where id in (select order_id from shipment_order_ids)
+            and shipping_status is distinct from 'queued'::shipping_status
         `);
       }
 

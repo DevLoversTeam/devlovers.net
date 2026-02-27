@@ -7,6 +7,7 @@ import { db } from '@/db';
 import { orders, productPrices, products } from '@/db/schema';
 import { toDbMoney } from '@/lib/shop/money';
 import { deriveTestIpFromIdemKey } from '@/lib/tests/helpers/ip';
+import { getOrSeedActiveTemplateProduct } from '@/lib/tests/helpers/seed-product';
 
 const __prevRateLimitDisabled = process.env.RATE_LIMIT_DISABLED;
 
@@ -51,45 +52,7 @@ function logTestCleanupFailed(meta: Record<string, unknown>, error: unknown) {
     error,
   });
 }
-async function getOrSeedActiveTemplateProduct(): Promise<any> {
-  const [existing] = await db
-    .select()
-    .from(products)
-    .where(eq(products.isActive as any, true))
-    .limit(1);
 
-  if (existing) return existing;
-
-  const now = new Date();
-  const productId = crypto.randomUUID();
-  const slug = `t-template-nopay-${crypto.randomUUID()}`;
-  const sku = `t-template-nopay-${crypto.randomUUID()}`;
-
-  await db.insert(products).values({
-    id: productId,
-    slug,
-    sku,
-    title: `Template ${slug}`,
-    imageUrl: `seed_image_url_${crypto.randomUUID()}`,
-    price: toDbMoney(1000),
-    isActive: true,
-    stock: 9999,
-    createdAt: now,
-    updatedAt: now,
-  } as any);
-
-  const [seeded] = await db
-    .select()
-    .from(products)
-    .where(eq(products.id, productId))
-    .limit(1);
-
-  if (!seeded) {
-    throw new Error('Failed to seed template product (no-payments).');
-  }
-
-  return seeded;
-}
 async function createIsolatedProductForCurrency(opts: {
   currency: 'USD' | 'UAH';
   stock: number;

@@ -17,7 +17,6 @@ const TERMINAL_STATUSES = new Set([
   'failed',
   'refunded',
   'needs_review',
-  'canceled',
 ]);
 
 type StatusFetchResult =
@@ -143,10 +142,15 @@ export default function OrderStatusAutoRefresh({ paymentStatus }: Props) {
           tokenKey,
           tokenValue,
           signal: controller.signal,
-        }).catch(() => ({ ok: false, status: 500, code: 'INTERNAL_ERROR' }));
+        }).catch(
+          (): StatusFetchResult => ({
+            ok: false,
+            status: 500,
+            code: 'INTERNAL_ERROR',
+          })
+        );
 
         if (cancelled) {
-          controller.abort();
           return;
         }
         activeController = null;

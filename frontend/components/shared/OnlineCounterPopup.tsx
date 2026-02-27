@@ -22,16 +22,7 @@ type OnlineCounterPopupProps = {
 
 export function OnlineCounterPopup({ ctaRef }: OnlineCounterPopupProps) {
   const t = useTranslations('onlineCounter');
-  const [online, setOnline] = useState<number | null>(() => {
-    try {
-      const raw = sessionStorage.getItem(ACTIVITY_LAST_ONLINE_KEY);
-      if (raw === null) return null;
-      const n = Number(raw);
-      return Number.isFinite(n) ? n : null;
-    } catch {
-      return null;
-    }
-  });
+  const [online, setOnline] = useState<number | null>(null);
   const [show, setShow] = useState(false);
   const hideTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
 
@@ -61,6 +52,19 @@ export function OnlineCounterPopup({ ctaRef }: OnlineCounterPopupProps) {
     let alreadyShown: string | null = null;
     let shouldSendActivity = true;
     const now = Date.now();
+
+    try {
+      const rawOnline = sessionStorage.getItem(ACTIVITY_LAST_ONLINE_KEY);
+      if (rawOnline !== null) {
+        const n = Number(rawOnline);
+        if (Number.isFinite(n)) {
+          const cachedOnline = n;
+          setTimeout(() => setOnline(cachedOnline), 0);
+        }
+      }
+    } catch {
+      // Best effort only.
+    }
 
     try {
       alreadyShown = sessionStorage.getItem(SESSION_KEY);

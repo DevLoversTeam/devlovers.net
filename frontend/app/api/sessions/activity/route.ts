@@ -7,7 +7,15 @@ import { db } from '@/db';
 import { activeSessions } from '@/db/schema/sessions';
 
 const SESSION_TIMEOUT_MINUTES = 15;
-const HEARTBEAT_THROTTLE_MS = 60_000;
+
+function getHeartbeatThrottleMs(): number {
+  const raw = process.env.HEARTBEAT_THROTTLE_MS;
+  const parsed = raw ? Number.parseInt(raw, 10) : Number.NaN;
+  const fallback = 60_000;
+  const floor = 1_000;
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.max(floor, parsed);
+}
 
 export async function POST() {
   try {
@@ -19,7 +27,9 @@ export async function POST() {
     }
 
     const now = new Date();
-    const heartbeatThreshold = new Date(now.getTime() - HEARTBEAT_THROTTLE_MS);
+    const heartbeatThreshold = new Date(
+      now.getTime() - getHeartbeatThrottleMs()
+    );
 
     await db
       .insert(activeSessions)

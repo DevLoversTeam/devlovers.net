@@ -8,6 +8,7 @@ import { orders, paymentAttempts, productPrices, products } from '@/db/schema';
 import { resetEnvCache } from '@/lib/env';
 import { toDbMoney } from '@/lib/shop/money';
 import { deriveTestIpFromIdemKey } from '@/lib/tests/helpers/ip';
+import { getOrSeedActiveTemplateProduct } from '@/lib/tests/helpers/seed-product';
 
 vi.mock('@/lib/auth', () => ({
   getCurrentUser: vi.fn().mockResolvedValue(null),
@@ -66,44 +67,6 @@ afterAll(() => {
   else process.env.DATABASE_URL = __prevDatabaseUrl;
   resetEnvCache();
 });
-
-async function getOrSeedActiveTemplateProduct(): Promise<any> {
-  const [existing] = await db
-    .select()
-    .from(products)
-    .where(eq(products.isActive as any, true))
-    .limit(1);
-
-  if (existing) return existing;
-
-  const now = new Date();
-  const productId = crypto.randomUUID();
-  const slug = `t-template-mono-disabled-${crypto.randomUUID()}`;
-  const sku = `t-template-mono-disabled-${crypto.randomUUID()}`;
-
-  await db.insert(products).values({
-    id: productId,
-    slug,
-    sku,
-    title: `Template ${slug}`,
-    imageUrl: `seed_image_url_${crypto.randomUUID()}`,
-    price: toDbMoney(1000),
-    isActive: true,
-    stock: 9999,
-    createdAt: now,
-    updatedAt: now,
-  } as any);
-
-  const [seeded] = await db
-    .select()
-    .from(products)
-    .where(eq(products.id, productId))
-    .limit(1);
-
-  if (!seeded)
-    throw new Error('Failed to seed template product (mono-disabled).');
-  return seeded;
-}
 
 async function createIsolatedProduct(stock: number) {
   const tpl = await getOrSeedActiveTemplateProduct();

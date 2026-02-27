@@ -557,31 +557,44 @@ async function atomicMarkPaidOrderAndSucceedAttempt(args: {
         and s.status = 'queued'
     ),
     shipping_status_update as (
-      update orders
-      set shipping_status = 'queued'::shipping_status,
-          updated_at = ${args.now}
-      where id in (select order_id from queued_order_ids)
-      returning id
-    )
-    select
-      (select id from updated_order) as order_id,
-      (select id from updated_attempt) as attempt_id,
-      (select count(*)::int from inserted_shipment) as inserted_shipment_count,
-      (select count(*)::int from shipping_status_update) as shipping_status_update_count
+  update orders
+  set shipping_status = 'queued'::shipping_status,
+      updated_at = ${args.now}
+  where id in (select order_id from queued_order_ids)
+    and shipping_status is distinct from 'queued'::shipping_status
+  returning id
+)
+select
+  (select id from updated_order) as order_id,
+  (select id from updated_attempt) as attempt_id,
+  (select count(*)::int from inserted_shipment) as inserted_shipment_count,
+  (select count(*)::int from queued_order_ids) as queued_order_ids_count,
+  (select count(*)::int from shipping_status_update) as shipping_status_update_count,
+  (select exists(
+     select 1
+     from shipping_shipments s
+     where s.order_id = ${args.orderId}::uuid
+       and s.status = 'queued'
+   )) as shipment_is_queued,
+  (select (o.shipping_status = 'queued'::shipping_status)
+   from orders o
+   where o.id = ${args.orderId}::uuid
+  ) as order_shipping_is_queued
   `);
 
   const row = readDbRows<{
     order_id?: string;
     attempt_id?: string;
     inserted_shipment_count?: number;
-    shipping_status_update_count?: number;
+    queued_order_ids_count?: number;
+    shipment_is_queued?: boolean;
+    order_shipping_is_queued?: boolean | null;
   }>(res)[0];
 
   return {
     ok: Boolean(row?.order_id && row?.attempt_id),
     shipmentQueued:
-      Number(row?.inserted_shipment_count ?? 0) > 0 ||
-      Number(row?.shipping_status_update_count ?? 0) > 0,
+      Boolean(row?.shipment_is_queued) && Boolean(row?.order_shipping_is_queued),
   };
 }
 
@@ -613,8 +626,12 @@ async function ensureQueuedShipmentAndOrderShippingStatus(args: {
       and o.shipping_provider = 'nova_poshta'
       and o.shipping_method_code is not null
       and ${inventoryCommittedForShippingSql(sql`o.inventory_status`)}
-    on conflict (order_id) do nothing
-    returning order_id
+    on conflict (order_id) do update
+  set status = 'queued',
+      updated_at = ${args.now}
+  where shipping_shipments.provider = 'nova_poshta'
+    and shipping_shipments.status is distinct from 'queued'
+returning order_id
   `);
 
   const insertedShipment =
@@ -975,10 +992,12 @@ async function applyWebhookToMatchedOrderAttemptEvent(args: {
       });
     }
 
-    const ensured = await ensureQueuedShipmentAndOrderShippingStatus({
-      now,
-      orderId: orderRow.id,
-    });
+    const ensured = atomicResult.shipmentQueued
+      ? { insertedShipment: false, updatedOrder: false }
+      : await ensureQueuedShipmentAndOrderShippingStatus({
+          now,
+          orderId: orderRow.id,
+        });
 
     const shipmentQueued =
       atomicResult.shipmentQueued ||
