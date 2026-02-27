@@ -106,6 +106,11 @@ export const shippingShipmentStatusEnum = pgEnum('shipping_shipment_status', [
   'needs_attention',
 ]);
 
+export const notificationChannelEnum = pgEnum('notification_channel', [
+  'email',
+  'sms',
+]);
+
 export const products = pgTable(
   'products',
   {
@@ -862,6 +867,82 @@ export const shippingQuotes = pgTable(
   ]
 );
 
+export const notificationOutbox = pgTable(
+  'notification_outbox',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    orderId: uuid('order_id')
+      .notNull()
+      .references(() => orders.id, { onDelete: 'cascade' }),
+    channel: notificationChannelEnum('channel').notNull().default('email'),
+    templateKey: text('template_key').notNull(),
+    sourceDomain: text('source_domain').notNull(),
+    sourceEventId: uuid('source_event_id').notNull(),
+    payload: jsonb('payload')
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+    status: text('status').notNull().default('pending'),
+    attemptCount: integer('attempt_count').notNull().default(0),
+    maxAttempts: integer('max_attempts').notNull().default(5),
+    nextAttemptAt: timestamp('next_attempt_at', {
+      withTimezone: true,
+      mode: 'date',
+    })
+      .notNull()
+      .defaultNow(),
+    leaseOwner: varchar('lease_owner', { length: 64 }),
+    leaseExpiresAt: timestamp('lease_expires_at', {
+      withTimezone: true,
+      mode: 'date',
+    }),
+    lastErrorCode: text('last_error_code'),
+    lastErrorMessage: text('last_error_message'),
+    sentAt: timestamp('sent_at', { withTimezone: true, mode: 'date' }),
+    deadLetteredAt: timestamp('dead_lettered_at', {
+      withTimezone: true,
+      mode: 'date',
+    }),
+    dedupeKey: text('dedupe_key').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  t => [
+    uniqueIndex('notification_outbox_dedupe_key_uq').on(t.dedupeKey),
+    index('notification_outbox_status_next_attempt_idx').on(
+      t.status,
+      t.nextAttemptAt
+    ),
+    index('notification_outbox_status_lease_expires_idx').on(
+      t.status,
+      t.leaseExpiresAt
+    ),
+    index('notification_outbox_order_created_idx').on(t.orderId, t.createdAt),
+    index('notification_outbox_template_status_idx').on(t.templateKey, t.status),
+    check(
+      'notification_outbox_source_domain_chk',
+      sql`${t.sourceDomain} in ('shipping_event','payment_event')`
+    ),
+    check(
+      'notification_outbox_status_chk',
+      sql`${t.status} in ('pending','processing','sent','failed','dead_letter')`
+    ),
+    check(
+      'notification_outbox_attempt_count_non_negative_chk',
+      sql`${t.attemptCount} >= 0`
+    ),
+    check(
+      'notification_outbox_max_attempts_positive_chk',
+      sql`${t.maxAttempts} >= 1`
+    ),
+  ]
+);
+
 export const npCities = pgTable(
   'np_cities',
   {
@@ -1068,5 +1149,6 @@ export type DbMonobankPaymentCancel =
 export type DbOrderShipping = typeof orderShipping.$inferSelect;
 export type DbShippingShipment = typeof shippingShipments.$inferSelect;
 export type DbShippingQuote = typeof shippingQuotes.$inferSelect;
+export type DbNotificationOutbox = typeof notificationOutbox.$inferSelect;
 export type DbNpCity = typeof npCities.$inferSelect;
 export type DbNpWarehouse = typeof npWarehouses.$inferSelect;

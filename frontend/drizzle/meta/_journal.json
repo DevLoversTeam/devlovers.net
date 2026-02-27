@@ -162,6 +162,13 @@
       "when": 1772219957446,
       "tag": "0022_demonic_vapor",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1772223636248,
+      "tag": "0023_clean_madame_masque",
+      "breakpoints": true
     }
   ]
 }
