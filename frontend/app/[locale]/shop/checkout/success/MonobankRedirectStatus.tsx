@@ -69,9 +69,9 @@ const UI_STATE_TO_PAYMENT_STATUS_KEY = {
 const STATUS_TOKEN_KEY_PREFIX = 'shop:order-status-token:';
 const POLL_MAX_ATTEMPTS = 10;
 const POLL_MAX_DURATION_MS = 2 * 60 * 1000;
-const POLL_BASE_DELAY_MS = 1_500;
-const POLL_MAX_DELAY_MS = 12_000;
-const POLL_BUSY_RETRY_DELAY_MS = 250;
+const POLL_BASE_DELAY_MS = 3_000;
+const POLL_MAX_DELAY_MS = 15_000;
+const POLL_BUSY_RETRY_DELAY_MS = 1_000;
 const POLL_STOP_ERROR_CODES = new Set([
   'STATUS_TOKEN_REQUIRED',
   'STATUS_TOKEN_INVALID',
@@ -132,6 +132,27 @@ function normalizeToken(value: string | null | undefined): string | null {
 function parseOrderStatusPayload(payload: unknown): OrderStatusModel | null {
   if (!payload || typeof payload !== 'object') return null;
   const root = payload as Record<string, unknown>;
+
+  if (
+    typeof root.id === 'string' &&
+    root.id.trim() &&
+    root.currency === 'UAH' &&
+    typeof root.totalAmountMinor === 'number' &&
+    Number.isFinite(root.totalAmountMinor) &&
+    typeof root.paymentStatus === 'string' &&
+    root.paymentStatus.trim() &&
+    typeof root.itemsCount === 'number' &&
+    Number.isFinite(root.itemsCount)
+  ) {
+    return {
+      id: root.id,
+      currency: root.currency,
+      totalAmountMinor: root.totalAmountMinor,
+      paymentStatus: root.paymentStatus,
+      itemsCount: root.itemsCount,
+    };
+  }
+
   if (root.success !== true) return null;
 
   const orderRaw = root.order;
@@ -181,6 +202,7 @@ async function fetchOrderStatus(args: {
 }): Promise<StatusResult> {
   try {
     const qp = new URLSearchParams();
+    qp.set('view', 'lite');
     if (args.statusToken) {
       qp.set('statusToken', args.statusToken);
     }

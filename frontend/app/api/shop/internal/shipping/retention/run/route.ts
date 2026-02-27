@@ -6,14 +6,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { requireInternalJanitorAuth } from '@/lib/auth/internal-janitor';
 import { getShopShippingFlags } from '@/lib/env/nova-poshta';
-import { logError, logWarn } from '@/lib/logging';
+import { logError, logInfo, logWarn } from '@/lib/logging';
 import { guardNonBrowserFailClosed } from '@/lib/security/origin';
 import {
   sanitizeShippingErrorForLog,
   sanitizeShippingLogMeta,
 } from '@/lib/services/shop/shipping/log-sanitizer';
 import { anonymizeRetainedOrderShippingSnapshots } from '@/lib/services/shop/shipping/retention';
-import { internalShippingRetentionRunPayloadSchema } from '@/lib/validation/shop-shipping';
+import {
+  getInternalShippingMinIntervalFloorSeconds,
+  internalShippingRetentionRunPayloadSchema,
+} from '@/lib/validation/shop-shipping';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -175,13 +178,29 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const requestedMinIntervalSeconds = parsed.data.minIntervalSeconds;
+  const floorSeconds = getInternalShippingMinIntervalFloorSeconds();
+  const effectiveIntervalSeconds = Math.max(
+    floorSeconds,
+    requestedMinIntervalSeconds
+  );
+  const wasClamped = effectiveIntervalSeconds !== requestedMinIntervalSeconds;
+
+  logInfo('shop_shipping_job_interval_applied', {
+    ...safeBaseMeta,
+    jobName: JOB_NAME,
+    requestedMinIntervalSeconds,
+    effectiveIntervalSeconds,
+    wasClamped,
+  });
+
   const bypass = isLocalBypassEnabled();
 
   const gate = bypass
     ? ({ ok: true as const } as const)
     : await acquireJobSlot({
         runId,
-        minIntervalSeconds: parsed.data.minIntervalSeconds,
+        minIntervalSeconds: effectiveIntervalSeconds,
       });
 
   if (!gate.ok) {

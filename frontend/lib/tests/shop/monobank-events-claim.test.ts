@@ -47,22 +47,28 @@ async function insertMinimalEvent(args: {
 describe.sequential('claimNextMonobankEvent', () => {
   beforeEach(async () => {
     await db.execute(sql`
-      delete from monobank_events
-      where event_key like ${`${EVENT_KEY_PREFIX}:%`}
-         or raw_sha256 like ${`${EVENT_KEY_PREFIX}:%`}
-         or event_key = 'test:event_key:1'
-         or raw_sha256 = 'test:raw_sha256:1'
-    `);
+  delete from monobank_events
+  where provider = 'monobank'
+    and (
+      event_key like 'test:%'
+      or raw_sha256 like 'test:%'
+      or event_key = 'test:event_key:1'
+      or raw_sha256 = 'test:raw_sha256:1'
+    )
+`);
   });
 
   afterEach(async () => {
     await db.execute(sql`
-      delete from monobank_events
-      where event_key like ${`${EVENT_KEY_PREFIX}:%`}
-         or raw_sha256 like ${`${EVENT_KEY_PREFIX}:%`}
-         or event_key = 'test:event_key:1'
-         or raw_sha256 = 'test:raw_sha256:1'
-    `);
+  delete from monobank_events
+  where provider = 'monobank'
+    and (
+      event_key like 'test:%'
+      or raw_sha256 like 'test:%'
+      or event_key = 'test:event_key:1'
+      or raw_sha256 = 'test:raw_sha256:1'
+    )
+`);
   });
 
   it('claims first eligible event and sets lease fields', async () => {

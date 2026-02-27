@@ -8,6 +8,7 @@ import { orders, paymentAttempts, productPrices, products } from '@/db/schema';
 import { resetEnvCache } from '@/lib/env';
 import { toDbMoney } from '@/lib/shop/money';
 import { deriveTestIpFromIdemKey } from '@/lib/tests/helpers/ip';
+import { getOrSeedActiveTemplateProduct } from '@/lib/tests/helpers/seed-product';
 
 vi.mock('@/lib/auth', () => ({
   getCurrentUser: vi.fn().mockResolvedValue(null),
@@ -68,15 +69,7 @@ afterAll(() => {
 });
 
 async function createIsolatedProduct(stock: number) {
-  const [tpl] = await db
-    .select()
-    .from(products)
-    .where(eq(products.isActive as any, true))
-    .limit(1);
-
-  if (!tpl) {
-    throw new Error('No template product found to clone.');
-  }
+  const tpl = await getOrSeedActiveTemplateProduct();
 
   const productId = crypto.randomUUID();
   const slug = `t-mono-${crypto.randomUUID()}`;
