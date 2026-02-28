@@ -8,6 +8,8 @@ import {
   NovaPoshtaConfigError,
 } from '@/lib/env/nova-poshta';
 import { logInfo, logWarn } from '@/lib/logging';
+import { buildShippingEventDedupeKey } from '@/lib/services/shop/events/dedupe-key';
+import { writeShippingEvent } from '@/lib/services/shop/events/write-shipping-event';
 import { sanitizeShippingErrorMessage } from '@/lib/services/shop/shipping/log-sanitizer';
 import { recordShippingMetric } from '@/lib/services/shop/shipping/metrics';
 import {
@@ -50,6 +52,12 @@ type ShipmentError = {
   message: string;
   transient: boolean;
 };
+
+type WorkerShippingEventName =
+  | 'creating_label'
+  | 'label_created'
+  | 'label_creation_retry_scheduled'
+  | 'label_creation_needs_attention';
 
 export type RunShippingShipmentsWorkerArgs = {
   runId: string;
@@ -280,6 +288,71 @@ function computeBackoffSeconds(
   return Math.min(backoff, 6 * 60 * 60);
 }
 
+function nextAttemptNumber(attemptCount: number): number {
+  return Math.max(1, Math.max(0, Math.trunc(attemptCount)) + 1);
+}
+
+function buildWorkerEventDedupeKey(args: {
+  orderId: string;
+  shipmentId: string;
+  eventName: WorkerShippingEventName;
+  statusTo: string;
+  attemptNumber: number;
+  errorCode?: string | null;
+}): string {
+  return buildShippingEventDedupeKey({
+    domain: 'shipments_worker',
+    orderId: args.orderId,
+    shipmentId: args.shipmentId,
+    eventName: args.eventName,
+    statusTo: args.statusTo,
+    attemptNumber: args.attemptNumber,
+    errorCode: args.errorCode ?? null,
+  });
+}
+
+async function emitWorkerShippingEvent(args: {
+  orderId: string;
+  shipmentId: string;
+  provider: string;
+  eventName: WorkerShippingEventName;
+  statusFrom: string | null;
+  statusTo: string;
+  attemptNumber: number;
+  runId: string;
+  payload?: Record<string, unknown>;
+  eventRef?: string | null;
+  trackingNumber?: string | null;
+  errorCode?: string | null;
+}) {
+  const dedupeKey = buildWorkerEventDedupeKey({
+    orderId: args.orderId,
+    shipmentId: args.shipmentId,
+    eventName: args.eventName,
+    statusTo: args.statusTo,
+    attemptNumber: args.attemptNumber,
+    errorCode: args.errorCode ?? null,
+  });
+
+  await writeShippingEvent({
+    orderId: args.orderId,
+    shipmentId: args.shipmentId,
+    provider: args.provider,
+    eventName: args.eventName,
+    eventSource: 'shipments_worker',
+    eventRef: args.eventRef ?? args.runId,
+    statusFrom: args.statusFrom,
+    statusTo: args.statusTo,
+    trackingNumber: args.trackingNumber ?? null,
+    payload: {
+      runId: args.runId,
+      attemptNumber: args.attemptNumber,
+      ...(args.payload ?? {}),
+    },
+    dedupeKey,
+  });
+}
+
 function toNpPayload(args: {
   order: OrderShippingDetailsRow;
   snapshot: ParsedShipmentSnapshot;
@@ -380,7 +453,25 @@ export async function claimQueuedShipmentsForProcessing(args: {
     select * from claimed
   `);
 
-  return readRows<ClaimedShipmentRow>(res);
+  const claimed = readRows<ClaimedShipmentRow>(res);
+
+  for (const row of claimed) {
+    await emitWorkerShippingEvent({
+      orderId: row.order_id,
+      shipmentId: row.id,
+      provider: row.provider,
+      eventName: 'creating_label',
+      statusFrom: null,
+      statusTo: 'creating_label',
+      attemptNumber: nextAttemptNumber(row.attempt_count),
+      runId: args.runId,
+      payload: {
+        shipmentStatusTo: 'processing',
+      },
+    });
+  }
+
+  return claimed;
 }
 
 async function loadOrderShippingDetails(
@@ -454,13 +545,13 @@ async function markFailed(args: {
   error: ShipmentError;
   nextAttemptAt: Date | null;
   terminalNeedsAttention: boolean;
-}) {
+}): Promise<boolean> {
   const safeErrorMessage = sanitizeShippingErrorMessage(
     args.error.message,
     'Shipment processing failed.'
   );
 
-  await db.execute(sql`
+  const res = await db.execute<{ touched: number }>(sql`
     with updated_shipment as (
       update shipping_shipments s
       set status = ${args.terminalNeedsAttention ? 'needs_attention' : 'failed'},
@@ -489,8 +580,10 @@ async function markFailed(args: {
         })}
       returning o.id
     )
-    select 1
+    select 1 as touched from updated_shipment
   `);
+
+  return readRows<{ touched: number }>(res).length > 0;
 }
 
 async function processClaimedShipment(args: {
@@ -571,6 +664,23 @@ async function processClaimedShipment(args: {
       return 'retried';
     }
 
+    await emitWorkerShippingEvent({
+      orderId: args.claim.order_id,
+      shipmentId: args.claim.id,
+      provider: args.claim.provider,
+      eventName: 'label_created',
+      statusFrom: 'creating_label',
+      statusTo: 'label_created',
+      attemptNumber: nextAttemptNumber(args.claim.attempt_count),
+      runId: args.runId,
+      eventRef: created.providerRef,
+      trackingNumber: created.trackingNumber,
+      payload: {
+        providerRef: created.providerRef,
+        shipmentStatusTo: 'succeeded',
+      },
+    });
+
     recordShippingMetric({
       name: 'succeeded',
       source: 'shipments_worker',
@@ -598,13 +708,45 @@ async function processClaimedShipment(args: {
               1000
         );
 
-    await markFailed({
+    const updated = await markFailed({
       shipmentId: args.claim.id,
       runId: args.runId,
       orderId: args.claim.order_id,
       error: classified,
       nextAttemptAt,
       terminalNeedsAttention,
+    });
+
+    if (!updated) {
+      logWarn('shipping_shipments_worker_lease_lost', {
+        runId: args.runId,
+        shipmentId: args.claim.id,
+        orderId: args.claim.order_id,
+        code: 'SHIPMENT_LEASE_LOST',
+      });
+      return 'retried';
+    }
+
+    await emitWorkerShippingEvent({
+      orderId: args.claim.order_id,
+      shipmentId: args.claim.id,
+      provider: args.claim.provider,
+      eventName: terminalNeedsAttention
+        ? 'label_creation_needs_attention'
+        : 'label_creation_retry_scheduled',
+      statusFrom: 'creating_label',
+      statusTo: terminalNeedsAttention ? 'needs_attention' : 'queued',
+      attemptNumber: nextAttemptNumber(args.claim.attempt_count),
+      runId: args.runId,
+      eventRef: classified.code,
+      errorCode: classified.code,
+      payload: {
+        errorCode: classified.code,
+        errorMessage: classified.message,
+        transient: classified.transient,
+        nextAttemptAt: nextAttemptAt ? nextAttemptAt.toISOString() : null,
+        shipmentStatusTo: terminalNeedsAttention ? 'needs_attention' : 'failed',
+      },
     });
 
     if (terminalNeedsAttention) {
