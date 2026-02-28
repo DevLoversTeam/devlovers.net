@@ -14,10 +14,7 @@ async function cleanup(orderId: string) {
 }
 
 describe.sequential('admin shipping action canonical audit', () => {
-  it('mark_shipped inserts admin_audit_log row when canonical dual-write flag is ON', async () => {
-    const prevDualWrite = process.env.SHOP_CANONICAL_EVENTS_DUAL_WRITE;
-    process.env.SHOP_CANONICAL_EVENTS_DUAL_WRITE = 'true';
-
+  it('mark_shipped inserts admin_audit_log row by default', async () => {
     const orderId = crypto.randomUUID();
     const requestId = `req_${crypto.randomUUID()}`;
 
@@ -65,11 +62,6 @@ describe.sequential('admin shipping action canonical audit', () => {
       expect(logs[0]?.requestId).toBe(requestId);
       expect(logs[0]?.orderId).toBe(orderId);
     } finally {
-      if (prevDualWrite === undefined) {
-        delete process.env.SHOP_CANONICAL_EVENTS_DUAL_WRITE;
-      } else {
-        process.env.SHOP_CANONICAL_EVENTS_DUAL_WRITE = prevDualWrite;
-      }
       await cleanup(orderId);
     }
   });
