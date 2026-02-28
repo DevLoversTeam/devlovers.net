@@ -14,6 +14,7 @@ import { requireAdminCsrf } from '@/lib/security/admin-csrf';
 import { guardBrowserSameOrigin } from '@/lib/security/origin';
 import { InvalidPayloadError, SlugConflictError } from '@/lib/services/errors';
 import { createProduct } from '@/lib/services/products';
+import { writeAdminAudit } from '@/lib/services/shop/events/write-admin-audit';
 
 export const runtime = 'nodejs';
 function noStoreJson(body: unknown, init?: { status?: number }) {
@@ -115,7 +116,9 @@ export async function POST(request: NextRequest) {
   let slugForLog: string | null = null;
 
   try {
-    await requireAdminApi(request);
+    const adminUser = await requireAdminApi(request);
+    const actorUserId =
+      adminUser && typeof adminUser.id === 'string' ? adminUser.id : null;
 
     let formData: FormData;
     try {
@@ -282,6 +285,31 @@ export async function POST(request: NextRequest) {
         ...parsed.data,
         image: imageFile,
       });
+
+      await writeAdminAudit({
+        actorUserId,
+        action: 'product_admin_action.create',
+        targetType: 'product',
+        targetId: inserted.id,
+        requestId,
+        payload: {
+          productId: inserted.id,
+          slug: inserted.slug,
+          title: inserted.title,
+          badge: inserted.badge,
+          isActive: inserted.isActive,
+          isFeatured: inserted.isFeatured,
+          stock: inserted.stock,
+        },
+        dedupeSeed: {
+          domain: 'product_admin_action',
+          action: 'create',
+          requestId,
+          productId: inserted.id,
+          slug: inserted.slug,
+        },
+      });
+
       return noStoreJson(
         {
           success: true,
