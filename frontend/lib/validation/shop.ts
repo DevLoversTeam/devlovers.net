@@ -386,6 +386,17 @@ export const checkoutShippingSchema = z
     }
   });
 
+const checkoutLegalVersionSchema = z.string().trim().min(1).max(64);
+
+export const checkoutLegalConsentSchema = z
+  .object({
+    termsAccepted: z.boolean(),
+    privacyAccepted: z.boolean(),
+    termsVersion: checkoutLegalVersionSchema,
+    privacyVersion: checkoutLegalVersionSchema,
+  })
+  .strict();
+
 export const checkoutPayloadSchema = z
   .object({
     items: z.array(checkoutItemSchema).min(1),
@@ -397,6 +408,7 @@ export const checkoutPayloadSchema = z
       .transform(value => value.toUpperCase())
       .optional(),
     shipping: checkoutShippingSchema.optional(),
+    legalConsent: checkoutLegalConsentSchema.optional(),
   })
   .strict();
 
@@ -543,6 +555,9 @@ export type CartRehydrateResult = z.infer<typeof cartRehydrateResultSchema>;
 export type CheckoutItemInput = z.infer<typeof checkoutItemSchema>;
 export type CheckoutPayload = z.infer<typeof checkoutPayloadSchema>;
 export type CheckoutShippingPayload = z.infer<typeof checkoutShippingSchema>;
+export type CheckoutLegalConsentPayload = z.infer<
+  typeof checkoutLegalConsentSchema
+>;
 export type OrderIdParams = z.infer<typeof orderIdParamSchema>;
 export type IntlQuoteOfferPayload = z.infer<typeof intlQuoteOfferPayloadSchema>;
 export type IntlQuoteAcceptPayload = z.infer<typeof intlQuoteAcceptPayloadSchema>;
