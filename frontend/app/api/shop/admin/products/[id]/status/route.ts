@@ -95,25 +95,40 @@ export async function PATCH(
 
     const updated = await toggleProductStatus(productIdForLog);
 
-    await writeAdminAudit({
-      actorUserId,
-      action: 'product_admin_action.toggle_status',
-      targetType: 'product',
-      targetId: updated.id,
-      requestId,
-      payload: {
-        productId: updated.id,
-        slug: updated.slug,
-        isActive: updated.isActive,
-      },
-      dedupeSeed: {
-        domain: 'product_admin_action',
-        action: 'toggle_status',
+    try {
+      await writeAdminAudit({
+        actorUserId,
+        action: 'product_admin_action.toggle_status',
+        targetType: 'product',
+        targetId: updated.id,
         requestId,
+        payload: {
+          productId: updated.id,
+          slug: updated.slug,
+          isActive: updated.isActive,
+        },
+        dedupeSeed: {
+          domain: 'product_admin_action',
+          action: 'toggle_status',
+          requestId,
+          productId: updated.id,
+          toIsActive: updated.isActive,
+        },
+      });
+    } catch (auditError) {
+      logWarn('admin_product_status_audit_failed', {
+        ...baseMeta,
+        code: 'AUDIT_WRITE_FAILED',
+        requestId,
+        actorUserId,
         productId: updated.id,
-        toIsActive: updated.isActive,
-      },
-    });
+        action: 'product_admin_action.toggle_status',
+        isActive: updated.isActive,
+        message:
+          auditError instanceof Error ? auditError.message : String(auditError),
+        durationMs: Date.now() - startedAtMs,
+      });
+    }
 
     return noStoreJson({ success: true, product: updated }, { status: 200 });
   } catch (error) {

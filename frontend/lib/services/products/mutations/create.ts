@@ -17,9 +17,15 @@ import {
 } from '../prices';
 import { normalizeSlug } from '../slug';
 
-export async function createProduct(input: ProductInput): Promise<DbProduct> {
+type ProductMutationExecutor = Pick<typeof db, 'insert' | 'delete' | 'select'>;
+
+export async function createProduct(
+  input: ProductInput,
+  options?: { db?: ProductMutationExecutor }
+): Promise<DbProduct> {
+  const executor = options?.db ?? db;
   const slug = await normalizeSlug(
-    db,
+    executor as any,
     (input as any).slug ?? (input as any).title
   );
 
@@ -47,7 +53,7 @@ export async function createProduct(input: ProductInput): Promise<DbProduct> {
   let createdProductId: string | null = null;
 
   try {
-    const [row] = await db
+    const [row] = await executor
       .insert(products)
       .values({
         slug,
@@ -81,7 +87,7 @@ export async function createProduct(input: ProductInput): Promise<DbProduct> {
 
     createdProductId = row.id;
 
-    await db.insert(productPrices).values(
+    await executor.insert(productPrices).values(
       prices.map(p => {
         const priceMinor = p.priceMinor;
         const originalMinor = p.originalPriceMinor;
@@ -102,7 +108,7 @@ export async function createProduct(input: ProductInput): Promise<DbProduct> {
   } catch (error) {
     if (createdProductId) {
       try {
-        await db.delete(products).where(eq(products.id, createdProductId));
+        await executor.delete(products).where(eq(products.id, createdProductId));
       } catch (cleanupDbError) {
         logError(
           'Failed to cleanup product after create failure',

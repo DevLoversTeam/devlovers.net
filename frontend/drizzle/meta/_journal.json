@@ -183,6 +183,13 @@
       "when": 1772234409785,
       "tag": "0025_cute_mentor",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1772252564812,
+      "tag": "0026_gray_stone_men",
+      "breakpoints": true
     }
   ]
 }

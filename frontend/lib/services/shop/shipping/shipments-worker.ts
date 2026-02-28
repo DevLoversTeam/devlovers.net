@@ -345,9 +345,9 @@ async function emitWorkerShippingEvent(args: {
     statusTo: args.statusTo,
     trackingNumber: args.trackingNumber ?? null,
     payload: {
+      ...(args.payload ?? {}),
       runId: args.runId,
       attemptNumber: args.attemptNumber,
-      ...(args.payload ?? {}),
     },
     dedupeKey,
   });
@@ -532,7 +532,9 @@ async function markSucceeded(args: {
         })}
       returning o.id
     )
-    select order_id from updated_shipment
+    select us.order_id
+    from updated_shipment us
+    join updated_order uo on uo.id = us.order_id
   `);
 
   return readRows<{ order_id: string }>(res)[0] ?? null;
@@ -580,7 +582,9 @@ async function markFailed(args: {
         })}
       returning o.id
     )
-    select 1 as touched from updated_shipment
+    select 1 as touched
+    from updated_shipment us
+    join updated_order uo on uo.id = us.order_id
   `);
 
   return readRows<{ touched: number }>(res).length > 0;
@@ -664,30 +668,48 @@ async function processClaimedShipment(args: {
       return 'retried';
     }
 
-    await emitWorkerShippingEvent({
-      orderId: args.claim.order_id,
-      shipmentId: args.claim.id,
-      provider: args.claim.provider,
-      eventName: 'label_created',
-      statusFrom: 'creating_label',
-      statusTo: 'label_created',
-      attemptNumber: nextAttemptNumber(args.claim.attempt_count),
-      runId: args.runId,
-      eventRef: created.providerRef,
-      trackingNumber: created.trackingNumber,
-      payload: {
-        providerRef: created.providerRef,
-        shipmentStatusTo: 'succeeded',
-      },
-    });
+    try {
+      await emitWorkerShippingEvent({
+        orderId: args.claim.order_id,
+        shipmentId: args.claim.id,
+        provider: args.claim.provider,
+        eventName: 'label_created',
+        statusFrom: 'creating_label',
+        statusTo: 'label_created',
+        attemptNumber: nextAttemptNumber(args.claim.attempt_count),
+        runId: args.runId,
+        eventRef: created.providerRef,
+        trackingNumber: created.trackingNumber,
+        payload: {
+          providerRef: created.providerRef,
+          shipmentStatusTo: 'succeeded',
+        },
+      });
+    } catch {
+      logWarn('shipping_shipments_worker_post_success_event_write_failed', {
+        runId: args.runId,
+        shipmentId: args.claim.id,
+        orderId: args.claim.order_id,
+        code: 'SHIPPING_EVENT_WRITE_FAILED',
+      });
+    }
 
-    recordShippingMetric({
-      name: 'succeeded',
-      source: 'shipments_worker',
-      runId: args.runId,
-      orderId: args.claim.order_id,
-      shipmentId: args.claim.id,
-    });
+    try {
+      recordShippingMetric({
+        name: 'succeeded',
+        source: 'shipments_worker',
+        runId: args.runId,
+        orderId: args.claim.order_id,
+        shipmentId: args.claim.id,
+      });
+    } catch {
+      logWarn('shipping_shipments_worker_post_success_metric_write_failed', {
+        runId: args.runId,
+        shipmentId: args.claim.id,
+        orderId: args.claim.order_id,
+        code: 'SHIPPING_METRIC_WRITE_FAILED',
+      });
+    }
 
     return 'succeeded';
   } catch (error) {

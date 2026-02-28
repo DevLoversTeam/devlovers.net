@@ -7,6 +7,7 @@ import { db } from '@/db';
 import { notificationOutbox, orders } from '@/db/schema';
 import {
   claimNotificationOutboxBatch,
+  countRunnableNotificationOutboxRows,
   runNotificationOutboxWorker,
 } from '@/lib/services/shop/notifications/outbox-worker';
 import { toDbMoney } from '@/lib/shop/money';
@@ -35,6 +36,11 @@ async function insertOutboxRow(args: {
   orderId: string;
   payload?: Record<string, unknown>;
   maxAttempts?: number;
+  status?: 'pending' | 'failed' | 'processing';
+  attemptCount?: number;
+  nextAttemptAt?: Date;
+  leaseOwner?: string | null;
+  leaseExpiresAt?: Date | null;
 }) {
   const id = crypto.randomUUID();
   await db.insert(notificationOutbox).values({
@@ -45,10 +51,12 @@ async function insertOutboxRow(args: {
     sourceDomain: 'shipping_event',
     sourceEventId: crypto.randomUUID(),
     payload: args.payload ?? {},
-    status: 'pending',
-    attemptCount: 0,
+    status: args.status ?? 'pending',
+    attemptCount: args.attemptCount ?? 0,
     maxAttempts: args.maxAttempts ?? 5,
-    nextAttemptAt: new Date(),
+    nextAttemptAt: args.nextAttemptAt ?? new Date(),
+    leaseOwner: args.leaseOwner ?? null,
+    leaseExpiresAt: args.leaseExpiresAt ?? null,
     dedupeKey: `outbox:${crypto.randomUUID()}`,
   } as any);
   return id;
@@ -164,6 +172,70 @@ describe.sequential('notifications worker phase 3', () => {
       expect(afterSecond?.leaseOwner).toBeNull();
       expect(afterSecond?.leaseExpiresAt).toBeNull();
       expect(afterSecond?.nextAttemptAt).toBeTruthy();
+    } finally {
+      await cleanupOrder(orderId);
+    }
+  });
+
+  it('reclaims stuck processing rows with expired lease and processes them', async () => {
+    const orderId = await seedOrder();
+    const expiredLeaseAt = new Date(Date.now() - 60_000);
+    try {
+      const outboxId = await insertOutboxRow({
+        orderId,
+        status: 'processing',
+        attemptCount: 0,
+        nextAttemptAt: new Date(Date.now() - 60_000),
+        leaseOwner: 'old-worker',
+        leaseExpiresAt: expiredLeaseAt,
+        payload: {
+          testMode: {
+            forceFail: true,
+            code: 'TEMP_SEND_FAIL',
+            transient: true,
+            message: 'temporary send failure',
+          },
+        },
+        maxAttempts: 5,
+      });
+
+      const runnableBefore = await countRunnableNotificationOutboxRows();
+      expect(runnableBefore).toBeGreaterThanOrEqual(1);
+
+      const runId = `notify-worker-${crypto.randomUUID()}`;
+      const result = await runNotificationOutboxWorker({
+        runId,
+        limit: 10,
+        leaseSeconds: 120,
+        maxAttempts: 5,
+        baseBackoffSeconds: 5,
+      });
+
+      expect(result.claimed).toBe(1);
+      expect(result.processed).toBe(1);
+      expect(result.retried).toBe(1);
+
+      const [row] = await db
+        .select({
+          status: notificationOutbox.status,
+          attemptCount: notificationOutbox.attemptCount,
+          leaseOwner: notificationOutbox.leaseOwner,
+          leaseExpiresAt: notificationOutbox.leaseExpiresAt,
+          lastErrorCode: notificationOutbox.lastErrorCode,
+          nextAttemptAt: notificationOutbox.nextAttemptAt,
+          updatedAt: notificationOutbox.updatedAt,
+        })
+        .from(notificationOutbox)
+        .where(eq(notificationOutbox.id, outboxId))
+        .limit(1);
+
+      expect(row?.status).toBe('failed');
+      expect(row?.attemptCount).toBe(1);
+      expect(row?.leaseOwner).toBeNull();
+      expect(row?.leaseExpiresAt).toBeNull();
+      expect(row?.lastErrorCode).toBe('TEMP_SEND_FAIL');
+      expect(row?.updatedAt.getTime()).toBeGreaterThan(expiredLeaseAt.getTime());
+      expect(row?.nextAttemptAt.getTime()).toBeGreaterThan(Date.now() - 1000);
     } finally {
       await cleanupOrder(orderId);
     }

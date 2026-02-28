@@ -238,9 +238,17 @@ export async function countRunnableNotificationOutboxRows(): Promise<number> {
   const res = await db.execute<PreviewCountRow>(sql`
     select count(*)::int as total
     from notification_outbox n
-    where n.status in ('pending', 'failed')
-      and n.next_attempt_at <= now()
-      and (n.lease_expires_at is null or n.lease_expires_at < now())
+    where (
+      (
+        n.status in ('pending', 'failed')
+        and n.next_attempt_at <= now()
+        and (n.lease_expires_at is null or n.lease_expires_at < now())
+      )
+      or (
+        n.status = 'processing'
+        and n.lease_expires_at < now()
+      )
+    )
   `);
   return Number(readRows<PreviewCountRow>(res)[0]?.total ?? 0);
 }
@@ -254,9 +262,17 @@ export async function claimNotificationOutboxBatch(args: {
     with candidates as (
       select n.id
       from notification_outbox n
-      where n.status in ('pending', 'failed')
-        and n.next_attempt_at <= now()
-        and (n.lease_expires_at is null or n.lease_expires_at < now())
+      where (
+        (
+          n.status in ('pending', 'failed')
+          and n.next_attempt_at <= now()
+          and (n.lease_expires_at is null or n.lease_expires_at < now())
+        )
+        or (
+          n.status = 'processing'
+          and n.lease_expires_at < now()
+        )
+      )
       order by n.next_attempt_at asc, n.created_at asc
       for update skip locked
       limit ${args.limit}

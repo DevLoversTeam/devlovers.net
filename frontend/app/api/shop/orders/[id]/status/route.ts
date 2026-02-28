@@ -160,26 +160,40 @@ export async function GET(
       : requestedResponseMode;
 
     if (accessByStatusToken && tokenAuditSeed) {
-      await writeAdminAudit({
-        orderId,
-        actorUserId: null,
-        action: 'guest_status_token.used',
-        targetType: 'order_status',
-        targetId: orderId,
-        requestId,
-        payload: {
-          scope: 'status_lite',
-          tokenNonce: tokenAuditSeed.nonce,
-          tokenIat: tokenAuditSeed.iat,
-          tokenExp: tokenAuditSeed.exp,
-        },
-        dedupeSeed: {
-          domain: 'guest_status_token_use',
+      try {
+        await writeAdminAudit({
           orderId,
-          tokenNonce: tokenAuditSeed.nonce,
-          scope: 'status_lite',
-        },
-      });
+          actorUserId: null,
+          action: 'guest_status_token.used',
+          targetType: 'order_status',
+          targetId: orderId,
+          requestId,
+          payload: {
+            scope: 'status_lite',
+            tokenNonce: tokenAuditSeed.nonce,
+            tokenIat: tokenAuditSeed.iat,
+            tokenExp: tokenAuditSeed.exp,
+          },
+          dedupeSeed: {
+            domain: 'guest_status_token_use',
+            orderId,
+            tokenNonce: tokenAuditSeed.nonce,
+            scope: 'status_lite',
+          },
+        });
+      } catch (auditError) {
+        logWarn('order_status_guest_token_audit_failed', {
+          requestId,
+          orderId,
+          code: 'AUDIT_WRITE_FAILED',
+          message:
+            auditError instanceof Error
+              ? auditError.message
+              : String(auditError),
+          responseMode: effectiveResponseMode,
+          durationMs: Date.now() - startedAtMs,
+        });
+      }
     }
 
     if (effectiveResponseMode === 'lite') {

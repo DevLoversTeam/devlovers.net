@@ -17,9 +17,13 @@ export type WriteAdminAuditArgs = {
   dedupeSeed?: unknown;
 };
 
+type AdminAuditExecutor = Pick<typeof db, 'insert'>;
+
 export async function writeAdminAudit(
-  args: WriteAdminAuditArgs
+  args: WriteAdminAuditArgs,
+  options?: { db?: AdminAuditExecutor }
 ): Promise<{ inserted: boolean; dedupeKey: string; id: string | null }> {
+  const executor = options?.db ?? db;
   const dedupeKey =
     args.dedupeKey ??
     buildAdminAuditDedupeKey(
@@ -33,7 +37,7 @@ export async function writeAdminAudit(
       }
     );
 
-  const inserted = await db
+  const inserted = await executor
     .insert(adminAuditLog)
     .values({
       orderId: args.orderId ?? null,

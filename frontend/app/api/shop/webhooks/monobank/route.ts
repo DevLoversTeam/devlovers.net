@@ -22,7 +22,10 @@ import {
   getRateLimitSubject,
   rateLimitResponse,
 } from '@/lib/security/rate-limit';
-import { InvalidPayloadError } from '@/lib/services/errors';
+import {
+  getMonobankApplyErrorCode,
+  isRetryableApplyError,
+} from '@/lib/services/orders/monobank-retry';
 import { handleMonobankWebhook } from '@/lib/services/orders/monobank-webhook';
 
 export const dynamic = 'force-dynamic';
@@ -70,19 +73,6 @@ function parseWebhookPayload(
   }
 
   return parsed as Record<string, unknown>;
-}
-
-function getErrorCode(error: unknown): string | null {
-  if (!error || typeof error !== 'object') return null;
-  const maybeCode = (error as { code?: unknown }).code;
-  return typeof maybeCode === 'string' ? maybeCode : null;
-}
-
-function isRetryableApplyError(error: unknown): boolean {
-  if (error instanceof InvalidPayloadError) return false;
-  const code = getErrorCode(error);
-  if (code === 'INVALID_PAYLOAD') return false;
-  return true;
 }
 
 export async function POST(request: NextRequest) {
@@ -284,7 +274,7 @@ export async function POST(request: NextRequest) {
       ...diagMeta,
       code: 'WEBHOOK_APPLY_FAILED',
       eventKey,
-      errorCode: getErrorCode(error),
+      errorCode: getMonobankApplyErrorCode(error),
       retryable,
       reason: 'WEBHOOK_APPLY_FAILED',
     });

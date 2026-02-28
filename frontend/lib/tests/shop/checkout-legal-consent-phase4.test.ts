@@ -87,6 +87,7 @@ describe('checkout legal consent phase 4', () => {
   it('persists legal consent artifact for new order', async () => {
     const { productId } = await seedProduct();
     let orderId: string | null = null;
+    const before = Date.now();
 
     try {
       const result = await createOrderWithItems({
@@ -120,6 +121,7 @@ describe('checkout legal consent phase 4', () => {
         .from(orderLegalConsents)
         .where(eq(orderLegalConsents.orderId, orderId))
         .limit(1);
+      const after = Date.now();
 
       expect(row).toBeTruthy();
       expect(row?.termsAccepted).toBe(true);
@@ -130,6 +132,8 @@ describe('checkout legal consent phase 4', () => {
       expect(row?.locale).toBe('en-us');
       expect(row?.country).toBe('US');
       expect(row?.consentedAt).toBeInstanceOf(Date);
+      expect(row?.consentedAt.getTime()).toBeGreaterThanOrEqual(before - 1000);
+      expect(row?.consentedAt.getTime()).toBeLessThanOrEqual(after + 1000);
     } finally {
       if (orderId) await cleanupOrder(orderId);
       await cleanupProduct(productId);
@@ -137,6 +141,79 @@ describe('checkout legal consent phase 4', () => {
   }, 30_000);
 
   it('idempotency conflicts if legal consent versions change for same key', async () => {
+    const { productId } = await seedProduct();
+    let orderId: string | null = null;
+    const idempotencyKey = crypto.randomUUID();
+    let baselineConsentedAtMs: number | null = null;
+    let baselineSource: string | null = null;
+
+    try {
+      const first = await createOrderWithItems({
+        idempotencyKey,
+        userId: null,
+        locale: 'en-US',
+        country: 'US',
+        items: [{ productId, quantity: 1 }],
+        legalConsent: {
+          termsAccepted: true,
+          privacyAccepted: true,
+          termsVersion: 'terms-2026-02-27',
+          privacyVersion: 'privacy-2026-02-27',
+        },
+      });
+
+      orderId = first.order.id;
+      const [baseline] = await db
+        .select({
+          consentedAt: orderLegalConsents.consentedAt,
+          source: orderLegalConsents.source,
+        })
+        .from(orderLegalConsents)
+        .where(eq(orderLegalConsents.orderId, orderId))
+        .limit(1);
+
+      baselineConsentedAtMs = baseline?.consentedAt.getTime() ?? null;
+      baselineSource = baseline?.source ?? null;
+
+      await expect(
+        createOrderWithItems({
+          idempotencyKey,
+          userId: null,
+          locale: 'en-US',
+          country: 'US',
+          items: [{ productId, quantity: 1 }],
+          legalConsent: {
+            termsAccepted: true,
+            privacyAccepted: true,
+            termsVersion: 'terms-2026-03-01',
+            privacyVersion: 'privacy-2026-02-27',
+          },
+        })
+      ).rejects.toBeInstanceOf(IdempotencyConflictError);
+
+      const [afterConflict] = await db
+        .select({
+          consentedAt: orderLegalConsents.consentedAt,
+          source: orderLegalConsents.source,
+          termsVersion: orderLegalConsents.termsVersion,
+          privacyVersion: orderLegalConsents.privacyVersion,
+        })
+        .from(orderLegalConsents)
+        .where(eq(orderLegalConsents.orderId, orderId))
+        .limit(1);
+
+      expect(afterConflict).toBeTruthy();
+      expect(afterConflict?.consentedAt.getTime()).toBe(baselineConsentedAtMs);
+      expect(afterConflict?.source).toBe(baselineSource);
+      expect(afterConflict?.termsVersion).toBe('terms-2026-02-27');
+      expect(afterConflict?.privacyVersion).toBe('privacy-2026-02-27');
+    } finally {
+      if (orderId) await cleanupOrder(orderId);
+      await cleanupProduct(productId);
+    }
+  }, 30_000);
+
+  it('fails closed when idempotent replay finds missing legal consent row', async () => {
     const { productId } = await seedProduct();
     let orderId: string | null = null;
     const idempotencyKey = crypto.randomUUID();
@@ -158,6 +235,10 @@ describe('checkout legal consent phase 4', () => {
 
       orderId = first.order.id;
 
+      await db
+        .delete(orderLegalConsents)
+        .where(eq(orderLegalConsents.orderId, orderId));
+
       await expect(
         createOrderWithItems({
           idempotencyKey,
@@ -168,11 +249,25 @@ describe('checkout legal consent phase 4', () => {
           legalConsent: {
             termsAccepted: true,
             privacyAccepted: true,
-            termsVersion: 'terms-2026-03-01',
+            termsVersion: 'terms-2026-02-27',
             privacyVersion: 'privacy-2026-02-27',
           },
         })
-      ).rejects.toBeInstanceOf(IdempotencyConflictError);
+      ).rejects.toMatchObject({
+        code: 'IDEMPOTENCY_CONFLICT',
+        details: {
+          orderId,
+          reason: 'LEGAL_CONSENT_MISSING',
+        },
+      });
+
+      const [missing] = await db
+        .select({ orderId: orderLegalConsents.orderId })
+        .from(orderLegalConsents)
+        .where(eq(orderLegalConsents.orderId, orderId))
+        .limit(1);
+
+      expect(missing).toBeUndefined();
     } finally {
       if (orderId) await cleanupOrder(orderId);
       await cleanupProduct(productId);

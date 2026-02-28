@@ -9,11 +9,12 @@ import {
   AdminUnauthorizedError,
   requireAdminApi,
 } from '@/lib/auth/admin';
+import { destroyProductImage } from '@/lib/cloudinary';
 import { logError, logWarn } from '@/lib/logging';
 import { requireAdminCsrf } from '@/lib/security/admin-csrf';
 import { guardBrowserSameOrigin } from '@/lib/security/origin';
 import { InvalidPayloadError, SlugConflictError } from '@/lib/services/errors';
-import { createProduct } from '@/lib/services/products';
+import { createProduct, deleteProduct } from '@/lib/services/products';
 import { writeAdminAudit } from '@/lib/services/shop/events/write-admin-audit';
 
 export const runtime = 'nodejs';
@@ -286,29 +287,80 @@ export async function POST(request: NextRequest) {
         image: imageFile,
       });
 
-      await writeAdminAudit({
-        actorUserId,
-        action: 'product_admin_action.create',
-        targetType: 'product',
-        targetId: inserted.id,
-        requestId,
-        payload: {
-          productId: inserted.id,
-          slug: inserted.slug,
-          title: inserted.title,
-          badge: inserted.badge,
-          isActive: inserted.isActive,
-          isFeatured: inserted.isFeatured,
-          stock: inserted.stock,
-        },
-        dedupeSeed: {
-          domain: 'product_admin_action',
-          action: 'create',
+      try {
+        await writeAdminAudit({
+          actorUserId,
+          action: 'product_admin_action.create',
+          targetType: 'product',
+          targetId: inserted.id,
           requestId,
+          payload: {
+            productId: inserted.id,
+            slug: inserted.slug,
+            title: inserted.title,
+            badge: inserted.badge,
+            isActive: inserted.isActive,
+            isFeatured: inserted.isFeatured,
+            stock: inserted.stock,
+          },
+          dedupeSeed: {
+            domain: 'product_admin_action',
+            action: 'create',
+            requestId,
+            productId: inserted.id,
+            slug: inserted.slug,
+          },
+        });
+      } catch (auditError) {
+        logWarn('admin_product_create_audit_failed', {
+          ...baseMeta,
+          code: 'AUDIT_WRITE_FAILED',
           productId: inserted.id,
           slug: inserted.slug,
-        },
-      });
+          message:
+            auditError instanceof Error
+              ? auditError.message
+              : String(auditError),
+          durationMs: Date.now() - startedAtMs,
+        });
+
+        try {
+          await deleteProduct(inserted.id);
+        } catch (rollbackError) {
+          logError(
+            'admin_product_create_audit_rollback_failed',
+            rollbackError,
+            {
+              ...baseMeta,
+              code: 'AUDIT_ROLLBACK_FAILED',
+              productId: inserted.id,
+              slug: inserted.slug,
+              durationMs: Date.now() - startedAtMs,
+            }
+          );
+        }
+
+        try {
+          if (inserted.imagePublicId) {
+            await destroyProductImage(inserted.imagePublicId);
+          }
+        } catch (imgError) {
+          logError(
+            'admin_product_create_audit_rollback_image_failed',
+            imgError,
+            {
+              ...baseMeta,
+              code: 'AUDIT_ROLLBACK_IMAGE_FAILED',
+              productId: inserted.id,
+              slug: inserted.slug,
+              imagePublicId: inserted.imagePublicId ?? null,
+              durationMs: Date.now() - startedAtMs,
+            }
+          );
+        }
+
+        throw auditError;
+      }
 
       return noStoreJson(
         {

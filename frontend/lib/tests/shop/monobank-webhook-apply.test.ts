@@ -93,8 +93,10 @@ async function cleanup(orderId: string, invoiceId: string) {
     .where(eq(shippingShipments.orderId, orderId));
   try {
     await db.delete(paymentEvents).where(eq(paymentEvents.orderId, orderId));
-  } catch {
-    // migration not applied in the local DB yet
+  } catch (error) {
+    const code = (error as { code?: string } | null)?.code;
+    // 42P01 = undefined_table (migration not applied in local DB yet).
+    if (code !== '42P01') throw error;
   }
   await db
     .delete(monobankEvents)

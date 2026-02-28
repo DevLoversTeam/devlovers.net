@@ -4,16 +4,16 @@ import { db } from '@/db';
 import { coercePriceFromDb } from '@/db/queries/shop/orders';
 import {
   npCities,
-  orderLegalConsents,
   npWarehouses,
   orderItems,
+  orderLegalConsents,
   orders,
   orderShipping,
   productPrices,
   products,
 } from '@/db/schema/shop';
-import { getShopLegalVersions } from '@/lib/env/shop-legal';
 import { getShopShippingFlags } from '@/lib/env/nova-poshta';
+import { getShopLegalVersions } from '@/lib/env/shop-legal';
 import { isPaymentsEnabled } from '@/lib/env/stripe';
 import { logError, logWarn } from '@/lib/logging';
 import { resolveShippingAvailability } from '@/lib/services/shop/shipping/availability';
@@ -837,6 +837,16 @@ export async function createOrderWithItems({
       .where(eq(orderLegalConsents.orderId, row.id))
       .limit(1);
 
+    if (!existingLegalConsentRow) {
+      throw new IdempotencyConflictError(
+        'Idempotency key cannot be replayed because persisted legal consent evidence is missing.',
+        {
+          orderId: row.id,
+          reason: 'LEGAL_CONSENT_MISSING',
+        }
+      );
+    }
+
     const existingCityRef = readShippingRefFromSnapshot(
       existingShippingRow?.shippingAddress,
       'cityRef'
@@ -845,25 +855,22 @@ export async function createOrderWithItems({
       existingShippingRow?.shippingAddress,
       'warehouseRef'
     );
-    const existingLegalHashRefs = existingLegalConsentRow
-      ? {
-          termsAccepted: existingLegalConsentRow.termsAccepted,
-          privacyAccepted: existingLegalConsentRow.privacyAccepted,
-          termsVersion: existingLegalConsentRow.termsVersion,
-          privacyVersion: existingLegalConsentRow.privacyVersion,
-        }
-      : preparedLegalConsent.hashRefs;
+    const existingLegalHashRefs = {
+      termsAccepted: existingLegalConsentRow.termsAccepted,
+      privacyAccepted: existingLegalConsentRow.privacyAccepted,
+      termsVersion: existingLegalConsentRow.termsVersion,
+      privacyVersion: existingLegalConsentRow.privacyVersion,
+    };
 
     if (
-      existingLegalConsentRow &&
-      (existingLegalHashRefs.termsAccepted !==
+      existingLegalHashRefs.termsAccepted !==
         preparedLegalConsent.hashRefs.termsAccepted ||
-        existingLegalHashRefs.privacyAccepted !==
-          preparedLegalConsent.hashRefs.privacyAccepted ||
-        existingLegalHashRefs.termsVersion !==
-          preparedLegalConsent.hashRefs.termsVersion ||
-        existingLegalHashRefs.privacyVersion !==
-          preparedLegalConsent.hashRefs.privacyVersion)
+      existingLegalHashRefs.privacyAccepted !==
+        preparedLegalConsent.hashRefs.privacyAccepted ||
+      existingLegalHashRefs.termsVersion !==
+        preparedLegalConsent.hashRefs.termsVersion ||
+      existingLegalHashRefs.privacyVersion !==
+        preparedLegalConsent.hashRefs.privacyVersion
     ) {
       throw new IdempotencyConflictError(
         'Idempotency key already used with different legal consent.',
@@ -937,13 +944,6 @@ export async function createOrderWithItems({
       });
     }
 
-    if (!existingLegalConsentRow) {
-      await ensureOrderLegalConsentSnapshot({
-        orderId: row.id,
-        snapshot: preparedLegalConsent.snapshot,
-      });
-    }
-
     if (row.paymentStatus === 'failed') {
       try {
         await restockOrder(existing.id, { reason: 'failed' });
@@ -963,10 +963,6 @@ export async function createOrderWithItems({
   const existing = await getOrderByIdempotencyKey(db, idempotencyKey);
   if (existing) {
     await assertIdempotencyCompatible(existing);
-    await ensureOrderLegalConsentSnapshot({
-      orderId: existing.id,
-      snapshot: preparedLegalConsent.snapshot,
-    });
     if (preparedShipping.required && preparedShipping.snapshot) {
       await ensureOrderShippingSnapshot({
         orderId: existing.id,
@@ -1122,10 +1118,6 @@ export async function createOrderWithItems({
       const existingOrder = await getOrderByIdempotencyKey(db, idempotencyKey);
       if (existingOrder) {
         await assertIdempotencyCompatible(existingOrder);
-        await ensureOrderLegalConsentSnapshot({
-          orderId: existingOrder.id,
-          snapshot: preparedLegalConsent.snapshot,
-        });
         if (preparedShipping.required && preparedShipping.snapshot) {
           await ensureOrderShippingSnapshot({
             orderId: existingOrder.id,

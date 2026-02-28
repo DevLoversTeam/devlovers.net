@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 
 import { eq } from 'drizzle-orm';
 import { NextRequest } from 'next/server';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { db } from '@/db';
 import { orderItems, orders, products, returnRequests, users } from '@/db/schema';
@@ -97,9 +97,15 @@ async function cleanup(orderId: string, productId: string) {
 }
 
 describe.sequential('returns customer route phase 4', () => {
-  it('create return contract: owner can create and refund amount is server-derived', async () => {
-    process.env.APP_ORIGIN = 'http://localhost:3000';
+  beforeEach(() => {
+    vi.stubEnv('APP_ORIGIN', 'http://localhost:3000');
+  });
 
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('create return contract: owner can create and refund amount is server-derived', async () => {
     const userId = `user_${crypto.randomUUID()}`;
     getCurrentUserMock.mockResolvedValue({
       id: userId,
@@ -144,8 +150,6 @@ describe.sequential('returns customer route phase 4', () => {
   });
 
   it('rejects exchange intent with stable contract code', async () => {
-    process.env.APP_ORIGIN = 'http://localhost:3000';
-
     const userId = `user_${crypto.randomUUID()}`;
     getCurrentUserMock.mockResolvedValue({
       id: userId,

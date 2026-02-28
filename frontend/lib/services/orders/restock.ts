@@ -5,8 +5,8 @@ import { and, eq, isNull, lt, ne, or } from 'drizzle-orm';
 import { db } from '@/db';
 import { inventoryMoves, orders } from '@/db/schema/shop';
 import { logWarn } from '@/lib/logging';
-import { type PaymentStatus } from '@/lib/shop/payments';
 import { isOrderNonPaymentStatusTransitionAllowed } from '@/lib/services/shop/transitions/order-state';
+import { type PaymentStatus } from '@/lib/shop/payments';
 
 import { OrderNotFoundError, OrderStateInvalidError } from '../errors';
 import { applyReleaseMove } from '../inventory';
@@ -53,6 +53,40 @@ async function tryClaimRestockLease(params: {
     .returning({ id: orders.id });
 
   return !!row;
+}
+
+function validateRestockTransition(
+  orderId: string,
+  currentStatus: string,
+  reason: RestockReason | undefined
+): void {
+  const shouldCancel = reason === 'canceled';
+  const shouldFail = reason === 'failed' || reason === 'stale';
+  const targetOrderStatus = shouldFail
+    ? 'INVENTORY_FAILED'
+    : shouldCancel
+      ? 'CANCELED'
+      : null;
+
+  if (!targetOrderStatus) return;
+
+  if (
+    !isOrderNonPaymentStatusTransitionAllowed(currentStatus, targetOrderStatus, {
+      includeSame: true,
+    })
+  ) {
+    throw new OrderStateInvalidError(
+      `Invalid order status transition: ${currentStatus} -> ${targetOrderStatus}`,
+      {
+        orderId,
+        details: {
+          reason,
+          fromStatus: currentStatus,
+          toStatus: targetOrderStatus,
+        },
+      }
+    );
+  }
 }
 
 export async function restockOrder(
@@ -124,32 +158,7 @@ export async function restockOrder(
     const now = new Date();
     const shouldCancel = reason === 'canceled';
     const shouldFail = reason === 'failed' || reason === 'stale';
-    const targetOrderStatus = shouldFail
-      ? 'INVENTORY_FAILED'
-      : shouldCancel
-        ? 'CANCELED'
-        : null;
-
-    if (
-      targetOrderStatus &&
-      !isOrderNonPaymentStatusTransitionAllowed(
-        order.status,
-        targetOrderStatus,
-        { includeSame: true }
-      )
-    ) {
-      throw new OrderStateInvalidError(
-        `Invalid order status transition: ${order.status} -> ${targetOrderStatus}`,
-        {
-          orderId,
-          details: {
-            reason,
-            fromStatus: order.status,
-            toStatus: targetOrderStatus,
-          },
-        }
-      );
-    }
+    validateRestockTransition(orderId, order.status, reason);
 
     const orphanFailureCode =
       order.failureCode ??
@@ -318,30 +327,7 @@ export async function restockOrder(
 
   const shouldCancel = reason === 'canceled';
   const shouldFail = reason === 'failed' || reason === 'stale';
-  const targetOrderStatus = shouldFail
-    ? 'INVENTORY_FAILED'
-    : shouldCancel
-      ? 'CANCELED'
-      : null;
-
-  if (
-    targetOrderStatus &&
-    !isOrderNonPaymentStatusTransitionAllowed(order.status, targetOrderStatus, {
-      includeSame: true,
-    })
-  ) {
-    throw new OrderStateInvalidError(
-      `Invalid order status transition: ${order.status} -> ${targetOrderStatus}`,
-      {
-        orderId,
-        details: {
-          reason,
-          fromStatus: order.status,
-          toStatus: targetOrderStatus,
-        },
-      }
-    );
-  }
+  validateRestockTransition(orderId, order.status, reason);
 
   await db
     .update(orders)

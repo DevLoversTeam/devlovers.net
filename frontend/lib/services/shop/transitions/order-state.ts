@@ -40,6 +40,18 @@ export function isOrderNonPaymentStatusTransitionAllowed(
   return allowed.includes(from as OrderNonPaymentStatus);
 }
 
+export function orderNonPaymentTransitionWhereSql(args: {
+  column: SQL;
+  to: OrderNonPaymentStatus;
+  includeSame?: boolean;
+}): SQL {
+  const from = allowedFromOrderNonPaymentStatus(args.to, {
+    includeSame: args.includeSame,
+  });
+  if (from.length === 0) return sql`false`;
+  return sql`${args.column} in (${sql.join(from.map(v => sql`${v}`), sql`, `)})`;
+}
+
 export const ORDER_QUOTE_STATUSES = [
   'none',
   'requested',

@@ -3,6 +3,7 @@ import {
   bigint,
   boolean,
   check,
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -1036,6 +1037,7 @@ export const returnRequests = pgTable(
   },
   table => [
     uniqueIndex('return_requests_order_id_uq').on(table.orderId),
+    uniqueIndex('return_requests_id_order_id_uq').on(table.id, table.orderId),
     uniqueIndex('return_requests_idempotency_key_uq').on(table.idempotencyKey),
     index('return_requests_status_created_idx').on(table.status, table.createdAt),
     index('return_requests_user_id_created_idx').on(table.userId, table.createdAt),
@@ -1076,6 +1078,11 @@ export const returnItems = pgTable(
     index('return_items_return_request_idx').on(table.returnRequestId),
     index('return_items_order_id_idx').on(table.orderId),
     index('return_items_product_id_idx').on(table.productId),
+    foreignKey({
+      name: 'return_items_return_request_order_fk',
+      columns: [table.returnRequestId, table.orderId],
+      foreignColumns: [returnRequests.id, returnRequests.orderId],
+    }).onDelete('cascade'),
     check('return_items_quantity_positive_chk', sql`${table.quantity} > 0`),
     check(
       'return_items_unit_price_minor_non_negative_chk',

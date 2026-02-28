@@ -17,6 +17,7 @@ vi.mock('@/lib/auth', () => ({
 }));
 
 async function cleanupOrder(orderId: string) {
+  await db.delete(shippingQuotes).where(eq(shippingQuotes.orderId, orderId));
   await db.delete(paymentAttempts).where(eq(paymentAttempts.orderId, orderId));
   await db.delete(orders).where(eq(orders.id, orderId));
 }
@@ -191,6 +192,6 @@ describe.sequential('order payment init intl gate (phase 2)', () => {
         quoteStatus: 'none',
         itemsSubtotalMinor: 1000,
       } as any)
-    ).rejects.toBeTruthy();
+    ).rejects.toThrow(/constraint|intl.*monobank|monobank.*intl/i);
   });
 });

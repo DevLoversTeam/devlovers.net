@@ -47,6 +47,7 @@ export async function POST(request: NextRequest) {
   });
   if (blocked) {
     blocked.headers.set('X-Request-Id', requestId);
+    blocked.headers.set('Cache-Control', 'no-store');
     return blocked;
   }
 

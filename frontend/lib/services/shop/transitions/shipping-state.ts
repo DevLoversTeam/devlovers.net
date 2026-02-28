@@ -1,4 +1,4 @@
-import { sql, type SQL } from 'drizzle-orm';
+import { type SQL,sql } from 'drizzle-orm';
 
 export const SHIPPING_STATUSES = [
   'pending',
@@ -23,6 +23,8 @@ const SHIPPING_ALLOWED_FROM: Record<ShippingStatus, readonly ShippingStatus[]> =
   cancelled: ['pending', 'queued', 'creating_label', 'label_created', 'shipped'],
   needs_attention: ['pending', 'queued', 'creating_label', 'needs_attention'],
 };
+Object.values(SHIPPING_ALLOWED_FROM).forEach(arr => Object.freeze(arr));
+Object.freeze(SHIPPING_ALLOWED_FROM);
 
 export function allowedFromShippingStatus(
   to: ShippingStatus,

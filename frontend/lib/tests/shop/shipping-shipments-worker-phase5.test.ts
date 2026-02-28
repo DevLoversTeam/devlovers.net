@@ -22,10 +22,21 @@ vi.mock('@/lib/services/shop/shipping/nova-poshta-client', async () => {
   };
 });
 
+vi.mock('@/lib/services/shop/events/write-shipping-event', async () => {
+  const actual = await vi.importActual<any>(
+    '@/lib/services/shop/events/write-shipping-event'
+  );
+  return {
+    ...actual,
+    writeShippingEvent: vi.fn(actual.writeShippingEvent),
+  };
+});
+
 import {
   createInternetDocument,
   NovaPoshtaApiError,
 } from '@/lib/services/shop/shipping/nova-poshta-client';
+import { writeShippingEvent } from '@/lib/services/shop/events/write-shipping-event';
 
 type Seeded = {
   orderId: string;
@@ -58,6 +69,15 @@ async function seedShipment(args?: {
   currency?: 'USD' | 'UAH';
   attemptCount?: number;
   shipmentStatus?: 'queued' | 'failed' | 'processing' | 'needs_attention' | 'succeeded';
+  orderShippingStatus?:
+    | 'pending'
+    | 'queued'
+    | 'creating_label'
+    | 'label_created'
+    | 'shipped'
+    | 'delivered'
+    | 'cancelled'
+    | 'needs_attention';
   nextAttemptAt?: Date | null;
 }) {
   const orderId = crypto.randomUUID();
@@ -81,7 +101,7 @@ async function seedShipment(args?: {
     shippingProvider: 'nova_poshta',
     shippingMethodCode: 'NP_WAREHOUSE',
     shippingAmountMinor: null,
-    shippingStatus: 'queued',
+    shippingStatus: args?.orderShippingStatus ?? 'queued',
   } as any);
 
   await db.insert(orderShipping).values({
@@ -340,6 +360,210 @@ describe.sequential('shipping shipments worker phase 5', () => {
           'label_creation_needs_attention',
         ])
       );
+    } finally {
+      await cleanupSeed(seed);
+    }
+  });
+
+  it('keeps success outcome when post-success event write throws', async () => {
+    const seed = await seedShipment();
+
+    const originalWriteShippingEventImpl =
+      vi.mocked(writeShippingEvent).getMockImplementation();
+
+    try {
+      vi.mocked(createInternetDocument).mockResolvedValue({
+        providerRef: 'np-provider-ref-event-fail',
+        trackingNumber: '20450000999999',
+      });
+
+      vi.mocked(writeShippingEvent).mockImplementation(async (args: any) => {
+        if (args?.eventName === 'label_created') {
+          throw new Error('event-write-failed');
+        }
+        if (originalWriteShippingEventImpl) {
+          await originalWriteShippingEventImpl(args);
+        }
+      });
+
+      const result = await runShippingShipmentsWorker({
+        runId: crypto.randomUUID(),
+        limit: 10,
+        leaseSeconds: 120,
+        maxAttempts: 5,
+        baseBackoffSeconds: 10,
+      });
+
+      expect(result).toMatchObject({
+        claimed: 1,
+        processed: 1,
+        succeeded: 1,
+        retried: 0,
+        needsAttention: 0,
+      });
+
+      const [shipment] = await db
+        .select({
+          status: shippingShipments.status,
+          attemptCount: shippingShipments.attemptCount,
+          providerRef: shippingShipments.providerRef,
+          trackingNumber: shippingShipments.trackingNumber,
+          nextAttemptAt: shippingShipments.nextAttemptAt,
+          lastErrorCode: shippingShipments.lastErrorCode,
+        })
+        .from(shippingShipments)
+        .where(eq(shippingShipments.id, seed.shipmentId))
+        .limit(1);
+
+      expect(shipment?.status).toBe('succeeded');
+      expect(shipment?.attemptCount).toBe(1);
+      expect(shipment?.providerRef).toBe('np-provider-ref-event-fail');
+      expect(shipment?.trackingNumber).toBe('20450000999999');
+      expect(shipment?.nextAttemptAt).toBeNull();
+      expect(shipment?.lastErrorCode).toBeNull();
+
+      const [order] = await db
+        .select({
+          shippingStatus: orders.shippingStatus,
+          trackingNumber: orders.trackingNumber,
+          shippingProviderRef: orders.shippingProviderRef,
+        })
+        .from(orders)
+        .where(eq(orders.id, seed.orderId))
+        .limit(1);
+
+      expect(order?.shippingStatus).toBe('label_created');
+      expect(order?.trackingNumber).toBe('20450000999999');
+      expect(order?.shippingProviderRef).toBe('np-provider-ref-event-fail');
+    } finally {
+      if (originalWriteShippingEventImpl) {
+        vi.mocked(writeShippingEvent).mockImplementation(
+          originalWriteShippingEventImpl
+        );
+      } else {
+        vi.mocked(writeShippingEvent).mockReset();
+      }
+      await cleanupSeed(seed);
+    }
+  });
+
+  it('does not mark success or emit label_created when order transition is blocked', async () => {
+    const seed = await seedShipment({ orderShippingStatus: 'shipped' });
+
+    try {
+      vi.mocked(createInternetDocument).mockResolvedValue({
+        providerRef: 'np-provider-ref-blocked-success',
+        trackingNumber: '20450000111111',
+      });
+
+      const result = await runShippingShipmentsWorker({
+        runId: crypto.randomUUID(),
+        limit: 10,
+        leaseSeconds: 120,
+        maxAttempts: 5,
+        baseBackoffSeconds: 10,
+      });
+
+      expect(result).toMatchObject({
+        claimed: 1,
+        processed: 1,
+        succeeded: 0,
+        retried: 1,
+        needsAttention: 0,
+      });
+
+      const [shipment] = await db
+        .select({
+          status: shippingShipments.status,
+          attemptCount: shippingShipments.attemptCount,
+          providerRef: shippingShipments.providerRef,
+          trackingNumber: shippingShipments.trackingNumber,
+        })
+        .from(shippingShipments)
+        .where(eq(shippingShipments.id, seed.shipmentId))
+        .limit(1);
+
+      expect(shipment?.status).toBe('succeeded');
+      expect(shipment?.attemptCount).toBe(1);
+      expect(shipment?.providerRef).toBe('np-provider-ref-blocked-success');
+      expect(shipment?.trackingNumber).toBe('20450000111111');
+
+      const [order] = await db
+        .select({
+          shippingStatus: orders.shippingStatus,
+          trackingNumber: orders.trackingNumber,
+          shippingProviderRef: orders.shippingProviderRef,
+        })
+        .from(orders)
+        .where(eq(orders.id, seed.orderId))
+        .limit(1);
+
+      expect(order?.shippingStatus).toBe('shipped');
+      expect(order?.trackingNumber).toBeNull();
+      expect(order?.shippingProviderRef).toBeNull();
+
+      const events = await readOrderShippingEvents(seed.orderId);
+      expect(events.some(event => event.eventName === 'label_created')).toBe(false);
+    } finally {
+      await cleanupSeed(seed);
+    }
+  });
+
+  it('does not emit retry/needs_attention transition events when order transition is blocked', async () => {
+    const seed = await seedShipment({ orderShippingStatus: 'shipped' });
+
+    try {
+      vi.mocked(createInternetDocument).mockRejectedValue(
+        new NovaPoshtaApiError('NP_HTTP_ERROR', 'temporary', 503)
+      );
+
+      const result = await runShippingShipmentsWorker({
+        runId: crypto.randomUUID(),
+        limit: 10,
+        leaseSeconds: 120,
+        maxAttempts: 5,
+        baseBackoffSeconds: 10,
+      });
+
+      expect(result).toMatchObject({
+        claimed: 1,
+        processed: 1,
+        succeeded: 0,
+        retried: 1,
+        needsAttention: 0,
+      });
+
+      const [shipment] = await db
+        .select({
+          status: shippingShipments.status,
+          attemptCount: shippingShipments.attemptCount,
+          lastErrorCode: shippingShipments.lastErrorCode,
+        })
+        .from(shippingShipments)
+        .where(eq(shippingShipments.id, seed.shipmentId))
+        .limit(1);
+
+      expect(shipment?.status).toBe('failed');
+      expect(shipment?.attemptCount).toBe(1);
+      expect(shipment?.lastErrorCode).toBe('NP_HTTP_ERROR');
+
+      const [order] = await db
+        .select({
+          shippingStatus: orders.shippingStatus,
+        })
+        .from(orders)
+        .where(eq(orders.id, seed.orderId))
+        .limit(1);
+
+      expect(order?.shippingStatus).toBe('shipped');
+
+      const events = await readOrderShippingEvents(seed.orderId);
+      expect(
+        events.some(event =>
+          event.eventName === 'label_creation_retry_scheduled' ||
+          event.eventName === 'label_creation_needs_attention'
+        )
+      ).toBe(false);
     } finally {
       await cleanupSeed(seed);
     }

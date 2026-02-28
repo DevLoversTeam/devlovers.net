@@ -460,33 +460,49 @@ export async function PATCH(
             : undefined,
       });
 
-      await writeAdminAudit({
-        actorUserId,
-        action: 'product_admin_action.update',
-        targetType: 'product',
-        targetId: updated.id,
-        requestId,
-        payload: {
-          productId: updated.id,
-          slug: updated.slug,
-          title: updated.title,
-          badge: updated.badge,
-          isActive: updated.isActive,
-          isFeatured: updated.isFeatured,
-          stock: updated.stock,
-        },
-        dedupeSeed: {
-          domain: 'product_admin_action',
-          action: 'update',
+      try {
+        await writeAdminAudit({
+          actorUserId,
+          action: 'product_admin_action.update',
+          targetType: 'product',
+          targetId: updated.id,
           requestId,
+          payload: {
+            productId: updated.id,
+            slug: updated.slug,
+            title: updated.title,
+            badge: updated.badge,
+            isActive: updated.isActive,
+            isFeatured: updated.isFeatured,
+            stock: updated.stock,
+          },
+          dedupeSeed: {
+            domain: 'product_admin_action',
+            action: 'update',
+            requestId,
+            productId: updated.id,
+            Slug: updated.slug,
+            toBadge: updated.badge,
+            toIsActive: updated.isActive,
+            toIsFeatured: updated.isFeatured,
+            toStock: updated.stock,
+          },
+        });
+      } catch (auditError) {
+        logWarn('admin_product_update_audit_failed', {
+          ...baseMeta,
+          code: 'AUDIT_WRITE_FAILED',
+          requestId,
+          actorUserId,
           productId: updated.id,
-          toSlug: updated.slug,
-          toBadge: updated.badge,
-          toIsActive: updated.isActive,
-          toIsFeatured: updated.isFeatured,
-          toStock: updated.stock,
-        },
-      });
+          action: 'product_admin_action.update',
+          message:
+            auditError instanceof Error
+              ? auditError.message
+              : String(auditError),
+          durationMs: Date.now() - startedAtMs,
+        });
+      }
 
       return noStoreJson({ success: true, product: updated }, { status: 200 });
     } catch (error) {
@@ -737,22 +753,36 @@ export async function DELETE(
 
     await deleteProduct(productIdForLog);
 
-    await writeAdminAudit({
-      actorUserId,
-      action: 'product_admin_action.delete',
-      targetType: 'product',
-      targetId: productIdForLog,
-      requestId,
-      payload: {
-        productId: productIdForLog,
-      },
-      dedupeSeed: {
-        domain: 'product_admin_action',
-        action: 'delete',
+    try {
+      await writeAdminAudit({
+        actorUserId,
+        action: 'product_admin_action.delete',
+        targetType: 'product',
+        targetId: productIdForLog,
         requestId,
+        payload: {
+          productId: productIdForLog,
+        },
+        dedupeSeed: {
+          domain: 'product_admin_action',
+          action: 'delete',
+          requestId,
+          productId: productIdForLog,
+        },
+      });
+    } catch (auditError) {
+      logWarn('admin_product_delete_audit_failed', {
+        ...baseMeta,
+        code: 'AUDIT_WRITE_FAILED',
+        requestId,
+        actorUserId,
         productId: productIdForLog,
-      },
-    });
+        action: 'product_admin_action.delete',
+        message:
+          auditError instanceof Error ? auditError.message : String(auditError),
+        durationMs: Date.now() - startedAtMs,
+      });
+    }
 
     return noStoreJson({ success: true }, { status: 200 });
   } catch (error) {

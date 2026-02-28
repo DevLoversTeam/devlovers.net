@@ -1,44 +1,20 @@
 import crypto from 'node:crypto';
 
 import { expect, test } from '@playwright/test';
-import { Client } from 'pg';
+import { Pool } from 'pg';
 
-const LOCAL_DB_URL =
-  process.env.DATABASE_URL_LOCAL ??
-  'postgresql://devlovers_local:Gfdtkk43@localhost:5432/devlovers_shop_local_clean?sslmode=disable';
-const STATUS_TOKEN_SECRET =
-  process.env.SHOP_STATUS_TOKEN_SECRET ??
-  'test_status_token_secret_test_status_token_secret';
+import { createStatusToken } from '@/lib/shop/status-token';
 
-function base64UrlEncode(buf: Buffer): string {
-  return buf
-    .toString('base64')
-    .replace(/=/g, '')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_');
-}
+const LOCAL_DB_URL = process.env.DATABASE_URL_LOCAL;
+const STATUS_TOKEN_SECRET = process.env.SHOP_STATUS_TOKEN_SECRET;
 
-function createStatusToken(args: {
-  orderId: string;
-  scopes?: string[];
-  ttlSeconds?: number;
-}): string {
-  const nowSeconds = Math.floor(Date.now() / 1000);
-  const payload = {
-    v: 1,
-    orderId: args.orderId,
-    iat: nowSeconds,
-    exp: nowSeconds + (args.ttlSeconds ?? 45 * 60),
-    nonce: crypto.randomUUID(),
-    scp: args.scopes ?? ['status_lite'],
-  };
-
-  const body = base64UrlEncode(Buffer.from(JSON.stringify(payload)));
-  const sig = base64UrlEncode(
-    crypto.createHmac('sha256', STATUS_TOKEN_SECRET).update(body).digest()
+if (!LOCAL_DB_URL?.trim() || !STATUS_TOKEN_SECRET?.trim()) {
+  throw new Error(
+    'E2E tests require DATABASE_URL_LOCAL and SHOP_STATUS_TOKEN_SECRET environment variables'
   );
-  return `${body}.${sig}`;
 }
+
+const pool = new Pool({ connectionString: LOCAL_DB_URL });
 
 async function insertOrder(args: {
   orderId: string;
@@ -75,20 +51,17 @@ async function insertOrder(args: {
     | 'expired'
     | 'requires_requote';
 }) {
-  const client = new Client({ connectionString: LOCAL_DB_URL });
-  await client.connect();
-  try {
-    const totalAmountMinor = args.totalAmountMinor ?? 1000;
-    const currency = args.currency ?? 'UAH';
-    const paymentProvider = args.paymentProvider ?? 'monobank';
-    const paymentStatus = args.paymentStatus ?? 'pending';
-    const status = args.status ?? 'INVENTORY_RESERVED';
-    const inventoryStatus = args.inventoryStatus ?? 'reserved';
-    const fulfillmentMode = args.fulfillmentMode ?? 'ua_np';
-    const quoteStatus = args.quoteStatus ?? 'none';
+  const totalAmountMinor = args.totalAmountMinor ?? 1000;
+  const currency = args.currency ?? 'UAH';
+  const paymentProvider = args.paymentProvider ?? 'monobank';
+  const paymentStatus = args.paymentStatus ?? 'pending';
+  const status = args.status ?? 'INVENTORY_RESERVED';
+  const inventoryStatus = args.inventoryStatus ?? 'reserved';
+  const fulfillmentMode = args.fulfillmentMode ?? 'ua_np';
+  const quoteStatus = args.quoteStatus ?? 'none';
 
-    await client.query(
-      `
+  await pool.query(
+    `
       insert into orders (
         id,
         user_id,
@@ -124,44 +97,39 @@ async function insertOrder(args: {
         now()
       )
       `,
-      [
-        args.orderId,
-        `e2e:${args.orderId}`,
-        currency,
-        totalAmountMinor,
-        paymentProvider,
-        paymentStatus,
-        status,
-        inventoryStatus,
-        fulfillmentMode,
-        quoteStatus,
-      ]
-    );
-  } finally {
-    await client.end();
-  }
+    [
+      args.orderId,
+      `e2e:${args.orderId}`,
+      currency,
+      totalAmountMinor,
+      paymentProvider,
+      paymentStatus,
+      status,
+      inventoryStatus,
+      fulfillmentMode,
+      quoteStatus,
+    ]
+  );
 }
 
 async function cleanupOrder(orderId: string) {
-  const client = new Client({ connectionString: LOCAL_DB_URL });
-  await client.connect();
-  try {
-    await client.query('delete from admin_audit_log where order_id = $1::uuid', [
-      orderId,
-    ]);
-    await client.query('delete from payment_attempts where order_id = $1::uuid', [
-      orderId,
-    ]);
-    await client.query('delete from order_items where order_id = $1::uuid', [
-      orderId,
-    ]);
-    await client.query('delete from orders where id = $1::uuid', [orderId]);
-  } finally {
-    await client.end();
-  }
+  await pool.query('delete from admin_audit_log where order_id = $1::uuid', [
+    orderId,
+  ]);
+  await pool.query('delete from payment_attempts where order_id = $1::uuid', [
+    orderId,
+  ]);
+  await pool.query('delete from order_items where order_id = $1::uuid', [
+    orderId,
+  ]);
+  await pool.query('delete from orders where id = $1::uuid', [orderId]);
 }
 
 test.describe('shop e2e minimal phase 9', () => {
+  test.afterAll(async () => {
+    await pool.end();
+  });
+
   test('flow 1: guest status endpoint requires token', async ({ request }) => {
     const orderId = crypto.randomUUID();
     await insertOrder({ orderId });

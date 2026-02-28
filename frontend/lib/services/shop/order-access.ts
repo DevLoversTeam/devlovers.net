@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { and, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { orders } from '@/db/schema';
@@ -31,13 +31,13 @@ export async function authorizeOrderMutationAccess(args: {
   statusToken: string | null;
   requiredScope: StatusTokenScope;
 }): Promise<OrderAccessResult> {
-  const [exists] = await db
-    .select({ id: orders.id })
+  const [orderRow] = await db
+    .select({ id: orders.id, userId: orders.userId })
     .from(orders)
     .where(eq(orders.id, args.orderId))
     .limit(1);
 
-  if (!exists) {
+  if (!orderRow) {
     return {
       authorized: false,
       actorUserId: null,
@@ -57,12 +57,7 @@ export async function authorizeOrderMutationAccess(args: {
       };
     }
 
-    const [owned] = await db
-      .select({ id: orders.id })
-      .from(orders)
-      .where(and(eq(orders.id, args.orderId), eq(orders.userId, user.id)))
-      .limit(1);
-    if (owned) {
+    if (orderRow.userId === user.id) {
       return {
         authorized: true,
         actorUserId: user.id,

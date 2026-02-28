@@ -38,6 +38,8 @@ export async function writePaymentEvent(args: WritePaymentEventArgs): Promise<{
         attemptId: args.attemptId ?? null,
         providerPaymentIntentId: args.providerPaymentIntentId ?? null,
         providerChargeId: args.providerChargeId ?? null,
+        amountMinor: args.amountMinor,
+        currency: args.currency,
       }
     );
 
