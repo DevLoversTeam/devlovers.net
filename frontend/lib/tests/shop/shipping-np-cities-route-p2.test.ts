@@ -53,7 +53,6 @@ describe('shop shipping np cities route (phase 2)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.unstubAllEnvs();
-    vi.stubEnv('DATABASE_URL', 'https://example.com/db');
     vi.stubEnv('SHOP_SHIPPING_ENABLED', 'true');
     vi.stubEnv('SHOP_SHIPPING_NP_ENABLED', 'true');
     resetEnvCache();

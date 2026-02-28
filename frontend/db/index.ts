@@ -12,6 +12,34 @@ dotenv.config();
 type AppDatabase = PgDatabase<PgQueryResultHKT, typeof schema>;
 
 const APP_ENV = process.env.APP_ENV ?? 'local';
+const STRICT_LOCAL_DB_GUARD = process.env.SHOP_STRICT_LOCAL_DB === '1';
+const REQUIRED_LOCAL_DB_URL = process.env.SHOP_REQUIRED_DATABASE_URL_LOCAL;
+
+if (STRICT_LOCAL_DB_GUARD) {
+  if (APP_ENV !== 'local') {
+    throw new Error(
+      `[db] SHOP_STRICT_LOCAL_DB=1 requires APP_ENV=local (got "${APP_ENV}")`
+    );
+  }
+  if (!process.env.DATABASE_URL_LOCAL?.trim()) {
+    throw new Error(
+      '[db] SHOP_STRICT_LOCAL_DB=1 requires DATABASE_URL_LOCAL to be set'
+    );
+  }
+  if (process.env.DATABASE_URL?.trim()) {
+    throw new Error(
+      '[db] SHOP_STRICT_LOCAL_DB=1 forbids DATABASE_URL during shop-local tests'
+    );
+  }
+  if (
+    REQUIRED_LOCAL_DB_URL &&
+    process.env.DATABASE_URL_LOCAL !== REQUIRED_LOCAL_DB_URL
+  ) {
+    throw new Error(
+      '[db] SHOP_STRICT_LOCAL_DB=1 requires DATABASE_URL_LOCAL to match SHOP_REQUIRED_DATABASE_URL_LOCAL exactly'
+    );
+  }
+}
 
 let db: AppDatabase;
 

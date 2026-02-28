@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { getRuntimeEnv, getServerEnv } from '@/lib/env';
+import { getRuntimeEnv } from '@/lib/env';
 
 function toUrl(value: string, label: string): URL {
   try {
@@ -11,9 +11,11 @@ function toUrl(value: string, label: string): URL {
 }
 
 export function resolveShopBaseUrl(): URL {
-  const env = getServerEnv();
   const raw =
-    env.SHOP_BASE_URL ?? env.APP_ORIGIN ?? env.NEXT_PUBLIC_SITE_URL ?? '';
+    process.env.SHOP_BASE_URL ??
+    process.env.APP_ORIGIN ??
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    '';
 
   if (!raw) {
     throw new Error(

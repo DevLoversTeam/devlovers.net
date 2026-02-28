@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { resetEnvCache } from '@/lib/env';
 
 const ENV_KEYS = [
-  'DATABASE_URL',
   'MONO_MERCHANT_TOKEN',
   'PAYMENTS_ENABLED',
   'MONO_PUBLIC_KEY',
@@ -38,8 +37,6 @@ function makeResponse(status: number, body: string) {
 
 beforeEach(() => {
   rememberEnv();
-  process.env.DATABASE_URL =
-    process.env.DATABASE_URL ?? 'postgres://user:pass@localhost:5432/dev';
   process.env.MONO_MERCHANT_TOKEN = 'test_token';
   process.env.PAYMENTS_ENABLED = 'true';
   process.env.MONO_API_BASE = 'https://api.example.test';
