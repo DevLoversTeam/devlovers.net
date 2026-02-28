@@ -5,7 +5,11 @@ import { and, eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { orders } from '@/db/schema';
 import { getCurrentUser } from '@/lib/auth';
-import { verifyStatusToken } from '@/lib/shop/status-token';
+import {
+  hasStatusTokenScope,
+  type StatusTokenScope,
+  verifyStatusToken,
+} from '@/lib/shop/status-token';
 
 export type OrderAccessResult = {
   authorized: boolean;
@@ -17,6 +21,7 @@ export type OrderAccessResult = {
     | 'FORBIDDEN'
     | 'STATUS_TOKEN_REQUIRED'
     | 'STATUS_TOKEN_INVALID'
+    | 'STATUS_TOKEN_SCOPE_FORBIDDEN'
     | 'STATUS_TOKEN_MISCONFIGURED';
   status: number;
 };
@@ -24,6 +29,7 @@ export type OrderAccessResult = {
 export async function authorizeOrderMutationAccess(args: {
   orderId: string;
   statusToken: string | null;
+  requiredScope: StatusTokenScope;
 }): Promise<OrderAccessResult> {
   const [exists] = await db
     .select({ id: orders.id })
@@ -93,6 +99,15 @@ export async function authorizeOrderMutationAccess(args: {
       authorized: false,
       actorUserId: null,
       code: 'STATUS_TOKEN_INVALID',
+      status: 403,
+    };
+  }
+
+  if (!hasStatusTokenScope(tokenRes.payload, args.requiredScope)) {
+    return {
+      authorized: false,
+      actorUserId: null,
+      code: 'STATUS_TOKEN_SCOPE_FORBIDDEN',
       status: 403,
     };
   }

@@ -330,10 +330,7 @@ describe.sequential('intl quote domain (phase 2)', () => {
     }
   });
 
-  it('writes canonical quote transition events when dual-write flag is ON', async () => {
-    const prev = process.env.SHOP_CANONICAL_EVENTS_DUAL_WRITE;
-    process.env.SHOP_CANONICAL_EVENTS_DUAL_WRITE = 'true';
-
+  it('writes canonical quote transition events by default', async () => {
     const orderA = await seedIntlOrder();
     const orderB = await seedIntlOrder();
     const orderC = await seedIntlOrder({ stock: 2, quantity: 1, totalAmountMinor: 1000 });
@@ -448,11 +445,6 @@ describe.sequential('intl quote domain (phase 2)', () => {
         ])
       );
     } finally {
-      if (prev === undefined) {
-        delete process.env.SHOP_CANONICAL_EVENTS_DUAL_WRITE;
-      } else {
-        process.env.SHOP_CANONICAL_EVENTS_DUAL_WRITE = prev;
-      }
       await cleanupSeed(orderA);
       await cleanupSeed(orderB);
       await cleanupSeed(orderC);

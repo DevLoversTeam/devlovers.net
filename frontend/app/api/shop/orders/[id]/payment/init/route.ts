@@ -88,6 +88,7 @@ export async function POST(
   const auth = await authorizeOrderMutationAccess({
     orderId,
     statusToken,
+    requiredScope: 'order_payment_init',
   });
   if (!auth.authorized) {
     return noStoreJson({ code: auth.code }, { status: auth.status });
