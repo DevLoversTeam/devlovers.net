@@ -50,7 +50,10 @@ export async function POST(
   };
 
   const blocked = guardBrowserSameOrigin(request);
-  if (blocked) return blocked;
+  if (blocked) {
+    blocked.headers.set('Cache-Control', 'no-store');
+    return blocked;
+  }
 
   const parsedParams = orderIdParamSchema.safeParse(await context.params);
   if (!parsedParams.success) {

@@ -14,7 +14,24 @@ if (!LOCAL_DB_URL?.trim() || !STATUS_TOKEN_SECRET?.trim()) {
   );
 }
 
-const pool = new Pool({ connectionString: LOCAL_DB_URL });
+const ALLOWED_LOCAL_DB_HOSTS = new Set(['localhost', '127.0.0.1']);
+const localDbUrlRaw = LOCAL_DB_URL.trim();
+let localDbUrlParsed: URL;
+try {
+  localDbUrlParsed = new URL(localDbUrlRaw);
+} catch {
+  throw new Error(
+    'E2E DATABASE_URL_LOCAL must be a valid URL. Expected a postgresql:// URL string.'
+  );
+}
+
+if (!ALLOWED_LOCAL_DB_HOSTS.has(localDbUrlParsed.hostname)) {
+  throw new Error(
+    `Refusing to run E2E against non-local DB host: ${localDbUrlParsed.hostname}`
+  );
+}
+
+const pool = new Pool({ connectionString: localDbUrlRaw });
 
 async function insertOrder(args: {
   orderId: string;

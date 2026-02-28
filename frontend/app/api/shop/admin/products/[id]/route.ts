@@ -481,7 +481,7 @@ export async function PATCH(
             action: 'update',
             requestId,
             productId: updated.id,
-            Slug: updated.slug,
+            slug: updated.slug,
             toBadge: updated.badge,
             toIsActive: updated.isActive,
             toIsFeatured: updated.isFeatured,

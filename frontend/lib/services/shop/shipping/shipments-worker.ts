@@ -407,7 +407,9 @@ export async function claimQueuedShipmentsForProcessing(args: {
   leaseSeconds: number;
   limit: number;
 }): Promise<ClaimedShipmentRow[]> {
-  const res = await db.execute<ClaimedShipmentRow>(sql`
+  const res = await db.execute<
+    ClaimedShipmentRow & { order_transitioned: boolean | null }
+  >(sql`
     with candidates as (
       select s.id
       from shipping_shipments s
@@ -448,14 +450,23 @@ export async function claimQueuedShipmentsForProcessing(args: {
           allowNullFrom: true,
           includeSame: true,
         })}
-      returning o.id
+      returning o.id as order_id
     )
-    select * from claimed
+    select
+      c.id,
+      c.order_id,
+      c.provider,
+      c.status,
+      c.attempt_count,
+      (mo.order_id is not null) as order_transitioned
+    from claimed c
+    left join mark_orders mo on mo.order_id = c.order_id
   `);
 
-  const claimed = readRows<ClaimedShipmentRow>(res);
+  const claimed = readRows<ClaimedShipmentRow & { order_transitioned: boolean | null }>(res);
 
   for (const row of claimed) {
+    if (!row.order_transitioned) continue;
     await emitWorkerShippingEvent({
       orderId: row.order_id,
       shipmentId: row.id,
@@ -471,7 +482,13 @@ export async function claimQueuedShipmentsForProcessing(args: {
     });
   }
 
-  return claimed;
+  return claimed.map(row => ({
+    id: row.id,
+    order_id: row.order_id,
+    provider: row.provider,
+    status: row.status,
+    attempt_count: row.attempt_count,
+  }));
 }
 
 async function loadOrderShippingDetails(
@@ -749,27 +766,39 @@ async function processClaimedShipment(args: {
       return 'retried';
     }
 
-    await emitWorkerShippingEvent({
-      orderId: args.claim.order_id,
-      shipmentId: args.claim.id,
-      provider: args.claim.provider,
-      eventName: terminalNeedsAttention
-        ? 'label_creation_needs_attention'
-        : 'label_creation_retry_scheduled',
-      statusFrom: 'creating_label',
-      statusTo: terminalNeedsAttention ? 'needs_attention' : 'queued',
-      attemptNumber: nextAttemptNumber(args.claim.attempt_count),
-      runId: args.runId,
-      eventRef: classified.code,
-      errorCode: classified.code,
-      payload: {
+    const failureEventName = terminalNeedsAttention
+      ? 'label_creation_needs_attention'
+      : 'label_creation_retry_scheduled';
+    try {
+      await emitWorkerShippingEvent({
+        orderId: args.claim.order_id,
+        shipmentId: args.claim.id,
+        provider: args.claim.provider,
+        eventName: failureEventName,
+        statusFrom: 'creating_label',
+        statusTo: terminalNeedsAttention ? 'needs_attention' : 'queued',
+        attemptNumber: nextAttemptNumber(args.claim.attempt_count),
+        runId: args.runId,
+        eventRef: classified.code,
         errorCode: classified.code,
-        errorMessage: classified.message,
-        transient: classified.transient,
-        nextAttemptAt: nextAttemptAt ? nextAttemptAt.toISOString() : null,
-        shipmentStatusTo: terminalNeedsAttention ? 'needs_attention' : 'failed',
-      },
-    });
+        payload: {
+          errorCode: classified.code,
+          errorMessage: classified.message,
+          transient: classified.transient,
+          nextAttemptAt: nextAttemptAt ? nextAttemptAt.toISOString() : null,
+          shipmentStatusTo: terminalNeedsAttention ? 'needs_attention' : 'failed',
+        },
+      });
+    } catch {
+      logWarn('shipping_shipments_worker_failure_event_write_failed', {
+        runId: args.runId,
+        shipmentId: args.claim.id,
+        orderId: args.claim.order_id,
+        provider: args.claim.provider,
+        code: 'SHIPPING_EVENT_WRITE_FAILED',
+        eventName: failureEventName,
+      });
+    }
 
     if (terminalNeedsAttention) {
       recordShippingMetric({

@@ -145,4 +145,68 @@ describe.sequential('admin products create atomicity (phase C)', () => {
       await cleanupBySlug(slug);
     }
   });
+
+  it('does not destroy Cloudinary image when rollback product delete fails', async () => {
+    const slug = `atomic-create-rollback-${Date.now()}-${crypto
+      .randomUUID()
+      .slice(0, 8)}`;
+
+    mocks.parseAdminProductForm.mockReturnValue({
+      ok: true,
+      data: {
+        slug,
+        title: 'Atomic create rollback guard',
+        badge: 'NONE',
+        prices: [{ currency: 'USD', priceMinor: 2099, originalPriceMinor: null }],
+        stock: 2,
+        isActive: true,
+        isFeatured: false,
+      },
+    });
+
+    await cleanupBySlug(slug);
+
+    const productServices = await import('@/lib/services/products');
+    const deleteSpy = vi
+      .spyOn(productServices, 'deleteProduct')
+      .mockRejectedValueOnce(new Error('rollback-delete-fail'));
+
+    const cloudinary = await import('@/lib/cloudinary');
+    const destroyProductImageMock = vi.mocked(cloudinary.destroyProductImage);
+    const uploadProductImageFromFileMock = vi.mocked(
+      cloudinary.uploadProductImageFromFile
+    );
+
+    try {
+      const { POST } = await import('@/app/api/shop/admin/products/route');
+
+      const req = new NextRequest(
+        new Request('http://localhost/api/shop/admin/products', {
+          method: 'POST',
+          headers: {
+            origin: 'http://localhost:3000',
+            'x-request-id': `req_${crypto.randomUUID()}`,
+          },
+          body: makeFormData(),
+        })
+      );
+
+      const res = await POST(req);
+      expect(res.status).toBe(500);
+      expect(uploadProductImageFromFileMock).toHaveBeenCalledTimes(1);
+      expect(destroyProductImageMock).not.toHaveBeenCalled();
+
+      const existing = await db
+        .select({ id: products.id, imagePublicId: products.imagePublicId })
+        .from(products)
+        .where(eq(products.slug, slug))
+        .limit(1);
+
+      expect(existing).toHaveLength(1);
+      expect(existing[0]?.imagePublicId).toBeTruthy();
+    } finally {
+      deleteSpy.mockRestore();
+      await cleanupBySlug(slug);
+    }
+  });
 });

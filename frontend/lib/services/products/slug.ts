@@ -4,7 +4,7 @@ import { products } from '@/db/schema';
 import { slugify } from '@/lib/shop/slug';
 
 import { SlugConflictError } from '../errors';
-import type { DbClient } from './types';
+import type { SlugDbClient } from './types';
 
 function randomSuffix(length = 6) {
   return Math.random()
@@ -13,7 +13,7 @@ function randomSuffix(length = 6) {
 }
 
 async function ensureUniqueSlug(
-  db: DbClient,
+  db: SlugDbClient,
   baseSlug: string,
   options?: { excludeId?: string }
 ): Promise<string> {
@@ -46,7 +46,7 @@ async function ensureUniqueSlug(
 }
 
 export async function normalizeSlug(
-  db: DbClient,
+  db: SlugDbClient,
   slug: string,
   options?: { excludeId?: string }
 ) {

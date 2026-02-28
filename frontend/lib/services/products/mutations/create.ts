@@ -24,10 +24,7 @@ export async function createProduct(
   options?: { db?: ProductMutationExecutor }
 ): Promise<DbProduct> {
   const executor = options?.db ?? db;
-  const slug = await normalizeSlug(
-    executor as any,
-    (input as any).slug ?? (input as any).title
-  );
+  const slug = await normalizeSlug(executor, (input as any).slug ?? (input as any).title);
 
   let uploaded: { secureUrl: string; publicId: string } | null = null;
 
@@ -106,9 +103,9 @@ export async function createProduct(
 
     return mapRowToProduct(row);
   } catch (error) {
-    if (createdProductId) {
+    if (createdProductId && !options?.db) {
       try {
-        await executor.delete(products).where(eq(products.id, createdProductId));
+        await db.delete(products).where(eq(products.id, createdProductId));
       } catch (cleanupDbError) {
         logError(
           'Failed to cleanup product after create failure',

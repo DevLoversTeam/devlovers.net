@@ -19,6 +19,7 @@ export type AdminProductsFilter = {
 export type ProductsTable = typeof import('@/db/schema').products;
 export type ProductRow = ProductsTable['$inferSelect'];
 export type DbClient = typeof import('@/db').db;
+export type SlugDbClient = Pick<DbClient, 'select'>;
 
 export type NormalizedPriceRow = {
   currency: CurrencyCode;

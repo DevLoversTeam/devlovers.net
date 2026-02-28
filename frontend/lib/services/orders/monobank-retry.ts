@@ -48,10 +48,5 @@ export function isRetryableApplyError(error: unknown): boolean {
   if (!code) return true;
   if (NON_RETRYABLE_APPLY_CODES.has(code)) return false;
 
-  if (TRANSIENT_APPLY_CODES.size > 0) {
-    return TRANSIENT_APPLY_CODES.has(code);
-  }
-
-  return false;
+  return TRANSIENT_APPLY_CODES.has(code);
 }
-

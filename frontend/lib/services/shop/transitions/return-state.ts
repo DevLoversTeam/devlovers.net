@@ -15,7 +15,9 @@ const RETURN_ALLOWED_FROM: Record<ReturnStatus, readonly ReturnStatus[]> = {
   received: ['approved'],
   refunded: ['received'],
 };
-Object.values(RETURN_ALLOWED_FROM).forEach(arr => Object.freeze(arr));
+Object.values(RETURN_ALLOWED_FROM).forEach(arr => {
+  Object.freeze(arr);
+});
 Object.freeze(RETURN_ALLOWED_FROM);
 
 export function allowedFromReturnStatus(

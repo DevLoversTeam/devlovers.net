@@ -324,8 +324,10 @@ export async function POST(request: NextRequest) {
           durationMs: Date.now() - startedAtMs,
         });
 
+        let rollbackDeleted = false;
         try {
           await deleteProduct(inserted.id);
+          rollbackDeleted = true;
         } catch (rollbackError) {
           logError(
             'admin_product_create_audit_rollback_failed',
@@ -341,7 +343,7 @@ export async function POST(request: NextRequest) {
         }
 
         try {
-          if (inserted.imagePublicId) {
+          if (rollbackDeleted && inserted.imagePublicId) {
             await destroyProductImage(inserted.imagePublicId);
           }
         } catch (imgError) {

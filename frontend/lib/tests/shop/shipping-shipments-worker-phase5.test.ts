@@ -231,6 +231,10 @@ describe.sequential('shipping shipments worker phase 5', () => {
       expect(events.map(event => event.eventName)).toEqual(
         expect.arrayContaining(['creating_label', 'label_created'])
       );
+      const creatingLabelEvents = events.filter(
+        event => event.eventName === 'creating_label'
+      );
+      expect(creatingLabelEvents).toHaveLength(1);
       expect(events.every(event => event.eventSource === 'shipments_worker')).toBe(
         true
       );
@@ -299,6 +303,85 @@ describe.sequential('shipping shipments worker phase 5', () => {
         ])
       );
     } finally {
+      await cleanupSeed(seed);
+    }
+  });
+
+  it('keeps retry outcome when failure-path event write throws', async () => {
+    const seed = await seedShipment();
+
+    const originalWriteShippingEventImpl =
+      vi.mocked(writeShippingEvent).getMockImplementation();
+
+    try {
+      vi.mocked(createInternetDocument).mockRejectedValue(
+        new NovaPoshtaApiError('NP_HTTP_ERROR', 'temporary', 503)
+      );
+
+      vi.mocked(writeShippingEvent).mockImplementation(async (args: any) => {
+        if (args?.eventName === 'label_creation_retry_scheduled') {
+          throw new Error('failure-event-write-failed');
+        }
+        if (originalWriteShippingEventImpl) {
+          return originalWriteShippingEventImpl(args);
+        }
+        return { inserted: false, dedupeKey: 'mock_noop', id: null };
+      });
+
+      const result = await runShippingShipmentsWorker({
+        runId: crypto.randomUUID(),
+        limit: 10,
+        leaseSeconds: 120,
+        maxAttempts: 5,
+        baseBackoffSeconds: 10,
+      });
+
+      expect(result).toMatchObject({
+        claimed: 1,
+        processed: 1,
+        succeeded: 0,
+        retried: 1,
+        needsAttention: 0,
+      });
+
+      const [shipment] = await db
+        .select({
+          status: shippingShipments.status,
+          attemptCount: shippingShipments.attemptCount,
+          nextAttemptAt: shippingShipments.nextAttemptAt,
+          lastErrorCode: shippingShipments.lastErrorCode,
+        })
+        .from(shippingShipments)
+        .where(eq(shippingShipments.id, seed.shipmentId))
+        .limit(1);
+
+      expect(shipment?.status).toBe('failed');
+      expect(shipment?.attemptCount).toBe(1);
+      expect(shipment?.nextAttemptAt).toBeTruthy();
+      expect(shipment?.lastErrorCode).toBe('NP_HTTP_ERROR');
+
+      const [order] = await db
+        .select({
+          shippingStatus: orders.shippingStatus,
+        })
+        .from(orders)
+        .where(eq(orders.id, seed.orderId))
+        .limit(1);
+      expect(order?.shippingStatus).toBe('queued');
+
+      const events = await readOrderShippingEvents(seed.orderId);
+      expect(events.some(event => event.eventName === 'creating_label')).toBe(true);
+      expect(
+        events.some(event => event.eventName === 'label_creation_retry_scheduled')
+      ).toBe(false);
+    } finally {
+      if (originalWriteShippingEventImpl) {
+        vi.mocked(writeShippingEvent).mockImplementation(
+          originalWriteShippingEventImpl
+        );
+      } else {
+        vi.mocked(writeShippingEvent).mockReset();
+      }
       await cleanupSeed(seed);
     }
   });
@@ -382,8 +465,9 @@ describe.sequential('shipping shipments worker phase 5', () => {
           throw new Error('event-write-failed');
         }
         if (originalWriteShippingEventImpl) {
-          await originalWriteShippingEventImpl(args);
+          return originalWriteShippingEventImpl(args);
         }
+        return { inserted: false, dedupeKey: 'mock_noop', id: null };
       });
 
       const result = await runShippingShipmentsWorker({
@@ -503,6 +587,7 @@ describe.sequential('shipping shipments worker phase 5', () => {
       expect(order?.shippingProviderRef).toBeNull();
 
       const events = await readOrderShippingEvents(seed.orderId);
+      expect(events.some(event => event.eventName === 'creating_label')).toBe(false);
       expect(events.some(event => event.eventName === 'label_created')).toBe(false);
     } finally {
       await cleanupSeed(seed);
