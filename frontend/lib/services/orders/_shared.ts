@@ -191,6 +191,12 @@ export function hashIdempotencyRequest(params: {
     cityRef: string;
     warehouseRef: string | null;
   } | null;
+  legalConsent: {
+    termsAccepted: boolean;
+    privacyAccepted: boolean;
+    termsVersion: string;
+    privacyVersion: string;
+  };
 }) {
   const normalized = [...params.items]
     .map(i => {
@@ -209,11 +215,12 @@ export function hashIdempotencyRequest(params: {
     });
 
   const payload = JSON.stringify({
-    v: 2,
+    v: 3,
     currency: params.currency,
     locale: normVariant(params.locale).toLowerCase(),
     paymentProvider: params.paymentProvider,
     shipping: params.shipping,
+    legalConsent: params.legalConsent,
     items: normalized,
   });
 

@@ -9,6 +9,7 @@ import { createPaymentIntent, retrievePaymentIntent } from '@/lib/psp/stripe';
 import { OrderStateInvalidError } from '@/lib/services/errors';
 import { setOrderPaymentIntent } from '@/lib/services/orders';
 import { readStripePaymentIntentParams } from '@/lib/services/orders/payment-intent';
+import { assertIntlPaymentInitAllowed } from '@/lib/services/shop/quotes';
 
 import { buildStripeAttemptIdempotencyKey } from './attempt-idempotency';
 
@@ -197,6 +198,11 @@ export async function ensureStripePaymentIntentForOrder(args: {
   const { orderId, existingPaymentIntentId } = args;
   const provider: PaymentProvider = 'stripe';
   const maxAttempts = args.maxAttempts ?? DEFAULT_MAX_ATTEMPTS;
+
+  await assertIntlPaymentInitAllowed({
+    orderId,
+    provider,
+  });
 
   let attempt = await getActiveAttempt(orderId, provider);
 

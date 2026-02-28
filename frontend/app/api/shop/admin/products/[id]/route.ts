@@ -25,6 +25,7 @@ import {
   getAdminProductByIdWithPrices,
   updateProduct,
 } from '@/lib/services/products';
+import { writeAdminAudit } from '@/lib/services/shop/events/write-admin-audit';
 
 export const runtime = 'nodejs';
 
@@ -320,7 +321,9 @@ export async function PATCH(
   let productIdForLog: string | null = null;
 
   try {
-    await requireAdminApi(request);
+    const adminUser = await requireAdminApi(request);
+    const actorUserId =
+      adminUser && typeof adminUser.id === 'string' ? adminUser.id : null;
 
     const rawParams = await context.params;
     const parsedParams = productIdParamSchema.safeParse(rawParams);
@@ -456,6 +459,51 @@ export async function PATCH(
             ? imageFile
             : undefined,
       });
+
+      try {
+        await writeAdminAudit({
+          actorUserId,
+          action: 'product_admin_action.update',
+          targetType: 'product',
+          targetId: updated.id,
+          requestId,
+          payload: {
+            productId: updated.id,
+            slug: updated.slug,
+            title: updated.title,
+            badge: updated.badge,
+            isActive: updated.isActive,
+            isFeatured: updated.isFeatured,
+            stock: updated.stock,
+          },
+          dedupeSeed: {
+            domain: 'product_admin_action',
+            action: 'update',
+            requestId,
+            productId: updated.id,
+            slug: updated.slug,
+            toBadge: updated.badge,
+            toIsActive: updated.isActive,
+            toIsFeatured: updated.isFeatured,
+            toStock: updated.stock,
+          },
+        });
+      } catch (auditError) {
+        logWarn('admin_product_update_audit_failed', {
+          ...baseMeta,
+          code: 'AUDIT_WRITE_FAILED',
+          requestId,
+          actorUserId,
+          productId: updated.id,
+          action: 'product_admin_action.update',
+          message:
+            auditError instanceof Error
+              ? auditError.message
+              : String(auditError),
+          durationMs: Date.now() - startedAtMs,
+        });
+        throw auditError;
+      }
 
       return noStoreJson({ success: true, product: updated }, { status: 200 });
     } catch (error) {
@@ -643,7 +691,9 @@ export async function DELETE(
   let productIdForLog: string | null = null;
 
   try {
-    await requireAdminApi(request);
+    const adminUser = await requireAdminApi(request);
+    const actorUserId =
+      adminUser && typeof adminUser.id === 'string' ? adminUser.id : null;
 
     const csrfRes = requireAdminCsrf(request, 'admin:products:delete');
     if (csrfRes) {
@@ -703,6 +753,39 @@ export async function DELETE(
     }
 
     await deleteProduct(productIdForLog);
+
+    try {
+      await writeAdminAudit({
+        actorUserId,
+        action: 'product_admin_action.delete',
+        targetType: 'product',
+        targetId: productIdForLog,
+        requestId,
+        payload: {
+          productId: productIdForLog,
+        },
+        dedupeSeed: {
+          domain: 'product_admin_action',
+          action: 'delete',
+          requestId,
+          productId: productIdForLog,
+        },
+      });
+    } catch (auditError) {
+      logWarn('admin_product_delete_audit_failed', {
+        ...baseMeta,
+        code: 'AUDIT_WRITE_FAILED',
+        requestId,
+        actorUserId,
+        productId: productIdForLog,
+        action: 'product_admin_action.delete',
+        message:
+          auditError instanceof Error ? auditError.message : String(auditError),
+        durationMs: Date.now() - startedAtMs,
+      });
+      // Delete is irreversible; keep success response to avoid misleading retries.
+      // Audit failure is logged and should be monitored/alerted separately.
+    }
 
     return noStoreJson({ success: true }, { status: 200 });
   } catch (error) {

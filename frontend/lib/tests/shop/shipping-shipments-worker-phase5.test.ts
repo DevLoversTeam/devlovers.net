@@ -1,11 +1,12 @@
 import crypto from 'node:crypto';
 
-import { eq } from 'drizzle-orm';
+import { asc, eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { db } from '@/db';
-import { orderShipping, orders, shippingShipments } from '@/db/schema';
+import { orders, orderShipping, shippingEvents, shippingShipments } from '@/db/schema';
 import { resetEnvCache } from '@/lib/env';
+import * as logging from '@/lib/logging';
 import {
   claimQueuedShipmentsForProcessing,
   runShippingShipmentsWorker,
@@ -22,6 +23,17 @@ vi.mock('@/lib/services/shop/shipping/nova-poshta-client', async () => {
   };
 });
 
+vi.mock('@/lib/services/shop/events/write-shipping-event', async () => {
+  const actual = await vi.importActual<any>(
+    '@/lib/services/shop/events/write-shipping-event'
+  );
+  return {
+    ...actual,
+    writeShippingEvent: vi.fn(actual.writeShippingEvent),
+  };
+});
+
+import { writeShippingEvent } from '@/lib/services/shop/events/write-shipping-event';
 import {
   createInternetDocument,
   NovaPoshtaApiError,
@@ -58,6 +70,15 @@ async function seedShipment(args?: {
   currency?: 'USD' | 'UAH';
   attemptCount?: number;
   shipmentStatus?: 'queued' | 'failed' | 'processing' | 'needs_attention' | 'succeeded';
+  orderShippingStatus?:
+    | 'pending'
+    | 'queued'
+    | 'creating_label'
+    | 'label_created'
+    | 'shipped'
+    | 'delivered'
+    | 'cancelled'
+    | 'needs_attention';
   nextAttemptAt?: Date | null;
 }) {
   const orderId = crypto.randomUUID();
@@ -81,7 +102,7 @@ async function seedShipment(args?: {
     shippingProvider: 'nova_poshta',
     shippingMethodCode: 'NP_WAREHOUSE',
     shippingAmountMinor: null,
-    shippingStatus: 'queued',
+    shippingStatus: args?.orderShippingStatus ?? 'queued',
   } as any);
 
   await db.insert(orderShipping).values({
@@ -107,6 +128,21 @@ async function cleanupSeed(seed: Seeded) {
   await db.delete(shippingShipments).where(eq(shippingShipments.id, seed.shipmentId));
   await db.delete(orderShipping).where(eq(orderShipping.orderId, seed.orderId));
   await db.delete(orders).where(eq(orders.id, seed.orderId));
+}
+
+async function readOrderShippingEvents(orderId: string) {
+  return db
+    .select({
+      eventName: shippingEvents.eventName,
+      statusFrom: shippingEvents.statusFrom,
+      statusTo: shippingEvents.statusTo,
+      eventSource: shippingEvents.eventSource,
+      shipmentId: shippingEvents.shipmentId,
+      eventRef: shippingEvents.eventRef,
+    })
+    .from(shippingEvents)
+    .where(eq(shippingEvents.orderId, orderId))
+    .orderBy(asc(shippingEvents.createdAt), asc(shippingEvents.id));
 }
 
 describe.sequential('shipping shipments worker phase 5', () => {
@@ -191,6 +227,19 @@ describe.sequential('shipping shipments worker phase 5', () => {
       expect(order?.shippingStatus).toBe('label_created');
       expect(order?.trackingNumber).toBe('20451234567890');
       expect(order?.shippingProviderRef).toBe('np-provider-ref-1');
+
+      const events = await readOrderShippingEvents(seed.orderId);
+      expect(events.length).toBe(2);
+      expect(events.map(event => event.eventName)).toEqual(
+        expect.arrayContaining(['creating_label', 'label_created'])
+      );
+      const creatingLabelEvents = events.filter(
+        event => event.eventName === 'creating_label'
+      );
+      expect(creatingLabelEvents).toHaveLength(1);
+      expect(events.every(event => event.eventSource === 'shipments_worker')).toBe(
+        true
+      );
     } finally {
       await cleanupSeed(seed);
     }
@@ -246,7 +295,95 @@ describe.sequential('shipping shipments worker phase 5', () => {
         .where(eq(orders.id, seed.orderId))
         .limit(1);
       expect(order?.shippingStatus).toBe('queued');
+
+      const events = await readOrderShippingEvents(seed.orderId);
+      expect(events.length).toBe(2);
+      expect(events.map(event => event.eventName)).toEqual(
+        expect.arrayContaining([
+          'creating_label',
+          'label_creation_retry_scheduled',
+        ])
+      );
     } finally {
+      await cleanupSeed(seed);
+    }
+  });
+
+  it('keeps retry outcome when failure-path event write throws', async () => {
+    const seed = await seedShipment();
+
+    const originalWriteShippingEventImpl =
+      vi.mocked(writeShippingEvent).getMockImplementation();
+
+    try {
+      vi.mocked(createInternetDocument).mockRejectedValue(
+        new NovaPoshtaApiError('NP_HTTP_ERROR', 'temporary', 503)
+      );
+
+      vi.mocked(writeShippingEvent).mockImplementation(async (args: any) => {
+        if (args?.eventName === 'label_creation_retry_scheduled') {
+          throw new Error('failure-event-write-failed');
+        }
+        if (originalWriteShippingEventImpl) {
+          return originalWriteShippingEventImpl(args);
+        }
+        return { inserted: false, dedupeKey: 'mock_noop', id: null };
+      });
+
+      const result = await runShippingShipmentsWorker({
+        runId: crypto.randomUUID(),
+        limit: 10,
+        leaseSeconds: 120,
+        maxAttempts: 5,
+        baseBackoffSeconds: 10,
+      });
+
+      expect(result).toMatchObject({
+        claimed: 1,
+        processed: 1,
+        succeeded: 0,
+        retried: 1,
+        needsAttention: 0,
+      });
+
+      const [shipment] = await db
+        .select({
+          status: shippingShipments.status,
+          attemptCount: shippingShipments.attemptCount,
+          nextAttemptAt: shippingShipments.nextAttemptAt,
+          lastErrorCode: shippingShipments.lastErrorCode,
+        })
+        .from(shippingShipments)
+        .where(eq(shippingShipments.id, seed.shipmentId))
+        .limit(1);
+
+      expect(shipment?.status).toBe('failed');
+      expect(shipment?.attemptCount).toBe(1);
+      expect(shipment?.nextAttemptAt).toBeTruthy();
+      expect(shipment?.lastErrorCode).toBe('NP_HTTP_ERROR');
+
+      const [order] = await db
+        .select({
+          shippingStatus: orders.shippingStatus,
+        })
+        .from(orders)
+        .where(eq(orders.id, seed.orderId))
+        .limit(1);
+      expect(order?.shippingStatus).toBe('queued');
+
+      const events = await readOrderShippingEvents(seed.orderId);
+      expect(events.some(event => event.eventName === 'creating_label')).toBe(true);
+      expect(
+        events.some(event => event.eventName === 'label_creation_retry_scheduled')
+      ).toBe(false);
+    } finally {
+      if (originalWriteShippingEventImpl) {
+        vi.mocked(writeShippingEvent).mockImplementation(
+          originalWriteShippingEventImpl
+        );
+      } else {
+        vi.mocked(writeShippingEvent).mockReset();
+      }
       await cleanupSeed(seed);
     }
   });
@@ -299,6 +436,311 @@ describe.sequential('shipping shipments worker phase 5', () => {
         .where(eq(orders.id, seed.orderId))
         .limit(1);
       expect(order?.shippingStatus).toBe('needs_attention');
+
+      const events = await readOrderShippingEvents(seed.orderId);
+      expect(events.length).toBe(2);
+      expect(events.map(event => event.eventName)).toEqual(
+        expect.arrayContaining([
+          'creating_label',
+          'label_creation_needs_attention',
+        ])
+      );
+    } finally {
+      await cleanupSeed(seed);
+    }
+  });
+
+  it('keeps success outcome when post-success event write throws', async () => {
+    const seed = await seedShipment();
+
+    const originalWriteShippingEventImpl =
+      vi.mocked(writeShippingEvent).getMockImplementation();
+
+    try {
+      vi.mocked(createInternetDocument).mockResolvedValue({
+        providerRef: 'np-provider-ref-event-fail',
+        trackingNumber: '20450000999999',
+      });
+
+      vi.mocked(writeShippingEvent).mockImplementation(async (args: any) => {
+        if (args?.eventName === 'label_created') {
+          throw new Error('event-write-failed');
+        }
+        if (originalWriteShippingEventImpl) {
+          return originalWriteShippingEventImpl(args);
+        }
+        return { inserted: false, dedupeKey: 'mock_noop', id: null };
+      });
+
+      const result = await runShippingShipmentsWorker({
+        runId: crypto.randomUUID(),
+        limit: 10,
+        leaseSeconds: 120,
+        maxAttempts: 5,
+        baseBackoffSeconds: 10,
+      });
+
+      expect(result).toMatchObject({
+        claimed: 1,
+        processed: 1,
+        succeeded: 1,
+        retried: 0,
+        needsAttention: 0,
+      });
+
+      const [shipment] = await db
+        .select({
+          status: shippingShipments.status,
+          attemptCount: shippingShipments.attemptCount,
+          providerRef: shippingShipments.providerRef,
+          trackingNumber: shippingShipments.trackingNumber,
+          nextAttemptAt: shippingShipments.nextAttemptAt,
+          lastErrorCode: shippingShipments.lastErrorCode,
+        })
+        .from(shippingShipments)
+        .where(eq(shippingShipments.id, seed.shipmentId))
+        .limit(1);
+
+      expect(shipment?.status).toBe('succeeded');
+      expect(shipment?.attemptCount).toBe(1);
+      expect(shipment?.providerRef).toBe('np-provider-ref-event-fail');
+      expect(shipment?.trackingNumber).toBe('20450000999999');
+      expect(shipment?.nextAttemptAt).toBeNull();
+      expect(shipment?.lastErrorCode).toBeNull();
+
+      const [order] = await db
+        .select({
+          shippingStatus: orders.shippingStatus,
+          trackingNumber: orders.trackingNumber,
+          shippingProviderRef: orders.shippingProviderRef,
+        })
+        .from(orders)
+        .where(eq(orders.id, seed.orderId))
+        .limit(1);
+
+      expect(order?.shippingStatus).toBe('label_created');
+      expect(order?.trackingNumber).toBe('20450000999999');
+      expect(order?.shippingProviderRef).toBe('np-provider-ref-event-fail');
+
+      const eventNames = vi
+        .mocked(writeShippingEvent)
+        .mock.calls.map(call => (call[0] as { eventName?: string })?.eventName);
+      expect(eventNames).toContain('creating_label');
+      expect(eventNames).toContain('label_created');
+    } finally {
+      if (originalWriteShippingEventImpl) {
+        vi.mocked(writeShippingEvent).mockImplementation(
+          originalWriteShippingEventImpl
+        );
+      } else {
+        vi.mocked(writeShippingEvent).mockReset();
+      }
+      await cleanupSeed(seed);
+    }
+  });
+
+  it('filters out blocked transitions before processing so no external label is created', async () => {
+    const seed = await seedShipment({ orderShippingStatus: 'shipped' });
+
+    try {
+      vi.mocked(createInternetDocument).mockResolvedValue({
+        providerRef: 'np-provider-ref-blocked-success',
+        trackingNumber: '20450000111111',
+      });
+
+      const result = await runShippingShipmentsWorker({
+        runId: crypto.randomUUID(),
+        limit: 10,
+        leaseSeconds: 120,
+        maxAttempts: 5,
+        baseBackoffSeconds: 10,
+      });
+
+      expect(result).toMatchObject({
+        claimed: 0,
+        processed: 0,
+        succeeded: 0,
+        retried: 0,
+        needsAttention: 0,
+      });
+      expect(createInternetDocument).not.toHaveBeenCalled();
+
+      const [shipment] = await db
+        .select({
+          status: shippingShipments.status,
+          attemptCount: shippingShipments.attemptCount,
+          providerRef: shippingShipments.providerRef,
+          trackingNumber: shippingShipments.trackingNumber,
+        })
+        .from(shippingShipments)
+        .where(eq(shippingShipments.id, seed.shipmentId))
+        .limit(1);
+
+      expect(shipment?.status).toBe('queued');
+      expect(shipment?.attemptCount).toBe(0);
+      expect(shipment?.providerRef).toBeNull();
+      expect(shipment?.trackingNumber).toBeNull();
+
+      const [order] = await db
+        .select({
+          shippingStatus: orders.shippingStatus,
+          trackingNumber: orders.trackingNumber,
+          shippingProviderRef: orders.shippingProviderRef,
+        })
+        .from(orders)
+        .where(eq(orders.id, seed.orderId))
+        .limit(1);
+
+      expect(order?.shippingStatus).toBe('shipped');
+      expect(order?.trackingNumber).toBeNull();
+      expect(order?.shippingProviderRef).toBeNull();
+
+      const events = await readOrderShippingEvents(seed.orderId);
+      expect(events.some(event => event.eventName === 'creating_label')).toBe(false);
+      expect(events.some(event => event.eventName === 'label_created')).toBe(false);
+    } finally {
+      await cleanupSeed(seed);
+    }
+  });
+
+  it('classifies lease loss when shipment row is no longer owned by runId', async () => {
+    const seed = await seedShipment({ orderShippingStatus: 'queued' });
+    const warnSpy = vi.spyOn(logging, 'logWarn');
+
+    try {
+      vi.mocked(createInternetDocument).mockImplementation(async () => {
+        await db
+          .update(shippingShipments)
+          .set({
+            leaseOwner: `lease-stolen-${crypto.randomUUID()}`,
+            leaseExpiresAt: new Date(Date.now() + 60_000),
+          } as any)
+          .where(eq(shippingShipments.id, seed.shipmentId));
+
+        return {
+          providerRef: 'np-provider-ref-lease-lost',
+          trackingNumber: '20450000777777',
+        };
+      });
+
+      const result = await runShippingShipmentsWorker({
+        runId: crypto.randomUUID(),
+        limit: 10,
+        leaseSeconds: 120,
+        maxAttempts: 5,
+        baseBackoffSeconds: 10,
+      });
+
+      expect(result).toMatchObject({
+        claimed: 1,
+        processed: 1,
+        succeeded: 0,
+        retried: 1,
+        needsAttention: 0,
+      });
+
+      const [shipment] = await db
+        .select({
+          status: shippingShipments.status,
+          attemptCount: shippingShipments.attemptCount,
+          providerRef: shippingShipments.providerRef,
+          trackingNumber: shippingShipments.trackingNumber,
+          leaseOwner: shippingShipments.leaseOwner,
+        })
+        .from(shippingShipments)
+        .where(eq(shippingShipments.id, seed.shipmentId))
+        .limit(1);
+
+      expect(shipment?.status).toBe('processing');
+      expect(shipment?.attemptCount).toBe(0);
+      expect(shipment?.providerRef).toBeNull();
+      expect(shipment?.trackingNumber).toBeNull();
+      expect(shipment?.leaseOwner).toBeTruthy();
+
+      const [order] = await db
+        .select({ shippingStatus: orders.shippingStatus })
+        .from(orders)
+        .where(eq(orders.id, seed.orderId))
+        .limit(1);
+
+      expect(order?.shippingStatus).toBe('creating_label');
+
+      expect(
+        warnSpy.mock.calls.some(
+          ([name, meta]) =>
+            name === 'shipping_shipments_worker_lease_lost' &&
+            (meta as Record<string, unknown>)?.code === 'SHIPMENT_LEASE_LOST'
+        )
+      ).toBe(true);
+      expect(
+        warnSpy.mock.calls.some(
+          ([name, meta]) =>
+            name === 'shipping_shipments_worker_order_transition_blocked' &&
+            (meta as Record<string, unknown>)?.code === 'ORDER_TRANSITION_BLOCKED'
+        )
+      ).toBe(false);
+    } finally {
+      warnSpy.mockRestore();
+      await cleanupSeed(seed);
+    }
+  });
+
+  it('does not emit retry/needs_attention transition events when order transition is blocked', async () => {
+    const seed = await seedShipment({ orderShippingStatus: 'shipped' });
+
+    try {
+      vi.mocked(createInternetDocument).mockRejectedValue(
+        new NovaPoshtaApiError('NP_HTTP_ERROR', 'temporary', 503)
+      );
+
+      const result = await runShippingShipmentsWorker({
+        runId: crypto.randomUUID(),
+        limit: 10,
+        leaseSeconds: 120,
+        maxAttempts: 5,
+        baseBackoffSeconds: 10,
+      });
+
+      expect(result).toMatchObject({
+        claimed: 0,
+        processed: 0,
+        succeeded: 0,
+        retried: 0,
+        needsAttention: 0,
+      });
+      expect(createInternetDocument).not.toHaveBeenCalled();
+
+      const [shipment] = await db
+        .select({
+          status: shippingShipments.status,
+          attemptCount: shippingShipments.attemptCount,
+          lastErrorCode: shippingShipments.lastErrorCode,
+        })
+        .from(shippingShipments)
+        .where(eq(shippingShipments.id, seed.shipmentId))
+        .limit(1);
+
+      expect(shipment?.status).toBe('queued');
+      expect(shipment?.attemptCount).toBe(0);
+      expect(shipment?.lastErrorCode).toBeNull();
+
+      const [order] = await db
+        .select({
+          shippingStatus: orders.shippingStatus,
+        })
+        .from(orders)
+        .where(eq(orders.id, seed.orderId))
+        .limit(1);
+
+      expect(order?.shippingStatus).toBe('shipped');
+
+      const events = await readOrderShippingEvents(seed.orderId);
+      expect(
+        events.some(event =>
+          event.eventName === 'label_creation_retry_scheduled' ||
+          event.eventName === 'label_creation_needs_attention'
+        )
+      ).toBe(false);
     } finally {
       await cleanupSeed(seed);
     }
@@ -321,9 +763,47 @@ describe.sequential('shipping shipments worker phase 5', () => {
 
       expect(first.length).toBe(1);
       expect(second.length).toBe(0);
+
+      const events = await readOrderShippingEvents(seed.orderId);
+      expect(events.length).toBe(1);
+      expect(events[0]?.eventName).toBe('creating_label');
+    } finally {
+      await cleanupSeed(seed);
+    }
+  });
+
+  it('dedupes creating_label event on processing-claim replay for same attempt', async () => {
+    const seed = await seedShipment({ shipmentStatus: 'processing', attemptCount: 0 });
+
+    try {
+      const runA = `worker-a-${crypto.randomUUID()}`;
+      const first = await claimQueuedShipmentsForProcessing({
+        runId: runA,
+        leaseSeconds: 120,
+        limit: 1,
+      });
+
+      expect(first.length).toBe(1);
+
+      await db
+        .update(shippingShipments)
+        .set({ leaseExpiresAt: new Date(Date.now() - 5_000) } as any)
+        .where(eq(shippingShipments.id, seed.shipmentId));
+
+      const runB = `worker-b-${crypto.randomUUID()}`;
+      const second = await claimQueuedShipmentsForProcessing({
+        runId: runB,
+        leaseSeconds: 120,
+        limit: 1,
+      });
+
+      expect(second.length).toBe(1);
+
+      const events = await readOrderShippingEvents(seed.orderId);
+      const creating = events.filter(event => event.eventName === 'creating_label');
+      expect(creating.length).toBe(1);
     } finally {
       await cleanupSeed(seed);
     }
   });
 });
-

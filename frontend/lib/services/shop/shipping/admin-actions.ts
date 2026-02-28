@@ -3,6 +3,12 @@ import 'server-only';
 import { sql } from 'drizzle-orm';
 
 import { db } from '@/db';
+import { isCanonicalEventsDualWriteEnabled } from '@/lib/env/shop-canonical-events';
+import { buildAdminAuditDedupeKey } from '@/lib/services/shop/events/dedupe-key';
+import {
+  isShippingStatusTransitionAllowed,
+  shippingStatusTransitionWhereSql,
+} from '@/lib/services/shop/transitions/shipping-state';
 import { recordShippingMetric } from '@/lib/services/shop/shipping/metrics';
 
 export type ShippingAdminAction =
@@ -39,6 +45,12 @@ type ShippingAuditEntry = {
   toShippingStatus: string | null;
   fromShipmentStatus: string | null;
   at: string;
+};
+
+type CanonicalAdminAuditArgs = {
+  enabled: boolean;
+  dedupeKey: string;
+  occurredAt: Date;
 };
 
 export type ApplyShippingAdminActionResult = {
@@ -138,26 +150,116 @@ async function loadShippingState(
 async function appendAuditEntry(args: {
   orderId: string;
   entry: ShippingAuditEntry;
+  canonical: CanonicalAdminAuditArgs;
 }) {
-  const entryJson = JSON.stringify([args.entry]);
+  const entryArrayJson = JSON.stringify([args.entry]);
+  if (!args.canonical.enabled) {
+    await db.execute(sql`
+      update orders o
+      set psp_metadata = jsonb_set(
+        coalesce(o.psp_metadata, '{}'::jsonb),
+        '{shippingAdminAudit}',
+        coalesce(o.psp_metadata -> 'shippingAdminAudit', '[]'::jsonb) || ${entryArrayJson}::jsonb,
+        true
+      ),
+      updated_at = now()
+      where o.id = ${args.orderId}::uuid
+    `);
+    return;
+  }
+
+  const entryObjectJson = JSON.stringify(args.entry);
   await db.execute(sql`
-    update orders o
-    set psp_metadata = jsonb_set(
-      coalesce(o.psp_metadata, '{}'::jsonb),
-      '{shippingAdminAudit}',
-      coalesce(o.psp_metadata -> 'shippingAdminAudit', '[]'::jsonb) || ${entryJson}::jsonb,
-      true
+    with updated_order as (
+      update orders o
+      set psp_metadata = jsonb_set(
+        coalesce(o.psp_metadata, '{}'::jsonb),
+        '{shippingAdminAudit}',
+        coalesce(o.psp_metadata -> 'shippingAdminAudit', '[]'::jsonb) || ${entryArrayJson}::jsonb,
+        true
+      ),
+      updated_at = now()
+      where o.id = ${args.orderId}::uuid
+      returning o.id
     ),
-    updated_at = now()
-    where o.id = ${args.orderId}::uuid
+    inserted_admin_audit as (
+      insert into admin_audit_log (
+        order_id,
+        actor_user_id,
+        action,
+        target_type,
+        target_id,
+        request_id,
+        payload,
+        dedupe_key,
+        occurred_at,
+        created_at
+      )
+      select
+        uo.id,
+        ${args.entry.actorUserId},
+        ${`shipping_admin_action.${args.entry.action}`},
+        'order',
+        uo.id::text,
+        ${args.entry.requestId},
+        ${entryObjectJson}::jsonb,
+        ${args.canonical.dedupeKey},
+        ${args.canonical.occurredAt},
+        now()
+      from updated_order uo
+      where ${args.canonical.enabled} = true
+      on conflict (dedupe_key) do nothing
+      returning id
+    )
+    select id from updated_order
   `);
 }
 
 async function requeueShipment(args: {
   orderId: string;
   auditEntry: ShippingAuditEntry;
+  canonical: CanonicalAdminAuditArgs;
 }): Promise<ResultRow | null> {
-  const entryJson = JSON.stringify([args.auditEntry]);
+  const entryArrayJson = JSON.stringify([args.auditEntry]);
+  if (!args.canonical.enabled) {
+    const res = await db.execute<ResultRow>(sql`
+      with updated_shipment as (
+        update shipping_shipments s
+        set status = 'queued',
+            next_attempt_at = now(),
+            last_error_code = null,
+            last_error_message = null,
+            lease_owner = null,
+            lease_expires_at = null,
+            updated_at = now()
+        where s.order_id = ${args.orderId}::uuid
+          and s.status in ('failed', 'needs_attention')
+        returning s.order_id
+      ),
+      updated_order as (
+        update orders o
+        set shipping_status = 'queued',
+            psp_metadata = jsonb_set(
+              coalesce(o.psp_metadata, '{}'::jsonb),
+              '{shippingAdminAudit}',
+              coalesce(o.psp_metadata -> 'shippingAdminAudit', '[]'::jsonb) || ${entryArrayJson}::jsonb,
+              true
+            ),
+            updated_at = now()
+        where o.id in (select order_id from updated_shipment)
+          and ${shippingStatusTransitionWhereSql({
+            column: sql`o.shipping_status`,
+            to: 'queued',
+            allowNullFrom: true,
+          })}
+        returning o.id, o.shipping_status, o.tracking_number
+      )
+      select * from updated_order
+    `);
+    return first<ResultRow>(res);
+  }
+
+  const entryObjectJson = JSON.stringify(args.auditEntry);
 
   const res = await db.execute<ResultRow>(sql`
     with updated_shipment as (
@@ -179,12 +281,46 @@ async function requeueShipment(args: {
           psp_metadata = jsonb_set(
             coalesce(o.psp_metadata, '{}'::jsonb),
             '{shippingAdminAudit}',
-            coalesce(o.psp_metadata -> 'shippingAdminAudit', '[]'::jsonb) || ${entryJson}::jsonb,
+            coalesce(o.psp_metadata -> 'shippingAdminAudit', '[]'::jsonb) || ${entryArrayJson}::jsonb,
             true
           ),
           updated_at = now()
       where o.id in (select order_id from updated_shipment)
+        and ${shippingStatusTransitionWhereSql({
+          column: sql`o.shipping_status`,
+          to: 'queued',
+          allowNullFrom: true,
+        })}
       returning o.id, o.shipping_status, o.tracking_number
+    ),
+    inserted_admin_audit as (
+      insert into admin_audit_log (
+        order_id,
+        actor_user_id,
+        action,
+        target_type,
+        target_id,
+        request_id,
+        payload,
+        dedupe_key,
+        occurred_at,
+        created_at
+      )
+      select
+        uo.id,
+        ${args.auditEntry.actorUserId},
+        ${`shipping_admin_action.${args.auditEntry.action}`},
+        'order',
+        uo.id::text,
+        ${args.auditEntry.requestId},
+        ${entryObjectJson}::jsonb,
+        ${args.canonical.dedupeKey},
+        ${args.canonical.occurredAt},
+        now()
+      from updated_order uo
+      where ${args.canonical.enabled} = true
+      on conflict (dedupe_key) do nothing
+      returning id
     )
     select * from updated_order
   `);
@@ -197,21 +333,81 @@ async function updateOrderShippingStatus(args: {
   expectedStatus: 'label_created' | 'shipped';
   nextStatus: 'shipped' | 'delivered';
   auditEntry: ShippingAuditEntry;
+  canonical: CanonicalAdminAuditArgs;
 }): Promise<ResultRow | null> {
-  const entryJson = JSON.stringify([args.auditEntry]);
+  const entryArrayJson = JSON.stringify([args.auditEntry]);
+  if (!args.canonical.enabled) {
+    const res = await db.execute<ResultRow>(sql`
+      update orders o
+      set shipping_status = ${args.nextStatus},
+          psp_metadata = jsonb_set(
+            coalesce(o.psp_metadata, '{}'::jsonb),
+            '{shippingAdminAudit}',
+            coalesce(o.psp_metadata -> 'shippingAdminAudit', '[]'::jsonb) || ${entryArrayJson}::jsonb,
+            true
+          ),
+          updated_at = now()
+      where o.id = ${args.orderId}::uuid
+        and o.shipping_status = ${args.expectedStatus}
+        and ${shippingStatusTransitionWhereSql({
+          column: sql`o.shipping_status`,
+          to: args.nextStatus,
+        })}
+      returning o.id, o.shipping_status, o.tracking_number
+    `);
+    return first<ResultRow>(res);
+  }
+
+  const entryObjectJson = JSON.stringify(args.auditEntry);
   const res = await db.execute<ResultRow>(sql`
-    update orders o
-    set shipping_status = ${args.nextStatus},
-        psp_metadata = jsonb_set(
-          coalesce(o.psp_metadata, '{}'::jsonb),
-          '{shippingAdminAudit}',
-          coalesce(o.psp_metadata -> 'shippingAdminAudit', '[]'::jsonb) || ${entryJson}::jsonb,
-          true
-        ),
-        updated_at = now()
-    where o.id = ${args.orderId}::uuid
-      and o.shipping_status = ${args.expectedStatus}
-    returning o.id, o.shipping_status, o.tracking_number
+    with updated_order as (
+      update orders o
+      set shipping_status = ${args.nextStatus},
+          psp_metadata = jsonb_set(
+            coalesce(o.psp_metadata, '{}'::jsonb),
+            '{shippingAdminAudit}',
+            coalesce(o.psp_metadata -> 'shippingAdminAudit', '[]'::jsonb) || ${entryArrayJson}::jsonb,
+            true
+          ),
+          updated_at = now()
+      where o.id = ${args.orderId}::uuid
+        and o.shipping_status = ${args.expectedStatus}
+        and ${shippingStatusTransitionWhereSql({
+          column: sql`o.shipping_status`,
+          to: args.nextStatus,
+        })}
+      returning o.id, o.shipping_status, o.tracking_number
+    ),
+    inserted_admin_audit as (
+      insert into admin_audit_log (
+        order_id,
+        actor_user_id,
+        action,
+        target_type,
+        target_id,
+        request_id,
+        payload,
+        dedupe_key,
+        occurred_at,
+        created_at
+      )
+      select
+        uo.id,
+        ${args.auditEntry.actorUserId},
+        ${`shipping_admin_action.${args.auditEntry.action}`},
+        'order',
+        uo.id::text,
+        ${args.auditEntry.requestId},
+        ${entryObjectJson}::jsonb,
+        ${args.canonical.dedupeKey},
+        ${args.canonical.occurredAt},
+        now()
+      from updated_order uo
+      where ${args.canonical.enabled} = true
+      on conflict (dedupe_key) do nothing
+      returning id
+    )
+    select * from updated_order
   `);
   return first<ResultRow>(res);
 }
@@ -227,6 +423,25 @@ async function loadShipmentStatus(orderId: string): Promise<string | null> {
   return first<ShipmentStatusRow>(res)?.status ?? null;
 }
 
+function buildShippingAdminAuditDedupe(args: {
+  orderId: string;
+  requestId: string;
+  action: ShippingAdminAction;
+  fromShippingStatus: string | null;
+  toShippingStatus: string | null;
+  fromShipmentStatus: string | null;
+}) {
+  return buildAdminAuditDedupeKey({
+    domain: 'shipping_admin_action',
+    orderId: args.orderId,
+    requestId: args.requestId,
+    action: args.action,
+    fromShippingStatus: args.fromShippingStatus,
+    toShippingStatus: args.toShippingStatus,
+    fromShipmentStatus: args.fromShipmentStatus,
+  });
+}
+
 export async function applyShippingAdminAction(args: {
   orderId: string;
   action: ShippingAdminAction;
@@ -236,7 +451,9 @@ export async function applyShippingAdminAction(args: {
   const state = await loadShippingState(args.orderId);
   assertOrderIsShippable(state);
 
-  const nowIso = new Date().toISOString();
+  const canonicalDualWriteEnabled = isCanonicalEventsDualWriteEnabled();
+  const now = new Date();
+  const nowIso = now.toISOString();
 
   if (args.action === 'retry_label_creation') {
     if (!state.shipment_id) {
@@ -258,6 +475,18 @@ export async function applyShippingAdminAction(args: {
       );
     }
 
+    if (
+      !isShippingStatusTransitionAllowed(state.shipping_status, 'queued', {
+        allowNullFrom: true,
+      })
+    ) {
+      throw new ShippingAdminActionError(
+        'INVALID_SHIPPING_TRANSITION',
+        `retry_label_creation is not allowed from ${state.shipping_status ?? 'null'}.`,
+        409
+      );
+    }
+
     const updated = await requeueShipment({
       orderId: args.orderId,
       auditEntry: {
@@ -268,6 +497,18 @@ export async function applyShippingAdminAction(args: {
         toShippingStatus: 'queued',
         fromShipmentStatus: state.shipment_status,
         at: nowIso,
+      },
+      canonical: {
+        enabled: canonicalDualWriteEnabled,
+        dedupeKey: buildShippingAdminAuditDedupe({
+          orderId: args.orderId,
+          requestId: args.requestId,
+          action: args.action,
+          fromShippingStatus: state.shipping_status,
+          toShippingStatus: 'queued',
+          fromShipmentStatus: state.shipment_status,
+        }),
+        occurredAt: now,
       },
     });
 
@@ -309,6 +550,18 @@ export async function applyShippingAdminAction(args: {
           fromShipmentStatus: state.shipment_status,
           at: nowIso,
         },
+        canonical: {
+          enabled: canonicalDualWriteEnabled,
+          dedupeKey: buildShippingAdminAuditDedupe({
+            orderId: args.orderId,
+            requestId: args.requestId,
+            action: args.action,
+            fromShippingStatus: state.shipping_status,
+            toShippingStatus: 'shipped',
+            fromShipmentStatus: state.shipment_status,
+          }),
+          occurredAt: now,
+        },
       });
 
       return {
@@ -321,7 +574,9 @@ export async function applyShippingAdminAction(args: {
       };
     }
 
-    if (state.shipping_status !== 'label_created') {
+    if (
+      !isShippingStatusTransitionAllowed(state.shipping_status, 'shipped')
+    ) {
       throw new ShippingAdminActionError(
         'INVALID_SHIPPING_TRANSITION',
         'mark_shipped is allowed only from label_created.',
@@ -341,6 +596,18 @@ export async function applyShippingAdminAction(args: {
         toShippingStatus: 'shipped',
         fromShipmentStatus: state.shipment_status,
         at: nowIso,
+      },
+      canonical: {
+        enabled: canonicalDualWriteEnabled,
+        dedupeKey: buildShippingAdminAuditDedupe({
+          orderId: args.orderId,
+          requestId: args.requestId,
+          action: args.action,
+          fromShippingStatus: state.shipping_status,
+          toShippingStatus: 'shipped',
+          fromShipmentStatus: state.shipment_status,
+        }),
+        occurredAt: now,
       },
     });
 
@@ -382,6 +649,18 @@ export async function applyShippingAdminAction(args: {
         fromShipmentStatus: state.shipment_status,
         at: nowIso,
       },
+      canonical: {
+        enabled: canonicalDualWriteEnabled,
+        dedupeKey: buildShippingAdminAuditDedupe({
+          orderId: args.orderId,
+          requestId: args.requestId,
+          action: args.action,
+          fromShippingStatus: state.shipping_status,
+          toShippingStatus: 'delivered',
+          fromShipmentStatus: state.shipment_status,
+        }),
+        occurredAt: now,
+      },
     });
 
     return {
@@ -394,7 +673,7 @@ export async function applyShippingAdminAction(args: {
     };
   }
 
-  if (state.shipping_status !== 'shipped') {
+  if (!isShippingStatusTransitionAllowed(state.shipping_status, 'delivered')) {
     throw new ShippingAdminActionError(
       'INVALID_SHIPPING_TRANSITION',
       'mark_delivered is allowed only from shipped.',
@@ -414,6 +693,18 @@ export async function applyShippingAdminAction(args: {
       toShippingStatus: 'delivered',
       fromShipmentStatus: state.shipment_status,
       at: nowIso,
+    },
+    canonical: {
+      enabled: canonicalDualWriteEnabled,
+      dedupeKey: buildShippingAdminAuditDedupe({
+        orderId: args.orderId,
+        requestId: args.requestId,
+        action: args.action,
+        fromShippingStatus: state.shipping_status,
+        toShippingStatus: 'delivered',
+        fromShipmentStatus: state.shipment_status,
+      }),
+      occurredAt: now,
     },
   });
 

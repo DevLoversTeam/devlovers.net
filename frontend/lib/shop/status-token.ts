@@ -1,11 +1,27 @@
 import crypto from 'node:crypto';
 
+export const STATUS_TOKEN_SCOPES = [
+  'status_lite',
+  'order_payment_init',
+  'order_quote_request',
+  'order_quote_accept',
+  'order_quote_decline',
+] as const;
+
+export type StatusTokenScope = (typeof STATUS_TOKEN_SCOPES)[number];
+
+const STATUS_TOKEN_SCOPE_SET = new Set<string>(STATUS_TOKEN_SCOPES);
+const DEFAULT_STATUS_TOKEN_SCOPES: readonly StatusTokenScope[] = [
+  'status_lite',
+];
+
 type TokenPayload = {
   v: 1;
   orderId: string;
   iat: number;
   exp: number;
   nonce: string;
+  scp: StatusTokenScope[];
 };
 
 const DEFAULT_TTL_SECONDS = 45 * 60;
@@ -45,16 +61,40 @@ function safeEqual(a: string, b: string): boolean {
   return crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
 }
 
+function normalizeScopes(raw: unknown): StatusTokenScope[] {
+  if (!Array.isArray(raw)) return [];
+
+  const seen = new Set<StatusTokenScope>();
+  const out: StatusTokenScope[] = [];
+
+  for (const item of raw) {
+    if (typeof item !== 'string') continue;
+    const scope = item.trim() as StatusTokenScope;
+    if (!STATUS_TOKEN_SCOPE_SET.has(scope)) continue;
+    if (seen.has(scope)) continue;
+    seen.add(scope);
+    out.push(scope);
+  }
+
+  return out;
+}
+
 export function createStatusToken(args: {
   orderId: string;
   ttlSeconds?: number;
   nowMs?: number;
+  scopes?: StatusTokenScope[];
 }): string {
   const secret = getSecret();
   const nowMs = args.nowMs ?? Date.now();
   const iat = Math.floor(nowMs / 1000);
   const ttl = args.ttlSeconds ?? DEFAULT_TTL_SECONDS;
   const exp = iat + ttl;
+  const explicitScopes = normalizeScopes(args.scopes);
+  const resolvedScopes =
+    explicitScopes.length > 0
+      ? explicitScopes
+      : [...DEFAULT_STATUS_TOKEN_SCOPES];
 
   const payload: TokenPayload = {
     v: 1,
@@ -62,6 +102,7 @@ export function createStatusToken(args: {
     iat,
     exp,
     nonce: crypto.randomUUID(),
+    scp: resolvedScopes,
   };
 
   return signPayload(payload, secret);
@@ -96,9 +137,27 @@ export function verifyStatusToken(args: {
 
   let payload: TokenPayload;
   try {
-    payload = JSON.parse(
-      base64UrlDecode(body).toString('utf-8')
-    ) as TokenPayload;
+    const rawPayload = JSON.parse(base64UrlDecode(body).toString('utf-8')) as {
+      v?: unknown;
+      orderId?: unknown;
+      iat?: unknown;
+      exp?: unknown;
+      nonce?: unknown;
+      scp?: unknown;
+    };
+
+    const rawScopes = normalizeScopes(rawPayload.scp);
+    const scopes =
+      rawScopes.length > 0 ? rawScopes : [...DEFAULT_STATUS_TOKEN_SCOPES];
+
+    payload = {
+      v: rawPayload.v as TokenPayload['v'],
+      orderId: rawPayload.orderId as TokenPayload['orderId'],
+      iat: rawPayload.iat as TokenPayload['iat'],
+      exp: rawPayload.exp as TokenPayload['exp'],
+      nonce: rawPayload.nonce as TokenPayload['nonce'],
+      scp: scopes,
+    };
   } catch {
     return { ok: false, reason: 'invalid_payload' };
   }
@@ -119,4 +178,11 @@ export function verifyStatusToken(args: {
   }
 
   return { ok: true, payload };
+}
+
+export function hasStatusTokenScope(
+  payload: Pick<TokenPayload, 'scp'>,
+  scope: StatusTokenScope
+): boolean {
+  return Array.isArray(payload.scp) && payload.scp.includes(scope);
 }

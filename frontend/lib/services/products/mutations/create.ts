@@ -17,11 +17,14 @@ import {
 } from '../prices';
 import { normalizeSlug } from '../slug';
 
-export async function createProduct(input: ProductInput): Promise<DbProduct> {
-  const slug = await normalizeSlug(
-    db,
-    (input as any).slug ?? (input as any).title
-  );
+type ProductMutationExecutor = Pick<typeof db, 'insert' | 'delete' | 'select'>;
+
+export async function createProduct(
+  input: ProductInput,
+  options?: { db?: ProductMutationExecutor }
+): Promise<DbProduct> {
+  const executor = options?.db ?? db;
+  const slug = await normalizeSlug(executor, (input as any).slug ?? (input as any).title);
 
   let uploaded: { secureUrl: string; publicId: string } | null = null;
 
@@ -47,7 +50,7 @@ export async function createProduct(input: ProductInput): Promise<DbProduct> {
   let createdProductId: string | null = null;
 
   try {
-    const [row] = await db
+    const [row] = await executor
       .insert(products)
       .values({
         slug,
@@ -81,7 +84,7 @@ export async function createProduct(input: ProductInput): Promise<DbProduct> {
 
     createdProductId = row.id;
 
-    await db.insert(productPrices).values(
+    await executor.insert(productPrices).values(
       prices.map(p => {
         const priceMinor = p.priceMinor;
         const originalMinor = p.originalPriceMinor;
@@ -100,7 +103,7 @@ export async function createProduct(input: ProductInput): Promise<DbProduct> {
 
     return mapRowToProduct(row);
   } catch (error) {
-    if (createdProductId) {
+    if (createdProductId && !options?.db) {
       try {
         await db.delete(products).where(eq(products.id, createdProductId));
       } catch (cleanupDbError) {
