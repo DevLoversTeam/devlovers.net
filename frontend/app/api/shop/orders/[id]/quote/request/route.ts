@@ -18,8 +18,13 @@ export async function POST(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  const requestId =
-    request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
+  const raw = request.headers.get('x-request-id');
+  const candidateRequestId = raw?.trim() ?? '';
+  const requestId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    candidateRequestId
+  )
+    ? candidateRequestId
+    : crypto.randomUUID();
   const baseMeta = {
     requestId,
     route: request.nextUrl.pathname,
@@ -74,17 +79,25 @@ export async function POST(
     }
 
     if (error instanceof InvalidPayloadError) {
+      const detailsKeys =
+        error.details &&
+        typeof error.details === 'object' &&
+        !Array.isArray(error.details)
+          ? Object.keys(error.details as Record<string, unknown>).slice(0, 20)
+          : null;
+
       logWarn('quote_request_rejected', {
         ...baseMeta,
         orderId,
+        action: 'order_quote_request',
         code: error.code,
+        ...(detailsKeys ? { detailsKeys } : {}),
       });
 
       return noStoreJson(
         {
           code: error.code,
           message: error.message,
-          ...(error.details ? { details: error.details } : {}),
         },
         { status: mapQuoteErrorStatus(error.code, 'request') }
       );

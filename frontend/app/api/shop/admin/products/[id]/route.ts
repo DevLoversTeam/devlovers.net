@@ -783,6 +783,8 @@ export async function DELETE(
           auditError instanceof Error ? auditError.message : String(auditError),
         durationMs: Date.now() - startedAtMs,
       });
+      // Delete is irreversible; keep success response to avoid misleading retries.
+      // Audit failure is logged and should be monitored/alerted separately.
     }
 
     return noStoreJson({ success: true }, { status: 200 });
