@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { db } from '@/db';
-import { orderShipping, orders, shippingShipments } from '@/db/schema';
+import { orderShipping, orders, shippingEvents, shippingShipments } from '@/db/schema';
 import { resetEnvCache } from '@/lib/env';
 import {
   claimQueuedShipmentsForProcessing,
@@ -109,6 +109,20 @@ async function cleanupSeed(seed: Seeded) {
   await db.delete(orders).where(eq(orders.id, seed.orderId));
 }
 
+async function readOrderShippingEvents(orderId: string) {
+  return db
+    .select({
+      eventName: shippingEvents.eventName,
+      statusFrom: shippingEvents.statusFrom,
+      statusTo: shippingEvents.statusTo,
+      eventSource: shippingEvents.eventSource,
+      shipmentId: shippingEvents.shipmentId,
+      eventRef: shippingEvents.eventRef,
+    })
+    .from(shippingEvents)
+    .where(eq(shippingEvents.orderId, orderId));
+}
+
 describe.sequential('shipping shipments worker phase 5', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -191,6 +205,15 @@ describe.sequential('shipping shipments worker phase 5', () => {
       expect(order?.shippingStatus).toBe('label_created');
       expect(order?.trackingNumber).toBe('20451234567890');
       expect(order?.shippingProviderRef).toBe('np-provider-ref-1');
+
+      const events = await readOrderShippingEvents(seed.orderId);
+      expect(events.length).toBe(2);
+      expect(events.map(event => event.eventName)).toEqual(
+        expect.arrayContaining(['creating_label', 'label_created'])
+      );
+      expect(events.every(event => event.eventSource === 'shipments_worker')).toBe(
+        true
+      );
     } finally {
       await cleanupSeed(seed);
     }
@@ -246,6 +269,15 @@ describe.sequential('shipping shipments worker phase 5', () => {
         .where(eq(orders.id, seed.orderId))
         .limit(1);
       expect(order?.shippingStatus).toBe('queued');
+
+      const events = await readOrderShippingEvents(seed.orderId);
+      expect(events.length).toBe(2);
+      expect(events.map(event => event.eventName)).toEqual(
+        expect.arrayContaining([
+          'creating_label',
+          'label_creation_retry_scheduled',
+        ])
+      );
     } finally {
       await cleanupSeed(seed);
     }
@@ -299,6 +331,15 @@ describe.sequential('shipping shipments worker phase 5', () => {
         .where(eq(orders.id, seed.orderId))
         .limit(1);
       expect(order?.shippingStatus).toBe('needs_attention');
+
+      const events = await readOrderShippingEvents(seed.orderId);
+      expect(events.length).toBe(2);
+      expect(events.map(event => event.eventName)).toEqual(
+        expect.arrayContaining([
+          'creating_label',
+          'label_creation_needs_attention',
+        ])
+      );
     } finally {
       await cleanupSeed(seed);
     }
@@ -321,6 +362,45 @@ describe.sequential('shipping shipments worker phase 5', () => {
 
       expect(first.length).toBe(1);
       expect(second.length).toBe(0);
+
+      const events = await readOrderShippingEvents(seed.orderId);
+      expect(events.length).toBe(1);
+      expect(events[0]?.eventName).toBe('creating_label');
+    } finally {
+      await cleanupSeed(seed);
+    }
+  });
+
+  it('dedupes creating_label event on processing-claim replay for same attempt', async () => {
+    const seed = await seedShipment({ shipmentStatus: 'processing', attemptCount: 0 });
+
+    try {
+      const runA = `worker-a-${crypto.randomUUID()}`;
+      const first = await claimQueuedShipmentsForProcessing({
+        runId: runA,
+        leaseSeconds: 120,
+        limit: 1,
+      });
+
+      expect(first.length).toBe(1);
+
+      await db
+        .update(shippingShipments)
+        .set({ leaseExpiresAt: new Date(Date.now() - 5_000) } as any)
+        .where(eq(shippingShipments.id, seed.shipmentId));
+
+      const runB = `worker-b-${crypto.randomUUID()}`;
+      const second = await claimQueuedShipmentsForProcessing({
+        runId: runB,
+        leaseSeconds: 120,
+        limit: 1,
+      });
+
+      expect(second.length).toBe(1);
+
+      const events = await readOrderShippingEvents(seed.orderId);
+      const creating = events.filter(event => event.eventName === 'creating_label');
+      expect(creating.length).toBe(1);
     } finally {
       await cleanupSeed(seed);
     }

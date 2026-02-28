@@ -8,7 +8,6 @@ import {
 } from '@/lib/services/shop/shipping/nova-poshta-client';
 
 function stubRequiredNpEnv() {
-  vi.stubEnv('DATABASE_URL', 'https://example.com/db');
   vi.stubEnv('SHOP_SHIPPING_ENABLED', 'true');
   vi.stubEnv('SHOP_SHIPPING_NP_ENABLED', 'true');
   vi.stubEnv('NP_API_BASE', 'https://np.invalid/v2.0/json/');

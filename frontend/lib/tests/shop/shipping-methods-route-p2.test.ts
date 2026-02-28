@@ -35,7 +35,6 @@ describe('shop shipping methods route (phase 2)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.unstubAllEnvs();
-    vi.stubEnv('DATABASE_URL', 'https://example.com/db');
     resetEnvCache();
     enforceRateLimitMock.mockResolvedValue({ ok: true, remaining: 100 });
   });
