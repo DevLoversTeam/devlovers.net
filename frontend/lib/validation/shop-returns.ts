@@ -4,6 +4,9 @@ export const returnRequestIdParamSchema = z.object({
   id: z.string().uuid(),
 });
 
+export const returnResolutionSchema = z.enum(['refund', 'exchange']);
+export type ReturnResolution = z.infer<typeof returnResolutionSchema>;
+
 export const createReturnPayloadSchema = z
   .object({
     idempotencyKey: z
@@ -14,6 +17,7 @@ export const createReturnPayloadSchema = z
       .regex(/^[A-Za-z0-9_.-]+$/),
     reason: z.string().trim().max(500).optional(),
     policyRestock: z.boolean().optional().default(true),
+    resolution: returnResolutionSchema.optional().default('refund'),
   })
   .strict();
 
