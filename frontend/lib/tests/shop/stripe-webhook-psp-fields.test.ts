@@ -127,9 +127,6 @@ async function cleanup(params: {
 
 describe('P0-6 webhook: writes PSP fields on succeeded', () => {
   it('payment_intent.succeeded must set PSP fields + pspMetadata and be idempotent on duplicate eventId', async () => {
-    const prevDualWrite = process.env.SHOP_CANONICAL_EVENTS_DUAL_WRITE;
-    process.env.SHOP_CANONICAL_EVENTS_DUAL_WRITE = 'true';
-
     const productId = randomUUID();
     const priceId = randomUUID();
 
@@ -364,11 +361,6 @@ describe('P0-6 webhook: writes PSP fields on succeeded', () => {
         .where(eq(shippingShipments.orderId, orderId));
       expect(queued2.length).toBe(1);
     } finally {
-      if (prevDualWrite === undefined) {
-        delete process.env.SHOP_CANONICAL_EVENTS_DUAL_WRITE;
-      } else {
-        process.env.SHOP_CANONICAL_EVENTS_DUAL_WRITE = prevDualWrite;
-      }
       await cleanup({ orderId, productId, eventId });
     }
   }, 30_000);
