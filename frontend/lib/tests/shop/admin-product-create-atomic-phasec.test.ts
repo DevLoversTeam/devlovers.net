@@ -133,6 +133,13 @@ describe.sequential('admin products create atomicity (phase C)', () => {
 
       const json = await res.json();
       expect(json.code).toBe('INTERNAL_ERROR');
+      expect(mocks.writeAdminAudit).toHaveBeenCalled();
+      expect(mocks.writeAdminAudit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'product_admin_action.create',
+          targetType: 'product',
+        })
+      );
 
       const existing = await db
         .select({ id: products.id })
@@ -193,6 +200,14 @@ describe.sequential('admin products create atomicity (phase C)', () => {
 
       const res = await POST(req);
       expect(res.status).toBe(500);
+      expect(mocks.writeAdminAudit).toHaveBeenCalled();
+      expect(mocks.writeAdminAudit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'product_admin_action.create',
+          targetType: 'product',
+        })
+      );
+      expect(deleteSpy).toHaveBeenCalled();
       expect(uploadProductImageFromFileMock).toHaveBeenCalledTimes(1);
       expect(destroyProductImageMock).not.toHaveBeenCalled();
 

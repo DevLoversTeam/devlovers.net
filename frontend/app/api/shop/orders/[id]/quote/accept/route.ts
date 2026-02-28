@@ -1,41 +1,23 @@
 import crypto from 'node:crypto';
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 
 import { logError, logWarn } from '@/lib/logging';
+import { guardBrowserSameOrigin } from '@/lib/security/origin';
 import {
   InvalidPayloadError,
   OrderNotFoundError,
 } from '@/lib/services/errors';
 import { authorizeOrderMutationAccess } from '@/lib/services/shop/order-access';
 import { acceptIntlQuote } from '@/lib/services/shop/quotes';
-import { guardBrowserSameOrigin } from '@/lib/security/origin';
 import {
   intlQuoteAcceptPayloadSchema,
   orderIdParamSchema,
 } from '@/lib/validation/shop';
 
+import { mapQuoteErrorStatus, noStoreJson } from '../quote-utils';
+
 export const runtime = 'nodejs';
-
-function noStoreJson(body: unknown, init?: { status?: number }) {
-  const res = NextResponse.json(body, { status: init?.status ?? 200 });
-  res.headers.set('Cache-Control', 'no-store');
-  return res;
-}
-
-function mapQuoteErrorStatus(code: string): number {
-  if (
-    code === 'QUOTE_VERSION_CONFLICT' ||
-    code === 'QUOTE_NOT_APPLICABLE' ||
-    code === 'QUOTE_NOT_OFFERED' ||
-    code === 'QUOTE_ALREADY_ACCEPTED'
-  ) {
-    return 409;
-  }
-  if (code === 'QUOTE_EXPIRED') return 410;
-  if (code === 'QUOTE_STOCK_UNAVAILABLE') return 409;
-  return 400;
-}
 
 export async function POST(
   request: NextRequest,
@@ -129,7 +111,7 @@ export async function POST(
           message: error.message,
           ...(error.details ? { details: error.details } : {}),
         },
-        { status: mapQuoteErrorStatus(error.code) }
+        { status: mapQuoteErrorStatus(error.code, 'accept') }
       );
     }
 
