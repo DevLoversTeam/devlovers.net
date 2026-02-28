@@ -779,6 +779,46 @@ export const orderShipping = pgTable(
   table => [index('order_shipping_updated_idx').on(table.updatedAt)]
 );
 
+export const orderLegalConsents = pgTable(
+  'order_legal_consents',
+  {
+    orderId: uuid('order_id')
+      .primaryKey()
+      .references(() => orders.id, { onDelete: 'cascade' }),
+    termsAccepted: boolean('terms_accepted').notNull().default(true),
+    privacyAccepted: boolean('privacy_accepted').notNull().default(true),
+    termsVersion: text('terms_version').notNull(),
+    privacyVersion: text('privacy_version').notNull(),
+    consentedAt: timestamp('consented_at', {
+      withTimezone: true,
+      mode: 'date',
+    })
+      .notNull()
+      .defaultNow(),
+    source: text('source').notNull().default('checkout'),
+    locale: text('locale'),
+    country: varchar('country', { length: 2 }),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  table => [
+    index('order_legal_consents_consented_idx').on(table.consentedAt),
+    check(
+      'order_legal_consents_terms_accepted_chk',
+      sql`${table.termsAccepted} = true`
+    ),
+    check(
+      'order_legal_consents_privacy_accepted_chk',
+      sql`${table.privacyAccepted} = true`
+    ),
+  ]
+);
+
 export const shippingShipments = pgTable(
   'shipping_shipments',
   {
@@ -1256,6 +1296,7 @@ export type DbMonobankRefund = typeof monobankRefunds.$inferSelect;
 export type DbMonobankPaymentCancel =
   typeof monobankPaymentCancels.$inferSelect;
 export type DbOrderShipping = typeof orderShipping.$inferSelect;
+export type DbOrderLegalConsent = typeof orderLegalConsents.$inferSelect;
 export type DbShippingShipment = typeof shippingShipments.$inferSelect;
 export type DbShippingQuote = typeof shippingQuotes.$inferSelect;
 export type DbNotificationOutbox = typeof notificationOutbox.$inferSelect;
