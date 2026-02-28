@@ -5,7 +5,7 @@ import { NextRequest } from 'next/server';
 import { describe, expect, it, vi } from 'vitest';
 
 import { db } from '@/db';
-import { orderItems, orders, products, users } from '@/db/schema';
+import { orderItems, orders, products, returnRequests, users } from '@/db/schema';
 import { toDbMoney } from '@/lib/shop/money';
 
 const getCurrentUserMock = vi.hoisted(() => vi.fn());
@@ -138,6 +138,54 @@ describe.sequential('returns customer route phase 4', () => {
       expect(json.returnRequest.refundAmountMinor).toBe(2400);
       expect(Array.isArray(json.returnRequest.items)).toBe(true);
       expect(json.returnRequest.items.length).toBe(2);
+    } finally {
+      await cleanup(seed.orderId, seed.productId);
+    }
+  });
+
+  it('rejects exchange intent with stable contract code', async () => {
+    process.env.APP_ORIGIN = 'http://localhost:3000';
+
+    const userId = `user_${crypto.randomUUID()}`;
+    getCurrentUserMock.mockResolvedValue({
+      id: userId,
+      role: 'user',
+    });
+
+    const seed = await seedOwnedOrder({ userId });
+
+    try {
+      const { POST } = await import('@/app/api/shop/orders/[id]/returns/route');
+      const request = new NextRequest(
+        `http://localhost:3000/api/shop/orders/${seed.orderId}/returns`,
+        {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            origin: 'http://localhost:3000',
+          },
+          body: JSON.stringify({
+            idempotencyKey: `ret_${crypto.randomUUID()}`,
+            reason: 'need another size',
+            policyRestock: true,
+            resolution: 'exchange',
+          }),
+        }
+      );
+
+      const response = await POST(request, {
+        params: Promise.resolve({ id: seed.orderId }),
+      });
+
+      expect(response.status).toBe(422);
+      const json = await response.json();
+      expect(json.code).toBe('EXCHANGES_NOT_SUPPORTED');
+
+      const existing = await db
+        .select({ id: returnRequests.id })
+        .from(returnRequests)
+        .where(eq(returnRequests.orderId, seed.orderId));
+      expect(existing).toHaveLength(0);
     } finally {
       await cleanup(seed.orderId, seed.productId);
     }

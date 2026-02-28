@@ -109,6 +109,21 @@ export async function POST(
     );
   }
 
+  if (parsedPayload.data.resolution === 'exchange') {
+    logWarn('order_returns_exchange_not_supported', {
+      ...baseMeta,
+      orderId,
+      code: 'EXCHANGES_NOT_SUPPORTED',
+    });
+    return noStoreJson(
+      {
+        code: 'EXCHANGES_NOT_SUPPORTED',
+        message: 'Exchanges are not supported. Please create a return refund request.',
+      },
+      422
+    );
+  }
+
   try {
     const result = await createReturnRequest({
       orderId,
