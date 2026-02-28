@@ -150,10 +150,7 @@ describe.sequential('monobank webhook apply (persist-first)', () => {
       await cleanup(orderId, invoiceId);
     }
   }, 15000);
-  it('dedupes identical events and applies once', async () => {
-    const prevDualWrite = process.env.SHOP_CANONICAL_EVENTS_DUAL_WRITE;
-    process.env.SHOP_CANONICAL_EVENTS_DUAL_WRITE = 'true';
-
+  it('dedupes identical events, applies once, and writes canonical payment event', async () => {
     const invoiceId = `inv_${crypto.randomUUID()}`;
     const { orderId } = await insertOrderAndAttempt({
       invoiceId,
@@ -224,11 +221,6 @@ describe.sequential('monobank webhook apply (persist-first)', () => {
       expect(queued.length).toBe(1);
       expect(queued[0]?.status).toBe('queued');
     } finally {
-      if (prevDualWrite === undefined) {
-        delete process.env.SHOP_CANONICAL_EVENTS_DUAL_WRITE;
-      } else {
-        process.env.SHOP_CANONICAL_EVENTS_DUAL_WRITE = prevDualWrite;
-      }
       await cleanup(orderId, invoiceId);
     }
   });

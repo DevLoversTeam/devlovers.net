@@ -22,6 +22,7 @@ import {
   getRateLimitSubject,
   rateLimitResponse,
 } from '@/lib/security/rate-limit';
+import { InvalidPayloadError } from '@/lib/services/errors';
 import { handleMonobankWebhook } from '@/lib/services/orders/monobank-webhook';
 
 export const dynamic = 'force-dynamic';
@@ -32,6 +33,7 @@ const DEFAULT_MONO_WEBHOOK_MISSING_SIG_LIMIT = 30;
 const DEFAULT_MONO_WEBHOOK_MISSING_SIG_WINDOW_SECONDS = 60;
 const DEFAULT_MONO_WEBHOOK_INVALID_SIG_LIMIT = 30;
 const DEFAULT_MONO_WEBHOOK_INVALID_SIG_WINDOW_SECONDS = 60;
+const MONO_WEBHOOK_RETRY_AFTER_SECONDS = 10;
 
 function parseWebhookMode(raw: unknown): WebhookMode {
   const v = typeof raw === 'string' ? raw.trim().toLowerCase() : '';
@@ -39,8 +41,14 @@ function parseWebhookMode(raw: unknown): WebhookMode {
   return 'apply';
 }
 
-function noStoreJson(body: unknown, init?: { status?: number }) {
-  const res = NextResponse.json(body, { status: init?.status ?? 200 });
+function noStoreJson(
+  body: unknown,
+  init?: { status?: number; headers?: HeadersInit }
+) {
+  const res = NextResponse.json(body, {
+    status: init?.status ?? 200,
+    headers: init?.headers,
+  });
   res.headers.set('Cache-Control', 'no-store');
   return res;
 }
@@ -62,6 +70,19 @@ function parseWebhookPayload(
   }
 
   return parsed as Record<string, unknown>;
+}
+
+function getErrorCode(error: unknown): string | null {
+  if (!error || typeof error !== 'object') return null;
+  const maybeCode = (error as { code?: unknown }).code;
+  return typeof maybeCode === 'string' ? maybeCode : null;
+}
+
+function isRetryableApplyError(error: unknown): boolean {
+  if (error instanceof InvalidPayloadError) return false;
+  const code = getErrorCode(error);
+  if (code === 'INVALID_PAYLOAD') return false;
+  return true;
 }
 
 export async function POST(request: NextRequest) {
@@ -258,12 +279,30 @@ export async function POST(request: NextRequest) {
       reason: 'PROCESSED',
     });
   } catch (error) {
+    const retryable = isRetryableApplyError(error);
     logError('monobank_webhook_apply_failed', error, {
       ...diagMeta,
       code: 'WEBHOOK_APPLY_FAILED',
       eventKey,
+      errorCode: getErrorCode(error),
+      retryable,
       reason: 'WEBHOOK_APPLY_FAILED',
     });
+
+    if (retryable) {
+      return noStoreJson(
+        {
+          code: 'WEBHOOK_RETRYABLE',
+          retryAfterSeconds: MONO_WEBHOOK_RETRY_AFTER_SECONDS,
+        },
+        {
+          status: 503,
+          headers: {
+            'Retry-After': String(MONO_WEBHOOK_RETRY_AFTER_SECONDS),
+          },
+        }
+      );
+    }
   }
 
   return noStoreJson({ ok: true }, { status: 200 });
