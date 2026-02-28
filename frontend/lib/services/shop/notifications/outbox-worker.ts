@@ -5,6 +5,14 @@ import { sql } from 'drizzle-orm';
 import { db } from '@/db';
 import { notificationOutbox } from '@/db/schema';
 import { logInfo, logWarn } from '@/lib/logging';
+import {
+  renderShopNotificationTemplate,
+  type ShopNotificationTemplateKey,
+} from '@/lib/services/shop/notifications/templates';
+import {
+  sendShopNotificationEmail,
+  ShopNotificationTransportError,
+} from '@/lib/services/shop/notifications/transport';
 
 type OutboxClaimedRow = {
   id: string;
@@ -21,6 +29,15 @@ type OutboxClaimedRow = {
 };
 
 type PreviewCountRow = { total: number };
+
+type NotificationRecipientLookupRow = {
+  shipping_email: string | null;
+  user_email: string | null;
+};
+
+type NotificationRecipient = {
+  email: string;
+};
 
 export type NotificationWorkerRunArgs = {
   runId: string;
@@ -103,6 +120,61 @@ function readTestFailureMode(payload: unknown): {
   return { forceFail: true, code, transient, message };
 }
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function normalizeEmailOrNull(value: string | null | undefined): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim().toLowerCase();
+  if (!trimmed) return null;
+  if (trimmed === '[redacted]') return null;
+  if (!EMAIL_REGEX.test(trimmed)) return null;
+  return trimmed;
+}
+
+async function loadNotificationRecipient(
+  orderId: string
+): Promise<NotificationRecipient | null> {
+  const res = await db.execute<NotificationRecipientLookupRow>(sql`
+    select
+      nullif(trim(os.shipping_address #>> '{recipient,email}'), '') as shipping_email,
+      nullif(trim(u.email), '') as user_email
+    from orders o
+    left join order_shipping os on os.order_id = o.id
+    left join users u on u.id = o.user_id
+    where o.id = ${orderId}::uuid
+    limit 1
+  `);
+
+  const row = readRows<NotificationRecipientLookupRow>(res)[0];
+  if (!row) return null;
+
+  const shippingEmail = normalizeEmailOrNull(row.shipping_email);
+  if (shippingEmail) {
+    return { email: shippingEmail };
+  }
+
+  const userEmail = normalizeEmailOrNull(row.user_email);
+  if (userEmail) {
+    return { email: userEmail };
+  }
+
+  return null;
+}
+
+function toNotificationSendError(error: unknown): NotificationSendError {
+  if (error instanceof NotificationSendError) return error;
+
+  if (error instanceof ShopNotificationTransportError) {
+    return new NotificationSendError(error.code, error.message, error.transient);
+  }
+
+  return new NotificationSendError(
+    'NOTIFICATION_SEND_FAILED',
+    error instanceof Error ? error.message : 'Notification send failed.',
+    true
+  );
+}
+
 async function sendNotification(row: OutboxClaimedRow): Promise<void> {
   const failMode = readTestFailureMode(row.payload);
   if (failMode.forceFail) {
@@ -113,8 +185,44 @@ async function sendNotification(row: OutboxClaimedRow): Promise<void> {
     );
   }
 
-  // Transport integration comes in a later phase; this worker persists
-  // delivery lifecycle and treats send as successful when no failure mode is injected.
+  if (row.channel !== 'email') {
+    throw new NotificationSendError(
+      'NOTIFICATION_CHANNEL_UNSUPPORTED',
+      `Unsupported notification channel: ${row.channel}`,
+      false
+    );
+  }
+
+  const recipient = await loadNotificationRecipient(row.order_id);
+  if (!recipient) {
+    throw new NotificationSendError(
+      'NOTIFICATION_RECIPIENT_MISSING',
+      'Notification recipient email is missing for order.',
+      false
+    );
+  }
+
+  const template = renderShopNotificationTemplate({
+    templateKey: row.template_key as ShopNotificationTemplateKey,
+    orderId: row.order_id,
+    payload: asObject(row.payload),
+  });
+
+  if (!template) {
+    throw new NotificationSendError(
+      'NOTIFICATION_TEMPLATE_UNSUPPORTED',
+      `Unsupported notification template: ${row.template_key}`,
+      false
+    );
+  }
+
+  const sendResult = await sendShopNotificationEmail({
+    to: recipient.email,
+    subject: template.subject,
+    text: template.text,
+    html: template.html,
+  });
+
   logInfo('shop_notification_sent', {
     outboxId: row.id,
     orderId: row.order_id,
@@ -122,6 +230,7 @@ async function sendNotification(row: OutboxClaimedRow): Promise<void> {
     templateKey: row.template_key,
     sourceDomain: row.source_domain,
     sourceEventId: row.source_event_id,
+    messageId: sendResult.messageId,
   });
 }
 
@@ -282,16 +391,7 @@ export async function runNotificationOutboxWorker(
       }
       continue;
     } catch (error) {
-      const sendError =
-        error instanceof NotificationSendError
-          ? error
-          : new NotificationSendError(
-              'NOTIFICATION_SEND_FAILED',
-              error instanceof Error
-                ? error.message
-                : 'Notification send failed.',
-              true
-            );
+      const sendError = toNotificationSendError(error);
 
       const transition = await markFailedOrDeadLetter({
         row,
