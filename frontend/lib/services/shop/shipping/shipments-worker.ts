@@ -407,11 +407,11 @@ export async function claimQueuedShipmentsForProcessing(args: {
   leaseSeconds: number;
   limit: number;
 }): Promise<ClaimedShipmentRow[]> {
-  const res = await db.execute<
-    ClaimedShipmentRow & { order_transitioned: boolean | null }
-  >(sql`
+  const res = await db.execute<ClaimedShipmentRow>(sql`
     with candidates as (
-      select s.id
+      select
+        s.id,
+        s.order_id
       from shipping_shipments s
       where (
         (
@@ -431,7 +431,15 @@ export async function claimQueuedShipmentsForProcessing(args: {
           lease_owner = ${args.runId},
           lease_expires_at = now() + make_interval(secs => ${args.leaseSeconds}),
           updated_at = now()
-      where s.id in (select id from candidates)
+      from candidates c
+      join orders o on o.id = c.order_id
+      where s.id = c.id
+        and ${shippingStatusTransitionWhereSql({
+          column: sql`o.shipping_status`,
+          to: 'creating_label',
+          allowNullFrom: true,
+          includeSame: true,
+        })}
       returning
         s.id,
         s.order_id,
@@ -451,44 +459,62 @@ export async function claimQueuedShipmentsForProcessing(args: {
           includeSame: true,
         })}
       returning o.id as order_id
+    ),
+    released_blocked as (
+      update shipping_shipments s
+      set status = 'queued',
+          lease_owner = null,
+          lease_expires_at = null,
+          updated_at = now()
+      from claimed c
+      left join mark_orders mo on mo.order_id = c.order_id
+      where s.id = c.id
+        and mo.order_id is null
+      returning s.id
     )
     select
       c.id,
       c.order_id,
       c.provider,
       c.status,
-      c.attempt_count,
-      (mo.order_id is not null) as order_transitioned
+      c.attempt_count
     from claimed c
-    left join mark_orders mo on mo.order_id = c.order_id
+join mark_orders mo on mo.order_id = c.order_id
   `);
 
-  const claimed = readRows<ClaimedShipmentRow & { order_transitioned: boolean | null }>(res);
+  const claimed = readRows<ClaimedShipmentRow>(res);
 
   for (const row of claimed) {
-    if (!row.order_transitioned) continue;
-    await emitWorkerShippingEvent({
-      orderId: row.order_id,
-      shipmentId: row.id,
-      provider: row.provider,
-      eventName: 'creating_label',
-      statusFrom: null,
-      statusTo: 'creating_label',
-      attemptNumber: nextAttemptNumber(row.attempt_count),
-      runId: args.runId,
-      payload: {
-        shipmentStatusTo: 'processing',
-      },
-    });
+    try {
+      await emitWorkerShippingEvent({
+        orderId: row.order_id,
+        shipmentId: row.id,
+        provider: row.provider,
+        eventName: 'creating_label',
+        statusFrom: null,
+        statusTo: 'creating_label',
+        attemptNumber: nextAttemptNumber(row.attempt_count),
+        runId: args.runId,
+        payload: {
+          shipmentStatusTo: 'processing',
+        },
+      });
+    } catch (error) {
+      logWarn('shipping_shipments_worker_claim_event_write_failed', {
+        runId: args.runId,
+        orderId: row.order_id,
+        shipmentId: row.id,
+        provider: row.provider,
+        eventName: 'creating_label',
+        code: 'SHIPPING_EVENT_WRITE_FAILED',
+        ...(error instanceof Error && error.message
+          ? { errorMessage: error.message }
+          : {}),
+      });
+    }
   }
 
-  return claimed.map(row => ({
-    id: row.id,
-    order_id: row.order_id,
-    provider: row.provider,
-    status: row.status,
-    attempt_count: row.attempt_count,
-  }));
+  return claimed;
 }
 
 async function loadOrderShippingDetails(

@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 
-import { eq } from 'drizzle-orm';
+import { asc, eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { db } from '@/db';
@@ -141,7 +141,8 @@ async function readOrderShippingEvents(orderId: string) {
       eventRef: shippingEvents.eventRef,
     })
     .from(shippingEvents)
-    .where(eq(shippingEvents.orderId, orderId));
+    .where(eq(shippingEvents.orderId, orderId))
+    .orderBy(asc(shippingEvents.createdAt), asc(shippingEvents.id));
 }
 
 describe.sequential('shipping shipments worker phase 5', () => {
@@ -538,9 +539,8 @@ describe.sequential('shipping shipments worker phase 5', () => {
     }
   });
 
-  it('shipment succeeds but order transition is blocked; run is counted as retried', async () => {
+  it('filters out blocked transitions before processing so no external label is created', async () => {
     const seed = await seedShipment({ orderShippingStatus: 'shipped' });
-    const warnSpy = vi.spyOn(logging, 'logWarn');
 
     try {
       vi.mocked(createInternetDocument).mockResolvedValue({
@@ -556,15 +556,14 @@ describe.sequential('shipping shipments worker phase 5', () => {
         baseBackoffSeconds: 10,
       });
 
-      // Shipment row reaches succeeded, but because the guarded order transition
-      // to label_created is blocked, the worker classifies this claim as retried.
       expect(result).toMatchObject({
-        claimed: 1,
-        processed: 1,
+        claimed: 0,
+        processed: 0,
         succeeded: 0,
-        retried: 1,
+        retried: 0,
         needsAttention: 0,
       });
+      expect(createInternetDocument).not.toHaveBeenCalled();
 
       const [shipment] = await db
         .select({
@@ -577,10 +576,10 @@ describe.sequential('shipping shipments worker phase 5', () => {
         .where(eq(shippingShipments.id, seed.shipmentId))
         .limit(1);
 
-      expect(shipment?.status).toBe('succeeded');
-      expect(shipment?.attemptCount).toBe(1);
-      expect(shipment?.providerRef).toBe('np-provider-ref-blocked-success');
-      expect(shipment?.trackingNumber).toBe('20450000111111');
+      expect(shipment?.status).toBe('queued');
+      expect(shipment?.attemptCount).toBe(0);
+      expect(shipment?.providerRef).toBeNull();
+      expect(shipment?.trackingNumber).toBeNull();
 
       const [order] = await db
         .select({
@@ -599,22 +598,7 @@ describe.sequential('shipping shipments worker phase 5', () => {
       const events = await readOrderShippingEvents(seed.orderId);
       expect(events.some(event => event.eventName === 'creating_label')).toBe(false);
       expect(events.some(event => event.eventName === 'label_created')).toBe(false);
-      expect(
-        warnSpy.mock.calls.some(
-          ([name, meta]) =>
-            name === 'shipping_shipments_worker_order_transition_blocked' &&
-            (meta as Record<string, unknown>)?.code === 'ORDER_TRANSITION_BLOCKED'
-        )
-      ).toBe(true);
-      expect(
-        warnSpy.mock.calls.some(
-          ([name, meta]) =>
-            name === 'shipping_shipments_worker_lease_lost' &&
-            (meta as Record<string, unknown>)?.code === 'SHIPMENT_LEASE_LOST'
-        )
-      ).toBe(false);
     } finally {
-      warnSpy.mockRestore();
       await cleanupSeed(seed);
     }
   });
@@ -718,12 +702,13 @@ describe.sequential('shipping shipments worker phase 5', () => {
       });
 
       expect(result).toMatchObject({
-        claimed: 1,
-        processed: 1,
+        claimed: 0,
+        processed: 0,
         succeeded: 0,
-        retried: 1,
+        retried: 0,
         needsAttention: 0,
       });
+      expect(createInternetDocument).not.toHaveBeenCalled();
 
       const [shipment] = await db
         .select({
@@ -735,9 +720,9 @@ describe.sequential('shipping shipments worker phase 5', () => {
         .where(eq(shippingShipments.id, seed.shipmentId))
         .limit(1);
 
-      expect(shipment?.status).toBe('failed');
-      expect(shipment?.attemptCount).toBe(1);
-      expect(shipment?.lastErrorCode).toBe('NP_HTTP_ERROR');
+      expect(shipment?.status).toBe('queued');
+      expect(shipment?.attemptCount).toBe(0);
+      expect(shipment?.lastErrorCode).toBeNull();
 
       const [order] = await db
         .select({

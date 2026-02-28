@@ -783,7 +783,6 @@ export async function DELETE(
           auditError instanceof Error ? auditError.message : String(auditError),
         durationMs: Date.now() - startedAtMs,
       });
-      throw auditError;
     }
 
     return noStoreJson({ success: true }, { status: 200 });
