@@ -19,7 +19,10 @@ import {
   getOrderStatusLiteSummary,
   getOrderSummary,
 } from '@/lib/services/orders/summary';
-import { verifyStatusToken } from '@/lib/shop/status-token';
+import {
+  hasStatusTokenScope,
+  verifyStatusToken,
+} from '@/lib/shop/status-token';
 import { orderIdParamSchema } from '@/lib/validation/shop';
 
 export const dynamic = 'force-dynamic';
@@ -130,6 +133,20 @@ export async function GET(
       }
 
       accessByStatusToken = true;
+      if (!hasStatusTokenScope(tokenResult.payload, 'status_lite')) {
+        logWarn('order_status_token_scope_forbidden', {
+          requestId,
+          orderId,
+          code: 'STATUS_TOKEN_SCOPE_FORBIDDEN',
+          responseMode: requestedResponseMode,
+          durationMs: Date.now() - startedAtMs,
+        });
+        return noStoreJson(
+          { code: 'STATUS_TOKEN_SCOPE_FORBIDDEN' },
+          { status: 403 }
+        );
+      }
+
       tokenAuditSeed = {
         nonce: tokenResult.payload.nonce,
         iat: tokenResult.payload.iat,

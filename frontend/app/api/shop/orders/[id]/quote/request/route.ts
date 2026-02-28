@@ -58,6 +58,7 @@ export async function POST(
   const auth = await authorizeOrderMutationAccess({
     orderId,
     statusToken,
+    requiredScope: 'order_quote_request',
   });
   if (!auth.authorized) {
     return noStoreJson({ code: auth.code }, { status: auth.status });

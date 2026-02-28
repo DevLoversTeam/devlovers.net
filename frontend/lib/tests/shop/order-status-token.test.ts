@@ -153,6 +153,30 @@ describe('order status token access control', () => {
     }
   });
 
+  it('rejects token without status_lite scope', async () => {
+    const orderId = crypto.randomUUID();
+    await insertOrder(orderId);
+
+    try {
+      const token = createStatusToken({
+        orderId,
+        scopes: ['order_payment_init'],
+      });
+      const { GET } = await import('@/app/api/shop/orders/[id]/status/route');
+      const req = new NextRequest(
+        `http://localhost/api/shop/orders/${orderId}/status?statusToken=${encodeURIComponent(
+          token
+        )}`
+      );
+      const res = await GET(req, { params: Promise.resolve({ id: orderId }) });
+      expect(res.status).toBe(403);
+      const json: any = await res.json();
+      expect(json.code).toBe('STATUS_TOKEN_SCOPE_FORBIDDEN');
+    } finally {
+      await deleteOrder(orderId);
+    }
+  });
+
   it('rejects token for another order', async () => {
     const orderId = crypto.randomUUID();
     const otherOrderId = crypto.randomUUID();
