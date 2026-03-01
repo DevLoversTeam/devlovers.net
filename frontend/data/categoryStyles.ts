@@ -116,6 +116,49 @@ export const categoryTabStyles = {
     glow: 'bg-[#3776AB]',
     accent: '#3776AB',
   },
+  django: {
+    icon: '/icons/django.svg',
+    color:
+      'group-hover:border-[#092E20]/50 group-hover:bg-[#092E20]/10 data-[state=active]:border-[#092E20]/50 data-[state=active]:bg-[#092E20]/10',
+    glow: 'bg-[#092E20]',
+    accent: '#092E20',
+  },
+  docker: {
+    icon: '/icons/docker.svg',
+    color:
+      'group-hover:border-[#1D63ED]/50 group-hover:bg-[#1D63ED]/10 data-[state=active]:border-[#1D63ED]/50 data-[state=active]:bg-[#1D63ED]/10',
+    glow: 'bg-[#1D63ED]',
+    accent: '#1D63ED',
+  },
+  kubernetes: {
+    icon: '/icons/kubernetes.svg',
+    color:
+      'group-hover:border-[#326CE5]/50 group-hover:bg-[#326CE5]/10 data-[state=active]:border-[#326CE5]/50 data-[state=active]:bg-[#326CE5]/10',
+    glow: 'bg-[#326CE5]',
+    accent: '#326CE5',
+  },
+  aws: {
+    icon: '/icons/aws.svg',
+    color:
+      'group-hover:border-[#FF9900]/50 group-hover:bg-[#FF9900]/10 data-[state=active]:border-[#FF9900]/50 data-[state=active]:bg-[#FF9900]/10',
+    glow: 'bg-[#FF9900]',
+    accent: '#FF9900',
+    iconClassName: 'dark:invert dark:hue-rotate-180 dark:brightness-110',
+  },
+  azure: {
+    icon: '/icons/azure.svg',
+    color:
+      'group-hover:border-[#0078D4]/50 group-hover:bg-[#0078D4]/10 data-[state=active]:border-[#0078D4]/50 data-[state=active]:bg-[#0078D4]/10',
+    glow: 'bg-[#0078D4]',
+    accent: '#0078D4',
+  },
+  devops: {
+    icon: '/icons/devops.svg',
+    color:
+      'group-hover:border-[#0052CC]/50 group-hover:bg-[#0052CC]/10 data-[state=active]:border-[#0052CC]/50 data-[state=active]:bg-[#0052CC]/10',
+    glow: 'bg-[#0052CC]',
+    accent: '#0052CC',
+  },
 } as const satisfies Partial<Record<CategorySlug, CategoryTabStyle>>;
 
 export function getCategoryTabStyle(slug: string): CategoryTabStyle {
