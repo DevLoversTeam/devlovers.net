@@ -6,6 +6,7 @@ import { and, eq, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { monobankEvents, orders, paymentAttempts } from '@/db/schema';
+import { isCanonicalEventsDualWriteEnabled } from '@/lib/env/shop-canonical-events';
 import {
   MONO_DEDUP,
   MONO_MISMATCH,
@@ -22,11 +23,13 @@ import {
 import { InvalidPayloadError } from '@/lib/services/errors';
 import { guardedPaymentStatusUpdate } from '@/lib/services/orders/payment-state';
 import { restockOrder } from '@/lib/services/orders/restock';
+import { buildPaymentEventDedupeKey } from '@/lib/services/shop/events/dedupe-key';
 import {
   inventoryCommittedForShippingSql,
   isInventoryCommittedForShipping,
 } from '@/lib/services/shop/shipping/inventory-eligibility';
 import { recordShippingMetric } from '@/lib/services/shop/shipping/metrics';
+import { shippingStatusTransitionWhereSql } from '@/lib/services/shop/transitions/shipping-state';
 import { isUuidV1toV5 } from '@/lib/utils/uuid';
 
 type WebhookMode = 'apply' | 'store' | 'drop';
@@ -477,110 +480,265 @@ async function atomicMarkPaidOrderAndSucceedAttempt(args: {
   now: Date;
   orderId: string;
   attemptId: string;
+  eventId: string;
   invoiceId: string;
   mergedMetaSql: ReturnType<typeof buildMergedMetaSql>;
   nextProviderModifiedAt: Date | null;
   enqueueShipment: boolean;
+  canonicalDualWriteEnabled: boolean;
+  canonicalEventDedupeKey: string;
 }): Promise<{ ok: boolean; shipmentQueued: boolean }> {
-  const res = await db.execute(sql`
-    with updated_order as (
-      update orders
-      set status = 'PAID',
-          payment_status = 'paid',
-          psp_charge_id = ${args.invoiceId},
-          psp_metadata = ${args.mergedMetaSql},
-          updated_at = ${args.now}
-      where id = ${args.orderId}::uuid
-        and payment_provider = 'monobank'
-        and exists (
-          select 1
-          from payment_attempts
+  const res = args.canonicalDualWriteEnabled
+    ? await db.execute(sql`
+        with updated_order as (
+          update orders
+          set status = 'PAID',
+              payment_status = 'paid',
+              psp_charge_id = ${args.invoiceId},
+              psp_metadata = ${args.mergedMetaSql},
+              updated_at = ${args.now}
+          where id = ${args.orderId}::uuid
+            and payment_provider = 'monobank'
+            and exists (
+              select 1
+              from payment_attempts
+              where id = ${args.attemptId}::uuid
+                and order_id = ${args.orderId}::uuid
+            )
+          returning
+            id,
+            total_amount_minor,
+            currency,
+            payment_status,
+            inventory_status,
+            shipping_required,
+            shipping_provider,
+            shipping_method_code
+        ),
+        updated_attempt as (
+          update payment_attempts
+          set status = 'succeeded',
+              finalized_at = ${args.now},
+              updated_at = ${args.now},
+              last_error_code = null,
+              last_error_message = null,
+              provider_modified_at = ${args.nextProviderModifiedAt ?? null}
           where id = ${args.attemptId}::uuid
-            and order_id = ${args.orderId}::uuid
-        )
-      returning
-        id,
-        payment_status,
-        inventory_status,
-        shipping_required,
-        shipping_provider,
-        shipping_method_code
-    ),
-    updated_attempt as (
-      update payment_attempts
-      set status = 'succeeded',
-          finalized_at = ${args.now},
-          updated_at = ${args.now},
-          last_error_code = null,
-          last_error_message = null,
-          provider_modified_at = ${args.nextProviderModifiedAt ?? null}
-      where id = ${args.attemptId}::uuid
-        and exists (select 1 from updated_order)
+            and exists (select 1 from updated_order)
+          returning id
+        ),
+        inserted_payment_event as (
+          insert into payment_events (
+            order_id,
+            provider,
+            event_name,
+            event_source,
+            event_ref,
+            attempt_id,
+            provider_payment_intent_id,
+            provider_charge_id,
+            amount_minor,
+            currency,
+            payload,
+            dedupe_key,
+            occurred_at,
+            created_at
+          )
+          select
+            uo.id,
+            'monobank',
+            'paid_applied',
+            'monobank_webhook',
+            ${args.eventId},
+            ${args.attemptId}::uuid,
+            ${args.invoiceId},
+            null,
+            uo.total_amount_minor::bigint,
+            uo.currency,
+            ${JSON.stringify({
+              monobankEventId: args.eventId,
+              invoiceId: args.invoiceId,
+              status: 'success',
+            })}::jsonb,
+            ${args.canonicalEventDedupeKey},
+            ${args.now},
+            ${args.now}
+          from updated_order uo
+          on conflict (dedupe_key) do nothing
+          returning id
+        ),
+        eligible_for_enqueue as (
+          select uo.id
+          from updated_order uo
+          where ${args.enqueueShipment} = true
+            and uo.payment_status = 'paid'
+            and uo.shipping_required = true
+            and uo.shipping_provider = 'nova_poshta'
+            and uo.shipping_method_code is not null
+            and ${inventoryCommittedForShippingSql(sql`uo.inventory_status`)}
+        ),
+        inserted_shipment as (
+          insert into shipping_shipments (
+            order_id,
+            provider,
+            status,
+            attempt_count,
+            created_at,
+            updated_at
+          )
+          select
+            id,
+            'nova_poshta',
+            'queued',
+            0,
+            ${args.now},
+            ${args.now}
+          from eligible_for_enqueue
+          on conflict (order_id) do nothing
+          returning order_id
+        ),
+        queued_order_ids as (
+          select order_id from inserted_shipment
+          union
+          select s.order_id
+          from shipping_shipments s
+          where s.order_id in (select id from eligible_for_enqueue)
+            and s.status = 'queued'
+        ),
+        shipping_status_update as (
+      update orders
+      set shipping_status = 'queued'::shipping_status,
+          updated_at = ${args.now}
+      where id in (select order_id from queued_order_ids)
+        and shipping_status is distinct from 'queued'::shipping_status
+        and ${shippingStatusTransitionWhereSql({
+          column: sql`shipping_status`,
+          to: 'queued',
+          allowNullFrom: true,
+        })}
       returning id
-    ),
-    eligible_for_enqueue as (
-      select uo.id
-      from updated_order uo
-      where ${args.enqueueShipment} = true
-        and uo.payment_status = 'paid'
-        and uo.shipping_required = true
-        and uo.shipping_provider = 'nova_poshta'
-        and uo.shipping_method_code is not null
-        and ${inventoryCommittedForShippingSql(sql`uo.inventory_status`)}
-    ),
-    inserted_shipment as (
-      insert into shipping_shipments (
-        order_id,
-        provider,
-        status,
-        attempt_count,
-        created_at,
-        updated_at
-      )
-      select
-        id,
-        'nova_poshta',
-        'queued',
-        0,
-        ${args.now},
-        ${args.now}
-      from eligible_for_enqueue
-      on conflict (order_id) do nothing
-      returning order_id
-    ),
-    queued_order_ids as (
-      select order_id from inserted_shipment
-      union
-      select s.order_id
-      from shipping_shipments s
-      where s.order_id in (select id from eligible_for_enqueue)
-        and s.status = 'queued'
-    ),
-    shipping_status_update as (
-  update orders
-  set shipping_status = 'queued'::shipping_status,
-      updated_at = ${args.now}
-  where id in (select order_id from queued_order_ids)
-    and shipping_status is distinct from 'queued'::shipping_status
-  returning id
-)
-select
-  (select id from updated_order) as order_id,
-  (select id from updated_attempt) as attempt_id,
-  (select count(*)::int from inserted_shipment) as inserted_shipment_count,
-  (select count(*)::int from queued_order_ids) as queued_order_ids_count,
-  (select count(*)::int from shipping_status_update) as shipping_status_update_count,
-  (select exists(
-     select 1
-     from shipping_shipments s
-     where s.order_id = ${args.orderId}::uuid
-       and s.status = 'queued'
-   )) as shipment_is_queued,
-  (select (o.shipping_status = 'queued'::shipping_status)
-   from orders o
-   where o.id = ${args.orderId}::uuid
-  ) as order_shipping_is_queued
-  `);
+    )
+    select
+      (select id from updated_order) as order_id,
+      (select id from updated_attempt) as attempt_id,
+      (select count(*)::int from inserted_shipment) as inserted_shipment_count,
+      (select count(*)::int from queued_order_ids) as queued_order_ids_count,
+      (select count(*)::int from shipping_status_update) as shipping_status_update_count,
+      (select exists(
+         select 1
+         from shipping_shipments s
+         where s.order_id = ${args.orderId}::uuid
+           and s.status = 'queued'
+       )) as shipment_is_queued,
+      (select (o.shipping_status = 'queued'::shipping_status)
+       from orders o
+       where o.id = ${args.orderId}::uuid
+      ) as order_shipping_is_queued
+      `)
+    : await db.execute(sql`
+        with updated_order as (
+          update orders
+          set status = 'PAID',
+              payment_status = 'paid',
+              psp_charge_id = ${args.invoiceId},
+              psp_metadata = ${args.mergedMetaSql},
+              updated_at = ${args.now}
+          where id = ${args.orderId}::uuid
+            and payment_provider = 'monobank'
+            and exists (
+              select 1
+              from payment_attempts
+              where id = ${args.attemptId}::uuid
+                and order_id = ${args.orderId}::uuid
+            )
+          returning
+            id,
+            payment_status,
+            inventory_status,
+            shipping_required,
+            shipping_provider,
+            shipping_method_code
+        ),
+        updated_attempt as (
+          update payment_attempts
+          set status = 'succeeded',
+              finalized_at = ${args.now},
+              updated_at = ${args.now},
+              last_error_code = null,
+              last_error_message = null,
+              provider_modified_at = ${args.nextProviderModifiedAt ?? null}
+          where id = ${args.attemptId}::uuid
+            and exists (select 1 from updated_order)
+          returning id
+        ),
+        eligible_for_enqueue as (
+          select uo.id
+          from updated_order uo
+          where ${args.enqueueShipment} = true
+            and uo.payment_status = 'paid'
+            and uo.shipping_required = true
+            and uo.shipping_provider = 'nova_poshta'
+            and uo.shipping_method_code is not null
+            and ${inventoryCommittedForShippingSql(sql`uo.inventory_status`)}
+        ),
+        inserted_shipment as (
+          insert into shipping_shipments (
+            order_id,
+            provider,
+            status,
+            attempt_count,
+            created_at,
+            updated_at
+          )
+          select
+            id,
+            'nova_poshta',
+            'queued',
+            0,
+            ${args.now},
+            ${args.now}
+          from eligible_for_enqueue
+          on conflict (order_id) do nothing
+          returning order_id
+        ),
+        queued_order_ids as (
+          select order_id from inserted_shipment
+          union
+          select s.order_id
+          from shipping_shipments s
+          where s.order_id in (select id from eligible_for_enqueue)
+            and s.status = 'queued'
+        ),
+        shipping_status_update as (
+      update orders
+      set shipping_status = 'queued'::shipping_status,
+          updated_at = ${args.now}
+      where id in (select order_id from queued_order_ids)
+        and shipping_status is distinct from 'queued'::shipping_status
+        and ${shippingStatusTransitionWhereSql({
+          column: sql`shipping_status`,
+          to: 'queued',
+          allowNullFrom: true,
+        })}
+      returning id
+    )
+    select
+      (select id from updated_order) as order_id,
+      (select id from updated_attempt) as attempt_id,
+      (select count(*)::int from inserted_shipment) as inserted_shipment_count,
+      (select count(*)::int from queued_order_ids) as queued_order_ids_count,
+      (select count(*)::int from shipping_status_update) as shipping_status_update_count,
+      (select exists(
+         select 1
+         from shipping_shipments s
+         where s.order_id = ${args.orderId}::uuid
+           and s.status = 'queued'
+       )) as shipment_is_queued,
+      (select (o.shipping_status = 'queued'::shipping_status)
+       from orders o
+       where o.id = ${args.orderId}::uuid
+      ) as order_shipping_is_queued
+      `);
 
   const row = readDbRows<{
     order_id?: string;
@@ -643,6 +801,11 @@ returning order_id
         updated_at = ${args.now}
     where id = ${args.orderId}::uuid
       and shipping_status is distinct from 'queued'::shipping_status
+      and ${shippingStatusTransitionWhereSql({
+        column: sql`shipping_status`,
+        to: 'queued',
+        allowNullFrom: true,
+      })}
       and exists (
         select 1
         from shipping_shipments s
@@ -950,15 +1113,27 @@ async function applyWebhookToMatchedOrderAttemptEvent(args: {
       orderRow.shippingProvider === 'nova_poshta' &&
       Boolean(orderRow.shippingMethodCode) &&
       isInventoryCommittedForShipping(orderRow.inventoryStatus);
+    const canonicalDualWriteEnabled = isCanonicalEventsDualWriteEnabled();
 
     const atomicResult = await atomicMarkPaidOrderAndSucceedAttempt({
       now,
       orderId: orderRow.id,
       attemptId: attemptRow.id,
+      eventId,
       invoiceId: normalized.invoiceId,
       mergedMetaSql,
       nextProviderModifiedAt: nextProviderModifiedAt ?? null,
       enqueueShipment,
+      canonicalDualWriteEnabled,
+      canonicalEventDedupeKey: buildPaymentEventDedupeKey({
+        provider: 'monobank',
+        orderId: orderRow.id,
+        attemptId: attemptRow.id,
+        eventName: 'paid_applied',
+        eventSource: 'monobank_webhook',
+        monobankEventId: eventId,
+        invoiceId: normalized.invoiceId,
+      }),
     });
 
     if (!atomicResult.ok) {

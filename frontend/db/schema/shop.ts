@@ -3,6 +3,7 @@ import {
   bigint,
   boolean,
   check,
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -40,6 +41,21 @@ export const orderStatusEnum = pgEnum('order_status', [
   'INVENTORY_FAILED',
   'PAID',
   'CANCELED',
+]);
+
+export const fulfillmentModeEnum = pgEnum('fulfillment_mode', [
+  'ua_np',
+  'intl',
+]);
+
+export const quoteStatusEnum = pgEnum('quote_status', [
+  'none',
+  'requested',
+  'offered',
+  'accepted',
+  'declined',
+  'expired',
+  'requires_requote',
 ]);
 
 export const inventoryStatusEnum = pgEnum('inventory_status', [
@@ -89,6 +105,19 @@ export const shippingShipmentStatusEnum = pgEnum('shipping_shipment_status', [
   'succeeded',
   'failed',
   'needs_attention',
+]);
+
+export const notificationChannelEnum = pgEnum('notification_channel', [
+  'email',
+  'sms',
+]);
+
+export const returnRequestStatusEnum = pgEnum('return_request_status', [
+  'requested',
+  'approved',
+  'rejected',
+  'received',
+  'refunded',
 ]);
 
 export const products = pgTable(
@@ -156,6 +185,23 @@ export const orders = pgTable(
       .notNull(),
 
     currency: currencyEnum('currency').notNull().default('USD'),
+    fulfillmentMode: fulfillmentModeEnum('fulfillment_mode')
+      .notNull()
+      .default('ua_np'),
+    quoteStatus: quoteStatusEnum('quote_status').notNull().default('none'),
+    quoteVersion: integer('quote_version'),
+    shippingQuoteMinor: bigint('shipping_quote_minor', { mode: 'number' }),
+    itemsSubtotalMinor: bigint('items_subtotal_minor', { mode: 'number' })
+      .notNull()
+      .default(0),
+    quoteAcceptedAt: timestamp('quote_accepted_at', {
+      withTimezone: true,
+      mode: 'date',
+    }),
+    quotePaymentDeadlineAt: timestamp('quote_payment_deadline_at', {
+      withTimezone: true,
+      mode: 'date',
+    }),
 
     shippingRequired: boolean('shipping_required'),
     shippingPayer: shippingPayerEnum('shipping_payer'),
@@ -218,6 +264,14 @@ export const orders = pgTable(
       sql`${table.totalAmountMinor} >= 0`
     ),
     check(
+      'orders_items_subtotal_minor_non_negative',
+      sql`${table.itemsSubtotalMinor} >= 0`
+    ),
+    check(
+      'orders_shipping_quote_minor_non_negative',
+      sql`${table.shippingQuoteMinor} is null or ${table.shippingQuoteMinor} >= 0`
+    ),
+    check(
       'orders_payment_intent_id_null_when_none',
       sql`${table.paymentProvider} <> 'none' OR ${table.paymentIntentId} IS NULL`
     ),
@@ -271,10 +325,23 @@ export const orders = pgTable(
       'orders_shipping_payer_present_when_required_chk',
       sql`${table.shippingRequired} IS DISTINCT FROM TRUE OR ${table.shippingPayer} IS NOT NULL`
     ),
+    check(
+      'orders_intl_provider_restriction_chk',
+      sql`${table.fulfillmentMode} <> 'intl' OR ${table.paymentProvider} in ('stripe', 'none')`
+    ),
     index('orders_sweep_claim_expires_idx').on(table.sweepClaimExpiresAt),
     index('idx_orders_user_id_created_at').on(table.userId, table.createdAt),
     index('orders_shipping_status_idx').on(
       table.shippingStatus,
+      table.updatedAt
+    ),
+    index('orders_quote_status_deadline_idx').on(
+      table.fulfillmentMode,
+      table.quoteStatus,
+      table.quotePaymentDeadlineAt
+    ),
+    index('orders_quote_status_updated_idx').on(
+      table.quoteStatus,
       table.updatedAt
     ),
   ]
@@ -410,6 +477,116 @@ export const monobankEvents = pgTable(
     index('monobank_events_order_id_idx').on(t.orderId),
     index('monobank_events_attempt_id_idx').on(t.attemptId),
     index('monobank_events_claim_expires_idx').on(t.claimExpiresAt),
+  ]
+);
+
+export const paymentEvents = pgTable(
+  'payment_events',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    orderId: uuid('order_id')
+      .notNull()
+      .references(() => orders.id, { onDelete: 'cascade' }),
+    provider: text('provider').notNull(),
+    eventName: text('event_name').notNull(),
+    eventSource: text('event_source').notNull(),
+    eventRef: text('event_ref'),
+    attemptId: uuid('attempt_id').references(() => paymentAttempts.id, {
+      onDelete: 'set null',
+    }),
+    providerPaymentIntentId: text('provider_payment_intent_id'),
+    providerChargeId: text('provider_charge_id'),
+    amountMinor: bigint('amount_minor', { mode: 'number' }).notNull(),
+    currency: currencyEnum('currency').notNull(),
+    payload: jsonb('payload')
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+    dedupeKey: text('dedupe_key').notNull(),
+    occurredAt: timestamp('occurred_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  t => [
+    uniqueIndex('payment_events_dedupe_key_uq').on(t.dedupeKey),
+    index('payment_events_order_id_idx').on(t.orderId),
+    index('payment_events_attempt_id_idx').on(t.attemptId),
+    index('payment_events_event_ref_idx').on(t.eventRef),
+    index('payment_events_occurred_at_idx').on(t.occurredAt),
+  ]
+);
+
+export const shippingEvents = pgTable(
+  'shipping_events',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    orderId: uuid('order_id')
+      .notNull()
+      .references(() => orders.id, { onDelete: 'cascade' }),
+    shipmentId: uuid('shipment_id').references(() => shippingShipments.id, {
+      onDelete: 'set null',
+    }),
+    provider: text('provider').notNull(),
+    eventName: text('event_name').notNull(),
+    eventSource: text('event_source').notNull(),
+    eventRef: text('event_ref'),
+    statusFrom: text('status_from'),
+    statusTo: text('status_to'),
+    trackingNumber: text('tracking_number'),
+    payload: jsonb('payload')
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+    dedupeKey: text('dedupe_key').notNull(),
+    occurredAt: timestamp('occurred_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  t => [
+    uniqueIndex('shipping_events_dedupe_key_uq').on(t.dedupeKey),
+    index('shipping_events_order_id_idx').on(t.orderId),
+    index('shipping_events_shipment_id_idx').on(t.shipmentId),
+    index('shipping_events_occurred_at_idx').on(t.occurredAt),
+  ]
+);
+
+export const adminAuditLog = pgTable(
+  'admin_audit_log',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    orderId: uuid('order_id').references(() => orders.id, {
+      onDelete: 'set null',
+    }),
+    actorUserId: text('actor_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    action: text('action').notNull(),
+    targetType: text('target_type').notNull(),
+    targetId: text('target_id').notNull(),
+    requestId: text('request_id'),
+    payload: jsonb('payload')
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+    dedupeKey: text('dedupe_key').notNull(),
+    occurredAt: timestamp('occurred_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  t => [
+    uniqueIndex('admin_audit_log_dedupe_key_uq').on(t.dedupeKey),
+    index('admin_audit_log_order_id_idx').on(t.orderId),
+    index('admin_audit_log_actor_user_id_idx').on(t.actorUserId),
+    index('admin_audit_log_occurred_at_idx').on(t.occurredAt),
   ]
 );
 
@@ -603,6 +780,46 @@ export const orderShipping = pgTable(
   table => [index('order_shipping_updated_idx').on(table.updatedAt)]
 );
 
+export const orderLegalConsents = pgTable(
+  'order_legal_consents',
+  {
+    orderId: uuid('order_id')
+      .primaryKey()
+      .references(() => orders.id, { onDelete: 'cascade' }),
+    termsAccepted: boolean('terms_accepted').notNull().default(true),
+    privacyAccepted: boolean('privacy_accepted').notNull().default(true),
+    termsVersion: text('terms_version').notNull(),
+    privacyVersion: text('privacy_version').notNull(),
+    consentedAt: timestamp('consented_at', {
+      withTimezone: true,
+      mode: 'date',
+    })
+      .notNull()
+      .defaultNow(),
+    source: text('source').notNull().default('checkout'),
+    locale: text('locale'),
+    country: varchar('country', { length: 2 }),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  table => [
+    index('order_legal_consents_consented_idx').on(table.consentedAt),
+    check(
+      'order_legal_consents_terms_accepted_chk',
+      sql`${table.termsAccepted} = true`
+    ),
+    check(
+      'order_legal_consents_privacy_accepted_chk',
+      sql`${table.privacyAccepted} = true`
+    ),
+  ]
+);
+
 export const shippingShipments = pgTable(
   'shipping_shipments',
   {
@@ -636,6 +853,248 @@ export const shippingShipments = pgTable(
     check(
       'shipping_shipments_attempt_count_non_negative_chk',
       sql`${table.attemptCount} >= 0`
+    ),
+  ]
+);
+
+export const shippingQuotes = pgTable(
+  'shipping_quotes',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    orderId: uuid('order_id')
+      .notNull()
+      .references(() => orders.id, { onDelete: 'cascade' }),
+    version: integer('version').notNull(),
+    status: quoteStatusEnum('status').notNull(),
+    currency: currencyEnum('currency').notNull(),
+    shippingQuoteMinor: bigint('shipping_quote_minor', {
+      mode: 'number',
+    }).notNull(),
+    offeredBy: text('offered_by').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    offeredAt: timestamp('offered_at', { withTimezone: true, mode: 'date' })
+      .notNull()
+      .defaultNow(),
+    expiresAt: timestamp('expires_at', {
+      withTimezone: true,
+      mode: 'date',
+    }).notNull(),
+    acceptedAt: timestamp('accepted_at', { withTimezone: true, mode: 'date' }),
+    declinedAt: timestamp('declined_at', { withTimezone: true, mode: 'date' }),
+    payload: jsonb('payload')
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  table => [
+    uniqueIndex('shipping_quotes_order_version_uq').on(
+      table.orderId,
+      table.version
+    ),
+    index('shipping_quotes_order_status_idx').on(table.orderId, table.status),
+    index('shipping_quotes_status_expires_idx').on(
+      table.status,
+      table.expiresAt
+    ),
+    index('shipping_quotes_order_updated_idx').on(
+      table.orderId,
+      table.updatedAt
+    ),
+    check('shipping_quotes_version_positive_chk', sql`${table.version} >= 1`),
+    check(
+      'shipping_quotes_quote_minor_non_negative_chk',
+      sql`${table.shippingQuoteMinor} >= 0`
+    ),
+  ]
+);
+
+export const notificationOutbox = pgTable(
+  'notification_outbox',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    orderId: uuid('order_id')
+      .notNull()
+      .references(() => orders.id, { onDelete: 'cascade' }),
+    channel: notificationChannelEnum('channel').notNull().default('email'),
+    templateKey: text('template_key').notNull(),
+    sourceDomain: text('source_domain').notNull(),
+    sourceEventId: uuid('source_event_id').notNull(),
+    payload: jsonb('payload')
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+    status: text('status').notNull().default('pending'),
+    attemptCount: integer('attempt_count').notNull().default(0),
+    maxAttempts: integer('max_attempts').notNull().default(5),
+    nextAttemptAt: timestamp('next_attempt_at', {
+      withTimezone: true,
+      mode: 'date',
+    })
+      .notNull()
+      .defaultNow(),
+    leaseOwner: varchar('lease_owner', { length: 64 }),
+    leaseExpiresAt: timestamp('lease_expires_at', {
+      withTimezone: true,
+      mode: 'date',
+    }),
+    lastErrorCode: text('last_error_code'),
+    lastErrorMessage: text('last_error_message'),
+    sentAt: timestamp('sent_at', { withTimezone: true, mode: 'date' }),
+    deadLetteredAt: timestamp('dead_lettered_at', {
+      withTimezone: true,
+      mode: 'date',
+    }),
+    dedupeKey: text('dedupe_key').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  t => [
+    uniqueIndex('notification_outbox_dedupe_key_uq').on(t.dedupeKey),
+    index('notification_outbox_status_next_attempt_idx').on(
+      t.status,
+      t.nextAttemptAt
+    ),
+    index('notification_outbox_status_lease_expires_idx').on(
+      t.status,
+      t.leaseExpiresAt
+    ),
+    index('notification_outbox_order_created_idx').on(t.orderId, t.createdAt),
+    index('notification_outbox_template_status_idx').on(t.templateKey, t.status),
+    check(
+      'notification_outbox_source_domain_chk',
+      sql`${t.sourceDomain} in ('shipping_event','payment_event')`
+    ),
+    check(
+      'notification_outbox_status_chk',
+      sql`${t.status} in ('pending','processing','sent','failed','dead_letter')`
+    ),
+    check(
+      'notification_outbox_attempt_count_non_negative_chk',
+      sql`${t.attemptCount} >= 0`
+    ),
+    check(
+      'notification_outbox_max_attempts_positive_chk',
+      sql`${t.maxAttempts} >= 1`
+    ),
+  ]
+);
+
+export const returnRequests = pgTable(
+  'return_requests',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    orderId: uuid('order_id')
+      .notNull()
+      .references(() => orders.id, { onDelete: 'cascade' }),
+    userId: text('user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    status: returnRequestStatusEnum('status').notNull().default('requested'),
+    reason: text('reason'),
+    policyRestock: boolean('policy_restock').notNull().default(true),
+    refundAmountMinor: bigint('refund_amount_minor', { mode: 'number' })
+      .notNull()
+      .default(0),
+    currency: currencyEnum('currency').notNull(),
+    idempotencyKey: varchar('idempotency_key', { length: 128 }).notNull(),
+    approvedAt: timestamp('approved_at', { withTimezone: true, mode: 'date' }),
+    approvedBy: text('approved_by').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    rejectedAt: timestamp('rejected_at', { withTimezone: true, mode: 'date' }),
+    rejectedBy: text('rejected_by').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    receivedAt: timestamp('received_at', { withTimezone: true, mode: 'date' }),
+    receivedBy: text('received_by').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    refundedAt: timestamp('refunded_at', { withTimezone: true, mode: 'date' }),
+    refundedBy: text('refunded_by').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    refundProviderRef: text('refund_provider_ref'),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  table => [
+    uniqueIndex('return_requests_order_id_uq').on(table.orderId),
+    uniqueIndex('return_requests_id_order_id_uq').on(table.id, table.orderId),
+    uniqueIndex('return_requests_idempotency_key_uq').on(table.idempotencyKey),
+    index('return_requests_status_created_idx').on(table.status, table.createdAt),
+    index('return_requests_user_id_created_idx').on(table.userId, table.createdAt),
+    check(
+      'return_requests_refund_amount_minor_non_negative_chk',
+      sql`${table.refundAmountMinor} >= 0`
+    ),
+  ]
+);
+
+export const returnItems = pgTable(
+  'return_items',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    returnRequestId: uuid('return_request_id')
+      .notNull()
+      .references(() => returnRequests.id, { onDelete: 'cascade' }),
+    orderId: uuid('order_id')
+      .notNull()
+      .references(() => orders.id, { onDelete: 'cascade' }),
+    orderItemId: uuid('order_item_id').references(() => orderItems.id, {
+      onDelete: 'set null',
+    }),
+    productId: uuid('product_id').references(() => products.id, {
+      onDelete: 'set null',
+    }),
+    quantity: integer('quantity').notNull(),
+    unitPriceMinor: integer('unit_price_minor').notNull(),
+    lineTotalMinor: integer('line_total_minor').notNull(),
+    currency: currencyEnum('currency').notNull(),
+    idempotencyKey: varchar('idempotency_key', { length: 200 }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })
+      .notNull()
+      .defaultNow(),
+  },
+  table => [
+    uniqueIndex('return_items_idempotency_key_uq').on(table.idempotencyKey),
+    index('return_items_return_request_idx').on(table.returnRequestId),
+    index('return_items_order_id_idx').on(table.orderId),
+    index('return_items_product_id_idx').on(table.productId),
+    foreignKey({
+      name: 'return_items_return_request_order_fk',
+      columns: [table.returnRequestId, table.orderId],
+      foreignColumns: [returnRequests.id, returnRequests.orderId],
+    }).onDelete('cascade'),
+    check('return_items_quantity_positive_chk', sql`${table.quantity} > 0`),
+    check(
+      'return_items_unit_price_minor_non_negative_chk',
+      sql`${table.unitPriceMinor} >= 0`
+    ),
+    check(
+      'return_items_line_total_minor_non_negative_chk',
+      sql`${table.lineTotalMinor} >= 0`
+    ),
+    check(
+      'return_items_line_total_consistent_chk',
+      sql`${table.lineTotalMinor} = (${table.unitPriceMinor} * ${table.quantity})`
     ),
   ]
 );
@@ -837,10 +1296,18 @@ export type DbInternalJobState = typeof internalJobState.$inferSelect;
 export type DbPaymentAttempt = typeof paymentAttempts.$inferSelect;
 export type DbApiRateLimit = typeof apiRateLimits.$inferSelect;
 export type DbMonobankEvent = typeof monobankEvents.$inferSelect;
+export type DbPaymentEvent = typeof paymentEvents.$inferSelect;
+export type DbShippingEvent = typeof shippingEvents.$inferSelect;
+export type DbAdminAuditLog = typeof adminAuditLog.$inferSelect;
 export type DbMonobankRefund = typeof monobankRefunds.$inferSelect;
 export type DbMonobankPaymentCancel =
   typeof monobankPaymentCancels.$inferSelect;
 export type DbOrderShipping = typeof orderShipping.$inferSelect;
+export type DbOrderLegalConsent = typeof orderLegalConsents.$inferSelect;
 export type DbShippingShipment = typeof shippingShipments.$inferSelect;
+export type DbShippingQuote = typeof shippingQuotes.$inferSelect;
+export type DbNotificationOutbox = typeof notificationOutbox.$inferSelect;
+export type DbReturnRequest = typeof returnRequests.$inferSelect;
+export type DbReturnItem = typeof returnItems.$inferSelect;
 export type DbNpCity = typeof npCities.$inferSelect;
 export type DbNpWarehouse = typeof npWarehouses.$inferSelect;

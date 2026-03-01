@@ -122,7 +122,6 @@ async function cleanupSeedData(data: SeedData, orderIds: string[]) {
 describe('checkout shipping phase 3', () => {
   beforeEach(() => {
     vi.unstubAllEnvs();
-    vi.stubEnv('DATABASE_URL', 'https://example.com/db');
     vi.stubEnv('SHOP_SHIPPING_ENABLED', 'true');
     vi.stubEnv('SHOP_SHIPPING_NP_ENABLED', 'true');
     vi.stubEnv('SHOP_SHIPPING_SYNC_ENABLED', 'true');

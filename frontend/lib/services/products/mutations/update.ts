@@ -125,23 +125,9 @@ export async function updateProduct(
           ? (input as any).sku
           : null
         : existing.sku,
-
-    currency: 'USD',
-    price: existing.price,
-    originalPrice: existing.originalPrice,
   };
-
-  if (prices.length) {
-    const usd = prices.find(p => p.currency === 'USD');
-    if (usd?.priceMinor) {
-      updateData.price = toDbMoney(usd.priceMinor);
-      updateData.originalPrice =
-        usd.originalPriceMinor == null
-          ? null
-          : toDbMoney(usd.originalPriceMinor);
-      updateData.currency = 'USD';
-    }
-  }
+  // Legacy products.price/original_price are intentionally not updated here.
+  // product_prices is the single write-authority for catalog pricing.
 
   try {
     if (prices.length) {

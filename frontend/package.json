@@ -1,6 +1,6 @@
 {
   "name": "frontend",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -18,6 +18,7 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
+    "test:e2e:shop": "playwright test --config=playwright.config.ts tests/e2e/shop-minimal-phase9.spec.ts --workers=1",
     "test:blog": "vitest run components/tests/blog/*.test.tsx lib/tests/blog/*.test.ts",
     "test:blog:coverage": "vitest run --coverage \"--coverage.include=components/blog/**\" \"--coverage.include=app/api/blog-*/**\" components/tests/blog/*.test.tsx lib/tests/blog/*.test.ts"
   },
@@ -68,6 +69,7 @@
     "zod": "^3.24.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4.1.18",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.8.0",

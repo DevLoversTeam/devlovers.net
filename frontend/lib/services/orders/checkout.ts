@@ -6,12 +6,14 @@ import {
   npCities,
   npWarehouses,
   orderItems,
+  orderLegalConsents,
   orders,
   orderShipping,
   productPrices,
   products,
 } from '@/db/schema/shop';
 import { getShopShippingFlags } from '@/lib/env/nova-poshta';
+import { getShopLegalVersions } from '@/lib/env/shop-legal';
 import { isPaymentsEnabled } from '@/lib/env/stripe';
 import { logError, logWarn } from '@/lib/logging';
 import { resolveShippingAvailability } from '@/lib/services/shop/shipping/availability';
@@ -26,6 +28,7 @@ import {
 import { type PaymentProvider, type PaymentStatus } from '@/lib/shop/payments';
 import {
   type CheckoutItem,
+  type CheckoutLegalConsentInput,
   type CheckoutResult,
   type CheckoutShippingInput,
   type OrderSummaryWithMinor,
@@ -325,6 +328,36 @@ type PreparedShipping = {
   snapshot: Record<string, unknown> | null;
 };
 
+type PreparedLegalConsent = {
+  hashRefs: {
+    termsAccepted: true;
+    privacyAccepted: true;
+    termsVersion: string;
+    privacyVersion: string;
+  };
+  snapshot: {
+    termsAccepted: true;
+    privacyAccepted: true;
+    termsVersion: string;
+    privacyVersion: string;
+    consentedAt: Date;
+    source: string;
+    locale: string | null;
+    country: string | null;
+  };
+};
+
+function normalizeLegalVersion(raw: string | undefined, fallback: string): string {
+  const normalized = (raw ?? '').trim();
+  return normalized.length > 0 ? normalized : fallback;
+}
+
+function normalizeCountryCode(raw: string | null | undefined): string | null {
+  const normalized = (raw ?? '').trim().toUpperCase();
+  if (normalized.length !== 2) return null;
+  return normalized;
+}
+
 function readShippingRefFromSnapshot(
   value: unknown,
   field: 'cityRef' | 'warehouseRef'
@@ -532,6 +565,66 @@ async function prepareCheckoutShipping(args: {
     snapshot,
   };
 }
+
+function resolveCheckoutLegalConsent(args: {
+  legalConsent?: CheckoutLegalConsentInput | null;
+  locale: string | null | undefined;
+  country: string | null | undefined;
+}): PreparedLegalConsent {
+  const versions = getShopLegalVersions();
+
+  const termsAccepted = args.legalConsent?.termsAccepted ?? true;
+  const privacyAccepted = args.legalConsent?.privacyAccepted ?? true;
+
+  if (!termsAccepted) {
+    throw new InvalidPayloadError('Terms must be accepted before checkout.', {
+      code: 'TERMS_NOT_ACCEPTED',
+    });
+  }
+
+  if (!privacyAccepted) {
+    throw new InvalidPayloadError('Privacy policy must be accepted.', {
+      code: 'PRIVACY_NOT_ACCEPTED',
+    });
+  }
+
+  const termsVersion = normalizeLegalVersion(
+    args.legalConsent?.termsVersion,
+    versions.termsVersion
+  );
+  const privacyVersion = normalizeLegalVersion(
+    args.legalConsent?.privacyVersion,
+    versions.privacyVersion
+  );
+
+  const consentedAt = new Date();
+  const source =
+    args.legalConsent == null ? 'checkout_implicit' : 'checkout_explicit';
+  const normalizedLocale = normVariant(args.locale).toLowerCase() || null;
+  const normalizedCountry = normalizeCountryCode(
+    args.country ?? localeToCountry(args.locale)
+  );
+
+  return {
+    hashRefs: {
+      termsAccepted: true,
+      privacyAccepted: true,
+      termsVersion,
+      privacyVersion,
+    },
+    snapshot: {
+      termsAccepted: true,
+      privacyAccepted: true,
+      termsVersion,
+      privacyVersion,
+      consentedAt,
+      source,
+      locale: normalizedLocale,
+      country: normalizedCountry,
+    },
+  };
+}
+
 type OrderShippingSnapshotDbClient = Pick<typeof db, 'insert'>;
 async function ensureOrderShippingSnapshot(args: {
   orderId: string;
@@ -547,6 +640,30 @@ async function ensureOrderShippingSnapshot(args: {
       shippingAddress: args.snapshot,
     })
     .onConflictDoNothing({ target: orderShipping.orderId });
+}
+
+type OrderLegalConsentSnapshotDbClient = Pick<typeof db, 'insert'>;
+async function ensureOrderLegalConsentSnapshot(args: {
+  orderId: string;
+  snapshot: PreparedLegalConsent['snapshot'];
+  dbClient?: OrderLegalConsentSnapshotDbClient;
+}) {
+  const client = args.dbClient ?? db;
+
+  await client
+    .insert(orderLegalConsents)
+    .values({
+      orderId: args.orderId,
+      termsAccepted: args.snapshot.termsAccepted,
+      privacyAccepted: args.snapshot.privacyAccepted,
+      termsVersion: args.snapshot.termsVersion,
+      privacyVersion: args.snapshot.privacyVersion,
+      consentedAt: args.snapshot.consentedAt,
+      source: args.snapshot.source,
+      locale: args.snapshot.locale,
+      country: args.snapshot.country,
+    })
+    .onConflictDoNothing({ target: orderLegalConsents.orderId });
 }
 
 function priceItems(
@@ -623,6 +740,7 @@ export async function createOrderWithItems({
   locale,
   country,
   shipping,
+  legalConsent,
   paymentProvider: requestedProvider,
 }: {
   items: CheckoutItem[];
@@ -631,6 +749,7 @@ export async function createOrderWithItems({
   locale: string | null | undefined;
   country?: string | null;
   shipping?: CheckoutShippingInput | null;
+  legalConsent?: CheckoutLegalConsentInput | null;
   paymentProvider?: PaymentProvider;
 }): Promise<CheckoutResult> {
   const isMonobankRequested = requestedProvider === 'monobank';
@@ -660,6 +779,11 @@ export async function createOrderWithItems({
     country: country ?? null,
     currency,
   });
+  const preparedLegalConsent = resolveCheckoutLegalConsent({
+    legalConsent: legalConsent ?? null,
+    locale,
+    country: country ?? null,
+  });
 
   const requestHash = hashIdempotencyRequest({
     items: normalizedItems,
@@ -667,6 +791,7 @@ export async function createOrderWithItems({
     locale: locale ?? null,
     paymentProvider,
     shipping: preparedShipping.hashRefs,
+    legalConsent: preparedLegalConsent.hashRefs,
   });
 
   async function assertIdempotencyCompatible(existing: OrderSummaryWithMinor) {
@@ -701,6 +826,26 @@ export async function createOrderWithItems({
       .from(orderShipping)
       .where(eq(orderShipping.orderId, row.id))
       .limit(1);
+    const [existingLegalConsentRow] = await db
+      .select({
+        termsAccepted: orderLegalConsents.termsAccepted,
+        privacyAccepted: orderLegalConsents.privacyAccepted,
+        termsVersion: orderLegalConsents.termsVersion,
+        privacyVersion: orderLegalConsents.privacyVersion,
+      })
+      .from(orderLegalConsents)
+      .where(eq(orderLegalConsents.orderId, row.id))
+      .limit(1);
+
+    if (!existingLegalConsentRow) {
+      throw new IdempotencyConflictError(
+        'Idempotency key cannot be replayed because persisted legal consent evidence is missing.',
+        {
+          orderId: row.id,
+          reason: 'LEGAL_CONSENT_MISSING',
+        }
+      );
+    }
 
     const existingCityRef = readShippingRefFromSnapshot(
       existingShippingRow?.shippingAddress,
@@ -710,45 +855,69 @@ export async function createOrderWithItems({
       existingShippingRow?.shippingAddress,
       'warehouseRef'
     );
+    const existingLegalHashRefs = {
+      termsAccepted: existingLegalConsentRow.termsAccepted,
+      privacyAccepted: existingLegalConsentRow.privacyAccepted,
+      termsVersion: existingLegalConsentRow.termsVersion,
+      privacyVersion: existingLegalConsentRow.privacyVersion,
+    };
 
-    const derivedExistingHash =
-      row.idempotencyRequestHash ??
-      hashIdempotencyRequest({
-        items: (existing.items as any[]).map(i => ({
-          productId: i.productId,
-          quantity: i.quantity,
-          selectedSize: normVariant((i as any).selectedSize),
-          selectedColor: normVariant((i as any).selectedColor),
-          options: {
-            ...(normVariant((i as any).selectedSize)
-              ? { size: normVariant((i as any).selectedSize) }
-              : {}),
-            ...(normVariant((i as any).selectedColor)
-              ? { color: normVariant((i as any).selectedColor) }
-              : {}),
-          },
-        })) as CheckoutItemWithVariant[],
-        currency: row.currency,
-        locale: locale ?? null,
-        paymentProvider: resolvePaymentProvider({
-          paymentProvider: row.paymentProvider,
-          paymentIntentId: existing.paymentIntentId ?? null,
-          paymentStatus: row.paymentStatus,
-        }),
-        shipping:
-          row.shippingProvider === 'nova_poshta' &&
-          row.shippingMethodCode &&
-          existingCityRef
-            ? {
-                provider: 'nova_poshta',
-                methodCode: row.shippingMethodCode,
-                cityRef: existingCityRef,
-                warehouseRef: existingWarehouseRef,
-              }
-            : null,
-      });
+    if (
+      existingLegalHashRefs.termsAccepted !==
+        preparedLegalConsent.hashRefs.termsAccepted ||
+      existingLegalHashRefs.privacyAccepted !==
+        preparedLegalConsent.hashRefs.privacyAccepted ||
+      existingLegalHashRefs.termsVersion !==
+        preparedLegalConsent.hashRefs.termsVersion ||
+      existingLegalHashRefs.privacyVersion !==
+        preparedLegalConsent.hashRefs.privacyVersion
+    ) {
+      throw new IdempotencyConflictError(
+        'Idempotency key already used with different legal consent.',
+        {
+          existing: existingLegalHashRefs,
+          requested: preparedLegalConsent.hashRefs,
+        }
+      );
+    }
 
-    if (!row.idempotencyRequestHash) {
+    const derivedExistingHash = hashIdempotencyRequest({
+      items: (existing.items as any[]).map(i => ({
+        productId: i.productId,
+        quantity: i.quantity,
+        selectedSize: normVariant((i as any).selectedSize),
+        selectedColor: normVariant((i as any).selectedColor),
+        options: {
+          ...(normVariant((i as any).selectedSize)
+            ? { size: normVariant((i as any).selectedSize) }
+            : {}),
+          ...(normVariant((i as any).selectedColor)
+            ? { color: normVariant((i as any).selectedColor) }
+            : {}),
+        },
+      })) as CheckoutItemWithVariant[],
+      currency: row.currency,
+      locale: locale ?? null,
+      paymentProvider: resolvePaymentProvider({
+        paymentProvider: row.paymentProvider,
+        paymentIntentId: existing.paymentIntentId ?? null,
+        paymentStatus: row.paymentStatus,
+      }),
+      shipping:
+        row.shippingProvider === 'nova_poshta' &&
+        row.shippingMethodCode &&
+        existingCityRef
+          ? {
+              provider: 'nova_poshta',
+              methodCode: row.shippingMethodCode,
+              cityRef: existingCityRef,
+              warehouseRef: existingWarehouseRef,
+            }
+          : null,
+      legalConsent: existingLegalHashRefs,
+    });
+
+    if (row.idempotencyRequestHash !== derivedExistingHash) {
       try {
         await db
           .update(orders)
@@ -914,8 +1083,13 @@ export async function createOrderWithItems({
 
     if (!created) throw new Error('Failed to create order');
 
-    if (preparedShipping.required && preparedShipping.snapshot) {
-      try {
+    try {
+      await ensureOrderLegalConsentSnapshot({
+        orderId: created.id,
+        snapshot: preparedLegalConsent.snapshot,
+      });
+
+      if (preparedShipping.required && preparedShipping.snapshot) {
         await ensureOrderShippingSnapshot({
           orderId: created.id,
           snapshot: preparedShipping.snapshot,
@@ -936,6 +1110,21 @@ export async function createOrderWithItems({
         }
         throw e;
       }
+    } catch (e) {
+      // Neon HTTP: no interactive transactions. Do compensating cleanup.
+      logError(
+        `[createOrderWithItems] order snapshot insert failed orderId=${created.id}`,
+        e
+      );
+      try {
+        await db.delete(orders).where(eq(orders.id, created.id));
+      } catch (cleanupErr) {
+        logError(
+          `[createOrderWithItems] cleanup delete failed orderId=${created.id}`,
+          cleanupErr
+        );
+      }
+      throw e;
     }
 
     orderId = created.id;

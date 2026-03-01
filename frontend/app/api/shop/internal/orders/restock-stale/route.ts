@@ -12,6 +12,10 @@ import {
   restockStalePendingOrders,
   restockStuckReservingOrders,
 } from '@/lib/services/orders';
+import {
+  sweepAcceptedIntlQuotePaymentTimeouts,
+  sweepExpiredOfferedIntlQuotes,
+} from '@/lib/services/shop/quotes';
 
 export const runtime = 'nodejs';
 
@@ -473,10 +477,30 @@ export async function POST(request: NextRequest) {
       timeBudgetMs: remaining2,
     });
 
+    const remaining3 = Math.max(0, deadlineMs - Date.now());
+    const processedIntlQuoteExpired =
+      remaining3 > 0
+        ? await sweepExpiredOfferedIntlQuotes({
+            batchSize: policy.batchSize,
+            now: new Date(),
+          })
+        : 0;
+
+    const remaining4 = Math.max(0, deadlineMs - Date.now());
+    const processedIntlQuotePaymentTimeouts =
+      remaining4 > 0
+        ? await sweepAcceptedIntlQuotePaymentTimeouts({
+            batchSize: policy.batchSize,
+            now: new Date(),
+          })
+        : 0;
+
     const processed =
       processedStuckReserving +
       processedStalePending +
-      processedOrphanNoPayment;
+      processedOrphanNoPayment +
+      processedIntlQuoteExpired +
+      processedIntlQuotePaymentTimeouts;
 
     logInfo('internal_janitor_run_completed', {
       ...baseMeta,
@@ -489,6 +513,8 @@ export async function POST(request: NextRequest) {
         stuckReserving: processedStuckReserving,
         stalePending: processedStalePending,
         orphanNoPayment: processedOrphanNoPayment,
+        intlQuoteExpired: processedIntlQuoteExpired,
+        intlQuotePaymentTimeout: processedIntlQuotePaymentTimeouts,
       },
       batchSize: policy.batchSize,
       appliedPolicy: policy,
@@ -509,6 +535,8 @@ export async function POST(request: NextRequest) {
         stuckReserving: processedStuckReserving,
         stalePending: processedStalePending,
         orphanNoPayment: processedOrphanNoPayment,
+        intlQuoteExpired: processedIntlQuoteExpired,
+        intlQuotePaymentTimeout: processedIntlQuotePaymentTimeouts,
       },
       batchSize: policy.batchSize,
       olderThanMinutes: policy.olderThanMinutes.stalePending,

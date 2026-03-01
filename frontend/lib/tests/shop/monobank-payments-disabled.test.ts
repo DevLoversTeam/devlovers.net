@@ -29,7 +29,6 @@ const __prevPaymentsEnabled = process.env.PAYMENTS_ENABLED;
 const __prevMonoMerchantToken = process.env.MONO_MERCHANT_TOKEN;
 const __prevStatusSecret = process.env.SHOP_STATUS_TOKEN_SECRET;
 const __prevAppOrigin = process.env.APP_ORIGIN;
-const __prevDatabaseUrl = process.env.DATABASE_URL;
 
 beforeAll(() => {
   process.env.RATE_LIMIT_DISABLED = '1';
@@ -38,9 +37,6 @@ beforeAll(() => {
   process.env.APP_ORIGIN = 'http://localhost:3000';
   process.env.SHOP_STATUS_TOKEN_SECRET =
     'test_status_token_secret_test_status_token_secret';
-  if (!process.env.DATABASE_URL && __prevDatabaseUrl) {
-    process.env.DATABASE_URL = __prevDatabaseUrl;
-  }
   resetEnvCache();
 });
 
@@ -62,9 +58,6 @@ afterAll(() => {
   if (__prevStatusSecret === undefined)
     delete process.env.SHOP_STATUS_TOKEN_SECRET;
   else process.env.SHOP_STATUS_TOKEN_SECRET = __prevStatusSecret;
-
-  if (__prevDatabaseUrl === undefined) delete process.env.DATABASE_URL;
-  else process.env.DATABASE_URL = __prevDatabaseUrl;
   resetEnvCache();
 });
 

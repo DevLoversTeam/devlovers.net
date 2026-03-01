@@ -5,6 +5,7 @@ import { and, eq, isNull, lt, ne, or } from 'drizzle-orm';
 import { db } from '@/db';
 import { inventoryMoves, orders } from '@/db/schema/shop';
 import { logWarn } from '@/lib/logging';
+import { isOrderNonPaymentStatusTransitionAllowed } from '@/lib/services/shop/transitions/order-state';
 import { type PaymentStatus } from '@/lib/shop/payments';
 
 import { OrderNotFoundError, OrderStateInvalidError } from '../errors';
@@ -54,6 +55,40 @@ async function tryClaimRestockLease(params: {
   return !!row;
 }
 
+function validateRestockTransition(
+  orderId: string,
+  currentStatus: string,
+  reason: RestockReason | undefined
+): void {
+  const shouldCancel = reason === 'canceled';
+  const shouldFail = reason === 'failed' || reason === 'stale';
+  const targetOrderStatus = shouldFail
+    ? 'INVENTORY_FAILED'
+    : shouldCancel
+      ? 'CANCELED'
+      : null;
+
+  if (!targetOrderStatus) return;
+
+  if (
+    !isOrderNonPaymentStatusTransitionAllowed(currentStatus, targetOrderStatus, {
+      includeSame: true,
+    })
+  ) {
+    throw new OrderStateInvalidError(
+      `Invalid order status transition: ${currentStatus} -> ${targetOrderStatus}`,
+      {
+        orderId,
+        details: {
+          reason,
+          fromStatus: currentStatus,
+          toStatus: targetOrderStatus,
+        },
+      }
+    );
+  }
+}
+
 export async function restockOrder(
   orderId: string,
   options?: RestockOptions
@@ -63,6 +98,7 @@ export async function restockOrder(
   const [order] = await db
     .select({
       id: orders.id,
+      status: orders.status,
       paymentProvider: orders.paymentProvider,
       [PAYMENT_STATUS_KEY]: orders.paymentStatus,
       paymentIntentId: orders.paymentIntentId,
@@ -122,6 +158,7 @@ export async function restockOrder(
     const now = new Date();
     const shouldCancel = reason === 'canceled';
     const shouldFail = reason === 'failed' || reason === 'stale';
+    validateRestockTransition(orderId, order.status, reason);
 
     const orphanFailureCode =
       order.failureCode ??
@@ -149,10 +186,28 @@ export async function restockOrder(
         restockedAt: now,
         updatedAt: now,
       })
-      .where(and(eq(orders.id, orderId), eq(orders.stockRestored, false)))
+      .where(
+        and(
+          eq(orders.id, orderId),
+          eq(orders.stockRestored, false),
+          eq(orders.status, order.status)
+        )
+      )
       .returning({ id: orders.id });
 
-    if (!touched) return;
+    if (!touched) {
+      throw new OrderStateInvalidError(
+        `Cannot finalize orphan restock due to concurrent order state change.`,
+        {
+          orderId,
+          details: {
+            reason,
+            expectedStatus: order.status,
+            phase: 'orphan_finalize',
+          },
+        }
+      );
+    }
 
     let normalizedStatus: PaymentStatus | undefined;
     if (reason === 'refunded' && !isNoPayment) normalizedStatus = 'refunded';
@@ -181,6 +236,10 @@ export async function restockOrder(
       }
     );
   }
+  const shouldCancel = reason === 'canceled';
+  const shouldFail = reason === 'failed' || reason === 'stale';
+  validateRestockTransition(orderId, order.status, reason);
+
   const claimTtlMinutes = options?.claimTtlMinutes ?? 5;
   const workerId = options?.workerId ?? 'restock';
   if (!options?.alreadyClaimed) {
@@ -274,31 +333,40 @@ export async function restockOrder(
   const [finalized] = await db
     .update(orders)
     .set({
+      inventoryStatus: 'released',
       stockRestored: true,
       restockedAt: finalizedAt,
       updatedAt: finalizedAt,
+      ...(shouldFail ? { status: 'INVENTORY_FAILED' } : {}),
+      ...(shouldCancel ? { status: 'CANCELED' } : {}),
     })
-    .where(and(eq(orders.id, orderId), eq(orders.stockRestored, false)))
+    .where(
+      and(
+        eq(orders.id, orderId),
+        eq(orders.stockRestored, false),
+        eq(orders.status, order.status)
+      )
+    )
     .returning({ id: orders.id });
 
-  if (!finalized) return;
+  if (!finalized) {
+    throw new OrderStateInvalidError(
+      `Cannot finalize restock due to concurrent order state change.`,
+      {
+        orderId,
+        details: {
+          reason,
+          expectedStatus: order.status,
+          phase: 'finalize',
+        },
+      }
+    );
+  }
 
   let normalizedStatus: PaymentStatus | undefined;
   if (reason === 'refunded' && !isNoPayment) normalizedStatus = 'refunded';
   else if (reason === 'failed' || reason === 'canceled' || reason === 'stale')
     normalizedStatus = 'failed';
-
-  const shouldCancel = reason === 'canceled';
-  const shouldFail = reason === 'failed' || reason === 'stale';
-  await db
-    .update(orders)
-    .set({
-      inventoryStatus: 'released',
-      updatedAt: finalizedAt,
-      ...(shouldFail ? { status: 'INVENTORY_FAILED' } : {}),
-      ...(shouldCancel ? { status: 'CANCELED' } : {}),
-    })
-    .where(eq(orders.id, orderId));
 
   if (normalizedStatus) {
     await guardedPaymentStatusUpdate({

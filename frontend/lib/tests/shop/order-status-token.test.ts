@@ -4,7 +4,7 @@ import { NextRequest } from 'next/server';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { db } from '@/db';
-import { orders, paymentAttempts } from '@/db/schema';
+import { adminAuditLog, orders, paymentAttempts } from '@/db/schema';
 import { toDbMoney } from '@/lib/shop/money';
 import { createStatusToken } from '@/lib/shop/status-token';
 
@@ -40,6 +40,7 @@ async function insertOrder(orderId: string) {
 }
 
 async function deleteOrder(orderId: string) {
+  await db.delete(adminAuditLog).where(eq(adminAuditLog.orderId, orderId));
   await db.delete(paymentAttempts).where(eq(paymentAttempts.orderId, orderId));
   await db.delete(orders).where(eq(orders.id, orderId));
 }
@@ -107,14 +108,13 @@ describe('order status token access control', () => {
       expect(res.status).toBe(200);
 
       const json: any = await res.json();
-      expect(json.success).toBe(true);
-      expect(json.order.id).toBe(orderId);
-      expect(typeof json.order.currency).toBe('string');
-      expect(json.order.totalAmountMinor).toBeDefined();
-      expect(json.order.paymentProvider).toBeDefined();
-      expect(json.order.paymentStatus).toBe('pending');
-      expect(typeof json.order.createdAt).toBe('string');
-      expect(json.attempt).toBeNull();
+      expect(json.id).toBe(orderId);
+      expect(json.currency).toBe('UAH');
+      expect(json.totalAmountMinor).toBe(1000);
+      expect(json.paymentStatus).toBe('pending');
+      expect(typeof json.updatedAt).toBe('string');
+      expect(json.order).toBeUndefined();
+      expect(json.attempt).toBeUndefined();
 
       const [row] = await db
         .select({ paymentStatus: orders.paymentStatus })
@@ -122,6 +122,56 @@ describe('order status token access control', () => {
         .where(eq(orders.id, orderId))
         .limit(1);
       expect(row?.paymentStatus).toBe('pending');
+    } finally {
+      await deleteOrder(orderId);
+    }
+  });
+
+  it('enforces status-only scope for token users even when view=full is requested', async () => {
+    const orderId = crypto.randomUUID();
+    await insertOrder(orderId);
+
+    try {
+      const token = createStatusToken({ orderId });
+      const { GET } = await import('@/app/api/shop/orders/[id]/status/route');
+      const req = new NextRequest(
+        `http://localhost/api/shop/orders/${orderId}/status?view=full&statusToken=${encodeURIComponent(
+          token
+        )}`
+      );
+      const res = await GET(req, { params: Promise.resolve({ id: orderId }) });
+      expect(res.status).toBe(200);
+
+      const json: any = await res.json();
+      expect(json.id).toBe(orderId);
+      expect(json.paymentStatus).toBe('pending');
+      expect(json.order).toBeUndefined();
+      expect(json.attempt).toBeUndefined();
+      expect(json.success).toBeUndefined();
+    } finally {
+      await deleteOrder(orderId);
+    }
+  });
+
+  it('rejects token without status_lite scope', async () => {
+    const orderId = crypto.randomUUID();
+    await insertOrder(orderId);
+
+    try {
+      const token = createStatusToken({
+        orderId,
+        scopes: ['order_payment_init'],
+      });
+      const { GET } = await import('@/app/api/shop/orders/[id]/status/route');
+      const req = new NextRequest(
+        `http://localhost/api/shop/orders/${orderId}/status?statusToken=${encodeURIComponent(
+          token
+        )}`
+      );
+      const res = await GET(req, { params: Promise.resolve({ id: orderId }) });
+      expect(res.status).toBe(403);
+      const json: any = await res.json();
+      expect(json.code).toBe('STATUS_TOKEN_SCOPE_FORBIDDEN');
     } finally {
       await deleteOrder(orderId);
     }
@@ -201,11 +251,9 @@ describe('order status token access control', () => {
       expect(res.status).toBe(200);
 
       const json: any = await res.json();
-      expect(json.success).toBe(true);
-      expect(json.attempt).not.toBeNull();
-      expect(json.attempt.status).toBe('active');
-      expect(json.attempt.providerRef).toBe('inv_123');
-      expect(json.attempt.checkoutUrl).toBe('https://pay.test/inv_123');
+      expect(json.id).toBe(orderId);
+      expect(json.paymentStatus).toBe('pending');
+      expect(json.attempt).toBeUndefined();
     } finally {
       await deleteOrder(orderId);
     }
@@ -245,10 +293,48 @@ describe('order status token access control', () => {
       expect(res.status).toBe(200);
 
       const json: any = await res.json();
-      expect(json.attempt).not.toBeNull();
-      expect(json.attempt.status).toBe('active');
-      expect(json.attempt.providerRef).toBe('inv_active');
-      expect(json.attempt.checkoutUrl).toBe('https://pay.test/inv_active');
+      expect(json.id).toBe(orderId);
+      expect(json.paymentStatus).toBe('pending');
+      expect(json.attempt).toBeUndefined();
+    } finally {
+      await deleteOrder(orderId);
+    }
+  });
+
+  it('replay uses deduped token-use audit and records canonical audit entry', async () => {
+    const orderId = crypto.randomUUID();
+    await insertOrder(orderId);
+    const token = createStatusToken({ orderId });
+
+    try {
+      const { GET } = await import('@/app/api/shop/orders/[id]/status/route');
+      const req1 = new NextRequest(
+        `http://localhost/api/shop/orders/${orderId}/status?statusToken=${encodeURIComponent(
+          token
+        )}`
+      );
+      const req2 = new NextRequest(
+        `http://localhost/api/shop/orders/${orderId}/status?statusToken=${encodeURIComponent(
+          token
+        )}`
+      );
+
+      const res1 = await GET(req1, { params: Promise.resolve({ id: orderId }) });
+      const res2 = await GET(req2, { params: Promise.resolve({ id: orderId }) });
+      expect(res1.status).toBe(200);
+      expect(res2.status).toBe(200);
+
+      const rows = await db
+        .select({
+          action: adminAuditLog.action,
+          orderId: adminAuditLog.orderId,
+        })
+        .from(adminAuditLog)
+        .where(eq(adminAuditLog.orderId, orderId));
+
+      const tokenUseRows = rows.filter(r => r.action === 'guest_status_token.used');
+      expect(tokenUseRows.length).toBe(1);
+      expect(tokenUseRows[0]?.orderId).toBe(orderId);
     } finally {
       await deleteOrder(orderId);
     }

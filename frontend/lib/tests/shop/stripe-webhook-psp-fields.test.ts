@@ -7,6 +7,7 @@ import { db } from '@/db';
 import {
   orderItems,
   orders,
+  paymentEvents,
   productPrices,
   products,
   shippingShipments,
@@ -50,6 +51,15 @@ async function cleanup(params: {
   eventId: string;
 }) {
   const { orderId, productId, eventId } = params;
+
+  try {
+    await db.delete(paymentEvents).where(eq(paymentEvents.orderId, orderId));
+  } catch (e) {
+    logTestCleanupFailed(
+      { step: 'delete paymentEvents by orderId', orderId, eventId, productId },
+      e
+    );
+  }
 
   try {
     await db.delete(stripeEvents).where(eq(stripeEvents.eventId, eventId));
@@ -290,6 +300,17 @@ describe('P0-6 webhook: writes PSP fields on succeeded', () => {
         .where(eq(stripeEvents.eventId, eventId));
 
       expect(ev1.length).toBe(1);
+      const canonical1 = await db
+        .select({
+          id: paymentEvents.id,
+          eventName: paymentEvents.eventName,
+          eventRef: paymentEvents.eventRef,
+        })
+        .from(paymentEvents)
+        .where(eq(paymentEvents.orderId, orderId));
+      expect(canonical1.length).toBe(1);
+      expect(canonical1[0]?.eventName).toBe('paid_applied');
+      expect(canonical1[0]?.eventRef).toBe(eventId);
 
       const queued1 = await db
         .select({ id: shippingShipments.id })
@@ -308,6 +329,11 @@ describe('P0-6 webhook: writes PSP fields on succeeded', () => {
         .where(eq(stripeEvents.eventId, eventId));
 
       expect(ev2.length).toBe(1);
+      const canonical2 = await db
+        .select({ id: paymentEvents.id })
+        .from(paymentEvents)
+        .where(eq(paymentEvents.orderId, orderId));
+      expect(canonical2.length).toBe(1);
 
       const updated2 = await db
         .select({

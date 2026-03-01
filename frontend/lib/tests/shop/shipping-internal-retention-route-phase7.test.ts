@@ -23,7 +23,6 @@ describe('internal shipping retention route (phase 7)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.unstubAllEnvs();
-    vi.stubEnv('DATABASE_URL', 'https://example.com/db');
     vi.stubEnv('INTERNAL_JANITOR_SECRET', 'test-secret');
     vi.stubEnv('SHOP_SHIPPING_ENABLED', 'true');
     vi.stubEnv('SHOP_SHIPPING_RETENTION_ENABLED', 'true');

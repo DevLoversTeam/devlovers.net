@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { InvalidPayloadError } from '@/lib/services/errors';
+
 const enforceRateLimitMock = vi.fn(async (..._args: any[]) => ({
   ok: false,
   retryAfterSeconds: 12,
@@ -140,5 +142,50 @@ describe('monobank webhook rate limit policy', () => {
     expect(json.code).toBe('RATE_LIMITED');
     expect(verifyWebhookSignatureWithRefreshMock).not.toHaveBeenCalled();
     expect(handleMonobankWebhookMock).not.toHaveBeenCalled();
+  });
+
+  it('returns 503 + Retry-After when signed apply fails with transient error', async () => {
+    verifyWebhookSignatureWithRefreshMock.mockResolvedValue(true);
+    handleMonobankWebhookMock.mockRejectedValueOnce(new Error('DB_TEMP_FAIL'));
+
+    const req = makeReq(
+      JSON.stringify({
+        invoiceId: 'inv_123',
+        status: 'success',
+      }),
+      true
+    );
+
+    const res = await POST(req);
+    const json: any = await res.json();
+
+    expect(res.status).toBe(503);
+    expect(res.headers.get('Retry-After')).toBe('10');
+    expect(res.headers.get('Cache-Control')).toBe('no-store');
+    expect(json.code).toBe('WEBHOOK_RETRYABLE');
+    expect(json.retryAfterSeconds).toBe(10);
+  });
+
+  it('acknowledges with 200 when signed apply fails with invalid payload (non-retryable)', async () => {
+    verifyWebhookSignatureWithRefreshMock.mockResolvedValue(true);
+    handleMonobankWebhookMock.mockRejectedValueOnce(
+      new InvalidPayloadError('Invalid webhook payload', {
+        code: 'INVALID_PAYLOAD',
+      })
+    );
+
+    const req = makeReq(
+      JSON.stringify({
+        invoiceId: 'inv_123',
+        status: 'success',
+      }),
+      true
+    );
+
+    const res = await POST(req);
+    const json: any = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.ok).toBe(true);
   });
 });

@@ -7,6 +7,7 @@ import { db } from '@/db';
 import {
   monobankEvents,
   orders,
+  paymentEvents,
   paymentAttempts,
   shippingShipments,
 } from '@/db/schema';
@@ -90,6 +91,13 @@ async function cleanup(orderId: string, invoiceId: string) {
   await db
     .delete(shippingShipments)
     .where(eq(shippingShipments.orderId, orderId));
+  try {
+    await db.delete(paymentEvents).where(eq(paymentEvents.orderId, orderId));
+  } catch (error) {
+    const code = (error as { code?: string } | null)?.code;
+    // 42P01 = undefined_table (migration not applied in local DB yet).
+    if (code !== '42P01') throw error;
+  }
   await db
     .delete(monobankEvents)
     .where(eq(monobankEvents.invoiceId, invoiceId));
@@ -144,7 +152,7 @@ describe.sequential('monobank webhook apply (persist-first)', () => {
       await cleanup(orderId, invoiceId);
     }
   }, 15000);
-  it('dedupes identical events and applies once', async () => {
+  it('dedupes identical events, applies once, and writes canonical payment event', async () => {
     const invoiceId = `inv_${crypto.randomUUID()}`;
     const { orderId } = await insertOrderAndAttempt({
       invoiceId,
@@ -182,6 +190,17 @@ describe.sequential('monobank webhook apply (persist-first)', () => {
         .from(monobankEvents)
         .where(eq(monobankEvents.invoiceId, invoiceId));
       expect(events.length).toBe(1);
+      const canonical = await db
+        .select({
+          id: paymentEvents.id,
+          eventName: paymentEvents.eventName,
+          eventRef: paymentEvents.eventRef,
+        })
+        .from(paymentEvents)
+        .where(eq(paymentEvents.orderId, orderId));
+      expect(canonical.length).toBe(1);
+      expect(canonical[0]?.eventName).toBe('paid_applied');
+      expect(canonical[0]?.eventRef).toBe(events[0]?.id ?? null);
 
       const [order] = await db
         .select({

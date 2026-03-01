@@ -4,7 +4,6 @@ import { resetEnvCache } from '@/lib/env';
 import { getMonobankConfig, requireMonobankToken } from '@/lib/env/monobank';
 
 const ENV_KEYS = [
-  'DATABASE_URL',
   'MONO_MERCHANT_TOKEN',
   'MONO_WEBHOOK_MODE',
   'MONO_REFUND_ENABLED',
@@ -25,8 +24,6 @@ beforeEach(() => {
     previousEnv[key] = process.env[key];
     delete process.env[key];
   }
-
-  process.env.DATABASE_URL = 'https://db.example.test';
   resetEnvCache();
 });
 
