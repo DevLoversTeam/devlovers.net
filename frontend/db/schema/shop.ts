@@ -972,7 +972,10 @@ export const notificationOutbox = pgTable(
       t.leaseExpiresAt
     ),
     index('notification_outbox_order_created_idx').on(t.orderId, t.createdAt),
-    index('notification_outbox_template_status_idx').on(t.templateKey, t.status),
+    index('notification_outbox_template_status_idx').on(
+      t.templateKey,
+      t.status
+    ),
     check(
       'notification_outbox_source_domain_chk',
       sql`${t.sourceDomain} in ('shipping_event','payment_event')`
@@ -1039,8 +1042,14 @@ export const returnRequests = pgTable(
     uniqueIndex('return_requests_order_id_uq').on(table.orderId),
     uniqueIndex('return_requests_id_order_id_uq').on(table.id, table.orderId),
     uniqueIndex('return_requests_idempotency_key_uq').on(table.idempotencyKey),
-    index('return_requests_status_created_idx').on(table.status, table.createdAt),
-    index('return_requests_user_id_created_idx').on(table.userId, table.createdAt),
+    index('return_requests_status_created_idx').on(
+      table.status,
+      table.createdAt
+    ),
+    index('return_requests_user_id_created_idx').on(
+      table.userId,
+      table.createdAt
+    ),
     check(
       'return_requests_refund_amount_minor_non_negative_chk',
       sql`${table.refundAmountMinor} >= 0`

@@ -76,7 +76,12 @@ async function cleanup(params: {
       .where(eq(shippingShipments.orderId, orderId));
   } catch (e) {
     logTestCleanupFailed(
-      { step: 'delete shippingShipments by orderId', orderId, eventId, productId },
+      {
+        step: 'delete shippingShipments by orderId',
+        orderId,
+        eventId,
+        productId,
+      },
       e
     );
   }

@@ -1,4 +1,7 @@
-import { getUserLastAttemptPerQuiz, getUserQuizStats } from '@/db/queries/quizzes/quiz';
+import {
+  getUserLastAttemptPerQuiz,
+  getUserQuizStats,
+} from '@/db/queries/quizzes/quiz';
 import { getUserProfile } from '@/db/queries/users';
 import { getAllSponsors, getSponsors } from '@/lib/about/github-sponsors';
 import { type UserStats } from '@/lib/achievements';
@@ -8,7 +11,9 @@ import { checkHasStarredRepo, resolveGitHubLogin } from '@/lib/github-stars';
  * Fetches and resolves all necessary dependencies to compute a user's `UserStats`
  * object required for evaluating achievements.
  */
-export async function getUserStatsForAchievements(userId: string): Promise<UserStats | null> {
+export async function getUserStatsForAchievements(
+  userId: string
+): Promise<UserStats | null> {
   const user = await getUserProfile(userId);
   if (!user) return null;
 
@@ -22,14 +27,16 @@ export async function getUserStatsForAchievements(userId: string): Promise<UserS
   function findSponsor(list: typeof sponsors) {
     return list.find(s => {
       if (s.email && s.email.toLowerCase() === userEmail) return true;
-      if (userName && s.login && s.login.toLowerCase() === userName) return true;
+      if (userName && s.login && s.login.toLowerCase() === userName)
+        return true;
       if (userName && s.name && s.name.toLowerCase() === userName) return true;
       if (
         userImage &&
         s.avatarUrl &&
         s.avatarUrl.trim().length > 0 &&
         userImage.includes(s.avatarUrl.split('?')[0])
-      ) return true;
+      )
+        return true;
       return false;
     });
   }
@@ -39,12 +46,15 @@ export async function getUserStatsForAchievements(userId: string): Promise<UserS
 
   let githubLogin = matchedSponsor?.login || '';
   if (!githubLogin && user.provider === 'github' && user.providerId) {
-    githubLogin = (await resolveGitHubLogin(user.providerId)) ?? user.name ?? '';
+    githubLogin =
+      (await resolveGitHubLogin(user.providerId)) ?? user.name ?? '';
   } else if (!githubLogin) {
     githubLogin = user.name ?? '';
   }
 
-  const hasStarredRepo = githubLogin ? await checkHasStarredRepo(githubLogin) : false;
+  const hasStarredRepo = githubLogin
+    ? await checkHasStarredRepo(githubLogin)
+    : false;
 
   // We enforce the 'uk' locale here only for query syntax requirements, it doesn't affect raw stats.
   const attempts = await getUserQuizStats(userId);
@@ -60,7 +70,9 @@ export async function getUserStatsForAchievements(userId: string): Promise<UserS
         )
       : 0;
 
-  const perfectScores = attempts.filter(a => Number(a.percentage) === 100).length;
+  const perfectScores = attempts.filter(
+    a => Number(a.percentage) === 100
+  ).length;
   const highScores = attempts.filter(a => Number(a.percentage) >= 90).length;
   const uniqueQuizzes = lastAttempts.length;
 
@@ -80,7 +92,7 @@ export async function getUserStatsForAchievements(userId: string): Promise<UserS
     totalPoints: user.points,
     topLeaderboard: false, // Currently mocked or separate logic
     hasStarredRepo,
-    sponsorCount: matchedSponsor ? 1 : 0, 
+    sponsorCount: matchedSponsor ? 1 : 0,
     hasNightOwl,
   };
 }

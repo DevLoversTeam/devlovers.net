@@ -219,7 +219,9 @@ export async function cleanupSeededTemplateProduct(): Promise<void> {
   } catch {}
 
   try {
-    await db.delete(productPrices).where(eq(productPrices.productId, productId));
+    await db
+      .delete(productPrices)
+      .where(eq(productPrices.productId, productId));
   } catch {}
 
   try {

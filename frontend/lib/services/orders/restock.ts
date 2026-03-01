@@ -71,9 +71,13 @@ function validateRestockTransition(
   if (!targetOrderStatus) return;
 
   if (
-    !isOrderNonPaymentStatusTransitionAllowed(currentStatus, targetOrderStatus, {
-      includeSame: true,
-    })
+    !isOrderNonPaymentStatusTransitionAllowed(
+      currentStatus,
+      targetOrderStatus,
+      {
+        includeSame: true,
+      }
+    )
   ) {
     throw new OrderStateInvalidError(
       `Invalid order status transition: ${currentStatus} -> ${targetOrderStatus}`,

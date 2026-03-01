@@ -28,7 +28,6 @@ export function CountdownTimer({
 
   const [isSynced, setIsSynced] = useState(false);
 
-
   useEffect(() => {
     if (!isActive) return;
 

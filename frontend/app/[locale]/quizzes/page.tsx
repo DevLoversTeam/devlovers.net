@@ -3,9 +3,7 @@ import { getTranslations } from 'next-intl/server';
 
 import QuizzesSection from '@/components/quiz/QuizzesSection';
 import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
-import {
-  getActiveQuizzes,
-} from '@/db/queries/quizzes/quiz';
+import { getActiveQuizzes } from '@/db/queries/quizzes/quiz';
 
 type PageProps = { params: Promise<{ locale: string }> };
 
@@ -21,7 +19,7 @@ export async function generateMetadata({
   };
 }
 
-export const revalidate = 300
+export const revalidate = 300;
 
 export default async function QuizzesPage({ params }: PageProps) {
   const { locale } = await params;

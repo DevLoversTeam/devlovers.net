@@ -585,11 +585,13 @@ async function markSucceeded(args: {
       (select us.order_id from updated_shipment us limit 1) as order_id
   `);
 
-  return readRows<{
-    shipment_updated: boolean;
-    order_updated: boolean;
-    order_id: string | null;
-  }>(res)[0] ?? null;
+  return (
+    readRows<{
+      shipment_updated: boolean;
+      order_updated: boolean;
+      order_id: string | null;
+    }>(res)[0] ?? null
+  );
 }
 
 async function markFailed(args: {
@@ -642,10 +644,12 @@ async function markFailed(args: {
       exists (select 1 from updated_order) as order_updated
   `);
 
-  return readRows<{
-    shipment_updated: boolean;
-    order_updated: boolean;
-  }>(res)[0] ?? null;
+  return (
+    readRows<{
+      shipment_updated: boolean;
+      order_updated: boolean;
+    }>(res)[0] ?? null
+  );
 }
 
 async function processClaimedShipment(args: {
@@ -847,7 +851,9 @@ async function processClaimedShipment(args: {
           errorMessage: classified.message,
           transient: classified.transient,
           nextAttemptAt: nextAttemptAt ? nextAttemptAt.toISOString() : null,
-          shipmentStatusTo: terminalNeedsAttention ? 'needs_attention' : 'failed',
+          shipmentStatusTo: terminalNeedsAttention
+            ? 'needs_attention'
+            : 'failed',
         },
       });
     } catch {

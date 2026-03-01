@@ -574,9 +574,7 @@ export async function applyShippingAdminAction(args: {
       };
     }
 
-    if (
-      !isShippingStatusTransitionAllowed(state.shipping_status, 'shipped')
-    ) {
+    if (!isShippingStatusTransitionAllowed(state.shipping_status, 'shipped')) {
       throw new ShippingAdminActionError(
         'INVALID_SHIPPING_TRANSITION',
         'mark_shipped is allowed only from label_created.',

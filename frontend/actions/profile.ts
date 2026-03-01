@@ -22,7 +22,7 @@ export async function updateName(formData: FormData) {
 
   try {
     await updateUser(session.id, { name: name.trim() });
-    
+
     // Create notification
     const tNotify = await getTranslations('notifications.account');
     await createNotification({
@@ -62,7 +62,7 @@ export async function updatePassword(formData: FormData) {
     const { db } = await import('@/db');
     const { users } = await import('@/db/schema/users');
     const { eq } = await import('drizzle-orm');
-    
+
     const dbUser = await db.query.users.findFirst({
       where: eq(users.id, session.id),
     });

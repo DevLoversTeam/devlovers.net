@@ -113,7 +113,9 @@ describe('admin product canonical audit phase 5', () => {
       data: {
         title: 'New product',
         badge: 'NONE',
-        prices: [{ currency: 'USD', priceMinor: 1000, originalPriceMinor: null }],
+        prices: [
+          { currency: 'USD', priceMinor: 1000, originalPriceMinor: null },
+        ],
       },
     });
 
@@ -161,7 +163,9 @@ describe('admin product canonical audit phase 5', () => {
       data: {
         title: 'Updated title',
         badge: 'NONE',
-        prices: [{ currency: 'USD', priceMinor: 2000, originalPriceMinor: null }],
+        prices: [
+          { currency: 'USD', priceMinor: 2000, originalPriceMinor: null },
+        ],
       },
     });
     mocks.updateProduct.mockResolvedValue(makeProduct(productId, true));
@@ -245,17 +249,19 @@ describe('admin product canonical audit phase 5', () => {
 
     mocks.toggleProductStatus.mockResolvedValue(makeProduct(productId, false));
 
-    const { PATCH } = await import(
-      '@/app/api/shop/admin/products/[id]/status/route'
-    );
+    const { PATCH } =
+      await import('@/app/api/shop/admin/products/[id]/status/route');
     const req = new NextRequest(
-      new Request(`http://localhost/api/shop/admin/products/${productId}/status`, {
-        method: 'PATCH',
-        headers: {
-          origin: 'http://localhost:3000',
-          'x-request-id': requestId,
-        },
-      })
+      new Request(
+        `http://localhost/api/shop/admin/products/${productId}/status`,
+        {
+          method: 'PATCH',
+          headers: {
+            origin: 'http://localhost:3000',
+            'x-request-id': requestId,
+          },
+        }
+      )
     );
 
     const res = await PATCH(req, {

@@ -17,7 +17,8 @@ vi.mock('@/lib/logging', () => ({
   logInfo: vi.fn(),
 }));
 
-const { POST } = await import('@/app/api/shop/internal/shipping/retention/run/route');
+const { POST } =
+  await import('@/app/api/shop/internal/shipping/retention/run/route');
 
 describe('internal shipping retention route (phase 7)', () => {
   beforeEach(() => {

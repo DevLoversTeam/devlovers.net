@@ -4,10 +4,7 @@ import { NextRequest } from 'next/server';
 
 import { logError, logWarn } from '@/lib/logging';
 import { guardBrowserSameOrigin } from '@/lib/security/origin';
-import {
-  InvalidPayloadError,
-  OrderNotFoundError,
-} from '@/lib/services/errors';
+import { InvalidPayloadError, OrderNotFoundError } from '@/lib/services/errors';
 import { authorizeOrderMutationAccess } from '@/lib/services/shop/order-access';
 import { requestIntlQuote } from '@/lib/services/shop/quotes';
 import { orderIdParamSchema } from '@/lib/validation/shop';
@@ -20,11 +17,12 @@ export async function POST(
 ) {
   const raw = request.headers.get('x-request-id');
   const candidateRequestId = raw?.trim() ?? '';
-  const requestId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-    candidateRequestId
-  )
-    ? candidateRequestId
-    : crypto.randomUUID();
+  const requestId =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      candidateRequestId
+    )
+      ? candidateRequestId
+      : crypto.randomUUID();
   const baseMeta = {
     requestId,
     route: request.nextUrl.pathname,

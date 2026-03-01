@@ -45,7 +45,9 @@ describe('nova poshta client network failure', () => {
         status: 0,
         message: 'fetch failed',
       });
-      expect((error as NovaPoshtaApiError & { cause?: unknown }).cause).toBe(fetchError);
+      expect((error as NovaPoshtaApiError & { cause?: unknown }).cause).toBe(
+        fetchError
+      );
     }
   });
 
@@ -55,7 +57,9 @@ describe('nova poshta client network failure', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     try {
-      await getWarehousesBySettlementRef('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee');
+      await getWarehousesBySettlementRef(
+        'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'
+      );
       throw new Error('expected getWarehousesBySettlementRef to throw');
     } catch (error) {
       expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -65,7 +69,9 @@ describe('nova poshta client network failure', () => {
         status: 0,
         message: 'fetch failed',
       });
-      expect((error as NovaPoshtaApiError & { cause?: unknown }).cause).toBe(fetchError);
+      expect((error as NovaPoshtaApiError & { cause?: unknown }).cause).toBe(
+        fetchError
+      );
     }
   });
 });

@@ -17,7 +17,11 @@ const themes = [
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
   const t = useTranslations('aria');
-  const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
+  const mounted = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false
+  );
 
   if (!mounted) {
     return (

@@ -11,10 +11,7 @@ import {
 import { logError, logWarn } from '@/lib/logging';
 import { requireAdminCsrf } from '@/lib/security/admin-csrf';
 import { guardBrowserSameOrigin } from '@/lib/security/origin';
-import {
-  InvalidPayloadError,
-  OrderNotFoundError,
-} from '@/lib/services/errors';
+import { InvalidPayloadError, OrderNotFoundError } from '@/lib/services/errors';
 import { offerIntlQuote } from '@/lib/services/shop/quotes';
 import {
   intlQuoteOfferPayloadSchema,
@@ -133,7 +130,10 @@ export async function POST(
       );
     }
     if (error instanceof AdminForbiddenError) {
-      return noStoreJson({ code: error.code, message: 'Forbidden.' }, { status: 403 });
+      return noStoreJson(
+        { code: error.code, message: 'Forbidden.' },
+        { status: 403 }
+      );
     }
     if (error instanceof OrderNotFoundError) {
       return noStoreJson({ code: error.code }, { status: 404 });

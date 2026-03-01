@@ -1094,6 +1094,7 @@ export async function createOrderWithItems({
           orderId: created.id,
           snapshot: preparedShipping.snapshot,
         });
+      }
       } catch (e) {
         // Neon HTTP: no interactive transactions. Do compensating cleanup.
         logError(

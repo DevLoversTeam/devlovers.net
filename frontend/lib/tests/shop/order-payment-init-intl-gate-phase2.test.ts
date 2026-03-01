@@ -107,9 +107,8 @@ describe.sequential('order payment init intl gate (phase 2)', () => {
     });
 
     try {
-      const { POST } = await import(
-        '@/app/api/shop/orders/[id]/payment/init/route'
-      );
+      const { POST } =
+        await import('@/app/api/shop/orders/[id]/payment/init/route');
       const res = await POST(makeInitRequest(orderId), {
         params: Promise.resolve({ id: orderId }),
       });
@@ -131,9 +130,8 @@ describe.sequential('order payment init intl gate (phase 2)', () => {
     });
 
     try {
-      const { POST } = await import(
-        '@/app/api/shop/orders/[id]/payment/init/route'
-      );
+      const { POST } =
+        await import('@/app/api/shop/orders/[id]/payment/init/route');
       const res = await POST(makeInitRequest(orderId), {
         params: Promise.resolve({ id: orderId }),
       });
@@ -155,9 +153,8 @@ describe.sequential('order payment init intl gate (phase 2)', () => {
     });
 
     try {
-      const { POST } = await import(
-        '@/app/api/shop/orders/[id]/payment/init/route'
-      );
+      const { POST } =
+        await import('@/app/api/shop/orders/[id]/payment/init/route');
       const res = await POST(makeInitRequest(orderId), {
         params: Promise.resolve({ id: orderId }),
       });

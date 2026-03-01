@@ -1,6 +1,6 @@
 'use server';
 
-import { and,desc, eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { notifications } from '@/db/schema/notifications';
@@ -9,7 +9,7 @@ import { getCurrentUser } from '@/lib/auth';
 export async function getNotifications() {
   const session = await getCurrentUser();
   if (!session) return [];
-  
+
   try {
     const data = await db.query.notifications.findMany({
       where: eq(notifications.userId, session.id),
@@ -53,7 +53,12 @@ export async function markAllAsRead() {
     await db
       .update(notifications)
       .set({ isRead: true })
-      .where(and(eq(notifications.userId, session.id), eq(notifications.isRead, false)));
+      .where(
+        and(
+          eq(notifications.userId, session.id),
+          eq(notifications.isRead, false)
+        )
+      );
 
     return { success: true };
   } catch (error) {

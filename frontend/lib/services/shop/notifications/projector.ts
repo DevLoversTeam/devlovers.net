@@ -3,11 +3,7 @@ import 'server-only';
 import { asc } from 'drizzle-orm';
 
 import { db } from '@/db';
-import {
-  notificationOutbox,
-  paymentEvents,
-  shippingEvents,
-} from '@/db/schema';
+import { notificationOutbox, paymentEvents, shippingEvents } from '@/db/schema';
 import { buildNotificationOutboxDedupeKey } from '@/lib/services/shop/events/dedupe-key';
 import {
   mapPaymentEventToTemplate,

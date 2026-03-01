@@ -367,7 +367,8 @@ export const checkoutShippingSchema = z
   .strict()
   .superRefine((value, ctx) => {
     if (
-      (value.methodCode === 'NP_WAREHOUSE' || value.methodCode === 'NP_LOCKER') &&
+      (value.methodCode === 'NP_WAREHOUSE' ||
+        value.methodCode === 'NP_LOCKER') &&
       !value.selection.warehouseRef
     ) {
       ctx.addIssue({
@@ -560,7 +561,9 @@ export type CheckoutLegalConsentPayload = z.infer<
 >;
 export type OrderIdParams = z.infer<typeof orderIdParamSchema>;
 export type IntlQuoteOfferPayload = z.infer<typeof intlQuoteOfferPayloadSchema>;
-export type IntlQuoteAcceptPayload = z.infer<typeof intlQuoteAcceptPayloadSchema>;
+export type IntlQuoteAcceptPayload = z.infer<
+  typeof intlQuoteAcceptPayloadSchema
+>;
 export type IntlQuoteDeclinePayload = z.infer<
   typeof intlQuoteDeclinePayloadSchema
 >;

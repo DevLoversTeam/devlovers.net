@@ -150,7 +150,7 @@ async function insertAttempt(args: {
   invoiceId: string;
   providerModifiedAt: Date | null;
 }) {
-    const attemptStatus =
+  const attemptStatus =
     args.status ??
     (await pickEnumLabelByColumn('payment_attempts', 'status', [
       'active',

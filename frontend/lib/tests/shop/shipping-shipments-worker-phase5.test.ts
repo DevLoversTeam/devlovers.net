@@ -4,7 +4,12 @@ import { asc, eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { db } from '@/db';
-import { orders, orderShipping, shippingEvents, shippingShipments } from '@/db/schema';
+import {
+  orders,
+  orderShipping,
+  shippingEvents,
+  shippingShipments,
+} from '@/db/schema';
 import { resetEnvCache } from '@/lib/env';
 import * as logging from '@/lib/logging';
 import {
@@ -69,7 +74,12 @@ function baseShippingSnapshot() {
 async function seedShipment(args?: {
   currency?: 'USD' | 'UAH';
   attemptCount?: number;
-  shipmentStatus?: 'queued' | 'failed' | 'processing' | 'needs_attention' | 'succeeded';
+  shipmentStatus?:
+    | 'queued'
+    | 'failed'
+    | 'processing'
+    | 'needs_attention'
+    | 'succeeded';
   orderShippingStatus?:
     | 'pending'
     | 'queued'
@@ -125,7 +135,9 @@ async function seedShipment(args?: {
 }
 
 async function cleanupSeed(seed: Seeded) {
-  await db.delete(shippingShipments).where(eq(shippingShipments.id, seed.shipmentId));
+  await db
+    .delete(shippingShipments)
+    .where(eq(shippingShipments.id, seed.shipmentId));
   await db.delete(orderShipping).where(eq(orderShipping.orderId, seed.orderId));
   await db.delete(orders).where(eq(orders.id, seed.orderId));
 }
@@ -237,9 +249,9 @@ describe.sequential('shipping shipments worker phase 5', () => {
         event => event.eventName === 'creating_label'
       );
       expect(creatingLabelEvents).toHaveLength(1);
-      expect(events.every(event => event.eventSource === 'shipments_worker')).toBe(
-        true
-      );
+      expect(
+        events.every(event => event.eventSource === 'shipments_worker')
+      ).toBe(true);
     } finally {
       await cleanupSeed(seed);
     }
@@ -285,7 +297,9 @@ describe.sequential('shipping shipments worker phase 5', () => {
       expect(shipment?.attemptCount).toBe(1);
       expect(shipment?.nextAttemptAt).toBeTruthy();
       expect(shipment?.lastErrorCode).toBe('NP_HTTP_ERROR');
-      expect(shipment?.lastErrorMessage).toBe('Nova Poshta temporary API error.');
+      expect(shipment?.lastErrorMessage).toBe(
+        'Nova Poshta temporary API error.'
+      );
 
       const [order] = await db
         .select({
@@ -312,8 +326,9 @@ describe.sequential('shipping shipments worker phase 5', () => {
   it('keeps retry outcome when failure-path event write throws', async () => {
     const seed = await seedShipment();
 
-    const originalWriteShippingEventImpl =
-      vi.mocked(writeShippingEvent).getMockImplementation();
+    const originalWriteShippingEventImpl = vi
+      .mocked(writeShippingEvent)
+      .getMockImplementation();
 
     try {
       vi.mocked(createInternetDocument).mockRejectedValue(
@@ -372,9 +387,13 @@ describe.sequential('shipping shipments worker phase 5', () => {
       expect(order?.shippingStatus).toBe('queued');
 
       const events = await readOrderShippingEvents(seed.orderId);
-      expect(events.some(event => event.eventName === 'creating_label')).toBe(true);
+      expect(events.some(event => event.eventName === 'creating_label')).toBe(
+        true
+      );
       expect(
-        events.some(event => event.eventName === 'label_creation_retry_scheduled')
+        events.some(
+          event => event.eventName === 'label_creation_retry_scheduled'
+        )
       ).toBe(false);
     } finally {
       if (originalWriteShippingEventImpl) {
@@ -389,7 +408,10 @@ describe.sequential('shipping shipments worker phase 5', () => {
   });
 
   it('max attempts -> needs_attention', async () => {
-    const seed = await seedShipment({ attemptCount: 2, shipmentStatus: 'failed' });
+    const seed = await seedShipment({
+      attemptCount: 2,
+      shipmentStatus: 'failed',
+    });
 
     try {
       vi.mocked(createInternetDocument).mockRejectedValue(
@@ -453,8 +475,9 @@ describe.sequential('shipping shipments worker phase 5', () => {
   it('keeps success outcome when post-success event write throws', async () => {
     const seed = await seedShipment();
 
-    const originalWriteShippingEventImpl =
-      vi.mocked(writeShippingEvent).getMockImplementation();
+    const originalWriteShippingEventImpl = vi
+      .mocked(writeShippingEvent)
+      .getMockImplementation();
 
     try {
       vi.mocked(createInternetDocument).mockResolvedValue({
@@ -596,8 +619,12 @@ describe.sequential('shipping shipments worker phase 5', () => {
       expect(order?.shippingProviderRef).toBeNull();
 
       const events = await readOrderShippingEvents(seed.orderId);
-      expect(events.some(event => event.eventName === 'creating_label')).toBe(false);
-      expect(events.some(event => event.eventName === 'label_created')).toBe(false);
+      expect(events.some(event => event.eventName === 'creating_label')).toBe(
+        false
+      );
+      expect(events.some(event => event.eventName === 'label_created')).toBe(
+        false
+      );
     } finally {
       await cleanupSeed(seed);
     }
@@ -676,7 +703,8 @@ describe.sequential('shipping shipments worker phase 5', () => {
         warnSpy.mock.calls.some(
           ([name, meta]) =>
             name === 'shipping_shipments_worker_order_transition_blocked' &&
-            (meta as Record<string, unknown>)?.code === 'ORDER_TRANSITION_BLOCKED'
+            (meta as Record<string, unknown>)?.code ===
+              'ORDER_TRANSITION_BLOCKED'
         )
       ).toBe(false);
     } finally {
@@ -736,9 +764,10 @@ describe.sequential('shipping shipments worker phase 5', () => {
 
       const events = await readOrderShippingEvents(seed.orderId);
       expect(
-        events.some(event =>
-          event.eventName === 'label_creation_retry_scheduled' ||
-          event.eventName === 'label_creation_needs_attention'
+        events.some(
+          event =>
+            event.eventName === 'label_creation_retry_scheduled' ||
+            event.eventName === 'label_creation_needs_attention'
         )
       ).toBe(false);
     } finally {
@@ -773,7 +802,10 @@ describe.sequential('shipping shipments worker phase 5', () => {
   });
 
   it('dedupes creating_label event on processing-claim replay for same attempt', async () => {
-    const seed = await seedShipment({ shipmentStatus: 'processing', attemptCount: 0 });
+    const seed = await seedShipment({
+      shipmentStatus: 'processing',
+      attemptCount: 0,
+    });
 
     try {
       const runA = `worker-a-${crypto.randomUUID()}`;
@@ -800,7 +832,9 @@ describe.sequential('shipping shipments worker phase 5', () => {
       expect(second.length).toBe(1);
 
       const events = await readOrderShippingEvents(seed.orderId);
-      const creating = events.filter(event => event.eventName === 'creating_label');
+      const creating = events.filter(
+        event => event.eventName === 'creating_label'
+      );
       expect(creating.length).toBe(1);
     } finally {
       await cleanupSeed(seed);

@@ -47,8 +47,7 @@ export function ProfileCard({
   const [isSaving, setIsSaving] = useState(false);
 
   const username = user.name || user.email.split('@')[0];
-  const roleLabel =
-    user.role === 'admin' ? t('roles.admin') : t('roles.user');
+  const roleLabel = user.role === 'admin' ? t('roles.admin') : t('roles.user');
   const seed = `${username}-${user.id}`;
   const avatarSrc =
     user.image ||
@@ -60,7 +59,7 @@ export function ProfileCard({
     e.preventDefault();
     setIsSaving(true);
     const formData = new FormData(e.currentTarget);
-    
+
     try {
       const result = await updateName(formData);
       if (!result.success) {
@@ -77,7 +76,7 @@ export function ProfileCard({
     e.preventDefault();
     setIsSaving(true);
     const formData = new FormData(e.currentTarget);
-    
+
     try {
       const result = await updatePassword(formData);
       if (result.success) {
@@ -95,7 +94,8 @@ export function ProfileCard({
   const statItemBase =
     'flex flex-row items-center gap-2 sm:gap-3 rounded-2xl border border-gray-100 bg-white/50 p-2 sm:p-3 text-left dark:border-white/5 dark:bg-black/20 xl:flex-row-reverse xl:items-center xl:text-right xl:p-3 xl:px-4 transition-all hover:-translate-y-0.5 hover:border-(--accent-primary)/30 hover:bg-white/80 dark:hover:border-(--accent-primary)/20 dark:hover:bg-black/40';
 
-  const iconBoxStyles = 'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/40 border border-white/20 shadow-xs backdrop-blur-xs xl:h-auto xl:w-auto xl:p-2.5 dark:bg-white/5 dark:border-white/10';
+  const iconBoxStyles =
+    'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/40 border border-white/20 shadow-xs backdrop-blur-xs xl:h-auto xl:w-auto xl:p-2.5 dark:bg-white/5 dark:border-white/10';
 
   return (
     <section className={cardStyles} aria-labelledby="profile-heading">
@@ -142,7 +142,12 @@ export function ProfileCard({
           <a
             href="#quiz-results"
             className={statItemBase}
-            onClick={e => { e.preventDefault(); document.getElementById('quiz-results')?.scrollIntoView({ behavior: 'smooth' }); }}
+            onClick={e => {
+              e.preventDefault();
+              document
+                .getElementById('quiz-results')
+                ?.scrollIntoView({ behavior: 'smooth' });
+            }}
           >
             <div className={iconBoxStyles}>
               <Target className="h-5 w-5 text-purple-600 dark:text-purple-400" />
@@ -161,7 +166,12 @@ export function ProfileCard({
           <a
             href="#stats"
             className={statItemBase}
-            onClick={e => { e.preventDefault(); document.getElementById('stats')?.scrollIntoView({ behavior: 'smooth' }); }}
+            onClick={e => {
+              e.preventDefault();
+              document
+                .getElementById('stats')
+                ?.scrollIntoView({ behavior: 'smooth' });
+            }}
           >
             <div className={iconBoxStyles}>
               <Trophy className="h-5 w-5 text-amber-600 dark:text-amber-400" />
@@ -245,7 +255,10 @@ export function ProfileCard({
                   <h3 className="mb-4 text-sm font-semibold tracking-wide text-gray-900 uppercase dark:text-white">
                     {t('changeName')}
                   </h3>
-                  <form onSubmit={handleUpdateName} className="flex flex-col gap-4 sm:flex-row sm:items-end">
+                  <form
+                    onSubmit={handleUpdateName}
+                    className="flex flex-col gap-4 sm:flex-row sm:items-end"
+                  >
                     <div className="flex-1">
                       <label htmlFor="name-input" className="sr-only">
                         {t('changeName')}
@@ -275,7 +288,10 @@ export function ProfileCard({
                   <h3 className="mb-4 text-sm font-semibold tracking-wide text-gray-900 uppercase dark:text-white">
                     {t('changePassword')}
                   </h3>
-                  <form onSubmit={handleUpdatePassword} className="flex flex-col gap-4">
+                  <form
+                    onSubmit={handleUpdatePassword}
+                    className="flex flex-col gap-4"
+                  >
                     <div>
                       <input
                         type="password"

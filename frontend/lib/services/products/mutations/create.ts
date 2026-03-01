@@ -24,7 +24,10 @@ export async function createProduct(
   options?: { db?: ProductMutationExecutor }
 ): Promise<DbProduct> {
   const executor = options?.db ?? db;
-  const slug = await normalizeSlug(executor, (input as any).slug ?? (input as any).title);
+  const slug = await normalizeSlug(
+    executor,
+    (input as any).slug ?? (input as any).title
+  );
 
   let uploaded: { secureUrl: string; publicId: string } | null = null;
 

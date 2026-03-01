@@ -12,12 +12,16 @@ interface QuizResultsSectionProps {
   locale: string;
 }
 
-export function QuizResultsSection({ attempts, locale }: QuizResultsSectionProps) {
+export function QuizResultsSection({
+  attempts,
+  locale,
+}: QuizResultsSectionProps) {
   const t = useTranslations('dashboard.quizResults');
 
   const cardStyles = 'dashboard-card flex flex-col p-6 sm:p-8 lg:p-10';
 
-  const iconBoxStyles = 'shrink-0 rounded-xl bg-white/40 border border-white/20 shadow-xs backdrop-blur-xs p-3 dark:bg-white/5 dark:border-white/10';
+  const iconBoxStyles =
+    'shrink-0 rounded-xl bg-white/40 border border-white/20 shadow-xs backdrop-blur-xs p-3 dark:bg-white/5 dark:border-white/10';
 
   const primaryBtnStyles =
     'group relative inline-flex items-center justify-center rounded-full px-8 py-3 text-sm font-semibold tracking-widest uppercase text-white bg-(--accent-primary) hover:bg-(--accent-hover) transition-all hover:scale-105';
@@ -43,15 +47,13 @@ export function QuizResultsSection({ attempts, locale }: QuizResultsSectionProps
     );
   }
 
-  const headerCellStyles = 'flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-gray-400';
+  const headerCellStyles =
+    'flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-gray-400';
 
   return (
     <section className={cardStyles}>
       <div className="mb-6 flex items-center gap-3">
-        <div
-          className={iconBoxStyles}
-          aria-hidden="true"
-        >
+        <div className={iconBoxStyles} aria-hidden="true">
           <ClipboardList className="h-5 w-5 text-(--accent-primary) drop-shadow-[0_0_8px_rgba(var(--accent-primary-rgb),0.6)]" />
         </div>
         <div>
@@ -65,12 +67,8 @@ export function QuizResultsSection({ attempts, locale }: QuizResultsSectionProps
       </div>
 
       <div className="mb-2 hidden items-center gap-2 px-4 md:grid md:grid-cols-[minmax(0,4fr)_1fr_1.5fr_1fr_1fr_1fr_20px] lg:grid-cols-[minmax(0,4fr)_1fr_1.5fr_1fr_1fr_1fr_1.2fr_20px]">
-        <div className={headerCellStyles}>
-          {t('quiz')}
-        </div>
-        <div className={`justify-center ${headerCellStyles}`}>
-          {t('score')}
-        </div>
+        <div className={headerCellStyles}>{t('quiz')}</div>
+        <div className={`justify-center ${headerCellStyles}`}>{t('score')}</div>
         <div className={`justify-center ${headerCellStyles}`}>
           {t('accuracy', { fallback: 'Accuracy' })}
         </div>
@@ -95,20 +93,23 @@ export function QuizResultsSection({ attempts, locale }: QuizResultsSectionProps
           .sort((a, b) => {
             const scoreA = Number(a.percentage);
             const scoreB = Number(b.percentage);
-            
+
             // Bucket values: Study = 1, Review = 2, Mastered = 3
             // So that Study (1) comes before Review (2) before Mastered (3)
             const bucketA = scoreA < 70 ? 1 : scoreA < 100 ? 2 : 3;
             const bucketB = scoreB < 70 ? 1 : scoreB < 100 ? 2 : 3;
-            
+
             if (bucketA !== bucketB) {
               return bucketA - bucketB; // Ascending order of buckets
             }
-            
+
             // If they are in the same bucket, sort by most recent first
-            return new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime();
+            return (
+              new Date(b.completedAt).getTime() -
+              new Date(a.completedAt).getTime()
+            );
           })
-          .map((attempt) => (
+          .map(attempt => (
             <QuizResultRow
               key={attempt.attemptId}
               attempt={attempt}

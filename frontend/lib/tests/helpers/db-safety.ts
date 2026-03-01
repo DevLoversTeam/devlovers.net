@@ -31,9 +31,7 @@ export function assertNotProductionDb(): void {
   }
 
   if (strictLocal && !databaseUrlLocal.trim()) {
-    reasons.push(
-      'DATABASE_URL_LOCAL must be set when SHOP_STRICT_LOCAL_DB=1'
-    );
+    reasons.push('DATABASE_URL_LOCAL must be set when SHOP_STRICT_LOCAL_DB=1');
   }
 
   if (strictLocal && requiredLocal && databaseUrlLocal !== requiredLocal) {

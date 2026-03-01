@@ -9,13 +9,19 @@ export async function GET() {
   const user = await getCurrentUser();
 
   if (!user?.id) {
-    return NextResponse.json({}, {
-      headers: { 'Cache-Control': 'no-store' },
-    });
+    return NextResponse.json(
+      {},
+      {
+        headers: { 'Cache-Control': 'no-store' },
+      }
+    );
   }
 
   const rawProgress = await getUserQuizzesProgress(user.id);
-  const progressMap: Record<string, { bestScore: number; totalQuestions: number; attemptsCount: number }> = {};
+  const progressMap: Record<
+    string,
+    { bestScore: number; totalQuestions: number; attemptsCount: number }
+  > = {};
 
   for (const [quizId, progress] of rawProgress) {
     progressMap[quizId] = {

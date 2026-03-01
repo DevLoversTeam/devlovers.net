@@ -397,8 +397,7 @@ describe.sequential('orders/[id]/status ownership (J)', () => {
         expect((json as any).paymentStatus).toBeTruthy();
         expect((json as any).totalAmountMinor).toBeGreaterThan(0);
 
-        const returnedId =
-          (json as any).orderId ?? (json as any).id;
+        const returnedId = (json as any).orderId ?? (json as any).id;
 
         if (!returnedId) {
           const topKeys =

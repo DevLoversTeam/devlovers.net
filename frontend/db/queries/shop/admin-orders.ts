@@ -3,7 +3,12 @@ import 'server-only';
 import { count, desc, eq, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
-import { orderItems, orderShipping, orders, shippingShipments } from '@/db/schema';
+import {
+  orderItems,
+  orderShipping,
+  orders,
+  shippingShipments,
+} from '@/db/schema';
 import type { CurrencyCode } from '@/lib/shop/currency';
 import { toDbMoney } from '@/lib/shop/money';
 import type { PaymentProvider, PaymentStatus } from '@/lib/shop/payments';
@@ -203,7 +208,8 @@ export async function getAdminOrderDetail(
     shipmentStatus: rows[0]?.shipping.shipmentStatus ?? null,
     shipmentAttemptCount: rows[0]?.shipping.shipmentAttemptCount ?? null,
     shipmentLastErrorCode: rows[0]?.shipping.shipmentLastErrorCode ?? null,
-    shipmentLastErrorMessage: rows[0]?.shipping.shipmentLastErrorMessage ?? null,
+    shipmentLastErrorMessage:
+      rows[0]?.shipping.shipmentLastErrorMessage ?? null,
     shippingAddress:
       (rows[0]?.shipping.shippingAddress as Record<string, unknown> | null) ??
       null,

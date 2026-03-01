@@ -2,7 +2,15 @@ import crypto from 'node:crypto';
 
 import { eq } from 'drizzle-orm';
 import { NextRequest } from 'next/server';
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 
 import { db } from '@/db';
 import { orders } from '@/db/schema';
@@ -23,12 +31,14 @@ vi.mock('@/lib/logging', async () => {
   };
 });
 
-const ensureStripePaymentIntentForOrderMock = vi.fn(async (..._args: unknown[]) => ({
-  paymentIntentId: `pi_${crypto.randomUUID().replace(/-/g, '').slice(0, 24)}`,
-  clientSecret: `cs_${crypto.randomUUID().replace(/-/g, '').slice(0, 24)}`,
-  attemptId: crypto.randomUUID(),
-  attemptNumber: 1,
-}));
+const ensureStripePaymentIntentForOrderMock = vi.fn(
+  async (..._args: unknown[]) => ({
+    paymentIntentId: `pi_${crypto.randomUUID().replace(/-/g, '').slice(0, 24)}`,
+    clientSecret: `cs_${crypto.randomUUID().replace(/-/g, '').slice(0, 24)}`,
+    attemptId: crypto.randomUUID(),
+    attemptNumber: 1,
+  })
+);
 
 vi.mock('@/lib/services/orders/payment-attempts', () => ({
   PaymentAttemptsExhaustedError: class PaymentAttemptsExhaustedError extends Error {
@@ -105,7 +115,8 @@ describe.sequential('order payment init token scope (phase 7)', () => {
     await insertOrder(orderId);
 
     try {
-      const { POST } = await import('@/app/api/shop/orders/[id]/payment/init/route');
+      const { POST } =
+        await import('@/app/api/shop/orders/[id]/payment/init/route');
 
       const unscopedToken = createStatusToken({ orderId });
       const unscopedRes = await POST(makeRequest(orderId, unscopedToken), {

@@ -235,9 +235,9 @@ describe('checkout shipping phase 3', () => {
       expect((shippingRow?.shippingAddress as any)?.selection?.cityRef).toBe(
         seed.cityRef
       );
-      expect((shippingRow?.shippingAddress as any)?.selection?.warehouseRef).toBe(
-        seed.warehouseRefA
-      );
+      expect(
+        (shippingRow?.shippingAddress as any)?.selection?.warehouseRef
+      ).toBe(seed.warehouseRefA);
       expect((shippingRow?.shippingAddress as any)?.recipient?.fullName).toBe(
         'Alice'
       );

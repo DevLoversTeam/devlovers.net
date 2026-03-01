@@ -63,13 +63,11 @@ export async function GET(
     const user = await getCurrentUser();
     let authorized = false;
     let accessByStatusToken = false;
-    let tokenAuditSeed:
-      | {
-          nonce: string;
-          iat: number;
-          exp: number;
-        }
-      | null = null;
+    let tokenAuditSeed: {
+      nonce: string;
+      iat: number;
+      exp: number;
+    } | null = null;
 
     if (user) {
       const isAdmin = user.role === 'admin';

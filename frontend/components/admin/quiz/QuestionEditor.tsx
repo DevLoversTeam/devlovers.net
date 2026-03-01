@@ -502,7 +502,9 @@ export function QuestionEditor({
           <button
             type="button"
             onClick={handleSave}
-            disabled={!isDirty || saveStatus === 'saving' || saveStatus === 'saved'}
+            disabled={
+              !isDirty || saveStatus === 'saving' || saveStatus === 'saved'
+            }
             className={cn(
               'rounded-md px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50',
               saveStatus === 'saved'

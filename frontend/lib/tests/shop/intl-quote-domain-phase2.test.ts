@@ -89,7 +89,9 @@ async function seedIntlOrder(args?: {
 }
 
 async function cleanupSeed(seed: Seeded) {
-  await db.delete(paymentAttempts).where(eq(paymentAttempts.orderId, seed.orderId));
+  await db
+    .delete(paymentAttempts)
+    .where(eq(paymentAttempts.orderId, seed.orderId));
   await db.delete(orders).where(eq(orders.id, seed.orderId));
   await db.delete(products).where(eq(products.id, seed.productId));
 }
@@ -190,9 +192,7 @@ describe.sequential('intl quote domain (phase 2)', () => {
           expiresAt: new Date(Date.now() - 60_000),
           updatedAt: new Date(),
         })
-        .where(
-          eq(shippingQuotes.orderId, seed.orderId)
-        );
+        .where(eq(shippingQuotes.orderId, seed.orderId));
 
       await expect(
         acceptIntlQuote({
@@ -224,7 +224,11 @@ describe.sequential('intl quote domain (phase 2)', () => {
   });
 
   it('accept reserves inventory and sets accepted payment deadline', async () => {
-    const seed = await seedIntlOrder({ stock: 5, quantity: 2, totalAmountMinor: 2000 });
+    const seed = await seedIntlOrder({
+      stock: 5,
+      quantity: 2,
+      totalAmountMinor: 2000,
+    });
     try {
       await requestIntlQuote({
         orderId: seed.orderId,
@@ -279,7 +283,11 @@ describe.sequential('intl quote domain (phase 2)', () => {
   });
 
   it('accept returns QUOTE_STOCK_UNAVAILABLE and sets requires_requote when reserve fails', async () => {
-    const seed = await seedIntlOrder({ stock: 0, quantity: 1, totalAmountMinor: 1000 });
+    const seed = await seedIntlOrder({
+      stock: 0,
+      quantity: 1,
+      totalAmountMinor: 1000,
+    });
     try {
       await requestIntlQuote({
         orderId: seed.orderId,
@@ -333,7 +341,11 @@ describe.sequential('intl quote domain (phase 2)', () => {
   it('writes canonical quote transition events by default', async () => {
     const orderA = await seedIntlOrder();
     const orderB = await seedIntlOrder();
-    const orderC = await seedIntlOrder({ stock: 2, quantity: 1, totalAmountMinor: 1000 });
+    const orderC = await seedIntlOrder({
+      stock: 2,
+      quantity: 1,
+      totalAmountMinor: 1000,
+    });
 
     try {
       await requestIntlQuote({

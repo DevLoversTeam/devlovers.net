@@ -5,7 +5,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getShopShippingFlags } from '@/lib/env/nova-poshta';
 import { readPositiveIntEnv } from '@/lib/env/readPositiveIntEnv';
 import { logError, logWarn } from '@/lib/logging';
-import { enforceRateLimit, getRateLimitSubject, rateLimitResponse } from '@/lib/security/rate-limit';
+import {
+  enforceRateLimit,
+  getRateLimitSubject,
+  rateLimitResponse,
+} from '@/lib/security/rate-limit';
 import { resolveCurrencyFromLocale } from '@/lib/shop/currency';
 import { resolveRequestLocale } from '@/lib/shop/request-locale';
 import { resolveShippingAvailability } from '@/lib/services/shop/shipping/availability';
@@ -23,7 +27,13 @@ type ShippingMethod = {
   provider: 'nova_poshta';
   methodCode: 'NP_WAREHOUSE' | 'NP_LOCKER' | 'NP_COURIER';
   title: string;
-  requiredFields: Array<'cityRef' | 'warehouseRef' | 'addressLine1' | 'recipientName' | 'recipientPhone'>;
+  requiredFields: Array<
+    | 'cityRef'
+    | 'warehouseRef'
+    | 'addressLine1'
+    | 'recipientName'
+    | 'recipientPhone'
+  >;
 };
 
 function cachedJson(body: unknown, requestId: string) {
@@ -54,25 +64,41 @@ function getMethods(): ShippingMethod[] {
       provider: 'nova_poshta',
       methodCode: 'NP_WAREHOUSE',
       title: 'Nova Poshta warehouse',
-      requiredFields: ['cityRef', 'warehouseRef', 'recipientName', 'recipientPhone'],
+      requiredFields: [
+        'cityRef',
+        'warehouseRef',
+        'recipientName',
+        'recipientPhone',
+      ],
     },
     {
       provider: 'nova_poshta',
       methodCode: 'NP_LOCKER',
       title: 'Nova Poshta parcel locker',
-      requiredFields: ['cityRef', 'warehouseRef', 'recipientName', 'recipientPhone'],
+      requiredFields: [
+        'cityRef',
+        'warehouseRef',
+        'recipientName',
+        'recipientPhone',
+      ],
     },
     {
       provider: 'nova_poshta',
       methodCode: 'NP_COURIER',
       title: 'Nova Poshta courier',
-      requiredFields: ['cityRef', 'addressLine1', 'recipientName', 'recipientPhone'],
+      requiredFields: [
+        'cityRef',
+        'addressLine1',
+        'recipientName',
+        'recipientPhone',
+      ],
     },
   ];
 }
 
 export async function GET(request: NextRequest) {
-  const requestId = request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
+  const requestId =
+    request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
   const baseMeta = {
     requestId,
     route: request.nextUrl.pathname,
