@@ -23,4 +23,10 @@ export const categoryData = [
   createCategory('postgresql', 'PostgreSQL', 11),
   createCategory('mongodb', 'MongoDB', 12),
   createCategory('python', 'Python', 13),
+  createCategory('django', 'Django', 14),
+  createCategory('docker', 'Docker', 15),
+  createCategory('kubernetes', 'Kubernetes', 16),
+  createCategory('aws', 'AWS', 17),
+  createCategory('azure', 'Azure', 18),
+  createCategory('devops', 'DevOps', 19),
 ];
