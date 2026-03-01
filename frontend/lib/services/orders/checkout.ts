@@ -1090,26 +1090,27 @@ export async function createOrderWithItems({
       });
 
       if (preparedShipping.required && preparedShipping.snapshot) {
-        await ensureOrderShippingSnapshot({
-          orderId: created.id,
-          snapshot: preparedShipping.snapshot,
-        });
-      }
-      } catch (e) {
-        // Neon HTTP: no interactive transactions. Do compensating cleanup.
-        logError(
-          `[createOrderWithItems] orderShipping snapshot insert failed orderId=${created.id}`,
-          e
-        );
         try {
-          await db.delete(orders).where(eq(orders.id, created.id));
-        } catch (cleanupErr) {
+          await ensureOrderShippingSnapshot({
+            orderId: created.id,
+            snapshot: preparedShipping.snapshot,
+          });
+        } catch (e) {
+          // Neon HTTP: no interactive transactions. Do compensating cleanup.
           logError(
-            `[createOrderWithItems] cleanup delete failed orderId=${created.id}`,
-            cleanupErr
+            `[createOrderWithItems] orderShipping snapshot insert failed orderId=${created.id}`,
+            e
           );
+          try {
+            await db.delete(orders).where(eq(orders.id, created.id));
+          } catch (cleanupErr) {
+            logError(
+              `[createOrderWithItems] cleanup delete failed orderId=${created.id}`,
+              cleanupErr
+            );
+          }
+          throw e;
         }
-        throw e;
       }
     } catch (e) {
       // Neon HTTP: no interactive transactions. Do compensating cleanup.
