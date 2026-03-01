@@ -208,6 +208,17 @@ export async function GET(
       return noStoreJson(liteOrder, { status: 200 });
     }
 
+    if (responseMode === 'lite') {
+      const liteOrder = await getOrderStatusLiteSummary(orderId);
+      logInfo('order_status_responded', {
+        requestId,
+        orderId,
+        responseMode,
+        durationMs: Date.now() - startedAtMs,
+      });
+      return noStoreJson(liteOrder, { status: 200 });
+    }
+
     const order = await getOrderSummary(orderId);
     const attempt = await getOrderAttemptSummary(orderId);
     logInfo('order_status_responded', {

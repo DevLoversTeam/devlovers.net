@@ -1094,6 +1094,21 @@ export async function createOrderWithItems({
           orderId: created.id,
           snapshot: preparedShipping.snapshot,
         });
+      } catch (e) {
+        // Neon HTTP: no interactive transactions. Do compensating cleanup.
+        logError(
+          `[createOrderWithItems] orderShipping snapshot insert failed orderId=${created.id}`,
+          e
+        );
+        try {
+          await db.delete(orders).where(eq(orders.id, created.id));
+        } catch (cleanupErr) {
+          logError(
+            `[createOrderWithItems] cleanup delete failed orderId=${created.id}`,
+            cleanupErr
+          );
+        }
+        throw e;
       }
     } catch (e) {
       // Neon HTTP: no interactive transactions. Do compensating cleanup.
