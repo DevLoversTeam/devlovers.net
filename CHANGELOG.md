@@ -782,3 +782,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Reduced server load by moving auth and progress logic to client
 - Improved ISR caching efficiency for quizzes page
 - Faster navigation and more stable UI during locale and tab changes
+
+## [1.0.6] - 2026-03-01
+
+### Added
+
+- New learning categories with visual identity:
+  - Django
+  - Docker
+  - Kubernetes
+  - AWS
+  - Azure
+  - DevOps
+- Category-specific SVG icons with accent styling across tabs, pagination, and controls
+- Improved AWS icon readability in dark mode
+
+### Shop (Production Readiness)
+
+- Audit-driven end-to-end purchase hardening:
+  - Canonical append-only event/audit system
+  - Async email notifications via outbox worker
+  - Persisted checkout legal consent (terms/privacy)
+  - Returns & exchanges lifecycle support
+  - Admin audit logs for product operations
+  - Token-scoped guest order access
+- Improved Monobank webhook retry behavior
+- Added Playwright E2E coverage for Shop flows
+
+### Performance & Infrastructure
+
+- Reduced Neon compute usage:
+  - Throttled background janitor jobs (every 30 min)
+  - Partial indexes for order sweeps
+  - SKIP LOCKED batching to reduce contention
+- Optimized checkout and payment status polling with backoff strategy
+- Lightweight order status view for faster client updates
+- Reduced session activity write frequency
