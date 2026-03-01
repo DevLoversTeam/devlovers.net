@@ -9,7 +9,10 @@ import { getCurrentUser } from '@/lib/auth';
 import { logError, logWarn } from '@/lib/logging';
 import { guardBrowserSameOrigin } from '@/lib/security/origin';
 import { InvalidPayloadError } from '@/lib/services/errors';
-import { createReturnRequest, listOrderReturns } from '@/lib/services/shop/returns';
+import {
+  createReturnRequest,
+  listOrderReturns,
+} from '@/lib/services/shop/returns';
 import { orderIdParamSchema } from '@/lib/validation/shop';
 import { createReturnPayloadSchema } from '@/lib/validation/shop-returns';
 
@@ -118,7 +121,8 @@ export async function POST(
     return noStoreJson(
       {
         code: 'EXCHANGES_NOT_SUPPORTED',
-        message: 'Exchanges are not supported. Please create a return refund request.',
+        message:
+          'Exchanges are not supported. Please create a return refund request.',
       },
       422
     );

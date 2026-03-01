@@ -54,22 +54,22 @@ describe('transition matrix phase 6', () => {
 
   it('shipping matrix allows/forbids expected transitions', () => {
     expect(isShippingStatusTransitionAllowed('pending', 'queued')).toBe(true);
-    expect(
-      isShippingStatusTransitionAllowed('creating_label', 'queued')
-    ).toBe(true);
-    expect(
-      isShippingStatusTransitionAllowed('needs_attention', 'queued')
-    ).toBe(true);
+    expect(isShippingStatusTransitionAllowed('creating_label', 'queued')).toBe(
+      true
+    );
+    expect(isShippingStatusTransitionAllowed('needs_attention', 'queued')).toBe(
+      true
+    );
     expect(
       isShippingStatusTransitionAllowed(null, 'queued', { allowNullFrom: true })
     ).toBe(true);
     expect(isShippingStatusTransitionAllowed('shipped', 'queued')).toBe(false);
-    expect(
-      isShippingStatusTransitionAllowed('label_created', 'shipped')
-    ).toBe(true);
-    expect(
-      isShippingStatusTransitionAllowed('creating_label', 'shipped')
-    ).toBe(false);
+    expect(isShippingStatusTransitionAllowed('label_created', 'shipped')).toBe(
+      true
+    );
+    expect(isShippingStatusTransitionAllowed('creating_label', 'shipped')).toBe(
+      false
+    );
     expect(isShippingStatusTransitionAllowed('shipped', 'delivered')).toBe(
       true
     );
@@ -85,8 +85,6 @@ describe('transition matrix phase 6', () => {
     expect(isReturnStatusTransitionAllowed('requested', 'refunded')).toBe(
       false
     );
-    expect(isReturnStatusTransitionAllowed('refunded', 'approved')).toBe(
-      false
-    );
+    expect(isReturnStatusTransitionAllowed('refunded', 'approved')).toBe(false);
   });
 });

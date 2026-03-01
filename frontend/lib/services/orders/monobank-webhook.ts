@@ -752,7 +752,8 @@ async function atomicMarkPaidOrderAndSucceedAttempt(args: {
   return {
     ok: Boolean(row?.order_id && row?.attempt_id),
     shipmentQueued:
-      Boolean(row?.shipment_is_queued) && Boolean(row?.order_shipping_is_queued),
+      Boolean(row?.shipment_is_queued) &&
+      Boolean(row?.order_shipping_is_queued),
   };
 }
 

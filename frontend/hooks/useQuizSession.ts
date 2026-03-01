@@ -35,10 +35,7 @@ type UseQuizSessionParams = {
   state: QuizState;
 };
 
-export function useQuizSession({
-  quizId,
-  state,
-}: UseQuizSessionParams): void {
+export function useQuizSession({ quizId, state }: UseQuizSessionParams): void {
   const reloadKey = getQuizReloadKey(quizId);
 
   useEffect(() => {

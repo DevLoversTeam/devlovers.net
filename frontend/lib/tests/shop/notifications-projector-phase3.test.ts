@@ -99,7 +99,9 @@ describe.sequential('notifications projector phase 3', () => {
         await db.insert(shippingEvents).values({
           id: crypto.randomUUID(),
           orderId,
-          provider: eventName.startsWith('quote_') ? 'intl_quote' : 'nova_poshta',
+          provider: eventName.startsWith('quote_')
+            ? 'intl_quote'
+            : 'nova_poshta',
           eventName,
           eventSource: 'test_mapping',
           eventRef: `evt_${crypto.randomUUID()}`,

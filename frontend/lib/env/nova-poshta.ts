@@ -70,7 +70,8 @@ export function getNovaPoshtaConfig(): NovaPoshtaConfig {
   const flags = getShopShippingFlags();
 
   const apiBaseUrl = nonEmpty(process.env.NP_API_BASE) ?? DEFAULT_NP_API_BASE;
-  const defaultCargoType = nonEmpty(process.env.NP_DEFAULT_CARGO_TYPE) ?? 'Cargo';
+  const defaultCargoType =
+    nonEmpty(process.env.NP_DEFAULT_CARGO_TYPE) ?? 'Cargo';
   const defaultWeightGrams = parsePositiveInt(
     process.env.NP_DEFAULT_WEIGHT_GRAMS,
     1000

@@ -42,9 +42,7 @@
       "uniqueConstraints": {
         "categories_slug_unique": {
           "name": "categories_slug_unique",
-          "columns": [
-            "slug"
-          ],
+          "columns": ["slug"],
           "nullsNotDistinct": false
         }
       },
@@ -80,13 +78,9 @@
         "category_translations_category_id_categories_id_fk": {
           "name": "category_translations_category_id_categories_id_fk",
           "tableFrom": "category_translations",
-          "columnsFrom": [
-            "category_id"
-          ],
+          "columnsFrom": ["category_id"],
           "tableTo": "categories",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -94,10 +88,7 @@
       "compositePrimaryKeys": {
         "category_translations_category_id_locale_pk": {
           "name": "category_translations_category_id_locale_pk",
-          "columns": [
-            "category_id",
-            "locale"
-          ]
+          "columns": ["category_id", "locale"]
         }
       },
       "uniqueConstraints": {},
@@ -220,13 +211,9 @@
         "notifications_user_id_users_id_fk": {
           "name": "notifications_user_id_users_id_fk",
           "tableFrom": "notifications",
-          "columnsFrom": [
-            "user_id"
-          ],
+          "columnsFrom": ["user_id"],
           "tableTo": "users",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -364,13 +351,9 @@
         "point_transactions_user_id_users_id_fk": {
           "name": "point_transactions_user_id_users_id_fk",
           "tableFrom": "point_transactions",
-          "columnsFrom": [
-            "user_id"
-          ],
+          "columnsFrom": ["user_id"],
           "tableTo": "users",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -415,13 +398,9 @@
         "question_translations_question_id_questions_id_fk": {
           "name": "question_translations_question_id_questions_id_fk",
           "tableFrom": "question_translations",
-          "columnsFrom": [
-            "question_id"
-          ],
+          "columnsFrom": ["question_id"],
           "tableTo": "questions",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -429,10 +408,7 @@
       "compositePrimaryKeys": {
         "question_translations_question_id_locale_pk": {
           "name": "question_translations_question_id_locale_pk",
-          "columns": [
-            "question_id",
-            "locale"
-          ]
+          "columns": ["question_id", "locale"]
         }
       },
       "uniqueConstraints": {},
@@ -513,13 +489,9 @@
         "questions_category_id_categories_id_fk": {
           "name": "questions_category_id_categories_id_fk",
           "tableFrom": "questions",
-          "columnsFrom": [
-            "category_id"
-          ],
+          "columnsFrom": ["category_id"],
           "tableTo": "categories",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "restrict"
         }
@@ -558,13 +530,9 @@
         "quiz_answer_translations_quiz_answer_id_quiz_answers_id_fk": {
           "name": "quiz_answer_translations_quiz_answer_id_quiz_answers_id_fk",
           "tableFrom": "quiz_answer_translations",
-          "columnsFrom": [
-            "quiz_answer_id"
-          ],
+          "columnsFrom": ["quiz_answer_id"],
           "tableTo": "quiz_answers",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -572,10 +540,7 @@
       "compositePrimaryKeys": {
         "quiz_answer_translations_quiz_answer_id_locale_pk": {
           "name": "quiz_answer_translations_quiz_answer_id_locale_pk",
-          "columns": [
-            "quiz_answer_id",
-            "locale"
-          ]
+          "columns": ["quiz_answer_id", "locale"]
         }
       },
       "uniqueConstraints": {},
@@ -641,13 +606,9 @@
         "quiz_answers_quiz_question_id_quiz_questions_id_fk": {
           "name": "quiz_answers_quiz_question_id_quiz_questions_id_fk",
           "tableFrom": "quiz_answers",
-          "columnsFrom": [
-            "quiz_question_id"
-          ],
+          "columnsFrom": ["quiz_question_id"],
           "tableTo": "quiz_questions",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -722,39 +683,27 @@
         "quiz_attempt_answers_attempt_id_quiz_attempts_id_fk": {
           "name": "quiz_attempt_answers_attempt_id_quiz_attempts_id_fk",
           "tableFrom": "quiz_attempt_answers",
-          "columnsFrom": [
-            "attempt_id"
-          ],
+          "columnsFrom": ["attempt_id"],
           "tableTo": "quiz_attempts",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         },
         "quiz_attempt_answers_quiz_question_id_quiz_questions_id_fk": {
           "name": "quiz_attempt_answers_quiz_question_id_quiz_questions_id_fk",
           "tableFrom": "quiz_attempt_answers",
-          "columnsFrom": [
-            "quiz_question_id"
-          ],
+          "columnsFrom": ["quiz_question_id"],
           "tableTo": "quiz_questions",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         },
         "quiz_attempt_answers_selected_answer_id_quiz_answers_id_fk": {
           "name": "quiz_attempt_answers_selected_answer_id_quiz_answers_id_fk",
           "tableFrom": "quiz_attempt_answers",
-          "columnsFrom": [
-            "selected_answer_id"
-          ],
+          "columnsFrom": ["selected_answer_id"],
           "tableTo": "quiz_answers",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "set null"
         }
@@ -953,26 +902,18 @@
         "quiz_attempts_user_id_users_id_fk": {
           "name": "quiz_attempts_user_id_users_id_fk",
           "tableFrom": "quiz_attempts",
-          "columnsFrom": [
-            "user_id"
-          ],
+          "columnsFrom": ["user_id"],
           "tableTo": "users",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         },
         "quiz_attempts_quiz_id_quizzes_id_fk": {
           "name": "quiz_attempts_quiz_id_quizzes_id_fk",
           "tableFrom": "quiz_attempts",
-          "columnsFrom": [
-            "quiz_id"
-          ],
+          "columnsFrom": ["quiz_id"],
           "tableTo": "quizzes",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -1017,13 +958,9 @@
         "quiz_question_content_quiz_question_id_quiz_questions_id_fk": {
           "name": "quiz_question_content_quiz_question_id_quiz_questions_id_fk",
           "tableFrom": "quiz_question_content",
-          "columnsFrom": [
-            "quiz_question_id"
-          ],
+          "columnsFrom": ["quiz_question_id"],
           "tableTo": "quiz_questions",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -1031,10 +968,7 @@
       "compositePrimaryKeys": {
         "quiz_question_content_quiz_question_id_locale_pk": {
           "name": "quiz_question_content_quiz_question_id_locale_pk",
-          "columns": [
-            "quiz_question_id",
-            "locale"
-          ]
+          "columns": ["quiz_question_id", "locale"]
         }
       },
       "uniqueConstraints": {},
@@ -1113,13 +1047,9 @@
         "quiz_questions_quiz_id_quizzes_id_fk": {
           "name": "quiz_questions_quiz_id_quizzes_id_fk",
           "tableFrom": "quiz_questions",
-          "columnsFrom": [
-            "quiz_id"
-          ],
+          "columnsFrom": ["quiz_id"],
           "tableTo": "quizzes",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -1164,13 +1094,9 @@
         "quiz_translations_quiz_id_quizzes_id_fk": {
           "name": "quiz_translations_quiz_id_quizzes_id_fk",
           "tableFrom": "quiz_translations",
-          "columnsFrom": [
-            "quiz_id"
-          ],
+          "columnsFrom": ["quiz_id"],
           "tableTo": "quizzes",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -1178,10 +1104,7 @@
       "compositePrimaryKeys": {
         "quiz_translations_quiz_id_locale_pk": {
           "name": "quiz_translations_quiz_id_locale_pk",
-          "columns": [
-            "quiz_id",
-            "locale"
-          ]
+          "columns": ["quiz_id", "locale"]
         }
       },
       "uniqueConstraints": {},
@@ -1282,13 +1205,9 @@
         "quizzes_category_id_categories_id_fk": {
           "name": "quizzes_category_id_categories_id_fk",
           "tableFrom": "quizzes",
-          "columnsFrom": [
-            "category_id"
-          ],
+          "columnsFrom": ["category_id"],
           "tableTo": "categories",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "restrict"
         }
@@ -1297,10 +1216,7 @@
       "uniqueConstraints": {
         "quizzes_category_id_slug_unique": {
           "name": "quizzes_category_id_slug_unique",
-          "columns": [
-            "category_id",
-            "slug"
-          ],
+          "columns": ["category_id", "slug"],
           "nullsNotDistinct": false
         }
       },
@@ -1548,26 +1464,18 @@
         "inventory_moves_order_id_orders_id_fk": {
           "name": "inventory_moves_order_id_orders_id_fk",
           "tableFrom": "inventory_moves",
-          "columnsFrom": [
-            "order_id"
-          ],
+          "columnsFrom": ["order_id"],
           "tableTo": "orders",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         },
         "inventory_moves_product_id_products_id_fk": {
           "name": "inventory_moves_product_id_products_id_fk",
           "tableFrom": "inventory_moves",
-          "columnsFrom": [
-            "product_id"
-          ],
+          "columnsFrom": ["product_id"],
           "tableTo": "products",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         }
@@ -1804,26 +1712,18 @@
         "monobank_events_attempt_id_payment_attempts_id_fk": {
           "name": "monobank_events_attempt_id_payment_attempts_id_fk",
           "tableFrom": "monobank_events",
-          "columnsFrom": [
-            "attempt_id"
-          ],
+          "columnsFrom": ["attempt_id"],
           "tableTo": "payment_attempts",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "set null"
         },
         "monobank_events_order_id_orders_id_fk": {
           "name": "monobank_events_order_id_orders_id_fk",
           "tableFrom": "monobank_events",
-          "columnsFrom": [
-            "order_id"
-          ],
+          "columnsFrom": ["order_id"],
           "tableTo": "orders",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -1971,26 +1871,18 @@
         "monobank_payment_cancels_order_id_orders_id_fk": {
           "name": "monobank_payment_cancels_order_id_orders_id_fk",
           "tableFrom": "monobank_payment_cancels",
-          "columnsFrom": [
-            "order_id"
-          ],
+          "columnsFrom": ["order_id"],
           "tableTo": "orders",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         },
         "monobank_payment_cancels_attempt_id_payment_attempts_id_fk": {
           "name": "monobank_payment_cancels_attempt_id_payment_attempts_id_fk",
           "tableFrom": "monobank_payment_cancels",
-          "columnsFrom": [
-            "attempt_id"
-          ],
+          "columnsFrom": ["attempt_id"],
           "tableTo": "payment_attempts",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "set null"
         }
@@ -2141,26 +2033,18 @@
         "monobank_refunds_order_id_orders_id_fk": {
           "name": "monobank_refunds_order_id_orders_id_fk",
           "tableFrom": "monobank_refunds",
-          "columnsFrom": [
-            "order_id"
-          ],
+          "columnsFrom": ["order_id"],
           "tableTo": "orders",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         },
         "monobank_refunds_attempt_id_payment_attempts_id_fk": {
           "name": "monobank_refunds_attempt_id_payment_attempts_id_fk",
           "tableFrom": "monobank_refunds",
-          "columnsFrom": [
-            "attempt_id"
-          ],
+          "columnsFrom": ["attempt_id"],
           "tableTo": "payment_attempts",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "set null"
         }
@@ -2478,13 +2362,9 @@
         "np_warehouses_settlement_ref_np_cities_ref_fk": {
           "name": "np_warehouses_settlement_ref_np_cities_ref_fk",
           "tableFrom": "np_warehouses",
-          "columnsFrom": [
-            "settlement_ref"
-          ],
+          "columnsFrom": ["settlement_ref"],
           "tableTo": "np_cities",
-          "columnsTo": [
-            "ref"
-          ],
+          "columnsTo": ["ref"],
           "onUpdate": "no action",
           "onDelete": "set null"
         }
@@ -2635,26 +2515,18 @@
         "order_items_order_id_orders_id_fk": {
           "name": "order_items_order_id_orders_id_fk",
           "tableFrom": "order_items",
-          "columnsFrom": [
-            "order_id"
-          ],
+          "columnsFrom": ["order_id"],
           "tableTo": "orders",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         },
         "order_items_product_id_products_id_fk": {
           "name": "order_items_product_id_products_id_fk",
           "tableFrom": "order_items",
-          "columnsFrom": [
-            "product_id"
-          ],
+          "columnsFrom": ["product_id"],
           "tableTo": "products",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "no action"
         }
@@ -2743,13 +2615,9 @@
         "order_shipping_order_id_orders_id_fk": {
           "name": "order_shipping_order_id_orders_id_fk",
           "tableFrom": "order_shipping",
-          "columnsFrom": [
-            "order_id"
-          ],
+          "columnsFrom": ["order_id"],
           "tableTo": "orders",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -3050,13 +2918,9 @@
         "orders_user_id_users_id_fk": {
           "name": "orders_user_id_users_id_fk",
           "tableFrom": "orders",
-          "columnsFrom": [
-            "user_id"
-          ],
+          "columnsFrom": ["user_id"],
           "tableTo": "users",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "set null"
         }
@@ -3065,9 +2929,7 @@
       "uniqueConstraints": {
         "orders_idempotency_key_unique": {
           "name": "orders_idempotency_key_unique",
-          "columns": [
-            "idempotency_key"
-          ],
+          "columns": ["idempotency_key"],
           "nullsNotDistinct": false
         }
       },
@@ -3403,13 +3265,9 @@
         "payment_attempts_order_id_orders_id_fk": {
           "name": "payment_attempts_order_id_orders_id_fk",
           "tableFrom": "payment_attempts",
-          "columnsFrom": [
-            "order_id"
-          ],
+          "columnsFrom": ["order_id"],
           "tableTo": "orders",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -3546,13 +3404,9 @@
         "product_prices_product_id_products_id_fk": {
           "name": "product_prices_product_id_products_id_fk",
           "tableFrom": "product_prices",
-          "columnsFrom": [
-            "product_id"
-          ],
+          "columnsFrom": ["product_id"],
           "tableTo": "products",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -3931,13 +3785,9 @@
         "shipping_shipments_order_id_orders_id_fk": {
           "name": "shipping_shipments_order_id_orders_id_fk",
           "tableFrom": "shipping_shipments",
-          "columnsFrom": [
-            "order_id"
-          ],
+          "columnsFrom": ["order_id"],
           "tableTo": "orders",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -4064,13 +3914,9 @@
         "stripe_events_order_id_orders_id_fk": {
           "name": "stripe_events_order_id_orders_id_fk",
           "tableFrom": "stripe_events",
-          "columnsFrom": [
-            "order_id"
-          ],
+          "columnsFrom": ["order_id"],
           "tableTo": "orders",
-          "columnsTo": [
-            "id"
-          ],
+          "columnsTo": ["id"],
           "onUpdate": "no action",
           "onDelete": "cascade"
         }
@@ -4178,9 +4024,7 @@
       "uniqueConstraints": {
         "users_email_unique": {
           "name": "users_email_unique",
-          "columns": [
-            "email"
-          ],
+          "columns": ["email"],
           "nullsNotDistinct": false
         }
       },
@@ -4193,18 +4037,12 @@
     "public.currency": {
       "name": "currency",
       "schema": "public",
-      "values": [
-        "USD",
-        "UAH"
-      ]
+      "values": ["USD", "UAH"]
     },
     "public.inventory_move_type": {
       "name": "inventory_move_type",
       "schema": "public",
-      "values": [
-        "reserve",
-        "release"
-      ]
+      "values": ["reserve", "release"]
     },
     "public.inventory_status": {
       "name": "inventory_status",
@@ -4244,36 +4082,22 @@
     "public.product_badge": {
       "name": "product_badge",
       "schema": "public",
-      "values": [
-        "NEW",
-        "SALE",
-        "NONE"
-      ]
+      "values": ["NEW", "SALE", "NONE"]
     },
     "public.shipping_method_code": {
       "name": "shipping_method_code",
       "schema": "public",
-      "values": [
-        "NP_WAREHOUSE",
-        "NP_LOCKER",
-        "NP_COURIER"
-      ]
+      "values": ["NP_WAREHOUSE", "NP_LOCKER", "NP_COURIER"]
     },
     "public.shipping_payer": {
       "name": "shipping_payer",
       "schema": "public",
-      "values": [
-        "customer",
-        "merchant"
-      ]
+      "values": ["customer", "merchant"]
     },
     "public.shipping_provider": {
       "name": "shipping_provider",
       "schema": "public",
-      "values": [
-        "nova_poshta",
-        "ukrposhta"
-      ]
+      "values": ["nova_poshta", "ukrposhta"]
     },
     "public.shipping_shipment_status": {
       "name": "shipping_shipment_status",

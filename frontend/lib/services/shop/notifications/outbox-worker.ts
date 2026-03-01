@@ -165,7 +165,11 @@ function toNotificationSendError(error: unknown): NotificationSendError {
   if (error instanceof NotificationSendError) return error;
 
   if (error instanceof ShopNotificationTransportError) {
-    return new NotificationSendError(error.code, error.message, error.transient);
+    return new NotificationSendError(
+      error.code,
+      error.message,
+      error.transient
+    );
   }
 
   return new NotificationSendError(

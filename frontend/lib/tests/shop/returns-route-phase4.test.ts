@@ -5,7 +5,13 @@ import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { db } from '@/db';
-import { orderItems, orders, products, returnRequests, users } from '@/db/schema';
+import {
+  orderItems,
+  orders,
+  products,
+  returnRequests,
+  users,
+} from '@/db/schema';
 import { toDbMoney } from '@/lib/shop/money';
 
 const getCurrentUserMock = vi.hoisted(() => vi.fn());

@@ -9,9 +9,7 @@ import {
   productPrices,
   products,
 } from '@/db/schema/shop';
-import {
-  IdempotencyConflictError,
-} from '@/lib/services/errors';
+import { IdempotencyConflictError } from '@/lib/services/errors';
 import { createOrderWithItems } from '@/lib/services/orders';
 import { toDbMoney } from '@/lib/shop/money';
 

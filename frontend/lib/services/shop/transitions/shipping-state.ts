@@ -1,4 +1,4 @@
-import { type SQL,sql } from 'drizzle-orm';
+import { type SQL, sql } from 'drizzle-orm';
 
 export const SHIPPING_STATUSES = [
   'pending',
@@ -13,16 +13,23 @@ export const SHIPPING_STATUSES = [
 
 export type ShippingStatus = (typeof SHIPPING_STATUSES)[number];
 
-const SHIPPING_ALLOWED_FROM: Record<ShippingStatus, readonly ShippingStatus[]> = {
-  pending: [],
-  queued: ['pending', 'queued', 'creating_label', 'needs_attention'],
-  creating_label: ['pending', 'queued', 'creating_label'],
-  label_created: ['pending', 'queued', 'creating_label'],
-  shipped: ['label_created'],
-  delivered: ['shipped'],
-  cancelled: ['pending', 'queued', 'creating_label', 'label_created', 'shipped'],
-  needs_attention: ['pending', 'queued', 'creating_label', 'needs_attention'],
-};
+const SHIPPING_ALLOWED_FROM: Record<ShippingStatus, readonly ShippingStatus[]> =
+  {
+    pending: [],
+    queued: ['pending', 'queued', 'creating_label', 'needs_attention'],
+    creating_label: ['pending', 'queued', 'creating_label'],
+    label_created: ['pending', 'queued', 'creating_label'],
+    shipped: ['label_created'],
+    delivered: ['shipped'],
+    cancelled: [
+      'pending',
+      'queued',
+      'creating_label',
+      'label_created',
+      'shipped',
+    ],
+    needs_attention: ['pending', 'queued', 'creating_label', 'needs_attention'],
+  };
 Object.values(SHIPPING_ALLOWED_FROM).forEach(arr => {
   Object.freeze(arr);
 });
@@ -58,7 +65,10 @@ export function shippingStatusTransitionWhereSql(args: {
   });
   const inAllowed =
     from.length > 0
-      ? sql`${args.column} in (${sql.join(from.map(v => sql`${v}`), sql`, `)})`
+      ? sql`${args.column} in (${sql.join(
+          from.map(v => sql`${v}`),
+          sql`, `
+        )})`
       : sql`false`;
 
   if (args.allowNullFrom) {
@@ -68,4 +78,3 @@ export function shippingStatusTransitionWhereSql(args: {
 }
 
 export const __shippingTransitionMatrix = SHIPPING_ALLOWED_FROM;
-

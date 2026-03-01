@@ -2,10 +2,17 @@ import crypto from 'node:crypto';
 
 import { NextRequest, NextResponse } from 'next/server';
 
-import { getShopShippingFlags, NovaPoshtaConfigError } from '@/lib/env/nova-poshta';
+import {
+  getShopShippingFlags,
+  NovaPoshtaConfigError,
+} from '@/lib/env/nova-poshta';
 import { readPositiveIntEnv } from '@/lib/env/readPositiveIntEnv';
 import { logError, logWarn } from '@/lib/logging';
-import { enforceRateLimit, getRateLimitSubject, rateLimitResponse } from '@/lib/security/rate-limit';
+import {
+  enforceRateLimit,
+  getRateLimitSubject,
+  rateLimitResponse,
+} from '@/lib/security/rate-limit';
 import { resolveShippingAvailability } from '@/lib/services/shop/shipping/availability';
 import {
   sanitizeShippingErrorForLog,
@@ -39,7 +46,8 @@ function noStoreJson(body: unknown, requestId: string, status = 200) {
 }
 
 export async function GET(request: NextRequest) {
-  const requestId = request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
+  const requestId =
+    request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
   const baseMeta = {
     requestId,
     route: request.nextUrl.pathname,

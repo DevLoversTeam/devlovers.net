@@ -7,7 +7,10 @@ function parsePositiveInt(raw: string | undefined, fallback: number): number {
 }
 
 export function getIntlAcceptedPaymentTtlMinutes(): number {
-  return parsePositiveInt(process.env.SHOP_INTL_ACCEPTED_PAYMENT_TTL_MINUTES, 30);
+  return parsePositiveInt(
+    process.env.SHOP_INTL_ACCEPTED_PAYMENT_TTL_MINUTES,
+    30
+  );
 }
 
 export function getIntlQuoteOfferTtlMinutes(): number {

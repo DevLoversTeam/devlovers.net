@@ -52,7 +52,8 @@ type QuoteRow = {
 
 function parseDateOrNull(value: unknown): Date | null {
   if (!value) return null;
-  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+  if (value instanceof Date)
+    return Number.isNaN(value.getTime()) ? null : value;
   const parsed = new Date(String(value));
   if (Number.isNaN(parsed.getTime())) return null;
   return parsed;
@@ -122,7 +123,9 @@ async function loadOrderQuote(orderId: string): Promise<OrderQuoteRow> {
     quoteVersion:
       typeof row.quoteVersion === 'number' ? row.quoteVersion : null,
     shippingQuoteMinor:
-      typeof row.shippingQuoteMinor === 'number' ? row.shippingQuoteMinor : null,
+      typeof row.shippingQuoteMinor === 'number'
+        ? row.shippingQuoteMinor
+        : null,
     itemsSubtotalMinor:
       typeof row.itemsSubtotalMinor === 'number' ? row.itemsSubtotalMinor : 0,
     totalAmountMinor:
@@ -168,11 +171,10 @@ async function loadQuoteByVersion(
 
   const expiresAt = parseDateOrNull(row.expiresAt);
   if (!expiresAt) {
-    throw quoteError(
-      'INVALID_PAYLOAD',
-      'Stored quote expiry is invalid.',
-      { orderId, version }
-    );
+    throw quoteError('INVALID_PAYLOAD', 'Stored quote expiry is invalid.', {
+      orderId,
+      version,
+    });
   }
 
   return {
@@ -449,14 +451,16 @@ export async function offerIntlQuote(args: {
   const latestQuote = await loadLatestQuote(order.id);
   const expectedVersion = (latestQuote?.version ?? 0) + 1;
   if (args.version !== expectedVersion) {
-    throw quoteError(
-      'QUOTE_VERSION_CONFLICT',
-      'Quote version conflict.',
-      { expectedVersion, gotVersion: args.version }
-    );
+    throw quoteError('QUOTE_VERSION_CONFLICT', 'Quote version conflict.', {
+      expectedVersion,
+      gotVersion: args.version,
+    });
   }
 
-  if (!Number.isInteger(args.shippingQuoteMinor) || args.shippingQuoteMinor < 0) {
+  if (
+    !Number.isInteger(args.shippingQuoteMinor) ||
+    args.shippingQuoteMinor < 0
+  ) {
     throw quoteError(
       'INVALID_PAYLOAD',
       'shippingQuoteMinor must be a non-negative integer.'
@@ -589,9 +593,13 @@ export async function offerIntlQuote(args: {
   const row = (res as any)?.rows?.[0];
   const insertedCount = Number(row?.inserted_quote_count ?? 0);
   if (insertedCount === 0) {
-    throw quoteError('QUOTE_VERSION_CONFLICT', 'Quote version already exists.', {
-      version: args.version,
-    });
+    throw quoteError(
+      'QUOTE_VERSION_CONFLICT',
+      'Quote version already exists.',
+      {
+        version: args.version,
+      }
+    );
   }
 
   return {
@@ -693,7 +701,11 @@ export async function acceptIntlQuote(args: {
   };
 
   for (const move of reserves) {
-    const reserve = await applyReserveMove(order.id, move.productId, move.quantity);
+    const reserve = await applyReserveMove(
+      order.id,
+      move.productId,
+      move.quantity
+    );
     if (!reserve.ok) {
       stockFailureProductId = move.productId;
       break;
@@ -952,7 +964,11 @@ export async function declineIntlQuote(args: {
   }
 
   if (latestQuote.status === 'declined') {
-    return { orderId: order.id, quoteStatus: 'declined' as const, changed: false };
+    return {
+      orderId: order.id,
+      quoteStatus: 'declined' as const,
+      changed: false,
+    };
   }
 
   if (latestQuote.status !== 'offered') {
@@ -1128,7 +1144,10 @@ export async function sweepExpiredOfferedIntlQuotes(options?: {
   batchSize?: number;
   now?: Date;
 }): Promise<number> {
-  const batchSize = Math.max(1, Math.min(100, Math.floor(options?.batchSize ?? 50)));
+  const batchSize = Math.max(
+    1,
+    Math.min(100, Math.floor(options?.batchSize ?? 50))
+  );
   const now = options?.now ?? new Date();
 
   const candidates = await db
@@ -1166,7 +1185,10 @@ export async function sweepAcceptedIntlQuotePaymentTimeouts(options?: {
   batchSize?: number;
   now?: Date;
 }): Promise<number> {
-  const batchSize = Math.max(1, Math.min(100, Math.floor(options?.batchSize ?? 50)));
+  const batchSize = Math.max(
+    1,
+    Math.min(100, Math.floor(options?.batchSize ?? 50))
+  );
   const now = options?.now ?? new Date();
 
   const candidates = await db

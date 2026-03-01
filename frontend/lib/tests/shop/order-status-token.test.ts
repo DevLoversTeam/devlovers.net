@@ -319,8 +319,12 @@ describe('order status token access control', () => {
         )}`
       );
 
-      const res1 = await GET(req1, { params: Promise.resolve({ id: orderId }) });
-      const res2 = await GET(req2, { params: Promise.resolve({ id: orderId }) });
+      const res1 = await GET(req1, {
+        params: Promise.resolve({ id: orderId }),
+      });
+      const res2 = await GET(req2, {
+        params: Promise.resolve({ id: orderId }),
+      });
       expect(res1.status).toBe(200);
       expect(res2.status).toBe(200);
 
@@ -332,7 +336,9 @@ describe('order status token access control', () => {
         .from(adminAuditLog)
         .where(eq(adminAuditLog.orderId, orderId));
 
-      const tokenUseRows = rows.filter(r => r.action === 'guest_status_token.used');
+      const tokenUseRows = rows.filter(
+        r => r.action === 'guest_status_token.used'
+      );
       expect(tokenUseRows.length).toBe(1);
       expect(tokenUseRows[0]?.orderId).toBe(orderId);
     } finally {

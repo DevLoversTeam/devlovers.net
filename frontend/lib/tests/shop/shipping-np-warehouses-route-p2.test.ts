@@ -31,10 +31,9 @@ vi.mock('@/lib/security/rate-limit', () => ({
 }));
 
 vi.mock('@/lib/services/shop/shipping/nova-poshta-client', async () => {
-  const actual =
-    await vi.importActual<typeof import('@/lib/services/shop/shipping/nova-poshta-client')>(
-      '@/lib/services/shop/shipping/nova-poshta-client'
-    );
+  const actual = await vi.importActual<
+    typeof import('@/lib/services/shop/shipping/nova-poshta-client')
+  >('@/lib/services/shop/shipping/nova-poshta-client');
   return {
     ...actual,
     getWarehousesBySettlementRef: (...args: any[]) =>

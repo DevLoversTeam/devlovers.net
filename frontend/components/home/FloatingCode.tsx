@@ -202,7 +202,11 @@ function CodeBlock({ snippet }: { snippet: CodeSnippet }) {
 }
 
 export function FloatingCode() {
-  const isClient = useSyncExternalStore(emptySubscribe, () => true, () => false);
+  const isClient = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false
+  );
   if (!isClient) return null;
 
   return (

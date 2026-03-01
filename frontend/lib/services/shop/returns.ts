@@ -3,12 +3,7 @@ import 'server-only';
 import { and, asc, eq, inArray, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
-import {
-  orderItems,
-  orders,
-  returnItems,
-  returnRequests,
-} from '@/db/schema';
+import { orderItems, orders, returnItems, returnRequests } from '@/db/schema';
 import { createRefund } from '@/lib/psp/stripe';
 import { InvalidPayloadError } from '@/lib/services/errors';
 import { buildAdminAuditDedupeKey } from '@/lib/services/shop/events/dedupe-key';
@@ -270,7 +265,9 @@ async function applyReturnRestockMove(args: {
   orderId: string;
   productId: string;
   quantity: number;
-}): Promise<'applied' | 'already' | 'already_released' | 'no_reserve' | 'noop'> {
+}): Promise<
+  'applied' | 'already' | 'already_released' | 'no_reserve' | 'noop'
+> {
   const moveKey = `return_release:${args.returnRequestId}:${args.productId}`;
   const res = await db.execute<{ status: string }>(sql`
     with c as (
@@ -338,7 +335,10 @@ async function applyReturnRestockMove(args: {
 }
 
 async function restockReturnItems(returnRequestId: string, orderId: string) {
-  const grouped = await db.execute<{ product_id: string; quantity: number }>(sql`
+  const grouped = await db.execute<{
+    product_id: string;
+    quantity: number;
+  }>(sql`
     select
       ri.product_id::text as product_id,
       sum(ri.quantity)::int as quantity
@@ -348,7 +348,9 @@ async function restockReturnItems(returnRequestId: string, orderId: string) {
       and ri.product_id is not null
     group by ri.product_id
   `);
-  const productsToRelease = readRows<{ product_id: string; quantity: number }>(grouped);
+  const productsToRelease = readRows<{ product_id: string; quantity: number }>(
+    grouped
+  );
   if (productsToRelease.length === 0) {
     throw returnError(
       'RETURN_ITEMS_MISSING',
@@ -568,7 +570,10 @@ export async function createReturnRequest(args: {
   if (insertedReturnId) {
     const created = await loadReturnByIdWithItems(insertedReturnId);
     if (!created) {
-      throw returnError('RETURN_NOT_FOUND', 'Return request not found after create.');
+      throw returnError(
+        'RETURN_NOT_FOUND',
+        'Return request not found after create.'
+      );
     }
     return { created: true, request: created };
   }
@@ -604,7 +609,9 @@ export async function createReturnRequest(args: {
   throw returnError('RETURN_NOT_FOUND', 'Unable to create return request.');
 }
 
-export async function listOrderReturns(orderId: string): Promise<ReturnRequestWithItems[]> {
+export async function listOrderReturns(
+  orderId: string
+): Promise<ReturnRequestWithItems[]> {
   const requests = await db
     .select({
       id: returnRequests.id,
@@ -965,17 +972,26 @@ export async function refundReturnRequest(args: {
       { returnRequestId: current.id, status: current.status }
     );
   }
-  if (!Number.isInteger(current.refundAmountMinor) || current.refundAmountMinor <= 0) {
+  if (
+    !Number.isInteger(current.refundAmountMinor) ||
+    current.refundAmountMinor <= 0
+  ) {
     throw returnError(
       'RETURN_REFUND_AMOUNT_INVALID',
       'Refund amount is invalid.',
-      { returnRequestId: current.id, refundAmountMinor: current.refundAmountMinor }
+      {
+        returnRequestId: current.id,
+        refundAmountMinor: current.refundAmountMinor,
+      }
     );
   }
 
   const order = await loadOrder(current.orderId);
   if (!order) {
-    throw returnError('RETURN_NOT_FOUND', 'Order not found for return request.');
+    throw returnError(
+      'RETURN_NOT_FOUND',
+      'Order not found for return request.'
+    );
   }
 
   if (order.paymentProvider !== 'stripe') {

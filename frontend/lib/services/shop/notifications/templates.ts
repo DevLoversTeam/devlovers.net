@@ -43,7 +43,9 @@ function escapeHtml(input: string): string {
     .replaceAll("'", '&#39;');
 }
 
-function readCanonicalEventName(payload: Record<string, unknown>): string | null {
+function readCanonicalEventName(
+  payload: Record<string, unknown>
+): string | null {
   const raw = payload.canonicalEventName;
   if (typeof raw !== 'string') return null;
   const trimmed = raw.trim();
@@ -96,7 +98,9 @@ export function renderShopNotificationTemplate(
       return null;
   }
 
-  const eventLine = canonicalEvent ? `Canonical event: ${canonicalEvent}` : null;
+  const eventLine = canonicalEvent
+    ? `Canonical event: ${canonicalEvent}`
+    : null;
   const text = [leadLine, `Order: ${orderTag}`, eventLine]
     .filter(Boolean)
     .join('\n');

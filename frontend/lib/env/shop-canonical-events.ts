@@ -34,4 +34,3 @@ export function isCanonicalEventsDualWriteEnabled(): boolean {
     `Invalid SHOP_CANONICAL_EVENTS_DUAL_WRITE value: "${process.env.SHOP_CANONICAL_EVENTS_DUAL_WRITE ?? ''}".`
   );
 }
-

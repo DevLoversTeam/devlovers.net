@@ -105,7 +105,9 @@ describe.sequential('admin products create atomicity (phase C)', () => {
         slug,
         title: 'Atomic create product',
         badge: 'NONE',
-        prices: [{ currency: 'USD', priceMinor: 1999, originalPriceMinor: null }],
+        prices: [
+          { currency: 'USD', priceMinor: 1999, originalPriceMinor: null },
+        ],
         stock: 2,
         isActive: true,
         isFeatured: false,
@@ -164,7 +166,9 @@ describe.sequential('admin products create atomicity (phase C)', () => {
         slug,
         title: 'Atomic create rollback guard',
         badge: 'NONE',
-        prices: [{ currency: 'USD', priceMinor: 2099, originalPriceMinor: null }],
+        prices: [
+          { currency: 'USD', priceMinor: 2099, originalPriceMinor: null },
+        ],
         stock: 2,
         isActive: true,
         isFeatured: false,

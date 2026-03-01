@@ -63,13 +63,11 @@ export async function GET(
     const user = await getCurrentUser();
     let authorized = false;
     let accessByStatusToken = false;
-    let tokenAuditSeed:
-      | {
-          nonce: string;
-          iat: number;
-          exp: number;
-        }
-      | null = null;
+    let tokenAuditSeed: {
+      nonce: string;
+      iat: number;
+      exp: number;
+    } | null = null;
 
     if (user) {
       const isAdmin = user.role === 'admin';
@@ -203,17 +201,6 @@ export async function GET(
         orderId,
         responseMode: effectiveResponseMode,
         authMode: accessByStatusToken ? 'guest_token' : 'session',
-        durationMs: Date.now() - startedAtMs,
-      });
-      return noStoreJson(liteOrder, { status: 200 });
-    }
-
-    if (responseMode === 'lite') {
-      const liteOrder = await getOrderStatusLiteSummary(orderId);
-      logInfo('order_status_responded', {
-        requestId,
-        orderId,
-        responseMode,
         durationMs: Date.now() - startedAtMs,
       });
       return noStoreJson(liteOrder, { status: 200 });

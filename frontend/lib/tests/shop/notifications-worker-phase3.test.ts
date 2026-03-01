@@ -234,7 +234,9 @@ describe.sequential('notifications worker phase 3', () => {
       expect(row?.leaseOwner).toBeNull();
       expect(row?.leaseExpiresAt).toBeNull();
       expect(row?.lastErrorCode).toBe('TEMP_SEND_FAIL');
-      expect(row?.updatedAt.getTime()).toBeGreaterThan(expiredLeaseAt.getTime());
+      expect(row?.updatedAt.getTime()).toBeGreaterThan(
+        expiredLeaseAt.getTime()
+      );
       expect(row?.nextAttemptAt.getTime()).toBeGreaterThan(Date.now() - 1000);
     } finally {
       await cleanupOrder(orderId);

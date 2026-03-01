@@ -73,8 +73,7 @@ function resolveMonobankToken(): string | null {
 function resolveBaseUrlSource(): MonobankConfig['baseUrlSource'] {
   if (nonEmpty(process.env.SHOP_BASE_URL)) return 'shop_base_url';
   if (nonEmpty(process.env.APP_ORIGIN)) return 'app_origin';
-  if (nonEmpty(process.env.NEXT_PUBLIC_SITE_URL))
-    return 'next_public_site_url';
+  if (nonEmpty(process.env.NEXT_PUBLIC_SITE_URL)) return 'next_public_site_url';
   return 'unknown';
 }
 

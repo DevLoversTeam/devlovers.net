@@ -35,4 +35,3 @@ describe('monobank webhook retry classifier', () => {
     expect(isRetryableApplyError(err)).toBe(true);
   });
 });
-

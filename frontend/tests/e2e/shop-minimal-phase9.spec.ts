@@ -152,7 +152,9 @@ test.describe('shop e2e minimal phase 9', () => {
     await insertOrder({ orderId });
 
     try {
-      const res = await request.get(`/api/shop/orders/${orderId}/status?view=lite`);
+      const res = await request.get(
+        `/api/shop/orders/${orderId}/status?view=lite`
+      );
       expect(res.status()).toBe(401);
       const body = await res.json();
       expect(body.code).toBe('STATUS_TOKEN_REQUIRED');

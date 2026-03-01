@@ -86,7 +86,9 @@ describe.sequential('notifications worker transport phase 3', () => {
   });
 
   it('marks outbox row as sent only when transport succeeds', async () => {
-    sendShopNotificationEmailMock.mockResolvedValue({ messageId: 'msg-test-1' });
+    sendShopNotificationEmailMock.mockResolvedValue({
+      messageId: 'msg-test-1',
+    });
 
     const orderId = await seedOrder();
     try {
@@ -134,7 +136,9 @@ describe.sequential('notifications worker transport phase 3', () => {
   });
 
   it('dead-letters immediately when recipient email is missing', async () => {
-    sendShopNotificationEmailMock.mockResolvedValue({ messageId: 'msg-test-2' });
+    sendShopNotificationEmailMock.mockResolvedValue({
+      messageId: 'msg-test-2',
+    });
 
     const orderId = await seedOrder();
     try {

@@ -16,9 +16,20 @@ const ORDER_NON_PAYMENT_ALLOWED_FROM: Record<
 > = {
   CREATED: [],
   INVENTORY_RESERVED: ['CREATED'],
-  INVENTORY_FAILED: ['CREATED', 'INVENTORY_RESERVED', 'PAID', 'INVENTORY_FAILED'],
+  INVENTORY_FAILED: [
+    'CREATED',
+    'INVENTORY_RESERVED',
+    'PAID',
+    'INVENTORY_FAILED',
+  ],
   PAID: [],
-  CANCELED: ['CREATED', 'INVENTORY_RESERVED', 'INVENTORY_FAILED', 'PAID', 'CANCELED'],
+  CANCELED: [
+    'CREATED',
+    'INVENTORY_RESERVED',
+    'INVENTORY_FAILED',
+    'PAID',
+    'CANCELED',
+  ],
 };
 
 export function allowedFromOrderNonPaymentStatus(
@@ -49,7 +60,10 @@ export function orderNonPaymentTransitionWhereSql(args: {
     includeSame: args.includeSame,
   });
   if (from.length === 0) return sql`false`;
-  return sql`${args.column} in (${sql.join(from.map(v => sql`${v}`), sql`, `)})`;
+  return sql`${args.column} in (${sql.join(
+    from.map(v => sql`${v}`),
+    sql`, `
+  )})`;
 }
 
 export const ORDER_QUOTE_STATUSES = [
@@ -105,7 +119,10 @@ export function orderQuoteTransitionWhereSql(args: {
     includeSame: args.includeSame,
   });
   if (from.length === 0) return sql`false`;
-  return sql`${args.column} in (${sql.join(from.map(v => sql`${v}`), sql`, `)})`;
+  return sql`${args.column} in (${sql.join(
+    from.map(v => sql`${v}`),
+    sql`, `
+  )})`;
 }
 
 export const __orderTransitionMatrix = {
