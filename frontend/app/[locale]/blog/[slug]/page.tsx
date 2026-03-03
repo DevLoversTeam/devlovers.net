@@ -1,20 +1,11 @@
 import groq from 'groq';
+import { setRequestLocale } from 'next-intl/server';
 
 import { client } from '@/client';
 
 import PostDetails from './PostDetails';
 
-export const revalidate = 3600;
-
-export async function generateStaticParams() {
-  const slugs = await client.fetch<string[]>(
-    groq`*[_type == "post" && defined(slug.current)][].slug.current`
-  );
-
-  return slugs.map(slug => ({
-    slug,
-  }));
-}
+export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({
   params,
@@ -25,7 +16,7 @@ export async function generateMetadata({
 
   const post = await client.fetch(
     groq`*[_type == "post" && slug.current == $slug][0]{
-      "title": string(coalesce(title[$locale], title[lower($locale)], title.uk, title.en, title.pl, title))
+      "title": coalesce(title[$locale], title[lower($locale)], title.uk, title.en, title.pl, title)
     }`,
     { slug, locale }
   );
@@ -41,5 +32,6 @@ export default async function Page({
   params: Promise<{ slug: string; locale: string }>;
 }) {
   const { slug, locale } = await params;
+  setRequestLocale(locale);
   return <PostDetails slug={slug} locale={locale} />;
 }

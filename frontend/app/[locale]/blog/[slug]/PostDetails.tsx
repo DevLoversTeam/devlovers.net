@@ -1,7 +1,7 @@
 import groq from 'groq';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { client } from '@/client';
 import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
@@ -376,6 +376,7 @@ export default async function PostDetails({
   slug: string;
   locale: string;
 }) {
+  setRequestLocale(locale);
   const t = await getTranslations({ locale, namespace: 'blog' });
   const tNav = await getTranslations({ locale, namespace: 'navigation' });
   const slugParam = String(slug || '').trim();
