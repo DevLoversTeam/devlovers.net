@@ -2,6 +2,30 @@ import { z } from 'zod';
 
 import { currencySchema } from '@/lib/validation/shop';
 
+const INTERNAL_SHIPPING_PROD_MIN_INTERVAL_SECONDS = 60;
+
+function isProductionRuntime(): boolean {
+  const appEnv = String(process.env.APP_ENV ?? '').toLowerCase();
+  const nodeEnv = String(process.env.NODE_ENV ?? '').toLowerCase();
+  return appEnv === 'production' || nodeEnv === 'production';
+}
+
+export function getInternalShippingMinIntervalFloorSeconds(): number {
+  return isProductionRuntime()
+    ? INTERNAL_SHIPPING_PROD_MIN_INTERVAL_SECONDS
+    : 1;
+}
+
+export function applyInternalShippingMinIntervalFloor(
+  requestedMinIntervalSeconds: number
+): number {
+  if (!isProductionRuntime()) return requestedMinIntervalSeconds;
+  return Math.max(
+    INTERNAL_SHIPPING_PROD_MIN_INTERVAL_SECONDS,
+    requestedMinIntervalSeconds
+  );
+}
+
 const localeSchema = z
   .string()
   .trim()
@@ -35,7 +59,6 @@ export const shippingCitiesQuerySchema = z
   })
   .strict();
 
-// cityRef in API contract is SettlementRef from NP Address.searchSettlements.
 const settlementRefSchema = z
   .string()
   .trim()
@@ -65,7 +88,8 @@ export const internalNpSyncPayloadSchema = z
       .min(1)
       .max(3600)
       .optional()
-      .default(60),
+      .default(60)
+      .transform(applyInternalShippingMinIntervalFloor),
   })
   .strict()
   .refine(value => !!value.cityRef || !!value.q, {
@@ -97,7 +121,8 @@ export const internalShippingShipmentsRunPayloadSchema = z
       .min(1)
       .max(3600)
       .optional()
-      .default(1),
+      .default(1)
+      .transform(applyInternalShippingMinIntervalFloor),
   })
   .strict();
 
@@ -111,6 +136,7 @@ export const internalShippingRetentionRunPayloadSchema = z
       .min(1)
       .max(86400)
       .optional()
-      .default(3600),
+      .default(3600)
+      .transform(applyInternalShippingMinIntervalFloor),
   })
   .strict();

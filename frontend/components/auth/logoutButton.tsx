@@ -37,7 +37,7 @@ export function LogoutButton({ iconOnly = false }: LogoutButtonProps) {
     <button
       type="button"
       onClick={handleLogout}
-      className="group flex w-full items-center justify-between rounded-md px-3 py-2 text-sm transition-colors text-muted-foreground hover:bg-(--accent-primary)/10 hover:text-(--accent-primary) active:bg-(--accent-primary)/20"
+      className="group text-muted-foreground flex w-full items-center justify-between rounded-md px-3 py-2 text-sm transition-colors hover:bg-(--accent-primary)/10 hover:text-(--accent-primary) active:bg-(--accent-primary)/20"
     >
       <div className="flex items-center gap-2">
         <LogOut className="h-4 w-4" />

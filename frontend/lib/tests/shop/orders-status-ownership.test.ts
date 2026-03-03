@@ -391,22 +391,20 @@ describe.sequential('orders/[id]/status ownership (J)', () => {
         expect(res.status).toBe(200);
 
         expect(json).toBeTruthy();
-        expect((json as any).success).toBe(true);
-        expect((json as any).order).toBeTruthy();
+        expect((json as any).success).toBeUndefined();
+        expect((json as any).order).toBeUndefined();
+        expect((json as any).attempt).toBeUndefined();
+        expect((json as any).paymentStatus).toBeTruthy();
+        expect((json as any).totalAmountMinor).toBeGreaterThan(0);
 
-        const returnedId =
-          (json as any).orderId ?? (json as any).id ?? (json as any).order?.id;
+        const returnedId = (json as any).orderId ?? (json as any).id;
 
         if (!returnedId) {
           const topKeys =
             json && typeof json === 'object' ? Object.keys(json) : [];
-          const orderKeys =
-            (json as any)?.order && typeof (json as any).order === 'object'
-              ? Object.keys((json as any).order)
-              : [];
           throw new Error(
             `[ownership-test] status 200 response missing order identifier. ` +
-              `topKeys=${JSON.stringify(topKeys)} orderKeys=${JSON.stringify(orderKeys)}`
+              `topKeys=${JSON.stringify(topKeys)}`
           );
         }
 

@@ -50,27 +50,27 @@ export default function QuizzesSection({
 
   const [progressMap, setProgressMap] =
     useState<Record<string, UserProgress>>(userProgressMap);
-    const [progressLoaded, setProgressLoaded] = useState(
+  const [progressLoaded, setProgressLoaded] = useState(
     Object.keys(userProgressMap).length > 0
   );
-  
-   useEffect(() => {
-  fetch('/api/quiz/progress')
-    .then(res => res.ok ? res.json() : {})
-    .then(data => {
-      setProgressMap(data);
-      setProgressLoaded(true);
-    })
-    .catch(() => {
-      setProgressLoaded(true);
-    });
+
+  useEffect(() => {
+    fetch('/api/quiz/progress')
+      .then(res => (res.ok ? res.json() : {}))
+      .then(data => {
+        setProgressMap(data);
+        setProgressLoaded(true);
+      })
+      .catch(() => {
+        setProgressLoaded(true);
+      });
   }, []);
-      
+
   const DEFAULT_CATEGORY = categoryData[0]?.slug || 'git';
 
   const categoryFromUrl = searchParams.get('category');
   const validCategory = categoryData.some(c => c.slug === categoryFromUrl);
-    const [activeCategory, setActiveCategory] = useState(
+  const [activeCategory, setActiveCategory] = useState(
     validCategory ? categoryFromUrl! : DEFAULT_CATEGORY
   );
 
@@ -108,10 +108,10 @@ export default function QuizzesSection({
           );
           return (
             <TabsContent
-            key={category.slug}
-            value={category.slug}
-            forceMount
-            className={activeCategory !== category.slug ? 'hidden' : ''}
+              key={category.slug}
+              value={category.slug}
+              forceMount
+              className={activeCategory !== category.slug ? 'hidden' : ''}
             >
               {categoryQuizzes.length > 0 ? (
                 <div className="max-w-5xl">

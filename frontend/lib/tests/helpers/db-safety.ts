@@ -6,6 +6,8 @@ export function assertNotProductionDb(): void {
   const appEnv = (process.env.APP_ENV ?? 'local').toLowerCase();
   const databaseUrl = process.env.DATABASE_URL ?? '';
   const databaseUrlLocal = process.env.DATABASE_URL_LOCAL ?? '';
+  const strictLocal = process.env.SHOP_STRICT_LOCAL_DB === '1';
+  const requiredLocal = process.env.SHOP_REQUIRED_DATABASE_URL_LOCAL ?? '';
 
   const reasons: string[] = [];
 
@@ -22,6 +24,20 @@ export function assertNotProductionDb(): void {
     /production/i.test(databaseUrlLocal)
   ) {
     reasons.push('DATABASE_URL_LOCAL looks production-like');
+  }
+
+  if (strictLocal && databaseUrl.trim()) {
+    reasons.push('DATABASE_URL must be unset when SHOP_STRICT_LOCAL_DB=1');
+  }
+
+  if (strictLocal && !databaseUrlLocal.trim()) {
+    reasons.push('DATABASE_URL_LOCAL must be set when SHOP_STRICT_LOCAL_DB=1');
+  }
+
+  if (strictLocal && requiredLocal && databaseUrlLocal !== requiredLocal) {
+    reasons.push(
+      'DATABASE_URL_LOCAL must match SHOP_REQUIRED_DATABASE_URL_LOCAL exactly'
+    );
   }
 
   if (reasons.length > 0) {

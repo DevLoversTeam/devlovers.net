@@ -19,7 +19,8 @@ function actionEnabled(args: {
 }): boolean {
   if (args.action === 'retry_label_creation') {
     return (
-      args.shipmentStatus === 'failed' || args.shipmentStatus === 'needs_attention'
+      args.shipmentStatus === 'failed' ||
+      args.shipmentStatus === 'needs_attention'
     );
   }
   if (args.action === 'mark_shipped') {

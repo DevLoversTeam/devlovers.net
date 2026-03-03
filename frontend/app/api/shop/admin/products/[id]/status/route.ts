@@ -14,6 +14,7 @@ import { logError, logWarn } from '@/lib/logging';
 import { requireAdminCsrf } from '@/lib/security/admin-csrf';
 import { guardBrowserSameOrigin } from '@/lib/security/origin';
 import { toggleProductStatus } from '@/lib/services/products';
+import { writeAdminAudit } from '@/lib/services/shop/events/write-admin-audit';
 
 export const runtime = 'nodejs';
 
@@ -55,7 +56,9 @@ export async function PATCH(
   let productIdForLog: string | null = null;
 
   try {
-    await requireAdminApi(request);
+    const adminUser = await requireAdminApi(request);
+    const actorUserId =
+      adminUser && typeof adminUser.id === 'string' ? adminUser.id : null;
     const csrfRes = requireAdminCsrf(request, 'admin:products:status');
     if (csrfRes) {
       logWarn('admin_product_status_csrf_rejected', {
@@ -91,6 +94,41 @@ export async function PATCH(
     productIdForLog = parsedParams.data.id;
 
     const updated = await toggleProductStatus(productIdForLog);
+
+    try {
+      await writeAdminAudit({
+        actorUserId,
+        action: 'product_admin_action.toggle_status',
+        targetType: 'product',
+        targetId: updated.id,
+        requestId,
+        payload: {
+          productId: updated.id,
+          slug: updated.slug,
+          isActive: updated.isActive,
+        },
+        dedupeSeed: {
+          domain: 'product_admin_action',
+          action: 'toggle_status',
+          requestId,
+          productId: updated.id,
+          toIsActive: updated.isActive,
+        },
+      });
+    } catch (auditError) {
+      logWarn('admin_product_status_audit_failed', {
+        ...baseMeta,
+        code: 'AUDIT_WRITE_FAILED',
+        requestId,
+        actorUserId,
+        productId: updated.id,
+        action: 'product_admin_action.toggle_status',
+        isActive: updated.isActive,
+        message:
+          auditError instanceof Error ? auditError.message : String(auditError),
+        durationMs: Date.now() - startedAtMs,
+      });
+    }
 
     return noStoreJson({ success: true, product: updated }, { status: 200 });
   } catch (error) {

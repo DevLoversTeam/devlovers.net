@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { getRuntimeEnv, getServerEnv } from '@/lib/env';
+import { getRuntimeEnv } from '@/lib/env';
 
 export type MonobankEnv = {
   token: string | null;
@@ -19,19 +19,17 @@ function parseWebhookMode(raw: string | undefined): MonobankWebhookMode {
 }
 
 export function getMonobankConfig(): MonobankConfig {
-  const env = getServerEnv();
-
-  const rawMode = process.env.MONO_WEBHOOK_MODE ?? env.MONO_WEBHOOK_MODE;
+  const rawMode = process.env.MONO_WEBHOOK_MODE;
 
   return {
     webhookMode: parseWebhookMode(rawMode),
-    refundEnabled: env.MONO_REFUND_ENABLED === 'true',
+    refundEnabled: process.env.MONO_REFUND_ENABLED === 'true',
     invoiceValiditySeconds: parsePositiveInt(
-      env.MONO_INVOICE_VALIDITY_SECONDS,
+      process.env.MONO_INVOICE_VALIDITY_SECONDS,
       86400
     ),
     timeSkewToleranceSec: parsePositiveInt(
-      env.MONO_TIME_SKEW_TOLERANCE_SEC,
+      process.env.MONO_TIME_SKEW_TOLERANCE_SEC,
       300
     ),
     baseUrlSource: resolveBaseUrlSource(),
@@ -69,16 +67,13 @@ function parsePositiveInt(raw: string | undefined, fallback: number): number {
 }
 
 function resolveMonobankToken(): string | null {
-  const env = getServerEnv();
-  return nonEmpty(env.MONO_MERCHANT_TOKEN);
+  return nonEmpty(process.env.MONO_MERCHANT_TOKEN);
 }
 
 function resolveBaseUrlSource(): MonobankConfig['baseUrlSource'] {
-  const env = getServerEnv();
-  if (nonEmpty(env.SHOP_BASE_URL ?? undefined)) return 'shop_base_url';
-  if (nonEmpty(env.APP_ORIGIN ?? undefined)) return 'app_origin';
-  if (nonEmpty(env.NEXT_PUBLIC_SITE_URL ?? undefined))
-    return 'next_public_site_url';
+  if (nonEmpty(process.env.SHOP_BASE_URL)) return 'shop_base_url';
+  if (nonEmpty(process.env.APP_ORIGIN)) return 'app_origin';
+  if (nonEmpty(process.env.NEXT_PUBLIC_SITE_URL)) return 'next_public_site_url';
   return 'unknown';
 }
 
@@ -92,19 +87,19 @@ export function requireMonobankToken(): string {
 
 export function getMonobankEnv(): MonobankEnv {
   const runtimeEnv = getRuntimeEnv();
-  const env = getServerEnv();
 
   const token = resolveMonobankToken();
-  const publicKey = nonEmpty(env.MONO_PUBLIC_KEY);
+  const publicKey = nonEmpty(process.env.MONO_PUBLIC_KEY);
 
-  const apiBaseUrl = nonEmpty(env.MONO_API_BASE) ?? 'https://api.monobank.ua';
+  const apiBaseUrl =
+    nonEmpty(process.env.MONO_API_BASE) ?? 'https://api.monobank.ua';
 
-  const paymentsFlag = env.PAYMENTS_ENABLED ?? 'false';
+  const paymentsFlag = process.env.PAYMENTS_ENABLED ?? 'false';
   const configured = !!token;
   const paymentsEnabled = String(paymentsFlag).trim() === 'true' && configured;
 
   const invoiceTimeoutMs = parseTimeoutMs(
-    env.MONO_INVOICE_TIMEOUT_MS,
+    process.env.MONO_INVOICE_TIMEOUT_MS,
     runtimeEnv.NODE_ENV === 'production' ? 8000 : 12000
   );
 

@@ -8,6 +8,8 @@ import {
   NovaPoshtaConfigError,
 } from '@/lib/env/nova-poshta';
 import { logInfo, logWarn } from '@/lib/logging';
+import { buildShippingEventDedupeKey } from '@/lib/services/shop/events/dedupe-key';
+import { writeShippingEvent } from '@/lib/services/shop/events/write-shipping-event';
 import { sanitizeShippingErrorMessage } from '@/lib/services/shop/shipping/log-sanitizer';
 import { recordShippingMetric } from '@/lib/services/shop/shipping/metrics';
 import {
@@ -15,6 +17,7 @@ import {
   NovaPoshtaApiError,
   type NovaPoshtaCreateTtnInput,
 } from '@/lib/services/shop/shipping/nova-poshta-client';
+import { shippingStatusTransitionWhereSql } from '@/lib/services/shop/transitions/shipping-state';
 
 type ClaimedShipmentRow = {
   id: string;
@@ -49,6 +52,12 @@ type ShipmentError = {
   message: string;
   transient: boolean;
 };
+
+type WorkerShippingEventName =
+  | 'creating_label'
+  | 'label_created'
+  | 'label_creation_retry_scheduled'
+  | 'label_creation_needs_attention';
 
 export type RunShippingShipmentsWorkerArgs = {
   runId: string;
@@ -279,6 +288,71 @@ function computeBackoffSeconds(
   return Math.min(backoff, 6 * 60 * 60);
 }
 
+function nextAttemptNumber(attemptCount: number): number {
+  return Math.max(1, Math.max(0, Math.trunc(attemptCount)) + 1);
+}
+
+function buildWorkerEventDedupeKey(args: {
+  orderId: string;
+  shipmentId: string;
+  eventName: WorkerShippingEventName;
+  statusTo: string;
+  attemptNumber: number;
+  errorCode?: string | null;
+}): string {
+  return buildShippingEventDedupeKey({
+    domain: 'shipments_worker',
+    orderId: args.orderId,
+    shipmentId: args.shipmentId,
+    eventName: args.eventName,
+    statusTo: args.statusTo,
+    attemptNumber: args.attemptNumber,
+    errorCode: args.errorCode ?? null,
+  });
+}
+
+async function emitWorkerShippingEvent(args: {
+  orderId: string;
+  shipmentId: string;
+  provider: string;
+  eventName: WorkerShippingEventName;
+  statusFrom: string | null;
+  statusTo: string;
+  attemptNumber: number;
+  runId: string;
+  payload?: Record<string, unknown>;
+  eventRef?: string | null;
+  trackingNumber?: string | null;
+  errorCode?: string | null;
+}) {
+  const dedupeKey = buildWorkerEventDedupeKey({
+    orderId: args.orderId,
+    shipmentId: args.shipmentId,
+    eventName: args.eventName,
+    statusTo: args.statusTo,
+    attemptNumber: args.attemptNumber,
+    errorCode: args.errorCode ?? null,
+  });
+
+  await writeShippingEvent({
+    orderId: args.orderId,
+    shipmentId: args.shipmentId,
+    provider: args.provider,
+    eventName: args.eventName,
+    eventSource: 'shipments_worker',
+    eventRef: args.eventRef ?? args.runId,
+    statusFrom: args.statusFrom,
+    statusTo: args.statusTo,
+    trackingNumber: args.trackingNumber ?? null,
+    payload: {
+      ...(args.payload ?? {}),
+      runId: args.runId,
+      attemptNumber: args.attemptNumber,
+    },
+    dedupeKey,
+  });
+}
+
 function toNpPayload(args: {
   order: OrderShippingDetailsRow;
   snapshot: ParsedShipmentSnapshot;
@@ -335,7 +409,9 @@ export async function claimQueuedShipmentsForProcessing(args: {
 }): Promise<ClaimedShipmentRow[]> {
   const res = await db.execute<ClaimedShipmentRow>(sql`
     with candidates as (
-      select s.id
+      select
+        s.id,
+        s.order_id
       from shipping_shipments s
       where (
         (
@@ -355,7 +431,15 @@ export async function claimQueuedShipmentsForProcessing(args: {
           lease_owner = ${args.runId},
           lease_expires_at = now() + make_interval(secs => ${args.leaseSeconds}),
           updated_at = now()
-      where s.id in (select id from candidates)
+      from candidates c
+      join orders o on o.id = c.order_id
+      where s.id = c.id
+        and ${shippingStatusTransitionWhereSql({
+          column: sql`o.shipping_status`,
+          to: 'creating_label',
+          allowNullFrom: true,
+          includeSame: true,
+        })}
       returning
         s.id,
         s.order_id,
@@ -368,16 +452,69 @@ export async function claimQueuedShipmentsForProcessing(args: {
       set shipping_status = 'creating_label',
           updated_at = now()
       where o.id in (select order_id from claimed)
-        and (
-          o.shipping_status is null
-          or o.shipping_status in ('pending', 'queued', 'creating_label')
-        )
-      returning o.id
+        and ${shippingStatusTransitionWhereSql({
+          column: sql`o.shipping_status`,
+          to: 'creating_label',
+          allowNullFrom: true,
+          includeSame: true,
+        })}
+      returning o.id as order_id
+    ),
+    released_blocked as (
+      update shipping_shipments s
+      set status = 'queued',
+          lease_owner = null,
+          lease_expires_at = null,
+          updated_at = now()
+      from claimed c
+      left join mark_orders mo on mo.order_id = c.order_id
+      where s.id = c.id
+        and mo.order_id is null
+      returning s.id
     )
-    select * from claimed
+    select
+      c.id,
+      c.order_id,
+      c.provider,
+      c.status,
+      c.attempt_count
+    from claimed c
+join mark_orders mo on mo.order_id = c.order_id
   `);
 
-  return readRows<ClaimedShipmentRow>(res);
+  const claimed = readRows<ClaimedShipmentRow>(res);
+
+  for (const row of claimed) {
+    try {
+      await emitWorkerShippingEvent({
+        orderId: row.order_id,
+        shipmentId: row.id,
+        provider: row.provider,
+        eventName: 'creating_label',
+        statusFrom: null,
+        statusTo: 'creating_label',
+        attemptNumber: nextAttemptNumber(row.attempt_count),
+        runId: args.runId,
+        payload: {
+          shipmentStatusTo: 'processing',
+        },
+      });
+    } catch (error) {
+      logWarn('shipping_shipments_worker_claim_event_write_failed', {
+        runId: args.runId,
+        orderId: row.order_id,
+        shipmentId: row.id,
+        provider: row.provider,
+        eventName: 'creating_label',
+        code: 'SHIPPING_EVENT_WRITE_FAILED',
+        ...(error instanceof Error && error.message
+          ? { errorMessage: error.message }
+          : {}),
+      });
+    }
+  }
+
+  return claimed;
 }
 
 async function loadOrderShippingDetails(
@@ -407,7 +544,11 @@ async function markSucceeded(args: {
   providerRef: string;
   trackingNumber: string;
 }) {
-  const res = await db.execute<{ order_id: string }>(sql`
+  const res = await db.execute<{
+    shipment_updated: boolean;
+    order_updated: boolean;
+    order_id: string | null;
+  }>(sql`
     with updated_shipment as (
       update shipping_shipments s
       set status = 'succeeded',
@@ -431,12 +572,26 @@ async function markSucceeded(args: {
           shipping_provider_ref = ${args.providerRef},
           updated_at = now()
       where o.id in (select order_id from updated_shipment)
+        and ${shippingStatusTransitionWhereSql({
+          column: sql`o.shipping_status`,
+          to: 'label_created',
+          allowNullFrom: true,
+        })}
       returning o.id
     )
-    select order_id from updated_shipment
+    select
+      exists (select 1 from updated_shipment) as shipment_updated,
+      exists (select 1 from updated_order) as order_updated,
+      (select us.order_id from updated_shipment us limit 1) as order_id
   `);
 
-  return readRows<{ order_id: string }>(res)[0] ?? null;
+  return (
+    readRows<{
+      shipment_updated: boolean;
+      order_updated: boolean;
+      order_id: string | null;
+    }>(res)[0] ?? null
+  );
 }
 
 async function markFailed(args: {
@@ -446,13 +601,16 @@ async function markFailed(args: {
   error: ShipmentError;
   nextAttemptAt: Date | null;
   terminalNeedsAttention: boolean;
-}) {
+}): Promise<{ shipment_updated: boolean; order_updated: boolean } | null> {
   const safeErrorMessage = sanitizeShippingErrorMessage(
     args.error.message,
     'Shipment processing failed.'
   );
 
-  await db.execute(sql`
+  const res = await db.execute<{
+    shipment_updated: boolean;
+    order_updated: boolean;
+  }>(sql`
     with updated_shipment as (
       update shipping_shipments s
       set status = ${args.terminalNeedsAttention ? 'needs_attention' : 'failed'},
@@ -473,10 +631,25 @@ async function markFailed(args: {
           updated_at = now()
       where o.id = ${args.orderId}::uuid
         and exists (select 1 from updated_shipment)
+        and ${shippingStatusTransitionWhereSql({
+          column: sql`o.shipping_status`,
+          to: args.terminalNeedsAttention ? 'needs_attention' : 'queued',
+          allowNullFrom: true,
+          includeSame: true,
+        })}
       returning o.id
     )
-    select 1
+    select
+      exists (select 1 from updated_shipment) as shipment_updated,
+      exists (select 1 from updated_order) as order_updated
   `);
+
+  return (
+    readRows<{
+      shipment_updated: boolean;
+      order_updated: boolean;
+    }>(res)[0] ?? null
+  );
 }
 
 async function processClaimedShipment(args: {
@@ -547,7 +720,7 @@ async function processClaimedShipment(args: {
       trackingNumber: created.trackingNumber,
     });
 
-    if (!marked) {
+    if (!marked?.shipment_updated) {
       logWarn('shipping_shipments_worker_lease_lost', {
         runId: args.runId,
         shipmentId: args.claim.id,
@@ -556,14 +729,59 @@ async function processClaimedShipment(args: {
       });
       return 'retried';
     }
+    if (!marked.order_updated) {
+      logWarn('shipping_shipments_worker_order_transition_blocked', {
+        runId: args.runId,
+        shipmentId: args.claim.id,
+        orderId: args.claim.order_id,
+        code: 'ORDER_TRANSITION_BLOCKED',
+        statusTo: 'label_created',
+      });
+      return 'retried';
+    }
 
-    recordShippingMetric({
-      name: 'succeeded',
-      source: 'shipments_worker',
-      runId: args.runId,
-      orderId: args.claim.order_id,
-      shipmentId: args.claim.id,
-    });
+    try {
+      await emitWorkerShippingEvent({
+        orderId: args.claim.order_id,
+        shipmentId: args.claim.id,
+        provider: args.claim.provider,
+        eventName: 'label_created',
+        statusFrom: 'creating_label',
+        statusTo: 'label_created',
+        attemptNumber: nextAttemptNumber(args.claim.attempt_count),
+        runId: args.runId,
+        eventRef: created.providerRef,
+        trackingNumber: created.trackingNumber,
+        payload: {
+          providerRef: created.providerRef,
+          shipmentStatusTo: 'succeeded',
+        },
+      });
+    } catch {
+      logWarn('shipping_shipments_worker_post_success_event_write_failed', {
+        runId: args.runId,
+        shipmentId: args.claim.id,
+        orderId: args.claim.order_id,
+        code: 'SHIPPING_EVENT_WRITE_FAILED',
+      });
+    }
+
+    try {
+      recordShippingMetric({
+        name: 'succeeded',
+        source: 'shipments_worker',
+        runId: args.runId,
+        orderId: args.claim.order_id,
+        shipmentId: args.claim.id,
+      });
+    } catch {
+      logWarn('shipping_shipments_worker_post_success_metric_write_failed', {
+        runId: args.runId,
+        shipmentId: args.claim.id,
+        orderId: args.claim.order_id,
+        code: 'SHIPPING_METRIC_WRITE_FAILED',
+      });
+    }
 
     return 'succeeded';
   } catch (error) {
@@ -584,7 +802,7 @@ async function processClaimedShipment(args: {
               1000
         );
 
-    await markFailed({
+    const updated = await markFailed({
       shipmentId: args.claim.id,
       runId: args.runId,
       orderId: args.claim.order_id,
@@ -593,32 +811,119 @@ async function processClaimedShipment(args: {
       terminalNeedsAttention,
     });
 
+    if (!updated?.shipment_updated) {
+      logWarn('shipping_shipments_worker_lease_lost', {
+        runId: args.runId,
+        shipmentId: args.claim.id,
+        orderId: args.claim.order_id,
+        code: 'SHIPMENT_LEASE_LOST',
+      });
+      return 'retried';
+    }
+    if (!updated.order_updated) {
+      logWarn('shipping_shipments_worker_order_transition_blocked', {
+        runId: args.runId,
+        shipmentId: args.claim.id,
+        orderId: args.claim.order_id,
+        code: 'ORDER_TRANSITION_BLOCKED',
+        statusTo: terminalNeedsAttention ? 'needs_attention' : 'queued',
+      });
+      return 'retried';
+    }
+
+    const failureEventName = terminalNeedsAttention
+      ? 'label_creation_needs_attention'
+      : 'label_creation_retry_scheduled';
+    try {
+      await emitWorkerShippingEvent({
+        orderId: args.claim.order_id,
+        shipmentId: args.claim.id,
+        provider: args.claim.provider,
+        eventName: failureEventName,
+        statusFrom: 'creating_label',
+        statusTo: terminalNeedsAttention ? 'needs_attention' : 'queued',
+        attemptNumber: nextAttemptNumber(args.claim.attempt_count),
+        runId: args.runId,
+        eventRef: classified.code,
+        errorCode: classified.code,
+        payload: {
+          errorCode: classified.code,
+          errorMessage: classified.message,
+          transient: classified.transient,
+          nextAttemptAt: nextAttemptAt ? nextAttemptAt.toISOString() : null,
+          shipmentStatusTo: terminalNeedsAttention
+            ? 'needs_attention'
+            : 'failed',
+        },
+      });
+    } catch {
+      logWarn('shipping_shipments_worker_failure_event_write_failed', {
+        runId: args.runId,
+        shipmentId: args.claim.id,
+        orderId: args.claim.order_id,
+        provider: args.claim.provider,
+        code: 'SHIPPING_EVENT_WRITE_FAILED',
+        eventName: failureEventName,
+      });
+    }
+
     if (terminalNeedsAttention) {
-      recordShippingMetric({
-        name: 'needs_attention',
-        source: 'shipments_worker',
-        runId: args.runId,
-        orderId: args.claim.order_id,
-        shipmentId: args.claim.id,
-        code: classified.code,
-      });
+      try {
+        recordShippingMetric({
+          name: 'needs_attention',
+          source: 'shipments_worker',
+          runId: args.runId,
+          orderId: args.claim.order_id,
+          shipmentId: args.claim.id,
+          code: classified.code,
+        });
+      } catch {
+        logWarn('shipping_shipments_worker_terminal_metric_write_failed', {
+          runId: args.runId,
+          orderId: args.claim.order_id,
+          shipmentId: args.claim.id,
+          errorCode: classified.code,
+          code: 'SHIPPING_METRIC_WRITE_FAILED',
+        });
+      }
     } else {
-      recordShippingMetric({
-        name: 'failed',
-        source: 'shipments_worker',
-        runId: args.runId,
-        orderId: args.claim.order_id,
-        shipmentId: args.claim.id,
-        code: classified.code,
-      });
-      recordShippingMetric({
-        name: 'retries',
-        source: 'shipments_worker',
-        runId: args.runId,
-        orderId: args.claim.order_id,
-        shipmentId: args.claim.id,
-        code: classified.code,
-      });
+      try {
+        recordShippingMetric({
+          name: 'failed',
+          source: 'shipments_worker',
+          runId: args.runId,
+          orderId: args.claim.order_id,
+          shipmentId: args.claim.id,
+          code: classified.code,
+        });
+      } catch {
+        logWarn('shipping_shipments_worker_terminal_metric_write_failed', {
+          runId: args.runId,
+          orderId: args.claim.order_id,
+          shipmentId: args.claim.id,
+          errorCode: classified.code,
+          code: 'SHIPPING_METRIC_WRITE_FAILED',
+        });
+      }
+
+      try {
+        recordShippingMetric({
+          name: 'retries',
+          source: 'shipments_worker',
+          runId: args.runId,
+          orderId: args.claim.order_id,
+          shipmentId: args.claim.id,
+          code: classified.code,
+        });
+      } catch {
+        logWarn('shipping_shipments_worker_terminal_metric_write_failed', {
+          runId: args.runId,
+          orderId: args.claim.order_id,
+          shipmentId: args.claim.id,
+          errorCode: classified.code,
+          code: 'SHIPPING_METRIC_WRITE_FAILED',
+        });
+      }
     }
 
     logWarn('shipping_shipments_worker_item_failed', {

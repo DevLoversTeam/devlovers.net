@@ -8,6 +8,7 @@ import { orders, paymentAttempts, productPrices, products } from '@/db/schema';
 import { resetEnvCache } from '@/lib/env';
 import { toDbMoney } from '@/lib/shop/money';
 import { deriveTestIpFromIdemKey } from '@/lib/tests/helpers/ip';
+import { getOrSeedActiveTemplateProduct } from '@/lib/tests/helpers/seed-product';
 
 vi.mock('@/lib/auth', () => ({
   getCurrentUser: vi.fn().mockResolvedValue(null),
@@ -28,7 +29,6 @@ const __prevPaymentsEnabled = process.env.PAYMENTS_ENABLED;
 const __prevMonoMerchantToken = process.env.MONO_MERCHANT_TOKEN;
 const __prevStatusSecret = process.env.SHOP_STATUS_TOKEN_SECRET;
 const __prevAppOrigin = process.env.APP_ORIGIN;
-const __prevDatabaseUrl = process.env.DATABASE_URL;
 
 beforeAll(() => {
   process.env.RATE_LIMIT_DISABLED = '1';
@@ -37,9 +37,6 @@ beforeAll(() => {
   process.env.APP_ORIGIN = 'http://localhost:3000';
   process.env.SHOP_STATUS_TOKEN_SECRET =
     'test_status_token_secret_test_status_token_secret';
-  if (!process.env.DATABASE_URL && __prevDatabaseUrl) {
-    process.env.DATABASE_URL = __prevDatabaseUrl;
-  }
   resetEnvCache();
 });
 
@@ -61,22 +58,11 @@ afterAll(() => {
   if (__prevStatusSecret === undefined)
     delete process.env.SHOP_STATUS_TOKEN_SECRET;
   else process.env.SHOP_STATUS_TOKEN_SECRET = __prevStatusSecret;
-
-  if (__prevDatabaseUrl === undefined) delete process.env.DATABASE_URL;
-  else process.env.DATABASE_URL = __prevDatabaseUrl;
   resetEnvCache();
 });
 
 async function createIsolatedProduct(stock: number) {
-  const [tpl] = await db
-    .select()
-    .from(products)
-    .where(eq(products.isActive as any, true))
-    .limit(1);
-
-  if (!tpl) {
-    throw new Error('No template product found to clone.');
-  }
+  const tpl = await getOrSeedActiveTemplateProduct();
 
   const productId = crypto.randomUUID();
   const slug = `t-mono-${crypto.randomUUID()}`;

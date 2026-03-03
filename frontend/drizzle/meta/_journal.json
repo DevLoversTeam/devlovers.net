@@ -141,6 +141,55 @@
       "when": 1771984384747,
       "tag": "0019_p2_shop_invariants",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1772135863883,
+      "tag": "0020_shop_orders_sweeps_partial_indexes",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1772213459590,
+      "tag": "0021_solid_sage",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1772219957446,
+      "tag": "0022_demonic_vapor",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1772223636248,
+      "tag": "0023_clean_madame_masque",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1772225141854,
+      "tag": "0024_gigantic_annihilus",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1772234409785,
+      "tag": "0025_cute_mentor",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1772252564812,
+      "tag": "0026_gray_stone_men",
+      "breakpoints": true
     }
   ]
 }

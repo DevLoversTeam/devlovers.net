@@ -4,7 +4,6 @@ import { resetEnvCache } from '@/lib/env';
 import { resolveShopBaseUrl, toAbsoluteUrl } from '@/lib/shop/url';
 
 const ENV_KEYS = [
-  'DATABASE_URL',
   'SHOP_BASE_URL',
   'APP_ORIGIN',
   'NEXT_PUBLIC_SITE_URL',
@@ -18,8 +17,6 @@ beforeEach(() => {
     previousEnv[key] = process.env[key];
     delete process.env[key];
   }
-
-  process.env.DATABASE_URL = 'https://db.example.test';
   resetEnvCache();
 });
 

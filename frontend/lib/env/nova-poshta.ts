@@ -1,7 +1,5 @@
 import 'server-only';
 
-import { getServerEnv } from '@/lib/env';
-
 const DEFAULT_NP_API_BASE = 'https://api.novaposhta.ua/v2.0/json/';
 
 function nonEmpty(value: string | undefined): string | null {
@@ -51,28 +49,33 @@ export class NovaPoshtaConfigError extends Error {
 }
 
 export function getShopShippingFlags(): ShopShippingFlags {
-  const env = getServerEnv();
   const retentionDays = Math.max(
     1,
-    Math.min(3650, parsePositiveInt(env.SHOP_SHIPPING_RETENTION_DAYS, 180))
+    Math.min(
+      3650,
+      parsePositiveInt(process.env.SHOP_SHIPPING_RETENTION_DAYS, 180)
+    )
   );
 
   return {
-    shippingEnabled: env.SHOP_SHIPPING_ENABLED === 'true',
-    npEnabled: env.SHOP_SHIPPING_NP_ENABLED === 'true',
-    syncEnabled: env.SHOP_SHIPPING_SYNC_ENABLED === 'true',
-    retentionEnabled: env.SHOP_SHIPPING_RETENTION_ENABLED === 'true',
+    shippingEnabled: process.env.SHOP_SHIPPING_ENABLED === 'true',
+    npEnabled: process.env.SHOP_SHIPPING_NP_ENABLED === 'true',
+    syncEnabled: process.env.SHOP_SHIPPING_SYNC_ENABLED === 'true',
+    retentionEnabled: process.env.SHOP_SHIPPING_RETENTION_ENABLED === 'true',
     retentionDays,
   };
 }
 
 export function getNovaPoshtaConfig(): NovaPoshtaConfig {
-  const env = getServerEnv();
   const flags = getShopShippingFlags();
 
-  const apiBaseUrl = nonEmpty(env.NP_API_BASE) ?? DEFAULT_NP_API_BASE;
-  const defaultCargoType = nonEmpty(env.NP_DEFAULT_CARGO_TYPE) ?? 'Cargo';
-  const defaultWeightGrams = parsePositiveInt(env.NP_DEFAULT_WEIGHT_GRAMS, 1000);
+  const apiBaseUrl = nonEmpty(process.env.NP_API_BASE) ?? DEFAULT_NP_API_BASE;
+  const defaultCargoType =
+    nonEmpty(process.env.NP_DEFAULT_CARGO_TYPE) ?? 'Cargo';
+  const defaultWeightGrams = parsePositiveInt(
+    process.env.NP_DEFAULT_WEIGHT_GRAMS,
+    1000
+  );
 
   if (!flags.shippingEnabled || !flags.npEnabled) {
     return {
@@ -85,15 +88,15 @@ export function getNovaPoshtaConfig(): NovaPoshtaConfig {
     };
   }
 
-  const apiKey = nonEmpty(env.NP_API_KEY);
+  const apiKey = nonEmpty(process.env.NP_API_KEY);
   const sender = {
-    cityRef: nonEmpty(env.NP_SENDER_CITY_REF),
-    warehouseRef: nonEmpty(env.NP_SENDER_WAREHOUSE_REF),
-    senderRef: nonEmpty(env.NP_SENDER_REF),
-    contactRef: nonEmpty(env.NP_SENDER_CONTACT_REF),
-    name: nonEmpty(env.NP_SENDER_NAME),
-    phone: nonEmpty(env.NP_SENDER_PHONE),
-    edrpou: nonEmpty(env.NP_SENDER_EDRPOU),
+    cityRef: nonEmpty(process.env.NP_SENDER_CITY_REF),
+    warehouseRef: nonEmpty(process.env.NP_SENDER_WAREHOUSE_REF),
+    senderRef: nonEmpty(process.env.NP_SENDER_REF),
+    contactRef: nonEmpty(process.env.NP_SENDER_CONTACT_REF),
+    name: nonEmpty(process.env.NP_SENDER_NAME),
+    phone: nonEmpty(process.env.NP_SENDER_PHONE),
+    edrpou: nonEmpty(process.env.NP_SENDER_EDRPOU),
   };
 
   const missing: string[] = [];

@@ -122,7 +122,6 @@ async function cleanupSeedData(data: SeedData, orderIds: string[]) {
 describe('checkout shipping phase 3', () => {
   beforeEach(() => {
     vi.unstubAllEnvs();
-    vi.stubEnv('DATABASE_URL', 'https://example.com/db');
     vi.stubEnv('SHOP_SHIPPING_ENABLED', 'true');
     vi.stubEnv('SHOP_SHIPPING_NP_ENABLED', 'true');
     vi.stubEnv('SHOP_SHIPPING_SYNC_ENABLED', 'true');
@@ -236,9 +235,9 @@ describe('checkout shipping phase 3', () => {
       expect((shippingRow?.shippingAddress as any)?.selection?.cityRef).toBe(
         seed.cityRef
       );
-      expect((shippingRow?.shippingAddress as any)?.selection?.warehouseRef).toBe(
-        seed.warehouseRefA
-      );
+      expect(
+        (shippingRow?.shippingAddress as any)?.selection?.warehouseRef
+      ).toBe(seed.warehouseRefA);
       expect((shippingRow?.shippingAddress as any)?.recipient?.fullName).toBe(
         'Alice'
       );

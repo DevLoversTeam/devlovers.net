@@ -49,6 +49,8 @@ const EXPECTED_BUSINESS_ERROR_CODES = new Set([
   'INVALID_SHIPPING_ADDRESS',
   'SHIPPING_METHOD_UNAVAILABLE',
   'SHIPPING_CURRENCY_UNSUPPORTED',
+  'TERMS_NOT_ACCEPTED',
+  'PRIVACY_NOT_ACCEPTED',
 ]);
 
 const DEFAULT_CHECKOUT_RATE_LIMIT_MAX = 10;
@@ -681,7 +683,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { items, userId, shipping, country } = parsedPayload.data;
+  const { items, userId, shipping, country, legalConsent } = parsedPayload.data;
   const itemCount = items.reduce((total, item) => total + item.quantity, 0);
   const locale = resolveRequestLocale(request);
 
@@ -785,6 +787,7 @@ export async function POST(request: NextRequest) {
       locale,
       country: country ?? null,
       shipping: shipping ?? null,
+      legalConsent: legalConsent ?? null,
       paymentProvider: selectedProvider === 'monobank' ? 'monobank' : undefined,
     });
 

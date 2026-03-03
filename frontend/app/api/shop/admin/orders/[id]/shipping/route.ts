@@ -144,11 +144,17 @@ export async function POST(
     }
 
     if (error instanceof AdminUnauthorizedError) {
-      return noStoreJson({ code: error.code, message: 'Unauthorized.' }, { status: 401 });
+      return noStoreJson(
+        { code: error.code, message: 'Unauthorized.' },
+        { status: 401 }
+      );
     }
 
     if (error instanceof AdminForbiddenError) {
-      return noStoreJson({ code: error.code, message: 'Forbidden.' }, { status: 403 });
+      return noStoreJson(
+        { code: error.code, message: 'Forbidden.' },
+        { status: 403 }
+      );
     }
 
     if (error instanceof ShippingAdminActionError) {

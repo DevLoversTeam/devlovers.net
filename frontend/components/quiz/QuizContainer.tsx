@@ -2,12 +2,7 @@
 import { Ban, FileText, TriangleAlert, UserRound } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import {
-  useEffect,
-  useReducer,
-  useState,
-  useTransition,
-} from 'react';
+import { useEffect, useReducer, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 
 import { initializeQuizCache, submitQuizAttempt } from '@/actions/quiz';
@@ -184,7 +179,7 @@ export function QuizContainer({
     : '#3B82F6';
   const [isStarting, setIsStarting] = useState(false);
   const [isPending, startTransition] = useTransition();
-  const [state, dispatch] = useReducer(quizReducer, quizId, (id) => {
+  const [state, dispatch] = useReducer(quizReducer, quizId, id => {
     const defaultState: QuizState = {
       status: 'rules',
       currentIndex: 0,

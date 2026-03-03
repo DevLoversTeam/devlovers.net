@@ -8,7 +8,6 @@ import {
 } from '@/lib/services/shop/shipping/nova-poshta-client';
 
 function stubRequiredNpEnv() {
-  vi.stubEnv('DATABASE_URL', 'https://example.com/db');
   vi.stubEnv('SHOP_SHIPPING_ENABLED', 'true');
   vi.stubEnv('SHOP_SHIPPING_NP_ENABLED', 'true');
   vi.stubEnv('NP_API_BASE', 'https://np.invalid/v2.0/json/');
@@ -46,7 +45,9 @@ describe('nova poshta client network failure', () => {
         status: 0,
         message: 'fetch failed',
       });
-      expect((error as NovaPoshtaApiError & { cause?: unknown }).cause).toBe(fetchError);
+      expect((error as NovaPoshtaApiError & { cause?: unknown }).cause).toBe(
+        fetchError
+      );
     }
   });
 
@@ -56,7 +57,9 @@ describe('nova poshta client network failure', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     try {
-      await getWarehousesBySettlementRef('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee');
+      await getWarehousesBySettlementRef(
+        'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'
+      );
       throw new Error('expected getWarehousesBySettlementRef to throw');
     } catch (error) {
       expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -66,7 +69,9 @@ describe('nova poshta client network failure', () => {
         status: 0,
         message: 'fetch failed',
       });
-      expect((error as NovaPoshtaApiError & { cause?: unknown }).cause).toBe(fetchError);
+      expect((error as NovaPoshtaApiError & { cause?: unknown }).cause).toBe(
+        fetchError
+      );
     }
   });
 });

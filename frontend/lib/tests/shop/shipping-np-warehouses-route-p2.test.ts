@@ -31,10 +31,9 @@ vi.mock('@/lib/security/rate-limit', () => ({
 }));
 
 vi.mock('@/lib/services/shop/shipping/nova-poshta-client', async () => {
-  const actual =
-    await vi.importActual<typeof import('@/lib/services/shop/shipping/nova-poshta-client')>(
-      '@/lib/services/shop/shipping/nova-poshta-client'
-    );
+  const actual = await vi.importActual<
+    typeof import('@/lib/services/shop/shipping/nova-poshta-client')
+  >('@/lib/services/shop/shipping/nova-poshta-client');
   return {
     ...actual,
     getWarehousesBySettlementRef: (...args: any[]) =>
@@ -54,7 +53,6 @@ describe('shop shipping np warehouses route (phase 2)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.unstubAllEnvs();
-    vi.stubEnv('DATABASE_URL', 'https://example.com/db');
     vi.stubEnv('SHOP_SHIPPING_ENABLED', 'true');
     vi.stubEnv('SHOP_SHIPPING_NP_ENABLED', 'true');
     resetEnvCache();

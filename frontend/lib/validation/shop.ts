@@ -367,7 +367,8 @@ export const checkoutShippingSchema = z
   .strict()
   .superRefine((value, ctx) => {
     if (
-      (value.methodCode === 'NP_WAREHOUSE' || value.methodCode === 'NP_LOCKER') &&
+      (value.methodCode === 'NP_WAREHOUSE' ||
+        value.methodCode === 'NP_LOCKER') &&
       !value.selection.warehouseRef
     ) {
       ctx.addIssue({
@@ -386,6 +387,17 @@ export const checkoutShippingSchema = z
     }
   });
 
+const checkoutLegalVersionSchema = z.string().trim().min(1).max(64);
+
+export const checkoutLegalConsentSchema = z
+  .object({
+    termsAccepted: z.boolean(),
+    privacyAccepted: z.boolean(),
+    termsVersion: checkoutLegalVersionSchema,
+    privacyVersion: checkoutLegalVersionSchema,
+  })
+  .strict();
+
 export const checkoutPayloadSchema = z
   .object({
     items: z.array(checkoutItemSchema).min(1),
@@ -397,6 +409,7 @@ export const checkoutPayloadSchema = z
       .transform(value => value.toUpperCase())
       .optional(),
     shipping: checkoutShippingSchema.optional(),
+    legalConsent: checkoutLegalConsentSchema.optional(),
   })
   .strict();
 
@@ -501,6 +514,34 @@ export const orderSummarySchema = z.object({
   ),
 });
 
+export const intlQuoteOfferPayloadSchema = z
+  .object({
+    version: z.coerce.number().int().min(1),
+    shippingQuoteMinor: z.coerce.number().int().min(0),
+    currency: currencySchema,
+    expiresAt: z.coerce.date().optional(),
+    payload: z.record(z.string(), z.unknown()).optional(),
+  })
+  .strict();
+
+export const intlQuoteAcceptPayloadSchema = z
+  .object({
+    version: z.coerce.number().int().min(1),
+  })
+  .strict();
+
+export const intlQuoteDeclinePayloadSchema = z
+  .object({
+    version: z.coerce.number().int().min(1).optional(),
+  })
+  .strict();
+
+export const orderPaymentInitPayloadSchema = z
+  .object({
+    provider: z.enum(['stripe']).default('stripe'),
+  })
+  .strict();
+
 export type CatalogQuery = z.infer<typeof catalogQuerySchema>;
 export type CatalogFilters = z.infer<typeof catalogFilterSchema>;
 export type DbProduct = z.infer<typeof dbProductSchema>;
@@ -515,4 +556,17 @@ export type CartRehydrateResult = z.infer<typeof cartRehydrateResultSchema>;
 export type CheckoutItemInput = z.infer<typeof checkoutItemSchema>;
 export type CheckoutPayload = z.infer<typeof checkoutPayloadSchema>;
 export type CheckoutShippingPayload = z.infer<typeof checkoutShippingSchema>;
+export type CheckoutLegalConsentPayload = z.infer<
+  typeof checkoutLegalConsentSchema
+>;
 export type OrderIdParams = z.infer<typeof orderIdParamSchema>;
+export type IntlQuoteOfferPayload = z.infer<typeof intlQuoteOfferPayloadSchema>;
+export type IntlQuoteAcceptPayload = z.infer<
+  typeof intlQuoteAcceptPayloadSchema
+>;
+export type IntlQuoteDeclinePayload = z.infer<
+  typeof intlQuoteDeclinePayloadSchema
+>;
+export type OrderPaymentInitPayload = z.infer<
+  typeof orderPaymentInitPayloadSchema
+>;

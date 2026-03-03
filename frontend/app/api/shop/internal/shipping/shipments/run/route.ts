@@ -5,15 +5,22 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { db } from '@/db';
 import { requireInternalJanitorAuth } from '@/lib/auth/internal-janitor';
-import { getNovaPoshtaConfig, getShopShippingFlags, NovaPoshtaConfigError } from '@/lib/env/nova-poshta';
-import { logError, logWarn } from '@/lib/logging';
+import {
+  getNovaPoshtaConfig,
+  getShopShippingFlags,
+  NovaPoshtaConfigError,
+} from '@/lib/env/nova-poshta';
+import { logError, logInfo, logWarn } from '@/lib/logging';
 import { guardNonBrowserFailClosed } from '@/lib/security/origin';
 import {
   sanitizeShippingErrorForLog,
   sanitizeShippingLogMeta,
 } from '@/lib/services/shop/shipping/log-sanitizer';
 import { runShippingShipmentsWorker } from '@/lib/services/shop/shipping/shipments-worker';
-import { internalShippingShipmentsRunPayloadSchema } from '@/lib/validation/shop-shipping';
+import {
+  getInternalShippingMinIntervalFloorSeconds,
+  internalShippingShipmentsRunPayloadSchema,
+} from '@/lib/validation/shop-shipping';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -84,7 +91,8 @@ async function readJsonBodyOrDefault(request: NextRequest): Promise<unknown> {
 }
 
 export async function POST(request: NextRequest) {
-  const requestId = request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
+  const requestId =
+    request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
   const runId = crypto.randomUUID();
   const baseMeta = {
     requestId,
@@ -161,9 +169,25 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const requestedMinIntervalSeconds = parsed.data.minIntervalSeconds;
+  const floorSeconds = getInternalShippingMinIntervalFloorSeconds();
+  const effectiveIntervalSeconds = Math.max(
+    floorSeconds,
+    requestedMinIntervalSeconds
+  );
+  const wasClamped = effectiveIntervalSeconds !== requestedMinIntervalSeconds;
+
+  logInfo('shop_shipping_job_interval_applied', {
+    ...baseMeta,
+    jobName: JOB_NAME,
+    requestedMinIntervalSeconds,
+    effectiveIntervalSeconds,
+    wasClamped,
+  });
+
   const gate = await acquireJobSlot({
     runId,
-    minIntervalSeconds: parsed.data.minIntervalSeconds,
+    minIntervalSeconds: effectiveIntervalSeconds,
   });
   if (!gate.ok) {
     const wait = retryAfterSeconds(gate.nextAllowedAt);

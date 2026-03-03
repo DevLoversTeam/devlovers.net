@@ -179,7 +179,7 @@ export function AppMobileMenu({
                 <>
                   <Link
                     href="/shop"
-                    onClick={(e) => handleLinkClick(e, '/shop')}
+                    onClick={e => handleLinkClick(e, '/shop')}
                     className={linkClass(pathname === '/shop')}
                   >
                     {t('shop')}
@@ -209,7 +209,7 @@ export function AppMobileMenu({
                 <>
                   <Link
                     href="/blog"
-                    onClick={(e) => handleLinkClick(e, '/blog')}
+                    onClick={e => handleLinkClick(e, '/blog')}
                     className={linkClass(pathname === '/blog')}
                   >
                     {t('blog')}
@@ -237,17 +237,16 @@ export function AppMobileMenu({
 
               {variant === 'platform' && (
                 <>
-                  {links
-                    .map(link => (
-                      <Link
-                        key={link.href}
-                        href={link.href}
-                        onClick={e => handleLinkClick(e, link.href)}
-                        className={linkClass(pathname === link.href)}
-                      >
-                        {'labelKey' in link ? t(link.labelKey) : link.label}
-                      </Link>
-                    ))}
+                  {links.map(link => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={e => handleLinkClick(e, link.href)}
+                      className={linkClass(pathname === link.href)}
+                    >
+                      {'labelKey' in link ? t(link.labelKey) : link.label}
+                    </Link>
+                  ))}
                 </>
               )}
 
@@ -285,14 +284,17 @@ export function AppMobileMenu({
                     </Link>
                   )}
 
-                  <div onClick={close} className="px-3 py-2 cursor-pointer text-muted-foreground hover:text-foreground transition-colors font-medium text-sm">
+                  <div
+                    onClick={close}
+                    className="text-muted-foreground hover:text-foreground cursor-pointer px-3 py-2 text-sm font-medium transition-colors"
+                  >
                     <LogoutButton />
                   </div>
                 </>
               ) : (
                 <Link
                   href="/login"
-                  onClick={(e) => handleLinkClick(e, '/login')}
+                  onClick={e => handleLinkClick(e, '/login')}
                   className={linkClass(pathname === '/login')}
                 >
                   {t('login')}

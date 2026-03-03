@@ -165,7 +165,7 @@ export default async function DashboardPage({
   const outlineBtnStyles =
     'inline-flex items-center justify-center rounded-full border border-gray-200/50 bg-white/10 px-6 py-2.5 text-sm font-semibold tracking-wide text-gray-700 backdrop-blur-md transition-all hover:-translate-y-0.5 hover:bg-white/20 hover:shadow-md hover:border-gray-300 dark:border-white/10 dark:bg-neutral-900/40 dark:text-gray-200 dark:hover:bg-neutral-800/80 dark:hover:border-white/20';
 
-  const sponsorBtnStyles = 
+  const sponsorBtnStyles =
     'group relative inline-flex items-center justify-center gap-2 rounded-full border border-(--accent-primary)/30 bg-(--accent-primary)/10 px-6 py-2.5 text-sm font-semibold tracking-wide text-(--accent-primary) backdrop-blur-md transition-all hover:-translate-y-0.5 hover:bg-(--accent-primary)/20 hover:shadow-[0_4px_12px_rgba(var(--accent-primary-rgb),0.2)] hover:border-(--accent-primary)/50 dark:border-(--accent-primary)/20 dark:bg-(--accent-primary)/5 dark:hover:bg-(--accent-primary)/20 dark:hover:border-(--accent-primary)/40 dark:hover:shadow-[0_4px_15px_rgba(var(--accent-primary-rgb),0.3)] overflow-hidden';
 
   return (
@@ -188,7 +188,7 @@ export default async function DashboardPage({
                 href="#feedback"
                 className={`group flex items-center gap-2 ${outlineBtnStyles}`}
               >
-                <MessageSquare className="h-4 w-4 transition-transform group-hover:-translate-y-0.5 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-white" />
+                <MessageSquare className="h-4 w-4 text-gray-400 transition-transform group-hover:-translate-y-0.5 group-hover:text-gray-600 dark:group-hover:text-white" />
                 {t('supportLink')}
               </a>
               <a
@@ -199,10 +199,12 @@ export default async function DashboardPage({
               >
                 {/* Subtle gradient glow background effect */}
                 <div className="absolute inset-0 z-0 bg-linear-to-r from-transparent via-(--accent-primary)/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                
+
                 <span className="relative z-10 flex items-center gap-2">
                   <Heart className="h-4 w-4 transition-transform group-hover:scale-110 group-hover:fill-(--accent-primary)/20" />
-                  {isMatchedSponsor ? t('profile.supportAgain') : t('profile.becomeSponsor')}
+                  {isMatchedSponsor
+                    ? t('profile.supportAgain')
+                    : t('profile.becomeSponsor')}
                 </span>
               </a>
             </div>
@@ -216,9 +218,13 @@ export default async function DashboardPage({
               totalAttempts={totalAttempts}
               globalRank={globalRank}
             />
-            <div id="stats" className="grid gap-8 scroll-mt-8 lg:grid-cols-2">
+            <div id="stats" className="grid scroll-mt-8 gap-8 lg:grid-cols-2">
               <StatsCard stats={stats} attempts={lastAttempts} />
-              <ActivityHeatmapCard attempts={attempts} locale={locale} currentStreak={currentStreak} />
+              <ActivityHeatmapCard
+                attempts={attempts}
+                locale={locale}
+                currentStreak={currentStreak}
+              />
             </div>
           </div>
           <div className="mt-8">

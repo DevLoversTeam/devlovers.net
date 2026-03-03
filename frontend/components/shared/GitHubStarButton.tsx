@@ -91,7 +91,7 @@ export function GitHubStarButton({ className = '' }: GitHubStarButtonProps) {
       target="_blank"
       rel="noopener noreferrer"
       aria-label={t('starOnGithub', { count: displayCount })}
-      className={`group hidden h-9 items-center justify-center gap-1.5 rounded-full border border-gray-200 bg-white/50 px-3 text-sm font-medium text-muted-foreground shadow-sm backdrop-blur-sm transition-all duration-200 hover:border-gray-300 hover:bg-white hover:text-foreground hover:shadow min-[375px]:inline-flex dark:border-neutral-800 dark:bg-neutral-900/50 dark:hover:border-neutral-700 dark:hover:bg-neutral-900 ${className}`}
+      className={`group text-muted-foreground hover:text-foreground hidden h-9 items-center justify-center gap-1.5 rounded-full border border-gray-200 bg-white/50 px-3 text-sm font-medium shadow-sm backdrop-blur-sm transition-all duration-200 hover:border-gray-300 hover:bg-white hover:shadow min-[375px]:inline-flex dark:border-neutral-800 dark:bg-neutral-900/50 dark:hover:border-neutral-700 dark:hover:bg-neutral-900 ${className}`}
     >
       <svg
         viewBox="0 0 16 16"
@@ -107,7 +107,7 @@ export function GitHubStarButton({ className = '' }: GitHubStarButtonProps) {
           {formatStarCount(displayCount)}
         </span>
         <Star
-          className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-[transform,color] duration-300 group-hover:rotate-12 group-hover:text-yellow-400 group-hover:drop-shadow-[0_0_6px_rgba(250,204,21,0.5)] group-active:rotate-12 group-active:text-yellow-400 group-active:drop-shadow-[0_0_6px_rgba(250,204,21,0.5)]"
+          className="text-muted-foreground h-3.5 w-3.5 shrink-0 transition-[transform,color] duration-300 group-hover:rotate-12 group-hover:text-yellow-400 group-hover:drop-shadow-[0_0_6px_rgba(250,204,21,0.5)] group-active:rotate-12 group-active:text-yellow-400 group-active:drop-shadow-[0_0_6px_rgba(250,204,21,0.5)]"
           fill="currentColor"
           aria-hidden="true"
         />

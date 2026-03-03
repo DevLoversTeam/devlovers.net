@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { requireInternalJanitorAuth } from '@/lib/auth/internal-janitor';
 import { getShopShippingFlags } from '@/lib/env/nova-poshta';
-import { logError, logWarn } from '@/lib/logging';
+import { logError, logInfo, logWarn } from '@/lib/logging';
 import { guardNonBrowserFailClosed } from '@/lib/security/origin';
 import {
   sanitizeShippingErrorForLog,
@@ -16,7 +16,10 @@ import {
   cacheSettlementsByQuery,
   cacheWarehousesBySettlement,
 } from '@/lib/services/shop/shipping/nova-poshta-catalog';
-import { internalNpSyncPayloadSchema } from '@/lib/validation/shop-shipping';
+import {
+  getInternalShippingMinIntervalFloorSeconds,
+  internalNpSyncPayloadSchema,
+} from '@/lib/validation/shop-shipping';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -81,7 +84,8 @@ function retryAfterSeconds(nextAllowedAt: Date | null): number {
 }
 
 export async function POST(request: NextRequest) {
-  const requestId = request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
+  const requestId =
+    request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
   const runId = crypto.randomUUID();
   const baseMeta = {
     requestId,
@@ -158,9 +162,24 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const requestedMinIntervalSeconds = parsed.data.minIntervalSeconds;
+  const effectiveIntervalSeconds = Math.max(
+    getInternalShippingMinIntervalFloorSeconds(),
+    requestedMinIntervalSeconds
+  );
+  const wasClamped = effectiveIntervalSeconds !== requestedMinIntervalSeconds;
+
+  logInfo('shop_shipping_job_interval_applied', {
+    ...baseMeta,
+    jobName: JOB_NAME,
+    requestedMinIntervalSeconds,
+    effectiveIntervalSeconds,
+    wasClamped,
+  });
+
   const gate = await acquireJobSlot({
     runId,
-    minIntervalSeconds: parsed.data.minIntervalSeconds,
+    minIntervalSeconds: effectiveIntervalSeconds,
   });
 
   if (!gate.ok) {
