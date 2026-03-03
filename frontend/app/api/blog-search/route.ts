@@ -6,8 +6,8 @@ import { client } from '@/client';
 const searchQuery = groq`
   *[_type == "post" && defined(slug.current)] | order(publishedAt desc) {
     _id,
-    "title": coalesce(title[$locale], title[lower($locale)], title.uk, title.en, title.pl, title),
-    "body": coalesce(body[$locale], body[lower($locale)], body.uk, body.en, body.pl, body)[]{
+    "title": coalesce(title[$locale], title[lower($locale)], title.uk, title.en, title.pl),
+    "body": coalesce(body[$locale], body[lower($locale)], body.uk, body.en, body.pl)[]{
       ...,
       children[]{ text }
     },

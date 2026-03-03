@@ -16,14 +16,13 @@ export async function generateMetadata({
 
   const post = await client.fetch(
     groq`*[_type == "post" && slug.current == $slug][0]{
-      "title": coalesce(title[$locale], title[lower($locale)], title.uk, title.en, title.pl, title)
+      "title": coalesce(title[$locale], title[lower($locale)], title.uk, title.en, title.pl)
     }`,
     { slug, locale }
   );
 
-  return {
-    title: post?.title || 'Post',
-  };
+  const title = typeof post?.title === 'string' ? post.title : 'Post';
+  return { title };
 }
 
 export default async function Page({

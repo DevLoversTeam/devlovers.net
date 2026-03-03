@@ -64,17 +64,17 @@ export default async function BlogCategoryPage({
       *[_type == "post" && defined(slug.current) && $category in categories[]->title]
         | order(coalesce(publishedAt, _createdAt) desc) {
           _id,
-          "title": coalesce(title[$locale], title[lower($locale)], title.uk, title.en, title.pl, title),
+          "title": coalesce(title[$locale], title[lower($locale)], title.uk, title.en, title.pl),
           slug,
           publishedAt,
           "categories": categories[]->title,
-          "body": coalesce(body[$locale], body[lower($locale)], body.uk, body.en, body.pl, body)[]{
+          "body": coalesce(body[$locale], body[lower($locale)], body.uk, body.en, body.pl)[]{
             ...,
             children[]{ text }
           },
           "mainImage": mainImage.asset->url,
           "author": author->{
-            "name": coalesce(name[$locale], name[lower($locale)], name.uk, name.en, name.pl, name),
+            "name": coalesce(name[$locale], name[lower($locale)], name.uk, name.en, name.pl),
             "image": image.asset->url
           }
         }
