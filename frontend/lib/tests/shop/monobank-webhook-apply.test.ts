@@ -7,8 +7,8 @@ import { db } from '@/db';
 import {
   monobankEvents,
   orders,
-  paymentEvents,
   paymentAttempts,
+  paymentEvents,
   shippingShipments,
 } from '@/db/schema';
 import { buildMonobankAttemptIdempotencyKey } from '@/lib/services/orders/attempt-idempotency';
@@ -47,6 +47,7 @@ async function insertOrderAndAttempt(args: {
     | 'released'
     | 'failed';
   withShippingNp?: boolean;
+  attemptMetadata?: Record<string, unknown>;
 }) {
   const orderId = crypto.randomUUID();
   await db.insert(orders).values({
@@ -82,6 +83,7 @@ async function insertOrderAndAttempt(args: {
     expectedAmountMinor: args.amountMinor,
     idempotencyKey: buildMonobankAttemptIdempotencyKey(orderId, 1),
     providerPaymentIntentId: args.invoiceId,
+    metadata: args.attemptMetadata ?? {},
   } as any);
 
   return { orderId, attemptId };
@@ -223,6 +225,70 @@ describe.sequential('monobank webhook apply (persist-first)', () => {
       expect(queued.length).toBe(1);
       expect(queued[0]?.status).toBe('queued');
     } finally {
+      await cleanup(orderId, invoiceId);
+    }
+  });
+
+  it('copies wallet attribution from attempt metadata and performs no outbound network calls', async () => {
+    const invoiceId = `inv_${crypto.randomUUID()}`;
+    const { orderId } = await insertOrderAndAttempt({
+      invoiceId,
+      amountMinor: 1000,
+      attemptMetadata: {
+        monobank: {
+          wallet: {
+            requested: 'google_pay',
+          },
+        },
+      },
+    });
+
+    const rawBody = JSON.stringify({
+      invoiceId,
+      status: 'success',
+      amount: 1000,
+      ccy: 980,
+    });
+
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+
+    try {
+      const res = await applyMonoWebhookEvent({
+        rawBody,
+        rawSha256: sha256HexUtf8(rawBody),
+        requestId: 'req_wallet_attr_1',
+        mode: 'apply',
+      });
+
+      expect(res.appliedResult).toBe('applied');
+
+      const [order] = await db
+        .select({ pspMetadata: orders.pspMetadata })
+        .from(orders)
+        .where(eq(orders.id, orderId))
+        .limit(1);
+
+      expect((order?.pspMetadata as any)?.wallet).toEqual({
+        provider: 'monobank',
+        type: 'google_pay',
+        source: 'attempt',
+      });
+
+      const [event] = await db
+        .select({ payload: paymentEvents.payload })
+        .from(paymentEvents)
+        .where(eq(paymentEvents.orderId, orderId))
+        .limit(1);
+
+      expect((event?.payload as any)?.wallet).toEqual({
+        provider: 'monobank',
+        type: 'google_pay',
+        source: 'attempt',
+      });
+
+      expect(fetchSpy).not.toHaveBeenCalled();
+    } finally {
+      fetchSpy.mockRestore();
       await cleanup(orderId, invoiceId);
     }
   });

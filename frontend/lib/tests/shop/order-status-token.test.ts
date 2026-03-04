@@ -100,7 +100,7 @@ describe('order status token access control', () => {
       const token = createStatusToken({ orderId });
       const { GET } = await import('@/app/api/shop/orders/[id]/status/route');
       const req = new NextRequest(
-        `http://localhost/api/shop/orders/${orderId}/status?statusToken=${encodeURIComponent(
+        `http://localhost/api/shop/orders/${orderId}/status?view=lite&statusToken=${encodeURIComponent(
           token
         )}`
       );
@@ -112,6 +112,7 @@ describe('order status token access control', () => {
       expect(json.currency).toBe('UAH');
       expect(json.totalAmountMinor).toBe(1000);
       expect(json.paymentStatus).toBe('pending');
+      expect(json.itemsCount).toBe(0);
       expect(typeof json.updatedAt).toBe('string');
       expect(json.order).toBeUndefined();
       expect(json.attempt).toBeUndefined();

@@ -7,9 +7,9 @@ import { orders, paymentAttempts } from '@/db/schema';
 import {
   MONO_CCY,
   MONO_CURRENCY,
+  type MonobankWalletPaymentResult,
   PspError,
   walletPayment,
-  type MonobankWalletPaymentResult,
 } from '@/lib/psp/monobank';
 import {
   IdempotencyConflictError,
@@ -69,6 +69,13 @@ function asRecord(value: unknown): Record<string, unknown> {
   return value as Record<string, unknown>;
 }
 
+function readWalletMetadata(meta: Record<string, unknown>): Record<string, unknown> {
+  const monobank = asRecord(meta.monobank);
+  const monobankWallet = asRecord(monobank.wallet);
+  if (Object.keys(monobankWallet).length > 0) return monobankWallet;
+  return asRecord(meta.wallet);
+}
+
 function parseIsoDateOrNull(value: unknown): Date | null {
   if (typeof value !== 'string' || !value.trim()) return null;
   const ms = Date.parse(value);
@@ -81,7 +88,7 @@ function readReplayResult(
   reused: boolean
 ): MonobankWalletSubmitResult {
   const meta = asRecord(attempt.metadata);
-  const wallet = asRecord(meta.wallet);
+  const wallet = readWalletMetadata(meta);
 
   const submitOutcome =
     wallet.submitOutcome === 'unknown' ? 'unknown' : 'submitted';
@@ -250,6 +257,11 @@ async function createCreatingAttempt(args: {
   }
 
   const now = new Date();
+  const walletMetadata = {
+    requested: 'google_pay',
+    submitOutcome: 'creating',
+    lastSubmitAt: now.toISOString(),
+  };
   const inserted = await db
     .insert(paymentAttempts)
     .values({
@@ -261,10 +273,10 @@ async function createCreatingAttempt(args: {
       expectedAmountMinor: args.expectedAmountMinor,
       idempotencyKey: args.idempotencyKey,
       metadata: {
-        wallet: {
-          submitOutcome: 'creating',
-          lastSubmitAt: now.toISOString(),
+        monobank: {
+          wallet: walletMetadata,
         },
+        wallet: walletMetadata,
       },
     })
     .returning();
@@ -280,8 +292,17 @@ function mergeWalletMetadata(
 ): Record<string, unknown> {
   const meta = asRecord(current);
   const wallet = asRecord(meta.wallet);
+  const monobank = asRecord(meta.monobank);
+  const monobankWallet = asRecord(monobank.wallet);
   return {
     ...meta,
+    monobank: {
+      ...monobank,
+      wallet: {
+        ...monobankWallet,
+        ...patch,
+      },
+    },
     wallet: {
       ...wallet,
       ...patch,
@@ -306,6 +327,7 @@ async function persistAttemptSubmitted(args: {
     (args.pspResult.redirectUrl ? 'redirect_required' : 'submitted');
 
   const nextMetadata = mergeWalletMetadata(args.attempt.metadata, {
+    requested: 'google_pay',
     submitOutcome: 'submitted',
     syncStatus,
     invoiceId,
@@ -338,6 +360,7 @@ async function persistAttemptUnknown(args: {
 }): Promise<void> {
   const now = new Date();
   const nextMetadata = mergeWalletMetadata(args.attempt.metadata, {
+    requested: 'google_pay',
     submitOutcome: 'unknown',
     syncStatus: 'unknown',
     unknownReason: args.errorCode,
@@ -363,6 +386,7 @@ async function persistAttemptRejected(args: {
 }): Promise<void> {
   const now = new Date();
   const nextMetadata = mergeWalletMetadata(args.attempt.metadata, {
+    requested: 'google_pay',
     submitOutcome: 'rejected',
     syncStatus: 'rejected',
     rejectCode: args.errorCode,

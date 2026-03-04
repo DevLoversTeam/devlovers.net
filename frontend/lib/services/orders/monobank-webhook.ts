@@ -67,6 +67,7 @@ type AttemptRow = Pick<
   | 'expectedAmountMinor'
   | 'providerPaymentIntentId'
   | 'providerModifiedAt'
+  | 'metadata'
 >;
 
 type OrderRow = Pick<
@@ -88,6 +89,12 @@ type PaymentStatusTarget = Parameters<
   typeof guardedPaymentStatusUpdate
 >[0]['to'];
 
+type WalletAttribution = {
+  provider: 'monobank';
+  type: 'google_pay';
+  source: 'attempt';
+};
+
 const CLAIM_TTL_MS = (() => {
   const raw = process.env.MONO_WEBHOOK_CLAIM_TTL_MS;
   const parsed = raw ? Number.parseInt(raw, 10) : Number.NaN;
@@ -101,6 +108,38 @@ const INSTANCE_ID = (() => {
   const value = `${base}:${suffix}`;
   return value.length > 64 ? value.slice(0, 64) : value;
 })();
+
+function asRecord(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  return value as Record<string, unknown>;
+}
+
+function resolveWalletAttributionFromAttempt(
+  attempt: AttemptRow
+): WalletAttribution | null {
+  const metadata = asRecord(attempt.metadata);
+  const monobank = asRecord(metadata.monobank);
+  const monobankWallet = asRecord(monobank.wallet);
+  const legacyWallet = asRecord(metadata.wallet);
+
+  const requestedRaw =
+    typeof monobankWallet.requested === 'string'
+      ? monobankWallet.requested
+      : typeof legacyWallet.requested === 'string'
+        ? legacyWallet.requested
+        : '';
+  const requested = requestedRaw.trim().toLowerCase();
+
+  if (requested === 'google_pay') {
+    return {
+      provider: 'monobank',
+      type: 'google_pay',
+      source: 'attempt',
+    };
+  }
+
+  return null;
+}
 
 function toIssueMessage(error: unknown): string {
   const msg =
@@ -343,7 +382,8 @@ async function fetchAttemptForWebhook(args: {
       status as "status",
       expected_amount_minor as "expectedAmountMinor",
       provider_payment_intent_id as "providerPaymentIntentId",
-      provider_modified_at as "providerModifiedAt"
+      provider_modified_at as "providerModifiedAt",
+      metadata as "metadata"
     from payment_attempts
     where provider = 'monobank'
       and (
@@ -460,8 +500,11 @@ async function persistEventOutcome(args: {
     .where(eq(monobankEvents.id, args.eventId));
 }
 
-function buildMergedMetaSql(normalized: NormalizedWebhook) {
-  const metadataPatch = {
+function buildMergedMetaSql(
+  normalized: NormalizedWebhook,
+  walletAttribution: WalletAttribution | null
+) {
+  const metadataPatch: Record<string, unknown> = {
     monobank: {
       invoiceId: normalized.invoiceId,
       status: normalized.status,
@@ -470,6 +513,9 @@ function buildMergedMetaSql(normalized: NormalizedWebhook) {
       reference: normalized.reference ?? null,
     },
   };
+  if (walletAttribution) {
+    metadataPatch.wallet = walletAttribution;
+  }
 
   return sql`coalesce(${orders.pspMetadata}, '{}'::jsonb) || ${JSON.stringify(
     metadataPatch
@@ -487,7 +533,17 @@ async function atomicMarkPaidOrderAndSucceedAttempt(args: {
   enqueueShipment: boolean;
   canonicalDualWriteEnabled: boolean;
   canonicalEventDedupeKey: string;
+  walletAttribution: WalletAttribution | null;
 }): Promise<{ ok: boolean; shipmentQueued: boolean }> {
+  const paymentEventPayload: Record<string, unknown> = {
+    monobankEventId: args.eventId,
+    invoiceId: args.invoiceId,
+    status: 'success',
+  };
+  if (args.walletAttribution) {
+    paymentEventPayload.wallet = args.walletAttribution;
+  }
+
   const res = args.canonicalDualWriteEnabled
     ? await db.execute(sql`
         with updated_order as (
@@ -555,11 +611,7 @@ async function atomicMarkPaidOrderAndSucceedAttempt(args: {
             null,
             uo.total_amount_minor::bigint,
             uo.currency,
-            ${JSON.stringify({
-              monobankEventId: args.eventId,
-              invoiceId: args.invoiceId,
-              status: 'success',
-            })}::jsonb,
+            ${JSON.stringify(paymentEventPayload)}::jsonb,
             ${args.canonicalEventDedupeKey},
             ${args.now},
             ${args.now}
@@ -887,7 +939,8 @@ async function applyWebhookToMatchedOrderAttemptEvent(args: {
     providerModifiedAt,
     attemptProviderModifiedAt
   );
-  const mergedMetaSql = buildMergedMetaSql(normalized);
+  const walletAttribution = resolveWalletAttributionFromAttempt(attemptRow);
+  const mergedMetaSql = buildMergedMetaSql(normalized, walletAttribution);
 
   if (
     providerModifiedAt &&
@@ -1135,6 +1188,7 @@ async function applyWebhookToMatchedOrderAttemptEvent(args: {
         monobankEventId: eventId,
         invoiceId: normalized.invoiceId,
       }),
+      walletAttribution,
     });
 
     if (!atomicResult.ok) {
