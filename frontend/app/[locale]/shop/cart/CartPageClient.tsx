@@ -72,9 +72,14 @@ const ORDERS_CARD = cn('border-border rounded-md border p-4');
 type Props = {
   stripeEnabled: boolean;
   monobankEnabled: boolean;
+  monobankGooglePayEnabled: boolean;
 };
 
 type CheckoutProvider = 'stripe' | 'monobank';
+type CheckoutPaymentMethod =
+  | 'stripe_card'
+  | 'monobank_invoice'
+  | 'monobank_google_pay';
 
 function resolveInitialProvider(args: {
   stripeEnabled: boolean;
@@ -85,9 +90,19 @@ function resolveInitialProvider(args: {
   const canUseStripe = args.stripeEnabled;
   const canUseMonobank = args.monobankEnabled && isUah;
 
-  if (canUseStripe) return 'stripe';
+  // Monobank-first for UAH checkout.
   if (canUseMonobank) return 'monobank';
+  if (canUseStripe) return 'stripe';
   return 'stripe';
+}
+
+function resolveDefaultMethodForProvider(args: {
+  provider: CheckoutProvider;
+  monobankGooglePayEnabled: boolean;
+}): CheckoutPaymentMethod {
+  if (args.provider === 'stripe') return 'stripe_card';
+  void args.monobankGooglePayEnabled;
+  return 'monobank_invoice';
 }
 
 type OrdersSummaryState = {
@@ -118,7 +133,11 @@ function isWarehouseMethod(
   return methodCode === 'NP_WAREHOUSE' || methodCode === 'NP_LOCKER';
 }
 
-export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
+export default function CartPage({
+  stripeEnabled,
+  monobankEnabled,
+  monobankGooglePayEnabled,
+}: Props) {
   const { cart, updateQuantity, removeFromCart } = useCart();
   const router = useRouter();
   const t = useTranslations('shop.cart');
@@ -134,14 +153,20 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
   );
   const [isOrdersLoading, setIsOrdersLoading] = useState(false);
 
-  const [selectedProvider, setSelectedProvider] = useState<CheckoutProvider>(
-    () =>
-      resolveInitialProvider({
-        stripeEnabled,
-        monobankEnabled,
-        currency: cart?.summary?.currency,
+  const initialProvider = resolveInitialProvider({
+    stripeEnabled,
+    monobankEnabled,
+    currency: cart?.summary?.currency,
+  });
+  const [selectedProvider, setSelectedProvider] =
+    useState<CheckoutProvider>(initialProvider);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] =
+    useState<CheckoutPaymentMethod>(() =>
+      resolveDefaultMethodForProvider({
+        provider: initialProvider,
+        monobankGooglePayEnabled,
       })
-  );
+    );
   const [isClientReady, setIsClientReady] = useState(false);
   const [shippingMethods, setShippingMethods] = useState<ShippingMethod[]>([]);
   const [shippingMethodsLoading, setShippingMethodsLoading] = useState(true);
@@ -188,6 +213,7 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
   const isUahCheckout = cart.summary.currency === 'UAH';
   const canUseStripe = stripeEnabled;
   const canUseMonobank = monobankEnabled && isUahCheckout;
+  const canUseMonobankGooglePay = canUseMonobank && monobankGooglePayEnabled;
   const hasSelectableProvider = canUseStripe || canUseMonobank;
   const country = localeToCountry(locale);
   const shippingUnavailableHardBlock =
@@ -256,6 +282,35 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
       setSelectedProvider('stripe');
     }
   }, [canUseMonobank, canUseStripe, selectedProvider]);
+
+  useEffect(() => {
+    if (selectedProvider === 'stripe') {
+      if (selectedPaymentMethod !== 'stripe_card') {
+        setSelectedPaymentMethod('stripe_card');
+      }
+      return;
+    }
+
+    if (
+      selectedPaymentMethod === 'monobank_google_pay' &&
+      !canUseMonobankGooglePay
+    ) {
+      setSelectedPaymentMethod('monobank_invoice');
+      return;
+    }
+
+    if (
+      selectedPaymentMethod !== 'monobank_invoice' &&
+      selectedPaymentMethod !== 'monobank_google_pay'
+    ) {
+      setSelectedPaymentMethod(
+        resolveDefaultMethodForProvider({
+          provider: 'monobank',
+          monobankGooglePayEnabled: canUseMonobankGooglePay,
+        })
+      );
+    }
+  }, [canUseMonobankGooglePay, selectedPaymentMethod, selectedProvider]);
 
   useEffect(() => {
     let cancelled = false;
@@ -728,6 +783,14 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
       );
       return;
     }
+    if (
+      selectedProvider === 'monobank' &&
+      selectedPaymentMethod === 'monobank_google_pay' &&
+      !canUseMonobankGooglePay
+    ) {
+      setCheckoutError(t('checkout.paymentMethod.monobankGooglePayUnavailable'));
+      return;
+    }
     if (shippingMethodsLoading) {
       setCheckoutError(safeT('delivery.methodsLoading', 'METHODS_LOADING'));
       return;
@@ -772,6 +835,8 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
       }
 
       const idempotencyKey = generateIdempotencyKey();
+      const checkoutPaymentMethod: CheckoutPaymentMethod =
+        selectedProvider === 'stripe' ? 'stripe_card' : selectedPaymentMethod;
 
       const response = await fetch('/api/shop/checkout', {
         method: 'POST',
@@ -781,6 +846,7 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
         },
         body: JSON.stringify({
           paymentProvider: selectedProvider,
+          paymentMethod: checkoutPaymentMethod,
           ...(shippingPayloadResult?.ok
             ? {
                 shipping: shippingPayloadResult.shipping,
@@ -826,6 +892,11 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
         typeof data.pageUrl === 'string' && data.pageUrl.trim().length > 0
           ? data.pageUrl
           : null;
+      const statusToken: string | null =
+        typeof data.statusToken === 'string' &&
+        data.statusToken.trim().length > 0
+          ? data.statusToken
+          : null;
 
       const orderId = String(data.orderId);
       setCreatedOrderId(orderId);
@@ -839,7 +910,34 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
         return;
       }
       if (paymentProvider === 'monobank' && monobankPageUrl) {
+        if (checkoutPaymentMethod === 'monobank_google_pay') {
+          if (!statusToken) {
+            setCheckoutError(t('checkout.errors.unexpectedResponse'));
+            return;
+          }
+
+          router.push(
+            `${shopBase}/checkout/payment/monobank/${encodeURIComponent(
+              orderId
+            )}?statusToken=${encodeURIComponent(statusToken)}&clearCart=1`
+          );
+          return;
+        }
+
         window.location.assign(monobankPageUrl);
+        return;
+      }
+      if (paymentProvider === 'monobank' && checkoutPaymentMethod === 'monobank_google_pay') {
+        if (!statusToken) {
+          setCheckoutError(t('checkout.errors.unexpectedResponse'));
+          return;
+        }
+
+        router.push(
+          `${shopBase}/checkout/payment/monobank/${encodeURIComponent(
+            orderId
+          )}?statusToken=${encodeURIComponent(statusToken)}&clearCart=1`
+        );
         return;
       }
       if (paymentProvider === 'monobank' && !monobankPageUrl) {
@@ -866,8 +964,16 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
 
   const shippingUnavailableText =
     resolveShippingUnavailableText(shippingReasonCode);
+  const hasValidPaymentSelection =
+    selectedProvider === 'stripe'
+      ? canUseStripe && selectedPaymentMethod === 'stripe_card'
+      : canUseMonobank &&
+        (selectedPaymentMethod === 'monobank_invoice' ||
+          (selectedPaymentMethod === 'monobank_google_pay' &&
+            canUseMonobankGooglePay));
   const canPlaceOrder =
     hasSelectableProvider &&
+    hasValidPaymentSelection &&
     !shippingMethodsLoading &&
     !shippingUnavailableHardBlock &&
     (!shippingAvailable || !!selectedShippingMethod);
@@ -1455,7 +1561,10 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
                     name="payment-provider"
                     value="stripe"
                     checked={selectedProvider === 'stripe'}
-                    onChange={() => setSelectedProvider('stripe')}
+                    onChange={() => {
+                      setSelectedProvider('stripe');
+                      setSelectedPaymentMethod('stripe_card');
+                    }}
                     className="h-4 w-4"
                   />
                   <span className="text-sm font-medium">
@@ -1475,7 +1584,20 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
                   name="payment-provider"
                   value="monobank"
                   checked={selectedProvider === 'monobank'}
-                  onChange={() => setSelectedProvider('monobank')}
+                  onChange={() => {
+                    setSelectedProvider('monobank');
+                    if (
+                      selectedPaymentMethod !== 'monobank_invoice' &&
+                      selectedPaymentMethod !== 'monobank_google_pay'
+                    ) {
+                      setSelectedPaymentMethod(
+                        resolveDefaultMethodForProvider({
+                          provider: 'monobank',
+                          monobankGooglePayEnabled: canUseMonobankGooglePay,
+                        })
+                      );
+                    }
+                  }}
                   disabled={!canUseMonobank}
                   className="h-4 w-4"
                 />
@@ -1483,6 +1605,54 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
                   {t('checkout.paymentMethod.monobank')}
                 </span>
               </label>
+
+              {selectedProvider === 'monobank' && canUseMonobank ? (
+                <div className="ml-2 space-y-2">
+                  {canUseMonobankGooglePay ? (
+                    <label className="border-border flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2">
+                      <input
+                        type="radio"
+                        name="payment-method-monobank"
+                        value="monobank_google_pay"
+                        checked={selectedPaymentMethod === 'monobank_google_pay'}
+                        onChange={() =>
+                          setSelectedPaymentMethod('monobank_google_pay')
+                        }
+                        className="h-4 w-4"
+                      />
+                      <span className="text-sm font-medium">
+                        {t('checkout.paymentMethod.monobankGooglePay')}
+                      </span>
+                    </label>
+                  ) : null}
+
+                  <label className="border-border flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2">
+                    <input
+                      type="radio"
+                      name="payment-method-monobank"
+                      value="monobank_invoice"
+                      checked={selectedPaymentMethod === 'monobank_invoice'}
+                      onChange={() =>
+                        setSelectedPaymentMethod('monobank_invoice')
+                      }
+                      className="h-4 w-4"
+                    />
+                    <span className="text-sm font-medium">
+                      {t('checkout.paymentMethod.monobankInvoice')}
+                    </span>
+                  </label>
+
+                  {canUseMonobankGooglePay ? (
+                    <p className="text-muted-foreground text-xs">
+                      {t('checkout.paymentMethod.monobankGooglePayHint')}
+                    </p>
+                  ) : (
+                    <p className="text-muted-foreground text-xs">
+                      {t('checkout.paymentMethod.monobankGooglePayFallbackHint')}
+                    </p>
+                  )}
+                </div>
+              ) : null}
 
               {!canUseMonobank ? (
                 <p className="text-muted-foreground text-xs">

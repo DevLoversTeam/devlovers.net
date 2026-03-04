@@ -33,11 +33,17 @@ function resolveMonobankCheckoutEnabled(): boolean {
   }
 }
 
+function resolveMonobankGooglePayEnabled(): boolean {
+  const raw = (process.env.SHOP_MONOBANK_GPAY_ENABLED ?? '').trim().toLowerCase();
+  return raw === 'true' || raw === '1' || raw === 'yes' || raw === 'on';
+}
+
 export default function CartPage() {
   return (
     <CartPageClient
       stripeEnabled={resolveStripeCheckoutEnabled()}
       monobankEnabled={resolveMonobankCheckoutEnabled()}
+      monobankGooglePayEnabled={resolveMonobankGooglePayEnabled()}
     />
   );
 }

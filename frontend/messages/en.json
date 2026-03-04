@@ -461,6 +461,11 @@
           "label": "Payment method",
           "stripe": "Stripe",
           "monobank": "Monobank",
+          "monobankGooglePay": "Google Pay (Monobank)",
+          "monobankInvoice": "Card/Invoice (Monobank)",
+          "monobankGooglePayHint": "Google Pay available on supported devices",
+          "monobankGooglePayFallbackHint": "If Google Pay not available, use invoice",
+          "monobankGooglePayUnavailable": "Google Pay is currently unavailable for this order.",
           "monobankUahOnlyHint": "Monobank is available only for UAH checkout.",
           "monobankUnavailable": "Monobank is unavailable in this environment.",
           "noAvailable": "No payment methods are currently available."
@@ -717,6 +722,22 @@
           "previousFailed": "The previous payment attempt failed. Please try again",
           "completePayment": "Complete payment to finish your order"
         }
+      },
+      "monobankGooglePay": {
+        "supportedDevices": "Google Pay available on supported devices",
+        "useInvoiceFallback": "If Google Pay not available, use invoice",
+        "loading": "Preparing Google Pay...",
+        "submitting": "Processing payment...",
+        "unableToInit": "Unable to initialize Google Pay. You can continue with invoice.",
+        "invoiceFallback": "Pay via invoice",
+        "invoiceLoading": "Opening invoice...",
+        "invoiceFallbackFailed": "Unable to start invoice payment right now.",
+        "cancelled": "Google Pay was canceled. You can try again or use invoice."
+      },
+      "monobankReturn": {
+        "processing": "Processing payment...",
+        "checking": "Waiting for webhook confirmation before finalizing your order.",
+        "refresh": "Refresh status"
       },
       "actions": {
         "backToProducts": "Back to products",
