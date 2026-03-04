@@ -54,7 +54,7 @@ function isLeaderboardPath(pathname: string): boolean {
 type MainSwitcherProps = {
   children: ReactNode;
   enableAdminFeature?: boolean;
-  blogCategories?: Array<{ _id: string; title: string }>;
+  blogCategories?: Array<{ id: string; slug: string; title: string }>;
 };
 
 export function MainSwitcher({

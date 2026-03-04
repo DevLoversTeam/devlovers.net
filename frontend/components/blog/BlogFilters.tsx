@@ -1,5 +1,4 @@
 'use client';
-
 import {
   Dribbble,
   Facebook,
@@ -23,28 +22,9 @@ import { usePathname, useRouter } from '@/i18n/routing';
 import { Link } from '@/i18n/routing';
 import { formatBlogDate } from '@/lib/blog/date';
 import { shouldBypassImageOptimization } from '@/lib/blog/image';
-
-export type PortableTextSpan = {
-  _type: 'span';
-  text?: string;
-};
-
-export type PortableTextBlock = {
-  _type: 'block';
-  _key?: string;
-  children?: PortableTextSpan[];
-};
-
-export type PortableTextImage = {
-  _type: 'image';
-  _key?: string;
-  url?: string;
-};
-
-export type PortableText = Array<PortableTextBlock | PortableTextImage>;
+import { extractPlainText } from '@/lib/blog/text';
 
 export type SocialLink = {
-  _key?: string;
   platform?: string;
   url?: string;
 };
@@ -55,24 +35,25 @@ export type Author = {
   company?: string;
   jobTitle?: string;
   city?: string;
-  bio?: PortableText;
+  bio?: string | null;
   socialMedia?: SocialLink[];
 };
 
 export type Post = {
-  _id: string;
+  id: string;
   title: string;
-  slug: { current: string };
+  slug: string;
   publishedAt?: string;
   tags?: string[];
-  categories?: string[];
+  categories?: { slug: string; title: string }[];
   resourceLink?: string;
   mainImage?: string;
-  body?: PortableText;
+  body?: any;
   author?: Author;
 };
+
 type Category = {
-  _id: string;
+  id: string;
   title: string;
 };
 
@@ -141,23 +122,12 @@ function normalizeAuthor(input: string) {
   return (input || '').trim().toLowerCase().replace(/\s+/g, ' ');
 }
 
-function plainTextFromPortableText(value?: PortableText): string {
-  if (!Array.isArray(value)) return '';
-  return value
-    .filter(block => block?._type === 'block')
-    .map(block =>
-      (block.children || []).map(child => child.text || '').join(' ')
-    )
-    .join('\n')
-    .trim();
-}
-
 function normalizeSearchText(value: string) {
   return value.toLowerCase().replace(/\s+/g, ' ').trim();
 }
 
-function plainTextExcerpt(value?: PortableText): string {
-  return plainTextFromPortableText(value);
+function plainTextExcerpt(value?: any): string {
+  return extractPlainText(value).trim();
 }
 
 /**
@@ -258,7 +228,7 @@ export default function BlogFilters({
     const map = new Map<string, string>();
     for (const p of posts) {
       for (const c of p.categories || []) {
-        const raw = (c || '').trim();
+        const raw = (c?.title || '').trim();
         const norm = normalizeTag(raw);
         if (norm && !map.has(norm)) map.set(norm, raw);
       }
@@ -414,15 +384,13 @@ export default function BlogFilters({
       }
 
       if (resolvedCategory) {
-        const postCategories = (post.categories || []).map(normalizeTag);
+        const postCategories = (post.categories || []).map(c => normalizeTag(c.title));
         if (!postCategories.includes(resolvedCategory.norm)) return false;
       }
 
       if (searchQueryNormalized) {
         const titleText = normalizeSearchText(post.title);
-        const bodyText = normalizeSearchText(
-          plainTextFromPortableText(post.body)
-        );
+        const bodyText = normalizeSearchText(extractPlainText(post.body));
         const words = searchQueryNormalized.split(/\s+/).filter(Boolean);
         if (
           !words.some(
@@ -452,9 +420,8 @@ export default function BlogFilters({
     if (authorProfile?.name === resolvedName) return authorProfile.data;
     return resolvedAuthor?.data || null;
   }, [authorProfile, resolvedAuthor?.data, resolvedAuthor?.name]);
-  const authorBioText = useMemo(() => {
-    return plainTextFromPortableText(selectedAuthorData?.bio);
-  }, [selectedAuthorData]);
+
+  const authorBioText = selectedAuthorData?.bio ?? '';
 
   useEffect(() => {
     if (parsedPage <= totalPages) return;
@@ -485,7 +452,7 @@ export default function BlogFilters({
           <div className="grid gap-8 md:grid-cols-[1.3fr_1fr] md:items-stretch lg:grid-cols-[1.4fr_1fr]">
             {featuredPost.mainImage && (
               <Link
-                href={`/blog/${featuredPost.slug.current}`}
+                href={`/blog/${featuredPost.slug}`}
                 className="group block"
               >
                 <div className="relative h-[300px] overflow-hidden rounded-3xl border-0 shadow-[0_12px_30px_rgba(0,0,0,0.12)] sm:h-[340px] md:h-full md:min-h-[400px] lg:min-h-[440px]">
@@ -507,15 +474,15 @@ export default function BlogFilters({
               {featuredPost.categories?.[0] && (
                 <div className="absolute top-0 left-0 text-xs font-bold tracking-[0.2em] text-[var(--accent-primary)] uppercase">
                   {getCategoryLabel(
-                    featuredPost.categories[0] === 'Growth'
+                    featuredPost.categories[0]?.title === 'Growth'
                       ? 'Career'
-                      : featuredPost.categories[0]
+                      : featuredPost.categories[0]?.title
                   )}
                 </div>
               )}
               <div className="my-auto">
                 <Link
-                  href={`/blog/${featuredPost.slug.current}`}
+                  href={`/blog/${featuredPost.slug}`}
                   className="mt-3 block text-3xl leading-tight font-semibold text-gray-900 underline-offset-4 transition hover:underline md:text-4xl dark:text-gray-100"
                 >
                   {featuredPost.title}
@@ -533,7 +500,7 @@ export default function BlogFilters({
                     {formatBlogDate(featuredPost.publishedAt)}
                   </time>
                   <Link
-                    href={`/blog/${featuredPost.slug.current}`}
+                    href={`/blog/${featuredPost.slug}`}
                     className="text-sm font-medium tracking-normal text-[var(--accent-primary)] underline-offset-4 transition hover:underline"
                   >
                     {t('readMore')} <span aria-hidden="true">→</span>
@@ -609,7 +576,7 @@ export default function BlogFilters({
                       .filter(item => item?.url)
                       .map((item, index) => (
                         <a
-                          key={item._key || `${item.platform}-${index}`}
+                          key={`${item.platform}-${index}`}
                           href={item.url}
                           target="_blank"
                           rel="noopener noreferrer"

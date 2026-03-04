@@ -1,10 +1,10 @@
-import groq from 'groq';
 import { getTranslations } from 'next-intl/server';
 
-import { client } from '@/client';
 import BlogFilters from '@/components/blog/BlogFilters';
 import { BlogPageHeader } from '@/components/blog/BlogPageHeader';
 import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
+import { getBlogCategories } from '@/db/queries/blog/blog-categories';
+import { getBlogPosts } from '@/db/queries/blog/blog-posts';
 
 export const revalidate = 3600;
 
@@ -30,52 +30,12 @@ export default async function BlogPage({
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'blog' });
 
-  const posts = await client.fetch(
-    groq`
-      *[_type == "post" && defined(slug.current)]
-        | order(coalesce(publishedAt, _createdAt) desc) {
-          _id,
-          "title": coalesce(title[$locale], title[lower($locale)], title.uk, title.en, title.pl),
-          slug,
-          publishedAt,
-          tags,
-          resourceLink,
+  const [posts, categories] = await Promise.all([
+    getBlogPosts(locale),
+    getBlogCategories(locale),
+  ]);
 
-          "categories": categories[]->title,
-
-          "body": coalesce(body[$locale], body[lower($locale)], body.uk, body.en, body.pl)[]{
-            ...,
-            children[]{
-              text
-            }
-          },
-          "mainImage": mainImage.asset->url,
-        "author": author->{
-          "name": coalesce(name[$locale], name[lower($locale)], name.uk, name.en, name.pl),
-          "company": coalesce(company[$locale], company[lower($locale)], company.uk, company.en, company.pl),
-          "jobTitle": coalesce(jobTitle[$locale], jobTitle[lower($locale)], jobTitle.uk, jobTitle.en, jobTitle.pl),
-          "city": coalesce(city[$locale], city[lower($locale)], city.uk, city.en, city.pl),
-          "bio": coalesce(bio[$locale], bio[lower($locale)], bio.uk, bio.en, bio.pl),
-          "image": image.asset->url,
-          socialMedia[]{
-            _key,
-              platform,
-              url
-            }
-          }
-        }
-    `,
-    { locale }
-  );
-  const categories = await client.fetch(
-    groq`
-      *[_type == "category"] | order(orderRank asc) {
-        _id,
-        title
-      }
-    `
-  );
-  const featuredPost = posts?.[0];
+  const featuredPost = posts[0];
 
   return (
     <DynamicGridBackground className="bg-gray-50 py-10 transition-colors duration-300 dark:bg-transparent">

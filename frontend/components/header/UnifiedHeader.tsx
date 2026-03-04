@@ -16,7 +16,7 @@ export type UnifiedHeaderProps = {
   variant: UnifiedHeaderVariant;
   userExists: boolean;
   showAdminLink?: boolean;
-  blogCategories?: Array<{ _id: string; title: string }>;
+  blogCategories?: Array<{ id: string; slug: string; title: string }>;
 };
 
 function HeaderContent({

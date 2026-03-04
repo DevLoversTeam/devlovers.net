@@ -16,7 +16,7 @@ type Props = {
   variant: AppMobileMenuVariant;
   userExists: boolean;
   showAdminLink?: boolean;
-  blogCategories?: Array<{ _id: string; title: string }>;
+  blogCategories?: Array<{ id: string; slug: string; title: string }>;
 };
 
 export function AppMobileMenu({
@@ -96,13 +96,6 @@ export function AppMobileMenu({
     if (variant === 'platform') return SITE_LINKS;
     return [];
   }, [variant, shopLinks]);
-
-  const slugify = (value: string) =>
-    value
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-');
 
   const linkClass = (isActive: boolean) =>
     `rounded-md px-3 py-2 text-sm font-medium transition-colors ${
@@ -215,15 +208,14 @@ export function AppMobileMenu({
                     {t('blog')}
                   </Link>
                   {blogCategories.map(category => {
-                    const slug = slugify(category.title || '');
-                    const href = `/blog/category/${slug}`;
+                    const href = `/blog/category/${category.slug}`;
                     const isActive = pathname === href;
                     const displayTitle =
                       category.title === 'Growth' ? 'Career' : category.title;
 
                     return (
                       <Link
-                        key={category._id}
+                        key={category.id}
                         href={href}
                         onClick={e => handleLinkClick(e, href)}
                         className={linkClass(isActive)}

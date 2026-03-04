@@ -1,303 +1,13 @@
-import groq from 'groq';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
-import { client } from '@/client';
+import BlogPostRenderer from '@/components/blog/BlogPostRenderer';
 import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
+import { getBlogPostBySlug, getBlogPosts } from '@/db/queries/blog/blog-posts';
 import { Link } from '@/i18n/routing';
 import { formatBlogDate } from '@/lib/blog/date';
-import { shouldBypassImageOptimization } from '@/lib/blog/image';
-
-type SocialLink = {
-  _key?: string;
-  platform?: string;
-  url?: string;
-};
-
-type Author = {
-  name?: string;
-  company?: string;
-  jobTitle?: string;
-  city?: string;
-  image?: string;
-  bio?: any;
-  socialMedia?: SocialLink[];
-};
-
-type Post = {
-  _id?: string;
-  title?: string;
-  publishedAt?: string;
-  mainImage?: string;
-  categories?: string[];
-  tags?: string[];
-  resourceLink?: string;
-  author?: Author;
-  body?: any[];
-  slug?: { current?: string };
-};
-
-function plainTextFromPortableText(value: any): string {
-  if (!Array.isArray(value)) return '';
-  return value
-    .filter(b => b?._type === 'block')
-    .map(b => (b.children || []).map((c: any) => c.text || '').join(''))
-    .join('\n')
-    .trim();
-}
-
-function linkifyText(text: string) {
-  const urlRegex = /(https?:\/\/[^\s]+)/g;
-  const parts = text.split(urlRegex);
-  return parts.map((part, index) => {
-    if (!part) return null;
-    if (urlRegex.test(part)) {
-      return (
-        <a
-          key={`link-${index}`}
-          href={part}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-[var(--accent-primary)] underline underline-offset-4"
-        >
-          {part}
-        </a>
-      );
-    }
-    return <span key={`text-${index}`}>{part}</span>;
-  });
-}
-
-function renderPortableTextSpans(
-  children: Array<{ _type?: string; text?: string; marks?: string[] }> = [],
-  markDefs: Array<{ _key?: string; _type?: string; href?: string }> = []
-) {
-  const linkMap = new Map(
-    markDefs
-      .filter(def => def?._type === 'link' && def?._key && def?.href)
-      .map(def => [def._key as string, def.href as string])
-  );
-
-  return children.map((child, index) => {
-    const text = child?.text || '';
-    if (!text) return null;
-    const marks = child?.marks || [];
-
-    let node: React.ReactNode = marks.length === 0 ? linkifyText(text) : text;
-
-    for (const mark of marks) {
-      if (linkMap.has(mark)) {
-        const href = linkMap.get(mark)!;
-        node = (
-          <a
-            href={href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[var(--accent-primary)] underline underline-offset-4"
-          >
-            {node}
-          </a>
-        );
-        continue;
-      }
-      if (mark === 'strong') {
-        node = <strong>{node}</strong>;
-        continue;
-      }
-      if (mark === 'em') {
-        node = <em>{node}</em>;
-        continue;
-      }
-      if (mark === 'underline') {
-        node = <u>{node}</u>;
-        continue;
-      }
-      if (mark === 'code') {
-        node = (
-          <code className="rounded bg-gray-100 px-1 py-0.5 text-[0.9em] text-gray-900 dark:bg-neutral-900 dark:text-gray-100">
-            {node}
-          </code>
-        );
-        continue;
-      }
-      if (mark === 'strike-through' || mark === 'strike') {
-        node = <s>{node}</s>;
-      }
-    }
-
-    return <span key={`mark-text-${index}`}>{node}</span>;
-  });
-}
-
-function renderPortableTextBlock(block: any, index: number): React.ReactNode {
-  const children = renderPortableTextSpans(block.children, block.markDefs);
-  const style = block?.style || 'normal';
-
-  if (style === 'h1') {
-    return (
-      <h1
-        key={block._key || `block-${index}`}
-        className="mt-10 mb-4 text-3xl font-bold text-gray-900 dark:text-gray-100"
-      >
-        {children}
-      </h1>
-    );
-  }
-  if (style === 'h2') {
-    return (
-      <h2
-        key={block._key || `block-${index}`}
-        className="mt-8 mb-3 text-2xl font-semibold text-gray-900 dark:text-gray-100"
-      >
-        {children}
-      </h2>
-    );
-  }
-  if (style === 'h3') {
-    return (
-      <h3
-        key={block._key || `block-${index}`}
-        className="mt-7 mb-3 text-xl font-semibold text-gray-900 dark:text-gray-100"
-      >
-        {children}
-      </h3>
-    );
-  }
-  if (style === 'h4') {
-    return (
-      <h4
-        key={block._key || `block-${index}`}
-        className="mt-6 mb-2 text-lg font-semibold text-gray-900 dark:text-gray-100"
-      >
-        {children}
-      </h4>
-    );
-  }
-  if (style === 'h5') {
-    return (
-      <h5
-        key={block._key || `block-${index}`}
-        className="mt-6 mb-2 text-base font-semibold text-gray-900 dark:text-gray-100"
-      >
-        {children}
-      </h5>
-    );
-  }
-  if (style === 'h6') {
-    return (
-      <h6
-        key={block._key || `block-${index}`}
-        className="mt-6 mb-2 text-sm font-semibold tracking-wide text-gray-700 uppercase dark:text-gray-300"
-      >
-        {children}
-      </h6>
-    );
-  }
-  if (style === 'blockquote') {
-    return (
-      <blockquote
-        key={block._key || `block-${index}`}
-        className="my-6 border-l-4 border-[color-mix(in_srgb,var(--accent-primary)_40%,transparent)] pl-4 text-gray-600 dark:text-gray-400"
-      >
-        {children}
-      </blockquote>
-    );
-  }
-
-  return (
-    <p
-      key={block._key || `block-${index}`}
-      className="mb-4 text-base leading-relaxed whitespace-pre-line text-gray-700 dark:text-gray-300"
-    >
-      {children}
-    </p>
-  );
-}
-
-function renderPortableText(
-  body: any[],
-  postTitle?: string
-): React.ReactNode[] {
-  const nodes: React.ReactNode[] = [];
-  let i = 0;
-
-  while (i < body.length) {
-    const block = body[i];
-
-    if (block?._type === 'block' && block.listItem) {
-      const listType = block.listItem === 'number' ? 'ol' : 'ul';
-      const level = block.level ?? 1;
-      const items: React.ReactNode[] = [];
-      let j = i;
-
-      while (
-        j < body.length &&
-        body[j]?._type === 'block' &&
-        body[j].listItem === block.listItem &&
-        (body[j].level ?? 1) === level
-      ) {
-        const item = body[j];
-        items.push(
-          <li key={item._key || `list-item-${j}`}>
-            {renderPortableTextSpans(item.children, item.markDefs)}
-          </li>
-        );
-        j += 1;
-      }
-
-      const listClass =
-        listType === 'ol' ? 'my-4 list-decimal pl-6' : 'my-4 list-disc pl-6';
-      const levelClass = level > 1 ? 'ml-6' : '';
-      nodes.push(
-        listType === 'ol' ? (
-          <ol
-            key={block._key || `list-${i}`}
-            className={`${listClass} ${levelClass}`.trim()}
-          >
-            {items}
-          </ol>
-        ) : (
-          <ul
-            key={block._key || `list-${i}`}
-            className={`${listClass} ${levelClass}`.trim()}
-          >
-            {items}
-          </ul>
-        )
-      );
-      i = j;
-      continue;
-    }
-
-    if (block?._type === 'block') {
-      nodes.push(renderPortableTextBlock(block, i));
-      i += 1;
-      continue;
-    }
-
-    if (block?._type === 'image' && block?.url) {
-      nodes.push(
-        <Image
-          key={block._key || `image-${i}`}
-          src={block.url}
-          alt={postTitle || 'Post image'}
-          width={1200}
-          height={800}
-          unoptimized={shouldBypassImageOptimization(block.url)}
-          sizes="100vw"
-          className="my-6 h-auto w-full rounded-xl border border-gray-200"
-        />
-      );
-      i += 1;
-      continue;
-    }
-
-    i += 1;
-  }
-
-  return nodes;
-}
+import { extractPlainText } from '@/lib/blog/text';
 
 function seededShuffle<T>(items: T[], seed: number) {
   const result = [...items];
@@ -318,56 +28,15 @@ function hashString(input: string) {
   return hash;
 }
 
-const query = groq`
-  *[_type=="post" && slug.current==$slug][0]{
-    _id,
-    "title": coalesce(title[$locale], title[lower($locale)], title.uk, title.en, title.pl),
-    publishedAt,
-    "mainImage": mainImage.asset->url,
-    "categories": categories[]->title,
-    tags,
-    resourceLink,
-
-    "author": author->{
-      "name": coalesce(name[$locale], name[lower($locale)], name.uk, name.en, name.pl),
-      "company": coalesce(company[$locale], company[lower($locale)], company.uk, company.en, company.pl),
-      "jobTitle": coalesce(jobTitle[$locale], jobTitle[lower($locale)], jobTitle.uk, jobTitle.en, jobTitle.pl),
-      "city": coalesce(city[$locale], city[lower($locale)], city.uk, city.en, city.pl),
-      "bio": coalesce(bio[$locale], bio[lower($locale)], bio.uk, bio.en, bio.pl),
-      "image": image.asset->url,
-      socialMedia[]{ _key, platform, url }
-    },
-
-    "body": coalesce(body[$locale], body[lower($locale)], body.uk, body.en, body.pl)[]{
-      ...,
-      _type == "image" => {
-        ...,
-        "url": asset->url
-      }
-    }
-  }
-`;
-const recommendedQuery = groq`
-  *[_type=="post" && defined(slug.current) && slug.current != $slug]{
-    _id,
-    "title": coalesce(title[$locale], title[lower($locale)], title.uk, title.en, title.pl),
-    publishedAt,
-    "mainImage": mainImage.asset->url,
-    slug,
-    "categories": categories[]->title,
-    "author": author->{
-      "name": coalesce(name[$locale], name[lower($locale)], name.uk, name.en, name.pl),
-      "image": image.asset->url
-    },
-    "body": coalesce(body[$locale], body[lower($locale)], body.uk, body.en, body.pl)[]{
-      ...,
-      _type == "image" => {
-        ...,
-        "url": asset->url
-      }
-    }
-  }
-`;
+function getCategoryLabel(categoryName: string, t: (key: string) => string) {
+  const key = categoryName.toLowerCase();
+  if (key === 'growth') return t('categories.career');
+  if (key === 'tech') return t('categories.tech');
+  if (key === 'career') return t('categories.career');
+  if (key === 'insights') return t('categories.insights');
+  if (key === 'news') return t('categories.news');
+  return categoryName;
+}
 
 export default async function PostDetails({
   slug,
@@ -382,49 +51,33 @@ export default async function PostDetails({
   const slugParam = String(slug || '').trim();
   if (!slugParam) return notFound();
 
-  const post: Post | null = await client.fetch(query, {
-    slug: slugParam,
-    locale,
-  });
-  const recommendedAll: Post[] = await client.fetch(recommendedQuery, {
-    slug: slugParam,
-    locale,
-  });
+  const [post, allPosts] = await Promise.all([
+    getBlogPostBySlug(slugParam, locale),
+    getBlogPosts(locale),
+  ]);
+
+  if (!post) return notFound();
+
   const recommendedPosts = seededShuffle(
-    recommendedAll,
+    allPosts.filter(p => p.slug !== slugParam),
     hashString(slugParam)
   ).slice(0, 3);
 
-  if (!post?.title) return notFound();
-
-  const authorBio = plainTextFromPortableText(post.author?.bio);
   const authorName = post.author?.name;
-  const authorMetaParts = [
-    post.author?.jobTitle,
-    post.author?.company,
-    post.author?.city,
-  ].filter(Boolean) as string[];
-  const authorMeta = authorMetaParts.join(' · ');
-  const categoryLabel = post.categories?.[0];
-  const categoryDisplay = categoryLabel
-    ? getCategoryLabel(categoryLabel, t)
+  const category = post.categories?.[0];
+  const categoryDisplay = category
+    ? getCategoryLabel(category.title, t)
     : null;
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL;
   const postUrl = baseUrl ? `${baseUrl}/${locale}/blog/${slugParam}` : null;
   const blogUrl = baseUrl ? `${baseUrl}/${locale}/blog` : null;
-  const description = plainTextFromPortableText(post.body).slice(0, 160);
-  const categoryHref = categoryLabel
-    ? `/blog/category/${categoryLabel
-        .toLowerCase()
-        .replace(/[^a-z0-9\\s-]/g, '')
-        .replace(/\\s+/g, '-')}`
+  const description = extractPlainText(post.body).slice(0, 160);
+  const categoryHref = category
+    ? `/blog/category/${category.slug}`
     : null;
   const categoryUrl =
-    baseUrl && categoryLabel
-      ? `${baseUrl}/${locale}/blog/category/${categoryLabel
-          .toLowerCase()
-          .replace(/[^a-z0-9\\s-]/g, '')
-          .replace(/\\s+/g, '-')}`
+    baseUrl && category
+      ? `${baseUrl}/${locale}/blog/category/${category.slug}`
       : null;
   const breadcrumbsItems = [
     {
@@ -432,10 +85,10 @@ export default async function PostDetails({
       href: '/blog',
       url: blogUrl,
     },
-    ...(categoryLabel
+    ...(category
       ? [
           {
-            name: categoryDisplay || categoryLabel,
+            name: categoryDisplay || category.title,
             href: categoryHref,
             url: categoryUrl,
           },
@@ -532,13 +185,13 @@ export default async function PostDetails({
         </nav>
 
         <div className="mx-auto w-full max-w-3xl">
-          {categoryLabel && (
+          {category && (
             <div className="text-center text-sm font-medium text-gray-500 dark:text-gray-400">
               <Link
                 href={categoryHref || '/blog'}
                 className="inline-flex items-center gap-1 text-[var(--accent-primary)] transition"
               >
-                {categoryDisplay || categoryLabel}
+                {categoryDisplay || category.title}
               </Link>
             </div>
           )}
@@ -566,15 +219,13 @@ export default async function PostDetails({
           )}
         </div>
 
-        {(post.tags?.length || 0) > 0 && null}
-
         {post.mainImage && (
           <div className="relative my-8 h-[520px] w-full overflow-hidden rounded-2xl">
             <Image
               src={post.mainImage}
               alt={post.title || 'Post image'}
               fill
-              unoptimized={shouldBypassImageOptimization(post.mainImage)}
+              unoptimized
               className="object-contain"
             />
           </div>
@@ -582,7 +233,7 @@ export default async function PostDetails({
 
         <div className="mx-auto w-full max-w-3xl">
           <article className="prose prose-gray max-w-none">
-            {renderPortableText(post.body || [], post.title)}
+            <BlogPostRenderer content={post.body as any} />
           </article>
         </div>
 
@@ -601,13 +252,13 @@ export default async function PostDetails({
                   {recommendedPosts.map(item => {
                     const itemCategory = item.categories?.[0];
                     const itemCategoryDisplay = itemCategory
-                      ? getCategoryLabel(itemCategory, t)
+                      ? getCategoryLabel(itemCategory.title, t)
                       : null;
 
                     return (
                       <Link
-                        key={item._id}
-                        href={`/blog/${item.slug?.current}`}
+                        key={item.id}
+                        href={`/blog/${item.slug}`}
                         className="group flex h-full flex-col"
                       >
                         {item.mainImage && (
@@ -616,9 +267,7 @@ export default async function PostDetails({
                               src={item.mainImage}
                               alt={item.title || 'Post image'}
                               fill
-                              unoptimized={shouldBypassImageOptimization(
-                                item.mainImage
-                              )}
+                              unoptimized
                               className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
                             />
                           </div>
@@ -626,9 +275,9 @@ export default async function PostDetails({
                         <h3 className="mt-4 text-lg font-semibold text-gray-900 underline-offset-4 transition group-hover:underline dark:text-gray-100">
                           {item.title}
                         </h3>
-                        {item.body && (
+                        {item.body != null && (
                           <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-gray-600 dark:text-gray-400">
-                            {plainTextFromPortableText(item.body)}
+                            {extractPlainText(item.body)}
                           </p>
                         )}
                         {(item.author?.name ||
@@ -641,9 +290,7 @@ export default async function PostDetails({
                                   src={item.author.image}
                                   alt={item.author.name || 'Author'}
                                   fill
-                                  unoptimized={shouldBypassImageOptimization(
-                                    item.author.image
-                                  )}
+                                  unoptimized
                                   className="object-cover"
                                 />
                               </span>
@@ -676,21 +323,7 @@ export default async function PostDetails({
             </section>
           </>
         )}
-
-        {post.resourceLink && null}
-
-        {(authorBio || authorName || authorMeta) && null}
       </main>
     </DynamicGridBackground>
   );
-}
-
-function getCategoryLabel(categoryName: string, t: (key: string) => string) {
-  const key = categoryName.toLowerCase();
-  if (key === 'growth') return t('categories.career');
-  if (key === 'tech') return t('categories.tech');
-  if (key === 'career') return t('categories.career');
-  if (key === 'insights') return t('categories.insights');
-  if (key === 'news') return t('categories.news');
-  return categoryName;
 }

@@ -9,7 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 
 type AppChromeProps = {
   enableAdminFeature?: boolean;
-  blogCategories?: Array<{ _id: string; title: string }>;
+  blogCategories?: Array<{ id: string; slug: string; title: string }>;
   children: React.ReactNode;
 };
 
