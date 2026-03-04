@@ -85,6 +85,13 @@ function getScopeFromPathname(pathname: string): 'shop' | 'site' {
 }
 
 export function proxy(req: NextRequest) {
+  // TODO(wallets-phase8): replace placeholder bytes in
+  // frontend/public/.well-known/apple-developer-merchantid-domain-association
+  // with the exact Stripe/Apple file before production enablement.
+  if (req.nextUrl.pathname.startsWith('/.well-known/')) {
+    return NextResponse.next();
+  }
+
   if (req.nextUrl.pathname === '/') {
     return NextResponse.redirect(new URL('/en', req.url));
   }
@@ -109,5 +116,9 @@ export function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/', '/(uk|en|pl)/:path*', '/((?!api|_next|.*\\..*).*)'],
+  matcher: [
+    '/',
+    '/(uk|en|pl)/:path*',
+    '/((?!api|_next|\\.well-known(?:/|$)|.*\\..*).*)',
+  ],
 };
