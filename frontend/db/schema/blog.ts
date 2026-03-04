@@ -1,6 +1,7 @@
 import { relations } from 'drizzle-orm';
 import {
   boolean,
+  index,
   integer,
   jsonb,
   pgTable,
@@ -95,7 +96,11 @@ export const blogPosts = pgTable('blog_posts', {
   updatedAt: timestamp('updated_at', { withTimezone: true })
     .notNull()
     .defaultNow(),
-});
+},
+  table => ({
+      authorIdx: index('blog_posts_author_id_idx').on(table.authorId),
+    })
+);
 
 export const blogPostTranslations = pgTable(
   'blog_post_translations',
@@ -126,6 +131,7 @@ export const blogPostCategories = pgTable(
   },
   table => ({
     pk: primaryKey({ columns: [table.postId, table.categoryId] }),
+    categoryIdx: index('blog_post_categories_category_id_idx').on(table.categoryId),
   })
 );
 
