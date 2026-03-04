@@ -9,11 +9,7 @@ import { formatBlogDate } from '@/lib/blog/date';
 import { shouldBypassImageOptimization } from '@/lib/blog/image';
 import { extractPlainText } from '@/lib/blog/text';
 
-import type {
-  Author,
-  Post,
-} from './BlogFilters';
-
+import type { Author, Post } from './BlogFilters';
 
 export default function BlogCard({
   post,
@@ -50,7 +46,9 @@ export default function BlogCard({
     [post.publishedAt]
   );
   const rawCategory =
-    post.categories?.[0].title === 'Growth' ? 'Career' : post.categories?.[0].title;
+    post.categories?.[0].title === 'Growth'
+      ? 'Career'
+      : post.categories?.[0].title;
   const categoryLabel = rawCategory ? getCategoryLabel(rawCategory) : undefined;
 
   return (

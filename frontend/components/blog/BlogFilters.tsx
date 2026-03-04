@@ -384,7 +384,9 @@ export default function BlogFilters({
       }
 
       if (resolvedCategory) {
-        const postCategories = (post.categories || []).map(c => normalizeTag(c.title));
+        const postCategories = (post.categories || []).map(c =>
+          normalizeTag(c.title)
+        );
         if (!postCategories.includes(resolvedCategory.norm)) return false;
       }
 
@@ -451,10 +453,7 @@ export default function BlogFilters({
         <section className="mb-12">
           <div className="grid gap-8 md:grid-cols-[1.3fr_1fr] md:items-stretch lg:grid-cols-[1.4fr_1fr]">
             {featuredPost.mainImage && (
-              <Link
-                href={`/blog/${featuredPost.slug}`}
-                className="group block"
-              >
+              <Link href={`/blog/${featuredPost.slug}`} className="group block">
                 <div className="relative h-[300px] overflow-hidden rounded-3xl border-0 shadow-[0_12px_30px_rgba(0,0,0,0.12)] sm:h-[340px] md:h-full md:min-h-[400px] lg:min-h-[440px]">
                   <Image
                     src={featuredPost.mainImage}

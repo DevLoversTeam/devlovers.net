@@ -1,10 +1,7 @@
 import { sql } from 'drizzle-orm';
 
 import { db } from '../../index';
-import {
-  blogCategories,
-  blogCategoryTranslations,
-} from '../../schema/blog';
+import { blogCategories, blogCategoryTranslations } from '../../schema/blog';
 
 export interface BlogCategory {
   id: string;

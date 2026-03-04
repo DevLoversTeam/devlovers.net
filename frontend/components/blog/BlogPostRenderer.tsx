@@ -160,10 +160,7 @@ function renderNode(node: TiptapNode, index: number): React.ReactNode {
 
     case 'horizontalRule':
       return (
-        <hr
-          key={key}
-          className="my-8 border-gray-200 dark:border-gray-700"
-        />
+        <hr key={key} className="my-8 border-gray-200 dark:border-gray-700" />
       );
 
     default:

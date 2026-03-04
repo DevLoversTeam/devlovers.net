@@ -65,16 +65,12 @@ export default async function PostDetails({
 
   const authorName = post.author?.name;
   const category = post.categories?.[0];
-  const categoryDisplay = category
-    ? getCategoryLabel(category.title, t)
-    : null;
+  const categoryDisplay = category ? getCategoryLabel(category.title, t) : null;
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL;
   const postUrl = baseUrl ? `${baseUrl}/${locale}/blog/${slugParam}` : null;
   const blogUrl = baseUrl ? `${baseUrl}/${locale}/blog` : null;
   const description = extractPlainText(post.body).slice(0, 160);
-  const categoryHref = category
-    ? `/blog/category/${category.slug}`
-    : null;
+  const categoryHref = category ? `/blog/category/${category.slug}` : null;
   const categoryUrl =
     baseUrl && category
       ? `${baseUrl}/${locale}/blog/category/${category.slug}`

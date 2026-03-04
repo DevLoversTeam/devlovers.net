@@ -14,7 +14,6 @@ import { getBlogCategories } from '@/db/queries/blog/blog-categories';
 import { AuthProvider } from '@/hooks/useAuth';
 import { locales } from '@/i18n/config';
 
-
 export default async function LocaleLayout({
   children,
   params,

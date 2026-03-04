@@ -13,7 +13,6 @@ import {
   blogPostTranslations,
 } from '../../schema/blog';
 
-
 const publishedFilter = and(
   eq(blogPosts.isPublished, true),
   or(
@@ -23,16 +22,16 @@ const publishedFilter = and(
 );
 
 export interface BlogPost {
-  id: string;          
-  title: string;         
-  slug: string;          
-  publishedAt: string;   
-  tags: string[];        
-  categories: { slug: string; title: string }[]; 
-  body: unknown;         
+  id: string;
+  title: string;
+  slug: string;
+  publishedAt: string;
+  tags: string[];
+  categories: { slug: string; title: string }[];
+  body: unknown;
   resourceLink?: string;
   mainImage?: string;
-  author?: { 
+  author?: {
     name: string;
     image?: string;
     company?: string;
@@ -132,7 +131,7 @@ async function attachCategories(
 function assemblePost(
   row: RawPostRow,
   categories: { slug: string; title: string }[]
-): BlogPost  {
+): BlogPost {
   return {
     id: row.id,
     title: row.title ?? '',
@@ -159,9 +158,7 @@ function assemblePost(
 
 // ── Public queries ──
 
-export async function getBlogPosts(
-  locale: string
-): Promise<BlogPost[]> {
+export async function getBlogPosts(locale: string): Promise<BlogPost[]> {
   const rows = await db
     .select(buildPostSelect())
     .from(blogPosts)

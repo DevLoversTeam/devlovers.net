@@ -4,7 +4,6 @@ import { getBlogAuthorByName } from '@/db/queries/blog/blog-authors';
 
 export const revalidate = 0;
 
-
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const name = (searchParams.get('name') || '').trim();

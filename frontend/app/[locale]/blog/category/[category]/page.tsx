@@ -30,13 +30,13 @@ export default async function BlogCategoryPage({
   const { locale, category } = await params;
   const t = await getTranslations({ locale, namespace: 'blog' });
   const tNav = await getTranslations({ locale, namespace: 'navigation' });
-  
+
   const [categories, posts] = await Promise.all([
     getBlogCategories(locale),
     getBlogPostsByCategory(category, locale),
   ]);
 
-    const matchedCategory = categories.find(c => c.slug === category);
+  const matchedCategory = categories.find(c => c.slug === category);
   if (!matchedCategory) return notFound();
 
   const categoryDisplay = getCategoryLabel(matchedCategory.title, t);
