@@ -289,6 +289,39 @@ function resolvePaymentMethod(
   return paymentMethodFromIntent ?? paymentMethodFromCharge ?? null;
 }
 
+type StripeWalletType = 'apple_pay' | 'google_pay' | null;
+type StripeWalletAttribution = {
+  provider: 'stripe';
+  type: StripeWalletType;
+  source: 'event';
+};
+
+function resolveStripeWalletType(
+  paymentIntent?: Stripe.PaymentIntent,
+  charge?: Stripe.Charge
+): StripeWalletType {
+  const chargeWithWallet = charge ?? getLatestCharge(paymentIntent as any);
+  const walletTypeRaw = (chargeWithWallet as any)?.payment_method_details?.card
+    ?.wallet?.type;
+
+  if (walletTypeRaw === 'apple_pay' || walletTypeRaw === 'google_pay') {
+    return walletTypeRaw;
+  }
+
+  return null;
+}
+
+function buildStripeWalletAttribution(args: {
+  paymentIntent?: Stripe.PaymentIntent;
+  charge?: Stripe.Charge;
+}): StripeWalletAttribution {
+  return {
+    provider: 'stripe',
+    type: resolveStripeWalletType(args.paymentIntent, args.charge),
+    source: 'event',
+  };
+}
+
 function buildPspMetadata(params: {
   eventType: string;
   paymentIntent?: Stripe.PaymentIntent;
@@ -1140,6 +1173,10 @@ export async function POST(request: NextRequest) {
       const amountMatches = stripeAmount === orderAmountMinor;
       const currencyMatches =
         stripeCurrency?.toUpperCase() === order.currency.toUpperCase();
+      const walletAttribution = buildStripeWalletAttribution({
+        paymentIntent,
+        charge: getLatestCharge(paymentIntent as any),
+      });
 
       if (stripeAmount == null || !amountMatches || !currencyMatches) {
         const mismatchReason =
@@ -1157,6 +1194,7 @@ export async function POST(request: NextRequest) {
           paymentIntent,
           charge: chargeForIntent,
           extra: {
+            wallet: walletAttribution,
             mismatch: {
               reason: mismatchReason,
               eventId: event.id,
@@ -1221,6 +1259,9 @@ export async function POST(request: NextRequest) {
         eventType,
         paymentIntent,
         charge: chargeForIntent ?? undefined,
+        extra: {
+          wallet: walletAttribution,
+        },
       });
       const nextMeta = mergePspMetadata({
         prevMeta: order.pspMetadata,
@@ -1256,6 +1297,7 @@ export async function POST(request: NextRequest) {
           paymentIntentId,
           chargeId: latestChargeId ?? chargeForIntent?.id ?? null,
           paymentIntentStatus: paymentIntent?.status ?? null,
+          wallet: walletAttribution,
         },
       };
       const applyResult =
