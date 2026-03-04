@@ -316,7 +316,10 @@ describe('monobank api methods', () => {
     expect(result.modifiedDate).toBeInstanceOf(Date);
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [
+      string,
+      RequestInit,
+    ];
     expect(url).toBe('https://api.example.test/api/merchant/wallet/payment');
     expect(init.method).toBe('POST');
     expect((init.headers as Record<string, string>)['X-Token']).toBe(
