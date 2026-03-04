@@ -59,6 +59,7 @@ const __prevMonoToken = process.env.MONO_MERCHANT_TOKEN;
 const __prevAppOrigin = process.env.APP_ORIGIN;
 const __prevShopBaseUrl = process.env.SHOP_BASE_URL;
 const __prevStatusSecret = process.env.SHOP_STATUS_TOKEN_SECRET;
+const __prevMonobankGpayEnabled = process.env.SHOP_MONOBANK_GPAY_ENABLED;
 
 beforeAll(() => {
   process.env.RATE_LIMIT_DISABLED = '1';
@@ -68,6 +69,7 @@ beforeAll(() => {
   process.env.SHOP_BASE_URL = 'http://localhost:3000';
   process.env.SHOP_STATUS_TOKEN_SECRET =
     'test_status_token_secret_test_status_token_secret';
+  process.env.SHOP_MONOBANK_GPAY_ENABLED = 'false';
 
   resetEnvCache();
 });
@@ -93,11 +95,16 @@ afterAll(() => {
     delete process.env.SHOP_STATUS_TOKEN_SECRET;
   else process.env.SHOP_STATUS_TOKEN_SECRET = __prevStatusSecret;
 
+  if (__prevMonobankGpayEnabled === undefined)
+    delete process.env.SHOP_MONOBANK_GPAY_ENABLED;
+  else process.env.SHOP_MONOBANK_GPAY_ENABLED = __prevMonobankGpayEnabled;
+
   resetEnvCache();
 });
 
 beforeEach(() => {
   vi.clearAllMocks();
+  process.env.SHOP_MONOBANK_GPAY_ENABLED = 'false';
 });
 
 async function createIsolatedProduct(args: {
@@ -165,7 +172,13 @@ afterAll(async () => {
   await cleanupSeededTemplateProduct();
 });
 
-async function postCheckout(idemKey: string, productId: string) {
+type MonobankCheckoutMethod = 'monobank_invoice' | 'monobank_google_pay';
+
+async function postCheckout(
+  idemKey: string,
+  productId: string,
+  options?: { paymentMethod?: MonobankCheckoutMethod }
+) {
   const mod = (await import('@/app/api/shop/checkout/route')) as unknown as {
     POST: (req: NextRequest) => Promise<Response>;
   };
@@ -184,6 +197,9 @@ async function postCheckout(idemKey: string, productId: string) {
     body: JSON.stringify({
       items: [{ productId, quantity: 1 }],
       paymentProvider: 'monobank',
+      ...(options?.paymentMethod
+        ? { paymentMethod: options.paymentMethod }
+        : {}),
     }),
   });
 
@@ -283,11 +299,21 @@ describe.sequential('checkout monobank contract', () => {
       expect(json1.totalAmountMinor).toBe(json2.totalAmountMinor);
 
       const [dbOrder] = await db
-        .select({ id: orders.id })
+        .select({
+          id: orders.id,
+          pspPaymentMethod: orders.pspPaymentMethod,
+          pspMetadata: orders.pspMetadata,
+        })
         .from(orders)
         .where(eq(orders.idempotencyKey, idemKey))
         .limit(1);
       expect(dbOrder?.id).toBe(orderId);
+      expect(dbOrder?.pspPaymentMethod).toBe('monobank_invoice');
+      expect(
+        ((dbOrder?.pspMetadata ?? {}) as Record<string, unknown>)?.checkout
+      ).toMatchObject({
+        requestedMethod: 'monobank_invoice',
+      });
 
       const attemptRows = await db
         .select({ id: paymentAttempts.id })
@@ -304,6 +330,58 @@ describe.sequential('checkout monobank contract', () => {
     } finally {
       if (orderId) await cleanupOrder(orderId).catch(() => {});
       await cleanupProduct(productId).catch(() => {});
+    }
+  }, 20_000);
+
+  it('idempotency hash is method-aware for same key + different method', async () => {
+    process.env.SHOP_MONOBANK_GPAY_ENABLED = 'true';
+
+    const { productId } = await createIsolatedProduct({
+      stock: 3,
+      prices: [{ currency: 'UAH', priceMinor: 1000 }],
+    });
+    const idemKey = crypto.randomUUID();
+    let orderId: string | null = null;
+
+    try {
+      const first = await postCheckout(idemKey, productId, {
+        paymentMethod: 'monobank_invoice',
+      });
+      expect(first.status).toBe(201);
+      const firstJson: any = await first.json();
+      orderId = typeof firstJson.orderId === 'string' ? firstJson.orderId : null;
+
+      const second = await postCheckout(idemKey, productId, {
+        paymentMethod: 'monobank_google_pay',
+      });
+      expect(second.status).toBe(409);
+      const secondJson: any = await second.json();
+      expect(secondJson.code).toBe('CHECKOUT_IDEMPOTENCY_CONFLICT');
+
+      const [dbOrder] = await db
+        .select({
+          id: orders.id,
+          pspPaymentMethod: orders.pspPaymentMethod,
+        })
+        .from(orders)
+        .where(eq(orders.idempotencyKey, idemKey))
+        .limit(1);
+
+      if (!orderId) orderId = dbOrder?.id ?? null;
+      expect(dbOrder?.pspPaymentMethod).toBe('monobank_invoice');
+      expect(createMonobankInvoiceMock).toHaveBeenCalledTimes(1);
+    } finally {
+      if (!orderId) {
+        const [row] = await db
+          .select({ id: orders.id })
+          .from(orders)
+          .where(eq(orders.idempotencyKey, idemKey))
+          .limit(1);
+        orderId = row?.id ?? null;
+      }
+      if (orderId) await cleanupOrder(orderId).catch(() => {});
+      await cleanupProduct(productId).catch(() => {});
+      process.env.SHOP_MONOBANK_GPAY_ENABLED = 'false';
     }
   }, 20_000);
 

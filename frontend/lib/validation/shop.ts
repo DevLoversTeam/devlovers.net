@@ -10,10 +10,15 @@ import {
 } from '@/lib/config/catalog';
 import { currencyValues } from '@/lib/shop/currency';
 import {
+  paymentMethodValues,
   paymentProviderValues,
   paymentStatusValues,
 } from '@/lib/shop/payments';
-export type { PaymentProvider, PaymentStatus } from '@/lib/shop/payments';
+export type {
+  PaymentMethod,
+  PaymentProvider,
+  PaymentStatus,
+} from '@/lib/shop/payments';
 
 export const MAX_QUANTITY_PER_LINE = 20;
 
@@ -28,6 +33,7 @@ const sortEnum = z.enum(sortValues as [SortValue, ...SortValue[]]);
 export const badgeSchema = z.enum(productBadgeValues);
 export const paymentStatusSchema = z.enum(paymentStatusValues);
 export const paymentProviderSchema = z.enum(paymentProviderValues);
+export const paymentMethodSchema = z.enum(paymentMethodValues);
 export const currencySchema = z.enum(currencyValues);
 
 export type { CurrencyCode } from '@/lib/shop/currency';
@@ -398,6 +404,8 @@ export const checkoutLegalConsentSchema = z
   })
   .strict();
 
+const checkoutRequestedProviderSchema = z.enum(['stripe', 'monobank']);
+
 export const checkoutPayloadSchema = z
   .object({
     items: z.array(checkoutItemSchema).min(1),
@@ -410,8 +418,57 @@ export const checkoutPayloadSchema = z
       .optional(),
     shipping: checkoutShippingSchema.optional(),
     legalConsent: checkoutLegalConsentSchema.optional(),
+    paymentProvider: checkoutRequestedProviderSchema.optional(),
+    paymentMethod: paymentMethodSchema.optional(),
+    paymentCurrency: currencySchema.optional(),
   })
-  .strict();
+  .strict()
+  .superRefine((value, ctx) => {
+    if (!value.paymentMethod) return;
+
+    if (!value.paymentProvider) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['paymentProvider'],
+        message: 'paymentProvider is required when paymentMethod is provided',
+      });
+      return;
+    }
+
+    const paymentCurrency =
+      value.paymentCurrency ??
+      (value.paymentProvider === 'monobank' ? 'UAH' : 'USD');
+
+    const provider = value.paymentProvider;
+    const method = value.paymentMethod;
+
+    const providerAllowed =
+      (method === 'stripe_card' && provider === 'stripe') ||
+      ((method === 'monobank_invoice' || method === 'monobank_google_pay') &&
+        provider === 'monobank');
+
+    if (!providerAllowed) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['paymentMethod'],
+        message:
+          'paymentMethod is not allowed for the selected paymentProvider',
+      });
+      return;
+    }
+
+    if (
+      (method === 'monobank_invoice' || method === 'monobank_google_pay') &&
+      paymentCurrency !== 'UAH'
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['paymentMethod'],
+        message:
+          'paymentMethod is not allowed for the selected provider and currency',
+      });
+    }
+  });
 
 export const cartRehydratePayloadSchema = z
   .object({

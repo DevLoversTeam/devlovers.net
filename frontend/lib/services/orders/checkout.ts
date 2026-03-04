@@ -25,7 +25,12 @@ import {
   sumLineTotals,
   toDbMoney,
 } from '@/lib/shop/money';
-import { type PaymentProvider, type PaymentStatus } from '@/lib/shop/payments';
+import {
+  resolveDefaultMethodForProvider,
+  type PaymentMethod,
+  type PaymentProvider,
+  type PaymentStatus,
+} from '@/lib/shop/payments';
 import {
   type CheckoutItem,
   type CheckoutLegalConsentInput,
@@ -733,6 +738,97 @@ function priceItems(
   });
 }
 
+function isMonobankGooglePayEnabled(): boolean {
+  const raw = (process.env.SHOP_MONOBANK_GPAY_ENABLED ?? '')
+    .trim()
+    .toLowerCase();
+  return raw === 'true' || raw === '1' || raw === 'yes' || raw === 'on';
+}
+
+function normalizeStoredPaymentMethod(value: unknown): PaymentMethod | null {
+  const normalized = normVariant(typeof value === 'string' ? value : '');
+  if (normalized === 'stripe_card') return 'stripe_card';
+  if (normalized === 'monobank_invoice') return 'monobank_invoice';
+  if (normalized === 'monobank_google_pay') return 'monobank_google_pay';
+  return null;
+}
+
+function resolveCheckoutPaymentMethod(args: {
+  requestedMethod?: PaymentMethod | null;
+  paymentProvider: PaymentProvider;
+  currency: Currency;
+}): PaymentMethod | null {
+  if (args.paymentProvider === 'none') return null;
+
+  if (!args.requestedMethod) {
+    return resolveDefaultMethodForProvider(args.paymentProvider, args.currency);
+  }
+
+  if (args.requestedMethod === 'stripe_card') {
+    if (args.paymentProvider !== 'stripe') {
+      throw new InvalidPayloadError(
+        'paymentMethod is not allowed for selected provider.',
+        {
+          code: 'INVALID_PAYLOAD',
+        }
+      );
+    }
+    return args.requestedMethod;
+  }
+
+  if (
+    args.requestedMethod === 'monobank_invoice' ||
+    args.requestedMethod === 'monobank_google_pay'
+  ) {
+    if (args.paymentProvider !== 'monobank' || args.currency !== 'UAH') {
+      throw new InvalidPayloadError(
+        'paymentMethod is not allowed for selected provider/currency.',
+        {
+          code: 'INVALID_PAYLOAD',
+        }
+      );
+    }
+
+    if (
+      args.requestedMethod === 'monobank_google_pay' &&
+      !isMonobankGooglePayEnabled()
+    ) {
+      throw new InvalidPayloadError('Monobank Google Pay is disabled.', {
+        code: 'INVALID_PAYLOAD',
+      });
+    }
+
+    return args.requestedMethod;
+  }
+
+  throw new InvalidPayloadError('Invalid payment method.', {
+    code: 'INVALID_PAYLOAD',
+  });
+}
+
+function buildCheckoutMetadataPatch(
+  existingMeta: unknown,
+  paymentMethod: PaymentMethod | null
+): Record<string, unknown> {
+  const base =
+    existingMeta && typeof existingMeta === 'object' && !Array.isArray(existingMeta)
+      ? (existingMeta as Record<string, unknown>)
+      : {};
+
+  const checkoutMeta =
+    base.checkout && typeof base.checkout === 'object' && !Array.isArray(base.checkout)
+      ? (base.checkout as Record<string, unknown>)
+      : {};
+
+  return {
+    ...base,
+    checkout: {
+      ...checkoutMeta,
+      requestedMethod: paymentMethod,
+    },
+  };
+}
+
 export async function createOrderWithItems({
   items,
   idempotencyKey,
@@ -742,6 +838,7 @@ export async function createOrderWithItems({
   shipping,
   legalConsent,
   paymentProvider: requestedProvider,
+  paymentMethod: requestedMethod,
 }: {
   items: CheckoutItem[];
   idempotencyKey: string;
@@ -751,6 +848,7 @@ export async function createOrderWithItems({
   shipping?: CheckoutShippingInput | null;
   legalConsent?: CheckoutLegalConsentInput | null;
   paymentProvider?: PaymentProvider;
+  paymentMethod?: PaymentMethod | null;
 }): Promise<CheckoutResult> {
   const isMonobankRequested = requestedProvider === 'monobank';
   const currency: Currency = isMonobankRequested
@@ -768,6 +866,11 @@ export async function createOrderWithItems({
 
   const initialPaymentStatus: PaymentStatus =
     paymentProvider === 'none' ? 'paid' : 'pending';
+  const resolvedPaymentMethod = resolveCheckoutPaymentMethod({
+    requestedMethod,
+    paymentProvider,
+    currency,
+  });
 
   const normalizedItems = mergeCheckoutItems(items).map(item =>
     normalizeCheckoutItem(item)
@@ -790,6 +893,7 @@ export async function createOrderWithItems({
     currency,
     locale: locale ?? null,
     paymentProvider,
+    paymentMethod: resolvedPaymentMethod,
     shipping: preparedShipping.hashRefs,
     legalConsent: preparedLegalConsent.hashRefs,
   });
@@ -801,6 +905,8 @@ export async function createOrderWithItems({
         currency: orders.currency,
         paymentStatus: orders.paymentStatus,
         paymentProvider: orders.paymentProvider,
+        pspPaymentMethod: orders.pspPaymentMethod,
+        pspMetadata: orders.pspMetadata,
         idempotencyRequestHash: orders.idempotencyRequestHash,
         failureMessage: orders.failureMessage,
         shippingProvider: orders.shippingProvider,
@@ -881,6 +987,15 @@ export async function createOrderWithItems({
       );
     }
 
+    const existingProvider = resolvePaymentProvider({
+      paymentProvider: row.paymentProvider,
+      paymentIntentId: existing.paymentIntentId ?? null,
+      paymentStatus: row.paymentStatus,
+    });
+    const existingMethod =
+      normalizeStoredPaymentMethod(row.pspPaymentMethod) ??
+      resolveDefaultMethodForProvider(existingProvider, row.currency as Currency);
+
     const derivedExistingHash = hashIdempotencyRequest({
       items: (existing.items as any[]).map(i => ({
         productId: i.productId,
@@ -898,11 +1013,8 @@ export async function createOrderWithItems({
       })) as CheckoutItemWithVariant[],
       currency: row.currency,
       locale: locale ?? null,
-      paymentProvider: resolvePaymentProvider({
-        paymentProvider: row.paymentProvider,
-        paymentIntentId: existing.paymentIntentId ?? null,
-        paymentStatus: row.paymentStatus,
-      }),
+      paymentProvider: existingProvider,
+      paymentMethod: existingMethod,
       shipping:
         row.shippingProvider === 'nova_poshta' &&
         row.shippingMethodCode &&
@@ -942,6 +1054,46 @@ export async function createOrderWithItems({
         existingHash: derivedExistingHash,
         requestHash,
       });
+    }
+
+    const nextMeta = buildCheckoutMetadataPatch(
+      row.pspMetadata,
+      existingMethod ?? resolvedPaymentMethod
+    );
+    const needsMethodBackfill =
+      row.pspPaymentMethod !== (existingMethod ?? resolvedPaymentMethod);
+    const currentStoredMethod =
+      row.pspMetadata &&
+      typeof row.pspMetadata === 'object' &&
+      !Array.isArray(row.pspMetadata)
+        ? (
+            ((row.pspMetadata as Record<string, unknown>).checkout as
+              | Record<string, unknown>
+              | undefined) ?? {}
+          ).requestedMethod
+        : undefined;
+    const needsMetadataBackfill =
+      currentStoredMethod !== (existingMethod ?? resolvedPaymentMethod);
+
+    if (needsMethodBackfill || needsMetadataBackfill) {
+      try {
+        await db
+          .update(orders)
+          .set({
+            pspPaymentMethod: existingMethod ?? resolvedPaymentMethod,
+            pspMetadata: nextMeta,
+            updatedAt: new Date(),
+          })
+          .where(eq(orders.id, row.id));
+      } catch (e) {
+        if (process.env.DEBUG) {
+          logWarn('checkout_rejected', {
+            phase: 'payment_method_backfill',
+            orderId: row.id,
+            message: e instanceof Error ? e.message : String(e),
+          });
+        }
+      }
     }
 
     if (row.paymentStatus === 'failed') {
@@ -1058,6 +1210,8 @@ export async function createOrderWithItems({
         paymentStatus: initialPaymentStatus,
         paymentProvider,
         paymentIntentId: null,
+        pspPaymentMethod: resolvedPaymentMethod,
+        pspMetadata: buildCheckoutMetadataPatch({}, resolvedPaymentMethod),
         shippingRequired: preparedShipping.orderSummary.shippingRequired,
         shippingPayer: preparedShipping.orderSummary.shippingPayer,
         shippingProvider: preparedShipping.orderSummary.shippingProvider,
