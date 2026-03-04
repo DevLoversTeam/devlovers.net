@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 
 import { and, eq } from 'drizzle-orm';
 import { NextRequest } from 'next/server';
@@ -46,6 +46,11 @@ function makeJsonRequest(
     headers,
     body: JSON.stringify(body),
   });
+}
+
+function makeTestClientIp(seed: string): string {
+  const digest = createHash('sha256').update(seed).digest();
+  return `${(digest[0] % 223) + 1}.${digest[1]}.${digest[2]}.${(digest[3] % 254) + 1}`;
 }
 
 async function cleanupByIds(params: { orderId?: string; productId: string }) {
@@ -110,6 +115,7 @@ describe('P0-6 snapshots: order_items immutability', () => {
         'Accept-Language': 'en-US,en;q=0.9',
         'Content-Type': 'application/json',
         'Idempotency-Key': idem,
+        'X-Forwarded-For': makeTestClientIp(idem),
         Origin: 'http://localhost:3000',
       }
     );

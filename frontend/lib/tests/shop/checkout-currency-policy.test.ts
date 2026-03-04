@@ -116,6 +116,11 @@ function makeIdempotencyKey(): string {
   return crypto.randomUUID();
 }
 
+function makeTestClientIp(seed: string): string {
+  const digest = crypto.createHash('sha256').update(seed).digest();
+  return `${(digest[0] % 223) + 1}.${digest[1]}.${digest[2]}.${(digest[3] % 254) + 1}`;
+}
+
 function makeCheckoutRequest(
   payload: unknown,
   opts: { idempotencyKey: string; acceptLanguage: string }
@@ -124,6 +129,7 @@ function makeCheckoutRequest(
     'Content-Type': 'application/json',
     'Idempotency-Key': opts.idempotencyKey,
     'Accept-Language': opts.acceptLanguage,
+    'X-Forwarded-For': makeTestClientIp(opts.idempotencyKey),
     Origin: 'http://localhost:3000',
   });
 
