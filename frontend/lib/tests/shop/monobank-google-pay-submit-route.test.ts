@@ -255,6 +255,13 @@ describe.sequential('monobank google pay submit route', () => {
         .from(paymentAttempts)
         .where(inArray(paymentAttempts.orderId, [orderJsonToken, orderRawToken]));
 
+      for (const attempt of attempts) {
+        const metadata = (attempt.metadata ?? {}) as Record<string, any>;
+        const wallet = metadata.monobank?.wallet;
+        expect(wallet?.requested).toBe('google_pay');
+        expect(wallet?.submitOutcome).toBe('submitted');
+      }
+
       const serializedMeta = JSON.stringify(attempts);
       expect(serializedMeta).not.toContain(jsonTokenMarker);
       expect(serializedMeta).not.toContain(rawTokenMarker);
