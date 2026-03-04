@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { db } from '@/db';
 import { orders } from '@/db/schema/shop';
 import { type CurrencyCode } from '@/lib/shop/currency';
-import { type PaymentProvider } from '@/lib/shop/payments';
+import { type PaymentMethod, type PaymentProvider } from '@/lib/shop/payments';
 import {
   type CheckoutItem,
   type OrderSummaryWithMinor,
@@ -185,6 +185,7 @@ export function hashIdempotencyRequest(params: {
   currency: string;
   locale: string | null;
   paymentProvider: PaymentProvider;
+  paymentMethod: PaymentMethod | null;
   shipping: {
     provider: 'nova_poshta';
     methodCode: 'NP_WAREHOUSE' | 'NP_LOCKER' | 'NP_COURIER';
@@ -215,10 +216,11 @@ export function hashIdempotencyRequest(params: {
     });
 
   const payload = JSON.stringify({
-    v: 3,
+    v: 4,
     currency: params.currency,
     locale: normVariant(params.locale).toLowerCase(),
     paymentProvider: params.paymentProvider,
+    paymentMethod: params.paymentMethod,
     shipping: params.shipping,
     legalConsent: params.legalConsent,
     items: normalized,
