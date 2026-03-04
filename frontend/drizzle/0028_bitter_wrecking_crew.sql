@@ -1,0 +1,2 @@
+CREATE INDEX "blog_post_categories_category_id_idx" ON "blog_post_categories" USING btree ("category_id");--> statement-breakpoint
+CREATE INDEX "blog_posts_author_id_idx" ON "blog_posts" USING btree ("author_id");
