@@ -85,9 +85,6 @@ function getScopeFromPathname(pathname: string): 'shop' | 'site' {
 }
 
 export function proxy(req: NextRequest) {
-  // TODO(wallets-phase8): replace placeholder bytes in
-  // frontend/public/.well-known/apple-developer-merchantid-domain-association
-  // with the exact Stripe/Apple file before production enablement.
   if (req.nextUrl.pathname.startsWith('/.well-known/')) {
     return NextResponse.next();
   }

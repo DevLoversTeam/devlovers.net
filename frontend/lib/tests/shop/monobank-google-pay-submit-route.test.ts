@@ -473,4 +473,32 @@ describe.sequential('monobank google pay submit route', () => {
       await cleanupOrder(orderId);
     }
   });
+
+  it('returns pending/unknown on transient 429 upstream without retries', async () => {
+    const orderId = crypto.randomUUID();
+    await insertOrder({ id: orderId });
+
+    walletPaymentMock.mockRejectedValueOnce(
+      new PspErrorCtor('PSP_UPSTREAM', 'rate_limited', { httpStatus: 429 })
+    );
+
+    try {
+      const res = await postRoute(
+        makeSubmitRequest({
+          orderId,
+          idempotencyKey: 'mono_submit_unknown_429_0001',
+          body: JSON.stringify({ gToken: 'token-429' }),
+        }),
+        { params: Promise.resolve({ id: orderId }) }
+      );
+
+      expect(res.status).toBe(202);
+      const json: any = await res.json();
+      expect(json.submitOutcome).toBe('unknown');
+      expect(json.status).toBe('pending');
+      expect(walletPaymentMock).toHaveBeenCalledTimes(1);
+    } finally {
+      await cleanupOrder(orderId);
+    }
+  });
 });

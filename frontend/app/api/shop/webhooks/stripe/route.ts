@@ -8,7 +8,7 @@ import { db } from '@/db';
 import { orders, stripeEvents } from '@/db/schema';
 import { isCanonicalEventsDualWriteEnabled } from '@/lib/env/shop-canonical-events';
 import { logError, logInfo, logWarn } from '@/lib/logging';
-import { retrieveCharge, verifyWebhookSignature } from '@/lib/psp/stripe';
+import { verifyWebhookSignature } from '@/lib/psp/stripe';
 import { guardNonBrowserOnly } from '@/lib/security/origin';
 import {
   enforceRateLimit,
@@ -1714,8 +1714,6 @@ export async function POST(request: NextRequest) {
 
         if (typeof refund.charge === 'object' && refund.charge) {
           effectiveCharge = refund.charge as Stripe.Charge;
-        } else if (typeof refund.charge === 'string' && refund.charge.trim()) {
-          effectiveCharge = await retrieveCharge(refund.charge.trim());
         }
 
         const amt =

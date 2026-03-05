@@ -200,12 +200,21 @@ describe('stripe webhook refund (full only): PI fallback + terminal status + ded
     expect(events.length).toBe(1);
   }, 30_000);
 
-  it('full refund (charge.refund.updated) WITHOUT metadata.orderId resolves by paymentIntentId (via retrieveCharge), sets terminal status, calls restock once', async () => {
+  it('full refund (charge.refund.updated) WITHOUT metadata.orderId resolves by paymentIntentId, sets terminal status, calls restock once', async () => {
     inserted = await insertPaidOrder();
 
     const eventId = `evt_${crypto.randomUUID()}`;
     const chargeId = `ch_${crypto.randomUUID()}`;
     const refundId = `re_${crypto.randomUUID()}`;
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+
+    const expandedCharge = makeCharge({
+      chargeId,
+      paymentIntentId: inserted.paymentIntentId,
+      amount: 2500,
+      amountRefunded: 2500,
+      refunds: [{ id: refundId, amount: 2500 }],
+    });
 
     const refund = {
       id: refundId,
@@ -213,20 +222,10 @@ describe('stripe webhook refund (full only): PI fallback + terminal status + ded
       amount: 2500,
       status: 'succeeded',
       reason: null,
-      charge: chargeId,
+      charge: expandedCharge,
       payment_intent: inserted.paymentIntentId,
       metadata: {},
     };
-
-    retrieveChargeMock.mockResolvedValue(
-      makeCharge({
-        chargeId,
-        paymentIntentId: inserted.paymentIntentId,
-        amount: 2500,
-        amountRefunded: 2500,
-        refunds: [{ id: refundId, amount: 2500 }],
-      })
-    );
 
     verifyWebhookSignatureMock.mockReturnValue({
       id: eventId,
@@ -253,13 +252,68 @@ describe('stripe webhook refund (full only): PI fallback + terminal status + ded
     expect(row.stockRestored).toBe(true);
     expect(row.pspChargeId).toBe(chargeId);
 
-    expect(retrieveChargeMock).toHaveBeenCalledTimes(1);
-    expect(retrieveChargeMock).toHaveBeenCalledWith(chargeId);
+    expect(retrieveChargeMock).not.toHaveBeenCalled();
+    expect(fetchSpy).not.toHaveBeenCalled();
 
     expect(restockOrderMock).toHaveBeenCalledTimes(1);
     expect(restockOrderMock).toHaveBeenCalledWith(inserted.orderId, {
       reason: 'refunded',
     });
+
+    fetchSpy.mockRestore();
+  }, 30_000);
+
+  it('charge.refund.updated fail-closed when refund.charge is a string id: no retrieve/no fetch/no terminal refund/no restock', async () => {
+    inserted = await insertPaidOrder();
+
+    const eventId = `evt_${crypto.randomUUID()}`;
+    const chargeId = `ch_${crypto.randomUUID()}`;
+    const refundId = `re_${crypto.randomUUID()}`;
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+
+    const refund = {
+      id: refundId,
+      object: 'refund',
+      amount: 2500,
+      status: 'succeeded',
+      reason: null,
+      charge: chargeId,
+      payment_intent: inserted.paymentIntentId,
+      metadata: {},
+    };
+
+    verifyWebhookSignatureMock.mockReturnValue({
+      id: eventId,
+      type: 'charge.refund.updated',
+      data: { object: refund },
+    } as unknown as Stripe.Event);
+
+    try {
+      const res = await POST(makeRequest());
+      expect(res.status).toBe(500);
+      expect(await res.json()).toEqual({
+        code: 'REFUND_FULLNESS_UNDETERMINED',
+      });
+
+      const [row] = await db
+        .select({
+          paymentStatus: orders.paymentStatus,
+          status: orders.status,
+          stockRestored: orders.stockRestored,
+        })
+        .from(orders)
+        .where(eq(orders.id, inserted.orderId))
+        .limit(1);
+
+      expect(row.paymentStatus).toBe('paid');
+      expect(row.status).toBe('PAID');
+      expect(row.stockRestored).toBe(false);
+      expect(retrieveChargeMock).not.toHaveBeenCalled();
+      expect(fetchSpy).not.toHaveBeenCalled();
+      expect(restockOrderMock).not.toHaveBeenCalled();
+    } finally {
+      fetchSpy.mockRestore();
+    }
   }, 30_000);
 
   it('partial refund is ignored (no paymentStatus/status change, no restock)', async () => {
@@ -375,10 +429,23 @@ describe('stripe webhook refund (full only): PI fallback + terminal status + ded
 
     const eventId = `evt_${crypto.randomUUID()}`;
     const chargeId = `ch_${crypto.randomUUID()}`;
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
 
     const refund1Id = `re_${crypto.randomUUID()}`;
     const refund2Id = `re_${crypto.randomUUID()}`;
     const refund3Id = `re_${crypto.randomUUID()}`;
+
+    const expandedCharge = makeCharge({
+      chargeId,
+      paymentIntentId: inserted.paymentIntentId,
+      amount: 2500,
+      amountRefunded: 2500,
+      refunds: [
+        { id: refund1Id, amount: 1000 },
+        { id: refund2Id, amount: 1000 },
+        { id: refund3Id, amount: 500 },
+      ],
+    });
 
     const refund = {
       id: refund3Id,
@@ -386,24 +453,10 @@ describe('stripe webhook refund (full only): PI fallback + terminal status + ded
       amount: 500,
       status: 'succeeded',
       reason: null,
-      charge: chargeId,
+      charge: expandedCharge,
       payment_intent: inserted.paymentIntentId,
       metadata: {},
     };
-
-    retrieveChargeMock.mockResolvedValue(
-      makeCharge({
-        chargeId,
-        paymentIntentId: inserted.paymentIntentId,
-        amount: 2500,
-        amountRefunded: 2500,
-        refunds: [
-          { id: refund1Id, amount: 1000 },
-          { id: refund2Id, amount: 1000 },
-          { id: refund3Id, amount: 500 },
-        ],
-      })
-    );
 
     verifyWebhookSignatureMock.mockReturnValue({
       id: eventId,
@@ -428,10 +481,12 @@ describe('stripe webhook refund (full only): PI fallback + terminal status + ded
     expect(row.status).toBe('CANCELED');
     expect(row.stockRestored).toBe(true);
 
-    expect(retrieveChargeMock).toHaveBeenCalledTimes(1);
-    expect(retrieveChargeMock).toHaveBeenCalledWith(chargeId);
+    expect(retrieveChargeMock).not.toHaveBeenCalled();
+    expect(fetchSpy).not.toHaveBeenCalled();
 
     expect(restockOrderMock).toHaveBeenCalledTimes(1);
+
+    fetchSpy.mockRestore();
   }, 30_000);
   it('charge.refunded: fallback to sum(refunds) when amount_refunded is missing (still detects full refund)', async () => {
     inserted = await insertPaidOrder();

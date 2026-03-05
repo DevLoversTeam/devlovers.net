@@ -337,7 +337,7 @@ describe('monobank api methods', () => {
     });
   });
 
-  it('walletPayment maps 400 and 500 deterministically', async () => {
+  it('walletPayment maps 400, 429, and 500 deterministically', async () => {
     const badRequestFetch = vi.fn(async () =>
       makeResponse(400, JSON.stringify({ errorCode: 'X', message: 'bad' }))
     );
@@ -357,6 +357,27 @@ describe('monobank api methods', () => {
       {
         httpStatus: 400,
         monoCode: 'X',
+      }
+    );
+
+    const rateLimitedFetch = vi.fn(async () =>
+      makeResponse(429, JSON.stringify({ errorCode: 'R', message: 'rate' }))
+    );
+    globalThis.fetch = rateLimitedFetch as any;
+
+    await expectPspError(
+      () =>
+        walletPayment({
+          cardToken: 'token',
+          amountMinor: 100,
+          ccy: 980,
+          redirectUrl: 'https://shop.test/return',
+          webHookUrl: 'https://shop.test/webhook',
+        }),
+      'PSP_UPSTREAM',
+      {
+        httpStatus: 429,
+        monoCode: 'R',
       }
     );
 
