@@ -8,7 +8,8 @@ import { NavLinks } from '@/components/shop/header/NavLinks';
 import { SITE_LINKS } from '@/lib/navigation';
 
 type Category = {
-  _id: string;
+  id: string;
+  slug: string;
   title: string;
 };
 

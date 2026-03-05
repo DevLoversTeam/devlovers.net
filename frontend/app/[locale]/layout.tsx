@@ -1,32 +1,18 @@
-import groq from 'groq';
-import { unstable_cache } from 'next/cache';
 import { notFound } from 'next/navigation';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import type React from 'react';
 import { Toaster } from 'sonner';
 
-import { client } from '@/client';
 import { AppChrome } from '@/components/header/AppChrome';
 import { MainSwitcher } from '@/components/header/MainSwitcher';
 import { CookieBanner } from '@/components/shared/CookieBanner';
 import Footer from '@/components/shared/Footer';
 import { ScrollWatcher } from '@/components/shared/ScrollWatcher';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
+import { getCachedBlogCategories } from '@/db/queries/blog/blog-categories';
 import { AuthProvider } from '@/hooks/useAuth';
 import { locales } from '@/i18n/config';
-
-const getCachedBlogCategories = unstable_cache(
-  async () =>
-    client.fetch<Array<{ _id: string; title: string }>>(groq`
-      *[_type == "category"] | order(orderRank asc) {
-        _id,
-        title
-      }
-    `),
-  ['blog-categories'],
-  { revalidate: 3600, tags: ['blog-categories'] }
-);
 
 export default async function LocaleLayout({
   children,
@@ -41,7 +27,7 @@ export default async function LocaleLayout({
 
   const [messages, blogCategories] = await Promise.all([
     getMessages({ locale }),
-    getCachedBlogCategories(),
+    getCachedBlogCategories(locale),
   ]);
 
   const enableAdmin =

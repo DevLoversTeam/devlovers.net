@@ -10,9 +10,10 @@ import {
   quizAttempts,
   quizQuestions,
 } from '@/db/schema/quiz';
-import { getCurrentUser } from '@/lib/auth';
 import { ACHIEVEMENTS, computeAchievements } from '@/lib/achievements';
+import { getCurrentUser } from '@/lib/auth';
 import { getUserStatsForAchievements } from '@/lib/user-stats';
+
 import { createNotification } from './notifications';
 
 export interface UserAnswer {

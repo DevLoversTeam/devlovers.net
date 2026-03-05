@@ -1,29 +1,22 @@
 'use client';
-
 import { Search } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { useRouter } from '@/i18n/routing';
+import { extractPlainText } from '@/lib/blog/text';
 
 type PostSearchItem = {
-  _id: string;
+  id: string;
   title?: string;
-  body?: Array<{ _type: string; children?: Array<{ text?: string }> }>;
-  slug?: { current?: string };
+  body?: unknown;
+  slug?: string;
 };
 
 type SearchResult = PostSearchItem & { snippet?: string };
 
 function extractSnippet(body: PostSearchItem['body'], query: string) {
-  const text = (body || [])
-    .filter(block => block?._type === 'block')
-    .map(block =>
-      (block.children || []).map(child => child.text || '').join(' ')
-    )
-    .join(' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+  const text = extractPlainText(body).replace(/\s+/g, ' ').trim();
   if (!text) return '';
   const lower = text.toLowerCase();
   const idx = lower.indexOf(query.toLowerCase());
@@ -118,14 +111,7 @@ export function BlogHeaderSearch() {
     return items
       .filter(item => {
         const title = normalizeSearchText(item.title || '');
-        const bodyText = normalizeSearchText(
-          (item.body || [])
-            .filter(block => block?._type === 'block')
-            .map(block =>
-              (block.children || []).map(child => child.text || '').join(' ')
-            )
-            .join(' ')
-        );
+        const bodyText = normalizeSearchText(extractPlainText(item.body));
         return words.some(
           word => title.includes(word) || bodyText.includes(word)
         );
@@ -158,6 +144,7 @@ export function BlogHeaderSearch() {
           setOpen(prev => {
             const next = !prev;
             if (next) startLoading();
+            else setValue('');
             return next;
           })
         }
@@ -211,10 +198,10 @@ export function BlogHeaderSearch() {
             <div className="border-border max-h-56 overflow-auto border-t py-2">
               {results.map(result => (
                 <button
-                  key={result._id}
+                  key={result.id}
                   type="button"
                   onClick={() => {
-                    const slug = result.slug?.current;
+                    const slug = result.slug;
                     if (slug) {
                       router.push(`/blog/${slug}`);
                     } else {

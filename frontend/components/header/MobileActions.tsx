@@ -8,7 +8,8 @@ import { CartButton } from '@/components/shop/header/CartButton';
 import { NotificationBell } from './NotificationBell';
 
 type Category = {
-  _id: string;
+  id: string;
+  slug: string;
   title: string;
 };
 

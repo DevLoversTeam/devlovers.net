@@ -1,7 +1,6 @@
-import groq from 'groq';
 import { setRequestLocale } from 'next-intl/server';
 
-import { client } from '@/client';
+import { getBlogPostBySlug } from '@/db/queries/blog/blog-posts';
 
 import PostDetails from './PostDetails';
 
@@ -13,16 +12,8 @@ export async function generateMetadata({
   params: Promise<{ slug: string; locale: string }>;
 }) {
   const { slug, locale } = await params;
-
-  const post = await client.fetch(
-    groq`*[_type == "post" && slug.current == $slug][0]{
-      "title": coalesce(title[$locale], title[lower($locale)], title.uk, title.en, title.pl)
-    }`,
-    { slug, locale }
-  );
-
-  const title = typeof post?.title === 'string' ? post.title : 'Post';
-  return { title };
+  const post = await getBlogPostBySlug(slug, locale);
+  return { title: post?.title ?? 'Post' };
 }
 
 export default async function Page({

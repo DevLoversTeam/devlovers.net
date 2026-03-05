@@ -347,7 +347,10 @@ type PreparedLegalConsent = {
   };
 };
 
-function normalizeLegalVersion(raw: string | undefined, fallback: string): string {
+function normalizeLegalVersion(
+  raw: string | undefined,
+  fallback: string
+): string {
   const normalized = (raw ?? '').trim();
   return normalized.length > 0 ? normalized : fallback;
 }

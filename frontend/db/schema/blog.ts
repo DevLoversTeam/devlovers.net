@@ -75,31 +75,33 @@ export const blogAuthorTranslations = pgTable(
 
 // ── Blog Posts ───────────────────────────────────────────────────
 
-export const blogPosts = pgTable('blog_posts', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  slug: varchar('slug', { length: 200 }).notNull().unique(),
-  authorId: uuid('author_id').references(() => blogAuthors.id, {
-    onDelete: 'set null',
-  }),
-  mainImageUrl: text('main_image_url'),
-  mainImagePublicId: text('main_image_public_id'),
-  tags: text('tags').array().notNull().default([]),
-  resourceLink: text('resource_link'),
-  publishedAt: timestamp('published_at', { withTimezone: true }),
-  scheduledPublishAt: timestamp('scheduled_publish_at', {
-    withTimezone: true,
-  }),
-  isPublished: boolean('is_published').notNull().default(false),
-  createdAt: timestamp('created_at', { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-  updatedAt: timestamp('updated_at', { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-},
+export const blogPosts = pgTable(
+  'blog_posts',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    slug: varchar('slug', { length: 200 }).notNull().unique(),
+    authorId: uuid('author_id').references(() => blogAuthors.id, {
+      onDelete: 'set null',
+    }),
+    mainImageUrl: text('main_image_url'),
+    mainImagePublicId: text('main_image_public_id'),
+    tags: text('tags').array().notNull().default([]),
+    resourceLink: text('resource_link'),
+    publishedAt: timestamp('published_at', { withTimezone: true }),
+    scheduledPublishAt: timestamp('scheduled_publish_at', {
+      withTimezone: true,
+    }),
+    isPublished: boolean('is_published').notNull().default(false),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
   table => ({
-      authorIdx: index('blog_posts_author_id_idx').on(table.authorId),
-    })
+    authorIdx: index('blog_posts_author_id_idx').on(table.authorId),
+  })
 );
 
 export const blogPostTranslations = pgTable(
@@ -131,7 +133,9 @@ export const blogPostCategories = pgTable(
   },
   table => ({
     pk: primaryKey({ columns: [table.postId, table.categoryId] }),
-    categoryIdx: index('blog_post_categories_category_id_idx').on(table.categoryId),
+    categoryIdx: index('blog_post_categories_category_id_idx').on(
+      table.categoryId
+    ),
   })
 );
 

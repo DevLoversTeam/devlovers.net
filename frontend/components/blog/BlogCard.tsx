@@ -1,19 +1,15 @@
 'use client';
 
 import Image from 'next/image';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 
+import { Link } from '@/i18n/routing';
 import { formatBlogDate } from '@/lib/blog/date';
 import { shouldBypassImageOptimization } from '@/lib/blog/image';
+import { extractPlainText } from '@/lib/blog/text';
 
-import type {
-  Author,
-  PortableTextBlock,
-  PortableTextSpan,
-  Post,
-} from './BlogFilters';
+import type { Author, Post } from './BlogFilters';
 
 export default function BlogCard({
   post,
@@ -43,27 +39,23 @@ export default function BlogCard({
     return categoryTranslations[key] || categoryName;
   };
 
-  const excerpt =
-    (post.body ?? [])
-      .filter((b): b is PortableTextBlock => b._type === 'block')
-      .map(b =>
-        (b.children ?? []).map((c: PortableTextSpan) => c.text ?? '').join(' ')
-      )
-      .join('\n')
-      .slice(0, 160) || '';
+  const excerpt = extractPlainText(post.body).slice(0, 160);
+
   const formattedDate = useMemo(
     () => formatBlogDate(post.publishedAt),
     [post.publishedAt]
   );
   const rawCategory =
-    post.categories?.[0] === 'Growth' ? 'Career' : post.categories?.[0];
+    post.categories?.[0].title === 'Growth'
+      ? 'Career'
+      : post.categories?.[0].title;
   const categoryLabel = rawCategory ? getCategoryLabel(rawCategory) : undefined;
 
   return (
     <article className="group flex h-full flex-col overflow-visible rounded-none border-0 bg-transparent shadow-none transition">
       {post.mainImage && (
         <Link
-          href={`/blog/${post.slug.current}`}
+          href={`/blog/${post.slug}`}
           className="relative aspect-[16/9] w-full overflow-hidden rounded-lg bg-gray-100 shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-transform duration-300 dark:border dark:border-[0.5px] dark:border-[rgba(56,189,248,0.4)]"
         >
           <Image
@@ -79,7 +71,7 @@ export default function BlogCard({
 
       <div className="flex flex-1 flex-col px-1 pt-2">
         <Link
-          href={`/blog/${post.slug.current}`}
+          href={`/blog/${post.slug}`}
           className={`block text-[18px] leading-[1.15] font-semibold tracking-tight text-gray-950 underline-offset-4 transition group-hover:underline hover:underline md:text-[22px] dark:text-gray-100 ${
             disableHoverColor
               ? ''

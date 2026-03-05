@@ -525,10 +525,7 @@ async function migratePosts(authorIdMap: Map<string, string>) {
         mainImagePublicId = result.publicId;
         console.log(`  [img] Uploaded main image: ${slug}`);
       } catch (err) {
-        console.error(
-          `  [warn] Failed to upload main image for ${slug}:`,
-          err
-        );
+        console.error(`  [warn] Failed to upload main image for ${slug}:`, err);
       }
     }
 
@@ -566,10 +563,7 @@ async function migratePosts(authorIdMap: Map<string, string>) {
     for (const locale of LOCALES) {
       const rawBody = bodyByLocale[locale];
       const title =
-        post.title?.[locale] ||
-        post.title?.en ||
-        post.title?.uk ||
-        'Untitled';
+        post.title?.[locale] || post.title?.en || post.title?.uk || 'Untitled';
 
       let body: TiptapNode | null = null;
       if (rawBody && Array.isArray(rawBody) && rawBody.length > 0) {
@@ -613,7 +607,9 @@ async function migratePosts(authorIdMap: Map<string, string>) {
 
     inserted++;
     const localesWithBody = LOCALES.filter(l => bodyByLocale[l]);
-    console.log(`  [ok] ${slug} (body: ${localesWithBody.join(', ') || 'none'})`);
+    console.log(
+      `  [ok] ${slug} (body: ${localesWithBody.join(', ') || 'none'})`
+    );
   }
 
   console.log(
