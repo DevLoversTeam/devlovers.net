@@ -10,7 +10,7 @@ import { CookieBanner } from '@/components/shared/CookieBanner';
 import Footer from '@/components/shared/Footer';
 import { ScrollWatcher } from '@/components/shared/ScrollWatcher';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
-import { getBlogCategories } from '@/db/queries/blog/blog-categories';
+import { getCachedBlogCategories } from '@/db/queries/blog/blog-categories';
 import { AuthProvider } from '@/hooks/useAuth';
 import { locales } from '@/i18n/config';
 
@@ -27,7 +27,7 @@ export default async function LocaleLayout({
 
   const [messages, blogCategories] = await Promise.all([
     getMessages({ locale }),
-    getBlogCategories(locale),
+    getCachedBlogCategories(locale),
   ]);
 
   const enableAdmin =

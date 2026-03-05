@@ -384,9 +384,9 @@ export default function BlogFilters({
       }
 
       if (resolvedCategory) {
-        const postCategories = (post.categories || []).map(c =>
-          normalizeTag(c.title)
-        );
+        const postCategories = (post.categories || [])
+        .map(c => normalizeTag(c?.title || ''))
+        .filter(Boolean);
         if (!postCategories.includes(resolvedCategory.norm)) return false;
       }
 
@@ -470,12 +470,12 @@ export default function BlogFilters({
               </Link>
             )}
             <div className="relative flex h-full flex-col pt-8">
-              {featuredPost.categories?.[0] && (
+              {featuredPost.categories?.[0]?.title && (
                 <div className="absolute top-0 left-0 text-xs font-bold tracking-[0.2em] text-[var(--accent-primary)] uppercase">
                   {getCategoryLabel(
-                    featuredPost.categories[0]?.title === 'Growth'
+                    featuredPost.categories[0].title === 'Growth'
                       ? 'Career'
-                      : featuredPost.categories[0]?.title
+                      : featuredPost.categories[0].title
                   )}
                 </div>
               )}

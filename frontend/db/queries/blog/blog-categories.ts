@@ -1,4 +1,5 @@
 import { sql } from 'drizzle-orm';
+import { unstable_cache } from 'next/cache';
 
 import { db } from '../../index';
 import { blogCategories, blogCategoryTranslations } from '../../schema/blog';
@@ -31,3 +32,12 @@ export async function getBlogCategories(
     title: row.title ?? '',
   }));
 }
+
+export const getCachedBlogCategories = unstable_cache(
+  async (locale: string): Promise<BlogCategory[]> => getBlogCategories(locale),
+  ['blog-categories'],
+  {
+    revalidate: 60 * 60 * 24 * 7,
+    tags: ['blog-categories'],
+  }
+);
