@@ -532,6 +532,20 @@ async function requestMono<T>(
         });
       }
 
+      if (status === 429) {
+        throw new PspError('PSP_UPSTREAM', 'Monobank upstream rate limit', {
+          endpoint,
+          method: args.method,
+          httpStatus: status,
+          durationMs,
+          ...(parsed.monoCode ? { monoCode: parsed.monoCode } : {}),
+          ...(parsed.monoMessage ? { monoMessage: parsed.monoMessage } : {}),
+          ...(parsed.responseSnippet
+            ? { responseSnippet: parsed.responseSnippet }
+            : {}),
+        });
+      }
+
       if (status >= 400 && status < 500) {
         throw new PspError('PSP_BAD_REQUEST', 'Monobank request rejected', {
           endpoint,
@@ -770,7 +784,8 @@ export async function walletPayment(
     throw new Error('Monobank wallet payment returned invalid payload');
   }
 
-  const raw = res.data as MonobankWalletPaymentResponse & Record<string, unknown>;
+  const raw = res.data as MonobankWalletPaymentResponse &
+    Record<string, unknown>;
   const invoiceId =
     typeof raw.invoiceId === 'string' && raw.invoiceId.trim()
       ? raw.invoiceId.trim()
