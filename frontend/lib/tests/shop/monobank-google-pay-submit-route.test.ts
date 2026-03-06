@@ -1,8 +1,16 @@
 import crypto from 'node:crypto';
 
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray, type InferInsertModel } from 'drizzle-orm';
 import { NextRequest } from 'next/server';
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 
 import { db } from '@/db';
 import { orders, paymentAttempts } from '@/db/schema';
@@ -41,6 +49,8 @@ type WalletResult = {
   raw: unknown;
 };
 
+type OrderInsert = InferInsertModel<typeof orders>;
+
 vi.mock('@/lib/psp/monobank', async () => {
   const actual = await vi.importActual<any>('@/lib/psp/monobank');
   return {
@@ -78,7 +88,8 @@ afterAll(() => {
   if (prevFlag === undefined) delete process.env.SHOP_MONOBANK_GPAY_ENABLED;
   else process.env.SHOP_MONOBANK_GPAY_ENABLED = prevFlag;
 
-  if (prevMaxBody === undefined) delete process.env.SHOP_MONOBANK_GPAY_MAX_BODY_BYTES;
+  if (prevMaxBody === undefined)
+    delete process.env.SHOP_MONOBANK_GPAY_MAX_BODY_BYTES;
   else process.env.SHOP_MONOBANK_GPAY_MAX_BODY_BYTES = prevMaxBody;
 });
 
@@ -91,11 +102,16 @@ beforeEach(() => {
 async function insertOrder(args: {
   id: string;
   paymentProvider?: 'monobank' | 'stripe';
-  paymentStatus?: 'pending' | 'requires_payment' | 'paid' | 'failed' | 'refunded';
+  paymentStatus?:
+    | 'pending'
+    | 'requires_payment'
+    | 'paid'
+    | 'failed'
+    | 'refunded';
   currency?: 'UAH' | 'USD';
   paymentMethod?: 'monobank_google_pay' | 'monobank_invoice' | 'stripe_card';
 }) {
-  await db.insert(orders).values({
+  const values: OrderInsert = {
     id: args.id,
     totalAmountMinor: 4321,
     totalAmount: toDbMoney(4321),
@@ -111,7 +127,9 @@ async function insertOrder(args: {
         requestedMethod: args.paymentMethod ?? 'monobank_google_pay',
       },
     },
-  } as any);
+  };
+
+  await db.insert(orders).values(values);
 }
 
 async function cleanupOrder(orderId: string) {
@@ -144,6 +162,13 @@ function makeSubmitRequest(args: {
 
 async function waitForCreatingAttempt(orderId: string, timeoutMs = 3_000) {
   const deadline = Date.now() + timeoutMs;
+  let lastAttempt:
+    | {
+        id: string;
+        status: string;
+      }
+    | undefined;
+
   while (Date.now() < deadline) {
     const [attempt] = await db
       .select({
@@ -159,10 +184,15 @@ async function waitForCreatingAttempt(orderId: string, timeoutMs = 3_000) {
       )
       .limit(1);
 
-    if (attempt && attempt.status === 'creating') return;
+    lastAttempt = attempt;
+    if (attempt?.status === 'creating') return;
+
     await new Promise(resolve => setTimeout(resolve, 25));
   }
-  throw new Error('Timed out waiting for creating payment attempt');
+
+  throw new Error(
+    `Timed out waiting for creating payment attempt. orderId=${orderId}; provider=monobank; timeoutMs=${timeoutMs}; lastAttempt=${JSON.stringify(lastAttempt ?? null)}`
+  );
 }
 
 describe.sequential('monobank google pay submit route', () => {
@@ -253,7 +283,9 @@ describe.sequential('monobank google pay submit route', () => {
           metadata: paymentAttempts.metadata,
         })
         .from(paymentAttempts)
-        .where(inArray(paymentAttempts.orderId, [orderJsonToken, orderRawToken]));
+        .where(
+          inArray(paymentAttempts.orderId, [orderJsonToken, orderRawToken])
+        );
 
       for (const attempt of attempts) {
         const metadata = (attempt.metadata ?? {}) as Record<string, any>;

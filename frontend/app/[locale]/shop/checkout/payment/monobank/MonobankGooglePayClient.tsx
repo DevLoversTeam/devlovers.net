@@ -115,15 +115,19 @@ function loadGooglePayScript(): Promise<void> {
   if (window.google?.payments?.api?.PaymentsClient) return Promise.resolve();
   if (googlePayScriptPromise) return googlePayScriptPromise;
 
-  googlePayScriptPromise = new Promise((resolve, reject) => {
+  const promise: Promise<void> = new Promise<void>((resolve, reject) => {
     const existing = document.querySelector<HTMLScriptElement>(
       `script[src="${GOOGLE_PAY_SCRIPT_SRC}"]`
     );
+
     if (existing) {
       existing.addEventListener('load', () => resolve(), { once: true });
       existing.addEventListener(
         'error',
-        () => reject(new Error('google_pay_script_failed')),
+        () => {
+          googlePayScriptPromise = null;
+          reject(new Error('google_pay_script_failed'));
+        },
         { once: true }
       );
       return;
@@ -133,11 +137,19 @@ function loadGooglePayScript(): Promise<void> {
     script.src = GOOGLE_PAY_SCRIPT_SRC;
     script.async = true;
     script.onload = () => resolve();
-    script.onerror = () => reject(new Error('google_pay_script_failed'));
+    script.onerror = () => {
+      googlePayScriptPromise = null;
+      script.remove();
+      reject(new Error('google_pay_script_failed'));
+    };
     document.head.appendChild(script);
+  }).catch((error: unknown) => {
+    googlePayScriptPromise = null;
+    throw error;
   });
 
-  return googlePayScriptPromise;
+  googlePayScriptPromise = promise;
+  return promise;
 }
 
 function normalizeToken(value: unknown): string | null {
@@ -189,12 +201,17 @@ export default function MonobankGooglePayClient({
 
   const paymentsClientRef = useRef<GooglePayPaymentsClient | null>(null);
   const buttonHostRef = useRef<HTMLDivElement | null>(null);
+  const submitIdempotencyKeyRef = useRef<string | null>(null);
   const pendingPath = buildPendingReturnPath(orderId, statusToken);
   const statusTokenQuery = buildStatusTokenQuery(statusToken);
 
   const goToPending = useCallback(() => {
     router.push(pendingPath);
   }, [pendingPath, router]);
+
+  useEffect(() => {
+    submitIdempotencyKeyRef.current = null;
+  }, [orderId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -232,9 +249,10 @@ export default function MonobankGooglePayClient({
           }
         );
 
-        const data = (await response.json().catch(() => null)) as
-          | Record<string, unknown>
-          | null;
+        const data = (await response.json().catch(() => null)) as Record<
+          string,
+          unknown
+        > | null;
 
         if (!response.ok || !data) {
           if (!cancelled) {
@@ -323,12 +341,17 @@ export default function MonobankGooglePayClient({
     setIsSubmitting(true);
 
     try {
-      const paymentData = await client.loadPaymentData(config.paymentDataRequest);
+      const paymentData = await client.loadPaymentData(
+        config.paymentDataRequest
+      );
       const gToken = extractGToken(paymentData);
       if (!gToken) {
+        submitIdempotencyKeyRef.current = null;
         goToPending();
         return;
       }
+
+      submitIdempotencyKeyRef.current ??= generateIdempotencyKey();
 
       const response = await fetch(
         `/api/shop/orders/${encodeURIComponent(
@@ -338,17 +361,19 @@ export default function MonobankGooglePayClient({
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Idempotency-Key': generateIdempotencyKey(),
+            'Idempotency-Key': submitIdempotencyKeyRef.current,
           },
           body: JSON.stringify({ gToken }),
         }
       );
 
-      const data = (await response.json().catch(() => null)) as
-        | Record<string, unknown>
-        | null;
+      const data = (await response.json().catch(() => null)) as Record<
+        string,
+        unknown
+      > | null;
       const redirectUrl =
-        typeof data?.redirectUrl === 'string' && data.redirectUrl.trim().length > 0
+        typeof data?.redirectUrl === 'string' &&
+        data.redirectUrl.trim().length > 0
           ? data.redirectUrl
           : null;
 
@@ -365,6 +390,7 @@ export default function MonobankGooglePayClient({
           : '';
 
       if (statusCode.toUpperCase() === 'CANCELED') {
+        submitIdempotencyKeyRef.current = null;
         setUiMessage(t('monobankGooglePay.cancelled'));
         return;
       }
@@ -396,6 +422,7 @@ export default function MonobankGooglePayClient({
   }, [isReadyToPay, onGooglePayClick]);
 
   const onInvoiceFallback = useCallback(async () => {
+    submitIdempotencyKeyRef.current = null;
     setUiMessage(null);
     setIsInvoiceSubmitting(true);
 
@@ -410,9 +437,10 @@ export default function MonobankGooglePayClient({
         }
       );
 
-      const data = (await response.json().catch(() => null)) as
-        | Record<string, unknown>
-        | null;
+      const data = (await response.json().catch(() => null)) as Record<
+        string,
+        unknown
+      > | null;
       const pageUrl =
         typeof data?.pageUrl === 'string' && data.pageUrl.trim().length > 0
           ? data.pageUrl

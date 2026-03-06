@@ -119,7 +119,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const items = await findWarehousesWithCacheOnMiss({
-      settlementRef: parsed.data.cityRef,
+      cityRef: parsed.data.cityRef,
       q: parsed.data.q,
       limit: parsed.data.limit,
       runId: crypto.randomUUID(),

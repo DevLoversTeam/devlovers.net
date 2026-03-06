@@ -431,8 +431,8 @@ export async function searchSettlements(args: {
     throw err;
   }
 }
-export async function getWarehousesBySettlementRef(
-  settlementRef: string
+export async function getWarehousesByCityRef(
+  cityRef: string
 ): Promise<NovaPoshtaWarehouse[]> {
   const MAX_PAGES = 50;
   const LIMIT_PRIMARY = 500;
@@ -456,7 +456,7 @@ export async function getWarehousesBySettlementRef(
       modelName: 'Address',
       calledMethod: 'getWarehouses',
       methodProperties: {
-        CityRef: settlementRef,
+        CityRef: cityRef,
         Limit: String(limit),
         Page: String(page),
         Language: 'ua',

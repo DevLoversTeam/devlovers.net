@@ -16,8 +16,12 @@ import {
   submitMonobankWalletPayment,
 } from '@/lib/services/orders/monobank-wallet';
 import { authorizeOrderMutationAccess } from '@/lib/services/shop/order-access';
+import { createStatusToken } from '@/lib/shop/status-token';
 import { toAbsoluteUrl } from '@/lib/shop/url';
-import { idempotencyKeySchema, orderIdParamSchema } from '@/lib/validation/shop';
+import {
+  idempotencyKeySchema,
+  orderIdParamSchema,
+} from '@/lib/validation/shop';
 
 import {
   ensureMonobankPayableOrder,
@@ -80,11 +84,28 @@ function parseSubmitPayload(rawBytes: Buffer, maxBytes: number) {
   return { ok: true as const, payload: { gToken } satisfies SubmitPayload };
 }
 
-function buildPendingReturnUrl(orderId: string, statusToken: string | null): string {
+function resolveStatusToken(
+  orderId: string,
+  statusToken: string | null
+): string {
+  const normalized = statusToken?.trim() ?? '';
+  if (normalized) return normalized;
+
+  return createStatusToken({
+    orderId,
+    scopes: ['status_lite', 'order_payment_init'],
+  });
+}
+
+function buildPendingReturnUrl(
+  orderId: string,
+  statusToken: string | null
+): string {
   const params = new URLSearchParams({ orderId });
-  if (statusToken && statusToken.trim()) {
-    params.set('statusToken', statusToken.trim());
-  }
+  const resolvedStatusToken = resolveStatusToken(orderId, statusToken);
+
+  params.set('statusToken', resolvedStatusToken);
+
   return toAbsoluteUrl(`/shop/checkout/return/monobank?${params.toString()}`);
 }
 
@@ -159,7 +180,10 @@ export async function POST(
       orderId,
       code: guard.code,
     });
-    return noStoreJson({ code: guard.code, message: guard.message }, guard.status);
+    return noStoreJson(
+      { code: guard.code, message: guard.message },
+      guard.status
+    );
   }
 
   const maxBytes = getMonobankGooglePayMaxBodyBytes();
@@ -265,8 +289,7 @@ export async function POST(
     }
 
     if (error instanceof InvalidPayloadError) {
-      const status =
-        error.code === 'PAYMENT_ATTEMPTS_EXHAUSTED' ? 409 : 400;
+      const status = error.code === 'PAYMENT_ATTEMPTS_EXHAUSTED' ? 409 : 400;
       return noStoreJson(
         {
           code: error.code,
@@ -308,7 +331,10 @@ export async function POST(
       code: 'INTERNAL_ERROR',
     });
     return noStoreJson(
-      { code: 'INTERNAL_ERROR', message: 'Unable to submit Google Pay payment.' },
+      {
+        code: 'INTERNAL_ERROR',
+        message: 'Unable to submit Google Pay payment.',
+      },
       500
     );
   }

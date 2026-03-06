@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { resetEnvCache } from '@/lib/env';
 import {
-  getWarehousesBySettlementRef,
+  getWarehousesByCityRef,
   NovaPoshtaApiError,
   searchSettlements,
 } from '@/lib/services/shop/shipping/nova-poshta-client';
@@ -51,16 +51,16 @@ describe('nova poshta client network failure', () => {
     }
   });
 
-  it('wraps fetch throw in NovaPoshtaApiError for getWarehousesBySettlementRef', async () => {
+  it('wraps fetch throw in NovaPoshtaApiError for getWarehousesByCityRef', async () => {
     const fetchError = new TypeError('fetch failed');
     const fetchMock = vi.fn().mockRejectedValue(fetchError);
     vi.stubGlobal('fetch', fetchMock);
 
     try {
-      await getWarehousesBySettlementRef(
+      await getWarehousesByCityRef(
         'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'
       );
-      throw new Error('expected getWarehousesBySettlementRef to throw');
+      throw new Error('expected getWarehousesByCityRef to throw');
     } catch (error) {
       expect(fetchMock).toHaveBeenCalledTimes(1);
       expect(error).toBeInstanceOf(NovaPoshtaApiError);

@@ -97,10 +97,8 @@ function resolveInitialProvider(args: {
 
 function resolveDefaultMethodForProvider(args: {
   provider: CheckoutProvider;
-  monobankGooglePayEnabled: boolean;
 }): CheckoutPaymentMethod {
   if (args.provider === 'stripe') return 'stripe_card';
-  void args.monobankGooglePayEnabled;
   return 'monobank_invoice';
 }
 
@@ -230,7 +228,6 @@ export default function CartPage({
     useState<CheckoutPaymentMethod>(() =>
       resolveDefaultMethodForProvider({
         provider: initialProvider,
-        monobankGooglePayEnabled,
       })
     );
   const [isClientReady, setIsClientReady] = useState(false);
@@ -376,7 +373,6 @@ export default function CartPage({
       setSelectedPaymentMethod(
         resolveDefaultMethodForProvider({
           provider: 'monobank',
-          monobankGooglePayEnabled: canUseMonobankGooglePay,
         })
       );
     }
@@ -998,7 +994,8 @@ export default function CartPage({
         );
         return;
       }
-      if (paymentProvider === 'monobank' && monobankPageUrl) {
+
+      if (paymentProvider === 'monobank') {
         if (checkoutPaymentMethod === 'monobank_google_pay') {
           if (!statusToken) {
             setCheckoutError(t('checkout.errors.unexpectedResponse'));
@@ -1013,27 +1010,12 @@ export default function CartPage({
           return;
         }
 
-        window.location.assign(monobankPageUrl);
-        return;
-      }
-      if (
-        paymentProvider === 'monobank' &&
-        checkoutPaymentMethod === 'monobank_google_pay'
-      ) {
-        if (!statusToken) {
+        if (!monobankPageUrl) {
           setCheckoutError(t('checkout.errors.unexpectedResponse'));
           return;
         }
 
-        router.push(
-          `${shopBase}/checkout/payment/monobank/${encodeURIComponent(
-            orderId
-          )}?statusToken=${encodeURIComponent(statusToken)}&clearCart=1`
-        );
-        return;
-      }
-      if (paymentProvider === 'monobank' && !monobankPageUrl) {
-        setCheckoutError(t('checkout.errors.unexpectedResponse'));
+        window.location.assign(monobankPageUrl);
         return;
       }
 
@@ -1469,10 +1451,7 @@ export default function CartPage({
                   !selectedCityRef &&
                   cityOptions.length === 0 ? (
                     <p className="text-muted-foreground text-xs" role="status">
-                      {safeT(
-                        'delivery.city.noResults',
-                        'Міста не знайдено. Перевірте назву або локальні дані Nova Poshta'
-                      )}
+                      {t('delivery.city.noResults')}
                     </p>
                   ) : null}
                 </div>
@@ -1505,10 +1484,7 @@ export default function CartPage({
                       placeholder={
                         selectedCityRef
                           ? t('delivery.warehouse.placeholder')
-                          : safeT(
-                              'delivery.warehouse.selectCityFirst',
-                              'Спочатку оберіть місто'
-                            )
+                          : t('delivery.warehouse.selectCityFirst')
                       }
                       className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
                       disabled={!selectedCityRef}
@@ -1519,10 +1495,7 @@ export default function CartPage({
                         className="text-muted-foreground text-xs"
                         role="status"
                       >
-                        {safeT(
-                          'delivery.warehouse.cityRequired',
-                          'Щоб вибрати відділення, спочатку оберіть місто зі списку'
-                        )}
+                        {t('delivery.warehouse.cityRequired')}
                       </p>
                     ) : null}
 
@@ -1740,7 +1713,6 @@ export default function CartPage({
                       setSelectedPaymentMethod(
                         resolveDefaultMethodForProvider({
                           provider: 'monobank',
-                          monobankGooglePayEnabled: canUseMonobankGooglePay,
                         })
                       );
                     }

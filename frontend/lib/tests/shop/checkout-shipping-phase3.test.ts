@@ -136,29 +136,31 @@ describe('checkout shipping phase 3', () => {
 
     try {
       const idem = crypto.randomUUID();
-      await expect(
-        createOrderWithItems({
-          idempotencyKey: idem,
-          userId: null,
-          locale: 'en-US',
-          country: 'UA',
-          items: [{ productId: seed.productId, quantity: 1 }],
-          shipping: {
-            provider: 'nova_poshta',
-            methodCode: 'NP_WAREHOUSE',
-            selection: {
-              cityRef: seed.cityRef,
-              warehouseRef: seed.warehouseRefA,
-            },
-            recipient: {
-              fullName: 'Test User',
-              phone: '+380501112233',
-            },
+      const promise = createOrderWithItems({
+        idempotencyKey: idem,
+        userId: null,
+        locale: 'en-US',
+        country: 'UA',
+        items: [{ productId: seed.productId, quantity: 1 }],
+        shipping: {
+          provider: 'nova_poshta',
+          methodCode: 'NP_WAREHOUSE',
+          selection: {
+            cityRef: seed.cityRef,
+            warehouseRef: seed.warehouseRefA,
           },
-        })
-      ).rejects.toMatchObject({
-        code: 'SHIPPING_CURRENCY_UNSUPPORTED',
+          recipient: {
+            fullName: 'Test User',
+            phone: '+380501112233',
+          },
+        },
       });
+
+      await expect(promise).rejects.toBeInstanceOf(Error);
+      await expect(promise).rejects.toHaveProperty(
+        'code',
+        'SHIPPING_CURRENCY_UNSUPPORTED'
+      );
 
       const rows = await db
         .select({ id: orders.id })

@@ -417,13 +417,16 @@
           "label": "City",
           "placeholder": "Start typing city name (min 2 chars)",
           "selected": "Selected city: {city}",
-          "searching": "Searching cities..."
+          "searching": "Searching cities...",
+          "noResults": "No cities found. Check the name or local Nova Poshta data."
         },
         "warehouse": {
           "label": "Warehouse / parcel locker",
           "placeholder": "Type warehouse name or number",
           "selected": "Selected warehouse: {warehouse}",
-          "searching": "Searching warehouses..."
+          "searching": "Searching warehouses...",
+          "selectCityFirst": "Select a city first",
+          "cityRequired": "To choose a branch, first select a city from the list"
         },
         "courierAddress": {
           "label": "Courier address",
@@ -463,8 +466,8 @@
           "monobank": "Monobank",
           "monobankGooglePay": "Google Pay (Monobank)",
           "monobankInvoice": "Card/Invoice (Monobank)",
-          "monobankGooglePayHint": "Google Pay available on supported devices",
-          "monobankGooglePayFallbackHint": "If Google Pay not available, use invoice",
+          "monobankGooglePayHint": "Google Pay is available on supported devices",
+          "monobankGooglePayFallbackHint": "If Google Pay is unavailable, use invoice payment",
           "monobankGooglePayUnavailable": "Google Pay is currently unavailable for this order.",
           "monobankUahOnlyHint": "Monobank is available only for UAH checkout.",
           "monobankUnavailable": "Monobank is unavailable in this environment.",

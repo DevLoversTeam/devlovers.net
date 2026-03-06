@@ -6,7 +6,7 @@ import { db } from '@/db';
 import { logWarn } from '@/lib/logging';
 
 import {
-  getWarehousesBySettlementRef,
+  getWarehousesByCityRef,
   type NovaPoshtaSettlement,
   type NovaPoshtaWarehouse,
   searchSettlements,
@@ -128,7 +128,7 @@ export async function findCachedCities(args: {
 }
 
 export async function findCachedWarehouses(args: {
-  settlementRef: string;
+  cityRef: string;
   q?: string;
   limit: number;
 }): Promise<ShippingWarehouse[]> {
@@ -138,7 +138,7 @@ export async function findCachedWarehouses(args: {
     SELECT ref, settlement_ref, city_ref, number, type, name, name_ru, address, address_ru, is_post_machine
     FROM np_warehouses
 WHERE is_active = true
-  AND city_ref = ${args.settlementRef}
+  AND city_ref = ${args.cityRef}
       AND (
         ${hasQ} = false
         OR name ILIKE ${like}
@@ -275,7 +275,7 @@ async function upsertWarehouses(rows: NovaPoshtaWarehouse[], runId: string) {
 }
 
 async function deactivateMissingWarehouses(args: {
-  settlementRef: string;
+  cityRef: string;
   keepRefs: string[];
   runId: string;
 }): Promise<number> {
@@ -288,7 +288,7 @@ async function deactivateMissingWarehouses(args: {
     is_active = false,
     last_sync_run_id = ${args.runId}::uuid,
     updated_at = now()
-  WHERE city_ref = ${args.settlementRef}
+  WHERE city_ref = ${args.cityRef}
     AND is_active = true
   RETURNING ref
 `);
@@ -303,7 +303,7 @@ async function deactivateMissingWarehouses(args: {
     is_active = false,
     last_sync_run_id = ${args.runId}::uuid,
     updated_at = now()
-  WHERE city_ref = ${args.settlementRef}
+  WHERE city_ref = ${args.cityRef}
     AND is_active = true
     AND ref NOT IN (${sql.join(refs, sql`, `)})
   RETURNING ref
@@ -326,15 +326,15 @@ export async function cacheSettlementsByQuery(args: {
   return { upserted: settlements.length };
 }
 
-export async function cacheWarehousesBySettlement(args: {
-  settlementRef: string;
+export async function cacheWarehousesByCityRef(args: {
+  cityRef: string;
   runId: string;
 }): Promise<{ upserted: number; deactivated: number }> {
-  const warehouses = await getWarehousesBySettlementRef(args.settlementRef);
+  const warehouses = await getWarehousesByCityRef(args.cityRef);
   await upsertWarehouses(warehouses, args.runId);
 
   const deactivated = await deactivateMissingWarehouses({
-    settlementRef: args.settlementRef,
+    cityRef: args.cityRef,
     keepRefs: warehouses.map(x => x.ref),
     runId: args.runId,
   });
@@ -377,13 +377,13 @@ export async function findCitiesWithCacheOnMiss(args: {
 }
 
 export async function findWarehousesWithCacheOnMiss(args: {
-  settlementRef: string;
+  cityRef: string;
   q?: string;
   limit: number;
   runId: string;
 }): Promise<ShippingWarehouse[]> {
   const localResults = await findCachedWarehouses({
-    settlementRef: args.settlementRef,
+    cityRef: args.cityRef,
     q: args.q,
     limit: args.limit,
   });
@@ -393,32 +393,32 @@ export async function findWarehousesWithCacheOnMiss(args: {
 
   const hasQ = !!args.q?.trim();
   if (hasQ) {
-    const anyCachedForSettlement = await findCachedWarehouses({
-      settlementRef: args.settlementRef,
+    const anyCachedForCity = await findCachedWarehouses({
+      cityRef: args.cityRef,
       limit: 1,
     });
 
-    if (anyCachedForSettlement.length > 0) {
+    if (anyCachedForCity.length > 0) {
       return [];
     }
   }
 
   try {
-    await cacheWarehousesBySettlement({
-      settlementRef: args.settlementRef,
+    await cacheWarehousesByCityRef({
+      cityRef: args.cityRef,
       runId: args.runId,
     });
   } catch (error) {
     logWarn('np_warehouses_cache_on_miss_failed', {
       code: 'NP_CACHE_REFRESH_FAILED',
       runId: args.runId,
-      settlementRef: args.settlementRef,
+      cityRef: args.cityRef,
     });
     throw error;
   }
 
   const refreshedLocalResults = await findCachedWarehouses({
-    settlementRef: args.settlementRef,
+    cityRef: args.cityRef,
     q: args.q,
     limit: args.limit,
   });

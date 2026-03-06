@@ -404,31 +404,34 @@ describe('monobank api methods', () => {
 
   it('walletPayment timeout returns PSP_TIMEOUT without retries', async () => {
     vi.useFakeTimers();
-    process.env.MONO_INVOICE_TIMEOUT_MS = '25';
-    resetEnvCache();
 
-    const fetchMock = vi.fn(() => new Promise<Response>(() => {}));
-    globalThis.fetch = fetchMock as any;
+    try {
+      process.env.MONO_INVOICE_TIMEOUT_MS = '25';
+      resetEnvCache();
 
-    const { walletPayment } = await import('@/lib/psp/monobank');
-    const p = walletPayment({
-      cardToken: 'token',
-      amountMinor: 100,
-      ccy: 980,
-      redirectUrl: 'https://shop.test/return',
-      webHookUrl: 'https://shop.test/webhook',
-    }).then(
-      () => null,
-      e => e
-    );
+      const fetchMock = vi.fn(() => new Promise<Response>(() => {}));
+      globalThis.fetch = fetchMock as any;
 
-    await vi.advanceTimersByTimeAsync(25);
-    const error = await p;
-    const { PspError } = await import('@/lib/psp/monobank');
-    expect(error).toBeInstanceOf(PspError);
-    expect((error as InstanceType<typeof PspError>).code).toBe('PSP_TIMEOUT');
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+      const { walletPayment } = await import('@/lib/psp/monobank');
+      const p = walletPayment({
+        cardToken: 'token',
+        amountMinor: 100,
+        ccy: 980,
+        redirectUrl: 'https://shop.test/return',
+        webHookUrl: 'https://shop.test/webhook',
+      }).then(
+        () => null,
+        e => e
+      );
 
-    vi.useRealTimers();
+      await vi.advanceTimersByTimeAsync(25);
+      const error = await p;
+      const { PspError } = await import('@/lib/psp/monobank');
+      expect(error).toBeInstanceOf(PspError);
+      expect((error as InstanceType<typeof PspError>).code).toBe('PSP_TIMEOUT');
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
