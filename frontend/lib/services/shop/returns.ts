@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { and, asc, eq, inArray, sql } from 'drizzle-orm';
+import { asc, eq, inArray, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { orderItems, orders, returnItems, returnRequests } from '@/db/schema';

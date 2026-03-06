@@ -5,11 +5,11 @@ import { sql } from 'drizzle-orm';
 import { db } from '@/db';
 import { isCanonicalEventsDualWriteEnabled } from '@/lib/env/shop-canonical-events';
 import { buildAdminAuditDedupeKey } from '@/lib/services/shop/events/dedupe-key';
+import { recordShippingMetric } from '@/lib/services/shop/shipping/metrics';
 import {
   isShippingStatusTransitionAllowed,
   shippingStatusTransitionWhereSql,
 } from '@/lib/services/shop/transitions/shipping-state';
-import { recordShippingMetric } from '@/lib/services/shop/shipping/metrics';
 
 export type ShippingAdminAction =
   | 'retry_label_creation'

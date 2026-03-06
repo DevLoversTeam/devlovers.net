@@ -3,8 +3,8 @@
 import { ShoppingBag } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
-import { Link } from '@/i18n/routing';
 import { useMounted } from '@/hooks/use-mounted';
+import { Link } from '@/i18n/routing';
 
 import { useCart } from '../CartProvider';
 

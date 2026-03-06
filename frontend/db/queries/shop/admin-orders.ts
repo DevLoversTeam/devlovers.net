@@ -5,8 +5,8 @@ import { count, desc, eq, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import {
   orderItems,
-  orderShipping,
   orders,
+  orderShipping,
   shippingShipments,
 } from '@/db/schema';
 import type { CurrencyCode } from '@/lib/shop/currency';

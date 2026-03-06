@@ -14,6 +14,8 @@ import {
   paymentProviderValues,
   paymentStatusValues,
 } from '@/lib/shop/payments';
+
+export type { CurrencyCode } from '@/lib/shop/currency';
 export type {
   PaymentMethod,
   PaymentProvider,
@@ -35,8 +37,6 @@ export const paymentStatusSchema = z.enum(paymentStatusValues);
 export const paymentProviderSchema = z.enum(paymentProviderValues);
 export const paymentMethodSchema = z.enum(paymentMethodValues);
 export const currencySchema = z.enum(currencyValues);
-
-export type { CurrencyCode } from '@/lib/shop/currency';
 
 const searchParamString = z
   .union([z.string(), z.array(z.string())])

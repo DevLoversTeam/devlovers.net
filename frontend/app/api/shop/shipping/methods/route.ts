@@ -10,13 +10,13 @@ import {
   getRateLimitSubject,
   rateLimitResponse,
 } from '@/lib/security/rate-limit';
-import { resolveCurrencyFromLocale } from '@/lib/shop/currency';
-import { resolveRequestLocale } from '@/lib/shop/request-locale';
 import { resolveShippingAvailability } from '@/lib/services/shop/shipping/availability';
 import {
   sanitizeShippingErrorForLog,
   sanitizeShippingLogMeta,
 } from '@/lib/services/shop/shipping/log-sanitizer';
+import { resolveCurrencyFromLocale } from '@/lib/shop/currency';
+import { resolveRequestLocale } from '@/lib/shop/request-locale';
 import { shippingMethodsQuerySchema } from '@/lib/validation/shop-shipping';
 
 export const runtime = 'nodejs';
