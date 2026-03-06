@@ -4,6 +4,7 @@ import {
   getNovaPoshtaConfig,
   NovaPoshtaConfigError,
 } from '@/lib/env/nova-poshta';
+import { logWarn } from '@/lib/logging';
 
 type NovaPoshtaEnvelope<T> = {
   success: boolean;
@@ -110,6 +111,8 @@ export type NovaPoshtaCreatedTtn = {
   providerRef: string;
   trackingNumber: string;
 };
+
+const NP_SEARCH_SETTLEMENTS_FALLBACK_ERROR_CODE = '20000900746';
 
 export class NovaPoshtaApiError extends Error {
   status: number;
@@ -424,10 +427,22 @@ export async function searchSettlements(args: {
   try {
     return await getCitiesByFindByString(args);
   } catch (err) {
-    // precise fallback for the exact NP error we saw in debug:
-    if (err instanceof NovaPoshtaApiError && err.code === '20000900746') {
+    if (
+      err instanceof NovaPoshtaApiError &&
+      err.code === NP_SEARCH_SETTLEMENTS_FALLBACK_ERROR_CODE
+    ) {
+      logWarn('nova_poshta_search_settlements_fallback', {
+        q: args.q,
+        page: args.page ?? 1,
+        limit: args.limit ?? 20,
+        errorCode: err.code,
+        status: err.status,
+        message: err.message,
+      });
+
       return await searchSettlementsByCityName(args);
     }
+
     throw err;
   }
 }
@@ -465,6 +480,10 @@ export async function getWarehousesByCityRef(
 
     if (!firstPageAttempted) {
       firstPageAttempted = true;
+
+      // Some NP endpoints can return an empty first page with a larger limit.
+      // Retry once from page 1 with a smaller fallback limit before treating it
+      // as a real empty result.
       if (batch.length === 0 && limit !== LIMIT_FALLBACK) {
         limit = LIMIT_FALLBACK;
         page = 1;

@@ -376,13 +376,27 @@ export default function MonobankGooglePayClient({
         data.redirectUrl.trim().length > 0
           ? data.redirectUrl
           : null;
+      const returnUrl =
+        typeof data?.returnUrl === 'string' && data.returnUrl.trim().length > 0
+          ? data.returnUrl
+          : null;
 
-      if (response.ok && redirectUrl) {
-        window.location.assign(redirectUrl);
+      if (response.ok) {
+        if (redirectUrl) {
+          window.location.assign(redirectUrl);
+          return;
+        }
+
+        if (returnUrl) {
+          window.location.assign(returnUrl);
+          return;
+        }
+
+        goToPending();
         return;
       }
 
-      goToPending();
+      setUiMessage(t('monobankGooglePay.invoiceFallbackFailed'));
     } catch (error) {
       const statusCode =
         error && typeof error === 'object' && 'statusCode' in error
@@ -395,7 +409,7 @@ export default function MonobankGooglePayClient({
         return;
       }
 
-      goToPending();
+      setUiMessage(t('monobankGooglePay.unableToInit'));
     } finally {
       setIsSubmitting(false);
     }

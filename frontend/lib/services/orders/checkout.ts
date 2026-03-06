@@ -873,13 +873,19 @@ export async function createOrderWithItems({
     : resolveCurrencyFromLocale(locale);
   const stripePaymentsEnabled = isPaymentsEnabled();
   const paymentProvider: PaymentProvider =
-    requestedProvider === 'monobank'
-      ? 'monobank'
-      : stripePaymentsEnabled
-        ? 'stripe'
-        : 'none';
+    requestedProvider === 'none'
+      ? 'none'
+      : requestedProvider === 'monobank'
+        ? 'monobank'
+        : requestedProvider === 'stripe'
+          ? 'stripe'
+          : stripePaymentsEnabled
+            ? 'stripe'
+            : 'none';
+
   const paymentsEnabled =
-    paymentProvider === 'monobank' ? true : stripePaymentsEnabled;
+    paymentProvider !== 'none' &&
+    (paymentProvider === 'monobank' || stripePaymentsEnabled);
 
   const initialPaymentStatus: PaymentStatus =
     paymentProvider === 'none' ? 'paid' : 'pending';
@@ -1009,8 +1015,22 @@ export async function createOrderWithItems({
       paymentIntentId: existing.paymentIntentId ?? null,
       paymentStatus: row.paymentStatus,
     });
+    const metadataMethod =
+      row.pspMetadata &&
+      typeof row.pspMetadata === 'object' &&
+      !Array.isArray(row.pspMetadata)
+        ? normalizeStoredPaymentMethod(
+            (
+              (row.pspMetadata as Record<string, unknown>).checkout as
+                | Record<string, unknown>
+                | undefined
+            )?.requestedMethod
+          )
+        : null;
+
     const existingMethod =
       normalizeStoredPaymentMethod(row.pspPaymentMethod) ??
+      metadataMethod ??
       resolveDefaultMethodForProvider(
         existingProvider,
         row.currency as Currency

@@ -305,7 +305,6 @@ describe('monobank api methods', () => {
       cardToken: 'token-value',
       amountMinor: 1234,
       ccy: 980,
-      initiationKind: 'client',
       redirectUrl: 'https://shop.test/return/monobank',
       webHookUrl: 'https://shop.test/api/shop/webhooks/monobank',
     });
