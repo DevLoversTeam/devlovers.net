@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 
-import { eq, sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { db } from '@/db';

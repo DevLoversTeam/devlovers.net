@@ -3,7 +3,6 @@ import 'server-only';
 import { sql } from 'drizzle-orm';
 
 import { db } from '@/db';
-import { notificationOutbox } from '@/db/schema';
 import { logInfo, logWarn } from '@/lib/logging';
 import {
   renderShopNotificationTemplate,

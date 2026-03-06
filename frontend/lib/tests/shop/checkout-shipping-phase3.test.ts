@@ -6,17 +6,14 @@ import { db } from '@/db';
 import {
   npCities,
   npWarehouses,
-  orderShipping,
   orders,
+  orderShipping,
   productPrices,
   products,
 } from '@/db/schema/shop';
-import {
-  IdempotencyConflictError,
-  InvalidPayloadError,
-} from '@/lib/services/errors';
-import { createOrderWithItems } from '@/lib/services/orders';
 import { resetEnvCache } from '@/lib/env';
+import { IdempotencyConflictError } from '@/lib/services/errors';
+import { createOrderWithItems } from '@/lib/services/orders';
 
 type SeedData = {
   productId: string;
@@ -159,7 +156,7 @@ describe('checkout shipping phase 3', () => {
             },
           },
         })
-      ).rejects.toMatchObject<Partial<InvalidPayloadError>>({
+      ).rejects.toMatchObject({
         code: 'SHIPPING_CURRENCY_UNSUPPORTED',
       });
 

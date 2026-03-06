@@ -14,8 +14,8 @@ import {
   getRateLimitSubject,
   rateLimitResponse,
 } from '@/lib/security/rate-limit';
-import { IdempotencyConflictError } from '@/lib/services/errors';
 import {
+  IdempotencyConflictError,
   InsufficientStockError,
   InvalidPayloadError,
   InvalidVariantError,
@@ -611,10 +611,8 @@ export async function POST(request: NextRequest) {
   let payloadForValidation: unknown = body;
 
   if (body && typeof body === 'object' && !Array.isArray(body)) {
-    const { paymentProvider, provider, paymentMethod, ...rest } = body as Record<
-      string,
-      unknown
-    >;
+    const { paymentProvider, provider, paymentMethod, ...rest } =
+      body as Record<string, unknown>;
     const rawProvider = paymentProvider ?? provider;
     const parsedProvider = parseRequestedProvider(rawProvider);
 

@@ -2,8 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { resetEnvCache } from '@/lib/env';
 import {
-  NovaPoshtaApiError,
   getWarehousesBySettlementRef,
+  NovaPoshtaApiError,
   searchSettlements,
 } from '@/lib/services/shop/shipping/nova-poshta-client';
 

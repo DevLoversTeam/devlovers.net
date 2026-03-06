@@ -26,10 +26,10 @@ import {
   toDbMoney,
 } from '@/lib/shop/money';
 import {
-  resolveDefaultMethodForProvider,
   type PaymentMethod,
   type PaymentProvider,
   type PaymentStatus,
+  resolveDefaultMethodForProvider,
 } from '@/lib/shop/payments';
 import {
   type CheckoutItem,
