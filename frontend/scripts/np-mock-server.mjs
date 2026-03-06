@@ -120,13 +120,55 @@ const server = http.createServer(async (req, res) => {
     (modelName === 'Address' && calledMethod === 'getCities') ||
     calledMethod === 'searchSettlements'
   ) {
+    const cityRef = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
+
+    // NP "searchSettlements" typically returns { data: [{ Addresses: [...] }] }
+    if (calledMethod === 'searchSettlements') {
+      return json(
+        res,
+        200,
+        okNp([
+          {
+            TotalCount: 1,
+            Addresses: [
+              {
+                Ref: cityRef,
+                DeliveryCity: cityRef,
+                CityRef: cityRef,
+
+                // These are commonly used by client mappers
+                MainDescription: 'Київ',
+                Present: 'м. Київ (mock)',
+                Description: 'Київ',
+                DescriptionRu: 'Киев',
+
+                AreaDescription: 'Київська',
+                RegionDescription: 'Київ',
+
+                SettlementTypeDescription: 'місто',
+                SettlementTypeDescriptionRu: 'город',
+
+                Warehouses: 2,
+              },
+            ],
+          },
+        ])
+      );
+    }
+
+    // getCities: return flat list
     return json(
       res,
       200,
       okNp([
         {
-          Ref: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
-          Description: 'Kyiv (mock)',
+          Ref: cityRef,
+          Description: 'Київ',
+          DescriptionRu: 'Киев',
+          SettlementTypeDescription: 'місто',
+          SettlementTypeDescriptionRu: 'город',
+          AreaDescription: 'Київська',
+          RegionDescription: 'Київ',
         },
       ])
     );
@@ -137,13 +179,47 @@ const server = http.createServer(async (req, res) => {
     (calledMethod === 'getWarehouses' ||
       calledMethod === 'getWarehousesByCityRef')
   ) {
+    const cityRef = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
+
     return json(
       res,
       200,
       okNp([
         {
           Ref: '11111111-1111-1111-1111-111111111111',
-          Description: 'Warehouse #1 (mock)',
+          CityRef: cityRef,
+          SettlementRef: cityRef,
+
+          Number: '1',
+          TypeOfWarehouse: 'Warehouse',
+
+          Description: 'Відділення №1 (mock)',
+          DescriptionRu: 'Отделение №1 (mock)',
+
+          Address: 'вул. Хрещатик, 1',
+          AddressRu: 'ул. Крещатик, 1',
+
+          PostMachine: '0',
+          IsPostMachine: false,
+          CategoryOfWarehouse: 'Branch',
+        },
+        {
+          Ref: '22222222-2222-2222-2222-222222222222',
+          CityRef: cityRef,
+          SettlementRef: cityRef,
+
+          Number: '2',
+          TypeOfWarehouse: 'Postomat',
+
+          Description: 'Поштомат №1 (mock)',
+          DescriptionRu: 'Почтомат №1 (mock)',
+
+          Address: 'вул. Хрещатик, 2',
+          AddressRu: 'ул. Крещатик, 2',
+
+          PostMachine: '1',
+          IsPostMachine: true,
+          CategoryOfWarehouse: 'Postomat',
         },
       ])
     );

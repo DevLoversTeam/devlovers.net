@@ -19,6 +19,14 @@ type InternetDocumentSaveItem = {
   IntDocNumber?: string;
 };
 
+type GetCitiesItem = {
+  Ref?: string;
+  Description?: string;
+  DescriptionRu?: string;
+  AreaDescription?: string;
+  RegionDescription?: string;
+  SettlementTypeDescription?: string;
+};
 type SearchSettlementsAddress = {
   Ref?: string;
   Present?: string;
@@ -253,7 +261,7 @@ async function callNp<T>(params: {
     response = await fetch(config.apiBaseUrl, {
       method: 'POST',
       headers: {
-        'content-type': 'application/json',
+        'content-type': 'application/json; charset=utf-8',
         accept: 'application/json',
       },
       body: JSON.stringify({
@@ -320,18 +328,62 @@ async function callNp<T>(params: {
   return payload.data ?? [];
 }
 
-export async function searchSettlements(args: {
+async function getCitiesByFindByString(args: {
   q: string;
   page?: number;
   limit?: number;
 }): Promise<NovaPoshtaSettlement[]> {
+  const q = args.q.trim();
+  if (!q) return [];
+
+  const rows = await callNp<GetCitiesItem>({
+    modelName: 'Address',
+    calledMethod: 'getCities',
+    methodProperties: {
+      FindByString: q,
+      Page: String(Math.max(1, Math.floor(args.page ?? 1))),
+      Limit: String(Math.max(1, Math.min(50, Math.floor(args.limit ?? 20)))),
+      Language: 'ua',
+    },
+  });
+
+  const out: NovaPoshtaSettlement[] = [];
+  const seen = new Set<string>();
+
+  for (const item of rows) {
+    const ref = readString(item.Ref);
+    const nameUa = readString(item.Description);
+    if (!ref || !nameUa || seen.has(ref)) continue;
+    seen.add(ref);
+
+    out.push({
+      ref,
+      nameUa,
+      nameRu: readString(item.DescriptionRu),
+      area: readString(item.AreaDescription),
+      region: readString(item.RegionDescription),
+      settlementType: readString(item.SettlementTypeDescription),
+    });
+  }
+
+  return out;
+}
+
+async function searchSettlementsByCityName(args: {
+  q: string;
+  page?: number;
+  limit?: number;
+}): Promise<NovaPoshtaSettlement[]> {
+  const q = args.q.trim();
+  if (!q) return [];
+
   const rows = await callNp<SearchSettlementsItem>({
     modelName: 'Address',
     calledMethod: 'searchSettlements',
     methodProperties: {
-      CityName: args.q,
-      Page: Math.max(1, Math.floor(args.page ?? 1)),
-      Limit: Math.max(1, Math.min(50, Math.floor(args.limit ?? 20))),
+      CityName: q,
+      Page: String(Math.max(1, Math.floor(args.page ?? 1))),
+      Limit: String(Math.max(1, Math.min(50, Math.floor(args.limit ?? 20)))),
     },
   });
 
@@ -345,14 +397,15 @@ export async function searchSettlements(args: {
   for (const item of addresses) {
     const ref = readString(item.Ref);
     const present = readString(item.Present);
-    const mainDescription = readString(item.MainDescription);
-    const name = present ?? mainDescription;
-    if (!ref || !name || seen.has(ref)) continue;
+    const main = readString(item.MainDescription);
+    const nameUa = present ?? main;
+
+    if (!ref || !nameUa || seen.has(ref)) continue;
     seen.add(ref);
 
     out.push({
       ref,
-      nameUa: name,
+      nameUa,
       nameRu: null,
       area: readString(item.Area),
       region: readString(item.Region),
@@ -363,14 +416,32 @@ export async function searchSettlements(args: {
   return out;
 }
 
+export async function searchSettlements(args: {
+  q: string;
+  page?: number;
+  limit?: number;
+}): Promise<NovaPoshtaSettlement[]> {
+  try {
+    return await getCitiesByFindByString(args);
+  } catch (err) {
+    // precise fallback for the exact NP error we saw in debug:
+    if (err instanceof NovaPoshtaApiError && err.code === '20000900746') {
+      return await searchSettlementsByCityName(args);
+    }
+    throw err;
+  }
+}
 export async function getWarehousesBySettlementRef(
   settlementRef: string
 ): Promise<NovaPoshtaWarehouse[]> {
-  const LIMIT = 500;
-  const MAX_PAGES = 20;
+  const MAX_PAGES = 50;
+  const LIMIT_PRIMARY = 500;
+  const LIMIT_FALLBACK = 200;
 
   const rows: WarehouseItem[] = [];
   let page = 1;
+  let limit = LIMIT_PRIMARY;
+  let firstPageAttempted = false;
 
   while (true) {
     if (page > MAX_PAGES) {
@@ -385,18 +456,27 @@ export async function getWarehousesBySettlementRef(
       modelName: 'Address',
       calledMethod: 'getWarehouses',
       methodProperties: {
-        SettlementRef: settlementRef,
-        Limit: LIMIT,
-        Page: page,
+        CityRef: settlementRef,
+        Limit: String(limit),
+        Page: String(page),
         Language: 'ua',
       },
     });
+
+    if (!firstPageAttempted) {
+      firstPageAttempted = true;
+      if (batch.length === 0 && limit !== LIMIT_FALLBACK) {
+        limit = LIMIT_FALLBACK;
+        page = 1;
+        continue;
+      }
+    }
 
     if (batch.length === 0) break;
 
     rows.push(...batch);
 
-    if (batch.length < LIMIT) break;
+    if (batch.length < limit) break;
 
     page += 1;
   }
