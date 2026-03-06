@@ -741,7 +741,8 @@
         "invoiceFallback": "Zapłać przez fakturę",
         "invoiceLoading": "Otwieranie faktury...",
         "invoiceFallbackFailed": "Nie można teraz uruchomić płatności przez fakturę.",
-        "cancelled": "Google Pay został anulowany. Możesz spróbować ponownie lub użyć faktury."
+        "cancelled": "Google Pay został anulowany. Możesz spróbować ponownie lub użyć faktury.",
+        "processingFallback": "Nie udało się dokończyć potwierdzenia w przeglądarce. Twoje zamówienie zostanie sfinalizowane automatycznie."
       },
       "monobankReturn": {
         "processing": "Przetwarzanie płatności...",

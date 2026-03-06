@@ -97,9 +97,13 @@ function resolveInitialProvider(args: {
 
 function resolveDefaultMethodForProvider(args: {
   provider: CheckoutProvider;
-}): CheckoutPaymentMethod {
+  currency: string | null | undefined;
+}): CheckoutPaymentMethod | null {
   if (args.provider === 'stripe') return 'stripe_card';
-  return 'monobank_invoice';
+  if (args.provider === 'monobank') {
+    return args.currency === 'UAH' ? 'monobank_invoice' : null;
+  }
+  return null;
 }
 
 type OrdersSummaryState = {
@@ -225,9 +229,10 @@ export default function CartPage({
   const [selectedProvider, setSelectedProvider] =
     useState<CheckoutProvider>(initialProvider);
   const [selectedPaymentMethod, setSelectedPaymentMethod] =
-    useState<CheckoutPaymentMethod>(() =>
+    useState<CheckoutPaymentMethod | null>(() =>
       resolveDefaultMethodForProvider({
         provider: initialProvider,
+        currency: cart?.summary?.currency,
       })
     );
   const [isClientReady, setIsClientReady] = useState(false);
@@ -374,10 +379,16 @@ export default function CartPage({
       setSelectedPaymentMethod(
         resolveDefaultMethodForProvider({
           provider: 'monobank',
+          currency: cart.summary.currency,
         })
       );
     }
-  }, [canUseMonobankGooglePay, selectedPaymentMethod, selectedProvider]);
+  }, [
+    canUseMonobankGooglePay,
+    cart.summary.currency,
+    selectedPaymentMethod,
+    selectedProvider,
+  ]);
 
   useEffect(() => {
     let cancelled = false;
@@ -925,9 +936,12 @@ export default function CartPage({
       }
 
       const idempotencyKey = generateIdempotencyKey();
-      const checkoutPaymentMethod: CheckoutPaymentMethod =
+      const checkoutPaymentMethod =
         selectedProvider === 'stripe' ? 'stripe_card' : selectedPaymentMethod;
-
+      if (!checkoutPaymentMethod) {
+        setCheckoutError(t('checkout.paymentMethod.noAvailable'));
+        return;
+      }
       const response = await fetch('/api/shop/checkout', {
         method: 'POST',
         headers: {
@@ -1721,6 +1735,7 @@ export default function CartPage({
                       setSelectedPaymentMethod(
                         resolveDefaultMethodForProvider({
                           provider: 'monobank',
+                          currency: cart.summary.currency,
                         })
                       );
                     }
