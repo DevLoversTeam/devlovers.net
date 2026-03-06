@@ -244,6 +244,7 @@ export default function CartPage({
   const [selectedCityRef, setSelectedCityRef] = useState<string | null>(null);
   const [selectedCityName, setSelectedCityName] = useState<string | null>(null);
   const [citiesLoading, setCitiesLoading] = useState(false);
+  const [cityLookupFailed, setCityLookupFailed] = useState(false);
 
   const [warehouseQuery, setWarehouseQuery] = useState('');
   const [warehouseOptions, setWarehouseOptions] = useState<ShippingWarehouse[]>(
@@ -535,6 +536,7 @@ export default function CartPage({
   useEffect(() => {
     if (!shippingAvailable) {
       setCityOptions([]);
+      setCityLookupFailed(false);
       setCitiesLoading(false);
       return;
     }
@@ -542,6 +544,7 @@ export default function CartPage({
     const query = cityQuery.trim();
     if (query.length < 2) {
       setCityOptions([]);
+      setCityLookupFailed(false);
       setCitiesLoading(false);
       return;
     }
@@ -551,6 +554,7 @@ export default function CartPage({
 
     const timeoutId = setTimeout(async () => {
       setCitiesLoading(true);
+      setCityLookupFailed(false);
 
       try {
         const qs = new URLSearchParams({
@@ -575,12 +579,13 @@ export default function CartPage({
 
         if (!response.ok || parsed.available === false) {
           if (!cancelled) {
-            setCityOptions([]);
+            setCityLookupFailed(true);
           }
           return;
         }
 
         if (!cancelled) {
+          setCityLookupFailed(false);
           const next = parsed.items;
           const normalizedQuery = normalizeLookupValue(query);
 
@@ -599,7 +604,7 @@ export default function CartPage({
         }
       } catch {
         if (!cancelled) {
-          setCityOptions([]);
+          setCityLookupFailed(true);
         }
       } finally {
         if (!cancelled) {
@@ -1403,6 +1408,7 @@ export default function CartPage({
                     spellCheck={false}
                     onChange={event => {
                       clearCheckoutUiErrors();
+                      setCityLookupFailed(false);
                       setCityQuery(event.target.value);
                       setSelectedCityRef(null);
                       setSelectedCityName(null);
@@ -1447,6 +1453,7 @@ export default function CartPage({
                   ) : null}
 
                   {!citiesLoading &&
+                  !cityLookupFailed &&
                   cityQuery.trim().length >= 2 &&
                   !selectedCityRef &&
                   cityOptions.length === 0 ? (
@@ -1529,6 +1536,7 @@ export default function CartPage({
                                   ? `${warehouse.name} (${warehouse.address})`
                                   : warehouse.name
                               );
+                              setWarehouseOptions([]);
                             }}
                             className="hover:bg-secondary block w-full rounded px-2 py-1 text-left text-xs"
                           >

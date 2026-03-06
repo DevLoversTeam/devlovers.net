@@ -116,6 +116,8 @@ function isNonProductionAppStage(): boolean {
     return vercelEnv !== 'production';
   }
 
+  // Deliberately fail closed: if stage env is unset, treat the route as
+  // production-like so debug payloads are not exposed by default.
   return false;
 }
 

@@ -41,6 +41,7 @@ const POLL_DELAY_MS = 2_500;
 const TERMINAL_NON_PAID = new Set([
   'failed',
   'refunded',
+  'requires_payment',
   'canceled',
   'needs_review',
 ]);

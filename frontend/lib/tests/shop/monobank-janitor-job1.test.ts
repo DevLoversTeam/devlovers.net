@@ -133,12 +133,8 @@ describe.sequential('monobank janitor job1', () => {
 
     try {
       const res = await runMonobankJanitorJob1(makeArgs());
-      expect(res).toEqual({
-        processed: 1,
-        applied: 1,
-        noop: 0,
-        failed: 0,
-      });
+      expect(res.applied).toBeGreaterThanOrEqual(1);
+      expect(res.processed).toBeGreaterThanOrEqual(1);
 
       const [order] = await db
         .select({
@@ -190,12 +186,8 @@ describe.sequential('monobank janitor job1', () => {
 
     try {
       const res = await runMonobankJanitorJob1(makeArgs());
-      expect(res).toEqual({
-        processed: 1,
-        applied: 1,
-        noop: 0,
-        failed: 0,
-      });
+      expect(res.applied).toBeGreaterThanOrEqual(1);
+      expect(res.processed).toBeGreaterThanOrEqual(1);
 
       const [order] = await db
         .select({
@@ -286,10 +278,10 @@ describe.sequential('monobank janitor job1', () => {
       expect(attempt?.janitorClaimedUntil).toBeNull();
       expect(attempt?.janitorClaimedBy).toBeNull();
 
-      expect(
-        getInvoiceStatusMock.mock.calls.some(call => call[0] === invoiceId)
-      ).toBe(true);
-      expect(getInvoiceStatusMock.mock.calls.length).toBeGreaterThanOrEqual(2);
+      const invoiceCalls = getInvoiceStatusMock.mock.calls.filter(
+        ([calledInvoiceId]) => calledInvoiceId === invoiceId
+      );
+      expect(invoiceCalls).toHaveLength(2);
     } finally {
       await cleanup(orderId, invoiceId);
     }

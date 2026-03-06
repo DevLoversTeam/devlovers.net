@@ -339,7 +339,10 @@ export function buildMonobankInvoicePayload(
 export function buildMonobankWalletPayload(
   args: MonobankWalletPaymentInput
 ): MonobankWalletPaymentRequest {
-  if (typeof args.cardToken !== 'string' || !args.cardToken.trim()) {
+  const cardToken =
+    typeof args.cardToken === 'string' ? args.cardToken.trim() : '';
+
+  if (!cardToken) {
     throw new Error('wallet cardToken is required');
   }
 
@@ -347,8 +350,8 @@ export function buildMonobankWalletPayload(
     throw new Error('Invalid wallet amount (minor units)');
   }
 
-  if (!Number.isSafeInteger(args.ccy) || args.ccy <= 0) {
-    throw new Error('Invalid wallet currency code');
+  if (args.ccy !== MONO_CCY) {
+    throw new Error(`Monobank wallet payments require ccy=${MONO_CCY}`);
   }
 
   const redirectUrl = args.redirectUrl.trim();
@@ -358,7 +361,7 @@ export function buildMonobankWalletPayload(
   }
 
   return {
-    cardToken: args.cardToken,
+    cardToken,
     amount: args.amountMinor,
     ccy: args.ccy,
     initiationKind: 'client',

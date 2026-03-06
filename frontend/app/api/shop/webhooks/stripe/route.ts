@@ -298,7 +298,7 @@ function resolvePaymentMethod(
 type StripeWalletType = 'apple_pay' | 'google_pay' | null;
 type StripeWalletAttribution = {
   provider: 'stripe';
-  type: StripeWalletType;
+  type: Exclude<StripeWalletType, null>;
   source: 'event';
 };
 
@@ -320,10 +320,14 @@ function resolveStripeWalletType(
 function buildStripeWalletAttribution(args: {
   paymentIntent?: Stripe.PaymentIntent;
   charge?: Stripe.Charge;
-}): StripeWalletAttribution {
+}): StripeWalletAttribution | null {
+  const type = resolveStripeWalletType(args.paymentIntent, args.charge);
+
+  if (!type) return null;
+
   return {
     provider: 'stripe',
-    type: resolveStripeWalletType(args.paymentIntent, args.charge),
+    type,
     source: 'event',
   };
 }
@@ -1200,7 +1204,7 @@ export async function POST(request: NextRequest) {
           paymentIntent,
           charge: chargeForIntent,
           extra: {
-            wallet: walletAttribution,
+            ...(walletAttribution ? { wallet: walletAttribution } : {}),
             mismatch: {
               reason: mismatchReason,
               eventId: event.id,
@@ -1265,9 +1269,7 @@ export async function POST(request: NextRequest) {
         eventType,
         paymentIntent,
         charge: chargeForIntent ?? undefined,
-        extra: {
-          wallet: walletAttribution,
-        },
+        extra: walletAttribution ? { wallet: walletAttribution } : {},
       });
       const nextMeta = mergePspMetadata({
         prevMeta: order.pspMetadata,
@@ -1303,7 +1305,7 @@ export async function POST(request: NextRequest) {
           paymentIntentId,
           chargeId: latestChargeId ?? chargeForIntent?.id ?? null,
           paymentIntentStatus: paymentIntent?.status ?? null,
-          wallet: walletAttribution,
+          ...(walletAttribution ? { wallet: walletAttribution } : {}),
         },
       };
       const applyResult =

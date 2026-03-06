@@ -12,7 +12,10 @@ import {
   products,
 } from '@/db/schema/shop';
 import { resetEnvCache } from '@/lib/env';
-import { IdempotencyConflictError } from '@/lib/services/errors';
+import {
+  IdempotencyConflictError,
+  InvalidPayloadError,
+} from '@/lib/services/errors';
 import { createOrderWithItems } from '@/lib/services/orders';
 
 type SeedData = {
@@ -156,7 +159,7 @@ describe('checkout shipping phase 3', () => {
         },
       });
 
-      await expect(promise).rejects.toBeInstanceOf(Error);
+      await expect(promise).rejects.toBeInstanceOf(InvalidPayloadError);
       await expect(promise).rejects.toHaveProperty(
         'code',
         'SHIPPING_CURRENCY_UNSUPPORTED'
