@@ -198,10 +198,12 @@ export default function MonobankGooglePayClient({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isInvoiceSubmitting, setIsInvoiceSubmitting] = useState(false);
   const [uiMessage, setUiMessage] = useState<string | null>(null);
+  const [uiMessageTone, setUiMessageTone] = useState<'error' | 'info'>('error');
 
   const paymentsClientRef = useRef<GooglePayPaymentsClient | null>(null);
   const buttonHostRef = useRef<HTMLDivElement | null>(null);
   const submitIdempotencyKeyRef = useRef<string | null>(null);
+  const pendingRedirectTimeoutRef = useRef<number | null>(null);
   const pendingPath = buildPendingReturnPath(orderId, statusToken);
   const statusTokenQuery = buildStatusTokenQuery(statusToken);
 
@@ -211,8 +213,21 @@ export default function MonobankGooglePayClient({
 
   useEffect(() => {
     submitIdempotencyKeyRef.current = null;
+
+    if (pendingRedirectTimeoutRef.current !== null) {
+      window.clearTimeout(pendingRedirectTimeoutRef.current);
+      pendingRedirectTimeoutRef.current = null;
+    }
   }, [orderId]);
 
+  useEffect(() => {
+    return () => {
+      if (pendingRedirectTimeoutRef.current !== null) {
+        window.clearTimeout(pendingRedirectTimeoutRef.current);
+        pendingRedirectTimeoutRef.current = null;
+      }
+    };
+  }, []);
   useEffect(() => {
     let cancelled = false;
     void loadGooglePayScript()
@@ -222,6 +237,7 @@ export default function MonobankGooglePayClient({
       .catch(() => {
         if (!cancelled) {
           setIsScriptReady(false);
+          setUiMessageTone('error');
           setUiMessage(t('monobankGooglePay.unableToInit'));
         }
       });
@@ -257,6 +273,7 @@ export default function MonobankGooglePayClient({
         if (!response.ok || !data) {
           if (!cancelled) {
             setConfig(null);
+            setUiMessageTone('error');
             setUiMessage(t('monobankGooglePay.unableToInit'));
           }
           return;
@@ -274,6 +291,7 @@ export default function MonobankGooglePayClient({
       } catch {
         if (!cancelled) {
           setConfig(null);
+          setUiMessageTone('error');
           setUiMessage(t('monobankGooglePay.unableToInit'));
         }
       } finally {
@@ -338,6 +356,7 @@ export default function MonobankGooglePayClient({
     if (!client || !config) return;
 
     setUiMessage(null);
+    setUiMessageTone('error');
     setIsSubmitting(true);
 
     try {
@@ -347,7 +366,18 @@ export default function MonobankGooglePayClient({
       const gToken = extractGToken(paymentData);
       if (!gToken) {
         submitIdempotencyKeyRef.current = null;
-        goToPending();
+        setUiMessageTone('info');
+        setUiMessage(t('monobankGooglePay.processingFallback'));
+
+        if (pendingRedirectTimeoutRef.current !== null) {
+          window.clearTimeout(pendingRedirectTimeoutRef.current);
+        }
+
+        pendingRedirectTimeoutRef.current = window.setTimeout(() => {
+          pendingRedirectTimeoutRef.current = null;
+          goToPending();
+        }, 800);
+
         return;
       }
 
@@ -396,6 +426,7 @@ export default function MonobankGooglePayClient({
         return;
       }
 
+      setUiMessageTone('error');
       setUiMessage(t('monobankGooglePay.invoiceFallbackFailed'));
     } catch (error) {
       const statusCode =
@@ -403,12 +434,14 @@ export default function MonobankGooglePayClient({
           ? String((error as { statusCode?: unknown }).statusCode ?? '')
           : '';
 
-      if (statusCode.toUpperCase() === 'CANCELED') {
+      if (statusCode === 'CANCELED') {
         submitIdempotencyKeyRef.current = null;
+        setUiMessageTone('error');
         setUiMessage(t('monobankGooglePay.cancelled'));
         return;
       }
 
+      setUiMessageTone('error');
       setUiMessage(t('monobankGooglePay.unableToInit'));
     } finally {
       setIsSubmitting(false);
@@ -438,6 +471,7 @@ export default function MonobankGooglePayClient({
   const onInvoiceFallback = useCallback(async () => {
     submitIdempotencyKeyRef.current = null;
     setUiMessage(null);
+    setUiMessageTone('error');
     setIsInvoiceSubmitting(true);
 
     try {
@@ -465,8 +499,10 @@ export default function MonobankGooglePayClient({
         return;
       }
 
+      setUiMessageTone('error');
       setUiMessage(t('monobankGooglePay.invoiceFallbackFailed'));
     } catch {
+      setUiMessageTone('error');
       setUiMessage(t('monobankGooglePay.invoiceFallbackFailed'));
     } finally {
       setIsInvoiceSubmitting(false);
@@ -529,7 +565,15 @@ export default function MonobankGooglePayClient({
       ) : null}
 
       {uiMessage ? (
-        <p className="text-destructive text-sm" role="alert">
+        <p
+          className={cn(
+            'text-sm',
+            uiMessageTone === 'error'
+              ? 'text-destructive'
+              : 'text-muted-foreground'
+          )}
+          aria-live={uiMessageTone === 'error' ? 'assertive' : 'polite'}
+        >
           {uiMessage}
         </p>
       ) : null}

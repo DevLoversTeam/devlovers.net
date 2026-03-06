@@ -735,7 +735,8 @@
         "invoiceFallback": "Pay via invoice",
         "invoiceLoading": "Opening invoice...",
         "invoiceFallbackFailed": "Unable to start invoice payment right now.",
-        "cancelled": "Google Pay was canceled. You can try again or use invoice."
+        "cancelled": "Google Pay was canceled. You can try again or use invoice.",
+        "processingFallback": "We couldn't complete confirmation in the browser. Your order will be finalized automatically."
       },
       "monobankReturn": {
         "processing": "Processing payment...",
