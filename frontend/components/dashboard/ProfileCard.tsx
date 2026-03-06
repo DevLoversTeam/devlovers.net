@@ -43,6 +43,7 @@ export function ProfileCard({
 }: ProfileCardProps) {
   const t = useTranslations('dashboard.profile');
   const tStats = useTranslations('dashboard.stats');
+  const tFields = useTranslations('auth.fields');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -271,6 +272,14 @@ export function ProfileCard({
                         className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm transition-all outline-none placeholder:text-gray-400 focus:border-(--accent-primary) focus:ring-1 focus:ring-(--accent-primary) dark:border-neutral-800 dark:bg-neutral-900 dark:text-white"
                         placeholder={t('defaultName')}
                         required
+                        onInvalid={e => {
+                          if (e.currentTarget.validity.valueMissing) {
+                            e.currentTarget.setCustomValidity(
+                              tFields('validation.required')
+                            );
+                          }
+                        }}
+                        onInput={e => e.currentTarget.setCustomValidity('')}
                       />
                     </div>
                     <button
@@ -299,6 +308,14 @@ export function ProfileCard({
                         placeholder={t('currentPassword')}
                         className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm transition-all outline-none placeholder:text-gray-400 focus:border-(--accent-primary) focus:ring-1 focus:ring-(--accent-primary) dark:border-neutral-800 dark:bg-neutral-900 dark:text-white"
                         required
+                        onInvalid={e => {
+                          if (e.currentTarget.validity.valueMissing) {
+                            e.currentTarget.setCustomValidity(
+                              tFields('validation.required')
+                            );
+                          }
+                        }}
+                        onInput={e => e.currentTarget.setCustomValidity('')}
                       />
                     </div>
                     <div>
@@ -309,6 +326,14 @@ export function ProfileCard({
                         minLength={8}
                         className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm transition-all outline-none placeholder:text-gray-400 focus:border-(--accent-primary) focus:ring-1 focus:ring-(--accent-primary) dark:border-neutral-800 dark:bg-neutral-900 dark:text-white"
                         required
+                        onInvalid={e => {
+                          if (e.currentTarget.validity.valueMissing) {
+                            e.currentTarget.setCustomValidity(
+                              tFields('validation.required')
+                            );
+                          }
+                        }}
+                        onInput={e => e.currentTarget.setCustomValidity('')}
                       />
                     </div>
                     <button

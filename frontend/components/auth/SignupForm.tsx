@@ -161,11 +161,11 @@ export function SignupForm({ locale, returnTo }: SignupFormProps) {
       const data = await res.json().catch(() => null);
 
       if (!res.ok) {
-        const msg =
-          typeof data?.error === 'string'
-            ? data.error
-            : t('errors.signupFailed');
-        setError(msg);
+        setError(
+          res.status === 409
+            ? t('errors.emailAlreadyInUse')
+            : t('errors.signupFailed')
+        );
         return;
       }
 

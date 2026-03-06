@@ -1121,6 +1121,7 @@
       "loginLink": "Увійти",
       "errors": {
         "signupFailed": "Не вдалося зареєструватися. Спробуйте ще раз.",
+        "emailAlreadyInUse": "Акаунт з такою електронною адресою вже існує. Спробуйте увійти.",
         "networkError": "Помилка мережі. Перевірте з'єднання та спробуйте ще раз."
       },
       "verificationSent": "Ми надіслали лист підтвердження на",
@@ -1159,13 +1160,15 @@
       "show": "Показати",
       "hide": "Сховати",
       "validation": {
-        "emailRequired": "Будь ласка, введіть email",
+        "required": "Це поле є обов'язковим",
         "invalidName": "Ім'я має містити не менше {NAME_MIN_LEN} символів та не більше {NAME_MAX_LEN} символів",
         "emailTooShort": "Електронна адреса має містити щонайменше {EMAIL_MIN_LEN} символів",
         "emailTooLong": "Електронна адреса не повинна перевищувати {EMAIL_MAX_LEN} символів",
         "invalidEmail": "Будь ласка, введіть дійсну адресу електронної пошти",
-        "passwordRequirements": "{PASSWORD_MIN_LEN}-{PASSWORD_MAX_BYTES} символи, принаймні одна велика літера та принаймні один спеціальний символ",
+        "passwordRequirements": "{PASSWORD_MIN_LEN}-{PASSWORD_MAX_BYTES} символів, принаймні одна велика літера та принаймні один спеціальний символ",
         "invalidPassword": "Пароль має відповідати вимогам: {passwordRequirementsText}",
+        "passwordTooShort": "Пароль має містити щонайменше {minLength} символів",
+        "passwordTooLongBytes": "Пароль не повинен перевищувати {PASSWORD_MAX_BYTES} символів",
         "passwordsDontMatch": "Паролі не співпадають"
       }
     },
