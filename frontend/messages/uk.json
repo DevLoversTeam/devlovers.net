@@ -1169,7 +1169,7 @@
         "passwordRequirements": "{PASSWORD_MIN_LEN}-{PASSWORD_MAX_BYTES} символів, принаймні одна велика літера та принаймні один спеціальний символ",
         "invalidPassword": "Пароль має відповідати вимогам: {passwordRequirementsText}",
         "passwordTooShort": "Пароль має містити щонайменше {minLength} символів",
-        "passwordTooLongBytes": "Пароль не повинен перевищувати {PASSWORD_MAX_BYTES} байт",
+        "passwordTooLongBytes": "Пароль не повинен перевищувати {PASSWORD_MAX_BYTES} символів",
         "passwordsDontMatch": "Паролі не співпадають"
       }
     },
@@ -1213,7 +1213,7 @@
       "passwordUpdateSuccess": "Пароль успішно оновлено",
       "saving": "Збереження...",
       "updateNameFailed": "Не вдалося оновити ім'я. Спробуйте ще раз.",
-      "updatePasswordFailed": "Не вдалося оновити пароль. Спробуйте ще раз.",
+      "updatePasswordFailed": "Не вдалося оновити пароль. Спробуйте ще раз.", 
       "somethingWentWrong": "Щось пішло не так. Спробуйте ще раз."
     },
     "stats": {
@@ -1326,9 +1326,7 @@
         "expand": "Переглянути всі",
         "collapse": "Згорнути",
         "clickInfo": "Натисніть для інфо",
-        "clickBack": "Натисніть, щоб повернутись",
-        "more": "ще",
-        "moreCount": "ще {count}"
+        "clickBack": "Натисніть, щоб повернутись"
       },
       "badges": {
         "first_blood": {
