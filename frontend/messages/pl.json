@@ -417,13 +417,16 @@
           "label": "Miasto",
           "placeholder": "Zacznij wpisywać nazwę miasta (min. 2 znaki)",
           "selected": "Wybrane miasto: {city}",
-          "searching": "Wyszukiwanie miast..."
+          "searching": "Wyszukiwanie miast...",
+          "noResults": "Nie znaleziono miast. Sprawdź nazwę lub lokalne dane Nova Poshta."
         },
         "warehouse": {
-          "label": "Oddział / automat paczkowy",
+          "label": "Oddział / paczkomat",
           "placeholder": "Wpisz nazwę lub numer oddziału",
           "selected": "Wybrany oddział: {warehouse}",
-          "searching": "Wyszukiwanie oddziałów..."
+          "searching": "Wyszukiwanie oddziałów...",
+          "selectCityFirst": "Najpierw wybierz miasto",
+          "cityRequired": "Aby wybrać oddział, najpierw wybierz miasto z listy"
         },
         "courierAddress": {
           "label": "Adres kuriera",
@@ -461,14 +464,14 @@
           "label": "Metoda płatności",
           "stripe": "Stripe",
           "monobank": "Monobank",
-          "monobankUahOnlyHint": "Monobank jest dostępny tylko dla płatności w UAH.",
-          "monobankUnavailable": "Monobank jest niedostępny w tym środowisku.",
-          "noAvailable": "Brak dostępnych metod płatności.",
           "monobankGooglePay": "Google Pay (Monobank)",
-          "monobankInvoice": "Card/Invoice (Monobank)",
-          "monobankGooglePayHint": "Google Pay available on supported devices",
-          "monobankGooglePayFallbackHint": "If Google Pay not available, use invoice",
-          "monobankGooglePayUnavailable": "Google Pay is currently unavailable for this order."
+          "monobankInvoice": "Karta / faktura (Monobank)",
+          "monobankGooglePayHint": "Google Pay jest dostępny na obsługiwanych urządzeniach",
+          "monobankGooglePayFallbackHint": "Jeśli Google Pay jest niedostępny, użyj płatności przez fakturę",
+          "monobankGooglePayUnavailable": "Google Pay jest obecnie niedostępny dla tego zamówienia.",
+          "monobankUahOnlyHint": "Monobank jest dostępny tylko dla zamówień w UAH.",
+          "monobankUnavailable": "Monobank jest niedostępny w tym środowisku.",
+          "noAvailable": "Obecnie brak dostępnych metod płatności."
         }
       },
       "actions": {
@@ -730,20 +733,20 @@
         "continueShopping": "Kontynuuj zakupy"
       },
       "monobankGooglePay": {
-        "supportedDevices": "Google Pay available on supported devices",
-        "useInvoiceFallback": "If Google Pay not available, use invoice",
-        "loading": "Preparing Google Pay...",
-        "submitting": "Processing payment...",
-        "unableToInit": "Unable to initialize Google Pay. You can continue with invoice.",
-        "invoiceFallback": "Pay via invoice",
-        "invoiceLoading": "Opening invoice...",
-        "invoiceFallbackFailed": "Unable to start invoice payment right now.",
-        "cancelled": "Google Pay was canceled. You can try again or use invoice."
+        "supportedDevices": "Google Pay jest dostępny na obsługiwanych urządzeniach",
+        "useInvoiceFallback": "Jeśli Google Pay jest niedostępny, użyj płatności przez fakturę",
+        "loading": "Przygotowywanie Google Pay...",
+        "submitting": "Przetwarzanie płatności...",
+        "unableToInit": "Nie udało się zainicjalizować Google Pay. Możesz kontynuować przez fakturę.",
+        "invoiceFallback": "Zapłać przez fakturę",
+        "invoiceLoading": "Otwieranie faktury...",
+        "invoiceFallbackFailed": "Nie można teraz uruchomić płatności przez fakturę.",
+        "cancelled": "Google Pay został anulowany. Możesz spróbować ponownie lub użyć faktury."
       },
       "monobankReturn": {
-        "processing": "Processing payment...",
-        "checking": "Waiting for webhook confirmation before finalizing your order.",
-        "refresh": "Refresh status"
+        "processing": "Przetwarzanie płatności...",
+        "checking": "Oczekiwanie na potwierdzenie webhook przed finalizacją zamówienia.",
+        "refresh": "Odśwież status"
       }
     },
     "orders": {

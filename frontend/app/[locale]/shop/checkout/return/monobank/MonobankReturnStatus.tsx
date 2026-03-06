@@ -29,7 +29,14 @@ type LiteOrderStatus = {
   currency: CurrencyCode;
   itemsCount: number;
 };
-
+type PaymentStatusLabelKey =
+  | 'paymentStatus.paid'
+  | 'paymentStatus.failed'
+  | 'paymentStatus.refunded'
+  | 'paymentStatus.pending'
+  | 'paymentStatus.confirming'
+  | 'paymentStatus.needsReview'
+  | 'paymentStatus.unknown';
 const POLL_DELAY_MS = 2_500;
 const TERMINAL_NON_PAID = new Set([
   'failed',
@@ -37,7 +44,6 @@ const TERMINAL_NON_PAID = new Set([
   'canceled',
   'needs_review',
 ]);
-const PENDING_STATUSES = new Set(['pending', 'requires_payment']);
 
 const SHOP_OUTLINE_BTN = cn(
   SHOP_OUTLINE_BTN_BASE,
@@ -51,7 +57,7 @@ function normalizeToken(token: string | null): string | null {
   return normalized.length ? normalized : null;
 }
 
-function getStatusLabelKey(status: string): string {
+function getStatusLabelKey(status: string): PaymentStatusLabelKey {
   if (status === 'paid') return 'paymentStatus.paid';
   if (status === 'failed') return 'paymentStatus.failed';
   if (status === 'refunded') return 'paymentStatus.refunded';
@@ -155,11 +161,6 @@ export default function MonobankReturnStatus({
           return;
         }
 
-        if (!PENDING_STATUSES.has(nextStatus.paymentStatus)) {
-          timer = setTimeout(poll, POLL_DELAY_MS);
-          return;
-        }
-
         timer = setTimeout(poll, POLL_DELAY_MS);
       } catch {
         if (!cancelled) {
@@ -181,7 +182,7 @@ export default function MonobankReturnStatus({
 
   const statusLabel = useMemo(() => {
     if (!status) return t('paymentStatus.confirming');
-    return t(getStatusLabelKey(status.paymentStatus) as any);
+    return t(getStatusLabelKey(status.paymentStatus));
   }, [status, t]);
 
   return (

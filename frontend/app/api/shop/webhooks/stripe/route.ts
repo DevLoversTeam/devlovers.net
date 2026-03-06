@@ -184,6 +184,12 @@ function warnRefundFullnessUndetermined(payload: {
   });
 }
 
+function isRefundChargeIdOnly(
+  refund: Stripe.Refund | null | undefined
+): boolean {
+  return typeof refund?.charge === 'string' && refund.charge.trim().length > 0;
+}
+
 function logWebhookEvent(payload: {
   requestId?: string;
   stripeEventId?: string;
@@ -1710,6 +1716,41 @@ export async function POST(request: NextRequest) {
 
         isFullRefund = cumulativeRefunded === amt;
       } else if (eventType === 'charge.refund.updated' && refund) {
+        if (isRefundChargeIdOnly(refund)) {
+          warnRefundFullnessUndetermined({
+            ...warnBase,
+            eventId: event.id,
+            eventType,
+            chargeId: refundChargeId ?? null,
+            chargeAmount: null,
+            cumulativeRefunded: null,
+            hasRefundObject: true,
+            refundsListLength: null,
+            hasAmountRefundedField: false,
+            reason: 'id_only_refund_charge_not_expanded',
+            orderId: order.id,
+            paymentIntentId,
+            refundId: refund.id,
+            refundAmount:
+              typeof (refund as any)?.amount === 'number'
+                ? (refund as any).amount
+                : null,
+          });
+
+          logWebhookEvent({
+            requestId,
+            stripeEventId,
+            orderId: order.id,
+            paymentIntentId,
+            paymentStatus,
+            eventType,
+            refundId: refund.id,
+            chargeId: refundChargeId ?? null,
+          });
+
+          return ack();
+        }
+
         let effectiveCharge: Stripe.Charge | undefined;
 
         if (typeof refund.charge === 'object' && refund.charge) {
@@ -1740,7 +1781,6 @@ export async function POST(request: NextRequest) {
             warnRefundFullnessUndetermined({
               ...warnBase,
               eventId: event.id,
-
               eventType,
               chargeId:
                 ((effectiveCharge as any)?.id as string | undefined) ??

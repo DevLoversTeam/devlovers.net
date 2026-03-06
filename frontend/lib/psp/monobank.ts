@@ -98,7 +98,7 @@ export type MonobankWalletPaymentInput = {
 };
 
 export type MonobankWalletPaymentResult = {
-  invoiceId: string | null;
+  invoiceId: string;
   status: string | null;
   redirectUrl: string | null;
   modifiedDate: Date | null;
@@ -789,7 +789,12 @@ export async function walletPayment(
   const invoiceId =
     typeof raw.invoiceId === 'string' && raw.invoiceId.trim()
       ? raw.invoiceId.trim()
-      : null;
+      : '';
+
+  if (!invoiceId) {
+    throw new Error('Monobank wallet payment missing invoiceId');
+  }
+
   const status =
     typeof raw.status === 'string' && raw.status.trim()
       ? raw.status.trim()

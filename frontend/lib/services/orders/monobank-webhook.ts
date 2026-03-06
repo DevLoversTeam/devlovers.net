@@ -513,11 +513,16 @@ function buildMergedMetaSql(
       reference: normalized.reference ?? null,
     },
   };
+
   if (walletAttribution) {
     metadataPatch.wallet = walletAttribution;
+
+    return sql`coalesce(${orders.pspMetadata}, '{}'::jsonb) || ${JSON.stringify(
+      metadataPatch
+    )}::jsonb`;
   }
 
-  return sql`coalesce(${orders.pspMetadata}, '{}'::jsonb) || ${JSON.stringify(
+  return sql`(coalesce(${orders.pspMetadata}, '{}'::jsonb) - 'wallet') || ${JSON.stringify(
     metadataPatch
   )}::jsonb`;
 }

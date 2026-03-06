@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 
 import { and, eq } from 'drizzle-orm';
 import { NextRequest } from 'next/server';
@@ -12,6 +12,7 @@ import {
   productPrices,
   products,
 } from '@/db/schema';
+import { deriveTestIpFromIdemKey } from '@/lib/tests/helpers/ip';
 
 vi.mock('@/lib/auth', async () => {
   const actual = await vi.importActual<Record<string, unknown>>('@/lib/auth');
@@ -46,11 +47,6 @@ function makeJsonRequest(
     headers,
     body: JSON.stringify(body),
   });
-}
-
-function makeTestClientIp(seed: string): string {
-  const digest = createHash('sha256').update(seed).digest();
-  return `${(digest[0] % 223) + 1}.${digest[1]}.${digest[2]}.${(digest[3] % 254) + 1}`;
 }
 
 async function cleanupByIds(params: { orderId?: string; productId: string }) {
@@ -115,7 +111,7 @@ describe('P0-6 snapshots: order_items immutability', () => {
         'Accept-Language': 'en-US,en;q=0.9',
         'Content-Type': 'application/json',
         'Idempotency-Key': idem,
-        'X-Forwarded-For': makeTestClientIp(idem),
+        'X-Forwarded-For': deriveTestIpFromIdemKey(idem),
         Origin: 'http://localhost:3000',
       }
     );

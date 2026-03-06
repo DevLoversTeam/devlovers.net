@@ -428,9 +428,19 @@ async function prepareCheckoutShipping(args: {
   }
 
   if (!args.shipping) {
-    throw new InvalidPayloadError('Shipping payload is required.', {
-      code: 'MISSING_SHIPPING_ADDRESS',
-    });
+    return {
+      required: false,
+      hashRefs: null,
+      orderSummary: {
+        shippingRequired: false,
+        shippingPayer: null,
+        shippingProvider: null,
+        shippingMethodCode: null,
+        shippingAmountMinor: null,
+        shippingStatus: null,
+      },
+      snapshot: null,
+    };
   }
 
   const availability = resolveShippingAvailability({
@@ -503,7 +513,7 @@ async function prepareCheckoutShipping(args: {
         and(
           eq(npWarehouses.ref, warehouseRef),
           eq(npWarehouses.isActive, true),
-          eq(npWarehouses.settlementRef, cityRef)
+          eq(npWarehouses.cityRef, cityRef)
         )
       )
       .limit(1);
@@ -814,12 +824,16 @@ function buildCheckoutMetadataPatch(
   paymentMethod: PaymentMethod | null
 ): Record<string, unknown> {
   const base =
-    existingMeta && typeof existingMeta === 'object' && !Array.isArray(existingMeta)
+    existingMeta &&
+    typeof existingMeta === 'object' &&
+    !Array.isArray(existingMeta)
       ? (existingMeta as Record<string, unknown>)
       : {};
 
   const checkoutMeta =
-    base.checkout && typeof base.checkout === 'object' && !Array.isArray(base.checkout)
+    base.checkout &&
+    typeof base.checkout === 'object' &&
+    !Array.isArray(base.checkout)
       ? (base.checkout as Record<string, unknown>)
       : {};
 
@@ -997,7 +1011,10 @@ export async function createOrderWithItems({
     });
     const existingMethod =
       normalizeStoredPaymentMethod(row.pspPaymentMethod) ??
-      resolveDefaultMethodForProvider(existingProvider, row.currency as Currency);
+      resolveDefaultMethodForProvider(
+        existingProvider,
+        row.currency as Currency
+      );
 
     const derivedExistingHash = hashIdempotencyRequest({
       items: (existing.items as any[]).map(i => ({
@@ -1042,13 +1059,11 @@ export async function createOrderWithItems({
           })
           .where(eq(orders.id, row.id));
       } catch (e) {
-        if (process.env.DEBUG) {
-          logWarn('checkout_rejected', {
-            phase: 'idempotency_request_hash_backfill',
-            orderId: row.id,
-            message: e instanceof Error ? e.message : String(e),
-          });
-        }
+        logWarn('checkout_rejected', {
+          phase: 'idempotency_request_hash_backfill',
+          orderId: row.id,
+          message: e instanceof Error ? e.message : String(e),
+        });
       }
     }
 
@@ -1089,13 +1104,11 @@ export async function createOrderWithItems({
           })
           .where(eq(orders.id, row.id));
       } catch (e) {
-        if (process.env.DEBUG) {
-          logWarn('checkout_rejected', {
-            phase: 'payment_method_backfill',
-            orderId: row.id,
-            message: e instanceof Error ? e.message : String(e),
-          });
-        }
+        logWarn('checkout_rejected', {
+          phase: 'payment_method_backfill',
+          orderId: row.id,
+          message: e instanceof Error ? e.message : String(e),
+        });
       }
     }
 
