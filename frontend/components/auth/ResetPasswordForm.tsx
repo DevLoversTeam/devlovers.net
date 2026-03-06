@@ -76,7 +76,9 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
       });
 
       if (!res.ok) {
-        setError(t('errors.resetFailed'));
+        setError(
+          res.status === 400 ? t('errors.resetFailed') : t('errors.serverError')
+        );
         return;
       }
 
