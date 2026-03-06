@@ -137,8 +137,8 @@ export async function findCachedWarehouses(args: {
   const res = await db.execute<WarehouseRow>(sql`
     SELECT ref, settlement_ref, city_ref, number, type, name, name_ru, address, address_ru, is_post_machine
     FROM np_warehouses
-    WHERE is_active = true
-      AND settlement_ref = ${args.settlementRef}
+WHERE is_active = true
+  AND city_ref = ${args.settlementRef}
       AND (
         ${hasQ} = false
         OR name ILIKE ${like}
@@ -288,7 +288,7 @@ async function deactivateMissingWarehouses(args: {
     is_active = false,
     last_sync_run_id = ${args.runId}::uuid,
     updated_at = now()
-  WHERE settlement_ref = ${args.settlementRef}
+  WHERE city_ref = ${args.settlementRef}
     AND is_active = true
   RETURNING ref
 `);
@@ -303,7 +303,7 @@ async function deactivateMissingWarehouses(args: {
     is_active = false,
     last_sync_run_id = ${args.runId}::uuid,
     updated_at = now()
-  WHERE settlement_ref = ${args.settlementRef}
+  WHERE city_ref = ${args.settlementRef}
     AND is_active = true
     AND ref NOT IN (${sql.join(refs, sql`, `)})
   RETURNING ref

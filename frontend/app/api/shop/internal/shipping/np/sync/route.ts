@@ -16,6 +16,7 @@ import {
   cacheSettlementsByQuery,
   cacheWarehousesBySettlement,
 } from '@/lib/services/shop/shipping/nova-poshta-catalog';
+import { NovaPoshtaApiError } from '@/lib/services/shop/shipping/nova-poshta-client';
 import {
   getInternalShippingMinIntervalFloorSeconds,
   internalNpSyncPayloadSchema,
@@ -93,7 +94,9 @@ export async function POST(request: NextRequest) {
     route: ROUTE_PATH,
     method: request.method,
   };
-
+  const debugEnabled =
+    process.env.NODE_ENV !== 'production' &&
+    (request.headers.get('x-shop-debug') ?? '').trim() === '1';
   const blocked = guardNonBrowserFailClosed(request, {
     surface: 'shop_shipping_np_sync',
   });
@@ -241,10 +244,33 @@ export async function POST(request: NextRequest) {
         code: 'NP_SYNC_FAILED',
       }
     );
+
+    const debug = debugEnabled
+      ? {
+          env: {
+            NP_API_BASE: (process.env.NP_API_BASE ?? '').trim() || null,
+            NP_API_KEY_SET: (process.env.NP_API_KEY ?? '').trim().length > 0,
+            NP_API_KEY_LEN: (process.env.NP_API_KEY ?? '').trim().length,
+            SHOP_SHIPPING_NP_ENABLED:
+              (process.env.SHOP_SHIPPING_NP_ENABLED ?? '').trim() || null,
+            SHOP_SHIPPING_SYNC_ENABLED:
+              (process.env.SHOP_SHIPPING_SYNC_ENABLED ?? '').trim() || null,
+            APP_ENV: (process.env.APP_ENV ?? '').trim() || null,
+          },
+          error: {
+            name: error instanceof Error ? error.name : typeof error,
+            message: error instanceof Error ? error.message : String(error),
+            code: error instanceof NovaPoshtaApiError ? error.code : null,
+            status: error instanceof NovaPoshtaApiError ? error.status : null,
+          },
+        }
+      : null;
+
     return noStoreJson(
       {
         success: false,
         code: 'NP_SYNC_FAILED',
+        ...(debug ? { debug } : {}),
       },
       requestId,
       503

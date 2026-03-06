@@ -90,7 +90,6 @@ function resolveInitialProvider(args: {
   const canUseStripe = args.stripeEnabled;
   const canUseMonobank = args.monobankEnabled && isUah;
 
-  // Monobank-first for UAH checkout.
   if (canUseMonobank) return 'monobank';
   if (canUseStripe) return 'stripe';
   return 'stripe';
@@ -126,6 +125,73 @@ type ShippingWarehouse = {
   name: string;
   address: string | null;
 };
+
+function normalizeLookupValue(value: string): string {
+  return value.trim().toLocaleLowerCase();
+}
+
+function normalizeShippingCity(raw: unknown): ShippingCity | null {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    return null;
+  }
+
+  const item = raw as Record<string, unknown>;
+
+  const ref = typeof item.ref === 'string' ? item.ref.trim() : '';
+
+  const rawName =
+    typeof item.nameUa === 'string'
+      ? item.nameUa
+      : typeof item.name_ua === 'string'
+        ? item.name_ua
+        : typeof item.name === 'string'
+          ? item.name
+          : typeof item.present === 'string'
+            ? item.present
+            : '';
+
+  const nameUa = rawName.trim();
+
+  if (!ref || !nameUa) {
+    return null;
+  }
+
+  return {
+    ref,
+    nameUa,
+  };
+}
+
+function parseShippingCitiesResponse(data: unknown): {
+  available: boolean | null;
+  items: ShippingCity[];
+} {
+  if (Array.isArray(data)) {
+    return {
+      available: null,
+      items: data
+        .map(normalizeShippingCity)
+        .filter((item): item is ShippingCity => item !== null),
+    };
+  }
+
+  if (!data || typeof data !== 'object') {
+    return {
+      available: null,
+      items: [],
+    };
+  }
+
+  const obj = data as Record<string, unknown>;
+  const itemsRaw = Array.isArray(obj.items) ? obj.items : [];
+
+  return {
+    available: typeof obj.available === 'boolean' ? obj.available : null,
+    items: itemsRaw
+      .map(normalizeShippingCity)
+      .filter((item): item is ShippingCity => item !== null),
+  };
+}
 
 function isWarehouseMethod(
   methodCode: CheckoutDeliveryMethodCode | null
@@ -271,6 +337,10 @@ export default function CartPage({
 
     if (key) return safeT(key, code ?? 'SHIPPING_INVALID');
     return safeT('delivery.validation.invalid', code ?? 'SHIPPING_INVALID');
+  };
+  const clearCheckoutUiErrors = () => {
+    setDeliveryUiError(null);
+    setCheckoutError(null);
   };
 
   useEffect(() => {
@@ -482,8 +552,10 @@ export default function CartPage({
 
     let cancelled = false;
     const controller = new AbortController();
+
     const timeoutId = setTimeout(async () => {
       setCitiesLoading(true);
+
       try {
         const qs = new URLSearchParams({
           q: query,
@@ -492,16 +564,20 @@ export default function CartPage({
           ...(country ? { country } : {}),
         });
 
-        const response = await fetch(`/api/shop/shipping/np/cities?${qs}`, {
-          method: 'GET',
-          headers: { Accept: 'application/json' },
-          cache: 'no-store',
-          signal: controller.signal,
-        });
+        const response = await fetch(
+          `/api/shop/shipping/np/cities?${qs.toString()}`,
+          {
+            method: 'GET',
+            headers: { Accept: 'application/json' },
+            cache: 'no-store',
+            signal: controller.signal,
+          }
+        );
 
         const data = await response.json().catch(() => null);
+        const parsed = parseShippingCitiesResponse(data);
 
-        if (!response.ok || !data || data.available === false) {
+        if (!response.ok || parsed.available === false) {
           if (!cancelled) {
             setCityOptions([]);
           }
@@ -509,10 +585,21 @@ export default function CartPage({
         }
 
         if (!cancelled) {
-          const next = Array.isArray(data.items)
-            ? (data.items as ShippingCity[])
-            : [];
-          setCityOptions(next);
+          const next = parsed.items;
+          const normalizedQuery = normalizeLookupValue(query);
+
+          const exactMatches = next.filter(
+            city => normalizeLookupValue(city.nameUa) === normalizedQuery
+          );
+
+          if (exactMatches.length === 1) {
+            const exactCity = exactMatches[0]!;
+            setSelectedCityRef(exactCity.ref);
+            setSelectedCityName(exactCity.nameUa);
+            setCityOptions([]);
+          } else {
+            setCityOptions(next);
+          }
         }
       } catch {
         if (!cancelled) {
@@ -788,7 +875,9 @@ export default function CartPage({
       selectedPaymentMethod === 'monobank_google_pay' &&
       !canUseMonobankGooglePay
     ) {
-      setCheckoutError(t('checkout.paymentMethod.monobankGooglePayUnavailable'));
+      setCheckoutError(
+        t('checkout.paymentMethod.monobankGooglePayUnavailable')
+      );
       return;
     }
     if (shippingMethodsLoading) {
@@ -927,7 +1016,10 @@ export default function CartPage({
         window.location.assign(monobankPageUrl);
         return;
       }
-      if (paymentProvider === 'monobank' && checkoutPaymentMethod === 'monobank_google_pay') {
+      if (
+        paymentProvider === 'monobank' &&
+        checkoutPaymentMethod === 'monobank_google_pay'
+      ) {
         if (!statusToken) {
           setCheckoutError(t('checkout.errors.unexpectedResponse'));
           return;
@@ -1301,9 +1393,10 @@ export default function CartPage({
                         name="delivery-method"
                         value={method.methodCode}
                         checked={selectedShippingMethod === method.methodCode}
-                        onChange={() =>
-                          setSelectedShippingMethod(method.methodCode)
-                        }
+                        onChange={() => {
+                          clearCheckoutUiErrors();
+                          setSelectedShippingMethod(method.methodCode);
+                        }}
                         className="h-4 w-4"
                       />
                       <span className="text-sm font-medium">
@@ -1324,7 +1417,10 @@ export default function CartPage({
                     id="shipping-city-search"
                     type="text"
                     value={cityQuery}
+                    autoComplete="off"
+                    spellCheck={false}
                     onChange={event => {
+                      clearCheckoutUiErrors();
                       setCityQuery(event.target.value);
                       setSelectedCityRef(null);
                       setSelectedCityName(null);
@@ -1354,9 +1450,11 @@ export default function CartPage({
                           key={city.ref}
                           type="button"
                           onClick={() => {
+                            clearCheckoutUiErrors();
                             setSelectedCityRef(city.ref);
                             setSelectedCityName(city.nameUa);
                             setCityQuery(city.nameUa);
+                            setCityOptions([]);
                           }}
                           className="hover:bg-secondary block w-full rounded px-2 py-1 text-left text-xs"
                         >
@@ -1364,6 +1462,18 @@ export default function CartPage({
                         </button>
                       ))}
                     </div>
+                  ) : null}
+
+                  {!citiesLoading &&
+                  cityQuery.trim().length >= 2 &&
+                  !selectedCityRef &&
+                  cityOptions.length === 0 ? (
+                    <p className="text-muted-foreground text-xs" role="status">
+                      {safeT(
+                        'delivery.city.noResults',
+                        'Міста не знайдено. Перевірте назву або локальні дані Nova Poshta'
+                      )}
+                    </p>
                   ) : null}
                 </div>
 
@@ -1387,14 +1497,34 @@ export default function CartPage({
                       type="text"
                       value={warehouseQuery}
                       onChange={event => {
+                        clearCheckoutUiErrors();
                         setWarehouseQuery(event.target.value);
                         setSelectedWarehouseRef(null);
                         setSelectedWarehouseName(null);
                       }}
-                      placeholder={t('delivery.warehouse.placeholder')}
+                      placeholder={
+                        selectedCityRef
+                          ? t('delivery.warehouse.placeholder')
+                          : safeT(
+                              'delivery.warehouse.selectCityFirst',
+                              'Спочатку оберіть місто'
+                            )
+                      }
                       className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
                       disabled={!selectedCityRef}
                     />
+
+                    {!selectedCityRef ? (
+                      <p
+                        className="text-muted-foreground text-xs"
+                        role="status"
+                      >
+                        {safeT(
+                          'delivery.warehouse.cityRequired',
+                          'Щоб вибрати відділення, спочатку оберіть місто зі списку'
+                        )}
+                      </p>
+                    ) : null}
 
                     {selectedWarehouseRef ? (
                       <p className="text-muted-foreground text-xs">
@@ -1418,6 +1548,7 @@ export default function CartPage({
                             key={warehouse.ref}
                             type="button"
                             onClick={() => {
+                              clearCheckoutUiErrors();
                               setSelectedWarehouseRef(warehouse.ref);
                               setSelectedWarehouseName(warehouse.name);
                               setWarehouseQuery(
@@ -1449,9 +1580,10 @@ export default function CartPage({
                       id="shipping-address-1"
                       type="text"
                       value={courierAddressLine1}
-                      onChange={event =>
-                        setCourierAddressLine1(event.target.value)
-                      }
+                      onChange={event => {
+                        clearCheckoutUiErrors();
+                        setCourierAddressLine1(event.target.value);
+                      }}
                       placeholder={t(
                         'delivery.courierAddress.line1Placeholder'
                       )}
@@ -1460,9 +1592,10 @@ export default function CartPage({
                     <input
                       type="text"
                       value={courierAddressLine2}
-                      onChange={event =>
-                        setCourierAddressLine2(event.target.value)
-                      }
+                      onChange={event => {
+                        clearCheckoutUiErrors();
+                        setCourierAddressLine2(event.target.value);
+                      }}
                       placeholder={t(
                         'delivery.courierAddress.line2Placeholder'
                       )}
@@ -1482,7 +1615,10 @@ export default function CartPage({
                     id="recipient-name"
                     type="text"
                     value={recipientName}
-                    onChange={event => setRecipientName(event.target.value)}
+                    onChange={event => {
+                      clearCheckoutUiErrors();
+                      setRecipientName(event.target.value);
+                    }}
                     placeholder={t('delivery.recipientName.placeholder')}
                     className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
                   />
@@ -1499,7 +1635,10 @@ export default function CartPage({
                     id="recipient-phone"
                     type="tel"
                     value={recipientPhone}
-                    onChange={event => setRecipientPhone(event.target.value)}
+                    onChange={event => {
+                      clearCheckoutUiErrors();
+                      setRecipientPhone(event.target.value);
+                    }}
                     placeholder={t('delivery.recipientPhone.placeholder')}
                     className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
                   />
@@ -1516,7 +1655,10 @@ export default function CartPage({
                     id="recipient-email"
                     type="email"
                     value={recipientEmail}
-                    onChange={event => setRecipientEmail(event.target.value)}
+                    onChange={event => {
+                      clearCheckoutUiErrors();
+                      setRecipientEmail(event.target.value);
+                    }}
                     placeholder={t('delivery.recipientEmail.placeholder')}
                     className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
                   />
@@ -1532,7 +1674,10 @@ export default function CartPage({
                   <textarea
                     id="recipient-comment"
                     value={recipientComment}
-                    onChange={event => setRecipientComment(event.target.value)}
+                    onChange={event => {
+                      clearCheckoutUiErrors();
+                      setRecipientComment(event.target.value);
+                    }}
                     placeholder={t('delivery.recipientComment.placeholder')}
                     rows={2}
                     className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
@@ -1562,6 +1707,7 @@ export default function CartPage({
                     value="stripe"
                     checked={selectedProvider === 'stripe'}
                     onChange={() => {
+                      clearCheckoutUiErrors();
                       setSelectedProvider('stripe');
                       setSelectedPaymentMethod('stripe_card');
                     }}
@@ -1585,6 +1731,7 @@ export default function CartPage({
                   value="monobank"
                   checked={selectedProvider === 'monobank'}
                   onChange={() => {
+                    clearCheckoutUiErrors();
                     setSelectedProvider('monobank');
                     if (
                       selectedPaymentMethod !== 'monobank_invoice' &&
@@ -1614,10 +1761,13 @@ export default function CartPage({
                         type="radio"
                         name="payment-method-monobank"
                         value="monobank_google_pay"
-                        checked={selectedPaymentMethod === 'monobank_google_pay'}
-                        onChange={() =>
-                          setSelectedPaymentMethod('monobank_google_pay')
+                        checked={
+                          selectedPaymentMethod === 'monobank_google_pay'
                         }
+                        onChange={() => {
+                          clearCheckoutUiErrors();
+                          setSelectedPaymentMethod('monobank_google_pay');
+                        }}
                         className="h-4 w-4"
                       />
                       <span className="text-sm font-medium">
@@ -1632,9 +1782,10 @@ export default function CartPage({
                       name="payment-method-monobank"
                       value="monobank_invoice"
                       checked={selectedPaymentMethod === 'monobank_invoice'}
-                      onChange={() =>
-                        setSelectedPaymentMethod('monobank_invoice')
-                      }
+                      onChange={() => {
+                        clearCheckoutUiErrors();
+                        setSelectedPaymentMethod('monobank_invoice');
+                      }}
                       className="h-4 w-4"
                     />
                     <span className="text-sm font-medium">
@@ -1648,7 +1799,9 @@ export default function CartPage({
                     </p>
                   ) : (
                     <p className="text-muted-foreground text-xs">
-                      {t('checkout.paymentMethod.monobankGooglePayFallbackHint')}
+                      {t(
+                        'checkout.paymentMethod.monobankGooglePayFallbackHint'
+                      )}
                     </p>
                   )}
                 </div>
