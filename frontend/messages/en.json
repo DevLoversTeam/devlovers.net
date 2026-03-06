@@ -1145,7 +1145,8 @@
       "submitting": "Updating...",
       "errors": {
         "resetFailed": "Failed to reset password. The link may be invalid or expired.",
-        "networkError": "Network error. Please try again."
+        "networkError": "Network error. Please try again.",
+        "serverError": "Something went wrong. Please try again later."
       },
       "success": "Your password has been updated successfully."
     },
@@ -1168,7 +1169,7 @@
         "passwordRequirements": "{PASSWORD_MIN_LEN}-{PASSWORD_MAX_BYTES} characters, at least one capital letter, and at least one special character",
         "invalidPassword": "Password must meet requirements: {passwordRequirementsText}",
         "passwordTooShort": "Password must be at least {minLength} characters",
-        "passwordTooLongBytes": "Password must not exceed {PASSWORD_MAX_BYTES} characters",
+        "passwordTooLongBytes": "Password must not exceed {PASSWORD_MAX_BYTES} bytes",
         "passwordsDontMatch": "Passwords don't match"
       }
     },
@@ -1206,7 +1207,10 @@
       "newPassword": "New password",
       "nameUpdateSuccess": "Name updated successfully",
       "passwordUpdateSuccess": "Password updated successfully",
-      "saving": "Saving..."
+      "saving": "Saving...",
+      "updateNameFailed": "Failed to update name. Please try again.",
+      "updatePasswordFailed": "Failed to update password. Please try again.",
+      "somethingWentWrong": "Something went wrong. Please try again."
     },
     "stats": {
       "title": "Quiz Statistics",

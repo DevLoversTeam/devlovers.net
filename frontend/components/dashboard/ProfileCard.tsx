@@ -64,10 +64,10 @@ export function ProfileCard({
     try {
       const result = await updateName(formData);
       if (!result.success) {
-        toast.error(result.error || 'Failed to update name');
+        toast.error(result.error || t('updateNameFailed'));
       }
     } catch {
-      toast.error('Something went wrong');
+      toast.error(t('somethingWentWrong'));
     } finally {
       setIsSaving(false);
     }
@@ -83,10 +83,10 @@ export function ProfileCard({
       if (result.success) {
         (e.target as HTMLFormElement).reset();
       } else {
-        toast.error(result.error || 'Failed to update password');
+        toast.error(result.error || t('updatePasswordFailed'));
       }
     } catch {
-      toast.error('Something went wrong');
+      toast.error(t('somethingWentWrong'));
     } finally {
       setIsSaving(false);
     }
@@ -330,6 +330,12 @@ export function ProfileCard({
                           if (e.currentTarget.validity.valueMissing) {
                             e.currentTarget.setCustomValidity(
                               tFields('validation.required')
+                            );
+                          } else if (e.currentTarget.validity.tooShort) {
+                            e.currentTarget.setCustomValidity(
+                              tFields('validation.passwordTooShort', {
+                                minLength: 8,
+                              })
                             );
                           }
                         }}
