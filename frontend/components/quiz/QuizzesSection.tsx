@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
@@ -40,7 +40,6 @@ export default function QuizzesSection({
   const t = useTranslations('quiz.section');
   const params = useParams();
   const searchParams = useSearchParams();
-  const router = useRouter();
   const locale = params.locale as string;
   const localeKey = (['uk', 'en', 'pl'] as const).includes(
     locale as 'uk' | 'en' | 'pl'

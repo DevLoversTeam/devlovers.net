@@ -10,7 +10,8 @@ import { usePathname } from '@/i18n/routing';
 import { cn } from '@/lib/utils';
 
 type Category = {
-  _id: string;
+  id: string;
+  slug: string;
   title: string;
 };
 
@@ -52,7 +53,6 @@ export function BlogCategoryLinks({
   const items = categories
     .map(category => ({
       ...category,
-      slug: slugify(category.title || ''),
       displayTitle: category.title === 'Growth' ? 'Career' : category.title,
     }))
     .filter(category => category.slug);
@@ -80,7 +80,7 @@ export function BlogCategoryLinks({
         const isActive = pathname === href;
         return (
           <AnimatedNavLink
-            key={category._id}
+            key={category.id}
             href={href}
             isActive={isActive}
             onClick={onNavigate}
@@ -92,12 +92,4 @@ export function BlogCategoryLinks({
       })}
     </nav>
   );
-}
-
-function slugify(value: string) {
-  return value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/\s+/g, '-');
 }
