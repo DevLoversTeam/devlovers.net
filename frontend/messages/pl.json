@@ -1121,6 +1121,7 @@
       "loginLink": "Zaloguj się",
       "errors": {
         "signupFailed": "Nie udało się zarejestrować. Spróbuj ponownie.",
+        "emailAlreadyInUse": "Konto z tym adresem email już istnieje. Spróbuj się zalogować.",
         "networkError": "Błąd sieci. Sprawdź połączenie i spróbuj ponownie."
       },
       "verificationSent": "Wysłaliśmy email weryfikacyjny na",
@@ -1159,13 +1160,15 @@
       "show": "Pokaż",
       "hide": "Ukryj",
       "validation": {
-        "emailRequired": "Proszę wypełnić to pole",
+        "required": "To pole jest wymagane",
         "invalidName": "Imię i nazwisko musi mieć co najmniej {NAME_MIN_LEN} znaków i nie więcej niż {NAME_MAX_LEN} znaków",
         "emailTooShort": "Adres e-mail musi mieć co najmniej {EMAIL_MIN_LEN} znaków",
         "emailTooLong": "Adres e-mail nie może mieć więcej niż {EMAIL_MAX_LEN} znaków",
         "invalidEmail": "Proszę podać prawidłowy adres email",
         "passwordRequirements": "{PASSWORD_MIN_LEN}–{PASSWORD_MAX_BYTES} znaków, co najmniej jedną wielką literę i co najmniej jeden znak specjalny",
         "invalidPassword": "Hasło musi spełniać wymagania: {passwordRequirementsText}",
+        "passwordTooShort": "Hasło musi mieć co najmniej {minLength} znaków",
+        "passwordTooLongBytes": "Hasło nie może przekraczać {PASSWORD_MAX_BYTES} znaków",
         "passwordsDontMatch": "Hasła nie zgadzają się"
       }
     },

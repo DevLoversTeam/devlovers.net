@@ -85,7 +85,7 @@ export function LoginForm({ locale, returnTo }: LoginFormProps) {
 
       if (!res.ok) {
         setErrorCode(data?.code ?? 'RESEND_FAILED');
-        setErrorMessage(data?.error ?? t('errors.resendFailed'));
+        setErrorMessage(t('errors.resendFailed'));
         return;
       }
 
