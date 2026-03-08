@@ -818,3 +818,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Optimized checkout and payment status polling with backoff strategy
 - Lightweight order status view for faster client updates
 - Reduced session activity write frequency
+
+## [1.0.7] - 2026-03-08
+
+### Added
+
+- Blog platform migration:
+  - Blog content fully migrated from **Sanity → PostgreSQL**
+  - New **Drizzle ORM query layer** for blog posts, categories and authors
+  - Multi-language blog support (uk / en / pl)
+  - Portable Text → Tiptap JSON conversion
+  - Cloudinary image hosting for blog assets
+- Wallet payments foundation:
+  - Monobank **Google Pay checkout support**
+  - Wallet payment adapter and wallet service layer
+  - Payment method selection with idempotent checkout flow
+
+### Changed
+
+- Blog architecture:
+  - Public blog routes now read **entirely from PostgreSQL**
+  - Removed all runtime calls to `api.sanity.io`
+  - Blog rendering switched to server component `BlogPostRenderer`
+- Internationalization improvements:
+  - Improved locale handling for blog pages
+  - Expanded translation coverage across auth and dashboard flows
+
+### Fixed
+
+- Fixed **500 error on blog post pages** caused by `pt::text()` GROQ query
+- Fixed layout issues with ISR/SSG blog rendering
+- Fixed duplicate response handling in order status API
+- Improved error handling and automatic cleanup in order processing
+- Stabilized shipping status transition validation
+- Fixed missing translation keys and raw error strings
+
+### Shop & Payments
+
+- Stabilized checkout compatibility across Monobank and Stripe
+- Added wallet attribution support for Google Pay
+- Hardened Nova Poshta warehouse synchronization and caching
+- Improved webhook retry handling for payment flows
+- Added Google Pay fallback messaging for Monobank checkout
+
+### Performance & Infrastructure
+
+- Added DB indexes for blog queries
+- Optimized blog queries through Drizzle ORM
+- Reduced external API dependencies (Sanity removed from runtime)
+- Improved shipping and payment event processing reliability
