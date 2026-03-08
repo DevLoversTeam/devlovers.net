@@ -159,6 +159,34 @@ export const categoryTabStyles = {
     glow: 'bg-[#0052CC]',
     accent: '#0052CC',
   },
+  swift: {
+    icon: '/icons/swift.svg',
+    color:
+      'group-hover:border-[#F05138]/50 group-hover:bg-[#F05138]/10 data-[state=active]:border-[#F05138]/50 data-[state=active]:bg-[#F05138]/10',
+    glow: 'bg-[#F05138]',
+    accent: '#F05138',
+  },
+  flutter: {
+    icon: '/icons/flutter.svg',
+    color:
+      'group-hover:border-[#02569B]/50 group-hover:bg-[#02569B]/10 data-[state=active]:border-[#02569B]/50 data-[state=active]:bg-[#02569B]/10',
+    glow: 'bg-[#02569B]',
+    accent: '#02569B',
+  },
+  kotlin: {
+    icon: '/icons/kotlin.svg',
+    color:
+      'group-hover:border-[#7F52FF]/50 group-hover:bg-[#7F52FF]/10 data-[state=active]:border-[#7F52FF]/50 data-[state=active]:bg-[#7F52FF]/10',
+    glow: 'bg-[#7F52FF]',
+    accent: '#7F52FF',
+  },
+  reactnative: {
+    icon: '/icons/reactnative.svg',
+    color:
+      'group-hover:border-[#61DAFB]/50 group-hover:bg-[#61DAFB]/10 data-[state=active]:border-[#61DAFB]/50 data-[state=active]:bg-[#61DAFB]/10',
+    glow: 'bg-[#61DAFB]',
+    accent: '#61DAFB',
+  },
 } as const satisfies Partial<Record<CategorySlug, CategoryTabStyle>>;
 
 export function getCategoryTabStyle(slug: string): CategoryTabStyle {
