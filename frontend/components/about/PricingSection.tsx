@@ -9,13 +9,13 @@ import {
   Sparkles,
   X,
 } from 'lucide-react';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 import { GradientBadge } from '@/components/ui/gradient-badge';
 import { ParticleCanvas } from '@/components/ui/particle-canvas';
 import { SectionHeading } from '@/components/ui/section-heading';
+import { Link } from '@/i18n/routing';
 import type { Sponsor } from '@/lib/about/github-sponsors';
 
 import { SponsorsWall } from './SponsorsWall';
@@ -50,7 +50,7 @@ export function PricingSection({ sponsors = [] }: PricingSectionProps) {
       aria-labelledby="pricing-heading"
     >
       <div
-        className="pointer-events-none absolute top-1/2 left-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#1e5eff]/5 blur-[100px] dark:bg-[#ff2d55]/5"
+        className="pointer-events-none absolute top-1/2 left-1/2 h-150 w-150 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#1e5eff]/5 blur-[100px] dark:bg-[#ff2d55]/5"
         aria-hidden="true"
       />
 
@@ -134,7 +134,7 @@ export function PricingSection({ sponsors = [] }: PricingSectionProps) {
             </ul>
 
             <Link
-              href="/"
+              href="/q&a"
               className="w-full rounded-xl border border-gray-200 bg-gray-50 py-4 text-center text-xs font-bold tracking-widest text-gray-900 uppercase transition-all hover:bg-gray-100 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
             >
               {t('junior.cta')}
@@ -147,7 +147,7 @@ export function PricingSection({ sponsors = [] }: PricingSectionProps) {
             onMouseLeave={() => setActiveShape(null)}
             onFocus={() => setActiveShape('heart')}
             onBlur={() => setActiveShape(null)}
-            className="relative z-10 flex flex-col overflow-hidden rounded-3xl border border-[#1e5eff]/30 bg-gradient-to-b from-[#1e5eff]/5 to-white/10 p-8 backdrop-blur-md lg:p-10 dark:border-[#ff2d55]/30 dark:from-[#ff2d55]/10 dark:to-neutral-900/10"
+            className="relative z-10 flex flex-col overflow-hidden rounded-3xl border border-[#1e5eff]/30 bg-linear-to-b from-[#1e5eff]/5 to-white/10 p-8 backdrop-blur-md lg:p-10 dark:border-[#ff2d55]/30 dark:from-[#ff2d55]/10 dark:to-neutral-900/10"
           >
             <div className="absolute top-0 right-0 rounded-bl-xl bg-[#1e5eff] px-3 py-1 text-[10px] font-bold tracking-widest text-white uppercase dark:bg-[#ff2d55]">
               {t('hero.badge')}
