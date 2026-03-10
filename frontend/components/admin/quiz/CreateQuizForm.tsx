@@ -1,9 +1,9 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import type { AdminCategoryItem } from '@/db/queries/categories/admin-categories';
+import { useRouter } from '@/i18n/routing';
 import { slugify } from '@/lib/shop/slug';
 import type { JsonQuestion } from '@/lib/validation/admin-quiz';
 
@@ -251,7 +251,7 @@ export function CreateQuizForm({
           onChange={e => setTimeLimitSeconds(e.target.value)}
           placeholder="Optional"
           min={0}
-          className="border-border bg-background text-foreground w-full max-w-[160px] rounded-md border px-3 py-2 text-sm"
+          className="border-border bg-background text-foreground w-full max-w-40 rounded-md border px-3 py-2 text-sm"
         />
       </div>
 

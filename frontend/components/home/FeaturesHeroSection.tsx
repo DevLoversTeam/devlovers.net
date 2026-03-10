@@ -1,11 +1,11 @@
 'use client';
 
 import { BrainCircuit, MessageCircleQuestion, TrendingUp } from 'lucide-react';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import * as React from 'react';
 
 import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
+import { Link } from '@/i18n/routing';
 
 import { FlipCardQA } from './FlipCardQA';
 import { FloatingCode } from './FloatingCode';
@@ -23,7 +23,7 @@ export default function FeaturesHeroSection() {
       <div className="relative z-10 flex w-full max-w-6xl flex-col items-center px-6 py-8 text-center sm:py-12">
         <h1 className="mb-4 text-2xl font-black tracking-tight text-gray-900 sm:text-4xl md:text-5xl dark:text-white">
           {t('featuresHeading.aceYourNext')} <br className="sm:hidden" />
-          <span className="bg-gradient-to-r from-[var(--accent-primary)] via-[color-mix(in_srgb,var(--accent-primary)_70%,white)] to-[var(--accent-hover)] bg-clip-text text-transparent">
+          <span className="bg-linear-to-r from-(--accent-primary) via-[color-mix(in_srgb,var(--accent-primary)_70%,white)] to-(--accent-hover) bg-clip-text text-transparent">
             {t('featuresHeading.technicalInterview')}
           </span>
         </h1>
@@ -33,8 +33,8 @@ export default function FeaturesHeroSection() {
         </p>
 
         <div className="mb-8 flex flex-row flex-wrap items-center justify-center gap-3 sm:gap-4">
-          <div className="group relative overflow-hidden rounded-full border border-blue-200/60 bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-2 shadow-sm transition-all duration-300 hover:scale-105 hover:shadow-md dark:border-blue-800/30 dark:from-blue-950/30 dark:to-indigo-950/30">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-100/0 via-blue-100/50 to-blue-100/0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 dark:from-blue-800/0 dark:via-blue-800/30 dark:to-blue-800/0" />
+          <div className="group relative overflow-hidden rounded-full border border-blue-200/60 bg-linear-to-r from-blue-50 to-indigo-50 px-4 py-2 shadow-sm transition-all duration-300 hover:scale-105 hover:shadow-md dark:border-blue-800/30 dark:from-blue-950/30 dark:to-indigo-950/30">
+            <div className="absolute inset-0 bg-linear-to-r from-blue-100/0 via-blue-100/50 to-blue-100/0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 dark:from-blue-800/0 dark:via-blue-800/30 dark:to-blue-800/0" />
             <span className="relative flex items-center gap-2 text-xs font-semibold text-blue-700 sm:text-sm dark:text-blue-300">
               <MessageCircleQuestion className="h-4 w-4" />
               <span className="whitespace-nowrap">
@@ -43,8 +43,8 @@ export default function FeaturesHeroSection() {
             </span>
           </div>
 
-          <div className="group relative overflow-hidden rounded-full border border-purple-200/60 bg-gradient-to-r from-purple-50 to-pink-50 px-4 py-2 shadow-sm transition-all duration-300 hover:scale-105 hover:shadow-md dark:border-purple-800/30 dark:from-purple-950/30 dark:to-pink-950/30">
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-100/0 via-purple-100/50 to-purple-100/0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 dark:from-purple-800/0 dark:via-purple-800/30 dark:to-purple-800/0" />
+          <div className="group relative overflow-hidden rounded-full border border-purple-200/60 bg-linear-to-r from-purple-50 to-pink-50 px-4 py-2 shadow-sm transition-all duration-300 hover:scale-105 hover:shadow-md dark:border-purple-800/30 dark:from-purple-950/30 dark:to-pink-950/30">
+            <div className="absolute inset-0 bg-linear-to-r from-purple-100/0 via-purple-100/50 to-purple-100/0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 dark:from-purple-800/0 dark:via-purple-800/30 dark:to-purple-800/0" />
             <span className="relative flex items-center gap-2 text-xs font-semibold text-purple-700 sm:text-sm dark:text-purple-300">
               <BrainCircuit className="h-4 w-4" />
               <span className="whitespace-nowrap">
@@ -53,8 +53,8 @@ export default function FeaturesHeroSection() {
             </span>
           </div>
 
-          <div className="group relative overflow-hidden rounded-full border border-emerald-200/60 bg-gradient-to-r from-emerald-50 to-teal-50 px-4 py-2 shadow-sm transition-all duration-300 hover:scale-105 hover:shadow-md dark:border-emerald-800/30 dark:from-emerald-950/30 dark:to-teal-950/30">
-            <div className="absolute inset-0 bg-gradient-to-r from-emerald-100/0 via-emerald-100/50 to-emerald-100/0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 dark:from-emerald-800/0 dark:via-emerald-800/30 dark:to-emerald-800/0" />
+          <div className="group relative overflow-hidden rounded-full border border-emerald-200/60 bg-linear-to-r from-emerald-50 to-teal-50 px-4 py-2 shadow-sm transition-all duration-300 hover:scale-105 hover:shadow-md dark:border-emerald-800/30 dark:from-emerald-950/30 dark:to-teal-950/30">
+            <div className="absolute inset-0 bg-linear-to-r from-emerald-100/0 via-emerald-100/50 to-emerald-100/0 opacity-0 transition-opacity duration-300 group-hover:opacity-100 dark:from-emerald-800/0 dark:via-emerald-800/30 dark:to-emerald-800/0" />
             <span className="relative flex items-center gap-2 text-xs font-semibold text-emerald-700 sm:text-sm dark:text-emerald-300">
               <TrendingUp className="h-4 w-4" />
               <span className="whitespace-nowrap">
@@ -69,7 +69,7 @@ export default function FeaturesHeroSection() {
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:gap-4">
           <Link
             href="/q&a"
-            className="group relative overflow-hidden rounded-full bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-hover)] px-6 py-2.5 text-sm font-bold text-white shadow-[var(--accent-primary)]/20 shadow-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-[var(--accent-primary)]/30 hover:shadow-xl focus:ring-2 focus:ring-[var(--accent-primary)] focus:ring-offset-2 focus:outline-none dark:shadow-[var(--accent-primary)]/10 dark:hover:shadow-[var(--accent-primary)]/20"
+            className="group relative overflow-hidden rounded-full bg-linear-to-r from-(--accent-primary) to-(--accent-hover) px-6 py-2.5 text-sm font-bold text-white shadow-(--accent-primary)/20 shadow-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-(--accent-primary)/30 hover:shadow-xl focus:ring-2 focus:ring-(--accent-primary) focus:ring-offset-2 focus:outline-none dark:shadow-(--accent-primary)/10 dark:hover:shadow-(--accent-primary)/20"
           >
             <span className="relative z-10 flex items-center justify-center gap-2">
               {t('featuresCta.browseQuestions')}
