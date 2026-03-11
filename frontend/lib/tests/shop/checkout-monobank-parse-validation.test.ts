@@ -11,6 +11,10 @@ import {
 
 import { POST } from '@/app/api/shop/checkout/route';
 import { createOrderWithItems } from '@/lib/services/orders';
+import {
+  hasStatusTokenScope,
+  verifyStatusToken,
+} from '@/lib/shop/status-token';
 
 vi.mock('@/lib/auth', () => ({
   getCurrentUser: vi.fn().mockResolvedValue(null),
@@ -28,6 +32,12 @@ vi.mock('@/lib/services/orders', async () => {
     restockOrder: vi.fn(),
   };
 });
+const createMonobankAttemptAndInvoiceMock = vi.hoisted(() => vi.fn());
+
+vi.mock('@/lib/services/orders/monobank', () => ({
+  createMonobankAttemptAndInvoice: (...args: unknown[]) =>
+    createMonobankAttemptAndInvoiceMock(...args),
+}));
 
 type MockedFn = ReturnType<typeof vi.fn>;
 
@@ -35,12 +45,15 @@ const __prevRateLimitDisabled = process.env.RATE_LIMIT_DISABLED;
 const __prevPaymentsEnabled = process.env.PAYMENTS_ENABLED;
 const __prevStripePaymentsEnabled = process.env.STRIPE_PAYMENTS_ENABLED;
 const __prevMonobankGpayEnabled = process.env.SHOP_MONOBANK_GPAY_ENABLED;
+const __prevStatusTokenSecret = process.env.SHOP_STATUS_TOKEN_SECRET;
 
 beforeAll(() => {
   process.env.RATE_LIMIT_DISABLED = '1';
   process.env.PAYMENTS_ENABLED = 'true';
   process.env.STRIPE_PAYMENTS_ENABLED = 'true';
   process.env.SHOP_MONOBANK_GPAY_ENABLED = 'false';
+  process.env.SHOP_STATUS_TOKEN_SECRET =
+    'test_status_token_secret_test_status_token_secret';
 });
 
 afterAll(() => {
@@ -58,11 +71,23 @@ afterAll(() => {
   if (__prevMonobankGpayEnabled === undefined)
     delete process.env.SHOP_MONOBANK_GPAY_ENABLED;
   else process.env.SHOP_MONOBANK_GPAY_ENABLED = __prevMonobankGpayEnabled;
+
+  if (__prevStatusTokenSecret === undefined)
+    delete process.env.SHOP_STATUS_TOKEN_SECRET;
+  else process.env.SHOP_STATUS_TOKEN_SECRET = __prevStatusTokenSecret;
 });
 
 beforeEach(() => {
   vi.clearAllMocks();
   process.env.SHOP_MONOBANK_GPAY_ENABLED = 'false';
+  createMonobankAttemptAndInvoiceMock.mockResolvedValue({
+    attemptId: 'attempt_mono_scope_1',
+    attemptNumber: 1,
+    invoiceId: 'invoice_mono_scope_1',
+    pageUrl: 'https://pay.example.test/invoice_mono_scope_1',
+    currency: 'UAH',
+    totalAmountMinor: 1000,
+  });
 });
 
 function makeMonobankCheckoutReq(params: {
@@ -101,6 +126,13 @@ function mockCreateOrderSuccess(mockFn: MockedFn, orderId: string) {
     isNew: true,
     totalCents: 1000,
   });
+}
+
+function readTokenScopes(token: string, orderId: string) {
+  const verified = verifyStatusToken({ token, orderId });
+  expect(verified.ok).toBe(true);
+  if (!verified.ok) return null;
+  return verified.payload;
 }
 
 describe('checkout monobank parse/validation', () => {
@@ -241,5 +273,76 @@ describe('checkout monobank parse/validation', () => {
       paymentProvider: 'monobank',
       paymentMethod: 'monobank_google_pay',
     });
+  });
+
+  it('issues payment-init capable token for guest monobank checkout flow', async () => {
+    process.env.SHOP_MONOBANK_GPAY_ENABLED = 'true';
+    const createOrderWithItemsMock =
+      createOrderWithItems as unknown as MockedFn;
+    const orderId = '11111111-1111-4111-8111-111111111119';
+
+    createOrderWithItemsMock.mockResolvedValueOnce({
+      order: {
+        id: orderId,
+        currency: 'UAH',
+        totalAmount: 10,
+        paymentStatus: 'pending',
+        paymentProvider: 'monobank',
+        paymentIntentId: null,
+      },
+      isNew: true,
+      totalCents: 1000,
+    });
+
+    const res = await POST(
+      makeMonobankCheckoutReq({
+        idempotencyKey: 'mono_scope_checkout_0001',
+        body: {
+          paymentProvider: 'monobank',
+          paymentMethod: 'monobank_google_pay',
+          items: [
+            { productId: '11111111-1111-4111-8111-111111111111', quantity: 1 },
+          ],
+        },
+      })
+    );
+
+    expect(res.status).toBe(201);
+    const json: any = await res.json();
+    expect(typeof json.statusToken).toBe('string');
+
+    const payload = readTokenScopes(json.statusToken, orderId);
+    expect(payload).not.toBeNull();
+    if (!payload) return;
+    expect(hasStatusTokenScope(payload, 'status_lite')).toBe(true);
+    expect(hasStatusTokenScope(payload, 'order_payment_init')).toBe(true);
+  });
+
+  it('keeps status-only token for no-payment checkout flow', async () => {
+    const createOrderWithItemsMock =
+      createOrderWithItems as unknown as MockedFn;
+    const orderId = '11111111-1111-4111-8111-111111111120';
+    mockCreateOrderSuccess(createOrderWithItemsMock, orderId);
+
+    const res = await POST(
+      makeMonobankCheckoutReq({
+        idempotencyKey: 'status_only_checkout_0001',
+        body: {
+          items: [
+            { productId: '11111111-1111-4111-8111-111111111111', quantity: 1 },
+          ],
+        },
+      })
+    );
+
+    expect(res.status).toBe(201);
+    const json: any = await res.json();
+    expect(typeof json.statusToken).toBe('string');
+
+    const payload = readTokenScopes(json.statusToken, orderId);
+    expect(payload).not.toBeNull();
+    if (!payload) return;
+    expect(hasStatusTokenScope(payload, 'status_lite')).toBe(true);
+    expect(hasStatusTokenScope(payload, 'order_payment_init')).toBe(false);
   });
 });

@@ -37,7 +37,10 @@ import {
   type PaymentStatus,
 } from '@/lib/shop/payments';
 import { resolveRequestLocale } from '@/lib/shop/request-locale';
-import { createStatusToken } from '@/lib/shop/status-token';
+import {
+  createStatusToken,
+  type StatusTokenScope,
+} from '@/lib/shop/status-token';
 import {
   checkoutPayloadSchema,
   idempotencyKeySchema,
@@ -69,6 +72,39 @@ const SHIPPING_ERROR_STATUS_MAP: Record<string, number> = {
   SHIPPING_METHOD_UNAVAILABLE: 422,
   SHIPPING_CURRENCY_UNSUPPORTED: 422,
 };
+
+const STATUS_TOKEN_SCOPES_STATUS_ONLY: readonly StatusTokenScope[] = [
+  'status_lite',
+];
+const STATUS_TOKEN_SCOPES_PAYMENT_INIT: readonly StatusTokenScope[] = [
+  'status_lite',
+  'order_payment_init',
+];
+
+function resolveCheckoutTokenScopes(args: {
+  paymentProvider: PaymentProvider;
+  paymentStatus: PaymentStatus;
+}): readonly StatusTokenScope[] {
+  const needsPaymentInitScope =
+    args.paymentProvider !== 'none' &&
+    (args.paymentStatus === 'pending' ||
+      args.paymentStatus === 'requires_payment');
+
+  return needsPaymentInitScope
+    ? STATUS_TOKEN_SCOPES_PAYMENT_INIT
+    : STATUS_TOKEN_SCOPES_STATUS_ONLY;
+}
+
+function createCheckoutStatusToken(args: {
+  orderId: string;
+  paymentProvider: PaymentProvider;
+  paymentStatus: PaymentStatus;
+}): string {
+  return createStatusToken({
+    orderId: args.orderId,
+    scopes: [...resolveCheckoutTokenScopes(args)],
+  });
+}
 
 function shippingErrorStatus(code: string): number | null {
   return SHIPPING_ERROR_STATUS_MAP[code] ?? null;
@@ -412,7 +448,11 @@ async function runMonobankCheckoutFlow(args: {
     const { createMonobankAttemptAndInvoice } =
       await import('@/lib/services/orders/monobank');
 
-    const statusToken = createStatusToken({ orderId: args.order.id });
+    const statusToken = createCheckoutStatusToken({
+      orderId: args.order.id,
+      paymentProvider: args.order.paymentProvider,
+      paymentStatus: args.order.paymentStatus,
+    });
 
     const monobankAttempt = await createMonobankAttemptAndInvoice({
       orderId: args.order.id,
@@ -921,7 +961,11 @@ export async function POST(request: NextRequest) {
     };
     const statusToken = (() => {
       try {
-        return createStatusToken({ orderId: order.id });
+        return createCheckoutStatusToken({
+          orderId: order.id,
+          paymentProvider: order.paymentProvider,
+          paymentStatus: order.paymentStatus,
+        });
       } catch (error) {
         logError('checkout_status_token_create_failed', error, {
           ...orderMeta,

@@ -16,17 +16,21 @@ import { db } from '@/db';
 import { orders, paymentAttempts } from '@/db/schema';
 import { toDbMoney } from '@/lib/shop/money';
 
+const authorizeOrderMutationAccessMock = vi.hoisted(() =>
+  vi.fn(async () => ({
+    authorized: true,
+    actorUserId: null,
+    code: 'OK',
+    status: 200,
+  }))
+);
+
 vi.mock('@/lib/auth', () => ({
   getCurrentUser: vi.fn().mockResolvedValue(null),
 }));
 
 vi.mock('@/lib/services/shop/order-access', () => ({
-  authorizeOrderMutationAccess: vi.fn(async () => ({
-    authorized: true,
-    actorUserId: null,
-    code: 'OK',
-    status: 200,
-  })),
+  authorizeOrderMutationAccess: authorizeOrderMutationAccessMock,
 }));
 
 vi.mock('@/lib/logging', async () => {
@@ -55,7 +59,7 @@ vi.mock('@/lib/psp/monobank', async () => {
   const actual = await vi.importActual<any>('@/lib/psp/monobank');
   return {
     ...actual,
-    walletPayment: (...args: any[]) => walletPaymentMock(...args),
+    walletPayment: walletPaymentMock,
   };
 });
 
@@ -94,6 +98,13 @@ afterAll(() => {
 });
 
 beforeEach(() => {
+  authorizeOrderMutationAccessMock.mockReset();
+  authorizeOrderMutationAccessMock.mockResolvedValue({
+    authorized: true,
+    actorUserId: null,
+    code: 'OK',
+    status: 200,
+  });
   walletPaymentMock.mockReset();
   process.env.SHOP_MONOBANK_GPAY_ENABLED = 'true';
   delete process.env.SHOP_MONOBANK_GPAY_MAX_BODY_BYTES;
@@ -196,6 +207,66 @@ async function waitForCreatingAttempt(orderId: string, timeoutMs = 3_000) {
 }
 
 describe.sequential('monobank google pay submit route', () => {
+  it('requires order_payment_init scope and rejects insufficient scope', async () => {
+    const orderId = crypto.randomUUID();
+    await insertOrder({ id: orderId });
+
+    try {
+      authorizeOrderMutationAccessMock.mockResolvedValueOnce({
+        authorized: false,
+        actorUserId: null,
+        code: 'STATUS_TOKEN_SCOPE_FORBIDDEN',
+        status: 403,
+      });
+
+      const res = await postRoute(
+        makeSubmitRequest({
+          orderId,
+          idempotencyKey: 'mono_submit_scope_0001',
+          body: JSON.stringify({ gToken: 'tok_scope_test' }),
+        }),
+        { params: Promise.resolve({ id: orderId }) }
+      );
+
+      expect(res.status).toBe(403);
+      expect((await res.json()).code).toBe('STATUS_TOKEN_SCOPE_FORBIDDEN');
+      expect(walletPaymentMock).not.toHaveBeenCalled();
+      expect(authorizeOrderMutationAccessMock).toHaveBeenCalledWith({
+        orderId,
+        statusToken: 'tok_test',
+        requiredScope: 'order_payment_init',
+      });
+
+      authorizeOrderMutationAccessMock.mockResolvedValueOnce({
+        authorized: true,
+        actorUserId: null,
+        code: 'OK',
+        status: 200,
+      });
+
+      walletPaymentMock.mockResolvedValueOnce({
+        invoiceId: 'inv_scope_ok_1',
+        status: 'created',
+        redirectUrl: null,
+        modifiedDate: null,
+        raw: {},
+      });
+
+      const allowed = await postRoute(
+        makeSubmitRequest({
+          orderId,
+          idempotencyKey: 'mono_submit_scope_0002',
+          body: JSON.stringify({ gToken: 'tok_scope_ok' }),
+        }),
+        { params: Promise.resolve({ id: orderId }) }
+      );
+
+      expect(allowed.status).toBe(200);
+    } finally {
+      await cleanupOrder(orderId);
+    }
+  });
+
   it('enforces payload cap before JSON.parse', async () => {
     const orderId = crypto.randomUUID();
     await insertOrder({ id: orderId });
