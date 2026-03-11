@@ -37,6 +37,7 @@ import { cn } from '@/lib/utils';
 type PaymentFormProps = {
   orderId: string;
   locale: string;
+  statusToken: string | null;
 };
 
 type StripePaymentClientProps = {
@@ -44,6 +45,7 @@ type StripePaymentClientProps = {
   publishableKey: string | null;
   paymentsEnabled: boolean;
   orderId: string;
+  statusToken: string | null;
   amountMinor: number;
   currency: string;
   locale: string;
@@ -83,12 +85,18 @@ function buildStripeReturnUrl(params: {
 
 function nextRouteForPaymentResult(params: {
   orderId: string;
+  statusToken: string | null;
   status?: string | null;
 }) {
-  const { orderId, status } = params;
+  const { orderId, status, statusToken } = params;
   const id = encodeURIComponent(orderId);
+  const tokenSuffix = statusToken
+    ? `&statusToken=${encodeURIComponent(statusToken)}`
+    : '';
 
-  const success = buildInAppPath(`/checkout/success?orderId=${id}`);
+  const success = buildInAppPath(
+    `/checkout/success?orderId=${id}${tokenSuffix}`
+  );
   const failure = buildInAppPath(`/checkout/error?orderId=${id}`);
 
   if (!status) return success;
@@ -152,7 +160,7 @@ function HeroCtaInner({ children }: { children: React.ReactNode }) {
   );
 }
 
-function StripePaymentForm({ orderId, locale }: PaymentFormProps) {
+function StripePaymentForm({ orderId, locale, statusToken }: PaymentFormProps) {
   const stripe = useStripe();
   const elements = useElements();
   const router = useRouter();
@@ -175,8 +183,13 @@ function StripePaymentForm({ orderId, locale }: PaymentFormProps) {
 
     try {
       const id = encodeURIComponent(orderId);
+      const tokenSuffix = statusToken
+        ? `&statusToken=${encodeURIComponent(statusToken)}`
+        : '';
 
-      const inAppSuccess = buildInAppPath(`/checkout/success?orderId=${id}`);
+      const inAppSuccess = buildInAppPath(
+        `/checkout/success?orderId=${id}${tokenSuffix}`
+      );
       const inAppFailure = buildInAppPath(`/checkout/error?orderId=${id}`);
 
       const { error, paymentIntent } = await stripe.confirmPayment({
@@ -195,6 +208,7 @@ function StripePaymentForm({ orderId, locale }: PaymentFormProps) {
 
       const next = nextRouteForPaymentResult({
         orderId,
+        statusToken,
         status: paymentIntent?.status ?? null,
       });
 
@@ -243,6 +257,7 @@ export default function StripePaymentClient({
   publishableKey,
   paymentsEnabled,
   orderId,
+  statusToken,
   amountMinor,
   currency,
   locale,
@@ -279,7 +294,7 @@ export default function StripePaymentClient({
         >
           <Link
             href={buildInAppPath(
-              `/checkout/success?orderId=${encodeURIComponent(orderId)}`
+              `/checkout/success?orderId=${encodeURIComponent(orderId)}${statusToken ? `&statusToken=${encodeURIComponent(statusToken)}` : ''}`
             )}
             className={cn(SHOP_HERO_CTA, 'w-full sm:w-auto')}
           >
@@ -340,7 +355,11 @@ export default function StripePaymentClient({
             </p>
           </div>
 
-          <StripePaymentForm orderId={orderId} locale={locale} />
+          <StripePaymentForm
+            orderId={orderId}
+            locale={locale}
+            statusToken={statusToken}
+          />
         </div>
       </Elements>
     </section>

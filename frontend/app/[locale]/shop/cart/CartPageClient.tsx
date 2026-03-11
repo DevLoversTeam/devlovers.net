@@ -1004,12 +1004,15 @@ export default function CartPage({
 
       const orderId = String(data.orderId);
       setCreatedOrderId(orderId);
+      const statusTokenQuery = statusToken
+        ? `&statusToken=${encodeURIComponent(statusToken)}`
+        : '';
 
       if (paymentProvider === 'stripe' && clientSecret) {
         router.push(
           `${shopBase}/checkout/payment/${encodeURIComponent(
             orderId
-          )}?clientSecret=${encodeURIComponent(clientSecret)}&clearCart=1`
+          )}?clientSecret=${encodeURIComponent(clientSecret)}&clearCart=1${statusTokenQuery}`
         );
         return;
       }
@@ -1046,7 +1049,7 @@ export default function CartPage({
       router.push(
         `${shopBase}/checkout/success?orderId=${encodeURIComponent(
           orderId
-        )}&clearCart=1${paymentsDisabledFlag}`
+        )}&clearCart=1${paymentsDisabledFlag}${statusTokenQuery}`
       );
     } catch {
       setCheckoutError(t('checkout.errors.startFailed'));

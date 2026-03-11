@@ -147,11 +147,13 @@ export default function MonobankReturnStatus({
         setPollError(null);
 
         if (nextStatus.paymentStatus === 'paid') {
-          router.replace(
-            `/shop/checkout/success?orderId=${encodeURIComponent(
-              orderId
-            )}&clearCart=1`
-          );
+          const qp = new URLSearchParams({
+            orderId,
+            flow: 'monobank',
+            clearCart: '1',
+          });
+          if (normalizedToken) qp.set('statusToken', normalizedToken);
+          router.replace(`/shop/checkout/success?${qp.toString()}`);
           return;
         }
 
@@ -179,7 +181,7 @@ export default function MonobankReturnStatus({
       cancelled = true;
       if (timer) clearTimeout(timer);
     };
-  }, [fetchStatus, orderId, refreshSeed, router, t]);
+  }, [fetchStatus, normalizedToken, orderId, refreshSeed, router, t]);
 
   const statusLabel = useMemo(() => {
     if (!status) return t('paymentStatus.confirming');

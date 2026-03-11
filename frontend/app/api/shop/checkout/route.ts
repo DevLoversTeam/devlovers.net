@@ -308,11 +308,13 @@ function buildCheckoutResponse({
   order,
   itemCount,
   clientSecret,
+  statusToken,
   status,
 }: {
   order: CheckoutOrderShape;
   itemCount: number;
   clientSecret: string | null;
+  statusToken: string | null;
   status: number;
 }) {
   const res = NextResponse.json(
@@ -333,6 +335,7 @@ function buildCheckoutResponse({
       paymentProvider: order.paymentProvider,
       paymentIntentId: order.paymentIntentId,
       clientSecret,
+      statusToken,
     },
     { status }
   );
@@ -916,6 +919,17 @@ export async function POST(request: NextRequest) {
       paymentStatus: order.paymentStatus,
       paymentIntentId: order.paymentIntentId ?? null,
     };
+    const statusToken = (() => {
+      try {
+        return createStatusToken({ orderId: order.id });
+      } catch (error) {
+        logError('checkout_status_token_create_failed', error, {
+          ...orderMeta,
+          code: 'STATUS_TOKEN_CREATE_FAILED',
+        });
+        return null;
+      }
+    })();
 
     const orderProvider = order.paymentProvider as unknown as
       | 'stripe'
@@ -957,6 +971,7 @@ export async function POST(request: NextRequest) {
             },
             itemCount,
             clientSecret: ensured.clientSecret,
+            statusToken,
             status: 200,
           });
         } catch (error) {
@@ -1052,6 +1067,7 @@ export async function POST(request: NextRequest) {
         },
         itemCount,
         clientSecret: null,
+        statusToken,
         status: 200,
       });
     }
@@ -1086,6 +1102,7 @@ export async function POST(request: NextRequest) {
         },
         itemCount,
         clientSecret: null,
+        statusToken,
         status: 201,
       });
     }
@@ -1107,6 +1124,7 @@ export async function POST(request: NextRequest) {
         },
         itemCount,
         clientSecret: ensured.clientSecret,
+        statusToken,
         status: 201,
       });
     } catch (error) {

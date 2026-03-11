@@ -48,6 +48,15 @@ function resolveClientSecret(
   return raw;
 }
 
+function parseStatusToken(
+  searchParams?: Record<string, string | string[] | undefined>
+): string | null {
+  const raw = searchParams?.statusToken;
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  const normalized = (value ?? '').trim();
+  return normalized.length > 0 ? normalized : null;
+}
+
 async function buildStatusMessage(status: string) {
   const t = await getTranslations('shop.checkout.payment.statusMessages');
 
@@ -160,6 +169,10 @@ export default async function PaymentPage(props: PaymentPageProps) {
   const cc = clearCart ? '&clearCart=1' : '';
   const { locale } = params;
   const shopBase = `/shop`;
+  const statusToken = parseStatusToken(searchParams);
+  const statusTokenQuery = statusToken
+    ? `&statusToken=${encodeURIComponent(statusToken)}`
+    : '';
 
   const t = await getTranslations('shop.checkout');
 
@@ -265,7 +278,7 @@ export default async function PaymentPage(props: PaymentPageProps) {
             aria-label="Next steps"
           >
             <HeroCtaLink
-              href={`${shopBase}/checkout/success?orderId=${order.id}${cc}`}
+              href={`${shopBase}/checkout/success?orderId=${order.id}${statusTokenQuery}${cc}`}
             >
               {t('payment.viewConfirmation')}
             </HeroCtaLink>
@@ -338,6 +351,7 @@ export default async function PaymentPage(props: PaymentPageProps) {
             <StripePaymentClient
               clientSecret={clientSecret}
               orderId={order.id}
+              statusToken={statusToken}
               amountMinor={order.totalAmountMinor}
               currency={order.currency}
               publishableKey={publishableKey}

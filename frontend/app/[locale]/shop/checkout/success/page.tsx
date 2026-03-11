@@ -3,8 +3,7 @@ import { getTranslations } from 'next-intl/server';
 
 import { ClearCartOnMount } from '@/components/shop/ClearCartOnMount';
 import { Link } from '@/i18n/routing';
-import { OrderNotFoundError } from '@/lib/services/errors';
-import { getOrderSummary } from '@/lib/services/orders';
+import { getCheckoutSuccessOrderSummary } from '@/lib/services/orders';
 import { formatMoney } from '@/lib/shop/currency';
 import {
   SHOP_CTA_BASE,
@@ -51,11 +50,7 @@ function parseStatusToken(params: SearchParams): string | null {
   return raw.length ? raw : null;
 }
 
-function isMonobankRedirectFlow(
-  params: SearchParams,
-  statusToken: string | null
-): boolean {
-  if (statusToken) return true;
+function isMonobankRedirectFlow(params: SearchParams): boolean {
   const flow = getStringParam(params, 'flow').trim().toLowerCase();
   return flow === 'monobank';
 }
@@ -175,7 +170,7 @@ export default async function CheckoutSuccessPage({
   }
 
   const statusToken = parseStatusToken(resolvedParams);
-  if (isMonobankRedirectFlow(resolvedParams, statusToken)) {
+  if (isMonobankRedirectFlow(resolvedParams)) {
     return (
       <main
         className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8"
@@ -194,39 +189,38 @@ export default async function CheckoutSuccessPage({
 
   const paymentsDisabled = isPaymentsDisabled(resolvedParams);
 
-  let order: Awaited<ReturnType<typeof getOrderSummary>>;
-  try {
-    order = await getOrderSummary(orderId);
-  } catch (error) {
-    if (error instanceof OrderNotFoundError) {
+  const summaryAccess = await getCheckoutSuccessOrderSummary({
+    orderId,
+    statusToken,
+  });
+  if (!summaryAccess.ok) {
+    if (summaryAccess.code === 'STATUS_TOKEN_MISCONFIGURED') {
       return (
         <CheckoutShell
-          title={t('errors.orderNotFound')}
-          description={t('notFoundOrder.message')}
-        >
-          <nav
-            className="mt-6 flex justify-center gap-3"
-            aria-label="Next steps"
-          >
-            <Link href="/shop/products" className={SHOP_HERO_CTA_SM}>
-              <HeroCtaInner>{t('actions.backToProducts')}</HeroCtaInner>
-            </Link>
-
-            <Link href="/shop/cart" className={SHOP_OUTLINE_BTN}>
-              {t('actions.goToCart')}
-            </Link>
-          </nav>
-        </CheckoutShell>
+          title={t('errors.unableToLoad')}
+          description={t('errors.tryAgainLater')}
+        />
       );
     }
-
     return (
       <CheckoutShell
-        title={t('errors.unableToLoad')}
-        description={t('errors.tryAgainLater')}
-      />
+        title={t('errors.orderNotFound')}
+        description={t('notFoundOrder.message')}
+      >
+        <nav className="mt-6 flex justify-center gap-3" aria-label="Next steps">
+          <Link href="/shop/products" className={SHOP_HERO_CTA_SM}>
+            <HeroCtaInner>{t('actions.backToProducts')}</HeroCtaInner>
+          </Link>
+
+          <Link href="/shop/cart" className={SHOP_OUTLINE_BTN}>
+            {t('actions.goToCart')}
+          </Link>
+        </nav>
+      </CheckoutShell>
     );
   }
+
+  const order = summaryAccess.order;
 
   const totalMinor = order.totalAmountMinor;
   const itemsCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
