@@ -24,19 +24,28 @@ vi.mock('@/lib/services/orders', () => ({
 
 import { POST } from '@/app/api/shop/webhooks/stripe/route';
 import { db } from '@/db';
-import { orders, stripeEvents } from '@/db/schema';
+import { orders, shippingShipments, stripeEvents } from '@/db/schema';
 import { retrieveCharge, verifyWebhookSignature } from '@/lib/psp/stripe';
 import { restockOrder } from '@/lib/services/orders';
+import { claimQueuedShipmentsForProcessing } from '@/lib/services/shop/shipping/shipments-worker';
+import { closeShippingPipelineForOrder } from '@/lib/services/shop/shipping/pipeline-shutdown';
 
 const verifyWebhookSignatureMock = vi.mocked(verifyWebhookSignature);
 const retrieveChargeMock = vi.mocked(retrieveCharge);
 const restockOrderMock = vi.mocked(restockOrder);
 
-type Inserted = { orderId: string; paymentIntentId: string };
+type Inserted = {
+  orderId: string;
+  paymentIntentId: string;
+  shipmentId: string | null;
+};
 
-async function insertPaidOrder(): Promise<Inserted> {
+async function insertPaidOrder(args?: {
+  withQueuedShipment?: boolean;
+}): Promise<Inserted> {
   const orderId = crypto.randomUUID();
   const paymentIntentId = `pi_test_${crypto.randomUUID()}`;
+  const shipmentId = args?.withQueuedShipment ? crypto.randomUUID() : null;
 
   const totalAmountMinor = 2500;
   const totalAmount = (totalAmountMinor / 100).toFixed(2);
@@ -52,14 +61,80 @@ async function insertPaidOrder(): Promise<Inserted> {
     paymentIntentId,
     status: 'PAID',
     inventoryStatus: 'reserved',
+    ...(args?.withQueuedShipment
+      ? {
+          shippingRequired: true,
+          shippingPayer: 'customer',
+          shippingProvider: 'nova_poshta',
+          shippingMethodCode: 'NP_WAREHOUSE',
+          shippingAmountMinor: null,
+          shippingStatus: 'queued',
+        }
+      : {}),
     idempotencyKey: `idem_${crypto.randomUUID()}`,
     stockRestored: false,
     pspMetadata: {},
   };
 
   await db.insert(orders).values(row);
+  if (shipmentId) {
+    await db.insert(shippingShipments).values({
+      id: shipmentId,
+      orderId,
+      provider: 'nova_poshta',
+      status: 'queued',
+      attemptCount: 0,
+      leaseOwner: null,
+      leaseExpiresAt: null,
+      nextAttemptAt: null,
+    } as any);
+  }
 
-  return { orderId, paymentIntentId };
+  return { orderId, paymentIntentId, shipmentId };
+}
+
+async function insertPendingOrderWithQueuedShipment(): Promise<Inserted> {
+  const orderId = crypto.randomUUID();
+  const paymentIntentId = `pi_test_${crypto.randomUUID()}`;
+  const shipmentId = crypto.randomUUID();
+
+  const totalAmountMinor = 2500;
+  const totalAmount = (totalAmountMinor / 100).toFixed(2);
+
+  await db.insert(orders).values({
+    id: orderId,
+    userId: null,
+    totalAmountMinor,
+    totalAmount,
+    currency: 'USD',
+    paymentStatus: 'pending',
+    paymentProvider: 'stripe',
+    paymentIntentId,
+    status: 'INVENTORY_RESERVED',
+    inventoryStatus: 'reserved',
+    shippingRequired: true,
+    shippingPayer: 'customer',
+    shippingProvider: 'nova_poshta',
+    shippingMethodCode: 'NP_WAREHOUSE',
+    shippingAmountMinor: null,
+    shippingStatus: 'queued',
+    idempotencyKey: `idem_${crypto.randomUUID()}`,
+    stockRestored: false,
+    pspMetadata: {},
+  } as any);
+
+  await db.insert(shippingShipments).values({
+    id: shipmentId,
+    orderId,
+    provider: 'nova_poshta',
+    status: 'queued',
+    attemptCount: 0,
+    leaseOwner: null,
+    leaseExpiresAt: null,
+    nextAttemptAt: null,
+  } as any);
+
+  return { orderId, paymentIntentId, shipmentId };
 }
 
 function makeRequest() {
@@ -77,6 +152,9 @@ function makeRequest() {
 }
 
 async function cleanupInserted(ins: Inserted) {
+  await db
+    .delete(shippingShipments)
+    .where(eq(shippingShipments.orderId, ins.orderId));
   await db
     .delete(stripeEvents)
     .where(eq(stripeEvents.paymentIntentId, ins.paymentIntentId));
@@ -124,6 +202,11 @@ describe('stripe webhook refund (full only): PI fallback + terminal status + ded
     vi.clearAllMocks();
 
     restockOrderMock.mockImplementation(async (orderId: string) => {
+      await closeShippingPipelineForOrder({
+        orderId,
+        reason: 'test_restock',
+      });
+
       await db
         .update(orders)
         .set({
@@ -204,6 +287,200 @@ describe('stripe webhook refund (full only): PI fallback + terminal status + ded
     } finally {
       fetchSpy.mockRestore();
     }
+  }, 30_000);
+
+  it('refund closes queued shipment pipeline and stays idempotent on replay', async () => {
+    inserted = await insertPaidOrder({ withQueuedShipment: true });
+
+    const eventId = `evt_${crypto.randomUUID()}`;
+    const chargeId = `ch_${crypto.randomUUID()}`;
+    const refundId = `re_${crypto.randomUUID()}`;
+
+    const expandedCharge = makeCharge({
+      chargeId,
+      paymentIntentId: inserted.paymentIntentId,
+      amount: 2500,
+      amountRefunded: 2500,
+      refunds: [{ id: refundId, amount: 2500 }],
+    });
+
+    const refund = {
+      id: refundId,
+      object: 'refund',
+      amount: 2500,
+      status: 'succeeded',
+      reason: null,
+      charge: expandedCharge,
+      payment_intent: inserted.paymentIntentId,
+      metadata: {},
+    };
+
+    verifyWebhookSignatureMock.mockReturnValue({
+      id: eventId,
+      type: 'charge.refund.updated',
+      data: { object: refund },
+    } as unknown as Stripe.Event);
+
+    const first = await POST(makeRequest());
+    expect(first.status).toBe(200);
+
+    const [order1] = await db
+      .select({
+        paymentStatus: orders.paymentStatus,
+        status: orders.status,
+        shippingStatus: orders.shippingStatus,
+      })
+      .from(orders)
+      .where(eq(orders.id, inserted.orderId))
+      .limit(1);
+
+    expect(order1?.paymentStatus).toBe('refunded');
+    expect(order1?.status).toBe('CANCELED');
+    expect(order1?.shippingStatus).toBe('cancelled');
+
+    const [shipment1] = await db
+      .select({
+        status: shippingShipments.status,
+      })
+      .from(shippingShipments)
+      .where(eq(shippingShipments.id, inserted.shipmentId!))
+      .limit(1);
+    expect(shipment1?.status).toBe('needs_attention');
+
+    const claimed = await claimQueuedShipmentsForProcessing({
+      runId: crypto.randomUUID(),
+      leaseSeconds: 120,
+      limit: 10,
+    });
+    expect(claimed).toHaveLength(0);
+
+    const second = await POST(makeRequest());
+    expect(second.status).toBe(200);
+
+    const [shipment2] = await db
+      .select({
+        status: shippingShipments.status,
+      })
+      .from(shippingShipments)
+      .where(eq(shippingShipments.id, inserted.shipmentId!))
+      .limit(1);
+    expect(shipment2?.status).toBe('needs_attention');
+    expect(restockOrderMock).toHaveBeenCalledTimes(1);
+  }, 30_000);
+
+  it('payment_intent.payment_failed closes queued shipment pipeline and is idempotent on replay', async () => {
+    inserted = await insertPendingOrderWithQueuedShipment();
+
+    const eventId = `evt_${crypto.randomUUID()}`;
+    const chargeId = `ch_${crypto.randomUUID()}`;
+
+    verifyWebhookSignatureMock.mockReturnValue({
+      id: eventId,
+      type: 'payment_intent.payment_failed',
+      data: {
+        object: {
+          id: inserted.paymentIntentId,
+          object: 'payment_intent',
+          status: 'requires_payment_method',
+          latest_charge: chargeId,
+          cancellation_reason: null,
+          last_payment_error: {
+            code: 'card_declined',
+            decline_code: 'insufficient_funds',
+            message: 'Card declined',
+          },
+          metadata: { orderId: inserted.orderId },
+        },
+      },
+    } as unknown as Stripe.Event);
+
+    const first = await POST(makeRequest());
+    expect(first.status).toBe(200);
+
+    const [order1] = await db
+      .select({
+        paymentStatus: orders.paymentStatus,
+        shippingStatus: orders.shippingStatus,
+      })
+      .from(orders)
+      .where(eq(orders.id, inserted.orderId))
+      .limit(1);
+    expect(order1?.paymentStatus).toBe('failed');
+    expect(order1?.shippingStatus).toBe('cancelled');
+
+    const [shipment1] = await db
+      .select({ status: shippingShipments.status })
+      .from(shippingShipments)
+      .where(eq(shippingShipments.id, inserted.shipmentId!))
+      .limit(1);
+    expect(shipment1?.status).toBe('needs_attention');
+
+    const claimed = await claimQueuedShipmentsForProcessing({
+      runId: crypto.randomUUID(),
+      leaseSeconds: 120,
+      limit: 10,
+    });
+    expect(claimed).toHaveLength(0);
+
+    const second = await POST(makeRequest());
+    expect(second.status).toBe(200);
+
+    expect(restockOrderMock).toHaveBeenCalledTimes(1);
+  }, 30_000);
+
+  it('payment_intent.canceled closes queued shipment pipeline and is idempotent on replay', async () => {
+    inserted = await insertPendingOrderWithQueuedShipment();
+
+    const eventId = `evt_${crypto.randomUUID()}`;
+    const chargeId = `ch_${crypto.randomUUID()}`;
+
+    verifyWebhookSignatureMock.mockReturnValue({
+      id: eventId,
+      type: 'payment_intent.canceled',
+      data: {
+        object: {
+          id: inserted.paymentIntentId,
+          object: 'payment_intent',
+          status: 'canceled',
+          latest_charge: chargeId,
+          cancellation_reason: 'abandoned',
+          metadata: { orderId: inserted.orderId },
+        },
+      },
+    } as unknown as Stripe.Event);
+
+    const first = await POST(makeRequest());
+    expect(first.status).toBe(200);
+
+    const [order1] = await db
+      .select({
+        paymentStatus: orders.paymentStatus,
+        shippingStatus: orders.shippingStatus,
+      })
+      .from(orders)
+      .where(eq(orders.id, inserted.orderId))
+      .limit(1);
+    expect(order1?.paymentStatus).toBe('failed');
+    expect(order1?.shippingStatus).toBe('cancelled');
+
+    const [shipment1] = await db
+      .select({ status: shippingShipments.status })
+      .from(shippingShipments)
+      .where(eq(shippingShipments.id, inserted.shipmentId!))
+      .limit(1);
+    expect(shipment1?.status).toBe('needs_attention');
+
+    const claimed = await claimQueuedShipmentsForProcessing({
+      runId: crypto.randomUUID(),
+      leaseSeconds: 120,
+      limit: 10,
+    });
+    expect(claimed).toHaveLength(0);
+
+    const second = await POST(makeRequest());
+    expect(second.status).toBe(200);
+
+    expect(restockOrderMock).toHaveBeenCalledTimes(1);
   }, 30_000);
 
   it('full refund (charge.refund.updated) must use cumulative refunded (not refund.amount) when full consists of multiple partial refunds', async () => {
