@@ -6,6 +6,7 @@ import { MoneyValueError } from '@/db/queries/shop/orders';
 import { getCurrentUser } from '@/lib/auth';
 import { isMonobankEnabled } from '@/lib/env/monobank';
 import { readPositiveIntEnv } from '@/lib/env/readPositiveIntEnv';
+import { isPaymentsEnabled as isStripeRuntimeEnabled } from '@/lib/env/stripe';
 import { logError, logInfo, logWarn } from '@/lib/logging';
 import { MONO_MISMATCH, monoLogWarn } from '@/lib/logging/monobank';
 import { guardBrowserSameOrigin } from '@/lib/security/origin';
@@ -665,10 +666,32 @@ export async function POST(request: NextRequest) {
   const rawStripePaymentsEnabled = (
     process.env.STRIPE_PAYMENTS_ENABLED ?? ''
   ).trim();
-  const stripePaymentsEnabled =
+  const stripePaymentsEnabledByFlag =
     rawStripePaymentsEnabled.length > 0
       ? rawStripePaymentsEnabled === 'true'
       : paymentsEnabled;
+  const stripeRuntimeEnabled = isStripeRuntimeEnabled();
+  const stripeCheckoutAvailable =
+    stripePaymentsEnabledByFlag && stripeRuntimeEnabled;
+  const checkoutPaymentProvider: PaymentProvider =
+    selectedProvider === 'monobank'
+      ? 'monobank'
+      : stripeCheckoutAvailable
+        ? 'stripe'
+        : 'none';
+
+  if (requestedProvider === 'stripe' && !stripeCheckoutAvailable) {
+    logWarn('checkout_stripe_payments_disabled', {
+      ...baseMeta,
+      code: 'PAYMENTS_DISABLED',
+    });
+
+    return errorResponse(
+      'PSP_UNAVAILABLE',
+      'Payment provider unavailable.',
+      503
+    );
+  }
 
   if (selectedProvider === 'monobank') {
     let enabled = false;
@@ -881,7 +904,7 @@ export async function POST(request: NextRequest) {
       country: country ?? null,
       shipping: shipping ?? null,
       legalConsent: legalConsent ?? null,
-      paymentProvider: selectedProvider === 'monobank' ? 'monobank' : undefined,
+      paymentProvider: checkoutPaymentProvider,
       paymentMethod: selectedMethod,
     });
 
@@ -902,7 +925,7 @@ export async function POST(request: NextRequest) {
     const stripePaymentFlow = orderProvider === 'stripe';
     const monobankPaymentFlow = orderProvider === 'monobank';
 
-    if (stripePaymentFlow && !stripePaymentsEnabled) {
+    if (stripePaymentFlow && !stripeCheckoutAvailable) {
       logWarn('checkout_stripe_payments_disabled', {
         ...orderMeta,
         code: 'PAYMENTS_DISABLED',

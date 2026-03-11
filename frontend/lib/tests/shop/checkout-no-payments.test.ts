@@ -156,6 +156,9 @@ async function postCheckout(params: {
     selectedSize?: string;
     selectedColor?: string;
   }>;
+  paymentProvider?: 'stripe' | 'monobank';
+  paymentMethod?: string;
+  paymentCurrency?: 'USD' | 'UAH';
 }) {
   const mod = (await import('@/app/api/shop/checkout/route')) as unknown as {
     POST: (req: NextRequest) => Promise<Response>;
@@ -171,7 +174,16 @@ async function postCheckout(params: {
       origin: 'http://localhost:3000',
     },
 
-    body: JSON.stringify({ items: params.items }),
+    body: JSON.stringify({
+      items: params.items,
+      ...(params.paymentProvider
+        ? { paymentProvider: params.paymentProvider }
+        : {}),
+      ...(params.paymentMethod ? { paymentMethod: params.paymentMethod } : {}),
+      ...(params.paymentCurrency
+        ? { paymentCurrency: params.paymentCurrency }
+        : {}),
+    }),
   });
 
   return mod.POST(req);
@@ -250,6 +262,41 @@ async function bestEffortHardDeleteOrder(orderId: string) {
 }
 
 describe.sequential('Checkout (no payments) invariants', () => {
+  it('Explicit Stripe request fails closed when Stripe is unavailable', async () => {
+    const { productId } = await createIsolatedProductForCurrency({
+      currency: 'USD',
+      stock: 2,
+    });
+
+    try {
+      await db
+        .update(products)
+        .set({ isActive: true, updatedAt: new Date() } as any)
+        .where(eq(products.id, productId));
+
+      const idemKey = crypto.randomUUID();
+      const res = await postCheckout({
+        idemKey,
+        acceptLanguage: 'en',
+        paymentProvider: 'stripe',
+        items: [{ productId, quantity: 1 }],
+      });
+
+      expect(res.status).toBe(503);
+      const json: any = await res.json();
+      expect(json?.code).toBe('PSP_UNAVAILABLE');
+
+      const [row] = await db
+        .select({ id: orders.id })
+        .from(orders)
+        .where(eq(orders.idempotencyKey, idemKey))
+        .limit(1);
+      expect(row).toBeFalsy();
+    } finally {
+      await cleanupIsolatedProduct(productId);
+    }
+  }, 20_000);
+
   it('No-payments success path', async () => {
     const { productId } = await createIsolatedProductForCurrency({
       currency: 'USD',

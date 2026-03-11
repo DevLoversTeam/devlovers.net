@@ -175,7 +175,7 @@ describe('checkout monobank parse/validation', () => {
 
     expect(res.status).toBe(201);
     const args = createOrderWithItemsMock.mock.calls[0]?.[0];
-    expect(args?.paymentProvider).toBeUndefined();
+    expect(args?.paymentProvider).toBe('stripe');
     expect(args?.paymentMethod).toBe('stripe_card');
   });
 
