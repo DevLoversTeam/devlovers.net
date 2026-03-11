@@ -3,8 +3,7 @@ import { getTranslations } from 'next-intl/server';
 
 import { ClearCartOnMount } from '@/components/shop/ClearCartOnMount';
 import { Link } from '@/i18n/routing';
-import { OrderNotFoundError } from '@/lib/services/errors';
-import { getOrderSummary } from '@/lib/services/orders';
+import { getCheckoutPaymentPageOrderSummary } from '@/lib/services/orders';
 import { formatMoney } from '@/lib/shop/currency';
 import {
   SHOP_FOCUS,
@@ -89,16 +88,27 @@ export default async function MonobankGooglePayPage(props: PaymentPageProps) {
     );
   }
 
-  let order: Awaited<ReturnType<typeof getOrderSummary>> | null = null;
-  let loadState: 'ok' | 'not_found' | 'error' = 'ok';
+  const orderAccess = await getCheckoutPaymentPageOrderSummary({
+    orderId,
+    statusToken,
+  });
 
-  try {
-    order = await getOrderSummary(orderId);
-  } catch (error) {
-    loadState = error instanceof OrderNotFoundError ? 'not_found' : 'error';
-  }
+  if (!orderAccess.ok) {
+    if (orderAccess.code === 'STATUS_TOKEN_MISCONFIGURED') {
+      return (
+        <main className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
+          <section className="border-border bg-card rounded-lg border p-8 text-center">
+            <h1 className="text-foreground text-2xl font-bold">
+              {t('errors.unableToLoad')}
+            </h1>
+            <p className="text-muted-foreground mt-2 text-sm">
+              {t('errors.tryAgainLater')}
+            </p>
+          </section>
+        </main>
+      );
+    }
 
-  if (loadState === 'not_found') {
     return (
       <main className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
         <section className="border-border bg-card rounded-lg border p-8 text-center">
@@ -117,21 +127,7 @@ export default async function MonobankGooglePayPage(props: PaymentPageProps) {
       </main>
     );
   }
-
-  if (loadState === 'error' || !order) {
-    return (
-      <main className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
-        <section className="border-border bg-card rounded-lg border p-8 text-center">
-          <h1 className="text-foreground text-2xl font-bold">
-            {t('errors.unableToLoad')}
-          </h1>
-          <p className="text-muted-foreground mt-2 text-sm">
-            {t('errors.tryAgainLater')}
-          </p>
-        </section>
-      </main>
-    );
-  }
+  const order = orderAccess.order;
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">

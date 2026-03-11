@@ -5,8 +5,7 @@ import { ClearCartOnMount } from '@/components/shop/ClearCartOnMount';
 import { Link } from '@/i18n/routing';
 import { getStripeEnv } from '@/lib/env/stripe';
 import { logError } from '@/lib/logging';
-import { OrderNotFoundError } from '@/lib/services/errors';
-import { getOrderSummary } from '@/lib/services/orders';
+import { getCheckoutPaymentPageOrderSummary } from '@/lib/services/orders';
 import { ensureStripePaymentIntentForOrder } from '@/lib/services/orders/payment-attempts';
 import { formatMoney } from '@/lib/shop/currency';
 import {
@@ -197,40 +196,39 @@ export default async function PaymentPage(props: PaymentPageProps) {
     );
   }
 
-  let order: Awaited<ReturnType<typeof getOrderSummary>>;
+  const orderAccess = await getCheckoutPaymentPageOrderSummary({
+    orderId,
+    statusToken,
+  });
 
-  try {
-    order = await getOrderSummary(orderId);
-  } catch (error) {
-    if (error instanceof OrderNotFoundError) {
+  if (!orderAccess.ok) {
+    if (orderAccess.code === 'STATUS_TOKEN_MISCONFIGURED') {
       return (
         <PageShell
-          title={t('errors.orderNotFound')}
-          description={t('notFoundOrder.message')}
-        >
-          <nav
-            className="mt-6 flex justify-center gap-3"
-            aria-label="Next steps"
-          >
-            <Link href={`${shopBase}/cart`} className={SHOP_OUTLINE_BTN}>
-              {t('actions.goToCart')}
-            </Link>
-
-            <HeroCtaLink href={`${shopBase}/products`}>
-              {t('actions.continueShopping')}
-            </HeroCtaLink>
-          </nav>
-        </PageShell>
+          title={t('errors.unableToLoad')}
+          description={t('errors.tryAgainLater')}
+        />
       );
     }
 
     return (
       <PageShell
-        title={t('errors.unableToLoad')}
-        description={t('errors.tryAgainLater')}
-      />
+        title={t('errors.orderNotFound')}
+        description={t('notFoundOrder.message')}
+      >
+        <nav className="mt-6 flex justify-center gap-3" aria-label="Next steps">
+          <Link href={`${shopBase}/cart`} className={SHOP_OUTLINE_BTN}>
+            {t('actions.goToCart')}
+          </Link>
+
+          <HeroCtaLink href={`${shopBase}/products`}>
+            {t('actions.continueShopping')}
+          </HeroCtaLink>
+        </nav>
+      </PageShell>
     );
   }
+  const order = orderAccess.order;
 
   const stripeEnv = getStripeEnv();
   const paymentsEnabled =

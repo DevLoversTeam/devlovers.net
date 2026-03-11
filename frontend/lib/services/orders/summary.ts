@@ -165,29 +165,32 @@ export async function getOrderSummary(
   return getOrderById(id);
 }
 
-export type CheckoutSuccessOrderSummaryAccessResult =
+type CheckoutOrderSummaryAccessCode =
+  | 'ORDER_NOT_FOUND'
+  | 'UNAUTHORIZED'
+  | 'FORBIDDEN'
+  | 'STATUS_TOKEN_REQUIRED'
+  | 'STATUS_TOKEN_INVALID'
+  | 'STATUS_TOKEN_SCOPE_FORBIDDEN'
+  | 'STATUS_TOKEN_MISCONFIGURED';
+
+export type CheckoutOrderSummaryAccessResult =
   | { ok: true; order: OrderSummaryWithMinor }
   | {
       ok: false;
-      code:
-        | 'ORDER_NOT_FOUND'
-        | 'UNAUTHORIZED'
-        | 'FORBIDDEN'
-        | 'STATUS_TOKEN_REQUIRED'
-        | 'STATUS_TOKEN_INVALID'
-        | 'STATUS_TOKEN_SCOPE_FORBIDDEN'
-        | 'STATUS_TOKEN_MISCONFIGURED';
+      code: CheckoutOrderSummaryAccessCode;
       status: number;
     };
 
-export async function getCheckoutSuccessOrderSummary(args: {
+async function getCheckoutScopedOrderSummary(args: {
   orderId: string;
   statusToken: string | null;
-}): Promise<CheckoutSuccessOrderSummaryAccessResult> {
+  requiredScope: 'status_lite' | 'order_payment_init';
+}): Promise<CheckoutOrderSummaryAccessResult> {
   const access = await authorizeOrderMutationAccess({
     orderId: args.orderId,
     statusToken: args.statusToken,
-    requiredScope: 'status_lite',
+    requiredScope: args.requiredScope,
   });
 
   if (!access.authorized) {
@@ -208,6 +211,34 @@ export async function getCheckoutSuccessOrderSummary(args: {
     }
     throw error;
   }
+}
+
+export type CheckoutSuccessOrderSummaryAccessResult =
+  CheckoutOrderSummaryAccessResult;
+
+export async function getCheckoutSuccessOrderSummary(args: {
+  orderId: string;
+  statusToken: string | null;
+}): Promise<CheckoutSuccessOrderSummaryAccessResult> {
+  return getCheckoutScopedOrderSummary({
+    orderId: args.orderId,
+    statusToken: args.statusToken,
+    requiredScope: 'status_lite',
+  });
+}
+
+export type CheckoutPaymentPageOrderSummaryAccessResult =
+  CheckoutOrderSummaryAccessResult;
+
+export async function getCheckoutPaymentPageOrderSummary(args: {
+  orderId: string;
+  statusToken: string | null;
+}): Promise<CheckoutPaymentPageOrderSummaryAccessResult> {
+  return getCheckoutScopedOrderSummary({
+    orderId: args.orderId,
+    statusToken: args.statusToken,
+    requiredScope: 'order_payment_init',
+  });
 }
 
 export type OrderStatusLiteSummary = {
