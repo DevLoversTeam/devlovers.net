@@ -83,7 +83,7 @@ function buildStripeReturnUrl(params: {
   return new URL(`/${loc}${p}`, window.location.origin).toString();
 }
 
-function nextRouteForPaymentResult(params: {
+export function nextRouteForPaymentResult(params: {
   orderId: string;
   statusToken: string | null;
   status?: string | null;
@@ -99,7 +99,7 @@ function nextRouteForPaymentResult(params: {
   );
   const failure = buildInAppPath(`/checkout/error?orderId=${id}`);
 
-  if (!status) return success;
+  if (!status) return failure;
 
   if (
     status === 'succeeded' ||
@@ -113,7 +113,7 @@ function nextRouteForPaymentResult(params: {
     return failure;
   }
 
-  return success;
+  return failure;
 }
 
 const SHOP_HERO_CTA = cn(

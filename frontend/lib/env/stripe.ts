@@ -8,6 +8,11 @@ export type StripeEnv = {
   mode: 'test' | 'live';
 };
 
+type StripePaymentsEnabledOptions = {
+  requirePublishableKey?: boolean;
+  respectStripePaymentsFlag?: boolean;
+};
+
 function nonEmpty(v: string | undefined): string | null {
   if (!v) return null;
   const t = v.trim();
@@ -51,6 +56,31 @@ export function getStripeEnv(): StripeEnv {
   };
 }
 
-export function isPaymentsEnabled(): boolean {
-  return getStripeEnv().paymentsEnabled;
+function isFlagEnabled(value: string | undefined): boolean {
+  return (value ?? '').trim() === 'true';
+}
+
+function isStripeRailEnabledByFlags(): boolean {
+  const paymentsEnabled = isFlagEnabled(process.env.PAYMENTS_ENABLED);
+  if (!paymentsEnabled) return false;
+
+  const stripeFlag = (process.env.STRIPE_PAYMENTS_ENABLED ?? '').trim();
+  return stripeFlag.length > 0 ? stripeFlag === 'true' : true;
+}
+
+export function isPaymentsEnabled(
+  options: StripePaymentsEnabledOptions = {}
+): boolean {
+  const env = getStripeEnv();
+  if (!env.paymentsEnabled) return false;
+
+  if (options.respectStripePaymentsFlag && !isStripeRailEnabledByFlags()) {
+    return false;
+  }
+
+  if (options.requirePublishableKey && !env.publishableKey) {
+    return false;
+  }
+
+  return true;
 }

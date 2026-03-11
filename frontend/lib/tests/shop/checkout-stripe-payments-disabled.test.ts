@@ -55,12 +55,15 @@ const __prevPaymentsEnabled = process.env.PAYMENTS_ENABLED;
 const __prevStripePaymentsEnabled = process.env.STRIPE_PAYMENTS_ENABLED;
 const __prevStripeSecret = process.env.STRIPE_SECRET_KEY;
 const __prevStripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+const __prevStripePublishableKey =
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 const __prevStatusSecret = process.env.SHOP_STATUS_TOKEN_SECRET;
 const __prevAppOrigin = process.env.APP_ORIGIN;
 
 beforeAll(() => {
   process.env.RATE_LIMIT_DISABLED = '1';
   process.env.APP_ORIGIN = 'http://localhost:3000';
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = 'pk_test_default';
   process.env.SHOP_STATUS_TOKEN_SECRET =
     'test_status_token_secret_test_status_token_secret';
   resetEnvCache();
@@ -85,6 +88,11 @@ afterAll(() => {
     delete process.env.STRIPE_WEBHOOK_SECRET;
   else process.env.STRIPE_WEBHOOK_SECRET = __prevStripeWebhookSecret;
 
+  if (__prevStripePublishableKey === undefined)
+    delete process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+  else
+    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = __prevStripePublishableKey;
+
   if (__prevStatusSecret === undefined)
     delete process.env.SHOP_STATUS_TOKEN_SECRET;
   else process.env.SHOP_STATUS_TOKEN_SECRET = __prevStatusSecret;
@@ -97,6 +105,8 @@ afterAll(() => {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = 'pk_test_default';
+  resetEnvCache();
 });
 
 function setStripeEnv(args: {
@@ -104,6 +114,7 @@ function setStripeEnv(args: {
   stripePaymentsEnabled: string;
   stripeSecretKey?: string | null;
   stripeWebhookSecret?: string | null;
+  stripePublishableKey?: string | null;
 }) {
   process.env.PAYMENTS_ENABLED = args.paymentsEnabled;
   process.env.STRIPE_PAYMENTS_ENABLED = args.stripePaymentsEnabled;
@@ -114,6 +125,14 @@ function setStripeEnv(args: {
   if (args.stripeWebhookSecret == null)
     delete process.env.STRIPE_WEBHOOK_SECRET;
   else process.env.STRIPE_WEBHOOK_SECRET = args.stripeWebhookSecret;
+
+  if (Object.prototype.hasOwnProperty.call(args, 'stripePublishableKey')) {
+    if (args.stripePublishableKey == null)
+      delete process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+    else
+      process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY =
+        args.stripePublishableKey;
+  }
 
   resetEnvCache();
 }
@@ -249,6 +268,7 @@ describe.sequential('checkout stripe fail-closed + tamper guards', () => {
       stripePaymentsEnabled: 'true',
       stripeSecretKey: null,
       stripeWebhookSecret: null,
+      stripePublishableKey: 'pk_test_dummy',
     });
 
     const { productId } = await createIsolatedProductWithPrices();
@@ -280,6 +300,45 @@ describe.sequential('checkout stripe fail-closed + tamper guards', () => {
       createdOrderId = null;
     } finally {
       if (createdOrderId) await cleanupOrder(createdOrderId);
+      await cleanupProduct(productId);
+    }
+  }, 30_000);
+
+  it('explicit stripe request fails closed when stripe publishable key is missing', async () => {
+    setStripeEnv({
+      paymentsEnabled: 'true',
+      stripePaymentsEnabled: 'true',
+      stripeSecretKey: 'sk_test_dummy',
+      stripeWebhookSecret: 'whsec_test_dummy',
+      stripePublishableKey: null,
+    });
+
+    const { productId } = await createIsolatedProductWithPrices();
+    const idemKey = crypto.randomUUID();
+
+    try {
+      const res = await postCheckout({
+        idemKey,
+        acceptLanguage: 'en-US',
+        body: {
+          paymentProvider: 'stripe',
+          items: [{ productId, quantity: 1 }],
+        },
+      });
+
+      expect(res.status).toBe(503);
+      const json: any = await res.json();
+      expect(json.code).toBe('PSP_UNAVAILABLE');
+
+      const [row] = await db
+        .select({ id: orders.id })
+        .from(orders)
+        .where(eq(orders.idempotencyKey, idemKey))
+        .limit(1);
+
+      expect(row).toBeUndefined();
+      expect(ensureStripePaymentIntentForOrder).not.toHaveBeenCalled();
+    } finally {
       await cleanupProduct(productId);
     }
   }, 30_000);

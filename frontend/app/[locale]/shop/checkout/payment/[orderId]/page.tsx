@@ -3,7 +3,10 @@ import { getTranslations } from 'next-intl/server';
 
 import { ClearCartOnMount } from '@/components/shop/ClearCartOnMount';
 import { Link } from '@/i18n/routing';
-import { getStripeEnv } from '@/lib/env/stripe';
+import {
+  getStripeEnv,
+  isPaymentsEnabled as isStripePaymentsEnabled,
+} from '@/lib/env/stripe';
 import { logError } from '@/lib/logging';
 import { getCheckoutPaymentPageOrderSummary } from '@/lib/services/orders';
 import { ensureStripePaymentIntentForOrder } from '@/lib/services/orders/payment-attempts';
@@ -230,9 +233,11 @@ export default async function PaymentPage(props: PaymentPageProps) {
   }
   const order = orderAccess.order;
 
+  const paymentsEnabled = isStripePaymentsEnabled({
+    requirePublishableKey: true,
+    respectStripePaymentsFlag: true,
+  });
   const stripeEnv = getStripeEnv();
-  const paymentsEnabled =
-    stripeEnv.paymentsEnabled && Boolean(stripeEnv.publishableKey);
 
   let clientSecret = resolveClientSecret(searchParams);
   const publishableKey = paymentsEnabled ? stripeEnv.publishableKey : null;

@@ -2,6 +2,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const getCheckoutPaymentPageOrderSummaryMock = vi.hoisted(() => vi.fn());
 const ensureStripePaymentIntentForOrderMock = vi.hoisted(() => vi.fn());
+const isStripePaymentsEnabledMock = vi.hoisted(() =>
+  vi.fn((_args?: unknown) => true)
+);
 
 vi.mock('next-intl/server', () => ({
   getTranslations: vi.fn(async () => (key: string) => key),
@@ -18,6 +21,7 @@ vi.mock('@/lib/services/orders/payment-attempts', () => ({
 }));
 
 vi.mock('@/lib/env/stripe', () => ({
+  isPaymentsEnabled: (args?: unknown) => isStripePaymentsEnabledMock(args),
   getStripeEnv: vi.fn(() => ({
     paymentsEnabled: true,
     publishableKey: 'pk_test_123',
@@ -65,6 +69,7 @@ describe('checkout stripe payment page access gating', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.resetModules();
+    isStripePaymentsEnabledMock.mockReturnValue(true);
 
     ensureStripePaymentIntentForOrderMock.mockResolvedValue({
       paymentIntentId: 'pi_test_123',
@@ -81,7 +86,8 @@ describe('checkout stripe payment page access gating', () => {
       status: 401,
     });
 
-    const mod = await import('@/app/[locale]/shop/checkout/payment/[orderId]/page');
+    const mod =
+      await import('@/app/[locale]/shop/checkout/payment/[orderId]/page');
     await mod.default(makePageArgs());
 
     expect(getCheckoutPaymentPageOrderSummaryMock).toHaveBeenCalledWith({
@@ -97,7 +103,8 @@ describe('checkout stripe payment page access gating', () => {
       order: authorizedOrder(),
     });
 
-    const mod = await import('@/app/[locale]/shop/checkout/payment/[orderId]/page');
+    const mod =
+      await import('@/app/[locale]/shop/checkout/payment/[orderId]/page');
     await mod.default(makePageArgs({ statusToken: 'token_payment_init' }));
 
     expect(getCheckoutPaymentPageOrderSummaryMock).toHaveBeenCalledWith({
@@ -113,7 +120,8 @@ describe('checkout stripe payment page access gating', () => {
       order: authorizedOrder(),
     });
 
-    const mod = await import('@/app/[locale]/shop/checkout/payment/[orderId]/page');
+    const mod =
+      await import('@/app/[locale]/shop/checkout/payment/[orderId]/page');
     await mod.default(makePageArgs());
 
     expect(getCheckoutPaymentPageOrderSummaryMock).toHaveBeenCalledWith({
@@ -121,5 +129,23 @@ describe('checkout stripe payment page access gating', () => {
       statusToken: null,
     });
     expect(ensureStripePaymentIntentForOrderMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not initialize stripe when canonical capability is false', async () => {
+    isStripePaymentsEnabledMock.mockReturnValue(false);
+    getCheckoutPaymentPageOrderSummaryMock.mockResolvedValue({
+      ok: true,
+      order: authorizedOrder(),
+    });
+
+    const mod =
+      await import('@/app/[locale]/shop/checkout/payment/[orderId]/page');
+    await mod.default(makePageArgs());
+
+    expect(isStripePaymentsEnabledMock).toHaveBeenCalledWith({
+      requirePublishableKey: true,
+      respectStripePaymentsFlag: true,
+    });
+    expect(ensureStripePaymentIntentForOrderMock).not.toHaveBeenCalled();
   });
 });

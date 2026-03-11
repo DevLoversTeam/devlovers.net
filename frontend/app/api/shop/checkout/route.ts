@@ -6,7 +6,7 @@ import { MoneyValueError } from '@/db/queries/shop/orders';
 import { getCurrentUser } from '@/lib/auth';
 import { isMonobankEnabled } from '@/lib/env/monobank';
 import { readPositiveIntEnv } from '@/lib/env/readPositiveIntEnv';
-import { isPaymentsEnabled as isStripeRuntimeEnabled } from '@/lib/env/stripe';
+import { isPaymentsEnabled as isStripePaymentsEnabled } from '@/lib/env/stripe';
 import { logError, logInfo, logWarn } from '@/lib/logging';
 import { MONO_MISMATCH, monoLogWarn } from '@/lib/logging/monobank';
 import { guardBrowserSameOrigin } from '@/lib/security/origin';
@@ -706,16 +706,10 @@ export async function POST(request: NextRequest) {
   const paymentsEnabled =
     (process.env.PAYMENTS_ENABLED ?? '').trim() === 'true';
 
-  const rawStripePaymentsEnabled = (
-    process.env.STRIPE_PAYMENTS_ENABLED ?? ''
-  ).trim();
-  const stripePaymentsEnabledByFlag =
-    rawStripePaymentsEnabled.length > 0
-      ? rawStripePaymentsEnabled === 'true'
-      : paymentsEnabled;
-  const stripeRuntimeEnabled = isStripeRuntimeEnabled();
-  const stripeCheckoutAvailable =
-    stripePaymentsEnabledByFlag && stripeRuntimeEnabled;
+  const stripeCheckoutAvailable = isStripePaymentsEnabled({
+    requirePublishableKey: true,
+    respectStripePaymentsFlag: true,
+  });
   const checkoutPaymentProvider: PaymentProvider =
     selectedProvider === 'monobank'
       ? 'monobank'

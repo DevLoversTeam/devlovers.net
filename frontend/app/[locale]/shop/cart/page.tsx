@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
 import { isMonobankEnabled } from '@/lib/env/monobank';
+import { isPaymentsEnabled as isStripePaymentsEnabled } from '@/lib/env/stripe';
 
 import CartPageClient from './CartPageClient';
 
@@ -13,13 +14,15 @@ function isFlagEnabled(value: string | undefined): boolean {
   return (value ?? '').trim() === 'true';
 }
 
-function resolveStripeCheckoutEnabled(): boolean {
-  const paymentsEnabled = isFlagEnabled(process.env.PAYMENTS_ENABLED);
-  const stripeFlag = (process.env.STRIPE_PAYMENTS_ENABLED ?? '').trim();
-
-  return (
-    paymentsEnabled && (stripeFlag.length > 0 ? stripeFlag === 'true' : true)
-  );
+export function resolveStripeCheckoutEnabled(): boolean {
+  try {
+    return isStripePaymentsEnabled({
+      requirePublishableKey: true,
+      respectStripePaymentsFlag: true,
+    });
+  } catch {
+    return false;
+  }
 }
 
 function resolveMonobankCheckoutEnabled(): boolean {
@@ -34,7 +37,9 @@ function resolveMonobankCheckoutEnabled(): boolean {
 }
 
 function resolveMonobankGooglePayEnabled(): boolean {
-  const raw = (process.env.SHOP_MONOBANK_GPAY_ENABLED ?? '').trim().toLowerCase();
+  const raw = (process.env.SHOP_MONOBANK_GPAY_ENABLED ?? '')
+    .trim()
+    .toLowerCase();
   return raw === 'true' || raw === '1' || raw === 'yes' || raw === 'on';
 }
 
