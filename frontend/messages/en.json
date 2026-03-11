@@ -1121,6 +1121,7 @@
       "loginLink": "Log in",
       "errors": {
         "signupFailed": "Failed to sign up. Please try again.",
+        "emailAlreadyInUse": "An account with this email already exists. Try logging in.",
         "networkError": "Network error. Please check your connection and try again."
       },
       "verificationSent": "We've sent a verification email to",
@@ -1144,7 +1145,8 @@
       "submitting": "Updating...",
       "errors": {
         "resetFailed": "Failed to reset password. The link may be invalid or expired.",
-        "networkError": "Network error. Please try again."
+        "networkError": "Network error. Please try again.",
+        "serverError": "Something went wrong. Please try again later."
       },
       "success": "Your password has been updated successfully."
     },
@@ -1159,13 +1161,15 @@
       "show": "Show",
       "hide": "Hide",
       "validation": {
-        "emailRequired": "Email is required",
+        "required": "This field is required",
         "invalidName": "Name must be at least {NAME_MIN_LEN} characters and at most {NAME_MAX_LEN} characters",
         "emailTooShort": "Email must be at least {EMAIL_MIN_LEN} characters",
         "emailTooLong": "Email must not exceed {EMAIL_MAX_LEN} characters",
         "invalidEmail": "Please enter a valid email address",
         "passwordRequirements": "{PASSWORD_MIN_LEN}-{PASSWORD_MAX_BYTES} characters, at least one capital letter, and at least one special character",
         "invalidPassword": "Password must meet requirements: {passwordRequirementsText}",
+        "passwordTooShort": "Password must be at least {minLength} characters",
+        "passwordTooLongBytes": "Password must not exceed {PASSWORD_MAX_BYTES} bytes",
         "passwordsDontMatch": "Passwords don't match"
       }
     },
@@ -1203,7 +1207,10 @@
       "newPassword": "New password",
       "nameUpdateSuccess": "Name updated successfully",
       "passwordUpdateSuccess": "Password updated successfully",
-      "saving": "Saving..."
+      "saving": "Saving...",
+      "updateNameFailed": "Failed to update name. Please try again.",
+      "updatePasswordFailed": "Failed to update password. Please try again.",
+      "somethingWentWrong": "Something went wrong. Please try again."
     },
     "stats": {
       "title": "Quiz Statistics",

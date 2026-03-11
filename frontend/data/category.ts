@@ -29,4 +29,8 @@ export const categoryData = [
   createCategory('aws', 'AWS', 17),
   createCategory('azure', 'Azure', 18),
   createCategory('devops', 'DevOps', 19),
+  createCategory('swift', 'Swift', 20),
+  createCategory('flutter', 'Flutter', 21),
+  createCategory('kotlin', 'Kotlin', 22),
+  createCategory('reactnative', 'React Native', 23),
 ];

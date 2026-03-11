@@ -27,7 +27,7 @@ export function EmailField({
 
     if (input.validity.tooShort && minLength) {
       input.setCustomValidity(
-        `Email must be at least ${minLength} characters.`
+        t('validation.emailTooShort', { EMAIL_MIN_LEN: minLength })
       );
       return;
     }
@@ -38,7 +38,9 @@ export function EmailField({
     }
 
     if (input.validity.tooLong && maxLength) {
-      input.setCustomValidity(`Email must be at most ${maxLength} characters.`);
+      input.setCustomValidity(
+        t('validation.emailTooLong', { EMAIL_MAX_LEN: maxLength })
+      );
       return;
     }
   };

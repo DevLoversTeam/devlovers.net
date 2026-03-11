@@ -3,10 +3,10 @@
 import { motion } from 'framer-motion';
 import { ArrowUpRight } from 'lucide-react';
 import Image from 'next/image';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 
 import { type Topic, TOPICS } from '@/data/about';
+import { Link } from '@/i18n/routing';
 
 export function TopicsSection() {
   const t = useTranslations('about.topics');
@@ -28,7 +28,7 @@ export function TopicsSection() {
             </motion.div>
             <h2 className="text-4xl font-black tracking-tighter text-black md:text-5xl lg:text-6xl dark:text-white">
               {t('titleStart')} <br />
-              <span className="bg-gradient-to-r from-[#1e5eff] to-[#1e5eff]/70 bg-clip-text text-transparent dark:from-[#ff2d55] dark:to-[#ff2d55]/70">
+              <span className="bg-linear-to-r from-[#1e5eff] to-[#1e5eff]/70 bg-clip-text text-transparent dark:from-[#ff2d55] dark:to-[#ff2d55]/70">
                 {t('titleHighlight')}
               </span>
             </h2>
@@ -87,7 +87,7 @@ function TopicCard({ topic, index }: { topic: Topic; index: number }) {
           </div>
 
           <div
-            className={`absolute -right-6 -bottom-6 h-20 w-20 rounded-full opacity-0 blur-[40px] transition-opacity duration-500 group-hover:opacity-40 ${topic.glow} `}
+            className={`absolute -right-6 -bottom-6 h-20 w-20 rounded-full opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-40 ${topic.glow} `}
           />
         </div>
       </Link>

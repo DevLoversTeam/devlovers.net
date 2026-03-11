@@ -1,8 +1,8 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+import { useRouter } from '@/i18n/routing';
 import { CATEGORIES, COLORS, PRODUCT_TYPES, SIZES } from '@/lib/config/catalog';
 import { logError } from '@/lib/logging';
 import type { ProductAdminInput } from '@/lib/validation/shop';
