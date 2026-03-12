@@ -93,10 +93,9 @@ async function insertPaidOrder(args?: {
   return { orderId, paymentIntentId, shipmentId };
 }
 
-async function insertPendingOrderWithQueuedShipment(): Promise<Inserted> {
+async function insertPendingOrder(): Promise<Inserted> {
   const orderId = crypto.randomUUID();
   const paymentIntentId = `pi_test_${crypto.randomUUID()}`;
-  const shipmentId = crypto.randomUUID();
 
   const totalAmountMinor = 2500;
   const totalAmount = (totalAmountMinor / 100).toFixed(2);
@@ -117,24 +116,13 @@ async function insertPendingOrderWithQueuedShipment(): Promise<Inserted> {
     shippingProvider: 'nova_poshta',
     shippingMethodCode: 'NP_WAREHOUSE',
     shippingAmountMinor: null,
-    shippingStatus: 'queued',
+    shippingStatus: 'pending',
     idempotencyKey: `idem_${crypto.randomUUID()}`,
     stockRestored: false,
     pspMetadata: {},
   } as any);
 
-  await db.insert(shippingShipments).values({
-    id: shipmentId,
-    orderId,
-    provider: 'nova_poshta',
-    status: 'queued',
-    attemptCount: 0,
-    leaseOwner: null,
-    leaseExpiresAt: null,
-    nextAttemptAt: null,
-  } as any);
-
-  return { orderId, paymentIntentId, shipmentId };
+  return { orderId, paymentIntentId, shipmentId: null };
 }
 
 function makeRequest() {
@@ -368,8 +356,8 @@ describe('stripe webhook refund (full only): PI fallback + terminal status + ded
     expect(restockOrderMock).toHaveBeenCalledTimes(1);
   }, 30_000);
 
-  it('payment_intent.payment_failed closes queued shipment pipeline and is idempotent on replay', async () => {
-    inserted = await insertPendingOrderWithQueuedShipment();
+  it('payment_intent.payment_failed closes shipping pipeline and does not leave processable shipments on replay', async () => {
+    inserted = await insertPendingOrder();
 
     const eventId = `evt_${crypto.randomUUID()}`;
     const chargeId = `ch_${crypto.randomUUID()}`;
@@ -408,12 +396,11 @@ describe('stripe webhook refund (full only): PI fallback + terminal status + ded
     expect(order1?.paymentStatus).toBe('failed');
     expect(order1?.shippingStatus).toBe('cancelled');
 
-    const [shipment1] = await db
-      .select({ status: shippingShipments.status })
+    const shipmentRows = await db
+      .select({ id: shippingShipments.id })
       .from(shippingShipments)
-      .where(eq(shippingShipments.id, inserted.shipmentId!))
-      .limit(1);
-    expect(shipment1?.status).toBe('needs_attention');
+      .where(eq(shippingShipments.orderId, inserted.orderId));
+    expect(shipmentRows).toHaveLength(0);
 
     const claimed = await claimQueuedShipmentsForProcessing({
       runId: crypto.randomUUID(),
@@ -428,8 +415,8 @@ describe('stripe webhook refund (full only): PI fallback + terminal status + ded
     expect(restockOrderMock).toHaveBeenCalledTimes(1);
   }, 30_000);
 
-  it('payment_intent.canceled closes queued shipment pipeline and is idempotent on replay', async () => {
-    inserted = await insertPendingOrderWithQueuedShipment();
+  it('payment_intent.canceled closes shipping pipeline and does not leave processable shipments on replay', async () => {
+    inserted = await insertPendingOrder();
 
     const eventId = `evt_${crypto.randomUUID()}`;
     const chargeId = `ch_${crypto.randomUUID()}`;
@@ -463,12 +450,11 @@ describe('stripe webhook refund (full only): PI fallback + terminal status + ded
     expect(order1?.paymentStatus).toBe('failed');
     expect(order1?.shippingStatus).toBe('cancelled');
 
-    const [shipment1] = await db
-      .select({ status: shippingShipments.status })
+    const shipmentRows = await db
+      .select({ id: shippingShipments.id })
       .from(shippingShipments)
-      .where(eq(shippingShipments.id, inserted.shipmentId!))
-      .limit(1);
-    expect(shipment1?.status).toBe('needs_attention');
+      .where(eq(shippingShipments.orderId, inserted.orderId));
+    expect(shipmentRows).toHaveLength(0);
 
     const claimed = await claimQueuedShipmentsForProcessing({
       runId: crypto.randomUUID(),
@@ -798,63 +784,65 @@ describe('stripe webhook refund (full only): PI fallback + terminal status + ded
 
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-    const res = await POST(makeRequest());
-    expect(res.status).toBe(500);
+    try {
+      const res = await POST(makeRequest());
+      expect(res.status).toBe(500);
 
-    const body = await res.json();
-    expect(body).toEqual({ code: 'REFUND_FULLNESS_UNDETERMINED' });
+      const body = await res.json();
+      expect(body).toEqual({ code: 'REFUND_FULLNESS_UNDETERMINED' });
 
-    const [evt] = await db
-      .select({
-        processedAt: stripeEvents.processedAt,
-        eventId: stripeEvents.eventId,
-        paymentIntentId: stripeEvents.paymentIntentId,
-      })
-      .from(stripeEvents)
-      .where(eq(stripeEvents.eventId, eventId))
-      .limit(1);
+      const [evt] = await db
+        .select({
+          processedAt: stripeEvents.processedAt,
+          eventId: stripeEvents.eventId,
+          paymentIntentId: stripeEvents.paymentIntentId,
+        })
+        .from(stripeEvents)
+        .where(eq(stripeEvents.eventId, eventId))
+        .limit(1);
 
-    expect(evt).toBeTruthy();
-    expect(evt.processedAt).toBeNull();
-    expect(evt.paymentIntentId).toBe(inserted.paymentIntentId);
+      expect(evt).toBeTruthy();
+      expect(evt.processedAt).toBeNull();
+      expect(evt.paymentIntentId).toBe(inserted.paymentIntentId);
 
-    const [row] = await db
-      .select({
-        paymentStatus: orders.paymentStatus,
-        status: orders.status,
-        stockRestored: orders.stockRestored,
-        inventoryStatus: orders.inventoryStatus,
-      })
-      .from(orders)
-      .where(eq(orders.id, inserted.orderId))
-      .limit(1);
+      const [row] = await db
+        .select({
+          paymentStatus: orders.paymentStatus,
+          status: orders.status,
+          stockRestored: orders.stockRestored,
+          inventoryStatus: orders.inventoryStatus,
+        })
+        .from(orders)
+        .where(eq(orders.id, inserted.orderId))
+        .limit(1);
 
-    expect(row.paymentStatus).toBe('paid');
-    expect(row.status).toBe('PAID');
-    expect(row.stockRestored).toBe(false);
-    expect(row.inventoryStatus).toBe('reserved');
+      expect(row.paymentStatus).toBe('paid');
+      expect(row.status).toBe('PAID');
+      expect(row.stockRestored).toBe(false);
+      expect(row.inventoryStatus).toBe('reserved');
 
-    expect(restockOrderMock).toHaveBeenCalledTimes(0);
+      expect(restockOrderMock).toHaveBeenCalledTimes(0);
 
-    expect(warnSpy).toHaveBeenCalled();
+      expect(warnSpy).toHaveBeenCalled();
 
-    const firstArg = warnSpy.mock.calls[0]?.[0];
-    expect(typeof firstArg).toBe('string');
+      const firstArg = warnSpy.mock.calls[0]?.[0];
+      expect(typeof firstArg).toBe('string');
 
-    const line = firstArg as string;
-    const parsed = JSON.parse(line) as {
-      level?: string;
-      msg?: string;
-      meta?: Record<string, unknown>;
-    };
+      const line = firstArg as string;
+      const parsed = JSON.parse(line) as {
+        level?: string;
+        msg?: string;
+        meta?: Record<string, unknown>;
+      };
 
-    expect(parsed.level).toBe('warn');
-    expect(parsed.msg).toBe('stripe_webhook_refund_fullness_undetermined');
+      expect(parsed.level).toBe('warn');
+      expect(parsed.msg).toBe('stripe_webhook_refund_fullness_undetermined');
 
-    expect(parsed.meta?.reason).toBe(
-      'missing_amount_refunded_and_empty_refunds_list'
-    );
-
-    warnSpy.mockRestore();
+      expect(parsed.meta?.reason).toBe(
+        'missing_amount_refunded_and_empty_refunds_list'
+      );
+    } finally {
+      warnSpy.mockRestore();
+    }
   }, 30_000);
 });

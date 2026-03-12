@@ -431,11 +431,12 @@ describe.sequential('monobank google pay submit route', () => {
 
     try {
       const requestKey = 'mono_submit_replay_key_0001';
+      const replayToken = `token_${crypto.randomUUID()}`;
       const req = () =>
         makeSubmitRequest({
           orderId,
           idempotencyKey: requestKey,
-          body: JSON.stringify({ gToken: `token_${crypto.randomUUID()}` }),
+          body: JSON.stringify({ gToken: replayToken }),
         });
 
       const first = await postRoute(req(), {

@@ -573,7 +573,6 @@ describe.sequential('monobank webhook apply (persist-first)', () => {
       invoiceId,
       amountMinor: 1000,
       withShippingNp: true,
-      seedQueuedShipment: true,
       inventoryStatus: 'reserved',
     });
 
@@ -625,9 +624,9 @@ describe.sequential('monobank webhook apply (persist-first)', () => {
         .from(shippingShipments)
         .where(eq(shippingShipments.orderId, orderId));
       expect(queuedRows.length).toBeGreaterThan(0);
-      expect(
-        queuedRows.every(row => row.status === 'needs_attention')
-      ).toBe(true);
+      expect(queuedRows.every(row => row.status === 'needs_attention')).toBe(
+        true
+      );
 
       const claimed = await claimQueuedShipmentsForProcessing({
         runId: crypto.randomUUID(),
@@ -658,13 +657,12 @@ describe.sequential('monobank webhook apply (persist-first)', () => {
     }
   });
 
-  it('failure closes queued shipment pipeline and is idempotent on rerun', async () => {
+  it('failure on non-paid order does not leave processable shipping pipeline and is idempotent on rerun', async () => {
     const invoiceId = `inv_${crypto.randomUUID()}`;
     const { orderId } = await insertOrderAndAttempt({
       invoiceId,
       amountMinor: 1000,
       withShippingNp: true,
-      seedQueuedShipment: true,
       inventoryStatus: 'reserved',
     });
 
@@ -695,16 +693,13 @@ describe.sequential('monobank webhook apply (persist-first)', () => {
       expect(orderAfterFailure?.paymentStatus).toBe('failed');
       expect(orderAfterFailure?.shippingStatus).toBe('cancelled');
 
-      const queuedRows = await db
+      const shipmentRows = await db
         .select({
           status: shippingShipments.status,
         })
         .from(shippingShipments)
         .where(eq(shippingShipments.orderId, orderId));
-      expect(queuedRows.length).toBeGreaterThan(0);
-      expect(
-        queuedRows.every(row => row.status === 'needs_attention')
-      ).toBe(true);
+      expect(shipmentRows).toHaveLength(0);
 
       const claimed = await claimQueuedShipmentsForProcessing({
         runId: crypto.randomUUID(),
@@ -727,9 +722,7 @@ describe.sequential('monobank webhook apply (persist-first)', () => {
         })
         .from(shippingShipments)
         .where(eq(shippingShipments.orderId, orderId));
-      expect(
-        afterRerunRows.every(row => row.status === 'needs_attention')
-      ).toBe(true);
+      expect(afterRerunRows).toHaveLength(0);
     } finally {
       await cleanup(orderId, invoiceId);
     }

@@ -218,6 +218,13 @@
       "when": 1772764398365,
       "tag": "0030_shop_np_warehouses_city_ref_fk_backfill",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1773354614701,
+      "tag": "0031_lean_nebula",
+      "breakpoints": true
     }
   ]
 }
