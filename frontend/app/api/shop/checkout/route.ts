@@ -1076,7 +1076,7 @@ export async function POST(request: NextRequest) {
           );
         }
       }
-      if (monobankPaymentFlow) {
+      if (monobankPaymentFlow && selectedMethod === 'monobank_invoice') {
         return runMonobankCheckoutFlow({
           order: {
             id: order.id,
@@ -1091,6 +1091,23 @@ export async function POST(request: NextRequest) {
           requestId,
           totalCents: result.totalCents,
           orderMeta,
+        });
+      }
+
+      if (monobankPaymentFlow) {
+        return buildCheckoutResponse({
+          order: {
+            id: order.id,
+            currency: order.currency,
+            totalAmount: order.totalAmount,
+            paymentStatus: order.paymentStatus,
+            paymentProvider: order.paymentProvider,
+            paymentIntentId: order.paymentIntentId ?? null,
+          },
+          itemCount,
+          clientSecret: null,
+          statusToken,
+          status: 200,
         });
       }
 
@@ -1110,7 +1127,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    if (monobankPaymentFlow) {
+    if (monobankPaymentFlow && selectedMethod === 'monobank_invoice') {
       return runMonobankCheckoutFlow({
         order: {
           id: order.id,
@@ -1125,6 +1142,23 @@ export async function POST(request: NextRequest) {
         requestId,
         totalCents: result.totalCents,
         orderMeta,
+      });
+    }
+
+    if (monobankPaymentFlow) {
+      return buildCheckoutResponse({
+        order: {
+          id: order.id,
+          currency: order.currency,
+          totalAmount: order.totalAmount,
+          paymentStatus: order.paymentStatus,
+          paymentProvider: order.paymentProvider,
+          paymentIntentId: order.paymentIntentId ?? null,
+        },
+        itemCount,
+        clientSecret: null,
+        statusToken,
+        status: 201,
       });
     }
 

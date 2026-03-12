@@ -275,6 +275,90 @@ describe('checkout monobank parse/validation', () => {
     });
   });
 
+  it('does not pre-create invoice attempt for monobank_google_pay checkout', async () => {
+    process.env.SHOP_MONOBANK_GPAY_ENABLED = 'true';
+    const createOrderWithItemsMock =
+      createOrderWithItems as unknown as MockedFn;
+    const orderId = '11111111-1111-4111-8111-111111111121';
+
+    createOrderWithItemsMock.mockResolvedValueOnce({
+      order: {
+        id: orderId,
+        currency: 'UAH',
+        totalAmount: 10,
+        paymentStatus: 'pending',
+        paymentProvider: 'monobank',
+        paymentIntentId: null,
+      },
+      isNew: true,
+      totalCents: 1000,
+    });
+
+    const res = await POST(
+      makeMonobankCheckoutReq({
+        idempotencyKey: 'mono_gpay_no_precreate_0001',
+        body: {
+          paymentProvider: 'monobank',
+          paymentMethod: 'monobank_google_pay',
+          items: [
+            { productId: '11111111-1111-4111-8111-111111111111', quantity: 1 },
+          ],
+        },
+      })
+    );
+
+    expect(res.status).toBe(201);
+    const json: any = await res.json();
+    expect(json.orderId).toBe(orderId);
+    expect(json.paymentProvider).toBe('monobank');
+    expect(json.paymentStatus).toBe('pending');
+    expect(typeof json.statusToken).toBe('string');
+    expect(json.attemptId).toBeUndefined();
+    expect(json.pageUrl).toBeUndefined();
+    expect(createMonobankAttemptAndInvoiceMock).not.toHaveBeenCalled();
+  });
+
+  it('keeps monobank_invoice checkout attempt creation behavior', async () => {
+    const createOrderWithItemsMock =
+      createOrderWithItems as unknown as MockedFn;
+    const orderId = '11111111-1111-4111-8111-111111111122';
+
+    createOrderWithItemsMock.mockResolvedValueOnce({
+      order: {
+        id: orderId,
+        currency: 'UAH',
+        totalAmount: 10,
+        paymentStatus: 'pending',
+        paymentProvider: 'monobank',
+        paymentIntentId: null,
+      },
+      isNew: true,
+      totalCents: 1000,
+    });
+
+    const res = await POST(
+      makeMonobankCheckoutReq({
+        idempotencyKey: 'mono_invoice_checkout_0001',
+        body: {
+          paymentProvider: 'monobank',
+          paymentMethod: 'monobank_invoice',
+          items: [
+            { productId: '11111111-1111-4111-8111-111111111111', quantity: 1 },
+          ],
+        },
+      })
+    );
+
+    expect(res.status).toBe(201);
+    const json: any = await res.json();
+    expect(json.orderId).toBe(orderId);
+    expect(json.paymentProvider).toBe('monobank');
+    expect(json.paymentStatus).toBe('pending');
+    expect(json.attemptId).toBe('attempt_mono_scope_1');
+    expect(json.pageUrl).toBe('https://pay.example.test/invoice_mono_scope_1');
+    expect(createMonobankAttemptAndInvoiceMock).toHaveBeenCalledTimes(1);
+  });
+
   it('issues payment-init capable token for guest monobank checkout flow', async () => {
     process.env.SHOP_MONOBANK_GPAY_ENABLED = 'true';
     const createOrderWithItemsMock =

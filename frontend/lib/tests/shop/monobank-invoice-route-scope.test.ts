@@ -57,7 +57,10 @@ beforeEach(() => {
   });
 });
 
-async function insertOrder(orderId: string) {
+async function insertOrder(
+  orderId: string,
+  paymentMethod: 'monobank_invoice' | 'monobank_google_pay' = 'monobank_invoice'
+) {
   const values: InferInsertModel<typeof orders> = {
     id: orderId,
     totalAmountMinor: 4321,
@@ -68,10 +71,10 @@ async function insertOrder(orderId: string) {
     status: 'INVENTORY_RESERVED',
     inventoryStatus: 'reserved',
     idempotencyKey: `idem_${crypto.randomUUID()}`,
-    pspPaymentMethod: 'monobank_invoice',
+    pspPaymentMethod: paymentMethod,
     pspMetadata: {
       checkout: {
-        requestedMethod: 'monobank_invoice',
+        requestedMethod: paymentMethod,
       },
     },
   };
@@ -135,6 +138,27 @@ describe.sequential('monobank invoice route scope policy', () => {
       const allowedJson: any = await allowed.json();
       expect(allowedJson.success).toBe(true);
       expect(allowedJson.orderId).toBe(orderId);
+      expect(createMonobankAttemptAndInvoiceMock).toHaveBeenCalledTimes(1);
+    } finally {
+      await cleanupOrder(orderId);
+    }
+  });
+
+  it('allows invoice fallback for wallet-intended monobank_google_pay orders', async () => {
+    const orderId = crypto.randomUUID();
+    await insertOrder(orderId, 'monobank_google_pay');
+
+    try {
+      const res = await postRoute(makeRequest(orderId), {
+        params: Promise.resolve({ id: orderId }),
+      });
+
+      expect(res.status).toBe(200);
+      const json: any = await res.json();
+      expect(json.success).toBe(true);
+      expect(json.orderId).toBe(orderId);
+      expect(json.status).toBe('pending');
+      expect(json.pageUrl).toBe('https://pay.example.test/invoice_scope_1');
       expect(createMonobankAttemptAndInvoiceMock).toHaveBeenCalledTimes(1);
     } finally {
       await cleanupOrder(orderId);

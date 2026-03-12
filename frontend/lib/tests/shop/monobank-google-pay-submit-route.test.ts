@@ -292,6 +292,48 @@ describe.sequential('monobank google pay submit route', () => {
     }
   });
 
+  it('submits wallet payment for a fresh monobank_google_pay order without conflict', async () => {
+    const orderId = crypto.randomUUID();
+    await insertOrder({
+      id: orderId,
+      paymentProvider: 'monobank',
+      paymentMethod: 'monobank_google_pay',
+      paymentStatus: 'pending',
+      currency: 'UAH',
+    });
+
+    walletPaymentMock.mockResolvedValueOnce({
+      invoiceId: 'inv_fresh_submit_1',
+      status: 'created',
+      redirectUrl: null,
+      modifiedDate: null,
+      raw: {},
+    });
+
+    try {
+      const res = await postRoute(
+        makeSubmitRequest({
+          orderId,
+          idempotencyKey: 'mono_submit_fresh_order_0001',
+          body: JSON.stringify({ gToken: 'token-fresh-order' }),
+        }),
+        { params: Promise.resolve({ id: orderId }) }
+      );
+
+      expect(res.status).toBe(200);
+      const json: any = await res.json();
+      expect(json.success).toBe(true);
+      expect(json.status).toBe('pending');
+      expect(json.submitOutcome).toBe('submitted');
+      expect(json.reused).toBe(false);
+      expect(json.attemptId).toBeTruthy();
+      expect(json.code).toBeUndefined();
+      expect(walletPaymentMock).toHaveBeenCalledTimes(1);
+    } finally {
+      await cleanupOrder(orderId);
+    }
+  });
+
   it('formats token via parse/stringify fallback and never persists raw token', async () => {
     const orderJsonToken = crypto.randomUUID();
     const orderRawToken = crypto.randomUUID();
