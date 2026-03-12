@@ -14,6 +14,7 @@ import {
 
 import { db } from '@/db';
 import { orders, paymentAttempts } from '@/db/schema';
+import { applyMonoWebhookEvent } from '@/lib/services/orders/monobank-webhook';
 import { toDbMoney } from '@/lib/shop/money';
 
 const authorizeOrderMutationAccessMock = vi.hoisted(() =>
@@ -642,6 +643,102 @@ describe.sequential('monobank google pay submit route', () => {
       expect(json.submitOutcome).toBe('unknown');
       expect(json.status).toBe('pending');
       expect(walletPaymentMock).toHaveBeenCalledTimes(1);
+    } finally {
+      await cleanupOrder(orderId);
+    }
+  });
+
+  it('unknown submit with persisted invoice hint is reconciled by webhook and remains idempotent', async () => {
+    const orderId = crypto.randomUUID();
+    const hintedInvoiceId = `inv_unknown_hint_${crypto.randomUUID()}`;
+    await insertOrder({ id: orderId });
+
+    walletPaymentMock.mockRejectedValueOnce(
+      new PspErrorCtor('PSP_UPSTREAM', 'temporary_upstream_error', {
+        httpStatus: 502,
+        invoiceId: hintedInvoiceId,
+      })
+    );
+
+    try {
+      const submit = await postRoute(
+        makeSubmitRequest({
+          orderId,
+          idempotencyKey: 'mono_submit_unknown_hint_0001',
+          body: JSON.stringify({ gToken: 'token-unknown-hint' }),
+        }),
+        { params: Promise.resolve({ id: orderId }) }
+      );
+
+      expect(submit.status).toBe(202);
+      const submitJson: any = await submit.json();
+      expect(submitJson.submitOutcome).toBe('unknown');
+      expect(submitJson.status).toBe('pending');
+
+      const [attempt] = await db
+        .select({
+          id: paymentAttempts.id,
+          status: paymentAttempts.status,
+          providerPaymentIntentId: paymentAttempts.providerPaymentIntentId,
+          metadata: paymentAttempts.metadata,
+        })
+        .from(paymentAttempts)
+        .where(
+          and(
+            eq(paymentAttempts.orderId, orderId),
+            eq(paymentAttempts.provider, 'monobank')
+          )
+        )
+        .limit(1);
+
+      expect(attempt?.status).toBe('active');
+      expect(attempt?.providerPaymentIntentId).toBeNull();
+      const walletMeta = (attempt?.metadata as any)?.monobank?.wallet;
+      expect(walletMeta?.submitOutcome).toBe('unknown');
+      expect(walletMeta?.invoiceId).toBe(hintedInvoiceId);
+      if (!attempt) throw new Error('Expected wallet attempt to exist');
+
+      const rawBody = JSON.stringify({
+        invoiceId: hintedInvoiceId,
+        status: 'success',
+        amount: 4321,
+        ccy: 980,
+      });
+
+      const firstApply = await applyMonoWebhookEvent({
+        rawBody,
+        rawSha256: 'c'.repeat(64),
+        requestId: 'req_unknown_hint_apply_1',
+        mode: 'apply',
+      });
+      expect(firstApply.appliedResult).toBe('applied');
+      expect(firstApply.deduped).toBe(false);
+
+      const secondApply = await applyMonoWebhookEvent({
+        rawBody,
+        rawSha256: 'c'.repeat(64),
+        requestId: 'req_unknown_hint_apply_2',
+        mode: 'apply',
+      });
+      expect(secondApply.deduped).toBe(true);
+
+      const [order] = await db
+        .select({
+          paymentStatus: orders.paymentStatus,
+        })
+        .from(orders)
+        .where(eq(orders.id, orderId))
+        .limit(1);
+      expect(order?.paymentStatus).toBe('paid');
+
+      const [afterAttempt] = await db
+        .select({
+          status: paymentAttempts.status,
+        })
+        .from(paymentAttempts)
+        .where(eq(paymentAttempts.id, attempt.id))
+        .limit(1);
+      expect(afterAttempt?.status).toBe('succeeded');
     } finally {
       await cleanupOrder(orderId);
     }

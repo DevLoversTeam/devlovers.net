@@ -16,7 +16,10 @@ import {
 import { restockOrder } from '@/lib/services/orders/restock';
 
 const ACTIVE_MONOBANK_ATTEMPT_STATUSES = ['creating', 'active'] as const;
-const STALE_CREATING_MONOBANK_ATTEMPT_STATUSES = ['creating'] as const;
+const STALE_JOB2_MONOBANK_ATTEMPT_STATUSES = [
+  'creating',
+  'active(unknown_wallet_submit)',
+] as const;
 const DEFAULT_JOB1_GRACE_SECONDS = 900;
 const DEFAULT_JOB2_TTL_SECONDS = 120;
 const DEFAULT_JANITOR_LEASE_SECONDS = 120;
@@ -31,6 +34,13 @@ const JOB2_ORDER_FAILURE_MESSAGE = 'Monobank invoice create failed.';
 const JOB2_ATTEMPT_ERROR_CODE = 'invoice_missing';
 const JOB2_ATTEMPT_ERROR_MESSAGE =
   'Active attempt missing invoice details (stale).';
+const UNKNOWN_WALLET_SUBMIT_OUTCOME_SQL = sql`lower(
+  coalesce(
+    pa.metadata -> 'monobank' -> 'wallet' ->> 'submitOutcome',
+    pa.metadata -> 'wallet' ->> 'submitOutcome',
+    ''
+  )
+) = 'unknown'`;
 
 const JOB3_MODE_MISMATCH_CODE = 'MONO_WEBHOOK_MODE_NOT_STORE';
 const DEFAULT_JOB4_NEEDS_REVIEW_AGE_HOURS = 24;
@@ -173,12 +183,20 @@ async function readDryRunCandidates(args: {
     select
       pa.id,
       pa.order_id,
-      pa.provider_payment_intent_id,
+      coalesce(
+        nullif(pa.provider_payment_intent_id, ''),
+        nullif(pa.metadata -> 'monobank' -> 'wallet' ->> 'invoiceId', ''),
+        nullif(pa.metadata -> 'wallet' ->> 'invoiceId', '')
+      ) as provider_payment_intent_id,
       pa.status
     from payment_attempts pa
     where pa.provider = 'monobank'
       and pa.status in ('creating', 'active')
-      and pa.provider_payment_intent_id is not null
+      and coalesce(
+        nullif(pa.provider_payment_intent_id, ''),
+        nullif(pa.metadata -> 'monobank' -> 'wallet' ->> 'invoiceId', ''),
+        nullif(pa.metadata -> 'wallet' ->> 'invoiceId', '')
+      ) is not null
       and pa.updated_at < now() - make_interval(secs => ${args.graceSeconds})
       and (pa.janitor_claimed_until is null or pa.janitor_claimed_until < now())
     order by pa.updated_at asc
@@ -200,7 +218,11 @@ async function claimJob1Attempts(args: {
       from payment_attempts pa
       where pa.provider = 'monobank'
         and pa.status in ('creating', 'active')
-        and pa.provider_payment_intent_id is not null
+        and coalesce(
+          nullif(pa.provider_payment_intent_id, ''),
+          nullif(pa.metadata -> 'monobank' -> 'wallet' ->> 'invoiceId', ''),
+          nullif(pa.metadata -> 'wallet' ->> 'invoiceId', '')
+        ) is not null
         and pa.updated_at < now() - make_interval(secs => ${args.graceSeconds})
         and (pa.janitor_claimed_until is null or pa.janitor_claimed_until < now())
       order by pa.updated_at asc
@@ -217,7 +239,11 @@ async function claimJob1Attempts(args: {
       returning
         pa.id,
         pa.order_id,
-        pa.provider_payment_intent_id,
+        coalesce(
+          nullif(pa.provider_payment_intent_id, ''),
+          nullif(pa.metadata -> 'monobank' -> 'wallet' ->> 'invoiceId', ''),
+          nullif(pa.metadata -> 'wallet' ->> 'invoiceId', '')
+        ) as provider_payment_intent_id,
         pa.status
     )
     select * from claimed
@@ -434,8 +460,12 @@ async function readDryRunJob2Candidates(args: {
       pa.order_id
     from payment_attempts pa
     where pa.provider = 'monobank'
-      and pa.status = 'creating'
+      and pa.status in ('creating', 'active')
       and pa.provider_payment_intent_id is null
+      and (
+        pa.status = 'creating'
+        or ${UNKNOWN_WALLET_SUBMIT_OUTCOME_SQL}
+      )
       and pa.created_at < now() - make_interval(secs => ${args.ttlSeconds})
       and (pa.janitor_claimed_until is null or pa.janitor_claimed_until < now())
       and exists (
@@ -464,8 +494,12 @@ async function claimJob2Attempts(args: {
       select pa.id
       from payment_attempts pa
       where pa.provider = 'monobank'
-        and pa.status = 'creating'
+        and pa.status in ('creating', 'active')
         and pa.provider_payment_intent_id is null
+        and (
+          pa.status = 'creating'
+          or ${UNKNOWN_WALLET_SUBMIT_OUTCOME_SQL}
+        )
         and pa.created_at < now() - make_interval(secs => ${args.ttlSeconds})
         and (pa.janitor_claimed_until is null or pa.janitor_claimed_until < now())
         and exists (
@@ -517,8 +551,12 @@ async function atomicCancelOrderAndFailCreatingAttempt(args: {
       where pa.id = ${args.attemptId}::uuid
         and pa.order_id = o.id
         and pa.provider = 'monobank'
-        and pa.status = 'creating'
+        and pa.status in ('creating', 'active')
         and pa.provider_payment_intent_id is null
+        and (
+          pa.status = 'creating'
+          or ${UNKNOWN_WALLET_SUBMIT_OUTCOME_SQL}
+        )
         and pa.created_at < now() - make_interval(secs => ${args.ttlSeconds})
         and pa.janitor_claimed_by = ${args.runId}
         and o.payment_provider = 'monobank'
@@ -534,9 +572,13 @@ async function atomicCancelOrderAndFailCreatingAttempt(args: {
           last_error_code = ${JOB2_ATTEMPT_ERROR_CODE},
           last_error_message = ${JOB2_ATTEMPT_ERROR_MESSAGE}
       where pa.id = ${args.attemptId}::uuid
-        and pa.status = 'creating'
+        and pa.status in ('creating', 'active')
         and pa.provider = 'monobank'
         and pa.provider_payment_intent_id is null
+        and (
+          pa.status = 'creating'
+          or ${UNKNOWN_WALLET_SUBMIT_OUTCOME_SQL}
+        )
         and pa.janitor_claimed_by = ${args.runId}
         and exists (select 1 from updated_order)
       returning pa.id
@@ -737,7 +779,7 @@ export async function runMonobankJanitorJob2(
       limit: args.limit,
       ttlSeconds,
       leaseSeconds,
-      targetStatuses: STALE_CREATING_MONOBANK_ATTEMPT_STATUSES,
+      targetStatuses: STALE_JOB2_MONOBANK_ATTEMPT_STATUSES,
       candidates: candidates.length,
     });
 
@@ -830,9 +872,9 @@ export async function runMonobankJanitorJob2(
     limit: args.limit,
     ttlSeconds,
     leaseSeconds,
-    targetStatuses: STALE_CREATING_MONOBANK_ATTEMPT_STATUSES,
-    claimed: claimed.length,
-    processed,
+      targetStatuses: STALE_JOB2_MONOBANK_ATTEMPT_STATUSES,
+      claimed: claimed.length,
+      processed,
     applied,
     noop,
     failed,

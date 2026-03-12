@@ -23,6 +23,8 @@ async function insertOrderAndAttempt(args: {
   createdAt: Date;
   paymentStatus?: 'pending' | 'requires_payment' | 'paid';
   orderStatus?: 'INVENTORY_RESERVED' | 'PAID' | 'CREATED';
+  attemptStatus?: 'creating' | 'active';
+  attemptMetadata?: Record<string, unknown>;
 }) {
   const orderId = crypto.randomUUID();
   const attemptId = crypto.randomUUID();
@@ -45,12 +47,13 @@ async function insertOrderAndAttempt(args: {
     id: attemptId,
     orderId,
     provider: 'monobank',
-    status: 'creating',
+    status: args.attemptStatus ?? 'creating',
     attemptNumber: 1,
     currency: 'UAH',
     expectedAmountMinor: 1000,
     idempotencyKey: buildMonobankAttemptIdempotencyKey(orderId, 1),
     providerPaymentIntentId: null,
+    metadata: args.attemptMetadata ?? {},
     createdAt: args.createdAt,
     updatedAt: args.createdAt,
   } as any);
@@ -198,6 +201,71 @@ describe.sequential('monobank janitor job2', () => {
         .where(eq(paymentAttempts.id, attemptId))
         .limit(1);
       expect(attempt?.status).toBe('failed');
+    } finally {
+      await cleanup(orderId);
+    }
+  });
+
+  it('stale active unknown-submit attempt without invoice id is safely recovered', async () => {
+    const staleAt = new Date(Date.now() - 2 * 60 * 60 * 1000);
+    const { orderId, attemptId } = await insertOrderAndAttempt({
+      createdAt: staleAt,
+      attemptStatus: 'active',
+      attemptMetadata: {
+        monobank: {
+          wallet: {
+            requested: 'google_pay',
+            submitOutcome: 'unknown',
+            syncStatus: 'unknown',
+          },
+        },
+      },
+    });
+
+    try {
+      const first = await runMonobankJanitorJob2(makeArgs());
+      expect(first).toEqual({
+        processed: 1,
+        applied: 1,
+        noop: 0,
+        failed: 0,
+      });
+
+      const second = await runMonobankJanitorJob2(makeArgs());
+      expect(second).toEqual({
+        processed: 0,
+        applied: 0,
+        noop: 0,
+        failed: 0,
+      });
+
+      const [attempt] = await db
+        .select({
+          status: paymentAttempts.status,
+          lastErrorCode: paymentAttempts.lastErrorCode,
+          finalizedAt: paymentAttempts.finalizedAt,
+        })
+        .from(paymentAttempts)
+        .where(eq(paymentAttempts.id, attemptId))
+        .limit(1);
+      expect(attempt?.status).toBe('failed');
+      expect(attempt?.lastErrorCode).toBe('invoice_missing');
+      expect(attempt?.finalizedAt).toBeTruthy();
+
+      const [order] = await db
+        .select({
+          paymentStatus: orders.paymentStatus,
+          status: orders.status,
+          stockRestored: orders.stockRestored,
+          inventoryStatus: orders.inventoryStatus,
+        })
+        .from(orders)
+        .where(eq(orders.id, orderId))
+        .limit(1);
+      expect(order?.paymentStatus).toBe('failed');
+      expect(order?.status).toBe('CANCELED');
+      expect(order?.stockRestored).toBe(true);
+      expect(order?.inventoryStatus).toBe('released');
     } finally {
       await cleanup(orderId);
     }

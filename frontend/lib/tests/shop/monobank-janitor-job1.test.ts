@@ -34,6 +34,8 @@ async function insertOrderAndAttempt(args: {
   attemptStatus?: 'creating' | 'active';
   updatedAt: Date;
   amountMinor?: number;
+  providerPaymentIntentId?: string | null;
+  attemptMetadata?: Record<string, unknown>;
 }) {
   const orderId = crypto.randomUUID();
   const attemptId = crypto.randomUUID();
@@ -62,7 +64,11 @@ async function insertOrderAndAttempt(args: {
     currency: 'UAH',
     expectedAmountMinor: amountMinor,
     idempotencyKey: buildMonobankAttemptIdempotencyKey(orderId, 1),
-    providerPaymentIntentId: args.invoiceId,
+    providerPaymentIntentId:
+      args.providerPaymentIntentId === undefined
+        ? args.invoiceId
+        : args.providerPaymentIntentId,
+    metadata: args.attemptMetadata ?? {},
     createdAt: args.updatedAt,
     updatedAt: args.updatedAt,
   } as any);
@@ -286,4 +292,65 @@ describe.sequential('monobank janitor job1', () => {
       await cleanup(orderId, invoiceId);
     }
   }, 15000);
+
+  it('reconciles using wallet metadata invoiceId when provider_payment_intent_id is null', async () => {
+    const invoiceId = `inv_${crypto.randomUUID()}`;
+    const staleAt = new Date(Date.now() - 2 * 60 * 60 * 1000);
+    const { orderId, attemptId } = await insertOrderAndAttempt({
+      invoiceId,
+      updatedAt: staleAt,
+      attemptStatus: 'active',
+      providerPaymentIntentId: null,
+      attemptMetadata: {
+        monobank: {
+          wallet: {
+            requested: 'google_pay',
+            submitOutcome: 'unknown',
+            syncStatus: 'unknown',
+            invoiceId,
+          },
+        },
+      },
+    });
+
+    getInvoiceStatusMock.mockResolvedValueOnce({
+      invoiceId,
+      status: 'success',
+      raw: {
+        invoiceId,
+        status: 'success',
+        amount: 1000,
+        ccy: 980,
+        modifiedDate: 1700000000003,
+      },
+    });
+
+    try {
+      const res = await runMonobankJanitorJob1(makeArgs());
+      expect(res.applied).toBeGreaterThanOrEqual(1);
+      expect(res.processed).toBeGreaterThanOrEqual(1);
+
+      const [order] = await db
+        .select({
+          paymentStatus: orders.paymentStatus,
+          status: orders.status,
+        })
+        .from(orders)
+        .where(eq(orders.id, orderId))
+        .limit(1);
+      expect(order?.paymentStatus).toBe('paid');
+      expect(order?.status).toBe('PAID');
+
+      const [attempt] = await db
+        .select({
+          status: paymentAttempts.status,
+        })
+        .from(paymentAttempts)
+        .where(eq(paymentAttempts.id, attemptId))
+        .limit(1);
+      expect(attempt?.status).toBe('succeeded');
+    } finally {
+      await cleanup(orderId, invoiceId);
+    }
+  });
 });
