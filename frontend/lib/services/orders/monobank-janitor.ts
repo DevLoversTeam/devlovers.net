@@ -46,6 +46,15 @@ const UNKNOWN_WALLET_SUBMIT_OUTCOME_SQL = sql`lower(
     ''
   )
 ) = 'unknown'`;
+const JOB2_STALE_ATTEMPT_PREDICATE_SQL = sql`
+  pa.status in ('creating', 'active')
+  and pa.provider_payment_intent_id is null
+  and ${RECONCILABLE_INVOICE_ID_SQL} is null
+  and (
+    pa.status = 'creating'
+    or ${UNKNOWN_WALLET_SUBMIT_OUTCOME_SQL}
+  )
+`;
 
 const JOB3_MODE_MISMATCH_CODE = 'MONO_WEBHOOK_MODE_NOT_STORE';
 const DEFAULT_JOB4_NEEDS_REVIEW_AGE_HOURS = 24;
@@ -465,15 +474,7 @@ async function readDryRunJob2Candidates(args: {
       pa.order_id
     from payment_attempts pa
     where pa.provider = 'monobank'
-      and pa.status in ('creating', 'active')
-      and pa.provider_payment_intent_id is null
-      and (
-        pa.status = 'creating'
-        or (
-          ${UNKNOWN_WALLET_SUBMIT_OUTCOME_SQL}
-          and ${RECONCILABLE_INVOICE_ID_SQL} is null
-        )
-      )
+      and ${JOB2_STALE_ATTEMPT_PREDICATE_SQL}
       and pa.created_at < now() - make_interval(secs => ${args.ttlSeconds})
       and (pa.janitor_claimed_until is null or pa.janitor_claimed_until < now())
       and exists (
@@ -502,15 +503,7 @@ async function claimJob2Attempts(args: {
       select pa.id
       from payment_attempts pa
       where pa.provider = 'monobank'
-        and pa.status in ('creating', 'active')
-        and pa.provider_payment_intent_id is null
-        and (
-          pa.status = 'creating'
-          or (
-            ${UNKNOWN_WALLET_SUBMIT_OUTCOME_SQL}
-            and ${RECONCILABLE_INVOICE_ID_SQL} is null
-          )
-        )
+        and ${JOB2_STALE_ATTEMPT_PREDICATE_SQL}
         and pa.created_at < now() - make_interval(secs => ${args.ttlSeconds})
         and (pa.janitor_claimed_until is null or pa.janitor_claimed_until < now())
         and exists (
@@ -562,15 +555,7 @@ async function atomicCancelOrderAndFailCreatingAttempt(args: {
       where pa.id = ${args.attemptId}::uuid
         and pa.order_id = o.id
         and pa.provider = 'monobank'
-        and pa.status in ('creating', 'active')
-        and pa.provider_payment_intent_id is null
-        and (
-          pa.status = 'creating'
-          or (
-            ${UNKNOWN_WALLET_SUBMIT_OUTCOME_SQL}
-            and ${RECONCILABLE_INVOICE_ID_SQL} is null
-          )
-        )
+        and ${JOB2_STALE_ATTEMPT_PREDICATE_SQL}
         and pa.created_at < now() - make_interval(secs => ${args.ttlSeconds})
         and pa.janitor_claimed_by = ${args.runId}
         and o.payment_provider = 'monobank'
@@ -586,16 +571,8 @@ async function atomicCancelOrderAndFailCreatingAttempt(args: {
           last_error_code = ${JOB2_ATTEMPT_ERROR_CODE},
           last_error_message = ${JOB2_ATTEMPT_ERROR_MESSAGE}
       where pa.id = ${args.attemptId}::uuid
-        and pa.status in ('creating', 'active')
         and pa.provider = 'monobank'
-        and pa.provider_payment_intent_id is null
-        and (
-          pa.status = 'creating'
-          or (
-            ${UNKNOWN_WALLET_SUBMIT_OUTCOME_SQL}
-            and ${RECONCILABLE_INVOICE_ID_SQL} is null
-          )
-        )
+        and ${JOB2_STALE_ATTEMPT_PREDICATE_SQL}
         and pa.janitor_claimed_by = ${args.runId}
         and exists (select 1 from updated_order)
       returning pa.id

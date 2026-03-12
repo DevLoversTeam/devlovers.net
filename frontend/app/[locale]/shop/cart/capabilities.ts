@@ -9,7 +9,6 @@ export function resolveStripeCheckoutEnabled(): boolean {
   try {
     return isStripePaymentsEnabled({
       requirePublishableKey: true,
-      respectStripePaymentsFlag: true,
     });
   } catch {
     return false;
@@ -28,6 +27,8 @@ export function resolveMonobankCheckoutEnabled(): boolean {
 }
 
 export function resolveMonobankGooglePayEnabled(): boolean {
+  if (!resolveMonobankCheckoutEnabled()) return false;
+
   const raw = (process.env.SHOP_MONOBANK_GPAY_ENABLED ?? '')
     .trim()
     .toLowerCase();

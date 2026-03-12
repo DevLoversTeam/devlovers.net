@@ -257,21 +257,17 @@ function StepIndicator({
 function SelectableCard({
   selected,
   disabled = false,
-  onClick,
   children,
   size = 'tall',
 }: {
   selected: boolean;
   disabled?: boolean;
-  onClick?: () => void;
   children: React.ReactNode;
   size?: 'tall' | 'compact';
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
+    <label
+      aria-disabled={disabled || undefined}
       className={cn(
         SHOP_CART_SELECTABLE_CARD,
         size === 'compact'
@@ -280,7 +276,7 @@ function SelectableCard({
         selected
           ? SHOP_CART_SELECTABLE_CARD_SELECTED
           : SHOP_CART_SELECTABLE_CARD_IDLE,
-        disabled && 'cursor-not-allowed opacity-60'
+        disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
       )}
     >
       {children}
@@ -290,7 +286,7 @@ function SelectableCard({
           <Check className="text-background h-3 w-3" aria-hidden="true" />
         </span>
       ) : null}
-    </button>
+    </label>
   );
 }
 export default function CartPage({
@@ -307,6 +303,9 @@ export default function CartPage({
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
+  const [paymentRecoveryUrl, setPaymentRecoveryUrl] = useState<string | null>(
+    null
+  );
 
   const [ordersSummary, setOrdersSummary] = useState<OrdersSummaryState | null>(
     null
@@ -1017,6 +1016,7 @@ export default function CartPage({
     setCheckoutError(null);
     setDeliveryUiError(null);
     setCreatedOrderId(null);
+    setPaymentRecoveryUrl(null);
     setIsCheckingOut(true);
 
     try {
@@ -1120,12 +1120,19 @@ export default function CartPage({
         ? `&statusToken=${encodeURIComponent(statusToken)}`
         : '';
 
-      if (paymentProvider === 'stripe' && clientSecret) {
-        router.push(
-          `${shopBase}/checkout/payment/${encodeURIComponent(
-            orderId
-          )}?clientSecret=${encodeURIComponent(clientSecret)}&clearCart=1${statusTokenQuery}`
-        );
+      if (selectedProvider === 'stripe') {
+        if (paymentProvider !== 'stripe' || !clientSecret) {
+          setCheckoutError(t('checkout.errors.unexpectedResponse'));
+          return;
+        }
+
+        const stripeRecoveryUrl = `${shopBase}/checkout/payment/${encodeURIComponent(
+          orderId
+        )}?clientSecret=${encodeURIComponent(clientSecret)}${statusTokenQuery}`;
+
+        setPaymentRecoveryUrl(stripeRecoveryUrl);
+
+        router.push(`${stripeRecoveryUrl}&clearCart=1`);
         return;
       }
 
@@ -1136,11 +1143,13 @@ export default function CartPage({
             return;
           }
 
-          router.push(
-            `${shopBase}/checkout/payment/monobank/${encodeURIComponent(
-              orderId
-            )}?statusToken=${encodeURIComponent(statusToken)}&clearCart=1`
-          );
+          const monobankGooglePayRecoveryUrl = `${shopBase}/checkout/payment/monobank/${encodeURIComponent(
+            orderId
+          )}?statusToken=${encodeURIComponent(statusToken)}`;
+
+          setPaymentRecoveryUrl(monobankGooglePayRecoveryUrl);
+
+          router.push(`${monobankGooglePayRecoveryUrl}&clearCart=1`);
           return;
         }
 
@@ -1149,6 +1158,7 @@ export default function CartPage({
           return;
         }
 
+        setPaymentRecoveryUrl(monobankPageUrl);
         window.location.assign(monobankPageUrl);
         return;
       }
@@ -1187,6 +1197,16 @@ export default function CartPage({
     !shippingMethodsLoading &&
     !shippingUnavailableHardBlock &&
     (!shippingAvailable || !!selectedShippingMethod);
+
+  const orderDetailsHref = createdOrderId
+    ? `/shop/orders/${encodeURIComponent(createdOrderId)}`
+    : null;
+  const recoveryHref = paymentRecoveryUrl ?? orderDetailsHref;
+  const recoveryIsExternal =
+    !!recoveryHref && /^https?:\/\//i.test(recoveryHref);
+  const recoveryLinkLabel = paymentRecoveryUrl
+    ? t('checkout.notRedirected')
+    : t('checkout.goToOrder');
 
   const itemsComplete = cart.items.length > 0;
   const deliveryComplete =
@@ -1528,9 +1548,12 @@ export default function CartPage({
                         });
 
                         return (
-                          <label
+                          <SelectableCard
                             key={method.methodCode}
-                            className="block h-full"
+                            size="tall"
+                            selected={
+                              selectedShippingMethod === method.methodCode
+                            }
                           >
                             <input
                               type="radio"
@@ -1543,32 +1566,22 @@ export default function CartPage({
                                 clearCheckoutUiErrors();
                                 setSelectedShippingMethod(method.methodCode);
                               }}
+                              aria-label={cardCopy.title}
                               className="sr-only"
                             />
 
-                            <SelectableCard
-                              size="tall"
-                              selected={
-                                selectedShippingMethod === method.methodCode
-                              }
-                              onClick={() => {
-                                clearCheckoutUiErrors();
-                                setSelectedShippingMethod(method.methodCode);
-                              }}
-                            >
-                              <span className={SHOP_CART_METHOD_CARD_TITLE}>
-                                {cardCopy.title}
-                              </span>
+                            <span className={SHOP_CART_METHOD_CARD_TITLE}>
+                              {cardCopy.title}
+                            </span>
 
-                              {cardCopy.description ? (
-                                <span
-                                  className={SHOP_CART_METHOD_CARD_DESCRIPTION}
-                                >
-                                  {cardCopy.description}
-                                </span>
-                              ) : null}
-                            </SelectableCard>
-                          </label>
+                            {cardCopy.description ? (
+                              <span
+                                className={SHOP_CART_METHOD_CARD_DESCRIPTION}
+                              >
+                                {cardCopy.description}
+                              </span>
+                            ) : null}
+                          </SelectableCard>
                         );
                       })}
                     </div>
@@ -1902,7 +1915,10 @@ export default function CartPage({
               <div className="p-5">
                 <div className="grid gap-3 sm:grid-cols-2">
                   {canUseStripe ? (
-                    <label className="block">
+                    <SelectableCard
+                      size="compact"
+                      selected={selectedProvider === 'stripe'}
+                    >
                       <input
                         type="radio"
                         name="payment-provider"
@@ -1913,26 +1929,21 @@ export default function CartPage({
                           setSelectedProvider('stripe');
                           setSelectedPaymentMethod('stripe_card');
                         }}
+                        aria-label={t('checkout.paymentMethod.stripe')}
                         className="sr-only"
                       />
 
-                      <SelectableCard
-                        size="compact"
-                        selected={selectedProvider === 'stripe'}
-                        onClick={() => {
-                          clearCheckoutUiErrors();
-                          setSelectedProvider('stripe');
-                          setSelectedPaymentMethod('stripe_card');
-                        }}
-                      >
-                        <span className="text-foreground block text-sm font-semibold">
-                          {t('checkout.paymentMethod.stripe')}
-                        </span>
-                      </SelectableCard>
-                    </label>
+                      <span className="text-foreground block text-sm font-semibold">
+                        {t('checkout.paymentMethod.stripe')}
+                      </span>
+                    </SelectableCard>
                   ) : null}
 
-                  <label className="block">
+                  <SelectableCard
+                    size="compact"
+                    selected={selectedProvider === 'monobank'}
+                    disabled={!canUseMonobank}
+                  >
                     <input
                       type="radio"
                       name="payment-provider"
@@ -1955,36 +1966,14 @@ export default function CartPage({
                         }
                       }}
                       disabled={!canUseMonobank}
+                      aria-label={t('checkout.paymentMethod.monobank')}
                       className="sr-only"
                     />
 
-                    <SelectableCard
-                      size="compact"
-                      selected={selectedProvider === 'monobank'}
-                      disabled={!canUseMonobank}
-                      onClick={() => {
-                        if (!canUseMonobank) return;
-                        clearCheckoutUiErrors();
-                        setSelectedProvider('monobank');
-
-                        if (
-                          selectedPaymentMethod !== 'monobank_invoice' &&
-                          selectedPaymentMethod !== 'monobank_google_pay'
-                        ) {
-                          setSelectedPaymentMethod(
-                            resolveDefaultMethodForProvider({
-                              provider: 'monobank',
-                              currency: cart.summary.currency,
-                            })
-                          );
-                        }
-                      }}
-                    >
-                      <span className="text-foreground block text-sm font-semibold">
-                        {t('checkout.paymentMethod.monobank')}
-                      </span>
-                    </SelectableCard>
-                  </label>
+                    <span className="text-foreground block text-sm font-semibold">
+                      {t('checkout.paymentMethod.monobank')}
+                    </span>
+                  </SelectableCard>
                 </div>
 
                 {selectedProvider === 'monobank' && canUseMonobank ? (
@@ -2181,14 +2170,31 @@ export default function CartPage({
                     {t('summary.shippingPayOnDeliveryNote')}
                   </p>
 
-                  {createdOrderId && !checkoutError ? (
+                  {recoveryHref && !checkoutError ? (
                     <div className="mt-3 flex justify-center">
-                      <Link
-                        href={`/shop/orders/${encodeURIComponent(createdOrderId)}`}
-                        className={cn(SHOP_LINK_BASE, SHOP_LINK_XS, SHOP_FOCUS)}
-                      >
-                        {t('checkout.notRedirected')}
-                      </Link>
+                      {recoveryIsExternal ? (
+                        <a
+                          href={recoveryHref}
+                          className={cn(
+                            SHOP_LINK_BASE,
+                            SHOP_LINK_XS,
+                            SHOP_FOCUS
+                          )}
+                        >
+                          {t('checkout.notRedirected')}
+                        </a>
+                      ) : (
+                        <Link
+                          href={recoveryHref}
+                          className={cn(
+                            SHOP_LINK_BASE,
+                            SHOP_LINK_XS,
+                            SHOP_FOCUS
+                          )}
+                        >
+                          {t('checkout.notRedirected')}
+                        </Link>
+                      )}
                     </div>
                   ) : null}
 
@@ -2201,18 +2207,31 @@ export default function CartPage({
                         {checkoutError}
                       </p>
 
-                      {createdOrderId ? (
+                      {recoveryHref ? (
                         <div className="flex justify-center">
-                          <Link
-                            href={`/shop/orders/${encodeURIComponent(createdOrderId)}`}
-                            className={cn(
-                              SHOP_LINK_BASE,
-                              SHOP_LINK_XS,
-                              SHOP_FOCUS
-                            )}
-                          >
-                            {t('checkout.goToOrder')}
-                          </Link>
+                          {recoveryIsExternal ? (
+                            <a
+                              href={recoveryHref}
+                              className={cn(
+                                SHOP_LINK_BASE,
+                                SHOP_LINK_XS,
+                                SHOP_FOCUS
+                              )}
+                            >
+                              {recoveryLinkLabel}
+                            </a>
+                          ) : (
+                            <Link
+                              href={recoveryHref}
+                              className={cn(
+                                SHOP_LINK_BASE,
+                                SHOP_LINK_XS,
+                                SHOP_FOCUS
+                              )}
+                            >
+                              {recoveryLinkLabel}
+                            </Link>
+                          )}
                         </div>
                       ) : null}
                     </div>

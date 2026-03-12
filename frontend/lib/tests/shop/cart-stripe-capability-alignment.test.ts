@@ -25,7 +25,6 @@ describe('cart stripe capability alignment', () => {
     expect(enabled).toBe(false);
     expect(isStripePaymentsEnabledMock).toHaveBeenCalledWith({
       requirePublishableKey: true,
-      respectStripePaymentsFlag: true,
     });
   });
 
@@ -38,7 +37,6 @@ describe('cart stripe capability alignment', () => {
     expect(enabled).toBe(true);
     expect(isStripePaymentsEnabledMock).toHaveBeenCalledWith({
       requirePublishableKey: true,
-      respectStripePaymentsFlag: true,
     });
   });
 });

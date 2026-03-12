@@ -239,7 +239,6 @@ export default async function PaymentPage(props: PaymentPageProps) {
 
   const paymentsEnabled = isStripePaymentsEnabled({
     requirePublishableKey: true,
-    respectStripePaymentsFlag: true,
   });
   const stripeEnv = getStripeEnv();
 

@@ -274,6 +274,17 @@ describe.sequential('Checkout (no payments) invariants', () => {
         .set({ isActive: true, updatedAt: new Date() } as any)
         .where(eq(products.id, productId));
 
+      const [p0] = await db
+        .select({ stock: products.stock })
+        .from(products)
+        .where(eq(products.id, productId))
+        .limit(1);
+
+      expect(p0).toBeTruthy();
+      const stockBefore = p0!.stock;
+
+      const movesBefore = await countMovesForProduct(productId);
+
       const idemKey = crypto.randomUUID();
       const res = await postCheckout({
         idemKey,
@@ -292,6 +303,18 @@ describe.sequential('Checkout (no payments) invariants', () => {
         .where(eq(orders.idempotencyKey, idemKey))
         .limit(1);
       expect(row).toBeFalsy();
+
+      const [p1] = await db
+        .select({ stock: products.stock })
+        .from(products)
+        .where(eq(products.id, productId))
+        .limit(1);
+
+      expect(p1).toBeTruthy();
+      expect(p1!.stock).toBe(stockBefore);
+
+      const movesAfter = await countMovesForProduct(productId);
+      expect(movesAfter).toBe(movesBefore);
     } finally {
       await cleanupIsolatedProduct(productId);
     }

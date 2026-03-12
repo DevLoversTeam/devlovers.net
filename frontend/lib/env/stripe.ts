@@ -10,7 +10,7 @@ export type StripeEnv = {
 
 type StripePaymentsEnabledOptions = {
   requirePublishableKey?: boolean;
-  respectStripePaymentsFlag?: boolean;
+  ignoreStripePaymentsFlag?: boolean;
 };
 
 function nonEmpty(v: string | undefined): string | null {
@@ -68,13 +68,26 @@ function isStripeRailEnabledByFlags(): boolean {
   return stripeFlag.length > 0 ? stripeFlag === 'true' : true;
 }
 
+export function isRawPaymentsEnabled(
+  options: Pick<StripePaymentsEnabledOptions, 'requirePublishableKey'> = {}
+): boolean {
+  const env = getStripeEnv();
+  if (!env.paymentsEnabled) return false;
+
+  if (options.requirePublishableKey && !env.publishableKey) {
+    return false;
+  }
+
+  return true;
+}
+
 export function isPaymentsEnabled(
   options: StripePaymentsEnabledOptions = {}
 ): boolean {
   const env = getStripeEnv();
   if (!env.paymentsEnabled) return false;
 
-  if (options.respectStripePaymentsFlag && !isStripeRailEnabledByFlags()) {
+  if (!options.ignoreStripePaymentsFlag && !isStripeRailEnabledByFlags()) {
     return false;
   }
 

@@ -106,6 +106,13 @@ function createCheckoutStatusToken(args: {
   });
 }
 
+function isCheckoutStatusTokenRequired(args: {
+  paymentProvider: PaymentProvider;
+  paymentStatus: PaymentStatus;
+}): boolean {
+  return resolveCheckoutTokenScopes(args).includes('order_payment_init');
+}
+
 function shippingErrorStatus(code: string): number | null {
   return SHIPPING_ERROR_STATUS_MAP[code] ?? null;
 }
@@ -448,11 +455,35 @@ async function runMonobankCheckoutFlow(args: {
     const { createMonobankAttemptAndInvoice } =
       await import('@/lib/services/orders/monobank');
 
-    const statusToken = createCheckoutStatusToken({
-      orderId: args.order.id,
-      paymentProvider: args.order.paymentProvider,
-      paymentStatus: args.order.paymentStatus,
-    });
+    let statusToken: string;
+    try {
+      statusToken = createCheckoutStatusToken({
+        orderId: args.order.id,
+        paymentProvider: args.order.paymentProvider,
+        paymentStatus: args.order.paymentStatus,
+      });
+    } catch (error) {
+      logError('checkout_mono_status_token_create_failed', error, {
+        ...args.orderMeta,
+        orderId: args.order.id,
+        paymentProvider: args.order.paymentProvider,
+        code: 'STATUS_TOKEN_CREATE_FAILED',
+        tokenScopes: resolveCheckoutTokenScopes({
+          paymentProvider: args.order.paymentProvider,
+          paymentStatus: args.order.paymentStatus,
+        }),
+      });
+
+      return errorResponse(
+        'CHECKOUT_FAILED',
+        'Unable to process checkout.',
+        500,
+        {
+          orderId: args.order.id,
+          paymentProvider: args.order.paymentProvider,
+        }
+      );
+    }
 
     const monobankAttempt = await createMonobankAttemptAndInvoice({
       orderId: args.order.id,
@@ -708,7 +739,6 @@ export async function POST(request: NextRequest) {
 
   const stripeCheckoutAvailable = isStripePaymentsEnabled({
     requirePublishableKey: true,
-    respectStripePaymentsFlag: true,
   });
   const checkoutPaymentProvider: PaymentProvider =
     selectedProvider === 'monobank'
@@ -953,6 +983,11 @@ export async function POST(request: NextRequest) {
       paymentStatus: order.paymentStatus,
       paymentIntentId: order.paymentIntentId ?? null,
     };
+    const statusTokenRequired = isCheckoutStatusTokenRequired({
+      paymentProvider: order.paymentProvider,
+      paymentStatus: order.paymentStatus,
+    });
+
     const statusToken = (() => {
       try {
         return createCheckoutStatusToken({
@@ -964,10 +999,28 @@ export async function POST(request: NextRequest) {
         logError('checkout_status_token_create_failed', error, {
           ...orderMeta,
           code: 'STATUS_TOKEN_CREATE_FAILED',
+          statusTokenRequired,
+          tokenScopes: resolveCheckoutTokenScopes({
+            paymentProvider: order.paymentProvider,
+            paymentStatus: order.paymentStatus,
+          }),
+          orderMeta,
         });
         return null;
       }
     })();
+
+    if (!statusToken && statusTokenRequired) {
+      return errorResponse(
+        'CHECKOUT_FAILED',
+        'Unable to process checkout.',
+        500,
+        {
+          orderId: order.id,
+          paymentProvider: order.paymentProvider,
+        }
+      );
+    }
 
     const orderProvider = order.paymentProvider as unknown as
       | 'stripe'

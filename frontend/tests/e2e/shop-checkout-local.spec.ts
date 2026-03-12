@@ -6,7 +6,7 @@ import { Pool } from 'pg';
 import { createStatusToken } from '@/lib/shop/status-token';
 
 const REQUIRED_LOCAL_DB_URL =
-  'postgresql://devlovers_local:Gfdtkk43@localhost:5432/devlovers_shop_local_clean?sslmode=disable';
+  process.env.REQUIRED_LOCAL_DB_URL ?? process.env.LOCAL_DB_URL ?? '';
 const ALLOWED_LOCAL_DB_HOSTS = new Set(['localhost', '127.0.0.1']);
 
 function assertStrictLocalDbGuard() {
@@ -17,6 +17,12 @@ function assertStrictLocalDbGuard() {
   const requiredLocalDb = process.env.SHOP_REQUIRED_DATABASE_URL_LOCAL ?? '';
   const statusTokenSecret = (process.env.SHOP_STATUS_TOKEN_SECRET ?? '').trim();
 
+  if (!REQUIRED_LOCAL_DB_URL.trim()) {
+    throw new Error(
+      'E2E requires REQUIRED_LOCAL_DB_URL or LOCAL_DB_URL to be set.'
+    );
+  }
+
   if (appEnv !== 'local') {
     throw new Error(
       `E2E requires APP_ENV=local, got "${appEnv || '<empty>'}".`
@@ -25,7 +31,7 @@ function assertStrictLocalDbGuard() {
 
   if (databaseUrlLocal !== REQUIRED_LOCAL_DB_URL) {
     throw new Error(
-      'E2E requires DATABASE_URL_LOCAL to match the required local shop DSN exactly.'
+      'E2E requires DATABASE_URL_LOCAL to match REQUIRED_LOCAL_DB_URL/LOCAL_DB_URL exactly.'
     );
   }
 
@@ -437,7 +443,7 @@ async function getOrderPaymentState(orderId: string): Promise<{
 }
 
 async function cleanupSeededData(bucket: CleanupBucket) {
-  for (const orderId of bucket.orderIds.reverse()) {
+  for (const orderId of [...bucket.orderIds].reverse()) {
     try {
       await cleanupOrder(orderId);
     } catch {
@@ -445,7 +451,7 @@ async function cleanupSeededData(bucket: CleanupBucket) {
     }
   }
 
-  for (const productId of bucket.productIds.reverse()) {
+  for (const productId of [...bucket.productIds].reverse()) {
     try {
       await cleanupProduct(productId);
     } catch {
@@ -453,7 +459,7 @@ async function cleanupSeededData(bucket: CleanupBucket) {
     }
   }
 
-  for (const cityRef of bucket.cityRefs.reverse()) {
+  for (const cityRef of [...bucket.cityRefs].reverse()) {
     try {
       await cleanupCity(cityRef);
     } catch {
@@ -603,12 +609,6 @@ test.describe('shop checkout local UX', () => {
       const createdOrderId = currentPaymentUrl.pathname.split('/').pop() ?? '';
       const statusTokenFromRedirect =
         currentPaymentUrl.searchParams.get('statusToken');
-      const statusToken =
-        statusTokenFromRedirect ??
-        createStatusToken({
-          orderId: createdOrderId,
-          scopes: ['status_lite', 'order_payment_init'],
-        });
 
       expect(createdOrderId).toMatch(
         /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -616,10 +616,12 @@ test.describe('shop checkout local UX', () => {
       bucket.orderIds.push(createdOrderId);
 
       if (!statusTokenFromRedirect) {
-        await page.goto(
-          `/uk/shop/checkout/payment/${encodeURIComponent(
-            createdOrderId
-          )}?statusToken=${encodeURIComponent(statusToken)}`
+        throw new Error(
+          [
+            'E2E checkout redirect is missing statusToken.',
+            `orderId=${createdOrderId}`,
+            `url=${currentPaymentUrl.toString()}`,
+          ].join(' ')
         );
       }
 

@@ -97,7 +97,7 @@ export function nextRouteForPaymentResult(params: {
   const success = buildInAppPath(
     `/checkout/success?orderId=${id}${tokenSuffix}`
   );
-  const failure = buildInAppPath(`/checkout/error?orderId=${id}`);
+  const failure = buildInAppPath(`/checkout/error?orderId=${id}${tokenSuffix}`);
 
   if (!status) return failure;
 
@@ -190,7 +190,9 @@ function StripePaymentForm({ orderId, locale, statusToken }: PaymentFormProps) {
       const inAppSuccess = buildInAppPath(
         `/checkout/success?orderId=${id}${tokenSuffix}`
       );
-      const inAppFailure = buildInAppPath(`/checkout/error?orderId=${id}`);
+      const inAppFailure = buildInAppPath(
+        `/checkout/error?orderId=${id}${tokenSuffix}`
+      );
 
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
@@ -214,10 +216,15 @@ function StripePaymentForm({ orderId, locale, statusToken }: PaymentFormProps) {
 
       router.push(next);
     } catch (error) {
+      const id = encodeURIComponent(orderId);
+      const tokenSuffix = statusToken
+        ? `&statusToken=${encodeURIComponent(statusToken)}`
+        : '';
+
       logError('stripe_payment_confirm_failed', error, { orderId });
       setErrorMessage('We couldn’t confirm your payment. Please try again.');
       router.push(
-        buildInAppPath(`/checkout/error?orderId=${encodeURIComponent(orderId)}`)
+        buildInAppPath(`/checkout/error?orderId=${id}${tokenSuffix}`)
       );
     } finally {
       setSubmitting(false);

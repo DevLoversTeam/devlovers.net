@@ -20,11 +20,11 @@ export default defineConfig({
     command: 'npm run build && npm run start -- -p 3100 -H 127.0.0.1',
     port: 3100,
     timeout: 300_000,
-    reuseExistingServer: true,
+    reuseExistingServer: process.env.PW_REUSE_EXISTING_SERVER === '1',
     env: {
       APP_ENV: 'local',
       DATABASE_URL_LOCAL: LOCAL_DB_URL,
-      DATABASE_URL: ' ',
+      DATABASE_URL: '',
       SHOP_STRICT_LOCAL_DB: '1',
       SHOP_REQUIRED_DATABASE_URL_LOCAL: LOCAL_DB_URL,
       SHOP_STATUS_TOKEN_SECRET:

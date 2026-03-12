@@ -29,8 +29,11 @@ describe('stripe payment client return routing', () => {
       status: 'succeeded',
     });
 
-    expect(route).toContain('/shop/checkout/success?orderId=');
-    expect(route).toContain(`statusToken=${STATUS_TOKEN}`);
+    expect(route).toBe(
+      `/shop/checkout/success?orderId=${encodeURIComponent(
+        ORDER_ID
+      )}&statusToken=${encodeURIComponent(STATUS_TOKEN)}`
+    );
   });
 
   it('routes unknown statuses to checkout error', () => {
@@ -41,7 +44,9 @@ describe('stripe payment client return routing', () => {
     });
 
     expect(route).toBe(
-      `/shop/checkout/error?orderId=${encodeURIComponent(ORDER_ID)}`
+      `/shop/checkout/error?orderId=${encodeURIComponent(
+        ORDER_ID
+      )}&statusToken=${encodeURIComponent(STATUS_TOKEN)}`
     );
   });
 
@@ -53,7 +58,9 @@ describe('stripe payment client return routing', () => {
     });
 
     expect(route).toBe(
-      `/shop/checkout/error?orderId=${encodeURIComponent(ORDER_ID)}`
+      `/shop/checkout/error?orderId=${encodeURIComponent(
+        ORDER_ID
+      )}&statusToken=${encodeURIComponent(STATUS_TOKEN)}`
     );
   });
 });

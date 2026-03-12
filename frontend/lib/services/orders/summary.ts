@@ -194,10 +194,21 @@ async function getCheckoutScopedOrderSummary(args: {
   });
 
   if (!access.authorized) {
-    const code = access.code === 'OK' ? 'FORBIDDEN' : access.code;
+    if (access.code === 'OK') {
+      throw new OrderStateInvalidError(
+        'authorizeOrderMutationAccess returned unauthorized result with code OK',
+        {
+          orderId: args.orderId,
+          details: {
+            requiredScope: args.requiredScope,
+          },
+        }
+      );
+    }
+
     return {
       ok: false,
-      code,
+      code: access.code,
       status: access.status,
     };
   }

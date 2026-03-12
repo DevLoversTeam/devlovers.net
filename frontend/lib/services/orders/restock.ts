@@ -119,13 +119,6 @@ export async function restockOrder(
 
   if (!order) throw new OrderNotFoundError('Order not found');
 
-  if (reason) {
-    await closeShippingPipelineForOrder({
-      orderId,
-      reason: `payment_terminal:${reason}`,
-    });
-  }
-
   const isNoPayment = order.paymentProvider === 'none';
   const provider = resolvePaymentProvider(order);
   const transitionSource = options?.alreadyClaimed ? 'janitor' : 'system';
@@ -136,6 +129,13 @@ export async function restockOrder(
     order.restockedAt !== null
   )
     return;
+
+  if (reason) {
+    await closeShippingPipelineForOrder({
+      orderId,
+      reason: `payment_terminal:${reason}`,
+    });
+  }
 
   const reservedMoves = await db
     .select({

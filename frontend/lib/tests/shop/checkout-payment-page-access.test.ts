@@ -144,7 +144,6 @@ describe('checkout stripe payment page access gating', () => {
 
     expect(isStripePaymentsEnabledMock).toHaveBeenCalledWith({
       requirePublishableKey: true,
-      respectStripePaymentsFlag: true,
     });
     expect(ensureStripePaymentIntentForOrderMock).not.toHaveBeenCalled();
   });
