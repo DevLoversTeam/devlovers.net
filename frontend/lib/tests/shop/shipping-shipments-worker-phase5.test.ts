@@ -679,13 +679,19 @@ describe.sequential('shipping shipments worker phase 5', () => {
     'does not claim or process queued shipment when $title',
     async ({ paymentStatus, orderStatus, inventoryStatus }) => {
       const seed = await seedShipment({
-        paymentStatus,
-        orderStatus,
-        inventoryStatus,
         orderShippingStatus: 'queued',
       });
 
       try {
+        await db
+          .update(orders)
+          .set({
+            paymentStatus,
+            status: orderStatus,
+            inventoryStatus,
+          } as any)
+          .where(eq(orders.id, seed.orderId));
+
         vi.mocked(createInternetDocument).mockResolvedValue({
           providerRef: 'np-provider-ref-should-not-run',
           trackingNumber: '20450000888888',
@@ -718,7 +724,7 @@ describe.sequential('shipping shipments worker phase 5', () => {
           .where(eq(shippingShipments.id, seed.shipmentId))
           .limit(1);
 
-        expect(shipment?.status).toBe('queued');
+        expect(shipment?.status).toBe('needs_attention');
         expect(shipment?.attemptCount).toBe(0);
         expect(shipment?.leaseOwner).toBeNull();
 
@@ -730,7 +736,7 @@ describe.sequential('shipping shipments worker phase 5', () => {
           .where(eq(orders.id, seed.orderId))
           .limit(1);
 
-        expect(order?.shippingStatus).toBe('queued');
+        expect(order?.shippingStatus).toBe('cancelled');
 
         const events = await readOrderShippingEvents(seed.orderId);
         expect(events.some(event => event.eventName === 'creating_label')).toBe(

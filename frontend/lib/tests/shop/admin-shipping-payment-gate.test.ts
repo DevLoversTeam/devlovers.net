@@ -1,3 +1,5 @@
+import crypto from 'node:crypto';
+
 import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
@@ -35,7 +37,7 @@ type SeedArgs = {
 type Seeded = {
   orderId: string;
   shipmentId: string | null;
-  shippingStatus: 'needs_attention' | 'label_created' | 'shipped';
+  shippingStatus: 'needs_attention' | 'label_created' | 'shipped' | 'cancelled';
   shipmentStatus: 'failed' | null;
 };
 
@@ -65,15 +67,30 @@ async function seedOrder(args: SeedArgs): Promise<Seeded> {
   const shipmentId = crypto.randomUUID();
   const state = defaultStateForAction(args.action);
 
+  const requiresPostInsertBlockedTransition =
+    args.paymentStatus === 'refunded' || args.orderStatus === 'CANCELED';
+
+  const seedPaymentStatus = requiresPostInsertBlockedTransition
+    ? 'paid'
+    : args.paymentStatus;
+
+  const seedOrderStatus = requiresPostInsertBlockedTransition
+    ? 'PAID'
+    : args.orderStatus;
+
+  const seedInventoryStatus = requiresPostInsertBlockedTransition
+    ? 'reserved'
+    : args.inventoryStatus;
+
   await db.insert(orders).values({
     id: orderId,
     totalAmountMinor: 1000,
     totalAmount: toDbMoney(1000),
     currency: 'USD',
     paymentProvider: 'stripe',
-    paymentStatus: args.paymentStatus,
-    status: args.orderStatus,
-    inventoryStatus: args.inventoryStatus,
+    paymentStatus: seedPaymentStatus,
+    status: seedOrderStatus,
+    inventoryStatus: seedInventoryStatus,
     shippingRequired: true,
     shippingPayer: 'customer',
     shippingProvider: 'nova_poshta',
@@ -96,10 +113,23 @@ async function seedOrder(args: SeedArgs): Promise<Seeded> {
     } as any);
   }
 
+  if (requiresPostInsertBlockedTransition) {
+    await db
+      .update(orders)
+      .set({
+        paymentStatus: args.paymentStatus,
+        status: args.orderStatus,
+        inventoryStatus: args.inventoryStatus,
+      } as any)
+      .where(eq(orders.id, orderId));
+  }
+
   return {
     orderId,
     shipmentId: state.shipmentStatus ? shipmentId : null,
-    shippingStatus: state.shippingStatus,
+    shippingStatus: requiresPostInsertBlockedTransition
+      ? 'cancelled'
+      : state.shippingStatus,
     shipmentStatus: state.shipmentStatus,
   };
 }
@@ -200,4 +230,3 @@ describe.sequential('admin shipping action payment gate', () => {
     }
   }
 });
-
