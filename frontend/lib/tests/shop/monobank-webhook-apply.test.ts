@@ -14,8 +14,8 @@ import {
 import { buildMonobankAttemptIdempotencyKey } from '@/lib/services/orders/attempt-idempotency';
 import { applyMonoWebhookEvent } from '@/lib/services/orders/monobank-webhook';
 import { restockOrder } from '@/lib/services/orders/restock';
-import { claimQueuedShipmentsForProcessing } from '@/lib/services/shop/shipping/shipments-worker';
 import { closeShippingPipelineForOrder } from '@/lib/services/shop/shipping/pipeline-shutdown';
+import { claimQueuedShipmentsForProcessing } from '@/lib/services/shop/shipping/shipments-worker';
 import { toDbMoney } from '@/lib/shop/money';
 
 vi.mock('@/lib/services/orders/restock', () => ({

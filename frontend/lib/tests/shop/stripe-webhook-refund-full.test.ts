@@ -27,8 +27,8 @@ import { db } from '@/db';
 import { orders, shippingShipments, stripeEvents } from '@/db/schema';
 import { retrieveCharge, verifyWebhookSignature } from '@/lib/psp/stripe';
 import { restockOrder } from '@/lib/services/orders';
-import { claimQueuedShipmentsForProcessing } from '@/lib/services/shop/shipping/shipments-worker';
 import { closeShippingPipelineForOrder } from '@/lib/services/shop/shipping/pipeline-shutdown';
+import { claimQueuedShipmentsForProcessing } from '@/lib/services/shop/shipping/shipments-worker';
 
 const verifyWebhookSignatureMock = vi.mocked(verifyWebhookSignature);
 const retrieveChargeMock = vi.mocked(retrieveCharge);

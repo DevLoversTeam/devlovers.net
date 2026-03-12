@@ -429,7 +429,7 @@
           "cityRequired": "Щоб вибрати відділення, спочатку оберіть місто зі списку"
         },
         "courierAddress": {
-          "label": "Адреса кур’єра",
+          "label": "Адреса доставки",
           "line1Placeholder": "Вулиця, будинок, квартира",
           "line2Placeholder": "Додаткова інформація про адресу (необов’язково)"
         },
@@ -448,6 +448,20 @@
         "recipientComment": {
           "label": "Коментар (необов’язково)",
           "placeholder": "Коментар до доставки"
+        },
+        "methodCards": {
+          "warehouse": {
+            "title": "Відділення",
+            "description": "Самовивіз із відділення Nova Poshta"
+          },
+          "locker": {
+            "title": "Поштомат",
+            "description": "Самовивіз із поштомату Nova Poshta"
+          },
+          "courier": {
+            "title": "Кур’єр",
+            "description": "Доставка Nova Poshta до дверей"
+          }
         }
       },
       "checkout": {
@@ -1213,7 +1227,7 @@
       "passwordUpdateSuccess": "Пароль успішно оновлено",
       "saving": "Збереження...",
       "updateNameFailed": "Не вдалося оновити ім'я. Спробуйте ще раз.",
-      "updatePasswordFailed": "Не вдалося оновити пароль. Спробуйте ще раз.", 
+      "updatePasswordFailed": "Не вдалося оновити пароль. Спробуйте ще раз.",
       "somethingWentWrong": "Щось пішло не так. Спробуйте ще раз."
     },
     "stats": {

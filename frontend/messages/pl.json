@@ -429,7 +429,7 @@
           "cityRequired": "Aby wybrać oddział, najpierw wybierz miasto z listy"
         },
         "courierAddress": {
-          "label": "Adres kuriera",
+          "label": "Adres dostawy",
           "line1Placeholder": "Ulica, numer domu, mieszkanie",
           "line2Placeholder": "Dodatkowe informacje o adresie (opcjonalnie)"
         },
@@ -448,6 +448,20 @@
         "recipientComment": {
           "label": "Komentarz (opcjonalnie)",
           "placeholder": "Komentarz do dostawy"
+        },
+        "methodCards": {
+          "warehouse": {
+            "title": "Oddział",
+            "description": "Odbiór z oddziale Nova Poshta"
+          },
+          "locker": {
+            "title": "Paczkomat",
+            "description": "Odbiór z paczkomatu Nova Poshta"
+          },
+          "courier": {
+            "title": "Kurier",
+            "description": "Dostawa kurierska Nova Poshta pod drzwi"
+          }
         }
       },
       "checkout": {
