@@ -106,6 +106,30 @@ function normalizeLookupValue(value: string): string {
   return value.trim().toLocaleLowerCase();
 }
 
+function normalizeExternalRecoveryUrl(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+
+  const trimmed = value.trim();
+
+  if (trimmed.length === 0) return null;
+
+  if (/[\u0000-\u001F\u007F]/.test(trimmed)) {
+    return null;
+  }
+
+  try {
+    const url = new URL(trimmed);
+
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      return null;
+    }
+
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
 function normalizeShippingCity(raw: unknown): ShippingCity | null {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
     return null;
@@ -310,6 +334,7 @@ function SelectableCard({
       aria-disabled={disabled || undefined}
       className={cn(
         SHOP_CART_SELECTABLE_CARD,
+        'focus-within:ring-foreground focus-within:ring-2 focus-within:ring-offset-2 focus-within:outline-none',
         size === 'compact'
           ? SHOP_CART_SELECTABLE_CARD_COMPACT
           : SHOP_CART_SELECTABLE_CARD_TALL,
@@ -1162,10 +1187,7 @@ export default function CartPage({
         data.clientSecret.trim().length > 0
           ? data.clientSecret
           : null;
-      const monobankPageUrl: string | null =
-        typeof data.pageUrl === 'string' && data.pageUrl.trim().length > 0
-          ? data.pageUrl
-          : null;
+      const monobankPageUrl = normalizeExternalRecoveryUrl(data.pageUrl);
       const statusToken: string | null =
         typeof data.statusToken === 'string' &&
         data.statusToken.trim().length > 0
@@ -1195,7 +1217,12 @@ export default function CartPage({
         return;
       }
 
-      if (paymentProvider === 'monobank') {
+      if (selectedProvider === 'monobank') {
+        if (paymentProvider !== 'monobank') {
+          setCheckoutError(t('checkout.errors.unexpectedResponse'));
+          return;
+        }
+
         if (checkoutPaymentMethod === 'monobank_google_pay') {
           if (!statusToken) {
             setCheckoutError(t('checkout.errors.unexpectedResponse'));
@@ -1414,12 +1441,17 @@ export default function CartPage({
         <div className="lg:grid lg:grid-cols-5 lg:gap-8">
           <div className="space-y-6 lg:col-span-3">
             <section className={SHOP_CART_CARD} aria-label={t('itemsLabel')}>
-              <div className={SHOP_CART_SECTION_HEADER}>
+              <div className="border-border flex items-center gap-3 border-b px-5 py-4">
                 <div className="bg-foreground text-background flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold">
                   1
                 </div>
 
-                <h2 className="text-foreground text-sm font-semibold tracking-wider uppercase">
+                <h2
+                  className={cn(
+                    SHOP_CART_SECTION_HEADER,
+                    'text-sm tracking-wider uppercase'
+                  )}
+                >
                   {t('itemsLabel')}
                 </h2>
 
@@ -1572,12 +1604,17 @@ export default function CartPage({
             </section>
 
             <section className={SHOP_CART_CARD}>
-              <div className={SHOP_CART_SECTION_HEADER}>
+              <div className="border-border flex items-center gap-3 border-b px-5 py-4">
                 <div className="bg-foreground text-background flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold">
                   2
                 </div>
 
-                <h2 className="text-foreground text-sm font-semibold tracking-wider uppercase">
+                <h2
+                  className={cn(
+                    SHOP_CART_SECTION_HEADER,
+                    'text-sm tracking-wider uppercase'
+                  )}
+                >
                   {t('delivery.legend')}
                 </h2>
               </div>
@@ -1961,12 +1998,17 @@ export default function CartPage({
             </section>
 
             <section className={SHOP_CART_CARD}>
-              <div className={SHOP_CART_SECTION_HEADER}>
+              <div className="border-border flex items-center gap-3 border-b px-5 py-4">
                 <div className="bg-foreground text-background flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold">
                   3
                 </div>
 
-                <h2 className="text-foreground text-sm font-semibold tracking-wider uppercase">
+                <h2
+                  className={cn(
+                    SHOP_CART_SECTION_HEADER,
+                    'text-sm tracking-wider uppercase'
+                  )}
+                >
                   {t('checkout.paymentMethod.label')}
                 </h2>
               </div>
@@ -2107,10 +2149,13 @@ export default function CartPage({
           <aside className="mt-8 lg:col-span-2 lg:mt-0">
             <div className="lg:sticky lg:top-8">
               <div className={SHOP_CART_CARD}>
-                <div className={SHOP_CART_SECTION_HEADER}>
+                <div className="border-border flex items-center gap-3 border-b px-5 py-4">
                   <h2
                     id="order-summary"
-                    className="text-foreground text-sm font-semibold tracking-wider uppercase"
+                    className={cn(
+                      SHOP_CART_SECTION_HEADER,
+                      'text-sm tracking-wider uppercase'
+                    )}
                   >
                     {t('summary.heading')}
                   </h2>

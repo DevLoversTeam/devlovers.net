@@ -352,20 +352,105 @@ type CheckoutOrderShape = {
 };
 type CheckoutCreateResult = Awaited<ReturnType<typeof createOrderWithItems>>;
 
+const VALID_CHECKOUT_PAYMENT_PROVIDERS = new Set<PaymentProvider>([
+  'none',
+  'stripe',
+  'monobank',
+]);
+
+const VALID_CHECKOUT_PAYMENT_STATUSES = new Set<PaymentStatus>([
+  'pending',
+  'requires_payment',
+  'paid',
+  'failed',
+  'refunded',
+  'needs_review',
+]);
+
+function normalizeRecoveredCheckoutOrder(
+  value: unknown
+): CheckoutOrderShape | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return null;
+  }
+
+  const candidate = value as Record<string, unknown>;
+
+  const id = typeof candidate.id === 'string' ? candidate.id.trim() : '';
+  const currency =
+    typeof candidate.currency === 'string' ? candidate.currency.trim() : '';
+  const totalAmount =
+    typeof candidate.totalAmount === 'number' &&
+    Number.isFinite(candidate.totalAmount)
+      ? candidate.totalAmount
+      : null;
+
+  const paymentStatus =
+    typeof candidate.paymentStatus === 'string' &&
+    VALID_CHECKOUT_PAYMENT_STATUSES.has(
+      candidate.paymentStatus as PaymentStatus
+    )
+      ? (candidate.paymentStatus as PaymentStatus)
+      : null;
+
+  const paymentProvider =
+    typeof candidate.paymentProvider === 'string' &&
+    VALID_CHECKOUT_PAYMENT_PROVIDERS.has(
+      candidate.paymentProvider as PaymentProvider
+    )
+      ? (candidate.paymentProvider as PaymentProvider)
+      : null;
+
+  const paymentIntentIdRaw = candidate.paymentIntentId;
+  const paymentIntentId =
+    paymentIntentIdRaw === null || paymentIntentIdRaw === undefined
+      ? null
+      : typeof paymentIntentIdRaw === 'string'
+        ? paymentIntentIdRaw.trim() || null
+        : null;
+
+  if (
+    !id ||
+    !currency ||
+    totalAmount === null ||
+    !paymentStatus ||
+    !paymentProvider
+  ) {
+    return null;
+  }
+
+  if (
+    paymentIntentIdRaw !== null &&
+    paymentIntentIdRaw !== undefined &&
+    typeof paymentIntentIdRaw !== 'string'
+  ) {
+    return null;
+  }
+
+  return {
+    id,
+    currency,
+    totalAmount,
+    paymentStatus,
+    paymentProvider,
+    paymentIntentId,
+  };
+}
+
 function extractRecoveredCheckoutOrder(
   value: unknown
 ): CheckoutOrderShape | null {
-  if (!value || typeof value !== 'object') return null;
-
-  if ('order' in value && value.order && typeof value.order === 'object') {
-    return value.order as CheckoutOrderShape;
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return null;
   }
 
-  if ('id' in value) {
-    return value as CheckoutOrderShape;
+  const obj = value as Record<string, unknown>;
+
+  if ('order' in obj) {
+    return normalizeRecoveredCheckoutOrder(obj.order);
   }
 
-  return null;
+  return normalizeRecoveredCheckoutOrder(obj);
 }
 
 function buildRecoveredCheckoutResult(
@@ -1085,7 +1170,6 @@ export async function POST(request: NextRequest) {
             paymentProvider: order.paymentProvider,
             paymentStatus: order.paymentStatus,
           }),
-          orderMeta,
         });
         return null;
       }

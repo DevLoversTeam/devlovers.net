@@ -128,11 +128,6 @@ describe('checkout route - stripe disabled recovery', () => {
     mockReadPositiveIntEnv.mockImplementation(
       (_name: string, fallback: number) => fallback
     );
-
-    mockCreateOrderWithItems.mockReset();
-    mockFindExistingCheckoutOrderByIdempotencyKey.mockReset();
-    mockRestockOrder.mockReset();
-    mockEnsureStripePaymentIntentForOrder.mockReset();
   });
 
   function makeRequest(body: Record<string, unknown>) {
@@ -237,9 +232,7 @@ describe('checkout route - stripe disabled recovery', () => {
 
     const { POST } = await import('@/app/api/shop/checkout/route');
 
-    const response = await POST(
-      makeRequest({ paymentProvider: 'stripe' }) as any
-    );
+    const response = await POST(makeRequest({ paymentProvider: 'stripe' }));
     const json = await response.json();
 
     expect(response.status).toBe(500);

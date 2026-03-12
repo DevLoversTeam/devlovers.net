@@ -454,28 +454,46 @@ async function getOrderPaymentState(orderId: string): Promise<{
 }
 
 async function cleanupSeededData(bucket: CleanupBucket) {
+  const failures: string[] = [];
+
   for (const orderId of [...bucket.orderIds].reverse()) {
     try {
       await cleanupOrder(orderId);
-    } catch {
-      // no-op
+    } catch (error) {
+      failures.push(
+        `cleanupOrder(orderId=${orderId}) failed: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
     }
   }
 
   for (const productId of [...bucket.productIds].reverse()) {
     try {
       await cleanupProduct(productId);
-    } catch {
-      // no-op
+    } catch (error) {
+      failures.push(
+        `cleanupProduct(productId=${productId}) failed: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
     }
   }
 
   for (const cityRef of [...bucket.cityRefs].reverse()) {
     try {
       await cleanupCity(cityRef);
-    } catch {
-      // no-op
+    } catch (error) {
+      failures.push(
+        `cleanupCity(cityRef=${cityRef}) failed: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
     }
+  }
+
+  if (failures.length > 0) {
+    throw new Error(`Seed cleanup failed:\n${failures.join('\n')}`);
   }
 }
 
@@ -807,52 +825,77 @@ test.describe('shop checkout local UX', () => {
   });
 
   test('pending return UX: pending state stays non-paid and does not redirect to success', async ({
-    page,
-  }) => {
-    const bucket: CleanupBucket = {
-      orderIds: [],
-      productIds: [],
-      cityRefs: [],
-    };
+  page,
+}) => {
+  const bucket: CleanupBucket = {
+    orderIds: [],
+    productIds: [],
+    cityRefs: [],
+  };
 
-    try {
-      const orderId = crypto.randomUUID();
-      bucket.orderIds.push(orderId);
+  try {
+    const orderId = crypto.randomUUID();
+    bucket.orderIds.push(orderId);
 
-      await insertOrder({
-        orderId,
-        currency: 'UAH',
-        totalAmountMinor: 4200,
-        paymentProvider: 'monobank',
-        paymentStatus: 'pending',
-      });
+    await insertOrder({
+      orderId,
+      currency: 'UAH',
+      totalAmountMinor: 4200,
+      paymentProvider: 'monobank',
+      paymentStatus: 'pending',
+    });
 
-      const statusToken = createStatusToken({
-        orderId,
-        scopes: ['status_lite'],
-      });
+    const statusToken = createStatusToken({
+      orderId,
+      scopes: ['status_lite'],
+    });
 
-      await page.goto(
-        `/en/shop/checkout/return/monobank?orderId=${encodeURIComponent(
-          orderId
-        )}&statusToken=${encodeURIComponent(statusToken)}`
-      );
+    let pendingStatusPollCount = 0;
 
-      await expect(
-        page.getByRole('heading', { name: 'Processing payment...' })
-      ).toBeVisible();
-      await expect(page.getByText('Payment pending')).toBeVisible({
-        timeout: 10_000,
-      });
+    await page.route(
+      `**/api/shop/orders/${orderId}/status?**`,
+      async route => {
+        pendingStatusPollCount += 1;
 
-      await page.waitForTimeout(3_500);
-      await expect(page).toHaveURL(/\/en\/shop\/checkout\/return\/monobank/);
-      await expect(page.getByText('Payment confirmed')).toHaveCount(0);
-    } finally {
-      await stopActivePageEffects(page);
-      await cleanupSeededData(bucket);
-    }
-  });
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            success: true,
+            orderId,
+            paymentStatus: 'pending',
+            paymentProvider: 'monobank',
+            status: 'INVENTORY_RESERVED',
+            inventoryStatus: 'reserved',
+            canRetryPayment: false,
+            canCancel: false,
+          }),
+        });
+      }
+    );
+
+    await page.goto(
+      `/en/shop/checkout/return/monobank?orderId=${encodeURIComponent(
+        orderId
+      )}&statusToken=${encodeURIComponent(statusToken)}`
+    );
+
+    await expect(
+      page.getByRole('heading', { name: 'Processing payment...' })
+    ).toBeVisible();
+
+    await expect(page.getByText('Payment pending')).toBeVisible({
+      timeout: 10_000,
+    });
+
+    await expect.poll(() => pendingStatusPollCount).toBeGreaterThan(0);
+    await expect(page).toHaveURL(/\/en\/shop\/checkout\/return\/monobank/);
+    await expect(page.getByText('Payment confirmed')).toHaveCount(0);
+  } finally {
+    await stopActivePageEffects(page);
+    await cleanupSeededData(bucket);
+  }
+});
 
   test('failure/cancel return UX: failed state remains non-paid and retry path is usable', async ({
     page,
