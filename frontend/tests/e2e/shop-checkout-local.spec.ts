@@ -534,7 +534,6 @@ async function addSeededProductToCart(args: {
   await expect(page.getByRole('link', { name: product.title })).toBeVisible();
   await expect(page.locator('button[aria-busy]')).toBeVisible();
 }
-
 async function stopActivePageEffects(page: Page) {
   try {
     await page.route('**/api/shop/orders/*/status*', route => route.abort());
@@ -552,6 +551,51 @@ async function stopActivePageEffects(page: Page) {
     await page.waitForTimeout(250);
   } catch {
     // no-op
+  }
+}
+function logSupplementalTeardownErrors(errors: unknown[]) {
+  for (const error of errors) {
+    console.error(
+      'Supplemental teardown error in shop-checkout-local.spec.ts',
+      error
+    );
+  }
+}
+
+async function runTeardownPreservingPrimaryError(args: {
+  page: Page;
+  bucket: CleanupBucket;
+  primaryError: unknown;
+}) {
+  const teardownErrors: unknown[] = [];
+
+  try {
+    await stopActivePageEffects(args.page);
+  } catch (error) {
+    teardownErrors.push(error);
+  }
+
+  try {
+    await cleanupSeededData(args.bucket);
+  } catch (error) {
+    teardownErrors.push(error);
+  }
+
+  if (args.primaryError) {
+    if (teardownErrors.length > 0) {
+      logSupplementalTeardownErrors(teardownErrors);
+    }
+
+    throw args.primaryError;
+  }
+
+  if (teardownErrors.length === 1) {
+    throw teardownErrors[0];
+  }
+
+  if (teardownErrors.length > 1) {
+    logSupplementalTeardownErrors(teardownErrors.slice(1));
+    throw teardownErrors[0];
   }
 }
 
@@ -573,6 +617,7 @@ test.describe('shop checkout local UX', () => {
       productIds: [],
       cityRefs: [],
     };
+    let primaryError: unknown = null;
 
     try {
       const product = await seedProduct('happy');
@@ -623,7 +668,7 @@ test.describe('shop checkout local UX', () => {
       await page.fill('#recipient-phone', '+380501112233');
 
       const cartTotalText = (
-        await page.locator('aside .text-2xl.font-bold').first().innerText()
+        await page.getByTestId('checkout-summary-total').innerText()
       ).trim();
 
       const placeOrderButton = page.locator('button[aria-busy]');
@@ -659,10 +704,7 @@ test.describe('shop checkout local UX', () => {
       ).toBeVisible();
 
       const paymentAmountText = (
-        await page
-          .locator('aside[aria-label="Order summary"] dd')
-          .nth(1)
-          .innerText()
+        await page.getByTestId('payment-summary-total').innerText()
       ).trim();
       expect(digitsOnly(paymentAmountText)).toBe(digitsOnly(cartTotalText));
 
@@ -671,9 +713,14 @@ test.describe('shop checkout local UX', () => {
       expect(orderState?.paymentStatus).not.toBe('paid');
       expect(orderState?.totalAmountMinor).toBe(product.priceMinorUah);
       await expect(page.getByText('Payment confirmed')).toHaveCount(0);
+    } catch (error) {
+      primaryError = error;
     } finally {
-      await stopActivePageEffects(page);
-      await cleanupSeededData(bucket);
+      await runTeardownPreservingPrimaryError({
+        page,
+        bucket,
+        primaryError,
+      });
     }
   });
 
@@ -685,6 +732,7 @@ test.describe('shop checkout local UX', () => {
       productIds: [],
       cityRefs: [],
     };
+    let primaryError: unknown = null;
 
     try {
       const product = await seedProduct('shipping-block');
@@ -709,9 +757,14 @@ test.describe('shop checkout local UX', () => {
       await expect(page.locator('p[role="alert"]').first()).toBeVisible();
       expect(checkoutRequestCount).toBe(0);
       await expect(page).toHaveURL(/\/uk\/shop\/cart$/);
+    } catch (error) {
+      primaryError = error;
     } finally {
-      await stopActivePageEffects(page);
-      await cleanupSeededData(bucket);
+      await runTeardownPreservingPrimaryError({
+        page,
+        bucket,
+        primaryError,
+      });
     }
   });
 
@@ -723,6 +776,7 @@ test.describe('shop checkout local UX', () => {
       productIds: [],
       cityRefs: [],
     };
+    let primaryError: unknown = null;
 
     try {
       const product = await seedProduct('usd-gating');
@@ -744,9 +798,14 @@ test.describe('shop checkout local UX', () => {
       await expect(
         page.locator('input[name="payment-method-monobank"]')
       ).toHaveCount(0);
+    } catch (error) {
+      primaryError = error;
     } finally {
-      await stopActivePageEffects(page);
-      await cleanupSeededData(bucket);
+      await runTeardownPreservingPrimaryError({
+        page,
+        bucket,
+        primaryError,
+      });
     }
   });
 
@@ -758,6 +817,7 @@ test.describe('shop checkout local UX', () => {
       productIds: [],
       cityRefs: [],
     };
+    let primaryError: unknown = null;
 
     try {
       const orderId = crypto.randomUUID();
@@ -818,84 +878,95 @@ test.describe('shop checkout local UX', () => {
         new RegExp(`/uk/shop/checkout/return/monobank\\?orderId=${orderId}`)
       );
       await expect(page.getByText('Payment confirmed')).toHaveCount(0);
+    } catch (error) {
+      primaryError = error;
     } finally {
-      await stopActivePageEffects(page);
-      await cleanupSeededData(bucket);
+      await runTeardownPreservingPrimaryError({
+        page,
+        bucket,
+        primaryError,
+      });
     }
   });
 
   test('pending return UX: pending state stays non-paid and does not redirect to success', async ({
-  page,
-}) => {
-  const bucket: CleanupBucket = {
-    orderIds: [],
-    productIds: [],
-    cityRefs: [],
-  };
+    page,
+  }) => {
+    const bucket: CleanupBucket = {
+      orderIds: [],
+      productIds: [],
+      cityRefs: [],
+    };
+    let primaryError: unknown = null;
 
-  try {
-    const orderId = crypto.randomUUID();
-    bucket.orderIds.push(orderId);
+    try {
+      const orderId = crypto.randomUUID();
+      bucket.orderIds.push(orderId);
 
-    await insertOrder({
-      orderId,
-      currency: 'UAH',
-      totalAmountMinor: 4200,
-      paymentProvider: 'monobank',
-      paymentStatus: 'pending',
-    });
+      await insertOrder({
+        orderId,
+        currency: 'UAH',
+        totalAmountMinor: 4200,
+        paymentProvider: 'monobank',
+        paymentStatus: 'pending',
+      });
 
-    const statusToken = createStatusToken({
-      orderId,
-      scopes: ['status_lite'],
-    });
+      const statusToken = createStatusToken({
+        orderId,
+        scopes: ['status_lite'],
+      });
 
-    let pendingStatusPollCount = 0;
+      let pendingStatusPollCount = 0;
 
-    await page.route(
-      `**/api/shop/orders/${orderId}/status?**`,
-      async route => {
-        pendingStatusPollCount += 1;
+      await page.route(
+        `**/api/shop/orders/${orderId}/status?**`,
+        async route => {
+          pendingStatusPollCount += 1;
 
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            success: true,
-            orderId,
-            paymentStatus: 'pending',
-            paymentProvider: 'monobank',
-            status: 'INVENTORY_RESERVED',
-            inventoryStatus: 'reserved',
-            canRetryPayment: false,
-            canCancel: false,
-          }),
-        });
-      }
-    );
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              success: true,
+              orderId,
+              paymentStatus: 'pending',
+              paymentProvider: 'monobank',
+              status: 'INVENTORY_RESERVED',
+              inventoryStatus: 'reserved',
+              canRetryPayment: false,
+              canCancel: false,
+            }),
+          });
+        }
+      );
 
-    await page.goto(
-      `/en/shop/checkout/return/monobank?orderId=${encodeURIComponent(
-        orderId
-      )}&statusToken=${encodeURIComponent(statusToken)}`
-    );
+      await page.goto(
+        `/en/shop/checkout/return/monobank?orderId=${encodeURIComponent(
+          orderId
+        )}&statusToken=${encodeURIComponent(statusToken)}`
+      );
 
-    await expect(
-      page.getByRole('heading', { name: 'Processing payment...' })
-    ).toBeVisible();
+      await expect(
+        page.getByRole('heading', { name: 'Processing payment...' })
+      ).toBeVisible();
 
-    await expect(page.getByText('Payment pending')).toBeVisible({
-      timeout: 10_000,
-    });
+      await expect(page.getByText('Payment pending')).toBeVisible({
+        timeout: 10_000,
+      });
 
-    await expect.poll(() => pendingStatusPollCount).toBeGreaterThan(0);
-    await expect(page).toHaveURL(/\/en\/shop\/checkout\/return\/monobank/);
-    await expect(page.getByText('Payment confirmed')).toHaveCount(0);
-  } finally {
-    await stopActivePageEffects(page);
-    await cleanupSeededData(bucket);
-  }
-});
+      await expect.poll(() => pendingStatusPollCount).toBeGreaterThan(0);
+      await expect(page).toHaveURL(/\/en\/shop\/checkout\/return\/monobank/);
+      await expect(page.getByText('Payment confirmed')).toHaveCount(0);
+    } catch (error) {
+      primaryError = error;
+    } finally {
+      await runTeardownPreservingPrimaryError({
+        page,
+        bucket,
+        primaryError,
+      });
+    }
+  });
 
   test('failure/cancel return UX: failed state remains non-paid and retry path is usable', async ({
     page,
@@ -906,6 +977,7 @@ test.describe('shop checkout local UX', () => {
       productIds: [],
       cityRefs: [],
     };
+    let primaryError: unknown = null;
 
     try {
       const orderId = crypto.randomUUID();
@@ -933,11 +1005,9 @@ test.describe('shop checkout local UX', () => {
       await expect(
         page.getByRole('heading', { name: 'Payment failed' })
       ).toBeVisible();
-      await expect(
-        page.locator('dd.text-foreground.font-semibold.capitalize').filter({
-          hasText: /^failed$/i,
-        })
-      ).toBeVisible();
+      await expect(page.getByTestId('payment-summary-status')).toHaveText(
+        /failed/i
+      );
       await expect(page.getByText('Payment confirmed')).toHaveCount(0);
 
       await page.getByRole('link', { name: 'Retry payment' }).click();
@@ -957,9 +1027,14 @@ test.describe('shop checkout local UX', () => {
       expect(statusRes.status()).toBe(200);
       const statusBody = await statusRes.json();
       expect(statusBody.paymentStatus).toBe('failed');
+    } catch (error) {
+      primaryError = error;
     } finally {
-      await stopActivePageEffects(page);
-      await cleanupSeededData(bucket);
+      await runTeardownPreservingPrimaryError({
+        page,
+        bucket,
+        primaryError,
+      });
     }
   });
 });

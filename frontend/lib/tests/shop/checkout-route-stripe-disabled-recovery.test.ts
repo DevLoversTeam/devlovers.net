@@ -79,6 +79,15 @@ vi.mock('@/lib/shop/currency', () => ({
 
 vi.mock('@/lib/shop/payments', () => ({
   isMethodAllowed: mockIsMethodAllowed,
+  paymentProviderValues: ['stripe', 'monobank', 'none'],
+  paymentStatusValues: [
+    'pending',
+    'requires_payment',
+    'paid',
+    'failed',
+    'refunded',
+    'needs_review',
+  ],
 }));
 
 vi.mock('@/lib/shop/request-locale', () => ({
@@ -167,7 +176,19 @@ describe('checkout route - stripe disabled recovery', () => {
     expect(mockFindExistingCheckoutOrderByIdempotencyKey).toHaveBeenCalledWith(
       'idem_key_1234567890'
     );
-    expect(mockCreateOrderWithItems).not.toHaveBeenCalled();
+
+    expect(mockCreateOrderWithItems).toHaveBeenCalledTimes(1);
+    expect(mockCreateOrderWithItems).toHaveBeenCalledWith({
+      items: [{ productId: 'prod_1', quantity: 1 }],
+      idempotencyKey: 'idem_key_1234567890',
+      userId: null,
+      locale: 'en',
+      country: null,
+      shipping: null,
+      legalConsent: null,
+      paymentProvider: 'stripe',
+      paymentMethod: 'stripe_card',
+    });
     expect(mockEnsureStripePaymentIntentForOrder).not.toHaveBeenCalled();
   });
 
@@ -207,7 +228,18 @@ describe('checkout route - stripe disabled recovery', () => {
     expect(response.status).toBe(200);
     expect(json.orderId).toBe('order_existing_default');
     expect(json.paymentProvider).toBe('stripe');
-    expect(mockCreateOrderWithItems).not.toHaveBeenCalled();
+    expect(mockCreateOrderWithItems).toHaveBeenCalledTimes(1);
+    expect(mockCreateOrderWithItems).toHaveBeenCalledWith({
+      items: [{ productId: 'prod_1', quantity: 1 }],
+      idempotencyKey: 'idem_key_1234567890',
+      userId: null,
+      locale: 'en',
+      country: null,
+      shipping: null,
+      legalConsent: null,
+      paymentProvider: 'stripe',
+      paymentMethod: 'stripe_card',
+    });
     expect(mockEnsureStripePaymentIntentForOrder).not.toHaveBeenCalled();
   });
 
@@ -241,5 +273,48 @@ describe('checkout route - stripe disabled recovery', () => {
     expect(mockRestockOrder).toHaveBeenCalledWith('order_new_1', {
       reason: 'failed',
     });
+  });
+  it('stripe disabled + existing order with unknown payment provider => returns 503', async () => {
+    mockFindExistingCheckoutOrderByIdempotencyKey.mockResolvedValue({
+      id: 'order_existing_bad_provider',
+      currency: 'USD',
+      totalAmount: 30,
+      paymentStatus: 'pending',
+      paymentProvider: 'unknown_provider',
+      paymentIntentId: 'pi_existing_bad_provider',
+    });
+
+    const { POST } = await import('@/app/api/shop/checkout/route');
+
+    const response = await POST(makeRequest({ paymentProvider: 'stripe' }));
+    const json = await response.json();
+
+    expect(response.status).toBe(503);
+    expect(json.code).toBe('PSP_UNAVAILABLE');
+    expect(mockFindExistingCheckoutOrderByIdempotencyKey).toHaveBeenCalledWith(
+      'idem_key_1234567890'
+    );
+    expect(mockCreateOrderWithItems).not.toHaveBeenCalled();
+    expect(mockEnsureStripePaymentIntentForOrder).not.toHaveBeenCalled();
+  });
+  it('stripe disabled + existing order with unknown payment status => returns 503', async () => {
+    mockFindExistingCheckoutOrderByIdempotencyKey.mockResolvedValue({
+      id: 'order_existing_bad_status',
+      currency: 'USD',
+      totalAmount: 30,
+      paymentStatus: 'unknown_status',
+      paymentProvider: 'stripe',
+      paymentIntentId: 'pi_existing_bad_status',
+    });
+
+    const { POST } = await import('@/app/api/shop/checkout/route');
+
+    const response = await POST(makeRequest({ paymentProvider: 'stripe' }));
+    const json = await response.json();
+
+    expect(response.status).toBe(503);
+    expect(json.code).toBe('PSP_UNAVAILABLE');
+    expect(mockCreateOrderWithItems).not.toHaveBeenCalled();
+    expect(mockEnsureStripePaymentIntentForOrder).not.toHaveBeenCalled();
   });
 });

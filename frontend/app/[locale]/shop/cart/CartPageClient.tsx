@@ -1249,16 +1249,37 @@ export default function CartPage({
         return;
       }
 
-      const paymentsDisabledFlag =
-        paymentProvider !== 'stripe' || !clientSecret
-          ? '&paymentsDisabled=true'
-          : '';
+      if (process.env.NODE_ENV !== 'production') {
+        const g = globalThis as unknown as {
+          __DEVLOVERS_SHOP_DEBUG_LOGS__?: Array<{
+            level: 'warn';
+            message: string;
+            meta: Record<string, unknown>;
+            ts: number;
+          }>;
+        };
 
-      router.push(
-        `${shopBase}/checkout/success?orderId=${encodeURIComponent(
-          orderId
-        )}&clearCart=1${paymentsDisabledFlag}${statusTokenQuery}`
-      );
+        if (!g.__DEVLOVERS_SHOP_DEBUG_LOGS__) {
+          g.__DEVLOVERS_SHOP_DEBUG_LOGS__ = [];
+        }
+
+        g.__DEVLOVERS_SHOP_DEBUG_LOGS__.push({
+          level: 'warn',
+          message: '[shop.cart] blocked unexpected checkout provider fallback',
+          meta: {
+            selectedProvider,
+            paymentProvider,
+            orderId,
+            checkoutPaymentMethod,
+            hasClientSecret: !!clientSecret,
+            hasStatusToken: !!statusToken,
+          },
+          ts: Date.now(),
+        });
+      }
+
+      setCheckoutError(t('checkout.errors.unexpectedResponse'));
+      return;
     } catch {
       setCheckoutError(t('checkout.errors.startFailed'));
     } finally {
@@ -2189,7 +2210,10 @@ export default function CartPage({
                         {t('summary.subtotal')}
                       </span>
 
-                      <span className="text-foreground font-medium">
+                      <span
+                        data-testid="checkout-summary-subtotal"
+                        className="text-foreground font-medium"
+                      >
                         {formatMoney(
                           cart.summary.totalAmountMinor,
                           cart.summary.currency,
@@ -2203,7 +2227,10 @@ export default function CartPage({
                         {t('summary.shipping')}
                       </span>
 
-                      <span className="text-muted-foreground text-right text-xs">
+                      <span
+                        data-testid="checkout-summary-shipping"
+                        className="text-muted-foreground text-right text-xs"
+                      >
                         {t('summary.shippingInformationalOnly')}
                       </span>
                     </div>
@@ -2215,7 +2242,10 @@ export default function CartPage({
                         {t('summary.total')}
                       </span>
 
-                      <span className="text-foreground text-2xl font-bold">
+                      <span
+                        data-testid="checkout-summary-total"
+                        className="text-foreground text-2xl font-bold"
+                      >
                         {formatMoney(
                           cart.summary.totalAmountMinor,
                           cart.summary.currency,

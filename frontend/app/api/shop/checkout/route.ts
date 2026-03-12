@@ -38,7 +38,9 @@ import {
   isMethodAllowed,
   type PaymentMethod,
   type PaymentProvider,
+  paymentProviderValues,
   type PaymentStatus,
+  paymentStatusValues,
 } from '@/lib/shop/payments';
 import { resolveRequestLocale } from '@/lib/shop/request-locale';
 import {
@@ -352,21 +354,6 @@ type CheckoutOrderShape = {
 };
 type CheckoutCreateResult = Awaited<ReturnType<typeof createOrderWithItems>>;
 
-const VALID_CHECKOUT_PAYMENT_PROVIDERS = new Set<PaymentProvider>([
-  'none',
-  'stripe',
-  'monobank',
-]);
-
-const VALID_CHECKOUT_PAYMENT_STATUSES = new Set<PaymentStatus>([
-  'pending',
-  'requires_payment',
-  'paid',
-  'failed',
-  'refunded',
-  'needs_review',
-]);
-
 function normalizeRecoveredCheckoutOrder(
   value: unknown
 ): CheckoutOrderShape | null {
@@ -387,17 +374,13 @@ function normalizeRecoveredCheckoutOrder(
 
   const paymentStatus =
     typeof candidate.paymentStatus === 'string' &&
-    VALID_CHECKOUT_PAYMENT_STATUSES.has(
-      candidate.paymentStatus as PaymentStatus
-    )
+    paymentStatusValues.includes(candidate.paymentStatus as PaymentStatus)
       ? (candidate.paymentStatus as PaymentStatus)
       : null;
 
   const paymentProvider =
     typeof candidate.paymentProvider === 'string' &&
-    VALID_CHECKOUT_PAYMENT_PROVIDERS.has(
-      candidate.paymentProvider as PaymentProvider
-    )
+    paymentProviderValues.includes(candidate.paymentProvider as PaymentProvider)
       ? (candidate.paymentProvider as PaymentProvider)
       : null;
 
@@ -1118,13 +1101,26 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      await createOrderWithItems({
+        items,
+        idempotencyKey,
+        userId: sessionUserId,
+        locale,
+        country: country ?? null,
+        shipping: shipping ?? null,
+        legalConsent: legalConsent ?? null,
+        paymentProvider: 'stripe',
+        paymentMethod: selectedMethod,
+      });
+
+      recoveredCheckoutResult = buildRecoveredCheckoutResult(recoveredOrder);
+
       logInfo('checkout_idempotent_recovery_while_stripe_disabled', {
         ...authMeta,
         orderId: recoveredOrder.id,
         code: 'IDEMPOTENT_RECOVERY',
+        validation: 'createOrderWithItems',
       });
-
-      recoveredCheckoutResult = buildRecoveredCheckoutResult(recoveredOrder);
     }
 
     const result =

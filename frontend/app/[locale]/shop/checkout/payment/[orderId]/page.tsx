@@ -400,19 +400,30 @@ export default async function PaymentPage(props: PaymentPageProps) {
           <dl className="text-muted-foreground mt-4 space-y-3 text-sm">
             <div className="flex items-center justify-between">
               <dt>{t('payment.items')}</dt>
-              <dd className="text-foreground font-medium">{itemsCount}</dd>
+              <dd
+                data-testid="payment-summary-items"
+                className="text-foreground font-medium"
+              >
+                {itemsCount}
+              </dd>
             </div>
 
             <div className="flex items-center justify-between">
               <dt>{t('payment.totalAmount')}</dt>
-              <dd className="text-foreground font-semibold">
+              <dd
+                data-testid="payment-summary-total"
+                className="text-foreground font-semibold"
+              >
                 {formatMoney(order.totalAmountMinor, order.currency, locale)}
               </dd>
             </div>
 
             <div className="flex items-center justify-between">
               <dt>{t('payment.status')}</dt>
-              <dd className="text-foreground font-semibold capitalize">
+              <dd
+                data-testid="payment-summary-status"
+                className="text-foreground font-semibold capitalize"
+              >
                 {order.paymentStatus}
               </dd>
             </div>
