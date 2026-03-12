@@ -34,6 +34,11 @@ const JOB2_ORDER_FAILURE_MESSAGE = 'Monobank invoice create failed.';
 const JOB2_ATTEMPT_ERROR_CODE = 'invoice_missing';
 const JOB2_ATTEMPT_ERROR_MESSAGE =
   'Active attempt missing invoice details (stale).';
+const RECONCILABLE_INVOICE_ID_SQL = sql`coalesce(
+  nullif(pa.provider_payment_intent_id, ''),
+  nullif(pa.metadata -> 'monobank' -> 'wallet' ->> 'invoiceId', ''),
+  nullif(pa.metadata -> 'wallet' ->> 'invoiceId', '')
+)`;
 const UNKNOWN_WALLET_SUBMIT_OUTCOME_SQL = sql`lower(
   coalesce(
     pa.metadata -> 'monobank' -> 'wallet' ->> 'submitOutcome',
@@ -464,7 +469,10 @@ async function readDryRunJob2Candidates(args: {
       and pa.provider_payment_intent_id is null
       and (
         pa.status = 'creating'
-        or ${UNKNOWN_WALLET_SUBMIT_OUTCOME_SQL}
+        or (
+          ${UNKNOWN_WALLET_SUBMIT_OUTCOME_SQL}
+          and ${RECONCILABLE_INVOICE_ID_SQL} is null
+        )
       )
       and pa.created_at < now() - make_interval(secs => ${args.ttlSeconds})
       and (pa.janitor_claimed_until is null or pa.janitor_claimed_until < now())
@@ -498,7 +506,10 @@ async function claimJob2Attempts(args: {
         and pa.provider_payment_intent_id is null
         and (
           pa.status = 'creating'
-          or ${UNKNOWN_WALLET_SUBMIT_OUTCOME_SQL}
+          or (
+            ${UNKNOWN_WALLET_SUBMIT_OUTCOME_SQL}
+            and ${RECONCILABLE_INVOICE_ID_SQL} is null
+          )
         )
         and pa.created_at < now() - make_interval(secs => ${args.ttlSeconds})
         and (pa.janitor_claimed_until is null or pa.janitor_claimed_until < now())
@@ -555,7 +566,10 @@ async function atomicCancelOrderAndFailCreatingAttempt(args: {
         and pa.provider_payment_intent_id is null
         and (
           pa.status = 'creating'
-          or ${UNKNOWN_WALLET_SUBMIT_OUTCOME_SQL}
+          or (
+            ${UNKNOWN_WALLET_SUBMIT_OUTCOME_SQL}
+            and ${RECONCILABLE_INVOICE_ID_SQL} is null
+          )
         )
         and pa.created_at < now() - make_interval(secs => ${args.ttlSeconds})
         and pa.janitor_claimed_by = ${args.runId}
@@ -577,7 +591,10 @@ async function atomicCancelOrderAndFailCreatingAttempt(args: {
         and pa.provider_payment_intent_id is null
         and (
           pa.status = 'creating'
-          or ${UNKNOWN_WALLET_SUBMIT_OUTCOME_SQL}
+          or (
+            ${UNKNOWN_WALLET_SUBMIT_OUTCOME_SQL}
+            and ${RECONCILABLE_INVOICE_ID_SQL} is null
+          )
         )
         and pa.janitor_claimed_by = ${args.runId}
         and exists (select 1 from updated_order)
@@ -872,9 +889,9 @@ export async function runMonobankJanitorJob2(
     limit: args.limit,
     ttlSeconds,
     leaseSeconds,
-      targetStatuses: STALE_JOB2_MONOBANK_ATTEMPT_STATUSES,
-      claimed: claimed.length,
-      processed,
+    targetStatuses: STALE_JOB2_MONOBANK_ATTEMPT_STATUSES,
+    claimed: claimed.length,
+    processed,
     applied,
     noop,
     failed,

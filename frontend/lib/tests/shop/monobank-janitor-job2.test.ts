@@ -271,6 +271,73 @@ describe.sequential('monobank janitor job2', () => {
     }
   });
 
+  it('stale active unknown-submit attempt with metadata invoiceId is not canceled by job2', async () => {
+    const staleAt = new Date(Date.now() - 2 * 60 * 60 * 1000);
+    const hintedInvoiceId = `inv_${crypto.randomUUID()}`;
+    const { orderId, attemptId } = await insertOrderAndAttempt({
+      createdAt: staleAt,
+      attemptStatus: 'active',
+      attemptMetadata: {
+        monobank: {
+          wallet: {
+            requested: 'google_pay',
+            submitOutcome: 'unknown',
+            syncStatus: 'unknown',
+            invoiceId: hintedInvoiceId,
+          },
+        },
+      },
+    });
+
+    try {
+      const first = await runMonobankJanitorJob2(makeArgs());
+      expect(first).toEqual({
+        processed: 0,
+        applied: 0,
+        noop: 0,
+        failed: 0,
+      });
+
+      const second = await runMonobankJanitorJob2(makeArgs());
+      expect(second).toEqual({
+        processed: 0,
+        applied: 0,
+        noop: 0,
+        failed: 0,
+      });
+
+      const [attempt] = await db
+        .select({
+          status: paymentAttempts.status,
+          finalizedAt: paymentAttempts.finalizedAt,
+          lastErrorCode: paymentAttempts.lastErrorCode,
+        })
+        .from(paymentAttempts)
+        .where(eq(paymentAttempts.id, attemptId))
+        .limit(1);
+      expect(attempt?.status).toBe('active');
+      expect(attempt?.finalizedAt).toBeNull();
+      expect(attempt?.lastErrorCode).toBeNull();
+
+      const [order] = await db
+        .select({
+          paymentStatus: orders.paymentStatus,
+          status: orders.status,
+          inventoryStatus: orders.inventoryStatus,
+          stockRestored: orders.stockRestored,
+        })
+        .from(orders)
+        .where(eq(orders.id, orderId))
+        .limit(1);
+      expect(order?.paymentStatus).toBe('pending');
+      expect(order?.status).toBe('INVENTORY_RESERVED');
+      expect(order?.inventoryStatus).toBe('reserved');
+      expect(order?.stockRestored).toBe(false);
+    } finally {
+      await cleanup(orderId);
+    }
+  });
+
   it('dryRun counts eligible rows without claiming or mutating', async () => {
     const staleAt = new Date(Date.now() - 2 * 60 * 60 * 1000);
     const { orderId, attemptId } = await insertOrderAndAttempt({

@@ -6,7 +6,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { db } from '@/db';
 import { monobankEvents, orders, paymentAttempts } from '@/db/schema';
 import { buildMonobankAttemptIdempotencyKey } from '@/lib/services/orders/attempt-idempotency';
-import { runMonobankJanitorJob1 } from '@/lib/services/orders/monobank-janitor';
+import {
+  runMonobankJanitorJob1,
+  runMonobankJanitorJob2,
+} from '@/lib/services/orders/monobank-janitor';
 import { toDbMoney } from '@/lib/shop/money';
 
 const getInvoiceStatusMock = vi.fn();
@@ -106,10 +109,28 @@ function makeArgs(
   };
 }
 
+function makeJob2Args(
+  override?: Partial<Parameters<typeof runMonobankJanitorJob2>[0]>
+) {
+  return {
+    dryRun: false,
+    limit: 20,
+    requestId: `req-${crypto.randomUUID()}`,
+    runId: crypto.randomUUID(),
+    baseMeta: {
+      route: '/api/shop/internal/monobank/janitor',
+      method: 'POST',
+      jobName: 'monobank-janitor',
+    },
+    ...override,
+  };
+}
+
 describe.sequential('monobank janitor job1', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubEnv('MONO_JANITOR_JOB1_GRACE_SECONDS', '900');
+    vi.stubEnv('MONO_JANITOR_JOB2_TTL_SECONDS', '120');
     vi.stubEnv('MONO_JANITOR_LEASE_SECONDS', '120');
   });
 
@@ -326,6 +347,14 @@ describe.sequential('monobank janitor job1', () => {
     });
 
     try {
+      const job2 = await runMonobankJanitorJob2(makeJob2Args());
+      expect(job2).toEqual({
+        processed: 0,
+        applied: 0,
+        noop: 0,
+        failed: 0,
+      });
+
       const res = await runMonobankJanitorJob1(makeArgs());
       expect(res.applied).toBeGreaterThanOrEqual(1);
       expect(res.processed).toBeGreaterThanOrEqual(1);
