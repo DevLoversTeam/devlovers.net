@@ -67,6 +67,10 @@ async function buildStatusMessage(status: string) {
   return t('completePayment');
 }
 
+function canInitializeStripeForPaymentStatus(status: string): boolean {
+  return status === 'pending' || status === 'requires_payment';
+}
+
 function shouldClearCart(
   searchParams?: Record<string, string | string[] | undefined>
 ): boolean {
@@ -241,10 +245,14 @@ export default async function PaymentPage(props: PaymentPageProps) {
 
   let clientSecret = resolveClientSecret(searchParams);
   const publishableKey = paymentsEnabled ? stripeEnv.publishableKey : null;
+  const shouldInitStripePaymentIntent = canInitializeStripeForPaymentStatus(
+    order.paymentStatus
+  );
 
   if (
     paymentsEnabled &&
     publishableKey &&
+    shouldInitStripePaymentIntent &&
     (!clientSecret || !clientSecret.trim())
   ) {
     const existingPi = order.paymentIntentId?.trim() ?? '';

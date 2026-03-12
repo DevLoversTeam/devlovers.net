@@ -158,9 +158,9 @@ export default function MonobankReturnStatus({
         }
 
         if (TERMINAL_NON_PAID.has(nextStatus.paymentStatus)) {
-          router.replace(
-            `/shop/checkout/error?orderId=${encodeURIComponent(orderId)}`
-          );
+          const qp = new URLSearchParams({ orderId });
+          if (normalizedToken) qp.set('statusToken', normalizedToken);
+          router.replace(`/shop/checkout/error?${qp.toString()}`);
           return;
         }
 

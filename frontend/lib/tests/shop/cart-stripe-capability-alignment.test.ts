@@ -19,7 +19,7 @@ describe('cart stripe capability alignment', () => {
   it('resolves stripe as disabled when canonical capability is false', async () => {
     isStripePaymentsEnabledMock.mockReturnValue(false);
 
-    const mod = await import('@/app/[locale]/shop/cart/page');
+    const mod = await import('@/app/[locale]/shop/cart/capabilities');
     const enabled = mod.resolveStripeCheckoutEnabled();
 
     expect(enabled).toBe(false);
@@ -32,7 +32,7 @@ describe('cart stripe capability alignment', () => {
   it('resolves stripe as enabled when canonical capability is true', async () => {
     isStripePaymentsEnabledMock.mockReturnValue(true);
 
-    const mod = await import('@/app/[locale]/shop/cart/page');
+    const mod = await import('@/app/[locale]/shop/cart/capabilities');
     const enabled = mod.resolveStripeCheckoutEnabled();
 
     expect(enabled).toBe(true);
