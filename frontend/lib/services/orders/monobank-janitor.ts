@@ -48,7 +48,6 @@ const UNKNOWN_WALLET_SUBMIT_OUTCOME_SQL = sql`lower(
 ) = 'unknown'`;
 const JOB2_STALE_ATTEMPT_PREDICATE_SQL = sql`
   pa.status in ('creating', 'active')
-  and pa.provider_payment_intent_id is null
   and ${RECONCILABLE_INVOICE_ID_SQL} is null
   and (
     pa.status = 'creating'
@@ -542,7 +541,23 @@ async function atomicCancelOrderAndFailCreatingAttempt(args: {
   now: Date;
 }): Promise<string | null> {
   const res = await db.execute(sql`
-    with updated_order as (
+    with locked_candidate as (
+      select
+        pa.id as attempt_id,
+        pa.order_id
+      from payment_attempts pa
+      join orders o on o.id = pa.order_id
+      where pa.id = ${args.attemptId}::uuid
+        and pa.provider = 'monobank'
+        and ${JOB2_STALE_ATTEMPT_PREDICATE_SQL}
+        and pa.created_at < now() - make_interval(secs => ${args.ttlSeconds})
+        and pa.janitor_claimed_by = ${args.runId}
+        and o.payment_provider = 'monobank'
+        and o.payment_status in ('pending', 'requires_payment')
+        and o.status not in ('PAID', 'CANCELED')
+      for update of pa, o
+    ),
+    updated_order as (
       update orders o
       set status = 'CANCELED',
           failure_code = coalesce(o.failure_code, ${JOB2_ORDER_FAILURE_CODE}),
@@ -551,16 +566,8 @@ async function atomicCancelOrderAndFailCreatingAttempt(args: {
             ${JOB2_ORDER_FAILURE_MESSAGE}
           ),
           updated_at = ${args.now}
-      from payment_attempts pa
-      where pa.id = ${args.attemptId}::uuid
-        and pa.order_id = o.id
-        and pa.provider = 'monobank'
-        and ${JOB2_STALE_ATTEMPT_PREDICATE_SQL}
-        and pa.created_at < now() - make_interval(secs => ${args.ttlSeconds})
-        and pa.janitor_claimed_by = ${args.runId}
-        and o.payment_provider = 'monobank'
-        and o.payment_status in ('pending', 'requires_payment')
-        and o.status not in ('PAID', 'CANCELED')
+      from locked_candidate lc
+      where o.id = lc.order_id
       returning o.id
     ),
     updated_attempt as (
@@ -570,11 +577,13 @@ async function atomicCancelOrderAndFailCreatingAttempt(args: {
           updated_at = ${args.now},
           last_error_code = ${JOB2_ATTEMPT_ERROR_CODE},
           last_error_message = ${JOB2_ATTEMPT_ERROR_MESSAGE}
-      where pa.id = ${args.attemptId}::uuid
-        and pa.provider = 'monobank'
-        and ${JOB2_STALE_ATTEMPT_PREDICATE_SQL}
-        and pa.janitor_claimed_by = ${args.runId}
-        and exists (select 1 from updated_order)
+      from locked_candidate lc
+      where pa.id = lc.attempt_id
+        and exists (
+          select 1
+          from updated_order uo
+          where uo.id = lc.order_id
+        )
       returning pa.id
     )
     select

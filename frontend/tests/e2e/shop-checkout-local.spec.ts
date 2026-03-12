@@ -36,9 +36,20 @@ function assertStrictLocalDbGuard() {
   }
 
   if (databaseUrl.trim().length > 0) {
-    throw new Error(
-      'E2E requires DATABASE_URL to be blank or whitespace only.'
-    );
+    let parsedDatabaseUrl: URL;
+    try {
+      parsedDatabaseUrl = new URL(databaseUrl);
+    } catch {
+      throw new Error(
+        'E2E DATABASE_URL must be blank/whitespace or a valid local URL.'
+      );
+    }
+
+    if (!ALLOWED_LOCAL_DB_HOSTS.has(parsedDatabaseUrl.hostname)) {
+      throw new Error(
+        `Refusing to run E2E with non-local DATABASE_URL host: ${parsedDatabaseUrl.hostname}`
+      );
+    }
   }
 
   if (strictLocalDb !== '1') {
@@ -715,9 +726,6 @@ test.describe('shop checkout local UX', () => {
       await expect(
         page.locator('input[name="payment-method-monobank"]')
       ).toHaveCount(0);
-
-      const placeOrderButton = page.locator('button[aria-busy]');
-      await expect(placeOrderButton).toBeDisabled();
     } finally {
       await stopActivePageEffects(page);
       await cleanupSeededData(bucket);

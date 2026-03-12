@@ -74,6 +74,7 @@ type ShippingWarehouse = {
   ref: string;
   name: string;
   address: string | null;
+  isPostMachine: boolean;
 };
 
 function resolveInitialProvider(args: {
@@ -136,7 +137,31 @@ function normalizeShippingCity(raw: unknown): ShippingCity | null {
     nameUa,
   };
 }
+function normalizeShippingWarehouse(raw: unknown): ShippingWarehouse | null {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    return null;
+  }
 
+  const item = raw as Record<string, unknown>;
+
+  const ref = typeof item.ref === 'string' ? item.ref.trim() : '';
+  const name = typeof item.name === 'string' ? item.name.trim() : '';
+  const address =
+    typeof item.address === 'string' ? item.address.trim() || null : null;
+  const isPostMachine =
+    typeof item.isPostMachine === 'boolean' ? item.isPostMachine : null;
+
+  if (!ref || !name || isPostMachine === null) {
+    return null;
+  }
+
+  return {
+    ref,
+    name,
+    address,
+    isPostMachine,
+  };
+}
 function parseShippingCitiesResponse(data: unknown): {
   available: boolean | null;
   items: ShippingCity[];
@@ -166,6 +191,21 @@ function parseShippingCitiesResponse(data: unknown): {
       .map(normalizeShippingCity)
       .filter((item): item is ShippingCity => item !== null),
   };
+}
+
+const VALID_DELIVERY_METHOD_CODES = new Set<CheckoutDeliveryMethodCode>([
+  'NP_WAREHOUSE',
+  'NP_LOCKER',
+  'NP_COURIER',
+]);
+
+function isValidDeliveryMethodCode(
+  value: unknown
+): value is CheckoutDeliveryMethodCode {
+  return (
+    typeof value === 'string' &&
+    VALID_DELIVERY_METHOD_CODES.has(value as CheckoutDeliveryMethodCode)
+  );
 }
 
 function isWarehouseMethod(
@@ -576,8 +616,9 @@ export default function CartPage({
           const m = item as Record<string, unknown>;
 
           const providerOk = m.provider === 'nova_poshta';
-          const methodCodeOk =
-            typeof m.methodCode === 'string' && m.methodCode.trim().length > 0;
+          const methodCode =
+            typeof m.methodCode === 'string' ? m.methodCode.trim() : '';
+          const methodCodeOk = isValidDeliveryMethodCode(methodCode);
           const titleOk =
             typeof m.title === 'string' && m.title.trim().length > 0;
 
@@ -588,7 +629,7 @@ export default function CartPage({
 
           methods.push({
             provider: 'nova_poshta',
-            methodCode: m.methodCode as CheckoutDeliveryMethodCode,
+            methodCode,
             title: String(m.title),
           });
         }
@@ -776,10 +817,27 @@ export default function CartPage({
         }
 
         if (!cancelled) {
-          const next = Array.isArray(data.items)
-            ? (data.items as ShippingWarehouse[])
+          const itemsRaw: unknown[] = Array.isArray(data.items)
+            ? data.items
             : [];
-          setWarehouseOptions(next);
+
+          const next: ShippingWarehouse[] = itemsRaw
+            .map((item: unknown) => normalizeShippingWarehouse(item))
+            .filter(
+              (item: ShippingWarehouse | null): item is ShippingWarehouse =>
+                item !== null
+            );
+
+          const filtered: ShippingWarehouse[] =
+            selectedShippingMethod === 'NP_LOCKER'
+              ? next.filter(
+                  (warehouse: ShippingWarehouse) => warehouse.isPostMachine
+                )
+              : next.filter(
+                  (warehouse: ShippingWarehouse) => !warehouse.isPostMachine
+                );
+
+          setWarehouseOptions(filtered);
         }
       } catch {
         if (!cancelled) {
@@ -803,6 +861,7 @@ export default function CartPage({
     isWarehouseSelectionMethod,
     locale,
     selectedCityRef,
+    selectedShippingMethod,
     shippingAvailable,
     warehouseQuery,
   ]);

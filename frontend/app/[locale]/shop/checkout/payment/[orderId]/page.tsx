@@ -236,6 +236,24 @@ export default async function PaymentPage(props: PaymentPageProps) {
     );
   }
   const order = orderAccess.order;
+  if (order.paymentProvider !== 'stripe') {
+    return (
+      <PageShell
+        title={t('errors.orderNotFound')}
+        description={t('notFoundOrder.message')}
+      >
+        <nav className="mt-6 flex justify-center gap-3" aria-label="Next steps">
+          <Link href={`${shopBase}/cart`} className={SHOP_OUTLINE_BTN}>
+            {t('actions.goToCart')}
+          </Link>
+
+          <HeroCtaLink href={`${shopBase}/products`}>
+            {t('actions.continueShopping')}
+          </HeroCtaLink>
+        </nav>
+      </PageShell>
+    );
+  }
 
   const paymentsEnabled = isStripePaymentsEnabled({
     requirePublishableKey: true,

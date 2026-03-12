@@ -24,13 +24,13 @@ export default defineConfig({
     env: {
       APP_ENV: 'local',
       DATABASE_URL_LOCAL: LOCAL_DB_URL,
-      DATABASE_URL: '',
       SHOP_STRICT_LOCAL_DB: '1',
       SHOP_REQUIRED_DATABASE_URL_LOCAL: LOCAL_DB_URL,
       SHOP_STATUS_TOKEN_SECRET:
         'test_status_token_secret_test_status_token_secret',
       PAYMENTS_ENABLED: 'true',
       MONO_MERCHANT_TOKEN: 'e2e_local_monobank_token',
+      MONO_API_BASE: 'http://127.0.0.1:9999',
       SHOP_MONOBANK_GPAY_ENABLED: 'true',
       MONO_GOOGLE_PAY_GATEWAY_MERCHANT_ID: 'e2e_local_monobank_gateway',
       MONO_GOOGLE_PAY_MERCHANT_NAME: 'DevLovers Local E2E',
