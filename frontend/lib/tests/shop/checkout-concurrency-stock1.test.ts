@@ -3,6 +3,8 @@ import { eq, inArray } from 'drizzle-orm';
 import { NextRequest } from 'next/server';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
+const __prevRateLimitDisabled = process.env.RATE_LIMIT_DISABLED;
+
 import { db } from '@/db';
 import {
   inventoryMoves,
@@ -53,6 +55,16 @@ function toNum(v: unknown): number {
   const n = typeof v === 'number' ? v : Number(v);
   return Number.isFinite(n) ? n : 0;
 }
+
+beforeAll(() => {
+  process.env.RATE_LIMIT_DISABLED = '1';
+});
+
+afterAll(() => {
+  if (__prevRateLimitDisabled === undefined)
+    delete process.env.RATE_LIMIT_DISABLED;
+  else process.env.RATE_LIMIT_DISABLED = __prevRateLimitDisabled;
+});
 
 describe('P0-8.10.1 checkout concurrency: stock=1, two parallel checkouts', () => {
   const stripeKeys = [

@@ -3,6 +3,7 @@ import crypto from 'node:crypto';
 import { expect, type Page, test } from '@playwright/test';
 import { Pool } from 'pg';
 
+import { type PaymentStatus } from '@/lib/shop/payments';
 import { createStatusToken } from '@/lib/shop/status-token';
 
 const REQUIRED_LOCAL_DB_URL =
@@ -259,13 +260,7 @@ async function insertOrder(args: {
   currency: 'USD' | 'UAH';
   totalAmountMinor: number;
   paymentProvider: 'stripe' | 'monobank';
-  paymentStatus:
-    | 'pending'
-    | 'requires_payment'
-    | 'paid'
-    | 'failed'
-    | 'refunded'
-    | 'needs_review';
+  paymentStatus: PaymentStatus;
   status?:
     | 'CREATED'
     | 'INVENTORY_RESERVED'

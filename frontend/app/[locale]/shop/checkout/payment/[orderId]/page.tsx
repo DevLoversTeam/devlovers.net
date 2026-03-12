@@ -68,7 +68,9 @@ async function buildStatusMessage(status: string) {
 }
 
 function canInitializeStripeForPaymentStatus(status: string): boolean {
-  return status === 'pending' || status === 'requires_payment';
+  return (
+    status === 'pending' || status === 'requires_payment' || status === 'failed'
+  );
 }
 
 function shouldClearCart(

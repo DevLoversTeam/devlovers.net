@@ -368,6 +368,9 @@ export default function CartPage({
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
+  const [createdOrderStatusToken, setCreatedOrderStatusToken] = useState<
+    string | null
+  >(null);
   const [paymentRecoveryUrl, setPaymentRecoveryUrl] = useState<string | null>(
     null
   );
@@ -1100,6 +1103,7 @@ export default function CartPage({
     setCheckoutError(null);
     setDeliveryUiError(null);
     setCreatedOrderId(null);
+    setCreatedOrderStatusToken(null);
     setPaymentRecoveryUrl(null);
     setIsCheckingOut(true);
 
@@ -1196,6 +1200,7 @@ export default function CartPage({
 
       const orderId = String(data.orderId);
       setCreatedOrderId(orderId);
+      setCreatedOrderStatusToken(statusToken);
 
       const statusTokenQuery = statusToken
         ? `&statusToken=${encodeURIComponent(statusToken)}`
@@ -1306,7 +1311,11 @@ export default function CartPage({
     (!shippingAvailable || !!selectedShippingMethod);
 
   const orderDetailsHref = createdOrderId
-    ? `/shop/orders/${encodeURIComponent(createdOrderId)}`
+    ? `/shop/orders/${encodeURIComponent(createdOrderId)}${
+        createdOrderStatusToken
+          ? `?statusToken=${encodeURIComponent(createdOrderStatusToken)}`
+          : ''
+      }`
     : null;
   const recoveryHref = paymentRecoveryUrl ?? orderDetailsHref;
   const recoveryIsExternal =
