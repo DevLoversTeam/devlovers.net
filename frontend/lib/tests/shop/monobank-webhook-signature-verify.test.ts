@@ -190,4 +190,36 @@ describe('monobank webhook signature verify', () => {
     expect(ok).toBe(false);
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
+
+  it('classifies pubkey fetch outage as verification_unavailable (retryable)', async () => {
+    const rawBody = Buffer.from(
+      '{"invoiceId":"inv_pubkey_unavailable","status":"success"}'
+    );
+    const signature = Buffer.from('sig').toString('base64');
+
+    const fetchMock = vi.fn().mockResolvedValueOnce(
+      new Response(JSON.stringify({ errCode: 'TEMP_UNAVAILABLE' }), {
+        status: 503,
+        headers: { 'content-type': 'application/json' },
+      })
+    );
+    globalThis.fetch = fetchMock as any;
+
+    const { verifyWebhookSignatureWithRefreshDetailed } =
+      await import('@/lib/psp/monobank');
+
+    const result = await verifyWebhookSignatureWithRefreshDetailed({
+      rawBodyBytes: rawBody,
+      signature,
+    });
+
+    if (result.ok) {
+      throw new Error(
+        'Expected verification_unavailable result for pubkey outage'
+      );
+    }
+    expect(result.reason).toBe('verification_unavailable');
+    expect(result.retryable).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
 });

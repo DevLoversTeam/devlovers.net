@@ -13,6 +13,9 @@ import {
 } from '@/db/schema';
 import { buildMonobankAttemptIdempotencyKey } from '@/lib/services/orders/attempt-idempotency';
 import { applyMonoWebhookEvent } from '@/lib/services/orders/monobank-webhook';
+import { restockOrder } from '@/lib/services/orders/restock';
+import { closeShippingPipelineForOrder } from '@/lib/services/shop/shipping/pipeline-shutdown';
+import { claimQueuedShipmentsForProcessing } from '@/lib/services/shop/shipping/shipments-worker';
 import { toDbMoney } from '@/lib/shop/money';
 
 vi.mock('@/lib/services/orders/restock', () => ({
@@ -31,7 +34,26 @@ vi.mock('@/lib/logging', async () => {
 
 beforeEach(() => {
   vi.clearAllMocks();
+
+  restockOrderMock.mockImplementation(async (orderId: string) => {
+    await closeShippingPipelineForOrder({
+      orderId,
+      reason: 'test_restock',
+    });
+
+    await db
+      .update(orders)
+      .set({
+        stockRestored: true,
+        restockedAt: new Date(),
+        inventoryStatus: 'released',
+        updatedAt: new Date(),
+      } as any)
+      .where(eq(orders.id, orderId));
+  });
 });
+
+const restockOrderMock = vi.mocked(restockOrder);
 
 const sha256HexUtf8 = (s: string) =>
   crypto.createHash('sha256').update(Buffer.from(s, 'utf8')).digest('hex');
@@ -47,6 +69,7 @@ async function insertOrderAndAttempt(args: {
     | 'released'
     | 'failed';
   withShippingNp?: boolean;
+  seedQueuedShipment?: boolean;
   attemptMetadata?: Record<string, unknown>;
 }) {
   const orderId = crypto.randomUUID();
@@ -66,7 +89,7 @@ async function insertOrderAndAttempt(args: {
           shippingProvider: 'nova_poshta',
           shippingMethodCode: 'NP_WAREHOUSE',
           shippingAmountMinor: null,
-          shippingStatus: 'pending',
+          shippingStatus: args.seedQueuedShipment ? 'queued' : 'pending',
         }
       : {}),
     idempotencyKey: crypto.randomUUID(),
@@ -85,6 +108,19 @@ async function insertOrderAndAttempt(args: {
     providerPaymentIntentId: args.invoiceId,
     metadata: args.attemptMetadata ?? {},
   } as any);
+
+  if (args.withShippingNp && args.seedQueuedShipment) {
+    await db.insert(shippingShipments).values({
+      id: crypto.randomUUID(),
+      orderId,
+      provider: 'nova_poshta',
+      status: 'queued',
+      attemptCount: 0,
+      leaseOwner: null,
+      leaseExpiresAt: null,
+      nextAttemptAt: null,
+    } as any);
+  }
 
   return { orderId, attemptId };
 }
@@ -531,6 +567,174 @@ describe.sequential('monobank webhook apply (persist-first)', () => {
     }
   });
 
+  it('reversed closes queued shipment pipeline and is idempotent on rerun', async () => {
+    const invoiceId = `inv_${crypto.randomUUID()}`;
+    const { orderId } = await insertOrderAndAttempt({
+      invoiceId,
+      amountMinor: 1000,
+      withShippingNp: true,
+      seedQueuedShipment: true,
+      inventoryStatus: 'reserved',
+    });
+
+    const successBody = JSON.stringify({
+      invoiceId,
+      status: 'success',
+      amount: 1000,
+      ccy: 980,
+    });
+    const reversedBody = JSON.stringify({
+      invoiceId,
+      status: 'reversed',
+      amount: 1000,
+      ccy: 980,
+    });
+
+    try {
+      const paid = await applyMonoWebhookEvent({
+        rawBody: successBody,
+        rawSha256: sha256HexUtf8(successBody),
+        requestId: 'req_paid_before_reverse',
+        mode: 'apply',
+      });
+      expect(paid.appliedResult).toBe('applied');
+
+      const reversed = await applyMonoWebhookEvent({
+        rawBody: reversedBody,
+        rawSha256: sha256HexUtf8(reversedBody),
+        requestId: 'req_reversed_1',
+        mode: 'apply',
+      });
+      expect(reversed.appliedResult).toBe('applied');
+
+      const [orderAfterReverse] = await db
+        .select({
+          paymentStatus: orders.paymentStatus,
+          shippingStatus: orders.shippingStatus,
+        })
+        .from(orders)
+        .where(eq(orders.id, orderId))
+        .limit(1);
+      expect(orderAfterReverse?.paymentStatus).toBe('refunded');
+      expect(orderAfterReverse?.shippingStatus).toBe('cancelled');
+
+      const queuedRows = await db
+        .select({
+          status: shippingShipments.status,
+        })
+        .from(shippingShipments)
+        .where(eq(shippingShipments.orderId, orderId));
+      expect(queuedRows.length).toBeGreaterThan(0);
+      expect(
+        queuedRows.every(row => row.status === 'needs_attention')
+      ).toBe(true);
+
+      const claimed = await claimQueuedShipmentsForProcessing({
+        runId: crypto.randomUUID(),
+        leaseSeconds: 120,
+        limit: 10,
+      });
+      expect(claimed).toHaveLength(0);
+
+      const rerun = await applyMonoWebhookEvent({
+        rawBody: reversedBody,
+        rawSha256: sha256HexUtf8(reversedBody),
+        requestId: 'req_reversed_2',
+        mode: 'apply',
+      });
+      expect(rerun.deduped).toBe(true);
+
+      const afterRerunRows = await db
+        .select({
+          status: shippingShipments.status,
+        })
+        .from(shippingShipments)
+        .where(eq(shippingShipments.orderId, orderId));
+      expect(
+        afterRerunRows.every(row => row.status === 'needs_attention')
+      ).toBe(true);
+    } finally {
+      await cleanup(orderId, invoiceId);
+    }
+  });
+
+  it('failure closes queued shipment pipeline and is idempotent on rerun', async () => {
+    const invoiceId = `inv_${crypto.randomUUID()}`;
+    const { orderId } = await insertOrderAndAttempt({
+      invoiceId,
+      amountMinor: 1000,
+      withShippingNp: true,
+      seedQueuedShipment: true,
+      inventoryStatus: 'reserved',
+    });
+
+    const failureBody = JSON.stringify({
+      invoiceId,
+      status: 'failure',
+      amount: 1000,
+      ccy: 980,
+    });
+
+    try {
+      const failed = await applyMonoWebhookEvent({
+        rawBody: failureBody,
+        rawSha256: sha256HexUtf8(failureBody),
+        requestId: 'req_failure_1',
+        mode: 'apply',
+      });
+      expect(failed.appliedResult).toBe('applied');
+
+      const [orderAfterFailure] = await db
+        .select({
+          paymentStatus: orders.paymentStatus,
+          shippingStatus: orders.shippingStatus,
+        })
+        .from(orders)
+        .where(eq(orders.id, orderId))
+        .limit(1);
+      expect(orderAfterFailure?.paymentStatus).toBe('failed');
+      expect(orderAfterFailure?.shippingStatus).toBe('cancelled');
+
+      const queuedRows = await db
+        .select({
+          status: shippingShipments.status,
+        })
+        .from(shippingShipments)
+        .where(eq(shippingShipments.orderId, orderId));
+      expect(queuedRows.length).toBeGreaterThan(0);
+      expect(
+        queuedRows.every(row => row.status === 'needs_attention')
+      ).toBe(true);
+
+      const claimed = await claimQueuedShipmentsForProcessing({
+        runId: crypto.randomUUID(),
+        leaseSeconds: 120,
+        limit: 10,
+      });
+      expect(claimed).toHaveLength(0);
+
+      const rerun = await applyMonoWebhookEvent({
+        rawBody: failureBody,
+        rawSha256: sha256HexUtf8(failureBody),
+        requestId: 'req_failure_2',
+        mode: 'apply',
+      });
+      expect(rerun.deduped).toBe(true);
+
+      const afterRerunRows = await db
+        .select({
+          status: shippingShipments.status,
+        })
+        .from(shippingShipments)
+        .where(eq(shippingShipments.orderId, orderId));
+      expect(
+        afterRerunRows.every(row => row.status === 'needs_attention')
+      ).toBe(true);
+    } finally {
+      await cleanup(orderId, invoiceId);
+    }
+  });
+
   it('mismatch marks applied_with_issue and fails the attempt', async () => {
     const invoiceId = `inv_${crypto.randomUUID()}`;
     const { orderId } = await insertOrderAndAttempt({
@@ -588,8 +792,7 @@ describe.sequential('monobank webhook apply (persist-first)', () => {
       expect(event?.appliedResult).toBe('applied_with_issue');
       expect(event?.appliedErrorCode).toBe('AMOUNT_MISMATCH');
 
-      const { restockOrder } = await import('@/lib/services/orders/restock');
-      expect(restockOrder).not.toHaveBeenCalled();
+      expect(restockOrderMock).not.toHaveBeenCalled();
     } finally {
       await cleanup(orderId, invoiceId);
     }

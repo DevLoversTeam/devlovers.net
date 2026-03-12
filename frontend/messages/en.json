@@ -429,7 +429,7 @@
           "cityRequired": "To choose a branch, first select a city from the list"
         },
         "courierAddress": {
-          "label": "Courier address",
+          "label": "Delivery address",
           "line1Placeholder": "Street, house, apartment",
           "line2Placeholder": "Additional address info (optional)"
         },
@@ -448,6 +448,20 @@
         "recipientComment": {
           "label": "Comment (optional)",
           "placeholder": "Delivery comment"
+        },
+        "methodCards": {
+          "warehouse": {
+            "title": "Branch",
+            "description": "Pick up at a Nova Poshta branch"
+          },
+          "locker": {
+            "title": "Parcel locker",
+            "description": "Pick up from a Nova Poshta parcel locker"
+          },
+          "courier": {
+            "title": "Courier",
+            "description": "Nova Poshta door-to-door delivery"
+          }
         }
       },
       "checkout": {

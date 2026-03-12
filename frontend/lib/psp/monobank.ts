@@ -109,9 +109,20 @@ export type MonobankWebhookPubKeyResult = {
   pubKeyPemBytes: Uint8Array;
 };
 
-export type MonobankWebhookVerifyResult = {
-  ok: boolean;
-};
+export type MonobankWebhookVerifyResult =
+  | {
+      ok: true;
+      reason: 'verified';
+    }
+  | {
+      ok: false;
+      reason:
+        | 'missing_signature'
+        | 'invalid_signature'
+        | 'verification_unavailable';
+      retryable?: boolean;
+      errorCode?: string | null;
+    };
 
 export type MonobankPaymentType = 'debit';
 
@@ -1033,11 +1044,30 @@ export function verifyWebhookSignature(
   }
 }
 
-export async function verifyWebhookSignatureWithRefresh(args: {
+const NON_RETRYABLE_WEBHOOK_VERIFY_CODES = new Set([
+  'PSP_AUTH_FAILED',
+  'PSP_BAD_REQUEST',
+]);
+
+function readErrorCode(error: unknown): string | null {
+  if (!error || typeof error !== 'object') return null;
+  const code = (error as { code?: unknown }).code;
+  return typeof code === 'string' ? code : null;
+}
+
+function isRetryableWebhookVerifyError(error: unknown): boolean {
+  const code = readErrorCode(error);
+  if (code && NON_RETRYABLE_WEBHOOK_VERIFY_CODES.has(code)) return false;
+  return true;
+}
+
+export async function verifyWebhookSignatureWithRefreshDetailed(args: {
   rawBodyBytes: Uint8Array;
   signature: string | null;
-}): Promise<boolean> {
-  if (!args.signature) return false;
+}): Promise<MonobankWebhookVerifyResult> {
+  if (!args.signature) {
+    return { ok: false, reason: 'missing_signature', retryable: false };
+  }
 
   let key: Uint8Array;
   try {
@@ -1048,11 +1078,16 @@ export async function verifyWebhookSignatureWithRefresh(args: {
       reason: 'pubkey_fetch_failed',
       errorCode: error instanceof Error ? error.name : 'UNKNOWN',
     });
-    return false;
+    return {
+      ok: false,
+      reason: 'verification_unavailable',
+      retryable: isRetryableWebhookVerifyError(error),
+      errorCode: readErrorCode(error),
+    };
   }
 
   if (verifyWebhookSignature(args.rawBodyBytes, args.signature, key)) {
-    return true;
+    return { ok: true, reason: 'verified' };
   }
 
   try {
@@ -1067,14 +1102,28 @@ export async function verifyWebhookSignatureWithRefresh(args: {
       reason: 'refresh_once_after_verify_failed',
       status: ok ? 'verified' : 'invalid_signature',
     });
-    return ok;
+    if (ok) return { ok: true, reason: 'verified' };
+    return { ok: false, reason: 'invalid_signature', retryable: false };
   } catch (error) {
     monoLogError(MONO_PUBKEY_REFRESHED, error, {
       endpoint: '/api/merchant/pubkey',
       reason: 'refresh_failed',
     });
-    return false;
+    return {
+      ok: false,
+      reason: 'verification_unavailable',
+      retryable: isRetryableWebhookVerifyError(error),
+      errorCode: readErrorCode(error),
+    };
   }
+}
+
+export async function verifyWebhookSignatureWithRefresh(args: {
+  rawBodyBytes: Uint8Array;
+  signature: string | null;
+}): Promise<boolean> {
+  const result = await verifyWebhookSignatureWithRefreshDetailed(args);
+  return result.ok;
 }
 
 export async function getMonobankPublicKey(): Promise<string> {

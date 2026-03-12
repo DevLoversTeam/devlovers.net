@@ -95,3 +95,57 @@ export function shopCtaGradient(baseVar: string, hoverVar: string) {
     background: `linear-gradient(90deg, var(${baseVar}) 0%, var(${hoverVar}) 100%)`,
   } as const;
 }
+
+export const SHOP_CART_HERO_CTA = `
+  ${SHOP_CTA_BASE}
+  ${SHOP_CTA_INTERACTIVE}
+  ${SHOP_FOCUS}
+  ${SHOP_DISABLED}
+  w-full justify-center gap-2 px-6 py-3.5 text-sm text-white
+  shadow-[var(--shop-hero-btn-shadow)] hover:shadow-[var(--shop-hero-btn-shadow-hover)]
+`;
+
+export const SHOP_CART_CARD =
+  'border-border bg-card overflow-hidden rounded-2xl border shadow-[0_1px_2px_rgba(0,0,0,0.04)]';
+
+export const SHOP_CART_SECTION_HEADER =
+  'border-border bg-muted/30 flex items-center gap-3 border-b px-5 py-4';
+
+export const SHOP_CART_FIELD = `
+  ${SHOP_FOCUS}
+  border-border bg-background placeholder:text-muted-foreground/60
+  w-full rounded-xl border px-3 py-2.5 text-sm transition-colors
+  hover:border-foreground/40 focus:border-foreground
+`;
+
+export const SHOP_CART_ORDERS_LINK = `
+  ${SHOP_LINK_BASE}
+  ${SHOP_LINK_MD}
+  ${SHOP_FOCUS}
+`;
+
+export const SHOP_CART_ORDERS_COUNT_BADGE =
+  'border-border bg-muted/40 text-foreground inline-flex min-w-8 items-center justify-center rounded-full border px-2.5 py-1 text-xs font-semibold tabular-nums';
+
+export const SHOP_CART_SELECTABLE_CARD = `
+  ${SHOP_FOCUS}
+  ${SHOP_DISABLED}
+  relative flex h-full w-full flex-col justify-start rounded-xl border p-4 pr-12 text-left transition-all duration-200
+`;
+
+export const SHOP_CART_SELECTABLE_CARD_TALL = 'min-h-34';
+export const SHOP_CART_SELECTABLE_CARD_COMPACT = 'min-h-10';
+export const SHOP_CART_SELECTABLE_CARD_SELECTED =
+  'border-foreground bg-muted ring-foreground ring-offset-background ring-2 ring-offset-2';
+
+export const SHOP_CART_SELECTABLE_CARD_IDLE =
+  'border-border hover:border-foreground/40 hover:bg-muted/50';
+
+export const SHOP_CART_SELECTABLE_CARD_CHECK =
+  'bg-foreground pointer-events-none absolute top-4 right-4 flex h-5 w-5 items-center justify-center rounded-full';
+
+export const SHOP_CART_METHOD_CARD_TITLE =
+  'text-foreground block min-h-10 pr-2 text-sm leading-5 font-semibold';
+
+export const SHOP_CART_METHOD_CARD_DESCRIPTION =
+  'text-muted-foreground mt-1 block min-h-15 pr-2 text-xs leading-5';

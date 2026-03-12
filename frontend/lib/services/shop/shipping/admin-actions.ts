@@ -5,6 +5,7 @@ import { sql } from 'drizzle-orm';
 import { db } from '@/db';
 import { isCanonicalEventsDualWriteEnabled } from '@/lib/env/shop-canonical-events';
 import { buildAdminAuditDedupeKey } from '@/lib/services/shop/events/dedupe-key';
+import { evaluateOrderShippingEligibility } from '@/lib/services/shop/shipping/eligibility';
 import { recordShippingMetric } from '@/lib/services/shop/shipping/metrics';
 import {
   isShippingStatusTransitionAllowed,
@@ -18,6 +19,9 @@ export type ShippingAdminAction =
 
 type ShippingStateRow = {
   order_id: string;
+  payment_status: string | null;
+  order_status: string | null;
+  inventory_status: string | null;
   shipping_required: boolean | null;
   shipping_provider: string | null;
   shipping_method_code: string | null;
@@ -123,6 +127,19 @@ function assertOrderIsShippable(
       409
     );
   }
+
+  const eligibility = evaluateOrderShippingEligibility({
+    paymentStatus: state.payment_status,
+    orderStatus: state.order_status,
+    inventoryStatus: state.inventory_status,
+  });
+  if (!eligibility.ok) {
+    throw new ShippingAdminActionError(
+      'ORDER_NOT_SHIPPABLE',
+      eligibility.message,
+      409
+    );
+  }
 }
 
 async function loadShippingState(
@@ -131,6 +148,9 @@ async function loadShippingState(
   const res = await db.execute<ShippingStateRow>(sql`
     select
       o.id as order_id,
+      o.payment_status,
+      o.status as order_status,
+      o.inventory_status,
       o.shipping_required,
       o.shipping_provider,
       o.shipping_method_code,

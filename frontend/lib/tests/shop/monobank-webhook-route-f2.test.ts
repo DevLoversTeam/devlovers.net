@@ -7,16 +7,25 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { db } from '@/db';
 import { monobankEvents, orders, paymentAttempts } from '@/db/schema';
 import { resetEnvCache } from '@/lib/env';
+import type { MonobankWebhookVerifyResult } from '@/lib/psp/monobank';
 import { buildMonobankAttemptIdempotencyKey } from '@/lib/services/orders/attempt-idempotency';
 import { toDbMoney } from '@/lib/shop/money';
 
-const verifyWebhookSignatureWithRefreshMock = vi.fn(
-  async (..._args: unknown[]) => true
+function verifiedResult(): MonobankWebhookVerifyResult {
+  return { ok: true, reason: 'verified' };
+}
+
+function invalidSignatureResult(): MonobankWebhookVerifyResult {
+  return { ok: false, reason: 'invalid_signature', retryable: false };
+}
+
+const verifyWebhookSignatureWithRefreshDetailedMock = vi.fn(
+  async (): Promise<MonobankWebhookVerifyResult> => verifiedResult()
 );
 
 vi.mock('@/lib/psp/monobank', () => ({
-  verifyWebhookSignatureWithRefresh: (args: unknown) =>
-    verifyWebhookSignatureWithRefreshMock(args),
+  verifyWebhookSignatureWithRefreshDetailed:
+    verifyWebhookSignatureWithRefreshDetailedMock,
 }));
 
 vi.mock('@/lib/logging', async () => {
@@ -111,7 +120,9 @@ async function postWebhookRaw(rawBody: string, signature = 'test-signature') {
 
 describe.sequential('monobank webhook route F2', () => {
   it('invalid signature: no event write and no order/attempt state changes', async () => {
-    verifyWebhookSignatureWithRefreshMock.mockResolvedValue(false);
+    verifyWebhookSignatureWithRefreshDetailedMock.mockResolvedValue({
+      ...invalidSignatureResult(),
+    });
 
     const invoiceId = `inv_${crypto.randomUUID()}`;
     const { orderId } = await insertOrderAndAttempt(invoiceId);
@@ -126,9 +137,9 @@ describe.sequential('monobank webhook route F2', () => {
 
     try {
       const res = await postWebhookRaw(rawBody, 'bad-signature');
-      expect(res.status).toBe(200);
+      expect(res.status).toBe(401);
       const json: any = await res.json();
-      expect(json.ok).toBe(true);
+      expect(json.code).toBe('MONO_SIGNATURE_INVALID');
 
       const events = await db
         .select({ id: monobankEvents.id })
@@ -155,7 +166,9 @@ describe.sequential('monobank webhook route F2', () => {
   });
 
   it('dedupe: same raw payload is inserted once and applied once', async () => {
-    verifyWebhookSignatureWithRefreshMock.mockResolvedValue(true);
+    verifyWebhookSignatureWithRefreshDetailedMock.mockResolvedValue({
+      ...verifiedResult(),
+    });
 
     const invoiceId = `inv_${crypto.randomUUID()}`;
     const { orderId } = await insertOrderAndAttempt(invoiceId);
@@ -205,7 +218,9 @@ describe.sequential('monobank webhook route F2', () => {
   });
 
   it('out-of-order: older event does not revert paid state', async () => {
-    verifyWebhookSignatureWithRefreshMock.mockResolvedValue(true);
+    verifyWebhookSignatureWithRefreshDetailedMock.mockResolvedValue({
+      ...verifiedResult(),
+    });
 
     const invoiceId = `inv_${crypto.randomUUID()}`;
     const { orderId } = await insertOrderAndAttempt(invoiceId);

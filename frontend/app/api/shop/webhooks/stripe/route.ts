@@ -429,15 +429,6 @@ function mergePspMetadata(params: {
     ...safeDelta,
   };
 }
-function shouldRestockFromWebhook(order: {
-  stockRestored: boolean | null;
-  inventoryStatus: string | null;
-}) {
-  if (order.stockRestored === true) return false;
-  if (order.inventoryStatus === 'released') return false;
-  return true;
-}
-
 function readDbRows<T>(res: unknown): T[] {
   if (Array.isArray(res)) return res as T[];
   const anyRes = res as { rows?: unknown };
@@ -1474,9 +1465,7 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      if (shouldRestockFromWebhook(order)) {
-        await restockOrder(order.id, { reason: 'failed' });
-      }
+      await restockOrder(order.id, { reason: 'failed' });
 
       await markStripeAttemptFinal({
         paymentIntentId,
@@ -1565,9 +1554,7 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      if (shouldRestockFromWebhook(order)) {
-        await restockOrder(order.id, { reason: 'canceled' });
-      }
+      await restockOrder(order.id, { reason: 'canceled' });
       await markStripeAttemptFinal({
         paymentIntentId,
         status: 'canceled',
@@ -2002,7 +1989,7 @@ export async function POST(request: NextRequest) {
           (!refundRes.applied && refundRes.reason === 'ALREADY_IN_STATE');
       }
 
-      if (canRestock && shouldRestockFromWebhook(order)) {
+      if (canRestock) {
         await restockOrder(order.id, { reason: 'refunded' });
       }
 
