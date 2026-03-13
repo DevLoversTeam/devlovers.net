@@ -6,17 +6,17 @@ import { db } from '@/db';
 import {
   npCities,
   npWarehouses,
-  orderShipping,
   orders,
+  orderShipping,
   productPrices,
   products,
 } from '@/db/schema/shop';
+import { resetEnvCache } from '@/lib/env';
 import {
   IdempotencyConflictError,
   InvalidPayloadError,
 } from '@/lib/services/errors';
 import { createOrderWithItems } from '@/lib/services/orders';
-import { resetEnvCache } from '@/lib/env';
 
 type SeedData = {
   productId: string;
@@ -139,29 +139,31 @@ describe('checkout shipping phase 3', () => {
 
     try {
       const idem = crypto.randomUUID();
-      await expect(
-        createOrderWithItems({
-          idempotencyKey: idem,
-          userId: null,
-          locale: 'en-US',
-          country: 'UA',
-          items: [{ productId: seed.productId, quantity: 1 }],
-          shipping: {
-            provider: 'nova_poshta',
-            methodCode: 'NP_WAREHOUSE',
-            selection: {
-              cityRef: seed.cityRef,
-              warehouseRef: seed.warehouseRefA,
-            },
-            recipient: {
-              fullName: 'Test User',
-              phone: '+380501112233',
-            },
+      const promise = createOrderWithItems({
+        idempotencyKey: idem,
+        userId: null,
+        locale: 'en-US',
+        country: 'UA',
+        items: [{ productId: seed.productId, quantity: 1 }],
+        shipping: {
+          provider: 'nova_poshta',
+          methodCode: 'NP_WAREHOUSE',
+          selection: {
+            cityRef: seed.cityRef,
+            warehouseRef: seed.warehouseRefA,
           },
-        })
-      ).rejects.toMatchObject<Partial<InvalidPayloadError>>({
-        code: 'SHIPPING_CURRENCY_UNSUPPORTED',
+          recipient: {
+            fullName: 'Test User',
+            phone: '+380501112233',
+          },
+        },
       });
+
+      await expect(promise).rejects.toBeInstanceOf(InvalidPayloadError);
+      await expect(promise).rejects.toHaveProperty(
+        'code',
+        'SHIPPING_CURRENCY_UNSUPPORTED'
+      );
 
       const rows = await db
         .select({ id: orders.id })

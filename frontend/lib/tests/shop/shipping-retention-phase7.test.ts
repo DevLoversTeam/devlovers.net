@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import { db } from '@/db';
-import { orderShipping, orders } from '@/db/schema';
+import { orders, orderShipping } from '@/db/schema';
 import { anonymizeRetainedOrderShippingSnapshots } from '@/lib/services/shop/shipping/retention';
 import { toDbMoney } from '@/lib/shop/money';
 
@@ -88,7 +88,21 @@ describe.sequential('shipping retention (phase 7)', () => {
         .where(eq(orderShipping.orderId, seed.orderId))
         .limit(1);
 
-      const snapshot = (row?.shippingAddress ?? {}) as Record<string, any>;
+      const snapshot = (row?.shippingAddress ?? {}) as Record<
+        string,
+        unknown
+      > & {
+        piiRedacted?: boolean;
+        recipient?: {
+          fullName?: string;
+          phone?: string;
+          email?: string;
+        };
+        selection?: {
+          cityRef?: string;
+          warehouseRef?: string;
+        };
+      };
       expect(snapshot.piiRedacted).toBe(true);
       expect(snapshot?.recipient?.fullName).toBe('[REDACTED]');
       expect(snapshot?.recipient?.phone).toBe('[REDACTED]');
@@ -122,7 +136,21 @@ describe.sequential('shipping retention (phase 7)', () => {
         .where(eq(orderShipping.orderId, seed.orderId))
         .limit(1);
 
-      const snapshot = (row?.shippingAddress ?? {}) as Record<string, any>;
+      const snapshot = (row?.shippingAddress ?? {}) as Record<
+        string,
+        unknown
+      > & {
+        piiRedacted?: boolean;
+        recipient?: {
+          fullName?: string;
+          phone?: string;
+          email?: string;
+        };
+        selection?: {
+          cityRef?: string;
+          warehouseRef?: string;
+        };
+      };
       expect(snapshot?.recipient?.fullName).toBe('Ivan Petrenko');
       expect(snapshot?.recipient?.phone).toBe('+380501112233');
       expect(snapshot?.recipient?.email).toBe('ivan@example.com');

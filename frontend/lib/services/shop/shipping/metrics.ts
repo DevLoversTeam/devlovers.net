@@ -1,7 +1,6 @@
 import 'server-only';
 
 import { logInfo } from '@/lib/logging';
-
 import { sanitizeShippingLogMeta } from '@/lib/services/shop/shipping/log-sanitizer';
 
 export type ShippingMetricName =

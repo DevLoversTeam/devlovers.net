@@ -130,12 +130,12 @@ describe('monobank api methods', () => {
     });
   });
 
-  it('createInvoice maps 500 to PSP_UNKNOWN', async () => {
+  it('createInvoice maps 500 to PSP_UPSTREAM', async () => {
     const fetchMock = vi.fn(async () => makeResponse(500, 'error'));
     globalThis.fetch = fetchMock as any;
 
     const { createInvoice } = await import('@/lib/psp/monobank');
-    await expectPspError(() => createInvoice(createArgs), 'PSP_UNKNOWN', {
+    await expectPspError(() => createInvoice(createArgs), 'PSP_UPSTREAM', {
       httpStatus: 500,
     });
   });
@@ -173,12 +173,12 @@ describe('monobank api methods', () => {
     });
   });
 
-  it('getInvoiceStatus maps 500 to PSP_UNKNOWN', async () => {
+  it('getInvoiceStatus maps 500 to PSP_UPSTREAM', async () => {
     const fetchMock = vi.fn(async () => makeResponse(500, 'error'));
     globalThis.fetch = fetchMock as any;
 
     const { getInvoiceStatus } = await import('@/lib/psp/monobank');
-    await expectPspError(() => getInvoiceStatus('inv_2'), 'PSP_UNKNOWN', {
+    await expectPspError(() => getInvoiceStatus('inv_2'), 'PSP_UPSTREAM', {
       httpStatus: 500,
     });
   });
@@ -232,7 +232,7 @@ describe('monobank api methods', () => {
     );
   });
 
-  it('cancelInvoicePayment maps 500 to PSP_UNKNOWN', async () => {
+  it('cancelInvoicePayment maps 500 to PSP_UPSTREAM', async () => {
     const fetchMock = vi.fn(async () => makeResponse(500, 'error'));
     globalThis.fetch = fetchMock as any;
 
@@ -243,7 +243,7 @@ describe('monobank api methods', () => {
           invoiceId: 'inv_3',
           extRef: 'ext_3',
         }),
-      'PSP_UNKNOWN',
+      'PSP_UPSTREAM',
       { httpStatus: 500 }
     );
   });
@@ -280,13 +280,157 @@ describe('monobank api methods', () => {
     });
   });
 
-  it('removeInvoice maps 500 to PSP_UNKNOWN', async () => {
+  it('removeInvoice maps 500 to PSP_UPSTREAM', async () => {
     const fetchMock = vi.fn(async () => makeResponse(500, 'error'));
     globalThis.fetch = fetchMock as any;
 
     const { removeInvoice } = await import('@/lib/psp/monobank');
-    await expectPspError(() => removeInvoice('inv_4'), 'PSP_UNKNOWN', {
+    await expectPspError(() => removeInvoice('inv_4'), 'PSP_UPSTREAM', {
       httpStatus: 500,
     });
+  });
+
+  it('walletPayment sends required request shape', async () => {
+    const body = JSON.stringify({
+      invoiceId: 'wallet_inv_1',
+      status: 'created',
+      tdsUrl: 'https://pay.example.test/3ds',
+      modifiedDate: 1710000000,
+    });
+    const fetchMock = vi.fn(async () => makeResponse(200, body));
+    globalThis.fetch = fetchMock as any;
+
+    const { walletPayment } = await import('@/lib/psp/monobank');
+    const result = await walletPayment({
+      cardToken: 'token-value',
+      amountMinor: 1234,
+      ccy: 980,
+      redirectUrl: 'https://shop.test/return/monobank',
+      webHookUrl: 'https://shop.test/api/shop/webhooks/monobank',
+    });
+
+    expect(result.invoiceId).toBe('wallet_inv_1');
+    expect(result.status).toBe('created');
+    expect(result.redirectUrl).toBe('https://pay.example.test/3ds');
+    expect(result.modifiedDate).toBeInstanceOf(Date);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [
+      string,
+      RequestInit,
+    ];
+    expect(url).toBe('https://api.example.test/api/merchant/wallet/payment');
+    expect(init.method).toBe('POST');
+    expect((init.headers as Record<string, string>)['X-Token']).toBe(
+      'test_token'
+    );
+
+    const payload = JSON.parse(String(init.body));
+    expect(payload).toMatchObject({
+      cardToken: 'token-value',
+      amount: 1234,
+      ccy: 980,
+      initiationKind: 'client',
+      redirectUrl: 'https://shop.test/return/monobank',
+      webHookUrl: 'https://shop.test/api/shop/webhooks/monobank',
+    });
+  });
+
+  it('walletPayment maps 400, 429, and 500 deterministically', async () => {
+    const badRequestFetch = vi.fn(async () =>
+      makeResponse(400, JSON.stringify({ errorCode: 'X', message: 'bad' }))
+    );
+    globalThis.fetch = badRequestFetch as any;
+
+    const { walletPayment } = await import('@/lib/psp/monobank');
+    await expectPspError(
+      () =>
+        walletPayment({
+          cardToken: 'token',
+          amountMinor: 100,
+          ccy: 980,
+          redirectUrl: 'https://shop.test/return',
+          webHookUrl: 'https://shop.test/webhook',
+        }),
+      'PSP_BAD_REQUEST',
+      {
+        httpStatus: 400,
+        monoCode: 'X',
+      }
+    );
+
+    const rateLimitedFetch = vi.fn(async () =>
+      makeResponse(429, JSON.stringify({ errorCode: 'R', message: 'rate' }))
+    );
+    globalThis.fetch = rateLimitedFetch as any;
+
+    await expectPspError(
+      () =>
+        walletPayment({
+          cardToken: 'token',
+          amountMinor: 100,
+          ccy: 980,
+          redirectUrl: 'https://shop.test/return',
+          webHookUrl: 'https://shop.test/webhook',
+        }),
+      'PSP_UPSTREAM',
+      {
+        httpStatus: 429,
+        monoCode: 'R',
+      }
+    );
+
+    const upstreamFetch = vi.fn(async () => makeResponse(500, 'server error'));
+    globalThis.fetch = upstreamFetch as any;
+
+    await expectPspError(
+      () =>
+        walletPayment({
+          cardToken: 'token',
+          amountMinor: 100,
+          ccy: 980,
+          redirectUrl: 'https://shop.test/return',
+          webHookUrl: 'https://shop.test/webhook',
+        }),
+      'PSP_UPSTREAM',
+      {
+        httpStatus: 500,
+      }
+    );
+
+    expect(upstreamFetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('walletPayment timeout returns PSP_TIMEOUT without retries', async () => {
+    vi.useFakeTimers();
+
+    try {
+      process.env.MONO_INVOICE_TIMEOUT_MS = '25';
+      resetEnvCache();
+
+      const fetchMock = vi.fn(() => new Promise<Response>(() => {}));
+      globalThis.fetch = fetchMock as any;
+
+      const { walletPayment } = await import('@/lib/psp/monobank');
+      const p = walletPayment({
+        cardToken: 'token',
+        amountMinor: 100,
+        ccy: 980,
+        redirectUrl: 'https://shop.test/return',
+        webHookUrl: 'https://shop.test/webhook',
+      }).then(
+        () => null,
+        e => e
+      );
+
+      await vi.advanceTimersByTimeAsync(25);
+      const error = await p;
+      const { PspError } = await import('@/lib/psp/monobank');
+      expect(error).toBeInstanceOf(PspError);
+      expect((error as InstanceType<typeof PspError>).code).toBe('PSP_TIMEOUT');
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

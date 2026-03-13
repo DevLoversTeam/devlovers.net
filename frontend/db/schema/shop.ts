@@ -1138,10 +1138,10 @@ export const npWarehouses = pgTable(
   'np_warehouses',
   {
     ref: text('ref').primaryKey(),
-    cityRef: text('city_ref'),
-    settlementRef: text('settlement_ref').references(() => npCities.ref, {
+    cityRef: text('city_ref').references(() => npCities.ref, {
       onDelete: 'set null',
     }),
+    settlementRef: text('settlement_ref'),
     number: text('number'),
     type: text('type'),
     name: text('name').notNull(),

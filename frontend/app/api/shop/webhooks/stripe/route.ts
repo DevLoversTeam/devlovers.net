@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 
-import { and, eq, isNull, lt, ne, or, sql } from 'drizzle-orm';
+import { and, eq, isNull, lt, or, sql } from 'drizzle-orm';
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 
@@ -8,7 +8,7 @@ import { db } from '@/db';
 import { orders, stripeEvents } from '@/db/schema';
 import { isCanonicalEventsDualWriteEnabled } from '@/lib/env/shop-canonical-events';
 import { logError, logInfo, logWarn } from '@/lib/logging';
-import { retrieveCharge, verifyWebhookSignature } from '@/lib/psp/stripe';
+import { verifyWebhookSignature } from '@/lib/psp/stripe';
 import { guardNonBrowserOnly } from '@/lib/security/origin';
 import {
   enforceRateLimit,
@@ -184,6 +184,12 @@ function warnRefundFullnessUndetermined(payload: {
   });
 }
 
+function isRefundChargeIdOnly(
+  refund: Stripe.Refund | null | undefined
+): boolean {
+  return typeof refund?.charge === 'string' && refund.charge.trim().length > 0;
+}
+
 function logWebhookEvent(payload: {
   requestId?: string;
   stripeEventId?: string;
@@ -287,6 +293,43 @@ function resolvePaymentMethod(
       : undefined) ?? charge?.payment_method_details?.type;
 
   return paymentMethodFromIntent ?? paymentMethodFromCharge ?? null;
+}
+
+type StripeWalletType = 'apple_pay' | 'google_pay' | null;
+type StripeWalletAttribution = {
+  provider: 'stripe';
+  type: Exclude<StripeWalletType, null>;
+  source: 'event';
+};
+
+function resolveStripeWalletType(
+  paymentIntent?: Stripe.PaymentIntent,
+  charge?: Stripe.Charge
+): StripeWalletType {
+  const chargeWithWallet = charge ?? getLatestCharge(paymentIntent as any);
+  const walletTypeRaw = (chargeWithWallet as any)?.payment_method_details?.card
+    ?.wallet?.type;
+
+  if (walletTypeRaw === 'apple_pay' || walletTypeRaw === 'google_pay') {
+    return walletTypeRaw;
+  }
+
+  return null;
+}
+
+function buildStripeWalletAttribution(args: {
+  paymentIntent?: Stripe.PaymentIntent;
+  charge?: Stripe.Charge;
+}): StripeWalletAttribution | null {
+  const type = resolveStripeWalletType(args.paymentIntent, args.charge);
+
+  if (!type) return null;
+
+  return {
+    provider: 'stripe',
+    type,
+    source: 'event',
+  };
 }
 
 function buildPspMetadata(params: {
@@ -1140,6 +1183,10 @@ export async function POST(request: NextRequest) {
       const amountMatches = stripeAmount === orderAmountMinor;
       const currencyMatches =
         stripeCurrency?.toUpperCase() === order.currency.toUpperCase();
+      const walletAttribution = buildStripeWalletAttribution({
+        paymentIntent,
+        charge: getLatestCharge(paymentIntent as any),
+      });
 
       if (stripeAmount == null || !amountMatches || !currencyMatches) {
         const mismatchReason =
@@ -1157,6 +1204,7 @@ export async function POST(request: NextRequest) {
           paymentIntent,
           charge: chargeForIntent,
           extra: {
+            ...(walletAttribution ? { wallet: walletAttribution } : {}),
             mismatch: {
               reason: mismatchReason,
               eventId: event.id,
@@ -1221,6 +1269,7 @@ export async function POST(request: NextRequest) {
         eventType,
         paymentIntent,
         charge: chargeForIntent ?? undefined,
+        extra: walletAttribution ? { wallet: walletAttribution } : {},
       });
       const nextMeta = mergePspMetadata({
         prevMeta: order.pspMetadata,
@@ -1256,6 +1305,7 @@ export async function POST(request: NextRequest) {
           paymentIntentId,
           chargeId: latestChargeId ?? chargeForIntent?.id ?? null,
           paymentIntentStatus: paymentIntent?.status ?? null,
+          ...(walletAttribution ? { wallet: walletAttribution } : {}),
         },
       };
       const applyResult =
@@ -1668,12 +1718,45 @@ export async function POST(request: NextRequest) {
 
         isFullRefund = cumulativeRefunded === amt;
       } else if (eventType === 'charge.refund.updated' && refund) {
+        if (isRefundChargeIdOnly(refund)) {
+          warnRefundFullnessUndetermined({
+            ...warnBase,
+            eventId: event.id,
+            eventType,
+            chargeId: refundChargeId ?? null,
+            chargeAmount: null,
+            cumulativeRefunded: null,
+            hasRefundObject: true,
+            refundsListLength: null,
+            hasAmountRefundedField: false,
+            reason: 'id_only_refund_charge_not_expanded',
+            orderId: order.id,
+            paymentIntentId,
+            refundId: refund.id,
+            refundAmount:
+              typeof (refund as any)?.amount === 'number'
+                ? (refund as any).amount
+                : null,
+          });
+
+          logWebhookEvent({
+            requestId,
+            stripeEventId,
+            orderId: order.id,
+            paymentIntentId,
+            paymentStatus,
+            eventType,
+            refundId: refund.id,
+            chargeId: refundChargeId ?? null,
+          });
+
+          return ack();
+        }
+
         let effectiveCharge: Stripe.Charge | undefined;
 
         if (typeof refund.charge === 'object' && refund.charge) {
           effectiveCharge = refund.charge as Stripe.Charge;
-        } else if (typeof refund.charge === 'string' && refund.charge.trim()) {
-          effectiveCharge = await retrieveCharge(refund.charge.trim());
         }
 
         const amt =
@@ -1700,7 +1783,6 @@ export async function POST(request: NextRequest) {
             warnRefundFullnessUndetermined({
               ...warnBase,
               eventId: event.id,
-
               eventType,
               chargeId:
                 ((effectiveCharge as any)?.id as string | undefined) ??

@@ -28,12 +28,22 @@ export function NameField({
     }
 
     if (input.validity.tooShort && minLength) {
-      input.setCustomValidity(`Name must be at least ${minLength} characters.`);
+      input.setCustomValidity(
+        t('validation.invalidName', {
+          NAME_MIN_LEN: minLength,
+          NAME_MAX_LEN: maxLength ?? minLength,
+        })
+      );
       return;
     }
 
     if (input.validity.tooLong && maxLength) {
-      input.setCustomValidity(`Name must be at most ${maxLength} characters.`);
+      input.setCustomValidity(
+        t('validation.invalidName', {
+          NAME_MIN_LEN: minLength ?? 0,
+          NAME_MAX_LEN: maxLength,
+        })
+      );
       return;
     }
   };

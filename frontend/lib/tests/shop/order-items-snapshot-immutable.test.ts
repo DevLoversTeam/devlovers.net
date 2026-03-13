@@ -12,6 +12,7 @@ import {
   productPrices,
   products,
 } from '@/db/schema';
+import { deriveTestIpFromIdemKey } from '@/lib/tests/helpers/ip';
 
 vi.mock('@/lib/auth', async () => {
   const actual = await vi.importActual<Record<string, unknown>>('@/lib/auth');
@@ -110,6 +111,7 @@ describe('P0-6 snapshots: order_items immutability', () => {
         'Accept-Language': 'en-US,en;q=0.9',
         'Content-Type': 'application/json',
         'Idempotency-Key': idem,
+        'X-Forwarded-For': deriveTestIpFromIdemKey(idem),
         Origin: 'http://localhost:3000',
       }
     );

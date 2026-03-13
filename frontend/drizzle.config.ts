@@ -2,7 +2,7 @@ import * as dotenv from 'dotenv';
 
 dotenv.config();
 
-export default {
+const config = {
   out: './drizzle',
   schema: './db/schema/index.ts',
   dialect: 'postgresql',
@@ -10,3 +10,5 @@ export default {
     url: process.env.DATABASE_URL!,
   },
 };
+
+export default config;

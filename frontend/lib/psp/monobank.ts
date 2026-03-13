@@ -18,6 +18,7 @@ export type PspErrorCode =
   | 'PSP_TIMEOUT'
   | 'PSP_BAD_REQUEST'
   | 'PSP_AUTH_FAILED'
+  | 'PSP_UPSTREAM'
   | 'PSP_UNKNOWN';
 
 export class PspError extends Error {
@@ -85,6 +86,23 @@ export type MonobankRemoveInvoiceResult = {
   invoiceId: string;
   removed: boolean;
   raw?: Record<string, unknown>;
+};
+
+export type MonobankWalletPaymentInput = {
+  cardToken: string;
+  amountMinor: number;
+  ccy: number;
+  initiationKind?: 'client';
+  redirectUrl: string;
+  webHookUrl: string;
+};
+
+export type MonobankWalletPaymentResult = {
+  invoiceId: string;
+  status: string | null;
+  redirectUrl: string | null;
+  modifiedDate: Date | null;
+  raw: Record<string, unknown>;
 };
 
 export type MonobankWebhookPubKeyResult = {
@@ -237,6 +255,31 @@ type MonobankRemoveInvoiceResponse = {
   removed?: boolean;
 };
 
+type MonobankWalletPaymentRequest = {
+  cardToken: string;
+  amount: number;
+  ccy: number;
+  initiationKind: 'client';
+  redirectUrl: string;
+  webHookUrl: string;
+};
+
+type MonobankWalletPaymentResponse = {
+  invoiceId?: string;
+  status?: string;
+  tdsUrl?: string;
+  redirectUrl?: string;
+  pageUrl?: string;
+  checkoutUrl?: string;
+  modifiedDate?: unknown;
+  modifiedAt?: unknown;
+  updatedAt?: unknown;
+  createdDate?: unknown;
+  createdAt?: unknown;
+  time?: unknown;
+  timestamp?: unknown;
+};
+
 export function buildMonobankInvoicePayload(
   args: MonobankInvoiceCreateArgs
 ): MonobankInvoiceCreateRequest {
@@ -291,6 +334,40 @@ export function buildMonobankInvoicePayload(
   };
 
   return payload;
+}
+
+export function buildMonobankWalletPayload(
+  args: MonobankWalletPaymentInput
+): MonobankWalletPaymentRequest {
+  const cardToken =
+    typeof args.cardToken === 'string' ? args.cardToken.trim() : '';
+
+  if (!cardToken) {
+    throw new Error('wallet cardToken is required');
+  }
+
+  if (!Number.isSafeInteger(args.amountMinor) || args.amountMinor <= 0) {
+    throw new Error('Invalid wallet amount (minor units)');
+  }
+
+  if (args.ccy !== MONO_CCY) {
+    throw new Error(`Monobank wallet payments require ccy=${MONO_CCY}`);
+  }
+
+  const redirectUrl = args.redirectUrl.trim();
+  const webHookUrl = args.webHookUrl.trim();
+  if (!redirectUrl || !webHookUrl) {
+    throw new Error('wallet redirectUrl and webHookUrl are required');
+  }
+
+  return {
+    cardToken,
+    amount: args.amountMinor,
+    ccy: args.ccy,
+    initiationKind: 'client',
+    redirectUrl,
+    webHookUrl,
+  };
 }
 
 type MonoRequestArgs = {
@@ -360,6 +437,39 @@ function parseErrorPayload(text: string): {
   return {};
 }
 
+function parseTimestampMs(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    const ms = value < 1e11 ? value * 1000 : value;
+    return Number.isFinite(ms) ? ms : null;
+  }
+  if (typeof value === 'string') {
+    const parsed = Date.parse(value);
+    if (!Number.isNaN(parsed)) return parsed;
+  }
+  return null;
+}
+
+function extractProviderModifiedAt(
+  raw: MonobankWalletPaymentResponse & Record<string, unknown>
+): Date | null {
+  const candidates = [
+    raw.modifiedDate,
+    raw.modifiedAt,
+    raw.updatedAt,
+    raw.createdDate,
+    raw.createdAt,
+    raw.time,
+    raw.timestamp,
+  ];
+
+  for (const candidate of candidates) {
+    const ms = parseTimestampMs(candidate);
+    if (ms !== null) return new Date(ms);
+  }
+
+  return null;
+}
+
 function isAbortError(error: unknown): boolean {
   if (!error || typeof error !== 'object') return false;
   const err = error as { name?: unknown; message?: unknown };
@@ -425,6 +535,20 @@ async function requestMono<T>(
         });
       }
 
+      if (status === 429) {
+        throw new PspError('PSP_UPSTREAM', 'Monobank upstream rate limit', {
+          endpoint,
+          method: args.method,
+          httpStatus: status,
+          durationMs,
+          ...(parsed.monoCode ? { monoCode: parsed.monoCode } : {}),
+          ...(parsed.monoMessage ? { monoMessage: parsed.monoMessage } : {}),
+          ...(parsed.responseSnippet
+            ? { responseSnippet: parsed.responseSnippet }
+            : {}),
+        });
+      }
+
       if (status >= 400 && status < 500) {
         throw new PspError('PSP_BAD_REQUEST', 'Monobank request rejected', {
           endpoint,
@@ -439,11 +563,16 @@ async function requestMono<T>(
         });
       }
 
-      throw new PspError('PSP_UNKNOWN', 'Monobank request failed', {
+      throw new PspError('PSP_UPSTREAM', 'Monobank upstream error', {
         endpoint,
         method: args.method,
         httpStatus: status,
         durationMs,
+        ...(parsed.monoCode ? { monoCode: parsed.monoCode } : {}),
+        ...(parsed.monoMessage ? { monoMessage: parsed.monoMessage } : {}),
+        ...(parsed.responseSnippet
+          ? { responseSnippet: parsed.responseSnippet }
+          : {}),
       });
     }
 
@@ -631,6 +760,61 @@ export async function createMonobankInvoice(
 ): Promise<MonobankInvoiceResponse> {
   const payload = buildMonobankInvoicePayload(args);
   return requestCreateInvoice(payload);
+}
+
+export async function walletPayment(
+  args: MonobankWalletPaymentInput
+): Promise<MonobankWalletPaymentResult> {
+  const env = getMonobankEnv();
+
+  if (!env.paymentsEnabled || !env.token) {
+    throw new Error('Monobank payments are disabled');
+  }
+
+  const payload = buildMonobankWalletPayload(args);
+  const res = await requestMono<
+    MonobankWalletPaymentResponse & Record<string, unknown>
+  >({
+    method: 'POST',
+    path: '/api/merchant/wallet/payment',
+    body: payload,
+    timeoutMs: env.invoiceTimeoutMs,
+    token: env.token,
+    baseUrl: env.apiBaseUrl,
+  });
+
+  if (!res.data || typeof res.data !== 'object') {
+    throw new Error('Monobank wallet payment returned invalid payload');
+  }
+
+  const raw = res.data as MonobankWalletPaymentResponse &
+    Record<string, unknown>;
+  const invoiceId =
+    typeof raw.invoiceId === 'string' && raw.invoiceId.trim()
+      ? raw.invoiceId.trim()
+      : '';
+
+  if (!invoiceId) {
+    throw new Error('Monobank wallet payment missing invoiceId');
+  }
+
+  const status =
+    typeof raw.status === 'string' && raw.status.trim()
+      ? raw.status.trim()
+      : null;
+  const redirectUrl =
+    parsePageUrl(raw.tdsUrl) ??
+    parsePageUrl(raw.redirectUrl) ??
+    parsePageUrl(raw.pageUrl) ??
+    parsePageUrl(raw.checkoutUrl);
+
+  return {
+    invoiceId,
+    status,
+    redirectUrl,
+    modifiedDate: extractProviderModifiedAt(raw),
+    raw,
+  };
 }
 
 export async function getInvoiceStatus(

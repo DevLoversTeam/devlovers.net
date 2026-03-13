@@ -2,7 +2,6 @@
 
 import { ChevronRight, Shield } from 'lucide-react';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
 import { Badge, type BadgeProps } from '@/components/ui/badge';
@@ -10,6 +9,7 @@ import {
   type CategoryTabStyle,
   categoryTabStyles,
 } from '@/data/categoryStyles';
+import { useRouter } from '@/i18n/routing';
 import type { UserLastAttempt } from '@/types/quiz';
 
 interface QuizResultRowProps {
@@ -104,7 +104,7 @@ export function QuizResultRow({ attempt, locale }: QuizResultRowProps) {
 
   const handleClick = () => {
     if (!isMastered) {
-      router.push(`/${locale}/dashboard/quiz-review/${attempt.attemptId}`);
+      router.push(`/dashboard/quiz-review/${attempt.attemptId}`);
     }
   };
 
@@ -140,7 +140,7 @@ export function QuizResultRow({ attempt, locale }: QuizResultRowProps) {
           <div className="flex max-w-full flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] text-gray-400 sm:text-xs">
             <span
               style={catStyle ? { color: catStyle.accent } : undefined}
-              className="hidden max-w-[70px] truncate sm:block sm:max-w-none"
+              className="hidden max-w-17.5 truncate sm:block sm:max-w-none"
             >
               {attempt.categoryName ?? attempt.categorySlug ?? ''}
             </span>
@@ -182,7 +182,7 @@ export function QuizResultRow({ attempt, locale }: QuizResultRowProps) {
             <span className="text-gray-300 dark:text-gray-600">&mdash;</span>
           )}
         </div>
-        <div className="flex w-[76px] shrink-0 items-center justify-center sm:w-[86px]">
+        <div className="flex w-19 shrink-0 items-center justify-center sm:w-21.5">
           <Badge
             variant={status.variant}
             className="gap-1 rounded-full px-2 py-0.5 text-[10px] sm:px-2.5 sm:py-0.5 sm:text-xs"

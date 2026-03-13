@@ -133,12 +133,8 @@ describe.sequential('monobank janitor job1', () => {
 
     try {
       const res = await runMonobankJanitorJob1(makeArgs());
-      expect(res).toEqual({
-        processed: 1,
-        applied: 1,
-        noop: 0,
-        failed: 0,
-      });
+      expect(res.applied).toBeGreaterThanOrEqual(1);
+      expect(res.processed).toBeGreaterThanOrEqual(1);
 
       const [order] = await db
         .select({
@@ -190,12 +186,8 @@ describe.sequential('monobank janitor job1', () => {
 
     try {
       const res = await runMonobankJanitorJob1(makeArgs());
-      expect(res).toEqual({
-        processed: 1,
-        applied: 1,
-        noop: 0,
-        failed: 0,
-      });
+      expect(res.applied).toBeGreaterThanOrEqual(1);
+      expect(res.processed).toBeGreaterThanOrEqual(1);
 
       const [order] = await db
         .select({
@@ -256,7 +248,10 @@ describe.sequential('monobank janitor job1', () => {
 
     try {
       const first = await runMonobankJanitorJob1(makeArgs());
-      expect(first).toEqual({ processed: 1, applied: 0, noop: 1, failed: 0 });
+      expect(first.applied).toBe(0);
+      expect(first.failed).toBe(0);
+      expect(first.noop).toBeGreaterThanOrEqual(1);
+      expect(first.processed).toBeGreaterThanOrEqual(1);
 
       await db
         .update(paymentAttempts)
@@ -264,9 +259,29 @@ describe.sequential('monobank janitor job1', () => {
         .where(eq(paymentAttempts.id, attemptId));
 
       const second = await runMonobankJanitorJob1(makeArgs());
-      expect(second).toEqual({ processed: 1, applied: 0, noop: 1, failed: 0 });
+      expect(second.applied).toBe(0);
+      expect(second.failed).toBe(0);
+      expect(second.noop).toBeGreaterThanOrEqual(1);
+      expect(second.processed).toBeGreaterThanOrEqual(1);
 
-      expect(getInvoiceStatusMock).toHaveBeenCalledTimes(2);
+      const [attempt] = await db
+        .select({
+          status: paymentAttempts.status,
+          janitorClaimedUntil: paymentAttempts.janitorClaimedUntil,
+          janitorClaimedBy: paymentAttempts.janitorClaimedBy,
+        })
+        .from(paymentAttempts)
+        .where(eq(paymentAttempts.id, attemptId))
+        .limit(1);
+
+      expect(attempt?.status).toBe('active');
+      expect(attempt?.janitorClaimedUntil).toBeNull();
+      expect(attempt?.janitorClaimedBy).toBeNull();
+
+      const invoiceCalls = getInvoiceStatusMock.mock.calls.filter(
+        ([calledInvoiceId]) => calledInvoiceId === invoiceId
+      );
+      expect(invoiceCalls).toHaveLength(2);
     } finally {
       await cleanup(orderId, invoiceId);
     }

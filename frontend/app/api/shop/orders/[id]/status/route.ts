@@ -13,12 +13,12 @@ import {
   OrderNotFoundError,
   OrderStateInvalidError,
 } from '@/lib/services/errors';
-import { writeAdminAudit } from '@/lib/services/shop/events/write-admin-audit';
 import {
   getOrderAttemptSummary,
   getOrderStatusLiteSummary,
   getOrderSummary,
 } from '@/lib/services/orders/summary';
+import { writeAdminAudit } from '@/lib/services/shop/events/write-admin-audit';
 import {
   hasStatusTokenScope,
   verifyStatusToken,

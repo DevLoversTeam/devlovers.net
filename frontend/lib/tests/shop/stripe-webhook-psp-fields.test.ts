@@ -20,11 +20,12 @@ vi.mock('@/lib/psp/stripe', async () => {
   return {
     ...actual,
     verifyWebhookSignature: vi.fn(),
+    retrieveCharge: vi.fn(),
   };
 });
 
 import { POST as webhookPOST } from '@/app/api/shop/webhooks/stripe/route';
-import { verifyWebhookSignature } from '@/lib/psp/stripe';
+import { retrieveCharge, verifyWebhookSignature } from '@/lib/psp/stripe';
 
 function logTestCleanupFailed(meta: Record<string, unknown>, error: unknown) {
   console.error('[test cleanup failed]', {
@@ -234,7 +235,11 @@ describe('P0-6 webhook: writes PSP fields on succeeded', () => {
                 payment_intent: paymentIntentId,
                 payment_method_details: {
                   type: 'card',
-                  card: { brand: 'visa', last4: '4242' },
+                  card: {
+                    brand: 'visa',
+                    last4: '4242',
+                    wallet: { type: 'apple_pay' },
+                  },
                 },
               },
             ],
@@ -244,6 +249,7 @@ describe('P0-6 webhook: writes PSP fields on succeeded', () => {
     };
 
     vi.mocked(verifyWebhookSignature).mockReturnValue(event as any);
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
 
     const rawBody = JSON.stringify({ any: 'payload' });
     const req = makeWebhookRequest(rawBody);
@@ -298,6 +304,11 @@ describe('P0-6 webhook: writes PSP fields on succeeded', () => {
         Object.keys((updated1[0].pspMetadata ?? {}) as Record<string, unknown>)
           .length
       ).toBeGreaterThan(0);
+      expect((updated1[0].pspMetadata as any)?.wallet).toEqual({
+        provider: 'stripe',
+        type: 'apple_pay',
+        source: 'event',
+      });
 
       const ev1 = await db
         .select({ eventId: stripeEvents.eventId })
@@ -310,12 +321,18 @@ describe('P0-6 webhook: writes PSP fields on succeeded', () => {
           id: paymentEvents.id,
           eventName: paymentEvents.eventName,
           eventRef: paymentEvents.eventRef,
+          payload: paymentEvents.payload,
         })
         .from(paymentEvents)
         .where(eq(paymentEvents.orderId, orderId));
       expect(canonical1.length).toBe(1);
       expect(canonical1[0]?.eventName).toBe('paid_applied');
       expect(canonical1[0]?.eventRef).toBe(eventId);
+      expect((canonical1[0]?.payload as any)?.wallet).toEqual({
+        provider: 'stripe',
+        type: 'apple_pay',
+        source: 'event',
+      });
 
       const queued1 = await db
         .select({ id: shippingShipments.id })
@@ -365,7 +382,176 @@ describe('P0-6 webhook: writes PSP fields on succeeded', () => {
         .from(shippingShipments)
         .where(eq(shippingShipments.orderId, orderId));
       expect(queued2.length).toBe(1);
+      expect(vi.mocked(retrieveCharge)).not.toHaveBeenCalled();
+      expect(fetchSpy).not.toHaveBeenCalled();
     } finally {
+      fetchSpy.mockRestore();
+      await cleanup({ orderId, productId, eventId });
+    }
+  }, 30_000);
+
+  it('payment_intent.succeeded extracts google_pay wallet attribution into order and canonical event payload', async () => {
+    const productId = randomUUID();
+    const priceId = randomUUID();
+
+    const orderId = randomUUID();
+    const idemKey = `idem_${randomUUID()}`;
+
+    const paymentIntentId = `pi_test_${randomUUID()
+      .replace(/-/g, '')
+      .slice(0, 24)}`;
+    const eventId = `evt_test_${randomUUID().replace(/-/g, '').slice(0, 24)}`;
+    const chargeId = `ch_test_${randomUUID().replace(/-/g, '').slice(0, 24)}`;
+
+    const title = 'Webhook PSP Test Product GPay';
+    const slug = `webhook-psp-gpay-${productId.slice(0, 8)}`;
+    const sku = `SKU-GP-${productId.slice(0, 8)}`;
+
+    await db.insert(products).values({
+      id: productId,
+      slug,
+      title,
+      description: 'webhook test',
+      imageUrl: 'https://res.cloudinary.com/devlovers/image/upload/v1/test.png',
+      imagePublicId: null,
+      price: '9.00',
+      originalPrice: null,
+      currency: 'USD',
+      category: null,
+      type: null,
+      colors: [],
+      sizes: [],
+      badge: 'NONE',
+      isActive: true,
+      isFeatured: false,
+      stock: 10,
+      sku,
+    });
+
+    await db.insert(productPrices).values({
+      id: priceId,
+      productId,
+      currency: 'USD',
+      priceMinor: 900,
+      originalPriceMinor: null,
+      price: '9.00',
+      originalPrice: null,
+    });
+
+    await db.insert(orders).values({
+      id: orderId,
+      totalAmountMinor: 900,
+      totalAmount: '9.00',
+      currency: 'USD',
+      shippingRequired: true,
+      shippingPayer: 'customer',
+      shippingProvider: 'nova_poshta',
+      shippingMethodCode: 'NP_WAREHOUSE',
+      shippingAmountMinor: null,
+      shippingStatus: 'pending',
+      paymentStatus: 'requires_payment',
+      paymentProvider: 'stripe',
+      paymentIntentId,
+      idempotencyKey: idemKey,
+      status: 'INVENTORY_RESERVED',
+      inventoryStatus: 'reserved',
+    });
+
+    await db.insert(orderItems).values({
+      id: randomUUID(),
+      orderId,
+      productId,
+      quantity: 1,
+      unitPriceMinor: 900,
+      lineTotalMinor: 900,
+      unitPrice: '9.00',
+      lineTotal: '9.00',
+      productTitle: title,
+      productSlug: slug,
+      productSku: sku,
+    });
+
+    const event = {
+      id: eventId,
+      object: 'event',
+      type: 'payment_intent.succeeded',
+      data: {
+        object: {
+          id: paymentIntentId,
+          object: 'payment_intent',
+          amount: 900,
+          currency: 'usd',
+          status: 'succeeded',
+          metadata: { orderId },
+          charges: {
+            object: 'list',
+            data: [
+              {
+                id: chargeId,
+                object: 'charge',
+                payment_intent: paymentIntentId,
+                payment_method_details: {
+                  type: 'card',
+                  card: {
+                    brand: 'visa',
+                    last4: '4242',
+                    wallet: { type: 'google_pay' },
+                  },
+                },
+              },
+            ],
+          },
+        },
+      },
+    };
+
+    vi.mocked(verifyWebhookSignature).mockReturnValue(event as any);
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+
+    const rawBody = JSON.stringify({ any: 'payload_google_wallet' });
+    const req = makeWebhookRequest(rawBody);
+
+    try {
+      const res = await webhookPOST(req);
+      expect(res.status).toBeGreaterThanOrEqual(200);
+      expect(res.status).toBeLessThan(300);
+
+      const [updated] = await db
+        .select({
+          paymentStatus: orders.paymentStatus,
+          pspMetadata: orders.pspMetadata,
+        })
+        .from(orders)
+        .where(eq(orders.id, orderId))
+        .limit(1);
+
+      expect(updated?.paymentStatus).toBe('paid');
+      expect((updated?.pspMetadata as any)?.wallet).toEqual({
+        provider: 'stripe',
+        type: 'google_pay',
+        source: 'event',
+      });
+
+      const [canonical] = await db
+        .select({
+          eventName: paymentEvents.eventName,
+          payload: paymentEvents.payload,
+        })
+        .from(paymentEvents)
+        .where(eq(paymentEvents.orderId, orderId))
+        .limit(1);
+
+      expect(canonical?.eventName).toBe('paid_applied');
+      expect((canonical?.payload as any)?.wallet).toEqual({
+        provider: 'stripe',
+        type: 'google_pay',
+        source: 'event',
+      });
+
+      expect(vi.mocked(retrieveCharge)).not.toHaveBeenCalled();
+      expect(fetchSpy).not.toHaveBeenCalled();
+    } finally {
+      fetchSpy.mockRestore();
       await cleanup({ orderId, productId, eventId });
     }
   }, 30_000);

@@ -3,6 +3,11 @@
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
+import {
+  PASSWORD_MAX_BYTES,
+  PASSWORD_MIN_LEN,
+} from '@/lib/auth/signup-constraints';
+
 type PasswordFieldProps = {
   name?: string;
   id?: string;
@@ -44,8 +49,12 @@ export function PasswordField({
     }
 
     if (input.validity.patternMismatch) {
+      const reqs = t('validation.passwordRequirements', {
+        PASSWORD_MIN_LEN: minLength ?? PASSWORD_MIN_LEN,
+        PASSWORD_MAX_BYTES,
+      });
       input.setCustomValidity(
-        'Password must include at least one capital letter and one special character.'
+        t('validation.invalidPassword', { passwordRequirementsText: reqs })
       );
       return;
     }

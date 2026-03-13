@@ -14,8 +14,8 @@ import {
   getRateLimitSubject,
   rateLimitResponse,
 } from '@/lib/security/rate-limit';
-import { IdempotencyConflictError } from '@/lib/services/errors';
 import {
+  IdempotencyConflictError,
   InsufficientStockError,
   InvalidPayloadError,
   InvalidVariantError,
@@ -28,7 +28,13 @@ import {
   ensureStripePaymentIntentForOrder,
   PaymentAttemptsExhaustedError,
 } from '@/lib/services/orders/payment-attempts';
-import { type PaymentProvider, type PaymentStatus } from '@/lib/shop/payments';
+import { resolveCurrencyFromLocale } from '@/lib/shop/currency';
+import {
+  isMethodAllowed,
+  type PaymentMethod,
+  type PaymentProvider,
+  type PaymentStatus,
+} from '@/lib/shop/payments';
 import { resolveRequestLocale } from '@/lib/shop/request-locale';
 import { createStatusToken } from '@/lib/shop/status-token';
 import {
@@ -83,9 +89,30 @@ function parseRequestedProvider(
   return 'invalid';
 }
 
+function parseRequestedMethod(raw: unknown): PaymentMethod | 'invalid' | null {
+  if (raw === null || raw === undefined) return null;
+  if (typeof raw !== 'string') return 'invalid';
+
+  const normalized = raw.trim().toLowerCase();
+  if (!normalized) return 'invalid';
+
+  if (normalized === 'stripe_card') return 'stripe_card';
+  if (normalized === 'monobank_invoice') return 'monobank_invoice';
+  if (normalized === 'monobank_google_pay') return 'monobank_google_pay';
+
+  return 'invalid';
+}
+
 function isMonoAlias(raw: unknown): boolean {
   if (typeof raw !== 'string') return false;
   return raw.trim().toLowerCase() === 'mono';
+}
+
+function isMonobankGooglePayEnabled(): boolean {
+  const raw = (process.env.SHOP_MONOBANK_GPAY_ENABLED ?? '')
+    .trim()
+    .toLowerCase();
+  return raw === 'true' || raw === '1' || raw === 'yes' || raw === 'on';
 }
 
 function stripMonobankClientMoneyFields(payload: unknown): unknown {
@@ -508,14 +535,22 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const locale = resolveRequestLocale(request);
+
   let monobankRequestHint = false;
   if (body && typeof body === 'object' && !Array.isArray(body)) {
-    const { paymentProvider, provider } = body as Record<string, unknown>;
+    const { paymentProvider, provider, paymentMethod } = body as Record<
+      string,
+      unknown
+    >;
     const rawProvider = paymentProvider ?? provider;
     const parsedProvider = parseRequestedProvider(rawProvider);
+    const parsedMethod = parseRequestedMethod(paymentMethod);
     monobankRequestHint =
       parsedProvider === 'monobank' ||
-      (parsedProvider === 'invalid' && isMonoAlias(rawProvider));
+      (parsedProvider === 'invalid' && isMonoAlias(rawProvider)) ||
+      parsedMethod === 'monobank_invoice' ||
+      parsedMethod === 'monobank_google_pay';
   }
 
   const idempotencyKey = getIdempotencyKey(request);
@@ -572,13 +607,12 @@ export async function POST(request: NextRequest) {
   };
 
   let requestedProvider: CheckoutRequestedProvider | null = null;
+  let requestedMethod: PaymentMethod | null = null;
   let payloadForValidation: unknown = body;
 
   if (body && typeof body === 'object' && !Array.isArray(body)) {
-    const { paymentProvider, provider, ...rest } = body as Record<
-      string,
-      unknown
-    >;
+    const { paymentProvider, provider, paymentMethod, ...rest } =
+      body as Record<string, unknown>;
     const rawProvider = paymentProvider ?? provider;
     const parsedProvider = parseRequestedProvider(rawProvider);
 
@@ -594,12 +628,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const parsedMethod = parseRequestedMethod(paymentMethod);
+    if (parsedMethod === 'invalid') {
+      if (parsedProvider === 'monobank' || isMonoAlias(rawProvider)) {
+        return errorResponse('INVALID_REQUEST', 'Invalid request.', 422);
+      }
+
+      return errorResponse(
+        'PAYMENTS_METHOD_INVALID',
+        'Invalid payment method.',
+        422
+      );
+    }
+
     requestedProvider = parsedProvider;
+    requestedMethod = parsedMethod;
     payloadForValidation = rest;
   }
 
   const selectedProvider: CheckoutRequestedProvider =
     requestedProvider ?? 'stripe';
+  // Explicit default table (locked): stripe -> stripe_card, monobank -> monobank_invoice.
+  const defaultMethod: PaymentMethod =
+    selectedProvider === 'monobank' ? 'monobank_invoice' : 'stripe_card';
+  const selectedMethod: PaymentMethod = requestedMethod ?? defaultMethod;
+  const selectedCurrency =
+    selectedProvider === 'monobank' ? 'UAH' : resolveCurrencyFromLocale(locale);
+
   if (selectedProvider === 'monobank') {
     payloadForValidation = stripMonobankClientMoneyFields(payloadForValidation);
   }
@@ -651,6 +706,45 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  if (
+    selectedMethod === 'monobank_google_pay' &&
+    !isMonobankGooglePayEnabled()
+  ) {
+    return errorResponse('INVALID_REQUEST', 'Invalid request.', 422);
+  }
+
+  if (
+    !isMethodAllowed({
+      provider: selectedProvider,
+      method: selectedMethod,
+      currency: selectedCurrency,
+      flags: { monobankGooglePayEnabled: isMonobankGooglePayEnabled() },
+    })
+  ) {
+    if (selectedProvider === 'monobank') {
+      return errorResponse('INVALID_REQUEST', 'Invalid request.', 422);
+    }
+
+    return errorResponse(
+      'PAYMENTS_METHOD_INVALID',
+      'Invalid payment method.',
+      422
+    );
+  }
+
+  if (
+    payloadForValidation &&
+    typeof payloadForValidation === 'object' &&
+    !Array.isArray(payloadForValidation)
+  ) {
+    payloadForValidation = {
+      ...(payloadForValidation as Record<string, unknown>),
+      paymentProvider: selectedProvider,
+      paymentMethod: selectedMethod,
+      paymentCurrency: selectedCurrency,
+    };
+  }
+
   const parsedPayload = checkoutPayloadSchema.safeParse(payloadForValidation);
 
   if (!parsedPayload.success) {
@@ -685,7 +779,6 @@ export async function POST(request: NextRequest) {
 
   const { items, userId, shipping, country, legalConsent } = parsedPayload.data;
   const itemCount = items.reduce((total, item) => total + item.quantity, 0);
-  const locale = resolveRequestLocale(request);
 
   let currentUser: unknown = null;
   try {
@@ -789,6 +882,7 @@ export async function POST(request: NextRequest) {
       shipping: shipping ?? null,
       legalConsent: legalConsent ?? null,
       paymentProvider: selectedProvider === 'monobank' ? 'monobank' : undefined,
+      paymentMethod: selectedMethod,
     });
 
     const { order } = result;

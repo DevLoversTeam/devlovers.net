@@ -14,8 +14,9 @@ import {
 } from '@/lib/services/shop/shipping/log-sanitizer';
 import {
   cacheSettlementsByQuery,
-  cacheWarehousesBySettlement,
+  cacheWarehousesByCityRef,
 } from '@/lib/services/shop/shipping/nova-poshta-catalog';
+import { NovaPoshtaApiError } from '@/lib/services/shop/shipping/nova-poshta-client';
 import {
   getInternalShippingMinIntervalFloorSeconds,
   internalNpSyncPayloadSchema,
@@ -83,6 +84,43 @@ function retryAfterSeconds(nextAllowedAt: Date | null): number {
   return Math.max(1, Math.ceil((nextAllowedAt.getTime() - Date.now()) / 1000));
 }
 
+function buildSafeDebugPayload(error: unknown) {
+  return {
+    env: {
+      isNpApiKeyConfigured: (process.env.NP_API_KEY ?? '').trim().length > 0,
+      shopShippingNpEnabled:
+        (process.env.SHOP_SHIPPING_NP_ENABLED ?? '').trim() || null,
+      shopShippingSyncEnabled:
+        (process.env.SHOP_SHIPPING_SYNC_ENABLED ?? '').trim() || null,
+      appEnv: (process.env.APP_ENV ?? '').trim() || null,
+      vercelEnv: (process.env.VERCEL_ENV ?? '').trim() || null,
+    },
+    error: {
+      errorClass: error instanceof Error ? error.name : typeof error,
+      isNovaPoshtaError: error instanceof NovaPoshtaApiError,
+      code: error instanceof NovaPoshtaApiError ? error.code : null,
+      status: error instanceof NovaPoshtaApiError ? error.status : null,
+    },
+  };
+}
+
+function isNonProductionAppStage(): boolean {
+  const appEnv = (process.env.APP_ENV ?? '').trim().toLowerCase();
+  const vercelEnv = (process.env.VERCEL_ENV ?? '').trim().toLowerCase();
+
+  if (appEnv) {
+    return appEnv !== 'production' && appEnv !== 'prod';
+  }
+
+  if (vercelEnv) {
+    return vercelEnv !== 'production';
+  }
+
+  // Deliberately fail closed: if stage env is unset, treat the route as
+  // production-like so debug payloads are not exposed by default.
+  return false;
+}
+
 export async function POST(request: NextRequest) {
   const requestId =
     request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
@@ -93,7 +131,9 @@ export async function POST(request: NextRequest) {
     route: ROUTE_PATH,
     method: request.method,
   };
-
+  const debugEnabled =
+    isNonProductionAppStage() &&
+    (request.headers.get('x-shop-debug') ?? '').trim() === '1';
   const blocked = guardNonBrowserFailClosed(request, {
     surface: 'shop_shipping_np_sync',
   });
@@ -211,8 +251,8 @@ export async function POST(request: NextRequest) {
     }
 
     if (parsed.data.cityRef) {
-      const synced = await cacheWarehousesBySettlement({
-        settlementRef: parsed.data.cityRef,
+      const synced = await cacheWarehousesByCityRef({
+        cityRef: parsed.data.cityRef,
         runId,
       });
       warehousesUpserted += synced.upserted;
@@ -241,10 +281,14 @@ export async function POST(request: NextRequest) {
         code: 'NP_SYNC_FAILED',
       }
     );
+
+    const debug = debugEnabled ? buildSafeDebugPayload(error) : null;
+
     return noStoreJson(
       {
         success: false,
         code: 'NP_SYNC_FAILED',
+        ...(debug ? { debug } : {}),
       },
       requestId,
       503

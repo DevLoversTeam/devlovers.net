@@ -1,4 +1,4 @@
-import { inArray, type SQL, sql, type SQLWrapper } from 'drizzle-orm';
+import { inArray, type SQL, type SQLWrapper } from 'drizzle-orm';
 
 import { inventoryStatusEnum } from '@/db/schema/shop';
 

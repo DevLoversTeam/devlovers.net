@@ -22,7 +22,7 @@ vi.mock('@/lib/services/shop/notifications/transport', () => ({
 }));
 
 import { db } from '@/db';
-import { notificationOutbox, orderShipping, orders } from '@/db/schema';
+import { notificationOutbox, orders, orderShipping } from '@/db/schema';
 import { runNotificationOutboxWorker } from '@/lib/services/shop/notifications/outbox-worker';
 import { toDbMoney } from '@/lib/shop/money';
 

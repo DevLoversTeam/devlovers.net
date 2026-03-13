@@ -417,13 +417,16 @@
           "label": "Miasto",
           "placeholder": "Zacznij wpisywać nazwę miasta (min. 2 znaki)",
           "selected": "Wybrane miasto: {city}",
-          "searching": "Wyszukiwanie miast..."
+          "searching": "Wyszukiwanie miast...",
+          "noResults": "Nie znaleziono miast. Sprawdź nazwę lub lokalne dane Nova Poshta."
         },
         "warehouse": {
-          "label": "Oddział / automat paczkowy",
+          "label": "Oddział / paczkomat",
           "placeholder": "Wpisz nazwę lub numer oddziału",
           "selected": "Wybrany oddział: {warehouse}",
-          "searching": "Wyszukiwanie oddziałów..."
+          "searching": "Wyszukiwanie oddziałów...",
+          "selectCityFirst": "Najpierw wybierz miasto",
+          "cityRequired": "Aby wybrać oddział, najpierw wybierz miasto z listy"
         },
         "courierAddress": {
           "label": "Adres kuriera",
@@ -461,9 +464,14 @@
           "label": "Metoda płatności",
           "stripe": "Stripe",
           "monobank": "Monobank",
-          "monobankUahOnlyHint": "Monobank jest dostępny tylko dla płatności w UAH.",
+          "monobankGooglePay": "Google Pay (Monobank)",
+          "monobankInvoice": "Karta / faktura (Monobank)",
+          "monobankGooglePayHint": "Google Pay jest dostępny na obsługiwanych urządzeniach",
+          "monobankGooglePayFallbackHint": "Jeśli Google Pay jest niedostępny, użyj płatności przez fakturę",
+          "monobankGooglePayUnavailable": "Google Pay jest obecnie niedostępny dla tego zamówienia.",
+          "monobankUahOnlyHint": "Monobank jest dostępny tylko dla zamówień w UAH.",
           "monobankUnavailable": "Monobank jest niedostępny w tym środowisku.",
-          "noAvailable": "Brak dostępnych metod płatności."
+          "noAvailable": "Obecnie brak dostępnych metod płatności."
         }
       },
       "actions": {
@@ -723,6 +731,23 @@
         "goToCart": "Przejdź do koszyka",
         "backToCart": "Wróć do koszyka",
         "continueShopping": "Kontynuuj zakupy"
+      },
+      "monobankGooglePay": {
+        "supportedDevices": "Google Pay jest dostępny na obsługiwanych urządzeniach",
+        "useInvoiceFallback": "Jeśli Google Pay jest niedostępny, użyj płatności przez fakturę",
+        "loading": "Przygotowywanie Google Pay...",
+        "submitting": "Przetwarzanie płatności...",
+        "unableToInit": "Nie udało się zainicjalizować Google Pay. Możesz kontynuować przez fakturę.",
+        "invoiceFallback": "Zapłać przez fakturę",
+        "invoiceLoading": "Otwieranie faktury...",
+        "invoiceFallbackFailed": "Nie można teraz uruchomić płatności przez fakturę.",
+        "cancelled": "Google Pay został anulowany. Możesz spróbować ponownie lub użyć faktury.",
+        "processingFallback": "Nie udało się dokończyć potwierdzenia w przeglądarce. Twoje zamówienie zostanie sfinalizowane automatycznie."
+      },
+      "monobankReturn": {
+        "processing": "Przetwarzanie płatności...",
+        "checking": "Oczekiwanie na potwierdzenie webhook przed finalizacją zamówienia.",
+        "refresh": "Odśwież status"
       }
     },
     "orders": {
@@ -1096,6 +1121,7 @@
       "loginLink": "Zaloguj się",
       "errors": {
         "signupFailed": "Nie udało się zarejestrować. Spróbuj ponownie.",
+        "emailAlreadyInUse": "Konto z tym adresem email już istnieje. Spróbuj się zalogować.",
         "networkError": "Błąd sieci. Sprawdź połączenie i spróbuj ponownie."
       },
       "verificationSent": "Wysłaliśmy email weryfikacyjny na",
@@ -1119,7 +1145,8 @@
       "submitting": "Aktualizowanie...",
       "errors": {
         "resetFailed": "Nie udało się zresetować hasła. Link może być nieprawidłowy lub wygasły.",
-        "networkError": "Błąd sieci. Spróbuj ponownie."
+        "networkError": "Błąd sieci. Spróbuj ponownie.",
+        "serverError": "Coś poszło nie tak. Spróbuj ponownie później."
       },
       "success": "Twoje hasło zostało pomyślnie zaktualizowane."
     },
@@ -1134,13 +1161,15 @@
       "show": "Pokaż",
       "hide": "Ukryj",
       "validation": {
-        "emailRequired": "Proszę wypełnić to pole",
+        "required": "To pole jest wymagane",
         "invalidName": "Imię i nazwisko musi mieć co najmniej {NAME_MIN_LEN} znaków i nie więcej niż {NAME_MAX_LEN} znaków",
         "emailTooShort": "Adres e-mail musi mieć co najmniej {EMAIL_MIN_LEN} znaków",
         "emailTooLong": "Adres e-mail nie może mieć więcej niż {EMAIL_MAX_LEN} znaków",
         "invalidEmail": "Proszę podać prawidłowy adres email",
         "passwordRequirements": "{PASSWORD_MIN_LEN}–{PASSWORD_MAX_BYTES} znaków, co najmniej jedną wielką literę i co najmniej jeden znak specjalny",
         "invalidPassword": "Hasło musi spełniać wymagania: {passwordRequirementsText}",
+        "passwordTooShort": "Hasło musi mieć co najmniej {minLength} znaków",
+        "passwordTooLongBytes": "Hasło nie może przekraczać {PASSWORD_MAX_BYTES} bajtów",
         "passwordsDontMatch": "Hasła nie zgadzają się"
       }
     },
@@ -1180,7 +1209,10 @@
       "changePassword": "Zmień hasło",
       "currentPassword": "Aktualne hasło",
       "newPassword": "Nowe hasło",
-      "saving": "Zapisywanie..."
+      "saving": "Zapisywanie...",
+      "updateNameFailed": "Nie udało się zaktualizować nazwy. Spróbuj ponownie.",
+      "updatePasswordFailed": "Nie udało się zaktualizować hasła. Spróbuj ponownie.",
+      "somethingWentWrong": "Coś poszło nie tak. Spróbuj ponownie."
     },
     "stats": {
       "title": "Statystyki quizów",

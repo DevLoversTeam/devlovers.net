@@ -75,14 +75,10 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
         }),
       });
 
-      const data = await res.json().catch(() => null);
-
       if (!res.ok) {
-        const msg =
-          typeof data?.error === 'string'
-            ? data.error
-            : t('errors.resetFailed');
-        setError(msg);
+        setError(
+          res.status === 400 ? t('errors.resetFailed') : t('errors.serverError')
+        );
         return;
       }
 

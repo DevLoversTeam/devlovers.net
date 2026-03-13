@@ -72,9 +72,14 @@ const ORDERS_CARD = cn('border-border rounded-md border p-4');
 type Props = {
   stripeEnabled: boolean;
   monobankEnabled: boolean;
+  monobankGooglePayEnabled: boolean;
 };
 
 type CheckoutProvider = 'stripe' | 'monobank';
+type CheckoutPaymentMethod =
+  | 'stripe_card'
+  | 'monobank_invoice'
+  | 'monobank_google_pay';
 
 function resolveInitialProvider(args: {
   stripeEnabled: boolean;
@@ -85,9 +90,20 @@ function resolveInitialProvider(args: {
   const canUseStripe = args.stripeEnabled;
   const canUseMonobank = args.monobankEnabled && isUah;
 
-  if (canUseStripe) return 'stripe';
   if (canUseMonobank) return 'monobank';
+  if (canUseStripe) return 'stripe';
   return 'stripe';
+}
+
+function resolveDefaultMethodForProvider(args: {
+  provider: CheckoutProvider;
+  currency: string | null | undefined;
+}): CheckoutPaymentMethod | null {
+  if (args.provider === 'stripe') return 'stripe_card';
+  if (args.provider === 'monobank') {
+    return args.currency === 'UAH' ? 'monobank_invoice' : null;
+  }
+  return null;
 }
 
 type OrdersSummaryState = {
@@ -112,13 +128,84 @@ type ShippingWarehouse = {
   address: string | null;
 };
 
+function normalizeLookupValue(value: string): string {
+  return value.trim().toLocaleLowerCase();
+}
+
+function normalizeShippingCity(raw: unknown): ShippingCity | null {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    return null;
+  }
+
+  const item = raw as Record<string, unknown>;
+
+  const ref = typeof item.ref === 'string' ? item.ref.trim() : '';
+
+  const rawName =
+    typeof item.nameUa === 'string'
+      ? item.nameUa
+      : typeof item.name_ua === 'string'
+        ? item.name_ua
+        : typeof item.name === 'string'
+          ? item.name
+          : typeof item.present === 'string'
+            ? item.present
+            : '';
+
+  const nameUa = rawName.trim();
+
+  if (!ref || !nameUa) {
+    return null;
+  }
+
+  return {
+    ref,
+    nameUa,
+  };
+}
+
+function parseShippingCitiesResponse(data: unknown): {
+  available: boolean | null;
+  items: ShippingCity[];
+} {
+  if (Array.isArray(data)) {
+    return {
+      available: null,
+      items: data
+        .map(normalizeShippingCity)
+        .filter((item): item is ShippingCity => item !== null),
+    };
+  }
+
+  if (!data || typeof data !== 'object') {
+    return {
+      available: null,
+      items: [],
+    };
+  }
+
+  const obj = data as Record<string, unknown>;
+  const itemsRaw = Array.isArray(obj.items) ? obj.items : [];
+
+  return {
+    available: typeof obj.available === 'boolean' ? obj.available : null,
+    items: itemsRaw
+      .map(normalizeShippingCity)
+      .filter((item): item is ShippingCity => item !== null),
+  };
+}
+
 function isWarehouseMethod(
   methodCode: CheckoutDeliveryMethodCode | null
 ): boolean {
   return methodCode === 'NP_WAREHOUSE' || methodCode === 'NP_LOCKER';
 }
 
-export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
+export default function CartPage({
+  stripeEnabled,
+  monobankEnabled,
+  monobankGooglePayEnabled,
+}: Props) {
   const { cart, updateQuantity, removeFromCart } = useCart();
   const router = useRouter();
   const t = useTranslations('shop.cart');
@@ -134,14 +221,20 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
   );
   const [isOrdersLoading, setIsOrdersLoading] = useState(false);
 
-  const [selectedProvider, setSelectedProvider] = useState<CheckoutProvider>(
-    () =>
-      resolveInitialProvider({
-        stripeEnabled,
-        monobankEnabled,
+  const initialProvider = resolveInitialProvider({
+    stripeEnabled,
+    monobankEnabled,
+    currency: cart?.summary?.currency,
+  });
+  const [selectedProvider, setSelectedProvider] =
+    useState<CheckoutProvider>(initialProvider);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] =
+    useState<CheckoutPaymentMethod | null>(() =>
+      resolveDefaultMethodForProvider({
+        provider: initialProvider,
         currency: cart?.summary?.currency,
       })
-  );
+    );
   const [isClientReady, setIsClientReady] = useState(false);
   const [shippingMethods, setShippingMethods] = useState<ShippingMethod[]>([]);
   const [shippingMethodsLoading, setShippingMethodsLoading] = useState(true);
@@ -156,6 +249,7 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
   const [selectedCityRef, setSelectedCityRef] = useState<string | null>(null);
   const [selectedCityName, setSelectedCityName] = useState<string | null>(null);
   const [citiesLoading, setCitiesLoading] = useState(false);
+  const [cityLookupFailed, setCityLookupFailed] = useState(false);
 
   const [warehouseQuery, setWarehouseQuery] = useState('');
   const [warehouseOptions, setWarehouseOptions] = useState<ShippingWarehouse[]>(
@@ -188,6 +282,7 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
   const isUahCheckout = cart.summary.currency === 'UAH';
   const canUseStripe = stripeEnabled;
   const canUseMonobank = monobankEnabled && isUahCheckout;
+  const canUseMonobankGooglePay = canUseMonobank && monobankGooglePayEnabled;
   const hasSelectableProvider = canUseStripe || canUseMonobank;
   const country = localeToCountry(locale);
   const shippingUnavailableHardBlock =
@@ -246,6 +341,10 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
     if (key) return safeT(key, code ?? 'SHIPPING_INVALID');
     return safeT('delivery.validation.invalid', code ?? 'SHIPPING_INVALID');
   };
+  const clearCheckoutUiErrors = () => {
+    setDeliveryUiError(null);
+    setCheckoutError(null);
+  };
 
   useEffect(() => {
     if (selectedProvider === 'stripe' && !canUseStripe && canUseMonobank) {
@@ -256,6 +355,40 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
       setSelectedProvider('stripe');
     }
   }, [canUseMonobank, canUseStripe, selectedProvider]);
+
+  useEffect(() => {
+    if (selectedProvider === 'stripe') {
+      if (selectedPaymentMethod !== 'stripe_card') {
+        setSelectedPaymentMethod('stripe_card');
+      }
+      return;
+    }
+
+    if (
+      selectedPaymentMethod === 'monobank_google_pay' &&
+      !canUseMonobankGooglePay
+    ) {
+      setSelectedPaymentMethod('monobank_invoice');
+      return;
+    }
+
+    if (
+      selectedPaymentMethod !== 'monobank_invoice' &&
+      selectedPaymentMethod !== 'monobank_google_pay'
+    ) {
+      setSelectedPaymentMethod(
+        resolveDefaultMethodForProvider({
+          provider: 'monobank',
+          currency: cart.summary.currency,
+        })
+      );
+    }
+  }, [
+    canUseMonobankGooglePay,
+    cart.summary.currency,
+    selectedPaymentMethod,
+    selectedProvider,
+  ]);
 
   useEffect(() => {
     let cancelled = false;
@@ -414,6 +547,7 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
   useEffect(() => {
     if (!shippingAvailable) {
       setCityOptions([]);
+      setCityLookupFailed(false);
       setCitiesLoading(false);
       return;
     }
@@ -421,14 +555,18 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
     const query = cityQuery.trim();
     if (query.length < 2) {
       setCityOptions([]);
+      setCityLookupFailed(false);
       setCitiesLoading(false);
       return;
     }
 
     let cancelled = false;
     const controller = new AbortController();
+
     const timeoutId = setTimeout(async () => {
       setCitiesLoading(true);
+      setCityLookupFailed(false);
+
       try {
         const qs = new URLSearchParams({
           q: query,
@@ -437,31 +575,47 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
           ...(country ? { country } : {}),
         });
 
-        const response = await fetch(`/api/shop/shipping/np/cities?${qs}`, {
-          method: 'GET',
-          headers: { Accept: 'application/json' },
-          cache: 'no-store',
-          signal: controller.signal,
-        });
+        const response = await fetch(
+          `/api/shop/shipping/np/cities?${qs.toString()}`,
+          {
+            method: 'GET',
+            headers: { Accept: 'application/json' },
+            cache: 'no-store',
+            signal: controller.signal,
+          }
+        );
 
         const data = await response.json().catch(() => null);
+        const parsed = parseShippingCitiesResponse(data);
 
-        if (!response.ok || !data || data.available === false) {
+        if (!response.ok || parsed.available === false) {
           if (!cancelled) {
-            setCityOptions([]);
+            setCityLookupFailed(true);
           }
           return;
         }
 
         if (!cancelled) {
-          const next = Array.isArray(data.items)
-            ? (data.items as ShippingCity[])
-            : [];
-          setCityOptions(next);
+          setCityLookupFailed(false);
+          const next = parsed.items;
+          const normalizedQuery = normalizeLookupValue(query);
+
+          const exactMatches = next.filter(
+            city => normalizeLookupValue(city.nameUa) === normalizedQuery
+          );
+
+          if (exactMatches.length === 1) {
+            const exactCity = exactMatches[0]!;
+            setSelectedCityRef(exactCity.ref);
+            setSelectedCityName(exactCity.nameUa);
+            setCityOptions([]);
+          } else {
+            setCityOptions(next);
+          }
         }
       } catch {
         if (!cancelled) {
-          setCityOptions([]);
+          setCityLookupFailed(true);
         }
       } finally {
         if (!cancelled) {
@@ -728,6 +882,16 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
       );
       return;
     }
+    if (
+      selectedProvider === 'monobank' &&
+      selectedPaymentMethod === 'monobank_google_pay' &&
+      !canUseMonobankGooglePay
+    ) {
+      setCheckoutError(
+        t('checkout.paymentMethod.monobankGooglePayUnavailable')
+      );
+      return;
+    }
     if (shippingMethodsLoading) {
       setCheckoutError(safeT('delivery.methodsLoading', 'METHODS_LOADING'));
       return;
@@ -772,7 +936,12 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
       }
 
       const idempotencyKey = generateIdempotencyKey();
-
+      const checkoutPaymentMethod =
+        selectedProvider === 'stripe' ? 'stripe_card' : selectedPaymentMethod;
+      if (!checkoutPaymentMethod) {
+        setCheckoutError(t('checkout.paymentMethod.noAvailable'));
+        return;
+      }
       const response = await fetch('/api/shop/checkout', {
         method: 'POST',
         headers: {
@@ -781,6 +950,7 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
         },
         body: JSON.stringify({
           paymentProvider: selectedProvider,
+          paymentMethod: checkoutPaymentMethod,
           ...(shippingPayloadResult?.ok
             ? {
                 shipping: shippingPayloadResult.shipping,
@@ -826,6 +996,11 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
         typeof data.pageUrl === 'string' && data.pageUrl.trim().length > 0
           ? data.pageUrl
           : null;
+      const statusToken: string | null =
+        typeof data.statusToken === 'string' &&
+        data.statusToken.trim().length > 0
+          ? data.statusToken
+          : null;
 
       const orderId = String(data.orderId);
       setCreatedOrderId(orderId);
@@ -838,12 +1013,28 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
         );
         return;
       }
-      if (paymentProvider === 'monobank' && monobankPageUrl) {
+
+      if (paymentProvider === 'monobank') {
+        if (checkoutPaymentMethod === 'monobank_google_pay') {
+          if (!statusToken) {
+            setCheckoutError(t('checkout.errors.unexpectedResponse'));
+            return;
+          }
+
+          router.push(
+            `${shopBase}/checkout/payment/monobank/${encodeURIComponent(
+              orderId
+            )}?statusToken=${encodeURIComponent(statusToken)}&clearCart=1`
+          );
+          return;
+        }
+
+        if (!monobankPageUrl) {
+          setCheckoutError(t('checkout.errors.unexpectedResponse'));
+          return;
+        }
+
         window.location.assign(monobankPageUrl);
-        return;
-      }
-      if (paymentProvider === 'monobank' && !monobankPageUrl) {
-        setCheckoutError(t('checkout.errors.unexpectedResponse'));
         return;
       }
 
@@ -866,8 +1057,16 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
 
   const shippingUnavailableText =
     resolveShippingUnavailableText(shippingReasonCode);
+  const hasValidPaymentSelection =
+    selectedProvider === 'stripe'
+      ? canUseStripe && selectedPaymentMethod === 'stripe_card'
+      : canUseMonobank &&
+        (selectedPaymentMethod === 'monobank_invoice' ||
+          (selectedPaymentMethod === 'monobank_google_pay' &&
+            canUseMonobankGooglePay));
   const canPlaceOrder =
     hasSelectableProvider &&
+    hasValidPaymentSelection &&
     !shippingMethodsLoading &&
     !shippingUnavailableHardBlock &&
     (!shippingAvailable || !!selectedShippingMethod);
@@ -1195,9 +1394,10 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
                         name="delivery-method"
                         value={method.methodCode}
                         checked={selectedShippingMethod === method.methodCode}
-                        onChange={() =>
-                          setSelectedShippingMethod(method.methodCode)
-                        }
+                        onChange={() => {
+                          clearCheckoutUiErrors();
+                          setSelectedShippingMethod(method.methodCode);
+                        }}
                         className="h-4 w-4"
                       />
                       <span className="text-sm font-medium">
@@ -1218,7 +1418,11 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
                     id="shipping-city-search"
                     type="text"
                     value={cityQuery}
+                    autoComplete="off"
+                    spellCheck={false}
                     onChange={event => {
+                      clearCheckoutUiErrors();
+                      setCityLookupFailed(false);
                       setCityQuery(event.target.value);
                       setSelectedCityRef(null);
                       setSelectedCityName(null);
@@ -1248,9 +1452,11 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
                           key={city.ref}
                           type="button"
                           onClick={() => {
+                            clearCheckoutUiErrors();
                             setSelectedCityRef(city.ref);
                             setSelectedCityName(city.nameUa);
                             setCityQuery(city.nameUa);
+                            setCityOptions([]);
                           }}
                           className="hover:bg-secondary block w-full rounded px-2 py-1 text-left text-xs"
                         >
@@ -1258,6 +1464,16 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
                         </button>
                       ))}
                     </div>
+                  ) : null}
+
+                  {!citiesLoading &&
+                  !cityLookupFailed &&
+                  cityQuery.trim().length >= 2 &&
+                  !selectedCityRef &&
+                  cityOptions.length === 0 ? (
+                    <p className="text-muted-foreground text-xs" role="status">
+                      {t('delivery.city.noResults')}
+                    </p>
                   ) : null}
                 </div>
 
@@ -1281,14 +1497,28 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
                       type="text"
                       value={warehouseQuery}
                       onChange={event => {
+                        clearCheckoutUiErrors();
                         setWarehouseQuery(event.target.value);
                         setSelectedWarehouseRef(null);
                         setSelectedWarehouseName(null);
                       }}
-                      placeholder={t('delivery.warehouse.placeholder')}
+                      placeholder={
+                        selectedCityRef
+                          ? t('delivery.warehouse.placeholder')
+                          : t('delivery.warehouse.selectCityFirst')
+                      }
                       className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
                       disabled={!selectedCityRef}
                     />
+
+                    {!selectedCityRef ? (
+                      <p
+                        className="text-muted-foreground text-xs"
+                        role="status"
+                      >
+                        {t('delivery.warehouse.cityRequired')}
+                      </p>
+                    ) : null}
 
                     {selectedWarehouseRef ? (
                       <p className="text-muted-foreground text-xs">
@@ -1312,6 +1542,7 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
                             key={warehouse.ref}
                             type="button"
                             onClick={() => {
+                              clearCheckoutUiErrors();
                               setSelectedWarehouseRef(warehouse.ref);
                               setSelectedWarehouseName(warehouse.name);
                               setWarehouseQuery(
@@ -1319,6 +1550,7 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
                                   ? `${warehouse.name} (${warehouse.address})`
                                   : warehouse.name
                               );
+                              setWarehouseOptions([]);
                             }}
                             className="hover:bg-secondary block w-full rounded px-2 py-1 text-left text-xs"
                           >
@@ -1343,9 +1575,10 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
                       id="shipping-address-1"
                       type="text"
                       value={courierAddressLine1}
-                      onChange={event =>
-                        setCourierAddressLine1(event.target.value)
-                      }
+                      onChange={event => {
+                        clearCheckoutUiErrors();
+                        setCourierAddressLine1(event.target.value);
+                      }}
                       placeholder={t(
                         'delivery.courierAddress.line1Placeholder'
                       )}
@@ -1354,9 +1587,10 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
                     <input
                       type="text"
                       value={courierAddressLine2}
-                      onChange={event =>
-                        setCourierAddressLine2(event.target.value)
-                      }
+                      onChange={event => {
+                        clearCheckoutUiErrors();
+                        setCourierAddressLine2(event.target.value);
+                      }}
                       placeholder={t(
                         'delivery.courierAddress.line2Placeholder'
                       )}
@@ -1376,7 +1610,10 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
                     id="recipient-name"
                     type="text"
                     value={recipientName}
-                    onChange={event => setRecipientName(event.target.value)}
+                    onChange={event => {
+                      clearCheckoutUiErrors();
+                      setRecipientName(event.target.value);
+                    }}
                     placeholder={t('delivery.recipientName.placeholder')}
                     className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
                   />
@@ -1393,7 +1630,10 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
                     id="recipient-phone"
                     type="tel"
                     value={recipientPhone}
-                    onChange={event => setRecipientPhone(event.target.value)}
+                    onChange={event => {
+                      clearCheckoutUiErrors();
+                      setRecipientPhone(event.target.value);
+                    }}
                     placeholder={t('delivery.recipientPhone.placeholder')}
                     className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
                   />
@@ -1410,7 +1650,10 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
                     id="recipient-email"
                     type="email"
                     value={recipientEmail}
-                    onChange={event => setRecipientEmail(event.target.value)}
+                    onChange={event => {
+                      clearCheckoutUiErrors();
+                      setRecipientEmail(event.target.value);
+                    }}
                     placeholder={t('delivery.recipientEmail.placeholder')}
                     className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
                   />
@@ -1426,7 +1669,10 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
                   <textarea
                     id="recipient-comment"
                     value={recipientComment}
-                    onChange={event => setRecipientComment(event.target.value)}
+                    onChange={event => {
+                      clearCheckoutUiErrors();
+                      setRecipientComment(event.target.value);
+                    }}
                     placeholder={t('delivery.recipientComment.placeholder')}
                     rows={2}
                     className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
@@ -1455,7 +1701,11 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
                     name="payment-provider"
                     value="stripe"
                     checked={selectedProvider === 'stripe'}
-                    onChange={() => setSelectedProvider('stripe')}
+                    onChange={() => {
+                      clearCheckoutUiErrors();
+                      setSelectedProvider('stripe');
+                      setSelectedPaymentMethod('stripe_card');
+                    }}
                     className="h-4 w-4"
                   />
                   <span className="text-sm font-medium">
@@ -1475,7 +1725,21 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
                   name="payment-provider"
                   value="monobank"
                   checked={selectedProvider === 'monobank'}
-                  onChange={() => setSelectedProvider('monobank')}
+                  onChange={() => {
+                    clearCheckoutUiErrors();
+                    setSelectedProvider('monobank');
+                    if (
+                      selectedPaymentMethod !== 'monobank_invoice' &&
+                      selectedPaymentMethod !== 'monobank_google_pay'
+                    ) {
+                      setSelectedPaymentMethod(
+                        resolveDefaultMethodForProvider({
+                          provider: 'monobank',
+                          currency: cart.summary.currency,
+                        })
+                      );
+                    }
+                  }}
                   disabled={!canUseMonobank}
                   className="h-4 w-4"
                 />
@@ -1483,6 +1747,60 @@ export default function CartPage({ stripeEnabled, monobankEnabled }: Props) {
                   {t('checkout.paymentMethod.monobank')}
                 </span>
               </label>
+
+              {selectedProvider === 'monobank' && canUseMonobank ? (
+                <div className="ml-2 space-y-2">
+                  {canUseMonobankGooglePay ? (
+                    <label className="border-border flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2">
+                      <input
+                        type="radio"
+                        name="payment-method-monobank"
+                        value="monobank_google_pay"
+                        checked={
+                          selectedPaymentMethod === 'monobank_google_pay'
+                        }
+                        onChange={() => {
+                          clearCheckoutUiErrors();
+                          setSelectedPaymentMethod('monobank_google_pay');
+                        }}
+                        className="h-4 w-4"
+                      />
+                      <span className="text-sm font-medium">
+                        {t('checkout.paymentMethod.monobankGooglePay')}
+                      </span>
+                    </label>
+                  ) : null}
+
+                  <label className="border-border flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2">
+                    <input
+                      type="radio"
+                      name="payment-method-monobank"
+                      value="monobank_invoice"
+                      checked={selectedPaymentMethod === 'monobank_invoice'}
+                      onChange={() => {
+                        clearCheckoutUiErrors();
+                        setSelectedPaymentMethod('monobank_invoice');
+                      }}
+                      className="h-4 w-4"
+                    />
+                    <span className="text-sm font-medium">
+                      {t('checkout.paymentMethod.monobankInvoice')}
+                    </span>
+                  </label>
+
+                  {canUseMonobankGooglePay ? (
+                    <p className="text-muted-foreground text-xs">
+                      {t('checkout.paymentMethod.monobankGooglePayHint')}
+                    </p>
+                  ) : (
+                    <p className="text-muted-foreground text-xs">
+                      {t(
+                        'checkout.paymentMethod.monobankGooglePayFallbackHint'
+                      )}
+                    </p>
+                  )}
+                </div>
+              ) : null}
 
               {!canUseMonobank ? (
                 <p className="text-muted-foreground text-xs">

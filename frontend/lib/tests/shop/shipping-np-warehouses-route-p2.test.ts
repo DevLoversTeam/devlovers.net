@@ -10,7 +10,7 @@ import { resetEnvCache } from '@/lib/env';
 import { NovaPoshtaApiError } from '@/lib/services/shop/shipping/nova-poshta-client';
 
 const enforceRateLimitMock = vi.fn();
-const getWarehousesBySettlementRefMock = vi.fn();
+const getWarehousesByCityRefMock = vi.fn();
 
 vi.mock('@/lib/security/rate-limit', () => ({
   getRateLimitSubject: vi.fn(() => 'shipping_np_warehouses_subject'),
@@ -36,8 +36,8 @@ vi.mock('@/lib/services/shop/shipping/nova-poshta-client', async () => {
   >('@/lib/services/shop/shipping/nova-poshta-client');
   return {
     ...actual,
-    getWarehousesBySettlementRef: (...args: any[]) =>
-      getWarehousesBySettlementRefMock(...args),
+    getWarehousesByCityRef: (...args: any[]) =>
+      getWarehousesByCityRefMock(...args),
   };
 });
 
@@ -57,7 +57,7 @@ describe('shop shipping np warehouses route (phase 2)', () => {
     vi.stubEnv('SHOP_SHIPPING_NP_ENABLED', 'true');
     resetEnvCache();
     enforceRateLimitMock.mockResolvedValue({ ok: true, remaining: 99 });
-    getWarehousesBySettlementRefMock.mockResolvedValue([]);
+    getWarehousesByCityRefMock.mockResolvedValue([]);
   });
 
   it('returns 200 + available=false when shipping is disabled', async () => {
@@ -77,7 +77,7 @@ describe('shop shipping np warehouses route (phase 2)', () => {
       reasonCode: 'SHOP_SHIPPING_DISABLED',
       items: [],
     });
-    expect(getWarehousesBySettlementRefMock).not.toHaveBeenCalled();
+    expect(getWarehousesByCityRefMock).not.toHaveBeenCalled();
   });
 
   it('local hit does not call NP', async () => {
@@ -122,7 +122,7 @@ describe('shop shipping np warehouses route (phase 2)', () => {
       expect(Array.isArray(json.items)).toBe(true);
       expect(json.items.length).toBeGreaterThan(0);
       expect(json.items[0].ref).toBe(warehouseRef);
-      expect(getWarehousesBySettlementRefMock).toHaveBeenCalledTimes(0);
+      expect(getWarehousesByCityRefMock).toHaveBeenCalledTimes(0);
     } finally {
       await db.delete(npWarehouses).where(eq(npWarehouses.ref, warehouseRef));
       await db.delete(npCities).where(eq(npCities.ref, cityRef));
@@ -131,7 +131,7 @@ describe('shop shipping np warehouses route (phase 2)', () => {
 
   it('NP down returns 200 + available=false NP_UNAVAILABLE with empty items', async () => {
     const cityRef = crypto.randomUUID();
-    getWarehousesBySettlementRefMock.mockRejectedValue(
+    getWarehousesByCityRefMock.mockRejectedValue(
       new NovaPoshtaApiError('NP_HTTP_ERROR', 'temporary', 503)
     );
 
@@ -149,6 +149,6 @@ describe('shop shipping np warehouses route (phase 2)', () => {
       reasonCode: 'NP_UNAVAILABLE',
       items: [],
     });
-    expect(getWarehousesBySettlementRefMock).toHaveBeenCalledTimes(1);
+    expect(getWarehousesByCityRefMock).toHaveBeenCalledTimes(1);
   });
 });

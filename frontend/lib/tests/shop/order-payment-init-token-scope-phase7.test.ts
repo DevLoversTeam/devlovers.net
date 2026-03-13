@@ -44,7 +44,7 @@ vi.mock('@/lib/services/orders/payment-attempts', () => ({
   PaymentAttemptsExhaustedError: class PaymentAttemptsExhaustedError extends Error {
     code = 'PAYMENT_ATTEMPTS_EXHAUSTED' as const;
     orderId: string | null = null;
-    provider: 'stripe' = 'stripe';
+    provider = 'stripe' as const;
   },
   ensureStripePaymentIntentForOrder: (...args: unknown[]) =>
     ensureStripePaymentIntentForOrderMock(...args),
