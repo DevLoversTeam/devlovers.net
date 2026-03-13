@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { orders } from '@/db/schema/shop';
@@ -22,6 +22,13 @@ function makeRefundIdempotencyKey(
   currency: string
 ): string {
   return `refund:${orderId}:${amountMinor}:${currency}`.slice(0, 128);
+}
+
+function readRows<T>(res: unknown): T[] {
+  if (Array.isArray(res)) return res as T[];
+  const maybe = res as { rows?: unknown };
+  if (Array.isArray(maybe.rows)) return maybe.rows as T[];
+  return [];
 }
 
 export async function refundOrder(
@@ -102,6 +109,25 @@ export async function refundOrder(
 
   const now = new Date();
   const createdAtIso = now.toISOString();
+  const shipmentSnapshotRes = await db.execute<{
+    shipment_id: string | null;
+    shipment_status: string | null;
+  }>(sql`
+    select
+      s.id::text as shipment_id,
+      s.status as shipment_status
+    from shipping_shipments s
+    where s.order_id = ${orderId}::uuid
+    order by s.created_at desc nulls last
+    limit 1
+  `);
+  const latestShipment = readRows<{
+    shipment_id: string | null;
+    shipment_status: string | null;
+  }>(shipmentSnapshotRes)[0] ?? {
+    shipment_id: null,
+    shipment_status: null,
+  };
 
   const nextMeta = appendRefundToMeta({
     prevMeta: order.pspMetadata,
@@ -115,21 +141,40 @@ export async function refundOrder(
       status: status ?? null,
     },
   });
+  const containedMeta = {
+    ...nextMeta,
+    refundContainment: {
+      requestedAt: createdAtIso,
+      refundId,
+      orderShippingStatusBefore: order.shippingStatus ?? null,
+      latestShipmentIdBefore: latestShipment.shipment_id ?? null,
+      latestShipmentStatusBefore: latestShipment.shipment_status ?? null,
+      hadShipmentRowBefore: Boolean(latestShipment.shipment_id),
+      shippingRequiredBefore: order.shippingRequired === true,
+      shippingProviderBefore: order.shippingProvider ?? null,
+      shippingMethodCodeBefore: order.shippingMethodCode ?? null,
+      trackingNumberBefore: order.trackingNumber ?? null,
+      shippingProviderRefBefore: order.shippingProviderRef ?? null,
+    },
+  };
 
-  await db
+  const updated = await db
     .update(orders)
     .set({
       updatedAt: now,
       pspStatusReason: 'REFUND_REQUESTED',
-      pspMetadata: nextMeta,
+      pspMetadata: containedMeta,
     })
-    .where(eq(orders.id, orderId));
+    .where(eq(orders.id, orderId))
+    .returning({ id: orders.id });
 
-  await closeShippingPipelineForOrder({
-    orderId,
-    reason: 'refund_requested',
-    now,
-  });
+  if (updated.length > 0) {
+    await closeShippingPipelineForOrder({
+      orderId,
+      reason: 'refund_requested',
+      now,
+    });
+  }
 
   return await getOrderById(orderId);
 }

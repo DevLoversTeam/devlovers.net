@@ -23,6 +23,10 @@ import {
   appendRefundToMeta,
   type RefundMetaRecord,
 } from '@/lib/services/orders/psp-metadata/refunds';
+import {
+  finalizeStripeRefundSuccess,
+  restoreStripeRefundFailure,
+} from '@/lib/services/orders/stripe-refund-reconciliation';
 import { buildPaymentEventDedupeKey } from '@/lib/services/shop/events/dedupe-key';
 import { orderShippingEligibilityWhereSql } from '@/lib/services/shop/shipping/eligibility';
 import { recordShippingMetric } from '@/lib/services/shop/shipping/metrics';
@@ -689,87 +693,6 @@ async function applyStripePaidAndQueueShipmentAtomic(
   };
 }
 
-type StripeRefundApplyArgs = {
-  now: Date;
-  orderId: string;
-  paymentIntentId: string | null;
-  stripeEventId: string;
-  pspChargeId: string | null;
-  pspPaymentMethod: string | null;
-  pspStatusReason: string;
-  pspMetadata: Record<string, unknown>;
-  canonicalDualWriteEnabled: boolean;
-  canonicalEventDedupeKey: string;
-  canonicalEventPayload: Record<string, unknown>;
-};
-
-async function applyStripeRefundedAtomic(
-  args: StripeRefundApplyArgs
-): Promise<{ applied: boolean }> {
-  const res = await db.execute(sql`
-    with updated_order as (
-      update orders
-      set payment_status = 'refunded',
-          status = 'CANCELED',
-          updated_at = ${args.now},
-          psp_charge_id = ${args.pspChargeId},
-          psp_payment_method = ${args.pspPaymentMethod},
-          psp_status_reason = ${args.pspStatusReason},
-          psp_metadata = ${JSON.stringify(args.pspMetadata)}::jsonb
-      where id = ${args.orderId}::uuid
-        and payment_provider = 'stripe'
-        and payment_status = 'paid'
-      returning
-        id,
-        total_amount_minor,
-        currency
-    ),
-    inserted_payment_event as (
-      insert into payment_events (
-        order_id,
-        provider,
-        event_name,
-        event_source,
-        event_ref,
-        attempt_id,
-        provider_payment_intent_id,
-        provider_charge_id,
-        amount_minor,
-        currency,
-        payload,
-        dedupe_key,
-        occurred_at,
-        created_at
-      )
-      select
-        uo.id,
-        'stripe',
-        'refund_applied',
-        'stripe_webhook',
-        ${args.stripeEventId},
-        null,
-        ${args.paymentIntentId},
-        ${args.pspChargeId},
-        uo.total_amount_minor::bigint,
-        uo.currency,
-        ${JSON.stringify(args.canonicalEventPayload)}::jsonb,
-        ${args.canonicalEventDedupeKey},
-        ${args.now},
-        ${args.now}
-      from updated_order uo
-      where ${args.canonicalDualWriteEnabled} = true
-      on conflict (dedupe_key) do nothing
-      returning id
-    )
-    select (select count(*)::int from updated_order) as updated_count
-  `);
-
-  const row = readDbRows<{ updated_count?: number }>(res)[0];
-  return {
-    applied: Number(row?.updated_count ?? 0) > 0,
-  };
-}
-
 export async function POST(request: NextRequest) {
   const startedAtMs = Date.now();
 
@@ -1128,11 +1051,15 @@ export async function POST(request: NextRequest) {
     const [order] = await db
       .select({
         id: orders.id,
+        paymentProvider: orders.paymentProvider,
         paymentIntentId: orders.paymentIntentId,
         totalAmountMinor: orders.totalAmountMinor,
         currency: orders.currency,
         paymentStatus: orders.paymentStatus,
         status: orders.status,
+        pspChargeId: orders.pspChargeId,
+        pspPaymentMethod: orders.pspPaymentMethod,
+        pspStatusReason: orders.pspStatusReason,
         stockRestored: orders.stockRestored,
         inventoryStatus: orders.inventoryStatus,
         shippingRequired: orders.shippingRequired,
@@ -1140,6 +1067,8 @@ export async function POST(request: NextRequest) {
         shippingMethodCode: orders.shippingMethodCode,
         shippingStatus: orders.shippingStatus,
         pspMetadata: orders.pspMetadata,
+        restockedAt: orders.restockedAt,
+        createdAt: orders.createdAt,
       })
       .from(orders)
       .where(eq(orders.id, resolvedOrderId))
@@ -1877,6 +1806,103 @@ export async function POST(request: NextRequest) {
       const now = new Date();
       const createdAtIso = now.toISOString();
 
+      if (
+        eventType === 'charge.refund.updated' &&
+        refund &&
+        (refund.status === 'failed' || refund.status === 'canceled') &&
+        order.pspStatusReason === 'REFUND_REQUESTED'
+      ) {
+        const deltaMeta = buildPspMetadata({
+          eventType,
+          paymentIntent,
+          charge: charge ?? undefined,
+          refund,
+        });
+
+        const nextMeta = mergePspMetadata({
+          prevMeta: order.pspMetadata,
+          delta: deltaMeta as any,
+          eventId: event.id,
+          currency: order.currency,
+          createdAtIso,
+        });
+
+        await restoreStripeRefundFailure({
+          order: order as any,
+          now,
+          refundId: refund.id,
+          refundStatus: refund.status ?? null,
+          refundReason: refund.reason ?? null,
+          chargeId: charge?.id ?? refundChargeId ?? null,
+          paymentIntentId,
+          nextMeta,
+        });
+
+        logWebhookEvent({
+          requestId,
+          stripeEventId,
+          orderId: order.id,
+          paymentIntentId,
+          paymentStatus,
+          eventType,
+          refundId: refund.id,
+          chargeId: charge?.id ?? refundChargeId ?? null,
+        });
+
+        return ack();
+      }
+
+      if (
+        eventType === 'charge.refund.updated' &&
+        refund &&
+        refund.status !== 'succeeded'
+      ) {
+        const deltaMeta = buildPspMetadata({
+          eventType,
+          paymentIntent,
+          charge: charge ?? undefined,
+          refund,
+          extra: {
+            refundGate: {
+              decision: 'waiting_terminal_refund_status',
+              refundStatus: refund.status ?? null,
+              eventId: event.id,
+            },
+          },
+        });
+
+        const nextMeta = mergePspMetadata({
+          prevMeta: order.pspMetadata,
+          delta: deltaMeta as any,
+          eventId: event.id,
+          currency: order.currency,
+          createdAtIso,
+        });
+
+        await db
+          .update(orders)
+          .set({
+            updatedAt: now,
+            pspMetadata: nextMeta,
+            pspChargeId: charge?.id ?? refundChargeId ?? null,
+            pspPaymentMethod: resolvePaymentMethod(paymentIntent, charge),
+          })
+          .where(eq(orders.id, order.id));
+
+        logWebhookEvent({
+          requestId,
+          stripeEventId,
+          orderId: order.id,
+          paymentIntentId,
+          paymentStatus,
+          eventType,
+          refundId: refund.id,
+          chargeId: charge?.id ?? refundChargeId ?? null,
+        });
+
+        return ack();
+      }
+
       if (!isFullRefund) {
         const deltaMeta = buildPspMetadata({
           eventType,
@@ -1943,63 +1969,26 @@ export async function POST(request: NextRequest) {
         createdAtIso,
       });
 
-      let canRestock = false;
-      if (canonicalDualWriteEnabled) {
-        const refundApply = await applyStripeRefundedAtomic({
-          now,
-          orderId: order.id,
-          paymentIntentId,
-          stripeEventId: event.id,
-          pspChargeId: charge?.id ?? refundChargeId ?? null,
-          pspPaymentMethod: resolvePaymentMethod(paymentIntent, charge),
-          pspStatusReason: refund?.reason ?? refund?.status ?? 'refunded',
-          pspMetadata: nextMeta,
-          canonicalDualWriteEnabled,
-          canonicalEventDedupeKey: buildPaymentEventDedupeKey({
-            provider: 'stripe',
-            orderId: order.id,
-            eventName: 'refund_applied',
-            eventSource: 'stripe_webhook',
-            stripeEventId: event.id,
-            paymentIntentId,
-            chargeId: charge?.id ?? refundChargeId ?? null,
-            refundId: refund?.id ?? null,
-          }),
-          canonicalEventPayload: {
-            stripeEventId: event.id,
-            eventType,
-            paymentIntentId,
-            chargeId: charge?.id ?? refundChargeId ?? null,
-            refundId: refund?.id ?? null,
-          },
-        });
-        canRestock = refundApply.applied || order.paymentStatus === 'refunded';
-      } else {
-        const refundRes = await guardedPaymentStatusUpdate({
-          orderId: order.id,
-          paymentProvider: 'stripe',
-          to: 'refunded',
-          source: 'stripe_webhook',
-          eventId: event.id,
-          note: eventType,
-          set: {
-            updatedAt: now,
-            status: 'CANCELED',
-            pspChargeId: charge?.id ?? refundChargeId ?? null,
-            pspPaymentMethod: resolvePaymentMethod(paymentIntent, charge),
-            pspStatusReason: refund?.reason ?? refund?.status ?? 'refunded',
-            pspMetadata: nextMeta,
-          },
-        });
-
-        canRestock =
-          refundRes.applied ||
-          (!refundRes.applied && refundRes.reason === 'ALREADY_IN_STATE');
-      }
-
-      if (canRestock) {
-        await restockOrder(order.id, { reason: 'refunded' });
-      }
+      await finalizeStripeRefundSuccess({
+        order: {
+          ...(order as any),
+          pspChargeId: order.pspChargeId ?? null,
+          pspPaymentMethod:
+            order.pspPaymentMethod ??
+            resolvePaymentMethod(paymentIntent, charge),
+          pspStatusReason: order.pspStatusReason ?? null,
+        },
+        now,
+        refundId: refund?.id ?? null,
+        refundStatus: refund?.status ?? null,
+        refundReason: refund?.reason ?? null,
+        paymentIntentId,
+        chargeId: charge?.id ?? refundChargeId ?? null,
+        nextMeta,
+        requireContainment: false,
+        source: 'stripe_webhook',
+        eventRef: event.id,
+      });
 
       logWebhookEvent({
         requestId,

@@ -6,6 +6,10 @@ export { setOrderPaymentIntent } from './orders/payment-intent';
 export { refundOrder } from './orders/refund';
 export { restockOrder as restock, restockOrder } from './orders/restock';
 export {
+  reconcileStaleStripeRefundOrders,
+  reconcileStripeRefundOrder,
+} from './orders/stripe-refund-reconciliation';
+export {
   getCheckoutPaymentPageOrderSummary,
   getCheckoutSuccessOrderSummary,
   getOrderById,

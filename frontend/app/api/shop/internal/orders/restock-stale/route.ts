@@ -8,6 +8,7 @@ import { requireInternalJanitorAuth } from '@/lib/auth/internal-janitor';
 import { logError, logInfo, logWarn } from '@/lib/logging';
 import { guardNonBrowserFailClosed } from '@/lib/security/origin';
 import {
+  reconcileStaleStripeRefundOrders,
   restockStaleNoPaymentOrders,
   restockStalePendingOrders,
   restockStuckReservingOrders,
@@ -478,17 +479,28 @@ export async function POST(request: NextRequest) {
     });
 
     const remaining3 = Math.max(0, deadlineMs - Date.now());
-    const processedIntlQuoteExpired =
+    const processedStripeRefundRecovery =
       remaining3 > 0
+        ? await reconcileStaleStripeRefundOrders({
+            olderThanMinutes: policy.olderThanMinutes.stalePending,
+            batchSize: policy.batchSize,
+            workerId,
+            timeBudgetMs: remaining3,
+          })
+        : 0;
+
+    const remaining4 = Math.max(0, deadlineMs - Date.now());
+    const processedIntlQuoteExpired =
+      remaining4 > 0
         ? await sweepExpiredOfferedIntlQuotes({
             batchSize: policy.batchSize,
             now: new Date(),
           })
         : 0;
 
-    const remaining4 = Math.max(0, deadlineMs - Date.now());
+    const remaining5 = Math.max(0, deadlineMs - Date.now());
     const processedIntlQuotePaymentTimeouts =
-      remaining4 > 0
+      remaining5 > 0
         ? await sweepAcceptedIntlQuotePaymentTimeouts({
             batchSize: policy.batchSize,
             now: new Date(),
@@ -499,6 +511,7 @@ export async function POST(request: NextRequest) {
       processedStuckReserving +
       processedStalePending +
       processedOrphanNoPayment +
+      processedStripeRefundRecovery +
       processedIntlQuoteExpired +
       processedIntlQuotePaymentTimeouts;
 
@@ -513,6 +526,7 @@ export async function POST(request: NextRequest) {
         stuckReserving: processedStuckReserving,
         stalePending: processedStalePending,
         orphanNoPayment: processedOrphanNoPayment,
+        stripeRefundRecovery: processedStripeRefundRecovery,
         intlQuoteExpired: processedIntlQuoteExpired,
         intlQuotePaymentTimeout: processedIntlQuotePaymentTimeouts,
       },
@@ -535,6 +549,7 @@ export async function POST(request: NextRequest) {
         stuckReserving: processedStuckReserving,
         stalePending: processedStalePending,
         orphanNoPayment: processedOrphanNoPayment,
+        stripeRefundRecovery: processedStripeRefundRecovery,
         intlQuoteExpired: processedIntlQuoteExpired,
         intlQuotePaymentTimeout: processedIntlQuotePaymentTimeouts,
       },

@@ -22,17 +22,35 @@ vi.mock('@/lib/services/orders', () => ({
   restockOrder: vi.fn(),
 }));
 
+vi.mock('@/lib/services/orders/stripe-refund-reconciliation', async () => {
+  const actual = await vi.importActual<
+    typeof import('@/lib/services/orders/stripe-refund-reconciliation')
+  >('@/lib/services/orders/stripe-refund-reconciliation');
+
+  return {
+    ...actual,
+    finalizeStripeRefundSuccess: vi.fn(actual.finalizeStripeRefundSuccess),
+    restoreStripeRefundFailure: vi.fn(actual.restoreStripeRefundFailure),
+  };
+});
+
 import { POST } from '@/app/api/shop/webhooks/stripe/route';
 import { db } from '@/db';
 import { orders, shippingShipments, stripeEvents } from '@/db/schema';
 import { retrieveCharge, verifyWebhookSignature } from '@/lib/psp/stripe';
 import { restockOrder } from '@/lib/services/orders';
+import {
+  finalizeStripeRefundSuccess,
+  restoreStripeRefundFailure,
+} from '@/lib/services/orders/stripe-refund-reconciliation';
 import { closeShippingPipelineForOrder } from '@/lib/services/shop/shipping/pipeline-shutdown';
 import { claimQueuedShipmentsForProcessing } from '@/lib/services/shop/shipping/shipments-worker';
 
 const verifyWebhookSignatureMock = vi.mocked(verifyWebhookSignature);
 const retrieveChargeMock = vi.mocked(retrieveCharge);
 const restockOrderMock = vi.mocked(restockOrder);
+const finalizeStripeRefundSuccessMock = vi.mocked(finalizeStripeRefundSuccess);
+const restoreStripeRefundFailureMock = vi.mocked(restoreStripeRefundFailure);
 
 type Inserted = {
   orderId: string;
@@ -125,6 +143,59 @@ async function insertPendingOrder(): Promise<Inserted> {
   return { orderId, paymentIntentId, shipmentId: null };
 }
 
+async function insertContainedRefundRequestedOrder(): Promise<
+  Inserted & { refundId: string }
+> {
+  const inserted = await insertPaidOrder({ withQueuedShipment: true });
+  const refundId = `re_${crypto.randomUUID()}`;
+  const nowIso = new Date().toISOString();
+
+  await db
+    .update(orders)
+    .set({
+      pspStatusReason: 'REFUND_REQUESTED',
+      shippingStatus: 'cancelled',
+      pspMetadata: {
+        refunds: [
+          {
+            refundId,
+            idempotencyKey: `refund:${inserted.orderId}:2500:USD`,
+            amountMinor: 2500,
+            currency: 'USD',
+            createdAt: nowIso,
+            createdBy: 'admin',
+            status: 'pending',
+          },
+        ],
+        refundContainment: {
+          requestedAt: nowIso,
+          refundId,
+          orderShippingStatusBefore: 'queued',
+          latestShipmentIdBefore: inserted.shipmentId,
+          latestShipmentStatusBefore: 'queued',
+          hadShipmentRowBefore: true,
+          shippingRequiredBefore: true,
+          shippingProviderBefore: 'nova_poshta',
+          shippingMethodCodeBefore: 'NP_WAREHOUSE',
+          trackingNumberBefore: null,
+          shippingProviderRefBefore: null,
+        },
+      } as any,
+    })
+    .where(eq(orders.id, inserted.orderId));
+
+  await db
+    .update(shippingShipments)
+    .set({
+      status: 'needs_attention',
+      lastErrorCode: 'ORDER_NOT_FULFILLABLE',
+      lastErrorMessage: 'Shipping pipeline closed: refund_requested',
+    })
+    .where(eq(shippingShipments.id, inserted.shipmentId!));
+
+  return { ...inserted, refundId };
+}
+
 function makeRequest() {
   const req = new NextRequest(
     new Request('http://localhost/api/shop/webhooks/stripe', {
@@ -212,7 +283,7 @@ describe('stripe webhook refund (full only): PI fallback + terminal status + ded
     inserted = null;
   });
 
-  it('full refund (charge.refund.updated) WITHOUT metadata.orderId resolves by paymentIntentId, sets terminal status, calls restock once', async () => {
+  it('full refund (charge.refund.updated) WITHOUT metadata.orderId resolves by paymentIntentId and finalizes once', async () => {
     inserted = await insertPaidOrder();
 
     const eventId = `evt_${crypto.randomUUID()}`;
@@ -268,10 +339,7 @@ describe('stripe webhook refund (full only): PI fallback + terminal status + ded
       expect(retrieveChargeMock).not.toHaveBeenCalled();
       expect(fetchSpy).not.toHaveBeenCalled();
 
-      expect(restockOrderMock).toHaveBeenCalledTimes(1);
-      expect(restockOrderMock).toHaveBeenCalledWith(inserted.orderId, {
-        reason: 'refunded',
-      });
+      expect(finalizeStripeRefundSuccessMock).toHaveBeenCalledTimes(1);
     } finally {
       fetchSpy.mockRestore();
     }
@@ -353,7 +421,7 @@ describe('stripe webhook refund (full only): PI fallback + terminal status + ded
       .where(eq(shippingShipments.id, inserted.shipmentId!))
       .limit(1);
     expect(shipment2?.status).toBe('needs_attention');
-    expect(restockOrderMock).toHaveBeenCalledTimes(1);
+    expect(finalizeStripeRefundSuccessMock).toHaveBeenCalledTimes(1);
   }, 30_000);
 
   it('payment_intent.payment_failed closes shipping pipeline and does not leave processable shipments on replay', async () => {
@@ -530,7 +598,7 @@ describe('stripe webhook refund (full only): PI fallback + terminal status + ded
       expect(retrieveChargeMock).not.toHaveBeenCalled();
       expect(fetchSpy).not.toHaveBeenCalled();
 
-      expect(restockOrderMock).toHaveBeenCalledTimes(1);
+      expect(finalizeStripeRefundSuccessMock).toHaveBeenCalledTimes(1);
     } finally {
       fetchSpy.mockRestore();
     }
@@ -643,7 +711,7 @@ describe('stripe webhook refund (full only): PI fallback + terminal status + ded
     expect(restockOrderMock).toHaveBeenCalledTimes(0);
   }, 30_000);
 
-  it('retry after 500 must reprocess same event.id until processedAt is set (restock not lost)', async () => {
+  it('retry after 500 must reprocess same event.id until processedAt is set (refund finalization not lost)', async () => {
     inserted = await insertPaidOrder();
 
     const eventId = `evt_${crypto.randomUUID()}`;
@@ -664,21 +732,9 @@ describe('stripe webhook refund (full only): PI fallback + terminal status + ded
       data: { object: charge },
     } as unknown as Stripe.Event);
 
-    restockOrderMock
-      .mockImplementationOnce(async () => {
-        throw new Error('RESTOCK_FAILED');
-      })
-      .mockImplementationOnce(async (orderId: string) => {
-        await db
-          .update(orders)
-          .set({
-            stockRestored: true,
-            restockedAt: new Date(),
-            inventoryStatus: 'released',
-            updatedAt: new Date(),
-          })
-          .where(eq(orders.id, orderId));
-      });
+    finalizeStripeRefundSuccessMock.mockImplementationOnce(async () => {
+      throw new Error('RESTOCK_FAILED');
+    });
 
     const res1 = await POST(makeRequest());
     expect(res1.status).toBe(500);
@@ -753,10 +809,80 @@ describe('stripe webhook refund (full only): PI fallback + terminal status + ded
     expect(row.status).toBe('CANCELED');
     expect(row.stockRestored).toBe(true);
 
-    expect(restockOrderMock).toHaveBeenCalledTimes(1);
-    expect(restockOrderMock).toHaveBeenCalledWith(inserted.orderId, {
-      reason: 'refunded',
+    expect(finalizeStripeRefundSuccessMock).toHaveBeenCalledTimes(1);
+  }, 30_000);
+
+  it('contained refund failure restores the order to paid and re-queues shipment work', async () => {
+    const contained = await insertContainedRefundRequestedOrder();
+    inserted = contained;
+
+    const eventId = `evt_${crypto.randomUUID()}`;
+    const chargeId = `ch_${crypto.randomUUID()}`;
+
+    const expandedCharge = makeCharge({
+      chargeId,
+      paymentIntentId: contained.paymentIntentId,
+      amount: 2500,
+      amountRefunded: 2500,
+      refunds: [
+        {
+          id: contained.refundId,
+          amount: 2500,
+          status: 'canceled',
+        },
+      ],
     });
+
+    const refund = {
+      id: contained.refundId,
+      object: 'refund',
+      amount: 2500,
+      status: 'canceled',
+      reason: 'expired_uncaptured_charge',
+      charge: expandedCharge,
+      payment_intent: contained.paymentIntentId,
+      metadata: {},
+    };
+
+    verifyWebhookSignatureMock.mockReturnValue({
+      id: eventId,
+      type: 'charge.refund.updated',
+      data: { object: refund },
+    } as unknown as Stripe.Event);
+
+    const res = await POST(makeRequest());
+    expect(res.status).toBe(200);
+
+    const [orderRow] = await db
+      .select({
+        paymentStatus: orders.paymentStatus,
+        status: orders.status,
+        inventoryStatus: orders.inventoryStatus,
+        stockRestored: orders.stockRestored,
+        pspStatusReason: orders.pspStatusReason,
+        shippingStatus: orders.shippingStatus,
+      })
+      .from(orders)
+      .where(eq(orders.id, contained.orderId))
+      .limit(1);
+
+    expect(orderRow?.paymentStatus).toBe('paid');
+    expect(orderRow?.status).toBe('PAID');
+    expect(orderRow?.inventoryStatus).toBe('reserved');
+    expect(orderRow?.stockRestored).toBe(false);
+    expect(orderRow?.pspStatusReason).toBe('expired_uncaptured_charge');
+    expect(orderRow?.pspStatusReason).not.toBe('REFUND_REQUESTED');
+    expect(orderRow?.shippingStatus).toBe('queued');
+
+    const [shipmentRow] = await db
+      .select({ status: shippingShipments.status })
+      .from(shippingShipments)
+      .where(eq(shippingShipments.id, contained.shipmentId!))
+      .limit(1);
+
+    expect(shipmentRow?.status).toBe('queued');
+    expect(restoreStripeRefundFailureMock).toHaveBeenCalledTimes(1);
+    expect(restockOrderMock).not.toHaveBeenCalled();
   }, 30_000);
   it('refund fullness undetermined: amount_refunded missing + refunds list empty (no refund object) -> 500, processedAt NULL, no order changes', async () => {
     inserted = await insertPaidOrder();
