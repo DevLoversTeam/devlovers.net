@@ -67,11 +67,12 @@ async function seedOrder(args: SeedArgs): Promise<Seeded> {
   const shipmentId = crypto.randomUUID();
   const state = defaultStateForAction(args.action);
 
-  const requiresPostInsertBlockedTransition =
-    args.paymentStatus === 'failed' ||
-    args.paymentStatus === 'refunded' ||
-    args.orderStatus === 'CANCELED' ||
-    args.orderStatus === 'INVENTORY_FAILED';
+  const targetIsShippable =
+    args.paymentStatus === 'paid' &&
+    args.orderStatus === 'PAID' &&
+    args.inventoryStatus === 'reserved';
+
+  const requiresPostInsertBlockedTransition = !targetIsShippable;
 
   const seedPaymentStatus = requiresPostInsertBlockedTransition
     ? 'paid'
