@@ -113,15 +113,24 @@ function makeMonobankCheckoutReq(params: {
   );
 }
 
-function mockCreateOrderSuccess(mockFn: MockedFn, orderId: string) {
+function mockCreateOrderSuccess(
+  mockFn: MockedFn,
+  orderId: string,
+  options?: {
+    currency?: 'USD' | 'UAH';
+    paymentStatus?: 'pending' | 'paid';
+    paymentProvider?: 'stripe' | 'monobank' | 'none';
+    paymentIntentId?: string | null;
+  }
+) {
   mockFn.mockResolvedValueOnce({
     order: {
       id: orderId,
-      currency: 'UAH',
+      currency: options?.currency ?? 'UAH',
       totalAmount: 10,
-      paymentStatus: 'paid',
-      paymentProvider: 'none',
-      paymentIntentId: null,
+      paymentStatus: options?.paymentStatus ?? 'pending',
+      paymentProvider: options?.paymentProvider ?? 'monobank',
+      paymentIntentId: options?.paymentIntentId ?? null,
     },
     isNew: true,
     totalCents: 1000,
@@ -189,7 +198,7 @@ describe('checkout monobank parse/validation', () => {
     expect(Array.isArray(args?.items)).toBe(true);
   });
 
-  it('defaults stripe method to stripe_card when paymentMethod is omitted', async () => {
+  it('omitted provider resolves to the server-preferred monobank rail for UAH checkout', async () => {
     const createOrderWithItemsMock =
       createOrderWithItems as unknown as MockedFn;
     mockCreateOrderSuccess(createOrderWithItemsMock, 'order_stripe_default_1');
@@ -207,8 +216,8 @@ describe('checkout monobank parse/validation', () => {
 
     expect(res.status).toBe(201);
     const args = createOrderWithItemsMock.mock.calls[0]?.[0];
-    expect(args?.paymentProvider).toBe('stripe');
-    expect(args?.paymentMethod).toBe('stripe_card');
+    expect(args?.paymentProvider).toBe('monobank');
+    expect(args?.paymentMethod).toBe('monobank_invoice');
   });
 
   it('rejects incompatible provider/method pair', async () => {
@@ -402,11 +411,15 @@ describe('checkout monobank parse/validation', () => {
     expect(hasStatusTokenScope(payload, 'order_payment_init')).toBe(true);
   });
 
-  it('keeps status-only token for no-payment checkout flow', async () => {
+  it('omitted provider still issues payment-init capable token for the resolved rail', async () => {
     const createOrderWithItemsMock =
       createOrderWithItems as unknown as MockedFn;
     const orderId = '11111111-1111-4111-8111-111111111120';
-    mockCreateOrderSuccess(createOrderWithItemsMock, orderId);
+    mockCreateOrderSuccess(createOrderWithItemsMock, orderId, {
+      currency: 'UAH',
+      paymentStatus: 'pending',
+      paymentProvider: 'monobank',
+    });
 
     const res = await POST(
       makeMonobankCheckoutReq({
@@ -427,6 +440,6 @@ describe('checkout monobank parse/validation', () => {
     expect(payload).not.toBeNull();
     if (!payload) return;
     expect(hasStatusTokenScope(payload, 'status_lite')).toBe(true);
-    expect(hasStatusTokenScope(payload, 'order_payment_init')).toBe(false);
+    expect(hasStatusTokenScope(payload, 'order_payment_init')).toBe(true);
   });
 });

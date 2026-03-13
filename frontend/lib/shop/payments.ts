@@ -15,6 +15,8 @@ export const paymentProviderValues = ['stripe', 'monobank', 'none'] as const;
 
 export type PaymentProvider = (typeof paymentProviderValues)[number];
 
+export type CheckoutPaymentProvider = Exclude<PaymentProvider, 'none'>;
+
 export const paymentMethodValues = [
   'stripe_card',
   'monobank_invoice',
@@ -22,6 +24,39 @@ export const paymentMethodValues = [
 ] as const;
 
 export type PaymentMethod = (typeof paymentMethodValues)[number];
+
+export function inferCheckoutProviderFromMethod(
+  method: PaymentMethod | null | undefined
+): CheckoutPaymentProvider | null {
+  if (method === 'stripe_card') return 'stripe';
+  if (
+    method === 'monobank_invoice' ||
+    method === 'monobank_google_pay'
+  ) {
+    return 'monobank';
+  }
+
+  return null;
+}
+
+export function resolveCheckoutProviderCandidates(args: {
+  requestedProvider?: CheckoutPaymentProvider | null;
+  requestedMethod?: PaymentMethod | null;
+  currency: CurrencyCode;
+}): readonly CheckoutPaymentProvider[] {
+  const explicitProvider =
+    args.requestedProvider ?? inferCheckoutProviderFromMethod(args.requestedMethod);
+
+  if (explicitProvider) {
+    return [explicitProvider];
+  }
+
+  if (args.currency === 'UAH') {
+    return ['monobank', 'stripe'];
+  }
+
+  return ['stripe'];
+}
 
 export function resolveDefaultMethodForProvider(
   provider: PaymentProvider,

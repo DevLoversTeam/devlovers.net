@@ -261,7 +261,7 @@ async function bestEffortHardDeleteOrder(orderId: string) {
   }
 }
 
-describe.sequential('Checkout (no payments) invariants', () => {
+describe.sequential('Checkout provider fail-closed invariants', () => {
   it('Explicit Stripe request fails closed when Stripe is unavailable', async () => {
     const { productId } = await createIsolatedProductForCurrency({
       currency: 'USD',
@@ -282,7 +282,6 @@ describe.sequential('Checkout (no payments) invariants', () => {
 
       expect(p0).toBeTruthy();
       const stockBefore = p0!.stock;
-
       const movesBefore = await countMovesForProduct(productId);
 
       const idemKey = crypto.randomUUID();
@@ -320,13 +319,11 @@ describe.sequential('Checkout (no payments) invariants', () => {
     }
   }, 20_000);
 
-  it('No-payments success path', async () => {
+  it('omitted provider fails closed when no checkout provider is available', async () => {
     const { productId } = await createIsolatedProductForCurrency({
       currency: 'USD',
       stock: 2,
     });
-
-    let orderId: string | null = null;
 
     try {
       await db
@@ -342,6 +339,7 @@ describe.sequential('Checkout (no payments) invariants', () => {
 
       expect(p0).toBeTruthy();
       const stockBefore = p0!.stock;
+      const movesBefore = await countMovesForProduct(productId);
 
       const idemKey = crypto.randomUUID();
       const res = await postCheckout({
@@ -350,23 +348,10 @@ describe.sequential('Checkout (no payments) invariants', () => {
         items: [{ productId, quantity: 1 }],
       });
 
-      expect([200, 201]).toContain(res.status);
+      expect(res.status).toBe(503);
 
       const json: any = await res.json();
-      expect(json?.success).toBe(true);
-
-      orderId = (json?.order?.id ?? json?.orderId) as string;
-      expect(typeof orderId).toBe('string');
-      expect(orderId.length).toBeGreaterThan(10);
-
-      await db
-        .update(products)
-        .set({ isActive: false, updatedAt: new Date() } as any)
-        .where(eq(products.id, productId));
-
-      expect(json.order.paymentProvider).toBe('none');
-      expect(json.order.paymentStatus).toBe('paid');
-      expect(json.order.currency).toBe('USD');
+      expect(json?.code).toBe('PSP_UNAVAILABLE');
 
       const [row] = await db
         .select({
@@ -379,25 +364,13 @@ describe.sequential('Checkout (no payments) invariants', () => {
           totalAmountMinor: orders.totalAmountMinor,
         })
         .from(orders)
-        .where(eq(orders.id, orderId))
+        .where(eq(orders.idempotencyKey, idemKey))
         .limit(1);
 
-      expect(row).toBeTruthy();
-      expect(row!.paymentProvider).toBe('none');
-      expect(row!.paymentStatus).toBe('paid');
-      expect(row!.inventoryStatus).toBe('reserved');
-      expect(row!.status).toBe('PAID');
-      expect(row!.currency).toBe('USD');
-      expect(row!.totalAmountMinor).toBeGreaterThan(0);
+      expect(row).toBeFalsy();
 
-      const moves = await readMoves(orderId);
-      const reserves = moves.filter(m => m.type === 'reserve');
-      const releases = moves.filter(m => m.type === 'release');
-
-      expect(reserves.length).toBe(1);
-      expect(reserves[0]!.productId).toBe(productId);
-      expect(reserves[0]!.quantity).toBe(1);
-      expect(releases.length).toBe(0);
+      const movesAfter = await countMovesForProduct(productId);
+      expect(movesAfter).toBe(movesBefore);
 
       const [p1] = await db
         .select({ stock: products.stock })
@@ -406,37 +379,17 @@ describe.sequential('Checkout (no payments) invariants', () => {
         .limit(1);
 
       expect(p1).toBeTruthy();
-      expect(p1!.stock).toBe(stockBefore - 1);
-
-      const { restockOrder } = await import('@/lib/services/orders');
-      await restockOrder(orderId, { reason: 'stale' });
-
-      const [p2] = await db
-        .select({ stock: products.stock })
-        .from(products)
-        .where(eq(products.id, productId))
-        .limit(1);
-
-      expect(p2).toBeTruthy();
-      expect(p2!.stock).toBe(stockBefore);
-
-      await bestEffortHardDeleteOrder(orderId);
-      orderId = null;
+      expect(p1!.stock).toBe(stockBefore);
     } finally {
-      if (orderId) {
-        await bestEffortHardDeleteOrder(orderId);
-      }
       await cleanupIsolatedProduct(productId);
     }
   }, 20_000);
 
-  it('Idempotency for no-payments', async () => {
+  it('repeated omitted-provider retries fail closed without creating orders or stock moves', async () => {
     const { productId } = await createIsolatedProductForCurrency({
       currency: 'USD',
       stock: 3,
     });
-
-    let orderId1: string | null = null;
 
     try {
       await db
@@ -452,6 +405,7 @@ describe.sequential('Checkout (no payments) invariants', () => {
 
       expect(p0).toBeTruthy();
       const stockBefore = p0!.stock;
+      const movesBefore = await countMovesForProduct(productId);
 
       const idemKey = crypto.randomUUID();
       const body1 = [{ productId, quantity: 1 }];
@@ -461,62 +415,54 @@ describe.sequential('Checkout (no payments) invariants', () => {
         acceptLanguage: 'en',
         items: body1,
       });
-      expect([200, 201]).toContain(r1.status);
+      expect(r1.status).toBe(503);
 
       const j1: any = await r1.json();
-      orderId1 = (j1?.order?.id ?? j1?.orderId) as string;
-      expect(orderId1).toBeTruthy();
-
-      await db
-        .update(products)
-        .set({ isActive: false, updatedAt: new Date() } as any)
-        .where(eq(products.id, productId));
+      expect(j1?.code).toBe('PSP_UNAVAILABLE');
 
       const r2 = await postCheckout({
         idemKey,
         acceptLanguage: 'en',
         items: body1,
       });
-      expect([200, 201]).toContain(r2.status);
+      expect(r2.status).toBe(503);
 
       const j2: any = await r2.json();
-      const orderId2: string = (j2?.order?.id ?? j2?.orderId) as string;
-
-      expect(orderId2).toBe(orderId1);
-
-      const movesAfter2 = await readMoves(orderId1);
-      const reservesAfter2 = movesAfter2.filter(m => m.type === 'reserve');
-      expect(reservesAfter2.length).toBe(1);
+      expect(j2?.code).toBe('PSP_UNAVAILABLE');
 
       const r3 = await postCheckout({
         idemKey,
         acceptLanguage: 'en',
         items: [{ productId, quantity: 2 }],
       });
-      expect(r3.status).toBe(409);
+      expect(r3.status).toBe(503);
 
-      const { restockOrder } = await import('@/lib/services/orders');
-      await restockOrder(orderId1, { reason: 'stale' });
+      const j3: any = await r3.json();
+      expect(j3?.code).toBe('PSP_UNAVAILABLE');
 
-      const [p2] = await db
+      const [row] = await db
+        .select({ id: orders.id })
+        .from(orders)
+        .where(eq(orders.idempotencyKey, idemKey))
+        .limit(1);
+      expect(row).toBeFalsy();
+
+      const movesAfter = await countMovesForProduct(productId);
+      expect(movesAfter).toBe(movesBefore);
+
+      const [p1] = await db
         .select({ stock: products.stock })
         .from(products)
         .where(eq(products.id, productId))
         .limit(1);
 
-      expect(p2).toBeTruthy();
-      expect(p2!.stock).toBe(stockBefore);
-
-      await bestEffortHardDeleteOrder(orderId1);
-      orderId1 = null;
+      expect(p1).toBeTruthy();
+      expect(p1!.stock).toBe(stockBefore);
     } finally {
-      if (orderId1) {
-        await bestEffortHardDeleteOrder(orderId1);
-      }
       await cleanupIsolatedProduct(productId);
     }
   }, 20_000);
-  it('Invalid variant rejects without side effects (no payments)', async () => {
+  it('provider unavailability fails closed before variant processing', async () => {
     const { productId } = await createIsolatedProductForCurrency({
       currency: 'USD',
       stock: 2,
@@ -566,7 +512,7 @@ describe.sequential('Checkout (no payments) invariants', () => {
         ],
       });
 
-      expect(res.status).toBe(400);
+      expect(res.status).toBe(503);
 
       const json: any = await res.json();
 
@@ -575,7 +521,7 @@ describe.sequential('Checkout (no payments) invariants', () => {
         .set({ isActive: false, updatedAt: new Date() } as any)
         .where(eq(products.id, productId));
 
-      expect(json?.code).toBe('INVALID_VARIANT');
+      expect(json?.code).toBe('PSP_UNAVAILABLE');
       const countAfter = await countMovesForProduct(productId);
       expect(countAfter).toBe(countBefore);
 
@@ -612,7 +558,7 @@ describe.sequential('Checkout (no payments) invariants', () => {
     }
   }, 20_000);
 
-  it('Missing variants reject when client provides options (no payments)', async () => {
+  it('provider unavailability fails closed before missing-variant checks', async () => {
     const { productId } = await createIsolatedProductForCurrency({
       currency: 'USD',
       stock: 2,
@@ -663,7 +609,7 @@ describe.sequential('Checkout (no payments) invariants', () => {
         ],
       });
 
-      expect(res.status).toBe(400);
+      expect(res.status).toBe(503);
 
       const json: any = await res.json();
 
@@ -672,7 +618,7 @@ describe.sequential('Checkout (no payments) invariants', () => {
         .set({ isActive: false, updatedAt: new Date() } as any)
         .where(eq(products.id, productId));
 
-      expect(json?.code).toBe('INVALID_VARIANT');
+      expect(json?.code).toBe('PSP_UNAVAILABLE');
 
       const countAfter = await countMovesForProduct(productId);
       expect(countAfter).toBe(countBefore);
