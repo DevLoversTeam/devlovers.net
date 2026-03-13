@@ -38,7 +38,7 @@ type Seeded = {
   orderId: string;
   shipmentId: string | null;
   shippingStatus: 'needs_attention' | 'label_created' | 'shipped' | 'cancelled';
-  shipmentStatus: 'failed' | null;
+  shipmentStatus: 'failed' | 'needs_attention' | null;
 };
 
 function defaultStateForAction(
@@ -127,13 +127,33 @@ async function seedOrder(args: SeedArgs): Promise<Seeded> {
       .where(eq(orders.id, orderId));
   }
 
+  const [persistedOrderRow] = await db
+    .select({
+      shippingStatus: orders.shippingStatus,
+    })
+    .from(orders)
+    .where(eq(orders.id, orderId))
+    .limit(1);
+
+  const [persistedShipmentRow] = state.shipmentStatus
+    ? await db
+        .select({
+          status: shippingShipments.status,
+        })
+        .from(shippingShipments)
+        .where(eq(shippingShipments.id, shipmentId))
+        .limit(1)
+    : [undefined];
+
   return {
     orderId,
     shipmentId: state.shipmentStatus ? shipmentId : null,
-    shippingStatus: requiresPostInsertBlockedTransition
-      ? 'cancelled'
-      : state.shippingStatus,
-    shipmentStatus: state.shipmentStatus,
+    shippingStatus:
+      (persistedOrderRow?.shippingStatus as Seeded['shippingStatus']) ??
+      state.shippingStatus,
+    shipmentStatus:
+      (persistedShipmentRow?.status as Seeded['shipmentStatus']) ??
+      state.shipmentStatus,
   };
 }
 
