@@ -13,12 +13,30 @@ import {
   productPrices,
   products,
 } from '@/db/schema/shop';
+import { resetEnvCache } from '@/lib/env';
 
 vi.mock('@/lib/auth', async () => {
   const actual = await vi.importActual<any>('@/lib/auth');
   return {
     ...actual,
     getCurrentUser: async () => null,
+  };
+});
+
+vi.mock('@/lib/services/orders/payment-attempts', async () => {
+  const actual = await vi.importActual<any>(
+    '@/lib/services/orders/payment-attempts'
+  );
+  return {
+    ...actual,
+    ensureStripePaymentIntentForOrder: vi.fn(
+      async (args: { orderId: string }) => ({
+        paymentIntentId: `pi_test_${args.orderId.slice(0, 8)}`,
+        clientSecret: `cs_test_${args.orderId.slice(0, 8)}`,
+        attemptId: crypto.randomUUID(),
+        attemptNumber: 1,
+      })
+    ),
   };
 });
 
@@ -68,17 +86,25 @@ afterAll(() => {
 
 describe('P0-8.10.1 checkout concurrency: stock=1, two parallel checkouts', () => {
   const stripeKeys = [
+    'PAYMENTS_ENABLED',
+    'STRIPE_PAYMENTS_ENABLED',
     'STRIPE_SECRET_KEY',
     'STRIPE_WEBHOOK_SECRET',
-    'STRIPE_PUBLISHABLE_KEY',
     'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY',
+    'APP_ORIGIN',
   ] as const;
 
   const originalEnv: Record<string, string | undefined> = {};
 
   beforeAll(() => {
     for (const k of stripeKeys) originalEnv[k] = process.env[k];
-    for (const k of stripeKeys) delete process.env[k];
+    process.env.PAYMENTS_ENABLED = 'true';
+    process.env.STRIPE_PAYMENTS_ENABLED = 'true';
+    process.env.STRIPE_SECRET_KEY = 'sk_test_concurrency';
+    process.env.STRIPE_WEBHOOK_SECRET = 'whsec_test_concurrency';
+    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = 'pk_test_concurrency';
+    process.env.APP_ORIGIN = 'http://localhost:3000';
+    resetEnvCache();
   });
 
   afterAll(() => {
@@ -87,6 +113,7 @@ describe('P0-8.10.1 checkout concurrency: stock=1, two parallel checkouts', () =
       if (v === undefined) delete process.env[k];
       else process.env[k] = v;
     }
+    resetEnvCache();
   });
 
   it('must allow only one success and must not double-reserve (stock must not go below 0)', async () => {
@@ -130,6 +157,8 @@ describe('P0-8.10.1 checkout concurrency: stock=1, two parallel checkouts', () =
 
     async function callCheckout(idemKey: string) {
       const body = JSON.stringify({
+        paymentProvider: 'stripe',
+        paymentMethod: 'stripe_card',
         items: [{ productId, quantity: 1 }],
       });
 

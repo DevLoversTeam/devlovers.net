@@ -258,7 +258,7 @@ function mapMonobankCheckoutError(error: unknown) {
     return {
       code: 'PRICE_CONFIG_ERROR',
       message: getErrorMessage(error, 'Price configuration error.'),
-      status: 422,
+      status: 400,
       details:
         error instanceof PriceConfigError
           ? {

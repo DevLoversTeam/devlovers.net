@@ -5,6 +5,13 @@ import { NextRequest } from 'next/server';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 const __prevRateLimitDisabled = process.env.RATE_LIMIT_DISABLED;
+const __prevPaymentsEnabled = process.env.PAYMENTS_ENABLED;
+const __prevStripePaymentsEnabled = process.env.STRIPE_PAYMENTS_ENABLED;
+const __prevStripeSecret = process.env.STRIPE_SECRET_KEY;
+const __prevStripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+const __prevStripePublishableKey =
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+const __prevAppOrigin = process.env.APP_ORIGIN;
 
 import { db } from '@/db';
 import {
@@ -14,6 +21,7 @@ import {
   productPrices,
   products,
 } from '@/db/schema';
+import { resetEnvCache } from '@/lib/env';
 import { deriveTestIpFromIdemKey } from '@/lib/tests/helpers/ip';
 
 vi.mock('@/lib/auth', async () => {
@@ -29,7 +37,24 @@ vi.mock('@/lib/env/stripe', async () => {
     await vi.importActual<Record<string, unknown>>('@/lib/env/stripe');
   return {
     ...actual,
-    isPaymentsEnabled: () => false,
+    isPaymentsEnabled: () => true,
+  };
+});
+
+vi.mock('@/lib/services/orders/payment-attempts', async () => {
+  const actual = await vi.importActual<any>(
+    '@/lib/services/orders/payment-attempts'
+  );
+  return {
+    ...actual,
+    ensureStripePaymentIntentForOrder: vi.fn(
+      async (args: { orderId: string }) => ({
+        paymentIntentId: `pi_test_${args.orderId.slice(0, 8)}`,
+        clientSecret: `cs_test_${args.orderId.slice(0, 8)}`,
+        attemptId: randomUUID(),
+        attemptNumber: 1,
+      })
+    ),
   };
 });
 
@@ -67,12 +92,42 @@ async function cleanupByIds(params: { orderId?: string; productId: string }) {
 
 beforeAll(() => {
   process.env.RATE_LIMIT_DISABLED = '1';
+  process.env.PAYMENTS_ENABLED = 'true';
+  process.env.STRIPE_PAYMENTS_ENABLED = 'true';
+  process.env.STRIPE_SECRET_KEY = 'sk_test_snapshot';
+  process.env.STRIPE_WEBHOOK_SECRET = 'whsec_test_snapshot';
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = 'pk_test_snapshot';
+  process.env.APP_ORIGIN = 'http://localhost:3000';
+  resetEnvCache();
 });
 
 afterAll(() => {
   if (__prevRateLimitDisabled === undefined)
     delete process.env.RATE_LIMIT_DISABLED;
   else process.env.RATE_LIMIT_DISABLED = __prevRateLimitDisabled;
+
+  if (__prevPaymentsEnabled === undefined) delete process.env.PAYMENTS_ENABLED;
+  else process.env.PAYMENTS_ENABLED = __prevPaymentsEnabled;
+
+  if (__prevStripePaymentsEnabled === undefined)
+    delete process.env.STRIPE_PAYMENTS_ENABLED;
+  else process.env.STRIPE_PAYMENTS_ENABLED = __prevStripePaymentsEnabled;
+
+  if (__prevStripeSecret === undefined) delete process.env.STRIPE_SECRET_KEY;
+  else process.env.STRIPE_SECRET_KEY = __prevStripeSecret;
+
+  if (__prevStripeWebhookSecret === undefined)
+    delete process.env.STRIPE_WEBHOOK_SECRET;
+  else process.env.STRIPE_WEBHOOK_SECRET = __prevStripeWebhookSecret;
+
+  if (__prevStripePublishableKey === undefined)
+    delete process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+  else
+    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = __prevStripePublishableKey;
+
+  if (__prevAppOrigin === undefined) delete process.env.APP_ORIGIN;
+  else process.env.APP_ORIGIN = __prevAppOrigin;
+  resetEnvCache();
 });
 
 describe('P0-6 snapshots: order_items immutability', () => {
@@ -118,7 +173,11 @@ describe('P0-6 snapshots: order_items immutability', () => {
     const idem = randomUUID();
     const req = makeJsonRequest(
       'http://localhost:3000/api/shop/checkout',
-      { items: [{ productId, quantity: 1 }] },
+      {
+        items: [{ productId, quantity: 1 }],
+        paymentProvider: 'stripe',
+        paymentMethod: 'stripe_card',
+      },
       {
         'Accept-Language': 'en-US,en;q=0.9',
         'Content-Type': 'application/json',
