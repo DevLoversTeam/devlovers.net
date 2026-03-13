@@ -144,6 +144,27 @@ function assertOrderIsShippable(
   }
 }
 
+function assertShipmentSupportsManualFulfillment(
+  state: ShippingStateRow,
+  action: 'mark_shipped' | 'mark_delivered'
+) {
+  if (!state.shipment_id) {
+    throw new ShippingAdminActionError(
+      'SHIPMENT_NOT_FOUND',
+      'Shipment record does not exist for this order.',
+      409
+    );
+  }
+
+  if (state.shipment_status !== 'succeeded') {
+    throw new ShippingAdminActionError(
+      'SHIPMENT_STATE_INCOMPATIBLE',
+      `${action} requires a succeeded shipment record.`,
+      409
+    );
+  }
+}
+
 async function loadShippingState(
   orderId: string
 ): Promise<ShippingStateRow | null> {
@@ -561,6 +582,8 @@ export async function applyShippingAdminAction(args: {
   }
 
   if (args.action === 'mark_shipped') {
+    assertShipmentSupportsManualFulfillment(state, 'mark_shipped');
+
     if (state.shipping_status === 'shipped') {
       await appendAuditEntry({
         orderId: args.orderId,
@@ -657,6 +680,8 @@ export async function applyShippingAdminAction(args: {
       400
     );
   }
+
+  assertShipmentSupportsManualFulfillment(state, 'mark_delivered');
 
   if (state.shipping_status === 'delivered') {
     await appendAuditEntry({

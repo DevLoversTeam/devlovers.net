@@ -39,7 +39,7 @@ type Seeded = {
   orderId: string;
   shipmentId: string | null;
   shippingStatus: 'needs_attention' | 'label_created' | 'shipped' | 'cancelled';
-  shipmentStatus: 'failed' | 'needs_attention' | null;
+  shipmentStatus: 'failed' | 'needs_attention' | 'succeeded' | null;
 };
 
 function defaultStateForAction(
@@ -54,12 +54,12 @@ function defaultStateForAction(
   if (action === 'mark_shipped') {
     return {
       shippingStatus: 'label_created',
-      shipmentStatus: null,
+      shipmentStatus: 'succeeded',
     };
   }
   return {
     shippingStatus: 'shipped',
-    shipmentStatus: null,
+    shipmentStatus: 'succeeded',
   };
 }
 
