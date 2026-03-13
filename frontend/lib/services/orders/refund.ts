@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { orders } from '@/db/schema/shop';
 import { createRefund } from '@/lib/psp/stripe';
+import { closeShippingPipelineForOrder } from '@/lib/services/shop/shipping/pipeline-shutdown';
 
 import { InvalidPayloadError, OrderNotFoundError } from '../errors';
 import {
@@ -123,6 +124,12 @@ export async function refundOrder(
       pspMetadata: nextMeta,
     })
     .where(eq(orders.id, orderId));
+
+  await closeShippingPipelineForOrder({
+    orderId,
+    reason: 'refund_requested',
+    now,
+  });
 
   return await getOrderById(orderId);
 }

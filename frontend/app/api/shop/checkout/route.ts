@@ -36,13 +36,13 @@ import {
 import { resolveCurrencyFromLocale } from '@/lib/shop/currency';
 import {
   isMethodAllowed,
-  resolveCheckoutProviderCandidates,
-  resolveDefaultMethodForProvider,
   type PaymentMethod,
   type PaymentProvider,
   paymentProviderValues,
   type PaymentStatus,
   paymentStatusValues,
+  resolveCheckoutProviderCandidates,
+  resolveDefaultMethodForProvider,
 } from '@/lib/shop/payments';
 import { resolveRequestLocale } from '@/lib/shop/request-locale';
 import {
@@ -876,7 +876,8 @@ export async function POST(request: NextRequest) {
         : monobankCheckoutAvailable
     ) ?? null;
 
-  const fallbackProvider = selectedProvider ?? checkoutProviderCandidates[0] ?? null;
+  const fallbackProvider =
+    selectedProvider ?? checkoutProviderCandidates[0] ?? null;
   const selectedCurrency =
     fallbackProvider === 'monobank' ? 'UAH' : localeCurrency;
   const selectedMethod =
@@ -932,32 +933,50 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (selectedProvider) {
-    if (
-      selectedMethod === 'monobank_google_pay' &&
-      !isMonobankGooglePayEnabled()
-    ) {
+  const resolvedProvider = selectedProvider ?? fallbackProvider;
+  if (!resolvedProvider) {
+    logWarn('checkout_provider_unavailable', {
+      ...baseMeta,
+      code: 'PAYMENTS_DISABLED',
+      requestedProvider,
+      requestedMethod,
+      localeCurrency,
+      candidates: checkoutProviderCandidates,
+      stripeCheckoutAvailable,
+      monobankCheckoutAvailable,
+    });
+
+    return errorResponse(
+      'PSP_UNAVAILABLE',
+      'Payment provider unavailable.',
+      503
+    );
+  }
+
+  if (
+    selectedMethod === 'monobank_google_pay' &&
+    !isMonobankGooglePayEnabled()
+  ) {
+    return errorResponse('INVALID_REQUEST', 'Invalid request.', 422);
+  }
+
+  if (
+    !isMethodAllowed({
+      provider: resolvedProvider,
+      method: selectedMethod,
+      currency: selectedCurrency,
+      flags: { monobankGooglePayEnabled: isMonobankGooglePayEnabled() },
+    })
+  ) {
+    if (resolvedProvider === 'monobank') {
       return errorResponse('INVALID_REQUEST', 'Invalid request.', 422);
     }
 
-    if (
-      !isMethodAllowed({
-        provider: selectedProvider,
-        method: selectedMethod,
-        currency: selectedCurrency,
-        flags: { monobankGooglePayEnabled: isMonobankGooglePayEnabled() },
-      })
-    ) {
-      if (selectedProvider === 'monobank') {
-        return errorResponse('INVALID_REQUEST', 'Invalid request.', 422);
-      }
-
-      return errorResponse(
-        'PAYMENTS_METHOD_INVALID',
-        'Invalid payment method.',
-        422
-      );
-    }
+    return errorResponse(
+      'PAYMENTS_METHOD_INVALID',
+      'Invalid payment method.',
+      422
+    );
   }
 
   if (
@@ -1154,7 +1173,7 @@ export async function POST(request: NextRequest) {
         country: country ?? null,
         shipping: shipping ?? null,
         legalConsent: legalConsent ?? null,
-        paymentProvider: selectedProvider,
+        paymentProvider: resolvedProvider,
         paymentMethod: selectedMethod,
       }));
 

@@ -29,10 +29,7 @@ export function inferCheckoutProviderFromMethod(
   method: PaymentMethod | null | undefined
 ): CheckoutPaymentProvider | null {
   if (method === 'stripe_card') return 'stripe';
-  if (
-    method === 'monobank_invoice' ||
-    method === 'monobank_google_pay'
-  ) {
+  if (method === 'monobank_invoice' || method === 'monobank_google_pay') {
     return 'monobank';
   }
 
@@ -45,7 +42,8 @@ export function resolveCheckoutProviderCandidates(args: {
   currency: CurrencyCode;
 }): readonly CheckoutPaymentProvider[] {
   const explicitProvider =
-    args.requestedProvider ?? inferCheckoutProviderFromMethod(args.requestedMethod);
+    args.requestedProvider ??
+    inferCheckoutProviderFromMethod(args.requestedMethod);
 
   if (explicitProvider) {
     return [explicitProvider];

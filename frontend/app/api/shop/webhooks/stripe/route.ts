@@ -24,7 +24,7 @@ import {
   type RefundMetaRecord,
 } from '@/lib/services/orders/psp-metadata/refunds';
 import { buildPaymentEventDedupeKey } from '@/lib/services/shop/events/dedupe-key';
-import { inventoryCommittedForShippingSql } from '@/lib/services/shop/shipping/inventory-eligibility';
+import { orderShippingEligibilityWhereSql } from '@/lib/services/shop/shipping/eligibility';
 import { recordShippingMetric } from '@/lib/services/shop/shipping/metrics';
 import { shippingStatusTransitionWhereSql } from '@/lib/services/shop/transitions/shipping-state';
 
@@ -523,11 +523,15 @@ async function applyStripePaidAndQueueShipmentAtomic(
           from orders o
           where o.id = ${args.orderId}::uuid
             and o.payment_provider = 'stripe'
-            and o.payment_status = 'paid'
             and o.shipping_required = true
             and o.shipping_provider = 'nova_poshta'
             and o.shipping_method_code is not null
-            and ${inventoryCommittedForShippingSql(sql`o.inventory_status`)}
+            and ${orderShippingEligibilityWhereSql({
+              paymentStatusColumn: sql`o.payment_status`,
+              orderStatusColumn: sql`o.status`,
+              inventoryStatusColumn: sql`o.inventory_status`,
+              pspStatusReasonColumn: sql`o.psp_status_reason`,
+            })}
         ),
         inserted_shipment as (
           insert into shipping_shipments (
@@ -611,11 +615,15 @@ async function applyStripePaidAndQueueShipmentAtomic(
           from orders o
           where o.id = ${args.orderId}::uuid
             and o.payment_provider = 'stripe'
-            and o.payment_status = 'paid'
             and o.shipping_required = true
             and o.shipping_provider = 'nova_poshta'
             and o.shipping_method_code is not null
-            and ${inventoryCommittedForShippingSql(sql`o.inventory_status`)}
+            and ${orderShippingEligibilityWhereSql({
+              paymentStatusColumn: sql`o.payment_status`,
+              orderStatusColumn: sql`o.status`,
+              inventoryStatusColumn: sql`o.inventory_status`,
+              pspStatusReasonColumn: sql`o.psp_status_reason`,
+            })}
         ),
         inserted_shipment as (
           insert into shipping_shipments (

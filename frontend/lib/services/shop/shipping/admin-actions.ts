@@ -22,6 +22,7 @@ type ShippingStateRow = {
   payment_status: string | null;
   order_status: string | null;
   inventory_status: string | null;
+  psp_status_reason: string | null;
   shipping_required: boolean | null;
   shipping_provider: string | null;
   shipping_method_code: string | null;
@@ -132,6 +133,7 @@ function assertOrderIsShippable(
     paymentStatus: state.payment_status,
     orderStatus: state.order_status,
     inventoryStatus: state.inventory_status,
+    pspStatusReason: state.psp_status_reason,
   });
   if (!eligibility.ok) {
     throw new ShippingAdminActionError(
@@ -151,6 +153,7 @@ async function loadShippingState(
       o.payment_status,
       o.status as order_status,
       o.inventory_status,
+      o.psp_status_reason,
       o.shipping_required,
       o.shipping_provider,
       o.shipping_method_code,

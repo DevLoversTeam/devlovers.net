@@ -25,6 +25,7 @@ function mapInvalidPayloadStatus(code: string): number {
   if (code === 'RETURN_NOT_FOUND') return 404;
   if (
     code === 'RETURN_TRANSITION_INVALID' ||
+    code === 'RETURN_REFUND_DISABLED' ||
     code === 'RETURN_REFUND_STATE_INVALID' ||
     code === 'RETURN_REFUND_PROVIDER_UNSUPPORTED' ||
     code === 'RETURN_REFUND_PAYMENT_STATUS_INVALID'
@@ -70,25 +71,12 @@ export async function POST(
     }
     returnRequestIdForLog = parsed.data.id;
 
-    const result = await refundReturnRequest({
+    await refundReturnRequest({
       returnRequestId: returnRequestIdForLog,
       actorUserId: typeof admin.id === 'string' ? admin.id : null,
       requestId,
     });
-
-    return noStoreJson({
-      success: true,
-      changed: result.changed,
-      returnRequest: {
-        ...result.row,
-        approvedAt: result.row.approvedAt?.toISOString() ?? null,
-        rejectedAt: result.row.rejectedAt?.toISOString() ?? null,
-        receivedAt: result.row.receivedAt?.toISOString() ?? null,
-        refundedAt: result.row.refundedAt?.toISOString() ?? null,
-        createdAt: result.row.createdAt.toISOString(),
-        updatedAt: result.row.updatedAt.toISOString(),
-      },
-    });
+    return noStoreJson({ code: 'INTERNAL_ERROR' }, 500);
   } catch (error) {
     if (error instanceof AdminApiDisabledError) {
       return noStoreJson({ code: 'ADMIN_API_DISABLED' }, 403);

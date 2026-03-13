@@ -38,6 +38,7 @@ type OrderShippingDetailsRow = {
   payment_status: string | null;
   status: string | null;
   inventory_status: string | null;
+  psp_status_reason: string | null;
   shipping_required: boolean | null;
   shipping_provider: string | null;
   shipping_method_code: string | null;
@@ -445,6 +446,7 @@ export async function claimQueuedShipmentsForProcessing(args: {
           paymentStatusColumn: sql`o.payment_status`,
           orderStatusColumn: sql`o.status`,
           inventoryStatusColumn: sql`o.inventory_status`,
+          pspStatusReasonColumn: sql`o.psp_status_reason`,
         })}
         and ${shippingStatusTransitionWhereSql({
           column: sql`o.shipping_status`,
@@ -540,6 +542,7 @@ async function loadOrderShippingDetails(
       o.payment_status as payment_status,
       o.status as status,
       o.inventory_status as inventory_status,
+      o.psp_status_reason as psp_status_reason,
       o.shipping_required as shipping_required,
       o.shipping_provider as shipping_provider,
       o.shipping_method_code as shipping_method_code,
@@ -691,6 +694,7 @@ async function processClaimedShipment(args: {
       paymentStatus: details.payment_status,
       orderStatus: details.status,
       inventoryStatus: details.inventory_status,
+      pspStatusReason: details.psp_status_reason,
     });
     if (!eligibility.ok) {
       throw buildFailure('ORDER_NOT_SHIPPABLE', eligibility.message, false);

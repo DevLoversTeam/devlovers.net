@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 
 import { and, eq, sql } from 'drizzle-orm';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { db } from '@/db';
 import {
@@ -10,6 +10,7 @@ import {
   orderItems,
   orders,
   products,
+  returnRequests,
   shippingEvents,
   users,
 } from '@/db/schema';
@@ -28,6 +29,10 @@ const createRefundMock = vi.hoisted(() => vi.fn());
 vi.mock('@/lib/psp/stripe', () => ({
   createRefund: createRefundMock,
 }));
+
+beforeEach(() => {
+  createRefundMock.mockReset();
+});
 
 type Seed = {
   orderId: string;
@@ -129,6 +134,9 @@ async function cleanupSeed(seed: Seed) {
     .delete(shippingEvents)
     .where(eq(shippingEvents.orderId, seed.orderId));
   await db
+    .delete(returnRequests)
+    .where(eq(returnRequests.orderId, seed.orderId));
+  await db
     .delete(inventoryMoves)
     .where(eq(inventoryMoves.orderId, seed.orderId));
   await db.delete(orderItems).where(eq(orderItems.orderId, seed.orderId));
@@ -193,7 +201,7 @@ describe.sequential('returns phase 4', () => {
     }
   });
 
-  it('refund is allowed only after receive state', async () => {
+  it('refund stays disabled for launch even after receive state', async () => {
     const seed = await seedPaidReservedOrder();
     try {
       const created = await createReturnRequest({
@@ -219,7 +227,7 @@ describe.sequential('returns phase 4', () => {
           requestId: `req_${crypto.randomUUID()}`,
         })
       ).rejects.toMatchObject({
-        code: 'RETURN_REFUND_STATE_INVALID',
+        code: 'RETURN_REFUND_DISABLED',
       } satisfies Partial<InvalidPayloadError>);
 
       await receiveReturnRequest({
@@ -228,25 +236,30 @@ describe.sequential('returns phase 4', () => {
         requestId: `req_${crypto.randomUUID()}`,
       });
 
-      createRefundMock.mockResolvedValueOnce({
-        refundId: `re_${crypto.randomUUID()}`,
-        status: 'succeeded',
-      });
-
-      const refunded = await refundReturnRequest({
-        returnRequestId: created.request.id,
-        actorUserId: 'admin_2',
-        requestId: `req_${crypto.randomUUID()}`,
-      });
-      expect(refunded.changed).toBe(true);
-      expect(refunded.row.status).toBe('refunded');
-      expect(createRefundMock).toHaveBeenCalledTimes(1);
-      expect(createRefundMock).toHaveBeenCalledWith(
-        expect.objectContaining({
-          orderId: seed.orderId,
-          amountMinor: created.request.refundAmountMinor,
+      await expect(
+        refundReturnRequest({
+          returnRequestId: created.request.id,
+          actorUserId: 'admin_2',
+          requestId: `req_${crypto.randomUUID()}`,
         })
-      );
+      ).rejects.toMatchObject({
+        code: 'RETURN_REFUND_DISABLED',
+      } satisfies Partial<InvalidPayloadError>);
+
+      const [row] = await db
+        .select({
+          status: returnRequests.status,
+          refundedAt: returnRequests.refundedAt,
+          refundProviderRef: returnRequests.refundProviderRef,
+        })
+        .from(returnRequests)
+        .where(eq(returnRequests.id, created.request.id))
+        .limit(1);
+
+      expect(row?.status).toBe('received');
+      expect(row?.refundedAt).toBeNull();
+      expect(row?.refundProviderRef).toBeNull();
+      expect(createRefundMock).not.toHaveBeenCalled();
     } finally {
       await cleanupSeed(seed);
     }
@@ -314,7 +327,7 @@ describe.sequential('returns phase 4', () => {
     }
   });
 
-  it('emits canonical shipping events and admin audit entries for return transitions', async () => {
+  it('does not emit refund events or audit entries while return refunds are disabled', async () => {
     const seed = await seedPaidReservedOrder();
     try {
       const created = await createReturnRequest({
@@ -338,15 +351,15 @@ describe.sequential('returns phase 4', () => {
         requestId: `req_${crypto.randomUUID()}`,
       });
 
-      createRefundMock.mockResolvedValueOnce({
-        refundId: `re_${crypto.randomUUID()}`,
-        status: 'succeeded',
-      });
-      await refundReturnRequest({
-        returnRequestId: created.request.id,
-        actorUserId: 'admin_4',
-        requestId: `req_${crypto.randomUUID()}`,
-      });
+      await expect(
+        refundReturnRequest({
+          returnRequestId: created.request.id,
+          actorUserId: 'admin_4',
+          requestId: `req_${crypto.randomUUID()}`,
+        })
+      ).rejects.toMatchObject({
+        code: 'RETURN_REFUND_DISABLED',
+      } satisfies Partial<InvalidPayloadError>);
 
       const events = await db
         .select({
@@ -366,9 +379,9 @@ describe.sequential('returns phase 4', () => {
           'return_requested',
           'return_approved',
           'return_received',
-          'return_refunded',
         ])
       );
+      expect(events.map(e => e.eventName)).not.toContain('return_refunded');
 
       const audits = await db
         .select({
@@ -387,9 +400,10 @@ describe.sequential('returns phase 4', () => {
           'return.requested',
           'return.approve',
           'return.receive',
-          'return.refund',
         ])
       );
+      expect(audits.map(a => a.action)).not.toContain('return.refund');
+      expect(createRefundMock).not.toHaveBeenCalled();
     } finally {
       await cleanupSeed(seed);
       await db.delete(users).where(eq(users.id, seed.userId));
