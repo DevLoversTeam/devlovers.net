@@ -66,7 +66,19 @@ function readStoredQuestionIds(storageKey: string): Set<string> {
 
 function writeStoredQuestionIds(storageKey: string, ids: Set<string>) {
   if (typeof window === 'undefined') return;
-  window.localStorage.setItem(storageKey, JSON.stringify([...ids]));
+  try {
+    window.localStorage.setItem(storageKey, JSON.stringify([...ids]));
+  } catch {
+    // Ignore storage write failures in restricted environments.
+  }
+}
+
+function getQuestionStorageId(question: QuestionEntry): string {
+  if (question.id !== undefined && question.id !== null) {
+    return String(question.id);
+  }
+
+  return `${question.category}:${question.question}`;
 }
 
 function normalizeCachedTerm(term: string): string {
@@ -373,10 +385,10 @@ export default function AccordionList({ items }: { items: QuestionEntry[] }) {
       if (e.key === CACHE_KEY) {
         refreshCachedTerms();
       }
-      if (e.key === QA_VIEWED_STORAGE_KEY) {
+      if (e.key === null || e.key === QA_VIEWED_STORAGE_KEY) {
         setViewedItems(readStoredQuestionIds(QA_VIEWED_STORAGE_KEY));
       }
-      if (e.key === QA_BOOKMARK_STORAGE_KEY) {
+      if (e.key === null || e.key === QA_BOOKMARK_STORAGE_KEY) {
         setBookmarkedItems(readStoredQuestionIds(QA_BOOKMARK_STORAGE_KEY));
       }
     };
@@ -467,7 +479,7 @@ export default function AccordionList({ items }: { items: QuestionEntry[] }) {
       <Accordion type="single" collapsible className="w-full">
         {items.map((q, idx) => {
           const key = q.id ?? idx;
-          const questionId = String(key);
+          const questionId = getQuestionStorageId(q);
           const accentColor =
             categoryTabStyles[q.category as keyof typeof categoryTabStyles]
               ?.accent ?? '#A1A1AA';
@@ -491,10 +503,35 @@ export default function AccordionList({ items }: { items: QuestionEntry[] }) {
                 className="px-4 hover:no-underline"
                 onPointerDown={clearSelection}
                 onClick={() => markAsViewed(questionId)}
+                trailing={
+                  isViewed ? (
+                    <button
+                      type="button"
+                      aria-label={isBookmarked ? 'Remove bookmark' : 'Add bookmark'}
+                      aria-pressed={isBookmarked}
+                      className="mr-2 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-sm text-red-500 transition-colors hover:bg-red-500/10 focus-visible:ring-2 focus-visible:ring-red-500/40 focus-visible:outline-none"
+                      onClick={event => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        toggleBookmark(questionId);
+                      }}
+                    >
+                      <Bookmark
+                        className="h-4 w-4"
+                        fill={isBookmarked ? 'currentColor' : 'none'}
+                      />
+                    </button>
+                  ) : (
+                    <span
+                      aria-hidden="true"
+                      className="mr-2 inline-flex h-6 w-6 shrink-0"
+                    />
+                  )
+                }
               >
                 <span className="flex min-w-0 flex-1 items-center gap-3">
                   <span className="min-w-0 flex-1 truncate">{q.question}</span>
-                  <span className="flex h-6 w-[108px] shrink-0 items-center justify-end gap-1.5">
+                  <span className="flex h-6 w-[82px] shrink-0 items-center justify-end">
                     <Badge
                       variant="success"
                       className={
@@ -506,42 +543,6 @@ export default function AccordionList({ items }: { items: QuestionEntry[] }) {
                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                       Viewed
                     </Badge>
-                    <span
-                      role={isViewed ? 'button' : undefined}
-                      tabIndex={isViewed ? 0 : -1}
-                      aria-label={
-                        isViewed
-                          ? isBookmarked
-                            ? 'Remove bookmark'
-                            : 'Add bookmark'
-                          : undefined
-                      }
-                      aria-pressed={isViewed ? isBookmarked : undefined}
-                      aria-hidden={isViewed ? undefined : true}
-                      className={
-                        isViewed
-                          ? 'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-sm text-red-500 transition-colors hover:bg-red-500/10 focus-visible:ring-2 focus-visible:ring-red-500/40 focus-visible:outline-none'
-                          : 'invisible inline-flex h-6 w-6 shrink-0 items-center justify-center'
-                      }
-                      onClick={event => {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        if (!isViewed) return;
-                        toggleBookmark(questionId);
-                      }}
-                      onKeyDown={event => {
-                        if (!isViewed) return;
-                        if (event.key !== 'Enter' && event.key !== ' ') return;
-                        event.preventDefault();
-                        event.stopPropagation();
-                        toggleBookmark(questionId);
-                      }}
-                    >
-                      <Bookmark
-                        className="h-4 w-4"
-                        fill={isBookmarked ? 'currentColor' : 'none'}
-                      />
-                    </span>
                   </span>
                 </span>
               </AccordionTrigger>
