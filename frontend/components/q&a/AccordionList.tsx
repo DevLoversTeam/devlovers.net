@@ -7,7 +7,8 @@ import {
   useEffect,
   useState,
 } from 'react';
-import { Bookmark } from 'lucide-react';
+import { Bookmark, CheckCircle } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 import { Badge } from '@/components/ui/badge';
 import AIWordHelper from '@/components/q&a/AIWordHelper';
@@ -75,7 +76,7 @@ function writeStoredQuestionIds(storageKey: string, ids: Set<string>) {
 
 function getQuestionStorageId(question: QuestionEntry): string {
   if (question.id !== undefined && question.id !== null) {
-    return String(question.id);
+    return `${question.category}:${String(question.id)}`;
   }
 
   return `${question.category}:${question.question}`;
@@ -354,7 +355,14 @@ function renderBlock(
   }
 }
 
-export default function AccordionList({ items }: { items: QuestionEntry[] }) {
+export default function AccordionList({
+  items,
+  totalItems,
+}: {
+  items: QuestionEntry[];
+  totalItems: number;
+}) {
+  const t = useTranslations('qa');
   const [selectedText, setSelectedText] = useState<string | null>(null);
   const [buttonPosition, setButtonPosition] = useState<{
     x: number;
@@ -474,8 +482,81 @@ export default function AccordionList({ items }: { items: QuestionEntry[] }) {
     });
   }, []);
 
+  const categoryKey = items[0]?.category ?? null;
+  const viewedCategoryCount = categoryKey
+    ? [...viewedItems].filter(id => id.startsWith(`${categoryKey}:`)).length
+    : 0;
+  const viewedPercentage =
+    totalItems > 0
+      ? Math.round((viewedCategoryCount / totalItems) * 100)
+      : 0;
+  const progressAccent =
+    items[0]?.category
+      ? categoryTabStyles[items[0].category as keyof typeof categoryTabStyles]
+          ?.accent ?? 'var(--accent-primary)'
+      : 'var(--accent-primary)';
+  const progressTrackBorder = hexToRgba(progressAccent, 0.38);
+  const progressFill = `linear-gradient(90deg, ${hexToRgba(progressAccent, 0.72)} 0%, ${hexToRgba(progressAccent, 0.18)} 100%)`;
+
+  const resetVisibleProgress = useCallback(() => {
+    if (!categoryKey) return;
+
+    setViewedItems(prev => {
+      const next = new Set(
+        [...prev].filter(id => !id.startsWith(`${categoryKey}:`))
+      );
+      writeStoredQuestionIds(QA_VIEWED_STORAGE_KEY, next);
+      return next;
+    });
+
+    setBookmarkedItems(prev => {
+      const next = new Set(
+        [...prev].filter(id => !id.startsWith(`${categoryKey}:`))
+      );
+      writeStoredQuestionIds(QA_BOOKMARK_STORAGE_KEY, next);
+      return next;
+    });
+  }, [categoryKey]);
+
   return (
     <>
+      <div className="mb-4">
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+          <div className="text-sm text-gray-500 dark:text-gray-400">
+            {t('progressLabel')}:{' '}
+            <span className="font-semibold text-gray-900 dark:text-gray-100">
+              {viewedCategoryCount}/{totalItems}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={resetVisibleProgress}
+            className="inline-flex h-8 items-center rounded-full border border-[var(--qa-progress-border)] px-3 text-xs font-medium text-[var(--qa-progress-accent)] transition-colors hover:border-red-500 hover:text-red-500 focus-visible:border-red-500 focus-visible:text-red-500 focus-visible:outline-none"
+            style={
+              {
+                '--qa-progress-accent': progressAccent,
+                '--qa-progress-border': progressTrackBorder,
+              } as React.CSSProperties
+            }
+          >
+            {t('resetProgress')}
+          </button>
+        </div>
+        <div
+          className="h-3 overflow-hidden rounded-full border bg-white/5 dark:bg-white/5"
+          style={{ borderColor: progressTrackBorder }}
+        >
+          <div
+            className="h-full rounded-full transition-[width] duration-500"
+            style={{
+              width: `${viewedPercentage}%`,
+              background: progressFill,
+              boxShadow: `0 0 24px ${hexToRgba(progressAccent, 0.3)}`,
+            }}
+          />
+        </div>
+      </div>
+
       <Accordion type="single" collapsible className="w-full">
         {items.map((q, idx) => {
           const key = q.id ?? idx;
@@ -501,48 +582,54 @@ export default function AccordionList({ items }: { items: QuestionEntry[] }) {
             >
               <AccordionTrigger
                 className="px-4 hover:no-underline"
+                chevronOutside
                 onPointerDown={clearSelection}
                 onClick={() => markAsViewed(questionId)}
                 trailing={
-                  isViewed ? (
-                    <button
-                      type="button"
-                      aria-label={isBookmarked ? 'Remove bookmark' : 'Add bookmark'}
-                      aria-pressed={isBookmarked}
-                      className="mr-2 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-sm text-red-500 transition-colors hover:bg-red-500/10 focus-visible:ring-2 focus-visible:ring-red-500/40 focus-visible:outline-none"
-                      onClick={event => {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        toggleBookmark(questionId);
-                      }}
-                    >
-                      <Bookmark
-                        className="h-4 w-4"
-                        fill={isBookmarked ? 'currentColor' : 'none'}
-                      />
-                    </button>
-                  ) : (
-                    <span
-                      aria-hidden="true"
-                      className="mr-2 inline-flex h-6 w-6 shrink-0"
-                    />
-                  )
-                }
-              >
-                <span className="flex min-w-0 flex-1 items-center gap-3">
-                  <span className="min-w-0 flex-1 truncate">{q.question}</span>
-                  <span className="flex h-6 w-[82px] shrink-0 items-center justify-end">
+                  <div className="mr-2 flex h-6 w-[80px] shrink-0 items-center justify-end gap-2 self-center sm:w-[118px] sm:gap-3">
                     <Badge
                       variant="success"
                       className={
                         isViewed
-                          ? 'h-6 gap-1 rounded-full px-2 py-0 text-[11px]'
-                          : 'invisible h-6 gap-1 rounded-full px-2 py-0 text-[11px]'
+                          ? 'h-6 rounded-full px-0 py-0 text-[11px] whitespace-nowrap bg-transparent text-emerald-500 shadow-none dark:bg-transparent dark:text-emerald-400 sm:px-2 sm:text-inherit sm:bg-green-100 sm:text-green-700 sm:dark:bg-green-900/30 sm:dark:text-green-400'
+                          : 'invisible h-6 rounded-full px-0 py-0 text-[11px] whitespace-nowrap bg-transparent shadow-none sm:px-2 sm:text-inherit'
                       }
+                      aria-label={isViewed ? 'Viewed' : undefined}
                     >
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                      Viewed
+                      <span className="inline-flex items-center sm:hidden">
+                        <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />
+                      </span>
+                      <span className="hidden items-center gap-1 sm:inline-flex">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                        Viewed
+                      </span>
                     </Badge>
+                    {isViewed ? (
+                      <button
+                        type="button"
+                        aria-label={isBookmarked ? 'Remove bookmark' : 'Add bookmark'}
+                        aria-pressed={isBookmarked}
+                        className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-sm text-red-500 transition-colors hover:bg-red-500/10 focus-visible:ring-2 focus-visible:ring-red-500/40 focus-visible:outline-none"
+                        onClick={event => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          toggleBookmark(questionId);
+                        }}
+                      >
+                        <Bookmark
+                          className="h-4 w-4"
+                          fill={isBookmarked ? 'currentColor' : 'none'}
+                        />
+                      </button>
+                    ) : (
+                      <span aria-hidden="true" className="inline-flex h-6 w-6 shrink-0" />
+                    )}
+                  </div>
+                }
+              >
+                <span className="flex min-w-0 flex-1 items-center">
+                  <span className="min-w-0 flex-1 break-words whitespace-normal leading-snug sm:leading-normal">
+                    {q.question}
                   </span>
                 </span>
               </AccordionTrigger>

@@ -15,6 +15,7 @@ const qaState = {
   isLoading: false,
   items: [] as unknown[],
   localeKey: 'en',
+  totalItems: 0,
   totalPages: 0,
 };
 
@@ -24,7 +25,13 @@ vi.mock('@/components/q&a/useQaTabs', () => ({
 
 vi.mock('@/components/q&a/AccordionList', () => ({
   __esModule: true,
-  default: ({ items }: { items: unknown[] }) => (
+  default: ({
+    items,
+    totalItems,
+  }: {
+    items: unknown[];
+    totalItems: number;
+  }) => (
     <div data-testid="accordion-list">{items.length}</div>
   ),
 }));
@@ -61,6 +68,7 @@ describe('QaSection', () => {
   it('renders category tabs and pagination', () => {
     qaState.totalPages = 3;
     qaState.items = [{ id: 'q1' }];
+    qaState.totalItems = 42;
     render(<QaSection />);
 
     const buttons = screen.getAllByRole('button');
