@@ -3,6 +3,23 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const getCachedTermsMock = vi.fn();
+const storage = new Map<string, string>();
+
+Object.defineProperty(window, 'localStorage', {
+  value: {
+    getItem: (key: string) => storage.get(key) ?? null,
+    setItem: (key: string, value: string) => {
+      storage.set(key, value);
+    },
+    removeItem: (key: string) => {
+      storage.delete(key);
+    },
+    clear: () => {
+      storage.clear();
+    },
+  },
+  configurable: true,
+});
 
 vi.mock('@/lib/ai/explainCache', () => ({
   getCachedTerms: () => getCachedTermsMock(),
@@ -15,8 +32,24 @@ vi.mock('@/components/ui/accordion', () => ({
   AccordionItem: ({ children }: { children: React.ReactNode }) => (
     <div>{children}</div>
   ),
-  AccordionTrigger: ({ children }: { children: React.ReactNode }) => (
-    <button type="button">{children}</button>
+  AccordionTrigger: ({
+    children,
+    leading,
+    trailing,
+    onClick,
+  }: {
+    children: React.ReactNode;
+    leading?: React.ReactNode;
+    trailing?: React.ReactNode;
+    onClick?: () => void;
+  }) => (
+    <div>
+      {leading}
+      <button type="button" onClick={onClick}>
+        {children}
+      </button>
+      {trailing}
+    </div>
   ),
   AccordionContent: ({ children }: { children: React.ReactNode }) => (
     <div>{children}</div>
@@ -113,6 +146,7 @@ import type { QuestionEntry } from '@/components/q&a/types';
 describe('AccordionList', () => {
   beforeEach(() => {
     getCachedTermsMock.mockReturnValue([]);
+    localStorage.clear();
   });
 
   it('renders questions and answer blocks', () => {
@@ -134,6 +168,69 @@ describe('AccordionList', () => {
 
     expect(screen.getByText('What is CSS?')).toBeTruthy();
     expect(screen.getByText('CSS styles pages.')).toBeTruthy();
+  });
+
+  it('marks an accordion as viewed after opening it', () => {
+    const items: QuestionEntry[] = [
+      {
+        id: 'q1',
+        question: 'What is CSS?',
+        category: 'css',
+        answerBlocks: [
+          {
+            type: 'paragraph',
+            children: [{ text: 'CSS styles pages.' }],
+          },
+        ],
+      },
+    ];
+
+    render(<AccordionList items={items} />);
+
+    expect(
+      screen.queryByRole('button', { name: 'Add bookmark' })
+    ).toBeNull();
+
+    fireEvent.click(screen.getByText('What is CSS?'));
+
+    expect(
+      screen.getByRole('button', { name: 'Add bookmark' })
+    ).toBeTruthy();
+    expect(
+      JSON.parse(
+        localStorage.getItem('devlovers_qa_viewed_questions') ?? '[]'
+      )
+    ).toContain('q1');
+  });
+
+  it('toggles bookmark state for viewed accordion', () => {
+    const items: QuestionEntry[] = [
+      {
+        id: 'q1',
+        question: 'What is CSS?',
+        category: 'css',
+        answerBlocks: [
+          {
+            type: 'paragraph',
+            children: [{ text: 'CSS styles pages.' }],
+          },
+        ],
+      },
+    ];
+
+    render(<AccordionList items={items} />);
+
+    fireEvent.click(screen.getByText('What is CSS?'));
+    fireEvent.click(screen.getByRole('button', { name: 'Add bookmark' }));
+
+    expect(
+      screen.getByRole('button', { name: 'Remove bookmark' })
+    ).toBeTruthy();
+    expect(
+      JSON.parse(
+        localStorage.getItem('devlovers_qa_bookmarked_questions') ?? '[]'
+      )
+    ).toContain('q1');
   });
 
   it('opens AI helper from selection', () => {
