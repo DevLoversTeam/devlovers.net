@@ -175,6 +175,157 @@ describe('checkout shipping phase 3', () => {
     }
   }, 60_000);
 
+  it('rejects warehouse-city mismatch', async () => {
+    const seed = await seedCheckoutShippingData();
+    const createdOrderIds: string[] = [];
+    const otherCityRef = crypto.randomUUID();
+    const otherWarehouseRef = crypto.randomUUID();
+
+    await db.insert(npCities).values({
+      ref: otherCityRef,
+      nameUa: 'Lviv',
+      nameRu: 'Lvov',
+      area: 'Lvivska',
+      region: 'Lviv',
+      settlementType: 'City',
+      isActive: true,
+    } as any);
+
+    await db.insert(npWarehouses).values({
+      ref: otherWarehouseRef,
+      cityRef: otherCityRef,
+      settlementRef: otherCityRef,
+      number: '99',
+      type: 'Branch',
+      name: 'Warehouse Other City',
+      address: 'Other Address',
+      isPostMachine: false,
+      isActive: true,
+    } as any);
+
+    try {
+      const idem = crypto.randomUUID();
+      const promise = createOrderWithItems({
+        idempotencyKey: idem,
+        userId: null,
+        locale: 'uk-UA',
+        country: 'UA',
+        items: [{ productId: seed.productId, quantity: 1 }],
+        shipping: {
+          provider: 'nova_poshta',
+          methodCode: 'NP_WAREHOUSE',
+          selection: {
+            cityRef: seed.cityRef,
+            warehouseRef: otherWarehouseRef,
+          },
+          recipient: {
+            fullName: 'Test User',
+            phone: '+380501112233',
+          },
+        },
+      });
+
+      await expect(promise).rejects.toBeInstanceOf(InvalidPayloadError);
+      await expect(promise).rejects.toHaveProperty(
+        'code',
+        'INVALID_SHIPPING_ADDRESS'
+      );
+
+      const rows = await db
+        .select({ id: orders.id })
+        .from(orders)
+        .where(eq(orders.idempotencyKey, idem));
+      expect(rows.length).toBe(0);
+    } finally {
+      await db.delete(npWarehouses).where(eq(npWarehouses.ref, otherWarehouseRef));
+      await db.delete(npCities).where(eq(npCities.ref, otherCityRef));
+      await cleanupSeedData(seed, createdOrderIds);
+    }
+  }, 60_000);
+
+  it('rejects NP_LOCKER for non-locker warehouse', async () => {
+    const seed = await seedCheckoutShippingData();
+    const createdOrderIds: string[] = [];
+
+    try {
+      const idem = crypto.randomUUID();
+      const promise = createOrderWithItems({
+        idempotencyKey: idem,
+        userId: null,
+        locale: 'uk-UA',
+        country: 'UA',
+        items: [{ productId: seed.productId, quantity: 1 }],
+        shipping: {
+          provider: 'nova_poshta',
+          methodCode: 'NP_LOCKER',
+          selection: {
+            cityRef: seed.cityRef,
+            warehouseRef: seed.warehouseRefA,
+          },
+          recipient: {
+            fullName: 'Test User',
+            phone: '+380501112233',
+          },
+        },
+      });
+
+      await expect(promise).rejects.toBeInstanceOf(InvalidPayloadError);
+      await expect(promise).rejects.toHaveProperty(
+        'code',
+        'INVALID_SHIPPING_ADDRESS'
+      );
+
+      const rows = await db
+        .select({ id: orders.id })
+        .from(orders)
+        .where(eq(orders.idempotencyKey, idem));
+      expect(rows.length).toBe(0);
+    } finally {
+      await cleanupSeedData(seed, createdOrderIds);
+    }
+  }, 60_000);
+
+  it('rejects NP_COURIER without addressLine1', async () => {
+    const seed = await seedCheckoutShippingData();
+    const createdOrderIds: string[] = [];
+
+    try {
+      const idem = crypto.randomUUID();
+      const promise = createOrderWithItems({
+        idempotencyKey: idem,
+        userId: null,
+        locale: 'uk-UA',
+        country: 'UA',
+        items: [{ productId: seed.productId, quantity: 1 }],
+        shipping: {
+          provider: 'nova_poshta',
+          methodCode: 'NP_COURIER',
+          selection: {
+            cityRef: seed.cityRef,
+          },
+          recipient: {
+            fullName: 'Courier User',
+            phone: '+380501112233',
+          },
+        },
+      });
+
+      await expect(promise).rejects.toBeInstanceOf(InvalidPayloadError);
+      await expect(promise).rejects.toHaveProperty(
+        'code',
+        'INVALID_SHIPPING_ADDRESS'
+      );
+
+      const rows = await db
+        .select({ id: orders.id })
+        .from(orders)
+        .where(eq(orders.idempotencyKey, idem));
+      expect(rows.length).toBe(0);
+    } finally {
+      await cleanupSeedData(seed, createdOrderIds);
+    }
+  }, 60_000);
+
   it('persists shipping summary fields + order_shipping snapshot', async () => {
     const seed = await seedCheckoutShippingData();
     const createdOrderIds: string[] = [];

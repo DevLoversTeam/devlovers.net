@@ -296,6 +296,69 @@ describe('AccordionList', () => {
     ).toContain('css:q1');
   });
 
+  it('marks an accordion as viewed after opening it', () => {
+    const items: QuestionEntry[] = [
+      {
+        id: 'q1',
+        question: 'What is CSS?',
+        category: 'css',
+        answerBlocks: [
+          {
+            type: 'paragraph',
+            children: [{ text: 'CSS styles pages.' }],
+          },
+        ],
+      },
+    ];
+
+    render(<AccordionList items={items} />);
+
+    expect(
+      screen.queryByRole('button', { name: 'Add bookmark' })
+    ).toBeNull();
+
+    fireEvent.click(screen.getByText('What is CSS?'));
+
+    expect(
+      screen.getByRole('button', { name: 'Add bookmark' })
+    ).toBeTruthy();
+    expect(
+      JSON.parse(
+        localStorage.getItem('devlovers_qa_viewed_questions') ?? '[]'
+      )
+    ).toContain('q1');
+  });
+
+  it('toggles bookmark state for viewed accordion', () => {
+    const items: QuestionEntry[] = [
+      {
+        id: 'q1',
+        question: 'What is CSS?',
+        category: 'css',
+        answerBlocks: [
+          {
+            type: 'paragraph',
+            children: [{ text: 'CSS styles pages.' }],
+          },
+        ],
+      },
+    ];
+
+    render(<AccordionList items={items} />);
+
+    fireEvent.click(screen.getByText('What is CSS?'));
+    fireEvent.click(screen.getByRole('button', { name: 'Add bookmark' }));
+
+    expect(
+      screen.getByRole('button', { name: 'Remove bookmark' })
+    ).toBeTruthy();
+    expect(
+      JSON.parse(
+        localStorage.getItem('devlovers_qa_bookmarked_questions') ?? '[]'
+      )
+    ).toContain('q1');
+  });
+
   it('opens AI helper from selection', () => {
     const items: QuestionEntry[] = [
       {

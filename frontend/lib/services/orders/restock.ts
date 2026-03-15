@@ -5,6 +5,7 @@ import { and, eq, isNull, lt, ne, or } from 'drizzle-orm';
 import { db } from '@/db';
 import { inventoryMoves, orders } from '@/db/schema/shop';
 import { logWarn } from '@/lib/logging';
+import { closeShippingPipelineForOrder } from '@/lib/services/shop/shipping/pipeline-shutdown';
 import { isOrderNonPaymentStatusTransitionAllowed } from '@/lib/services/shop/transitions/order-state';
 import { type PaymentStatus } from '@/lib/shop/payments';
 
@@ -128,6 +129,13 @@ export async function restockOrder(
     order.restockedAt !== null
   )
     return;
+
+  if (reason) {
+    await closeShippingPipelineForOrder({
+      orderId,
+      reason: `payment_terminal:${reason}`,
+    });
+  }
 
   const reservedMoves = await db
     .select({

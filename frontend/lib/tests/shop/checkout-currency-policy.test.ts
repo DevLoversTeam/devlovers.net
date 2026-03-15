@@ -3,6 +3,8 @@ import { inArray } from 'drizzle-orm';
 import { NextRequest } from 'next/server';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
+const __prevRateLimitDisabled = process.env.RATE_LIMIT_DISABLED;
+
 import {
   inventoryMoves,
   orderItems,
@@ -72,6 +74,8 @@ const createdProductIds: string[] = [];
 const createdOrderIds: string[] = [];
 
 beforeAll(() => {
+  process.env.RATE_LIMIT_DISABLED = '1';
+
   if (process.env.NODE_ENV === 'production') {
     throw new Error(
       'Refusing to run DB-mutating tests in production environment.'
@@ -110,6 +114,10 @@ afterAll(async () => {
 
     await db.delete(products).where(inArray(products.id, createdProductIds));
   }
+
+  if (__prevRateLimitDisabled === undefined)
+    delete process.env.RATE_LIMIT_DISABLED;
+  else process.env.RATE_LIMIT_DISABLED = __prevRateLimitDisabled;
 });
 
 function makeIdempotencyKey(): string {

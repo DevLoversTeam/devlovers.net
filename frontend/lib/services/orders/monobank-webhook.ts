@@ -388,7 +388,11 @@ async function fetchAttemptForWebhook(args: {
     where provider = 'monobank'
       and (
         (${args.referenceAttemptId}::uuid is not null and id = ${args.referenceAttemptId}::uuid)
-        or provider_payment_intent_id = ${args.invoiceId}
+        or coalesce(
+          nullif(provider_payment_intent_id, ''),
+          nullif(metadata -> 'monobank' -> 'wallet' ->> 'invoiceId', ''),
+          nullif(metadata -> 'wallet' ->> 'invoiceId', '')
+        ) = ${args.invoiceId}
       )
     order by case
       when (${args.referenceAttemptId}::uuid is not null and id = ${args.referenceAttemptId}::uuid) then 1

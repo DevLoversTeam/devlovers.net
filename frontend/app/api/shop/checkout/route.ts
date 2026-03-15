@@ -6,6 +6,7 @@ import { MoneyValueError } from '@/db/queries/shop/orders';
 import { getCurrentUser } from '@/lib/auth';
 import { isMonobankEnabled } from '@/lib/env/monobank';
 import { readPositiveIntEnv } from '@/lib/env/readPositiveIntEnv';
+import { isPaymentsEnabled as isStripePaymentsEnabled } from '@/lib/env/stripe';
 import { logError, logInfo, logWarn } from '@/lib/logging';
 import { MONO_MISMATCH, monoLogWarn } from '@/lib/logging/monobank';
 import { guardBrowserSameOrigin } from '@/lib/security/origin';
@@ -23,7 +24,11 @@ import {
   PriceConfigError,
   PspUnavailableError,
 } from '@/lib/services/errors';
-import { createOrderWithItems, restockOrder } from '@/lib/services/orders';
+import {
+  createOrderWithItems,
+  findExistingCheckoutOrderByIdempotencyKey,
+  restockOrder,
+} from '@/lib/services/orders';
 import {
   ensureStripePaymentIntentForOrder,
   PaymentAttemptsExhaustedError,
@@ -33,10 +38,15 @@ import {
   isMethodAllowed,
   type PaymentMethod,
   type PaymentProvider,
+  paymentProviderValues,
   type PaymentStatus,
+  paymentStatusValues,
 } from '@/lib/shop/payments';
 import { resolveRequestLocale } from '@/lib/shop/request-locale';
-import { createStatusToken } from '@/lib/shop/status-token';
+import {
+  createStatusToken,
+  type StatusTokenScope,
+} from '@/lib/shop/status-token';
 import {
   checkoutPayloadSchema,
   idempotencyKeySchema,
@@ -68,6 +78,46 @@ const SHIPPING_ERROR_STATUS_MAP: Record<string, number> = {
   SHIPPING_METHOD_UNAVAILABLE: 422,
   SHIPPING_CURRENCY_UNSUPPORTED: 422,
 };
+
+const STATUS_TOKEN_SCOPES_STATUS_ONLY: readonly StatusTokenScope[] = [
+  'status_lite',
+];
+const STATUS_TOKEN_SCOPES_PAYMENT_INIT: readonly StatusTokenScope[] = [
+  'status_lite',
+  'order_payment_init',
+];
+
+function resolveCheckoutTokenScopes(args: {
+  paymentProvider: PaymentProvider;
+  paymentStatus: PaymentStatus;
+}): readonly StatusTokenScope[] {
+  const needsPaymentInitScope =
+    args.paymentProvider !== 'none' &&
+    (args.paymentStatus === 'pending' ||
+      args.paymentStatus === 'requires_payment');
+
+  return needsPaymentInitScope
+    ? STATUS_TOKEN_SCOPES_PAYMENT_INIT
+    : STATUS_TOKEN_SCOPES_STATUS_ONLY;
+}
+
+function createCheckoutStatusToken(args: {
+  orderId: string;
+  paymentProvider: PaymentProvider;
+  paymentStatus: PaymentStatus;
+}): string {
+  return createStatusToken({
+    orderId: args.orderId,
+    scopes: [...resolveCheckoutTokenScopes(args)],
+  });
+}
+
+function isCheckoutStatusTokenRequired(args: {
+  paymentProvider: PaymentProvider;
+  paymentStatus: PaymentStatus;
+}): boolean {
+  return resolveCheckoutTokenScopes(args).includes('order_payment_init');
+}
 
 function shippingErrorStatus(code: string): number | null {
   return SHIPPING_ERROR_STATUS_MAP[code] ?? null;
@@ -302,16 +352,113 @@ type CheckoutOrderShape = {
   paymentProvider: PaymentProvider;
   paymentIntentId: string | null;
 };
+type CheckoutCreateResult = Awaited<ReturnType<typeof createOrderWithItems>>;
 
+function normalizeRecoveredCheckoutOrder(
+  value: unknown
+): CheckoutOrderShape | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return null;
+  }
+
+  const candidate = value as Record<string, unknown>;
+
+  const id = typeof candidate.id === 'string' ? candidate.id.trim() : '';
+  const currency =
+    typeof candidate.currency === 'string' ? candidate.currency.trim() : '';
+  const totalAmount =
+    typeof candidate.totalAmount === 'number' &&
+    Number.isFinite(candidate.totalAmount)
+      ? candidate.totalAmount
+      : null;
+
+  const paymentStatus =
+    typeof candidate.paymentStatus === 'string' &&
+    paymentStatusValues.includes(candidate.paymentStatus as PaymentStatus)
+      ? (candidate.paymentStatus as PaymentStatus)
+      : null;
+
+  const paymentProvider =
+    typeof candidate.paymentProvider === 'string' &&
+    paymentProviderValues.includes(candidate.paymentProvider as PaymentProvider)
+      ? (candidate.paymentProvider as PaymentProvider)
+      : null;
+
+  const paymentIntentIdRaw = candidate.paymentIntentId;
+  const paymentIntentId =
+    paymentIntentIdRaw === null || paymentIntentIdRaw === undefined
+      ? null
+      : typeof paymentIntentIdRaw === 'string'
+        ? paymentIntentIdRaw.trim() || null
+        : null;
+
+  if (
+    !id ||
+    !currency ||
+    totalAmount === null ||
+    !paymentStatus ||
+    !paymentProvider
+  ) {
+    return null;
+  }
+
+  if (
+    paymentIntentIdRaw !== null &&
+    paymentIntentIdRaw !== undefined &&
+    typeof paymentIntentIdRaw !== 'string'
+  ) {
+    return null;
+  }
+
+  return {
+    id,
+    currency,
+    totalAmount,
+    paymentStatus,
+    paymentProvider,
+    paymentIntentId,
+  };
+}
+
+function extractRecoveredCheckoutOrder(
+  value: unknown
+): CheckoutOrderShape | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return null;
+  }
+
+  const obj = value as Record<string, unknown>;
+
+  if ('order' in obj) {
+    return normalizeRecoveredCheckoutOrder(obj.order);
+  }
+
+  return normalizeRecoveredCheckoutOrder(obj);
+}
+
+function buildRecoveredCheckoutResult(
+  order: CheckoutOrderShape
+): CheckoutCreateResult {
+  return {
+    order: {
+      ...order,
+      paymentIntentId: order.paymentIntentId ?? null,
+    },
+    isNew: false,
+    totalCents: 0,
+  } as CheckoutCreateResult;
+}
 function buildCheckoutResponse({
   order,
   itemCount,
   clientSecret,
+  statusToken,
   status,
 }: {
   order: CheckoutOrderShape;
   itemCount: number;
   clientSecret: string | null;
+  statusToken: string | null;
   status: number;
 }) {
   const res = NextResponse.json(
@@ -332,6 +479,7 @@ function buildCheckoutResponse({
       paymentProvider: order.paymentProvider,
       paymentIntentId: order.paymentIntentId,
       clientSecret,
+      statusToken,
     },
     { status }
   );
@@ -390,7 +538,21 @@ function buildMonobankCheckoutResponse({
   res.headers.set('Cache-Control', 'no-store');
   return res;
 }
-
+async function cleanupNewCheckoutOrder(args: {
+  orderId: string;
+  orderMeta: Record<string, unknown>;
+  reason: string;
+}) {
+  try {
+    await restockOrder(args.orderId, { reason: 'failed' });
+  } catch (error) {
+    logError('checkout_restock_failed', error, {
+      ...args.orderMeta,
+      code: 'RESTOCK_FAILED',
+      reason: args.reason,
+    });
+  }
+}
 async function runMonobankCheckoutFlow(args: {
   order: CheckoutOrderShape;
   itemCount: number;
@@ -398,6 +560,7 @@ async function runMonobankCheckoutFlow(args: {
   requestId: string;
   totalCents: number;
   orderMeta: Record<string, unknown>;
+  isNew: boolean;
 }) {
   try {
     logInfo('monobank_lazy_import_invoked', {
@@ -408,7 +571,43 @@ async function runMonobankCheckoutFlow(args: {
     const { createMonobankAttemptAndInvoice } =
       await import('@/lib/services/orders/monobank');
 
-    const statusToken = createStatusToken({ orderId: args.order.id });
+    let statusToken: string;
+    try {
+      statusToken = createCheckoutStatusToken({
+        orderId: args.order.id,
+        paymentProvider: args.order.paymentProvider,
+        paymentStatus: args.order.paymentStatus,
+      });
+    } catch (error) {
+      logError('checkout_mono_status_token_create_failed', error, {
+        ...args.orderMeta,
+        orderId: args.order.id,
+        paymentProvider: args.order.paymentProvider,
+        code: 'STATUS_TOKEN_CREATE_FAILED',
+        tokenScopes: resolveCheckoutTokenScopes({
+          paymentProvider: args.order.paymentProvider,
+          paymentStatus: args.order.paymentStatus,
+        }),
+      });
+
+      if (args.isNew) {
+        await cleanupNewCheckoutOrder({
+          orderId: args.order.id,
+          orderMeta: args.orderMeta,
+          reason: 'status_token_create_failed',
+        });
+      }
+
+      return errorResponse(
+        'CHECKOUT_FAILED',
+        'Unable to process checkout.',
+        500,
+        {
+          orderId: args.order.id,
+          paymentProvider: args.order.paymentProvider,
+        }
+      );
+    }
 
     const monobankAttempt = await createMonobankAttemptAndInvoice({
       orderId: args.order.id,
@@ -662,13 +861,21 @@ export async function POST(request: NextRequest) {
   const paymentsEnabled =
     (process.env.PAYMENTS_ENABLED ?? '').trim() === 'true';
 
-  const rawStripePaymentsEnabled = (
-    process.env.STRIPE_PAYMENTS_ENABLED ?? ''
-  ).trim();
-  const stripePaymentsEnabled =
-    rawStripePaymentsEnabled.length > 0
-      ? rawStripePaymentsEnabled === 'true'
-      : paymentsEnabled;
+  const stripeCheckoutAvailable = isStripePaymentsEnabled({
+    requirePublishableKey: true,
+  });
+  const checkoutPaymentProvider: PaymentProvider =
+    selectedProvider === 'monobank'
+      ? 'monobank'
+      : stripeCheckoutAvailable
+        ? 'stripe'
+        : 'none';
+
+  const stripeExplicitlyRequested =
+    requestedProvider === 'stripe' || requestedMethod === 'stripe_card';
+
+  const stripeRequestedButUnavailable =
+    stripeExplicitlyRequested && !stripeCheckoutAvailable;
 
   if (selectedProvider === 'monobank') {
     let enabled = false;
@@ -873,17 +1080,62 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const result = await createOrderWithItems({
-      items,
-      idempotencyKey,
-      userId: sessionUserId,
-      locale,
-      country: country ?? null,
-      shipping: shipping ?? null,
-      legalConsent: legalConsent ?? null,
-      paymentProvider: selectedProvider === 'monobank' ? 'monobank' : undefined,
-      paymentMethod: selectedMethod,
-    });
+    let recoveredCheckoutResult: CheckoutCreateResult | null = null;
+
+    if (stripeRequestedButUnavailable) {
+      const existingCheckout =
+        await findExistingCheckoutOrderByIdempotencyKey(idempotencyKey);
+      const recoveredOrder = extractRecoveredCheckoutOrder(existingCheckout);
+
+      if (!recoveredOrder) {
+        logWarn('checkout_stripe_payments_disabled', {
+          ...authMeta,
+          code: 'PAYMENTS_DISABLED',
+          recoveryAttempted: true,
+        });
+
+        return errorResponse(
+          'PSP_UNAVAILABLE',
+          'Payment provider unavailable.',
+          503
+        );
+      }
+
+      await createOrderWithItems({
+        items,
+        idempotencyKey,
+        userId: sessionUserId,
+        locale,
+        country: country ?? null,
+        shipping: shipping ?? null,
+        legalConsent: legalConsent ?? null,
+        paymentProvider: 'stripe',
+        paymentMethod: selectedMethod,
+      });
+
+      recoveredCheckoutResult = buildRecoveredCheckoutResult(recoveredOrder);
+
+      logInfo('checkout_idempotent_recovery_while_stripe_disabled', {
+        ...authMeta,
+        orderId: recoveredOrder.id,
+        code: 'IDEMPOTENT_RECOVERY',
+        validation: 'createOrderWithItems',
+      });
+    }
+
+    const result =
+      recoveredCheckoutResult ??
+      (await createOrderWithItems({
+        items,
+        idempotencyKey,
+        userId: sessionUserId,
+        locale,
+        country: country ?? null,
+        shipping: shipping ?? null,
+        legalConsent: legalConsent ?? null,
+        paymentProvider: checkoutPaymentProvider,
+        paymentMethod: selectedMethod,
+      }));
 
     const { order } = result;
     const orderMeta = {
@@ -893,6 +1145,51 @@ export async function POST(request: NextRequest) {
       paymentStatus: order.paymentStatus,
       paymentIntentId: order.paymentIntentId ?? null,
     };
+    const statusTokenRequired = isCheckoutStatusTokenRequired({
+      paymentProvider: order.paymentProvider,
+      paymentStatus: order.paymentStatus,
+    });
+
+    const statusToken = (() => {
+      try {
+        return createCheckoutStatusToken({
+          orderId: order.id,
+          paymentProvider: order.paymentProvider,
+          paymentStatus: order.paymentStatus,
+        });
+      } catch (error) {
+        logError('checkout_status_token_create_failed', error, {
+          ...orderMeta,
+          code: 'STATUS_TOKEN_CREATE_FAILED',
+          statusTokenRequired,
+          tokenScopes: resolveCheckoutTokenScopes({
+            paymentProvider: order.paymentProvider,
+            paymentStatus: order.paymentStatus,
+          }),
+        });
+        return null;
+      }
+    })();
+
+    if (!statusToken && statusTokenRequired) {
+      if (result.isNew) {
+        await cleanupNewCheckoutOrder({
+          orderId: order.id,
+          orderMeta,
+          reason: 'status_token_create_failed',
+        });
+      }
+
+      return errorResponse(
+        'CHECKOUT_FAILED',
+        'Unable to process checkout.',
+        500,
+        {
+          orderId: order.id,
+          paymentProvider: order.paymentProvider,
+        }
+      );
+    }
 
     const orderProvider = order.paymentProvider as unknown as
       | 'stripe'
@@ -902,10 +1199,11 @@ export async function POST(request: NextRequest) {
     const stripePaymentFlow = orderProvider === 'stripe';
     const monobankPaymentFlow = orderProvider === 'monobank';
 
-    if (stripePaymentFlow && !stripePaymentsEnabled) {
+    if (stripePaymentFlow && !stripeCheckoutAvailable && result.isNew) {
       logWarn('checkout_stripe_payments_disabled', {
         ...orderMeta,
         code: 'PAYMENTS_DISABLED',
+        recoveryAttempted: false,
       });
 
       return errorResponse(
@@ -917,6 +1215,29 @@ export async function POST(request: NextRequest) {
 
     if (!result.isNew) {
       if (stripePaymentFlow) {
+        if (!stripeCheckoutAvailable) {
+          logWarn('checkout_stripe_recovery_without_payment_init', {
+            ...orderMeta,
+            code: 'PAYMENTS_DISABLED',
+            recoveryAttempted: true,
+          });
+
+          return buildCheckoutResponse({
+            order: {
+              id: order.id,
+              currency: order.currency,
+              totalAmount: order.totalAmount,
+              paymentStatus: order.paymentStatus,
+              paymentProvider: order.paymentProvider,
+              paymentIntentId: order.paymentIntentId ?? null,
+            },
+            itemCount,
+            clientSecret: null,
+            statusToken,
+            status: 200,
+          });
+        }
+
         try {
           const ensured = await ensureStripePaymentIntentForOrder({
             orderId: order.id,
@@ -934,6 +1255,7 @@ export async function POST(request: NextRequest) {
             },
             itemCount,
             clientSecret: ensured.clientSecret,
+            statusToken,
             status: 200,
           });
         } catch (error) {
@@ -1000,7 +1322,7 @@ export async function POST(request: NextRequest) {
           );
         }
       }
-      if (monobankPaymentFlow) {
+      if (monobankPaymentFlow && selectedMethod === 'monobank_invoice') {
         return runMonobankCheckoutFlow({
           order: {
             id: order.id,
@@ -1015,6 +1337,24 @@ export async function POST(request: NextRequest) {
           requestId,
           totalCents: result.totalCents,
           orderMeta,
+          isNew: false,
+        });
+      }
+
+      if (monobankPaymentFlow) {
+        return buildCheckoutResponse({
+          order: {
+            id: order.id,
+            currency: order.currency,
+            totalAmount: order.totalAmount,
+            paymentStatus: order.paymentStatus,
+            paymentProvider: order.paymentProvider,
+            paymentIntentId: order.paymentIntentId ?? null,
+          },
+          itemCount,
+          clientSecret: null,
+          statusToken,
+          status: 200,
         });
       }
 
@@ -1029,11 +1369,12 @@ export async function POST(request: NextRequest) {
         },
         itemCount,
         clientSecret: null,
+        statusToken,
         status: 200,
       });
     }
 
-    if (monobankPaymentFlow) {
+    if (monobankPaymentFlow && selectedMethod === 'monobank_invoice') {
       return runMonobankCheckoutFlow({
         order: {
           id: order.id,
@@ -1048,6 +1389,24 @@ export async function POST(request: NextRequest) {
         requestId,
         totalCents: result.totalCents,
         orderMeta,
+        isNew: true,
+      });
+    }
+
+    if (monobankPaymentFlow) {
+      return buildCheckoutResponse({
+        order: {
+          id: order.id,
+          currency: order.currency,
+          totalAmount: order.totalAmount,
+          paymentStatus: order.paymentStatus,
+          paymentProvider: order.paymentProvider,
+          paymentIntentId: order.paymentIntentId ?? null,
+        },
+        itemCount,
+        clientSecret: null,
+        statusToken,
+        status: 201,
       });
     }
 
@@ -1063,6 +1422,7 @@ export async function POST(request: NextRequest) {
         },
         itemCount,
         clientSecret: null,
+        statusToken,
         status: 201,
       });
     }
@@ -1084,6 +1444,7 @@ export async function POST(request: NextRequest) {
         },
         itemCount,
         clientSecret: ensured.clientSecret,
+        statusToken,
         status: 201,
       });
     } catch (error) {

@@ -145,6 +145,40 @@ describe('monobank wallet orchestration (unit, no DB)', () => {
     expect(deps.persistAttemptRejected).not.toHaveBeenCalled();
   });
 
+  it('persists invoiceId hint from PSP safeMeta on unknown path', async () => {
+    const deps = {
+      readWalletOrder: vi.fn(async () => baseOrder),
+      findAttemptByIdempotencyKey: vi.fn(async () => null),
+      findActiveAttempt: vi.fn(async () => null),
+      createCreatingAttempt: vi.fn(async () => creatingAttempt),
+      persistAttemptSubmitted: vi.fn(async () => undefined),
+      persistAttemptUnknown: vi.fn(async () => undefined),
+      persistAttemptRejected: vi.fn(async () => undefined),
+      walletPayment: vi.fn(async () => {
+        throw new PspError('PSP_UPSTREAM', 'rate_limited', {
+          invoiceId: 'inv_unknown_hint_1',
+          httpStatus: 429,
+        });
+      }),
+    };
+
+    const result = await __test__.submitMonobankWalletPaymentImpl(deps as any, {
+      orderId: 'order_1',
+      idempotencyKey: 'idem-1',
+      cardToken: 'token',
+      redirectUrl: 'https://shop.test/return',
+      webHookUrl: 'https://shop.test/webhook',
+    });
+
+    expect(result.outcome).toBe('unknown');
+    expect(result.invoiceId).toBe('inv_unknown_hint_1');
+    expect(deps.persistAttemptUnknown).toHaveBeenCalledWith(
+      expect.objectContaining({
+        invoiceId: 'inv_unknown_hint_1',
+      })
+    );
+  });
+
   it('4xx PSP error is persisted as rejected and rethrown', async () => {
     const deps = {
       readWalletOrder: vi.fn(async () => baseOrder),

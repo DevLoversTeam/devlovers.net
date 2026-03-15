@@ -15,7 +15,7 @@ import {
   monoLogWarn,
   monoSha256Raw,
 } from '@/lib/logging/monobank';
-import { verifyWebhookSignatureWithRefresh } from '@/lib/psp/monobank';
+import { verifyWebhookSignatureWithRefreshDetailed } from '@/lib/psp/monobank';
 import { guardNonBrowserFailClosed } from '@/lib/security/origin';
 import {
   enforceRateLimit,
@@ -179,12 +179,18 @@ export async function POST(request: NextRequest) {
       ...diagMeta,
       reason: 'SIG_MISSING',
     });
-    return noStoreJson({ ok: true }, { status: 200 });
+    return noStoreJson({ code: 'MONO_SIGNATURE_MISSING' }, { status: 401 });
   }
 
-  let validSignature = false;
+  let signatureVerification: Awaited<
+    ReturnType<typeof verifyWebhookSignatureWithRefreshDetailed>
+  > = {
+    ok: false,
+    reason: 'invalid_signature',
+    retryable: false,
+  };
   try {
-    validSignature = await verifyWebhookSignatureWithRefresh({
+    signatureVerification = await verifyWebhookSignatureWithRefreshDetailed({
       rawBodyBytes,
       signature,
     });
@@ -193,9 +199,46 @@ export async function POST(request: NextRequest) {
       ...diagMeta,
       reason: 'SIG_VERIFY_ERROR',
     });
+    signatureVerification = {
+      ok: false,
+      reason: 'verification_unavailable',
+      retryable: true,
+    };
   }
 
-  if (!validSignature) {
+  if (!signatureVerification.ok) {
+    if (signatureVerification.reason === 'verification_unavailable') {
+      if (signatureVerification.retryable === false) {
+        return noStoreJson(
+          {
+            code: 'MONO_SIGNATURE_VERIFICATION_FAILED',
+            reason: 'PERMANENT',
+            ...(signatureVerification.errorCode
+              ? { errorCode: signatureVerification.errorCode }
+              : {}),
+          },
+          { status: 500 }
+        );
+      }
+
+      return noStoreJson(
+        {
+          code: 'WEBHOOK_RETRYABLE',
+          retryAfterSeconds: MONO_WEBHOOK_RETRY_AFTER_SECONDS,
+          reason: 'SIGNATURE_VERIFICATION_UNAVAILABLE',
+          ...(signatureVerification.errorCode
+            ? { errorCode: signatureVerification.errorCode }
+            : {}),
+        },
+        {
+          status: 503,
+          headers: {
+            'Retry-After': String(MONO_WEBHOOK_RETRY_AFTER_SECONDS),
+          },
+        }
+      );
+    }
+
     const decision = await enforceRateLimit({
       key: `monobank_webhook:invalid_sig:${rateLimitSubject}`,
       limit: readPositiveIntEnv(
@@ -223,7 +266,7 @@ export async function POST(request: NextRequest) {
       ...diagMeta,
       reason: 'SIG_INVALID',
     });
-    return noStoreJson({ ok: true }, { status: 200 });
+    return noStoreJson({ code: 'MONO_SIGNATURE_INVALID' }, { status: 401 });
   }
 
   const parsedPayload = parseWebhookPayload(rawBodyBytes);

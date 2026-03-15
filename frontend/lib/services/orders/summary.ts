@@ -11,6 +11,7 @@ import { fromCents, fromDbMoney } from '@/lib/shop/money';
 import { type OrderDetail, type OrderSummaryWithMinor } from '@/lib/types/shop';
 
 import { OrderNotFoundError, OrderStateInvalidError } from '../errors';
+import { authorizeOrderMutationAccess } from '../shop/order-access';
 import {
   type DbClient,
   type OrderRow,
@@ -162,6 +163,93 @@ export async function getOrderSummary(
   id: string
 ): Promise<OrderSummaryWithMinor> {
   return getOrderById(id);
+}
+
+type CheckoutOrderSummaryAccessCode =
+  | 'ORDER_NOT_FOUND'
+  | 'UNAUTHORIZED'
+  | 'FORBIDDEN'
+  | 'STATUS_TOKEN_REQUIRED'
+  | 'STATUS_TOKEN_INVALID'
+  | 'STATUS_TOKEN_SCOPE_FORBIDDEN'
+  | 'STATUS_TOKEN_MISCONFIGURED';
+
+export type CheckoutOrderSummaryAccessResult =
+  | { ok: true; order: OrderSummaryWithMinor }
+  | {
+      ok: false;
+      code: CheckoutOrderSummaryAccessCode;
+      status: number;
+    };
+
+async function getCheckoutScopedOrderSummary(args: {
+  orderId: string;
+  statusToken: string | null;
+  requiredScope: 'status_lite' | 'order_payment_init';
+}): Promise<CheckoutOrderSummaryAccessResult> {
+  const access = await authorizeOrderMutationAccess({
+    orderId: args.orderId,
+    statusToken: args.statusToken,
+    requiredScope: args.requiredScope,
+  });
+
+  if (!access.authorized) {
+    if (access.code === 'OK') {
+      throw new OrderStateInvalidError(
+        'authorizeOrderMutationAccess returned unauthorized result with code OK',
+        {
+          orderId: args.orderId,
+          details: {
+            requiredScope: args.requiredScope,
+          },
+        }
+      );
+    }
+
+    return {
+      ok: false,
+      code: access.code,
+      status: access.status,
+    };
+  }
+
+  try {
+    const order = await getOrderSummary(args.orderId);
+    return { ok: true, order };
+  } catch (error) {
+    if (error instanceof OrderNotFoundError) {
+      return { ok: false, code: 'ORDER_NOT_FOUND', status: 404 };
+    }
+    throw error;
+  }
+}
+
+export type CheckoutSuccessOrderSummaryAccessResult =
+  CheckoutOrderSummaryAccessResult;
+
+export async function getCheckoutSuccessOrderSummary(args: {
+  orderId: string;
+  statusToken: string | null;
+}): Promise<CheckoutSuccessOrderSummaryAccessResult> {
+  return getCheckoutScopedOrderSummary({
+    orderId: args.orderId,
+    statusToken: args.statusToken,
+    requiredScope: 'status_lite',
+  });
+}
+
+export type CheckoutPaymentPageOrderSummaryAccessResult =
+  CheckoutOrderSummaryAccessResult;
+
+export async function getCheckoutPaymentPageOrderSummary(args: {
+  orderId: string;
+  statusToken: string | null;
+}): Promise<CheckoutPaymentPageOrderSummaryAccessResult> {
+  return getCheckoutScopedOrderSummary({
+    orderId: args.orderId,
+    statusToken: args.statusToken,
+    requiredScope: 'order_payment_init',
+  });
 }
 
 export type OrderStatusLiteSummary = {
