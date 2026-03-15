@@ -5,8 +5,6 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
----
-
 ## [0.1.0] - 2025-12-18
 
 ### Added
@@ -867,3 +865,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Optimized blog queries through Drizzle ORM
 - Reduced external API dependencies (Sanity removed from runtime)
 - Improved shipping and payment event processing reliability
+
+## [1.0.8] - 2026-03-15
+
+### Added
+
+- Q&A progress tracking:
+  - Per-topic viewed progress based on opened accordion items
+  - Progress bar and viewed counter above the question list
+  - Reset action for current-topic progress
+  - Viewed/bookmark persistence in localStorage
+  - Viewed and bookmark indicators in accordion rows
+  - Localized progress labels and reset action (uk / en / pl)
+- Local Shop smoke coverage:
+  - Stable Playwright checkout/shipping smoke scenarios for local verification
+  - Deterministic regression coverage for payment, shipping, and wallet flows
+
+### Changed
+
+- Q&A accordion UX:
+  - Improved mobile layout for wrapped question titles
+  - Restored chevron toggle behavior and open-state rotation
+  - Fixed Q&A totals by removing text-based deduplication in the API layer
+- About page:
+  - Updated LinkedIn followers fallback display to `1.8k+`
+- Shop checkout and payments:
+  - Enforced strict shipping/payment coupling for shippable orders
+  - Payment page access now requires authorized session or valid scoped token
+  - Guest payment-init flows now receive correct token scope
+  - Stripe capability checks aligned across cart, checkout, and payment page
+  - Monobank invoice flow separated from Monobank Google Pay flow
+
+### Fixed
+
+- Preserved locale during CTA navigation
+- Removed silent Stripe fallback behavior to prevent fake paid order creation
+- Closed shipment processing on refund, cancel, reverse, failure, and other terminal negative payment states
+- Hardened Monobank webhook verification, reconciliation, and wallet retry handling
+- Added validation coverage for invalid city/warehouse, locker, and courier address combinations
+- Prevented janitor cleanup from canceling reconcilable wallet attempts too early
