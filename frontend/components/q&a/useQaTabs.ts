@@ -49,6 +49,7 @@ export function useQaTabs() {
   const [currentPage, setCurrentPage] = useState(safePageFromUrl);
   const [pageSize, setPageSize] = useState<QaPageSize>(safePageSizeFromUrl);
   const [items, setItems] = useState<QuestionEntry[]>([]);
+  const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -111,6 +112,7 @@ export function useQaTabs() {
             answerBlocks: item.answerBlocks,
           }))
         );
+        setTotalItems(data.total);
         setTotalPages(data.totalPages);
       } catch (error) {
         if (!isActive || controller.signal.aborted) {
@@ -118,6 +120,7 @@ export function useQaTabs() {
         }
         console.error('Failed to load questions:', error);
         setItems([]);
+        setTotalItems(0);
         setTotalPages(0);
       } finally {
         if (isActive) {
@@ -177,6 +180,7 @@ export function useQaTabs() {
     localeKey,
     pageSize,
     pageSizeOptions: PAGE_SIZE_OPTIONS,
+    totalItems,
     totalPages,
   };
 }

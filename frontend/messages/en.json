@@ -127,6 +127,8 @@
     "subtitle": "Explore curated interview questions by category",
     "searchPlaceholder": "Search questions...",
     "clearSearch": "Clear search",
+    "progressLabel": "Progress",
+    "resetProgress": "Reset progress",
     "noResults": "Nothing found for \"{query}\"",
     "noQuestions": "No questions yet…\nBut they’re already in development.\nStay tuned - new content coming soon!",
     "metaTitle": "Q&A | DevLovers",

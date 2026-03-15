@@ -64,6 +64,7 @@ describe('useQaTabs', () => {
       expect.objectContaining({ signal: expect.any(AbortSignal) })
     );
     expect(result.current.items).toHaveLength(1);
+    expect(result.current.totalItems).toBe(1);
   });
 
   it('updates page and URL on page change', async () => {
@@ -136,6 +137,7 @@ describe('useQaTabs', () => {
     });
 
     expect(result.current.items).toEqual([]);
+    expect(result.current.totalItems).toBe(0);
     expect(result.current.totalPages).toBe(0);
     consoleSpy.mockRestore();
   });

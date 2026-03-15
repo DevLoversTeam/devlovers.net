@@ -30,15 +30,20 @@ function AccordionTrigger({
   children,
   leading,
   trailing,
+  chevronOutside = false,
   ...props
 }: React.ComponentProps<typeof AccordionPrimitive.Trigger> & {
   leading?: React.ReactNode;
   trailing?: React.ReactNode;
+  chevronOutside?: boolean;
 }) {
+  const triggerRef = React.useRef<HTMLButtonElement | null>(null);
+
   return (
-    <AccordionPrimitive.Header className="flex">
+    <AccordionPrimitive.Header className="group flex items-center">
       {leading}
       <AccordionPrimitive.Trigger
+        ref={triggerRef}
         data-slot="accordion-trigger"
         className={cn(
           'focus-visible:border-ring focus-visible:ring-ring/50 flex flex-1 items-center justify-between gap-4 rounded-md py-4 text-left text-sm font-medium transition-all outline-none hover:underline focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 [&[data-state=open]>svg]:rotate-180',
@@ -47,12 +52,27 @@ function AccordionTrigger({
         {...props}
       >
         {children}
-        <ChevronDownIcon
-          aria-hidden="true"
-          className="text-muted-foreground pointer-events-none size-4 shrink-0 transition-transform duration-200"
-        />
+        {!chevronOutside && (
+          <ChevronDownIcon
+            aria-hidden="true"
+            className="text-muted-foreground pointer-events-none size-4 shrink-0 transition-transform duration-200"
+          />
+        )}
       </AccordionPrimitive.Trigger>
       {trailing}
+      {chevronOutside && (
+        <button
+          type="button"
+          aria-label="Toggle accordion"
+          className="text-muted-foreground mr-4 inline-flex size-6 shrink-0 items-center justify-center self-center rounded-sm transition-colors duration-200 hover:bg-black/5 dark:hover:bg-white/5"
+          onClick={() => triggerRef.current?.click()}
+        >
+          <ChevronDownIcon
+            aria-hidden="true"
+            className="pointer-events-none size-4 transition-transform duration-200 group-data-[state=open]:rotate-180"
+          />
+        </button>
+      )}
     </AccordionPrimitive.Header>
   );
 }
