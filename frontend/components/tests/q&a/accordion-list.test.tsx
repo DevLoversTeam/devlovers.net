@@ -149,6 +149,31 @@ describe('AccordionList', () => {
     localStorage.clear();
   });
 
+  it('uses a stable fallback id when question id is missing', () => {
+    const items: QuestionEntry[] = [
+      {
+        question: 'What is CSS?',
+        category: 'css',
+        answerBlocks: [
+          {
+            type: 'paragraph',
+            children: [{ text: 'CSS styles pages.' }],
+          },
+        ],
+      },
+    ];
+
+    render(<AccordionList items={items} />);
+
+    fireEvent.click(screen.getByText('What is CSS?'));
+
+    expect(
+      JSON.parse(
+        localStorage.getItem('devlovers_qa_viewed_questions') ?? '[]'
+      )
+    ).toContain('css:What is CSS?');
+  });
+
   it('renders questions and answer blocks', () => {
     const items: QuestionEntry[] = [
       {
