@@ -7,7 +7,9 @@ import {
   useEffect,
   useState,
 } from 'react';
+import { Bookmark } from 'lucide-react';
 
+import { Badge } from '@/components/ui/badge';
 import AIWordHelper from '@/components/q&a/AIWordHelper';
 import CodeBlock from '@/components/q&a/CodeBlock';
 import FloatingExplainButton from '@/components/q&a/FloatingExplainButton';
@@ -40,6 +42,32 @@ type QaItemStyle = CSSProperties & {
   '--qa-accent': string;
   '--qa-accent-soft': string;
 };
+
+const QA_VIEWED_STORAGE_KEY = 'devlovers_qa_viewed_questions';
+const QA_BOOKMARK_STORAGE_KEY = 'devlovers_qa_bookmarked_questions';
+
+function readStoredQuestionIds(storageKey: string): Set<string> {
+  if (typeof window === 'undefined') return new Set();
+
+  try {
+    const raw = window.localStorage.getItem(storageKey);
+    if (!raw) return new Set();
+
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return new Set();
+
+    return new Set(
+      parsed.filter((value): value is string => typeof value === 'string')
+    );
+  } catch {
+    return new Set();
+  }
+}
+
+function writeStoredQuestionIds(storageKey: string, ids: Set<string>) {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(storageKey, JSON.stringify([...ids]));
+}
 
 function normalizeCachedTerm(term: string): string {
   return term.toLowerCase().trim();
@@ -327,6 +355,8 @@ export default function AccordionList({ items }: { items: QuestionEntry[] }) {
   const [cachedTerms, setCachedTerms] = useState<Set<string>>(
     () => new Set(getCachedTerms().map(normalizeCachedTerm))
   );
+  const [viewedItems, setViewedItems] = useState<Set<string>>(new Set());
+  const [bookmarkedItems, setBookmarkedItems] = useState<Set<string>>(new Set());
 
   const refreshCachedTerms = useCallback(() => {
     const terms = getCachedTerms().map(normalizeCachedTerm);
@@ -334,9 +364,20 @@ export default function AccordionList({ items }: { items: QuestionEntry[] }) {
   }, []);
 
   useEffect(() => {
+    setViewedItems(readStoredQuestionIds(QA_VIEWED_STORAGE_KEY));
+    setBookmarkedItems(readStoredQuestionIds(QA_BOOKMARK_STORAGE_KEY));
+  }, []);
+
+  useEffect(() => {
     const handleStorage = (e: StorageEvent) => {
       if (e.key === CACHE_KEY) {
         refreshCachedTerms();
+      }
+      if (e.key === QA_VIEWED_STORAGE_KEY) {
+        setViewedItems(readStoredQuestionIds(QA_VIEWED_STORAGE_KEY));
+      }
+      if (e.key === QA_BOOKMARK_STORAGE_KEY) {
+        setBookmarkedItems(readStoredQuestionIds(QA_BOOKMARK_STORAGE_KEY));
       }
     };
     window.addEventListener('storage', handleStorage);
@@ -393,15 +434,46 @@ export default function AccordionList({ items }: { items: QuestionEntry[] }) {
     }
   }, []);
 
+  const markAsViewed = useCallback((questionId: string) => {
+    setViewedItems(prev => {
+      if (prev.has(questionId)) {
+        return prev;
+      }
+
+      const next = new Set(prev);
+      next.add(questionId);
+      writeStoredQuestionIds(QA_VIEWED_STORAGE_KEY, next);
+      return next;
+    });
+  }, []);
+
+  const toggleBookmark = useCallback((questionId: string) => {
+    setBookmarkedItems(prev => {
+      const next = new Set(prev);
+
+      if (next.has(questionId)) {
+        next.delete(questionId);
+      } else {
+        next.add(questionId);
+      }
+
+      writeStoredQuestionIds(QA_BOOKMARK_STORAGE_KEY, next);
+      return next;
+    });
+  }, []);
+
   return (
     <>
       <Accordion type="single" collapsible className="w-full">
         {items.map((q, idx) => {
           const key = q.id ?? idx;
+          const questionId = String(key);
           const accentColor =
             categoryTabStyles[q.category as keyof typeof categoryTabStyles]
               ?.accent ?? '#A1A1AA';
           const animationDelay = `${Math.min(idx, 10) * 60}ms`;
+          const isViewed = viewedItems.has(questionId);
+          const isBookmarked = bookmarkedItems.has(questionId);
           const itemStyle: QaItemStyle = {
             animationDelay,
             animationFillMode: 'both',
@@ -418,8 +490,60 @@ export default function AccordionList({ items }: { items: QuestionEntry[] }) {
               <AccordionTrigger
                 className="px-4 hover:no-underline"
                 onPointerDown={clearSelection}
+                onClick={() => markAsViewed(questionId)}
               >
-                {q.question}
+                <span className="flex min-w-0 flex-1 items-center gap-3">
+                  <span className="min-w-0 flex-1 truncate">{q.question}</span>
+                  <span className="flex h-6 w-[108px] shrink-0 items-center justify-end gap-1.5">
+                    <Badge
+                      variant="success"
+                      className={
+                        isViewed
+                          ? 'h-6 gap-1 rounded-full px-2 py-0 text-[11px]'
+                          : 'invisible h-6 gap-1 rounded-full px-2 py-0 text-[11px]'
+                      }
+                    >
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                      Viewed
+                    </Badge>
+                    <span
+                      role={isViewed ? 'button' : undefined}
+                      tabIndex={isViewed ? 0 : -1}
+                      aria-label={
+                        isViewed
+                          ? isBookmarked
+                            ? 'Remove bookmark'
+                            : 'Add bookmark'
+                          : undefined
+                      }
+                      aria-pressed={isViewed ? isBookmarked : undefined}
+                      aria-hidden={isViewed ? undefined : true}
+                      className={
+                        isViewed
+                          ? 'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-sm text-red-500 transition-colors hover:bg-red-500/10 focus-visible:ring-2 focus-visible:ring-red-500/40 focus-visible:outline-none'
+                          : 'invisible inline-flex h-6 w-6 shrink-0 items-center justify-center'
+                      }
+                      onClick={event => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        if (!isViewed) return;
+                        toggleBookmark(questionId);
+                      }}
+                      onKeyDown={event => {
+                        if (!isViewed) return;
+                        if (event.key !== 'Enter' && event.key !== ' ') return;
+                        event.preventDefault();
+                        event.stopPropagation();
+                        toggleBookmark(questionId);
+                      }}
+                    >
+                      <Bookmark
+                        className="h-4 w-4"
+                        fill={isBookmarked ? 'currentColor' : 'none'}
+                      />
+                    </span>
+                  </span>
+                </span>
               </AccordionTrigger>
               <AccordionContent className="px-4">
                 <SelectableText
