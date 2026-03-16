@@ -217,16 +217,17 @@ describe('P0-8.10.1 checkout concurrency: stock=1, two parallel checkouts', () =
         pick(failJson, ['code', 'errorCode', 'businessCode', 'reason']) ?? ''
       ).toUpperCase();
 
-      if (failCode) {
-        expect(
-          [
-            'OUT_OF_STOCK',
-            'INSUFFICIENT_STOCK',
-            'STOCK',
-            'NOT_ENOUGH_STOCK',
-          ].some(k => failCode.includes(k))
-        ).toBe(true);
-      }
+      const failureIndicator =
+        `${failCode} ${JSON.stringify(failJson || {})}`.toUpperCase();
+
+      expect(
+        [
+          'OUT_OF_STOCK',
+          'INSUFFICIENT_STOCK',
+          'STOCK',
+          'NOT_ENOUGH_STOCK',
+        ].some(k => failureIndicator.includes(k))
+      ).toBe(true);
 
       const prodRows = await db
         .select()
