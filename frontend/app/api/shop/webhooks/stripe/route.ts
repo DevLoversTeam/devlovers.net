@@ -433,6 +433,11 @@ function mergePspMetadata(params: {
     ...safeDelta,
   };
 }
+
+type RestoreStripeRefundOrder = Parameters<
+  typeof restoreStripeRefundFailure
+>[0]['order'];
+
 function readDbRows<T>(res: unknown): T[] {
   if (Array.isArray(res)) return res as T[];
   const anyRes = res as { rows?: unknown };
@@ -1715,7 +1720,7 @@ export async function POST(request: NextRequest) {
           });
 
           await restoreStripeRefundFailure({
-            order: order as any,
+            order: order as RestoreStripeRefundOrder,
             now,
             refundId: refund.id,
             refundStatus: refund.status ?? null,
@@ -1906,7 +1911,9 @@ export async function POST(request: NextRequest) {
       if (
         eventType === 'charge.refund.updated' &&
         refund &&
-        refund.status !== 'succeeded'
+        refund.status !== 'succeeded' &&
+        refund.status !== 'failed' &&
+        refund.status !== 'canceled'
       ) {
         const deltaMeta = buildPspMetadata({
           eventType,
@@ -1916,6 +1923,59 @@ export async function POST(request: NextRequest) {
           extra: {
             refundGate: {
               decision: 'waiting_terminal_refund_status',
+              refundStatus: refund.status ?? null,
+              eventId: event.id,
+            },
+          },
+        });
+
+        const nextMeta = mergePspMetadata({
+          prevMeta: order.pspMetadata,
+          delta: deltaMeta as any,
+          eventId: event.id,
+          currency: order.currency,
+          createdAtIso,
+        });
+
+        await db
+          .update(orders)
+          .set({
+            updatedAt: now,
+            pspMetadata: nextMeta,
+            pspChargeId: charge?.id ?? refundChargeId ?? null,
+            pspPaymentMethod: resolvePaymentMethod(paymentIntent, charge),
+          })
+          .where(
+            and(eq(orders.id, order.id), eq(orders.paymentProvider, 'stripe'))
+          );
+
+        logWebhookEvent({
+          requestId,
+          stripeEventId,
+          orderId: order.id,
+          paymentIntentId,
+          paymentStatus,
+          eventType,
+          refundId: refund.id,
+          chargeId: charge?.id ?? refundChargeId ?? null,
+        });
+
+        return ack();
+      }
+
+      if (
+        eventType === 'charge.refund.updated' &&
+        refund &&
+        (refund.status === 'failed' || refund.status === 'canceled')
+      ) {
+        const deltaMeta = buildPspMetadata({
+          eventType,
+          paymentIntent,
+          charge: charge ?? undefined,
+          refund,
+          extra: {
+            refundGate: {
+              decision: 'terminal_refund_failure_ignored',
               refundStatus: refund.status ?? null,
               eventId: event.id,
             },

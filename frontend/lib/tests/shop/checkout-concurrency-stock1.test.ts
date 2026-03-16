@@ -271,8 +271,6 @@ describe('P0-8.10.1 checkout concurrency: stock=1, two parallel checkouts', () =
 
       expect(reservedUnits).toBe(1);
       expect(reserveMoves.length).toBe(1);
-    } catch (err) {
-      throw err;
     } finally {
       try {
         const oi = await db
