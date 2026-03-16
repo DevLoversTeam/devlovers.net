@@ -453,6 +453,7 @@ export async function reconcileStripeRefundOrder(args: {
 }): Promise<ReconcileRefundOrderResult> {
   const order = await loadStripeRefundOrder(args.orderId);
   if (!order || order.paymentProvider !== 'stripe') return 'noop';
+  if (order.pspStatusReason !== 'REFUND_REQUESTED') return 'noop';
 
   const refundRecord = chooseRefundRecord(order);
   if (!refundRecord?.refundId) return 'noop';

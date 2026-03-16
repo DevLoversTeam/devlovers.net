@@ -144,15 +144,17 @@ async function insertPendingOrder(): Promise<Inserted> {
 }
 
 async function insertContainedRefundRequestedOrder(): Promise<
-  Inserted & { refundId: string }
+  Inserted & { refundId: string; chargeId: string }
 > {
   const inserted = await insertPaidOrder({ withQueuedShipment: true });
   const refundId = `re_${crypto.randomUUID()}`;
+  const chargeId = `ch_${crypto.randomUUID()}`;
   const nowIso = new Date().toISOString();
 
   await db
     .update(orders)
     .set({
+      pspChargeId: chargeId,
       pspStatusReason: 'REFUND_REQUESTED',
       shippingStatus: 'cancelled',
       pspMetadata: {
@@ -193,7 +195,7 @@ async function insertContainedRefundRequestedOrder(): Promise<
     })
     .where(eq(shippingShipments.id, inserted.shipmentId!));
 
-  return { ...inserted, refundId };
+  return { ...inserted, refundId, chargeId };
 }
 
 function makeRequest() {
@@ -664,6 +666,71 @@ describe('stripe webhook refund (full only): PI fallback + terminal status + ded
       expect(retrieveChargeMock).not.toHaveBeenCalled();
       expect(fetchSpy).not.toHaveBeenCalled();
       expect(restockOrderMock).not.toHaveBeenCalled();
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  }, 30_000);
+
+  it('charge.refund.updated with refund.charge as string id still restores contained canceled refunds', async () => {
+    const contained = await insertContainedRefundRequestedOrder();
+    inserted = contained;
+
+    const eventId = `evt_${crypto.randomUUID()}`;
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+
+    const refund = {
+      id: contained.refundId,
+      object: 'refund',
+      amount: 2500,
+      status: 'canceled',
+      reason: 'expired_uncaptured_charge',
+      charge: contained.chargeId,
+      payment_intent: contained.paymentIntentId,
+      metadata: {},
+    };
+
+    verifyWebhookSignatureMock.mockReturnValue({
+      id: eventId,
+      type: 'charge.refund.updated',
+      data: { object: refund },
+    } as unknown as Stripe.Event);
+
+    try {
+      const res = await POST(makeRequest());
+      expect(res.status).toBe(200);
+
+      const [orderRow] = await db
+        .select({
+          paymentStatus: orders.paymentStatus,
+          status: orders.status,
+          inventoryStatus: orders.inventoryStatus,
+          stockRestored: orders.stockRestored,
+          pspStatusReason: orders.pspStatusReason,
+          shippingStatus: orders.shippingStatus,
+        })
+        .from(orders)
+        .where(eq(orders.id, contained.orderId))
+        .limit(1);
+
+      expect(orderRow?.paymentStatus).toBe('paid');
+      expect(orderRow?.status).toBe('PAID');
+      expect(orderRow?.inventoryStatus).toBe('reserved');
+      expect(orderRow?.stockRestored).toBe(false);
+      expect(orderRow?.pspStatusReason).toBe('expired_uncaptured_charge');
+      expect(orderRow?.pspStatusReason).not.toBe('REFUND_REQUESTED');
+      expect(orderRow?.shippingStatus).toBe('queued');
+
+      const [shipmentRow] = await db
+        .select({ status: shippingShipments.status })
+        .from(shippingShipments)
+        .where(eq(shippingShipments.id, contained.shipmentId!))
+        .limit(1);
+
+      expect(shipmentRow?.status).toBe('queued');
+      expect(restoreStripeRefundFailureMock).toHaveBeenCalledTimes(1);
+      expect(restockOrderMock).not.toHaveBeenCalled();
+      expect(retrieveChargeMock).not.toHaveBeenCalled();
+      expect(fetchSpy).not.toHaveBeenCalled();
     } finally {
       fetchSpy.mockRestore();
     }

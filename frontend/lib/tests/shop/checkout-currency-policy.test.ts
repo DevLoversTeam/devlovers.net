@@ -15,6 +15,7 @@ import {
   productPrices,
   products,
 } from '@/db/schema';
+import { resetEnvCache } from '@/lib/env';
 
 vi.mock('@/lib/auth', async () => {
   const actual =
@@ -30,6 +31,7 @@ vi.mock('@/lib/env/stripe', () => ({
 }));
 
 vi.mock('@/lib/services/orders/payment-attempts', async () => {
+  resetEnvCache();
   const actual = await vi.importActual<any>(
     '@/lib/services/orders/payment-attempts'
   );
@@ -77,6 +79,7 @@ beforeAll(() => {
   process.env.PAYMENTS_ENABLED = 'true';
   process.env.MONO_MERCHANT_TOKEN = 'mono_test_token';
   process.env.APP_ORIGIN = 'http://localhost:3000';
+  resetEnvCache();
 
   if (process.env.NODE_ENV === 'production') {
     throw new Error(
@@ -129,6 +132,8 @@ afterAll(async () => {
 
   if (__prevAppOrigin === undefined) delete process.env.APP_ORIGIN;
   else process.env.APP_ORIGIN = __prevAppOrigin;
+
+  resetEnvCache();
 });
 
 function makeIdempotencyKey(): string {

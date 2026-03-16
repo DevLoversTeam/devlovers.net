@@ -97,6 +97,7 @@ async function seedOrder(args: SeedArgs): Promise<Seeded> {
     paymentStatus: seedPaymentStatus,
     status: seedOrderStatus,
     inventoryStatus: seedInventoryStatus,
+    pspStatusReason: args.pspStatusReason ?? null,
     shippingRequired: true,
     shippingPayer: 'customer',
     shippingProvider: 'nova_poshta',

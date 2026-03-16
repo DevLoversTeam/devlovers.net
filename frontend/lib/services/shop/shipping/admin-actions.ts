@@ -582,8 +582,6 @@ export async function applyShippingAdminAction(args: {
   }
 
   if (args.action === 'mark_shipped') {
-    assertShipmentSupportsManualFulfillment(state, 'mark_shipped');
-
     if (state.shipping_status === 'shipped') {
       await appendAuditEntry({
         orderId: args.orderId,
@@ -619,6 +617,8 @@ export async function applyShippingAdminAction(args: {
         action: args.action,
       };
     }
+
+    assertShipmentSupportsManualFulfillment(state, 'mark_shipped');
 
     if (!isShippingStatusTransitionAllowed(state.shipping_status, 'shipped')) {
       throw new ShippingAdminActionError(
@@ -681,8 +681,6 @@ export async function applyShippingAdminAction(args: {
     );
   }
 
-  assertShipmentSupportsManualFulfillment(state, 'mark_delivered');
-
   if (state.shipping_status === 'delivered') {
     await appendAuditEntry({
       orderId: args.orderId,
@@ -718,6 +716,8 @@ export async function applyShippingAdminAction(args: {
       action: args.action,
     };
   }
+
+  assertShipmentSupportsManualFulfillment(state, 'mark_delivered');
 
   if (!isShippingStatusTransitionAllowed(state.shipping_status, 'delivered')) {
     throw new ShippingAdminActionError(

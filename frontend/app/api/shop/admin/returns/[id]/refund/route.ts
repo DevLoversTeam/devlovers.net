@@ -76,7 +76,7 @@ export async function POST(
       actorUserId: typeof admin.id === 'string' ? admin.id : null,
       requestId,
     });
-    return noStoreJson({ code: 'INTERNAL_ERROR' }, 500);
+    throw new Error('refundReturnRequest unexpectedly resolved');
   } catch (error) {
     if (error instanceof AdminApiDisabledError) {
       return noStoreJson({ code: 'ADMIN_API_DISABLED' }, 403);

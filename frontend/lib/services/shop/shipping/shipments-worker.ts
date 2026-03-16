@@ -419,7 +419,8 @@ export async function claimQueuedShipmentsForProcessing(args: {
     with candidates as (
       select
         s.id,
-        s.order_id
+        s.order_id,
+        s.status as candidate_status
       from shipping_shipments s
       where (
         (
@@ -442,12 +443,15 @@ export async function claimQueuedShipmentsForProcessing(args: {
       from candidates c
       join orders o on o.id = c.order_id
       where s.id = c.id
-        and ${orderShippingEligibilityWhereSql({
-          paymentStatusColumn: sql`o.payment_status`,
-          orderStatusColumn: sql`o.status`,
-          inventoryStatusColumn: sql`o.inventory_status`,
-          pspStatusReasonColumn: sql`o.psp_status_reason`,
-        })}
+        and (
+          c.candidate_status = 'processing'
+          or ${orderShippingEligibilityWhereSql({
+            paymentStatusColumn: sql`o.payment_status`,
+            orderStatusColumn: sql`o.status`,
+            inventoryStatusColumn: sql`o.inventory_status`,
+            pspStatusReasonColumn: sql`o.psp_status_reason`,
+          })}
+        )
         and ${shippingStatusTransitionWhereSql({
           column: sql`o.shipping_status`,
           to: 'creating_label',
@@ -554,6 +558,42 @@ async function loadOrderShippingDetails(
   `);
 
   return readRows<OrderShippingDetailsRow>(res)[0] ?? null;
+}
+
+function assertOrderStillShippable(details: OrderShippingDetailsRow) {
+  const eligibility = evaluateOrderShippingEligibility({
+    paymentStatus: details.payment_status,
+    orderStatus: details.status,
+    inventoryStatus: details.inventory_status,
+    pspStatusReason: details.psp_status_reason,
+  });
+  if (!eligibility.ok) {
+    throw buildFailure('ORDER_NOT_SHIPPABLE', eligibility.message, false);
+  }
+
+  if (details.shipping_required !== true) {
+    throw buildFailure(
+      'SHIPPING_NOT_REQUIRED',
+      'Order does not require shipping.',
+      false
+    );
+  }
+
+  if (details.shipping_provider !== 'nova_poshta') {
+    throw buildFailure(
+      'SHIPPING_PROVIDER_UNSUPPORTED',
+      'Shipping provider is unsupported.',
+      false
+    );
+  }
+
+  if (!details.shipping_method_code) {
+    throw buildFailure(
+      'SHIPPING_METHOD_MISSING',
+      'Shipping method is missing.',
+      false
+    );
+  }
 }
 
 async function markSucceeded(args: {
@@ -690,39 +730,7 @@ async function processClaimedShipment(args: {
   }
 
   try {
-    const eligibility = evaluateOrderShippingEligibility({
-      paymentStatus: details.payment_status,
-      orderStatus: details.status,
-      inventoryStatus: details.inventory_status,
-      pspStatusReason: details.psp_status_reason,
-    });
-    if (!eligibility.ok) {
-      throw buildFailure('ORDER_NOT_SHIPPABLE', eligibility.message, false);
-    }
-
-    if (details.shipping_required !== true) {
-      throw buildFailure(
-        'SHIPPING_NOT_REQUIRED',
-        'Order does not require shipping.',
-        false
-      );
-    }
-
-    if (details.shipping_provider !== 'nova_poshta') {
-      throw buildFailure(
-        'SHIPPING_PROVIDER_UNSUPPORTED',
-        'Shipping provider is unsupported.',
-        false
-      );
-    }
-
-    if (!details.shipping_method_code) {
-      throw buildFailure(
-        'SHIPPING_METHOD_MISSING',
-        'Shipping method is missing.',
-        false
-      );
-    }
+    assertOrderStillShippable(details);
 
     const parsedSnapshot = parseSnapshot(details.shipping_address);
 
@@ -734,12 +742,28 @@ async function processClaimedShipment(args: {
       );
     }
 
-    const payload = toNpPayload({
-      order: details,
-      snapshot: parsedSnapshot,
+    const latestDetails = await loadOrderShippingDetails(args.claim.order_id);
+    if (!latestDetails) {
+      throw buildFailure('ORDER_NOT_FOUND', 'Order was not found.', false);
+    }
+
+    assertOrderStillShippable(latestDetails);
+
+    const latestSnapshot = parseSnapshot(latestDetails.shipping_address);
+    if (latestSnapshot.methodCode !== latestDetails.shipping_method_code) {
+      throw buildFailure(
+        'SHIPPING_METHOD_MISMATCH',
+        'Shipping method does not match persisted order method.',
+        false
+      );
+    }
+
+    const latestPayload = toNpPayload({
+      order: latestDetails,
+      snapshot: latestSnapshot,
     });
 
-    const created = await createInternetDocument(payload);
+    const created = await createInternetDocument(latestPayload);
 
     const marked = await markSucceeded({
       shipmentId: args.claim.id,

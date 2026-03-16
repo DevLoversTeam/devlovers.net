@@ -231,7 +231,7 @@ describe.sequential('stripe refund convergence and recovery', () => {
     const second = await reconcileStripeRefundOrder({
       orderId: seeded.orderId,
     });
-    expect(['finalized_success', 'noop']).toContain(second);
+    expect(second).toBe('noop');
 
     const [afterSecond] = await db
       .select({

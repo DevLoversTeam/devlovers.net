@@ -119,179 +119,184 @@ describe('P0-8.10.1 checkout concurrency: stock=1, two parallel checkouts', () =
   it('must allow only one success and must not double-reserve (stock must not go below 0)', async () => {
     const productId = crypto.randomUUID();
     const slug = `__test_checkout_concurrency_${productId.slice(0, 8)}`;
-    const now = new Date();
-    await db.insert(products).values({
-      id: productId,
-      slug,
-      title: `TEST concurrency stock=1 (${slug})`,
-      imageUrl: '/placeholder.svg',
-
-      price: 1000,
-      originalPrice: null,
-      currency: 'USD',
-
-      stock: 1,
-      isActive: true,
-      createdAt: now,
-      updatedAt: now,
-    } as any);
-
-    await db.insert(productPrices).values({
-      id: crypto.randomUUID(),
-      productId,
-      currency: 'USD',
-
-      priceMinor: 1000,
-      originalPriceMinor: null,
-
-      price: 10,
-      originalPrice: null,
-
-      createdAt: now,
-      updatedAt: now,
-    } as any);
-
-    const baseUrl = 'http://localhost:3000';
-    const { POST: checkoutPOST } =
-      await import('@/app/api/shop/checkout/route');
-
-    async function callCheckout(idemKey: string) {
-      const body = JSON.stringify({
-        paymentProvider: 'stripe',
-        paymentMethod: 'stripe_card',
-        items: [{ productId, quantity: 1 }],
-      });
-
-      const req = makeNextRequest(`${baseUrl}/api/shop/checkout`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept-Language': 'en-US,en;q=0.9',
-          'Idempotency-Key': idemKey,
-          Origin: 'http://localhost:3000',
-        },
-        body,
-      });
-
-      const res = await checkoutPOST(req);
-      const json = await readJsonSafe(res);
-
-      return { status: res.status, json };
-    }
-
-    const idemA = crypto.randomUUID();
-    const idemB = crypto.randomUUID();
-
-    let release!: () => void;
-    const gate = new Promise<void>(r => (release = r));
-
-    const p1 = (async () => {
-      await gate;
-      return callCheckout(idemA);
-    })();
-
-    const p2 = (async () => {
-      await gate;
-      return callCheckout(idemB);
-    })();
-
-    release();
-
-    const [r1, r2] = await Promise.all([p1, p2]);
-
-    const results = [r1, r2];
-    const success = results.filter(r => r.status === 201);
-    const fail = results.filter(r => r.status !== 201);
-
-    expect(success.length).toBe(1);
-    expect(fail.length).toBe(1);
-
-    expect(fail[0].status).toBeGreaterThanOrEqual(400);
-    expect(fail[0].status).toBeLessThan(500);
-    const failJson = fail[0].json || {};
-    const failCode = String(
-      pick(failJson, ['code', 'errorCode', 'businessCode', 'reason']) ?? ''
-    ).toUpperCase();
-
-    if (failCode) {
-      expect(
-        [
-          'OUT_OF_STOCK',
-          'INSUFFICIENT_STOCK',
-          'STOCK',
-          'NOT_ENOUGH_STOCK',
-        ].some(k => failCode.includes(k))
-      ).toBe(true);
-    }
-
-    const prodRows = await db
-      .select()
-      .from(products)
-      .where(eq((products as any).id, productId));
-
-    expect(prodRows.length).toBe(1);
-
-    const prod: any = prodRows[0];
-    const stock =
-      prod.stock ?? prod.stockQuantity ?? prod.stock_qty ?? prod.stock_quantity;
-
-    expect(toNum(stock)).toBe(0);
-    expect(toNum(stock)).toBeGreaterThanOrEqual(0);
-
-    const moves = await db
-      .select()
-      .from(inventoryMoves)
-      .where(eq((inventoryMoves as any).productId, productId));
-
-    const reserveMoves = (moves as any[]).filter(m => {
-      const kind = normalizeMoveKind(
-        pick(m, ['kind', 'type', 'moveType', 'action', 'op'])
-      );
-      return kind === 'reserve' || kind === 'reserved';
-    });
-
-    const reservedUnits = reserveMoves.reduce((sum, m) => {
-      const q = pick(m, [
-        'quantity',
-        'qty',
-        'units',
-        'delta',
-        'deltaQty',
-        'deltaQuantity',
-      ]);
-      return sum + Math.abs(toNum(q));
-    }, 0);
-
-    expect(reservedUnits).toBe(1);
-    expect(reserveMoves.length).toBe(1);
-
     try {
-      const oi = await db
-        .select({ orderId: (orderItems as any).orderId })
-        .from(orderItems)
-        .where(eq((orderItems as any).productId, productId));
+      const now = new Date();
+      await db.insert(products).values({
+        id: productId,
+        slug,
+        title: `TEST concurrency stock=1 (${slug})`,
+        imageUrl: '/placeholder.svg',
 
-      const orderIds = oi.map((x: any) => x.orderId).filter(Boolean);
+        price: 1000,
+        originalPrice: null,
+        currency: 'USD',
 
-      await db
-        .delete(orderItems)
-        .where(eq((orderItems as any).productId, productId));
-      await db
-        .delete(inventoryMoves)
-        .where(eq((inventoryMoves as any).productId, productId));
-      await db
-        .delete(productPrices)
-        .where(eq((productPrices as any).productId, productId));
+        stock: 1,
+        isActive: true,
+        createdAt: now,
+        updatedAt: now,
+      } as any);
 
-      if (orderIds.length) {
-        await db.delete(orders).where(inArray((orders as any).id, orderIds));
+      await db.insert(productPrices).values({
+        id: crypto.randomUUID(),
+        productId,
+        currency: 'USD',
+
+        priceMinor: 1000,
+        originalPriceMinor: null,
+
+        price: 10,
+        originalPrice: null,
+
+        createdAt: now,
+        updatedAt: now,
+      } as any);
+
+      const baseUrl = 'http://localhost:3000';
+      const { POST: checkoutPOST } =
+        await import('@/app/api/shop/checkout/route');
+
+      async function callCheckout(idemKey: string) {
+        const body = JSON.stringify({
+          paymentProvider: 'stripe',
+          paymentMethod: 'stripe_card',
+          items: [{ productId, quantity: 1 }],
+        });
+
+        const req = makeNextRequest(`${baseUrl}/api/shop/checkout`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Idempotency-Key': idemKey,
+            Origin: 'http://localhost:3000',
+          },
+          body,
+        });
+
+        const res = await checkoutPOST(req);
+        const json = await readJsonSafe(res);
+
+        return { status: res.status, json };
       }
 
-      await db.delete(products).where(eq((products as any).id, productId));
-    } catch (err) {
-      if (process.env.CI) throw err;
+      const idemA = crypto.randomUUID();
+      const idemB = crypto.randomUUID();
 
-      console.warn('checkout concurrency cleanup failed', err);
+      let release!: () => void;
+      const gate = new Promise<void>(r => (release = r));
+
+      const p1 = (async () => {
+        await gate;
+        return callCheckout(idemA);
+      })();
+
+      const p2 = (async () => {
+        await gate;
+        return callCheckout(idemB);
+      })();
+
+      release();
+
+      const [r1, r2] = await Promise.all([p1, p2]);
+
+      const results = [r1, r2];
+      const success = results.filter(r => r.status === 201);
+      const fail = results.filter(r => r.status !== 201);
+
+      expect(success.length).toBe(1);
+      expect(fail.length).toBe(1);
+
+      expect(fail[0].status).toBeGreaterThanOrEqual(400);
+      expect(fail[0].status).toBeLessThan(500);
+      const failJson = fail[0].json || {};
+      const failCode = String(
+        pick(failJson, ['code', 'errorCode', 'businessCode', 'reason']) ?? ''
+      ).toUpperCase();
+
+      if (failCode) {
+        expect(
+          [
+            'OUT_OF_STOCK',
+            'INSUFFICIENT_STOCK',
+            'STOCK',
+            'NOT_ENOUGH_STOCK',
+          ].some(k => failCode.includes(k))
+        ).toBe(true);
+      }
+
+      const prodRows = await db
+        .select()
+        .from(products)
+        .where(eq((products as any).id, productId));
+
+      expect(prodRows.length).toBe(1);
+
+      const prod: any = prodRows[0];
+      const stock =
+        prod.stock ??
+        prod.stockQuantity ??
+        prod.stock_qty ??
+        prod.stock_quantity;
+
+      expect(toNum(stock)).toBe(0);
+      expect(toNum(stock)).toBeGreaterThanOrEqual(0);
+
+      const moves = await db
+        .select()
+        .from(inventoryMoves)
+        .where(eq((inventoryMoves as any).productId, productId));
+
+      const reserveMoves = (moves as any[]).filter(m => {
+        const kind = normalizeMoveKind(
+          pick(m, ['kind', 'type', 'moveType', 'action', 'op'])
+        );
+        return kind === 'reserve' || kind === 'reserved';
+      });
+
+      const reservedUnits = reserveMoves.reduce((sum, m) => {
+        const q = pick(m, [
+          'quantity',
+          'qty',
+          'units',
+          'delta',
+          'deltaQty',
+          'deltaQuantity',
+        ]);
+        return sum + Math.abs(toNum(q));
+      }, 0);
+
+      expect(reservedUnits).toBe(1);
+      expect(reserveMoves.length).toBe(1);
+    } finally {
+      try {
+        const oi = await db
+          .select({ orderId: (orderItems as any).orderId })
+          .from(orderItems)
+          .where(eq((orderItems as any).productId, productId));
+
+        const orderIds = oi.map((x: any) => x.orderId).filter(Boolean);
+
+        await db
+          .delete(orderItems)
+          .where(eq((orderItems as any).productId, productId));
+        await db
+          .delete(inventoryMoves)
+          .where(eq((inventoryMoves as any).productId, productId));
+        await db
+          .delete(productPrices)
+          .where(eq((productPrices as any).productId, productId));
+
+        if (orderIds.length) {
+          await db.delete(orders).where(inArray((orders as any).id, orderIds));
+        }
+
+        await db.delete(products).where(eq((products as any).id, productId));
+      } catch (err) {
+        if (process.env.CI) throw err;
+
+        console.warn('checkout concurrency cleanup failed', err);
+      }
     }
   }, 30000);
 });

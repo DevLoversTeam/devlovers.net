@@ -1270,7 +1270,18 @@ export async function POST(request: NextRequest) {
         order.inventoryStatus === 'reserved'
       ) {
         await db.execute(sql`
-          with ensured_shipment as (
+          with eligible_order as (
+            select o.id
+            from orders o
+            where o.id = ${order.id}::uuid
+              and ${orderShippingEligibilityWhereSql({
+                paymentStatusColumn: sql`o.payment_status`,
+                orderStatusColumn: sql`o.status`,
+                inventoryStatusColumn: sql`o.inventory_status`,
+                pspStatusReasonColumn: sql`o.psp_status_reason`,
+              })}
+          ),
+          ensured_shipment as (
             insert into shipping_shipments (
               order_id,
               provider,
@@ -1278,14 +1289,15 @@ export async function POST(request: NextRequest) {
               attempt_count,
               created_at,
               updated_at
-            ) values (
-              ${order.id}::uuid,
+            )
+            select
+              eo.id,
               'nova_poshta',
               'queued',
               0,
               ${now},
               ${now}
-            )
+            from eligible_order eo
             on conflict (order_id) do update
             set status = 'queued',
                 updated_at = ${now}
@@ -1296,7 +1308,7 @@ export async function POST(request: NextRequest) {
           existing_shipment as (
             select order_id
             from shipping_shipments
-            where order_id = ${order.id}::uuid
+            where order_id in (select id from eligible_order)
               and status = 'queued'
           ),
           shipment_order_ids as (
@@ -1307,7 +1319,17 @@ export async function POST(request: NextRequest) {
           update orders
           set shipping_status = 'queued'::shipping_status,
               updated_at = ${now}
-          where id in (select order_id from shipment_order_ids)
+          where id in (
+            select soid.order_id
+            from shipment_order_ids soid
+            join orders o on o.id = soid.order_id
+            where ${orderShippingEligibilityWhereSql({
+              paymentStatusColumn: sql`o.payment_status`,
+              orderStatusColumn: sql`o.status`,
+              inventoryStatusColumn: sql`o.inventory_status`,
+              pspStatusReasonColumn: sql`o.psp_status_reason`,
+            })}
+          )
             and shipping_status is distinct from 'queued'::shipping_status
             and ${shippingStatusTransitionWhereSql({
               column: sql`shipping_status`,
@@ -1642,6 +1664,52 @@ export async function POST(request: NextRequest) {
 
         isFullRefund = cumulativeRefunded === amt;
       } else if (eventType === 'charge.refund.updated' && refund) {
+        if (
+          (refund.status === 'failed' || refund.status === 'canceled') &&
+          order.pspStatusReason === 'REFUND_REQUESTED'
+        ) {
+          const now = new Date();
+          const createdAtIso = now.toISOString();
+          const deltaMeta = buildPspMetadata({
+            eventType,
+            paymentIntent,
+            charge: charge ?? undefined,
+            refund,
+          });
+
+          const nextMeta = mergePspMetadata({
+            prevMeta: order.pspMetadata,
+            delta: deltaMeta as any,
+            eventId: event.id,
+            currency: order.currency,
+            createdAtIso,
+          });
+
+          await restoreStripeRefundFailure({
+            order: order as any,
+            now,
+            refundId: refund.id,
+            refundStatus: refund.status ?? null,
+            refundReason: refund.reason ?? null,
+            chargeId: charge?.id ?? refundChargeId ?? null,
+            paymentIntentId,
+            nextMeta,
+          });
+
+          logWebhookEvent({
+            requestId,
+            stripeEventId,
+            orderId: order.id,
+            paymentIntentId,
+            paymentStatus,
+            eventType,
+            refundId: refund.id,
+            chargeId: charge?.id ?? refundChargeId ?? null,
+          });
+
+          return ack();
+        }
+
         if (isRefundChargeIdOnly(refund)) {
           warnRefundFullnessUndetermined({
             ...warnBase,
@@ -1805,52 +1873,6 @@ export async function POST(request: NextRequest) {
 
       const now = new Date();
       const createdAtIso = now.toISOString();
-
-      if (
-        eventType === 'charge.refund.updated' &&
-        refund &&
-        (refund.status === 'failed' || refund.status === 'canceled') &&
-        order.pspStatusReason === 'REFUND_REQUESTED'
-      ) {
-        const deltaMeta = buildPspMetadata({
-          eventType,
-          paymentIntent,
-          charge: charge ?? undefined,
-          refund,
-        });
-
-        const nextMeta = mergePspMetadata({
-          prevMeta: order.pspMetadata,
-          delta: deltaMeta as any,
-          eventId: event.id,
-          currency: order.currency,
-          createdAtIso,
-        });
-
-        await restoreStripeRefundFailure({
-          order: order as any,
-          now,
-          refundId: refund.id,
-          refundStatus: refund.status ?? null,
-          refundReason: refund.reason ?? null,
-          chargeId: charge?.id ?? refundChargeId ?? null,
-          paymentIntentId,
-          nextMeta,
-        });
-
-        logWebhookEvent({
-          requestId,
-          stripeEventId,
-          orderId: order.id,
-          paymentIntentId,
-          paymentStatus,
-          eventType,
-          refundId: refund.id,
-          chargeId: charge?.id ?? refundChargeId ?? null,
-        });
-
-        return ack();
-      }
 
       if (
         eventType === 'charge.refund.updated' &&

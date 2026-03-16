@@ -390,6 +390,151 @@ describe('P0-6 webhook: writes PSP fields on succeeded', () => {
     }
   }, 30_000);
 
+  it('payment_intent.succeeded replay/manual fallback must not requeue shipping for refund-contained orders', async () => {
+    const productId = randomUUID();
+    const priceId = randomUUID();
+
+    const orderId = randomUUID();
+    const idemKey = `idem_${randomUUID()}`;
+
+    const paymentIntentId = `pi_test_${randomUUID()
+      .replace(/-/g, '')
+      .slice(0, 24)}`;
+    const eventId = `evt_test_${randomUUID().replace(/-/g, '').slice(0, 24)}`;
+    const chargeId = `ch_test_${randomUUID().replace(/-/g, '').slice(0, 24)}`;
+
+    await db.insert(products).values({
+      id: productId,
+      slug: `webhook-refund-contained-${productId.slice(0, 8)}`,
+      title: 'Webhook Refund Contained Product',
+      description: 'webhook test',
+      imageUrl: 'https://res.cloudinary.com/devlovers/image/upload/v1/test.png',
+      imagePublicId: null,
+      price: '9.00',
+      originalPrice: null,
+      currency: 'USD',
+      category: null,
+      type: null,
+      colors: [],
+      sizes: [],
+      badge: 'NONE',
+      isActive: true,
+      isFeatured: false,
+      stock: 10,
+      sku: `SKU-${productId.slice(0, 8)}`,
+    });
+
+    await db.insert(productPrices).values({
+      id: priceId,
+      productId,
+      currency: 'USD',
+      priceMinor: 900,
+      originalPriceMinor: null,
+      price: '9.00',
+      originalPrice: null,
+    });
+
+    await db.insert(orders).values({
+      id: orderId,
+      totalAmountMinor: 900,
+      totalAmount: '9.00',
+      currency: 'USD',
+      shippingRequired: true,
+      shippingPayer: 'customer',
+      shippingProvider: 'nova_poshta',
+      shippingMethodCode: 'NP_WAREHOUSE',
+      shippingAmountMinor: null,
+      shippingStatus: 'cancelled',
+      paymentStatus: 'paid',
+      paymentProvider: 'stripe',
+      paymentIntentId,
+      idempotencyKey: idemKey,
+      status: 'PAID',
+      inventoryStatus: 'reserved',
+      pspStatusReason: 'REFUND_REQUESTED',
+    });
+
+    await db.insert(orderItems).values({
+      id: randomUUID(),
+      orderId,
+      productId,
+      quantity: 1,
+      unitPriceMinor: 900,
+      lineTotalMinor: 900,
+      unitPrice: '9.00',
+      lineTotal: '9.00',
+      productTitle: 'Webhook Refund Contained Product',
+      productSlug: `webhook-refund-contained-${productId.slice(0, 8)}`,
+      productSku: `SKU-${productId.slice(0, 8)}`,
+    });
+
+    const event = {
+      id: eventId,
+      object: 'event',
+      type: 'payment_intent.succeeded',
+      data: {
+        object: {
+          id: paymentIntentId,
+          object: 'payment_intent',
+          amount: 900,
+          currency: 'usd',
+          status: 'succeeded',
+          metadata: { orderId },
+          charges: {
+            object: 'list',
+            data: [
+              {
+                id: chargeId,
+                object: 'charge',
+                payment_intent: paymentIntentId,
+                payment_method_details: {
+                  type: 'card',
+                  card: {
+                    brand: 'visa',
+                    last4: '4242',
+                  },
+                },
+              },
+            ],
+          },
+        },
+      },
+    };
+
+    vi.mocked(verifyWebhookSignature).mockReturnValue(event as any);
+
+    try {
+      const res = await webhookPOST(
+        makeWebhookRequest(JSON.stringify({ any: 'payload' }))
+      );
+      expect(res.status).toBeGreaterThanOrEqual(200);
+      expect(res.status).toBeLessThan(300);
+
+      const [updated] = await db
+        .select({
+          paymentStatus: orders.paymentStatus,
+          shippingStatus: orders.shippingStatus,
+          pspStatusReason: orders.pspStatusReason,
+        })
+        .from(orders)
+        .where(eq(orders.id, orderId))
+        .limit(1);
+
+      expect(updated?.paymentStatus).toBe('paid');
+      expect(updated?.shippingStatus).toBe('cancelled');
+      expect(updated?.pspStatusReason).toBe('REFUND_REQUESTED');
+
+      const queued = await db
+        .select({ id: shippingShipments.id })
+        .from(shippingShipments)
+        .where(eq(shippingShipments.orderId, orderId));
+
+      expect(queued).toHaveLength(0);
+    } finally {
+      await cleanup({ orderId, productId, eventId });
+    }
+  }, 30_000);
+
   it('payment_intent.succeeded extracts google_pay wallet attribution into order and canonical event payload', async () => {
     const productId = randomUUID();
     const priceId = randomUUID();
