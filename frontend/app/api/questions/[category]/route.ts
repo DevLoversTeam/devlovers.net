@@ -29,7 +29,6 @@ type QaApiResponse = {
 
 function dedupeItems(items: QaApiResponse['items']) {
   const seenById = new Set<string>();
-  const seenByText = new Set<string>();
   const unique: QaApiResponse['items'] = [];
 
   for (const item of items) {
@@ -37,13 +36,7 @@ function dedupeItems(items: QaApiResponse['items']) {
       continue;
     }
 
-    const textKey = `${item.locale}:${item.question.trim().toLowerCase()}`;
-    if (seenByText.has(textKey)) {
-      continue;
-    }
-
     seenById.add(item.id);
-    seenByText.add(textKey);
     unique.push(item);
   }
 

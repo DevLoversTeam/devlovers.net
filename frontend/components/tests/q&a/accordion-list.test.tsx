@@ -3,9 +3,30 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const getCachedTermsMock = vi.fn();
+const storage = new Map<string, string>();
+
+Object.defineProperty(window, 'localStorage', {
+  value: {
+    getItem: (key: string) => storage.get(key) ?? null,
+    setItem: (key: string, value: string) => {
+      storage.set(key, value);
+    },
+    removeItem: (key: string) => {
+      storage.delete(key);
+    },
+    clear: () => {
+      storage.clear();
+    },
+  },
+  configurable: true,
+});
 
 vi.mock('@/lib/ai/explainCache', () => ({
   getCachedTerms: () => getCachedTermsMock(),
+}));
+
+vi.mock('next-intl', () => ({
+  useTranslations: () => (key: string) => key,
 }));
 
 vi.mock('@/components/ui/accordion', () => ({
@@ -15,8 +36,27 @@ vi.mock('@/components/ui/accordion', () => ({
   AccordionItem: ({ children }: { children: React.ReactNode }) => (
     <div>{children}</div>
   ),
-  AccordionTrigger: ({ children }: { children: React.ReactNode }) => (
-    <button type="button">{children}</button>
+  AccordionTrigger: ({
+    children,
+    leading,
+    trailing,
+    chevronOutside,
+    onClick,
+  }: {
+    children: React.ReactNode;
+    leading?: React.ReactNode;
+    trailing?: React.ReactNode;
+    chevronOutside?: boolean;
+    onClick?: () => void;
+  }) => (
+    <div>
+      {leading}
+      <button type="button" onClick={onClick}>
+        {children}
+      </button>
+      {trailing}
+      {chevronOutside ? <span data-testid="chevron-outside" /> : null}
+    </div>
   ),
   AccordionContent: ({ children }: { children: React.ReactNode }) => (
     <div>{children}</div>
@@ -113,6 +153,32 @@ import type { QuestionEntry } from '@/components/q&a/types';
 describe('AccordionList', () => {
   beforeEach(() => {
     getCachedTermsMock.mockReturnValue([]);
+    localStorage.clear();
+  });
+
+  it('uses a stable fallback id when question id is missing', () => {
+    const items: QuestionEntry[] = [
+      {
+        question: 'What is CSS?',
+        category: 'css',
+        answerBlocks: [
+          {
+            type: 'paragraph',
+            children: [{ text: 'CSS styles pages.' }],
+          },
+        ],
+      },
+    ];
+
+    render(<AccordionList items={items} totalItems={1} />);
+
+    fireEvent.click(screen.getByText('What is CSS?'));
+
+    expect(
+      JSON.parse(
+        localStorage.getItem('devlovers_qa_viewed_questions') ?? '[]'
+      )
+    ).toContain('css:What is CSS?');
   });
 
   it('renders questions and answer blocks', () => {
@@ -130,10 +196,167 @@ describe('AccordionList', () => {
       },
     ];
 
-    render(<AccordionList items={items} />);
+    render(<AccordionList items={items} totalItems={1} />);
 
     expect(screen.getByText('What is CSS?')).toBeTruthy();
     expect(screen.getByText('CSS styles pages.')).toBeTruthy();
+    expect(screen.getByText('progressLabel:')).toBeTruthy();
+    expect(screen.getByText('0/1')).toBeTruthy();
+  });
+
+  it('marks an accordion as viewed after opening it', () => {
+    const items: QuestionEntry[] = [
+      {
+        id: 'q1',
+        question: 'What is CSS?',
+        category: 'css',
+        answerBlocks: [
+          {
+            type: 'paragraph',
+            children: [{ text: 'CSS styles pages.' }],
+          },
+        ],
+      },
+    ];
+
+    render(<AccordionList items={items} totalItems={1} />);
+
+    expect(
+      screen.queryByRole('button', { name: 'Add bookmark' })
+    ).toBeNull();
+
+    fireEvent.click(screen.getByText('What is CSS?'));
+
+    expect(
+      screen.getByRole('button', { name: 'Add bookmark' })
+    ).toBeTruthy();
+    expect(
+      JSON.parse(
+        localStorage.getItem('devlovers_qa_viewed_questions') ?? '[]'
+      )
+    ).toContain('css:q1');
+    expect(screen.getByText('1/1')).toBeTruthy();
+  });
+
+  it('resets progress for visible accordion items', () => {
+    const items: QuestionEntry[] = [
+      {
+        id: 'q1',
+        question: 'What is CSS?',
+        category: 'css',
+        answerBlocks: [
+          {
+            type: 'paragraph',
+            children: [{ text: 'CSS styles pages.' }],
+          },
+        ],
+      },
+    ];
+
+    render(<AccordionList items={items} totalItems={1} />);
+
+    fireEvent.click(screen.getByText('What is CSS?'));
+    fireEvent.click(screen.getByText('resetProgress'));
+
+    expect(screen.getByText('0/1')).toBeTruthy();
+    expect(
+      JSON.parse(
+        localStorage.getItem('devlovers_qa_viewed_questions') ?? '[]'
+      )
+    ).not.toContain('css:q1');
+  });
+
+  it('toggles bookmark state for viewed accordion', () => {
+    const items: QuestionEntry[] = [
+      {
+        id: 'q1',
+        question: 'What is CSS?',
+        category: 'css',
+        answerBlocks: [
+          {
+            type: 'paragraph',
+            children: [{ text: 'CSS styles pages.' }],
+          },
+        ],
+      },
+    ];
+
+    render(<AccordionList items={items} totalItems={1} />);
+
+    fireEvent.click(screen.getByText('What is CSS?'));
+    fireEvent.click(screen.getByRole('button', { name: 'Add bookmark' }));
+
+    expect(
+      screen.getByRole('button', { name: 'Remove bookmark' })
+    ).toBeTruthy();
+    expect(
+      JSON.parse(
+        localStorage.getItem('devlovers_qa_bookmarked_questions') ?? '[]'
+      )
+    ).toContain('css:q1');
+  });
+
+  it('marks an accordion as viewed after opening it', () => {
+    const items: QuestionEntry[] = [
+      {
+        id: 'q1',
+        question: 'What is CSS?',
+        category: 'css',
+        answerBlocks: [
+          {
+            type: 'paragraph',
+            children: [{ text: 'CSS styles pages.' }],
+          },
+        ],
+      },
+    ];
+
+    render(<AccordionList items={items} />);
+
+    expect(
+      screen.queryByRole('button', { name: 'Add bookmark' })
+    ).toBeNull();
+
+    fireEvent.click(screen.getByText('What is CSS?'));
+
+    expect(
+      screen.getByRole('button', { name: 'Add bookmark' })
+    ).toBeTruthy();
+    expect(
+      JSON.parse(
+        localStorage.getItem('devlovers_qa_viewed_questions') ?? '[]'
+      )
+    ).toContain('q1');
+  });
+
+  it('toggles bookmark state for viewed accordion', () => {
+    const items: QuestionEntry[] = [
+      {
+        id: 'q1',
+        question: 'What is CSS?',
+        category: 'css',
+        answerBlocks: [
+          {
+            type: 'paragraph',
+            children: [{ text: 'CSS styles pages.' }],
+          },
+        ],
+      },
+    ];
+
+    render(<AccordionList items={items} />);
+
+    fireEvent.click(screen.getByText('What is CSS?'));
+    fireEvent.click(screen.getByRole('button', { name: 'Add bookmark' }));
+
+    expect(
+      screen.getByRole('button', { name: 'Remove bookmark' })
+    ).toBeTruthy();
+    expect(
+      JSON.parse(
+        localStorage.getItem('devlovers_qa_bookmarked_questions') ?? '[]'
+      )
+    ).toContain('q1');
   });
 
   it('opens AI helper from selection', () => {
@@ -151,7 +374,7 @@ describe('AccordionList', () => {
       },
     ];
 
-    render(<AccordionList items={items} />);
+    render(<AccordionList items={items} totalItems={1} />);
 
     fireEvent.click(screen.getByText('select-text'));
     fireEvent.click(screen.getByText('explain'));
@@ -176,7 +399,7 @@ describe('AccordionList', () => {
       },
     ];
 
-    render(<AccordionList items={items} />);
+    render(<AccordionList items={items} totalItems={1} />);
 
     fireEvent.click(screen.getByText('HTML'));
 
@@ -198,7 +421,7 @@ describe('AccordionList', () => {
       },
     ];
 
-    render(<AccordionList items={items} />);
+    render(<AccordionList items={items} totalItems={1} />);
 
     fireEvent.click(screen.getByText('select-text'));
     expect(screen.getByText('explain')).toBeTruthy();
@@ -222,7 +445,7 @@ describe('AccordionList', () => {
       },
     ];
 
-    render(<AccordionList items={items} />);
+    render(<AccordionList items={items} totalItems={1} />);
 
     fireEvent.click(screen.getByText('select-text'));
     fireEvent.click(screen.getByText('explain'));
@@ -294,7 +517,7 @@ describe('AccordionList', () => {
       },
     ];
 
-    render(<AccordionList items={items} />);
+    render(<AccordionList items={items} totalItems={1} />);
 
     expect(screen.getByText('Bold').tagName).toBe('STRONG');
     expect(screen.getByText('Italic').tagName).toBe('EM');
