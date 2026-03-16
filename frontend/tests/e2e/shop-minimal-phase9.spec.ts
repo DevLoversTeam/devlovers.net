@@ -220,12 +220,10 @@ test.describe('shop e2e minimal phase 9', () => {
       });
 
       const res = await request.post(
-        `/api/shop/orders/${orderId}/payment/init?statusToken=${encodeURIComponent(
-          token
-        )}`,
+        `/api/shop/orders/${orderId}/payment/init?statusToken=${encodeURIComponent(token)}`,
         {
           headers: {
-            origin: 'http://localhost:3000',
+            origin: 'http://127.0.0.1:3100',
             'content-type': 'application/json',
           },
           data: { provider: 'stripe' },

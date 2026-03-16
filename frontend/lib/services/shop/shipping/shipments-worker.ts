@@ -10,6 +10,10 @@ import {
 import { logInfo, logWarn } from '@/lib/logging';
 import { buildShippingEventDedupeKey } from '@/lib/services/shop/events/dedupe-key';
 import { writeShippingEvent } from '@/lib/services/shop/events/write-shipping-event';
+import {
+  evaluateOrderShippingEligibility,
+  orderShippingEligibilityWhereSql,
+} from '@/lib/services/shop/shipping/eligibility';
 import { sanitizeShippingErrorMessage } from '@/lib/services/shop/shipping/log-sanitizer';
 import { recordShippingMetric } from '@/lib/services/shop/shipping/metrics';
 import {
@@ -31,6 +35,9 @@ type OrderShippingDetailsRow = {
   order_id: string;
   currency: string;
   total_amount_minor: number;
+  payment_status: string | null;
+  status: string | null;
+  inventory_status: string | null;
   shipping_required: boolean | null;
   shipping_provider: string | null;
   shipping_method_code: string | null;
@@ -434,6 +441,11 @@ export async function claimQueuedShipmentsForProcessing(args: {
       from candidates c
       join orders o on o.id = c.order_id
       where s.id = c.id
+        and ${orderShippingEligibilityWhereSql({
+          paymentStatusColumn: sql`o.payment_status`,
+          orderStatusColumn: sql`o.status`,
+          inventoryStatusColumn: sql`o.inventory_status`,
+        })}
         and ${shippingStatusTransitionWhereSql({
           column: sql`o.shipping_status`,
           to: 'creating_label',
@@ -525,6 +537,9 @@ async function loadOrderShippingDetails(
       o.id as order_id,
       o.currency as currency,
       o.total_amount_minor as total_amount_minor,
+      o.payment_status as payment_status,
+      o.status as status,
+      o.inventory_status as inventory_status,
       o.shipping_required as shipping_required,
       o.shipping_provider as shipping_provider,
       o.shipping_method_code as shipping_method_code,
@@ -672,6 +687,15 @@ async function processClaimedShipment(args: {
   }
 
   try {
+    const eligibility = evaluateOrderShippingEligibility({
+      paymentStatus: details.payment_status,
+      orderStatus: details.status,
+      inventoryStatus: details.inventory_status,
+    });
+    if (!eligibility.ok) {
+      throw buildFailure('ORDER_NOT_SHIPPABLE', eligibility.message, false);
+    }
+
     if (details.shipping_required !== true) {
       throw buildFailure(
         'SHIPPING_NOT_REQUIRED',

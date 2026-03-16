@@ -326,6 +326,19 @@ export const orders = pgTable(
       sql`${table.shippingRequired} IS DISTINCT FROM TRUE OR ${table.shippingPayer} IS NOT NULL`
     ),
     check(
+      'orders_terminal_shipping_status_chk',
+      sql`
+        (
+          ${table.paymentStatus} NOT IN ('failed', 'refunded')
+          AND ${table.status} NOT IN ('CANCELED', 'INVENTORY_FAILED')
+        )
+        OR (
+          ${table.shippingStatus} IS NULL
+          OR ${table.shippingStatus} IN ('cancelled', 'delivered')
+        )
+      `
+    ),
+    check(
       'orders_intl_provider_restriction_chk',
       sql`${table.fulfillmentMode} <> 'intl' OR ${table.paymentProvider} in ('stripe', 'none')`
     ),

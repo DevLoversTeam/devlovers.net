@@ -29,6 +29,7 @@ export default function TabsSection() {
     localeKey,
     pageSize,
     pageSizeOptions,
+    totalItems,
     totalPages,
   } = useQaTabs();
   const animationKey = useMemo(
@@ -115,7 +116,11 @@ export default function TabsSection() {
               aria-busy={isLoading}
             >
               {items.length ? (
-                <AccordionList key={animationKey} items={items} />
+                <AccordionList
+                  key={animationKey}
+                  items={items}
+                  totalItems={totalItems}
+                />
               ) : (
                 <div className="py-20 text-center">
                   {emptyStateLines[0] && (

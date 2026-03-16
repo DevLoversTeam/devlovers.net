@@ -10,7 +10,10 @@ import { buildMonobankAttemptIdempotencyKey } from '@/lib/services/orders/attemp
 import { toDbMoney } from '@/lib/shop/money';
 
 vi.mock('@/lib/psp/monobank', () => ({
-  verifyWebhookSignatureWithRefresh: vi.fn(async () => true),
+  verifyWebhookSignatureWithRefreshDetailed: vi.fn(async () => ({
+    ok: true,
+    reason: 'verified' as const,
+  })),
 }));
 
 vi.mock('@/lib/logging', async () => {

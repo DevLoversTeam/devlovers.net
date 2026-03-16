@@ -73,6 +73,26 @@ function baseShippingSnapshot() {
 
 async function seedShipment(args?: {
   currency?: 'USD' | 'UAH';
+  paymentStatus?:
+    | 'pending'
+    | 'requires_payment'
+    | 'paid'
+    | 'failed'
+    | 'refunded'
+    | 'needs_review';
+  orderStatus?:
+    | 'CREATED'
+    | 'INVENTORY_RESERVED'
+    | 'INVENTORY_FAILED'
+    | 'PAID'
+    | 'CANCELED';
+  inventoryStatus?:
+    | 'none'
+    | 'reserving'
+    | 'reserved'
+    | 'release_pending'
+    | 'released'
+    | 'failed';
   attemptCount?: number;
   shipmentStatus?:
     | 'queued'
@@ -102,10 +122,10 @@ async function seedShipment(args?: {
     totalAmountMinor,
     totalAmount: toDbMoney(totalAmountMinor),
     currency,
-    paymentStatus: 'paid',
+    paymentStatus: args?.paymentStatus ?? 'paid',
     paymentProvider: 'stripe',
-    status: 'PAID',
-    inventoryStatus: 'reserved',
+    status: args?.orderStatus ?? 'PAID',
+    inventoryStatus: args?.inventoryStatus ?? 'reserved',
     idempotencyKey: `shipping-worker-${orderId}`,
     shippingRequired: true,
     shippingPayer: 'customer',
@@ -629,6 +649,104 @@ describe.sequential('shipping shipments worker phase 5', () => {
       await cleanupSeed(seed);
     }
   });
+
+  it.each([
+    {
+      title: 'payment is not paid',
+      paymentStatus: 'pending' as const,
+      orderStatus: 'PAID' as const,
+      inventoryStatus: 'reserved' as const,
+    },
+    {
+      title: 'payment is refunded',
+      paymentStatus: 'refunded' as const,
+      orderStatus: 'PAID' as const,
+      inventoryStatus: 'reserved' as const,
+    },
+    {
+      title: 'order status is canceled',
+      paymentStatus: 'paid' as const,
+      orderStatus: 'CANCELED' as const,
+      inventoryStatus: 'reserved' as const,
+    },
+    {
+      title: 'inventory is not committed',
+      paymentStatus: 'paid' as const,
+      orderStatus: 'PAID' as const,
+      inventoryStatus: 'released' as const,
+    },
+  ])(
+    'does not claim or process queued shipment when $title',
+    async ({ paymentStatus, orderStatus, inventoryStatus }) => {
+      const seed = await seedShipment({
+        orderShippingStatus: 'queued',
+      });
+
+      try {
+        await db
+          .update(orders)
+          .set({
+            paymentStatus,
+            status: orderStatus,
+            inventoryStatus,
+          } as any)
+          .where(eq(orders.id, seed.orderId));
+
+        vi.mocked(createInternetDocument).mockResolvedValue({
+          providerRef: 'np-provider-ref-should-not-run',
+          trackingNumber: '20450000888888',
+        });
+
+        const result = await runShippingShipmentsWorker({
+          runId: crypto.randomUUID(),
+          limit: 10,
+          leaseSeconds: 120,
+          maxAttempts: 5,
+          baseBackoffSeconds: 10,
+        });
+
+        expect(result).toMatchObject({
+          claimed: 0,
+          processed: 0,
+          succeeded: 0,
+          retried: 0,
+          needsAttention: 0,
+        });
+        expect(createInternetDocument).not.toHaveBeenCalled();
+
+        const [shipment] = await db
+          .select({
+            status: shippingShipments.status,
+            attemptCount: shippingShipments.attemptCount,
+            leaseOwner: shippingShipments.leaseOwner,
+          })
+          .from(shippingShipments)
+          .where(eq(shippingShipments.id, seed.shipmentId))
+          .limit(1);
+
+        expect(shipment?.status).toBe('needs_attention');
+        expect(shipment?.attemptCount).toBe(0);
+        expect(shipment?.leaseOwner).toBeNull();
+
+        const [order] = await db
+          .select({
+            shippingStatus: orders.shippingStatus,
+          })
+          .from(orders)
+          .where(eq(orders.id, seed.orderId))
+          .limit(1);
+
+        expect(order?.shippingStatus).toBe('cancelled');
+
+        const events = await readOrderShippingEvents(seed.orderId);
+        expect(events.some(event => event.eventName === 'creating_label')).toBe(
+          false
+        );
+      } finally {
+        await cleanupSeed(seed);
+      }
+    }
+  );
 
   it('classifies lease loss when shipment row is no longer owned by runId', async () => {
     const seed = await seedShipment({ orderShippingStatus: 'queued' });

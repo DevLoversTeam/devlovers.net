@@ -230,6 +230,11 @@ async function reconcileNoPaymentOrder(
     throw e;
   }
 }
+export async function findExistingCheckoutOrderByIdempotencyKey(
+  idempotencyKey: string
+): Promise<OrderSummaryWithMinor | null> {
+  return getOrderByIdempotencyKey(db, idempotencyKey);
+}
 
 async function getProductsForCheckout(
   productIds: string[],

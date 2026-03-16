@@ -83,6 +83,49 @@ function parseIsoDateOrNull(value: unknown): Date | null {
   return new Date(ms);
 }
 
+function readTrimmedString(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function extractInvoiceIdFromPspError(error: unknown): string | null {
+  if (!(error instanceof PspError)) return null;
+
+  const safeMeta = asRecord(error.safeMeta);
+  const directCandidates = [
+    safeMeta.invoiceId,
+    safeMeta.invoice_id,
+    safeMeta.providerPaymentIntentId,
+    safeMeta.provider_payment_intent_id,
+  ];
+
+  for (const candidate of directCandidates) {
+    const parsed = readTrimmedString(candidate);
+    if (parsed) return parsed;
+  }
+
+  const snippet = readTrimmedString(safeMeta.responseSnippet);
+  if (!snippet) return null;
+
+  try {
+    const parsed = asRecord(JSON.parse(snippet));
+    for (const candidate of [
+      parsed.invoiceId,
+      parsed.invoice_id,
+      parsed.providerPaymentIntentId,
+      parsed.provider_payment_intent_id,
+    ]) {
+      const normalized = readTrimmedString(candidate);
+      if (normalized) return normalized;
+    }
+  } catch {
+    // best-effort extraction only
+  }
+
+  return null;
+}
+
 function readReplayResult(
   attempt: PaymentAttemptRow,
   reused: boolean
@@ -357,12 +400,17 @@ async function persistAttemptUnknown(args: {
   attempt: PaymentAttemptRow;
   errorCode: string;
   errorMessage: string;
+  invoiceId: string | null;
 }): Promise<void> {
   const now = new Date();
+  const invoiceId =
+    readTrimmedString(args.attempt.providerPaymentIntentId) ??
+    readTrimmedString(args.invoiceId);
   const nextMetadata = mergeWalletMetadata(args.attempt.metadata, {
     requested: 'google_pay',
     submitOutcome: 'unknown',
     syncStatus: 'unknown',
+    ...(invoiceId ? { invoiceId } : {}),
     unknownReason: args.errorCode,
     lastSubmitAt: now.toISOString(),
   });
@@ -563,16 +611,18 @@ async function submitMonobankWalletPaymentImpl(
       errorCode === 'PSP_UPSTREAM' ||
       errorCode === 'PSP_UNKNOWN'
     ) {
+      const invoiceId = extractInvoiceIdFromPspError(error);
       await deps.persistAttemptUnknown({
         attempt,
         errorCode,
         errorMessage,
+        invoiceId,
       });
 
       return {
         attemptId: attempt.id,
         attemptNumber: attempt.attemptNumber,
-        invoiceId: null,
+        invoiceId,
         redirectUrl: null,
         outcome: 'unknown',
         syncStatus: 'unknown',

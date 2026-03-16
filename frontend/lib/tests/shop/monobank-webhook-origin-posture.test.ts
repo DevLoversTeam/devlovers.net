@@ -5,7 +5,10 @@ const enforceRateLimitMock = vi.fn(async () => ({
   ok: true,
   retryAfterSeconds: 0,
 }));
-const verifyWebhookSignatureWithRefreshMock = vi.fn(async () => true);
+const verifyWebhookSignatureWithRefreshDetailedMock = vi.fn(async () => ({
+  ok: true,
+  reason: 'verified' as const,
+}));
 const handleMonobankWebhookMock = vi.fn(async () => ({
   invoiceId: 'inv_test',
   appliedResult: 'applied',
@@ -33,7 +36,8 @@ vi.mock('@/lib/logging/monobank', async () => {
 });
 
 vi.mock('@/lib/psp/monobank', () => ({
-  verifyWebhookSignatureWithRefresh: verifyWebhookSignatureWithRefreshMock,
+  verifyWebhookSignatureWithRefreshDetailed:
+    verifyWebhookSignatureWithRefreshDetailedMock,
 }));
 
 vi.mock('@/lib/services/orders/monobank-webhook', () => ({
@@ -83,7 +87,9 @@ describe('monobank webhook origin posture', () => {
       surface: 'monobank_webhook',
     });
     expect(typeof json?.error?.message).toBe('string');
-    expect(verifyWebhookSignatureWithRefreshMock).not.toHaveBeenCalled();
+    expect(
+      verifyWebhookSignatureWithRefreshDetailedMock
+    ).not.toHaveBeenCalled();
     expect(handleMonobankWebhookMock).not.toHaveBeenCalled();
     expect(enforceRateLimitMock).not.toHaveBeenCalled();
     expect(failIfBodyRead).not.toHaveBeenCalled();

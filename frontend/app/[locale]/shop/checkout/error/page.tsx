@@ -44,6 +44,11 @@ function parseOrderId(searchParams?: SearchParams): string | null {
   return parsed.success ? parsed.data.id : null;
 }
 
+function parseStatusToken(searchParams?: SearchParams): string | null {
+  const raw = getStringParam(searchParams, 'statusToken').trim();
+  return raw.length > 0 ? raw : null;
+}
+
 const SHOP_HERO_CTA_SM = cn(
   SHOP_CTA_BASE,
   SHOP_CTA_INTERACTIVE,
@@ -76,6 +81,7 @@ export default async function CheckoutErrorPage({
       : (searchParams as SearchParams | undefined);
 
   const orderId = parseOrderId(resolvedSearchParams);
+  const statusToken = parseStatusToken(resolvedSearchParams);
 
   if (!orderId) {
     return (
@@ -278,7 +284,11 @@ export default async function CheckoutErrorPage({
 
           {isFailed && order.id ? (
             <Link
-              href={`/shop/checkout/payment/${order.id}`}
+              href={`/shop/checkout/payment/${order.id}${
+                statusToken
+                  ? `?statusToken=${encodeURIComponent(statusToken)}`
+                  : ''
+              }`}
               className={SHOP_HERO_CTA_SM}
             >
               <span

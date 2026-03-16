@@ -2,23 +2,35 @@ import crypto from 'node:crypto';
 
 import { eq } from 'drizzle-orm';
 import { NextRequest } from 'next/server';
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 
 import { db } from '@/db';
 import { orders } from '@/db/schema';
 import { toDbMoney } from '@/lib/shop/money';
+
+const authorizeOrderMutationAccessMock = vi.hoisted(() =>
+  vi.fn(async () => ({
+    authorized: true,
+    actorUserId: null,
+    code: 'OK',
+    status: 200,
+  }))
+);
 
 vi.mock('@/lib/auth', () => ({
   getCurrentUser: vi.fn().mockResolvedValue(null),
 }));
 
 vi.mock('@/lib/services/shop/order-access', () => ({
-  authorizeOrderMutationAccess: vi.fn(async () => ({
-    authorized: true,
-    actorUserId: null,
-    code: 'OK',
-    status: 200,
-  })),
+  authorizeOrderMutationAccess: authorizeOrderMutationAccessMock,
 }));
 
 let getRoute: typeof import('@/app/api/shop/orders/[id]/payment/monobank/google-pay/config/route').GET;
@@ -43,11 +55,19 @@ afterAll(() => {
     delete process.env.MONO_GOOGLE_PAY_GATEWAY_MERCHANT_ID;
   else process.env.MONO_GOOGLE_PAY_GATEWAY_MERCHANT_ID = prevGatewayMerchantId;
 
-  if (prevMerchantName === undefined) delete process.env.MONO_GOOGLE_PAY_MERCHANT_NAME;
+  if (prevMerchantName === undefined)
+    delete process.env.MONO_GOOGLE_PAY_MERCHANT_NAME;
   else process.env.MONO_GOOGLE_PAY_MERCHANT_NAME = prevMerchantName;
 });
 
 beforeEach(() => {
+  authorizeOrderMutationAccessMock.mockReset();
+  authorizeOrderMutationAccessMock.mockResolvedValue({
+    authorized: true,
+    actorUserId: null,
+    code: 'OK',
+    status: 200,
+  });
   process.env.SHOP_MONOBANK_GPAY_ENABLED = 'true';
   process.env.MONO_GOOGLE_PAY_GATEWAY_MERCHANT_ID = 'mono-gateway-mid';
   process.env.MONO_GOOGLE_PAY_MERCHANT_NAME = 'Devlovers Test Merchant';
@@ -56,10 +76,19 @@ beforeEach(() => {
 async function insertOrder(args: {
   id: string;
   paymentProvider?: 'monobank' | 'stripe';
-  paymentStatus?: 'pending' | 'requires_payment' | 'paid' | 'failed' | 'refunded';
+  paymentStatus?:
+    | 'pending'
+    | 'requires_payment'
+    | 'paid'
+    | 'failed'
+    | 'refunded';
   currency?: 'UAH' | 'USD';
   totalAmountMinor?: number;
-  paymentMethod?: 'monobank_google_pay' | 'monobank_invoice' | 'stripe_card' | null;
+  paymentMethod?:
+    | 'monobank_google_pay'
+    | 'monobank_invoice'
+    | 'stripe_card'
+    | null;
 }) {
   await db.insert(orders).values({
     id: args.id,
@@ -119,15 +148,16 @@ describe.sequential('monobank google pay config route', () => {
 
       expect(json.paymentDataRequest.transactionInfo.totalPrice).toBe('123.45');
       expect(json.paymentDataRequest.transactionInfo.currencyCode).toBe('UAH');
-      expect(json.paymentDataRequest.allowedPaymentMethods[0].tokenizationSpecification).toEqual(
-        {
-          type: 'PAYMENT_GATEWAY',
-          parameters: {
-            gateway: 'monobank',
-            gatewayMerchantId: 'mono-gateway-mid',
-          },
-        }
-      );
+      expect(
+        json.paymentDataRequest.allowedPaymentMethods[0]
+          .tokenizationSpecification
+      ).toEqual({
+        type: 'PAYMENT_GATEWAY',
+        parameters: {
+          gateway: 'monobank',
+          gatewayMerchantId: 'mono-gateway-mid',
+        },
+      });
       expect(json.paymentDataRequest.merchantInfo.merchantName).toBe(
         'Devlovers Test Merchant'
       );
@@ -176,13 +206,17 @@ describe.sequential('monobank google pay config route', () => {
         params: Promise.resolve({ id: providerOrderId }),
       });
       expect(providerRes.status).toBe(409);
-      expect((await providerRes.json()).code).toBe('PAYMENT_PROVIDER_NOT_ALLOWED');
+      expect((await providerRes.json()).code).toBe(
+        'PAYMENT_PROVIDER_NOT_ALLOWED'
+      );
 
       const currencyRes = await getRoute(makeRequest(currencyOrderId), {
         params: Promise.resolve({ id: currencyOrderId }),
       });
       expect(currencyRes.status).toBe(409);
-      expect((await currencyRes.json()).code).toBe('ORDER_CURRENCY_NOT_SUPPORTED');
+      expect((await currencyRes.json()).code).toBe(
+        'ORDER_CURRENCY_NOT_SUPPORTED'
+      );
 
       const methodRes = await getRoute(makeRequest(methodOrderId), {
         params: Promise.resolve({ id: methodOrderId }),
@@ -194,6 +228,46 @@ describe.sequential('monobank google pay config route', () => {
       await cleanupOrder(providerOrderId);
       await cleanupOrder(currencyOrderId);
       await cleanupOrder(methodOrderId);
+    }
+  });
+
+  it('requires order_payment_init scope and rejects insufficient scope', async () => {
+    const orderId = crypto.randomUUID();
+    await insertOrder({ id: orderId });
+
+    try {
+      authorizeOrderMutationAccessMock.mockResolvedValueOnce({
+        authorized: false,
+        actorUserId: null,
+        code: 'STATUS_TOKEN_SCOPE_FORBIDDEN',
+        status: 403,
+      });
+
+      const denied = await getRoute(makeRequest(orderId), {
+        params: Promise.resolve({ id: orderId }),
+      });
+
+      expect(denied.status).toBe(403);
+      expect((await denied.json()).code).toBe('STATUS_TOKEN_SCOPE_FORBIDDEN');
+      expect(authorizeOrderMutationAccessMock).toHaveBeenCalledWith({
+        orderId,
+        statusToken: 'tok_test',
+        requiredScope: 'order_payment_init',
+      });
+
+      authorizeOrderMutationAccessMock.mockResolvedValueOnce({
+        authorized: true,
+        actorUserId: null,
+        code: 'OK',
+        status: 200,
+      });
+
+      const allowed = await getRoute(makeRequest(orderId), {
+        params: Promise.resolve({ id: orderId }),
+      });
+      expect(allowed.status).toBe(200);
+    } finally {
+      await cleanupOrder(orderId);
     }
   });
 });

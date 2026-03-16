@@ -1,42 +1,16 @@
 import type { Metadata } from 'next';
 
-import { isMonobankEnabled } from '@/lib/env/monobank';
-
+import {
+  resolveMonobankCheckoutEnabled,
+  resolveMonobankGooglePayEnabled,
+  resolveStripeCheckoutEnabled,
+} from './capabilities';
 import CartPageClient from './CartPageClient';
 
 export const metadata: Metadata = {
   title: 'Cart | DevLovers',
   description: 'Review items in your cart and proceed to checkout.',
 };
-
-function isFlagEnabled(value: string | undefined): boolean {
-  return (value ?? '').trim() === 'true';
-}
-
-function resolveStripeCheckoutEnabled(): boolean {
-  const paymentsEnabled = isFlagEnabled(process.env.PAYMENTS_ENABLED);
-  const stripeFlag = (process.env.STRIPE_PAYMENTS_ENABLED ?? '').trim();
-
-  return (
-    paymentsEnabled && (stripeFlag.length > 0 ? stripeFlag === 'true' : true)
-  );
-}
-
-function resolveMonobankCheckoutEnabled(): boolean {
-  const paymentsEnabled = isFlagEnabled(process.env.PAYMENTS_ENABLED);
-  if (!paymentsEnabled) return false;
-
-  try {
-    return isMonobankEnabled();
-  } catch {
-    return false;
-  }
-}
-
-function resolveMonobankGooglePayEnabled(): boolean {
-  const raw = (process.env.SHOP_MONOBANK_GPAY_ENABLED ?? '').trim().toLowerCase();
-  return raw === 'true' || raw === '1' || raw === 'yes' || raw === 'on';
-}
 
 export default function CartPage() {
   return (

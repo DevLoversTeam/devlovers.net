@@ -1,6 +1,6 @@
 'use client';
 
-import { Loader2, Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react';
+import { Check, Loader2, Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -18,56 +18,29 @@ import { formatMoney } from '@/lib/shop/currency';
 import { generateIdempotencyKey } from '@/lib/shop/idempotency';
 import { localeToCountry } from '@/lib/shop/locale';
 import {
-  SHOP_CHIP_BORDER_HOVER,
-  SHOP_CHIP_INTERACTIVE,
-  SHOP_CHIP_SHADOW_HOVER,
-  SHOP_CTA_BASE,
+  SHOP_CART_CARD,
+  SHOP_CART_FIELD,
+  SHOP_CART_HERO_CTA,
+  SHOP_CART_METHOD_CARD_DESCRIPTION,
+  SHOP_CART_METHOD_CARD_TITLE,
+  SHOP_CART_ORDERS_COUNT_BADGE,
+  SHOP_CART_ORDERS_LINK,
+  SHOP_CART_SECTION_HEADER,
+  SHOP_CART_SELECTABLE_CARD,
+  SHOP_CART_SELECTABLE_CARD_CHECK,
+  SHOP_CART_SELECTABLE_CARD_COMPACT,
+  SHOP_CART_SELECTABLE_CARD_IDLE,
+  SHOP_CART_SELECTABLE_CARD_SELECTED,
+  SHOP_CART_SELECTABLE_CARD_TALL,
   SHOP_CTA_INSET,
-  SHOP_CTA_INTERACTIVE,
   SHOP_CTA_WAVE,
   SHOP_DISABLED,
   SHOP_FOCUS,
   SHOP_LINK_BASE,
-  SHOP_LINK_MD,
   SHOP_LINK_XS,
-  SHOP_STEPPER_BUTTON_BASE,
   shopCtaGradient,
 } from '@/lib/shop/ui-classes';
 import { cn } from '@/lib/utils';
-
-const SHOP_PRODUCT_LINK = cn(
-  'block truncate',
-  SHOP_LINK_BASE,
-  SHOP_LINK_MD,
-  SHOP_FOCUS
-);
-
-const SHOP_STEPPER_BTN = cn(
-  SHOP_STEPPER_BUTTON_BASE,
-  'h-8 w-8',
-  SHOP_CHIP_INTERACTIVE,
-  SHOP_CHIP_SHADOW_HOVER,
-  SHOP_CHIP_BORDER_HOVER,
-  SHOP_FOCUS,
-  SHOP_DISABLED
-);
-
-const SHOP_HERO_CTA = cn(
-  SHOP_CTA_BASE,
-  SHOP_CTA_INTERACTIVE,
-  SHOP_FOCUS,
-  SHOP_DISABLED,
-  'w-full justify-center gap-2 px-6 py-3 text-sm text-white',
-  'shadow-[var(--shop-hero-btn-shadow)] hover:shadow-[var(--shop-hero-btn-shadow-hover)]'
-);
-
-const ORDERS_LINK = cn(SHOP_LINK_BASE, SHOP_LINK_MD, SHOP_FOCUS);
-
-const ORDERS_COUNT_BADGE = cn(
-  'border-border bg-muted/40 text-foreground inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold tabular-nums'
-);
-
-const ORDERS_CARD = cn('border-border rounded-md border p-4');
 
 type Props = {
   stripeEnabled: boolean;
@@ -80,6 +53,29 @@ type CheckoutPaymentMethod =
   | 'stripe_card'
   | 'monobank_invoice'
   | 'monobank_google_pay';
+
+type OrdersSummaryState = {
+  count: number;
+  latestOrderId: string | null;
+};
+
+type ShippingMethod = {
+  provider: 'nova_poshta';
+  methodCode: CheckoutDeliveryMethodCode;
+  title: string;
+};
+
+type ShippingCity = {
+  ref: string;
+  nameUa: string;
+};
+
+type ShippingWarehouse = {
+  ref: string;
+  name: string;
+  address: string | null;
+  isPostMachine: boolean;
+};
 
 function resolveInitialProvider(args: {
   stripeEnabled: boolean;
@@ -106,30 +102,32 @@ function resolveDefaultMethodForProvider(args: {
   return null;
 }
 
-type OrdersSummaryState = {
-  count: number;
-  latestOrderId: string | null;
-};
-
-type ShippingMethod = {
-  provider: 'nova_poshta';
-  methodCode: CheckoutDeliveryMethodCode;
-  title: string;
-};
-
-type ShippingCity = {
-  ref: string;
-  nameUa: string;
-};
-
-type ShippingWarehouse = {
-  ref: string;
-  name: string;
-  address: string | null;
-};
-
 function normalizeLookupValue(value: string): string {
   return value.trim().toLocaleLowerCase();
+}
+
+function normalizeExternalRecoveryUrl(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+
+  const trimmed = value.trim();
+
+  if (trimmed.length === 0) return null;
+
+  if (/[\u0000-\u001F\u007F]/.test(trimmed)) {
+    return null;
+  }
+
+  try {
+    const url = new URL(trimmed);
+
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      return null;
+    }
+
+    return url.toString();
+  } catch {
+    return null;
+  }
 }
 
 function normalizeShippingCity(raw: unknown): ShippingCity | null {
@@ -163,7 +161,31 @@ function normalizeShippingCity(raw: unknown): ShippingCity | null {
     nameUa,
   };
 }
+function normalizeShippingWarehouse(raw: unknown): ShippingWarehouse | null {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    return null;
+  }
 
+  const item = raw as Record<string, unknown>;
+
+  const ref = typeof item.ref === 'string' ? item.ref.trim() : '';
+  const name = typeof item.name === 'string' ? item.name.trim() : '';
+  const address =
+    typeof item.address === 'string' ? item.address.trim() || null : null;
+  const isPostMachine =
+    typeof item.isPostMachine === 'boolean' ? item.isPostMachine : null;
+
+  if (!ref || !name || isPostMachine === null) {
+    return null;
+  }
+
+  return {
+    ref,
+    name,
+    address,
+    isPostMachine,
+  };
+}
 function parseShippingCitiesResponse(data: unknown): {
   available: boolean | null;
   items: ShippingCity[];
@@ -195,12 +217,143 @@ function parseShippingCitiesResponse(data: unknown): {
   };
 }
 
+const VALID_DELIVERY_METHOD_CODES = new Set<CheckoutDeliveryMethodCode>([
+  'NP_WAREHOUSE',
+  'NP_LOCKER',
+  'NP_COURIER',
+]);
+
+function isValidDeliveryMethodCode(
+  value: unknown
+): value is CheckoutDeliveryMethodCode {
+  return (
+    typeof value === 'string' &&
+    VALID_DELIVERY_METHOD_CODES.has(value as CheckoutDeliveryMethodCode)
+  );
+}
+
 function isWarehouseMethod(
   methodCode: CheckoutDeliveryMethodCode | null
 ): boolean {
   return methodCode === 'NP_WAREHOUSE' || methodCode === 'NP_LOCKER';
 }
+function resolveShippingMethodCardCopy(args: {
+  methodCode: CheckoutDeliveryMethodCode;
+  fallbackTitle: string;
+  safeT: (key: string, fallback: string) => string;
+}): { title: string; description: string } {
+  const { methodCode, fallbackTitle, safeT } = args;
 
+  switch (methodCode) {
+    case 'NP_WAREHOUSE':
+      return {
+        title: safeT('delivery.methodCards.warehouse.title', fallbackTitle),
+        description: safeT(
+          'delivery.methodCards.warehouse.description',
+          'Pick up at a Nova Poshta branch'
+        ),
+      };
+
+    case 'NP_LOCKER':
+      return {
+        title: safeT('delivery.methodCards.locker.title', fallbackTitle),
+        description: safeT(
+          'delivery.methodCards.locker.description',
+          'Pick up from a Nova Poshta parcel locker'
+        ),
+      };
+
+    case 'NP_COURIER':
+      return {
+        title: safeT('delivery.methodCards.courier.title', fallbackTitle),
+        description: safeT(
+          'delivery.methodCards.courier.description',
+          'Nova Poshta door-to-door delivery'
+        ),
+      };
+
+    default:
+      return {
+        title: fallbackTitle,
+        description: '',
+      };
+  }
+}
+
+function StepIndicator({
+  step,
+  label,
+  completed,
+  active,
+}: {
+  step: number;
+  label: string;
+  completed: boolean;
+  active: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <div
+        className={cn(
+          'flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition-colors duration-200',
+          completed
+            ? 'bg-foreground text-background'
+            : active
+              ? 'border-foreground bg-background text-foreground border-2'
+              : 'border-border bg-muted text-muted-foreground border'
+        )}
+      >
+        {completed ? <Check className="h-3.5 w-3.5" /> : step}
+      </div>
+
+      <span
+        className={cn(
+          'text-sm font-semibold transition-colors duration-200',
+          active || completed ? 'text-foreground' : 'text-muted-foreground'
+        )}
+      >
+        {label}
+      </span>
+    </div>
+  );
+}
+
+function SelectableCard({
+  selected,
+  disabled = false,
+  children,
+  size = 'tall',
+}: {
+  selected: boolean;
+  disabled?: boolean;
+  children: React.ReactNode;
+  size?: 'tall' | 'compact';
+}) {
+  return (
+    <label
+      aria-disabled={disabled || undefined}
+      className={cn(
+        SHOP_CART_SELECTABLE_CARD,
+        'focus-within:ring-foreground focus-within:ring-2 focus-within:ring-offset-2 focus-within:outline-none',
+        size === 'compact'
+          ? SHOP_CART_SELECTABLE_CARD_COMPACT
+          : SHOP_CART_SELECTABLE_CARD_TALL,
+        selected
+          ? SHOP_CART_SELECTABLE_CARD_SELECTED
+          : SHOP_CART_SELECTABLE_CARD_IDLE,
+        disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
+      )}
+    >
+      {children}
+
+      {selected ? (
+        <span className={SHOP_CART_SELECTABLE_CARD_CHECK}>
+          <Check className="text-background h-3 w-3" aria-hidden="true" />
+        </span>
+      ) : null}
+    </label>
+  );
+}
 export default function CartPage({
   stripeEnabled,
   monobankEnabled,
@@ -215,6 +368,12 @@ export default function CartPage({
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
+  const [createdOrderStatusToken, setCreatedOrderStatusToken] = useState<
+    string | null
+  >(null);
+  const [paymentRecoveryUrl, setPaymentRecoveryUrl] = useState<string | null>(
+    null
+  );
 
   const [ordersSummary, setOrdersSummary] = useState<OrdersSummaryState | null>(
     null
@@ -226,8 +385,10 @@ export default function CartPage({
     monobankEnabled,
     currency: cart?.summary?.currency,
   });
+
   const [selectedProvider, setSelectedProvider] =
     useState<CheckoutProvider>(initialProvider);
+
   const [selectedPaymentMethod, setSelectedPaymentMethod] =
     useState<CheckoutPaymentMethod | null>(() =>
       resolveDefaultMethodForProvider({
@@ -235,6 +396,7 @@ export default function CartPage({
         currency: cart?.summary?.currency,
       })
     );
+
   const [isClientReady, setIsClientReady] = useState(false);
   const [shippingMethods, setShippingMethods] = useState<ShippingMethod[]>([]);
   const [shippingMethodsLoading, setShippingMethodsLoading] = useState(true);
@@ -285,13 +447,16 @@ export default function CartPage({
   const canUseMonobankGooglePay = canUseMonobank && monobankGooglePayEnabled;
   const hasSelectableProvider = canUseStripe || canUseMonobank;
   const country = localeToCountry(locale);
+
   const shippingUnavailableHardBlock =
     shippingReasonCode === 'SHOP_SHIPPING_DISABLED' ||
     shippingReasonCode === 'NP_DISABLED' ||
     shippingReasonCode === 'COUNTRY_NOT_SUPPORTED' ||
     shippingReasonCode === 'CURRENCY_NOT_SUPPORTED' ||
     shippingReasonCode === 'INTERNAL_ERROR';
+
   const isWarehouseSelectionMethod = isWarehouseMethod(selectedShippingMethod);
+
   const safeT = (key: string, fallback: string) => {
     try {
       return t(key as any);
@@ -341,6 +506,7 @@ export default function CartPage({
     if (key) return safeT(key, code ?? 'SHIPPING_INVALID');
     return safeT('delivery.validation.invalid', code ?? 'SHIPPING_INVALID');
   };
+
   const clearCheckoutUiErrors = () => {
     setDeliveryUiError(null);
     setCheckoutError(null);
@@ -468,16 +634,19 @@ export default function CartPage({
         }
 
         const methods: ShippingMethod[] = [];
+
         for (const item of methodsRaw) {
           if (!item || typeof item !== 'object' || Array.isArray(item)) {
             hardBlock();
             return;
           }
+
           const m = item as Record<string, unknown>;
 
           const providerOk = m.provider === 'nova_poshta';
-          const methodCodeOk =
-            typeof m.methodCode === 'string' && m.methodCode.trim().length > 0;
+          const methodCode =
+            typeof m.methodCode === 'string' ? m.methodCode.trim() : '';
+          const methodCodeOk = isValidDeliveryMethodCode(methodCode);
           const titleOk =
             typeof m.title === 'string' && m.title.trim().length > 0;
 
@@ -488,7 +657,7 @@ export default function CartPage({
 
           methods.push({
             provider: 'nova_poshta',
-            methodCode: m.methodCode as CheckoutDeliveryMethodCode,
+            methodCode,
             title: String(m.title),
           });
         }
@@ -553,6 +722,7 @@ export default function CartPage({
     }
 
     const query = cityQuery.trim();
+
     if (query.length < 2) {
       setCityOptions([]);
       setCityLookupFailed(false);
@@ -640,8 +810,10 @@ export default function CartPage({
 
     let cancelled = false;
     const controller = new AbortController();
+
     const timeoutId = setTimeout(async () => {
       setWarehousesLoading(true);
+
       try {
         const qs = new URLSearchParams({
           cityRef: selectedCityRef,
@@ -673,10 +845,27 @@ export default function CartPage({
         }
 
         if (!cancelled) {
-          const next = Array.isArray(data.items)
-            ? (data.items as ShippingWarehouse[])
+          const itemsRaw: unknown[] = Array.isArray(data.items)
+            ? data.items
             : [];
-          setWarehouseOptions(next);
+
+          const next: ShippingWarehouse[] = itemsRaw
+            .map((item: unknown) => normalizeShippingWarehouse(item))
+            .filter(
+              (item: ShippingWarehouse | null): item is ShippingWarehouse =>
+                item !== null
+            );
+
+          const filtered: ShippingWarehouse[] =
+            selectedShippingMethod === 'NP_LOCKER'
+              ? next.filter(
+                  (warehouse: ShippingWarehouse) => warehouse.isPostMachine
+                )
+              : next.filter(
+                  (warehouse: ShippingWarehouse) => !warehouse.isPostMachine
+                );
+
+          setWarehouseOptions(filtered);
         }
       } catch {
         if (!cancelled) {
@@ -700,6 +889,7 @@ export default function CartPage({
     isWarehouseSelectionMethod,
     locale,
     selectedCityRef,
+    selectedShippingMethod,
     shippingAvailable,
     warehouseQuery,
   ]);
@@ -838,7 +1028,7 @@ export default function CartPage({
           setOrdersSummary({ count, latestOrderId });
         }
       } catch {
-        // ignore (timeout/network) — we just don't show summary
+        // ignore
       } finally {
         clearTimeout(timeoutId);
         if (!cancelled) {
@@ -858,6 +1048,7 @@ export default function CartPage({
   const translateColor = (color: string | null | undefined): string | null => {
     if (!color) return null;
     const colorSlug = color.toLowerCase();
+
     try {
       return tColors(colorSlug);
     } catch {
@@ -870,10 +1061,12 @@ export default function CartPage({
       setCheckoutError(t('checkout.paymentMethod.noAvailable'));
       return;
     }
+
     if (selectedProvider === 'stripe' && !canUseStripe) {
       setCheckoutError(t('checkout.paymentMethod.noAvailable'));
       return;
     }
+
     if (selectedProvider === 'monobank' && !canUseMonobank) {
       setCheckoutError(
         monobankEnabled
@@ -882,6 +1075,7 @@ export default function CartPage({
       );
       return;
     }
+
     if (
       selectedProvider === 'monobank' &&
       selectedPaymentMethod === 'monobank_google_pay' &&
@@ -892,6 +1086,7 @@ export default function CartPage({
       );
       return;
     }
+
     if (shippingMethodsLoading) {
       setCheckoutError(safeT('delivery.methodsLoading', 'METHODS_LOADING'));
       return;
@@ -908,6 +1103,8 @@ export default function CartPage({
     setCheckoutError(null);
     setDeliveryUiError(null);
     setCreatedOrderId(null);
+    setCreatedOrderStatusToken(null);
+    setPaymentRecoveryUrl(null);
     setIsCheckingOut(true);
 
     try {
@@ -938,10 +1135,12 @@ export default function CartPage({
       const idempotencyKey = generateIdempotencyKey();
       const checkoutPaymentMethod =
         selectedProvider === 'stripe' ? 'stripe_card' : selectedPaymentMethod;
+
       if (!checkoutPaymentMethod) {
         setCheckoutError(t('checkout.paymentMethod.noAvailable'));
         return;
       }
+
       const response = await fetch('/api/shop/checkout', {
         method: 'POST',
         headers: {
@@ -992,10 +1191,7 @@ export default function CartPage({
         data.clientSecret.trim().length > 0
           ? data.clientSecret
           : null;
-      const monobankPageUrl: string | null =
-        typeof data.pageUrl === 'string' && data.pageUrl.trim().length > 0
-          ? data.pageUrl
-          : null;
+      const monobankPageUrl = normalizeExternalRecoveryUrl(data.pageUrl);
       const statusToken: string | null =
         typeof data.statusToken === 'string' &&
         data.statusToken.trim().length > 0
@@ -1004,28 +1200,47 @@ export default function CartPage({
 
       const orderId = String(data.orderId);
       setCreatedOrderId(orderId);
+      setCreatedOrderStatusToken(statusToken);
 
-      if (paymentProvider === 'stripe' && clientSecret) {
-        router.push(
-          `${shopBase}/checkout/payment/${encodeURIComponent(
-            orderId
-          )}?clientSecret=${encodeURIComponent(clientSecret)}&clearCart=1`
-        );
+      const statusTokenQuery = statusToken
+        ? `&statusToken=${encodeURIComponent(statusToken)}`
+        : '';
+
+      if (selectedProvider === 'stripe') {
+        if (paymentProvider !== 'stripe' || !clientSecret) {
+          setCheckoutError(t('checkout.errors.unexpectedResponse'));
+          return;
+        }
+
+        const stripeRecoveryUrl = `${shopBase}/checkout/payment/${encodeURIComponent(
+          orderId
+        )}?clientSecret=${encodeURIComponent(clientSecret)}${statusTokenQuery}`;
+
+        setPaymentRecoveryUrl(stripeRecoveryUrl);
+
+        router.push(`${stripeRecoveryUrl}&clearCart=1`);
         return;
       }
 
-      if (paymentProvider === 'monobank') {
+      if (selectedProvider === 'monobank') {
+        if (paymentProvider !== 'monobank') {
+          setCheckoutError(t('checkout.errors.unexpectedResponse'));
+          return;
+        }
+
         if (checkoutPaymentMethod === 'monobank_google_pay') {
           if (!statusToken) {
             setCheckoutError(t('checkout.errors.unexpectedResponse'));
             return;
           }
 
-          router.push(
-            `${shopBase}/checkout/payment/monobank/${encodeURIComponent(
-              orderId
-            )}?statusToken=${encodeURIComponent(statusToken)}&clearCart=1`
-          );
+          const monobankGooglePayRecoveryUrl = `${shopBase}/checkout/payment/monobank/${encodeURIComponent(
+            orderId
+          )}?statusToken=${encodeURIComponent(statusToken)}`;
+
+          setPaymentRecoveryUrl(monobankGooglePayRecoveryUrl);
+
+          router.push(`${monobankGooglePayRecoveryUrl}&clearCart=1`);
           return;
         }
 
@@ -1034,20 +1249,42 @@ export default function CartPage({
           return;
         }
 
+        setPaymentRecoveryUrl(monobankPageUrl);
         window.location.assign(monobankPageUrl);
         return;
       }
 
-      const paymentsDisabledFlag =
-        paymentProvider !== 'stripe' || !clientSecret
-          ? '&paymentsDisabled=true'
-          : '';
+      if (process.env.NODE_ENV !== 'production') {
+        const g = globalThis as unknown as {
+          __DEVLOVERS_SHOP_DEBUG_LOGS__?: Array<{
+            level: 'warn';
+            message: string;
+            meta: Record<string, unknown>;
+            ts: number;
+          }>;
+        };
 
-      router.push(
-        `${shopBase}/checkout/success?orderId=${encodeURIComponent(
-          orderId
-        )}&clearCart=1${paymentsDisabledFlag}`
-      );
+        if (!g.__DEVLOVERS_SHOP_DEBUG_LOGS__) {
+          g.__DEVLOVERS_SHOP_DEBUG_LOGS__ = [];
+        }
+
+        g.__DEVLOVERS_SHOP_DEBUG_LOGS__.push({
+          level: 'warn',
+          message: '[shop.cart] blocked unexpected checkout provider fallback',
+          meta: {
+            selectedProvider,
+            paymentProvider,
+            orderId,
+            checkoutPaymentMethod,
+            hasClientSecret: !!clientSecret,
+            hasStatusToken: !!statusToken,
+          },
+          ts: Date.now(),
+        });
+      }
+
+      setCheckoutError(t('checkout.errors.unexpectedResponse'));
+      return;
     } catch {
       setCheckoutError(t('checkout.errors.startFailed'));
     } finally {
@@ -1057,6 +1294,7 @@ export default function CartPage({
 
   const shippingUnavailableText =
     resolveShippingUnavailableText(shippingReasonCode);
+
   const hasValidPaymentSelection =
     selectedProvider === 'stripe'
       ? canUseStripe && selectedPaymentMethod === 'stripe_card'
@@ -1064,6 +1302,7 @@ export default function CartPage({
         (selectedPaymentMethod === 'monobank_invoice' ||
           (selectedPaymentMethod === 'monobank_google_pay' &&
             canUseMonobankGooglePay));
+
   const canPlaceOrder =
     hasSelectableProvider &&
     hasValidPaymentSelection &&
@@ -1071,10 +1310,29 @@ export default function CartPage({
     !shippingUnavailableHardBlock &&
     (!shippingAvailable || !!selectedShippingMethod);
 
+  const orderDetailsHref = createdOrderId
+    ? `/shop/orders/${encodeURIComponent(createdOrderId)}${
+        createdOrderStatusToken
+          ? `?statusToken=${encodeURIComponent(createdOrderStatusToken)}`
+          : ''
+      }`
+    : null;
+  const recoveryHref = paymentRecoveryUrl ?? orderDetailsHref;
+  const recoveryIsExternal =
+    !!recoveryHref && /^https?:\/\//i.test(recoveryHref);
+  const recoveryLinkLabel = paymentRecoveryUrl
+    ? t('checkout.notRedirected')
+    : t('checkout.goToOrder');
+
+  const itemsComplete = cart.items.length > 0;
+  const deliveryComplete =
+    !shippingAvailable || !!selectedShippingMethod || shippingMethodsLoading;
+  const paymentComplete = hasValidPaymentSelection;
+
   const ordersCard = ordersSummary ? (
-    <div className={ORDERS_CARD}>
-      <div className="flex items-center justify-between gap-3">
-        <Link href="/shop/orders" className={ORDERS_LINK}>
+    <div className={SHOP_CART_CARD}>
+      <div className="border-border bg-muted/30 flex items-center justify-between gap-3 border-b px-5 py-4">
+        <Link href="/shop/orders" className={SHOP_CART_ORDERS_LINK}>
           {tOrders('title')}
         </Link>
 
@@ -1084,28 +1342,29 @@ export default function CartPage({
             aria-hidden="true"
           />
         ) : (
-          <span className={ORDERS_COUNT_BADGE} aria-live="polite">
+          <span className={SHOP_CART_ORDERS_COUNT_BADGE} aria-live="polite">
             {ordersSummary.count}
           </span>
         )}
       </div>
 
-      <p className="text-muted-foreground mt-2 text-xs">
-        {tOrders('subtitle')}
-      </p>
+      <div className="px-5 py-4">
+        <p className="text-muted-foreground text-xs">{tOrders('subtitle')}</p>
 
-      {ordersSummary.latestOrderId ? (
-        <div className="mt-2">
-          <Link
-            href={`/shop/orders/${encodeURIComponent(ordersSummary.latestOrderId)}`}
-            className={cn(SHOP_LINK_BASE, SHOP_LINK_XS, SHOP_FOCUS)}
-          >
-            {t('checkout.goToOrder')}
-          </Link>
-        </div>
-      ) : null}
+        {ordersSummary.latestOrderId ? (
+          <div className="mt-3">
+            <Link
+              href={`/shop/orders/${encodeURIComponent(ordersSummary.latestOrderId)}`}
+              className={cn(SHOP_LINK_BASE, SHOP_LINK_XS, SHOP_FOCUS)}
+            >
+              {t('checkout.goToOrder')}
+            </Link>
+          </div>
+        ) : null}
+      </div>
     </div>
   ) : null;
+
   const loadingAnnouncement = (() => {
     try {
       return t('loading');
@@ -1116,7 +1375,7 @@ export default function CartPage({
 
   if (!isClientReady) {
     return (
-      <main className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
         <div className="flex flex-col items-center justify-center gap-4">
           <Loader size={160} className="opacity-90" />
           <span className="sr-only" role="status" aria-live="polite">
@@ -1129,19 +1388,23 @@ export default function CartPage({
 
   if (cart.items.length === 0) {
     return (
-      <main className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
         <div className="flex flex-col items-center justify-center text-center">
-          <ShoppingBag
-            className="text-muted-foreground h-16 w-16"
-            aria-hidden="true"
-          />
-          <h1 className="text-foreground mt-6 text-3xl font-bold tracking-tight">
+          <div className="bg-muted rounded-2xl p-8">
+            <ShoppingBag
+              className="text-muted-foreground h-10 w-10"
+              aria-hidden="true"
+            />
+          </div>
+
+          <h1 className="text-foreground mt-6 text-2xl font-bold tracking-tight sm:text-3xl">
             {t('empty')}
           </h1>
-          <p className="text-muted-foreground mt-4">{t('emptyDescription')}</p>
+
+          <p className="text-muted-foreground mt-3">{t('emptyDescription')}</p>
 
           <div className="mx-auto mt-8 w-full max-w-md">
-            <Link href="/shop/products" className={SHOP_HERO_CTA}>
+            <Link href="/shop/products" className={SHOP_CART_HERO_CTA}>
               <span
                 className="absolute inset-0"
                 style={shopCtaGradient(
@@ -1170,82 +1433,115 @@ export default function CartPage({
   }
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <h1 className="text-foreground text-3xl font-bold tracking-tight">
-        {t('title')}
-      </h1>
+    <main className="bg-background min-h-screen">
+      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mb-8">
+          <h1 className="text-foreground text-2xl font-bold tracking-tight sm:text-3xl">
+            {t('title')}
+          </h1>
 
-      <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_380px]">
-        <section aria-label={t('itemsLabel')}>
-          <ul className="space-y-4">
-            {cart.removed.length > 0 && (
-              <li
-                className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
-                role="status"
-                aria-live="polite"
-              >
-                {t('alerts.itemsRemoved')}
-              </li>
-            )}
+          <div className="mt-6 flex flex-wrap items-center gap-4 sm:gap-8">
+            <StepIndicator
+              step={1}
+              label={t('itemsLabel')}
+              completed={itemsComplete}
+              active
+            />
 
-            {cart.items.map(item => (
-              <li
-                key={`${item.productId}-${item.selectedSize ?? 'na'}-${item.selectedColor ?? 'na'}`}
-                className="border-border rounded-lg border p-4"
-              >
-                <article className="flex gap-4">
-                  <div className="bg-muted relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-md">
-                    <Image
-                      src={item.imageUrl || '/placeholder.svg'}
-                      alt={item.title}
-                      fill
-                      className="object-cover"
-                      sizes="96px"
-                    />
-                  </div>
+            <div className="bg-border hidden h-px w-8 sm:block" />
 
-                  <div className="flex flex-1 flex-col">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
+            <StepIndicator
+              step={2}
+              label={t('delivery.legend')}
+              completed={deliveryComplete}
+              active={itemsComplete}
+            />
+
+            <div className="bg-border hidden h-px w-8 sm:block" />
+
+            <StepIndicator
+              step={3}
+              label={t('checkout.paymentMethod.label')}
+              completed={paymentComplete}
+              active={deliveryComplete}
+            />
+          </div>
+        </div>
+
+        <div className="lg:grid lg:grid-cols-5 lg:gap-8">
+          <div className="space-y-6 lg:col-span-3">
+            <section className={SHOP_CART_CARD} aria-label={t('itemsLabel')}>
+              <div className="border-border flex items-center gap-3 border-b px-5 py-4">
+                <div className="bg-foreground text-background flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold">
+                  1
+                </div>
+
+                <h2
+                  className={cn(
+                    SHOP_CART_SECTION_HEADER,
+                    'text-sm tracking-wider uppercase'
+                  )}
+                >
+                  {t('itemsLabel')}
+                </h2>
+
+                <span className="text-muted-foreground ml-auto text-xs">
+                  {cart.items.length}
+                </span>
+              </div>
+
+              {cart.removed.length > 0 ? (
+                <div
+                  className="border-b border-amber-200 bg-amber-50 px-5 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-100"
+                  role="status"
+                  aria-live="polite"
+                >
+                  {t('alerts.itemsRemoved')}
+                </div>
+              ) : null}
+
+              <ul className="divide-border divide-y">
+                {cart.items.map(item => (
+                  <li
+                    key={`${item.productId}-${item.selectedSize ?? 'na'}-${item.selectedColor ?? 'na'}`}
+                    className="hover:bg-muted/30 px-5 py-4 transition-colors"
+                  >
+                    <article className="flex items-center gap-4">
+                      <div className="bg-muted relative h-16 w-16 shrink-0 overflow-hidden rounded-lg">
+                        <Image
+                          src={item.imageUrl || '/placeholder.svg'}
+                          alt={item.title}
+                          fill
+                          className="object-cover"
+                          sizes="64px"
+                        />
+                      </div>
+
+                      <div className="min-w-0 flex-1">
                         <Link
                           href={`/shop/products/${item.slug}`}
-                          className={SHOP_PRODUCT_LINK}
+                          className={cn(
+                            SHOP_LINK_BASE,
+                            SHOP_FOCUS,
+                            'block truncate text-sm font-semibold'
+                          )}
                         >
                           {item.title}
                         </Link>
 
-                        {(item.selectedSize || item.selectedColor) && (
-                          <p className="text-muted-foreground mt-1 text-xs">
+                        {item.selectedSize || item.selectedColor ? (
+                          <p className="text-muted-foreground mt-0.5 text-xs">
                             {[
                               translateColor(item.selectedColor),
                               item.selectedSize,
                             ]
                               .filter(Boolean)
-                              .join(' / ')}
+                              .join(' · ')}
                           </p>
-                        )}
+                        ) : null}
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() =>
-                          removeFromCart(
-                            item.productId,
-                            item.selectedSize,
-                            item.selectedColor
-                          )
-                        }
-                        className="text-muted-foreground hover:text-foreground transition-colors"
-                        aria-label={t('actions.removeItem', {
-                          title: item.title,
-                        })}
-                      >
-                        <Trash2 className="h-4 w-4" aria-hidden="true" />
-                      </button>
-                    </div>
-
-                    <div className="mt-auto flex items-center justify-between pt-2">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5">
                         <button
                           type="button"
                           onClick={() =>
@@ -1257,13 +1553,17 @@ export default function CartPage({
                             )
                           }
                           disabled={item.quantity <= 1}
-                          className={SHOP_STEPPER_BTN}
+                          className={cn(
+                            'border-border text-foreground hover:bg-muted flex h-7 w-7 items-center justify-center rounded-md border transition-colors',
+                            SHOP_FOCUS,
+                            SHOP_DISABLED
+                          )}
                           aria-label={t('actions.decreaseQty')}
                         >
                           <Minus className="h-3 w-3" aria-hidden="true" />
                         </button>
 
-                        <span className="w-8 text-center text-sm font-medium">
+                        <span className="w-6 text-center text-sm font-semibold tabular-nums">
                           {item.quantity}
                         </span>
 
@@ -1278,628 +1578,814 @@ export default function CartPage({
                             )
                           }
                           disabled={item.quantity >= item.stock}
-                          className={SHOP_STEPPER_BTN}
+                          className={cn(
+                            'border-border text-foreground hover:bg-muted flex h-7 w-7 items-center justify-center rounded-md border transition-colors',
+                            SHOP_FOCUS,
+                            SHOP_DISABLED
+                          )}
                           aria-label={t('actions.increaseQty')}
                         >
                           <Plus className="h-3 w-3" aria-hidden="true" />
                         </button>
-
-                        {item.quantity >= item.stock && (
-                          <span
-                            className="text-muted-foreground ml-3 text-xs"
-                            role="status"
-                          >
-                            {t('actions.maxStock', { stock: item.stock })}
-                          </span>
-                        )}
                       </div>
 
-                      <span className="text-foreground text-sm font-semibold">
+                      <div className="w-24 text-right">
+                        <span className="text-foreground text-sm font-semibold">
+                          {formatMoney(
+                            item.lineTotalMinor,
+                            item.currency,
+                            locale
+                          )}
+                        </span>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          removeFromCart(
+                            item.productId,
+                            item.selectedSize,
+                            item.selectedColor
+                          )
+                        }
+                        className={cn(
+                          'text-muted-foreground hover:text-foreground hover:bg-muted flex h-8 w-8 items-center justify-center rounded-md transition-colors',
+                          SHOP_FOCUS
+                        )}
+                        aria-label={t('actions.removeItem', {
+                          title: item.title,
+                        })}
+                      >
+                        <Trash2 className="h-4 w-4" aria-hidden="true" />
+                      </button>
+                    </article>
+
+                    {item.quantity >= item.stock ? (
+                      <p
+                        className="text-muted-foreground mt-2 text-xs"
+                        role="status"
+                      >
+                        {t('actions.maxStock', { stock: item.stock })}
+                      </p>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            </section>
+
+            <section className={SHOP_CART_CARD}>
+              <div className="border-border flex items-center gap-3 border-b px-5 py-4">
+                <div className="bg-foreground text-background flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold">
+                  2
+                </div>
+
+                <h2
+                  className={cn(
+                    SHOP_CART_SECTION_HEADER,
+                    'text-sm tracking-wider uppercase'
+                  )}
+                >
+                  {t('delivery.legend')}
+                </h2>
+              </div>
+
+              <div className="p-5">
+                {shippingMethodsLoading ? (
+                  <p className="text-muted-foreground text-xs">
+                    {t('delivery.methodsLoading')}
+                  </p>
+                ) : null}
+
+                {!shippingMethodsLoading && !shippingAvailable ? (
+                  <p className="text-muted-foreground text-xs" role="status">
+                    {shippingUnavailableText ??
+                      t('delivery.unavailableFallback')}
+                  </p>
+                ) : null}
+
+                {shippingAvailable ? (
+                  <div className="space-y-4">
+                    <div className="grid items-stretch gap-3 sm:grid-cols-3">
+                      {shippingMethods.map(method => {
+                        const cardCopy = resolveShippingMethodCardCopy({
+                          methodCode: method.methodCode,
+                          fallbackTitle: method.title,
+                          safeT,
+                        });
+
+                        return (
+                          <SelectableCard
+                            key={method.methodCode}
+                            size="tall"
+                            selected={
+                              selectedShippingMethod === method.methodCode
+                            }
+                          >
+                            <input
+                              type="radio"
+                              name="delivery-method"
+                              value={method.methodCode}
+                              checked={
+                                selectedShippingMethod === method.methodCode
+                              }
+                              onChange={() => {
+                                clearCheckoutUiErrors();
+                                setSelectedShippingMethod(method.methodCode);
+                              }}
+                              aria-label={cardCopy.title}
+                              className="sr-only"
+                            />
+
+                            <span className={SHOP_CART_METHOD_CARD_TITLE}>
+                              {cardCopy.title}
+                            </span>
+
+                            {cardCopy.description ? (
+                              <span
+                                className={SHOP_CART_METHOD_CARD_DESCRIPTION}
+                              >
+                                {cardCopy.description}
+                              </span>
+                            ) : null}
+                          </SelectableCard>
+                        );
+                      })}
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="space-y-1.5">
+                        <label
+                          className="text-muted-foreground text-xs font-medium"
+                          htmlFor="shipping-city-search"
+                        >
+                          {t('delivery.city.label')}
+                        </label>
+
+                        <input
+                          id="shipping-city-search"
+                          type="text"
+                          value={cityQuery}
+                          autoComplete="off"
+                          spellCheck={false}
+                          onChange={event => {
+                            clearCheckoutUiErrors();
+                            setCityLookupFailed(false);
+                            setCityQuery(event.target.value);
+                            setSelectedCityRef(null);
+                            setSelectedCityName(null);
+                          }}
+                          placeholder={t('delivery.city.placeholder')}
+                          className={SHOP_CART_FIELD}
+                        />
+
+                        {selectedCityRef ? (
+                          <p className="text-muted-foreground text-xs">
+                            {t('delivery.city.selected', {
+                              city: selectedCityName ?? selectedCityRef,
+                            })}
+                          </p>
+                        ) : null}
+
+                        {citiesLoading ? (
+                          <p className="text-muted-foreground text-xs">
+                            {t('delivery.city.searching')}
+                          </p>
+                        ) : null}
+
+                        {!citiesLoading && cityOptions.length > 0 ? (
+                          <div className="border-border bg-background max-h-40 overflow-auto rounded-xl border p-2 shadow-sm">
+                            <div className="space-y-1">
+                              {cityOptions.map(city => (
+                                <button
+                                  key={city.ref}
+                                  type="button"
+                                  onClick={() => {
+                                    clearCheckoutUiErrors();
+                                    setSelectedCityRef(city.ref);
+                                    setSelectedCityName(city.nameUa);
+                                    setCityQuery(city.nameUa);
+                                    setCityOptions([]);
+                                  }}
+                                  className="hover:bg-secondary block w-full rounded-lg px-2.5 py-2 text-left text-xs"
+                                >
+                                  {city.nameUa}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        ) : null}
+
+                        {!citiesLoading &&
+                        !cityLookupFailed &&
+                        cityQuery.trim().length >= 2 &&
+                        !selectedCityRef &&
+                        cityOptions.length === 0 ? (
+                          <p
+                            className="text-muted-foreground text-xs"
+                            role="status"
+                          >
+                            {t('delivery.city.noResults')}
+                          </p>
+                        ) : null}
+                      </div>
+
+                      {isWarehouseSelectionMethod ? (
+                        <div className="space-y-1.5">
+                          <label
+                            className="text-muted-foreground text-xs font-medium"
+                            htmlFor="shipping-warehouse-search"
+                          >
+                            {t('delivery.warehouse.label')}
+                          </label>
+
+                          <input
+                            id="shipping-warehouse-search"
+                            type="text"
+                            value={warehouseQuery}
+                            onChange={event => {
+                              clearCheckoutUiErrors();
+                              setWarehouseQuery(event.target.value);
+                              setSelectedWarehouseRef(null);
+                              setSelectedWarehouseName(null);
+                            }}
+                            placeholder={
+                              selectedCityRef
+                                ? t('delivery.warehouse.placeholder')
+                                : t('delivery.warehouse.selectCityFirst')
+                            }
+                            className={SHOP_CART_FIELD}
+                            disabled={!selectedCityRef}
+                          />
+
+                          {!selectedCityRef ? (
+                            <p
+                              className="text-muted-foreground text-xs"
+                              role="status"
+                            >
+                              {t('delivery.warehouse.cityRequired')}
+                            </p>
+                          ) : null}
+
+                          {selectedWarehouseRef ? (
+                            <p className="text-muted-foreground text-xs">
+                              {t('delivery.warehouse.selected', {
+                                warehouse:
+                                  selectedWarehouseName ?? selectedWarehouseRef,
+                              })}
+                            </p>
+                          ) : null}
+
+                          {warehousesLoading ? (
+                            <p className="text-muted-foreground text-xs">
+                              {t('delivery.warehouse.searching')}
+                            </p>
+                          ) : null}
+
+                          {!warehousesLoading && warehouseOptions.length > 0 ? (
+                            <div className="border-border bg-background max-h-40 overflow-auto rounded-xl border p-2 shadow-sm">
+                              <div className="space-y-1">
+                                {warehouseOptions.map(warehouse => (
+                                  <button
+                                    key={warehouse.ref}
+                                    type="button"
+                                    onClick={() => {
+                                      clearCheckoutUiErrors();
+                                      setSelectedWarehouseRef(warehouse.ref);
+                                      setSelectedWarehouseName(warehouse.name);
+                                      setWarehouseQuery(
+                                        warehouse.address
+                                          ? `${warehouse.name} (${warehouse.address})`
+                                          : warehouse.name
+                                      );
+                                      setWarehouseOptions([]);
+                                    }}
+                                    className="hover:bg-secondary block w-full rounded-lg px-2.5 py-2 text-left text-xs"
+                                  >
+                                    {warehouse.name}
+                                    {warehouse.address
+                                      ? `, ${warehouse.address}`
+                                      : ''}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : null}
+
+                      {selectedShippingMethod === 'NP_COURIER' ? (
+                        <div className="space-y-3 sm:col-span-2">
+                          <div className="space-y-1.5">
+                            <label
+                              className="text-muted-foreground text-xs font-medium"
+                              htmlFor="shipping-address-1"
+                            >
+                              {t('delivery.courierAddress.label')}
+                            </label>
+
+                            <input
+                              id="shipping-address-1"
+                              type="text"
+                              value={courierAddressLine1}
+                              onChange={event => {
+                                clearCheckoutUiErrors();
+                                setCourierAddressLine1(event.target.value);
+                              }}
+                              placeholder={t(
+                                'delivery.courierAddress.line1Placeholder'
+                              )}
+                              className={SHOP_CART_FIELD}
+                            />
+                          </div>
+
+                          <input
+                            type="text"
+                            value={courierAddressLine2}
+                            onChange={event => {
+                              clearCheckoutUiErrors();
+                              setCourierAddressLine2(event.target.value);
+                            }}
+                            placeholder={t(
+                              'delivery.courierAddress.line2Placeholder'
+                            )}
+                            className={SHOP_CART_FIELD}
+                          />
+                        </div>
+                      ) : null}
+                    </div>
+
+                    <fieldset className="border-border rounded-xl border p-4">
+                      <legend className="text-muted-foreground px-2 text-xs font-medium tracking-wider uppercase">
+                        {safeT(
+                          'delivery.recipientName.label',
+                          'Recipient information'
+                        )}
+                      </legend>
+
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="space-y-1.5">
+                          <label
+                            className="text-muted-foreground text-xs font-medium"
+                            htmlFor="recipient-name"
+                          >
+                            {t('delivery.recipientName.label')}
+                          </label>
+
+                          <input
+                            id="recipient-name"
+                            type="text"
+                            value={recipientName}
+                            onChange={event => {
+                              clearCheckoutUiErrors();
+                              setRecipientName(event.target.value);
+                            }}
+                            placeholder={t(
+                              'delivery.recipientName.placeholder'
+                            )}
+                            className={SHOP_CART_FIELD}
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label
+                            className="text-muted-foreground text-xs font-medium"
+                            htmlFor="recipient-phone"
+                          >
+                            {t('delivery.recipientPhone.label')}
+                          </label>
+
+                          <input
+                            id="recipient-phone"
+                            type="tel"
+                            value={recipientPhone}
+                            onChange={event => {
+                              clearCheckoutUiErrors();
+                              setRecipientPhone(event.target.value);
+                            }}
+                            placeholder={t(
+                              'delivery.recipientPhone.placeholder'
+                            )}
+                            className={SHOP_CART_FIELD}
+                          />
+                        </div>
+
+                        <div className="space-y-1.5 sm:col-span-2">
+                          <label
+                            className="text-muted-foreground text-xs font-medium"
+                            htmlFor="recipient-email"
+                          >
+                            {t('delivery.recipientEmail.label')}
+                          </label>
+
+                          <input
+                            id="recipient-email"
+                            type="email"
+                            value={recipientEmail}
+                            onChange={event => {
+                              clearCheckoutUiErrors();
+                              setRecipientEmail(event.target.value);
+                            }}
+                            placeholder={t(
+                              'delivery.recipientEmail.placeholder'
+                            )}
+                            className={SHOP_CART_FIELD}
+                          />
+                        </div>
+
+                        <div className="space-y-1.5 sm:col-span-2">
+                          <label
+                            className="text-muted-foreground text-xs font-medium"
+                            htmlFor="recipient-comment"
+                          >
+                            {t('delivery.recipientComment.label')}
+                          </label>
+
+                          <textarea
+                            id="recipient-comment"
+                            value={recipientComment}
+                            onChange={event => {
+                              clearCheckoutUiErrors();
+                              setRecipientComment(event.target.value);
+                            }}
+                            placeholder={t(
+                              'delivery.recipientComment.placeholder'
+                            )}
+                            rows={3}
+                            className={cn(SHOP_CART_FIELD, 'resize-none')}
+                          />
+                        </div>
+                      </div>
+                    </fieldset>
+
+                    {deliveryUiError ? (
+                      <p className="text-destructive text-xs" role="alert">
+                        {deliveryUiError}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+            </section>
+
+            <section className={SHOP_CART_CARD}>
+              <div className="border-border flex items-center gap-3 border-b px-5 py-4">
+                <div className="bg-foreground text-background flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold">
+                  3
+                </div>
+
+                <h2
+                  className={cn(
+                    SHOP_CART_SECTION_HEADER,
+                    'text-sm tracking-wider uppercase'
+                  )}
+                >
+                  {t('checkout.paymentMethod.label')}
+                </h2>
+              </div>
+
+              <div className="p-5">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {canUseStripe ? (
+                    <SelectableCard
+                      size="compact"
+                      selected={selectedProvider === 'stripe'}
+                    >
+                      <input
+                        type="radio"
+                        name="payment-provider"
+                        value="stripe"
+                        checked={selectedProvider === 'stripe'}
+                        onChange={() => {
+                          clearCheckoutUiErrors();
+                          setSelectedProvider('stripe');
+                          setSelectedPaymentMethod('stripe_card');
+                        }}
+                        aria-label={t('checkout.paymentMethod.stripe')}
+                        className="sr-only"
+                      />
+
+                      <span className="text-foreground block text-sm font-semibold">
+                        {t('checkout.paymentMethod.stripe')}
+                      </span>
+                    </SelectableCard>
+                  ) : null}
+
+                  <SelectableCard
+                    size="compact"
+                    selected={selectedProvider === 'monobank'}
+                    disabled={!canUseMonobank}
+                  >
+                    <input
+                      type="radio"
+                      name="payment-provider"
+                      value="monobank"
+                      checked={selectedProvider === 'monobank'}
+                      onChange={() => {
+                        clearCheckoutUiErrors();
+                        setSelectedProvider('monobank');
+
+                        if (
+                          selectedPaymentMethod !== 'monobank_invoice' &&
+                          selectedPaymentMethod !== 'monobank_google_pay'
+                        ) {
+                          setSelectedPaymentMethod(
+                            resolveDefaultMethodForProvider({
+                              provider: 'monobank',
+                              currency: cart.summary.currency,
+                            })
+                          );
+                        }
+                      }}
+                      disabled={!canUseMonobank}
+                      aria-label={t('checkout.paymentMethod.monobank')}
+                      className="sr-only"
+                    />
+
+                    <span className="text-foreground block text-sm font-semibold">
+                      {t('checkout.paymentMethod.monobank')}
+                    </span>
+                  </SelectableCard>
+                </div>
+
+                {selectedProvider === 'monobank' && canUseMonobank ? (
+                  <div className="border-border mt-4 ml-4 space-y-2 border-l-2 pl-4">
+                    {canUseMonobankGooglePay ? (
+                      <label className="flex cursor-pointer items-center gap-2 text-sm">
+                        <input
+                          type="radio"
+                          name="payment-method-monobank"
+                          value="monobank_google_pay"
+                          checked={
+                            selectedPaymentMethod === 'monobank_google_pay'
+                          }
+                          onChange={() => {
+                            clearCheckoutUiErrors();
+                            setSelectedPaymentMethod('monobank_google_pay');
+                          }}
+                          className="h-4 w-4"
+                        />
+                        <span>
+                          {t('checkout.paymentMethod.monobankGooglePay')}
+                        </span>
+                      </label>
+                    ) : null}
+
+                    <label className="flex cursor-pointer items-center gap-2 text-sm">
+                      <input
+                        type="radio"
+                        name="payment-method-monobank"
+                        value="monobank_invoice"
+                        checked={selectedPaymentMethod === 'monobank_invoice'}
+                        onChange={() => {
+                          clearCheckoutUiErrors();
+                          setSelectedPaymentMethod('monobank_invoice');
+                        }}
+                        className="h-4 w-4"
+                      />
+                      <span>{t('checkout.paymentMethod.monobankInvoice')}</span>
+                    </label>
+
+                    {canUseMonobankGooglePay ? (
+                      <p className="text-muted-foreground text-xs">
+                        {t('checkout.paymentMethod.monobankGooglePayHint')}
+                      </p>
+                    ) : (
+                      <p className="text-muted-foreground text-xs">
+                        {t(
+                          'checkout.paymentMethod.monobankGooglePayFallbackHint'
+                        )}
+                      </p>
+                    )}
+                  </div>
+                ) : null}
+
+                {!canUseMonobank ? (
+                  <p className="text-muted-foreground mt-3 text-xs">
+                    {monobankEnabled
+                      ? t('checkout.paymentMethod.monobankUahOnlyHint')
+                      : t('checkout.paymentMethod.monobankUnavailable')}
+                  </p>
+                ) : null}
+
+                {!hasSelectableProvider ? (
+                  <p className="text-destructive mt-3 text-xs" role="status">
+                    {t('checkout.paymentMethod.noAvailable')}
+                  </p>
+                ) : null}
+              </div>
+            </section>
+          </div>
+
+          <aside className="mt-8 lg:col-span-2 lg:mt-0">
+            <div className="lg:sticky lg:top-8">
+              <div className={SHOP_CART_CARD}>
+                <div className="border-border flex items-center gap-3 border-b px-5 py-4">
+                  <h2
+                    id="order-summary"
+                    className={cn(
+                      SHOP_CART_SECTION_HEADER,
+                      'text-sm tracking-wider uppercase'
+                    )}
+                  >
+                    {t('summary.heading')}
+                  </h2>
+                </div>
+
+                <div className="space-y-4 p-5">
+                  <div className="space-y-2">
+                    {cart.items.map(item => (
+                      <div
+                        key={`${item.productId}-${item.selectedSize ?? 'na'}-${item.selectedColor ?? 'na'}`}
+                        className="flex items-center justify-between gap-3 text-sm"
+                      >
+                        <span className="text-muted-foreground max-w-45 truncate">
+                          {item.title} × {item.quantity}
+                        </span>
+
+                        <span className="text-foreground font-medium">
+                          {formatMoney(
+                            item.lineTotalMinor,
+                            item.currency,
+                            locale
+                          )}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="border-border space-y-2 border-t pt-4">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">
+                        {t('summary.subtotal')}
+                      </span>
+
+                      <span
+                        data-testid="checkout-summary-subtotal"
+                        className="text-foreground font-medium"
+                      >
                         {formatMoney(
-                          item.lineTotalMinor,
-                          item.currency,
+                          cart.summary.totalAmountMinor,
+                          cart.summary.currency,
+                          locale
+                        )}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-3 text-sm">
+                      <span className="text-muted-foreground">
+                        {t('summary.shipping')}
+                      </span>
+
+                      <span
+                        data-testid="checkout-summary-shipping"
+                        className="text-muted-foreground text-right text-xs"
+                      >
+                        {t('summary.shippingInformationalOnly')}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="border-border border-t pt-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-foreground text-base font-semibold">
+                        {t('summary.total')}
+                      </span>
+
+                      <span
+                        data-testid="checkout-summary-total"
+                        className="text-foreground text-2xl font-bold"
+                      >
+                        {formatMoney(
+                          cart.summary.totalAmountMinor,
+                          cart.summary.currency,
                           locale
                         )}
                       </span>
                     </div>
                   </div>
-                </article>
-              </li>
-            ))}
-          </ul>
-          {ordersCard ? <div className="mt-6">{ordersCard}</div> : null}
-        </section>
-
-        <aside
-          className="border-border h-fit rounded-lg border p-6"
-          aria-labelledby="order-summary"
-        >
-          <h2
-            id="order-summary"
-            className="text-foreground text-lg font-semibold"
-          >
-            {t('summary.heading')}
-          </h2>
-
-          <div className="mt-6 space-y-4">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">
-                {t('summary.subtotal')}
-              </span>
-              <span className="text-foreground font-medium">
-                {formatMoney(
-                  cart.summary.totalAmountMinor,
-                  cart.summary.currency,
-                  locale
-                )}
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">
-                {t('summary.shipping')}
-              </span>
-              <span className="text-muted-foreground">
-                {t('summary.shippingInformationalOnly')}
-              </span>
-            </div>
-
-            <div className="border-border border-t pt-4">
-              <div className="flex items-center justify-between">
-                <span className="text-foreground text-base font-semibold">
-                  {t('summary.total')}
-                </span>
-                <span className="text-foreground text-lg font-bold">
-                  {formatMoney(
-                    cart.summary.totalAmountMinor,
-                    cart.summary.currency,
-                    locale
-                  )}
-                </span>
-              </div>
-            </div>
-
-            <p className="text-muted-foreground text-xs">
-              {t('summary.shippingPayOnDeliveryNote')}
-            </p>
-          </div>
-
-          <fieldset className="border-border mt-6 rounded-md border p-4">
-            <legend className="text-foreground px-1 text-sm font-semibold">
-              {t('delivery.legend')}
-            </legend>
-
-            {shippingMethodsLoading ? (
-              <p className="text-muted-foreground text-xs">
-                {t('delivery.methodsLoading')}
-              </p>
-            ) : null}
-
-            {!shippingMethodsLoading && !shippingAvailable ? (
-              <p className="text-muted-foreground text-xs" role="status">
-                {shippingUnavailableText ?? t('delivery.unavailableFallback')}
-              </p>
-            ) : null}
-
-            {shippingAvailable ? (
-              <div className="mt-3 space-y-3">
-                <div className="space-y-2">
-                  {shippingMethods.map(method => (
-                    <label
-                      key={method.methodCode}
-                      className="border-border flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2"
-                    >
-                      <input
-                        type="radio"
-                        name="delivery-method"
-                        value={method.methodCode}
-                        checked={selectedShippingMethod === method.methodCode}
-                        onChange={() => {
-                          clearCheckoutUiErrors();
-                          setSelectedShippingMethod(method.methodCode);
-                        }}
-                        className="h-4 w-4"
-                      />
-                      <span className="text-sm font-medium">
-                        {method.title}
-                      </span>
-                    </label>
-                  ))}
                 </div>
 
-                <div className="space-y-2">
-                  <label
-                    className="text-muted-foreground text-xs"
-                    htmlFor="shipping-city-search"
+                <div className="border-border border-t p-5">
+                  <button
+                    type="button"
+                    onClick={handleCheckout}
+                    disabled={isCheckingOut || !canPlaceOrder}
+                    className={SHOP_CART_HERO_CTA}
+                    aria-busy={isCheckingOut}
                   >
-                    {t('delivery.city.label')}
-                  </label>
-                  <input
-                    id="shipping-city-search"
-                    type="text"
-                    value={cityQuery}
-                    autoComplete="off"
-                    spellCheck={false}
-                    onChange={event => {
-                      clearCheckoutUiErrors();
-                      setCityLookupFailed(false);
-                      setCityQuery(event.target.value);
-                      setSelectedCityRef(null);
-                      setSelectedCityName(null);
-                    }}
-                    placeholder={t('delivery.city.placeholder')}
-                    className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
-                  />
+                    <span
+                      className="absolute inset-0"
+                      style={shopCtaGradient(
+                        '--shop-hero-btn-bg',
+                        '--shop-hero-btn-bg-hover'
+                      )}
+                      aria-hidden="true"
+                    />
+                    <span
+                      className={SHOP_CTA_WAVE}
+                      style={shopCtaGradient(
+                        '--shop-hero-btn-bg-hover',
+                        '--shop-hero-btn-bg'
+                      )}
+                      aria-hidden="true"
+                    />
+                    <span className={SHOP_CTA_INSET} aria-hidden="true" />
 
-                  {selectedCityRef ? (
-                    <p className="text-muted-foreground text-xs">
-                      {t('delivery.city.selected', {
-                        city: selectedCityName ?? selectedCityRef,
-                      })}
-                    </p>
-                  ) : null}
+                    <span className="relative z-10 inline-flex min-w-0 items-center justify-center gap-2">
+                      {isCheckingOut ? (
+                        <Loader2
+                          className="h-4 w-4 animate-spin"
+                          aria-hidden="true"
+                        />
+                      ) : null}
 
-                  {citiesLoading ? (
-                    <p className="text-muted-foreground text-xs">
-                      {t('delivery.city.searching')}
-                    </p>
-                  ) : null}
+                      <span className="truncate whitespace-nowrap">
+                        {t('checkout.placeOrder')}
+                      </span>
 
-                  {!citiesLoading && cityOptions.length > 0 ? (
-                    <div className="max-h-36 space-y-1 overflow-auto rounded-md border p-2">
-                      {cityOptions.map(city => (
-                        <button
-                          key={city.ref}
-                          type="button"
-                          onClick={() => {
-                            clearCheckoutUiErrors();
-                            setSelectedCityRef(city.ref);
-                            setSelectedCityName(city.nameUa);
-                            setCityQuery(city.nameUa);
-                            setCityOptions([]);
-                          }}
-                          className="hover:bg-secondary block w-full rounded px-2 py-1 text-left text-xs"
+                      {isCheckingOut ? (
+                        <span className="sr-only">{t('checkout.placing')}</span>
+                      ) : null}
+                    </span>
+                  </button>
+
+                  <p className="text-muted-foreground mt-4 text-center text-xs">
+                    {t('summary.shippingPayOnDeliveryNote')}
+                  </p>
+
+                  {recoveryHref && !checkoutError ? (
+                    <div className="mt-3 flex justify-center">
+                      {recoveryIsExternal ? (
+                        <a
+                          href={recoveryHref}
+                          className={cn(
+                            SHOP_LINK_BASE,
+                            SHOP_LINK_XS,
+                            SHOP_FOCUS
+                          )}
                         >
-                          {city.nameUa}
-                        </button>
-                      ))}
+                          {t('checkout.notRedirected')}
+                        </a>
+                      ) : (
+                        <Link
+                          href={recoveryHref}
+                          className={cn(
+                            SHOP_LINK_BASE,
+                            SHOP_LINK_XS,
+                            SHOP_FOCUS
+                          )}
+                        >
+                          {t('checkout.notRedirected')}
+                        </Link>
+                      )}
                     </div>
                   ) : null}
 
-                  {!citiesLoading &&
-                  !cityLookupFailed &&
-                  cityQuery.trim().length >= 2 &&
-                  !selectedCityRef &&
-                  cityOptions.length === 0 ? (
-                    <p className="text-muted-foreground text-xs" role="status">
-                      {t('delivery.city.noResults')}
-                    </p>
-                  ) : null}
-                </div>
-
-                {isWarehouseSelectionMethod ? (
-                  <div className="space-y-2">
-                    {citiesLoading ? (
-                      <p className="text-muted-foreground text-xs">
-                        {t('delivery.city.searching')}
-                      </p>
-                    ) : null}
-
-                    <label
-                      className="text-muted-foreground text-xs"
-                      htmlFor="shipping-warehouse-search"
-                    >
-                      {t('delivery.warehouse.label')}
-                    </label>
-
-                    <input
-                      id="shipping-warehouse-search"
-                      type="text"
-                      value={warehouseQuery}
-                      onChange={event => {
-                        clearCheckoutUiErrors();
-                        setWarehouseQuery(event.target.value);
-                        setSelectedWarehouseRef(null);
-                        setSelectedWarehouseName(null);
-                      }}
-                      placeholder={
-                        selectedCityRef
-                          ? t('delivery.warehouse.placeholder')
-                          : t('delivery.warehouse.selectCityFirst')
-                      }
-                      className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
-                      disabled={!selectedCityRef}
-                    />
-
-                    {!selectedCityRef ? (
+                  {checkoutError ? (
+                    <div className="mt-3 space-y-2">
                       <p
-                        className="text-muted-foreground text-xs"
-                        role="status"
+                        className="text-destructive text-center text-xs"
+                        role="alert"
                       >
-                        {t('delivery.warehouse.cityRequired')}
+                        {checkoutError}
                       </p>
-                    ) : null}
 
-                    {selectedWarehouseRef ? (
-                      <p className="text-muted-foreground text-xs">
-                        {t('delivery.warehouse.selected', {
-                          warehouse:
-                            selectedWarehouseName ?? selectedWarehouseRef,
-                        })}
-                      </p>
-                    ) : null}
-
-                    {warehousesLoading ? (
-                      <p className="text-muted-foreground text-xs">
-                        {t('delivery.warehouse.searching')}
-                      </p>
-                    ) : null}
-
-                    {!warehousesLoading && warehouseOptions.length > 0 ? (
-                      <div className="max-h-36 space-y-1 overflow-auto rounded-md border p-2">
-                        {warehouseOptions.map(warehouse => (
-                          <button
-                            key={warehouse.ref}
-                            type="button"
-                            onClick={() => {
-                              clearCheckoutUiErrors();
-                              setSelectedWarehouseRef(warehouse.ref);
-                              setSelectedWarehouseName(warehouse.name);
-                              setWarehouseQuery(
-                                warehouse.address
-                                  ? `${warehouse.name} (${warehouse.address})`
-                                  : warehouse.name
-                              );
-                              setWarehouseOptions([]);
-                            }}
-                            className="hover:bg-secondary block w-full rounded px-2 py-1 text-left text-xs"
-                          >
-                            {warehouse.name}
-                            {warehouse.address ? `, ${warehouse.address}` : ''}
-                          </button>
-                        ))}
-                      </div>
-                    ) : null}
-                  </div>
-                ) : null}
-
-                {selectedShippingMethod === 'NP_COURIER' ? (
-                  <div className="space-y-2">
-                    <label
-                      className="text-muted-foreground text-xs"
-                      htmlFor="shipping-address-1"
-                    >
-                      {t('delivery.courierAddress.label')}
-                    </label>
-                    <input
-                      id="shipping-address-1"
-                      type="text"
-                      value={courierAddressLine1}
-                      onChange={event => {
-                        clearCheckoutUiErrors();
-                        setCourierAddressLine1(event.target.value);
-                      }}
-                      placeholder={t(
-                        'delivery.courierAddress.line1Placeholder'
-                      )}
-                      className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
-                    />
-                    <input
-                      type="text"
-                      value={courierAddressLine2}
-                      onChange={event => {
-                        clearCheckoutUiErrors();
-                        setCourierAddressLine2(event.target.value);
-                      }}
-                      placeholder={t(
-                        'delivery.courierAddress.line2Placeholder'
-                      )}
-                      className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
-                    />
-                  </div>
-                ) : null}
-
-                <div className="space-y-2">
-                  <label
-                    className="text-muted-foreground text-xs"
-                    htmlFor="recipient-name"
-                  >
-                    {t('delivery.recipientName.label')}
-                  </label>
-                  <input
-                    id="recipient-name"
-                    type="text"
-                    value={recipientName}
-                    onChange={event => {
-                      clearCheckoutUiErrors();
-                      setRecipientName(event.target.value);
-                    }}
-                    placeholder={t('delivery.recipientName.placeholder')}
-                    className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label
-                    className="text-muted-foreground text-xs"
-                    htmlFor="recipient-phone"
-                  >
-                    {t('delivery.recipientPhone.label')}
-                  </label>
-                  <input
-                    id="recipient-phone"
-                    type="tel"
-                    value={recipientPhone}
-                    onChange={event => {
-                      clearCheckoutUiErrors();
-                      setRecipientPhone(event.target.value);
-                    }}
-                    placeholder={t('delivery.recipientPhone.placeholder')}
-                    className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label
-                    className="text-muted-foreground text-xs"
-                    htmlFor="recipient-email"
-                  >
-                    {t('delivery.recipientEmail.label')}
-                  </label>
-                  <input
-                    id="recipient-email"
-                    type="email"
-                    value={recipientEmail}
-                    onChange={event => {
-                      clearCheckoutUiErrors();
-                      setRecipientEmail(event.target.value);
-                    }}
-                    placeholder={t('delivery.recipientEmail.placeholder')}
-                    className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label
-                    className="text-muted-foreground text-xs"
-                    htmlFor="recipient-comment"
-                  >
-                    {t('delivery.recipientComment.label')}
-                  </label>
-                  <textarea
-                    id="recipient-comment"
-                    value={recipientComment}
-                    onChange={event => {
-                      clearCheckoutUiErrors();
-                      setRecipientComment(event.target.value);
-                    }}
-                    placeholder={t('delivery.recipientComment.placeholder')}
-                    rows={2}
-                    className="border-border bg-background w-full rounded-md border px-3 py-2 text-sm"
-                  />
-                </div>
-
-                {deliveryUiError ? (
-                  <p className="text-destructive text-xs" role="alert">
-                    {deliveryUiError}
-                  </p>
-                ) : null}
-              </div>
-            ) : null}
-          </fieldset>
-
-          <fieldset className="border-border mt-6 rounded-md border p-4">
-            <legend className="text-foreground px-1 text-sm font-semibold">
-              {t('checkout.paymentMethod.label')}
-            </legend>
-
-            <div className="mt-3 space-y-2">
-              {canUseStripe ? (
-                <label className="border-border flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2">
-                  <input
-                    type="radio"
-                    name="payment-provider"
-                    value="stripe"
-                    checked={selectedProvider === 'stripe'}
-                    onChange={() => {
-                      clearCheckoutUiErrors();
-                      setSelectedProvider('stripe');
-                      setSelectedPaymentMethod('stripe_card');
-                    }}
-                    className="h-4 w-4"
-                  />
-                  <span className="text-sm font-medium">
-                    {t('checkout.paymentMethod.stripe')}
-                  </span>
-                </label>
-              ) : null}
-
-              <label
-                className={cn(
-                  'border-border flex items-center gap-2 rounded-md border px-3 py-2',
-                  canUseMonobank ? 'cursor-pointer' : 'opacity-60'
-                )}
-              >
-                <input
-                  type="radio"
-                  name="payment-provider"
-                  value="monobank"
-                  checked={selectedProvider === 'monobank'}
-                  onChange={() => {
-                    clearCheckoutUiErrors();
-                    setSelectedProvider('monobank');
-                    if (
-                      selectedPaymentMethod !== 'monobank_invoice' &&
-                      selectedPaymentMethod !== 'monobank_google_pay'
-                    ) {
-                      setSelectedPaymentMethod(
-                        resolveDefaultMethodForProvider({
-                          provider: 'monobank',
-                          currency: cart.summary.currency,
-                        })
-                      );
-                    }
-                  }}
-                  disabled={!canUseMonobank}
-                  className="h-4 w-4"
-                />
-                <span className="text-sm font-medium">
-                  {t('checkout.paymentMethod.monobank')}
-                </span>
-              </label>
-
-              {selectedProvider === 'monobank' && canUseMonobank ? (
-                <div className="ml-2 space-y-2">
-                  {canUseMonobankGooglePay ? (
-                    <label className="border-border flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2">
-                      <input
-                        type="radio"
-                        name="payment-method-monobank"
-                        value="monobank_google_pay"
-                        checked={
-                          selectedPaymentMethod === 'monobank_google_pay'
-                        }
-                        onChange={() => {
-                          clearCheckoutUiErrors();
-                          setSelectedPaymentMethod('monobank_google_pay');
-                        }}
-                        className="h-4 w-4"
-                      />
-                      <span className="text-sm font-medium">
-                        {t('checkout.paymentMethod.monobankGooglePay')}
-                      </span>
-                    </label>
+                      {recoveryHref ? (
+                        <div className="flex justify-center">
+                          {recoveryIsExternal ? (
+                            <a
+                              href={recoveryHref}
+                              className={cn(
+                                SHOP_LINK_BASE,
+                                SHOP_LINK_XS,
+                                SHOP_FOCUS
+                              )}
+                            >
+                              {recoveryLinkLabel}
+                            </a>
+                          ) : (
+                            <Link
+                              href={recoveryHref}
+                              className={cn(
+                                SHOP_LINK_BASE,
+                                SHOP_LINK_XS,
+                                SHOP_FOCUS
+                              )}
+                            >
+                              {recoveryLinkLabel}
+                            </Link>
+                          )}
+                        </div>
+                      ) : null}
+                    </div>
                   ) : null}
-
-                  <label className="border-border flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2">
-                    <input
-                      type="radio"
-                      name="payment-method-monobank"
-                      value="monobank_invoice"
-                      checked={selectedPaymentMethod === 'monobank_invoice'}
-                      onChange={() => {
-                        clearCheckoutUiErrors();
-                        setSelectedPaymentMethod('monobank_invoice');
-                      }}
-                      className="h-4 w-4"
-                    />
-                    <span className="text-sm font-medium">
-                      {t('checkout.paymentMethod.monobankInvoice')}
-                    </span>
-                  </label>
-
-                  {canUseMonobankGooglePay ? (
-                    <p className="text-muted-foreground text-xs">
-                      {t('checkout.paymentMethod.monobankGooglePayHint')}
-                    </p>
-                  ) : (
-                    <p className="text-muted-foreground text-xs">
-                      {t(
-                        'checkout.paymentMethod.monobankGooglePayFallbackHint'
-                      )}
-                    </p>
-                  )}
                 </div>
-              ) : null}
+              </div>
 
-              {!canUseMonobank ? (
-                <p className="text-muted-foreground text-xs">
-                  {monobankEnabled
-                    ? t('checkout.paymentMethod.monobankUahOnlyHint')
-                    : t('checkout.paymentMethod.monobankUnavailable')}
-                </p>
-              ) : null}
-
-              {!hasSelectableProvider ? (
-                <p className="text-destructive text-xs" role="status">
-                  {t('checkout.paymentMethod.noAvailable')}
-                </p>
-              ) : null}
+              {ordersCard ? <div className="mt-4">{ordersCard}</div> : null}
             </div>
-          </fieldset>
-
-          <div className="mt-6 space-y-3">
-            <button
-              type="button"
-              onClick={handleCheckout}
-              disabled={isCheckingOut || !canPlaceOrder}
-              className={SHOP_HERO_CTA}
-              aria-busy={isCheckingOut}
-            >
-              <span
-                className="absolute inset-0"
-                style={shopCtaGradient(
-                  '--shop-hero-btn-bg',
-                  '--shop-hero-btn-bg-hover'
-                )}
-                aria-hidden="true"
-              />
-              <span
-                className={SHOP_CTA_WAVE}
-                style={shopCtaGradient(
-                  '--shop-hero-btn-bg-hover',
-                  '--shop-hero-btn-bg'
-                )}
-                aria-hidden="true"
-              />
-              <span className={SHOP_CTA_INSET} aria-hidden="true" />
-
-              <span className="relative z-10 inline-flex min-w-0 items-center justify-center gap-2">
-                {isCheckingOut ? (
-                  <Loader2
-                    className="h-4 w-4 animate-spin"
-                    aria-hidden="true"
-                  />
-                ) : null}
-
-                <span className="truncate whitespace-nowrap">
-                  {t('checkout.placeOrder')}
-                </span>
-
-                {isCheckingOut ? (
-                  <span className="sr-only">{t('checkout.placing')}</span>
-                ) : null}
-              </span>
-            </button>
-
-            <p className="text-muted-foreground text-center text-xs">
-              {t('checkout.message')}
-            </p>
-
-            {createdOrderId && !checkoutError ? (
-              <div className="flex justify-center">
-                <Link
-                  href={`/shop/orders/${encodeURIComponent(createdOrderId)}`}
-                  className={cn(SHOP_LINK_BASE, SHOP_LINK_XS, SHOP_FOCUS)}
-                >
-                  {t('checkout.notRedirected')}
-                </Link>
-              </div>
-            ) : null}
-
-            {checkoutError ? (
-              <div className="space-y-2">
-                <p
-                  className="text-destructive text-center text-xs"
-                  role="alert"
-                >
-                  {checkoutError}
-                </p>
-
-                {createdOrderId ? (
-                  <div className="flex justify-center">
-                    <Link
-                      href={`/shop/orders/${encodeURIComponent(createdOrderId)}`}
-                      className={cn(SHOP_LINK_BASE, SHOP_LINK_XS, SHOP_FOCUS)}
-                    >
-                      {t('checkout.goToOrder')}
-                    </Link>
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-        </aside>
+          </aside>
+        </div>
       </div>
     </main>
   );

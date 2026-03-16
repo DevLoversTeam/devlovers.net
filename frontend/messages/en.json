@@ -127,6 +127,8 @@
     "subtitle": "Explore curated interview questions by category",
     "searchPlaceholder": "Search questions...",
     "clearSearch": "Clear search",
+    "progressLabel": "Progress",
+    "resetProgress": "Reset progress",
     "noResults": "Nothing found for \"{query}\"",
     "noQuestions": "No questions yet…\nBut they’re already in development.\nStay tuned - new content coming soon!",
     "metaTitle": "Q&A | DevLovers",
@@ -429,7 +431,7 @@
           "cityRequired": "To choose a branch, first select a city from the list"
         },
         "courierAddress": {
-          "label": "Courier address",
+          "label": "Delivery address",
           "line1Placeholder": "Street, house, apartment",
           "line2Placeholder": "Additional address info (optional)"
         },
@@ -448,6 +450,20 @@
         "recipientComment": {
           "label": "Comment (optional)",
           "placeholder": "Delivery comment"
+        },
+        "methodCards": {
+          "warehouse": {
+            "title": "Branch",
+            "description": "Pick up at a Nova Poshta branch"
+          },
+          "locker": {
+            "title": "Parcel locker",
+            "description": "Pick up from a Nova Poshta parcel locker"
+          },
+          "courier": {
+            "title": "Courier",
+            "description": "Nova Poshta door-to-door delivery"
+          }
         }
       },
       "checkout": {

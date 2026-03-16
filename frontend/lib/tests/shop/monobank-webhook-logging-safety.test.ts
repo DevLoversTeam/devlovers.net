@@ -1,6 +1,8 @@
 import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { MonobankWebhookVerifyResult } from '@/lib/psp/monobank';
+
 const monoLogInfoMock = vi.fn();
 const monoLogWarnMock = vi.fn();
 const monoLogErrorMock = vi.fn();
@@ -9,10 +11,18 @@ const logInfoMock = vi.fn();
 const logWarnMock = vi.fn();
 const logErrorMock = vi.fn();
 
-const verifyWebhookSignatureWithRefreshMock = vi.fn(
-  async (..._args: unknown[]) => false
+function verifiedResult(): MonobankWebhookVerifyResult {
+  return { ok: true, reason: 'verified' };
+}
+
+function invalidSignatureResult(): MonobankWebhookVerifyResult {
+  return { ok: false, reason: 'invalid_signature', retryable: false };
+}
+
+const verifyWebhookSignatureWithRefreshDetailedMock = vi.fn(
+  async (): Promise<MonobankWebhookVerifyResult> => invalidSignatureResult()
 );
-const handleMonobankWebhookMock = vi.fn(async (..._args: unknown[]) => ({
+const handleMonobankWebhookMock = vi.fn(async () => ({
   invoiceId: 'inv_test',
   appliedResult: 'applied',
   deduped: false,
@@ -22,9 +32,9 @@ vi.mock('@/lib/logging/monobank', async () => {
   const actual = await vi.importActual<any>('@/lib/logging/monobank');
   return {
     ...actual,
-    monoLogInfo: (...args: unknown[]) => monoLogInfoMock(...args),
-    monoLogWarn: (...args: unknown[]) => monoLogWarnMock(...args),
-    monoLogError: (...args: unknown[]) => monoLogErrorMock(...args),
+    monoLogInfo: monoLogInfoMock,
+    monoLogWarn: monoLogWarnMock,
+    monoLogError: monoLogErrorMock,
   };
 });
 
@@ -32,20 +42,19 @@ vi.mock('@/lib/logging', async () => {
   const actual = await vi.importActual<any>('@/lib/logging');
   return {
     ...actual,
-    logInfo: (...args: unknown[]) => logInfoMock(...args),
-    logWarn: (...args: unknown[]) => logWarnMock(...args),
-    logError: (...args: unknown[]) => logErrorMock(...args),
+    logInfo: logInfoMock,
+    logWarn: logWarnMock,
+    logError: logErrorMock,
   };
 });
 
 vi.mock('@/lib/psp/monobank', () => ({
-  verifyWebhookSignatureWithRefresh: (...args: unknown[]) =>
-    verifyWebhookSignatureWithRefreshMock(...args),
+  verifyWebhookSignatureWithRefreshDetailed:
+    verifyWebhookSignatureWithRefreshDetailedMock,
 }));
 
 vi.mock('@/lib/services/orders/monobank-webhook', () => ({
-  handleMonobankWebhook: (...args: unknown[]) =>
-    handleMonobankWebhookMock(...args),
+  handleMonobankWebhook: handleMonobankWebhookMock,
 }));
 
 vi.mock('@/lib/security/rate-limit', () => ({
@@ -108,12 +117,14 @@ afterEach(() => {
 
 describe('monobank webhook logging safety', () => {
   it('invalid signature logs safe diagnostics only', async () => {
-    verifyWebhookSignatureWithRefreshMock.mockResolvedValue(false);
+    verifyWebhookSignatureWithRefreshDetailedMock.mockResolvedValue({
+      ...invalidSignatureResult(),
+    });
 
     const res = await postWebhookRaw(
       JSON.stringify({ invoiceId: 'inv_1', status: 'success' })
     );
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(401);
     expect(handleMonobankWebhookMock).not.toHaveBeenCalled();
 
     const sigWarn = monoLogWarnMock.mock.calls.find(
@@ -128,7 +139,9 @@ describe('monobank webhook logging safety', () => {
   });
 
   it('invalid payload logs safe diagnostics only', async () => {
-    verifyWebhookSignatureWithRefreshMock.mockResolvedValue(true);
+    verifyWebhookSignatureWithRefreshDetailedMock.mockResolvedValue({
+      ...verifiedResult(),
+    });
 
     const res = await postWebhookRaw('{invalid json');
     expect(res.status).toBe(200);

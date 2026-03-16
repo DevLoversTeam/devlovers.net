@@ -2,7 +2,9 @@ import { randomUUID } from 'node:crypto';
 
 import { and, eq } from 'drizzle-orm';
 import { NextRequest } from 'next/server';
-import { describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+
+const __prevRateLimitDisabled = process.env.RATE_LIMIT_DISABLED;
 
 import { db } from '@/db';
 import {
@@ -62,6 +64,16 @@ async function cleanupByIds(params: { orderId?: string; productId: string }) {
 
   await db.delete(products).where(eq(products.id, productId));
 }
+
+beforeAll(() => {
+  process.env.RATE_LIMIT_DISABLED = '1';
+});
+
+afterAll(() => {
+  if (__prevRateLimitDisabled === undefined)
+    delete process.env.RATE_LIMIT_DISABLED;
+  else process.env.RATE_LIMIT_DISABLED = __prevRateLimitDisabled;
+});
 
 describe('P0-6 snapshots: order_items immutability', () => {
   it('snapshot fields must not change after products/product_prices update', async () => {

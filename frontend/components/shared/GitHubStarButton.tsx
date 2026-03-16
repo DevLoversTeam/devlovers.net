@@ -2,7 +2,7 @@
 
 import { Star } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const STORAGE_KEY = 'github-stars';
 
@@ -20,13 +20,25 @@ interface GitHubStarButtonProps {
 
 export function GitHubStarButton({ className = '' }: GitHubStarButtonProps) {
   const t = useTranslations('aria');
-  const [storedStars] = useState(getStoredStars);
-  const [displayCount, setDisplayCount] = useState(storedStars ?? 0);
-  const [finalCount, setFinalCount] = useState<number | null>(storedStars);
+  const [displayCount, setDisplayCount] = useState(0);
+  const [finalCount, setFinalCount] = useState<number | null>(null);
+  const displayCountRef = useRef(displayCount);
   const githubUrl = 'https://github.com/DevLoversTeam/devlovers.net';
 
   useEffect(() => {
-    if (storedStars !== null) return;
+    displayCountRef.current = displayCount;
+  }, [displayCount]);
+
+  useEffect(() => {
+    const cachedStars = getStoredStars();
+
+    if (cachedStars !== null) {
+      const frame = window.requestAnimationFrame(() => {
+        setFinalCount(cachedStars);
+      });
+
+      return () => window.cancelAnimationFrame(frame);
+    }
 
     const fetchStars = async () => {
       try {
@@ -58,12 +70,13 @@ export function GitHubStarButton({ className = '' }: GitHubStarButtonProps) {
   }, []);
 
   useEffect(() => {
-    if (finalCount === null || storedStars !== null) return;
+    if (finalCount === null || finalCount === displayCountRef.current) return;
 
     const duration = 2000;
     const steps = 60;
-    const increment = finalCount / steps;
-    let current = 0;
+    const start = displayCountRef.current;
+    const increment = Math.max((finalCount - start) / steps, 1);
+    let current = start;
 
     const timer = setInterval(() => {
       current += increment;
@@ -79,7 +92,7 @@ export function GitHubStarButton({ className = '' }: GitHubStarButtonProps) {
     }, duration / steps);
 
     return () => clearInterval(timer);
-  }, [finalCount, storedStars]);
+  }, [finalCount]);
 
   const formatStarCount = (count: number): string => {
     return count.toLocaleString();

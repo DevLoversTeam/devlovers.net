@@ -1,7 +1,6 @@
 import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Hoisted mocks: MUST be before importing the route module.
 vi.mock('@/lib/security/rate-limit', () => {
   return {
     enforceRateLimit: vi.fn(async () => ({ ok: false, retryAfterSeconds: 60 })),
@@ -24,7 +23,11 @@ vi.mock('@/lib/security/rate-limit', () => {
 
 vi.mock('@/lib/psp/monobank', () => {
   return {
-    verifyWebhookSignatureWithRefresh: vi.fn(async () => false),
+    verifyWebhookSignatureWithRefreshDetailed: vi.fn(async () => ({
+      ok: false,
+      reason: 'invalid_signature' as const,
+      retryable: false,
+    })),
   };
 });
 
@@ -32,7 +35,6 @@ import { POST } from '@/app/api/shop/webhooks/monobank/route';
 
 function makeReq(opts: { hasSign: boolean }) {
   const headers = new Headers();
-  // No Origin header → should not be blocked by origin posture.
   if (opts.hasSign) headers.set('x-sign', 'bad_signature');
 
   return new NextRequest('http://localhost/api/shop/webhooks/monobank', {

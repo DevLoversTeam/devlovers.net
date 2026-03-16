@@ -3,10 +3,12 @@ import { getTranslations } from 'next-intl/server';
 
 import { ClearCartOnMount } from '@/components/shop/ClearCartOnMount';
 import { Link } from '@/i18n/routing';
-import { getStripeEnv } from '@/lib/env/stripe';
+import {
+  getStripeEnv,
+  isPaymentsEnabled as isStripePaymentsEnabled,
+} from '@/lib/env/stripe';
 import { logError } from '@/lib/logging';
-import { OrderNotFoundError } from '@/lib/services/errors';
-import { getOrderSummary } from '@/lib/services/orders';
+import { getCheckoutPaymentPageOrderSummary } from '@/lib/services/orders';
 import { ensureStripePaymentIntentForOrder } from '@/lib/services/orders/payment-attempts';
 import { formatMoney } from '@/lib/shop/currency';
 import {
@@ -48,12 +50,27 @@ function resolveClientSecret(
   return raw;
 }
 
+function parseStatusToken(
+  searchParams?: Record<string, string | string[] | undefined>
+): string | null {
+  const raw = searchParams?.statusToken;
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  const normalized = (value ?? '').trim();
+  return normalized.length > 0 ? normalized : null;
+}
+
 async function buildStatusMessage(status: string) {
   const t = await getTranslations('shop.checkout.payment.statusMessages');
 
   if (status === 'paid') return t('alreadyPaid');
   if (status === 'failed') return t('previousFailed');
   return t('completePayment');
+}
+
+function canInitializeStripeForPaymentStatus(status: string): boolean {
+  return (
+    status === 'pending' || status === 'requires_payment' || status === 'failed'
+  );
 }
 
 function shouldClearCart(
@@ -160,6 +177,10 @@ export default async function PaymentPage(props: PaymentPageProps) {
   const cc = clearCart ? '&clearCart=1' : '';
   const { locale } = params;
   const shopBase = `/shop`;
+  const statusToken = parseStatusToken(searchParams);
+  const statusTokenQuery = statusToken
+    ? `&statusToken=${encodeURIComponent(statusToken)}`
+    : '';
 
   const t = await getTranslations('shop.checkout');
 
@@ -184,51 +205,73 @@ export default async function PaymentPage(props: PaymentPageProps) {
     );
   }
 
-  let order: Awaited<ReturnType<typeof getOrderSummary>>;
+  const orderAccess = await getCheckoutPaymentPageOrderSummary({
+    orderId,
+    statusToken,
+  });
 
-  try {
-    order = await getOrderSummary(orderId);
-  } catch (error) {
-    if (error instanceof OrderNotFoundError) {
+  if (!orderAccess.ok) {
+    if (orderAccess.code === 'STATUS_TOKEN_MISCONFIGURED') {
       return (
         <PageShell
-          title={t('errors.orderNotFound')}
-          description={t('notFoundOrder.message')}
-        >
-          <nav
-            className="mt-6 flex justify-center gap-3"
-            aria-label="Next steps"
-          >
-            <Link href={`${shopBase}/cart`} className={SHOP_OUTLINE_BTN}>
-              {t('actions.goToCart')}
-            </Link>
-
-            <HeroCtaLink href={`${shopBase}/products`}>
-              {t('actions.continueShopping')}
-            </HeroCtaLink>
-          </nav>
-        </PageShell>
+          title={t('errors.unableToLoad')}
+          description={t('errors.tryAgainLater')}
+        />
       );
     }
 
     return (
       <PageShell
-        title={t('errors.unableToLoad')}
-        description={t('errors.tryAgainLater')}
-      />
+        title={t('errors.orderNotFound')}
+        description={t('notFoundOrder.message')}
+      >
+        <nav className="mt-6 flex justify-center gap-3" aria-label="Next steps">
+          <Link href={`${shopBase}/cart`} className={SHOP_OUTLINE_BTN}>
+            {t('actions.goToCart')}
+          </Link>
+
+          <HeroCtaLink href={`${shopBase}/products`}>
+            {t('actions.continueShopping')}
+          </HeroCtaLink>
+        </nav>
+      </PageShell>
+    );
+  }
+  const order = orderAccess.order;
+  if (order.paymentProvider !== 'stripe') {
+    return (
+      <PageShell
+        title={t('errors.orderNotFound')}
+        description={t('notFoundOrder.message')}
+      >
+        <nav className="mt-6 flex justify-center gap-3" aria-label="Next steps">
+          <Link href={`${shopBase}/cart`} className={SHOP_OUTLINE_BTN}>
+            {t('actions.goToCart')}
+          </Link>
+
+          <HeroCtaLink href={`${shopBase}/products`}>
+            {t('actions.continueShopping')}
+          </HeroCtaLink>
+        </nav>
+      </PageShell>
     );
   }
 
+  const paymentsEnabled = isStripePaymentsEnabled({
+    requirePublishableKey: true,
+  });
   const stripeEnv = getStripeEnv();
-  const paymentsEnabled =
-    stripeEnv.paymentsEnabled && Boolean(stripeEnv.publishableKey);
 
   let clientSecret = resolveClientSecret(searchParams);
   const publishableKey = paymentsEnabled ? stripeEnv.publishableKey : null;
+  const shouldInitStripePaymentIntent = canInitializeStripeForPaymentStatus(
+    order.paymentStatus
+  );
 
   if (
     paymentsEnabled &&
     publishableKey &&
+    shouldInitStripePaymentIntent &&
     (!clientSecret || !clientSecret.trim())
   ) {
     const existingPi = order.paymentIntentId?.trim() ?? '';
@@ -265,7 +308,7 @@ export default async function PaymentPage(props: PaymentPageProps) {
             aria-label="Next steps"
           >
             <HeroCtaLink
-              href={`${shopBase}/checkout/success?orderId=${order.id}${cc}`}
+              href={`${shopBase}/checkout/success?orderId=${order.id}${statusTokenQuery}${cc}`}
             >
               {t('payment.viewConfirmation')}
             </HeroCtaLink>
@@ -338,6 +381,7 @@ export default async function PaymentPage(props: PaymentPageProps) {
             <StripePaymentClient
               clientSecret={clientSecret}
               orderId={order.id}
+              statusToken={statusToken}
               amountMinor={order.totalAmountMinor}
               currency={order.currency}
               publishableKey={publishableKey}
@@ -358,19 +402,30 @@ export default async function PaymentPage(props: PaymentPageProps) {
           <dl className="text-muted-foreground mt-4 space-y-3 text-sm">
             <div className="flex items-center justify-between">
               <dt>{t('payment.items')}</dt>
-              <dd className="text-foreground font-medium">{itemsCount}</dd>
+              <dd
+                data-testid="payment-summary-items"
+                className="text-foreground font-medium"
+              >
+                {itemsCount}
+              </dd>
             </div>
 
             <div className="flex items-center justify-between">
               <dt>{t('payment.totalAmount')}</dt>
-              <dd className="text-foreground font-semibold">
+              <dd
+                data-testid="payment-summary-total"
+                className="text-foreground font-semibold"
+              >
                 {formatMoney(order.totalAmountMinor, order.currency, locale)}
               </dd>
             </div>
 
             <div className="flex items-center justify-between">
               <dt>{t('payment.status')}</dt>
-              <dd className="text-foreground font-semibold capitalize">
+              <dd
+                data-testid="payment-summary-status"
+                className="text-foreground font-semibold capitalize"
+              >
                 {order.paymentStatus}
               </dd>
             </div>
