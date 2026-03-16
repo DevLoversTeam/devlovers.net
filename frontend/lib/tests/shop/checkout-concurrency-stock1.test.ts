@@ -24,6 +24,7 @@ vi.mock('@/lib/auth', async () => {
 });
 
 vi.mock('@/lib/services/orders/payment-attempts', async () => {
+  resetEnvCache();
   const actual = await vi.importActual<any>(
     '@/lib/services/orders/payment-attempts'
   );
@@ -119,6 +120,8 @@ describe('P0-8.10.1 checkout concurrency: stock=1, two parallel checkouts', () =
   it('must allow only one success and must not double-reserve (stock must not go below 0)', async () => {
     const productId = crypto.randomUUID();
     const slug = `__test_checkout_concurrency_${productId.slice(0, 8)}`;
+    let cleanupError: unknown = null;
+
     try {
       const now = new Date();
       await db.insert(products).values({
@@ -268,6 +271,8 @@ describe('P0-8.10.1 checkout concurrency: stock=1, two parallel checkouts', () =
 
       expect(reservedUnits).toBe(1);
       expect(reserveMoves.length).toBe(1);
+    } catch (err) {
+      throw err;
     } finally {
       try {
         const oi = await db
@@ -293,10 +298,15 @@ describe('P0-8.10.1 checkout concurrency: stock=1, two parallel checkouts', () =
 
         await db.delete(products).where(eq((products as any).id, productId));
       } catch (err) {
-        if (process.env.CI) throw err;
-
-        console.warn('checkout concurrency cleanup failed', err);
+        cleanupError = err;
+        if (!process.env.CI) {
+          console.warn('checkout concurrency cleanup failed', err);
+        }
       }
+    }
+
+    if (cleanupError) {
+      throw cleanupError;
     }
   }, 30000);
 });

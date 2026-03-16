@@ -1087,6 +1087,33 @@ export async function POST(request: NextRequest) {
       return ack();
     }
 
+    if (order.paymentProvider !== 'stripe') {
+      logWarn('stripe_webhook_provider_mismatch', {
+        ...eventMeta(),
+        code: 'PROVIDER_MISMATCH',
+        orderId: order.id,
+        paymentIntentId,
+        orderPaymentProvider: order.paymentProvider,
+        expectedPaymentProvider: 'stripe',
+        chargeId: bestEffortChargeId,
+        refundId: bestEffortRefundId,
+        reason: 'non_stripe_order_resolved',
+      });
+
+      logWebhookEvent({
+        requestId,
+        stripeEventId,
+        orderId: order.id,
+        paymentIntentId,
+        paymentStatus,
+        eventType,
+        chargeId: bestEffortChargeId,
+        refundId: bestEffortRefundId,
+      });
+
+      return ack();
+    }
+
     if (order.paymentIntentId && order.paymentIntentId !== paymentIntentId) {
       logInfo('stripe_webhook_payment_intent_mismatch', {
         ...eventMeta(),
@@ -1163,7 +1190,9 @@ export async function POST(request: NextRequest) {
             pspStatusReason: mismatchReason,
             pspMetadata: nextMeta,
           })
-          .where(eq(orders.id, order.id));
+          .where(
+            and(eq(orders.id, order.id), eq(orders.paymentProvider, 'stripe'))
+          );
 
         logWarn('stripe_webhook_mismatch', {
           ...eventMeta(),
@@ -1909,7 +1938,9 @@ export async function POST(request: NextRequest) {
             pspChargeId: charge?.id ?? refundChargeId ?? null,
             pspPaymentMethod: resolvePaymentMethod(paymentIntent, charge),
           })
-          .where(eq(orders.id, order.id));
+          .where(
+            and(eq(orders.id, order.id), eq(orders.paymentProvider, 'stripe'))
+          );
 
         logWebhookEvent({
           requestId,
@@ -1960,7 +1991,9 @@ export async function POST(request: NextRequest) {
             pspPaymentMethod: resolvePaymentMethod(paymentIntent, charge),
             pspStatusReason: 'PARTIAL_REFUND_IGNORED',
           })
-          .where(eq(orders.id, order.id));
+          .where(
+            and(eq(orders.id, order.id), eq(orders.paymentProvider, 'stripe'))
+          );
 
         logWebhookEvent({
           requestId,

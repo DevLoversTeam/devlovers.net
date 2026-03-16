@@ -25,6 +25,7 @@ import { resetEnvCache } from '@/lib/env';
 import { deriveTestIpFromIdemKey } from '@/lib/tests/helpers/ip';
 
 vi.mock('@/lib/auth', async () => {
+  resetEnvCache();
   const actual = await vi.importActual<Record<string, unknown>>('@/lib/auth');
   return {
     ...actual,
@@ -33,6 +34,7 @@ vi.mock('@/lib/auth', async () => {
 });
 
 vi.mock('@/lib/env/stripe', async () => {
+  resetEnvCache();
   const actual =
     await vi.importActual<Record<string, unknown>>('@/lib/env/stripe');
   return {
@@ -42,6 +44,7 @@ vi.mock('@/lib/env/stripe', async () => {
 });
 
 vi.mock('@/lib/services/orders/payment-attempts', async () => {
+  resetEnvCache();
   const actual = await vi.importActual<any>(
     '@/lib/services/orders/payment-attempts'
   );
@@ -146,6 +149,7 @@ describe('P0-6 snapshots: order_items immutability', () => {
     const priceId = randomUUID();
     let orderId: string | undefined;
     let primaryError: unknown = null;
+    let cleanupError: unknown = null;
 
     const titleV1 = 'Snapshot Test Product';
     const slugV1 = `snapshot-test-${productId.slice(0, 8)}`;
@@ -285,16 +289,16 @@ describe('P0-6 snapshots: order_items immutability', () => {
       primaryError = e;
       throw e;
     } finally {
-      let cleanupError: unknown = null;
       try {
         await cleanupByIds({ orderId, productId, priceId });
       } catch (e) {
         cleanupError = e;
         console.error('[test cleanup failed]', { orderId, productId }, e);
       }
-      if (!primaryError && cleanupError) {
-        throw cleanupError;
-      }
+    }
+
+    if (!primaryError && cleanupError) {
+      throw cleanupError;
     }
   }, 30_000);
 });

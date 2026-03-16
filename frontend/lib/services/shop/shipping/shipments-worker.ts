@@ -422,10 +422,23 @@ export async function claimQueuedShipmentsForProcessing(args: {
         s.order_id,
         s.status as candidate_status
       from shipping_shipments s
+      join orders o on o.id = s.order_id
       where (
         (
           s.status in ('queued', 'failed')
           and (s.next_attempt_at is null or s.next_attempt_at <= now())
+          and ${orderShippingEligibilityWhereSql({
+            paymentStatusColumn: sql`o.payment_status`,
+            orderStatusColumn: sql`o.status`,
+            inventoryStatusColumn: sql`o.inventory_status`,
+            pspStatusReasonColumn: sql`o.psp_status_reason`,
+          })}
+          and ${shippingStatusTransitionWhereSql({
+            column: sql`o.shipping_status`,
+            to: 'creating_label',
+            allowNullFrom: true,
+            includeSame: true,
+          })}
         )
         or s.status = 'processing'
       )
@@ -441,23 +454,7 @@ export async function claimQueuedShipmentsForProcessing(args: {
           lease_expires_at = now() + make_interval(secs => ${args.leaseSeconds}),
           updated_at = now()
       from candidates c
-      join orders o on o.id = c.order_id
       where s.id = c.id
-        and (
-          c.candidate_status = 'processing'
-          or ${orderShippingEligibilityWhereSql({
-            paymentStatusColumn: sql`o.payment_status`,
-            orderStatusColumn: sql`o.status`,
-            inventoryStatusColumn: sql`o.inventory_status`,
-            pspStatusReasonColumn: sql`o.psp_status_reason`,
-          })}
-        )
-        and ${shippingStatusTransitionWhereSql({
-          column: sql`o.shipping_status`,
-          to: 'creating_label',
-          allowNullFrom: true,
-          includeSame: true,
-        })}
       returning
         s.id,
         s.order_id,
@@ -619,8 +616,21 @@ async function markSucceeded(args: {
           lease_owner = null,
           lease_expires_at = null,
           updated_at = now()
+      from orders o
       where s.id = ${args.shipmentId}::uuid
         and s.lease_owner = ${args.runId}
+        and o.id = s.order_id
+        and ${orderShippingEligibilityWhereSql({
+          paymentStatusColumn: sql`o.payment_status`,
+          orderStatusColumn: sql`o.status`,
+          inventoryStatusColumn: sql`o.inventory_status`,
+          pspStatusReasonColumn: sql`o.psp_status_reason`,
+        })}
+        and ${shippingStatusTransitionWhereSql({
+          column: sql`o.shipping_status`,
+          to: 'label_created',
+          allowNullFrom: true,
+        })}
       returning s.order_id
     ),
     updated_order as (
@@ -758,12 +768,28 @@ async function processClaimedShipment(args: {
       );
     }
 
-    const latestPayload = toNpPayload({
-      order: latestDetails,
-      snapshot: latestSnapshot,
+    const finalDetails = await loadOrderShippingDetails(args.claim.order_id);
+    if (!finalDetails) {
+      throw buildFailure('ORDER_NOT_FOUND', 'Order was not found.', false);
+    }
+
+    assertOrderStillShippable(finalDetails);
+
+    const finalSnapshot = parseSnapshot(finalDetails.shipping_address);
+    if (finalSnapshot.methodCode !== finalDetails.shipping_method_code) {
+      throw buildFailure(
+        'SHIPPING_METHOD_MISMATCH',
+        'Shipping method does not match persisted order method.',
+        false
+      );
+    }
+
+    const finalPayload = toNpPayload({
+      order: finalDetails,
+      snapshot: finalSnapshot,
     });
 
-    const created = await createInternetDocument(latestPayload);
+    const created = await createInternetDocument(finalPayload);
 
     const marked = await markSucceeded({
       shipmentId: args.claim.id,
