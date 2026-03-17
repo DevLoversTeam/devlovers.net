@@ -5,6 +5,13 @@ import { NextRequest } from 'next/server';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 const __prevRateLimitDisabled = process.env.RATE_LIMIT_DISABLED;
+const __prevPaymentsEnabled = process.env.PAYMENTS_ENABLED;
+const __prevStripePaymentsEnabled = process.env.STRIPE_PAYMENTS_ENABLED;
+const __prevStripeSecret = process.env.STRIPE_SECRET_KEY;
+const __prevStripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+const __prevStripePublishableKey =
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+const __prevAppOrigin = process.env.APP_ORIGIN;
 
 import { db } from '@/db';
 import {
@@ -14,9 +21,11 @@ import {
   productPrices,
   products,
 } from '@/db/schema';
+import { resetEnvCache } from '@/lib/env';
 import { deriveTestIpFromIdemKey } from '@/lib/tests/helpers/ip';
 
 vi.mock('@/lib/auth', async () => {
+  resetEnvCache();
   const actual = await vi.importActual<Record<string, unknown>>('@/lib/auth');
   return {
     ...actual,
@@ -25,11 +34,30 @@ vi.mock('@/lib/auth', async () => {
 });
 
 vi.mock('@/lib/env/stripe', async () => {
+  resetEnvCache();
   const actual =
     await vi.importActual<Record<string, unknown>>('@/lib/env/stripe');
   return {
     ...actual,
-    isPaymentsEnabled: () => false,
+    isPaymentsEnabled: () => true,
+  };
+});
+
+vi.mock('@/lib/services/orders/payment-attempts', async () => {
+  resetEnvCache();
+  const actual = await vi.importActual<any>(
+    '@/lib/services/orders/payment-attempts'
+  );
+  return {
+    ...actual,
+    ensureStripePaymentIntentForOrder: vi.fn(
+      async (args: { orderId: string }) => ({
+        paymentIntentId: `pi_test_${args.orderId.slice(0, 8)}`,
+        clientSecret: `cs_test_${args.orderId.slice(0, 8)}`,
+        attemptId: randomUUID(),
+        attemptNumber: 1,
+      })
+    ),
   };
 });
 
@@ -51,8 +79,12 @@ function makeJsonRequest(
   });
 }
 
-async function cleanupByIds(params: { orderId?: string; productId: string }) {
-  const { orderId, productId } = params;
+async function cleanupByIds(params: {
+  orderId?: string;
+  productId: string;
+  priceId?: string;
+}) {
+  const { orderId, productId, priceId } = params;
 
   if (orderId) {
     await db.delete(inventoryMoves).where(eq(inventoryMoves.orderId, orderId));
@@ -60,92 +92,133 @@ async function cleanupByIds(params: { orderId?: string; productId: string }) {
     await db.delete(orders).where(eq(orders.id, orderId));
   }
 
-  await db.delete(productPrices).where(eq(productPrices.productId, productId));
+  if (priceId) {
+    await db.delete(productPrices).where(eq(productPrices.id, priceId));
+  } else {
+    await db
+      .delete(productPrices)
+      .where(eq(productPrices.productId, productId));
+  }
 
   await db.delete(products).where(eq(products.id, productId));
 }
 
 beforeAll(() => {
   process.env.RATE_LIMIT_DISABLED = '1';
+  process.env.PAYMENTS_ENABLED = 'true';
+  process.env.STRIPE_PAYMENTS_ENABLED = 'true';
+  process.env.STRIPE_SECRET_KEY = 'sk_test_snapshot';
+  process.env.STRIPE_WEBHOOK_SECRET = 'whsec_test_snapshot';
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = 'pk_test_snapshot';
+  process.env.APP_ORIGIN = 'http://localhost:3000';
+  resetEnvCache();
 });
 
 afterAll(() => {
   if (__prevRateLimitDisabled === undefined)
     delete process.env.RATE_LIMIT_DISABLED;
   else process.env.RATE_LIMIT_DISABLED = __prevRateLimitDisabled;
+
+  if (__prevPaymentsEnabled === undefined) delete process.env.PAYMENTS_ENABLED;
+  else process.env.PAYMENTS_ENABLED = __prevPaymentsEnabled;
+
+  if (__prevStripePaymentsEnabled === undefined)
+    delete process.env.STRIPE_PAYMENTS_ENABLED;
+  else process.env.STRIPE_PAYMENTS_ENABLED = __prevStripePaymentsEnabled;
+
+  if (__prevStripeSecret === undefined) delete process.env.STRIPE_SECRET_KEY;
+  else process.env.STRIPE_SECRET_KEY = __prevStripeSecret;
+
+  if (__prevStripeWebhookSecret === undefined)
+    delete process.env.STRIPE_WEBHOOK_SECRET;
+  else process.env.STRIPE_WEBHOOK_SECRET = __prevStripeWebhookSecret;
+
+  if (__prevStripePublishableKey === undefined)
+    delete process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+  else
+    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = __prevStripePublishableKey;
+
+  if (__prevAppOrigin === undefined) delete process.env.APP_ORIGIN;
+  else process.env.APP_ORIGIN = __prevAppOrigin;
+  resetEnvCache();
 });
 
 describe('P0-6 snapshots: order_items immutability', () => {
   it('snapshot fields must not change after products/product_prices update', async () => {
     const productId = randomUUID();
     const priceId = randomUUID();
+    let orderId: string | undefined;
+    let primaryError: unknown = null;
+    let cleanupError: unknown = null;
 
     const titleV1 = 'Snapshot Test Product';
     const slugV1 = `snapshot-test-${productId.slice(0, 8)}`;
     const skuV1 = `SKU-${productId.slice(0, 8)}`;
 
-    await db.insert(products).values({
-      id: productId,
-      slug: slugV1,
-      title: titleV1,
-      description: 'snapshot test',
-      imageUrl: 'https://res.cloudinary.com/devlovers/image/upload/v1/test.png',
-      imagePublicId: null,
-      price: '9.00',
-      originalPrice: null,
-      currency: 'USD',
-      category: null,
-      type: null,
-      colors: [],
-      sizes: [],
-      badge: 'NONE',
-      isActive: true,
-      isFeatured: false,
-      stock: 10,
-      sku: skuV1,
-    });
-
-    await db.insert(productPrices).values({
-      id: priceId,
-      productId,
-      currency: 'USD',
-      priceMinor: 900,
-      originalPriceMinor: null,
-      price: '9.00',
-      originalPrice: null,
-    });
-
-    const idem = randomUUID();
-    const req = makeJsonRequest(
-      'http://localhost:3000/api/shop/checkout',
-      { items: [{ productId, quantity: 1 }] },
-      {
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Content-Type': 'application/json',
-        'Idempotency-Key': idem,
-        'X-Forwarded-For': deriveTestIpFromIdemKey(idem),
-        Origin: 'http://localhost:3000',
-      }
-    );
-    const { POST: checkoutPOST } =
-      await import('@/app/api/shop/checkout/route');
-
-    const res = await checkoutPOST(req);
-
-    expect(res.status).toBeGreaterThanOrEqual(200);
-    expect(res.status).toBeLessThan(300);
-
-    const json = (await res.json()) as CheckoutResponse;
-    expect(json.success).toBe(true);
-
-    const orderId = json.orderId ?? json.order?.id;
-    expect(typeof orderId).toBe('string');
-    if (!orderId) throw new Error('Missing orderId from checkout response');
-
-    let primaryError: unknown = null;
-    let cleanupError: unknown = null;
-
     try {
+      await db.insert(products).values({
+        id: productId,
+        slug: slugV1,
+        title: titleV1,
+        description: 'snapshot test',
+        imageUrl:
+          'https://res.cloudinary.com/devlovers/image/upload/v1/test.png',
+        imagePublicId: null,
+        price: '9.00',
+        originalPrice: null,
+        currency: 'USD',
+        category: null,
+        type: null,
+        colors: [],
+        sizes: [],
+        badge: 'NONE',
+        isActive: true,
+        isFeatured: false,
+        stock: 10,
+        sku: skuV1,
+      });
+
+      await db.insert(productPrices).values({
+        id: priceId,
+        productId,
+        currency: 'USD',
+        priceMinor: 900,
+        originalPriceMinor: null,
+        price: '9.00',
+        originalPrice: null,
+      });
+
+      const idem = randomUUID();
+      const req = makeJsonRequest(
+        'http://localhost:3000/api/shop/checkout',
+        {
+          items: [{ productId, quantity: 1 }],
+          paymentProvider: 'stripe',
+          paymentMethod: 'stripe_card',
+        },
+        {
+          'Accept-Language': 'en-US,en;q=0.9',
+          'Content-Type': 'application/json',
+          'Idempotency-Key': idem,
+          'X-Forwarded-For': deriveTestIpFromIdemKey(idem),
+          Origin: 'http://localhost:3000',
+        }
+      );
+      const { POST: checkoutPOST } =
+        await import('@/app/api/shop/checkout/route');
+
+      const res = await checkoutPOST(req);
+
+      expect(res.status).toBeGreaterThanOrEqual(200);
+      expect(res.status).toBeLessThan(300);
+
+      const json = (await res.json()) as CheckoutResponse;
+      expect(json.success).toBe(true);
+
+      orderId = json.orderId ?? json.order?.id;
+      expect(typeof orderId).toBe('string');
+      if (!orderId) throw new Error('Missing orderId from checkout response');
+
       const before = await db
         .select({
           orderId: orderItems.orderId,
@@ -217,12 +290,13 @@ describe('P0-6 snapshots: order_items immutability', () => {
       throw e;
     } finally {
       try {
-        await cleanupByIds({ orderId, productId });
+        await cleanupByIds({ orderId, productId, priceId });
       } catch (e) {
         cleanupError = e;
         console.error('[test cleanup failed]', { orderId, productId }, e);
       }
     }
+
     if (!primaryError && cleanupError) {
       throw cleanupError;
     }

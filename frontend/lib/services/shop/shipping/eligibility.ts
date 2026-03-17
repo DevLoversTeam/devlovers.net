@@ -1,4 +1,4 @@
-import { and, eq, inArray, type SQL, type SQLWrapper } from 'drizzle-orm';
+import { and, eq, inArray, type SQL, sql, type SQLWrapper } from 'drizzle-orm';
 
 import {
   inventoryCommittedForShippingSql,
@@ -7,14 +7,17 @@ import {
 
 const SHIPPABLE_PAYMENT_STATUS = 'paid';
 const SHIPPABLE_ORDER_STATUSES = ['PAID'] as const;
+const REFUND_CONTAINMENT_REASON = 'REFUND_REQUESTED';
 
 export type OrderShippingEligibilityInput = {
   paymentStatus: string | null | undefined;
   orderStatus: string | null | undefined;
   inventoryStatus: string | null | undefined;
+  pspStatusReason?: string | null | undefined;
 };
 
 export type OrderShippingEligibilityFailureCode =
+  | 'REFUND_CONTAINED'
   | 'PAYMENT_NOT_PAID'
   | 'ORDER_NOT_FULFILLABLE'
   | 'INVENTORY_NOT_COMMITTED';
@@ -36,6 +39,14 @@ export type OrderShippingEligibilityResult =
 export function evaluateOrderShippingEligibility(
   state: OrderShippingEligibilityInput
 ): OrderShippingEligibilityResult {
+  if (state.pspStatusReason === REFUND_CONTAINMENT_REASON) {
+    return {
+      ok: false,
+      code: 'REFUND_CONTAINED',
+      message: 'Order refund is pending finalization.',
+    };
+  }
+
   if (state.paymentStatus !== SHIPPABLE_PAYMENT_STATUS) {
     return {
       ok: false,
@@ -67,8 +78,12 @@ export function orderShippingEligibilityWhereSql(args: {
   paymentStatusColumn: SQLWrapper;
   orderStatusColumn: SQLWrapper;
   inventoryStatusColumn: SQLWrapper;
+  pspStatusReasonColumn?: SQLWrapper;
 }): SQL {
   return and(
+    args.pspStatusReasonColumn
+      ? sql`${args.pspStatusReasonColumn} is distinct from ${REFUND_CONTAINMENT_REASON}`
+      : undefined,
     eq(args.paymentStatusColumn, SHIPPABLE_PAYMENT_STATUS),
     inArray(args.orderStatusColumn, SHIPPABLE_ORDER_STATUSES),
     inventoryCommittedForShippingSql(args.inventoryStatusColumn)

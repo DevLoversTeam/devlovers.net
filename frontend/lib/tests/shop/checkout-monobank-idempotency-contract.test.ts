@@ -385,7 +385,7 @@ describe.sequential('checkout monobank contract', () => {
     }
   }, 20_000);
 
-  it('missing UAH price -> 422 PRICE_CONFIG_ERROR for monobank checkout', async () => {
+  it('missing UAH price -> 400 PRICE_CONFIG_ERROR for monobank checkout', async () => {
     const { productId } = await createIsolatedProduct({
       stock: 2,
       prices: [{ currency: 'USD', priceMinor: 1000 }],
@@ -394,7 +394,7 @@ describe.sequential('checkout monobank contract', () => {
 
     try {
       const res = await postCheckout(idemKey, productId);
-      expect(res.status).toBe(422);
+      expect(res.status).toBe(400);
       const json: any = await res.json();
       expect(json.code).toBe('PRICE_CONFIG_ERROR');
       expect(createMonobankInvoiceMock).not.toHaveBeenCalled();

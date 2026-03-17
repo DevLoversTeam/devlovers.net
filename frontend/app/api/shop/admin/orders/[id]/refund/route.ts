@@ -11,7 +11,6 @@ import {
   AdminUnauthorizedError,
   requireAdminApi,
 } from '@/lib/auth/admin';
-import { getMonobankConfig } from '@/lib/env/monobank';
 import { readPositiveIntEnv } from '@/lib/env/readPositiveIntEnv';
 import { logError, logWarn } from '@/lib/logging';
 import { requireAdminCsrf } from '@/lib/security/admin-csrf';
@@ -143,44 +142,17 @@ export async function POST(
       .limit(1);
 
     if (targetOrder?.paymentProvider === 'monobank') {
-      const { refundEnabled } = getMonobankConfig();
-      if (!refundEnabled) {
-        logWarn('admin_orders_refund_disabled', {
-          ...baseMeta,
-          code: 'REFUND_DISABLED',
-          orderId: orderIdForLog,
-          durationMs: Date.now() - startedAtMs,
-        });
-
-        return noStoreJson(
-          { code: 'REFUND_DISABLED', message: 'Refunds are disabled.' },
-          { status: 409 }
-        );
-      }
-
-      const { requestMonobankFullRefund } =
-        await import('@/lib/services/orders/monobank-refund');
-      const result = await requestMonobankFullRefund({
+      logWarn('admin_orders_refund_disabled', {
+        ...baseMeta,
+        code: 'REFUND_DISABLED',
         orderId: orderIdForLog,
-        requestId,
+        durationMs: Date.now() - startedAtMs,
       });
-
-      const orderSummary = orderSummarySchema.parse(result.order);
 
       return noStoreJson({
-        success: true,
-        order: {
-          ...orderSummary,
-          createdAt:
-            orderSummary.createdAt instanceof Date
-              ? orderSummary.createdAt.toISOString()
-              : String(orderSummary.createdAt),
-        },
-        refund: {
-          ...result.refund,
-          deduped: result.deduped,
-        },
-      });
+        code: 'REFUND_DISABLED',
+        message: 'Refunds are disabled.',
+      }, { status: 409 });
     }
 
     const order = await refundOrder(orderIdForLog, { requestedBy: 'admin' });

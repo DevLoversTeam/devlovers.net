@@ -24,8 +24,8 @@ import { InvalidPayloadError } from '@/lib/services/errors';
 import { guardedPaymentStatusUpdate } from '@/lib/services/orders/payment-state';
 import { restockOrder } from '@/lib/services/orders/restock';
 import { buildPaymentEventDedupeKey } from '@/lib/services/shop/events/dedupe-key';
+import { orderShippingEligibilityWhereSql } from '@/lib/services/shop/shipping/eligibility';
 import {
-  inventoryCommittedForShippingSql,
   isInventoryCommittedForShipping,
 } from '@/lib/services/shop/shipping/inventory-eligibility';
 import { recordShippingMetric } from '@/lib/services/shop/shipping/metrics';
@@ -632,11 +632,14 @@ async function atomicMarkPaidOrderAndSucceedAttempt(args: {
           select uo.id
           from updated_order uo
           where ${args.enqueueShipment} = true
-            and uo.payment_status = 'paid'
             and uo.shipping_required = true
             and uo.shipping_provider = 'nova_poshta'
             and uo.shipping_method_code is not null
-            and ${inventoryCommittedForShippingSql(sql`uo.inventory_status`)}
+            and ${orderShippingEligibilityWhereSql({
+              paymentStatusColumn: sql`uo.payment_status`,
+              orderStatusColumn: sql`'PAID'`,
+              inventoryStatusColumn: sql`uo.inventory_status`,
+            })}
         ),
         inserted_shipment as (
           insert into shipping_shipments (
@@ -736,11 +739,14 @@ async function atomicMarkPaidOrderAndSucceedAttempt(args: {
           select uo.id
           from updated_order uo
           where ${args.enqueueShipment} = true
-            and uo.payment_status = 'paid'
             and uo.shipping_required = true
             and uo.shipping_provider = 'nova_poshta'
             and uo.shipping_method_code is not null
-            and ${inventoryCommittedForShippingSql(sql`uo.inventory_status`)}
+            and ${orderShippingEligibilityWhereSql({
+              paymentStatusColumn: sql`uo.payment_status`,
+              orderStatusColumn: sql`'PAID'`,
+              inventoryStatusColumn: sql`uo.inventory_status`,
+            })}
         ),
         inserted_shipment as (
           insert into shipping_shipments (
@@ -841,11 +847,15 @@ async function ensureQueuedShipmentAndOrderShippingStatus(args: {
     from orders o
     where o.id = ${args.orderId}::uuid
       and o.payment_provider = 'monobank'
-      and o.payment_status = 'paid'
       and o.shipping_required = true
       and o.shipping_provider = 'nova_poshta'
       and o.shipping_method_code is not null
-      and ${inventoryCommittedForShippingSql(sql`o.inventory_status`)}
+      and ${orderShippingEligibilityWhereSql({
+        paymentStatusColumn: sql`o.payment_status`,
+        orderStatusColumn: sql`o.status`,
+        inventoryStatusColumn: sql`o.inventory_status`,
+        pspStatusReasonColumn: sql`o.psp_status_reason`,
+      })}
     on conflict (order_id) do update
   set status = 'queued',
       updated_at = ${args.now}

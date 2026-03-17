@@ -14,7 +14,6 @@ import {
 } from '@/db/schema/shop';
 import { getShopShippingFlags } from '@/lib/env/nova-poshta';
 import { getShopLegalVersions } from '@/lib/env/shop-legal';
-import { isPaymentsEnabled } from '@/lib/env/stripe';
 import { logError, logWarn } from '@/lib/logging';
 import { resolveShippingAvailability } from '@/lib/services/shop/shipping/availability';
 import { resolveCurrencyFromLocale } from '@/lib/shop/currency';
@@ -29,6 +28,7 @@ import {
   type PaymentMethod,
   type PaymentProvider,
   type PaymentStatus,
+  resolveCheckoutProviderCandidates,
   resolveDefaultMethodForProvider,
 } from '@/lib/shop/payments';
 import {
@@ -872,28 +872,27 @@ export async function createOrderWithItems({
   paymentProvider?: PaymentProvider;
   paymentMethod?: PaymentMethod | null;
 }): Promise<CheckoutResult> {
-  const isMonobankRequested = requestedProvider === 'monobank';
-  const currency: Currency = isMonobankRequested
-    ? 'UAH'
-    : resolveCurrencyFromLocale(locale);
-  const stripePaymentsEnabled = isPaymentsEnabled();
+  if (requestedProvider === 'none') {
+    throw new InvalidPayloadError('paymentProvider "none" is not supported.', {
+      code: 'INVALID_PAYLOAD',
+    });
+  }
+
+  const localeCurrency: Currency = resolveCurrencyFromLocale(locale);
+  const checkoutProviderCandidates = resolveCheckoutProviderCandidates({
+    requestedProvider:
+      requestedProvider === 'stripe' || requestedProvider === 'monobank'
+        ? requestedProvider
+        : null,
+    requestedMethod,
+    currency: localeCurrency,
+  });
   const paymentProvider: PaymentProvider =
-    requestedProvider === 'none'
-      ? 'none'
-      : requestedProvider === 'monobank'
-        ? 'monobank'
-        : requestedProvider === 'stripe'
-          ? 'stripe'
-          : stripePaymentsEnabled
-            ? 'stripe'
-            : 'none';
+    checkoutProviderCandidates[0] ?? 'stripe';
+  const currency: Currency =
+    paymentProvider === 'monobank' ? 'UAH' : localeCurrency;
 
-  const paymentsEnabled =
-    paymentProvider !== 'none' &&
-    (paymentProvider === 'monobank' || stripePaymentsEnabled);
-
-  const initialPaymentStatus: PaymentStatus =
-    paymentProvider === 'none' ? 'paid' : 'pending';
+  const initialPaymentStatus: PaymentStatus = 'pending';
   const resolvedPaymentMethod = resolveCheckoutPaymentMethod({
     requestedMethod,
     paymentProvider,
@@ -1162,14 +1161,6 @@ export async function createOrderWithItems({
         snapshot: preparedShipping.snapshot,
       });
     }
-    if (!paymentsEnabled) {
-      const reconciled = await reconcileNoPaymentOrder(existing.id);
-      return {
-        order: reconciled,
-        isNew: false,
-        totalCents: requireTotalCents(reconciled),
-      };
-    }
     return {
       order: existing,
       isNew: false,
@@ -1264,7 +1255,7 @@ export async function createOrderWithItems({
 
         status: 'CREATED',
 
-        inventoryStatus: paymentsEnabled ? 'none' : 'reserving',
+        inventoryStatus: 'none',
         failureCode: null,
         failureMessage: null,
         idempotencyRequestHash: requestHash,
@@ -1335,14 +1326,6 @@ export async function createOrderWithItems({
             orderId: existingOrder.id,
             snapshot: preparedShipping.snapshot,
           });
-        }
-        if (!paymentsEnabled) {
-          const reconciled = await reconcileNoPaymentOrder(existingOrder.id);
-          return {
-            order: reconciled,
-            isNew: false,
-            totalCents: requireTotalCents(reconciled),
-          };
         }
         return {
           order: existingOrder,
@@ -1423,7 +1406,7 @@ export async function createOrderWithItems({
     await db
       .update(orders)
       .set({
-        status: paymentsEnabled ? 'INVENTORY_RESERVED' : 'PAID',
+        status: 'INVENTORY_RESERVED',
         inventoryStatus: 'reserved',
         failureCode: null,
         failureMessage: null,
@@ -1431,8 +1414,7 @@ export async function createOrderWithItems({
       })
       .where(eq(orders.id, orderId));
 
-    const targetPaymentStatus: PaymentStatus =
-      paymentProvider === 'none' ? 'paid' : 'pending';
+    const targetPaymentStatus: PaymentStatus = 'pending';
 
     const payRes = await guardedPaymentStatusUpdate({
       orderId,
