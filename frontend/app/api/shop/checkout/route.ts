@@ -41,6 +41,8 @@ import {
   paymentProviderValues,
   type PaymentStatus,
   paymentStatusValues,
+  resolveCheckoutProviderCandidates,
+  resolveDefaultMethodForProvider,
 } from '@/lib/shop/payments';
 import { resolveRequestLocale } from '@/lib/shop/request-locale';
 import {
@@ -256,7 +258,7 @@ function mapMonobankCheckoutError(error: unknown) {
     return {
       code: 'PRICE_CONFIG_ERROR',
       message: getErrorMessage(error, 'Price configuration error.'),
-      status: 422,
+      status: 400,
       details:
         error instanceof PriceConfigError
           ? {
@@ -845,72 +847,110 @@ export async function POST(request: NextRequest) {
     payloadForValidation = rest;
   }
 
-  const selectedProvider: CheckoutRequestedProvider =
-    requestedProvider ?? 'stripe';
-  // Explicit default table (locked): stripe -> stripe_card, monobank -> monobank_invoice.
-  const defaultMethod: PaymentMethod =
-    selectedProvider === 'monobank' ? 'monobank_invoice' : 'stripe_card';
-  const selectedMethod: PaymentMethod = requestedMethod ?? defaultMethod;
-  const selectedCurrency =
-    selectedProvider === 'monobank' ? 'UAH' : resolveCurrencyFromLocale(locale);
-
-  if (selectedProvider === 'monobank') {
-    payloadForValidation = stripMonobankClientMoneyFields(payloadForValidation);
-  }
-
+  const localeCurrency = resolveCurrencyFromLocale(locale);
   const paymentsEnabled =
     (process.env.PAYMENTS_ENABLED ?? '').trim() === 'true';
 
   const stripeCheckoutAvailable = isStripePaymentsEnabled({
     requirePublishableKey: true,
   });
-  const checkoutPaymentProvider: PaymentProvider =
-    selectedProvider === 'monobank'
-      ? 'monobank'
-      : stripeCheckoutAvailable
-        ? 'stripe'
-        : 'none';
+  let monobankCheckoutAvailable = false;
+  try {
+    monobankCheckoutAvailable = paymentsEnabled && isMonobankEnabled();
+  } catch (error) {
+    logError('monobank_env_invalid', error, {
+      ...baseMeta,
+      code: 'MONOBANK_ENV_INVALID',
+    });
+  }
 
-  const stripeExplicitlyRequested =
-    requestedProvider === 'stripe' || requestedMethod === 'stripe_card';
+  const checkoutProviderCandidates = resolveCheckoutProviderCandidates({
+    requestedProvider,
+    requestedMethod,
+    currency: localeCurrency,
+  });
+  const selectedProvider =
+    checkoutProviderCandidates.find(candidate =>
+      candidate === 'stripe'
+        ? stripeCheckoutAvailable
+        : monobankCheckoutAvailable
+    ) ?? null;
+
+  const fallbackProvider =
+    selectedProvider ?? checkoutProviderCandidates[0] ?? null;
+  const selectedCurrency =
+    fallbackProvider === 'monobank' ? 'UAH' : localeCurrency;
+  const selectedMethod =
+    requestedMethod ??
+    (fallbackProvider
+      ? resolveDefaultMethodForProvider(fallbackProvider, selectedCurrency)
+      : null);
+
+  if (fallbackProvider === 'monobank') {
+    payloadForValidation = stripMonobankClientMoneyFields(payloadForValidation);
+  }
 
   const stripeRequestedButUnavailable =
-    stripeExplicitlyRequested && !stripeCheckoutAvailable;
+    checkoutProviderCandidates.length === 1 &&
+    checkoutProviderCandidates[0] === 'stripe' &&
+    !stripeCheckoutAvailable;
 
-  if (selectedProvider === 'monobank') {
-    let enabled = false;
+  if (!selectedMethod) {
+    logWarn('checkout_provider_unavailable', {
+      ...baseMeta,
+      code: 'PAYMENTS_DISABLED',
+      requestedProvider,
+      requestedMethod,
+      localeCurrency,
+      candidates: checkoutProviderCandidates,
+      stripeCheckoutAvailable,
+      monobankCheckoutAvailable,
+    });
 
-    try {
-      enabled = isMonobankEnabled();
-    } catch (error) {
-      logError('monobank_env_invalid', error, {
-        ...baseMeta,
-        code: 'MONOBANK_ENV_INVALID',
-      });
-      enabled = false;
-    }
+    return errorResponse(
+      'PSP_UNAVAILABLE',
+      'Payment provider unavailable.',
+      503
+    );
+  }
 
-    if (!enabled) {
-      logWarn('provider_disabled', {
-        requestedProvider: 'monobank',
-        requestId,
-      });
+  if (!selectedProvider && !stripeRequestedButUnavailable) {
+    logWarn('checkout_provider_unavailable', {
+      ...baseMeta,
+      code: 'PAYMENTS_DISABLED',
+      requestedProvider,
+      requestedMethod,
+      localeCurrency,
+      candidates: checkoutProviderCandidates,
+      stripeCheckoutAvailable,
+      monobankCheckoutAvailable,
+    });
 
-      return errorResponse('INVALID_REQUEST', 'Invalid request.', 422);
-    }
+    return errorResponse(
+      'PSP_UNAVAILABLE',
+      'Payment provider unavailable.',
+      503
+    );
+  }
 
-    if (!paymentsEnabled) {
-      logWarn('monobank_payments_disabled', {
-        ...baseMeta,
-        code: 'PAYMENTS_DISABLED',
-      });
+  const resolvedProvider = selectedProvider ?? fallbackProvider;
+  if (!resolvedProvider) {
+    logWarn('checkout_provider_unavailable', {
+      ...baseMeta,
+      code: 'PAYMENTS_DISABLED',
+      requestedProvider,
+      requestedMethod,
+      localeCurrency,
+      candidates: checkoutProviderCandidates,
+      stripeCheckoutAvailable,
+      monobankCheckoutAvailable,
+    });
 
-      return errorResponse(
-        'PSP_UNAVAILABLE',
-        'Payment provider unavailable.',
-        503
-      );
-    }
+    return errorResponse(
+      'PSP_UNAVAILABLE',
+      'Payment provider unavailable.',
+      503
+    );
   }
 
   if (
@@ -922,13 +962,13 @@ export async function POST(request: NextRequest) {
 
   if (
     !isMethodAllowed({
-      provider: selectedProvider,
+      provider: resolvedProvider,
       method: selectedMethod,
       currency: selectedCurrency,
       flags: { monobankGooglePayEnabled: isMonobankGooglePayEnabled() },
     })
   ) {
-    if (selectedProvider === 'monobank') {
+    if (resolvedProvider === 'monobank') {
       return errorResponse('INVALID_REQUEST', 'Invalid request.', 422);
     }
 
@@ -946,7 +986,7 @@ export async function POST(request: NextRequest) {
   ) {
     payloadForValidation = {
       ...(payloadForValidation as Record<string, unknown>),
-      paymentProvider: selectedProvider,
+      paymentProvider: fallbackProvider,
       paymentMethod: selectedMethod,
       paymentCurrency: selectedCurrency,
     };
@@ -1133,7 +1173,7 @@ export async function POST(request: NextRequest) {
         country: country ?? null,
         shipping: shipping ?? null,
         legalConsent: legalConsent ?? null,
-        paymentProvider: checkoutPaymentProvider,
+        paymentProvider: resolvedProvider,
         paymentMethod: selectedMethod,
       }));
 

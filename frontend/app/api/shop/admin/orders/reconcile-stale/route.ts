@@ -15,7 +15,10 @@ import {
   verifyCsrfToken,
 } from '@/lib/security/csrf';
 import { guardBrowserSameOrigin } from '@/lib/security/origin';
-import { restockStalePendingOrders } from '@/lib/services/orders';
+import {
+  reconcileStaleStripeRefundOrders,
+  restockStalePendingOrders,
+} from '@/lib/services/orders';
 export const runtime = 'nodejs';
 
 function noStoreJson(body: unknown, init?: { status?: number }) {
@@ -93,18 +96,32 @@ export async function POST(request: NextRequest) {
       return noStoreJson({ code: 'CSRF_INVALID' }, { status: 403 });
     }
 
-    const processed = await restockStalePendingOrders({
+    const processedStalePending = await restockStalePendingOrders({
       olderThanMinutes: DEFAULT_STALE_MINUTES,
     });
+    const processedStripeRefundRecovery =
+      await reconcileStaleStripeRefundOrders({
+        olderThanMinutes: DEFAULT_STALE_MINUTES,
+      });
+    const processed = processedStalePending + processedStripeRefundRecovery;
     logInfo('admin_reconcile_stale_succeeded', {
       ...baseMeta,
       code: 'OK',
       processed,
+      processedStalePending,
+      processedStripeRefundRecovery,
       olderThanMinutes: DEFAULT_STALE_MINUTES,
       durationMs: Date.now() - startedAtMs,
     });
 
-    return noStoreJson({ processed }, { status: 200 });
+    return noStoreJson(
+      {
+        processed,
+        processedStalePending,
+        processedStripeRefundRecovery,
+      },
+      { status: 200 }
+    );
   } catch (error) {
     if (error instanceof AdminApiDisabledError) {
       logWarn('admin_reconcile_stale_admin_api_disabled', {

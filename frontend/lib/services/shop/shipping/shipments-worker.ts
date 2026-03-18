@@ -38,6 +38,7 @@ type OrderShippingDetailsRow = {
   payment_status: string | null;
   status: string | null;
   inventory_status: string | null;
+  psp_status_reason: string | null;
   shipping_required: boolean | null;
   shipping_provider: string | null;
   shipping_method_code: string | null;
@@ -418,12 +419,26 @@ export async function claimQueuedShipmentsForProcessing(args: {
     with candidates as (
       select
         s.id,
-        s.order_id
+        s.order_id,
+        s.status as candidate_status
       from shipping_shipments s
+      join orders o on o.id = s.order_id
       where (
         (
           s.status in ('queued', 'failed')
           and (s.next_attempt_at is null or s.next_attempt_at <= now())
+          and ${orderShippingEligibilityWhereSql({
+            paymentStatusColumn: sql`o.payment_status`,
+            orderStatusColumn: sql`o.status`,
+            inventoryStatusColumn: sql`o.inventory_status`,
+            pspStatusReasonColumn: sql`o.psp_status_reason`,
+          })}
+          and ${shippingStatusTransitionWhereSql({
+            column: sql`o.shipping_status`,
+            to: 'creating_label',
+            allowNullFrom: true,
+            includeSame: true,
+          })}
         )
         or s.status = 'processing'
       )
@@ -439,19 +454,7 @@ export async function claimQueuedShipmentsForProcessing(args: {
           lease_expires_at = now() + make_interval(secs => ${args.leaseSeconds}),
           updated_at = now()
       from candidates c
-      join orders o on o.id = c.order_id
       where s.id = c.id
-        and ${orderShippingEligibilityWhereSql({
-          paymentStatusColumn: sql`o.payment_status`,
-          orderStatusColumn: sql`o.status`,
-          inventoryStatusColumn: sql`o.inventory_status`,
-        })}
-        and ${shippingStatusTransitionWhereSql({
-          column: sql`o.shipping_status`,
-          to: 'creating_label',
-          allowNullFrom: true,
-          includeSame: true,
-        })}
       returning
         s.id,
         s.order_id,
@@ -540,6 +543,7 @@ async function loadOrderShippingDetails(
       o.payment_status as payment_status,
       o.status as status,
       o.inventory_status as inventory_status,
+      o.psp_status_reason as psp_status_reason,
       o.shipping_required as shipping_required,
       o.shipping_provider as shipping_provider,
       o.shipping_method_code as shipping_method_code,
@@ -551,6 +555,42 @@ async function loadOrderShippingDetails(
   `);
 
   return readRows<OrderShippingDetailsRow>(res)[0] ?? null;
+}
+
+function assertOrderStillShippable(details: OrderShippingDetailsRow) {
+  const eligibility = evaluateOrderShippingEligibility({
+    paymentStatus: details.payment_status,
+    orderStatus: details.status,
+    inventoryStatus: details.inventory_status,
+    pspStatusReason: details.psp_status_reason,
+  });
+  if (!eligibility.ok) {
+    throw buildFailure('ORDER_NOT_SHIPPABLE', eligibility.message, false);
+  }
+
+  if (details.shipping_required !== true) {
+    throw buildFailure(
+      'SHIPPING_NOT_REQUIRED',
+      'Order does not require shipping.',
+      false
+    );
+  }
+
+  if (details.shipping_provider !== 'nova_poshta') {
+    throw buildFailure(
+      'SHIPPING_PROVIDER_UNSUPPORTED',
+      'Shipping provider is unsupported.',
+      false
+    );
+  }
+
+  if (!details.shipping_method_code) {
+    throw buildFailure(
+      'SHIPPING_METHOD_MISSING',
+      'Shipping method is missing.',
+      false
+    );
+  }
 }
 
 async function markSucceeded(args: {
@@ -576,8 +616,21 @@ async function markSucceeded(args: {
           lease_owner = null,
           lease_expires_at = null,
           updated_at = now()
+      from orders o
       where s.id = ${args.shipmentId}::uuid
         and s.lease_owner = ${args.runId}
+        and o.id = s.order_id
+        and ${orderShippingEligibilityWhereSql({
+          paymentStatusColumn: sql`o.payment_status`,
+          orderStatusColumn: sql`o.status`,
+          inventoryStatusColumn: sql`o.inventory_status`,
+          pspStatusReasonColumn: sql`o.psp_status_reason`,
+        })}
+        and ${shippingStatusTransitionWhereSql({
+          column: sql`o.shipping_status`,
+          to: 'label_created',
+          allowNullFrom: true,
+        })}
       returning s.order_id
     ),
     updated_order as (
@@ -687,38 +740,7 @@ async function processClaimedShipment(args: {
   }
 
   try {
-    const eligibility = evaluateOrderShippingEligibility({
-      paymentStatus: details.payment_status,
-      orderStatus: details.status,
-      inventoryStatus: details.inventory_status,
-    });
-    if (!eligibility.ok) {
-      throw buildFailure('ORDER_NOT_SHIPPABLE', eligibility.message, false);
-    }
-
-    if (details.shipping_required !== true) {
-      throw buildFailure(
-        'SHIPPING_NOT_REQUIRED',
-        'Order does not require shipping.',
-        false
-      );
-    }
-
-    if (details.shipping_provider !== 'nova_poshta') {
-      throw buildFailure(
-        'SHIPPING_PROVIDER_UNSUPPORTED',
-        'Shipping provider is unsupported.',
-        false
-      );
-    }
-
-    if (!details.shipping_method_code) {
-      throw buildFailure(
-        'SHIPPING_METHOD_MISSING',
-        'Shipping method is missing.',
-        false
-      );
-    }
+    assertOrderStillShippable(details);
 
     const parsedSnapshot = parseSnapshot(details.shipping_address);
 
@@ -730,12 +752,44 @@ async function processClaimedShipment(args: {
       );
     }
 
-    const payload = toNpPayload({
-      order: details,
-      snapshot: parsedSnapshot,
+    const latestDetails = await loadOrderShippingDetails(args.claim.order_id);
+    if (!latestDetails) {
+      throw buildFailure('ORDER_NOT_FOUND', 'Order was not found.', false);
+    }
+
+    assertOrderStillShippable(latestDetails);
+
+    const latestSnapshot = parseSnapshot(latestDetails.shipping_address);
+    if (latestSnapshot.methodCode !== latestDetails.shipping_method_code) {
+      throw buildFailure(
+        'SHIPPING_METHOD_MISMATCH',
+        'Shipping method does not match persisted order method.',
+        false
+      );
+    }
+
+    const finalDetails = await loadOrderShippingDetails(args.claim.order_id);
+    if (!finalDetails) {
+      throw buildFailure('ORDER_NOT_FOUND', 'Order was not found.', false);
+    }
+
+    assertOrderStillShippable(finalDetails);
+
+    const finalSnapshot = parseSnapshot(finalDetails.shipping_address);
+    if (finalSnapshot.methodCode !== finalDetails.shipping_method_code) {
+      throw buildFailure(
+        'SHIPPING_METHOD_MISMATCH',
+        'Shipping method does not match persisted order method.',
+        false
+      );
+    }
+
+    const finalPayload = toNpPayload({
+      order: finalDetails,
+      snapshot: finalSnapshot,
     });
 
-    const created = await createInternetDocument(payload);
+    const created = await createInternetDocument(finalPayload);
 
     const marked = await markSucceeded({
       shipmentId: args.claim.id,

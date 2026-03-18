@@ -4,6 +4,9 @@ import { NextRequest } from 'next/server';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 const __prevRateLimitDisabled = process.env.RATE_LIMIT_DISABLED;
+const __prevPaymentsEnabled = process.env.PAYMENTS_ENABLED;
+const __prevMonoToken = process.env.MONO_MERCHANT_TOKEN;
+const __prevAppOrigin = process.env.APP_ORIGIN;
 
 import {
   inventoryMoves,
@@ -12,10 +15,7 @@ import {
   productPrices,
   products,
 } from '@/db/schema';
-
-process.env.STRIPE_PAYMENTS_ENABLED = 'false';
-process.env.STRIPE_SECRET_KEY = 'sk_test_dummy';
-process.env.STRIPE_WEBHOOK_SECRET = 'whsec_dummy';
+import { resetEnvCache } from '@/lib/env';
 
 vi.mock('@/lib/auth', async () => {
   const actual =
@@ -27,25 +27,26 @@ vi.mock('@/lib/auth', async () => {
 });
 
 vi.mock('@/lib/env/stripe', () => ({
-  isPaymentsEnabled: () => false,
+  isPaymentsEnabled: () => true,
 }));
 
-const createPaymentIntentMock = vi.fn((...args: any[]) => {
-  void args;
-  throw new Error(
-    'Stripe should not be called in this test (payments disabled).'
+vi.mock('@/lib/services/orders/payment-attempts', async () => {
+  resetEnvCache();
+  const actual = await vi.importActual<any>(
+    '@/lib/services/orders/payment-attempts'
   );
+  return {
+    ...actual,
+    ensureStripePaymentIntentForOrder: vi.fn(
+      async (args: { orderId: string }) => ({
+        paymentIntentId: `pi_test_${args.orderId.slice(0, 8)}`,
+        clientSecret: `cs_test_${args.orderId.slice(0, 8)}`,
+        attemptId: crypto.randomUUID(),
+        attemptNumber: 1,
+      })
+    ),
+  };
 });
-
-vi.mock('@/lib/psp/stripe', () => ({
-  createPaymentIntent: (...args: any[]) => createPaymentIntentMock(...args),
-  retrievePaymentIntent: (...args: any[]) => {
-    void args;
-    throw new Error(
-      'Stripe should not be called in this test (payments disabled).'
-    );
-  },
-}));
 
 const logErrorMock = vi.fn((...args: any[]) => {
   void args;
@@ -75,6 +76,10 @@ const createdOrderIds: string[] = [];
 
 beforeAll(() => {
   process.env.RATE_LIMIT_DISABLED = '1';
+  process.env.PAYMENTS_ENABLED = 'true';
+  process.env.MONO_MERCHANT_TOKEN = 'mono_test_token';
+  process.env.APP_ORIGIN = 'http://localhost:3000';
+  resetEnvCache();
 
   if (process.env.NODE_ENV === 'production') {
     throw new Error(
@@ -118,6 +123,17 @@ afterAll(async () => {
   if (__prevRateLimitDisabled === undefined)
     delete process.env.RATE_LIMIT_DISABLED;
   else process.env.RATE_LIMIT_DISABLED = __prevRateLimitDisabled;
+
+  if (__prevPaymentsEnabled === undefined) delete process.env.PAYMENTS_ENABLED;
+  else process.env.PAYMENTS_ENABLED = __prevPaymentsEnabled;
+
+  if (__prevMonoToken === undefined) delete process.env.MONO_MERCHANT_TOKEN;
+  else process.env.MONO_MERCHANT_TOKEN = __prevMonoToken;
+
+  if (__prevAppOrigin === undefined) delete process.env.APP_ORIGIN;
+  else process.env.APP_ORIGIN = __prevAppOrigin;
+
+  resetEnvCache();
 });
 
 function makeIdempotencyKey(): string {
@@ -205,10 +221,6 @@ async function debugIfNotExpected(res: Response, expectedStatus: number) {
 
   console.log('checkout failed', { status: res.status, body: text });
   console.log('logError calls', logErrorMock.mock.calls);
-  console.log(
-    'stripe createPaymentIntent calls',
-    createPaymentIntentMock.mock.calls.length
-  );
 }
 
 describe('P0-CUR-3 checkout currency policy', () => {
@@ -225,7 +237,11 @@ describe('P0-CUR-3 checkout currency policy', () => {
     });
 
     const req = makeCheckoutRequest(
-      { items: [{ productId, quantity: 1 }] },
+      {
+        paymentProvider: 'stripe',
+        paymentMethod: 'stripe_card',
+        items: [{ productId, quantity: 1 }],
+      },
       { idempotencyKey: makeIdempotencyKey(), acceptLanguage: 'uk-UA,uk;q=0.9' }
     );
 
@@ -253,7 +269,11 @@ describe('P0-CUR-3 checkout currency policy', () => {
     });
 
     const req = makeCheckoutRequest(
-      { items: [{ productId, quantity: 1 }] },
+      {
+        paymentProvider: 'stripe',
+        paymentMethod: 'stripe_card',
+        items: [{ productId, quantity: 1 }],
+      },
       { idempotencyKey: makeIdempotencyKey(), acceptLanguage: 'en-US,en;q=0.9' }
     );
 
@@ -278,7 +298,11 @@ describe('P0-CUR-3 checkout currency policy', () => {
     });
 
     const req = makeCheckoutRequest(
-      { items: [{ productId, quantity: 1 }] },
+      {
+        paymentProvider: 'monobank',
+        paymentMethod: 'monobank_invoice',
+        items: [{ productId, quantity: 1 }],
+      },
       { idempotencyKey: makeIdempotencyKey(), acceptLanguage: 'uk-UA,uk;q=0.9' }
     );
 

@@ -32,13 +32,14 @@ type SeedArgs = {
     | 'release_pending'
     | 'released'
     | 'failed';
+  pspStatusReason?: string | null;
 };
 
 type Seeded = {
   orderId: string;
   shipmentId: string | null;
   shippingStatus: 'needs_attention' | 'label_created' | 'shipped' | 'cancelled';
-  shipmentStatus: 'failed' | 'needs_attention' | null;
+  shipmentStatus: 'failed' | 'needs_attention' | 'succeeded' | null;
 };
 
 function defaultStateForAction(
@@ -53,12 +54,12 @@ function defaultStateForAction(
   if (action === 'mark_shipped') {
     return {
       shippingStatus: 'label_created',
-      shipmentStatus: null,
+      shipmentStatus: 'succeeded',
     };
   }
   return {
     shippingStatus: 'shipped',
-    shipmentStatus: null,
+    shipmentStatus: 'succeeded',
   };
 }
 
@@ -70,7 +71,8 @@ async function seedOrder(args: SeedArgs): Promise<Seeded> {
   const targetIsShippable =
     args.paymentStatus === 'paid' &&
     args.orderStatus === 'PAID' &&
-    args.inventoryStatus === 'reserved';
+    args.inventoryStatus === 'reserved' &&
+    (args.pspStatusReason ?? null) !== 'REFUND_REQUESTED';
 
   const requiresPostInsertBlockedTransition = !targetIsShippable;
 
@@ -95,6 +97,7 @@ async function seedOrder(args: SeedArgs): Promise<Seeded> {
     paymentStatus: seedPaymentStatus,
     status: seedOrderStatus,
     inventoryStatus: seedInventoryStatus,
+    pspStatusReason: args.pspStatusReason ?? null,
     shippingRequired: true,
     shippingPayer: 'customer',
     shippingProvider: 'nova_poshta',
@@ -124,6 +127,7 @@ async function seedOrder(args: SeedArgs): Promise<Seeded> {
         paymentStatus: args.paymentStatus,
         status: args.orderStatus,
         inventoryStatus: args.inventoryStatus,
+        pspStatusReason: args.pspStatusReason ?? null,
       } as any)
       .where(eq(orders.id, orderId));
   }
@@ -188,6 +192,13 @@ describe.sequential('admin shipping action payment gate', () => {
       orderStatus: 'CANCELED' as const,
       inventoryStatus: 'reserved' as const,
     },
+    {
+      title: 'refund containment is active',
+      paymentStatus: 'paid' as const,
+      orderStatus: 'PAID' as const,
+      inventoryStatus: 'reserved' as const,
+      pspStatusReason: 'REFUND_REQUESTED' as const,
+    },
   ];
 
   const actions: readonly Action[] = [
@@ -204,6 +215,7 @@ describe.sequential('admin shipping action payment gate', () => {
           paymentStatus: invalidCase.paymentStatus,
           orderStatus: invalidCase.orderStatus,
           inventoryStatus: invalidCase.inventoryStatus,
+          pspStatusReason: invalidCase.pspStatusReason ?? null,
         });
 
         try {

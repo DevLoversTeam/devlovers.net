@@ -4,7 +4,6 @@ import { asc, eq, inArray, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { orderItems, orders, returnItems, returnRequests } from '@/db/schema';
-import { createRefund } from '@/lib/psp/stripe';
 import { InvalidPayloadError } from '@/lib/services/errors';
 import { buildAdminAuditDedupeKey } from '@/lib/services/shop/events/dedupe-key';
 import { buildShippingEventDedupeKey } from '@/lib/services/shop/events/dedupe-key';
@@ -957,108 +956,11 @@ export async function refundReturnRequest(args: {
   returnRequestId: string;
   actorUserId: string | null;
   requestId: string;
-}) {
-  const current = await loadReturnById(args.returnRequestId);
-  if (!current) {
-    throw returnError('RETURN_NOT_FOUND', 'Return request not found.');
-  }
-  if (current.status === 'refunded') {
-    return { changed: false, row: current };
-  }
-  if (!isReturnStatusTransitionAllowed(current.status, 'refunded')) {
-    throw returnError(
-      'RETURN_REFUND_STATE_INVALID',
-      'Refund is allowed only after return is received.',
-      { returnRequestId: current.id, status: current.status }
-    );
-  }
-  if (
-    !Number.isInteger(current.refundAmountMinor) ||
-    current.refundAmountMinor <= 0
-  ) {
-    throw returnError(
-      'RETURN_REFUND_AMOUNT_INVALID',
-      'Refund amount is invalid.',
-      {
-        returnRequestId: current.id,
-        refundAmountMinor: current.refundAmountMinor,
-      }
-    );
-  }
-
-  const order = await loadOrder(current.orderId);
-  if (!order) {
-    throw returnError(
-      'RETURN_NOT_FOUND',
-      'Order not found for return request.'
-    );
-  }
-
-  if (order.paymentProvider !== 'stripe') {
-    throw returnError(
-      'RETURN_REFUND_PROVIDER_UNSUPPORTED',
-      'Return refund is supported only for Stripe orders.'
-    );
-  }
-  if (order.paymentStatus !== 'paid') {
-    throw returnError(
-      'RETURN_REFUND_PAYMENT_STATUS_INVALID',
-      'Order payment status is not refundable.',
-      { paymentStatus: order.paymentStatus }
-    );
-  }
-  if (!order.paymentIntentId && !order.pspChargeId) {
-    throw returnError(
-      'RETURN_REFUND_MISSING_PSP_TARGET',
-      'Missing Stripe identifiers for refund.'
-    );
-  }
-
-  const refundIdempotencyKey =
-    `return_refund:${current.id}:${current.refundAmountMinor}:${current.currency}`.slice(
-      0,
-      128
-    );
-
-  let refundResult: { refundId: string; status: string | null };
-  try {
-    refundResult = await createRefund({
-      orderId: order.id,
-      paymentIntentId: order.paymentIntentId,
-      chargeId: order.pspChargeId,
-      amountMinor: current.refundAmountMinor,
-      idempotencyKey: refundIdempotencyKey,
-    });
-  } catch (error) {
-    throw new InvalidPayloadError('Payment provider unavailable.', {
-      code: 'PSP_UNAVAILABLE',
-      details: {
-        returnRequestId: current.id,
-        reason: error instanceof Error ? error.message : String(error),
-      },
-    });
-  }
-
-  return applyTransition({
-    returnRequestId: args.returnRequestId,
-    actorUserId: args.actorUserId,
-    requestId: args.requestId,
-    expectedFrom: 'received',
-    statusTo: 'refunded',
-    action: 'return.refund',
-    eventName: 'return_refunded',
-    setClause: sql`
-      refunded_at = ${new Date()},
-      refunded_by = ${args.actorUserId},
-      refund_provider_ref = ${refundResult.refundId}
-    `,
-    payload: {
+}): Promise<never> {
+  throw new InvalidPayloadError('Return refunds are disabled.', {
+    code: 'RETURN_REFUND_DISABLED',
+    details: {
       returnRequestId: args.returnRequestId,
-      actorUserId: args.actorUserId,
-      refundId: refundResult.refundId,
-      refundStatus: refundResult.status,
-      refundAmountMinor: current.refundAmountMinor,
-      currency: current.currency,
     },
   });
 }

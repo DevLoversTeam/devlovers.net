@@ -77,18 +77,13 @@ vi.mock('@/lib/shop/currency', () => ({
   resolveCurrencyFromLocale: vi.fn(() => 'USD'),
 }));
 
-vi.mock('@/lib/shop/payments', () => ({
-  isMethodAllowed: mockIsMethodAllowed,
-  paymentProviderValues: ['stripe', 'monobank', 'none'],
-  paymentStatusValues: [
-    'pending',
-    'requires_payment',
-    'paid',
-    'failed',
-    'refunded',
-    'needs_review',
-  ],
-}));
+vi.mock('@/lib/shop/payments', async () => {
+  const actual = await vi.importActual<any>('@/lib/shop/payments');
+  return {
+    ...actual,
+    isMethodAllowed: mockIsMethodAllowed,
+  };
+});
 
 vi.mock('@/lib/shop/request-locale', () => ({
   resolveRequestLocale: mockResolveRequestLocale,

@@ -19,6 +19,7 @@ async function cleanup(orderId: string) {
 describe.sequential('admin shipping action canonical audit', () => {
   it('mark_shipped inserts admin_audit_log row by default', async () => {
     const orderId = crypto.randomUUID();
+    const shipmentId = crypto.randomUUID();
     const requestId = `req_${crypto.randomUUID()}`;
 
     await db.insert(orders).values({
@@ -37,6 +38,17 @@ describe.sequential('admin shipping action canonical audit', () => {
       shippingAmountMinor: null,
       shippingStatus: 'label_created',
       idempotencyKey: crypto.randomUUID(),
+    } as any);
+
+    await db.insert(shippingShipments).values({
+      id: shipmentId,
+      orderId,
+      provider: 'nova_poshta',
+      status: 'succeeded',
+      attemptCount: 1,
+      leaseOwner: null,
+      leaseExpiresAt: null,
+      nextAttemptAt: null,
     } as any);
 
     try {
@@ -71,6 +83,7 @@ describe.sequential('admin shipping action canonical audit', () => {
 
   it('mark_delivered works after valid mark_shipped transition', async () => {
     const orderId = crypto.randomUUID();
+    const shipmentId = crypto.randomUUID();
     const shippedRequestId = `req_${crypto.randomUUID()}`;
     const deliveredRequestId = `req_${crypto.randomUUID()}`;
 
@@ -90,6 +103,17 @@ describe.sequential('admin shipping action canonical audit', () => {
       shippingAmountMinor: null,
       shippingStatus: 'label_created',
       idempotencyKey: crypto.randomUUID(),
+    } as any);
+
+    await db.insert(shippingShipments).values({
+      id: shipmentId,
+      orderId,
+      provider: 'nova_poshta',
+      status: 'succeeded',
+      attemptCount: 1,
+      leaseOwner: null,
+      leaseExpiresAt: null,
+      nextAttemptAt: null,
     } as any);
 
     try {

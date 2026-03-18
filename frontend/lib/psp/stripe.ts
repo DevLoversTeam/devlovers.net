@@ -18,6 +18,14 @@ type CreateRefundInput = {
   idempotencyKey?: string;
 };
 
+type RetrieveRefundResult = {
+  refundId: string;
+  status: Stripe.Refund['status'];
+  reason: Stripe.Refund['reason'] | null;
+  chargeId: string | null;
+  paymentIntentId: string | null;
+};
+
 let _stripe: Stripe | null = null;
 let _stripeKey: string | null = null;
 
@@ -81,6 +89,48 @@ export async function createRefund({
   } catch (error) {
     logError('Stripe refund creation failed', error);
     throw withCause('STRIPE_REFUND_FAILED', error);
+  }
+}
+
+export async function retrieveRefund(
+  refundId: string
+): Promise<RetrieveRefundResult> {
+  const { paymentsEnabled } = getStripeEnv();
+  const stripe = getStripeClient();
+
+  if (!paymentsEnabled || !stripe) {
+    throw new Error('STRIPE_DISABLED');
+  }
+
+  if (!refundId || refundId.trim().length === 0) {
+    throw new Error('STRIPE_INVALID_REFUND_ID');
+  }
+
+  try {
+    const refund = await stripe.refunds.retrieve(refundId.trim(), {
+      expand: ['payment_intent', 'charge'],
+    });
+
+    const chargeId =
+      typeof refund.charge === 'string'
+        ? refund.charge.trim() || null
+        : (refund.charge?.id ?? null);
+
+    const paymentIntentId =
+      typeof refund.payment_intent === 'string'
+        ? refund.payment_intent.trim() || null
+        : (refund.payment_intent?.id ?? null);
+
+    return {
+      refundId: refund.id,
+      status: refund.status,
+      reason: refund.reason ?? null,
+      chargeId,
+      paymentIntentId,
+    };
+  } catch (error) {
+    logError('Stripe refund retrieval failed', error);
+    throw withCause('STRIPE_REFUND_RETRIEVE_FAILED', error);
   }
 }
 
