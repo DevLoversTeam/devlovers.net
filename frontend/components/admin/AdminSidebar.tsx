@@ -2,15 +2,19 @@
 
 import {
   BarChart3,
+  BookOpen,
   ClipboardList,
   FileQuestion,
+  FolderOpen,
   LayoutDashboard,
   MessageSquare,
   Package,
   PanelLeftClose,
   PanelLeftOpen,
+  PenLine,
   Plus,
   ShoppingBag,
+  Users,
 } from 'lucide-react';
 import { useSyncExternalStore } from 'react';
 
@@ -50,6 +54,17 @@ const NAV_SECTIONS: NavSection[] = [
       { label: 'Quizzes', href: '/admin/quiz', icon: FileQuestion },
       { label: 'Statistics', href: '/admin/quiz/statistics', icon: BarChart3 },
       { label: 'New Quiz', href: '/admin/quiz/new', icon: Plus },
+    ],
+  },
+    {
+    label: 'Blog',
+    icon: BookOpen,
+    basePath: '/admin/blog',
+    items: [
+      { label: 'Posts', href: '/admin/blog', icon: PenLine },
+      { label: 'New Post', href: '/admin/blog/new', icon: Plus },
+      { label: 'Authors', href: '/admin/blog/authors', icon: Users },
+      { label: 'Categories', href: '/admin/blog/categories', icon: FolderOpen },
     ],
   },
   {
