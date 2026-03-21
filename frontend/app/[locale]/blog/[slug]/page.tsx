@@ -1,10 +1,10 @@
 import { setRequestLocale } from 'next-intl/server';
 
-import { getBlogPostBySlug } from '@/db/queries/blog/blog-posts';
+import { getCachedBlogPostBySlug } from '@/db/queries/blog/blog-posts';
 
 import PostDetails from './PostDetails';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 604800; // 7 days
 
 export async function generateMetadata({
   params,
@@ -12,7 +12,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string; locale: string }>;
 }) {
   const { slug, locale } = await params;
-  const post = await getBlogPostBySlug(slug, locale);
+  const post = await getCachedBlogPostBySlug(slug, locale);
   return { title: post?.title ?? 'Post' };
 }
 

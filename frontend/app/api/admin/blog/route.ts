@@ -1,4 +1,5 @@
 import { eq } from 'drizzle-orm';
+import { revalidateTag } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { db } from '@/db';
@@ -101,6 +102,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             : null,
       });
     }
+    revalidateTag('blog-posts', 'default')
 
     return noStoreJson({ success: true, postId });
   } catch (error) {

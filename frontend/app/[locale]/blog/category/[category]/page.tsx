@@ -5,12 +5,11 @@ import { getTranslations } from 'next-intl/server';
 import { BlogCategoryGrid } from '@/components/blog/BlogCategoryGrid';
 import { FeaturedPostCtaButton } from '@/components/blog/FeaturedPostCtaButton';
 import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
-import { getBlogCategories } from '@/db/queries/blog/blog-categories';
-import { getBlogPostsByCategory } from '@/db/queries/blog/blog-posts';
+import { getCachedBlogCategories } from '@/db/queries/blog/blog-categories';
+import { getCachedBlogPostsByCategory } from '@/db/queries/blog/blog-posts';
 import { Link } from '@/i18n/routing';
 import { formatBlogDate } from '@/lib/blog/date';
-
-export const revalidate = 3600;
+export const revalidate = 604800; // 7 days
 
 function getCategoryLabel(categoryName: string, t: (key: string) => string) {
   const key = categoryName.toLowerCase();
@@ -32,8 +31,8 @@ export default async function BlogCategoryPage({
   const tNav = await getTranslations({ locale, namespace: 'navigation' });
 
   const [categories, posts] = await Promise.all([
-    getBlogCategories(locale),
-    getBlogPostsByCategory(category, locale),
+    getCachedBlogCategories(locale),
+    getCachedBlogPostsByCategory(category, locale),
   ]);
 
   const matchedCategory = categories.find(c => c.slug === category);

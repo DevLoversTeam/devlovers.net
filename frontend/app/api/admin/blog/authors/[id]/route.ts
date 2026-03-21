@@ -1,4 +1,4 @@
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { deleteBlogAuthor, updateBlogAuthor } from '@/db/queries/blog/admin-blog';
@@ -65,7 +65,11 @@ export async function PUT(
     }
 
     await updateBlogAuthor(id, parsed.data);
-    revalidatePath('/admin/blog/authors');
+    revalidatePath('/[locale]/admin/blog/authors', 'page');
+    revalidatePath('/[locale]/blog', 'page');
+    revalidatePath('/[locale]/blog/[slug]', 'page');
+    revalidateTag('blog-authors', 'default');
+    revalidateTag('blog-posts', 'default');
 
     return noStoreJson({ success: true });
   } catch (error) {
@@ -105,7 +109,11 @@ export async function DELETE(
 
     const { id } = await params;
     await deleteBlogAuthor(id);
-    revalidatePath('/admin/blog/authors');
+    revalidatePath('/[locale]/admin/blog/authors', 'page');
+    revalidatePath('/[locale]/blog', 'page');
+    revalidatePath('/[locale]/blog/[slug]', 'page');
+    revalidateTag('blog-authors', 'default');
+    revalidateTag('blog-posts', 'default');
 
     return noStoreJson({ success: true });
   } catch (error) {

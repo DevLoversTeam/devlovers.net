@@ -1,4 +1,4 @@
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 
 import {
@@ -100,6 +100,8 @@ export async function PUT(
 
     revalidatePath('/[locale]/blog', 'page');
     revalidatePath('/[locale]/blog/[slug]', 'page');
+    revalidateTag('blog-authors', 'default');
+    revalidateTag('blog-posts', 'default')
 
     return noStoreJson({ success: true });
   } catch (error) {
@@ -160,6 +162,8 @@ export async function DELETE(
     await deleteBlogPost(id);
 
     revalidatePath('/[locale]/blog', 'page');
+    revalidateTag('blog-authors', 'default');
+    revalidateTag('blog-posts', 'default')
 
     return noStoreJson({ success: true });
   } catch (error) {

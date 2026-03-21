@@ -1,6 +1,8 @@
 import { sql } from 'drizzle-orm';
 import { unstable_cache } from 'next/cache';
 
+import { STATIC_PAGE_REVALIDATE } from '@/lib/constants/cache';
+
 import { db } from '../../index';
 import { blogCategories, blogCategoryTranslations } from '../../schema/blog';
 
@@ -37,7 +39,7 @@ export const getCachedBlogCategories = unstable_cache(
   async (locale: string): Promise<BlogCategory[]> => getBlogCategories(locale),
   ['blog-categories'],
   {
-    revalidate: 60 * 60 * 24 * 7,
+    revalidate: STATIC_PAGE_REVALIDATE,
     tags: ['blog-categories'],
   }
 );

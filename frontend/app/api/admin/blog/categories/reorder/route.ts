@@ -1,4 +1,4 @@
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { swapBlogCategoryOrder } from '@/db/queries/blog/admin-blog';
@@ -60,7 +60,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     await swapBlogCategoryOrder(parsed.data.id1, parsed.data.id2);
-    revalidatePath('/admin/blog/categories');
+    revalidatePath('/[locale]/admin/blog/categories', 'page');
+    revalidateTag('blog-categories', 'default');
+    revalidateTag('blog-posts', 'default');
 
     return noStoreJson({ success: true });
   } catch (error) {
