@@ -65,7 +65,7 @@ export async function PUT(
     }
 
     await updateBlogCategory(id, parsed.data);
-    revalidatePath('/admin/blog/categories');
+    revalidatePath('/[locale]/admin/blog/categories', 'page');
 
     return noStoreJson({ success: true });
   } catch (error) {
@@ -105,7 +105,7 @@ export async function DELETE(
 
     const { id } = await params;
     await deleteBlogCategory(id);
-    revalidatePath('/admin/blog/categories');
+    revalidatePath('/[locale]/admin/blog/categories', 'page');
 
     return noStoreJson({ success: true });
   } catch (error) {

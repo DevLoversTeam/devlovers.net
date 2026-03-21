@@ -42,6 +42,8 @@ export function BlogAuthorListTable({
             : 'Failed to delete author'
         );
       }
+    }  catch {
+      toast.error('Failed to delete author');
     } finally {
       setDeletingId(null);
     }

@@ -196,6 +196,8 @@ export function BlogCategoryManager({
             : 'Failed to delete category'
         );
       }
+    } catch {
+      toast.error('Failed to delete category');
     } finally {
       setDeletingId(null);
     }
@@ -219,6 +221,8 @@ export function BlogCategoryManager({
       } else {
         toast.error('Failed to reorder');
       }
+    } catch {
+      toast.error('Failed to reorder');
     } finally {
       setReorderingId(null);
     }
