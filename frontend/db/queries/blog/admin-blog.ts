@@ -362,7 +362,7 @@ export async function getAdminBlogCategories(): Promise<
 
 export interface CreateBlogCategoryInput {
   slug: string;
-  translations: Record<string, { title: string }>;
+  translations: Record<string, { title: string; description?: string }>;
 }
 
 export async function createBlogCategory(
@@ -388,6 +388,7 @@ export async function createBlogCategory(
         categoryId,
         locale,
         title: trans.title,
+        description: trans.description ?? null,
       });
     }
   } catch (error) {
@@ -406,7 +407,16 @@ export async function createBlogCategory(
 
 export interface CreateBlogAuthorInput {
   slug: string;
-  translations: Record<string, { name: string }>;
+  imageUrl?: string | null;
+  imagePublicId?: string | null;
+  socialMedia?: { platform: string; url: string }[];
+  translations: Record<string, {
+    name: string;
+    bio?: string;
+    jobTitle?: string;
+    company?: string;
+    city?: string;
+  }>;
 }
 
 export async function createBlogAuthor(
@@ -421,6 +431,9 @@ export async function createBlogAuthor(
     .values({
       slug: input.slug,
       displayOrder: (maxRow?.max ?? -1) + 1,
+      ...(input.imageUrl !== undefined && { imageUrl: input.imageUrl }),
+      ...(input.imagePublicId !== undefined && { imagePublicId: input.imagePublicId }),
+      ...(input.socialMedia !== undefined && { socialMedia: input.socialMedia }),
     })
     .returning({ id: blogAuthors.id });
 
@@ -432,6 +445,10 @@ export async function createBlogAuthor(
         authorId,
         locale,
         name: trans.name,
+        bio: trans.bio ?? null,
+        jobTitle: trans.jobTitle ?? null,
+        company: trans.company ?? null,
+        city: trans.city ?? null,
       });
     }
   } catch (error) {
@@ -486,4 +503,363 @@ export async function getBlogPostCategoryName(
     .orderBy(blogCategories.displayOrder)
     .limit(1);
   return row?.title ?? null;
+}
+
+// ── Authors management ──────────────────────────────────────────
+
+export interface AdminBlogAuthorListItem {
+  id: string;
+  slug: string;
+  name: string;
+  imageUrl: string | null;
+  jobTitle: string | null;
+  postCount: number;
+}
+
+export async function getAdminBlogAuthorsFull(): Promise<AdminBlogAuthorListItem[]> {
+  const postCountSq = db
+    .select({
+      authorId: blogPosts.authorId,
+      cnt: sql<number>`COUNT(*)`.as('cnt'),
+    })
+    .from(blogPosts)
+    .groupBy(blogPosts.authorId)
+    .as('post_counts');
+
+  const rows = await db
+    .select({
+      id: blogAuthors.id,
+      slug: blogAuthors.slug,
+      name: blogAuthorTranslations.name,
+      imageUrl: blogAuthors.imageUrl,
+      jobTitle: blogAuthorTranslations.jobTitle,
+      postCount: postCountSq.cnt,
+    })
+    .from(blogAuthors)
+    .leftJoin(
+      blogAuthorTranslations,
+      sql`${blogAuthorTranslations.authorId} = ${blogAuthors.id} AND ${blogAuthorTranslations.locale} = ${ADMIN_LOCALE}`
+    )
+    .leftJoin(postCountSq, eq(postCountSq.authorId, blogAuthors.id))
+    .orderBy(blogAuthors.displayOrder);
+
+  return rows.map(r => ({
+    id: r.id,
+    slug: r.slug,
+    name: r.name ?? '(unnamed)',
+    imageUrl: r.imageUrl,
+    jobTitle: r.jobTitle ?? null,
+    postCount: r.postCount ?? 0,
+  }));
+}
+
+export interface AdminBlogAuthorTranslation {
+  name: string;
+  bio: string | null;
+  jobTitle: string | null;
+  company: string | null;
+  city: string | null;
+}
+
+export interface AdminBlogAuthorFull {
+  id: string;
+  slug: string;
+  imageUrl: string | null;
+  imagePublicId: string | null;
+  socialMedia: { platform: string; url: string }[];
+  translations: Record<string, AdminBlogAuthorTranslation>;
+}
+
+export async function getAdminBlogAuthorById(
+  authorId: string
+): Promise<AdminBlogAuthorFull | null> {
+  const [author] = await db
+    .select({
+      id: blogAuthors.id,
+      slug: blogAuthors.slug,
+      imageUrl: blogAuthors.imageUrl,
+      imagePublicId: blogAuthors.imagePublicId,
+      socialMedia: blogAuthors.socialMedia,
+    })
+    .from(blogAuthors)
+    .where(eq(blogAuthors.id, authorId))
+    .limit(1);
+
+  if (!author) return null;
+
+  const transRows = await db
+    .select({
+      locale: blogAuthorTranslations.locale,
+      name: blogAuthorTranslations.name,
+      bio: blogAuthorTranslations.bio,
+      jobTitle: blogAuthorTranslations.jobTitle,
+      company: blogAuthorTranslations.company,
+      city: blogAuthorTranslations.city,
+    })
+    .from(blogAuthorTranslations)
+    .where(eq(blogAuthorTranslations.authorId, authorId));
+
+  const translations: Record<string, AdminBlogAuthorTranslation> = {};
+  for (const t of transRows) {
+    translations[t.locale] = {
+      name: t.name,
+      bio: t.bio,
+      jobTitle: t.jobTitle,
+      company: t.company,
+      city: t.city,
+    };
+  }
+
+  return {
+    ...author,
+    socialMedia: (author.socialMedia as { platform: string; url: string }[]) ?? [],
+    translations,
+  };
+}
+
+export interface UpdateBlogAuthorInput {
+  slug: string;
+  imageUrl: string | null;
+  imagePublicId: string | null;
+  socialMedia: { platform: string; url: string }[];
+  translations: Record<string, {
+    name: string;
+    bio?: string;
+    jobTitle?: string;
+    company?: string;
+    city?: string;
+  }>;
+}
+
+export async function updateBlogAuthor(
+  authorId: string,
+  input: UpdateBlogAuthorInput
+): Promise<void> {
+  await db
+    .update(blogAuthors)
+    .set({
+      slug: input.slug,
+      imageUrl: input.imageUrl,
+      imagePublicId: input.imagePublicId,
+      socialMedia: input.socialMedia,
+      updatedAt: new Date(),
+    })
+    .where(eq(blogAuthors.id, authorId));
+
+  for (const [locale, trans] of Object.entries(input.translations)) {
+    await db
+      .insert(blogAuthorTranslations)
+      .values({
+        authorId,
+        locale,
+        name: trans.name,
+        bio: trans.bio ?? null,
+        jobTitle: trans.jobTitle ?? null,
+        company: trans.company ?? null,
+        city: trans.city ?? null,
+      })
+      .onConflictDoUpdate({
+        target: [blogAuthorTranslations.authorId, blogAuthorTranslations.locale],
+        set: {
+          name: trans.name,
+          bio: trans.bio ?? null,
+          jobTitle: trans.jobTitle ?? null,
+          company: trans.company ?? null,
+          city: trans.city ?? null,
+        },
+      });
+  }
+}
+
+export async function deleteBlogAuthor(authorId: string): Promise<void> {
+  const [row] = await db
+    .select({ cnt: sql<number>`COUNT(*)` })
+    .from(blogPosts)
+    .where(eq(blogPosts.authorId, authorId));
+
+  if ((row?.cnt ?? 0) > 0) {
+    throw new Error('AUTHOR_HAS_POSTS');
+  }
+
+  await db.delete(blogAuthors).where(eq(blogAuthors.id, authorId));
+}
+
+// ── Categories management ───────────────────────────────────────
+
+export interface AdminBlogCategoryTranslation {
+  title: string;
+  description: string | null;
+}
+
+export interface AdminBlogCategoryListItem {
+  id: string;
+  slug: string;
+  title: string;
+  description: string | null;
+  postCount: number;
+  displayOrder: number;
+  translations: Record<string, AdminBlogCategoryTranslation>;
+}
+
+export async function getAdminBlogCategoriesFull(): Promise<AdminBlogCategoryListItem[]> {
+  const postCountSq = db
+    .select({
+      categoryId: blogPostCategories.categoryId,
+      cnt: sql<number>`COUNT(*)`.as('cnt'),
+    })
+    .from(blogPostCategories)
+    .groupBy(blogPostCategories.categoryId)
+    .as('cat_post_counts');
+
+  const rows = await db
+    .select({
+      id: blogCategories.id,
+      slug: blogCategories.slug,
+      displayOrder: blogCategories.displayOrder,
+      postCount: postCountSq.cnt,
+    })
+    .from(blogCategories)
+    .leftJoin(postCountSq, eq(postCountSq.categoryId, blogCategories.id))
+    .orderBy(blogCategories.displayOrder);
+
+  const allTrans = await db
+    .select({
+      categoryId: blogCategoryTranslations.categoryId,
+      locale: blogCategoryTranslations.locale,
+      title: blogCategoryTranslations.title,
+      description: blogCategoryTranslations.description,
+    })
+    .from(blogCategoryTranslations);
+
+  const transMap = new Map<string, Record<string, AdminBlogCategoryTranslation>>();
+  for (const t of allTrans) {
+    if (!transMap.has(t.categoryId)) transMap.set(t.categoryId, {});
+    transMap.get(t.categoryId)![t.locale] = {
+      title: t.title,
+      description: t.description,
+    };
+  }
+
+  return rows.map(r => {
+    const trans = transMap.get(r.id) ?? {};
+    return {
+      id: r.id,
+      slug: r.slug,
+      title: trans[ADMIN_LOCALE]?.title ?? '(untitled)',
+      description: trans[ADMIN_LOCALE]?.description ?? null,
+      postCount: r.postCount ?? 0,
+      displayOrder: r.displayOrder,
+      translations: trans,
+    };
+  });
+}
+
+export interface AdminBlogCategoryFull {
+  id: string;
+  slug: string;
+  displayOrder: number;
+  translations: Record<string, AdminBlogCategoryTranslation>;
+}
+
+export async function getAdminBlogCategoryById(
+  categoryId: string
+): Promise<AdminBlogCategoryFull | null> {
+  const [category] = await db
+    .select({
+      id: blogCategories.id,
+      slug: blogCategories.slug,
+      displayOrder: blogCategories.displayOrder,
+    })
+    .from(blogCategories)
+    .where(eq(blogCategories.id, categoryId))
+    .limit(1);
+
+  if (!category) return null;
+
+  const transRows = await db
+    .select({
+      locale: blogCategoryTranslations.locale,
+      title: blogCategoryTranslations.title,
+      description: blogCategoryTranslations.description,
+    })
+    .from(blogCategoryTranslations)
+    .where(eq(blogCategoryTranslations.categoryId, categoryId));
+
+  const translations: Record<string, AdminBlogCategoryTranslation> = {};
+  for (const t of transRows) {
+    translations[t.locale] = { title: t.title, description: t.description };
+  }
+
+  return { ...category, translations };
+}
+
+export interface UpdateBlogCategoryInput {
+  slug: string;
+  translations: Record<string, { title: string; description?: string }>;
+}
+
+export async function updateBlogCategory(
+  categoryId: string,
+  input: UpdateBlogCategoryInput
+): Promise<void> {
+  await db
+    .update(blogCategories)
+    .set({ slug: input.slug })
+    .where(eq(blogCategories.id, categoryId));
+
+  for (const [locale, trans] of Object.entries(input.translations)) {
+    await db
+      .insert(blogCategoryTranslations)
+      .values({
+        categoryId,
+        locale,
+        title: trans.title,
+        description: trans.description ?? null,
+      })
+      .onConflictDoUpdate({
+        target: [blogCategoryTranslations.categoryId, blogCategoryTranslations.locale],
+        set: {
+          title: trans.title,
+          description: trans.description ?? null,
+        },
+      });
+  }
+}
+
+export async function deleteBlogCategory(categoryId: string): Promise<void> {
+  const [row] = await db
+    .select({ cnt: sql<number>`COUNT(*)` })
+    .from(blogPostCategories)
+    .where(eq(blogPostCategories.categoryId, categoryId));
+
+  if ((row?.cnt ?? 0) > 0) {
+    throw new Error('CATEGORY_HAS_POSTS');
+  }
+
+  await db.delete(blogCategories).where(eq(blogCategories.id, categoryId));
+}
+
+export async function swapBlogCategoryOrder(
+  id1: string,
+  id2: string
+): Promise<void> {
+  const rows = await db
+    .select({ id: blogCategories.id, displayOrder: blogCategories.displayOrder })
+    .from(blogCategories)
+    .where(sql`${blogCategories.id} IN (${id1}, ${id2})`);
+
+  if (rows.length !== 2) throw new Error('CATEGORIES_NOT_FOUND');
+
+  const order1 = rows.find(r => r.id === id1)!.displayOrder;
+  const order2 = rows.find(r => r.id === id2)!.displayOrder;
+
+  await db
+    .update(blogCategories)
+    .set({ displayOrder: order2 })
+    .where(eq(blogCategories.id, id1));
+
+  await db
+    .update(blogCategories)
+    .set({ displayOrder: order1 })
+    .where(eq(blogCategories.id, id2));
 }

@@ -1,0 +1,132 @@
+import { revalidatePath } from 'next/cache';
+import { NextRequest, NextResponse } from 'next/server';
+
+import { deleteBlogCategory, updateBlogCategory } from '@/db/queries/blog/admin-blog';
+import {
+  AdminApiDisabledError,
+  AdminForbiddenError,
+  AdminUnauthorizedError,
+  requireAdminApi,
+} from '@/lib/auth/admin';
+import { logError } from '@/lib/logging';
+import { requireAdminCsrf } from '@/lib/security/admin-csrf';
+import { guardBrowserSameOrigin } from '@/lib/security/origin';
+import { updateBlogCategorySchema } from '@/lib/validation/admin-blog';
+
+export const runtime = 'nodejs';
+
+function noStoreJson(body: unknown, init?: { status?: number }) {
+  const res = NextResponse.json(body, { status: init?.status ?? 200 });
+  res.headers.set('Cache-Control', 'no-store');
+  return res;
+}
+
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+): Promise<NextResponse> {
+  const blocked = guardBrowserSameOrigin(request);
+  if (blocked) {
+    blocked.headers.set('Cache-Control', 'no-store');
+    return blocked;
+  }
+
+  try {
+    await requireAdminApi(request);
+
+    const csrfResult = requireAdminCsrf(request, 'admin:blog-category:update');
+    if (csrfResult) {
+      csrfResult.headers.set('Cache-Control', 'no-store');
+      return csrfResult;
+    }
+
+    const { id } = await params;
+
+    let rawBody: unknown;
+    try {
+      rawBody = await request.json();
+    } catch {
+      return noStoreJson(
+        { error: 'Invalid JSON body', code: 'INVALID_BODY' },
+        { status: 400 }
+      );
+    }
+
+    const parsed = updateBlogCategorySchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return noStoreJson(
+        {
+          error: 'Invalid payload',
+          code: 'INVALID_PAYLOAD',
+          details: parsed.error.format(),
+        },
+        { status: 400 }
+      );
+    }
+
+    await updateBlogCategory(id, parsed.data);
+    revalidatePath('/admin/blog/categories');
+
+    return noStoreJson({ success: true });
+  } catch (error) {
+    if (error instanceof AdminApiDisabledError)
+      return noStoreJson({ code: error.code }, { status: 403 });
+    if (error instanceof AdminUnauthorizedError)
+      return noStoreJson({ code: error.code }, { status: 401 });
+    if (error instanceof AdminForbiddenError)
+      return noStoreJson({ code: error.code }, { status: 403 });
+
+    logError('admin_blog_category_update_failed', error, {});
+    return noStoreJson(
+      { error: 'Failed to update category', code: 'INTERNAL_ERROR' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+): Promise<NextResponse> {
+  const blocked = guardBrowserSameOrigin(request);
+  if (blocked) {
+    blocked.headers.set('Cache-Control', 'no-store');
+    return blocked;
+  }
+
+  try {
+    await requireAdminApi(request);
+
+    const csrfResult = requireAdminCsrf(request, 'admin:blog-category:delete');
+    if (csrfResult) {
+      csrfResult.headers.set('Cache-Control', 'no-store');
+      return csrfResult;
+    }
+
+    const { id } = await params;
+    await deleteBlogCategory(id);
+    revalidatePath('/admin/blog/categories');
+
+    return noStoreJson({ success: true });
+  } catch (error) {
+    if (error instanceof Error && error.message === 'CATEGORY_HAS_POSTS') {
+      return noStoreJson(
+        { error: 'Category has posts assigned', code: 'HAS_POSTS' },
+        { status: 409 }
+      );
+    }
+
+    if (error instanceof AdminApiDisabledError)
+      return noStoreJson({ code: error.code }, { status: 403 });
+    if (error instanceof AdminUnauthorizedError)
+      return noStoreJson({ code: error.code }, { status: 401 });
+    if (error instanceof AdminForbiddenError)
+      return noStoreJson({ code: error.code }, { status: 403 });
+
+    logError('admin_blog_category_delete_failed', error, {});
+    return noStoreJson(
+      { error: 'Failed to delete category', code: 'INTERNAL_ERROR' },
+      { status: 500 }
+    );
+  }
+}
