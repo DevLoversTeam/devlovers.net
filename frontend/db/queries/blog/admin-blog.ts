@@ -1,4 +1,4 @@
-import { eq, sql } from 'drizzle-orm';
+import { and,eq, sql } from 'drizzle-orm';
 
 import { db } from '../../index';
 import {
@@ -230,14 +230,12 @@ export async function updateBlogPost(
   if (input.tags !== undefined) baseUpdate.tags = input.tags;
   if (input.resourceLink !== undefined)
     baseUpdate.resourceLink = input.resourceLink;
-
-  if (Object.keys(baseUpdate).length > 0) {
+ 
     baseUpdate.updatedAt = new Date();
     await db
       .update(blogPosts)
       .set(baseUpdate)
       .where(eq(blogPosts.id, postId));
-  }
 
   if (input.translations) {
     for (const [locale, trans] of Object.entries(input.translations)) {
@@ -290,13 +288,16 @@ export async function toggleBlogPostPublish(
   opts: PublishOptions
 ): Promise<void> {
   const now = new Date();
-
+  const isScheduling =
+    opts.isPublished &&
+    opts.scheduledPublishAt != null &&
+    opts.scheduledPublishAt > now;
   await db
     .update(blogPosts)
     .set({
-      isPublished: opts.isPublished,
-      publishedAt: opts.isPublished ? now : null,
-      scheduledPublishAt: opts.scheduledPublishAt ?? null,
+      isPublished: opts.isPublished && !isScheduling,
+      publishedAt: opts.isPublished && !isScheduling ? now : null,
+      scheduledPublishAt: isScheduling ? opts.scheduledPublishAt : null,
       updatedAt: now,
     })
     .where(eq(blogPosts.id, postId));
@@ -442,4 +443,47 @@ export async function createBlogAuthor(
     id: authorId,
     name: input.translations[ADMIN_LOCALE]?.name ?? input.slug,
   };
+}
+
+// ── Preview helpers ─────────────────────────────────────────────
+
+export async function getBlogAuthorName(
+  authorId: string,
+  locale: string
+): Promise<string | null> {
+  const [row] = await db
+    .select({ name: blogAuthorTranslations.name })
+    .from(blogAuthorTranslations)
+    .where(
+      and(
+        eq(blogAuthorTranslations.authorId, authorId),
+        eq(blogAuthorTranslations.locale, locale)
+      )
+    )
+    .limit(1);
+  return row?.name ?? null;
+}
+
+export async function getBlogPostCategoryName(
+  postId: string,
+  locale: string
+): Promise<string | null> {
+  const [row] = await db
+    .select({ title: blogCategoryTranslations.title })
+    .from(blogPostCategories)
+    .innerJoin(
+      blogCategoryTranslations,
+      and(
+        eq(blogCategoryTranslations.categoryId, blogPostCategories.categoryId),
+        eq(blogCategoryTranslations.locale, locale)
+      )
+    )
+    .innerJoin(
+      blogCategories,
+      eq(blogCategories.id, blogPostCategories.categoryId)
+    )
+    .where(eq(blogPostCategories.postId, postId))
+    .orderBy(blogCategories.displayOrder)
+    .limit(1);
+  return row?.title ?? null;
 }

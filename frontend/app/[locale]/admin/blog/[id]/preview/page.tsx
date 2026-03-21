@@ -1,11 +1,13 @@
-import { and,eq } from 'drizzle-orm';
 import { Metadata } from 'next';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 
 import BlogPostRenderer from '@/components/blog/BlogPostRenderer';
-import { db } from '@/db';
-import { getAdminBlogPostById } from '@/db/queries/blog/admin-blog';
+import {
+  getAdminBlogPostById,
+  getBlogAuthorName,
+  getBlogPostCategoryName,
+} from '@/db/queries/blog/admin-blog';
 import {
   blogAuthorTranslations,
   blogCategoryTranslations,
@@ -43,36 +45,11 @@ export default async function AdminBlogPreviewPage({
   const title = translation?.title ?? post.translations.en?.title ?? post.slug;
   const body = translation?.body ?? post.translations.en?.body ?? null;
 
-  // Fetch author name for this locale
-  let authorName: string | null = null;
-  if (post.authorId) {
-    const [authorRow] = await db
-      .select({ name: blogAuthorTranslations.name })
-      .from(blogAuthorTranslations)
-      .where(
-        and(
-          eq(blogAuthorTranslations.authorId, post.authorId),
-          eq(blogAuthorTranslations.locale, lang)
-        )
-      )
-      .limit(1);
-    authorName = authorRow?.name ?? null;
-  }
+   const authorName = post.authorId
+    ? await getBlogAuthorName(post.authorId, lang)
+    : null;
 
-  // Fetch category names for this locale
-  const categoryRows = await db
-    .select({ title: blogCategoryTranslations.title })
-    .from(blogPostCategories)
-    .innerJoin(
-      blogCategoryTranslations,
-      and(
-        eq(blogCategoryTranslations.categoryId, blogPostCategories.categoryId),
-        eq(blogCategoryTranslations.locale, lang)
-      )
-    )
-    .where(eq(blogPostCategories.postId, id));
-
-  const categoryName = categoryRows[0]?.title ?? null;
+  const categoryName = await getBlogPostCategoryName(id, lang);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-transparent">

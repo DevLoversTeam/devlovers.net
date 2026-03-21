@@ -39,12 +39,13 @@ export function BlogImageUpload({
         body: formData,
       });
 
-      const data = await res.json();
-
       if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
         setError(data.error ?? 'Upload failed');
         return;
       }
+
+      const data = await res.json();
 
       setPreviewUrl(data.url);
       onChange({ url: data.url, publicId: data.publicId });

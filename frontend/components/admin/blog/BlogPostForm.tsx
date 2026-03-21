@@ -42,6 +42,12 @@ interface BlogPostFormProps {
   initialData?: AdminBlogPostFull;
 }
 
+function toLocalDateTimeValue(date: Date | string): string {
+  const d = date instanceof Date ? date : new Date(date);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 export function BlogPostForm({
  authors: initialAuthors,
   categories: initialCategories,
@@ -98,8 +104,9 @@ export function BlogPostForm({
   });
   const [scheduledDate, setScheduledDate] = useState(() => {
     if (!initialData?.scheduledPublishAt) return '';
-    return new Date(initialData.scheduledPublishAt).toISOString().slice(0, 16);
+    return toLocalDateTimeValue(initialData.scheduledPublishAt);
   });
+
 
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -129,7 +136,7 @@ export function BlogPostForm({
           ? 'schedule'
           : 'publish',
       scheduledDate: initialData.scheduledPublishAt
-        ? new Date(initialData.scheduledPublishAt).toISOString().slice(0, 16)
+        ? toLocalDateTimeValue(initialData.scheduledPublishAt)
         : '',
     });
   });
@@ -290,7 +297,9 @@ export function BlogPostForm({
         categoryIds: selectedCategoryIds,
         publishMode,
         scheduledPublishAt:
-          publishMode === 'schedule' ? scheduledDate : null,
+          publishMode === 'schedule'
+            ? new Date(scheduledDate).toISOString()
+            : null,
       };
 
       const url = isEditMode ? `/api/admin/blog/${postId}` : '/api/admin/blog';
@@ -305,9 +314,8 @@ export function BlogPostForm({
         body: JSON.stringify(body),
       });
 
-      const data = await res.json();
-
       if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
         setError(data.error ?? (isEditMode ? 'Failed to update post' : 'Failed to create post'));
         return;
       }

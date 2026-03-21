@@ -1,7 +1,7 @@
 'use client';
-
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 import type { AdminBlogListItem } from '@/db/queries/blog/admin-blog';
 import { Link } from '@/i18n/routing';
@@ -72,8 +72,10 @@ export function BlogPostListTable({
         method: 'DELETE',
         headers: { 'x-csrf-token': csrfTokenDelete },
       });
-      if (res.ok) {
+           if (res.ok) {
         router.refresh();
+      } else {
+        toast.error('Failed to delete post');
       }
     } finally {
       setDeletingId(null);
@@ -92,7 +94,10 @@ export function BlogPostListTable({
       });
       if (res.ok) {
         router.refresh();
+      } else {
+        toast.error('Failed to toggle publish status');
       }
+
     } finally {
       setTogglingId(null);
     }

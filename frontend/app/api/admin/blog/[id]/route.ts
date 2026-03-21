@@ -91,7 +91,7 @@ export async function PUT(
     });
 
     await toggleBlogPostPublish(id, {
-      isPublished: data.publishMode !== 'draft',
+      isPublished: data.publishMode === 'publish',
       scheduledPublishAt:
         data.publishMode === 'schedule' && data.scheduledPublishAt
           ? new Date(data.scheduledPublishAt)
@@ -158,6 +158,8 @@ export async function DELETE(
     }
 
     await deleteBlogPost(id);
+
+    revalidatePath('/[locale]/blog', 'page');
 
     return noStoreJson({ success: true });
   } catch (error) {

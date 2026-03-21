@@ -94,7 +94,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Apply publish state if not draft
     if (data.publishMode !== 'draft') {
       await toggleBlogPostPublish(postId, {
-        isPublished: true,
+        isPublished: data.publishMode === 'publish',
         scheduledPublishAt:
           data.publishMode === 'schedule' && data.scheduledPublishAt
             ? new Date(data.scheduledPublishAt)

@@ -1,5 +1,4 @@
 'use client';
-
 import 'highlight.js/styles/github-dark.css';
 
 import type { JSONContent } from '@tiptap/core';
@@ -12,6 +11,7 @@ import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { common, createLowlight } from 'lowlight';
 import { useRef, useState } from 'react';
+import { toast } from 'sonner';
 
 import { cn } from '@/lib/utils';
 
@@ -117,14 +117,19 @@ export function BlogTiptapEditor({
         body: formData,
       });
 
-      const data = await res.json();
-      if (!res.ok) return;
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        toast.error(data.error ?? 'Image upload failed');
+        return;
+      }
 
+      const data = await res.json();
       editor.chain().focus().setImage({ src: data.url }).run();
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
+
   }
 
   if (!editor) return null;

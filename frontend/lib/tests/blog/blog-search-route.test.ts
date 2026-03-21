@@ -10,7 +10,7 @@ vi.mock('@/client', () => ({
   },
 }));
 
-import { GET } from '@/app/api/blog-search/route';
+import { GET } from '@/app/api/blog/search/route';
 
 afterEach(() => {
   fetchMock.mockReset();
@@ -23,7 +23,7 @@ describe('GET /api/blog-search', () => {
     ]);
 
     const response = await GET(
-      new Request('http://localhost/api/blog-search?locale=uk')
+      new Request('http://localhost/api/blog/search?locale=uk')
     );
     const data = await response.json();
 

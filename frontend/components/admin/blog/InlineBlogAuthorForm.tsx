@@ -58,14 +58,15 @@ export function InlineBlogAuthorForm({
         }),
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
+            if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
         setError(data.error ?? 'Failed to create author');
         return;
       }
 
+      const data = await res.json();
       onCreated(data.author);
+
     } catch {
       setError('Network error');
     } finally {

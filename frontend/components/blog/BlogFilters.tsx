@@ -346,7 +346,7 @@ export default function BlogFilters({
     let active = true;
 
     fetch(
-      `/api/blog-author?name=${encodeURIComponent(name)}&locale=${encodeURIComponent(
+      `/api/blog/author?name=${encodeURIComponent(name)}&locale=${encodeURIComponent(
         locale
       )}`,
       { cache: 'no-store' }
