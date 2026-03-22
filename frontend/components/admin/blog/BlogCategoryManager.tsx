@@ -378,7 +378,7 @@ export function BlogCategoryManager({
                   <button
                     type="button"
                     onClick={() => handleDelete(cat.id)}
-                    disabled={cat.postCount > 0 || deletingId === cat.id}
+                    disabled={cat.postCount > 0 || deletingId !== null}
                     title={cat.postCount > 0 ? `Category has ${cat.postCount} posts` : 'Delete category'}
                     className={cn(
                       'inline-flex items-center rounded-md border px-2 py-1 text-xs font-medium transition-colors',

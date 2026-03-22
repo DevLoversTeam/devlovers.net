@@ -185,7 +185,7 @@ export function BlogPostListTable({
                   <button
                     type="button"
                     onClick={() => handleDelete(post.id)}
-                    disabled={deletingId === post.id}
+                    disabled={deletingId !== null}
                     className="inline-flex items-center rounded-md border border-red-500/30 px-2 py-1 text-xs font-medium text-red-500 transition-colors hover:bg-red-500/10 disabled:opacity-50"
                   >
                     {deletingId === post.id ? 'Deleting...' : 'Delete'}
@@ -280,7 +280,7 @@ export function BlogPostListTable({
                       <button
                         type="button"
                         onClick={() => handleDelete(post.id)}
-                        disabled={post.isPublished || deletingId === post.id}
+                        disabled={post.isPublished || deletingId !== null}
                         title={post.isPublished ? 'Unpublish first to delete' : 'Delete post'}
                         className={cn(
                           'inline-flex items-center rounded-md border px-2 py-1 text-xs font-medium transition-colors',

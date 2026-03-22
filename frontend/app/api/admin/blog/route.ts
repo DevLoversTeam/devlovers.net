@@ -81,16 +81,27 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    const postId = await createBlogPost({
-      slug: data.slug,
-      authorId: data.authorId,
-      mainImageUrl: data.mainImageUrl,
-      mainImagePublicId: data.mainImagePublicId,
-      tags: data.tags,
-      resourceLink: data.resourceLink,
-      translations: data.translations as Record<string, { title: string; body: unknown }>,
-      categoryIds: data.categoryIds,
-    });
+    let postId: string;
+      try {
+        postId = await createBlogPost({
+          slug: data.slug,
+          authorId: data.authorId,
+          mainImageUrl: data.mainImageUrl,
+          mainImagePublicId: data.mainImagePublicId,
+          tags: data.tags,
+          resourceLink: data.resourceLink,
+          translations: data.translations as Record<string, { title: string; body: unknown }>,
+          categoryIds: data.categoryIds,
+        });
+      } catch (err) {
+        if (err instanceof Error && err.message.includes('duplicate key')) {
+          return noStoreJson(
+            { error: 'Slug already exists', code: 'DUPLICATE_SLUG' },
+            { status: 409 }
+          );
+        }
+        throw err;
+      }
 
     // Apply publish state if not draft
     if (data.publishMode !== 'draft') {
@@ -102,7 +113,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             : null,
       });
     }
-    revalidateTag('blog-posts', 'default')
+    revalidateTag('blog-posts', 'default');
 
     return noStoreJson({ success: true, postId });
   } catch (error) {

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 import { getCachedBlogAuthorByName } from '@/db/queries/blog/blog-authors';
 
-export const revalidate = 604800; // 7 days
+export const revalidate = 0;
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -15,5 +15,7 @@ export async function GET(request: Request) {
 
   const author = await getCachedBlogAuthorByName(name, locale);
 
-  return NextResponse.json(author || null);
+  return NextResponse.json(author || null, {
+  headers: { 'Cache-Control': 'no-store' },
+});
 }

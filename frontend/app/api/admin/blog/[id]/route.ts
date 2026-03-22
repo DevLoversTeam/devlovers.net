@@ -101,7 +101,7 @@ export async function PUT(
     revalidatePath('/[locale]/blog', 'page');
     revalidatePath('/[locale]/blog/[slug]', 'page');
     revalidateTag('blog-authors', 'default');
-    revalidateTag('blog-posts', 'default')
+    revalidateTag('blog-posts', 'default');
 
     return noStoreJson({ success: true });
   } catch (error) {
@@ -163,7 +163,7 @@ export async function DELETE(
 
     revalidatePath('/[locale]/blog', 'page');
     revalidateTag('blog-authors', 'default');
-    revalidateTag('blog-posts', 'default')
+    revalidateTag('blog-posts', 'default');
 
     return noStoreJson({ success: true });
   } catch (error) {
@@ -220,6 +220,7 @@ export async function PATCH(
 
     revalidatePath('/[locale]/blog', 'page');
     revalidatePath('/[locale]/blog/[slug]', 'page');
+    revalidateTag('blog-posts', 'default');
 
     return noStoreJson({
       success: true,

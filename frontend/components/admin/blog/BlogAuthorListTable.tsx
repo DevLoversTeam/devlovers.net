@@ -102,7 +102,7 @@ export function BlogAuthorListTable({
               <button
                 type="button"
                 onClick={() => handleDelete(author.id)}
-                disabled={author.postCount > 0 || deletingId === author.id}
+                disabled={author.postCount > 0 || deletingId !== null}
                 title={author.postCount > 0 ? `Author has ${author.postCount} posts` : 'Delete author'}
                 className={cn(
                   'inline-flex items-center rounded-md border px-2 py-1 text-xs font-medium transition-colors',
@@ -166,7 +166,7 @@ export function BlogAuthorListTable({
                     <button
                       type="button"
                       onClick={() => handleDelete(author.id)}
-                      disabled={author.postCount > 0 || deletingId === author.id}
+                      disabled={author.postCount > 0 || deletingId !== null}
                       title={author.postCount > 0 ? `Author has ${author.postCount} posts` : 'Delete author'}
                       className={cn(
                         'inline-flex items-center rounded-md border px-2 py-1 text-xs font-medium transition-colors',
