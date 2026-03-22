@@ -1,6 +1,9 @@
 import { and, eq, inArray, isNull, or, sql } from 'drizzle-orm';
+import { unstable_cache } from 'next/cache';
+import { cache } from 'react';
 
 import type { SocialLink } from '@/components/blog/BlogFilters';
+import { STATIC_PAGE_REVALIDATE } from '@/lib/constants/cache';
 
 import { db } from '../../index';
 import {
@@ -182,7 +185,16 @@ export async function getBlogPosts(locale: string): Promise<BlogPost[]> {
   );
 }
 
-export async function getBlogPostBySlug(
+export const getCachedBlogPosts = unstable_cache(
+  async (locale: string) => getBlogPosts(locale),
+  ['blog-posts'],
+  {
+    revalidate: STATIC_PAGE_REVALIDATE,
+    tags: ['blog-posts'],
+  }
+);
+
+export const getBlogPostBySlug = cache(async function getBlogPostBySlug(
   slug: string,
   locale: string
 ): Promise<BlogPost | null> {
@@ -212,7 +224,16 @@ export async function getBlogPostBySlug(
       ? { ...base.author, bio: (row as RawPostRow).authorBio }
       : undefined,
   };
-}
+});
+
+export const getCachedBlogPostBySlug = unstable_cache(
+  async (slug: string, locale: string) => getBlogPostBySlug(slug, locale),
+  ['blog-post-by-slug'],
+  {
+    revalidate: STATIC_PAGE_REVALIDATE,
+    tags: ['blog-posts'],
+  }
+);
 
 export async function getBlogPostsByCategory(
   categorySlug: string,
@@ -261,6 +282,16 @@ export async function getBlogPostsByCategory(
     assemblePost(row as RawPostRow, catMap.get(row.id) ?? [])
   );
 }
+
+export const getCachedBlogPostsByCategory = unstable_cache(
+  async (categorySlug: string, locale: string) =>
+    getBlogPostsByCategory(categorySlug, locale),
+  ['blog-posts-by-category'],
+  {
+    revalidate: STATIC_PAGE_REVALIDATE,
+    tags: ['blog-posts', 'blog-categories'],
+  }
+);
 
 export async function getBlogPostSlugs(): Promise<{ slug: string }[]> {
   return db

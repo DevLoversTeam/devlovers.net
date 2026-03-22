@@ -28,7 +28,7 @@ function extractSnippet(body: PostSearchItem['body'], query: string) {
   return `${prefix}${text.slice(start, end)}${suffix}`;
 }
 
-const SEARCH_ENDPOINT = '/api/blog-search';
+const SEARCH_ENDPOINT = '/api/blog/search';
 
 function normalizeSearchText(value: string) {
   return value.toLowerCase().replace(/\s+/g, ' ').trim();

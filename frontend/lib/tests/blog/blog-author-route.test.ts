@@ -10,7 +10,7 @@ vi.mock('@/client', () => ({
   },
 }));
 
-import { GET } from '@/app/api/blog-author/route';
+import { GET } from '@/app/api/blog/author/route';
 
 afterEach(() => {
   fetchMock.mockReset();
@@ -19,7 +19,7 @@ afterEach(() => {
 describe('GET /api/blog-author', () => {
   it('returns 400 when name is missing', async () => {
     const response = await GET(
-      new Request('http://localhost/api/blog-author?locale=uk')
+      new Request('http://localhost/api/blog/author?locale=uk')
     );
 
     expect(response.status).toBe(400);
@@ -30,7 +30,7 @@ describe('GET /api/blog-author', () => {
 
     const response = await GET(
       new Request(
-        'http://localhost/api/blog-author?name=%D0%90%D0%BD%D0%BD%D0%B0&locale=uk'
+        'http://localhost/api/blog/author?name=%D0%90%D0%BD%D0%BD%D0%B0&locale=uk'
       )
     );
     const data = await response.json();

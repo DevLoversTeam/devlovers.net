@@ -3,10 +3,9 @@ import { getTranslations } from 'next-intl/server';
 import BlogFilters from '@/components/blog/BlogFilters';
 import { BlogPageHeader } from '@/components/blog/BlogPageHeader';
 import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
-import { getBlogCategories } from '@/db/queries/blog/blog-categories';
-import { getBlogPosts } from '@/db/queries/blog/blog-posts';
-
-export const revalidate = 3600;
+import { getCachedBlogCategories } from '@/db/queries/blog/blog-categories';
+import { getCachedBlogPosts } from '@/db/queries/blog/blog-posts';
+export const revalidate = 604800; // 7 days
 
 export async function generateMetadata({
   params,
@@ -31,8 +30,8 @@ export default async function BlogPage({
   const t = await getTranslations({ locale, namespace: 'blog' });
 
   const [posts, categories] = await Promise.all([
-    getBlogPosts(locale),
-    getBlogCategories(locale),
+    getCachedBlogPosts(locale),
+    getCachedBlogCategories(locale),
   ]);
 
   const featuredPost = posts[0];

@@ -1,5 +1,7 @@
 import Image from 'next/image';
 
+import { cn } from '@/lib/utils';
+
 // Tiptap JSON node shape
 interface TiptapNode {
   type?: string;
@@ -130,6 +132,28 @@ function renderNode(node: TiptapNode, index: number): React.ReactNode {
     case 'listItem':
       return <li key={key}>{children}</li>;
 
+    case 'taskList':
+      return (
+        <ul key={key} className="my-4 space-y-3 pl-0 [&_li_p]:mb-0">
+          {children}
+        </ul>
+      );
+
+    case 'taskItem': {
+      const checked = node.attrs?.checked ?? false;
+      return (
+        <li key={key} className="flex items-baseline gap-2 list-none">
+          <span className={cn(
+            'text-sm',
+            checked ? 'text-emerald-500' : 'text-gray-400 dark:text-gray-500'
+          )}>
+            {checked ? '✔' : '○'}
+          </span>
+          <span>{children}</span>
+        </li>
+      );
+    }
+    
     case 'codeBlock':
       return (
         <pre

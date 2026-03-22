@@ -1,4 +1,7 @@
 import { eq, sql } from 'drizzle-orm';
+import { unstable_cache } from 'next/cache';
+
+import { STATIC_PAGE_REVALIDATE } from '@/lib/constants/cache';
 
 import { db } from '../../index';
 import { blogAuthors, blogAuthorTranslations } from '../../schema/blog';
@@ -57,3 +60,12 @@ export async function getBlogAuthorByName(
     socialMedia: (row.socialMedia as unknown[]) ?? [],
   };
 }
+
+export const getCachedBlogAuthorByName = unstable_cache(
+  async (name: string, locale: string) => getBlogAuthorByName(name, locale),
+  ['blog-author-by-name'],
+  {
+    revalidate: STATIC_PAGE_REVALIDATE,
+    tags: ['blog-authors'],
+  }
+);

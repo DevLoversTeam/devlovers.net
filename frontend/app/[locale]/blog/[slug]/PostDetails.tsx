@@ -4,7 +4,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import BlogPostRenderer from '@/components/blog/BlogPostRenderer';
 import { DynamicGridBackground } from '@/components/shared/DynamicGridBackground';
-import { getBlogPostBySlug, getBlogPosts } from '@/db/queries/blog/blog-posts';
+import { getCachedBlogPosts } from '@/db/queries/blog/blog-posts';
 import { Link } from '@/i18n/routing';
 import { formatBlogDate } from '@/lib/blog/date';
 import { shouldBypassImageOptimization } from '@/lib/blog/image';
@@ -52,11 +52,8 @@ export default async function PostDetails({
   const slugParam = String(slug || '').trim();
   if (!slugParam) return notFound();
 
-  const [post, allPosts] = await Promise.all([
-    getBlogPostBySlug(slugParam, locale),
-    getBlogPosts(locale),
-  ]);
-
+ const allPosts = await getCachedBlogPosts(locale);
+  const post = allPosts.find(p => p.slug === slugParam);
   if (!post) return notFound();
 
   const recommendedPosts = seededShuffle(
