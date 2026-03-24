@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 
-import { eq, inArray } from 'drizzle-orm';
+import { eq, inArray, type InferInsertModel } from 'drizzle-orm';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   afterAll,
@@ -91,6 +91,10 @@ type SeedData = {
   cityRef: string;
   warehouseRef: string;
 };
+type ProductInsert = InferInsertModel<typeof products>;
+type ProductPriceInsert = InferInsertModel<typeof productPrices>;
+type NovaPoshtaCityInsert = InferInsertModel<typeof npCities>;
+type NovaPoshtaWarehouseInsert = InferInsertModel<typeof npWarehouses>;
 
 beforeAll(async () => {
   const checkoutRoute = await import('@/app/api/shop/checkout/route');
@@ -168,8 +172,7 @@ async function seedShippingCheckoutData(): Promise<SeedData> {
   const productId = crypto.randomUUID();
   const cityRef = crypto.randomUUID();
   const warehouseRef = crypto.randomUUID();
-
-  await db.insert(products).values({
+  const productRow: ProductInsert = {
     id: productId,
     slug: `checkout-shipping-total-${productId.slice(0, 8)}`,
     title: 'Checkout Shipping Total Test Product',
@@ -188,9 +191,8 @@ async function seedShippingCheckoutData(): Promise<SeedData> {
     isFeatured: false,
     stock: 25,
     sku: null,
-  } as any);
-
-  await db.insert(productPrices).values({
+  };
+  const productPriceRow: ProductPriceInsert = {
     id: crypto.randomUUID(),
     productId,
     currency: 'UAH',
@@ -198,9 +200,8 @@ async function seedShippingCheckoutData(): Promise<SeedData> {
     originalPriceMinor: null,
     price: '40.00',
     originalPrice: null,
-  } as any);
-
-  await db.insert(npCities).values({
+  };
+  const cityRow: NovaPoshtaCityInsert = {
     ref: cityRef,
     nameUa: 'Kyiv',
     nameRu: 'Kiev',
@@ -208,9 +209,8 @@ async function seedShippingCheckoutData(): Promise<SeedData> {
     region: 'Kyiv',
     settlementType: 'City',
     isActive: true,
-  } as any);
-
-  await db.insert(npWarehouses).values({
+  };
+  const warehouseRow: NovaPoshtaWarehouseInsert = {
     ref: warehouseRef,
     cityRef,
     settlementRef: cityRef,
@@ -220,7 +220,12 @@ async function seedShippingCheckoutData(): Promise<SeedData> {
     address: 'Address 1',
     isPostMachine: false,
     isActive: true,
-  } as any);
+  };
+
+  await db.insert(products).values(productRow);
+  await db.insert(productPrices).values(productPriceRow);
+  await db.insert(npCities).values(cityRow);
+  await db.insert(npWarehouses).values(warehouseRow);
 
   createdProductIds.push(productId);
   createdCityRefs.push(cityRef);
