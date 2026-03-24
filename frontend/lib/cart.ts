@@ -2,14 +2,12 @@ import { z } from 'zod';
 
 import { logWarn } from '@/lib/logging';
 import { createCartItemKey } from '@/lib/shop/cart-item-key';
-import { fromCents } from '@/lib/shop/money';
 import {
   type CartClientItem as ValidationCartClientItem,
   cartClientItemSchema,
   type CartRehydrateItem,
   type CartRehydrateResult,
   cartRehydrateResultSchema,
-  type CartRemovedItem,
   MAX_QUANTITY_PER_LINE,
 } from '@/lib/validation/shop';
 
@@ -166,44 +164,6 @@ function normalizeItemsForStorage(
   }));
 }
 
-export function computeSummaryFromItems(
-  items: CartRehydrateItem[]
-): CartSummary {
-  if (!items.length) {
-    return {
-      totalAmountMinor: 0,
-      totalAmount: 0,
-      itemCount: 0,
-      currency: 'USD',
-      pricingFingerprint: undefined,
-    };
-  }
-
-  const currency = (items[0]?.currency ?? 'USD') as CartSummary['currency'];
-
-  let totalMinor = 0;
-  let itemCount = 0;
-
-  for (const item of items) {
-    if (item.currency !== currency) {
-      throw new Error(
-        `Cart contains mixed currencies (${currency} and ${item.currency}). Clear cart and try again.`
-      );
-    }
-
-    totalMinor += item.lineTotalMinor;
-    itemCount += item.quantity;
-  }
-
-  return {
-    totalAmountMinor: totalMinor,
-    totalAmount: fromCents(totalMinor),
-    itemCount,
-    currency,
-    pricingFingerprint: undefined,
-  };
-}
-
 function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value);
 }
@@ -305,14 +265,6 @@ export async function rehydrateCart(
   persistCartItems(normalizedForStorage, ownerId);
 
   return parsed;
-}
-
-export function buildCartFromItems(
-  items: CartRehydrateItem[],
-  removed: CartRemovedItem[] = []
-): Cart {
-  const summary = computeSummaryFromItems(items);
-  return { items, removed, summary };
 }
 
 export function clearStoredCart(ownerId?: string | null): void {

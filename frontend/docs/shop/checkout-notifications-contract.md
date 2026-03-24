@@ -26,7 +26,7 @@ This is a launch rule, not a UI preference.
 
 Notification flows depend on a reliable recipient. If a guest order is created
 without email, the notification pipeline can fail or dead-letter because there
-is no guaranteed recipient identity. :contentReference[oaicite:2]{index=2}
+is no guaranteed recipient identity.
 
 The system must not rely only on:
 

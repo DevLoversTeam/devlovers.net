@@ -133,6 +133,7 @@ afterAll(async () => {
 
 async function seedProduct(priceMinor: number): Promise<string> {
   const slug = `checkout-price-change-${crypto.randomUUID()}`;
+  const price = (priceMinor / 100).toFixed(2);
 
   const [product] = await db
     .insert(products)
@@ -142,7 +143,7 @@ async function seedProduct(priceMinor: number): Promise<string> {
       description: null,
       imageUrl: 'https://example.com/checkout-price-change.png',
       imagePublicId: null,
-      price: '9.00',
+      price,
       originalPrice: null,
       currency: 'USD',
       category: null,
@@ -164,7 +165,7 @@ async function seedProduct(priceMinor: number): Promise<string> {
     currency: 'USD',
     priceMinor,
     originalPriceMinor: null,
-    price: (priceMinor / 100).toFixed(2),
+    price,
     originalPrice: null,
   });
 
@@ -309,8 +310,7 @@ describe('checkout fail-closed for changed price mismatch', () => {
     expect(json.success).toBe(true);
     expect(json.order?.totalAmount).toBe(9);
 
-    const orderId =
-      typeof json.order?.id === 'string' ? String(json.order.id) : null;
+    const orderId = typeof json.order?.id === 'string' ? json.order.id : null;
     expect(orderId).toBeTruthy();
 
     if (orderId) {
