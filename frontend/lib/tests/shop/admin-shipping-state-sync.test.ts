@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { db } from '@/db';
 import { adminAuditLog, orders, shippingShipments } from '@/db/schema';
 import { applyShippingAdminAction } from '@/lib/services/shop/shipping/admin-actions';
+import { ensureQueuedInitialShipment } from '@/lib/services/shop/shipping/ensure-queued-initial-shipment';
 import { toDbMoney } from '@/lib/shop/money';
 
 type Action = 'recover_initial_shipment' | 'mark_shipped' | 'mark_delivered';
@@ -83,6 +84,39 @@ async function seedOrder(args: SeedArgs): Promise<Seeded> {
 }
 
 describe.sequential('admin shipping action state sync', () => {
+  it('ensureQueuedInitialShipment does not regress an advanced shipment back to queued', async () => {
+    const seed = await seedOrder({
+      action: 'recover_initial_shipment',
+      shippingStatus: 'pending',
+      shipmentStatus: 'processing',
+    });
+
+    const result = await ensureQueuedInitialShipment({
+      now: new Date(),
+      orderId: seed.orderId,
+    });
+
+    expect(result).toEqual({
+      insertedShipment: false,
+      queuedShipment: false,
+      updatedOrder: false,
+    });
+
+    const [shipmentRow] = await db
+      .select({ status: shippingShipments.status })
+      .from(shippingShipments)
+      .where(eq(shippingShipments.orderId, seed.orderId))
+      .limit(1);
+    expect(shipmentRow?.status).toBe('processing');
+
+    const [orderRow] = await db
+      .select({ shippingStatus: orders.shippingStatus })
+      .from(orders)
+      .where(eq(orders.id, seed.orderId))
+      .limit(1);
+    expect(orderRow?.shippingStatus).toBe('pending');
+  });
+
   it('recover_initial_shipment creates a queued shipment row when missing', async () => {
     const seed = await seedOrder({
       action: 'recover_initial_shipment',
@@ -99,6 +133,54 @@ describe.sequential('admin shipping action state sync', () => {
     expect(result.changed).toBe(true);
     expect(result.shippingStatus).toBe('queued');
     expect(result.shipmentStatus).toBe('queued');
+
+    const shipmentRows = await db
+      .select({
+        id: shippingShipments.id,
+        status: shippingShipments.status,
+      })
+      .from(shippingShipments)
+      .where(eq(shippingShipments.orderId, seed.orderId));
+
+    expect(shipmentRows).toHaveLength(1);
+    expect(shipmentRows[0]?.status).toBe('queued');
+
+    const [orderRow] = await db
+      .select({ shippingStatus: orders.shippingStatus })
+      .from(orders)
+      .where(eq(orders.id, seed.orderId))
+      .limit(1);
+    expect(orderRow?.shippingStatus).toBe('queued');
+  });
+
+  it('recover_initial_shipment repairs queued shipment/order drift without creating duplicates', async () => {
+    const seed = await seedOrder({
+      action: 'recover_initial_shipment',
+      shippingStatus: 'pending',
+      shipmentStatus: 'queued',
+    });
+
+    const first = await applyShippingAdminAction({
+      orderId: seed.orderId,
+      action: 'recover_initial_shipment',
+      actorUserId: null,
+      requestId: `req_${crypto.randomUUID()}`,
+    });
+
+    expect(first.changed).toBe(true);
+    expect(first.shippingStatus).toBe('queued');
+    expect(first.shipmentStatus).toBe('queued');
+
+    const second = await applyShippingAdminAction({
+      orderId: seed.orderId,
+      action: 'recover_initial_shipment',
+      actorUserId: null,
+      requestId: `req_${crypto.randomUUID()}`,
+    });
+
+    expect(second.changed).toBe(false);
+    expect(second.shippingStatus).toBe('queued');
+    expect(second.shipmentStatus).toBe('queued');
 
     const shipmentRows = await db
       .select({

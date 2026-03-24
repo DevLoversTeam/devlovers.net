@@ -3,6 +3,7 @@ type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 import {
   sanitizeShopLogError,
   sanitizeShopLogMeta,
+  sanitizeShopLogString,
 } from '@/lib/services/shop/logging-redaction';
 
 const LEVEL_WEIGHT: Record<LogLevel, number> = {
@@ -65,7 +66,7 @@ function emit(
   const payload: Record<string, unknown> = {
     ts: new Date().toISOString(),
     level,
-    msg: message,
+    msg: sanitizeShopLogString(message),
     ...(meta ? { meta: sanitizeShopLogMeta(meta) } : null),
     ...(error ? { err: sanitizeShopLogError(toErrorShape(error)) } : null),
   };

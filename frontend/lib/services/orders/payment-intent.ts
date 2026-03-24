@@ -10,7 +10,10 @@ import {
   OrderNotFoundError,
   OrderStateInvalidError,
 } from '../errors';
-import { deriveCanonicalFulfillmentStage } from '../shop/fulfillment-stage';
+import {
+  deriveCanonicalFulfillmentStage,
+  readCanonicalFulfillmentSignals,
+} from '../shop/fulfillment-stage';
 import { resolvePaymentProvider } from './_shared';
 import { guardedPaymentStatusUpdate } from './payment-state';
 import { getOrderItems, parseOrderSummary } from './summary';
@@ -54,6 +57,10 @@ export async function setOrderPaymentIntent({
   }
 
   if (existing.paymentIntentId === paymentIntentId) {
+    const fulfillmentSignals = await readCanonicalFulfillmentSignals(
+      db,
+      orderId
+    );
     const items = await getOrderItems(orderId);
     return parseOrderSummary(
       existing,
@@ -61,6 +68,8 @@ export async function setOrderPaymentIntent({
       deriveCanonicalFulfillmentStage({
         orderStatus: existing.status,
         shippingStatus: existing.shippingStatus,
+        shipmentStatus: fulfillmentSignals.shipmentStatus,
+        returnStatus: fulfillmentSignals.returnStatus,
       })
     );
   }
@@ -91,6 +100,7 @@ export async function setOrderPaymentIntent({
 
   if (!updated) throw new OrderNotFoundError('Order not found');
 
+  const fulfillmentSignals = await readCanonicalFulfillmentSignals(db, orderId);
   const items = await getOrderItems(orderId);
   return parseOrderSummary(
     updated,
@@ -98,6 +108,8 @@ export async function setOrderPaymentIntent({
     deriveCanonicalFulfillmentStage({
       orderStatus: updated.status,
       shippingStatus: updated.shippingStatus,
+      shipmentStatus: fulfillmentSignals.shipmentStatus,
+      returnStatus: fulfillmentSignals.returnStatus,
     })
   );
 }

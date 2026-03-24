@@ -87,7 +87,7 @@ describe('shop logging redaction (generic)', () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const { logError, logWarn } = await import('@/lib/logging');
 
-    logWarn('shop_test_warn', {
+    logWarn('shop_test_warn buyer@example.com +380501112233', {
       requestId: 'req_warn',
       email: 'warn@example.com',
       shippingAddress: {
@@ -108,6 +108,9 @@ describe('shop logging redaction (generic)', () => {
     expect(errorSpy).toHaveBeenCalledTimes(1);
 
     const warnPayload = JSON.parse(String(warnSpy.mock.calls[0]?.[0] ?? '{}'));
+    expect(warnPayload.msg).toBe(
+      'shop_test_warn [REDACTED_EMAIL] [REDACTED_PHONE]'
+    );
     expect(warnPayload.meta).toMatchObject({
       requestId: 'req_warn',
       email: '[REDACTED_EMAIL]',

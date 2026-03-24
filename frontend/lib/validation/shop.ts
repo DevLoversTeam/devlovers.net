@@ -37,14 +37,17 @@ export const paymentStatusSchema = z.enum(paymentStatusValues);
 export const paymentProviderSchema = z.enum(paymentProviderValues);
 export const paymentMethodSchema = z.enum(paymentMethodValues);
 export const currencySchema = z.enum(currencyValues);
-export const fulfillmentStageSchema = z.enum([
+export const canonicalFulfillmentStageValues = [
   'processing',
   'packed',
   'shipped',
   'delivered',
   'canceled',
   'returned',
-]);
+] as const;
+export type CanonicalFulfillmentStage =
+  (typeof canonicalFulfillmentStageValues)[number];
+export const fulfillmentStageSchema = z.enum(canonicalFulfillmentStageValues);
 
 const searchParamString = z
   .union([z.string(), z.array(z.string())])

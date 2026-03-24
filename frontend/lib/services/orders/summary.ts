@@ -439,6 +439,9 @@ export async function getOrderByIdempotencyKey(
     .leftJoin(products, eq(orderItems.productId, products.id))
     .where(eq(orderItems.orderId, order.id));
 
+  // This checkout-time recovery path intentionally omits shipment/return signal
+  // lookups because it is used before shipments/returns exist; future reuse
+  // outside checkout should prefer getOrderById()/getOrderSummary().
   return parseOrderSummary(
     order,
     items,
