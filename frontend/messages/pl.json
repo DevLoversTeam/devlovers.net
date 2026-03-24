@@ -802,6 +802,7 @@
         "orderSummary": "Podsumowanie zamówienia",
         "total": "Razem",
         "paymentStatus": "Status płatności",
+        "fulfillmentStage": "Etap realizacji",
         "created": "Utworzono",
         "provider": "Dostawca",
         "paymentReference": "Referencja płatności",
@@ -818,6 +819,14 @@
         "no": "Nie",
         "shippingStatus": "Status dostawy",
         "trackingNumber": "Numer śledzenia",
+        "fulfillmentStages": {
+          "processing": "Przetwarzanie",
+          "packed": "Spakowane",
+          "shipped": "Wysłane",
+          "delivered": "Dostarczone",
+          "canceled": "Anulowane",
+          "returned": "Zwrócone"
+        },
         "qtyShort": "Ilość",
         "unitShort": "Cena",
         "lineShort": "Suma"
