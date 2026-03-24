@@ -4,18 +4,14 @@ import { desc, eq, type SQL, sql, type SQLWrapper } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { returnRequests, shippingShipments } from '@/db/schema/shop';
+import {
+  type CanonicalFulfillmentStage as ValidationCanonicalFulfillmentStage,
+  canonicalFulfillmentStageValues,
+} from '@/lib/validation/shop';
 
-export const CANONICAL_FULFILLMENT_STAGES = [
-  'processing',
-  'packed',
-  'shipped',
-  'delivered',
-  'canceled',
-  'returned',
-] as const;
+export const CANONICAL_FULFILLMENT_STAGES = canonicalFulfillmentStageValues;
 
-export type CanonicalFulfillmentStage =
-  (typeof CANONICAL_FULFILLMENT_STAGES)[number];
+export type CanonicalFulfillmentStage = ValidationCanonicalFulfillmentStage;
 
 export type CanonicalFulfillmentStageInput = {
   orderStatus?: string | null | undefined;

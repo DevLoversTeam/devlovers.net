@@ -73,11 +73,7 @@ export async function ensureQueuedInitialShipment(args: {
         ${args.now},
         ${args.now}
       from eligible_order eo
-      on conflict (order_id) do update
-      set status = 'queued',
-          updated_at = ${args.now}
-      where shipping_shipments.provider = 'nova_poshta'
-        and shipping_shipments.status is distinct from 'queued'
+      on conflict (order_id) do nothing
       returning order_id
     ),
     queued_order_ids as (

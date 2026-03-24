@@ -1,8 +1,29 @@
 import { describe, expect, it } from 'vitest';
 
 import { deriveCanonicalFulfillmentStage } from '@/lib/services/shop/fulfillment-stage';
+import {
+  canonicalFulfillmentStageValues,
+  fulfillmentStageSchema,
+} from '@/lib/validation/shop';
 
 describe('canonical fulfillment stage mapping', () => {
+  it('uses one shared canonical fulfillment stage value set for schema validation', () => {
+    expect(canonicalFulfillmentStageValues).toEqual([
+      'processing',
+      'packed',
+      'shipped',
+      'delivered',
+      'canceled',
+      'returned',
+    ]);
+
+    for (const value of canonicalFulfillmentStageValues) {
+      expect(fulfillmentStageSchema.parse(value)).toBe(value);
+    }
+
+    expect(() => fulfillmentStageSchema.parse('mystery')).toThrow();
+  });
+
   it('maps pre-shipment orders to processing by default', () => {
     expect(
       deriveCanonicalFulfillmentStage({

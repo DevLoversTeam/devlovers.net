@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { resetEnvCache } from '@/lib/env';
 import { getMonobankEnv } from '@/lib/env/monobank';
 import { getNovaPoshtaConfig } from '@/lib/env/nova-poshta';
+import { resolveShopPaymentProvider } from '@/lib/env/payments';
 import { getStripeEnv } from '@/lib/env/stripe';
 
 const ENV_KEYS = [
@@ -99,6 +100,19 @@ describe('shop provider runtime env safety', () => {
     });
   });
 
+  it('rejects a production-like stripe live/test mismatch when webhook validation is otherwise present', () => {
+    process.env.APP_ENV = 'production';
+    vi.stubEnv('NODE_ENV', 'test');
+    process.env.PAYMENTS_ENABLED = 'true';
+    process.env.STRIPE_MODE = 'live';
+    process.env.STRIPE_SECRET_KEY = 'sk_test_1234567890abcdef';
+    process.env.STRIPE_WEBHOOK_SECRET = 'whsec_1234567890abcdef';
+    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = 'pk_live_1234567890abcdef';
+    resetEnvCache();
+
+    expect(() => getStripeEnv()).toThrow(/STRIPE_SECRET_KEY/);
+  });
+
   it('keeps local/test stripe workflow usable with test keys', () => {
     process.env.APP_ENV = 'local';
     vi.stubEnv('NODE_ENV', 'test');
@@ -137,6 +151,19 @@ describe('shop provider runtime env safety', () => {
       token: 'mono_test_placeholder',
       apiBaseUrl: 'https://api.example.test',
     });
+  });
+
+  it('treats invalid monobank runtime config as disabled in generic provider resolution', () => {
+    process.env.APP_ENV = 'production';
+    vi.stubEnv('NODE_ENV', 'test');
+    process.env.PAYMENTS_ENABLED = 'true';
+    process.env.MONO_MERCHANT_TOKEN = 'mono_test_placeholder';
+    process.env.MONO_PUBLIC_KEY = 'mono_test_public';
+    process.env.MONO_API_BASE = 'https://api.example.test';
+    resetEnvCache();
+
+    expect(() => resolveShopPaymentProvider()).not.toThrow();
+    expect(resolveShopPaymentProvider()).toBe('none');
   });
 
   it('rejects placeholder nova poshta config in production-like runtime and keeps local/test usable', () => {
