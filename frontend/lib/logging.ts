@@ -1,5 +1,10 @@
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
+import {
+  sanitizeShopLogError,
+  sanitizeShopLogMeta,
+} from '@/lib/services/shop/logging-redaction';
+
 const LEVEL_WEIGHT: Record<LogLevel, number> = {
   debug: 10,
   info: 20,
@@ -46,14 +51,7 @@ function toErrorShape(
 }
 
 function redactJsonStringify(value: unknown): string {
-  const SENSITIVE_KEY_RE =
-    /(secret|token|password|authorization|cookie|api[_-]?key)/i;
-
-  return JSON.stringify(value, (key, val) => {
-    if (typeof key === 'string' && SENSITIVE_KEY_RE.test(key))
-      return '[REDACTED]';
-    return val;
-  });
+  return JSON.stringify(value);
 }
 
 function emit(
@@ -68,8 +66,8 @@ function emit(
     ts: new Date().toISOString(),
     level,
     msg: message,
-    ...(meta ? { meta } : null),
-    ...(error ? { err: toErrorShape(error) } : null),
+    ...(meta ? { meta: sanitizeShopLogMeta(meta) } : null),
+    ...(error ? { err: sanitizeShopLogError(toErrorShape(error)) } : null),
   };
 
   const line = redactJsonStringify(payload);
