@@ -1,5 +1,3 @@
-import 'server-only';
-
 const EMAIL_KEY_RE = /(^|[_-])(email|e-mail)([_-]|$)/i;
 const PHONE_KEY_RE =
   /(^|[_-])(phone|mobile|tel|telephone|recipientphone|sendersphone|recipientsphone)([_-]|$)/i;
