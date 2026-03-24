@@ -480,4 +480,49 @@ describe('checkout authoritative shipping totals', () => {
 
     expect(orderRow).toBeFalsy();
   });
+
+  it('rejects client-supplied discount input under the launch no-discount contract', async () => {
+    const seed = await seedShippingCheckoutData();
+    const quote = await rehydrateCartItems(
+      [{ productId: seed.productId, quantity: 1 }],
+      'UAH'
+    );
+    const warehouseMethod = await fetchWarehouseMethodQuote();
+    const pricingFingerprint = quote.summary.pricingFingerprint;
+    const idempotencyKey = crypto.randomUUID();
+
+    expect(typeof pricingFingerprint).toBe('string');
+    expect(pricingFingerprint).toHaveLength(64);
+
+    const response = await POST(
+      makeCheckoutRequest({
+        idempotencyKey,
+        productId: seed.productId,
+        pricingFingerprint: pricingFingerprint!,
+        cityRef: seed.cityRef,
+        warehouseRef: seed.warehouseRef,
+        shippingQuoteFingerprint: warehouseMethod.quoteFingerprint,
+        extraBody: {
+          discountCode: 'SPRING10',
+          discountAmountMinor: 1000,
+        },
+      })
+    );
+
+    expect(response.status).toBe(400);
+    const json = await response.json();
+    expect(json.code).toBe('DISCOUNTS_NOT_SUPPORTED');
+    expect(json.message).toBe('Discounts are not available at checkout.');
+    expect(json.details?.fields).toEqual(
+      expect.arrayContaining(['discountCode', 'discountAmountMinor'])
+    );
+
+    const [orderRow] = await db
+      .select({ id: orders.id })
+      .from(orders)
+      .where(eq(orders.idempotencyKey, idempotencyKey))
+      .limit(1);
+
+    expect(orderRow).toBeFalsy();
+  });
 });
