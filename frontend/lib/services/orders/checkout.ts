@@ -17,6 +17,7 @@ import { getShopLegalVersions } from '@/lib/env/shop-legal';
 import { logError, logWarn } from '@/lib/logging';
 import { resolveShippingAvailability } from '@/lib/services/shop/shipping/availability';
 import { resolveCurrencyFromLocale } from '@/lib/shop/currency';
+import { createCheckoutPricingFingerprint } from '@/lib/shop/checkout-pricing';
 import { localeToCountry } from '@/lib/shop/locale';
 import {
   calculateLineTotal,
@@ -859,6 +860,8 @@ export async function createOrderWithItems({
   country,
   shipping,
   legalConsent,
+  pricingFingerprint,
+  requirePricingFingerprint = false,
   paymentProvider: requestedProvider,
   paymentMethod: requestedMethod,
 }: {
@@ -869,6 +872,8 @@ export async function createOrderWithItems({
   country?: string | null;
   shipping?: CheckoutShippingInput | null;
   legalConsent?: CheckoutLegalConsentInput | null;
+  pricingFingerprint?: string | null;
+  requirePricingFingerprint?: boolean;
   paymentProvider?: PaymentProvider;
   paymentMethod?: PaymentMethod | null;
 }): Promise<CheckoutResult> {
@@ -1228,6 +1233,38 @@ export async function createOrderWithItems({
   }
 
   const pricedItems = priceItems(normalizedItems, productMap, currency);
+  const authoritativePricingFingerprint = createCheckoutPricingFingerprint({
+    currency,
+    items: pricedItems.map(item => ({
+      productId: item.productId,
+      quantity: item.quantity,
+      unitPriceMinor: item.unitPriceCents,
+      selectedSize: item.selectedSize,
+      selectedColor: item.selectedColor,
+    })),
+  });
+
+  if (requirePricingFingerprint) {
+    const normalizedPricingFingerprint = pricingFingerprint?.trim() ?? '';
+
+    if (
+      !normalizedPricingFingerprint ||
+      normalizedPricingFingerprint !== authoritativePricingFingerprint
+    ) {
+      throw new InvalidPayloadError(
+        'Cart pricing changed. Refresh your cart and try again.',
+        {
+          code: 'CHECKOUT_PRICE_CHANGED',
+          details: {
+            reason: normalizedPricingFingerprint
+              ? 'PRICING_FINGERPRINT_MISMATCH'
+              : 'PRICING_FINGERPRINT_MISSING',
+          },
+        }
+      );
+    }
+  }
+
   const orderTotalCents = sumLineTotals(pricedItems.map(i => i.lineTotalCents));
 
   let orderId: string;

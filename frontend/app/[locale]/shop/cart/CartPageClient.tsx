@@ -1150,6 +1150,9 @@ export default function CartPage({
         body: JSON.stringify({
           paymentProvider: selectedProvider,
           paymentMethod: checkoutPaymentMethod,
+          ...(cart.summary.pricingFingerprint
+            ? { pricingFingerprint: cart.summary.pricingFingerprint }
+            : {}),
           ...(shippingPayloadResult?.ok
             ? {
                 shipping: shippingPayloadResult.shipping,

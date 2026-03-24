@@ -61,6 +61,7 @@ const EXPECTED_BUSINESS_ERROR_CODES = new Set([
   'INVALID_PAYLOAD',
   'INVALID_VARIANT',
   'INSUFFICIENT_STOCK',
+  'CHECKOUT_PRICE_CHANGED',
   'PRICE_CONFIG_ERROR',
   'PAYMENT_ATTEMPTS_EXHAUSTED',
   'MISSING_SHIPPING_ADDRESS',
@@ -75,6 +76,7 @@ const DEFAULT_CHECKOUT_RATE_LIMIT_MAX = 10;
 const DEFAULT_CHECKOUT_RATE_LIMIT_WINDOW_SECONDS = 300;
 
 const SHIPPING_ERROR_STATUS_MAP: Record<string, number> = {
+  CHECKOUT_PRICE_CHANGED: 409,
   MISSING_SHIPPING_ADDRESS: 400,
   INVALID_SHIPPING_ADDRESS: 400,
   SHIPPING_METHOD_UNAVAILABLE: 422,
@@ -1024,7 +1026,14 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { items, userId, shipping, country, legalConsent } = parsedPayload.data;
+  const {
+    items,
+    userId,
+    shipping,
+    country,
+    legalConsent,
+    pricingFingerprint,
+  } = parsedPayload.data;
   const itemCount = items.reduce((total, item) => total + item.quantity, 0);
 
   let currentUser: unknown = null;
@@ -1149,6 +1158,8 @@ export async function POST(request: NextRequest) {
         country: country ?? null,
         shipping: shipping ?? null,
         legalConsent: legalConsent ?? null,
+        pricingFingerprint,
+        requirePricingFingerprint: true,
         paymentProvider: 'stripe',
         paymentMethod: selectedMethod,
       });
@@ -1173,6 +1184,8 @@ export async function POST(request: NextRequest) {
         country: country ?? null,
         shipping: shipping ?? null,
         legalConsent: legalConsent ?? null,
+        pricingFingerprint,
+        requirePricingFingerprint: true,
         paymentProvider: resolvedProvider,
         paymentMethod: selectedMethod,
       }));
@@ -1588,7 +1601,8 @@ export async function POST(request: NextRequest) {
       return errorResponse(
         error.code,
         error.message || 'Invalid checkout payload',
-        customStatus ?? 400
+        customStatus ?? 400,
+        error.details
       );
     }
 

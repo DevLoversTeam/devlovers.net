@@ -29,6 +29,7 @@ export const emptyCart: Cart = {
     totalAmount: 0,
     itemCount: 0,
     currency: 'USD',
+    pricingFingerprint: undefined,
   },
 };
 
@@ -174,6 +175,7 @@ export function computeSummaryFromItems(
       totalAmount: 0,
       itemCount: 0,
       currency: 'USD',
+      pricingFingerprint: undefined,
     };
   }
 
@@ -198,6 +200,7 @@ export function computeSummaryFromItems(
     totalAmount: fromCents(totalMinor),
     itemCount,
     currency,
+    pricingFingerprint: undefined,
   };
 }
 

@@ -405,6 +405,11 @@ export const checkoutLegalConsentSchema = z
   .strict();
 
 const checkoutRequestedProviderSchema = z.enum(['stripe', 'monobank']);
+const pricingFingerprintSchema = z
+  .string()
+  .trim()
+  .length(64)
+  .regex(/^[a-f0-9]{64}$/);
 
 export const checkoutPayloadSchema = z
   .object({
@@ -418,6 +423,7 @@ export const checkoutPayloadSchema = z
       .optional(),
     shipping: checkoutShippingSchema.optional(),
     legalConsent: checkoutLegalConsentSchema.optional(),
+    pricingFingerprint: pricingFingerprintSchema.optional(),
     paymentProvider: checkoutRequestedProviderSchema.optional(),
     paymentMethod: paymentMethodSchema.optional(),
     paymentCurrency: currencySchema.optional(),
@@ -534,6 +540,7 @@ export const cartRehydrateResultSchema = z.object({
     totalAmount: z.number().min(0),
     itemCount: z.number().int().min(0),
     currency: currencySchema,
+    pricingFingerprint: pricingFingerprintSchema.optional(),
   }),
 });
 
