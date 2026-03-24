@@ -4,6 +4,7 @@ import { db } from '@/db';
 import { coercePriceFromDb } from '@/db/queries/shop/orders';
 import { productPrices, products } from '@/db/schema';
 import { logWarn } from '@/lib/logging';
+import { createCheckoutPricingFingerprint } from '@/lib/shop/checkout-pricing';
 import { createCartItemKey } from '@/lib/shop/cart-item-key';
 import { type CurrencyCode, isTwoDecimalCurrency } from '@/lib/shop/currency';
 import { calculateLineTotal, fromCents, toCents } from '@/lib/shop/money';
@@ -296,6 +297,16 @@ export async function rehydrateCartItems(
   }
 
   const itemCount = rehydratedItems.reduce((total, i) => total + i.quantity, 0);
+  const pricingFingerprint = createCheckoutPricingFingerprint({
+    currency,
+    items: rehydratedItems.map(item => ({
+      productId: item.productId,
+      quantity: item.quantity,
+      unitPriceMinor: item.unitPriceMinor,
+      selectedSize: item.selectedSize,
+      selectedColor: item.selectedColor,
+    })),
+  });
 
   return cartRehydrateResultSchema.parse({
     items: rehydratedItems,
@@ -305,6 +316,7 @@ export async function rehydrateCartItems(
       totalAmount: fromMinorUnits(totalMinor),
       itemCount,
       currency,
+      pricingFingerprint,
     },
   });
 }

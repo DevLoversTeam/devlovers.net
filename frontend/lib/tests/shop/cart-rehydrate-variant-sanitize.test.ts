@@ -73,6 +73,7 @@ describe('cart rehydrate: variant sanitization', () => {
     expect(result.items[0]!.selectedSize).toBeUndefined();
     expect(result.items[0]!.selectedColor).toBe('black');
     expect(result.summary.totalAmountMinor).toBe(3000);
+    expect(result.summary.pricingFingerprint).toMatch(/^[a-f0-9]{64}$/);
   });
 
   it('drops invalid selectedColor and merges lines after sanitization', async () => {
@@ -98,5 +99,6 @@ describe('cart rehydrate: variant sanitization', () => {
     expect(result.items[0]!.selectedSize).toBe('S');
     expect(result.items[0]!.selectedColor).toBeUndefined();
     expect(result.summary.totalAmountMinor).toBe(3000);
+    expect(result.summary.pricingFingerprint).toMatch(/^[a-f0-9]{64}$/);
   });
 });
