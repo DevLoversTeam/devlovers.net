@@ -57,17 +57,17 @@ function seedPlaceholderNovaPoshtaEnv() {
 }
 
 beforeEach(() => {
+  vi.unstubAllEnvs();
   for (const key of ENV_KEYS) {
     previousEnv[key] = process.env[key];
     delete process.env[key];
   }
-  vi.unstubAllEnvs();
   resetEnvCache();
 });
 
 afterEach(() => {
-  restoreEnv();
   vi.unstubAllEnvs();
+  restoreEnv();
   resetEnvCache();
 });
 
