@@ -444,6 +444,55 @@ describe('checkout authoritative shipping totals', () => {
     expect(orderRow).toBeFalsy();
   });
 
+  it('fails closed in production-like runtime when NP provider config is placeholder and creates no order', async () => {
+    const seed = await seedShippingCheckoutData();
+    const quote = await rehydrateCartItems(
+      [{ productId: seed.productId, quantity: 1 }],
+      'UAH'
+    );
+    const warehouseMethod = await fetchWarehouseMethodQuote();
+    const pricingFingerprint = quote.summary.pricingFingerprint;
+
+    expect(typeof pricingFingerprint).toBe('string');
+    expect(pricingFingerprint).toHaveLength(64);
+
+    vi.stubEnv('APP_ENV', 'production');
+    vi.stubEnv('NP_API_BASE', 'https://api.example.test');
+    vi.stubEnv('NP_API_KEY', 'np_test_placeholder');
+    vi.stubEnv('NP_SENDER_CITY_REF', 'test-city-ref');
+    vi.stubEnv('NP_SENDER_WAREHOUSE_REF', 'test-warehouse-ref');
+    vi.stubEnv('NP_SENDER_REF', 'test-sender-ref');
+    vi.stubEnv('NP_SENDER_CONTACT_REF', 'test-contact-ref');
+    vi.stubEnv('NP_SENDER_NAME', 'Test Sender');
+    vi.stubEnv('NP_SENDER_PHONE', '0000000000');
+    resetEnvCache();
+
+    const idempotencyKey = crypto.randomUUID();
+    const response = await POST(
+      makeCheckoutRequest({
+        idempotencyKey,
+        productId: seed.productId,
+        pricingFingerprint: pricingFingerprint!,
+        cityRef: seed.cityRef,
+        warehouseRef: seed.warehouseRef,
+        shippingQuoteFingerprint: warehouseMethod.quoteFingerprint,
+      })
+    );
+
+    expect(response.status).toBe(422);
+    const json = await response.json();
+    expect(json.code).toBe('SHIPPING_METHOD_UNAVAILABLE');
+    expect(json.message).toBe('Shipping method is currently unavailable.');
+
+    const [orderRow] = await db
+      .select({ id: orders.id })
+      .from(orders)
+      .where(eq(orders.idempotencyKey, idempotencyKey))
+      .limit(1);
+
+    expect(orderRow).toBeFalsy();
+  });
+
   it('rejects client-supplied payable totals and creates no order', async () => {
     const seed = await seedShippingCheckoutData();
     const quote = await rehydrateCartItems(
