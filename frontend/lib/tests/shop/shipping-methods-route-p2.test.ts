@@ -76,4 +76,59 @@ describe('shop shipping methods route (phase 2)', () => {
       methods: [],
     });
   });
+
+  it('returns 200 + available=false when checkout currency is unsupported', async () => {
+    vi.stubEnv('SHOP_SHIPPING_ENABLED', 'true');
+    vi.stubEnv('SHOP_SHIPPING_NP_ENABLED', 'true');
+    vi.stubEnv('SHOP_SHIPPING_NP_WAREHOUSE_AMOUNT_MINOR', '500');
+    vi.stubEnv('SHOP_SHIPPING_NP_LOCKER_AMOUNT_MINOR', '400');
+    vi.stubEnv('SHOP_SHIPPING_NP_COURIER_AMOUNT_MINOR', '700');
+
+    const req = new NextRequest(
+      'http://localhost/api/shop/shipping/methods?locale=en&country=UA&currency=USD'
+    );
+    const res = await GET(req);
+    const json: any = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json).toMatchObject({
+      success: true,
+      available: false,
+      reasonCode: 'CURRENCY_NOT_SUPPORTED',
+      currency: 'USD',
+      methods: [],
+    });
+  });
+
+  it('returns authoritative shipping amounts and quote fingerprints when shipping is available', async () => {
+    vi.stubEnv('SHOP_SHIPPING_ENABLED', 'true');
+    vi.stubEnv('SHOP_SHIPPING_NP_ENABLED', 'true');
+    vi.stubEnv('SHOP_SHIPPING_NP_WAREHOUSE_AMOUNT_MINOR', '500');
+    vi.stubEnv('SHOP_SHIPPING_NP_LOCKER_AMOUNT_MINOR', '400');
+    vi.stubEnv('SHOP_SHIPPING_NP_COURIER_AMOUNT_MINOR', '700');
+
+    const req = new NextRequest(
+      'http://localhost/api/shop/shipping/methods?locale=uk&currency=UAH&country=UA'
+    );
+    const res = await GET(req);
+    const json: any = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json).toMatchObject({
+      success: true,
+      available: true,
+      reasonCode: 'OK',
+      currency: 'UAH',
+    });
+    expect(Array.isArray(json.methods)).toBe(true);
+    expect(json.methods).toHaveLength(3);
+
+    for (const method of json.methods) {
+      expect(method.provider).toBe('nova_poshta');
+      expect(method.methodCode).toMatch(/^NP_(WAREHOUSE|LOCKER|COURIER)$/);
+      expect(Number.isInteger(method.amountMinor)).toBe(true);
+      expect(method.amountMinor).toBeGreaterThanOrEqual(0);
+      expect(method.quoteFingerprint).toMatch(/^[a-f0-9]{64}$/);
+    }
+  });
 });

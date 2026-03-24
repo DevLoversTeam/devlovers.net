@@ -4,8 +4,8 @@ import { db } from '@/db';
 import { coercePriceFromDb } from '@/db/queries/shop/orders';
 import { productPrices, products } from '@/db/schema';
 import { logWarn } from '@/lib/logging';
-import { createCheckoutPricingFingerprint } from '@/lib/shop/checkout-pricing';
 import { createCartItemKey } from '@/lib/shop/cart-item-key';
+import { createCheckoutPricingFingerprint } from '@/lib/shop/checkout-pricing';
 import { type CurrencyCode, isTwoDecimalCurrency } from '@/lib/shop/currency';
 import { calculateLineTotal, fromCents, toCents } from '@/lib/shop/money';
 import type {
