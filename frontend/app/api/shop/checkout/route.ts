@@ -59,6 +59,7 @@ type CheckoutRequestedProvider = 'stripe' | 'monobank';
 const EXPECTED_BUSINESS_ERROR_CODES = new Set([
   'IDEMPOTENCY_CONFLICT',
   'INVALID_PAYLOAD',
+  'DISCOUNTS_NOT_SUPPORTED',
   'INVALID_VARIANT',
   'INSUFFICIENT_STOCK',
   'CHECKOUT_PRICE_CHANGED',
@@ -94,6 +95,15 @@ const STATUS_TOKEN_SCOPES_PAYMENT_INIT: readonly StatusTokenScope[] = [
   'status_lite',
   'order_payment_init',
 ];
+const UNSUPPORTED_DISCOUNT_FIELDS = new Set([
+  'discountCode',
+  'couponCode',
+  'promoCode',
+  'discountAmount',
+  'discountAmountMinor',
+  'totalDiscountAmount',
+  'totalDiscountMinor',
+]);
 
 function resolveCheckoutTokenScopes(args: {
   paymentProvider: PaymentProvider;
@@ -340,6 +350,18 @@ function errorResponse(
 
   res.headers.set('Cache-Control', 'no-store');
   return res;
+}
+
+function collectUnsupportedDiscountFields(
+  value: unknown
+): string[] {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return [];
+  }
+
+  return Object.keys(value).filter(field =>
+    UNSUPPORTED_DISCOUNT_FIELDS.has(field)
+  );
 }
 
 function getIdempotencyKey(request: NextRequest) {
@@ -996,6 +1018,24 @@ export async function POST(request: NextRequest) {
       paymentMethod: selectedMethod,
       paymentCurrency: selectedCurrency,
     };
+  }
+
+  const unsupportedDiscountFields =
+    collectUnsupportedDiscountFields(payloadForValidation);
+
+  if (unsupportedDiscountFields.length > 0) {
+    logWarn('checkout_discount_not_supported', {
+      ...meta,
+      code: 'DISCOUNTS_NOT_SUPPORTED',
+      fields: unsupportedDiscountFields,
+    });
+
+    return errorResponse(
+      'DISCOUNTS_NOT_SUPPORTED',
+      'Discounts are not available at checkout.',
+      400,
+      { fields: unsupportedDiscountFields }
+    );
   }
 
   const parsedPayload = checkoutPayloadSchema.safeParse(payloadForValidation);
