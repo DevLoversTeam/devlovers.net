@@ -131,4 +131,35 @@ describe('shop shipping methods route (phase 2)', () => {
       expect(method.quoteFingerprint).toMatch(/^[a-f0-9]{64}$/);
     }
   });
+
+  it('fails closed with NP_MISCONFIG in production-like runtime when NP config is placeholder', async () => {
+    vi.stubEnv('APP_ENV', 'production');
+    vi.stubEnv('SHOP_SHIPPING_ENABLED', 'true');
+    vi.stubEnv('SHOP_SHIPPING_NP_ENABLED', 'true');
+    vi.stubEnv('SHOP_SHIPPING_NP_WAREHOUSE_AMOUNT_MINOR', '500');
+    vi.stubEnv('SHOP_SHIPPING_NP_LOCKER_AMOUNT_MINOR', '400');
+    vi.stubEnv('SHOP_SHIPPING_NP_COURIER_AMOUNT_MINOR', '700');
+    vi.stubEnv('NP_API_BASE', 'https://api.example.test');
+    vi.stubEnv('NP_API_KEY', 'np_test_placeholder');
+    vi.stubEnv('NP_SENDER_CITY_REF', 'test-city-ref');
+    vi.stubEnv('NP_SENDER_WAREHOUSE_REF', 'test-warehouse-ref');
+    vi.stubEnv('NP_SENDER_REF', 'test-sender-ref');
+    vi.stubEnv('NP_SENDER_CONTACT_REF', 'test-contact-ref');
+    vi.stubEnv('NP_SENDER_NAME', 'Test Sender');
+    vi.stubEnv('NP_SENDER_PHONE', '0000000000');
+    resetEnvCache();
+
+    const req = new NextRequest(
+      'http://localhost/api/shop/shipping/methods?locale=uk&currency=UAH&country=UA'
+    );
+    const res = await GET(req);
+    const json: any = await res.json();
+
+    expect(res.status).toBe(503);
+    expect(json).toMatchObject({
+      success: false,
+      code: 'NP_MISCONFIG',
+      message: 'Nova Poshta configuration is invalid',
+    });
+  });
 });

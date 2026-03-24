@@ -2,7 +2,11 @@ import crypto from 'node:crypto';
 
 import { NextRequest, NextResponse } from 'next/server';
 
-import { getShopShippingFlags } from '@/lib/env/nova-poshta';
+import {
+  assertNovaPoshtaProductionLikeReady,
+  getShopShippingFlags,
+  NovaPoshtaConfigError,
+} from '@/lib/env/nova-poshta';
 import { readPositiveIntEnv } from '@/lib/env/readPositiveIntEnv';
 import { logError, logWarn } from '@/lib/logging';
 import {
@@ -206,6 +210,23 @@ export async function GET(request: NextRequest) {
         },
         requestId
       );
+    }
+
+    try {
+      assertNovaPoshtaProductionLikeReady();
+    } catch (error) {
+      if (error instanceof NovaPoshtaConfigError) {
+        return noStoreJson(
+          {
+            success: false,
+            code: 'NP_MISCONFIG',
+            message: 'Nova Poshta configuration is invalid',
+          },
+          requestId,
+          503
+        );
+      }
+      throw error;
     }
 
     return cachedJson(

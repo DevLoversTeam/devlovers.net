@@ -12,7 +12,11 @@ import {
   productPrices,
   products,
 } from '@/db/schema/shop';
-import { getShopShippingFlags } from '@/lib/env/nova-poshta';
+import {
+  assertNovaPoshtaProductionLikeReady,
+  getShopShippingFlags,
+  NovaPoshtaConfigError,
+} from '@/lib/env/nova-poshta';
 import { getShopLegalVersions } from '@/lib/env/shop-legal';
 import { logError, logWarn } from '@/lib/logging';
 import { resolveShippingAvailability } from '@/lib/services/shop/shipping/availability';
@@ -396,6 +400,20 @@ async function prepareCheckoutShipping(args: {
         code: 'SHIPPING_CURRENCY_UNSUPPORTED',
       }
     );
+  }
+
+  try {
+    assertNovaPoshtaProductionLikeReady();
+  } catch (error) {
+    if (error instanceof NovaPoshtaConfigError) {
+      throw new InvalidPayloadError(
+        'Shipping method is currently unavailable.',
+        {
+          code: 'SHIPPING_METHOD_UNAVAILABLE',
+        }
+      );
+    }
+    throw error;
   }
 
   let authoritativeQuote: CheckoutShippingQuote;
