@@ -6,6 +6,7 @@ import { db } from '@/db';
 import { isCanonicalEventsDualWriteEnabled } from '@/lib/env/shop-canonical-events';
 import { buildAdminAuditDedupeKey } from '@/lib/services/shop/events/dedupe-key';
 import { evaluateOrderShippingEligibility } from '@/lib/services/shop/shipping/eligibility';
+import { ensureQueuedInitialShipment } from '@/lib/services/shop/shipping/ensure-queued-initial-shipment';
 import { recordShippingMetric } from '@/lib/services/shop/shipping/metrics';
 import {
   isShippingStatusTransitionAllowed,
@@ -13,6 +14,7 @@ import {
 } from '@/lib/services/shop/transitions/shipping-state';
 
 export type ShippingAdminAction =
+  | 'recover_initial_shipment'
   | 'retry_label_creation'
   | 'mark_shipped'
   | 'mark_delivered';
@@ -498,6 +500,124 @@ export async function applyShippingAdminAction(args: {
   const canonicalDualWriteEnabled = isCanonicalEventsDualWriteEnabled();
   const now = new Date();
   const nowIso = now.toISOString();
+
+  if (args.action === 'recover_initial_shipment') {
+    if (state.shipment_id) {
+      if (state.shipment_status === 'queued') {
+        await appendAuditEntry({
+          orderId: args.orderId,
+          entry: {
+            action: args.action,
+            actorUserId: args.actorUserId,
+            requestId: args.requestId,
+            fromShippingStatus: state.shipping_status,
+            toShippingStatus: 'queued',
+            fromShipmentStatus: state.shipment_status,
+            at: nowIso,
+          },
+          canonical: {
+            enabled: canonicalDualWriteEnabled,
+            dedupeKey: buildShippingAdminAuditDedupe({
+              orderId: args.orderId,
+              requestId: args.requestId,
+              action: args.action,
+              fromShippingStatus: state.shipping_status,
+              toShippingStatus: 'queued',
+              fromShipmentStatus: state.shipment_status,
+            }),
+            occurredAt: now,
+          },
+        });
+
+        return {
+          orderId: state.order_id,
+          shippingStatus: state.shipping_status,
+          trackingNumber: state.tracking_number,
+          shipmentStatus: state.shipment_status,
+          changed: false,
+          action: args.action,
+        };
+      }
+
+      throw new ShippingAdminActionError(
+        'SHIPMENT_ALREADY_EXISTS',
+        'Shipment record already exists for this order.',
+        409
+      );
+    }
+
+    if (
+      !isShippingStatusTransitionAllowed(state.shipping_status, 'queued', {
+        allowNullFrom: true,
+        includeSame: true,
+      })
+    ) {
+      throw new ShippingAdminActionError(
+        'INVALID_SHIPPING_TRANSITION',
+        `recover_initial_shipment is not allowed from ${state.shipping_status ?? 'null'}.`,
+        409
+      );
+    }
+
+    const ensured = await ensureQueuedInitialShipment({
+      now,
+      orderId: args.orderId,
+    });
+
+    if (!ensured.queuedShipment) {
+      throw new ShippingAdminActionError(
+        'SHIPMENT_RECOVERY_NOT_ALLOWED',
+        'Initial shipment cannot be recovered in current state.',
+        409
+      );
+    }
+
+    await appendAuditEntry({
+      orderId: args.orderId,
+      entry: {
+        action: args.action,
+        actorUserId: args.actorUserId,
+        requestId: args.requestId,
+        fromShippingStatus: state.shipping_status,
+        toShippingStatus: 'queued',
+        fromShipmentStatus: state.shipment_status,
+        at: nowIso,
+      },
+      canonical: {
+        enabled: canonicalDualWriteEnabled,
+        dedupeKey: buildShippingAdminAuditDedupe({
+          orderId: args.orderId,
+          requestId: args.requestId,
+          action: args.action,
+          fromShippingStatus: state.shipping_status,
+          toShippingStatus: 'queued',
+          fromShipmentStatus: state.shipment_status,
+        }),
+        occurredAt: now,
+      },
+    });
+
+    if (ensured.insertedShipment || ensured.updatedOrder) {
+      recordShippingMetric({
+        name: 'queued',
+        source: 'admin_action',
+        orderId: args.orderId,
+        requestId: args.requestId,
+      });
+    }
+
+    return {
+      orderId: state.order_id,
+      shippingStatus:
+        ensured.updatedOrder || state.shipping_status === 'queued'
+          ? 'queued'
+          : state.shipping_status,
+      trackingNumber: state.tracking_number,
+      shipmentStatus: 'queued',
+      changed: ensured.insertedShipment || ensured.updatedOrder,
+      action: args.action,
+    };
+  }
 
   if (args.action === 'retry_label_creation') {
     if (!state.shipment_id) {

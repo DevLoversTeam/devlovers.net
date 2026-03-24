@@ -17,6 +17,72 @@ async function cleanup(orderId: string) {
 }
 
 describe.sequential('admin shipping action canonical audit', () => {
+  it('recover_initial_shipment inserts admin_audit_log row and queues missing shipment', async () => {
+    const orderId = crypto.randomUUID();
+    const requestId = `req_${crypto.randomUUID()}`;
+
+    await db.insert(orders).values({
+      id: orderId,
+      totalAmountMinor: 1000,
+      totalAmount: toDbMoney(1000),
+      currency: 'USD',
+      paymentProvider: 'stripe',
+      paymentStatus: 'paid',
+      status: 'PAID',
+      inventoryStatus: 'reserved',
+      shippingRequired: true,
+      shippingPayer: 'customer',
+      shippingProvider: 'nova_poshta',
+      shippingMethodCode: 'NP_WAREHOUSE',
+      shippingAmountMinor: null,
+      shippingStatus: 'pending',
+      idempotencyKey: crypto.randomUUID(),
+    } as any);
+
+    try {
+      const result = await applyShippingAdminAction({
+        orderId,
+        action: 'recover_initial_shipment',
+        actorUserId: null,
+        requestId,
+      });
+
+      expect(result.changed).toBe(true);
+      expect(result.shippingStatus).toBe('queued');
+      expect(result.shipmentStatus).toBe('queued');
+
+      const shipments = await db
+        .select({
+          id: shippingShipments.id,
+          status: shippingShipments.status,
+        })
+        .from(shippingShipments)
+        .where(eq(shippingShipments.orderId, orderId));
+
+      expect(shipments).toHaveLength(1);
+      expect(shipments[0]?.status).toBe('queued');
+
+      const logs = await db
+        .select({
+          id: adminAuditLog.id,
+          action: adminAuditLog.action,
+          requestId: adminAuditLog.requestId,
+          orderId: adminAuditLog.orderId,
+        })
+        .from(adminAuditLog)
+        .where(eq(adminAuditLog.orderId, orderId));
+
+      expect(logs.length).toBe(1);
+      expect(logs[0]?.action).toBe(
+        'shipping_admin_action.recover_initial_shipment'
+      );
+      expect(logs[0]?.requestId).toBe(requestId);
+      expect(logs[0]?.orderId).toBe(orderId);
+    } finally {
+      await cleanup(orderId);
+    }
+  });
+
   it('mark_shipped inserts admin_audit_log row by default', async () => {
     const orderId = crypto.randomUUID();
     const shipmentId = crypto.randomUUID();
