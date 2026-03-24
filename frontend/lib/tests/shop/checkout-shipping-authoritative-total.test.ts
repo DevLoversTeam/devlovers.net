@@ -61,7 +61,6 @@ vi.mock('@/lib/env/stripe', () => ({
 }));
 
 vi.mock('@/lib/services/orders/payment-attempts', async () => {
-  resetEnvCache();
   const actual = await vi.importActual<any>(
     '@/lib/services/orders/payment-attempts'
   );
