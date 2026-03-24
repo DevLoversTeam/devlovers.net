@@ -8,7 +8,11 @@ import { adminAuditLog, orders, shippingShipments } from '@/db/schema';
 import { applyShippingAdminAction } from '@/lib/services/shop/shipping/admin-actions';
 import { toDbMoney } from '@/lib/shop/money';
 
-type Action = 'retry_label_creation' | 'mark_shipped' | 'mark_delivered';
+type Action =
+  | 'recover_initial_shipment'
+  | 'retry_label_creation'
+  | 'mark_shipped'
+  | 'mark_delivered';
 
 type SeedArgs = {
   action: Action;
@@ -38,13 +42,24 @@ type SeedArgs = {
 type Seeded = {
   orderId: string;
   shipmentId: string | null;
-  shippingStatus: 'needs_attention' | 'label_created' | 'shipped' | 'cancelled';
+  shippingStatus:
+    | 'pending'
+    | 'needs_attention'
+    | 'label_created'
+    | 'shipped'
+    | 'cancelled';
   shipmentStatus: 'failed' | 'needs_attention' | 'succeeded' | null;
 };
 
 function defaultStateForAction(
   action: Action
 ): Pick<Seeded, 'shippingStatus' | 'shipmentStatus'> {
+  if (action === 'recover_initial_shipment') {
+    return {
+      shippingStatus: 'pending',
+      shipmentStatus: null,
+    };
+  }
   if (action === 'retry_label_creation') {
     return {
       shippingStatus: 'needs_attention',
@@ -202,6 +217,7 @@ describe.sequential('admin shipping action payment gate', () => {
   ];
 
   const actions: readonly Action[] = [
+    'recover_initial_shipment',
     'mark_shipped',
     'mark_delivered',
     'retry_label_creation',

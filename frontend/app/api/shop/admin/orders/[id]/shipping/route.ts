@@ -26,7 +26,12 @@ export const runtime = 'nodejs';
 
 const payloadSchema = z
   .object({
-    action: z.enum(['retry_label_creation', 'mark_shipped', 'mark_delivered']),
+    action: z.enum([
+      'recover_initial_shipment',
+      'retry_label_creation',
+      'mark_shipped',
+      'mark_delivered',
+    ]),
   })
   .strict();
 
