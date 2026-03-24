@@ -79,6 +79,10 @@ describe('P0-SEC-1.1: GET /api/shop/orders/[id] access control', () => {
           paymentStatus: 'pending',
           paymentProvider: 'stripe',
           paymentIntentId: null,
+          orderStatus: 'INVENTORY_RESERVED',
+          shippingStatus: null,
+          shipmentStatus: null,
+          returnStatus: null,
           stockRestored: false,
           restockedAt: null,
           idempotencyKey: 'idem_key',
@@ -96,6 +100,7 @@ describe('P0-SEC-1.1: GET /api/shop/orders/[id] access control', () => {
     expect(json?.success).toBe(true);
     expect(json?.order?.id).toBe(orderId);
     expect(json?.order?.userId).toBe(ownerId);
+    expect(json?.order?.fulfillmentStage).toBe('processing');
   });
 
   it('admin -> 200', async () => {
@@ -113,6 +118,10 @@ describe('P0-SEC-1.1: GET /api/shop/orders/[id] access control', () => {
           paymentStatus: 'pending',
           paymentProvider: 'stripe',
           paymentIntentId: null,
+          orderStatus: 'INVENTORY_RESERVED',
+          shippingStatus: null,
+          shipmentStatus: null,
+          returnStatus: null,
           stockRestored: false,
           restockedAt: null,
           idempotencyKey: 'idem_key',
@@ -125,5 +134,7 @@ describe('P0-SEC-1.1: GET /api/shop/orders/[id] access control', () => {
 
     const res = await callGet(orderId);
     expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json?.order?.fulfillmentStage).toBe('processing');
   });
 });

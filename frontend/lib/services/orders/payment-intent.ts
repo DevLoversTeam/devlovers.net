@@ -10,6 +10,7 @@ import {
   OrderNotFoundError,
   OrderStateInvalidError,
 } from '../errors';
+import { deriveCanonicalFulfillmentStage } from '../shop/fulfillment-stage';
 import { resolvePaymentProvider } from './_shared';
 import { guardedPaymentStatusUpdate } from './payment-state';
 import { getOrderItems, parseOrderSummary } from './summary';
@@ -54,7 +55,14 @@ export async function setOrderPaymentIntent({
 
   if (existing.paymentIntentId === paymentIntentId) {
     const items = await getOrderItems(orderId);
-    return parseOrderSummary(existing, items);
+    return parseOrderSummary(
+      existing,
+      items,
+      deriveCanonicalFulfillmentStage({
+        orderStatus: existing.status,
+        shippingStatus: existing.shippingStatus,
+      })
+    );
   }
 
   const res = await guardedPaymentStatusUpdate({
@@ -84,7 +92,14 @@ export async function setOrderPaymentIntent({
   if (!updated) throw new OrderNotFoundError('Order not found');
 
   const items = await getOrderItems(orderId);
-  return parseOrderSummary(updated, items);
+  return parseOrderSummary(
+    updated,
+    items,
+    deriveCanonicalFulfillmentStage({
+      orderStatus: updated.status,
+      shippingStatus: updated.shippingStatus,
+    })
+  );
 }
 
 export async function readStripePaymentIntentParams(orderId: string): Promise<{

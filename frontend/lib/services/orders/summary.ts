@@ -7,6 +7,12 @@ import {
   paymentAttempts,
   products,
 } from '@/db/schema/shop';
+import {
+  deriveCanonicalFulfillmentStage,
+  latestReturnStatusSql,
+  latestShipmentStatusSql,
+  readCanonicalFulfillmentSignals,
+} from '@/lib/services/shop/fulfillment-stage';
 import { fromCents, fromDbMoney } from '@/lib/shop/money';
 import { type OrderDetail, type OrderSummaryWithMinor } from '@/lib/types/shop';
 
@@ -49,9 +55,22 @@ export const orderItemSummarySelection = {
   >`coalesce(${orderItems.productSlug}, ${products.slug})`,
 };
 
+type OrderSummaryRow = Pick<
+  OrderRow,
+  | 'id'
+  | 'totalAmountMinor'
+  | 'totalAmount'
+  | 'currency'
+  | 'paymentStatus'
+  | 'paymentProvider'
+  | 'paymentIntentId'
+  | 'createdAt'
+>;
+
 export function parseOrderSummary(
-  order: OrderRow,
-  items: OrderItemForSummary[]
+  order: OrderSummaryRow,
+  items: OrderItemForSummary[],
+  fulfillmentStage: OrderSummaryWithMinor['fulfillmentStage']
 ): OrderSummaryWithMinor {
   function readLegacyMoneyCentsOrThrow(
     value: unknown,
@@ -132,6 +151,7 @@ export function parseOrderSummary(
     totalAmount: fromCents(totalAmountMinor),
     currency: order.currency,
     paymentStatus: order.paymentStatus,
+    fulfillmentStage,
     paymentProvider,
     paymentIntentId: order.paymentIntentId ?? undefined,
     createdAt: order.createdAt,
@@ -149,14 +169,35 @@ export async function getOrderItems(orderId: string) {
 
 export async function getOrderById(id: string): Promise<OrderDetail> {
   const [order] = await db
-    .select()
+    .select({
+      id: orders.id,
+      totalAmountMinor: orders.totalAmountMinor,
+      totalAmount: orders.totalAmount,
+      currency: orders.currency,
+      paymentStatus: orders.paymentStatus,
+      paymentProvider: orders.paymentProvider,
+      paymentIntentId: orders.paymentIntentId,
+      createdAt: orders.createdAt,
+      orderStatus: orders.status,
+      shippingStatus: orders.shippingStatus,
+    })
     .from(orders)
     .where(eq(orders.id, id))
     .limit(1);
   if (!order) throw new OrderNotFoundError('Order not found');
 
+  const fulfillmentSignals = await readCanonicalFulfillmentSignals(db, id);
   const items = await getOrderItems(id);
-  return parseOrderSummary(order, items);
+  return parseOrderSummary(
+    order,
+    items,
+    deriveCanonicalFulfillmentStage({
+      orderStatus: order.orderStatus,
+      shippingStatus: order.shippingStatus,
+      shipmentStatus: fulfillmentSignals.shipmentStatus,
+      returnStatus: fulfillmentSignals.returnStatus,
+    })
+  );
 }
 
 export async function getOrderSummary(
@@ -255,6 +296,7 @@ export async function getCheckoutPaymentPageOrderSummary(args: {
 export type OrderStatusLiteSummary = {
   id: string;
   paymentStatus: string;
+  fulfillmentStage: OrderSummaryWithMinor['fulfillmentStage'];
   totalAmountMinor: number;
   currency: string;
   itemsCount: number;
@@ -268,10 +310,14 @@ export async function getOrderStatusLiteSummary(
     .select({
       id: orders.id,
       paymentStatus: orders.paymentStatus,
+      orderStatus: orders.status,
+      shippingStatus: orders.shippingStatus,
       totalAmountMinor: orders.totalAmountMinor,
       totalAmount: orders.totalAmount,
       currency: orders.currency,
       updatedAt: orders.updatedAt,
+      shipmentStatus: latestShipmentStatusSql(orders.id),
+      returnStatus: latestReturnStatusSql(orders.id),
       itemsCount: sql<number>`count(${orderItems.id})::int`,
     })
     .from(orders)
@@ -280,6 +326,8 @@ export async function getOrderStatusLiteSummary(
     .groupBy(
       orders.id,
       orders.paymentStatus,
+      orders.status,
+      orders.shippingStatus,
       orders.totalAmountMinor,
       orders.totalAmount,
       orders.currency,
@@ -301,6 +349,14 @@ export async function getOrderStatusLiteSummary(
   return {
     id: row.id,
     paymentStatus: row.paymentStatus,
+    fulfillmentStage: deriveCanonicalFulfillmentStage({
+      orderStatus: row.orderStatus,
+      shippingStatus: row.shippingStatus,
+      shipmentStatus:
+        typeof row.shipmentStatus === 'string' ? row.shipmentStatus : null,
+      returnStatus:
+        typeof row.returnStatus === 'string' ? row.returnStatus : null,
+    }),
     totalAmountMinor,
     currency: row.currency,
     itemsCount: Number.isFinite(row.itemsCount) ? row.itemsCount : 0,
@@ -383,5 +439,12 @@ export async function getOrderByIdempotencyKey(
     .leftJoin(products, eq(orderItems.productId, products.id))
     .where(eq(orderItems.orderId, order.id));
 
-  return parseOrderSummary(order, items);
+  return parseOrderSummary(
+    order,
+    items,
+    deriveCanonicalFulfillmentStage({
+      orderStatus: order.status,
+      shippingStatus: order.shippingStatus,
+    })
+  );
 }

@@ -9,6 +9,12 @@ import { db } from '@/db';
 import { orderItems, orders } from '@/db/schema';
 import { getCurrentUser } from '@/lib/auth';
 import { logError, logWarn } from '@/lib/logging';
+import {
+  type CanonicalFulfillmentStage,
+  deriveCanonicalFulfillmentStage,
+  latestReturnStatusSql,
+  latestShipmentStatusSql,
+} from '@/lib/services/shop/fulfillment-stage';
 import { orderIdParamSchema } from '@/lib/validation/shop';
 
 export const dynamic = 'force-dynamic';
@@ -28,6 +34,7 @@ type OrderDetailResponse = {
   paymentStatus: OrderPaymentStatus;
   paymentProvider: string;
   paymentIntentId: string | null;
+  fulfillmentStage: CanonicalFulfillmentStage;
   shippingStatus: string | null;
   trackingNumber: string | null;
   stockRestored: boolean;
@@ -148,7 +155,10 @@ export async function GET(
           paymentStatus: orders.paymentStatus,
           paymentProvider: orders.paymentProvider,
           paymentIntentId: orders.paymentIntentId,
+          orderStatus: orders.status,
           shippingStatus: orders.shippingStatus,
+          shipmentStatus: latestShipmentStatusSql(orders.id),
+          returnStatus: latestReturnStatusSql(orders.id),
           trackingNumber: orders.trackingNumber,
           stockRestored: orders.stockRestored,
           restockedAt: orders.restockedAt,
@@ -184,13 +194,32 @@ export async function GET(
     }
 
     const base = rows[0]!.order;
+    const fulfillmentStage = deriveCanonicalFulfillmentStage({
+      orderStatus: base.orderStatus,
+      shippingStatus: base.shippingStatus,
+      shipmentStatus:
+        typeof base.shipmentStatus === 'string' ? base.shipmentStatus : null,
+      returnStatus:
+        typeof base.returnStatus === 'string' ? base.returnStatus : null,
+    });
 
     const items = rows
       .map(r => toOrderItem(r.item))
       .filter((i): i is NonNullable<typeof i> => i !== null);
 
     const response: OrderDetailResponse = {
-      ...base,
+      id: base.id,
+      userId: base.userId,
+      totalAmount: base.totalAmount,
+      currency: base.currency,
+      paymentStatus: base.paymentStatus,
+      paymentProvider: base.paymentProvider,
+      paymentIntentId: base.paymentIntentId,
+      fulfillmentStage,
+      shippingStatus: base.shippingStatus,
+      trackingNumber: base.trackingNumber,
+      stockRestored: base.stockRestored,
+      idempotencyKey: base.idempotencyKey,
       createdAt: base.createdAt.toISOString(),
       updatedAt: base.updatedAt.toISOString(),
       restockedAt: base.restockedAt ? base.restockedAt.toISOString() : null,

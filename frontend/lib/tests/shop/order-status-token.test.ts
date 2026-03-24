@@ -112,6 +112,7 @@ describe('order status token access control', () => {
       expect(json.currency).toBe('UAH');
       expect(json.totalAmountMinor).toBe(1000);
       expect(json.paymentStatus).toBe('pending');
+      expect(json.fulfillmentStage).toBe('processing');
       expect(json.itemsCount).toBe(0);
       expect(typeof json.updatedAt).toBe('string');
       expect(json.order).toBeUndefined();
@@ -146,6 +147,7 @@ describe('order status token access control', () => {
       const json: any = await res.json();
       expect(json.id).toBe(orderId);
       expect(json.paymentStatus).toBe('pending');
+      expect(json.fulfillmentStage).toBe('processing');
       expect(json.order).toBeUndefined();
       expect(json.attempt).toBeUndefined();
       expect(json.success).toBeUndefined();

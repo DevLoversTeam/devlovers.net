@@ -37,6 +37,14 @@ export const paymentStatusSchema = z.enum(paymentStatusValues);
 export const paymentProviderSchema = z.enum(paymentProviderValues);
 export const paymentMethodSchema = z.enum(paymentMethodValues);
 export const currencySchema = z.enum(currencyValues);
+export const fulfillmentStageSchema = z.enum([
+  'processing',
+  'packed',
+  'shipped',
+  'delivered',
+  'canceled',
+  'returned',
+]);
 
 const searchParamString = z
   .union([z.string(), z.array(z.string())])
@@ -557,6 +565,7 @@ export const orderSummarySchema = z.object({
   totalAmount: z.number().min(0),
   currency: currencySchema,
   paymentStatus: paymentStatusSchema,
+  fulfillmentStage: fulfillmentStageSchema,
   paymentProvider: paymentProviderSchema,
   paymentIntentId: z
     .string()
