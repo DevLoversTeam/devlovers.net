@@ -424,6 +424,7 @@ export const checkoutPayloadSchema = z
     shipping: checkoutShippingSchema.optional(),
     legalConsent: checkoutLegalConsentSchema.optional(),
     pricingFingerprint: pricingFingerprintSchema.optional(),
+    shippingQuoteFingerprint: pricingFingerprintSchema.optional(),
     paymentProvider: checkoutRequestedProviderSchema.optional(),
     paymentMethod: paymentMethodSchema.optional(),
     paymentCurrency: currencySchema.optional(),

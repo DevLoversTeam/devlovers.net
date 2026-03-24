@@ -163,8 +163,9 @@ async function makeCheckoutRequest(
       ? ({ ...(payload as Record<string, unknown>) } as Record<string, unknown>)
       : {};
   const items = Array.isArray(body.items) ? body.items : [];
-  const currency =
-    opts.acceptLanguage.trim().toLowerCase().startsWith('uk') ? 'UAH' : 'USD';
+  const currency = opts.acceptLanguage.trim().toLowerCase().startsWith('uk')
+    ? 'UAH'
+    : 'USD';
 
   if (items.length > 0) {
     try {

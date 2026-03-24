@@ -62,12 +62,14 @@ const EXPECTED_BUSINESS_ERROR_CODES = new Set([
   'INVALID_VARIANT',
   'INSUFFICIENT_STOCK',
   'CHECKOUT_PRICE_CHANGED',
+  'CHECKOUT_SHIPPING_CHANGED',
   'PRICE_CONFIG_ERROR',
   'PAYMENT_ATTEMPTS_EXHAUSTED',
   'MISSING_SHIPPING_ADDRESS',
   'INVALID_SHIPPING_ADDRESS',
   'SHIPPING_METHOD_UNAVAILABLE',
   'SHIPPING_CURRENCY_UNSUPPORTED',
+  'SHIPPING_AMOUNT_UNAVAILABLE',
   'TERMS_NOT_ACCEPTED',
   'PRIVACY_NOT_ACCEPTED',
 ]);
@@ -77,10 +79,12 @@ const DEFAULT_CHECKOUT_RATE_LIMIT_WINDOW_SECONDS = 300;
 
 const SHIPPING_ERROR_STATUS_MAP: Record<string, number> = {
   CHECKOUT_PRICE_CHANGED: 409,
+  CHECKOUT_SHIPPING_CHANGED: 409,
   MISSING_SHIPPING_ADDRESS: 400,
   INVALID_SHIPPING_ADDRESS: 400,
   SHIPPING_METHOD_UNAVAILABLE: 422,
   SHIPPING_CURRENCY_UNSUPPORTED: 422,
+  SHIPPING_AMOUNT_UNAVAILABLE: 422,
 };
 
 const STATUS_TOKEN_SCOPES_STATUS_ONLY: readonly StatusTokenScope[] = [
@@ -1033,6 +1037,7 @@ export async function POST(request: NextRequest) {
     country,
     legalConsent,
     pricingFingerprint,
+    shippingQuoteFingerprint,
   } = parsedPayload.data;
   const itemCount = items.reduce((total, item) => total + item.quantity, 0);
 
@@ -1159,7 +1164,9 @@ export async function POST(request: NextRequest) {
         shipping: shipping ?? null,
         legalConsent: legalConsent ?? null,
         pricingFingerprint,
+        shippingQuoteFingerprint,
         requirePricingFingerprint: true,
+        requireShippingQuoteFingerprint: true,
         paymentProvider: 'stripe',
         paymentMethod: selectedMethod,
       });
@@ -1185,7 +1192,9 @@ export async function POST(request: NextRequest) {
         shipping: shipping ?? null,
         legalConsent: legalConsent ?? null,
         pricingFingerprint,
+        shippingQuoteFingerprint,
         requirePricingFingerprint: true,
+        requireShippingQuoteFingerprint: true,
         paymentProvider: resolvedProvider,
         paymentMethod: selectedMethod,
       }));
