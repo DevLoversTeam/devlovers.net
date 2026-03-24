@@ -13,6 +13,8 @@ const BEARER_RE = /\bBearer\s+[A-Za-z0-9\-._~+/]+=*\b/gi;
 const JWT_RE = /\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9._-]+\.[A-Za-z0-9._-]+\b/g;
 const STRIPE_SECRET_RE = /\b(?:sk|rk)_(?:live|test)_[A-Za-z0-9]+\b/g;
 const STRIPE_WEBHOOK_SECRET_RE = /\bwhsec_[A-Za-z0-9]+\b/g;
+const TOKENISH_VALUE_RE =
+  /\b(?:tok(?:en)?|secret|status[_-]?token)[._-][A-Za-z0-9._-]+\b/gi;
 const PHONE_CANDIDATE_RE = /(?<!\w)\+?[\d()[\]\s.-]{9,}\d\b/g;
 
 const MAX_DEPTH = 6;
@@ -39,6 +41,7 @@ export function sanitizeShopLogString(value: string): string {
       .replace(JWT_RE, '[REDACTED_SECRET]')
       .replace(STRIPE_SECRET_RE, '[REDACTED_SECRET]')
       .replace(STRIPE_WEBHOOK_SECRET_RE, '[REDACTED_SECRET]')
+      .replace(TOKENISH_VALUE_RE, '[REDACTED_SECRET]')
   );
 }
 
