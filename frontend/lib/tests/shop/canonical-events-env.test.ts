@@ -1,12 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { isCanonicalEventsDualWriteEnabled } from '@/lib/env/shop-canonical-events';
 
-const ENV_KEYS = [
-  'SHOP_CANONICAL_EVENTS_DUAL_WRITE',
-  'APP_ENV',
-  'NODE_ENV',
-] as const;
+const ENV_KEYS = ['SHOP_CANONICAL_EVENTS_DUAL_WRITE', 'APP_ENV'] as const;
 
 const previousEnv: Record<string, string | undefined> = {};
 
@@ -14,12 +10,13 @@ beforeEach(() => {
   for (const key of ENV_KEYS) {
     previousEnv[key] = process.env[key];
   }
-  process.env.APP_ENV = 'local';
-  process.env.NODE_ENV = 'test';
+  vi.stubEnv('APP_ENV', 'local');
+  vi.stubEnv('NODE_ENV', 'test');
   delete process.env.SHOP_CANONICAL_EVENTS_DUAL_WRITE;
 });
 
 afterEach(() => {
+  vi.unstubAllEnvs();
   for (const key of ENV_KEYS) {
     const prev = previousEnv[key];
     if (prev === undefined) delete process.env[key];
@@ -38,16 +35,16 @@ describe('shop canonical events env policy', () => {
   });
 
   it('allows explicit disable only in non-production runtime', () => {
-    process.env.APP_ENV = 'local';
-    process.env.NODE_ENV = 'test';
+    vi.stubEnv('APP_ENV', 'local');
+    vi.stubEnv('NODE_ENV', 'test');
     process.env.SHOP_CANONICAL_EVENTS_DUAL_WRITE = 'off';
 
     expect(isCanonicalEventsDualWriteEnabled()).toBe(false);
   });
 
   it('throws in production runtime when explicit disable is set', () => {
-    process.env.APP_ENV = 'local';
-    process.env.NODE_ENV = 'production';
+    vi.stubEnv('APP_ENV', 'local');
+    vi.stubEnv('NODE_ENV', 'production');
     process.env.SHOP_CANONICAL_EVENTS_DUAL_WRITE = 'false';
 
     expect(() => isCanonicalEventsDualWriteEnabled()).toThrow(

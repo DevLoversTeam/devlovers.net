@@ -303,14 +303,15 @@ describe.sequential('intl quote domain (phase 2)', () => {
         shippingQuoteMinor: 500,
       });
 
-      await expect(
-        acceptIntlQuote({
-          orderId: seed.orderId,
-          requestId: `req_${crypto.randomUUID()}`,
-          actorUserId: null,
-          version: 1,
-        })
-      ).rejects.toMatchObject<Partial<InvalidPayloadError>>({
+      const acceptPromise = acceptIntlQuote({
+        orderId: seed.orderId,
+        requestId: `req_${crypto.randomUUID()}`,
+        actorUserId: null,
+        version: 1,
+      });
+
+      await expect(acceptPromise).rejects.toBeInstanceOf(InvalidPayloadError);
+      await expect(acceptPromise).rejects.toMatchObject({
         code: 'QUOTE_STOCK_UNAVAILABLE',
       });
 
