@@ -118,6 +118,80 @@ export const productImageSchema = z.object({
   updatedAt: z.coerce.date(),
 });
 
+export const MAX_ADMIN_PRODUCT_IMAGES = 12;
+
+const adminProductPhotoUploadIdSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(64)
+  .regex(/^[A-Za-z0-9_-]+$/);
+
+export const adminProductPhotoPlanItemSchema = z
+  .object({
+    imageId: z.string().uuid().optional(),
+    uploadId: adminProductPhotoUploadIdSchema.optional(),
+    isPrimary: z.boolean(),
+  })
+  .superRefine((value, ctx) => {
+    const references =
+      Number(Boolean(value.imageId)) + Number(Boolean(value.uploadId));
+    if (references !== 1) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['imageId'],
+        message:
+          'Each photo must reference exactly one existing image or one new upload',
+      });
+    }
+  });
+
+export const adminProductPhotoPlanSchema = z
+  .array(adminProductPhotoPlanItemSchema)
+  .min(1)
+  .max(MAX_ADMIN_PRODUCT_IMAGES)
+  .superRefine((items, ctx) => {
+    const seenExisting = new Set<string>();
+    const seenUploads = new Set<string>();
+    let primaryCount = 0;
+
+    items.forEach((item, index) => {
+      if (item.isPrimary) primaryCount += 1;
+
+      if (item.imageId) {
+        if (seenExisting.has(item.imageId)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [index, 'imageId'],
+            message: 'Duplicate existing image in photo plan',
+          });
+        } else {
+          seenExisting.add(item.imageId);
+        }
+      }
+
+      if (item.uploadId) {
+        if (seenUploads.has(item.uploadId)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [index, 'uploadId'],
+            message: 'Duplicate new upload in photo plan',
+          });
+        } else {
+          seenUploads.add(item.uploadId);
+        }
+      }
+    });
+
+    if (primaryCount !== 1) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: [],
+        message: 'Photo plan must contain exactly one primary image',
+      });
+    }
+  });
+
 export const dbProductSchema = z.object({
   id: z.string(),
   slug: z.string(),
@@ -654,6 +728,10 @@ export const orderPaymentInitPayloadSchema = z
 
 export type CatalogQuery = z.infer<typeof catalogQuerySchema>;
 export type CatalogFilters = z.infer<typeof catalogFilterSchema>;
+export type AdminProductPhotoPlanItem = z.infer<
+  typeof adminProductPhotoPlanItemSchema
+>;
+export type AdminProductPhotoPlan = z.infer<typeof adminProductPhotoPlanSchema>;
 export type ProductImage = z.infer<typeof productImageSchema>;
 export type DbProduct = z.infer<typeof dbProductSchema>;
 export type ShopProductImage = z.infer<typeof shopProductImageSchema>;

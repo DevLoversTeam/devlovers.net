@@ -1,11 +1,12 @@
 'use client';
 
+import Image from 'next/image';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { useRouter } from '@/i18n/routing';
 import { CATEGORIES, COLORS, PRODUCT_TYPES, SIZES } from '@/lib/config/catalog';
 import { logError } from '@/lib/logging';
-import type { ProductAdminInput } from '@/lib/validation/shop';
+import type { ProductAdminInput, ProductImage } from '@/lib/validation/shop';
 
 const localSlugify = (input: string): string => {
   return input
@@ -20,7 +21,10 @@ const localSlugify = (input: string): string => {
 type ProductFormProps = {
   mode: 'create' | 'edit';
   productId?: string;
-  initialValues?: Partial<ProductAdminInput> & { imageUrl?: string };
+  initialValues?: Partial<ProductAdminInput> & {
+    imageUrl?: string;
+    images?: ProductImage[];
+  };
   csrfToken: string;
 };
 
@@ -40,6 +44,17 @@ type UiPriceRow = {
   currency: CurrencyCode;
   price: string;
   originalPrice: string;
+};
+
+type UiPhoto = {
+  key: string;
+  source: 'existing' | 'new';
+  imageId?: string;
+  uploadId?: string;
+  previewUrl: string;
+  publicId?: string;
+  isPrimary: boolean;
+  file?: File;
 };
 
 type SaleRuleDetails = {
@@ -125,6 +140,54 @@ function ensureUiPriceRows(fromInitial: unknown): UiPriceRow[] {
   });
 }
 
+function normalizeUiPhotos(photos: UiPhoto[]): UiPhoto[] {
+  if (photos.length === 0) return [];
+
+  const primaryIndex = photos.findIndex(photo => photo.isPrimary);
+  const effectivePrimaryIndex = primaryIndex >= 0 ? primaryIndex : 0;
+
+  return photos.map((photo, index) => ({
+    ...photo,
+    isPrimary: index === effectivePrimaryIndex,
+  }));
+}
+
+function ensureUiPhotos(fromInitial: {
+  images?: ProductImage[];
+  imageUrl?: string;
+}): UiPhoto[] {
+  const explicitImages = Array.isArray(fromInitial.images)
+    ? [...fromInitial.images]
+        .sort((a, b) => a.sortOrder - b.sortOrder)
+        .map(image => ({
+          key: `existing:${image.id}`,
+          source: 'existing' as const,
+          imageId: image.id,
+          previewUrl: image.imageUrl,
+          publicId: image.imagePublicId,
+          isPrimary: image.isPrimary,
+        }))
+    : [];
+
+  if (explicitImages.length > 0) {
+    return normalizeUiPhotos(explicitImages);
+  }
+
+  if (fromInitial.imageUrl) {
+    return [
+      {
+        key: 'legacy-image',
+        source: 'existing',
+        imageId: 'legacy-image',
+        previewUrl: fromInitial.imageUrl,
+        isPrimary: true,
+      },
+    ];
+  }
+
+  return [];
+}
+
 export function ProductForm({
   mode,
   productId,
@@ -150,6 +213,7 @@ export function ProductForm({
   const uahOriginalErrorId = `${idBase}-uah-original-error`;
 
   const hydratedKeyRef = useRef<string | null>(null);
+  const photosRef = useRef<UiPhoto[]>([]);
   const [title, setTitle] = useState(initialValues?.title ?? '');
   const [slug, setSlug] = useState(
     initialValues?.slug
@@ -184,8 +248,12 @@ export function ProductForm({
     initialValues?.isFeatured ?? false
   );
 
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const existingImageUrl = initialValues?.imageUrl;
+  const [photos, setPhotos] = useState<UiPhoto[]>(
+    ensureUiPhotos({
+      images: initialValues?.images,
+      imageUrl: initialValues?.imageUrl,
+    })
+  );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -224,7 +292,6 @@ export function ProductForm({
     setImageError(null);
     setOriginalPriceErrors({});
     setIsSubmitting(false);
-    setImageFile(null);
 
     if (typeof initialValues.title === 'string') setTitle(initialValues.title);
     if (typeof initialValues.slug === 'string')
@@ -243,8 +310,28 @@ export function ProductForm({
     setDescription(initialValues.description ?? '');
     setIsActive(initialValues.isActive ?? true);
     setIsFeatured(initialValues.isFeatured ?? false);
+    setPhotos(
+      ensureUiPhotos({
+        images: initialValues.images,
+        imageUrl: initialValues.imageUrl,
+      })
+    );
     hydratedKeyRef.current = key;
   }, [mode, initialValues, productId]);
+
+  useEffect(() => {
+    photosRef.current = photos;
+  }, [photos]);
+
+  useEffect(() => {
+    return () => {
+      photosRef.current.forEach(photo => {
+        if (photo.source === 'new' && photo.previewUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(photo.previewUrl);
+        }
+      });
+    };
+  }, []);
 
   const slugValue = useMemo(() => {
     if (mode === 'edit') return slug;
@@ -284,10 +371,62 @@ export function ProductForm({
     });
   }
 
-  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0] ?? null;
-    setImageFile(file);
+  const handlePhotoFilesChange = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const files = Array.from(event.target.files ?? []);
+    if (files.length === 0) return;
+
+    const nextPhotos = files
+      .filter(file => file.size > 0)
+      .map(file => ({
+        key: `new:${crypto.randomUUID()}`,
+        source: 'new' as const,
+        uploadId: crypto.randomUUID(),
+        previewUrl: URL.createObjectURL(file),
+        isPrimary: false,
+        file,
+      }));
+
+    setPhotos(prev => normalizeUiPhotos([...prev, ...nextPhotos]));
     setImageError(null);
+    event.target.value = '';
+  };
+
+  const setPrimaryPhoto = (key: string) => {
+    setPhotos(prev =>
+      prev.map(photo => ({
+        ...photo,
+        isPrimary: photo.key === key,
+      }))
+    );
+    setImageError(null);
+  };
+
+  const movePhoto = (key: string, direction: -1 | 1) => {
+    setPhotos(prev => {
+      const index = prev.findIndex(photo => photo.key === key);
+      if (index < 0) return prev;
+
+      const nextIndex = index + direction;
+      if (nextIndex < 0 || nextIndex >= prev.length) return prev;
+
+      const next = [...prev];
+      const [photo] = next.splice(index, 1);
+      next.splice(nextIndex, 0, photo);
+      return normalizeUiPhotos(next);
+    });
+  };
+
+  const removePhoto = (key: string) => {
+    setPhotos(prev => {
+      const removed = prev.find(photo => photo.key === key);
+      if (removed?.source === 'new' && removed.previewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(removed.previewUrl);
+      }
+
+      return normalizeUiPhotos(prev.filter(photo => photo.key !== key));
+    });
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -298,8 +437,8 @@ export function ProductForm({
     setImageError(null);
     setOriginalPriceErrors({});
 
-    if (mode === 'create' && !imageFile) {
-      setImageError('Image file is required.');
+    if (photos.length === 0) {
+      setImageError('At least one product photo is required.');
       return;
     }
 
@@ -368,9 +507,30 @@ export function ProductForm({
       formData.append('isActive', isActive ? 'true' : 'false');
       formData.append('isFeatured', isFeatured ? 'true' : 'false');
 
-      if (imageFile) {
-        formData.append('image', imageFile);
-      }
+      const photoPlan = photos.map(photo => ({
+        imageId: photo.source === 'existing' ? photo.imageId : undefined,
+        uploadId: photo.source === 'new' ? photo.uploadId : undefined,
+        isPrimary: photo.isPrimary,
+      }));
+
+      const newPhotos = photos.filter(
+        (
+          photo
+        ): photo is UiPhoto & { source: 'new'; uploadId: string; file: File } =>
+          photo.source === 'new' &&
+          Boolean(photo.uploadId) &&
+          Boolean(photo.file)
+      );
+
+      formData.append('photoPlan', JSON.stringify(photoPlan));
+      formData.append(
+        'newImageUploadIds',
+        JSON.stringify(newPhotos.map(photo => photo.uploadId))
+      );
+      newPhotos.forEach(photo => {
+        formData.append('newImages', photo.file);
+      });
+
       if (!csrfToken) {
         setError('Security token missing. Refresh the page and retry.');
         setIsSubmitting(false);
@@ -397,8 +557,13 @@ export function ProductForm({
           setSlugError('This slug is already used. Try changing the title.');
         }
 
-        if (data.code === 'IMAGE_UPLOAD_FAILED' || data.field === 'image') {
-          setImageError(data.error ?? 'Failed to upload image');
+        if (
+          data.code === 'IMAGE_UPLOAD_FAILED' ||
+          data.code === 'IMAGE_REQUIRED' ||
+          data.field === 'image' ||
+          data.field === 'photos'
+        ) {
+          setImageError(data.error ?? 'Failed to update product photos');
         }
 
         if (data.code === 'SALE_ORIGINAL_REQUIRED') {
@@ -916,28 +1081,93 @@ export function ProductForm({
           />
         </section>
 
-        <section aria-label="Image upload">
+        <section aria-label="Photo management">
           <label
             className="text-foreground block text-sm font-medium"
-            htmlFor="image"
+            htmlFor="images"
           >
-            Image
+            Photos
           </label>
           <input
-            id="image"
-            name="image"
+            id="images"
+            name="images"
             className="border-border w-full rounded-md border px-3 py-2 text-sm"
             type="file"
             accept="image/*"
-            onChange={handleImageChange}
-            required={mode === 'create'}
+            multiple
+            onChange={handlePhotoFilesChange}
             aria-invalid={imageError ? true : undefined}
             aria-describedby={imageError ? imageErrorId : undefined}
           />
-          {existingImageUrl && !imageFile ? (
-            <p className="text-muted-foreground mt-2 text-sm">
-              Current image will be kept unless you upload a new one.
-            </p>
+          <p className="text-muted-foreground mt-2 text-sm">
+            Add one or more photos, reorder them, and mark exactly one as
+            primary.
+          </p>
+          {photos.length > 0 ? (
+            <div className="mt-4 space-y-3">
+              {photos.map((photo, index) => (
+                <div
+                  key={photo.key}
+                  className="border-border flex items-start gap-4 rounded-md border p-3"
+                >
+                  <Image
+                    src={photo.previewUrl}
+                    alt={`Product photo ${index + 1}`}
+                    width={96}
+                    height={96}
+                    unoptimized
+                    className="h-24 w-24 rounded-md object-cover"
+                  />
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <div className="flex flex-wrap items-center gap-2 text-sm">
+                      <span className="font-medium">Photo {index + 1}</span>
+                      {photo.isPrimary ? (
+                        <span className="rounded bg-black px-2 py-0.5 text-xs font-semibold text-white">
+                          Primary
+                        </span>
+                      ) : null}
+                      <span className="text-muted-foreground text-xs">
+                        {photo.source === 'existing' ? 'Saved' : 'New upload'}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        className="border-border rounded-md border px-2 py-1 text-xs"
+                        onClick={() => setPrimaryPhoto(photo.key)}
+                        disabled={photo.isPrimary}
+                      >
+                        Set primary
+                      </button>
+                      <button
+                        type="button"
+                        className="border-border rounded-md border px-2 py-1 text-xs"
+                        onClick={() => movePhoto(photo.key, -1)}
+                        disabled={index === 0}
+                      >
+                        Move up
+                      </button>
+                      <button
+                        type="button"
+                        className="border-border rounded-md border px-2 py-1 text-xs"
+                        onClick={() => movePhoto(photo.key, 1)}
+                        disabled={index === photos.length - 1}
+                      >
+                        Move down
+                      </button>
+                      <button
+                        type="button"
+                        className="rounded-md border border-red-200 px-2 py-1 text-xs text-red-700"
+                        onClick={() => removePhoto(photo.key)}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : null}
           {imageError ? (
             <p

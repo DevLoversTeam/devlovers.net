@@ -1,11 +1,9 @@
-import { eq } from 'drizzle-orm';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { z } from 'zod';
 
-import { db } from '@/db';
-import { productPrices, products } from '@/db/schema';
 import { issueCsrfToken } from '@/lib/security/csrf';
+import { getAdminProductByIdWithPrices } from '@/lib/services/products';
 import type { CurrencyCode } from '@/lib/shop/currency';
 import { currencyValues } from '@/lib/shop/currency';
 
@@ -37,22 +35,14 @@ export default async function EditProductPage({
   const parsed = paramsSchema.safeParse(rawParams);
   if (!parsed.success) notFound();
 
-  const [product] = await db
-    .select()
-    .from(products)
-    .where(eq(products.id, parsed.data.id))
-    .limit(1);
+  let product;
+  try {
+    product = await getAdminProductByIdWithPrices(parsed.data.id);
+  } catch {
+    notFound();
+  }
 
-  if (!product) notFound();
-
-  const prices = await db
-    .select({
-      currency: productPrices.currency,
-      price: productPrices.price,
-      originalPrice: productPrices.originalPrice,
-    })
-    .from(productPrices)
-    .where(eq(productPrices.productId, product.id));
+  const prices = product.prices;
 
   const initialPrices = prices.length
     ? prices
@@ -98,6 +88,7 @@ export default async function EditProductPage({
           stock: product.stock,
           sku: product.sku ?? undefined,
           imageUrl: product.imageUrl,
+          images: product.images,
         }}
       />
     </main>

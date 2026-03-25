@@ -12,9 +12,10 @@ import type { CurrencyCode } from '@/lib/shop/currency';
 import { toDbMoney } from '@/lib/shop/money';
 import type { DbProduct, ProductUpdateInput } from '@/lib/types/shop';
 
-import { SlugConflictError } from '../../errors';
+import { InvalidPayloadError, SlugConflictError } from '../../errors';
 import { getProductImagesByProductId } from '../images';
 import { mapRowToProduct } from '../mapping';
+import { resolvePhotoPlan } from '../photo-plan';
 import {
   assertMergedPricesPolicy,
   assertMoneyMinorInt,
@@ -43,6 +44,20 @@ export async function updateProduct(
   const currentPrimaryImage =
     existingImages.find(image => image.isPrimary) ?? null;
 
+  const legacyImage =
+    (input as any).image instanceof File && (input as any).image.size > 0
+      ? ((input as any).image as File)
+      : null;
+
+  const requestedUploads =
+    Array.isArray((input as any).images) && (input as any).images.length > 0
+      ? ((input as any).images as Array<{ uploadId: string; file: File }>)
+      : [];
+
+  const hasExplicitPhotoPlan =
+    Array.isArray((input as any).imagePlan) &&
+    (input as any).imagePlan.length > 0;
+
   const slug = await normalizeSlug(
     db,
     (input as any).slug ?? (input as any).title ?? existing.slug,
@@ -51,9 +66,9 @@ export async function updateProduct(
 
   let uploaded: { secureUrl: string; publicId: string } | null = null;
 
-  if ((input as any).image instanceof File && (input as any).image.size > 0) {
+  if (!hasExplicitPhotoPlan && legacyImage) {
     try {
-      uploaded = await uploadProductImageFromFile((input as any).image);
+      uploaded = await uploadProductImageFromFile(legacyImage);
     } catch (error) {
       logError('Failed to upload replacement image', error);
       throw error;
@@ -109,9 +124,76 @@ export async function updateProduct(
     }
   }
 
-  const mirroredImageUrl = currentPrimaryImage?.imageUrl ?? existing.imageUrl;
+  let resolvedPhotoPlan: ReturnType<typeof resolvePhotoPlan> | undefined;
+  const uploadedById = new Map<
+    string,
+    { secureUrl: string; publicId: string }
+  >();
+
+  if (hasExplicitPhotoPlan) {
+    resolvedPhotoPlan = resolvePhotoPlan({
+      mode: 'update',
+      photoPlan: (input as any).imagePlan,
+      existingImages,
+      uploads: requestedUploads,
+    });
+
+    try {
+      for (const requestedUpload of requestedUploads) {
+        if (!requestedUpload.file.type?.startsWith('image/')) {
+          const error = new InvalidPayloadError(
+            'Uploaded file must be an image.',
+            { code: 'INVALID_PRODUCT_PHOTOS' }
+          );
+          (error as any).field = 'photos';
+          throw error;
+        }
+
+        const uploadedImage = await uploadProductImageFromFile(
+          requestedUpload.file
+        );
+        uploadedById.set(requestedUpload.uploadId, uploadedImage);
+      }
+    } catch (error) {
+      for (const uploadedImage of uploadedById.values()) {
+        try {
+          await destroyProductImage(uploadedImage.publicId);
+        } catch (cleanupError) {
+          logError(
+            'Failed to cleanup uploaded image after update upload failure',
+            cleanupError
+          );
+        }
+      }
+      logError('Failed to upload admin product photos', error);
+      throw error;
+    }
+  }
+
+  const explicitPrimary =
+    resolvedPhotoPlan?.find(item => item.isPrimary) ?? null;
+  const explicitPrimaryImageUrl =
+    explicitPrimary?.source === 'existing'
+      ? explicitPrimary.existingImage.imageUrl
+      : explicitPrimary?.source === 'new'
+        ? uploadedById.get(explicitPrimary.uploadId)?.secureUrl
+        : undefined;
+  const explicitPrimaryImagePublicId =
+    explicitPrimary?.source === 'existing'
+      ? explicitPrimary.existingImage.imagePublicId
+      : explicitPrimary?.source === 'new'
+        ? uploadedById.get(explicitPrimary.uploadId)?.publicId
+        : undefined;
+
+  const mirroredImageUrl =
+    explicitPrimaryImageUrl ??
+    currentPrimaryImage?.imageUrl ??
+    existing.imageUrl;
   const mirroredImagePublicId =
-    currentPrimaryImage?.imagePublicId ?? existing.imagePublicId ?? undefined;
+    explicitPrimaryImagePublicId ??
+    currentPrimaryImage?.imagePublicId ??
+    existing.imagePublicId ??
+    undefined;
 
   const updateData: Partial<ProductsTable['$inferInsert']> = {
     slug,
@@ -173,7 +255,65 @@ export async function updateProduct(
           });
       }
 
-      if (uploaded) {
+      if (resolvedPhotoPlan) {
+        const retainedExistingIds = new Set(
+          resolvedPhotoPlan
+            .filter(
+              (
+                item
+              ): item is Extract<
+                (typeof resolvedPhotoPlan)[number],
+                { source: 'existing' }
+              > => item.source === 'existing'
+            )
+            .map(item => item.imageId)
+        );
+
+        const removedImages = existingImages.filter(
+          image => !retainedExistingIds.has(image.id)
+        );
+
+        if (removedImages.length) {
+          await tx.delete(productImages).where(
+            sql`${productImages.productId} = ${id} and ${productImages.id} in (${sql.join(
+              removedImages.map(image => sql`${image.id}`),
+              sql`, `
+            )})`
+          );
+        }
+
+        for (const item of resolvedPhotoPlan) {
+          if (item.source === 'existing') {
+            await tx
+              .update(productImages)
+              .set({
+                sortOrder: item.sortOrder,
+                isPrimary: item.isPrimary,
+                updatedAt: new Date(),
+              })
+              .where(eq(productImages.id, item.imageId));
+            continue;
+          }
+
+          const uploadedImage = uploadedById.get(item.uploadId);
+          if (!uploadedImage) {
+            const error = new InvalidPayloadError(
+              'Uploaded product photo is missing.',
+              { code: 'INVALID_PRODUCT_PHOTOS' }
+            );
+            (error as any).field = 'photos';
+            throw error;
+          }
+
+          await tx.insert(productImages).values({
+            productId: id,
+            imageUrl: uploadedImage.secureUrl,
+            imagePublicId: uploadedImage.publicId,
+            sortOrder: item.sortOrder,
+            isPrimary: item.isPrimary,
+          });
+        }
+      } else if (uploaded) {
         if (currentPrimaryImage) {
           await tx
             .update(productImages)
@@ -213,6 +353,34 @@ export async function updateProduct(
       return updatedRow;
     });
 
+    if (resolvedPhotoPlan) {
+      const retainedExistingIds = new Set(
+        resolvedPhotoPlan
+          .filter(
+            (
+              item
+            ): item is Extract<
+              (typeof resolvedPhotoPlan)[number],
+              { source: 'existing' }
+            > => item.source === 'existing'
+          )
+          .map(item => item.imageId)
+      );
+
+      const removedImages = existingImages.filter(
+        image => !retainedExistingIds.has(image.id)
+      );
+
+      for (const removedImage of removedImages) {
+        if (!removedImage.imagePublicId) continue;
+        try {
+          await destroyProductImage(removedImage.imagePublicId);
+        } catch (cleanupError) {
+          logError('Failed to cleanup removed product image', cleanupError);
+        }
+      }
+    }
+
     const replacedPrimaryPublicId =
       currentPrimaryImage?.imagePublicId ?? existing.imagePublicId ?? null;
 
@@ -230,6 +398,17 @@ export async function updateProduct(
 
     return await mapRowToProduct(row);
   } catch (error) {
+    for (const uploadedImage of uploadedById.values()) {
+      try {
+        await destroyProductImage(uploadedImage.publicId);
+      } catch (cleanupError) {
+        logError(
+          'Failed to cleanup uploaded image after update failure',
+          cleanupError
+        );
+      }
+    }
+
     if (uploaded?.publicId) {
       try {
         await destroyProductImage(uploaded.publicId);

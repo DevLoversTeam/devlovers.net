@@ -2,7 +2,10 @@ import crypto from 'node:crypto';
 
 import { NextRequest, NextResponse } from 'next/server';
 
-import { parseAdminProductForm } from '@/lib/admin/parseAdminProductForm';
+import {
+  parseAdminProductForm,
+  parseAdminProductPhotosForm,
+} from '@/lib/admin/parseAdminProductForm';
 import {
   AdminApiDisabledError,
   AdminForbiddenError,
@@ -160,25 +163,6 @@ export async function POST(request: NextRequest) {
       return csrfRes;
     }
 
-    const imageFile = formData.get('image');
-    if (!(imageFile instanceof File) || imageFile.size === 0) {
-      logWarn('admin_product_create_image_required', {
-        ...baseMeta,
-        code: 'IMAGE_REQUIRED',
-        slug: slugForLog,
-        durationMs: Date.now() - startedAtMs,
-      });
-
-      return noStoreJson(
-        {
-          error: 'Image file is required',
-          code: 'IMAGE_REQUIRED',
-          field: 'image',
-        },
-        { status: 400 }
-      );
-    }
-
     const saleViolationFromForm = getSaleViolationFromFormData(formData);
     if (isInvalidPricesJsonError(saleViolationFromForm)) {
       logWarn('admin_product_create_invalid_prices_json', {
@@ -225,6 +209,9 @@ export async function POST(request: NextRequest) {
     }
 
     const parsed = parseAdminProductForm(formData, { mode: 'create' });
+    const parsedPhotos = parseAdminProductPhotosForm(formData, {
+      mode: 'create',
+    });
 
     if (!parsed.ok) {
       const issuesCount =
@@ -243,6 +230,48 @@ export async function POST(request: NextRequest) {
           error: 'Invalid product data',
           code: 'INVALID_PAYLOAD',
           details: parsed.error.format(),
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!parsedPhotos.ok) {
+      const issuesCount =
+        ((parsedPhotos.error as any)?.issues?.length as number | undefined) ??
+        0;
+
+      logWarn('admin_product_create_invalid_photos', {
+        ...baseMeta,
+        code: 'INVALID_PAYLOAD',
+        slug: slugForLog,
+        issuesCount,
+        durationMs: Date.now() - startedAtMs,
+      });
+
+      return noStoreJson(
+        {
+          error: 'Invalid product photos',
+          code: 'INVALID_PAYLOAD',
+          field: 'photos',
+          details: parsedPhotos.error.format(),
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!parsedPhotos.data.imagePlan?.length) {
+      logWarn('admin_product_create_image_required', {
+        ...baseMeta,
+        code: 'IMAGE_REQUIRED',
+        slug: slugForLog,
+        durationMs: Date.now() - startedAtMs,
+      });
+
+      return noStoreJson(
+        {
+          error: 'At least one product photo is required',
+          code: 'IMAGE_REQUIRED',
+          field: 'photos',
         },
         { status: 400 }
       );
@@ -284,7 +313,8 @@ export async function POST(request: NextRequest) {
     try {
       const inserted = await createProduct({
         ...parsed.data,
-        image: imageFile,
+        imagePlan: parsedPhotos.data.imagePlan,
+        images: parsedPhotos.data.images,
       });
 
       try {
@@ -439,7 +469,7 @@ export async function POST(request: NextRequest) {
           {
             error: 'Failed to upload product image',
             code: 'IMAGE_UPLOAD_FAILED',
-            field: 'image',
+            field: 'photos',
           },
           { status: 502 }
         );

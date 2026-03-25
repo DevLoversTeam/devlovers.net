@@ -17,6 +17,15 @@ const mocks = vi.hoisted(() => ({
   requireAdminApi: vi.fn(async () => adminUser),
   requireAdminCsrf: vi.fn(() => null),
   parseAdminProductForm: vi.fn(),
+  parseAdminProductPhotosForm: vi.fn((formData: FormData) => ({
+    ok: true,
+    data: {
+      imagePlan: [{ uploadId: 'legacy-image', isPrimary: true }],
+      images: [
+        { uploadId: 'legacy-image', file: formData.get('image') as File },
+      ],
+    },
+  })),
   writeAdminAudit: vi.fn(async () => {
     throw new Error('audit-fail');
   }),
@@ -47,6 +56,7 @@ vi.mock('@/lib/security/admin-csrf', () => ({
 
 vi.mock('@/lib/admin/parseAdminProductForm', () => ({
   parseAdminProductForm: mocks.parseAdminProductForm,
+  parseAdminProductPhotosForm: mocks.parseAdminProductPhotosForm,
 }));
 
 vi.mock('@/lib/services/shop/events/write-admin-audit', () => ({
