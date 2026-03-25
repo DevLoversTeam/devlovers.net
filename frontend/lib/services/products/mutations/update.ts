@@ -1,7 +1,7 @@
 import { eq, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
-import { productPrices, products } from '@/db/schema';
+import { productImages, productPrices, products } from '@/db/schema';
 import {
   destroyProductImage,
   uploadProductImageFromFile,
@@ -13,6 +13,7 @@ import { toDbMoney } from '@/lib/shop/money';
 import type { DbProduct, ProductUpdateInput } from '@/lib/types/shop';
 
 import { SlugConflictError } from '../../errors';
+import { getProductImagesByProductId } from '../images';
 import { mapRowToProduct } from '../mapping';
 import {
   assertMergedPricesPolicy,
@@ -37,6 +38,10 @@ export async function updateProduct(
   if (!existing) {
     throw new ProductNotFoundError(id);
   }
+
+  const existingImages = await getProductImagesByProductId(id);
+  const currentPrimaryImage =
+    existingImages.find(image => image.isPrimary) ?? null;
 
   const slug = await normalizeSlug(
     db,
@@ -104,12 +109,18 @@ export async function updateProduct(
     }
   }
 
+  const mirroredImageUrl = currentPrimaryImage?.imageUrl ?? existing.imageUrl;
+  const mirroredImagePublicId =
+    currentPrimaryImage?.imagePublicId ?? existing.imagePublicId ?? undefined;
+
   const updateData: Partial<ProductsTable['$inferInsert']> = {
     slug,
     title: (input as any).title ?? existing.title,
     description: (input as any).description ?? existing.description ?? null,
-    imageUrl: uploaded ? uploaded.secureUrl : existing.imageUrl,
-    imagePublicId: uploaded ? uploaded.publicId : existing.imagePublicId,
+    imageUrl: uploaded ? uploaded.secureUrl : mirroredImageUrl,
+    imagePublicId: uploaded
+      ? uploaded.publicId
+      : (mirroredImagePublicId ?? null),
 
     category: (input as any).category ?? existing.category,
     type: (input as any).type ?? existing.type,
@@ -130,56 +141,94 @@ export async function updateProduct(
   // product_prices is the single write-authority for catalog pricing.
 
   try {
-    if (prices.length) {
-      const upsertRows = prices.map(p => {
-        const priceMinor = p.priceMinor;
-        const originalMinor = p.originalPriceMinor;
+    const row = await db.transaction(async tx => {
+      if (prices.length) {
+        const upsertRows = prices.map(p => {
+          const priceMinor = p.priceMinor;
+          const originalMinor = p.originalPriceMinor;
 
-        return {
-          productId: id,
-          currency: p.currency,
-          priceMinor,
-          originalPriceMinor: originalMinor,
-          price: toDbMoney(priceMinor),
-          originalPrice:
-            originalMinor == null ? null : toDbMoney(originalMinor),
-        };
-      });
-
-      await db
-        .insert(productPrices)
-        .values(upsertRows)
-        .onConflictDoUpdate({
-          target: [productPrices.productId, productPrices.currency],
-          set: {
-            priceMinor: sql`excluded.price_minor`,
-            originalPriceMinor: sql`excluded.original_price_minor`,
-            price: sql`excluded.price`,
-            originalPrice: sql`excluded.original_price`,
-            updatedAt: sql`now()`,
-          },
+          return {
+            productId: id,
+            currency: p.currency,
+            priceMinor,
+            originalPriceMinor: originalMinor,
+            price: toDbMoney(priceMinor),
+            originalPrice:
+              originalMinor == null ? null : toDbMoney(originalMinor),
+          };
         });
-    }
 
-    const [row] = await db
-      .update(products)
-      .set(updateData)
-      .where(eq(products.id, id))
-      .returning();
+        await tx
+          .insert(productPrices)
+          .values(upsertRows)
+          .onConflictDoUpdate({
+            target: [productPrices.productId, productPrices.currency],
+            set: {
+              priceMinor: sql`excluded.price_minor`,
+              originalPriceMinor: sql`excluded.original_price_minor`,
+              price: sql`excluded.price`,
+              originalPrice: sql`excluded.original_price`,
+              updatedAt: sql`now()`,
+            },
+          });
+      }
 
-    if (!row) {
-      throw new ProductNotFoundError(id);
-    }
+      if (uploaded) {
+        if (currentPrimaryImage) {
+          await tx
+            .update(productImages)
+            .set({
+              imageUrl: uploaded.secureUrl,
+              imagePublicId: uploaded.publicId,
+              updatedAt: new Date(),
+            })
+            .where(eq(productImages.id, currentPrimaryImage.id));
+        } else {
+          const nextSortOrder =
+            existingImages.reduce(
+              (maxSortOrder, image) => Math.max(maxSortOrder, image.sortOrder),
+              -1
+            ) + 1;
 
-    if (uploaded && existing.imagePublicId) {
+          await tx.insert(productImages).values({
+            productId: id,
+            imageUrl: uploaded.secureUrl,
+            imagePublicId: uploaded.publicId,
+            sortOrder: nextSortOrder,
+            isPrimary: true,
+          });
+        }
+      }
+
+      const [updatedRow] = await tx
+        .update(products)
+        .set(updateData)
+        .where(eq(products.id, id))
+        .returning();
+
+      if (!updatedRow) {
+        throw new ProductNotFoundError(id);
+      }
+
+      return updatedRow;
+    });
+
+    const replacedPrimaryPublicId =
+      currentPrimaryImage?.imagePublicId ?? existing.imagePublicId ?? null;
+
+    if (
+      uploaded &&
+      replacedPrimaryPublicId &&
+      replacedPrimaryPublicId !== uploaded.publicId
+    ) {
       try {
-        await destroyProductImage(existing.imagePublicId);
+        await destroyProductImage(replacedPrimaryPublicId);
       } catch (cleanupError) {
         logError('Failed to cleanup old image after update', cleanupError);
       }
     }
 
-    return mapRowToProduct(row);
+    return await mapRowToProduct(row);
   } catch (error) {
     if (uploaded?.publicId) {
       try {

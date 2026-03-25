@@ -13,6 +13,10 @@ import {
 import { db } from '@/db';
 import { productPrices, products } from '@/db/schema';
 import type { CatalogSort } from '@/lib/config/catalog';
+import {
+  getProductImagesByProductIds,
+  resolveProductImages,
+} from '@/lib/services/products/images';
 import type { CurrencyCode } from '@/lib/shop/currency';
 import { type DbProduct, dbProductSchema } from '@/lib/validation/shop';
 
@@ -118,12 +122,39 @@ type PublicProductRow = Pick<
   currency: CurrencyCode;
 };
 
-function mapRowToDbProduct(row: PublicProductRow): DbProduct {
+function mapRowToDbProduct(
+  row: PublicProductRow,
+  imagesByProductId?: Map<
+    string,
+    ReturnType<typeof resolveProductImages>['images']
+  >
+): DbProduct {
+  const resolvedImages = resolveProductImages(
+    row,
+    imagesByProductId?.get(row.id)
+  );
+
   return dbProductSchema.parse({
     ...row,
+    imageUrl: resolvedImages.imageUrl,
+    imagePublicId: resolvedImages.imagePublicId,
+    images: resolvedImages.images,
+    primaryImage: resolvedImages.primaryImage,
     colors: row.colors ?? [],
     sizes: row.sizes ?? [],
   });
+}
+
+async function mapRowsToDbProducts(
+  rows: PublicProductRow[]
+): Promise<DbProduct[]> {
+  if (rows.length === 0) return [];
+
+  const imagesByProductId = await getProductImagesByProductIds(
+    rows.map(row => row.id)
+  );
+
+  return rows.map(row => mapRowToDbProduct(row, imagesByProductId));
 }
 
 function priceJoin(currency: CurrencyCode) {
@@ -197,7 +228,7 @@ export async function getActiveProducts(
     .innerJoin(productPrices, priceJoin(currency))
     .where(eq(products.isActive, true));
 
-  return rows.map(mapRowToDbProduct);
+  return await mapRowsToDbProducts(rows);
 }
 
 export async function getActiveProductsPage(options: {
@@ -231,7 +262,7 @@ export async function getActiveProductsPage(options: {
     .limit(options.limit)
     .offset(options.offset);
 
-  return { items: rows.map(mapRowToDbProduct), total: totalCount };
+  return { items: await mapRowsToDbProducts(rows), total: totalCount };
 }
 
 export async function getProductBySlug(
@@ -246,7 +277,10 @@ export async function getProductBySlug(
     .limit(1);
 
   const row = rows[0];
-  return row ? mapRowToDbProduct(row) : null;
+  if (!row) return null;
+
+  const imagesByProductId = await getProductImagesByProductIds([row.id]);
+  return mapRowToDbProduct(row, imagesByProductId);
 }
 
 export async function getPublicProductBySlug(
@@ -261,7 +295,10 @@ export async function getPublicProductBySlug(
     .limit(1);
 
   const row = rows[0];
-  return row ? mapRowToDbProduct(row) : null;
+  if (!row) return null;
+
+  const imagesByProductId = await getProductImagesByProductIds([row.id]);
+  return mapRowToDbProduct(row, imagesByProductId);
 }
 
 export async function getFeaturedProducts(
@@ -276,7 +313,7 @@ export async function getFeaturedProducts(
     .orderBy(desc(products.createdAt))
     .limit(limit);
 
-  return rows.map(mapRowToDbProduct);
+  return await mapRowsToDbProducts(rows);
 }
 
 export async function getActiveProductsByIds(
@@ -291,5 +328,5 @@ export async function getActiveProductsByIds(
     .innerJoin(productPrices, priceJoin(currency))
     .where(and(eq(products.isActive, true), inArray(products.id, ids)));
 
-  return rows.map(mapRowToDbProduct);
+  return await mapRowsToDbProducts(rows);
 }

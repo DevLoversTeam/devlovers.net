@@ -170,6 +170,43 @@ export const products = pgTable(
   ]
 );
 
+export const productImages = pgTable(
+  'product_images',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    productId: uuid('product_id')
+      .notNull()
+      .references(() => products.id, { onDelete: 'cascade' }),
+    imageUrl: text('image_url').notNull(),
+    imagePublicId: text('image_public_id'),
+    sortOrder: integer('sort_order').notNull().default(0),
+    isPrimary: boolean('is_primary').notNull().default(false),
+    createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { mode: 'date' })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  table => [
+    index('product_images_product_id_idx').on(table.productId),
+    uniqueIndex('product_images_product_sort_order_uq').on(
+      table.productId,
+      table.sortOrder
+    ),
+    uniqueIndex('product_images_one_primary_per_product_uq')
+      .on(table.productId)
+      .where(sql`${table.isPrimary}`),
+    check(
+      'product_images_sort_order_non_negative',
+      sql`${table.sortOrder} >= 0`
+    ),
+    check(
+      'product_images_image_url_non_blank',
+      sql`length(btrim(${table.imageUrl})) > 0`
+    ),
+  ]
+);
+
 export const orders = pgTable(
   'orders',
   {

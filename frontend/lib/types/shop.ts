@@ -10,6 +10,7 @@ import {
   paymentStatusSchema,
   productAdminSchema,
   productAdminUpdateSchema,
+  productImageSchema,
 } from '@/lib/validation/shop';
 
 export type AdminProductPayload = z.infer<typeof productAdminSchema>;
@@ -21,6 +22,7 @@ export type ProductUpdateInput = z.infer<typeof productAdminUpdateSchema> & {
   prices?: ProductPriceInput[];
 };
 
+export type ProductImage = z.infer<typeof productImageSchema>;
 export type DbProduct = z.infer<typeof dbProductSchema>;
 
 export type CheckoutItem = z.infer<typeof checkoutItemSchema>;

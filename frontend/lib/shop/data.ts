@@ -17,6 +17,7 @@ import {
   dbProductSchema,
   type ProductBadge,
   productBadgeValues,
+  type ProductImage,
   type ShopProduct as ValidationShopProduct,
   shopProductSchema,
 } from '@/lib/validation/shop';
@@ -109,6 +110,16 @@ export class CatalogValidationError extends Error {
 
 const placeholderImage = '/placeholder.svg';
 
+function mapToShopProductImage(image: ProductImage) {
+  return {
+    id: image.id,
+    url: image.imageUrl || placeholderImage,
+    publicId: image.imagePublicId,
+    sortOrder: image.sortOrder,
+    isPrimary: image.isPrimary,
+  };
+}
+
 function deriveStock(product: DbProduct): boolean {
   if (!product.isActive) return false;
   return product.stock > 0;
@@ -167,7 +178,14 @@ function mapToShopProduct(product: DbProduct): ShopProduct | null {
     name: validated.title,
     price: fromDbMoney(validated.price),
     currency: validated.currency,
-    image: validated.imageUrl || placeholderImage,
+    image:
+      validated.primaryImage?.imageUrl ||
+      validated.imageUrl ||
+      placeholderImage,
+    images: validated.images.map(mapToShopProductImage),
+    primaryImage: validated.primaryImage
+      ? mapToShopProductImage(validated.primaryImage)
+      : undefined,
     originalPrice: validated.originalPrice
       ? fromDbMoney(validated.originalPrice)
       : undefined,

@@ -1,8 +1,9 @@
-import { eq } from 'drizzle-orm';
-
 import { db } from '@/db';
-import { productPrices, products } from '@/db/schema';
-import { uploadProductImageFromFile } from '@/lib/cloudinary';
+import { productImages, productPrices, products } from '@/db/schema';
+import {
+  destroyProductImage,
+  uploadProductImageFromFile,
+} from '@/lib/cloudinary';
 import { logError } from '@/lib/logging';
 import { toDbMoney } from '@/lib/shop/money';
 import type { DbProduct, ProductInput } from '@/lib/types/shop';
@@ -17,15 +18,9 @@ import {
 } from '../prices';
 import { normalizeSlug } from '../slug';
 
-type ProductMutationExecutor = Pick<typeof db, 'insert' | 'delete' | 'select'>;
-
-export async function createProduct(
-  input: ProductInput,
-  options?: { db?: ProductMutationExecutor }
-): Promise<DbProduct> {
-  const executor = options?.db ?? db;
+export async function createProduct(input: ProductInput): Promise<DbProduct> {
   const slug = await normalizeSlug(
-    executor,
+    db,
     (input as any).slug ?? (input as any).title
   );
 
@@ -50,72 +45,81 @@ export async function createProduct(
 
   const usd = requireUsd(prices);
 
-  let createdProductId: string | null = null;
-
   try {
-    const [row] = await executor
-      .insert(products)
-      .values({
-        slug,
-        title: (input as any).title,
-        description: (input as any).description ?? null,
-        imageUrl: uploaded?.secureUrl ?? '',
-        imagePublicId: uploaded?.publicId,
-        price: toDbMoney(usd.priceMinor),
-        originalPrice:
-          usd.originalPriceMinor == null
-            ? null
-            : toDbMoney(usd.originalPriceMinor),
-        currency: 'USD',
-
-        category: (input as any).category ?? null,
-        type: (input as any).type ?? null,
-        colors: (input as any).colors ?? [],
-        sizes: (input as any).sizes ?? [],
-        badge: (input as any).badge ?? 'NONE',
-        isActive: (input as any).isActive ?? true,
-        isFeatured: (input as any).isFeatured ?? false,
-        stock: (input as any).stock ?? 0,
-        sku: (input as any).sku ?? null,
-      })
-      .onConflictDoNothing({ target: products.slug })
-      .returning();
-
-    if (!row) {
-      throw new SlugConflictError('Slug already exists.');
-    }
-
-    createdProductId = row.id;
-
-    await executor.insert(productPrices).values(
-      prices.map(p => {
-        const priceMinor = p.priceMinor;
-        const originalMinor = p.originalPriceMinor;
-
-        return {
-          productId: row.id,
-          currency: p.currency,
-          priceMinor,
-          originalPriceMinor: originalMinor,
-          price: toDbMoney(priceMinor),
+    const row = await db.transaction(async tx => {
+      const [inserted] = await tx
+        .insert(products)
+        .values({
+          slug,
+          title: (input as any).title,
+          description: (input as any).description ?? null,
+          imageUrl: uploaded?.secureUrl ?? '',
+          imagePublicId: uploaded?.publicId,
+          price: toDbMoney(usd.priceMinor),
           originalPrice:
-            originalMinor == null ? null : toDbMoney(originalMinor),
-        };
-      })
-    );
+            usd.originalPriceMinor == null
+              ? null
+              : toDbMoney(usd.originalPriceMinor),
+          currency: 'USD',
 
-    return mapRowToProduct(row);
+          category: (input as any).category ?? null,
+          type: (input as any).type ?? null,
+          colors: (input as any).colors ?? [],
+          sizes: (input as any).sizes ?? [],
+          badge: (input as any).badge ?? 'NONE',
+          isActive: (input as any).isActive ?? true,
+          isFeatured: (input as any).isFeatured ?? false,
+          stock: (input as any).stock ?? 0,
+          sku: (input as any).sku ?? null,
+        })
+        .onConflictDoNothing({ target: products.slug })
+        .returning();
+
+      if (!inserted) {
+        throw new SlugConflictError('Slug already exists.');
+      }
+
+      await tx.insert(productPrices).values(
+        prices.map(p => {
+          const priceMinor = p.priceMinor;
+          const originalMinor = p.originalPriceMinor;
+
+          return {
+            productId: inserted.id,
+            currency: p.currency,
+            priceMinor,
+            originalPriceMinor: originalMinor,
+            price: toDbMoney(priceMinor),
+            originalPrice:
+              originalMinor == null ? null : toDbMoney(originalMinor),
+          };
+        })
+      );
+
+      await tx.insert(productImages).values({
+        productId: inserted.id,
+        imageUrl: uploaded?.secureUrl ?? '',
+        imagePublicId: uploaded?.publicId ?? null,
+        sortOrder: 0,
+        isPrimary: true,
+      });
+
+      return inserted;
+    });
+
+    return await mapRowToProduct(row);
   } catch (error) {
-    if (createdProductId && !options?.db) {
+    if (uploaded?.publicId) {
       try {
-        await db.delete(products).where(eq(products.id, createdProductId));
-      } catch (cleanupDbError) {
+        await destroyProductImage(uploaded.publicId);
+      } catch (cleanupError) {
         logError(
-          'Failed to cleanup product after create failure',
-          cleanupDbError
+          'Failed to cleanup uploaded image after create failure',
+          cleanupError
         );
       }
     }
+
     throw error;
   }
 }

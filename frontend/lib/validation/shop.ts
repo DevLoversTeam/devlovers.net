@@ -104,6 +104,20 @@ export const catalogFilterSchema = z
   })
   .strict();
 
+export const productImageSchema = z.object({
+  id: z.string(),
+  productId: z.string(),
+  imageUrl: z.string(),
+  imagePublicId: z
+    .string()
+    .nullish()
+    .transform(value => value ?? undefined),
+  sortOrder: z.coerce.number().int().min(0),
+  isPrimary: z.boolean(),
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
+});
+
 export const dbProductSchema = z.object({
   id: z.string(),
   slug: z.string(),
@@ -149,8 +163,23 @@ export const dbProductSchema = z.object({
   badge: badgeSchema
     .nullish()
     .transform(value => (value ?? 'NONE') as ProductBadge),
+  images: z.array(productImageSchema).default([]),
+  primaryImage: productImageSchema
+    .nullish()
+    .transform(value => value ?? undefined),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
+});
+
+export const shopProductImageSchema = z.object({
+  id: z.string(),
+  url: z.string(),
+  publicId: z
+    .string()
+    .nullish()
+    .transform(value => value ?? undefined),
+  sortOrder: z.coerce.number().int().min(0),
+  isPrimary: z.boolean(),
 });
 
 export const shopProductSchema = z.object({
@@ -160,6 +189,10 @@ export const shopProductSchema = z.object({
   price: z.number().int().min(0),
   currency: currencySchema,
   image: z.string(),
+  images: z.array(shopProductImageSchema).default([]),
+  primaryImage: shopProductImageSchema
+    .nullish()
+    .transform(value => value ?? undefined),
   originalPrice: z.number().int().min(0).optional(),
   createdAt: z.coerce.date().optional(),
   category: z.enum(productCategoryValues as [string, ...string[]]).optional(),
@@ -621,7 +654,9 @@ export const orderPaymentInitPayloadSchema = z
 
 export type CatalogQuery = z.infer<typeof catalogQuerySchema>;
 export type CatalogFilters = z.infer<typeof catalogFilterSchema>;
+export type ProductImage = z.infer<typeof productImageSchema>;
 export type DbProduct = z.infer<typeof dbProductSchema>;
+export type ShopProductImage = z.infer<typeof shopProductImageSchema>;
 export type ShopProduct = z.infer<typeof shopProductSchema>;
 export type OrderSummary = z.infer<typeof orderSummarySchema>;
 export type ProductAdminInput = z.infer<typeof productAdminSchema>;
