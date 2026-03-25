@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 
-import { Link } from '@/i18n/routing';
+import LegalBackButton from '@/components/legal/LegalBackButton';
 
 type Props = {
   title: string;
@@ -23,17 +23,12 @@ export default async function LegalPageShell({
       />
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 [background-image:radial-gradient(circle,rgba(148,163,184,0.18)_1px,transparent_1px)] [background-size:22px_22px] opacity-0 dark:opacity-40"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle,rgba(148,163,184,0.18)_1px,transparent_1px)] bg-size-[22px_22px] opacity-0 dark:opacity-40"
       />
 
       <div className="relative mx-auto max-w-4xl px-6 py-12 sm:py-16">
         <header className="space-y-5">
-          <Link
-            href="/"
-            className="inline-flex text-sm text-slate-600 transition-colors hover:text-blue-600 dark:text-slate-300 dark:hover:text-white"
-          >
-            ← {t('back')}
-          </Link>
+          <LegalBackButton label={t('back')} />
 
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
             {title}

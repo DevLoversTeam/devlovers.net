@@ -1323,7 +1323,8 @@
       "noHiddenTerms": "No hidden terms",
       "ariaDragHandle": "Drag to reorder {term}",
       "ariaHide": "Hide {term}",
-      "ariaRestore": "Restore {term}"
+      "ariaRestore": "Restore {term}",
+      "loadError": "Failed to load saved terms. Please refresh the page."
     },
     "feedback": {
       "title": "Send Feedback",
@@ -1527,6 +1528,10 @@
       "persistentHint": "Our engineers are working their magic. It'll be back soon!",
       "working": "Fixing it...",
       "fixing": "Magic in progress"
+    },
+    "termTooLong": {
+      "title": "Selection too long",
+      "hint": "Please select a shorter phrase — up to 100 characters. The AI works best with specific terms, not whole sentences."
     }
   },
   "onlineCounter": {

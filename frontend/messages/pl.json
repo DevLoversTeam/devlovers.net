@@ -1325,7 +1325,8 @@
       "noHiddenTerms": "Brak ukrytych terminów",
       "ariaDragHandle": "Przeciągnij, aby zmienić kolejność {term}",
       "ariaHide": "Ukryj {term}",
-      "ariaRestore": "Przywróć {term}"
+      "ariaRestore": "Przywróć {term}",
+      "loadError": "Nie udało się załadować zapisanych terminów. Odśwież stronę."
     },
     "feedback": {
       "title": "Wyślij opinię",
@@ -1529,6 +1530,10 @@
       "persistentHint": "Nasi inżynierowie właśnie czarują nad serwerami. Wkrótce wrócimy!",
       "working": "Naprawiamy…",
       "fixing": "Magia w toku"
+    },
+    "termTooLong": {
+      "title": "Zaznaczenie za długie",
+      "hint": "Wybierz krótszą frazę — maksymalnie 100 znaków. AI najlepiej tłumaczy konkretne terminy, a nie całe zdania."
     }
   },
   "onlineCounter": {
