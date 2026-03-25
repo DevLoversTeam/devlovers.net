@@ -9,6 +9,7 @@ import { Link } from '@/i18n/routing';
 import { getStorefrontAvailabilityState } from '@/lib/shop/availability';
 import { formatMoney } from '@/lib/shop/currency';
 import { getProductGalleryImages, getProductPageData } from '@/lib/shop/data';
+import { getApparelSizeGuideForProduct } from '@/lib/shop/size-guide';
 import { SHOP_FOCUS, SHOP_NAV_LINK_BASE } from '@/lib/shop/ui-classes';
 import { cn } from '@/lib/utils';
 
@@ -59,6 +60,7 @@ export default async function ProductPage({
   const commerceProduct =
     result.kind === 'available' ? result.commerceProduct : null;
   const availabilityState = getStorefrontAvailabilityState(commerceProduct);
+  const sizeGuide = getApparelSizeGuideForProduct(commerceProduct, locale);
   const galleryImages = getProductGalleryImages(product);
   const primaryImage = galleryImages[0];
   const secondaryImages = galleryImages.slice(1);
@@ -205,7 +207,7 @@ export default async function ProductPage({
 
           {commerceProduct ? (
             <section aria-label="Purchase">
-              <AddToCartButton product={commerceProduct} />
+              <AddToCartButton product={commerceProduct} sizeGuide={sizeGuide} />
             </section>
           ) : null}
         </div>

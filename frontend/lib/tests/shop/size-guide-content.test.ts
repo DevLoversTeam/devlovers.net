@@ -4,6 +4,7 @@ import { locales } from '@/i18n/config';
 import {
   APPAREL_SIZE_GUIDE_CONTENT,
   getApparelSizeGuide,
+  getApparelSizeGuideForProduct,
 } from '@/lib/shop/size-guide';
 
 describe('apparel size guide content source', () => {
@@ -30,5 +31,18 @@ describe('apparel size guide content source', () => {
 
   it('falls back to the default locale for unsupported locale input', () => {
     expect(getApparelSizeGuide('de')).toEqual(APPAREL_SIZE_GUIDE_CONTENT.en);
+  });
+
+  it('returns size-guide content only for products that expose sizes', () => {
+    expect(getApparelSizeGuideForProduct({ sizes: ['S', 'M'] }, 'pl')).toEqual(
+      APPAREL_SIZE_GUIDE_CONTENT.pl
+    );
+
+    expect(getApparelSizeGuideForProduct({ sizes: ['S'] }, 'en')).toEqual(
+      APPAREL_SIZE_GUIDE_CONTENT.en
+    );
+
+    expect(getApparelSizeGuideForProduct({ sizes: [] }, 'uk')).toBeNull();
+    expect(getApparelSizeGuideForProduct(null, 'uk')).toBeNull();
   });
 });

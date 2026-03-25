@@ -1,5 +1,6 @@
 import { defaultLocale, type Locale, locales } from '@/i18n/config';
 import { SIZES } from '@/lib/config/catalog';
+import type { ShopProduct } from '@/lib/validation/shop';
 
 export type ApparelSizeGuideSize = (typeof SIZES)[number];
 
@@ -116,6 +117,17 @@ export function getApparelSizeGuide(locale: string): ApparelSizeGuide {
   const normalized = isSupportedLocale(locale) ? locale : defaultLocale;
 
   return APPAREL_SIZE_GUIDE_CONTENT[normalized];
+}
+
+export function getApparelSizeGuideForProduct(
+  product: Pick<ShopProduct, 'sizes'> | null | undefined,
+  locale: string
+): ApparelSizeGuide | null {
+  if (!product?.sizes || product.sizes.length === 0) {
+    return null;
+  }
+
+  return getApparelSizeGuide(locale);
 }
 
 export { APPAREL_SIZE_GUIDE_CONTENT };
