@@ -1,10 +1,10 @@
 import { ArrowLeft } from 'lucide-react';
 import { Metadata } from 'next';
-import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { getMessages, getTranslations } from 'next-intl/server';
 
 import { AddToCartButton } from '@/components/shop/AddToCartButton';
+import { ProductGallery } from '@/components/shop/ProductGallery';
 import { Link } from '@/i18n/routing';
 import { getStorefrontAvailabilityState } from '@/lib/shop/availability';
 import { formatMoney } from '@/lib/shop/currency';
@@ -18,28 +18,6 @@ export const metadata: Metadata = {
   description: 'Details, price, and availability for product.',
 };
 export const dynamic = 'force-dynamic';
-
-const PLACEHOLDER_IMAGE = '/placeholder.svg';
-const allowedHosts = new Set(['res.cloudinary.com', 'cdn.sanity.io']);
-
-function safeImageSrc(raw?: string | null) {
-  if (!raw || raw.trim().length === 0) return PLACEHOLDER_IMAGE;
-
-  const src = raw.trim();
-
-  if (src.startsWith('/')) return src;
-
-  if (src.startsWith('http://') || src.startsWith('https://')) {
-    try {
-      const url = new URL(src);
-      return allowedHosts.has(url.hostname) ? src : PLACEHOLDER_IMAGE;
-    } catch {
-      return PLACEHOLDER_IMAGE;
-    }
-  }
-
-  return PLACEHOLDER_IMAGE;
-}
 
 export default async function ProductPage({
   params,
@@ -62,8 +40,6 @@ export default async function ProductPage({
   const availabilityState = getStorefrontAvailabilityState(commerceProduct);
   const sizeGuide = getApparelSizeGuideForProduct(commerceProduct, locale);
   const galleryImages = getProductGalleryImages(product);
-  const primaryImage = galleryImages[0];
-  const secondaryImages = galleryImages.slice(1);
 
   const NAV_LINK = cn(
     SHOP_NAV_LINK_BASE,
@@ -94,48 +70,11 @@ export default async function ProductPage({
       </nav>
 
       <div className="mt-8 grid gap-8 lg:grid-cols-2 lg:gap-16">
-        <div className="space-y-4" aria-label="Product gallery">
-          <div className="bg-muted relative aspect-square overflow-hidden rounded-lg">
-            {badge && badge !== 'NONE' && (
-              <span
-                className={cn(
-                  'absolute top-4 left-4 z-10 rounded px-2 py-1 text-xs font-semibold uppercase',
-                  'bg-foreground text-background dark:bg-accent dark:text-accent-foreground'
-                )}
-              >
-                {badgeLabel}
-              </span>
-            )}
-
-            <Image
-              src={safeImageSrc(primaryImage?.url)}
-              alt={`${product.name} photo 1`}
-              fill
-              className="object-cover"
-              sizes="(max-width: 1024px) 100vw, 50vw"
-              priority
-            />
-          </div>
-
-          {secondaryImages.length > 0 ? (
-            <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
-              {secondaryImages.map((image, index) => (
-                <div
-                  key={image.id}
-                  className="bg-muted relative aspect-square overflow-hidden rounded-lg"
-                >
-                  <Image
-                    src={safeImageSrc(image.url)}
-                    alt={`${product.name} photo ${index + 2}`}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 1024px) 30vw, 12vw"
-                  />
-                </div>
-              ))}
-            </div>
-          ) : null}
-        </div>
+        <ProductGallery
+          productName={product.name}
+          images={galleryImages}
+          badgeLabel={badgeLabel}
+        />
 
         <div className="flex flex-col">
           <h1 className="text-foreground text-3xl font-bold tracking-tight">
@@ -207,7 +146,10 @@ export default async function ProductPage({
 
           {commerceProduct ? (
             <section aria-label="Purchase">
-              <AddToCartButton product={commerceProduct} sizeGuide={sizeGuide} />
+              <AddToCartButton
+                product={commerceProduct}
+                sizeGuide={sizeGuide}
+              />
             </section>
           ) : null}
         </div>
