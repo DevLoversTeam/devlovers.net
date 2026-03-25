@@ -247,7 +247,9 @@ describe.sequential('admin product photo management', () => {
       imageUrl: 'https://example.com/p2.png',
       imagePublicId: 'products/p2',
     });
-    expect(cloudinaryMocks.destroyProductImage).toHaveBeenCalledWith(
+    expect(cloudinaryMocks.destroyProductImage).toHaveBeenCalledTimes(1);
+    expect(cloudinaryMocks.destroyProductImage).toHaveBeenNthCalledWith(
+      1,
       primaryImage.imagePublicId
     );
   });

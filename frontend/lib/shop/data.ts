@@ -61,17 +61,27 @@ export interface ProductPageDisplayProduct {
   badge: ProductBadge;
 }
 
+type AvailableProductPageViewModelInput = {
+  kind: 'available';
+  commerceProduct: ShopProduct;
+};
+
+type UnavailableProductPageViewModelInput = {
+  kind: 'unavailable';
+  product: ProductPageDisplayProduct;
+  commerceProduct: null;
+};
+
 export type ProductPageData =
-  | {
-      kind: 'available';
+  | (AvailableProductPageViewModelInput & {
       product: ProductPageDisplayProduct;
-      commerceProduct: ShopProduct;
-    }
-  | {
-      kind: 'unavailable';
-      product: ProductPageDisplayProduct;
-      commerceProduct: null;
-    }
+    })
+  | UnavailableProductPageViewModelInput
+  | { kind: 'not_found' };
+
+type ProductPageViewModelInput =
+  | AvailableProductPageViewModelInput
+  | UnavailableProductPageViewModelInput
   | { kind: 'not_found' };
 
 export async function getProductPageData(
@@ -83,23 +93,16 @@ export async function getProductPageData(
   const dbProduct = await getPublicProductBySlug(slug, currency);
   if (dbProduct) {
     const mapped = mapToShopProduct(dbProduct);
-    if (mapped) {
-      return toProductPageViewModel({
-        kind: 'available',
-        product: toProductPageDisplayProduct({
-          id: mapped.id,
-          slug: mapped.slug,
-          name: mapped.name,
-          image: mapped.image,
-          images: mapped.images,
-          primaryImage: mapped.primaryImage,
-          description: mapped.description,
-          badge: mapped.badge ?? 'NONE',
-        }),
-        commerceProduct: mapped,
-      });
+    if (!mapped) {
+      throw new Error(
+        `Invalid shop product data for PDP: slug=${slug} productId=${dbProduct.id}`
+      );
     }
-    return { kind: 'not_found' };
+
+    return toProductPageViewModel({
+      kind: 'available',
+      commerceProduct: mapped,
+    });
   }
 
   const base = await getPublicProductBaseBySlug(slug);
@@ -186,7 +189,9 @@ function toProductPageDisplayProduct(input: {
   };
 }
 
-export function toProductPageViewModel(data: ProductPageData): ProductPageData {
+export function toProductPageViewModel(
+  data: ProductPageViewModelInput
+): ProductPageData {
   if (data.kind === 'not_found') return data;
 
   if (data.kind === 'available') {

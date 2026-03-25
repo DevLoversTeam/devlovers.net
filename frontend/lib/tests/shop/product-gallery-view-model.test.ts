@@ -1,7 +1,17 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+const shopQueryMocks = vi.hoisted(() => ({
+  getPublicProductBySlug: vi.fn(),
+  getPublicProductBaseBySlug: vi.fn(),
+  getActiveProductsPage: vi.fn(),
+  getFeaturedProducts: vi.fn(),
+}));
+
+vi.mock('@/db/queries/shop/products', () => shopQueryMocks);
 
 import {
   getProductGalleryImages,
+  getProductPageData,
   toProductPageViewModel,
 } from '@/lib/shop/data';
 
@@ -87,30 +97,6 @@ describe('product gallery view model', () => {
   it('normalizes PDP display and commerce data into separate concrete branches', () => {
     const viewModel = toProductPageViewModel({
       kind: 'available',
-      product: {
-        id: 'product-1',
-        slug: 'product-1',
-        name: 'Product 1',
-        image: 'https://example.com/primary.png',
-        images: [
-          {
-            id: 'img-primary',
-            url: 'https://example.com/primary.png',
-            publicId: 'products/primary',
-            sortOrder: 0,
-            isPrimary: true,
-          },
-        ],
-        primaryImage: {
-          id: 'img-primary',
-          url: 'https://example.com/primary.png',
-          publicId: 'products/primary',
-          sortOrder: 0,
-          isPrimary: true,
-        },
-        description: 'desc',
-        badge: 'SALE',
-      },
       commerceProduct: {
         id: 'product-1',
         slug: 'product-1',
@@ -151,5 +137,36 @@ describe('product gallery view model', () => {
     expect(viewModel.product.name).toBe('Product 1');
     expect(viewModel.commerceProduct.price).toBe(5000);
     expect(viewModel.commerceProduct.currency).toBe('USD');
+  });
+
+  it('throws a descriptive error when a found PDP product cannot be mapped safely', async () => {
+    shopQueryMocks.getPublicProductBySlug.mockResolvedValueOnce({
+      id: 'db-product-1',
+      slug: 'broken-product',
+      title: 'Broken product',
+      description: null,
+      imageUrl: '',
+      imagePublicId: undefined,
+      price: 'not-a-number',
+      originalPrice: null,
+      currency: 'USD',
+      isActive: true,
+      isFeatured: false,
+      stock: 2,
+      sku: null,
+      category: null,
+      type: null,
+      colors: [],
+      sizes: [],
+      badge: 'NONE',
+      images: [],
+      primaryImage: undefined,
+      createdAt: new Date('2026-01-01T00:00:00.000Z'),
+      updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+    });
+
+    await expect(getProductPageData('broken-product', 'en')).rejects.toThrow(
+      'Invalid shop product data for PDP: slug=broken-product productId=db-product-1'
+    );
   });
 });

@@ -171,10 +171,36 @@ function isSerializableUiPhoto(photo: UiPhoto): photo is SerializableUiPhoto {
   return false;
 }
 
+export const LEGACY_PHOTO_MIGRATION_REQUIRED_MESSAGE =
+  'Legacy product photos must be migrated before adding or reordering gallery photos.';
+
+class PhotoPlanSubmissionError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'PhotoPlanSubmissionError';
+  }
+}
+
+export function getPhotoPlanSubmissionError(photos: UiPhoto[]): string | null {
+  const hasLegacyPhotos = photos.some(photo => photo.source === 'legacy');
+  const hasNonLegacyPhotos = photos.some(photo => photo.source !== 'legacy');
+
+  if (hasLegacyPhotos && hasNonLegacyPhotos) {
+    return LEGACY_PHOTO_MIGRATION_REQUIRED_MESSAGE;
+  }
+
+  return null;
+}
+
 export function buildPhotoPlanSubmission(photos: UiPhoto[]): {
   photoPlan?: AdminProductPhotoPlan;
   newPhotos: Array<UiPhoto & { source: 'new'; uploadId: string; file: File }>;
 } {
+  const submissionError = getPhotoPlanSubmissionError(photos);
+  if (submissionError) {
+    throw new PhotoPlanSubmissionError(submissionError);
+  }
+
   const serializablePhotos = photos.filter(isSerializableUiPhoto);
 
   if (serializablePhotos.length === 0) {
@@ -198,6 +224,35 @@ export function buildPhotoPlanSubmission(photos: UiPhoto[]): {
   );
 
   return { photoPlan, newPhotos };
+}
+
+function getBlobPreviewUrls(photos: UiPhoto[]): Set<string> {
+  return new Set(
+    photos
+      .filter(
+        photo => photo.source === 'new' && photo.previewUrl.startsWith('blob:')
+      )
+      .map(photo => photo.previewUrl)
+  );
+}
+
+export function revokeSupersededPhotoPreviewUrls(
+  previousPhotos: UiPhoto[],
+  nextPhotos: UiPhoto[]
+) {
+  const nextBlobPreviewUrls = getBlobPreviewUrls(nextPhotos);
+
+  previousPhotos.forEach(photo => {
+    if (photo.source !== 'new' || !photo.previewUrl.startsWith('blob:')) {
+      return;
+    }
+
+    if (nextBlobPreviewUrls.has(photo.previewUrl)) {
+      return;
+    }
+
+    URL.revokeObjectURL(photo.previewUrl);
+  });
 }
 
 export function ensureUiPhotos(fromInitial: {
@@ -310,6 +365,20 @@ export function ProductForm({
     Partial<Record<CurrencyCode, string>>
   >({});
 
+  function replacePhotos(
+    nextOrUpdater: UiPhoto[] | ((prev: UiPhoto[]) => UiPhoto[])
+  ) {
+    setPhotos(prev => {
+      const next =
+        typeof nextOrUpdater === 'function'
+          ? nextOrUpdater(prev)
+          : nextOrUpdater;
+      revokeSupersededPhotoPreviewUrls(prev, next);
+      photosRef.current = next;
+      return next;
+    });
+  }
+
   useEffect(() => {
     if (mode !== 'edit') {
       hydratedKeyRef.current = null;
@@ -357,7 +426,7 @@ export function ProductForm({
     setDescription(initialValues.description ?? '');
     setIsActive(initialValues.isActive ?? true);
     setIsFeatured(initialValues.isFeatured ?? false);
-    setPhotos(
+    replacePhotos(
       ensureUiPhotos({
         images: initialValues.images,
         imageUrl: initialValues.imageUrl,
@@ -435,13 +504,13 @@ export function ProductForm({
         file,
       }));
 
-    setPhotos(prev => normalizeUiPhotos([...prev, ...nextPhotos]));
+    replacePhotos(prev => normalizeUiPhotos([...prev, ...nextPhotos]));
     setImageError(null);
     event.target.value = '';
   };
 
   const setPrimaryPhoto = (key: string) => {
-    setPhotos(prev =>
+    replacePhotos(prev =>
       prev.map(photo => ({
         ...photo,
         isPrimary: photo.key === key,
@@ -451,7 +520,7 @@ export function ProductForm({
   };
 
   const movePhoto = (key: string, direction: -1 | 1) => {
-    setPhotos(prev => {
+    replacePhotos(prev => {
       const index = prev.findIndex(photo => photo.key === key);
       if (index < 0) return prev;
 
@@ -466,14 +535,9 @@ export function ProductForm({
   };
 
   const removePhoto = (key: string) => {
-    setPhotos(prev => {
-      const removed = prev.find(photo => photo.key === key);
-      if (removed?.source === 'new' && removed.previewUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(removed.previewUrl);
-      }
-
-      return normalizeUiPhotos(prev.filter(photo => photo.key !== key));
-    });
+    replacePhotos(prev =>
+      normalizeUiPhotos(prev.filter(photo => photo.key !== key))
+    );
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -554,7 +618,24 @@ export function ProductForm({
       formData.append('isActive', isActive ? 'true' : 'false');
       formData.append('isFeatured', isFeatured ? 'true' : 'false');
 
-      const { photoPlan, newPhotos } = buildPhotoPlanSubmission(photos);
+      const photoSubmission = (() => {
+        try {
+          return buildPhotoPlanSubmission(photos);
+        } catch (photoPlanError) {
+          if (photoPlanError instanceof PhotoPlanSubmissionError) {
+            setImageError(photoPlanError.message);
+            return null;
+          }
+
+          throw photoPlanError;
+        }
+      })();
+
+      if (!photoSubmission) {
+        return;
+      }
+
+      const { photoPlan, newPhotos } = photoSubmission;
 
       if (photoPlan?.length) {
         formData.append('photoPlan', JSON.stringify(photoPlan));
