@@ -47,7 +47,7 @@ export default function Footer({
     <footer
       ref={footerRef}
       className={cn(
-        'border-border bg-background/90 supports-[backdrop-filter]:bg-background/50 relative overflow-hidden border-t backdrop-blur ' +
+        'border-border bg-background/90 supports-backdrop-filter:bg-background/50 relative overflow-hidden border-t backdrop-blur ' +
           '[--footer-brand:var(--accent-primary)] [--footer-hover:var(--accent-hover)] [--theme-toggle-hover:var(--footer-hover)]',
         isShop &&
           '[--footer-brand:var(--foreground)] [--footer-hover:var(--foreground)] ' +
@@ -60,23 +60,26 @@ export default function Footer({
           <div className="space-y-3">
             <p className="text-sm text-slate-700 dark:text-slate-200">
               {t('builtWith')}{' '}
-              <span className="font-semibold text-[color:var(--footer-brand)]">
+              <Link
+                href="/"
+                className="font-semibold text-(--footer-brand) transition-colors hover:text-(--footer-hover)"
+              >
                 DevLovers
-              </span>{' '}
+              </Link>{' '}
               {t('byCommunity')}
             </p>
 
             <p className="text-sm text-slate-500 dark:text-slate-400">
               <Link
                 href="/privacy-policy"
-                className="transition-colors hover:[color:var(--footer-hover)] focus-visible:[color:var(--footer-hover)] active:[color:var(--footer-hover)]"
+                className="transition-colors hover:text-(--footer-hover) focus-visible:text-(--footer-hover) active:text-(--footer-hover)"
               >
                 {t('privacyPolicy')}
               </Link>
               <span className="px-2 opacity-60">|</span>
               <Link
                 href="/terms-of-service"
-                className="transition-colors hover:[color:var(--footer-hover)] focus-visible:[color:var(--footer-hover)] active:[color:var(--footer-hover)]"
+                className="transition-colors hover:text-(--footer-hover) focus-visible:text-(--footer-hover) active:text-(--footer-hover)"
               >
                 {t('termsOfService')}
               </Link>
@@ -97,7 +100,7 @@ export default function Footer({
                     target="_blank"
                     rel="noreferrer"
                     aria-label={label}
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200/60 bg-white/40 text-slate-600 transition-all hover:-translate-y-0.5 hover:!border-[var(--footer-hover)] hover:!text-[var(--footer-hover)] active:scale-95 active:!border-[var(--footer-hover)] active:!text-[var(--footer-hover)] dark:border-neutral-800/60 dark:bg-neutral-950/30 dark:text-slate-300"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200/60 bg-white/40 text-slate-600 transition-all hover:-translate-y-0.5 hover:border-(--footer-hover)! hover:text-(--footer-hover)! active:scale-95 active:border-(--footer-hover)! active:text-(--footer-hover)! dark:border-neutral-800/60 dark:bg-neutral-950/30 dark:text-slate-300"
                   >
                     <Icon className="h-5 w-5" />
                   </a>

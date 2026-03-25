@@ -1523,6 +1523,10 @@
       "persistentHint": "Nasi inżynierowie właśnie czarują nad serwerami. Wkrótce wrócimy!",
       "working": "Naprawiamy…",
       "fixing": "Magia w toku"
+    },
+    "termTooLong": {
+      "title": "Zaznaczenie za długie",
+      "hint": "Wybierz krótszą frazę — maksymalnie 100 znaków. AI najlepiej tłumaczy konkretne terminy, a nie całe zdania."
     }
   },
   "onlineCounter": {

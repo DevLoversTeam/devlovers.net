@@ -19,6 +19,7 @@ import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
+import { saveLearnedTerm } from '@/actions/ai';
 import { useAuth } from '@/hooks/useAuth';
 import { Link } from '@/i18n/routing';
 import {
@@ -203,6 +204,11 @@ export default function AIWordHelper({
   }, [isOpen, validatedLocale]);
 
   const fetchExplanation = useCallback(async () => {
+    if (term.length > 100) {
+      setError('TERM_TOO_LONG');
+      return;
+    }
+
     const cached = getCachedExplanation(term);
     if (cached) {
       setExplanation(cached);
@@ -257,6 +263,9 @@ export default function AIWordHelper({
       const data: ExplanationResponse = await response.json();
       setExplanation(data);
       setCachedExplanation(term, data);
+      saveLearnedTerm(term, data).catch(() => {
+        // DB sync failure is non-blocking; local cache still works
+      });
       setRateLimitState({ isRateLimited: false, resetIn: 0, retryAttempts: 0 });
       setServiceErrorState({
         isServiceError: false,
@@ -761,6 +770,15 @@ export default function AIWordHelper({
                             )}
                           </button>
                         </>
+                      ) : error === 'TERM_TOO_LONG' ? (
+                        <div className="text-center">
+                          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            {messages.termTooLong.title}
+                          </p>
+                          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            {messages.termTooLong.hint}
+                          </p>
+                        </div>
                       ) : (
                         <>
                           <p className="text-sm text-red-600 dark:text-red-400">
