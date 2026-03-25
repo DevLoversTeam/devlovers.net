@@ -29,6 +29,7 @@ export function ExplainedTermsCard() {
   const [terms, setTerms] = useState<string[]>([]);
   const [hiddenTerms, setHiddenTerms] = useState<string[]>([]);
   const [loadError, setLoadError] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   useEffect(() => {
     getLearnedTerms()
@@ -54,10 +55,12 @@ export function ExplainedTermsCard() {
         startTransition(() => {
           setTerms(visible);
           setHiddenTerms(hidden);
+          setIsInitialLoad(false);
         });
       })
       .catch(() => {
         setLoadError(true);
+        setIsInitialLoad(false);
       });
   }, []);
   const [showMore, setShowMore] = useState(false);
@@ -348,7 +351,7 @@ export function ExplainedTermsCard() {
                 })}
               </div>
             </>
-          ) : (
+          ) : !isInitialLoad ? (
             <div className="py-6 text-center">
               <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
                 {t('empty')}
@@ -357,7 +360,7 @@ export function ExplainedTermsCard() {
                 {t('emptyHint')}
               </p>
             </div>
-          )}
+          ) : null}
 
           {/* Explained Terms Section */}
           <div className="mt-6">
