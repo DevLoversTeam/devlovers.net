@@ -19,6 +19,7 @@ import {
   productBadgeValues,
   type ProductImage,
   type ShopProduct as ValidationShopProduct,
+  type ShopProductImage,
   shopProductSchema,
 } from '@/lib/validation/shop';
 
@@ -47,18 +48,27 @@ export interface CatalogPage {
   hasMore: boolean;
 }
 
+export interface ProductPageDisplayProduct {
+  id: string;
+  slug: string;
+  name: string;
+  image: string;
+  images: ShopProductImage[];
+  primaryImage?: ShopProductImage;
+  description?: string;
+  badge: ProductBadge;
+}
+
 export type ProductPageData =
-  | { kind: 'available'; product: ShopProduct }
+  | {
+      kind: 'available';
+      product: ProductPageDisplayProduct;
+      commerceProduct: ShopProduct;
+    }
   | {
       kind: 'unavailable';
-      product: {
-        id: string;
-        slug: string;
-        name: string;
-        image: string;
-        description?: string;
-        badge: ProductBadge;
-      };
+      product: ProductPageDisplayProduct;
+      commerceProduct: null;
     }
   | { kind: 'not_found' };
 
@@ -71,7 +81,22 @@ export async function getProductPageData(
   const dbProduct = await getPublicProductBySlug(slug, currency);
   if (dbProduct) {
     const mapped = mapToShopProduct(dbProduct);
-    if (mapped) return { kind: 'available', product: mapped };
+    if (mapped) {
+      return toProductPageViewModel({
+        kind: 'available',
+        product: toProductPageDisplayProduct({
+          id: mapped.id,
+          slug: mapped.slug,
+          name: mapped.name,
+          image: mapped.image,
+          images: mapped.images,
+          primaryImage: mapped.primaryImage,
+          description: mapped.description,
+          badge: mapped.badge ?? 'NONE',
+        }),
+        commerceProduct: mapped,
+      });
+    }
     return { kind: 'not_found' };
   }
 
@@ -84,17 +109,20 @@ export async function getProductPageData(
     ? (base.badge as ProductBadge)
     : 'NONE';
 
-  return {
+  return toProductPageViewModel({
     kind: 'unavailable',
     product: {
       id: base.id,
       slug: base.slug,
       name: base.title,
       image: base.imageUrl || placeholderImage,
+      images: [],
+      primaryImage: undefined,
       description: base.description ?? undefined,
       badge,
     },
-  };
+    commerceProduct: null,
+  });
 }
 
 export class CatalogValidationError extends Error {
@@ -110,6 +138,18 @@ export class CatalogValidationError extends Error {
 
 const placeholderImage = '/placeholder.svg';
 
+type ProductGallerySource = {
+  image?: string;
+  images?: ShopProductImage[];
+  primaryImage?: ShopProductImage;
+};
+
+function getGalleryIdentity(
+  image: Pick<ShopProductImage, 'id' | 'url'>
+): string {
+  return image.id || image.url;
+}
+
 function mapToShopProductImage(image: ProductImage) {
   return {
     id: image.id,
@@ -118,6 +158,107 @@ function mapToShopProductImage(image: ProductImage) {
     sortOrder: image.sortOrder,
     isPrimary: image.isPrimary,
   };
+}
+
+function toProductPageDisplayProduct(input: {
+  id: string;
+  slug: string;
+  name: string;
+  image: string;
+  images?: ShopProductImage[];
+  primaryImage?: ShopProductImage;
+  description?: string;
+  badge: ProductBadge;
+}): ProductPageDisplayProduct {
+  return {
+    id: input.id,
+    slug: input.slug,
+    name: input.name,
+    image: input.image,
+    images: input.images ?? [],
+    primaryImage: input.primaryImage,
+    description: input.description,
+    badge: input.badge,
+  };
+}
+
+export function toProductPageViewModel(data: ProductPageData): ProductPageData {
+  if (data.kind === 'not_found') return data;
+
+  if (data.kind === 'available') {
+    return {
+      kind: 'available',
+      product: toProductPageDisplayProduct({
+        id: data.commerceProduct.id,
+        slug: data.commerceProduct.slug,
+        name: data.commerceProduct.name,
+        image: data.commerceProduct.image,
+        images: data.commerceProduct.images,
+        primaryImage: data.commerceProduct.primaryImage,
+        description: data.commerceProduct.description,
+        badge: data.commerceProduct.badge ?? 'NONE',
+      }),
+      commerceProduct: data.commerceProduct,
+    };
+  }
+
+  return {
+    kind: 'unavailable',
+    product: toProductPageDisplayProduct(data.product),
+    commerceProduct: null,
+  };
+}
+
+export function getProductGalleryImages(
+  product: ProductGallerySource
+): ShopProductImage[] {
+  const explicitImages = Array.isArray(product.images)
+    ? product.images.filter(
+        image => typeof image?.url === 'string' && image.url.trim().length > 0
+      )
+    : [];
+
+  const explicitPrimary =
+    (product.primaryImage &&
+    typeof product.primaryImage.url === 'string' &&
+    product.primaryImage.url.trim().length > 0
+      ? product.primaryImage
+      : undefined) ??
+    explicitImages.find(image => image.isPrimary) ??
+    explicitImages[0];
+
+  if (explicitImages.length > 0) {
+    const seen = new Set<string>();
+    const ordered: ShopProductImage[] = [];
+
+    const pushImage = (image?: ShopProductImage) => {
+      if (!image) return;
+      const identity = getGalleryIdentity(image);
+      if (seen.has(identity)) return;
+      seen.add(identity);
+      ordered.push(image);
+    };
+
+    pushImage(explicitPrimary);
+    explicitImages.forEach(pushImage);
+
+    return ordered;
+  }
+
+  const fallbackUrl =
+    typeof product.image === 'string' && product.image.trim().length > 0
+      ? product.image
+      : placeholderImage;
+
+  return [
+    {
+      id: 'fallback:primary',
+      url: fallbackUrl,
+      publicId: undefined,
+      sortOrder: 0,
+      isPrimary: true,
+    },
+  ];
 }
 
 function deriveStock(product: DbProduct): boolean {

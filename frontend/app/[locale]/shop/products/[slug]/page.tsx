@@ -5,10 +5,9 @@ import { notFound } from 'next/navigation';
 import { getMessages, getTranslations } from 'next-intl/server';
 
 import { AddToCartButton } from '@/components/shop/AddToCartButton';
-import { getPublicProductBySlug } from '@/db/queries/shop/products';
 import { Link } from '@/i18n/routing';
-import { formatMoney, resolveCurrencyFromLocale } from '@/lib/shop/currency';
-import { getProductPageData } from '@/lib/shop/data';
+import { formatMoney } from '@/lib/shop/currency';
+import { getProductGalleryImages, getProductPageData } from '@/lib/shop/data';
 import { SHOP_FOCUS, SHOP_NAV_LINK_BASE } from '@/lib/shop/ui-classes';
 import { cn } from '@/lib/utils';
 
@@ -17,6 +16,28 @@ export const metadata: Metadata = {
   description: 'Details, price, and availability for product.',
 };
 export const dynamic = 'force-dynamic';
+
+const PLACEHOLDER_IMAGE = '/placeholder.svg';
+const allowedHosts = new Set(['res.cloudinary.com', 'cdn.sanity.io']);
+
+function safeImageSrc(raw?: string | null) {
+  if (!raw || raw.trim().length === 0) return PLACEHOLDER_IMAGE;
+
+  const src = raw.trim();
+
+  if (src.startsWith('/')) return src;
+
+  if (src.startsWith('http://') || src.startsWith('https://')) {
+    try {
+      const url = new URL(src);
+      return allowedHosts.has(url.hostname) ? src : PLACEHOLDER_IMAGE;
+    } catch {
+      return PLACEHOLDER_IMAGE;
+    }
+  }
+
+  return PLACEHOLDER_IMAGE;
+}
 
 export default async function ProductPage({
   params,
@@ -27,26 +48,18 @@ export default async function ProductPage({
   const t = await getTranslations('shop.products');
   const tProduct = await getTranslations('shop.product');
 
-  const currency = resolveCurrencyFromLocale(locale);
-  const publicProduct = await getPublicProductBySlug(slug, currency);
-  if (!publicProduct) {
-    notFound();
-  }
-
   const result = await getProductPageData(slug, locale);
 
   if (result.kind === 'not_found') {
     notFound();
   }
-  const isUnavailable = result.kind === 'unavailable';
-  const resultProduct = (result as any).product ?? {};
 
-  const product = {
-    ...(publicProduct as any),
-    ...Object.fromEntries(
-      Object.entries(resultProduct).filter(([, v]) => v !== undefined)
-    ),
-  } as any;
+  const product = result.product;
+  const commerceProduct =
+    result.kind === 'available' ? result.commerceProduct : null;
+  const galleryImages = getProductGalleryImages(product);
+  const primaryImage = galleryImages[0];
+  const secondaryImages = galleryImages.slice(1);
 
   const NAV_LINK = cn(
     SHOP_NAV_LINK_BASE,
@@ -77,26 +90,47 @@ export default async function ProductPage({
       </nav>
 
       <div className="mt-8 grid gap-8 lg:grid-cols-2 lg:gap-16">
-        <div className="bg-muted relative aspect-square overflow-hidden rounded-lg">
-          {badge && badge !== 'NONE' && (
-            <span
-              className={cn(
-                'absolute top-4 left-4 z-10 rounded px-2 py-1 text-xs font-semibold uppercase',
-                'bg-foreground text-background dark:bg-accent dark:text-accent-foreground'
-              )}
-            >
-              {badgeLabel}
-            </span>
-          )}
+        <div className="space-y-4" aria-label="Product gallery">
+          <div className="bg-muted relative aspect-square overflow-hidden rounded-lg">
+            {badge && badge !== 'NONE' && (
+              <span
+                className={cn(
+                  'absolute top-4 left-4 z-10 rounded px-2 py-1 text-xs font-semibold uppercase',
+                  'bg-foreground text-background dark:bg-accent dark:text-accent-foreground'
+                )}
+              >
+                {badgeLabel}
+              </span>
+            )}
 
-          <Image
-            src={product.image || '/placeholder.svg'}
-            alt={product.name}
-            fill
-            className="object-cover"
-            sizes="(max-width: 1024px) 100vw, 50vw"
-            priority
-          />
+            <Image
+              src={safeImageSrc(primaryImage?.url)}
+              alt={`${product.name} photo 1`}
+              fill
+              className="object-cover"
+              sizes="(max-width: 1024px) 100vw, 50vw"
+              priority
+            />
+          </div>
+
+          {secondaryImages.length > 0 ? (
+            <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+              {secondaryImages.map((image, index) => (
+                <div
+                  key={image.id}
+                  className="bg-muted relative aspect-square overflow-hidden rounded-lg"
+                >
+                  <Image
+                    src={safeImageSrc(image.url)}
+                    alt={`${product.name} photo ${index + 2}`}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 1024px) 30vw, 12vw"
+                  />
+                </div>
+              ))}
+            </div>
+          ) : null}
         </div>
 
         <div className="flex flex-col">
@@ -104,7 +138,7 @@ export default async function ProductPage({
             {product.name}
           </h1>
 
-          {isUnavailable ? (
+          {commerceProduct === null ? (
             <div
               className="border-border bg-muted/30 text-muted-foreground mt-4 rounded-md border p-4 text-sm"
               role="status"
@@ -122,12 +156,20 @@ export default async function ProductPage({
                   badge === 'SALE' ? 'text-accent' : 'text-foreground'
                 }`}
               >
-                {formatMoney(product.price, product.currency, locale)}
+                {formatMoney(
+                  commerceProduct.price,
+                  commerceProduct.currency,
+                  locale
+                )}
               </span>
 
-              {product.originalPrice && (
+              {commerceProduct.originalPrice && (
                 <span className="text-muted-foreground text-lg line-through">
-                  {formatMoney(product.originalPrice, product.currency, locale)}
+                  {formatMoney(
+                    commerceProduct.originalPrice,
+                    commerceProduct.currency,
+                    locale
+                  )}
                 </span>
               )}
             </section>
@@ -146,11 +188,11 @@ export default async function ProductPage({
             );
           })()}
 
-          {!isUnavailable && (
+          {commerceProduct ? (
             <section aria-label="Purchase">
-              <AddToCartButton product={product} />
+              <AddToCartButton product={commerceProduct} />
             </section>
-          )}
+          ) : null}
         </div>
       </div>
     </div>
