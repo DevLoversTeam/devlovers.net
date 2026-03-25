@@ -94,6 +94,7 @@ export async function setTermHidden(
   if (!user) return { success: false, error: 'Unauthorized' };
 
   const normalized = normalizeTerm(term);
+  if (!normalized) return { success: false, error: 'Invalid term' };
 
   try {
     await db

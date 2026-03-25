@@ -28,29 +28,37 @@ export function ExplainedTermsCard() {
   const t = useTranslations('dashboard.explainedTerms');
   const [terms, setTerms] = useState<string[]>([]);
   const [hiddenTerms, setHiddenTerms] = useState<string[]>([]);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
-    getLearnedTerms().then(result => {
-      if (!result.success) return;
-      const visible: string[] = [];
-      const hidden: string[] = [];
-      for (const row of result.terms) {
-        setCachedExplanation(row.term, {
-          uk: row.explanationUk,
-          en: row.explanationEn,
-          pl: row.explanationPl,
-        });
-        if (row.isHidden) {
-          hidden.push(row.term);
-        } else {
-          visible.push(row.term);
+    getLearnedTerms()
+      .then(result => {
+        if (!result.success) {
+          setLoadError(true);
+          return;
         }
-      }
-      startTransition(() => {
-        setTerms(visible);
-        setHiddenTerms(hidden);
+        const visible: string[] = [];
+        const hidden: string[] = [];
+        for (const row of result.terms) {
+          setCachedExplanation(row.term, {
+            uk: row.explanationUk,
+            en: row.explanationEn,
+            pl: row.explanationPl,
+          });
+          if (row.isHidden) {
+            hidden.push(row.term);
+          } else {
+            visible.push(row.term);
+          }
+        }
+        startTransition(() => {
+          setTerms(visible);
+          setHiddenTerms(hidden);
+        });
+      })
+      .catch(() => {
+        setLoadError(true);
       });
-    });
   }, []);
   const [showMore, setShowMore] = useState(false);
   const [selectedTerm, setSelectedTerm] = useState<string | null>(null);
@@ -65,19 +73,29 @@ export function ExplainedTermsCard() {
   } | null>(null);
 
   const handleRemoveTerm = (term: string) => {
-    setTerms(prevTerms => prevTerms.filter(t => t !== term));
-    setHiddenTerms(prevHidden => [...prevHidden, term]);
-    setTermHidden(term, true).catch(() => {});
+    const prevTerms = terms;
+    const prevHidden = hiddenTerms;
+    setTerms(prevTerms.filter(t => t !== term));
+    setHiddenTerms([...prevHidden, term]);
+    setTermHidden(term, true).catch(() => {
+      setTerms(prevTerms);
+      setHiddenTerms(prevHidden);
+    });
   };
 
   const handleRestoreTerm = (term: string) => {
-    setHiddenTerms(prevHidden => prevHidden.filter(t => t !== term));
-    setTerms(prevTerms => {
-      const updated = [...prevTerms, term];
-      updateTermsOrder(updated).catch(() => {});
-      return updated;
+    const prevTerms = terms;
+    const prevHidden = hiddenTerms;
+    const updatedTerms = [...prevTerms, term];
+    setTerms(updatedTerms);
+    setHiddenTerms(prevHidden.filter(t => t !== term));
+    Promise.all([
+      setTermHidden(term, false),
+      updateTermsOrder(updatedTerms),
+    ]).catch(() => {
+      setTerms(prevTerms);
+      setHiddenTerms(prevHidden);
     });
-    setTermHidden(term, false).catch(() => {});
   };
 
   const handleDragStart = (index: number) => {
@@ -94,16 +112,15 @@ export function ExplainedTermsCard() {
       return;
     }
 
-    setTerms(prevTerms => {
-      const newTerms = [...prevTerms];
-      const [dragged] = newTerms.splice(draggedIndex, 1);
-      newTerms.splice(targetIndex, 0, dragged);
-
-      updateTermsOrder(newTerms).catch(() => {});
-      return newTerms;
-    });
-
+    const prevTerms = [...terms];
+    const newTerms = [...terms];
+    const [dragged] = newTerms.splice(draggedIndex, 1);
+    newTerms.splice(targetIndex, 0, dragged);
+    setTerms(newTerms);
     setDraggedIndex(null);
+    updateTermsOrder(newTerms).catch(() => {
+      setTerms(prevTerms);
+    });
   };
 
   const touchDragIndex = useRef<number | null>(null);
@@ -197,12 +214,13 @@ export function ExplainedTermsCard() {
       const toIndex = dragTargetIndex.current;
 
       if (fromIndex !== null && toIndex !== null && fromIndex !== toIndex) {
-        setTerms(prevTerms => {
-          const newTerms = [...prevTerms];
-          const [dragged] = newTerms.splice(fromIndex, 1);
-          newTerms.splice(toIndex, 0, dragged);
-          updateTermsOrder(newTerms).catch(() => {});
-          return newTerms;
+        const prevTerms = [...termsRef.current];
+        const newTerms = [...termsRef.current];
+        const [dragged] = newTerms.splice(fromIndex, 1);
+        newTerms.splice(toIndex, 0, dragged);
+        setTerms(newTerms);
+        updateTermsOrder(newTerms).catch(() => {
+          setTerms(prevTerms);
         });
       }
 
@@ -261,7 +279,13 @@ export function ExplainedTermsCard() {
             </div>
           </div>
 
-          {hasTerms ? (
+          {loadError ? (
+            <div className="py-6 text-center">
+              <p className="text-sm text-red-500 dark:text-red-400">
+                {t('loadError')}
+              </p>
+            </div>
+          ) : hasTerms ? (
             <>
               <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">
                 {t('termCount', { count: terms.length })}

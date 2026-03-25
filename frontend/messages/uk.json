@@ -1321,7 +1321,8 @@
       "noHiddenTerms": "Немає прихованих термінів",
       "ariaDragHandle": "Перетягніть для зміни порядку {term}",
       "ariaHide": "Приховати {term}",
-      "ariaRestore": "Відновити {term}"
+      "ariaRestore": "Відновити {term}",
+      "loadError": "Не вдалося завантажити збережені терміни. Оновіть сторінку."
     },
     "feedback": {
       "title": "Надіслати відгук",

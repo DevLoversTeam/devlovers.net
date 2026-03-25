@@ -1317,7 +1317,8 @@
       "noHiddenTerms": "No hidden terms",
       "ariaDragHandle": "Drag to reorder {term}",
       "ariaHide": "Hide {term}",
-      "ariaRestore": "Restore {term}"
+      "ariaRestore": "Restore {term}",
+      "loadError": "Failed to load saved terms. Please refresh the page."
     },
     "feedback": {
       "title": "Send Feedback",
