@@ -14,7 +14,9 @@ import { db } from '@/db';
 import { getPublicProductBySlug } from '@/db/queries/shop/products';
 import { productImages, productPrices, products } from '@/db/schema';
 import { createProduct, updateProduct } from '@/lib/services/products';
+import { getProductPageData } from '@/lib/shop/data';
 import { toDbMoney } from '@/lib/shop/money';
+import type { ProductInput } from '@/lib/types/shop';
 
 async function cleanupProduct(productId: string) {
   await db.delete(products).where(eq(products.id, productId));
@@ -152,23 +154,89 @@ describe.sequential('product images contract', () => {
     ]);
   });
 
+  it('uses resolved product_images for unavailable PDP fallback instead of stale legacy image fields', async () => {
+    const productId = randomUUID();
+    const slug = `unavailable-gallery-${randomUUID()}`;
+    createdProductIds.push(productId);
+
+    await db.insert(products).values({
+      id: productId,
+      slug,
+      title: 'Unavailable gallery product',
+      description: null,
+      imageUrl: 'https://example.com/stale-unavailable.png',
+      imagePublicId: 'products/stale-unavailable',
+      price: toDbMoney(3300),
+      originalPrice: null,
+      currency: 'USD',
+      category: null,
+      type: null,
+      colors: [],
+      sizes: [],
+      badge: 'NONE',
+      isActive: true,
+      isFeatured: false,
+      stock: 0,
+      sku: null,
+    });
+
+    await db.insert(productImages).values([
+      {
+        productId,
+        imageUrl: 'https://example.com/unavailable-secondary.png',
+        imagePublicId: 'products/unavailable-secondary',
+        sortOrder: 1,
+        isPrimary: false,
+      },
+      {
+        productId,
+        imageUrl: 'https://example.com/unavailable-primary.png',
+        imagePublicId: 'products/unavailable-primary',
+        sortOrder: 0,
+        isPrimary: true,
+      },
+    ]);
+
+    const pageData = await getProductPageData(slug, 'en');
+
+    expect(pageData.kind).toBe('unavailable');
+    if (pageData.kind !== 'unavailable') {
+      throw new Error('Expected unavailable product page data');
+    }
+
+    expect(pageData.product.image).toBe(
+      'https://example.com/unavailable-primary.png'
+    );
+    expect(pageData.product.primaryImage?.url).toBe(
+      'https://example.com/unavailable-primary.png'
+    );
+    expect(pageData.product.images.map(image => image.url)).toEqual([
+      'https://example.com/unavailable-primary.png',
+      'https://example.com/unavailable-secondary.png',
+    ]);
+  });
+
   it('createProduct writes a primary product_images row and returns the expanded image contract', async () => {
     cloudinaryMocks.uploadProductImageFromFile.mockResolvedValueOnce({
       secureUrl: 'https://example.com/create-primary.png',
       publicId: 'products/create-primary',
     });
 
-    const created = await createProduct({
+    const input: ProductInput = {
       title: `Created product ${randomUUID()}`,
       image: new File([new Uint8Array([1, 2, 3])], 'create.png', {
         type: 'image/png',
       }),
       prices: [{ currency: 'USD', priceMinor: 4100, originalPriceMinor: null }],
+      colors: [],
+      sizes: [],
       badge: 'NONE',
       stock: 4,
       isActive: true,
       isFeatured: false,
-    } as any);
+    };
+
+    const created = await createProduct(input);
 
     createdProductIds.push(created.id);
 

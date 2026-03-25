@@ -71,6 +71,7 @@ export default async function ProductPage({
 
       <div className="mt-8 grid gap-8 lg:grid-cols-2 lg:gap-16">
         <ProductGallery
+          key={product.id}
           productName={product.name}
           images={galleryImages}
           badgeLabel={badgeLabel}

@@ -405,9 +405,6 @@ export async function PATCH(
     }
 
     const parsed = parseAdminProductForm(formData, { mode: 'update' });
-    const parsedPhotos = parseAdminProductPhotosForm(formData, {
-      mode: 'update',
-    });
     if (!parsed.ok) {
       const issuesCount = getIssuesCount(parsed.error);
 
@@ -428,6 +425,9 @@ export async function PATCH(
         { status: 400 }
       );
     }
+    const parsedPhotos = parseAdminProductPhotosForm(formData, {
+      mode: 'update',
+    });
     if (!parsedPhotos.ok) {
       logWarn('admin_product_update_invalid_photos', {
         ...baseMeta,

@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import type { KeyboardEvent } from 'react';
 import { useState } from 'react';
 
 import { SHOP_FOCUS } from '@/lib/shop/ui-classes';
@@ -52,6 +53,22 @@ export function ProductGallery({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const selectedImage = galleryImages[selectedIndex] ?? galleryImages[0];
 
+  const handleThumbnailKeyDown = (
+    event: KeyboardEvent<HTMLButtonElement>,
+    index: number
+  ) => {
+    if (
+      event.key !== ' ' &&
+      event.key !== 'Space' &&
+      event.key !== 'Spacebar'
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    setSelectedIndex(index);
+  };
+
   return (
     <div className="space-y-4" aria-label="Product gallery">
       <div className="bg-muted relative aspect-square overflow-hidden rounded-lg">
@@ -86,6 +103,7 @@ export function ProductGallery({
                 key={image.id}
                 type="button"
                 onClick={() => setSelectedIndex(index)}
+                onKeyDown={event => handleThumbnailKeyDown(event, index)}
                 aria-label={`Show ${productName} photo ${index + 1}`}
                 aria-pressed={isSelected}
                 className={cn(

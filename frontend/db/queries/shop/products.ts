@@ -61,16 +61,37 @@ export type PublicProductBaseRow = Pick<
   | 'updatedAt'
 >;
 
+type PublicProductBaseResolvedRow = Omit<
+  PublicProductBaseRow,
+  'imageUrl' | 'imagePublicId'
+> &
+  ReturnType<typeof resolveProductImages>;
+
 export async function getPublicProductBaseBySlug(
   slug: string
-): Promise<PublicProductBaseRow | null> {
+): Promise<PublicProductBaseResolvedRow | null> {
   const rows = await db
     .select(publicProductBaseSelect)
     .from(products)
     .where(and(eq(products.slug, slug), eq(products.isActive, true)))
     .limit(1);
 
-  return rows[0] ?? null;
+  const row = rows[0];
+  if (!row) return null;
+
+  const imagesByProductId = await getProductImagesByProductIds([row.id]);
+  const resolvedImages = resolveProductImages(
+    row,
+    imagesByProductId.get(row.id)
+  );
+
+  return {
+    ...row,
+    imageUrl: resolvedImages.imageUrl,
+    imagePublicId: resolvedImages.imagePublicId,
+    images: resolvedImages.images,
+    primaryImage: resolvedImages.primaryImage,
+  };
 }
 
 const publicProductSelect = {

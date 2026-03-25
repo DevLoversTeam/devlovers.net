@@ -35,15 +35,12 @@ describe('shop canonical events env policy', () => {
   });
 
   it('allows explicit disable only in non-production runtime', () => {
-    vi.stubEnv('APP_ENV', 'local');
-    vi.stubEnv('NODE_ENV', 'test');
     process.env.SHOP_CANONICAL_EVENTS_DUAL_WRITE = 'off';
 
     expect(isCanonicalEventsDualWriteEnabled()).toBe(false);
   });
 
   it('throws in production runtime when explicit disable is set', () => {
-    vi.stubEnv('APP_ENV', 'local');
     vi.stubEnv('NODE_ENV', 'production');
     process.env.SHOP_CANONICAL_EVENTS_DUAL_WRITE = 'false';
 

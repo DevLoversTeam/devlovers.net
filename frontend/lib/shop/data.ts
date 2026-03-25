@@ -118,8 +118,10 @@ export async function getProductPageData(
       slug: base.slug,
       name: base.title,
       image: base.imageUrl || placeholderImage,
-      images: [],
-      primaryImage: undefined,
+      images: base.images.map(mapToShopProductImage),
+      primaryImage: base.primaryImage
+        ? mapToShopProductImage(base.primaryImage)
+        : undefined,
       description: base.description ?? undefined,
       badge,
     },

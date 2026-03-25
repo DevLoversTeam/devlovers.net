@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS "ai_learned_terms" (
+CREATE TABLE IF NOT EXISTS "public"."ai_learned_terms" (
 	"id" text PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"user_id" text NOT NULL,
 	"term" text NOT NULL,
@@ -20,7 +20,7 @@ BEGIN
 		WHERE conname = 'ai_learned_terms_user_id_users_id_fk'
 		  AND conrelid = 'public.ai_learned_terms'::regclass
 	) THEN
-		ALTER TABLE "ai_learned_terms"
+		ALTER TABLE "public"."ai_learned_terms"
 		ADD CONSTRAINT "ai_learned_terms_user_id_users_id_fk"
 		FOREIGN KEY ("user_id")
 		REFERENCES "public"."users"("id")

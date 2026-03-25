@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { z } from 'zod';
 
+import { ProductNotFoundError } from '@/lib/errors/products';
 import { issueCsrfToken } from '@/lib/security/csrf';
 import { getAdminProductByIdWithPrices } from '@/lib/services/products';
 import type { CurrencyCode } from '@/lib/shop/currency';
@@ -38,8 +39,12 @@ export default async function EditProductPage({
   let product;
   try {
     product = await getAdminProductByIdWithPrices(parsed.data.id);
-  } catch {
-    notFound();
+  } catch (error) {
+    if (error instanceof ProductNotFoundError) {
+      notFound();
+    }
+
+    throw error;
   }
 
   const prices = product.prices;

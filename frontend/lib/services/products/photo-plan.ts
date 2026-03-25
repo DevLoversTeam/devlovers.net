@@ -38,6 +38,27 @@ function photoPayloadError(
   return error;
 }
 
+function assertUniqueUploadIds(
+  uploads: ProductImageUploadInput[],
+  mode: ResolvePhotoPlanOptions['mode']
+) {
+  const seen = new Set<string>();
+
+  for (const upload of uploads) {
+    if (seen.has(upload.uploadId)) {
+      throw photoPayloadError(
+        'Uploaded photo payload contains duplicate upload ids.',
+        {
+          uploadId: upload.uploadId,
+          mode,
+        }
+      );
+    }
+
+    seen.add(upload.uploadId);
+  }
+}
+
 export function resolvePhotoPlan({
   mode,
   photoPlan,
@@ -47,6 +68,8 @@ export function resolvePhotoPlan({
   if (!photoPlan.length) {
     throw photoPayloadError('At least one product photo is required.');
   }
+
+  assertUniqueUploadIds(uploads, mode);
 
   const existingById = new Map(existingImages.map(image => [image.id, image]));
   const uploadsById = new Map(uploads.map(upload => [upload.uploadId, upload]));

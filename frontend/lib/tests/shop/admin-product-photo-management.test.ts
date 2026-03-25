@@ -234,13 +234,15 @@ describe.sequential('admin product photo management', () => {
         isPrimary: true,
       },
       {
-        id: imageRows[1]!.id,
+        id: expect.any(String),
         imageUrl: 'https://example.com/p3.png',
         imagePublicId: 'products/p3',
         sortOrder: 1,
         isPrimary: false,
       },
     ]);
+    expect(imageRows[1]?.id).not.toBe(primaryImage.id);
+    expect(imageRows[1]?.id).not.toBe(secondaryImage.id);
     expect(productRow).toEqual({
       imageUrl: 'https://example.com/p2.png',
       imagePublicId: 'products/p2',
@@ -289,5 +291,80 @@ describe.sequential('admin product photo management', () => {
         imagePlan: [{ imageId: randomUUID(), isPrimary: true }],
       })
     ).rejects.toBeInstanceOf(InvalidPayloadError);
+  });
+
+  it('updateProduct leaves legacy-only image state unchanged when photoPlan is omitted', async () => {
+    const productId = randomUUID();
+    const slug = `legacy-photo-noop-${randomUUID()}`;
+    createdProductIds.push(productId);
+
+    await db.insert(products).values({
+      id: productId,
+      slug,
+      title: 'Legacy photo product',
+      description: 'Original description',
+      imageUrl: 'https://example.com/legacy-only.png',
+      imagePublicId: 'products/legacy-only',
+      price: toDbMoney(3100),
+      originalPrice: null,
+      currency: 'USD',
+      category: null,
+      type: null,
+      colors: [],
+      sizes: [],
+      badge: 'NONE',
+      isActive: true,
+      isFeatured: false,
+      stock: 7,
+      sku: null,
+    });
+
+    await db.insert(productPrices).values({
+      productId,
+      currency: 'USD',
+      priceMinor: 3100,
+      originalPriceMinor: null,
+      price: toDbMoney(3100),
+      originalPrice: null,
+    });
+
+    const updated = await updateProduct(productId, {
+      title: 'Legacy photo product renamed',
+      description: 'Updated description',
+    });
+
+    const [productRow] = await db
+      .select({
+        imageUrl: products.imageUrl,
+        imagePublicId: products.imagePublicId,
+        title: products.title,
+        description: products.description,
+      })
+      .from(products)
+      .where(eq(products.id, productId))
+      .limit(1);
+
+    const imageRows = await db
+      .select({
+        id: productImages.id,
+      })
+      .from(productImages)
+      .where(eq(productImages.productId, productId));
+
+    expect(updated.imageUrl).toBe('https://example.com/legacy-only.png');
+    expect(updated.primaryImage?.imageUrl).toBe(
+      'https://example.com/legacy-only.png'
+    );
+    expect(updated.images).toHaveLength(1);
+    expect(updated.images[0]?.id).toBe(`legacy:${productId}`);
+    expect(productRow).toEqual({
+      imageUrl: 'https://example.com/legacy-only.png',
+      imagePublicId: 'products/legacy-only',
+      title: 'Legacy photo product renamed',
+      description: 'Updated description',
+    });
+    expect(imageRows).toEqual([]);
+    expect(cloudinaryMocks.uploadProductImageFromFile).not.toHaveBeenCalled();
+    expect(cloudinaryMocks.destroyProductImage).not.toHaveBeenCalled();
   });
 });

@@ -12,7 +12,6 @@ import {
   AdminUnauthorizedError,
   requireAdminApi,
 } from '@/lib/auth/admin';
-import { destroyProductImage } from '@/lib/cloudinary';
 import { logError, logWarn } from '@/lib/logging';
 import { requireAdminCsrf } from '@/lib/security/admin-csrf';
 import { guardBrowserSameOrigin } from '@/lib/security/origin';
@@ -354,10 +353,8 @@ export async function POST(request: NextRequest) {
           durationMs: Date.now() - startedAtMs,
         });
 
-        let rollbackDeleted = false;
         try {
           await deleteProduct(inserted.id);
-          rollbackDeleted = true;
         } catch (rollbackError) {
           logError(
             'admin_product_create_audit_rollback_failed',
@@ -367,25 +364,6 @@ export async function POST(request: NextRequest) {
               code: 'AUDIT_ROLLBACK_FAILED',
               productId: inserted.id,
               slug: inserted.slug,
-              durationMs: Date.now() - startedAtMs,
-            }
-          );
-        }
-
-        try {
-          if (rollbackDeleted && inserted.imagePublicId) {
-            await destroyProductImage(inserted.imagePublicId);
-          }
-        } catch (imgError) {
-          logError(
-            'admin_product_create_audit_rollback_image_failed',
-            imgError,
-            {
-              ...baseMeta,
-              code: 'AUDIT_ROLLBACK_IMAGE_FAILED',
-              productId: inserted.id,
-              slug: inserted.slug,
-              imagePublicId: inserted.imagePublicId ?? null,
               durationMs: Date.now() - startedAtMs,
             }
           );

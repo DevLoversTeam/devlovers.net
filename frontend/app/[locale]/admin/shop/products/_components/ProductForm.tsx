@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from '@/i18n/routing';
 import { CATEGORIES, COLORS, PRODUCT_TYPES, SIZES } from '@/lib/config/catalog';
 import { logError } from '@/lib/logging';
+import type { AdminProductPhotoPlan } from '@/lib/validation/shop';
 import type { ProductAdminInput, ProductImage } from '@/lib/validation/shop';
 
 const localSlugify = (input: string): string => {
@@ -46,9 +47,9 @@ type UiPriceRow = {
   originalPrice: string;
 };
 
-type UiPhoto = {
+export type UiPhoto = {
   key: string;
-  source: 'existing' | 'new';
+  source: 'existing' | 'legacy' | 'new';
   imageId?: string;
   uploadId?: string;
   previewUrl: string;
@@ -152,7 +153,54 @@ function normalizeUiPhotos(photos: UiPhoto[]): UiPhoto[] {
   }));
 }
 
-function ensureUiPhotos(fromInitial: {
+type SerializableUiPhoto =
+  | (UiPhoto & { source: 'existing'; imageId: string })
+  | (UiPhoto & { source: 'new'; uploadId: string; file?: File });
+
+function isSerializableUiPhoto(photo: UiPhoto): photo is SerializableUiPhoto {
+  if (photo.source === 'existing') {
+    return typeof photo.imageId === 'string' && photo.imageId.trim().length > 0;
+  }
+
+  if (photo.source === 'new') {
+    return (
+      typeof photo.uploadId === 'string' && photo.uploadId.trim().length > 0
+    );
+  }
+
+  return false;
+}
+
+export function buildPhotoPlanSubmission(photos: UiPhoto[]): {
+  photoPlan?: AdminProductPhotoPlan;
+  newPhotos: Array<UiPhoto & { source: 'new'; uploadId: string; file: File }>;
+} {
+  const serializablePhotos = photos.filter(isSerializableUiPhoto);
+
+  if (serializablePhotos.length === 0) {
+    return { photoPlan: undefined, newPhotos: [] };
+  }
+
+  const primaryIndex = serializablePhotos.findIndex(photo => photo.isPrimary);
+  const effectivePrimaryIndex = primaryIndex >= 0 ? primaryIndex : 0;
+
+  const photoPlan = serializablePhotos.map((photo, index) => ({
+    imageId: photo.source === 'existing' ? photo.imageId : undefined,
+    uploadId: photo.source === 'new' ? photo.uploadId : undefined,
+    isPrimary: index === effectivePrimaryIndex,
+  }));
+
+  const newPhotos = serializablePhotos.filter(
+    (
+      photo
+    ): photo is UiPhoto & { source: 'new'; uploadId: string; file: File } =>
+      photo.source === 'new' && Boolean(photo.file)
+  );
+
+  return { photoPlan, newPhotos };
+}
+
+export function ensureUiPhotos(fromInitial: {
   images?: ProductImage[];
   imageUrl?: string;
 }): UiPhoto[] {
@@ -177,8 +225,7 @@ function ensureUiPhotos(fromInitial: {
     return [
       {
         key: 'legacy-image',
-        source: 'existing',
-        imageId: 'legacy-image',
+        source: 'legacy',
         previewUrl: fromInitial.imageUrl,
         isPrimary: true,
       },
@@ -507,29 +554,18 @@ export function ProductForm({
       formData.append('isActive', isActive ? 'true' : 'false');
       formData.append('isFeatured', isFeatured ? 'true' : 'false');
 
-      const photoPlan = photos.map(photo => ({
-        imageId: photo.source === 'existing' ? photo.imageId : undefined,
-        uploadId: photo.source === 'new' ? photo.uploadId : undefined,
-        isPrimary: photo.isPrimary,
-      }));
+      const { photoPlan, newPhotos } = buildPhotoPlanSubmission(photos);
 
-      const newPhotos = photos.filter(
-        (
-          photo
-        ): photo is UiPhoto & { source: 'new'; uploadId: string; file: File } =>
-          photo.source === 'new' &&
-          Boolean(photo.uploadId) &&
-          Boolean(photo.file)
-      );
-
-      formData.append('photoPlan', JSON.stringify(photoPlan));
-      formData.append(
-        'newImageUploadIds',
-        JSON.stringify(newPhotos.map(photo => photo.uploadId))
-      );
-      newPhotos.forEach(photo => {
-        formData.append('newImages', photo.file);
-      });
+      if (photoPlan?.length) {
+        formData.append('photoPlan', JSON.stringify(photoPlan));
+        formData.append(
+          'newImageUploadIds',
+          JSON.stringify(newPhotos.map(photo => photo.uploadId))
+        );
+        newPhotos.forEach(photo => {
+          formData.append('newImages', photo.file);
+        });
+      }
 
       if (!csrfToken) {
         setError('Security token missing. Refresh the page and retry.');
@@ -1127,7 +1163,11 @@ export function ProductForm({
                         </span>
                       ) : null}
                       <span className="text-muted-foreground text-xs">
-                        {photo.source === 'existing' ? 'Saved' : 'New upload'}
+                        {photo.source === 'existing'
+                          ? 'Saved'
+                          : photo.source === 'legacy'
+                            ? 'Legacy image'
+                            : 'New upload'}
                       </span>
                     </div>
 

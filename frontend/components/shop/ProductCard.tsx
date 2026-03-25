@@ -101,7 +101,7 @@ export function ProductCard({ product }: ProductCardProps) {
             className="text-muted-foreground mt-2 min-h-4 text-xs leading-4"
             {...(availabilityState === 'available_to_order'
               ? { 'aria-label': t('availability.availableToOrder') }
-              : { role: 'status' })}
+              : {})}
           >
             {availabilityState === 'available_to_order'
               ? t('availability.availableToOrder')
