@@ -1521,6 +1521,10 @@
       "persistentHint": "Our engineers are working their magic. It'll be back soon!",
       "working": "Fixing it...",
       "fixing": "Magic in progress"
+    },
+    "termTooLong": {
+      "title": "Selection too long",
+      "hint": "Please select a shorter phrase — up to 100 characters. The AI works best with specific terms, not whole sentences."
     }
   },
   "onlineCounter": {

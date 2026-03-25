@@ -1,3 +1,4 @@
+export * from './ai';
 export * from './blog';
 export * from './categories';
 export * from './emailVerificationTokens';
