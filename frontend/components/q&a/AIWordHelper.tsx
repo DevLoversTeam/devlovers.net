@@ -204,11 +204,6 @@ export default function AIWordHelper({
   }, [isOpen, validatedLocale]);
 
   const fetchExplanation = useCallback(async () => {
-    if (term.length > 100) {
-      setError('TERM_TOO_LONG');
-      return;
-    }
-
     const cached = getCachedExplanation(term);
     if (cached) {
       setExplanation(cached);
@@ -219,6 +214,11 @@ export default function AIWordHelper({
         errorCode: '',
         retryAttempts: 0,
       });
+      return;
+    }
+
+    if (term.length > 100) {
+      setError('TERM_TOO_LONG');
       return;
     }
 
@@ -263,8 +263,8 @@ export default function AIWordHelper({
       const data: ExplanationResponse = await response.json();
       setExplanation(data);
       setCachedExplanation(term, data);
-      saveLearnedTerm(term, data).catch(() => {
-        // DB sync failure is non-blocking; local cache still works
+      saveLearnedTerm(term, data).catch(err => {
+        console.error('[AIWordHelper] Failed to persist learned term:', err);
       });
       setRateLimitState({ isRateLimited: false, resetIn: 0, retryAttempts: 0 });
       setServiceErrorState({

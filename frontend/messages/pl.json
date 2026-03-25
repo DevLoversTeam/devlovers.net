@@ -1319,7 +1319,8 @@
       "noHiddenTerms": "Brak ukrytych terminów",
       "ariaDragHandle": "Przeciągnij, aby zmienić kolejność {term}",
       "ariaHide": "Ukryj {term}",
-      "ariaRestore": "Przywróć {term}"
+      "ariaRestore": "Przywróć {term}",
+      "loadError": "Nie udało się załadować zapisanych terminów. Odśwież stronę."
     },
     "feedback": {
       "title": "Wyślij opinię",

@@ -8,6 +8,8 @@ import {
   unique,
 } from 'drizzle-orm/pg-core';
 
+import { users } from './users';
+
 export const aiLearnedTerms = pgTable(
   'ai_learned_terms',
   {
@@ -15,7 +17,9 @@ export const aiLearnedTerms = pgTable(
       .primaryKey()
       .notNull()
       .default(sql`gen_random_uuid()`),
-    userId: text('user_id').notNull(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
     term: text('term').notNull(),
     explanationUk: text('explanation_uk').notNull(),
     explanationEn: text('explanation_en').notNull(),
