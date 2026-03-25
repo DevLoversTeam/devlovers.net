@@ -350,6 +350,12 @@
       "addToCart": "Add to cart",
       "addedToCart": "Added to cart",
       "purchaseOptions": "Purchase options",
+      "availability": {
+        "availableToOrder": "Available to order",
+        "currentlyUnavailable": "Currently unavailable",
+        "unavailableLocaleCurrency": "This product is currently unavailable to order in your selected locale or currency.",
+        "browseOtherProducts": "Browse other products or try a different locale or currency."
+      },
       "decreaseQuantity": "Decrease quantity",
       "increaseQuantity": "Increase quantity",
       "badges": {

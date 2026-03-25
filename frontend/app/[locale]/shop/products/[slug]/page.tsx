@@ -6,6 +6,7 @@ import { getMessages, getTranslations } from 'next-intl/server';
 
 import { AddToCartButton } from '@/components/shop/AddToCartButton';
 import { Link } from '@/i18n/routing';
+import { getStorefrontAvailabilityState } from '@/lib/shop/availability';
 import { formatMoney } from '@/lib/shop/currency';
 import { getProductGalleryImages, getProductPageData } from '@/lib/shop/data';
 import { SHOP_FOCUS, SHOP_NAV_LINK_BASE } from '@/lib/shop/ui-classes';
@@ -57,6 +58,7 @@ export default async function ProductPage({
   const product = result.product;
   const commerceProduct =
     result.kind === 'available' ? result.commerceProduct : null;
+  const availabilityState = getStorefrontAvailabilityState(commerceProduct);
   const galleryImages = getProductGalleryImages(product);
   const primaryImage = galleryImages[0];
   const secondaryImages = galleryImages.slice(1);
@@ -138,13 +140,26 @@ export default async function ProductPage({
             {product.name}
           </h1>
 
+          <div
+            className={cn(
+              'border-border bg-muted/30 mt-4 rounded-xl border px-4 py-3 text-sm leading-6',
+              availabilityState === 'available_to_order'
+                ? 'text-foreground'
+                : 'text-muted-foreground'
+            )}
+            role="status"
+            aria-live="polite"
+          >
+            {availabilityState === 'available_to_order'
+              ? tProduct('availability.availableToOrder')
+              : availabilityState === 'out_of_stock'
+                ? tProduct('availability.currentlyUnavailable')
+                : tProduct('availability.unavailableLocaleCurrency')}
+          </div>
+
           {commerceProduct === null ? (
-            <div
-              className="border-border bg-muted/30 text-muted-foreground mt-4 rounded-md border p-4 text-sm"
-              role="status"
-              aria-live="polite"
-            >
-              {t('notAvailable')}
+            <div className="text-muted-foreground mt-3 text-sm">
+              {tProduct('availability.browseOtherProducts')}
             </div>
           ) : (
             <section

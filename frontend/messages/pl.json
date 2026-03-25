@@ -350,6 +350,12 @@
       "addToCart": "Dodaj do koszyka",
       "addedToCart": "Dodano do koszyka",
       "purchaseOptions": "Opcje zakupu",
+      "availability": {
+        "availableToOrder": "Dostępne do zamówienia",
+        "currentlyUnavailable": "Obecnie niedostępne",
+        "unavailableLocaleCurrency": "Ten produkt jest obecnie niedostępny do zamówienia w wybranej lokalizacji lub walucie.",
+        "browseOtherProducts": "Przeglądaj inne produkty lub wybierz inną lokalizację albo walutę."
+      },
       "decreaseQuantity": "Zmniejsz ilość",
       "increaseQuantity": "Zwiększ ilość",
       "badges": {

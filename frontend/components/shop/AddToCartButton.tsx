@@ -4,7 +4,6 @@ import { Check, Minus, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
 
-import type { ShopProduct } from '@/lib/shop/data';
 import {
   SHOP_CHIP_HOVER,
   SHOP_CHIP_INTERACTIVE,
@@ -20,6 +19,7 @@ import {
   shopCtaGradient,
 } from '@/lib/shop/ui-classes';
 import { cn } from '@/lib/utils';
+import type { ShopProduct } from '@/lib/validation/shop';
 
 import { useCart } from './CartProvider';
 
@@ -278,7 +278,7 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
 
         <span className="relative z-10 flex items-center gap-2">
           {!product.inStock ? (
-            t('soldOut')
+            t('availability.currentlyUnavailable')
           ) : added ? (
             <>
               <Check className="h-5 w-5" aria-hidden="true" />

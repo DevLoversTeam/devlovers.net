@@ -350,6 +350,12 @@
       "addToCart": "Додати до кошика",
       "addedToCart": "Додано до кошика",
       "purchaseOptions": "Опції покупки",
+      "availability": {
+        "availableToOrder": "Доступно до замовлення",
+        "currentlyUnavailable": "Наразі недоступно",
+        "unavailableLocaleCurrency": "Цей товар наразі недоступний для замовлення у вибраній локалі або валюті.",
+        "browseOtherProducts": "Перегляньте інші товари або виберіть іншу локаль чи валюту."
+      },
       "decreaseQuantity": "Зменшити кількість",
       "increaseQuantity": "Збільшити кількість",
       "badges": {
