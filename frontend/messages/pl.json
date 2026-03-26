@@ -528,10 +528,14 @@
       },
       "products": {
         "title": "Admin · Produkty",
+        "subtitle": "Zarządzaj katalogiem, cenami i widocznością w sklepie.",
         "newProduct": "Nowy produkt",
+        "backToList": "Wróć do produktów",
+        "editProductHeading": "Edycja · {title}",
         "listCaption": "Lista produktów",
         "empty": "Brak produktów.",
         "table": {
+          "product": "Produkt",
           "title": "Tytuł",
           "slug": "Slug",
           "price": "Cena",
@@ -541,16 +545,23 @@
           "badge": "Odznaka",
           "active": "Aktywny",
           "featured": "Polecany",
+          "status": "Status",
+          "date": "Data",
           "created": "Utworzono",
           "actions": "Akcje"
         },
         "actions": {
-          "view": "Zobacz",
+          "view": "Otwórz",
           "edit": "Edytuj",
           "viewProduct": "Zobacz produkt {title}",
           "editProduct": "Edytuj produkt {title}",
           "yes": "Tak",
           "no": "Nie"
+        },
+        "states": {
+          "active": "Aktywny",
+          "hidden": "Ukryty",
+          "featured": "Polecany"
         }
       },
       "statusToggle": {
@@ -558,8 +569,8 @@
         "securityExpired": "Token bezpieczeństwa wygasł. Odśwież stronę i spróbuj ponownie.",
         "failedUpdate": "Nie udało się zaktualizować statusu",
         "updating": "Aktualizowanie",
-        "deactivate": "Dezaktywuj",
-        "activate": "Aktywuj"
+        "deactivate": "Wyłącz",
+        "activate": "Włącz"
       },
       "pagination": {
         "label": "Stronicowanie",

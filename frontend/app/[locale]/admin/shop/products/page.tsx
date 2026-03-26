@@ -23,10 +23,49 @@ export const metadata: Metadata = {
 };
 
 const PAGE_SIZE = 25;
+const TH_BASE =
+  'px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground';
+const TD_BASE = 'px-3 py-3 text-sm align-top';
+const ACTION_LINK_CLASS =
+  'inline-flex h-8 w-full items-center justify-center rounded-md border border-border px-2.5 text-[11px] font-medium text-foreground leading-none whitespace-nowrap transition-colors hover:bg-secondary';
+const PRIMARY_BUTTON_CLASS =
+  'bg-foreground text-background hover:bg-foreground/90 inline-flex items-center rounded-md px-4 py-2 text-sm font-medium transition-colors';
 
 function formatDate(value: Date | null, locale: string): string {
   if (!value) return '-';
-  return value.toLocaleDateString(locale);
+  return new Intl.DateTimeFormat(locale, {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(value);
+}
+
+function formatBadge(value: string | null): string | null {
+  if (!value || value === 'NONE') return null;
+  return value;
+}
+
+function booleanBadgeClass(value: boolean, tone: 'success' | 'accent'): string {
+  if (!value) return 'bg-muted text-muted-foreground';
+  if (tone === 'success') return 'bg-emerald-500/10 text-emerald-500';
+  return 'bg-sky-500/10 text-sky-500';
+}
+
+function productBadgeClass(badge: string | null): string {
+  if (badge === 'SALE') return 'bg-amber-500/10 text-amber-500';
+  if (badge === 'NEW') return 'bg-sky-500/10 text-sky-500';
+  return 'bg-muted text-muted-foreground';
+}
+
+function formatCatalogMeta(
+  category: string | null,
+  type: string | null
+): string | null {
+  const parts = [category, type].filter(
+    (value): value is string => typeof value === 'string' && value.length > 0
+  );
+
+  return parts.length ? parts.join(' / ') : null;
 }
 
 export default async function AdminProductsPage({
@@ -90,26 +129,24 @@ export default async function AdminProductsPage({
 
   const csrfTokenStatus = issueCsrfToken('admin:products:status');
   const csrfTokenDelete = issueCsrfToken('admin:products:delete');
-  const TH_BASE =
-    'px-3 py-2 text-left text-xs font-semibold text-foreground leading-tight whitespace-normal break-words';
 
   return (
     <main
-      className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8"
+      className="mx-auto max-w-5xl px-6 py-8"
       aria-labelledby="admin-products-title"
     >
       <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <h1
-          id="admin-products-title"
-          className="text-foreground text-2xl font-bold"
-        >
-          {t('title')}
-        </h1>
+        <div>
+          <h1
+            id="admin-products-title"
+            className="text-foreground text-2xl font-bold"
+          >
+            {t('title')}
+          </h1>
+          <p className="text-muted-foreground mt-1 text-sm">{t('subtitle')}</p>
+        </div>
 
-        <Link
-          href="/admin/shop/products/new"
-          className="border-border text-foreground hover:bg-secondary inline-flex items-center justify-center rounded-md border px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors"
-        >
+        <Link href="/admin/shop/products/new" className={PRIMARY_BUTTON_CLASS}>
           {t('newProduct')}
         </Link>
       </header>
@@ -118,20 +155,20 @@ export default async function AdminProductsPage({
         {/* Mobile cards */}
         <div className="md:hidden">
           {rows.length === 0 ? (
-            <div className="border-border text-muted-foreground rounded-md border p-4 text-sm">
+            <div className="border-border text-muted-foreground rounded-xl border border-dashed p-8 text-center text-sm">
               {t('empty')}
             </div>
           ) : (
             <ul className="space-y-3">
               {rows.map(row => {
                 const priceMinor = row.priceMinor;
-                const badge =
-                  row.badge == null || row.badge === 'NONE' ? '-' : row.badge;
+                const badge = formatBadge(row.badge);
+                const catalogMeta = formatCatalogMeta(row.category, row.type);
 
                 return (
                   <li
                     key={row.id}
-                    className="border-border bg-background rounded-lg border p-4"
+                    className="border-border bg-background rounded-xl border p-4 shadow-sm"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
@@ -147,6 +184,14 @@ export default async function AdminProductsPage({
                         >
                           {row.slug}
                         </div>
+                        {catalogMeta ? (
+                          <div
+                            className="text-muted-foreground mt-1 truncate text-xs"
+                            title={catalogMeta}
+                          >
+                            {catalogMeta}
+                          </div>
+                        ) : null}
                       </div>
 
                       <div className="text-foreground shrink-0 text-right text-sm whitespace-nowrap">
@@ -156,31 +201,27 @@ export default async function AdminProductsPage({
                       </div>
                     </div>
 
-                    <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
-                      <div className="min-w-0">
-                        <dt className="text-muted-foreground">
-                          {t('table.category')}
-                        </dt>
-                        <dd
-                          className="text-foreground truncate"
-                          title={row.category ?? '-'}
+                    <div className="mt-3 flex flex-wrap gap-1.5">
+                      {badge ? (
+                        <span
+                          className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${productBadgeClass(row.badge)}`}
                         >
-                          {row.category ?? '-'}
-                        </dd>
-                      </div>
+                          {badge}
+                        </span>
+                      ) : null}
+                      <span
+                        className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${booleanBadgeClass(row.isActive, 'success')}`}
+                      >
+                        {row.isActive ? t('states.active') : t('states.hidden')}
+                      </span>
+                      {row.isFeatured ? (
+                        <span className="inline-flex rounded-full bg-sky-500/10 px-2 py-0.5 text-[11px] font-medium text-sky-500">
+                          {t('states.featured')}
+                        </span>
+                      ) : null}
+                    </div>
 
-                      <div className="min-w-0">
-                        <dt className="text-muted-foreground">
-                          {t('table.type')}
-                        </dt>
-                        <dd
-                          className="text-foreground truncate"
-                          title={row.type ?? '-'}
-                        >
-                          {row.type ?? '-'}
-                        </dd>
-                      </div>
-
+                    <dl className="mt-3 grid grid-cols-3 gap-x-3 gap-y-2 text-xs">
                       <div>
                         <dt className="text-muted-foreground">
                           {t('table.stock')}
@@ -190,32 +231,18 @@ export default async function AdminProductsPage({
 
                       <div>
                         <dt className="text-muted-foreground">
-                          {t('table.badge')}
+                          {t('table.price')}
                         </dt>
-                        <dd className="text-foreground">{badge}</dd>
-                      </div>
-
-                      <div>
-                        <dt className="text-muted-foreground">
-                          {t('table.active')}
-                        </dt>
-                        <dd className="text-foreground">
-                          {row.isActive ? t('actions.yes') : t('actions.no')}
+                        <dd className="text-foreground whitespace-nowrap">
+                          {priceMinor == null
+                            ? '-'
+                            : formatMoney(priceMinor, displayCurrency, locale)}
                         </dd>
                       </div>
 
                       <div>
                         <dt className="text-muted-foreground">
-                          {t('table.featured')}
-                        </dt>
-                        <dd className="text-foreground">
-                          {row.isFeatured ? t('actions.yes') : t('actions.no')}
-                        </dd>
-                      </div>
-
-                      <div className="col-span-2">
-                        <dt className="text-muted-foreground">
-                          {t('table.created')}
+                          {t('table.date')}
                         </dt>
                         <dd className="text-foreground">
                           {formatDate(row.createdAt, locale)}
@@ -223,10 +250,10 @@ export default async function AdminProductsPage({
                       </div>
                     </dl>
 
-                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <div className="mt-3 grid grid-cols-2 gap-2">
                       <Link
                         href={`/shop/products/${row.slug}`}
-                        className="border-border text-foreground hover:bg-secondary inline-flex items-center justify-center rounded-md border px-2 py-1 text-xs font-medium transition-colors"
+                        className={ACTION_LINK_CLASS}
                         aria-label={t('actions.viewProduct', {
                           title: row.title,
                         })}
@@ -236,7 +263,7 @@ export default async function AdminProductsPage({
 
                       <Link
                         href={`/admin/shop/products/${row.id}/edit`}
-                        className="border-border text-foreground hover:bg-secondary inline-flex items-center justify-center rounded-md border px-2 py-1 text-xs font-medium transition-colors"
+                        className={ACTION_LINK_CLASS}
                         aria-label={t('actions.editProduct', {
                           title: row.title,
                         })}
@@ -248,6 +275,7 @@ export default async function AdminProductsPage({
                         id={row.id}
                         initialIsActive={row.isActive}
                         csrfToken={csrfTokenStatus}
+                        className={row.isInUse ? 'col-span-2' : undefined}
                       />
 
                       {row.isInUse ? null : (
@@ -267,53 +295,33 @@ export default async function AdminProductsPage({
 
         {/* Desktop table */}
         <div className="hidden md:block">
-          <div className="overflow-x-auto">
+          <div className="bg-background/80 overflow-x-auto rounded-xl shadow-sm">
             <table className="divide-border w-full table-fixed divide-y text-sm">
               <caption className="sr-only">{t('listCaption')}</caption>
               <colgroup>
-                <col className="w-[9.5rem]" />
-                <col className="w-[8rem]" />
-                <col className="w-[6.5rem]" />
-                <col className="w-[6rem]" />
-                <col className="w-[5.5rem]" />
+                <col className="w-[21rem]" />
+                <col className="w-[7.5rem]" />
                 <col className="w-[5rem]" />
-                <col className="w-[4rem]" />
-                <col className="w-[5rem]" />
-                <col className="w-[5rem]" />
-                <col className="w-[4.5rem]" />
                 <col className="w-[11rem]" />
+                <col className="w-[6.5rem]" />
+                <col className="w-[10.5rem]" />
               </colgroup>
               <thead className="bg-muted/50">
                 <tr>
                   <th scope="col" className={TH_BASE}>
-                    {t('table.title')}
-                  </th>
-                  <th scope="col" className={TH_BASE}>
-                    {t('table.slug')}
+                    {t('table.product')}
                   </th>
                   <th scope="col" className={TH_BASE}>
                     {t('table.price')}
                   </th>
                   <th scope="col" className={TH_BASE}>
-                    {t('table.category')}
-                  </th>
-                  <th scope="col" className={TH_BASE}>
-                    {t('table.type')}
-                  </th>
-                  <th scope="col" className={TH_BASE}>
                     {t('table.stock')}
                   </th>
                   <th scope="col" className={TH_BASE}>
-                    {t('table.badge')}
+                    {t('table.status')}
                   </th>
                   <th scope="col" className={TH_BASE}>
-                    {t('table.active')}
-                  </th>
-                  <th scope="col" className={TH_BASE}>
-                    {t('table.featured')}
-                  </th>
-                  <th scope="col" className={TH_BASE}>
-                    {t('table.created')}
+                    {t('table.date')}
                   </th>
                   <th scope="col" className={TH_BASE}>
                     {t('table.actions')}
@@ -324,70 +332,84 @@ export default async function AdminProductsPage({
               <tbody className="divide-border divide-y">
                 {rows.map(row => {
                   const priceMinor = row.priceMinor;
+                  const badge = formatBadge(row.badge);
+                  const catalogMeta = formatCatalogMeta(row.category, row.type);
 
                   return (
                     <tr key={row.id} className="hover:bg-muted/50">
-                      <td className="text-foreground max-w-0 px-3 py-2 font-medium">
-                        <div className="truncate" title={row.title}>
-                          {row.title}
+                      <td
+                        className={`${TD_BASE} text-foreground max-w-0 font-medium`}
+                      >
+                        <div className="min-w-0 space-y-1">
+                          <div className="truncate" title={row.title}>
+                            {row.title}
+                          </div>
+                          <div
+                            className="text-muted-foreground truncate text-xs font-normal"
+                            title={row.slug}
+                          >
+                            {row.slug}
+                          </div>
+                          {catalogMeta ? (
+                            <div
+                              className="text-muted-foreground truncate text-xs font-normal"
+                              title={catalogMeta}
+                            >
+                              {catalogMeta}
+                            </div>
+                          ) : null}
                         </div>
                       </td>
 
-                      <td className="text-muted-foreground max-w-0 px-3 py-2">
-                        <div className="truncate" title={row.slug}>
-                          {row.slug}
-                        </div>
-                      </td>
-
-                      <td className="text-foreground px-3 py-2 whitespace-nowrap">
+                      <td
+                        className={`${TD_BASE} text-foreground whitespace-nowrap`}
+                      >
                         {priceMinor == null
                           ? '-'
                           : formatMoney(priceMinor, displayCurrency, locale)}
                       </td>
 
-                      <td className="text-muted-foreground max-w-0 px-3 py-2">
-                        <div className="truncate" title={row.category ?? '-'}>
-                          {row.category ?? '-'}
-                        </div>
-                      </td>
-
-                      <td className="text-muted-foreground max-w-0 px-3 py-2">
-                        <div className="truncate" title={row.type ?? '-'}>
-                          {row.type ?? '-'}
-                        </div>
-                      </td>
-
-                      <td className="text-muted-foreground px-3 py-2 whitespace-nowrap">
+                      <td
+                        className={`${TD_BASE} text-muted-foreground whitespace-nowrap`}
+                      >
                         {row.stock}
                       </td>
 
-                      <td className="text-muted-foreground px-3 py-2 whitespace-nowrap">
-                        {row.badge == null || row.badge === 'NONE'
-                          ? '-'
-                          : row.badge}
+                      <td className={TD_BASE}>
+                        <div className="flex flex-wrap gap-1.5">
+                          {badge ? (
+                            <span
+                              className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium whitespace-nowrap ${productBadgeClass(row.badge)}`}
+                            >
+                              {badge}
+                            </span>
+                          ) : null}
+                          <span
+                            className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium whitespace-nowrap ${booleanBadgeClass(row.isActive, 'success')}`}
+                          >
+                            {row.isActive
+                              ? t('states.active')
+                              : t('states.hidden')}
+                          </span>
+                          {row.isFeatured ? (
+                            <span className="inline-flex rounded-full bg-sky-500/10 px-2 py-0.5 text-[11px] font-medium whitespace-nowrap text-sky-500">
+                              {t('states.featured')}
+                            </span>
+                          ) : null}
+                        </div>
                       </td>
 
-                      <td className="px-3 py-2 whitespace-nowrap">
-                        <span className="bg-muted text-foreground inline-flex rounded-full px-2 py-1 text-xs font-medium">
-                          {row.isActive ? t('actions.yes') : t('actions.no')}
-                        </span>
-                      </td>
-
-                      <td className="px-3 py-2 whitespace-nowrap">
-                        <span className="bg-muted text-foreground inline-flex rounded-full px-2 py-1 text-xs font-medium">
-                          {row.isFeatured ? t('actions.yes') : t('actions.no')}
-                        </span>
-                      </td>
-
-                      <td className="text-muted-foreground px-3 py-2 whitespace-nowrap">
+                      <td
+                        className={`${TD_BASE} text-muted-foreground whitespace-nowrap`}
+                      >
                         {formatDate(row.createdAt, locale)}
                       </td>
 
-                      <td className="px-3 py-2">
-                        <div className="grid grid-cols-2 gap-2">
+                      <td className={TD_BASE}>
+                        <div className="grid grid-cols-2 gap-1.5">
                           <Link
                             href={`/shop/products/${row.slug}`}
-                            className="border-border text-foreground hover:bg-secondary inline-flex items-center justify-center rounded-md border px-2 py-1 text-center text-xs leading-tight font-medium break-words whitespace-normal transition-colors"
+                            className={ACTION_LINK_CLASS}
                             aria-label={t('actions.viewProduct', {
                               title: row.title,
                             })}
@@ -397,7 +419,7 @@ export default async function AdminProductsPage({
 
                           <Link
                             href={`/admin/shop/products/${row.id}/edit`}
-                            className="border-border text-foreground hover:bg-secondary inline-flex items-center justify-center rounded-md border px-2 py-1 text-center text-xs leading-tight font-medium break-words whitespace-normal transition-colors"
+                            className={ACTION_LINK_CLASS}
                             aria-label={t('actions.editProduct', {
                               title: row.title,
                             })}
@@ -409,6 +431,7 @@ export default async function AdminProductsPage({
                             id={row.id}
                             initialIsActive={row.isActive}
                             csrfToken={csrfTokenStatus}
+                            className={row.isInUse ? 'col-span-2' : undefined}
                           />
 
                           {row.isInUse ? null : (
@@ -427,8 +450,8 @@ export default async function AdminProductsPage({
                 {rows.length === 0 ? (
                   <tr>
                     <td
-                      className="text-muted-foreground px-3 py-6"
-                      colSpan={11}
+                      className="text-muted-foreground px-3 py-10 text-center"
+                      colSpan={6}
                     >
                       {t('empty')}
                     </td>
@@ -439,11 +462,12 @@ export default async function AdminProductsPage({
           </div>
         </div>
 
-        <div className="mt-4">
+        <div className="border-border bg-background/80 mt-4 flex min-h-20 items-center rounded-xl border px-4 py-3 shadow-sm">
           <AdminPagination
             basePath="/admin/shop/products"
             page={page}
             hasNext={hasNext}
+            className="mt-0 w-full"
           />
         </div>
       </section>

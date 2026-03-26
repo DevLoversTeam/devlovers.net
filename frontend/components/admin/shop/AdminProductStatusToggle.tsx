@@ -7,12 +7,14 @@ interface AdminProductStatusToggleProps {
   id: string;
   initialIsActive: boolean;
   csrfToken: string;
+  className?: string;
 }
 
 export function AdminProductStatusToggle({
   id,
   initialIsActive,
   csrfToken,
+  className,
 }: AdminProductStatusToggleProps) {
   const [isActive, setIsActive] = useState(initialIsActive);
   const [isLoading, setIsLoading] = useState(false);
@@ -78,7 +80,7 @@ export function AdminProductStatusToggle({
       : t('activate');
 
   return (
-    <div className="flex w-full min-w-0 flex-col gap-1">
+    <div className={`flex min-w-0 flex-col gap-1 ${className ?? ''}`.trim()}>
       <button
         type="button"
         onClick={toggleStatus}
@@ -86,7 +88,11 @@ export function AdminProductStatusToggle({
         aria-busy={isLoading}
         aria-pressed={isActive}
         aria-describedby={error ? errorId : undefined}
-        className="border-border text-foreground hover:bg-secondary w-full max-w-full rounded-md border px-2 py-1 text-center text-xs leading-tight font-medium break-words whitespace-normal transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+        className={`inline-flex h-8 w-full max-w-full items-center justify-center rounded-md border px-2.5 text-center text-[11px] leading-none font-medium whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+          isActive
+            ? 'border-amber-500/30 text-amber-500 hover:bg-amber-500/10'
+            : 'border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/10'
+        }`}
       >
         {buttonLabel}
       </button>
@@ -96,7 +102,7 @@ export function AdminProductStatusToggle({
           id={errorId}
           role="status"
           aria-live="polite"
-          className="max-w-[9rem] truncate text-xs text-red-600"
+          className="max-w-[12rem] truncate text-xs text-red-600"
           title={error}
         >
           {error}

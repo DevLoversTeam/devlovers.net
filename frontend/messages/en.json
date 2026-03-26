@@ -528,29 +528,40 @@
       },
       "products": {
         "title": "Admin · Products",
+        "subtitle": "Manage catalog items, pricing, and storefront visibility.",
         "newProduct": "New product",
+        "backToList": "Back to products",
+        "editProductHeading": "Edit · {title}",
         "listCaption": "Products list",
         "empty": "No products yet.",
         "table": {
+          "product": "Product",
           "title": "Title",
           "slug": "Slug",
           "price": "Price",
           "category": "Category",
           "type": "Type",
-          "stock": "Stock",
+          "stock": "Qty",
           "badge": "Badge",
           "active": "Active",
           "featured": "Featured",
+          "status": "Status",
+          "date": "Date",
           "created": "Created",
           "actions": "Actions"
         },
         "actions": {
-          "view": "View",
+          "view": "Open",
           "edit": "Edit",
           "viewProduct": "View product {title}",
           "editProduct": "Edit product {title}",
           "yes": "Yes",
           "no": "No"
+        },
+        "states": {
+          "active": "Active",
+          "hidden": "Hidden",
+          "featured": "Featured"
         }
       },
       "statusToggle": {
@@ -558,8 +569,8 @@
         "securityExpired": "Security token expired. Refresh the page and retry.",
         "failedUpdate": "Failed to update status",
         "updating": "Updating",
-        "deactivate": "Deactivate",
-        "activate": "Activate"
+        "deactivate": "Disable",
+        "activate": "Enable"
       },
       "pagination": {
         "label": "Pagination",
