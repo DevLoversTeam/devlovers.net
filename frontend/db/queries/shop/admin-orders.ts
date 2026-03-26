@@ -8,7 +8,13 @@ import {
   orders,
   orderShipping,
   shippingShipments,
+  users,
 } from '@/db/schema';
+import {
+  type CanonicalFulfillmentStage,
+  deriveCanonicalFulfillmentStage,
+  latestReturnStatusSql,
+} from '@/lib/services/shop/fulfillment-stage';
 import type { CurrencyCode } from '@/lib/shop/currency';
 import { toDbMoney } from '@/lib/shop/money';
 import type { PaymentProvider, PaymentStatus } from '@/lib/shop/payments';
@@ -29,12 +35,15 @@ export type AdminOrderListItem = {
 export type AdminOrderDetail = {
   id: string;
   userId: string | null;
+  customerAccountName: string | null;
+  customerAccountEmail: string | null;
   totalAmountMinor: number;
   totalAmount: string;
   currency: CurrencyCode;
   paymentStatus: PaymentStatus;
   paymentProvider: PaymentProvider;
   paymentIntentId: string | null;
+  fulfillmentStage: CanonicalFulfillmentStage;
   stockRestored: boolean;
   restockedAt: Date | null;
   idempotencyKey: string;
@@ -170,12 +179,16 @@ export async function getAdminOrderDetail(
       order: {
         id: orders.id,
         userId: orders.userId,
+        customerAccountName: users.name,
+        customerAccountEmail: users.email,
         totalAmount: orders.totalAmount,
         totalAmountMinor: orders.totalAmountMinor,
         currency: orders.currency,
         paymentStatus: orders.paymentStatus,
         paymentProvider: orders.paymentProvider,
         paymentIntentId: orders.paymentIntentId,
+        orderStatus: orders.status,
+        returnStatus: latestReturnStatusSql(orders.id),
         stockRestored: orders.stockRestored,
         restockedAt: orders.restockedAt,
         idempotencyKey: orders.idempotencyKey,
@@ -210,21 +223,48 @@ export async function getAdminOrderDetail(
     .from(orders)
     .leftJoin(shippingShipments, eq(shippingShipments.orderId, orders.id))
     .leftJoin(orderShipping, eq(orderShipping.orderId, orders.id))
+    .leftJoin(users, eq(users.id, orders.userId))
     .leftJoin(orderItems, eq(orderItems.orderId, orders.id))
     .where(eq(orders.id, orderId));
 
   if (rows.length === 0) return null;
 
   const base = rows[0]!.order;
+  const shipmentStatus = rows[0]?.shipping.shipmentStatus ?? null;
+  const fulfillmentStage = deriveCanonicalFulfillmentStage({
+    orderStatus: base.orderStatus,
+    shippingStatus: base.shippingStatus,
+    shipmentStatus: typeof shipmentStatus === 'string' ? shipmentStatus : null,
+    returnStatus:
+      typeof base.returnStatus === 'string' ? base.returnStatus : null,
+  });
 
   const items = rows
     .map(r => toAdminOrderItem(r.item))
     .filter((i): i is AdminOrderDetail['items'][number] => i !== null);
 
   return {
-    ...base,
+    id: base.id,
+    userId: base.userId,
+    customerAccountName: base.customerAccountName,
+    customerAccountEmail: base.customerAccountEmail,
+    totalAmountMinor: base.totalAmountMinor,
+    fulfillmentStage,
+    currency: base.currency,
+    paymentStatus: base.paymentStatus,
+    paymentProvider: base.paymentProvider,
+    paymentIntentId: base.paymentIntentId,
+    stockRestored: base.stockRestored,
+    restockedAt: base.restockedAt,
+    idempotencyKey: base.idempotencyKey,
     pspMetadata: (base.pspMetadata ?? {}) as Record<string, unknown>,
-    shipmentStatus: rows[0]?.shipping.shipmentStatus ?? null,
+    shippingRequired: base.shippingRequired,
+    shippingProvider: base.shippingProvider,
+    shippingMethodCode: base.shippingMethodCode,
+    shippingStatus: base.shippingStatus,
+    trackingNumber: base.trackingNumber,
+    shippingProviderRef: base.shippingProviderRef,
+    shipmentStatus,
     shipmentAttemptCount: rows[0]?.shipping.shipmentAttemptCount ?? null,
     shipmentLastErrorCode: rows[0]?.shipping.shipmentLastErrorCode ?? null,
     shipmentLastErrorMessage:
@@ -233,6 +273,8 @@ export async function getAdminOrderDetail(
       (rows[0]?.shipping.shippingAddress as Record<string, unknown> | null) ??
       null,
     totalAmount: toDbMoney(base.totalAmountMinor),
+    createdAt: base.createdAt,
+    updatedAt: base.updatedAt,
     items,
   };
 }
