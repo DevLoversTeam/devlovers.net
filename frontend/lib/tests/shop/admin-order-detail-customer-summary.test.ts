@@ -48,6 +48,46 @@ vi.mock('@/i18n/routing', () => ({
   }) => createElement('a', { href, ...props }, children),
 }));
 
+vi.mock('@/app/[locale]/admin/shop/orders/[id]/ShippingActions', () => ({
+  ShippingActions: ({
+    orderId,
+    shippingStatus,
+    shipmentStatus,
+  }: {
+    orderId: string;
+    shippingStatus: string | null;
+    shipmentStatus: string | null;
+  }) =>
+    createElement(
+      'div',
+      {
+        'data-testid': 'shipping-actions',
+        'data-order-id': orderId,
+        'data-shipping-status': shippingStatus ?? '',
+        'data-shipment-status': shipmentStatus ?? '',
+      },
+      'shipping-actions'
+    ),
+}));
+
+vi.mock('@/app/[locale]/admin/shop/orders/[id]/RefundButton', () => ({
+  RefundButton: ({ orderId }: { orderId: string }) =>
+    createElement(
+      'div',
+      { 'data-testid': 'refund-button', 'data-order-id': orderId },
+      'refund-button'
+    ),
+}));
+
+vi.mock('@/app/[locale]/admin/shop/orders/[id]/CancelPaymentButton', () => ({
+  CancelPaymentButton: ({ orderId }: { orderId: string }) =>
+    createElement(
+      'div',
+      { 'data-testid': 'cancel-payment-button', 'data-order-id': orderId },
+      'cancel-payment-button'
+    ),
+}));
+
 import OrderDetailPage from '@/app/[locale]/admin/shop/orders/[id]/page';
 
 function baseOrderDetail(
@@ -161,10 +201,10 @@ describe('admin order detail customer summary', () => {
       '550e8400-e29b-41d4-a716-446655440000'
     );
     expect(html).toContain('customerSummary');
-    expect(html).toContain('lifecycle.heading');
-    expect(html).toContain('lifecycle.confirm');
-    expect(html).toContain('lifecycle.cancel');
-    expect(html).toContain('lifecycle.complete');
+    expect(html).toContain('actions.heading');
+    expect(html).toContain('shipping-actions');
+    expect(html).toContain('refund-button');
+    expect(html).not.toContain('cancel-payment-button');
     expect(html).toContain('Admin Customer');
     expect(html).toContain('customer@example.com');
     expect(html).toContain('Ivan Petrenko');
@@ -212,6 +252,9 @@ describe('admin order detail customer summary', () => {
     expect(html).toContain('customerSummary');
     expect(readFieldValue(html, 'customerAccount')).toBe('guest');
     expect(html).toContain('Olena');
+    expect(html).not.toContain('shipping-actions');
+    expect(html).toContain('refund-button');
+    expect(html).not.toContain('cancel-payment-button');
     expect(html).toContain('orderSummary');
     expect(html).toContain('Classic Hoodie');
     expect(readFieldValue(html, 'recipientPhone')).toBe('-');

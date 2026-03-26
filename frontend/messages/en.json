@@ -829,8 +829,9 @@
         "orderSummary": "Order summary",
           "customerSummary": "Customer summary",
           "lifecycle": {
-            "heading": "Lifecycle actions",
-            "subtitle": "Controlled admin actions for confirm, cancel, and complete.",
+            "eyebrow": "Order state",
+            "heading": "Status updates",
+            "subtitle": "Use these when you need to move the order to its next safe state.",
             "confirm": "Confirm",
             "cancel": "Cancel",
             "complete": "Complete",
@@ -844,6 +845,54 @@
               "invalidPayload": "Invalid lifecycle action request.",
               "internalError": "Lifecycle action failed. Please try again.",
               "generic": "Lifecycle action is not available in the current state."
+            }
+          },
+          "actions": {
+            "heading": "Admin actions",
+            "subtitle": "Choose the next safe step for this order. Only actions that fit the current state are shown.",
+            "empty": "No admin actions are available for the current state."
+          },
+          "shippingControls": {
+            "eyebrow": "Shipping",
+            "heading": "Shipment handling",
+            "subtitle": "Recover or advance delivery only when the shipment is ready for it.",
+            "recoverInitialShipment": "Recover shipment",
+            "retryLabelCreation": "Retry label",
+            "markShipped": "Mark shipped",
+            "markDelivered": "Mark delivered",
+            "errors": {
+              "network": "Shipping action failed to send. Try again.",
+              "security": "Security check failed. Refresh the page and try again.",
+              "recoverNotAvailable": "Shipment recovery is no longer available for this order.",
+              "shipmentMissing": "There is no shipment record to update yet.",
+              "retryNotAvailable": "Label retry is not available in the current shipment state.",
+              "transitionNotAvailable": "This shipping step is no longer available for the current order state.",
+              "adminDisabled": "Admin shipping actions are currently unavailable.",
+              "generic": "Shipping action could not be completed. Refresh the order and try again."
+            }
+          },
+          "paymentControls": {
+            "eyebrow": "Payment",
+            "heading": "Payment handling",
+            "subtitle": "Use the payment tools below only when this order needs financial follow-up.",
+            "refund": "Refund payment",
+            "refunding": "Refunding…",
+            "onlyForPaidStripe": "Refund is only available for paid Stripe orders",
+            "cancelUnpaidPayment": "Cancel unpaid payment",
+            "cancelingPayment": "Canceling payment…",
+            "onlyForUnpaidMonobank": "This action is only available for unpaid Monobank orders",
+            "errors": {
+              "network": "Payment action failed to send. Try again.",
+              "security": "Security check failed. Refresh the page and try again.",
+              "refundNotAvailable": "Refund is no longer available for this order.",
+              "cancelPaymentDisabled": "Payment cancel is currently unavailable.",
+              "cancelPaymentNotAvailable": "Unpaid cancel is no longer available for this order.",
+              "cancelPaymentInProgress": "Payment cancel is already being processed. Refresh in a moment.",
+              "missingPaymentReference": "The payment provider reference is missing, so this action cannot run automatically.",
+              "invalidAmount": "Order amount data is incomplete, so refund cannot start automatically.",
+              "providerUnavailable": "The payment provider is temporarily unavailable. Try again later.",
+              "adminDisabled": "Admin payment actions are currently unavailable.",
+              "generic": "Payment action could not be completed. Refresh the order and try again."
             }
           },
           "customerAccount": "Customer account",
