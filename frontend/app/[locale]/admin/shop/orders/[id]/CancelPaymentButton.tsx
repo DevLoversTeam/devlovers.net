@@ -10,19 +10,24 @@ type Props = {
   csrfToken: string;
 };
 
-function mapRefundError(code: string, t: (key: string) => string): string {
+function mapCancelPaymentError(
+  code: string,
+  t: (key: string) => string
+): string {
   switch (code) {
     case 'NETWORK_ERROR':
       return t('errors.network');
     case 'CSRF_REJECTED':
       return t('errors.security');
-    case 'REFUND_PROVIDER_NOT_STRIPE':
-    case 'REFUND_ORDER_NOT_PAID':
-      return t('errors.refundNotAvailable');
-    case 'REFUND_MISSING_PSP_TARGET':
+    case 'CANCEL_DISABLED':
+      return t('errors.cancelPaymentDisabled');
+    case 'CANCEL_PROVIDER_NOT_MONOBANK':
+    case 'CANCEL_NOT_ALLOWED':
+      return t('errors.cancelPaymentNotAvailable');
+    case 'CANCEL_MISSING_PROVIDER_REF':
       return t('errors.missingPaymentReference');
-    case 'REFUND_ORDER_MONEY_INVALID':
-      return t('errors.invalidAmount');
+    case 'CANCEL_IN_PROGRESS':
+      return t('errors.cancelPaymentInProgress');
     case 'PSP_UNAVAILABLE':
       return t('errors.providerUnavailable');
     case 'ADMIN_API_DISABLED':
@@ -35,19 +40,19 @@ function mapRefundError(code: string, t: (key: string) => string): string {
   }
 }
 
-export function RefundButton({ orderId, disabled, csrfToken }: Props) {
+export function CancelPaymentButton({ orderId, disabled, csrfToken }: Props) {
   const router = useRouter();
   const t = useTranslations('shop.orders.detail.paymentControls');
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const errorId = useId();
 
-  async function onRefund() {
+  async function onCancelPayment() {
     setError(null);
 
     let res: Response;
     try {
-      res = await fetch(`/api/shop/admin/orders/${orderId}/refund`, {
+      res = await fetch(`/api/shop/admin/orders/${orderId}/cancel-payment`, {
         method: 'POST',
         credentials: 'same-origin',
         headers: {
@@ -58,7 +63,7 @@ export function RefundButton({ orderId, disabled, csrfToken }: Props) {
     } catch (err) {
       const msg =
         err instanceof Error && err.message ? err.message : 'NETWORK_ERROR';
-      setError(mapRefundError(msg, t));
+      setError(mapCancelPaymentError(msg, t));
       return;
     }
 
@@ -71,7 +76,10 @@ export function RefundButton({ orderId, disabled, csrfToken }: Props) {
 
     if (!res.ok) {
       setError(
-        mapRefundError(json?.error ?? json?.code ?? `HTTP_${res.status}`, t)
+        mapCancelPaymentError(
+          json?.code ?? json?.message ?? `HTTP_${res.status}`,
+          t
+        )
       );
       return;
     }
@@ -87,14 +95,14 @@ export function RefundButton({ orderId, disabled, csrfToken }: Props) {
     <div className="space-y-2">
       <button
         type="button"
-        onClick={onRefund}
+        onClick={onCancelPayment}
         disabled={isDisabled}
         aria-busy={isPending}
         aria-describedby={error ? errorId : undefined}
-        className="w-full rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-left text-sm font-medium text-amber-100 transition-colors hover:bg-amber-500/10 disabled:cursor-not-allowed disabled:opacity-50"
-        title={disabled ? t('onlyForPaidStripe') : undefined}
+        className="w-full rounded-lg border border-sky-500/30 bg-sky-500/5 px-3 py-2 text-left text-sm font-medium text-sky-100 transition-colors hover:bg-sky-500/10 disabled:cursor-not-allowed disabled:opacity-50"
+        title={disabled ? t('onlyForUnpaidMonobank') : undefined}
       >
-        {isPending ? t('refunding') : t('refund')}
+        {isPending ? t('cancelingPayment') : t('cancelUnpaidPayment')}
       </button>
 
       {error ? (

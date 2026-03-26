@@ -829,8 +829,9 @@
         "orderSummary": "Podsumowanie zamówienia",
           "customerSummary": "Podsumowanie klienta",
           "lifecycle": {
-            "heading": "Akcje cyklu życia",
-            "subtitle": "Kontrolowane akcje administratora dla potwierdzania, anulowania i zamykania zamówienia.",
+            "eyebrow": "Stan zamówienia",
+            "heading": "Aktualizacja statusu",
+            "subtitle": "Używaj tych akcji, gdy trzeba bezpiecznie przesunąć zamówienie do następnego etapu.",
             "confirm": "Potwierdź",
             "cancel": "Anuluj",
             "complete": "Zakończ",
@@ -844,6 +845,54 @@
               "invalidPayload": "Nieprawidłowe żądanie lifecycle.",
               "internalError": "Nie udało się wykonać akcji lifecycle. Spróbuj ponownie.",
               "generic": "Akcja lifecycle nie jest dostępna w bieżącym stanie."
+            }
+          },
+          "actions": {
+            "heading": "Akcje administratora",
+            "subtitle": "Wybierz następny bezpieczny krok dla tego zamówienia. Pokazujemy tylko działania pasujące do bieżącego stanu.",
+            "empty": "Brak dostępnych akcji administratora dla bieżącego stanu."
+          },
+          "shippingControls": {
+            "eyebrow": "Wysyłka",
+            "heading": "Obsługa przesyłki",
+            "subtitle": "Odzyskuj lub przesuwaj dostawę tylko wtedy, gdy przesyłka jest już do tego gotowa.",
+            "recoverInitialShipment": "Odzyskaj przesyłkę",
+            "retryLabelCreation": "Ponów etykietę",
+            "markShipped": "Oznacz jako wysłane",
+            "markDelivered": "Oznacz jako dostarczone",
+            "errors": {
+              "network": "Nie udało się wysłać akcji wysyłki. Spróbuj ponownie.",
+              "security": "Weryfikacja bezpieczeństwa nie powiodła się. Odśwież stronę i spróbuj ponownie.",
+              "recoverNotAvailable": "Odzyskanie przesyłki nie jest już dostępne dla tego zamówienia.",
+              "shipmentMissing": "Nie ma jeszcze rekordu przesyłki, który można zaktualizować.",
+              "retryNotAvailable": "Ponowienie etykiety nie jest teraz dostępne dla tego stanu przesyłki.",
+              "transitionNotAvailable": "Ten krok wysyłki nie jest już dostępny dla bieżącego stanu zamówienia.",
+              "adminDisabled": "Akcje wysyłki administratora są obecnie niedostępne.",
+              "generic": "Nie udało się wykonać akcji wysyłki. Odśwież zamówienie i spróbuj ponownie."
+            }
+          },
+          "paymentControls": {
+            "eyebrow": "Płatność",
+            "heading": "Obsługa płatności",
+            "subtitle": "Używaj narzędzi płatniczych tylko wtedy, gdy zamówienie wymaga finansowej obsługi.",
+            "refund": "Zwróć płatność",
+            "refunding": "Zwrot płatności…",
+            "onlyForPaidStripe": "Zwrot jest dostępny tylko dla opłaconych zamówień Stripe",
+            "cancelUnpaidPayment": "Anuluj nieopłaconą płatność",
+            "cancelingPayment": "Anulowanie płatności…",
+            "onlyForUnpaidMonobank": "Ta akcja jest dostępna tylko dla nieopłaconych zamówień Monobank",
+            "errors": {
+              "network": "Nie udało się wysłać akcji płatności. Spróbuj ponownie.",
+              "security": "Weryfikacja bezpieczeństwa nie powiodła się. Odśwież stronę i spróbuj ponownie.",
+              "refundNotAvailable": "Zwrot nie jest już dostępny dla tego zamówienia.",
+              "cancelPaymentDisabled": "Anulowanie płatności jest obecnie niedostępne.",
+              "cancelPaymentNotAvailable": "Anulowanie nieopłaconej płatności nie jest już dostępne dla tego zamówienia.",
+              "cancelPaymentInProgress": "Anulowanie płatności jest już przetwarzane. Odśwież stronę za chwilę.",
+              "missingPaymentReference": "Brakuje identyfikatora płatności u dostawcy, więc tej akcji nie da się wykonać automatycznie.",
+              "invalidAmount": "Dane kwoty zamówienia są niepełne, więc automatyczny zwrot nie może wystartować.",
+              "providerUnavailable": "Dostawca płatności jest chwilowo niedostępny. Spróbuj później.",
+              "adminDisabled": "Akcje płatności administratora są obecnie niedostępne.",
+              "generic": "Nie udało się wykonać akcji płatności. Odśwież zamówienie i spróbuj ponownie."
             }
           },
           "customerAccount": "Konto klienta",

@@ -2,10 +2,7 @@ import { createElement, type ReactNode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type {
-  AdminOrderDetail,
-  AdminOrderHistoryEntry,
-} from '@/db/queries/shop/admin-orders';
+import type { AdminOrderDetail } from '@/db/queries/shop/admin-orders';
 
 const getAdminOrderDetailMock = vi.hoisted(() => vi.fn());
 const getAdminOrderTimelineMock = vi.hoisted(() => vi.fn());
@@ -27,16 +24,7 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('next-intl/server', () => ({
-  getTranslations: vi.fn(
-    async () =>
-      (key: string, values?: Record<string, string | number | Date>) => {
-        if (!values) return key;
-
-        return `${key}:${Object.entries(values)
-          .map(([name, value]) => `${name}=${String(value)}`)
-          .join(',')}`;
-      }
-  ),
+  getTranslations: vi.fn(async () => (key: string) => key),
 }));
 
 vi.mock('@/lib/auth', () => ({
@@ -61,24 +49,41 @@ vi.mock('@/i18n/routing', () => ({
 }));
 
 vi.mock('@/app/[locale]/admin/shop/orders/[id]/ShippingActions', () => ({
-  ShippingActions: () =>
+  ShippingActions: ({
+    orderId,
+    shippingStatus,
+    shipmentStatus,
+  }: {
+    orderId: string;
+    shippingStatus: string | null;
+    shipmentStatus: string | null;
+  }) =>
     createElement(
       'div',
-      { 'data-testid': 'shipping-actions' },
+      {
+        'data-testid': 'shipping-actions',
+        'data-order-id': orderId,
+        'data-shipping-status': shippingStatus ?? '',
+        'data-shipment-status': shipmentStatus ?? '',
+      },
       'shipping-actions'
     ),
 }));
 
 vi.mock('@/app/[locale]/admin/shop/orders/[id]/RefundButton', () => ({
-  RefundButton: () =>
-    createElement('div', { 'data-testid': 'refund-button' }, 'refund-button'),
+  RefundButton: ({ orderId }: { orderId: string }) =>
+    createElement(
+      'div',
+      { 'data-testid': 'refund-button', 'data-order-id': orderId },
+      'refund-button'
+    ),
 }));
 
 vi.mock('@/app/[locale]/admin/shop/orders/[id]/CancelPaymentButton', () => ({
-  CancelPaymentButton: () =>
+  CancelPaymentButton: ({ orderId }: { orderId: string }) =>
     createElement(
       'div',
-      { 'data-testid': 'cancel-payment-button' },
+      { 'data-testid': 'cancel-payment-button', 'data-order-id': orderId },
       'cancel-payment-button'
     ),
 }));
@@ -136,7 +141,20 @@ function baseOrderDetail(
   };
 }
 
-describe('admin order detail history timeline', () => {
+async function renderOrder(overrides?: Partial<AdminOrderDetail>) {
+  getAdminOrderDetailMock.mockResolvedValue(baseOrderDetail(overrides));
+
+  return renderToStaticMarkup(
+    await OrderDetailPage({
+      params: Promise.resolve({
+        locale: 'en',
+        id: '550e8400-e29b-41d4-a716-446655440000',
+      }),
+    })
+  );
+}
+
+describe('admin order detail operational actions', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.CSRF_SECRET = 'test_csrf_secret_for_admin_order_detail';
@@ -144,81 +162,57 @@ describe('admin order detail history timeline', () => {
       id: 'admin-1',
       role: 'admin',
     });
-    getAdminOrderDetailMock.mockResolvedValue(baseOrderDetail());
-  });
-
-  it('renders timeline when order-scoped history exists', async () => {
-    const history: AdminOrderHistoryEntry[] = [
-      {
-        id: 'entry-newer',
-        source: 'audit',
-        action: 'complete',
-        occurredAt: new Date('2026-03-12T08:00:00.000Z'),
-        actorUserId: 'admin-2',
-        actorName: 'Olha Admin',
-        actorEmail: 'olha@example.com',
-        requestId: 'req-newer',
-        fromShippingStatus: 'shipped',
-        toShippingStatus: 'delivered',
-        fromShipmentStatus: 'succeeded',
-      },
-      {
-        id: 'entry-older',
-        source: 'legacy',
-        action: 'mark_shipped',
-        occurredAt: new Date('2026-03-11T08:00:00.000Z'),
-        actorUserId: null,
-        actorName: null,
-        actorEmail: null,
-        requestId: 'req-older',
-        fromShippingStatus: 'label_created',
-        toShippingStatus: 'shipped',
-        fromShipmentStatus: 'succeeded',
-      },
-    ];
-    getAdminOrderTimelineMock.mockResolvedValue(history);
-
-    const html = renderToStaticMarkup(
-      await OrderDetailPage({
-        params: Promise.resolve({
-          locale: 'en',
-          id: '550e8400-e29b-41d4-a716-446655440000',
-        }),
-      })
-    );
-
-    expect(html).toContain('history.heading');
-    expect(html).toContain('history.actions.complete');
-    expect(html).toContain('history.actions.markShipped');
-    expect(html).toContain('Olha Admin');
-    expect(html).toContain('olha@example.com');
-    expect(html).toContain(
-      'history.shippingTransition:from=shipped,to=delivered'
-    );
-    expect(html).toContain('history.shipmentState:status=succeeded');
-    expect(html).toContain('history.requestId:requestId=req-newer');
-    expect(html).toContain('history.legacySource');
-    expect(html.indexOf('history.actions.complete')).toBeLessThan(
-      html.indexOf('history.actions.markShipped')
-    );
-  });
-
-  it('renders empty history state safely', async () => {
     getAdminOrderTimelineMock.mockResolvedValue([]);
+  });
 
-    const html = renderToStaticMarkup(
-      await OrderDetailPage({
-        params: Promise.resolve({
-          locale: 'en',
-          id: '550e8400-e29b-41d4-a716-446655440000',
-        }),
-      })
-    );
+  it('renders existing shipping and refund controls for eligible Stripe orders', async () => {
+    const html = await renderOrder();
 
-    expect(html).toContain('history.heading');
-    expect(html).toContain('history.empty');
-    expect(html).not.toContain('history.actions.markShipped');
-    expect(html).not.toContain('undefined');
-    expect(html).not.toContain('null');
+    expect(html).toContain('actions.heading');
+    expect(html).toContain('shippingControls.heading');
+    expect(html).toContain('paymentControls.heading');
+    expect(html).toContain('shipping-actions');
+    expect(html).toContain('refund-button');
+    expect(html).not.toContain('cancel-payment-button');
+    expect(html).not.toContain('lifecycle.complete');
+  });
+
+  it('renders cancel-payment control and suppresses duplicate generic cancel for Monobank unpaid orders', async () => {
+    const html = await renderOrder({
+      status: 'CREATED',
+      paymentProvider: 'monobank',
+      paymentStatus: 'pending',
+      shippingRequired: false,
+      shippingProvider: null,
+      shippingMethodCode: null,
+      shippingStatus: null,
+      shipmentStatus: null,
+      paymentIntentId: null,
+    });
+
+    expect(html).toContain('paymentControls.heading');
+    expect(html).toContain('cancel-payment-button');
+    expect(html).not.toContain('refund-button');
+    expect(html).not.toContain('shipping-actions');
+    expect(html).not.toContain('lifecycle.cancel');
+  });
+
+  it('renders confirm as a lifecycle action when it is the only eligible operational action', async () => {
+    const html = await renderOrder({
+      status: 'INVENTORY_RESERVED',
+      paymentProvider: 'monobank',
+      paymentStatus: 'paid',
+      shippingRequired: false,
+      shippingProvider: null,
+      shippingMethodCode: null,
+      shippingStatus: null,
+      shipmentStatus: null,
+    });
+
+    expect(html).toContain('lifecycle.heading');
+    expect(html).toContain('lifecycle.confirm');
+    expect(html).not.toContain('shipping-actions');
+    expect(html).not.toContain('refund-button');
+    expect(html).not.toContain('cancel-payment-button');
   });
 });
