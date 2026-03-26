@@ -76,7 +76,7 @@ export default async function EditProductPage({
   const csrfToken = issueCsrfToken('admin:products:update');
 
   return (
-    <main className="mx-auto max-w-5xl px-6 py-8">
+    <main className="mx-auto max-w-6xl px-6 py-8">
       <div className="mb-6">
         <Link
           href="/admin/shop/products"
