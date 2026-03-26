@@ -862,15 +862,32 @@
         "shippingProviders": {
           "novaPoshta": "Nova Poshta"
         },
-        "shippingMethods": {
-          "novaPoshtaWarehouse": "Oddział Nova Poshta",
-          "novaPoshtaLocker": "Automat Nova Poshta",
-          "novaPoshtaCourier": "Kurier Nova Poshta"
-        },
-        "fulfillmentStages": {
-          "processing": "Przetwarzanie",
-          "packed": "Spakowane",
-          "shipped": "Wysłane",
+          "shippingMethods": {
+            "novaPoshtaWarehouse": "Oddział Nova Poshta",
+            "novaPoshtaLocker": "Automat Nova Poshta",
+            "novaPoshtaCourier": "Kurier Nova Poshta"
+          },
+          "history": {
+            "heading": "Historia",
+            "subtitle": "Działania administratora i przejścia statusów dla tego zamówienia.",
+            "empty": "Brak historii zamówienia.",
+            "adminUser": "Administrator",
+            "system": "System",
+            "legacySource": "Historia legacy",
+            "shippingTransition": "Dostawa: {from} -> {to}",
+            "shipmentState": "Status przesyłki: {status}",
+            "requestId": "Żądanie: {requestId}",
+            "actions": {
+              "recoverInitialShipment": "Odzyskano początkową przesyłkę",
+              "retryLabelCreation": "Ponowiono utworzenie etykiety",
+              "markShipped": "Oznaczono jako wysłane",
+              "markDelivered": "Oznaczono jako dostarczone"
+            }
+          },
+          "fulfillmentStages": {
+            "processing": "Przetwarzanie",
+            "packed": "Spakowane",
+            "shipped": "Wysłane",
           "delivered": "Dostarczone",
           "canceled": "Anulowane",
           "returned": "Zwrócone"

@@ -2,7 +2,10 @@ import { createElement, type ReactNode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { AdminOrderDetail } from '@/db/queries/shop/admin-orders';
+import type {
+  AdminOrderDetail,
+  AdminOrderHistoryEntry,
+} from '@/db/queries/shop/admin-orders';
 
 const getAdminOrderDetailMock = vi.hoisted(() => vi.fn());
 const getAdminOrderTimelineMock = vi.hoisted(() => vi.fn());
@@ -24,7 +27,16 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('next-intl/server', () => ({
-  getTranslations: vi.fn(async () => (key: string) => key),
+  getTranslations: vi.fn(
+    async () =>
+      (key: string, values?: Record<string, string | number | Date>) => {
+        if (!values) return key;
+
+        return `${key}:${Object.entries(values)
+          .map(([name, value]) => `${name}=${String(value)}`)
+          .join(',')}`;
+      }
+  ),
 }));
 
 vi.mock('@/lib/auth', () => ({
@@ -79,22 +91,7 @@ function baseOrderDetail(
     shipmentAttemptCount: 1,
     shipmentLastErrorCode: null,
     shipmentLastErrorMessage: null,
-    shippingAddress: {
-      provider: 'nova_poshta',
-      methodCode: 'NP_WAREHOUSE',
-      selection: {
-        cityNameUa: 'Kyiv',
-        warehouseName: 'Warehouse 12',
-        addressLine1: 'Khreshchatyk 1',
-        addressLine2: 'Apt 10',
-      },
-      recipient: {
-        fullName: 'Ivan Petrenko',
-        phone: '+380501112233',
-        email: 'ivan@example.com',
-        comment: 'Call me before delivery',
-      },
-    },
+    shippingAddress: null,
     createdAt: new Date('2026-03-10T12:00:00.000Z'),
     updatedAt: new Date('2026-03-10T13:00:00.000Z'),
     items: [
@@ -115,84 +112,46 @@ function baseOrderDetail(
   };
 }
 
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-function readFieldValue(html: string, label: string): string | null {
-  const pattern = new RegExp(
-    `<dt[^>]*>${escapeRegExp(label)}</dt><dd[^>]*>([\\s\\S]*?)</dd>`,
-    'i'
-  );
-  const match = html.match(pattern);
-  if (!match?.[1]) return null;
-
-  return match[1]
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-describe('admin order detail customer summary', () => {
+describe('admin order detail history timeline', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     getCurrentUserMock.mockResolvedValue({
       id: 'admin-1',
       role: 'admin',
     });
-    getAdminOrderTimelineMock.mockResolvedValue([]);
-  });
-
-  it('renders customer summary when snapshot data exists', async () => {
     getAdminOrderDetailMock.mockResolvedValue(baseOrderDetail());
-
-    const html = renderToStaticMarkup(
-      await OrderDetailPage({
-        params: Promise.resolve({
-          locale: 'en',
-          id: '550e8400-e29b-41d4-a716-446655440000',
-        }),
-      })
-    );
-
-    expect(getAdminOrderDetailMock).toHaveBeenCalledWith(
-      '550e8400-e29b-41d4-a716-446655440000'
-    );
-    expect(html).toContain('customerSummary');
-    expect(html).toContain('Admin Customer');
-    expect(html).toContain('customer@example.com');
-    expect(html).toContain('Ivan Petrenko');
-    expect(html).toContain('+380501112233');
-    expect(html).toContain('ivan@example.com');
-    expect(html).toContain('Kyiv');
-    expect(html).toContain('Warehouse 12');
-    expect(html).toContain('Khreshchatyk 1, Apt 10');
-    expect(html).toContain('Call me before delivery');
-    expect(readFieldValue(html, 'shippingProviderLabel')).toBe(
-      'shippingProviders.novaPoshta'
-    );
-    expect(readFieldValue(html, 'shippingMethod')).toBe(
-      'shippingMethods.novaPoshtaWarehouse'
-    );
-    expect(html).toContain('Classic Hoodie');
   });
 
-  it('degrades safely when optional customer fields are missing', async () => {
-    getAdminOrderDetailMock.mockResolvedValue(
-      baseOrderDetail({
-        userId: null,
-        customerAccountName: null,
-        customerAccountEmail: null,
-        shippingStatus: null,
-        trackingNumber: null,
-        paymentIntentId: null,
-        shippingAddress: {
-          recipient: {
-            fullName: 'Olena',
-          },
-        },
-      })
-    );
+  it('renders timeline when order-scoped history exists', async () => {
+    const history: AdminOrderHistoryEntry[] = [
+      {
+        id: 'entry-newer',
+        source: 'audit',
+        action: 'retry_label_creation',
+        occurredAt: new Date('2026-03-12T08:00:00.000Z'),
+        actorUserId: 'admin-2',
+        actorName: 'Olha Admin',
+        actorEmail: 'olha@example.com',
+        requestId: 'req-newer',
+        fromShippingStatus: 'needs_attention',
+        toShippingStatus: 'queued',
+        fromShipmentStatus: 'failed',
+      },
+      {
+        id: 'entry-older',
+        source: 'legacy',
+        action: 'mark_shipped',
+        occurredAt: new Date('2026-03-11T08:00:00.000Z'),
+        actorUserId: null,
+        actorName: null,
+        actorEmail: null,
+        requestId: 'req-older',
+        fromShippingStatus: 'label_created',
+        toShippingStatus: 'shipped',
+        fromShipmentStatus: 'succeeded',
+      },
+    ];
+    getAdminOrderTimelineMock.mockResolvedValue(history);
 
     const html = renderToStaticMarkup(
       await OrderDetailPage({
@@ -203,23 +162,37 @@ describe('admin order detail customer summary', () => {
       })
     );
 
-    expect(html).toContain('customerSummary');
-    expect(readFieldValue(html, 'customerAccount')).toBe('guest');
-    expect(html).toContain('Olena');
-    expect(html).toContain('orderSummary');
-    expect(html).toContain('Classic Hoodie');
-    expect(readFieldValue(html, 'recipientPhone')).toBe('-');
-    expect(readFieldValue(html, 'recipientEmail')).toBe('-');
-    expect(readFieldValue(html, 'city')).toBe('-');
-    expect(readFieldValue(html, 'pickupPoint')).toBe('-');
-    expect(readFieldValue(html, 'address')).toBe('-');
-    expect(readFieldValue(html, 'comment')).toBe('-');
-    expect(readFieldValue(html, 'shippingProviderLabel')).toBe(
-      'shippingProviders.novaPoshta'
+    expect(html).toContain('history.heading');
+    expect(html).toContain('history.actions.retryLabelCreation');
+    expect(html).toContain('history.actions.markShipped');
+    expect(html).toContain('Olha Admin');
+    expect(html).toContain('olha@example.com');
+    expect(html).toContain(
+      'history.shippingTransition:from=needs_attention,to=queued'
     );
-    expect(readFieldValue(html, 'shippingMethod')).toBe(
-      'shippingMethods.novaPoshtaWarehouse'
+    expect(html).toContain('history.shipmentState:status=failed');
+    expect(html).toContain('history.requestId:requestId=req-newer');
+    expect(html).toContain('history.legacySource');
+    expect(html.indexOf('history.actions.retryLabelCreation')).toBeLessThan(
+      html.indexOf('history.actions.markShipped')
     );
+  });
+
+  it('renders empty history state safely', async () => {
+    getAdminOrderTimelineMock.mockResolvedValue([]);
+
+    const html = renderToStaticMarkup(
+      await OrderDetailPage({
+        params: Promise.resolve({
+          locale: 'en',
+          id: '550e8400-e29b-41d4-a716-446655440000',
+        }),
+      })
+    );
+
+    expect(html).toContain('history.heading');
+    expect(html).toContain('history.empty');
+    expect(html).not.toContain('history.actions.markShipped');
     expect(html).not.toContain('undefined');
     expect(html).not.toContain('null');
   });

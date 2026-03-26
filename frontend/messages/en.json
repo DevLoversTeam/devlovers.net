@@ -862,15 +862,32 @@
         "shippingProviders": {
           "novaPoshta": "Nova Poshta"
         },
-        "shippingMethods": {
-          "novaPoshtaWarehouse": "Nova Poshta warehouse",
-          "novaPoshtaLocker": "Nova Poshta parcel locker",
-          "novaPoshtaCourier": "Nova Poshta courier"
-        },
-        "fulfillmentStages": {
-          "processing": "Processing",
-          "packed": "Packed",
-          "shipped": "Shipped",
+          "shippingMethods": {
+            "novaPoshtaWarehouse": "Nova Poshta warehouse",
+            "novaPoshtaLocker": "Nova Poshta parcel locker",
+            "novaPoshtaCourier": "Nova Poshta courier"
+          },
+          "history": {
+            "heading": "History",
+            "subtitle": "Order-scoped admin activity and status transitions.",
+            "empty": "No order history yet.",
+            "adminUser": "Admin user",
+            "system": "System",
+            "legacySource": "Legacy history",
+            "shippingTransition": "Shipping: {from} -> {to}",
+            "shipmentState": "Shipment state: {status}",
+            "requestId": "Request: {requestId}",
+            "actions": {
+              "recoverInitialShipment": "Recovered initial shipment",
+              "retryLabelCreation": "Retried label creation",
+              "markShipped": "Marked as shipped",
+              "markDelivered": "Marked as delivered"
+            }
+          },
+          "fulfillmentStages": {
+            "processing": "Processing",
+            "packed": "Packed",
+            "shipped": "Shipped",
           "delivered": "Delivered",
           "canceled": "Canceled",
           "returned": "Returned"

@@ -6,7 +6,9 @@ import { getTranslations } from 'next-intl/server';
 
 import {
   type AdminOrderDetail,
+  type AdminOrderHistoryEntry,
   getAdminOrderDetail,
+  getAdminOrderTimeline,
 } from '@/db/queries/shop/admin-orders';
 import { Link } from '@/i18n/routing';
 import { getCurrentUser } from '@/lib/auth';
@@ -175,6 +177,54 @@ function humanizeShippingMethod(
   }
 }
 
+function historyActionLabel(
+  action: AdminOrderHistoryEntry['action'],
+  t: (key: string, values?: Record<string, string | number | Date>) => string
+): string {
+  switch (action) {
+    case 'recover_initial_shipment':
+      return t('history.actions.recoverInitialShipment');
+    case 'retry_label_creation':
+      return t('history.actions.retryLabelCreation');
+    case 'mark_shipped':
+      return t('history.actions.markShipped');
+    case 'mark_delivered':
+      return t('history.actions.markDelivered');
+    default:
+      return action;
+  }
+}
+
+function renderHistoryActor(
+  entry: AdminOrderHistoryEntry,
+  t: (key: string, values?: Record<string, string | number | Date>) => string
+) {
+  if (entry.actorEmail) {
+    return (
+      <div className="min-w-0">
+        <div className="truncate font-medium">
+          {entry.actorName ?? entry.actorEmail}
+        </div>
+        {entry.actorName ? (
+          <div className="text-muted-foreground truncate text-xs">
+            {entry.actorEmail}
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
+  if (entry.actorName) {
+    return <span className="font-medium">{entry.actorName}</span>;
+  }
+
+  if (entry.actorUserId) {
+    return <span className="font-medium">{t('history.adminUser')}</span>;
+  }
+
+  return <span className="font-medium">{t('history.system')}</span>;
+}
+
 export default async function OrderDetailPage({
   params,
 }: {
@@ -198,9 +248,13 @@ export default async function OrderDetailPage({
   if (user.role !== 'admin') notFound();
 
   let order: AdminOrderDetail | null;
+  let history: AdminOrderHistoryEntry[];
 
   try {
-    order = await getAdminOrderDetail(parsed.data.id);
+    [order, history] = await Promise.all([
+      getAdminOrderDetail(parsed.data.id),
+      getAdminOrderTimeline(parsed.data.id),
+    ]);
   } catch (error) {
     logError('Admin order detail page failed', error);
     throw new Error('ORDER_DETAIL_LOAD_FAILED');
@@ -394,7 +448,7 @@ export default async function OrderDetailPage({
                           customerSummary.accountEmail}
                       </div>
                       {customerSummary.accountName ? (
-                        <div className="text-muted-foreground break-all text-xs">
+                        <div className="text-muted-foreground text-xs break-all">
                           {customerSummary.accountEmail}
                         </div>
                       ) : null}
@@ -479,6 +533,103 @@ export default async function OrderDetailPage({
           </dl>
         </section>
       </div>
+
+      <section
+        className="border-border bg-background/80 mb-6 rounded-xl border shadow-sm"
+        aria-labelledby="order-history-heading"
+      >
+        <div className="border-border border-b p-4">
+          <h2
+            id="order-history-heading"
+            className="text-foreground text-lg font-semibold"
+          >
+            {t('history.heading')}
+          </h2>
+          <p className="text-muted-foreground mt-1 text-sm">
+            {t('history.subtitle')}
+          </p>
+        </div>
+
+        {history.length === 0 ? (
+          <div className="p-4">
+            <div className="border-border text-muted-foreground rounded-lg border border-dashed px-4 py-6 text-sm">
+              {t('history.empty')}
+            </div>
+          </div>
+        ) : (
+          <ol
+            className="divide-border divide-y"
+            aria-label={t('history.heading')}
+          >
+            {history.map(entry => {
+              const occurredAtLabel = safeFormatDateTime(entry.occurredAt, dtf);
+              const hasTransition =
+                entry.fromShippingStatus || entry.toShippingStatus;
+
+              return (
+                <li key={entry.id} className="p-4">
+                  <div className="flex gap-3">
+                    <div
+                      className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-400"
+                      aria-hidden="true"
+                    />
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium">
+                            {historyActionLabel(entry.action, t)}
+                          </div>
+                          <div className="text-muted-foreground text-xs">
+                            {occurredAtLabel}
+                          </div>
+                        </div>
+
+                        <div className="min-w-0 text-right text-sm">
+                          {renderHistoryActor(entry, t)}
+                        </div>
+                      </div>
+
+                      <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                        {hasTransition ? (
+                          <span className="border-border text-muted-foreground rounded-full border px-2 py-1">
+                            {t('history.shippingTransition', {
+                              from: entry.fromShippingStatus ?? DASH,
+                              to: entry.toShippingStatus ?? DASH,
+                            })}
+                          </span>
+                        ) : null}
+
+                        {entry.fromShipmentStatus ? (
+                          <span className="border-border text-muted-foreground rounded-full border px-2 py-1">
+                            {t('history.shipmentState', {
+                              status: entry.fromShipmentStatus,
+                            })}
+                          </span>
+                        ) : null}
+
+                        {entry.requestId ? (
+                          <span className="border-border text-muted-foreground rounded-full border px-2 py-1 break-all">
+                            {t('history.requestId', {
+                              requestId: entry.requestId,
+                            })}
+                          </span>
+                        ) : null}
+
+                        {entry.source === 'legacy' ? (
+                          <span className="border-border text-muted-foreground rounded-full border px-2 py-1">
+                            {t('history.legacySource')}
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+        )}
+      </section>
 
       <section
         className="border-border bg-background/80 rounded-xl border shadow-sm"
