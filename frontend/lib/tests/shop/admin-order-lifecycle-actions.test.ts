@@ -9,6 +9,7 @@ import { applyAdminOrderLifecycleAction } from '@/lib/services/shop/admin-order-
 import { toDbMoney } from '@/lib/shop/money';
 
 const ADMIN_USER_ID = 'admin-1';
+type OrderInsertRow = typeof orders.$inferInsert;
 
 async function cleanup(orderId: string) {
   await db.delete(adminAuditLog).where(eq(adminAuditLog.orderId, orderId));
@@ -71,7 +72,7 @@ async function insertOrder(args: {
   stockRestored?: boolean;
   restockedAt?: Date | null;
 }) {
-  await db.insert(orders).values({
+  const orderRow: OrderInsertRow = {
     id: args.orderId,
     totalAmountMinor: 1000,
     totalAmount: toDbMoney(1000),
@@ -91,7 +92,9 @@ async function insertOrder(args: {
     stockRestored: args.stockRestored ?? false,
     restockedAt: args.restockedAt ?? null,
     idempotencyKey: crypto.randomUUID(),
-  } as any);
+  };
+
+  await db.insert(orders).values(orderRow);
 }
 
 describe.sequential('admin order lifecycle actions', () => {

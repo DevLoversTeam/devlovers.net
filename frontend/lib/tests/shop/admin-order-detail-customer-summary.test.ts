@@ -228,6 +228,10 @@ function readFieldValue(html: string, label: string): string | null {
     .trim();
 }
 
+function countOccurrences(html: string, value: string): number {
+  return html.split(value).length - 1;
+}
+
 describe('admin order detail customer summary', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -276,6 +280,7 @@ describe('admin order detail customer summary', () => {
     expect(readFieldValue(html, 'Shipping status')).toBe('Label created');
     expect(readFieldValue(html, 'Provider')).toBe('Stripe');
     expect(readFieldValue(html, 'Payment status')).toBe('Paid');
+    expect(countOccurrences(html, 'customer@example.com')).toBe(1);
     expect(html).toContain('Classic Hoodie');
   });
 
@@ -346,6 +351,30 @@ describe('admin order detail customer summary', () => {
 
     expect(readFieldValue(html, 'Customer account')).toBe('Named Account');
     expect(html).not.toContain('Account unavailable');
+    expect(html).not.toContain('customer@example.com');
+  });
+
+  it('renders account-email-only registered snapshots once without duplicate secondary line', async () => {
+    getAdminOrderDetailMock.mockResolvedValue(
+      baseOrderDetail({
+        customerAccountName: null,
+        customerAccountEmail: 'email-only@example.com',
+      })
+    );
+
+    const html = renderToStaticMarkup(
+      await OrderDetailPage({
+        params: Promise.resolve({
+          locale: 'en',
+          id: '550e8400-e29b-41d4-a716-446655440000',
+        }),
+      })
+    );
+
+    expect(readFieldValue(html, 'Customer account')).toBe(
+      'email-only@example.com'
+    );
+    expect(countOccurrences(html, 'email-only@example.com')).toBe(1);
   });
 
   it('falls back safely when registered account snapshots have neither name nor email', async () => {

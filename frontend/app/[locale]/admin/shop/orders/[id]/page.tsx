@@ -828,7 +828,8 @@ export default async function OrderDetailPage({
                         {customerSummary.accountName ??
                           customerSummary.accountEmail}
                       </div>
-                      {customerSummary.accountEmail ? (
+                      {customerSummary.accountName &&
+                      customerSummary.accountEmail ? (
                         <div className="text-muted-foreground text-xs break-all">
                           {customerSummary.accountEmail}
                         </div>
