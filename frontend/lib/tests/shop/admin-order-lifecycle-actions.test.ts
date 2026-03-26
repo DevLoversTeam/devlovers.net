@@ -28,7 +28,14 @@ async function ensureAdminUser() {
       role: 'admin',
       name: 'Admin 1',
     })
-    .onConflictDoNothing();
+    .onConflictDoUpdate({
+      target: users.id,
+      set: {
+        email: 'admin-1@example.test',
+        role: 'admin',
+        name: 'Admin 1',
+      },
+    });
 }
 
 async function insertOrder(args: {

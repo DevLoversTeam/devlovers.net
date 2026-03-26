@@ -166,7 +166,7 @@ function humanizeShippingProvider(
   t: (key: string) => string
 ): string {
   if (value === 'nova_poshta') return t('shippingProviders.novaPoshta');
-  return detailValue(value);
+  return humanizeCode(value);
 }
 
 function humanizeShippingMethod(
@@ -181,7 +181,7 @@ function humanizeShippingMethod(
     case 'NP_COURIER':
       return t('shippingMethods.novaPoshtaCourier');
     default:
-      return detailValue(value);
+      return humanizeCode(value);
   }
 }
 
@@ -191,6 +191,7 @@ function humanizeCode(value: string | null): string {
   return value
     .trim()
     .replace(/_/g, ' ')
+    .toLowerCase()
     .replace(/\b\w/g, char => char.toUpperCase());
 }
 
@@ -474,7 +475,7 @@ export default async function OrderDetailPage({
   const lifecycleErrorKey = lifecycleErrorMessageKey(lifecycleErrorCode);
   const visibleLifecycle = {
     confirm: enabled.confirm,
-    cancel: enabled.cancel && !paymentEnabled.cancelPayment,
+    cancel: enabled.cancel,
     complete: enabled.complete && !shippingEnabled.markDelivered,
   };
   const showLifecycleActions =
@@ -578,7 +579,7 @@ export default async function OrderDetailPage({
                       <input type="hidden" name="action" value="confirm" />
                       <button
                         type="submit"
-                        className="w-full rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-3 py-2 text-left text-sm font-medium text-emerald-100 transition-colors hover:bg-emerald-500/10"
+                        className="w-full rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-3 py-2 text-left text-sm font-medium text-emerald-700 transition-colors hover:bg-emerald-500/10 dark:text-emerald-100"
                       >
                         {t('lifecycle.confirm')}
                       </button>
@@ -598,7 +599,7 @@ export default async function OrderDetailPage({
                       <input type="hidden" name="action" value="cancel" />
                       <button
                         type="submit"
-                        className="w-full rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-left text-sm font-medium text-amber-100 transition-colors hover:bg-amber-500/10"
+                        className="w-full rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-left text-sm font-medium text-amber-700 transition-colors hover:bg-amber-500/10 dark:text-amber-100"
                       >
                         {t('lifecycle.cancel')}
                       </button>
@@ -618,7 +619,7 @@ export default async function OrderDetailPage({
                       <input type="hidden" name="action" value="complete" />
                       <button
                         type="submit"
-                        className="w-full rounded-lg border border-sky-500/30 bg-sky-500/5 px-3 py-2 text-left text-sm font-medium text-sky-100 transition-colors hover:bg-sky-500/10"
+                        className="w-full rounded-lg border border-sky-500/30 bg-sky-500/5 px-3 py-2 text-left text-sm font-medium text-sky-700 transition-colors hover:bg-sky-500/10 dark:text-sky-100"
                       >
                         {t('lifecycle.complete')}
                       </button>

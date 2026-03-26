@@ -3,7 +3,7 @@ import path from 'node:path';
 
 import { createElement, type ReactNode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import OrderDetailPage from '@/app/[locale]/admin/shop/orders/[id]/page';
 import type { AdminOrderDetail } from '@/db/queries/shop/admin-orders';
@@ -25,6 +25,7 @@ const i18nState = vi.hoisted(() => ({
   locale: 'en',
 }));
 const messagesRoot = path.join(process.cwd(), 'messages');
+const previousCsrfSecret = process.env.CSRF_SECRET;
 
 function readLocaleMessages(locale: 'en' | 'uk' | 'pl') {
   return JSON.parse(
@@ -244,6 +245,15 @@ describe('admin order detail customer summary', () => {
     getAdminOrderTimelineMock.mockResolvedValue([]);
   });
 
+  afterEach(() => {
+    if (typeof previousCsrfSecret === 'undefined') {
+      delete process.env.CSRF_SECRET;
+      return;
+    }
+
+    process.env.CSRF_SECRET = previousCsrfSecret;
+  });
+
   it('renders customer summary when snapshot data exists', async () => {
     getAdminOrderDetailMock.mockResolvedValue(baseOrderDetail());
 
@@ -375,6 +385,34 @@ describe('admin order detail customer summary', () => {
       'email-only@example.com'
     );
     expect(countOccurrences(html, 'email-only@example.com')).toBe(1);
+  });
+
+  it('humanizes unknown shipping provider and method values instead of rendering raw enum-style codes', async () => {
+    getAdminOrderDetailMock.mockResolvedValue(
+      baseOrderDetail({
+        shippingProvider: 'custom_provider',
+        shippingMethodCode: 'CUSTOM_PICKUP_POINT',
+        shippingAddress: {
+          provider: 'custom_provider',
+          methodCode: 'CUSTOM_PICKUP_POINT',
+          recipient: {
+            fullName: 'Ivan Petrenko',
+          },
+        },
+      })
+    );
+
+    const html = renderToStaticMarkup(
+      await OrderDetailPage({
+        params: Promise.resolve({
+          locale: 'en',
+          id: '550e8400-e29b-41d4-a716-446655440000',
+        }),
+      })
+    );
+
+    expect(readFieldValue(html, 'Shipping provider')).toBe('Custom Provider');
+    expect(readFieldValue(html, 'Shipping method')).toBe('Custom Pickup Point');
   });
 
   it('falls back safely when registered account snapshots have neither name nor email', async () => {
