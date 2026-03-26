@@ -1,7 +1,9 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import { z } from 'zod';
 
+import { Link } from '@/i18n/routing';
 import { ProductNotFoundError } from '@/lib/errors/products';
 import { issueCsrfToken } from '@/lib/security/csrf';
 import { getAdminProductByIdWithPrices } from '@/lib/services/products';
@@ -48,6 +50,7 @@ export default async function EditProductPage({
   }
 
   const prices = product.prices;
+  const t = await getTranslations('shop.admin.products');
 
   const initialPrices = prices.length
     ? prices
@@ -73,7 +76,20 @@ export default async function EditProductPage({
   const csrfToken = issueCsrfToken('admin:products:update');
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <main className="mx-auto max-w-5xl px-6 py-8">
+      <div className="mb-6">
+        <Link
+          href="/admin/shop/products"
+          className="text-muted-foreground hover:text-foreground text-sm transition-colors"
+        >
+          &larr; {t('backToList')}
+        </Link>
+      </div>
+
+      <h1 className="text-foreground mb-6 text-2xl font-bold">
+        {t('editProductHeading', { title: product.title })}
+      </h1>
+
       <ProductForm
         mode="edit"
         productId={product.id}

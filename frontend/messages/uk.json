@@ -528,29 +528,40 @@
       },
       "products": {
         "title": "Адмін · Товари",
+        "subtitle": "Керуйте позиціями каталогу, цінами та видимістю у магазині.",
         "newProduct": "Новий товар",
+        "backToList": "Назад до товарів",
+        "editProductHeading": "Редагування · {title}",
         "listCaption": "Список товарів",
         "empty": "Товарів поки немає.",
         "table": {
+          "product": "Товар",
           "title": "Назва",
           "slug": "Slug",
           "price": "Ціна",
           "category": "Категорія",
           "type": "Тип",
-          "stock": "Наявність",
+          "stock": "Запас",
           "badge": "Значок",
           "active": "Активний",
           "featured": "Рекомендований",
+          "status": "Статус",
+          "date": "Дата",
           "created": "Створено",
           "actions": "Дії"
         },
         "actions": {
-          "view": "Переглянути",
-          "edit": "Редагувати",
+          "view": "Відкрити",
+          "edit": "Змінити",
           "viewProduct": "Переглянути товар {title}",
           "editProduct": "Редагувати товар {title}",
           "yes": "Так",
           "no": "Ні"
+        },
+        "states": {
+          "active": "Активний",
+          "hidden": "Приховано",
+          "featured": "Вітрина"
         }
       },
       "statusToggle": {
@@ -558,8 +569,8 @@
         "securityExpired": "Токен безпеки прострочений. Оновіть сторінку та спробуйте ще раз.",
         "failedUpdate": "Не вдалося оновити статус",
         "updating": "Оновлення",
-        "deactivate": "Деактивувати",
-        "activate": "Активувати"
+        "deactivate": "Вимкнути",
+        "activate": "Увімкнути"
       },
       "pagination": {
         "label": "Пагінація",

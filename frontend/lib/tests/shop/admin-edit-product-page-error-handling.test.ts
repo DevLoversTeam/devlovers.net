@@ -26,6 +26,10 @@ vi.mock('@/app/[locale]/admin/shop/products/_components/ProductForm', () => ({
   ProductForm: () => null,
 }));
 
+vi.mock('@/i18n/routing', () => ({
+  Link: () => null,
+}));
+
 describe('admin edit product page error handling', () => {
   const validId = '550e8400-e29b-41d4-a716-446655440000';
 
