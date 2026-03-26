@@ -38,6 +38,7 @@ export type AdminOrderDetail = {
   userId: string | null;
   customerAccountName: string | null;
   customerAccountEmail: string | null;
+  status: string;
   totalAmountMinor: number;
   totalAmount: string;
   currency: CurrencyCode;
@@ -204,6 +205,10 @@ function normalizeHistoryAction(args: {
     return args.action.slice('shipping_admin_action.'.length);
   }
 
+  if (args.action.startsWith('order_admin_action.')) {
+    return args.action.slice('order_admin_action.'.length);
+  }
+
   return readString(args.payload.action) ?? args.action;
 }
 
@@ -326,6 +331,7 @@ export async function getAdminOrderDetail(
         userId: orders.userId,
         customerAccountName: users.name,
         customerAccountEmail: users.email,
+        status: orders.status,
         totalAmount: orders.totalAmount,
         totalAmountMinor: orders.totalAmountMinor,
         currency: orders.currency,
@@ -393,6 +399,7 @@ export async function getAdminOrderDetail(
     userId: base.userId,
     customerAccountName: base.customerAccountName,
     customerAccountEmail: base.customerAccountEmail,
+    status: base.status,
     totalAmountMinor: base.totalAmountMinor,
     fulfillmentStage,
     currency: base.currency,

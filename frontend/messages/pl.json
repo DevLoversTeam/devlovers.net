@@ -827,8 +827,26 @@
         "myOrders": "Moje zamówienia",
         "shop": "Sklep",
         "orderSummary": "Podsumowanie zamówienia",
-        "customerSummary": "Podsumowanie klienta",
-        "customerAccount": "Konto klienta",
+          "customerSummary": "Podsumowanie klienta",
+          "lifecycle": {
+            "heading": "Akcje cyklu życia",
+            "subtitle": "Kontrolowane akcje administratora dla potwierdzania, anulowania i zamykania zamówienia.",
+            "confirm": "Potwierdź",
+            "cancel": "Anuluj",
+            "complete": "Zakończ",
+            "errors": {
+              "confirmRequiresPaid": "Potwierdzić można tylko opłacone zamówienia.",
+              "confirmNotAllowed": "Nie można potwierdzić tego zamówienia w bieżącym stanie.",
+              "cancelRequiresRefund": "Dla opłaconych zamówień należy użyć zwrotu, a nie anulowania.",
+              "completeRequiresShipping": "Zakończyć można tylko zamówienia z wysyłką.",
+              "completeNotAllowed": "Nie można zakończyć tego zamówienia w bieżącym stanie.",
+              "csrfRejected": "Weryfikacja bezpieczeństwa nie powiodła się. Odśwież stronę i spróbuj ponownie.",
+              "invalidPayload": "Nieprawidłowe żądanie lifecycle.",
+              "internalError": "Nie udało się wykonać akcji lifecycle. Spróbuj ponownie.",
+              "generic": "Akcja lifecycle nie jest dostępna w bieżącym stanie."
+            }
+          },
+          "customerAccount": "Konto klienta",
         "accountUnavailable": "Zarejestrowane konto",
         "guest": "Zamówienie gościa",
         "total": "Razem",
@@ -878,6 +896,9 @@
             "shipmentState": "Status przesyłki: {status}",
             "requestId": "Żądanie: {requestId}",
             "actions": {
+              "confirm": "Potwierdzono zamówienie",
+              "cancel": "Anulowano zamówienie",
+              "complete": "Zakończono zamówienie",
               "recoverInitialShipment": "Odzyskano początkową przesyłkę",
               "retryLabelCreation": "Ponowiono utworzenie etykiety",
               "markShipped": "Oznaczono jako wysłane",

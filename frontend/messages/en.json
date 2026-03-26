@@ -827,8 +827,26 @@
         "myOrders": "My orders",
         "shop": "Shop",
         "orderSummary": "Order summary",
-        "customerSummary": "Customer summary",
-        "customerAccount": "Customer account",
+          "customerSummary": "Customer summary",
+          "lifecycle": {
+            "heading": "Lifecycle actions",
+            "subtitle": "Controlled admin actions for confirm, cancel, and complete.",
+            "confirm": "Confirm",
+            "cancel": "Cancel",
+            "complete": "Complete",
+            "errors": {
+              "confirmRequiresPaid": "Only paid orders can be confirmed.",
+              "confirmNotAllowed": "This order cannot be confirmed in its current state.",
+              "cancelRequiresRefund": "Paid orders must use refund flow instead of cancel.",
+              "completeRequiresShipping": "Only shippable orders can be completed.",
+              "completeNotAllowed": "This order cannot be completed in its current state.",
+              "csrfRejected": "Security validation failed. Refresh and try again.",
+              "invalidPayload": "Invalid lifecycle action request.",
+              "internalError": "Lifecycle action failed. Please try again.",
+              "generic": "Lifecycle action is not available in the current state."
+            }
+          },
+          "customerAccount": "Customer account",
         "accountUnavailable": "Registered account",
         "guest": "Guest checkout",
         "total": "Total",
@@ -878,6 +896,9 @@
             "shipmentState": "Shipment state: {status}",
             "requestId": "Request: {requestId}",
             "actions": {
+              "confirm": "Confirmed order",
+              "cancel": "Canceled order",
+              "complete": "Completed order",
               "recoverInitialShipment": "Recovered initial shipment",
               "retryLabelCreation": "Retried label creation",
               "markShipped": "Marked as shipped",

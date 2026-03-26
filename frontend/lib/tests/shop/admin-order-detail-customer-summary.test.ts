@@ -58,6 +58,7 @@ function baseOrderDetail(
     userId: 'user-123',
     customerAccountName: 'Admin Customer',
     customerAccountEmail: 'customer@example.com',
+    status: 'PAID',
     totalAmountMinor: 2599,
     totalAmount: '25.99',
     currency: 'USD',
@@ -136,6 +137,7 @@ function readFieldValue(html: string, label: string): string | null {
 describe('admin order detail customer summary', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    process.env.CSRF_SECRET = 'test_csrf_secret_for_admin_order_detail';
     getCurrentUserMock.mockResolvedValue({
       id: 'admin-1',
       role: 'admin',
@@ -159,6 +161,10 @@ describe('admin order detail customer summary', () => {
       '550e8400-e29b-41d4-a716-446655440000'
     );
     expect(html).toContain('customerSummary');
+    expect(html).toContain('lifecycle.heading');
+    expect(html).toContain('lifecycle.confirm');
+    expect(html).toContain('lifecycle.cancel');
+    expect(html).toContain('lifecycle.complete');
     expect(html).toContain('Admin Customer');
     expect(html).toContain('customer@example.com');
     expect(html).toContain('Ivan Petrenko');
