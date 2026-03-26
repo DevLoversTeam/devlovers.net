@@ -1,9 +1,103 @@
 {
-  "id": "3eb20842-8a99-4a84-b730-e128319cc8bb",
-  "prevId": "976fe687-2e8f-4415-80e3-25c1e299d87a",
+  "id": "f6bccceb-2735-4a19-8946-edf09cd07d0a",
+  "prevId": "3eb20842-8a99-4a84-b730-e128319cc8bb",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
+    "public.ai_learned_terms": {
+      "name": "ai_learned_terms",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "term": {
+          "name": "term",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "explanation_uk": {
+          "name": "explanation_uk",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "explanation_en": {
+          "name": "explanation_en",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "explanation_pl": {
+          "name": "explanation_pl",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_hidden": {
+          "name": "is_hidden",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "sort_order": {
+          "name": "sort_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "ai_learned_terms_user_id_users_id_fk": {
+          "name": "ai_learned_terms_user_id_users_id_fk",
+          "tableFrom": "ai_learned_terms",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "ai_learned_terms_user_term_uniq": {
+          "name": "ai_learned_terms_user_term_uniq",
+          "nullsNotDistinct": false,
+          "columns": [
+            "user_id",
+            "term"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.blog_author_translations": {
       "name": "blog_author_translations",
       "schema": "",

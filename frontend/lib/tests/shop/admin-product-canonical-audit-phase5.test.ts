@@ -1,6 +1,8 @@
 import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { WriteAdminAuditArgs } from '@/lib/services/shop/events/write-admin-audit';
+
 const adminUser = {
   id: 'admin_user_1',
   role: 'admin',
@@ -11,16 +13,27 @@ const mocks = vi.hoisted(() => ({
   requireAdminApi: vi.fn(async () => adminUser),
   requireAdminCsrf: vi.fn(() => null),
   parseAdminProductForm: vi.fn(),
+  parseAdminProductPhotosForm: vi.fn((formData: FormData) => ({
+    ok: true,
+    data: {
+      imagePlan: [{ uploadId: 'legacy-image', isPrimary: true }],
+      images: [
+        { uploadId: 'legacy-image', file: formData.get('image') as File },
+      ],
+    },
+  })),
   createProduct: vi.fn(),
   updateProduct: vi.fn(),
   deleteProduct: vi.fn(),
   toggleProductStatus: vi.fn(),
   getAdminProductByIdWithPrices: vi.fn(),
-  writeAdminAudit: vi.fn(async () => ({
-    inserted: true,
-    dedupeKey: 'admin_audit:v1:test',
-    id: 'audit_row_1',
-  })),
+  writeAdminAudit: vi.fn(
+    async (_args: WriteAdminAuditArgs, _options?: { db?: unknown }) => ({
+      inserted: true,
+      dedupeKey: 'admin_audit:v1:test',
+      id: 'audit_row_1',
+    })
+  ),
 }));
 
 vi.mock('@/lib/auth/admin', () => {
@@ -47,6 +60,7 @@ vi.mock('@/lib/security/admin-csrf', () => ({
 
 vi.mock('@/lib/admin/parseAdminProductForm', () => ({
   parseAdminProductForm: mocks.parseAdminProductForm,
+  parseAdminProductPhotosForm: mocks.parseAdminProductPhotosForm,
 }));
 
 vi.mock('@/lib/services/products', () => ({

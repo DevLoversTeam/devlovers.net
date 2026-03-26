@@ -1,14 +1,15 @@
 import { ArrowLeft } from 'lucide-react';
 import { Metadata } from 'next';
-import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { getMessages, getTranslations } from 'next-intl/server';
 
 import { AddToCartButton } from '@/components/shop/AddToCartButton';
-import { getPublicProductBySlug } from '@/db/queries/shop/products';
+import { ProductGallery } from '@/components/shop/ProductGallery';
 import { Link } from '@/i18n/routing';
-import { formatMoney, resolveCurrencyFromLocale } from '@/lib/shop/currency';
-import { getProductPageData } from '@/lib/shop/data';
+import { getStorefrontAvailabilityState } from '@/lib/shop/availability';
+import { formatMoney } from '@/lib/shop/currency';
+import { getProductGalleryImages, getProductPageData } from '@/lib/shop/data';
+import { getApparelSizeGuideForProduct } from '@/lib/shop/size-guide';
 import { SHOP_FOCUS, SHOP_NAV_LINK_BASE } from '@/lib/shop/ui-classes';
 import { cn } from '@/lib/utils';
 
@@ -27,26 +28,18 @@ export default async function ProductPage({
   const t = await getTranslations('shop.products');
   const tProduct = await getTranslations('shop.product');
 
-  const currency = resolveCurrencyFromLocale(locale);
-  const publicProduct = await getPublicProductBySlug(slug, currency);
-  if (!publicProduct) {
-    notFound();
-  }
-
   const result = await getProductPageData(slug, locale);
 
   if (result.kind === 'not_found') {
     notFound();
   }
-  const isUnavailable = result.kind === 'unavailable';
-  const resultProduct = (result as any).product ?? {};
 
-  const product = {
-    ...(publicProduct as any),
-    ...Object.fromEntries(
-      Object.entries(resultProduct).filter(([, v]) => v !== undefined)
-    ),
-  } as any;
+  const product = result.product;
+  const commerceProduct =
+    result.kind === 'available' ? result.commerceProduct : null;
+  const availabilityState = getStorefrontAvailabilityState(commerceProduct);
+  const sizeGuide = getApparelSizeGuideForProduct(commerceProduct, locale);
+  const galleryImages = getProductGalleryImages(product);
 
   const NAV_LINK = cn(
     SHOP_NAV_LINK_BASE,
@@ -77,40 +70,38 @@ export default async function ProductPage({
       </nav>
 
       <div className="mt-8 grid gap-8 lg:grid-cols-2 lg:gap-16">
-        <div className="bg-muted relative aspect-square overflow-hidden rounded-lg">
-          {badge && badge !== 'NONE' && (
-            <span
-              className={cn(
-                'absolute top-4 left-4 z-10 rounded px-2 py-1 text-xs font-semibold uppercase',
-                'bg-foreground text-background dark:bg-accent dark:text-accent-foreground'
-              )}
-            >
-              {badgeLabel}
-            </span>
-          )}
-
-          <Image
-            src={product.image || '/placeholder.svg'}
-            alt={product.name}
-            fill
-            className="object-cover"
-            sizes="(max-width: 1024px) 100vw, 50vw"
-            priority
-          />
-        </div>
+        <ProductGallery
+          key={product.id}
+          productName={product.name}
+          images={galleryImages}
+          badgeLabel={badgeLabel}
+        />
 
         <div className="flex flex-col">
           <h1 className="text-foreground text-3xl font-bold tracking-tight">
             {product.name}
           </h1>
 
-          {isUnavailable ? (
-            <div
-              className="border-border bg-muted/30 text-muted-foreground mt-4 rounded-md border p-4 text-sm"
-              role="status"
-              aria-live="polite"
-            >
-              {t('notAvailable')}
+          <div
+            className={cn(
+              'border-border bg-muted/30 mt-4 rounded-xl border px-4 py-3 text-sm leading-6',
+              availabilityState === 'available_to_order'
+                ? 'text-foreground'
+                : 'text-muted-foreground'
+            )}
+            role="status"
+            aria-live="polite"
+          >
+            {availabilityState === 'available_to_order'
+              ? tProduct('availability.availableToOrder')
+              : availabilityState === 'out_of_stock'
+                ? tProduct('availability.currentlyUnavailable')
+                : tProduct('availability.unavailableLocaleCurrency')}
+          </div>
+
+          {commerceProduct === null ? (
+            <div className="text-muted-foreground mt-3 text-sm">
+              {tProduct('availability.browseOtherProducts')}
             </div>
           ) : (
             <section
@@ -122,12 +113,20 @@ export default async function ProductPage({
                   badge === 'SALE' ? 'text-accent' : 'text-foreground'
                 }`}
               >
-                {formatMoney(product.price, product.currency, locale)}
+                {formatMoney(
+                  commerceProduct.price,
+                  commerceProduct.currency,
+                  locale
+                )}
               </span>
 
-              {product.originalPrice && (
+              {commerceProduct.originalPrice && (
                 <span className="text-muted-foreground text-lg line-through">
-                  {formatMoney(product.originalPrice, product.currency, locale)}
+                  {formatMoney(
+                    commerceProduct.originalPrice,
+                    commerceProduct.currency,
+                    locale
+                  )}
                 </span>
               )}
             </section>
@@ -146,11 +145,14 @@ export default async function ProductPage({
             );
           })()}
 
-          {!isUnavailable && (
+          {commerceProduct ? (
             <section aria-label="Purchase">
-              <AddToCartButton product={product} />
+              <AddToCartButton
+                product={commerceProduct}
+                sizeGuide={sizeGuide}
+              />
             </section>
-          )}
+          ) : null}
         </div>
       </div>
     </div>

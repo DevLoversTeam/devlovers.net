@@ -28,5 +28,5 @@ export async function toggleProductStatus(id: string): Promise<DbProduct> {
     throw new ProductNotFoundError(id);
   }
 
-  return mapRowToProduct(updated);
+  return await mapRowToProduct(updated);
 }

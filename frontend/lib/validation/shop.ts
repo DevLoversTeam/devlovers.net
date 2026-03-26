@@ -104,6 +104,94 @@ export const catalogFilterSchema = z
   })
   .strict();
 
+export const productImageSchema = z.object({
+  id: z.string(),
+  productId: z.string(),
+  imageUrl: z.string(),
+  imagePublicId: z
+    .string()
+    .nullish()
+    .transform(value => value ?? undefined),
+  sortOrder: z.coerce.number().int().min(0),
+  isPrimary: z.boolean(),
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
+});
+
+export const MAX_ADMIN_PRODUCT_IMAGES = 12;
+
+const adminProductPhotoUploadIdSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(64)
+  .regex(/^[A-Za-z0-9_-]+$/);
+
+export const adminProductPhotoPlanItemSchema = z
+  .object({
+    imageId: z.string().uuid().optional(),
+    uploadId: adminProductPhotoUploadIdSchema.optional(),
+    isPrimary: z.boolean(),
+  })
+  .superRefine((value, ctx) => {
+    const references =
+      Number(Boolean(value.imageId)) + Number(Boolean(value.uploadId));
+    if (references !== 1) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['imageId'],
+        message:
+          'Each photo must reference exactly one existing image or one new upload',
+      });
+    }
+  });
+
+export const adminProductPhotoPlanSchema = z
+  .array(adminProductPhotoPlanItemSchema)
+  .min(1)
+  .max(MAX_ADMIN_PRODUCT_IMAGES)
+  .superRefine((items, ctx) => {
+    const seenExisting = new Set<string>();
+    const seenUploads = new Set<string>();
+    let primaryCount = 0;
+
+    items.forEach((item, index) => {
+      if (item.isPrimary) primaryCount += 1;
+
+      if (item.imageId) {
+        if (seenExisting.has(item.imageId)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [index, 'imageId'],
+            message: 'Duplicate existing image in photo plan',
+          });
+        } else {
+          seenExisting.add(item.imageId);
+        }
+      }
+
+      if (item.uploadId) {
+        if (seenUploads.has(item.uploadId)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [index, 'uploadId'],
+            message: 'Duplicate new upload in photo plan',
+          });
+        } else {
+          seenUploads.add(item.uploadId);
+        }
+      }
+    });
+
+    if (primaryCount !== 1) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: [],
+        message: 'Photo plan must contain exactly one primary image',
+      });
+    }
+  });
+
 export const dbProductSchema = z.object({
   id: z.string(),
   slug: z.string(),
@@ -149,8 +237,23 @@ export const dbProductSchema = z.object({
   badge: badgeSchema
     .nullish()
     .transform(value => (value ?? 'NONE') as ProductBadge),
+  images: z.array(productImageSchema).default([]),
+  primaryImage: productImageSchema
+    .nullish()
+    .transform(value => value ?? undefined),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
+});
+
+export const shopProductImageSchema = z.object({
+  id: z.string(),
+  url: z.string(),
+  publicId: z
+    .string()
+    .nullish()
+    .transform(value => value ?? undefined),
+  sortOrder: z.coerce.number().int().min(0),
+  isPrimary: z.boolean(),
 });
 
 export const shopProductSchema = z.object({
@@ -160,6 +263,10 @@ export const shopProductSchema = z.object({
   price: z.number().int().min(0),
   currency: currencySchema,
   image: z.string(),
+  images: z.array(shopProductImageSchema).default([]),
+  primaryImage: shopProductImageSchema
+    .nullish()
+    .transform(value => value ?? undefined),
   originalPrice: z.number().int().min(0).optional(),
   createdAt: z.coerce.date().optional(),
   category: z.enum(productCategoryValues as [string, ...string[]]).optional(),
@@ -621,7 +728,13 @@ export const orderPaymentInitPayloadSchema = z
 
 export type CatalogQuery = z.infer<typeof catalogQuerySchema>;
 export type CatalogFilters = z.infer<typeof catalogFilterSchema>;
+export type AdminProductPhotoPlanItem = z.infer<
+  typeof adminProductPhotoPlanItemSchema
+>;
+export type AdminProductPhotoPlan = z.infer<typeof adminProductPhotoPlanSchema>;
+export type ProductImage = z.infer<typeof productImageSchema>;
 export type DbProduct = z.infer<typeof dbProductSchema>;
+export type ShopProductImage = z.infer<typeof shopProductImageSchema>;
 export type ShopProduct = z.infer<typeof shopProductSchema>;
 export type OrderSummary = z.infer<typeof orderSummarySchema>;
 export type ProductAdminInput = z.infer<typeof productAdminSchema>;

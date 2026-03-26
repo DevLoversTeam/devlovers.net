@@ -23,7 +23,7 @@ import {
   rehydrateCart,
 } from '@/lib/cart';
 import { logWarn } from '@/lib/logging';
-import type { ShopProduct } from '@/lib/shop/data';
+import type { ShopProduct } from '@/lib/validation/shop';
 
 interface CartContextType {
   cart: Cart;

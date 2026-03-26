@@ -17,6 +17,15 @@ const mocks = vi.hoisted(() => ({
   requireAdminApi: vi.fn(async () => adminUser),
   requireAdminCsrf: vi.fn(() => null),
   parseAdminProductForm: vi.fn(),
+  parseAdminProductPhotosForm: vi.fn((formData: FormData) => ({
+    ok: true,
+    data: {
+      imagePlan: [{ uploadId: 'legacy-image', isPrimary: true }],
+      images: [
+        { uploadId: 'legacy-image', file: formData.get('image') as File },
+      ],
+    },
+  })),
   writeAdminAudit: vi.fn(async () => {
     throw new Error('audit-fail');
   }),
@@ -47,6 +56,7 @@ vi.mock('@/lib/security/admin-csrf', () => ({
 
 vi.mock('@/lib/admin/parseAdminProductForm', () => ({
   parseAdminProductForm: mocks.parseAdminProductForm,
+  parseAdminProductPhotosForm: mocks.parseAdminProductPhotosForm,
 }));
 
 vi.mock('@/lib/services/shop/events/write-admin-audit', () => ({
@@ -223,6 +233,61 @@ describe.sequential('admin products create atomicity (phase C)', () => {
 
       expect(existing).toHaveLength(1);
       expect(existing[0]?.imagePublicId).toBeTruthy();
+    } finally {
+      deleteSpy.mockRestore();
+      await cleanupBySlug(slug);
+    }
+  });
+
+  it('does not double-destroy Cloudinary image after successful rollback delete', async () => {
+    const slug = `atomic-create-cleanup-${Date.now()}-${crypto
+      .randomUUID()
+      .slice(0, 8)}`;
+
+    mocks.parseAdminProductForm.mockReturnValue({
+      ok: true,
+      data: {
+        slug,
+        title: 'Atomic create cleanup owner',
+        badge: 'NONE',
+        prices: [
+          { currency: 'USD', priceMinor: 2199, originalPriceMinor: null },
+        ],
+        stock: 2,
+        isActive: true,
+        isFeatured: false,
+      },
+    });
+
+    await cleanupBySlug(slug);
+
+    const productServices = await import('@/lib/services/products');
+    const deleteSpy = vi
+      .spyOn(productServices, 'deleteProduct')
+      .mockResolvedValueOnce(undefined);
+
+    const cloudinary = await import('@/lib/cloudinary');
+    const destroyProductImageMock = vi.mocked(cloudinary.destroyProductImage);
+
+    try {
+      const { POST } = await import('@/app/api/shop/admin/products/route');
+
+      const req = new NextRequest(
+        new Request('http://localhost/api/shop/admin/products', {
+          method: 'POST',
+          headers: {
+            origin: 'http://localhost:3000',
+            'x-request-id': `req_${crypto.randomUUID()}`,
+          },
+          body: makeFormData(),
+        })
+      );
+
+      const res = await POST(req);
+      expect(res.status).toBe(500);
+      expect(mocks.writeAdminAudit).toHaveBeenCalled();
+      expect(deleteSpy).toHaveBeenCalledTimes(1);
+      expect(destroyProductImageMock).not.toHaveBeenCalled();
     } finally {
       deleteSpy.mockRestore();
       await cleanupBySlug(slug);

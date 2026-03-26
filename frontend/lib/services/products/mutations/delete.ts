@@ -1,43 +1,60 @@
-import { sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 import { db } from '@/db';
-import { productPrices, products } from '@/db/schema';
+import { productImages, productPrices, products } from '@/db/schema';
 import { destroyProductImage } from '@/lib/cloudinary';
 import { ProductNotFoundError } from '@/lib/errors/products';
 import { logError } from '@/lib/logging';
 
 export async function deleteProduct(id: string): Promise<void> {
-  const result = await db.execute(sql`
-    WITH del_prices AS (
-      DELETE FROM ${productPrices}
-      WHERE ${productPrices.productId} = ${id}
-    ),
-    del_product AS (
-      DELETE FROM ${products}
-      WHERE ${products.id} = ${id}
-      RETURNING ${products.id} AS id, ${products.imagePublicId} AS imagePublicId
-    )
-    SELECT id, imagePublicId FROM del_product;
-  `);
+  const { deletedProduct, publicIds } = await db.transaction(async tx => {
+    const [existingProduct] = await tx
+      .select({
+        id: products.id,
+        imagePublicId: products.imagePublicId,
+      })
+      .from(products)
+      .where(eq(products.id, id))
+      .limit(1);
 
-  const rows =
-    (
-      result as unknown as {
-        rows?: Array<{ id: string; imagePublicId: string | null }>;
-      }
-    ).rows ?? [];
+    if (!existingProduct) {
+      throw new ProductNotFoundError(id);
+    }
 
-  const [deleted] = rows;
+    const imageRows = await tx
+      .select({ imagePublicId: productImages.imagePublicId })
+      .from(productImages)
+      .where(eq(productImages.productId, id));
 
-  if (!deleted) {
-    throw new ProductNotFoundError(id);
-  }
+    await tx.delete(productPrices).where(eq(productPrices.productId, id));
+    await tx.delete(products).where(eq(products.id, id));
 
-  if (deleted.imagePublicId) {
+    const publicIds = Array.from(
+      new Set(
+        [
+          existingProduct.imagePublicId,
+          ...imageRows.map(row => row.imagePublicId),
+        ].filter(
+          (value): value is string =>
+            typeof value === 'string' && value.trim().length > 0
+        )
+      )
+    );
+
+    return {
+      deletedProduct: existingProduct,
+      publicIds,
+    };
+  });
+
+  for (const publicId of publicIds) {
     try {
-      await destroyProductImage(deleted.imagePublicId);
+      await destroyProductImage(publicId);
     } catch (error) {
-      logError('Failed to cleanup product image after delete', error);
+      logError('Failed to cleanup product image after delete', error, {
+        productId: deletedProduct.id,
+        imagePublicId: publicId,
+      });
     }
   }
 }

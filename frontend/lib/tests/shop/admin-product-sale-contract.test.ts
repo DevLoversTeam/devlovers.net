@@ -1,13 +1,26 @@
 import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { getCurrentUserMock, parseAdminProductFormMock } = vi.hoisted(() => ({
+const {
+  getCurrentUserMock,
+  parseAdminProductFormMock,
+  parseAdminProductPhotosFormMock,
+} = vi.hoisted(() => ({
   getCurrentUserMock: vi.fn(async () => ({
     id: 'u_test_admin',
     email: 'admin@test.local',
     role: 'admin',
   })),
   parseAdminProductFormMock: vi.fn(),
+  parseAdminProductPhotosFormMock: vi.fn((formData: FormData) => ({
+    ok: true,
+    data: {
+      imagePlan: [{ uploadId: 'legacy-image', isPrimary: true }],
+      images: [
+        { uploadId: 'legacy-image', file: formData.get('image') as File },
+      ],
+    },
+  })),
 }));
 
 const { productsServiceMock } = vi.hoisted(() => ({
@@ -27,6 +40,7 @@ vi.mock('@/lib/auth', () => ({
 
 vi.mock('@/lib/admin/parseAdminProductForm', () => ({
   parseAdminProductForm: parseAdminProductFormMock,
+  parseAdminProductPhotosForm: parseAdminProductPhotosFormMock,
 }));
 
 vi.mock('@/lib/security/admin-csrf', () => ({
@@ -60,6 +74,7 @@ describe('P1-3 SALE rule end-to-end contract: admin products API returns stable 
     vi.stubEnv('ENABLE_ADMIN_API', 'true');
 
     parseAdminProductFormMock.mockReset();
+    parseAdminProductPhotosFormMock.mockClear();
     productsServiceMock.createProduct.mockReset();
     productsServiceMock.updateProduct.mockReset();
     productsServiceMock.deleteProduct.mockReset();
@@ -217,5 +232,36 @@ describe('P1-3 SALE rule end-to-end contract: admin products API returns stable 
 
     expect(productsServiceMock.updateProduct).not.toHaveBeenCalled();
     expect(parseAdminProductFormMock).not.toHaveBeenCalled();
+  });
+
+  it('PATCH /api/shop/admin/products/:id: does not parse photos when product form payload is invalid', async () => {
+    parseAdminProductFormMock.mockReturnValue({
+      ok: false,
+      error: {
+        format: () => ({ title: { _errors: ['Required'] } }),
+        issues: [{ path: ['title'], message: 'Required' }],
+      },
+    });
+
+    const { PATCH } = await import('@/app/api/shop/admin/products/[id]/route');
+
+    const req = new NextRequest(
+      new Request(
+        'http://localhost/api/shop/admin/products/11111111-1111-4111-8111-111111111111',
+        {
+          method: 'PATCH',
+          headers: { origin: 'http://localhost:3000' },
+          body: makeFormData(),
+        }
+      )
+    );
+
+    const res = await PATCH(req, {
+      params: Promise.resolve({ id: '11111111-1111-4111-8111-111111111111' }),
+    });
+
+    expect(res.status).toBe(400);
+    expect(parseAdminProductPhotosFormMock).not.toHaveBeenCalled();
+    expect(productsServiceMock.updateProduct).not.toHaveBeenCalled();
   });
 });

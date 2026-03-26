@@ -5,9 +5,11 @@ import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
 import { Link } from '@/i18n/routing';
+import { getStorefrontAvailabilityState } from '@/lib/shop/availability';
 import { formatMoney } from '@/lib/shop/currency';
-import type { ShopProduct } from '@/lib/shop/data';
+import { SHOP_FOCUS } from '@/lib/shop/ui-classes';
 import { cn } from '@/lib/utils';
+import type { ShopProduct } from '@/lib/validation/shop';
 
 const PLACEHOLDER = '/placeholder.svg';
 const allowedHosts = new Set(['res.cloudinary.com', 'cdn.sanity.io']);
@@ -39,13 +41,17 @@ export function ProductCard({ product }: ProductCardProps) {
   const params = useParams<{ locale?: string }>();
   const locale = params.locale ?? 'en';
   const t = useTranslations('shop.product');
+  const availabilityState = getStorefrontAvailabilityState(product);
 
   const src = safeImageSrc(product.image);
 
   return (
     <Link
       href={`/shop/products/${product.slug}`}
-      className="group border-border bg-card focus-visible:ring-offset-background relative flex flex-col overflow-hidden rounded-lg border transition-shadow duration-500 hover:border-transparent hover:shadow-[var(--shop-card-shadow-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--color-ring)] focus-visible:ring-offset-2 focus-visible:outline-none"
+      className={cn(
+        'group border-border bg-card relative flex h-full flex-col overflow-hidden rounded-lg border transition-shadow duration-500 hover:border-transparent hover:shadow-[var(--shop-card-shadow-hover)]',
+        SHOP_FOCUS
+      )}
     >
       {product.badge && product.badge !== 'NONE' && (
         <span
@@ -69,34 +75,39 @@ export function ProductCard({ product }: ProductCardProps) {
       </div>
 
       <div className="flex flex-1 flex-col p-4">
-        <h3 className="text-foreground text-sm font-medium">{product.name}</h3>
+        <h3 className="text-muted-foreground line-clamp-2 min-h-10 text-sm leading-5 font-medium">
+          {product.name}
+        </h3>
 
-        <div className="mt-2 flex items-center gap-2" aria-label="Price">
-          <span
-            className={cn(
-              'text-sm font-semibold',
-              product.badge === 'SALE' ? 'text-accent' : 'text-foreground'
-            )}
-          >
-            {formatMoney(product.price, product.currency, locale)}
-          </span>
-
-          {product.originalPrice && (
-            <span className="text-muted-foreground text-sm line-through">
-              {formatMoney(product.originalPrice, product.currency, locale)}
+        <div className="mt-auto pt-3">
+          <div className="flex min-h-6 items-center gap-2" aria-label="Price">
+            <span
+              className={cn(
+                'text-sm font-semibold',
+                product.badge === 'SALE' ? 'text-accent' : 'text-foreground'
+              )}
+            >
+              {formatMoney(product.price, product.currency, locale)}
             </span>
-          )}
-        </div>
 
-        <p
-          className={cn(
-            'text-muted-foreground mt-2 min-h-[1rem] text-xs leading-4',
-            product.inStock && 'invisible'
-          )}
-          {...(product.inStock ? { 'aria-hidden': true } : { role: 'status' })}
-        >
-          {t('soldOut')}
-        </p>
+            {product.originalPrice && (
+              <span className="text-muted-foreground text-sm line-through">
+                {formatMoney(product.originalPrice, product.currency, locale)}
+              </span>
+            )}
+          </div>
+
+          <p
+            className="text-muted-foreground mt-2 min-h-4 text-xs leading-4"
+            {...(availabilityState === 'available_to_order'
+              ? { 'aria-label': t('availability.availableToOrder') }
+              : {})}
+          >
+            {availabilityState === 'available_to_order'
+              ? t('availability.availableToOrder')
+              : t('availability.currentlyUnavailable')}
+          </p>
+        </div>
       </div>
     </Link>
   );
