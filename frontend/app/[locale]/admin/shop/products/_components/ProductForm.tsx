@@ -674,13 +674,22 @@ export function ProductForm({
           setSlugError('This slug is already used. Try changing the title.');
         }
 
+        const photoErrorFields = new Set([
+          'image',
+          'photos',
+          'photoPlan',
+          'newImages',
+          'newImageUploadIds',
+        ]);
+
         if (
+          (typeof data.field === 'string' &&
+            photoErrorFields.has(data.field)) ||
           data.code === 'IMAGE_UPLOAD_FAILED' ||
-          data.code === 'IMAGE_REQUIRED' ||
-          data.field === 'image' ||
-          data.field === 'photos'
+          data.code === 'IMAGE_REQUIRED'
         ) {
           setImageError(data.error ?? 'Failed to update product photos');
+          return;
         }
 
         if (data.code === 'SALE_ORIGINAL_REQUIRED') {
@@ -698,6 +707,7 @@ export function ProductForm({
           setError(data.error ?? msg);
           return;
         }
+
         if (
           response.status === 403 &&
           (data.code === 'CSRF_MISSING' || data.code === 'CSRF_INVALID')
