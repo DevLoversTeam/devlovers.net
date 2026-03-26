@@ -308,7 +308,7 @@ export default async function AdminOrdersPage({
 
         {/* Desktop table */}
         <div className="hidden md:block">
-          <div className="border-border bg-background/80 overflow-hidden rounded-xl border shadow-sm">
+          <div className="bg-background/80 overflow-hidden rounded-xl shadow-sm">
             <table className="divide-border min-w-full divide-y text-sm">
               <caption className="sr-only">{t('listCaption')}</caption>
 
@@ -406,11 +406,12 @@ export default async function AdminOrdersPage({
           </div>
         </div>
 
-        <div className="border-border bg-background/80 mt-4 rounded-xl border px-4 py-3 shadow-sm">
+        <div className="border-border bg-background/80 mt-4 flex min-h-24 items-center rounded-xl border px-4 py-3 shadow-sm">
           <AdminPagination
             basePath="/admin/shop/orders"
             page={page}
             hasNext={hasNext}
+            className="mt-0 w-full"
             query={{
               status: filters.status,
               dateFrom: filters.dateFrom,
