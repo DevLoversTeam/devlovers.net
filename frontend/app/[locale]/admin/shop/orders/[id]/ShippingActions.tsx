@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useId, useState, useTransition } from 'react';
 
+import { getAdminOrderShippingActionVisibility } from './shippingActionVisibility';
+
 type ActionName =
   | 'recover_initial_shipment'
   | 'retry_label_creation'
@@ -13,6 +15,7 @@ type ActionName =
 type Props = {
   orderId: string;
   csrfToken: string;
+  shippingReady: boolean;
   shippingStatus: string | null;
   shipmentStatus: string | null;
 };
@@ -54,50 +57,26 @@ function mapShippingError(code: string, t: (key: string) => string): string {
   }
 }
 
-function actionEnabled(args: {
-  action: ActionName;
-  shippingStatus: string | null;
-  shipmentStatus: string | null;
-}): boolean {
-  if (args.action === 'recover_initial_shipment') {
-    const queueableShippingStatus =
-      args.shippingStatus == null ||
-      args.shippingStatus === 'pending' ||
-      args.shippingStatus === 'queued' ||
-      args.shippingStatus === 'creating_label' ||
-      args.shippingStatus === 'needs_attention';
-
-    return (
-      queueableShippingStatus &&
-      (args.shipmentStatus == null || args.shipmentStatus === 'queued')
-    );
-  }
-
-  if (args.action === 'retry_label_creation') {
-    return (
-      args.shipmentStatus === 'failed' ||
-      args.shipmentStatus === 'needs_attention'
-    );
-  }
-  if (args.action === 'mark_shipped') {
-    return args.shippingStatus === 'label_created';
-  }
-  return args.shippingStatus === 'shipped';
-}
-
 export function ShippingActions({
   orderId,
   csrfToken,
+  shippingReady,
   shippingStatus,
   shipmentStatus,
 }: Props) {
   const router = useRouter();
   const t = useTranslations('shop.orders.detail.shippingControls');
   const [isPending, startTransition] = useTransition();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const errorId = useId();
 
   async function runAction(action: ActionName) {
+    if (isSubmitting || isPending) {
+      return;
+    }
+
+    setIsSubmitting(true);
     setError(null);
 
     let res: Response;
@@ -113,6 +92,7 @@ export function ShippingActions({
       });
     } catch (err) {
       setError(mapShippingError(normalizeActionErrorCode(err), t));
+      setIsSubmitting(false);
       return;
     }
 
@@ -127,31 +107,18 @@ export function ShippingActions({
       setError(
         mapShippingError(json?.code ?? json?.message ?? `HTTP_${res.status}`, t)
       );
+      setIsSubmitting(false);
       return;
     }
 
+    setIsSubmitting(false);
     startTransition(() => {
       router.refresh();
     });
   }
 
-  const retryEnabled = actionEnabled({
-    action: 'retry_label_creation',
-    shippingStatus,
-    shipmentStatus,
-  });
-  const recoverEnabled = actionEnabled({
-    action: 'recover_initial_shipment',
-    shippingStatus,
-    shipmentStatus,
-  });
-  const shippedEnabled = actionEnabled({
-    action: 'mark_shipped',
-    shippingStatus,
-    shipmentStatus,
-  });
-  const deliveredEnabled = actionEnabled({
-    action: 'mark_delivered',
+  const visibility = getAdminOrderShippingActionVisibility({
+    shippingReady,
     shippingStatus,
     shipmentStatus,
   });
@@ -161,21 +128,21 @@ export function ShippingActions({
     tone?: 'default' | 'emphasis';
   }> = [];
 
-  if (recoverEnabled) {
+  if (visibility.recoverInitialShipment) {
     visibleActions.push({
       action: 'recover_initial_shipment',
       label: t('recoverInitialShipment'),
     });
   }
 
-  if (retryEnabled) {
+  if (visibility.retryLabelCreation) {
     visibleActions.push({
       action: 'retry_label_creation',
       label: t('retryLabelCreation'),
     });
   }
 
-  if (shippedEnabled) {
+  if (visibility.markShipped) {
     visibleActions.push({
       action: 'mark_shipped',
       label: t('markShipped'),
@@ -183,7 +150,7 @@ export function ShippingActions({
     });
   }
 
-  if (deliveredEnabled) {
+  if (visibility.markDelivered) {
     visibleActions.push({
       action: 'mark_delivered',
       label: t('markDelivered'),
@@ -199,8 +166,8 @@ export function ShippingActions({
             key={action}
             type="button"
             onClick={() => runAction(action)}
-            disabled={isPending}
-            aria-busy={isPending}
+            disabled={isSubmitting || isPending}
+            aria-busy={isSubmitting || isPending}
             className={
               tone === 'emphasis'
                 ? 'rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-3 py-2 text-left text-sm font-medium text-emerald-100 transition-colors hover:bg-emerald-500/10 disabled:cursor-not-allowed disabled:opacity-50'

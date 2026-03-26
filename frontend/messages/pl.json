@@ -939,7 +939,7 @@
           "queued": "W kolejce",
           "creatingLabel": "Tworzenie etykiety",
           "labelCreated": "Etykieta utworzona",
-          "shipped": "WysÅ‚ane",
+          "shipped": "Wysłane",
           "delivered": "Dostarczone",
           "cancelled": "Anulowano",
           "needsAttention": "Wymaga uwagi"
@@ -947,8 +947,8 @@
         "shipmentStatuses": {
           "queued": "W kolejce",
           "created": "Utworzono",
-          "succeeded": "ZakoÅ„czono powodzeniem",
-          "failed": "BÅ‚Ä…d",
+          "succeeded": "Zakończono powodzeniem",
+          "failed": "Błąd",
           "needsAttention": "Wymaga uwagi"
         },
           "shippingMethods": {

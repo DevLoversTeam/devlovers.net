@@ -9,6 +9,22 @@ const applyAdminOrderLifecycleActionMock = vi.hoisted(() =>
 );
 const logWarnMock = vi.hoisted(() => vi.fn());
 const logErrorMock = vi.hoisted(() => vi.fn());
+const lifecycleErrors = vi.hoisted(() => {
+  class AdminOrderLifecycleActionError extends Error {
+    code: string;
+    status: number;
+
+    constructor(code: string, message: string, status: number) {
+      super(message);
+      this.code = code;
+      this.status = status;
+    }
+  }
+
+  return {
+    AdminOrderLifecycleActionError,
+  };
+});
 const adminAuthErrors = vi.hoisted(() => {
   class AdminApiDisabledError extends Error {
     code = 'ADMIN_API_DISABLED';
@@ -45,19 +61,8 @@ vi.mock('@/lib/security/origin', () => ({
 }));
 
 vi.mock('@/lib/services/shop/admin-order-lifecycle', () => {
-  class AdminOrderLifecycleActionError extends Error {
-    code: string;
-    status: number;
-
-    constructor(code: string, message: string, status: number) {
-      super(message);
-      this.code = code;
-      this.status = status;
-    }
-  }
-
   return {
-    AdminOrderLifecycleActionError,
+    ...lifecycleErrors,
     applyAdminOrderLifecycleAction: (args: unknown) =>
       (applyAdminOrderLifecycleActionMock as any)(args),
   };
@@ -147,6 +152,37 @@ describe('admin order lifecycle route redirects', () => {
     expect(res.status).toBe(303);
     expect(res.headers.get('location')).toBe(
       'http://localhost/en/admin/shop/orders/550e8400-e29b-41d4-a716-446655440000?lifecycleError=FORBIDDEN'
+    );
+  });
+
+  it('redirects standardized lifecycle errors back to detail with lifecycleError code', async () => {
+    applyAdminOrderLifecycleActionMock.mockRejectedValueOnce(
+      new lifecycleErrors.AdminOrderLifecycleActionError(
+        'PSP_UNAVAILABLE',
+        'Payment provider unavailable.',
+        503
+      )
+    );
+
+    const req = new NextRequest(
+      'http://localhost/en/admin/shop/orders/550e8400-e29b-41d4-a716-446655440000/lifecycle',
+      {
+        method: 'POST',
+        headers: { origin: 'http://localhost:3000' },
+        body: new URLSearchParams({ action: 'cancel' }),
+      }
+    );
+
+    const res = await POST(req, {
+      params: Promise.resolve({
+        locale: 'en',
+        id: '550e8400-e29b-41d4-a716-446655440000',
+      }),
+    });
+
+    expect(res.status).toBe(303);
+    expect(res.headers.get('location')).toBe(
+      'http://localhost/en/admin/shop/orders/550e8400-e29b-41d4-a716-446655440000?lifecycleError=PSP_UNAVAILABLE'
     );
   });
 });

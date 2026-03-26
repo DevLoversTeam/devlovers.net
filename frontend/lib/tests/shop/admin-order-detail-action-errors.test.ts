@@ -9,6 +9,15 @@ import { ShippingActions } from '@/app/[locale]/admin/shop/orders/[id]/ShippingA
 
 const refreshMock = vi.fn();
 
+function createDeferredResponse() {
+  let resolve!: (value: Response) => void;
+  const promise = new Promise<Response>(res => {
+    resolve = res;
+  });
+
+  return { promise, resolve };
+}
+
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
     refresh: refreshMock,
@@ -38,12 +47,12 @@ const translations: Record<string, string> = {
   'shop.orders.detail.shippingControls.errors.generic':
     'Shipping action could not be completed. Refresh the order and try again.',
   'shop.orders.detail.paymentControls.refund': 'Refund payment',
-  'shop.orders.detail.paymentControls.refunding': 'Refundingâ€¦',
+  'shop.orders.detail.paymentControls.refunding': 'Refunding…',
   'shop.orders.detail.paymentControls.onlyForPaidStripe':
     'Refund is only available for paid Stripe orders',
   'shop.orders.detail.paymentControls.cancelUnpaidPayment':
     'Cancel unpaid payment',
-  'shop.orders.detail.paymentControls.cancelingPayment': 'Canceling paymentâ€¦',
+  'shop.orders.detail.paymentControls.cancelingPayment': 'Canceling payment…',
   'shop.orders.detail.paymentControls.onlyForUnpaidMonobank':
     'This action is only available for unpaid Monobank orders',
   'shop.orders.detail.paymentControls.errors.network':
@@ -94,6 +103,7 @@ describe('admin order detail action error messages', () => {
       createElement(ShippingActions, {
         orderId: 'order-1',
         csrfToken: 'csrf',
+        shippingReady: true,
         shippingStatus: 'label_created',
         shipmentStatus: 'succeeded',
       })
@@ -109,6 +119,43 @@ describe('admin order detail action error messages', () => {
       ).toBeTruthy();
     });
     expect(screen.queryByText('INVALID_SHIPPING_TRANSITION')).toBeNull();
+  });
+
+  it('blocks duplicate shipping clicks while the request is in flight', async () => {
+    const deferred = createDeferredResponse();
+    vi.mocked(fetch).mockReturnValueOnce(deferred.promise as Promise<Response>);
+
+    render(
+      createElement(ShippingActions, {
+        orderId: 'order-1',
+        csrfToken: 'csrf',
+        shippingReady: true,
+        shippingStatus: 'label_created',
+        shipmentStatus: 'succeeded',
+      })
+    );
+
+    const button = screen.getByRole('button', { name: 'Mark shipped' });
+
+    fireEvent.click(button);
+
+    await waitFor(() => {
+      expect((button as HTMLButtonElement).disabled).toBe(true);
+    });
+
+    fireEvent.click(button);
+
+    expect(fetch).toHaveBeenCalledTimes(1);
+
+    deferred.resolve({
+      ok: true,
+      status: 200,
+      json: async () => ({}),
+    } as Response);
+
+    await waitFor(() => {
+      expect(refreshMock).toHaveBeenCalledTimes(1);
+    });
   });
 
   it('maps refund backend codes to friendly admin copy', async () => {
@@ -136,6 +183,41 @@ describe('admin order detail action error messages', () => {
       ).toBeTruthy();
     });
     expect(screen.queryByText('PSP_UNAVAILABLE')).toBeNull();
+  });
+
+  it('blocks duplicate refund clicks while the request is in flight', async () => {
+    const deferred = createDeferredResponse();
+    vi.mocked(fetch).mockReturnValueOnce(deferred.promise as Promise<Response>);
+
+    render(
+      createElement(RefundButton, {
+        orderId: 'order-1',
+        disabled: false,
+        csrfToken: 'csrf',
+      })
+    );
+
+    const button = screen.getByRole('button', { name: 'Refund payment' });
+
+    fireEvent.click(button);
+
+    await waitFor(() => {
+      expect((button as HTMLButtonElement).disabled).toBe(true);
+    });
+
+    fireEvent.click(button);
+
+    expect(fetch).toHaveBeenCalledTimes(1);
+
+    deferred.resolve({
+      ok: true,
+      status: 200,
+      json: async () => ({}),
+    } as Response);
+
+    await waitFor(() => {
+      expect(refreshMock).toHaveBeenCalledTimes(1);
+    });
   });
 
   it('maps refund network failures to the localized network message', async () => {
@@ -253,6 +335,7 @@ describe('admin order detail action error messages', () => {
       createElement(ShippingActions, {
         orderId: 'order-1',
         csrfToken: 'csrf',
+        shippingReady: true,
         shippingStatus: 'label_created',
         shipmentStatus: 'succeeded',
       })

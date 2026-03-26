@@ -951,7 +951,7 @@
         },
         "shipmentStatuses": {
           "queued": "Queued",
-          "created": "Created",
+          "processing": "Processing",
           "succeeded": "Succeeded",
           "failed": "Failed",
           "needsAttention": "Needs attention"

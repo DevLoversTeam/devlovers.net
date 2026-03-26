@@ -30,6 +30,7 @@ import { orderIdParamSchema } from '@/lib/validation/shop';
 import { CancelPaymentButton } from './CancelPaymentButton';
 import { RefundButton } from './RefundButton';
 import { ShippingActions } from './ShippingActions';
+import { getAdminOrderShippingActionVisibility } from './shippingActionVisibility';
 
 export const metadata: Metadata = {
   title: 'Order Details | DevLovers',
@@ -356,45 +357,6 @@ function lifecycleErrorMessageKey(code: string | null): string | null {
   }
 }
 
-function shippingControlsEnabled(order: AdminOrderDetail): {
-  recoverInitialShipment: boolean;
-  retryLabelCreation: boolean;
-  markShipped: boolean;
-  markDelivered: boolean;
-} {
-  const shippingEligible = evaluateOrderShippingEligibility({
-    paymentStatus: order.paymentStatus,
-    orderStatus: order.status,
-    inventoryStatus: order.inventoryStatus,
-    pspStatusReason: order.pspStatusReason,
-  }).ok;
-  const shippingReady =
-    order.shippingRequired === true &&
-    order.shippingProvider === 'nova_poshta' &&
-    !!order.shippingMethodCode &&
-    shippingEligible;
-  const shippingStatus = order.shippingStatus;
-  const shipmentStatus = order.shipmentStatus;
-  const queueableShippingStatus =
-    shippingStatus == null ||
-    shippingStatus === 'pending' ||
-    shippingStatus === 'queued' ||
-    shippingStatus === 'creating_label' ||
-    shippingStatus === 'needs_attention';
-
-  return {
-    recoverInitialShipment:
-      shippingReady &&
-      queueableShippingStatus &&
-      (shipmentStatus == null || shipmentStatus === 'queued'),
-    retryLabelCreation:
-      shippingReady &&
-      (shipmentStatus === 'failed' || shipmentStatus === 'needs_attention'),
-    markShipped: shippingReady && shippingStatus === 'label_created',
-    markDelivered: shippingReady && shippingStatus === 'shipped',
-  };
-}
-
 function paymentControlsEnabled(order: AdminOrderDetail): {
   refund: boolean;
   cancelPayment: boolean;
@@ -490,7 +452,21 @@ export default async function OrderDetailPage({
     stockRestored: order.stockRestored,
     shipmentStatus: order.shipmentStatus,
   });
-  const shippingEnabled = shippingControlsEnabled(order);
+  const shippingReady =
+    order.shippingRequired === true &&
+    order.shippingProvider === 'nova_poshta' &&
+    !!order.shippingMethodCode &&
+    evaluateOrderShippingEligibility({
+      paymentStatus: order.paymentStatus,
+      orderStatus: order.status,
+      inventoryStatus: order.inventoryStatus,
+      pspStatusReason: order.pspStatusReason,
+    }).ok;
+  const shippingEnabled = getAdminOrderShippingActionVisibility({
+    shippingReady,
+    shippingStatus: order.shippingStatus,
+    shipmentStatus: order.shipmentStatus,
+  });
   const paymentEnabled = paymentControlsEnabled(order);
   const lifecycleErrorCode = Array.isArray(sp.lifecycleError)
     ? (sp.lifecycleError[0] ?? null)
@@ -678,6 +654,7 @@ export default async function OrderDetailPage({
                   <ShippingActions
                     orderId={order.id}
                     csrfToken={shippingCsrfToken}
+                    shippingReady={shippingReady}
                     shippingStatus={order.shippingStatus}
                     shipmentStatus={order.shipmentStatus}
                   />
@@ -844,13 +821,14 @@ export default async function OrderDetailPage({
               </dt>
               <dd className="text-sm">
                 {order.userId ? (
+                  customerSummary.accountName ||
                   customerSummary.accountEmail ? (
                     <div className="min-w-0">
                       <div className="font-medium">
                         {customerSummary.accountName ??
                           customerSummary.accountEmail}
                       </div>
-                      {customerSummary.accountName ? (
+                      {customerSummary.accountEmail ? (
                         <div className="text-muted-foreground text-xs break-all">
                           {customerSummary.accountEmail}
                         </div>

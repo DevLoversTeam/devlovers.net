@@ -6,6 +6,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import OrderDetailPage from '@/app/[locale]/admin/shop/orders/[id]/page';
+import { getAdminOrderShippingActionVisibility } from '@/app/[locale]/admin/shop/orders/[id]/shippingActionVisibility';
 import type { AdminOrderDetail } from '@/db/queries/shop/admin-orders';
 
 const getAdminOrderDetailMock = vi.hoisted(() => vi.fn());
@@ -102,10 +103,12 @@ vi.mock('@/i18n/routing', () => ({
 vi.mock('@/app/[locale]/admin/shop/orders/[id]/ShippingActions', () => ({
   ShippingActions: ({
     orderId,
+    shippingReady,
     shippingStatus,
     shipmentStatus,
   }: {
     orderId: string;
+    shippingReady: boolean;
     shippingStatus: string | null;
     shipmentStatus: string | null;
   }) =>
@@ -114,6 +117,7 @@ vi.mock('@/app/[locale]/admin/shop/orders/[id]/ShippingActions', () => ({
       {
         'data-testid': 'shipping-actions',
         'data-order-id': orderId,
+        'data-shipping-ready': String(shippingReady),
         'data-shipping-status': shippingStatus ?? '',
         'data-shipment-status': shipmentStatus ?? '',
       },
@@ -222,12 +226,26 @@ describe('admin order detail operational actions', () => {
   });
 
   it('renders existing shipping and refund controls for eligible Stripe orders', async () => {
+    expect(
+      getAdminOrderShippingActionVisibility({
+        shippingReady: true,
+        shippingStatus: 'label_created',
+        shipmentStatus: 'created',
+      })
+    ).toEqual({
+      recoverInitialShipment: false,
+      retryLabelCreation: false,
+      markShipped: true,
+      markDelivered: false,
+    });
+
     const html = await renderOrder();
 
     expect(html).toContain('Admin actions');
     expect(html).toContain('Shipment handling');
     expect(html).toContain('Payment handling');
     expect(html).toContain('shipping-actions');
+    expect(html).toContain('data-shipping-ready="true"');
     expect(html).toContain('refund-button');
     expect(html).not.toContain('cancel-payment-button');
     expect(html).not.toContain('>Complete<');
@@ -275,6 +293,19 @@ describe('admin order detail operational actions', () => {
   });
 
   it('hides complete and shipping controls when refund containment blocks shipping eligibility', async () => {
+    expect(
+      getAdminOrderShippingActionVisibility({
+        shippingReady: false,
+        shippingStatus: 'shipped',
+        shipmentStatus: 'succeeded',
+      })
+    ).toEqual({
+      recoverInitialShipment: false,
+      retryLabelCreation: false,
+      markShipped: false,
+      markDelivered: false,
+    });
+
     const html = await renderOrder({
       status: 'PAID',
       inventoryStatus: 'reserved',
@@ -290,6 +321,7 @@ describe('admin order detail operational actions', () => {
 
     expect(html).toContain('Admin actions');
     expect(html).not.toContain('shipping-actions');
+    expect(html).not.toContain('data-shipping-ready="true"');
     expect(html).not.toContain('>Complete<');
     expect(html).toContain('refund-button');
   });

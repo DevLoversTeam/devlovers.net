@@ -9,6 +9,7 @@ import {
   InvalidPayloadError,
   OrderNotFoundError,
   OrderStateInvalidError,
+  PspUnavailableError,
 } from '@/lib/services/errors';
 import { cancelMonobankUnpaidPayment } from '@/lib/services/orders/monobank-cancel-payment';
 import { restockOrder } from '@/lib/services/orders/restock';
@@ -222,6 +223,100 @@ function buildConfirmAuditDedupeKey(orderId: string): string {
   });
 }
 
+function buildCancelAuditDedupeKey(orderId: string): string {
+  return buildAdminAuditDedupeKey({
+    domain: 'order_admin_action',
+    action: 'cancel',
+    orderId,
+  });
+}
+
+function buildCompleteAuditDedupeKey(orderId: string): string {
+  return buildAdminAuditDedupeKey({
+    domain: 'order_admin_action',
+    action: 'complete',
+    orderId,
+  });
+}
+
+async function repairCancelAudit(args: {
+  current: LifecycleStateRow;
+  actorUserId: string | null;
+  requestId: string;
+  fromStatus?: string;
+  fromPaymentStatus?: string;
+  fromShippingStatus?: string | null;
+}) {
+  await writeAdminAudit({
+    orderId: args.current.id,
+    actorUserId: args.actorUserId,
+    action: 'order_admin_action.cancel',
+    targetType: 'order',
+    targetId: args.current.id,
+    requestId: args.requestId,
+    dedupeKey: buildCancelAuditDedupeKey(args.current.id),
+    payload: {
+      action: 'cancel',
+      fromStatus: args.fromStatus ?? args.current.status,
+      toStatus: args.current.status,
+      fromPaymentStatus: args.fromPaymentStatus ?? args.current.paymentStatus,
+      toPaymentStatus: args.current.paymentStatus,
+      fromShippingStatus:
+        args.fromShippingStatus ?? args.current.shippingStatus,
+      toShippingStatus: args.current.shippingStatus,
+    },
+  });
+}
+
+async function repairCompleteAudit(args: {
+  current: LifecycleStateRow;
+  actorUserId: string | null;
+  requestId: string;
+  fromShippingStatus?: string | null;
+  fromShipmentStatus?: string | null;
+}) {
+  await writeAdminAudit({
+    orderId: args.current.id,
+    actorUserId: args.actorUserId,
+    action: 'order_admin_action.complete',
+    targetType: 'order',
+    targetId: args.current.id,
+    requestId: args.requestId,
+    dedupeKey: buildCompleteAuditDedupeKey(args.current.id),
+    payload: {
+      action: 'complete',
+      fromShippingStatus:
+        args.fromShippingStatus ??
+        (args.current.shippingStatus === 'delivered'
+          ? 'shipped'
+          : args.current.shippingStatus),
+      toShippingStatus: args.current.shippingStatus,
+      fromShipmentStatus:
+        args.fromShipmentStatus ?? args.current.shipmentStatus,
+    },
+  });
+}
+
+function normalizeMonobankCancelError(error: unknown): never {
+  if (error instanceof AdminOrderLifecycleActionError) {
+    throw error;
+  }
+
+  if (error instanceof InvalidPayloadError) {
+    throw new AdminOrderLifecycleActionError(error.code, error.message, 409);
+  }
+
+  if (error instanceof PspUnavailableError) {
+    throw new AdminOrderLifecycleActionError(error.code, error.message, 503);
+  }
+
+  if (error instanceof OrderNotFoundError) {
+    throw new AdminOrderLifecycleActionError(error.code, error.message, 404);
+  }
+
+  throw error;
+}
+
 async function repairConfirmedOrderSideEffects(args: {
   current: LifecycleStateRow;
   actorUserId: string | null;
@@ -230,17 +325,6 @@ async function repairConfirmedOrderSideEffects(args: {
   auditFromStatus?: string;
   repairOnly?: boolean;
 }) {
-  if (args.repairOnly && !canRepairConfirmedOrderSideEffects(args.current)) {
-    return {
-      repaired: false,
-      shipmentSync: {
-        insertedShipment: false,
-        queuedShipment: false,
-        updatedOrder: false,
-      },
-    };
-  }
-
   const shipmentSync = canRepairConfirmedOrderSideEffects(args.current)
     ? await ensureQueuedInitialShipment({
         now: args.now,
@@ -425,6 +509,12 @@ async function applyCancel(args: {
   }
 
   if (isFinalCanceled(current)) {
+    await repairCancelAudit({
+      current,
+      actorUserId: args.actorUserId,
+      requestId: args.requestId,
+    });
+
     return {
       action: 'cancel',
       orderId: current.id,
@@ -447,10 +537,14 @@ async function applyCancel(args: {
     (current.paymentStatus === 'pending' ||
       current.paymentStatus === 'requires_payment')
   ) {
-    await cancelMonobankUnpaidPayment({
-      orderId: args.orderId,
-      requestId: args.requestId,
-    });
+    try {
+      await cancelMonobankUnpaidPayment({
+        orderId: args.orderId,
+        requestId: args.requestId,
+      });
+    } catch (error) {
+      normalizeMonobankCancelError(error);
+    }
   } else {
     await restockOrder(args.orderId, {
       reason: 'canceled',
@@ -469,22 +563,13 @@ async function applyCancel(args: {
     latest.inventoryStatus !== current.inventoryStatus;
 
   if (changed) {
-    await writeAdminAudit({
-      orderId: args.orderId,
+    await repairCancelAudit({
+      current: latest,
       actorUserId: args.actorUserId,
-      action: 'order_admin_action.cancel',
-      targetType: 'order',
-      targetId: args.orderId,
       requestId: args.requestId,
-      payload: {
-        action: 'cancel',
-        fromStatus: current.status,
-        toStatus: latest.status,
-        fromPaymentStatus: current.paymentStatus,
-        toPaymentStatus: latest.paymentStatus,
-        fromShippingStatus: current.shippingStatus,
-        toShippingStatus: latest.shippingStatus,
-      },
+      fromStatus: current.status,
+      fromPaymentStatus: current.paymentStatus,
+      fromShippingStatus: current.shippingStatus,
     });
   }
 
@@ -530,6 +615,12 @@ async function applyComplete(args: {
   }
 
   if (current.shippingStatus === 'delivered') {
+    await repairCompleteAudit({
+      current,
+      actorUserId: args.actorUserId,
+      requestId: args.requestId,
+    });
+
     return {
       action: 'complete',
       orderId: current.id,
@@ -587,6 +678,12 @@ async function applyComplete(args: {
   if (!updated) {
     const latest = await loadLifecycleState(args.orderId);
     if (latest?.shippingStatus === 'delivered') {
+      await repairCompleteAudit({
+        current: latest,
+        actorUserId: args.actorUserId,
+        requestId: args.requestId,
+      });
+
       return {
         action: 'complete',
         orderId: latest.id,
@@ -603,19 +700,15 @@ async function applyComplete(args: {
     );
   }
 
-  await writeAdminAudit({
-    orderId: args.orderId,
-    actorUserId: args.actorUserId,
-    action: 'order_admin_action.complete',
-    targetType: 'order',
-    targetId: args.orderId,
-    requestId: args.requestId,
-    payload: {
-      action: 'complete',
-      fromShippingStatus: current.shippingStatus,
-      toShippingStatus: 'delivered',
-      fromShipmentStatus: current.shipmentStatus,
+  await repairCompleteAudit({
+    current: {
+      ...current,
+      shippingStatus: 'delivered',
     },
+    actorUserId: args.actorUserId,
+    requestId: args.requestId,
+    fromShippingStatus: current.shippingStatus,
+    fromShipmentStatus: current.shipmentStatus,
   });
 
   const latest = await loadLifecycleState(args.orderId);
