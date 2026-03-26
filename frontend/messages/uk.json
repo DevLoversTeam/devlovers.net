@@ -862,15 +862,32 @@
         "shippingProviders": {
           "novaPoshta": "Нова пошта"
         },
-        "shippingMethods": {
-          "novaPoshtaWarehouse": "Відділення Нової пошти",
-          "novaPoshtaLocker": "Поштомат Нової пошти",
-          "novaPoshtaCourier": "Кур'єр Нової пошти"
-        },
-        "fulfillmentStages": {
-          "processing": "Опрацювання",
-          "packed": "Упаковано",
-          "shipped": "Відправлено",
+          "shippingMethods": {
+            "novaPoshtaWarehouse": "Відділення Нової пошти",
+            "novaPoshtaLocker": "Поштомат Нової пошти",
+            "novaPoshtaCourier": "Кур'єр Нової пошти"
+          },
+          "history": {
+            "heading": "Історія",
+            "subtitle": "Адмін-дії та переходи станів у межах цього замовлення.",
+            "empty": "Історія замовлення поки порожня.",
+            "adminUser": "Адміністратор",
+            "system": "Система",
+            "legacySource": "Legacy-історія",
+            "shippingTransition": "Доставка: {from} -> {to}",
+            "shipmentState": "Стан відправлення: {status}",
+            "requestId": "Запит: {requestId}",
+            "actions": {
+              "recoverInitialShipment": "Відновлено початкове відправлення",
+              "retryLabelCreation": "Повторено створення етикетки",
+              "markShipped": "Позначено як відправлене",
+              "markDelivered": "Позначено як доставлене"
+            }
+          },
+          "fulfillmentStages": {
+            "processing": "Опрацювання",
+            "packed": "Упаковано",
+            "shipped": "Відправлено",
           "delivered": "Доставлено",
           "canceled": "Скасовано",
           "returned": "Повернено"

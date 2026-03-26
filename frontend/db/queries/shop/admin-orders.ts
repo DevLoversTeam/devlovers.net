@@ -4,6 +4,7 @@ import { and, count, desc, eq, gte, lt, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
 import {
+  adminAuditLog,
   orderItems,
   orders,
   orderShipping,
@@ -73,6 +74,20 @@ export type AdminOrderDetail = {
     unitPrice: string;
     lineTotal: string;
   }>;
+};
+
+export type AdminOrderHistoryEntry = {
+  id: string;
+  source: 'audit' | 'legacy';
+  action: string;
+  occurredAt: Date;
+  actorUserId: string | null;
+  actorName: string | null;
+  actorEmail: string | null;
+  requestId: string | null;
+  fromShippingStatus: string | null;
+  toShippingStatus: string | null;
+  fromShipmentStatus: string | null;
 };
 
 export async function getAdminOrdersPage(options: {
@@ -169,6 +184,136 @@ function toAdminOrderItem(
     unitPrice: toDbMoney(item.unitPriceMinor),
     lineTotal: toDbMoney(item.lineTotalMinor),
   };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function readString(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function normalizeHistoryAction(args: {
+  action: string;
+  payload: Record<string, unknown>;
+}): string {
+  if (args.action.startsWith('shipping_admin_action.')) {
+    return args.action.slice('shipping_admin_action.'.length);
+  }
+
+  return readString(args.payload.action) ?? args.action;
+}
+
+function toHistoryDate(value: unknown): Date | null {
+  if (!value) return null;
+  const date = value instanceof Date ? value : new Date(String(value));
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function parseLegacyShippingAdminAudit(
+  pspMetadata: Record<string, unknown> | null
+): AdminOrderHistoryEntry[] {
+  if (!isRecord(pspMetadata)) return [];
+
+  const rawEntries = pspMetadata.shippingAdminAudit;
+  if (!Array.isArray(rawEntries)) return [];
+
+  const entries: Array<{
+    entry: AdminOrderHistoryEntry;
+    index: number;
+  }> = [];
+
+  rawEntries.forEach((entry, index) => {
+    if (!isRecord(entry)) return;
+
+    const action = readString(entry.action);
+    const occurredAt = toHistoryDate(entry.at);
+    if (!action || !occurredAt) return;
+
+    entries.push({
+      entry: {
+        id: `legacy-shipping-${index}`,
+        source: 'legacy',
+        action,
+        occurredAt,
+        actorUserId: readString(entry.actorUserId),
+        actorName: null,
+        actorEmail: null,
+        requestId: readString(entry.requestId),
+        fromShippingStatus: readString(entry.fromShippingStatus),
+        toShippingStatus: readString(entry.toShippingStatus),
+        fromShipmentStatus: readString(entry.fromShipmentStatus),
+      },
+      index,
+    });
+  });
+
+  entries.sort((a, b) => {
+    const diff = b.entry.occurredAt.getTime() - a.entry.occurredAt.getTime();
+    return diff !== 0 ? diff : b.index - a.index;
+  });
+
+  return entries.map(item => item.entry);
+}
+
+export async function getAdminOrderTimeline(
+  orderId: string
+): Promise<AdminOrderHistoryEntry[]> {
+  const auditRows = await db
+    .select({
+      id: adminAuditLog.id,
+      action: adminAuditLog.action,
+      occurredAt: adminAuditLog.occurredAt,
+      actorUserId: adminAuditLog.actorUserId,
+      requestId: adminAuditLog.requestId,
+      payload: adminAuditLog.payload,
+      actorName: users.name,
+      actorEmail: users.email,
+    })
+    .from(adminAuditLog)
+    .leftJoin(users, eq(users.id, adminAuditLog.actorUserId))
+    .where(eq(adminAuditLog.orderId, orderId))
+    .orderBy(
+      desc(adminAuditLog.occurredAt),
+      desc(adminAuditLog.createdAt),
+      desc(adminAuditLog.id)
+    );
+
+  if (auditRows.length > 0) {
+    return auditRows.map(row => {
+      const payload = isRecord(row.payload) ? row.payload : {};
+
+      return {
+        id: row.id,
+        source: 'audit',
+        action: normalizeHistoryAction({
+          action: row.action,
+          payload,
+        }),
+        occurredAt: row.occurredAt,
+        actorUserId: row.actorUserId,
+        actorName: row.actorName,
+        actorEmail: row.actorEmail,
+        requestId: row.requestId,
+        fromShippingStatus: readString(payload.fromShippingStatus),
+        toShippingStatus: readString(payload.toShippingStatus),
+        fromShipmentStatus: readString(payload.fromShipmentStatus),
+      };
+    });
+  }
+
+  const [legacyOrder] = await db
+    .select({ pspMetadata: orders.pspMetadata })
+    .from(orders)
+    .where(eq(orders.id, orderId))
+    .limit(1);
+
+  return parseLegacyShippingAdminAudit(
+    isRecord(legacyOrder?.pspMetadata) ? legacyOrder.pspMetadata : null
+  );
 }
 
 export async function getAdminOrderDetail(
