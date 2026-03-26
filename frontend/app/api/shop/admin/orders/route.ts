@@ -13,6 +13,10 @@ import {
 import { logError, logWarn } from '@/lib/logging';
 import { requireAdminCsrf } from '@/lib/security/admin-csrf';
 import { guardBrowserSameOrigin } from '@/lib/security/origin';
+import {
+  adminOrdersFilterInputSchema,
+  normalizeAdminOrdersFilters,
+} from '@/lib/validation/shop-admin-orders';
 
 export const runtime = 'nodejs';
 
@@ -70,12 +74,24 @@ export async function GET(request: NextRequest) {
       limit: request.nextUrl.searchParams.get('limit') ?? undefined,
       offset: request.nextUrl.searchParams.get('offset') ?? undefined,
     });
+    const parsedFilters = adminOrdersFilterInputSchema.safeParse({
+      status: request.nextUrl.searchParams.get('status') ?? undefined,
+      dateFrom: request.nextUrl.searchParams.get('dateFrom') ?? undefined,
+      dateTo: request.nextUrl.searchParams.get('dateTo') ?? undefined,
+    });
 
-    if (!parsedQuery.success) {
+    if (!parsedQuery.success || !parsedFilters.success) {
+      const queryError = !parsedQuery.success ? parsedQuery.error.format() : {};
+      const filtersError = !parsedFilters.success
+        ? parsedFilters.error.format()
+        : {};
+
       logWarn('admin_orders_list_invalid_query', {
         ...baseMeta,
         code: 'INVALID_QUERY',
-        issuesCount: parsedQuery.error.issues?.length ?? 0,
+        issuesCount:
+          (!parsedQuery.success ? parsedQuery.error.issues.length : 0) +
+          (!parsedFilters.success ? parsedFilters.error.issues.length : 0),
         durationMs: Date.now() - startedAtMs,
       });
 
@@ -83,13 +99,20 @@ export async function GET(request: NextRequest) {
         {
           error: 'Invalid query',
           code: 'INVALID_QUERY',
-          details: parsedQuery.error.format(),
+          details: {
+            ...queryError,
+            ...filtersError,
+          },
         },
         { status: 400 }
       );
     }
 
-    const { items, total } = await getAdminOrdersPage(parsedQuery.data);
+    const filters = normalizeAdminOrdersFilters(parsedFilters.data);
+    const { items, total } = await getAdminOrdersPage({
+      ...parsedQuery.data,
+      ...filters,
+    });
 
     return noStoreJson(
       {

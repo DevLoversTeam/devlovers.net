@@ -8,11 +8,29 @@ type AdminPaginationProps = {
   page: number;
   hasNext: boolean;
   className?: string;
+  query?: Record<string, string | undefined>;
 };
 
-function pageHref(basePath: string, page: number) {
-  if (page <= 1) return basePath;
-  return `${basePath}?page=${page}`;
+function pageHref(
+  basePath: string,
+  page: number,
+  query?: Record<string, string | undefined>
+) {
+  const params = new URLSearchParams();
+
+  if (query) {
+    for (const [key, value] of Object.entries(query)) {
+      if (!value) continue;
+      params.set(key, value);
+    }
+  }
+
+  if (page > 1) {
+    params.set('page', String(page));
+  }
+
+  const queryString = params.toString();
+  return queryString ? `${basePath}?${queryString}` : basePath;
 }
 
 export async function AdminPagination({
@@ -20,14 +38,15 @@ export async function AdminPagination({
   page,
   hasNext,
   className,
+  query,
 }: AdminPaginationProps) {
   const hasPrev = page > 1;
   const t = await getTranslations('shop.admin.pagination');
 
   const disabledClass =
-    'inline-flex items-center rounded-md border border-border px-3 py-1.5 text-sm font-medium text-muted-foreground opacity-60';
+    'inline-flex h-9 items-center rounded-md border border-border px-3 text-sm font-medium text-muted-foreground opacity-60';
   const linkClass =
-    'inline-flex items-center rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary';
+    'inline-flex h-9 items-center rounded-md border border-border px-3 text-sm font-medium text-foreground transition-colors hover:bg-secondary';
 
   return (
     <nav aria-label={t('label')} className={cn('mt-6', className)}>
@@ -35,7 +54,7 @@ export async function AdminPagination({
         <li>
           {hasPrev ? (
             <Link
-              href={pageHref(basePath, page - 1)}
+              href={pageHref(basePath, page - 1, query)}
               rel="prev"
               aria-label={t('previousPage')}
               className={linkClass}
@@ -58,7 +77,7 @@ export async function AdminPagination({
         <li>
           {hasNext ? (
             <Link
-              href={pageHref(basePath, page + 1)}
+              href={pageHref(basePath, page + 1, query)}
               rel="next"
               aria-label={t('nextPage')}
               className={linkClass}

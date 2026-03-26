@@ -571,13 +571,23 @@
       },
       "orders": {
         "title": "Admin · Orders",
+        "subtitle": "Review recent orders, filter results, and inspect payment state.",
         "reconcileStale": "Reconcile stale",
         "empty": "No orders yet.",
         "listCaption": "Orders list",
         "viewOrder": "View order {id}",
+        "filters": {
+          "label": "Order filters",
+          "status": "Payment status",
+          "allStatuses": "All statuses",
+          "dateFrom": "From date",
+          "dateTo": "To date",
+          "apply": "Apply",
+          "reset": "Reset"
+        },
         "table": {
           "created": "Created",
-          "status": "Status",
+          "status": "Payment status",
           "total": "Total",
           "items": "Items",
           "provider": "Provider",

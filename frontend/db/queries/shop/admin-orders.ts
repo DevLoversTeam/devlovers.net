@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { count, desc, eq, sql } from 'drizzle-orm';
+import { and, count, desc, eq, gte, lt, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
 import {
@@ -69,11 +69,29 @@ export type AdminOrderDetail = {
 export async function getAdminOrdersPage(options: {
   limit: number;
   offset: number;
+  status?: PaymentStatus;
+  createdAtGte?: Date;
+  createdAtLt?: Date;
 }) {
   const limit = Math.max(1, Math.min(100, options.limit));
   const offset = Math.max(0, options.offset);
+  const filtersRaw = [
+    options.status ? eq(orders.paymentStatus, options.status) : undefined,
+    options.createdAtGte
+      ? gte(orders.createdAt, options.createdAtGte)
+      : undefined,
+    options.createdAtLt ? lt(orders.createdAt, options.createdAtLt) : undefined,
+  ];
+  const filters = filtersRaw.filter(
+    (value): value is NonNullable<(typeof filtersRaw)[number]> =>
+      value !== undefined
+  );
+  const whereClause = filters.length > 0 ? and(...filters) : sql`true`;
 
-  const [{ value: total }] = await db.select({ value: count() }).from(orders);
+  const [{ value: total }] = await db
+    .select({ value: count() })
+    .from(orders)
+    .where(whereClause);
   const totalCount =
     typeof total === 'bigint' ? Number(total) : Number(total ?? 0);
 
@@ -92,6 +110,7 @@ export async function getAdminOrdersPage(options: {
     })
     .from(orders)
     .leftJoin(orderItems, eq(orderItems.orderId, orders.id))
+    .where(whereClause)
     .groupBy(orders.id)
     .orderBy(desc(orders.createdAt))
     .limit(limit)
