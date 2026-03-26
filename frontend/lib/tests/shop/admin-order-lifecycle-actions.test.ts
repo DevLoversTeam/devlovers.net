@@ -68,6 +68,8 @@ async function insertOrder(args: {
     | null;
   pspChargeId?: string | null;
   pspStatusReason?: string | null;
+  stockRestored?: boolean;
+  restockedAt?: Date | null;
 }) {
   await db.insert(orders).values({
     id: args.orderId,
@@ -86,6 +88,8 @@ async function insertOrder(args: {
     shippingStatus: args.shippingStatus ?? null,
     pspChargeId: args.pspChargeId ?? null,
     pspStatusReason: args.pspStatusReason ?? null,
+    stockRestored: args.stockRestored ?? false,
+    restockedAt: args.restockedAt ?? null,
     idempotencyKey: crypto.randomUUID(),
   } as any);
 }
@@ -221,7 +225,7 @@ describe.sequential('admin order lifecycle actions', () => {
     }
   });
 
-  it('does not repair shipment side-effects for already-paid refund-contained orders', async () => {
+  it('backfills confirm audit without repairing shipment side-effects for already-paid refund-contained orders', async () => {
     const orderId = crypto.randomUUID();
     await ensureAdminUser();
 
@@ -276,7 +280,7 @@ describe.sequential('admin order lifecycle actions', () => {
         .where(eq(adminAuditLog.orderId, orderId));
       expect(
         auditRows.filter(row => row.action === 'order_admin_action.confirm')
-      ).toHaveLength(0);
+      ).toHaveLength(1);
     } finally {
       await cleanup(orderId);
     }
@@ -328,6 +332,51 @@ describe.sequential('admin order lifecycle actions', () => {
       expect(orderRow?.paymentStatus).toBe('failed');
       expect(orderRow?.inventoryStatus).toBe('released');
       expect(orderRow?.stockRestored).toBe(true);
+
+      const auditRows = await db
+        .select({ action: adminAuditLog.action })
+        .from(adminAuditLog)
+        .where(eq(adminAuditLog.orderId, orderId));
+      expect(
+        auditRows.filter(row => row.action === 'order_admin_action.cancel')
+      ).toHaveLength(1);
+    } finally {
+      await cleanup(orderId);
+    }
+  });
+
+  it('retrying cancel backfills missing audit for already-final canceled orders', async () => {
+    const orderId = crypto.randomUUID();
+    await ensureAdminUser();
+
+    await insertOrder({
+      orderId,
+      paymentProvider: 'stripe',
+      paymentStatus: 'failed',
+      status: 'CANCELED',
+      inventoryStatus: 'released',
+      shippingRequired: false,
+      shippingStatus: null,
+      stockRestored: true,
+      restockedAt: new Date(),
+    });
+
+    try {
+      const first = await applyAdminOrderLifecycleAction({
+        orderId,
+        action: 'cancel',
+        actorUserId: ADMIN_USER_ID,
+        requestId: `req_${crypto.randomUUID()}`,
+      });
+      const second = await applyAdminOrderLifecycleAction({
+        orderId,
+        action: 'cancel',
+        actorUserId: ADMIN_USER_ID,
+        requestId: `req_${crypto.randomUUID()}`,
+      });
+
+      expect(first.changed).toBe(false);
+      expect(second.changed).toBe(false);
 
       const auditRows = await db
         .select({ action: adminAuditLog.action })
@@ -400,6 +449,100 @@ describe.sequential('admin order lifecycle actions', () => {
         auditRows.filter(row => row.action === 'order_admin_action.complete')
       ).toHaveLength(1);
     } finally {
+      await cleanup(orderId);
+    }
+  });
+
+  it('retrying complete backfills missing audit for already-delivered orders', async () => {
+    const orderId = crypto.randomUUID();
+    await ensureAdminUser();
+
+    await insertOrder({
+      orderId,
+      paymentProvider: 'stripe',
+      paymentStatus: 'paid',
+      status: 'PAID',
+      inventoryStatus: 'reserved',
+      shippingRequired: true,
+      shippingProvider: 'nova_poshta',
+      shippingMethodCode: 'NP_WAREHOUSE',
+      shippingStatus: 'delivered',
+    });
+
+    await db.insert(shippingShipments).values({
+      id: crypto.randomUUID(),
+      orderId,
+      provider: 'nova_poshta',
+      status: 'succeeded',
+      attemptCount: 1,
+      leaseOwner: null,
+      leaseExpiresAt: null,
+      nextAttemptAt: null,
+    } as any);
+
+    try {
+      const first = await applyAdminOrderLifecycleAction({
+        orderId,
+        action: 'complete',
+        actorUserId: ADMIN_USER_ID,
+        requestId: `req_${crypto.randomUUID()}`,
+      });
+      const second = await applyAdminOrderLifecycleAction({
+        orderId,
+        action: 'complete',
+        actorUserId: ADMIN_USER_ID,
+        requestId: `req_${crypto.randomUUID()}`,
+      });
+
+      expect(first.changed).toBe(false);
+      expect(second.changed).toBe(false);
+
+      const auditRows = await db
+        .select({ action: adminAuditLog.action })
+        .from(adminAuditLog)
+        .where(eq(adminAuditLog.orderId, orderId));
+      expect(
+        auditRows.filter(row => row.action === 'order_admin_action.complete')
+      ).toHaveLength(1);
+    } finally {
+      await cleanup(orderId);
+    }
+  });
+
+  it('normalizes Monobank cancel provider/domain failures into lifecycle errors', async () => {
+    const orderId = crypto.randomUUID();
+    const originalPaymentsEnabled = process.env.PAYMENTS_ENABLED;
+    const originalMonobankToken = process.env.MONO_MERCHANT_TOKEN;
+    await ensureAdminUser();
+
+    process.env.PAYMENTS_ENABLED = 'true';
+    process.env.MONO_MERCHANT_TOKEN = 'test_monobank_token';
+
+    await insertOrder({
+      orderId,
+      paymentProvider: 'monobank',
+      paymentStatus: 'pending',
+      status: 'CREATED',
+      inventoryStatus: 'none',
+      shippingRequired: false,
+      shippingStatus: null,
+    });
+
+    try {
+      await expect(
+        applyAdminOrderLifecycleAction({
+          orderId,
+          action: 'cancel',
+          actorUserId: ADMIN_USER_ID,
+          requestId: `req_${crypto.randomUUID()}`,
+        })
+      ).rejects.toMatchObject({
+        code: 'CANCEL_MISSING_PROVIDER_REF',
+        status: 409,
+      });
+    } finally {
+      process.env.PAYMENTS_ENABLED = originalPaymentsEnabled;
+      process.env.MONO_MERCHANT_TOKEN = originalMonobankToken;
       await cleanup(orderId);
     }
   });

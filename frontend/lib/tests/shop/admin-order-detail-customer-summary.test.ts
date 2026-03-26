@@ -102,10 +102,12 @@ vi.mock('@/i18n/routing', () => ({
 vi.mock('@/app/[locale]/admin/shop/orders/[id]/ShippingActions', () => ({
   ShippingActions: ({
     orderId,
+    shippingReady,
     shippingStatus,
     shipmentStatus,
   }: {
     orderId: string;
+    shippingReady: boolean;
     shippingStatus: string | null;
     shipmentStatus: string | null;
   }) =>
@@ -114,6 +116,7 @@ vi.mock('@/app/[locale]/admin/shop/orders/[id]/ShippingActions', () => ({
       {
         'data-testid': 'shipping-actions',
         'data-order-id': orderId,
+        'data-shipping-ready': String(shippingReady),
         'data-shipping-status': shippingStatus ?? '',
         'data-shipment-status': shipmentStatus ?? '',
       },
@@ -320,6 +323,49 @@ describe('admin order detail customer summary', () => {
     expect(readFieldValue(html, 'Shipping method')).toBe(
       'Nova Poshta warehouse'
     );
+    expect(html).not.toContain('undefined');
+    expect(html).not.toContain('null');
+  });
+
+  it('renders registered account snapshots when only account name is available', async () => {
+    getAdminOrderDetailMock.mockResolvedValue(
+      baseOrderDetail({
+        customerAccountName: 'Named Account',
+        customerAccountEmail: null,
+      })
+    );
+
+    const html = renderToStaticMarkup(
+      await OrderDetailPage({
+        params: Promise.resolve({
+          locale: 'en',
+          id: '550e8400-e29b-41d4-a716-446655440000',
+        }),
+      })
+    );
+
+    expect(readFieldValue(html, 'Customer account')).toBe('Named Account');
+    expect(html).not.toContain('Account unavailable');
+  });
+
+  it('falls back safely when registered account snapshots have neither name nor email', async () => {
+    getAdminOrderDetailMock.mockResolvedValue(
+      baseOrderDetail({
+        customerAccountName: null,
+        customerAccountEmail: null,
+      })
+    );
+
+    const html = renderToStaticMarkup(
+      await OrderDetailPage({
+        params: Promise.resolve({
+          locale: 'en',
+          id: '550e8400-e29b-41d4-a716-446655440000',
+        }),
+      })
+    );
+
+    expect(readFieldValue(html, 'Customer account')).toBe('Registered account');
     expect(html).not.toContain('undefined');
     expect(html).not.toContain('null');
   });

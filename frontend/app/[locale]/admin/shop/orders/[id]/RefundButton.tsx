@@ -51,10 +51,16 @@ export function RefundButton({ orderId, disabled, csrfToken }: Props) {
   const router = useRouter();
   const t = useTranslations('shop.orders.detail.paymentControls');
   const [isPending, startTransition] = useTransition();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const errorId = useId();
 
   async function onRefund() {
+    if (disabled || isSubmitting || isPending) {
+      return;
+    }
+
+    setIsSubmitting(true);
     setError(null);
 
     let res: Response;
@@ -69,6 +75,7 @@ export function RefundButton({ orderId, disabled, csrfToken }: Props) {
       });
     } catch (err) {
       setError(mapRefundError(normalizeActionErrorCode(err), t));
+      setIsSubmitting(false);
       return;
     }
 
@@ -86,15 +93,17 @@ export function RefundButton({ orderId, disabled, csrfToken }: Props) {
           t
         )
       );
+      setIsSubmitting(false);
       return;
     }
 
+    setIsSubmitting(false);
     startTransition(() => {
       router.refresh();
     });
   }
 
-  const isDisabled = disabled || isPending;
+  const isDisabled = disabled || isSubmitting || isPending;
 
   return (
     <div className="space-y-2">
@@ -102,7 +111,7 @@ export function RefundButton({ orderId, disabled, csrfToken }: Props) {
         type="button"
         onClick={onRefund}
         disabled={isDisabled}
-        aria-busy={isPending}
+        aria-busy={isSubmitting || isPending}
         aria-describedby={error ? errorId : undefined}
         className="w-full rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-left text-sm font-medium text-amber-100 transition-colors hover:bg-amber-500/10 disabled:cursor-not-allowed disabled:opacity-50"
         title={disabled ? t('onlyForPaidStripe') : undefined}
