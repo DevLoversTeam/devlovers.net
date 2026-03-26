@@ -70,6 +70,7 @@ function baseOrderDetail(
     userId: 'user-123',
     customerAccountName: 'Admin Customer',
     customerAccountEmail: 'customer@example.com',
+    status: 'PAID',
     totalAmountMinor: 2599,
     totalAmount: '25.99',
     currency: 'USD',
@@ -115,6 +116,7 @@ function baseOrderDetail(
 describe('admin order detail history timeline', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    process.env.CSRF_SECRET = 'test_csrf_secret_for_admin_order_detail';
     getCurrentUserMock.mockResolvedValue({
       id: 'admin-1',
       role: 'admin',
@@ -127,15 +129,15 @@ describe('admin order detail history timeline', () => {
       {
         id: 'entry-newer',
         source: 'audit',
-        action: 'retry_label_creation',
+        action: 'complete',
         occurredAt: new Date('2026-03-12T08:00:00.000Z'),
         actorUserId: 'admin-2',
         actorName: 'Olha Admin',
         actorEmail: 'olha@example.com',
         requestId: 'req-newer',
-        fromShippingStatus: 'needs_attention',
-        toShippingStatus: 'queued',
-        fromShipmentStatus: 'failed',
+        fromShippingStatus: 'shipped',
+        toShippingStatus: 'delivered',
+        fromShipmentStatus: 'succeeded',
       },
       {
         id: 'entry-older',
@@ -163,17 +165,17 @@ describe('admin order detail history timeline', () => {
     );
 
     expect(html).toContain('history.heading');
-    expect(html).toContain('history.actions.retryLabelCreation');
+    expect(html).toContain('history.actions.complete');
     expect(html).toContain('history.actions.markShipped');
     expect(html).toContain('Olha Admin');
     expect(html).toContain('olha@example.com');
     expect(html).toContain(
-      'history.shippingTransition:from=needs_attention,to=queued'
+      'history.shippingTransition:from=shipped,to=delivered'
     );
-    expect(html).toContain('history.shipmentState:status=failed');
+    expect(html).toContain('history.shipmentState:status=succeeded');
     expect(html).toContain('history.requestId:requestId=req-newer');
     expect(html).toContain('history.legacySource');
-    expect(html.indexOf('history.actions.retryLabelCreation')).toBeLessThan(
+    expect(html.indexOf('history.actions.complete')).toBeLessThan(
       html.indexOf('history.actions.markShipped')
     );
   });

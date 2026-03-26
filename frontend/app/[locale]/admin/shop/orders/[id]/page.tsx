@@ -13,6 +13,7 @@ import {
 import { Link } from '@/i18n/routing';
 import { getCurrentUser } from '@/lib/auth';
 import { logError } from '@/lib/logging';
+import { CSRF_FORM_FIELD, issueCsrfToken } from '@/lib/security/csrf';
 import { type CurrencyCode, formatMoney } from '@/lib/shop/currency';
 import { fromDbMoney } from '@/lib/shop/money';
 import {
@@ -182,6 +183,12 @@ function historyActionLabel(
   t: (key: string, values?: Record<string, string | number | Date>) => string
 ): string {
   switch (action) {
+    case 'confirm':
+      return t('history.actions.confirm');
+    case 'cancel':
+      return t('history.actions.cancel');
+    case 'complete':
+      return t('history.actions.complete');
     case 'recover_initial_shipment':
       return t('history.actions.recoverInitialShipment');
     case 'retry_label_creation':
@@ -225,13 +232,64 @@ function renderHistoryActor(
   return <span className="font-medium">{t('history.system')}</span>;
 }
 
+function lifecycleErrorMessageKey(code: string | null): string | null {
+  if (!code) return null;
+
+  switch (code) {
+    case 'ORDER_CONFIRM_REQUIRES_PAID_PAYMENT':
+      return 'lifecycle.errors.confirmRequiresPaid';
+    case 'ORDER_CONFIRM_NOT_ALLOWED':
+    case 'ORDER_CONFIRM_INVENTORY_NOT_READY':
+      return 'lifecycle.errors.confirmNotAllowed';
+    case 'ORDER_CANCEL_REQUIRES_REFUND':
+      return 'lifecycle.errors.cancelRequiresRefund';
+    case 'ORDER_COMPLETE_REQUIRES_SHIPPING':
+      return 'lifecycle.errors.completeRequiresShipping';
+    case 'ORDER_COMPLETE_NOT_ALLOWED':
+    case 'ORDER_COMPLETE_SHIPMENT_STATE_INCOMPATIBLE':
+      return 'lifecycle.errors.completeNotAllowed';
+    case 'CSRF_REJECTED':
+      return 'lifecycle.errors.csrfRejected';
+    case 'INVALID_PAYLOAD':
+      return 'lifecycle.errors.invalidPayload';
+    case 'INTERNAL_ERROR':
+      return 'lifecycle.errors.internalError';
+    default:
+      return 'lifecycle.errors.generic';
+  }
+}
+
+function lifecycleEnabled(order: AdminOrderDetail): {
+  confirm: boolean;
+  cancel: boolean;
+  complete: boolean;
+} {
+  return {
+    confirm:
+      order.status === 'INVENTORY_RESERVED' && order.paymentStatus === 'paid',
+    cancel:
+      order.status !== 'CANCELED' &&
+      order.status !== 'INVENTORY_FAILED' &&
+      order.paymentStatus !== 'paid' &&
+      order.paymentStatus !== 'refunded',
+    complete:
+      order.shippingRequired === true &&
+      (order.shippingStatus === 'shipped' ||
+        order.shippingStatus === 'delivered'),
+  };
+}
+
 export default async function OrderDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string; id: string }>;
+  searchParams?: Promise<{ lifecycleError?: string | string[] }>;
 }) {
   const { locale, id } = await params;
+  const sp = searchParams ? await searchParams : {};
   const t = await getTranslations('shop.orders.detail');
+  const csrfToken = issueCsrfToken('admin:orders:lifecycle');
 
   const user = await getCurrentUser();
   if (!user) {
@@ -284,6 +342,11 @@ export default async function OrderDetailPage({
     customerSummary.shippingMethod,
     t
   );
+  const enabled = lifecycleEnabled(order);
+  const lifecycleErrorCode = Array.isArray(sp.lifecycleError)
+    ? (sp.lifecycleError[0] ?? null)
+    : (sp.lifecycleError ?? null);
+  const lifecycleErrorKey = lifecycleErrorMessageKey(lifecycleErrorCode);
   const NAV_LINK = cn(SHOP_NAV_LINK_BASE, 'text-lg', SHOP_FOCUS);
 
   const PRODUCT_LINK = cn(
@@ -324,6 +387,81 @@ export default async function OrderDetailPage({
           </Link>
         </nav>
       </header>
+
+      <section
+        className="border-border bg-background/80 mb-6 rounded-xl border p-4 shadow-sm"
+        aria-labelledby="order-lifecycle-heading"
+      >
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h2
+              id="order-lifecycle-heading"
+              className="text-foreground text-lg font-semibold"
+            >
+              {t('lifecycle.heading')}
+            </h2>
+            <p className="text-muted-foreground mt-1 text-sm">
+              {t('lifecycle.subtitle')}
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <form
+              action={`/${locale}/admin/shop/orders/${order.id}/lifecycle`}
+              method="post"
+            >
+              <input type="hidden" name={CSRF_FORM_FIELD} value={csrfToken} />
+              <input type="hidden" name="action" value="confirm" />
+              <button
+                type="submit"
+                disabled={!enabled.confirm}
+                className="border-border text-foreground hover:bg-secondary rounded-md border px-3 py-1.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {t('lifecycle.confirm')}
+              </button>
+            </form>
+
+            <form
+              action={`/${locale}/admin/shop/orders/${order.id}/lifecycle`}
+              method="post"
+            >
+              <input type="hidden" name={CSRF_FORM_FIELD} value={csrfToken} />
+              <input type="hidden" name="action" value="cancel" />
+              <button
+                type="submit"
+                disabled={!enabled.cancel}
+                className="border-border text-foreground hover:bg-secondary rounded-md border px-3 py-1.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {t('lifecycle.cancel')}
+              </button>
+            </form>
+
+            <form
+              action={`/${locale}/admin/shop/orders/${order.id}/lifecycle`}
+              method="post"
+            >
+              <input type="hidden" name={CSRF_FORM_FIELD} value={csrfToken} />
+              <input type="hidden" name="action" value="complete" />
+              <button
+                type="submit"
+                disabled={!enabled.complete}
+                className="border-border text-foreground hover:bg-secondary rounded-md border px-3 py-1.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {t('lifecycle.complete')}
+              </button>
+            </form>
+          </div>
+        </div>
+
+        {lifecycleErrorKey ? (
+          <p
+            role="alert"
+            className="text-destructive mt-3 rounded-md border border-rose-500/30 bg-rose-500/5 px-3 py-2 text-sm"
+          >
+            {t(lifecycleErrorKey)}
+          </p>
+        ) : null}
+      </section>
 
       <div className="mb-6 grid gap-6 xl:grid-cols-2">
         <section
