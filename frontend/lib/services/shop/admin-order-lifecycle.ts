@@ -12,6 +12,7 @@ import {
 } from '@/lib/services/errors';
 import { cancelMonobankUnpaidPayment } from '@/lib/services/orders/monobank-cancel-payment';
 import { restockOrder } from '@/lib/services/orders/restock';
+import { buildAdminAuditDedupeKey } from '@/lib/services/shop/events/dedupe-key';
 import { writeAdminAudit } from '@/lib/services/shop/events/write-admin-audit';
 import {
   evaluateOrderShippingEligibility,
@@ -37,6 +38,20 @@ type LifecycleStateRow = {
   restockedAt: Date | null;
   shipmentStatus: string | null;
 };
+
+export type AdminOrderLifecycleVisibilityState = Pick<
+  LifecycleStateRow,
+  | 'status'
+  | 'paymentStatus'
+  | 'inventoryStatus'
+  | 'shippingRequired'
+  | 'shippingProvider'
+  | 'shippingMethodCode'
+  | 'shippingStatus'
+  | 'pspStatusReason'
+  | 'stockRestored'
+  | 'shipmentStatus'
+>;
 
 export type ApplyAdminOrderLifecycleActionResult = {
   action: AdminOrderLifecycleAction;
@@ -108,6 +123,39 @@ function isPaidLike(state: LifecycleStateRow): boolean {
   );
 }
 
+export function getAdminOrderLifecycleAvailability(
+  state: AdminOrderLifecycleVisibilityState
+): {
+  confirm: boolean;
+  cancel: boolean;
+  complete: boolean;
+} {
+  const shippingEligible = evaluateOrderShippingEligibility({
+    paymentStatus: state.paymentStatus,
+    orderStatus: state.status,
+    inventoryStatus: state.inventoryStatus,
+    pspStatusReason: state.pspStatusReason,
+  }).ok;
+
+  return {
+    confirm:
+      state.status === 'INVENTORY_RESERVED' &&
+      state.paymentStatus === 'paid' &&
+      state.inventoryStatus === 'reserved',
+    cancel:
+      !isFinalCanceled(state as LifecycleStateRow) &&
+      !isPaidLike(state as LifecycleStateRow),
+    complete:
+      state.shippingRequired === true &&
+      state.shippingProvider === 'nova_poshta' &&
+      !!state.shippingMethodCode &&
+      state.shippingStatus !== 'delivered' &&
+      shippingEligible &&
+      state.shipmentStatus === 'succeeded' &&
+      state.shippingStatus === 'shipped',
+  };
+}
+
 function shippingEligibilityOrThrow(
   orderId: string,
   state: LifecycleStateRow
@@ -145,6 +193,93 @@ function toSupportedShipmentProvider(
   return undefined;
 }
 
+function shouldEnsureConfirmedOrderShipment(state: LifecycleStateRow): boolean {
+  return (
+    state.shippingRequired === true &&
+    state.shippingProvider === 'nova_poshta' &&
+    !!state.shippingMethodCode
+  );
+}
+
+function canRepairConfirmedOrderSideEffects(state: LifecycleStateRow): boolean {
+  if (!shouldEnsureConfirmedOrderShipment(state)) {
+    return false;
+  }
+
+  return evaluateOrderShippingEligibility({
+    paymentStatus: state.paymentStatus,
+    orderStatus: state.status,
+    inventoryStatus: state.inventoryStatus,
+    pspStatusReason: state.pspStatusReason,
+  }).ok;
+}
+
+function buildConfirmAuditDedupeKey(orderId: string): string {
+  return buildAdminAuditDedupeKey({
+    domain: 'order_admin_action',
+    action: 'confirm',
+    orderId,
+  });
+}
+
+async function repairConfirmedOrderSideEffects(args: {
+  current: LifecycleStateRow;
+  actorUserId: string | null;
+  requestId: string;
+  now: Date;
+  auditFromStatus?: string;
+  repairOnly?: boolean;
+}) {
+  if (args.repairOnly && !canRepairConfirmedOrderSideEffects(args.current)) {
+    return {
+      repaired: false,
+      shipmentSync: {
+        insertedShipment: false,
+        queuedShipment: false,
+        updatedOrder: false,
+      },
+    };
+  }
+
+  const shipmentSync = canRepairConfirmedOrderSideEffects(args.current)
+    ? await ensureQueuedInitialShipment({
+        now: args.now,
+        orderId: args.current.id,
+        paymentProvider: toSupportedShipmentProvider(
+          args.current.paymentProvider
+        ),
+      })
+    : {
+        insertedShipment: false,
+        queuedShipment: false,
+        updatedOrder: false,
+      };
+
+  await writeAdminAudit({
+    orderId: args.current.id,
+    actorUserId: args.actorUserId,
+    action: 'order_admin_action.confirm',
+    targetType: 'order',
+    targetId: args.current.id,
+    requestId: args.requestId,
+    dedupeKey: buildConfirmAuditDedupeKey(args.current.id),
+    payload: {
+      action: 'confirm',
+      fromStatus: args.auditFromStatus ?? args.current.status,
+      toStatus: 'PAID',
+      paymentStatus: args.current.paymentStatus,
+      insertedShipment: shipmentSync.insertedShipment,
+      queuedShipment: shipmentSync.queuedShipment,
+      updatedShippingStatus: shipmentSync.updatedOrder,
+    },
+  });
+
+  return {
+    repaired: true,
+    shipmentSync,
+  };
+}
+
 async function applyConfirm(args: {
   orderId: string;
   actorUserId: string | null;
@@ -160,13 +295,24 @@ async function applyConfirm(args: {
   }
 
   if (current.status === 'PAID') {
+    const beforeShippingStatus = current.shippingStatus;
+    await repairConfirmedOrderSideEffects({
+      current,
+      actorUserId: args.actorUserId,
+      requestId: args.requestId,
+      now: new Date(),
+      repairOnly: true,
+    });
+    const latest = await loadLifecycleState(args.orderId);
+    if (!latest) throw new OrderNotFoundError('Order not found.');
+
     return {
       action: 'confirm',
-      orderId: current.id,
-      changed: false,
-      status: current.status,
-      paymentStatus: current.paymentStatus,
-      shippingStatus: current.shippingStatus,
+      orderId: latest.id,
+      changed: latest.shippingStatus !== beforeShippingStatus,
+      status: latest.status,
+      paymentStatus: latest.paymentStatus,
+      shippingStatus: latest.shippingStatus,
     };
   }
 
@@ -213,13 +359,24 @@ async function applyConfirm(args: {
   if (!updated) {
     const latest = await loadLifecycleState(args.orderId);
     if (latest?.status === 'PAID') {
+      const beforeShippingStatus = latest.shippingStatus;
+      await repairConfirmedOrderSideEffects({
+        current: latest,
+        actorUserId: args.actorUserId,
+        requestId: args.requestId,
+        now,
+        repairOnly: true,
+      });
+      const repaired = await loadLifecycleState(args.orderId);
+      if (!repaired) throw new OrderNotFoundError('Order not found.');
+
       return {
         action: 'confirm',
-        orderId: latest.id,
-        changed: false,
-        status: latest.status,
-        paymentStatus: latest.paymentStatus,
-        shippingStatus: latest.shippingStatus,
+        orderId: repaired.id,
+        changed: repaired.shippingStatus !== beforeShippingStatus,
+        status: repaired.status,
+        paymentStatus: repaired.paymentStatus,
+        shippingStatus: repaired.shippingStatus,
       };
     }
 
@@ -229,37 +386,15 @@ async function applyConfirm(args: {
     );
   }
 
-  const shipmentSync =
-    current.shippingRequired === true &&
-    current.shippingProvider === 'nova_poshta' &&
-    current.shippingMethodCode
-      ? await ensureQueuedInitialShipment({
-          now,
-          orderId: args.orderId,
-          paymentProvider: toSupportedShipmentProvider(current.paymentProvider),
-        })
-      : {
-          insertedShipment: false,
-          queuedShipment: false,
-          updatedOrder: false,
-        };
-
-  await writeAdminAudit({
-    orderId: args.orderId,
-    actorUserId: args.actorUserId,
-    action: 'order_admin_action.confirm',
-    targetType: 'order',
-    targetId: args.orderId,
-    requestId: args.requestId,
-    payload: {
-      action: 'confirm',
-      fromStatus: current.status,
-      toStatus: 'PAID',
-      paymentStatus: current.paymentStatus,
-      insertedShipment: shipmentSync.insertedShipment,
-      queuedShipment: shipmentSync.queuedShipment,
-      updatedShippingStatus: shipmentSync.updatedOrder,
+  await repairConfirmedOrderSideEffects({
+    current: {
+      ...current,
+      status: 'PAID',
     },
+    actorUserId: args.actorUserId,
+    requestId: args.requestId,
+    now,
+    auditFromStatus: current.status,
   });
 
   const latest = await loadLifecycleState(args.orderId);

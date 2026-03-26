@@ -820,15 +820,16 @@
         "pending": "Pending",
         "requiresPayment": "Payment required",
         "failed": "Failed",
-        "refunded": "Refunded"
+        "refunded": "Refunded",
+        "needsReview": "Needs review"
       },
       "detail": {
         "title": "Order",
         "myOrders": "My orders",
         "shop": "Shop",
         "orderSummary": "Order summary",
-          "customerSummary": "Customer summary",
-          "lifecycle": {
+        "customerSummary": "Customer summary",
+        "lifecycle": {
             "eyebrow": "Order state",
             "heading": "Status updates",
             "subtitle": "Use these when you need to move the order to its next safe state.",
@@ -847,12 +848,12 @@
               "generic": "Lifecycle action is not available in the current state."
             }
           },
-          "actions": {
+        "actions": {
             "heading": "Admin actions",
             "subtitle": "Choose the next safe step for this order. Only actions that fit the current state are shown.",
             "empty": "No admin actions are available for the current state."
           },
-          "shippingControls": {
+        "shippingControls": {
             "eyebrow": "Shipping",
             "heading": "Shipment handling",
             "subtitle": "Recover or advance delivery only when the shipment is ready for it.",
@@ -871,7 +872,7 @@
               "generic": "Shipping action could not be completed. Refresh the order and try again."
             }
           },
-          "paymentControls": {
+        "paymentControls": {
             "eyebrow": "Payment",
             "heading": "Payment handling",
             "subtitle": "Use the payment tools below only when this order needs financial follow-up.",
@@ -895,7 +896,7 @@
               "generic": "Payment action could not be completed. Refresh the order and try again."
             }
           },
-          "customerAccount": "Customer account",
+        "customerAccount": "Customer account",
         "accountUnavailable": "Registered account",
         "guest": "Guest checkout",
         "total": "Total",
@@ -929,32 +930,53 @@
         "shippingProviders": {
           "novaPoshta": "Nova Poshta"
         },
-          "shippingMethods": {
-            "novaPoshtaWarehouse": "Nova Poshta warehouse",
-            "novaPoshtaLocker": "Nova Poshta parcel locker",
-            "novaPoshtaCourier": "Nova Poshta courier"
-          },
-          "history": {
-            "heading": "History",
-            "subtitle": "Order-scoped admin activity and status transitions.",
-            "empty": "No order history yet.",
-            "adminUser": "Admin user",
-            "system": "System",
-            "legacySource": "Legacy history",
-            "shippingTransition": "Shipping: {from} -> {to}",
-            "shipmentState": "Shipment state: {status}",
-            "requestId": "Request: {requestId}",
-            "actions": {
-              "confirm": "Confirmed order",
-              "cancel": "Canceled order",
-              "complete": "Completed order",
-              "recoverInitialShipment": "Recovered initial shipment",
-              "retryLabelCreation": "Retried label creation",
-              "markShipped": "Marked as shipped",
-              "markDelivered": "Marked as delivered"
-            }
-          },
-          "fulfillmentStages": {
+        "paymentProviders": {
+          "stripe": "Stripe",
+          "monobank": "Monobank"
+        },
+        "shippingMethods": {
+          "novaPoshtaWarehouse": "Nova Poshta warehouse",
+          "novaPoshtaLocker": "Nova Poshta parcel locker",
+          "novaPoshtaCourier": "Nova Poshta courier"
+        },
+        "shippingStatuses": {
+          "pending": "Pending",
+          "queued": "Queued",
+          "creatingLabel": "Creating label",
+          "labelCreated": "Label created",
+          "shipped": "Shipped",
+          "delivered": "Delivered",
+          "cancelled": "Cancelled",
+          "needsAttention": "Needs attention"
+        },
+        "shipmentStatuses": {
+          "queued": "Queued",
+          "created": "Created",
+          "succeeded": "Succeeded",
+          "failed": "Failed",
+          "needsAttention": "Needs attention"
+        },
+        "history": {
+          "heading": "History",
+          "subtitle": "Order-scoped admin activity and status transitions.",
+          "empty": "No order history yet.",
+          "adminUser": "Admin user",
+          "system": "System",
+          "legacySource": "Legacy history",
+          "shippingTransition": "Shipping: {from} -> {to}",
+          "shipmentState": "Shipment state: {status}",
+          "requestId": "Request: {requestId}",
+          "actions": {
+            "confirm": "Confirmed order",
+            "cancel": "Canceled order",
+            "complete": "Completed order",
+            "recoverInitialShipment": "Recovered initial shipment",
+            "retryLabelCreation": "Retried label creation",
+            "markShipped": "Marked as shipped",
+            "markDelivered": "Marked as delivered"
+          }
+        },
+        "fulfillmentStages": {
             "processing": "Processing",
             "packed": "Packed",
             "shipped": "Shipped",

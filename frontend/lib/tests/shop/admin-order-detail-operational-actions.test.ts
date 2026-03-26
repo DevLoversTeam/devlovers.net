@@ -1,7 +1,11 @@
+import fs from 'node:fs';
+import path from 'node:path';
+
 import { createElement, type ReactNode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import OrderDetailPage from '@/app/[locale]/admin/shop/orders/[id]/page';
 import type { AdminOrderDetail } from '@/db/queries/shop/admin-orders';
 
 const getAdminOrderDetailMock = vi.hoisted(() => vi.fn());
@@ -17,6 +21,22 @@ const redirectMock = vi.hoisted(() =>
     throw new Error(`NEXT_REDIRECT:${location}`);
   })
 );
+const i18nState = vi.hoisted(() => ({
+  locale: 'en',
+}));
+const messagesRoot = path.join(process.cwd(), 'messages');
+
+function readLocaleMessages(locale: 'en' | 'uk' | 'pl') {
+  return JSON.parse(
+    fs.readFileSync(path.join(messagesRoot, `${locale}.json`), 'utf8')
+  ) as Record<string, unknown>;
+}
+
+const localeMessagesCache = {
+  en: readLocaleMessages('en'),
+  uk: readLocaleMessages('uk'),
+  pl: readLocaleMessages('pl'),
+};
 
 vi.mock('next/navigation', () => ({
   notFound: notFoundMock,
@@ -24,7 +44,38 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('next-intl/server', () => ({
-  getTranslations: vi.fn(async () => (key: string) => key),
+  getTranslations: vi.fn(async (namespace: string) => {
+    const getByPath = (source: unknown, dottedPath: string): unknown =>
+      dottedPath.split('.').reduce<unknown>((acc, segment) => {
+        if (!acc || typeof acc !== 'object' || Array.isArray(acc)) {
+          return undefined;
+        }
+        return (acc as Record<string, unknown>)[segment];
+      }, source);
+
+    const formatMessage = (
+      template: string,
+      values?: Record<string, string | number | Date>
+    ) =>
+      template.replace(/\{(\w+)\}/g, (_match, key: string) =>
+        values && key in values ? String(values[key]) : `{${key}}`
+      );
+
+    const localeMessages =
+      localeMessagesCache[i18nState.locale as 'en' | 'uk' | 'pl'];
+    const scopedMessages = getByPath(localeMessages, namespace);
+    if (!scopedMessages || typeof scopedMessages !== 'object') {
+      throw new Error(`MISSING_NAMESPACE:${namespace}`);
+    }
+
+    return (key: string, values?: Record<string, string | number | Date>) => {
+      const message = getByPath(scopedMessages, key);
+      if (typeof message !== 'string') {
+        throw new Error(`MISSING_MESSAGE:${namespace}.${key}`);
+      }
+      return formatMessage(message, values);
+    };
+  }),
 }));
 
 vi.mock('@/lib/auth', () => ({
@@ -88,8 +139,6 @@ vi.mock('@/app/[locale]/admin/shop/orders/[id]/CancelPaymentButton', () => ({
     ),
 }));
 
-import OrderDetailPage from '@/app/[locale]/admin/shop/orders/[id]/page';
-
 function baseOrderDetail(
   overrides?: Partial<AdminOrderDetail>
 ): AdminOrderDetail {
@@ -99,6 +148,8 @@ function baseOrderDetail(
     customerAccountName: 'Admin Customer',
     customerAccountEmail: 'customer@example.com',
     status: 'PAID',
+    inventoryStatus: 'reserved',
+    pspStatusReason: null,
     totalAmountMinor: 2599,
     totalAmount: '25.99',
     currency: 'USD',
@@ -141,13 +192,17 @@ function baseOrderDetail(
   };
 }
 
-async function renderOrder(overrides?: Partial<AdminOrderDetail>) {
+async function renderOrder(
+  overrides?: Partial<AdminOrderDetail>,
+  locale = 'en'
+) {
+  i18nState.locale = locale;
   getAdminOrderDetailMock.mockResolvedValue(baseOrderDetail(overrides));
 
   return renderToStaticMarkup(
     await OrderDetailPage({
       params: Promise.resolve({
-        locale: 'en',
+        locale,
         id: '550e8400-e29b-41d4-a716-446655440000',
       }),
     })
@@ -157,6 +212,7 @@ async function renderOrder(overrides?: Partial<AdminOrderDetail>) {
 describe('admin order detail operational actions', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    i18nState.locale = 'en';
     process.env.CSRF_SECRET = 'test_csrf_secret_for_admin_order_detail';
     getCurrentUserMock.mockResolvedValue({
       id: 'admin-1',
@@ -168,18 +224,19 @@ describe('admin order detail operational actions', () => {
   it('renders existing shipping and refund controls for eligible Stripe orders', async () => {
     const html = await renderOrder();
 
-    expect(html).toContain('actions.heading');
-    expect(html).toContain('shippingControls.heading');
-    expect(html).toContain('paymentControls.heading');
+    expect(html).toContain('Admin actions');
+    expect(html).toContain('Shipment handling');
+    expect(html).toContain('Payment handling');
     expect(html).toContain('shipping-actions');
     expect(html).toContain('refund-button');
     expect(html).not.toContain('cancel-payment-button');
-    expect(html).not.toContain('lifecycle.complete');
+    expect(html).not.toContain('>Complete<');
   });
 
   it('renders cancel-payment control and suppresses duplicate generic cancel for Monobank unpaid orders', async () => {
     const html = await renderOrder({
       status: 'CREATED',
+      inventoryStatus: 'none',
       paymentProvider: 'monobank',
       paymentStatus: 'pending',
       shippingRequired: false,
@@ -190,16 +247,17 @@ describe('admin order detail operational actions', () => {
       paymentIntentId: null,
     });
 
-    expect(html).toContain('paymentControls.heading');
+    expect(html).toContain('Payment handling');
     expect(html).toContain('cancel-payment-button');
     expect(html).not.toContain('refund-button');
     expect(html).not.toContain('shipping-actions');
-    expect(html).not.toContain('lifecycle.cancel');
+    expect(html).not.toContain('>Cancel<');
   });
 
   it('renders confirm as a lifecycle action when it is the only eligible operational action', async () => {
     const html = await renderOrder({
       status: 'INVENTORY_RESERVED',
+      inventoryStatus: 'reserved',
       paymentProvider: 'monobank',
       paymentStatus: 'paid',
       shippingRequired: false,
@@ -209,10 +267,30 @@ describe('admin order detail operational actions', () => {
       shipmentStatus: null,
     });
 
-    expect(html).toContain('lifecycle.heading');
-    expect(html).toContain('lifecycle.confirm');
+    expect(html).toContain('Status updates');
+    expect(html).toContain('>Confirm<');
     expect(html).not.toContain('shipping-actions');
     expect(html).not.toContain('refund-button');
     expect(html).not.toContain('cancel-payment-button');
+  });
+
+  it('hides complete and shipping controls when refund containment blocks shipping eligibility', async () => {
+    const html = await renderOrder({
+      status: 'PAID',
+      inventoryStatus: 'reserved',
+      paymentProvider: 'stripe',
+      paymentStatus: 'paid',
+      pspStatusReason: 'REFUND_REQUESTED',
+      shippingRequired: true,
+      shippingProvider: 'nova_poshta',
+      shippingMethodCode: 'NP_WAREHOUSE',
+      shippingStatus: 'shipped',
+      shipmentStatus: 'succeeded',
+    });
+
+    expect(html).toContain('Admin actions');
+    expect(html).not.toContain('shipping-actions');
+    expect(html).not.toContain('>Complete<');
+    expect(html).toContain('refund-button');
   });
 });

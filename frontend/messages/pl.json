@@ -820,7 +820,8 @@
         "pending": "Oczekujące",
         "requiresPayment": "Wymaga płatności",
         "failed": "Nieudane",
-        "refunded": "Zwrócone"
+        "refunded": "Zwrócone",
+        "needsReview": "Wymaga weryfikacji"
       },
       "detail": {
         "title": "Zamówienie",
@@ -928,6 +929,27 @@
         "trackingNumber": "Numer śledzenia",
         "shippingProviders": {
           "novaPoshta": "Nova Poshta"
+        },
+        "paymentProviders": {
+          "stripe": "Stripe",
+          "monobank": "Monobank"
+        },
+        "shippingStatuses": {
+          "pending": "Oczekuje",
+          "queued": "W kolejce",
+          "creatingLabel": "Tworzenie etykiety",
+          "labelCreated": "Etykieta utworzona",
+          "shipped": "WysÅ‚ane",
+          "delivered": "Dostarczone",
+          "cancelled": "Anulowano",
+          "needsAttention": "Wymaga uwagi"
+        },
+        "shipmentStatuses": {
+          "queued": "W kolejce",
+          "created": "Utworzono",
+          "succeeded": "ZakoÅ„czono powodzeniem",
+          "failed": "BÅ‚Ä…d",
+          "needsAttention": "Wymaga uwagi"
         },
           "shippingMethods": {
             "novaPoshtaWarehouse": "Oddział Nova Poshta",

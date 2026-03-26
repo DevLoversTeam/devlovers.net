@@ -17,6 +17,18 @@ type Props = {
   shipmentStatus: string | null;
 };
 
+function normalizeActionErrorCode(error: unknown): string {
+  if (error instanceof TypeError) {
+    return 'NETWORK_ERROR';
+  }
+
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message;
+  }
+
+  return 'NETWORK_ERROR';
+}
+
 function mapShippingError(code: string, t: (key: string) => string): string {
   switch (code) {
     case 'NETWORK_ERROR':
@@ -100,9 +112,7 @@ export function ShippingActions({
         body: JSON.stringify({ action }),
       });
     } catch (err) {
-      const msg =
-        err instanceof Error && err.message ? err.message : 'NETWORK_ERROR';
-      setError(mapShippingError(msg, t));
+      setError(mapShippingError(normalizeActionErrorCode(err), t));
       return;
     }
 

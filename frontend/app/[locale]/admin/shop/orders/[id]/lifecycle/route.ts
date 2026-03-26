@@ -53,6 +53,25 @@ function redirectToDetail(args: {
   return NextResponse.redirect(buildDetailUrl(args), { status: 303 });
 }
 
+function buildLoginUrl(args: {
+  request: NextRequest;
+  locale: string;
+  orderId: string;
+}): URL {
+  const returnTo = `/${args.locale}/admin/shop/orders/${args.orderId}`;
+  const url = new URL(`/${args.locale}/login`, args.request.url);
+  url.searchParams.set('returnTo', returnTo);
+  return url;
+}
+
+function redirectToLogin(args: {
+  request: NextRequest;
+  locale: string;
+  orderId: string;
+}) {
+  return NextResponse.redirect(buildLoginUrl(args), { status: 303 });
+}
+
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ locale: string; id: string }> }
@@ -68,6 +87,7 @@ export async function POST(
 
   let localeForRedirect = 'en';
   let orderIdForLog: string | null = null;
+  let orderIdForRedirect = '';
 
   const blocked = guardBrowserSameOrigin(request);
   if (blocked) {
@@ -85,15 +105,20 @@ export async function POST(
       typeof rawParams.locale === 'string' && rawParams.locale.trim().length > 0
         ? rawParams.locale
         : 'en';
+    orderIdForRedirect =
+      typeof rawParams.id === 'string' ? rawParams.id.trim() : '';
 
     const parsed = orderIdParamSchema.safeParse({ id: rawParams.id });
     if (!parsed.success) {
-      return NextResponse.json(
-        { code: 'INVALID_ORDER_ID', message: 'Invalid order id.' },
-        { status: 400 }
-      );
+      return redirectToDetail({
+        request,
+        locale: localeForRedirect,
+        orderId: orderIdForRedirect,
+        errorCode: 'INVALID_ORDER_ID',
+      });
     }
     orderIdForLog = parsed.data.id;
+    orderIdForRedirect = parsed.data.id;
 
     const adminUser = await requireAdminApi(request);
     const formData = await request.formData();
@@ -152,24 +177,29 @@ export async function POST(
     });
   } catch (error) {
     if (error instanceof AdminApiDisabledError) {
-      return NextResponse.json(
-        { code: 'ADMIN_API_DISABLED', message: 'Admin API is disabled.' },
-        { status: 403 }
-      );
+      return redirectToDetail({
+        request,
+        locale: localeForRedirect,
+        orderId: orderIdForRedirect,
+        errorCode: error.code,
+      });
     }
 
     if (error instanceof AdminUnauthorizedError) {
-      return NextResponse.json(
-        { code: error.code, message: 'Unauthorized.' },
-        { status: 401 }
-      );
+      return redirectToLogin({
+        request,
+        locale: localeForRedirect,
+        orderId: orderIdForRedirect,
+      });
     }
 
     if (error instanceof AdminForbiddenError) {
-      return NextResponse.json(
-        { code: error.code, message: 'Forbidden.' },
-        { status: 403 }
-      );
+      return redirectToDetail({
+        request,
+        locale: localeForRedirect,
+        orderId: orderIdForRedirect,
+        errorCode: error.code,
+      });
     }
 
     if (error instanceof AdminOrderLifecycleActionError) {
@@ -182,7 +212,7 @@ export async function POST(
       return redirectToDetail({
         request,
         locale: localeForRedirect,
-        orderId: orderIdForLog ?? '',
+        orderId: orderIdForRedirect,
         errorCode: error.code,
       });
     }
@@ -197,7 +227,7 @@ export async function POST(
     return redirectToDetail({
       request,
       locale: localeForRedirect,
-      orderId: orderIdForLog ?? '',
+      orderId: orderIdForRedirect,
       errorCode: 'INTERNAL_ERROR',
     });
   }

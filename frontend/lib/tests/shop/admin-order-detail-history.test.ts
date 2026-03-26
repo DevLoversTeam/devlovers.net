@@ -1,7 +1,11 @@
+import fs from 'node:fs';
+import path from 'node:path';
+
 import { createElement, type ReactNode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import OrderDetailPage from '@/app/[locale]/admin/shop/orders/[id]/page';
 import type {
   AdminOrderDetail,
   AdminOrderHistoryEntry,
@@ -20,6 +24,22 @@ const redirectMock = vi.hoisted(() =>
     throw new Error(`NEXT_REDIRECT:${location}`);
   })
 );
+const i18nState = vi.hoisted(() => ({
+  locale: 'en',
+}));
+const messagesRoot = path.join(process.cwd(), 'messages');
+
+function readLocaleMessages(locale: 'en' | 'uk' | 'pl') {
+  return JSON.parse(
+    fs.readFileSync(path.join(messagesRoot, `${locale}.json`), 'utf8')
+  ) as Record<string, unknown>;
+}
+
+const localeMessagesCache = {
+  en: readLocaleMessages('en'),
+  uk: readLocaleMessages('uk'),
+  pl: readLocaleMessages('pl'),
+};
 
 vi.mock('next/navigation', () => ({
   notFound: notFoundMock,
@@ -27,16 +47,38 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('next-intl/server', () => ({
-  getTranslations: vi.fn(
-    async () =>
-      (key: string, values?: Record<string, string | number | Date>) => {
-        if (!values) return key;
+  getTranslations: vi.fn(async (namespace: string) => {
+    const getByPath = (source: unknown, dottedPath: string): unknown =>
+      dottedPath.split('.').reduce<unknown>((acc, segment) => {
+        if (!acc || typeof acc !== 'object' || Array.isArray(acc)) {
+          return undefined;
+        }
+        return (acc as Record<string, unknown>)[segment];
+      }, source);
 
-        return `${key}:${Object.entries(values)
-          .map(([name, value]) => `${name}=${String(value)}`)
-          .join(',')}`;
+    const formatMessage = (
+      template: string,
+      values?: Record<string, string | number | Date>
+    ) =>
+      template.replace(/\{(\w+)\}/g, (_match, key: string) =>
+        values && key in values ? String(values[key]) : `{${key}}`
+      );
+
+    const localeMessages =
+      localeMessagesCache[i18nState.locale as 'en' | 'uk' | 'pl'];
+    const scopedMessages = getByPath(localeMessages, namespace);
+    if (!scopedMessages || typeof scopedMessages !== 'object') {
+      throw new Error(`MISSING_NAMESPACE:${namespace}`);
+    }
+
+    return (key: string, values?: Record<string, string | number | Date>) => {
+      const message = getByPath(scopedMessages, key);
+      if (typeof message !== 'string') {
+        throw new Error(`MISSING_MESSAGE:${namespace}.${key}`);
       }
-  ),
+      return formatMessage(message, values);
+    };
+  }),
 }));
 
 vi.mock('@/lib/auth', () => ({
@@ -61,29 +103,16 @@ vi.mock('@/i18n/routing', () => ({
 }));
 
 vi.mock('@/app/[locale]/admin/shop/orders/[id]/ShippingActions', () => ({
-  ShippingActions: () =>
-    createElement(
-      'div',
-      { 'data-testid': 'shipping-actions' },
-      'shipping-actions'
-    ),
+  ShippingActions: () => createElement('div', {}, 'shipping-actions'),
 }));
 
 vi.mock('@/app/[locale]/admin/shop/orders/[id]/RefundButton', () => ({
-  RefundButton: () =>
-    createElement('div', { 'data-testid': 'refund-button' }, 'refund-button'),
+  RefundButton: () => createElement('div', {}, 'refund-button'),
 }));
 
 vi.mock('@/app/[locale]/admin/shop/orders/[id]/CancelPaymentButton', () => ({
-  CancelPaymentButton: () =>
-    createElement(
-      'div',
-      { 'data-testid': 'cancel-payment-button' },
-      'cancel-payment-button'
-    ),
+  CancelPaymentButton: () => createElement('div', {}, 'cancel-payment-button'),
 }));
-
-import OrderDetailPage from '@/app/[locale]/admin/shop/orders/[id]/page';
 
 function baseOrderDetail(
   overrides?: Partial<AdminOrderDetail>
@@ -94,6 +123,8 @@ function baseOrderDetail(
     customerAccountName: 'Admin Customer',
     customerAccountEmail: 'customer@example.com',
     status: 'PAID',
+    inventoryStatus: 'reserved',
+    pspStatusReason: null,
     totalAmountMinor: 2599,
     totalAmount: '25.99',
     currency: 'USD',
@@ -136,89 +167,101 @@ function baseOrderDetail(
   };
 }
 
-describe('admin order detail history timeline', () => {
+function baseHistoryEntry(
+  overrides?: Partial<AdminOrderHistoryEntry>
+): AdminOrderHistoryEntry {
+  return {
+    id: 'history-1',
+    action: 'mark_shipped',
+    occurredAt: new Date('2026-03-10T14:00:00.000Z'),
+    actorUserId: 'admin-1',
+    actorName: 'Admin User',
+    actorEmail: 'admin@example.com',
+    requestId: 'req-1',
+    source: 'audit',
+    fromShippingStatus: 'pending',
+    toShippingStatus: 'label_created',
+    fromShipmentStatus: 'succeeded',
+    ...overrides,
+  };
+}
+
+async function renderOrder(history: AdminOrderHistoryEntry[], locale = 'en') {
+  i18nState.locale = locale;
+  getAdminOrderDetailMock.mockResolvedValue(baseOrderDetail());
+  getAdminOrderTimelineMock.mockResolvedValue(history);
+
+  return renderToStaticMarkup(
+    await OrderDetailPage({
+      params: Promise.resolve({
+        locale,
+        id: '550e8400-e29b-41d4-a716-446655440000',
+      }),
+    })
+  );
+}
+
+describe('admin order detail history', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    i18nState.locale = 'en';
     process.env.CSRF_SECRET = 'test_csrf_secret_for_admin_order_detail';
     getCurrentUserMock.mockResolvedValue({
       id: 'admin-1',
       role: 'admin',
     });
-    getAdminOrderDetailMock.mockResolvedValue(baseOrderDetail());
   });
 
-  it('renders timeline when order-scoped history exists', async () => {
-    const history: AdminOrderHistoryEntry[] = [
-      {
-        id: 'entry-newer',
-        source: 'audit',
+  it('renders localized history details for known transition statuses', async () => {
+    const html = await renderOrder([
+      baseHistoryEntry(),
+      baseHistoryEntry({
+        id: 'history-2',
+        source: 'legacy',
         action: 'complete',
-        occurredAt: new Date('2026-03-12T08:00:00.000Z'),
-        actorUserId: 'admin-2',
-        actorName: 'Olha Admin',
-        actorEmail: 'olha@example.com',
-        requestId: 'req-newer',
+        requestId: null,
         fromShippingStatus: 'shipped',
         toShippingStatus: 'delivered',
-        fromShipmentStatus: 'succeeded',
-      },
-      {
-        id: 'entry-older',
-        source: 'legacy',
-        action: 'mark_shipped',
-        occurredAt: new Date('2026-03-11T08:00:00.000Z'),
-        actorUserId: null,
-        actorName: null,
-        actorEmail: null,
-        requestId: 'req-older',
-        fromShippingStatus: 'label_created',
-        toShippingStatus: 'shipped',
-        fromShipmentStatus: 'succeeded',
-      },
-    ];
-    getAdminOrderTimelineMock.mockResolvedValue(history);
+        fromShipmentStatus: 'created',
+      }),
+    ]);
 
-    const html = renderToStaticMarkup(
-      await OrderDetailPage({
-        params: Promise.resolve({
-          locale: 'en',
-          id: '550e8400-e29b-41d4-a716-446655440000',
-        }),
-      })
-    );
-
-    expect(html).toContain('history.heading');
-    expect(html).toContain('history.actions.complete');
-    expect(html).toContain('history.actions.markShipped');
-    expect(html).toContain('Olha Admin');
-    expect(html).toContain('olha@example.com');
-    expect(html).toContain(
-      'history.shippingTransition:from=shipped,to=delivered'
-    );
-    expect(html).toContain('history.shipmentState:status=succeeded');
-    expect(html).toContain('history.requestId:requestId=req-newer');
-    expect(html).toContain('history.legacySource');
-    expect(html.indexOf('history.actions.complete')).toBeLessThan(
-      html.indexOf('history.actions.markShipped')
-    );
+    expect(html).toContain('History');
+    expect(html).toContain('Marked as shipped');
+    expect(html).toContain('Completed order');
+    expect(html).toContain('Shipping: Pending -&gt; Label created');
+    expect(html).toContain('Shipment state: Succeeded');
+    expect(html).toContain('Request: req-1');
+    expect(html).toContain('Legacy history');
+    expect(html).toContain('Shipping: Shipped -&gt; Delivered');
+    expect(html).toContain('Shipment state: Created');
   });
 
-  it('renders empty history state safely', async () => {
-    getAdminOrderTimelineMock.mockResolvedValue([]);
+  it('renders empty history safely', async () => {
+    const html = await renderOrder([]);
 
-    const html = renderToStaticMarkup(
-      await OrderDetailPage({
-        params: Promise.resolve({
-          locale: 'en',
-          id: '550e8400-e29b-41d4-a716-446655440000',
+    expect(html).toContain('History');
+    expect(html).toContain('No order history yet.');
+  });
+
+  it('renders ukrainian localized history labels without falling back to englishized codes', async () => {
+    const html = await renderOrder(
+      [
+        baseHistoryEntry({
+          action: 'mark_delivered',
+          fromShippingStatus: 'queued',
+          toShippingStatus: 'needs_attention',
+          fromShipmentStatus: 'failed',
         }),
-      })
+      ],
+      'uk'
     );
 
-    expect(html).toContain('history.heading');
-    expect(html).toContain('history.empty');
-    expect(html).not.toContain('history.actions.markShipped');
-    expect(html).not.toContain('undefined');
-    expect(html).not.toContain('null');
+    expect(html).toContain('Історія');
+    expect(html).toContain('Позначено як доставлене');
+    expect(html).toContain('Доставка: У черзі -&gt; Потребує уваги');
+    expect(html).toContain('Стан відправлення: Помилка');
+    expect(html).not.toContain('Needs attention');
+    expect(html).not.toContain('Failed');
   });
 });

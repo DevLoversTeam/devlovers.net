@@ -67,6 +67,7 @@ async function insertOrder(args: {
     | 'needs_attention'
     | null;
   pspChargeId?: string | null;
+  pspStatusReason?: string | null;
 }) {
   await db.insert(orders).values({
     id: args.orderId,
@@ -84,6 +85,7 @@ async function insertOrder(args: {
     shippingAmountMinor: null,
     shippingStatus: args.shippingStatus ?? null,
     pspChargeId: args.pspChargeId ?? null,
+    pspStatusReason: args.pspStatusReason ?? null,
     idempotencyKey: crypto.randomUUID(),
   } as any);
 }
@@ -145,6 +147,136 @@ describe.sequential('admin order lifecycle actions', () => {
       expect(auditRows.map(row => row.action)).toContain(
         'order_admin_action.confirm'
       );
+    } finally {
+      await cleanup(orderId);
+    }
+  });
+
+  it('retrying confirm repairs missing shipment and audit side-effects for already-paid orders', async () => {
+    const orderId = crypto.randomUUID();
+    await ensureAdminUser();
+
+    await insertOrder({
+      orderId,
+      paymentProvider: 'stripe',
+      paymentStatus: 'paid',
+      status: 'PAID',
+      inventoryStatus: 'reserved',
+      shippingRequired: true,
+      shippingProvider: 'nova_poshta',
+      shippingMethodCode: 'NP_WAREHOUSE',
+      shippingStatus: 'pending',
+    });
+
+    try {
+      const first = await applyAdminOrderLifecycleAction({
+        orderId,
+        action: 'confirm',
+        actorUserId: ADMIN_USER_ID,
+        requestId: `req_${crypto.randomUUID()}`,
+      });
+      const second = await applyAdminOrderLifecycleAction({
+        orderId,
+        action: 'confirm',
+        actorUserId: ADMIN_USER_ID,
+        requestId: `req_${crypto.randomUUID()}`,
+      });
+
+      expect(first.changed).toBe(true);
+      expect(first.status).toBe('PAID');
+      expect(first.shippingStatus).toBe('queued');
+      expect(second.changed).toBe(false);
+      expect(second.status).toBe('PAID');
+      expect(second.shippingStatus).toBe('queued');
+
+      const [orderRow] = await db
+        .select({
+          status: orders.status,
+          paymentStatus: orders.paymentStatus,
+          shippingStatus: orders.shippingStatus,
+        })
+        .from(orders)
+        .where(eq(orders.id, orderId))
+        .limit(1);
+      expect(orderRow?.status).toBe('PAID');
+      expect(orderRow?.paymentStatus).toBe('paid');
+      expect(orderRow?.shippingStatus).toBe('queued');
+
+      const shipmentRows = await db
+        .select({ id: shippingShipments.id, status: shippingShipments.status })
+        .from(shippingShipments)
+        .where(eq(shippingShipments.orderId, orderId));
+      expect(shipmentRows).toHaveLength(1);
+      expect(shipmentRows[0]?.status).toBe('queued');
+
+      const auditRows = await db
+        .select({ action: adminAuditLog.action })
+        .from(adminAuditLog)
+        .where(eq(adminAuditLog.orderId, orderId));
+      expect(
+        auditRows.filter(row => row.action === 'order_admin_action.confirm')
+      ).toHaveLength(1);
+    } finally {
+      await cleanup(orderId);
+    }
+  });
+
+  it('does not repair shipment side-effects for already-paid refund-contained orders', async () => {
+    const orderId = crypto.randomUUID();
+    await ensureAdminUser();
+
+    await insertOrder({
+      orderId,
+      paymentProvider: 'stripe',
+      paymentStatus: 'paid',
+      status: 'PAID',
+      inventoryStatus: 'reserved',
+      shippingRequired: true,
+      shippingProvider: 'nova_poshta',
+      shippingMethodCode: 'NP_WAREHOUSE',
+      shippingStatus: 'pending',
+      pspStatusReason: 'REFUND_REQUESTED',
+    });
+
+    try {
+      const result = await applyAdminOrderLifecycleAction({
+        orderId,
+        action: 'confirm',
+        actorUserId: ADMIN_USER_ID,
+        requestId: `req_${crypto.randomUUID()}`,
+      });
+
+      expect(result.changed).toBe(false);
+      expect(result.status).toBe('PAID');
+      expect(result.paymentStatus).toBe('paid');
+      expect(result.shippingStatus).toBe('pending');
+
+      const [orderRow] = await db
+        .select({
+          status: orders.status,
+          paymentStatus: orders.paymentStatus,
+          shippingStatus: orders.shippingStatus,
+        })
+        .from(orders)
+        .where(eq(orders.id, orderId))
+        .limit(1);
+      expect(orderRow?.status).toBe('PAID');
+      expect(orderRow?.paymentStatus).toBe('paid');
+      expect(orderRow?.shippingStatus).toBe('pending');
+
+      const shipmentRows = await db
+        .select({ id: shippingShipments.id })
+        .from(shippingShipments)
+        .where(eq(shippingShipments.orderId, orderId));
+      expect(shipmentRows).toHaveLength(0);
+
+      const auditRows = await db
+        .select({ action: adminAuditLog.action })
+        .from(adminAuditLog)
+        .where(eq(adminAuditLog.orderId, orderId));
+      expect(
+        auditRows.filter(row => row.action === 'order_admin_action.confirm')
+      ).toHaveLength(0);
     } finally {
       await cleanup(orderId);
     }

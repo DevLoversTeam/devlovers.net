@@ -820,15 +820,16 @@
         "pending": "В очікуванні",
         "requiresPayment": "Потрібна оплата",
         "failed": "Не вдалося",
-        "refunded": "Повернуто"
+        "refunded": "Повернуто",
+        "needsReview": "Потребує перевірки"
       },
       "detail": {
         "title": "Замовлення",
         "myOrders": "Мої замовлення",
         "shop": "Магазин",
         "orderSummary": "Підсумок замовлення",
-          "customerSummary": "Підсумок клієнта",
-          "lifecycle": {
+        "customerSummary": "Підсумок клієнта",
+        "lifecycle": {
             "eyebrow": "Стан замовлення",
             "heading": "Оновлення статусу",
             "subtitle": "Використовуйте ці дії, коли потрібно безпечно перевести замовлення на наступний етап.",
@@ -847,12 +848,12 @@
               "generic": "Lifecycle-дія недоступна в поточному стані."
             }
           },
-          "actions": {
+        "actions": {
             "heading": "Дії адміністратора",
             "subtitle": "Оберіть наступний безпечний крок для цього замовлення. Показуються лише дії, що підходять до поточного стану.",
             "empty": "Для поточного стану немає доступних адмін-дій."
           },
-          "shippingControls": {
+        "shippingControls": {
             "eyebrow": "Доставка",
             "heading": "Робота з відправленням",
             "subtitle": "Відновлюйте або просувайте доставку лише тоді, коли відправлення вже до цього готове.",
@@ -871,7 +872,7 @@
               "generic": "Не вдалося виконати дію доставки. Оновіть замовлення й спробуйте ще раз."
             }
           },
-          "paymentControls": {
+        "paymentControls": {
             "eyebrow": "Оплата",
             "heading": "Робота з оплатою",
             "subtitle": "Використовуйте інструменти оплати лише тоді, коли замовлення потребує фінансової обробки.",
@@ -895,7 +896,7 @@
               "generic": "Не вдалося виконати дію оплати. Оновіть замовлення й спробуйте ще раз."
             }
           },
-          "customerAccount": "Акаунт клієнта",
+        "customerAccount": "Акаунт клієнта",
         "accountUnavailable": "Зареєстрований акаунт",
         "guest": "Гостьове замовлення",
         "total": "Всього",
@@ -929,32 +930,53 @@
         "shippingProviders": {
           "novaPoshta": "Нова пошта"
         },
-          "shippingMethods": {
-            "novaPoshtaWarehouse": "Відділення Нової пошти",
-            "novaPoshtaLocker": "Поштомат Нової пошти",
-            "novaPoshtaCourier": "Кур'єр Нової пошти"
-          },
-          "history": {
-            "heading": "Історія",
-            "subtitle": "Адмін-дії та переходи станів у межах цього замовлення.",
-            "empty": "Історія замовлення поки порожня.",
-            "adminUser": "Адміністратор",
-            "system": "Система",
-            "legacySource": "Legacy-історія",
-            "shippingTransition": "Доставка: {from} -> {to}",
-            "shipmentState": "Стан відправлення: {status}",
-            "requestId": "Запит: {requestId}",
-            "actions": {
-              "confirm": "Підтверджено замовлення",
-              "cancel": "Скасовано замовлення",
-              "complete": "Завершено замовлення",
-              "recoverInitialShipment": "Відновлено початкове відправлення",
-              "retryLabelCreation": "Повторено створення етикетки",
-              "markShipped": "Позначено як відправлене",
-              "markDelivered": "Позначено як доставлене"
-            }
-          },
-          "fulfillmentStages": {
+        "paymentProviders": {
+          "stripe": "Stripe",
+          "monobank": "Monobank"
+        },
+        "shippingMethods": {
+          "novaPoshtaWarehouse": "Відділення Нової пошти",
+          "novaPoshtaLocker": "Поштомат Нової пошти",
+          "novaPoshtaCourier": "Кур'єр Нової пошти"
+        },
+        "shippingStatuses": {
+          "pending": "Очікується",
+          "queued": "У черзі",
+          "creatingLabel": "Створення накладної",
+          "labelCreated": "Накладну створено",
+          "shipped": "Відправлено",
+          "delivered": "Доставлено",
+          "cancelled": "Скасовано",
+          "needsAttention": "Потребує уваги"
+        },
+        "shipmentStatuses": {
+          "queued": "У черзі",
+          "created": "Створено",
+          "succeeded": "Успішно",
+          "failed": "Помилка",
+          "needsAttention": "Потребує уваги"
+        },
+        "history": {
+          "heading": "Історія",
+          "subtitle": "Адмін-дії та переходи станів у межах цього замовлення.",
+          "empty": "Історія замовлення поки порожня.",
+          "adminUser": "Адміністратор",
+          "system": "Система",
+          "legacySource": "Legacy-історія",
+          "shippingTransition": "Доставка: {from} -> {to}",
+          "shipmentState": "Стан відправлення: {status}",
+          "requestId": "Запит: {requestId}",
+          "actions": {
+            "confirm": "Підтверджено замовлення",
+            "cancel": "Скасовано замовлення",
+            "complete": "Завершено замовлення",
+            "recoverInitialShipment": "Відновлено початкове відправлення",
+            "retryLabelCreation": "Повторено створення етикетки",
+            "markShipped": "Позначено як відправлене",
+            "markDelivered": "Позначено як доставлене"
+          }
+        },
+        "fulfillmentStages": {
             "processing": "Опрацювання",
             "packed": "Упаковано",
             "shipped": "Відправлено",
