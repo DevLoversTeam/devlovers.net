@@ -14,6 +14,8 @@ import { Link } from '@/i18n/routing';
 import { getCurrentUser } from '@/lib/auth';
 import { logError } from '@/lib/logging';
 import { CSRF_FORM_FIELD, issueCsrfToken } from '@/lib/security/csrf';
+import { getAdminOrderLifecycleAvailability } from '@/lib/services/shop/admin-order-lifecycle';
+import { evaluateOrderShippingEligibility } from '@/lib/services/shop/shipping/eligibility';
 import { type CurrencyCode, formatMoney } from '@/lib/shop/currency';
 import { fromDbMoney } from '@/lib/shop/money';
 import {
@@ -182,6 +184,97 @@ function humanizeShippingMethod(
   }
 }
 
+function humanizeCode(value: string | null): string {
+  if (!value || value.trim().length === 0) return DASH;
+
+  return value
+    .trim()
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, char => char.toUpperCase());
+}
+
+function humanizePaymentStatus(
+  value: string | null,
+  t: (key: string) => string
+): string {
+  switch (value) {
+    case 'pending':
+      return t('pending');
+    case 'requires_payment':
+      return t('requiresPayment');
+    case 'paid':
+      return t('paid');
+    case 'failed':
+      return t('failed');
+    case 'refunded':
+      return t('refunded');
+    case 'needs_review':
+      return t('needsReview');
+    default:
+      return humanizeCode(value);
+  }
+}
+
+function humanizePaymentProvider(
+  value: string | null,
+  t: (key: string) => string
+): string {
+  switch (value) {
+    case 'stripe':
+      return t('paymentProviders.stripe');
+    case 'monobank':
+      return t('paymentProviders.monobank');
+    default:
+      return humanizeCode(value);
+  }
+}
+
+function humanizeShippingStatus(
+  value: string | null,
+  t: (key: string) => string
+): string {
+  switch (value) {
+    case 'pending':
+      return t('shippingStatuses.pending');
+    case 'queued':
+      return t('shippingStatuses.queued');
+    case 'creating_label':
+      return t('shippingStatuses.creatingLabel');
+    case 'label_created':
+      return t('shippingStatuses.labelCreated');
+    case 'shipped':
+      return t('shippingStatuses.shipped');
+    case 'delivered':
+      return t('shippingStatuses.delivered');
+    case 'cancelled':
+      return t('shippingStatuses.cancelled');
+    case 'needs_attention':
+      return t('shippingStatuses.needsAttention');
+    default:
+      return humanizeCode(value);
+  }
+}
+
+function humanizeShipmentStatus(
+  value: string | null,
+  t: (key: string) => string
+): string {
+  switch (value) {
+    case 'queued':
+      return t('shipmentStatuses.queued');
+    case 'created':
+      return t('shipmentStatuses.created');
+    case 'succeeded':
+      return t('shipmentStatuses.succeeded');
+    case 'failed':
+      return t('shipmentStatuses.failed');
+    case 'needs_attention':
+      return t('shipmentStatuses.needsAttention');
+    default:
+      return humanizeCode(value);
+  }
+}
+
 function historyActionLabel(
   action: AdminOrderHistoryEntry['action'],
   t: (key: string, values?: Record<string, string | number | Date>) => string
@@ -263,34 +356,23 @@ function lifecycleErrorMessageKey(code: string | null): string | null {
   }
 }
 
-function lifecycleEnabled(order: AdminOrderDetail): {
-  confirm: boolean;
-  cancel: boolean;
-  complete: boolean;
-} {
-  return {
-    confirm:
-      order.status === 'INVENTORY_RESERVED' && order.paymentStatus === 'paid',
-    cancel:
-      order.status !== 'CANCELED' &&
-      order.status !== 'INVENTORY_FAILED' &&
-      order.paymentStatus !== 'paid' &&
-      order.paymentStatus !== 'refunded',
-    complete:
-      order.shippingRequired === true &&
-      (order.shippingStatus === 'shipped' ||
-        order.shippingStatus === 'delivered'),
-  };
-}
-
 function shippingControlsEnabled(order: AdminOrderDetail): {
   recoverInitialShipment: boolean;
   retryLabelCreation: boolean;
   markShipped: boolean;
   markDelivered: boolean;
 } {
+  const shippingEligible = evaluateOrderShippingEligibility({
+    paymentStatus: order.paymentStatus,
+    orderStatus: order.status,
+    inventoryStatus: order.inventoryStatus,
+    pspStatusReason: order.pspStatusReason,
+  }).ok;
   const shippingReady =
-    order.shippingRequired === true && order.shippingProvider === 'nova_poshta';
+    order.shippingRequired === true &&
+    order.shippingProvider === 'nova_poshta' &&
+    !!order.shippingMethodCode &&
+    shippingEligible;
   const shippingStatus = order.shippingStatus;
   const shipmentStatus = order.shipmentStatus;
   const queueableShippingStatus =
@@ -339,6 +421,7 @@ export default async function OrderDetailPage({
   const { locale, id } = await params;
   const sp = searchParams ? await searchParams : {};
   const t = await getTranslations('shop.orders.detail');
+  const paymentStatusT = await getTranslations('shop.orders.paymentStatus');
   const lifecycleCsrfToken = issueCsrfToken('admin:orders:lifecycle');
   const shippingCsrfToken = issueCsrfToken('admin:orders:shipping:action');
   const refundCsrfToken = issueCsrfToken('admin:orders:refund');
@@ -395,7 +478,18 @@ export default async function OrderDetailPage({
     customerSummary.shippingMethod,
     t
   );
-  const enabled = lifecycleEnabled(order);
+  const enabled = getAdminOrderLifecycleAvailability({
+    status: order.status,
+    paymentStatus: order.paymentStatus,
+    inventoryStatus: order.inventoryStatus,
+    shippingRequired: order.shippingRequired,
+    shippingProvider: order.shippingProvider,
+    shippingMethodCode: order.shippingMethodCode,
+    shippingStatus: order.shippingStatus,
+    pspStatusReason: order.pspStatusReason,
+    stockRestored: order.stockRestored,
+    shipmentStatus: order.shipmentStatus,
+  });
   const shippingEnabled = shippingControlsEnabled(order);
   const paymentEnabled = paymentControlsEnabled(order);
   const lifecycleErrorCode = Array.isArray(sp.lifecycleError)
@@ -655,7 +749,7 @@ export default async function OrderDetailPage({
                 {t('paymentStatus')}
               </dt>
               <dd className="text-sm font-medium">
-                {String(order.paymentStatus)}
+                {humanizePaymentStatus(order.paymentStatus, paymentStatusT)}
               </dd>
             </div>
 
@@ -673,7 +767,7 @@ export default async function OrderDetailPage({
                 {t('shippingStatus')}
               </dt>
               <dd className="text-sm font-medium">
-                {detailValue(order.shippingStatus)}
+                {humanizeShippingStatus(order.shippingStatus, t)}
               </dd>
             </div>
 
@@ -693,7 +787,9 @@ export default async function OrderDetailPage({
 
             <div>
               <dt className="text-muted-foreground text-xs">{t('provider')}</dt>
-              <dd className="text-sm">{String(order.paymentProvider)}</dd>
+              <dd className="text-sm">
+                {humanizePaymentProvider(order.paymentProvider, t)}
+              </dd>
             </div>
 
             <div>
@@ -901,8 +997,14 @@ export default async function OrderDetailPage({
                         {hasTransition ? (
                           <span className="border-border text-muted-foreground rounded-full border px-2 py-1">
                             {t('history.shippingTransition', {
-                              from: entry.fromShippingStatus ?? DASH,
-                              to: entry.toShippingStatus ?? DASH,
+                              from: humanizeShippingStatus(
+                                entry.fromShippingStatus,
+                                t
+                              ),
+                              to: humanizeShippingStatus(
+                                entry.toShippingStatus,
+                                t
+                              ),
                             })}
                           </span>
                         ) : null}
@@ -910,7 +1012,10 @@ export default async function OrderDetailPage({
                         {entry.fromShipmentStatus ? (
                           <span className="border-border text-muted-foreground rounded-full border px-2 py-1">
                             {t('history.shipmentState', {
-                              status: entry.fromShipmentStatus,
+                              status: humanizeShipmentStatus(
+                                entry.fromShipmentStatus,
+                                t
+                              ),
                             })}
                           </span>
                         ) : null}

@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { createElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { CancelPaymentButton } from '@/app/[locale]/admin/shop/orders/[id]/CancelPaymentButton';
@@ -37,12 +38,12 @@ const translations: Record<string, string> = {
   'shop.orders.detail.shippingControls.errors.generic':
     'Shipping action could not be completed. Refresh the order and try again.',
   'shop.orders.detail.paymentControls.refund': 'Refund payment',
-  'shop.orders.detail.paymentControls.refunding': 'Refunding…',
+  'shop.orders.detail.paymentControls.refunding': 'Refundingâ€¦',
   'shop.orders.detail.paymentControls.onlyForPaidStripe':
     'Refund is only available for paid Stripe orders',
   'shop.orders.detail.paymentControls.cancelUnpaidPayment':
     'Cancel unpaid payment',
-  'shop.orders.detail.paymentControls.cancelingPayment': 'Canceling payment…',
+  'shop.orders.detail.paymentControls.cancelingPayment': 'Canceling paymentâ€¦',
   'shop.orders.detail.paymentControls.onlyForUnpaidMonobank':
     'This action is only available for unpaid Monobank orders',
   'shop.orders.detail.paymentControls.errors.network':
@@ -90,12 +91,12 @@ describe('admin order detail action error messages', () => {
     } as Response);
 
     render(
-      <ShippingActions
-        orderId="order-1"
-        csrfToken="csrf"
-        shippingStatus="label_created"
-        shipmentStatus="succeeded"
-      />
+      createElement(ShippingActions, {
+        orderId: 'order-1',
+        csrfToken: 'csrf',
+        shippingStatus: 'label_created',
+        shipmentStatus: 'succeeded',
+      })
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Mark shipped' }));
@@ -118,7 +119,11 @@ describe('admin order detail action error messages', () => {
     } as Response);
 
     render(
-      <RefundButton orderId="order-1" disabled={false} csrfToken="csrf" />
+      createElement(RefundButton, {
+        orderId: 'order-1',
+        disabled: false,
+        csrfToken: 'csrf',
+      })
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Refund payment' }));
@@ -133,6 +138,62 @@ describe('admin order detail action error messages', () => {
     expect(screen.queryByText('PSP_UNAVAILABLE')).toBeNull();
   });
 
+  it('maps refund network failures to the localized network message', async () => {
+    vi.mocked(fetch).mockRejectedValueOnce(new TypeError('Failed to fetch'));
+
+    render(
+      createElement(RefundButton, {
+        orderId: 'order-1',
+        disabled: false,
+        csrfToken: 'csrf',
+      })
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Refund payment' }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText('Payment action failed to send. Try again.')
+      ).toBeTruthy();
+    });
+    expect(screen.queryByText('Failed to fetch')).toBeNull();
+  });
+
+  it('prefers API error over code and message for cancel-payment extraction', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: false,
+      status: 409,
+      json: async () => ({
+        error: 'CANCEL_IN_PROGRESS',
+        code: 'CANCEL_DISABLED',
+        message: 'HTTP conflict',
+      }),
+    } as Response);
+
+    render(
+      createElement(CancelPaymentButton, {
+        orderId: 'order-1',
+        disabled: false,
+        csrfToken: 'csrf',
+      })
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Cancel unpaid payment' })
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          'Payment cancel is already being processed. Refresh in a moment.'
+        )
+      ).toBeTruthy();
+    });
+    expect(
+      screen.queryByText('Payment cancel is currently unavailable.')
+    ).toBeNull();
+  });
+
   it('maps cancel-payment backend codes to friendly admin copy', async () => {
     vi.mocked(fetch).mockResolvedValueOnce({
       ok: false,
@@ -141,11 +202,11 @@ describe('admin order detail action error messages', () => {
     } as Response);
 
     render(
-      <CancelPaymentButton
-        orderId="order-1"
-        disabled={false}
-        csrfToken="csrf"
-      />
+      createElement(CancelPaymentButton, {
+        orderId: 'order-1',
+        disabled: false,
+        csrfToken: 'csrf',
+      })
     );
 
     fireEvent.click(
@@ -160,5 +221,50 @@ describe('admin order detail action error messages', () => {
       ).toBeTruthy();
     });
     expect(screen.queryByText('CANCEL_IN_PROGRESS')).toBeNull();
+  });
+
+  it('maps cancel-payment network failures to the localized network message', async () => {
+    vi.mocked(fetch).mockRejectedValueOnce(new TypeError('Failed to fetch'));
+
+    render(
+      createElement(CancelPaymentButton, {
+        orderId: 'order-1',
+        disabled: false,
+        csrfToken: 'csrf',
+      })
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Cancel unpaid payment' })
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByText('Payment action failed to send. Try again.')
+      ).toBeTruthy();
+    });
+    expect(screen.queryByText('Failed to fetch')).toBeNull();
+  });
+
+  it('maps shipping network failures to the localized network message', async () => {
+    vi.mocked(fetch).mockRejectedValueOnce(new TypeError('Failed to fetch'));
+
+    render(
+      createElement(ShippingActions, {
+        orderId: 'order-1',
+        csrfToken: 'csrf',
+        shippingStatus: 'label_created',
+        shipmentStatus: 'succeeded',
+      })
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mark shipped' }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText('Shipping action failed to send. Try again.')
+      ).toBeTruthy();
+    });
+    expect(screen.queryByText('Failed to fetch')).toBeNull();
   });
 });

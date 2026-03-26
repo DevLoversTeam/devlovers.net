@@ -132,7 +132,7 @@ export default async function AdminProductsPage({
 
   return (
     <main
-      className="mx-auto max-w-5xl px-6 py-8"
+      className="mx-auto max-w-6xl px-6 py-8"
       aria-labelledby="admin-products-title"
     >
       <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">

@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 
 import { eq } from 'drizzle-orm';
-import { afterEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { db } from '@/db';
 import { getAdminOrderTimeline } from '@/db/queries/shop/admin-orders';
@@ -38,10 +38,6 @@ async function insertOrder(args: {
 }
 
 describe.sequential('admin order timeline query', () => {
-  afterEach(async () => {
-    // tests own their rows; cleanup happens in each test finally block
-  });
-
   it('returns canonical audit history in deterministic newest-first order', async () => {
     const orderId = crypto.randomUUID();
 
@@ -162,6 +158,71 @@ describe.sequential('admin order timeline query', () => {
       expect(history.map(entry => entry.source)).toEqual(['legacy', 'legacy']);
       expect(history[0]?.requestId).toBe('req-legacy-newer');
       expect(history[1]?.requestId).toBe('req-legacy-older');
+    } finally {
+      await cleanup(orderId);
+    }
+  });
+
+  it('merges canonical and legacy history without duplicating the same event', async () => {
+    const orderId = crypto.randomUUID();
+
+    await insertOrder({
+      orderId,
+      pspMetadata: {
+        shippingAdminAudit: [
+          {
+            action: 'mark_shipped',
+            actorUserId: null,
+            requestId: 'req-shared',
+            fromShippingStatus: 'label_created',
+            toShippingStatus: 'shipped',
+            fromShipmentStatus: 'succeeded',
+            at: '2026-03-12T09:00:00.000Z',
+          },
+          {
+            action: 'retry_label_creation',
+            actorUserId: null,
+            requestId: 'req-legacy-only',
+            fromShippingStatus: 'needs_attention',
+            toShippingStatus: 'queued',
+            fromShipmentStatus: 'failed',
+            at: '2026-03-11T08:00:00.000Z',
+          },
+        ],
+      },
+    });
+
+    try {
+      await db.insert(adminAuditLog).values({
+        id: crypto.randomUUID(),
+        orderId,
+        actorUserId: null,
+        action: 'shipping_admin_action.mark_shipped',
+        targetType: 'order',
+        targetId: orderId,
+        requestId: 'req-shared',
+        payload: {
+          action: 'mark_shipped',
+          fromShippingStatus: 'label_created',
+          toShippingStatus: 'shipped',
+          fromShipmentStatus: 'succeeded',
+        },
+        dedupeKey: `audit-${crypto.randomUUID()}`,
+        occurredAt: new Date('2026-03-12T09:00:00.000Z'),
+        createdAt: new Date('2026-03-12T09:00:00.000Z'),
+      } as any);
+
+      const history = await getAdminOrderTimeline(orderId);
+
+      expect(history.map(entry => entry.action)).toEqual([
+        'mark_shipped',
+        'retry_label_creation',
+      ]);
+      expect(history.map(entry => entry.source)).toEqual(['audit', 'legacy']);
+      expect(history.map(entry => entry.requestId)).toEqual([
+        'req-shared',
+        'req-legacy-only',
+      ]);
     } finally {
       await cleanup(orderId);
     }

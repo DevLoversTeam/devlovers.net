@@ -44,7 +44,7 @@ describe('admin orders i18n messages', () => {
   });
 
   it('does not keep order filter labels under shop.admin.products', () => {
-    for (const messages of [uk, pl]) {
+    for (const messages of [en, uk, pl]) {
       expect(
         getAtPath(messages as Record<string, unknown>, [
           'shop',

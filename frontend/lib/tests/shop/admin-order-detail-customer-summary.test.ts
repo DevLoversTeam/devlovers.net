@@ -1,7 +1,11 @@
+import fs from 'node:fs';
+import path from 'node:path';
+
 import { createElement, type ReactNode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import OrderDetailPage from '@/app/[locale]/admin/shop/orders/[id]/page';
 import type { AdminOrderDetail } from '@/db/queries/shop/admin-orders';
 
 const getAdminOrderDetailMock = vi.hoisted(() => vi.fn());
@@ -17,14 +21,61 @@ const redirectMock = vi.hoisted(() =>
     throw new Error(`NEXT_REDIRECT:${location}`);
   })
 );
+const i18nState = vi.hoisted(() => ({
+  locale: 'en',
+}));
+const messagesRoot = path.join(process.cwd(), 'messages');
+
+function readLocaleMessages(locale: 'en' | 'uk' | 'pl') {
+  return JSON.parse(
+    fs.readFileSync(path.join(messagesRoot, `${locale}.json`), 'utf8')
+  ) as Record<string, unknown>;
+}
+
+const localeMessagesCache = {
+  en: readLocaleMessages('en'),
+  uk: readLocaleMessages('uk'),
+  pl: readLocaleMessages('pl'),
+};
+
+vi.mock('next-intl/server', () => ({
+  getTranslations: vi.fn(async (namespace: string) => {
+    const getByPath = (source: unknown, dottedPath: string): unknown =>
+      dottedPath.split('.').reduce<unknown>((acc, segment) => {
+        if (!acc || typeof acc !== 'object' || Array.isArray(acc)) {
+          return undefined;
+        }
+        return (acc as Record<string, unknown>)[segment];
+      }, source);
+
+    const formatMessage = (
+      template: string,
+      values?: Record<string, string | number | Date>
+    ) =>
+      template.replace(/\{(\w+)\}/g, (_match, key: string) =>
+        values && key in values ? String(values[key]) : `{${key}}`
+      );
+
+    const localeMessages =
+      localeMessagesCache[i18nState.locale as 'en' | 'uk' | 'pl'];
+    const scopedMessages = getByPath(localeMessages, namespace);
+    if (!scopedMessages || typeof scopedMessages !== 'object') {
+      throw new Error(`MISSING_NAMESPACE:${namespace}`);
+    }
+
+    return (key: string, values?: Record<string, string | number | Date>) => {
+      const message = getByPath(scopedMessages, key);
+      if (typeof message !== 'string') {
+        throw new Error(`MISSING_MESSAGE:${namespace}.${key}`);
+      }
+      return formatMessage(message, values);
+    };
+  }),
+}));
 
 vi.mock('next/navigation', () => ({
   notFound: notFoundMock,
   redirect: redirectMock,
-}));
-
-vi.mock('next-intl/server', () => ({
-  getTranslations: vi.fn(async () => (key: string) => key),
 }));
 
 vi.mock('@/lib/auth', () => ({
@@ -88,8 +139,6 @@ vi.mock('@/app/[locale]/admin/shop/orders/[id]/CancelPaymentButton', () => ({
     ),
 }));
 
-import OrderDetailPage from '@/app/[locale]/admin/shop/orders/[id]/page';
-
 function baseOrderDetail(
   overrides?: Partial<AdminOrderDetail>
 ): AdminOrderDetail {
@@ -99,6 +148,8 @@ function baseOrderDetail(
     customerAccountName: 'Admin Customer',
     customerAccountEmail: 'customer@example.com',
     status: 'PAID',
+    inventoryStatus: 'reserved',
+    pspStatusReason: null,
     totalAmountMinor: 2599,
     totalAmount: '25.99',
     currency: 'USD',
@@ -177,6 +228,7 @@ function readFieldValue(html: string, label: string): string | null {
 describe('admin order detail customer summary', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    i18nState.locale = 'en';
     process.env.CSRF_SECRET = 'test_csrf_secret_for_admin_order_detail';
     getCurrentUserMock.mockResolvedValue({
       id: 'admin-1',
@@ -200,8 +252,8 @@ describe('admin order detail customer summary', () => {
     expect(getAdminOrderDetailMock).toHaveBeenCalledWith(
       '550e8400-e29b-41d4-a716-446655440000'
     );
-    expect(html).toContain('customerSummary');
-    expect(html).toContain('actions.heading');
+    expect(html).toContain('Customer summary');
+    expect(html).toContain('Admin actions');
     expect(html).toContain('shipping-actions');
     expect(html).toContain('refund-button');
     expect(html).not.toContain('cancel-payment-button');
@@ -214,12 +266,13 @@ describe('admin order detail customer summary', () => {
     expect(html).toContain('Warehouse 12');
     expect(html).toContain('Khreshchatyk 1, Apt 10');
     expect(html).toContain('Call me before delivery');
-    expect(readFieldValue(html, 'shippingProviderLabel')).toBe(
-      'shippingProviders.novaPoshta'
+    expect(readFieldValue(html, 'Shipping provider')).toBe('Nova Poshta');
+    expect(readFieldValue(html, 'Shipping method')).toBe(
+      'Nova Poshta warehouse'
     );
-    expect(readFieldValue(html, 'shippingMethod')).toBe(
-      'shippingMethods.novaPoshtaWarehouse'
-    );
+    expect(readFieldValue(html, 'Shipping status')).toBe('Label created');
+    expect(readFieldValue(html, 'Provider')).toBe('Stripe');
+    expect(readFieldValue(html, 'Payment status')).toBe('Paid');
     expect(html).toContain('Classic Hoodie');
   });
 
@@ -249,27 +302,48 @@ describe('admin order detail customer summary', () => {
       })
     );
 
-    expect(html).toContain('customerSummary');
-    expect(readFieldValue(html, 'customerAccount')).toBe('guest');
+    expect(html).toContain('Customer summary');
+    expect(readFieldValue(html, 'Customer account')).toBe('Guest checkout');
     expect(html).toContain('Olena');
     expect(html).not.toContain('shipping-actions');
     expect(html).toContain('refund-button');
     expect(html).not.toContain('cancel-payment-button');
-    expect(html).toContain('orderSummary');
+    expect(html).toContain('Order summary');
     expect(html).toContain('Classic Hoodie');
-    expect(readFieldValue(html, 'recipientPhone')).toBe('-');
-    expect(readFieldValue(html, 'recipientEmail')).toBe('-');
-    expect(readFieldValue(html, 'city')).toBe('-');
-    expect(readFieldValue(html, 'pickupPoint')).toBe('-');
-    expect(readFieldValue(html, 'address')).toBe('-');
-    expect(readFieldValue(html, 'comment')).toBe('-');
-    expect(readFieldValue(html, 'shippingProviderLabel')).toBe(
-      'shippingProviders.novaPoshta'
-    );
-    expect(readFieldValue(html, 'shippingMethod')).toBe(
-      'shippingMethods.novaPoshtaWarehouse'
+    expect(readFieldValue(html, 'Recipient phone')).toBe('-');
+    expect(readFieldValue(html, 'Recipient email')).toBe('-');
+    expect(readFieldValue(html, 'City')).toBe('-');
+    expect(readFieldValue(html, 'Pickup point')).toBe('-');
+    expect(readFieldValue(html, 'Address')).toBe('-');
+    expect(readFieldValue(html, 'Comment')).toBe('-');
+    expect(readFieldValue(html, 'Shipping provider')).toBe('Nova Poshta');
+    expect(readFieldValue(html, 'Shipping method')).toBe(
+      'Nova Poshta warehouse'
     );
     expect(html).not.toContain('undefined');
     expect(html).not.toContain('null');
+  });
+
+  it('renders known provider and status labels in ukrainian locale without missing-message errors', async () => {
+    i18nState.locale = 'uk';
+    getAdminOrderDetailMock.mockResolvedValue(baseOrderDetail());
+
+    const html = renderToStaticMarkup(
+      await OrderDetailPage({
+        params: Promise.resolve({
+          locale: 'uk',
+          id: '550e8400-e29b-41d4-a716-446655440000',
+        }),
+      })
+    );
+
+    expect(html).toContain('Підсумок клієнта');
+    expect(readFieldValue(html, 'Провайдер')).toBe('Stripe');
+    expect(readFieldValue(html, 'Статус оплати')).toBe('Оплачено');
+    expect(readFieldValue(html, 'Статус доставки')).toBe('Накладну створено');
+    expect(readFieldValue(html, 'Провайдер доставки')).toBe('Нова пошта');
+    expect(readFieldValue(html, 'Метод доставки')).toBe(
+      'Відділення Нової пошти'
+    );
   });
 });

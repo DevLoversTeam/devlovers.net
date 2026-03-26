@@ -10,6 +10,18 @@ type Props = {
   csrfToken: string;
 };
 
+function normalizeActionErrorCode(error: unknown): string {
+  if (error instanceof TypeError) {
+    return 'NETWORK_ERROR';
+  }
+
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message;
+  }
+
+  return 'NETWORK_ERROR';
+}
+
 function mapCancelPaymentError(
   code: string,
   t: (key: string) => string
@@ -61,9 +73,7 @@ export function CancelPaymentButton({ orderId, disabled, csrfToken }: Props) {
         },
       });
     } catch (err) {
-      const msg =
-        err instanceof Error && err.message ? err.message : 'NETWORK_ERROR';
-      setError(mapCancelPaymentError(msg, t));
+      setError(mapCancelPaymentError(normalizeActionErrorCode(err), t));
       return;
     }
 
@@ -77,7 +87,7 @@ export function CancelPaymentButton({ orderId, disabled, csrfToken }: Props) {
     if (!res.ok) {
       setError(
         mapCancelPaymentError(
-          json?.code ?? json?.message ?? `HTTP_${res.status}`,
+          json?.error ?? json?.code ?? json?.message ?? `HTTP_${res.status}`,
           t
         )
       );

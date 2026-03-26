@@ -58,7 +58,7 @@ describe.sequential('admin orders query filters', () => {
       createdAt: new Date('2099-03-05T12:00:00.000Z'),
       paymentStatus: 'paid',
     });
-    const paidLateMarchId = await seedOrder({
+    const paidEndOfMarchId = await seedOrder({
       createdAt: new Date('2099-03-31T23:59:59.000Z'),
       paymentStatus: 'paid',
     });
@@ -70,7 +70,7 @@ describe.sequential('admin orders query filters', () => {
 
     expect(result.total).toBe(baseline.total + 3);
     expect(result.items.slice(0, 3).map(item => item.id)).toEqual([
-      paidLateMarchId,
+      paidEndOfMarchId,
       paidId,
       pendingId,
     ]);
@@ -90,7 +90,7 @@ describe.sequential('admin orders query filters', () => {
       createdAt: new Date('2099-04-05T12:00:00.000Z'),
       paymentStatus: 'paid',
     });
-    const paidLateMarchId = await seedOrder({
+    const paidEndOfAprilId = await seedOrder({
       createdAt: new Date('2099-04-30T23:59:59.000Z'),
       paymentStatus: 'paid',
     });
@@ -107,7 +107,7 @@ describe.sequential('admin orders query filters', () => {
 
     expect(result.total).toBe(baseline.total + 2);
     expect(result.items.slice(0, 2).map(item => item.id)).toEqual([
-      paidLateMarchId,
+      paidEndOfAprilId,
       paidId,
     ]);
     expect(result.items.every(item => item.paymentStatus === 'paid')).toBe(
@@ -134,11 +134,11 @@ describe.sequential('admin orders query filters', () => {
       createdAt: new Date('2099-05-05T12:00:00.000Z'),
       paymentStatus: 'paid',
     });
-    const paidLateMarchId = await seedOrder({
+    const paidEndOfMayId = await seedOrder({
       createdAt: new Date('2099-05-31T23:59:59.000Z'),
       paymentStatus: 'paid',
     });
-    const aprilId = await seedOrder({
+    const juneId = await seedOrder({
       createdAt: new Date('2099-06-02T12:00:00.000Z'),
       paymentStatus: 'failed',
     });
@@ -156,20 +156,18 @@ describe.sequential('admin orders query filters', () => {
 
     expect(fromResult.total).toBe(fromBaseline.total + 3);
     expect(fromResult.items.slice(0, 3).map(item => item.id)).toEqual([
-      aprilId,
-      paidLateMarchId,
+      juneId,
+      paidEndOfMayId,
       paidId,
     ]);
 
     expect(toResult.total).toBe(toBaseline.total + 3);
     expect(toResult.items.slice(0, 3).map(item => item.id)).toEqual([
-      paidLateMarchId,
+      paidEndOfMayId,
       paidId,
       pendingId,
     ]);
-    expect(toResult.items.slice(0, 3).map(item => item.id)).not.toContain(
-      aprilId
-    );
+    expect(toResult.items.slice(0, 3).map(item => item.id)).not.toContain(juneId);
   });
 
   it('combines status and date filters together', async () => {
@@ -188,11 +186,11 @@ describe.sequential('admin orders query filters', () => {
       createdAt: new Date('2099-06-05T12:00:00.000Z'),
       paymentStatus: 'paid',
     });
-    const paidMidMarchId = await seedOrder({
+    const paidMidJuneId = await seedOrder({
       createdAt: new Date('2099-06-10T12:00:00.000Z'),
       paymentStatus: 'paid',
     });
-    const paidLateMarchId = await seedOrder({
+    const paidEndOfJuneId = await seedOrder({
       createdAt: new Date('2099-06-30T23:59:59.000Z'),
       paymentStatus: 'paid',
     });
@@ -211,8 +209,8 @@ describe.sequential('admin orders query filters', () => {
 
     expect(result.total).toBe(baseline.total + 2);
     expect(result.items.slice(0, 2).map(item => item.id)).toEqual([
-      paidLateMarchId,
-      paidMidMarchId,
+      paidEndOfJuneId,
+      paidMidJuneId,
     ]);
   });
 });

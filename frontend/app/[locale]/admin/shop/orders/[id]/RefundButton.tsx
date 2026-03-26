@@ -10,6 +10,18 @@ type Props = {
   csrfToken: string;
 };
 
+function normalizeActionErrorCode(error: unknown): string {
+  if (error instanceof TypeError) {
+    return 'NETWORK_ERROR';
+  }
+
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message;
+  }
+
+  return 'NETWORK_ERROR';
+}
+
 function mapRefundError(code: string, t: (key: string) => string): string {
   switch (code) {
     case 'NETWORK_ERROR':
@@ -56,9 +68,7 @@ export function RefundButton({ orderId, disabled, csrfToken }: Props) {
         },
       });
     } catch (err) {
-      const msg =
-        err instanceof Error && err.message ? err.message : 'NETWORK_ERROR';
-      setError(mapRefundError(msg, t));
+      setError(mapRefundError(normalizeActionErrorCode(err), t));
       return;
     }
 
@@ -71,7 +81,10 @@ export function RefundButton({ orderId, disabled, csrfToken }: Props) {
 
     if (!res.ok) {
       setError(
-        mapRefundError(json?.error ?? json?.code ?? `HTTP_${res.status}`, t)
+        mapRefundError(
+          json?.error ?? json?.code ?? json?.message ?? `HTTP_${res.status}`,
+          t
+        )
       );
       return;
     }
