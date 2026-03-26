@@ -571,13 +571,23 @@
       },
       "orders": {
         "title": "Admin · Zamówienia",
+        "subtitle": "Przeglądaj zamówienia, filtruj wyniki i sprawdzaj stan płatności.",
         "reconcileStale": "Uzgodnij nieaktualne",
         "empty": "Brak zamówień.",
         "listCaption": "Lista zamówień",
         "viewOrder": "Zobacz zamówienie {id}",
+        "filters": {
+          "label": "Filtry zamówień",
+          "status": "Status płatności",
+          "allStatuses": "Wszystkie statusy",
+          "dateFrom": "Od daty",
+          "dateTo": "Do daty",
+          "apply": "Zastosuj",
+          "reset": "Resetuj"
+        },
         "table": {
           "created": "Utworzono",
-          "status": "Status",
+          "status": "Status płatności",
           "total": "Suma",
           "items": "Produkty",
           "provider": "Dostawca",
