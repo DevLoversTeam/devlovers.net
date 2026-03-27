@@ -3,7 +3,7 @@
 import { Github, Linkedin, Send } from 'lucide-react';
 import { usePathname, useSelectedLayoutSegments } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import type { Ref } from 'react';
+import { Fragment, type Ref } from 'react';
 
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { locales } from '@/i18n/config';
@@ -38,6 +38,19 @@ export default function Footer({
     pathSegments.length === 0 ||
     (pathSegments.length === 1 &&
       locales.includes(pathSegments[0] as (typeof locales)[number]));
+  const legalLinks = isShop
+    ? [
+        { href: '/seller-information', label: t('sellerInformation') },
+        { href: '/payment-policy', label: t('payment') },
+        { href: '/delivery-policy', label: t('delivery') },
+        { href: '/returns-policy', label: t('returns') },
+        { href: '/privacy-policy', label: t('privacyPolicy') },
+        { href: '/terms-of-service', label: t('termsOfService') },
+      ]
+    : [
+        { href: '/privacy-policy', label: t('privacyPolicy') },
+        { href: '/terms-of-service', label: t('termsOfService') },
+      ];
 
   if (isHome && !forceVisible) {
     return null;
@@ -69,20 +82,20 @@ export default function Footer({
               {t('byCommunity')}
             </p>
 
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              <Link
-                href="/privacy-policy"
-                className="transition-colors hover:text-(--footer-hover) focus-visible:text-(--footer-hover) active:text-(--footer-hover)"
-              >
-                {t('privacyPolicy')}
-              </Link>
-              <span className="px-2 opacity-60">|</span>
-              <Link
-                href="/terms-of-service"
-                className="transition-colors hover:text-(--footer-hover) focus-visible:text-(--footer-hover) active:text-(--footer-hover)"
-              >
-                {t('termsOfService')}
-              </Link>
+            <p className="flex flex-wrap items-center gap-y-1.5 text-sm leading-6 text-slate-500 dark:text-slate-400">
+              {legalLinks.map((link, index) => (
+                <Fragment key={link.href}>
+                  {index > 0 ? (
+                    <span className="px-2 opacity-60"> </span>
+                  ) : null}
+                  <Link
+                    href={link.href}
+                    className="transition-colors hover:text-(--footer-hover) focus-visible:text-(--footer-hover) active:text-(--footer-hover)"
+                  >
+                    {link.label}
+                  </Link>
+                </Fragment>
+              ))}
             </p>
           </div>
 

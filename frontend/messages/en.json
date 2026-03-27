@@ -322,6 +322,10 @@
   "footer": {
     "builtWith": "Built by",
     "byCommunity": "community.",
+    "sellerInformation": "Seller Information",
+    "payment": "Payment",
+    "delivery": "Delivery",
+    "returns": "Returns",
     "privacyPolicy": "Privacy Policy",
     "termsOfService": "Terms of Service"
   },
@@ -1696,6 +1700,101 @@
     "back": "Back",
     "lastUpdated": "Last updated",
     "contactEmail": "devlovers.net@gmail.com",
+    "seller": {
+      "metaTitle": "Seller Information | DevLovers Shop",
+      "metaDescription": "Public seller identity and contact details for the DevLovers shop.",
+      "title": "Seller Information",
+      "sellerDetailsTitle": "Seller details",
+      "sellerDetailsBody": "Below are the seller details currently published for the shop.",
+      "supportContactsTitle": "Support contacts",
+      "supportContactsBody": "If you need help with an order or a policy question, use the contacts below.",
+      "placeholders": {
+        "toBeAdded": "To be added"
+      },
+      "fields": {
+        "sellerName": "Seller legal name",
+        "supportEmail": "Contact email",
+        "supportPhone": "Contact phone",
+        "address": "Seller address",
+        "businessDetails": "Registration details"
+      }
+    },
+    "payment": {
+      "metaTitle": "Payment Policy | DevLovers Shop",
+      "metaDescription": "Public payment policy for the DevLovers shop.",
+      "title": "Payment Policy",
+      "methods": {
+        "title": "Available payment methods",
+        "body": "Available payment methods are shown during order checkout. Depending on the order, you may see online card payment via Stripe or a Monobank payment option.",
+        "items": {
+          "stripe": "Online card payment via Stripe.",
+          "monobank": "Available Monobank payment option."
+        }
+      },
+      "confirmation": {
+        "title": "When payment is confirmed",
+        "body": "An order is treated as paid only after the selected payment provider confirms the transaction and the shop records that result. A browser return page or redirect by itself is not the authoritative confirmation of payment."
+      },
+      "charges": {
+        "title": "What is charged online",
+        "body": "The amount shown before order confirmation includes the goods in your order and, when applicable, the delivery cost shown for the selected delivery method."
+      },
+      "support": {
+        "title": "Payment questions",
+        "body": "If you have a payment question about a shop order, contact"
+      }
+    },
+    "delivery": {
+      "metaTitle": "Delivery Policy | DevLovers Shop",
+      "metaDescription": "Public delivery policy for the DevLovers shop.",
+      "title": "Delivery Policy",
+      "methods": {
+        "title": "Available delivery methods",
+        "body": "Available delivery methods are shown during order checkout for orders that can be delivered.",
+        "items": {
+          "warehouse": "Nova Poshta warehouse pickup",
+          "locker": "Nova Poshta parcel locker pickup",
+          "courier": "Nova Poshta courier delivery"
+        }
+      },
+      "availability": {
+        "title": "Availability",
+        "body": "At the moment, delivery options are available for eligible orders within Ukraine. The available methods may depend on the destination and carrier availability."
+      },
+      "timing": {
+        "title": "Delivery timing",
+        "body": "Delivery time depends on the selected method, destination, and the carrier’s workload. The carrier determines the final delivery timing after dispatch."
+      },
+      "charges": {
+        "title": "Delivery charges",
+        "body": "The delivery cost for the selected method is shown during order checkout and is added to the order total before order confirmation. Additional carrier charges for extra services requested after order placement, storage beyond the free period, redirection, or other carrier services may be charged separately under the carrier’s own rules."
+      },
+      "support": {
+        "title": "Delivery questions",
+        "body": "If you have a delivery question about a shop order, contact"
+      }
+    },
+    "returns": {
+      "metaTitle": "Returns Policy | DevLovers Shop",
+      "metaDescription": "Public returns policy for the DevLovers shop.",
+      "title": "Returns Policy",
+      "request": {
+        "title": "How to request a return or refund review",
+        "body": "To request a return or refund review, contact support and include your order number together with a short description of the reason for the request."
+      },
+      "review": {
+        "title": "How requests are reviewed",
+        "body": "Each request is reviewed individually. We may ask for additional details, photos, or other information needed to assess the request and explain the next steps."
+      },
+      "refunds": {
+        "title": "Refund processing",
+        "body": "Refund availability and timing depend on the review result and the payment method used for the order. Automatic refund processing through the website is not currently available."
+      },
+      "contact": {
+        "title": "How to contact support",
+        "body": "To request return guidance or report a delivery issue, contact"
+      }
+    },
     "privacy": {
       "metaTitle": "Privacy Policy | DevLovers",
       "metaDescription": "Learn how DevLovers collects, uses, and protects your personal data.",
