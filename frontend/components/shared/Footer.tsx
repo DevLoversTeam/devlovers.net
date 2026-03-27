@@ -59,6 +59,7 @@ export default function Footer({
   return (
     <footer
       ref={footerRef}
+      data-testid="site-footer"
       className={cn(
         'border-border bg-background/90 supports-backdrop-filter:bg-background/50 relative overflow-hidden border-t backdrop-blur ' +
           '[--footer-brand:var(--accent-primary)] [--footer-hover:var(--accent-hover)] [--theme-toggle-hover:var(--footer-hover)]',
@@ -82,14 +83,20 @@ export default function Footer({
               {t('byCommunity')}
             </p>
 
-            <p className="flex flex-wrap items-center gap-y-1.5 text-sm leading-6 text-slate-500 dark:text-slate-400">
+            <p
+              data-testid="footer-legal-links"
+              className="flex flex-wrap items-center gap-y-1.5 text-sm leading-6 text-slate-500 dark:text-slate-400"
+            >
               {legalLinks.map((link, index) => (
                 <Fragment key={link.href}>
                   {index > 0 ? (
-                    <span className="px-2 opacity-60"> </span>
+                    <span aria-hidden="true" className="px-2 opacity-60">
+                      {' '}
+                    </span>
                   ) : null}
                   <Link
                     href={link.href}
+                    data-testid={`footer-legal-link-${link.href.replace(/\//g, '') || 'home'}`}
                     className="transition-colors hover:text-(--footer-hover) focus-visible:text-(--footer-hover) active:text-(--footer-hover)"
                   >
                     {link.label}

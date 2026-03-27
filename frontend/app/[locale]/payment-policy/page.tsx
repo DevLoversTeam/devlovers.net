@@ -23,7 +23,10 @@ export default async function PaymentPolicyPage() {
   const t = await getTranslations('legal.payment');
 
   return (
-    <LegalPageShell title={t('title')} lastUpdated={PAYMENT_POLICY_LAST_UPDATED}>
+    <LegalPageShell
+      title={t('title')}
+      lastUpdated={PAYMENT_POLICY_LAST_UPDATED}
+    >
       <PaymentPolicyContent />
     </LegalPageShell>
   );
