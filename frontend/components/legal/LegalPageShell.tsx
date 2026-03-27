@@ -1,6 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 
 import LegalBackButton from '@/components/legal/LegalBackButton';
+import { getPublicSupportEmail } from '@/lib/legal/public-contact';
 
 type Props = {
   title: string;
@@ -14,6 +15,7 @@ export default async function LegalPageShell({
   children,
 }: Props) {
   const t = await getTranslations('legal');
+  const contactEmail = getPublicSupportEmail();
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-white text-slate-900 dark:bg-neutral-950 dark:text-slate-100">
@@ -39,10 +41,10 @@ export default async function LegalPageShell({
             <span className="opacity-60">•</span>
             <address className="not-italic">
               <a
-                href={`mailto:${t('contactEmail')}`}
+                href={`mailto:${contactEmail}`}
                 className="underline underline-offset-4 transition-colors hover:text-blue-600 dark:hover:text-white"
               >
-                {t('contactEmail')}
+                {contactEmail}
               </a>
             </address>
             <span className="opacity-60">•</span>

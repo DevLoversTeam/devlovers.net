@@ -1,5 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 
+import { getPublicSupportEmail } from '@/lib/legal/public-contact';
+
 import LegalBlock from './LegalBlock';
 
 export const PRIVACY_LAST_UPDATED = '2025-12-14';
@@ -9,8 +11,7 @@ const linkClass =
 
 export default async function PrivacyPolicyContent() {
   const t = await getTranslations('legal.privacy');
-  const tLegal = await getTranslations('legal');
-  const email = tLegal('contactEmail');
+  const email = getPublicSupportEmail();
 
   return (
     <div className="space-y-6">

@@ -322,6 +322,10 @@
   "footer": {
     "builtWith": "Zbudowane przez",
     "byCommunity": "przez społeczność.",
+    "sellerInformation": "Informacje o sprzedawcy",
+    "payment": "Płatność",
+    "delivery": "Dostawa",
+    "returns": "Zwroty",
     "privacyPolicy": "Polityka Prywatności",
     "termsOfService": "Warunki Świadczenia Usług"
   },
@@ -1698,6 +1702,101 @@
     "back": "Wróć",
     "lastUpdated": "Ostatnia aktualizacja",
     "contactEmail": "devlovers.net@gmail.com",
+    "seller": {
+      "metaTitle": "Informacje o sprzedawcy | Sklep DevLovers",
+      "metaDescription": "Publiczne dane sprzedawcy i kontaktowe dla sklepu DevLovers.",
+      "title": "Informacje o sprzedawcy",
+      "sellerDetailsTitle": "Dane sprzedawcy",
+      "sellerDetailsBody": "Poniżej znajdują się dane sprzedawcy, które są obecnie opublikowane dla sklepu.",
+      "supportContactsTitle": "Kontakty wsparcia",
+      "supportContactsBody": "Jeśli potrzebujesz pomocy z zamówieniem lub masz pytanie dotyczące zasad sklepu, skorzystaj z kontaktów poniżej.",
+      "placeholders": {
+        "toBeAdded": "Do uzupełnienia"
+      },
+      "fields": {
+        "sellerName": "Nazwa sprzedawcy",
+        "supportEmail": "Kontaktowy email",
+        "supportPhone": "Kontaktowy telefon",
+        "address": "Adres sprzedawcy",
+        "businessDetails": "Dane rejestracyjne"
+      }
+    },
+    "payment": {
+      "metaTitle": "Polityka płatności | Sklep DevLovers",
+      "metaDescription": "Publiczna polityka płatności sklepu DevLovers.",
+      "title": "Polityka płatności",
+      "methods": {
+        "title": "Dostępne metody płatności",
+        "body": "Dostępne metody płatności są pokazywane podczas składania zamówienia. W zależności od zamówienia możesz zobaczyć płatność kartą online przez Stripe lub opcję płatności Monobank.",
+        "items": {
+          "stripe": "Płatność kartą online przez Stripe.",
+          "monobank": "Dostępna opcja płatności Monobank."
+        }
+      },
+      "confirmation": {
+        "title": "Kiedy płatność jest potwierdzona",
+        "body": "Zamówienie jest uznawane za opłacone dopiero wtedy, gdy wybrany operator płatności potwierdzi transakcję, a sklep zapisze ten wynik. Sama strona powrotu lub przekierowanie w przeglądarce nie są autorytatywnym potwierdzeniem płatności."
+      },
+      "charges": {
+        "title": "Co jest pobierane online",
+        "body": "Kwota widoczna przed potwierdzeniem zamówienia obejmuje towary w Twoim zamówieniu oraz, jeśli dotyczy, koszt dostawy pokazany dla wybranej metody dostawy."
+      },
+      "support": {
+        "title": "Pytania o płatność",
+        "body": "Jeśli masz pytanie dotyczące płatności za zamówienie w sklepie, napisz na"
+      }
+    },
+    "delivery": {
+      "metaTitle": "Polityka dostawy | Sklep DevLovers",
+      "metaDescription": "Publiczna polityka dostawy sklepu DevLovers.",
+      "title": "Polityka dostawy",
+      "methods": {
+        "title": "Dostępne metody dostawy",
+        "body": "Dostępne metody dostawy są pokazywane podczas składania zamówienia dla zamówień, które mogą zostać dostarczone.",
+        "items": {
+          "warehouse": "Odbiór w oddziale Nova Poshta",
+          "locker": "Odbiór w automacie paczkowym Nova Poshta",
+          "courier": "Dostawa kurierska Nova Poshta"
+        }
+      },
+      "availability": {
+        "title": "Dostępność",
+        "body": "Obecnie opcje dostawy są dostępne dla kwalifikujących się zamówień na terenie Ukrainy. Dostępne metody mogą zależeć od miejsca docelowego i dostępności przewoźnika."
+      },
+      "timing": {
+        "title": "Czas dostawy",
+        "body": "Czas dostawy zależy od wybranej metody, miejsca docelowego i obciążenia przewoźnika. Ostateczny termin dostawy przewoźnik określa po nadaniu przesyłki."
+      },
+      "charges": {
+        "title": "Koszty dostawy",
+        "body": "Koszt dostawy dla wybranej metody jest pokazywany podczas składania zamówienia i dodawany do łącznej kwoty przed potwierdzeniem zamówienia. Dodatkowe opłaty przewoźnika za usługi zamawiane po złożeniu zamówienia, przechowywanie po bezpłatnym okresie, przekierowanie lub inne usługi przewoźnika mogą zostać naliczone osobno zgodnie z zasadami przewoźnika."
+      },
+      "support": {
+        "title": "Pytania o dostawę",
+        "body": "Jeśli masz pytanie dotyczące dostawy zamówienia w sklepie, napisz na"
+      }
+    },
+    "returns": {
+      "metaTitle": "Polityka zwrotów | Sklep DevLovers",
+      "metaDescription": "Publiczna polityka zwrotów sklepu DevLovers.",
+      "title": "Polityka zwrotów",
+      "request": {
+        "title": "Jak zgłosić zwrot lub prośbę o rozpatrzenie refundacji",
+        "body": "Aby zgłosić zwrot lub prośbę o rozpatrzenie refundacji, skontaktuj się ze wsparciem i podaj numer zamówienia oraz krótki opis przyczyny zgłoszenia."
+      },
+      "review": {
+        "title": "Jak rozpatrywane są zgłoszenia",
+        "body": "Każde zgłoszenie jest rozpatrywane indywidualnie. W razie potrzeby możemy poprosić o dodatkowe szczegóły, zdjęcia lub inne informacje potrzebne do oceny zgłoszenia i przekazania dalszych kroków."
+      },
+      "refunds": {
+        "title": "Zwrot środków",
+        "body": "Możliwość oraz czas zwrotu środków zależą od wyniku rozpatrzenia i metody płatności użytej przy zamówieniu. Automatyczne zwroty przez stronę internetową nie są obecnie dostępne."
+      },
+      "contact": {
+        "title": "Jak skontaktować się ze wsparciem",
+        "body": "Aby uzyskać wskazówki dotyczące zwrotu lub zgłosić problem z dostawą, napisz na"
+      }
+    },
     "privacy": {
       "metaTitle": "Polityka Prywatności | DevLovers",
       "metaDescription": "Dowiedz się, jak DevLovers gromadzi, wykorzystuje i chroni Twoje dane osobowe.",
