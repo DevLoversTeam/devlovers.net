@@ -43,7 +43,7 @@ export const getPlatformStats = unstable_cache(
 
     const linkedinCount = process.env.LINKEDIN_FOLLOWER_COUNT
       ? parseInt(process.env.LINKEDIN_FOLLOWER_COUNT)
-      : 1800;
+      : 1900;
 
     let totalUsers = 243;
     let solvedTests = 1890;
