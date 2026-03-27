@@ -23,7 +23,10 @@ export default async function ReturnsPolicyPage() {
   const t = await getTranslations('legal.returns');
 
   return (
-    <LegalPageShell title={t('title')} lastUpdated={RETURNS_POLICY_LAST_UPDATED}>
+    <LegalPageShell
+      title={t('title')}
+      lastUpdated={RETURNS_POLICY_LAST_UPDATED}
+    >
       <ReturnsPolicyContent />
     </LegalPageShell>
   );
