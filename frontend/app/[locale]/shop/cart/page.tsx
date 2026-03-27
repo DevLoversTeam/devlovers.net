@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 
+import { getShopLegalVersions } from '@/lib/env/shop-legal';
+
 import {
   resolveMonobankCheckoutEnabled,
   resolveMonobankGooglePayEnabled,
@@ -13,11 +15,15 @@ export const metadata: Metadata = {
 };
 
 export default function CartPage() {
+  const legalVersions = getShopLegalVersions();
+
   return (
     <CartPageClient
       stripeEnabled={resolveStripeCheckoutEnabled()}
       monobankEnabled={resolveMonobankCheckoutEnabled()}
       monobankGooglePayEnabled={resolveMonobankGooglePayEnabled()}
+      termsVersion={legalVersions.termsVersion}
+      privacyVersion={legalVersions.privacyVersion}
     />
   );
 }

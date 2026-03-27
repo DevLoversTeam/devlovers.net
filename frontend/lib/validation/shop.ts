@@ -540,7 +540,7 @@ export const checkoutPayloadSchema = z
       .transform(value => value.toUpperCase())
       .optional(),
     shipping: checkoutShippingSchema.optional(),
-    legalConsent: checkoutLegalConsentSchema.optional(),
+    legalConsent: checkoutLegalConsentSchema,
     pricingFingerprint: pricingFingerprintSchema.optional(),
     shippingQuoteFingerprint: pricingFingerprintSchema.optional(),
     paymentProvider: checkoutRequestedProviderSchema.optional(),

@@ -315,4 +315,36 @@ describe('checkout legal consent phase 4', () => {
       await cleanupProduct(productId);
     }
   }, 30_000);
+
+  it('rejects checkout when explicit legal consent is missing and does not write implicit consent', async () => {
+    const { productId } = await seedProduct();
+    const idempotencyKey = crypto.randomUUID();
+
+    try {
+      await expect(
+        createOrderWithItems({
+          idempotencyKey,
+          userId: null,
+          locale: 'en-US',
+          country: 'US',
+          items: [{ productId, quantity: 1 }],
+        })
+      ).rejects.toMatchObject({
+        code: 'LEGAL_CONSENT_REQUIRED',
+      });
+
+      const [persistedOrder] = await db
+        .select({
+          id: orders.id,
+          idempotencyKey: orders.idempotencyKey,
+        })
+        .from(orders)
+        .where(eq(orders.idempotencyKey, idempotencyKey))
+        .limit(1);
+
+      expect(persistedOrder).toBeUndefined();
+    } finally {
+      await cleanupProduct(productId);
+    }
+  }, 30_000);
 });

@@ -482,6 +482,14 @@
         "message": "Zostaniesz przekierowany do bezpiecznej płatności lub zobaczysz potwierdzenie, jeśli płatność nie jest wymagana w tym środowisku",
         "notRedirected": "Jeśli nie zostałeś automatycznie przekierowany, otwórz swoje zamówienie",
         "goToOrder": "Przejdź do zamówienia",
+        "consent": {
+          "prefix": "Zapoznałem(-am) się i akceptuję",
+          "termsLink": "Warunki świadczenia usług",
+          "and": "oraz",
+          "privacyLink": "Politykę prywatności",
+          "suffix": " dla tego zamówienia.",
+          "required": "Potwierdź akceptację Warunków świadczenia usług i Polityki prywatności przed złożeniem zamówienia."
+        },
         "errors": {
           "unexpectedResponse": "Nieoczekiwana odpowiedź checkout.",
           "startFailed": "Nie można teraz rozpocząć checkoutu."
@@ -1260,10 +1268,10 @@
   },
   "CookieBanner": {
     "title": "🍪 Dbamy o Twoją prywatność",
-    "description": "Używamy plików cookie, aby poprawić jakość przeglądania, wyświetlać spersonalizowane treści i analizować nasz ruch. Klikając „Zaakceptuj\", wyrażasz zgodę na używanie plików cookie. Przeczytaj naszą",
+    "description": "Używamy plików cookie i lokalnego magazynu, aby utrzymać Cię zalogowanego, zapamiętywać preferencje, takie jak motyw, i chronić usługę. Przeczytaj naszą",
     "policyLink": "Politykę Prywatności",
-    "accept": "Zaakceptuj",
-    "decline": "Odrzuć"
+    "accept": "Rozumiem",
+    "decline": "Zamknij"
   },
   "leaderboard": {
     "title": "Ranking",
@@ -1822,7 +1830,7 @@
       },
       "cookies": {
         "title": "4. Pliki cookie i podobne technologie",
-        "content": "Możemy używać plików cookie/lokalnego magazynu, aby utrzymać Cię zalogowanego, przechowywać preferencje (np. motyw) i chronić usługę. Jeśli dodamy analityczne pliki cookie, zaktualizujemy tę sekcję."
+        "content": "Używamy plików cookie/lokalnego magazynu, aby utrzymać Cię zalogowanego, przechowywać preferencje (np. motyw) i chronić usługę. Jeśli dodamy analityczne pliki cookie, zaktualizujemy tę sekcję."
       },
       "sharing": {
         "title": "5. Udostępnianie danych",
