@@ -25,6 +25,13 @@ type SeedData = {
   warehouseRefB: string;
 };
 
+const TEST_LEGAL_CONSENT = {
+  termsAccepted: true,
+  privacyAccepted: true,
+  termsVersion: 'terms-2026-02-27',
+  privacyVersion: 'privacy-2026-02-27',
+} as const;
+
 async function seedCheckoutShippingData(): Promise<SeedData> {
   const productId = crypto.randomUUID();
   const cityRef = crypto.randomUUID();
@@ -148,6 +155,7 @@ describe('checkout shipping phase 3', () => {
         locale: 'en-US',
         country: 'UA',
         items: [{ productId: seed.productId, quantity: 1 }],
+        legalConsent: TEST_LEGAL_CONSENT,
         shipping: {
           provider: 'nova_poshta',
           methodCode: 'NP_WAREHOUSE',
@@ -214,6 +222,7 @@ describe('checkout shipping phase 3', () => {
         locale: 'uk-UA',
         country: 'UA',
         items: [{ productId: seed.productId, quantity: 1 }],
+        legalConsent: TEST_LEGAL_CONSENT,
         shipping: {
           provider: 'nova_poshta',
           methodCode: 'NP_WAREHOUSE',
@@ -260,6 +269,7 @@ describe('checkout shipping phase 3', () => {
         locale: 'uk-UA',
         country: 'UA',
         items: [{ productId: seed.productId, quantity: 1 }],
+        legalConsent: TEST_LEGAL_CONSENT,
         shipping: {
           provider: 'nova_poshta',
           methodCode: 'NP_LOCKER',
@@ -302,6 +312,7 @@ describe('checkout shipping phase 3', () => {
         locale: 'uk-UA',
         country: 'UA',
         items: [{ productId: seed.productId, quantity: 1 }],
+        legalConsent: TEST_LEGAL_CONSENT,
         shipping: {
           provider: 'nova_poshta',
           methodCode: 'NP_COURIER',
@@ -343,6 +354,7 @@ describe('checkout shipping phase 3', () => {
         locale: 'uk-UA',
         country: 'UA',
         items: [{ productId: seed.productId, quantity: 1 }],
+        legalConsent: TEST_LEGAL_CONSENT,
         shipping: {
           provider: 'nova_poshta',
           methodCode: 'NP_WAREHOUSE',
@@ -423,6 +435,7 @@ describe('checkout shipping phase 3', () => {
         locale: 'uk-UA',
         country: 'UA',
         items: [{ productId: seed.productId, quantity: 1 }],
+        legalConsent: TEST_LEGAL_CONSENT,
         shipping: {
           provider: 'nova_poshta',
           methodCode: 'NP_WAREHOUSE',
@@ -444,6 +457,7 @@ describe('checkout shipping phase 3', () => {
         locale: 'uk-UA',
         country: 'UA',
         items: [{ productId: seed.productId, quantity: 1 }],
+        legalConsent: TEST_LEGAL_CONSENT,
         shipping: {
           provider: 'nova_poshta',
           methodCode: 'NP_WAREHOUSE',
@@ -478,6 +492,7 @@ describe('checkout shipping phase 3', () => {
           locale: 'uk-UA',
           country: 'UA',
           items: [{ productId: seed.productId, quantity: 1 }],
+          legalConsent: TEST_LEGAL_CONSENT,
           shipping: {
             provider: 'nova_poshta',
             methodCode: 'NP_WAREHOUSE',

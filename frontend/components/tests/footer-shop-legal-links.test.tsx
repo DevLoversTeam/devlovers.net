@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { render, screen } from '@testing-library/react';
-import type { ReactNode } from 'react';
+import type { AnchorHTMLAttributes, ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import Footer from '@/components/shared/Footer';
@@ -47,13 +47,12 @@ vi.mock('@/i18n/routing', () => ({
   Link: ({
     href,
     children,
-    className,
+    ...props
   }: {
     href: string;
     children: ReactNode;
-    className?: string;
-  }) => (
-    <a href={href} className={className}>
+  } & AnchorHTMLAttributes<HTMLAnchorElement>) => (
+    <a href={href} {...props}>
       {children}
     </a>
   ),
@@ -69,25 +68,25 @@ describe('shared footer shop legal links', () => {
     render(<Footer />);
 
     expect(
-      screen.getByRole('link', { name: 'Seller Information' })
+      screen.getByTestId('footer-legal-link-seller-information')
     ).toHaveAttribute('href', '/seller-information');
-    expect(screen.getByRole('link', { name: 'Payment' })).toHaveAttribute(
-      'href',
-      '/payment-policy'
-    );
-    expect(screen.getByRole('link', { name: 'Delivery' })).toHaveAttribute(
-      'href',
-      '/delivery-policy'
-    );
-    expect(screen.getByRole('link', { name: 'Returns' })).toHaveAttribute(
-      'href',
-      '/returns-policy'
-    );
     expect(
-      screen.getByRole('link', { name: 'Privacy Policy' })
+      screen.getByTestId('footer-legal-link-payment-policy')
+    ).toHaveTextContent('Payment');
+    expect(
+      screen.getByTestId('footer-legal-link-payment-policy')
+    ).toHaveAttribute('href', '/payment-policy');
+    expect(
+      screen.getByTestId('footer-legal-link-delivery-policy')
+    ).toHaveAttribute('href', '/delivery-policy');
+    expect(
+      screen.getByTestId('footer-legal-link-returns-policy')
+    ).toHaveAttribute('href', '/returns-policy');
+    expect(
+      screen.getByTestId('footer-legal-link-privacy-policy')
     ).toHaveAttribute('href', '/privacy-policy');
     expect(
-      screen.getByRole('link', { name: 'Terms of Service' })
+      screen.getByTestId('footer-legal-link-terms-of-service')
     ).toHaveAttribute('href', '/terms-of-service');
   });
 
@@ -98,13 +97,19 @@ describe('shared footer shop legal links', () => {
     render(<Footer />);
 
     expect(
-      screen.queryByRole('link', { name: 'Seller Information' })
+      screen.queryByTestId('footer-legal-link-seller-information')
     ).toBeNull();
-    expect(screen.queryByRole('link', { name: 'Payment' })).toBeNull();
-    expect(screen.queryByRole('link', { name: 'Delivery' })).toBeNull();
-    expect(screen.queryByRole('link', { name: 'Returns' })).toBeNull();
-    expect(screen.getByRole('link', { name: 'Privacy Policy' })).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Terms of Service' })).toBeTruthy();
+    expect(screen.queryByTestId('footer-legal-link-payment-policy')).toBeNull();
+    expect(
+      screen.queryByTestId('footer-legal-link-delivery-policy')
+    ).toBeNull();
+    expect(screen.queryByTestId('footer-legal-link-returns-policy')).toBeNull();
+    expect(
+      screen.getByTestId('footer-legal-link-privacy-policy')
+    ).toHaveAttribute('href', '/privacy-policy');
+    expect(
+      screen.getByTestId('footer-legal-link-terms-of-service')
+    ).toHaveAttribute('href', '/terms-of-service');
   });
 
   it('preserves hidden-on-home behavior unless forceVisible is enabled', () => {
