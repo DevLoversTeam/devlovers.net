@@ -17,7 +17,6 @@ import {
   getShopShippingFlags,
   NovaPoshtaConfigError,
 } from '@/lib/env/nova-poshta';
-import { getShopLegalVersions } from '@/lib/env/shop-legal';
 import { logError, logWarn } from '@/lib/logging';
 import { resolveShippingAvailability } from '@/lib/services/shop/shipping/availability';
 import {
@@ -202,12 +201,32 @@ type PreparedLegalConsent = {
   };
 };
 
-function normalizeLegalVersion(
+const CHECKOUT_LEGAL_CONSENT_REPLAY_GRACE_MS = 30_000;
+
+function requireLegalConsentVersion(
   raw: string | undefined,
-  fallback: string
+  field: 'termsVersion' | 'privacyVersion'
 ): string {
   const normalized = (raw ?? '').trim();
-  return normalized.length > 0 ? normalized : fallback;
+  if (normalized.length > 0) {
+    return normalized;
+  }
+
+  throw new InvalidPayloadError(
+    `${field === 'termsVersion' ? 'Terms' : 'Privacy'} version is required before checkout.`,
+    {
+      code:
+        field === 'termsVersion'
+          ? 'TERMS_VERSION_REQUIRED'
+          : 'PRIVACY_VERSION_REQUIRED',
+    }
+  );
+}
+
+function isWithinLegalConsentReplayGraceWindow(createdAt: Date): boolean {
+  return (
+    Date.now() - createdAt.getTime() <= CHECKOUT_LEGAL_CONSENT_REPLAY_GRACE_MS
+  );
 }
 
 function normalizeCountryCode(raw: string | null | undefined): string | null {
@@ -505,7 +524,7 @@ async function prepareCheckoutShipping(args: {
 }
 
 function resolveCheckoutLegalConsent(args: {
-  legalConsent?: CheckoutLegalConsentInput | null;
+  legalConsent: CheckoutLegalConsentInput | null | undefined;
   locale: string | null | undefined;
   country: string | null | undefined;
 }): PreparedLegalConsent {
@@ -517,8 +536,6 @@ function resolveCheckoutLegalConsent(args: {
       }
     );
   }
-
-  const versions = getShopLegalVersions();
 
   const termsAccepted = args.legalConsent.termsAccepted;
   const privacyAccepted = args.legalConsent.privacyAccepted;
@@ -535,13 +552,13 @@ function resolveCheckoutLegalConsent(args: {
     });
   }
 
-  const termsVersion = normalizeLegalVersion(
+  const termsVersion = requireLegalConsentVersion(
     args.legalConsent.termsVersion,
-    versions.termsVersion
+    'termsVersion'
   );
-  const privacyVersion = normalizeLegalVersion(
+  const privacyVersion = requireLegalConsentVersion(
     args.legalConsent.privacyVersion,
-    versions.privacyVersion
+    'privacyVersion'
   );
 
   const consentedAt = new Date();
@@ -795,7 +812,7 @@ export async function createOrderWithItems({
   locale: string | null | undefined;
   country?: string | null;
   shipping?: CheckoutShippingInput | null;
-  legalConsent?: CheckoutLegalConsentInput | null;
+  legalConsent: CheckoutLegalConsentInput;
   pricingFingerprint?: string | null;
   requirePricingFingerprint?: boolean;
   shippingQuoteFingerprint?: string | null;
@@ -843,7 +860,7 @@ export async function createOrderWithItems({
     requireShippingQuoteFingerprint,
   });
   const preparedLegalConsent = resolveCheckoutLegalConsent({
-    legalConsent: legalConsent ?? null,
+    legalConsent,
     locale,
     country: country ?? null,
   });
@@ -892,7 +909,7 @@ export async function createOrderWithItems({
       .from(orderShipping)
       .where(eq(orderShipping.orderId, row.id))
       .limit(1);
-    const [existingLegalConsentRow] = await db
+    let [existingLegalConsentRow] = await db
       .select({
         termsAccepted: orderLegalConsents.termsAccepted,
         privacyAccepted: orderLegalConsents.privacyAccepted,
@@ -904,13 +921,37 @@ export async function createOrderWithItems({
       .limit(1);
 
     if (!existingLegalConsentRow) {
-      throw new IdempotencyConflictError(
-        'Idempotency key cannot be replayed because persisted legal consent evidence is missing.',
-        {
+      const canRepairMissingLegalConsent =
+        row.idempotencyRequestHash === requestHash &&
+        isWithinLegalConsentReplayGraceWindow(existing.createdAt);
+
+      if (canRepairMissingLegalConsent) {
+        await ensureOrderLegalConsentSnapshot({
           orderId: row.id,
-          reason: 'LEGAL_CONSENT_MISSING',
-        }
-      );
+          snapshot: preparedLegalConsent.snapshot,
+        });
+
+        [existingLegalConsentRow] = await db
+          .select({
+            termsAccepted: orderLegalConsents.termsAccepted,
+            privacyAccepted: orderLegalConsents.privacyAccepted,
+            termsVersion: orderLegalConsents.termsVersion,
+            privacyVersion: orderLegalConsents.privacyVersion,
+          })
+          .from(orderLegalConsents)
+          .where(eq(orderLegalConsents.orderId, row.id))
+          .limit(1);
+      }
+
+      if (!existingLegalConsentRow) {
+        throw new IdempotencyConflictError(
+          'Idempotency key cannot be replayed because persisted legal consent evidence is missing.',
+          {
+            orderId: row.id,
+            reason: 'LEGAL_CONSENT_MISSING',
+          }
+        );
+      }
     }
 
     const existingCityRef = readShippingRefFromSnapshot(
@@ -1203,6 +1244,7 @@ export async function createOrderWithItems({
     shippingAmountCents,
   ]);
 
+  const orderCreatedAt = new Date();
   let orderId: string;
   try {
     const [created] = await db
@@ -1238,6 +1280,8 @@ export async function createOrderWithItems({
         restockedAt: null,
         idempotencyKey,
         userId: userId ?? null,
+        createdAt: orderCreatedAt,
+        updatedAt: orderCreatedAt,
       })
       .returning({ id: orders.id });
 

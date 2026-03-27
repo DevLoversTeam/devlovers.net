@@ -400,8 +400,8 @@
         "shipping": "Wysyłka",
         "shippingCalc": "Obliczone przy kasie",
         "total": "Razem",
-        "shippingInformationalOnly": "Tylko informacyjnie",
-        "shippingPayOnDeliveryNote": "Dostawa jest opłacana przewoźnikowi przy odbiorze; obecnie pobieramy opłatę tylko za produkty."
+        "shippingInformationalOnly": "Pokazywane przed potwierdzeniem",
+        "shippingPayOnDeliveryNote": "Koszt dostawy, jeśli ma zastosowanie, jest doliczany podczas składania zamówienia i pokazywany w sumie przed potwierdzeniem zamówienia."
       },
       "delivery": {
         "legend": "Dostawa",
@@ -1709,7 +1709,6 @@
   "legal": {
     "back": "Wróć",
     "lastUpdated": "Ostatnia aktualizacja",
-    "contactEmail": "devlovers.net@gmail.com",
     "seller": {
       "metaTitle": "Informacje o sprzedawcy | Sklep DevLovers",
       "metaDescription": "Publiczne dane sprzedawcy i kontaktowe dla sklepu DevLovers.",

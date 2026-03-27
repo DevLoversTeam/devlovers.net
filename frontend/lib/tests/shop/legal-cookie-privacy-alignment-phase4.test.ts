@@ -19,9 +19,52 @@ function getAtPath(
   return current;
 }
 
+const localeCases = [
+  ['en', en],
+  ['uk', uk],
+  ['pl', pl],
+] as const;
+
+const cookieAlignmentCases = [
+  {
+    locale: 'en',
+    messages: en,
+    bannerRequired: ['cookies and local storage', 'signed in', 'preferences'],
+    bannerForbidden: ['personalized content', 'analyze our traffic'],
+    privacyRequired: ['cookies/local storage', 'signed in', 'preferences'],
+  },
+  {
+    locale: 'uk',
+    messages: uk,
+    bannerRequired: [
+      'cookie та локальне сховище',
+      'авторизації',
+      'налаштувань',
+    ],
+    bannerForbidden: ['персоналізації контенту', 'аналізу трафіку'],
+    privacyRequired: ['cookie/локальне сховище', 'авторизації', 'налаштувань'],
+  },
+  {
+    locale: 'pl',
+    messages: pl,
+    bannerRequired: [
+      'plików cookie i lokalnego magazynu',
+      'zalogowanego',
+      'preferencje',
+    ],
+    bannerForbidden: ['spersonalizowane treści', 'analizować nasz ruch'],
+    privacyRequired: [
+      'plików cookie/lokalnego magazynu',
+      'zalogowanego',
+      'preferencje',
+    ],
+  },
+] as const;
+
 describe('legal cookie/privacy alignment phase 4', () => {
-  it('keeps checkout consent keys present for all supported locales', () => {
-    for (const messages of [en, uk, pl]) {
+  it.each(localeCases)(
+    'keeps checkout consent keys present for locale %s',
+    (_locale, messages) => {
       expect(
         getAtPath(messages as Record<string, unknown>, [
           'shop',
@@ -42,59 +85,25 @@ describe('legal cookie/privacy alignment phase 4', () => {
         ])
       ).toBeTruthy();
     }
-  });
+  );
 
-  it('aligns cookie banner wording with privacy cookie wording in all supported locales', () => {
-    const cases = [
-      {
-        messages: en,
-        bannerRequired: [
-          'cookies and local storage',
-          'signed in',
-          'preferences',
-        ],
-        bannerForbidden: ['personalized content', 'analyze our traffic'],
-        privacyRequired: ['cookies/local storage', 'signed in', 'preferences'],
-      },
-      {
-        messages: uk,
-        bannerRequired: [
-          'cookie та локальне сховище',
-          'авторизації',
-          'налаштувань',
-        ],
-        bannerForbidden: ['персоналізації контенту', 'аналізу трафіку'],
-        privacyRequired: [
-          'cookie/локальне сховище',
-          'авторизації',
-          'налаштувань',
-        ],
-      },
-      {
-        messages: pl,
-        bannerRequired: [
-          'plików cookie i lokalnego magazynu',
-          'zalogowanego',
-          'preferencje',
-        ],
-        bannerForbidden: ['spersonalizowane treści', 'analizować nasz ruch'],
-        privacyRequired: [
-          'plików cookie/lokalnego magazynu',
-          'zalogowanego',
-          'preferencje',
-        ],
-      },
-    ] as const;
-
-    for (const item of cases) {
+  it.each(cookieAlignmentCases)(
+    'aligns cookie banner wording with privacy cookie wording for locale $locale',
+    ({
+      locale,
+      messages,
+      bannerRequired,
+      bannerForbidden,
+      privacyRequired,
+    }) => {
       const banner = String(
-        getAtPath(item.messages as Record<string, unknown>, [
+        getAtPath(messages as Record<string, unknown>, [
           'CookieBanner',
           'description',
         ]) ?? ''
       );
       const privacy = String(
-        getAtPath(item.messages as Record<string, unknown>, [
+        getAtPath(messages as Record<string, unknown>, [
           'legal',
           'privacy',
           'cookies',
@@ -102,17 +111,26 @@ describe('legal cookie/privacy alignment phase 4', () => {
         ]) ?? ''
       );
 
-      for (const snippet of item.bannerRequired) {
-        expect(banner).toContain(snippet);
+      for (const snippet of bannerRequired) {
+        expect(
+          banner,
+          `locale=${locale} banner should contain "${snippet}"`
+        ).toContain(snippet);
       }
 
-      for (const snippet of item.bannerForbidden) {
-        expect(banner).not.toContain(snippet);
+      for (const snippet of bannerForbidden) {
+        expect(
+          banner,
+          `locale=${locale} banner should not contain "${snippet}"`
+        ).not.toContain(snippet);
       }
 
-      for (const snippet of item.privacyRequired) {
-        expect(privacy).toContain(snippet);
+      for (const snippet of privacyRequired) {
+        expect(
+          privacy,
+          `locale=${locale} privacy content should contain "${snippet}"`
+        ).toContain(snippet);
       }
     }
-  });
+  );
 });
