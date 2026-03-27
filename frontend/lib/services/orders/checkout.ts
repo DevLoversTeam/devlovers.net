@@ -509,10 +509,19 @@ function resolveCheckoutLegalConsent(args: {
   locale: string | null | undefined;
   country: string | null | undefined;
 }): PreparedLegalConsent {
+  if (args.legalConsent == null) {
+    throw new InvalidPayloadError(
+      'Explicit legal consent is required before checkout.',
+      {
+        code: 'LEGAL_CONSENT_REQUIRED',
+      }
+    );
+  }
+
   const versions = getShopLegalVersions();
 
-  const termsAccepted = args.legalConsent?.termsAccepted ?? true;
-  const privacyAccepted = args.legalConsent?.privacyAccepted ?? true;
+  const termsAccepted = args.legalConsent.termsAccepted;
+  const privacyAccepted = args.legalConsent.privacyAccepted;
 
   if (!termsAccepted) {
     throw new InvalidPayloadError('Terms must be accepted before checkout.', {
@@ -527,17 +536,16 @@ function resolveCheckoutLegalConsent(args: {
   }
 
   const termsVersion = normalizeLegalVersion(
-    args.legalConsent?.termsVersion,
+    args.legalConsent.termsVersion,
     versions.termsVersion
   );
   const privacyVersion = normalizeLegalVersion(
-    args.legalConsent?.privacyVersion,
+    args.legalConsent.privacyVersion,
     versions.privacyVersion
   );
 
   const consentedAt = new Date();
-  const source =
-    args.legalConsent == null ? 'checkout_implicit' : 'checkout_explicit';
+  const source = 'checkout_explicit';
   const normalizedLocale = normVariant(args.locale).toLowerCase() || null;
   const normalizedCountry = normalizeCountryCode(
     args.country ?? localeToCountry(args.locale)

@@ -482,6 +482,14 @@
         "message": "You'll either be redirected to secure payment or see confirmation if payment is not required in this environment",
         "notRedirected": "If you are not redirected automatically, open your order",
         "goToOrder": "Go to order",
+        "consent": {
+          "prefix": "I have read and agree to the",
+          "termsLink": "Terms of Service",
+          "and": "and",
+          "privacyLink": "Privacy Policy",
+          "suffix": " for this order.",
+          "required": "Please confirm that you agree to the Terms of Service and Privacy Policy before placing your order."
+        },
         "errors": {
           "unexpectedResponse": "Unexpected checkout response.",
           "startFailed": "Unable to start checkout right now."
@@ -1260,10 +1268,10 @@
   },
   "CookieBanner": {
     "title": "🍪 We value your privacy",
-    "description": "We use cookies to enhance your browsing experience, serve personalized content, and analyze our traffic. By clicking \"Accept\", you consent to our use of cookies. Read our",
+    "description": "We use cookies and local storage to keep you signed in, remember preferences such as theme, and protect the service. Read our",
     "policyLink": "Privacy Policy",
-    "accept": "Accept Cookies",
-    "decline": "Decline"
+    "accept": "Got it",
+    "decline": "Close"
   },
   "leaderboard": {
     "title": "Leaderboard",
@@ -1820,7 +1828,7 @@
       },
       "cookies": {
         "title": "4. Cookies and similar technologies",
-        "content": "We may use cookies/local storage to keep you signed in, store preferences (e.g. theme), and protect the service. If we add analytics cookies, this section will be updated."
+        "content": "We use cookies/local storage to keep you signed in, store preferences (e.g. theme), and protect the service. If we add analytics cookies, this section will be updated."
       },
       "sharing": {
         "title": "5. Sharing of data",

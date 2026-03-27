@@ -14,6 +14,50 @@ const mockCreateStatusToken = vi.fn();
 const mockIsStripePaymentsEnabled = vi.fn();
 const mockIsMethodAllowed = vi.fn();
 const mockReadPositiveIntEnv = vi.fn();
+type MockCheckoutPayloadSafeParseResult =
+  | {
+      success: true;
+      data: {
+        items: Array<{ productId: string; quantity: number }>;
+        userId: null;
+        shipping: null;
+        country: null;
+        legalConsent: {
+          termsAccepted: boolean;
+          privacyAccepted: boolean;
+          termsVersion: string;
+          privacyVersion: string;
+        };
+      };
+    }
+  | {
+      success: false;
+      error: {
+        issues: Array<{ path: Array<string | number>; message: string }>;
+        format: () => unknown;
+      };
+    };
+
+function makeValidCheckoutPayloadParseResult(): MockCheckoutPayloadSafeParseResult {
+  return {
+    success: true,
+    data: {
+      items: [{ productId: 'prod_1', quantity: 1 }],
+      userId: null,
+      shipping: null,
+      country: null,
+      legalConsent: {
+        termsAccepted: true,
+        privacyAccepted: true,
+        termsVersion: 'terms-v1',
+        privacyVersion: 'privacy-v1',
+      },
+    },
+  };
+}
+const mockCheckoutPayloadSafeParse = vi.fn<
+  (input: unknown) => MockCheckoutPayloadSafeParseResult
+>(() => makeValidCheckoutPayloadParseResult());
 
 vi.mock('@/lib/auth', () => ({
   getCurrentUser: mockGetCurrentUser,
@@ -95,16 +139,7 @@ vi.mock('@/lib/shop/status-token', () => ({
 
 vi.mock('@/lib/validation/shop', () => ({
   checkoutPayloadSchema: {
-    safeParse: vi.fn(() => ({
-      success: true,
-      data: {
-        items: [{ productId: 'prod_1', quantity: 1 }],
-        userId: null,
-        shipping: null,
-        country: null,
-        legalConsent: null,
-      },
-    })),
+    safeParse: mockCheckoutPayloadSafeParse,
   },
   idempotencyKeySchema: {
     safeParse: vi.fn((value: string) => ({
@@ -118,6 +153,10 @@ describe('checkout route - stripe disabled recovery', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    mockCheckoutPayloadSafeParse.mockReset();
+    mockCheckoutPayloadSafeParse.mockReturnValue(
+      makeValidCheckoutPayloadParseResult()
+    );
 
     mockGetCurrentUser.mockResolvedValue(null);
     mockGuardBrowserSameOrigin.mockReturnValue(null);
@@ -173,17 +212,24 @@ describe('checkout route - stripe disabled recovery', () => {
     );
 
     expect(mockCreateOrderWithItems).toHaveBeenCalledTimes(1);
-    expect(mockCreateOrderWithItems).toHaveBeenCalledWith({
-      items: [{ productId: 'prod_1', quantity: 1 }],
-      idempotencyKey: 'idem_key_1234567890',
-      userId: null,
-      locale: 'en',
-      country: null,
-      shipping: null,
-      legalConsent: null,
-      paymentProvider: 'stripe',
-      paymentMethod: 'stripe_card',
-    });
+    expect(mockCreateOrderWithItems).toHaveBeenCalledWith(
+      expect.objectContaining({
+        items: [{ productId: 'prod_1', quantity: 1 }],
+        idempotencyKey: 'idem_key_1234567890',
+        userId: null,
+        locale: 'en',
+        country: null,
+        shipping: null,
+        legalConsent: {
+          termsAccepted: true,
+          privacyAccepted: true,
+          termsVersion: 'terms-v1',
+          privacyVersion: 'privacy-v1',
+        },
+        paymentProvider: 'stripe',
+        paymentMethod: 'stripe_card',
+      })
+    );
     expect(mockEnsureStripePaymentIntentForOrder).not.toHaveBeenCalled();
   });
 
@@ -224,17 +270,48 @@ describe('checkout route - stripe disabled recovery', () => {
     expect(json.orderId).toBe('order_existing_default');
     expect(json.paymentProvider).toBe('stripe');
     expect(mockCreateOrderWithItems).toHaveBeenCalledTimes(1);
-    expect(mockCreateOrderWithItems).toHaveBeenCalledWith({
-      items: [{ productId: 'prod_1', quantity: 1 }],
-      idempotencyKey: 'idem_key_1234567890',
-      userId: null,
-      locale: 'en',
-      country: null,
-      shipping: null,
-      legalConsent: null,
-      paymentProvider: 'stripe',
-      paymentMethod: 'stripe_card',
+    expect(mockCreateOrderWithItems).toHaveBeenCalledWith(
+      expect.objectContaining({
+        items: [{ productId: 'prod_1', quantity: 1 }],
+        idempotencyKey: 'idem_key_1234567890',
+        userId: null,
+        locale: 'en',
+        country: null,
+        shipping: null,
+        legalConsent: {
+          termsAccepted: true,
+          privacyAccepted: true,
+          termsVersion: 'terms-v1',
+          privacyVersion: 'privacy-v1',
+        },
+        paymentProvider: 'stripe',
+        paymentMethod: 'stripe_card',
+      })
+    );
+    expect(mockEnsureStripePaymentIntentForOrder).not.toHaveBeenCalled();
+  });
+
+  it('missing legal consent returns a controlled validation error before checkout starts', async () => {
+    mockCheckoutPayloadSafeParse.mockReturnValue({
+      success: false,
+      error: {
+        issues: [{ path: ['legalConsent'], message: 'Required' }],
+        format: () => ({
+          legalConsent: {
+            _errors: ['Required'],
+          },
+        }),
+      },
     });
+
+    const { POST } = await import('@/app/api/shop/checkout/route');
+
+    const response = await POST(makeRequest({ paymentProvider: 'stripe' }));
+    const json = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(json.code).toBe('LEGAL_CONSENT_REQUIRED');
+    expect(mockCreateOrderWithItems).not.toHaveBeenCalled();
     expect(mockEnsureStripePaymentIntentForOrder).not.toHaveBeenCalled();
   });
 
@@ -292,6 +369,7 @@ describe('checkout route - stripe disabled recovery', () => {
     expect(mockCreateOrderWithItems).not.toHaveBeenCalled();
     expect(mockEnsureStripePaymentIntentForOrder).not.toHaveBeenCalled();
   });
+
   it('stripe disabled + existing order with unknown payment status => returns 503', async () => {
     mockFindExistingCheckoutOrderByIdempotencyKey.mockResolvedValue({
       id: 'order_existing_bad_status',

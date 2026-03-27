@@ -71,6 +71,7 @@ const EXPECTED_BUSINESS_ERROR_CODES = new Set([
   'SHIPPING_METHOD_UNAVAILABLE',
   'SHIPPING_CURRENCY_UNSUPPORTED',
   'SHIPPING_AMOUNT_UNAVAILABLE',
+  'LEGAL_CONSENT_REQUIRED',
   'TERMS_NOT_ACCEPTED',
   'PRIVACY_NOT_ACCEPTED',
 ]);
@@ -218,6 +219,12 @@ function getErrorMessage(error: unknown, fallback: string): string {
   return fallback;
 }
 
+function hasLegalConsentValidationIssue(issues: Array<{ path?: unknown[] }>) {
+  return issues.some(
+    issue => Array.isArray(issue.path) && issue.path[0] === 'legalConsent'
+  );
+}
+
 function isMonobankInvalidRequestError(error: unknown): boolean {
   const code = getErrorCode(error);
 
@@ -352,9 +359,7 @@ function errorResponse(
   return res;
 }
 
-function collectUnsupportedDiscountFields(
-  value: unknown
-): string[] {
+function collectUnsupportedDiscountFields(value: unknown): string[] {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return [];
   }
@@ -1041,6 +1046,21 @@ export async function POST(request: NextRequest) {
   const parsedPayload = checkoutPayloadSchema.safeParse(payloadForValidation);
 
   if (!parsedPayload.success) {
+    if (hasLegalConsentValidationIssue(parsedPayload.error.issues ?? [])) {
+      logWarn('checkout_legal_consent_required', {
+        ...meta,
+        code: 'LEGAL_CONSENT_REQUIRED',
+        issuesCount: parsedPayload.error.issues?.length ?? 0,
+      });
+
+      return errorResponse(
+        'LEGAL_CONSENT_REQUIRED',
+        'Explicit legal consent is required before checkout.',
+        400,
+        parsedPayload.error.format()
+      );
+    }
+
     if (selectedProvider === 'monobank') {
       logWarn('checkout_invalid_request', {
         ...meta,
@@ -1202,7 +1222,7 @@ export async function POST(request: NextRequest) {
         locale,
         country: country ?? null,
         shipping: shipping ?? null,
-        legalConsent: legalConsent ?? null,
+        legalConsent,
         pricingFingerprint,
         shippingQuoteFingerprint,
         requirePricingFingerprint: true,
@@ -1230,7 +1250,7 @@ export async function POST(request: NextRequest) {
         locale,
         country: country ?? null,
         shipping: shipping ?? null,
-        legalConsent: legalConsent ?? null,
+        legalConsent,
         pricingFingerprint,
         shippingQuoteFingerprint,
         requirePricingFingerprint: true,
