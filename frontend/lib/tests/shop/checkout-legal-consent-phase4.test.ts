@@ -13,6 +13,8 @@ import { IdempotencyConflictError } from '@/lib/services/errors';
 import { createOrderWithItems } from '@/lib/services/orders';
 import { toDbMoney } from '@/lib/shop/money';
 
+import { TEST_LEGAL_CONSENT } from './test-legal-consent';
+
 type SeedProduct = {
   productId: string;
 };
@@ -94,12 +96,7 @@ describe('checkout legal consent phase 4', () => {
         locale: 'en-US',
         country: 'US',
         items: [{ productId, quantity: 1 }],
-        legalConsent: {
-          termsAccepted: true,
-          privacyAccepted: true,
-          termsVersion: 'terms-2026-02-27',
-          privacyVersion: 'privacy-2026-02-27',
-        },
+        legalConsent: TEST_LEGAL_CONSENT,
       });
 
       orderId = result.order.id;
@@ -152,12 +149,7 @@ describe('checkout legal consent phase 4', () => {
         locale: 'en-US',
         country: 'US',
         items: [{ productId, quantity: 1 }],
-        legalConsent: {
-          termsAccepted: true,
-          privacyAccepted: true,
-          termsVersion: 'terms-2026-02-27',
-          privacyVersion: 'privacy-2026-02-27',
-        },
+        legalConsent: TEST_LEGAL_CONSENT,
       });
 
       orderId = first.order.id;
@@ -223,12 +215,7 @@ describe('checkout legal consent phase 4', () => {
         locale: 'en-US',
         country: 'US',
         items: [{ productId, quantity: 1 }],
-        legalConsent: {
-          termsAccepted: true,
-          privacyAccepted: true,
-          termsVersion: 'terms-2026-02-27',
-          privacyVersion: 'privacy-2026-02-27',
-        },
+        legalConsent: TEST_LEGAL_CONSENT,
       });
 
       orderId = first.order.id;
@@ -243,12 +230,7 @@ describe('checkout legal consent phase 4', () => {
         locale: 'en-US',
         country: 'US',
         items: [{ productId, quantity: 1 }],
-        legalConsent: {
-          termsAccepted: true,
-          privacyAccepted: true,
-          termsVersion: 'terms-2026-02-27',
-          privacyVersion: 'privacy-2026-02-27',
-        },
+        legalConsent: TEST_LEGAL_CONSENT,
       });
 
       expect(replay.isNew).toBe(false);
@@ -287,12 +269,7 @@ describe('checkout legal consent phase 4', () => {
         locale: 'en-US',
         country: 'US',
         items: [{ productId, quantity: 1 }],
-        legalConsent: {
-          termsAccepted: true,
-          privacyAccepted: true,
-          termsVersion: 'terms-2026-02-27',
-          privacyVersion: 'privacy-2026-02-27',
-        },
+        legalConsent: TEST_LEGAL_CONSENT,
       });
 
       orderId = first.order.id;
@@ -317,12 +294,7 @@ describe('checkout legal consent phase 4', () => {
           locale: 'en-US',
           country: 'US',
           items: [{ productId, quantity: 1 }],
-          legalConsent: {
-            termsAccepted: true,
-            privacyAccepted: true,
-            termsVersion: 'terms-2026-02-27',
-            privacyVersion: 'privacy-2026-02-27',
-          },
+          legalConsent: TEST_LEGAL_CONSENT,
         })
       ).rejects.toMatchObject({
         code: 'IDEMPOTENCY_CONFLICT',

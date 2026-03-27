@@ -18,19 +18,14 @@ import {
 } from '@/lib/services/errors';
 import { createOrderWithItems } from '@/lib/services/orders';
 
+import { TEST_LEGAL_CONSENT } from './test-legal-consent';
+
 type SeedData = {
   productId: string;
   cityRef: string;
   warehouseRefA: string;
   warehouseRefB: string;
 };
-
-const TEST_LEGAL_CONSENT = {
-  termsAccepted: true,
-  privacyAccepted: true,
-  termsVersion: 'terms-2026-02-27',
-  privacyVersion: 'privacy-2026-02-27',
-} as const;
 
 async function seedCheckoutShippingData(): Promise<SeedData> {
   const productId = crypto.randomUUID();

@@ -400,8 +400,8 @@
         "shipping": "Shipping",
         "shippingCalc": "Calculated at checkout",
         "total": "Total",
-        "shippingInformationalOnly": "Informational only",
-        "shippingPayOnDeliveryNote": "Shipping is paid to the carrier on delivery; we currently charge only for goods."
+        "shippingInformationalOnly": "Shown before confirmation",
+        "shippingPayOnDeliveryNote": "When applicable, the shipping cost is included in the total shown before order confirmation. Additional carrier charges for extra services may still apply separately under the carrier's rules."
       },
       "delivery": {
         "legend": "Delivery",
@@ -1732,7 +1732,7 @@
       "title": "Payment Policy",
       "methods": {
         "title": "Available payment methods",
-        "body": "Available payment methods are shown during order checkout. Depending on the order, you may see online card payment via Stripe or a Monobank payment option.",
+        "body": "Available payment methods are shown before order confirmation. Depending on the order, you may see online card payment via Stripe or a Monobank payment option.",
         "items": {
           "stripe": "Online card payment via Stripe.",
           "monobank": "Available Monobank payment option."
@@ -1757,7 +1757,7 @@
       "title": "Delivery Policy",
       "methods": {
         "title": "Available delivery methods",
-        "body": "Available delivery methods are shown during order checkout for orders that can be delivered.",
+        "body": "Available delivery methods are shown before order confirmation for orders that can be delivered.",
         "items": {
           "warehouse": "Nova Poshta warehouse pickup",
           "locker": "Nova Poshta parcel locker pickup",
@@ -1774,7 +1774,7 @@
       },
       "charges": {
         "title": "Delivery charges",
-        "body": "The delivery cost for the selected method is shown during order checkout and is added to the order total before order confirmation. Additional carrier charges for extra services requested after order placement, storage beyond the free period, redirection, or other carrier services may be charged separately under the carrier’s own rules."
+        "body": "The delivery cost for the selected method is shown before order confirmation and is added to the order total before order confirmation. Additional carrier charges for extra services requested after order placement, storage beyond the free period, redirection, or other carrier services may be charged separately under the carrier’s own rules."
       },
       "support": {
         "title": "Delivery questions",
