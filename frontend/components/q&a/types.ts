@@ -18,7 +18,8 @@ export type TextNode = {
 export type CodeBlock = {
   type: 'code';
   language: string | null;
-  content: string;
+  content?: string;
+  code?: string;
 };
 
 export type ListEntry = ListItemBlock | ListItemChild;

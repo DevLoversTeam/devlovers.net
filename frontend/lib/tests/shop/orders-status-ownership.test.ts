@@ -15,6 +15,7 @@ import {
 import { db } from '@/db';
 import { orders, paymentAttempts, productPrices, products } from '@/db/schema';
 import { resetEnvCache } from '@/lib/env';
+import { rehydrateCartItems } from '@/lib/services/products';
 import { toDbMoney } from '@/lib/shop/money';
 import { verifyStatusToken } from '@/lib/shop/status-token';
 import { assertNotProductionDb } from '@/lib/tests/helpers/db-safety';
@@ -174,6 +175,14 @@ async function postCheckout(idemKey: string, productId: string) {
   const mod = (await import('@/app/api/shop/checkout/route')) as unknown as {
     POST: (req: NextRequest) => Promise<Response>;
   };
+  const quote = await rehydrateCartItems([{ productId, quantity: 1 }], 'UAH');
+  const pricingFingerprint = quote.summary.pricingFingerprint;
+
+  if (typeof pricingFingerprint !== 'string' || pricingFingerprint.length !== 64) {
+    throw new Error(
+      '[ownership-test] expected authoritative pricing fingerprint from cart rehydrate'
+    );
+  }
 
   const req = new NextRequest('http://localhost/api/shop/checkout', {
     method: 'POST',
@@ -188,6 +197,7 @@ async function postCheckout(idemKey: string, productId: string) {
     body: JSON.stringify({
       items: [{ productId, quantity: 1 }],
       paymentProvider: 'monobank',
+      pricingFingerprint,
     }),
   });
 
@@ -395,6 +405,7 @@ describe.sequential('orders/[id]/status ownership (J)', () => {
         expect((json as any).order).toBeUndefined();
         expect((json as any).attempt).toBeUndefined();
         expect((json as any).paymentStatus).toBeTruthy();
+        expect((json as any).fulfillmentStage).toBe('processing');
         expect((json as any).totalAmountMinor).toBeGreaterThan(0);
 
         const returnedId = (json as any).orderId ?? (json as any).id;

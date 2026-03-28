@@ -13,6 +13,8 @@ import { IdempotencyConflictError } from '@/lib/services/errors';
 import { createOrderWithItems } from '@/lib/services/orders';
 import { toDbMoney } from '@/lib/shop/money';
 
+import { TEST_LEGAL_CONSENT } from './test-legal-consent';
+
 type SeedProduct = {
   productId: string;
 };
@@ -94,12 +96,7 @@ describe('checkout legal consent phase 4', () => {
         locale: 'en-US',
         country: 'US',
         items: [{ productId, quantity: 1 }],
-        legalConsent: {
-          termsAccepted: true,
-          privacyAccepted: true,
-          termsVersion: 'terms-2026-02-27',
-          privacyVersion: 'privacy-2026-02-27',
-        },
+        legalConsent: TEST_LEGAL_CONSENT,
       });
 
       orderId = result.order.id;
@@ -152,12 +149,7 @@ describe('checkout legal consent phase 4', () => {
         locale: 'en-US',
         country: 'US',
         items: [{ productId, quantity: 1 }],
-        legalConsent: {
-          termsAccepted: true,
-          privacyAccepted: true,
-          termsVersion: 'terms-2026-02-27',
-          privacyVersion: 'privacy-2026-02-27',
-        },
+        legalConsent: TEST_LEGAL_CONSENT,
       });
 
       orderId = first.order.id;
@@ -211,7 +203,7 @@ describe('checkout legal consent phase 4', () => {
     }
   }, 30_000);
 
-  it('fails closed when idempotent replay finds missing legal consent row', async () => {
+  it('repairs a transiently missing legal consent row for a recent matching replay', async () => {
     const { productId } = await seedProduct();
     let orderId: string | null = null;
     const idempotencyKey = crypto.randomUUID();
@@ -223,15 +215,73 @@ describe('checkout legal consent phase 4', () => {
         locale: 'en-US',
         country: 'US',
         items: [{ productId, quantity: 1 }],
-        legalConsent: {
-          termsAccepted: true,
-          privacyAccepted: true,
-          termsVersion: 'terms-2026-02-27',
-          privacyVersion: 'privacy-2026-02-27',
-        },
+        legalConsent: TEST_LEGAL_CONSENT,
       });
 
       orderId = first.order.id;
+
+      await db
+        .delete(orderLegalConsents)
+        .where(eq(orderLegalConsents.orderId, orderId));
+
+      const replay = await createOrderWithItems({
+        idempotencyKey,
+        userId: null,
+        locale: 'en-US',
+        country: 'US',
+        items: [{ productId, quantity: 1 }],
+        legalConsent: TEST_LEGAL_CONSENT,
+      });
+
+      expect(replay.isNew).toBe(false);
+      expect(replay.order.id).toBe(orderId);
+
+      const [restored] = await db
+        .select({
+          orderId: orderLegalConsents.orderId,
+          termsVersion: orderLegalConsents.termsVersion,
+          privacyVersion: orderLegalConsents.privacyVersion,
+          source: orderLegalConsents.source,
+        })
+        .from(orderLegalConsents)
+        .where(eq(orderLegalConsents.orderId, orderId))
+        .limit(1);
+
+      expect(restored).toBeTruthy();
+      expect(restored?.termsVersion).toBe('terms-2026-02-27');
+      expect(restored?.privacyVersion).toBe('privacy-2026-02-27');
+      expect(restored?.source).toBe('checkout_explicit');
+    } finally {
+      if (orderId) await cleanupOrder(orderId);
+      await cleanupProduct(productId);
+    }
+  }, 30_000);
+
+  it('fails closed when idempotent replay finds missing legal consent row outside the replay grace window', async () => {
+    const { productId } = await seedProduct();
+    let orderId: string | null = null;
+    const idempotencyKey = crypto.randomUUID();
+
+    try {
+      const first = await createOrderWithItems({
+        idempotencyKey,
+        userId: null,
+        locale: 'en-US',
+        country: 'US',
+        items: [{ productId, quantity: 1 }],
+        legalConsent: TEST_LEGAL_CONSENT,
+      });
+
+      orderId = first.order.id;
+
+      const staleTimestamp = new Date(Date.now() - 5 * 60_000);
+      await db
+        .update(orders)
+        .set({
+          createdAt: staleTimestamp,
+          updatedAt: staleTimestamp,
+        })
+        .where(eq(orders.id, orderId));
 
       await db
         .delete(orderLegalConsents)
@@ -244,12 +294,7 @@ describe('checkout legal consent phase 4', () => {
           locale: 'en-US',
           country: 'US',
           items: [{ productId, quantity: 1 }],
-          legalConsent: {
-            termsAccepted: true,
-            privacyAccepted: true,
-            termsVersion: 'terms-2026-02-27',
-            privacyVersion: 'privacy-2026-02-27',
-          },
+          legalConsent: TEST_LEGAL_CONSENT,
         })
       ).rejects.toMatchObject({
         code: 'IDEMPOTENCY_CONFLICT',
@@ -268,6 +313,50 @@ describe('checkout legal consent phase 4', () => {
       expect(missing).toBeUndefined();
     } finally {
       if (orderId) await cleanupOrder(orderId);
+      await cleanupProduct(productId);
+    }
+  }, 30_000);
+
+  it('rejects blank legal consent versions', async () => {
+    const { productId } = await seedProduct();
+
+    try {
+      await expect(
+        createOrderWithItems({
+          idempotencyKey: crypto.randomUUID(),
+          userId: null,
+          locale: 'en-US',
+          country: 'US',
+          items: [{ productId, quantity: 1 }],
+          legalConsent: {
+            termsAccepted: true,
+            privacyAccepted: true,
+            termsVersion: '   ',
+            privacyVersion: 'privacy-2026-02-27',
+          },
+        })
+      ).rejects.toMatchObject({
+        code: 'TERMS_VERSION_REQUIRED',
+      });
+
+      await expect(
+        createOrderWithItems({
+          idempotencyKey: crypto.randomUUID(),
+          userId: null,
+          locale: 'en-US',
+          country: 'US',
+          items: [{ productId, quantity: 1 }],
+          legalConsent: {
+            termsAccepted: true,
+            privacyAccepted: true,
+            termsVersion: 'terms-2026-02-27',
+            privacyVersion: '   ',
+          },
+        })
+      ).rejects.toMatchObject({
+        code: 'PRIVACY_VERSION_REQUIRED',
+      });
+    } finally {
       await cleanupProduct(productId);
     }
   }, 30_000);
@@ -311,6 +400,38 @@ describe('checkout legal consent phase 4', () => {
       ).rejects.toMatchObject({
         code: 'PRIVACY_NOT_ACCEPTED',
       });
+    } finally {
+      await cleanupProduct(productId);
+    }
+  }, 30_000);
+
+  it('rejects checkout when explicit legal consent is missing and does not write implicit consent', async () => {
+    const { productId } = await seedProduct();
+    const idempotencyKey = crypto.randomUUID();
+
+    try {
+      await expect(
+        createOrderWithItems({
+          idempotencyKey,
+          userId: null,
+          locale: 'en-US',
+          country: 'US',
+          items: [{ productId, quantity: 1 }],
+        } as any)
+      ).rejects.toMatchObject({
+        code: 'LEGAL_CONSENT_REQUIRED',
+      });
+
+      const [persistedOrder] = await db
+        .select({
+          id: orders.id,
+          idempotencyKey: orders.idempotencyKey,
+        })
+        .from(orders)
+        .where(eq(orders.idempotencyKey, idempotencyKey))
+        .limit(1);
+
+      expect(persistedOrder).toBeUndefined();
     } finally {
       await cleanupProduct(productId);
     }

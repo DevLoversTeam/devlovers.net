@@ -59,14 +59,19 @@ type CheckoutRequestedProvider = 'stripe' | 'monobank';
 const EXPECTED_BUSINESS_ERROR_CODES = new Set([
   'IDEMPOTENCY_CONFLICT',
   'INVALID_PAYLOAD',
+  'DISCOUNTS_NOT_SUPPORTED',
   'INVALID_VARIANT',
   'INSUFFICIENT_STOCK',
+  'CHECKOUT_PRICE_CHANGED',
+  'CHECKOUT_SHIPPING_CHANGED',
   'PRICE_CONFIG_ERROR',
   'PAYMENT_ATTEMPTS_EXHAUSTED',
   'MISSING_SHIPPING_ADDRESS',
   'INVALID_SHIPPING_ADDRESS',
   'SHIPPING_METHOD_UNAVAILABLE',
   'SHIPPING_CURRENCY_UNSUPPORTED',
+  'SHIPPING_AMOUNT_UNAVAILABLE',
+  'LEGAL_CONSENT_REQUIRED',
   'TERMS_NOT_ACCEPTED',
   'PRIVACY_NOT_ACCEPTED',
 ]);
@@ -75,10 +80,13 @@ const DEFAULT_CHECKOUT_RATE_LIMIT_MAX = 10;
 const DEFAULT_CHECKOUT_RATE_LIMIT_WINDOW_SECONDS = 300;
 
 const SHIPPING_ERROR_STATUS_MAP: Record<string, number> = {
+  CHECKOUT_PRICE_CHANGED: 409,
+  CHECKOUT_SHIPPING_CHANGED: 409,
   MISSING_SHIPPING_ADDRESS: 400,
   INVALID_SHIPPING_ADDRESS: 400,
   SHIPPING_METHOD_UNAVAILABLE: 422,
   SHIPPING_CURRENCY_UNSUPPORTED: 422,
+  SHIPPING_AMOUNT_UNAVAILABLE: 422,
 };
 
 const STATUS_TOKEN_SCOPES_STATUS_ONLY: readonly StatusTokenScope[] = [
@@ -88,6 +96,15 @@ const STATUS_TOKEN_SCOPES_PAYMENT_INIT: readonly StatusTokenScope[] = [
   'status_lite',
   'order_payment_init',
 ];
+const UNSUPPORTED_DISCOUNT_FIELDS = new Set([
+  'discountCode',
+  'couponCode',
+  'promoCode',
+  'discountAmount',
+  'discountAmountMinor',
+  'totalDiscountAmount',
+  'totalDiscountMinor',
+]);
 
 function resolveCheckoutTokenScopes(args: {
   paymentProvider: PaymentProvider;
@@ -200,6 +217,12 @@ function getErrorCode(err: unknown): string | null {
 function getErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof Error && error.message) return error.message;
   return fallback;
+}
+
+function hasLegalConsentValidationIssue(issues: Array<{ path?: unknown[] }>) {
+  return issues.some(
+    issue => Array.isArray(issue.path) && issue.path[0] === 'legalConsent'
+  );
 }
 
 function isMonobankInvalidRequestError(error: unknown): boolean {
@@ -334,6 +357,16 @@ function errorResponse(
 
   res.headers.set('Cache-Control', 'no-store');
   return res;
+}
+
+function collectUnsupportedDiscountFields(value: unknown): string[] {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return [];
+  }
+
+  return Object.keys(value).filter(field =>
+    UNSUPPORTED_DISCOUNT_FIELDS.has(field)
+  );
 }
 
 function getIdempotencyKey(request: NextRequest) {
@@ -992,9 +1025,42 @@ export async function POST(request: NextRequest) {
     };
   }
 
+  const unsupportedDiscountFields =
+    collectUnsupportedDiscountFields(payloadForValidation);
+
+  if (unsupportedDiscountFields.length > 0) {
+    logWarn('checkout_discount_not_supported', {
+      ...meta,
+      code: 'DISCOUNTS_NOT_SUPPORTED',
+      fields: unsupportedDiscountFields,
+    });
+
+    return errorResponse(
+      'DISCOUNTS_NOT_SUPPORTED',
+      'Discounts are not available at checkout.',
+      400,
+      { fields: unsupportedDiscountFields }
+    );
+  }
+
   const parsedPayload = checkoutPayloadSchema.safeParse(payloadForValidation);
 
   if (!parsedPayload.success) {
+    if (hasLegalConsentValidationIssue(parsedPayload.error.issues ?? [])) {
+      logWarn('checkout_legal_consent_required', {
+        ...meta,
+        code: 'LEGAL_CONSENT_REQUIRED',
+        issuesCount: parsedPayload.error.issues?.length ?? 0,
+      });
+
+      return errorResponse(
+        'LEGAL_CONSENT_REQUIRED',
+        'Explicit legal consent is required before checkout.',
+        400,
+        parsedPayload.error.format()
+      );
+    }
+
     if (selectedProvider === 'monobank') {
       logWarn('checkout_invalid_request', {
         ...meta,
@@ -1024,7 +1090,15 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { items, userId, shipping, country, legalConsent } = parsedPayload.data;
+  const {
+    items,
+    userId,
+    shipping,
+    country,
+    legalConsent,
+    pricingFingerprint,
+    shippingQuoteFingerprint,
+  } = parsedPayload.data;
   const itemCount = items.reduce((total, item) => total + item.quantity, 0);
 
   let currentUser: unknown = null;
@@ -1148,7 +1222,11 @@ export async function POST(request: NextRequest) {
         locale,
         country: country ?? null,
         shipping: shipping ?? null,
-        legalConsent: legalConsent ?? null,
+        legalConsent,
+        pricingFingerprint,
+        shippingQuoteFingerprint,
+        requirePricingFingerprint: true,
+        requireShippingQuoteFingerprint: true,
         paymentProvider: 'stripe',
         paymentMethod: selectedMethod,
       });
@@ -1172,7 +1250,11 @@ export async function POST(request: NextRequest) {
         locale,
         country: country ?? null,
         shipping: shipping ?? null,
-        legalConsent: legalConsent ?? null,
+        legalConsent,
+        pricingFingerprint,
+        shippingQuoteFingerprint,
+        requirePricingFingerprint: true,
+        requireShippingQuoteFingerprint: true,
         paymentProvider: resolvedProvider,
         paymentMethod: selectedMethod,
       }));
@@ -1588,7 +1670,8 @@ export async function POST(request: NextRequest) {
       return errorResponse(
         error.code,
         error.message || 'Invalid checkout payload',
-        customStatus ?? 400
+        customStatus ?? 400,
+        error.details
       );
     }
 

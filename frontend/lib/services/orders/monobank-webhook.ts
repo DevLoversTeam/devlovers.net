@@ -25,9 +25,8 @@ import { guardedPaymentStatusUpdate } from '@/lib/services/orders/payment-state'
 import { restockOrder } from '@/lib/services/orders/restock';
 import { buildPaymentEventDedupeKey } from '@/lib/services/shop/events/dedupe-key';
 import { orderShippingEligibilityWhereSql } from '@/lib/services/shop/shipping/eligibility';
-import {
-  isInventoryCommittedForShipping,
-} from '@/lib/services/shop/shipping/inventory-eligibility';
+import { ensureQueuedInitialShipment } from '@/lib/services/shop/shipping/ensure-queued-initial-shipment';
+import { isInventoryCommittedForShipping } from '@/lib/services/shop/shipping/inventory-eligibility';
 import { recordShippingMetric } from '@/lib/services/shop/shipping/metrics';
 import { shippingStatusTransitionWhereSql } from '@/lib/services/shop/transitions/shipping-state';
 import { isUuidV1toV5 } from '@/lib/utils/uuid';
@@ -828,68 +827,16 @@ async function ensureQueuedShipmentAndOrderShippingStatus(args: {
   now: Date;
   orderId: string;
 }): Promise<{ insertedShipment: boolean; updatedOrder: boolean }> {
-  const insertRes = await db.execute(sql`
-    insert into shipping_shipments (
-      order_id,
-      provider,
-      status,
-      attempt_count,
-      created_at,
-      updated_at
-    )
-    select
-      o.id,
-      'nova_poshta',
-      'queued',
-      0,
-      ${args.now},
-      ${args.now}
-    from orders o
-    where o.id = ${args.orderId}::uuid
-      and o.payment_provider = 'monobank'
-      and o.shipping_required = true
-      and o.shipping_provider = 'nova_poshta'
-      and o.shipping_method_code is not null
-      and ${orderShippingEligibilityWhereSql({
-        paymentStatusColumn: sql`o.payment_status`,
-        orderStatusColumn: sql`o.status`,
-        inventoryStatusColumn: sql`o.inventory_status`,
-        pspStatusReasonColumn: sql`o.psp_status_reason`,
-      })}
-    on conflict (order_id) do update
-  set status = 'queued',
-      updated_at = ${args.now}
-  where shipping_shipments.provider = 'nova_poshta'
-    and shipping_shipments.status is distinct from 'queued'
-returning order_id
-  `);
+  const ensured = await ensureQueuedInitialShipment({
+    now: args.now,
+    orderId: args.orderId,
+    paymentProvider: 'monobank',
+  });
 
-  const insertedShipment =
-    readDbRows<{ order_id?: string }>(insertRes).length > 0;
-
-  const updateRes = await db.execute(sql`
-    update orders
-    set shipping_status = 'queued'::shipping_status,
-        updated_at = ${args.now}
-    where id = ${args.orderId}::uuid
-      and shipping_status is distinct from 'queued'::shipping_status
-      and ${shippingStatusTransitionWhereSql({
-        column: sql`shipping_status`,
-        to: 'queued',
-        allowNullFrom: true,
-      })}
-      and exists (
-        select 1
-        from shipping_shipments s
-        where s.order_id = ${args.orderId}::uuid
-          and s.status = 'queued'
-      )
-    returning id
-  `);
-
-  const updatedOrder = readDbRows<{ id?: string }>(updateRes).length > 0;
-
-  return { insertedShipment, updatedOrder };
+  return {
+    insertedShipment: ensured.insertedShipment,
+    updatedOrder: ensured.updatedOrder,
+  };
 }
 
 async function atomicFinalizeOrderAndAttempt(args: {

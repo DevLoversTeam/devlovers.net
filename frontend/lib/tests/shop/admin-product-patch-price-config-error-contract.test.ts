@@ -21,6 +21,10 @@ vi.mock('@/lib/admin/parseAdminProductForm', () => ({
     ok: true,
     data: { badge: 'NONE', prices: [{ currency: 'UAH', priceMinor: 1000 }] },
   })),
+  parseAdminProductPhotosForm: vi.fn(() => ({
+    ok: true,
+    data: { imagePlan: undefined, images: [] },
+  })),
 }));
 
 vi.mock('@/lib/services/products', () => ({

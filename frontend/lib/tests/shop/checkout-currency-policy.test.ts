@@ -16,6 +16,7 @@ import {
   products,
 } from '@/db/schema';
 import { resetEnvCache } from '@/lib/env';
+import { rehydrateCartItems } from '@/lib/services/products';
 
 vi.mock('@/lib/auth', async () => {
   const actual =
@@ -145,7 +146,7 @@ function makeTestClientIp(seed: string): string {
   return `${(digest[0] % 223) + 1}.${digest[1]}.${digest[2]}.${(digest[3] % 254) + 1}`;
 }
 
-function makeCheckoutRequest(
+async function makeCheckoutRequest(
   payload: unknown,
   opts: { idempotencyKey: string; acceptLanguage: string }
 ) {
@@ -157,11 +158,27 @@ function makeCheckoutRequest(
     Origin: 'http://localhost:3000',
   });
 
+  const body =
+    payload && typeof payload === 'object' && !Array.isArray(payload)
+      ? ({ ...(payload as Record<string, unknown>) } as Record<string, unknown>)
+      : {};
+  const items = Array.isArray(body.items) ? body.items : [];
+  const currency = opts.acceptLanguage.trim().toLowerCase().startsWith('uk')
+    ? 'UAH'
+    : 'USD';
+
+  if (items.length > 0) {
+    try {
+      const quote = await rehydrateCartItems(items as any, currency);
+      body.pricingFingerprint = quote.summary.pricingFingerprint;
+    } catch {}
+  }
+
   return new NextRequest(
     new Request('http://localhost/api/shop/checkout', {
       method: 'POST',
       headers,
-      body: JSON.stringify(payload),
+      body: JSON.stringify(body),
     })
   );
 }
@@ -236,7 +253,7 @@ describe('P0-CUR-3 checkout currency policy', () => {
       ],
     });
 
-    const req = makeCheckoutRequest(
+    const req = await makeCheckoutRequest(
       {
         paymentProvider: 'stripe',
         paymentMethod: 'stripe_card',
@@ -268,7 +285,7 @@ describe('P0-CUR-3 checkout currency policy', () => {
       ],
     });
 
-    const req = makeCheckoutRequest(
+    const req = await makeCheckoutRequest(
       {
         paymentProvider: 'stripe',
         paymentMethod: 'stripe_card',
@@ -297,7 +314,7 @@ describe('P0-CUR-3 checkout currency policy', () => {
       prices: [{ currency: 'USD', priceMinor: 6700, price: '67.00' }], // no UAH row
     });
 
-    const req = makeCheckoutRequest(
+    const req = await makeCheckoutRequest(
       {
         paymentProvider: 'monobank',
         paymentMethod: 'monobank_invoice',

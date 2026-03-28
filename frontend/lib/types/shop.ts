@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import {
+  adminProductPhotoPlanSchema,
   checkoutItemSchema,
   checkoutLegalConsentSchema,
   checkoutShippingSchema,
@@ -10,17 +11,31 @@ import {
   paymentStatusSchema,
   productAdminSchema,
   productAdminUpdateSchema,
+  productImageSchema,
 } from '@/lib/validation/shop';
 
 export type AdminProductPayload = z.infer<typeof productAdminSchema>;
 
-export type ProductInput = AdminProductPayload & { image: File };
+export type AdminProductPhotoPlan = z.infer<typeof adminProductPhotoPlanSchema>;
+export type ProductImageUploadInput = {
+  uploadId: string;
+  file: File;
+};
+
+export type ProductInput = AdminProductPayload & {
+  image?: File | null;
+  images?: ProductImageUploadInput[];
+  imagePlan?: AdminProductPhotoPlan;
+};
 
 export type ProductUpdateInput = z.infer<typeof productAdminUpdateSchema> & {
   image?: File | null;
+  images?: ProductImageUploadInput[];
+  imagePlan?: AdminProductPhotoPlan;
   prices?: ProductPriceInput[];
 };
 
+export type ProductImage = z.infer<typeof productImageSchema>;
 export type DbProduct = z.infer<typeof dbProductSchema>;
 
 export type CheckoutItem = z.infer<typeof checkoutItemSchema>;

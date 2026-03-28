@@ -322,6 +322,10 @@
   "footer": {
     "builtWith": "Zbudowane przez",
     "byCommunity": "przez społeczność.",
+    "sellerInformation": "Informacje o sprzedawcy",
+    "payment": "Polityka płatności",
+    "delivery": "Polityka dostawy",
+    "returns": "Polityka zwrotów",
     "privacyPolicy": "Polityka Prywatności",
     "termsOfService": "Warunki Świadczenia Usług"
   },
@@ -350,6 +354,12 @@
       "addToCart": "Dodaj do koszyka",
       "addedToCart": "Dodano do koszyka",
       "purchaseOptions": "Opcje zakupu",
+      "availability": {
+        "availableToOrder": "Dostępne do zamówienia",
+        "currentlyUnavailable": "Obecnie niedostępne",
+        "unavailableLocaleCurrency": "Ten produkt jest obecnie niedostępny do zamówienia w wybranej lokalizacji lub walucie.",
+        "browseOtherProducts": "Przeglądaj inne produkty lub wybierz inną lokalizację albo walutę."
+      },
       "decreaseQuantity": "Zmniejsz ilość",
       "increaseQuantity": "Zwiększ ilość",
       "badges": {
@@ -390,8 +400,8 @@
         "shipping": "Wysyłka",
         "shippingCalc": "Obliczone przy kasie",
         "total": "Razem",
-        "shippingInformationalOnly": "Tylko informacyjnie",
-        "shippingPayOnDeliveryNote": "Dostawa jest opłacana przewoźnikowi przy odbiorze; obecnie pobieramy opłatę tylko za produkty."
+        "shippingInformationalOnly": "Pokazywane przed potwierdzeniem",
+        "shippingPayOnDeliveryNote": "Koszt dostawy, jeśli ma zastosowanie, jest doliczany podczas składania zamówienia i pokazywany w sumie przed potwierdzeniem zamówienia."
       },
       "delivery": {
         "legend": "Dostawa",
@@ -472,6 +482,14 @@
         "message": "Zostaniesz przekierowany do bezpiecznej płatności lub zobaczysz potwierdzenie, jeśli płatność nie jest wymagana w tym środowisku",
         "notRedirected": "Jeśli nie zostałeś automatycznie przekierowany, otwórz swoje zamówienie",
         "goToOrder": "Przejdź do zamówienia",
+      "consent": {
+        "prefix": "Potwierdzam akceptację",
+        "termsLink": "Warunki świadczenia usług",
+        "and": "oraz",
+        "privacyLink": "Politykę prywatności",
+        "suffix": " dla tego zamówienia.",
+        "required": "Potwierdź akceptację Warunków świadczenia usług i Polityki prywatności przed złożeniem zamówienia."
+        },
         "errors": {
           "unexpectedResponse": "Nieoczekiwana odpowiedź checkout.",
           "startFailed": "Nie można teraz rozpocząć checkoutu."
@@ -522,10 +540,14 @@
       },
       "products": {
         "title": "Admin · Produkty",
+        "subtitle": "Zarządzaj katalogiem, cenami i widocznością w sklepie.",
         "newProduct": "Nowy produkt",
+        "backToList": "Wróć do produktów",
+        "editProductHeading": "Edycja · {title}",
         "listCaption": "Lista produktów",
         "empty": "Brak produktów.",
         "table": {
+          "product": "Produkt",
           "title": "Tytuł",
           "slug": "Slug",
           "price": "Cena",
@@ -535,16 +557,23 @@
           "badge": "Odznaka",
           "active": "Aktywny",
           "featured": "Polecany",
+          "status": "Status",
+          "date": "Data",
           "created": "Utworzono",
           "actions": "Akcje"
         },
         "actions": {
-          "view": "Zobacz",
+          "view": "Otwórz",
           "edit": "Edytuj",
           "viewProduct": "Zobacz produkt {title}",
           "editProduct": "Edytuj produkt {title}",
           "yes": "Tak",
           "no": "Nie"
+        },
+        "states": {
+          "active": "Aktywny",
+          "hidden": "Ukryty",
+          "featured": "Polecany"
         }
       },
       "statusToggle": {
@@ -552,8 +581,8 @@
         "securityExpired": "Token bezpieczeństwa wygasł. Odśwież stronę i spróbuj ponownie.",
         "failedUpdate": "Nie udało się zaktualizować statusu",
         "updating": "Aktualizowanie",
-        "deactivate": "Dezaktywuj",
-        "activate": "Aktywuj"
+        "deactivate": "Wyłącz",
+        "activate": "Włącz"
       },
       "pagination": {
         "label": "Stronicowanie",
@@ -565,13 +594,23 @@
       },
       "orders": {
         "title": "Admin · Zamówienia",
+        "subtitle": "Przeglądaj zamówienia, filtruj wyniki i sprawdzaj stan płatności.",
         "reconcileStale": "Uzgodnij nieaktualne",
         "empty": "Brak zamówień.",
         "listCaption": "Lista zamówień",
         "viewOrder": "Zobacz zamówienie {id}",
+        "filters": {
+          "label": "Filtry zamówień",
+          "status": "Status płatności",
+          "allStatuses": "Wszystkie statusy",
+          "dateFrom": "Od daty",
+          "dateTo": "Do daty",
+          "apply": "Zastosuj",
+          "reset": "Resetuj"
+        },
         "table": {
           "created": "Utworzono",
-          "status": "Status",
+          "status": "Status płatności",
           "total": "Suma",
           "items": "Produkty",
           "provider": "Dostawca",
@@ -793,17 +832,99 @@
         "pending": "Oczekujące",
         "requiresPayment": "Wymaga płatności",
         "failed": "Nieudane",
-        "refunded": "Zwrócone"
+        "refunded": "Zwrócone",
+        "needsReview": "Wymaga weryfikacji"
       },
       "detail": {
         "title": "Zamówienie",
         "myOrders": "Moje zamówienia",
         "shop": "Sklep",
         "orderSummary": "Podsumowanie zamówienia",
+          "customerSummary": "Podsumowanie klienta",
+          "lifecycle": {
+            "eyebrow": "Stan zamówienia",
+            "heading": "Aktualizacja statusu",
+            "subtitle": "Używaj tych akcji, gdy trzeba bezpiecznie przesunąć zamówienie do następnego etapu.",
+            "confirm": "Potwierdź",
+            "cancel": "Anuluj",
+            "complete": "Zakończ",
+            "errors": {
+              "confirmRequiresPaid": "Potwierdzić można tylko opłacone zamówienia.",
+              "confirmNotAllowed": "Nie można potwierdzić tego zamówienia w bieżącym stanie.",
+              "cancelRequiresRefund": "Dla opłaconych zamówień należy użyć zwrotu, a nie anulowania.",
+              "completeRequiresShipping": "Zakończyć można tylko zamówienia z wysyłką.",
+              "completeNotAllowed": "Nie można zakończyć tego zamówienia w bieżącym stanie.",
+              "csrfRejected": "Weryfikacja bezpieczeństwa nie powiodła się. Odśwież stronę i spróbuj ponownie.",
+              "invalidPayload": "Nieprawidłowe żądanie lifecycle.",
+              "internalError": "Nie udało się wykonać akcji lifecycle. Spróbuj ponownie.",
+              "generic": "Akcja lifecycle nie jest dostępna w bieżącym stanie."
+            }
+          },
+          "actions": {
+            "heading": "Akcje administratora",
+            "subtitle": "Wybierz następny bezpieczny krok dla tego zamówienia. Pokazujemy tylko działania pasujące do bieżącego stanu.",
+            "empty": "Brak dostępnych akcji administratora dla bieżącego stanu."
+          },
+          "shippingControls": {
+            "eyebrow": "Wysyłka",
+            "heading": "Obsługa przesyłki",
+            "subtitle": "Odzyskuj lub przesuwaj dostawę tylko wtedy, gdy przesyłka jest już do tego gotowa.",
+            "recoverInitialShipment": "Odzyskaj przesyłkę",
+            "retryLabelCreation": "Ponów etykietę",
+            "markShipped": "Oznacz jako wysłane",
+            "markDelivered": "Oznacz jako dostarczone",
+            "errors": {
+              "network": "Nie udało się wysłać akcji wysyłki. Spróbuj ponownie.",
+              "security": "Weryfikacja bezpieczeństwa nie powiodła się. Odśwież stronę i spróbuj ponownie.",
+              "recoverNotAvailable": "Odzyskanie przesyłki nie jest już dostępne dla tego zamówienia.",
+              "shipmentMissing": "Nie ma jeszcze rekordu przesyłki, który można zaktualizować.",
+              "retryNotAvailable": "Ponowienie etykiety nie jest teraz dostępne dla tego stanu przesyłki.",
+              "transitionNotAvailable": "Ten krok wysyłki nie jest już dostępny dla bieżącego stanu zamówienia.",
+              "adminDisabled": "Akcje wysyłki administratora są obecnie niedostępne.",
+              "generic": "Nie udało się wykonać akcji wysyłki. Odśwież zamówienie i spróbuj ponownie."
+            }
+          },
+          "paymentControls": {
+            "eyebrow": "Płatność",
+            "heading": "Obsługa płatności",
+            "subtitle": "Używaj narzędzi płatniczych tylko wtedy, gdy zamówienie wymaga finansowej obsługi.",
+            "refund": "Zwróć płatność",
+            "refunding": "Zwrot płatności…",
+            "onlyForPaidStripe": "Zwrot jest dostępny tylko dla opłaconych zamówień Stripe",
+            "cancelUnpaidPayment": "Anuluj nieopłaconą płatność",
+            "cancelingPayment": "Anulowanie płatności…",
+            "onlyForUnpaidMonobank": "Ta akcja jest dostępna tylko dla nieopłaconych zamówień Monobank",
+            "errors": {
+              "network": "Nie udało się wysłać akcji płatności. Spróbuj ponownie.",
+              "security": "Weryfikacja bezpieczeństwa nie powiodła się. Odśwież stronę i spróbuj ponownie.",
+              "refundNotAvailable": "Zwrot nie jest już dostępny dla tego zamówienia.",
+              "cancelPaymentDisabled": "Anulowanie płatności jest obecnie niedostępne.",
+              "cancelPaymentNotAvailable": "Anulowanie nieopłaconej płatności nie jest już dostępne dla tego zamówienia.",
+              "cancelPaymentInProgress": "Anulowanie płatności jest już przetwarzane. Odśwież stronę za chwilę.",
+              "missingPaymentReference": "Brakuje identyfikatora płatności u dostawcy, więc tej akcji nie da się wykonać automatycznie.",
+              "invalidAmount": "Dane kwoty zamówienia są niepełne, więc automatyczny zwrot nie może wystartować.",
+              "providerUnavailable": "Dostawca płatności jest chwilowo niedostępny. Spróbuj później.",
+              "adminDisabled": "Akcje płatności administratora są obecnie niedostępne.",
+              "generic": "Nie udało się wykonać akcji płatności. Odśwież zamówienie i spróbuj ponownie."
+            }
+          },
+          "customerAccount": "Konto klienta",
+        "accountUnavailable": "Zarejestrowane konto",
+        "guest": "Zamówienie gościa",
         "total": "Razem",
         "paymentStatus": "Status płatności",
+        "fulfillmentStage": "Etap realizacji",
         "created": "Utworzono",
         "provider": "Dostawca",
+        "shippingProviderLabel": "Przewoźnik",
+        "shippingMethod": "Metoda dostawy",
+        "recipientName": "Odbiorca",
+        "recipientPhone": "Telefon odbiorcy",
+        "recipientEmail": "Email odbiorcy",
+        "city": "Miasto",
+        "pickupPoint": "Punkt odbioru",
+        "address": "Adres",
+        "comment": "Komentarz",
         "paymentReference": "Referencja płatności",
         "idempotencyKey": "Klucz idempotencji",
         "stockRestored": "Stan przywrócony",
@@ -818,6 +939,63 @@
         "no": "Nie",
         "shippingStatus": "Status dostawy",
         "trackingNumber": "Numer śledzenia",
+        "shippingProviders": {
+          "novaPoshta": "Nova Poshta"
+        },
+        "paymentProviders": {
+          "stripe": "Stripe",
+          "monobank": "Monobank"
+        },
+        "shippingStatuses": {
+          "pending": "Oczekuje",
+          "queued": "W kolejce",
+          "creatingLabel": "Tworzenie etykiety",
+          "labelCreated": "Etykieta utworzona",
+          "shipped": "Wysłane",
+          "delivered": "Dostarczone",
+          "cancelled": "Anulowano",
+          "needsAttention": "Wymaga uwagi"
+        },
+        "shipmentStatuses": {
+          "queued": "W kolejce",
+          "created": "Utworzono",
+          "succeeded": "Zakończono powodzeniem",
+          "failed": "Błąd",
+          "needsAttention": "Wymaga uwagi"
+        },
+          "shippingMethods": {
+            "novaPoshtaWarehouse": "Oddział Nova Poshta",
+            "novaPoshtaLocker": "Automat Nova Poshta",
+            "novaPoshtaCourier": "Kurier Nova Poshta"
+          },
+          "history": {
+            "heading": "Historia",
+            "subtitle": "Działania administratora i przejścia statusów dla tego zamówienia.",
+            "empty": "Brak historii zamówienia.",
+            "adminUser": "Administrator",
+            "system": "System",
+            "legacySource": "Historia legacy",
+            "shippingTransition": "Dostawa: {from} -> {to}",
+            "shipmentState": "Status przesyłki: {status}",
+            "requestId": "Żądanie: {requestId}",
+            "actions": {
+              "confirm": "Potwierdzono zamówienie",
+              "cancel": "Anulowano zamówienie",
+              "complete": "Zakończono zamówienie",
+              "recoverInitialShipment": "Odzyskano początkową przesyłkę",
+              "retryLabelCreation": "Ponowiono utworzenie etykiety",
+              "markShipped": "Oznaczono jako wysłane",
+              "markDelivered": "Oznaczono jako dostarczone"
+            }
+          },
+          "fulfillmentStages": {
+            "processing": "Przetwarzanie",
+            "packed": "Spakowane",
+            "shipped": "Wysłane",
+          "delivered": "Dostarczone",
+          "canceled": "Anulowane",
+          "returned": "Zwrócone"
+        },
         "qtyShort": "Ilość",
         "unitShort": "Cena",
         "lineShort": "Suma"
@@ -1090,10 +1268,10 @@
   },
   "CookieBanner": {
     "title": "🍪 Dbamy o Twoją prywatność",
-    "description": "Używamy plików cookie, aby poprawić jakość przeglądania, wyświetlać spersonalizowane treści i analizować nasz ruch. Klikając „Zaakceptuj\", wyrażasz zgodę na używanie plików cookie. Przeczytaj naszą",
+    "description": "Używamy plików cookie i lokalnego magazynu, aby utrzymać Cię zalogowanego, zapamiętywać preferencje, takie jak motyw, i chronić usługę. Przeczytaj naszą",
     "policyLink": "Politykę Prywatności",
-    "accept": "Zaakceptuj",
-    "decline": "Odrzuć"
+    "accept": "Rozumiem",
+    "decline": "Zamknij"
   },
   "leaderboard": {
     "title": "Ranking",
@@ -1310,7 +1488,8 @@
       "noHiddenTerms": "Brak ukrytych terminów",
       "ariaDragHandle": "Przeciągnij, aby zmienić kolejność {term}",
       "ariaHide": "Ukryj {term}",
-      "ariaRestore": "Przywróć {term}"
+      "ariaRestore": "Przywróć {term}",
+      "loadError": "Nie udało się załadować zapisanych terminów. Odśwież stronę."
     },
     "feedback": {
       "title": "Wyślij opinię",
@@ -1514,6 +1693,10 @@
       "persistentHint": "Nasi inżynierowie właśnie czarują nad serwerami. Wkrótce wrócimy!",
       "working": "Naprawiamy…",
       "fixing": "Magia w toku"
+    },
+    "termTooLong": {
+      "title": "Zaznaczenie za długie",
+      "hint": "Wybierz krótszą frazę — maksymalnie 100 znaków. AI najlepiej tłumaczy konkretne terminy, a nie całe zdania."
     }
   },
   "onlineCounter": {
@@ -1526,7 +1709,101 @@
   "legal": {
     "back": "Wróć",
     "lastUpdated": "Ostatnia aktualizacja",
-    "contactEmail": "devlovers.net@gmail.com",
+    "seller": {
+      "metaTitle": "Informacje o sprzedawcy | Sklep DevLovers",
+      "metaDescription": "Publiczne dane sprzedawcy i dane kontaktowe sklepu DevLovers.",
+      "title": "Informacje o sprzedawcy",
+      "sellerDetailsTitle": "Dane sprzedawcy",
+      "sellerDetailsBody": "Poniżej znajdują się dane sprzedawcy, które są obecnie opublikowane dla sklepu.",
+      "supportContactsTitle": "Kontakty wsparcia",
+      "supportContactsBody": "Jeśli potrzebujesz pomocy z zamówieniem lub masz pytanie dotyczące zasad sklepu, skorzystaj z kontaktów poniżej.",
+      "placeholders": {
+        "toBeAdded": "Do uzupełnienia"
+      },
+      "fields": {
+        "sellerName": "Nazwa sprzedawcy",
+        "supportEmail": "Kontaktowy email",
+        "supportPhone": "Kontaktowy telefon",
+        "address": "Adres sprzedawcy",
+        "businessDetails": "Dane rejestracyjne"
+      }
+    },
+    "payment": {
+      "metaTitle": "Polityka płatności | Sklep DevLovers",
+      "metaDescription": "Publiczna polityka płatności sklepu DevLovers.",
+      "title": "Polityka płatności",
+      "methods": {
+        "title": "Dostępne metody płatności",
+        "body": "Dostępne metody płatności są pokazywane podczas składania zamówienia. W zależności od zamówienia możesz zobaczyć płatność kartą online przez Stripe lub opcję płatności Monobank.",
+        "items": {
+          "stripe": "Płatność kartą online przez Stripe.",
+          "monobank": "Dostępna opcja płatności Monobank."
+        }
+      },
+      "confirmation": {
+        "title": "Kiedy płatność jest potwierdzona",
+        "body": "Zamówienie jest uznawane za opłacone dopiero wtedy, gdy wybrany operator płatności potwierdzi transakcję, a sklep zapisze ten wynik. Sama strona powrotu lub przekierowanie w przeglądarce nie są autorytatywnym potwierdzeniem płatności."
+      },
+      "charges": {
+        "title": "Co jest pobierane online",
+        "body": "Kwota widoczna przed potwierdzeniem zamówienia obejmuje towary w Twoim zamówieniu oraz, jeśli dotyczy, koszt dostawy pokazany dla wybranej metody dostawy."
+      },
+      "support": {
+        "title": "Pytania o płatność",
+        "body": "Jeśli masz pytanie dotyczące płatności za zamówienie w sklepie, napisz na"
+      }
+    },
+    "delivery": {
+      "metaTitle": "Polityka dostawy | Sklep DevLovers",
+      "metaDescription": "Publiczna polityka dostawy sklepu DevLovers.",
+      "title": "Polityka dostawy",
+      "methods": {
+        "title": "Dostępne metody dostawy",
+        "body": "Dostępne metody dostawy są pokazywane podczas składania zamówienia dla zamówień, które mogą zostać dostarczone.",
+        "items": {
+          "warehouse": "Odbiór w oddziale Nova Poshta",
+          "locker": "Odbiór w automacie paczkowym Nova Poshta",
+          "courier": "Dostawa kurierska Nova Poshta"
+        }
+      },
+      "availability": {
+        "title": "Dostępność",
+        "body": "Obecnie opcje dostawy są dostępne dla kwalifikujących się zamówień na terenie Ukrainy. Dostępne metody mogą zależeć od miejsca docelowego i dostępności przewoźnika."
+      },
+      "timing": {
+        "title": "Czas dostawy",
+        "body": "Czas dostawy zależy od wybranej metody, miejsca docelowego i obciążenia przewoźnika. Ostateczny termin dostawy przewoźnik określa po nadaniu przesyłki."
+      },
+      "charges": {
+        "title": "Koszty dostawy",
+        "body": "Koszt dostawy dla wybranej metody jest pokazywany podczas składania zamówienia i dodawany do łącznej kwoty przed potwierdzeniem zamówienia. Dodatkowe opłaty przewoźnika za usługi zamawiane po złożeniu zamówienia, przechowywanie po bezpłatnym okresie, przekierowanie lub inne usługi przewoźnika mogą zostać naliczone osobno zgodnie z zasadami przewoźnika."
+      },
+      "support": {
+        "title": "Pytania o dostawę",
+        "body": "Jeśli masz pytanie dotyczące dostawy zamówienia w sklepie, napisz na"
+      }
+    },
+    "returns": {
+      "metaTitle": "Polityka zwrotów | Sklep DevLovers",
+      "metaDescription": "Publiczna polityka zwrotów sklepu DevLovers.",
+      "title": "Polityka zwrotów",
+      "request": {
+        "title": "Jak zgłosić zwrot lub prośbę o rozpatrzenie refundacji",
+        "body": "Aby zgłosić zwrot lub prośbę o rozpatrzenie refundacji, skontaktuj się ze wsparciem i podaj numer zamówienia oraz krótki opis przyczyny zgłoszenia."
+      },
+      "review": {
+        "title": "Jak rozpatrywane są zgłoszenia",
+        "body": "Każde zgłoszenie jest rozpatrywane indywidualnie. W razie potrzeby możemy poprosić o dodatkowe szczegóły, zdjęcia lub inne informacje potrzebne do oceny zgłoszenia i przekazania dalszych kroków."
+      },
+      "refunds": {
+        "title": "Zwrot środków",
+        "body": "Możliwość oraz czas zwrotu środków zależą od wyniku rozpatrzenia i metody płatności użytej przy zamówieniu. Automatyczne zwroty przez stronę internetową nie są obecnie dostępne."
+      },
+      "contact": {
+        "title": "Jak skontaktować się ze wsparciem",
+        "body": "Aby uzyskać wskazówki dotyczące zwrotu lub zgłosić problem z dostawą, napisz na"
+      }
+    },
     "privacy": {
       "metaTitle": "Polityka Prywatności | DevLovers",
       "metaDescription": "Dowiedz się, jak DevLovers gromadzi, wykorzystuje i chroni Twoje dane osobowe.",
@@ -1552,7 +1829,7 @@
       },
       "cookies": {
         "title": "4. Pliki cookie i podobne technologie",
-        "content": "Możemy używać plików cookie/lokalnego magazynu, aby utrzymać Cię zalogowanego, przechowywać preferencje (np. motyw) i chronić usługę. Jeśli dodamy analityczne pliki cookie, zaktualizujemy tę sekcję."
+        "content": "Używamy plików cookie/lokalnego magazynu, aby utrzymać Cię zalogowanego, przechowywać preferencje (np. motyw) i chronić usługę. Jeśli dodamy analityczne pliki cookie, zaktualizujemy tę sekcję."
       },
       "sharing": {
         "title": "5. Udostępnianie danych",

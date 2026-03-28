@@ -6,6 +6,8 @@ import { db } from '@/db';
 import { orderItems, orders, productPrices, products } from '@/db/schema/shop';
 import { createOrderWithItems } from '@/lib/services/orders';
 
+import { TEST_LEGAL_CONSENT } from './test-legal-consent';
+
 describe('order_items variants (selected_size/selected_color)', () => {
   it('creates two distinct order_items rows for same product with different variants', async () => {
     const productId = crypto.randomUUID();
@@ -48,6 +50,7 @@ describe('order_items variants (selected_size/selected_color)', () => {
         idempotencyKey: idem,
         userId: null,
         locale: 'en-US',
+        legalConsent: TEST_LEGAL_CONSENT,
         items: [
           {
             productId,

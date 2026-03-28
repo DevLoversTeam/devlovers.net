@@ -1,6 +1,10 @@
 import 'server-only';
 
 import { getRuntimeEnv } from '@/lib/env';
+import {
+  assertProductionLikeProviderString,
+  assertProductionLikeProviderUrl,
+} from '@/lib/env/provider-runtime';
 
 export type MonobankEnv = {
   token: string | null;
@@ -70,6 +74,33 @@ function resolveMonobankToken(): string | null {
   return nonEmpty(process.env.MONO_MERCHANT_TOKEN);
 }
 
+function assertMonobankRuntimeConfig(args: {
+  token: string;
+  apiBaseUrl: string;
+  publicKey: string | null;
+}) {
+  assertProductionLikeProviderString({
+    provider: 'monobank',
+    envName: 'MONO_MERCHANT_TOKEN',
+    value: args.token,
+    minLength: 8,
+  });
+  assertProductionLikeProviderUrl({
+    provider: 'monobank',
+    envName: 'MONO_API_BASE',
+    value: args.apiBaseUrl,
+  });
+
+  if (args.publicKey) {
+    assertProductionLikeProviderString({
+      provider: 'monobank',
+      envName: 'MONO_PUBLIC_KEY',
+      value: args.publicKey,
+      minLength: 8,
+    });
+  }
+}
+
 function resolveBaseUrlSource(): MonobankConfig['baseUrlSource'] {
   if (nonEmpty(process.env.SHOP_BASE_URL)) return 'shop_base_url';
   if (nonEmpty(process.env.APP_ORIGIN)) return 'app_origin';
@@ -82,6 +113,12 @@ export function requireMonobankToken(): string {
   if (!token) {
     throw new Error('MONO_MERCHANT_TOKEN is required for Monobank operations.');
   }
+  assertMonobankRuntimeConfig({
+    token,
+    apiBaseUrl:
+      nonEmpty(process.env.MONO_API_BASE) ?? 'https://api.monobank.ua',
+    publicKey: nonEmpty(process.env.MONO_PUBLIC_KEY),
+  });
   return token;
 }
 
@@ -113,6 +150,12 @@ export function getMonobankEnv(): MonobankEnv {
     };
   }
 
+  assertMonobankRuntimeConfig({
+    token,
+    apiBaseUrl,
+    publicKey,
+  });
+
   return {
     token,
     apiBaseUrl,
@@ -123,5 +166,15 @@ export function getMonobankEnv(): MonobankEnv {
 }
 
 export function isMonobankEnabled(): boolean {
-  return !!resolveMonobankToken();
+  const token = resolveMonobankToken();
+  if (!token) return false;
+
+  assertMonobankRuntimeConfig({
+    token,
+    apiBaseUrl:
+      nonEmpty(process.env.MONO_API_BASE) ?? 'https://api.monobank.ua',
+    publicKey: nonEmpty(process.env.MONO_PUBLIC_KEY),
+  });
+
+  return true;
 }

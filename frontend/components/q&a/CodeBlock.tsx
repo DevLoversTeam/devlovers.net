@@ -6,25 +6,27 @@ import { Highlight, themes } from 'prism-react-renderer';
 import { useState } from 'react';
 
 type Props = {
-  code: string;
+  code?: string | null;
   language?: string | null;
 };
 
 export default function CodeBlock({ code, language }: Props) {
   const { resolvedTheme } = useTheme();
   const [copied, setCopied] = useState(false);
+  const safeCode = typeof code === 'string' ? code : '';
 
   const theme = resolvedTheme === 'dark' ? themes.nightOwl : themes.github;
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(code);
+    if (!safeCode) return;
+    await navigator.clipboard.writeText(safeCode);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
 
   return (
     <Highlight
-      code={code.trim()}
+      code={safeCode.trim()}
       language={(language ?? 'markup') as any}
       theme={theme}
     >

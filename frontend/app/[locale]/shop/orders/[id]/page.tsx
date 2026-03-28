@@ -11,6 +11,12 @@ import { orderItems, orders } from '@/db/schema';
 import { Link } from '@/i18n/routing';
 import { getCurrentUser } from '@/lib/auth';
 import { logError } from '@/lib/logging';
+import {
+  type CanonicalFulfillmentStage,
+  deriveCanonicalFulfillmentStage,
+  latestReturnStatusSql,
+  latestShipmentStatusSql,
+} from '@/lib/services/shop/fulfillment-stage';
 import { type CurrencyCode, formatMoney } from '@/lib/shop/currency';
 import { fromDbMoney } from '@/lib/shop/money';
 import {
@@ -40,6 +46,7 @@ type OrderDetail = {
   paymentStatus: OrderPaymentStatus;
   paymentProvider: OrderPaymentProvider;
   paymentIntentId: string | null;
+  fulfillmentStage: CanonicalFulfillmentStage;
   shippingStatus: string | null;
   trackingNumber: string | null;
   stockRestored: boolean;
@@ -75,6 +82,10 @@ function safeFormatDateTime(iso: string, dtf: Intl.DateTimeFormat): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
   return dtf.format(d);
+}
+
+function fulfillmentStageLabelKey(stage: CanonicalFulfillmentStage): string {
+  return `fulfillmentStages.${stage}`;
 }
 
 function toOrderItem(
@@ -153,7 +164,10 @@ export default async function OrderDetailPage({
           paymentStatus: orders.paymentStatus,
           paymentProvider: orders.paymentProvider,
           paymentIntentId: orders.paymentIntentId,
+          orderStatus: orders.status,
           shippingStatus: orders.shippingStatus,
+          shipmentStatus: latestShipmentStatusSql(orders.id),
+          returnStatus: latestReturnStatusSql(orders.id),
           trackingNumber: orders.trackingNumber,
           stockRestored: orders.stockRestored,
           restockedAt: orders.restockedAt,
@@ -189,13 +203,32 @@ export default async function OrderDetailPage({
 
   try {
     const base = rows[0]!.order;
+    const fulfillmentStage = deriveCanonicalFulfillmentStage({
+      orderStatus: base.orderStatus,
+      shippingStatus: base.shippingStatus,
+      shipmentStatus:
+        typeof base.shipmentStatus === 'string' ? base.shipmentStatus : null,
+      returnStatus:
+        typeof base.returnStatus === 'string' ? base.returnStatus : null,
+    });
 
     const items = rows
       .map(r => toOrderItem(r.item))
       .filter((i): i is NonNullable<typeof i> => i !== null);
 
     order = {
-      ...base,
+      id: base.id,
+      userId: base.userId,
+      totalAmount: base.totalAmount,
+      currency: base.currency,
+      paymentStatus: base.paymentStatus,
+      paymentProvider: base.paymentProvider,
+      paymentIntentId: base.paymentIntentId,
+      fulfillmentStage,
+      shippingStatus: base.shippingStatus,
+      trackingNumber: base.trackingNumber,
+      stockRestored: base.stockRestored,
+      idempotencyKey: base.idempotencyKey,
       createdAt: base.createdAt.toISOString(),
       updatedAt: base.updatedAt.toISOString(),
       restockedAt: base.restockedAt ? base.restockedAt.toISOString() : null,
@@ -279,6 +312,15 @@ export default async function OrderDetailPage({
             </dt>
             <dd className="text-sm font-medium">
               {String(order.paymentStatus)}
+            </dd>
+          </div>
+
+          <div>
+            <dt className="text-muted-foreground text-xs">
+              {t('fulfillmentStage')}
+            </dt>
+            <dd className="text-sm font-medium">
+              {t(fulfillmentStageLabelKey(order.fulfillmentStage))}
             </dd>
           </div>
 

@@ -904,3 +904,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Hardened Monobank webhook verification, reconciliation, and wallet retry handling
 - Added validation coverage for invalid city/warehouse, locker, and courier address combinations
 - Prevented janitor cleanup from canceling reconcilable wallet attempts too early
+
+## [1.0.9] - 2026-03-22
+
+### Added
+
+- Full Blog Admin in the admin panel:
+  - Blog post create, edit, delete, preview, publish, and schedule workflow
+  - Tiptap WYSIWYG editor with headings, lists, task lists, code blocks, images, links, and sticky toolbar
+  - Cloudinary image upload with preview for blog content
+  - Inline author and category creation directly from the post form
+  - Locale-aware preview rendering with `BlogPostRenderer`
+  - Blog section in admin sidebar with Posts, New Post, Authors, and Categories
+- Blog content management:
+  - Author CRUD with multilingual profiles, profile photo upload, and social links
+  - Category CRUD with inline editing and display-order reordering
+  - Admin API routes for blog posts, authors, categories, and image upload
+  - Zod validation schemas for blog admin forms and mutations
+
+### Changed
+
+- Blog architecture and performance:
+  - Replaced force-dynamic blog post rendering with ISR using shared 7-day revalidation
+  - Unified cache strategy across blog list, post, category, search, and author routes
+  - Cached blog queries with React cache and `unstable_cache`
+  - Public blog pages now revalidate correctly after admin mutations
+  - Blog categories on public pages now use cached query variants
+- Shop launch readiness:
+  - Checkout provider resolution is now server-authoritative and fail-closed
+  - Stripe refunds now enter a contained non-shippable state before reconciliation
+  - Admin shipping actions now require a compatible shipment record and centralized eligibility checks
+  - Disabled Monobank admin refunds and in-app return refunds for launch
+
+### Fixed
+
+- Fixed inconsistent blog `revalidatePath` patterns and missing locale-aware invalidation
+- Fixed public blog cache invalidation after post, author, and category updates
+- Removed legacy order creation paths that could persist new orders with `paymentProvider='none'`
+- Prevented double finalization and double restock during Stripe refund recovery flows
+- Blocked shipment queuing and admin shipping transitions for refund-contained orders
+- Updated Shop regression coverage for checkout fail-closed behavior, refunds, webhooks, and shipping guards

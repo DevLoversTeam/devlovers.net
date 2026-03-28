@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { type CurrencyCode, currencyValues } from '@/lib/shop/currency';
 import { toCents } from '@/lib/shop/money';
 import {
+  adminProductPhotoPlanSchema,
   productAdminSchema,
   productAdminUpdateSchema,
 } from '@/lib/validation/shop';
@@ -69,6 +70,19 @@ function zodPricesJsonError(message: string) {
     {
       code: z.ZodIssueCode.custom,
       path: ['prices'],
+      message,
+    },
+  ]);
+}
+
+function zodPhotoError(
+  message: string,
+  path: Array<string | number> = ['photos']
+) {
+  return new z.ZodError([
+    {
+      code: z.ZodIssueCode.custom,
+      path,
       message,
     },
   ]);
@@ -346,4 +360,172 @@ export function parseAdminProductForm(
   }
 
   return { ok: true, data: parsed.data };
+}
+
+type ParsedAdminProductPhotos = {
+  imagePlan?: z.infer<typeof adminProductPhotoPlanSchema>;
+  images: Array<{ uploadId: string; file: File }>;
+};
+
+function parseStringArrayJsonField(
+  formData: FormData,
+  name: string
+): ParsedResult<string[]> {
+  const raw = formData.get(name);
+  if (raw == null) return { ok: true, data: [] };
+  if (typeof raw !== 'string') {
+    return {
+      ok: false,
+      error: zodPhotoError(`Invalid ${name} payload type`, [name]),
+    };
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return { ok: false, error: zodPhotoError(`Invalid ${name} JSON`, [name]) };
+  }
+
+  const result = z.array(z.string()).safeParse(parsed);
+  if (!result.success) {
+    return {
+      ok: false,
+      error: zodPhotoError(`Invalid ${name} payload`, [name]),
+    };
+  }
+
+  return { ok: true, data: result.data };
+}
+
+export function parseAdminProductPhotosForm(
+  formData: FormData,
+  options: { mode?: ParseMode } = {}
+): ParsedResult<ParsedAdminProductPhotos> {
+  const mode: ParseMode = options.mode ?? 'create';
+
+  const photoPlanRaw = formData.get('photoPlan');
+  const legacyImage = formData.get('image');
+
+  if (photoPlanRaw == null) {
+    if (!(legacyImage instanceof File) || legacyImage.size === 0) {
+      return {
+        ok: true,
+        data: {
+          imagePlan: undefined,
+          images: [],
+        },
+      };
+    }
+
+    if (!legacyImage.type?.startsWith('image/')) {
+      return {
+        ok: false,
+        error: zodPhotoError('Uploaded file must be an image', ['photos']),
+      };
+    }
+
+    return {
+      ok: true,
+      data: {
+        imagePlan: [{ uploadId: 'legacy-image', isPrimary: true }],
+        images: [{ uploadId: 'legacy-image', file: legacyImage }],
+      },
+    };
+  }
+
+  if (typeof photoPlanRaw !== 'string') {
+    return {
+      ok: false,
+      error: zodPhotoError('Invalid photoPlan payload type', ['photoPlan']),
+    };
+  }
+
+  let parsedPlanJson: unknown;
+  try {
+    parsedPlanJson = JSON.parse(photoPlanRaw);
+  } catch {
+    return {
+      ok: false,
+      error: zodPhotoError('Invalid photoPlan JSON', ['photoPlan']),
+    };
+  }
+
+  const parsedPlan = adminProductPhotoPlanSchema.safeParse(parsedPlanJson);
+  if (!parsedPlan.success) {
+    return { ok: false, error: parsedPlan.error };
+  }
+
+  const uploadIdsResult = parseStringArrayJsonField(
+    formData,
+    'newImageUploadIds'
+  );
+  if (!uploadIdsResult.ok) return uploadIdsResult;
+
+  const files = formData.getAll('newImages');
+  if (files.length !== uploadIdsResult.data.length) {
+    return {
+      ok: false,
+      error: zodPhotoError(
+        'newImages and newImageUploadIds must have the same length',
+        ['newImages']
+      ),
+    };
+  }
+
+  const images: Array<{ uploadId: string; file: File }> = [];
+  for (let index = 0; index < files.length; index += 1) {
+    const file = files[index];
+    const uploadId = uploadIdsResult.data[index]?.trim();
+
+    if (!(file instanceof File) || file.size === 0) {
+      return {
+        ok: false,
+        error: zodPhotoError('Each uploaded photo must be a non-empty file', [
+          'newImages',
+          index,
+        ]),
+      };
+    }
+
+    if (!file.type?.startsWith('image/')) {
+      return {
+        ok: false,
+        error: zodPhotoError('Uploaded file must be an image', [
+          'newImages',
+          index,
+        ]),
+      };
+    }
+
+    if (!uploadId) {
+      return {
+        ok: false,
+        error: zodPhotoError('Missing upload id for photo', [
+          'newImageUploadIds',
+          index,
+        ]),
+      };
+    }
+
+    images.push({ uploadId, file });
+  }
+
+  if (mode === 'create' && parsedPlan.data.some(item => item.imageId)) {
+    return {
+      ok: false,
+      error: zodPhotoError(
+        'Create photo plan cannot reference existing images',
+        ['photoPlan']
+      ),
+    };
+  }
+
+  return {
+    ok: true,
+    data: {
+      imagePlan: parsedPlan.data,
+      images,
+    },
+  };
 }

@@ -5,7 +5,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { db } from '@/db';
-import { parseAdminProductForm } from '@/lib/admin/parseAdminProductForm';
+import {
+  parseAdminProductForm,
+  parseAdminProductPhotosForm,
+} from '@/lib/admin/parseAdminProductForm';
 import {
   AdminApiDisabledError,
   AdminForbiddenError,
@@ -422,6 +425,28 @@ export async function PATCH(
         { status: 400 }
       );
     }
+    const parsedPhotos = parseAdminProductPhotosForm(formData, {
+      mode: 'update',
+    });
+    if (!parsedPhotos.ok) {
+      logWarn('admin_product_update_invalid_photos', {
+        ...baseMeta,
+        code: 'INVALID_PAYLOAD',
+        productId: productIdForLog,
+        issuesCount: getIssuesCount(parsedPhotos.error),
+        durationMs: Date.now() - startedAtMs,
+      });
+
+      return noStoreJson(
+        {
+          error: 'Invalid product photos',
+          code: 'INVALID_PAYLOAD',
+          field: 'photos',
+          details: parsedPhotos.error.format(),
+        },
+        { status: 400 }
+      );
+    }
     const saleViolation = findSaleRuleViolation(parsed.data);
     if (saleViolation) {
       const message =
@@ -450,14 +475,10 @@ export async function PATCH(
     }
 
     try {
-      const imageFile = formData.get('image');
-
       const updated = await updateProduct(productIdForLog, {
         ...(parsed.data as UpdateProductInput),
-        image:
-          imageFile instanceof File && imageFile.size > 0
-            ? imageFile
-            : undefined,
+        imagePlan: parsedPhotos.data.imagePlan,
+        images: parsedPhotos.data.images,
       });
 
       try {
@@ -597,7 +618,7 @@ export async function PATCH(
           {
             error: 'Failed to upload product image',
             code: 'IMAGE_UPLOAD_FAILED',
-            field: 'image',
+            field: 'photos',
           },
           { status: 502 }
         );

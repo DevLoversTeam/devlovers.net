@@ -1,5 +1,13 @@
 import 'server-only';
 
+import {
+  assertProductionLikeProviderPhone,
+  assertProductionLikeProviderString,
+  assertProductionLikeProviderUrl,
+  isProductionLikeRuntime,
+  ShopProviderConfigError,
+} from '@/lib/env/provider-runtime';
+
 const DEFAULT_NP_API_BASE = 'https://api.novaposhta.ua/v2.0/json/';
 
 function nonEmpty(value: string | undefined): string | null {
@@ -45,6 +53,73 @@ export class NovaPoshtaConfigError extends Error {
   constructor(message: string) {
     super(message);
     this.name = 'NovaPoshtaConfigError';
+  }
+}
+
+function assertNovaPoshtaRuntimeConfig(args: {
+  apiBaseUrl: string;
+  apiKey: string;
+  sender: {
+    cityRef: string;
+    warehouseRef: string;
+    senderRef: string;
+    contactRef: string;
+    name: string;
+    phone: string;
+  };
+}) {
+  try {
+    assertProductionLikeProviderUrl({
+      provider: 'nova_poshta',
+      envName: 'NP_API_BASE',
+      value: args.apiBaseUrl,
+    });
+    assertProductionLikeProviderString({
+      provider: 'nova_poshta',
+      envName: 'NP_API_KEY',
+      value: args.apiKey,
+      minLength: 8,
+    });
+    assertProductionLikeProviderString({
+      provider: 'nova_poshta',
+      envName: 'NP_SENDER_CITY_REF',
+      value: args.sender.cityRef,
+      minLength: 8,
+    });
+    assertProductionLikeProviderString({
+      provider: 'nova_poshta',
+      envName: 'NP_SENDER_WAREHOUSE_REF',
+      value: args.sender.warehouseRef,
+      minLength: 8,
+    });
+    assertProductionLikeProviderString({
+      provider: 'nova_poshta',
+      envName: 'NP_SENDER_REF',
+      value: args.sender.senderRef,
+      minLength: 8,
+    });
+    assertProductionLikeProviderString({
+      provider: 'nova_poshta',
+      envName: 'NP_SENDER_CONTACT_REF',
+      value: args.sender.contactRef,
+      minLength: 8,
+    });
+    assertProductionLikeProviderString({
+      provider: 'nova_poshta',
+      envName: 'NP_SENDER_NAME',
+      value: args.sender.name,
+      minLength: 2,
+    });
+    assertProductionLikeProviderPhone({
+      provider: 'nova_poshta',
+      envName: 'NP_SENDER_PHONE',
+      value: args.sender.phone,
+    });
+  } catch (error) {
+    if (error instanceof ShopProviderConfigError) {
+      throw new NovaPoshtaConfigError(error.message);
+    }
+    throw error;
   }
 }
 
@@ -114,6 +189,19 @@ export function getNovaPoshtaConfig(): NovaPoshtaConfig {
     );
   }
 
+  assertNovaPoshtaRuntimeConfig({
+    apiBaseUrl,
+    apiKey: apiKey!,
+    sender: {
+      cityRef: sender.cityRef!,
+      warehouseRef: sender.warehouseRef!,
+      senderRef: sender.senderRef!,
+      contactRef: sender.contactRef!,
+      name: sender.name!,
+      phone: sender.phone!,
+    },
+  });
+
   return {
     enabled: true,
     apiBaseUrl,
@@ -130,4 +218,11 @@ export function getNovaPoshtaConfig(): NovaPoshtaConfig {
       edrpou: sender.edrpou ?? null,
     },
   };
+}
+
+export function assertNovaPoshtaProductionLikeReady(): void {
+  const flags = getShopShippingFlags();
+  if (!flags.shippingEnabled || !flags.npEnabled) return;
+  if (!isProductionLikeRuntime()) return;
+  getNovaPoshtaConfig();
 }

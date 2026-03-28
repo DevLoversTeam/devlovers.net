@@ -3,7 +3,7 @@
 import { Github, Linkedin, Send } from 'lucide-react';
 import { usePathname, useSelectedLayoutSegments } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import type { Ref } from 'react';
+import { Fragment, type Ref } from 'react';
 
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { locales } from '@/i18n/config';
@@ -38,6 +38,19 @@ export default function Footer({
     pathSegments.length === 0 ||
     (pathSegments.length === 1 &&
       locales.includes(pathSegments[0] as (typeof locales)[number]));
+  const legalLinks = isShop
+    ? [
+        { href: '/seller-information', label: t('sellerInformation') },
+        { href: '/payment-policy', label: t('payment') },
+        { href: '/delivery-policy', label: t('delivery') },
+        { href: '/returns-policy', label: t('returns') },
+        { href: '/privacy-policy', label: t('privacyPolicy') },
+        { href: '/terms-of-service', label: t('termsOfService') },
+      ]
+    : [
+        { href: '/privacy-policy', label: t('privacyPolicy') },
+        { href: '/terms-of-service', label: t('termsOfService') },
+      ];
 
   if (isHome && !forceVisible) {
     return null;
@@ -46,8 +59,9 @@ export default function Footer({
   return (
     <footer
       ref={footerRef}
+      data-testid="site-footer"
       className={cn(
-        'border-border bg-background/90 supports-[backdrop-filter]:bg-background/50 relative overflow-hidden border-t backdrop-blur ' +
+        'border-border bg-background/90 supports-backdrop-filter:bg-background/50 relative overflow-hidden border-t backdrop-blur ' +
           '[--footer-brand:var(--accent-primary)] [--footer-hover:var(--accent-hover)] [--theme-toggle-hover:var(--footer-hover)]',
         isShop &&
           '[--footer-brand:var(--foreground)] [--footer-hover:var(--foreground)] ' +
@@ -60,26 +74,35 @@ export default function Footer({
           <div className="space-y-3">
             <p className="text-sm text-slate-700 dark:text-slate-200">
               {t('builtWith')}{' '}
-              <span className="font-semibold text-[color:var(--footer-brand)]">
+              <Link
+                href="/"
+                className="font-semibold text-(--footer-brand) transition-colors hover:text-(--footer-hover)"
+              >
                 DevLovers
-              </span>{' '}
+              </Link>{' '}
               {t('byCommunity')}
             </p>
 
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              <Link
-                href="/privacy-policy"
-                className="transition-colors hover:[color:var(--footer-hover)] focus-visible:[color:var(--footer-hover)] active:[color:var(--footer-hover)]"
-              >
-                {t('privacyPolicy')}
-              </Link>
-              <span className="px-2 opacity-60">|</span>
-              <Link
-                href="/terms-of-service"
-                className="transition-colors hover:[color:var(--footer-hover)] focus-visible:[color:var(--footer-hover)] active:[color:var(--footer-hover)]"
-              >
-                {t('termsOfService')}
-              </Link>
+            <p
+              data-testid="footer-legal-links"
+              className="flex flex-wrap items-center gap-y-1.5 text-sm leading-6 text-slate-500 dark:text-slate-400"
+            >
+              {legalLinks.map((link, index) => (
+                <Fragment key={link.href}>
+                  {index > 0 ? (
+                    <span aria-hidden="true" className="px-2 opacity-60">
+                      {' '}
+                    </span>
+                  ) : null}
+                  <Link
+                    href={link.href}
+                    data-testid={`footer-legal-link-${link.href.replace(/\//g, '') || 'home'}`}
+                    className="transition-colors hover:text-(--footer-hover) focus-visible:text-(--footer-hover) active:text-(--footer-hover)"
+                  >
+                    {link.label}
+                  </Link>
+                </Fragment>
+              ))}
             </p>
           </div>
 
@@ -97,7 +120,7 @@ export default function Footer({
                     target="_blank"
                     rel="noreferrer"
                     aria-label={label}
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200/60 bg-white/40 text-slate-600 transition-all hover:-translate-y-0.5 hover:!border-[var(--footer-hover)] hover:!text-[var(--footer-hover)] active:scale-95 active:!border-[var(--footer-hover)] active:!text-[var(--footer-hover)] dark:border-neutral-800/60 dark:bg-neutral-950/30 dark:text-slate-300"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200/60 bg-white/40 text-slate-600 transition-all hover:-translate-y-0.5 hover:border-(--footer-hover)! hover:text-(--footer-hover)! active:scale-95 active:border-(--footer-hover)! active:text-(--footer-hover)! dark:border-neutral-800/60 dark:bg-neutral-950/30 dark:text-slate-300"
                   >
                     <Icon className="h-5 w-5" />
                   </a>

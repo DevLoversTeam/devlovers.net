@@ -1,4 +1,9 @@
 import { getClientEnv, getRuntimeEnv } from '@/lib/env';
+import {
+  assertProductionLikeProviderString,
+  isProductionLikeRuntime,
+  ShopProviderConfigError,
+} from '@/lib/env/provider-runtime';
 
 export type StripeEnv = {
   secretKey: string | null;
@@ -47,6 +52,40 @@ export function getStripeEnv(): StripeEnv {
     };
   }
 
+  if (isProductionLikeRuntime() && mode !== 'live') {
+    throw new ShopProviderConfigError({
+      provider: 'stripe',
+      envName: 'STRIPE_MODE',
+      message:
+        'stripe provider config is invalid for production runtime: STRIPE_MODE must be live.',
+    });
+  }
+
+  assertProductionLikeProviderString({
+    provider: 'stripe',
+    envName: 'STRIPE_SECRET_KEY',
+    value: secretKey,
+    minLength: 16,
+    requiredPrefix: 'sk_live_',
+  });
+  assertProductionLikeProviderString({
+    provider: 'stripe',
+    envName: 'STRIPE_WEBHOOK_SECRET',
+    value: webhookSecret,
+    minLength: 16,
+    requiredPrefix: 'whsec_',
+  });
+
+  if (publishableKey) {
+    assertProductionLikeProviderString({
+      provider: 'stripe',
+      envName: 'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY',
+      value: publishableKey,
+      minLength: 16,
+      requiredPrefix: 'pk_live_',
+    });
+  }
+
   return {
     secretKey,
     webhookSecret,
@@ -71,7 +110,13 @@ function isStripeRailEnabledByFlags(): boolean {
 export function isRawPaymentsEnabled(
   options: Pick<StripePaymentsEnabledOptions, 'requirePublishableKey'> = {}
 ): boolean {
-  const env = getStripeEnv();
+  let env: StripeEnv;
+  try {
+    env = getStripeEnv();
+  } catch (error) {
+    if (error instanceof ShopProviderConfigError) return false;
+    throw error;
+  }
   if (!env.paymentsEnabled) return false;
 
   if (options.requirePublishableKey && !env.publishableKey) {
@@ -84,7 +129,13 @@ export function isRawPaymentsEnabled(
 export function isPaymentsEnabled(
   options: StripePaymentsEnabledOptions = {}
 ): boolean {
-  const env = getStripeEnv();
+  let env: StripeEnv;
+  try {
+    env = getStripeEnv();
+  } catch (error) {
+    if (error instanceof ShopProviderConfigError) return false;
+    throw error;
+  }
   if (!env.paymentsEnabled) return false;
 
   if (!options.ignoreStripePaymentsFlag && !isStripeRailEnabledByFlags()) {

@@ -322,6 +322,10 @@
   "footer": {
     "builtWith": "Built by",
     "byCommunity": "community.",
+    "sellerInformation": "Seller Information",
+    "payment": "Payment",
+    "delivery": "Delivery",
+    "returns": "Returns",
     "privacyPolicy": "Privacy Policy",
     "termsOfService": "Terms of Service"
   },
@@ -350,6 +354,12 @@
       "addToCart": "Add to cart",
       "addedToCart": "Added to cart",
       "purchaseOptions": "Purchase options",
+      "availability": {
+        "availableToOrder": "Available to order",
+        "currentlyUnavailable": "Currently unavailable",
+        "unavailableLocaleCurrency": "This product is currently unavailable to order in your selected locale or currency.",
+        "browseOtherProducts": "Browse other products or try a different locale or currency."
+      },
       "decreaseQuantity": "Decrease quantity",
       "increaseQuantity": "Increase quantity",
       "badges": {
@@ -390,8 +400,8 @@
         "shipping": "Shipping",
         "shippingCalc": "Calculated at checkout",
         "total": "Total",
-        "shippingInformationalOnly": "Informational only",
-        "shippingPayOnDeliveryNote": "Shipping is paid to the carrier on delivery; we currently charge only for goods."
+        "shippingInformationalOnly": "Shown before confirmation",
+        "shippingPayOnDeliveryNote": "When applicable, the shipping cost is included in the total shown before order confirmation. Additional carrier charges for extra services may still apply separately under the carrier's rules."
       },
       "delivery": {
         "legend": "Delivery",
@@ -472,6 +482,14 @@
         "message": "You'll either be redirected to secure payment or see confirmation if payment is not required in this environment",
         "notRedirected": "If you are not redirected automatically, open your order",
         "goToOrder": "Go to order",
+        "consent": {
+          "prefix": "I have read and agree to the",
+          "termsLink": "Terms of Service",
+          "and": "and",
+          "privacyLink": "Privacy Policy",
+          "suffix": " for this order.",
+          "required": "Please confirm that you agree to the Terms of Service and Privacy Policy before placing your order."
+        },
         "errors": {
           "unexpectedResponse": "Unexpected checkout response.",
           "startFailed": "Unable to start checkout right now."
@@ -522,29 +540,40 @@
       },
       "products": {
         "title": "Admin · Products",
+        "subtitle": "Manage catalog items, pricing, and storefront visibility.",
         "newProduct": "New product",
+        "backToList": "Back to products",
+        "editProductHeading": "Edit · {title}",
         "listCaption": "Products list",
         "empty": "No products yet.",
         "table": {
+          "product": "Product",
           "title": "Title",
           "slug": "Slug",
           "price": "Price",
           "category": "Category",
           "type": "Type",
-          "stock": "Stock",
+          "stock": "Qty",
           "badge": "Badge",
           "active": "Active",
           "featured": "Featured",
+          "status": "Status",
+          "date": "Date",
           "created": "Created",
           "actions": "Actions"
         },
         "actions": {
-          "view": "View",
+          "view": "Open",
           "edit": "Edit",
           "viewProduct": "View product {title}",
           "editProduct": "Edit product {title}",
           "yes": "Yes",
           "no": "No"
+        },
+        "states": {
+          "active": "Active",
+          "hidden": "Hidden",
+          "featured": "Featured"
         }
       },
       "statusToggle": {
@@ -552,8 +581,8 @@
         "securityExpired": "Security token expired. Refresh the page and retry.",
         "failedUpdate": "Failed to update status",
         "updating": "Updating",
-        "deactivate": "Deactivate",
-        "activate": "Activate"
+        "deactivate": "Disable",
+        "activate": "Enable"
       },
       "pagination": {
         "label": "Pagination",
@@ -565,13 +594,23 @@
       },
       "orders": {
         "title": "Admin · Orders",
+        "subtitle": "Review recent orders, filter results, and inspect payment state.",
         "reconcileStale": "Reconcile stale",
         "empty": "No orders yet.",
         "listCaption": "Orders list",
         "viewOrder": "View order {id}",
+        "filters": {
+          "label": "Order filters",
+          "status": "Payment status",
+          "allStatuses": "All statuses",
+          "dateFrom": "From date",
+          "dateTo": "To date",
+          "apply": "Apply",
+          "reset": "Reset"
+        },
         "table": {
           "created": "Created",
-          "status": "Status",
+          "status": "Payment status",
           "total": "Total",
           "items": "Items",
           "provider": "Provider",
@@ -793,17 +832,99 @@
         "pending": "Pending",
         "requiresPayment": "Payment required",
         "failed": "Failed",
-        "refunded": "Refunded"
+        "refunded": "Refunded",
+        "needsReview": "Needs review"
       },
       "detail": {
         "title": "Order",
         "myOrders": "My orders",
         "shop": "Shop",
         "orderSummary": "Order summary",
+        "customerSummary": "Customer summary",
+        "lifecycle": {
+            "eyebrow": "Order state",
+            "heading": "Status updates",
+            "subtitle": "Use these when you need to move the order to its next safe state.",
+            "confirm": "Confirm",
+            "cancel": "Cancel",
+            "complete": "Complete",
+            "errors": {
+              "confirmRequiresPaid": "Only paid orders can be confirmed.",
+              "confirmNotAllowed": "This order cannot be confirmed in its current state.",
+              "cancelRequiresRefund": "Paid orders must use refund flow instead of cancel.",
+              "completeRequiresShipping": "Only shippable orders can be completed.",
+              "completeNotAllowed": "This order cannot be completed in its current state.",
+              "csrfRejected": "Security validation failed. Refresh and try again.",
+              "invalidPayload": "Invalid lifecycle action request.",
+              "internalError": "Lifecycle action failed. Please try again.",
+              "generic": "Lifecycle action is not available in the current state."
+            }
+          },
+        "actions": {
+            "heading": "Admin actions",
+            "subtitle": "Choose the next safe step for this order. Only actions that fit the current state are shown.",
+            "empty": "No admin actions are available for the current state."
+          },
+        "shippingControls": {
+            "eyebrow": "Shipping",
+            "heading": "Shipment handling",
+            "subtitle": "Recover or advance delivery only when the shipment is ready for it.",
+            "recoverInitialShipment": "Recover shipment",
+            "retryLabelCreation": "Retry label",
+            "markShipped": "Mark shipped",
+            "markDelivered": "Mark delivered",
+            "errors": {
+              "network": "Shipping action failed to send. Try again.",
+              "security": "Security check failed. Refresh the page and try again.",
+              "recoverNotAvailable": "Shipment recovery is no longer available for this order.",
+              "shipmentMissing": "There is no shipment record to update yet.",
+              "retryNotAvailable": "Label retry is not available in the current shipment state.",
+              "transitionNotAvailable": "This shipping step is no longer available for the current order state.",
+              "adminDisabled": "Admin shipping actions are currently unavailable.",
+              "generic": "Shipping action could not be completed. Refresh the order and try again."
+            }
+          },
+        "paymentControls": {
+            "eyebrow": "Payment",
+            "heading": "Payment handling",
+            "subtitle": "Use the payment tools below only when this order needs financial follow-up.",
+            "refund": "Refund payment",
+            "refunding": "Refunding…",
+            "onlyForPaidStripe": "Refund is only available for paid Stripe orders",
+            "cancelUnpaidPayment": "Cancel unpaid payment",
+            "cancelingPayment": "Canceling payment…",
+            "onlyForUnpaidMonobank": "This action is only available for unpaid Monobank orders",
+            "errors": {
+              "network": "Payment action failed to send. Try again.",
+              "security": "Security check failed. Refresh the page and try again.",
+              "refundNotAvailable": "Refund is no longer available for this order.",
+              "cancelPaymentDisabled": "Payment cancel is currently unavailable.",
+              "cancelPaymentNotAvailable": "Unpaid cancel is no longer available for this order.",
+              "cancelPaymentInProgress": "Payment cancel is already being processed. Refresh in a moment.",
+              "missingPaymentReference": "The payment provider reference is missing, so this action cannot run automatically.",
+              "invalidAmount": "Order amount data is incomplete, so refund cannot start automatically.",
+              "providerUnavailable": "The payment provider is temporarily unavailable. Try again later.",
+              "adminDisabled": "Admin payment actions are currently unavailable.",
+              "generic": "Payment action could not be completed. Refresh the order and try again."
+            }
+          },
+        "customerAccount": "Customer account",
+        "accountUnavailable": "Registered account",
+        "guest": "Guest checkout",
         "total": "Total",
         "paymentStatus": "Payment status",
+        "fulfillmentStage": "Fulfillment stage",
         "created": "Created",
         "provider": "Provider",
+        "shippingProviderLabel": "Shipping provider",
+        "shippingMethod": "Shipping method",
+        "recipientName": "Recipient name",
+        "recipientPhone": "Recipient phone",
+        "recipientEmail": "Recipient email",
+        "city": "City",
+        "pickupPoint": "Pickup point",
+        "address": "Address",
+        "comment": "Comment",
         "paymentReference": "Payment reference",
         "idempotencyKey": "Idempotency key",
         "stockRestored": "Stock restored",
@@ -818,6 +939,63 @@
         "no": "No",
         "shippingStatus": "Shipping status",
         "trackingNumber": "Tracking number",
+        "shippingProviders": {
+          "novaPoshta": "Nova Poshta"
+        },
+        "paymentProviders": {
+          "stripe": "Stripe",
+          "monobank": "Monobank"
+        },
+        "shippingMethods": {
+          "novaPoshtaWarehouse": "Nova Poshta warehouse",
+          "novaPoshtaLocker": "Nova Poshta parcel locker",
+          "novaPoshtaCourier": "Nova Poshta courier"
+        },
+        "shippingStatuses": {
+          "pending": "Pending",
+          "queued": "Queued",
+          "creatingLabel": "Creating label",
+          "labelCreated": "Label created",
+          "shipped": "Shipped",
+          "delivered": "Delivered",
+          "cancelled": "Cancelled",
+          "needsAttention": "Needs attention"
+        },
+        "shipmentStatuses": {
+          "queued": "Queued",
+          "processing": "Processing",
+          "succeeded": "Succeeded",
+          "failed": "Failed",
+          "needsAttention": "Needs attention"
+        },
+        "history": {
+          "heading": "History",
+          "subtitle": "Order-scoped admin activity and status transitions.",
+          "empty": "No order history yet.",
+          "adminUser": "Admin user",
+          "system": "System",
+          "legacySource": "Legacy history",
+          "shippingTransition": "Shipping: {from} -> {to}",
+          "shipmentState": "Shipment state: {status}",
+          "requestId": "Request: {requestId}",
+          "actions": {
+            "confirm": "Confirmed order",
+            "cancel": "Canceled order",
+            "complete": "Completed order",
+            "recoverInitialShipment": "Recovered initial shipment",
+            "retryLabelCreation": "Retried label creation",
+            "markShipped": "Marked as shipped",
+            "markDelivered": "Marked as delivered"
+          }
+        },
+        "fulfillmentStages": {
+            "processing": "Processing",
+            "packed": "Packed",
+            "shipped": "Shipped",
+          "delivered": "Delivered",
+          "canceled": "Canceled",
+          "returned": "Returned"
+        },
         "qtyShort": "Qty",
         "unitShort": "Unit",
         "lineShort": "Line"
@@ -1090,10 +1268,10 @@
   },
   "CookieBanner": {
     "title": "🍪 We value your privacy",
-    "description": "We use cookies to enhance your browsing experience, serve personalized content, and analyze our traffic. By clicking \"Accept\", you consent to our use of cookies. Read our",
+    "description": "We use cookies and local storage to keep you signed in, remember preferences such as theme, and protect the service. Read our",
     "policyLink": "Privacy Policy",
-    "accept": "Accept Cookies",
-    "decline": "Decline"
+    "accept": "Got it",
+    "decline": "Close"
   },
   "leaderboard": {
     "title": "Leaderboard",
@@ -1308,7 +1486,8 @@
       "noHiddenTerms": "No hidden terms",
       "ariaDragHandle": "Drag to reorder {term}",
       "ariaHide": "Hide {term}",
-      "ariaRestore": "Restore {term}"
+      "ariaRestore": "Restore {term}",
+      "loadError": "Failed to load saved terms. Please refresh the page."
     },
     "feedback": {
       "title": "Send Feedback",
@@ -1512,6 +1691,10 @@
       "persistentHint": "Our engineers are working their magic. It'll be back soon!",
       "working": "Fixing it...",
       "fixing": "Magic in progress"
+    },
+    "termTooLong": {
+      "title": "Selection too long",
+      "hint": "Please select a shorter phrase — up to 100 characters. The AI works best with specific terms, not whole sentences."
     }
   },
   "onlineCounter": {
@@ -1524,7 +1707,101 @@
   "legal": {
     "back": "Back",
     "lastUpdated": "Last updated",
-    "contactEmail": "devlovers.net@gmail.com",
+    "seller": {
+      "metaTitle": "Seller Information | DevLovers Shop",
+      "metaDescription": "Public seller identity and contact details for the DevLovers shop.",
+      "title": "Seller Information",
+      "sellerDetailsTitle": "Seller details",
+      "sellerDetailsBody": "Below are the seller details currently published for the shop.",
+      "supportContactsTitle": "Support contacts",
+      "supportContactsBody": "If you need help with an order or a policy question, use the contacts below.",
+      "placeholders": {
+        "toBeAdded": "To be added"
+      },
+      "fields": {
+        "sellerName": "Seller legal name",
+        "supportEmail": "Contact email",
+        "supportPhone": "Contact phone",
+        "address": "Seller address",
+        "businessDetails": "Registration details"
+      }
+    },
+    "payment": {
+      "metaTitle": "Payment Policy | DevLovers Shop",
+      "metaDescription": "Public payment policy for the DevLovers shop.",
+      "title": "Payment Policy",
+      "methods": {
+        "title": "Available payment methods",
+        "body": "Available payment methods are shown before order confirmation. Depending on the order, you may see online card payment via Stripe or a Monobank payment option.",
+        "items": {
+          "stripe": "Online card payment via Stripe.",
+          "monobank": "Available Monobank payment option."
+        }
+      },
+      "confirmation": {
+        "title": "When payment is confirmed",
+        "body": "An order is treated as paid only after the selected payment provider confirms the transaction and the shop records that result. A browser return page or redirect by itself is not the authoritative confirmation of payment."
+      },
+      "charges": {
+        "title": "What is charged online",
+        "body": "The amount shown before order confirmation includes the goods in your order and, when applicable, the delivery cost shown for the selected delivery method."
+      },
+      "support": {
+        "title": "Payment questions",
+        "body": "If you have a payment question about a shop order, contact"
+      }
+    },
+    "delivery": {
+      "metaTitle": "Delivery Policy | DevLovers Shop",
+      "metaDescription": "Public delivery policy for the DevLovers shop.",
+      "title": "Delivery Policy",
+      "methods": {
+        "title": "Available delivery methods",
+        "body": "Available delivery methods are shown before order confirmation for orders that can be delivered.",
+        "items": {
+          "warehouse": "Nova Poshta warehouse pickup",
+          "locker": "Nova Poshta parcel locker pickup",
+          "courier": "Nova Poshta courier delivery"
+        }
+      },
+      "availability": {
+        "title": "Availability",
+        "body": "At the moment, delivery options are available for eligible orders within Ukraine. The available methods may depend on the destination and carrier availability."
+      },
+      "timing": {
+        "title": "Delivery timing",
+        "body": "Delivery time depends on the selected method, destination, and the carrier’s workload. The carrier determines the final delivery timing after dispatch."
+      },
+      "charges": {
+        "title": "Delivery charges",
+        "body": "The delivery cost for the selected method is shown before order confirmation and is added to the order total before order confirmation. Additional carrier charges for extra services requested after order placement, storage beyond the free period, redirection, or other carrier services may be charged separately under the carrier’s own rules."
+      },
+      "support": {
+        "title": "Delivery questions",
+        "body": "If you have a delivery question about a shop order, contact"
+      }
+    },
+    "returns": {
+      "metaTitle": "Returns Policy | DevLovers Shop",
+      "metaDescription": "Public returns policy for the DevLovers shop.",
+      "title": "Returns Policy",
+      "request": {
+        "title": "How to request a return or refund review",
+        "body": "To request a return or refund review, contact support and include your order number together with a short description of the reason for the request."
+      },
+      "review": {
+        "title": "How requests are reviewed",
+        "body": "Each request is reviewed individually. We may ask for additional details, photos, or other information needed to assess the request and explain the next steps."
+      },
+      "refunds": {
+        "title": "Refund processing",
+        "body": "Refund availability and timing depend on the review result and the payment method used for the order. Automatic refund processing through the website is not currently available."
+      },
+      "contact": {
+        "title": "How to contact support",
+        "body": "To request return guidance or report a delivery issue, contact"
+      }
+    },
     "privacy": {
       "metaTitle": "Privacy Policy | DevLovers",
       "metaDescription": "Learn how DevLovers collects, uses, and protects your personal data.",
@@ -1550,7 +1827,7 @@
       },
       "cookies": {
         "title": "4. Cookies and similar technologies",
-        "content": "We may use cookies/local storage to keep you signed in, store preferences (e.g. theme), and protect the service. If we add analytics cookies, this section will be updated."
+        "content": "We use cookies/local storage to keep you signed in, store preferences (e.g. theme), and protect the service. If we add analytics cookies, this section will be updated."
       },
       "sharing": {
         "title": "5. Sharing of data",

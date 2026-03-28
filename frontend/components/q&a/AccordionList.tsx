@@ -191,9 +191,21 @@ function renderTextNodes(
   return nodes.map((node, i) => renderTextNode(node, i, highlight));
 }
 
+function resolveCodeContent(
+  block: Pick<CodeBlockEntry, 'content' | 'code'>
+): string {
+  if (typeof block.content === 'string') return block.content;
+  if (typeof block.code === 'string') return block.code;
+  return '';
+}
+
 function renderCodeBlock(block: CodeBlockEntry, index: number): ReactNode {
   return (
-    <CodeBlock key={index} code={block.content} language={block.language} />
+    <CodeBlock
+      key={index}
+      code={resolveCodeContent(block)}
+      language={block.language}
+    />
   );
 }
 
@@ -236,7 +248,11 @@ function renderListItemChildren(
 
     if ('type' in child && child.type === 'code') {
       return (
-        <CodeBlock key={i} code={child.content} language={child.language} />
+        <CodeBlock
+          key={i}
+          code={resolveCodeContent(child)}
+          language={child.language}
+        />
       );
     }
 

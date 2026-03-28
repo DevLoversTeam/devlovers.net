@@ -8,12 +8,14 @@ interface AdminProductDeleteButtonProps {
   id: string;
   title: string;
   csrfToken: string;
+  className?: string;
 }
 
 export function AdminProductDeleteButton({
   id,
   title,
   csrfToken,
+  className,
 }: AdminProductDeleteButtonProps) {
   const router = useRouter();
   const t = useTranslations('shop.admin.deleteProduct');
@@ -84,14 +86,14 @@ export function AdminProductDeleteButton({
   };
 
   return (
-    <div className="flex w-full min-w-0 flex-col gap-1">
+    <div className={`flex min-w-0 flex-col gap-1 ${className ?? ''}`.trim()}>
       <button
         type="button"
         onClick={onDelete}
         disabled={isLoading}
         aria-busy={isLoading}
         aria-describedby={error ? errorId : undefined}
-        className="border-border text-foreground hover:bg-secondary w-full max-w-full rounded-md border px-2 py-1 text-center text-xs leading-tight font-medium break-words whitespace-normal transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex h-8 w-full max-w-full items-center justify-center rounded-md border border-red-500/30 px-2.5 text-center text-[11px] leading-none font-medium whitespace-nowrap text-red-500 transition-colors hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isLoading ? t('deleting') : t('delete')}
       </button>
@@ -101,7 +103,7 @@ export function AdminProductDeleteButton({
           id={errorId}
           role="status"
           aria-live="polite"
-          className="max-w-[9rem] truncate text-xs text-red-600"
+          className="max-w-[12rem] truncate text-xs text-red-600"
           title={error}
         >
           {error}

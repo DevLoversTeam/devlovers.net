@@ -1,11 +1,12 @@
-import { eq } from 'drizzle-orm';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import { z } from 'zod';
 
-import { db } from '@/db';
-import { productPrices, products } from '@/db/schema';
+import { Link } from '@/i18n/routing';
+import { ProductNotFoundError } from '@/lib/errors/products';
 import { issueCsrfToken } from '@/lib/security/csrf';
+import { getAdminProductByIdWithPrices } from '@/lib/services/products';
 import type { CurrencyCode } from '@/lib/shop/currency';
 import { currencyValues } from '@/lib/shop/currency';
 
@@ -37,22 +38,19 @@ export default async function EditProductPage({
   const parsed = paramsSchema.safeParse(rawParams);
   if (!parsed.success) notFound();
 
-  const [product] = await db
-    .select()
-    .from(products)
-    .where(eq(products.id, parsed.data.id))
-    .limit(1);
+  let product;
+  try {
+    product = await getAdminProductByIdWithPrices(parsed.data.id);
+  } catch (error) {
+    if (error instanceof ProductNotFoundError) {
+      notFound();
+    }
 
-  if (!product) notFound();
+    throw error;
+  }
 
-  const prices = await db
-    .select({
-      currency: productPrices.currency,
-      price: productPrices.price,
-      originalPrice: productPrices.originalPrice,
-    })
-    .from(productPrices)
-    .where(eq(productPrices.productId, product.id));
+  const prices = product.prices;
+  const t = await getTranslations('shop.admin.products');
 
   const initialPrices = prices.length
     ? prices
@@ -78,7 +76,20 @@ export default async function EditProductPage({
   const csrfToken = issueCsrfToken('admin:products:update');
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <main className="mx-auto max-w-5xl px-6 py-8">
+      <div className="mb-6">
+        <Link
+          href="/admin/shop/products"
+          className="text-muted-foreground hover:text-foreground text-sm transition-colors"
+        >
+          &larr; {t('backToList')}
+        </Link>
+      </div>
+
+      <h1 className="text-foreground mb-6 text-2xl font-bold">
+        {t('editProductHeading', { title: product.title })}
+      </h1>
+
       <ProductForm
         mode="edit"
         productId={product.id}
@@ -98,6 +109,7 @@ export default async function EditProductPage({
           stock: product.stock,
           sku: product.sku ?? undefined,
           imageUrl: product.imageUrl,
+          images: product.images,
         }}
       />
     </main>

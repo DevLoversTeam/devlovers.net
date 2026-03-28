@@ -1,4 +1,4 @@
-import { and, eq, inArray, ne, sql } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { coercePriceFromDb } from '@/db/queries/shop/orders';
@@ -12,10 +12,20 @@ import {
   productPrices,
   products,
 } from '@/db/schema/shop';
-import { getShopShippingFlags } from '@/lib/env/nova-poshta';
-import { getShopLegalVersions } from '@/lib/env/shop-legal';
+import {
+  assertNovaPoshtaProductionLikeReady,
+  getShopShippingFlags,
+  NovaPoshtaConfigError,
+} from '@/lib/env/nova-poshta';
 import { logError, logWarn } from '@/lib/logging';
 import { resolveShippingAvailability } from '@/lib/services/shop/shipping/availability';
+import {
+  type CheckoutShippingQuote,
+  CheckoutShippingQuoteConfigError,
+  isCheckoutShippingQuoteCurrency,
+  resolveCheckoutShippingQuote,
+} from '@/lib/services/shop/shipping/checkout-quote';
+import { createCheckoutPricingFingerprint } from '@/lib/shop/checkout-pricing';
 import { resolveCurrencyFromLocale } from '@/lib/shop/currency';
 import { localeToCountry } from '@/lib/shop/locale';
 import {
@@ -64,172 +74,6 @@ import {
 import { guardedPaymentStatusUpdate } from './payment-state';
 import { restockOrder } from './restock';
 import { getOrderById, getOrderByIdempotencyKey } from './summary';
-
-async function reconcileNoPaymentOrder(
-  orderId: string
-): Promise<OrderSummaryWithMinor> {
-  const [row] = await db
-    .select({
-      id: orders.id,
-      paymentStatus: orders.paymentStatus,
-      paymentProvider: orders.paymentProvider,
-      paymentIntentId: orders.paymentIntentId,
-      inventoryStatus: orders.inventoryStatus,
-      stockRestored: orders.stockRestored,
-      restockedAt: orders.restockedAt,
-      failureCode: orders.failureCode,
-      failureMessage: orders.failureMessage,
-    })
-    .from(orders)
-    .where(eq(orders.id, orderId))
-    .limit(1);
-
-  if (!row) throw new OrderNotFoundError('Order not found');
-
-  const provider = resolvePaymentProvider({
-    paymentProvider: row.paymentProvider,
-    paymentIntentId: row.paymentIntentId,
-    paymentStatus: row.paymentStatus as PaymentStatus,
-  });
-
-  if (provider !== 'none') return getOrderById(orderId);
-
-  if (row.paymentIntentId) {
-    throw new OrderStateInvalidError(
-      `Order ${orderId} is inconsistent: paymentProvider=none but paymentIntentId is set`,
-      { orderId }
-    );
-  }
-
-  if (row.inventoryStatus === 'reserved') {
-    return getOrderById(orderId);
-  }
-
-  if (row.inventoryStatus === 'release_pending') {
-    try {
-      await restockOrder(orderId, {
-        reason: 'failed',
-        workerId: 'reconcileNoPaymentOrder',
-      });
-    } catch (restockErr) {
-      logError(
-        `[reconcileNoPaymentOrder] restock failed orderId=${orderId}`,
-        restockErr
-      );
-    }
-
-    throw new InsufficientStockError(
-      row.failureMessage ?? 'Order cannot be completed (release pending).'
-    );
-  }
-  if (
-    row.inventoryStatus === 'released' ||
-    row.stockRestored ||
-    row.restockedAt !== null
-  ) {
-    throw new InsufficientStockError(
-      'Order cannot be completed (stock restored).'
-    );
-  }
-
-  const items = await db
-    .select({
-      productId: orderItems.productId,
-      quantity: orderItems.quantity,
-    })
-    .from(orderItems)
-    .where(eq(orderItems.orderId, orderId));
-
-  if (!items.length) {
-    throw new InvalidPayloadError('Order has no items.');
-  }
-
-  const now = new Date();
-  await db
-    .update(orders)
-    .set({ inventoryStatus: 'reserving', updatedAt: now })
-    .where(
-      and(
-        eq(orders.id, orderId),
-        ne(orders.inventoryStatus, 'reserved'),
-        ne(orders.inventoryStatus, 'released')
-      )
-    );
-
-  const itemsToReserve = aggregateReserveByProductId(items);
-
-  try {
-    for (const item of itemsToReserve) {
-      const res = await applyReserveMove(
-        orderId,
-        item.productId,
-        item.quantity
-      );
-      if (!res.ok) {
-        throw new InsufficientStockError(
-          `Insufficient stock for product ${item.productId}`
-        );
-      }
-    }
-
-    await db
-      .update(orders)
-      .set({
-        status: 'PAID',
-        inventoryStatus: 'reserved',
-        failureCode: null,
-        failureMessage: null,
-        updatedAt: new Date(),
-      })
-      .where(eq(orders.id, orderId));
-
-    const payRes = await guardedPaymentStatusUpdate({
-      orderId,
-      paymentProvider: 'none',
-      to: 'paid',
-      source: 'checkout',
-    });
-
-    if (!payRes.applied && payRes.reason !== 'ALREADY_IN_STATE') {
-      throw new OrderStateInvalidError(
-        'Order paymentStatus transition blocked after reservation.',
-        { orderId, details: { reason: payRes.reason, from: payRes.from } }
-      );
-    }
-
-    return getOrderById(orderId);
-  } catch (e) {
-    const failAt = new Date();
-    const isOos = e instanceof InsufficientStockError;
-
-    await db
-      .update(orders)
-      .set({
-        status: 'INVENTORY_FAILED',
-        inventoryStatus: 'release_pending',
-        failureCode: isOos ? 'OUT_OF_STOCK' : 'INTERNAL_ERROR',
-        failureMessage: isOos
-          ? e.message
-          : 'Checkout failed after reservation attempt.',
-        updatedAt: failAt,
-      })
-      .where(eq(orders.id, orderId));
-
-    try {
-      await restockOrder(orderId, {
-        reason: 'failed',
-        workerId: 'reconcileNoPaymentOrder',
-      });
-    } catch (restockErr) {
-      logError(
-        `[reconcileNoPaymentOrder] restock failed orderId=${orderId}`,
-        restockErr
-      );
-    }
-
-    throw e;
-  }
-}
 export async function findExistingCheckoutOrderByIdempotencyKey(
   idempotencyKey: string
 ): Promise<OrderSummaryWithMinor | null> {
@@ -357,12 +201,32 @@ type PreparedLegalConsent = {
   };
 };
 
-function normalizeLegalVersion(
+const CHECKOUT_LEGAL_CONSENT_REPLAY_GRACE_MS = 30_000;
+
+function requireLegalConsentVersion(
   raw: string | undefined,
-  fallback: string
+  field: 'termsVersion' | 'privacyVersion'
 ): string {
   const normalized = (raw ?? '').trim();
-  return normalized.length > 0 ? normalized : fallback;
+  if (normalized.length > 0) {
+    return normalized;
+  }
+
+  throw new InvalidPayloadError(
+    `${field === 'termsVersion' ? 'Terms' : 'Privacy'} version is required before checkout.`,
+    {
+      code:
+        field === 'termsVersion'
+          ? 'TERMS_VERSION_REQUIRED'
+          : 'PRIVACY_VERSION_REQUIRED',
+    }
+  );
+}
+
+function isWithinLegalConsentReplayGraceWindow(createdAt: Date): boolean {
+  return (
+    Date.now() - createdAt.getTime() <= CHECKOUT_LEGAL_CONSENT_REPLAY_GRACE_MS
+  );
 }
 
 function normalizeCountryCode(raw: string | null | undefined): string | null {
@@ -407,6 +271,8 @@ async function prepareCheckoutShipping(args: {
   locale: string | null | undefined;
   country: string | null | undefined;
   currency: Currency;
+  shippingQuoteFingerprint?: string | null;
+  requireShippingQuoteFingerprint?: boolean;
 }): Promise<PreparedShipping> {
   const flags = getShopShippingFlags();
   const shippingFeatureEnabled = flags.shippingEnabled && flags.npEnabled;
@@ -546,9 +412,77 @@ async function prepareCheckoutShipping(args: {
     });
   }
 
+  if (!isCheckoutShippingQuoteCurrency(args.currency)) {
+    throw new InvalidPayloadError(
+      'Shipping is available only for UAH currency.',
+      {
+        code: 'SHIPPING_CURRENCY_UNSUPPORTED',
+      }
+    );
+  }
+
+  try {
+    assertNovaPoshtaProductionLikeReady();
+  } catch (error) {
+    if (error instanceof NovaPoshtaConfigError) {
+      throw new InvalidPayloadError(
+        'Shipping method is currently unavailable.',
+        {
+          code: 'SHIPPING_METHOD_UNAVAILABLE',
+        }
+      );
+    }
+    throw error;
+  }
+
+  let authoritativeQuote: CheckoutShippingQuote;
+  try {
+    authoritativeQuote = resolveCheckoutShippingQuote({
+      methodCode,
+      currency: args.currency,
+    });
+  } catch (error) {
+    if (error instanceof CheckoutShippingQuoteConfigError) {
+      throw new InvalidPayloadError(
+        'Shipping amount is unavailable. Refresh your cart and try again.',
+        {
+          code: 'SHIPPING_AMOUNT_UNAVAILABLE',
+        }
+      );
+    }
+    throw error;
+  }
+
+  if (args.requireShippingQuoteFingerprint) {
+    const normalizedShippingQuoteFingerprint =
+      args.shippingQuoteFingerprint?.trim() ?? '';
+
+    if (
+      !normalizedShippingQuoteFingerprint ||
+      normalizedShippingQuoteFingerprint !== authoritativeQuote.quoteFingerprint
+    ) {
+      throw new InvalidPayloadError(
+        'Shipping amount changed. Refresh your cart and try again.',
+        {
+          code: 'CHECKOUT_SHIPPING_CHANGED',
+          details: {
+            reason: normalizedShippingQuoteFingerprint
+              ? 'SHIPPING_QUOTE_FINGERPRINT_MISMATCH'
+              : 'SHIPPING_QUOTE_FINGERPRINT_MISSING',
+          },
+        }
+      );
+    }
+  }
+
   const snapshot: Record<string, unknown> = {
     provider: 'nova_poshta',
     methodCode,
+    quote: {
+      currency: authoritativeQuote.currency,
+      amountMinor: authoritativeQuote.amountMinor,
+      quoteFingerprint: authoritativeQuote.quoteFingerprint,
+    },
     selection: {
       cityRef,
       cityNameUa: city.nameUa,
@@ -582,7 +516,7 @@ async function prepareCheckoutShipping(args: {
       shippingPayer: 'customer',
       shippingProvider: 'nova_poshta',
       shippingMethodCode: methodCode,
-      shippingAmountMinor: null,
+      shippingAmountMinor: authoritativeQuote.amountMinor,
       shippingStatus: 'pending',
     },
     snapshot,
@@ -590,14 +524,21 @@ async function prepareCheckoutShipping(args: {
 }
 
 function resolveCheckoutLegalConsent(args: {
-  legalConsent?: CheckoutLegalConsentInput | null;
+  legalConsent: CheckoutLegalConsentInput | null | undefined;
   locale: string | null | undefined;
   country: string | null | undefined;
 }): PreparedLegalConsent {
-  const versions = getShopLegalVersions();
+  if (args.legalConsent == null) {
+    throw new InvalidPayloadError(
+      'Explicit legal consent is required before checkout.',
+      {
+        code: 'LEGAL_CONSENT_REQUIRED',
+      }
+    );
+  }
 
-  const termsAccepted = args.legalConsent?.termsAccepted ?? true;
-  const privacyAccepted = args.legalConsent?.privacyAccepted ?? true;
+  const termsAccepted = args.legalConsent.termsAccepted;
+  const privacyAccepted = args.legalConsent.privacyAccepted;
 
   if (!termsAccepted) {
     throw new InvalidPayloadError('Terms must be accepted before checkout.', {
@@ -611,18 +552,17 @@ function resolveCheckoutLegalConsent(args: {
     });
   }
 
-  const termsVersion = normalizeLegalVersion(
-    args.legalConsent?.termsVersion,
-    versions.termsVersion
+  const termsVersion = requireLegalConsentVersion(
+    args.legalConsent.termsVersion,
+    'termsVersion'
   );
-  const privacyVersion = normalizeLegalVersion(
-    args.legalConsent?.privacyVersion,
-    versions.privacyVersion
+  const privacyVersion = requireLegalConsentVersion(
+    args.legalConsent.privacyVersion,
+    'privacyVersion'
   );
 
   const consentedAt = new Date();
-  const source =
-    args.legalConsent == null ? 'checkout_implicit' : 'checkout_explicit';
+  const source = 'checkout_explicit';
   const normalizedLocale = normVariant(args.locale).toLowerCase() || null;
   const normalizedCountry = normalizeCountryCode(
     args.country ?? localeToCountry(args.locale)
@@ -859,6 +799,10 @@ export async function createOrderWithItems({
   country,
   shipping,
   legalConsent,
+  pricingFingerprint,
+  requirePricingFingerprint = false,
+  shippingQuoteFingerprint,
+  requireShippingQuoteFingerprint = false,
   paymentProvider: requestedProvider,
   paymentMethod: requestedMethod,
 }: {
@@ -868,7 +812,11 @@ export async function createOrderWithItems({
   locale: string | null | undefined;
   country?: string | null;
   shipping?: CheckoutShippingInput | null;
-  legalConsent?: CheckoutLegalConsentInput | null;
+  legalConsent: CheckoutLegalConsentInput;
+  pricingFingerprint?: string | null;
+  requirePricingFingerprint?: boolean;
+  shippingQuoteFingerprint?: string | null;
+  requireShippingQuoteFingerprint?: boolean;
   paymentProvider?: PaymentProvider;
   paymentMethod?: PaymentMethod | null;
 }): Promise<CheckoutResult> {
@@ -908,9 +856,11 @@ export async function createOrderWithItems({
     locale,
     country: country ?? null,
     currency,
+    shippingQuoteFingerprint,
+    requireShippingQuoteFingerprint,
   });
   const preparedLegalConsent = resolveCheckoutLegalConsent({
-    legalConsent: legalConsent ?? null,
+    legalConsent,
     locale,
     country: country ?? null,
   });
@@ -959,7 +909,7 @@ export async function createOrderWithItems({
       .from(orderShipping)
       .where(eq(orderShipping.orderId, row.id))
       .limit(1);
-    const [existingLegalConsentRow] = await db
+    let [existingLegalConsentRow] = await db
       .select({
         termsAccepted: orderLegalConsents.termsAccepted,
         privacyAccepted: orderLegalConsents.privacyAccepted,
@@ -971,13 +921,37 @@ export async function createOrderWithItems({
       .limit(1);
 
     if (!existingLegalConsentRow) {
-      throw new IdempotencyConflictError(
-        'Idempotency key cannot be replayed because persisted legal consent evidence is missing.',
-        {
+      const canRepairMissingLegalConsent =
+        row.idempotencyRequestHash === requestHash &&
+        isWithinLegalConsentReplayGraceWindow(existing.createdAt);
+
+      if (canRepairMissingLegalConsent) {
+        await ensureOrderLegalConsentSnapshot({
           orderId: row.id,
-          reason: 'LEGAL_CONSENT_MISSING',
-        }
-      );
+          snapshot: preparedLegalConsent.snapshot,
+        });
+
+        [existingLegalConsentRow] = await db
+          .select({
+            termsAccepted: orderLegalConsents.termsAccepted,
+            privacyAccepted: orderLegalConsents.privacyAccepted,
+            termsVersion: orderLegalConsents.termsVersion,
+            privacyVersion: orderLegalConsents.privacyVersion,
+          })
+          .from(orderLegalConsents)
+          .where(eq(orderLegalConsents.orderId, row.id))
+          .limit(1);
+      }
+
+      if (!existingLegalConsentRow) {
+        throw new IdempotencyConflictError(
+          'Idempotency key cannot be replayed because persisted legal consent evidence is missing.',
+          {
+            orderId: row.id,
+            reason: 'LEGAL_CONSENT_MISSING',
+          }
+        );
+      }
     }
 
     const existingCityRef = readShippingRefFromSnapshot(
@@ -1228,8 +1202,49 @@ export async function createOrderWithItems({
   }
 
   const pricedItems = priceItems(normalizedItems, productMap, currency);
-  const orderTotalCents = sumLineTotals(pricedItems.map(i => i.lineTotalCents));
+  const authoritativePricingFingerprint = createCheckoutPricingFingerprint({
+    currency,
+    items: pricedItems.map(item => ({
+      productId: item.productId,
+      quantity: item.quantity,
+      unitPriceMinor: item.unitPriceCents,
+      selectedSize: item.selectedSize,
+      selectedColor: item.selectedColor,
+    })),
+  });
 
+  if (requirePricingFingerprint) {
+    const normalizedPricingFingerprint = pricingFingerprint?.trim() ?? '';
+
+    if (
+      !normalizedPricingFingerprint ||
+      normalizedPricingFingerprint !== authoritativePricingFingerprint
+    ) {
+      throw new InvalidPayloadError(
+        'Cart pricing changed. Refresh your cart and try again.',
+        {
+          code: 'CHECKOUT_PRICE_CHANGED',
+          details: {
+            reason: normalizedPricingFingerprint
+              ? 'PRICING_FINGERPRINT_MISMATCH'
+              : 'PRICING_FINGERPRINT_MISSING',
+          },
+        }
+      );
+    }
+  }
+
+  const itemsSubtotalCents = sumLineTotals(
+    pricedItems.map(i => i.lineTotalCents)
+  );
+  const shippingAmountCents =
+    preparedShipping.orderSummary.shippingAmountMinor ?? 0;
+  const orderTotalCents = sumLineTotals([
+    itemsSubtotalCents,
+    shippingAmountCents,
+  ]);
+
+  const orderCreatedAt = new Date();
   let orderId: string;
   try {
     const [created] = await db
@@ -1239,6 +1254,7 @@ export async function createOrderWithItems({
         totalAmount: toDbMoney(orderTotalCents),
 
         currency,
+        itemsSubtotalMinor: itemsSubtotalCents,
         paymentStatus: initialPaymentStatus,
         paymentProvider,
         paymentIntentId: null,
@@ -1264,6 +1280,8 @@ export async function createOrderWithItems({
         restockedAt: null,
         idempotencyKey,
         userId: userId ?? null,
+        createdAt: orderCreatedAt,
+        updatedAt: orderCreatedAt,
       })
       .returning({ id: orders.id });
 

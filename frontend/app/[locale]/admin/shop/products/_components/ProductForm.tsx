@@ -1,11 +1,14 @@
 'use client';
 
+import Image from 'next/image';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { useRouter } from '@/i18n/routing';
 import { CATEGORIES, COLORS, PRODUCT_TYPES, SIZES } from '@/lib/config/catalog';
 import { logError } from '@/lib/logging';
-import type { ProductAdminInput } from '@/lib/validation/shop';
+import { cn } from '@/lib/utils';
+import type { AdminProductPhotoPlan } from '@/lib/validation/shop';
+import type { ProductAdminInput, ProductImage } from '@/lib/validation/shop';
 
 const localSlugify = (input: string): string => {
   return input
@@ -20,7 +23,10 @@ const localSlugify = (input: string): string => {
 type ProductFormProps = {
   mode: 'create' | 'edit';
   productId?: string;
-  initialValues?: Partial<ProductAdminInput> & { imageUrl?: string };
+  initialValues?: Partial<ProductAdminInput> & {
+    imageUrl?: string;
+    images?: ProductImage[];
+  };
   csrfToken: string;
 };
 
@@ -42,6 +48,17 @@ type UiPriceRow = {
   originalPrice: string;
 };
 
+export type UiPhoto = {
+  key: string;
+  source: 'existing' | 'legacy' | 'new';
+  imageId?: string;
+  uploadId?: string;
+  previewUrl: string;
+  publicId?: string;
+  isPrimary: boolean;
+  file?: File;
+};
+
 type SaleRuleDetails = {
   currency?: CurrencyCode;
   field?: string;
@@ -50,6 +67,19 @@ type SaleRuleDetails = {
 
 const SALE_REQUIRED_MSG = 'Original price is required for SALE.';
 const SALE_GREATER_MSG = 'Original price must be greater than price for SALE.';
+const CARD_CLASS =
+  'rounded-xl border border-border bg-background/80 p-5 shadow-sm';
+const LABEL_CLASS = 'block text-sm font-medium text-foreground';
+const INPUT_CLASS =
+  'h-10 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground shadow-sm outline-none transition focus:border-foreground/40 focus:ring-2 focus:ring-foreground/10';
+const TEXTAREA_CLASS =
+  'w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground shadow-sm outline-none transition focus:border-foreground/40 focus:ring-2 focus:ring-foreground/10';
+const READONLY_INPUT_CLASS =
+  'h-10 w-full rounded-md border border-border bg-muted px-3 text-sm text-foreground';
+const SECONDARY_BUTTON_CLASS =
+  'inline-flex h-8 items-center justify-center rounded-md border border-border px-3 text-xs font-medium text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50';
+const PRIMARY_BUTTON_CLASS =
+  'inline-flex h-10 w-full items-center justify-center rounded-md bg-foreground px-4 text-sm font-semibold text-background transition-colors hover:bg-foreground/90 disabled:opacity-60';
 
 function formatMinorToMajor(value: number): string {
   if (!Number.isFinite(value)) return '';
@@ -125,6 +155,155 @@ function ensureUiPriceRows(fromInitial: unknown): UiPriceRow[] {
   });
 }
 
+function normalizeUiPhotos(photos: UiPhoto[]): UiPhoto[] {
+  if (photos.length === 0) return [];
+
+  const primaryIndex = photos.findIndex(photo => photo.isPrimary);
+  const effectivePrimaryIndex = primaryIndex >= 0 ? primaryIndex : 0;
+
+  return photos.map((photo, index) => ({
+    ...photo,
+    isPrimary: index === effectivePrimaryIndex,
+  }));
+}
+
+type SerializableUiPhoto =
+  | (UiPhoto & { source: 'existing'; imageId: string })
+  | (UiPhoto & { source: 'new'; uploadId: string; file?: File });
+
+function isSerializableUiPhoto(photo: UiPhoto): photo is SerializableUiPhoto {
+  if (photo.source === 'existing') {
+    return typeof photo.imageId === 'string' && photo.imageId.trim().length > 0;
+  }
+
+  if (photo.source === 'new') {
+    return (
+      typeof photo.uploadId === 'string' && photo.uploadId.trim().length > 0
+    );
+  }
+
+  return false;
+}
+
+export const LEGACY_PHOTO_MIGRATION_REQUIRED_MESSAGE =
+  'Legacy product photos must be migrated before adding or reordering gallery photos.';
+
+class PhotoPlanSubmissionError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'PhotoPlanSubmissionError';
+  }
+}
+
+export function getPhotoPlanSubmissionError(photos: UiPhoto[]): string | null {
+  const hasLegacyPhotos = photos.some(photo => photo.source === 'legacy');
+  const hasNonLegacyPhotos = photos.some(photo => photo.source !== 'legacy');
+
+  if (hasLegacyPhotos && hasNonLegacyPhotos) {
+    return LEGACY_PHOTO_MIGRATION_REQUIRED_MESSAGE;
+  }
+
+  return null;
+}
+
+export function buildPhotoPlanSubmission(photos: UiPhoto[]): {
+  photoPlan?: AdminProductPhotoPlan;
+  newPhotos: Array<UiPhoto & { source: 'new'; uploadId: string; file: File }>;
+} {
+  const submissionError = getPhotoPlanSubmissionError(photos);
+  if (submissionError) {
+    throw new PhotoPlanSubmissionError(submissionError);
+  }
+
+  const serializablePhotos = photos.filter(isSerializableUiPhoto);
+
+  if (serializablePhotos.length === 0) {
+    return { photoPlan: undefined, newPhotos: [] };
+  }
+
+  const primaryIndex = serializablePhotos.findIndex(photo => photo.isPrimary);
+  const effectivePrimaryIndex = primaryIndex >= 0 ? primaryIndex : 0;
+
+  const photoPlan = serializablePhotos.map((photo, index) => ({
+    imageId: photo.source === 'existing' ? photo.imageId : undefined,
+    uploadId: photo.source === 'new' ? photo.uploadId : undefined,
+    isPrimary: index === effectivePrimaryIndex,
+  }));
+
+  const newPhotos = serializablePhotos.filter(
+    (
+      photo
+    ): photo is UiPhoto & { source: 'new'; uploadId: string; file: File } =>
+      photo.source === 'new' && Boolean(photo.file)
+  );
+
+  return { photoPlan, newPhotos };
+}
+
+function getBlobPreviewUrls(photos: UiPhoto[]): Set<string> {
+  return new Set(
+    photos
+      .filter(
+        photo => photo.source === 'new' && photo.previewUrl.startsWith('blob:')
+      )
+      .map(photo => photo.previewUrl)
+  );
+}
+
+export function revokeSupersededPhotoPreviewUrls(
+  previousPhotos: UiPhoto[],
+  nextPhotos: UiPhoto[]
+) {
+  const nextBlobPreviewUrls = getBlobPreviewUrls(nextPhotos);
+
+  previousPhotos.forEach(photo => {
+    if (photo.source !== 'new' || !photo.previewUrl.startsWith('blob:')) {
+      return;
+    }
+
+    if (nextBlobPreviewUrls.has(photo.previewUrl)) {
+      return;
+    }
+
+    URL.revokeObjectURL(photo.previewUrl);
+  });
+}
+
+export function ensureUiPhotos(fromInitial: {
+  images?: ProductImage[];
+  imageUrl?: string;
+}): UiPhoto[] {
+  const explicitImages = Array.isArray(fromInitial.images)
+    ? [...fromInitial.images]
+        .sort((a, b) => a.sortOrder - b.sortOrder)
+        .map(image => ({
+          key: `existing:${image.id}`,
+          source: 'existing' as const,
+          imageId: image.id,
+          previewUrl: image.imageUrl,
+          publicId: image.imagePublicId,
+          isPrimary: image.isPrimary,
+        }))
+    : [];
+
+  if (explicitImages.length > 0) {
+    return normalizeUiPhotos(explicitImages);
+  }
+
+  if (fromInitial.imageUrl) {
+    return [
+      {
+        key: 'legacy-image',
+        source: 'legacy',
+        previewUrl: fromInitial.imageUrl,
+        isPrimary: true,
+      },
+    ];
+  }
+
+  return [];
+}
+
 export function ProductForm({
   mode,
   productId,
@@ -150,6 +329,7 @@ export function ProductForm({
   const uahOriginalErrorId = `${idBase}-uah-original-error`;
 
   const hydratedKeyRef = useRef<string | null>(null);
+  const photosRef = useRef<UiPhoto[]>([]);
   const [title, setTitle] = useState(initialValues?.title ?? '');
   const [slug, setSlug] = useState(
     initialValues?.slug
@@ -184,8 +364,12 @@ export function ProductForm({
     initialValues?.isFeatured ?? false
   );
 
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const existingImageUrl = initialValues?.imageUrl;
+  const [photos, setPhotos] = useState<UiPhoto[]>(
+    ensureUiPhotos({
+      images: initialValues?.images,
+      imageUrl: initialValues?.imageUrl,
+    })
+  );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -194,6 +378,20 @@ export function ProductForm({
   const [originalPriceErrors, setOriginalPriceErrors] = useState<
     Partial<Record<CurrencyCode, string>>
   >({});
+
+  function replacePhotos(
+    nextOrUpdater: UiPhoto[] | ((prev: UiPhoto[]) => UiPhoto[])
+  ) {
+    setPhotos(prev => {
+      const next =
+        typeof nextOrUpdater === 'function'
+          ? nextOrUpdater(prev)
+          : nextOrUpdater;
+      revokeSupersededPhotoPreviewUrls(prev, next);
+      photosRef.current = next;
+      return next;
+    });
+  }
 
   useEffect(() => {
     if (mode !== 'edit') {
@@ -224,7 +422,6 @@ export function ProductForm({
     setImageError(null);
     setOriginalPriceErrors({});
     setIsSubmitting(false);
-    setImageFile(null);
 
     if (typeof initialValues.title === 'string') setTitle(initialValues.title);
     if (typeof initialValues.slug === 'string')
@@ -243,8 +440,28 @@ export function ProductForm({
     setDescription(initialValues.description ?? '');
     setIsActive(initialValues.isActive ?? true);
     setIsFeatured(initialValues.isFeatured ?? false);
+    replacePhotos(
+      ensureUiPhotos({
+        images: initialValues.images,
+        imageUrl: initialValues.imageUrl,
+      })
+    );
     hydratedKeyRef.current = key;
   }, [mode, initialValues, productId]);
+
+  useEffect(() => {
+    photosRef.current = photos;
+  }, [photos]);
+
+  useEffect(() => {
+    return () => {
+      photosRef.current.forEach(photo => {
+        if (photo.source === 'new' && photo.previewUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(photo.previewUrl);
+        }
+      });
+    };
+  }, []);
 
   const slugValue = useMemo(() => {
     if (mode === 'edit') return slug;
@@ -284,10 +501,57 @@ export function ProductForm({
     });
   }
 
-  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0] ?? null;
-    setImageFile(file);
+  const handlePhotoFilesChange = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const files = Array.from(event.target.files ?? []);
+    if (files.length === 0) return;
+
+    const nextPhotos = files
+      .filter(file => file.size > 0)
+      .map(file => ({
+        key: `new:${crypto.randomUUID()}`,
+        source: 'new' as const,
+        uploadId: crypto.randomUUID(),
+        previewUrl: URL.createObjectURL(file),
+        isPrimary: false,
+        file,
+      }));
+
+    replacePhotos(prev => normalizeUiPhotos([...prev, ...nextPhotos]));
     setImageError(null);
+    event.target.value = '';
+  };
+
+  const setPrimaryPhoto = (key: string) => {
+    replacePhotos(prev =>
+      prev.map(photo => ({
+        ...photo,
+        isPrimary: photo.key === key,
+      }))
+    );
+    setImageError(null);
+  };
+
+  const movePhoto = (key: string, direction: -1 | 1) => {
+    replacePhotos(prev => {
+      const index = prev.findIndex(photo => photo.key === key);
+      if (index < 0) return prev;
+
+      const nextIndex = index + direction;
+      if (nextIndex < 0 || nextIndex >= prev.length) return prev;
+
+      const next = [...prev];
+      const [photo] = next.splice(index, 1);
+      next.splice(nextIndex, 0, photo);
+      return normalizeUiPhotos(next);
+    });
+  };
+
+  const removePhoto = (key: string) => {
+    replacePhotos(prev =>
+      normalizeUiPhotos(prev.filter(photo => photo.key !== key))
+    );
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -298,8 +562,8 @@ export function ProductForm({
     setImageError(null);
     setOriginalPriceErrors({});
 
-    if (mode === 'create' && !imageFile) {
-      setImageError('Image file is required.');
+    if (photos.length === 0) {
+      setImageError('At least one product photo is required.');
       return;
     }
 
@@ -368,9 +632,36 @@ export function ProductForm({
       formData.append('isActive', isActive ? 'true' : 'false');
       formData.append('isFeatured', isFeatured ? 'true' : 'false');
 
-      if (imageFile) {
-        formData.append('image', imageFile);
+      const photoSubmission = (() => {
+        try {
+          return buildPhotoPlanSubmission(photos);
+        } catch (photoPlanError) {
+          if (photoPlanError instanceof PhotoPlanSubmissionError) {
+            setImageError(photoPlanError.message);
+            return null;
+          }
+
+          throw photoPlanError;
+        }
+      })();
+
+      if (!photoSubmission) {
+        return;
       }
+
+      const { photoPlan, newPhotos } = photoSubmission;
+
+      if (photoPlan?.length) {
+        formData.append('photoPlan', JSON.stringify(photoPlan));
+        formData.append(
+          'newImageUploadIds',
+          JSON.stringify(newPhotos.map(photo => photo.uploadId))
+        );
+        newPhotos.forEach(photo => {
+          formData.append('newImages', photo.file);
+        });
+      }
+
       if (!csrfToken) {
         setError('Security token missing. Refresh the page and retry.');
         setIsSubmitting(false);
@@ -397,8 +688,22 @@ export function ProductForm({
           setSlugError('This slug is already used. Try changing the title.');
         }
 
-        if (data.code === 'IMAGE_UPLOAD_FAILED' || data.field === 'image') {
-          setImageError(data.error ?? 'Failed to upload image');
+        const photoErrorFields = new Set([
+          'image',
+          'photos',
+          'photoPlan',
+          'newImages',
+          'newImageUploadIds',
+        ]);
+
+        if (
+          (typeof data.field === 'string' &&
+            photoErrorFields.has(data.field)) ||
+          data.code === 'IMAGE_UPLOAD_FAILED' ||
+          data.code === 'IMAGE_REQUIRED'
+        ) {
+          setImageError(data.error ?? 'Failed to update product photos');
+          return;
         }
 
         if (data.code === 'SALE_ORIGINAL_REQUIRED') {
@@ -416,6 +721,7 @@ export function ProductForm({
           setError(data.error ?? msg);
           return;
         }
+
         if (
           response.status === 403 &&
           (data.code === 'CSRF_MISSING' || data.code === 'CSRF_INVALID')
@@ -455,45 +761,39 @@ export function ProductForm({
     : slugHelpId;
 
   return (
-    <section
-      className="mx-auto max-w-2xl px-4 py-8"
-      aria-labelledby={headingId}
-    >
-      <header>
-        <h1 id={headingId} className="text-foreground text-2xl font-bold">
-          {mode === 'create' ? 'Create new product' : 'Edit product'}
-        </h1>
-      </header>
-
+    <section aria-labelledby={headingId}>
+      <h2 id={headingId} className="sr-only">
+        {mode === 'create' ? 'Create new product' : 'Edit product'}
+      </h2>
       {error ? (
         <div
           id={formErrorId}
           role="alert"
           aria-live="polite"
-          className="mt-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700"
+          className="mb-4 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-600"
         >
           {error}
         </div>
       ) : null}
 
       <form
-        className="mt-6 space-y-4"
+        className="space-y-5"
         onSubmit={handleSubmit}
         encType="multipart/form-data"
         aria-describedby={error ? formErrorId : undefined}
       >
-        <section className="grid gap-4 sm:grid-cols-2" aria-label="Basic info">
+        <section
+          className={cn(CARD_CLASS, 'grid gap-4 sm:grid-cols-2')}
+          aria-label="Basic info"
+        >
           <div>
-            <label
-              className="text-foreground block text-sm font-medium"
-              htmlFor="title"
-            >
+            <label className={LABEL_CLASS} htmlFor="title">
               Title
             </label>
             <input
               id="title"
               name="title"
-              className="border-border w-full rounded-md border px-3 py-2 text-sm"
+              className={INPUT_CLASS}
               type="text"
               value={title}
               onChange={event => setTitle(event.target.value)}
@@ -503,10 +803,7 @@ export function ProductForm({
 
           <div>
             <div className="flex items-center justify-between">
-              <label
-                className="text-foreground block text-sm font-medium"
-                htmlFor="slug"
-              >
+              <label className={LABEL_CLASS} htmlFor="slug">
                 Slug
               </label>
               <span id={slugHelpId} className="text-muted-foreground text-xs">
@@ -516,7 +813,7 @@ export function ProductForm({
             <input
               id="slug"
               name="slug"
-              className="border-border bg-muted w-full rounded-md border px-3 py-2 text-sm"
+              className={READONLY_INPUT_CLASS}
               type="text"
               value={slugValue}
               readOnly
@@ -536,7 +833,7 @@ export function ProductForm({
           </div>
         </section>
 
-        <fieldset className="border-border rounded-md border p-3">
+        <fieldset className={CARD_CLASS}>
           <legend className="text-foreground px-1 text-sm font-semibold">
             Prices
           </legend>
@@ -548,16 +845,13 @@ export function ProductForm({
               </legend>
 
               <div>
-                <label
-                  className="text-foreground block text-sm font-medium"
-                  htmlFor="price-usd"
-                >
+                <label className={LABEL_CLASS} htmlFor="price-usd">
                   Price (USD)
                 </label>
                 <input
                   id="price-usd"
                   name="price-usd"
-                  className="border-border w-full rounded-md border px-3 py-2 text-sm"
+                  className={INPUT_CLASS}
                   type="text"
                   inputMode="decimal"
                   placeholder="59.00"
@@ -568,18 +862,16 @@ export function ProductForm({
               </div>
 
               <div>
-                <label
-                  className="text-foreground block text-sm font-medium"
-                  htmlFor="original-usd"
-                >
+                <label className={LABEL_CLASS} htmlFor="original-usd">
                   Original price (USD)
                 </label>
                 <input
                   id="original-usd"
                   name="original-usd"
-                  className={`w-full rounded-md border px-3 py-2 text-sm ${
-                    usdOriginalError ? 'border-red-500' : 'border-border'
-                  }`}
+                  className={cn(
+                    INPUT_CLASS,
+                    usdOriginalError && 'border-red-500'
+                  )}
                   type="text"
                   inputMode="decimal"
                   placeholder="79.00"
@@ -610,16 +902,13 @@ export function ProductForm({
               </legend>
 
               <div>
-                <label
-                  className="text-foreground block text-sm font-medium"
-                  htmlFor="price-uah"
-                >
+                <label className={LABEL_CLASS} htmlFor="price-uah">
                   Price (UAH)
                 </label>
                 <input
                   id="price-uah"
                   name="price-uah"
-                  className="border-border w-full rounded-md border px-3 py-2 text-sm"
+                  className={INPUT_CLASS}
                   type="text"
                   inputMode="decimal"
                   placeholder="1999.00"
@@ -629,18 +918,16 @@ export function ProductForm({
               </div>
 
               <div>
-                <label
-                  className="text-foreground block text-sm font-medium"
-                  htmlFor="original-uah"
-                >
+                <label className={LABEL_CLASS} htmlFor="original-uah">
                   Original price (UAH)
                 </label>
                 <input
                   id="original-uah"
                   name="original-uah"
-                  className={`w-full rounded-md border px-3 py-2 text-sm ${
-                    uahOriginalError ? 'border-red-500' : 'border-border'
-                  }`}
+                  className={cn(
+                    INPUT_CLASS,
+                    uahOriginalError && 'border-red-500'
+                  )}
                   type="text"
                   inputMode="decimal"
                   placeholder="2499.00"
@@ -674,20 +961,17 @@ export function ProductForm({
         </fieldset>
 
         <section
-          className="grid gap-4 sm:grid-cols-2"
+          className={cn(CARD_CLASS, 'grid gap-4 sm:grid-cols-2')}
           aria-label="Inventory and SKU"
         >
           <div>
-            <label
-              className="text-foreground block text-sm font-medium"
-              htmlFor="stock"
-            >
+            <label className={LABEL_CLASS} htmlFor="stock">
               Stock
             </label>
             <input
               id="stock"
               name="stock"
-              className="border-border w-full rounded-md border px-3 py-2 text-sm"
+              className={INPUT_CLASS}
               type="number"
               value={stock}
               onChange={event => setStock(event.target.value)}
@@ -697,16 +981,13 @@ export function ProductForm({
           </div>
 
           <div>
-            <label
-              className="text-foreground block text-sm font-medium"
-              htmlFor="sku"
-            >
+            <label className={LABEL_CLASS} htmlFor="sku">
               SKU
             </label>
             <input
               id="sku"
               name="sku"
-              className="border-border w-full rounded-md border px-3 py-2 text-sm"
+              className={INPUT_CLASS}
               type="text"
               value={sku}
               onChange={event => setSku(event.target.value)}
@@ -715,20 +996,17 @@ export function ProductForm({
         </section>
 
         <section
-          className="grid gap-4 sm:grid-cols-2"
+          className={cn(CARD_CLASS, 'grid gap-4 sm:grid-cols-2')}
           aria-label="Catalog attributes"
         >
           <div>
-            <label
-              className="text-foreground block text-sm font-medium"
-              htmlFor="category"
-            >
+            <label className={LABEL_CLASS} htmlFor="category">
               Category
             </label>
             <select
               id="category"
               name="category"
-              className="border-border bg-background text-foreground focus:ring-accent w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
+              className={INPUT_CLASS}
               value={category}
               onChange={event => setCategory(event.target.value)}
             >
@@ -744,16 +1022,13 @@ export function ProductForm({
           </div>
 
           <div>
-            <label
-              className="text-foreground block text-sm font-medium"
-              htmlFor="type"
-            >
+            <label className={LABEL_CLASS} htmlFor="type">
               Type
             </label>
             <select
               id="type"
               name="type"
-              className="border-border bg-background text-foreground focus:ring-accent w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
+              className={INPUT_CLASS}
               value={type}
               onChange={event => setType(event.target.value)}
             >
@@ -767,12 +1042,13 @@ export function ProductForm({
           </div>
         </section>
 
-        <section className="grid gap-4 sm:grid-cols-2" aria-label="Variants">
+        <section
+          className={cn(CARD_CLASS, 'grid gap-4 sm:grid-cols-2')}
+          aria-label="Variants"
+        >
           <fieldset>
-            <legend className="text-foreground block text-sm font-medium">
-              Colors
-            </legend>
-            <div className="border-border mt-2 flex flex-col gap-2 rounded-md border px-3 py-2">
+            <legend className={LABEL_CLASS}>Colors</legend>
+            <div className="border-border bg-muted/20 mt-2 flex flex-col gap-2 rounded-lg border px-3 py-3">
               {COLORS.map(color => (
                 <label
                   key={color.slug}
@@ -801,10 +1077,8 @@ export function ProductForm({
           </fieldset>
 
           <fieldset>
-            <legend className="text-foreground block text-sm font-medium">
-              Sizes
-            </legend>
-            <div className="border-border mt-2 flex flex-col gap-2 rounded-md border px-3 py-2">
+            <legend className={LABEL_CLASS}>Sizes</legend>
+            <div className="border-border bg-muted/20 mt-2 flex flex-col gap-2 rounded-lg border px-3 py-3">
               {SIZES.map(size => (
                 <label
                   key={size}
@@ -832,20 +1106,17 @@ export function ProductForm({
         </section>
 
         <section
-          className="grid gap-4 sm:grid-cols-2"
+          className={cn(CARD_CLASS, 'grid gap-4 sm:grid-cols-2')}
           aria-label="Flags and badge"
         >
           <div>
-            <label
-              className="text-foreground block text-sm font-medium"
-              htmlFor="badge"
-            >
+            <label className={LABEL_CLASS} htmlFor="badge">
               Badge
             </label>
             <select
               id="badge"
               name="badge"
-              className="border-border bg-background text-foreground focus:ring-accent w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
+              className={INPUT_CLASS}
               value={badge}
               onChange={event => {
                 const next = event.target.value as ProductAdminInput['badge'];
@@ -862,7 +1133,7 @@ export function ProductForm({
             </select>
           </div>
 
-          <div className="flex items-center gap-6">
+          <div className="border-border bg-muted/20 flex flex-wrap items-center gap-6 rounded-lg border px-4 py-3">
             <div className="flex items-center space-x-2">
               <input
                 id="isActive"
@@ -899,45 +1170,108 @@ export function ProductForm({
           </div>
         </section>
 
-        <section aria-label="Description">
-          <label
-            className="text-foreground block text-sm font-medium"
-            htmlFor="description"
-          >
+        <section className={CARD_CLASS} aria-label="Description">
+          <label className={LABEL_CLASS} htmlFor="description">
             Description
           </label>
           <textarea
             id="description"
             name="description"
-            className="border-border w-full rounded-md border px-3 py-2 text-sm"
+            className={cn(TEXTAREA_CLASS, 'mt-2')}
             rows={4}
             value={description}
             onChange={event => setDescription(event.target.value)}
           />
         </section>
 
-        <section aria-label="Image upload">
-          <label
-            className="text-foreground block text-sm font-medium"
-            htmlFor="image"
-          >
-            Image
+        <section className={CARD_CLASS} aria-label="Photo management">
+          <label className={LABEL_CLASS} htmlFor="images">
+            Photos
           </label>
           <input
-            id="image"
-            name="image"
-            className="border-border w-full rounded-md border px-3 py-2 text-sm"
+            id="images"
+            name="images"
+            className={cn(INPUT_CLASS, 'mt-2 h-auto py-2')}
             type="file"
             accept="image/*"
-            onChange={handleImageChange}
-            required={mode === 'create'}
+            multiple
+            onChange={handlePhotoFilesChange}
             aria-invalid={imageError ? true : undefined}
             aria-describedby={imageError ? imageErrorId : undefined}
           />
-          {existingImageUrl && !imageFile ? (
-            <p className="text-muted-foreground mt-2 text-sm">
-              Current image will be kept unless you upload a new one.
-            </p>
+          <p className="text-muted-foreground mt-2 text-sm">
+            Add one or more photos, reorder them, and mark exactly one as
+            primary.
+          </p>
+          {photos.length > 0 ? (
+            <div className="mt-4 space-y-3">
+              {photos.map((photo, index) => (
+                <div
+                  key={photo.key}
+                  className="border-border bg-muted/20 flex items-start gap-4 rounded-lg border p-4"
+                >
+                  <Image
+                    src={photo.previewUrl}
+                    alt={`Product photo ${index + 1}`}
+                    width={96}
+                    height={96}
+                    unoptimized
+                    className="h-24 w-24 rounded-md object-cover"
+                  />
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <div className="flex flex-wrap items-center gap-2 text-sm">
+                      <span className="font-medium">Photo {index + 1}</span>
+                      {photo.isPrimary ? (
+                        <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-semibold text-emerald-500">
+                          Primary
+                        </span>
+                      ) : null}
+                      <span className="text-muted-foreground text-xs">
+                        {photo.source === 'existing'
+                          ? 'Saved'
+                          : photo.source === 'legacy'
+                            ? 'Legacy image'
+                            : 'New upload'}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        className={SECONDARY_BUTTON_CLASS}
+                        onClick={() => setPrimaryPhoto(photo.key)}
+                        disabled={photo.isPrimary}
+                      >
+                        Set primary
+                      </button>
+                      <button
+                        type="button"
+                        className={SECONDARY_BUTTON_CLASS}
+                        onClick={() => movePhoto(photo.key, -1)}
+                        disabled={index === 0}
+                      >
+                        Move up
+                      </button>
+                      <button
+                        type="button"
+                        className={SECONDARY_BUTTON_CLASS}
+                        onClick={() => movePhoto(photo.key, 1)}
+                        disabled={index === photos.length - 1}
+                      >
+                        Move down
+                      </button>
+                      <button
+                        type="button"
+                        className="inline-flex h-8 items-center justify-center rounded-md border border-red-500/30 px-3 text-xs font-medium text-red-500 transition-colors hover:bg-red-500/10"
+                        onClick={() => removePhoto(photo.key)}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : null}
           {imageError ? (
             <p
@@ -952,7 +1286,7 @@ export function ProductForm({
 
         <button
           type="submit"
-          className="bg-accent text-accent-foreground hover:bg-accent/90 mt-6 w-full rounded-md px-4 py-2 text-sm font-semibold transition-colors disabled:opacity-60"
+          className={PRIMARY_BUTTON_CLASS}
           disabled={isSubmitting}
           aria-disabled={isSubmitting}
           aria-busy={isSubmitting}

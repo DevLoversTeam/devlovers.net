@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
+import { utf8ByteLength } from '@/lib/auth/password-bytes';
 import {
   PASSWORD_MAX_BYTES,
   PASSWORD_MIN_LEN,
@@ -43,6 +44,13 @@ export function PasswordField({
       return;
     }
 
+    if (utf8ByteLength(input.value) > PASSWORD_MAX_BYTES) {
+      input.setCustomValidity(
+        t('validation.passwordTooLongBytes', { PASSWORD_MAX_BYTES })
+      );
+      return;
+    }
+
     if (input.validity.tooShort && minLength) {
       input.setCustomValidity(t('validation.passwordTooShort', { minLength }));
       return;
@@ -61,7 +69,14 @@ export function PasswordField({
   };
 
   const handleInput = (e: React.FormEvent<HTMLInputElement>) => {
-    e.currentTarget.setCustomValidity('');
+    const input = e.currentTarget;
+    if (utf8ByteLength(input.value) > PASSWORD_MAX_BYTES) {
+      input.setCustomValidity(
+        t('validation.passwordTooLongBytes', { PASSWORD_MAX_BYTES })
+      );
+    } else {
+      input.setCustomValidity('');
+    }
   };
 
   const resolvedPlaceholder = placeholder ?? t('password');

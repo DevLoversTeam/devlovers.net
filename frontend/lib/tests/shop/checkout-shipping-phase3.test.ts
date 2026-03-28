@@ -18,6 +18,8 @@ import {
 } from '@/lib/services/errors';
 import { createOrderWithItems } from '@/lib/services/orders';
 
+import { TEST_LEGAL_CONSENT } from './test-legal-consent';
+
 type SeedData = {
   productId: string;
   cityRef: string;
@@ -125,6 +127,9 @@ describe('checkout shipping phase 3', () => {
     vi.stubEnv('SHOP_SHIPPING_ENABLED', 'true');
     vi.stubEnv('SHOP_SHIPPING_NP_ENABLED', 'true');
     vi.stubEnv('SHOP_SHIPPING_SYNC_ENABLED', 'true');
+    vi.stubEnv('SHOP_SHIPPING_NP_WAREHOUSE_AMOUNT_MINOR', '500');
+    vi.stubEnv('SHOP_SHIPPING_NP_LOCKER_AMOUNT_MINOR', '400');
+    vi.stubEnv('SHOP_SHIPPING_NP_COURIER_AMOUNT_MINOR', '700');
     resetEnvCache();
   });
 
@@ -145,6 +150,7 @@ describe('checkout shipping phase 3', () => {
         locale: 'en-US',
         country: 'UA',
         items: [{ productId: seed.productId, quantity: 1 }],
+        legalConsent: TEST_LEGAL_CONSENT,
         shipping: {
           provider: 'nova_poshta',
           methodCode: 'NP_WAREHOUSE',
@@ -211,6 +217,7 @@ describe('checkout shipping phase 3', () => {
         locale: 'uk-UA',
         country: 'UA',
         items: [{ productId: seed.productId, quantity: 1 }],
+        legalConsent: TEST_LEGAL_CONSENT,
         shipping: {
           provider: 'nova_poshta',
           methodCode: 'NP_WAREHOUSE',
@@ -237,7 +244,9 @@ describe('checkout shipping phase 3', () => {
         .where(eq(orders.idempotencyKey, idem));
       expect(rows.length).toBe(0);
     } finally {
-      await db.delete(npWarehouses).where(eq(npWarehouses.ref, otherWarehouseRef));
+      await db
+        .delete(npWarehouses)
+        .where(eq(npWarehouses.ref, otherWarehouseRef));
       await db.delete(npCities).where(eq(npCities.ref, otherCityRef));
       await cleanupSeedData(seed, createdOrderIds);
     }
@@ -255,6 +264,7 @@ describe('checkout shipping phase 3', () => {
         locale: 'uk-UA',
         country: 'UA',
         items: [{ productId: seed.productId, quantity: 1 }],
+        legalConsent: TEST_LEGAL_CONSENT,
         shipping: {
           provider: 'nova_poshta',
           methodCode: 'NP_LOCKER',
@@ -297,6 +307,7 @@ describe('checkout shipping phase 3', () => {
         locale: 'uk-UA',
         country: 'UA',
         items: [{ productId: seed.productId, quantity: 1 }],
+        legalConsent: TEST_LEGAL_CONSENT,
         shipping: {
           provider: 'nova_poshta',
           methodCode: 'NP_COURIER',
@@ -338,6 +349,7 @@ describe('checkout shipping phase 3', () => {
         locale: 'uk-UA',
         country: 'UA',
         items: [{ productId: seed.productId, quantity: 1 }],
+        legalConsent: TEST_LEGAL_CONSENT,
         shipping: {
           provider: 'nova_poshta',
           methodCode: 'NP_WAREHOUSE',
@@ -358,6 +370,8 @@ describe('checkout shipping phase 3', () => {
 
       const [orderRow] = await db
         .select({
+          totalAmountMinor: orders.totalAmountMinor,
+          itemsSubtotalMinor: orders.itemsSubtotalMinor,
           shippingRequired: orders.shippingRequired,
           shippingPayer: orders.shippingPayer,
           shippingProvider: orders.shippingProvider,
@@ -370,12 +384,14 @@ describe('checkout shipping phase 3', () => {
         .limit(1);
 
       expect(orderRow).toMatchObject({
+        totalAmountMinor: 4500,
+        itemsSubtotalMinor: 4000,
         shippingRequired: true,
         shippingPayer: 'customer',
         shippingProvider: 'nova_poshta',
         shippingMethodCode: 'NP_WAREHOUSE',
         shippingStatus: 'pending',
-        shippingAmountMinor: null,
+        shippingAmountMinor: 500,
       });
 
       const [shippingRow] = await db
@@ -391,6 +407,9 @@ describe('checkout shipping phase 3', () => {
       expect(
         (shippingRow?.shippingAddress as any)?.selection?.warehouseRef
       ).toBe(seed.warehouseRefA);
+      expect((shippingRow?.shippingAddress as any)?.quote?.amountMinor).toBe(
+        500
+      );
       expect((shippingRow?.shippingAddress as any)?.recipient?.fullName).toBe(
         'Alice'
       );
@@ -411,6 +430,7 @@ describe('checkout shipping phase 3', () => {
         locale: 'uk-UA',
         country: 'UA',
         items: [{ productId: seed.productId, quantity: 1 }],
+        legalConsent: TEST_LEGAL_CONSENT,
         shipping: {
           provider: 'nova_poshta',
           methodCode: 'NP_WAREHOUSE',
@@ -432,6 +452,7 @@ describe('checkout shipping phase 3', () => {
         locale: 'uk-UA',
         country: 'UA',
         items: [{ productId: seed.productId, quantity: 1 }],
+        legalConsent: TEST_LEGAL_CONSENT,
         shipping: {
           provider: 'nova_poshta',
           methodCode: 'NP_WAREHOUSE',
@@ -466,6 +487,7 @@ describe('checkout shipping phase 3', () => {
           locale: 'uk-UA',
           country: 'UA',
           items: [{ productId: seed.productId, quantity: 1 }],
+          legalConsent: TEST_LEGAL_CONSENT,
           shipping: {
             provider: 'nova_poshta',
             methodCode: 'NP_WAREHOUSE',

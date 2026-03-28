@@ -2,7 +2,11 @@ import crypto from 'node:crypto';
 
 import { NextRequest, NextResponse } from 'next/server';
 
-import { getShopShippingFlags } from '@/lib/env/nova-poshta';
+import {
+  assertNovaPoshtaProductionLikeReady,
+  getShopShippingFlags,
+  NovaPoshtaConfigError,
+} from '@/lib/env/nova-poshta';
 import { readPositiveIntEnv } from '@/lib/env/readPositiveIntEnv';
 import { logError, logWarn } from '@/lib/logging';
 import {
@@ -11,6 +15,10 @@ import {
   rateLimitResponse,
 } from '@/lib/security/rate-limit';
 import { resolveShippingAvailability } from '@/lib/services/shop/shipping/availability';
+import {
+  isCheckoutShippingQuoteCurrency,
+  resolveCheckoutShippingQuote,
+} from '@/lib/services/shop/shipping/checkout-quote';
 import {
   sanitizeShippingErrorForLog,
   sanitizeShippingLogMeta,
@@ -27,6 +35,8 @@ type ShippingMethod = {
   provider: 'nova_poshta';
   methodCode: 'NP_WAREHOUSE' | 'NP_LOCKER' | 'NP_COURIER';
   title: string;
+  amountMinor: number;
+  quoteFingerprint: string;
   requiredFields: Array<
     | 'cityRef'
     | 'warehouseRef'
@@ -58,12 +68,27 @@ function parseQuery(request: NextRequest) {
   return shippingMethodsQuerySchema.safeParse(raw);
 }
 
-function getMethods(): ShippingMethod[] {
+function getMethods(currency: 'UAH'): ShippingMethod[] {
+  const warehouseQuote = resolveCheckoutShippingQuote({
+    methodCode: 'NP_WAREHOUSE',
+    currency,
+  });
+  const lockerQuote = resolveCheckoutShippingQuote({
+    methodCode: 'NP_LOCKER',
+    currency,
+  });
+  const courierQuote = resolveCheckoutShippingQuote({
+    methodCode: 'NP_COURIER',
+    currency,
+  });
+
   return [
     {
       provider: 'nova_poshta',
       methodCode: 'NP_WAREHOUSE',
       title: 'Nova Poshta warehouse',
+      amountMinor: warehouseQuote.amountMinor,
+      quoteFingerprint: warehouseQuote.quoteFingerprint,
       requiredFields: [
         'cityRef',
         'warehouseRef',
@@ -75,6 +100,8 @@ function getMethods(): ShippingMethod[] {
       provider: 'nova_poshta',
       methodCode: 'NP_LOCKER',
       title: 'Nova Poshta parcel locker',
+      amountMinor: lockerQuote.amountMinor,
+      quoteFingerprint: lockerQuote.quoteFingerprint,
       requiredFields: [
         'cityRef',
         'warehouseRef',
@@ -86,6 +113,8 @@ function getMethods(): ShippingMethod[] {
       provider: 'nova_poshta',
       methodCode: 'NP_COURIER',
       title: 'Nova Poshta courier',
+      amountMinor: courierQuote.amountMinor,
+      quoteFingerprint: courierQuote.quoteFingerprint,
       requiredFields: [
         'cityRef',
         'addressLine1',
@@ -168,6 +197,38 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    if (!isCheckoutShippingQuoteCurrency(availability.normalized.currency)) {
+      return cachedJson(
+        {
+          success: true,
+          available: false,
+          reasonCode: 'CURRENCY_NOT_SUPPORTED',
+          locale: availability.normalized.locale,
+          country: availability.normalized.country,
+          currency: availability.normalized.currency,
+          methods: [],
+        },
+        requestId
+      );
+    }
+
+    try {
+      assertNovaPoshtaProductionLikeReady();
+    } catch (error) {
+      if (error instanceof NovaPoshtaConfigError) {
+        return noStoreJson(
+          {
+            success: false,
+            code: 'NP_MISCONFIG',
+            message: 'Nova Poshta configuration is invalid',
+          },
+          requestId,
+          503
+        );
+      }
+      throw error;
+    }
+
     return cachedJson(
       {
         success: true,
@@ -176,7 +237,7 @@ export async function GET(request: NextRequest) {
         locale: availability.normalized.locale,
         country: availability.normalized.country,
         currency: availability.normalized.currency,
-        methods: getMethods(),
+        methods: getMethods(availability.normalized.currency),
       },
       requestId
     );

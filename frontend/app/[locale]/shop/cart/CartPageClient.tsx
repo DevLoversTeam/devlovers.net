@@ -46,6 +46,8 @@ type Props = {
   stripeEnabled: boolean;
   monobankEnabled: boolean;
   monobankGooglePayEnabled: boolean;
+  termsVersion: string;
+  privacyVersion: string;
 };
 
 type CheckoutProvider = 'stripe' | 'monobank';
@@ -63,6 +65,8 @@ type ShippingMethod = {
   provider: 'nova_poshta';
   methodCode: CheckoutDeliveryMethodCode;
   title: string;
+  amountMinor: number;
+  quoteFingerprint: string;
 };
 
 type ShippingCity = {
@@ -161,6 +165,57 @@ function normalizeShippingCity(raw: unknown): ShippingCity | null {
     nameUa,
   };
 }
+
+function readTrimmedNonEmptyString(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function normalizeShippingMethod(raw: unknown): ShippingMethod | null {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    return null;
+  }
+
+  const item = raw as Record<string, unknown>;
+  if (item.provider !== 'nova_poshta') {
+    return null;
+  }
+
+  const methodCode = readTrimmedNonEmptyString(item.methodCode);
+  const title = readTrimmedNonEmptyString(item.title);
+  const quoteFingerprint = readTrimmedNonEmptyString(item.quoteFingerprint);
+  const amountMinor = item.amountMinor;
+
+  if (!methodCode || !isValidDeliveryMethodCode(methodCode)) {
+    return null;
+  }
+
+  if (!title) {
+    return null;
+  }
+
+  if (
+    typeof amountMinor !== 'number' ||
+    !Number.isInteger(amountMinor) ||
+    amountMinor < 0
+  ) {
+    return null;
+  }
+
+  if (!quoteFingerprint || !/^[a-f0-9]{64}$/.test(quoteFingerprint)) {
+    return null;
+  }
+
+  return {
+    provider: 'nova_poshta',
+    methodCode,
+    title,
+    amountMinor,
+    quoteFingerprint,
+  };
+}
+
 function normalizeShippingWarehouse(raw: unknown): ShippingWarehouse | null {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
     return null;
@@ -358,6 +413,8 @@ export default function CartPage({
   stripeEnabled,
   monobankEnabled,
   monobankGooglePayEnabled,
+  termsVersion,
+  privacyVersion,
 }: Props) {
   const { cart, updateQuantity, removeFromCart } = useCart();
   const router = useRouter();
@@ -433,6 +490,10 @@ export default function CartPage({
   const [recipientComment, setRecipientComment] = useState('');
 
   const [deliveryUiError, setDeliveryUiError] = useState<string | null>(null);
+  const [legalConsentAccepted, setLegalConsentAccepted] = useState(false);
+  const [legalConsentUiError, setLegalConsentUiError] = useState<string | null>(
+    null
+  );
 
   useEffect(() => {
     setIsClientReady(true);
@@ -454,6 +515,13 @@ export default function CartPage({
     shippingReasonCode === 'COUNTRY_NOT_SUPPORTED' ||
     shippingReasonCode === 'CURRENCY_NOT_SUPPORTED' ||
     shippingReasonCode === 'INTERNAL_ERROR';
+  const selectedShippingQuote =
+    shippingMethods.find(
+      method => method.methodCode === selectedShippingMethod
+    ) ?? null;
+  const checkoutSummaryShippingMinor = selectedShippingQuote?.amountMinor ?? 0;
+  const checkoutSummaryTotalMinor =
+    cart.summary.totalAmountMinor + checkoutSummaryShippingMinor;
 
   const isWarehouseSelectionMethod = isWarehouseMethod(selectedShippingMethod);
 
@@ -509,6 +577,7 @@ export default function CartPage({
 
   const clearCheckoutUiErrors = () => {
     setDeliveryUiError(null);
+    setLegalConsentUiError(null);
     setCheckoutError(null);
   };
 
@@ -636,30 +705,14 @@ export default function CartPage({
         const methods: ShippingMethod[] = [];
 
         for (const item of methodsRaw) {
-          if (!item || typeof item !== 'object' || Array.isArray(item)) {
+          const method = normalizeShippingMethod(item);
+
+          if (!method) {
             hardBlock();
             return;
           }
 
-          const m = item as Record<string, unknown>;
-
-          const providerOk = m.provider === 'nova_poshta';
-          const methodCode =
-            typeof m.methodCode === 'string' ? m.methodCode.trim() : '';
-          const methodCodeOk = isValidDeliveryMethodCode(methodCode);
-          const titleOk =
-            typeof m.title === 'string' && m.title.trim().length > 0;
-
-          if (!providerOk || !methodCodeOk || !titleOk) {
-            hardBlock();
-            return;
-          }
-
-          methods.push({
-            provider: 'nova_poshta',
-            methodCode,
-            title: String(m.title),
-          });
+          methods.push(method);
         }
 
         if (available === false && reasonCode == null) {
@@ -1100,8 +1153,16 @@ export default function CartPage({
       return;
     }
 
+    if (!legalConsentAccepted) {
+      const message = t('checkout.consent.required');
+      setLegalConsentUiError(message);
+      setCheckoutError(message);
+      return;
+    }
+
     setCheckoutError(null);
     setDeliveryUiError(null);
+    setLegalConsentUiError(null);
     setCreatedOrderId(null);
     setCreatedOrderStatusToken(null);
     setPaymentRecoveryUrl(null);
@@ -1150,6 +1211,21 @@ export default function CartPage({
         body: JSON.stringify({
           paymentProvider: selectedProvider,
           paymentMethod: checkoutPaymentMethod,
+          ...(cart.summary.pricingFingerprint
+            ? { pricingFingerprint: cart.summary.pricingFingerprint }
+            : {}),
+          ...(selectedShippingQuote?.quoteFingerprint
+            ? {
+                shippingQuoteFingerprint:
+                  selectedShippingQuote.quoteFingerprint,
+              }
+            : {}),
+          legalConsent: {
+            termsAccepted: true,
+            privacyAccepted: true,
+            termsVersion,
+            privacyVersion,
+          },
           ...(shippingPayloadResult?.ok
             ? {
                 shipping: shippingPayloadResult.shipping,
@@ -1306,6 +1382,7 @@ export default function CartPage({
   const canPlaceOrder =
     hasSelectableProvider &&
     hasValidPaymentSelection &&
+    legalConsentAccepted &&
     !shippingMethodsLoading &&
     !shippingUnavailableHardBlock &&
     (!shippingAvailable || !!selectedShippingMethod);
@@ -2238,9 +2315,15 @@ export default function CartPage({
 
                       <span
                         data-testid="checkout-summary-shipping"
-                        className="text-muted-foreground text-right text-xs"
+                        className="text-foreground font-medium"
                       >
-                        {t('summary.shippingInformationalOnly')}
+                        {selectedShippingQuote
+                          ? formatMoney(
+                              checkoutSummaryShippingMinor,
+                              cart.summary.currency,
+                              locale
+                            )
+                          : t('summary.shippingCalc')}
                       </span>
                     </div>
                   </div>
@@ -2256,7 +2339,7 @@ export default function CartPage({
                         className="text-foreground text-2xl font-bold"
                       >
                         {formatMoney(
-                          cart.summary.totalAmountMinor,
+                          checkoutSummaryTotalMinor,
                           cart.summary.currency,
                           locale
                         )}
@@ -2266,6 +2349,56 @@ export default function CartPage({
                 </div>
 
                 <div className="border-border border-t p-5">
+                  <div className="mb-4 rounded-2xl border border-gray-200/70 bg-gray-50/80 p-4 dark:border-neutral-800/70 dark:bg-neutral-900/70">
+                    <label
+                      htmlFor="checkout-legal-consent"
+                      className="flex cursor-pointer items-start gap-3"
+                    >
+                      <input
+                        id="checkout-legal-consent"
+                        type="checkbox"
+                        checked={legalConsentAccepted}
+                        onChange={event => {
+                          clearCheckoutUiErrors();
+                          setLegalConsentAccepted(event.target.checked);
+                        }}
+                        aria-invalid={legalConsentUiError ? true : undefined}
+                        className="mt-1 h-4 w-4 shrink-0 rounded border-gray-300"
+                      />
+                      <span className="text-sm leading-6 text-slate-700 dark:text-slate-200">
+                        {t('checkout.consent.prefix')}{' '}
+                        <Link
+                          href="/terms-of-service"
+                          className={cn(
+                            SHOP_LINK_BASE,
+                            SHOP_LINK_XS,
+                            SHOP_FOCUS
+                          )}
+                        >
+                          {t('checkout.consent.termsLink')}
+                        </Link>{' '}
+                        {t('checkout.consent.and')}{' '}
+                        <Link
+                          href="/privacy-policy"
+                          className={cn(
+                            SHOP_LINK_BASE,
+                            SHOP_LINK_XS,
+                            SHOP_FOCUS
+                          )}
+                        >
+                          {t('checkout.consent.privacyLink')}
+                        </Link>
+                        {t('checkout.consent.suffix')}
+                      </span>
+                    </label>
+
+                    {legalConsentUiError ? (
+                      <p className="text-destructive mt-2 text-xs" role="alert">
+                        {legalConsentUiError}
+                      </p>
+                    ) : null}
+                  </div>
+
                   <button
                     type="button"
                     onClick={handleCheckout}
@@ -2308,10 +2441,6 @@ export default function CartPage({
                       ) : null}
                     </span>
                   </button>
-
-                  <p className="text-muted-foreground mt-4 text-center text-xs">
-                    {t('summary.shippingPayOnDeliveryNote')}
-                  </p>
 
                   {recoveryHref && !checkoutError ? (
                     <div className="mt-3 flex justify-center">

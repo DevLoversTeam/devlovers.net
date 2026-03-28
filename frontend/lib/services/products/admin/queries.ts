@@ -6,7 +6,7 @@ import { ProductNotFoundError } from '@/lib/errors/products';
 import type { CurrencyCode } from '@/lib/shop/currency';
 import type { DbProduct } from '@/lib/types/shop';
 
-import { mapRowToProduct } from '../mapping';
+import { mapRowsToProducts, mapRowToProduct } from '../mapping';
 import { assertMoneyMinorInt } from '../prices';
 import type { AdminProductPriceRow, AdminProductsFilter } from '../types';
 
@@ -21,7 +21,7 @@ export async function getAdminProductById(id: string): Promise<DbProduct> {
     throw new ProductNotFoundError(id);
   }
 
-  return mapRowToProduct(row);
+  return await mapRowToProduct(row);
 }
 
 export async function getAdminProductPrices(
@@ -88,5 +88,5 @@ export async function getAdminProductsList(
     .from(products)
     .where(conditions.length ? and(...conditions) : undefined);
 
-  return rows.map(mapRowToProduct);
+  return await mapRowsToProducts(rows);
 }
