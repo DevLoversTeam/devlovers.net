@@ -1,6 +1,6 @@
 [build]
   base = "frontend"
-  command = "npm ci --include=optional && npm run build"
+  command = "printenv > .env && npm ci --include=optional && npm run build"
   publish = ".next"
 
 [build.environment]
@@ -8,6 +8,3 @@
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
-
-[[plugins]]
-  package = "netlify-plugin-bundle-env"
