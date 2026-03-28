@@ -1,25 +1,31 @@
-import * as dotenv from 'dotenv';
-dotenv.config();
+import { readServerEnv } from './server-env';
 
 type AppEnv = 'local' | 'develop' | 'production';
 
-const validAppEnvs = ['local', 'develop', 'production'];
-const rawAppEnv = process.env.APP_ENV;
+const validAppEnvs: AppEnv[] = ['local', 'develop', 'production'];
 
-if (!rawAppEnv) {
-  throw new Error('APP_ENV is not defined');
-}
+const rawAppEnv = readServerEnv('APP_ENV')?.toLowerCase();
+const context = readServerEnv('CONTEXT')?.toLowerCase();
 
-if (!validAppEnvs.includes(rawAppEnv as AppEnv)) {
+const inferredAppEnv: AppEnv | undefined =
+  context === 'production'
+    ? 'production'
+    : context
+      ? 'develop'
+      : undefined;
+
+const resolvedAppEnv = (rawAppEnv ?? inferredAppEnv) as AppEnv | undefined;
+
+if (!resolvedAppEnv || !validAppEnvs.includes(resolvedAppEnv)) {
   throw new Error(
-    `Invalid APP_ENV: ${rawAppEnv}. Must be one of: ${validAppEnvs.join(', ')}`
+    `Invalid APP_ENV: ${rawAppEnv ?? '<undefined>'}. Must be one of: ${validAppEnvs.join(', ')}`
   );
 }
 
-const APP_ENV = rawAppEnv as AppEnv;
+const APP_ENV: AppEnv = resolvedAppEnv;
 
 function requireEnv(name: string): string {
-  const value = process.env[name];
+  const value = readServerEnv(name);
   if (!value) {
     throw new Error(`Missing env var: ${name}`);
   }
@@ -29,16 +35,24 @@ function requireEnv(name: string): string {
 export const authEnv = {
   appEnv: APP_ENV,
 
-  google: {
-    clientId: requireEnv('GOOGLE_CLIENT_ID'),
-    clientSecret: requireEnv('GOOGLE_CLIENT_SECRET'),
-    redirectUri:
-      APP_ENV === 'local'
-        ? requireEnv('GOOGLE_CLIENT_REDIRECT_URI_LOCAL')
-        : APP_ENV === 'develop'
-          ? requireEnv('GOOGLE_CLIENT_REDIRECT_URI_DEVELOP')
-          : requireEnv('GOOGLE_CLIENT_REDIRECT_URI_PROD'),
-  },
+    google:
+    APP_ENV === 'local'
+      ? {
+          clientId: requireEnv('GOOGLE_CLIENT_ID_LOCAL'),
+          clientSecret: requireEnv('GOOGLE_CLIENT_SECRET_LOCAL'),
+          redirectUri: requireEnv('GOOGLE_CLIENT_REDIRECT_URI_LOCAL'),
+        }
+      : APP_ENV === 'develop'
+        ? {
+            clientId: requireEnv('GOOGLE_CLIENT_ID_DEVELOP'),
+            clientSecret: requireEnv('GOOGLE_CLIENT_SECRET_DEVELOP'),
+            redirectUri: requireEnv('GOOGLE_CLIENT_REDIRECT_URI_DEVELOP'),
+          }
+        : {
+            clientId: requireEnv('GOOGLE_CLIENT_ID_PROD'),
+            clientSecret: requireEnv('GOOGLE_CLIENT_SECRET_PROD'),
+            redirectUri: requireEnv('GOOGLE_CLIENT_REDIRECT_URI_PROD'),
+          },
 
   github:
     APP_ENV === 'local'
