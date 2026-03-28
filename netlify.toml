@@ -1,6 +1,6 @@
 [build]
   base = "frontend"
-  command = "bash scripts/generate-env.sh && npm ci --include=optional && npm run build"
+  command = "npm ci --include=optional && npm run build"
   publish = ".next"
 
 [build.environment]
