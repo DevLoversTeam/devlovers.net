@@ -11,26 +11,30 @@ dotenv.config();
 
 type AppDatabase = PgDatabase<PgQueryResultHKT, typeof schema>;
 
-const APP_ENV = process.env.APP_ENV ?? 'local';
+const APP_ENV = process.env.APP_ENV?.trim();
+const IS_LOCAL_ENV = APP_ENV === 'local';
 const STRICT_LOCAL_DB_GUARD = process.env.SHOP_STRICT_LOCAL_DB === '1';
 const REQUIRED_LOCAL_DB_URL = process.env.SHOP_REQUIRED_DATABASE_URL_LOCAL;
 
 if (STRICT_LOCAL_DB_GUARD) {
-  if (APP_ENV !== 'local') {
+  if (!IS_LOCAL_ENV) {
     throw new Error(
-      `[db] SHOP_STRICT_LOCAL_DB=1 requires APP_ENV=local (got "${APP_ENV}")`
+      `[db] SHOP_STRICT_LOCAL_DB=1 requires APP_ENV=local (got "${APP_ENV ?? 'undefined'}")`
     );
   }
+
   if (!process.env.DATABASE_URL_LOCAL?.trim()) {
     throw new Error(
       '[db] SHOP_STRICT_LOCAL_DB=1 requires DATABASE_URL_LOCAL to be set'
     );
   }
+
   if (process.env.DATABASE_URL?.trim()) {
     throw new Error(
       '[db] SHOP_STRICT_LOCAL_DB=1 forbids DATABASE_URL during shop-local tests'
     );
   }
+
   if (
     REQUIRED_LOCAL_DB_URL &&
     process.env.DATABASE_URL_LOCAL !== REQUIRED_LOCAL_DB_URL
@@ -43,8 +47,8 @@ if (STRICT_LOCAL_DB_GUARD) {
 
 let db: AppDatabase;
 
-if (APP_ENV === 'local') {
-  const url = process.env.DATABASE_URL_LOCAL;
+if (IS_LOCAL_ENV) {
+  const url = process.env.DATABASE_URL_LOCAL?.trim();
 
   if (!url) {
     throw new Error('[db] APP_ENV=local requires DATABASE_URL_LOCAL to be set');
@@ -60,10 +64,12 @@ if (APP_ENV === 'local') {
     console.log('[db] using local PostgreSQL (pg)');
   }
 } else {
-  const url = process.env.DATABASE_URL;
+  const url = process.env.DATABASE_URL?.trim();
 
   if (!url) {
-    throw new Error(`[db] APP_ENV=${APP_ENV} requires DATABASE_URL to be set`);
+    throw new Error(
+      `[db] APP_ENV=${APP_ENV ?? 'undefined'} requires DATABASE_URL to be set`
+    );
   }
 
   const sql = neon(url);
