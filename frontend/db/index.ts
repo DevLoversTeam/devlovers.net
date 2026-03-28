@@ -13,20 +13,18 @@ type AppDatabase = PgDatabase<PgQueryResultHKT, typeof schema>;
 
 const APP_ENV = process.env.APP_ENV?.trim().toLowerCase();
 
-if (!APP_ENV) {
-  throw new Error(
-    '[db] APP_ENV is required. Set APP_ENV=local in .env for development, or APP_ENV=develop/production for deployment'
-  );
+if (process.env.NODE_ENV !== 'test') {
+  console.log('[db] runtime env check', {
+    APP_ENV: process.env.APP_ENV ?? '<undefined>',
+    has_DATABASE_URL: Boolean(process.env.DATABASE_URL?.trim()),
+    has_DATABASE_URL_LOCAL: Boolean(process.env.DATABASE_URL_LOCAL?.trim()),
+    NETLIFY: process.env.NETLIFY ?? '<undefined>',
+    CONTEXT: process.env.CONTEXT ?? '<undefined>',
+    NODE_ENV: process.env.NODE_ENV ?? '<undefined>',
+  });
 }
 
 const IS_LOCAL_ENV = APP_ENV === 'local';
-
-if (process.env.NODE_ENV !== 'test') {
-  console.log('[db] runtime env check', {
-    has_DATABASE_URL: Boolean(process.env.DATABASE_URL?.trim()),
-    has_DATABASE_URL_LOCAL: Boolean(process.env.DATABASE_URL_LOCAL?.trim()),
-  });
-}
 
 const STRICT_LOCAL_DB_GUARD = process.env.SHOP_STRICT_LOCAL_DB === '1';
 const REQUIRED_LOCAL_DB_URL = process.env.SHOP_REQUIRED_DATABASE_URL_LOCAL;

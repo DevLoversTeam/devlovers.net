@@ -13,6 +13,9 @@ export default defineConfig({
     },
   },
   test: {
+      env: {
+    APP_ENV: 'local',
+    },
     environment: 'node',
     include: [
       'lib/tests/**/*.test.ts',
