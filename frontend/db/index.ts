@@ -12,14 +12,29 @@ dotenv.config();
 type AppDatabase = PgDatabase<PgQueryResultHKT, typeof schema>;
 
 const APP_ENV = process.env.APP_ENV?.trim().toLowerCase();
+
+if (!APP_ENV) {
+  throw new Error(
+    '[db] APP_ENV is required. Set APP_ENV=local in .env for development, or APP_ENV=develop/production for deployment'
+  );
+}
+
 const IS_LOCAL_ENV = APP_ENV === 'local';
+
+if (process.env.NODE_ENV !== 'test') {
+  console.log('[db] runtime env check', {
+    has_DATABASE_URL: Boolean(process.env.DATABASE_URL?.trim()),
+    has_DATABASE_URL_LOCAL: Boolean(process.env.DATABASE_URL_LOCAL?.trim()),
+  });
+}
+
 const STRICT_LOCAL_DB_GUARD = process.env.SHOP_STRICT_LOCAL_DB === '1';
 const REQUIRED_LOCAL_DB_URL = process.env.SHOP_REQUIRED_DATABASE_URL_LOCAL;
 
 if (STRICT_LOCAL_DB_GUARD) {
   if (!IS_LOCAL_ENV) {
     throw new Error(
-      `[db] SHOP_STRICT_LOCAL_DB=1 requires APP_ENV=local (got "${APP_ENV ?? 'undefined'}")`
+      `[db] SHOP_STRICT_LOCAL_DB=1 requires APP_ENV=local (got "${APP_ENV}")`
     );
   }
 
@@ -68,7 +83,7 @@ if (IS_LOCAL_ENV) {
 
   if (!url) {
     throw new Error(
-      `[db] APP_ENV=${APP_ENV ?? 'undefined'} requires DATABASE_URL to be set`
+      `[db] APP_ENV=${APP_ENV} requires DATABASE_URL to be set`
     );
   }
 
