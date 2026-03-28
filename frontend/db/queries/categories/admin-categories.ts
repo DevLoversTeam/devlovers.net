@@ -20,13 +20,17 @@ export async function getAdminCategoryList(): Promise<AdminCategoryItem[]> {
       title: categoryTranslations.title,
     })
     .from(categories)
-    .innerJoin(
+    .leftJoin(
       categoryTranslations,
       sql`${categoryTranslations.categoryId} = ${categories.id} AND ${categoryTranslations.locale} = ${ADMIN_LOCALE}`
     )
     .orderBy(categories.displayOrder);
 
-  return rows;
+  return rows.map(row => ({
+    id: row.id,
+    slug: row.slug,
+    title: row.title ?? row.slug,
+  }));
 }
 
 export async function getMaxQuizDisplayOrder(

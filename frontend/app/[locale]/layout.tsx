@@ -37,6 +37,7 @@ export default async function LocaleLayout({
     title: string;
   }> = [];
 
+
   const enableAdmin =
     (
       process.env.ENABLE_ADMIN_API ??
