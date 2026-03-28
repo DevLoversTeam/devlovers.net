@@ -1,3 +1,6 @@
+import * as dotenv from 'dotenv';
+dotenv.config();
+
 type AppEnv = 'local' | 'develop' | 'production';
 
 const validAppEnvs = ['local', 'develop', 'production'];
