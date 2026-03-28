@@ -11,7 +11,7 @@ dotenv.config();
 
 type AppDatabase = PgDatabase<PgQueryResultHKT, typeof schema>;
 
-const APP_ENV = process.env.APP_ENV?.trim();
+const APP_ENV = process.env.APP_ENV?.trim().toLowerCase();
 const IS_LOCAL_ENV = APP_ENV === 'local';
 const STRICT_LOCAL_DB_GUARD = process.env.SHOP_STRICT_LOCAL_DB === '1';
 const REQUIRED_LOCAL_DB_URL = process.env.SHOP_REQUIRED_DATABASE_URL_LOCAL;
