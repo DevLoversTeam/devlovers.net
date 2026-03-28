@@ -10,7 +10,7 @@ import { CookieBanner } from '@/components/shared/CookieBanner';
 import Footer from '@/components/shared/Footer';
 import { ScrollWatcher } from '@/components/shared/ScrollWatcher';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
-import { getCachedBlogCategories } from '@/db/queries/blog/blog-categories';
+// import { getCachedBlogCategories } from '@/db/queries/blog/blog-categories';
 import { AuthProvider } from '@/hooks/useAuth';
 import { locales } from '@/i18n/config';
 
@@ -25,10 +25,17 @@ export default async function LocaleLayout({
 
   if (!locales.includes(locale as any)) notFound();
 
-  const [messages, blogCategories] = await Promise.all([
-    getMessages({ locale }),
-    getCachedBlogCategories(locale),
-  ]);
+  // const [messages, blogCategories] = await Promise.all([
+  //   getMessages({ locale }),
+  //   getCachedBlogCategories(locale),
+  // ]);
+
+  const messages = await getMessages({ locale });
+  const blogCategories: Array<{
+    id: string;
+    slug: string;
+    title: string;
+  }> = [];
 
   const enableAdmin =
     (
