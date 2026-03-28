@@ -29,7 +29,7 @@ export async function getAdminCategoryList(): Promise<AdminCategoryItem[]> {
   return rows.map(row => ({
     id: row.id,
     slug: row.slug,
-    title: row.title ?? row.slug,
+    title: row.title?.trim() || row.slug
   }));
 }
 
