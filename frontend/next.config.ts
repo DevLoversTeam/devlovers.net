@@ -5,10 +5,11 @@ import createNextIntlPlugin from 'next-intl/plugin';
 const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 
 const nextConfig: NextConfig = {
-   env: {
-    APP_ENV: process.env.APP_ENV,
-    DATABASE_URL: process.env.DATABASE_URL,
-  },
+  env: Object.fromEntries(
+    Object.entries(process.env).filter(
+      ([key]) => !key.startsWith('NEXT_PUBLIC_') && !key.startsWith('npm_')
+    )
+  ),
   images: {
     remotePatterns: [
       {
