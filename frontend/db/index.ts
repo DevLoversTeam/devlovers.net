@@ -26,7 +26,7 @@ if (process.env.NODE_ENV !== 'test') {
 
 const IS_LOCAL_ENV = APP_ENV === 'local';
 
-0const STRICT_LOCAL_DB_GUARD = process.env.SHOP_STRICT_LOCAL_DB === '1';
+const STRICT_LOCAL_DB_GUARD = process.env.SHOP_STRICT_LOCAL_DB === '1';
 const REQUIRED_LOCAL_DB_URL = process.env.SHOP_REQUIRED_DATABASE_URL_LOCAL;
 
 if (STRICT_LOCAL_DB_GUARD) {
