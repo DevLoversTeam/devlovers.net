@@ -3,9 +3,6 @@
   command = "npm ci --include=optional && npm run build"
   publish = ".next"
 
-[functions]
-  node_bundler = "esbuild"
-
 [build.environment]
   NODE_VERSION = "20.19.0"
 
