@@ -1,5 +1,7 @@
 import crypto from 'node:crypto';
 
+import { readServerEnv } from '@/lib/env/server-env';
+
 export const STATUS_TOKEN_SCOPES = [
   'status_lite',
   'order_payment_init',
@@ -27,7 +29,7 @@ type TokenPayload = {
 const DEFAULT_TTL_SECONDS = 45 * 60;
 
 function getSecret(): string {
-  const raw = process.env.SHOP_STATUS_TOKEN_SECRET ?? '';
+  const raw = readServerEnv('SHOP_STATUS_TOKEN_SECRET') ?? '';
   const trimmed = raw.trim();
   if (!trimmed) {
     throw new Error('SHOP_STATUS_TOKEN_SECRET is not configured');

@@ -1,3 +1,5 @@
+import { readServerEnv } from '@/lib/env/server-env';
+
 import { verifyEmailTemplate } from './templates/verify-email';
 import { mailer } from './transporter';
 
@@ -7,7 +9,7 @@ type Params = {
 };
 
 export async function sendVerificationEmail({ to, verifyUrl }: Params) {
-  const from = process.env.EMAIL_FROM;
+  const from = readServerEnv('EMAIL_FROM');
 
   if (!from) {
     throw new Error('EMAIL_FROM is not configured');
