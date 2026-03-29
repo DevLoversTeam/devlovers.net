@@ -13,6 +13,7 @@ import { ThemeProvider } from '@/components/theme/ThemeProvider';
 import { getCachedBlogCategories } from '@/db/queries/blog/blog-categories';
 import { AuthProvider } from '@/hooks/useAuth';
 import { locales } from '@/i18n/config';
+import { readServerEnv } from '@/lib/env/server-env';
 
 export default async function LocaleLayout({
   children,
@@ -32,8 +33,8 @@ export default async function LocaleLayout({
 
   const enableAdmin =
     (
-      process.env.ENABLE_ADMIN_API ??
-      process.env.NEXT_PUBLIC_ENABLE_ADMIN ??
+      readServerEnv('ENABLE_ADMIN_API') ??
+      readServerEnv('NEXT_PUBLIC_ENABLE_ADMIN') ??
       ''
     ).toLowerCase() === 'true';
 

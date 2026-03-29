@@ -1,6 +1,7 @@
 import 'server-only';
 
 import type { NextRequest } from 'next/server';
+import { readServerEnv } from '@/lib/env/server-env';
 
 import { getCurrentUser } from '@/lib/auth';
 
@@ -31,7 +32,7 @@ export class AdminForbiddenError extends Error {
 export function assertAdminApiEnabled(): void {
   if (
     process.env.NODE_ENV === 'production' &&
-    process.env.ENABLE_ADMIN_API !== 'true'
+    readServerEnv('ENABLE_ADMIN_API') !== 'true'
   ) {
     throw new AdminApiDisabledError();
   }
