@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { readServerEnv } from '@/lib/env/server-env';
+
 const LOCALHOST_ORIGIN = 'http://localhost:3000';
 
 function buildErrorResponse(
@@ -49,13 +51,13 @@ export function normalizeOrigin(input: string): string {
 export function getAllowedOrigins(): string[] {
   const allowed = new Set<string>();
 
-  const appOrigin = (process.env.APP_ORIGIN ?? '').trim();
+  const appOrigin = (readServerEnv('APP_ORIGIN') ?? '').trim();
   if (appOrigin) {
     const normalized = normalizeOrigin(appOrigin);
     if (normalized) allowed.add(normalized);
   }
 
-  const additionalRaw = (process.env.APP_ADDITIONAL_ORIGINS ?? '').trim();
+  const additionalRaw = (readServerEnv('APP_ADDITIONAL_ORIGINS') ?? '').trim();
   if (additionalRaw) {
     for (const entry of additionalRaw.split(',')) {
       const candidate = entry.trim();

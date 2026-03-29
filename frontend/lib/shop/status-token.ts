@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+
 import { readServerEnv } from '@/lib/env/server-env';
 
 export const STATUS_TOKEN_SCOPES = [
