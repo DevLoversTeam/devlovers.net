@@ -89,7 +89,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} bg-gray-50 text-gray-900 antialiased transition-colors duration-300 dark:bg-neutral-950 dark:text-gray-100`}
       >
         {children}
-        {process.env.NODE_ENV === 'production' && <Analytics />}
+        {process.env.VERCEL === '1' && <Analytics />}
       </body>
     </html>
   );
