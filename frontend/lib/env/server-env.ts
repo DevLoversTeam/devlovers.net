@@ -1,5 +1,7 @@
 import 'server-only';
 
+import { RUNTIME_ENV } from './runtime-env.generated';
+
 type NetlifyEnv = {
   get?: (key: string) => string | undefined;
 };
@@ -29,5 +31,13 @@ export function readServerEnv(key: string): string | undefined {
   const fromProcess = process.env[key]?.trim();
   if (fromProcess) return fromProcess;
 
-  return readFromNetlifyEnv(key);
+  const fromNetlify = readFromNetlifyEnv(key);
+  if (fromNetlify) return fromNetlify;
+
+  return readFromGeneratedRuntimeEnv(key);
+}
+
+function readFromGeneratedRuntimeEnv(key: string): string | undefined {
+  const value = RUNTIME_ENV[key];
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
 }
