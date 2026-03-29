@@ -4,11 +4,13 @@ import crypto from 'node:crypto';
 
 import type { NextRequest } from 'next/server';
 
+import { readServerEnv } from '@/lib/env/server-env';
+
 export const CSRF_FORM_FIELD = 'csrfToken' as const;
 
 const DEFAULT_TTL_SECONDS = 60 * 60;
 function getSecret(): string {
-  const secret = process.env.CSRF_SECRET;
+  const secret = readServerEnv('CSRF_SECRET');
   if (!secret) throw new Error('Missing env var: CSRF_SECRET');
   return secret;
 }

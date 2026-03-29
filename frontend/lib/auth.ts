@@ -6,11 +6,12 @@ import { cookies } from 'next/headers';
 
 import { db } from '@/db';
 import { users } from '@/db/schema/users';
+import { readServerEnv } from '@/lib/env/server-env';
 
 const AUTH_COOKIE_NAME = 'auth_session';
 const AUTH_TOKEN_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
 
-const _AUTH_SECRET = process.env.AUTH_SECRET;
+const _AUTH_SECRET = readServerEnv('AUTH_SECRET');
 
 if (!_AUTH_SECRET) {
   throw new Error('AUTH_SECRET is not defined');
