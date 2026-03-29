@@ -1,5 +1,7 @@
 import 'server-only';
 
+import { RUNTIME_ENV } from './runtime-env.generated';
+
 type NetlifyEnv = {
   get?: (key: string) => string | undefined;
 };
@@ -25,9 +27,34 @@ function readFromNetlifyEnv(key: string): string | undefined {
   return typeof value === 'string' && value.trim() ? value.trim() : undefined;
 }
 
+const GENERATED_FALLBACK_KEYS = new Set([
+  'APP_ENV',
+  'CONTEXT',
+  'NETLIFY',
+  'DATABASE_URL',
+  'DATABASE_URL_LOCAL',
+  'AUTH_SECRET',
+  'CSRF_SECRET',
+]);
+
+
+function canUseGeneratedFallback(key: string): boolean {
+  return GENERATED_FALLBACK_KEYS.has(key);
+}
+
 export function readServerEnv(key: string): string | undefined {
   const fromProcess = process.env[key]?.trim();
   if (fromProcess) return fromProcess;
 
-  return readFromNetlifyEnv(key);
+  const fromNetlify = readFromNetlifyEnv(key);
+  if (fromNetlify) return fromNetlify;
+
+ if (!canUseGeneratedFallback(key)) return undefined;
+ return readFromGeneratedRuntimeEnv(key);
+
+}
+
+function readFromGeneratedRuntimeEnv(key: string): string | undefined {
+  const value = RUNTIME_ENV[key];
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
 }
