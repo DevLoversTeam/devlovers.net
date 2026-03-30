@@ -944,3 +944,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Prevented double finalization and double restock during Stripe refund recovery flows
 - Blocked shipment queuing and admin shipping transitions for refund-contained orders
 - Updated Shop regression coverage for checkout fail-closed behavior, refunds, webhooks, and shipping guards
+
+## [1.0.10] - 2026-03-30
+
+### Added
+
+- Netlify runtime env resilience:
+  - Build-time runtime env generation (`generate-env-runtime.mjs`) for server-only fallback reads
+  - Generated fallback map for safe server env resolution when `process.env` is partially unavailable
+  - Extended explicit runtime allowlist for OAuth, admin visibility, and shop status token keys
+  - Hybrid server env resolution with Netlify runtime fallback support
+- Shop PDP merch-ready experience:
+  - Multi-image product model with primary image and stable ordering
+  - Admin product photo management with upload, reorder, primary selection, and safe removal
+  - Interactive PDP gallery with thumbnail-to-main image switching
+  - Localized apparel size-guide entry near size selection
+
+### Changed
+
+- Server env resolution:
+  - Migrated remaining direct server env reads to `readServerEnv(...)` across auth, csrf, admin guards, layout admin visibility, and shop status-token flows
+  - Added platform-safe fallback behavior for Netlify SSR/functions while keeping Vercel-first behavior intact
+  - Updated build/deploy env handling to avoid runtime 502 caused by missing SSR env delivery
+- Shop launch readiness:
+  - Hardened checkout provider resolution with fail-closed behavior
+  - Tightened Stripe refund containment and reconciliation flows
+  - Hardened shipping admin guards with centralized non-shippable eligibility rules
+  - Disabled Monobank admin refunds and in-app return refunds for launch scope
+- Platform maintenance:
+  - Added missing Tiptap packages required by admin blog editor build
+  - Updated CODEOWNERS and refreshed About LinkedIn social-proof metric
+
+### Fixed
+
+- Fixed Netlify SSR runtime env gaps that caused auth/db initialization failures and site-level 5xx/502 on develop
+- Restored GitHub and Google OAuth runtime behavior on Netlify develop
+- Stabilized auth and CSRF secret resolution in SSR runtime using server-safe env reads
+- Fixed Vercel Analytics loading condition to avoid `/_vercel/insights/script.js` 404 on Netlify
+- Improved Redis client safety path for malformed or missing runtime configuration
