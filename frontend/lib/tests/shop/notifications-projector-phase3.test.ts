@@ -119,6 +119,23 @@ describe.sequential('notifications projector phase 3', () => {
           id: crypto.randomUUID(),
           orderId,
           provider: 'stripe',
+          eventName: 'order_created',
+          eventSource: 'test_mapping',
+          eventRef: `evt_${crypto.randomUUID()}`,
+          amountMinor: 2000,
+          currency: 'USD',
+          payload: {
+            totalAmountMinor: 2000,
+            currency: 'USD',
+            paymentStatus: 'pending',
+          },
+          dedupeKey: makeDedupe('payment'),
+          occurredAt: new Date(),
+        } as any,
+        {
+          id: crypto.randomUUID(),
+          orderId,
+          provider: 'stripe',
           eventName: 'paid_applied',
           eventSource: 'test_mapping',
           eventRef: `evt_${crypto.randomUUID()}`,
@@ -144,7 +161,7 @@ describe.sequential('notifications projector phase 3', () => {
       ]);
 
       const projected = await runNotificationOutboxProjector({ limit: 100 });
-      expect(projected.inserted).toBeGreaterThanOrEqual(8);
+      expect(projected.inserted).toBeGreaterThanOrEqual(9);
 
       const rows = await db
         .select({
@@ -161,6 +178,7 @@ describe.sequential('notifications projector phase 3', () => {
           'intl_quote_accepted',
           'intl_quote_declined',
           'intl_quote_expired',
+          'order_created',
           'payment_confirmed',
           'shipment_created',
           'refund_processed',
