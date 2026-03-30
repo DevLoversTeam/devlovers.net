@@ -34,9 +34,8 @@ function requireEnv(name: string): string {
 
 export const authEnv = {
   appEnv: APP_ENV,
-
-    google:
-    APP_ENV === 'local'
+  get google() {
+    return APP_ENV === 'local'
       ? {
           clientId: requireEnv('GOOGLE_CLIENT_ID_LOCAL'),
           clientSecret: requireEnv('GOOGLE_CLIENT_SECRET_LOCAL'),
@@ -52,10 +51,11 @@ export const authEnv = {
             clientId: requireEnv('GOOGLE_CLIENT_ID_PROD'),
             clientSecret: requireEnv('GOOGLE_CLIENT_SECRET_PROD'),
             redirectUri: requireEnv('GOOGLE_CLIENT_REDIRECT_URI_PROD'),
-          },
+          };
+  },
 
-  github:
-    APP_ENV === 'local'
+  get github() {
+    return APP_ENV === 'local'
       ? {
           clientId: requireEnv('GITHUB_CLIENT_ID_LOCAL'),
           clientSecret: requireEnv('GITHUB_CLIENT_SECRET_LOCAL'),
@@ -71,5 +71,6 @@ export const authEnv = {
             clientId: requireEnv('GITHUB_CLIENT_ID_PROD'),
             clientSecret: requireEnv('GITHUB_CLIENT_SECRET_PROD'),
             redirectUri: requireEnv('GITHUB_CLIENT_REDIRECT_URI_PROD'),
-          },
+          };
+  },
 };
