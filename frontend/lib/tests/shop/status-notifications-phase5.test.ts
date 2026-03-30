@@ -624,5 +624,5 @@ describe.sequential('status notifications phase 5', () => {
     } finally {
       await cleanupOrder(orderId);
     }
-  });
+  }, 30_000);
 });

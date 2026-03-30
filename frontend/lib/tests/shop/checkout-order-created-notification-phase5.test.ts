@@ -115,6 +115,11 @@ async function cleanupProduct(productId: string) {
 }
 
 async function cleanupOrder(orderId: string) {
+  await db
+    .delete(notificationOutbox)
+    .where(eq(notificationOutbox.orderId, orderId));
+  await db.delete(paymentEvents).where(eq(paymentEvents.orderId, orderId));
+  await db.delete(orderShipping).where(eq(orderShipping.orderId, orderId));
   await db.delete(orders).where(eq(orders.id, orderId));
 }
 
