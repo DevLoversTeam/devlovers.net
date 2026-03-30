@@ -9,6 +9,9 @@ export const shopNotificationTemplateKeys = [
   'intl_quote_declined',
   'intl_quote_expired',
   'order_created',
+  'order_shipped',
+  'order_canceled',
+  'order_returned',
   'payment_confirmed',
   'shipment_created',
   'refund_processed',
@@ -141,6 +144,18 @@ export function renderShopNotificationTemplate(
       subject = `[DevLovers] Order received for order ${orderTag}`;
       leadLine = 'Your order has been created.';
       break;
+    case 'order_shipped':
+      subject = `[DevLovers] Order shipped for order ${orderTag}`;
+      leadLine = 'Your order has been shipped.';
+      break;
+    case 'order_canceled':
+      subject = `[DevLovers] Order canceled for order ${orderTag}`;
+      leadLine = 'Your order has been canceled.';
+      break;
+    case 'order_returned':
+      subject = `[DevLovers] Return received for order ${orderTag}`;
+      leadLine = 'Your return has been received.';
+      break;
     case 'payment_confirmed':
       subject = `[DevLovers] Payment confirmed for order ${orderTag}`;
       leadLine = 'Your payment has been confirmed.';
@@ -218,6 +233,10 @@ export function mapShippingEventToTemplate(
     case 'shipment_created':
     case 'label_created':
       return 'shipment_created';
+    case 'shipped':
+      return 'order_shipped';
+    case 'return_received':
+      return 'order_returned';
     default:
       return null;
   }
@@ -229,6 +248,8 @@ export function mapPaymentEventToTemplate(
   switch (eventName) {
     case 'order_created':
       return 'order_created';
+    case 'order_canceled':
+      return 'order_canceled';
     case 'paid_applied':
       return 'payment_confirmed';
     case 'refund_applied':

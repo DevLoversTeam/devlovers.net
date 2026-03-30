@@ -5,13 +5,15 @@ import { and, eq, isNull, lt, ne, or } from 'drizzle-orm';
 import { db } from '@/db';
 import { inventoryMoves, orders } from '@/db/schema/shop';
 import { logWarn } from '@/lib/logging';
+import { buildPaymentEventDedupeKey } from '@/lib/services/shop/events/dedupe-key';
+import { writePaymentEvent } from '@/lib/services/shop/events/write-payment-event';
 import { closeShippingPipelineForOrder } from '@/lib/services/shop/shipping/pipeline-shutdown';
 import { isOrderNonPaymentStatusTransitionAllowed } from '@/lib/services/shop/transitions/order-state';
 import { type PaymentStatus } from '@/lib/shop/payments';
 
 import { OrderNotFoundError, OrderStateInvalidError } from '../errors';
 import { applyReleaseMove } from '../inventory';
-import { resolvePaymentProvider } from './_shared';
+import { type OrderRow, resolvePaymentProvider } from './_shared';
 import { guardedPaymentStatusUpdate } from './payment-state';
 
 const PAYMENT_STATUS_KEY = 'paymentStatus' as const;
@@ -94,6 +96,99 @@ function validateRestockTransition(
   }
 }
 
+type OrderCanceledNotificationState = Pick<
+  OrderRow,
+  | 'id'
+  | 'totalAmountMinor'
+  | 'currency'
+  | 'paymentProvider'
+  | 'paymentIntentId'
+  | 'paymentStatus'
+  | 'status'
+  | 'inventoryStatus'
+  | 'stockRestored'
+  | 'restockedAt'
+  | 'shippingStatus'
+>;
+
+async function loadOrderCanceledNotificationState(
+  orderId: string
+): Promise<OrderCanceledNotificationState | null> {
+  const [row] = await db
+    .select({
+      id: orders.id,
+      totalAmountMinor: orders.totalAmountMinor,
+      currency: orders.currency,
+      paymentProvider: orders.paymentProvider,
+      paymentIntentId: orders.paymentIntentId,
+      paymentStatus: orders.paymentStatus,
+      status: orders.status,
+      inventoryStatus: orders.inventoryStatus,
+      stockRestored: orders.stockRestored,
+      restockedAt: orders.restockedAt,
+      shippingStatus: orders.shippingStatus,
+    })
+    .from(orders)
+    .where(eq(orders.id, orderId))
+    .limit(1);
+
+  return (row as OrderCanceledNotificationState | undefined) ?? null;
+}
+
+function buildOrderCanceledEventDedupeKey(orderId: string): string {
+  return buildPaymentEventDedupeKey({
+    orderId,
+    eventName: 'order_canceled',
+    status: 'CANCELED',
+  });
+}
+
+async function ensureOrderCanceledCanonicalEvent(args: {
+  orderId: string;
+  ensuredBy: string;
+}): Promise<void> {
+  const state = await loadOrderCanceledNotificationState(args.orderId);
+  if (
+    !state ||
+    state.status !== 'CANCELED' ||
+    state.inventoryStatus !== 'released' ||
+    !state.stockRestored
+  ) {
+    return;
+  }
+
+  try {
+    await writePaymentEvent({
+      orderId: state.id,
+      provider: resolvePaymentProvider(state),
+      eventName: 'order_canceled',
+      eventSource: 'order_restock',
+      eventRef: null,
+      amountMinor: state.totalAmountMinor,
+      currency: state.currency,
+      payload: {
+        orderId: state.id,
+        totalAmountMinor: state.totalAmountMinor,
+        currency: state.currency,
+        paymentProvider: state.paymentProvider,
+        paymentStatus: state.paymentStatus,
+        orderStatus: state.status,
+        inventoryStatus: state.inventoryStatus,
+        shippingStatus: state.shippingStatus,
+        restockedAt: state.restockedAt?.toISOString() ?? null,
+        ensuredBy: args.ensuredBy,
+      },
+      dedupeKey: buildOrderCanceledEventDedupeKey(state.id),
+    });
+  } catch (error) {
+    logWarn('order_canceled_event_write_failed', {
+      orderId: args.orderId,
+      ensuredBy: args.ensuredBy,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
+
 export async function restockOrder(
   orderId: string,
   options?: RestockOptions
@@ -127,8 +222,15 @@ export async function restockOrder(
     order.inventoryStatus === 'released' ||
     order.stockRestored ||
     order.restockedAt !== null
-  )
+  ) {
+    if (reason === 'canceled' && order.status === 'CANCELED') {
+      await ensureOrderCanceledCanonicalEvent({
+        orderId,
+        ensuredBy: 'restock_replay',
+      });
+    }
     return;
+  }
 
   if (reason) {
     await closeShippingPipelineForOrder({
@@ -233,6 +335,13 @@ export async function restockOrder(
         to: normalizedStatus,
         source: transitionSource,
         extraWhere: eq(orders.restockedAt, now),
+      });
+    }
+
+    if (reason === 'canceled') {
+      await ensureOrderCanceledCanonicalEvent({
+        orderId,
+        ensuredBy: 'restock_finalize_orphan',
       });
     }
 
@@ -388,6 +497,13 @@ export async function restockOrder(
       source: transitionSource,
 
       extraWhere: eq(orders.restockedAt, finalizedAt),
+    });
+  }
+
+  if (reason === 'canceled') {
+    await ensureOrderCanceledCanonicalEvent({
+      orderId,
+      ensuredBy: 'restock_finalize',
     });
   }
 }
