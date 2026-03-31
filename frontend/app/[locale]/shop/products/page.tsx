@@ -7,6 +7,7 @@ import { ProductFilters } from '@/components/shop/ProductFilters';
 import { ProductsToolbar } from '@/components/shop/ProductsToolbar';
 import { redirect } from '@/i18n/routing';
 import { CATALOG_PAGE_SIZE } from '@/lib/config/catalog';
+import { canonicalizePublicCatalogQuery } from '@/lib/shop/catalog-query';
 import { getCatalogProducts } from '@/lib/shop/data';
 import { catalogQuerySchema } from '@/lib/validation/shop';
 
@@ -36,30 +37,16 @@ export default async function ProductsPage({
   const { locale } = await params;
   const resolvedSearchParams = (await searchParams) ?? {};
   const t = await getTranslations('shop.products');
+  const canonical = canonicalizePublicCatalogQuery(resolvedSearchParams);
 
-  const hasLegacyFilter = resolvedSearchParams.filter === 'new';
-  const needsCanonical = hasLegacyFilter;
-
-  if (needsCanonical) {
-    const qsParams = new URLSearchParams();
-
-    for (const [k, v] of Object.entries(resolvedSearchParams)) {
-      if (!v) continue;
-      if (k === 'filter') continue;
-      qsParams.set(k, v);
-    }
-
-    if (hasLegacyFilter && !resolvedSearchParams.sort) {
-      qsParams.set('sort', 'newest');
-    }
-
-    const qs = qsParams.toString();
+  if (canonical.needsCanonical) {
+    const qs = canonical.params.toString();
     const basePath = `/shop/products`;
 
     redirect({ href: qs ? `${basePath}?${qs}` : basePath, locale });
   }
 
-  const parsedParams = catalogQuerySchema.safeParse(resolvedSearchParams);
+  const parsedParams = catalogQuerySchema.safeParse(canonical.normalized);
 
   const parsed = parsedParams.success
     ? parsedParams.data

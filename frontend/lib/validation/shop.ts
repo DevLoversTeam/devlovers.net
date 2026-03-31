@@ -7,6 +7,7 @@ import {
   PRODUCT_TYPES,
   SIZES,
   SORT_OPTIONS,
+  STOREFRONT_CATEGORIES,
 } from '@/lib/config/catalog';
 import { currencyValues } from '@/lib/shop/currency';
 import {
@@ -62,6 +63,7 @@ const searchParamString = z
   });
 
 const categoryValues = CATEGORIES.map(c => c.slug);
+const storefrontCategoryValues = STOREFRONT_CATEGORIES.map(c => c.slug);
 const productCategoryValues = categoryValues.filter(slug => slug !== 'all');
 const typeValues = PRODUCT_TYPES.map(t => t.slug);
 const colorValues = COLORS.map(c => c.slug);
@@ -71,7 +73,7 @@ const enumSearchParam = <T extends readonly [string, ...string[]]>(values: T) =>
   searchParamString.pipe(z.enum(values).optional());
 
 const categoryParam = enumSearchParam(
-  categoryValues as [string, ...string[]]
+  storefrontCategoryValues as [string, ...string[]]
 ).transform(value => (value === 'all' ? undefined : value));
 const typeParam = enumSearchParam(typeValues as [string, ...string[]]);
 const colorParam = enumSearchParam(colorValues as [string, ...string[]]);
@@ -92,7 +94,7 @@ export const catalogQuerySchema = z
 export const catalogFilterSchema = z
   .object({
     category: z
-      .enum(categoryValues as [string, ...string[]])
+      .enum(storefrontCategoryValues as [string, ...string[]])
       .optional()
       .transform(value => (value === 'all' ? undefined : value)),
     type: z.enum(typeValues as [string, ...string[]]).optional(),

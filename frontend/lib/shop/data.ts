@@ -2,10 +2,9 @@ import 'server-only';
 
 import {
   getActiveProductsPage,
-  getFeaturedProducts,
+  getPublicProductBaseBySlug,
   getPublicProductBySlug,
 } from '@/db/queries/shop/products';
-import { getPublicProductBaseBySlug } from '@/db/queries/shop/products';
 import {
   CATALOG_PAGE_SIZE,
   type CatalogSort,
@@ -412,32 +411,6 @@ export async function getProductDetail(
 export async function getHomepageContent(
   locale: string = 'en'
 ): Promise<HomepageContent> {
-  const currency = resolveCurrencyFromLocale(locale);
-
-  const featured: DbProduct[] = await getFeaturedProducts(currency, 4);
-
-  const featuredProducts = featured
-    .map(mapToShopProduct)
-    .filter((product): product is ShopProduct => product !== null);
-
-  const fillTo = (
-    primary: ShopProduct[],
-    fallback: ShopProduct[],
-    count: number
-  ) => {
-    const used = new Set(primary.map(p => p.id));
-    const merged = [...primary];
-
-    for (const p of fallback) {
-      if (merged.length >= count) break;
-      if (used.has(p.id)) continue;
-      used.add(p.id);
-      merged.push(p);
-    }
-
-    return merged.slice(0, count);
-  };
-
   const newestCatalog = await getCatalogProducts(
     {
       category: 'all',
@@ -448,7 +421,7 @@ export async function getHomepageContent(
     locale
   );
 
-  const newArrivals = fillTo(featuredProducts, newestCatalog.products, 4);
+  const newArrivals = newestCatalog.products.slice(0, 4);
 
   return {
     newArrivals,
