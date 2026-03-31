@@ -109,6 +109,7 @@ export function ShippingEditForm({
 
   const isWarehouseMethod =
     methodCode === 'NP_WAREHOUSE' || methodCode === 'NP_LOCKER';
+  const isCourierMethod = methodCode === 'NP_COURIER';
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -118,14 +119,19 @@ export function ShippingEditForm({
 
     const trimmedCityRef = cityRef.trim();
     const trimmedWarehouseRef = warehouseRef.trim();
+    const trimmedAddressLine1 = addressLine1.trim();
+    const trimmedAddressLine2 = addressLine2.trim();
     const trimmedRecipientFullName = recipientFullName.trim();
     const trimmedRecipientPhone = recipientPhone.trim();
+    const trimmedRecipientEmail = recipientEmail.trim();
+    const trimmedRecipientComment = recipientComment.trim();
 
     const hasRequiredFields =
       trimmedCityRef.length > 0 &&
       trimmedRecipientFullName.length > 0 &&
       trimmedRecipientPhone.length > 0 &&
-      (!isWarehouseMethod || trimmedWarehouseRef.length > 0);
+      (!isWarehouseMethod || trimmedWarehouseRef.length > 0) &&
+      (!isCourierMethod || trimmedAddressLine1.length > 0);
 
     if (!hasRequiredFields) {
       setError(tEditor('errors.invalid'));
@@ -147,19 +153,22 @@ export function ShippingEditForm({
           provider: 'nova_poshta',
           methodCode,
           selection: {
-            cityRef,
+            cityRef: trimmedCityRef,
             ...(isWarehouseMethod
-              ? { warehouseRef }
-              : { addressLine1, addressLine2 }),
+              ? { warehouseRef: trimmedWarehouseRef }
+              : {
+                  addressLine1: trimmedAddressLine1,
+                  addressLine2: trimmedAddressLine2,
+                }),
           },
           recipient: {
-            fullName: recipientFullName,
-            phone: recipientPhone,
-            ...(recipientEmail.trim().length > 0
-              ? { email: recipientEmail }
+            fullName: trimmedRecipientFullName,
+            phone: trimmedRecipientPhone,
+            ...(trimmedRecipientEmail.length > 0
+              ? { email: trimmedRecipientEmail }
               : {}),
-            ...(recipientComment.trim().length > 0
-              ? { comment: recipientComment }
+            ...(trimmedRecipientComment.length > 0
+              ? { comment: trimmedRecipientComment }
               : {}),
           },
         }),
@@ -275,6 +284,7 @@ export function ShippingEditForm({
               id="shipping-address-line-1"
               value={addressLine1}
               onChange={event => setAddressLine1(event.target.value)}
+              required={isCourierMethod}
               className="border-border bg-background text-foreground w-full rounded-lg border px-3 py-2 text-sm"
             />
           </div>

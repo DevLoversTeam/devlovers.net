@@ -108,4 +108,44 @@ describe('admin shipping edit form', () => {
     });
     expect(fetchMock).not.toHaveBeenCalled();
   });
+
+  it('requires addressLine1 locally for courier methods before sending PATCH', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { ShippingEditForm } =
+      await import('@/app/[locale]/admin/shop/orders/[id]/ShippingEditForm');
+
+    const { container } = render(
+      createElement(ShippingEditForm, {
+        orderId: '550e8400-e29b-41d4-a716-446655440102',
+        csrfToken: 'csrf-token',
+        initialShipping: {
+          methodCode: 'NP_COURIER',
+          cityRef: 'city-ref',
+          cityLabel: null,
+          warehouseRef: null,
+          warehouseLabel: null,
+          addressLine1: '',
+          addressLine2: 'Apartment 5',
+          recipientFullName: 'Test User',
+          recipientPhone: '+380501112233',
+          recipientEmail: null,
+          recipientComment: null,
+        },
+      })
+    );
+
+    const form = container.querySelector('form');
+    if (!form) throw new Error('ShippingEditForm form not rendered');
+
+    fireEvent.submit(form);
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'shop.orders.detail.shippingEditor.errors.invalid'
+      );
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
 });
