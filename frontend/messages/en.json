@@ -822,6 +822,11 @@
         "openOrder": "Open order {id}",
         "orderId": "Order ID"
       },
+      "card": {
+        "orderNumber": "Order {id}",
+        "placedOn": "Placed on {date}",
+        "itemsCount": "{count, plural, one {# item} other {# items}}"
+      },
       "orderHeadline": {
         "incomplete": "Order {id} (incomplete)",
         "withMore": "{item} +{count} more",
@@ -839,6 +844,10 @@
         "title": "Order",
         "myOrders": "My orders",
         "shop": "Shop",
+        "orderReference": "Order details",
+        "orderNumber": "Order {id}",
+        "orderNumberLabel": "Reference: {id}",
+        "placedOn": "Placed on {date}",
         "orderSummary": "Order summary",
         "customerSummary": "Customer summary",
         "lifecycle": {
@@ -914,6 +923,7 @@
         "total": "Total",
         "paymentStatus": "Payment status",
         "fulfillmentStage": "Fulfillment stage",
+        "delivery": "Delivery",
         "created": "Created",
         "provider": "Provider",
         "shippingProviderLabel": "Shipping provider",
@@ -939,12 +949,22 @@
         "no": "No",
         "shippingStatus": "Shipping status",
         "trackingNumber": "Tracking number",
+        "trackingPending": "Tracking details will appear after shipment",
+        "deliveryPending": "Preparing shipment",
         "shippingProviders": {
           "novaPoshta": "Nova Poshta"
         },
         "paymentProviders": {
           "stripe": "Stripe",
           "monobank": "Monobank"
+        },
+        "paymentStatuses": {
+          "paid": "Paid",
+          "pending": "Pending",
+          "requiresPayment": "Payment required",
+          "failed": "Failed",
+          "refunded": "Refunded",
+          "needsReview": "Needs review"
         },
         "shippingMethods": {
           "novaPoshtaWarehouse": "Nova Poshta warehouse",
@@ -982,6 +1002,8 @@
             "confirm": "Confirmed order",
             "cancel": "Canceled order",
             "complete": "Completed order",
+            "refund": "Requested refund",
+            "cancelPayment": "Canceled unpaid payment",
             "recoverInitialShipment": "Recovered initial shipment",
             "retryLabelCreation": "Retried label creation",
             "markShipped": "Marked as shipped",

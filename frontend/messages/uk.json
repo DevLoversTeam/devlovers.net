@@ -822,6 +822,11 @@
         "openOrder": "Відкрити замовлення {id}",
         "orderId": "ID замовлення"
       },
+      "card": {
+        "orderNumber": "Замовлення {id}",
+        "placedOn": "Оформлено {date}",
+        "itemsCount": "{count, plural, one {# товар} few {# товари} many {# товарів} other {# товару}}"
+      },
       "orderHeadline": {
         "incomplete": "Замовлення {id} (незавершене)",
         "withMore": "{item} +ще {count}",
@@ -839,6 +844,10 @@
         "title": "Замовлення",
         "myOrders": "Мої замовлення",
         "shop": "Магазин",
+        "orderReference": "Деталі замовлення",
+        "orderNumber": "Замовлення {id}",
+        "orderNumberLabel": "Номер для підтримки: {id}",
+        "placedOn": "Оформлено {date}",
         "orderSummary": "Підсумок замовлення",
         "customerSummary": "Підсумок клієнта",
         "lifecycle": {
@@ -914,6 +923,7 @@
         "total": "Всього",
         "paymentStatus": "Статус оплати",
         "fulfillmentStage": "Етап виконання",
+        "delivery": "Доставка",
         "created": "Створено",
         "provider": "Провайдер",
         "shippingProviderLabel": "Провайдер доставки",
@@ -939,12 +949,22 @@
         "no": "Ні",
         "shippingStatus": "Статус доставки",
         "trackingNumber": "Номер відстеження",
+        "trackingPending": "Номер відстеження з'явиться після відправлення",
+        "deliveryPending": "Готуємо відправлення",
         "shippingProviders": {
           "novaPoshta": "Нова пошта"
         },
         "paymentProviders": {
           "stripe": "Stripe",
           "monobank": "Monobank"
+        },
+        "paymentStatuses": {
+          "paid": "Оплачено",
+          "pending": "Очікується підтвердження",
+          "requiresPayment": "Потрібна оплата",
+          "failed": "Помилка оплати",
+          "refunded": "Оплату повернуто",
+          "needsReview": "Потребує перевірки"
         },
         "shippingMethods": {
           "novaPoshtaWarehouse": "Відділення Нової пошти",
@@ -982,6 +1002,8 @@
             "confirm": "Підтверджено замовлення",
             "cancel": "Скасовано замовлення",
             "complete": "Завершено замовлення",
+            "refund": "Запитано повернення",
+            "cancelPayment": "Скасовано неоплачену оплату",
             "recoverInitialShipment": "Відновлено початкове відправлення",
             "retryLabelCreation": "Повторено створення етикетки",
             "markShipped": "Позначено як відправлене",

@@ -822,6 +822,11 @@
         "openOrder": "Otwórz zamówienie {id}",
         "orderId": "ID zamówienia"
       },
+      "card": {
+        "orderNumber": "Zamówienie {id}",
+        "placedOn": "Złożono {date}",
+        "itemsCount": "{count, plural, one {# produkt} few {# produkty} many {# produktów} other {# produktu}}"
+      },
       "orderHeadline": {
         "incomplete": "Zamówienie {id} (niekompletne)",
         "withMore": "{item} +{count} więcej",
@@ -839,6 +844,10 @@
         "title": "Zamówienie",
         "myOrders": "Moje zamówienia",
         "shop": "Sklep",
+        "orderReference": "Szczegóły zamówienia",
+        "orderNumber": "Zamówienie {id}",
+        "orderNumberLabel": "Numer do kontaktu: {id}",
+        "placedOn": "Złożono {date}",
         "orderSummary": "Podsumowanie zamówienia",
           "customerSummary": "Podsumowanie klienta",
           "lifecycle": {
@@ -914,6 +923,7 @@
         "total": "Razem",
         "paymentStatus": "Status płatności",
         "fulfillmentStage": "Etap realizacji",
+        "delivery": "Dostawa",
         "created": "Utworzono",
         "provider": "Dostawca",
         "shippingProviderLabel": "Przewoźnik",
@@ -939,12 +949,22 @@
         "no": "Nie",
         "shippingStatus": "Status dostawy",
         "trackingNumber": "Numer śledzenia",
+        "trackingPending": "Numer śledzenia pojawi się po wysyłce",
+        "deliveryPending": "Przygotowujemy wysyłkę",
         "shippingProviders": {
           "novaPoshta": "Nova Poshta"
         },
         "paymentProviders": {
           "stripe": "Stripe",
           "monobank": "Monobank"
+        },
+        "paymentStatuses": {
+          "paid": "Opłacone",
+          "pending": "Oczekuje na potwierdzenie",
+          "requiresPayment": "Wymaga płatności",
+          "failed": "Płatność nieudana",
+          "refunded": "Zwrócone",
+          "needsReview": "Wymaga weryfikacji"
         },
         "shippingStatuses": {
           "pending": "Oczekuje",
@@ -982,6 +1002,8 @@
               "confirm": "Potwierdzono zamówienie",
               "cancel": "Anulowano zamówienie",
               "complete": "Zakończono zamówienie",
+              "refund": "Zlecono zwrot",
+              "cancelPayment": "Anulowano nieopłaconą płatność",
               "recoverInitialShipment": "Odzyskano początkową przesyłkę",
               "retryLabelCreation": "Ponowiono utworzenie etykiety",
               "markShipped": "Oznaczono jako wysłane",

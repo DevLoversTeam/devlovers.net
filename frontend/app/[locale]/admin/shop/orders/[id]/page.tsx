@@ -288,6 +288,10 @@ function historyActionLabel(
       return t('history.actions.cancel');
     case 'complete':
       return t('history.actions.complete');
+    case 'refund':
+      return t('history.actions.refund');
+    case 'cancel_payment':
+      return t('history.actions.cancelPayment');
     case 'recover_initial_shipment':
       return t('history.actions.recoverInitialShipment');
     case 'retry_label_creation':

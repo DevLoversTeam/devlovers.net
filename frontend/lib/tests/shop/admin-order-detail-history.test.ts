@@ -222,19 +222,39 @@ describe('admin order detail history', () => {
         requestId: null,
         fromShippingStatus: 'shipped',
         toShippingStatus: 'delivered',
-        fromShipmentStatus: 'created',
+        fromShipmentStatus: 'queued',
+      }),
+      baseHistoryEntry({
+        id: 'history-3',
+        action: 'refund',
+        requestId: 'req-refund',
+        fromShippingStatus: null,
+        toShippingStatus: null,
+        fromShipmentStatus: null,
+      }),
+      baseHistoryEntry({
+        id: 'history-4',
+        action: 'cancel_payment',
+        requestId: 'req-cancel-payment',
+        fromShippingStatus: null,
+        toShippingStatus: null,
+        fromShipmentStatus: null,
       }),
     ]);
 
     expect(html).toContain('History');
     expect(html).toContain('Marked as shipped');
     expect(html).toContain('Completed order');
+    expect(html).toContain('Requested refund');
+    expect(html).toContain('Canceled unpaid payment');
     expect(html).toContain('Shipping: Pending -&gt; Label created');
     expect(html).toContain('Shipment state: Succeeded');
     expect(html).toContain('Request: req-1');
+    expect(html).toContain('Request: req-refund');
+    expect(html).toContain('Request: req-cancel-payment');
     expect(html).toContain('Legacy history');
     expect(html).toContain('Shipping: Shipped -&gt; Delivered');
-    expect(html).toContain('Shipment state: Created');
+    expect(html).toContain('Shipment state: Queued');
   });
 
   it('renders empty history safely', async () => {

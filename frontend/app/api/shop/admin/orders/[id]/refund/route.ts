@@ -27,6 +27,7 @@ import {
   PspUnavailableError,
 } from '@/lib/services/errors';
 import { refundOrder } from '@/lib/services/orders';
+import { writeAdminAudit } from '@/lib/services/shop/events/write-admin-audit';
 import { orderIdParamSchema, orderSummarySchema } from '@/lib/validation/shop';
 
 function noStoreJson(body: unknown, init?: { status?: number }) {
@@ -149,15 +150,41 @@ export async function POST(
         durationMs: Date.now() - startedAtMs,
       });
 
-      return noStoreJson({
-        code: 'REFUND_DISABLED',
-        message: 'Refunds are disabled.',
-      }, { status: 409 });
+      return noStoreJson(
+        {
+          code: 'REFUND_DISABLED',
+          message: 'Refunds are disabled.',
+        },
+        { status: 409 }
+      );
     }
 
     const order = await refundOrder(orderIdForLog, { requestedBy: 'admin' });
 
     const orderSummary = orderSummarySchema.parse(order);
+
+    await writeAdminAudit({
+      orderId: orderIdForLog,
+      actorUserId:
+        typeof adminUser?.id === 'string' && adminUser.id.trim().length > 0
+          ? adminUser.id
+          : null,
+      action: 'order_admin_action.refund',
+      targetType: 'order',
+      targetId: orderIdForLog,
+      requestId,
+      payload: {
+        action: 'refund',
+        paymentProvider: orderSummary.paymentProvider,
+        paymentStatus: orderSummary.paymentStatus,
+        fulfillmentStage: orderSummary.fulfillmentStage,
+      },
+      dedupeSeed: {
+        domain: 'order_admin_action',
+        action: 'refund',
+        orderId: orderIdForLog,
+      },
+    });
 
     return noStoreJson({
       success: true,
