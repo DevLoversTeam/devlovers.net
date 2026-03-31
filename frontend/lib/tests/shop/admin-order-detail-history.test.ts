@@ -106,6 +106,10 @@ vi.mock('@/app/[locale]/admin/shop/orders/[id]/ShippingActions', () => ({
   ShippingActions: () => createElement('div', {}, 'shipping-actions'),
 }));
 
+vi.mock('@/app/[locale]/admin/shop/orders/[id]/ShippingEditForm', () => ({
+  ShippingEditForm: () => createElement('div', {}, 'shipping-edit-form'),
+}));
+
 vi.mock('@/app/[locale]/admin/shop/orders/[id]/RefundButton', () => ({
   RefundButton: () => createElement('div', {}, 'refund-button'),
 }));
@@ -142,7 +146,7 @@ function baseOrderDetail(
     shippingStatus: 'label_created',
     trackingNumber: 'TRACK-123',
     shippingProviderRef: 'ref-123',
-    shipmentStatus: 'created',
+    shipmentStatus: 'queued',
     shipmentAttemptCount: 1,
     shipmentLastErrorCode: null,
     shipmentLastErrorMessage: null,
@@ -240,6 +244,14 @@ describe('admin order detail history', () => {
         toShippingStatus: null,
         fromShipmentStatus: null,
       }),
+      baseHistoryEntry({
+        id: 'history-5',
+        action: 'edit_shipping',
+        requestId: 'req-edit-shipping',
+        fromShippingStatus: null,
+        toShippingStatus: null,
+        fromShipmentStatus: null,
+      }),
     ]);
 
     expect(html).toContain('History');
@@ -247,11 +259,13 @@ describe('admin order detail history', () => {
     expect(html).toContain('Completed order');
     expect(html).toContain('Requested refund');
     expect(html).toContain('Canceled unpaid payment');
+    expect(html).toContain('Edited shipping details');
     expect(html).toContain('Shipping: Pending -&gt; Label created');
     expect(html).toContain('Shipment state: Succeeded');
     expect(html).toContain('Request: req-1');
     expect(html).toContain('Request: req-refund');
     expect(html).toContain('Request: req-cancel-payment');
+    expect(html).toContain('Request: req-edit-shipping');
     expect(html).toContain('Legacy history');
     expect(html).toContain('Shipping: Shipped -&gt; Delivered');
     expect(html).toContain('Shipment state: Queued');

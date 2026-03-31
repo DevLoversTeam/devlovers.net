@@ -1,8 +1,15 @@
 import { NextRequest } from 'next/server';
 import { describe, expect, it, vi } from 'vitest';
 
+process.env.AUTH_SECRET ??= 'test_auth_secret_for_admin_csrf_contract';
+
+vi.mock('@/lib/auth', () => ({}));
+
 import { POST as postCancelPayment } from '@/app/api/shop/admin/orders/[id]/cancel-payment/route';
-import { POST as postShippingAction } from '@/app/api/shop/admin/orders/[id]/shipping/route';
+import {
+  PATCH as patchShippingEdit,
+  POST as postShippingAction,
+} from '@/app/api/shop/admin/orders/[id]/shipping/route';
 import { PATCH as patchStatus } from '@/app/api/shop/admin/products/[id]/status/route';
 
 vi.mock('@/lib/auth/admin', () => {
@@ -97,6 +104,46 @@ describe('P0-SEC: admin CSRF required for mutating endpoints', () => {
       );
 
       const res = await postShippingAction(req, {
+        params: Promise.resolve({ id: '11111111-1111-1111-1111-111111111111' }),
+      });
+
+      expect(res.status).toBe(403);
+      const body = await res.json();
+      expect(body.code).toBe('CSRF_MISSING');
+    } finally {
+      if (prev === undefined) delete process.env.CSRF_SECRET;
+      else process.env.CSRF_SECRET = prev;
+    }
+  });
+
+  it('admin shipping edit: missing CSRF => 403 CSRF_MISSING', async () => {
+    const prev = process.env.CSRF_SECRET;
+    try {
+      process.env.CSRF_SECRET = 'test_csrf_secret';
+
+      const req = new NextRequest(
+        new Request('http://localhost/api/shop/admin/orders/x/shipping', {
+          method: 'PATCH',
+          headers: {
+            origin: 'http://localhost:3000',
+            'content-type': 'application/json',
+          },
+          body: JSON.stringify({
+            provider: 'nova_poshta',
+            methodCode: 'NP_WAREHOUSE',
+            selection: {
+              cityRef: 'city-ref-1',
+              warehouseRef: 'wh-ref-1',
+            },
+            recipient: {
+              fullName: 'Test User',
+              phone: '+380501112233',
+            },
+          }),
+        })
+      );
+
+      const res = await patchShippingEdit(req, {
         params: Promise.resolve({ id: '11111111-1111-1111-1111-111111111111' }),
       });
 

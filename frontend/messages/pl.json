@@ -482,13 +482,13 @@
         "message": "Zostaniesz przekierowany do bezpiecznej płatności lub zobaczysz potwierdzenie, jeśli płatność nie jest wymagana w tym środowisku",
         "notRedirected": "Jeśli nie zostałeś automatycznie przekierowany, otwórz swoje zamówienie",
         "goToOrder": "Przejdź do zamówienia",
-      "consent": {
-        "prefix": "Potwierdzam akceptację",
-        "termsLink": "Warunki świadczenia usług",
-        "and": "oraz",
-        "privacyLink": "Politykę prywatności",
-        "suffix": " dla tego zamówienia.",
-        "required": "Potwierdź akceptację Warunków świadczenia usług i Polityki prywatności przed złożeniem zamówienia."
+        "consent": {
+          "prefix": "Potwierdzam akceptację",
+          "termsLink": "Warunki świadczenia usług",
+          "and": "oraz",
+          "privacyLink": "Politykę prywatności",
+          "suffix": " dla tego zamówienia.",
+          "required": "Potwierdź akceptację Warunków świadczenia usług i Polityki prywatności przed złożeniem zamówienia."
         },
         "errors": {
           "unexpectedResponse": "Nieoczekiwana odpowiedź checkout.",
@@ -849,75 +849,95 @@
         "orderNumberLabel": "Numer do kontaktu: {id}",
         "placedOn": "Złożono {date}",
         "orderSummary": "Podsumowanie zamówienia",
-          "customerSummary": "Podsumowanie klienta",
-          "lifecycle": {
-            "eyebrow": "Stan zamówienia",
-            "heading": "Aktualizacja statusu",
-            "subtitle": "Używaj tych akcji, gdy trzeba bezpiecznie przesunąć zamówienie do następnego etapu.",
-            "confirm": "Potwierdź",
-            "cancel": "Anuluj",
-            "complete": "Zakończ",
-            "errors": {
-              "confirmRequiresPaid": "Potwierdzić można tylko opłacone zamówienia.",
-              "confirmNotAllowed": "Nie można potwierdzić tego zamówienia w bieżącym stanie.",
-              "cancelRequiresRefund": "Dla opłaconych zamówień należy użyć zwrotu, a nie anulowania.",
-              "completeRequiresShipping": "Zakończyć można tylko zamówienia z wysyłką.",
-              "completeNotAllowed": "Nie można zakończyć tego zamówienia w bieżącym stanie.",
-              "csrfRejected": "Weryfikacja bezpieczeństwa nie powiodła się. Odśwież stronę i spróbuj ponownie.",
-              "invalidPayload": "Nieprawidłowe żądanie lifecycle.",
-              "internalError": "Nie udało się wykonać akcji lifecycle. Spróbuj ponownie.",
-              "generic": "Akcja lifecycle nie jest dostępna w bieżącym stanie."
-            }
-          },
-          "actions": {
-            "heading": "Akcje administratora",
-            "subtitle": "Wybierz następny bezpieczny krok dla tego zamówienia. Pokazujemy tylko działania pasujące do bieżącego stanu.",
-            "empty": "Brak dostępnych akcji administratora dla bieżącego stanu."
-          },
-          "shippingControls": {
-            "eyebrow": "Wysyłka",
-            "heading": "Obsługa przesyłki",
-            "subtitle": "Odzyskuj lub przesuwaj dostawę tylko wtedy, gdy przesyłka jest już do tego gotowa.",
-            "recoverInitialShipment": "Odzyskaj przesyłkę",
-            "retryLabelCreation": "Ponów etykietę",
-            "markShipped": "Oznacz jako wysłane",
-            "markDelivered": "Oznacz jako dostarczone",
-            "errors": {
-              "network": "Nie udało się wysłać akcji wysyłki. Spróbuj ponownie.",
-              "security": "Weryfikacja bezpieczeństwa nie powiodła się. Odśwież stronę i spróbuj ponownie.",
-              "recoverNotAvailable": "Odzyskanie przesyłki nie jest już dostępne dla tego zamówienia.",
-              "shipmentMissing": "Nie ma jeszcze rekordu przesyłki, który można zaktualizować.",
-              "retryNotAvailable": "Ponowienie etykiety nie jest teraz dostępne dla tego stanu przesyłki.",
-              "transitionNotAvailable": "Ten krok wysyłki nie jest już dostępny dla bieżącego stanu zamówienia.",
-              "adminDisabled": "Akcje wysyłki administratora są obecnie niedostępne.",
-              "generic": "Nie udało się wykonać akcji wysyłki. Odśwież zamówienie i spróbuj ponownie."
-            }
-          },
-          "paymentControls": {
-            "eyebrow": "Płatność",
-            "heading": "Obsługa płatności",
-            "subtitle": "Używaj narzędzi płatniczych tylko wtedy, gdy zamówienie wymaga finansowej obsługi.",
-            "refund": "Zwróć płatność",
-            "refunding": "Zwrot płatności…",
-            "onlyForPaidStripe": "Zwrot jest dostępny tylko dla opłaconych zamówień Stripe",
-            "cancelUnpaidPayment": "Anuluj nieopłaconą płatność",
-            "cancelingPayment": "Anulowanie płatności…",
-            "onlyForUnpaidMonobank": "Ta akcja jest dostępna tylko dla nieopłaconych zamówień Monobank",
-            "errors": {
-              "network": "Nie udało się wysłać akcji płatności. Spróbuj ponownie.",
-              "security": "Weryfikacja bezpieczeństwa nie powiodła się. Odśwież stronę i spróbuj ponownie.",
-              "refundNotAvailable": "Zwrot nie jest już dostępny dla tego zamówienia.",
-              "cancelPaymentDisabled": "Anulowanie płatności jest obecnie niedostępne.",
-              "cancelPaymentNotAvailable": "Anulowanie nieopłaconej płatności nie jest już dostępne dla tego zamówienia.",
-              "cancelPaymentInProgress": "Anulowanie płatności jest już przetwarzane. Odśwież stronę za chwilę.",
-              "missingPaymentReference": "Brakuje identyfikatora płatności u dostawcy, więc tej akcji nie da się wykonać automatycznie.",
-              "invalidAmount": "Dane kwoty zamówienia są niepełne, więc automatyczny zwrot nie może wystartować.",
-              "providerUnavailable": "Dostawca płatności jest chwilowo niedostępny. Spróbuj później.",
-              "adminDisabled": "Akcje płatności administratora są obecnie niedostępne.",
-              "generic": "Nie udało się wykonać akcji płatności. Odśwież zamówienie i spróbuj ponownie."
-            }
-          },
-          "customerAccount": "Konto klienta",
+        "customerSummary": "Podsumowanie klienta",
+        "lifecycle": {
+          "eyebrow": "Stan zamówienia",
+          "heading": "Aktualizacja statusu",
+          "subtitle": "Używaj tych akcji, gdy trzeba bezpiecznie przesunąć zamówienie do następnego etapu.",
+          "confirm": "Potwierdź",
+          "cancel": "Anuluj",
+          "complete": "Zakończ",
+          "errors": {
+            "confirmRequiresPaid": "Potwierdzić można tylko opłacone zamówienia.",
+            "confirmNotAllowed": "Nie można potwierdzić tego zamówienia w bieżącym stanie.",
+            "cancelRequiresRefund": "Dla opłaconych zamówień należy użyć zwrotu, a nie anulowania.",
+            "completeRequiresShipping": "Zakończyć można tylko zamówienia z wysyłką.",
+            "completeNotAllowed": "Nie można zakończyć tego zamówienia w bieżącym stanie.",
+            "csrfRejected": "Weryfikacja bezpieczeństwa nie powiodła się. Odśwież stronę i spróbuj ponownie.",
+            "invalidPayload": "Nieprawidłowe żądanie lifecycle.",
+            "internalError": "Nie udało się wykonać akcji lifecycle. Spróbuj ponownie.",
+            "generic": "Akcja lifecycle nie jest dostępna w bieżącym stanie."
+          }
+        },
+        "actions": {
+          "heading": "Akcje administratora",
+          "subtitle": "Wybierz następny bezpieczny krok dla tego zamówienia. Pokazujemy tylko działania pasujące do bieżącego stanu.",
+          "empty": "Brak dostępnych akcji administratora dla bieżącego stanu."
+        },
+        "shippingControls": {
+          "eyebrow": "Wysyłka",
+          "heading": "Obsługa przesyłki",
+          "subtitle": "Odzyskuj lub przesuwaj dostawę tylko wtedy, gdy przesyłka jest już do tego gotowa.",
+          "recoverInitialShipment": "Odzyskaj przesyłkę",
+          "retryLabelCreation": "Ponów etykietę",
+          "markShipped": "Oznacz jako wysłane",
+          "markDelivered": "Oznacz jako dostarczone",
+          "errors": {
+            "network": "Nie udało się wysłać akcji wysyłki. Spróbuj ponownie.",
+            "security": "Weryfikacja bezpieczeństwa nie powiodła się. Odśwież stronę i spróbuj ponownie.",
+            "recoverNotAvailable": "Odzyskanie przesyłki nie jest już dostępne dla tego zamówienia.",
+            "shipmentMissing": "Nie ma jeszcze rekordu przesyłki, który można zaktualizować.",
+            "retryNotAvailable": "Ponowienie etykiety nie jest teraz dostępne dla tego stanu przesyłki.",
+            "transitionNotAvailable": "Ten krok wysyłki nie jest już dostępny dla bieżącego stanu zamówienia.",
+            "adminDisabled": "Akcje wysyłki administratora są obecnie niedostępne.",
+            "generic": "Nie udało się wykonać akcji wysyłki. Odśwież zamówienie i spróbuj ponownie."
+          }
+        },
+        "shippingEditor": {
+          "heading": "Edytuj dane dostawy",
+          "subtitle": "Zapisuj tylko zweryfikowane referencje Nova Poshta i dane odbiorcy dla tego zam\u00f3wienia.",
+          "cityRef": "Referencja miasta",
+          "pickupPointRef": "Referencja punktu odbioru",
+          "addressLine1": "Adres kuriera",
+          "addressLine2": "Szczeg\u00f3\u0142y adresu",
+          "currentCity": "Obecne miasto: {city}",
+          "currentPickupPoint": "Obecny punkt odbioru: {pickupPoint}",
+          "save": "Zapisz dane dostawy",
+          "saving": "Zapisywanie...",
+          "errors": {
+            "network": "Nie uda\u0142o si\u0119 wys\u0142a\u0107 edycji dostawy. Spr\u00f3buj ponownie.",
+            "security": "Weryfikacja bezpiecze\u0144stwa nie powiod\u0142a si\u0119. Od\u015bwie\u017c stron\u0119 i spr\u00f3buj ponownie.",
+            "invalid": "Dane dostawy s\u0105 nieprawid\u0142owe. Sprawd\u017a formularz i spr\u00f3buj ponownie.",
+            "notAllowed": "Danych dostawy nie mo\u017cna ju\u017c edytowa\u0107 dla tego zam\u00f3wienia.",
+            "adminDisabled": "Edycja dostawy administratora jest obecnie niedost\u0119pna.",
+            "generic": "Nie uda\u0142o si\u0119 zapisa\u0107 danych dostawy. Od\u015bwie\u017c zam\u00f3wienie i spr\u00f3buj ponownie."
+          }
+        },
+        "paymentControls": {
+          "eyebrow": "Płatność",
+          "heading": "Obsługa płatności",
+          "subtitle": "Używaj narzędzi płatniczych tylko wtedy, gdy zamówienie wymaga finansowej obsługi.",
+          "refund": "Zwróć płatność",
+          "refunding": "Zwrot płatności…",
+          "onlyForPaidStripe": "Zwrot jest dostępny tylko dla opłaconych zamówień Stripe",
+          "cancelUnpaidPayment": "Anuluj nieopłaconą płatność",
+          "cancelingPayment": "Anulowanie płatności…",
+          "onlyForUnpaidMonobank": "Ta akcja jest dostępna tylko dla nieopłaconych zamówień Monobank",
+          "errors": {
+            "network": "Nie udało się wysłać akcji płatności. Spróbuj ponownie.",
+            "security": "Weryfikacja bezpieczeństwa nie powiodła się. Odśwież stronę i spróbuj ponownie.",
+            "refundNotAvailable": "Zwrot nie jest już dostępny dla tego zamówienia.",
+            "cancelPaymentDisabled": "Anulowanie płatności jest obecnie niedostępne.",
+            "cancelPaymentNotAvailable": "Anulowanie nieopłaconej płatności nie jest już dostępne dla tego zamówienia.",
+            "cancelPaymentInProgress": "Anulowanie płatności jest już przetwarzane. Odśwież stronę za chwilę.",
+            "missingPaymentReference": "Brakuje identyfikatora płatności u dostawcy, więc tej akcji nie da się wykonać automatycznie.",
+            "invalidAmount": "Dane kwoty zamówienia są niepełne, więc automatyczny zwrot nie może wystartować.",
+            "providerUnavailable": "Dostawca płatności jest chwilowo niedostępny. Spróbuj później.",
+            "adminDisabled": "Akcje płatności administratora są obecnie niedostępne.",
+            "generic": "Nie udało się wykonać akcji płatności. Odśwież zamówienie i spróbuj ponownie."
+          }
+        },
+        "customerAccount": "Konto klienta",
         "accountUnavailable": "Zarejestrowane konto",
         "guest": "Zamówienie gościa",
         "total": "Razem",
@@ -984,37 +1004,38 @@
           "failed": "Błąd",
           "needsAttention": "Wymaga uwagi"
         },
-          "shippingMethods": {
-            "novaPoshtaWarehouse": "Oddział Nova Poshta",
-            "novaPoshtaLocker": "Automat Nova Poshta",
-            "novaPoshtaCourier": "Kurier Nova Poshta"
-          },
-          "history": {
-            "heading": "Historia",
-            "subtitle": "Działania administratora i przejścia statusów dla tego zamówienia.",
-            "empty": "Brak historii zamówienia.",
-            "adminUser": "Administrator",
-            "system": "System",
-            "legacySource": "Historia legacy",
-            "shippingTransition": "Dostawa: {from} -> {to}",
-            "shipmentState": "Status przesyłki: {status}",
-            "requestId": "Żądanie: {requestId}",
-            "actions": {
-              "confirm": "Potwierdzono zamówienie",
-              "cancel": "Anulowano zamówienie",
-              "complete": "Zakończono zamówienie",
-              "refund": "Zlecono zwrot",
-              "cancelPayment": "Anulowano nieopłaconą płatność",
-              "recoverInitialShipment": "Odzyskano początkową przesyłkę",
-              "retryLabelCreation": "Ponowiono utworzenie etykiety",
-              "markShipped": "Oznaczono jako wysłane",
-              "markDelivered": "Oznaczono jako dostarczone"
-            }
-          },
-          "fulfillmentStages": {
-            "processing": "Przetwarzanie",
-            "packed": "Spakowane",
-            "shipped": "Wysłane",
+        "shippingMethods": {
+          "novaPoshtaWarehouse": "Oddział Nova Poshta",
+          "novaPoshtaLocker": "Automat Nova Poshta",
+          "novaPoshtaCourier": "Kurier Nova Poshta"
+        },
+        "history": {
+          "heading": "Historia",
+          "subtitle": "Działania administratora i przejścia statusów dla tego zamówienia.",
+          "empty": "Brak historii zamówienia.",
+          "adminUser": "Administrator",
+          "system": "System",
+          "legacySource": "Historia legacy",
+          "shippingTransition": "Dostawa: {from} -> {to}",
+          "shipmentState": "Status przesyłki: {status}",
+          "requestId": "Żądanie: {requestId}",
+          "actions": {
+            "confirm": "Potwierdzono zamówienie",
+            "cancel": "Anulowano zamówienie",
+            "complete": "Zakończono zamówienie",
+            "refund": "Zlecono zwrot",
+            "cancelPayment": "Anulowano nieopłaconą płatność",
+            "recoverInitialShipment": "Odzyskano początkową przesyłkę",
+            "retryLabelCreation": "Ponowiono utworzenie etykiety",
+            "markShipped": "Oznaczono jako wysłane",
+            "markDelivered": "Oznaczono jako dostarczone",
+            "editShipping": "Edytowano dane dostawy"
+          }
+        },
+        "fulfillmentStages": {
+          "processing": "Przetwarzanie",
+          "packed": "Spakowane",
+          "shipped": "Wysłane",
           "delivered": "Dostarczone",
           "canceled": "Anulowane",
           "returned": "Zwrócone"

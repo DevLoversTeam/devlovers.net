@@ -125,6 +125,26 @@ vi.mock('@/app/[locale]/admin/shop/orders/[id]/ShippingActions', () => ({
     ),
 }));
 
+vi.mock('@/app/[locale]/admin/shop/orders/[id]/ShippingEditForm', () => ({
+  ShippingEditForm: ({
+    orderId,
+    initialShipping,
+  }: {
+    orderId: string;
+    initialShipping: { methodCode: string; cityRef: string };
+  }) =>
+    createElement(
+      'div',
+      {
+        'data-testid': 'shipping-edit-form',
+        'data-order-id': orderId,
+        'data-method-code': initialShipping.methodCode,
+        'data-city-ref': initialShipping.cityRef,
+      },
+      'shipping-edit-form'
+    ),
+}));
+
 vi.mock('@/app/[locale]/admin/shop/orders/[id]/RefundButton', () => ({
   RefundButton: ({ orderId }: { orderId: string }) =>
     createElement(
@@ -171,7 +191,7 @@ function baseOrderDetail(
     shippingStatus: 'label_created',
     trackingNumber: 'TRACK-123',
     shippingProviderRef: 'ref-123',
-    shipmentStatus: 'created',
+    shipmentStatus: 'queued',
     shipmentAttemptCount: 1,
     shipmentLastErrorCode: null,
     shipmentLastErrorMessage: null,
@@ -272,6 +292,7 @@ describe('admin order detail customer summary', () => {
     expect(html).toContain('Customer summary');
     expect(html).toContain('Admin actions');
     expect(html).toContain('shipping-actions');
+    expect(html).not.toContain('shipping-edit-form');
     expect(html).toContain('refund-button');
     expect(html).not.toContain('cancel-payment-button');
     expect(html).toContain('Admin Customer');
@@ -301,6 +322,7 @@ describe('admin order detail customer summary', () => {
         customerAccountName: null,
         customerAccountEmail: null,
         shippingStatus: null,
+        shipmentStatus: 'processing',
         trackingNumber: null,
         paymentIntentId: null,
         shippingAddress: {
@@ -362,6 +384,46 @@ describe('admin order detail customer summary', () => {
     expect(readFieldValue(html, 'Customer account')).toBe('Named Account');
     expect(html).not.toContain('Account unavailable');
     expect(html).not.toContain('customer@example.com');
+  });
+
+  it('renders the shipping editor when the order is still in an editable shipping state', async () => {
+    getAdminOrderDetailMock.mockResolvedValue(
+      baseOrderDetail({
+        shippingStatus: 'pending',
+        shipmentStatus: null,
+        shippingAddress: {
+          provider: 'nova_poshta',
+          methodCode: 'NP_WAREHOUSE',
+          selection: {
+            cityRef: 'city-ref-1',
+            cityNameUa: 'Kyiv',
+            warehouseRef: 'wh-ref-1',
+            warehouseName: 'Warehouse 12',
+          },
+          recipient: {
+            fullName: 'Ivan Petrenko',
+            phone: '+380501112233',
+          },
+        },
+      })
+    );
+
+    const html = renderToStaticMarkup(
+      await OrderDetailPage({
+        params: Promise.resolve({
+          locale: 'en',
+          id: '550e8400-e29b-41d4-a716-446655440000',
+        }),
+      })
+    );
+
+    expect(html).toContain('Edit shipping details');
+    expect(html).toContain('shipping-edit-form');
+    expect(html).toContain(
+      'data-order-id="550e8400-e29b-41d4-a716-446655440000"'
+    );
+    expect(html).toContain('data-method-code="NP_WAREHOUSE"');
+    expect(html).toContain('data-city-ref="city-ref-1"');
   });
 
   it('renders account-email-only registered snapshots once without duplicate secondary line', async () => {

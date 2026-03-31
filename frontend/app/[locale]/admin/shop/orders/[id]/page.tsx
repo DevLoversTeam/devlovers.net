@@ -15,6 +15,7 @@ import { getCurrentUser } from '@/lib/auth';
 import { logError } from '@/lib/logging';
 import { CSRF_FORM_FIELD, issueCsrfToken } from '@/lib/security/csrf';
 import { getAdminOrderLifecycleAvailability } from '@/lib/services/shop/admin-order-lifecycle';
+import { getAdminOrderShippingEditAvailability } from '@/lib/services/shop/shipping/admin-edit';
 import { evaluateOrderShippingEligibility } from '@/lib/services/shop/shipping/eligibility';
 import { type CurrencyCode, formatMoney } from '@/lib/shop/currency';
 import { fromDbMoney } from '@/lib/shop/money';
@@ -31,6 +32,7 @@ import { CancelPaymentButton } from './CancelPaymentButton';
 import { RefundButton } from './RefundButton';
 import { ShippingActions } from './ShippingActions';
 import { getAdminOrderShippingActionVisibility } from './shippingActionVisibility';
+import { ShippingEditForm } from './ShippingEditForm';
 
 export const metadata: Metadata = {
   title: 'Order Details | DevLovers',
@@ -52,6 +54,20 @@ type NormalizedCustomerSummary = {
   city: string | null;
   pickupPoint: string | null;
   address: string | null;
+};
+
+type ShippingEditInitialData = {
+  methodCode: 'NP_WAREHOUSE' | 'NP_LOCKER' | 'NP_COURIER';
+  cityRef: string;
+  cityLabel: string | null;
+  warehouseRef: string | null;
+  warehouseLabel: string | null;
+  addressLine1: string | null;
+  addressLine2: string | null;
+  recipientFullName: string;
+  recipientPhone: string;
+  recipientEmail: string | null;
+  recipientComment: string | null;
 };
 
 function safeFormatMoneyMajor(
@@ -154,6 +170,43 @@ function normalizeCustomerSummary(
     city,
     pickupPoint,
     address,
+  };
+}
+
+function normalizeShippingEditInitialData(
+  order: AdminOrderDetail
+): ShippingEditInitialData | null {
+  const root = isRecord(order.shippingAddress) ? order.shippingAddress : {};
+  const selection = isRecord(root.selection) ? root.selection : {};
+  const recipient = isRecord(root.recipient) ? root.recipient : {};
+  const methodCode = firstNonEmpty(
+    order.shippingMethodCode,
+    toStringOrNull(root.methodCode)
+  );
+
+  if (
+    methodCode !== 'NP_WAREHOUSE' &&
+    methodCode !== 'NP_LOCKER' &&
+    methodCode !== 'NP_COURIER'
+  ) {
+    return null;
+  }
+
+  return {
+    methodCode,
+    cityRef: toStringOrNull(selection.cityRef) ?? '',
+    cityLabel: firstNonEmpty(
+      toStringOrNull(selection.cityNameUa),
+      toStringOrNull(selection.cityNameRu)
+    ),
+    warehouseRef: toStringOrNull(selection.warehouseRef),
+    warehouseLabel: toStringOrNull(selection.warehouseName),
+    addressLine1: toStringOrNull(selection.addressLine1),
+    addressLine2: toStringOrNull(selection.addressLine2),
+    recipientFullName: toStringOrNull(recipient.fullName) ?? '',
+    recipientPhone: toStringOrNull(recipient.phone) ?? '',
+    recipientEmail: toStringOrNull(recipient.email),
+    recipientComment: toStringOrNull(recipient.comment),
   };
 }
 
@@ -300,6 +353,8 @@ function historyActionLabel(
       return t('history.actions.markShipped');
     case 'mark_delivered':
       return t('history.actions.markDelivered');
+    case 'edit_shipping':
+      return t('history.actions.editShipping');
     default:
       return action;
   }
@@ -391,6 +446,7 @@ export default async function OrderDetailPage({
   const paymentStatusT = await getTranslations('shop.orders.paymentStatus');
   const lifecycleCsrfToken = issueCsrfToken('admin:orders:lifecycle');
   const shippingCsrfToken = issueCsrfToken('admin:orders:shipping:action');
+  const shippingEditCsrfToken = issueCsrfToken('admin:orders:shipping:edit');
   const refundCsrfToken = issueCsrfToken('admin:orders:refund');
   const cancelPaymentCsrfToken = issueCsrfToken('admin:orders:cancel-payment');
 
@@ -472,6 +528,12 @@ export default async function OrderDetailPage({
     shippingStatus: order.shippingStatus,
     shipmentStatus: order.shipmentStatus,
   });
+  const shippingEditEnabled = getAdminOrderShippingEditAvailability({
+    shippingReady,
+    shippingStatus: order.shippingStatus,
+    shipmentStatus: order.shipmentStatus,
+  });
+  const shippingEditInitialData = normalizeShippingEditInitialData(order);
   const paymentEnabled = paymentControlsEnabled(order);
   const lifecycleErrorCode = Array.isArray(sp.lifecycleError)
     ? (sp.lifecycleError[0] ?? null)
@@ -918,6 +980,21 @@ export default async function OrderDetailPage({
               </dd>
             </div>
           </dl>
+
+          {shippingEditEnabled && shippingEditInitialData ? (
+            <section className="mt-6 border-t pt-4">
+              <div className="mb-3">
+                <h3 className="text-foreground text-sm font-semibold">
+                  {t('shippingEditor.heading')}
+                </h3>
+              </div>
+              <ShippingEditForm
+                orderId={order.id}
+                csrfToken={shippingEditCsrfToken}
+                initialShipping={shippingEditInitialData}
+              />
+            </section>
+          ) : null}
         </section>
       </div>
 
