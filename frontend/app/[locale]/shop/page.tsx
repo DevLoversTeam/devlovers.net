@@ -20,6 +20,9 @@ export const metadata: Metadata = {
     'DevLovers merch shop — browse products, add to cart, and checkout.',
 };
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export default async function HomePage({
   params,
 }: {

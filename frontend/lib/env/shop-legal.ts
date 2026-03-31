@@ -1,5 +1,7 @@
 import 'server-only';
 
+import { readServerEnv } from './server-env';
+
 const DEFAULT_TERMS_VERSION = 'terms-v1';
 const DEFAULT_PRIVACY_VERSION = 'privacy-v1';
 
@@ -16,11 +18,11 @@ export type ShopLegalVersions = {
 export function getShopLegalVersions(): ShopLegalVersions {
   return {
     termsVersion: readVersion(
-      process.env.SHOP_TERMS_VERSION,
+      readServerEnv('SHOP_TERMS_VERSION'),
       DEFAULT_TERMS_VERSION
     ),
     privacyVersion: readVersion(
-      process.env.SHOP_PRIVACY_VERSION,
+      readServerEnv('SHOP_PRIVACY_VERSION'),
       DEFAULT_PRIVACY_VERSION
     ),
   };

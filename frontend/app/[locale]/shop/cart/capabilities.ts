@@ -1,4 +1,5 @@
 import { isMonobankEnabled } from '@/lib/env/monobank';
+import { readServerEnv } from '@/lib/env/server-env';
 import { isPaymentsEnabled as isStripePaymentsEnabled } from '@/lib/env/stripe';
 
 function isFlagEnabled(value: string | undefined): boolean {
@@ -16,7 +17,7 @@ export function resolveStripeCheckoutEnabled(): boolean {
 }
 
 export function resolveMonobankCheckoutEnabled(): boolean {
-  const paymentsEnabled = isFlagEnabled(process.env.PAYMENTS_ENABLED);
+  const paymentsEnabled = isFlagEnabled(readServerEnv('PAYMENTS_ENABLED'));
   if (!paymentsEnabled) return false;
 
   try {
@@ -29,7 +30,7 @@ export function resolveMonobankCheckoutEnabled(): boolean {
 export function resolveMonobankGooglePayEnabled(): boolean {
   if (!resolveMonobankCheckoutEnabled()) return false;
 
-  const raw = (process.env.SHOP_MONOBANK_GPAY_ENABLED ?? '')
+  const raw = (readServerEnv('SHOP_MONOBANK_GPAY_ENABLED') ?? '')
     .trim()
     .toLowerCase();
   return raw === 'true' || raw === '1' || raw === 'yes' || raw === 'on';

@@ -16,6 +16,9 @@ export const metadata: Metadata = {
   description: 'Browse all DevLovers products, available sizes, and prices',
 };
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 type RawSearchParams = {
   category?: string;
   type?: string;
