@@ -10,6 +10,7 @@ const adminUser = {
 
 const refundOrderMock = vi.hoisted(() => vi.fn());
 const cancelMonobankUnpaidPaymentMock = vi.hoisted(() => vi.fn());
+const logErrorMock = vi.hoisted(() => vi.fn());
 const writeAdminAuditMock = vi.hoisted(() =>
   vi.fn(async (..._call: [WriteAdminAuditArgs, { db?: unknown }?]) => {
     void _call;
@@ -58,7 +59,7 @@ vi.mock('@/lib/logging', async () => {
   return {
     ...actual,
     logWarn: () => {},
-    logError: () => {},
+    logError: (...args: unknown[]) => logErrorMock(...args),
   };
 });
 
@@ -139,6 +140,57 @@ describe('admin order payment audit routes', () => {
     );
   });
 
+  it('refund route keeps 200 success when audit persistence fails after refund succeeds', async () => {
+    const orderId = '550e8400-e29b-41d4-a716-446655440010';
+    const requestId = 'req_refund_route_audit_nonfatal';
+    const auditError = new Error('audit write failed after refund');
+
+    refundOrderMock.mockResolvedValue({
+      id: orderId,
+      totalAmountMinor: 2500,
+      totalAmount: 25,
+      currency: 'USD',
+      paymentStatus: 'paid',
+      fulfillmentStage: 'processing',
+      paymentProvider: 'stripe',
+      paymentIntentId: 'pi_test_456',
+      createdAt: new Date('2026-03-31T12:00:00.000Z'),
+      items: [],
+      pspStatusReason: 'REFUND_REQUESTED',
+    });
+    writeAdminAuditMock.mockRejectedValueOnce(auditError);
+
+    const { POST } =
+      await import('@/app/api/shop/admin/orders/[id]/refund/route');
+    const request = new NextRequest(
+      `http://localhost/api/shop/admin/orders/${orderId}/refund`,
+      {
+        method: 'POST',
+        headers: {
+          origin: 'http://localhost:3000',
+          'x-request-id': requestId,
+        },
+      }
+    );
+
+    const response = await POST(request, {
+      params: Promise.resolve({ id: orderId }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(logErrorMock).toHaveBeenCalledWith(
+      'admin_orders_refund_audit_failed',
+      auditError,
+      expect.objectContaining({
+        requestId,
+        orderId,
+        action: 'refund',
+        code: 'ADMIN_AUDIT_FAILED',
+        durationMs: expect.any(Number),
+      })
+    );
+  });
+
   it('cancel-payment route writes canonical order audit after successful unpaid cancel', async () => {
     const orderId = '550e8400-e29b-41d4-a716-446655440001';
     const requestId = 'req_cancel_payment_route_audit';
@@ -205,6 +257,64 @@ describe('admin order payment audit routes', () => {
           action: 'cancel_payment',
           orderId,
         },
+      })
+    );
+  });
+
+  it('cancel-payment route keeps 200 success when audit persistence fails after cancel succeeds', async () => {
+    const orderId = '550e8400-e29b-41d4-a716-446655440011';
+    const requestId = 'req_cancel_payment_route_audit_nonfatal';
+    const auditError = new Error('audit write failed after cancel');
+
+    cancelMonobankUnpaidPaymentMock.mockResolvedValue({
+      order: {
+        id: orderId,
+        totalAmountMinor: 2500,
+        totalAmount: 25,
+        currency: 'UAH',
+        paymentStatus: 'failed',
+        fulfillmentStage: 'canceled',
+        paymentProvider: 'monobank',
+        paymentIntentId: null,
+        createdAt: new Date('2026-03-31T12:00:00.000Z'),
+        items: [],
+      },
+      cancel: {
+        id: 'cancel_row_2',
+        extRef: `mono_cancel:${orderId}`,
+        status: 'success',
+        deduped: false,
+      },
+    });
+    writeAdminAuditMock.mockRejectedValueOnce(auditError);
+
+    const { POST } =
+      await import('@/app/api/shop/admin/orders/[id]/cancel-payment/route');
+    const request = new NextRequest(
+      `http://localhost/api/shop/admin/orders/${orderId}/cancel-payment`,
+      {
+        method: 'POST',
+        headers: {
+          origin: 'http://localhost:3000',
+          'x-request-id': requestId,
+        },
+      }
+    );
+
+    const response = await POST(request, {
+      params: Promise.resolve({ id: orderId }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(logErrorMock).toHaveBeenCalledWith(
+      'admin_orders_cancel_payment_audit_failed',
+      auditError,
+      expect.objectContaining({
+        requestId,
+        orderId,
+        action: 'cancel_payment',
+        code: 'ADMIN_AUDIT_FAILED',
+        durationMs: expect.any(Number),
       })
     );
   });

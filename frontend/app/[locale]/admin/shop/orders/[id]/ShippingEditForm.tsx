@@ -105,7 +105,7 @@ export function ShippingEditForm({
   const [recipientComment, setRecipientComment] = useState(
     initialShipping.recipientComment ?? ''
   );
-  const errorId = useId();
+  const errorAlertId = `${useId()}-error`;
 
   const isWarehouseMethod =
     methodCode === 'NP_WAREHOUSE' || methodCode === 'NP_LOCKER';
@@ -114,8 +114,25 @@ export function ShippingEditForm({
     event.preventDefault();
     if (isSubmitting || isPending) return;
 
-    setIsSubmitting(true);
     setError(null);
+
+    const trimmedCityRef = cityRef.trim();
+    const trimmedWarehouseRef = warehouseRef.trim();
+    const trimmedRecipientFullName = recipientFullName.trim();
+    const trimmedRecipientPhone = recipientPhone.trim();
+
+    const hasRequiredFields =
+      trimmedCityRef.length > 0 &&
+      trimmedRecipientFullName.length > 0 &&
+      trimmedRecipientPhone.length > 0 &&
+      (!isWarehouseMethod || trimmedWarehouseRef.length > 0);
+
+    if (!hasRequiredFields) {
+      setError(tEditor('errors.invalid'));
+      return;
+    }
+
+    setIsSubmitting(true);
 
     let response: Response;
     try {
@@ -212,6 +229,7 @@ export function ShippingEditForm({
           id="shipping-city-ref"
           value={cityRef}
           onChange={event => setCityRef(event.target.value)}
+          required
           className="border-border bg-background text-foreground w-full rounded-lg border px-3 py-2 text-sm"
         />
         {initialShipping.cityLabel ? (
@@ -233,6 +251,7 @@ export function ShippingEditForm({
             id="shipping-warehouse-ref"
             value={warehouseRef}
             onChange={event => setWarehouseRef(event.target.value)}
+            required
             className="border-border bg-background text-foreground w-full rounded-lg border px-3 py-2 text-sm"
           />
           {initialShipping.warehouseLabel ? (
@@ -288,6 +307,7 @@ export function ShippingEditForm({
           id="shipping-recipient-full-name"
           value={recipientFullName}
           onChange={event => setRecipientFullName(event.target.value)}
+          required
           className="border-border bg-background text-foreground w-full rounded-lg border px-3 py-2 text-sm"
         />
       </div>
@@ -303,6 +323,7 @@ export function ShippingEditForm({
           id="shipping-recipient-phone"
           value={recipientPhone}
           onChange={event => setRecipientPhone(event.target.value)}
+          required
           className="border-border bg-background text-foreground w-full rounded-lg border px-3 py-2 text-sm"
         />
       </div>
@@ -343,6 +364,7 @@ export function ShippingEditForm({
           type="submit"
           disabled={isSubmitting || isPending}
           aria-busy={isSubmitting || isPending}
+          aria-describedby={error ? errorAlertId : undefined}
           className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-3 py-2 text-sm font-medium text-emerald-700 transition-colors hover:bg-emerald-500/10 disabled:cursor-not-allowed disabled:opacity-50 dark:text-emerald-100"
         >
           {isSubmitting || isPending ? tEditor('saving') : tEditor('save')}
@@ -351,7 +373,7 @@ export function ShippingEditForm({
 
       {error ? (
         <p
-          id={errorId}
+          id={errorAlertId}
           role="alert"
           className="rounded-md border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs text-amber-700 dark:text-amber-100"
         >

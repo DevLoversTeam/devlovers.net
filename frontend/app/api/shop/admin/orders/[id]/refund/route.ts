@@ -163,28 +163,38 @@ export async function POST(
 
     const orderSummary = orderSummarySchema.parse(order);
 
-    await writeAdminAudit({
-      orderId: orderIdForLog,
-      actorUserId:
-        typeof adminUser?.id === 'string' && adminUser.id.trim().length > 0
-          ? adminUser.id
-          : null,
-      action: 'order_admin_action.refund',
-      targetType: 'order',
-      targetId: orderIdForLog,
-      requestId,
-      payload: {
-        action: 'refund',
-        paymentProvider: orderSummary.paymentProvider,
-        paymentStatus: orderSummary.paymentStatus,
-        fulfillmentStage: orderSummary.fulfillmentStage,
-      },
-      dedupeSeed: {
-        domain: 'order_admin_action',
-        action: 'refund',
+    try {
+      await writeAdminAudit({
         orderId: orderIdForLog,
-      },
-    });
+        actorUserId:
+          typeof adminUser?.id === 'string' && adminUser.id.trim().length > 0
+            ? adminUser.id
+            : null,
+        action: 'order_admin_action.refund',
+        targetType: 'order',
+        targetId: orderIdForLog,
+        requestId,
+        payload: {
+          action: 'refund',
+          paymentProvider: orderSummary.paymentProvider,
+          paymentStatus: orderSummary.paymentStatus,
+          fulfillmentStage: orderSummary.fulfillmentStage,
+        },
+        dedupeSeed: {
+          domain: 'order_admin_action',
+          action: 'refund',
+          orderId: orderIdForLog,
+        },
+      });
+    } catch (auditError) {
+      logError('admin_orders_refund_audit_failed', auditError, {
+        ...baseMeta,
+        code: 'ADMIN_AUDIT_FAILED',
+        orderId: orderIdForLog,
+        action: 'refund',
+        durationMs: Date.now() - startedAtMs,
+      });
+    }
 
     return noStoreJson({
       success: true,
