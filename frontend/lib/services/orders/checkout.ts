@@ -17,7 +17,9 @@ import {
   getShopShippingFlags,
   NovaPoshtaConfigError,
 } from '@/lib/env/nova-poshta';
+import { readServerEnv } from '@/lib/env/server-env';
 import { logError, logWarn } from '@/lib/logging';
+import { writePaymentEvent } from '@/lib/services/shop/events/write-payment-event';
 import { resolveShippingAvailability } from '@/lib/services/shop/shipping/availability';
 import {
   type CheckoutShippingQuote,
@@ -78,6 +80,42 @@ export async function findExistingCheckoutOrderByIdempotencyKey(
   idempotencyKey: string
 ): Promise<OrderSummaryWithMinor | null> {
   return getOrderByIdempotencyKey(db, idempotencyKey);
+}
+
+async function writeOrderCreatedCanonicalEvent(
+  order: OrderSummaryWithMinor
+): Promise<void> {
+  await writePaymentEvent({
+    orderId: order.id,
+    provider: order.paymentProvider,
+    eventName: 'order_created',
+    eventSource: 'checkout',
+    amountMinor: order.totalAmountMinor,
+    currency: order.currency,
+    payload: {
+      orderId: order.id,
+      totalAmountMinor: order.totalAmountMinor,
+      currency: order.currency,
+      paymentProvider: order.paymentProvider,
+      paymentStatus: order.paymentStatus,
+      fulfillmentStage: order.fulfillmentStage,
+      createdAt: order.createdAt.toISOString(),
+    },
+  });
+}
+
+async function ensureOrderCreatedCanonicalEvent(
+  order: OrderSummaryWithMinor
+): Promise<void> {
+  try {
+    await writeOrderCreatedCanonicalEvent(order);
+  } catch (error) {
+    logWarn('checkout_order_created_event_write_failed', {
+      orderId: order.id,
+      code: 'ORDER_CREATED_EVENT_WRITE_FAILED',
+      message: error instanceof Error ? error.message : String(error),
+    });
+  }
 }
 
 async function getProductsForCheckout(
@@ -697,9 +735,7 @@ function priceItems(
 }
 
 function isMonobankGooglePayEnabled(): boolean {
-  const raw = (process.env.SHOP_MONOBANK_GPAY_ENABLED ?? '')
-    .trim()
-    .toLowerCase();
+  const raw = readServerEnv('SHOP_MONOBANK_GPAY_ENABLED')?.toLowerCase() ?? '';
   return raw === 'true' || raw === '1' || raw === 'yes' || raw === 'on';
 }
 
@@ -1135,6 +1171,7 @@ export async function createOrderWithItems({
         snapshot: preparedShipping.snapshot,
       });
     }
+    await ensureOrderCreatedCanonicalEvent(existing);
     return {
       order: existing,
       isNew: false,
@@ -1345,6 +1382,7 @@ export async function createOrderWithItems({
             snapshot: preparedShipping.snapshot,
           });
         }
+        await ensureOrderCreatedCanonicalEvent(existingOrder);
         return {
           order: existingOrder,
           isNew: false,
@@ -1494,5 +1532,6 @@ export async function createOrderWithItems({
   }
 
   const order = await getOrderById(orderId);
+  await ensureOrderCreatedCanonicalEvent(order);
   return { order, isNew: true, totalCents: orderTotalCents };
 }

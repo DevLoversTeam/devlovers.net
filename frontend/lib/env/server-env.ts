@@ -44,13 +44,13 @@ const GENERATED_FALLBACK_KEYS = new Set([
   'ENABLE_ADMIN_API',
   'NEXT_PUBLIC_ENABLE_ADMIN',
   'SHOP_STATUS_TOKEN_SECRET',
+  'SHOP_MONOBANK_GPAY_ENABLED',
   'APP_ORIGIN',
   'APP_ADDITIONAL_ORIGINS',
   'GMAIL_USER',
   'GMAIL_APP_PASSWORD',
   'EMAIL_FROM',
 ]);
-
 
 function canUseGeneratedFallback(key: string): boolean {
   return GENERATED_FALLBACK_KEYS.has(key);
@@ -63,9 +63,8 @@ export function readServerEnv(key: string): string | undefined {
   const fromNetlify = readFromNetlifyEnv(key);
   if (fromNetlify) return fromNetlify;
 
- if (!canUseGeneratedFallback(key)) return undefined;
- return readFromGeneratedRuntimeEnv(key);
-
+  if (!canUseGeneratedFallback(key)) return undefined;
+  return readFromGeneratedRuntimeEnv(key);
 }
 
 function readFromGeneratedRuntimeEnv(key: string): string | undefined {

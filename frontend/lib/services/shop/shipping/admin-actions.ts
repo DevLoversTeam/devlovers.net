@@ -4,7 +4,12 @@ import { sql } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { isCanonicalEventsDualWriteEnabled } from '@/lib/env/shop-canonical-events';
-import { buildAdminAuditDedupeKey } from '@/lib/services/shop/events/dedupe-key';
+import { logWarn } from '@/lib/logging';
+import {
+  buildAdminAuditDedupeKey,
+  buildShippingEventDedupeKey,
+} from '@/lib/services/shop/events/dedupe-key';
+import { writeShippingEvent } from '@/lib/services/shop/events/write-shipping-event';
 import { evaluateOrderShippingEligibility } from '@/lib/services/shop/shipping/eligibility';
 import { ensureQueuedInitialShipment } from '@/lib/services/shop/shipping/ensure-queued-initial-shipment';
 import { recordShippingMetric } from '@/lib/services/shop/shipping/metrics';
@@ -21,7 +26,10 @@ export type ShippingAdminAction =
 
 type ShippingStateRow = {
   order_id: string;
+  total_amount_minor: number;
+  currency: string | null;
   payment_status: string | null;
+  payment_provider: string | null;
   order_status: string | null;
   inventory_status: string | null;
   psp_status_reason: string | null;
@@ -173,7 +181,10 @@ async function loadShippingState(
   const res = await db.execute<ShippingStateRow>(sql`
     select
       o.id as order_id,
+      o.total_amount_minor,
+      o.currency,
       o.payment_status,
+      o.payment_provider,
       o.status as order_status,
       o.inventory_status,
       o.psp_status_reason,
@@ -488,6 +499,66 @@ function buildShippingAdminAuditDedupe(args: {
   });
 }
 
+function buildOrderShippedEventDedupe(args: {
+  orderId: string;
+  shipmentId: string | null;
+}) {
+  return buildShippingEventDedupeKey({
+    domain: 'shipping_admin_action',
+    orderId: args.orderId,
+    shipmentId: args.shipmentId,
+    eventName: 'shipped',
+    statusTo: 'shipped',
+  });
+}
+
+async function ensureOrderShippedCanonicalEvent(args: {
+  state: ShippingStateRow;
+  trackingNumber: string | null;
+  requestId: string;
+  ensuredBy: string;
+}) {
+  if (args.state.shipping_status !== 'shipped') {
+    return;
+  }
+
+  try {
+    await writeShippingEvent({
+      orderId: args.state.order_id,
+      shipmentId: args.state.shipment_id ?? null,
+      provider: args.state.shipping_provider ?? 'nova_poshta',
+      eventName: 'shipped',
+      eventSource: 'shipping_admin_action',
+      eventRef: args.requestId,
+      statusFrom: null,
+      statusTo: 'shipped',
+      trackingNumber: args.trackingNumber ?? args.state.tracking_number ?? null,
+      payload: {
+        orderId: args.state.order_id,
+        totalAmountMinor: args.state.total_amount_minor,
+        currency: args.state.currency,
+        paymentProvider: args.state.payment_provider,
+        paymentStatus: args.state.payment_status,
+        shippingStatus: args.state.shipping_status,
+        trackingNumber:
+          args.trackingNumber ?? args.state.tracking_number ?? null,
+        ensuredBy: args.ensuredBy,
+      },
+      dedupeKey: buildOrderShippedEventDedupe({
+        orderId: args.state.order_id,
+        shipmentId: args.state.shipment_id ?? null,
+      }),
+    });
+  } catch (error) {
+    logWarn('order_shipped_event_write_failed', {
+      orderId: args.state.order_id,
+      requestId: args.requestId,
+      ensuredBy: args.ensuredBy,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
+
 export async function applyShippingAdminAction(args: {
   orderId: string;
   action: ShippingAdminAction;
@@ -694,6 +765,13 @@ export async function applyShippingAdminAction(args: {
         },
       });
 
+      await ensureOrderShippedCanonicalEvent({
+        state,
+        trackingNumber: state.tracking_number,
+        requestId: args.requestId,
+        ensuredBy: 'mark_shipped_replay',
+      });
+
       return {
         orderId: state.order_id,
         shippingStatus: state.shipping_status,
@@ -748,6 +826,17 @@ export async function applyShippingAdminAction(args: {
         409
       );
     }
+
+    await ensureOrderShippedCanonicalEvent({
+      state: {
+        ...state,
+        shipping_status: 'shipped',
+        tracking_number: updated.tracking_number,
+      },
+      trackingNumber: updated.tracking_number,
+      requestId: args.requestId,
+      ensuredBy: 'mark_shipped',
+    });
 
     return {
       orderId: updated.id,

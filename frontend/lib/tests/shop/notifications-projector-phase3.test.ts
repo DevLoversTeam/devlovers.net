@@ -94,6 +94,8 @@ describe.sequential('notifications projector phase 3', () => {
         'quote_declined',
         'quote_expired',
         'shipment_created',
+        'shipped',
+        'return_received',
       ];
       for (const eventName of shippingEventNames) {
         await db.insert(shippingEvents).values({
@@ -115,6 +117,40 @@ describe.sequential('notifications projector phase 3', () => {
       }
 
       await db.insert(paymentEvents).values([
+        {
+          id: crypto.randomUUID(),
+          orderId,
+          provider: 'stripe',
+          eventName: 'order_created',
+          eventSource: 'test_mapping',
+          eventRef: `evt_${crypto.randomUUID()}`,
+          amountMinor: 2000,
+          currency: 'USD',
+          payload: {
+            totalAmountMinor: 2000,
+            currency: 'USD',
+            paymentStatus: 'pending',
+          },
+          dedupeKey: makeDedupe('payment'),
+          occurredAt: new Date(),
+        } as any,
+        {
+          id: crypto.randomUUID(),
+          orderId,
+          provider: 'stripe',
+          eventName: 'order_canceled',
+          eventSource: 'test_mapping',
+          eventRef: `evt_${crypto.randomUUID()}`,
+          amountMinor: 2000,
+          currency: 'USD',
+          payload: {
+            totalAmountMinor: 2000,
+            currency: 'USD',
+            paymentStatus: 'failed',
+          },
+          dedupeKey: makeDedupe('payment'),
+          occurredAt: new Date(),
+        } as any,
         {
           id: crypto.randomUUID(),
           orderId,
@@ -144,7 +180,7 @@ describe.sequential('notifications projector phase 3', () => {
       ]);
 
       const projected = await runNotificationOutboxProjector({ limit: 100 });
-      expect(projected.inserted).toBeGreaterThanOrEqual(8);
+      expect(projected.inserted).toBeGreaterThanOrEqual(12);
 
       const rows = await db
         .select({
@@ -161,6 +197,10 @@ describe.sequential('notifications projector phase 3', () => {
           'intl_quote_accepted',
           'intl_quote_declined',
           'intl_quote_expired',
+          'order_created',
+          'order_shipped',
+          'order_canceled',
+          'order_returned',
           'payment_confirmed',
           'shipment_created',
           'refund_processed',

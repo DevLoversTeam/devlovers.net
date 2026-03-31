@@ -30,13 +30,22 @@ type OutboxClaimedRow = {
 type PreviewCountRow = { total: number };
 
 type NotificationRecipientLookupRow = {
+  order_user_id: string | null;
   shipping_email: string | null;
   user_email: string | null;
 };
 
-type NotificationRecipient = {
-  email: string;
-};
+type NotificationRecipient =
+  | {
+      kind: 'resolved';
+      email: string;
+    }
+  | {
+      kind: 'missing';
+      missingCode:
+        | 'NOTIFICATION_GUEST_RECIPIENT_MISSING'
+        | 'NOTIFICATION_RECIPIENT_MISSING';
+    };
 
 export type NotificationWorkerRunArgs = {
   runId: string;
@@ -135,6 +144,7 @@ async function loadNotificationRecipient(
 ): Promise<NotificationRecipient | null> {
   const res = await db.execute<NotificationRecipientLookupRow>(sql`
     select
+      o.user_id::text as order_user_id,
       nullif(trim(os.shipping_address #>> '{recipient,email}'), '') as shipping_email,
       nullif(trim(u.email), '') as user_email
     from orders o
@@ -149,15 +159,25 @@ async function loadNotificationRecipient(
 
   const shippingEmail = normalizeEmailOrNull(row.shipping_email);
   if (shippingEmail) {
-    return { email: shippingEmail };
+    return { kind: 'resolved', email: shippingEmail };
   }
 
   const userEmail = normalizeEmailOrNull(row.user_email);
   if (userEmail) {
-    return { email: userEmail };
+    return { kind: 'resolved', email: userEmail };
   }
 
-  return null;
+  if (!row.order_user_id) {
+    return {
+      kind: 'missing',
+      missingCode: 'NOTIFICATION_GUEST_RECIPIENT_MISSING',
+    };
+  }
+
+  return {
+    kind: 'missing',
+    missingCode: 'NOTIFICATION_RECIPIENT_MISSING',
+  };
 }
 
 function toNotificationSendError(error: unknown): NotificationSendError {
@@ -201,6 +221,16 @@ async function sendNotification(row: OutboxClaimedRow): Promise<void> {
     throw new NotificationSendError(
       'NOTIFICATION_RECIPIENT_MISSING',
       'Notification recipient email is missing for order.',
+      false
+    );
+  }
+
+  if (recipient.kind === 'missing') {
+    throw new NotificationSendError(
+      recipient.missingCode,
+      recipient.missingCode === 'NOTIFICATION_GUEST_RECIPIENT_MISSING'
+        ? 'Guest notification recipient email is missing from persisted shipping data.'
+        : 'Notification recipient email is missing for order.',
       false
     );
   }

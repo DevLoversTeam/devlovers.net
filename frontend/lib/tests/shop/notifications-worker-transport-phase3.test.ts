@@ -22,14 +22,15 @@ vi.mock('@/lib/services/shop/notifications/transport', () => ({
 }));
 
 import { db } from '@/db';
-import { notificationOutbox, orders, orderShipping } from '@/db/schema';
+import { notificationOutbox, orders, orderShipping, users } from '@/db/schema';
 import { runNotificationOutboxWorker } from '@/lib/services/shop/notifications/outbox-worker';
 import { toDbMoney } from '@/lib/shop/money';
 
-async function seedOrder() {
+async function seedOrder(userId: string | null = null) {
   const orderId = crypto.randomUUID();
   await db.insert(orders).values({
     id: orderId,
+    userId,
     totalAmountMinor: 1500,
     totalAmount: toDbMoney(1500),
     currency: 'USD',
@@ -40,6 +41,18 @@ async function seedOrder() {
     idempotencyKey: `phase3-notify-transport-${orderId}`,
   } as any);
   return orderId;
+}
+
+async function ensureUser(userId: string, email: string) {
+  await db
+    .insert(users)
+    .values({
+      id: userId,
+      email,
+      role: 'user',
+      name: 'Notification Test User',
+    } as any)
+    .onConflictDoNothing();
 }
 
 async function attachRecipientEmail(orderId: string, email: string) {
@@ -56,6 +69,10 @@ async function attachRecipientEmail(orderId: string, email: string) {
 
 async function cleanupOrder(orderId: string) {
   await db.delete(orders).where(eq(orders.id, orderId));
+}
+
+async function cleanupUser(userId: string) {
+  await db.delete(users).where(eq(users.id, userId));
 }
 
 async function insertOutboxRow(orderId: string) {
@@ -171,10 +188,58 @@ describe.sequential('notifications worker transport phase 3', () => {
       expect(row?.status).toBe('dead_letter');
       expect(row?.attemptCount).toBe(1);
       expect(row?.deadLetteredAt).toBeTruthy();
-      expect(row?.lastErrorCode).toBe('NOTIFICATION_RECIPIENT_MISSING');
+      expect(row?.lastErrorCode).toBe('NOTIFICATION_GUEST_RECIPIENT_MISSING');
       expect(sendShopNotificationEmailMock).not.toHaveBeenCalled();
     } finally {
       await cleanupOrder(orderId);
+    }
+  });
+
+  it('falls back to users.email for signed-in orders when shipping recipient email is absent', async () => {
+    sendShopNotificationEmailMock.mockResolvedValue({
+      messageId: 'msg-test-3',
+    });
+
+    const userId = `user-${crypto.randomUUID()}`;
+    await ensureUser(userId, 'account@example.test');
+
+    const orderId = await seedOrder(userId);
+    try {
+      const outboxId = await insertOutboxRow(orderId);
+
+      const result = await runNotificationOutboxWorker({
+        runId: `notify-worker-${crypto.randomUUID()}`,
+        limit: 10,
+        leaseSeconds: 120,
+        maxAttempts: 5,
+        baseBackoffSeconds: 5,
+      });
+
+      expect(result.claimed).toBe(1);
+      expect(result.sent).toBe(1);
+      expect(result.deadLettered).toBe(0);
+
+      const [row] = await db
+        .select({
+          status: notificationOutbox.status,
+          lastErrorCode: notificationOutbox.lastErrorCode,
+        })
+        .from(notificationOutbox)
+        .where(eq(notificationOutbox.id, outboxId))
+        .limit(1);
+
+      expect(row?.status).toBe('sent');
+      expect(row?.lastErrorCode).toBeNull();
+
+      expect(sendShopNotificationEmailMock).toHaveBeenCalledTimes(1);
+      expect(sendShopNotificationEmailMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: 'account@example.test',
+        })
+      );
+    } finally {
+      await cleanupOrder(orderId);
+      await cleanupUser(userId);
     }
   });
 });
