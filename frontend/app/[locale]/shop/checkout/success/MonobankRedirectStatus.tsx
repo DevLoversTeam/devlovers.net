@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Link } from '@/i18n/routing';
 import { formatMoneyCode } from '@/lib/shop/currency';
+import { formatGuestShipmentStatus } from '@/lib/shop/guest-shipment-status';
 import { type PaymentStatus } from '@/lib/shop/payments';
 import {
   SHOP_CTA_BASE,
@@ -32,6 +33,8 @@ type OrderStatusModel = {
   totalAmountMinor: number;
   paymentStatus: string;
   itemsCount: number;
+  shipmentStatus: string | null;
+  trackingNumber: string | null;
 };
 
 type StatusResult =
@@ -133,6 +136,14 @@ function normalizeToken(value: string | null | undefined): string | null {
 function parseOrderStatusPayload(payload: unknown): OrderStatusModel | null {
   if (!payload || typeof payload !== 'object') return null;
   const root = payload as Record<string, unknown>;
+  const shipmentStatus =
+    typeof root.shipmentStatus === 'string' && root.shipmentStatus.trim()
+      ? root.shipmentStatus
+      : null;
+  const trackingNumber =
+    typeof root.trackingNumber === 'string' && root.trackingNumber.trim()
+      ? root.trackingNumber
+      : null;
 
   if (
     typeof root.id === 'string' &&
@@ -151,6 +162,8 @@ function parseOrderStatusPayload(payload: unknown): OrderStatusModel | null {
       totalAmountMinor: root.totalAmountMinor,
       paymentStatus: root.paymentStatus,
       itemsCount: root.itemsCount,
+      shipmentStatus,
+      trackingNumber,
     };
   }
 
@@ -160,6 +173,14 @@ function parseOrderStatusPayload(payload: unknown): OrderStatusModel | null {
   if (!orderRaw || typeof orderRaw !== 'object') return null;
 
   const order = orderRaw as Record<string, unknown>;
+  const fullShipmentStatus =
+    typeof order.shipmentStatus === 'string' && order.shipmentStatus.trim()
+      ? order.shipmentStatus
+      : null;
+  const fullTrackingNumber =
+    typeof order.trackingNumber === 'string' && order.trackingNumber.trim()
+      ? order.trackingNumber
+      : null;
 
   if (typeof order.id !== 'string' || !order.id.trim()) return null;
   if (order.currency !== 'UAH') return null;
@@ -186,6 +207,8 @@ function parseOrderStatusPayload(payload: unknown): OrderStatusModel | null {
     totalAmountMinor: order.totalAmountMinor,
     paymentStatus: order.paymentStatus,
     itemsCount,
+    shipmentStatus: fullShipmentStatus,
+    trackingNumber: fullTrackingNumber,
   };
 }
 
@@ -350,6 +373,7 @@ export default function MonobankRedirectStatus({
 }: Props) {
   const router = useRouter();
   const t = useTranslations('shop.checkout');
+  const tOrder = useTranslations('shop.orders.detail');
   const [order, setOrder] = useState<OrderStatusModel | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [statusCode, setStatusCode] = useState<string | null>(null);
@@ -550,6 +574,9 @@ export default function MonobankRedirectStatus({
   const localizedPaymentStatus = isLoading
     ? t('paymentStatus.confirming')
     : t(getPaymentStatusKey(statusVm.uiState));
+  const localizedShipmentStatus = order
+    ? formatGuestShipmentStatus(order.shipmentStatus, tOrder)
+    : null;
 
   const errorText = useMemo(() => {
     if (!statusCode) return null;
@@ -635,6 +662,28 @@ export default function MonobankRedirectStatus({
                 {localizedPaymentStatus}
               </dd>
             </div>
+
+            {localizedShipmentStatus ? (
+              <div className="flex items-center justify-between gap-4">
+                <dt className="text-muted-foreground">
+                  {tOrder('shippingStatus')}
+                </dt>
+                <dd className="text-foreground text-right font-medium">
+                  {localizedShipmentStatus}
+                </dd>
+              </div>
+            ) : null}
+
+            {order?.trackingNumber ? (
+              <div className="flex items-center justify-between gap-4">
+                <dt className="text-muted-foreground">
+                  {tOrder('trackingNumber')}
+                </dt>
+                <dd className="text-foreground text-right font-medium [overflow-wrap:anywhere] break-words">
+                  {order.trackingNumber}
+                </dd>
+              </div>
+            ) : null}
           </dl>
         </div>
       </section>

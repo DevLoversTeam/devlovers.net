@@ -46,6 +46,8 @@ export type CheckoutLegalConsentInput = z.infer<
 
 export type OrderSummary = z.infer<typeof orderSummarySchema> & {
   totalCents?: number;
+  shipmentStatus?: string | null;
+  trackingNumber?: string | null;
 };
 
 export type OrderDetail = OrderSummary;

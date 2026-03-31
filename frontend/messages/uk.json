@@ -982,6 +982,7 @@
           "needsAttention": "Потребує уваги"
         },
         "shipmentStatuses": {
+          "processing": "Опрацювання",
           "queued": "У черзі",
           "created": "Створено",
           "succeeded": "Успішно",

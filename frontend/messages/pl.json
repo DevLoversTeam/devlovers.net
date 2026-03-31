@@ -977,6 +977,7 @@
           "needsAttention": "Wymaga uwagi"
         },
         "shipmentStatuses": {
+          "processing": "Przetwarzanie",
           "queued": "W kolejce",
           "created": "Utworzono",
           "succeeded": "Zakończono powodzeniem",
