@@ -118,6 +118,7 @@ export async function updateProduct(
     if (prices.length) {
       assertMergedPricesPolicy(mergedRows, {
         productId: id,
+        requiredCurrency: 'UAH',
         requireUsd: false,
       });
     }

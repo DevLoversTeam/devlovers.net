@@ -11,6 +11,7 @@ import {
   type Stripe,
   type StripeElementsOptions,
 } from '@stripe/stripe-js';
+import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 
 import { Link, useRouter } from '@/i18n/routing';
@@ -150,6 +151,7 @@ function StripePaymentForm({ orderId, locale, statusToken }: PaymentFormProps) {
   const stripe = useStripe();
   const elements = useElements();
   const router = useRouter();
+  const t = useTranslations('shop.checkout.paymentClient');
 
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -159,9 +161,7 @@ function StripePaymentForm({ orderId, locale, statusToken }: PaymentFormProps) {
     setErrorMessage(null);
 
     if (!stripe || !elements) {
-      setErrorMessage(
-        'Payment is not ready yet. Please try again in a moment.'
-      );
+      setErrorMessage(t('messages.notReady'));
       return;
     }
 
@@ -189,7 +189,7 @@ function StripePaymentForm({ orderId, locale, statusToken }: PaymentFormProps) {
       });
 
       if (error) {
-        setErrorMessage(error.message ?? 'Unable to confirm payment.');
+        setErrorMessage(error.message ?? t('messages.confirmFailed'));
         router.push(inAppFailure);
         return;
       }
@@ -208,7 +208,7 @@ function StripePaymentForm({ orderId, locale, statusToken }: PaymentFormProps) {
         : '';
 
       logError('stripe_payment_confirm_failed', error, { orderId });
-      setErrorMessage('We couldn’t confirm your payment. Please try again.');
+      setErrorMessage(t('messages.unexpectedConfirmFailed'));
       router.push(
         buildInAppPath(`/checkout/error?orderId=${id}${tokenSuffix}`)
       );
@@ -221,7 +221,7 @@ function StripePaymentForm({ orderId, locale, statusToken }: PaymentFormProps) {
     <form
       onSubmit={handleSubmit}
       className="space-y-4"
-      aria-label="Stripe payment form"
+      aria-label={t('aria.form')}
     >
       <PaymentElement />
 
@@ -232,7 +232,7 @@ function StripePaymentForm({ orderId, locale, statusToken }: PaymentFormProps) {
         aria-disabled={!stripe || submitting}
       >
         <HeroCtaInner>
-          {submitting ? 'Processing...' : 'Submit payment'}
+          {submitting ? t('actions.processing') : t('actions.submit')}
         </HeroCtaInner>
       </button>
 
@@ -255,6 +255,7 @@ export default function StripePaymentClient({
   currency,
   locale,
 }: StripePaymentClientProps) {
+  const t = useTranslations('shop.checkout.paymentClient');
   const uiCurrency = useMemo(
     () => resolveCheckoutDisplayCurrency(currency),
     [currency]
@@ -277,13 +278,13 @@ export default function StripePaymentClient({
     return (
       <section
         className="text-muted-foreground space-y-3 text-sm"
-        aria-label="Payments disabled"
+        aria-label={t('aria.paymentsDisabled')}
       >
-        <p>Payments are disabled in this environment.</p>
+        <p>{t('messages.paymentsDisabled')}</p>
 
         <nav
           className="flex flex-col gap-3 sm:flex-row"
-          aria-label="Next steps"
+          aria-label={t('aria.nextSteps')}
         >
           <Link
             href={buildInAppPath(
@@ -291,14 +292,14 @@ export default function StripePaymentClient({
             )}
             className={cn(SHOP_HERO_CTA, 'w-full sm:w-auto')}
           >
-            <HeroCtaInner>Continue</HeroCtaInner>
+            <HeroCtaInner>{t('actions.continue')}</HeroCtaInner>
           </Link>
 
           <Link
             href={buildInAppPath('/cart')}
             className={cn(SHOP_OUTLINE, 'w-full sm:w-auto')}
           >
-            Back to cart
+            {t('actions.backToCart')}
           </Link>
         </nav>
       </section>
@@ -309,15 +310,15 @@ export default function StripePaymentClient({
     return (
       <section
         className="text-muted-foreground space-y-3 text-sm"
-        aria-label="Payment initialization failed"
+        aria-label={t('aria.paymentInitializationFailed')}
       >
-        <p>Payment cannot be initialized. Please try again later.</p>
+        <p>{t('messages.initializationFailed')}</p>
 
         <Link
           href={buildInAppPath('/cart')}
           className={cn(SHOP_OUTLINE, 'w-full sm:w-auto')}
         >
-          Return to cart
+          {t('actions.returnToCart')}
         </Link>
       </section>
     );
@@ -326,18 +327,20 @@ export default function StripePaymentClient({
   if (!stripePromise || !options) {
     return (
       <p className="text-muted-foreground text-sm" aria-live="polite">
-        Preparing secure payment…
+        {t('messages.preparing')}
       </p>
     );
   }
 
   return (
-    <section aria-label="Secure payment">
+    <section aria-label={t('aria.securePayment')}>
       <Elements stripe={stripePromise as Promise<Stripe>} options={options}>
         <div className="space-y-4">
           <div className="border-border bg-muted/40 text-foreground rounded-md border p-3 text-sm">
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Pay</span>
+              <span className="text-muted-foreground">
+                {t('summary.payLabel')}
+              </span>
               <span className="text-base font-semibold">
                 {formatMoney(amountMinor, uiCurrency, locale)}
               </span>

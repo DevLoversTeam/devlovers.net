@@ -275,36 +275,27 @@ function isWarehouseMethod(
 function resolveShippingMethodCardCopy(args: {
   methodCode: CheckoutDeliveryMethodCode;
   fallbackTitle: string;
-  safeT: (key: string, fallback: string) => string;
+  translate: (key: string) => string;
 }): { title: string; description: string } {
-  const { methodCode, fallbackTitle, safeT } = args;
+  const { methodCode, fallbackTitle, translate } = args;
 
   switch (methodCode) {
     case 'NP_WAREHOUSE':
       return {
-        title: safeT('delivery.methodCards.warehouse.title', fallbackTitle),
-        description: safeT(
-          'delivery.methodCards.warehouse.description',
-          'Pick up at a Nova Poshta branch'
-        ),
+        title: translate('delivery.methodCards.warehouse.title'),
+        description: translate('delivery.methodCards.warehouse.description'),
       };
 
     case 'NP_LOCKER':
       return {
-        title: safeT('delivery.methodCards.locker.title', fallbackTitle),
-        description: safeT(
-          'delivery.methodCards.locker.description',
-          'Pick up from a Nova Poshta parcel locker'
-        ),
+        title: translate('delivery.methodCards.locker.title'),
+        description: translate('delivery.methodCards.locker.description'),
       };
 
     case 'NP_COURIER':
       return {
-        title: safeT('delivery.methodCards.courier.title', fallbackTitle),
-        description: safeT(
-          'delivery.methodCards.courier.description',
-          'Nova Poshta door-to-door delivery'
-        ),
+        title: translate('delivery.methodCards.courier.title'),
+        description: translate('delivery.methodCards.courier.description'),
       };
 
     default:
@@ -1722,7 +1713,7 @@ export default function CartPage({
                         const cardCopy = resolveShippingMethodCardCopy({
                           methodCode: method.methodCode,
                           fallbackTitle: method.title,
-                          safeT,
+                          translate: key => t(key as any),
                         });
 
                         return (

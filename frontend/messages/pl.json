@@ -574,6 +574,96 @@
           "active": "Aktywny",
           "hidden": "Ukryty",
           "featured": "Polecany"
+        },
+        "form": {
+          "headings": {
+            "create": "Utwórz nowy produkt",
+            "edit": "Edytuj produkt"
+          },
+          "sections": {
+            "basicInfo": "Podstawowe informacje",
+            "inventorySku": "Stan i SKU",
+            "catalogAttributes": "Atrybuty katalogu",
+            "variants": "Warianty",
+            "flagsBadge": "Flagi i odznaka",
+            "description": "Opis",
+            "photoManagement": "Zarządzanie zdjęciami"
+          },
+          "fields": {
+            "title": "Tytuł",
+            "slug": "Slug",
+            "slugHelp": "Generowany automatycznie z tytułu",
+            "price": "Cena ({currency})",
+            "originalPrice": "Cena pierwotna ({currency})",
+            "stock": "Stan",
+            "sku": "SKU",
+            "category": "Kategoria",
+            "selectCategory": "Wybierz kategorię",
+            "type": "Typ",
+            "selectType": "Wybierz typ",
+            "colors": "Kolory",
+            "sizes": "Rozmiary",
+            "badge": "Odznaka",
+            "isActive": "Aktywny",
+            "isFeatured": "Polecany",
+            "description": "Opis",
+            "photos": "Zdjęcia"
+          },
+          "badge": {
+            "none": "Brak",
+            "sale": "SALE",
+            "new": "NEW"
+          },
+          "pricing": {
+            "legend": "Ceny",
+            "helper": "UAH jest wymagana dla standardowego storefrontu. USD jest opcjonalna i pozostaje tylko dla zgodności.",
+            "uahLegend": "UAH (standardowy storefront)",
+            "usdLegend": "USD (opcjonalna zgodność)",
+            "policyPrefix": "Standardowy storefront finalizuje checkout w UAH. Zapisz wiersz UAH w",
+            "policySuffix": "dla waluty standardowego storefrontu. USD pozostaje tylko dla zgodności."
+          },
+          "photos": {
+            "helper": "Dodaj jedno lub więcej zdjęć, zmień ich kolejność i oznacz dokładnie jedno jako główne.",
+            "photoAlt": "Zdjęcie produktu {index}",
+            "photoLabel": "Zdjęcie {index}",
+            "primary": "Główne",
+            "status": {
+              "saved": "Zapisane",
+              "legacy": "Starszy obraz",
+              "new": "Nowy upload"
+            },
+            "actions": {
+              "setPrimary": "Ustaw jako główne",
+              "moveUp": "Przesuń w górę",
+              "moveDown": "Przesuń w dół",
+              "remove": "Usuń"
+            }
+          },
+          "actions": {
+            "creating": "Tworzenie...",
+            "updating": "Aktualizowanie...",
+            "create": "Utwórz produkt",
+            "save": "Zapisz zmiany"
+          },
+          "errors": {
+            "legacyPhotoMigrationRequired": "Starsze zdjęcia produktu trzeba zmigrować przed dodaniem lub zmianą kolejności zdjęć w galerii.",
+            "photoRequired": "Wymagane jest co najmniej jedno zdjęcie produktu.",
+            "atLeastOnePrice": "Wymagana jest co najmniej jedna cena.",
+            "uahRequired": "Dla standardowego storefrontu wymagana jest cena w UAH.",
+            "priceRequiredWhenOriginalSet": "{currency}: cena jest wymagana, gdy ustawiono cenę pierwotną.",
+            "invalidMoneyValue": "Nieprawidłowa kwota: \"{value}\"",
+            "invalidPriceValue": "Nieprawidłowa wartość ceny.",
+            "securityMissing": "Brakuje tokenu bezpieczeństwa. Odśwież stronę i spróbuj ponownie.",
+            "slugConflict": "Ten slug jest już używany. Spróbuj zmienić tytuł.",
+            "photoUpdateFailed": "Nie udało się zaktualizować zdjęć produktu",
+            "saleOriginalRequired": "Dla SALE wymagana jest cena pierwotna.",
+            "saleOriginalGreater": "Dla SALE cena pierwotna musi być wyższa od bieżącej.",
+            "securityExpired": "Token bezpieczeństwa wygasł. Odśwież stronę i spróbuj ponownie.",
+            "createFailed": "Nie udało się utworzyć produktu",
+            "updateFailed": "Nie udało się zaktualizować produktu",
+            "unexpectedCreate": "Nieoczekiwany błąd podczas tworzenia produktu.",
+            "unexpectedUpdate": "Nieoczekiwany błąd podczas aktualizowania produktu."
+          }
         }
       },
       "statusToggle": {
@@ -780,6 +870,40 @@
           "previousFailed": "Poprzednia próba płatności nie powiodła się. Spróbuj ponownie",
           "completePayment": "Dokończ płatność, aby sfinalizować zamówienie"
         }
+      },
+      "paymentClient": {
+        "aria": {
+          "form": "Formularz płatności Stripe",
+          "paymentsDisabled": "Płatności wyłączone",
+          "paymentInitializationFailed": "Nie udało się zainicjować płatności",
+          "nextSteps": "Dalsze kroki",
+          "securePayment": "Bezpieczna płatność"
+        },
+        "summary": {
+          "payLabel": "Do zapłaty"
+        },
+        "messages": {
+          "notReady": "Płatność nie jest jeszcze gotowa. Spróbuj ponownie za chwilę.",
+          "confirmFailed": "Nie udało się potwierdzić płatności.",
+          "unexpectedConfirmFailed": "Nie udało się potwierdzić płatności. Spróbuj ponownie.",
+          "paymentsDisabled": "Płatności są wyłączone w tym środowisku.",
+          "initializationFailed": "Nie można zainicjować płatności. Spróbuj ponownie później.",
+          "preparing": "Przygotowywanie bezpiecznej płatności..."
+        },
+        "actions": {
+          "processing": "Przetwarzanie...",
+          "submit": "Potwierdź płatność",
+          "continue": "Kontynuuj",
+          "backToCart": "Powrót do koszyka",
+          "returnToCart": "Wróć do koszyka"
+        }
+      },
+      "errorPage": {
+        "metaTitle": "Błąd realizacji zamówienia | DevLovers",
+        "metaDescription": "Nie udało się dokończyć składania zamówienia. Spróbuj ponownie lub skontaktuj się z pomocą.",
+        "checkoutNavigation": "Nawigacja realizacji zamówienia",
+        "orderDetails": "Szczegóły zamówienia",
+        "nextSteps": "Dalsze kroki"
       },
       "actions": {
         "backToProducts": "Wróć do produktów",

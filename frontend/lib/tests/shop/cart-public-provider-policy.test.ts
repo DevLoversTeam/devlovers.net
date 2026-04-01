@@ -16,7 +16,7 @@ describe('cart public provider policy', () => {
     ).toBe('monobank');
   });
 
-  it('keeps Monobank payment method selection available even before checkout enforcement switches', () => {
+  it('keeps Monobank payment method selection available without cart currency gating', () => {
     expect(
       resolveDefaultMethodForProvider({
         provider: 'monobank',

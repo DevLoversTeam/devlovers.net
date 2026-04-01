@@ -338,6 +338,23 @@ function refineNoDuplicateCurrencies(
   });
 }
 
+function refineRequiresStandardStorefrontCurrency(
+  prices: AdminPriceRow[],
+  ctx: z.RefinementCtx
+) {
+  const hasUah = prices.some(
+    price => price.currency === 'UAH' && price.priceMinor >= 1
+  );
+
+  if (!hasUah) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['prices'],
+      message: 'UAH price is required for the standard storefront',
+    });
+  }
+}
+
 export const productAdminSchema = z
   .object({
     title: z.string().min(1),
@@ -362,6 +379,7 @@ export const productAdminSchema = z
   })
   .superRefine((data, ctx) => {
     refineNoDuplicateCurrencies(data.prices, ctx);
+    refineRequiresStandardStorefrontCurrency(data.prices, ctx);
 
     if (data.badge === 'SALE') {
       data.prices.forEach((p, idx) => {
@@ -553,10 +571,6 @@ export const checkoutPayloadSchema = z
       return;
     }
 
-    const paymentCurrency =
-      value.paymentCurrency ??
-      (value.paymentProvider === 'monobank' ? 'UAH' : 'USD');
-
     const provider = value.paymentProvider;
     const method = value.paymentMethod;
 
@@ -577,7 +591,8 @@ export const checkoutPayloadSchema = z
 
     if (
       (method === 'monobank_invoice' || method === 'monobank_google_pay') &&
-      paymentCurrency !== 'UAH'
+      value.paymentCurrency != null &&
+      value.paymentCurrency !== 'UAH'
     ) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,

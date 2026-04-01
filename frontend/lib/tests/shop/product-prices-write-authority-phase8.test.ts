@@ -3,6 +3,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { db } from '@/db';
 import { productPrices, products } from '@/db/schema';
+import { PriceConfigError } from '@/lib/services/errors';
 import { createProduct } from '@/lib/services/products';
 import { updateProduct } from '@/lib/services/products';
 import { toDbMoney } from '@/lib/shop/money';
@@ -66,14 +67,24 @@ describe.sequential('product_prices write authority (phase 8)', () => {
 
     createdProductIds.push(product.id);
 
-    await db.insert(productPrices).values({
-      productId: product.id,
-      currency: 'USD',
-      priceMinor: 1000,
-      originalPriceMinor: null,
-      price: toDbMoney(1000),
-      originalPrice: null,
-    });
+    await db.insert(productPrices).values([
+      {
+        productId: product.id,
+        currency: 'USD',
+        priceMinor: 1000,
+        originalPriceMinor: null,
+        price: toDbMoney(1000),
+        originalPrice: null,
+      },
+      {
+        productId: product.id,
+        currency: 'UAH',
+        priceMinor: 4100,
+        originalPriceMinor: null,
+        price: toDbMoney(4100),
+        originalPrice: null,
+      },
+    ]);
 
     await updateProduct(product.id, {
       prices: [{ currency: 'USD', priceMinor: 2500, originalPriceMinor: null }],
@@ -102,10 +113,24 @@ describe.sequential('product_prices write authority (phase 8)', () => {
       )
       .limit(1);
 
+    const [uah] = await db
+      .select({
+        priceMinor: productPrices.priceMinor,
+      })
+      .from(productPrices)
+      .where(
+        and(
+          eq(productPrices.productId, product.id),
+          eq(productPrices.currency, 'UAH')
+        )
+      )
+      .limit(1);
+
     expect(String(legacy.price)).toBe(String(toDbMoney(1000)));
     expect(legacy.originalPrice).toBeNull();
     expect(usd.priceMinor).toBe(2500);
     expect(usd.originalPriceMinor).toBeNull();
+    expect(uah?.priceMinor).toBe(4100);
   });
 
   it('upserts non-USD row in product_prices without mutating legacy products.price fields', async () => {
@@ -186,6 +211,53 @@ describe.sequential('product_prices write authority (phase 8)', () => {
     expect(legacy.originalPrice).toBeNull();
     expect(usd.priceMinor).toBe(1200);
     expect(uah.priceMinor).toBe(4700);
+  });
+
+  it('rejects a pricing update that would leave the product without a UAH storefront row', async () => {
+    const [product] = await db
+      .insert(products)
+      .values({
+        slug: uniqueSlug(),
+        title: 'Phase8 USD-only merged state',
+        description: null,
+        imageUrl: 'https://example.com/p8-usd-only.png',
+        imagePublicId: null,
+        price: toDbMoney(1200),
+        originalPrice: null,
+        currency: 'USD',
+        category: null,
+        type: null,
+        colors: [],
+        sizes: [],
+        badge: 'NONE',
+        isActive: true,
+        isFeatured: false,
+        stock: 10,
+        sku: null,
+      })
+      .returning();
+
+    createdProductIds.push(product.id);
+
+    await db.insert(productPrices).values({
+      productId: product.id,
+      currency: 'USD',
+      priceMinor: 1200,
+      originalPriceMinor: null,
+      price: toDbMoney(1200),
+      originalPrice: null,
+    });
+
+    await expect(
+      updateProduct(product.id, {
+        prices: [
+          { currency: 'USD', priceMinor: 1500, originalPriceMinor: null },
+        ],
+      } as any)
+    ).rejects.toMatchObject({
+      code: 'PRICE_CONFIG_ERROR',
+      currency: 'UAH',
+    });
   });
 
   it('updates a UAH-only product row without requiring a dormant USD price row', async () => {

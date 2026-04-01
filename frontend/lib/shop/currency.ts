@@ -60,6 +60,8 @@ function normalizeLocaleForIntl(
   currency: CurrencyCode
 ): string {
   const raw = (locale ?? '').trim();
+  if (currency === 'UAH') return 'uk-UA';
+
   const primary = normalizeLocaleTag(raw);
 
   if (primary === 'uk') return 'uk-UA';
@@ -67,7 +69,7 @@ function normalizeLocaleForIntl(
 
   if (raw) return raw.replaceAll('_', '-');
 
-  return currency === 'UAH' ? 'uk-UA' : 'en-US';
+  return 'en-US';
 }
 
 const formatterCache = new Map<string, Intl.NumberFormat>();

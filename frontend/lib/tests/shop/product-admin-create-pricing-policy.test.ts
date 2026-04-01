@@ -3,6 +3,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { db } from '@/db';
 import { productPrices, products } from '@/db/schema';
+import { PriceConfigError } from '@/lib/services/errors';
 import { createProduct } from '@/lib/services/products';
 import { toDbMoney } from '@/lib/shop/money';
 import { assertNotProductionDb } from '@/lib/tests/helpers/db-safety';
@@ -54,6 +55,22 @@ describe.sequential('admin create pricing policy', () => {
     });
 
     expect(result.success).toBe(true);
+  });
+
+  it('rejects USD-only pricing in the admin create schema', () => {
+    const result = productAdminSchema.safeParse({
+      title: 'USD-only schema product',
+      slug: uniqueSlug('admin-schema-usd-only'),
+      prices: [{ currency: 'USD', priceMinor: 5100, originalPriceMinor: null }],
+      badge: 'NONE',
+      colors: [],
+      sizes: [],
+      stock: 2,
+      isActive: true,
+      isFeatured: false,
+    });
+
+    expect(result.success).toBe(false);
   });
 
   it('creates a product from UAH-only admin pricing while keeping the legacy USD mirror explicit', async () => {
@@ -116,5 +133,28 @@ describe.sequential('admin create pricing policy', () => {
     expect(uah?.priceMinor).toBe(5100);
     expect(uah?.originalPriceMinor).toBeNull();
     expect(usd).toBeUndefined();
+  });
+
+  it('rejects USD-only admin pricing at create-time even through the service layer', async () => {
+    await expect(
+      createProduct({
+        title: 'USD-only create product',
+        slug: uniqueSlug('admin-create-usd-only'),
+        description: null,
+        badge: 'NONE',
+        isActive: true,
+        isFeatured: false,
+        stock: 4,
+        prices: [
+          { currency: 'USD', priceMinor: 5100, originalPriceMinor: null },
+        ],
+        image: new File([new Uint8Array([1, 2, 3, 4])], 'create-usd-only.png', {
+          type: 'image/png',
+        }),
+      } as any)
+    ).rejects.toMatchObject({
+      code: 'PRICE_CONFIG_ERROR',
+      currency: 'UAH',
+    });
   });
 });

@@ -4,9 +4,52 @@ import userEvent from '@testing-library/user-event';
 import { createElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import en from '@/messages/en.json';
+
 vi.mock('next/image', () => ({
   default: () => null,
 }));
+
+function getAtPath(
+  root: Record<string, unknown>,
+  path: readonly string[]
+): unknown {
+  let current: unknown = root;
+
+  for (const segment of path) {
+    if (!current || typeof current !== 'object' || !(segment in current)) {
+      return undefined;
+    }
+    current = (current as Record<string, unknown>)[segment];
+  }
+
+  return current;
+}
+
+function formatMessage(
+  template: string,
+  values?: Record<string, string | number>
+) {
+  return template.replace(/\{(\w+)\}/g, (_match, key: string) =>
+    values && key in values ? String(values[key]) : `{${key}}`
+  );
+}
+
+function getFormMessage(key: string, values?: Record<string, string | number>) {
+  const raw = getAtPath(en as Record<string, unknown>, [
+    'shop',
+    'admin',
+    'products',
+    'form',
+    ...key.split('.'),
+  ]);
+
+  if (typeof raw !== 'string') {
+    throw new Error(`Missing test message: ${key}`);
+  }
+
+  return formatMessage(raw, values);
+}
 
 vi.mock('@/i18n/routing', () => ({
   useRouter: () => ({
@@ -15,11 +58,27 @@ vi.mock('@/i18n/routing', () => ({
   }),
 }));
 
+vi.mock('next-intl', () => ({
+  useTranslations:
+    (namespace: string) =>
+    (key: string, values?: Record<string, string | number>) => {
+      const raw = getAtPath(en as Record<string, unknown>, [
+        ...namespace.split('.'),
+        ...key.split('.'),
+      ]);
+
+      if (typeof raw !== 'string') {
+        throw new Error(`Missing test translation: ${namespace}.${key}`);
+      }
+
+      return formatMessage(raw, values);
+    },
+}));
+
 import {
   buildPhotoPlanSubmission,
   ensureUiPhotos,
   getPhotoPlanSubmissionError,
-  LEGACY_PHOTO_MIGRATION_REQUIRED_MESSAGE,
   ProductForm,
   revokeSupersededPhotoPreviewUrls,
 } from '@/app/[locale]/admin/shop/products/_components/ProductForm';
@@ -32,6 +91,10 @@ afterEach(() => {
 });
 
 describe('product photo plan fixes', () => {
+  const legacyPhotoMigrationRequiredMessage = getFormMessage(
+    'errors.legacyPhotoMigrationRequired'
+  );
+
   it('does not serialize fake existing image ids for legacy imageUrl-only edit state', () => {
     const photos = ensureUiPhotos({
       imageUrl: 'https://example.com/legacy-only.png',
@@ -46,7 +109,9 @@ describe('product photo plan fixes', () => {
       }),
     ]);
 
-    const submission = buildPhotoPlanSubmission(photos);
+    const submission = buildPhotoPlanSubmission(photos, {
+      legacyPhotoMigrationRequired: legacyPhotoMigrationRequiredMessage,
+    });
 
     expect(submission.photoPlan).toBeUndefined();
     expect(submission.newPhotos).toEqual([]);
@@ -67,11 +132,18 @@ describe('product photo plan fixes', () => {
       },
     ];
 
-    expect(getPhotoPlanSubmissionError(mixedPhotos)).toBe(
-      LEGACY_PHOTO_MIGRATION_REQUIRED_MESSAGE
-    );
-    expect(() => buildPhotoPlanSubmission(mixedPhotos)).toThrowError(
-      LEGACY_PHOTO_MIGRATION_REQUIRED_MESSAGE
+    expect(
+      getPhotoPlanSubmissionError(mixedPhotos, {
+        legacyPhotoMigrationRequired: legacyPhotoMigrationRequiredMessage,
+      })
+    ).toBe(legacyPhotoMigrationRequiredMessage);
+    expect(
+      () =>
+        buildPhotoPlanSubmission(mixedPhotos, {
+          legacyPhotoMigrationRequired: legacyPhotoMigrationRequiredMessage,
+        })
+    ).toThrowError(
+      legacyPhotoMigrationRequiredMessage
     );
   });
 
@@ -91,7 +163,7 @@ describe('product photo plan fixes', () => {
           slug: 'legacy-product',
           prices: [
             {
-              currency: 'USD',
+              currency: 'UAH',
               priceMinor: 5900,
               originalPriceMinor: null,
             },
@@ -107,17 +179,19 @@ describe('product photo plan fixes', () => {
       })
     );
 
-    const fileInput = screen.getByLabelText('Photos');
+    const fileInput = screen.getByLabelText(getFormMessage('fields.photos'));
     await user.upload(
       fileInput,
       new File(['new'], 'new.png', { type: 'image/png' })
     );
 
-    await user.click(screen.getByRole('button', { name: 'Save changes' }));
+    await user.click(
+      screen.getByRole('button', { name: getFormMessage('actions.save') })
+    );
 
     expect(fetchMock).not.toHaveBeenCalled();
     expect(
-      await screen.findByText(LEGACY_PHOTO_MIGRATION_REQUIRED_MESSAGE)
+      await screen.findByText(legacyPhotoMigrationRequiredMessage)
     ).toBeInTheDocument();
   });
 

@@ -57,12 +57,29 @@ function assertOptionalMoneyString(
 }
 export function assertMergedPricesPolicy(
   merged: NormalizedPriceRow[],
-  options?: { productId?: string; requireUsd?: boolean }
+  options?: {
+    productId?: string;
+    requireUsd?: boolean;
+    requiredCurrency?: CurrencyCode;
+  }
 ) {
   if (!merged.length) {
     throw new PriceConfigError('At least one price is required.', {
       productId: options?.productId,
     });
+  }
+
+  const requiredCurrency = options?.requiredCurrency;
+  if (requiredCurrency) {
+    const hasRequiredCurrency = merged.some(
+      p => p.currency === requiredCurrency && p.priceMinor >= 1
+    );
+    if (!hasRequiredCurrency) {
+      throw new PriceConfigError(`${requiredCurrency} price is required.`, {
+        productId: options?.productId,
+        currency: requiredCurrency,
+      });
+    }
   }
 
   const requireUsd = options?.requireUsd ?? true;

@@ -12,6 +12,7 @@ import { InvalidPayloadError, SlugConflictError } from '../../errors';
 import { mapRowToProduct } from '../mapping';
 import { resolvePhotoPlan } from '../photo-plan';
 import {
+  assertMergedPricesPolicy,
   enforceSaleBadgeRequiresOriginal,
   normalizePricesFromInput,
   resolveLegacyCompatPriceMirror,
@@ -31,6 +32,10 @@ export async function createProduct(input: ProductInput): Promise<DbProduct> {
   }
 
   validatePriceRows(prices);
+  assertMergedPricesPolicy(prices, {
+    requiredCurrency: 'UAH',
+    requireUsd: false,
+  });
 
   const badge = (input as any).badge ?? 'NONE';
   enforceSaleBadgeRequiresOriginal(badge, prices);

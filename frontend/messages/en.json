@@ -574,6 +574,96 @@
           "active": "Active",
           "hidden": "Hidden",
           "featured": "Featured"
+        },
+        "form": {
+          "headings": {
+            "create": "Create new product",
+            "edit": "Edit product"
+          },
+          "sections": {
+            "basicInfo": "Basic info",
+            "inventorySku": "Inventory and SKU",
+            "catalogAttributes": "Catalog attributes",
+            "variants": "Variants",
+            "flagsBadge": "Flags and badge",
+            "description": "Description",
+            "photoManagement": "Photo management"
+          },
+          "fields": {
+            "title": "Title",
+            "slug": "Slug",
+            "slugHelp": "Auto-generated from title",
+            "price": "Price ({currency})",
+            "originalPrice": "Original price ({currency})",
+            "stock": "Stock",
+            "sku": "SKU",
+            "category": "Category",
+            "selectCategory": "Select category",
+            "type": "Type",
+            "selectType": "Select type",
+            "colors": "Colors",
+            "sizes": "Sizes",
+            "badge": "Badge",
+            "isActive": "Is Active",
+            "isFeatured": "Is Featured",
+            "description": "Description",
+            "photos": "Photos"
+          },
+          "badge": {
+            "none": "None",
+            "sale": "SALE",
+            "new": "NEW"
+          },
+          "pricing": {
+            "legend": "Prices",
+            "helper": "UAH is required for the standard storefront. USD is optional and kept only as a compatibility price.",
+            "uahLegend": "UAH (standard storefront)",
+            "usdLegend": "USD (compatibility optional)",
+            "policyPrefix": "Standard storefront checkout uses UAH. Save a UAH row in",
+            "policySuffix": "for the standard storefront currency. USD is optional compatibility only."
+          },
+          "photos": {
+            "helper": "Add one or more photos, reorder them, and mark exactly one as primary.",
+            "photoAlt": "Product photo {index}",
+            "photoLabel": "Photo {index}",
+            "primary": "Primary",
+            "status": {
+              "saved": "Saved",
+              "legacy": "Legacy image",
+              "new": "New upload"
+            },
+            "actions": {
+              "setPrimary": "Set primary",
+              "moveUp": "Move up",
+              "moveDown": "Move down",
+              "remove": "Remove"
+            }
+          },
+          "actions": {
+            "creating": "Creating...",
+            "updating": "Updating...",
+            "create": "Create product",
+            "save": "Save changes"
+          },
+          "errors": {
+            "legacyPhotoMigrationRequired": "Legacy product photos must be migrated before adding or reordering gallery photos.",
+            "photoRequired": "At least one product photo is required.",
+            "atLeastOnePrice": "At least one price is required.",
+            "uahRequired": "UAH price is required for the standard storefront.",
+            "priceRequiredWhenOriginalSet": "{currency}: price is required when original price is set.",
+            "invalidMoneyValue": "Invalid money value: \"{value}\"",
+            "invalidPriceValue": "Invalid price value.",
+            "securityMissing": "Security token missing. Refresh the page and retry.",
+            "slugConflict": "This slug is already used. Try changing the title.",
+            "photoUpdateFailed": "Failed to update product photos",
+            "saleOriginalRequired": "Original price is required for SALE.",
+            "saleOriginalGreater": "Original price must be greater than price for SALE.",
+            "securityExpired": "Security token expired. Refresh the page and retry.",
+            "createFailed": "Failed to create product",
+            "updateFailed": "Failed to update product",
+            "unexpectedCreate": "Unexpected error while creating product.",
+            "unexpectedUpdate": "Unexpected error while updating product."
+          }
         }
       },
       "statusToggle": {
@@ -780,6 +870,40 @@
           "previousFailed": "The previous payment attempt failed. Please try again",
           "completePayment": "Complete payment to finish your order"
         }
+      },
+      "paymentClient": {
+        "aria": {
+          "form": "Stripe payment form",
+          "paymentsDisabled": "Payments disabled",
+          "paymentInitializationFailed": "Payment initialization failed",
+          "nextSteps": "Next steps",
+          "securePayment": "Secure payment"
+        },
+        "summary": {
+          "payLabel": "Pay"
+        },
+        "messages": {
+          "notReady": "Payment is not ready yet. Please try again in a moment.",
+          "confirmFailed": "Unable to confirm payment.",
+          "unexpectedConfirmFailed": "We couldn't confirm your payment. Please try again.",
+          "paymentsDisabled": "Payments are disabled in this environment.",
+          "initializationFailed": "Payment cannot be initialized. Please try again later.",
+          "preparing": "Preparing secure payment..."
+        },
+        "actions": {
+          "processing": "Processing...",
+          "submit": "Submit payment",
+          "continue": "Continue",
+          "backToCart": "Back to cart",
+          "returnToCart": "Return to cart"
+        }
+      },
+      "errorPage": {
+        "metaTitle": "Checkout Error | DevLovers",
+        "metaDescription": "We couldn't complete the checkout. Try again or contact support.",
+        "checkoutNavigation": "Checkout navigation",
+        "orderDetails": "Order details",
+        "nextSteps": "Next steps"
       },
       "monobankGooglePay": {
         "supportedDevices": "Google Pay available on supported devices",

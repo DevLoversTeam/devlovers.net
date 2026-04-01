@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { useRouter } from '@/i18n/routing';
@@ -65,8 +66,6 @@ type SaleRuleDetails = {
   rule?: 'required' | 'greater_than_price';
 };
 
-const SALE_REQUIRED_MSG = 'Original price is required for SALE.';
-const SALE_GREATER_MSG = 'Original price must be greater than price for SALE.';
 const CARD_CLASS =
   'rounded-xl border border-border bg-background/80 p-5 shadow-sm';
 const LABEL_CLASS = 'block text-sm font-medium text-foreground';
@@ -81,6 +80,16 @@ const SECONDARY_BUTTON_CLASS =
 const PRIMARY_BUTTON_CLASS =
   'inline-flex h-10 w-full items-center justify-center rounded-md bg-foreground px-4 text-sm font-semibold text-background transition-colors hover:bg-foreground/90 disabled:opacity-60';
 
+class InvalidMoneyValueError extends Error {
+  rawValue: string;
+
+  constructor(rawValue: string) {
+    super('INVALID_MONEY_VALUE');
+    this.name = 'InvalidMoneyValueError';
+    this.rawValue = rawValue;
+  }
+}
+
 function formatMinorToMajor(value: number): string {
   if (!Number.isFinite(value)) return '';
   const abs = Math.abs(Math.trunc(value));
@@ -93,13 +102,13 @@ function formatMinorToMajor(value: number): string {
 function parseMajorToMinor(value: string): number {
   const s = value.trim().replace(',', '.');
   if (!/^\d+(\.\d{1,2})?$/.test(s)) {
-    throw new Error(`Invalid money value: "${value}"`);
+    throw new InvalidMoneyValueError(value);
   }
   const [whole, frac = ''] = s.split('.');
   const frac2 = (frac + '00').slice(0, 2);
   const minor = Number(whole) * 100 + Number(frac2);
   if (!Number.isSafeInteger(minor) || minor < 0) {
-    throw new Error(`Invalid money value: "${value}"`);
+    throw new InvalidMoneyValueError(value);
   }
   return minor;
 }
@@ -185,8 +194,9 @@ function isSerializableUiPhoto(photo: UiPhoto): photo is SerializableUiPhoto {
   return false;
 }
 
-export const LEGACY_PHOTO_MIGRATION_REQUIRED_MESSAGE =
-  'Legacy product photos must be migrated before adding or reordering gallery photos.';
+type ProductFormErrorMessages = {
+  legacyPhotoMigrationRequired: string;
+};
 
 class PhotoPlanSubmissionError extends Error {
   constructor(message: string) {
@@ -195,22 +205,28 @@ class PhotoPlanSubmissionError extends Error {
   }
 }
 
-export function getPhotoPlanSubmissionError(photos: UiPhoto[]): string | null {
+export function getPhotoPlanSubmissionError(
+  photos: UiPhoto[],
+  messages: ProductFormErrorMessages
+): string | null {
   const hasLegacyPhotos = photos.some(photo => photo.source === 'legacy');
   const hasNonLegacyPhotos = photos.some(photo => photo.source !== 'legacy');
 
   if (hasLegacyPhotos && hasNonLegacyPhotos) {
-    return LEGACY_PHOTO_MIGRATION_REQUIRED_MESSAGE;
+    return messages.legacyPhotoMigrationRequired;
   }
 
   return null;
 }
 
-export function buildPhotoPlanSubmission(photos: UiPhoto[]): {
+export function buildPhotoPlanSubmission(
+  photos: UiPhoto[],
+  messages: ProductFormErrorMessages
+): {
   photoPlan?: AdminProductPhotoPlan;
   newPhotos: Array<UiPhoto & { source: 'new'; uploadId: string; file: File }>;
 } {
-  const submissionError = getPhotoPlanSubmissionError(photos);
+  const submissionError = getPhotoPlanSubmissionError(photos, messages);
   if (submissionError) {
     throw new PhotoPlanSubmissionError(submissionError);
   }
@@ -311,6 +327,7 @@ export function ProductForm({
   csrfToken,
 }: ProductFormProps) {
   const router = useRouter();
+  const t = useTranslations('shop.admin.products.form');
 
   const idBase = useMemo(() => {
     const pid =
@@ -563,7 +580,7 @@ export function ProductForm({
     setOriginalPriceErrors({});
 
     if (photos.length === 0) {
-      setImageError('At least one product photo is required.');
+      setImageError(t('errors.photoRequired'));
       return;
     }
 
@@ -581,14 +598,24 @@ export function ProductForm({
       );
 
       if (effectivePrices.length === 0) {
-        setError('At least one price is required.');
+        setError(t('errors.atLeastOnePrice'));
+        return;
+      }
+
+      const storefrontUahPrice = normalizedPrices.find(
+        price => price.currency === 'UAH'
+      );
+      if (!storefrontUahPrice?.price.length) {
+        setError(t('errors.uahRequired'));
         return;
       }
 
       for (const p of effectivePrices) {
         if (!p.price.length && p.originalPrice.length) {
           setError(
-            `${p.currency}: price is required when original price is set.`
+            t('errors.priceRequiredWhenOriginalSet', {
+              currency: p.currency,
+            })
           );
           return;
         }
@@ -609,7 +636,11 @@ export function ProductForm({
             : null,
         }));
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Invalid price value.');
+        if (e instanceof InvalidMoneyValueError) {
+          setError(t('errors.invalidMoneyValue', { value: e.rawValue }));
+          return;
+        }
+        setError(t('errors.invalidPriceValue'));
         return;
       }
 
@@ -633,7 +664,11 @@ export function ProductForm({
 
       const photoSubmission = (() => {
         try {
-          return buildPhotoPlanSubmission(photos);
+          return buildPhotoPlanSubmission(photos, {
+            legacyPhotoMigrationRequired: t(
+              'errors.legacyPhotoMigrationRequired'
+            ),
+          });
         } catch (photoPlanError) {
           if (photoPlanError instanceof PhotoPlanSubmissionError) {
             setImageError(photoPlanError.message);
@@ -662,7 +697,7 @@ export function ProductForm({
       }
 
       if (!csrfToken) {
-        setError('Security token missing. Refresh the page and retry.');
+        setError(t('errors.securityMissing'));
         setIsSubmitting(false);
         return;
       }
@@ -684,7 +719,7 @@ export function ProductForm({
 
       if (!response.ok) {
         if (data.code === 'SLUG_CONFLICT' || data.field === 'slug') {
-          setSlugError('This slug is already used. Try changing the title.');
+          setSlugError(t('errors.slugConflict'));
         }
 
         const photoErrorFields = new Set([
@@ -701,7 +736,7 @@ export function ProductForm({
           data.code === 'IMAGE_UPLOAD_FAILED' ||
           data.code === 'IMAGE_REQUIRED'
         ) {
-          setImageError(data.error ?? 'Failed to update product photos');
+          setImageError(data.error ?? t('errors.photoUpdateFailed'));
           return;
         }
 
@@ -710,8 +745,8 @@ export function ProductForm({
           const currency = details?.currency;
           const msg =
             details?.rule === 'greater_than_price'
-              ? SALE_GREATER_MSG
-              : SALE_REQUIRED_MSG;
+              ? t('errors.saleOriginalGreater')
+              : t('errors.saleOriginalRequired');
 
           if (currency === 'USD' || currency === 'UAH') {
             setOriginalPriceErrors(prev => ({ ...prev, [currency]: msg }));
@@ -725,13 +760,15 @@ export function ProductForm({
           response.status === 403 &&
           (data.code === 'CSRF_MISSING' || data.code === 'CSRF_INVALID')
         ) {
-          setError('Security token expired. Refresh the page and retry.');
+          setError(t('errors.securityExpired'));
           return;
         }
 
         setError(
           data.error ??
-            `Failed to ${mode === 'create' ? 'create' : 'update'} product`
+            (mode === 'create'
+              ? t('errors.createFailed')
+              : t('errors.updateFailed'))
         );
         return;
       }
@@ -746,9 +783,9 @@ export function ProductForm({
       });
 
       setError(
-        `Unexpected error while ${
-          mode === 'create' ? 'creating' : 'updating'
-        } product.`
+        mode === 'create'
+          ? t('errors.unexpectedCreate')
+          : t('errors.unexpectedUpdate')
       );
     } finally {
       setIsSubmitting(false);
@@ -762,7 +799,7 @@ export function ProductForm({
   return (
     <section aria-labelledby={headingId}>
       <h2 id={headingId} className="sr-only">
-        {mode === 'create' ? 'Create new product' : 'Edit product'}
+        {mode === 'create' ? t('headings.create') : t('headings.edit')}
       </h2>
       {error ? (
         <div
@@ -783,11 +820,11 @@ export function ProductForm({
       >
         <section
           className={cn(CARD_CLASS, 'grid gap-4 sm:grid-cols-2')}
-          aria-label="Basic info"
+          aria-label={t('sections.basicInfo')}
         >
           <div>
             <label className={LABEL_CLASS} htmlFor="title">
-              Title
+              {t('fields.title')}
             </label>
             <input
               id="title"
@@ -803,10 +840,10 @@ export function ProductForm({
           <div>
             <div className="flex items-center justify-between">
               <label className={LABEL_CLASS} htmlFor="slug">
-                Slug
+                {t('fields.slug')}
               </label>
               <span id={slugHelpId} className="text-muted-foreground text-xs">
-                Auto-generated from title
+                {t('fields.slugHelp')}
               </span>
             </div>
             <input
@@ -834,23 +871,22 @@ export function ProductForm({
 
         <fieldset className={CARD_CLASS}>
           <legend className="text-foreground px-1 text-sm font-semibold">
-            Prices
+            {t('pricing.legend')}
           </legend>
 
           <p className="text-muted-foreground mt-2 text-xs">
-            UAH is the standard storefront price. USD is optional and kept only
-            as a compatibility price.
+            {t('pricing.helper')}
           </p>
 
           <div className="mt-3 grid gap-4 sm:grid-cols-2">
             <fieldset className="space-y-2">
               <legend className="text-muted-foreground text-xs font-medium">
-                UAH (standard storefront)
+                {t('pricing.uahLegend')}
               </legend>
 
               <div>
                 <label className={LABEL_CLASS} htmlFor="price-uah">
-                  Price (UAH)
+                  {t('fields.price', { currency: 'UAH' })}
                 </label>
                 <input
                   id="price-uah"
@@ -866,7 +902,7 @@ export function ProductForm({
 
               <div>
                 <label className={LABEL_CLASS} htmlFor="original-uah">
-                  Original price (UAH)
+                  {t('fields.originalPrice', { currency: 'UAH' })}
                 </label>
                 <input
                   id="original-uah"
@@ -901,12 +937,12 @@ export function ProductForm({
 
             <fieldset className="space-y-2">
               <legend className="text-muted-foreground text-xs font-medium">
-                USD (compatibility optional)
+                {t('pricing.usdLegend')}
               </legend>
 
               <div>
                 <label className={LABEL_CLASS} htmlFor="price-usd">
-                  Price (USD)
+                  {t('fields.price', { currency: 'USD' })}
                 </label>
                 <input
                   id="price-usd"
@@ -922,7 +958,7 @@ export function ProductForm({
 
               <div>
                 <label className={LABEL_CLASS} htmlFor="original-usd">
-                  Original price (USD)
+                  {t('fields.originalPrice', { currency: 'USD' })}
                 </label>
                 <input
                   id="original-usd"
@@ -957,19 +993,19 @@ export function ProductForm({
           </div>
 
           <p className="text-muted-foreground mt-3 text-xs">
-            Standard storefront checkout uses UAH. Prices must exist in{' '}
-            <span className="font-mono">product_prices</span> for the standard
-            storefront currency. USD is optional compatibility only.
+            {t('pricing.policyPrefix')}{' '}
+            <span className="font-mono">product_prices</span>{' '}
+            {t('pricing.policySuffix')}
           </p>
         </fieldset>
 
         <section
           className={cn(CARD_CLASS, 'grid gap-4 sm:grid-cols-2')}
-          aria-label="Inventory and SKU"
+          aria-label={t('sections.inventorySku')}
         >
           <div>
             <label className={LABEL_CLASS} htmlFor="stock">
-              Stock
+              {t('fields.stock')}
             </label>
             <input
               id="stock"
@@ -985,7 +1021,7 @@ export function ProductForm({
 
           <div>
             <label className={LABEL_CLASS} htmlFor="sku">
-              SKU
+              {t('fields.sku')}
             </label>
             <input
               id="sku"
@@ -1000,11 +1036,11 @@ export function ProductForm({
 
         <section
           className={cn(CARD_CLASS, 'grid gap-4 sm:grid-cols-2')}
-          aria-label="Catalog attributes"
+          aria-label={t('sections.catalogAttributes')}
         >
           <div>
             <label className={LABEL_CLASS} htmlFor="category">
-              Category
+              {t('fields.category')}
             </label>
             <select
               id="category"
@@ -1013,7 +1049,7 @@ export function ProductForm({
               value={category}
               onChange={event => setCategory(event.target.value)}
             >
-              <option value="">Select category</option>
+              <option value="">{t('fields.selectCategory')}</option>
               {CATEGORIES.filter(
                 categoryOption => categoryOption.slug !== 'all'
               ).map(categoryOption => (
@@ -1026,7 +1062,7 @@ export function ProductForm({
 
           <div>
             <label className={LABEL_CLASS} htmlFor="type">
-              Type
+              {t('fields.type')}
             </label>
             <select
               id="type"
@@ -1035,7 +1071,7 @@ export function ProductForm({
               value={type}
               onChange={event => setType(event.target.value)}
             >
-              <option value="">Select type</option>
+              <option value="">{t('fields.selectType')}</option>
               {PRODUCT_TYPES.map(productType => (
                 <option key={productType.slug} value={productType.slug}>
                   {productType.label}
@@ -1047,10 +1083,10 @@ export function ProductForm({
 
         <section
           className={cn(CARD_CLASS, 'grid gap-4 sm:grid-cols-2')}
-          aria-label="Variants"
+          aria-label={t('sections.variants')}
         >
           <fieldset>
-            <legend className={LABEL_CLASS}>Colors</legend>
+            <legend className={LABEL_CLASS}>{t('fields.colors')}</legend>
             <div className="border-border bg-muted/20 mt-2 flex flex-col gap-2 rounded-lg border px-3 py-3">
               {COLORS.map(color => (
                 <label
@@ -1080,7 +1116,7 @@ export function ProductForm({
           </fieldset>
 
           <fieldset>
-            <legend className={LABEL_CLASS}>Sizes</legend>
+            <legend className={LABEL_CLASS}>{t('fields.sizes')}</legend>
             <div className="border-border bg-muted/20 mt-2 flex flex-col gap-2 rounded-lg border px-3 py-3">
               {SIZES.map(size => (
                 <label
@@ -1110,11 +1146,11 @@ export function ProductForm({
 
         <section
           className={cn(CARD_CLASS, 'grid gap-4 sm:grid-cols-2')}
-          aria-label="Flags and badge"
+          aria-label={t('sections.flagsBadge')}
         >
           <div>
             <label className={LABEL_CLASS} htmlFor="badge">
-              Badge
+              {t('fields.badge')}
             </label>
             <select
               id="badge"
@@ -1130,9 +1166,9 @@ export function ProductForm({
                 }
               }}
             >
-              <option value="NONE">None</option>
-              <option value="SALE">SALE</option>
-              <option value="NEW">NEW</option>
+              <option value="NONE">{t('badge.none')}</option>
+              <option value="SALE">{t('badge.sale')}</option>
+              <option value="NEW">{t('badge.new')}</option>
             </select>
           </div>
 
@@ -1150,7 +1186,7 @@ export function ProductForm({
                 className="text-foreground text-sm font-medium"
                 htmlFor="isActive"
               >
-                Is Active
+                {t('fields.isActive')}
               </label>
             </div>
 
@@ -1167,15 +1203,15 @@ export function ProductForm({
                 className="text-foreground text-sm font-medium"
                 htmlFor="isFeatured"
               >
-                Is Featured
+                {t('fields.isFeatured')}
               </label>
             </div>
           </div>
         </section>
 
-        <section className={CARD_CLASS} aria-label="Description">
+        <section className={CARD_CLASS} aria-label={t('sections.description')}>
           <label className={LABEL_CLASS} htmlFor="description">
-            Description
+            {t('fields.description')}
           </label>
           <textarea
             id="description"
@@ -1187,9 +1223,9 @@ export function ProductForm({
           />
         </section>
 
-        <section className={CARD_CLASS} aria-label="Photo management">
+        <section className={CARD_CLASS} aria-label={t('sections.photoManagement')}>
           <label className={LABEL_CLASS} htmlFor="images">
-            Photos
+            {t('fields.photos')}
           </label>
           <input
             id="images"
@@ -1203,8 +1239,7 @@ export function ProductForm({
             aria-describedby={imageError ? imageErrorId : undefined}
           />
           <p className="text-muted-foreground mt-2 text-sm">
-            Add one or more photos, reorder them, and mark exactly one as
-            primary.
+            {t('photos.helper')}
           </p>
           {photos.length > 0 ? (
             <div className="mt-4 space-y-3">
@@ -1215,7 +1250,7 @@ export function ProductForm({
                 >
                   <Image
                     src={photo.previewUrl}
-                    alt={`Product photo ${index + 1}`}
+                    alt={t('photos.photoAlt', { index: index + 1 })}
                     width={96}
                     height={96}
                     unoptimized
@@ -1223,18 +1258,20 @@ export function ProductForm({
                   />
                   <div className="min-w-0 flex-1 space-y-2">
                     <div className="flex flex-wrap items-center gap-2 text-sm">
-                      <span className="font-medium">Photo {index + 1}</span>
+                      <span className="font-medium">
+                        {t('photos.photoLabel', { index: index + 1 })}
+                      </span>
                       {photo.isPrimary ? (
                         <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-semibold text-emerald-500">
-                          Primary
+                          {t('photos.primary')}
                         </span>
                       ) : null}
                       <span className="text-muted-foreground text-xs">
                         {photo.source === 'existing'
-                          ? 'Saved'
+                          ? t('photos.status.saved')
                           : photo.source === 'legacy'
-                            ? 'Legacy image'
-                            : 'New upload'}
+                            ? t('photos.status.legacy')
+                            : t('photos.status.new')}
                       </span>
                     </div>
 
@@ -1245,7 +1282,7 @@ export function ProductForm({
                         onClick={() => setPrimaryPhoto(photo.key)}
                         disabled={photo.isPrimary}
                       >
-                        Set primary
+                        {t('photos.actions.setPrimary')}
                       </button>
                       <button
                         type="button"
@@ -1253,7 +1290,7 @@ export function ProductForm({
                         onClick={() => movePhoto(photo.key, -1)}
                         disabled={index === 0}
                       >
-                        Move up
+                        {t('photos.actions.moveUp')}
                       </button>
                       <button
                         type="button"
@@ -1261,14 +1298,14 @@ export function ProductForm({
                         onClick={() => movePhoto(photo.key, 1)}
                         disabled={index === photos.length - 1}
                       >
-                        Move down
+                        {t('photos.actions.moveDown')}
                       </button>
                       <button
                         type="button"
                         className="inline-flex h-8 items-center justify-center rounded-md border border-red-500/30 px-3 text-xs font-medium text-red-500 transition-colors hover:bg-red-500/10"
                         onClick={() => removePhoto(photo.key)}
                       >
-                        Remove
+                        {t('photos.actions.remove')}
                       </button>
                     </div>
                   </div>
@@ -1296,11 +1333,11 @@ export function ProductForm({
         >
           {isSubmitting
             ? mode === 'create'
-              ? 'Creating...'
-              : 'Updating...'
+              ? t('actions.creating')
+              : t('actions.updating')
             : mode === 'create'
-              ? 'Create product'
-              : 'Save changes'}
+              ? t('actions.create')
+              : t('actions.save')}
         </button>
       </form>
     </section>

@@ -29,8 +29,9 @@ vi.mock('@/lib/admin/parseAdminProductForm', () => ({
 
 vi.mock('@/lib/services/products', () => ({
   updateProduct: vi.fn(async () => {
-    throw new PriceConfigError('At least one price is required.', {
+    throw new PriceConfigError('UAH price is required.', {
       productId: 'p1',
+      currency: 'UAH',
     });
   }),
   getAdminProductByIdWithPrices: vi.fn(),
@@ -59,7 +60,6 @@ function makeReq(): NextRequest {
     'prices',
     JSON.stringify([
       { currency: 'USD', priceMinor: 999, originalPriceMinor: null },
-      { currency: 'UAH', priceMinor: 1000, originalPriceMinor: null },
     ])
   );
 
@@ -84,5 +84,6 @@ describe('admin PATCH /shop/admin/products/:id (PRICE_CONFIG_ERROR contract)', (
     expect(res.status).toBe(400);
     const json = await res.json();
     expect(json.code).toBe('PRICE_CONFIG_ERROR');
+    expect(json.currency).toBe('UAH');
   });
 });

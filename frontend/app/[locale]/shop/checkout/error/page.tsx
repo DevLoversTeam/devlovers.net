@@ -20,11 +20,14 @@ import {
 import { cn } from '@/lib/utils';
 import { orderIdParamSchema } from '@/lib/validation/shop';
 
-export const metadata: Metadata = {
-  title: 'Checkout Error | DevLovers',
-  description:
-    'We couldn’t complete the checkout. Try again or contact support.',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('shop.checkout.errorPage');
+
+  return {
+    title: t('metaTitle'),
+    description: t('metaDescription'),
+  };
+}
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -103,7 +106,7 @@ export default async function CheckoutErrorPage({
 
           <nav
             className="mt-6 flex flex-wrap justify-center gap-3"
-            aria-label="Checkout navigation"
+            aria-label={t('errorPage.checkoutNavigation')}
           >
             <Link href="/shop/cart" className={SHOP_OUTLINE_BTN}>
               {t('actions.backToCart')}
@@ -162,7 +165,7 @@ export default async function CheckoutErrorPage({
 
             <nav
               className="mt-6 flex flex-wrap justify-center gap-3"
-              aria-label="Checkout navigation"
+              aria-label={t('errorPage.checkoutNavigation')}
             >
               <Link href="/shop/cart" className={SHOP_OUTLINE_BTN}>
                 {t('actions.backToCart')}
@@ -248,7 +251,7 @@ export default async function CheckoutErrorPage({
 
         <section
           className="border-border bg-muted/30 text-foreground mt-6 rounded-md border p-4 text-sm"
-          aria-label="Order details"
+          aria-label={t('errorPage.orderDetails')}
         >
           <dl className="space-y-2">
             <div className="flex items-center justify-between gap-4">
@@ -278,7 +281,10 @@ export default async function CheckoutErrorPage({
           </dl>
         </section>
 
-        <nav className="mt-6 flex flex-wrap gap-3" aria-label="Next steps">
+        <nav
+          className="mt-6 flex flex-wrap gap-3"
+          aria-label={t('errorPage.nextSteps')}
+        >
           <Link href="/shop/cart" className={SHOP_OUTLINE_BTN}>
             {t('actions.backToCart')}
           </Link>

@@ -4,6 +4,9 @@
 
 Approved for Batch CP-01 preparation work.
 
+This memo was written for PR-A to record the intended policy before the runtime
+switches landed in later CP-01 PRs.
+
 ## Purpose
 
 This memo records the target commercial policy for the standard Shop storefront
