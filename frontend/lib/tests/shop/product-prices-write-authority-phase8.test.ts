@@ -3,7 +3,6 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { db } from '@/db';
 import { productPrices, products } from '@/db/schema';
-import { PriceConfigError } from '@/lib/services/errors';
 import { createProduct } from '@/lib/services/products';
 import { updateProduct } from '@/lib/services/products';
 import { toDbMoney } from '@/lib/shop/money';
@@ -260,6 +259,51 @@ describe.sequential('product_prices write authority (phase 8)', () => {
     });
   });
 
+  it('rejects a non-price update that would preserve a USD-only product state', async () => {
+    const [product] = await db
+      .insert(products)
+      .values({
+        slug: uniqueSlug(),
+        title: 'Phase8 USD-only non-price update',
+        description: null,
+        imageUrl: 'https://example.com/p8-usd-only-non-price.png',
+        imagePublicId: null,
+        price: toDbMoney(1200),
+        originalPrice: null,
+        currency: 'USD',
+        category: null,
+        type: null,
+        colors: [],
+        sizes: [],
+        badge: 'NONE',
+        isActive: true,
+        isFeatured: false,
+        stock: 10,
+        sku: null,
+      })
+      .returning();
+
+    createdProductIds.push(product.id);
+
+    await db.insert(productPrices).values({
+      productId: product.id,
+      currency: 'USD',
+      priceMinor: 1200,
+      originalPriceMinor: null,
+      price: toDbMoney(1200),
+      originalPrice: null,
+    });
+
+    await expect(
+      updateProduct(product.id, {
+        title: 'Renamed without touching prices',
+      } as any)
+    ).rejects.toMatchObject({
+      code: 'PRICE_CONFIG_ERROR',
+      currency: 'UAH',
+    });
+  });
+
   it('updates a UAH-only product row without requiring a dormant USD price row', async () => {
     const created = await createProduct({
       title: 'Phase8 UAH-only update',
@@ -320,5 +364,72 @@ describe.sequential('product_prices write authority (phase 8)', () => {
     expect(String(legacy.price)).toBe(String(toDbMoney(4100)));
     expect(usd).toBeUndefined();
     expect(uah?.priceMinor).toBe(4300);
+  });
+
+  it('allows a non-price update when the product already has a UAH storefront row', async () => {
+    const [product] = await db
+      .insert(products)
+      .values({
+        slug: uniqueSlug(),
+        title: 'Phase8 UAH-present non-price update',
+        description: null,
+        imageUrl: 'https://example.com/p8-uah-present-non-price.png',
+        imagePublicId: null,
+        price: toDbMoney(1200),
+        originalPrice: null,
+        currency: 'USD',
+        category: null,
+        type: null,
+        colors: [],
+        sizes: [],
+        badge: 'NONE',
+        isActive: true,
+        isFeatured: false,
+        stock: 10,
+        sku: null,
+      })
+      .returning();
+
+    createdProductIds.push(product.id);
+
+    await db.insert(productPrices).values([
+      {
+        productId: product.id,
+        currency: 'USD',
+        priceMinor: 1200,
+        originalPriceMinor: null,
+        price: toDbMoney(1200),
+        originalPrice: null,
+      },
+      {
+        productId: product.id,
+        currency: 'UAH',
+        priceMinor: 4700,
+        originalPriceMinor: null,
+        price: toDbMoney(4700),
+        originalPrice: null,
+      },
+    ]);
+
+    const updated = await updateProduct(product.id, {
+      title: 'Renamed with UAH-present pricing',
+    } as any);
+
+    expect(updated.title).toBe('Renamed with UAH-present pricing');
+
+    const [uah] = await db
+      .select({
+        priceMinor: productPrices.priceMinor,
+      })
+      .from(productPrices)
+      .where(
+        and(
+          eq(productPrices.productId, product.id),
+          eq(productPrices.currency, 'UAH')
+        )
+      )
+      .limit(1);
+
+    expect(uah?.priceMinor).toBe(4700);
   });
 });

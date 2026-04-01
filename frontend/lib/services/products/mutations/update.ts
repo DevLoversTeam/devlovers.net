@@ -80,52 +80,48 @@ export async function updateProduct(
 
   const finalBadge = (input as any).badge ?? existing.badge;
 
-  if (prices.length || finalBadge === 'SALE') {
-    const existingPriceRows = await db
-      .select({
-        currency: productPrices.currency,
-        priceMinor: productPrices.priceMinor,
-        originalPriceMinor: productPrices.originalPriceMinor,
-      })
-      .from(productPrices)
-      .where(eq(productPrices.productId, id));
+  const existingPriceRows = await db
+    .select({
+      currency: productPrices.currency,
+      priceMinor: productPrices.priceMinor,
+      originalPriceMinor: productPrices.originalPriceMinor,
+    })
+    .from(productPrices)
+    .where(eq(productPrices.productId, id));
 
-    const merged = new Map<CurrencyCode, NormalizedPriceRow>();
+  const merged = new Map<CurrencyCode, NormalizedPriceRow>();
 
-    for (const r of existingPriceRows) {
-      merged.set(r.currency as CurrencyCode, {
-        currency: r.currency as CurrencyCode,
-        priceMinor: assertMoneyMinorInt(
-          r.priceMinor,
-          `${String(r.currency)} priceMinor`
-        ),
-        originalPriceMinor:
-          r.originalPriceMinor == null
-            ? null
-            : assertMoneyMinorInt(
-                r.originalPriceMinor,
-                `${String(r.currency)} originalPriceMinor`
-              ),
-      });
-    }
+  for (const r of existingPriceRows) {
+    merged.set(r.currency as CurrencyCode, {
+      currency: r.currency as CurrencyCode,
+      priceMinor: assertMoneyMinorInt(
+        r.priceMinor,
+        `${String(r.currency)} priceMinor`
+      ),
+      originalPriceMinor:
+        r.originalPriceMinor == null
+          ? null
+          : assertMoneyMinorInt(
+              r.originalPriceMinor,
+              `${String(r.currency)} originalPriceMinor`
+            ),
+    });
+  }
 
-    for (const p of prices) {
-      merged.set(p.currency, p);
-    }
+  for (const p of prices) {
+    merged.set(p.currency, p);
+  }
 
-    const mergedRows = Array.from(merged.values());
+  const mergedRows = Array.from(merged.values());
 
-    if (prices.length) {
-      assertMergedPricesPolicy(mergedRows, {
-        productId: id,
-        requiredCurrency: 'UAH',
-        requireUsd: false,
-      });
-    }
+  assertMergedPricesPolicy(mergedRows, {
+    productId: id,
+    requiredCurrency: 'UAH',
+    requireUsd: false,
+  });
 
-    if (finalBadge === 'SALE') {
-      enforceSaleBadgeRequiresOriginal('SALE', mergedRows);
-    }
+  if (finalBadge === 'SALE') {
+    enforceSaleBadgeRequiresOriginal('SALE', mergedRows);
   }
 
   let resolvedPhotoPlan: ReturnType<typeof resolvePhotoPlan> | undefined;
