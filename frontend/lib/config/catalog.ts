@@ -8,6 +8,11 @@ export const CATEGORIES = [
   { slug: 'sale', label: 'Sale' },
 ] as const;
 
+export const STOREFRONT_CATEGORIES = CATEGORIES.filter(
+  category =>
+    category.slug !== 'best-sellers' && category.slug !== 'new-arrivals'
+);
+
 export const PRODUCT_TYPES = [
   { slug: 'accessories', label: 'Accessories' },
   { slug: 'shirts', label: 'Shirts' },

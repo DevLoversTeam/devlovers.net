@@ -1,3 +1,4 @@
+import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const getCheckoutSuccessOrderSummaryMock = vi.hoisted(() => vi.fn());
@@ -65,6 +66,8 @@ describe('checkout success page access gating', () => {
         totalAmountMinor: 1000,
         currency: 'UAH',
         paymentStatus: 'paid',
+        shipmentStatus: null,
+        trackingNumber: null,
         items: [],
       },
     });
@@ -78,6 +81,57 @@ describe('checkout success page access gating', () => {
       orderId: ORDER_ID,
       statusToken: 'token_test',
     });
+  });
+
+  it('renders shipment status and tracking only when present', async () => {
+    getCheckoutSuccessOrderSummaryMock.mockResolvedValue({
+      ok: true,
+      order: {
+        id: ORDER_ID,
+        totalAmountMinor: 1000,
+        currency: 'UAH',
+        paymentStatus: 'paid',
+        shipmentStatus: 'processing',
+        trackingNumber: 'TRACK-123',
+        items: [],
+      },
+    });
+
+    const mod = await import('@/app/[locale]/shop/checkout/success/page');
+    const html = renderToStaticMarkup(
+      await mod.default(
+        makePageArgs({ orderId: ORDER_ID, statusToken: 'token_test' })
+      )
+    );
+
+    expect(html).toContain('shippingStatus');
+    expect(html).toContain('shipmentStatuses.processing');
+    expect(html).toContain('TRACK-123');
+  });
+
+  it('omits shipment and tracking rows when guest summary has no shipment data', async () => {
+    getCheckoutSuccessOrderSummaryMock.mockResolvedValue({
+      ok: true,
+      order: {
+        id: ORDER_ID,
+        totalAmountMinor: 1000,
+        currency: 'UAH',
+        paymentStatus: 'paid',
+        shipmentStatus: null,
+        trackingNumber: null,
+        items: [],
+      },
+    });
+
+    const mod = await import('@/app/[locale]/shop/checkout/success/page');
+    const html = renderToStaticMarkup(
+      await mod.default(
+        makePageArgs({ orderId: ORDER_ID, statusToken: 'token_test' })
+      )
+    );
+
+    expect(html).not.toContain('shipmentStatuses.');
+    expect(html).not.toContain('TRACK-123');
   });
 
   it('keeps monobank flow on redirect status component path', async () => {

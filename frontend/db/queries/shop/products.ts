@@ -1,14 +1,4 @@
-import {
-  and,
-  asc,
-  count,
-  desc,
-  eq,
-  inArray,
-  or,
-  type SQL,
-  sql,
-} from 'drizzle-orm';
+import { and, asc, count, desc, eq, inArray, type SQL, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { productPrices, products } from '@/db/schema';
@@ -195,13 +185,7 @@ function buildWhereClause(options: {
   const conditions: SQL[] = [eq(products.isActive, true)];
 
   if (options.category && options.category !== 'all') {
-    if (options.category === 'new-arrivals') {
-      const clause = or(
-        eq(products.badge, 'NEW'),
-        eq(products.category, 'new-arrivals')
-      );
-      if (clause) conditions.push(clause);
-    } else if (options.category === 'sale') {
+    if (options.category === 'sale') {
       conditions.push(sql`${productPrices.originalPriceMinor} IS NOT NULL`);
     } else {
       conditions.push(eq(products.category, options.category));
@@ -227,16 +211,21 @@ function buildWhereClause(options: {
   return (and(...conditions) ?? conditions[0]) as SQL;
 }
 
-function applySorting(sort?: CatalogSort): SQL {
+function applySorting(sort?: CatalogSort): SQL[] {
   switch (sort) {
     case 'price-asc':
-      return asc(productPrices.price);
+      return [asc(productPrices.price), asc(products.id)];
     case 'price-desc':
-      return desc(productPrices.price);
+      return [desc(productPrices.price), asc(products.id)];
     case 'newest':
-      return desc(products.createdAt);
+      return [desc(products.createdAt), asc(products.id)];
+    case 'featured':
     default:
-      return desc(products.createdAt);
+      return [
+        desc(products.isFeatured),
+        desc(products.createdAt),
+        asc(products.id),
+      ];
   }
 }
 
@@ -279,7 +268,7 @@ export async function getActiveProductsPage(options: {
     .from(products)
     .innerJoin(productPrices, priceJoin(options.currency))
     .where(whereClause)
-    .orderBy(applySorting(options.sort))
+    .orderBy(...applySorting(options.sort))
     .limit(options.limit)
     .offset(options.offset);
 

@@ -64,13 +64,18 @@ type OrderSummaryRow = Pick<
   | 'paymentStatus'
   | 'paymentProvider'
   | 'paymentIntentId'
+  | 'trackingNumber'
   | 'createdAt'
 >;
 
 export function parseOrderSummary(
   order: OrderSummaryRow,
   items: OrderItemForSummary[],
-  fulfillmentStage: OrderSummaryWithMinor['fulfillmentStage']
+  fulfillmentStage: OrderSummaryWithMinor['fulfillmentStage'],
+  shipment: {
+    shipmentStatus?: string | null;
+    trackingNumber?: string | null;
+  } = {}
 ): OrderSummaryWithMinor {
   function readLegacyMoneyCentsOrThrow(
     value: unknown,
@@ -154,6 +159,8 @@ export function parseOrderSummary(
     fulfillmentStage,
     paymentProvider,
     paymentIntentId: order.paymentIntentId ?? undefined,
+    shipmentStatus: shipment.shipmentStatus ?? null,
+    trackingNumber: shipment.trackingNumber ?? order.trackingNumber ?? null,
     createdAt: order.createdAt,
     items: normalizedItems,
   };
@@ -177,6 +184,7 @@ export async function getOrderById(id: string): Promise<OrderDetail> {
       paymentStatus: orders.paymentStatus,
       paymentProvider: orders.paymentProvider,
       paymentIntentId: orders.paymentIntentId,
+      trackingNumber: orders.trackingNumber,
       createdAt: orders.createdAt,
       orderStatus: orders.status,
       shippingStatus: orders.shippingStatus,
@@ -196,7 +204,11 @@ export async function getOrderById(id: string): Promise<OrderDetail> {
       shippingStatus: order.shippingStatus,
       shipmentStatus: fulfillmentSignals.shipmentStatus,
       returnStatus: fulfillmentSignals.returnStatus,
-    })
+    }),
+    {
+      shipmentStatus: fulfillmentSignals.shipmentStatus,
+      trackingNumber: order.trackingNumber,
+    }
   );
 }
 
@@ -295,10 +307,12 @@ export async function getCheckoutPaymentPageOrderSummary(args: {
 
 export type OrderStatusLiteSummary = {
   id: string;
-  paymentStatus: string;
+  paymentStatus: OrderSummaryWithMinor['paymentStatus'];
   fulfillmentStage: OrderSummaryWithMinor['fulfillmentStage'];
+  shipmentStatus: string | null;
+  trackingNumber: string | null;
   totalAmountMinor: number;
-  currency: string;
+  currency: OrderSummaryWithMinor['currency'];
   itemsCount: number;
   updatedAt: Date;
 };
@@ -315,6 +329,7 @@ export async function getOrderStatusLiteSummary(
       totalAmountMinor: orders.totalAmountMinor,
       totalAmount: orders.totalAmount,
       currency: orders.currency,
+      trackingNumber: orders.trackingNumber,
       updatedAt: orders.updatedAt,
       shipmentStatus: latestShipmentStatusSql(orders.id),
       returnStatus: latestReturnStatusSql(orders.id),
@@ -331,6 +346,7 @@ export async function getOrderStatusLiteSummary(
       orders.totalAmountMinor,
       orders.totalAmount,
       orders.currency,
+      orders.trackingNumber,
       orders.updatedAt
     )
     .limit(1);
@@ -357,6 +373,12 @@ export async function getOrderStatusLiteSummary(
       returnStatus:
         typeof row.returnStatus === 'string' ? row.returnStatus : null,
     }),
+    shipmentStatus:
+      typeof row.shipmentStatus === 'string' ? row.shipmentStatus : null,
+    trackingNumber:
+      typeof row.trackingNumber === 'string' && row.trackingNumber.trim()
+        ? row.trackingNumber
+        : null,
     totalAmountMinor,
     currency: row.currency,
     itemsCount: Number.isFinite(row.itemsCount) ? row.itemsCount : 0,

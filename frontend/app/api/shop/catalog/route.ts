@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { CATALOG_PAGE_SIZE } from '@/lib/config/catalog';
 import { logError, logWarn } from '@/lib/logging';
+import { canonicalizePublicCatalogQuery } from '@/lib/shop/catalog-query';
 import { getCatalogProducts } from '@/lib/shop/data';
 import { catalogQuerySchema } from '@/lib/validation/shop';
 
@@ -51,15 +52,10 @@ export async function GET(request: NextRequest) {
     request.nextUrl.searchParams.entries()
   ) as RawSearchParams;
 
-  const { locale, filter, ...rest } = raw;
+  const { locale, ...rest } = raw;
   const effectiveLocale = normalizeLocale(locale);
-
-  const normalizedRest: Record<string, string | undefined> = { ...rest };
-  if (filter === 'new' && !normalizedRest.sort) {
-    normalizedRest.sort = 'newest';
-  }
-
-  const parsed = catalogQuerySchema.safeParse(normalizedRest);
+  const canonical = canonicalizePublicCatalogQuery(rest);
+  const parsed = catalogQuerySchema.safeParse(canonical.normalized);
 
   if (!parsed.success) {
     logWarn('shop_catalog_invalid_query', {

@@ -66,6 +66,12 @@ type OrderDetail = {
   }>;
 };
 
+function shortOrderId(id: string) {
+  if (!id) return '';
+  if (id.length <= 14) return id;
+  return `${id.slice(0, 8)}...${id.slice(-4)}`;
+}
+
 function safeFormatMoneyMajor(
   major: string,
   currency: CurrencyCode,
@@ -86,6 +92,74 @@ function safeFormatDateTime(iso: string, dtf: Intl.DateTimeFormat): string {
 
 function fulfillmentStageLabelKey(stage: CanonicalFulfillmentStage): string {
   return `fulfillmentStages.${stage}`;
+}
+
+function fulfillmentStageClassName(stage: CanonicalFulfillmentStage) {
+  switch (stage) {
+    case 'canceled':
+      return 'border border-border bg-destructive/10 text-destructive';
+    default:
+      return 'border border-border bg-muted/40 text-foreground';
+  }
+}
+
+function paymentStatusLabel(
+  status: OrderPaymentStatus,
+  t: Awaited<ReturnType<typeof getTranslations<'shop.orders.detail'>>>
+) {
+  switch (status) {
+    case 'paid':
+      return t('paymentStatuses.paid');
+    case 'pending':
+      return t('paymentStatuses.pending');
+    case 'requires_payment':
+      return t('paymentStatuses.requiresPayment');
+    case 'failed':
+      return t('paymentStatuses.failed');
+    case 'refunded':
+      return t('paymentStatuses.refunded');
+    case 'needs_review':
+      return t('paymentStatuses.needsReview');
+    default:
+      return String(status);
+  }
+}
+
+function paymentStatusClassName(status: OrderPaymentStatus) {
+  switch (status) {
+    case 'failed':
+      return 'border border-border bg-destructive/10 text-destructive';
+    default:
+      return 'border border-border bg-muted/40 text-foreground';
+  }
+}
+
+function shippingStatusLabel(
+  status: string | null,
+  t: Awaited<ReturnType<typeof getTranslations<'shop.orders.detail'>>>
+) {
+  switch (status) {
+    case null:
+      return t('deliveryPending');
+    case 'pending':
+      return t('shippingStatuses.pending');
+    case 'queued':
+      return t('shippingStatuses.queued');
+    case 'creating_label':
+      return t('shippingStatuses.creatingLabel');
+    case 'label_created':
+      return t('shippingStatuses.labelCreated');
+    case 'shipped':
+      return t('shippingStatuses.shipped');
+    case 'delivered':
+      return t('shippingStatuses.delivered');
+    case 'cancelled':
+      return t('shippingStatuses.cancelled');
+    case 'needs_attention':
+      return t('shippingStatuses.needsAttention');
+    default:
+      return status;
+  }
 }
 
 function toOrderItem(
@@ -251,16 +325,21 @@ export default async function OrderDetailPage({
     locale
   );
   const createdFormatted = safeFormatDateTime(order.createdAt, dtf);
+  const paymentStatusFormatted = paymentStatusLabel(order.paymentStatus, t);
+  const fulfillmentStageFormatted = t(
+    fulfillmentStageLabelKey(order.fulfillmentStage)
+  );
+  const shippingStatusFormatted = shippingStatusLabel(order.shippingStatus, t);
   const restockedFormatted = order.restockedAt
     ? safeFormatDateTime(order.restockedAt, dtf)
-    : '—';
+    : '-';
   const NAV_LINK = cn(SHOP_NAV_LINK_BASE, 'text-lg', SHOP_FOCUS);
 
   const PRODUCT_LINK = cn(
     SHOP_LINK_BASE,
     SHOP_LINK_MD,
     SHOP_FOCUS,
-    'truncate',
+    'block min-w-0 [overflow-wrap:anywhere] whitespace-normal',
     '!underline !decoration-2 !underline-offset-4'
   );
 
@@ -269,18 +348,24 @@ export default async function OrderDetailPage({
       className="mx-auto w-full max-w-3xl px-4 py-8"
       aria-labelledby="order-heading"
     >
-      <header className="mb-6 flex items-start justify-between gap-3">
+      <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <h1 id="order-heading" className="truncate text-2xl font-semibold">
-            {t('title')}
+          <p className="text-muted-foreground text-xs font-medium tracking-[0.16em] uppercase">
+            {t('orderReference')}
+          </p>
+          <h1
+            id="order-heading"
+            className="mt-2 truncate text-2xl font-semibold"
+          >
+            {t('orderNumber', { id: shortOrderId(order.id) })}
           </h1>
-          <div className="text-muted-foreground mt-1 truncate text-xs">
-            {order.id}
-          </div>
+          <p className="text-muted-foreground mt-2 text-sm">
+            {t('placedOn', { date: createdFormatted })}
+          </p>
         </div>
 
         <nav
-          className="flex flex-wrap items-center justify-end gap-3"
+          className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end sm:gap-3"
           aria-label="Order navigation"
         >
           <Link className={NAV_LINK} href="/shop/orders">
@@ -293,58 +378,94 @@ export default async function OrderDetailPage({
       </header>
 
       <section
-        className="border-border mb-6 rounded-md border p-4"
+        className="border-border mb-6 rounded-xl border p-4 sm:p-5"
         aria-labelledby="order-summary-heading"
       >
-        <h2 id="order-summary-heading" className="sr-only">
-          {t('orderSummary')}
-        </h2>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <p className="text-muted-foreground text-xs font-medium tracking-[0.16em] uppercase">
+              {t('customerSummary')}
+            </p>
+            <h2
+              id="order-summary-heading"
+              className="mt-2 text-xl font-semibold"
+            >
+              {t('orderSummary')}
+            </h2>
+            <p className="text-muted-foreground mt-2 text-sm">
+              {t('orderNumberLabel', { id: shortOrderId(order.id) })}
+            </p>
+          </div>
 
-        <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="flex flex-wrap gap-2">
+            <span
+              className={cn(
+                'inline-flex items-center rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap',
+                fulfillmentStageClassName(order.fulfillmentStage)
+              )}
+            >
+              {fulfillmentStageFormatted}
+            </span>
+            <span
+              className={cn(
+                'inline-flex items-center rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap',
+                paymentStatusClassName(order.paymentStatus)
+              )}
+            >
+              {paymentStatusFormatted}
+            </span>
+          </div>
+        </div>
+
+        <dl className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div>
-            <dt className="text-muted-foreground text-xs">{t('total')}</dt>
-            <dd className="text-sm font-medium">{totalFormatted}</dd>
+            <dt className="text-muted-foreground text-xs tracking-[0.16em] uppercase">
+              {t('total')}
+            </dt>
+            <dd className="mt-1 text-base font-semibold">{totalFormatted}</dd>
           </div>
 
           <div>
-            <dt className="text-muted-foreground text-xs">
+            <dt className="text-muted-foreground text-xs tracking-[0.16em] uppercase">
               {t('paymentStatus')}
             </dt>
-            <dd className="text-sm font-medium">
-              {String(order.paymentStatus)}
+            <dd className="mt-1 text-sm font-medium">
+              {paymentStatusFormatted}
             </dd>
           </div>
 
           <div>
-            <dt className="text-muted-foreground text-xs">
+            <dt className="text-muted-foreground text-xs tracking-[0.16em] uppercase">
               {t('fulfillmentStage')}
             </dt>
-            <dd className="text-sm font-medium">
-              {t(fulfillmentStageLabelKey(order.fulfillmentStage))}
+            <dd className="mt-1 text-sm font-medium">
+              {fulfillmentStageFormatted}
             </dd>
           </div>
 
           <div>
-            <dt className="text-muted-foreground text-xs">
-              {t('shippingStatus')}
+            <dt className="text-muted-foreground text-xs tracking-[0.16em] uppercase">
+              {t('delivery')}
             </dt>
-            <dd className="text-sm font-medium">
-              {order.shippingStatus ?? '-'}
+            <dd className="mt-1 text-sm font-medium">
+              {shippingStatusFormatted}
             </dd>
           </div>
 
-          <div>
-            <dt className="text-muted-foreground text-xs">
+          <div className="sm:col-span-2 lg:col-span-2">
+            <dt className="text-muted-foreground text-xs tracking-[0.16em] uppercase">
               {t('trackingNumber')}
             </dt>
-            <dd className="text-sm font-medium break-all">
-              {order.trackingNumber ?? '-'}
+            <dd
+              className={cn(
+                'mt-1 text-sm font-medium',
+                order.trackingNumber
+                  ? '[overflow-wrap:anywhere] break-words'
+                  : 'text-muted-foreground'
+              )}
+            >
+              {order.trackingNumber ?? t('trackingPending')}
             </dd>
-          </div>
-
-          <div>
-            <dt className="text-muted-foreground text-xs">{t('created')}</dt>
-            <dd className="text-sm">{createdFormatted}</dd>
           </div>
 
           {isAdmin && (
@@ -362,7 +483,7 @@ export default async function OrderDetailPage({
                 {t('paymentReference')}
               </dt>
               <dd className="text-sm break-all">
-                {order.paymentIntentId ?? '—'}
+                {order.paymentIntentId ?? '-'}
               </dd>
             </div>
             <div>
@@ -395,7 +516,7 @@ export default async function OrderDetailPage({
       </section>
 
       <section
-        className="border-border rounded-md border"
+        className="border-border rounded-xl border"
         aria-labelledby="order-items-heading"
       >
         <div className="border-border border-b p-4">
@@ -407,12 +528,12 @@ export default async function OrderDetailPage({
         <ul className="divide-border divide-y" aria-label={t('items')}>
           {order.items.map(it => (
             <li key={it.id} className="p-4">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
                   {it.productSlug ? (
                     <Link
                       href={`/shop/products/${it.productSlug}`}
-                      className={PRODUCT_LINK}
+                      className={cn(PRODUCT_LINK, 'line-clamp-2 leading-snug')}
                     >
                       {it.productTitle ??
                         it.productSlug ??
@@ -420,12 +541,12 @@ export default async function OrderDetailPage({
                         it.productId}
                     </Link>
                   ) : (
-                    <div className="truncate font-medium">
+                    <div className="line-clamp-2 leading-snug font-medium [overflow-wrap:anywhere]">
                       {it.productTitle ?? it.productSku ?? it.productId}
                     </div>
                   )}
 
-                  <div className="text-muted-foreground mt-1 text-xs break-all">
+                  <div className="text-muted-foreground mt-1 text-xs [overflow-wrap:anywhere]">
                     {it.productSku
                       ? t('sku', { sku: it.productSku })
                       : t('product', { productId: it.productId })}

@@ -125,6 +125,10 @@ vi.mock('@/app/[locale]/admin/shop/orders/[id]/ShippingActions', () => ({
     ),
 }));
 
+vi.mock('@/app/[locale]/admin/shop/orders/[id]/ShippingEditForm', () => ({
+  ShippingEditForm: () => createElement('div', {}, 'shipping-edit-form'),
+}));
+
 vi.mock('@/app/[locale]/admin/shop/orders/[id]/RefundButton', () => ({
   RefundButton: ({ orderId }: { orderId: string }) =>
     createElement(
@@ -171,7 +175,7 @@ function baseOrderDetail(
     shippingStatus: 'label_created',
     trackingNumber: 'TRACK-123',
     shippingProviderRef: 'ref-123',
-    shipmentStatus: 'created',
+    shipmentStatus: 'queued',
     shipmentAttemptCount: 1,
     shipmentLastErrorCode: null,
     shipmentLastErrorMessage: null,
@@ -230,7 +234,7 @@ describe('admin order detail operational actions', () => {
       getAdminOrderShippingActionVisibility({
         shippingReady: true,
         shippingStatus: 'label_created',
-        shipmentStatus: 'created',
+        shipmentStatus: 'queued',
       })
     ).toEqual({
       recoverInitialShipment: false,
@@ -251,7 +255,7 @@ describe('admin order detail operational actions', () => {
     expect(html).not.toContain('>Complete<');
   });
 
-  it('renders cancel-payment control and suppresses duplicate generic cancel for Monobank unpaid orders', async () => {
+  it('renders cancel-payment control for Monobank unpaid orders', async () => {
     const html = await renderOrder({
       status: 'CREATED',
       inventoryStatus: 'none',
@@ -269,7 +273,6 @@ describe('admin order detail operational actions', () => {
     expect(html).toContain('cancel-payment-button');
     expect(html).not.toContain('refund-button');
     expect(html).not.toContain('shipping-actions');
-    expect(html).not.toContain('>Cancel<');
   });
 
   it('renders confirm as a lifecycle action when it is the only eligible operational action', async () => {

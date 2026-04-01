@@ -4,7 +4,12 @@ import { NextRequest } from 'next/server';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { db } from '@/db';
-import { adminAuditLog, orders, paymentAttempts } from '@/db/schema';
+import {
+  adminAuditLog,
+  orders,
+  paymentAttempts,
+  shippingShipments,
+} from '@/db/schema';
 import { toDbMoney } from '@/lib/shop/money';
 import { createStatusToken } from '@/lib/shop/status-token';
 
@@ -25,16 +30,34 @@ afterAll(() => {
   else process.env.SHOP_STATUS_TOKEN_SECRET = __prevStatusSecret;
 });
 
-async function insertOrder(orderId: string) {
+async function insertOrder(
+  orderId: string,
+  overrides?: {
+    trackingNumber?: string | null;
+    paymentStatus?: 'pending' | 'paid';
+    status?: 'INVENTORY_RESERVED' | 'PAID';
+    shippingRequired?: boolean;
+    shippingPayer?: 'customer';
+    shippingProvider?: 'nova_poshta';
+    shippingMethodCode?: 'NP_WAREHOUSE';
+    shippingStatus?: string | null;
+  }
+) {
   await db.insert(orders).values({
     id: orderId,
     totalAmountMinor: 1000,
     totalAmount: toDbMoney(1000),
     currency: 'UAH',
     paymentProvider: 'monobank',
-    paymentStatus: 'pending',
-    status: 'INVENTORY_RESERVED',
+    paymentStatus: overrides?.paymentStatus ?? 'pending',
+    status: overrides?.status ?? 'INVENTORY_RESERVED',
     inventoryStatus: 'reserved',
+    shippingRequired: overrides?.shippingRequired ?? null,
+    shippingPayer: overrides?.shippingPayer ?? null,
+    shippingProvider: overrides?.shippingProvider ?? null,
+    shippingMethodCode: overrides?.shippingMethodCode ?? null,
+    shippingStatus: overrides?.shippingStatus ?? null,
+    trackingNumber: overrides?.trackingNumber ?? null,
     idempotencyKey: crypto.randomUUID(),
   } as any);
 }
@@ -42,7 +65,24 @@ async function insertOrder(orderId: string) {
 async function deleteOrder(orderId: string) {
   await db.delete(adminAuditLog).where(eq(adminAuditLog.orderId, orderId));
   await db.delete(paymentAttempts).where(eq(paymentAttempts.orderId, orderId));
+  await db
+    .delete(shippingShipments)
+    .where(eq(shippingShipments.orderId, orderId));
   await db.delete(orders).where(eq(orders.id, orderId));
+}
+
+async function insertShipment(args: {
+  orderId: string;
+  status: 'queued' | 'processing' | 'succeeded' | 'failed' | 'needs_attention';
+  trackingNumber?: string | null;
+}) {
+  await db.insert(shippingShipments).values({
+    id: crypto.randomUUID(),
+    orderId: args.orderId,
+    provider: 'nova_poshta',
+    status: args.status,
+    trackingNumber: args.trackingNumber ?? null,
+  } as any);
 }
 
 async function insertAttempt(args: {
@@ -113,6 +153,8 @@ describe('order status token access control', () => {
       expect(json.totalAmountMinor).toBe(1000);
       expect(json.paymentStatus).toBe('pending');
       expect(json.fulfillmentStage).toBe('processing');
+      expect(json.shipmentStatus).toBeNull();
+      expect(json.trackingNumber).toBeNull();
       expect(json.itemsCount).toBe(0);
       expect(typeof json.updatedAt).toBe('string');
       expect(json.order).toBeUndefined();
@@ -124,6 +166,72 @@ describe('order status token access control', () => {
         .where(eq(orders.id, orderId))
         .limit(1);
       expect(row?.paymentStatus).toBe('pending');
+    } finally {
+      await deleteOrder(orderId);
+    }
+  });
+
+  it('includes shipment status and tracking number when they already exist', async () => {
+    const orderId = crypto.randomUUID();
+    await insertOrder(orderId, { trackingNumber: 'TRACK-123' });
+    await insertShipment({
+      orderId,
+      status: 'succeeded',
+      trackingNumber: 'TRACK-123',
+    });
+
+    try {
+      const token = createStatusToken({ orderId });
+      const { GET } = await import('@/app/api/shop/orders/[id]/status/route');
+      const req = new NextRequest(
+        `http://localhost/api/shop/orders/${orderId}/status?view=lite&statusToken=${encodeURIComponent(
+          token
+        )}`
+      );
+      const res = await GET(req, { params: Promise.resolve({ id: orderId }) });
+      expect(res.status).toBe(200);
+
+      const json: any = await res.json();
+      expect(json.id).toBe(orderId);
+      expect(json.shipmentStatus).toBe('succeeded');
+      expect(json.trackingNumber).toBe('TRACK-123');
+    } finally {
+      await deleteOrder(orderId);
+    }
+  });
+
+  it('includes real in-flight shipment status in lite guest payload', async () => {
+    const orderId = crypto.randomUUID();
+    await insertOrder(orderId, {
+      paymentStatus: 'paid',
+      status: 'PAID',
+      shippingRequired: true,
+      shippingPayer: 'customer',
+      shippingProvider: 'nova_poshta',
+      shippingMethodCode: 'NP_WAREHOUSE',
+      shippingStatus: 'queued',
+    });
+    await insertShipment({
+      orderId,
+      status: 'processing',
+      trackingNumber: null,
+    });
+
+    try {
+      const token = createStatusToken({ orderId });
+      const { GET } = await import('@/app/api/shop/orders/[id]/status/route');
+      const req = new NextRequest(
+        `http://localhost/api/shop/orders/${orderId}/status?view=lite&statusToken=${encodeURIComponent(
+          token
+        )}`
+      );
+      const res = await GET(req, { params: Promise.resolve({ id: orderId }) });
+      expect(res.status).toBe(200);
+
+      const json: any = await res.json();
+      expect(json.id).toBe(orderId);
+      expect(json.shipmentStatus).toBe('processing');
+      expect(json.trackingNumber).toBeNull();
     } finally {
       await deleteOrder(orderId);
     }

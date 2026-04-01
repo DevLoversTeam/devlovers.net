@@ -17,6 +17,7 @@ import {
   PspUnavailableError,
 } from '@/lib/services/errors';
 import { cancelMonobankUnpaidPayment } from '@/lib/services/orders/monobank-cancel-payment';
+import { writeAdminAudit } from '@/lib/services/shop/events/write-admin-audit';
 import { orderIdParamSchema, orderSummarySchema } from '@/lib/validation/shop';
 
 function noStoreJson(body: unknown, init?: { status?: number }) {
@@ -69,7 +70,7 @@ export async function POST(
   let orderIdForLog: string | null = null;
 
   try {
-    await requireAdminApi(request);
+    const adminUser = await requireAdminApi(request);
 
     const csrfRes = requireAdminCsrf(request, 'admin:orders:cancel-payment');
     if (csrfRes) {
@@ -105,6 +106,42 @@ export async function POST(
     });
 
     const orderSummary = orderSummarySchema.parse(result.order);
+
+    try {
+      await writeAdminAudit({
+        orderId: orderIdForLog,
+        actorUserId:
+          typeof adminUser?.id === 'string' && adminUser.id.trim().length > 0
+            ? adminUser.id
+            : null,
+        action: 'order_admin_action.cancel_payment',
+        targetType: 'order',
+        targetId: orderIdForLog,
+        requestId,
+        payload: {
+          action: 'cancel_payment',
+          paymentProvider: orderSummary.paymentProvider,
+          paymentStatus: orderSummary.paymentStatus,
+          fulfillmentStage: orderSummary.fulfillmentStage,
+          cancelStatus: result.cancel.status,
+          cancelExtRef: result.cancel.extRef,
+          deduped: result.cancel.deduped,
+        },
+        dedupeSeed: {
+          domain: 'order_admin_action',
+          action: 'cancel_payment',
+          orderId: orderIdForLog,
+        },
+      });
+    } catch (auditError) {
+      logError('admin_orders_cancel_payment_audit_failed', auditError, {
+        ...baseMeta,
+        code: 'ADMIN_AUDIT_FAILED',
+        orderId: orderIdForLog,
+        action: 'cancel_payment',
+        durationMs: Date.now() - startedAtMs,
+      });
+    }
 
     return noStoreJson({
       success: true,

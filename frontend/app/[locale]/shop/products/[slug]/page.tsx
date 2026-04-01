@@ -17,6 +17,7 @@ export const metadata: Metadata = {
   title: 'Product name | DevLovers',
   description: 'Details, price, and availability for product.',
 };
+export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export default async function ProductPage({

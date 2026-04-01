@@ -14,6 +14,9 @@ export const metadata: Metadata = {
   description: 'Review items in your cart and proceed to checkout.',
 };
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export default function CartPage() {
   const legalVersions = getShopLegalVersions();
 

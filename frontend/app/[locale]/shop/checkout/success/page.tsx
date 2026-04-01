@@ -5,6 +5,7 @@ import { ClearCartOnMount } from '@/components/shop/ClearCartOnMount';
 import { Link } from '@/i18n/routing';
 import { getCheckoutSuccessOrderSummary } from '@/lib/services/orders';
 import { formatMoney } from '@/lib/shop/currency';
+import { formatGuestShipmentStatus } from '@/lib/shop/guest-shipment-status';
 import {
   SHOP_CTA_BASE,
   SHOP_CTA_INSET,
@@ -148,6 +149,7 @@ export default async function CheckoutSuccessPage({
 
   const clearCart = shouldClearCart(resolvedParams);
   const t = await getTranslations('shop.checkout');
+  const tOrder = await getTranslations('shop.orders.detail');
 
   const orderId = parseOrderId(resolvedParams);
   if (!orderId) {
@@ -224,6 +226,10 @@ export default async function CheckoutSuccessPage({
 
   const totalMinor = order.totalAmountMinor;
   const itemsCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
+  const shipmentStatusLabel = formatGuestShipmentStatus(
+    order.shipmentStatus,
+    tOrder
+  );
 
   return (
     <main
@@ -289,6 +295,28 @@ export default async function CheckoutSuccessPage({
                   {order.paymentStatus}
                 </dd>
               </div>
+
+              {shipmentStatusLabel ? (
+                <div className="flex items-center justify-between gap-4">
+                  <dt className="text-muted-foreground">
+                    {tOrder('shippingStatus')}
+                  </dt>
+                  <dd className="text-foreground text-right font-medium">
+                    {shipmentStatusLabel}
+                  </dd>
+                </div>
+              ) : null}
+
+              {order.trackingNumber ? (
+                <div className="flex items-center justify-between gap-4">
+                  <dt className="text-muted-foreground">
+                    {tOrder('trackingNumber')}
+                  </dt>
+                  <dd className="text-foreground text-right font-medium [overflow-wrap:anywhere] break-words">
+                    {order.trackingNumber}
+                  </dd>
+                </div>
+              ) : null}
             </dl>
           </div>
         </section>

@@ -70,7 +70,11 @@ export async function setOrderPaymentIntent({
         shippingStatus: existing.shippingStatus,
         shipmentStatus: fulfillmentSignals.shipmentStatus,
         returnStatus: fulfillmentSignals.returnStatus,
-      })
+      }),
+      {
+        shipmentStatus: fulfillmentSignals.shipmentStatus,
+        trackingNumber: existing.trackingNumber,
+      }
     );
   }
 
@@ -110,7 +114,11 @@ export async function setOrderPaymentIntent({
       shippingStatus: updated.shippingStatus,
       shipmentStatus: fulfillmentSignals.shipmentStatus,
       returnStatus: fulfillmentSignals.returnStatus,
-    })
+    }),
+    {
+      shipmentStatus: fulfillmentSignals.shipmentStatus,
+      trackingNumber: updated.trackingNumber,
+    }
   );
 }
 

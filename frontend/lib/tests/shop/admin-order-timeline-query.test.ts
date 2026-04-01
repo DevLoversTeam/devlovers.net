@@ -119,6 +119,63 @@ describe.sequential('admin order timeline query', () => {
     }
   });
 
+  it('normalizes canonical refund and cancel-payment admin actions', async () => {
+    const orderId = crypto.randomUUID();
+
+    await insertOrder({ orderId });
+
+    try {
+      await db.insert(adminAuditLog).values([
+        {
+          id: crypto.randomUUID(),
+          orderId,
+          actorUserId: null,
+          action: 'order_admin_action.refund',
+          targetType: 'order',
+          targetId: orderId,
+          requestId: 'req-refund',
+          payload: {
+            action: 'refund',
+            paymentStatus: 'paid',
+          },
+          dedupeKey: `audit-${crypto.randomUUID()}`,
+          occurredAt: new Date('2026-03-12T10:00:00.000Z'),
+          createdAt: new Date('2026-03-12T10:00:00.000Z'),
+        },
+        {
+          id: crypto.randomUUID(),
+          orderId,
+          actorUserId: null,
+          action: 'order_admin_action.cancel_payment',
+          targetType: 'order',
+          targetId: orderId,
+          requestId: 'req-cancel-payment',
+          payload: {
+            action: 'cancel_payment',
+            paymentStatus: 'failed',
+          },
+          dedupeKey: `audit-${crypto.randomUUID()}`,
+          occurredAt: new Date('2026-03-12T11:00:00.000Z'),
+          createdAt: new Date('2026-03-12T11:00:00.000Z'),
+        },
+      ] as any);
+
+      const history = await getAdminOrderTimeline(orderId);
+
+      expect(history.map(entry => entry.action)).toEqual([
+        'cancel_payment',
+        'refund',
+      ]);
+      expect(history.map(entry => entry.requestId)).toEqual([
+        'req-cancel-payment',
+        'req-refund',
+      ]);
+      expect(history.every(entry => entry.source === 'audit')).toBe(true);
+    } finally {
+      await cleanup(orderId);
+    }
+  });
+
   it('falls back to legacy shipping audit when canonical audit rows are absent', async () => {
     const orderId = crypto.randomUUID();
 

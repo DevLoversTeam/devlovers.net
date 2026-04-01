@@ -5,7 +5,12 @@ import { useTranslations } from 'next-intl';
 import { useId } from 'react';
 
 import { usePathname, useRouter } from '@/i18n/routing';
-import { CATEGORIES, COLORS, PRODUCT_TYPES, SIZES } from '@/lib/config/catalog';
+import {
+  COLORS,
+  PRODUCT_TYPES,
+  SIZES,
+  STOREFRONT_CATEGORIES,
+} from '@/lib/config/catalog';
 import {
   SHOP_CHIP_BORDER_HOVER,
   SHOP_CHIP_HOVER,
@@ -59,7 +64,7 @@ export function ProductFilters() {
         </h3>
 
         <ul className="mt-4 space-y-2" role="list">
-          {CATEGORIES.map(cat => (
+          {STOREFRONT_CATEGORIES.map(cat => (
             <li key={cat.slug}>
               <button
                 type="button"
@@ -73,13 +78,7 @@ export function ProductFilters() {
                     : 'text-muted-foreground hover:text-accent active:text-accent'
                 )}
               >
-                {tCategories(
-                  cat.slug === 'new-arrivals'
-                    ? 'newArrivals'
-                    : cat.slug === 'best-sellers'
-                      ? 'bestSellers'
-                      : cat.slug
-                )}
+                {tCategories(cat.slug)}
               </button>
             </li>
           ))}

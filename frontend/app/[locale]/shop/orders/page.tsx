@@ -11,6 +11,8 @@ import { orderItems, orders } from '@/db/schema';
 import { Link } from '@/i18n/routing';
 import { getCurrentUser } from '@/lib/auth';
 import { logError } from '@/lib/logging';
+import { type CurrencyCode, formatMoney } from '@/lib/shop/currency';
+import { fromDbMoney } from '@/lib/shop/money';
 import {
   SHOP_FOCUS,
   SHOP_LINK_BASE,
@@ -32,7 +34,7 @@ type OrderCurrency = (typeof orders.$inferSelect)['currency'];
 function shortOrderId(id: string) {
   if (!id) return '';
   if (id.length <= 14) return id;
-  return `${id.slice(0, 8)}…${id.slice(-4)}`;
+  return `${id.slice(0, 8)}...${id.slice(-4)}`;
 }
 
 function formatDateTime(d: Date, locale: string) {
@@ -43,6 +45,19 @@ function formatDateTime(d: Date, locale: string) {
     }).format(d);
   } catch {
     return d.toISOString();
+  }
+}
+
+function formatOrderTotal(
+  major: string,
+  currency: OrderCurrency,
+  locale: string
+): string {
+  try {
+    const currencyCode: CurrencyCode = currency === 'UAH' ? 'UAH' : 'USD';
+    return formatMoney(fromDbMoney(major), currencyCode, locale);
+  } catch {
+    return `${major} ${currency}`;
   }
 }
 
@@ -61,6 +76,8 @@ function statusLabel(
       return t('paymentStatus.failed');
     case 'refunded':
       return t('paymentStatus.refunded');
+    case 'needs_review':
+      return t('paymentStatus.needsReview');
     default:
       return String(status);
   }
@@ -74,6 +91,7 @@ function statusClassName(status: PaymentStatus) {
     case 'requires_payment':
     case 'refunded':
     case 'pending':
+    case 'needs_review':
     default:
       return 'border border-border bg-muted/40 text-foreground';
   }
@@ -187,10 +205,11 @@ export default async function MyOrdersPage({
     logError('My orders page failed', error);
     throw new Error('MY_ORDERS_LOAD_FAILED');
   }
+
   const NAV_LINK = cn(SHOP_NAV_LINK_BASE, 'text-lg', SHOP_FOCUS);
 
   const ORDER_HEADLINE_LINK = cn(
-    'block max-w-[24rem] truncate',
+    'block max-w-full',
     SHOP_LINK_BASE,
     SHOP_LINK_MD,
     SHOP_FOCUS
@@ -226,105 +245,77 @@ export default async function MyOrdersPage({
           </div>
         </section>
       ) : (
-        <section className="rounded-md border" aria-label="Orders list">
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <caption className="sr-only">{t('table.caption')}</caption>
+        <section className="space-y-3" aria-label={t('table.caption')}>
+          {rows.map(o => {
+            const href = `/shop/orders/${o.id}`;
+            const dateTime = o.createdAt.toISOString();
+            const count = toCount(o.itemCount);
+            const rawPrimary = o.primaryItemLabel?.trim() || null;
+            const primary =
+              rawPrimary && !looksLikeUuid(rawPrimary) ? rawPrimary : null;
+            const headline = buildOrderHeadline(primary, count, o.id, t);
+            const totalLabel = formatOrderTotal(
+              o.totalAmount,
+              o.currency,
+              locale
+            );
 
-              <thead className="border-border border-b">
-                <tr>
-                  <th
-                    scope="col"
-                    className="text-muted-foreground px-4 py-3 text-left text-xs font-semibold"
-                  >
-                    {t('table.items')}
-                  </th>
-                  <th
-                    scope="col"
-                    className="text-muted-foreground px-4 py-3 text-left text-xs font-semibold"
-                  >
-                    {t('table.date')}
-                  </th>
-                  <th
-                    scope="col"
-                    className="text-muted-foreground px-4 py-3 text-left text-xs font-semibold"
-                  >
-                    {t('table.status')}
-                  </th>
-                  <th
-                    scope="col"
-                    className="text-muted-foreground px-4 py-3 text-right text-xs font-semibold"
-                  >
-                    {t('table.total')}
-                  </th>
-                </tr>
-              </thead>
+            return (
+              <article
+                key={o.id}
+                className="border-border bg-background hover:bg-muted/10 rounded-xl border p-4 shadow-sm transition-colors sm:p-5"
+              >
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-muted-foreground text-xs font-medium tracking-[0.16em] uppercase">
+                      {t('card.orderNumber', { id: shortOrderId(o.id) })}
+                    </p>
 
-              <tbody>
-                {rows.map(o => {
-                  const href = `/shop/orders/${o.id}`;
-                  const dt = o.createdAt.toISOString();
-
-                  const count = toCount(o.itemCount);
-
-                  const rawPrimary = o.primaryItemLabel?.trim() || null;
-                  const primary =
-                    rawPrimary && !looksLikeUuid(rawPrimary)
-                      ? rawPrimary
-                      : null;
-
-                  const headline = buildOrderHeadline(primary, count, o.id, t);
-
-                  return (
-                    <tr
-                      key={o.id}
-                      className="border-border hover:bg-muted/20 border-b last:border-b-0"
+                    <Link
+                      href={href}
+                      className={cn(
+                        ORDER_HEADLINE_LINK,
+                        'mt-2 text-base leading-tight font-semibold sm:text-lg'
+                      )}
+                      title={headline}
+                      aria-label={t('table.openOrder', { id: o.id })}
                     >
-                      <th scope="row" className="px-4 py-3 text-left align-top">
-                        <Link
-                          href={href}
-                          className={ORDER_HEADLINE_LINK}
-                          title={headline}
-                          aria-label={t('table.openOrder', { id: o.id })}
-                        >
-                          {headline}
-                        </Link>
+                      <span className="line-clamp-2">{headline}</span>
+                    </Link>
 
-                        <div className="text-muted-foreground mt-1 text-xs">
-                          <span className="sr-only">
-                            {t('table.orderId')}:{' '}
-                          </span>
-                          <span className="break-all">
-                            {shortOrderId(o.id)}
-                          </span>
-                        </div>
-                      </th>
+                    <div className="text-muted-foreground mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                      <span>{t('card.itemsCount', { count })}</span>
+                      <time dateTime={dateTime}>
+                        {t('card.placedOn', {
+                          date: formatDateTime(o.createdAt, locale),
+                        })}
+                      </time>
+                    </div>
+                  </div>
 
-                      <td className="px-4 py-3 align-top text-sm">
-                        <time dateTime={dt}>
-                          {formatDateTime(o.createdAt, locale)}
-                        </time>
-                      </td>
+                  <div className="flex flex-col items-start gap-3 sm:items-end sm:text-right">
+                    <span
+                      className={cn(
+                        'inline-flex items-center rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap',
+                        statusClassName(o.paymentStatus)
+                      )}
+                    >
+                      {statusLabel(o.paymentStatus, t)}
+                    </span>
 
-                      <td className="px-4 py-3 align-top">
-                        <span
-                          className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${statusClassName(
-                            o.paymentStatus
-                          )}`}
-                        >
-                          {statusLabel(o.paymentStatus, t)}
-                        </span>
-                      </td>
-
-                      <td className="px-4 py-3 text-right align-top text-sm font-medium">
-                        {String(o.totalAmount)} {String(o.currency)}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                    <div>
+                      <div className="text-muted-foreground text-xs tracking-[0.16em] uppercase">
+                        {t('table.total')}
+                      </div>
+                      <div className="mt-1 text-base font-semibold">
+                        {totalLabel}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
         </section>
       )}
     </main>
