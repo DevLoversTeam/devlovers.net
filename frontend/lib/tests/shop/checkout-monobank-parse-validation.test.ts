@@ -15,6 +15,7 @@ import {
   hasStatusTokenScope,
   verifyStatusToken,
 } from '@/lib/shop/status-token';
+import { TEST_LEGAL_CONSENT } from '@/lib/tests/shop/test-legal-consent';
 
 vi.mock('@/lib/auth', () => ({
   getCurrentUser: vi.fn().mockResolvedValue(null),
@@ -94,6 +95,11 @@ function makeMonobankCheckoutReq(params: {
   idempotencyKey?: string;
   body: Record<string, unknown>;
 }) {
+  const body = {
+    legalConsent: TEST_LEGAL_CONSENT,
+    ...params.body,
+  };
+
   const headers = new Headers({
     'content-type': 'application/json',
     'accept-language': 'uk-UA',
@@ -108,7 +114,7 @@ function makeMonobankCheckoutReq(params: {
     new Request('http://localhost:3000/api/shop/checkout', {
       method: 'POST',
       headers,
-      body: JSON.stringify(params.body),
+      body: JSON.stringify(body),
     })
   );
 }
