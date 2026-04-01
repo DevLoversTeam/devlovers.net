@@ -187,6 +187,20 @@ export const categoryTabStyles = {
     glow: 'bg-[#61DAFB]',
     accent: '#61DAFB',
   },
+  java: {
+    icon: '/icons/java.svg',
+    color:
+      'group-hover:border-[#0074BD]/50 group-hover:bg-[#0074BD]/10 data-[state=active]:border-[#0074BD]/50 data-[state=active]:bg-[#0074BD]/10',
+    glow: 'bg-[#0074BD]',
+    accent: '#0074BD',
+  },
+  spring: {
+    icon: '/icons/spring.svg',
+    color:
+      'group-hover:border-[#77BC1F]/50 group-hover:bg-[#77BC1F]/10 data-[state=active]:border-[#77BC1F]/50 data-[state=active]:bg-[#77BC1F]/10',
+    glow: 'bg-[#77BC1F]',
+    accent: '#77BC1F',
+  },
 } as const satisfies Partial<Record<CategorySlug, CategoryTabStyle>>;
 
 export function getCategoryTabStyle(slug: string): CategoryTabStyle {

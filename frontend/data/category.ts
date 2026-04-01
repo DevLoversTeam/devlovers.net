@@ -33,4 +33,6 @@ export const categoryData = [
   createCategory('flutter', 'Flutter', 21),
   createCategory('kotlin', 'Kotlin', 22),
   createCategory('reactnative', 'React Native', 23),
+  createCategory('java', 'Java', 24),
+  createCategory('spring', 'Spring', 25),
 ];
