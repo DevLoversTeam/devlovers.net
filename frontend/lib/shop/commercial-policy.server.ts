@@ -12,7 +12,13 @@ export type StandardStorefrontProviderCapabilities = {
 };
 
 function isFlagEnabled(value: string | undefined): boolean {
-  return (value ?? '').trim() === 'true';
+  const normalized = (value ?? '').trim().toLowerCase();
+  return (
+    normalized === 'true' ||
+    normalized === '1' ||
+    normalized === 'yes' ||
+    normalized === 'on'
+  );
 }
 
 export function resolveStandardStorefrontProviderCapabilities(): StandardStorefrontProviderCapabilities {
@@ -36,17 +42,9 @@ export function resolveStandardStorefrontProviderCapabilities(): StandardStorefr
     }
   }
 
-  const rawMonobankGooglePay = (
-    readServerEnv('SHOP_MONOBANK_GPAY_ENABLED') ?? ''
-  )
-    .trim()
-    .toLowerCase();
   const monobankGooglePayEnabled =
     monobankCheckoutEnabled &&
-    (rawMonobankGooglePay === 'true' ||
-      rawMonobankGooglePay === '1' ||
-      rawMonobankGooglePay === 'yes' ||
-      rawMonobankGooglePay === 'on');
+    isFlagEnabled(readServerEnv('SHOP_MONOBANK_GPAY_ENABLED'));
 
   const enabledProviders: Array<'monobank' | 'stripe'> = [];
   if (monobankCheckoutEnabled) enabledProviders.push('monobank');

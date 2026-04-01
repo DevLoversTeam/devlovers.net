@@ -22,50 +22,31 @@ function getAtPath(
 
 describe('admin product form i18n messages', () => {
   it('keeps product form labels under shop.admin.products.form for all supported locales', () => {
-    for (const messages of [en, uk, pl]) {
-      expect(
-        getAtPath(messages as Record<string, unknown>, [
-          'shop',
-          'admin',
-          'products',
-          'form',
-          'fields',
-          'title',
-        ])
-      ).toBeTruthy();
-
-      expect(
-        getAtPath(messages as Record<string, unknown>, [
-          'shop',
-          'admin',
-          'products',
-          'form',
-          'pricing',
-          'helper',
-        ])
-      ).toBeTruthy();
-
-      expect(
-        getAtPath(messages as Record<string, unknown>, [
+    for (const [locale, messages] of [
+      ['en', en],
+      ['uk', uk],
+      ['pl', pl],
+    ] as const) {
+      for (const path of [
+        ['shop', 'admin', 'products', 'form', 'fields', 'title'],
+        ['shop', 'admin', 'products', 'form', 'pricing', 'helper'],
+        [
           'shop',
           'admin',
           'products',
           'form',
           'errors',
           'legacyPhotoMigrationRequired',
-        ])
-      ).toBeTruthy();
+        ],
+        ['shop', 'admin', 'products', 'form', 'actions', 'save'],
+      ] as const) {
+        const resolved = getAtPath(messages as Record<string, unknown>, path);
 
-      expect(
-        getAtPath(messages as Record<string, unknown>, [
-          'shop',
-          'admin',
-          'products',
-          'form',
-          'actions',
-          'save',
-        ])
-      ).toBeTruthy();
+        expect(
+          resolved,
+          `Missing ${path.join('.')} for locale ${locale}`
+        ).toBeTruthy();
+      }
     }
   });
 });

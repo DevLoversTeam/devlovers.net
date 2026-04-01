@@ -29,39 +29,25 @@ export function resolveStandardStorefrontCheckoutProviderCandidates(args: {
   requestedProvider?: CompatibleCheckoutProvider | null;
   requestedMethod?: CompatiblePaymentMethod | null;
 }): readonly CompatibleCheckoutProvider[] {
-  const explicitProvider =
-    args.requestedProvider ??
-    inferCurrentCheckoutProviderFromMethod(args.requestedMethod);
-
-  if (explicitProvider) {
-    return [explicitProvider];
-  }
-
-  return ['monobank', 'stripe'];
-}
-
-function normalizeLocaleTag(locale: string | null | undefined): string {
-  const raw = (locale ?? '').trim().toLowerCase();
-  if (!raw) return '';
-  return raw.split(/[-_]/)[0] ?? raw;
+  return resolveCheckoutProviderCandidatesFromAllowedProviders({
+    allowedProviders: ['monobank', 'stripe'],
+    requestedProvider: args.requestedProvider,
+    requestedMethod: args.requestedMethod,
+  });
 }
 
 export function resolveCurrentStandardStorefrontCurrencyFromLocale(
   locale: string | null | undefined
 ): CompatibleCurrency {
-  const primary = normalizeLocaleTag(locale);
-  return primary === 'uk'
-    ? STANDARD_STOREFRONT_COMMERCIAL_POLICY.currency
-    : 'USD';
+  void locale;
+  return STANDARD_STOREFRONT_COMMERCIAL_POLICY.currency;
 }
 
 export function resolveCurrentStandardStorefrontShippingCountryFromLocale(
   locale: string | null | undefined
 ): StandardStorefrontShippingCountry | null {
-  const primary = normalizeLocaleTag(locale);
-  return primary === 'uk'
-    ? STANDARD_STOREFRONT_COMMERCIAL_POLICY.shippingCountry
-    : null;
+  void locale;
+  return STANDARD_STOREFRONT_COMMERCIAL_POLICY.shippingCountry;
 }
 
 export function inferCurrentCheckoutProviderFromMethod(
@@ -80,17 +66,33 @@ export function resolveCurrentCheckoutProviderCandidates(args: {
   requestedMethod?: CompatiblePaymentMethod | null;
   currency: CompatibleCurrency;
 }): readonly CompatibleCheckoutProvider[] {
-  const explicitProvider =
-    args.requestedProvider ??
-    inferCurrentCheckoutProviderFromMethod(args.requestedMethod);
+  const allowedProviders: readonly CompatibleCheckoutProvider[] =
+    args.currency === STANDARD_STOREFRONT_COMMERCIAL_POLICY.currency
+      ? ['monobank', 'stripe']
+      : ['stripe'];
 
-  if (explicitProvider) {
-    return [explicitProvider];
+  return resolveCheckoutProviderCandidatesFromAllowedProviders({
+    allowedProviders,
+    requestedProvider: args.requestedProvider,
+    requestedMethod: args.requestedMethod,
+  });
+}
+
+function resolveCheckoutProviderCandidatesFromAllowedProviders(args: {
+  allowedProviders: readonly CompatibleCheckoutProvider[];
+  requestedProvider?: CompatibleCheckoutProvider | null;
+  requestedMethod?: CompatiblePaymentMethod | null;
+}): readonly CompatibleCheckoutProvider[] {
+  const inferredProvider = inferCurrentCheckoutProviderFromMethod(
+    args.requestedMethod
+  );
+  const methodFiltered = inferredProvider
+    ? args.allowedProviders.filter(provider => provider === inferredProvider)
+    : [...args.allowedProviders];
+
+  if (!args.requestedProvider) {
+    return methodFiltered;
   }
 
-  if (args.currency === STANDARD_STOREFRONT_COMMERCIAL_POLICY.currency) {
-    return ['monobank', 'stripe'];
-  }
-
-  return ['stripe'];
+  return methodFiltered.filter(provider => provider === args.requestedProvider);
 }

@@ -1,17 +1,28 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+const COMMERCIAL_POLICY_MODULE_ID = '@/lib/shop/commercial-policy';
+const COMMERCIAL_POLICY_SERVER_MODULE_ID =
+  '@/lib/shop/commercial-policy.server';
 
 describe('commercial policy wrapper delegation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.resetModules();
+    vi.doUnmock(COMMERCIAL_POLICY_MODULE_ID);
+    vi.doUnmock(COMMERCIAL_POLICY_SERVER_MODULE_ID);
+  });
+
+  afterEach(() => {
+    vi.doUnmock(COMMERCIAL_POLICY_MODULE_ID);
+    vi.doUnmock(COMMERCIAL_POLICY_SERVER_MODULE_ID);
   });
 
   it('currency and locale helpers delegate to the centralized policy module', async () => {
     const currencyDelegate = vi.fn(() => 'USD');
     const countryDelegate = vi.fn(() => 'UA');
 
-    vi.doMock('@/lib/shop/commercial-policy', async () => {
-      const actual = await vi.importActual<any>('@/lib/shop/commercial-policy');
+    vi.doMock(COMMERCIAL_POLICY_MODULE_ID, async () => {
+      const actual = await vi.importActual<any>(COMMERCIAL_POLICY_MODULE_ID);
       return {
         ...actual,
         resolveCurrentStandardStorefrontCurrencyFromLocale: currencyDelegate,
@@ -33,8 +44,8 @@ describe('commercial policy wrapper delegation', () => {
   it('checkout provider helper delegates to the centralized policy module', async () => {
     const candidateDelegate = vi.fn(() => ['stripe'] as const);
 
-    vi.doMock('@/lib/shop/commercial-policy', async () => {
-      const actual = await vi.importActual<any>('@/lib/shop/commercial-policy');
+    vi.doMock(COMMERCIAL_POLICY_MODULE_ID, async () => {
+      const actual = await vi.importActual<any>(COMMERCIAL_POLICY_MODULE_ID);
       return {
         ...actual,
         resolveCurrentCheckoutProviderCandidates: candidateDelegate,
@@ -61,7 +72,7 @@ describe('commercial policy wrapper delegation', () => {
       enabledProviders: ['stripe'] as const,
     }));
 
-    vi.doMock('@/lib/shop/commercial-policy.server', () => ({
+    vi.doMock(COMMERCIAL_POLICY_SERVER_MODULE_ID, () => ({
       resolveStandardStorefrontProviderCapabilities: resolveCapabilities,
     }));
 

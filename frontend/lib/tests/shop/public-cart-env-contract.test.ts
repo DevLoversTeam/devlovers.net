@@ -47,6 +47,24 @@ describe('public cart env contract', () => {
     expect(isMonobankEnabledMock).not.toHaveBeenCalled();
   });
 
+  it('treats normalized truthy env values as enabled for capability resolution', async () => {
+    readServerEnvMock.mockImplementation((key: string) => {
+      if (key === 'PAYMENTS_ENABLED') return ' YES ';
+      if (key === 'SHOP_MONOBANK_GPAY_ENABLED') return ' On ';
+      return undefined;
+    });
+    isMonobankEnabledMock.mockReturnValue(true);
+
+    const mod = await import('@/app/[locale]/shop/cart/capabilities');
+
+    expect(mod.resolveMonobankCheckoutEnabled()).toBe(true);
+    expect(mod.resolveMonobankGooglePayEnabled()).toBe(true);
+    expect(readServerEnvMock).toHaveBeenCalledWith('PAYMENTS_ENABLED');
+    expect(readServerEnvMock).toHaveBeenCalledWith(
+      'SHOP_MONOBANK_GPAY_ENABLED'
+    );
+  });
+
   it('resolves monobank google pay from readServerEnv SHOP_MONOBANK_GPAY_ENABLED', async () => {
     readServerEnvMock.mockImplementation((key: string) => {
       if (key === 'PAYMENTS_ENABLED') return 'true';

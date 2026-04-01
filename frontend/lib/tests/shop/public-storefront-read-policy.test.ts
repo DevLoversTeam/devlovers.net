@@ -58,36 +58,45 @@ describe('public storefront read policy', () => {
       );
     }
 
-    expect(shopQueryMocks.getActiveProductsPage).toHaveBeenNthCalledWith(1, {
-      currency: 'UAH',
-      limit: 24,
-      offset: 0,
-      category: undefined,
-      type: undefined,
-      color: undefined,
-      size: undefined,
-      sort: 'newest',
-    });
-    expect(shopQueryMocks.getActiveProductsPage).toHaveBeenNthCalledWith(2, {
-      currency: 'UAH',
-      limit: 24,
-      offset: 0,
-      category: undefined,
-      type: undefined,
-      color: undefined,
-      size: undefined,
-      sort: 'newest',
-    });
-    expect(shopQueryMocks.getActiveProductsPage).toHaveBeenNthCalledWith(3, {
-      currency: 'UAH',
-      limit: 24,
-      offset: 0,
-      category: undefined,
-      type: undefined,
-      color: undefined,
-      size: undefined,
-      sort: 'newest',
-    });
+    expect(shopQueryMocks.getActiveProductsPage).toHaveBeenCalledTimes(3);
+    expect(shopQueryMocks.getActiveProductsPage.mock.calls).toEqual([
+      [
+        {
+          currency: 'UAH',
+          limit: 24,
+          offset: 0,
+          category: undefined,
+          type: undefined,
+          color: undefined,
+          size: undefined,
+          sort: 'newest',
+        },
+      ],
+      [
+        {
+          currency: 'UAH',
+          limit: 24,
+          offset: 0,
+          category: undefined,
+          type: undefined,
+          color: undefined,
+          size: undefined,
+          sort: 'newest',
+        },
+      ],
+      [
+        {
+          currency: 'UAH',
+          limit: 24,
+          offset: 0,
+          category: undefined,
+          type: undefined,
+          color: undefined,
+          size: undefined,
+          sort: 'newest',
+        },
+      ],
+    ]);
   });
 
   it('uses the standard storefront UAH currency for PDP reads on non-uk locales', async () => {
@@ -97,10 +106,10 @@ describe('public storefront read policy', () => {
 
     const result = await getProductPageData('policy-product', 'en');
 
-    expect(shopQueryMocks.getPublicProductBySlug).toHaveBeenCalledWith(
-      'policy-product',
-      'UAH'
-    );
+    expect(shopQueryMocks.getPublicProductBySlug).toHaveBeenCalledTimes(1);
+    expect(shopQueryMocks.getPublicProductBySlug.mock.calls).toEqual([
+      ['policy-product', 'UAH'],
+    ]);
     expect(result.kind).toBe('available');
   });
 });

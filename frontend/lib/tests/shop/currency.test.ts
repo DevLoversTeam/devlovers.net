@@ -9,23 +9,20 @@ import {
   resolveCurrencyFromLocale,
 } from '../../shop/currency';
 
-describe('legacy locale currency compatibility helper', () => {
-  it('maps uk locales to UAH for compatibility resolution', () => {
+describe('standard storefront locale wrappers', () => {
+  it('resolves storefront currency as UAH regardless of locale input', () => {
     expect(resolveCurrencyFromLocale('uk')).toBe('UAH');
     expect(resolveCurrencyFromLocale('uk-UA')).toBe('UAH');
     expect(resolveCurrencyFromLocale('uk_UA')).toBe('UAH');
     expect(resolveCurrencyFromLocale('UK-ua')).toBe('UAH');
+    expect(resolveCurrencyFromLocale('en')).toBe('UAH');
+    expect(resolveCurrencyFromLocale('pl-PL')).toBe('UAH');
+    expect(resolveCurrencyFromLocale(null)).toBe('UAH');
+    expect(resolveCurrencyFromLocale(undefined)).toBe('UAH');
+    expect(resolveCurrencyFromLocale('')).toBe('UAH');
   });
 
-  it('maps non-uk locales to USD for compatibility resolution', () => {
-    expect(resolveCurrencyFromLocale('en')).toBe('USD');
-    expect(resolveCurrencyFromLocale('pl-PL')).toBe('USD');
-    expect(resolveCurrencyFromLocale(null)).toBe('USD');
-    expect(resolveCurrencyFromLocale(undefined)).toBe('USD');
-    expect(resolveCurrencyFromLocale('')).toBe('USD');
-  });
-
-  it('parses the primary locale from Accept-Language for compatibility helpers', () => {
+  it('parses the primary locale from Accept-Language', () => {
     expect(
       parsePrimaryLocaleFromAcceptLanguage('uk-UA,uk;q=0.9,en-US;q=0.8')
     ).toBe('uk-UA');
@@ -34,17 +31,17 @@ describe('legacy locale currency compatibility helper', () => {
     expect(parsePrimaryLocaleFromAcceptLanguage(null)).toBe(null);
   });
 
-  it('resolves locale-derived compatibility currency from Accept-Language headers', () => {
+  it('resolves storefront currency as UAH from Accept-Language headers too', () => {
     const h1 = new Headers({
       'accept-language': 'uk-UA,uk;q=0.9,en-US;q=0.8',
     });
     expect(resolveCurrencyFromHeaders(h1)).toBe('UAH');
 
     const h2 = new Headers({ 'accept-language': 'en-US,en;q=0.9' });
-    expect(resolveCurrencyFromHeaders(h2)).toBe('USD');
+    expect(resolveCurrencyFromHeaders(h2)).toBe('UAH');
 
     const h3 = new Headers();
-    expect(resolveCurrencyFromHeaders(h3)).toBe('USD');
+    expect(resolveCurrencyFromHeaders(h3)).toBe('UAH');
   });
 });
 

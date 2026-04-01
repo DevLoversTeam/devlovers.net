@@ -21,8 +21,8 @@ import {
   products,
 } from '@/db/schema';
 import { resetEnvCache } from '@/lib/env';
-import { toDbMoney } from '@/lib/shop/money';
 import { rehydrateCartItems } from '@/lib/services/products';
+import { toDbMoney } from '@/lib/shop/money';
 import { deriveTestIpFromIdemKey } from '@/lib/tests/helpers/ip';
 import { getOrSeedActiveTemplateProduct } from '@/lib/tests/helpers/seed-product';
 import { TEST_LEGAL_CONSENT } from '@/lib/tests/shop/test-legal-consent';
@@ -381,7 +381,6 @@ describe.sequential('checkout stripe fail-closed + tamper guards', () => {
           paymentProvider: 'stripe',
           paymentMethod: 'stripe_card',
           paymentCurrency: 'UAH',
-          legalConsent: TEST_LEGAL_CONSENT,
           items: [{ productId, quantity: 1 }],
         },
       });

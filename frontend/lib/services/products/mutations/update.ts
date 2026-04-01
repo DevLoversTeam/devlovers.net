@@ -80,50 +80,6 @@ export async function updateProduct(
 
   const finalBadge = (input as any).badge ?? existing.badge;
 
-  const existingPriceRows = await db
-    .select({
-      currency: productPrices.currency,
-      priceMinor: productPrices.priceMinor,
-      originalPriceMinor: productPrices.originalPriceMinor,
-    })
-    .from(productPrices)
-    .where(eq(productPrices.productId, id));
-
-  const merged = new Map<CurrencyCode, NormalizedPriceRow>();
-
-  for (const r of existingPriceRows) {
-    merged.set(r.currency as CurrencyCode, {
-      currency: r.currency as CurrencyCode,
-      priceMinor: assertMoneyMinorInt(
-        r.priceMinor,
-        `${String(r.currency)} priceMinor`
-      ),
-      originalPriceMinor:
-        r.originalPriceMinor == null
-          ? null
-          : assertMoneyMinorInt(
-              r.originalPriceMinor,
-              `${String(r.currency)} originalPriceMinor`
-            ),
-    });
-  }
-
-  for (const p of prices) {
-    merged.set(p.currency, p);
-  }
-
-  const mergedRows = Array.from(merged.values());
-
-  assertMergedPricesPolicy(mergedRows, {
-    productId: id,
-    requiredCurrency: 'UAH',
-    requireUsd: false,
-  });
-
-  if (finalBadge === 'SALE') {
-    enforceSaleBadgeRequiresOriginal('SALE', mergedRows);
-  }
-
   let resolvedPhotoPlan: ReturnType<typeof resolvePhotoPlan> | undefined;
   const uploadedById = new Map<
     string,
@@ -224,6 +180,51 @@ export async function updateProduct(
 
   try {
     const row = await db.transaction(async tx => {
+      const existingPriceRows = await tx
+        .select({
+          currency: productPrices.currency,
+          priceMinor: productPrices.priceMinor,
+          originalPriceMinor: productPrices.originalPriceMinor,
+        })
+        .from(productPrices)
+        .where(eq(productPrices.productId, id))
+        .for('update');
+
+      const merged = new Map<CurrencyCode, NormalizedPriceRow>();
+
+      for (const r of existingPriceRows) {
+        merged.set(r.currency as CurrencyCode, {
+          currency: r.currency as CurrencyCode,
+          priceMinor: assertMoneyMinorInt(
+            r.priceMinor,
+            `${String(r.currency)} priceMinor`
+          ),
+          originalPriceMinor:
+            r.originalPriceMinor == null
+              ? null
+              : assertMoneyMinorInt(
+                  r.originalPriceMinor,
+                  `${String(r.currency)} originalPriceMinor`
+                ),
+        });
+      }
+
+      for (const p of prices) {
+        merged.set(p.currency, p);
+      }
+
+      const mergedRows = Array.from(merged.values());
+
+      assertMergedPricesPolicy(mergedRows, {
+        productId: id,
+        requiredCurrency: 'UAH',
+        requireUsd: false,
+      });
+
+      if (finalBadge === 'SALE') {
+        enforceSaleBadgeRequiresOriginal('SALE', mergedRows);
+      }
+
       if (prices.length) {
         const upsertRows = prices.map(p => {
           const priceMinor = p.priceMinor;

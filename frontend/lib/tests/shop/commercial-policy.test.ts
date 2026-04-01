@@ -22,7 +22,7 @@ describe('commercial policy contract', () => {
     });
   });
 
-  it('keeps current locale-based storefront currency compatibility unchanged', () => {
+  it('returns the standard storefront currency regardless of locale wrapper input', () => {
     expect(resolveCurrentStandardStorefrontCurrencyFromLocale('uk')).toBe(
       'UAH'
     );
@@ -30,17 +30,17 @@ describe('commercial policy contract', () => {
       'UAH'
     );
     expect(resolveCurrentStandardStorefrontCurrencyFromLocale('en')).toBe(
-      'USD'
+      'UAH'
     );
     expect(resolveCurrentStandardStorefrontCurrencyFromLocale('pl-PL')).toBe(
-      'USD'
+      'UAH'
     );
     expect(resolveCurrentStandardStorefrontCurrencyFromLocale(null)).toBe(
-      'USD'
+      'UAH'
     );
   });
 
-  it('keeps current locale-based shipping country compatibility unchanged', () => {
+  it('returns the standard storefront shipping country regardless of locale wrapper input', () => {
     expect(
       resolveCurrentStandardStorefrontShippingCountryFromLocale('uk')
     ).toBe('UA');
@@ -49,13 +49,13 @@ describe('commercial policy contract', () => {
     ).toBe('UA');
     expect(
       resolveCurrentStandardStorefrontShippingCountryFromLocale('en')
-    ).toBe(null);
+    ).toBe('UA');
     expect(
       resolveCurrentStandardStorefrontShippingCountryFromLocale(null)
-    ).toBe(null);
+    ).toBe('UA');
   });
 
-  it('keeps current checkout provider candidate compatibility unchanged', () => {
+  it('tightens the currency-aware checkout provider helper against contradictory provider and method input', () => {
     expect(inferCurrentCheckoutProviderFromMethod('stripe_card')).toBe(
       'stripe'
     );
@@ -78,9 +78,28 @@ describe('commercial policy contract', () => {
         currency: 'UAH',
       })
     ).toEqual(['stripe']);
+    expect(
+      resolveCurrentCheckoutProviderCandidates({
+        requestedProvider: 'monobank',
+        currency: 'USD',
+      })
+    ).toEqual([]);
+    expect(
+      resolveCurrentCheckoutProviderCandidates({
+        requestedMethod: 'monobank_invoice',
+        currency: 'USD',
+      })
+    ).toEqual([]);
+    expect(
+      resolveCurrentCheckoutProviderCandidates({
+        requestedProvider: 'stripe',
+        requestedMethod: 'stripe_card',
+        currency: 'USD',
+      })
+    ).toEqual(['stripe']);
   });
 
-  it('resolves standard storefront checkout provider candidates without locale-derived currency input', () => {
+  it('tightens the standard storefront checkout provider helper against contradictory provider and method input', () => {
     expect(resolveStandardStorefrontCheckoutProviderCandidates({})).toEqual([
       'monobank',
       'stripe',
@@ -95,5 +114,11 @@ describe('commercial policy contract', () => {
         requestedMethod: 'monobank_invoice',
       })
     ).toEqual(['monobank']);
+    expect(
+      resolveStandardStorefrontCheckoutProviderCandidates({
+        requestedProvider: 'stripe',
+        requestedMethod: 'monobank_invoice',
+      })
+    ).toEqual([]);
   });
 });

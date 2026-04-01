@@ -20,8 +20,16 @@ import {
 import { cn } from '@/lib/utils';
 import { orderIdParamSchema } from '@/lib/validation/shop';
 
-export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations('shop.checkout.errorPage');
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({
+    locale,
+    namespace: 'shop.checkout.errorPage',
+  });
 
   return {
     title: t('metaTitle'),

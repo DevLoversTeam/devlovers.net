@@ -136,8 +136,10 @@ describe.sequential('admin create pricing policy', () => {
   });
 
   it('rejects USD-only admin pricing at create-time even through the service layer', async () => {
-    await expect(
-      createProduct({
+    expect.assertions(3);
+
+    try {
+      await createProduct({
         title: 'USD-only create product',
         slug: uniqueSlug('admin-create-usd-only'),
         description: null,
@@ -151,10 +153,14 @@ describe.sequential('admin create pricing policy', () => {
         image: new File([new Uint8Array([1, 2, 3, 4])], 'create-usd-only.png', {
           type: 'image/png',
         }),
-      } as any)
-    ).rejects.toMatchObject({
-      code: 'PRICE_CONFIG_ERROR',
-      currency: 'UAH',
-    });
+      } as any);
+      throw new Error('Expected createProduct to throw PriceConfigError');
+    } catch (error) {
+      expect(error).toBeInstanceOf(PriceConfigError);
+      expect((error as PriceConfigError).code).toBe('PRICE_CONFIG_ERROR');
+      expect((error as PriceConfigError & { currency?: string }).currency).toBe(
+        'UAH'
+      );
+    }
   });
 });
