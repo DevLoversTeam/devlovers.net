@@ -1,3 +1,5 @@
+import { resolveCurrentStandardStorefrontCurrencyFromLocale } from '@/lib/shop/commercial-policy';
+
 export const currencyValues = ['USD', 'UAH'] as const;
 export type CurrencyCode = (typeof currencyValues)[number];
 
@@ -31,8 +33,7 @@ function normalizeLocaleTag(locale: string | null | undefined): string {
 export function resolveCurrencyFromLocale(
   locale: string | null | undefined
 ): CurrencyCode {
-  const primary = normalizeLocaleTag(locale);
-  return primary === 'uk' ? 'UAH' : 'USD';
+  return resolveCurrentStandardStorefrontCurrencyFromLocale(locale);
 }
 
 export function parsePrimaryLocaleFromAcceptLanguage(
