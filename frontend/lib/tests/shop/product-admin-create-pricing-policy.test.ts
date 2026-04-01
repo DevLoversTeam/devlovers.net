@@ -32,12 +32,8 @@ describe.sequential('admin create pricing policy', () => {
     for (const productId of createdProductIds.splice(0)) {
       await db
         .delete(productPrices)
-        .where(eq(productPrices.productId, productId))
-        .catch(() => undefined);
-      await db
-        .delete(products)
-        .where(eq(products.id, productId))
-        .catch(() => undefined);
+        .where(eq(productPrices.productId, productId));
+      await db.delete(products).where(eq(products.id, productId));
     }
   });
 
@@ -127,6 +123,10 @@ describe.sequential('admin create pricing policy', () => {
       )
       .limit(1);
 
+    expect(
+      legacy,
+      'Expected legacy products row to exist after create'
+    ).toBeDefined();
     expect(legacy.currency).toBe('USD');
     expect(String(legacy.price)).toBe(String(toDbMoney(5100)));
     expect(legacy.originalPrice).toBeNull();

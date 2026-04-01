@@ -9,6 +9,8 @@ import {
   resolveCurrencyFromLocale,
 } from '../../shop/currency';
 
+const STOREFRONT_LOCALES = ['uk', 'en', 'pl'] as const;
+
 describe('standard storefront locale wrappers', () => {
   it('resolves storefront currency as UAH regardless of locale input', () => {
     expect(resolveCurrencyFromLocale('uk')).toBe('UAH');
@@ -51,32 +53,43 @@ function normalizeRenderedSpacing(value: string): string {
 
 describe('UAH storefront formatting', () => {
   it('formats UAH identically across uk / en / pl in Ukrainian storefront style', () => {
-    const uk = formatMoney(200000, 'UAH', 'uk');
-    const en = formatMoney(200000, 'UAH', 'en');
-    const pl = formatMoney(200000, 'UAH', 'pl');
+    const [canonicalLocale, ...otherLocales] = STOREFRONT_LOCALES;
+    const canonical = formatMoney(200000, 'UAH', canonicalLocale);
 
-    expect(en).toBe(uk);
-    expect(pl).toBe(uk);
-    expect(normalizeRenderedSpacing(uk)).toBe('2 000,00 ₴');
+    for (const locale of otherLocales) {
+      expect(formatMoney(200000, 'UAH', locale)).toBe(canonical);
+    }
+
+    expect(normalizeRenderedSpacing(canonical)).toBe('2 000,00 ₴');
   });
 
   it('formats UAH code output identically across uk / en / pl', () => {
-    const uk = formatMoneyCode(200000, 'UAH', 'uk');
-    const en = formatMoneyCode(200000, 'UAH', 'en');
-    const pl = formatMoneyCode(200000, 'UAH', 'pl');
+    const [canonicalLocale, ...otherLocales] = STOREFRONT_LOCALES;
+    const canonical = formatMoneyCode(200000, 'UAH', canonicalLocale);
 
-    expect(en).toBe(uk);
-    expect(pl).toBe(uk);
-    expect(normalizeRenderedSpacing(uk)).toBe('2 000,00 UAH');
+    for (const locale of otherLocales) {
+      expect(formatMoneyCode(200000, 'UAH', locale)).toBe(canonical);
+    }
+
+    expect(normalizeRenderedSpacing(canonical)).toBe('2 000,00 UAH');
   });
 
   it('formats major-unit UAH prices identically across uk / en / pl', () => {
-    const uk = formatPrice(2000, { currency: 'UAH', locale: 'uk' });
-    const en = formatPrice(2000, { currency: 'UAH', locale: 'en' });
-    const pl = formatPrice(2000, { currency: 'UAH', locale: 'pl' });
+    const [canonicalLocale, ...otherLocales] = STOREFRONT_LOCALES;
+    const canonical = formatPrice(2000, {
+      currency: 'UAH',
+      locale: canonicalLocale,
+    });
 
-    expect(en).toBe(uk);
-    expect(pl).toBe(uk);
-    expect(normalizeRenderedSpacing(uk)).toBe('2 000,00 ₴');
+    for (const locale of otherLocales) {
+      expect(
+        formatPrice(2000, {
+          currency: 'UAH',
+          locale,
+        })
+      ).toBe(canonical);
+    }
+
+    expect(normalizeRenderedSpacing(canonical)).toBe('2 000,00 ₴');
   });
 });

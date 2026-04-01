@@ -231,11 +231,9 @@ export default async function CheckoutErrorPage({
   const isFailed = order.paymentStatus === 'failed';
 
   const totalMinor =
-    typeof (order as any).totalAmountMinor === 'number'
-      ? (order as any).totalAmountMinor
-      : null;
+    typeof order.totalAmountMinor === 'number' ? order.totalAmountMinor : null;
 
-  const currency = resolveCheckoutDisplayCurrency((order as any).currency);
+  const currency = resolveCheckoutDisplayCurrency(order.currency);
 
   return (
     <main
