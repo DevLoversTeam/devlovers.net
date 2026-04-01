@@ -363,15 +363,6 @@ export const productAdminSchema = z
   .superRefine((data, ctx) => {
     refineNoDuplicateCurrencies(data.prices, ctx);
 
-    const usd = data.prices.find(p => p.currency === 'USD');
-    if (!usd) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['prices'],
-        message: 'USD price is required',
-      });
-    }
-
     if (data.badge === 'SALE') {
       data.prices.forEach((p, idx) => {
         if (p.originalPriceMinor == null) {

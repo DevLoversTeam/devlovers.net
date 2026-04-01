@@ -3,6 +3,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { db } from '@/db';
 import { productPrices, products } from '@/db/schema';
+import { createProduct } from '@/lib/services/products';
 import { updateProduct } from '@/lib/services/products';
 import { toDbMoney } from '@/lib/shop/money';
 import { assertNotProductionDb } from '@/lib/tests/helpers/db-safety';
@@ -185,5 +186,67 @@ describe.sequential('product_prices write authority (phase 8)', () => {
     expect(legacy.originalPrice).toBeNull();
     expect(usd.priceMinor).toBe(1200);
     expect(uah.priceMinor).toBe(4700);
+  });
+
+  it('updates a UAH-only product row without requiring a dormant USD price row', async () => {
+    const created = await createProduct({
+      title: 'Phase8 UAH-only update',
+      slug: uniqueSlug(),
+      description: null,
+      badge: 'NONE',
+      isActive: true,
+      isFeatured: false,
+      stock: 10,
+      prices: [{ currency: 'UAH', priceMinor: 4100, originalPriceMinor: null }],
+      image: new File([new Uint8Array([1, 2, 3])], 'p8-uah-only.png', {
+        type: 'image/png',
+      }),
+    } as any);
+
+    createdProductIds.push(created.id);
+
+    await updateProduct(created.id, {
+      prices: [{ currency: 'UAH', priceMinor: 4300, originalPriceMinor: null }],
+    } as any);
+
+    const [legacy] = await db
+      .select({
+        price: products.price,
+        currency: products.currency,
+      })
+      .from(products)
+      .where(eq(products.id, created.id))
+      .limit(1);
+
+    const [usd] = await db
+      .select({
+        priceMinor: productPrices.priceMinor,
+      })
+      .from(productPrices)
+      .where(
+        and(
+          eq(productPrices.productId, created.id),
+          eq(productPrices.currency, 'USD')
+        )
+      )
+      .limit(1);
+
+    const [uah] = await db
+      .select({
+        priceMinor: productPrices.priceMinor,
+      })
+      .from(productPrices)
+      .where(
+        and(
+          eq(productPrices.productId, created.id),
+          eq(productPrices.currency, 'UAH')
+        )
+      )
+      .limit(1);
+
+    expect(legacy.currency).toBe('USD');
+    expect(String(legacy.price)).toBe(String(toDbMoney(4100)));
+    expect(usd).toBeUndefined();
+    expect(uah?.priceMinor).toBe(4300);
   });
 });

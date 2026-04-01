@@ -116,7 +116,10 @@ export async function updateProduct(
     const mergedRows = Array.from(merged.values());
 
     if (prices.length) {
-      assertMergedPricesPolicy(mergedRows, { productId: id, requireUsd: true });
+      assertMergedPricesPolicy(mergedRows, {
+        productId: id,
+        requireUsd: false,
+      });
     }
 
     if (finalBadge === 'SALE') {

@@ -76,6 +76,24 @@ export function assertMergedPricesPolicy(
     }
   }
 }
+
+export function resolveLegacyCompatPriceMirror(
+  prices: NormalizedPriceRow[]
+): NormalizedPriceRow {
+  const usd = prices.find(p => p.currency === 'USD' && p.priceMinor >= 1);
+  if (usd) return usd;
+
+  const storefrontFallback = prices.find(
+    p => p.currency === 'UAH' && p.priceMinor >= 1
+  );
+  if (storefrontFallback) return storefrontFallback;
+
+  const firstUsable = prices.find(p => p.priceMinor >= 1);
+  if (firstUsable) return firstUsable;
+
+  throw new InvalidPayloadError('At least one price is required.');
+}
+
 function toMoneyMinor(value: string, field: string): number {
   const n = assertMoneyString(value, field);
   return toCents(n);
@@ -170,14 +188,6 @@ export function normalizePricesFromInput(input: unknown): NormalizedPriceRow[] {
   }
 
   return [];
-}
-
-export function requireUsd(prices: NormalizedPriceRow[]): NormalizedPriceRow {
-  const usd = prices.find(p => p.currency === 'USD');
-  if (!usd?.priceMinor) {
-    throw new InvalidPayloadError('USD price is required.');
-  }
-  return usd;
 }
 
 export function validatePriceRows(prices: NormalizedPriceRow[]) {

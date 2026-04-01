@@ -29,9 +29,8 @@ vi.mock('@/lib/admin/parseAdminProductForm', () => ({
 
 vi.mock('@/lib/services/products', () => ({
   updateProduct: vi.fn(async () => {
-    throw new PriceConfigError('USD price is required.', {
+    throw new PriceConfigError('At least one price is required.', {
       productId: 'p1',
-      currency: 'USD',
     });
   }),
   getAdminProductByIdWithPrices: vi.fn(),

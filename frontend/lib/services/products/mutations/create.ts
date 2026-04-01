@@ -14,7 +14,7 @@ import { resolvePhotoPlan } from '../photo-plan';
 import {
   enforceSaleBadgeRequiresOriginal,
   normalizePricesFromInput,
-  requireUsd,
+  resolveLegacyCompatPriceMirror,
   validatePriceRows,
 } from '../prices';
 import { normalizeSlug } from '../slug';
@@ -35,7 +35,7 @@ export async function createProduct(input: ProductInput): Promise<DbProduct> {
   const badge = (input as any).badge ?? 'NONE';
   enforceSaleBadgeRequiresOriginal(badge, prices);
 
-  const usd = requireUsd(prices);
+  const legacyMirror = resolveLegacyCompatPriceMirror(prices);
 
   const legacyImage =
     (input as any).image instanceof File && (input as any).image.size > 0
@@ -142,11 +142,14 @@ export async function createProduct(input: ProductInput): Promise<DbProduct> {
           description: (input as any).description ?? null,
           imageUrl: primaryUpload.secureUrl,
           imagePublicId: primaryUpload.publicId,
-          price: toDbMoney(usd.priceMinor),
+          // Legacy products.* price fields remain schema-constrained to USD.
+          // When no dormant USD row is supplied, mirror the canonical admin row
+          // for compatibility only while product_prices stays authoritative.
+          price: toDbMoney(legacyMirror.priceMinor),
           originalPrice:
-            usd.originalPriceMinor == null
+            legacyMirror.originalPriceMinor == null
               ? null
-              : toDbMoney(usd.originalPriceMinor),
+              : toDbMoney(legacyMirror.originalPriceMinor),
           currency: 'USD',
 
           category: (input as any).category ?? null,

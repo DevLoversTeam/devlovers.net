@@ -580,6 +580,11 @@ export function ProductForm({
         p => p.price.length > 0 || p.originalPrice.length > 0
       );
 
+      if (effectivePrices.length === 0) {
+        setError('At least one price is required.');
+        return;
+      }
+
       for (const p of effectivePrices) {
         if (!p.price.length && p.originalPrice.length) {
           setError(
@@ -587,12 +592,6 @@ export function ProductForm({
           );
           return;
         }
-      }
-
-      const usd = effectivePrices.find(p => p.currency === 'USD');
-      if (!usd || !usd.price.length) {
-        setError('USD price is required.');
-        return;
       }
 
       let minorPrices: Array<{
@@ -838,67 +837,15 @@ export function ProductForm({
             Prices
           </legend>
 
+          <p className="text-muted-foreground mt-2 text-xs">
+            UAH is the standard storefront price. USD is optional and kept only
+            as a compatibility price.
+          </p>
+
           <div className="mt-3 grid gap-4 sm:grid-cols-2">
             <fieldset className="space-y-2">
               <legend className="text-muted-foreground text-xs font-medium">
-                USD (required)
-              </legend>
-
-              <div>
-                <label className={LABEL_CLASS} htmlFor="price-usd">
-                  Price (USD)
-                </label>
-                <input
-                  id="price-usd"
-                  name="price-usd"
-                  className={INPUT_CLASS}
-                  type="text"
-                  inputMode="decimal"
-                  placeholder="59.00"
-                  value={usdRow?.price ?? ''}
-                  onChange={e => setPriceField('USD', 'price', e.target.value)}
-                  required
-                />
-              </div>
-
-              <div>
-                <label className={LABEL_CLASS} htmlFor="original-usd">
-                  Original price (USD)
-                </label>
-                <input
-                  id="original-usd"
-                  name="original-usd"
-                  className={cn(
-                    INPUT_CLASS,
-                    usdOriginalError && 'border-red-500'
-                  )}
-                  type="text"
-                  inputMode="decimal"
-                  placeholder="79.00"
-                  value={usdRow?.originalPrice ?? ''}
-                  onChange={e =>
-                    setPriceField('USD', 'originalPrice', e.target.value)
-                  }
-                  aria-invalid={usdOriginalError ? true : undefined}
-                  aria-describedby={
-                    usdOriginalError ? usdOriginalErrorId : undefined
-                  }
-                />
-                {usdOriginalError ? (
-                  <p
-                    id={usdOriginalErrorId}
-                    className="mt-1 text-sm text-red-600"
-                    role="alert"
-                  >
-                    {usdOriginalError}
-                  </p>
-                ) : null}
-              </div>
-            </fieldset>
-
-            <fieldset className="space-y-2">
-              <legend className="text-muted-foreground text-xs font-medium">
-                UAH (optional)
+                UAH (standard storefront)
               </legend>
 
               <div>
@@ -951,12 +898,68 @@ export function ProductForm({
                 ) : null}
               </div>
             </fieldset>
+
+            <fieldset className="space-y-2">
+              <legend className="text-muted-foreground text-xs font-medium">
+                USD (compatibility optional)
+              </legend>
+
+              <div>
+                <label className={LABEL_CLASS} htmlFor="price-usd">
+                  Price (USD)
+                </label>
+                <input
+                  id="price-usd"
+                  name="price-usd"
+                  className={INPUT_CLASS}
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="59.00"
+                  value={usdRow?.price ?? ''}
+                  onChange={e => setPriceField('USD', 'price', e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label className={LABEL_CLASS} htmlFor="original-usd">
+                  Original price (USD)
+                </label>
+                <input
+                  id="original-usd"
+                  name="original-usd"
+                  className={cn(
+                    INPUT_CLASS,
+                    usdOriginalError && 'border-red-500'
+                  )}
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="79.00"
+                  value={usdRow?.originalPrice ?? ''}
+                  onChange={e =>
+                    setPriceField('USD', 'originalPrice', e.target.value)
+                  }
+                  aria-invalid={usdOriginalError ? true : undefined}
+                  aria-describedby={
+                    usdOriginalError ? usdOriginalErrorId : undefined
+                  }
+                />
+                {usdOriginalError ? (
+                  <p
+                    id={usdOriginalErrorId}
+                    className="mt-1 text-sm text-red-600"
+                    role="alert"
+                  >
+                    {usdOriginalError}
+                  </p>
+                ) : null}
+              </div>
+            </fieldset>
           </div>
 
           <p className="text-muted-foreground mt-3 text-xs">
-            Checkout currency is server-selected by locale. Prices must exist in{' '}
-            <span className="font-mono">product_prices</span> for that currency,
-            or checkout fails.
+            Standard storefront checkout uses UAH. Prices must exist in{' '}
+            <span className="font-mono">product_prices</span> for the standard
+            storefront currency. USD is optional compatibility only.
           </p>
         </fieldset>
 
