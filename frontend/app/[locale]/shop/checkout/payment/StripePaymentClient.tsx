@@ -15,12 +15,8 @@ import { useMemo, useState } from 'react';
 
 import { Link, useRouter } from '@/i18n/routing';
 import { logError } from '@/lib/logging';
-import {
-  type CurrencyCode,
-  currencyValues,
-  formatMoney,
-  resolveCurrencyFromLocale,
-} from '@/lib/shop/currency';
+import { resolveCheckoutDisplayCurrency } from '@/lib/shop/checkout-display-currency';
+import { formatMoney } from '@/lib/shop/currency';
 import {
   SHOP_CTA_BASE,
   SHOP_CTA_INSET,
@@ -50,16 +46,6 @@ type StripePaymentClientProps = {
   currency: string;
   locale: string;
 };
-
-function toCurrencyCode(
-  value: string | null | undefined,
-  locale: string
-): CurrencyCode {
-  const normalized = (value ?? '').trim().toUpperCase();
-  return currencyValues.includes(normalized as CurrencyCode)
-    ? (normalized as CurrencyCode)
-    : resolveCurrencyFromLocale(locale);
-}
 
 const IN_APP_SHOP_BASE = '/shop';
 
@@ -270,8 +256,8 @@ export default function StripePaymentClient({
   locale,
 }: StripePaymentClientProps) {
   const uiCurrency = useMemo(
-    () => toCurrencyCode(currency, locale),
-    [currency, locale]
+    () => resolveCheckoutDisplayCurrency(currency),
+    [currency]
   );
 
   const stripePromise = useMemo(() => {

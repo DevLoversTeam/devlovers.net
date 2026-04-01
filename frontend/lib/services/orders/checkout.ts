@@ -28,8 +28,11 @@ import {
   resolveCheckoutShippingQuote,
 } from '@/lib/services/shop/shipping/checkout-quote';
 import { createCheckoutPricingFingerprint } from '@/lib/shop/checkout-pricing';
-import { resolveCurrencyFromLocale } from '@/lib/shop/currency';
-import { localeToCountry } from '@/lib/shop/locale';
+import {
+  resolveStandardStorefrontCheckoutProviderCandidates,
+  resolveStandardStorefrontCurrency,
+  resolveStandardStorefrontShippingCountry,
+} from '@/lib/shop/commercial-policy';
 import {
   calculateLineTotal,
   fromCents,
@@ -40,7 +43,6 @@ import {
   type PaymentMethod,
   type PaymentProvider,
   type PaymentStatus,
-  resolveCheckoutProviderCandidates,
   resolveDefaultMethodForProvider,
 } from '@/lib/shop/payments';
 import {
@@ -356,7 +358,7 @@ async function prepareCheckoutShipping(args: {
     shippingEnabled: flags.shippingEnabled,
     npEnabled: flags.npEnabled,
     locale: args.locale ?? null,
-    country: args.country ?? localeToCountry(args.locale),
+    country: args.country ?? resolveStandardStorefrontShippingCountry(),
     currency: args.currency,
   });
 
@@ -603,7 +605,7 @@ function resolveCheckoutLegalConsent(args: {
   const source = 'checkout_explicit';
   const normalizedLocale = normVariant(args.locale).toLowerCase() || null;
   const normalizedCountry = normalizeCountryCode(
-    args.country ?? localeToCountry(args.locale)
+    args.country ?? resolveStandardStorefrontShippingCountry()
   );
 
   return {
@@ -862,19 +864,18 @@ export async function createOrderWithItems({
     });
   }
 
-  const localeCurrency: Currency = resolveCurrencyFromLocale(locale);
-  const checkoutProviderCandidates = resolveCheckoutProviderCandidates({
+  const storefrontCurrency: Currency = resolveStandardStorefrontCurrency();
+  const checkoutProviderCandidates =
+    resolveStandardStorefrontCheckoutProviderCandidates({
     requestedProvider:
       requestedProvider === 'stripe' || requestedProvider === 'monobank'
         ? requestedProvider
         : null,
     requestedMethod,
-    currency: localeCurrency,
   });
   const paymentProvider: PaymentProvider =
     checkoutProviderCandidates[0] ?? 'stripe';
-  const currency: Currency =
-    paymentProvider === 'monobank' ? 'UAH' : localeCurrency;
+  const currency: Currency = storefrontCurrency;
 
   const initialPaymentStatus: PaymentStatus = 'pending';
   const resolvedPaymentMethod = resolveCheckoutPaymentMethod({

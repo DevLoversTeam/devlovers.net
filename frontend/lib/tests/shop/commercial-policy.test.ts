@@ -5,6 +5,7 @@ import {
   resolveCurrentCheckoutProviderCandidates,
   resolveCurrentStandardStorefrontCurrencyFromLocale,
   resolveCurrentStandardStorefrontShippingCountryFromLocale,
+  resolveStandardStorefrontCheckoutProviderCandidates,
   STANDARD_STOREFRONT_COMMERCIAL_POLICY,
 } from '@/lib/shop/commercial-policy';
 
@@ -77,5 +78,22 @@ describe('commercial policy contract', () => {
         currency: 'UAH',
       })
     ).toEqual(['stripe']);
+  });
+
+  it('resolves standard storefront checkout provider candidates without locale-derived currency input', () => {
+    expect(resolveStandardStorefrontCheckoutProviderCandidates({})).toEqual([
+      'monobank',
+      'stripe',
+    ]);
+    expect(
+      resolveStandardStorefrontCheckoutProviderCandidates({
+        requestedProvider: 'stripe',
+      })
+    ).toEqual(['stripe']);
+    expect(
+      resolveStandardStorefrontCheckoutProviderCandidates({
+        requestedMethod: 'monobank_invoice',
+      })
+    ).toEqual(['monobank']);
   });
 });

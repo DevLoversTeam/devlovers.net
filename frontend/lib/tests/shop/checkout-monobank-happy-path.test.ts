@@ -15,8 +15,10 @@ import { db } from '@/db';
 import { orders, paymentAttempts, productPrices, products } from '@/db/schema';
 import { resetEnvCache } from '@/lib/env';
 import { toDbMoney } from '@/lib/shop/money';
+import { rehydrateCartItems } from '@/lib/services/products';
 import { assertNotProductionDb } from '@/lib/tests/helpers/db-safety';
 import { deriveTestIpFromIdemKey } from '@/lib/tests/helpers/ip';
+import { TEST_LEGAL_CONSENT } from '@/lib/tests/shop/test-legal-consent';
 
 vi.mock('@/lib/auth', () => ({
   getCurrentUser: vi.fn().mockResolvedValue(null),
@@ -163,22 +165,25 @@ async function postCheckout(idemKey: string, productId: string) {
   const mod = (await import('@/app/api/shop/checkout/route')) as unknown as {
     POST: (req: NextRequest) => Promise<Response>;
   };
+  const quote = await rehydrateCartItems([{ productId, quantity: 1 }], 'UAH');
 
   const req = new NextRequest('http://localhost/api/shop/checkout', {
     method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      'accept-language': 'uk-UA',
-      'idempotency-key': idemKey,
-      'x-request-id': `mono-happy-${idemKey}`,
-      'x-forwarded-for': deriveTestIpFromIdemKey(idemKey),
-      origin: 'http://localhost:3000',
-    },
-    body: JSON.stringify({
-      items: [{ productId, quantity: 1 }],
-      paymentProvider: 'monobank',
-    }),
-  });
+      headers: {
+        'content-type': 'application/json',
+        'accept-language': 'en-US,en;q=0.9',
+        'idempotency-key': idemKey,
+        'x-request-id': `mono-happy-${idemKey}`,
+        'x-forwarded-for': deriveTestIpFromIdemKey(idemKey),
+        origin: 'http://localhost:3000',
+      },
+      body: JSON.stringify({
+        items: [{ productId, quantity: 1 }],
+        paymentProvider: 'monobank',
+        pricingFingerprint: quote.summary.pricingFingerprint,
+        legalConsent: TEST_LEGAL_CONSENT,
+      }),
+    });
 
   return mod.POST(req);
 }

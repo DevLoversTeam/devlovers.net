@@ -25,6 +25,21 @@ export function resolveStandardStorefrontShippingCountry(): StandardStorefrontSh
   return STANDARD_STOREFRONT_COMMERCIAL_POLICY.shippingCountry;
 }
 
+export function resolveStandardStorefrontCheckoutProviderCandidates(args: {
+  requestedProvider?: CompatibleCheckoutProvider | null;
+  requestedMethod?: CompatiblePaymentMethod | null;
+}): readonly CompatibleCheckoutProvider[] {
+  const explicitProvider =
+    args.requestedProvider ??
+    inferCurrentCheckoutProviderFromMethod(args.requestedMethod);
+
+  if (explicitProvider) {
+    return [explicitProvider];
+  }
+
+  return ['monobank', 'stripe'];
+}
+
 function normalizeLocaleTag(locale: string | null | undefined): string {
   const raw = (locale ?? '').trim().toLowerCase();
   if (!raw) return '';

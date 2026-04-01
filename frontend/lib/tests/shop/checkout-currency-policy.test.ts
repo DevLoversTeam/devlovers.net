@@ -165,9 +165,7 @@ async function makeCheckoutRequest(
       : {};
   body.legalConsent ??= TEST_LEGAL_CONSENT;
   const items = Array.isArray(body.items) ? body.items : [];
-  const currency = opts.acceptLanguage.trim().toLowerCase().startsWith('uk')
-    ? 'UAH'
-    : 'USD';
+  const currency = 'UAH';
 
   if (items.length > 0) {
     try {
@@ -275,7 +273,7 @@ describe('P0-CUR-3 checkout currency policy', () => {
     expect(json.order.totalAmount).toBe(100);
   });
 
-  it('locale en -> order.currency USD and totals correct', async () => {
+  it('locale en -> order.currency UAH and totals correct', async () => {
     const slug = `t-en-${crypto.randomUUID()}`;
     const productId = await seedProduct({
       slug,
@@ -303,8 +301,40 @@ describe('P0-CUR-3 checkout currency policy', () => {
     const json = await res.json();
     createdOrderIds.push(json.order.id);
 
-    expect(json.order.currency).toBe('USD');
-    expect(json.order.totalAmount).toBe(67);
+    expect(json.order.currency).toBe('UAH');
+    expect(json.order.totalAmount).toBe(100);
+  });
+
+  it('locale pl -> order.currency UAH and totals correct', async () => {
+    const slug = `t-pl-${crypto.randomUUID()}`;
+    const productId = await seedProduct({
+      slug,
+      title: 'Test Product PL',
+      stock: 10,
+      prices: [
+        { currency: 'USD', priceMinor: 6700, price: '67.00' },
+        { currency: 'UAH', priceMinor: 10000, price: '100.00' },
+      ],
+    });
+
+    const req = await makeCheckoutRequest(
+      {
+        paymentProvider: 'stripe',
+        paymentMethod: 'stripe_card',
+        items: [{ productId, quantity: 1 }],
+      },
+      { idempotencyKey: makeIdempotencyKey(), acceptLanguage: 'pl-PL,pl;q=0.9' }
+    );
+
+    const res = await POST(req);
+    await debugIfNotExpected(res, 201);
+    expect(res.status).toBe(201);
+
+    const json = await res.json();
+    createdOrderIds.push(json.order.id);
+
+    expect(json.order.currency).toBe('UAH');
+    expect(json.order.totalAmount).toBe(100);
   });
 
   it('missing price for currency -> 400 PRICE_CONFIG_ERROR', async () => {

@@ -4,7 +4,8 @@ import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/routing';
 import { OrderNotFoundError } from '@/lib/services/errors';
 import { getOrderSummary } from '@/lib/services/orders';
-import { formatMoney, resolveCurrencyFromLocale } from '@/lib/shop/currency';
+import { resolveCheckoutDisplayCurrency } from '@/lib/shop/checkout-display-currency';
+import { formatMoney } from '@/lib/shop/currency';
 import {
   SHOP_CTA_BASE,
   SHOP_CTA_INSET,
@@ -223,7 +224,7 @@ export default async function CheckoutErrorPage({
       ? (order as any).totalAmountMinor
       : null;
 
-  const currency = (order as any).currency ?? resolveCurrencyFromLocale(locale);
+  const currency = resolveCheckoutDisplayCurrency((order as any).currency);
 
   return (
     <main
