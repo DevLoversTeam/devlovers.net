@@ -17,6 +17,14 @@ export const STANDARD_STOREFRONT_COMMERCIAL_POLICY = {
   schemaCleanup: 'deferred',
 } as const;
 
+export function resolveStandardStorefrontCurrency(): StandardStorefrontCurrency {
+  return STANDARD_STOREFRONT_COMMERCIAL_POLICY.currency;
+}
+
+export function resolveStandardStorefrontShippingCountry(): StandardStorefrontShippingCountry {
+  return STANDARD_STOREFRONT_COMMERCIAL_POLICY.shippingCountry;
+}
+
 function normalizeLocaleTag(locale: string | null | undefined): string {
   const raw = (locale ?? '').trim().toLowerCase();
   if (!raw) return '';

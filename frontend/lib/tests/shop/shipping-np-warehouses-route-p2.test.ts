@@ -129,6 +129,53 @@ describe('shop shipping np warehouses route (phase 2)', () => {
     }
   });
 
+  it('allows standard storefront warehouse lookup on en locale without explicit currency or country params', async () => {
+    const cityRef = crypto.randomUUID();
+    const warehouseRef = crypto.randomUUID();
+
+    await db.insert(npCities).values({
+      ref: cityRef,
+      nameUa: 'Kyiv Policy Local',
+      nameRu: null,
+      area: 'Kyivska',
+      region: 'Kyiv',
+      settlementType: 'City',
+      isActive: true,
+    });
+
+    await db.insert(npWarehouses).values({
+      ref: warehouseRef,
+      settlementRef: cityRef,
+      cityRef,
+      number: '15',
+      type: 'Warehouse',
+      name: 'Policy Warehouse 15',
+      address: 'Kyiv, Policy 15',
+      isPostMachine: false,
+      isActive: true,
+    });
+
+    try {
+      const req = new NextRequest(
+        `http://localhost/api/shop/shipping/np/warehouses?cityRef=${cityRef}&q=policy&locale=en`
+      );
+      const res = await GET(req);
+      const json: any = await res.json();
+
+      expect(res.status).toBe(200);
+      expect(json).toMatchObject({
+        success: true,
+        available: true,
+        reasonCode: 'OK',
+      });
+      expect(json.items.some((it: any) => it.ref === warehouseRef)).toBe(true);
+      expect(getWarehousesByCityRefMock).toHaveBeenCalledTimes(0);
+    } finally {
+      await db.delete(npWarehouses).where(eq(npWarehouses.ref, warehouseRef));
+      await db.delete(npCities).where(eq(npCities.ref, cityRef));
+    }
+  });
+
   it('NP down returns 200 + available=false NP_UNAVAILABLE with empty items', async () => {
     const cityRef = crypto.randomUUID();
     getWarehousesByCityRefMock.mockRejectedValue(

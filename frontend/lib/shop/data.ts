@@ -24,7 +24,7 @@ import {
   shopProductSchema,
 } from '@/lib/validation/shop';
 
-import { resolveCurrencyFromLocale } from './currency';
+import { resolveStandardStorefrontCurrency } from './commercial-policy';
 import { fromDbMoney } from './money';
 
 export type ShopProduct = ValidationShopProduct;
@@ -87,7 +87,8 @@ export async function getProductPageData(
   slug: string,
   locale: string = 'en'
 ): Promise<ProductPageData> {
-  const currency = resolveCurrencyFromLocale(locale);
+  void locale;
+  const currency = resolveStandardStorefrontCurrency();
 
   const dbProduct = await getPublicProductBySlug(slug, currency);
   if (dbProduct) {
@@ -368,7 +369,8 @@ export async function getCatalogProducts(
   const { category, type, color, size, sort, page, limit } =
     validateCatalogFilters(filters);
 
-  const currency = resolveCurrencyFromLocale(locale);
+  void locale;
+  const currency = resolveStandardStorefrontCurrency();
 
   const { items, total } = await getActiveProductsPage({
     currency,
@@ -395,7 +397,8 @@ export async function getProductDetail(
   locale: string = 'en'
 ): Promise<ShopProduct | null> {
   try {
-    const currency = resolveCurrencyFromLocale(locale);
+    void locale;
+    const currency = resolveStandardStorefrontCurrency();
 
     const dbProduct = await getPublicProductBySlug(slug, currency);
 
