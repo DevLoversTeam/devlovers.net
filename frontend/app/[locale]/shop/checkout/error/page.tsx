@@ -42,6 +42,10 @@ export const revalidate = 0;
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
+function isPromise<T>(value: unknown): value is Promise<T> {
+  return !!value && typeof (value as any).then === 'function';
+}
+
 function getStringParam(params: SearchParams | undefined, key: string): string {
   if (!params) return '';
   const raw = params[key];
@@ -87,10 +91,9 @@ export default async function CheckoutErrorPage({
   const { locale } = await params;
   const t = await getTranslations('shop.checkout');
 
-  const resolvedSearchParams: SearchParams | undefined =
-    searchParams && typeof (searchParams as any).then === 'function'
-      ? await (searchParams as Promise<SearchParams>)
-      : (searchParams as SearchParams | undefined);
+  const resolvedSearchParams = isPromise<SearchParams>(searchParams)
+    ? await searchParams
+    : searchParams;
 
   const orderId = parseOrderId(resolvedSearchParams);
   const statusToken = parseStatusToken(resolvedSearchParams);

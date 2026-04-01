@@ -57,7 +57,11 @@ describe('UAH storefront formatting', () => {
     const canonical = formatMoney(200000, 'UAH', canonicalLocale);
 
     for (const locale of otherLocales) {
-      expect(formatMoney(200000, 'UAH', locale)).toBe(canonical);
+      const result = formatMoney(200000, 'UAH', locale);
+      expect(
+        result,
+        `formatMoney should match canonical for locale "${locale}"`
+      ).toBe(canonical);
     }
 
     expect(normalizeRenderedSpacing(canonical)).toBe('2 000,00 ₴');
@@ -68,7 +72,11 @@ describe('UAH storefront formatting', () => {
     const canonical = formatMoneyCode(200000, 'UAH', canonicalLocale);
 
     for (const locale of otherLocales) {
-      expect(formatMoneyCode(200000, 'UAH', locale)).toBe(canonical);
+      const result = formatMoneyCode(200000, 'UAH', locale);
+      expect(
+        result,
+        `formatMoneyCode should match canonical for locale "${locale}"`
+      ).toBe(canonical);
     }
 
     expect(normalizeRenderedSpacing(canonical)).toBe('2 000,00 UAH');
@@ -82,11 +90,13 @@ describe('UAH storefront formatting', () => {
     });
 
     for (const locale of otherLocales) {
+      const result = formatPrice(2000, {
+        currency: 'UAH',
+        locale,
+      });
       expect(
-        formatPrice(2000, {
-          currency: 'UAH',
-          locale,
-        })
+        result,
+        `formatPrice should match canonical for locale "${locale}"`
       ).toBe(canonical);
     }
 
