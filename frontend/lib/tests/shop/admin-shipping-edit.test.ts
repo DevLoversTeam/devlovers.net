@@ -36,8 +36,8 @@ async function cleanup(seed: SeededOrder) {
 }
 
 async function seedEditableOrder(args?: {
-  shippingStatus?: 'pending' | 'label_created';
-  shipmentStatus?: 'succeeded' | null;
+  shippingStatus?: 'pending' | 'queued' | 'label_created';
+  shipmentStatus?: 'queued' | 'succeeded' | null;
 }): Promise<SeededOrder> {
   const orderId = crypto.randomUUID();
   const cityRef = `city_${crypto.randomUUID()}`;
@@ -70,6 +70,7 @@ async function seedEditableOrder(args?: {
     id: orderId,
     totalAmountMinor: 1000,
     totalAmount: toDbMoney(1000),
+    itemsSubtotalMinor: 900,
     currency: 'UAH',
     paymentProvider: 'stripe',
     paymentStatus: 'paid',
@@ -79,7 +80,7 @@ async function seedEditableOrder(args?: {
     shippingPayer: 'customer',
     shippingProvider: 'nova_poshta',
     shippingMethodCode: 'NP_WAREHOUSE',
-    shippingAmountMinor: null,
+    shippingAmountMinor: 100,
     shippingStatus: args?.shippingStatus ?? 'pending',
     idempotencyKey: `admin-shipping-edit-${orderId}`,
   } as any);
@@ -176,6 +177,16 @@ describe.sequential('admin shipping edit service', () => {
         .where(eq(orderShipping.orderId, seed.orderId))
         .limit(1);
 
+      const [orderRow] = await db
+        .select({
+          shippingMethodCode: orders.shippingMethodCode,
+          shippingAmountMinor: orders.shippingAmountMinor,
+          totalAmountMinor: orders.totalAmountMinor,
+        })
+        .from(orders)
+        .where(eq(orders.id, seed.orderId))
+        .limit(1);
+
       expect(shippingRow?.shippingAddress).toMatchObject({
         provider: 'nova_poshta',
         methodCode: 'NP_WAREHOUSE',
@@ -197,55 +208,78 @@ describe.sequential('admin shipping edit service', () => {
           comment: 'Call before delivery',
         },
       });
+      expect(orderRow).toEqual({
+        shippingMethodCode: 'NP_WAREHOUSE',
+        shippingAmountMinor: 100,
+        totalAmountMinor: 1000,
+      });
+
+      const auditRows = await db
+        .select({
+          action: adminAuditLog.action,
+          requestId: adminAuditLog.requestId,
+        })
+        .from(adminAuditLog)
+        .where(eq(adminAuditLog.orderId, seed.orderId));
+
+      expect(auditRows).toHaveLength(1);
+      expect(auditRows[0]).toEqual({
+        action: 'order_admin_action.edit_shipping',
+        requestId,
+      });
     } finally {
       await cleanup(seed);
     }
   });
 
-  it('drops the existing quote when quote-affecting shipping selection changes', async () => {
+  it('rejects quote-affecting shipping selection changes so totals cannot drift', async () => {
     const seed = await seedEditableOrder();
     const requestId = `req_${crypto.randomUUID()}`;
 
     try {
-      const result = await applyAdminOrderShippingEdit({
-        orderId: seed.orderId,
-        actorUserId: null,
-        requestId,
-        shipping: {
-          provider: 'nova_poshta',
-          methodCode: 'NP_COURIER',
-          selection: {
-            cityRef: seed.cityRef,
-            addressLine1: 'Khreshchatyk 7',
-            addressLine2: 'Apartment 21',
+      await expect(
+        applyAdminOrderShippingEdit({
+          orderId: seed.orderId,
+          actorUserId: null,
+          requestId,
+          shipping: {
+            provider: 'nova_poshta',
+            methodCode: 'NP_COURIER',
+            selection: {
+              cityRef: seed.cityRef,
+              addressLine1: 'Khreshchatyk 7',
+              addressLine2: 'Apartment 21',
+            },
+            recipient: {
+              fullName: 'Olena Petrenko',
+              phone: '+380671112233',
+              email: 'olena@example.com',
+              comment: 'Call before delivery',
+            },
           },
-          recipient: {
-            fullName: 'Olena Petrenko',
-            phone: '+380671112233',
-            email: 'olena@example.com',
-            comment: 'Call before delivery',
-          },
-        },
-      });
-
-      expect(result).toEqual({
-        orderId: seed.orderId,
-        shippingMethodCode: 'NP_COURIER',
-        changed: true,
+        })
+      ).rejects.toMatchObject({
+        name: 'AdminOrderShippingEditError',
+        code: 'SHIPPING_EDIT_REQUIRES_TOTAL_SYNC',
+        status: 409,
       });
 
       const [orderRow] = await db
         .select({
           shippingMethodCode: orders.shippingMethodCode,
           shippingProvider: orders.shippingProvider,
+          shippingAmountMinor: orders.shippingAmountMinor,
+          totalAmountMinor: orders.totalAmountMinor,
         })
         .from(orders)
         .where(eq(orders.id, seed.orderId))
         .limit(1);
 
       expect(orderRow).toEqual({
-        shippingMethodCode: 'NP_COURIER',
+        shippingMethodCode: 'NP_WAREHOUSE',
         shippingProvider: 'nova_poshta',
+        shippingAmountMinor: 100,
+        totalAmountMinor: 1000,
       });
 
       const [shippingRow] = await db
@@ -258,56 +292,124 @@ describe.sequential('admin shipping edit service', () => {
 
       expect(shippingRow?.shippingAddress).toMatchObject({
         provider: 'nova_poshta',
-        methodCode: 'NP_COURIER',
+        methodCode: 'NP_WAREHOUSE',
+        quote: {
+          currency: 'UAH',
+          amountMinor: 100,
+          quoteFingerprint: `quote_${seed.orderId}`,
+        },
         selection: {
           cityRef: seed.cityRef,
-          warehouseRef: null,
-          warehouseName: null,
-          warehouseAddress: null,
-          addressLine1: 'Khreshchatyk 7',
-          addressLine2: 'Apartment 21',
+          warehouseRef: seed.warehouseRef,
+          warehouseName: 'Warehouse 12',
+          warehouseAddress: 'Khreshchatyk 1',
+          addressLine1: null,
+          addressLine2: null,
         },
         recipient: {
-          fullName: 'Olena Petrenko',
-          phone: '+380671112233',
-          email: 'olena@example.com',
-          comment: 'Call before delivery',
+          fullName: 'Ivan Petrenko',
+          phone: '+380501112233',
+          email: 'ivan@example.com',
+          comment: 'Call me before delivery',
         },
       });
-      expect(shippingRow?.shippingAddress).not.toHaveProperty('quote');
 
-      const [auditRow] = await db
+      const auditRows = await db
         .select({
           action: adminAuditLog.action,
           requestId: adminAuditLog.requestId,
           payload: adminAuditLog.payload,
         })
         .from(adminAuditLog)
-        .where(eq(adminAuditLog.orderId, seed.orderId))
-        .limit(1);
+        .where(eq(adminAuditLog.orderId, seed.orderId));
 
-      expect(auditRow?.action).toBe('order_admin_action.edit_shipping');
-      expect(auditRow?.requestId).toBe(requestId);
-      expect(auditRow?.payload).toMatchObject({
-        action: 'edit_shipping',
-        shippingProvider: 'nova_poshta',
-        fromMethodCode: 'NP_WAREHOUSE',
-        toMethodCode: 'NP_COURIER',
-        fromCityRef: seed.cityRef,
-        toCityRef: seed.cityRef,
-        fromWarehouseRef: seed.warehouseRef,
-        toWarehouseRef: null,
-        addressChanged: true,
-        recipientChanged: {
-          fullName: true,
-          phone: true,
-          email: true,
-          comment: true,
+      expect(auditRows).toHaveLength(0);
+    } finally {
+      await cleanup(seed);
+    }
+  });
+
+  it('keeps fulfillment-facing persisted snapshot coherent for recipient-only edits while shipment stays queued', async () => {
+    const seed = await seedEditableOrder({
+      shippingStatus: 'queued',
+      shipmentStatus: 'queued',
+    });
+
+    try {
+      const result = await applyAdminOrderShippingEdit({
+        orderId: seed.orderId,
+        actorUserId: null,
+        requestId: `req_${crypto.randomUUID()}`,
+        shipping: {
+          provider: 'nova_poshta',
+          methodCode: 'NP_WAREHOUSE',
+          selection: {
+            cityRef: seed.cityRef,
+            warehouseRef: seed.warehouseRef,
+          },
+          recipient: {
+            fullName: 'Queue Safe',
+            phone: '+380931112233',
+            email: 'queue@example.com',
+            comment: 'Use the side entrance',
+          },
         },
       });
-      expect(auditRow?.payload).not.toHaveProperty('fullName');
-      expect(auditRow?.payload).not.toHaveProperty('phone');
-      expect(auditRow?.payload).not.toHaveProperty('email');
+
+      expect(result).toEqual({
+        orderId: seed.orderId,
+        shippingMethodCode: 'NP_WAREHOUSE',
+        changed: true,
+      });
+
+      const [shipmentRow] = await db
+        .select({
+          status: shippingShipments.status,
+        })
+        .from(shippingShipments)
+        .where(eq(shippingShipments.orderId, seed.orderId))
+        .limit(1);
+
+      const [shippingRow] = await db
+        .select({
+          shippingAddress: orderShipping.shippingAddress,
+        })
+        .from(orderShipping)
+        .where(eq(orderShipping.orderId, seed.orderId))
+        .limit(1);
+
+      const [orderRow] = await db
+        .select({
+          shippingMethodCode: orders.shippingMethodCode,
+          shippingStatus: orders.shippingStatus,
+          shippingAmountMinor: orders.shippingAmountMinor,
+          totalAmountMinor: orders.totalAmountMinor,
+        })
+        .from(orders)
+        .where(eq(orders.id, seed.orderId))
+        .limit(1);
+
+      expect(shipmentRow?.status).toBe('queued');
+      expect(orderRow).toEqual({
+        shippingMethodCode: 'NP_WAREHOUSE',
+        shippingStatus: 'queued',
+        shippingAmountMinor: 100,
+        totalAmountMinor: 1000,
+      });
+      expect(shippingRow?.shippingAddress).toMatchObject({
+        methodCode: 'NP_WAREHOUSE',
+        quote: {
+          currency: 'UAH',
+          amountMinor: 100,
+          quoteFingerprint: `quote_${seed.orderId}`,
+        },
+        recipient: {
+          fullName: 'Queue Safe',
+          phone: '+380931112233',
+          email: 'queue@example.com',
+          comment: 'Use the side entrance',
+        },
+      });
     } finally {
       await cleanup(seed);
     }

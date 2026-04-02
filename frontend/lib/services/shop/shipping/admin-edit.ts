@@ -421,7 +421,7 @@ export async function applyAdminOrderShippingEdit(args: {
       state.shipping_method_code
     );
     const nextComparable = buildNextComparable(args.shipping);
-    const preserveQuote = !hasQuoteAffectingChange(
+    const quoteAffectingChange = hasQuoteAffectingChange(
       currentComparable,
       nextComparable
     );
@@ -434,11 +434,18 @@ export async function applyAdminOrderShippingEdit(args: {
       };
     }
 
+    if (quoteAffectingChange) {
+      throw invalid(
+        'SHIPPING_EDIT_REQUIRES_TOTAL_SYNC',
+        'Quote-affecting shipping edits are blocked until order totals can be safely synchronized.'
+      );
+    }
+
     const resolved = await resolveSnapshotData({
       executor: tx,
       input: args.shipping,
       existingSnapshot: state.shipping_address,
-      preserveQuote,
+      preserveQuote: true,
     });
 
     const now = new Date();
