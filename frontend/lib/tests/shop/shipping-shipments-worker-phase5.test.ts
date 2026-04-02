@@ -206,6 +206,16 @@ async function readInternalCarrierEvents(shipmentId: string) {
     .orderBy(asc(shippingEvents.createdAt), asc(shippingEvents.id));
 }
 
+function carrierSuccessOutcomeKeys(
+  events: Awaited<ReturnType<typeof readInternalCarrierEvents>>
+) {
+  return new Set(
+    events
+      .filter(event => event.eventName === 'carrier_create_succeeded_internal')
+      .map(event => `${event.eventRef ?? ''}::${event.trackingNumber ?? ''}`)
+  );
+}
+
 async function buildAuthoritativeNovaPoshtaRequestPayload(
   seed: Seeded
 ): Promise<NovaPoshtaCreateTtnInput> {
@@ -442,6 +452,7 @@ describe.sequential('shipping shipments worker phase 5', () => {
         'carrier_create_requested_internal',
         'carrier_create_succeeded_internal',
       ]);
+      expect(carrierSuccessOutcomeKeys(internalEvents).size).toBe(1);
       expect(
         (internalEvents[0]?.payload as { canonicalHash?: string } | undefined)
           ?.canonicalHash
@@ -1001,6 +1012,9 @@ describe.sequential('shipping shipments worker phase 5', () => {
           'carrier_create_succeeded_internal',
         ]
       );
+      expect(carrierSuccessOutcomeKeys(internalEventsAfterFirstRun).size).toBe(
+        1
+      );
 
       expect(
         warnSpy.mock.calls.some(
@@ -1073,6 +1087,11 @@ describe.sequential('shipping shipments worker phase 5', () => {
       expect(replayedOrder?.shippingProviderRef).toBe(
         'np-provider-ref-lease-lost'
       );
+
+      const internalEventsAfterReplay = await readInternalCarrierEvents(
+        seed.shipmentId
+      );
+      expect(carrierSuccessOutcomeKeys(internalEventsAfterReplay).size).toBe(1);
     } finally {
       warnSpy.mockRestore();
       await cleanupSeed(seed);
@@ -1278,6 +1297,121 @@ describe.sequential('shipping shipments worker phase 5', () => {
       expect(order?.shippingStatus).toBe('needs_attention');
       expect(order?.trackingNumber).toBeNull();
       expect(order?.shippingProviderRef).toBeNull();
+    } finally {
+      await cleanupSeed(seed);
+    }
+  });
+
+  it('detects conflicting duplicate shipment success outcomes and contains them', async () => {
+    const seed = await seedShipment({
+      shipmentStatus: 'failed',
+      attemptCount: 1,
+    });
+
+    try {
+      await db.insert(shippingEvents).values([
+        {
+          orderId: seed.orderId,
+          shipmentId: seed.shipmentId,
+          provider: 'nova_poshta',
+          eventName: 'carrier_create_succeeded_internal',
+          eventSource: 'shipments_worker_internal',
+          eventRef: 'np-provider-ref-conflict-a',
+          trackingNumber: '20450000444441',
+          payload: {
+            canonicalHash: 'conflict-hash-a',
+            providerRef: 'np-provider-ref-conflict-a',
+            trackingNumber: '20450000444441',
+          },
+          dedupeKey: buildShippingEventDedupeKey({
+            domain: 'carrier_create',
+            orderId: seed.orderId,
+            shipmentId: seed.shipmentId,
+            provider: 'nova_poshta',
+            phase: 'succeeded',
+            conflictSeed: 'a',
+          }),
+        },
+        {
+          orderId: seed.orderId,
+          shipmentId: seed.shipmentId,
+          provider: 'nova_poshta',
+          eventName: 'carrier_create_succeeded_internal',
+          eventSource: 'shipments_worker_internal',
+          eventRef: 'np-provider-ref-conflict-b',
+          trackingNumber: '20450000444442',
+          payload: {
+            canonicalHash: 'conflict-hash-b',
+            providerRef: 'np-provider-ref-conflict-b',
+            trackingNumber: '20450000444442',
+          },
+          dedupeKey: buildShippingEventDedupeKey({
+            domain: 'carrier_create',
+            orderId: seed.orderId,
+            shipmentId: seed.shipmentId,
+            provider: 'nova_poshta',
+            phase: 'succeeded',
+            conflictSeed: 'b',
+          }),
+        },
+      ] as any);
+
+      vi.mocked(createInternetDocument).mockResolvedValue({
+        providerRef: 'np-provider-ref-should-not-run-conflict',
+        trackingNumber: '20450000444443',
+      });
+
+      const result = await runShippingShipmentsWorker({
+        runId: crypto.randomUUID(),
+        limit: 10,
+        leaseSeconds: 120,
+        maxAttempts: 5,
+        baseBackoffSeconds: 10,
+      });
+
+      expect(result).toMatchObject({
+        claimed: 1,
+        processed: 1,
+        succeeded: 0,
+        retried: 0,
+        needsAttention: 1,
+      });
+      expect(createInternetDocument).not.toHaveBeenCalled();
+
+      const [shipment] = await db
+        .select({
+          status: shippingShipments.status,
+          attemptCount: shippingShipments.attemptCount,
+          lastErrorCode: shippingShipments.lastErrorCode,
+          providerRef: shippingShipments.providerRef,
+          trackingNumber: shippingShipments.trackingNumber,
+        })
+        .from(shippingShipments)
+        .where(eq(shippingShipments.id, seed.shipmentId))
+        .limit(1);
+
+      expect(shipment?.status).toBe('needs_attention');
+      expect(shipment?.attemptCount).toBe(2);
+      expect(shipment?.lastErrorCode).toBe('CARRIER_CREATE_SUCCESS_CONFLICT');
+      expect(shipment?.providerRef).toBeNull();
+      expect(shipment?.trackingNumber).toBeNull();
+
+      const [order] = await db
+        .select({
+          shippingStatus: orders.shippingStatus,
+          trackingNumber: orders.trackingNumber,
+          shippingProviderRef: orders.shippingProviderRef,
+        })
+        .from(orders)
+        .where(eq(orders.id, seed.orderId))
+        .limit(1);
+
+      expect(order?.shippingStatus).toBe('needs_attention');
+      expect(order?.trackingNumber).toBeNull();
+      expect(order?.shippingProviderRef).toBeNull();
+
+      const internalEvents = await readInternalCarrierEvents(seed.shipmentId);
+      expect(carrierSuccessOutcomeKeys(internalEvents).size).toBe(2);
     } finally {
       await cleanupSeed(seed);
     }

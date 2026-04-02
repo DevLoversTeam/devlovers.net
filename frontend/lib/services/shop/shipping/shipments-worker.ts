@@ -486,40 +486,6 @@ async function readPersistedCarrierCreateRequest(args: {
   };
 }
 
-async function readPersistedCarrierCreateSuccess(args: {
-  shipmentId: string;
-}): Promise<PersistedCarrierCreateSuccess | null> {
-  const [row] = await db
-    .select({
-      providerRef: shippingEvents.eventRef,
-      trackingNumber: shippingEvents.trackingNumber,
-      payload: shippingEvents.payload,
-    })
-    .from(shippingEvents)
-    .where(
-      and(
-        eq(shippingEvents.shipmentId, args.shipmentId),
-        eq(shippingEvents.eventSource, INTERNAL_CARRIER_EVENT_SOURCE),
-        eq(shippingEvents.eventName, INTERNAL_CARRIER_CREATE_SUCCEEDED_EVENT)
-      )
-    )
-    .orderBy(desc(shippingEvents.occurredAt), desc(shippingEvents.id))
-    .limit(1);
-
-  const providerRef = toStringOrNull(row?.providerRef);
-  const trackingNumber = toStringOrNull(row?.trackingNumber);
-
-  if (!providerRef || !trackingNumber) {
-    return null;
-  }
-
-  return {
-    providerRef,
-    trackingNumber,
-    canonicalHash: readCanonicalHashFromPayload(row?.payload),
-  };
-}
-
 type CarrierCreateAttemptResolution =
   | {
       outcome: 'call_carrier';
@@ -533,7 +499,146 @@ type CarrierCreateAttemptResolution =
     }
   | {
       outcome: 'payload_drift';
+    }
+  | {
+      outcome: 'success_conflict';
     };
+
+type PersistedCarrierCreateSuccessState =
+  | {
+      state: 'none';
+    }
+  | {
+      state: 'single';
+      success: PersistedCarrierCreateSuccess;
+    }
+  | {
+      state: 'conflict';
+    };
+
+function buildShipmentSuccessOutcomeKey(args: {
+  providerRef: string;
+  trackingNumber: string;
+}): string {
+  return `${args.providerRef}::${args.trackingNumber}`;
+}
+
+function isPartiallyPopulatedOutcome(args: {
+  providerRef: string | null;
+  trackingNumber: string | null;
+}): boolean {
+  return Boolean(args.providerRef) !== Boolean(args.trackingNumber);
+}
+
+async function readPersistedCarrierCreateSuccessState(args: {
+  shipmentId: string;
+}): Promise<PersistedCarrierCreateSuccessState> {
+  const successEvents = await db
+    .select({
+      providerRef: shippingEvents.eventRef,
+      trackingNumber: shippingEvents.trackingNumber,
+      payload: shippingEvents.payload,
+    })
+    .from(shippingEvents)
+    .where(
+      and(
+        eq(shippingEvents.shipmentId, args.shipmentId),
+        eq(shippingEvents.eventSource, INTERNAL_CARRIER_EVENT_SOURCE),
+        eq(shippingEvents.eventName, INTERNAL_CARRIER_CREATE_SUCCEEDED_EVENT)
+      )
+    )
+    .orderBy(desc(shippingEvents.occurredAt), desc(shippingEvents.id));
+
+  const stateRows = readRows<{
+    shipment_provider_ref: string | null;
+    shipment_tracking_number: string | null;
+    order_provider_ref: string | null;
+    order_tracking_number: string | null;
+  }>(
+    await db.execute(sql`
+    select
+      s.provider_ref as shipment_provider_ref,
+      s.tracking_number as shipment_tracking_number,
+      o.shipping_provider_ref as order_provider_ref,
+      o.tracking_number as order_tracking_number
+    from shipping_shipments s
+    join orders o on o.id = s.order_id
+    where s.id = ${args.shipmentId}::uuid
+    limit 1
+  `)
+  );
+
+  const stateRow = stateRows[0];
+  const outcomes = new Map<string, PersistedCarrierCreateSuccess>();
+
+  const rememberOutcome = (candidate: PersistedCarrierCreateSuccess | null) => {
+    if (!candidate) return;
+    outcomes.set(buildShipmentSuccessOutcomeKey(candidate), candidate);
+  };
+
+  for (const row of successEvents) {
+    const providerRef = toStringOrNull(row.providerRef);
+    const trackingNumber = toStringOrNull(row.trackingNumber);
+    if (!providerRef || !trackingNumber) {
+      return { state: 'conflict' };
+    }
+    rememberOutcome({
+      providerRef,
+      trackingNumber,
+      canonicalHash: readCanonicalHashFromPayload(row.payload),
+    });
+  }
+
+  const shipmentProviderRef = toStringOrNull(stateRow?.shipment_provider_ref);
+  const shipmentTrackingNumber = toStringOrNull(
+    stateRow?.shipment_tracking_number
+  );
+  if (
+    isPartiallyPopulatedOutcome({
+      providerRef: shipmentProviderRef,
+      trackingNumber: shipmentTrackingNumber,
+    })
+  ) {
+    return { state: 'conflict' };
+  }
+  if (shipmentProviderRef && shipmentTrackingNumber) {
+    rememberOutcome({
+      providerRef: shipmentProviderRef,
+      trackingNumber: shipmentTrackingNumber,
+      canonicalHash: null,
+    });
+  }
+
+  const orderProviderRef = toStringOrNull(stateRow?.order_provider_ref);
+  const orderTrackingNumber = toStringOrNull(stateRow?.order_tracking_number);
+  if (
+    isPartiallyPopulatedOutcome({
+      providerRef: orderProviderRef,
+      trackingNumber: orderTrackingNumber,
+    })
+  ) {
+    return { state: 'conflict' };
+  }
+  if (orderProviderRef && orderTrackingNumber) {
+    rememberOutcome({
+      providerRef: orderProviderRef,
+      trackingNumber: orderTrackingNumber,
+      canonicalHash: null,
+    });
+  }
+
+  if (outcomes.size === 0) {
+    return { state: 'none' };
+  }
+  if (outcomes.size > 1) {
+    return { state: 'conflict' };
+  }
+
+  return {
+    state: 'single',
+    success: Array.from(outcomes.values())[0] as PersistedCarrierCreateSuccess,
+  };
+}
 
 async function resolveCarrierCreateAttempt(args: {
   orderId: string;
@@ -541,13 +646,16 @@ async function resolveCarrierCreateAttempt(args: {
   provider: string;
   payloadIdentity: CarrierCreatePayloadIdentity;
 }): Promise<CarrierCreateAttemptResolution> {
-  const persistedSuccess = await readPersistedCarrierCreateSuccess({
+  const persistedSuccessState = await readPersistedCarrierCreateSuccessState({
     shipmentId: args.shipmentId,
   });
-  if (persistedSuccess) {
+  if (persistedSuccessState.state === 'conflict') {
+    return { outcome: 'success_conflict' };
+  }
+  if (persistedSuccessState.state === 'single') {
     return {
       outcome: 'replay_success',
-      success: persistedSuccess,
+      success: persistedSuccessState.success,
     };
   }
 
@@ -582,15 +690,17 @@ async function resolveCarrierCreateAttempt(args: {
     return { outcome: 'call_carrier' };
   }
 
-  const persistedSuccessAfterConflict = await readPersistedCarrierCreateSuccess(
-    {
+  const persistedSuccessAfterConflict =
+    await readPersistedCarrierCreateSuccessState({
       shipmentId: args.shipmentId,
-    }
-  );
-  if (persistedSuccessAfterConflict) {
+    });
+  if (persistedSuccessAfterConflict.state === 'conflict') {
+    return { outcome: 'success_conflict' };
+  }
+  if (persistedSuccessAfterConflict.state === 'single') {
     return {
       outcome: 'replay_success',
-      success: persistedSuccessAfterConflict,
+      success: persistedSuccessAfterConflict.success,
     };
   }
 
@@ -1176,6 +1286,14 @@ async function processClaimedShipment(args: {
         providerRef: carrierCreateAttempt.success.providerRef,
         trackingNumber: carrierCreateAttempt.success.trackingNumber,
       });
+    }
+
+    if (carrierCreateAttempt.outcome === 'success_conflict') {
+      throw buildFailure(
+        'CARRIER_CREATE_SUCCESS_CONFLICT',
+        'Conflicting shipment success outcomes were detected for this shipment intent.',
+        false
+      );
     }
 
     if (carrierCreateAttempt.outcome === 'payload_drift') {
