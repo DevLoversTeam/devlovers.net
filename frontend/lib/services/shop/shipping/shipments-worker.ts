@@ -1,8 +1,11 @@
 import 'server-only';
 
-import { sql } from 'drizzle-orm';
+import crypto from 'node:crypto';
+
+import { and, desc, eq, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
+import { shippingEvents } from '@/db/schema';
 import {
   getNovaPoshtaConfig,
   NovaPoshtaConfigError,
@@ -66,6 +69,43 @@ type WorkerShippingEventName =
   | 'label_created'
   | 'label_creation_retry_scheduled'
   | 'label_creation_needs_attention';
+
+type CanonicalCarrierCreatePayload = {
+  payerType: NovaPoshtaCreateTtnInput['payerType'];
+  paymentMethod: NovaPoshtaCreateTtnInput['paymentMethod'];
+  cargoType: string;
+  serviceType: NovaPoshtaCreateTtnInput['serviceType'];
+  seatsAmount: number;
+  weightGrams: number;
+  description: string;
+  declaredCostUah: number;
+  sender: {
+    cityRef: string;
+    senderRef: string;
+    warehouseRef: string;
+    contactRef: string;
+    phone: string;
+  };
+  recipient: {
+    cityRef: string;
+    warehouseRef: string | null;
+    addressLine1: string | null;
+    addressLine2: string | null;
+    fullName: string;
+    phone: string;
+  };
+};
+
+type CarrierCreatePayloadIdentity = {
+  canonicalPayload: CanonicalCarrierCreatePayload;
+  canonicalHash: string;
+};
+
+const INTERNAL_CARRIER_EVENT_SOURCE = 'shipments_worker_internal';
+const INTERNAL_CARRIER_CREATE_REQUESTED_EVENT =
+  'carrier_create_requested_internal';
+const INTERNAL_CARRIER_CREATE_SUCCEEDED_EVENT =
+  'carrier_create_succeeded_internal';
 
 export type RunShippingShipmentsWorkerArgs = {
   runId: string;
@@ -319,6 +359,281 @@ function buildWorkerEventDedupeKey(args: {
   });
 }
 
+function canonicalizeCarrierCreatePayload(
+  requestPayload: NovaPoshtaCreateTtnInput
+): CanonicalCarrierCreatePayload {
+  const normalizedWeightGrams = Math.max(
+    1,
+    Math.round(requestPayload.weightKg * 1000)
+  );
+
+  return {
+    payerType: requestPayload.payerType,
+    paymentMethod: requestPayload.paymentMethod,
+    cargoType: requestPayload.cargoType,
+    serviceType: requestPayload.serviceType,
+    seatsAmount: Math.max(1, Math.trunc(requestPayload.seatsAmount)),
+    weightGrams: normalizedWeightGrams,
+    description: requestPayload.description,
+    declaredCostUah: Math.max(0, Math.trunc(requestPayload.declaredCostUah)),
+    sender: {
+      cityRef: requestPayload.sender.cityRef,
+      senderRef: requestPayload.sender.senderRef,
+      warehouseRef: requestPayload.sender.warehouseRef,
+      contactRef: requestPayload.sender.contactRef,
+      phone: requestPayload.sender.phone,
+    },
+    recipient: {
+      cityRef: requestPayload.recipient.cityRef,
+      warehouseRef: requestPayload.recipient.warehouseRef ?? null,
+      addressLine1: requestPayload.recipient.addressLine1 ?? null,
+      addressLine2: requestPayload.recipient.addressLine2 ?? null,
+      fullName: requestPayload.recipient.fullName,
+      phone: requestPayload.recipient.phone,
+    },
+  };
+}
+
+export function buildCarrierCreatePayloadIdentity(
+  requestPayload: NovaPoshtaCreateTtnInput
+): CarrierCreatePayloadIdentity {
+  const canonicalPayload = canonicalizeCarrierCreatePayload(requestPayload);
+  const canonicalHash = crypto
+    .createHash('sha256')
+    .update(JSON.stringify(canonicalPayload), 'utf8')
+    .digest('hex');
+
+  return {
+    canonicalPayload,
+    canonicalHash,
+  };
+}
+
+function buildCarrierCreateIntentSeed(args: {
+  orderId: string;
+  shipmentId: string;
+  provider: string;
+}) {
+  return {
+    domain: 'carrier_create',
+    orderId: args.orderId,
+    shipmentId: args.shipmentId,
+    provider: args.provider,
+  };
+}
+
+function buildCarrierCreateRequestedDedupeKey(args: {
+  orderId: string;
+  shipmentId: string;
+  provider: string;
+}): string {
+  return buildShippingEventDedupeKey({
+    ...buildCarrierCreateIntentSeed(args),
+    phase: 'requested',
+  });
+}
+
+function buildCarrierCreateSucceededDedupeKey(args: {
+  orderId: string;
+  shipmentId: string;
+  provider: string;
+}): string {
+  return buildShippingEventDedupeKey({
+    ...buildCarrierCreateIntentSeed(args),
+    phase: 'succeeded',
+  });
+}
+
+type PersistedCarrierCreateSuccess = {
+  providerRef: string;
+  trackingNumber: string;
+  canonicalHash: string | null;
+};
+
+type PersistedCarrierCreateRequest = {
+  canonicalHash: string | null;
+};
+
+function readCanonicalHashFromPayload(payload: unknown): string | null {
+  const payloadObject = toObject(payload);
+  return toStringOrNull(payloadObject?.canonicalHash);
+}
+
+async function readPersistedCarrierCreateRequest(args: {
+  shipmentId: string;
+}): Promise<PersistedCarrierCreateRequest | null> {
+  const [row] = await db
+    .select({
+      payload: shippingEvents.payload,
+    })
+    .from(shippingEvents)
+    .where(
+      and(
+        eq(shippingEvents.shipmentId, args.shipmentId),
+        eq(shippingEvents.eventSource, INTERNAL_CARRIER_EVENT_SOURCE),
+        eq(shippingEvents.eventName, INTERNAL_CARRIER_CREATE_REQUESTED_EVENT)
+      )
+    )
+    .orderBy(desc(shippingEvents.occurredAt), desc(shippingEvents.id))
+    .limit(1);
+
+  if (!row) {
+    return null;
+  }
+
+  return {
+    canonicalHash: readCanonicalHashFromPayload(row.payload),
+  };
+}
+
+async function readPersistedCarrierCreateSuccess(args: {
+  shipmentId: string;
+}): Promise<PersistedCarrierCreateSuccess | null> {
+  const [row] = await db
+    .select({
+      providerRef: shippingEvents.eventRef,
+      trackingNumber: shippingEvents.trackingNumber,
+      payload: shippingEvents.payload,
+    })
+    .from(shippingEvents)
+    .where(
+      and(
+        eq(shippingEvents.shipmentId, args.shipmentId),
+        eq(shippingEvents.eventSource, INTERNAL_CARRIER_EVENT_SOURCE),
+        eq(shippingEvents.eventName, INTERNAL_CARRIER_CREATE_SUCCEEDED_EVENT)
+      )
+    )
+    .orderBy(desc(shippingEvents.occurredAt), desc(shippingEvents.id))
+    .limit(1);
+
+  const providerRef = toStringOrNull(row?.providerRef);
+  const trackingNumber = toStringOrNull(row?.trackingNumber);
+
+  if (!providerRef || !trackingNumber) {
+    return null;
+  }
+
+  return {
+    providerRef,
+    trackingNumber,
+    canonicalHash: readCanonicalHashFromPayload(row?.payload),
+  };
+}
+
+type CarrierCreateAttemptResolution =
+  | {
+      outcome: 'call_carrier';
+    }
+  | {
+      outcome: 'replay_success';
+      success: PersistedCarrierCreateSuccess;
+    }
+  | {
+      outcome: 'block_retry';
+    }
+  | {
+      outcome: 'payload_drift';
+    };
+
+async function resolveCarrierCreateAttempt(args: {
+  orderId: string;
+  shipmentId: string;
+  provider: string;
+  payloadIdentity: CarrierCreatePayloadIdentity;
+}): Promise<CarrierCreateAttemptResolution> {
+  const persistedSuccess = await readPersistedCarrierCreateSuccess({
+    shipmentId: args.shipmentId,
+  });
+  if (persistedSuccess) {
+    return {
+      outcome: 'replay_success',
+      success: persistedSuccess,
+    };
+  }
+
+  const requestedIntent = await readPersistedCarrierCreateRequest({
+    shipmentId: args.shipmentId,
+  });
+  if (requestedIntent) {
+    if (
+      requestedIntent.canonicalHash &&
+      requestedIntent.canonicalHash !== args.payloadIdentity.canonicalHash
+    ) {
+      return { outcome: 'payload_drift' };
+    }
+    return { outcome: 'block_retry' };
+  }
+
+  const dedupeKey = buildCarrierCreateRequestedDedupeKey(args);
+  const requested = await writeShippingEvent({
+    orderId: args.orderId,
+    shipmentId: args.shipmentId,
+    provider: args.provider,
+    eventName: INTERNAL_CARRIER_CREATE_REQUESTED_EVENT,
+    eventSource: INTERNAL_CARRIER_EVENT_SOURCE,
+    payload: {
+      canonicalHash: args.payloadIdentity.canonicalHash,
+      canonicalPayload: args.payloadIdentity.canonicalPayload,
+    },
+    dedupeKey,
+  });
+
+  if (requested.inserted) {
+    return { outcome: 'call_carrier' };
+  }
+
+  const persistedSuccessAfterConflict = await readPersistedCarrierCreateSuccess(
+    {
+      shipmentId: args.shipmentId,
+    }
+  );
+  if (persistedSuccessAfterConflict) {
+    return {
+      outcome: 'replay_success',
+      success: persistedSuccessAfterConflict,
+    };
+  }
+
+  const requestedIntentAfterConflict = await readPersistedCarrierCreateRequest({
+    shipmentId: args.shipmentId,
+  });
+  if (
+    requestedIntentAfterConflict?.canonicalHash &&
+    requestedIntentAfterConflict.canonicalHash !==
+      args.payloadIdentity.canonicalHash
+  ) {
+    return { outcome: 'payload_drift' };
+  }
+
+  return { outcome: 'block_retry' };
+}
+
+async function persistCarrierCreateSuccess(args: {
+  orderId: string;
+  shipmentId: string;
+  provider: string;
+  payloadIdentity: CarrierCreatePayloadIdentity;
+  providerRef: string;
+  trackingNumber: string;
+}) {
+  await writeShippingEvent({
+    orderId: args.orderId,
+    shipmentId: args.shipmentId,
+    provider: args.provider,
+    eventName: INTERNAL_CARRIER_CREATE_SUCCEEDED_EVENT,
+    eventSource: INTERNAL_CARRIER_EVENT_SOURCE,
+    eventRef: args.providerRef,
+    trackingNumber: args.trackingNumber,
+    payload: {
+      canonicalHash: args.payloadIdentity.canonicalHash,
+      canonicalPayload: args.payloadIdentity.canonicalPayload,
+      providerRef: args.providerRef,
+      trackingNumber: args.trackingNumber,
+    },
+    dedupeKey: buildCarrierCreateSucceededDedupeKey(args),
+  });
+}
+
 async function emitWorkerShippingEvent(args: {
   orderId: string;
   shipmentId: string;
@@ -557,6 +872,43 @@ async function loadOrderShippingDetails(
   return readRows<OrderShippingDetailsRow>(res)[0] ?? null;
 }
 
+async function loadAuthoritativeCarrierCreateIntent(args: {
+  orderId: string;
+}): Promise<{
+  details: OrderShippingDetailsRow;
+  snapshot: ParsedShipmentSnapshot;
+  requestPayload: NovaPoshtaCreateTtnInput;
+  payloadIdentity: CarrierCreatePayloadIdentity;
+}> {
+  const details = await loadOrderShippingDetails(args.orderId);
+  if (!details) {
+    throw buildFailure('ORDER_NOT_FOUND', 'Order was not found.', false);
+  }
+
+  assertOrderStillShippable(details);
+
+  const snapshot = parseSnapshot(details.shipping_address);
+  if (snapshot.methodCode !== details.shipping_method_code) {
+    throw buildFailure(
+      'SHIPPING_METHOD_MISMATCH',
+      'Shipping method does not match persisted order method.',
+      false
+    );
+  }
+
+  const requestPayload = toNpPayload({
+    order: details,
+    snapshot,
+  });
+
+  return {
+    details,
+    snapshot,
+    requestPayload,
+    payloadIdentity: buildCarrierCreatePayloadIdentity(requestPayload),
+  };
+}
+
 function assertOrderStillShippable(details: OrderShippingDetailsRow) {
   const eligibility = evaluateOrderShippingEligibility({
     paymentStatus: details.payment_status,
@@ -720,148 +1072,147 @@ async function markFailed(args: {
   );
 }
 
+async function finalizeShipmentSuccess(args: {
+  claim: ClaimedShipmentRow;
+  runId: string;
+  providerRef: string;
+  trackingNumber: string;
+}): Promise<'succeeded' | 'retried'> {
+  const marked = await markSucceeded({
+    shipmentId: args.claim.id,
+    runId: args.runId,
+    providerRef: args.providerRef,
+    trackingNumber: args.trackingNumber,
+  });
+
+  if (!marked?.shipment_updated) {
+    logWarn('shipping_shipments_worker_lease_lost', {
+      runId: args.runId,
+      shipmentId: args.claim.id,
+      orderId: args.claim.order_id,
+      code: 'SHIPMENT_LEASE_LOST',
+    });
+    return 'retried';
+  }
+  if (!marked.order_updated) {
+    logWarn('shipping_shipments_worker_order_transition_blocked', {
+      runId: args.runId,
+      shipmentId: args.claim.id,
+      orderId: args.claim.order_id,
+      code: 'ORDER_TRANSITION_BLOCKED',
+      statusTo: 'label_created',
+    });
+    return 'retried';
+  }
+
+  try {
+    await emitWorkerShippingEvent({
+      orderId: args.claim.order_id,
+      shipmentId: args.claim.id,
+      provider: args.claim.provider,
+      eventName: 'label_created',
+      statusFrom: 'creating_label',
+      statusTo: 'label_created',
+      attemptNumber: nextAttemptNumber(args.claim.attempt_count),
+      runId: args.runId,
+      eventRef: args.providerRef,
+      trackingNumber: args.trackingNumber,
+      payload: {
+        providerRef: args.providerRef,
+        shipmentStatusTo: 'succeeded',
+      },
+    });
+  } catch {
+    logWarn('shipping_shipments_worker_post_success_event_write_failed', {
+      runId: args.runId,
+      shipmentId: args.claim.id,
+      orderId: args.claim.order_id,
+      code: 'SHIPPING_EVENT_WRITE_FAILED',
+    });
+  }
+
+  try {
+    recordShippingMetric({
+      name: 'succeeded',
+      source: 'shipments_worker',
+      runId: args.runId,
+      orderId: args.claim.order_id,
+      shipmentId: args.claim.id,
+    });
+  } catch {
+    logWarn('shipping_shipments_worker_post_success_metric_write_failed', {
+      runId: args.runId,
+      shipmentId: args.claim.id,
+      orderId: args.claim.order_id,
+      code: 'SHIPPING_METRIC_WRITE_FAILED',
+    });
+  }
+
+  return 'succeeded';
+}
+
 async function processClaimedShipment(args: {
   claim: ClaimedShipmentRow;
   runId: string;
   maxAttempts: number;
   baseBackoffSeconds: number;
 }): Promise<'succeeded' | 'retried' | 'needs_attention'> {
-  const details = await loadOrderShippingDetails(args.claim.order_id);
-  if (!details) {
-    await markFailed({
-      shipmentId: args.claim.id,
-      runId: args.runId,
-      orderId: args.claim.order_id,
-      error: buildFailure('ORDER_NOT_FOUND', 'Order was not found.', false),
-      nextAttemptAt: null,
-      terminalNeedsAttention: true,
-    });
-    return 'needs_attention';
-  }
-
   try {
-    assertOrderStillShippable(details);
-
-    const parsedSnapshot = parseSnapshot(details.shipping_address);
-
-    if (parsedSnapshot.methodCode !== details.shipping_method_code) {
-      throw buildFailure(
-        'SHIPPING_METHOD_MISMATCH',
-        'Shipping method does not match persisted order method.',
-        false
-      );
-    }
-
-    const latestDetails = await loadOrderShippingDetails(args.claim.order_id);
-    if (!latestDetails) {
-      throw buildFailure('ORDER_NOT_FOUND', 'Order was not found.', false);
-    }
-
-    assertOrderStillShippable(latestDetails);
-
-    const latestSnapshot = parseSnapshot(latestDetails.shipping_address);
-    if (latestSnapshot.methodCode !== latestDetails.shipping_method_code) {
-      throw buildFailure(
-        'SHIPPING_METHOD_MISMATCH',
-        'Shipping method does not match persisted order method.',
-        false
-      );
-    }
-
-    const finalDetails = await loadOrderShippingDetails(args.claim.order_id);
-    if (!finalDetails) {
-      throw buildFailure('ORDER_NOT_FOUND', 'Order was not found.', false);
-    }
-
-    assertOrderStillShippable(finalDetails);
-
-    const finalSnapshot = parseSnapshot(finalDetails.shipping_address);
-    if (finalSnapshot.methodCode !== finalDetails.shipping_method_code) {
-      throw buildFailure(
-        'SHIPPING_METHOD_MISMATCH',
-        'Shipping method does not match persisted order method.',
-        false
-      );
-    }
-
-    const finalPayload = toNpPayload({
-      order: finalDetails,
-      snapshot: finalSnapshot,
+    const carrierCreateIntent = await loadAuthoritativeCarrierCreateIntent({
+      orderId: args.claim.order_id,
     });
 
-    const created = await createInternetDocument(finalPayload);
-
-    const marked = await markSucceeded({
+    const carrierCreateAttempt = await resolveCarrierCreateAttempt({
+      orderId: args.claim.order_id,
       shipmentId: args.claim.id,
-      runId: args.runId,
+      provider: args.claim.provider,
+      payloadIdentity: carrierCreateIntent.payloadIdentity,
+    });
+
+    if (carrierCreateAttempt.outcome === 'replay_success') {
+      return finalizeShipmentSuccess({
+        claim: args.claim,
+        runId: args.runId,
+        providerRef: carrierCreateAttempt.success.providerRef,
+        trackingNumber: carrierCreateAttempt.success.trackingNumber,
+      });
+    }
+
+    if (carrierCreateAttempt.outcome === 'payload_drift') {
+      throw buildFailure(
+        'CARRIER_CREATE_PAYLOAD_DRIFT',
+        'Shipment create payload drift was detected for an existing carrier create intent.',
+        false
+      );
+    }
+
+    if (carrierCreateAttempt.outcome === 'block_retry') {
+      throw buildFailure(
+        'CARRIER_CREATE_RETRY_BLOCKED',
+        'Previous shipment create attempt may already have reached the carrier boundary.',
+        false
+      );
+    }
+
+    const created = await createInternetDocument(
+      carrierCreateIntent.requestPayload
+    );
+
+    await persistCarrierCreateSuccess({
+      orderId: args.claim.order_id,
+      shipmentId: args.claim.id,
+      provider: args.claim.provider,
+      payloadIdentity: carrierCreateIntent.payloadIdentity,
       providerRef: created.providerRef,
       trackingNumber: created.trackingNumber,
     });
 
-    if (!marked?.shipment_updated) {
-      logWarn('shipping_shipments_worker_lease_lost', {
-        runId: args.runId,
-        shipmentId: args.claim.id,
-        orderId: args.claim.order_id,
-        code: 'SHIPMENT_LEASE_LOST',
-      });
-      return 'retried';
-    }
-    if (!marked.order_updated) {
-      logWarn('shipping_shipments_worker_order_transition_blocked', {
-        runId: args.runId,
-        shipmentId: args.claim.id,
-        orderId: args.claim.order_id,
-        code: 'ORDER_TRANSITION_BLOCKED',
-        statusTo: 'label_created',
-      });
-      return 'retried';
-    }
-
-    try {
-      await emitWorkerShippingEvent({
-        orderId: args.claim.order_id,
-        shipmentId: args.claim.id,
-        provider: args.claim.provider,
-        eventName: 'label_created',
-        statusFrom: 'creating_label',
-        statusTo: 'label_created',
-        attemptNumber: nextAttemptNumber(args.claim.attempt_count),
-        runId: args.runId,
-        eventRef: created.providerRef,
-        trackingNumber: created.trackingNumber,
-        payload: {
-          providerRef: created.providerRef,
-          shipmentStatusTo: 'succeeded',
-        },
-      });
-    } catch {
-      logWarn('shipping_shipments_worker_post_success_event_write_failed', {
-        runId: args.runId,
-        shipmentId: args.claim.id,
-        orderId: args.claim.order_id,
-        code: 'SHIPPING_EVENT_WRITE_FAILED',
-      });
-    }
-
-    try {
-      recordShippingMetric({
-        name: 'succeeded',
-        source: 'shipments_worker',
-        runId: args.runId,
-        orderId: args.claim.order_id,
-        shipmentId: args.claim.id,
-      });
-    } catch {
-      logWarn('shipping_shipments_worker_post_success_metric_write_failed', {
-        runId: args.runId,
-        shipmentId: args.claim.id,
-        orderId: args.claim.order_id,
-        code: 'SHIPPING_METRIC_WRITE_FAILED',
-      });
-    }
-
-    return 'succeeded';
+    return finalizeShipmentSuccess({
+      claim: args.claim,
+      runId: args.runId,
+      providerRef: created.providerRef,
+      trackingNumber: created.trackingNumber,
+    });
   } catch (error) {
     const classified = asShipmentError(error, {
       code: 'INTERNAL_ERROR',
