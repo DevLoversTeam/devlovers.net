@@ -13,6 +13,7 @@ import { ProductNotFoundError } from '@/lib/errors/products';
 import { logError, logWarn } from '@/lib/logging';
 import { requireAdminCsrf } from '@/lib/security/admin-csrf';
 import { guardBrowserSameOrigin } from '@/lib/security/origin';
+import { InvalidPayloadError, PriceConfigError } from '@/lib/services/errors';
 import { toggleProductStatus } from '@/lib/services/products';
 import { writeAdminAudit } from '@/lib/services/shop/events/write-admin-audit';
 
@@ -171,6 +172,52 @@ export async function PATCH(
       return noStoreJson(
         { error: 'Product not found', code: 'PRODUCT_NOT_FOUND' },
         { status: 404 }
+      );
+    }
+
+    if (error instanceof PriceConfigError) {
+      logWarn('admin_product_status_price_config_error', {
+        ...baseMeta,
+        code: error.code,
+        productId: productIdForLog,
+        currency: error.currency,
+        durationMs: Date.now() - startedAtMs,
+      });
+
+      return noStoreJson(
+        {
+          error: error.message,
+          code: error.code,
+          productId: error.productId,
+          currency: error.currency,
+          field: 'prices',
+        },
+        { status: 400 }
+      );
+    }
+
+    if (error instanceof InvalidPayloadError) {
+      const rec = error as unknown as Record<string, unknown>;
+      const code = typeof rec.code === 'string' ? rec.code : 'INVALID_PAYLOAD';
+      const field = typeof rec.field === 'string' ? rec.field : undefined;
+      const details = rec.details;
+
+      logWarn('admin_product_status_invalid_payload_error', {
+        ...baseMeta,
+        code,
+        productId: productIdForLog,
+        field,
+        durationMs: Date.now() - startedAtMs,
+      });
+
+      return noStoreJson(
+        {
+          error: error.message || 'Invalid product state',
+          code,
+          field,
+          details,
+        },
+        { status: 400 }
       );
     }
 
