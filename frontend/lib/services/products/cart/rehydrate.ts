@@ -1,13 +1,12 @@
 import { and, eq, inArray } from 'drizzle-orm';
 
 import { db } from '@/db';
-import { coercePriceFromDb } from '@/db/queries/shop/orders';
 import { productPrices, products } from '@/db/schema';
 import { logWarn } from '@/lib/logging';
 import { createCartItemKey } from '@/lib/shop/cart-item-key';
 import { createCheckoutPricingFingerprint } from '@/lib/shop/checkout-pricing';
 import { type CurrencyCode, isTwoDecimalCurrency } from '@/lib/shop/currency';
-import { calculateLineTotal, fromCents, toCents } from '@/lib/shop/money';
+import { calculateLineTotal, fromCents } from '@/lib/shop/money';
 import type {
   CartClientItem,
   CartRehydrateItem,
@@ -122,7 +121,6 @@ export async function rehydrateCartItems(
       colors: products.colors,
       sizes: products.sizes,
       priceMinor: productPrices.priceMinor,
-      price: productPrices.price,
       priceCurrency: productPrices.currency,
     })
     .from(products)
@@ -166,50 +164,40 @@ export async function rehydrateCartItems(
       continue;
     }
 
-    if (
-      !product.priceCurrency ||
-      (product.priceMinor == null && product.price == null)
-    ) {
+    if (!product.priceCurrency || product.priceMinor == null) {
       throw new PriceConfigError('Price not configured for currency.', {
         productId: product.id,
         currency,
       });
     }
 
-    let unitPriceMinor: number;
-
     if (
-      typeof product.priceMinor === 'number' &&
-      Number.isFinite(product.priceMinor)
+      typeof product.priceMinor !== 'number' ||
+      !Number.isFinite(product.priceMinor)
     ) {
-      if (!Number.isInteger(product.priceMinor)) {
-        throw new PriceConfigError(
-          'Invalid priceMinor in DB (must be integer).',
-          {
-            productId: product.id,
-            currency,
-          }
-        );
-      }
-      if (!Number.isSafeInteger(product.priceMinor) || product.priceMinor < 1) {
-        throw new PriceConfigError('Invalid priceMinor in DB (out of range).', {
+      throw new PriceConfigError(
+        'Invalid priceMinor in DB (must be integer).',
+        {
           productId: product.id,
           currency,
-        });
-      }
-
-      unitPriceMinor = product.priceMinor;
-    } else {
-      unitPriceMinor = toCents(
-        coercePriceFromDb(product.price, {
-          field: 'price',
-          productId: product.id,
-        })
+        }
       );
     }
 
+    if (!Number.isInteger(product.priceMinor)) {
+      throw new PriceConfigError(
+        'Invalid priceMinor in DB (must be integer).',
+        {
+          productId: product.id,
+          currency,
+        }
+      );
+    }
+
+    const unitPriceMinor = product.priceMinor;
+
     if (!Number.isSafeInteger(unitPriceMinor) || unitPriceMinor < 1) {
-      throw new PriceConfigError('Invalid price in DB (out of range).', {
+      throw new PriceConfigError('Invalid priceMinor in DB (out of range).', {
         productId: product.id,
         currency,
       });

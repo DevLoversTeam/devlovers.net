@@ -1,7 +1,6 @@
 import { and, eq, inArray, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
-import { coercePriceFromDb } from '@/db/queries/shop/orders';
 import {
   npCities,
   npWarehouses,
@@ -138,8 +137,6 @@ async function getProductsForCheckout(
       sizes: products.sizes,
 
       priceMinor: productPrices.priceMinor,
-
-      price: productPrices.price,
 
       originalPrice: productPrices.originalPrice,
       priceCurrency: productPrices.currency,
@@ -680,38 +677,16 @@ function priceItems(
     if (!product) {
       throw new InvalidPayloadError('Some products are unavailable.');
     }
-    if (
-      !product.priceCurrency ||
-      (product.priceMinor == null && product.price == null)
-    ) {
+    if (!product.priceCurrency || product.priceMinor == null) {
       throw new PriceConfigError('Price not configured for currency.', {
         productId: product.id,
         currency,
       });
     }
 
-    let unitPriceCents: number | null = null;
-    if (product.priceMinor !== null && product.priceMinor !== undefined) {
-      if (
-        !isStrictNonNegativeInt(product.priceMinor) ||
-        product.priceMinor <= 0
-      ) {
-        throw new InvalidPayloadError('Product pricing is misconfigured.');
-      }
-      unitPriceCents = product.priceMinor;
-    }
-    if (unitPriceCents == null) {
-      const unitPrice = coercePriceFromDb(product.price, {
-        field: 'price',
-        productId: product.id,
-      });
-      if (unitPrice <= 0) {
-        throw new InvalidPayloadError('Product pricing is misconfigured.');
-      }
-      unitPriceCents = Math.round(unitPrice * 100);
-    }
+    const unitPriceCents = product.priceMinor;
 
-    if (unitPriceCents <= 0) {
+    if (!isStrictNonNegativeInt(unitPriceCents) || unitPriceCents <= 0) {
       throw new InvalidPayloadError('Product pricing is misconfigured.');
     }
 
@@ -867,12 +842,12 @@ export async function createOrderWithItems({
   const storefrontCurrency: Currency = resolveStandardStorefrontCurrency();
   const checkoutProviderCandidates =
     resolveStandardStorefrontCheckoutProviderCandidates({
-    requestedProvider:
-      requestedProvider === 'stripe' || requestedProvider === 'monobank'
-        ? requestedProvider
-        : null,
-    requestedMethod,
-  });
+      requestedProvider:
+        requestedProvider === 'stripe' || requestedProvider === 'monobank'
+          ? requestedProvider
+          : null,
+      requestedMethod,
+    });
   const paymentProvider: PaymentProvider =
     checkoutProviderCandidates[0] ?? 'stripe';
   const currency: Currency = storefrontCurrency;
