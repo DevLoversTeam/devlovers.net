@@ -1187,7 +1187,7 @@ async function finalizeShipmentSuccess(args: {
   runId: string;
   providerRef: string;
   trackingNumber: string;
-}): Promise<'succeeded' | 'retried'> {
+}): Promise<'succeeded' | 'retried' | 'needs_attention'> {
   const marked = await markSucceeded({
     shipmentId: args.claim.id,
     runId: args.runId,
@@ -1212,7 +1212,81 @@ async function finalizeShipmentSuccess(args: {
       code: 'ORDER_TRANSITION_BLOCKED',
       statusTo: 'label_created',
     });
-    return 'retried';
+
+    const updated = await markFailed({
+      shipmentId: args.claim.id,
+      runId: args.runId,
+      orderId: args.claim.order_id,
+      error: buildFailure(
+        'SHIPMENT_SUCCESS_APPLY_BLOCKED',
+        'Shipment carrier success could not be applied because the order shipping transition was blocked.',
+        false
+      ),
+      nextAttemptAt: null,
+      terminalNeedsAttention: true,
+    });
+
+    if (!updated?.shipment_updated) {
+      return 'retried';
+    }
+
+    try {
+      await emitWorkerShippingEvent({
+        orderId: args.claim.order_id,
+        shipmentId: args.claim.id,
+        provider: args.claim.provider,
+        eventName: 'label_creation_needs_attention',
+        statusFrom: 'creating_label',
+        statusTo: 'needs_attention',
+        attemptNumber: nextAttemptNumber(args.claim.attempt_count),
+        runId: args.runId,
+        eventRef: 'SHIPMENT_SUCCESS_APPLY_BLOCKED',
+        errorCode: 'SHIPMENT_SUCCESS_APPLY_BLOCKED',
+        trackingNumber: args.trackingNumber,
+        payload: {
+          errorCode: 'SHIPMENT_SUCCESS_APPLY_BLOCKED',
+          errorMessage:
+            'Shipment carrier success could not be applied because the order shipping transition was blocked.',
+          transient: false,
+          nextAttemptAt: null,
+          shipmentStatusTo: 'needs_attention',
+          orderTransitionBlocked: true,
+          providerRef: args.providerRef,
+          trackingNumber: args.trackingNumber,
+          carrierSuccessPersisted: true,
+        },
+      });
+    } catch {
+      logWarn('shipping_shipments_worker_failure_event_write_failed', {
+        runId: args.runId,
+        shipmentId: args.claim.id,
+        orderId: args.claim.order_id,
+        provider: args.claim.provider,
+        code: 'SHIPPING_EVENT_WRITE_FAILED',
+        eventName: 'label_creation_needs_attention',
+      });
+    }
+
+    try {
+      recordShippingMetric({
+        name: 'needs_attention',
+        source: 'shipments_worker',
+        runId: args.runId,
+        orderId: args.claim.order_id,
+        shipmentId: args.claim.id,
+        code: 'SHIPMENT_SUCCESS_APPLY_BLOCKED',
+      });
+    } catch {
+      logWarn('shipping_shipments_worker_terminal_metric_write_failed', {
+        runId: args.runId,
+        orderId: args.claim.order_id,
+        shipmentId: args.claim.id,
+        errorCode: 'SHIPMENT_SUCCESS_APPLY_BLOCKED',
+        code: 'SHIPPING_METRIC_WRITE_FAILED',
+      });
+    }
+
+    return 'needs_attention';
   }
 
   try {
@@ -1367,7 +1441,8 @@ async function processClaimedShipment(args: {
       });
       return 'retried';
     }
-    if (!updated.order_updated) {
+    const orderTransitionBlocked = !updated.order_updated;
+    if (orderTransitionBlocked) {
       logWarn('shipping_shipments_worker_order_transition_blocked', {
         runId: args.runId,
         shipmentId: args.claim.id,
@@ -1375,7 +1450,9 @@ async function processClaimedShipment(args: {
         code: 'ORDER_TRANSITION_BLOCKED',
         statusTo: terminalNeedsAttention ? 'needs_attention' : 'queued',
       });
-      return 'retried';
+      if (!terminalNeedsAttention) {
+        return 'retried';
+      }
     }
 
     const failureEventName = terminalNeedsAttention
@@ -1401,6 +1478,9 @@ async function processClaimedShipment(args: {
           shipmentStatusTo: terminalNeedsAttention
             ? 'needs_attention'
             : 'failed',
+          orderTransitionBlocked: terminalNeedsAttention
+            ? orderTransitionBlocked
+            : undefined,
         },
       });
     } catch {

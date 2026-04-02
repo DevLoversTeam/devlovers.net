@@ -454,6 +454,9 @@ describe.sequential('shipping shipments worker phase 5', () => {
       ]);
       expect(carrierSuccessOutcomeKeys(internalEvents).size).toBe(1);
       expect(
+        publicEvents.filter(event => event.eventName === 'label_created')
+      ).toHaveLength(1);
+      expect(
         (internalEvents[0]?.payload as { canonicalHash?: string } | undefined)
           ?.canonicalHash
       ).toMatch(/^[a-f0-9]{64}$/);
@@ -529,6 +532,12 @@ describe.sequential('shipping shipments worker phase 5', () => {
       expect(internalEvents.map(event => event.eventName)).toEqual([
         'carrier_create_requested_internal',
       ]);
+
+      const retryEvents = publicEvents.filter(
+        event => event.eventName === 'label_creation_retry_scheduled'
+      );
+      expect(retryEvents).toHaveLength(1);
+      expect(retryEvents[0]?.statusTo).toBe('queued');
     } finally {
       await cleanupSeed(seed);
     }
@@ -1107,6 +1116,8 @@ describe.sequential('shipping shipments worker phase 5', () => {
     try {
       const authoritativePayload =
         await buildAuthoritativeNovaPoshtaRequestPayload(seed);
+      const authoritativeIdentity =
+        buildCarrierCreatePayloadIdentity(authoritativePayload);
 
       await db.insert(shippingEvents).values({
         orderId: seed.orderId,
@@ -1115,12 +1126,8 @@ describe.sequential('shipping shipments worker phase 5', () => {
         eventName: 'carrier_create_requested_internal',
         eventSource: 'shipments_worker_internal',
         payload: {
-          canonicalHash:
-            buildCarrierCreatePayloadIdentity(authoritativePayload)
-              .canonicalHash,
-          canonicalPayload:
-            buildCarrierCreatePayloadIdentity(authoritativePayload)
-              .canonicalPayload,
+          canonicalHash: authoritativeIdentity.canonicalHash,
+          canonicalPayload: authoritativeIdentity.canonicalPayload,
         },
         dedupeKey: buildCarrierCreateRequestDedupeKeyForTest({
           orderId: seed.orderId,
@@ -1182,6 +1189,20 @@ describe.sequential('shipping shipments worker phase 5', () => {
       expect(order?.shippingStatus).toBe('needs_attention');
       expect(order?.trackingNumber).toBeNull();
       expect(order?.shippingProviderRef).toBeNull();
+
+      const publicEvents = workerEvents(
+        await readOrderShippingEvents(seed.orderId)
+      );
+      const terminalEvents = publicEvents.filter(
+        event => event.eventName === 'label_creation_needs_attention'
+      );
+      expect(terminalEvents).toHaveLength(1);
+      expect(terminalEvents[0]?.eventRef).toBe('CARRIER_CREATE_RETRY_BLOCKED');
+      expect(
+        publicEvents.some(
+          event => event.eventName === 'label_creation_retry_scheduled'
+        )
+      ).toBe(false);
     } finally {
       await cleanupSeed(seed);
     }
@@ -1297,6 +1318,20 @@ describe.sequential('shipping shipments worker phase 5', () => {
       expect(order?.shippingStatus).toBe('needs_attention');
       expect(order?.trackingNumber).toBeNull();
       expect(order?.shippingProviderRef).toBeNull();
+
+      const publicEvents = workerEvents(
+        await readOrderShippingEvents(seed.orderId)
+      );
+      const terminalEvents = publicEvents.filter(
+        event => event.eventName === 'label_creation_needs_attention'
+      );
+      expect(terminalEvents).toHaveLength(1);
+      expect(terminalEvents[0]?.eventRef).toBe('CARRIER_CREATE_PAYLOAD_DRIFT');
+      expect(
+        publicEvents.some(
+          event => event.eventName === 'label_creation_retry_scheduled'
+        )
+      ).toBe(false);
     } finally {
       await cleanupSeed(seed);
     }
@@ -1412,6 +1447,99 @@ describe.sequential('shipping shipments worker phase 5', () => {
 
       const internalEvents = await readInternalCarrierEvents(seed.shipmentId);
       expect(carrierSuccessOutcomeKeys(internalEvents).size).toBe(2);
+
+      const publicEvents = workerEvents(
+        await readOrderShippingEvents(seed.orderId)
+      );
+      const terminalEvents = publicEvents.filter(
+        event => event.eventName === 'label_creation_needs_attention'
+      );
+      expect(terminalEvents).toHaveLength(1);
+      expect(terminalEvents[0]?.eventRef).toBe(
+        'CARRIER_CREATE_SUCCESS_CONFLICT'
+      );
+      expect(
+        publicEvents.some(event => event.eventName === 'label_created')
+      ).toBe(false);
+    } finally {
+      await cleanupSeed(seed);
+    }
+  });
+
+  it('keeps terminal needs_attention explicit when order transition is blocked during terminal failure handling', async () => {
+    const seed = await seedShipment({ orderShippingStatus: 'queued' });
+
+    try {
+      vi.mocked(createInternetDocument).mockImplementation(async () => {
+        await db
+          .update(orders)
+          .set({ shippingStatus: 'shipped' } as any)
+          .where(eq(orders.id, seed.orderId));
+
+        throw new NovaPoshtaApiError('NP_VALIDATION_ERROR', 'invalid', 400);
+      });
+
+      const result = await runShippingShipmentsWorker({
+        runId: crypto.randomUUID(),
+        limit: 10,
+        leaseSeconds: 120,
+        maxAttempts: 5,
+        baseBackoffSeconds: 10,
+      });
+
+      expect(result).toMatchObject({
+        claimed: 1,
+        processed: 1,
+        succeeded: 0,
+        retried: 0,
+        needsAttention: 1,
+      });
+
+      const [shipment] = await db
+        .select({
+          status: shippingShipments.status,
+          attemptCount: shippingShipments.attemptCount,
+          lastErrorCode: shippingShipments.lastErrorCode,
+          providerRef: shippingShipments.providerRef,
+          trackingNumber: shippingShipments.trackingNumber,
+        })
+        .from(shippingShipments)
+        .where(eq(shippingShipments.id, seed.shipmentId))
+        .limit(1);
+
+      expect(shipment?.status).toBe('needs_attention');
+      expect(shipment?.attemptCount).toBe(1);
+      expect(shipment?.lastErrorCode).toBe('NP_VALIDATION_ERROR');
+      expect(shipment?.providerRef).toBeNull();
+      expect(shipment?.trackingNumber).toBeNull();
+
+      const [order] = await db
+        .select({
+          shippingStatus: orders.shippingStatus,
+          trackingNumber: orders.trackingNumber,
+          shippingProviderRef: orders.shippingProviderRef,
+        })
+        .from(orders)
+        .where(eq(orders.id, seed.orderId))
+        .limit(1);
+
+      expect(order?.shippingStatus).toBe('shipped');
+      expect(order?.trackingNumber).toBeNull();
+      expect(order?.shippingProviderRef).toBeNull();
+
+      const publicEvents = workerEvents(
+        await readOrderShippingEvents(seed.orderId)
+      );
+      const terminalEvents = publicEvents.filter(
+        event => event.eventName === 'label_creation_needs_attention'
+      );
+      expect(terminalEvents).toHaveLength(1);
+      expect(terminalEvents[0]?.eventRef).toBe('NP_VALIDATION_ERROR');
+      expect(
+        publicEvents.some(
+          event => event.eventName === 'label_creation_retry_scheduled'
+        )
+      ).toBe(false);
     } finally {
       await cleanupSeed(seed);
     }
