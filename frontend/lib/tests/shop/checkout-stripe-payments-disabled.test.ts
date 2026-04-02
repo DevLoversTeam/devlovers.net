@@ -21,9 +21,11 @@ import {
   products,
 } from '@/db/schema';
 import { resetEnvCache } from '@/lib/env';
+import { rehydrateCartItems } from '@/lib/services/products';
 import { toDbMoney } from '@/lib/shop/money';
 import { deriveTestIpFromIdemKey } from '@/lib/tests/helpers/ip';
 import { getOrSeedActiveTemplateProduct } from '@/lib/tests/helpers/seed-product';
+import { TEST_LEGAL_CONSENT } from '@/lib/tests/shop/test-legal-consent';
 
 vi.mock('@/lib/auth', () => ({
   getCurrentUser: vi.fn().mockResolvedValue(null),
@@ -203,6 +205,16 @@ async function postCheckout(args: {
   const mod = (await import('@/app/api/shop/checkout/route')) as unknown as {
     POST: (req: NextRequest) => Promise<Response>;
   };
+  const items = Array.isArray(args.body.items)
+    ? (args.body.items as Array<{
+        productId: string;
+        quantity: number;
+        selectedSize?: string;
+        selectedColor?: string;
+      }>)
+    : [];
+  const quote =
+    items.length > 0 ? await rehydrateCartItems(items, 'UAH') : null;
 
   const req = new NextRequest('http://localhost/api/shop/checkout', {
     method: 'POST',
@@ -214,7 +226,13 @@ async function postCheckout(args: {
       'x-forwarded-for': deriveTestIpFromIdemKey(args.idemKey),
       origin: 'http://localhost:3000',
     },
-    body: JSON.stringify(args.body),
+    body: JSON.stringify({
+      legalConsent: TEST_LEGAL_CONSENT,
+      ...(quote
+        ? { pricingFingerprint: quote.summary.pricingFingerprint }
+        : {}),
+      ...args.body,
+    }),
   });
 
   return mod.POST(req);
@@ -370,8 +388,8 @@ describe.sequential('checkout stripe fail-closed + tamper guards', () => {
       expect(res.status).toBe(201);
       const json: any = await res.json();
       expect(json?.order?.paymentProvider).toBe('stripe');
-      expect(json?.order?.currency).toBe('USD');
-      expect(json?.order?.totalAmount).toBe(67);
+      expect(json?.order?.currency).toBe('UAH');
+      expect(json?.order?.totalAmount).toBe(100);
       expect(typeof json?.clientSecret).toBe('string');
 
       const [row] = await db
@@ -387,8 +405,8 @@ describe.sequential('checkout stripe fail-closed + tamper guards', () => {
         .limit(1);
 
       expect(row).toBeTruthy();
-      expect(row?.currency).toBe('USD');
-      expect(row?.totalAmountMinor).toBe(6700);
+      expect(row?.currency).toBe('UAH');
+      expect(row?.totalAmountMinor).toBe(10000);
       expect(row?.paymentProvider).toBe('stripe');
       expect(row?.paymentStatus).toBe('pending');
       createdOrderId = row?.id ?? null;

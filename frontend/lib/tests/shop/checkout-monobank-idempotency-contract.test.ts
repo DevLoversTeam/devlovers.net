@@ -14,12 +14,14 @@ import {
 import { db } from '@/db';
 import { orders, paymentAttempts, productPrices, products } from '@/db/schema';
 import { resetEnvCache } from '@/lib/env';
+import { rehydrateCartItems } from '@/lib/services/products';
 import { toDbMoney } from '@/lib/shop/money';
 import { deriveTestIpFromIdemKey } from '@/lib/tests/helpers/ip';
 import {
   cleanupSeededTemplateProduct,
   getOrSeedActiveTemplateProduct,
 } from '@/lib/tests/helpers/seed-product';
+import { TEST_LEGAL_CONSENT } from '@/lib/tests/shop/test-legal-consent';
 
 vi.mock('@/lib/auth', () => ({
   getCurrentUser: vi.fn().mockResolvedValue(null),
@@ -177,11 +179,19 @@ type MonobankCheckoutMethod = 'monobank_invoice' | 'monobank_google_pay';
 async function postCheckout(
   idemKey: string,
   productId: string,
-  options?: { paymentMethod?: MonobankCheckoutMethod }
+  options?: {
+    paymentMethod?: MonobankCheckoutMethod;
+    includePricingFingerprint?: boolean;
+  }
 ) {
   const mod = (await import('@/app/api/shop/checkout/route')) as unknown as {
     POST: (req: NextRequest) => Promise<Response>;
   };
+  const pricingFingerprint =
+    options?.includePricingFingerprint === false
+      ? null
+      : (await rehydrateCartItems([{ productId, quantity: 1 }], 'UAH')).summary
+          .pricingFingerprint;
 
   const req = new NextRequest('http://localhost/api/shop/checkout', {
     method: 'POST',
@@ -196,7 +206,9 @@ async function postCheckout(
 
     body: JSON.stringify({
       items: [{ productId, quantity: 1 }],
+      legalConsent: TEST_LEGAL_CONSENT,
       paymentProvider: 'monobank',
+      ...(pricingFingerprint ? { pricingFingerprint } : {}),
       ...(options?.paymentMethod
         ? { paymentMethod: options.paymentMethod }
         : {}),
@@ -349,7 +361,8 @@ describe.sequential('checkout monobank contract', () => {
       });
       expect(first.status).toBe(201);
       const firstJson: any = await first.json();
-      orderId = typeof firstJson.orderId === 'string' ? firstJson.orderId : null;
+      orderId =
+        typeof firstJson.orderId === 'string' ? firstJson.orderId : null;
 
       const second = await postCheckout(idemKey, productId, {
         paymentMethod: 'monobank_google_pay',
@@ -393,7 +406,9 @@ describe.sequential('checkout monobank contract', () => {
     const idemKey = crypto.randomUUID();
 
     try {
-      const res = await postCheckout(idemKey, productId);
+      const res = await postCheckout(idemKey, productId, {
+        includePricingFingerprint: false,
+      });
       expect(res.status).toBe(400);
       const json: any = await res.json();
       expect(json.code).toBe('PRICE_CONFIG_ERROR');

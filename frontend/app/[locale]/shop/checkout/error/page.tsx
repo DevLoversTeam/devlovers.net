@@ -4,7 +4,8 @@ import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/routing';
 import { OrderNotFoundError } from '@/lib/services/errors';
 import { getOrderSummary } from '@/lib/services/orders';
-import { formatMoney, resolveCurrencyFromLocale } from '@/lib/shop/currency';
+import { resolveCheckoutDisplayCurrency } from '@/lib/shop/checkout-display-currency';
+import { formatMoney } from '@/lib/shop/currency';
 import {
   SHOP_CTA_BASE,
   SHOP_CTA_INSET,
@@ -19,16 +20,31 @@ import {
 import { cn } from '@/lib/utils';
 import { orderIdParamSchema } from '@/lib/validation/shop';
 
-export const metadata: Metadata = {
-  title: 'Checkout Error | DevLovers',
-  description:
-    'We couldn’t complete the checkout. Try again or contact support.',
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({
+    locale,
+    namespace: 'shop.checkout.errorPage',
+  });
+
+  return {
+    title: t('metaTitle'),
+    description: t('metaDescription'),
+  };
+}
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 type SearchParams = Record<string, string | string[] | undefined>;
+
+function isPromise<T>(value: unknown): value is Promise<T> {
+  return !!value && typeof (value as any).then === 'function';
+}
 
 function getStringParam(params: SearchParams | undefined, key: string): string {
   if (!params) return '';
@@ -75,10 +91,9 @@ export default async function CheckoutErrorPage({
   const { locale } = await params;
   const t = await getTranslations('shop.checkout');
 
-  const resolvedSearchParams: SearchParams | undefined =
-    searchParams && typeof (searchParams as any).then === 'function'
-      ? await (searchParams as Promise<SearchParams>)
-      : (searchParams as SearchParams | undefined);
+  const resolvedSearchParams = isPromise<SearchParams>(searchParams)
+    ? await searchParams
+    : searchParams;
 
   const orderId = parseOrderId(resolvedSearchParams);
   const statusToken = parseStatusToken(resolvedSearchParams);
@@ -102,7 +117,7 @@ export default async function CheckoutErrorPage({
 
           <nav
             className="mt-6 flex flex-wrap justify-center gap-3"
-            aria-label="Checkout navigation"
+            aria-label={t('errorPage.checkoutNavigation')}
           >
             <Link href="/shop/cart" className={SHOP_OUTLINE_BTN}>
               {t('actions.backToCart')}
@@ -161,7 +176,7 @@ export default async function CheckoutErrorPage({
 
             <nav
               className="mt-6 flex flex-wrap justify-center gap-3"
-              aria-label="Checkout navigation"
+              aria-label={t('errorPage.checkoutNavigation')}
             >
               <Link href="/shop/cart" className={SHOP_OUTLINE_BTN}>
                 {t('actions.backToCart')}
@@ -219,11 +234,9 @@ export default async function CheckoutErrorPage({
   const isFailed = order.paymentStatus === 'failed';
 
   const totalMinor =
-    typeof (order as any).totalAmountMinor === 'number'
-      ? (order as any).totalAmountMinor
-      : null;
+    typeof order.totalAmountMinor === 'number' ? order.totalAmountMinor : null;
 
-  const currency = (order as any).currency ?? resolveCurrencyFromLocale(locale);
+  const currency = resolveCheckoutDisplayCurrency(order.currency);
 
   return (
     <main
@@ -247,7 +260,7 @@ export default async function CheckoutErrorPage({
 
         <section
           className="border-border bg-muted/30 text-foreground mt-6 rounded-md border p-4 text-sm"
-          aria-label="Order details"
+          aria-label={t('errorPage.orderDetails')}
         >
           <dl className="space-y-2">
             <div className="flex items-center justify-between gap-4">
@@ -277,7 +290,10 @@ export default async function CheckoutErrorPage({
           </dl>
         </section>
 
-        <nav className="mt-6 flex flex-wrap gap-3" aria-label="Next steps">
+        <nav
+          className="mt-6 flex flex-wrap gap-3"
+          aria-label={t('errorPage.nextSteps')}
+        >
           <Link href="/shop/cart" className={SHOP_OUTLINE_BTN}>
             {t('actions.backToCart')}
           </Link>

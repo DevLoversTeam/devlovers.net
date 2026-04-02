@@ -132,6 +132,30 @@ describe('shop shipping methods route (phase 2)', () => {
     }
   });
 
+  it('uses the standard storefront UA + UAH policy for en locale requests when query policy fields are omitted', async () => {
+    vi.stubEnv('SHOP_SHIPPING_ENABLED', 'true');
+    vi.stubEnv('SHOP_SHIPPING_NP_ENABLED', 'true');
+    vi.stubEnv('SHOP_SHIPPING_NP_WAREHOUSE_AMOUNT_MINOR', '500');
+    vi.stubEnv('SHOP_SHIPPING_NP_LOCKER_AMOUNT_MINOR', '400');
+    vi.stubEnv('SHOP_SHIPPING_NP_COURIER_AMOUNT_MINOR', '700');
+
+    const req = new NextRequest(
+      'http://localhost/api/shop/shipping/methods?locale=en'
+    );
+    const res = await GET(req);
+    const json: any = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json).toMatchObject({
+      success: true,
+      available: true,
+      reasonCode: 'OK',
+      country: 'UA',
+      currency: 'UAH',
+    });
+    expect(json.methods).toHaveLength(3);
+  });
+
   it('fails closed with NP_MISCONFIG in production-like runtime when NP config is placeholder', async () => {
     vi.stubEnv('APP_ENV', 'production');
     vi.stubEnv('SHOP_SHIPPING_ENABLED', 'true');

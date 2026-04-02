@@ -6,7 +6,7 @@ import { MoneyValueError } from '@/db/queries/shop/orders';
 import { logError, logInfo, logWarn } from '@/lib/logging';
 import { InvalidPayloadError, PriceConfigError } from '@/lib/services/errors';
 import { rehydrateCartItems } from '@/lib/services/products';
-import { resolveLocaleAndCurrency } from '@/lib/shop/request-locale';
+import { resolveStandardStorefrontCurrency } from '@/lib/shop/commercial-policy';
 import { cartRehydratePayloadSchema } from '@/lib/validation/shop';
 
 function normalizeCartPayload(body: unknown) {
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     route: request.nextUrl.pathname,
     method: request.method,
   };
-  const { currency } = resolveLocaleAndCurrency(request);
+  const currency = resolveStandardStorefrontCurrency();
 
   const meta = {
     ...baseMeta,

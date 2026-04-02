@@ -3,6 +3,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { db } from '@/db';
 import { productPrices, products } from '@/db/schema';
+import { createProduct } from '@/lib/services/products';
 import { updateProduct } from '@/lib/services/products';
 import { toDbMoney } from '@/lib/shop/money';
 import { assertNotProductionDb } from '@/lib/tests/helpers/db-safety';
@@ -65,14 +66,24 @@ describe.sequential('product_prices write authority (phase 8)', () => {
 
     createdProductIds.push(product.id);
 
-    await db.insert(productPrices).values({
-      productId: product.id,
-      currency: 'USD',
-      priceMinor: 1000,
-      originalPriceMinor: null,
-      price: toDbMoney(1000),
-      originalPrice: null,
-    });
+    await db.insert(productPrices).values([
+      {
+        productId: product.id,
+        currency: 'USD',
+        priceMinor: 1000,
+        originalPriceMinor: null,
+        price: toDbMoney(1000),
+        originalPrice: null,
+      },
+      {
+        productId: product.id,
+        currency: 'UAH',
+        priceMinor: 4100,
+        originalPriceMinor: null,
+        price: toDbMoney(4100),
+        originalPrice: null,
+      },
+    ]);
 
     await updateProduct(product.id, {
       prices: [{ currency: 'USD', priceMinor: 2500, originalPriceMinor: null }],
@@ -101,10 +112,24 @@ describe.sequential('product_prices write authority (phase 8)', () => {
       )
       .limit(1);
 
+    const [uah] = await db
+      .select({
+        priceMinor: productPrices.priceMinor,
+      })
+      .from(productPrices)
+      .where(
+        and(
+          eq(productPrices.productId, product.id),
+          eq(productPrices.currency, 'UAH')
+        )
+      )
+      .limit(1);
+
     expect(String(legacy.price)).toBe(String(toDbMoney(1000)));
     expect(legacy.originalPrice).toBeNull();
     expect(usd.priceMinor).toBe(2500);
     expect(usd.originalPriceMinor).toBeNull();
+    expect(uah?.priceMinor).toBe(4100);
   });
 
   it('upserts non-USD row in product_prices without mutating legacy products.price fields', async () => {
@@ -185,5 +210,226 @@ describe.sequential('product_prices write authority (phase 8)', () => {
     expect(legacy.originalPrice).toBeNull();
     expect(usd.priceMinor).toBe(1200);
     expect(uah.priceMinor).toBe(4700);
+  });
+
+  it('rejects a pricing update that would leave the product without a UAH storefront row', async () => {
+    const [product] = await db
+      .insert(products)
+      .values({
+        slug: uniqueSlug(),
+        title: 'Phase8 USD-only merged state',
+        description: null,
+        imageUrl: 'https://example.com/p8-usd-only.png',
+        imagePublicId: null,
+        price: toDbMoney(1200),
+        originalPrice: null,
+        currency: 'USD',
+        category: null,
+        type: null,
+        colors: [],
+        sizes: [],
+        badge: 'NONE',
+        isActive: true,
+        isFeatured: false,
+        stock: 10,
+        sku: null,
+      })
+      .returning();
+
+    createdProductIds.push(product.id);
+
+    await db.insert(productPrices).values({
+      productId: product.id,
+      currency: 'USD',
+      priceMinor: 1200,
+      originalPriceMinor: null,
+      price: toDbMoney(1200),
+      originalPrice: null,
+    });
+
+    await expect(
+      updateProduct(product.id, {
+        prices: [
+          { currency: 'USD', priceMinor: 1500, originalPriceMinor: null },
+        ],
+      } as any)
+    ).rejects.toMatchObject({
+      code: 'PRICE_CONFIG_ERROR',
+      currency: 'UAH',
+    });
+  });
+
+  it('rejects a non-price update that would preserve a USD-only product state', async () => {
+    const [product] = await db
+      .insert(products)
+      .values({
+        slug: uniqueSlug(),
+        title: 'Phase8 USD-only non-price update',
+        description: null,
+        imageUrl: 'https://example.com/p8-usd-only-non-price.png',
+        imagePublicId: null,
+        price: toDbMoney(1200),
+        originalPrice: null,
+        currency: 'USD',
+        category: null,
+        type: null,
+        colors: [],
+        sizes: [],
+        badge: 'NONE',
+        isActive: true,
+        isFeatured: false,
+        stock: 10,
+        sku: null,
+      })
+      .returning();
+
+    createdProductIds.push(product.id);
+
+    await db.insert(productPrices).values({
+      productId: product.id,
+      currency: 'USD',
+      priceMinor: 1200,
+      originalPriceMinor: null,
+      price: toDbMoney(1200),
+      originalPrice: null,
+    });
+
+    await expect(
+      updateProduct(product.id, {
+        title: 'Renamed without touching prices',
+      } as any)
+    ).rejects.toMatchObject({
+      code: 'PRICE_CONFIG_ERROR',
+      currency: 'UAH',
+    });
+  });
+
+  it('updates a UAH-only product row without requiring a dormant USD price row', async () => {
+    const created = await createProduct({
+      title: 'Phase8 UAH-only update',
+      slug: uniqueSlug(),
+      description: null,
+      badge: 'NONE',
+      isActive: true,
+      isFeatured: false,
+      stock: 10,
+      prices: [{ currency: 'UAH', priceMinor: 4100, originalPriceMinor: null }],
+      image: new File([new Uint8Array([1, 2, 3])], 'p8-uah-only.png', {
+        type: 'image/png',
+      }),
+    } as any);
+
+    createdProductIds.push(created.id);
+
+    await updateProduct(created.id, {
+      prices: [{ currency: 'UAH', priceMinor: 4300, originalPriceMinor: null }],
+    } as any);
+
+    const [legacy] = await db
+      .select({
+        price: products.price,
+        currency: products.currency,
+      })
+      .from(products)
+      .where(eq(products.id, created.id))
+      .limit(1);
+
+    const [usd] = await db
+      .select({
+        priceMinor: productPrices.priceMinor,
+      })
+      .from(productPrices)
+      .where(
+        and(
+          eq(productPrices.productId, created.id),
+          eq(productPrices.currency, 'USD')
+        )
+      )
+      .limit(1);
+
+    const [uah] = await db
+      .select({
+        priceMinor: productPrices.priceMinor,
+      })
+      .from(productPrices)
+      .where(
+        and(
+          eq(productPrices.productId, created.id),
+          eq(productPrices.currency, 'UAH')
+        )
+      )
+      .limit(1);
+
+    expect(legacy.currency).toBe('USD');
+    expect(String(legacy.price)).toBe(String(toDbMoney(4100)));
+    expect(usd).toBeUndefined();
+    expect(uah?.priceMinor).toBe(4300);
+  });
+
+  it('allows a non-price update when the product already has a UAH storefront row', async () => {
+    const [product] = await db
+      .insert(products)
+      .values({
+        slug: uniqueSlug(),
+        title: 'Phase8 UAH-present non-price update',
+        description: null,
+        imageUrl: 'https://example.com/p8-uah-present-non-price.png',
+        imagePublicId: null,
+        price: toDbMoney(1200),
+        originalPrice: null,
+        currency: 'USD',
+        category: null,
+        type: null,
+        colors: [],
+        sizes: [],
+        badge: 'NONE',
+        isActive: true,
+        isFeatured: false,
+        stock: 10,
+        sku: null,
+      })
+      .returning();
+
+    createdProductIds.push(product.id);
+
+    await db.insert(productPrices).values([
+      {
+        productId: product.id,
+        currency: 'USD',
+        priceMinor: 1200,
+        originalPriceMinor: null,
+        price: toDbMoney(1200),
+        originalPrice: null,
+      },
+      {
+        productId: product.id,
+        currency: 'UAH',
+        priceMinor: 4700,
+        originalPriceMinor: null,
+        price: toDbMoney(4700),
+        originalPrice: null,
+      },
+    ]);
+
+    const updated = await updateProduct(product.id, {
+      title: 'Renamed with UAH-present pricing',
+    } as any);
+
+    expect(updated.title).toBe('Renamed with UAH-present pricing');
+
+    const [uah] = await db
+      .select({
+        priceMinor: productPrices.priceMinor,
+      })
+      .from(productPrices)
+      .where(
+        and(
+          eq(productPrices.productId, product.id),
+          eq(productPrices.currency, 'UAH')
+        )
+      )
+      .limit(1);
+
+    expect(uah?.priceMinor).toBe(4700);
   });
 });

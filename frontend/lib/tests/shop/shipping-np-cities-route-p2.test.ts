@@ -132,6 +132,38 @@ describe('shop shipping np cities route (phase 2)', () => {
     }
   });
 
+  it('allows standard storefront city lookup on en locale without explicit currency or country params', async () => {
+    const cityRef = crypto.randomUUID();
+    await db.insert(npCities).values({
+      ref: cityRef,
+      nameUa: 'Kyiv Policy Local',
+      nameRu: null,
+      area: 'Kyivska',
+      region: 'Kyiv',
+      settlementType: 'City',
+      isActive: true,
+    });
+
+    try {
+      const req = new NextRequest(
+        'http://localhost/api/shop/shipping/np/cities?q=kyiv&locale=en'
+      );
+      const res = await GET(req);
+      const json: any = await res.json();
+
+      expect(res.status).toBe(200);
+      expect(json).toMatchObject({
+        success: true,
+        available: true,
+        reasonCode: 'OK',
+      });
+      expect(json.items.some((it: any) => it.ref === cityRef)).toBe(true);
+      expect(searchSettlementsMock).toHaveBeenCalledTimes(0);
+    } finally {
+      await db.delete(npCities).where(eq(npCities.ref, cityRef));
+    }
+  });
+
   it('NP down returns 200 + available=false NP_UNAVAILABLE with empty items', async () => {
     searchSettlementsMock.mockRejectedValue(
       new NovaPoshtaApiError('NP_HTTP_ERROR', 'temporary', 503)

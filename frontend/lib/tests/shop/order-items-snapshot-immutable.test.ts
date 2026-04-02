@@ -22,7 +22,9 @@ import {
   products,
 } from '@/db/schema';
 import { resetEnvCache } from '@/lib/env';
+import { rehydrateCartItems } from '@/lib/services/products';
 import { deriveTestIpFromIdemKey } from '@/lib/tests/helpers/ip';
+import { TEST_LEGAL_CONSENT } from '@/lib/tests/shop/test-legal-consent';
 
 vi.mock('@/lib/auth', async () => {
   resetEnvCache();
@@ -181,7 +183,7 @@ describe('P0-6 snapshots: order_items immutability', () => {
       await db.insert(productPrices).values({
         id: priceId,
         productId,
-        currency: 'USD',
+        currency: 'UAH',
         priceMinor: 900,
         originalPriceMinor: null,
         price: '9.00',
@@ -189,12 +191,18 @@ describe('P0-6 snapshots: order_items immutability', () => {
       });
 
       const idem = randomUUID();
+      const quote = await rehydrateCartItems(
+        [{ productId, quantity: 1 }],
+        'UAH'
+      );
       const req = makeJsonRequest(
         'http://localhost:3000/api/shop/checkout',
         {
           items: [{ productId, quantity: 1 }],
+          legalConsent: TEST_LEGAL_CONSENT,
           paymentProvider: 'stripe',
           paymentMethod: 'stripe_card',
+          pricingFingerprint: quote.summary.pricingFingerprint,
         },
         {
           'Accept-Language': 'en-US,en;q=0.9',
@@ -264,7 +272,7 @@ describe('P0-6 snapshots: order_items immutability', () => {
         .where(
           and(
             eq(productPrices.productId, productId),
-            eq(productPrices.currency, 'USD')
+            eq(productPrices.currency, 'UAH')
           )
         );
 

@@ -574,6 +574,96 @@
           "active": "Активний",
           "hidden": "Приховано",
           "featured": "Вітрина"
+        },
+        "form": {
+          "headings": {
+            "create": "Створити новий товар",
+            "edit": "Редагувати товар"
+          },
+          "sections": {
+            "basicInfo": "Основна інформація",
+            "inventorySku": "Запаси та SKU",
+            "catalogAttributes": "Атрибути каталогу",
+            "variants": "Варіанти",
+            "flagsBadge": "Прапорці та значок",
+            "description": "Опис",
+            "photoManagement": "Керування фото"
+          },
+          "fields": {
+            "title": "Назва",
+            "slug": "Slug",
+            "slugHelp": "Автоматично створюється з назви",
+            "price": "Ціна ({currency})",
+            "originalPrice": "Початкова ціна ({currency})",
+            "stock": "Запас",
+            "sku": "SKU",
+            "category": "Категорія",
+            "selectCategory": "Оберіть категорію",
+            "type": "Тип",
+            "selectType": "Оберіть тип",
+            "colors": "Кольори",
+            "sizes": "Розміри",
+            "badge": "Значок",
+            "isActive": "Активний",
+            "isFeatured": "Рекомендований",
+            "description": "Опис",
+            "photos": "Фото"
+          },
+          "badge": {
+            "none": "Немає",
+            "sale": "SALE",
+            "new": "NEW"
+          },
+          "pricing": {
+            "legend": "Ціни",
+            "helper": "UAH є обов'язковою для стандартної вітрини. USD необов'язкова й зберігається лише для сумісності.",
+            "uahLegend": "UAH (стандартна вітрина)",
+            "usdLegend": "USD (необов'язкова сумісність)",
+            "policyPrefix": "Стандартна вітрина оформлює замовлення в UAH. Збережіть рядок UAH у",
+            "policySuffix": "для валюти стандартної вітрини. USD потрібна лише для сумісності."
+          },
+          "photos": {
+            "helper": "Додайте одне або кілька фото, змініть їх порядок і позначте рівно одне як основне.",
+            "photoAlt": "Фото товару {index}",
+            "photoLabel": "Фото {index}",
+            "primary": "Основне",
+            "status": {
+              "saved": "Збережено",
+              "legacy": "Застаріле зображення",
+              "new": "Нове завантаження"
+            },
+            "actions": {
+              "setPrimary": "Зробити основним",
+              "moveUp": "Перемістити вгору",
+              "moveDown": "Перемістити вниз",
+              "remove": "Видалити"
+            }
+          },
+          "actions": {
+            "creating": "Створення...",
+            "updating": "Оновлення...",
+            "create": "Створити товар",
+            "save": "Зберегти зміни"
+          },
+          "errors": {
+            "legacyPhotoMigrationRequired": "Застарілі фото товару потрібно перенести перед додаванням або зміною порядку фото в галереї.",
+            "photoRequired": "Потрібне хоча б одне фото товару.",
+            "atLeastOnePrice": "Потрібна хоча б одна ціна.",
+            "uahRequired": "Для стандартної вітрини обов'язкова ціна в UAH.",
+            "priceRequiredWhenOriginalSet": "{currency}: ціна обов'язкова, якщо вказано початкову ціну.",
+            "invalidMoneyValue": "Некоректне значення суми: \"{value}\"",
+            "invalidPriceValue": "Некоректне значення ціни.",
+            "securityMissing": "Відсутній токен безпеки. Оновіть сторінку й спробуйте ще раз.",
+            "slugConflict": "Такий slug уже використовується. Спробуйте змінити назву.",
+            "photoUpdateFailed": "Не вдалося оновити фото товару",
+            "saleOriginalRequired": "Для SALE потрібна початкова ціна.",
+            "saleOriginalGreater": "Для SALE початкова ціна має бути більшою за поточну.",
+            "securityExpired": "Токен безпеки прострочений. Оновіть сторінку й спробуйте ще раз.",
+            "createFailed": "Не вдалося створити товар",
+            "updateFailed": "Не вдалося оновити товар",
+            "unexpectedCreate": "Неочікувана помилка під час створення товару.",
+            "unexpectedUpdate": "Неочікувана помилка під час оновлення товару."
+          }
         }
       },
       "statusToggle": {
@@ -780,6 +870,40 @@
           "previousFailed": "Попередня спроба оплати не вдалася. Будь ласка, спробуйте ще раз",
           "completePayment": "Завершіть оплату, щоб завершити замовлення"
         }
+      },
+      "paymentClient": {
+        "aria": {
+          "form": "Форма оплати Stripe",
+          "paymentsDisabled": "Оплату вимкнено",
+          "paymentInitializationFailed": "Не вдалося ініціалізувати оплату",
+          "nextSteps": "Наступні кроки",
+          "securePayment": "Безпечна оплата"
+        },
+        "summary": {
+          "payLabel": "До сплати"
+        },
+        "messages": {
+          "notReady": "Оплата ще не готова. Спробуйте ще раз за мить.",
+          "confirmFailed": "Не вдалося підтвердити оплату.",
+          "unexpectedConfirmFailed": "Не вдалося підтвердити оплату. Спробуйте ще раз.",
+          "paymentsDisabled": "У цьому середовищі оплату вимкнено.",
+          "initializationFailed": "Не вдалося ініціалізувати оплату. Спробуйте пізніше.",
+          "preparing": "Готуємо безпечну оплату..."
+        },
+        "actions": {
+          "processing": "Обробка...",
+          "submit": "Підтвердити оплату",
+          "continue": "Продовжити",
+          "backToCart": "Назад до кошика",
+          "returnToCart": "Повернутися до кошика"
+        }
+      },
+      "errorPage": {
+        "metaTitle": "Помилка оформлення | DevLovers",
+        "metaDescription": "Не вдалося завершити оформлення замовлення. Спробуйте ще раз або зверніться до підтримки.",
+        "checkoutNavigation": "Навігація оформлення замовлення",
+        "orderDetails": "Деталі замовлення",
+        "nextSteps": "Наступні кроки"
       },
       "actions": {
         "backToProducts": "Назад до товарів",

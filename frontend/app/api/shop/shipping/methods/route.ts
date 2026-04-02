@@ -23,7 +23,10 @@ import {
   sanitizeShippingErrorForLog,
   sanitizeShippingLogMeta,
 } from '@/lib/services/shop/shipping/log-sanitizer';
-import { resolveCurrencyFromLocale } from '@/lib/shop/currency';
+import {
+  resolveStandardStorefrontCurrency,
+  resolveStandardStorefrontShippingCountry,
+} from '@/lib/shop/commercial-policy';
 import { resolveRequestLocale } from '@/lib/shop/request-locale';
 import { shippingMethodsQuerySchema } from '@/lib/validation/shop-shipping';
 
@@ -172,13 +175,15 @@ export async function GET(request: NextRequest) {
 
   try {
     const locale = parsed.data.locale ?? resolveRequestLocale(request);
-    const currency = parsed.data.currency ?? resolveCurrencyFromLocale(locale);
+    const currency =
+      parsed.data.currency ?? resolveStandardStorefrontCurrency();
     const flags = getShopShippingFlags();
     const availability = resolveShippingAvailability({
       shippingEnabled: flags.shippingEnabled,
       npEnabled: flags.npEnabled,
       locale,
-      country: parsed.data.country ?? null,
+      country:
+        parsed.data.country ?? resolveStandardStorefrontShippingCountry(),
       currency,
     });
 

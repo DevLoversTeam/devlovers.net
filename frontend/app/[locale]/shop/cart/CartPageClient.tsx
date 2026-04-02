@@ -14,9 +14,9 @@ import {
   type CheckoutDeliveryMethodCode,
   type ShippingAvailabilityReasonCode,
 } from '@/lib/services/shop/shipping/checkout-payload';
+import { resolveStandardStorefrontShippingCountry } from '@/lib/shop/commercial-policy';
 import { formatMoney } from '@/lib/shop/currency';
 import { generateIdempotencyKey } from '@/lib/shop/idempotency';
-import { localeToCountry } from '@/lib/shop/locale';
 import {
   SHOP_CART_CARD,
   SHOP_CART_FIELD,
@@ -41,6 +41,11 @@ import {
   shopCtaGradient,
 } from '@/lib/shop/ui-classes';
 import { cn } from '@/lib/utils';
+
+import {
+  resolveDefaultMethodForProvider,
+  resolveInitialProvider,
+} from './provider-policy';
 
 type Props = {
   stripeEnabled: boolean;
@@ -80,31 +85,6 @@ type ShippingWarehouse = {
   address: string | null;
   isPostMachine: boolean;
 };
-
-function resolveInitialProvider(args: {
-  stripeEnabled: boolean;
-  monobankEnabled: boolean;
-  currency: string | null | undefined;
-}): CheckoutProvider {
-  const isUah = args.currency === 'UAH';
-  const canUseStripe = args.stripeEnabled;
-  const canUseMonobank = args.monobankEnabled && isUah;
-
-  if (canUseMonobank) return 'monobank';
-  if (canUseStripe) return 'stripe';
-  return 'stripe';
-}
-
-function resolveDefaultMethodForProvider(args: {
-  provider: CheckoutProvider;
-  currency: string | null | undefined;
-}): CheckoutPaymentMethod | null {
-  if (args.provider === 'stripe') return 'stripe_card';
-  if (args.provider === 'monobank') {
-    return args.currency === 'UAH' ? 'monobank_invoice' : null;
-  }
-  return null;
-}
 
 function normalizeLookupValue(value: string): string {
   return value.trim().toLocaleLowerCase();
@@ -295,36 +275,27 @@ function isWarehouseMethod(
 function resolveShippingMethodCardCopy(args: {
   methodCode: CheckoutDeliveryMethodCode;
   fallbackTitle: string;
-  safeT: (key: string, fallback: string) => string;
+  translate: (key: string) => string;
 }): { title: string; description: string } {
-  const { methodCode, fallbackTitle, safeT } = args;
+  const { methodCode, fallbackTitle, translate } = args;
 
   switch (methodCode) {
     case 'NP_WAREHOUSE':
       return {
-        title: safeT('delivery.methodCards.warehouse.title', fallbackTitle),
-        description: safeT(
-          'delivery.methodCards.warehouse.description',
-          'Pick up at a Nova Poshta branch'
-        ),
+        title: translate('delivery.methodCards.warehouse.title'),
+        description: translate('delivery.methodCards.warehouse.description'),
       };
 
     case 'NP_LOCKER':
       return {
-        title: safeT('delivery.methodCards.locker.title', fallbackTitle),
-        description: safeT(
-          'delivery.methodCards.locker.description',
-          'Pick up from a Nova Poshta parcel locker'
-        ),
+        title: translate('delivery.methodCards.locker.title'),
+        description: translate('delivery.methodCards.locker.description'),
       };
 
     case 'NP_COURIER':
       return {
-        title: safeT('delivery.methodCards.courier.title', fallbackTitle),
-        description: safeT(
-          'delivery.methodCards.courier.description',
-          'Nova Poshta door-to-door delivery'
-        ),
+        title: translate('delivery.methodCards.courier.title'),
+        description: translate('delivery.methodCards.courier.description'),
       };
 
     default:
@@ -502,12 +473,11 @@ export default function CartPage({
   const params = useParams<{ locale?: string }>();
   const locale = params.locale ?? 'en';
   const shopBase = '/shop';
-  const isUahCheckout = cart.summary.currency === 'UAH';
   const canUseStripe = stripeEnabled;
-  const canUseMonobank = monobankEnabled && isUahCheckout;
+  const canUseMonobank = monobankEnabled;
   const canUseMonobankGooglePay = canUseMonobank && monobankGooglePayEnabled;
   const hasSelectableProvider = canUseStripe || canUseMonobank;
-  const country = localeToCountry(locale);
+  const country = resolveStandardStorefrontShippingCountry();
 
   const shippingUnavailableHardBlock =
     shippingReasonCode === 'SHOP_SHIPPING_DISABLED' ||
@@ -1121,11 +1091,7 @@ export default function CartPage({
     }
 
     if (selectedProvider === 'monobank' && !canUseMonobank) {
-      setCheckoutError(
-        monobankEnabled
-          ? t('checkout.paymentMethod.monobankUahOnlyHint')
-          : t('checkout.paymentMethod.monobankUnavailable')
-      );
+      setCheckoutError(t('checkout.paymentMethod.monobankUnavailable'));
       return;
     }
 
@@ -1747,7 +1713,7 @@ export default function CartPage({
                         const cardCopy = resolveShippingMethodCardCopy({
                           methodCode: method.methodCode,
                           fallbackTitle: method.title,
-                          safeT,
+                          translate: key => t(key as any),
                         });
 
                         return (
@@ -2238,9 +2204,7 @@ export default function CartPage({
 
                 {!canUseMonobank ? (
                   <p className="text-muted-foreground mt-3 text-xs">
-                    {monobankEnabled
-                      ? t('checkout.paymentMethod.monobankUahOnlyHint')
-                      : t('checkout.paymentMethod.monobankUnavailable')}
+                    {t('checkout.paymentMethod.monobankUnavailable')}
                   </p>
                 ) : null}
 

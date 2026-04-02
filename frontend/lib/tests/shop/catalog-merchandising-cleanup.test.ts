@@ -138,7 +138,7 @@ describe('catalog merchandising cleanup', () => {
     const content = await getHomepageContent('en');
 
     expect(shopQueryMocks.getActiveProductsPage).toHaveBeenCalledWith({
-      currency: 'USD',
+      currency: 'UAH',
       limit: 12,
       offset: 0,
       category: undefined,

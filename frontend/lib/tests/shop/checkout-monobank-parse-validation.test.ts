@@ -15,6 +15,7 @@ import {
   hasStatusTokenScope,
   verifyStatusToken,
 } from '@/lib/shop/status-token';
+import { TEST_LEGAL_CONSENT } from '@/lib/tests/shop/test-legal-consent';
 
 vi.mock('@/lib/auth', () => ({
   getCurrentUser: vi.fn().mockResolvedValue(null),
@@ -22,6 +23,19 @@ vi.mock('@/lib/auth', () => ({
 
 vi.mock('@/lib/env/monobank', () => ({
   isMonobankEnabled: () => true,
+}));
+
+vi.mock('@/lib/env/stripe', () => ({
+  isPaymentsEnabled: () => true,
+}));
+
+vi.mock('@/lib/services/orders/payment-attempts', () => ({
+  ensureStripePaymentIntentForOrder: vi.fn(async (args: { orderId: string }) => ({
+    paymentIntentId: `pi_test_${args.orderId}`,
+    clientSecret: `cs_test_${args.orderId}`,
+    attemptId: `attempt_${args.orderId}`,
+    attemptNumber: 1,
+  })),
 }));
 
 vi.mock('@/lib/services/orders', async () => {
@@ -80,6 +94,8 @@ afterAll(() => {
 beforeEach(() => {
   vi.clearAllMocks();
   process.env.SHOP_MONOBANK_GPAY_ENABLED = 'false';
+  (createOrderWithItems as unknown as MockedFn).mockReset();
+  createMonobankAttemptAndInvoiceMock.mockReset();
   createMonobankAttemptAndInvoiceMock.mockResolvedValue({
     attemptId: 'attempt_mono_scope_1',
     attemptNumber: 1,
@@ -93,10 +109,16 @@ beforeEach(() => {
 function makeMonobankCheckoutReq(params: {
   idempotencyKey?: string;
   body: Record<string, unknown>;
+  acceptLanguage?: string;
 }) {
+  const body = {
+    legalConsent: TEST_LEGAL_CONSENT,
+    ...params.body,
+  };
+
   const headers = new Headers({
     'content-type': 'application/json',
-    'accept-language': 'uk-UA',
+    'accept-language': params.acceptLanguage ?? 'uk-UA',
     origin: 'http://localhost:3000',
   });
 
@@ -108,7 +130,7 @@ function makeMonobankCheckoutReq(params: {
     new Request('http://localhost:3000/api/shop/checkout', {
       method: 'POST',
       headers,
-      body: JSON.stringify(params.body),
+      body: JSON.stringify(body),
     })
   );
 }
@@ -198,7 +220,7 @@ describe('checkout monobank parse/validation', () => {
     expect(Array.isArray(args?.items)).toBe(true);
   });
 
-  it('omitted provider resolves to the server-preferred monobank rail for UAH checkout', async () => {
+  it('omitted provider resolves to the server-preferred monobank rail on en locale too', async () => {
     const createOrderWithItemsMock =
       createOrderWithItems as unknown as MockedFn;
     mockCreateOrderSuccess(createOrderWithItemsMock, 'order_stripe_default_1');
@@ -206,6 +228,7 @@ describe('checkout monobank parse/validation', () => {
     const res = await POST(
       makeMonobankCheckoutReq({
         idempotencyKey: 'stripe_idem_method_0001',
+        acceptLanguage: 'en-US,en;q=0.9',
         body: {
           items: [
             { productId: '11111111-1111-4111-8111-111111111111', quantity: 1 },
@@ -218,6 +241,36 @@ describe('checkout monobank parse/validation', () => {
     const args = createOrderWithItemsMock.mock.calls[0]?.[0];
     expect(args?.paymentProvider).toBe('monobank');
     expect(args?.paymentMethod).toBe('monobank_invoice');
+  });
+
+  it('explicit stripe rail remains available on pl locale when enabled', async () => {
+    const createOrderWithItemsMock =
+      createOrderWithItems as unknown as MockedFn;
+    mockCreateOrderSuccess(createOrderWithItemsMock, 'order_stripe_pl_1', {
+      currency: 'UAH',
+      paymentProvider: 'stripe',
+      paymentStatus: 'pending',
+      paymentIntentId: null,
+    });
+
+    const res = await POST(
+      makeMonobankCheckoutReq({
+        idempotencyKey: 'stripe_pl_enabled_0001',
+        acceptLanguage: 'pl-PL,pl;q=0.9',
+        body: {
+          paymentProvider: 'stripe',
+          paymentMethod: 'stripe_card',
+          items: [
+            { productId: '11111111-1111-4111-8111-111111111111', quantity: 1 },
+          ],
+        },
+      })
+    );
+
+    expect(res.status).toBe(201);
+    const args = createOrderWithItemsMock.mock.calls[0]?.[0];
+    expect(args?.paymentProvider).toBe('stripe');
+    expect(args?.paymentMethod).toBe('stripe_card');
   });
 
   it('rejects incompatible provider/method pair', async () => {

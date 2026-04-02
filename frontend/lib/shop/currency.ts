@@ -1,3 +1,5 @@
+import { resolveCurrentStandardStorefrontCurrencyFromLocale } from '@/lib/shop/commercial-policy';
+
 export const currencyValues = ['USD', 'UAH'] as const;
 export type CurrencyCode = (typeof currencyValues)[number];
 
@@ -31,8 +33,7 @@ function normalizeLocaleTag(locale: string | null | undefined): string {
 export function resolveCurrencyFromLocale(
   locale: string | null | undefined
 ): CurrencyCode {
-  const primary = normalizeLocaleTag(locale);
-  return primary === 'uk' ? 'UAH' : 'USD';
+  return resolveCurrentStandardStorefrontCurrencyFromLocale(locale);
 }
 
 export function parsePrimaryLocaleFromAcceptLanguage(
@@ -59,6 +60,8 @@ function normalizeLocaleForIntl(
   currency: CurrencyCode
 ): string {
   const raw = (locale ?? '').trim();
+  if (currency === 'UAH') return 'uk-UA';
+
   const primary = normalizeLocaleTag(raw);
 
   if (primary === 'uk') return 'uk-UA';
@@ -66,7 +69,7 @@ function normalizeLocaleForIntl(
 
   if (raw) return raw.replaceAll('_', '-');
 
-  return currency === 'UAH' ? 'uk-UA' : 'en-US';
+  return 'en-US';
 }
 
 const formatterCache = new Map<string, Intl.NumberFormat>();

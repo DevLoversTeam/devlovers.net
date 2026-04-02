@@ -4,9 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { MoneyValueError } from '@/db/queries/shop/orders';
 import { getCurrentUser } from '@/lib/auth';
-import { isMonobankEnabled } from '@/lib/env/monobank';
 import { readPositiveIntEnv } from '@/lib/env/readPositiveIntEnv';
-import { isPaymentsEnabled as isStripePaymentsEnabled } from '@/lib/env/stripe';
 import { logError, logInfo, logWarn } from '@/lib/logging';
 import { MONO_MISMATCH, monoLogWarn } from '@/lib/logging/monobank';
 import { guardBrowserSameOrigin } from '@/lib/security/origin';
@@ -33,7 +31,11 @@ import {
   ensureStripePaymentIntentForOrder,
   PaymentAttemptsExhaustedError,
 } from '@/lib/services/orders/payment-attempts';
-import { resolveCurrencyFromLocale } from '@/lib/shop/currency';
+import {
+  resolveStandardStorefrontCheckoutProviderCandidates,
+  resolveStandardStorefrontCurrency,
+} from '@/lib/shop/commercial-policy';
+import { resolveStandardStorefrontProviderCapabilities } from '@/lib/shop/commercial-policy.server';
 import {
   isMethodAllowed,
   type PaymentMethod,
@@ -41,7 +43,6 @@ import {
   paymentProviderValues,
   type PaymentStatus,
   paymentStatusValues,
-  resolveCheckoutProviderCandidates,
   resolveDefaultMethodForProvider,
 } from '@/lib/shop/payments';
 import { resolveRequestLocale } from '@/lib/shop/request-locale';
@@ -175,13 +176,6 @@ function parseRequestedMethod(raw: unknown): PaymentMethod | 'invalid' | null {
 function isMonoAlias(raw: unknown): boolean {
   if (typeof raw !== 'string') return false;
   return raw.trim().toLowerCase() === 'mono';
-}
-
-function isMonobankGooglePayEnabled(): boolean {
-  const raw = (process.env.SHOP_MONOBANK_GPAY_ENABLED ?? '')
-    .trim()
-    .toLowerCase();
-  return raw === 'true' || raw === '1' || raw === 'yes' || raw === 'on';
 }
 
 function stripMonobankClientMoneyFields(payload: unknown): unknown {
@@ -880,27 +874,18 @@ export async function POST(request: NextRequest) {
     payloadForValidation = rest;
   }
 
-  const localeCurrency = resolveCurrencyFromLocale(locale);
-  const paymentsEnabled =
-    (process.env.PAYMENTS_ENABLED ?? '').trim() === 'true';
+  const storefrontCurrency = resolveStandardStorefrontCurrency();
+  const providerCapabilities =
+    resolveStandardStorefrontProviderCapabilities();
+  const stripeCheckoutAvailable =
+    providerCapabilities.stripeCheckoutEnabled;
+  const monobankCheckoutAvailable =
+    providerCapabilities.monobankCheckoutEnabled;
 
-  const stripeCheckoutAvailable = isStripePaymentsEnabled({
-    requirePublishableKey: true,
-  });
-  let monobankCheckoutAvailable = false;
-  try {
-    monobankCheckoutAvailable = paymentsEnabled && isMonobankEnabled();
-  } catch (error) {
-    logError('monobank_env_invalid', error, {
-      ...baseMeta,
-      code: 'MONOBANK_ENV_INVALID',
-    });
-  }
-
-  const checkoutProviderCandidates = resolveCheckoutProviderCandidates({
+  const checkoutProviderCandidates =
+    resolveStandardStorefrontCheckoutProviderCandidates({
     requestedProvider,
     requestedMethod,
-    currency: localeCurrency,
   });
   const selectedProvider =
     checkoutProviderCandidates.find(candidate =>
@@ -911,8 +896,7 @@ export async function POST(request: NextRequest) {
 
   const fallbackProvider =
     selectedProvider ?? checkoutProviderCandidates[0] ?? null;
-  const selectedCurrency =
-    fallbackProvider === 'monobank' ? 'UAH' : localeCurrency;
+  const selectedCurrency = storefrontCurrency;
   const selectedMethod =
     requestedMethod ??
     (fallbackProvider
@@ -934,7 +918,7 @@ export async function POST(request: NextRequest) {
       code: 'PAYMENTS_DISABLED',
       requestedProvider,
       requestedMethod,
-      localeCurrency,
+      storefrontCurrency,
       candidates: checkoutProviderCandidates,
       stripeCheckoutAvailable,
       monobankCheckoutAvailable,
@@ -953,7 +937,7 @@ export async function POST(request: NextRequest) {
       code: 'PAYMENTS_DISABLED',
       requestedProvider,
       requestedMethod,
-      localeCurrency,
+      storefrontCurrency,
       candidates: checkoutProviderCandidates,
       stripeCheckoutAvailable,
       monobankCheckoutAvailable,
@@ -973,7 +957,7 @@ export async function POST(request: NextRequest) {
       code: 'PAYMENTS_DISABLED',
       requestedProvider,
       requestedMethod,
-      localeCurrency,
+      storefrontCurrency,
       candidates: checkoutProviderCandidates,
       stripeCheckoutAvailable,
       monobankCheckoutAvailable,
@@ -988,7 +972,7 @@ export async function POST(request: NextRequest) {
 
   if (
     selectedMethod === 'monobank_google_pay' &&
-    !isMonobankGooglePayEnabled()
+    !providerCapabilities.monobankGooglePayEnabled
   ) {
     return errorResponse('INVALID_REQUEST', 'Invalid request.', 422);
   }
@@ -998,7 +982,10 @@ export async function POST(request: NextRequest) {
       provider: resolvedProvider,
       method: selectedMethod,
       currency: selectedCurrency,
-      flags: { monobankGooglePayEnabled: isMonobankGooglePayEnabled() },
+      flags: {
+        monobankGooglePayEnabled:
+          providerCapabilities.monobankGooglePayEnabled,
+      },
     })
   ) {
     if (resolvedProvider === 'monobank') {

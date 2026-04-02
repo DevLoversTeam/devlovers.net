@@ -20,7 +20,10 @@ import {
 } from '@/lib/services/shop/shipping/log-sanitizer';
 import { findWarehousesWithCacheOnMiss } from '@/lib/services/shop/shipping/nova-poshta-catalog';
 import { NovaPoshtaApiError } from '@/lib/services/shop/shipping/nova-poshta-client';
-import { resolveCurrencyFromLocale } from '@/lib/shop/currency';
+import {
+  resolveStandardStorefrontCurrency,
+  resolveStandardStorefrontShippingCountry,
+} from '@/lib/shop/commercial-policy';
 import { resolveRequestLocale } from '@/lib/shop/request-locale';
 import { shippingWarehousesQuerySchema } from '@/lib/validation/shop-shipping';
 
@@ -95,13 +98,13 @@ export async function GET(request: NextRequest) {
   }
 
   const locale = parsed.data.locale ?? resolveRequestLocale(request);
-  const currency = parsed.data.currency ?? resolveCurrencyFromLocale(locale);
+  const currency = parsed.data.currency ?? resolveStandardStorefrontCurrency();
   const flags = getShopShippingFlags();
   const availability = resolveShippingAvailability({
     shippingEnabled: flags.shippingEnabled,
     npEnabled: flags.npEnabled,
     locale,
-    country: parsed.data.country ?? null,
+    country: parsed.data.country ?? resolveStandardStorefrontShippingCountry(),
     currency,
   });
 

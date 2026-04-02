@@ -1,3 +1,7 @@
+import {
+  inferCurrentCheckoutProviderFromMethod,
+  resolveCurrentCheckoutProviderCandidates,
+} from '@/lib/shop/commercial-policy';
 import type { CurrencyCode } from '@/lib/shop/currency';
 
 export const paymentStatusValues = [
@@ -28,12 +32,7 @@ export type PaymentMethod = (typeof paymentMethodValues)[number];
 export function inferCheckoutProviderFromMethod(
   method: PaymentMethod | null | undefined
 ): CheckoutPaymentProvider | null {
-  if (method === 'stripe_card') return 'stripe';
-  if (method === 'monobank_invoice' || method === 'monobank_google_pay') {
-    return 'monobank';
-  }
-
-  return null;
+  return inferCurrentCheckoutProviderFromMethod(method);
 }
 
 export function resolveCheckoutProviderCandidates(args: {
@@ -41,19 +40,7 @@ export function resolveCheckoutProviderCandidates(args: {
   requestedMethod?: PaymentMethod | null;
   currency: CurrencyCode;
 }): readonly CheckoutPaymentProvider[] {
-  const explicitProvider =
-    args.requestedProvider ??
-    inferCheckoutProviderFromMethod(args.requestedMethod);
-
-  if (explicitProvider) {
-    return [explicitProvider];
-  }
-
-  if (args.currency === 'UAH') {
-    return ['monobank', 'stripe'];
-  }
-
-  return ['stripe'];
+  return resolveCurrentCheckoutProviderCandidates(args);
 }
 
 export function resolveDefaultMethodForProvider(
