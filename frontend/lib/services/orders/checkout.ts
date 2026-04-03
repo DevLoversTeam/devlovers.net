@@ -207,6 +207,12 @@ type PreparedShipping = {
     methodCode: CheckoutShippingMethodCode;
     cityRef: string;
     warehouseRef: string | null;
+    recipient: {
+      fullName: string;
+      phone: string;
+      email: string | null;
+      comment: string | null;
+    };
   } | null;
   orderSummary: {
     shippingRequired: boolean;
@@ -282,6 +288,21 @@ function readShippingRefFromSnapshot(
     return null;
   }
   const raw = (selection as Record<string, unknown>)[field];
+  if (typeof raw !== 'string') return null;
+  const normalized = raw.trim();
+  return normalized.length > 0 ? normalized : null;
+}
+
+function readShippingRecipientFieldFromSnapshot(
+  value: unknown,
+  field: 'fullName' | 'phone' | 'email' | 'comment'
+): string | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const recipient = (value as { recipient?: unknown }).recipient;
+  if (!recipient || typeof recipient !== 'object' || Array.isArray(recipient)) {
+    return null;
+  }
+  const raw = (recipient as Record<string, unknown>)[field];
   if (typeof raw !== 'string') return null;
   const normalized = raw.trim();
   return normalized.length > 0 ? normalized : null;
@@ -547,6 +568,12 @@ async function prepareCheckoutShipping(args: {
       methodCode,
       cityRef,
       warehouseRef: warehouse?.ref ?? warehouseRef ?? null,
+      recipient: {
+        fullName: args.shipping.recipient.fullName.trim(),
+        phone: args.shipping.recipient.phone.trim(),
+        email: args.shipping.recipient.email?.trim() ?? null,
+        comment: args.shipping.recipient.comment?.trim() ?? null,
+      },
     },
     orderSummary: {
       shippingRequired: true,
@@ -974,6 +1001,26 @@ export async function createOrderWithItems({
       existingShippingRow?.shippingAddress,
       'warehouseRef'
     );
+    const existingRecipient = {
+      fullName:
+        readShippingRecipientFieldFromSnapshot(
+          existingShippingRow?.shippingAddress,
+          'fullName'
+        ) ?? '',
+      phone:
+        readShippingRecipientFieldFromSnapshot(
+          existingShippingRow?.shippingAddress,
+          'phone'
+        ) ?? '',
+      email: readShippingRecipientFieldFromSnapshot(
+        existingShippingRow?.shippingAddress,
+        'email'
+      ),
+      comment: readShippingRecipientFieldFromSnapshot(
+        existingShippingRow?.shippingAddress,
+        'comment'
+      ),
+    };
     const existingLegalHashRefs = {
       termsAccepted: existingLegalConsentRow.termsAccepted,
       privacyAccepted: existingLegalConsentRow.privacyAccepted,
@@ -1054,6 +1101,7 @@ export async function createOrderWithItems({
               methodCode: row.shippingMethodCode,
               cityRef: existingCityRef,
               warehouseRef: existingWarehouseRef,
+              recipient: existingRecipient,
             }
           : null,
       legalConsent: existingLegalHashRefs,

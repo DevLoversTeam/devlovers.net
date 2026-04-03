@@ -4,8 +4,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { db } from '@/db';
 import {
+  inventoryMoves,
   npCities,
   npWarehouses,
+  orderItems,
   orders,
   orderShipping,
   productPrices,
@@ -112,9 +114,17 @@ async function seedCheckoutShippingData(): Promise<SeedData> {
 
 async function cleanupSeedData(data: SeedData, orderIds: string[]) {
   for (const orderId of orderIds) {
+    await db.delete(orderShipping).where(eq(orderShipping.orderId, orderId));
     await db.delete(orders).where(eq(orders.id, orderId));
   }
 
+  await db
+    .delete(inventoryMoves)
+    .where(eq(inventoryMoves.productId, data.productId));
+  await db.delete(orderItems).where(eq(orderItems.productId, data.productId));
+  await db
+    .delete(productPrices)
+    .where(eq(productPrices.productId, data.productId));
   await db.delete(npWarehouses).where(eq(npWarehouses.ref, data.warehouseRefA));
   await db.delete(npWarehouses).where(eq(npWarehouses.ref, data.warehouseRefB));
   await db.delete(npCities).where(eq(npCities.ref, data.cityRef));
@@ -138,13 +148,13 @@ describe('checkout shipping phase 3', () => {
     resetEnvCache();
   });
 
-  it('rejects NP shipping for unsupported checkout currency', async () => {
+  it('uses the authoritative storefront UAH currency for shipping checkout regardless of locale', async () => {
     const seed = await seedCheckoutShippingData();
     const createdOrderIds: string[] = [];
 
     try {
       const idem = crypto.randomUUID();
-      const promise = createOrderWithItems({
+      const result = await createOrderWithItems({
         idempotencyKey: idem,
         userId: null,
         locale: 'en-US',
@@ -164,18 +174,28 @@ describe('checkout shipping phase 3', () => {
           },
         },
       });
+      createdOrderIds.push(result.order.id);
 
-      await expect(promise).rejects.toBeInstanceOf(InvalidPayloadError);
-      await expect(promise).rejects.toHaveProperty(
-        'code',
-        'SHIPPING_CURRENCY_UNSUPPORTED'
-      );
+      expect(result.isNew).toBe(true);
+      expect(result.order.currency).toBe('UAH');
+      expect(result.order.totalAmountMinor).toBe(4500);
 
-      const rows = await db
-        .select({ id: orders.id })
+      const [orderRow] = await db
+        .select({
+          id: orders.id,
+          currency: orders.currency,
+          shippingAmountMinor: orders.shippingAmountMinor,
+          totalAmountMinor: orders.totalAmountMinor,
+        })
         .from(orders)
         .where(eq(orders.idempotencyKey, idem));
-      expect(rows.length).toBe(0);
+
+      expect(orderRow).toEqual({
+        id: result.order.id,
+        currency: 'UAH',
+        shippingAmountMinor: 500,
+        totalAmountMinor: 4500,
+      });
     } finally {
       await cleanupSeedData(seed, createdOrderIds);
     }
@@ -418,7 +438,7 @@ describe('checkout shipping phase 3', () => {
     }
   }, 60_000);
 
-  it('idempotency excludes recipient PII but includes shipping refs', async () => {
+  it('idempotency replays only when shipping recipient data is materially identical', async () => {
     const seed = await seedCheckoutShippingData();
     const createdOrderIds: string[] = [];
 
@@ -461,14 +481,24 @@ describe('checkout shipping phase 3', () => {
             warehouseRef: seed.warehouseRefA,
           },
           recipient: {
-            fullName: 'Bob',
-            phone: '+380509998877',
+            fullName: 'Alice',
+            phone: '+380501112233',
           },
         },
       });
 
       expect(second.isNew).toBe(false);
       expect(second.order.id).toBe(first.order.id);
+
+      const matchedRows = await db
+        .select({
+          id: orders.id,
+          idempotencyKey: orders.idempotencyKey,
+        })
+        .from(orders)
+        .where(eq(orders.idempotencyKey, idem));
+
+      expect(matchedRows).toHaveLength(1);
 
       const [shippingRow] = await db
         .select({ shippingAddress: orderShipping.shippingAddress })
@@ -479,6 +509,54 @@ describe('checkout shipping phase 3', () => {
       expect((shippingRow?.shippingAddress as any)?.recipient?.fullName).toBe(
         'Alice'
       );
+
+      await expect(
+        createOrderWithItems({
+          idempotencyKey: idem,
+          userId: null,
+          locale: 'uk-UA',
+          country: 'UA',
+          items: [{ productId: seed.productId, quantity: 1 }],
+          legalConsent: TEST_LEGAL_CONSENT,
+          shipping: {
+            provider: 'nova_poshta',
+            methodCode: 'NP_WAREHOUSE',
+            selection: {
+              cityRef: seed.cityRef,
+              warehouseRef: seed.warehouseRefA,
+            },
+            recipient: {
+              fullName: 'Bob',
+              phone: '+380509998877',
+              email: 'bob@example.com',
+              comment: 'Call me on arrival',
+            },
+          },
+        })
+      ).rejects.toBeInstanceOf(IdempotencyConflictError);
+
+      const [shippingRowAfterRecipientConflict] = await db
+        .select({ shippingAddress: orderShipping.shippingAddress })
+        .from(orderShipping)
+        .where(eq(orderShipping.orderId, first.order.id))
+        .limit(1);
+
+      expect(
+        (shippingRowAfterRecipientConflict?.shippingAddress as any)?.recipient
+      ).toMatchObject({
+        fullName: 'Alice',
+        phone: '+380501112233',
+      });
+
+      const rowsAfterRecipientConflict = await db
+        .select({
+          id: orders.id,
+          idempotencyKey: orders.idempotencyKey,
+        })
+        .from(orders)
+        .where(eq(orders.idempotencyKey, idem));
+
+      expect(rowsAfterRecipientConflict).toHaveLength(1);
 
       await expect(
         createOrderWithItems({
