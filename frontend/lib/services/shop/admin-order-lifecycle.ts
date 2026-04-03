@@ -4,7 +4,7 @@ import { and, desc, eq } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { orders, shippingShipments } from '@/db/schema';
-import { logWarn } from '@/lib/logging';
+import { logError, logWarn } from '@/lib/logging';
 import {
   InvalidPayloadError,
   OrderNotFoundError,
@@ -297,6 +297,24 @@ async function repairCompleteAudit(args: {
   });
 }
 
+async function writeLifecycleAuditNonBlocking(args: {
+  orderId: string;
+  requestId: string;
+  action: AdminOrderLifecycleAction;
+  write: () => Promise<unknown>;
+}): Promise<void> {
+  try {
+    await args.write();
+  } catch (error) {
+    logError('admin_order_lifecycle_audit_failed', error, {
+      orderId: args.orderId,
+      requestId: args.requestId,
+      action: args.action,
+      code: 'ADMIN_AUDIT_FAILED',
+    });
+  }
+}
+
 function normalizeMonobankCancelError(error: unknown): never {
   if (error instanceof AdminOrderLifecycleActionError) {
     throw error;
@@ -323,7 +341,6 @@ async function repairConfirmedOrderSideEffects(args: {
   requestId: string;
   now: Date;
   auditFromStatus?: string;
-  repairOnly?: boolean;
 }) {
   const shipmentSync = canRepairConfirmedOrderSideEffects(args.current)
     ? await ensureQueuedInitialShipment({
@@ -339,23 +356,29 @@ async function repairConfirmedOrderSideEffects(args: {
         updatedOrder: false,
       };
 
-  await writeAdminAudit({
+  await writeLifecycleAuditNonBlocking({
     orderId: args.current.id,
-    actorUserId: args.actorUserId,
-    action: 'order_admin_action.confirm',
-    targetType: 'order',
-    targetId: args.current.id,
     requestId: args.requestId,
-    dedupeKey: buildConfirmAuditDedupeKey(args.current.id),
-    payload: {
-      action: 'confirm',
-      fromStatus: args.auditFromStatus ?? args.current.status,
-      toStatus: 'PAID',
-      paymentStatus: args.current.paymentStatus,
-      insertedShipment: shipmentSync.insertedShipment,
-      queuedShipment: shipmentSync.queuedShipment,
-      updatedShippingStatus: shipmentSync.updatedOrder,
-    },
+    action: 'confirm',
+    write: () =>
+      writeAdminAudit({
+        orderId: args.current.id,
+        actorUserId: args.actorUserId,
+        action: 'order_admin_action.confirm',
+        targetType: 'order',
+        targetId: args.current.id,
+        requestId: args.requestId,
+        dedupeKey: buildConfirmAuditDedupeKey(args.current.id),
+        payload: {
+          action: 'confirm',
+          fromStatus: args.auditFromStatus ?? args.current.status,
+          toStatus: 'PAID',
+          paymentStatus: args.current.paymentStatus,
+          insertedShipment: shipmentSync.insertedShipment,
+          queuedShipment: shipmentSync.queuedShipment,
+          updatedShippingStatus: shipmentSync.updatedOrder,
+        },
+      }),
   });
 
   return {
@@ -385,7 +408,6 @@ async function applyConfirm(args: {
       actorUserId: args.actorUserId,
       requestId: args.requestId,
       now: new Date(),
-      repairOnly: true,
     });
     const latest = await loadLifecycleState(args.orderId);
     if (!latest) throw new OrderNotFoundError('Order not found.');
@@ -449,7 +471,6 @@ async function applyConfirm(args: {
         actorUserId: args.actorUserId,
         requestId: args.requestId,
         now,
-        repairOnly: true,
       });
       const repaired = await loadLifecycleState(args.orderId);
       if (!repaired) throw new OrderNotFoundError('Order not found.');
@@ -509,10 +530,16 @@ async function applyCancel(args: {
   }
 
   if (isFinalCanceled(current)) {
-    await repairCancelAudit({
-      current,
-      actorUserId: args.actorUserId,
+    await writeLifecycleAuditNonBlocking({
+      orderId: current.id,
       requestId: args.requestId,
+      action: 'cancel',
+      write: () =>
+        repairCancelAudit({
+          current,
+          actorUserId: args.actorUserId,
+          requestId: args.requestId,
+        }),
     });
 
     return {
@@ -563,13 +590,19 @@ async function applyCancel(args: {
     latest.inventoryStatus !== current.inventoryStatus;
 
   if (changed) {
-    await repairCancelAudit({
-      current: latest,
-      actorUserId: args.actorUserId,
+    await writeLifecycleAuditNonBlocking({
+      orderId: latest.id,
       requestId: args.requestId,
-      fromStatus: current.status,
-      fromPaymentStatus: current.paymentStatus,
-      fromShippingStatus: current.shippingStatus,
+      action: 'cancel',
+      write: () =>
+        repairCancelAudit({
+          current: latest,
+          actorUserId: args.actorUserId,
+          requestId: args.requestId,
+          fromStatus: current.status,
+          fromPaymentStatus: current.paymentStatus,
+          fromShippingStatus: current.shippingStatus,
+        }),
     });
   }
 
@@ -615,10 +648,16 @@ async function applyComplete(args: {
   }
 
   if (current.shippingStatus === 'delivered') {
-    await repairCompleteAudit({
-      current,
-      actorUserId: args.actorUserId,
+    await writeLifecycleAuditNonBlocking({
+      orderId: current.id,
       requestId: args.requestId,
+      action: 'complete',
+      write: () =>
+        repairCompleteAudit({
+          current,
+          actorUserId: args.actorUserId,
+          requestId: args.requestId,
+        }),
     });
 
     return {
@@ -678,10 +717,16 @@ async function applyComplete(args: {
   if (!updated) {
     const latest = await loadLifecycleState(args.orderId);
     if (latest?.shippingStatus === 'delivered') {
-      await repairCompleteAudit({
-        current: latest,
-        actorUserId: args.actorUserId,
+      await writeLifecycleAuditNonBlocking({
+        orderId: latest.id,
         requestId: args.requestId,
+        action: 'complete',
+        write: () =>
+          repairCompleteAudit({
+            current: latest,
+            actorUserId: args.actorUserId,
+            requestId: args.requestId,
+          }),
       });
 
       return {
@@ -700,15 +745,21 @@ async function applyComplete(args: {
     );
   }
 
-  await repairCompleteAudit({
-    current: {
-      ...current,
-      shippingStatus: 'delivered',
-    },
-    actorUserId: args.actorUserId,
+  await writeLifecycleAuditNonBlocking({
+    orderId: args.orderId,
     requestId: args.requestId,
-    fromShippingStatus: current.shippingStatus,
-    fromShipmentStatus: current.shipmentStatus,
+    action: 'complete',
+    write: () =>
+      repairCompleteAudit({
+        current: {
+          ...current,
+          shippingStatus: 'delivered',
+        },
+        actorUserId: args.actorUserId,
+        requestId: args.requestId,
+        fromShippingStatus: current.shippingStatus,
+        fromShipmentStatus: current.shipmentStatus,
+      }),
   });
 
   const latest = await loadLifecycleState(args.orderId);
