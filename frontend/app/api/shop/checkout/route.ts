@@ -63,6 +63,7 @@ const EXPECTED_BUSINESS_ERROR_CODES = new Set([
   'DISCOUNTS_NOT_SUPPORTED',
   'INVALID_VARIANT',
   'INSUFFICIENT_STOCK',
+  'OUT_OF_STOCK',
   'CHECKOUT_PRICE_CHANGED',
   'CHECKOUT_SHIPPING_CHANGED',
   'PRICE_CONFIG_ERROR',
@@ -75,20 +76,48 @@ const EXPECTED_BUSINESS_ERROR_CODES = new Set([
   'LEGAL_CONSENT_REQUIRED',
   'TERMS_NOT_ACCEPTED',
   'PRIVACY_NOT_ACCEPTED',
+  'TERMS_VERSION_REQUIRED',
+  'PRIVACY_VERSION_REQUIRED',
+  'TERMS_VERSION_MISMATCH',
+  'PRIVACY_VERSION_MISMATCH',
 ]);
 
 const DEFAULT_CHECKOUT_RATE_LIMIT_MAX = 10;
 const DEFAULT_CHECKOUT_RATE_LIMIT_WINDOW_SECONDS = 300;
 
 const SHIPPING_ERROR_STATUS_MAP: Record<string, number> = {
-  CHECKOUT_PRICE_CHANGED: 409,
-  CHECKOUT_SHIPPING_CHANGED: 409,
-  MISSING_SHIPPING_ADDRESS: 400,
-  INVALID_SHIPPING_ADDRESS: 400,
+  CHECKOUT_PRICE_CHANGED: 422,
+  CHECKOUT_SHIPPING_CHANGED: 422,
+  MISSING_SHIPPING_ADDRESS: 422,
+  INVALID_SHIPPING_ADDRESS: 422,
   SHIPPING_METHOD_UNAVAILABLE: 422,
   SHIPPING_CURRENCY_UNSUPPORTED: 422,
   SHIPPING_AMOUNT_UNAVAILABLE: 422,
 };
+
+const CHECKOUT_UNPROCESSABLE_ERROR_CODES = new Set([
+  'INVALID_PAYLOAD',
+  'DISCOUNTS_NOT_SUPPORTED',
+  'INVALID_VARIANT',
+  'INSUFFICIENT_STOCK',
+  'OUT_OF_STOCK',
+  'CHECKOUT_PRICE_CHANGED',
+  'CHECKOUT_SHIPPING_CHANGED',
+  'PRICE_CONFIG_ERROR',
+  'MISSING_SHIPPING_ADDRESS',
+  'INVALID_SHIPPING_ADDRESS',
+  'SHIPPING_METHOD_UNAVAILABLE',
+  'SHIPPING_CURRENCY_UNSUPPORTED',
+  'SHIPPING_AMOUNT_UNAVAILABLE',
+  'LEGAL_CONSENT_REQUIRED',
+  'TERMS_NOT_ACCEPTED',
+  'PRIVACY_NOT_ACCEPTED',
+  'TERMS_VERSION_REQUIRED',
+  'PRIVACY_VERSION_REQUIRED',
+  'TERMS_VERSION_MISMATCH',
+  'PRIVACY_VERSION_MISMATCH',
+  'IDEMPOTENCY_CONFLICT',
+]);
 
 const STATUS_TOKEN_SCOPES_STATUS_ONLY: readonly StatusTokenScope[] = [
   'status_lite',
@@ -141,6 +170,10 @@ function isCheckoutStatusTokenRequired(args: {
 
 function shippingErrorStatus(code: string): number | null {
   return SHIPPING_ERROR_STATUS_MAP[code] ?? null;
+}
+
+function checkoutUnprocessableStatus(code: string): number | null {
+  return CHECKOUT_UNPROCESSABLE_ERROR_CODES.has(code) ? 422 : null;
 }
 
 function parseRequestedProvider(
@@ -241,7 +274,8 @@ function mapMonobankCheckoutError(error: unknown) {
   const code = getErrorCode(error);
 
   if (code) {
-    const status = shippingErrorStatus(code);
+    const status =
+      checkoutUnprocessableStatus(code) ?? shippingErrorStatus(code);
     if (status) {
       return {
         code,
@@ -255,7 +289,7 @@ function mapMonobankCheckoutError(error: unknown) {
     return {
       code: 'INVALID_REQUEST',
       message: getErrorMessage(error, 'Invalid request.'),
-      status: 400,
+      status: 422,
     } as const;
   }
 
@@ -267,7 +301,7 @@ function mapMonobankCheckoutError(error: unknown) {
     return {
       code: 'OUT_OF_STOCK',
       message: getErrorMessage(error, 'Insufficient stock.'),
-      status: 409,
+      status: 422,
     } as const;
   }
 
@@ -275,7 +309,7 @@ function mapMonobankCheckoutError(error: unknown) {
     return {
       code: 'PRICE_CONFIG_ERROR',
       message: getErrorMessage(error, 'Price configuration error.'),
-      status: 400,
+      status: 422,
       details:
         error instanceof PriceConfigError
           ? {
@@ -308,7 +342,7 @@ function mapMonobankCheckoutError(error: unknown) {
         error instanceof IdempotencyConflictError
           ? error.message
           : 'Checkout idempotency conflict.',
-      status: 409,
+      status: 422,
       details:
         error instanceof IdempotencyConflictError ? error.details : undefined,
     } as const;
@@ -875,18 +909,33 @@ export async function POST(request: NextRequest) {
   }
 
   const storefrontCurrency = resolveStandardStorefrontCurrency();
-  const providerCapabilities =
-    resolveStandardStorefrontProviderCapabilities();
-  const stripeCheckoutAvailable =
-    providerCapabilities.stripeCheckoutEnabled;
+  const providerCapabilities = resolveStandardStorefrontProviderCapabilities();
+  const stripeCheckoutAvailable = providerCapabilities.stripeCheckoutEnabled;
   const monobankCheckoutAvailable =
     providerCapabilities.monobankCheckoutEnabled;
 
   const checkoutProviderCandidates =
     resolveStandardStorefrontCheckoutProviderCandidates({
-    requestedProvider,
-    requestedMethod,
-  });
+      requestedProvider,
+      requestedMethod,
+    });
+
+  if (
+    requestedProvider &&
+    requestedMethod &&
+    checkoutProviderCandidates.length === 0
+  ) {
+    if (requestedProvider === 'monobank') {
+      return errorResponse('INVALID_REQUEST', 'Invalid request.', 422);
+    }
+
+    return errorResponse(
+      'PAYMENTS_METHOD_INVALID',
+      'Invalid payment method.',
+      422
+    );
+  }
+
   const selectedProvider =
     checkoutProviderCandidates.find(candidate =>
       candidate === 'stripe'
@@ -983,8 +1032,7 @@ export async function POST(request: NextRequest) {
       method: selectedMethod,
       currency: selectedCurrency,
       flags: {
-        monobankGooglePayEnabled:
-          providerCapabilities.monobankGooglePayEnabled,
+        monobankGooglePayEnabled: providerCapabilities.monobankGooglePayEnabled,
       },
     })
   ) {
@@ -1025,7 +1073,7 @@ export async function POST(request: NextRequest) {
     return errorResponse(
       'DISCOUNTS_NOT_SUPPORTED',
       'Discounts are not available at checkout.',
-      400,
+      422,
       { fields: unsupportedDiscountFields }
     );
   }
@@ -1043,7 +1091,7 @@ export async function POST(request: NextRequest) {
       return errorResponse(
         'LEGAL_CONSENT_REQUIRED',
         'Explicit legal consent is required before checkout.',
-        400,
+        422,
         parsedPayload.error.format()
       );
     }
@@ -1058,7 +1106,7 @@ export async function POST(request: NextRequest) {
       return errorResponse(
         'INVALID_REQUEST',
         'Invalid request.',
-        400,
+        422,
         parsedPayload.error.format()
       );
     }
@@ -1072,7 +1120,7 @@ export async function POST(request: NextRequest) {
     return errorResponse(
       'INVALID_PAYLOAD',
       'Invalid checkout payload',
-      400,
+      422,
       parsedPayload.error.format()
     );
   }
@@ -1653,17 +1701,19 @@ export async function POST(request: NextRequest) {
     }
 
     if (error instanceof InvalidPayloadError) {
-      const customStatus = shippingErrorStatus(error.code);
+      const customStatus =
+        checkoutUnprocessableStatus(error.code) ??
+        shippingErrorStatus(error.code);
       return errorResponse(
         error.code,
         error.message || 'Invalid checkout payload',
-        customStatus ?? 400,
+        customStatus ?? 422,
         error.details
       );
     }
 
     if (error instanceof InvalidVariantError) {
-      return errorResponse(error.code, error.message, 400, {
+      return errorResponse(error.code, error.message, 422, {
         productId: error.productId,
         field: error.field,
         value: error.value,
@@ -1672,7 +1722,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (error instanceof IdempotencyConflictError) {
-      return errorResponse(error.code, error.message, 409, error.details);
+      return errorResponse(error.code, error.message, 422, error.details);
     }
 
     if (error instanceof OrderStateInvalidError) {
@@ -1685,7 +1735,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (error instanceof PriceConfigError) {
-      return errorResponse(error.code, error.message, 400, {
+      return errorResponse(error.code, error.message, 422, {
         productId: error.productId,
         currency: error.currency,
       });
@@ -1703,7 +1753,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (error instanceof InsufficientStockError) {
-      return errorResponse('INSUFFICIENT_STOCK', error.message, 409);
+      return errorResponse('INSUFFICIENT_STOCK', error.message, 422);
     }
 
     if (error instanceof MoneyValueError) {
