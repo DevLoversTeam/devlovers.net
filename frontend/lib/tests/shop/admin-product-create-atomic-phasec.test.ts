@@ -96,6 +96,16 @@ function makeFormData(): FormData {
   return fd;
 }
 
+function dualCurrencyPrices(
+  priceMinor: number,
+  originalPriceMinor: number | null = null
+) {
+  return [
+    { currency: 'UAH' as const, priceMinor, originalPriceMinor },
+    { currency: 'USD' as const, priceMinor, originalPriceMinor },
+  ];
+}
+
 describe.sequential('admin products create atomicity (phase C)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -115,9 +125,7 @@ describe.sequential('admin products create atomicity (phase C)', () => {
         slug,
         title: 'Atomic create product',
         badge: 'NONE',
-        prices: [
-          { currency: 'USD', priceMinor: 1999, originalPriceMinor: null },
-        ],
+        prices: dualCurrencyPrices(1999),
         stock: 2,
         isActive: true,
         isFeatured: false,
@@ -176,9 +184,7 @@ describe.sequential('admin products create atomicity (phase C)', () => {
         slug,
         title: 'Atomic create rollback guard',
         badge: 'NONE',
-        prices: [
-          { currency: 'USD', priceMinor: 2099, originalPriceMinor: null },
-        ],
+        prices: dualCurrencyPrices(2099),
         stock: 2,
         isActive: true,
         isFeatured: false,
@@ -250,9 +256,7 @@ describe.sequential('admin products create atomicity (phase C)', () => {
         slug,
         title: 'Atomic create cleanup owner',
         badge: 'NONE',
-        prices: [
-          { currency: 'USD', priceMinor: 2199, originalPriceMinor: null },
-        ],
+        prices: dualCurrencyPrices(2199),
         stock: 2,
         isActive: true,
         isFeatured: false,

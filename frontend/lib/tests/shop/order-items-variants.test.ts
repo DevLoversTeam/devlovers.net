@@ -37,6 +37,15 @@ describe('order_items variants (selected_size/selected_color)', () => {
     await db.insert(productPrices).values({
       id: priceId,
       productId,
+      currency: 'UAH',
+      priceMinor: 1800,
+      originalPriceMinor: null,
+      price: '18.00',
+      originalPrice: null,
+    });
+
+    await db.insert(productPrices).values({
+      productId,
       currency: 'USD',
       priceMinor: 1800,
       originalPriceMinor: null,

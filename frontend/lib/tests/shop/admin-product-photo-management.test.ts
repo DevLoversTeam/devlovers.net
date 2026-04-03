@@ -20,6 +20,34 @@ async function cleanupProduct(productId: string) {
   await db.delete(products).where(eq(products.id, productId));
 }
 
+function dualCurrencyPrices(
+  priceMinor: number,
+  originalPriceMinor: number | null = null
+) {
+  return [
+    { currency: 'UAH' as const, priceMinor, originalPriceMinor },
+    { currency: 'USD' as const, priceMinor, originalPriceMinor },
+  ];
+}
+
+function dualCurrencyPriceRows(
+  productId: string,
+  priceMinor: number,
+  originalPriceMinor: number | null = null
+) {
+  return dualCurrencyPrices(priceMinor, originalPriceMinor).map(price => ({
+    productId,
+    currency: price.currency,
+    priceMinor: price.priceMinor,
+    originalPriceMinor: price.originalPriceMinor,
+    price: toDbMoney(price.priceMinor),
+    originalPrice:
+      price.originalPriceMinor == null
+        ? null
+        : toDbMoney(price.originalPriceMinor),
+  }));
+}
+
 describe.sequential('admin product photo management', () => {
   const createdProductIds: string[] = [];
 
@@ -54,7 +82,7 @@ describe.sequential('admin product photo management', () => {
       stock: 5,
       isActive: true,
       isFeatured: false,
-      prices: [{ currency: 'USD', priceMinor: 3200, originalPriceMinor: null }],
+      prices: dualCurrencyPrices(3200),
       images: [
         {
           uploadId: 'u1',
@@ -149,14 +177,9 @@ describe.sequential('admin product photo management', () => {
       sku: null,
     });
 
-    await db.insert(productPrices).values({
-      productId,
-      currency: 'USD',
-      priceMinor: 4500,
-      originalPriceMinor: null,
-      price: toDbMoney(4500),
-      originalPrice: null,
-    });
+    await db
+      .insert(productPrices)
+      .values(dualCurrencyPriceRows(productId, 4500));
 
     const [primaryImage, secondaryImage] = await db
       .insert(productImages)
@@ -279,14 +302,9 @@ describe.sequential('admin product photo management', () => {
       sku: null,
     });
 
-    await db.insert(productPrices).values({
-      productId,
-      currency: 'USD',
-      priceMinor: 2700,
-      originalPriceMinor: null,
-      price: toDbMoney(2700),
-      originalPrice: null,
-    });
+    await db
+      .insert(productPrices)
+      .values(dualCurrencyPriceRows(productId, 2700));
 
     await expect(
       updateProduct(productId, {
@@ -321,14 +339,9 @@ describe.sequential('admin product photo management', () => {
       sku: null,
     });
 
-    await db.insert(productPrices).values({
-      productId,
-      currency: 'USD',
-      priceMinor: 3100,
-      originalPriceMinor: null,
-      price: toDbMoney(3100),
-      originalPrice: null,
-    });
+    await db
+      .insert(productPrices)
+      .values(dualCurrencyPriceRows(productId, 3100));
 
     const updated = await updateProduct(productId, {
       title: 'Legacy photo product renamed',

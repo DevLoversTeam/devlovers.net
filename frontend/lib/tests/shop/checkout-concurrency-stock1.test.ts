@@ -242,7 +242,7 @@ describe('P0-8.10.1 checkout concurrency: stock=1, two parallel checkouts', () =
       const results = [r1, r2];
 
       const successResults = results.filter(result => result.status === 201);
-      const failedResults = results.filter(result => result.status === 409);
+      const failedResults = results.filter(result => result.status === 422);
 
       expect(successResults).toHaveLength(1);
       expect(failedResults).toHaveLength(1);
