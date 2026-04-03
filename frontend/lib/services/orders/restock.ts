@@ -111,6 +111,11 @@ type OrderCanceledNotificationState = Pick<
   | 'shippingStatus'
 >;
 
+type RestockFinalizeState = Pick<
+  OrderRow,
+  'status' | 'inventoryStatus' | 'stockRestored'
+>;
+
 async function loadOrderCanceledNotificationState(
   orderId: string
 ): Promise<OrderCanceledNotificationState | null> {
@@ -141,6 +146,33 @@ function buildOrderCanceledEventDedupeKey(orderId: string): string {
     eventName: 'order_canceled',
     status: 'CANCELED',
   });
+}
+
+function isRestockReasonAlreadyFinalized(
+  state: RestockFinalizeState,
+  reason: RestockReason | undefined
+): boolean {
+  if (reason === 'canceled') {
+    return (
+      state.status === 'CANCELED' &&
+      state.inventoryStatus === 'released' &&
+      state.stockRestored
+    );
+  }
+
+  if (reason === 'failed' || reason === 'stale') {
+    return (
+      state.status === 'INVENTORY_FAILED' &&
+      state.inventoryStatus === 'released' &&
+      state.stockRestored
+    );
+  }
+
+  if (reason === 'refunded') {
+    return state.inventoryStatus === 'released' && state.stockRestored;
+  }
+
+  return false;
 }
 
 async function ensureOrderCanceledCanonicalEvent(args: {
@@ -310,6 +342,20 @@ export async function restockOrder(
       .returning({ id: orders.id });
 
     if (!touched) {
+      const [latest] = await db
+        .select({
+          status: orders.status,
+          inventoryStatus: orders.inventoryStatus,
+          stockRestored: orders.stockRestored,
+        })
+        .from(orders)
+        .where(eq(orders.id, orderId))
+        .limit(1);
+
+      if (latest && isRestockReasonAlreadyFinalized(latest, reason)) {
+        return;
+      }
+
       throw new OrderStateInvalidError(
         `Cannot finalize orphan restock due to concurrent order state change.`,
         {
@@ -471,6 +517,20 @@ export async function restockOrder(
     .returning({ id: orders.id });
 
   if (!finalized) {
+    const [latest] = await db
+      .select({
+        status: orders.status,
+        inventoryStatus: orders.inventoryStatus,
+        stockRestored: orders.stockRestored,
+      })
+      .from(orders)
+      .where(eq(orders.id, orderId))
+      .limit(1);
+
+    if (latest && isRestockReasonAlreadyFinalized(latest, reason)) {
+      return;
+    }
+
     throw new OrderStateInvalidError(
       `Cannot finalize restock due to concurrent order state change.`,
       {
