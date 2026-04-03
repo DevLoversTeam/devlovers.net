@@ -1,3 +1,4 @@
+import { NextRequest } from 'next/server';
 import {
   afterAll,
   beforeAll,
@@ -9,6 +10,7 @@ import {
 } from 'vitest';
 
 import { makeCheckoutReq } from '@/lib/tests/helpers/makeCheckoutReq';
+import { TEST_LEGAL_CONSENT } from '@/lib/tests/shop/test-legal-consent';
 
 vi.mock('@/lib/auth', () => ({
   getCurrentUser: vi.fn().mockResolvedValue(null),
@@ -38,6 +40,7 @@ vi.mock('@/lib/services/orders/payment-attempts', async () => {
 });
 
 import { POST } from '@/app/api/shop/checkout/route';
+import { getCurrentUser } from '@/lib/auth';
 import {
   IdempotencyConflictError,
   InsufficientStockError,
@@ -46,10 +49,14 @@ import {
   PriceConfigError,
 } from '@/lib/services/errors';
 import { createOrderWithItems } from '@/lib/services/orders';
+import { ensureStripePaymentIntentForOrder } from '@/lib/services/orders/payment-attempts';
 
 type MockedFn = ReturnType<typeof vi.fn>;
 
 const createOrderWithItemsMock = createOrderWithItems as unknown as MockedFn;
+const ensureStripePaymentIntentForOrderMock =
+  ensureStripePaymentIntentForOrder as unknown as MockedFn;
+const getCurrentUserMock = getCurrentUser as unknown as MockedFn;
 
 const __prevRateLimitDisabled = process.env.RATE_LIMIT_DISABLED;
 const __prevPaymentsEnabled = process.env.PAYMENTS_ENABLED;
@@ -77,6 +84,9 @@ afterAll(() => {
 beforeEach(() => {
   vi.clearAllMocks();
   createOrderWithItemsMock.mockReset();
+  ensureStripePaymentIntentForOrderMock.mockReset();
+  getCurrentUserMock.mockReset();
+  getCurrentUserMock.mockResolvedValue(null);
 });
 
 describe('checkout route validation/business error contract', () => {
@@ -220,5 +230,205 @@ describe('checkout route validation/business error contract', () => {
     expect(response.status).toBe(500);
     const json = await response.json();
     expect(json.code).toBe('INTERNAL_ERROR');
+  });
+});
+
+function makeRouteCheckoutReq(params: {
+  idempotencyKey?: string;
+  paymentProvider?: 'stripe' | 'monobank';
+  paymentMethod?: 'stripe_card' | 'monobank_invoice';
+  userId?: string;
+}) {
+  const headers = new Headers({
+    'content-type': 'application/json',
+    'accept-language': 'uk-UA',
+    origin: 'http://localhost:3000',
+  });
+
+  if (params.idempotencyKey !== undefined) {
+    headers.set('idempotency-key', params.idempotencyKey);
+  }
+
+  return new NextRequest(
+    new Request('http://localhost:3000/api/shop/checkout', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        items: [
+          {
+            productId: '11111111-1111-4111-8111-111111111111',
+            quantity: 1,
+          },
+        ],
+        legalConsent: TEST_LEGAL_CONSENT,
+        ...(params.paymentProvider
+          ? { paymentProvider: params.paymentProvider }
+          : {}),
+        ...(params.paymentMethod
+          ? { paymentMethod: params.paymentMethod }
+          : {}),
+        ...(params.userId ? { userId: params.userId } : {}),
+      }),
+    })
+  );
+}
+
+function mockSuccessfulStripeCheckout(args?: { orderId?: string }) {
+  const orderId = args?.orderId ?? '11111111-1111-4111-8111-111111111123';
+
+  createOrderWithItemsMock.mockResolvedValueOnce({
+    order: {
+      id: orderId,
+      currency: 'UAH',
+      totalAmount: 10,
+      paymentStatus: 'pending',
+      paymentProvider: 'stripe',
+      paymentIntentId: null,
+    },
+    isNew: true,
+    totalCents: 1000,
+  });
+
+  ensureStripePaymentIntentForOrderMock.mockResolvedValueOnce({
+    paymentIntentId: `pi_test_${orderId}`,
+    clientSecret: `cs_test_${orderId}`,
+    attemptId: `attempt_${orderId}`,
+    attemptNumber: 1,
+  });
+}
+
+describe('checkout route idempotency and identity contract', () => {
+  it('rejects missing idempotency key for standard checkout', async () => {
+    const response = await POST(
+      makeRouteCheckoutReq({
+        paymentProvider: 'stripe',
+        paymentMethod: 'stripe_card',
+      })
+    );
+
+    expect(response.status).toBe(400);
+    const json = await response.json();
+    expect(json.code).toBe('MISSING_IDEMPOTENCY_KEY');
+    expect(createOrderWithItemsMock).not.toHaveBeenCalled();
+  });
+
+  it.each(['short', 'bad key!*', 'a'.repeat(129)])(
+    'rejects malformed idempotency key for standard checkout: %s',
+    async idempotencyKey => {
+      const response = await POST(
+        makeRouteCheckoutReq({
+          idempotencyKey,
+          paymentProvider: 'stripe',
+          paymentMethod: 'stripe_card',
+        })
+      );
+
+      expect(response.status).toBe(400);
+      const json = await response.json();
+      expect(json.code).toBe('INVALID_IDEMPOTENCY_KEY');
+      expect(createOrderWithItemsMock).not.toHaveBeenCalled();
+    }
+  );
+
+  it('keeps monobank missing-idempotency behavior on INVALID_REQUEST', async () => {
+    const response = await POST(
+      makeRouteCheckoutReq({
+        paymentProvider: 'monobank',
+        paymentMethod: 'monobank_invoice',
+      })
+    );
+
+    expect(response.status).toBe(400);
+    const json = await response.json();
+    expect(json.code).toBe('INVALID_REQUEST');
+    expect(createOrderWithItemsMock).not.toHaveBeenCalled();
+  });
+
+  it('keeps monobank malformed-idempotency behavior on INVALID_REQUEST', async () => {
+    const response = await POST(
+      makeRouteCheckoutReq({
+        idempotencyKey: 'bad key!*',
+        paymentProvider: 'monobank',
+        paymentMethod: 'monobank_invoice',
+      })
+    );
+
+    expect(response.status).toBe(400);
+    const json = await response.json();
+    expect(json.code).toBe('INVALID_REQUEST');
+    expect(createOrderWithItemsMock).not.toHaveBeenCalled();
+  });
+
+  it('rejects guest checkout when payload smuggles userId', async () => {
+    const response = await POST(
+      makeRouteCheckoutReq({
+        idempotencyKey: 'guest_userid_smuggle_0001',
+        userId: '11111111-1111-4111-8111-111111111111',
+      })
+    );
+
+    expect(response.status).toBe(400);
+    const json = await response.json();
+    expect(json.code).toBe('USER_ID_NOT_ALLOWED');
+    expect(createOrderWithItemsMock).not.toHaveBeenCalled();
+  });
+
+  it('rejects authenticated checkout when payload userId mismatches session user', async () => {
+    getCurrentUserMock.mockResolvedValueOnce({
+      id: '22222222-2222-4222-8222-222222222222',
+    });
+
+    const response = await POST(
+      makeRouteCheckoutReq({
+        idempotencyKey: 'user_mismatch_checkout_0001',
+        userId: '11111111-1111-4111-8111-111111111111',
+      })
+    );
+
+    expect(response.status).toBe(400);
+    const json = await response.json();
+    expect(json.code).toBe('USER_MISMATCH');
+    expect(createOrderWithItemsMock).not.toHaveBeenCalled();
+  });
+
+  it('allows authenticated checkout when payload userId matches the session user', async () => {
+    const userId = '11111111-1111-4111-8111-111111111111';
+    getCurrentUserMock.mockResolvedValueOnce({ id: userId });
+    mockSuccessfulStripeCheckout({
+      orderId: '11111111-1111-4111-8111-111111111124',
+    });
+
+    const response = await POST(
+      makeRouteCheckoutReq({
+        idempotencyKey: 'user_match_checkout_0001',
+        userId,
+      })
+    );
+
+    expect(response.status).toBe(201);
+    expect(createOrderWithItemsMock).toHaveBeenCalledTimes(1);
+    expect(createOrderWithItemsMock.mock.calls[0]?.[0]).toMatchObject({
+      idempotencyKey: 'user_match_checkout_0001',
+      userId,
+    });
+  });
+
+  it('allows guest checkout when payload omits userId', async () => {
+    mockSuccessfulStripeCheckout({
+      orderId: '11111111-1111-4111-8111-111111111125',
+    });
+
+    const response = await POST(
+      makeRouteCheckoutReq({
+        idempotencyKey: 'guest_checkout_without_user_0001',
+      })
+    );
+
+    expect(response.status).toBe(201);
+    expect(createOrderWithItemsMock).toHaveBeenCalledTimes(1);
+    expect(createOrderWithItemsMock.mock.calls[0]?.[0]).toMatchObject({
+      idempotencyKey: 'guest_checkout_without_user_0001',
+    });
+    expect(createOrderWithItemsMock.mock.calls[0]?.[0]?.userId).toBeNull();
   });
 });
