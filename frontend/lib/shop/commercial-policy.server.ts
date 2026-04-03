@@ -2,6 +2,7 @@ import 'server-only';
 
 import { isMonobankEnabled } from '@/lib/env/monobank';
 import { readServerEnv } from '@/lib/env/server-env';
+import { assertCriticalShopEnv } from '@/lib/env/shop-critical';
 import { isPaymentsEnabled as isStripePaymentsEnabled } from '@/lib/env/stripe';
 
 export type StandardStorefrontProviderCapabilities = {
@@ -22,25 +23,14 @@ function isFlagEnabled(value: string | undefined): boolean {
 }
 
 export function resolveStandardStorefrontProviderCapabilities(): StandardStorefrontProviderCapabilities {
-  let stripeCheckoutEnabled = false;
-  try {
-    stripeCheckoutEnabled = isStripePaymentsEnabled({
-      requirePublishableKey: true,
-    });
-  } catch {
-    stripeCheckoutEnabled = false;
-  }
+  assertCriticalShopEnv();
+
+  const stripeCheckoutEnabled = isStripePaymentsEnabled({
+    requirePublishableKey: true,
+  });
 
   const paymentsEnabled = isFlagEnabled(readServerEnv('PAYMENTS_ENABLED'));
-
-  let monobankCheckoutEnabled = false;
-  if (paymentsEnabled) {
-    try {
-      monobankCheckoutEnabled = isMonobankEnabled();
-    } catch {
-      monobankCheckoutEnabled = false;
-    }
-  }
+  const monobankCheckoutEnabled = paymentsEnabled ? isMonobankEnabled() : false;
 
   const monobankGooglePayEnabled =
     monobankCheckoutEnabled &&

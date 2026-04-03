@@ -17,6 +17,7 @@ import {
   NovaPoshtaConfigError,
 } from '@/lib/env/nova-poshta';
 import { readServerEnv } from '@/lib/env/server-env';
+import { assertCriticalShopEnv } from '@/lib/env/shop-critical';
 import { getShopLegalVersions } from '@/lib/env/shop-legal';
 import { logError, logWarn } from '@/lib/logging';
 import { writePaymentEvent } from '@/lib/services/shop/events/write-payment-event';
@@ -880,6 +881,8 @@ export async function createOrderWithItems({
   paymentProvider?: PaymentProvider;
   paymentMethod?: PaymentMethod | null;
 }): Promise<CheckoutResult> {
+  assertCriticalShopEnv();
+
   if (requestedProvider === 'none') {
     throw new InvalidPayloadError('paymentProvider "none" is not supported.', {
       code: 'INVALID_PAYLOAD',
