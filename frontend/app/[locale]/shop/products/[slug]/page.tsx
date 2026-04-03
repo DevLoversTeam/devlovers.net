@@ -5,6 +5,7 @@ import { getMessages, getTranslations } from 'next-intl/server';
 
 import { AddToCartButton } from '@/components/shop/AddToCartButton';
 import { ProductGallery } from '@/components/shop/ProductGallery';
+import { SizeGuideAccordion } from '@/components/shop/SizeGuideAccordion';
 import { Link } from '@/i18n/routing';
 import { getStorefrontAvailabilityState } from '@/lib/shop/availability';
 import { formatMoney } from '@/lib/shop/currency';
@@ -39,7 +40,7 @@ export default async function ProductPage({
   const commerceProduct =
     result.kind === 'available' ? result.commerceProduct : null;
   const availabilityState = getStorefrontAvailabilityState(commerceProduct);
-  const sizeGuide = getApparelSizeGuideForProduct(commerceProduct, locale);
+  const sizeGuide = getApparelSizeGuideForProduct(product, locale);
   const galleryImages = getProductGalleryImages(product);
 
   const NAV_LINK = cn(
@@ -145,6 +146,12 @@ export default async function ProductPage({
               </div>
             );
           })()}
+
+          {commerceProduct === null && sizeGuide ? (
+            <section className="mt-6" aria-label="Size guide">
+              <SizeGuideAccordion sizeGuide={sizeGuide} />
+            </section>
+          ) : null}
 
           {commerceProduct ? (
             <section aria-label="Purchase">
