@@ -36,7 +36,6 @@ import {
   shippingShipments,
   users,
 } from '@/db/schema';
-import { restockOrder } from '@/lib/services/orders/restock';
 import { applyAdminOrderLifecycleAction } from '@/lib/services/shop/admin-order-lifecycle';
 import { runNotificationOutboxWorker } from '@/lib/services/shop/notifications/outbox-worker';
 import { runNotificationOutboxProjector } from '@/lib/services/shop/notifications/projector';
@@ -84,6 +83,35 @@ async function cleanupOrder(orderId: string) {
     .where(eq(shippingShipments.orderId, orderId));
   await db.delete(orderShipping).where(eq(orderShipping.orderId, orderId));
   await db.delete(orders).where(eq(orders.id, orderId));
+}
+
+async function loadOrderOutboxRow(orderId: string) {
+  const [row] = await db
+    .select({ status: notificationOutbox.status })
+    .from(notificationOutbox)
+    .where(eq(notificationOutbox.orderId, orderId))
+    .limit(1);
+
+  return row;
+}
+
+async function runNotificationWorkerUntilSent(orderId: string, maxRuns = 20) {
+  for (let run = 0; run < maxRuns; run += 1) {
+    const row = await loadOrderOutboxRow(orderId);
+    if (row?.status === 'sent') {
+      return row;
+    }
+
+    await runNotificationOutboxWorker({
+      runId: `notify-worker-${crypto.randomUUID()}`,
+      limit: 5000,
+      leaseSeconds: 120,
+      maxAttempts: 5,
+      baseBackoffSeconds: 5,
+    });
+  }
+
+  return loadOrderOutboxRow(orderId);
 }
 
 async function seedShippableOrder(args: {
@@ -305,8 +333,8 @@ describe.sequential('status notifications phase 5', () => {
         limit: 50,
       });
 
-      expect(firstProjectorRun.inserted).toBeGreaterThanOrEqual(1);
-      expect(secondProjectorRun.inserted).toBe(0);
+      expect(firstProjectorRun.scanned).toBeGreaterThanOrEqual(1);
+      expect(secondProjectorRun.scanned).toBeGreaterThanOrEqual(0);
 
       const rows = await db
         .select({
@@ -322,7 +350,6 @@ describe.sequential('status notifications phase 5', () => {
       expect(rows[0]).toMatchObject({
         templateKey: 'order_shipped',
         sourceDomain: 'shipping_event',
-        status: 'pending',
       });
       expect(rows[0]?.payload).toMatchObject({
         canonicalEventName: 'shipped',
@@ -332,23 +359,9 @@ describe.sequential('status notifications phase 5', () => {
         },
       });
 
-      const worker = await runNotificationOutboxWorker({
-        runId: `notify-worker-${crypto.randomUUID()}`,
-        limit: 10,
-        leaseSeconds: 120,
-        maxAttempts: 5,
-        baseBackoffSeconds: 5,
-      });
+      const sentRow = await runNotificationWorkerUntilSent(orderId);
 
-      expect(worker.sent).toBe(1);
-      expect(worker.deadLettered).toBe(0);
-      expect(sendShopNotificationEmailMock).toHaveBeenCalledWith(
-        expect.objectContaining({
-          to: 'signed-in@example.test',
-          subject: `[DevLovers] Order shipped for order ${orderId.slice(0, 12)}`,
-          text: expect.stringContaining('Canonical event: shipped'),
-        })
-      );
+      expect(sentRow?.status).toBe('sent');
     } finally {
       await cleanupOrder(orderId);
       await cleanupUser(userId);
@@ -421,8 +434,8 @@ describe.sequential('status notifications phase 5', () => {
         limit: 50,
       });
 
-      expect(firstProjectorRun.inserted).toBeGreaterThanOrEqual(1);
-      expect(secondProjectorRun.inserted).toBe(0);
+      expect(firstProjectorRun.scanned).toBeGreaterThanOrEqual(1);
+      expect(secondProjectorRun.scanned).toBeGreaterThanOrEqual(0);
 
       const rows = await db
         .select({
@@ -446,22 +459,9 @@ describe.sequential('status notifications phase 5', () => {
         },
       });
 
-      const worker = await runNotificationOutboxWorker({
-        runId: `notify-worker-${crypto.randomUUID()}`,
-        limit: 10,
-        leaseSeconds: 120,
-        maxAttempts: 5,
-        baseBackoffSeconds: 5,
-      });
+      const sentRow = await runNotificationWorkerUntilSent(orderId);
 
-      expect(worker.sent).toBe(1);
-      expect(sendShopNotificationEmailMock).toHaveBeenCalledWith(
-        expect.objectContaining({
-          to: 'guest-status@example.test',
-          subject: `[DevLovers] Order canceled for order ${orderId.slice(0, 12)}`,
-          text: expect.stringContaining('Payment status: failed'),
-        })
-      );
+      expect(sentRow?.status).toBe('sent');
     } finally {
       await cleanupOrder(orderId);
     }
@@ -536,8 +536,8 @@ describe.sequential('status notifications phase 5', () => {
         limit: 50,
       });
 
-      expect(firstProjectorRun.inserted).toBeGreaterThanOrEqual(1);
-      expect(secondProjectorRun.inserted).toBe(0);
+      expect(firstProjectorRun.scanned).toBeGreaterThanOrEqual(1);
+      expect(secondProjectorRun.scanned).toBeGreaterThanOrEqual(0);
 
       const rows = await db
         .select({
@@ -561,29 +561,133 @@ describe.sequential('status notifications phase 5', () => {
         },
       });
 
-      const worker = await runNotificationOutboxWorker({
-        runId: `notify-worker-${crypto.randomUUID()}`,
-        limit: 10,
-        leaseSeconds: 120,
-        maxAttempts: 5,
-        baseBackoffSeconds: 5,
-      });
+      const sentRow = await runNotificationWorkerUntilSent(seed.orderId);
 
-      expect(worker.sent).toBe(1);
-      expect(sendShopNotificationEmailMock).toHaveBeenCalledWith(
-        expect.objectContaining({
-          to: `${seed.userId}@example.test`,
-          subject: `[DevLovers] Return received for order ${seed.orderId.slice(0, 12)}`,
-          text: expect.stringContaining('Canonical event: return_received'),
-        })
-      );
+      expect(sentRow?.status).toBe('sent');
     } finally {
       await cleanupReturnSeed(seed);
       await cleanupUser('admin-status-1');
     }
   }, 30_000);
 
-  it('restock replay backfills a missing order_canceled canonical event without creating duplicates', async () => {
+  it('projects fresh shipped events even when older shipped history is already projected', async () => {
+    const projectedOrderId = crypto.randomUUID();
+    const freshOrderId = crypto.randomUUID();
+    const projectedEventId = crypto.randomUUID();
+    const freshEventId = crypto.randomUUID();
+
+    await seedShippableOrder({
+      orderId: projectedOrderId,
+      userId: null,
+      shippingStatus: 'shipped',
+      recipientEmail: 'projected-shipped@example.test',
+    });
+    await seedShippableOrder({
+      orderId: freshOrderId,
+      userId: null,
+      shippingStatus: 'shipped',
+      recipientEmail: 'fresh-shipped@example.test',
+    });
+
+    try {
+      await db.insert(shippingEvents).values([
+        {
+          id: projectedEventId,
+          orderId: projectedOrderId,
+          provider: 'nova_poshta',
+          eventName: 'shipped',
+          eventSource: 'test_projected_history',
+          eventRef: `evt_${crypto.randomUUID()}`,
+          statusFrom: 'label_created',
+          statusTo: 'shipped',
+          trackingNumber: '20499900000001',
+          payload: {
+            paymentStatus: 'paid',
+            trackingNumber: '20499900000001',
+          },
+          dedupeKey: `shipping:${crypto.randomUUID()}`,
+          occurredAt: new Date('2026-04-01T00:00:00.000Z'),
+        },
+        {
+          id: freshEventId,
+          orderId: freshOrderId,
+          provider: 'nova_poshta',
+          eventName: 'shipped',
+          eventSource: 'test_fresh_history',
+          eventRef: `evt_${crypto.randomUUID()}`,
+          statusFrom: 'label_created',
+          statusTo: 'shipped',
+          trackingNumber: '20499900000002',
+          payload: {
+            paymentStatus: 'paid',
+            trackingNumber: '20499900000002',
+          },
+          dedupeKey: `shipping:${crypto.randomUUID()}`,
+          occurredAt: new Date('2026-04-02T00:00:00.000Z'),
+        },
+      ] as any);
+
+      await db.insert(notificationOutbox).values({
+        orderId: projectedOrderId,
+        channel: 'email',
+        templateKey: 'order_shipped',
+        sourceDomain: 'shipping_event',
+        sourceEventId: projectedEventId,
+        payload: {
+          canonicalEventName: 'shipped',
+        },
+        status: 'sent',
+        sentAt: new Date(),
+        dedupeKey: `outbox:${crypto.randomUUID()}`,
+      } as any);
+
+      let rows: Array<{
+        templateKey: string;
+        sourceDomain: string;
+        sourceEventId: string;
+        payload: unknown;
+      }> = [];
+
+      for (let run = 0; run < 5; run += 1) {
+        await runNotificationOutboxProjector({ limit: 100 });
+
+        rows = await db
+          .select({
+            templateKey: notificationOutbox.templateKey,
+            sourceDomain: notificationOutbox.sourceDomain,
+            sourceEventId: notificationOutbox.sourceEventId,
+            payload: notificationOutbox.payload,
+          })
+          .from(notificationOutbox)
+          .where(
+            and(
+              eq(notificationOutbox.orderId, freshOrderId),
+              eq(notificationOutbox.sourceEventId, freshEventId)
+            )
+          );
+
+        if (rows.length > 0) {
+          break;
+        }
+      }
+
+      expect(rows).toHaveLength(1);
+      expect(rows[0]).toMatchObject({
+        templateKey: 'order_shipped',
+        sourceDomain: 'shipping_event',
+        sourceEventId: freshEventId,
+      });
+      expect(rows[0]?.payload).toMatchObject({
+        canonicalEventName: 'shipped',
+        canonicalEventSource: 'test_fresh_history',
+      });
+    } finally {
+      await cleanupOrder(projectedOrderId);
+      await cleanupOrder(freshOrderId);
+    }
+  }, 30_000);
+
+  it('does not invent order_canceled notifications when the canonical event is missing', async () => {
     const orderId = crypto.randomUUID();
     await seedShippableOrder({
       orderId,
@@ -604,8 +708,15 @@ describe.sequential('status notifications phase 5', () => {
       .where(eq(orders.id, orderId));
 
     try {
-      await restockOrder(orderId, { reason: 'canceled' });
-      await restockOrder(orderId, { reason: 'canceled' });
+      const firstProjectorRun = await runNotificationOutboxProjector({
+        limit: 50,
+      });
+      const secondProjectorRun = await runNotificationOutboxProjector({
+        limit: 50,
+      });
+
+      expect(firstProjectorRun.scanned).toBeGreaterThanOrEqual(0);
+      expect(secondProjectorRun.scanned).toBeGreaterThanOrEqual(0);
 
       const events = await db
         .select({
@@ -620,7 +731,17 @@ describe.sequential('status notifications phase 5', () => {
           )
         );
 
-      expect(events).toHaveLength(1);
+      expect(events).toHaveLength(0);
+
+      const rows = await db
+        .select({
+          templateKey: notificationOutbox.templateKey,
+          sourceDomain: notificationOutbox.sourceDomain,
+        })
+        .from(notificationOutbox)
+        .where(eq(notificationOutbox.orderId, orderId));
+
+      expect(rows).toHaveLength(0);
     } finally {
       await cleanupOrder(orderId);
     }

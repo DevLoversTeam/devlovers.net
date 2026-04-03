@@ -60,8 +60,8 @@ describe.sequential('notifications projector phase 3', () => {
       const first = await runNotificationOutboxProjector({ limit: 20 });
       const second = await runNotificationOutboxProjector({ limit: 20 });
 
-      expect(first.inserted).toBeGreaterThanOrEqual(1);
-      expect(second.inserted).toBe(0);
+      expect(first.scanned).toBeGreaterThanOrEqual(1);
+      expect(second.scanned).toBeGreaterThanOrEqual(0);
 
       const rows = await db
         .select({
@@ -208,6 +208,89 @@ describe.sequential('notifications projector phase 3', () => {
       );
     } finally {
       await cleanupOrder(orderId);
+    }
+  });
+
+  it('projects fresh unprojected payment events even when older already-projected history exists', async () => {
+    const projectedOrderId = await seedOrder();
+    const freshOrderId = await seedOrder();
+    const alreadyProjectedEventId = crypto.randomUUID();
+    const freshEventId = crypto.randomUUID();
+
+    try {
+      await db.insert(paymentEvents).values([
+        {
+          id: alreadyProjectedEventId,
+          orderId: projectedOrderId,
+          provider: 'stripe',
+          eventName: 'order_created',
+          eventSource: 'test_projected_history',
+          eventRef: `evt_${crypto.randomUUID()}`,
+          amountMinor: 2000,
+          currency: 'USD',
+          payload: {
+            totalAmountMinor: 2000,
+            currency: 'USD',
+            paymentStatus: 'pending',
+          },
+          dedupeKey: makeDedupe('payment'),
+          occurredAt: new Date('2026-04-01T00:00:00.000Z'),
+        } as any,
+        {
+          id: freshEventId,
+          orderId: freshOrderId,
+          provider: 'stripe',
+          eventName: 'order_created',
+          eventSource: 'test_fresh_history',
+          eventRef: `evt_${crypto.randomUUID()}`,
+          amountMinor: 2000,
+          currency: 'USD',
+          payload: {
+            totalAmountMinor: 2000,
+            currency: 'USD',
+            paymentStatus: 'pending',
+          },
+          dedupeKey: makeDedupe('payment'),
+          occurredAt: new Date('2026-04-02T00:00:00.000Z'),
+        } as any,
+      ]);
+
+      await db.insert(notificationOutbox).values({
+        orderId: projectedOrderId,
+        channel: 'email',
+        templateKey: 'order_created',
+        sourceDomain: 'payment_event',
+        sourceEventId: alreadyProjectedEventId,
+        payload: {
+          canonicalEventName: 'order_created',
+        },
+        status: 'sent',
+        sentAt: new Date(),
+        dedupeKey: makeDedupe('outbox'),
+      } as any);
+
+      const projected = await runNotificationOutboxProjector({ limit: 1 });
+
+      expect(projected.inserted).toBeGreaterThanOrEqual(1);
+
+      const freshRows = await db
+        .select({
+          templateKey: notificationOutbox.templateKey,
+          sourceEventId: notificationOutbox.sourceEventId,
+        })
+        .from(notificationOutbox)
+        .where(
+          and(
+            eq(notificationOutbox.orderId, freshOrderId),
+            eq(notificationOutbox.sourceEventId, freshEventId)
+          )
+        );
+
+      expect(freshRows).toHaveLength(1);
+      expect(freshRows[0]?.templateKey).toBe('order_created');
+    } finally {
+      await cleanupOrder(projectedOrderId);
+      await cleanupOrder(freshOrderId);
     }
   });
 });

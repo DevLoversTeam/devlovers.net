@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { asc } from 'drizzle-orm';
+import { and, asc, eq, isNull } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { notificationOutbox, paymentEvents, shippingEvents } from '@/db/schema';
@@ -11,6 +11,8 @@ import {
   SHOP_NOTIFICATION_CHANNEL,
 } from '@/lib/services/shop/notifications/templates';
 
+type CanonicalOccurredAt = Date | string;
+
 type ShippingCanonicalRow = {
   id: string;
   orderId: string;
@@ -18,7 +20,7 @@ type ShippingCanonicalRow = {
   eventSource: string;
   eventRef: string | null;
   payload: Record<string, unknown>;
-  occurredAt: Date;
+  occurredAt: CanonicalOccurredAt;
 };
 
 type PaymentCanonicalRow = {
@@ -28,7 +30,7 @@ type PaymentCanonicalRow = {
   eventSource: string;
   eventRef: string | null;
   payload: Record<string, unknown>;
-  occurredAt: Date;
+  occurredAt: CanonicalOccurredAt;
 };
 
 export type NotificationProjectorResult = {
@@ -41,6 +43,23 @@ export type NotificationProjectorResult = {
 function asObject(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
   return value as Record<string, unknown>;
+}
+
+function normalizeOccurredAt(
+  value: CanonicalOccurredAt | null | undefined
+): Date {
+  if (value instanceof Date) {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const parsed = new Date(value);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed;
+    }
+  }
+
+  return new Date();
 }
 
 function buildOutboxDedupeKey(args: {
@@ -63,7 +82,7 @@ function buildOutboxPayload(args: {
   canonicalEventName: string;
   canonicalEventSource: string;
   canonicalEventRef: string | null;
-  canonicalOccurredAt: Date;
+  canonicalOccurredAt: CanonicalOccurredAt;
   canonicalPayload: Record<string, unknown>;
 }) {
   return {
@@ -72,7 +91,9 @@ function buildOutboxPayload(args: {
     canonicalEventName: args.canonicalEventName,
     canonicalEventSource: args.canonicalEventSource,
     canonicalEventRef: args.canonicalEventRef,
-    canonicalOccurredAt: args.canonicalOccurredAt.toISOString(),
+    canonicalOccurredAt: normalizeOccurredAt(
+      args.canonicalOccurredAt
+    ).toISOString(),
     canonicalPayload: args.canonicalPayload,
   };
 }
@@ -94,6 +115,14 @@ async function projectShippingEvents(limit: number): Promise<{
       occurredAt: shippingEvents.occurredAt,
     })
     .from(shippingEvents)
+    .leftJoin(
+      notificationOutbox,
+      and(
+        eq(notificationOutbox.sourceEventId, shippingEvents.id),
+        eq(notificationOutbox.sourceDomain, 'shipping_event')
+      )
+    )
+    .where(isNull(notificationOutbox.id))
     .orderBy(asc(shippingEvents.occurredAt), asc(shippingEvents.id))
     .limit(limit)) as ShippingCanonicalRow[];
 
@@ -159,6 +188,14 @@ async function projectPaymentEvents(limit: number): Promise<{
       occurredAt: paymentEvents.occurredAt,
     })
     .from(paymentEvents)
+    .leftJoin(
+      notificationOutbox,
+      and(
+        eq(notificationOutbox.sourceEventId, paymentEvents.id),
+        eq(notificationOutbox.sourceDomain, 'payment_event')
+      )
+    )
+    .where(isNull(notificationOutbox.id))
     .orderBy(asc(paymentEvents.occurredAt), asc(paymentEvents.id))
     .limit(limit)) as PaymentCanonicalRow[];
 
