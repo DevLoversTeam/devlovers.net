@@ -9,11 +9,10 @@ import {
   productPrices,
   products,
 } from '@/db/schema/shop';
-import { IdempotencyConflictError } from '@/lib/services/errors';
+import { getShopLegalVersions } from '@/lib/env/shop-legal';
+import { InvalidPayloadError } from '@/lib/services/errors';
 import { createOrderWithItems } from '@/lib/services/orders';
 import { toDbMoney } from '@/lib/shop/money';
-
-import { TEST_LEGAL_CONSENT } from './test-legal-consent';
 
 type SeedProduct = {
   productId: string;
@@ -75,9 +74,21 @@ async function cleanupOrder(orderId: string) {
   await db.delete(orders).where(eq(orders.id, orderId));
 }
 
+function canonicalLegalConsent() {
+  const versions = getShopLegalVersions();
+  return {
+    termsAccepted: true as const,
+    privacyAccepted: true as const,
+    termsVersion: versions.termsVersion,
+    privacyVersion: versions.privacyVersion,
+  };
+}
+
 describe('checkout legal consent phase 4', () => {
   beforeEach(() => {
     vi.unstubAllEnvs();
+    vi.stubEnv('SHOP_TERMS_VERSION', 'terms-2026-02-27');
+    vi.stubEnv('SHOP_PRIVACY_VERSION', 'privacy-2026-02-27');
   });
 
   afterEach(() => {
@@ -88,6 +99,7 @@ describe('checkout legal consent phase 4', () => {
     const { productId } = await seedProduct();
     let orderId: string | null = null;
     const before = Date.now();
+    const canonicalVersions = getShopLegalVersions();
 
     try {
       const result = await createOrderWithItems({
@@ -96,7 +108,7 @@ describe('checkout legal consent phase 4', () => {
         locale: 'en-US',
         country: 'US',
         items: [{ productId, quantity: 1 }],
-        legalConsent: TEST_LEGAL_CONSENT,
+        legalConsent: canonicalLegalConsent(),
       });
 
       orderId = result.order.id;
@@ -121,8 +133,8 @@ describe('checkout legal consent phase 4', () => {
       expect(row).toBeTruthy();
       expect(row?.termsAccepted).toBe(true);
       expect(row?.privacyAccepted).toBe(true);
-      expect(row?.termsVersion).toBe('terms-2026-02-27');
-      expect(row?.privacyVersion).toBe('privacy-2026-02-27');
+      expect(row?.termsVersion).toBe(canonicalVersions.termsVersion);
+      expect(row?.privacyVersion).toBe(canonicalVersions.privacyVersion);
       expect(row?.source).toBe('checkout_explicit');
       expect(row?.locale).toBe('en-us');
       expect(row?.country).toBe('US');
@@ -135,12 +147,87 @@ describe('checkout legal consent phase 4', () => {
     }
   }, 30_000);
 
-  it('idempotency conflicts if legal consent versions change for same key', async () => {
+  it('rejects mismatched terms version and does not create an order', async () => {
+    const { productId } = await seedProduct();
+    const idempotencyKey = crypto.randomUUID();
+    const canonicalVersions = getShopLegalVersions();
+
+    try {
+      await expect(
+        createOrderWithItems({
+          idempotencyKey,
+          userId: null,
+          locale: 'en-US',
+          country: 'US',
+          items: [{ productId, quantity: 1 }],
+          legalConsent: {
+            termsAccepted: true,
+            privacyAccepted: true,
+            termsVersion: 'terms-2026-03-01',
+            privacyVersion: canonicalVersions.privacyVersion,
+          },
+        })
+      ).rejects.toMatchObject({
+        code: 'TERMS_VERSION_MISMATCH',
+      });
+
+      const persistedOrders = await db
+        .select({
+          id: orders.id,
+        })
+        .from(orders)
+        .where(eq(orders.idempotencyKey, idempotencyKey));
+
+      expect(persistedOrders).toHaveLength(0);
+    } finally {
+      await cleanupProduct(productId);
+    }
+  }, 30_000);
+
+  it('rejects mismatched privacy version and does not create an order', async () => {
+    const { productId } = await seedProduct();
+    const idempotencyKey = crypto.randomUUID();
+    const canonicalVersions = getShopLegalVersions();
+
+    try {
+      await expect(
+        createOrderWithItems({
+          idempotencyKey,
+          userId: null,
+          locale: 'en-US',
+          country: 'US',
+          items: [{ productId, quantity: 1 }],
+          legalConsent: {
+            termsAccepted: true,
+            privacyAccepted: true,
+            termsVersion: canonicalVersions.termsVersion,
+            privacyVersion: 'privacy-2026-03-01',
+          },
+        })
+      ).rejects.toMatchObject({
+        code: 'PRIVACY_VERSION_MISMATCH',
+      });
+
+      const persistedOrders = await db
+        .select({
+          id: orders.id,
+        })
+        .from(orders)
+        .where(eq(orders.idempotencyKey, idempotencyKey));
+
+      expect(persistedOrders).toHaveLength(0);
+    } finally {
+      await cleanupProduct(productId);
+    }
+  }, 30_000);
+
+  it('idempotent replay cannot bypass canonical legal version pinning', async () => {
     const { productId } = await seedProduct();
     let orderId: string | null = null;
     const idempotencyKey = crypto.randomUUID();
     let baselineConsentedAtMs: number | null = null;
     let baselineSource: string | null = null;
+    const canonicalVersions = getShopLegalVersions();
 
     try {
       const first = await createOrderWithItems({
@@ -149,7 +236,7 @@ describe('checkout legal consent phase 4', () => {
         locale: 'en-US',
         country: 'US',
         items: [{ productId, quantity: 1 }],
-        legalConsent: TEST_LEGAL_CONSENT,
+        legalConsent: canonicalLegalConsent(),
       });
 
       orderId = first.order.id;
@@ -176,10 +263,10 @@ describe('checkout legal consent phase 4', () => {
             termsAccepted: true,
             privacyAccepted: true,
             termsVersion: 'terms-2026-03-01',
-            privacyVersion: 'privacy-2026-02-27',
+            privacyVersion: canonicalVersions.privacyVersion,
           },
         })
-      ).rejects.toBeInstanceOf(IdempotencyConflictError);
+      ).rejects.toBeInstanceOf(InvalidPayloadError);
 
       const [afterConflict] = await db
         .select({
@@ -195,8 +282,10 @@ describe('checkout legal consent phase 4', () => {
       expect(afterConflict).toBeTruthy();
       expect(afterConflict?.consentedAt.getTime()).toBe(baselineConsentedAtMs);
       expect(afterConflict?.source).toBe(baselineSource);
-      expect(afterConflict?.termsVersion).toBe('terms-2026-02-27');
-      expect(afterConflict?.privacyVersion).toBe('privacy-2026-02-27');
+      expect(afterConflict?.termsVersion).toBe(canonicalVersions.termsVersion);
+      expect(afterConflict?.privacyVersion).toBe(
+        canonicalVersions.privacyVersion
+      );
     } finally {
       if (orderId) await cleanupOrder(orderId);
       await cleanupProduct(productId);
@@ -215,7 +304,7 @@ describe('checkout legal consent phase 4', () => {
         locale: 'en-US',
         country: 'US',
         items: [{ productId, quantity: 1 }],
-        legalConsent: TEST_LEGAL_CONSENT,
+        legalConsent: canonicalLegalConsent(),
       });
 
       orderId = first.order.id;
@@ -230,7 +319,7 @@ describe('checkout legal consent phase 4', () => {
         locale: 'en-US',
         country: 'US',
         items: [{ productId, quantity: 1 }],
-        legalConsent: TEST_LEGAL_CONSENT,
+        legalConsent: canonicalLegalConsent(),
       });
 
       expect(replay.isNew).toBe(false);
@@ -248,8 +337,10 @@ describe('checkout legal consent phase 4', () => {
         .limit(1);
 
       expect(restored).toBeTruthy();
-      expect(restored?.termsVersion).toBe('terms-2026-02-27');
-      expect(restored?.privacyVersion).toBe('privacy-2026-02-27');
+      expect(restored?.termsVersion).toBe(getShopLegalVersions().termsVersion);
+      expect(restored?.privacyVersion).toBe(
+        getShopLegalVersions().privacyVersion
+      );
       expect(restored?.source).toBe('checkout_explicit');
     } finally {
       if (orderId) await cleanupOrder(orderId);
@@ -269,7 +360,7 @@ describe('checkout legal consent phase 4', () => {
         locale: 'en-US',
         country: 'US',
         items: [{ productId, quantity: 1 }],
-        legalConsent: TEST_LEGAL_CONSENT,
+        legalConsent: canonicalLegalConsent(),
       });
 
       orderId = first.order.id;
@@ -294,7 +385,7 @@ describe('checkout legal consent phase 4', () => {
           locale: 'en-US',
           country: 'US',
           items: [{ productId, quantity: 1 }],
-          legalConsent: TEST_LEGAL_CONSENT,
+          legalConsent: canonicalLegalConsent(),
         })
       ).rejects.toMatchObject({
         code: 'IDEMPOTENCY_CONFLICT',

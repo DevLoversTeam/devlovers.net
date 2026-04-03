@@ -17,6 +17,7 @@ import {
   NovaPoshtaConfigError,
 } from '@/lib/env/nova-poshta';
 import { readServerEnv } from '@/lib/env/server-env';
+import { getShopLegalVersions } from '@/lib/env/shop-legal';
 import { logError, logWarn } from '@/lib/logging';
 import { writePaymentEvent } from '@/lib/services/shop/events/write-payment-event';
 import { resolveShippingAvailability } from '@/lib/services/shop/shipping/availability';
@@ -624,6 +625,25 @@ function resolveCheckoutLegalConsent(args: {
     args.legalConsent.privacyVersion,
     'privacyVersion'
   );
+  const canonicalLegalVersions = getShopLegalVersions();
+
+  if (termsVersion !== canonicalLegalVersions.termsVersion) {
+    throw new InvalidPayloadError(
+      'Terms version is outdated. Refresh and try again.',
+      {
+        code: 'TERMS_VERSION_MISMATCH',
+      }
+    );
+  }
+
+  if (privacyVersion !== canonicalLegalVersions.privacyVersion) {
+    throw new InvalidPayloadError(
+      'Privacy version is outdated. Refresh and try again.',
+      {
+        code: 'PRIVACY_VERSION_MISMATCH',
+      }
+    );
+  }
 
   const consentedAt = new Date();
   const source = 'checkout_explicit';
