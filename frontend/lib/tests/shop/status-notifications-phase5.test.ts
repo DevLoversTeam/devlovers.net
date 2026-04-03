@@ -4,6 +4,12 @@ import { and, eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const sendShopNotificationEmailMock = vi.hoisted(() => vi.fn());
+const writePaymentEventState = vi.hoisted(() => ({
+  failNext: false,
+}));
+const writeShippingEventState = vi.hoisted(() => ({
+  failNext: false,
+}));
 
 vi.mock('@/lib/services/shop/notifications/transport', () => ({
   sendShopNotificationEmail: (...args: any[]) =>
@@ -20,6 +26,42 @@ vi.mock('@/lib/services/shop/notifications/transport', () => ({
     }
   },
 }));
+
+vi.mock('@/lib/services/shop/events/write-payment-event', async () => {
+  const actual = await vi.importActual<any>(
+    '@/lib/services/shop/events/write-payment-event'
+  );
+
+  return {
+    ...actual,
+    writePaymentEvent: vi.fn(async (...args: any[]) => {
+      if (writePaymentEventState.failNext) {
+        writePaymentEventState.failNext = false;
+        throw new Error('write_payment_event_forced_failure');
+      }
+
+      return actual.writePaymentEvent(...args);
+    }),
+  };
+});
+
+vi.mock('@/lib/services/shop/events/write-shipping-event', async () => {
+  const actual = await vi.importActual<any>(
+    '@/lib/services/shop/events/write-shipping-event'
+  );
+
+  return {
+    ...actual,
+    writeShippingEvent: vi.fn(async (...args: any[]) => {
+      if (writeShippingEventState.failNext) {
+        writeShippingEventState.failNext = false;
+        throw new Error('write_shipping_event_forced_failure');
+      }
+
+      return actual.writeShippingEvent(...args);
+    }),
+  };
+});
 
 import { db } from '@/db';
 import {
@@ -265,6 +307,8 @@ async function cleanupReturnSeed(seed: {
 describe.sequential('status notifications phase 5', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    writePaymentEventState.failNext = false;
+    writeShippingEventState.failNext = false;
   });
 
   afterEach(() => {
@@ -275,6 +319,7 @@ describe.sequential('status notifications phase 5', () => {
     sendShopNotificationEmailMock.mockResolvedValue({
       messageId: 'msg-status-shipped-1',
     });
+    writeShippingEventState.failNext = true;
 
     const orderId = crypto.randomUUID();
     const userId = `user-${crypto.randomUUID()}`;
@@ -372,6 +417,7 @@ describe.sequential('status notifications phase 5', () => {
     sendShopNotificationEmailMock.mockResolvedValue({
       messageId: 'msg-status-canceled-1',
     });
+    writePaymentEventState.failNext = true;
 
     const orderId = crypto.randomUUID();
     await seedShippableOrder({

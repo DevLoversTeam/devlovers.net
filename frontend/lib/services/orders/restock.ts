@@ -6,6 +6,7 @@ import { db } from '@/db';
 import { inventoryMoves, orders } from '@/db/schema/shop';
 import { logWarn } from '@/lib/logging';
 import { buildPaymentEventDedupeKey } from '@/lib/services/shop/events/dedupe-key';
+import { writeCanonicalEventWithRetry } from '@/lib/services/shop/events/write-canonical-event-with-retry';
 import { writePaymentEvent } from '@/lib/services/shop/events/write-payment-event';
 import { closeShippingPipelineForOrder } from '@/lib/services/shop/shipping/pipeline-shutdown';
 import { isOrderNonPaymentStatusTransitionAllowed } from '@/lib/services/shop/transitions/order-state';
@@ -189,36 +190,38 @@ async function ensureOrderCanceledCanonicalEvent(args: {
     return;
   }
 
-  try {
-    await writePaymentEvent({
-      orderId: state.id,
-      provider: resolvePaymentProvider(state),
-      eventName: 'order_canceled',
-      eventSource: 'order_restock',
-      eventRef: null,
-      amountMinor: state.totalAmountMinor,
-      currency: state.currency,
-      payload: {
+  await writeCanonicalEventWithRetry({
+    write: () =>
+      writePaymentEvent({
         orderId: state.id,
-        totalAmountMinor: state.totalAmountMinor,
+        provider: resolvePaymentProvider(state),
+        eventName: 'order_canceled',
+        eventSource: 'order_restock',
+        eventRef: null,
+        amountMinor: state.totalAmountMinor,
         currency: state.currency,
-        paymentProvider: state.paymentProvider,
-        paymentStatus: state.paymentStatus,
-        orderStatus: state.status,
-        inventoryStatus: state.inventoryStatus,
-        shippingStatus: state.shippingStatus,
-        restockedAt: state.restockedAt?.toISOString() ?? null,
+        payload: {
+          orderId: state.id,
+          totalAmountMinor: state.totalAmountMinor,
+          currency: state.currency,
+          paymentProvider: state.paymentProvider,
+          paymentStatus: state.paymentStatus,
+          orderStatus: state.status,
+          inventoryStatus: state.inventoryStatus,
+          shippingStatus: state.shippingStatus,
+          restockedAt: state.restockedAt?.toISOString() ?? null,
+          ensuredBy: args.ensuredBy,
+        },
+        dedupeKey: buildOrderCanceledEventDedupeKey(state.id),
+      }).then(() => undefined),
+    onFinalFailure: error => {
+      logWarn('order_canceled_event_write_failed', {
+        orderId: args.orderId,
         ensuredBy: args.ensuredBy,
-      },
-      dedupeKey: buildOrderCanceledEventDedupeKey(state.id),
-    });
-  } catch (error) {
-    logWarn('order_canceled_event_write_failed', {
-      orderId: args.orderId,
-      ensuredBy: args.ensuredBy,
-      error: error instanceof Error ? error.message : String(error),
-    });
-  }
+        error: error instanceof Error ? error.message : String(error),
+      });
+    },
+  });
 }
 
 export async function restockOrder(

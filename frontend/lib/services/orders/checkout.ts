@@ -20,6 +20,7 @@ import { readServerEnv } from '@/lib/env/server-env';
 import { assertCriticalShopEnv } from '@/lib/env/shop-critical';
 import { getShopLegalVersions } from '@/lib/env/shop-legal';
 import { logError, logWarn } from '@/lib/logging';
+import { writeCanonicalEventWithRetry } from '@/lib/services/shop/events/write-canonical-event-with-retry';
 import { writePaymentEvent } from '@/lib/services/shop/events/write-payment-event';
 import { resolveShippingAvailability } from '@/lib/services/shop/shipping/availability';
 import {
@@ -110,15 +111,16 @@ async function writeOrderCreatedCanonicalEvent(
 async function ensureOrderCreatedCanonicalEvent(
   order: OrderSummaryWithMinor
 ): Promise<void> {
-  try {
-    await writeOrderCreatedCanonicalEvent(order);
-  } catch (error) {
-    logWarn('checkout_order_created_event_write_failed', {
-      orderId: order.id,
-      code: 'ORDER_CREATED_EVENT_WRITE_FAILED',
-      message: error instanceof Error ? error.message : String(error),
-    });
-  }
+  await writeCanonicalEventWithRetry({
+    write: () => writeOrderCreatedCanonicalEvent(order),
+    onFinalFailure: error => {
+      logWarn('checkout_order_created_event_write_failed', {
+        orderId: order.id,
+        code: 'ORDER_CREATED_EVENT_WRITE_FAILED',
+        message: error instanceof Error ? error.message : String(error),
+      });
+    },
+  });
 }
 
 async function getProductsForCheckout(

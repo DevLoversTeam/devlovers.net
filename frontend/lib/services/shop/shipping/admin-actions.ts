@@ -9,6 +9,7 @@ import {
   buildAdminAuditDedupeKey,
   buildShippingEventDedupeKey,
 } from '@/lib/services/shop/events/dedupe-key';
+import { writeCanonicalEventWithRetry } from '@/lib/services/shop/events/write-canonical-event-with-retry';
 import { writeShippingEvent } from '@/lib/services/shop/events/write-shipping-event';
 import { evaluateOrderShippingEligibility } from '@/lib/services/shop/shipping/eligibility';
 import { ensureQueuedInitialShipment } from '@/lib/services/shop/shipping/ensure-queued-initial-shipment';
@@ -522,41 +523,44 @@ async function ensureOrderShippedCanonicalEvent(args: {
     return;
   }
 
-  try {
-    await writeShippingEvent({
-      orderId: args.state.order_id,
-      shipmentId: args.state.shipment_id ?? null,
-      provider: args.state.shipping_provider ?? 'nova_poshta',
-      eventName: 'shipped',
-      eventSource: 'shipping_admin_action',
-      eventRef: args.requestId,
-      statusFrom: null,
-      statusTo: 'shipped',
-      trackingNumber: args.trackingNumber ?? args.state.tracking_number ?? null,
-      payload: {
-        orderId: args.state.order_id,
-        totalAmountMinor: args.state.total_amount_minor,
-        currency: args.state.currency,
-        paymentProvider: args.state.payment_provider,
-        paymentStatus: args.state.payment_status,
-        shippingStatus: args.state.shipping_status,
-        trackingNumber:
-          args.trackingNumber ?? args.state.tracking_number ?? null,
-        ensuredBy: args.ensuredBy,
-      },
-      dedupeKey: buildOrderShippedEventDedupe({
+  await writeCanonicalEventWithRetry({
+    write: () =>
+      writeShippingEvent({
         orderId: args.state.order_id,
         shipmentId: args.state.shipment_id ?? null,
-      }),
-    });
-  } catch (error) {
-    logWarn('order_shipped_event_write_failed', {
-      orderId: args.state.order_id,
-      requestId: args.requestId,
-      ensuredBy: args.ensuredBy,
-      error: error instanceof Error ? error.message : String(error),
-    });
-  }
+        provider: args.state.shipping_provider ?? 'nova_poshta',
+        eventName: 'shipped',
+        eventSource: 'shipping_admin_action',
+        eventRef: args.requestId,
+        statusFrom: null,
+        statusTo: 'shipped',
+        trackingNumber:
+          args.trackingNumber ?? args.state.tracking_number ?? null,
+        payload: {
+          orderId: args.state.order_id,
+          totalAmountMinor: args.state.total_amount_minor,
+          currency: args.state.currency,
+          paymentProvider: args.state.payment_provider,
+          paymentStatus: args.state.payment_status,
+          shippingStatus: args.state.shipping_status,
+          trackingNumber:
+            args.trackingNumber ?? args.state.tracking_number ?? null,
+          ensuredBy: args.ensuredBy,
+        },
+        dedupeKey: buildOrderShippedEventDedupe({
+          orderId: args.state.order_id,
+          shipmentId: args.state.shipment_id ?? null,
+        }),
+      }).then(() => undefined),
+    onFinalFailure: error => {
+      logWarn('order_shipped_event_write_failed', {
+        orderId: args.state.order_id,
+        requestId: args.requestId,
+        ensuredBy: args.ensuredBy,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    },
+  });
 }
 
 export async function applyShippingAdminAction(args: {

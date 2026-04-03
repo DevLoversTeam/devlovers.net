@@ -348,7 +348,7 @@ describe.sequential('checkout order-created notification phase 5', () => {
     }
   }, 30_000);
 
-  it('does not false-fail checkout when order_created persistence fails, and projector does not invent canonical rows', async () => {
+  it('does not false-fail checkout when the first order_created persistence attempt fails and inline retry persists it', async () => {
     const { productId } = await seedProduct();
     let orderId: string | null = null;
 
@@ -379,13 +379,13 @@ describe.sequential('checkout order-created notification phase 5', () => {
           )
         );
 
-      expect(firstEvents).toHaveLength(0);
+      expect(firstEvents).toHaveLength(1);
 
       const projector = await runNotificationOutboxProjector({
         limit: 50,
       });
 
-      expect(projector.scanned).toBeGreaterThanOrEqual(0);
+      expect(projector.scanned).toBeGreaterThanOrEqual(1);
 
       const persistedEvents = await db
         .select({
@@ -401,7 +401,11 @@ describe.sequential('checkout order-created notification phase 5', () => {
           )
         );
 
-      expect(persistedEvents).toHaveLength(0);
+      expect(persistedEvents).toHaveLength(1);
+      expect(persistedEvents[0]).toMatchObject({
+        eventName: 'order_created',
+        eventSource: 'checkout',
+      });
 
       const rows = await db
         .select({
@@ -412,7 +416,15 @@ describe.sequential('checkout order-created notification phase 5', () => {
         .from(notificationOutbox)
         .where(eq(notificationOutbox.orderId, orderId));
 
-      expect(rows).toHaveLength(0);
+      expect(rows).toHaveLength(1);
+      expect(rows[0]).toMatchObject({
+        templateKey: 'order_created',
+        sourceDomain: 'payment_event',
+      });
+      expect(rows[0]?.payload).toMatchObject({
+        canonicalEventName: 'order_created',
+        canonicalEventSource: 'checkout',
+      });
     } finally {
       if (orderId) await cleanupOrder(orderId);
       await cleanupProduct(productId);
