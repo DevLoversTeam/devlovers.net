@@ -21,21 +21,31 @@ vi.mock('@/lib/auth', () => ({
   getCurrentUser: vi.fn().mockResolvedValue(null),
 }));
 
-vi.mock('@/lib/env/monobank', () => ({
-  isMonobankEnabled: () => true,
-}));
+vi.mock('@/lib/env/monobank', async () => {
+  const actual = await vi.importActual<any>('@/lib/env/monobank');
+  return {
+    ...actual,
+    isMonobankEnabled: () => true,
+  };
+});
 
-vi.mock('@/lib/env/stripe', () => ({
-  isPaymentsEnabled: () => true,
-}));
+vi.mock('@/lib/env/stripe', async () => {
+  const actual = await vi.importActual<any>('@/lib/env/stripe');
+  return {
+    ...actual,
+    isPaymentsEnabled: () => true,
+  };
+});
 
 vi.mock('@/lib/services/orders/payment-attempts', () => ({
-  ensureStripePaymentIntentForOrder: vi.fn(async (args: { orderId: string }) => ({
-    paymentIntentId: `pi_test_${args.orderId}`,
-    clientSecret: `cs_test_${args.orderId}`,
-    attemptId: `attempt_${args.orderId}`,
-    attemptNumber: 1,
-  })),
+  ensureStripePaymentIntentForOrder: vi.fn(
+    async (args: { orderId: string }) => ({
+      paymentIntentId: `pi_test_${args.orderId}`,
+      clientSecret: `cs_test_${args.orderId}`,
+      attemptId: `attempt_${args.orderId}`,
+      attemptNumber: 1,
+    })
+  ),
 }));
 
 vi.mock('@/lib/services/orders', async () => {
@@ -58,6 +68,10 @@ type MockedFn = ReturnType<typeof vi.fn>;
 const __prevRateLimitDisabled = process.env.RATE_LIMIT_DISABLED;
 const __prevPaymentsEnabled = process.env.PAYMENTS_ENABLED;
 const __prevStripePaymentsEnabled = process.env.STRIPE_PAYMENTS_ENABLED;
+const __prevStripeSecret = process.env.STRIPE_SECRET_KEY;
+const __prevStripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+const __prevMonoToken = process.env.MONO_MERCHANT_TOKEN;
+const __prevShopBaseUrl = process.env.SHOP_BASE_URL;
 const __prevMonobankGpayEnabled = process.env.SHOP_MONOBANK_GPAY_ENABLED;
 const __prevStatusTokenSecret = process.env.SHOP_STATUS_TOKEN_SECRET;
 
@@ -65,6 +79,10 @@ beforeAll(() => {
   process.env.RATE_LIMIT_DISABLED = '1';
   process.env.PAYMENTS_ENABLED = 'true';
   process.env.STRIPE_PAYMENTS_ENABLED = 'true';
+  process.env.STRIPE_SECRET_KEY = 'sk_test_checkout_monobank_parse';
+  process.env.STRIPE_WEBHOOK_SECRET = 'whsec_test_checkout_monobank_parse';
+  process.env.MONO_MERCHANT_TOKEN = 'test_mono_token_checkout_parse';
+  process.env.SHOP_BASE_URL = 'http://localhost:3000';
   process.env.SHOP_MONOBANK_GPAY_ENABLED = 'false';
   process.env.SHOP_STATUS_TOKEN_SECRET =
     'test_status_token_secret_test_status_token_secret';
@@ -81,6 +99,19 @@ afterAll(() => {
   if (__prevStripePaymentsEnabled === undefined)
     delete process.env.STRIPE_PAYMENTS_ENABLED;
   else process.env.STRIPE_PAYMENTS_ENABLED = __prevStripePaymentsEnabled;
+
+  if (__prevStripeSecret === undefined) delete process.env.STRIPE_SECRET_KEY;
+  else process.env.STRIPE_SECRET_KEY = __prevStripeSecret;
+
+  if (__prevStripeWebhookSecret === undefined)
+    delete process.env.STRIPE_WEBHOOK_SECRET;
+  else process.env.STRIPE_WEBHOOK_SECRET = __prevStripeWebhookSecret;
+
+  if (__prevMonoToken === undefined) delete process.env.MONO_MERCHANT_TOKEN;
+  else process.env.MONO_MERCHANT_TOKEN = __prevMonoToken;
+
+  if (__prevShopBaseUrl === undefined) delete process.env.SHOP_BASE_URL;
+  else process.env.SHOP_BASE_URL = __prevShopBaseUrl;
 
   if (__prevMonobankGpayEnabled === undefined)
     delete process.env.SHOP_MONOBANK_GPAY_ENABLED;

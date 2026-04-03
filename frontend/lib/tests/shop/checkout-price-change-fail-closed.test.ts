@@ -15,6 +15,7 @@ import {
 import { resetEnvCache } from '@/lib/env';
 import { rehydrateCartItems } from '@/lib/services/products';
 import { deriveTestIpFromIdemKey } from '@/lib/tests/helpers/ip';
+import { TEST_LEGAL_CONSENT } from '@/lib/tests/shop/test-legal-consent';
 
 vi.mock('@/lib/auth', async () => {
   const actual =
@@ -25,9 +26,13 @@ vi.mock('@/lib/auth', async () => {
   };
 });
 
-vi.mock('@/lib/env/stripe', () => ({
-  isPaymentsEnabled: () => true,
-}));
+vi.mock('@/lib/env/stripe', async () => {
+  const actual = await vi.importActual<any>('@/lib/env/stripe');
+  return {
+    ...actual,
+    isPaymentsEnabled: () => true,
+  };
+});
 
 vi.mock('@/lib/services/orders/payment-attempts', async () => {
   resetEnvCache();
@@ -162,7 +167,7 @@ async function seedProduct(priceMinor: number): Promise<string> {
 
   await db.insert(productPrices).values({
     productId: product.id,
-    currency: 'USD',
+    currency: 'UAH',
     priceMinor,
     originalPriceMinor: null,
     price,
@@ -192,6 +197,7 @@ function makeCheckoutRequest(args: {
         paymentProvider: 'stripe',
         paymentMethod: 'stripe_card',
         pricingFingerprint: args.pricingFingerprint,
+        legalConsent: TEST_LEGAL_CONSENT,
         items: [{ productId: args.productId, quantity: 1 }],
       }),
     })
@@ -217,13 +223,14 @@ describe('checkout fail-closed for changed price mismatch', () => {
           body: JSON.stringify({
             paymentProvider: 'stripe',
             paymentMethod: 'stripe_card',
+            legalConsent: TEST_LEGAL_CONSENT,
             items: [{ productId, quantity: 1 }],
           }),
         })
       )
     );
 
-    expect(response.status).toBe(409);
+    expect(response.status).toBe(422);
     const json = await response.json();
     expect(json.code).toBe('CHECKOUT_PRICE_CHANGED');
     expect(json.message).toBe(
@@ -242,7 +249,7 @@ describe('checkout fail-closed for changed price mismatch', () => {
 
   it('rejects a stale pricing fingerprint after price change and creates no order', async () => {
     const productId = await seedProduct(900);
-    const quote = await rehydrateCartItems([{ productId, quantity: 1 }], 'USD');
+    const quote = await rehydrateCartItems([{ productId, quantity: 1 }], 'UAH');
     const pricingFingerprint = quote.summary.pricingFingerprint;
 
     expect(typeof pricingFingerprint).toBe('string');
@@ -258,7 +265,7 @@ describe('checkout fail-closed for changed price mismatch', () => {
       .where(
         and(
           eq(productPrices.productId, productId),
-          eq(productPrices.currency, 'USD')
+          eq(productPrices.currency, 'UAH')
         )
       );
 
@@ -271,7 +278,7 @@ describe('checkout fail-closed for changed price mismatch', () => {
       })
     );
 
-    expect(response.status).toBe(409);
+    expect(response.status).toBe(422);
     const json = await response.json();
     expect(json.code).toBe('CHECKOUT_PRICE_CHANGED');
     expect(json.message).toBe(
@@ -290,7 +297,7 @@ describe('checkout fail-closed for changed price mismatch', () => {
 
   it('accepts checkout when the authoritative pricing fingerprint is unchanged', async () => {
     const productId = await seedProduct(900);
-    const quote = await rehydrateCartItems([{ productId, quantity: 1 }], 'USD');
+    const quote = await rehydrateCartItems([{ productId, quantity: 1 }], 'UAH');
     const pricingFingerprint = quote.summary.pricingFingerprint;
 
     expect(typeof pricingFingerprint).toBe('string');

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { TEST_LEGAL_CONSENT } from '@/lib/tests/shop/test-legal-consent';
+
 function parseLoggedJson(spy: ReturnType<typeof vi.spyOn>, index = 0) {
   return JSON.parse(String(spy.mock.calls[index]?.[0] ?? '{}')) as Record<
     string,
@@ -37,6 +39,14 @@ describe('shop logging redaction real flows', () => {
 
     vi.doMock('@/lib/security/origin', () => ({
       guardBrowserSameOrigin: () => null,
+    }));
+    vi.doMock('@/lib/shop/commercial-policy.server', () => ({
+      resolveStandardStorefrontProviderCapabilities: () => ({
+        stripeCheckoutEnabled: true,
+        monobankCheckoutEnabled: false,
+        monobankGooglePayEnabled: false,
+        enabledProviders: ['stripe'],
+      }),
     }));
     vi.doMock('@/lib/security/rate-limit', () => ({
       getRateLimitSubject: vi.fn(() => 'checkout_logging_subject'),
@@ -76,6 +86,7 @@ describe('shop logging redaction real flows', () => {
           'x-request-id': 'checkout-redaction-test',
         },
         body: JSON.stringify({
+          legalConsent: TEST_LEGAL_CONSENT,
           userId: '11111111-1111-1111-1111-111111111111',
           items: [
             {

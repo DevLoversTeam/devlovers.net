@@ -14,8 +14,8 @@ import {
 import { db } from '@/db';
 import { orders, paymentAttempts, productPrices, products } from '@/db/schema';
 import { resetEnvCache } from '@/lib/env';
-import { toDbMoney } from '@/lib/shop/money';
 import { rehydrateCartItems } from '@/lib/services/products';
+import { toDbMoney } from '@/lib/shop/money';
 import { assertNotProductionDb } from '@/lib/tests/helpers/db-safety';
 import { deriveTestIpFromIdemKey } from '@/lib/tests/helpers/ip';
 import { TEST_LEGAL_CONSENT } from '@/lib/tests/shop/test-legal-consent';
@@ -54,6 +54,7 @@ vi.mock('@/lib/psp/monobank', () => ({
 
 const __prevRateLimitDisabled = process.env.RATE_LIMIT_DISABLED;
 const __prevPaymentsEnabled = process.env.PAYMENTS_ENABLED;
+const __prevStripePaymentsEnabled = process.env.STRIPE_PAYMENTS_ENABLED;
 const __prevMonoToken = process.env.MONO_MERCHANT_TOKEN;
 const __prevAppOrigin = process.env.APP_ORIGIN;
 const __prevShopBaseUrl = process.env.SHOP_BASE_URL;
@@ -62,6 +63,7 @@ const __prevStatusSecret = process.env.SHOP_STATUS_TOKEN_SECRET;
 beforeAll(() => {
   process.env.RATE_LIMIT_DISABLED = '1';
   process.env.PAYMENTS_ENABLED = 'true';
+  process.env.STRIPE_PAYMENTS_ENABLED = 'false';
   process.env.MONO_MERCHANT_TOKEN = 'test_mono_token';
   process.env.APP_ORIGIN = 'http://localhost:3000';
   process.env.SHOP_BASE_URL = 'http://localhost:3000';
@@ -77,6 +79,10 @@ afterAll(() => {
 
   if (__prevPaymentsEnabled === undefined) delete process.env.PAYMENTS_ENABLED;
   else process.env.PAYMENTS_ENABLED = __prevPaymentsEnabled;
+
+  if (__prevStripePaymentsEnabled === undefined)
+    delete process.env.STRIPE_PAYMENTS_ENABLED;
+  else process.env.STRIPE_PAYMENTS_ENABLED = __prevStripePaymentsEnabled;
 
   if (__prevMonoToken === undefined) delete process.env.MONO_MERCHANT_TOKEN;
   else process.env.MONO_MERCHANT_TOKEN = __prevMonoToken;
@@ -169,21 +175,21 @@ async function postCheckout(idemKey: string, productId: string) {
 
   const req = new NextRequest('http://localhost/api/shop/checkout', {
     method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        'accept-language': 'en-US,en;q=0.9',
-        'idempotency-key': idemKey,
-        'x-request-id': `mono-happy-${idemKey}`,
-        'x-forwarded-for': deriveTestIpFromIdemKey(idemKey),
-        origin: 'http://localhost:3000',
-      },
-      body: JSON.stringify({
-        items: [{ productId, quantity: 1 }],
-        paymentProvider: 'monobank',
-        pricingFingerprint: quote.summary.pricingFingerprint,
-        legalConsent: TEST_LEGAL_CONSENT,
-      }),
-    });
+    headers: {
+      'content-type': 'application/json',
+      'accept-language': 'en-US,en;q=0.9',
+      'idempotency-key': idemKey,
+      'x-request-id': `mono-happy-${idemKey}`,
+      'x-forwarded-for': deriveTestIpFromIdemKey(idemKey),
+      origin: 'http://localhost:3000',
+    },
+    body: JSON.stringify({
+      items: [{ productId, quantity: 1 }],
+      paymentProvider: 'monobank',
+      pricingFingerprint: quote.summary.pricingFingerprint,
+      legalConsent: TEST_LEGAL_CONSENT,
+    }),
+  });
 
   return mod.POST(req);
 }

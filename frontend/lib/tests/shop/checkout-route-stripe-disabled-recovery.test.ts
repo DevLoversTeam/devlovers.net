@@ -71,9 +71,13 @@ vi.mock('@/lib/env/readPositiveIntEnv', () => ({
   readPositiveIntEnv: mockReadPositiveIntEnv,
 }));
 
-vi.mock('@/lib/env/stripe', () => ({
-  isPaymentsEnabled: mockIsStripePaymentsEnabled,
-}));
+vi.mock('@/lib/env/stripe', async () => {
+  const actual = await vi.importActual<any>('@/lib/env/stripe');
+  return {
+    ...actual,
+    isPaymentsEnabled: mockIsStripePaymentsEnabled,
+  };
+});
 
 vi.mock('@/lib/logging', () => ({
   logError: vi.fn(),
@@ -309,7 +313,7 @@ describe('checkout route - stripe disabled recovery', () => {
     const response = await POST(makeRequest({ paymentProvider: 'stripe' }));
     const json = await response.json();
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(422);
     expect(json.code).toBe('LEGAL_CONSENT_REQUIRED');
     expect(mockCreateOrderWithItems).not.toHaveBeenCalled();
     expect(mockEnsureStripePaymentIntentForOrder).not.toHaveBeenCalled();

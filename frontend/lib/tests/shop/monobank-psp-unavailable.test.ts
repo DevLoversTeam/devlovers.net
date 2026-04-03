@@ -6,8 +6,10 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { db } from '@/db';
 import { orders, paymentAttempts, productPrices, products } from '@/db/schema';
 import { resetEnvCache } from '@/lib/env';
+import { rehydrateCartItems } from '@/lib/services/products';
 import { toDbMoney } from '@/lib/shop/money';
 import { deriveTestIpFromIdemKey } from '@/lib/tests/helpers/ip';
+import { TEST_LEGAL_CONSENT } from '@/lib/tests/shop/test-legal-consent';
 import { isUuidV1toV5 } from '@/lib/utils/uuid';
 
 vi.mock('@/lib/auth', () => ({
@@ -34,6 +36,7 @@ vi.mock('@/lib/psp/monobank', () => ({
 
 const __prevRateLimitDisabled = process.env.RATE_LIMIT_DISABLED;
 const __prevPaymentsEnabled = process.env.PAYMENTS_ENABLED;
+const __prevStripePaymentsEnabled = process.env.STRIPE_PAYMENTS_ENABLED;
 const __prevMonoToken = process.env.MONO_MERCHANT_TOKEN;
 const __prevAppOrigin = process.env.APP_ORIGIN;
 const __prevShopBaseUrl = process.env.SHOP_BASE_URL;
@@ -42,6 +45,7 @@ const __prevStatusSecret = process.env.SHOP_STATUS_TOKEN_SECRET;
 beforeAll(() => {
   process.env.RATE_LIMIT_DISABLED = '1';
   process.env.PAYMENTS_ENABLED = 'true';
+  process.env.STRIPE_PAYMENTS_ENABLED = 'false';
   process.env.MONO_MERCHANT_TOKEN = 'test_mono_token';
   process.env.APP_ORIGIN = 'http://localhost:3000';
   process.env.SHOP_BASE_URL = 'http://localhost:3000';
@@ -57,6 +61,10 @@ afterAll(() => {
 
   if (__prevPaymentsEnabled === undefined) delete process.env.PAYMENTS_ENABLED;
   else process.env.PAYMENTS_ENABLED = __prevPaymentsEnabled;
+
+  if (__prevStripePaymentsEnabled === undefined)
+    delete process.env.STRIPE_PAYMENTS_ENABLED;
+  else process.env.STRIPE_PAYMENTS_ENABLED = __prevStripePaymentsEnabled;
 
   if (__prevMonoToken === undefined) delete process.env.MONO_MERCHANT_TOKEN;
   else process.env.MONO_MERCHANT_TOKEN = __prevMonoToken;
@@ -160,6 +168,8 @@ async function postCheckout(idemKey: string, productId: string) {
   const mod = (await import('@/app/api/shop/checkout/route')) as unknown as {
     POST: (req: NextRequest) => Promise<Response>;
   };
+  const quote = await rehydrateCartItems([{ productId, quantity: 1 }], 'UAH');
+  const pricingFingerprint = quote.summary.pricingFingerprint;
 
   const req = new NextRequest('http://localhost/api/shop/checkout', {
     method: 'POST',
@@ -174,6 +184,8 @@ async function postCheckout(idemKey: string, productId: string) {
     body: JSON.stringify({
       items: [{ productId, quantity: 1 }],
       paymentProvider: 'monobank',
+      pricingFingerprint,
+      legalConsent: TEST_LEGAL_CONSENT,
     }),
   });
 

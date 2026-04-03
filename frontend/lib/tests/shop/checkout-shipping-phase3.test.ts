@@ -140,6 +140,19 @@ describe('checkout shipping phase 3', () => {
     vi.stubEnv('SHOP_SHIPPING_NP_WAREHOUSE_AMOUNT_MINOR', '500');
     vi.stubEnv('SHOP_SHIPPING_NP_LOCKER_AMOUNT_MINOR', '400');
     vi.stubEnv('SHOP_SHIPPING_NP_COURIER_AMOUNT_MINOR', '700');
+    vi.stubEnv('NP_API_KEY', 'np_test_checkout_shipping_phase3');
+    vi.stubEnv('NP_SENDER_CITY_REF', 'np_sender_city_checkout_shipping_phase3');
+    vi.stubEnv(
+      'NP_SENDER_WAREHOUSE_REF',
+      'np_sender_warehouse_checkout_shipping_phase3'
+    );
+    vi.stubEnv('NP_SENDER_REF', 'np_sender_checkout_shipping_phase3');
+    vi.stubEnv(
+      'NP_SENDER_CONTACT_REF',
+      'np_sender_contact_checkout_shipping_phase3'
+    );
+    vi.stubEnv('NP_SENDER_NAME', 'Checkout Shipping Phase 3 Sender');
+    vi.stubEnv('NP_SENDER_PHONE', '+380500000001');
     resetEnvCache();
   });
 

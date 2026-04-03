@@ -20,6 +20,7 @@ import { toDbMoney } from '@/lib/shop/money';
 import { verifyStatusToken } from '@/lib/shop/status-token';
 import { assertNotProductionDb } from '@/lib/tests/helpers/db-safety';
 import { deriveTestIpFromIdemKey } from '@/lib/tests/helpers/ip';
+import { TEST_LEGAL_CONSENT } from '@/lib/tests/shop/test-legal-consent';
 
 vi.mock('@/lib/auth', () => ({
   getCurrentUser: vi.fn().mockResolvedValue(null),
@@ -51,6 +52,7 @@ vi.mock('@/lib/psp/monobank', () => ({
 
 const __prevRateLimitDisabled = process.env.RATE_LIMIT_DISABLED;
 const __prevPaymentsEnabled = process.env.PAYMENTS_ENABLED;
+const __prevStripePaymentsEnabled = process.env.STRIPE_PAYMENTS_ENABLED;
 const __prevMonoToken = process.env.MONO_MERCHANT_TOKEN;
 const __prevAppOrigin = process.env.APP_ORIGIN;
 const __prevShopBaseUrl = process.env.SHOP_BASE_URL;
@@ -59,6 +61,7 @@ const __prevStatusSecret = process.env.SHOP_STATUS_TOKEN_SECRET;
 beforeAll(() => {
   process.env.RATE_LIMIT_DISABLED = '1';
   process.env.PAYMENTS_ENABLED = 'true';
+  process.env.STRIPE_PAYMENTS_ENABLED = 'false';
   process.env.MONO_MERCHANT_TOKEN = 'test_mono_token';
   process.env.APP_ORIGIN = 'http://localhost:3000';
   process.env.SHOP_BASE_URL = 'http://localhost:3000';
@@ -75,6 +78,10 @@ afterAll(() => {
 
   if (__prevPaymentsEnabled === undefined) delete process.env.PAYMENTS_ENABLED;
   else process.env.PAYMENTS_ENABLED = __prevPaymentsEnabled;
+
+  if (__prevStripePaymentsEnabled === undefined)
+    delete process.env.STRIPE_PAYMENTS_ENABLED;
+  else process.env.STRIPE_PAYMENTS_ENABLED = __prevStripePaymentsEnabled;
 
   if (__prevMonoToken === undefined) delete process.env.MONO_MERCHANT_TOKEN;
   else process.env.MONO_MERCHANT_TOKEN = __prevMonoToken;
@@ -178,7 +185,10 @@ async function postCheckout(idemKey: string, productId: string) {
   const quote = await rehydrateCartItems([{ productId, quantity: 1 }], 'UAH');
   const pricingFingerprint = quote.summary.pricingFingerprint;
 
-  if (typeof pricingFingerprint !== 'string' || pricingFingerprint.length !== 64) {
+  if (
+    typeof pricingFingerprint !== 'string' ||
+    pricingFingerprint.length !== 64
+  ) {
     throw new Error(
       '[ownership-test] expected authoritative pricing fingerprint from cart rehydrate'
     );
@@ -198,6 +208,7 @@ async function postCheckout(idemKey: string, productId: string) {
       items: [{ productId, quantity: 1 }],
       paymentProvider: 'monobank',
       pricingFingerprint,
+      legalConsent: TEST_LEGAL_CONSENT,
     }),
   });
 

@@ -16,9 +16,13 @@ vi.mock('@/lib/auth', () => ({
   getCurrentUser: vi.fn().mockResolvedValue(null),
 }));
 
-vi.mock('@/lib/env/stripe', () => ({
-  isPaymentsEnabled: () => true,
-}));
+vi.mock('@/lib/env/stripe', async () => {
+  const actual = await vi.importActual<any>('@/lib/env/stripe');
+  return {
+    ...actual,
+    isPaymentsEnabled: () => true,
+  };
+});
 
 vi.mock('@/lib/services/orders', async () => {
   const actual = await vi.importActual<any>('@/lib/services/orders');
@@ -61,11 +65,19 @@ const getCurrentUserMock = getCurrentUser as unknown as MockedFn;
 const __prevRateLimitDisabled = process.env.RATE_LIMIT_DISABLED;
 const __prevPaymentsEnabled = process.env.PAYMENTS_ENABLED;
 const __prevStripePaymentsEnabled = process.env.STRIPE_PAYMENTS_ENABLED;
+const __prevStripeSecret = process.env.STRIPE_SECRET_KEY;
+const __prevStripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+const __prevStripePublishableKey =
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 
 beforeAll(() => {
   process.env.RATE_LIMIT_DISABLED = '1';
   process.env.PAYMENTS_ENABLED = 'true';
   process.env.STRIPE_PAYMENTS_ENABLED = 'true';
+  process.env.STRIPE_SECRET_KEY = 'sk_test_checkout_validation_contract';
+  process.env.STRIPE_WEBHOOK_SECRET = 'whsec_test_checkout_validation_contract';
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY =
+    'pk_test_checkout_validation_contract';
 });
 
 afterAll(() => {
@@ -79,6 +91,18 @@ afterAll(() => {
   if (__prevStripePaymentsEnabled === undefined)
     delete process.env.STRIPE_PAYMENTS_ENABLED;
   else process.env.STRIPE_PAYMENTS_ENABLED = __prevStripePaymentsEnabled;
+
+  if (__prevStripeSecret === undefined) delete process.env.STRIPE_SECRET_KEY;
+  else process.env.STRIPE_SECRET_KEY = __prevStripeSecret;
+
+  if (__prevStripeWebhookSecret === undefined)
+    delete process.env.STRIPE_WEBHOOK_SECRET;
+  else process.env.STRIPE_WEBHOOK_SECRET = __prevStripeWebhookSecret;
+
+  if (__prevStripePublishableKey === undefined)
+    delete process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+  else
+    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = __prevStripePublishableKey;
 });
 
 beforeEach(() => {

@@ -28,9 +28,13 @@ vi.mock('@/lib/auth', () => ({
   getCurrentUser: vi.fn().mockResolvedValue(null),
 }));
 
-vi.mock('@/lib/env/stripe', () => ({
-  isPaymentsEnabled: () => true,
-}));
+vi.mock('@/lib/env/stripe', async () => {
+  const actual = await vi.importActual<any>('@/lib/env/stripe');
+  return {
+    ...actual,
+    isPaymentsEnabled: () => true,
+  };
+});
 
 vi.mock('@/lib/services/orders/payment-attempts', async () => {
   const actual = await vi.importActual<any>(
@@ -53,11 +57,15 @@ const createdProductIds: string[] = [];
 const __prevRateLimitDisabled = process.env.RATE_LIMIT_DISABLED;
 const __prevPaymentsEnabled = process.env.PAYMENTS_ENABLED;
 const __prevStripePaymentsEnabled = process.env.STRIPE_PAYMENTS_ENABLED;
+const __prevStripeSecret = process.env.STRIPE_SECRET_KEY;
+const __prevStripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
 beforeAll(() => {
   process.env.RATE_LIMIT_DISABLED = '1';
   process.env.PAYMENTS_ENABLED = 'true';
   process.env.STRIPE_PAYMENTS_ENABLED = 'true';
+  process.env.STRIPE_SECRET_KEY = 'sk_test_checkout_inactive_after_cart';
+  process.env.STRIPE_WEBHOOK_SECRET = 'whsec_test_checkout_inactive_after_cart';
 });
 
 afterAll(async () => {
@@ -84,6 +92,13 @@ afterAll(async () => {
   if (__prevStripePaymentsEnabled === undefined)
     delete process.env.STRIPE_PAYMENTS_ENABLED;
   else process.env.STRIPE_PAYMENTS_ENABLED = __prevStripePaymentsEnabled;
+
+  if (__prevStripeSecret === undefined) delete process.env.STRIPE_SECRET_KEY;
+  else process.env.STRIPE_SECRET_KEY = __prevStripeSecret;
+
+  if (__prevStripeWebhookSecret === undefined)
+    delete process.env.STRIPE_WEBHOOK_SECRET;
+  else process.env.STRIPE_WEBHOOK_SECRET = __prevStripeWebhookSecret;
 });
 
 beforeEach(() => {
