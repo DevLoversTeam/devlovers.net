@@ -28,6 +28,7 @@ import {
 } from '@/lib/services/orders/monobank-retry';
 import { handleMonobankWebhook } from '@/lib/services/orders/monobank-webhook';
 
+export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 type WebhookMode = 'drop' | 'store' | 'apply';

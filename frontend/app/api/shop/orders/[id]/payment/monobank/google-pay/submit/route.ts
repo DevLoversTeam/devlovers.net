@@ -31,6 +31,8 @@ import {
   readOrderPaymentRow,
 } from '../../_shared';
 
+export const runtime = 'nodejs';
+
 type SubmitPayload = {
   gToken: string;
 };

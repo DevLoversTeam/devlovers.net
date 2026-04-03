@@ -18,6 +18,8 @@ import { orderIdParamSchema } from '@/lib/validation/shop';
 
 import { ensureMonobankPayableOrder, noStoreJson, readOrderPaymentRow } from '../_shared';
 
+export const runtime = 'nodejs';
+
 function resolveStatusToken(orderId: string, statusToken: string | null): string {
   const normalized = statusToken?.trim() ?? '';
   if (normalized) return normalized;

@@ -31,6 +31,8 @@ import {
   ensureStripePaymentIntentForOrder,
   PaymentAttemptsExhaustedError,
 } from '@/lib/services/orders/payment-attempts';
+export const runtime = 'nodejs';
+
 import {
   resolveStandardStorefrontCheckoutProviderCandidates,
   resolveStandardStorefrontCurrency,

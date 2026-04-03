@@ -27,6 +27,8 @@ import {
   finalizeStripeRefundSuccess,
   restoreStripeRefundFailure,
 } from '@/lib/services/orders/stripe-refund-reconciliation';
+export const runtime = 'nodejs';
+
 import { buildPaymentEventDedupeKey } from '@/lib/services/shop/events/dedupe-key';
 import { orderShippingEligibilityWhereSql } from '@/lib/services/shop/shipping/eligibility';
 import { recordShippingMetric } from '@/lib/services/shop/shipping/metrics';
