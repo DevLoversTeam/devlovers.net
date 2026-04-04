@@ -421,7 +421,7 @@ export async function applyAdminOrderShippingEdit(args: {
       state.shipping_method_code
     );
     const nextComparable = buildNextComparable(args.shipping);
-    const preserveQuote = !hasQuoteAffectingChange(
+    const quoteAffectingChange = hasQuoteAffectingChange(
       currentComparable,
       nextComparable
     );
@@ -438,8 +438,15 @@ export async function applyAdminOrderShippingEdit(args: {
       executor: tx,
       input: args.shipping,
       existingSnapshot: state.shipping_address,
-      preserveQuote,
+      preserveQuote: true,
     });
+
+    if (quoteAffectingChange) {
+      throw invalid(
+        'SHIPPING_EDIT_REQUIRES_TOTAL_SYNC',
+        'Quote-affecting shipping edits are blocked until order totals can be safely synchronized.'
+      );
+    }
 
     const now = new Date();
     const [updatedOrder] = await tx

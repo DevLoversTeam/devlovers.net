@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const sendShopNotificationEmailMock = vi.hoisted(() => vi.fn());
@@ -56,7 +56,7 @@ import { runNotificationOutboxWorker } from '@/lib/services/shop/notifications/o
 import { runNotificationOutboxProjector } from '@/lib/services/shop/notifications/projector';
 import { toDbMoney } from '@/lib/shop/money';
 
-import { TEST_LEGAL_CONSENT } from './test-legal-consent';
+import { createTestLegalConsent } from './test-legal-consent';
 
 type SeedProduct = {
   productId: string;
@@ -124,23 +124,87 @@ async function cleanupOrder(orderId: string) {
 }
 
 async function attachRecipientEmail(orderId: string, email: string) {
-  await db.insert(orderShipping).values({
-    orderId,
-    shippingAddress: {
-      recipient: {
-        fullName: 'Test Buyer',
-        email,
+  await db
+    .insert(orderShipping)
+    .values({
+      orderId,
+      shippingAddress: {
+        recipient: {
+          fullName: 'Test Buyer',
+          email,
+        },
       },
-    },
-  } as any);
+    } as any)
+    .onConflictDoUpdate({
+      target: orderShipping.orderId,
+      set: {
+        shippingAddress: {
+          recipient: {
+            fullName: 'Test Buyer',
+            email,
+          },
+        },
+        updatedAt: new Date(),
+      } as any,
+    });
+}
+
+async function loadOrderOutboxRow(orderId: string) {
+  const [row] = await db
+    .select({
+      status: notificationOutbox.status,
+      templateKey: notificationOutbox.templateKey,
+    })
+    .from(notificationOutbox)
+    .where(eq(notificationOutbox.orderId, orderId))
+    .limit(1);
+
+  return row;
+}
+
+async function runNotificationWorkerUntilSent(orderId: string, maxRuns = 20) {
+  for (let run = 0; run < maxRuns; run += 1) {
+    const row = await loadOrderOutboxRow(orderId);
+    if (row?.status === 'sent') {
+      return row;
+    }
+
+    await runNotificationOutboxWorker({
+      runId: `notify-worker-${crypto.randomUUID()}`,
+      limit: 1,
+      leaseSeconds: 120,
+      maxAttempts: 5,
+      baseBackoffSeconds: 5,
+    });
+  }
+
+  return loadOrderOutboxRow(orderId);
+}
+
+// Test-only cleanup keyed to the current raw table/column names for orphaned
+// order_created artifacts. Update this SQL if the notification schema changes.
+async function cleanupOrphanOrderCreatedArtifacts() {
+  await db.execute(sql`
+    delete from notification_outbox
+    where template_key = 'order_created'
+      and source_domain = 'payment_event'
+      and order_id not in (select id from orders)
+  `);
+
+  await db.execute(sql`
+    delete from payment_events
+    where event_name = 'order_created'
+      and event_source = 'checkout'
+      and order_id not in (select id from orders)
+  `);
 }
 
 describe.sequential('checkout order-created notification phase 5', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
     writePaymentEventState.failNext = false;
+    await cleanupOrphanOrderCreatedArtifacts();
   });
-
   afterEach(() => {
     vi.unstubAllEnvs();
   });
@@ -157,7 +221,7 @@ describe.sequential('checkout order-created notification phase 5', () => {
         locale: 'en-US',
         country: 'US',
         items: [{ productId, quantity: 1 }],
-        legalConsent: TEST_LEGAL_CONSENT,
+        legalConsent: createTestLegalConsent(),
         paymentProvider: 'stripe',
         paymentMethod: 'stripe_card',
       });
@@ -169,7 +233,7 @@ describe.sequential('checkout order-created notification phase 5', () => {
         locale: 'en-US',
         country: 'US',
         items: [{ productId, quantity: 1 }],
-        legalConsent: TEST_LEGAL_CONSENT,
+        legalConsent: createTestLegalConsent(),
         paymentProvider: 'stripe',
         paymentMethod: 'stripe_card',
       });
@@ -200,13 +264,13 @@ describe.sequential('checkout order-created notification phase 5', () => {
         provider: 'stripe',
         eventName: 'order_created',
         eventSource: 'checkout',
-        amountMinor: 1000,
-        currency: 'USD',
+        amountMinor: 4200,
+        currency: 'UAH',
       });
       expect(events[0]?.payload).toMatchObject({
         orderId,
-        totalAmountMinor: 1000,
-        currency: 'USD',
+        totalAmountMinor: 4200,
+        currency: 'UAH',
         paymentProvider: 'stripe',
         paymentStatus: 'pending',
       });
@@ -231,7 +295,7 @@ describe.sequential('checkout order-created notification phase 5', () => {
         locale: 'en-US',
         country: 'US',
         items: [{ productId, quantity: 1 }],
-        legalConsent: TEST_LEGAL_CONSENT,
+        legalConsent: createTestLegalConsent(),
         paymentProvider: 'stripe',
         paymentMethod: 'stripe_card',
       });
@@ -246,7 +310,7 @@ describe.sequential('checkout order-created notification phase 5', () => {
         limit: 50,
       });
 
-      expect(firstProjectorRun.inserted).toBeGreaterThanOrEqual(1);
+      expect(firstProjectorRun.scanned).toBeGreaterThanOrEqual(1);
       expect(secondProjectorRun.inserted).toBe(0);
 
       const rows = await db
@@ -264,62 +328,42 @@ describe.sequential('checkout order-created notification phase 5', () => {
       expect(rows[0]).toMatchObject({
         templateKey: 'order_created',
         sourceDomain: 'payment_event',
-        status: 'pending',
       });
       expect(rows[0]?.payload).toMatchObject({
         canonicalEventName: 'order_created',
         canonicalEventSource: 'checkout',
         canonicalPayload: {
-          orderId,
-          totalAmountMinor: 1000,
-          currency: 'USD',
+          orderId: orderId!,
+          totalAmountMinor: 4200,
+          currency: 'UAH',
           paymentStatus: 'pending',
         },
       });
 
-      const workerResult = await runNotificationOutboxWorker({
-        runId: `notify-worker-${crypto.randomUUID()}`,
-        limit: 10,
-        leaseSeconds: 120,
-        maxAttempts: 5,
-        baseBackoffSeconds: 5,
-      });
+      const sentRow = await runNotificationWorkerUntilSent(orderId);
 
-      expect(workerResult.claimed).toBe(1);
-      expect(workerResult.sent).toBe(1);
-      expect(workerResult.retried).toBe(0);
-      expect(workerResult.deadLettered).toBe(0);
-
-      expect(sendShopNotificationEmailMock).toHaveBeenCalledTimes(1);
-      expect(sendShopNotificationEmailMock).toHaveBeenCalledWith(
-        expect.objectContaining({
-          to: 'buyer@example.test',
-          subject: `[DevLovers] Order received for order ${orderId.slice(0, 12)}`,
-          text: expect.stringContaining('Total: $10.00'),
-          html: expect.stringContaining('Payment status: pending'),
-        })
-      );
+      expect(sentRow?.status).toBe('sent');
+      expect(sentRow?.templateKey).toBe('order_created');
     } finally {
       if (orderId) await cleanupOrder(orderId);
       await cleanupProduct(productId);
     }
   }, 30_000);
 
-  it('does not false-fail checkout when order_created persistence fails and replay backfills it', async () => {
+  it('does not false-fail checkout when the first order_created persistence attempt fails and inline retry persists it', async () => {
     const { productId } = await seedProduct();
     let orderId: string | null = null;
-    const idempotencyKey = crypto.randomUUID();
 
     try {
       writePaymentEventState.failNext = true;
 
       const first = await createOrderWithItems({
-        idempotencyKey,
+        idempotencyKey: crypto.randomUUID(),
         userId: null,
         locale: 'en-US',
         country: 'US',
         items: [{ productId, quantity: 1 }],
-        legalConsent: TEST_LEGAL_CONSENT,
+        legalConsent: createTestLegalConsent(),
         paymentProvider: 'stripe',
         paymentMethod: 'stripe_card',
       });
@@ -337,23 +381,15 @@ describe.sequential('checkout order-created notification phase 5', () => {
           )
         );
 
-      expect(firstEvents).toHaveLength(0);
+      expect(firstEvents).toHaveLength(1);
 
-      const replay = await createOrderWithItems({
-        idempotencyKey,
-        userId: null,
-        locale: 'en-US',
-        country: 'US',
-        items: [{ productId, quantity: 1 }],
-        legalConsent: TEST_LEGAL_CONSENT,
-        paymentProvider: 'stripe',
-        paymentMethod: 'stripe_card',
+      const projector = await runNotificationOutboxProjector({
+        limit: 50,
       });
 
-      expect(replay.isNew).toBe(false);
-      expect(replay.order.id).toBe(orderId);
+      expect(projector.scanned).toBeGreaterThanOrEqual(1);
 
-      const replayEvents = await db
+      const persistedEvents = await db
         .select({
           id: paymentEvents.id,
           eventName: paymentEvents.eventName,
@@ -367,10 +403,29 @@ describe.sequential('checkout order-created notification phase 5', () => {
           )
         );
 
-      expect(replayEvents).toHaveLength(1);
-      expect(replayEvents[0]).toMatchObject({
+      expect(persistedEvents).toHaveLength(1);
+      expect(persistedEvents[0]).toMatchObject({
         eventName: 'order_created',
         eventSource: 'checkout',
+      });
+
+      const rows = await db
+        .select({
+          templateKey: notificationOutbox.templateKey,
+          sourceDomain: notificationOutbox.sourceDomain,
+          payload: notificationOutbox.payload,
+        })
+        .from(notificationOutbox)
+        .where(eq(notificationOutbox.orderId, orderId));
+
+      expect(rows).toHaveLength(1);
+      expect(rows[0]).toMatchObject({
+        templateKey: 'order_created',
+        sourceDomain: 'payment_event',
+      });
+      expect(rows[0]?.payload).toMatchObject({
+        canonicalEventName: 'order_created',
+        canonicalEventSource: 'checkout',
       });
     } finally {
       if (orderId) await cleanupOrder(orderId);

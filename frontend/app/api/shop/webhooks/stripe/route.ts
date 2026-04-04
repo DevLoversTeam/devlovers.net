@@ -27,6 +27,8 @@ import {
   finalizeStripeRefundSuccess,
   restoreStripeRefundFailure,
 } from '@/lib/services/orders/stripe-refund-reconciliation';
+export const runtime = 'nodejs';
+
 import { buildPaymentEventDedupeKey } from '@/lib/services/shop/events/dedupe-key';
 import { orderShippingEligibilityWhereSql } from '@/lib/services/shop/shipping/eligibility';
 import { recordShippingMetric } from '@/lib/services/shop/shipping/metrics';
@@ -60,6 +62,20 @@ function busyRetry() {
   const res = noStoreJson(
     {
       code: 'WEBHOOK_CLAIMED',
+      retryAfterSeconds: STRIPE_EVENT_RETRY_AFTER_SECONDS,
+    },
+    {
+      status: 503,
+      headers: { 'Retry-After': String(STRIPE_EVENT_RETRY_AFTER_SECONDS) },
+    }
+  );
+  return res;
+}
+
+function terminalSuccessConflictRetry() {
+  const res = noStoreJson(
+    {
+      code: 'TERMINAL_SUCCESS_CONFLICT_BLOCKED',
       retryAfterSeconds: STRIPE_EVENT_RETRY_AFTER_SECONDS,
     },
     {
@@ -442,6 +458,56 @@ function readDbRows<T>(res: unknown): T[] {
   if (Array.isArray(res)) return res as T[];
   const anyRes = res as { rows?: unknown };
   return Array.isArray(anyRes?.rows) ? (anyRes.rows as T[]) : [];
+}
+
+type StripeOrderPaymentSnapshot = {
+  id: string;
+  paymentStatus: typeof orders.$inferSelect.paymentStatus;
+  status: typeof orders.$inferSelect.status;
+  pspStatusReason: string | null;
+  pspMetadata: Record<string, unknown>;
+};
+
+async function readStripeOrderPaymentSnapshot(
+  orderId: string
+): Promise<StripeOrderPaymentSnapshot | null> {
+  const [row] = await db
+    .select({
+      id: orders.id,
+      paymentStatus: orders.paymentStatus,
+      status: orders.status,
+      pspStatusReason: orders.pspStatusReason,
+      pspMetadata: orders.pspMetadata,
+    })
+    .from(orders)
+    .where(and(eq(orders.id, orderId), eq(orders.paymentProvider, 'stripe')))
+    .limit(1);
+
+  return row ?? null;
+}
+
+function resolveTerminalSuccessConflictSource(
+  order: Pick<StripeOrderPaymentSnapshot, 'paymentStatus' | 'pspStatusReason'>
+): 'failed' | 'refunded' | null {
+  if (order.paymentStatus === 'failed' || order.paymentStatus === 'refunded') {
+    return order.paymentStatus;
+  }
+
+  if (
+    order.paymentStatus === 'needs_review' &&
+    order.pspStatusReason === 'late_success_after_failed'
+  ) {
+    return 'failed';
+  }
+
+  if (
+    order.paymentStatus === 'needs_review' &&
+    order.pspStatusReason === 'late_success_after_refunded'
+  ) {
+    return 'refunded';
+  }
+
+  return null;
 }
 
 type StripePaidApplyArgs = {
@@ -1274,6 +1340,129 @@ export async function POST(request: NextRequest) {
         await applyStripePaidAndQueueShipmentAtomic(appliedArgs);
 
       if (!applyResult.applied) {
+        const latestOrder = await readStripeOrderPaymentSnapshot(order.id);
+        const conflictFrom = latestOrder
+          ? resolveTerminalSuccessConflictSource(latestOrder)
+          : null;
+
+        if (latestOrder && conflictFrom) {
+          const conflictReason = `late_success_after_${conflictFrom}` as const;
+          const conflictMeta = mergePspMetadata({
+            prevMeta: latestOrder.pspMetadata,
+            delta: buildPspMetadata({
+              eventType,
+              paymentIntent,
+              charge: chargeForIntent ?? undefined,
+              extra: {
+                ...(walletAttribution ? { wallet: walletAttribution } : {}),
+                outOfOrderSuccess: {
+                  eventId: event.id,
+                  fromPaymentStatus: conflictFrom,
+                  orderStatus: latestOrder.status,
+                  paymentIntentId,
+                  chargeId: latestChargeId ?? chargeForIntent?.id ?? null,
+                },
+              },
+            }),
+            eventId: event.id,
+            currency: order.currency,
+            createdAtIso,
+          });
+
+          let reviewTransitionResult: Awaited<
+            ReturnType<typeof guardedPaymentStatusUpdate>
+          > | null = null;
+
+          const reviewAlreadyPresent =
+            latestOrder.paymentStatus === 'needs_review';
+
+          if (!reviewAlreadyPresent) {
+            reviewTransitionResult = await guardedPaymentStatusUpdate({
+              orderId: order.id,
+              paymentProvider: 'stripe',
+              to: 'needs_review',
+              source: 'stripe_webhook',
+              eventId: event.id,
+              note: conflictReason,
+              set: {
+                updatedAt: now,
+                pspChargeId: latestChargeId ?? chargeForIntent?.id ?? null,
+                pspPaymentMethod: appliedArgs.pspPaymentMethod,
+                pspStatusReason: conflictReason,
+                pspMetadata: conflictMeta,
+              },
+            });
+          }
+
+          const reviewApplied =
+            reviewAlreadyPresent || reviewTransitionResult?.applied === true;
+          const reviewBlockedReason =
+            reviewTransitionResult && !reviewTransitionResult.applied
+              ? reviewTransitionResult.reason
+              : null;
+
+          if (!reviewApplied) {
+            logWarn('stripe_webhook_terminal_success_conflict_blocked', {
+              ...eventMeta(),
+              code: 'TERMINAL_SUCCESS_CONFLICT_BLOCKED',
+              orderId: order.id,
+              paymentIntentId,
+              pspChargeId: appliedArgs.pspChargeId,
+              pspPaymentMethod: appliedArgs.pspPaymentMethod,
+              paymentStatus: latestOrder.paymentStatus,
+              status: latestOrder.status,
+              conflictFrom,
+              reviewReason: reviewBlockedReason,
+            });
+
+            await db
+              .update(stripeEvents)
+              .set({ claimExpiresAt: new Date(0) })
+              .where(
+                and(
+                  eq(stripeEvents.eventId, event.id),
+                  eq(stripeEvents.claimedBy, STRIPE_WEBHOOK_INSTANCE_ID),
+                  isNull(stripeEvents.processedAt)
+                )
+              );
+
+            return terminalSuccessConflictRetry();
+          }
+
+          logWarn('stripe_webhook_terminal_success_conflict', {
+            ...eventMeta(),
+            code: 'TERMINAL_SUCCESS_CONFLICT',
+            orderId: order.id,
+            paymentIntentId,
+            pspChargeId: appliedArgs.pspChargeId,
+            pspPaymentMethod: appliedArgs.pspPaymentMethod,
+            paymentStatus: latestOrder.paymentStatus,
+            status: latestOrder.status,
+            conflictFrom,
+            reviewApplied: true,
+            reviewReason: null,
+          });
+
+          await markStripeAttemptFinal({
+            paymentIntentId,
+            status: 'succeeded',
+            errorCode: 'TERMINAL_ORDER_STATE_CONFLICT',
+            errorMessage: `payment_intent.succeeded_after_${conflictFrom}`,
+          });
+
+          logWebhookEvent({
+            requestId,
+            stripeEventId,
+            orderId: order.id,
+            paymentIntentId,
+            paymentStatus,
+            eventType,
+            chargeId: latestChargeId ?? chargeForIntent?.id ?? null,
+          });
+
+          return ack();
+        }
+
         logWarn('stripe_webhook_paid_apply_noop', {
           ...eventMeta(),
           code: 'PAID_APPLY_NOOP',
@@ -1281,8 +1470,8 @@ export async function POST(request: NextRequest) {
           paymentIntentId,
           pspChargeId: appliedArgs.pspChargeId,
           pspPaymentMethod: appliedArgs.pspPaymentMethod,
-          paymentStatus: order.paymentStatus,
-          status: order.status,
+          paymentStatus: latestOrder?.paymentStatus ?? order.paymentStatus,
+          status: latestOrder?.status ?? order.status,
           reason: 'applyResult.applied=false',
         });
       }

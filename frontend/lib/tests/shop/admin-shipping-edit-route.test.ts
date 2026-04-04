@@ -247,4 +247,57 @@ describe('admin shipping edit route', () => {
       })
     );
   });
+
+  it('returns controlled service errors for quote-affecting edits that require total sync', async () => {
+    applyAdminOrderShippingEditMock.mockRejectedValueOnce(
+      new shippingEditErrors.AdminOrderShippingEditError(
+        'SHIPPING_EDIT_REQUIRES_TOTAL_SYNC',
+        'Quote-affecting shipping edits are blocked until order totals can be safely synchronized.',
+        409
+      )
+    );
+
+    const request = new NextRequest(
+      'http://localhost/api/shop/admin/orders/550e8400-e29b-41d4-a716-446655440000/shipping',
+      {
+        method: 'PATCH',
+        headers: {
+          origin: 'http://localhost:3000',
+          'content-type': 'application/json',
+          'x-csrf-token': 'csrf-token',
+        },
+        body: JSON.stringify({
+          provider: 'nova_poshta',
+          methodCode: 'NP_COURIER',
+          selection: {
+            cityRef: '12345678901234567890',
+            addressLine1: 'Khreshchatyk 1',
+          },
+          recipient: {
+            fullName: 'Test User',
+            phone: '+380501112233',
+          },
+        }),
+      }
+    );
+
+    const response = await PATCH(request, {
+      params: Promise.resolve({
+        id: '550e8400-e29b-41d4-a716-446655440000',
+      }),
+    });
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toEqual({
+      code: 'SHIPPING_EDIT_REQUIRES_TOTAL_SYNC',
+      message:
+        'Quote-affecting shipping edits are blocked until order totals can be safely synchronized.',
+    });
+    expect(logWarnMock).toHaveBeenCalledWith(
+      'admin_orders_shipping_edit_rejected',
+      expect.objectContaining({
+        code: 'SHIPPING_EDIT_REQUIRES_TOTAL_SYNC',
+      })
+    );
+  });
 });

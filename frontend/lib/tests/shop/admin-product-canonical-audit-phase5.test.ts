@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { InvalidPayloadError, PriceConfigError } from '@/lib/services/errors';
 import type { WriteAdminAuditArgs } from '@/lib/services/shop/events/write-admin-audit';
 
 const adminUser = {
@@ -299,5 +300,91 @@ describe('admin product canonical audit phase 5', () => {
         toIsActive: false,
       },
     });
+  });
+
+  it('status toggle returns typed InvalidPayloadError details directly from the route contract', async () => {
+    const productId = '55555555-5555-4555-8555-555555555555';
+
+    mocks.toggleProductStatus.mockRejectedValueOnce(
+      new InvalidPayloadError('Missing required sale pricing.', {
+        code: 'SALE_ORIGINAL_REQUIRED',
+        field: 'prices',
+        details: {
+          currency: 'UAH',
+          field: 'originalPriceMinor',
+          rule: 'required',
+        },
+      })
+    );
+
+    const { PATCH } =
+      await import('@/app/api/shop/admin/products/[id]/status/route');
+    const req = new NextRequest(
+      new Request(
+        `http://localhost/api/shop/admin/products/${productId}/status`,
+        {
+          method: 'PATCH',
+          headers: {
+            origin: 'http://localhost:3000',
+          },
+        }
+      )
+    );
+
+    const res = await PATCH(req, {
+      params: Promise.resolve({ id: productId }),
+    });
+
+    expect(res.status).toBe(400);
+    await expect(res.json()).resolves.toEqual({
+      error: 'Missing required sale pricing.',
+      code: 'SALE_ORIGINAL_REQUIRED',
+      field: 'prices',
+      details: {
+        currency: 'UAH',
+        field: 'originalPriceMinor',
+        rule: 'required',
+      },
+    });
+    expect(mocks.writeAdminAudit).not.toHaveBeenCalled();
+  });
+
+  it('status toggle returns PriceConfigError details with canonical prices field', async () => {
+    const productId = '66666666-6666-4666-8666-666666666666';
+
+    mocks.toggleProductStatus.mockRejectedValueOnce(
+      new PriceConfigError('UAH price is required.', {
+        productId,
+        currency: 'UAH',
+      })
+    );
+
+    const { PATCH } =
+      await import('@/app/api/shop/admin/products/[id]/status/route');
+    const req = new NextRequest(
+      new Request(
+        `http://localhost/api/shop/admin/products/${productId}/status`,
+        {
+          method: 'PATCH',
+          headers: {
+            origin: 'http://localhost:3000',
+          },
+        }
+      )
+    );
+
+    const res = await PATCH(req, {
+      params: Promise.resolve({ id: productId }),
+    });
+
+    expect(res.status).toBe(400);
+    await expect(res.json()).resolves.toEqual({
+      error: 'UAH price is required.',
+      code: 'PRICE_CONFIG_ERROR',
+      productId,
+      currency: 'UAH',
+      field: 'prices',
+    });
+    expect(mocks.writeAdminAudit).not.toHaveBeenCalled();
   });
 });

@@ -6,6 +6,7 @@ import { db } from '@/db';
 import { inventoryMoves, orders } from '@/db/schema/shop';
 import { logWarn } from '@/lib/logging';
 import { buildPaymentEventDedupeKey } from '@/lib/services/shop/events/dedupe-key';
+import { writeCanonicalEventWithRetry } from '@/lib/services/shop/events/write-canonical-event-with-retry';
 import { writePaymentEvent } from '@/lib/services/shop/events/write-payment-event';
 import { closeShippingPipelineForOrder } from '@/lib/services/shop/shipping/pipeline-shutdown';
 import { isOrderNonPaymentStatusTransitionAllowed } from '@/lib/services/shop/transitions/order-state';
@@ -111,6 +112,11 @@ type OrderCanceledNotificationState = Pick<
   | 'shippingStatus'
 >;
 
+type RestockFinalizeState = Pick<
+  OrderRow,
+  'status' | 'inventoryStatus' | 'stockRestored' | 'paymentStatus'
+>;
+
 async function loadOrderCanceledNotificationState(
   orderId: string
 ): Promise<OrderCanceledNotificationState | null> {
@@ -143,6 +149,37 @@ function buildOrderCanceledEventDedupeKey(orderId: string): string {
   });
 }
 
+function isRestockReasonAlreadyFinalized(
+  state: RestockFinalizeState,
+  reason: RestockReason | undefined
+): boolean {
+  if (reason === 'canceled') {
+    return (
+      state.status === 'CANCELED' &&
+      state.inventoryStatus === 'released' &&
+      state.stockRestored
+    );
+  }
+
+  if (reason === 'failed' || reason === 'stale') {
+    return (
+      state.status === 'INVENTORY_FAILED' &&
+      state.inventoryStatus === 'released' &&
+      state.stockRestored
+    );
+  }
+
+  if (reason === 'refunded') {
+    return (
+      state.paymentStatus === 'refunded' &&
+      state.inventoryStatus === 'released' &&
+      state.stockRestored
+    );
+  }
+
+  return false;
+}
+
 async function ensureOrderCanceledCanonicalEvent(args: {
   orderId: string;
   ensuredBy: string;
@@ -157,36 +194,38 @@ async function ensureOrderCanceledCanonicalEvent(args: {
     return;
   }
 
-  try {
-    await writePaymentEvent({
-      orderId: state.id,
-      provider: resolvePaymentProvider(state),
-      eventName: 'order_canceled',
-      eventSource: 'order_restock',
-      eventRef: null,
-      amountMinor: state.totalAmountMinor,
-      currency: state.currency,
-      payload: {
+  await writeCanonicalEventWithRetry({
+    write: () =>
+      writePaymentEvent({
         orderId: state.id,
-        totalAmountMinor: state.totalAmountMinor,
+        provider: resolvePaymentProvider(state),
+        eventName: 'order_canceled',
+        eventSource: 'order_restock',
+        eventRef: null,
+        amountMinor: state.totalAmountMinor,
         currency: state.currency,
-        paymentProvider: state.paymentProvider,
-        paymentStatus: state.paymentStatus,
-        orderStatus: state.status,
-        inventoryStatus: state.inventoryStatus,
-        shippingStatus: state.shippingStatus,
-        restockedAt: state.restockedAt?.toISOString() ?? null,
+        payload: {
+          orderId: state.id,
+          totalAmountMinor: state.totalAmountMinor,
+          currency: state.currency,
+          paymentProvider: state.paymentProvider,
+          paymentStatus: state.paymentStatus,
+          orderStatus: state.status,
+          inventoryStatus: state.inventoryStatus,
+          shippingStatus: state.shippingStatus,
+          restockedAt: state.restockedAt?.toISOString() ?? null,
+          ensuredBy: args.ensuredBy,
+        },
+        dedupeKey: buildOrderCanceledEventDedupeKey(state.id),
+      }).then(() => undefined),
+    onFinalFailure: error => {
+      logWarn('order_canceled_event_write_failed', {
+        orderId: args.orderId,
         ensuredBy: args.ensuredBy,
-      },
-      dedupeKey: buildOrderCanceledEventDedupeKey(state.id),
-    });
-  } catch (error) {
-    logWarn('order_canceled_event_write_failed', {
-      orderId: args.orderId,
-      ensuredBy: args.ensuredBy,
-      error: error instanceof Error ? error.message : String(error),
-    });
-  }
+        error: error instanceof Error ? error.message : String(error),
+      });
+    },
+  });
 }
 
 export async function restockOrder(
@@ -310,6 +349,27 @@ export async function restockOrder(
       .returning({ id: orders.id });
 
     if (!touched) {
+      const [latest] = await db
+        .select({
+          status: orders.status,
+          inventoryStatus: orders.inventoryStatus,
+          stockRestored: orders.stockRestored,
+          paymentStatus: orders.paymentStatus,
+        })
+        .from(orders)
+        .where(eq(orders.id, orderId))
+        .limit(1);
+
+      if (latest && isRestockReasonAlreadyFinalized(latest, reason)) {
+        if (reason === 'canceled') {
+          await ensureOrderCanceledCanonicalEvent({
+            orderId,
+            ensuredBy: 'restock_replay',
+          });
+        }
+        return;
+      }
+
       throw new OrderStateInvalidError(
         `Cannot finalize orphan restock due to concurrent order state change.`,
         {
@@ -471,6 +531,27 @@ export async function restockOrder(
     .returning({ id: orders.id });
 
   if (!finalized) {
+    const [latest] = await db
+      .select({
+        status: orders.status,
+        inventoryStatus: orders.inventoryStatus,
+        stockRestored: orders.stockRestored,
+        paymentStatus: orders.paymentStatus,
+      })
+      .from(orders)
+      .where(eq(orders.id, orderId))
+      .limit(1);
+
+    if (latest && isRestockReasonAlreadyFinalized(latest, reason)) {
+      if (reason === 'canceled') {
+        await ensureOrderCanceledCanonicalEvent({
+          orderId,
+          ensuredBy: 'restock_replay',
+        });
+      }
+      return;
+    }
+
     throw new OrderStateInvalidError(
       `Cannot finalize restock due to concurrent order state change.`,
       {

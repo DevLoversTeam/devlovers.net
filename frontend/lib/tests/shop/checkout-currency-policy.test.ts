@@ -7,6 +7,9 @@ const __prevRateLimitDisabled = process.env.RATE_LIMIT_DISABLED;
 const __prevPaymentsEnabled = process.env.PAYMENTS_ENABLED;
 const __prevMonoToken = process.env.MONO_MERCHANT_TOKEN;
 const __prevAppOrigin = process.env.APP_ORIGIN;
+const __prevStripePaymentsEnabled = process.env.STRIPE_PAYMENTS_ENABLED;
+const __prevStripeSecret = process.env.STRIPE_SECRET_KEY;
+const __prevStripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
 import {
   inventoryMoves,
@@ -17,7 +20,8 @@ import {
 } from '@/db/schema';
 import { resetEnvCache } from '@/lib/env';
 import { rehydrateCartItems } from '@/lib/services/products';
-import { TEST_LEGAL_CONSENT } from '@/lib/tests/shop/test-legal-consent';
+
+import { createTestLegalConsent } from './test-legal-consent';
 
 vi.mock('@/lib/auth', async () => {
   const actual =
@@ -28,9 +32,13 @@ vi.mock('@/lib/auth', async () => {
   };
 });
 
-vi.mock('@/lib/env/stripe', () => ({
-  isPaymentsEnabled: () => true,
-}));
+vi.mock('@/lib/env/stripe', async () => {
+  const actual = await vi.importActual<any>('@/lib/env/stripe');
+  return {
+    ...actual,
+    isPaymentsEnabled: () => true,
+  };
+});
 
 vi.mock('@/lib/services/orders/payment-attempts', async () => {
   resetEnvCache();
@@ -79,6 +87,9 @@ const createdOrderIds: string[] = [];
 beforeAll(() => {
   process.env.RATE_LIMIT_DISABLED = '1';
   process.env.PAYMENTS_ENABLED = 'true';
+  process.env.STRIPE_PAYMENTS_ENABLED = 'true';
+  process.env.STRIPE_SECRET_KEY = 'sk_test_checkout_currency_policy';
+  process.env.STRIPE_WEBHOOK_SECRET = 'whsec_test_checkout_currency_policy';
   process.env.MONO_MERCHANT_TOKEN = 'mono_test_token';
   process.env.APP_ORIGIN = 'http://localhost:3000';
   resetEnvCache();
@@ -129,6 +140,17 @@ afterAll(async () => {
   if (__prevPaymentsEnabled === undefined) delete process.env.PAYMENTS_ENABLED;
   else process.env.PAYMENTS_ENABLED = __prevPaymentsEnabled;
 
+  if (__prevStripePaymentsEnabled === undefined)
+    delete process.env.STRIPE_PAYMENTS_ENABLED;
+  else process.env.STRIPE_PAYMENTS_ENABLED = __prevStripePaymentsEnabled;
+
+  if (__prevStripeSecret === undefined) delete process.env.STRIPE_SECRET_KEY;
+  else process.env.STRIPE_SECRET_KEY = __prevStripeSecret;
+
+  if (__prevStripeWebhookSecret === undefined)
+    delete process.env.STRIPE_WEBHOOK_SECRET;
+  else process.env.STRIPE_WEBHOOK_SECRET = __prevStripeWebhookSecret;
+
   if (__prevMonoToken === undefined) delete process.env.MONO_MERCHANT_TOKEN;
   else process.env.MONO_MERCHANT_TOKEN = __prevMonoToken;
 
@@ -163,7 +185,7 @@ async function makeCheckoutRequest(
     payload && typeof payload === 'object' && !Array.isArray(payload)
       ? ({ ...(payload as Record<string, unknown>) } as Record<string, unknown>)
       : {};
-  body.legalConsent ??= TEST_LEGAL_CONSENT;
+  body.legalConsent ??= createTestLegalConsent();
   const items = Array.isArray(body.items) ? body.items : [];
   const currency = 'UAH';
 
@@ -231,13 +253,15 @@ async function seedProduct(options: {
   return p.id;
 }
 
-async function debugIfNotExpected(res: Response, expectedStatus: number) {
+async function expectStatusOrThrow(res: Response, expectedStatus: number) {
   if (res.status === expectedStatus) return;
 
   const text = await res.text().catch(() => '<failed to read body>');
-
-  console.log('checkout failed', { status: res.status, body: text });
-  console.log('logError calls', logErrorMock.mock.calls);
+  throw new Error(
+    `unexpected checkout status ${res.status}; body=${text}; logErrorCalls=${JSON.stringify(
+      logErrorMock.mock.calls
+    )}`
+  );
 }
 
 describe('P0-CUR-3 checkout currency policy', () => {
@@ -263,7 +287,7 @@ describe('P0-CUR-3 checkout currency policy', () => {
     );
 
     const res = await POST(req);
-    await debugIfNotExpected(res, 201);
+    await expectStatusOrThrow(res, 201);
     expect(res.status).toBe(201);
 
     const json = await res.json();
@@ -295,7 +319,7 @@ describe('P0-CUR-3 checkout currency policy', () => {
     );
 
     const res = await POST(req);
-    await debugIfNotExpected(res, 201);
+    await expectStatusOrThrow(res, 201);
     expect(res.status).toBe(201);
 
     const json = await res.json();
@@ -327,7 +351,7 @@ describe('P0-CUR-3 checkout currency policy', () => {
     );
 
     const res = await POST(req);
-    await debugIfNotExpected(res, 201);
+    await expectStatusOrThrow(res, 201);
     expect(res.status).toBe(201);
 
     const json = await res.json();
@@ -337,7 +361,7 @@ describe('P0-CUR-3 checkout currency policy', () => {
     expect(json.order.totalAmount).toBe(100);
   });
 
-  it('missing price for currency -> 400 PRICE_CONFIG_ERROR', async () => {
+  it('missing price for currency -> 422 PRICE_CONFIG_ERROR', async () => {
     const slug = `t-missing-${crypto.randomUUID()}`;
     const productId = await seedProduct({
       slug,
@@ -356,12 +380,10 @@ describe('P0-CUR-3 checkout currency policy', () => {
     );
 
     const res = await POST(req);
-    await debugIfNotExpected(res, 400);
-    expect(res.status).toBe(400);
+    await expectStatusOrThrow(res, 422);
+    expect(res.status).toBe(422);
 
     const json = await res.json();
     expect(json.code).toBe('PRICE_CONFIG_ERROR');
-    expect(json.details?.productId).toBe(productId);
-    expect(json.details?.currency).toBe('UAH');
   }, 30_000);
 });

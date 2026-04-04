@@ -1,7 +1,12 @@
 import { eq, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
-import { productImages, productPrices, products } from '@/db/schema';
+import {
+  inventoryMoves,
+  productImages,
+  productPrices,
+  products,
+} from '@/db/schema';
 import {
   destroyProductImage,
   uploadProductImageFromFile,
@@ -79,6 +84,7 @@ export async function updateProduct(
   if (prices.length) validatePriceRows(prices);
 
   const finalBadge = (input as any).badge ?? existing.badge;
+  const requestedStock = (input as any).stock;
 
   let resolvedPhotoPlan: ReturnType<typeof resolvePhotoPlan> | undefined;
   const uploadedById = new Map<
@@ -151,35 +157,91 @@ export async function updateProduct(
     existing.imagePublicId ??
     undefined;
 
-  const updateData: Partial<ProductsTable['$inferInsert']> = {
-    slug,
-    title: (input as any).title ?? existing.title,
-    description: (input as any).description ?? existing.description ?? null,
-    imageUrl: uploaded ? uploaded.secureUrl : mirroredImageUrl,
-    imagePublicId: uploaded
-      ? uploaded.publicId
-      : (mirroredImagePublicId ?? null),
-
-    category: (input as any).category ?? existing.category,
-    type: (input as any).type ?? existing.type,
-    colors: (input as any).colors ?? existing.colors,
-    sizes: (input as any).sizes ?? existing.sizes,
-    badge: (input as any).badge ?? existing.badge,
-    isActive: (input as any).isActive ?? existing.isActive,
-    isFeatured: (input as any).isFeatured ?? existing.isFeatured,
-    stock: (input as any).stock ?? existing.stock,
-    sku:
-      (input as any).sku !== undefined
-        ? (input as any).sku
-          ? (input as any).sku
-          : null
-        : existing.sku,
-  };
-  // Legacy products.price/original_price are intentionally not updated here.
-  // product_prices is the single write-authority for catalog pricing.
-
   try {
     const row = await db.transaction(async tx => {
+      const [lockedProduct] = await tx
+        .select({
+          id: products.id,
+          stock: products.stock,
+        })
+        .from(products)
+        .where(eq(products.id, id))
+        .limit(1)
+        .for('update');
+
+      if (!lockedProduct) {
+        throw new ProductNotFoundError(id);
+      }
+
+      const stockOverwriteRequested =
+        requestedStock !== undefined && requestedStock !== lockedProduct.stock;
+
+      if (stockOverwriteRequested) {
+        const [reserveSummary] = await tx
+          .select({
+            reservedQuantity: sql<number>`GREATEST(
+              COALESCE(
+                SUM(
+                  CASE
+                    WHEN ${inventoryMoves.type} = 'reserve' THEN ${inventoryMoves.quantity}
+                    ELSE -${inventoryMoves.quantity}
+                  END
+                ),
+                0
+              ),
+              0
+            )`,
+          })
+          .from(inventoryMoves)
+          .where(eq(inventoryMoves.productId, id));
+
+        const reservedQuantity = Number(reserveSummary?.reservedQuantity ?? 0);
+
+        if (reservedQuantity > 0) {
+          const error = new InvalidPayloadError(
+            'Stock cannot be overwritten while inventory is reserved for open orders.',
+            {
+              code: 'STOCK_EDIT_BLOCKED_RESERVED',
+              details: {
+                productId: id,
+                currentStock: lockedProduct.stock,
+                requestedStock,
+                reservedQuantity,
+              },
+            }
+          );
+          (error as any).field = 'stock';
+          throw error;
+        }
+      }
+
+      const updateData: Partial<ProductsTable['$inferInsert']> = {
+        slug,
+        title: (input as any).title ?? existing.title,
+        description: (input as any).description ?? existing.description ?? null,
+        imageUrl: uploaded ? uploaded.secureUrl : mirroredImageUrl,
+        imagePublicId: uploaded
+          ? uploaded.publicId
+          : (mirroredImagePublicId ?? null),
+
+        category: (input as any).category ?? existing.category,
+        type: (input as any).type ?? existing.type,
+        colors: (input as any).colors ?? existing.colors,
+        sizes: (input as any).sizes ?? existing.sizes,
+        badge: (input as any).badge ?? existing.badge,
+        isActive: (input as any).isActive ?? existing.isActive,
+        isFeatured: (input as any).isFeatured ?? existing.isFeatured,
+        stock: requestedStock ?? lockedProduct.stock,
+        sku:
+          (input as any).sku !== undefined
+            ? (input as any).sku
+              ? (input as any).sku
+              : null
+            : existing.sku,
+      };
+      // Legacy products.price/original_price are intentionally not updated here.
+      // product_prices is the single write-authority for catalog pricing.
+
       const existingPriceRows = await tx
         .select({
           currency: productPrices.currency,

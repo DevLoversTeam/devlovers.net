@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 
 import { MoneyValueError } from '@/db/queries/shop/orders';
 import { getCurrentUser } from '@/lib/auth';
@@ -31,6 +32,8 @@ import {
   ensureStripePaymentIntentForOrder,
   PaymentAttemptsExhaustedError,
 } from '@/lib/services/orders/payment-attempts';
+export const runtime = 'nodejs';
+
 import {
   resolveStandardStorefrontCheckoutProviderCandidates,
   resolveStandardStorefrontCurrency,
@@ -51,8 +54,11 @@ import {
   type StatusTokenScope,
 } from '@/lib/shop/status-token';
 import {
-  checkoutPayloadSchema,
+  checkoutItemSchema,
+  checkoutShippingSchema,
+  currencySchema,
   idempotencyKeySchema,
+  paymentMethodSchema,
 } from '@/lib/validation/shop';
 
 type CheckoutRequestedProvider = 'stripe' | 'monobank';
@@ -63,6 +69,7 @@ const EXPECTED_BUSINESS_ERROR_CODES = new Set([
   'DISCOUNTS_NOT_SUPPORTED',
   'INVALID_VARIANT',
   'INSUFFICIENT_STOCK',
+  'OUT_OF_STOCK',
   'CHECKOUT_PRICE_CHANGED',
   'CHECKOUT_SHIPPING_CHANGED',
   'PRICE_CONFIG_ERROR',
@@ -75,20 +82,48 @@ const EXPECTED_BUSINESS_ERROR_CODES = new Set([
   'LEGAL_CONSENT_REQUIRED',
   'TERMS_NOT_ACCEPTED',
   'PRIVACY_NOT_ACCEPTED',
+  'TERMS_VERSION_REQUIRED',
+  'PRIVACY_VERSION_REQUIRED',
+  'TERMS_VERSION_MISMATCH',
+  'PRIVACY_VERSION_MISMATCH',
 ]);
 
 const DEFAULT_CHECKOUT_RATE_LIMIT_MAX = 10;
 const DEFAULT_CHECKOUT_RATE_LIMIT_WINDOW_SECONDS = 300;
 
 const SHIPPING_ERROR_STATUS_MAP: Record<string, number> = {
-  CHECKOUT_PRICE_CHANGED: 409,
-  CHECKOUT_SHIPPING_CHANGED: 409,
-  MISSING_SHIPPING_ADDRESS: 400,
-  INVALID_SHIPPING_ADDRESS: 400,
+  CHECKOUT_PRICE_CHANGED: 422,
+  CHECKOUT_SHIPPING_CHANGED: 422,
+  MISSING_SHIPPING_ADDRESS: 422,
+  INVALID_SHIPPING_ADDRESS: 422,
   SHIPPING_METHOD_UNAVAILABLE: 422,
   SHIPPING_CURRENCY_UNSUPPORTED: 422,
   SHIPPING_AMOUNT_UNAVAILABLE: 422,
 };
+
+const CHECKOUT_UNPROCESSABLE_ERROR_CODES = new Set([
+  'INVALID_PAYLOAD',
+  'DISCOUNTS_NOT_SUPPORTED',
+  'INVALID_VARIANT',
+  'INSUFFICIENT_STOCK',
+  'OUT_OF_STOCK',
+  'CHECKOUT_PRICE_CHANGED',
+  'CHECKOUT_SHIPPING_CHANGED',
+  'PRICE_CONFIG_ERROR',
+  'MISSING_SHIPPING_ADDRESS',
+  'INVALID_SHIPPING_ADDRESS',
+  'SHIPPING_METHOD_UNAVAILABLE',
+  'SHIPPING_CURRENCY_UNSUPPORTED',
+  'SHIPPING_AMOUNT_UNAVAILABLE',
+  'LEGAL_CONSENT_REQUIRED',
+  'TERMS_NOT_ACCEPTED',
+  'PRIVACY_NOT_ACCEPTED',
+  'TERMS_VERSION_REQUIRED',
+  'PRIVACY_VERSION_REQUIRED',
+  'TERMS_VERSION_MISMATCH',
+  'PRIVACY_VERSION_MISMATCH',
+  'IDEMPOTENCY_CONFLICT',
+]);
 
 const STATUS_TOKEN_SCOPES_STATUS_ONLY: readonly StatusTokenScope[] = [
   'status_lite',
@@ -141,6 +176,10 @@ function isCheckoutStatusTokenRequired(args: {
 
 function shippingErrorStatus(code: string): number | null {
   return SHIPPING_ERROR_STATUS_MAP[code] ?? null;
+}
+
+function checkoutUnprocessableStatus(code: string): number | null {
+  return CHECKOUT_UNPROCESSABLE_ERROR_CODES.has(code) ? 422 : null;
 }
 
 function parseRequestedProvider(
@@ -213,11 +252,112 @@ function getErrorMessage(error: unknown, fallback: string): string {
   return fallback;
 }
 
-function hasLegalConsentValidationIssue(issues: Array<{ path?: unknown[] }>) {
-  return issues.some(
-    issue => Array.isArray(issue.path) && issue.path[0] === 'legalConsent'
-  );
-}
+const routeCheckoutRequestedProviderSchema = z.enum(['stripe', 'monobank']);
+const routePricingFingerprintSchema = z
+  .string()
+  .trim()
+  .length(64)
+  .regex(/^[a-f0-9]{64}$/);
+
+const routeCheckoutLegalConsentSchema = z.preprocess(
+  value => {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      return undefined;
+    }
+
+    const record = value as Record<string, unknown>;
+    return {
+      termsAccepted:
+        typeof record.termsAccepted === 'boolean'
+          ? record.termsAccepted
+          : undefined,
+      privacyAccepted:
+        typeof record.privacyAccepted === 'boolean'
+          ? record.privacyAccepted
+          : undefined,
+      termsVersion:
+        typeof record.termsVersion === 'string'
+          ? record.termsVersion
+          : undefined,
+      privacyVersion:
+        typeof record.privacyVersion === 'string'
+          ? record.privacyVersion
+          : undefined,
+    };
+  },
+  z
+    .object({
+      termsAccepted: z.boolean().optional(),
+      privacyAccepted: z.boolean().optional(),
+      termsVersion: z.string().trim().min(1).max(64).optional(),
+      privacyVersion: z.string().trim().min(1).max(64).optional(),
+    })
+    .strict()
+    .optional()
+);
+
+const checkoutRoutePayloadSchema = z
+  .object({
+    items: z.array(checkoutItemSchema).min(1),
+    userId: z.string().uuid().optional(),
+    country: z
+      .string()
+      .trim()
+      .length(2)
+      .transform(value => value.toUpperCase())
+      .optional(),
+    shipping: checkoutShippingSchema.optional(),
+    legalConsent: routeCheckoutLegalConsentSchema,
+    pricingFingerprint: routePricingFingerprintSchema.optional(),
+    shippingQuoteFingerprint: routePricingFingerprintSchema.optional(),
+    paymentProvider: routeCheckoutRequestedProviderSchema.optional(),
+    paymentMethod: paymentMethodSchema.optional(),
+    paymentCurrency: currencySchema.optional(),
+  })
+  .strict()
+  .superRefine((value, ctx) => {
+    if (!value.paymentMethod) return;
+
+    if (!value.paymentProvider) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['paymentProvider'],
+        message: 'paymentProvider is required when paymentMethod is provided',
+      });
+      return;
+    }
+
+    const provider = value.paymentProvider;
+    const method = value.paymentMethod;
+
+    const providerAllowed =
+      (method === 'stripe_card' && provider === 'stripe') ||
+      ((method === 'monobank_invoice' || method === 'monobank_google_pay') &&
+        provider === 'monobank');
+
+    if (!providerAllowed) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['paymentMethod'],
+        message:
+          'paymentMethod is not allowed for the selected paymentProvider',
+      });
+      return;
+    }
+
+    if (
+      (method === 'monobank_invoice' || method === 'monobank_google_pay') &&
+      value.paymentCurrency != null &&
+      value.paymentCurrency !== 'UAH'
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['paymentMethod'],
+        message:
+          'paymentMethod is not allowed for the selected provider and currency',
+      });
+    }
+  });
 
 function isMonobankInvalidRequestError(error: unknown): boolean {
   const code = getErrorCode(error);
@@ -240,42 +380,11 @@ function isMonobankInvalidRequestError(error: unknown): boolean {
 function mapMonobankCheckoutError(error: unknown) {
   const code = getErrorCode(error);
 
-  if (code) {
-    const status = shippingErrorStatus(code);
-    if (status) {
-      return {
-        code,
-        message: getErrorMessage(error, 'Invalid request.'),
-        status,
-      } as const;
-    }
-  }
-
-  if (isMonobankInvalidRequestError(error)) {
-    return {
-      code: 'INVALID_REQUEST',
-      message: getErrorMessage(error, 'Invalid request.'),
-      status: 400,
-    } as const;
-  }
-
-  if (
-    error instanceof InsufficientStockError ||
-    code === 'INSUFFICIENT_STOCK' ||
-    code === 'OUT_OF_STOCK'
-  ) {
-    return {
-      code: 'OUT_OF_STOCK',
-      message: getErrorMessage(error, 'Insufficient stock.'),
-      status: 409,
-    } as const;
-  }
-
   if (error instanceof PriceConfigError || code === 'PRICE_CONFIG_ERROR') {
     return {
       code: 'PRICE_CONFIG_ERROR',
       message: getErrorMessage(error, 'Price configuration error.'),
-      status: 400,
+      status: 422,
       details:
         error instanceof PriceConfigError
           ? {
@@ -283,18 +392,6 @@ function mapMonobankCheckoutError(error: unknown) {
               currency: error.currency,
             }
           : undefined,
-    } as const;
-  }
-
-  if (
-    error instanceof PspUnavailableError ||
-    code === 'PSP_UNAVAILABLE' ||
-    code === 'PSP_INVOICE_PERSIST_FAILED'
-  ) {
-    return {
-      code: 'PSP_UNAVAILABLE',
-      message: 'Payment provider unavailable.',
-      status: 503,
     } as const;
   }
 
@@ -308,9 +405,53 @@ function mapMonobankCheckoutError(error: unknown) {
         error instanceof IdempotencyConflictError
           ? error.message
           : 'Checkout idempotency conflict.',
-      status: 409,
+      status: 422,
       details:
         error instanceof IdempotencyConflictError ? error.details : undefined,
+    } as const;
+  }
+
+  if (
+    error instanceof InsufficientStockError ||
+    code === 'INSUFFICIENT_STOCK' ||
+    code === 'OUT_OF_STOCK'
+  ) {
+    return {
+      code: 'INSUFFICIENT_STOCK',
+      message: getErrorMessage(error, 'Insufficient stock.'),
+      status: 422,
+    } as const;
+  }
+
+  if (code) {
+    const status =
+      checkoutUnprocessableStatus(code) ?? shippingErrorStatus(code);
+    if (status) {
+      return {
+        code,
+        message: getErrorMessage(error, 'Invalid request.'),
+        status,
+      } as const;
+    }
+  }
+
+  if (isMonobankInvalidRequestError(error)) {
+    return {
+      code: 'INVALID_REQUEST',
+      message: getErrorMessage(error, 'Invalid request.'),
+      status: 422,
+    } as const;
+  }
+
+  if (
+    error instanceof PspUnavailableError ||
+    code === 'PSP_UNAVAILABLE' ||
+    code === 'PSP_INVOICE_PERSIST_FAILED'
+  ) {
+    return {
+      code: 'PSP_UNAVAILABLE',
+      message: 'Payment provider unavailable.',
+      status: 503,
     } as const;
   }
 
@@ -875,18 +1016,33 @@ export async function POST(request: NextRequest) {
   }
 
   const storefrontCurrency = resolveStandardStorefrontCurrency();
-  const providerCapabilities =
-    resolveStandardStorefrontProviderCapabilities();
-  const stripeCheckoutAvailable =
-    providerCapabilities.stripeCheckoutEnabled;
+  const providerCapabilities = resolveStandardStorefrontProviderCapabilities();
+  const stripeCheckoutAvailable = providerCapabilities.stripeCheckoutEnabled;
   const monobankCheckoutAvailable =
     providerCapabilities.monobankCheckoutEnabled;
 
   const checkoutProviderCandidates =
     resolveStandardStorefrontCheckoutProviderCandidates({
-    requestedProvider,
-    requestedMethod,
-  });
+      requestedProvider,
+      requestedMethod,
+    });
+
+  if (
+    requestedProvider &&
+    requestedMethod &&
+    checkoutProviderCandidates.length === 0
+  ) {
+    if (requestedProvider === 'monobank') {
+      return errorResponse('INVALID_REQUEST', 'Invalid request.', 422);
+    }
+
+    return errorResponse(
+      'PAYMENTS_METHOD_INVALID',
+      'Invalid payment method.',
+      422
+    );
+  }
+
   const selectedProvider =
     checkoutProviderCandidates.find(candidate =>
       candidate === 'stripe'
@@ -983,8 +1139,7 @@ export async function POST(request: NextRequest) {
       method: selectedMethod,
       currency: selectedCurrency,
       flags: {
-        monobankGooglePayEnabled:
-          providerCapabilities.monobankGooglePayEnabled,
+        monobankGooglePayEnabled: providerCapabilities.monobankGooglePayEnabled,
       },
     })
   ) {
@@ -1025,29 +1180,15 @@ export async function POST(request: NextRequest) {
     return errorResponse(
       'DISCOUNTS_NOT_SUPPORTED',
       'Discounts are not available at checkout.',
-      400,
+      422,
       { fields: unsupportedDiscountFields }
     );
   }
 
-  const parsedPayload = checkoutPayloadSchema.safeParse(payloadForValidation);
+  const parsedPayload =
+    checkoutRoutePayloadSchema.safeParse(payloadForValidation);
 
   if (!parsedPayload.success) {
-    if (hasLegalConsentValidationIssue(parsedPayload.error.issues ?? [])) {
-      logWarn('checkout_legal_consent_required', {
-        ...meta,
-        code: 'LEGAL_CONSENT_REQUIRED',
-        issuesCount: parsedPayload.error.issues?.length ?? 0,
-      });
-
-      return errorResponse(
-        'LEGAL_CONSENT_REQUIRED',
-        'Explicit legal consent is required before checkout.',
-        400,
-        parsedPayload.error.format()
-      );
-    }
-
     if (selectedProvider === 'monobank') {
       logWarn('checkout_invalid_request', {
         ...meta,
@@ -1058,7 +1199,7 @@ export async function POST(request: NextRequest) {
       return errorResponse(
         'INVALID_REQUEST',
         'Invalid request.',
-        400,
+        422,
         parsedPayload.error.format()
       );
     }
@@ -1072,7 +1213,7 @@ export async function POST(request: NextRequest) {
     return errorResponse(
       'INVALID_PAYLOAD',
       'Invalid checkout payload',
-      400,
+      422,
       parsedPayload.error.format()
     );
   }
@@ -1209,7 +1350,9 @@ export async function POST(request: NextRequest) {
         locale,
         country: country ?? null,
         shipping: shipping ?? null,
-        legalConsent,
+        legalConsent: legalConsent as Parameters<
+          typeof createOrderWithItems
+        >[0]['legalConsent'],
         pricingFingerprint,
         shippingQuoteFingerprint,
         requirePricingFingerprint: true,
@@ -1237,7 +1380,9 @@ export async function POST(request: NextRequest) {
         locale,
         country: country ?? null,
         shipping: shipping ?? null,
-        legalConsent,
+        legalConsent: legalConsent as Parameters<
+          typeof createOrderWithItems
+        >[0]['legalConsent'],
         pricingFingerprint,
         shippingQuoteFingerprint,
         requirePricingFingerprint: true,
@@ -1653,17 +1798,19 @@ export async function POST(request: NextRequest) {
     }
 
     if (error instanceof InvalidPayloadError) {
-      const customStatus = shippingErrorStatus(error.code);
+      const customStatus =
+        checkoutUnprocessableStatus(error.code) ??
+        shippingErrorStatus(error.code);
       return errorResponse(
         error.code,
         error.message || 'Invalid checkout payload',
-        customStatus ?? 400,
+        customStatus ?? 422,
         error.details
       );
     }
 
     if (error instanceof InvalidVariantError) {
-      return errorResponse(error.code, error.message, 400, {
+      return errorResponse(error.code, error.message, 422, {
         productId: error.productId,
         field: error.field,
         value: error.value,
@@ -1672,7 +1819,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (error instanceof IdempotencyConflictError) {
-      return errorResponse(error.code, error.message, 409, error.details);
+      return errorResponse(error.code, error.message, 422, error.details);
     }
 
     if (error instanceof OrderStateInvalidError) {
@@ -1685,7 +1832,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (error instanceof PriceConfigError) {
-      return errorResponse(error.code, error.message, 400, {
+      return errorResponse(error.code, error.message, 422, {
         productId: error.productId,
         currency: error.currency,
       });
@@ -1702,8 +1849,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (error instanceof InsufficientStockError) {
-      return errorResponse('INSUFFICIENT_STOCK', error.message, 409);
+    if (
+      error instanceof InsufficientStockError ||
+      getErrorCode(error) === 'INSUFFICIENT_STOCK' ||
+      getErrorCode(error) === 'OUT_OF_STOCK'
+    ) {
+      return errorResponse(
+        'INSUFFICIENT_STOCK',
+        error instanceof InsufficientStockError
+          ? error.message
+          : getErrorMessage(error, 'Insufficient stock.'),
+        422
+      );
     }
 
     if (error instanceof MoneyValueError) {

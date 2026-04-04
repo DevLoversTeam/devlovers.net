@@ -1,10 +1,12 @@
 import crypto from 'crypto';
-import { eq, sql } from 'drizzle-orm';
-import { describe, expect, it } from 'vitest';
+import { and, eq, sql } from 'drizzle-orm';
+import { describe, expect, it, vi } from 'vitest';
 
 import { db } from '@/db';
-import { orders, products } from '@/db/schema';
+import { orders, paymentEvents, products } from '@/db/schema';
+import { OrderStateInvalidError } from '@/lib/services/errors';
 import { applyReserveMove } from '@/lib/services/inventory';
+import * as inventory from '@/lib/services/inventory';
 import { restockOrder } from '@/lib/services/orders';
 import { toDbMoney } from '@/lib/shop/money';
 
@@ -30,6 +32,22 @@ function logCleanupFailed(payload: {
   error: unknown;
 }) {
   console.error('[test cleanup failed]', payload);
+}
+
+async function readCanceledEvents(orderId: string) {
+  return db
+    .select({
+      id: paymentEvents.id,
+      eventSource: paymentEvents.eventSource,
+      eventName: paymentEvents.eventName,
+    })
+    .from(paymentEvents)
+    .where(
+      and(
+        eq(paymentEvents.orderId, orderId),
+        eq(paymentEvents.eventName, 'order_canceled')
+      )
+    );
 }
 
 describe('P0-8.4.2 restockOrder: order-level gate + idempotency', () => {
@@ -450,4 +468,211 @@ describe('P0-8.4.2 restockOrder: order-level gate + idempotency', () => {
       }
     }
   }, 30000);
-}, 30000);
+
+  it('ensures order_canceled canonical event when a concurrent canceled finalize already completed before this worker finishes', async () => {
+    const orderId = crypto.randomUUID();
+    const productId = crypto.randomUUID();
+    const slug = `test-${crypto.randomUUID()}`;
+    const sku = `sku-${crypto.randomUUID().slice(0, 8)}`;
+    const createdAt = new Date(Date.now() - 2 * 60 * 60 * 1000);
+    const idem = `test-restock-${crypto.randomUUID()}`;
+
+    const originalApplyReleaseMove = inventory.applyReleaseMove;
+    const releaseSpy = vi.spyOn(inventory, 'applyReleaseMove');
+
+    try {
+      await db.insert(products).values({
+        id: productId,
+        title: 'Test Product',
+        slug,
+        sku,
+        badge: 'NONE',
+        imageUrl: 'https://example.com/test.png',
+        isActive: true,
+        stock: 5,
+        price: toDbMoney(1000),
+        currency: 'USD',
+        createdAt,
+        updatedAt: createdAt,
+      } as any);
+
+      await db.insert(orders).values({
+        id: orderId,
+        userId: null,
+        totalAmountMinor: 1234,
+        totalAmount: toDbMoney(1234),
+        currency: 'USD',
+        paymentProvider: 'stripe',
+        paymentStatus: 'failed',
+        paymentIntentId: null,
+        status: 'INVENTORY_RESERVED',
+        inventoryStatus: 'reserved',
+        failureCode: null,
+        failureMessage: null,
+        idempotencyRequestHash: null,
+        stockRestored: false,
+        restockedAt: null,
+        idempotencyKey: idem,
+        createdAt,
+        updatedAt: createdAt,
+      } as any);
+
+      const reserved = await applyReserveMove(orderId, productId, 1);
+      expect(reserved.ok).toBe(true);
+
+      releaseSpy.mockImplementation(
+        async (...args: Parameters<typeof inventory.applyReleaseMove>) => {
+          const result = await originalApplyReleaseMove(...args);
+          const finalizedAt = new Date();
+          await db
+            .update(orders)
+            .set({
+              status: 'CANCELED',
+              inventoryStatus: 'released',
+              stockRestored: true,
+              restockedAt: finalizedAt,
+              updatedAt: finalizedAt,
+            } as any)
+            .where(eq(orders.id, orderId));
+          return result;
+        }
+      );
+
+      await restockOrder(orderId, {
+        reason: 'canceled',
+        alreadyClaimed: true,
+        workerId: 'test-concurrent-cancel',
+      });
+
+      const canceledEvents = await readCanceledEvents(orderId);
+      expect(canceledEvents).toHaveLength(1);
+      expect(canceledEvents[0]?.eventSource).toBe('order_restock');
+    } finally {
+      releaseSpy.mockRestore();
+      try {
+        await db.delete(orders).where(eq(orders.id, orderId));
+      } catch (error) {
+        logCleanupFailed({
+          test: 'restockOrder: concurrent canceled finalize ensures canonical event',
+          orderId,
+          productId,
+          step: 'delete orders',
+          error,
+        });
+      }
+      try {
+        await db.delete(products).where(eq(products.id, productId));
+      } catch (error) {
+        logCleanupFailed({
+          test: 'restockOrder: concurrent canceled finalize ensures canonical event',
+          orderId,
+          productId,
+          step: 'delete products',
+          error,
+        });
+      }
+    }
+  }, 30000);
+
+  it('does not treat released non-refunded state as already finalized for refunded restock recheck', async () => {
+    const orderId = crypto.randomUUID();
+    const productId = crypto.randomUUID();
+    const slug = `test-${crypto.randomUUID()}`;
+    const sku = `sku-${crypto.randomUUID().slice(0, 8)}`;
+    const createdAt = new Date(Date.now() - 2 * 60 * 60 * 1000);
+    const idem = `test-restock-${crypto.randomUUID()}`;
+
+    const originalApplyReleaseMove = inventory.applyReleaseMove;
+    const releaseSpy = vi.spyOn(inventory, 'applyReleaseMove');
+
+    try {
+      await db.insert(products).values({
+        id: productId,
+        title: 'Test Product',
+        slug,
+        sku,
+        badge: 'NONE',
+        imageUrl: 'https://example.com/test.png',
+        isActive: true,
+        stock: 5,
+        price: toDbMoney(1000),
+        currency: 'USD',
+        createdAt,
+        updatedAt: createdAt,
+      } as any);
+
+      await db.insert(orders).values({
+        id: orderId,
+        userId: null,
+        totalAmountMinor: 1234,
+        totalAmount: toDbMoney(1234),
+        currency: 'USD',
+        paymentProvider: 'stripe',
+        paymentStatus: 'paid',
+        paymentIntentId: null,
+        status: 'PAID',
+        inventoryStatus: 'reserved',
+        failureCode: null,
+        failureMessage: null,
+        idempotencyRequestHash: null,
+        stockRestored: false,
+        restockedAt: null,
+        idempotencyKey: idem,
+        createdAt,
+        updatedAt: createdAt,
+      } as any);
+
+      const reserved = await applyReserveMove(orderId, productId, 1);
+      expect(reserved.ok).toBe(true);
+
+      releaseSpy.mockImplementation(
+        async (...args: Parameters<typeof inventory.applyReleaseMove>) => {
+          const result = await originalApplyReleaseMove(...args);
+          const finalizedAt = new Date();
+          await db
+            .update(orders)
+            .set({
+              inventoryStatus: 'released',
+              stockRestored: true,
+              restockedAt: finalizedAt,
+              updatedAt: finalizedAt,
+            } as any)
+            .where(eq(orders.id, orderId));
+          return result;
+        }
+      );
+
+      await expect(
+        restockOrder(orderId, {
+          reason: 'refunded',
+          alreadyClaimed: true,
+          workerId: 'test-concurrent-refund',
+        })
+      ).rejects.toBeInstanceOf(OrderStateInvalidError);
+    } finally {
+      releaseSpy.mockRestore();
+      try {
+        await db.delete(orders).where(eq(orders.id, orderId));
+      } catch (error) {
+        logCleanupFailed({
+          test: 'restockOrder: released non-refunded state is not finalized for refunded recheck',
+          orderId,
+          productId,
+          step: 'delete orders',
+          error,
+        });
+      }
+      try {
+        await db.delete(products).where(eq(products.id, productId));
+      } catch (error) {
+        logCleanupFailed({
+          test: 'restockOrder: released non-refunded state is not finalized for refunded recheck',
+          orderId,
+          productId,
+          step: 'delete products',
+          error,
+        });
+      }
+    }
+  }, 30000);
+});

@@ -20,6 +20,16 @@ function uniqueSlug(prefix = 'sale-invariant') {
   return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
+function dualCurrencyPrices(
+  priceMinor: number,
+  originalPriceMinor: number | null = null
+) {
+  return [
+    { currency: 'UAH' as const, priceMinor, originalPriceMinor },
+    { currency: 'USD' as const, priceMinor, originalPriceMinor },
+  ];
+}
+
 describe('SALE invariant: originalPriceMinor is required', () => {
   const createdProductIds: string[] = [];
 
@@ -35,13 +45,7 @@ describe('SALE invariant: originalPriceMinor is required', () => {
         title: 'Sale product',
         badge: 'SALE',
         image: {} as any,
-        prices: [
-          {
-            currency: 'USD',
-            priceMinor: 1000,
-            originalPriceMinor: null,
-          },
-        ],
+        prices: dualCurrencyPrices(1000, null),
         stock: 10,
         isActive: true,
       } as any)
@@ -76,37 +80,51 @@ describe('SALE invariant: originalPriceMinor is required', () => {
 
     createdProductIds.push(p.id);
 
-    await db.insert(productPrices).values({
-      productId: p.id,
-      currency: 'USD',
-      priceMinor: 1000,
-      originalPriceMinor: 2000,
-      price: toDbMoney(1000),
-      originalPrice: toDbMoney(2000),
-    });
+    await db.insert(productPrices).values(
+      dualCurrencyPrices(1000, 2000).map(price => ({
+        productId: p.id,
+        currency: price.currency,
+        priceMinor: price.priceMinor,
+        originalPriceMinor: price.originalPriceMinor,
+        price: toDbMoney(price.priceMinor),
+        originalPrice:
+          price.originalPriceMinor == null
+            ? null
+            : toDbMoney(price.originalPriceMinor),
+      }))
+    );
 
     await expect(
       updateProduct(p.id, {
-        prices: [
-          {
-            currency: 'USD',
-            priceMinor: 1000,
-            originalPriceMinor: null,
-          },
-        ],
+        prices: dualCurrencyPrices(1000, null),
       } as any)
     ).rejects.toThrow(/SALE badge requires originalPrice/i);
 
-    const [pp] = await db
+    const rows = await db
       .select({
+        currency: productPrices.currency,
         priceMinor: productPrices.priceMinor,
         originalPriceMinor: productPrices.originalPriceMinor,
       })
       .from(productPrices)
-      .where(eq(productPrices.productId, p.id))
-      .limit(1);
+      .where(eq(productPrices.productId, p.id));
 
-    expect(pp.priceMinor).toBe(1000);
-    expect(pp.originalPriceMinor).toBe(2000);
+    expect(rows).toHaveLength(2);
+    expect(
+      [...rows].sort((left, right) =>
+        left.currency.localeCompare(right.currency)
+      )
+    ).toEqual([
+      {
+        currency: 'UAH',
+        priceMinor: 1000,
+        originalPriceMinor: 2000,
+      },
+      {
+        currency: 'USD',
+        priceMinor: 1000,
+        originalPriceMinor: 2000,
+      },
+    ]);
   }, 30_000);
 });

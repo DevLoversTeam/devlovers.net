@@ -1,11 +1,13 @@
 import crypto from 'crypto';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { db } from '@/db';
 import {
+  inventoryMoves,
   npCities,
   npWarehouses,
+  orderItems,
   orders,
   orderShipping,
   productPrices,
@@ -18,7 +20,7 @@ import {
 } from '@/lib/services/errors';
 import { createOrderWithItems } from '@/lib/services/orders';
 
-import { TEST_LEGAL_CONSENT } from './test-legal-consent';
+import { createTestLegalConsent } from './test-legal-consent';
 
 type SeedData = {
   productId: string;
@@ -111,10 +113,22 @@ async function seedCheckoutShippingData(): Promise<SeedData> {
 }
 
 async function cleanupSeedData(data: SeedData, orderIds: string[]) {
+  if (orderIds.length > 0) {
+    await db.delete(orderItems).where(inArray(orderItems.orderId, orderIds));
+  }
+
   for (const orderId of orderIds) {
+    await db.delete(orderShipping).where(eq(orderShipping.orderId, orderId));
     await db.delete(orders).where(eq(orders.id, orderId));
   }
 
+  await db
+    .delete(inventoryMoves)
+    .where(eq(inventoryMoves.productId, data.productId));
+  await db.delete(orderItems).where(eq(orderItems.productId, data.productId));
+  await db
+    .delete(productPrices)
+    .where(eq(productPrices.productId, data.productId));
   await db.delete(npWarehouses).where(eq(npWarehouses.ref, data.warehouseRefA));
   await db.delete(npWarehouses).where(eq(npWarehouses.ref, data.warehouseRefB));
   await db.delete(npCities).where(eq(npCities.ref, data.cityRef));
@@ -130,6 +144,19 @@ describe('checkout shipping phase 3', () => {
     vi.stubEnv('SHOP_SHIPPING_NP_WAREHOUSE_AMOUNT_MINOR', '500');
     vi.stubEnv('SHOP_SHIPPING_NP_LOCKER_AMOUNT_MINOR', '400');
     vi.stubEnv('SHOP_SHIPPING_NP_COURIER_AMOUNT_MINOR', '700');
+    vi.stubEnv('NP_API_KEY', 'np_test_checkout_shipping_phase3');
+    vi.stubEnv('NP_SENDER_CITY_REF', 'np_sender_city_checkout_shipping_phase3');
+    vi.stubEnv(
+      'NP_SENDER_WAREHOUSE_REF',
+      'np_sender_warehouse_checkout_shipping_phase3'
+    );
+    vi.stubEnv('NP_SENDER_REF', 'np_sender_checkout_shipping_phase3');
+    vi.stubEnv(
+      'NP_SENDER_CONTACT_REF',
+      'np_sender_contact_checkout_shipping_phase3'
+    );
+    vi.stubEnv('NP_SENDER_NAME', 'Checkout Shipping Phase 3 Sender');
+    vi.stubEnv('NP_SENDER_PHONE', '+380500000001');
     resetEnvCache();
   });
 
@@ -138,19 +165,19 @@ describe('checkout shipping phase 3', () => {
     resetEnvCache();
   });
 
-  it('rejects NP shipping for unsupported checkout currency', async () => {
+  it('uses the authoritative storefront UAH currency for shipping checkout regardless of locale', async () => {
     const seed = await seedCheckoutShippingData();
     const createdOrderIds: string[] = [];
 
     try {
       const idem = crypto.randomUUID();
-      const promise = createOrderWithItems({
+      const result = await createOrderWithItems({
         idempotencyKey: idem,
         userId: null,
         locale: 'en-US',
         country: 'UA',
         items: [{ productId: seed.productId, quantity: 1 }],
-        legalConsent: TEST_LEGAL_CONSENT,
+        legalConsent: createTestLegalConsent(),
         shipping: {
           provider: 'nova_poshta',
           methodCode: 'NP_WAREHOUSE',
@@ -164,18 +191,28 @@ describe('checkout shipping phase 3', () => {
           },
         },
       });
+      createdOrderIds.push(result.order.id);
 
-      await expect(promise).rejects.toBeInstanceOf(InvalidPayloadError);
-      await expect(promise).rejects.toHaveProperty(
-        'code',
-        'SHIPPING_CURRENCY_UNSUPPORTED'
-      );
+      expect(result.isNew).toBe(true);
+      expect(result.order.currency).toBe('UAH');
+      expect(result.order.totalAmountMinor).toBe(4500);
 
-      const rows = await db
-        .select({ id: orders.id })
+      const [orderRow] = await db
+        .select({
+          id: orders.id,
+          currency: orders.currency,
+          shippingAmountMinor: orders.shippingAmountMinor,
+          totalAmountMinor: orders.totalAmountMinor,
+        })
         .from(orders)
         .where(eq(orders.idempotencyKey, idem));
-      expect(rows.length).toBe(0);
+
+      expect(orderRow).toEqual({
+        id: result.order.id,
+        currency: 'UAH',
+        shippingAmountMinor: 500,
+        totalAmountMinor: 4500,
+      });
     } finally {
       await cleanupSeedData(seed, createdOrderIds);
     }
@@ -217,7 +254,7 @@ describe('checkout shipping phase 3', () => {
         locale: 'uk-UA',
         country: 'UA',
         items: [{ productId: seed.productId, quantity: 1 }],
-        legalConsent: TEST_LEGAL_CONSENT,
+        legalConsent: createTestLegalConsent(),
         shipping: {
           provider: 'nova_poshta',
           methodCode: 'NP_WAREHOUSE',
@@ -264,7 +301,7 @@ describe('checkout shipping phase 3', () => {
         locale: 'uk-UA',
         country: 'UA',
         items: [{ productId: seed.productId, quantity: 1 }],
-        legalConsent: TEST_LEGAL_CONSENT,
+        legalConsent: createTestLegalConsent(),
         shipping: {
           provider: 'nova_poshta',
           methodCode: 'NP_LOCKER',
@@ -307,7 +344,7 @@ describe('checkout shipping phase 3', () => {
         locale: 'uk-UA',
         country: 'UA',
         items: [{ productId: seed.productId, quantity: 1 }],
-        legalConsent: TEST_LEGAL_CONSENT,
+        legalConsent: createTestLegalConsent(),
         shipping: {
           provider: 'nova_poshta',
           methodCode: 'NP_COURIER',
@@ -349,7 +386,7 @@ describe('checkout shipping phase 3', () => {
         locale: 'uk-UA',
         country: 'UA',
         items: [{ productId: seed.productId, quantity: 1 }],
-        legalConsent: TEST_LEGAL_CONSENT,
+        legalConsent: createTestLegalConsent(),
         shipping: {
           provider: 'nova_poshta',
           methodCode: 'NP_WAREHOUSE',
@@ -418,7 +455,7 @@ describe('checkout shipping phase 3', () => {
     }
   }, 60_000);
 
-  it('idempotency excludes recipient PII but includes shipping refs', async () => {
+  it('idempotency replays only when shipping recipient data is materially identical', async () => {
     const seed = await seedCheckoutShippingData();
     const createdOrderIds: string[] = [];
 
@@ -430,7 +467,7 @@ describe('checkout shipping phase 3', () => {
         locale: 'uk-UA',
         country: 'UA',
         items: [{ productId: seed.productId, quantity: 1 }],
-        legalConsent: TEST_LEGAL_CONSENT,
+        legalConsent: createTestLegalConsent(),
         shipping: {
           provider: 'nova_poshta',
           methodCode: 'NP_WAREHOUSE',
@@ -452,7 +489,7 @@ describe('checkout shipping phase 3', () => {
         locale: 'uk-UA',
         country: 'UA',
         items: [{ productId: seed.productId, quantity: 1 }],
-        legalConsent: TEST_LEGAL_CONSENT,
+        legalConsent: createTestLegalConsent(),
         shipping: {
           provider: 'nova_poshta',
           methodCode: 'NP_WAREHOUSE',
@@ -461,14 +498,24 @@ describe('checkout shipping phase 3', () => {
             warehouseRef: seed.warehouseRefA,
           },
           recipient: {
-            fullName: 'Bob',
-            phone: '+380509998877',
+            fullName: 'Alice',
+            phone: '+380501112233',
           },
         },
       });
 
       expect(second.isNew).toBe(false);
       expect(second.order.id).toBe(first.order.id);
+
+      const matchedRows = await db
+        .select({
+          id: orders.id,
+          idempotencyKey: orders.idempotencyKey,
+        })
+        .from(orders)
+        .where(eq(orders.idempotencyKey, idem));
+
+      expect(matchedRows).toHaveLength(1);
 
       const [shippingRow] = await db
         .select({ shippingAddress: orderShipping.shippingAddress })
@@ -487,7 +534,55 @@ describe('checkout shipping phase 3', () => {
           locale: 'uk-UA',
           country: 'UA',
           items: [{ productId: seed.productId, quantity: 1 }],
-          legalConsent: TEST_LEGAL_CONSENT,
+          legalConsent: createTestLegalConsent(),
+          shipping: {
+            provider: 'nova_poshta',
+            methodCode: 'NP_WAREHOUSE',
+            selection: {
+              cityRef: seed.cityRef,
+              warehouseRef: seed.warehouseRefA,
+            },
+            recipient: {
+              fullName: 'Bob',
+              phone: '+380509998877',
+              email: 'bob@example.com',
+              comment: 'Call me on arrival',
+            },
+          },
+        })
+      ).rejects.toBeInstanceOf(IdempotencyConflictError);
+
+      const [shippingRowAfterRecipientConflict] = await db
+        .select({ shippingAddress: orderShipping.shippingAddress })
+        .from(orderShipping)
+        .where(eq(orderShipping.orderId, first.order.id))
+        .limit(1);
+
+      expect(
+        (shippingRowAfterRecipientConflict?.shippingAddress as any)?.recipient
+      ).toMatchObject({
+        fullName: 'Alice',
+        phone: '+380501112233',
+      });
+
+      const rowsAfterRecipientConflict = await db
+        .select({
+          id: orders.id,
+          idempotencyKey: orders.idempotencyKey,
+        })
+        .from(orders)
+        .where(eq(orders.idempotencyKey, idem));
+
+      expect(rowsAfterRecipientConflict).toHaveLength(1);
+
+      await expect(
+        createOrderWithItems({
+          idempotencyKey: idem,
+          userId: null,
+          locale: 'uk-UA',
+          country: 'UA',
+          items: [{ productId: seed.productId, quantity: 1 }],
+          legalConsent: createTestLegalConsent(),
           shipping: {
             provider: 'nova_poshta',
             methodCode: 'NP_WAREHOUSE',
@@ -502,6 +597,139 @@ describe('checkout shipping phase 3', () => {
           },
         })
       ).rejects.toBeInstanceOf(IdempotencyConflictError);
+    } finally {
+      await cleanupSeedData(seed, createdOrderIds);
+    }
+  }, 60_000);
+
+  it('treats blank optional shipping recipient fields as replay-equivalent nulls', async () => {
+    const seed = await seedCheckoutShippingData();
+    const createdOrderIds: string[] = [];
+
+    try {
+      const idem = crypto.randomUUID();
+      const first = await createOrderWithItems({
+        idempotencyKey: idem,
+        userId: null,
+        locale: 'uk-UA',
+        country: 'UA',
+        items: [{ productId: seed.productId, quantity: 1 }],
+        legalConsent: createTestLegalConsent(),
+        shipping: {
+          provider: 'nova_poshta',
+          methodCode: 'NP_WAREHOUSE',
+          selection: {
+            cityRef: seed.cityRef,
+            warehouseRef: seed.warehouseRefA,
+          },
+          recipient: {
+            fullName: 'Alice',
+            phone: '+380501112233',
+            email: '',
+            comment: '   ',
+          },
+        },
+      });
+      createdOrderIds.push(first.order.id);
+
+      const replay = await createOrderWithItems({
+        idempotencyKey: idem,
+        userId: null,
+        locale: 'uk-UA',
+        country: 'UA',
+        items: [{ productId: seed.productId, quantity: 1 }],
+        legalConsent: createTestLegalConsent(),
+        shipping: {
+          provider: 'nova_poshta',
+          methodCode: 'NP_WAREHOUSE',
+          selection: {
+            cityRef: seed.cityRef,
+            warehouseRef: seed.warehouseRefA,
+          },
+          recipient: {
+            fullName: 'Alice',
+            phone: '+380501112233',
+            email: '   ',
+            comment: '',
+          },
+        },
+      });
+
+      expect(replay.isNew).toBe(false);
+      expect(replay.order.id).toBe(first.order.id);
+
+      const [shippingRow] = await db
+        .select({ shippingAddress: orderShipping.shippingAddress })
+        .from(orderShipping)
+        .where(eq(orderShipping.orderId, first.order.id))
+        .limit(1);
+
+      expect((shippingRow?.shippingAddress as any)?.recipient).toMatchObject({
+        fullName: 'Alice',
+        phone: '+380501112233',
+        email: null,
+        comment: null,
+      });
+    } finally {
+      await cleanupSeedData(seed, createdOrderIds);
+    }
+  }, 60_000);
+
+  it('replays an existing order even if the shipping refs drift and would block a fresh order', async () => {
+    const seed = await seedCheckoutShippingData();
+    const createdOrderIds: string[] = [];
+
+    try {
+      const idem = crypto.randomUUID();
+      const first = await createOrderWithItems({
+        idempotencyKey: idem,
+        userId: null,
+        locale: 'uk-UA',
+        country: 'UA',
+        items: [{ productId: seed.productId, quantity: 1 }],
+        legalConsent: createTestLegalConsent(),
+        shipping: {
+          provider: 'nova_poshta',
+          methodCode: 'NP_WAREHOUSE',
+          selection: {
+            cityRef: seed.cityRef,
+            warehouseRef: seed.warehouseRefA,
+          },
+          recipient: {
+            fullName: 'Alice',
+            phone: '+380501112233',
+          },
+        },
+      });
+      createdOrderIds.push(first.order.id);
+
+      await db
+        .delete(npWarehouses)
+        .where(eq(npWarehouses.ref, seed.warehouseRefA));
+
+      const replay = await createOrderWithItems({
+        idempotencyKey: idem,
+        userId: null,
+        locale: 'uk-UA',
+        country: 'UA',
+        items: [{ productId: seed.productId, quantity: 1 }],
+        legalConsent: createTestLegalConsent(),
+        shipping: {
+          provider: 'nova_poshta',
+          methodCode: 'NP_WAREHOUSE',
+          selection: {
+            cityRef: seed.cityRef,
+            warehouseRef: seed.warehouseRefA,
+          },
+          recipient: {
+            fullName: 'Alice',
+            phone: '+380501112233',
+          },
+        },
+      });
+
+      expect(replay.isNew).toBe(false);
+      expect(replay.order.id).toBe(first.order.id);
     } finally {
       await cleanupSeedData(seed, createdOrderIds);
     }

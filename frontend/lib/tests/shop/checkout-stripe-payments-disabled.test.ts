@@ -25,7 +25,8 @@ import { rehydrateCartItems } from '@/lib/services/products';
 import { toDbMoney } from '@/lib/shop/money';
 import { deriveTestIpFromIdemKey } from '@/lib/tests/helpers/ip';
 import { getOrSeedActiveTemplateProduct } from '@/lib/tests/helpers/seed-product';
-import { TEST_LEGAL_CONSENT } from '@/lib/tests/shop/test-legal-consent';
+
+import { createTestLegalConsent } from './test-legal-consent';
 
 vi.mock('@/lib/auth', () => ({
   getCurrentUser: vi.fn().mockResolvedValue(null),
@@ -59,12 +60,16 @@ const __prevStripeSecret = process.env.STRIPE_SECRET_KEY;
 const __prevStripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 const __prevStripePublishableKey =
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+const __prevMonoToken = process.env.MONO_MERCHANT_TOKEN;
 const __prevStatusSecret = process.env.SHOP_STATUS_TOKEN_SECRET;
 const __prevAppOrigin = process.env.APP_ORIGIN;
+const __prevShopBaseUrl = process.env.SHOP_BASE_URL;
 
 beforeAll(() => {
   process.env.RATE_LIMIT_DISABLED = '1';
   process.env.APP_ORIGIN = 'http://localhost:3000';
+  process.env.SHOP_BASE_URL = 'http://localhost:3000';
+  process.env.MONO_MERCHANT_TOKEN = 'test_mono_token';
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = 'pk_test_default';
   process.env.SHOP_STATUS_TOKEN_SECRET =
     'test_status_token_secret_test_status_token_secret';
@@ -95,12 +100,18 @@ afterAll(() => {
   else
     process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = __prevStripePublishableKey;
 
+  if (__prevMonoToken === undefined) delete process.env.MONO_MERCHANT_TOKEN;
+  else process.env.MONO_MERCHANT_TOKEN = __prevMonoToken;
+
   if (__prevStatusSecret === undefined)
     delete process.env.SHOP_STATUS_TOKEN_SECRET;
   else process.env.SHOP_STATUS_TOKEN_SECRET = __prevStatusSecret;
 
   if (__prevAppOrigin === undefined) delete process.env.APP_ORIGIN;
   else process.env.APP_ORIGIN = __prevAppOrigin;
+
+  if (__prevShopBaseUrl === undefined) delete process.env.SHOP_BASE_URL;
+  else process.env.SHOP_BASE_URL = __prevShopBaseUrl;
 
   resetEnvCache();
 });
@@ -227,7 +238,7 @@ async function postCheckout(args: {
       origin: 'http://localhost:3000',
     },
     body: JSON.stringify({
-      legalConsent: TEST_LEGAL_CONSENT,
+      legalConsent: createTestLegalConsent(),
       ...(quote
         ? { pricingFingerprint: quote.summary.pricingFingerprint }
         : {}),
@@ -294,18 +305,16 @@ describe.sequential('checkout stripe fail-closed + tamper guards', () => {
     let createdOrderId: string | null = null;
 
     try {
-      const res = await postCheckout({
-        idemKey,
-        acceptLanguage: 'en-US',
-        body: {
-          paymentProvider: 'stripe',
-          items: [{ productId, quantity: 1 }],
-        },
-      });
-
-      expect(res.status).toBe(503);
-      const json: any = await res.json();
-      expect(json.code).toBe('PSP_UNAVAILABLE');
+      await expect(
+        postCheckout({
+          idemKey,
+          acceptLanguage: 'en-US',
+          body: {
+            paymentProvider: 'stripe',
+            items: [{ productId, quantity: 1 }],
+          },
+        })
+      ).rejects.toThrow(/STRIPE_SECRET_KEY/);
 
       const [row] = await db
         .select({ id: orders.id })
@@ -440,7 +449,7 @@ describe.sequential('checkout stripe fail-closed + tamper guards', () => {
         },
       });
 
-      expect(res.status).toBe(400);
+      expect(res.status).toBe(422);
       const json: any = await res.json();
       expect(json.code).toBe('INVALID_PAYLOAD');
 

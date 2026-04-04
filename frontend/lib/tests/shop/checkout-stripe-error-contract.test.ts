@@ -24,32 +24,28 @@ vi.mock('@/lib/auth', () => ({
   getCurrentUser: vi.fn().mockResolvedValue(null),
 }));
 
-vi.mock('@/lib/psp/stripe', () => ({
-  createPaymentIntent: vi.fn(async () => {
-    throw new Error('STRIPE_TEST_DOWN');
-  }),
-  retrievePaymentIntent: vi.fn(),
-}));
-
-vi.mock('@/lib/services/orders/payment-intent', () => ({
-  readStripePaymentIntentParams: vi.fn(async () => ({
-    amountMinor: 1000,
-    currency: 'USD',
-  })),
-}));
-
 vi.mock('@/lib/services/orders', async () => {
   const actual = await vi.importActual<any>('@/lib/services/orders');
   return {
     ...actual,
     createOrderWithItems: vi.fn(),
-    setOrderPaymentIntent: vi.fn(),
     restockOrder: vi.fn(),
   };
 });
 
+vi.mock('@/lib/services/orders/payment-attempts', async () => {
+  const actual = await vi.importActual<any>(
+    '@/lib/services/orders/payment-attempts'
+  );
+  return {
+    ...actual,
+    ensureStripePaymentIntentForOrder: vi.fn(),
+  };
+});
+
 import { POST } from '@/app/api/shop/checkout/route';
-import { createOrderWithItems } from '@/lib/services/orders';
+import { createOrderWithItems, restockOrder } from '@/lib/services/orders';
+import { ensureStripePaymentIntentForOrder } from '@/lib/services/orders/payment-attempts';
 
 type MockedFn = ReturnType<typeof vi.fn>;
 
@@ -69,9 +65,11 @@ afterAll(() => {
   else process.env.RATE_LIMIT_DISABLED = __prevRateLimitDisabled;
 });
 
-describe('checkout: Stripe errors after order creation must not be 400', () => {
-  it('new order (isNew=true): Stripe PI creation failure returns 502 STRIPE_ERROR', async () => {
+describe('checkout: stripe payment-init failures after order creation', () => {
+  it('new order (isNew=true): payment-init failure returns 502 STRIPE_ERROR and restocks', async () => {
     const co = createOrderWithItems as unknown as MockedFn;
+    const ensurePI = ensureStripePaymentIntentForOrder as unknown as MockedFn;
+    const restock = restockOrder as unknown as MockedFn;
 
     co.mockResolvedValueOnce({
       order: {
@@ -85,6 +83,7 @@ describe('checkout: Stripe errors after order creation must not be 400', () => {
       isNew: true,
       totalCents: 1000,
     });
+    ensurePI.mockRejectedValueOnce(new Error('STRIPE_TEST_DOWN'));
 
     const res = await POST(
       makeCheckoutReq({ idempotencyKey: 'idem_key_test_new_0001' })
@@ -95,10 +94,19 @@ describe('checkout: Stripe errors after order creation must not be 400', () => {
     expect(json.code).toBe('STRIPE_ERROR');
     expect(typeof json.message).toBe('string');
     expect(createOrderWithItems).toHaveBeenCalledTimes(1);
+    expect(ensurePI).toHaveBeenCalledWith({
+      orderId: 'order_test_new',
+      existingPaymentIntentId: null,
+    });
+    expect(restock).toHaveBeenCalledWith('order_test_new', {
+      reason: 'failed',
+    });
   });
 
-  it('existing order (isNew=false, no PI): Stripe PI creation failure returns 502 STRIPE_ERROR', async () => {
+  it('existing order (isNew=false, no PI): payment-init failure returns 502 STRIPE_ERROR without restocking', async () => {
     const co = createOrderWithItems as unknown as MockedFn;
+    const ensurePI = ensureStripePaymentIntentForOrder as unknown as MockedFn;
+    const restock = restockOrder as unknown as MockedFn;
 
     co.mockResolvedValueOnce({
       order: {
@@ -112,6 +120,7 @@ describe('checkout: Stripe errors after order creation must not be 400', () => {
       isNew: false,
       totalCents: 1000,
     });
+    ensurePI.mockRejectedValueOnce(new Error('STRIPE_TEST_DOWN'));
 
     const res = await POST(
       makeCheckoutReq({ idempotencyKey: 'idem_key_test_existing_0001' })
@@ -122,5 +131,10 @@ describe('checkout: Stripe errors after order creation must not be 400', () => {
     expect(json.code).toBe('STRIPE_ERROR');
     expect(typeof json.message).toBe('string');
     expect(createOrderWithItems).toHaveBeenCalledTimes(1);
+    expect(ensurePI).toHaveBeenCalledWith({
+      orderId: 'order_test_existing',
+      existingPaymentIntentId: null,
+    });
+    expect(restock).not.toHaveBeenCalled();
   });
 });

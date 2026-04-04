@@ -235,6 +235,92 @@ describe.sequential('admin order lifecycle actions', () => {
     }
   });
 
+  it('concurrent confirm attempts keep final state and side-effects consistent', async () => {
+    const orderId = crypto.randomUUID();
+    await ensureAdminUser();
+
+    await insertOrder({
+      orderId,
+      paymentProvider: 'stripe',
+      paymentStatus: 'paid',
+      status: 'INVENTORY_RESERVED',
+      inventoryStatus: 'reserved',
+      shippingRequired: true,
+      shippingProvider: 'nova_poshta',
+      shippingMethodCode: 'NP_WAREHOUSE',
+      shippingStatus: 'pending',
+    });
+
+    try {
+      const results = await Promise.allSettled([
+        applyAdminOrderLifecycleAction({
+          orderId,
+          action: 'confirm',
+          actorUserId: ADMIN_USER_ID,
+          requestId: `req_${crypto.randomUUID()}`,
+        }),
+        applyAdminOrderLifecycleAction({
+          orderId,
+          action: 'confirm',
+          actorUserId: ADMIN_USER_ID,
+          requestId: `req_${crypto.randomUUID()}`,
+        }),
+      ]);
+
+      expect(results).toHaveLength(2);
+      expect(results.every(result => result.status === 'fulfilled')).toBe(true);
+
+      const fulfilled = results
+        .filter(
+          (
+            result
+          ): result is PromiseFulfilledResult<
+            Awaited<ReturnType<typeof applyAdminOrderLifecycleAction>>
+          > => result.status === 'fulfilled'
+        )
+        .map(result => result.value);
+
+      expect(fulfilled).toHaveLength(2);
+      expect(fulfilled.every(result => result.status === 'PAID')).toBe(true);
+      expect(fulfilled.every(result => result.paymentStatus === 'paid')).toBe(
+        true
+      );
+      expect(
+        fulfilled.every(result => result.shippingStatus === 'queued')
+      ).toBe(true);
+
+      const [orderRow] = await db
+        .select({
+          status: orders.status,
+          paymentStatus: orders.paymentStatus,
+          shippingStatus: orders.shippingStatus,
+        })
+        .from(orders)
+        .where(eq(orders.id, orderId))
+        .limit(1);
+      expect(orderRow?.status).toBe('PAID');
+      expect(orderRow?.paymentStatus).toBe('paid');
+      expect(orderRow?.shippingStatus).toBe('queued');
+
+      const shipmentRows = await db
+        .select({ id: shippingShipments.id, status: shippingShipments.status })
+        .from(shippingShipments)
+        .where(eq(shippingShipments.orderId, orderId));
+      expect(shipmentRows).toHaveLength(1);
+      expect(shipmentRows[0]?.status).toBe('queued');
+
+      const auditRows = await db
+        .select({ action: adminAuditLog.action })
+        .from(adminAuditLog)
+        .where(eq(adminAuditLog.orderId, orderId));
+      expect(
+        auditRows.filter(row => row.action === 'order_admin_action.confirm')
+      ).toHaveLength(1);
+    } finally {
+      await cleanup(orderId);
+    }
+  });
+
   it('backfills confirm audit without repairing shipment side-effects for already-paid refund-contained orders', async () => {
     const orderId = crypto.randomUUID();
     await ensureAdminUser();
@@ -400,6 +486,86 @@ describe.sequential('admin order lifecycle actions', () => {
     }
   });
 
+  it('concurrent cancel attempts keep final canceled state without duplicate side-effects', async () => {
+    const orderId = crypto.randomUUID();
+    await ensureAdminUser();
+
+    await insertOrder({
+      orderId,
+      paymentProvider: 'stripe',
+      paymentStatus: 'pending',
+      status: 'CREATED',
+      inventoryStatus: 'none',
+      shippingRequired: false,
+      shippingStatus: null,
+    });
+
+    try {
+      const results = await Promise.allSettled([
+        applyAdminOrderLifecycleAction({
+          orderId,
+          action: 'cancel',
+          actorUserId: ADMIN_USER_ID,
+          requestId: `req_${crypto.randomUUID()}`,
+        }),
+        applyAdminOrderLifecycleAction({
+          orderId,
+          action: 'cancel',
+          actorUserId: ADMIN_USER_ID,
+          requestId: `req_${crypto.randomUUID()}`,
+        }),
+      ]);
+
+      expect(results).toHaveLength(2);
+      expect(results.every(result => result.status === 'fulfilled')).toBe(true);
+
+      const fulfilled = results
+        .filter(
+          (
+            result
+          ): result is PromiseFulfilledResult<
+            Awaited<ReturnType<typeof applyAdminOrderLifecycleAction>>
+          > => result.status === 'fulfilled'
+        )
+        .map(result => result.value);
+
+      expect(fulfilled).toHaveLength(2);
+      expect(fulfilled.every(result => result.status === 'CANCELED')).toBe(
+        true
+      );
+      expect(fulfilled.every(result => result.paymentStatus === 'failed')).toBe(
+        true
+      );
+      expect(fulfilled.some(result => result.changed)).toBe(true);
+
+      const [orderRow] = await db
+        .select({
+          status: orders.status,
+          paymentStatus: orders.paymentStatus,
+          inventoryStatus: orders.inventoryStatus,
+          stockRestored: orders.stockRestored,
+        })
+        .from(orders)
+        .where(eq(orders.id, orderId))
+        .limit(1);
+
+      expect(orderRow?.status).toBe('CANCELED');
+      expect(orderRow?.paymentStatus).toBe('failed');
+      expect(orderRow?.inventoryStatus).toBe('released');
+      expect(orderRow?.stockRestored).toBe(true);
+
+      const auditRows = await db
+        .select({ action: adminAuditLog.action })
+        .from(adminAuditLog)
+        .where(eq(adminAuditLog.orderId, orderId));
+      expect(
+        auditRows.filter(row => row.action === 'order_admin_action.cancel')
+      ).toHaveLength(1);
+    } finally {
+      await cleanup(orderId);
+    }
+  });
+
   it('eligible order can be completed and repeated attempts stay safe', async () => {
     const orderId = crypto.randomUUID();
     await ensureAdminUser();
@@ -506,6 +672,96 @@ describe.sequential('admin order lifecycle actions', () => {
 
       expect(first.changed).toBe(false);
       expect(second.changed).toBe(false);
+
+      const auditRows = await db
+        .select({ action: adminAuditLog.action })
+        .from(adminAuditLog)
+        .where(eq(adminAuditLog.orderId, orderId));
+      expect(
+        auditRows.filter(row => row.action === 'order_admin_action.complete')
+      ).toHaveLength(1);
+    } finally {
+      await cleanup(orderId);
+    }
+  });
+
+  it('concurrent complete attempts keep final delivered state without duplicate audit rows', async () => {
+    const orderId = crypto.randomUUID();
+    await ensureAdminUser();
+
+    await insertOrder({
+      orderId,
+      paymentProvider: 'stripe',
+      paymentStatus: 'paid',
+      status: 'PAID',
+      inventoryStatus: 'reserved',
+      shippingRequired: true,
+      shippingProvider: 'nova_poshta',
+      shippingMethodCode: 'NP_WAREHOUSE',
+      shippingStatus: 'shipped',
+    });
+
+    await db.insert(shippingShipments).values({
+      id: crypto.randomUUID(),
+      orderId,
+      provider: 'nova_poshta',
+      status: 'succeeded',
+      attemptCount: 1,
+      leaseOwner: null,
+      leaseExpiresAt: null,
+      nextAttemptAt: null,
+    } as any);
+
+    try {
+      const results = await Promise.allSettled([
+        applyAdminOrderLifecycleAction({
+          orderId,
+          action: 'complete',
+          actorUserId: ADMIN_USER_ID,
+          requestId: `req_${crypto.randomUUID()}`,
+        }),
+        applyAdminOrderLifecycleAction({
+          orderId,
+          action: 'complete',
+          actorUserId: ADMIN_USER_ID,
+          requestId: `req_${crypto.randomUUID()}`,
+        }),
+      ]);
+
+      expect(results).toHaveLength(2);
+      expect(results.every(result => result.status === 'fulfilled')).toBe(true);
+
+      const fulfilled = results
+        .filter(
+          (
+            result
+          ): result is PromiseFulfilledResult<
+            Awaited<ReturnType<typeof applyAdminOrderLifecycleAction>>
+          > => result.status === 'fulfilled'
+        )
+        .map(result => result.value);
+
+      expect(fulfilled).toHaveLength(2);
+      expect(fulfilled.filter(result => result.changed === true)).toHaveLength(
+        1
+      );
+      expect(fulfilled.filter(result => result.changed === false)).toHaveLength(
+        1
+      );
+      expect(fulfilled.every(result => result.status === 'PAID')).toBe(true);
+      expect(fulfilled.every(result => result.paymentStatus === 'paid')).toBe(
+        true
+      );
+      expect(
+        fulfilled.every(result => result.shippingStatus === 'delivered')
+      ).toBe(true);
+
+      const [orderRow] = await db
+        .select({ shippingStatus: orders.shippingStatus })
+        .from(orders)
+        .where(eq(orders.id, orderId))
+        .limit(1);
+      expect(orderRow?.shippingStatus).toBe('delivered');
 
       const auditRows = await db
         .select({ action: adminAuditLog.action })

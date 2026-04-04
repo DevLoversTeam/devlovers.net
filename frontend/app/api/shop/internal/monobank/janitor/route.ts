@@ -14,6 +14,8 @@ import {
   runMonobankJanitorJob4,
 } from '@/lib/services/orders/monobank-janitor';
 
+export const runtime = 'nodejs';
+
 const ROUTE_PATH = '/api/shop/internal/monobank/janitor' as const;
 const JOB_PREFIX = 'monobank-janitor:' as const;
 const JOB_NAMES = ['job1', 'job2', 'job3', 'job4'] as const;

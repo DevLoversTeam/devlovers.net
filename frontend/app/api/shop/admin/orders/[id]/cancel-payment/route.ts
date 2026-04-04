@@ -20,6 +20,8 @@ import { cancelMonobankUnpaidPayment } from '@/lib/services/orders/monobank-canc
 import { writeAdminAudit } from '@/lib/services/shop/events/write-admin-audit';
 import { orderIdParamSchema, orderSummarySchema } from '@/lib/validation/shop';
 
+export const runtime = 'nodejs';
+
 function noStoreJson(body: unknown, init?: { status?: number }) {
   const res = NextResponse.json(body, { status: init?.status ?? 200 });
   res.headers.set('Cache-Control', 'no-store');

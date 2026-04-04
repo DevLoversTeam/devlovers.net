@@ -1961,15 +1961,15 @@
       },
       "review": {
         "title": "Jak rozpatrywane są zgłoszenia",
-        "body": "Każde zgłoszenie jest rozpatrywane indywidualnie. W razie potrzeby możemy poprosić o dodatkowe szczegóły, zdjęcia lub inne informacje potrzebne do oceny zgłoszenia i przekazania dalszych kroków."
+        "body": "Każde zgłoszenie jest rozpatrywane indywidualnie. W razie potrzeby możemy poprosić o dodatkowe szczegóły, zdjęcia lub inne informacje potrzebne do oceny zgłoszenia i przekazania dalszych kroków. Wymiany nie są obsługiwane."
       },
       "refunds": {
         "title": "Zwrot środków",
-        "body": "Możliwość oraz czas zwrotu środków zależą od wyniku rozpatrzenia i metody płatności użytej przy zamówieniu. Automatyczne zwroty przez stronę internetową nie są obecnie dostępne."
+        "body": "Możliwość oraz czas zwrotu środków zależą od wyniku rozpatrzenia i metody płatności użytej przy zamówieniu. Samodzielne zwroty środków przez witrynę sklepu nie są obecnie dostępne."
       },
       "contact": {
         "title": "Jak skontaktować się ze wsparciem",
-        "body": "Aby uzyskać wskazówki dotyczące zwrotu lub zgłosić problem z dostawą, napisz na"
+        "body": "Aby uzyskać wskazówki dotyczące zwrotu, anulowania lub zgłosić problem z dostawą, napisz na"
       }
     },
     "privacy": {

@@ -24,7 +24,8 @@ import {
 import { resetEnvCache } from '@/lib/env';
 import { rehydrateCartItems } from '@/lib/services/products';
 import { deriveTestIpFromIdemKey } from '@/lib/tests/helpers/ip';
-import { TEST_LEGAL_CONSENT } from '@/lib/tests/shop/test-legal-consent';
+
+import { createTestLegalConsent } from './test-legal-consent';
 
 vi.mock('@/lib/auth', async () => {
   resetEnvCache();
@@ -199,7 +200,7 @@ describe('P0-6 snapshots: order_items immutability', () => {
         'http://localhost:3000/api/shop/checkout',
         {
           items: [{ productId, quantity: 1 }],
-          legalConsent: TEST_LEGAL_CONSENT,
+          legalConsent: createTestLegalConsent(),
           paymentProvider: 'stripe',
           paymentMethod: 'stripe_card',
           pricingFingerprint: quote.summary.pricingFingerprint,

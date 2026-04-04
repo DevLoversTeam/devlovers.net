@@ -58,6 +58,7 @@ export interface ProductPageDisplayProduct {
   primaryImage?: ShopProductImage;
   description?: string;
   badge: ProductBadge;
+  sizes: ShopProduct['sizes'];
 }
 
 type AvailableProductPageViewModelInput = {
@@ -127,6 +128,7 @@ export async function getProductPageData(
         : undefined,
       description: base.description ?? undefined,
       badge,
+      sizes: base.sizes ?? [],
     },
     commerceProduct: null,
   });
@@ -176,6 +178,7 @@ function toProductPageDisplayProduct(input: {
   primaryImage?: ShopProductImage;
   description?: string;
   badge: ProductBadge;
+  sizes?: ShopProduct['sizes'];
 }): ProductPageDisplayProduct {
   return {
     id: input.id,
@@ -186,6 +189,7 @@ function toProductPageDisplayProduct(input: {
     primaryImage: input.primaryImage,
     description: input.description,
     badge: input.badge,
+    sizes: input.sizes ?? [],
   };
 }
 
@@ -206,6 +210,7 @@ export function toProductPageViewModel(
         primaryImage: data.commerceProduct.primaryImage,
         description: data.commerceProduct.description,
         badge: data.commerceProduct.badge ?? 'NONE',
+        sizes: data.commerceProduct.sizes,
       }),
       commerceProduct: data.commerceProduct,
     };

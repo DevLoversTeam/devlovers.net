@@ -191,6 +191,12 @@ export function hashIdempotencyRequest(params: {
     methodCode: 'NP_WAREHOUSE' | 'NP_LOCKER' | 'NP_COURIER';
     cityRef: string;
     warehouseRef: string | null;
+    recipient: {
+      fullName: string;
+      phone: string;
+      email: string | null;
+      comment: string | null;
+    };
   } | null;
   legalConsent: {
     termsAccepted: boolean;

@@ -21,7 +21,8 @@ import {
   cleanupSeededTemplateProduct,
   getOrSeedActiveTemplateProduct,
 } from '@/lib/tests/helpers/seed-product';
-import { TEST_LEGAL_CONSENT } from '@/lib/tests/shop/test-legal-consent';
+
+import { createTestLegalConsent } from './test-legal-consent';
 
 vi.mock('@/lib/auth', () => ({
   getCurrentUser: vi.fn().mockResolvedValue(null),
@@ -57,6 +58,7 @@ vi.mock('@/lib/psp/monobank', () => ({
 
 const __prevRateLimitDisabled = process.env.RATE_LIMIT_DISABLED;
 const __prevPaymentsEnabled = process.env.PAYMENTS_ENABLED;
+const __prevStripePaymentsEnabled = process.env.STRIPE_PAYMENTS_ENABLED;
 const __prevMonoToken = process.env.MONO_MERCHANT_TOKEN;
 const __prevAppOrigin = process.env.APP_ORIGIN;
 const __prevShopBaseUrl = process.env.SHOP_BASE_URL;
@@ -66,6 +68,7 @@ const __prevMonobankGpayEnabled = process.env.SHOP_MONOBANK_GPAY_ENABLED;
 beforeAll(() => {
   process.env.RATE_LIMIT_DISABLED = '1';
   process.env.PAYMENTS_ENABLED = 'true';
+  process.env.STRIPE_PAYMENTS_ENABLED = 'false';
   process.env.MONO_MERCHANT_TOKEN = 'test_mono_token';
   process.env.APP_ORIGIN = 'http://localhost:3000';
   process.env.SHOP_BASE_URL = 'http://localhost:3000';
@@ -83,6 +86,10 @@ afterAll(() => {
 
   if (__prevPaymentsEnabled === undefined) delete process.env.PAYMENTS_ENABLED;
   else process.env.PAYMENTS_ENABLED = __prevPaymentsEnabled;
+
+  if (__prevStripePaymentsEnabled === undefined)
+    delete process.env.STRIPE_PAYMENTS_ENABLED;
+  else process.env.STRIPE_PAYMENTS_ENABLED = __prevStripePaymentsEnabled;
 
   if (__prevMonoToken === undefined) delete process.env.MONO_MERCHANT_TOKEN;
   else process.env.MONO_MERCHANT_TOKEN = __prevMonoToken;
@@ -206,7 +213,7 @@ async function postCheckout(
 
     body: JSON.stringify({
       items: [{ productId, quantity: 1 }],
-      legalConsent: TEST_LEGAL_CONSENT,
+      legalConsent: createTestLegalConsent(),
       paymentProvider: 'monobank',
       ...(pricingFingerprint ? { pricingFingerprint } : {}),
       ...(options?.paymentMethod
@@ -367,7 +374,7 @@ describe.sequential('checkout monobank contract', () => {
       const second = await postCheckout(idemKey, productId, {
         paymentMethod: 'monobank_google_pay',
       });
-      expect(second.status).toBe(409);
+      expect(second.status).toBe(422);
       const secondJson: any = await second.json();
       expect(secondJson.code).toBe('CHECKOUT_IDEMPOTENCY_CONFLICT');
 
@@ -398,7 +405,7 @@ describe.sequential('checkout monobank contract', () => {
     }
   }, 20_000);
 
-  it('missing UAH price -> 400 PRICE_CONFIG_ERROR for monobank checkout', async () => {
+  it('missing UAH price -> 422 PRICE_CONFIG_ERROR for monobank checkout', async () => {
     const { productId } = await createIsolatedProduct({
       stock: 2,
       prices: [{ currency: 'USD', priceMinor: 1000 }],
@@ -409,7 +416,7 @@ describe.sequential('checkout monobank contract', () => {
       const res = await postCheckout(idemKey, productId, {
         includePricingFingerprint: false,
       });
-      expect(res.status).toBe(400);
+      expect(res.status).toBe(422);
       const json: any = await res.json();
       expect(json.code).toBe('PRICE_CONFIG_ERROR');
       expect(createMonobankInvoiceMock).not.toHaveBeenCalled();

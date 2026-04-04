@@ -46,7 +46,6 @@ vi.mock('@/lib/services/orders', async () => {
   return {
     ...actual,
     createOrderWithItems: vi.fn(),
-    setOrderPaymentIntent: vi.fn(),
     restockOrder: vi.fn(),
   };
 });
@@ -62,11 +61,7 @@ vi.mock('@/lib/services/orders/payment-attempts', async () => {
 });
 
 import { POST } from '@/app/api/shop/checkout/route';
-import {
-  createOrderWithItems,
-  restockOrder,
-  setOrderPaymentIntent,
-} from '@/lib/services/orders';
+import { createOrderWithItems, restockOrder } from '@/lib/services/orders';
 
 type MockedFn = ReturnType<typeof vi.fn>;
 
@@ -86,10 +81,9 @@ afterAll(() => {
   else process.env.RATE_LIMIT_DISABLED = __prevRateLimitDisabled;
 });
 
-describe('checkout: setOrderPaymentIntent rejection after order creation must not be 400', () => {
-  it('new order (isNew=true): attach rejection returns 409 CHECKOUT_CONFLICT (not 400)', async () => {
+describe('checkout: payment-init state conflict after order creation', () => {
+  it('new order (isNew=true): InvalidPayloadError returns 409 CHECKOUT_CONFLICT', async () => {
     const co = createOrderWithItems as unknown as MockedFn;
-    const setPI = setOrderPaymentIntent as unknown as MockedFn;
     const restock = restockOrder as unknown as MockedFn;
 
     co.mockResolvedValueOnce({
@@ -105,11 +99,6 @@ describe('checkout: setOrderPaymentIntent rejection after order creation must no
       totalCents: 1000,
     });
 
-    setPI.mockRejectedValueOnce(
-      new InvalidPayloadError(
-        'Order cannot accept a payment intent from the current status.'
-      )
-    );
     const ensurePI = ensureStripePaymentIntentForOrder as unknown as MockedFn;
 
     ensurePI.mockRejectedValueOnce(
@@ -132,9 +121,8 @@ describe('checkout: setOrderPaymentIntent rejection after order creation must no
     expect(restock).not.toHaveBeenCalled();
   });
 
-  it('existing order (isNew=false, no PI): attach rejection returns 409 CHECKOUT_CONFLICT (not 400)', async () => {
+  it('existing order (isNew=false, no PI): InvalidPayloadError returns 409 CHECKOUT_CONFLICT', async () => {
     const co = createOrderWithItems as unknown as MockedFn;
-    const setPI = setOrderPaymentIntent as unknown as MockedFn;
     const restock = restockOrder as unknown as MockedFn;
 
     co.mockResolvedValueOnce({
@@ -150,11 +138,6 @@ describe('checkout: setOrderPaymentIntent rejection after order creation must no
       totalCents: 1000,
     });
 
-    setPI.mockRejectedValueOnce(
-      new InvalidPayloadError(
-        'Order cannot accept a payment intent from the current status.'
-      )
-    );
     const ensurePI = ensureStripePaymentIntentForOrder as unknown as MockedFn;
 
     ensurePI.mockRejectedValueOnce(

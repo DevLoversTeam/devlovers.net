@@ -1,7 +1,6 @@
 import { and, eq, inArray, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
-import { coercePriceFromDb } from '@/db/queries/shop/orders';
 import {
   npCities,
   npWarehouses,
@@ -18,7 +17,10 @@ import {
   NovaPoshtaConfigError,
 } from '@/lib/env/nova-poshta';
 import { readServerEnv } from '@/lib/env/server-env';
+import { assertCriticalShopEnv } from '@/lib/env/shop-critical';
+import { getShopLegalVersions } from '@/lib/env/shop-legal';
 import { logError, logWarn } from '@/lib/logging';
+import { writeCanonicalEventWithRetry } from '@/lib/services/shop/events/write-canonical-event-with-retry';
 import { writePaymentEvent } from '@/lib/services/shop/events/write-payment-event';
 import { resolveShippingAvailability } from '@/lib/services/shop/shipping/availability';
 import {
@@ -109,15 +111,16 @@ async function writeOrderCreatedCanonicalEvent(
 async function ensureOrderCreatedCanonicalEvent(
   order: OrderSummaryWithMinor
 ): Promise<void> {
-  try {
-    await writeOrderCreatedCanonicalEvent(order);
-  } catch (error) {
-    logWarn('checkout_order_created_event_write_failed', {
-      orderId: order.id,
-      code: 'ORDER_CREATED_EVENT_WRITE_FAILED',
-      message: error instanceof Error ? error.message : String(error),
-    });
-  }
+  await writeCanonicalEventWithRetry({
+    write: () => writeOrderCreatedCanonicalEvent(order),
+    onFinalFailure: error => {
+      logWarn('checkout_order_created_event_write_failed', {
+        orderId: order.id,
+        code: 'ORDER_CREATED_EVENT_WRITE_FAILED',
+        message: error instanceof Error ? error.message : String(error),
+      });
+    },
+  });
 }
 
 async function getProductsForCheckout(
@@ -138,8 +141,6 @@ async function getProductsForCheckout(
       sizes: products.sizes,
 
       priceMinor: productPrices.priceMinor,
-
-      price: productPrices.price,
 
       originalPrice: productPrices.originalPrice,
       priceCurrency: productPrices.currency,
@@ -210,6 +211,12 @@ type PreparedShipping = {
     methodCode: CheckoutShippingMethodCode;
     cityRef: string;
     warehouseRef: string | null;
+    recipient: {
+      fullName: string;
+      phone: string;
+      email: string | null;
+      comment: string | null;
+    };
   } | null;
   orderSummary: {
     shippingRequired: boolean;
@@ -243,6 +250,13 @@ type PreparedLegalConsent = {
 
 const CHECKOUT_LEGAL_CONSENT_REPLAY_GRACE_MS = 30_000;
 
+function normalizeOptionalRecipientText(
+  raw: string | null | undefined
+): string | null {
+  const normalized = raw?.trim() ?? '';
+  return normalized.length > 0 ? normalized : null;
+}
+
 function requireLegalConsentVersion(
   raw: string | undefined,
   field: 'termsVersion' | 'privacyVersion'
@@ -269,6 +283,83 @@ function isWithinLegalConsentReplayGraceWindow(createdAt: Date): boolean {
   );
 }
 
+function resolveRequestedCheckoutLegalConsentHashRefs(args: {
+  legalConsent: CheckoutLegalConsentInput | null | undefined;
+}): PreparedLegalConsent['hashRefs'] {
+  if (args.legalConsent == null) {
+    throw new InvalidPayloadError(
+      'Explicit legal consent is required before checkout.',
+      {
+        code: 'LEGAL_CONSENT_REQUIRED',
+      }
+    );
+  }
+
+  if (!args.legalConsent.termsAccepted) {
+    throw new InvalidPayloadError('Terms must be accepted before checkout.', {
+      code: 'TERMS_NOT_ACCEPTED',
+    });
+  }
+
+  if (!args.legalConsent.privacyAccepted) {
+    throw new InvalidPayloadError('Privacy policy must be accepted.', {
+      code: 'PRIVACY_NOT_ACCEPTED',
+    });
+  }
+
+  return {
+    termsAccepted: true,
+    privacyAccepted: true,
+    termsVersion: requireLegalConsentVersion(
+      args.legalConsent.termsVersion,
+      'termsVersion'
+    ),
+    privacyVersion: requireLegalConsentVersion(
+      args.legalConsent.privacyVersion,
+      'privacyVersion'
+    ),
+  };
+}
+
+function buildPreparedLegalConsentSnapshot(args: {
+  hashRefs: PreparedLegalConsent['hashRefs'];
+  locale: string | null | undefined;
+  country: string | null | undefined;
+  consentedAt?: Date;
+}): PreparedLegalConsent['snapshot'] {
+  return {
+    termsAccepted: true,
+    privacyAccepted: true,
+    termsVersion: args.hashRefs.termsVersion,
+    privacyVersion: args.hashRefs.privacyVersion,
+    consentedAt: args.consentedAt ?? new Date(),
+    source: 'checkout_explicit',
+    locale: normVariant(args.locale).toLowerCase() || null,
+    country: normalizeCountryCode(
+      args.country ?? resolveStandardStorefrontShippingCountry()
+    ),
+  };
+}
+
+function resolveRequestedCheckoutShippingHashRefs(
+  shipping: CheckoutShippingInput | null | undefined
+): PreparedShipping['hashRefs'] {
+  if (!shipping) return null;
+
+  return {
+    provider: 'nova_poshta',
+    methodCode: shipping.methodCode,
+    cityRef: shipping.selection.cityRef,
+    warehouseRef: shipping.selection.warehouseRef ?? null,
+    recipient: {
+      fullName: shipping.recipient.fullName.trim(),
+      phone: shipping.recipient.phone.trim(),
+      email: normalizeOptionalRecipientText(shipping.recipient.email),
+      comment: normalizeOptionalRecipientText(shipping.recipient.comment),
+    },
+  };
+}
+
 function normalizeCountryCode(raw: string | null | undefined): string | null {
   const normalized = (raw ?? '').trim().toUpperCase();
   if (normalized.length !== 2) return null;
@@ -285,6 +376,21 @@ function readShippingRefFromSnapshot(
     return null;
   }
   const raw = (selection as Record<string, unknown>)[field];
+  if (typeof raw !== 'string') return null;
+  const normalized = raw.trim();
+  return normalized.length > 0 ? normalized : null;
+}
+
+function readShippingRecipientFieldFromSnapshot(
+  value: unknown,
+  field: 'fullName' | 'phone' | 'email' | 'comment'
+): string | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const recipient = (value as { recipient?: unknown }).recipient;
+  if (!recipient || typeof recipient !== 'object' || Array.isArray(recipient)) {
+    return null;
+  }
+  const raw = (recipient as Record<string, unknown>)[field];
   if (typeof raw !== 'string') return null;
   const normalized = raw.trim();
   return normalized.length > 0 ? normalized : null;
@@ -538,8 +644,8 @@ async function prepareCheckoutShipping(args: {
     recipient: {
       fullName: args.shipping.recipient.fullName,
       phone: args.shipping.recipient.phone,
-      email: args.shipping.recipient.email ?? null,
-      comment: args.shipping.recipient.comment ?? null,
+      email: normalizeOptionalRecipientText(args.shipping.recipient.email),
+      comment: normalizeOptionalRecipientText(args.shipping.recipient.comment),
     },
   };
 
@@ -550,6 +656,14 @@ async function prepareCheckoutShipping(args: {
       methodCode,
       cityRef,
       warehouseRef: warehouse?.ref ?? warehouseRef ?? null,
+      recipient: {
+        fullName: args.shipping.recipient.fullName.trim(),
+        phone: args.shipping.recipient.phone.trim(),
+        email: normalizeOptionalRecipientText(args.shipping.recipient.email),
+        comment: normalizeOptionalRecipientText(
+          args.shipping.recipient.comment
+        ),
+      },
     },
     orderSummary: {
       shippingRequired: true,
@@ -568,63 +682,34 @@ function resolveCheckoutLegalConsent(args: {
   locale: string | null | undefined;
   country: string | null | undefined;
 }): PreparedLegalConsent {
-  if (args.legalConsent == null) {
+  const hashRefs = resolveRequestedCheckoutLegalConsentHashRefs(args);
+  const canonicalLegalVersions = getShopLegalVersions();
+
+  if (hashRefs.termsVersion !== canonicalLegalVersions.termsVersion) {
     throw new InvalidPayloadError(
-      'Explicit legal consent is required before checkout.',
+      'Terms version is outdated. Refresh and try again.',
       {
-        code: 'LEGAL_CONSENT_REQUIRED',
+        code: 'TERMS_VERSION_MISMATCH',
       }
     );
   }
 
-  const termsAccepted = args.legalConsent.termsAccepted;
-  const privacyAccepted = args.legalConsent.privacyAccepted;
-
-  if (!termsAccepted) {
-    throw new InvalidPayloadError('Terms must be accepted before checkout.', {
-      code: 'TERMS_NOT_ACCEPTED',
-    });
+  if (hashRefs.privacyVersion !== canonicalLegalVersions.privacyVersion) {
+    throw new InvalidPayloadError(
+      'Privacy version is outdated. Refresh and try again.',
+      {
+        code: 'PRIVACY_VERSION_MISMATCH',
+      }
+    );
   }
-
-  if (!privacyAccepted) {
-    throw new InvalidPayloadError('Privacy policy must be accepted.', {
-      code: 'PRIVACY_NOT_ACCEPTED',
-    });
-  }
-
-  const termsVersion = requireLegalConsentVersion(
-    args.legalConsent.termsVersion,
-    'termsVersion'
-  );
-  const privacyVersion = requireLegalConsentVersion(
-    args.legalConsent.privacyVersion,
-    'privacyVersion'
-  );
-
-  const consentedAt = new Date();
-  const source = 'checkout_explicit';
-  const normalizedLocale = normVariant(args.locale).toLowerCase() || null;
-  const normalizedCountry = normalizeCountryCode(
-    args.country ?? resolveStandardStorefrontShippingCountry()
-  );
 
   return {
-    hashRefs: {
-      termsAccepted: true,
-      privacyAccepted: true,
-      termsVersion,
-      privacyVersion,
-    },
-    snapshot: {
-      termsAccepted: true,
-      privacyAccepted: true,
-      termsVersion,
-      privacyVersion,
-      consentedAt,
-      source,
-      locale: normalizedLocale,
-      country: normalizedCountry,
-    },
+    hashRefs,
+    snapshot: buildPreparedLegalConsentSnapshot({
+      hashRefs,
+      locale: args.locale,
+      country: args.country,
+    }),
   };
 }
 
@@ -680,38 +765,16 @@ function priceItems(
     if (!product) {
       throw new InvalidPayloadError('Some products are unavailable.');
     }
-    if (
-      !product.priceCurrency ||
-      (product.priceMinor == null && product.price == null)
-    ) {
+    if (!product.priceCurrency || product.priceMinor == null) {
       throw new PriceConfigError('Price not configured for currency.', {
         productId: product.id,
         currency,
       });
     }
 
-    let unitPriceCents: number | null = null;
-    if (product.priceMinor !== null && product.priceMinor !== undefined) {
-      if (
-        !isStrictNonNegativeInt(product.priceMinor) ||
-        product.priceMinor <= 0
-      ) {
-        throw new InvalidPayloadError('Product pricing is misconfigured.');
-      }
-      unitPriceCents = product.priceMinor;
-    }
-    if (unitPriceCents == null) {
-      const unitPrice = coercePriceFromDb(product.price, {
-        field: 'price',
-        productId: product.id,
-      });
-      if (unitPrice <= 0) {
-        throw new InvalidPayloadError('Product pricing is misconfigured.');
-      }
-      unitPriceCents = Math.round(unitPrice * 100);
-    }
+    const unitPriceCents = product.priceMinor;
 
-    if (unitPriceCents <= 0) {
+    if (!isStrictNonNegativeInt(unitPriceCents) || unitPriceCents <= 0) {
       throw new InvalidPayloadError('Product pricing is misconfigured.');
     }
 
@@ -858,6 +921,8 @@ export async function createOrderWithItems({
   paymentProvider?: PaymentProvider;
   paymentMethod?: PaymentMethod | null;
 }): Promise<CheckoutResult> {
+  assertCriticalShopEnv();
+
   if (requestedProvider === 'none') {
     throw new InvalidPayloadError('paymentProvider "none" is not supported.', {
       code: 'INVALID_PAYLOAD',
@@ -867,12 +932,12 @@ export async function createOrderWithItems({
   const storefrontCurrency: Currency = resolveStandardStorefrontCurrency();
   const checkoutProviderCandidates =
     resolveStandardStorefrontCheckoutProviderCandidates({
-    requestedProvider:
-      requestedProvider === 'stripe' || requestedProvider === 'monobank'
-        ? requestedProvider
-        : null,
-    requestedMethod,
-  });
+      requestedProvider:
+        requestedProvider === 'stripe' || requestedProvider === 'monobank'
+          ? requestedProvider
+          : null,
+      requestedMethod,
+    });
   const paymentProvider: PaymentProvider =
     checkoutProviderCandidates[0] ?? 'stripe';
   const currency: Currency = storefrontCurrency;
@@ -887,29 +952,21 @@ export async function createOrderWithItems({
   const normalizedItems = mergeCheckoutItems(items).map(item =>
     normalizeCheckoutItem(item)
   );
-
-  const preparedShipping = await prepareCheckoutShipping({
-    shipping: shipping ?? null,
-    locale,
-    country: country ?? null,
-    currency,
-    shippingQuoteFingerprint,
-    requireShippingQuoteFingerprint,
-  });
-  const preparedLegalConsent = resolveCheckoutLegalConsent({
-    legalConsent,
-    locale,
-    country: country ?? null,
-  });
-
+  const requestedShippingHashRefs = resolveRequestedCheckoutShippingHashRefs(
+    shipping ?? null
+  );
+  const requestedLegalConsentHashRefs =
+    resolveRequestedCheckoutLegalConsentHashRefs({
+      legalConsent,
+    });
   const requestHash = hashIdempotencyRequest({
     items: normalizedItems,
     currency,
     locale: locale ?? null,
     paymentProvider,
     paymentMethod: resolvedPaymentMethod,
-    shipping: preparedShipping.hashRefs,
-    legalConsent: preparedLegalConsent.hashRefs,
+    shipping: requestedShippingHashRefs,
+    legalConsent: requestedLegalConsentHashRefs,
   });
 
   async function assertIdempotencyCompatible(existing: OrderSummaryWithMinor) {
@@ -965,7 +1022,12 @@ export async function createOrderWithItems({
       if (canRepairMissingLegalConsent) {
         await ensureOrderLegalConsentSnapshot({
           orderId: row.id,
-          snapshot: preparedLegalConsent.snapshot,
+          snapshot: buildPreparedLegalConsentSnapshot({
+            hashRefs: requestedLegalConsentHashRefs,
+            locale,
+            country: country ?? null,
+            consentedAt: existing.createdAt,
+          }),
         });
 
         [existingLegalConsentRow] = await db
@@ -999,6 +1061,26 @@ export async function createOrderWithItems({
       existingShippingRow?.shippingAddress,
       'warehouseRef'
     );
+    const existingRecipient = {
+      fullName:
+        readShippingRecipientFieldFromSnapshot(
+          existingShippingRow?.shippingAddress,
+          'fullName'
+        ) ?? '',
+      phone:
+        readShippingRecipientFieldFromSnapshot(
+          existingShippingRow?.shippingAddress,
+          'phone'
+        ) ?? '',
+      email: readShippingRecipientFieldFromSnapshot(
+        existingShippingRow?.shippingAddress,
+        'email'
+      ),
+      comment: readShippingRecipientFieldFromSnapshot(
+        existingShippingRow?.shippingAddress,
+        'comment'
+      ),
+    };
     const existingLegalHashRefs = {
       termsAccepted: existingLegalConsentRow.termsAccepted,
       privacyAccepted: existingLegalConsentRow.privacyAccepted,
@@ -1008,19 +1090,19 @@ export async function createOrderWithItems({
 
     if (
       existingLegalHashRefs.termsAccepted !==
-        preparedLegalConsent.hashRefs.termsAccepted ||
+        requestedLegalConsentHashRefs.termsAccepted ||
       existingLegalHashRefs.privacyAccepted !==
-        preparedLegalConsent.hashRefs.privacyAccepted ||
+        requestedLegalConsentHashRefs.privacyAccepted ||
       existingLegalHashRefs.termsVersion !==
-        preparedLegalConsent.hashRefs.termsVersion ||
+        requestedLegalConsentHashRefs.termsVersion ||
       existingLegalHashRefs.privacyVersion !==
-        preparedLegalConsent.hashRefs.privacyVersion
+        requestedLegalConsentHashRefs.privacyVersion
     ) {
       throw new IdempotencyConflictError(
         'Idempotency key already used with different legal consent.',
         {
           existing: existingLegalHashRefs,
-          requested: preparedLegalConsent.hashRefs,
+          requested: requestedLegalConsentHashRefs,
         }
       );
     }
@@ -1079,6 +1161,7 @@ export async function createOrderWithItems({
               methodCode: row.shippingMethodCode,
               cityRef: existingCityRef,
               warehouseRef: existingWarehouseRef,
+              recipient: existingRecipient,
             }
           : null,
       legalConsent: existingLegalHashRefs,
@@ -1166,12 +1249,6 @@ export async function createOrderWithItems({
   const existing = await getOrderByIdempotencyKey(db, idempotencyKey);
   if (existing) {
     await assertIdempotencyCompatible(existing);
-    if (preparedShipping.required && preparedShipping.snapshot) {
-      await ensureOrderShippingSnapshot({
-        orderId: existing.id,
-        snapshot: preparedShipping.snapshot,
-      });
-    }
     await ensureOrderCreatedCanonicalEvent(existing);
     return {
       order: existing,
@@ -1179,6 +1256,16 @@ export async function createOrderWithItems({
       totalCents: requireTotalCents(existing),
     };
   }
+
+  const preparedShipping = await prepareCheckoutShipping({
+    shipping: shipping ?? null,
+    locale,
+    country: country ?? null,
+    currency,
+    shippingQuoteFingerprint,
+    requireShippingQuoteFingerprint,
+  });
+
   const uniqueProductIds = Array.from(
     new Set(normalizedItems.map(i => i.productId))
   );
@@ -1271,6 +1358,12 @@ export async function createOrderWithItems({
       );
     }
   }
+
+  const preparedLegalConsent = resolveCheckoutLegalConsent({
+    legalConsent,
+    locale,
+    country: country ?? null,
+  });
 
   const itemsSubtotalCents = sumLineTotals(
     pricedItems.map(i => i.lineTotalCents)

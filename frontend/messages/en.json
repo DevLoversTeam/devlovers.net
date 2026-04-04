@@ -1958,15 +1958,15 @@
       },
       "review": {
         "title": "How requests are reviewed",
-        "body": "Each request is reviewed individually. We may ask for additional details, photos, or other information needed to assess the request and explain the next steps."
+        "body": "Each request is reviewed individually. We may ask for additional details, photos, or other information needed to assess the request and explain the next steps. Exchanges are not supported."
       },
       "refunds": {
         "title": "Refund processing",
-        "body": "Refund availability and timing depend on the review result and the payment method used for the order. Automatic refund processing through the website is not currently available."
+        "body": "Refund availability and timing depend on the review result and the payment method used for the order. Self-service refund processing through the storefront is not currently available."
       },
       "contact": {
         "title": "How to contact support",
-        "body": "To request return guidance or report a delivery issue, contact"
+        "body": "To request return or cancellation guidance, or report a delivery issue, contact"
       }
     },
     "privacy": {

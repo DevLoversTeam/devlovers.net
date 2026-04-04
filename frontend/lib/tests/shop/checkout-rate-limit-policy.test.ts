@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { createTestLegalConsent } from './test-legal-consent';
+
 const enforceRateLimitMock = vi.fn();
 const createOrderWithItemsMock = vi.fn();
 
@@ -20,6 +22,15 @@ vi.mock('@/lib/auth', () => ({
 
 vi.mock('@/lib/security/origin', () => ({
   guardBrowserSameOrigin: vi.fn(() => null),
+}));
+
+vi.mock('@/lib/shop/commercial-policy.server', () => ({
+  resolveStandardStorefrontProviderCapabilities: vi.fn(() => ({
+    stripeCheckoutEnabled: true,
+    monobankCheckoutEnabled: false,
+    monobankGooglePayEnabled: false,
+    enabledProviders: ['stripe'],
+  })),
 }));
 
 vi.mock('@/lib/security/rate-limit', () => ({
@@ -73,10 +84,13 @@ describe('checkout rate limit policy', () => {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
-        'idempotency-key': 'idem_key_12345678',
+        'idempotency-key': '123e4567-e89b-12d3-a456-426614174000',
         origin: 'http://localhost:3000',
       },
       body: JSON.stringify({
+        legalConsent: createTestLegalConsent(),
+        paymentProvider: 'stripe',
+        paymentMethod: 'stripe_card',
         items: [
           {
             productId: '00000000-0000-4000-8000-000000000001',

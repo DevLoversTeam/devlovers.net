@@ -53,6 +53,7 @@ export const serverEnvSchema = z.object({
     .optional()
     .default('false'),
   SHOP_SHIPPING_RETENTION_DAYS: z.string().optional().default('180'),
+  SHOP_SELLER_ADDRESS: z.string().min(1).optional(),
   SHOP_TERMS_VERSION: z.string().min(1).optional().default('terms-v1'),
   SHOP_PRIVACY_VERSION: z.string().min(1).optional().default('privacy-v1'),
 

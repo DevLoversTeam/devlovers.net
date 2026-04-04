@@ -1,6 +1,12 @@
-export const TEST_LEGAL_CONSENT = {
-  termsAccepted: true,
-  privacyAccepted: true,
-  termsVersion: 'terms-2026-02-27',
-  privacyVersion: 'privacy-2026-02-27',
-} as const;
+import { getShopLegalVersions } from '@/lib/env/shop-legal';
+
+export function createTestLegalConsent() {
+  const canonicalLegalVersions = getShopLegalVersions();
+
+  return {
+    termsAccepted: true,
+    privacyAccepted: true,
+    termsVersion: canonicalLegalVersions.termsVersion,
+    privacyVersion: canonicalLegalVersions.privacyVersion,
+  } as const;
+}

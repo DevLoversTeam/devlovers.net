@@ -8,6 +8,7 @@ const getProductPageDataMock = vi.hoisted(() => vi.fn());
 const redirectMock = vi.hoisted(() => vi.fn());
 const notFoundMock = vi.hoisted(() => vi.fn());
 const getMessagesMock = vi.hoisted(() => vi.fn(async () => ({ shop: {} })));
+const getApparelSizeGuideForProductMock = vi.hoisted(() => vi.fn(() => null));
 const resolveStripeCheckoutEnabledMock = vi.hoisted(() => vi.fn(() => true));
 const resolveMonobankCheckoutEnabledMock = vi.hoisted(() => vi.fn(() => false));
 const resolveMonobankGooglePayEnabledMock = vi.hoisted(() =>
@@ -61,7 +62,7 @@ vi.mock('@/lib/shop/currency', async importOriginal => {
 });
 
 vi.mock('@/lib/shop/size-guide', () => ({
-  getApparelSizeGuideForProduct: vi.fn(() => null),
+  getApparelSizeGuideForProduct: getApparelSizeGuideForProductMock,
 }));
 
 vi.mock('@/components/shop/CategoryTile', () => ({
@@ -158,6 +159,7 @@ describe('public shop runtime/cache smoke', () => {
     vi.resetModules();
 
     getMessagesMock.mockResolvedValue({ shop: {} });
+    getApparelSizeGuideForProductMock.mockReturnValue(null);
     getHomepageContentMock.mockResolvedValue({
       newArrivals: [
         {
@@ -204,6 +206,7 @@ describe('public shop runtime/cache smoke', () => {
         ],
         badge: 'NONE',
         description: 'A mug for engineers.',
+        sizes: [],
       },
       commerceProduct: {
         id: 'prod-pdp-1',
@@ -279,6 +282,65 @@ describe('public shop runtime/cache smoke', () => {
     expect(notFoundMock).not.toHaveBeenCalled();
     expect(html).toContain('DevLovers Mug');
     expect(html).toContain('add to cart');
+  });
+
+  it('keeps the size guide visible on the product detail page when the product is unavailable to purchase', async () => {
+    getProductPageDataMock.mockResolvedValueOnce({
+      kind: 'unavailable',
+      product: {
+        id: 'prod-pdp-2',
+        slug: 'devlovers-hoodie',
+        name: 'DevLovers Hoodie',
+        image: '/hoodie.jpg',
+        images: [
+          {
+            id: 'img-pdp-2',
+            url: '/hoodie.jpg',
+            publicId: null,
+            sortOrder: 0,
+            isPrimary: true,
+          },
+        ],
+        badge: 'NONE',
+        description: 'A hoodie for engineers.',
+        sizes: ['S', 'M', 'L'],
+      },
+      commerceProduct: null,
+    });
+    getApparelSizeGuideForProductMock.mockReturnValueOnce({
+      label: 'Size guide',
+      title: 'Apparel size guide',
+      intro: 'Measure a garment you already own.',
+      measurementNote: 'Measurements are garment measurements in centimeters.',
+      fitNotes: ['Choose the larger size if you prefer a relaxed fit.'],
+      chart: {
+        caption: 'Unisex apparel measurements',
+        unit: 'cm',
+        columns: {
+          size: 'Size',
+          chestWidth: 'Chest width',
+          bodyLength: 'Body length',
+        },
+        rows: [
+          {
+            size: 'M',
+            chestWidthCm: 55,
+            bodyLengthCm: 72,
+          },
+        ],
+      },
+    } as any);
+
+    const mod = await import('@/app/[locale]/shop/products/[slug]/page');
+    const html = renderToStaticMarkup(
+      await mod.default({
+        params: Promise.resolve({ locale: 'en', slug: 'devlovers-hoodie' }),
+      })
+    );
+
+    expect(html).toContain('DevLovers Hoodie');
+    expect(html).toContain('Size guide');
+    expect(html).not.toContain('add to cart');
   });
 
   it('keeps the cart page on explicit node runtime and dynamic cache posture while resolving server-side checkout capabilities', async () => {

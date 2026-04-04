@@ -22,6 +22,34 @@ async function cleanupProduct(productId: string) {
   await db.delete(products).where(eq(products.id, productId));
 }
 
+function dualCurrencyPrices(
+  priceMinor: number,
+  originalPriceMinor: number | null = null
+) {
+  return [
+    { currency: 'UAH' as const, priceMinor, originalPriceMinor },
+    { currency: 'USD' as const, priceMinor, originalPriceMinor },
+  ];
+}
+
+function dualCurrencyPriceRows(
+  productId: string,
+  priceMinor: number,
+  originalPriceMinor: number | null = null
+) {
+  return dualCurrencyPrices(priceMinor, originalPriceMinor).map(price => ({
+    productId,
+    currency: price.currency,
+    priceMinor: price.priceMinor,
+    originalPriceMinor: price.originalPriceMinor,
+    price: toDbMoney(price.priceMinor),
+    originalPrice:
+      price.originalPriceMinor == null
+        ? null
+        : toDbMoney(price.originalPriceMinor),
+  }));
+}
+
 describe.sequential('product images contract', () => {
   const createdProductIds: string[] = [];
 
@@ -227,7 +255,7 @@ describe.sequential('product images contract', () => {
       image: new File([new Uint8Array([1, 2, 3])], 'create.png', {
         type: 'image/png',
       }),
-      prices: [{ currency: 'USD', priceMinor: 4100, originalPriceMinor: null }],
+      prices: dualCurrencyPrices(4100),
       colors: [],
       sizes: [],
       badge: 'NONE',
@@ -292,14 +320,9 @@ describe.sequential('product images contract', () => {
       sku: null,
     });
 
-    await db.insert(productPrices).values({
-      productId,
-      currency: 'USD',
-      priceMinor: 5400,
-      originalPriceMinor: null,
-      price: toDbMoney(5400),
-      originalPrice: null,
-    });
+    await db
+      .insert(productPrices)
+      .values(dualCurrencyPriceRows(productId, 5400));
 
     await db.insert(productImages).values([
       {

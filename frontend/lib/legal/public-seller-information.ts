@@ -24,7 +24,7 @@ export function getPublicSellerInformation(): PublicSellerInformation {
   const sellerName = nonEmpty(process.env.NP_SENDER_NAME);
   const supportPhone = nonEmpty(process.env.NP_SENDER_PHONE);
   const supportEmail = getPublicSupportEmail();
-  const address = null;
+  const address = nonEmpty(process.env.SHOP_SELLER_ADDRESS);
   const edrpou = nonEmpty(process.env.NP_SENDER_EDRPOU);
   const businessDetails = edrpou ? [{ label: 'EDRPOU', value: edrpou }] : [];
 

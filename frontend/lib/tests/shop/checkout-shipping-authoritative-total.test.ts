@@ -27,6 +27,8 @@ import { resetEnvCache } from '@/lib/env';
 import { rehydrateCartItems } from '@/lib/services/products';
 import { deriveTestIpFromIdemKey } from '@/lib/tests/helpers/ip';
 
+import { createTestLegalConsent } from './test-legal-consent';
+
 const enforceRateLimitMock = vi.fn();
 
 vi.mock('@/lib/security/rate-limit', () => ({
@@ -56,9 +58,20 @@ vi.mock('@/lib/auth', async () => {
   };
 });
 
-vi.mock('@/lib/env/stripe', () => ({
-  isPaymentsEnabled: () => true,
-}));
+vi.mock('@/lib/env/stripe', async () => {
+  const actual = await vi.importActual<any>('@/lib/env/stripe');
+  return {
+    ...actual,
+    getStripeEnv: () => ({
+      secretKey: 'sk_test_checkout_shipping_total',
+      webhookSecret: 'whsec_test_checkout_shipping_total',
+      publishableKey: 'pk_test_checkout_shipping_total',
+      paymentsEnabled: true,
+      mode: 'test',
+    }),
+    isPaymentsEnabled: () => true,
+  };
+});
 
 vi.mock('@/lib/services/orders/payment-attempts', async () => {
   const actual = await vi.importActual<any>(
@@ -124,6 +137,19 @@ beforeEach(() => {
   vi.stubEnv('SHOP_SHIPPING_NP_WAREHOUSE_AMOUNT_MINOR', '500');
   vi.stubEnv('SHOP_SHIPPING_NP_LOCKER_AMOUNT_MINOR', '400');
   vi.stubEnv('SHOP_SHIPPING_NP_COURIER_AMOUNT_MINOR', '700');
+  vi.stubEnv('NP_API_KEY', 'np_test_checkout_shipping_total');
+  vi.stubEnv('NP_SENDER_CITY_REF', 'np_sender_city_checkout_shipping_total');
+  vi.stubEnv(
+    'NP_SENDER_WAREHOUSE_REF',
+    'np_sender_warehouse_checkout_shipping_total'
+  );
+  vi.stubEnv('NP_SENDER_REF', 'np_sender_checkout_shipping_total');
+  vi.stubEnv(
+    'NP_SENDER_CONTACT_REF',
+    'np_sender_contact_checkout_shipping_total'
+  );
+  vi.stubEnv('NP_SENDER_NAME', 'Checkout Shipping Total Sender');
+  vi.stubEnv('NP_SENDER_PHONE', '+380500000002');
   resetEnvCache();
 });
 
@@ -301,6 +327,7 @@ function makeCheckoutRequest(args: {
           },
         },
         items: [{ productId: args.productId, quantity: 1 }],
+        legalConsent: createTestLegalConsent(),
         ...(args.extraBody ?? {}),
       }),
     })
@@ -383,7 +410,7 @@ describe('checkout authoritative shipping totals', () => {
       })
     );
 
-    expect(response.status).toBe(409);
+    expect(response.status).toBe(422);
     const json = await response.json();
     expect(json.code).toBe('CHECKOUT_SHIPPING_CHANGED');
     expect(json.message).toBe(
@@ -427,7 +454,7 @@ describe('checkout authoritative shipping totals', () => {
       })
     );
 
-    expect(response.status).toBe(409);
+    expect(response.status).toBe(422);
     const json = await response.json();
     expect(json.code).toBe('CHECKOUT_SHIPPING_CHANGED');
     expect(json.message).toBe(
@@ -457,6 +484,10 @@ describe('checkout authoritative shipping totals', () => {
     expect(pricingFingerprint).toHaveLength(64);
 
     vi.stubEnv('APP_ENV', 'production');
+    vi.stubEnv(
+      'DATABASE_URL',
+      'postgresql://required-for-production-like-check'
+    );
     vi.stubEnv('NP_API_BASE', 'https://api.example.test');
     vi.stubEnv('NP_API_KEY', 'np_test_placeholder');
     vi.stubEnv('NP_SENDER_CITY_REF', 'test-city-ref');
@@ -468,21 +499,21 @@ describe('checkout authoritative shipping totals', () => {
     resetEnvCache();
 
     const idempotencyKey = crypto.randomUUID();
-    const response = await POST(
-      makeCheckoutRequest({
-        idempotencyKey,
-        productId: seed.productId,
-        pricingFingerprint: pricingFingerprint!,
-        cityRef: seed.cityRef,
-        warehouseRef: seed.warehouseRef,
-        shippingQuoteFingerprint: warehouseMethod.quoteFingerprint,
-      })
-    );
 
-    expect(response.status).toBe(422);
-    const json = await response.json();
-    expect(json.code).toBe('SHIPPING_METHOD_UNAVAILABLE');
-    expect(json.message).toBe('Shipping method is currently unavailable.');
+    await expect(
+      POST(
+        makeCheckoutRequest({
+          idempotencyKey,
+          productId: seed.productId,
+          pricingFingerprint: pricingFingerprint!,
+          cityRef: seed.cityRef,
+          warehouseRef: seed.warehouseRef,
+          shippingQuoteFingerprint: warehouseMethod.quoteFingerprint,
+        })
+      )
+    ).rejects.toThrow(
+      /nova_poshta provider config is invalid for production runtime: NP_API_BASE must not point at a local\/test host/i
+    );
 
     const [orderRow] = await db
       .select({ id: orders.id })
@@ -521,7 +552,7 @@ describe('checkout authoritative shipping totals', () => {
       })
     );
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(422);
     const json = await response.json();
     expect(json.code).toBe('INVALID_PAYLOAD');
 
@@ -562,7 +593,7 @@ describe('checkout authoritative shipping totals', () => {
       })
     );
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(422);
     const json = await response.json();
     expect(json.code).toBe('DISCOUNTS_NOT_SUPPORTED');
     expect(json.message).toBe('Discounts are not available at checkout.');
